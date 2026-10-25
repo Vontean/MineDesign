@@ -14,3 +14,4 @@ BaoCut: https://github.com/JimLiu/baocut
 - 编辑器外观仅在构建产物注入本地 theme adapter，不改用户画板。
 
 - React 18 UMD 改从 MineDesign 独立 preview-react18 workspace 读取，替代 npm alias；编辑器与其依赖统一使用根 React 19。
+- 两个编辑器入口（apps/*-editor/src/main.ts）读取 `globalThis.__MDN_FRAME__.base` 作为路由根：Codex 沙箱禁止访问本地 HTTP，编辑器改为 srcdoc 装载，`location.href` 是 `about:srcdoc`，无法推算路由根。未设置时行为与上游相同。

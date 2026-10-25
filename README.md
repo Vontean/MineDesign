@@ -51,6 +51,27 @@ npm run install:local
 
 默认工作区仅为本项目，便于实验，不授予任意磁盘访问。其他目录可以通过 CLI 的 `--workspace` 指定；正式多项目接入尚需设计相应的授权 UI。
 
+### 编辑器如何在 Codex 中装载
+
+Codex 的 MCP App 沙箱只放行 https、blob 与 data 来源，主进程也拦截沙箱发出的 http 请求，因此插件页不能嵌入 `http://127.0.0.1` 上的编辑器。MineDesign 改为“虚拟来源”：
+
+- 插件页取得编辑器 HTML，改写为 srcdoc 装载；编辑器看到的地址是 `<插件页>/__mdn/<kind>/<grant>/`。
+- 编辑器内的 shim（`src/frame-shim.js`）把对这个前缀的 fetch、EventSource 交给插件页的桥（`src/virtual.mjs`），桥调用 app 专用的 MCP 工具 `minedesign_http`、`minedesign_events`，由 MCP 进程回环请求本地服务，沿用原有 grant、ifMatch 与同源校验。
+- 画板与组件预览中的 `/_blob/<id>` 图片、字体和样式引用改写为 blob URL；设计系统预览 runner（`run.html#token`）由桥直接取暂存文档、按卡片目录装载。
+- srcdoc 的 `location.pathname` 都相同，shim 按作品给 localStorage/sessionStorage 加命名空间，避免未保存改动串到别的作品。
+
+浏览器模式同样走这条路径（transport 换成本地 API），本地验收即覆盖 Codex 中的数据通路。
+
+### 改动后如何在 Codex 中生效
+
+| 改了什么 | 生效方式 |
+| --- | --- |
+| `src/app.*`、`src/virtual.mjs`、`src/frame-shim.js`、`assets/*.css` | `node scripts/build.mjs`；Codex 下次重建插件视图时读取新页面 |
+| `src/mcp.mjs`、`src/service.mjs`、vendor 编辑器 | 构建后结束 Codex 拉起的 `dist/cli.mjs mcp` 进程；Codex 在下次调用时自动重启它 |
+| `.codex-plugin/plugin.json`、`skills/` | 提升版本号后 `npm run install:local` |
+
+Codex 会缓存已打开的插件视图，资源内容变化后切换页面不一定重建；载入失败时页面顶栏会显示原因和“重新载入”按钮。
+
 在 Codex 插件入口寻找 **MineDesign**。聊天内入口声明为 thread，宿主支持时可在面板的新标签工具列表中找到。实际入口发现与 UI 装载仍待本机人工验收；CLI 安装成功不等于 GUI 已通过。若 Codex 当前会话未发现新工具，应由用户检查插件页面的启用/刷新状态，不通过重启日常窗口强制刷新。
 
 ## 本轮证据
@@ -64,7 +85,7 @@ npm run install:local
 | 浏览器画布 | 两画板实际渲染；上游批注模式定位并添加反馈；切换作品后草稿仍在 |
 | 浏览器设计系统 | 实际渲染全部章节；间距从 16px 改为 20px，保存到 tokens.json |
 | 本机安装 | 官方 CLI 安装 `minedesign@minedesign-local` 0.0.3 成功；已读取注册结果 |
-| Codex GUI | 未验收；电脑操作工具禁止控制 Codex 自身界面，不能用其他通道绕过 |
+| Codex GUI | 插件入口与外壳已在 Codex 中打开；嵌套编辑器原先被沙箱 CSP 拦截（日志 `ERR_BLOCKED_BY_CSP`），已改为虚拟来源，浏览器中经同一路径验证画布、设计系统、保存与冲突、外部改动、素材图片；Codex 中的新视图待复验 |
 | 完整 Agent 闭环 | 未验收：尚未证明 Codex 实际装载 iframe、批注发回本聊天并由 Agent 修改原稿 |
 | 导出与其他编辑操作 | 上游路径已保留，但本轮未逐项点击验收；不宣称全部无回归 |
 
@@ -72,7 +93,8 @@ npm run install:local
 
 ## 已知边界
 
-- Codex 的 MCP Apps CSP、嵌套 iframe、`sendMessage` 支持需要真实 GUI 验证。浏览器模式明确禁用“发送到当前聊天”。
+- Codex 的 `sendMessage` 支持需要真实 GUI 验证。浏览器模式明确禁用“发送到当前聊天”。
+- 虚拟来源下，画板 `x-import` JSX 需要的 Babel 仍按文件地址加载，在 Codex 中不可用；导出下载经插件页触发，Codex 是否放行下载未验证。
 - 插件当前绑定本项目；不是成熟的跨项目作品库。重启 MCP 后，用户作品需重新打开。
 - 继承 BaoCut 已关闭的快速编辑 sample、多人协作等状态，不额外接入独立模型服务。
 - 上游界面文案多数保留英文，尚未完整汉化；首版优先保留布局和实际行为。

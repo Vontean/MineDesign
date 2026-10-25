@@ -29,10 +29,13 @@ export async function serveMcp(service) {
   }
   registerBrandedTool(server,'minedesign_annotations',{description:'Read or persist user-authored design annotation drafts.',inputSchema:{id:z.string(),annotations:z.array(z.record(z.string(),z.unknown())).optional()},_meta:{ui:{resourceUri:uri,visibility:['app']}}},async({id,annotations})=>({content:[],structuredContent:{annotations:await service.annotations(id,annotations)}}));
   registerBrandedTool(server,'minedesign_prepare_feedback',{description:'Check source version before explicitly sending user feedback.',inputSchema:{id:z.string()},_meta:{ui:{resourceUri:uri,visibility:['app']}}},async({id})=>({content:[],structuredContent:await service.prepareFeedback(id)}));
+  registerBrandedTool(server,'minedesign_http',{description:'Relay one editor request to the local design service.',inputSchema:{method:z.enum(['GET','HEAD','POST']).default('GET'),path:z.string(),headers:z.record(z.string(),z.string()).optional(),body:z.string().optional(),offset:z.number().int().min(0).default(0)},_meta:{ui:{resourceUri:uri,visibility:['app']}}},async input=>({content:[],structuredContent:await service.proxy(input)}));
+  registerBrandedTool(server,'minedesign_events',{description:'Wait for external changes to an open design document.',inputSchema:{path:z.string(),after:z.number().int().min(-1).default(-1),waitMs:z.number().int().min(0).max(25000).default(15000)},_meta:{ui:{resourceUri:uri,visibility:['app']}}},async input=>({content:[],structuredContent:await service.events(input)}));
   registerAppResource(server,'editor',uri,{},async()=>{
     let html=await fs.readFile(path.join(ROOT,'dist/app.html'),'utf8');
-    html=html.replace('/*__CONFIG__*/',()=>JSON.stringify({origin:service.origin,api:service.api,documents:service.documents()}).replaceAll('<','\\u003c'));
-    return {contents:[{uri,mimeType:RESOURCE_MIME_TYPE,text:html,_meta:{ui:{csp:{connectDomains:[service.origin],resourceDomains:[service.origin,'blob:','data:'],frameDomains:[service.origin]}}}}]};
+    html=html.replace('/*__CONFIG__*/',()=>JSON.stringify({documents:service.documents()}).replaceAll('<','\\u003c'));
+    // 编辑器经 MCP 工具读写；沙箱只需放行插件页自己生成的 blob/data 资源
+    return {contents:[{uri,mimeType:RESOURCE_MIME_TYPE,text:html,_meta:{ui:{csp:{resourceDomains:['blob:','data:'],frameDomains:['blob:','data:']}}}}]};
   });
   server.server.setRequestHandler(ListToolsRequestSchema,async()=>({tools:appTools}));
   server.server.oninitialized=()=>server.sendToolListChanged();

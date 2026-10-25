@@ -12,7 +12,9 @@ for(const editor of ['design-editor','design-system-editor']){
   await fs.writeFile(file,html);
 }
 await fs.mkdir(path.join(root,'dist'),{recursive:true});
-await build({entryPoints:[path.join(root,'src/app.mjs')],outfile:path.join(root,'dist/app.js'),bundle:true,format:'esm',platform:'browser',legalComments:'inline',define:{__MDN_VERSION__:JSON.stringify(version)}});
+// frame-shim.js 以文本注入编辑器 srcdoc
+const shimAsText={name:'shim-as-text',setup(b){b.onLoad({filter:/frame-shim\.js$/},async args=>({contents:await fs.readFile(args.path,'utf8'),loader:'text'}));}};
+await build({entryPoints:[path.join(root,'src/app.mjs')],outfile:path.join(root,'dist/app.js'),bundle:true,format:'esm',platform:'browser',legalComments:'inline',plugins:[shimAsText],define:{__MDN_VERSION__:JSON.stringify(version)}});
 const js=(await fs.readFile(path.join(root,'dist/app.js'),'utf8')).replaceAll('</script','<\\/script');
 const css=await fs.readFile(path.join(root,'assets/app.css'),'utf8');
 let html=await fs.readFile(path.join(root,'src/app.html'),'utf8');
