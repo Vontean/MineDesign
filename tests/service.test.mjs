@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import { startService, inside, ROOT } from '../src/service.mjs';
+import { startService, inside, ROOT } from '../src/backend/service.mjs';
 
 test('design editor serves real files, preserves ifMatch and rejects workspace escape',async()=>{
   const tmp=await fs.mkdtemp(path.join(os.tmpdir(),'minedesign-test-'));

@@ -1,4 +1,11 @@
 {
-  "exclude": ["**/dist/", "**/node_modules/", "**/src/generated/", "examples/**/components/lib/"],
-  "deprioritize": ["vendor/", "examples/"]
+  "exclude": [
+    "**/dist/",
+    "**/node_modules/",
+    "**/src/generated/",
+    "examples/**/components/lib/"
+  ],
+  "deprioritize": [
+    "examples/"
+  ]
 }

@@ -1,0 +1,13 @@
+{
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "name": "@minedesign/design-files",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@minedesign/contracts": "*",
+    "@minedesign/document-store": "*"
+  }
+}

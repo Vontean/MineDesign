@@ -174,4 +174,4 @@ MineDesign 当前没有既有测试。可参考 BaoCut 工具与文件边界测�
 
 需要后续决定的事项：最低支持的 Codex 构建、依赖联网策略、宿主消息桥，以及公开分发和源码许可。优先通过技术探针取得证据，再细化接口和交互设计；不通过追加问卷阻止当前规格落盘。
 
-证据和背景见 [CONTEXT.md](CONTEXT.md) 与 [上游研究笔记](baocut-design-source-notes.md)。
+证据和背景见 [CONTEXT.md](CONTEXT.md) 与 [分叉来源与许可](FORK.md)。

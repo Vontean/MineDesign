@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
-import { ROOT } from '../src/service.mjs';
+import { ROOT } from '../src/backend/service.mjs';
 import path from 'node:path';
 import { APP_URI } from '../src/brand.mjs';
 

@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
-import { ROOT } from './service.mjs';
+import { ROOT } from './paths.mjs';
 export const VERSION=JSON.parse(readFileSync(path.join(ROOT,'package.json'),'utf8')).version;
 // 资源身份不随安装版本改变，避免导航元数据与会话 MCP 的版本短暂错配。
 export const APP_URI='ui://minedesign/editor.html';

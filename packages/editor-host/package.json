@@ -1,0 +1,14 @@
+{
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "name": "@minedesign/editor-host",
+  "exports": {
+    ".": "./src/shared/index.ts",
+    "./design": "./src/design/index.ts",
+    "./design-system": "./src/design-system/index.ts"
+  },
+  "dependencies": {
+    "@minedesign/contracts": "*"
+  }
+}

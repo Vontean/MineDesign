@@ -1,5 +1,5 @@
-import { startService, ROOT } from './service.mjs';
-import { serveMcp } from './mcp.mjs';
+import { startService, ROOT } from './backend/service.mjs';
+import { serveMcp } from './interfaces/mcp.mjs';
 import path from 'node:path';
 
 const args=process.argv.slice(2);

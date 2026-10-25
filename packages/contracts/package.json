@@ -1,0 +1,14 @@
+{
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "name": "@minedesign/contracts",
+  "exports": {
+    "./file-protocol": "./src/file-protocol.ts",
+    "./editor-messages": "./src/editor-messages.ts",
+    "./i18n": "./src/i18n.ts",
+    "./document-info": "./src/document-info.ts",
+    "./service": "./src/service.mjs"
+  },
+  "dependencies": {}
+}

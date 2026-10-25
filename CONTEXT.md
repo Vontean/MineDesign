@@ -202,7 +202,7 @@ Agent 收到反馈后应先读取当前文件，修改同一份原稿，再检�
 - [README.md](README.md)：产品入口与快速启动；[开发工作流](docs/development.md) 说明构建与恢复，[验证记录](docs/verification.md) 保存已有证据。
 - [PRD.md](PRD.md)：第一版目标与验收规格；早期基线及“待验证”表述需结合验证记录中的较新证据理解，不作为当前功能状态清单。
 - [DESIGN.md](DESIGN.md)：MineDesign 自身的视觉约定。
-- [上游研究笔记](baocut-design-source-notes.md)、[移植来源与补丁](vendor/UPSTREAM.md)：保留历史研究与代码来源，本文不再重复研究轮次。
+- [分叉来源与许可](FORK.md)：固定分叉版本、接管模块和原始许可。
 
 功能变化时，同步更新对应说明与验收边界。测试数量、安装过程与临时排障记录留在开发文档或验证记录中，不用它们替代功能定义。
 

@@ -57,6 +57,6 @@ mdn plugin install
 
 ## 来源与许可
 
-复用固定版本的 BaoCut 设计编辑器、运行时与文件协议，来源和补丁见 [vendor/UPSTREAM.md](vendor/UPSTREAM.md)。原始许可及第三方声明保留在 vendor 中。当前用于本地实验，不据此宣称已取得任意商业分发权利。
+复用固定版本的 BaoCut 设计编辑器、运行时与文件协议，来源和补丁见 [FORK.md](FORK.md)。原始许可及第三方声明统一保留在 FORK.md 中。当前用于本地实验，不据此宣称已取得任意商业分发权利。
 
 品牌为 MineDesign，缩写 MDN。图标来源与生成方式见 [品牌说明](assets/brand/README.md)。

@@ -48,7 +48,7 @@
 | `--mdn-icon-stroke` | 1.5 | 线宽，24 网格单位，随尺寸等比缩放。依据：Codex 26.1021 原生图标放大 16 倍实测，20px 图标约 1.33px、16px 约 1.0px，约为尺寸的 1/15，折合 24 网格 1.5；Lucide 默认 2 偏粗 |
 | `--mdn-icon-stroke-strong` | 2 | 编辑器 bold 图标 |
 
-编辑器的 Anthropicons 字形名到 Lucide 的对照表在 `vendor/baocut/packages/design-runtime/src/cds/components/lucide-icons.ts`；新增或调整对照只改这一处，两个编辑器共用。
+编辑器的 Anthropicons 字形名到 Lucide 的对照表在 `packages/design-runtime/src/cds/components/lucide-icons.ts`；新增或调整对照只改这一处，两个编辑器共用。
 
 ## 主题与隔离
 

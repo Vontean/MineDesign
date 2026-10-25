@@ -1,0 +1,18 @@
+{
+  "name": "@minedesign/design-editor",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Design (canvas) editor page served by the Runtime, built from @minedesign/design-runtime",
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs"
+  },
+  "dependencies": {
+    "@minedesign/design-runtime": "*",
+    "@minedesign/editor-host": "*"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.12",
+    "vite": "^7.3.6"
+  }
+}

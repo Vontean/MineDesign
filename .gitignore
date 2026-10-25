@@ -6,6 +6,3 @@ dist/
 output/
 
 /.mcp.json
-
-# CodeGraph 默认跳过 vendor；显式纳入项目维护的移植源码，生成物仍按上方规则忽略。
-!/vendor/

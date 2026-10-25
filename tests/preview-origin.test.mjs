@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import { build } from 'esbuild';
 
-const bundle=await build({entryPoints:['vendor/baocut/packages/design-runtime/src/platform/file-content.ts'],bundle:true,write:false,format:'iife',globalName:'preview'});
+const bundle=await build({entryPoints:['packages/design-runtime/src/platform/file-content.ts'],bundle:true,write:false,format:'iife',globalName:'preview'});
 function runtimeFor(origin){
   const context=vm.createContext({origin,location:{origin:'null'}});
   vm.runInContext(bundle.outputFiles[0].text,context);

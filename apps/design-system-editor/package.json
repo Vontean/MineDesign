@@ -1,0 +1,17 @@
+{
+  "name": "@minedesign/design-system-editor",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Design system editor page served by the Runtime, built from @minedesign/design-system-runtime",
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs"
+  },
+  "dependencies": {
+    "@minedesign/design-system-runtime": "*",
+    "@minedesign/editor-host": "*"
+  },
+  "devDependencies": {
+    "vite": "^7.3.6"
+  }
+}

@@ -9,7 +9,7 @@
 | 改动 | 生效路径 | 检查完成条件 |
 | --- | --- | --- |
 | App、桥、frame shim、外壳样式、插画 | `node scripts/build.mjs`，关闭 MineDesign 标签后重开 | 页面展示本次构建；“重新载入”仅重载内部作品，不更新旧外壳 |
-| 上游编辑器源码 | 重建对应编辑器，再运行外壳构建 | 实际打开对应编辑器，关键操作正常 |
+| 编辑器源码 | 重建对应编辑器，再运行外壳构建 | 实际打开对应编辑器，关键操作正常 |
 | 服务、MCP | 构建、重新安装并在插件设置刷新连接 | 新服务工具与资源可用；不通过直接杀进程强制刷新日常会话 |
 | manifest、技能 | 同步版本与锁文件、运行本地安装 | 官方注册结果与缓存配置正确 |
 | 打包清单或运行依赖 | `npm pack --dry-run --ignore-scripts`；需要时隔离目录安装包 | 必需资源存在，无本地私有链接依赖 |
@@ -40,8 +40,10 @@
 | 文档与路由 | 链接、文件覆盖、相互引用与过期表述 | 所有新增路由可达，职责有唯一来源 |
 | 资源与外壳 | 构建、App 加载回归、真实页面切换 | 关键状态截图；明暗或窄屏受影响时补相应检查 |
 | MCP、服务、保存 | 构建后执行 `npm test` | stdio MCP、工作区边界、冲突、版本及错误恢复 |
-| 上游预览桥 | origin/source 回归与真实 iframe 内容 | Codex 中的内容证据；本地预览不能代替宿主验收 |
+| 预览桥 | origin/source 回归与真实 iframe 内容 | Codex 中的内容证据；本地预览不能代替宿主验收 |
 | 发布或安装包 | 打包名单、隔离安装、版本一致性 | 源码、包、注册、实际宿主分别报告 |
+
+文件模块与浏览器宿主的原生回归使用 `npm run test:modules`。跨层重构先在隔离目录保存旧 service bundle 与两套编辑器产物，再执行 `npm run verify:equivalence -- <旧 service.mjs>`；同一路径重置夹具，对比实际响应，仅归一化进程 grant/origin。视觉与交互使用同一窗口、作品与状态进行前后截图及操作比较，记录范围。
 
 可写测试使用 `tests/fixtures/` 复制到临时工作区。`examples/` 是可被用户编辑的作品，不作为可覆盖的数据。测试产生的批注或临时目录在 finally 清理。
 
@@ -51,12 +53,12 @@
 
 - 本机 CLI 已安装时，新 checkout 执行 `codegraph init --yes`；日常改动后执行 `codegraph sync`，状态用 `codegraph status` 核对。
 - 从项目目录运行 `codegraph explore "符号或问题"`。已连接的 MCP 可用 `codegraph_explore`，projectPath 指向本项目。
-- `.gitignore` 的 vendor 显式许可让 CodeGraph 纳入移植源码；`codegraph.json` 降低上游与示例的检索优先级，并忽略生成物、安装依赖和示例的压缩 React，避免图谱被噪声占据。
+- `codegraph.json` 索引 apps、src 和 packages 中自行维护的源码；降低示例优先级，忽略生成物、安装依赖与示例的压缩 React。
 - 更改索引范围后完整执行 `codegraph index`，确认 `codegraph files` 包含目标路径，再用一个真实符号查询验证。图谱静态路径不能证明动态代码已经运行。
 - `.codegraph/.gitignore` 是可共享规则；数据库和进程文件留在本机。新机器需要重新索引。
 
 ## 提交与远端
 
-提交前检查全部差异与打包名单，排除 `.mcp.json`、运行数据、凭据、索引数据库和生成物。文档、测试及资源随对应逻辑提交；保留上游许可和补丁说明。
+提交前检查全部差异与打包名单，排除 `.mcp.json`、运行数据、凭据、索引数据库和生成物。文档、测试及资源随对应逻辑提交；来源和许可统一维护在 FORK.md。
 
 仓库可见性通过 `gh repo view --json nameWithOwner,visibility,url` 实时核对；推送后核对分支 upstream 和远端提交 SHA。创建仓库、推送源码和发布安装包是不同动作，分别记录授权及结果。
