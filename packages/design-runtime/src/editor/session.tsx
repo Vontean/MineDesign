@@ -319,6 +319,14 @@ export function installEditorSession(runtime: RuntimeBindings): () => void {
       [value30, value31]: Dynamic = (0, runtime.reactCanvasShape_2.useState)(
         false,
       ),
+      // MineDesign：代码并入属性面板，与 Debug 一样可折叠、默认收起；「在代码中编辑」展开它并定位到对应行
+      [mdnCodeOpen, mdnSetCodeOpen]: Dynamic = (0,
+      runtime.reactCanvasShape_2.useState)(false),
+      [mdnCodeRequest, mdnSetCodeRequest]: Dynamic = (0,
+      runtime.reactCanvasShape_2.useState)(0),
+      [mdnDebugOpen, mdnSetDebugOpen]: Dynamic = (0,
+      runtime.reactCanvasShape_2.useState)(false),
+      mdnCodeSection: Dynamic = (0, runtime.reactCanvasShape_2.useRef)(null),
       [value32, value33]: Dynamic = (0, runtime.reactCanvasShape_2.useState)(
         (): Dynamic => new Set(),
       ),
@@ -7524,27 +7532,24 @@ export function installEditorSession(runtime: RuntimeBindings): () => void {
       value241: Dynamic =
         value240 === "tweaks"
           ? "tweaks"
-          : value240 === "code"
-            ? "code"
-            : value240 == null
+          : value240 == null
               ? null
               : "pro",
       value242: Dynamic =
         value241 === "tweaks" && value239
           ? "tweaks"
-          : value241 === "code"
-            ? "code"
-            : (modeOverride ?? value241 ?? text);
+          : (modeOverride ?? value241 ?? text);
     (0, runtime.reactCanvasShape_2.useEffect)((): Dynamic => {
       let current: Dynamic = value131.current;
-      if (value242 !== "code" || !current) return;
+      if (!mdnCodeOpen || !current) return;
       value131.current = false;
+      mdnCodeSection.current?.scrollIntoView({ block: "nearest" });
       let current2: Dynamic = value130.current;
-      current2?.focus();
+      current2?.focus({ preventScroll: true });
       current2 &&
         typeof current == "string" &&
         (0, runtime.focusPropertyCodeLine)(current2, "@" + current);
-    }, [value242]);
+    }, [mdnCodeOpen, mdnCodeRequest]);
     (0, runtime.reactCanvasShape_2.useEffect)((): Dynamic => {
       if (
         value242 === "tweaks" &&
@@ -9070,13 +9075,14 @@ export function installEditorSession(runtime: RuntimeBindings): () => void {
         renderRow: value273,
         renderRows: value274,
       }: Dynamic = value270,
-      value275: Dynamic = value242 !== "code" && !value202 && !!value216,
+      value275: Dynamic = !value202 && !!value216,
       value276: Dynamic =
         readOnly || value201
           ? undefined
           : (input?: Dynamic): Dynamic => {
               value131.current = input;
-              callback6("code");
+              mdnSetCodeOpen(true);
+              mdnSetCodeRequest((n?: Dynamic): Dynamic => n + 1);
             },
       value277: Dynamic =
         value199 && value200.length > 1
@@ -9362,16 +9368,6 @@ export function installEditorSession(runtime: RuntimeBindings): () => void {
               },
             ]
           : []),
-        {
-          value: "code",
-          label: mdnText.tabCode,
-          "data-testid": "dc-mode-code",
-          onClick: (): Dynamic => {
-            value242 === "code"
-              ? value130.current?.focus()
-              : (value131.current = true);
-          },
-        },
         ...(value239
           ? [
               {
@@ -9560,46 +9556,8 @@ export function installEditorSession(runtime: RuntimeBindings): () => void {
                       </runtime.Alert>
                     </runtime.CdsIsland>
                   )}
-                  {value242 === "code" && value199 && (
-                    <runtime.InspectorCodePanel
-                      selKey={
-                        value2.name +
-                        ":" +
-                        [...value2.tids]
-                          .sort(
-                            (input?: Dynamic, options?: Dynamic): Dynamic =>
-                              input - options,
-                          )
-                          .join(",")
-                      }
-                      tids={value200}
-                      model={value199.model}
-                      modelSig={value200
-                        .map(
-                          (input?: Dynamic): Dynamic =>
-                            value199.model.effectiveStyleAttr(input) +
-                            JSON.stringify(value199.model.attributes(input)),
-                        )
-                        .join("|")}
-                      readOnly={value201 || value202 || readOnly}
-                      textareaRef={value130}
-                      outline={value2.name === rootName ? value237 : undefined}
-                      onSelectTid={
-                        value2.name === rootName
-                          ? (input?: Dynamic): Dynamic => value243(input, false)
-                          : undefined
-                      }
-                      onHoverTid={
-                        value2.name === rootName ? value244 : undefined
-                      }
-                      onEdits={(input?: Dynamic, options?: Dynamic): Dynamic =>
-                        value152(input, options)
-                      }
-                    />
-                  )}
                   {!value281 && value278}
-                  {value242 !== "code" &&
-                    !value202 &&
+                  {!value202 &&
                     value280.map((input?: Dynamic): Dynamic => {
                       if (input.id === "sizing" || input.id === "size")
                         return (() => {
@@ -10069,7 +10027,6 @@ export function installEditorSession(runtime: RuntimeBindings): () => void {
                           })()
                         : value309;
                     })}
-                  {value242 !== "code" && (
                     <runtime.PropertySection
                       title={"Export"}
                       collapsed={!value79}
@@ -10186,9 +10143,7 @@ export function installEditorSession(runtime: RuntimeBindings): () => void {
                         </div>
                       </div>
                     </runtime.PropertySection>
-                  )}
-                  {value242 !== "code" &&
-                    !value202 &&
+                  {!value202 &&
                     !(value275 && (value279?.advanced.length ?? 0) === 0) && (
                       <runtime.PropertySection
                         title={"Advanced"}
@@ -10200,8 +10155,66 @@ export function installEditorSession(runtime: RuntimeBindings): () => void {
                         {value274(value279?.advanced ?? [])}
                       </runtime.PropertySection>
                     )}
-                  {value242 !== "code" && value199 && (
-                    <runtime.PropertySection title={"Debug"}>
+                  {value199 && (
+                      <runtime.PropertySection
+                        title={"Code"}
+                        collapsed={!mdnCodeOpen}
+                        onToggle={(): Dynamic =>
+                          mdnSetCodeOpen((input?: Dynamic): Dynamic => !input)
+                        }
+                      >
+                        {/* 代码短时按内容显示，长时在栏内滚动，不把整列属性撑长 */}
+                        <div
+                          ref={mdnCodeSection}
+                          className={"flex min-h-0 flex-col"}
+                          style={{ maxHeight: 320 }}
+                        >
+                    <runtime.InspectorCodePanel
+                          selKey={
+                            value2.name +
+                            ":" +
+                            [...value2.tids]
+                              .sort(
+                                (input?: Dynamic, options?: Dynamic): Dynamic =>
+                                  input - options,
+                              )
+                              .join(",")
+                          }
+                          tids={value200}
+                          model={value199.model}
+                          modelSig={value200
+                            .map(
+                              (input?: Dynamic): Dynamic =>
+                                value199.model.effectiveStyleAttr(input) +
+                                JSON.stringify(value199.model.attributes(input)),
+                            )
+                            .join("|")}
+                          readOnly={value201 || value202 || readOnly}
+                          textareaRef={value130}
+                          outline={value2.name === rootName ? value237 : undefined}
+                          onSelectTid={
+                            value2.name === rootName
+                              ? (input?: Dynamic): Dynamic => value243(input, false)
+                              : undefined
+                          }
+                          onHoverTid={
+                            value2.name === rootName ? value244 : undefined
+                          }
+                          onEdits={(input?: Dynamic, options?: Dynamic): Dynamic =>
+                            value152(input, options)
+                          }
+                        />
+                        </div>
+                      </runtime.PropertySection>
+                  )}
+                  {value199 && (
+                    <runtime.PropertySection
+                      title={"Debug"}
+                      collapsed={!mdnDebugOpen}
+                      onToggle={(): Dynamic =>
+                        mdnSetDebugOpen((input?: Dynamic): Dynamic => !input)
+                      }
+                    >
                       <runtime.InspectorCodePreview
                         data-testid={"dc-debug-attrs"}
                       >
@@ -10329,9 +10342,7 @@ export function installEditorSession(runtime: RuntimeBindings): () => void {
         >
           <div className={"text-[12.5px]"}>{mdnText.nothingSelected}</div>
           <div className={"text-[11.5px] leading-normal opacity-75"}>
-            {value242 === "code"
-              ? mdnText.clickToEditCode
-              : mdnText.clickToEdit}
+            {mdnText.clickToEdit}
           </div>
         </div>
       );
@@ -10353,7 +10364,7 @@ export function installEditorSession(runtime: RuntimeBindings): () => void {
                       className={(0, runtime.cn)(
                         "flex min-h-0 flex-1 flex-col overflow-y-auto border-t select-none [&_input]:select-text [&_textarea]:select-text",
                         runtime.ChromeScrollbarLabel,
-                        value242 === "code" ? "pb-0" : "pb-3",
+                        "pb-3",
                       )}
                     >
                       {value242 !== "tweaks" && value301}
