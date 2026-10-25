@@ -47,7 +47,7 @@ npm start
 npm run install:local
 ```
 
-脚本通过 `codex plugin marketplace add` 和 `codex plugin add` 注册独立的 `minedesign-local` marketplace。MCP 命令指向本项目构建产物；不复制整套 runtime 到插件缓存，不重启 Codex，也不修改 MCX。移动项目或更换 Node 后需要重装以更新绝对路径。
+脚本通过 `codex plugin marketplace add` 和 `codex plugin add` 注册独立的 `minedesign-local` marketplace。Codex 桌面版已并入 ChatGPT.app，CLI 不在 PATH 时脚本依次查找 `CODEX_BIN`、`codex` 与 `/Applications/ChatGPT.app/Contents/Resources/codex-cli/bin/codex`。MCP 命令指向本项目构建产物；不复制整套 runtime 到插件缓存，不重启 Codex，也不修改 MCX。移动项目或更换 Node 后需要重装以更新绝对路径。
 
 默认工作区仅为本项目，便于实验，不授予任意磁盘访问。其他目录可以通过 CLI 的 `--workspace` 指定；正式多项目接入尚需设计相应的授权 UI。
 

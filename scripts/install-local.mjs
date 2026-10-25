@@ -12,5 +12,12 @@ await fs.writeFile(path.join(plugin,'.mcp.json'),JSON.stringify({mcpServers:{min
 await fs.cp(path.join(root,'skills'),path.join(plugin,'skills'),{recursive:true});
 await fs.mkdir(path.join(market,'.agents/plugins'),{recursive:true});
 await fs.writeFile(path.join(market,'.agents/plugins/marketplace.json'),JSON.stringify({name:'minedesign-local',interface:{displayName:'MineDesign Local Experiment'},plugins:[{name:'minedesign',source:{source:'local',path:'./plugins/minedesign'},policy:{installation:'AVAILABLE',authentication:'ON_INSTALL'}}]},null,2));
-execFileSync('codex',['plugin','marketplace','add',market,'--json'],{stdio:'inherit'});
-execFileSync('codex',['plugin','add','minedesign@minedesign-local','--json'],{stdio:'inherit'});
+// Codex 桌面版已并入 ChatGPT.app，CLI 不一定在 PATH；按 CODEX_BIN → PATH → 已知安装位置查找
+function findCodex(){
+  const candidates=[process.env.CODEX_BIN,'codex','/Applications/ChatGPT.app/Contents/Resources/codex-cli/bin/codex','/Applications/Codex.app/Contents/Resources/codex'].filter(Boolean);
+  for(const bin of candidates){try{execFileSync(bin,['--version'],{stdio:'ignore'});return bin;}catch{}}
+  throw new Error('找不到 Codex CLI；请设置 CODEX_BIN 指向 codex 可执行文件后重试');
+}
+const codex=findCodex();
+execFileSync(codex,['plugin','marketplace','add',market,'--json'],{stdio:'inherit'});
+execFileSync(codex,['plugin','add','minedesign@minedesign-local','--json'],{stdio:'inherit'});
