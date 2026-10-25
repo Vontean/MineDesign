@@ -31,3 +31,30 @@ test('built plugin exposes both editors and design tools via real stdio MCP',asy
     const subscribed=await client.callTool({name:'minedesign_events',arguments:{path:`${design.editorPath}__deck/events`,after:-1}});assert.deepEqual(subscribed.structuredContent.events,[]);
   }finally{await client.close();}
 });
+
+test('backend reload preserves the same stdio connection, documents and persisted drafts',async()=>{
+  const fs=await import('node:fs/promises');
+  const os=await import('node:os');
+  const tmp=await fs.mkdtemp(path.join(os.tmpdir(),'mdn-reload-'));
+  await fs.cp(path.join(ROOT,'tests/fixtures/studio'),path.join(tmp,'studio'),{recursive:true});
+  const client=new Client({name:'reload-test',version:'1'});
+  let doc;
+  try{
+    await client.connect(new StdioClientTransport({command:process.execPath,args:[path.join(ROOT,'dist/cli.mjs'),'mcp','--workspace',tmp]}));
+    doc=(await client.callTool({name:'minedesign_open_document',arguments:{path:'studio',kind:'design'}})).structuredContent.document;
+    const notes=[{id:'reload-note',anchor:'Main.dc.html',label:'工作台',text:'保留草稿'}];
+    const saved=(await client.callTool({name:'minedesign_annotations',arguments:{id:doc.id,annotations:notes}})).structuredContent.annotations;
+    const result=await client.callTool({name:'minedesign_reload',arguments:{}});
+    assert.ok(!result.isError);
+    const current=result.structuredContent.documents[0];
+    assert.equal(current.id,doc.id);assert.notEqual(current.editorPath,doc.editorPath);
+    assert.deepEqual((await client.callTool({name:'minedesign_annotations',arguments:{id:doc.id}})).structuredContent.annotations,saved);
+    assert.equal((await client.callTool({name:'minedesign_http',arguments:{path:current.editorPath}})).structuredContent.status,200);
+    assert.match((await client.readResource({uri:APP_URI})).contents[0].text,/MineDesign/);
+    assert.ok((await client.listTools()).tools.some(t=>t.name==='minedesign_reload'));
+  }finally{
+    await client.close();
+    if(doc)await fs.rm(path.join(ROOT,'.local/annotations',doc.id+'.json'),{force:true});
+    await fs.rm(tmp,{recursive:true,force:true});
+  }
+});

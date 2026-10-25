@@ -32,7 +32,7 @@ flowchart TB
 
 编辑器的文件发布、素材、SSE 请求由 `editor-host` 经既有 HTTP 文件协议传输；Codex 沙箱中由 `virtual/frame-shim` 改写为接口客户端的代理操作。协议相同，浏览器与 Codex 的传输适配不同。
 
-依赖规则：前端引用 contracts、editor-host、浏览器 runtime 和资源；接口层引用 contracts 并接收后端操作；后端引用 contracts 与 Node 文件模块。前端不导入 Node 文件模块，后端不导入浏览器 runtime。`tests/architecture.test.mjs` 构建真实依赖图检查这两条规则。`src/backend/service.mjs` 是唯一服务组合根，负责把操作、文件模块和 HTTP 接口接起来；接口层不自行创建领域对象。
+依赖规则：前端引用 contracts、editor-host、浏览器 runtime 和资源；接口层引用 contracts 并接收后端操作；后端引用 contracts 与 Node 文件模块。前端不导入 Node 文件模块，后端不导入浏览器 runtime。`tests/architecture.test.mjs` 构建真实依赖图检查这两条规则。`src/backend/service.mjs` 是 HTTP/文件服务组合根，负责把操作、文件模块和 HTTP 接口接起来；接口层不自行创建领域对象。
 
 ## 文件地图
 
@@ -51,6 +51,7 @@ flowchart TB
 
 | 文件 | 用途 |
 | --- | --- |
+| `src/backend/runtime.mjs` | 稳定 MCP 服务门面、构建模块加载、等待在途操作、原子替换后端、更新失败保留旧服务 |
 | `src/backend/service.mjs` | 创建编辑器文件服务、注入依赖、监听回环端口与关闭资源；不包含作品操作规则 |
 | `src/backend/documents.mjs` | 打开/识别作品、检查、素材导入、批注持久化、反馈版本检查；不决定 HTTP 或 MCP 响应封装 |
 | `src/backend/workspace.mjs` | 真实路径授权；工作区和符号链接边界 |
@@ -93,8 +94,8 @@ flowchart TB
 | `assets/illustrations/` | 插画注册入口、实现和样式；读取其中 README 了解用途与替换契约 |
 | `assets/brand/` | Logo、favicon、明暗/选中状态、许可与版本缓存资源 |
 | `scripts/build-brand-icons.mjs` | 从品牌来源生成状态和主题资源 |
-| `scripts/build.mjs` | 打包前端外壳与 Node CLI、内嵌插画/样式、注入编辑器主题 |
-| `scripts/install-local.mjs` | 本机 marketplace、绝对启动配置、构建指纹与官方插件注册 |
+| `scripts/build.mjs` | 分别打包前端外壳、稳定 Node CLI 与可重载 backend、内嵌插画/样式、注入编辑器主题 |
+| `scripts/install-local.mjs` | 本机 marketplace、绝对启动配置、覆盖三类构建产物的指纹与官方插件注册 |
 | `scripts/verify-equivalence.mjs` | 对重构前后 service 运行同组文件/接口场景，比较实际响应 |
 | `package.json` / `package-lock.json` | scripts、工作区、依赖版本与包的交付清单 |
 | `tsconfig.json` | 工作区 TypeScript/JSX 编译约定；编译配置不是验证通过声明 |
@@ -110,7 +111,8 @@ flowchart TB
 | `examples/studio/`、`examples/design-system/` | Mine Studio 作品；测试不用它们作写入夹具 |
 | `tests/fixtures/` | 可复制的独立可写夹具 |
 | `tests/app-loading.test.mjs` | 旧 grant、切换/重试中央状态与反馈保留 |
-| `tests/mcp.test.mjs` | 构建后的真实 stdio MCP 工具与资源 |
+| `tests/mcp.test.mjs` | 构建后的真实 stdio MCP 工具、资源和同一连接内后端热更新 |
+| `tests/runtime.test.mjs` | 更新模块加载失败时，原服务仍可响应 |
 | `tests/service.test.mjs` | 文件响应、ifMatch、工作区、批注版本与 token 来源 |
 | `tests/preview-origin.test.mjs` | Codex/HTTP/opaque origin 与窗口来源 |
 | `tests/architecture.test.mjs` | 前后端依赖图和两种服务客户端适配结果 |
@@ -145,3 +147,9 @@ Codex 中通过接口工具把编辑器装为 srcdoc，图片、字体、脚本�
 页面用语义名引用插画，资源模块不引用服务。编辑器主题只影响 chrome，作品 token/品牌独立。目录和内部包名迁移不改变文件格式、用户文案、CSS、消息值与外部文件路径。
 
 跨层重构先保存旧构建和状态基线，再比较实际响应、真实页面截图与交互。自动化、浏览器预览、Codex 宿主和用户验收分别记录；不能用测试数量或目录完成代替交互等价证据。当前证据与边界见 docs/verification.md。
+
+### 不断连的后端更新
+
+CLI 和 MCP 注册保持运行；后端单独构建到 `dist/backend.mjs`，runtime 按构建内容摘要加载。`minedesign_reload` 等待在途操作、创建新后端、重新打开原作品后再替换旧服务，失败时继续使用旧服务。返回的 documents 让外壳按稳定身份重开，批注继续来自原持久化目录。MCP 模式的 SIGHUP 走同一入口；信号更新后已打开外壳可点重新载入取得新 grant。
+
+这条路径更新后端实现，不更新已注册的 MCP schema 或当前外壳脚本。改变接口、manifest 或稳定 CLI 时，由宿主重新建立连接；禁止把结束 stdio 进程当作宿主重连。桌面当前连接已经关闭时，插件代码无法在同一条已关闭的通道内执行修复。

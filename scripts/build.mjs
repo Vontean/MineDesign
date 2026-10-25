@@ -26,5 +26,6 @@ const logo=(await fs.readFile(path.join(root,'assets/brand/minedesign-icon-selec
 const favicon=Buffer.from(await fs.readFile(path.join(root,'assets/brand/favicon.svg'),'utf8')).toString('base64');
 html=html.replace('<!--__BRAND__-->',()=>logo).replace('</head>',`<link rel="icon" href="data:image/svg+xml;base64,${favicon}"></head>`);
 await fs.writeFile(path.join(root,'dist/app.html'),html.replace('/*__STYLES__*/',[tokens,css,illustrationsCss].join('\n')).replace('/*__APP__*/',()=>js));
+await build({entryPoints:[path.join(root,'src/backend/service.mjs')],outfile:path.join(root,'dist/backend.mjs'),bundle:true,format:'esm',platform:'node',logLevel:'warning'});
 await build({entryPoints:[path.join(root,'src/cli.mjs')],outfile:path.join(root,'dist/cli.mjs'),bundle:true,format:'esm',platform:'node',external:['@modelcontextprotocol/*','zod'],logLevel:'warning'});
 console.log('MineDesign host and editor theme adapters built.');

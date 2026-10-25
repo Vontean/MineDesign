@@ -4,7 +4,14 @@ import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 const root=path.resolve(import.meta.dirname,'..');
 const version=JSON.parse(await fs.readFile(path.join(root,'package.json'),'utf8')).version;
-const buildId=createHash('sha256').update(await fs.readFile(path.join(root,'dist/cli.mjs'))).digest('hex');
+const fingerprint=createHash('sha256');
+// 服务、页面和编辑器都参与指纹，后端独立打包后也能识别新构建。
+for(const folder of ['dist','apps/design-editor/dist','apps/design-system-editor/dist']){
+  const entries=await fs.readdir(path.join(root,folder),{recursive:true,withFileTypes:true});
+  const files=entries.filter(entry=>entry.isFile()).map(entry=>path.join(entry.parentPath,entry.name)).sort();
+  for(const file of files)fingerprint.update(path.relative(root,file)).update('\0').update(await fs.readFile(file));
+}
+const buildId=fingerprint.digest('hex');
 const market=path.join(root,'.local/marketplace');
 const plugin=path.join(market,'plugins/minedesign');
 await fs.mkdir(path.join(plugin,'.codex-plugin'),{recursive:true});

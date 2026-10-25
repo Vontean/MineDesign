@@ -1,12 +1,15 @@
-import { startService, ROOT } from './backend/service.mjs';
+import { ROOT } from './paths.mjs';
+import { startRuntime } from './backend/runtime.mjs';
 import { serveMcp } from './interfaces/mcp.mjs';
 import path from 'node:path';
 
 const args=process.argv.slice(2);
 const value=(name)=>args.includes(name)?args[args.indexOf(name)+1]:undefined;
 const workspace=path.resolve(value('--workspace')||ROOT);
-const service=await startService({workspace,port:Number(value('--port')||0)});
+const service=await startRuntime({workspace,port:Number(value('--port')||0)});
 if(workspace===ROOT){await service.open('examples/showcase');await service.open('examples/showcase-system','design-system');await service.open('examples/studio');await service.open('examples/design-system','design-system');}
 if(args.includes('mcp'))await serveMcp(service);
 else console.log(`MineDesign local experiment: ${service.url}`);
 for(const signal of ['SIGINT','SIGTERM'])process.on(signal,async()=>{await service.close();process.exit(0);});
+
+if(args.includes('mcp'))process.on('SIGHUP',()=>service.reload().catch(error=>console.error('MineDesign reload failed:',error.message)));
