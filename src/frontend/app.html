@@ -21,7 +21,7 @@
   <aside id="notes" aria-labelledby="notes-title">
     <div class="notes-head"><h2 id="notes-title">设计反馈</h2><span id="count" class="count" hidden></span></div>
     <ol id="annotation-list"></ol>
-    <div id="empty" class="empty"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M13 8H7"/><path d="M17 12H7"/></svg><p class="empty-title">还没有批注</p><p>开启“评论”后，在画板上点选元素或拖出区域。</p></div>
+    <div id="empty" class="empty"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M13 8H7"/><path d="M17 12H7"/></svg><p class="empty-title">还没有评论</p><p>开启“评论”后，在画板上点选元素或拖出区域。</p></div>
     <div class="composer">
       <textarea id="message" rows="3" aria-label="给 Agent 的补充说明" placeholder="补充说明，例如整体方向或优先级"></textarea>
       <div class="composer-actions">
@@ -34,10 +34,10 @@
 </main>
 <dialog id="compose" aria-labelledby="compose-title">
   <form method="dialog">
-    <h2 id="compose-title">添加批注</h2>
+    <h2 id="compose-title">添加评论</h2>
     <p id="target-label" class="target"></p>
     <button class="close" value="cancel" formnovalidate aria-label="关闭"><svg viewBox="0 0 21 21" aria-hidden="true"><path d="M14.6549 5.57307C14.9283 5.2997 15.3718 5.2997 15.6451 5.57307C15.9185 5.84643 15.9185 6.28993 15.6451 6.5633L11.3903 10.8182L15.6451 15.0731L15.735 15.1834C15.9141 15.4551 15.8842 15.8242 15.6451 16.0633C15.4061 16.3024 15.0369 16.3322 14.7653 16.1531L14.6549 16.0633L10.4 11.8084L6.14515 16.0633C5.87178 16.3367 5.42828 16.3367 5.15492 16.0633C4.88155 15.7899 4.88155 15.3464 5.15492 15.0731L9.4098 10.8182L5.15492 6.5633L5.06507 6.45295C4.88597 6.18128 4.91584 5.81214 5.15492 5.57307C5.39399 5.33399 5.76313 5.30413 6.0348 5.48322L6.14515 5.57307L10.4 9.82795L14.6549 5.57307Z" fill="currentColor"/></svg></button>
-    <textarea id="comment" aria-label="批注内容" placeholder="希望这里怎么改？" required maxlength="4000" rows="4"></textarea>
+    <textarea id="comment" aria-label="评论内容" placeholder="希望这里怎么改？" required maxlength="4000" rows="4"></textarea>
     <footer><button class="btn btn-pill btn-ghost" value="cancel" formnovalidate>取消</button><button class="btn btn-pill btn-solid" value="add">添加</button></footer>
   </form>
 </dialog>
