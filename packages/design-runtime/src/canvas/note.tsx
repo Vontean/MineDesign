@@ -311,7 +311,8 @@ export function installCanvasNote(runtime: RuntimeBindings): () => void {
         [spec.text, value7],
       ),
       value36: Dynamic = (0, runtime.PlatformFileContentMin)(value34.size),
-      value37: Dynamic = (0, runtime.PlatformFileContentKind)(spec),
+      // MineDesign：便签不再有高度上限，文字按宽度换行、便签随之长高，不截断也不滚动；maxH 是拖出来的最小高度
+      value37: Dynamic = value7 ? (0, runtime.PlatformFileContentKind)(spec) : 1 / 0,
       value38: Dynamic = !value7 && value24 > value37,
       value39: Dynamic = !value7 && (value || (editing ? selected : value38));
     (0, runtime.reactCanvasPanZoom.useLayoutEffect)((): Dynamic => {
@@ -372,10 +373,9 @@ export function installCanvasNote(runtime: RuntimeBindings): () => void {
           : undefined,
       callback5: Dynamic = (): Dynamic =>
         value15.current?.offsetHeight ?? value28.h,
-      callback6: Dynamic = (input?: Dynamic, options?: Dynamic): Dynamic =>
-        spec.maxH === undefined &&
-        input >= callback5() &&
-        input <= (0, runtime.PlatformFileContentMax_2)(options, value34.size)
+      // 拖到贴合文字时记为自动高度，不写 maxH
+      callback6: Dynamic = (input?: Dynamic): Dynamic =>
+        input <= callback5() + 1
           ? undefined
           : Math.min(runtime.PlatformFileContentConstant_13, Math.round(input)),
       state: Dynamic = {
@@ -401,19 +401,30 @@ export function installCanvasNote(runtime: RuntimeBindings): () => void {
                 value && "[--ring-w:var(--hair)]",
                 editing && !selected && "hover:[--ring-w:var(--hair)]",
               )
-            : (0, runtime.joinClassNames)(
-                "shadow-md",
-                !selected && "ring-1 ring-black/10",
-              ),
+            : undefined,
         )}
         style={{
           left: spec.x,
           top: spec.y,
           width: value7 ? (value42?.w ?? "max-content") : spec.w,
           height: value42?.h,
-          background: value7
-            ? undefined
-            : (0, runtime.NotesLinkEditingHandler)(value34.fill),
+          minHeight: value7 ? undefined : spec.maxH,
+          // 编辑器样式表是预编译的，便签的圆角和描边写成行内样式
+          ...(value7
+            ? {}
+            : {
+                background: "var(--note-fill)",
+                borderRadius: 12,
+                boxShadow:
+                  "inset 0 0 0 1px color-mix(in oklab, var(--note-fill), #000 14%)",
+              }),
+          ...(value7
+            ? {}
+            : {
+                "--note-fill": (0, runtime.NotesLinkEditingHandler)(
+                  value34.fill,
+                ),
+              }),
           isolation: "isolate",
           ...(value9
             ? {
@@ -459,7 +470,6 @@ export function installCanvasNote(runtime: RuntimeBindings): () => void {
                   }
                 : undefined
               : {
-                  maxHeight: value37,
                   overflowX: "hidden",
                   overflowY: value39 ? "auto" : "hidden",
                   touchAction:
@@ -633,23 +643,9 @@ export function installCanvasNote(runtime: RuntimeBindings): () => void {
                     value11 !== null ? String(value11) + "\xB0" : undefined
                   }
                   onGripDoubleClick={(): Dynamic => {
-                    let value47: Dynamic = callback5();
-                    onChange(
-                      {
-                        maxH:
-                          value47 <=
-                          (0, runtime.PlatformFileContentMax_2)(
-                            spec.w,
-                            value34.size,
-                          )
-                            ? undefined
-                            : Math.min(
-                                runtime.PlatformFileContentConstant_13,
-                                Math.round(value47),
-                              ),
-                      },
-                      true,
-                    );
+                    // 双击拖柄：高度回到刚好放下文字
+                    spec.maxH !== undefined &&
+                      onChange({ maxH: undefined }, true);
                   }}
                   onResizeStart={(
                     input2?: Dynamic,
@@ -680,9 +676,7 @@ export function installCanvasNote(runtime: RuntimeBindings): () => void {
                         options2?: Dynamic,
                         context?: Dynamic,
                       ): Dynamic => {
-                        let value50: Dynamic = value47
-                            ? runtime.PlatformFileContentConstant_13
-                            : Math.max(callback5(), value28.h),
+                        let value50: Dynamic = runtime.PlatformFileContentConstant_13,
                           value51: Dynamic =
                             input2.x !== null &&
                             input2.y !== null &&
@@ -726,7 +720,7 @@ export function installCanvasNote(runtime: RuntimeBindings): () => void {
                             value53.dy,
                             {
                               w: runtime.PlatformFileContentConstant_9,
-                              h: (0, runtime.NotesLinkEditingLh)(spec),
+                              h: callback5(),
                             },
                             {
                               w: runtime.PlatformFileContentConstant_10,
@@ -742,7 +736,7 @@ export function installCanvasNote(runtime: RuntimeBindings): () => void {
                               ? undefined
                               : Math.round(value54.h) === Math.round(state2.h)
                                 ? spec.maxH
-                                : callback6(value54.h, value55);
+                                : callback6(value54.h);
                         input2.y !== null &&
                           value27(
                             value56 !== undefined && value56 !== spec.maxH

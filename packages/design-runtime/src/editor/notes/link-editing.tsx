@@ -396,8 +396,9 @@ export function installEditorNotesLinkEditing(
     NotesLinkEditingLabel = "[data-note-typing-strip], [data-mc-popover]";
     NotesLinkEditingClosest = (input?: Dynamic): Dynamic =>
       input instanceof Element && input.closest(NotesLinkEditingLabel) !== null;
-    Fef3a2Value = "#fef3a2";
-    noteLinkHighlightColor = "#4a4220";
+    // MineDesign：便签与形状底色取 Excalidraw 的背景色板（open-color 第 2 档），文字用它的默认墨色
+    Fef3a2Value = "#ffec99";
+    noteLinkHighlightColor = "#1e1e1e";
     NotesLinkEditingGrayRedOrangeConfig = {
       gray: "#73726c",
       red: "#c62828",
@@ -409,14 +410,14 @@ export function installEditorNotesLinkEditing(
       pink: "#ad4d72",
     };
     NotesLinkEditingGrayRedOrangeConfig_2 = {
-      gray: "#d9d6d0",
-      red: "#f5c6c2",
-      orange: "#f8d9b8",
-      green: "#cfe5c9",
-      teal: "#c4e4e0",
-      blue: "#c8daf4",
-      purple: "#dccdf1",
-      pink: "#f4cadf",
+      gray: "#e9ecef",
+      red: "#ffc9c9",
+      orange: "#ffd8a8",
+      green: "#b2f2bb",
+      teal: "#96f2d7",
+      blue: "#a5d8ff",
+      purple: "#d0bfff",
+      pink: "#fcc2d7",
     };
     NotesLinkEditingHandler = (input?: Dynamic): Dynamic =>
       input === "default"

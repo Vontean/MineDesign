@@ -1297,7 +1297,7 @@ export function installEditorPropertiesAppearanceSection(
       "left",
     ]);
     PropertiesAppearanceSectionNoteTitle1Config = {
-      note: new Set(["max-height"]),
+      note: new Set(),
       title1: new Set(["max-width", "max-height"]),
     };
     PropertiesAppearanceSectionSubscribers_3 = new Set([

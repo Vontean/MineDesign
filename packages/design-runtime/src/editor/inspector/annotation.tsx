@@ -106,8 +106,13 @@ export function installEditorInspectorAnnotation(
             ...(settings.maxW !== undefined
               ? ["max-width: " + String(settings.maxW) + "px"]
               : []),
+            // MineDesign：便签的 maxH 是拖出来的高度（文字更多时继续长高），在面板里就是「高度」
             ...(settings.maxH !== undefined
-              ? ["max-height: " + String(settings.maxH) + "px"]
+              ? [
+                  (settings.kind === "note" ? "height: " : "max-height: ") +
+                    String(settings.maxH) +
+                    "px",
+                ]
               : []),
             ...(value6
               ? [
@@ -273,8 +278,9 @@ export function installEditorInspectorAnnotation(
                         : (input2.prop === "width" ||
                               input2.prop === "height") &&
                             value6 &&
-                            (input2.prop === "height" ||
-                              settings.kind === "title1")
+                            (input2.prop === "height"
+                              ? settings.kind !== "note"
+                              : settings.kind === "title1")
                           ? {
                               ...input2,
                               fixedSizeReason: value23,
@@ -384,7 +390,9 @@ export function installEditorInspectorAnnotation(
                   ? "y"
                   : value21.prop === "width"
                     ? "w"
-                    : "h"
+                    : settings.kind === "note"
+                      ? "maxH"
+                      : "h"
             ] = value22.value;
           } else if (
             value6 &&

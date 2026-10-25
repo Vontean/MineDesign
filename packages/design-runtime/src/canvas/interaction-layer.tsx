@@ -7317,7 +7317,7 @@ export function installCanvasInteractionLayer(
                 data-testid={"mega-note-ghost"}
                 aria-hidden={"true"}
                 className={
-                  "pointer-events-none absolute z-30 rounded-[2px] border border-dashed border-black/25 opacity-70 shadow-md"
+                  "pointer-events-none absolute z-30 rounded-[12px] border border-dashed border-black/25 opacity-70"
                 }
                 style={{
                   left: value75.x,
@@ -7330,7 +7330,7 @@ export function installCanvasInteractionLayer(
                     w: 0,
                     text: "",
                   }),
-                  background: "#fef3a2",
+                  background: runtime.Fef3a2Value,
                 }}
               />
             )}
