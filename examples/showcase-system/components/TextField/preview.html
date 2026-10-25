@@ -1,0 +1,12 @@
+<!-- @dsCard group="表单" height=200 -->
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><title>TextField</title></head>
+<body>
+<div id="root"></div>
+<script>
+  var P = window.Pine, h = React.createElement;
+  ReactDOM.createRoot(document.getElementById('root')).render(h('div',{style:{display:'grid',gridTemplateColumns:'repeat(2,minmax(0,1fr))',gap:16,padding:16}},h(P.TextField,{label:'任务名称',placeholder:'例如：首页改版视觉稿',hint:'会显示在看板卡片上'}),h(P.TextField,{label:'搜索',icon:'search',placeholder:'搜索任务、成员或文件'}),h(P.TextField,{label:'邮箱',defaultValue:'linxia@pine',error:'邮箱格式不正确，例如 name@company.com'}),h(P.TextField,{label:'项目编号',defaultValue:'PINE-1284',disabled:true})));
+</script>
+</body>
+</html>

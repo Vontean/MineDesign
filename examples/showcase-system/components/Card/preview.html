@@ -1,0 +1,14 @@
+<!-- @dsCard group="容器" height=200 -->
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><title>Card</title></head>
+<body>
+<div id="root"></div>
+<script>
+  var P = window.Pine, h = React.createElement;
+  ReactDOM.createRoot(document.getElementById('root')).render(h('div',{style:{display:'grid',gridTemplateColumns:'repeat(2,minmax(0,1fr))',gap:16,padding:16}},
+  h(P.Card,{title:'官网改版',description:'市场部 · 截止 11 月 18 日',action:h(P.Badge,{tone:'info',dot:true},'进行中'),footer:h(P.Button,{size:'sm',variant:'ghost'},'查看详情')},h(P.Progress,{value:64,label:'整体进度'})),
+  h(P.Card,{interactive:true,title:'移动端 2.0',description:'产品部 · 12 个任务'},h('div',{style:{display:'flex',alignItems:'center',justifyContent:'space-between'}},h('span',{style:{display:'inline-flex'}},['周屿','许诺','林夏'].map((n,i)=>h(P.Avatar,{key:n,name:n,size:24,style:{marginLeft:i?-6:0,boxShadow:'0 0 0 2px var(--surface-raised)'}}))),h(P.Badge,{tone:'warning',dot:true},'有风险')))));
+</script>
+</body>
+</html>

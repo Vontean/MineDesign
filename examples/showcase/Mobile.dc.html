@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <title>移动端今日</title>
+  <script src="./support.js"></script>
+  <link rel="stylesheet" href="ds/pine/tokens.css">
+  <link rel="stylesheet" href="ds/pine/components/bundle.css">
+  <script src="ds/pine/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet><style>body { margin: 0; } .tab { display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 11px; color: var(--ink-subtle); }</style></helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; display: flex; flex-direction: column; background: var(--surface-sunken); color: var(--ink); font-family: var(--font-sans);">
+  <div style="height: 47px; display: flex; align-items: center; justify-content: space-between; padding: 0 28px; font-size: 15px; font-weight: 600;"><span>9:41</span><span style="width: 24px; height: 11px; border-radius: 3px; border: 1px solid var(--ink);"></span></div>
+  <header style="display: flex; align-items: center; gap: 12px; padding: 8px 16px 16px;">
+    <div style="flex: 1;"><p style="margin: 0; font-size: 13px; color: var(--ink-muted);">10 月 25 日</p><h1 style="margin: 0; font-size: 28px; line-height: 36px; font-weight: 600;">今天</h1></div>
+    <x-import component-from-global-scope="Pine.Avatar" name="林夏" size="{{avatar}}" status="online"></x-import>
+  </header>
+  <div style="padding: 0 16px 12px;"><x-import component-from-global-scope="Pine.Tabs" variant="pill" items="{{filters}}" style="display: flex;"></x-import></div>
+  <main style="flex: 1; overflow: auto; padding: 4px 16px 16px; display: flex; flex-direction: column; gap: 12px;">
+    <sc-for list="{{tasks}}" as="t" hint-placeholder-count="4">
+      <div style="display: flex; flex-direction: column; gap: 10px; padding: 14px 16px; border-radius: 14px; background: var(--surface-raised); box-shadow: var(--shadow-sm);">
+        <x-import component-from-global-scope="Pine.Checkbox" label="{{t.title}}" default-checked="{{t.done}}" strike="{{yes}}"></x-import>
+        <div style="display: flex; align-items: center; gap: 8px; padding-left: 24px; font-size: 12px; color: var(--ink-muted);">
+          <x-import component-from-global-scope="Pine.Badge" tone="{{t.tone}}">{{t.project}}</x-import><span>{{t.time}}</span>
+        </div>
+      </div>
+    </sc-for>
+  </main>
+  <nav style="display: flex; justify-content: space-around; align-items: center; height: 84px; padding-bottom: 20px; box-sizing: border-box; border-top: 1px solid var(--line); background: var(--surface);">
+    <span class="tab" style="color: var(--accent);"><x-import component-from-global-scope="Pine.Icon" name="home" size="{{icon}}"></x-import>今天</span>
+    <span class="tab"><x-import component-from-global-scope="Pine.Icon" name="grid" size="{{icon}}"></x-import>项目</span>
+    <span style="width: 48px; height: 48px; border-radius: 16px; background: var(--accent); color: var(--on-accent); display: flex; align-items: center; justify-content: center; box-shadow: var(--shadow-md);"><x-import component-from-global-scope="Pine.Icon" name="plus" size="{{icon}}"></x-import></span>
+    <span class="tab"><x-import component-from-global-scope="Pine.Icon" name="inbox" size="{{icon}}"></x-import>收件箱</span>
+    <span class="tab"><x-import component-from-global-scope="Pine.Icon" name="user" size="{{icon}}"></x-import>我的</span>
+  </nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      yes: true, avatar: 36, icon: 22,
+      filters: [{ value: 'today', label: '今天', count: 5 }, { value: 'week', label: '本周' }, { value: 'later', label: '以后' }],
+      tasks: [
+        { title: '首页首屏视觉稿', project: '官网改版', tone: 'accent', time: '18:00 截止', done: false },
+        { title: '价格页文案评审', project: '官网改版', tone: 'accent', time: '14:00 评审会', done: false },
+        { title: '回复周屿关于导航的评论', project: '移动端 2.0', tone: 'info', time: '今天', done: false },
+        { title: '整理用户访谈记录', project: '研究', tone: 'neutral', time: '已完成', done: true },
+        { title: '更新品牌手册里的配色页', project: '品牌手册', tone: 'warning', time: '今天', done: false }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

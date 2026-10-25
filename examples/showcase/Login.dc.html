@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <title>登录</title>
+  <script src="./support.js"></script>
+  <link rel="stylesheet" href="ds/pine/tokens.css">
+  <link rel="stylesheet" href="ds/pine/components/bundle.css">
+  <script src="ds/pine/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet><style>body { margin: 0; }</style></helmet>
+<div style="width: 1080px; height: 720px; display: flex; background: var(--surface); color: var(--ink); font-family: var(--font-sans);">
+  <section style="flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 0 96px; gap: 24px;">
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <div style="width: 32px; height: 32px; border-radius: 9px; background: var(--accent); color: var(--on-accent); display: flex; align-items: center; justify-content: center; font-weight: 600;">P</div>
+      <span style="font-size: 17px; font-weight: 600;">Pine</span>
+    </div>
+    <div>
+      <h1 style="margin: 0; font-size: 28px; line-height: 36px; font-weight: 600;">登录你的团队空间</h1>
+      <p style="margin: 6px 0 0; font-size: 14px; color: var(--ink-muted);">还没有账号？<a href="Landing.dc.html" style="color: var(--accent);">免费试用 14 天</a></p>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 16px; width: 360px;">
+      <x-import component-from-global-scope="Pine.TextField" label="工作邮箱" icon="mail" placeholder="name@company.com" on-change="{{setEmail}}" error="{{emailError}}"></x-import>
+      <x-import component-from-global-scope="Pine.TextField" label="密码" icon="lock" type="password" placeholder="至少 8 位" on-change="{{setPassword}}" error="{{passwordError}}"></x-import>
+      <div style="display: flex; align-items: center; justify-content: space-between;">
+        <x-import component-from-global-scope="Pine.Checkbox" label="30 天内保持登录" default-checked="{{yes}}"></x-import>
+        <a href="#" style="font-size: 13px; color: var(--ink-muted);">忘记密码</a>
+      </div>
+      <x-import component-from-global-scope="Pine.Button" variant="primary" size="lg" loading="{{loading}}" on-click="{{submit}}">{{submitLabel}}</x-import>
+      <sc-if value="{{success}}" hint-placeholder-val="{{ false }}">
+        <a href="Main.dc.html" style="text-decoration: none;"><x-import component-from-global-scope="Pine.Alert" tone="success" title="登录成功">点这里进入工作台</x-import></a>
+      </sc-if>
+    </div>
+  </section>
+  <aside style="width: 440px; margin: 16px; border-radius: 20px; background: var(--accent); color: var(--on-accent); padding: 48px 40px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: flex-end; gap: 16px;">
+    <p style="margin: 0; font-size: 22px; line-height: 34px; font-weight: 500;">“换到 Pine 之后，周会从一小时缩短到二十分钟。大家打开看板就知道该做什么。”</p>
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <x-import component-from-global-scope="Pine.Avatar" name="Mia Wong" size="{{avatar}}"></x-import>
+      <div><p style="margin: 0; font-weight: 600;">Mia Wong</p><p style="margin: 0; font-size: 13px; opacity: 0.8;">设计负责人 · 青木工作室</p></div>
+    </div>
+  </aside>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1080,"height":720}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { email: '', password: '', emailError: '', passwordError: '', loading: false, success: false };
+  }
+  submit() {
+    const s = this.state;
+    const emailError = /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(s.email) ? '' : '邮箱格式不正确，例如 name@company.com';
+    const passwordError = s.password.length >= 8 ? '' : '密码至少 8 位';
+    this.setState({ emailError: emailError, passwordError: passwordError, success: false });
+    if (emailError || passwordError) return;
+    this.setState({ loading: true });
+    setTimeout(() => this.setState({ loading: false, success: true }), 900);
+  }
+  renderVals() {
+    const s = this.state;
+    return {
+      yes: true, avatar: 40, loading: s.loading, success: s.success,
+      emailError: s.emailError, passwordError: s.passwordError,
+      submitLabel: s.loading ? '正在登录' : '登录',
+      setEmail: v => this.setState({ email: v, emailError: '' }),
+      setPassword: v => this.setState({ password: v, passwordError: '' }),
+      submit: () => this.submit()
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,12 @@
+<!-- @dsCard group="反馈" height=112 -->
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><title>Skeleton</title></head>
+<body>
+<div id="root"></div>
+<script>
+  var P = window.Pine, h = React.createElement;
+  ReactDOM.createRoot(document.getElementById('root')).render(h('div',{style:{display:'flex',gap:12,padding:16}},h(P.Skeleton,{circle:true,width:40,height:40}),h('div',{style:{flex:1,display:'flex',flexDirection:'column',gap:8}},h(P.Skeleton,{width:'40%',height:14}),h(P.Skeleton,{width:'90%'}),h(P.Skeleton,{width:'70%'}))));
+</script>
+</body>
+</html>

@@ -1,0 +1,12 @@
+<!-- @dsCard group="基础" height=72 -->
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><title>Icon</title></head>
+<body>
+<div id="root"></div>
+<script>
+  var P = window.Pine, h = React.createElement;
+  ReactDOM.createRoot(document.getElementById('root')).render(h('div',{className:'pn-row',style:{color:'var(--ink-muted)'}},['home','grid','list','inbox','bell','search','calendar','clock','users','folder','message','paperclip','flag','star','tag','link','upload','settings','lock','sparkles'].map(n=>h(P.Icon,{key:n,name:n,size:20}))));
+</script>
+</body>
+</html>

@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <title>任务详情</title>
+  <script src="./support.js"></script>
+  <link rel="stylesheet" href="ds/pine/tokens.css">
+  <link rel="stylesheet" href="ds/pine/components/bundle.css">
+  <script src="ds/pine/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet><style>body { margin: 0; } .prop { display: flex; align-items: center; min-height: 36px; font-size: 13px; } .prop > span:first-child { width: 88px; color: var(--ink-muted); }</style></helmet>
+<div style="width: 1280px; height: 820px; box-sizing: border-box; display: flex; background: var(--surface); color: var(--ink); font-family: var(--font-sans);">
+  <main style="flex: 1; min-width: 0; padding: 28px 40px; display: flex; flex-direction: column; gap: 20px; overflow: auto;">
+    <nav style="display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--ink-muted);">
+      <a href="Main.dc.html" style="color: var(--ink-muted); text-decoration: none;">工作台</a>
+      <x-import component-from-global-scope="Pine.Icon" name="chevron-right" size="{{small}}"></x-import>
+      <a href="Board.dc.html" style="color: var(--ink-muted); text-decoration: none;">官网改版</a>
+      <x-import component-from-global-scope="Pine.Icon" name="chevron-right" size="{{small}}"></x-import>
+      <span style="font-family: var(--font-mono);">PINE-1284</span>
+    </nav>
+    <div style="display: flex; align-items: flex-start; gap: 16px;">
+      <h1 style="flex: 1; margin: 0; font-size: 28px; line-height: 36px; font-weight: 600; letter-spacing: -0.4px;">首页首屏视觉稿</h1>
+      <x-import component-from-global-scope="Pine.Button" icon="link" icon-only="{{yes}}" aria-label="复制链接"></x-import>
+      <x-import component-from-global-scope="Pine.Button" variant="primary" icon="check" on-click="{{complete}}">{{completeLabel}}</x-import>
+    </div>
+    <p style="margin: 0; max-width: 680px; font-size: 15px; line-height: 26px; color: var(--ink-muted);">首屏需要在 5 秒内讲清 Pine 是什么、适合谁。保留现有品牌色，主视觉改为产品界面截图，去掉轮播。</p>
+
+    <section style="display: flex; flex-direction: column; gap: 12px;">
+      <x-import component-from-global-scope="Pine.Progress" value="{{progress}}" label="检查清单" style="max-width: 680px;"></x-import>
+      <sc-for list="{{checklist}}" as="c" hint-placeholder-count="4">
+        <x-import component-from-global-scope="Pine.Checkbox" label="{{c.label}}" checked="{{c.done}}" on-change="{{c.toggle}}" strike="{{yes}}"></x-import>
+      </sc-for>
+    </section>
+
+    <section style="display: flex; flex-direction: column; gap: 16px; max-width: 680px; padding-top: 20px; border-top: 1px solid var(--line);">
+      <h2 style="margin: 0; font-size: 15px; font-weight: 600;">讨论 <span style="color: var(--ink-subtle); font-weight: 400;">{{commentCount}}</span></h2>
+      <sc-for list="{{comments}}" as="m" hint-placeholder-count="3">
+        <div style="display: flex; gap: 12px;">
+          <x-import component-from-global-scope="Pine.Avatar" name="{{m.who}}" size="{{avatar}}"></x-import>
+          <div style="flex: 1; min-width: 0;">
+            <p style="margin: 0; font-size: 13px;"><strong style="font-weight: 600;">{{m.who}}</strong><span style="color: var(--ink-subtle);"> · {{m.when}}</span></p>
+            <p style="margin: 4px 0 0; font-size: 14px; line-height: 22px;">{{m.text}}</p>
+          </div>
+        </div>
+      </sc-for>
+      <div style="display: flex; gap: 12px; align-items: flex-start;">
+        <x-import component-from-global-scope="Pine.Avatar" name="林夏" size="{{avatar}}"></x-import>
+        <div style="flex: 1; display: flex; flex-direction: column; gap: 8px;">
+          <x-import component-from-global-scope="Pine.TextField" key="{{draftKey}}" multiline="{{yes}}" rows="{{rows}}" placeholder="写下你的看法，输入 @ 提到成员" on-change="{{setDraft}}"></x-import>
+          <div style="display: flex; justify-content: flex-end; gap: 8px;">
+            <x-import component-from-global-scope="Pine.Button" variant="ghost" icon="paperclip" icon-only="{{yes}}" aria-label="添加附件"></x-import>
+            <x-import component-from-global-scope="Pine.Button" variant="primary" disabled="{{cannotSend}}" on-click="{{send}}">发送</x-import>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+  <aside style="width: 300px; flex-shrink: 0; box-sizing: border-box; padding: 28px 24px; border-left: 1px solid var(--line); background: var(--surface-sunken); display: flex; flex-direction: column; gap: 4px;">
+    <h2 style="margin: 0 0 8px; font-size: 13px; font-weight: 600; color: var(--ink-muted);">属性</h2>
+    <div class="prop"><span>状态</span><x-import component-from-global-scope="Pine.Badge" tone="{{statusTone}}" dot="{{yes}}">{{status}}</x-import></div>
+    <div class="prop"><span>负责人</span><x-import component-from-global-scope="Pine.Avatar" name="林夏" size="{{small2}}"></x-import><span style="margin-left: 8px;">林夏</span></div>
+    <div class="prop"><span>截止</span>10 月 26 日</div>
+    <div class="prop"><span>优先级</span><x-import component-from-global-scope="Pine.Badge" tone="danger">高</x-import></div>
+    <div class="prop"><span>标签</span><x-import component-from-global-scope="Pine.Badge" tone="accent">设计</x-import></div>
+    <h2 style="margin: 24px 0 8px; font-size: 13px; font-weight: 600; color: var(--ink-muted);">附件</h2>
+    <div style="display: flex; align-items: center; gap: 10px; padding: 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface-raised); font-size: 13px;">
+      <span style="width: 32px; height: 32px; border-radius: 8px; background: var(--accent-soft); color: var(--accent); display: flex; align-items: center; justify-content: center;"><x-import component-from-global-scope="Pine.Icon" name="paperclip"></x-import></span>
+      <div style="min-width: 0;"><p style="margin: 0; font-weight: 500;">首屏方案 v3.fig</p><p style="margin: 0; font-size: 12px; color: var(--ink-muted);">4.2 MB · 昨天</p></div>
+    </div>
+  </aside>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":820}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = {
+      done: false, draft: '', draftKey: 0,
+      checklist: [
+        { label: '确定首屏一句话主张', done: true },
+        { label: '产品截图替换插画', done: true },
+        { label: '移动端首屏适配', done: false },
+        { label: '与市场部确认 CTA 文案', done: false }
+      ],
+      comments: [
+        { who: '周屿', when: '昨天 16:20', text: '主张那句话可以再短一点，现在两行在手机上会换成三行。' },
+        { who: '陈一鸣', when: '昨天 17:05', text: '截图用 2x 的 WebP，体积能控制在 200 KB 以内。' },
+        { who: '林夏', when: '今天 09:12', text: '好的，今天下午出第三版，移动端一起看。' }
+      ]
+    };
+  }
+  renderVals() {
+    const s = this.state;
+    const doneCount = s.checklist.filter(c => c.done).length;
+    return {
+      yes: true, small: 14, small2: 22, avatar: 32, rows: 2, draftKey: s.draftKey,
+      progress: Math.round(doneCount / s.checklist.length * 100),
+      checklist: s.checklist.map((c, i) => Object.assign({}, c, { toggle: v => this.setState({ checklist: s.checklist.map((x, j) => j === i ? Object.assign({}, x, { done: v }) : x) }) })),
+      comments: s.comments, commentCount: s.comments.length,
+      status: s.done ? '已完成' : '进行中', statusTone: s.done ? 'success' : 'info',
+      completeLabel: s.done ? '重新打开' : '标记完成',
+      complete: () => this.setState({ done: !s.done }),
+      cannotSend: !s.draft.trim(),
+      setDraft: v => this.setState({ draft: v }),
+      send: () => this.setState({ comments: s.comments.concat([{ who: '林夏', when: '刚刚', text: s.draft.trim() }]), draft: '', draftKey: s.draftKey + 1 })
+    };
+  }
+}
+</script>
+</body>
+</html>

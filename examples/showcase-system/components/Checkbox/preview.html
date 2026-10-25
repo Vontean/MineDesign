@@ -1,0 +1,12 @@
+<!-- @dsCard group="表单" height=96 -->
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><title>Checkbox</title></head>
+<body>
+<div id="root"></div>
+<script>
+  var P = window.Pine, h = React.createElement;
+  ReactDOM.createRoot(document.getElementById('root')).render(h('div',{className:'pn-col'},h(P.Checkbox,{label:'整理用户访谈记录',defaultChecked:true,strike:true}),h(P.Checkbox,{label:'评审首页线框',strike:true}),h(P.Checkbox,{label:'归档的选项',disabled:true})));
+</script>
+</body>
+</html>

@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <title>设置</title>
+  <script src="./support.js"></script>
+  <link rel="stylesheet" href="ds/pine/tokens.css">
+  <link rel="stylesheet" href="ds/pine/components/bundle.css">
+  <script src="ds/pine/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet><style>body { margin: 0; } .row { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 16px 0; border-top: 1px solid var(--line); }</style></helmet>
+<div data-theme="{{theme}}" style="width: 880px; height: 680px; box-sizing: border-box; padding: 40px 48px; display: flex; flex-direction: column; gap: 24px; background: var(--surface); color: var(--ink); font-family: var(--font-sans); transition: background 200ms;">
+  <div style="display: flex; align-items: center; gap: 12px;">
+    <a href="Main.dc.html" style="display: inline-flex; color: var(--ink-muted);"><x-import component-from-global-scope="Pine.Icon" name="chevron-left" size="{{iconSize}}"></x-import></a>
+    <h1 style="margin: 0; font-size: 24px; line-height: 32px; font-weight: 600;">设置</h1>
+  </div>
+  <x-import component-from-global-scope="Pine.Tabs" items="{{tabs}}"></x-import>
+  <section style="display: flex; flex-direction: column;">
+    <h2 style="margin: 0 0 4px; font-size: 15px; font-weight: 600;">外观</h2>
+    <div class="row" style="border-top: 0;">
+      <x-import component-from-global-scope="Pine.Switch" label="深色模式" description="跟随系统，或在这里手动切换" checked="{{dark}}" on-change="{{setDark}}" style="flex: 1;"></x-import>
+    </div>
+    <h2 style="margin: 20px 0 4px; font-size: 15px; font-weight: 600;">通知</h2>
+    <div class="row" style="border-top: 0;"><x-import component-from-global-scope="Pine.Switch" label="邮件通知" description="有人提到你或任务到期时发邮件" default-checked="{{yes}}" style="flex: 1;"></x-import></div>
+    <div class="row"><x-import component-from-global-scope="Pine.Switch" label="每周摘要" description="每周一早上汇总上周进展" style="flex: 1;"></x-import></div>
+    <div class="row"><x-import component-from-global-scope="Pine.Switch" label="桌面通知" description="需要浏览器授权，当前不可用" disabled="{{yes}}" style="flex: 1;"></x-import></div>
+  </section>
+  <section style="display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px; border-radius: 14px; background: var(--danger-soft);">
+    <div><p style="margin: 0; font-weight: 600; color: var(--danger);">删除工作区</p><p style="margin: 2px 0 0; font-size: 13px; color: var(--ink-muted);">所有项目和文件会被永久删除，无法恢复。</p></div>
+    <a href="DialogOpen.dc.html" style="text-decoration: none;"><x-import component-from-global-scope="Pine.Button" variant="danger" icon="trash">删除工作区</x-import></a>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":880,"height":680}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { dark: false }; }
+  renderVals() {
+    return {
+      yes: true, iconSize: 20, dark: this.state.dark, theme: this.state.dark ? 'dark' : 'light',
+      setDark: v => this.setState({ dark: v }),
+      tabs: [{ value: 'general', label: '通用' }, { value: 'members', label: '成员', count: 8 }, { value: 'billing', label: '账单' }]
+    };
+  }
+}
+</script>
+</body>
+</html>

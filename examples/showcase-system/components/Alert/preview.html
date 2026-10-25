@@ -1,0 +1,12 @@
+<!-- @dsCard group="反馈" height=176 -->
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><title>Alert</title></head>
+<body>
+<div id="root"></div>
+<script>
+  var P = window.Pine, h = React.createElement;
+  ReactDOM.createRoot(document.getElementById('root')).render(h('div',{className:'pn-col'},h(P.Alert,{tone:'info',title:'同步中',dismissible:true},'正在从 Figma 导入 12 个画板'),h(P.Alert,{tone:'warning',title:'3 个任务即将到期'},'截止日期在明天，记得提醒负责人'),h(P.Alert,{tone:'danger',title:'上传失败',action:h(P.Button,{size:'sm'},'重试')},'文件超过 20 MB，压缩后再上传')));
+</script>
+</body>
+</html>

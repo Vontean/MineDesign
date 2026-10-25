@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <title>看板</title>
+  <script src="./support.js"></script>
+  <link rel="stylesheet" href="ds/pine/tokens.css">
+  <link rel="stylesheet" href="ds/pine/components/bundle.css">
+  <script src="ds/pine/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet><style>body { margin: 0; }</style></helmet>
+<div style="width: 1280px; height: 820px; box-sizing: border-box; padding: 28px 32px; display: flex; flex-direction: column; gap: 20px; background: var(--surface); color: var(--ink); font-family: var(--font-sans); overflow: hidden;">
+  <header style="display: flex; align-items: center; gap: 16px;">
+    <a href="Main.dc.html" style="display: inline-flex; color: var(--ink-muted);"><x-import component-from-global-scope="Pine.Icon" name="chevron-left" size="{{iconSize}}"></x-import></a>
+    <div style="flex: 1;">
+      <h1 style="margin: 0; font-size: 22px; line-height: 30px; font-weight: 600;">官网改版</h1>
+      <p style="margin: 0; font-size: 13px; color: var(--ink-muted);">市场部 · 截止 11 月 18 日 · 18 个任务</p>
+    </div>
+    <span style="display: inline-flex;">
+      <x-import component-from-global-scope="Pine.Avatar" name="林夏" size="{{avatarSize}}"></x-import>
+      <x-import component-from-global-scope="Pine.Avatar" name="周屿" size="{{avatarSize}}" style="margin-left: -6px; box-shadow: 0 0 0 2px var(--surface);"></x-import>
+      <x-import component-from-global-scope="Pine.Avatar" name="陈一鸣" size="{{avatarSize}}" style="margin-left: -6px; box-shadow: 0 0 0 2px var(--surface);"></x-import>
+      <x-import component-from-global-scope="Pine.Avatar" name="许诺" size="{{avatarSize}}" style="margin-left: -6px; box-shadow: 0 0 0 2px var(--surface);"></x-import>
+    </span>
+    <x-import component-from-global-scope="Pine.Tabs" variant="pill" items="{{views}}"></x-import>
+    <x-import component-from-global-scope="Pine.Button" variant="primary" icon="plus">添加任务</x-import>
+  </header>
+  <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; flex: 1; min-height: 0;">
+    <sc-for list="{{lanes}}" as="lane" hint-placeholder-count="4">
+      <section style="display: flex; flex-direction: column; gap: 12px; padding: 12px; border-radius: 14px; background: var(--surface-sunken);">
+        <div style="display: flex; align-items: center; gap: 8px; padding: 2px 4px; font-size: 13px; font-weight: 600;">
+          <span style="width: 8px; height: 8px; border-radius: 50%; background: {{lane.color}};"></span>{{lane.name}}
+          <span style="color: var(--ink-subtle); font-weight: 400;">{{lane.count}}</span>
+        </div>
+        <sc-for list="{{lane.tasks}}" as="task" hint-placeholder-count="2">
+          <dc-import name="TaskCard" task="{{task}}" hint-size="264px,124px"></dc-import>
+        </sc-for>
+      </section>
+    </sc-for>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":820}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const lanes = [
+      { name: '待开始', color: 'var(--ink-subtle)', tasks: [
+        { code: 'PINE-1290', tag: '开发', tone: 'neutral', title: '接入新的 CMS 数据结构', due: '11 月 4 日', comments: 0, owner: '陈一鸣' },
+        { code: 'PINE-1288', tag: '内容', tone: 'neutral', title: '客户案例页 6 篇稿件', due: '11 月 6 日', comments: 2, owner: '许诺' }
+      ] },
+      { name: '进行中', color: 'var(--info)', tasks: [
+        { code: 'PINE-1284', tag: '设计', tone: 'accent', title: '首页首屏视觉稿', due: '明天', comments: 6, owner: '林夏' },
+        { code: 'PINE-1275', tag: '设计', tone: 'accent', title: '导航交互原型', due: '10 月 28 日', comments: 3, owner: '林夏' },
+        { code: 'PINE-1270', tag: '已阻塞', tone: 'danger', title: '图片资源压缩方案', due: '明天', comments: 9, owner: '陈一鸣' }
+      ] },
+      { name: '待评审', color: 'var(--warning)', tasks: [
+        { code: 'PINE-1279', tag: '内容', tone: 'warning', title: '价格页文案评审', due: '明天', comments: 4, owner: '周屿' }
+      ] },
+      { name: '已完成', color: 'var(--success)', tasks: [
+        { code: 'PINE-1262', tag: '研究', tone: 'success', title: '用户访谈记录整理', due: '10 月 22 日', comments: 12, owner: '林夏' },
+        { code: 'PINE-1258', tag: '设计', tone: 'success', title: '设计 token 命名规范', due: '10 月 21 日', comments: 5, owner: '许诺' },
+        { code: 'PINE-1251', tag: '开发', tone: 'success', title: '页脚组件重构', due: '10 月 19 日', comments: 1, owner: '陈一鸣' }
+      ] }
+    ];
+    return {
+      iconSize: 20, avatarSize: 28,
+      lanes: lanes.map(l => Object.assign({}, l, { count: l.tasks.length })),
+      views: [{ value: 'board', label: '看板', icon: 'grid' }, { value: 'list', label: '列表', icon: 'list' }, { value: 'cal', label: '日历', icon: 'calendar' }]
+    };
+  }
+}
+</script>
+</body>
+</html>

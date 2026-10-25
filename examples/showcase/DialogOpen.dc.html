@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <title>删除确认</title>
+  <script src="./support.js"></script>
+  <link rel="stylesheet" href="ds/pine/tokens.css">
+  <link rel="stylesheet" href="ds/pine/components/bundle.css">
+  <script src="ds/pine/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet><style>body { margin: 0; }</style></helmet>
+<div style="position: relative; width: 880px; height: 560px; box-sizing: border-box; padding: 40px 48px; background: var(--surface); color: var(--ink); font-family: var(--font-sans); overflow: hidden;">
+  <h1 style="margin: 0 0 24px; font-size: 24px; font-weight: 600;">设置</h1>
+  <div style="display: flex; flex-direction: column; gap: 12px;">
+    <x-import component-from-global-scope="Pine.Skeleton" width="60%" height="{{h}}"></x-import>
+    <x-import component-from-global-scope="Pine.Skeleton" width="80%" height="{{h}}"></x-import>
+    <x-import component-from-global-scope="Pine.Skeleton" width="45%" height="{{h}}"></x-import>
+  </div>
+  <x-import component-from-global-scope="Pine.Dialog" inline="{{yes}}" title="删除“Pine 设计团队”工作区？" description="12 个项目、486 个任务和所有文件会被永久删除。">
+    <x-import component-from-global-scope="Pine.Alert" tone="danger" title="这个操作无法撤销">删除前可以在“设置 › 导出”里下载全部数据。</x-import>
+    <x-import component-from-global-scope="Pine.TextField" label="输入工作区名称以确认" placeholder="Pine 设计团队"></x-import>
+    <div style="display: flex; justify-content: flex-end; gap: 8px;">
+      <a href="Settings.dc.html" style="text-decoration: none;"><x-import component-from-global-scope="Pine.Button" variant="ghost">取消</x-import></a>
+      <x-import component-from-global-scope="Pine.Button" variant="danger" icon="trash">永久删除</x-import>
+    </div>
+  </x-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":880,"height":560}}'>
+class Component extends DCLogic {
+  renderVals() { return { yes: true, h: 16 }; }
+}
+</script>
+</body>
+</html>

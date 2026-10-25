@@ -1,0 +1,14 @@
+<!-- @dsCard group="操作" height=120 -->
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><title>Button</title></head>
+<body>
+<div id="root"></div>
+<script>
+  var P = window.Pine, h = React.createElement;
+  ReactDOM.createRoot(document.getElementById('root')).render(h('div',{className:'pn-col'},
+  h('div',{className:'pn-row',style:{padding:0}},h(P.Button,{variant:'primary',icon:'plus'},'创建任务'),h(P.Button,null,'导出'),h(P.Button,{variant:'ghost'},'取消'),h(P.Button,{variant:'danger',icon:'trash'},'删除项目')),
+  h('div',{className:'pn-row',style:{padding:0}},h(P.Button,{variant:'primary',size:'sm'},'小号'),h(P.Button,{variant:'primary',size:'lg'},'大号'),h(P.Button,{variant:'primary',loading:true},'保存中'),h(P.Button,{disabled:true},'不可用'),h(P.Button,{icon:'settings',iconOnly:true,'aria-label':'设置'}),h(P.Button,{variant:'ghost',icon:'more',iconOnly:true,'aria-label':'更多'}))));
+</script>
+</body>
+</html>

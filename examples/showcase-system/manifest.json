@@ -1,0 +1,116 @@
+{
+  "manifestVersion": 3,
+  "name": "Pine",
+  "namespace": "Pine",
+  "files": [
+    "tokens.css",
+    "components/bundle.css",
+    "components/bundle.js",
+    "components/index.d.ts",
+    "components/lib/react.production.min.js",
+    "components/lib/react-dom.production.min.js"
+  ],
+  "libraries": [
+    {
+      "name": "react",
+      "version": "18.3.1",
+      "global": "React",
+      "file": "components/lib/react.production.min.js"
+    },
+    {
+      "name": "react-dom",
+      "version": "18.3.1",
+      "global": "ReactDOM",
+      "file": "components/lib/react-dom.production.min.js"
+    }
+  ],
+  "components": [
+    {
+      "name": "Button",
+      "group": "操作",
+      "summary": "每屏最多一个 primary，用于这一屏最重要的那件事；其余用 secondary 或 ghost。"
+    },
+    {
+      "name": "Icon",
+      "group": "基础",
+      "summary": "图标取自 Lucide，24 网格、1.5 描边，默认 16px。"
+    },
+    {
+      "name": "Avatar",
+      "group": "基础",
+      "summary": "头像用姓名生成首字和底色，同一个人在任何地方颜色一致。"
+    },
+    {
+      "name": "Badge",
+      "group": "基础",
+      "summary": "一到四个字的状态。"
+    },
+    {
+      "name": "TextField",
+      "group": "表单",
+      "summary": "标签写在上方，一直可见；占位符只给例子。"
+    },
+    {
+      "name": "Checkbox",
+      "group": "表单",
+      "summary": "用于多选和待办勾选。"
+    },
+    {
+      "name": "Switch",
+      "group": "表单",
+      "summary": "开关立即生效，不需要再点保存。"
+    },
+    {
+      "name": "Tabs",
+      "group": "导航",
+      "summary": "line 用于页面级切换，pill 用于同一区域内的视图切换。"
+    },
+    {
+      "name": "Card",
+      "group": "容器",
+      "summary": "卡片把一件事的信息放在一起。"
+    },
+    {
+      "name": "Dialog",
+      "group": "容器",
+      "summary": "对话框只用于需要用户立刻决定的事。"
+    },
+    {
+      "name": "Alert",
+      "group": "反馈",
+      "summary": "提示写清发生了什么和下一步怎么做。"
+    },
+    {
+      "name": "Progress",
+      "group": "反馈",
+      "summary": "用于有明确终点的进度。"
+    },
+    {
+      "name": "EmptyState",
+      "group": "反馈",
+      "summary": "空状态说明这里会有什么，并给出第一步操作。"
+    },
+    {
+      "name": "Skeleton",
+      "group": "反馈",
+      "summary": "内容加载时保留版面的形状，避免内容出现时页面跳动。"
+    }
+  ],
+  "lastChange": {
+    "by": "林夏",
+    "via": "page",
+    "at": "2026-10-24T09:30:00.000Z",
+    "note": "补充 Dialog、Skeleton 与深色主题"
+  },
+  "assetGroups": [
+    {
+      "name": "Logos"
+    },
+    {
+      "name": "Icons"
+    },
+    {
+      "name": "Illustrations"
+    }
+  ]
+}

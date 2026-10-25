@@ -12,7 +12,7 @@ test('built plugin exposes both editors and design tools via real stdio MCP',asy
   try{
     await client.connect(transport);
     const {tools}=await client.listTools();assert.ok(tools.some(t=>t.name==='design_check'));assert.ok(tools.some(t=>t.name==='design_system_check'));
-    const result=await client.callTool({name:'minedesign_open',arguments:{}});assert.equal(result.structuredContent.documents.length,2);
+    const result=await client.callTool({name:'minedesign_open',arguments:{}});assert.equal(result.structuredContent.documents.length,4);
     const entry=tools.find(t=>t.name==='minedesign_open');assert.deepEqual(entry.icons.map(i=>i.theme),[undefined,'light','dark']);
     assert.match(Buffer.from(entry.icons[0].src.split(',')[1],'base64').toString(),/id="brush"/);
     const resource=await client.readResource({uri:APP_URI});assert.match(resource.contents[0].text,/MineDesign/);

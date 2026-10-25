@@ -1,0 +1,270 @@
+{
+  "v": 3,
+  "attachments": {},
+  "boards": {
+    "Board.dc.html": {
+      "h": 820,
+      "page": "flow",
+      "title": "看板",
+      "w": 1280,
+      "x": 2520,
+      "y": 0
+    },
+    "DialogOpen.dc.html": {
+      "h": 560,
+      "page": "states",
+      "title": "删除确认",
+      "w": 880,
+      "x": 2240,
+      "y": 0
+    },
+    "Landing.dc.html": {
+      "expand": "fill",
+      "guides": [
+        {
+          "count": 12,
+          "gutter": 24,
+          "kind": "columns",
+          "margin": 160
+        },
+        {
+          "hidden": true,
+          "kind": "rows",
+          "size": 8
+        }
+      ],
+      "h": 1360,
+      "page": "web",
+      "title": "官网首页",
+      "w": 1440,
+      "x": 0,
+      "y": 0
+    },
+    "Login.dc.html": {
+      "h": 720,
+      "is_interactive": true,
+      "page": "flow",
+      "title": "登录",
+      "w": 1080,
+      "x": 0,
+      "y": 0
+    },
+    "Main.dc.html": {
+      "expand": "fill",
+      "h": 820,
+      "is_interactive": true,
+      "page": "flow",
+      "title": "工作台",
+      "w": 1280,
+      "x": 1160,
+      "y": 0
+    },
+    "Mobile.dc.html": {
+      "guides": [
+        {
+          "color": "#2f6f4f1a",
+          "count": 4,
+          "gutter": 16,
+          "kind": "columns",
+          "margin": 16
+        }
+      ],
+      "h": 844,
+      "page": "states",
+      "radius": 40,
+      "title": "移动端 · 今天",
+      "w": 390,
+      "x": 3200,
+      "y": 0
+    },
+    "Settings.dc.html": {
+      "h": 680,
+      "is_interactive": true,
+      "page": "states",
+      "title": "设置",
+      "w": 880,
+      "x": 1280,
+      "y": 0
+    },
+    "States.dc.html": {
+      "h": 860,
+      "is_interactive": true,
+      "page": "states",
+      "title": "列表状态",
+      "w": 1200,
+      "x": 0,
+      "y": 0
+    },
+    "TaskCard.dc.html": {
+      "h": 124,
+      "page": "flow",
+      "radius": 12,
+      "title": "任务卡片（子组件）",
+      "w": 264,
+      "x": 2520,
+      "y": 940
+    },
+    "TaskDetail.dc.html": {
+      "h": 820,
+      "is_interactive": true,
+      "page": "flow",
+      "title": "任务详情",
+      "w": 1280,
+      "x": 3880,
+      "y": 0
+    }
+  },
+  "createdOnFiles": {
+    "at": "2026-10-25T00:00:00Z",
+    "v": 1
+  },
+  "designSystems": [
+    {
+      "artifact": "../showcase-system",
+      "copiedAt": "2026-10-25T00:00:00Z",
+      "namespace": "pine",
+      "title": "Pine 设计系统",
+      "version": null
+    }
+  ],
+  "launch": {
+    "page": "flow",
+    "view": "canvas"
+  },
+  "notes": {
+    "flow-board": {
+      "fill": "purple",
+      "page": "flow",
+      "text": "四列卡片都来自同一个“任务卡片”子画板，改一处所有列一起更新。",
+      "w": 320,
+      "x": 2864,
+      "y": 940
+    },
+    "flow-detail": {
+      "fill": "pink",
+      "page": "flow",
+      "text": "待定：检查清单是否要支持拖动排序？先和开发确认工作量。",
+      "w": 340,
+      "x": 3880,
+      "y": 900
+    },
+    "flow-login": {
+      "fill": "orange",
+      "page": "flow",
+      "text": "校验在点“登录”时触发，不在输入时打断。错误信息写清怎么改，不只说“格式错误”。",
+      "w": 320,
+      "x": 0,
+      "y": 800
+    },
+    "flow-main": {
+      "fill": "green",
+      "page": "flow",
+      "text": "勾选任务后，顶部统计和进度条要同步变化，让人感到“完成了一件事”。",
+      "w": 320,
+      "x": 1160,
+      "y": 900
+    },
+    "flow-main-2": {
+      "fill": "blue",
+      "page": "flow",
+      "text": "“创建任务”是这屏唯一的主按钮。空名称不能提交，提示放在输入框下方。",
+      "w": 320,
+      "x": 1520,
+      "y": 900
+    },
+    "flow-title": {
+      "kind": "title1",
+      "maxW": 5160,
+      "page": "flow",
+      "text": "核心流程：登录 → 工作台 → 看板 → 任务详情",
+      "w": 240,
+      "x": 0,
+      "y": -320
+    },
+    "states-dark": {
+      "fill": "gray",
+      "page": "states",
+      "text": "设置页的“深色模式”开关会切换这一页的主题，用来核对两套 token。",
+      "w": 320,
+      "x": 1280,
+      "y": 760
+    },
+    "states-mobile": {
+      "fill": "green",
+      "page": "states",
+      "text": "移动端按 4 列网格排布，左右边距 16。",
+      "w": 300,
+      "x": 3200,
+      "y": 924
+    },
+    "states-title": {
+      "kind": "title1",
+      "maxW": 3590,
+      "page": "states",
+      "text": "组件与状态",
+      "w": 240,
+      "x": 0,
+      "y": -320
+    },
+    "states-tweaks": {
+      "fill": "teal",
+      "page": "states",
+      "text": "“列表状态”在 Tweaks 里可以切换深色、密度和上传进度。",
+      "w": 340,
+      "x": 0,
+      "y": 940
+    },
+    "web-accent": {
+      "fill": "orange",
+      "page": "web",
+      "text": "品牌色在 Tweaks 里有 4 个候选，周三和市场部一起定。",
+      "w": 320,
+      "x": 1540,
+      "y": 0
+    },
+    "web-grid": {
+      "fill": "blue",
+      "page": "web",
+      "text": "12 列网格，列间距 24，内容区宽 1120。首屏标题在手机上不超过两行。",
+      "w": 320,
+      "x": 1540,
+      "y": 220
+    },
+    "web-title": {
+      "kind": "title1",
+      "maxW": 1440,
+      "page": "web",
+      "text": "官网",
+      "w": 240,
+      "x": 0,
+      "y": -320
+    }
+  },
+  "order": [
+    "Landing.dc.html",
+    "Mobile.dc.html",
+    "DialogOpen.dc.html",
+    "Settings.dc.html",
+    "States.dc.html",
+    "TaskCard.dc.html",
+    "TaskDetail.dc.html",
+    "Board.dc.html",
+    "Main.dc.html",
+    "Login.dc.html"
+  ],
+  "pages": [
+    {
+      "id": "flow",
+      "name": "核心流程"
+    },
+    {
+      "id": "states",
+      "name": "组件与状态"
+    },
+    {
+      "id": "web",
+      "name": "官网"
+    }
+  ],
+  "title": "Pine 项目协作"
+}

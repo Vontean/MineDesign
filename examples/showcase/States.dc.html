@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <title>列表状态</title>
+  <script src="./support.js"></script>
+  <link rel="stylesheet" href="ds/pine/tokens.css">
+  <link rel="stylesheet" href="ds/pine/components/bundle.css">
+  <script src="ds/pine/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet><style>body { margin: 0; } .panel { display: flex; flex-direction: column; min-height: 300px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface-raised); overflow: hidden; } .panel-head { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; border-bottom: 1px solid var(--line); font-size: 14px; font-weight: 600; } .label { margin: 0 0 8px; font-size: 12px; font-weight: 600; color: var(--ink-muted); }</style></helmet>
+<div data-theme="{{theme}}" style="width: 1200px; height: 860px; box-sizing: border-box; padding: {{pad}}px; display: flex; flex-direction: column; gap: {{gap}}px; background: var(--surface-sunken); color: var(--ink); font-family: var(--font-sans);">
+  <header>
+    <h1 style="margin: 0; font-size: 24px; line-height: 32px; font-weight: 600;">任务列表的五种状态</h1>
+    <p style="margin: 4px 0 0; font-size: 14px; color: var(--ink-muted);">同一个面板在加载、为空、出错、部分完成和全部完成时的样子。</p>
+  </header>
+  <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: {{gap}}px;">
+    <div><p class="label">加载中</p><div class="panel"><div class="panel-head">本周任务</div>
+      <div style="display: flex; flex-direction: column; gap: 18px; padding: 16px;">
+        <sc-for list="{{skeletons}}" as="s" hint-placeholder-count="4">
+          <div style="display: flex; gap: 12px; align-items: center;"><x-import component-from-global-scope="Pine.Skeleton" circle="{{yes}}" width="{{s.circle}}" height="{{s.circle}}"></x-import><div style="flex: 1; display: flex; flex-direction: column; gap: 6px;"><x-import component-from-global-scope="Pine.Skeleton" width="{{s.w}}" height="{{s.h}}"></x-import><x-import component-from-global-scope="Pine.Skeleton" width="30%" height="{{s.h2}}"></x-import></div></div>
+        </sc-for>
+      </div></div></div>
+    <div><p class="label">为空</p><div class="panel"><div class="panel-head">本周任务</div>
+      <x-import component-from-global-scope="Pine.EmptyState" icon="inbox" title="这周还没有任务" description="从看板拖一个任务过来，或者新建一个。"></x-import>
+      <div style="display: flex; justify-content: center; padding-bottom: 24px;"><x-import component-from-global-scope="Pine.Button" variant="primary" icon="plus">创建任务</x-import></div>
+    </div></div>
+    <div><p class="label">出错</p><div class="panel"><div class="panel-head">本周任务</div>
+      <div style="padding: 16px; display: flex; flex-direction: column; gap: 16px;">
+        <x-import component-from-global-scope="Pine.Alert" tone="danger" title="任务没有加载出来">网络连接中断。检查网络后重试，已有的修改不会丢失。</x-import>
+        <x-import component-from-global-scope="Pine.Button" on-click="{{retry}}" loading="{{retrying}}">{{retryLabel}}</x-import>
+      </div></div></div>
+    <div><p class="label">部分完成</p><div class="panel"><div class="panel-head">本周任务 <x-import component-from-global-scope="Pine.Badge" tone="info">2 / 4</x-import></div>
+      <div style="padding: 16px; display: flex; flex-direction: column; gap: 14px;">
+        <x-import component-from-global-scope="Pine.Checkbox" label="整理用户访谈记录" default-checked="{{yes}}" strike="{{yes}}"></x-import>
+        <x-import component-from-global-scope="Pine.Checkbox" label="评审首页线框" default-checked="{{yes}}" strike="{{yes}}"></x-import>
+        <x-import component-from-global-scope="Pine.Checkbox" label="移动端首屏适配" strike="{{yes}}"></x-import>
+        <x-import component-from-global-scope="Pine.Checkbox" label="这是一条特别长的任务标题，用来检查文字换行后复选框是否仍然和第一行对齐" strike="{{yes}}"></x-import>
+      </div></div></div>
+    <div><p class="label">全部完成</p><div class="panel"><div class="panel-head">本周任务 <x-import component-from-global-scope="Pine.Badge" tone="success" dot="{{yes}}">已完成</x-import></div>
+      <x-import component-from-global-scope="Pine.EmptyState" icon="check-circle" title="本周任务全部完成" description="做得好。下周的任务会在周一早上出现。"></x-import>
+    </div></div>
+    <div><p class="label">提示与进度</p><div class="panel" style="padding: 16px; gap: 14px;">
+      <x-import component-from-global-scope="Pine.Alert" tone="info" title="同步中" dismissible="{{yes}}">正在从 Figma 导入 12 个画板</x-import>
+      <x-import component-from-global-scope="Pine.Alert" tone="success" title="已邀请 3 位成员"></x-import>
+      <x-import component-from-global-scope="Pine.Progress" value="{{upload}}" label="上传素材"></x-import>
+    </div></div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1200,&quot;height&quot;:860},&quot;dark&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;section&quot;:&quot;外观&quot;},&quot;density&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;紧凑&quot;,&quot;标准&quot;,&quot;宽松&quot;],&quot;default&quot;:&quot;标准&quot;,&quot;section&quot;:&quot;外观&quot;},&quot;upload&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;min&quot;:0,&quot;max&quot;:100,&quot;step&quot;:1,&quot;default&quot;:64,&quot;unit&quot;:&quot;%&quot;,&quot;section&quot;:&quot;数据&quot;}}">
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { retrying: false }; }
+  renderVals() {
+    const density = this.props.density ?? '标准';
+    const scale = { '紧凑': [24, 16], '标准': [40, 24], '宽松': [56, 32] }[density] || [40, 24];
+    return {
+      yes: true, theme: (this.props.dark ?? false) ? 'dark' : 'light', pad: scale[0], gap: scale[1],
+      upload: this.props.upload ?? 64,
+      skeletons: [{ w: '70%' }, { w: '55%' }, { w: '80%' }, { w: '40%' }].map(s => Object.assign(s, { circle: 32, h: 12, h2: 10 })),
+      retrying: this.state.retrying, retryLabel: this.state.retrying ? '正在重试' : '重试',
+      retry: () => { this.setState({ retrying: true }); setTimeout(() => this.setState({ retrying: false }), 1200); }
+    };
+  }
+}
+</script>
+</body>
+</html>

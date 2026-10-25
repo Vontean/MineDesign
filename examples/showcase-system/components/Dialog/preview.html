@@ -1,0 +1,12 @@
+<!-- @dsCard group="容器" height=320 -->
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><title>Dialog</title></head>
+<body>
+<div id="root"></div>
+<script>
+  var P = window.Pine, h = React.createElement;
+  ReactDOM.createRoot(document.getElementById('root')).render(h('div',{style:{position:'relative',height:320}},h(P.Dialog,{inline:true,title:'邀请成员',description:'被邀请的人会收到一封邮件',footer:[h(P.Button,{key:'c',variant:'ghost'},'取消'),h(P.Button,{key:'o',variant:'primary'},'发送邀请')]},h(P.TextField,{label:'邮箱',placeholder:'name@company.com',icon:'mail'}))));
+</script>
+</body>
+</html>

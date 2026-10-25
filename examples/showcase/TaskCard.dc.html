@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <title>任务卡片</title>
+  <script src="./support.js"></script>
+  <link rel="stylesheet" href="ds/pine/tokens.css">
+  <link rel="stylesheet" href="ds/pine/components/bundle.css">
+  <script src="ds/pine/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet><style>body { margin: 0; }</style></helmet>
+<a href="TaskDetail.dc.html" style="display: flex; flex-direction: column; gap: 10px; width: 264px; box-sizing: border-box; padding: 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface-raised); box-shadow: var(--shadow-sm); color: var(--ink); font-family: var(--font-sans); text-decoration: none;">
+  <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+    <span style="font-family: var(--font-mono); font-size: 12px; color: var(--ink-subtle);">{{code}}</span>
+    <x-import component-from-global-scope="Pine.Badge" tone="{{tone}}">{{tag}}</x-import>
+  </div>
+  <p style="margin: 0; font-size: 14px; line-height: 20px; font-weight: 500;">{{title}}</p>
+  <div style="display: flex; align-items: center; gap: 12px; font-size: 12px; color: var(--ink-muted);">
+    <span style="display: inline-flex; align-items: center; gap: 4px;"><x-import component-from-global-scope="Pine.Icon" name="clock" size="{{iconSize}}"></x-import>{{due}}</span>
+    <span style="display: inline-flex; align-items: center; gap: 4px;"><x-import component-from-global-scope="Pine.Icon" name="message" size="{{iconSize}}"></x-import>{{comments}}</span>
+    <span style="flex: 1;"></span>
+    <x-import component-from-global-scope="Pine.Avatar" name="{{owner}}" size="{{avatarSize}}"></x-import>
+  </div>
+</a>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":264,"height":124},"task":{"editor":null}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const t = this.props.task || { code: 'PINE-1284', tag: '设计', tone: 'accent', title: '首页首屏视觉稿', due: '明天', comments: 6, owner: '林夏' };
+    return Object.assign({ iconSize: 14, avatarSize: 22 }, t);
+  }
+}
+</script>
+</body>
+</html>

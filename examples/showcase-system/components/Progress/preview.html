@@ -1,0 +1,12 @@
+<!-- @dsCard group="反馈" height=120 -->
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><title>Progress</title></head>
+<body>
+<div id="root"></div>
+<script>
+  var P = window.Pine, h = React.createElement;
+  ReactDOM.createRoot(document.getElementById('root')).render(h('div',{className:'pn-col',style:{maxWidth:420}},h(P.Progress,{value:72,label:'设计'}),h(P.Progress,{value:38,label:'开发',tone:'info'}),h(P.Progress,{value:12,label:'测试',tone:'warning'})));
+</script>
+</body>
+</html>

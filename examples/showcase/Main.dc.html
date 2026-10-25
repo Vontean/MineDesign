@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <title>工作台</title>
+  <script src="./support.js"></script>
+  <link rel="stylesheet" href="ds/pine/tokens.css">
+  <link rel="stylesheet" href="ds/pine/components/bundle.css">
+  <script src="ds/pine/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    body { margin: 0; }
+    .nav-item { display: flex; align-items: center; gap: 10px; height: 34px; padding: 0 10px; border-radius: 8px; color: var(--ink-muted); font-size: 14px; text-decoration: none; }
+    .nav-item:hover { background: var(--surface-sunken); color: var(--ink); }
+    .task-row { display: flex; align-items: center; gap: 12px; min-height: 52px; padding: 0 16px; border-top: 1px solid var(--line); }
+    .task-row:hover { background: var(--surface-sunken); }
+  </style>
+</helmet>
+<div style="display: flex; flex-wrap: wrap; min-height: 100vh; background: var(--surface); color: var(--ink); font-family: var(--font-sans);">
+  <nav style="flex: 1 1 220px; max-width: 240px; box-sizing: border-box; padding: 20px 12px; display: flex; flex-direction: column; gap: 4px; background: var(--surface-sunken); border-right: 1px solid var(--line);">
+    <div style="display: flex; align-items: center; gap: 10px; padding: 0 10px 20px;">
+      <div style="width: 28px; height: 28px; border-radius: 8px; background: var(--accent); color: var(--on-accent); display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 14px;">P</div>
+      <span style="font-size: 15px; font-weight: 600;">Pine</span>
+    </div>
+    <a class="nav-item" href="Main.dc.html" style="background: var(--surface-raised); color: var(--ink); font-weight: 500; box-shadow: var(--shadow-sm);"><x-import component-from-global-scope="Pine.Icon" name="home"></x-import>工作台</a>
+    <a class="nav-item" href="Board.dc.html"><x-import component-from-global-scope="Pine.Icon" name="grid"></x-import>看板</a>
+    <a class="nav-item" href="TaskDetail.dc.html"><x-import component-from-global-scope="Pine.Icon" name="inbox"></x-import>收件箱<span style="margin-left: auto; font-size: 12px; color: var(--accent); font-weight: 600;">4</span></a>
+    <a class="nav-item" href="Settings.dc.html"><x-import component-from-global-scope="Pine.Icon" name="settings"></x-import>设置</a>
+    <p style="margin: 24px 10px 6px; font-size: 12px; font-weight: 600; color: var(--ink-subtle);">项目</p>
+    <a class="nav-item" href="Board.dc.html"><span style="width: 8px; height: 8px; border-radius: 2px; background: var(--accent);"></span>官网改版</a>
+    <a class="nav-item" href="Board.dc.html"><span style="width: 8px; height: 8px; border-radius: 2px; background: var(--info);"></span>移动端 2.0</a>
+    <a class="nav-item" href="Board.dc.html"><span style="width: 8px; height: 8px; border-radius: 2px; background: var(--warning);"></span>品牌手册</a>
+    <div style="margin-top: auto; display: flex; align-items: center; gap: 10px; padding: 12px 10px 0;">
+      <x-import component-from-global-scope="Pine.Avatar" name="林夏" size="{{avatarSize}}" status="online"></x-import>
+      <div style="display: flex; flex-direction: column; min-width: 0;">
+        <span style="font-size: 13px; font-weight: 500;">林夏</span>
+        <span style="font-size: 12px; color: var(--ink-muted);">产品设计师</span>
+      </div>
+    </div>
+  </nav>
+
+  <main style="flex: 999 1 560px; min-width: 0; box-sizing: border-box; padding: 32px 40px; display: flex; flex-direction: column; gap: 24px;">
+    <header style="display: flex; flex-wrap: wrap; align-items: center; gap: 16px;">
+      <div style="flex: 1 1 240px;">
+        <p style="margin: 0 0 4px; font-size: 13px; color: var(--ink-muted);">10 月 25 日 · 星期日</p>
+        <h1 style="margin: 0; font-size: 28px; line-height: 36px; font-weight: 600; letter-spacing: -0.4px;">下午好，林夏</h1>
+      </div>
+      <x-import component-from-global-scope="Pine.TextField" icon="search" placeholder="搜索任务、成员或文件" style="width: 280px;"></x-import>
+      <x-import component-from-global-scope="Pine.Button" icon="bell" icon-only="{{yes}}" aria-label="通知"></x-import>
+      <x-import component-from-global-scope="Pine.Button" variant="primary" icon="plus" on-click="{{openDialog}}">创建任务</x-import>
+    </header>
+
+    <x-import component-from-global-scope="Pine.Alert" tone="warning" title="3 个任务明天到期" dismissible="{{yes}}">记得提醒负责人，或调整截止日期。</x-import>
+
+    <section style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr)); gap: 16px;">
+      <div style="padding: 16px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface-raised);">
+        <p style="margin: 0; font-size: 13px; color: var(--ink-muted);">进行中</p>
+        <p style="margin: 6px 0 0; font-size: 28px; font-weight: 600; font-variant-numeric: tabular-nums;">{{openCount}}</p>
+      </div>
+      <div style="padding: 16px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface-raised);">
+        <p style="margin: 0; font-size: 13px; color: var(--ink-muted);">本周完成</p>
+        <p style="margin: 6px 0 0; font-size: 28px; font-weight: 600; font-variant-numeric: tabular-nums;">{{doneCount}}</p>
+      </div>
+      <div style="padding: 16px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface-raised);">
+        <p style="margin: 0; font-size: 13px; color: var(--ink-muted);">有风险</p>
+        <p style="margin: 6px 0 0; font-size: 28px; font-weight: 600; color: var(--warning);">2</p>
+      </div>
+      <div style="padding: 16px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface-raised); display: flex; flex-direction: column; justify-content: center;">
+        <x-import component-from-global-scope="Pine.Progress" value="{{progress}}" label="官网改版"></x-import>
+      </div>
+    </section>
+
+    <section style="border: 1px solid var(--line); border-radius: 14px; background: var(--surface-raised); overflow: hidden;">
+      <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 0 16px;">
+        <x-import component-from-global-scope="Pine.Tabs" items="{{tabItems}}" value="{{tab}}" on-change="{{onTab}}" style="border-bottom: 0;"></x-import>
+        <x-import component-from-global-scope="Pine.Button" variant="ghost" size="sm" icon="filter">筛选</x-import>
+      </div>
+      <sc-if value="{{hasTasks}}" hint-placeholder-val="{{ true }}">
+        <sc-for list="{{visible}}" as="t" hint-placeholder-count="5">
+          <div class="task-row">
+            <x-import component-from-global-scope="Pine.Checkbox" checked="{{t.done}}" on-change="{{t.toggle}}" label="{{t.title}}" strike="{{yes}}" style="flex: 1; min-width: 0;"></x-import>
+            <span style="font-family: var(--font-mono); font-size: 12px; color: var(--ink-subtle);">{{t.code}}</span>
+            <x-import component-from-global-scope="Pine.Badge" tone="{{t.tone}}" dot="{{yes}}">{{t.status}}</x-import>
+            <span style="width: 72px; font-size: 13px; color: var(--ink-muted); text-align: right;">{{t.due}}</span>
+            <x-import component-from-global-scope="Pine.Avatar" name="{{t.owner}}" size="{{smallAvatar}}"></x-import>
+          </div>
+        </sc-for>
+      </sc-if>
+      <sc-if value="{{empty}}" hint-placeholder-val="{{ false }}">
+        <x-import component-from-global-scope="Pine.EmptyState" icon="check-circle" title="这里的任务都完成了" description="切换到“全部”查看其他任务。"></x-import>
+      </sc-if>
+    </section>
+  </main>
+
+  <sc-if value="{{dialogOpen}}" hint-placeholder-val="{{ false }}">
+    <x-import component-from-global-scope="Pine.Dialog" title="创建任务" description="新任务会出现在“我负责的”列表里" on-close="{{closeDialog}}">
+      <x-import component-from-global-scope="Pine.TextField" label="任务名称" placeholder="例如：首页改版视觉稿" on-change="{{setDraft}}" error="{{draftError}}"></x-import>
+      <div style="display: flex; justify-content: flex-end; gap: 8px;">
+        <x-import component-from-global-scope="Pine.Button" variant="ghost" on-click="{{closeDialog}}">取消</x-import>
+        <x-import component-from-global-scope="Pine.Button" variant="primary" on-click="{{createTask}}">创建任务</x-import>
+      </div>
+    </x-import>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":820}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = {
+      tab: 'all', dialogOpen: false, draft: '', draftError: '',
+      tasks: [
+        { id: 1, code: 'PINE-1284', title: '首页首屏视觉稿', status: '进行中', tone: 'info', due: '明天', owner: '林夏', mine: true, done: false },
+        { id: 2, code: 'PINE-1279', title: '价格页文案评审', status: '待评审', tone: 'warning', due: '明天', owner: '周屿', mine: false, done: false },
+        { id: 3, code: 'PINE-1275', title: '导航交互原型', status: '进行中', tone: 'info', due: '10 月 28 日', owner: '林夏', mine: true, done: false },
+        { id: 4, code: 'PINE-1270', title: '图片资源压缩方案', status: '已阻塞', tone: 'danger', due: '明天', owner: '陈一鸣', mine: false, done: false },
+        { id: 5, code: 'PINE-1262', title: '用户访谈记录整理', status: '已完成', tone: 'success', due: '10 月 22 日', owner: '林夏', mine: true, done: true },
+        { id: 6, code: 'PINE-1258', title: '设计 token 命名规范', status: '已完成', tone: 'success', due: '10 月 21 日', owner: '许诺', mine: false, done: true }
+      ]
+    };
+  }
+  toggle(id, done) {
+    this.setState({ tasks: this.state.tasks.map(t => t.id === id ? Object.assign({}, t, { done: done, status: done ? '已完成' : '进行中', tone: done ? 'success' : 'info' }) : t) });
+  }
+  createTask() {
+    const title = this.state.draft.trim();
+    if (!title) { this.setState({ draftError: '写一个任务名称，例如“首页改版视觉稿”' }); return; }
+    const id = Date.now();
+    const task = { id: id, code: 'PINE-' + (1285 + this.state.tasks.length), title: title, status: '进行中', tone: 'info', due: '未设置', owner: '林夏', mine: true, done: false };
+    this.setState({ tasks: [task].concat(this.state.tasks), dialogOpen: false, draft: '', draftError: '', tab: 'mine' });
+  }
+  renderVals() {
+    const s = this.state;
+    const pick = { all: () => true, mine: t => t.mine, open: t => !t.done, done: t => t.done };
+    const visible = s.tasks.filter(pick[s.tab]).map(t => Object.assign({}, t, { toggle: done => this.toggle(t.id, done) }));
+    const done = s.tasks.filter(t => t.done).length;
+    return {
+      yes: true, avatarSize: 32, smallAvatar: 24, tab: s.tab, visible: visible,
+      hasTasks: visible.length > 0, empty: visible.length === 0,
+      openCount: s.tasks.length - done, doneCount: done,
+      progress: Math.round(done / s.tasks.length * 100),
+      tabItems: [
+        { value: 'all', label: '全部', count: s.tasks.length },
+        { value: 'mine', label: '我负责的', count: s.tasks.filter(t => t.mine).length },
+        { value: 'open', label: '未完成', count: s.tasks.length - done },
+        { value: 'done', label: '已完成', count: done }
+      ],
+      onTab: v => this.setState({ tab: v }),
+      dialogOpen: s.dialogOpen, draftError: s.draftError,
+      openDialog: () => this.setState({ dialogOpen: true }),
+      closeDialog: () => this.setState({ dialogOpen: false, draft: '', draftError: '' }),
+      setDraft: v => this.setState({ draft: v, draftError: '' }),
+      createTask: () => this.createTask()
+    };
+  }
+}
+</script>
+</body>
+</html>

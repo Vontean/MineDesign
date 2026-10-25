@@ -1,0 +1,13 @@
+<!-- @dsCard group="基础" height=80 -->
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><title>Avatar</title></head>
+<body>
+<div id="root"></div>
+<script>
+  var P = window.Pine, h = React.createElement;
+  ReactDOM.createRoot(document.getElementById('root')).render(h('div',{className:'pn-row'},h(P.Avatar,{name:'林夏',size:24}),h(P.Avatar,{name:'周屿',size:32,status:'online'}),h(P.Avatar,{name:'陈一鸣',size:40,status:'away'}),h(P.Avatar,{name:'Mia Wong',size:48,status:'offline'}),
+  h('span',{style:{display:'inline-flex',marginLeft:16}},['林夏','周屿','陈一鸣','许诺'].map((n,i)=>h(P.Avatar,{key:n,name:n,size:28,style:{marginLeft:i?-8:0,boxShadow:'0 0 0 2px var(--surface)'}})))));
+</script>
+</body>
+</html>

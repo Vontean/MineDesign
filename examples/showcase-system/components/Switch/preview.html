@@ -1,0 +1,12 @@
+<!-- @dsCard group="表单" height=120 -->
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><title>Switch</title></head>
+<body>
+<div id="root"></div>
+<script>
+  var P = window.Pine, h = React.createElement;
+  ReactDOM.createRoot(document.getElementById('root')).render(h('div',{className:'pn-col',style:{maxWidth:360}},h(P.Switch,{label:'邮件通知',description:'有人提到你或任务到期时发邮件',defaultChecked:true}),h(P.Switch,{label:'每周摘要',description:'每周一早上汇总上周进展'})));
+</script>
+</body>
+</html>
