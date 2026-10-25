@@ -20853,6 +20853,8 @@ export function installCanvasDesignCanvas(
           onSave={value651}
         />
       );
+    // toolbarDensity 内部调用 hook，必须在顶层无条件调用，不能放进按展开状态渲染的分支
+    let mdnDockDensity: Dynamic = (0, runtime.toolbarDensity)();
     return (
       <runtime.ViewportContext.Provider value={value105}>
         <runtime.CanvasWorkingStateContext.Provider value={current}>
@@ -20960,7 +20962,7 @@ export function installCanvasDesignCanvas(
                   {/* MineDesign：工具栏移到画布底部居中，缩短鼠标往返；评论放在最右侧并默认显示文字 */}
                   {value347 ? null : (
                     <runtime.CdsIsland
-                      density={(0, runtime.toolbarDensity)()}
+                      density={mdnDockDensity}
                       className={"mdn-tool-dock"}
                       hidden={value492}
                     >
