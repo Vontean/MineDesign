@@ -1,5 +1,6 @@
 import type { Elevation } from "../../contracts/ui";
 import type * as React from "react";
+import { lucideIcons, lucideRotations } from "./lucide-icons";
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -214,6 +215,41 @@ export function installCdsComponentsIcon(runtime: RuntimeBindings): () => void {
             }),
           }
         : value20;
+    // MineDesign：有 Lucide 对照的字形改画 SVG；动画图标保留字体的分层动画
+    let lucideNode: Dynamic = value21 ? undefined : lucideIcons[value12];
+    if (lucideNode) {
+      let rotation: Dynamic = lucideRotations[value12];
+      return (
+        <svg
+          data-cds={"Icon"}
+          data-mdn-icon={""}
+          data-mdn-bold={value10 ? "" : undefined}
+          width={"1em"}
+          height={"1em"}
+          viewBox={"0 0 24 24"}
+          fill={"none"}
+          stroke={"currentColor"}
+          strokeLinecap={"round"}
+          strokeLinejoin={"round"}
+          xmlns={"http://www.w3.org/2000/svg"}
+          style={{
+            ...ComponentsIconFlexShrinkConfig,
+            fontSize: value20.fontSize,
+            ...(rotation ? { transform: `rotate(${rotation}deg)` } : null),
+            ...value3,
+          }}
+          className={value2}
+          {...value9}
+          role={value9.role ?? (value ? "img" : undefined)}
+          aria-hidden={value9["aria-hidden"] ?? (value ? undefined : true)}
+          aria-label={value9["aria-label"] ?? (value || undefined)}
+        >
+          {lucideNode.map(([Tag, attrs]: Dynamic, index: number): Dynamic => (
+            <Tag key={index} {...attrs} />
+          ))}
+        </svg>
+      );
+    }
     return (
       <span
         data-cds={"Icon"}

@@ -11,7 +11,7 @@
 | 层 | 文件 | 内容 |
 | --- | --- | --- |
 | 基础 | `assets/tokens.css` | MCP Apps 标准变量（`--color-*`、`--font-*`、`--border-radius-*`、`--shadow-*`）。Codex 通过 `hostContext.styles` 推送实际值，写在 html 内联样式上优先；文件内是本地快照，供浏览器模式和宿主缺值时使用 |
-| 语义 | `assets/tokens.css` | `--mdn-*`：表面、浮层、三级文字、边缘、焦点、ghost 悬停与选中、实心、危险、遮罩、字号字重、控件尺寸、圆角、投影、动效。宿主没有推送的 Codex 角色从基础层推导 |
+| 语义 | `assets/tokens.css` | `--mdn-*`：表面、浮层、三级文字、边缘、焦点、ghost 悬停与选中、实心、危险、遮罩、字号字重、控件尺寸、圆角、图标尺寸与线宽、投影、动效。宿主没有推送的 Codex 角色从基础层推导 |
 | 组件 | `assets/app.css` | 外壳组件，只引用 `--mdn-*` |
 | 编辑器适配 | `assets/editor-theme.css` | 把 CDS 变量映射到 `--mdn-*`，并把 CDS 暖灰阶按亮度换成中性灰 |
 
@@ -29,9 +29,19 @@
 | 反馈侧栏 | 300px，与页面同底色，左侧 1px 边缘。批注为 Codex 侧栏行：悬停底色、圆角 lg、编号、可点击的目标、正文、悬停出现的删除。无批注时显示空状态 |
 | 输入区 | Codex composer 外形：浮层底色、圆角 2xl、1px 边缘，聚焦时加深；左侧复制，右侧发送 |
 | 弹窗 | opaque dialog：浮层底色、圆角 3xl、半像素边缘加投影，右上角使用 Codex 原生关闭图标；遮罩浅色 #e3e3e380、深色 #00000080，加 1px 模糊 |
-| 编辑器 | 控件高 24px 改为 28px，内边距随之放宽，字号不变；菜单、Popover、Tooltip 用不透明浮层与下拉投影；选中与强调用 Codex 蓝；设计系统章节标题由衬线体改为系统字体 24px 半粗 |
+| 编辑器 | 控件高 24px 改为 28px，内边距随之放宽，字号不变；菜单、Popover、Tooltip 用不透明浮层与下拉投影；选中与强调用 Codex 蓝；设计系统章节标题由衬线体改为系统字体 24px 半粗；图标见下节 |
 
-图标使用 Lucide 官方路径（ISC），弹窗关闭使用 Codex 原生路径；编辑器内部保留上游图标。
+## 图标
+
+外壳与两个编辑器统一使用 Lucide（ISC，构建依赖 `lucide`，版本固定）。Codex 自身界面使用 OpenAI 私有的 SVG 图标，不能复制分发；Lucide 线条风格接近，Codex 也随包携带。例外：弹窗关闭沿用 Codex 原生路径（与 MineCodex 相同）；BaoCut 自绘的少量 SVG（对齐、边框样式等）没有 Lucide 对应，保持原样；带分层动画的字形保留 Anthropicons 字体以维持动画。
+
+| Token | 值 | 说明 |
+| --- | --- | --- |
+| `--mdn-icon-size` | 16px | 外壳图标尺寸；编辑器沿用 CDS 的尺寸档 |
+| `--mdn-icon-stroke` | 1.5 | 线宽，24 网格单位，随尺寸等比缩放。依据：Codex 26.1021 原生图标放大 16 倍实测，20px 图标约 1.33px、16px 约 1.0px，约为尺寸的 1/15，折合 24 网格 1.5；Lucide 默认 2 偏粗 |
+| `--mdn-icon-stroke-strong` | 2 | 编辑器 bold 图标 |
+
+编辑器的 Anthropicons 字形名到 Lucide 的对照表在 `vendor/baocut/packages/design-runtime/src/cds/components/lucide-icons.ts`；新增或调整对照只改这一处，两个编辑器共用。
 
 ## 主题与隔离
 

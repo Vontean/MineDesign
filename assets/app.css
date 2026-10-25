@@ -11,7 +11,7 @@ button, select, textarea { font: inherit; color: inherit; }
 h2, p, ol { margin: 0; }
 [hidden] { display: none !important; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
-.icon { width: 16px; height: 16px; flex-shrink: 0; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.icon { width: var(--mdn-icon-size); height: var(--mdn-icon-size); flex-shrink: 0; fill: none; stroke: currentColor; stroke-width: var(--mdn-icon-stroke); stroke-linecap: round; stroke-linejoin: round; }
 
 /* 按钮：ghost 取消与工具、outline 次级、solid 主操作；胶囊用于弹窗操作区 */
 .btn {

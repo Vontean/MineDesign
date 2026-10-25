@@ -103,5 +103,9 @@
 }
 :root[data-theme="dark"] { color-scheme: dark; }
 
+/* Lucide 图标（替换 Anthropicons 字体，见 cds/components/lucide-icons.ts）：线宽取统一 token */
+[data-mdn-icon] { stroke-width: var(--mdn-icon-stroke); }
+[data-mdn-icon][data-mdn-bold] { stroke-width: var(--mdn-icon-stroke-strong); }
+
 /* 设计系统章节标题：Codex 页面标题为系统字体 24px 半粗 */
 .cds-root .ds-page-title { font-size: 24px; font-weight: var(--mdn-weight-strong); font-variation-settings: normal; letter-spacing: normal; line-height: 1.25; }

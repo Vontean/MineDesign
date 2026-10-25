@@ -14,6 +14,10 @@ import type {
 } from "../contracts/dom";
 /** Restored application module; prepare first, initialize in original order. */
 import { bindRuntimeValue, type RuntimeBindings } from "../runtime-types";
+import {
+  lucideIcons,
+  lucideRotations,
+} from "../../../design-runtime/src/cds/components/lucide-icons";
 export function installUiInteractions(runtime: RuntimeBindings): () => void {
   var classMergeThemeKeys: D.ThemeTokenManifest["themeKeys"];
   var classMergeTypographyScale: string[];
@@ -1916,6 +1920,41 @@ export function installUiInteractions(runtime: RuntimeBindings): () => void {
             }),
           }
         : value21;
+    // MineDesign：有 Lucide 对照的字形改画 SVG；动画图标保留字体的分层动画
+    let lucideNode = value22 ? undefined : lucideIcons[value13];
+    if (lucideNode) {
+      let rotation = lucideRotations[value13];
+      return (
+        <svg
+          data-cds={"Icon"}
+          data-mdn-icon={""}
+          data-mdn-bold={value11 ? "" : undefined}
+          width={"1em"}
+          height={"1em"}
+          viewBox={"0 0 24 24"}
+          fill={"none"}
+          stroke={"currentColor"}
+          strokeLinecap={"round"}
+          strokeLinejoin={"round"}
+          xmlns={"http://www.w3.org/2000/svg"}
+          style={{
+            ...customIconBaseStyle,
+            fontSize: value21.fontSize,
+            ...(rotation ? { transform: `rotate(${rotation}deg)` } : null),
+            ...value4,
+          }}
+          className={value3}
+          {...value10}
+          role={value10.role ?? (value2 ? "img" : undefined)}
+          aria-hidden={value10["aria-hidden"] ?? (value2 ? undefined : true)}
+          aria-label={value10["aria-label"] ?? (value2 || undefined)}
+        >
+          {lucideNode.map(([Tag, attrs], index) => (
+            <Tag key={index} {...attrs} />
+          ))}
+        </svg>
+      );
+    }
     return (
       <span
         data-cds={"Icon"}

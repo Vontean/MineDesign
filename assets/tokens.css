@@ -84,6 +84,12 @@
   --mdn-radius-2xl: calc(var(--border-radius-xl) * 4 / 3);
   --mdn-radius-3xl: calc(var(--border-radius-xl) * 5 / 3);
 
+  /* 图标：Lucide，线宽为 24 网格单位，随图标尺寸等比缩放。
+     Codex 原生图标实测约为尺寸的 1/15（16px 约 1px、20px 约 1.33px），折合 24 网格 1.5；Lucide 默认 2 偏粗 */
+  --mdn-icon-size: 16px;
+  --mdn-icon-stroke: 1.5;
+  --mdn-icon-stroke-strong: 2;
+
   --mdn-shadow-overlay: 0 0 0 .5px var(--mdn-border), 0 8px 16px -4px #0000001f;
   --mdn-shadow-dialog: 0 0 0 .5px var(--mdn-border), var(--shadow-lg);
   --mdn-duration: .15s;
