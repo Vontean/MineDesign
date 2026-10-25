@@ -11,22 +11,23 @@ import { startService, ROOT } from '../src/backend/service.mjs';
 const bundled=await build({entryPoints:[path.join(ROOT,'src/frontend/app.mjs')],bundle:true,write:false,format:'iife',platform:'browser',define:{__MDN_VERSION__:'"test"'},plugins:[{name:'test-host',setup(b){
   b.onResolve({filter:/^@modelcontextprotocol\/ext-apps$/},()=>({path:'host',namespace:'test'}));
   b.onResolve({filter:/^\.\/virtual\.mjs$/},()=>({path:'bridge',namespace:'test'}));
-  b.onLoad({filter:/.*/,namespace:'test'},({path})=>({contents:path==='host'?`export class App { async connect(){} addEventListener(){} getHostContext(){return {}} async callServerTool(input){return window.testTransport(input)} }`:`export function createBridge(){return window.testBridge}`,loader:'js'}));
+  b.onLoad({filter:/.*/,namespace:'test'},({path})=>({contents:path==='host'?`export class App { async connect(){} async close(){window.testClosed=true} addEventListener(){} getHostContext(){return {}} async callServerTool(input){return window.testTransport(input)} }`:`export function createBridge(){return window.testBridge}`,loader:'js'}));
 }}]});
 const html=(await fs.readFile(path.join(ROOT,'src/frontend/app.html'),'utf8')).replace(/<script[\s\S]*?<\/script>/g,'');
 async function until(check){const deadline=Date.now()+3000;while(!check()){if(Date.now()>deadline)assert.fail('App did not reach expected state');await new Promise(r=>setTimeout(r,10));}}
-async function harness(record,service){
+async function harness(record,service,{build,shell}={}){
   const win=new Window({url:'https://minedesign.test/'});
   const calls=[];
   win.document.write(html);
   // 嵌入宿主，测试公开的工具响应与用户可见的加载结果。
   Object.defineProperty(win,'parent',{value:{},configurable:true});
-  win.MINEDESIGN_CONFIG={documents:[record]};
+  win.MINEDESIGN_CONFIG={documents:[record],...(build?{build}:{})};
   let broken=false;
   win.testTransport=async({name,arguments:args})=>{
     calls.push({name,args});
     if(name==='minedesign_open_document')return {structuredContent:{document:await service.open(args.path,args.kind)}};
     if(name==='minedesign_annotations')return {structuredContent:{annotations:await service.annotations(args.id)}};
+    if(name==='minedesign_shell')return {structuredContent:shell(args.build)};
     throw new Error('Unexpected tool '+name);
   };
   win.testBridge={async html(editorPath){
@@ -103,4 +104,27 @@ test('load failure stays in the viewport; retry reopens the document and preserv
     assert.equal(ui.calls.filter(c=>c.name==='minedesign_open_document').length,3);
     assert.match(d.getElementById('annotation-list').textContent,/保留这条意见/);
   }finally{if(ui)await ui.close();await service.close();await fs.rm(noteFile,{force:true});await fs.rm(tmp,{recursive:true,force:true});}
+});
+
+test('open shell swaps in a new build in place and keeps the view state',async()=>{
+  const tmp=await fs.mkdtemp(path.join(os.tmpdir(),'mdn-shell-'));
+  await fs.cp(path.join(ROOT,'tests/fixtures/studio'),path.join(tmp,'studio'),{recursive:true});
+  const service=await startService({workspace:tmp});
+  const doc=await service.open('studio');
+  let latest='old',ui;
+  try{
+    ui=await harness(doc,service,{build:'old',shell:build=>build===latest?{build}:{build:latest,html:'<!doctype html><p id="new-shell">新外壳</p>'}});
+    const d=ui.win.document;
+    await ui.ready();
+    await until(()=>d.getElementById('viewport-state').hidden);
+    d.getElementById('panel').click();
+    d.getElementById('message').value='整体更紧凑';
+    // 相同构建只轮询，不替换
+    await until(()=>ui.calls.some(c=>c.name==='minedesign_shell'));
+    assert.equal(d.getElementById('new-shell'),null);
+    latest='new';
+    await until(()=>d.getElementById('new-shell'));
+    assert.equal(ui.win.testClosed,true);
+    assert.deepEqual(JSON.parse(ui.win.sessionStorage.getItem('minedesign:shell-carry')),{id:doc.id,panel:'closed',message:'整体更紧凑'});
+  }finally{if(ui)await ui.close();await service.close();await fs.rm(tmp,{recursive:true,force:true});}
 });

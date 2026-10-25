@@ -5,4 +5,5 @@ export const OPERATIONS = Object.freeze({
   prepareFeedback: {http:'prepare-feedback',tool:'minedesign_prepare_feedback'},
   http: {http:'http',tool:'minedesign_http'},
   events: {http:'events',tool:'minedesign_events'},
+  shell: {http:'shell',tool:'minedesign_shell'},
 });

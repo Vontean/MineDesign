@@ -3,6 +3,16 @@
 本文保留本地实验各阶段的验证证据。当前能力解释见 [CONTEXT.md](../CONTEXT.md)，安装与恢复操作见 [开发与运行](development.md)。源码、构建、浏览器、Codex 宿主和用户确认分别记录；局部通过不能推导完整闭环完成。
 
 
+## 外壳构建后原地更新（2026-10-25）
+
+已打开的外壳每 2 秒比较构建标识，发现新构建后原地换成新页面。新增 app-only 工具 `minedesign_shell`，HTTP 模式使用同名 action。
+
+| 层级 | 结果 |
+| --- | --- |
+| 自动化 | `npm test` 12/12；新增 stdio MCP 构建标识比较与 App 原地替换、视图状态携带回归 |
+| 浏览器模式 | 本地服务中切到 Mine Studio、收起侧栏、填写说明后两次重建：每次约 2 秒内自动替换，页面未导航，作品、侧栏与说明保留，控制台无错误。截图在 `output/shell-swap-before.jpg`、`output/shell-swap-after.jpg` |
+| Codex 宿主 | 未验收。新工具需要宿主刷新一次 MineDesign 连接；参考 AppBridge 对同一页面的第二次 `ui/initialize` 正常响应，Codex 的实现是否一致需实测 |
+
 ## 当前宿主断连与后端热更新（2026-10-25）
 
 用户截图的 “Couldn't display MineDesign” 已在桌面日志复现：入口 minedesign_open 返回 Transport closed，宿主尚未进入插件外壳。退出旧 stdio 进程后，CLI 重装不会替当前聊天重建连接；继续点 Try again 只会重试已关闭的通道。此问题与作品 grant 404 分开判断。

@@ -56,6 +56,7 @@ flowchart TB
 | `src/backend/documents.mjs` | 打开/识别作品、检查、素材导入、批注持久化、反馈版本检查；不决定 HTTP 或 MCP 响应封装 |
 | `src/backend/workspace.mjs` | 真实路径授权；工作区和符号链接边界 |
 | `src/backend/editor-relay.mjs` | 已授权编辑器请求代理、分块、SSE 到长轮询的适配和订阅生命周期 |
+| `src/interfaces/shell.mjs` | 读取构建后的外壳、注入配置并计算构建标识；HTTP 与 MCP 共用 |
 | `src/interfaces/http.mjs` | HTTP 方法、路径、Host/Origin、请求大小与错误状态；提供外壳 HTML，适配后端操作与编辑器文件路由 |
 | `src/interfaces/mcp.mjs` | MCP 工具 schema、可见性、UI resource、工具结果封装与品牌元数据 |
 | `src/cli.mjs` | 启动工作区和端口、选择 MCP 模式、默认示例和信号退出 |
@@ -132,6 +133,8 @@ flowchart TB
 
 作品的目录与类型是稳定身份。App 每次初始化、切换和重试都调用 open 取得当前进程 grant，再恢复批注并加载编辑器；异步结果只应用到当前选择。global/thread 共用稳定 `ui://minedesign/editor.html`，与插件安装版本分离。旧外壳缓存和 MCP 连接是两种缓存，恢复步骤见开发文档。
 
+外壳配置带构建标识。已打开的外壳在可见且空闲时每 2 秒经 `shell` 操作比较标识；标识不同才返回整页，外壳关闭旧 App 连接后原地写入新文档，并经 sessionStorage 携带当前作品、侧栏开合和未发送说明。新文档重新完成 App 握手；批注本身已持久化，不随页面携带。
+
 ### 接口层
 
 `packages/contracts/src/service.mjs` 集中定义作品操作的 HTTP action、MCP tool 和结果字段。`service-client` 将 MCP 的 structuredContent 包装还原为领域结果，浏览器使用同样的结果。MCP schema 保留工具参数与 app-only 可见性，HTTP 保留原有状态、大小限制与认证规则。文件发布由 file-protocol 与 document-routes 管理；批注、保存、上传和事件没有新增第二套实现。
@@ -152,4 +155,4 @@ Codex 中通过接口工具把编辑器装为 srcdoc，图片、字体、脚本�
 
 CLI 和 MCP 注册保持运行；后端单独构建到 `dist/backend.mjs`，runtime 按构建内容摘要加载。`minedesign_reload` 等待在途操作、创建新后端、重新打开原作品后再替换旧服务，失败时继续使用旧服务。返回的 documents 让外壳按稳定身份重开，批注继续来自原持久化目录。MCP 模式的 SIGHUP 走同一入口；信号更新后已打开外壳可点重新载入取得新 grant。
 
-这条路径更新后端实现，不更新已注册的 MCP schema 或当前外壳脚本。改变接口、manifest 或稳定 CLI 时，由宿主重新建立连接；禁止把结束 stdio 进程当作宿主重连。桌面当前连接已经关闭时，插件代码无法在同一条已关闭的通道内执行修复。
+这条路径更新后端实现，不更新已注册的 MCP schema；外壳脚本由上节的构建标识轮询更新。改变接口、manifest 或稳定 CLI 时，由宿主重新建立连接；禁止把结束 stdio 进程当作宿主重连。桌面当前连接已经关闭时，插件代码无法在同一条已关闭的通道内执行修复。

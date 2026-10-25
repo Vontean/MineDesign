@@ -29,7 +29,7 @@ npm start
 npm run install:local
 ```
 
-安装脚本注册独立的 `minedesign-local` marketplace，不重启日常 Codex。项目移动或 Node 路径变化后需重新安装。更新了外壳代码时，关闭 MineDesign 标签再打开；MCP 断连时在插件设置刷新连接。详细步骤见 [开发与恢复](docs/development.md)。
+安装脚本注册独立的 `minedesign-local` marketplace，不重启日常 Codex。项目移动或 Node 路径变化后需重新安装。更新外壳代码并构建后，已打开的 MineDesign 标签会自动换成新外壳；MCP 断连时在插件设置刷新连接。详细步骤见 [开发与恢复](docs/development.md)。
 
 命令入口为 `mdn`，在本地包安装后可使用：
 

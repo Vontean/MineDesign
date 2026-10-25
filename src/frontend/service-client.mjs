@@ -22,5 +22,6 @@ export function createServiceClient({app,apiBase,fetchImpl=(...args)=>fetch(...a
     prepareFeedback:id=>call('prepareFeedback',{id}),
     http:args=>call('http',args),
     events:args=>call('events',args),
+    shell:build=>call('shell',{build}),
   };
 }
