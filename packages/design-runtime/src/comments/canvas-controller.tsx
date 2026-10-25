@@ -70,6 +70,10 @@ export function installCommentsCanvasController(
       },
       [value17, value18]: Dynamic = (0, runtime.react_mi.useState)(new Map()),
       [value19, value20]: Dynamic = (0, runtime.react_mi.useState)(null),
+      // MineDesign：点中元素后输入评论期间，继续框住这个元素（同 Codex），输入框关掉再放开
+      [mdnHeldRect, mdnSetHeldRect]: Dynamic = (0, runtime.react_mi.useState)(
+        null,
+      ),
       callback3: Dynamic = (input?: Dynamic): Dynamic =>
         value20(
           (input2?: Dynamic): Dynamic =>
@@ -1066,7 +1070,8 @@ export function installCommentsCanvasController(
           options.spaceHeld ||
           (0, runtime.prefersDragGesture)(event, !!current.areas)
           ? false
-          : (callback3(null),
+          : (mdnSetHeldRect(value19),
+            callback3(null),
             (value21.current += 1),
             value34.start(event.nativeEvent, current2, options2));
       },
@@ -1600,6 +1605,7 @@ export function installCommentsCanvasController(
       };
     (0, runtime.react_mi.useEffect)((): Dynamic => {
       value10 || callback30();
+      value10 || mdnSetHeldRect(null);
     }, [value10]);
     let [value48, value49]: Dynamic = (0, runtime.react_mi.useState)(false),
       [value50, value51]: Dynamic = (0, runtime.react_mi.useState)(false),
@@ -2052,6 +2058,8 @@ export function installCommentsCanvasController(
               }
             : null;
       })();
+    let mdnTargetRect: Dynamic =
+      value19 ?? (value10 && !value32 ? mdnHeldRect : null);
     return (
       <div
         ref={value33}
@@ -2136,17 +2144,19 @@ export function installCommentsCanvasController(
             />
           )
         )}
-        {value19 && !value35 && (
+        {mdnTargetRect && !value35 && (
           <div
             aria-hidden={true}
             className={
-              "pointer-events-none absolute rounded border-[1.5px] border-editor-comment-target"
+              "pointer-events-none absolute rounded border-2 border-editor-comment-target"
             }
             style={{
-              left: (value19.x - value8.x) * value8.scale,
-              top: (value19.y - value8.y) * value8.scale,
-              width: value19.w * value8.scale,
-              height: value19.h * value8.scale,
+              // MineDesign：与 Codex 原生评论一致，蓝色描边之外再盖一层浅蓝，突出正指着的对象
+              background: "var(--cds-bg-editor-comment-target, transparent)",
+              left: (mdnTargetRect.x - value8.x) * value8.scale,
+              top: (mdnTargetRect.y - value8.y) * value8.scale,
+              width: mdnTargetRect.w * value8.scale,
+              height: mdnTargetRect.h * value8.scale,
             }}
           />
         )}
@@ -2236,6 +2246,7 @@ export function installCommentsCanvasController(
                       height: value62.h,
                     }),
                 boxShadow: `0 0 0 ${commentPointerStrokeInset}px #fff`,
+                background: "var(--cds-bg-editor-comment-target, transparent)",
               }}
             />
             {value50 && (

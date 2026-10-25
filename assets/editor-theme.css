@@ -87,6 +87,8 @@
   --cds-fill-danger: var(--mdn-danger);
   --cds-bg-danger: var(--mdn-danger-soft);
   --cds-focus-shadow: 0 0 0 2px var(--mdn-ring);
+  --cds-border-editor-comment-target: var(--mdn-comment);
+  --cds-bg-editor-comment-target: var(--mdn-comment-fill);
   --cds-segmented-control-thumb: var(--mdn-elevated);
 
   /* 浮层材质：Codex 下拉的半像素描边 + 投影；遮罩与 Tooltip */

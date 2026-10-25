@@ -49,6 +49,10 @@
   --mdn-border-strong: var(--color-border-primary);
   --mdn-ring: var(--color-ring-primary);
   --mdn-accent: var(--color-ring-primary);
+  /* 评论目标：取自 Codex 原生评论模式截图（描边 #0069fb、内部 4% 蓝色覆盖、光标 #339cff）；宿主未推送这些角色 */
+  --mdn-comment: #0069fb;
+  --mdn-comment-fill: color-mix(in srgb, #0069fb 4%, transparent);
+  --mdn-comment-pointer: #339cff;
   --mdn-ghost-hover: light-dark(color-mix(in srgb, var(--color-text-primary) 5%, transparent), color-mix(in srgb, var(--color-text-primary) 8%, transparent));
   --mdn-ghost-active: light-dark(color-mix(in srgb, var(--color-text-primary) 8%, transparent), color-mix(in srgb, var(--color-text-primary) 12%, transparent));
   --mdn-outline-hover: light-dark(color-mix(in srgb, var(--color-text-primary) 2%, transparent), color-mix(in srgb, var(--color-text-primary) 4%, transparent));

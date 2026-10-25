@@ -127,12 +127,13 @@ export function installCommentsPointer(runtime: RuntimeBindings): () => void {
   );
   bindRuntimeValue(runtime, "CommentPointer", () => CommentPointer);
   return () => {
+    // MineDesign：形状不变，尖角按 Codex 原生评论光标翻到左下（热点就是尖角），填充改用 Codex 的蓝
     commentPointerTip = {
       x: 2,
-      y: 2,
+      y: 26,
     };
-    commentPointerPath = "M 2 2 L 2 14 A 12 12 0 1 0 14 2 Z";
-    commentPointerFill = "#000";
+    commentPointerPath = "M 2 26 L 2 14 A 12 12 0 1 1 14 26 Z";
+    commentPointerFill = "#339cff";
     commentPointerStroke = "#fff";
     commentPointerStrokeWidth = 2;
     commentPointerSvg = `<svg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28'><path d='${commentPointerPath}' fill='${commentPointerFill}' stroke='${commentPointerStroke}' stroke-width='${commentPointerStrokeWidth}'/></svg>`;

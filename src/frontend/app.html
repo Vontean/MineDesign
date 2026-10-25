@@ -38,15 +38,14 @@
     <p id="delivery" class="note" role="status"></p>
   </aside>
 </main>
-<dialog id="compose" aria-labelledby="compose-title">
-  <form method="dialog">
-    <h2 id="compose-title" data-i18n="composeTitle"></h2>
-    <p id="target-label" class="target"></p>
-    <button class="close" value="cancel" formnovalidate data-i18n-aria="close"><!--__CLOSE__--></button>
-    <textarea id="comment" data-i18n-aria="commentField" data-i18n-placeholder="commentPlaceholder" required maxlength="4000" rows="4"></textarea>
-    <footer><button class="btn btn-pill btn-ghost" value="cancel" formnovalidate data-i18n="cancel"></button><button class="btn btn-pill btn-solid" value="add" data-i18n="add"></button></footer>
+<!-- 评论输入：仿 Codex，在点中的位置旁浮出一行输入框，不遮挡目标；Enter 提交，Esc 取消 -->
+<div id="compose" class="comment-composer" role="dialog" hidden>
+  <svg class="comment-pin" viewBox="0 0 28 28" aria-hidden="true"><path d="M2 26 2 14A12 12 0 1 1 14 26Z"/></svg>
+  <form id="compose-form" class="comment-bar">
+    <textarea id="comment" rows="1" maxlength="4000" data-i18n-aria="commentField" data-i18n-placeholder="commentPlaceholder"></textarea>
+    <button id="compose-add" class="comment-submit" type="submit" data-i18n-label="add" disabled><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></button>
   </form>
-</dialog>
+</div>
 <dialog id="about" class="about" aria-labelledby="about-name">
   <form method="dialog"><button class="close" value="close" data-i18n-aria="close"><!--__CLOSE__--></button></form>
   <header class="about-head">
