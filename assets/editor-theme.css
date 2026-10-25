@@ -1,2 +1,107 @@
-/* Map editor chrome only. Artboard documents keep their authored theme. */
-:root.cds-root { --cds-font-sans:var(--md-font); --cds-font-sans-display:var(--md-font); --cds-font-system:var(--md-font); --cds-page-bg:var(--md-canvas); --cds-surface-0:var(--md-muted); --cds-surface-1:var(--md-surface); --cds-surface-2:var(--md-elevated); --cds-surface-3:var(--md-elevated); --cds-text-primary:var(--md-text); --cds-text-secondary:var(--md-secondary); --cds-text-tertiary:var(--md-tertiary); --cds-border:var(--md-border); --cds-border-strong:var(--md-outline); --om-bg-canvas:var(--md-muted); --om-bg-hover-opaque:var(--md-hover); }
+/* 编辑器适配：只作用于 BaoCut 编辑器 chrome（CDS 组件），画板文档保持作者自己的主题。
+   选择器重复 .cds-root 是为了高于 CDS 深色规则 `[data-mode=dark] .cds-root:not(…):not(…)` 的优先级；
+   取值引用 tokens.css 的 --mdn-*，明暗由 light-dark() 与宿主变量决定，不再分模式维护两份。 */
+.cds-root.cds-root.cds-root.cds-root.cds-root {
+  /* CDS 灰阶带暖色相，按相对亮度换成中性灰，与 Codex 一致 */
+  --cds-gray-0: #ffffff; --cds-gray-10: #fcfcfc; --cds-gray-20: #f9f9f9; --cds-gray-30: #f6f6f6; --cds-gray-40: #f3f3f3;
+  --cds-gray-50: #efefef; --cds-gray-60: #ececec; --cds-gray-70: #e9e9e9; --cds-gray-80: #e6e6e6; --cds-gray-90: #e3e3e3;
+  --cds-gray-100: #e0e0e0; --cds-gray-150: #d1d1d1; --cds-gray-200: #c1c1c1; --cds-gray-250: #b2b2b2; --cds-gray-300: #a4a4a4;
+  --cds-gray-350: #959595; --cds-gray-400: #878787; --cds-gray-450: #797979; --cds-gray-500: #6b6b6b; --cds-gray-550: #5e5e5e;
+  --cds-gray-600: #515151; --cds-gray-650: #444444; --cds-gray-700: #383838; --cds-gray-750: #2c2c2c; --cds-gray-800: #202020;
+  --cds-gray-810: #1e1e1e; --cds-gray-820: #1c1c1c; --cds-gray-830: #1a1a1a; --cds-gray-840: #181818; --cds-gray-850: #151515;
+  --cds-gray-860: #131313; --cds-gray-870: #111111; --cds-gray-880: #0f0f0f; --cds-gray-890: #0d0d0d; --cds-gray-900: #0b0b0b;
+
+  /* 字体与字重：Codex 系统字体，UI 常规字重 430 */
+  --cds-font-system: var(--mdn-font);
+  --cds-font-sans: var(--mdn-font);
+  --cds-font-sans-display: var(--mdn-font);
+  --cds-font-mono-ui: var(--mdn-font-mono);
+  /* CDS 的叙述衬线体（设计系统章节标题）在 Codex 中没有对应，统一为系统字体 */
+  --cds-font-voice: var(--mdn-font);
+  --cds-font-weight-regular: var(--mdn-weight);
+  --cds-font-weight-medium: var(--mdn-weight-medium);
+  --cds-font-weight-semibold: var(--mdn-weight-strong);
+  --cds-font-weight-bold: var(--mdn-weight-strong);
+  --cds-font-wght-regular: "wght" 430;
+  --cds-font-wght-medium: "wght" 500;
+  --cds-font-wght-semibold: "wght" 600;
+  --cds-font-wght-bold: "wght" 600;
+
+  /* 密度与几何：控件 24px → Codex 28px，内边距随之放宽；字号保持不变；圆角取宿主圆角 */
+  --cds-h-control: var(--mdn-control-sm);
+  --cds-h-control-nested: 20px;
+  --cds-pad-xs: 4px;
+  --cds-pad-sm: 6px;
+  --cds-pad-md: 10px;
+  --cds-pad-lg: 12px;
+  --cds-gap-xs: 6px;
+  --cds-gap-sm: 8px;
+  --cds-radius: var(--mdn-radius-md);
+  --cds-radius-composer: var(--mdn-radius-2xl);
+
+  /* 表面：画布为下沉层，面板为主表面，菜单与弹层为不透明浮层 */
+  --cds-surface-0: var(--mdn-surface-sunken);
+  --cds-surface-1: var(--mdn-surface);
+  --cds-surface-2: var(--mdn-elevated);
+  --cds-surface-3: var(--mdn-elevated);
+  --cds-surface-popover: var(--mdn-elevated);
+  --cds-surface-panel: var(--mdn-surface);
+  --cds-page-bg: var(--mdn-surface);
+  --om-bg-canvas: var(--mdn-surface-sunken);
+  --om-bg-hover-opaque: color-mix(in srgb, var(--mdn-text) 5%, var(--mdn-elevated));
+
+  /* 文字与边缘 */
+  --cds-text-primary: var(--mdn-text);
+  --cds-text-secondary: var(--mdn-text-secondary);
+  --cds-text-tertiary: var(--mdn-text-tertiary);
+  --cds-text-muted: var(--mdn-text-tertiary);
+  --cds-undimmed-text-primary: var(--mdn-text);
+  --cds-undimmed-text-secondary: var(--mdn-text-secondary);
+  --cds-undimmed-text-muted: var(--mdn-text-tertiary);
+  --cds-text-danger: var(--mdn-danger);
+  --cds-text-accent: var(--mdn-accent);
+  --cds-border: var(--mdn-border);
+  --cds-border-strong: var(--mdn-border-strong);
+  --cds-ring-color: var(--mdn-border);
+
+  /* 交互：ghost 悬停与选中、实心主按钮、Codex 蓝色强调与焦点环 */
+  --cds-fill-ghost-hover: var(--mdn-ghost-hover);
+  --cds-fill-ghost-selected: var(--mdn-ghost-active);
+  --cds-fill-secondary: transparent;
+  --cds-fill-secondary-hover: var(--mdn-outline-hover);
+  --cds-fill-secondary-ring: var(--mdn-border-strong);
+  --cds-fill-field: transparent;
+  --cds-fill-field-ring: var(--mdn-border-strong);
+  --cds-fill-control: var(--mdn-ghost-hover);
+  --cds-fill-control-hover: var(--mdn-ghost-active);
+  --cds-fill-primary: var(--mdn-solid);
+  --cds-fill-primary-hover: var(--mdn-solid-hover);
+  --cds-on-primary: var(--mdn-on-solid);
+  --cds-role-accent-fill: var(--mdn-accent);
+  --cds-role-accent-fill-hover: color-mix(in srgb, var(--mdn-accent) 88%, var(--mdn-text));
+  --cds-fill-accent: var(--mdn-accent);
+  --cds-fill-accent-hover: color-mix(in srgb, var(--mdn-accent) 88%, var(--mdn-text));
+  --cds-on-accent: #ffffff;
+  --cds-bg-accent: color-mix(in srgb, var(--mdn-accent) 16%, transparent);
+  --cds-border-accent: color-mix(in srgb, var(--mdn-accent) 50%, transparent);
+  --cds-fill-danger: var(--mdn-danger);
+  --cds-bg-danger: var(--mdn-danger-soft);
+  --cds-focus-shadow: 0 0 0 2px var(--mdn-ring);
+  --cds-segmented-control-thumb: var(--mdn-elevated);
+
+  /* 浮层材质：Codex 下拉的半像素描边 + 投影；遮罩与 Tooltip */
+  --cds-shadow-popover: var(--mdn-shadow-overlay);
+  --cds-shadow-md: var(--mdn-shadow-overlay);
+  --cds-shadow-lg: var(--mdn-shadow-dialog);
+  --cds-backdrop: var(--mdn-overlay);
+  --cds-tooltip-bg: var(--mdn-elevated);
+  --cds-tooltip-fg: var(--mdn-text);
+
+  /* 动效：Codex 基础过渡 */
+  --cds-dur-base: var(--mdn-duration);
+  --cds-ease-out: cubic-bezier(0, 0, .2, 1);
+}
+:root[data-theme="dark"] { color-scheme: dark; }
+
+/* 设计系统章节标题：Codex 页面标题为系统字体 24px 半粗 */
+.cds-root .ds-page-title { font-size: 24px; font-weight: var(--mdn-weight-strong); font-variation-settings: normal; letter-spacing: normal; line-height: 1.25; }

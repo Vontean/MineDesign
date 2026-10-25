@@ -1,3 +1,91 @@
-/* MCX Dashboard snapshot; maintained locally by MineDesign. */
-:root { color-scheme:light; --md-canvas:#fff; --md-surface:#fff; --md-muted:#f7f7f7; --md-elevated:#fff; --md-text:#0d0d0d; --md-secondary:#0d0d0da6; --md-tertiary:#0d0d0d7b; --md-border:#0d0d0d13; --md-outline:#0d0d0d1c; --md-success:#00a240; --md-danger:#e02e2a; --md-focus:#3a83f7; --md-hover:#0d0d0d0d; --md-shadow:0 4px 16px -6px #00000012; --md-font:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; --md-radius:8px; --md-panel-radius:12px; --md-control:32px; --md-space:4px; --md-duration:140ms; }
-:root[data-theme="dark"] { color-scheme:dark; --md-canvas:#181818; --md-surface:#181818; --md-muted:#141414; --md-elevated:#2d2d2d; --md-text:#fff; --md-secondary:#ffffffa6; --md-tertiary:#ffffff7f; --md-border:#ffffff15; --md-outline:#ffffff28; --md-success:#40c977; --md-danger:#ff6764; --md-hover:#ffffff13; }
+/* 基础层：MCP Apps 标准变量。Codex 通过 hostContext.styles 推送实际值（写在 html 内联样式上，优先）；
+   以下为本地快照，供浏览器模式和宿主缺值时使用。深色取自 Codex 26.1021.31345 实测，浅色取自 MCX 26.1007 快照。 */
+:root {
+  color-scheme: light;
+  --color-background-primary: light-dark(#ffffff, #181818);
+  --color-background-secondary: light-dark(#ffffff, #363636f5);
+  --color-background-tertiary: light-dark(#f7f7f7, #141414);
+  --color-text-primary: light-dark(#0d0d0d, #ffffff);
+  --color-text-secondary: light-dark(#0d0d0d7b, #ffffff7f);
+  --color-text-tertiary: light-dark(#0d0d0d7b, #ffffff7f);
+  --color-text-danger: light-dark(#e02e2a, #ff6764);
+  --color-text-success: light-dark(#00a240, #40c977);
+  --color-border-primary: light-dark(#0d0d0d1c, #ffffff28);
+  --color-border-secondary: light-dark(#0d0d0d13, #ffffff15);
+  --color-ring-primary: #3a83f7;
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: ui-monospace, "SFMono-Regular", "SF Mono", menlo, consolas, monospace;
+  --font-weight-normal: 430;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-text-xs-size: 12px;
+  --font-text-sm-size: 13px;
+  --font-text-md-size: 14px;
+  --font-text-lg-size: 16px;
+  --font-heading-sm-size: 20px;
+  --border-radius-xs: 5px;
+  --border-radius-sm: 7.5px;
+  --border-radius-md: 10px;
+  --border-radius-lg: 12.5px;
+  --border-radius-xl: 15px;
+  --border-radius-full: 9999px;
+  --shadow-lg: 0 4px 8px -2px #0000001a;
+}
+:root[data-theme="dark"] { color-scheme: dark; }
+
+/* 语义层：MineDesign 组件只消费 --mdn-*。宿主未提供的 Codex 角色（悬停、实心、遮罩、浮层）由基础层推导。 */
+:root {
+  --mdn-surface: var(--color-background-primary);
+  --mdn-surface-sunken: var(--color-background-tertiary);
+  /* Codex 菜单、弹窗、提示使用不透明的 elevated-secondary；宿主未推送该角色，取快照 */
+  --mdn-elevated: light-dark(#ffffff, #2d2d2d);
+  --mdn-text: var(--color-text-primary);
+  /* 宿主把 secondary 映射为 description（与 tertiary 同值）；原生次级文字为主文字 65% */
+  --mdn-text-secondary: color-mix(in srgb, var(--color-text-primary) 65%, transparent);
+  --mdn-text-tertiary: var(--color-text-tertiary);
+  --mdn-danger: var(--color-text-danger);
+  --mdn-success: var(--color-text-success);
+  --mdn-border: var(--color-border-secondary);
+  --mdn-border-strong: var(--color-border-primary);
+  --mdn-ring: var(--color-ring-primary);
+  --mdn-accent: var(--color-ring-primary);
+  --mdn-ghost-hover: light-dark(color-mix(in srgb, var(--color-text-primary) 5%, transparent), color-mix(in srgb, var(--color-text-primary) 8%, transparent));
+  --mdn-ghost-active: light-dark(color-mix(in srgb, var(--color-text-primary) 8%, transparent), color-mix(in srgb, var(--color-text-primary) 12%, transparent));
+  --mdn-outline-hover: light-dark(color-mix(in srgb, var(--color-text-primary) 2%, transparent), color-mix(in srgb, var(--color-text-primary) 4%, transparent));
+  --mdn-solid: var(--color-text-primary);
+  --mdn-solid-hover: color-mix(in srgb, var(--color-text-primary) 88%, var(--color-background-primary));
+  --mdn-on-solid: var(--color-background-primary);
+  --mdn-danger-soft: color-mix(in oklab, var(--color-text-danger) 12%, transparent);
+  --mdn-danger-soft-hover: color-mix(in oklab, var(--color-text-danger) 20%, transparent);
+  --mdn-overlay: light-dark(#e3e3e380, #00000080);
+  --mdn-overlay-filter: blur(1px);
+
+  --mdn-font: var(--font-sans);
+  --mdn-font-mono: var(--font-mono);
+  --mdn-weight: var(--font-weight-normal);
+  --mdn-weight-medium: var(--font-weight-medium);
+  --mdn-weight-strong: var(--font-weight-semibold);
+  --mdn-text-xs: var(--font-text-xs-size);
+  --mdn-text-sm: var(--font-text-sm-size);
+  --mdn-text-md: var(--font-text-md-size);
+  --mdn-text-lg: var(--font-text-lg-size);
+  --mdn-heading: var(--font-heading-sm-size);
+
+  --mdn-space: 4px;
+  --mdn-control-sm: 28px;
+  --mdn-control-md: 32px;
+  --mdn-control-lg: 36px;
+  --mdn-radius-sm: var(--border-radius-sm);
+  --mdn-radius-md: var(--border-radius-md);
+  --mdn-radius-lg: var(--border-radius-lg);
+  --mdn-radius-xl: var(--border-radius-xl);
+  --mdn-radius-full: var(--border-radius-full);
+  /* 原生 2xl / 3xl 基数为 xl 的 4/3 与 5/3，随 Codex 圆角缩放 */
+  --mdn-radius-2xl: calc(var(--border-radius-xl) * 4 / 3);
+  --mdn-radius-3xl: calc(var(--border-radius-xl) * 5 / 3);
+
+  --mdn-shadow-overlay: 0 0 0 .5px var(--mdn-border), 0 8px 16px -4px #0000001f;
+  --mdn-shadow-dialog: 0 0 0 .5px var(--mdn-border), var(--shadow-lg);
+  --mdn-duration: .15s;
+  --mdn-ease: ease;
+}

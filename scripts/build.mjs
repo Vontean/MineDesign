@@ -5,10 +5,13 @@ const root=path.resolve(import.meta.dirname,'..');
 const version=JSON.parse(await fs.readFile(path.join(root,'package.json'),'utf8')).version;
 const tokens=await fs.readFile(path.join(root,'assets/tokens.css'),'utf8');
 const editorTheme=await fs.readFile(path.join(root,'assets/editor-theme.css'),'utf8');
+const themeBridge="(()=>{let applied=[];addEventListener('message',e=>{const d=e.data;if(e.source!==parent||d?.type!=='minedesign:theme'||!['light','dark'].includes(d.theme))return;const r=document.documentElement;r.dataset.theme=d.theme;r.dataset.mode=d.theme;for(const n of applied)r.style.removeProperty(n);applied=Object.entries(d.variables||{}).filter(([n,v])=>n.startsWith('--')&&typeof v==='string').map(([n,v])=>(r.style.setProperty(n,v),n));})})()";
 for(const editor of ['design-editor','design-system-editor']){
   const file=path.join(root,'vendor/baocut/apps',editor,'dist/index.html');
   let html=await fs.readFile(file,'utf8');
-  if(!html.includes('data-minedesign-theme'))html=html.replace('</head>',`<style data-minedesign-theme>${tokens}\n${editorTheme}</style><script>addEventListener('message',e=>{if(e.source===parent&&e.data?.type==='minedesign:theme'&&['light','dark'].includes(e.data.theme)){document.documentElement.dataset.theme=e.data.theme;document.documentElement.dataset.mode=e.data.theme}})</script></head>`);
+  // 外壳把主题与宿主样式变量转发给编辑器；每次构建替换旧的注入块
+  html=html.replace(/<style data-minedesign-theme>[\s\S]*?<\/style><script(?: data-minedesign-theme)?>[\s\S]*?<\/script>/g,'');
+  html=html.replace('</head>',()=>`<style data-minedesign-theme>${tokens}\n${editorTheme}</style><script data-minedesign-theme>${themeBridge}</script></head>`);
   await fs.writeFile(file,html);
 }
 await fs.mkdir(path.join(root,'dist'),{recursive:true});

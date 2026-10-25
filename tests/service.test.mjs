@@ -43,6 +43,6 @@ test('design system uses the same persisted token source and structural checker'
     const tokens=await response.json();assert.equal(tokens.name,'Mine Studio');
     const result=await service.check('examples/design-system','design-system');assert.equal(result.issues.length,0,JSON.stringify(result.issues));
     const html=await fetch(doc.editorUrl).then(r=>r.text());assert.match(html,/data-minedesign-theme/);
-    assert.match(html,/--md-canvas/);assert.doesNotMatch(html,/getComputedStyle\(parent/);
+    assert.match(html,/--mdn-surface/);assert.doesNotMatch(html,/getComputedStyle\(parent/);
   }finally{await service.close();}
 });

@@ -1,2 +1,128 @@
-*{box-sizing:border-box}html,body{margin:0;height:100%;font:14px var(--md-font);color:var(--md-text);background:var(--md-canvas)}body{display:flex;flex-direction:column}header{height:52px;display:flex;align-items:center;gap:12px;padding:0 16px;border-bottom:1px solid var(--md-border);flex-shrink:0}header strong{font-size:14px;font-weight:600}button,select,textarea{font:inherit;color:var(--md-text);background:var(--md-surface);border:1px solid var(--md-outline);border-radius:var(--md-radius)}button,select{min-height:var(--md-control);padding:4px 12px}button{cursor:pointer}button:hover{background:var(--md-hover)}button:disabled{opacity:.45;cursor:default}button[aria-pressed=true],#send{background:var(--md-text);color:var(--md-canvas)}:focus-visible{outline:2px solid var(--md-focus);outline-offset:2px}select{min-width:160px;max-width:30vw}#status{font-size:12px;color:var(--md-secondary);margin-left:auto}main{display:flex;flex:1;min-height:0}iframe{border:0;flex:1;min-width:0;width:100%;background:var(--md-muted)}aside{width:280px;flex-shrink:0;padding:16px;border-left:1px solid var(--md-border);overflow:auto;display:flex;flex-direction:column;gap:12px}h2{font-size:14px;font-weight:600;margin:0}.hint,small,#delivery{color:var(--md-secondary);font-size:12px;line-height:1.6;margin:0}textarea{padding:10px;min-height:88px;width:100%;resize:vertical}ol{padding-left:20px;margin:0}li{padding:10px 0;border-bottom:1px solid var(--md-border)}li p{margin:6px 0;white-space:pre-wrap}li button{min-height:24px;padding:2px 6px;font-size:12px}small{margin-top:auto}dialog{color:var(--md-text);background:var(--md-elevated);border:1px solid var(--md-outline);border-radius:var(--md-panel-radius);padding:20px;width:min(420px,90vw);box-shadow:var(--md-shadow)}dialog::backdrop{background:#0005}dialog textarea{margin:14px 0}footer{display:flex;justify-content:flex-end;gap:8px}header button{white-space:nowrap}@media(max-width:700px){header{gap:6px;padding:0 8px}header strong{display:none}#status{display:none}aside{width:230px}select{min-width:110px;max-width:30vw}}@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
-.brand{display:inline-flex;align-items:center;gap:8px;flex-shrink:0;color:var(--md-text)}.brand-icon{width:24px;height:24px;display:block;flex-shrink:0}
+/* 组件层：外壳组件按 Codex 原生配方实现，只引用 tokens.css 的 --mdn-* 语义变量。 */
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body {
+  display: flex; flex-direction: column;
+  font-family: var(--mdn-font); font-size: var(--mdn-text-sm); font-weight: var(--mdn-weight); line-height: 1.43;
+  color: var(--mdn-text); background: var(--mdn-surface);
+  -webkit-font-smoothing: antialiased;
+}
+button, select, textarea { font: inherit; color: inherit; }
+h2, p, ol { margin: 0; }
+[hidden] { display: none !important; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.icon { width: 16px; height: 16px; flex-shrink: 0; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+/* 按钮：ghost 取消与工具、outline 次级、solid 主操作；胶囊用于弹窗操作区 */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--mdn-space);
+  height: var(--mdn-control-sm); padding: 0 calc(var(--mdn-space) * 2.5); flex-shrink: 0;
+  border: 0; border-radius: var(--mdn-radius-md); background: transparent;
+  font-size: var(--mdn-text-sm); line-height: 1; white-space: nowrap; cursor: pointer;
+  transition: background-color var(--mdn-duration) var(--mdn-ease), color var(--mdn-duration) var(--mdn-ease);
+}
+.btn:focus-visible, .picker:focus-within, .close:focus-visible, #annotation-list button:focus-visible { outline: 2px solid var(--mdn-ring); outline-offset: 0; }
+.btn:disabled { opacity: .4; cursor: default; }
+.btn-ghost { color: var(--mdn-text-secondary); }
+.btn-ghost:hover:not(:disabled) { background: var(--mdn-ghost-hover); color: var(--mdn-text); }
+.btn-ghost[aria-pressed="true"] { background: var(--mdn-ghost-active); color: var(--mdn-text); }
+.btn-icon { width: var(--mdn-control-sm); padding: 0; color: var(--mdn-text-tertiary); }
+.btn-icon:hover:not(:disabled) { background: var(--mdn-ghost-hover); color: var(--mdn-text); }
+.btn-icon[aria-pressed="true"] { color: var(--mdn-text-secondary); }
+.btn-outline { color: var(--mdn-text); box-shadow: inset 0 0 0 1px var(--mdn-border-strong); }
+.btn-outline:hover:not(:disabled) { background: var(--mdn-outline-hover); }
+.btn-solid { background: var(--mdn-solid); color: var(--mdn-on-solid); }
+.btn-solid:hover:not(:disabled) { background: var(--mdn-solid-hover); }
+.btn-pill { height: var(--mdn-control-lg); padding: 0 calc(var(--mdn-space) * 4); border-radius: var(--mdn-radius-full); }
+
+/* 顶栏 */
+.topbar {
+  display: flex; align-items: center; gap: var(--mdn-space); flex-shrink: 0;
+  height: 44px; padding: 0 calc(var(--mdn-space) * 2) 0 calc(var(--mdn-space) * 3);
+  border-bottom: 1px solid var(--mdn-border);
+}
+.brand { display: inline-flex; align-items: center; gap: calc(var(--mdn-space) * 2); margin-right: calc(var(--mdn-space) * 2); flex-shrink: 0; }
+.brand strong { font-size: var(--mdn-text-sm); font-weight: var(--mdn-weight-strong); }
+.brand-icon { width: 20px; height: 20px; display: block; }
+.spacer { flex: 1; }
+#status { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--mdn-text-tertiary); font-size: var(--mdn-text-xs); margin-right: calc(var(--mdn-space) * 2); }
+
+/* 作品切换：保留原生 select 的键盘与读屏行为，外观为 Codex 下拉触发器 */
+.picker { position: relative; display: inline-flex; align-items: center; min-width: 0; max-width: 40vw; border-radius: var(--mdn-radius-md); color: var(--mdn-text); }
+.picker:hover { background: var(--mdn-ghost-hover); }
+.picker select {
+  appearance: none; min-width: 0; width: 100%; height: var(--mdn-control-sm);
+  padding: 0 calc(var(--mdn-space) * 7) 0 calc(var(--mdn-space) * 2.5);
+  border: 0; border-radius: inherit; background: transparent; outline: none;
+  font-size: var(--mdn-text-sm); text-overflow: ellipsis; cursor: pointer;
+  field-sizing: content;
+}
+.picker select:disabled { opacity: .4; cursor: default; }
+.picker option { background: var(--mdn-elevated); color: var(--mdn-text); }
+.picker .icon { position: absolute; right: calc(var(--mdn-space) * 2); pointer-events: none; color: var(--mdn-text-tertiary); }
+
+/* 主区：编辑器 + 右侧反馈侧栏 */
+main { display: flex; flex: 1; min-height: 0; }
+iframe { flex: 1; min-width: 0; border: 0; background: var(--mdn-surface-sunken); }
+aside {
+  display: flex; flex-direction: column; gap: calc(var(--mdn-space) * 3);
+  width: 300px; flex-shrink: 0; padding: calc(var(--mdn-space) * 3);
+  border-left: 1px solid var(--mdn-border); background: var(--mdn-surface); overflow: auto;
+}
+body[data-panel="closed"] aside { display: none; }
+.notes-head { display: flex; align-items: center; gap: calc(var(--mdn-space) * 2); min-height: var(--mdn-control-sm); padding: 0 calc(var(--mdn-space) * 1); }
+.notes-head h2 { font-size: var(--mdn-text-sm); font-weight: var(--mdn-weight-strong); }
+.count { min-width: 20px; height: 20px; padding: 0 6px; border-radius: var(--mdn-radius-full); background: var(--mdn-ghost-active); color: var(--mdn-text-secondary); font-size: var(--mdn-text-xs); line-height: 20px; text-align: center; }
+
+/* 批注行：沿用 Codex 侧栏行的悬停与圆角；删除按钮在悬停或聚焦时出现 */
+#annotation-list { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+#annotation-list li { position: relative; display: grid; grid-template-columns: 20px 1fr; column-gap: calc(var(--mdn-space) * 2); padding: calc(var(--mdn-space) * 2); border-radius: var(--mdn-radius-lg); }
+#annotation-list li:hover, #annotation-list li:focus-within { background: var(--mdn-ghost-hover); }
+.index { width: 20px; height: 20px; border-radius: var(--mdn-radius-full); background: var(--mdn-accent); color: #fff; font-size: var(--mdn-text-xs); font-weight: var(--mdn-weight-medium); line-height: 20px; text-align: center; }
+.target-link { grid-column: 2; min-width: 0; padding: 0; margin: 0 28px 2px 0; border: 0; background: none; border-radius: var(--mdn-radius-sm); text-align: left; color: var(--mdn-text-tertiary); font-size: var(--mdn-text-xs); line-height: 20px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
+.target-link:hover { color: var(--mdn-text-secondary); }
+.comment { grid-column: 2; color: var(--mdn-text); white-space: pre-wrap; overflow-wrap: anywhere; }
+.remove { position: absolute; top: 4px; right: 4px; width: 24px; height: 24px; border-radius: var(--mdn-radius-sm); opacity: 0; }
+.remove .icon { width: 14px; height: 14px; }
+#annotation-list li:hover .remove, .remove:focus-visible { opacity: 1; }
+.remove:hover:not(:disabled) { color: var(--mdn-danger); background: var(--mdn-danger-soft); }
+
+.empty { display: flex; flex-direction: column; align-items: center; gap: var(--mdn-space); padding: calc(var(--mdn-space) * 8) calc(var(--mdn-space) * 4); text-align: center; color: var(--mdn-text-tertiary); }
+.empty .icon { width: 20px; height: 20px; margin-bottom: calc(var(--mdn-space) * 1); }
+.empty-title { color: var(--mdn-text-secondary); font-weight: var(--mdn-weight-medium); }
+
+/* 输入区：Codex composer 外形，补充说明 + 操作 */
+.composer { margin-top: auto; display: flex; flex-direction: column; border-radius: var(--mdn-radius-2xl); background: var(--mdn-elevated); box-shadow: 0 0 0 1px var(--mdn-border); transition: box-shadow var(--mdn-duration) var(--mdn-ease); }
+.composer:focus-within { box-shadow: 0 0 0 1px var(--mdn-border-strong); }
+.composer textarea { min-height: 64px; max-height: 240px; padding: calc(var(--mdn-space) * 3) calc(var(--mdn-space) * 3) var(--mdn-space); border: 0; background: transparent; outline: none; resize: none; line-height: 1.43; }
+.composer-actions { display: flex; align-items: center; justify-content: space-between; padding: calc(var(--mdn-space) * 2); }
+.composer .btn-solid { border-radius: var(--mdn-radius-full); padding: 0 calc(var(--mdn-space) * 3); }
+textarea::placeholder { color: var(--mdn-text-tertiary); }
+.note { color: var(--mdn-text-tertiary); font-size: var(--mdn-text-xs); line-height: 1.5; padding: 0 calc(var(--mdn-space) * 1); }
+.note:empty { display: none; }
+
+/* 弹窗：Codex opaque dialog + 遮罩 */
+dialog {
+  width: min(440px, calc(100vw - 32px)); padding: calc(var(--mdn-space) * 5);
+  border: 0; border-radius: var(--mdn-radius-3xl); color: var(--mdn-text);
+  background: var(--mdn-elevated); box-shadow: var(--mdn-shadow-dialog); outline: none;
+}
+dialog::backdrop { background: var(--mdn-overlay); backdrop-filter: var(--mdn-overlay-filter); -webkit-backdrop-filter: var(--mdn-overlay-filter); }
+dialog h2 { padding-right: 28px; font-size: var(--mdn-text-lg); font-weight: var(--mdn-weight-strong); line-height: 1.4; }
+dialog .target { margin-top: var(--mdn-space); color: var(--mdn-text-tertiary); font-size: var(--mdn-text-xs); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.close { position: absolute; top: 16px; right: 16px; display: flex; align-items: center; justify-content: center; width: 24px; height: 24px; padding: 4px; border: 0; border-radius: var(--border-radius-xs); background: transparent; color: color-mix(in srgb, var(--mdn-text) 80%, transparent); cursor: pointer; }
+.close svg { width: 16px; height: 16px; display: block; }
+.close:hover { background: var(--mdn-ghost-hover); }
+dialog textarea {
+  display: block; width: 100%; margin: calc(var(--mdn-space) * 4) 0; padding: calc(var(--mdn-space) * 2.5) calc(var(--mdn-space) * 3);
+  border: 0; border-radius: var(--mdn-radius-lg); background: transparent; box-shadow: inset 0 0 0 1px var(--mdn-border-strong);
+  resize: vertical; outline: none; line-height: 1.43;
+}
+dialog textarea:focus-visible { box-shadow: inset 0 0 0 1px var(--mdn-ring); }
+dialog footer { display: flex; justify-content: flex-end; gap: calc(var(--mdn-space) * 2); }
+
+@media (max-width: 720px) {
+  .brand strong, #status { display: none; }
+  aside { position: absolute; top: 44px; right: 0; bottom: 0; width: min(300px, 86vw); box-shadow: var(--mdn-shadow-overlay); }
+}
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; animation: none !important; } }
