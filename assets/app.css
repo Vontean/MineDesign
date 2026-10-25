@@ -21,7 +21,7 @@ h2, p, ol { margin: 0; }
   font-size: var(--mdn-text-sm); line-height: 1; white-space: nowrap; cursor: pointer;
   transition: background-color var(--mdn-duration) var(--mdn-ease), color var(--mdn-duration) var(--mdn-ease);
 }
-.btn:focus-visible, .picker:focus-within, .close:focus-visible, #annotation-list button:focus-visible { outline: 2px solid var(--mdn-ring); outline-offset: 0; }
+.btn:focus-visible, .file-tab:focus-visible, .close:focus-visible, #annotation-list button:focus-visible { outline: 2px solid var(--mdn-ring); outline-offset: 0; }
 .btn:disabled { opacity: .4; cursor: default; }
 .btn-ghost { color: var(--mdn-text-secondary); }
 .btn-ghost:hover:not(:disabled) { background: var(--mdn-ghost-hover); color: var(--mdn-text); }
@@ -58,23 +58,29 @@ h2, p, ol { margin: 0; }
 .menu-item:hover:not(:disabled), .menu-item:focus-visible { background: var(--mdn-ghost-hover); outline: none; }
 .menu-item:disabled { opacity: .4; cursor: default; }
 .menu-item[aria-checked="true"]::after { content: "✓"; color: var(--mdn-text-secondary); }
-.menu-trailing { color: var(--mdn-text-tertiary); font-size: var(--mdn-text-xs); }
+.menu-trailing { flex-shrink: 0; color: var(--mdn-text-tertiary); font-size: var(--mdn-text-xs); white-space: nowrap; }
 .menu-label { padding: calc(var(--mdn-space) * 1.5) calc(var(--mdn-space) * 2) var(--mdn-space); color: var(--mdn-text-tertiary); font-size: var(--mdn-text-xs); }
 .menu-separator { height: 1px; margin: var(--mdn-space) 0; background: var(--mdn-border); }
 
-/* 作品切换：保留原生 select 的键盘与读屏行为，外观为 Codex 下拉触发器 */
-.picker { position: relative; display: inline-flex; align-items: center; min-width: 0; max-width: 40vw; border-radius: var(--mdn-radius-md); color: var(--mdn-text); }
-.picker:hover { background: var(--mdn-ghost-hover); }
-.picker select {
-  appearance: none; min-width: 0; width: 100%; height: var(--mdn-control-sm);
-  padding: 0 calc(var(--mdn-space) * 7) 0 calc(var(--mdn-space) * 2.5);
-  border: 0; border-radius: inherit; background: transparent; outline: none;
-  font-size: var(--mdn-text-sm); text-overflow: ellipsis; cursor: pointer;
-  field-sizing: content;
+/* 项目与文件：项目菜单切换项目，标签切换当前项目里的文件（设计稿、设计系统……）；窄窗口时标签截短标题，再横向滚动 */
+.menu-start { right: auto; left: 0; width: max-content; min-width: 160px; max-width: min(280px, 90vw); }
+.project { gap: 2px; color: var(--mdn-text); max-width: 240px; padding: 0 calc(var(--mdn-space) * 1.5) 0 calc(var(--mdn-space) * 2); font-weight: var(--mdn-weight-medium); flex-shrink: 0; }
+.project span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.project .icon { width: 14px; height: 14px; flex-shrink: 0; color: var(--mdn-text-tertiary); }
+.file-tabs { display: flex; align-items: center; gap: 2px; min-width: 0; padding-left: calc(var(--mdn-space) * 2); margin-left: var(--mdn-space); border-left: 1px solid var(--mdn-border); overflow-x: auto; scrollbar-width: none; }
+.file-tabs:empty { display: none; }
+.file-tabs::-webkit-scrollbar { display: none; }
+.file-tab {
+  display: inline-flex; align-items: center; gap: calc(var(--mdn-space) * 1.5); flex-shrink: 0; max-width: 180px; height: var(--mdn-control-sm);
+  padding: 0 calc(var(--mdn-space) * 2.5); border: 0; border-radius: var(--mdn-radius-md); background: none;
+  color: var(--mdn-text-secondary); font-size: var(--mdn-text-sm); cursor: pointer;
 }
-.picker select:disabled { opacity: .4; cursor: default; }
-.picker option { background: var(--mdn-elevated); color: var(--mdn-text); }
-.picker .icon { position: absolute; right: calc(var(--mdn-space) * 2); pointer-events: none; color: var(--mdn-text-tertiary); }
+.file-tab span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.file-tab .icon { width: 14px; height: 14px; flex-shrink: 0; }
+.file-tab:hover:not(:disabled) { background: var(--mdn-ghost-hover); color: var(--mdn-text); }
+.file-tab[aria-selected="true"] { background: var(--mdn-ghost-active); color: var(--mdn-text); font-weight: var(--mdn-weight-medium); }
+.file-tab:disabled { cursor: default; }
+.file-tab:focus-visible { outline-offset: -2px; }
 
 /* 主区：编辑器 + 右侧反馈侧栏 */
 main { display: flex; flex: 1; min-height: 0; }

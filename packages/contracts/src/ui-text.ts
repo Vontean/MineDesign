@@ -20,7 +20,8 @@ export function resolveUiLocale(preference: LanguagePreference | null | undefine
 const en = {
   // 顶栏与作品
   about: 'About MineDesign',
-  pickDocument: 'Choose a document',
+  pickProject: 'Switch project',
+  projectFiles: 'Project files',
   kindDesign: 'Design',
   kindSystem: 'Design system',
   comment: 'Comment',
@@ -133,7 +134,8 @@ export type UiText = typeof en;
 
 const zh: UiText = {
   about: '关于 MineDesign',
-  pickDocument: '选择作品',
+  pickProject: '切换项目',
+  projectFiles: '项目文件',
   kindDesign: '设计稿',
   kindSystem: '设计系统',
   comment: '评论',

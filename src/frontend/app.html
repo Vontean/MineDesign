@@ -2,7 +2,8 @@
 <!-- 界面文案在 app.mjs 按当前语言填入：data-i18n 写文字，data-i18n-label 写 aria-label 与 title，data-i18n-aria 只写 aria-label，data-i18n-placeholder 写占位文字 -->
 <header class="topbar">
   <button id="about-open" class="brand" type="button" aria-haspopup="dialog" data-i18n-label="about"><!--__BRAND__--><strong>MineDesign</strong></button>
-  <label class="picker"><span class="sr-only" data-i18n="pickDocument"></span><select id="documents"></select><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></label>
+  <div class="menu-wrap"><button id="project" class="btn btn-ghost project" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="project-menu" data-i18n-label="pickProject"><span id="project-name"></span><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button><div id="project-menu" class="menu menu-start" role="menu" data-i18n-aria="pickProject" hidden></div></div>
+  <div id="files" class="file-tabs" role="tablist" data-i18n-aria="projectFiles"></div>
   <span class="spacer"></span>
   <button id="annotate" class="btn btn-ghost" type="button" aria-pressed="false" disabled><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M12 7v6"/><path d="M9 10h6"/></svg><span data-i18n="comment"></span></button>
   <div id="view-controls" class="view-controls" hidden>

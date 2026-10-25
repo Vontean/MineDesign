@@ -41,7 +41,7 @@ flowchart TB
 | 文件 | 用途 |
 | --- | --- |
 | `app.html` | 顶栏、作品视窗、中央状态、反馈侧栏和批注对话框的语义结构 |
-| `app.mjs` | 作品选择、用户可见加载状态、主题、批注与显式反馈交互；设计稿的评论列表、面板开关、顶栏缩放与播放经编辑器消息驱动 |
+| `app.mjs` | 项目菜单与文件标签、用户可见加载状态、主题、批注与显式反馈交互；设计稿的评论列表、面板开关、顶栏缩放与播放经编辑器消息驱动 |
 | `about.mjs` | About 弹窗：版本与更新状态、语言切换、联系方式；更新期间轮询任务进度 |
 | `service-client.mjs` | 统一 open、annotations、prepareFeedback、http、events；处理 MCP 结果封装与 HTTP 请求差异 |
 | `virtual.mjs` | 虚拟 URL、blob 资源、HTML/CSS 改写、请求分块与事件传输 |
@@ -55,6 +55,7 @@ flowchart TB
 | `src/backend/runtime.mjs` | 稳定 MCP 服务门面、构建模块加载、等待在途操作、原子替换后端、更新失败保留旧服务 |
 | `src/backend/service.mjs` | 创建编辑器文件服务、注入依赖、监听回环端口与关闭资源；不包含作品操作规则 |
 | `src/backend/documents.mjs` | 打开/识别作品、检查、素材导入、批注持久化、反馈版本检查；不决定 HTTP 或 MCP 响应封装 |
+| `src/backend/projects.mjs` | 作品所属项目：向上查找列出它的 `project.json`，没有时按设计稿的 `designSystems` 引用自动归组；打开作品时随记录返回 `project` |
 | `src/backend/workspace.mjs` | 真实路径授权；工作区和符号链接边界 |
 | `src/backend/settings.mjs` | 本机界面偏好（`.local/settings.json`，目前只有界面语言） |
 | `src/backend/updates.mjs` | About 的版本与本机更新：对比当前分支上游、拒绝脏工作区、快进合并、按需安装依赖、构建并经 SIGHUP 入口重新加载后端；任务状态写在 `.local/update.json` |
@@ -135,6 +136,8 @@ flowchart TB
 ### 打开与恢复
 
 作品的目录与类型是稳定身份。App 每次初始化、切换和重试都调用 open 取得当前进程 grant，再恢复批注并加载编辑器；异步结果只应用到当前选择。global/thread 共用稳定 `ui://minedesign/editor.html`，与插件安装版本分离。旧外壳缓存和 MCP 连接是两种缓存，恢复步骤见开发文档。
+
+打开结果带 `project: {id, name, files:[{kind, path, title}]}`。项目文件 `project.json` 放在项目目录：`{"name":"Pine","files":[{"kind":"design","path":"app"},{"kind":"design-system","path":"system"}]}`，`path` 相对项目目录；只认工作区内、当前有编辑器的类型，其他类型和失效路径跳过，留给以后的组件库、动效编辑器。没有项目文件时，设计稿带上 `designSystems[].artifact` 指向的设计系统；设计系统只在恰好被一份同级设计稿引用时归入该稿的项目，否则单独成项目。外壳按 `project.id` 归组，切换标签时按目录调用 open。
 
 外壳配置带构建标识，由外壳页面与两套编辑器入口共同计算，重建任一编辑器也会触发更新。已打开的外壳在可见且空闲时每 2 秒经 `shell` 操作比较标识；标识不同才返回整页，外壳关闭旧 App 连接后原地写入新文档，并经 sessionStorage 携带当前作品、侧栏开合和未发送说明。新文档重新完成 App 握手；批注本身已持久化，不随页面携带。
 

@@ -2,6 +2,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { createHash, randomBytes } from 'node:crypto';
 import { inside } from './workspace.mjs';
+import { projectOf } from './projects.mjs';
 import { readCanvasInfo, checkCanvas } from '@minedesign/design-files';
 import { readDesignSystemInfo, checkDesignSystem } from '@minedesign/design-system-files';
 
@@ -14,7 +15,7 @@ export function createDocumentService({workspace, editors, origin, annotationRoo
     if (!info) throw new Error('目录缺少有效的设计稿或设计系统索引');
     const grant = await editors.open(dir,kind);
     const version=(await editors.storeOf(dir,kind).listing()).ver;
-    const record = {id:createHash('sha256').update(`${kind}:${dir}`).digest('hex').slice(0,20),path:dir,title:info.title || path.basename(dir),kind,version,editorPath:`/${kind}/${grant}/`,editorUrl:`${origin()}/${kind}/${grant}/?lang=zh-Hans`};
+    const record = {id:createHash('sha256').update(`${kind}:${dir}`).digest('hex').slice(0,20),path:dir,title:info.title || path.basename(dir),kind,version,editorPath:`/${kind}/${grant}/`,editorUrl:`${origin()}/${kind}/${grant}/?lang=zh-Hans`,project:await projectOf(workspace,dir,kind)};
     opened.set(record.id,record);
     return record;
   }

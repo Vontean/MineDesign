@@ -15,14 +15,13 @@ const bundled=await build({entryPoints:[path.join(ROOT,'src/frontend/app.mjs')],
 }}]});
 const html=(await fs.readFile(path.join(ROOT,'src/frontend/app.html'),'utf8')).replace(/<script[\s\S]*?<\/script>/g,'');
 async function until(check){const deadline=Date.now()+3000;while(!check()){if(Date.now()>deadline)assert.fail('App did not reach expected state');await new Promise(r=>setTimeout(r,10));}}
-async function harness(record,service,{build,shell}={}){
+async function harness(record,service,{build,shell,broken=false}={}){
   const win=new Window({url:'https://minedesign.test/'});
   const calls=[];
   win.document.write(html);
   // 嵌入宿主，测试公开的工具响应与用户可见的加载结果。
   Object.defineProperty(win,'parent',{value:{},configurable:true});
   win.MINEDESIGN_CONFIG={documents:[record],...(build?{build}:{})};
-  let broken=false;
   win.testTransport=async({name,arguments:args})=>{
     calls.push({name,args});
     if(name==='minedesign_open_document')return {structuredContent:{document:await service.open(args.path,args.kind)}};
@@ -75,12 +74,8 @@ test('load failure stays in the viewport; retry reopens the document and preserv
   let ui;
   try{
     await service.annotations(doc.id,[{id:'kept',label:'标题',text:'保留这条意见'}]);
-    ui=await harness(doc,service);
+    ui=await harness(doc,service,{broken:true});
     const d=ui.win.document;
-    await ui.ready();
-    await until(()=>d.getElementById('viewport-state').hidden);
-    ui.breakLoading(true);
-    d.getElementById('documents').dispatchEvent(new ui.win.Event('change'));
     await until(()=>d.getElementById('viewport-state').dataset.state==='error');
     assert.equal(d.querySelector('header #retry'),null);
     assert.equal(d.querySelector('header [role=status]'),null);
@@ -101,7 +96,7 @@ test('load failure stays in the viewport; retry reopens the document and preserv
     await ui.ready();
     await until(()=>d.getElementById('viewport-state').hidden);
     assert.equal(d.getElementById('viewport-state').hidden,true);
-    assert.equal(ui.calls.filter(c=>c.name==='minedesign_open_document').length,3);
+    assert.equal(ui.calls.filter(c=>c.name==='minedesign_open_document').length,2);
     assert.match(d.getElementById('annotation-list').textContent,/保留这条意见/);
   }finally{if(ui)await ui.close();await service.close();await fs.rm(noteFile,{force:true});await fs.rm(tmp,{recursive:true,force:true});}
 });
@@ -167,4 +162,32 @@ test('design feedback lives in the editor panel: drafts are pushed in, editor ac
     items('play').find(b=>b.textContent==='登录').click();
     assert.deepEqual({...sent.at(-1)},{type:'editor:view-action',action:'play',file:'Login.dc.html'});
   }finally{if(ui)await ui.close();await service.close();await fs.rm(noteFile,{force:true});await fs.rm(tmp,{recursive:true,force:true});}
+});
+
+test('topbar shows the project of the open document; file tabs open the other members of the project',async()=>{
+  const tmp=await fs.mkdtemp(path.join(os.tmpdir(),'mdn-project-'));
+  await fs.cp(path.join(ROOT,'tests/fixtures/studio'),path.join(tmp,'studio'),{recursive:true});
+  await fs.cp(path.join(ROOT,'examples/showcase-system'),path.join(tmp,'system'),{recursive:true});
+  const canvasFile=path.join(tmp,'studio/canvas.json');
+  const canvas=JSON.parse(await fs.readFile(canvasFile,'utf8'));
+  await fs.writeFile(canvasFile,JSON.stringify({...canvas,designSystems:[{title:'System',namespace:'system',artifact:'../system',version:null,copiedAt:'2026-10-25T00:00:00Z'}]}));
+  const service=await startService({workspace:tmp});
+  const doc=await service.open('studio');
+  let ui;
+  try{
+    ui=await harness(doc,service);
+    const d=ui.win.document,tabs=()=>[...d.querySelectorAll('#files [role=tab]')];
+    await ui.ready();
+    await until(()=>d.getElementById('viewport-state').hidden);
+    assert.equal(d.getElementById('project-name').textContent,doc.title);
+    assert.deepEqual(tabs().map(t=>[t.textContent,t.getAttribute('aria-selected')]),[['Design','true'],['Design system','false']]);
+    // 设计系统尚未打开：点标签按目录打开，编辑器换成设计系统，标签跟随
+    tabs()[1].click();
+    await until(()=>tabs()[1]?.getAttribute('aria-selected')==='true');
+    await ui.ready();
+    await until(()=>d.getElementById('viewport-state').hidden);
+    assert.ok(ui.calls.some(c=>c.name==='minedesign_open_document'&&c.args.kind==='design-system'&&c.args.path.endsWith('system')));
+    assert.equal(d.body.dataset.feedback,'shell');
+    assert.equal(d.querySelectorAll('#project-menu .menu-item').length,1);
+  }finally{if(ui)await ui.close();await service.close();await fs.rm(tmp,{recursive:true,force:true});}
 });
