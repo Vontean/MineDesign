@@ -4,6 +4,10 @@
   <label class="picker"><span class="sr-only">选择设计稿</span><select id="documents"></select><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></label>
   <span class="spacer"></span>
   <button id="annotate" class="btn btn-ghost" type="button" aria-pressed="false" disabled><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M12 7v6"/><path d="M9 10h6"/></svg>评论</button>
+  <div id="view-controls" class="view-controls" hidden>
+    <div class="menu-wrap"><button id="zoom" class="btn btn-ghost zoom" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="zoom-menu" aria-label="缩放" title="缩放"><span id="zoom-readout">100%</span><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button><div id="zoom-menu" class="menu" role="menu" aria-label="缩放" hidden></div></div>
+    <div class="menu-wrap"><button id="play" class="btn btn-icon" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="play-menu" aria-label="播放画板" title="播放画板"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><polygon points="6 3 20 12 6 21 6 3"/></svg></button><div id="play-menu" class="menu" role="menu" aria-label="播放画板" hidden></div></div>
+  </div>
   <button id="panel" class="btn btn-icon" type="button" aria-pressed="true" aria-controls="notes" aria-label="收起反馈侧栏" title="收起反馈侧栏"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M15 3v18"/></svg></button>
 </header>
 <main>

@@ -9,6 +9,7 @@
  *   assets           platform/image-upload.ts（粘贴、拖入的图片与字体，返回 /_blob/<id>）
  *   comments         comments/host-controller.ts（customAnchors：运行时算锚点，宿主弹批注框）
  *   chat             canvas/claude-handoff.tsx（「交给智能体」的提示放进会话的输入框）
+ *   feedback         MineDesign 右侧面板的评论视图（feedback-bridge.ts；页面单独打开时不提供，面板保持原样）
  *   downloads        export/downloads.tsx 的 saveThroughHost（导出的文件交给父窗口保存，downloads-bridge.ts；页面单独打开时不提供）
  * 不提供（运行时都有兜底，见 packages/design-runtime/README.md）：
  *   use       按名字异步取能力；没有时 platform/host-capabilities.ts 直接读上面的字段，不等待
@@ -19,10 +20,12 @@
  */
 import type { SlidesHost } from '@minedesign/editor-host';
 import type { HostDownloadsCapability } from './downloads-bridge.ts';
+import type { HostFeedbackCapability } from './feedback-bridge.ts';
 
 export type { HostDownloadsCapability, HostSaveFile } from './downloads-bridge.ts';
+export type { HostFeedbackCapability, HostFeedbackState } from './feedback-bridge.ts';
 
-export type DesignHost = Omit<SlidesHost, 'commentLabels' | 'use'> & { downloads?: HostDownloadsCapability };
+export type DesignHost = Omit<SlidesHost, 'commentLabels' | 'use'> & { downloads?: HostDownloadsCapability; feedback?: HostFeedbackCapability };
 
 declare global {
   // eslint-disable-next-line no-var -- 全局变量只能用 var 声明

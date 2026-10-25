@@ -41,7 +41,7 @@ flowchart TB
 | 文件 | 用途 |
 | --- | --- |
 | `app.html` | 顶栏、作品视窗、中央状态、反馈侧栏和批注对话框的语义结构 |
-| `app.mjs` | 作品选择、用户可见加载状态、主题、批注与显式反馈交互 |
+| `app.mjs` | 作品选择、用户可见加载状态、主题、批注与显式反馈交互；设计稿的评论列表、面板开关、顶栏缩放与播放经编辑器消息驱动 |
 | `service-client.mjs` | 统一 open、annotations、prepareFeedback、http、events；处理 MCP 结果封装与 HTTP 请求差异 |
 | `virtual.mjs` | 虚拟 URL、blob 资源、HTML/CSS 改写、请求分块与事件传输 |
 | `frame-shim.js` | 注入 srcdoc，接管 fetch、SSE、嵌套 frame 和存储命名空间；构建时作为文本嵌入 |
@@ -75,7 +75,7 @@ flowchart TB
 | `packages/design-runtime/` | 设计稿浏览器实现：画布、属性、预览、DCLogic、导出、worker；`src/generated/` 由构建生成 |
 | `packages/design-system-runtime/` | 设计系统浏览器实现：章节、token、排版、组件、素材、预览与文档 |
 | `packages/editor-host/src/shared/` | 浏览器 HTTP 文件客户端、发布/上传/flush、SSE、批注、chat 桥、语言标签与宿主能力类型 |
-| `packages/editor-host/src/design/` | 设计稿宿主安装与下载桥；不包含 Node 文件服务 |
+| `packages/editor-host/src/design/` | 设计稿宿主安装、下载桥与 MineDesign 反馈桥（feedback-bridge：评论草稿、面板开关、视图状态与操作）；不包含 Node 文件服务 |
 | `packages/editor-host/src/design-system/` | 设计系统宿主安装、当前用户名、批注目标读取与定位 |
 | `packages/contracts/` | 平台无关的 file-protocol、editor-messages、service 操作名称、作品概要类型、i18n；前后端共享 |
 | `packages/document-store/` | Node 的 document-store、document-routes：文件清单、内容版本、原子发布、素材、目录监听、grant、HTTP/CSP；不依赖浏览器宿主 |
@@ -142,6 +142,8 @@ flowchart TB
 ### 沙箱、文件与反馈
 
 Codex 中通过接口工具把编辑器装为 srcdoc，图片、字体、脚本和 CSS 改为 blob 资源；浏览器模式仅更换 transport。路径授权检查 realpath；写入检查 grant、origin、ifMatch。Codex 消息保留精确 scheme/origin、source 和 MessagePort 检查。
+
+设计稿的评论列表显示在编辑器右侧面板的「评论」标签里，外壳经 `editor:feedback` 推送草稿与发送状态，面板里的定位、删除、复制、发送以 `editor:feedback-action` 交回外壳执行；面板开关用 `editor:set-panel`/`editor:panel`，顶栏缩放与播放用 `editor:view`/`editor:view-action`。这些都经编辑器宿主的 `feedback` 能力进入运行时；编辑器单独打开时没有该能力，界面保持原样。设计系统仍用外壳反馈侧栏。
 
 批注按稳定作品 id 保存在 `.local/annotations/`。发送先 flush 编辑器，再检查来源版本，经宿主显式提交；失败保留批注。补充说明文本框尚无持久化保证。发送成功与 Agent 修改完成分别判断。
 

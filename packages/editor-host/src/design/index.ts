@@ -8,9 +8,11 @@
  */
 import { connectEditorHost, windowParentLink } from '@minedesign/editor-host';
 import { createDownloadsBridge } from './downloads-bridge.ts';
+import { createFeedbackBridge } from './feedback-bridge.ts';
 
 export type * from './design-host.ts';
 export { createDownloadsBridge, type DownloadsBridge } from './downloads-bridge.ts';
+export { createFeedbackBridge, type FeedbackBridge } from './feedback-bridge.ts';
 
 export interface InstallDesignEditorHostOptions {
   /** 编辑器页面的地址（以 / 结尾），路由都相对它。默认是页面所在目录。 */
@@ -37,5 +39,6 @@ export function installDesignEditorHost(options: InstallDesignEditorHostOptions 
   // 桌面端的父页面是 file://（origin 为 null），按 origin 认不了，与 editor-messages 一样按 window.parent 认
   const page = win as unknown as { __FRAME_PREAMBLE?: FramePreamble };
   page.__FRAME_PREAMBLE = { ...page.__FRAME_PREAMBLE, trustParent: true };
-  win.designHost = { ...host, downloads: createDownloadsBridge(link).capability };
+  // MineDesign：评论列表显示在编辑器右侧面板里，草稿与发送仍在父窗口
+  win.designHost = { ...host, downloads: createDownloadsBridge(link).capability, feedback: createFeedbackBridge(link).capability };
 }

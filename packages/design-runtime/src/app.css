@@ -13187,3 +13187,143 @@ html[data-theme-switching] *::after {
     height: 48px;
   }
 }
+
+/* MineDesign：属性面板与评论合成的右侧面板；缩放与播放在外壳顶栏 */
+.mdn-right-panel {
+  position: relative;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  flex-shrink: 0;
+  border-left: 1px solid var(--cds-border);
+  background-color: var(--cds-surface-panel);
+}
+.mdn-right-panel[hidden] {
+  display: none;
+}
+/* 属性面板自带左边线，合入右侧面板后由外层统一绘制 */
+.mdn-right-panel [data-testid="dc-edit-side-panel"] {
+  border-left-width: 0;
+}
+.mdn-feedback {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 0;
+  flex: 1;
+  padding: 8px 12px 12px;
+  border-top: 1px solid var(--cds-border);
+  font-size: var(--cds-font-size-body);
+  color: var(--cds-text-primary);
+}
+.mdn-feedback-list {
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-height: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+.mdn-feedback-list li {
+  position: relative;
+  display: grid;
+  grid-template-columns: 20px 1fr;
+  column-gap: 8px;
+  padding: 8px;
+  border-radius: calc(var(--cds-radius) + 2px);
+}
+.mdn-feedback-list li:hover,
+.mdn-feedback-list li:focus-within {
+  background: var(--cds-fill-ghost-hover);
+}
+.mdn-feedback-index {
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  background: var(--cds-fill-accent);
+  color: var(--cds-on-accent);
+  font-size: var(--cds-font-size-caption);
+  font-weight: var(--cds-font-wght-medium);
+  line-height: 20px;
+  text-align: center;
+}
+.mdn-feedback-target {
+  grid-column: 2;
+  min-width: 0;
+  margin: 0 28px 2px 0;
+  overflow: hidden;
+  color: var(--cds-text-muted);
+  font-size: var(--cds-font-size-caption);
+  line-height: 20px;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.mdn-feedback-target:hover {
+  color: var(--cds-text-secondary);
+}
+.mdn-feedback-text {
+  grid-column: 2;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.mdn-feedback-remove {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  opacity: 0;
+}
+.mdn-feedback-list li:hover .mdn-feedback-remove,
+.mdn-feedback-remove:focus-visible {
+  opacity: 1;
+}
+.mdn-feedback-empty {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 24px 8px;
+  color: var(--cds-text-secondary);
+  text-align: center;
+}
+.mdn-feedback-empty-title {
+  color: var(--cds-text-primary);
+  font-weight: var(--cds-font-wght-medium);
+}
+.mdn-feedback-composer {
+  display: flex;
+  flex-direction: column;
+  margin-top: auto;
+  border-radius: 16px;
+  background: var(--cds-surface-2);
+  box-shadow: 0 0 0 1px var(--cds-border);
+}
+.mdn-feedback-composer:focus-within {
+  box-shadow: 0 0 0 1px var(--cds-border-strong);
+}
+.mdn-feedback-composer textarea {
+  min-height: 64px;
+  max-height: 240px;
+  padding: 12px 12px 4px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  outline: none;
+  resize: none;
+  line-height: 1.43;
+}
+.mdn-feedback-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px;
+}
+.mdn-feedback-status {
+  min-height: 16px;
+  padding-inline: 4px;
+  color: var(--cds-text-secondary);
+  font-size: var(--cds-font-size-caption);
+}

@@ -9206,6 +9206,21 @@ export function installEditorSession(runtime: RuntimeBindings): () => void {
             ),
           );
     }, [value292, value230, value287]);
+    // MineDesign：「评论」是右侧面板的第四个标签，与评论模式双向联动（comments/feedback-panel.tsx）
+    let mdnFeedback: Dynamic =
+        (0, runtime.getCachedHostCapability)("feedback") ?? null,
+      mdnCommenting: Dynamic =
+        (0, runtime.reactCanvasShape_2.useSyncExternalStore)(
+          runtime.mdnCommentMode.subscribe,
+          runtime.mdnCommentMode.get,
+          runtime.mdnCommentMode.get,
+        ) && mdnFeedback != null,
+      mdnFeedbackCount: Dynamic = (0,
+      runtime.reactCanvasShape_2.useSyncExternalStore)(
+        mdnFeedback?.subscribe ?? runtime.noopCanvasSubscription,
+        (): Dynamic => mdnFeedback?.read().items.length ?? 0,
+        (): Dynamic => 0,
+      );
     let [value294, value295]: Dynamic = (0,
       runtime.reactCanvasShape_2.useState)("edit"),
       value296: Dynamic = (0, runtime.reactCanvasShape_2.useRef)(false);
@@ -9320,6 +9335,12 @@ export function installEditorSession(runtime: RuntimeBindings): () => void {
         value294,
       ),
       callback6: Dynamic = (input?: Dynamic): Dynamic => {
+        // 切到「评论」进入评论模式；从「评论」切走则退出，回到所选标签
+        if (mdnFeedback && (input === "comments") !== mdnCommenting) {
+          runtime.mdnCommentMode.keepPanelOnExit = input !== "comments";
+          runtime.mdnToggleCommentMode();
+        }
+        if (input === "comments") return;
         let value307: Dynamic = (0, runtime.inspectorModeState)(input);
         value40(value307.mode);
         value307.sheetTab != null && value295(value307.sheetTab);
@@ -9359,13 +9380,22 @@ export function installEditorSession(runtime: RuntimeBindings): () => void {
               },
             ]
           : []),
+        ...(mdnFeedback
+          ? [
+              {
+                value: "comments",
+                label: mdnFeedbackCount ? "评论 " + mdnFeedbackCount : "评论",
+                "data-testid": "mdn-tab-comments",
+              },
+            ]
+          : []),
       ],
       value303: Dynamic = (
         <runtime.CdsIsland density={"compact"} className={"contents"}>
           <runtime.PanelShell
             data-testid={"dc-selection-header"}
             tabs={items}
-            tab={value302}
+            tab={mdnCommenting ? "comments" : value302}
             onTabChange={(input?: Dynamic): Dynamic => callback6(input)}
             activateOnFocus={false}
             tabsLabel={"Panel view"}
@@ -10311,18 +10341,22 @@ export function installEditorSession(runtime: RuntimeBindings): () => void {
               <runtime.CdsIsland density={"compact"} className={"contents"}>
                 <runtime.DesignPropertiesSidebar>
                   {value303}
-                  <div
-                    data-testid={"dc-anchored-content"}
-                    className={(0, runtime.cn)(
-                      "flex min-h-0 flex-1 flex-col overflow-y-auto border-t select-none [&_input]:select-text [&_textarea]:select-text",
-                      runtime.ChromeScrollbarLabel,
-                      value242 === "code" ? "pb-0" : "pb-3",
-                    )}
-                  >
-                    {value242 !== "tweaks" && value301}
-                    {value305 ? value306 : value304}
-                    <runtime.FloatingScrollbar />
-                  </div>
+                  {mdnCommenting ? (
+                    <runtime.FeedbackPanel host={mdnFeedback} />
+                  ) : (
+                    <div
+                      data-testid={"dc-anchored-content"}
+                      className={(0, runtime.cn)(
+                        "flex min-h-0 flex-1 flex-col overflow-y-auto border-t select-none [&_input]:select-text [&_textarea]:select-text",
+                        runtime.ChromeScrollbarLabel,
+                        value242 === "code" ? "pb-0" : "pb-3",
+                      )}
+                    >
+                      {value242 !== "tweaks" && value301}
+                      {value305 ? value306 : value304}
+                      <runtime.FloatingScrollbar />
+                    </div>
+                  )}
                 </runtime.DesignPropertiesSidebar>
               </runtime.CdsIsland>,
               value286,
@@ -10338,7 +10372,9 @@ export function installEditorSession(runtime: RuntimeBindings): () => void {
                   headerAt={"top"}
                   data-testid={"dc-edit-side-panel"}
                 >
-                  {value242 === "pro" && value294 === "outline" ? (
+                  {mdnCommenting ? (
+                    <runtime.FeedbackPanel host={mdnFeedback} />
+                  ) : value242 === "pro" && value294 === "outline" ? (
                     <runtime.DcOutline
                       fill={true}
                       artboards={value300}

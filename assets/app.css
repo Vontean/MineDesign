@@ -45,6 +45,20 @@ h2, p, ol { margin: 0; }
 .brand strong { font-size: var(--mdn-text-sm); font-weight: var(--mdn-weight-strong); }
 .brand-icon { width: 20px; height: 20px; display: block; }
 .spacer { flex: 1; }
+/* 顶栏的缩放与播放：设计稿编辑器经消息驱动，顺序为缩放、播放、面板开关 */
+.view-controls { display: flex; align-items: center; gap: var(--mdn-space); }
+.menu-wrap { position: relative; }
+.zoom { gap: 2px; padding: 0 calc(var(--mdn-space) * 1.5) 0 calc(var(--mdn-space) * 2); font-variant-numeric: tabular-nums; }
+.zoom .icon { width: 14px; height: 14px; color: var(--mdn-text-tertiary); }
+.menu { position: absolute; top: calc(100% + var(--mdn-space)); right: 0; z-index: 10; min-width: 200px; max-height: 70vh; overflow-y: auto; padding: var(--mdn-space); border-radius: var(--mdn-radius-xl); background: var(--mdn-elevated); box-shadow: var(--mdn-shadow-overlay); }
+.menu-item { display: flex; align-items: center; gap: calc(var(--mdn-space) * 3); width: 100%; height: var(--mdn-control-md); padding: 0 calc(var(--mdn-space) * 2); border: 0; border-radius: var(--mdn-radius-md); background: none; text-align: left; cursor: pointer; }
+.menu-item > span:first-child { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.menu-item:hover:not(:disabled), .menu-item:focus-visible { background: var(--mdn-ghost-hover); outline: none; }
+.menu-item:disabled { opacity: .4; cursor: default; }
+.menu-item[aria-checked="true"]::after { content: "✓"; color: var(--mdn-text-secondary); }
+.menu-trailing { color: var(--mdn-text-tertiary); font-size: var(--mdn-text-xs); }
+.menu-label { padding: calc(var(--mdn-space) * 1.5) calc(var(--mdn-space) * 2) var(--mdn-space); color: var(--mdn-text-tertiary); font-size: var(--mdn-text-xs); }
+.menu-separator { height: 1px; margin: var(--mdn-space) 0; background: var(--mdn-border); }
 
 /* 作品切换：保留原生 select 的键盘与读屏行为，外观为 Codex 下拉触发器 */
 .picker { position: relative; display: inline-flex; align-items: center; min-width: 0; max-width: 40vw; border-radius: var(--mdn-radius-md); color: var(--mdn-text); }
@@ -78,6 +92,8 @@ aside {
   border-left: 1px solid var(--mdn-border); background: var(--mdn-surface); overflow: auto;
 }
 body[data-panel="closed"] aside { display: none; }
+/* 设计稿的评论在编辑器右侧面板里，外壳侧栏只服务设计系统 */
+body[data-feedback="editor"] aside { display: none; }
 .notes-head { display: flex; align-items: center; gap: calc(var(--mdn-space) * 2); min-height: var(--mdn-control-sm); padding: 0 calc(var(--mdn-space) * 1); }
 .notes-head h2 { font-size: var(--mdn-text-sm); font-weight: var(--mdn-weight-strong); }
 .count { min-width: 20px; height: 20px; padding: 0 6px; border-radius: var(--mdn-radius-full); background: var(--mdn-ghost-active); color: var(--mdn-text-secondary); font-size: var(--mdn-text-xs); line-height: 20px; text-align: center; }

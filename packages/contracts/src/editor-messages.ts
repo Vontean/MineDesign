@@ -35,6 +35,38 @@ export interface EditorThread {
   section?: string;
 }
 
+/** 编辑器右侧面板里显示的一条评论（MineDesign 的反馈草稿）：`n` 是序号，`label` 是定位目标，`text` 是意见。 */
+export interface FeedbackItem {
+  id: string;
+  n: number;
+  label: string;
+  text: string;
+}
+
+/** 编辑器右侧面板对反馈的操作：定位、删除一条，或连同补充说明复制、发送整轮反馈。 */
+export type FeedbackAction = { action: 'reveal' | 'remove'; id: string } | { action: 'send' | 'copy'; message: string };
+
+/** MineDesign：外壳顶栏的缩放与播放控件需要的编辑器视图状态。比例是倍数（1 为 100%）。 */
+export interface EditorView {
+  scale: number;
+  minScale: number;
+  maxScale: number;
+  presets: number[];
+  /** 缩放菜单里的视图开关（如参考线），`id` 用于回传操作。 */
+  toggles: { id: string; label: string; checked: boolean }[];
+  canUndo: boolean;
+  canRedo: boolean;
+  /** 可播放的画板，按原型与其他分组；空数组表示当前没有可播放的画板。 */
+  play: { label: string; items: { file: string; title: string }[] }[];
+}
+
+/** MineDesign：外壳顶栏对编辑器视图的操作。 */
+export type ViewAction =
+  | { action: 'zoom-in' | 'zoom-out' | 'fit' | 'undo' | 'redo' }
+  | { action: 'zoom'; scale: number }
+  | { action: 'toggle'; id: string }
+  | { action: 'play'; file: string };
+
 /** iframe → 父窗口。 */
 export type EditorToHostMessage =
   /** 运行时启动了；`canEdit` 为 false 时编辑器只读（Web 服务的只读模式）。 */
@@ -50,7 +82,13 @@ export type EditorToHostMessage =
   /** 运行时请父窗口把一段提示放进这个会话的输入框（「让智能体修好这页」等），父窗口回 `editor:suggest-prompt-result`。 */
   | { type: 'editor:suggest-prompt'; requestId: string; prompt: string }
   /** 设计稿编辑器导出了一个文件，请父窗口保存（Web 交给浏览器下载，桌面端弹存储对话框），父窗口回 `editor:save-file-result`。 */
-  | { type: 'editor:save-file'; requestId: string; filename: string; data: ArrayBuffer | Blob };
+  | { type: 'editor:save-file'; requestId: string; filename: string; data: ArrayBuffer | Blob }
+  /** MineDesign：用户在编辑器右侧面板里操作反馈，由父窗口保存或发送。 */
+  | ({ type: 'editor:feedback-action' } & FeedbackAction)
+  /** MineDesign：编辑器右侧面板是否显示（属性面板打开或处于评论模式）。 */
+  | { type: 'editor:panel'; open: boolean }
+  /** MineDesign：视图状态变了（比例、可播放画板、撤销状态等），外壳顶栏据此更新。 */
+  | ({ type: 'editor:view' } & EditorView);
 
 /** 父窗口 → iframe。 */
 export type HostToEditorMessage =
@@ -69,7 +107,13 @@ export type HostToEditorMessage =
   /** 回应 `editor:suggest-prompt`：提示放进输入框了没有（标签页不属于会话时为 false，运行时改为复制到剪贴板）。 */
   | { type: 'editor:suggest-prompt-result'; requestId: string; ok: boolean }
   /** 回应 `editor:save-file`：`saved` 交出去了，`declined` 用户在存储对话框里取消了，`failed` 没能保存。 */
-  | { type: 'editor:save-file-result'; requestId: string; outcome: SaveFileOutcome };
+  | { type: 'editor:save-file-result'; requestId: string; outcome: SaveFileOutcome }
+  /** MineDesign：反馈草稿与发送状态，编辑器在评论模式的右侧面板里显示。 */
+  | { type: 'editor:feedback'; items: FeedbackItem[]; status: string; canSend: boolean; busy: boolean }
+  /** MineDesign：父窗口顶栏的面板开关。 */
+  | { type: 'editor:set-panel'; open: boolean }
+  /** MineDesign：外壳顶栏的缩放、播放等操作。 */
+  | ({ type: 'editor:view-action' } & ViewAction);
 
 /** 父窗口保存导出文件的结果（`editor:save-file-result`）。 */
 export type SaveFileOutcome = 'saved' | 'declined' | 'failed';
@@ -82,6 +126,9 @@ const EDITOR_TYPES = new Set<EditorToHostMessage['type']>([
   'editor:external-change',
   'editor:suggest-prompt',
   'editor:save-file',
+  'editor:feedback-action',
+  'editor:panel',
+  'editor:view',
 ]);
 const HOST_TYPES = new Set<HostToEditorMessage['type']>([
   'editor:threads',
@@ -92,11 +139,18 @@ const HOST_TYPES = new Set<HostToEditorMessage['type']>([
   'editor:flush',
   'editor:suggest-prompt-result',
   'editor:save-file-result',
+  'editor:feedback',
+  'editor:set-panel',
+  'editor:view-action',
 ]);
 const SAVE_FILE_OUTCOMES = new Set<SaveFileOutcome>(['saved', 'declined', 'failed']);
 
 /** `editor:suggest-prompt` 的提示最长多少字符（运行时的修复提示远小于这个数）。 */
 export const SUGGESTED_PROMPT_MAX = 20_000;
+
+/** 评论意见与补充说明的长度上限，与父窗口批注框的 maxlength 一致或更宽。 */
+export const FEEDBACK_TEXT_MAX = 4000;
+export const FEEDBACK_MESSAGE_MAX = 20_000;
 
 /** `editor:save-file` 的文件最大多少字节（整份设计稿的 HTML 内嵌画板运行时与素材，远小于这个数）。 */
 export const SAVE_FILE_MAX_BYTES = 512 * 1024 * 1024;
@@ -190,6 +244,39 @@ export function readEditorMessage(data: unknown): EditorToHostMessage | null {
       return isString(data.requestId, 100) && isString(data.filename, 1000) && data.filename.trim() !== '' && isFileData(data.data)
         ? { type: data.type, requestId: data.requestId, filename: data.filename, data: data.data }
         : null;
+    case 'editor:feedback-action':
+      if ((data.action === 'reveal' || data.action === 'remove') && isString(data.id, 100)) return { type: data.type, action: data.action, id: data.id };
+      if ((data.action === 'send' || data.action === 'copy') && isString(data.message, FEEDBACK_MESSAGE_MAX)) return { type: data.type, action: data.action, message: data.message };
+      return null;
+    case 'editor:panel':
+      return typeof data.open === 'boolean' ? { type: data.type, open: data.open } : null;
+    case 'editor:view': {
+      const scales = [data.scale, data.minScale, data.maxScale];
+      if (!scales.every(v => isFiniteNumber(v) && v > 0) || typeof data.canUndo !== 'boolean' || typeof data.canRedo !== 'boolean') return null;
+      if (!Array.isArray(data.presets) || data.presets.length > 20 || !data.presets.every(v => isFiniteNumber(v) && v > 0)) return null;
+      const toggles = data.toggles,
+        play = data.play;
+      if (!Array.isArray(toggles) || toggles.length > 20 || !toggles.every(t => isRecord(t) && isString(t.id, 100) && isString(t.label, 200) && typeof t.checked === 'boolean')) return null;
+      if (
+        !Array.isArray(play) ||
+        play.length > 10 ||
+        !play.every(
+          g => isRecord(g) && isString(g.label, 200) && Array.isArray(g.items) && g.items.length <= 500 && g.items.every(i => isRecord(i) && isString(i.file, 1000) && isString(i.title, 1000)),
+        )
+      )
+        return null;
+      return {
+        type: data.type,
+        scale: data.scale as number,
+        minScale: data.minScale as number,
+        maxScale: data.maxScale as number,
+        presets: data.presets as number[],
+        toggles: (toggles as EditorView['toggles']).map(t => ({ id: t.id, label: t.label, checked: t.checked })),
+        canUndo: data.canUndo,
+        canRedo: data.canRedo,
+        play: (play as EditorView['play']).map(g => ({ label: g.label, items: g.items.map(i => ({ file: i.file, title: i.title })) })),
+      };
+    }
     default:
       return null;
   }
@@ -222,6 +309,40 @@ export function readHostMessage(data: unknown): HostToEditorMessage | null {
       return isString(data.requestId, 100) && SAVE_FILE_OUTCOMES.has(data.outcome as SaveFileOutcome)
         ? { type: data.type, requestId: data.requestId, outcome: data.outcome as SaveFileOutcome }
         : null;
+    case 'editor:feedback':
+      return Array.isArray(data.items) &&
+        data.items.length <= 1000 &&
+        data.items.every(i => isRecord(i) && isString(i.id, 100) && isFiniteNumber(i.n) && isString(i.label, 1000) && isString(i.text, FEEDBACK_TEXT_MAX)) &&
+        isString(data.status, 1000) &&
+        typeof data.canSend === 'boolean' &&
+        typeof data.busy === 'boolean'
+        ? {
+            type: data.type,
+            items: (data.items as FeedbackItem[]).map(i => ({ id: i.id, n: i.n, label: i.label, text: i.text })),
+            status: data.status,
+            canSend: data.canSend,
+            busy: data.busy,
+          }
+        : null;
+    case 'editor:set-panel':
+      return typeof data.open === 'boolean' ? { type: data.type, open: data.open } : null;
+    case 'editor:view-action':
+      switch (data.action) {
+        case 'zoom-in':
+        case 'zoom-out':
+        case 'fit':
+        case 'undo':
+        case 'redo':
+          return { type: data.type, action: data.action };
+        case 'zoom':
+          return isFiniteNumber(data.scale) && data.scale > 0 ? { type: data.type, action: data.action, scale: data.scale } : null;
+        case 'toggle':
+          return isString(data.id, 100) ? { type: data.type, action: data.action, id: data.id } : null;
+        case 'play':
+          return isString(data.file, 1000) ? { type: data.type, action: data.action, file: data.file } : null;
+        default:
+          return null;
+      }
     default:
       return null;
   }

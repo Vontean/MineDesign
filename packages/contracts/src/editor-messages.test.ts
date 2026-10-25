@@ -52,3 +52,57 @@ describe('saveFileName', () => {
     expect(saveFileName(`${'a'.repeat(260)}.html`)).toBeNull();
   });
 });
+
+describe('MineDesign 右侧面板的反馈消息', () => {
+  it('编辑器认反馈草稿与发送状态，只保留约定字段', () => {
+    const items = [{ id: 'a', n: 1, label: '工作台 › 按钮', text: '更醒目', extra: true }];
+    expect(readHostMessage({ type: 'editor:feedback', items, status: '已复制反馈', canSend: true, busy: false })).toEqual({
+      type: 'editor:feedback',
+      items: [{ id: 'a', n: 1, label: '工作台 › 按钮', text: '更醒目' }],
+      status: '已复制反馈',
+      canSend: true,
+      busy: false,
+    });
+    expect(readHostMessage({ type: 'editor:feedback', items: [{ id: 'a', n: 1, label: 'x', text: 'y'.repeat(4001) }], status: '', canSend: true, busy: false })).toBeNull();
+    expect(readHostMessage({ type: 'editor:feedback', items: [], status: '', canSend: 'yes', busy: false })).toBeNull();
+    expect(readHostMessage({ type: 'editor:set-panel', open: false })).toEqual({ type: 'editor:set-panel', open: false });
+  });
+
+  it('父窗口按动作核对字段：定位与删除要 id，复制与发送要补充说明', () => {
+    expect(readEditorMessage({ type: 'editor:feedback-action', action: 'remove', id: 'a' })).toEqual({ type: 'editor:feedback-action', action: 'remove', id: 'a' });
+    expect(readEditorMessage({ type: 'editor:feedback-action', action: 'send', message: '整体更紧凑' })).toEqual({
+      type: 'editor:feedback-action',
+      action: 'send',
+      message: '整体更紧凑',
+    });
+    expect(readEditorMessage({ type: 'editor:feedback-action', action: 'send', id: 'a' })).toBeNull();
+    expect(readEditorMessage({ type: 'editor:feedback-action', action: 'delete', id: 'a' })).toBeNull();
+    expect(readEditorMessage({ type: 'editor:panel', open: true })).toEqual({ type: 'editor:panel', open: true });
+    expect(readEditorMessage({ type: 'editor:panel', open: 1 })).toBeNull();
+  });
+});
+
+describe('MineDesign 顶栏的视图消息', () => {
+  const view = {
+    scale: 0.26,
+    minScale: 0.05,
+    maxScale: 8,
+    presets: [0.5, 1],
+    toggles: [{ id: 'Layout guides', label: 'Layout guides', checked: false }],
+    canUndo: true,
+    canRedo: false,
+    play: [{ label: 'Prototypes', items: [{ file: 'Login.dc.html', title: '登录' }] }],
+  };
+  it('父窗口认视图状态，比例必须为正数', () => {
+    expect(readEditorMessage({ type: 'editor:view', ...view })).toEqual({ type: 'editor:view', ...view });
+    expect(readEditorMessage({ type: 'editor:view', ...view, scale: 0 })).toBeNull();
+    expect(readEditorMessage({ type: 'editor:view', ...view, play: [{ label: 'x', items: [{ file: 1 }] }] })).toBeNull();
+  });
+  it('编辑器按动作核对视图操作', () => {
+    expect(readHostMessage({ type: 'editor:view-action', action: 'fit' })).toEqual({ type: 'editor:view-action', action: 'fit' });
+    expect(readHostMessage({ type: 'editor:view-action', action: 'zoom', scale: 2 })).toEqual({ type: 'editor:view-action', action: 'zoom', scale: 2 });
+    expect(readHostMessage({ type: 'editor:view-action', action: 'play', file: 'Login.dc.html' })).toEqual({ type: 'editor:view-action', action: 'play', file: 'Login.dc.html' });
+    expect(readHostMessage({ type: 'editor:view-action', action: 'zoom', scale: -1 })).toBeNull();
+    expect(readHostMessage({ type: 'editor:view-action', action: 'reload' })).toBeNull();
+  });
+});

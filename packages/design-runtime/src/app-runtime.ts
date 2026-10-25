@@ -482,6 +482,7 @@ import { installCanvasFrameEnvironment } from "./canvas/frame-environment";
 import { installGeometryInsertionTransform } from "./geometry/insertion-transform";
 import { installCommentsAnchorCodec } from "./comments/anchor-codec";
 import { installCommentsHostController } from "./comments/host-controller";
+import { installCommentsFeedbackPanel } from "./comments/feedback-panel";
 import { installCommentsPageSurfaces } from "./comments/page-surfaces";
 import { installCanvasFrameReadiness } from "./canvas/frame-readiness";
 import { installCanvasContextPublisher } from "./canvas/context-publisher";
@@ -1098,6 +1099,7 @@ export function createDesignRuntime(
     installGeometryInsertionTransform(runtime),
     installCommentsAnchorCodec(runtime),
     installCommentsHostController(runtime),
+    installCommentsFeedbackPanel(runtime),
     installCommentsPageSurfaces(runtime),
     installCanvasFrameReadiness(runtime),
     installCanvasContextPublisher(runtime),

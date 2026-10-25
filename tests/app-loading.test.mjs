@@ -26,7 +26,7 @@ async function harness(record,service,{build,shell}={}){
   win.testTransport=async({name,arguments:args})=>{
     calls.push({name,args});
     if(name==='minedesign_open_document')return {structuredContent:{document:await service.open(args.path,args.kind)}};
-    if(name==='minedesign_annotations')return {structuredContent:{annotations:await service.annotations(args.id)}};
+    if(name==='minedesign_annotations')return {structuredContent:{annotations:await service.annotations(args.id,args.annotations)}};
     if(name==='minedesign_shell')return {structuredContent:shell(args.build)};
     throw new Error('Unexpected tool '+name);
   };
@@ -117,7 +117,6 @@ test('open shell swaps in a new build in place and keeps the view state',async()
     const d=ui.win.document;
     await ui.ready();
     await until(()=>d.getElementById('viewport-state').hidden);
-    d.getElementById('panel').click();
     d.getElementById('message').value='整体更紧凑';
     // 相同构建只轮询，不替换
     await until(()=>ui.calls.some(c=>c.name==='minedesign_shell'));
@@ -125,6 +124,47 @@ test('open shell swaps in a new build in place and keeps the view state',async()
     latest='new';
     await until(()=>d.getElementById('new-shell'));
     assert.equal(ui.win.testClosed,true);
-    assert.deepEqual(JSON.parse(ui.win.sessionStorage.getItem('minedesign:shell-carry')),{id:doc.id,panel:'closed',message:'整体更紧凑'});
+    assert.deepEqual(JSON.parse(ui.win.sessionStorage.getItem('minedesign:shell-carry')),{id:doc.id,message:'整体更紧凑'});
   }finally{if(ui)await ui.close();await service.close();await fs.rm(tmp,{recursive:true,force:true});}
+});
+
+test('design feedback lives in the editor panel: drafts are pushed in, editor actions are saved here',async()=>{
+  const tmp=await fs.mkdtemp(path.join(os.tmpdir(),'mdn-feedback-'));
+  await fs.cp(path.join(ROOT,'tests/fixtures/studio'),path.join(tmp,'studio'),{recursive:true});
+  const service=await startService({workspace:tmp});
+  const doc=await service.open('studio');
+  const noteFile=path.join(ROOT,'.local/annotations',`${doc.id}.json`);
+  let ui;
+  try{
+    await service.annotations(doc.id,[{id:'keep',label:'标题',text:'保留'},{id:'drop',label:'按钮',text:'删除这条'}]);
+    ui=await harness(doc,service);
+    const d=ui.win.document,frame=d.getElementById('editor');
+    await until(()=>!frame.hidden);
+    const sent=[];frame.contentWindow.postMessage=data=>sent.push(data);
+    await ui.ready();
+    await until(()=>sent.some(m=>m.type==='editor:feedback'));
+    assert.equal(d.body.dataset.feedback,'editor');
+    assert.deepEqual(sent.findLast(m=>m.type==='editor:feedback').items.map(i=>[i.n,i.label,i.text]),[[1,'标题','保留'],[2,'按钮','删除这条']]);
+    // 编辑器面板里的删除由外壳保存，再推送新的草稿
+    ui.win.dispatchEvent(new ui.win.MessageEvent('message',{source:frame.contentWindow,data:{type:'editor:feedback-action',action:'remove',id:'drop'}}));
+    await until(()=>sent.findLast(m=>m.type==='editor:feedback').items.length===1);
+    assert.deepEqual((await service.annotations(doc.id)).map(n=>n.id),['keep']);
+    // 顶栏开关请求编辑器开关右侧面板，按钮状态跟随编辑器回报
+    ui.win.dispatchEvent(new ui.win.MessageEvent('message',{source:frame.contentWindow,data:{type:'editor:panel',open:true}}));
+    assert.equal(d.getElementById('panel').getAttribute('aria-pressed'),'true');
+    d.getElementById('panel').click();
+    assert.deepEqual({...sent.at(-1)},{type:'editor:set-panel',open:false});
+    // 顶栏的缩放与播放按编辑器报告的视图状态显示，菜单操作发回编辑器
+    assert.equal(d.getElementById('view-controls').hidden,true);
+    const view={scale:0.26,minScale:0.05,maxScale:8,presets:[0.5,1],toggles:[],canUndo:false,canRedo:false,play:[{label:'Prototypes',items:[{file:'Login.dc.html',title:'登录'}]}]};
+    ui.win.dispatchEvent(new ui.win.MessageEvent('message',{source:frame.contentWindow,data:{type:'editor:view',...view}}));
+    assert.equal(d.getElementById('view-controls').hidden,false);
+    assert.equal(d.getElementById('zoom-readout').textContent,'26%');
+    const items=id=>[...d.querySelectorAll(`#${id}-menu .menu-item`)];
+    items('zoom').find(b=>b.textContent==='100%').click();
+    assert.deepEqual({...sent.at(-1)},{type:'editor:view-action',action:'zoom',scale:1});
+    assert.match(d.getElementById('play-menu').textContent,/原型/);
+    items('play').find(b=>b.textContent==='登录').click();
+    assert.deepEqual({...sent.at(-1)},{type:'editor:view-action',action:'play',file:'Login.dc.html'});
+  }finally{if(ui)await ui.close();await service.close();await fs.rm(noteFile,{force:true});await fs.rm(tmp,{recursive:true,force:true});}
 });

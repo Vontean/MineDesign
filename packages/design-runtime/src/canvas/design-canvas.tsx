@@ -20853,6 +20853,120 @@ export function installCanvasDesignCanvas(
           onSave={value651}
         />
       );
+    // MineDesign：属性面板与评论合成一个右侧面板（有 feedback 宿主能力时）：评论是面板的第四个标签，与评论模式双向联动；
+    // 缩放与播放移到外壳顶栏，这里发布视图状态并执行顶栏的操作
+    let mdnFeedback: Dynamic =
+        (0, runtime.getCachedHostCapability)("feedback") ?? null,
+      mdnPanelOpen: Dynamic = mdnFeedback != null && (value220 || value95),
+      mdnCommenting: Dynamic = (0, runtime.reactChromeTheme.useRef)(value220),
+      // 进入评论模式前面板是否打开；退出时恢复
+      mdnOpenBefore: Dynamic = (0, runtime.reactChromeTheme.useRef)(null);
+    mdnCommenting.current = value220;
+    (0, runtime.reactChromeTheme.useEffect)((): Dynamic => {
+      if (!mdnFeedback) return;
+      runtime.mdnCommentMode.set(value220);
+      if (value220) {
+        mdnOpenBefore.current = value95;
+        value96(true);
+      } else if (mdnOpenBefore.current !== null) {
+        value96(runtime.mdnCommentMode.keepPanelOnExit || mdnOpenBefore.current);
+        runtime.mdnCommentMode.keepPanelOnExit = false;
+        mdnOpenBefore.current = null;
+      }
+    }, [mdnFeedback, value220]);
+    (0, runtime.reactChromeTheme.useEffect)((): Dynamic => {
+      mdnFeedback?.panelChanged(mdnPanelOpen);
+    }, [mdnFeedback, mdnPanelOpen]);
+    (0, runtime.reactChromeTheme.useEffect)(
+      (): Dynamic =>
+        mdnFeedback?.onPanelRequest((open?: Dynamic): Dynamic => {
+          // 关上面板时退出评论模式由下一个 effect 完成，退出后不再恢复成打开
+          if (!open && mdnCommenting.current) mdnOpenBefore.current = false;
+          value96(open);
+        }),
+      [mdnFeedback, value96],
+    );
+    (0, runtime.reactChromeTheme.useEffect)((): Dynamic => {
+      // 面板被关上（顶栏开关、面板的关闭按钮或 ⌘\）时一并退出评论模式，避免面板只剩 header
+      if (!mdnFeedback || value95 || !mdnCommenting.current) return;
+      mdnOpenBefore.current = false;
+      runtime.mdnToggleCommentMode();
+    }, [mdnFeedback, value95]);
+    let mdnPlayable: Dynamic = value347 || flag ? null : value641;
+    (0, runtime.reactChromeTheme.useEffect)((): Dynamic => {
+      if (!mdnFeedback) return;
+      let { minScale, maxScale }: Dynamic = value646(),
+        groups: Dynamic = mdnPlayable
+          ? [
+              [runtime.artboardNavigationGroupLabels.prototypes, mdnPlayable.prototypes],
+              [runtime.artboardNavigationGroupLabels.others, mdnPlayable.others],
+            ]
+          : [],
+        publish: Dynamic = (scale?: Dynamic): Dynamic =>
+          mdnFeedback.viewChanged({
+            scale,
+            minScale,
+            maxScale,
+            presets: runtime.zoomScalePresets,
+            toggles: value650.map((toggle?: Dynamic): Dynamic => ({
+              id: toggle.label,
+              label: toggle.label,
+              checked: !!toggle.checked,
+            })),
+            canUndo: !!value649?.canUndo(),
+            canRedo: !!value649?.canRedo(),
+            play: groups
+              .filter(([, items]: Dynamic): Dynamic => items.length > 0)
+              .map(([label, items]: Dynamic): Dynamic => ({
+                label: String(label),
+                items: items.map((item?: Dynamic): Dynamic => ({
+                  file: item.file,
+                  title: String(callback2(item.file)),
+                })),
+              })),
+          });
+      // value613 订阅比例变化，并立刻以当前比例回调一次
+      return value613(publish);
+    }, [mdnFeedback, mdnPlayable, value650, value649, value647, value613, value646]);
+    (0, runtime.reactChromeTheme.useEffect)(
+      (): Dynamic =>
+        mdnFeedback?.onViewAction((input?: Dynamic): Dynamic => {
+          if (input.action === "zoom-in") value645(1);
+          else if (input.action === "zoom-out") value645(-1);
+          else if (input.action === "fit") value619();
+          else if (input.action === "zoom") value617(input.scale);
+          else if (input.action === "undo") value649?.canUndo() && value649.undo();
+          else if (input.action === "redo") value649?.canRedo() && value649.redo();
+          else if (input.action === "toggle")
+            value650
+              .find((toggle?: Dynamic): Dynamic => toggle.label === input.id)
+              ?.onToggle();
+          else if (input.action === "play") value381(input.file);
+        }),
+      [mdnFeedback, value645, value619, value617, value649, value650, value381],
+    );
+    let mdnZoom: Dynamic = (
+      <span data-view-control={""} className={"contents"}>
+        <MemoizedCanvasZoomControl
+          data-testid={"dc-zoom"}
+          readout={true}
+          subscribeScale={value613}
+          getScale={value644}
+          onPickScale={value617}
+          onFit={value619}
+          onStepZoom={value645}
+          getLimits={value646}
+          undo={value649}
+          viewToggles={value650}
+          fitLabel={fitArtboardsLabel}
+          tip={
+            (0, runtime.isApplePlatform)()
+              ? "Zoom: \u23180 fit, \u2318+ / \u2318\u2212 step"
+              : "Zoom: Ctrl+0 fit, Ctrl and + / \u2212 step"
+          }
+        />
+      </span>
+    );
     // toolbarDensity 内部调用 hook，必须在顶层无条件调用，不能放进按展开状态渲染的分支
     let mdnDockDensity: Dynamic = (0, runtime.toolbarDensity)();
     return (
@@ -20904,28 +21018,9 @@ export function installCanvasDesignCanvas(
                         data-testid={"dc-save"}
                         className={"flex shrink-0 items-center gap-1"}
                       >
-                        {value639}
-                        {value639 ? <runtime.ToolbarDivider /> : null}
-                        <span data-view-control={""} className={"contents"}>
-                          <MemoizedCanvasZoomControl
-                            data-testid={"dc-zoom"}
-                            readout={true}
-                            subscribeScale={value613}
-                            getScale={value644}
-                            onPickScale={value617}
-                            onFit={value619}
-                            onStepZoom={value645}
-                            getLimits={value646}
-                            undo={value649}
-                            viewToggles={value650}
-                            fitLabel={fitArtboardsLabel}
-                            tip={
-                              (0, runtime.isApplePlatform)()
-                                ? "Zoom: \u23180 fit, \u2318+ / \u2318\u2212 step"
-                                : "Zoom: Ctrl+0 fit, Ctrl and + / \u2212 step"
-                            }
-                          />
-                        </span>
+                        {mdnFeedback ? null : value639}
+                        {!mdnFeedback && value639 ? <runtime.ToolbarDivider /> : null}
+                        {mdnFeedback ? null : mdnZoom}
                         {value652}
                       </span>
                     )
@@ -20945,7 +21040,7 @@ export function installCanvasDesignCanvas(
                             }
                           />
                         )}
-                        {value642}
+                        {mdnFeedback ? null : value642}
                       </runtime.jsx_Gn.Fragment>
                     )
                   }
@@ -22417,15 +22512,33 @@ export function installCanvasDesignCanvas(
                   )}
                 </div>
               </div>
-              <aside
-                id={runtime.inspectorPanelId}
-                aria-label={"Properties panel"}
-                inert={value283}
-                className={
-                  (value283 ? "hidden" : "flex") +
-                  " isolate z-40 h-full shrink-0 max-[599px]:h-auto max-[599px]:w-full max-[599px]:flex-col"
-                }
-              />
+              {mdnFeedback ? (
+                <div
+                  className={"mdn-right-panel"}
+                  hidden={!mdnPanelOpen || value283}
+                  data-testid={"mdn-right-panel"}
+                >
+                  <aside
+                    id={runtime.inspectorPanelId}
+                    aria-label={"Properties panel"}
+                    inert={value283}
+                    className={
+                      (value283 ? "hidden" : "flex") +
+                      " isolate z-40 min-h-0 flex-1 shrink-0"
+                    }
+                  />
+                </div>
+              ) : (
+                <aside
+                  id={runtime.inspectorPanelId}
+                  aria-label={"Properties panel"}
+                  inert={value283}
+                  className={
+                    (value283 ? "hidden" : "flex") +
+                    " isolate z-40 h-full shrink-0 max-[599px]:h-auto max-[599px]:w-full max-[599px]:flex-col"
+                  }
+                />
+              )}
             </div>
           </runtime.InspectorOpenContext.Provider>
         </runtime.CanvasWorkingStateContext.Provider>
