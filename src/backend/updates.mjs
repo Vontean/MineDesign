@@ -17,6 +17,20 @@ async function installDependencies(root) {
   const npm = path.join(path.dirname(process.execPath), 'npm');
   await run(existsSync(npm) ? npm : 'npm', ['install', '--no-audit', '--no-fund'], root);
 }
+async function npmInstallGlobal(spec) {
+  const npm = path.join(path.dirname(process.execPath), 'npm');
+  await run(existsSync(npm) ? npm : 'npm', ['install', '--global', spec, '--no-audit', '--no-fund'], process.cwd());
+}
+async function registryLatest(name) {
+  const response = await fetch(`https://registry.npmjs.org/${name.replace('/', '%2f')}/latest`);
+  if (!response.ok) throw new Error(`npm registry ${response.status}`);
+  return (await response.json()).version;
+}
+const newer = (a, b) => {
+  const [x, y] = [a, b].map(v => v.split('.').map(Number));
+  for (let i = 0; i < 3; i++) if (x[i] !== y[i]) return x[i] > y[i];
+  return false;
+};
 async function fileHash(file) {
   try {
     return createHash('sha256').update(await fs.readFile(file)).digest('hex');
@@ -26,10 +40,11 @@ async function fileHash(file) {
 }
 
 /**
- * 本机一键更新：与当前分支的上游对比；更新只做快进合并，本地有未提交改动或没有上游时拒绝。
- * 任务状态写在 statusFile，后端重新加载后仍可读到结果。build、install、reload 可替换，测试用真实 git 仓库但不真正构建。
+ * 本机一键更新。source 为 git（源码检出，开发版）时与当前分支的上游对比，只做快进合并，本地有未提交改动或没有上游时拒绝；
+ * 为 npm（npm 安装，生产版）时查 npm 上的 latest，用全局安装换成新版本，再重新登记 Codex 插件。
+ * 任务状态写在 statusFile，后端重新加载后仍可读到结果。build、install、reload 等可替换，测试用真实 git 仓库但不真正构建。
  */
-export function createUpdates({ root, statusFile, build = buildAll, install = installDependencies, reload = async () => {} }) {
+export function createUpdates({ root, statusFile, source = 'git', build = buildAll, install = installDependencies, latest: latestOf = registryLatest, installRelease = npmInstallGlobal, registerPlugin = () => run(process.execPath, [path.join(root, 'scripts/install-local.mjs')], root), reload = async () => {} }) {
   const git = (...args) => run('git', args, root);
   let running = null;
 
@@ -50,7 +65,14 @@ export function createUpdates({ root, statusFile, build = buildAll, install = in
     await fs.writeFile(temp, JSON.stringify(job));
     await fs.rename(temp, statusFile);
   }
+  async function packageName() {
+    return JSON.parse(await fs.readFile(path.join(root, 'package.json'), 'utf8')).name;
+  }
   async function inspect({ fetch }) {
+    if (source === 'npm') {
+      const latest = await latestOf(await packageName());
+      return { source, latest, behind: newer(latest, await version()) ? 1 : 0 };
+    }
     const upstream = await git('rev-parse', '--abbrev-ref', '@{u}').catch(() => null);
     if (!upstream) return { blocked: 'no-upstream' };
     if (fetch) await git('fetch', '--quiet');
@@ -74,7 +96,23 @@ export function createUpdates({ root, statusFile, build = buildAll, install = in
     return { version: await version(), status, job: job.state === 'running' && !running ? { state: 'failed', error: 'interrupted' } : job };
   }
 
+  async function npmSteps() {
+    const step = async name => writeJob({ state: 'running', step: name });
+    await step('fetch');
+    const { latest } = await inspect({ fetch: true });
+    const cli = await fileHash(path.join(root, 'dist/cli.mjs'));
+    await step('release');
+    await installRelease(`${await packageName()}@${latest}`);
+    // 包目录已整体换新：用新版本的安装脚本重新登记插件，MCP 参数与构建号随之更新
+    await step('plugin');
+    await registerPlugin();
+    const reconnect = (await fileHash(path.join(root, 'dist/cli.mjs'))) !== cli;
+    await writeJob({ state: 'done', reconnect, version: await version() });
+    await reload();
+  }
+
   async function steps() {
+    if (source === 'npm') return npmSteps();
     const step = async name => writeJob({ state: 'running', step: name });
     await step('fetch');
     const before = await inspect({ fetch: true });

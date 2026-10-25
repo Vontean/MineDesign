@@ -18,7 +18,7 @@ export function createAbout({ $, text, client, openLink, preference, onLanguage,
     if (job?.state === 'failed' && !status) return { status: t.updateFailed(reason(job.error)), ...check };
     if (status?.error) return { status: t.checkFailed(status.error), ...check };
     if (status?.blocked) return { status: reason(status.blocked), ...check };
-    if (status?.behind > 0) return { status: t.updateAvailable(status.behind, status.latest), label: t.update, primary: true, run: update };
+    if (status?.behind > 0) return { status: status.source === 'npm' ? t.releaseAvailable(status.latest) : t.updateAvailable(status.behind, status.latest), label: t.update, primary: true, run: update };
     if (status) return { status: t.upToDate, ...check };
     return { status: '', ...check };
   }

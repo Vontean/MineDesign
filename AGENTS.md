@@ -26,6 +26,7 @@
 | 修改界面、主题、状态或插画 | [DESIGN.md](DESIGN.md) | `src/frontend/app.*`、`assets/`；插画另读 [资源目录](assets/illustrations/README.md) |
 | 修改加载、保存、素材、反馈或 MCP | [架构契约](ARCHITECTURE.md#运行时契约) | `src/backend/`、`src/interfaces/`、`src/frontend/service-client.mjs` |
 | 构建、安装、连接恢复、打包 | [docs/development.md](docs/development.md) | `package.json`、`scripts/`、`bin/mdn.mjs`、插件 manifest |
+| 发布版本、npm 与 GitHub Release | [docs/releasing.md](docs/releasing.md) | `.github/workflows/publish.yml`、`docs/releases/` |
 | 选择测试、判断某项是否验收 | [验证路由](docs/development.md#按风险验证)、[证据记录](docs/verification.md) | `tests/`；修改测试用独立夹具，不覆盖示例作品 |
 | 改设计生成方法或文件格式 | 对应 `skills/design/SKILL.md` 或 `skills/design-system/SKILL.md` | 再按技能指针读取 references；不用整批加载 |
 | 修改编辑器、选择性合入外部更新或评估分发 | [ARCHITECTURE.md](ARCHITECTURE.md)、[FORK.md](FORK.md) | 模块自行维护；FORK 统一记录固定来源、接管映射与许可 |

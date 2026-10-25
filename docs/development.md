@@ -17,7 +17,7 @@
 
 安装脚本使用当前 Node 的绝对路径，生成独立 `minedesign-local` marketplace；CLI 按 CODEX_BIN、PATH、应用内置路径查找。构建指纹覆盖 dist、两套编辑器产物并进入启动配置，使后端独立打包后的变化也可识别。移动项目或更换 Node 后重新安装；安装成功不代表旧的宿主连接已替换。
 
-默认工作区为项目自身；其他项目使用 CLI 的 `--workspace`。这里没有通用跨项目授权 UI，路径边界测试必须保留。
+源码检出的默认工作区为项目自身，npm 安装默认 `~/MineDesign`（规则见 `src/paths.mjs`）；其他项目使用 CLI 的 `--workspace`。发版与 npm 安装包见 [发布](releasing.md)。这里没有通用跨项目授权 UI，路径边界测试必须保留。
 
 ## 故障与恢复
 

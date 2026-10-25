@@ -1,7 +1,6 @@
 {
-  "name": "minedesign",
-  "version": "0.0.5",
-  "private": true,
+  "name": "@vontean/minedesign",
+  "version": "0.1.0",
   "type": "module",
   "description": "Independent Codex design and design-system plugin",
   "engines": {
@@ -62,5 +61,16 @@
     "apps/design-editor/dist/",
     "apps/design-system-editor/dist/"
   ],
-  "license": "SEE LICENSE IN FORK.md"
+  "license": "SEE LICENSE IN FORK.md",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vontean/MineDesign.git"
+  },
+  "homepage": "https://github.com/Vontean/MineDesign#readme",
+  "bugs": {
+    "url": "https://github.com/Vontean/MineDesign/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
 }

@@ -52,6 +52,33 @@ test('update checks the upstream, refuses a dirty checkout and fast-forwards wit
   }
 });
 
+test('an npm install checks the registry, installs the newer release and re-registers the plugin', async () => {
+  const tmp = await fs.mkdtemp(path.join(os.tmpdir(), 'mdn-npm-update-'));
+  try {
+    await fs.writeFile(path.join(tmp, 'package.json'), JSON.stringify({ name: '@vontean/minedesign', version: '0.1.0' }));
+    const calls = [];
+    let published = '0.1.0';
+    const updates = createUpdates({
+      root: tmp, source: 'npm', statusFile: path.join(tmp, 'state/update.json'),
+      latest: async name => (calls.push(['latest', name]), published),
+      // 模拟全局安装把包目录换成新版本
+      installRelease: async spec => { calls.push(['install', spec]); await fs.writeFile(path.join(tmp, 'package.json'), JSON.stringify({ name: '@vontean/minedesign', version: published })); },
+      registerPlugin: async () => calls.push(['plugin']),
+    });
+    assert.deepEqual((await updates.about({ check: true })).status, { source: 'npm', latest: '0.1.0', behind: 0 });
+    published = '0.2.0';
+    assert.deepEqual((await updates.about({ check: true })).status, { source: 'npm', latest: '0.2.0', behind: 1 });
+    await updates.update();
+    await updates.idle();
+    const done = await updates.about();
+    assert.equal(done.version, '0.2.0');
+    assert.equal(done.job.state, 'done');
+    assert.deepEqual(calls.slice(-3), [['latest', '@vontean/minedesign'], ['install', '@vontean/minedesign@0.2.0'], ['plugin']]);
+  } finally {
+    await fs.rm(tmp, { recursive: true, force: true });
+  }
+});
+
 test('settings default to following Codex and reject unknown languages', async () => {
   const tmp = await fs.mkdtemp(path.join(os.tmpdir(), 'mdn-settings-'));
   try {

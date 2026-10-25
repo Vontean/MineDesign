@@ -57,14 +57,14 @@ flowchart TB
 | `src/backend/documents.mjs` | 打开/识别作品、检查、素材导入、批注持久化、反馈版本检查；不决定 HTTP 或 MCP 响应封装 |
 | `src/backend/projects.mjs` | 作品所属项目：向上查找列出它的 `project.json`，没有时按设计稿的 `designSystems` 引用自动归组；打开作品时随记录返回 `project` |
 | `src/backend/workspace.mjs` | 真实路径授权；工作区和符号链接边界 |
-| `src/backend/settings.mjs` | 本机界面偏好（`.local/settings.json`，目前只有界面语言） |
-| `src/backend/updates.mjs` | About 的版本与本机更新：对比当前分支上游、拒绝脏工作区、快进合并、按需安装依赖、构建并经 SIGHUP 入口重新加载后端；任务状态写在 `.local/update.json` |
+| `src/backend/settings.mjs` | 本机界面偏好（本机数据目录的 `settings.json`，目前只有界面语言） |
+| `src/backend/updates.mjs` | About 的版本与本机更新。源码检出：对比当前分支上游、拒绝脏工作区、快进合并、按需安装依赖、构建；npm 安装：查 npm latest、全局安装新版本、重新登记插件。两者都经 SIGHUP 入口重新加载后端，任务状态写在本机数据目录的 `update.json` |
 | `src/backend/editor-relay.mjs` | 已授权编辑器请求代理、分块、SSE 到长轮询的适配和订阅生命周期 |
 | `src/interfaces/shell.mjs` | 读取构建后的外壳、注入配置并计算构建标识；HTTP 与 MCP 共用 |
 | `src/interfaces/http.mjs` | HTTP 方法、路径、Host/Origin、请求大小与错误状态；提供外壳 HTML，适配后端操作与编辑器文件路由 |
 | `src/interfaces/mcp.mjs` | MCP 工具 schema、可见性、UI resource、工具结果封装与品牌元数据 |
 | `src/cli.mjs` | 启动工作区和端口、选择 MCP 模式、默认示例和信号退出 |
-| `src/paths.mjs` | 源码与构建后的共同项目根定位；不依赖服务 |
+| `src/paths.mjs` | 项目根、发行形态与本机位置：有 `.git` 为源码检出（开发版，数据在项目 `.local/`，作品即项目），否则为 npm 安装（生产版，数据在 `~/.minedesign`、可用 `MINEDESIGN_HOME` 改，作品默认 `~/MineDesign`）；不依赖服务 |
 | `src/brand.mjs` | 版本、稳定 App URI、主题和选中状态图标；不依赖服务启动 |
 | `bin/mdn.mjs` | 用户 CLI 的帮助、版本、安装与构建入口分发 |
 
@@ -100,7 +100,7 @@ flowchart TB
 | `assets/brand/` | Logo、favicon、明暗/选中状态、许可与版本缓存资源 |
 | `scripts/build-brand-icons.mjs` | 从品牌来源生成状态和主题资源 |
 | `scripts/build.mjs` | 分别打包前端外壳、稳定 Node CLI 与可重载 backend、内嵌插画/样式、注入编辑器主题 |
-| `scripts/install-local.mjs` | 本机 marketplace、绝对启动配置、覆盖三类构建产物的指纹与官方插件注册 |
+| `scripts/install-local.mjs` | 本机 marketplace、绝对启动配置、覆盖三类构建产物的指纹与官方插件注册；按 `src/paths.mjs` 同一规则定位数据与作品目录，记住 `--workspace`，npm 安装首次带上示例作品 |
 | `scripts/verify-equivalence.mjs` | 对重构前后 service 运行同组文件/接口场景，比较实际响应 |
 | `package.json` / `package-lock.json` | scripts、工作区、依赖版本与包的交付清单 |
 | `tsconfig.json` | 工作区 TypeScript/JSX 编译约定；编译配置不是验证通过声明 |
@@ -129,7 +129,7 @@ flowchart TB
 | `FORK.md` | 唯一分叉记录、固定提交、接管映射、完整许可与来源限制；按需阅读 |
 | `docs/development.md` / `docs/verification.md` | 工作流、恢复方式 / 验证证据及能力限制 |
 
-`.mcp.json` 是本机绝对路径启动配置；`.local/` 保存批注和本机安装数据；`.claude/` 是本地工具状态；`.codegraph/` 是本地索引；`output/` 是验证交付物；`dist/`、`apps/*/dist/`、`packages/*/src/generated/` 和 `node_modules/` 是生成或安装产物。上述本机数据不入库；保留 `.codegraph/.gitignore`。安装包按 package files 收集构建产物和 FORK 许可，运行不依赖源码工作区链接。
+`.mcp.json` 是本机绝对路径启动配置；`.local/`（源码检出）或 `~/.minedesign/`（npm 安装）保存批注、设置、更新状态和本机插件登记；`.claude/` 是本地工具状态；`.codegraph/` 是本地索引；`output/` 是验证交付物；`dist/`、`apps/*/dist/`、`packages/*/src/generated/` 和 `node_modules/` 是生成或安装产物。上述本机数据不入库；保留 `.codegraph/.gitignore`。安装包按 package files 收集构建产物和 FORK 许可，运行不依赖源码工作区链接。
 
 ## 运行时契约
 
@@ -151,7 +151,7 @@ Codex 中通过接口工具把编辑器装为 srcdoc，图片、字体、脚本�
 
 设计稿的评论列表显示在编辑器右侧面板的「评论」标签里，外壳经 `editor:feedback` 推送草稿与发送状态，面板里的定位、删除、复制、发送以 `editor:feedback-action` 交回外壳执行；面板开关用 `editor:set-panel`/`editor:panel`，顶栏缩放与播放用 `editor:view`/`editor:view-action`。界面语言由外壳解析（About 偏好，缺省跟随宿主 locale）后经 `editor:locale` 推送，运行时用 `useUiText()` 读取 `ui-text` 目录。这些都经编辑器宿主的 `feedback` 能力进入运行时；编辑器单独打开时没有该能力，界面保持原样。设计系统仍用外壳反馈侧栏。
 
-批注按稳定作品 id 保存在 `.local/annotations/`。发送先 flush 编辑器，再检查来源版本，经宿主显式提交；失败保留批注。补充说明文本框尚无持久化保证。发送成功与 Agent 修改完成分别判断。
+批注按稳定作品 id 保存在本机数据目录的 `annotations/`。发送先 flush 编辑器，再检查来源版本，经宿主显式提交；失败保留批注。补充说明文本框尚无持久化保证。发送成功与 Agent 修改完成分别判断。
 
 ### 资源与等价重构
 

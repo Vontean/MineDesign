@@ -1,0 +1,226 @@
+name: Publish MineDesign
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: '已推送到 main 的版本标签，例如 v0.1.0'
+        required: true
+        type: string
+      publish:
+        description: '检查通过后发布到 npm 并创建 GitHub Release；不勾选则只验证'
+        default: false
+        type: boolean
+
+permissions: {}
+
+concurrency:
+  group: minedesign-npm-release
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    runs-on: macos-14
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    outputs:
+      artifact-id: ${{ steps.upload.outputs.artifact-id }}
+      sha256: ${{ steps.pack.outputs.sha256 }}
+      package: ${{ steps.pack.outputs.package }}
+    steps:
+      - name: Authorize owner and main workflow
+        env:
+          ACTOR_ID: ${{ github.actor_id }}
+          TRIGGERING_ACTOR: ${{ github.triggering_actor }}
+          REPOSITORY_ID: ${{ github.repository_id }}
+          WORKFLOW_REF: ${{ github.ref }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        run: |
+          # 发起与重跑都限本人；输入作为环境变量传入，避免脚本插值。
+          test "$ACTOR_ID" = '65079079'
+          test "$TRIGGERING_ACTOR" = 'Vontean'
+          test "$REPOSITORY_ID" = '1432977566'
+          test "$WORKFLOW_REF" = 'refs/heads/main'
+          [[ "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]
+
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Select released commit
+        env:
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        run: |
+          RELEASE_SHA=$(git rev-parse "refs/tags/$RELEASE_TAG^{commit}")
+          git merge-base --is-ancestor "$RELEASE_SHA" origin/main
+          git checkout --detach "$RELEASE_SHA"
+
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '24'
+          package-manager-cache: false
+
+      - name: Check package identity, version and release notes
+        env:
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        run: |
+          node --input-type=module <<'JS'
+          import assert from 'node:assert/strict';
+          import {readFileSync,existsSync} from 'node:fs';
+          const pkg=JSON.parse(readFileSync('package.json'));
+          const lock=JSON.parse(readFileSync('package-lock.json'));
+          const plugin=JSON.parse(readFileSync('.codex-plugin/plugin.json'));
+          const tag=process.env.RELEASE_TAG;
+          assert.equal(pkg.name,'@vontean/minedesign');
+          assert.equal(`v${pkg.version}`,tag);
+          assert.equal(lock.version,pkg.version);
+          assert.equal(lock.packages[''].version,pkg.version);
+          assert.equal(plugin.version,pkg.version);
+          assert.ok(existsSync(`assets/brand/${pkg.version}/minedesign-icon.svg`));
+          assert.ok(existsSync(`docs/releases/${tag}.md`),`missing docs/releases/${tag}.md`);
+          JS
+
+      - run: npm ci --no-audit --no-fund
+      - run: npm run build
+      - run: npm test
+      - run: npm run test:modules
+
+      - name: Pack validated release
+        id: pack
+        run: |
+          mkdir -p "$RUNNER_TEMP/npm-release"
+          npm pack --ignore-scripts --pack-destination "$RUNNER_TEMP/npm-release"
+          PACKAGE=$(find "$RUNNER_TEMP/npm-release" -name '*.tgz' -type f)
+          echo "package=$(basename "$PACKAGE")" >> "$GITHUB_OUTPUT"
+          echo "sha256=$(shasum -a 256 "$PACKAGE" | cut -d ' ' -f 1)" >> "$GITHUB_OUTPUT"
+
+      - name: Audit package contents and install it
+        env:
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        run: |
+          PACKAGE=$(find "$RUNNER_TEMP/npm-release" -name '*.tgz' -type f)
+          FILES=$(tar tzf "$PACKAGE")
+          for required in package/dist/cli.mjs package/dist/backend.mjs package/dist/app.html package/apps/design-editor/dist/index.html package/apps/design-system-editor/dist/index.html package/FORK.md package/scripts/install-local.mjs; do
+            grep -qx "$required" <<<"$FILES"
+          done
+          # 本机数据、验证产物、源码工作区与依赖不进包
+          ! grep -E '^package/(\.local|output|node_modules|packages|src|tests|\.codegraph)/' <<<"$FILES"
+          # 隔离目录安装，确认命令可用、版本一致、本地服务能起来
+          PREFIX="$RUNNER_TEMP/install"
+          npm install --global --prefix "$PREFIX" "$PACKAGE" --no-audit --no-fund
+          test "$("$PREFIX/bin/mdn" --version)" = "MDN ${RELEASE_TAG#v}"
+          export MINEDESIGN_HOME="$RUNNER_TEMP/home"
+          "$PREFIX/bin/mdn" --port 0 --workspace "$PREFIX/lib/node_modules/@vontean/minedesign/examples" > "$RUNNER_TEMP/serve.log" 2>&1 &
+          SERVER=$!
+          for attempt in $(seq 1 30); do grep -q 'http://' "$RUNNER_TEMP/serve.log" && break; sleep 1; done
+          URL=$(grep -o 'http://[^ ]*' "$RUNNER_TEMP/serve.log" | head -1)
+          test "$(curl -s -o /dev/null -w '%{http_code}' "$URL")" = 200
+          kill "$SERVER"
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        id: upload
+        with:
+          name: minedesign-npm-package
+          path: ${{ runner.temp }}/npm-release/*.tgz
+          if-no-files-found: error
+          retention-days: 7
+
+  publish:
+    needs: prepare
+    if: >-
+      inputs.publish && github.actor_id == '65079079' &&
+      github.triggering_actor == 'Vontean' &&
+      github.repository_id == '1432977566' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    environment: npm-release
+    permissions:
+      id-token: write
+      actions: read
+    steps:
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - run: npm install --global npm@11.19.0 --ignore-scripts
+
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          artifact-ids: ${{ needs.prepare.outputs.artifact-id }}
+          path: release
+          merge-multiple: true
+
+      - name: Publish verified tarball with OIDC
+        env:
+          EXPECTED_SHA256: ${{ needs.prepare.outputs.sha256 }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        run: |
+          PACKAGE=$(find "$GITHUB_WORKSPACE/release" -name '*.tgz' -type f)
+          echo "$EXPECTED_SHA256  $PACKAGE" | sha256sum --check
+          # 可信发布用短期 OIDC 凭证，不保存 npm Token。已发布的版本跳过，便于只补齐后续步骤。
+          if npm view "@vontean/minedesign@${RELEASE_TAG#v}" version >/dev/null 2>&1; then
+            echo "@vontean/minedesign@${RELEASE_TAG#v} already on npm; skipping publish"
+          else
+            npm publish "$PACKAGE" --access public --tag latest --ignore-scripts
+          fi
+
+      - name: Verify public registry
+        env:
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        run: |
+          node --input-type=module <<'JS'
+          const version=process.env.RELEASE_TAG.slice(1);
+          for(let attempt=0;attempt<12;attempt++) {
+            const response=await fetch(`https://registry.npmjs.org/@vontean%2fminedesign?release_check=${Date.now()}`);
+            if(response.ok) {
+              const data=await response.json();
+              if(data.versions?.[version]?.version===version && data['dist-tags']?.latest===version) {
+                console.log(`Published @vontean/minedesign@${version}; latest=${version}`);
+                process.exit(0);
+              }
+            }
+            await new Promise(resolve=>setTimeout(resolve,20_000));
+          }
+          throw new Error(`Registry has not confirmed @vontean/minedesign@${version} and latest`);
+          JS
+
+  release:
+    needs: [prepare, publish]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: refs/tags/${{ inputs.release_tag }}
+          persist-credentials: false
+
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          artifact-ids: ${{ needs.prepare.outputs.artifact-id }}
+          path: release
+          merge-multiple: true
+
+      - name: Create or update GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
+          EXPECTED_SHA256: ${{ needs.prepare.outputs.sha256 }}
+          PACKAGE_NAME: ${{ needs.prepare.outputs.package }}
+        run: |
+          cd release
+          echo "$EXPECTED_SHA256  $PACKAGE_NAME" | tee "$PACKAGE_NAME.sha256" | sha256sum --check
+          NOTES="$GITHUB_WORKSPACE/docs/releases/$RELEASE_TAG.md"
+          TITLE="MineDesign ${RELEASE_TAG#v}"
+          # 标签已存在才创建，不让 Release 隐式打标签；同版本已有 Release 时只更新正文、附件与 Latest
+          if gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release edit "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --title "$TITLE" --notes-file "$NOTES" --latest
+            gh release upload "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" "$PACKAGE_NAME" "$PACKAGE_NAME.sha256" --clobber
+          else
+            gh release create "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --verify-tag --title "$TITLE" --notes-file "$NOTES" --latest "$PACKAGE_NAME" "$PACKAGE_NAME.sha256"
+          fi

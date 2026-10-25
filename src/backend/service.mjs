@@ -5,7 +5,7 @@ import { randomBytes } from 'node:crypto';
 import { DocumentServer } from '@minedesign/document-store';
 import { CANVAS_LAYOUT } from '@minedesign/design-files';
 import { DESIGN_SYSTEM_LAYOUT } from '@minedesign/design-system-files';
-import { ROOT } from '../paths.mjs';
+import { ROOT, CHECKOUT, DATA, DEFAULT_WORKSPACE } from '../paths.mjs';
 import { createDocumentService } from './documents.mjs';
 import { createEditorRelay } from './editor-relay.mjs';
 import { createSettings } from './settings.mjs';
@@ -15,7 +15,7 @@ export { ROOT } from '../paths.mjs';
 export { inside } from './workspace.mjs';
 
 // 唯一组合根：连接领域操作、文件适配器和两种外部接口。
-export async function startService({workspace=ROOT,port=0}={}) {
+export async function startService({workspace=DEFAULT_WORKSPACE,port=0}={}) {
   workspace=await fs.realpath(workspace);
   const token=randomBytes(24).toString('hex');
   const editors=new DocumentServer({editorDist:()=>null,
@@ -25,11 +25,11 @@ export async function startService({workspace=ROOT,port=0}={}) {
   });
   let origin;
   const getOrigin=()=>origin;
-  const documents=createDocumentService({workspace,editors,origin:getOrigin,annotationRoot:path.join(ROOT,'.local/annotations')});
+  const documents=createDocumentService({workspace,editors,origin:getOrigin,annotationRoot:path.join(DATA,'annotations')});
   const relay=createEditorRelay(getOrigin);
-  const settings=createSettings(path.join(ROOT,'.local/settings.json'));
+  const settings=createSettings(path.join(DATA,'settings.json'));
   // 更新完成后按 MCP 模式的 SIGHUP 入口重新加载后端；HTTP 模式没有该入口，需重启服务
-  const updates=createUpdates({root:ROOT,statusFile:path.join(ROOT,'.local/update.json'),reload:async()=>{if(process.listenerCount('SIGHUP'))process.emit('SIGHUP');}});
+  const updates=createUpdates({root:ROOT,source:CHECKOUT?'git':'npm',statusFile:path.join(DATA,'update.json'),reload:async()=>{if(process.listenerCount('SIGHUP'))process.emit('SIGHUP');}});
   const service={...documents,proxy:relay.proxy,events:relay.events,
     about:async(input={})=>({...await updates.about(input),settings:await settings.read()}),
     settings:patch=>settings.update(patch),
