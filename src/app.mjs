@@ -95,7 +95,7 @@ window.addEventListener('message',e=>{
     const url=URL.createObjectURL(new Blob([m.data]));const a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),10000);post({type:'editor:save-file-result',requestId:m.requestId,outcome:'saved'});
   }
 });
-$('copy').onclick=async()=>{try{await navigator.clipboard.writeText(feedback());$('delivery').textContent='已复制；浏览器预览不代表 Codex 消息桥已验收';}catch(e){$('delivery').textContent=e.message;}};
+$('copy').onclick=async()=>{try{await navigator.clipboard.writeText(feedback());$('delivery').textContent='已复制反馈';}catch(e){$('delivery').textContent=e.message;}};
 $('send').onclick=async()=>{
   if(!app||busy)return;
   busy=true;$('send').disabled=true;$('documents').disabled=true;
@@ -108,7 +108,7 @@ async function initialize(){
     // 宿主只推送变化的字段，合并后整体应用
     app.addEventListener('hostcontextchanged',()=>applyContext(app.getHostContext()));
     await app.connect();applyContext(app.getHostContext());
-  }else{$('send').disabled=true;$('delivery').textContent='浏览器模式：可编辑、保存和批注；发送需在 Codex 插件中验证。';}
+  }else{$('send').disabled=true;$('send').title='在 Codex 聊天中打开 MineDesign 后可发送';}
   bridge=window.__mdnBridge=createBridge(app?{http:args=>tool('minedesign_http',args),events:args=>tool('minedesign_events',args)}:{http:args=>api('http',args),events:args=>api('events',args)});
   refreshDocuments();await select(docs[0]?.id);
 }
