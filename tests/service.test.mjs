@@ -8,7 +8,7 @@ import { startService, inside, ROOT } from '../src/service.mjs';
 test('design editor serves real files, preserves ifMatch and rejects workspace escape',async()=>{
   const tmp=await fs.mkdtemp(path.join(os.tmpdir(),'minedesign-test-'));
   const workspace=path.join(tmp,'workspace');await fs.mkdir(workspace);
-  await fs.cp(path.join(ROOT,'examples/studio'),path.join(workspace,'studio'),{recursive:true});
+  await fs.cp(path.join(import.meta.dirname,'fixtures/studio'),path.join(workspace,'studio'),{recursive:true});
   await fs.symlink(tmp,path.join(workspace,'outside'));
   const service=await startService({workspace});
   try{

@@ -16,6 +16,10 @@ test('built plugin exposes both editors and design tools via real stdio MCP',asy
     const entry=tools.find(t=>t.name==='minedesign_open');assert.deepEqual(entry.icons.map(i=>i.theme),[undefined,'light','dark']);
     assert.match(Buffer.from(entry.icons[0].src.split(',')[1],'base64').toString(),/id="brush"/);
     const resource=await client.readResource({uri:APP_URI});assert.match(resource.contents[0].text,/MineDesign/);
+    assert.equal(entry._meta.ui.resourceUri,APP_URI);
+    assert.deepEqual(entry._meta['openai/ui'].entrypoints,[{type:'global'},{type:'thread'}]);
+    const {resources}=await client.listResources();assert.deepEqual(resources.map(r=>r.uri),[APP_URI]);
+    for(const name of ['minedesign_http','minedesign_events','minedesign_annotations','minedesign_prepare_feedback'])assert.deepEqual(tools.find(t=>t.name===name)._meta.ui.visibility,['app']);
     const check=await client.callTool({name:'design_check',arguments:{path:'examples/studio'}});assert.equal(check.isError,undefined);
     const outside=await client.callTool({name:'design_check',arguments:{path:'/private/tmp'}});assert.equal(outside.isError,true);
     // Codex 沙箱只放行 https/blob/data：编辑器请求经 MCP 工具转发，CSP 不声明本地 http 来源

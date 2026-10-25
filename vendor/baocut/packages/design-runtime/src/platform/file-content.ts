@@ -2202,7 +2202,8 @@ export function installPlatformFileContent(
   function currentHttpOrigin(): Dynamic {
     if (typeof location === "undefined") return "null";
     let value: Dynamic = (globalThis as Dynamic).origin ?? location.origin;
-    return /^https?:\/\//i.test(value) ? value : "null";
+    // Codex 的同源 srcdoc 消息保留宿主 scheme，不能将它折成 opaque origin。
+    return /^(?:https?|codex-sandbox):\/\//i.test(value) ? value : "null";
   }
   function resolveProjectAssetUrl(
     project?: Dynamic,
