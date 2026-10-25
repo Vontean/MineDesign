@@ -20,10 +20,11 @@ const shimAsText={name:'shim-as-text',setup(b){b.onLoad({filter:/frame-shim\.js$
 await build({entryPoints:[path.join(root,'src/app.mjs')],outfile:path.join(root,'dist/app.js'),bundle:true,format:'esm',platform:'browser',legalComments:'inline',plugins:[shimAsText],define:{__MDN_VERSION__:JSON.stringify(version)}});
 const js=(await fs.readFile(path.join(root,'dist/app.js'),'utf8')).replaceAll('</script','<\\/script');
 const css=await fs.readFile(path.join(root,'assets/app.css'),'utf8');
+const illustrationsCss=await fs.readFile(path.join(root,'assets/illustrations/illustrations.css'),'utf8');
 let html=await fs.readFile(path.join(root,'src/app.html'),'utf8');
 const logo=(await fs.readFile(path.join(root,'assets/brand/minedesign-icon-selected.svg'),'utf8')).replace(/<!--[\s\S]*?-->/g,'').replace('role="img" aria-label="MineDesign"','aria-hidden="true" class="brand-icon"');
 const favicon=Buffer.from(await fs.readFile(path.join(root,'assets/brand/favicon.svg'),'utf8')).toString('base64');
 html=html.replace('<!--__BRAND__-->',()=>logo).replace('</head>',`<link rel="icon" href="data:image/svg+xml;base64,${favicon}"></head>`);
-await fs.writeFile(path.join(root,'dist/app.html'),html.replace('/*__STYLES__*/',tokens+'\n'+css).replace('/*__APP__*/',()=>js));
+await fs.writeFile(path.join(root,'dist/app.html'),html.replace('/*__STYLES__*/',[tokens,css,illustrationsCss].join('\n')).replace('/*__APP__*/',()=>js));
 await build({entryPoints:[path.join(root,'src/cli.mjs')],outfile:path.join(root,'dist/cli.mjs'),bundle:true,format:'esm',platform:'node',external:['@modelcontextprotocol/*','zod'],logLevel:'warning'});
 console.log('MineDesign host and editor theme adapters built.');

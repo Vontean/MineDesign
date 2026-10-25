@@ -1,0 +1,16 @@
+/* 插画的几何、图层与主题由资源层统一维护，不放进页面布局样式。 */
+.mdn-illustration {
+  position: relative; display: grid; place-items: center;
+  width: var(--mdn-illustration-size, 112px); aspect-ratio: 1; isolation: isolate;
+}
+.mdn-document-stack::before, .mdn-document-stack::after {
+  content: ''; position: absolute; width: 64.2857%; height: 78.5714%;
+  border: 1px solid var(--mdn-border-strong); border-radius: var(--mdn-radius-lg);
+  background: var(--mdn-surface); z-index: -1;
+}
+.mdn-document-stack::before { transform: translate(-16.6667%, -3.4091%) rotate(-12deg); }
+.mdn-document-stack::after { transform: translate(16.6667%, 3.4091%) rotate(12deg); }
+.mdn-document-stack svg {
+  width: 46.4286%; height: 46.4286%; stroke: var(--mdn-text-secondary);
+  stroke-width: 1.25; fill: var(--mdn-surface-sunken);
+}

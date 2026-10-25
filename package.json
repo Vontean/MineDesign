@@ -45,6 +45,7 @@
     "scripts/install-local.mjs",
     ".codex-plugin/plugin.json",
     "assets/brand/",
+    "assets/illustrations/",
     "assets/tokens.css",
     "assets/editor-theme.css",
     "skills/",

@@ -1,9 +1,11 @@
 import { App } from '@modelcontextprotocol/ext-apps';
 import { readEditorMessage, saveFileName } from '../vendor/baocut/packages/slides/src/editor-messages.ts';
 import { createBridge } from './virtual.mjs';
+import { createIllustration } from '../assets/illustrations/index.mjs';
 const config=window.MINEDESIGN_CONFIG;
 const $=id=>document.getElementById(id);
 const frame=$('editor');
+$('state-illustration').append(createIllustration('document-loading'));
 let app,bridge,documentRecord,notes=[],pending,mode=false,busy=false,loading=0;
 let docs=config.documents;
 const system=matchMedia('(prefers-color-scheme: dark)');
@@ -26,9 +28,21 @@ function applyContext(ctx){
 }
 system.addEventListener('change',e=>{if(!hostTheme)setTheme(e.matches?'dark':'light');});
 setTheme(theme);
-function show(text){$('status').textContent=text;$('retry').hidden=true;}
-// 载入失败时保留原因并给出重试入口（例如 MCP 服务刚重启）
-function fail(error){$('status').textContent=`载入失败：${error.message}`;$('retry').hidden=false;}
+function editorAvailable(available){$('annotate').disabled=!available;$('send').disabled=!available||!app;}
+// 连接、加载和失败共用视窗状态，重试不能把提示送回顶栏。
+function viewState(state,{title,description='',error}={}){
+  const panel=$('viewport-state'),failed=state==='error';
+  panel.hidden=state==='ready';panel.dataset.state=state;
+  panel.closest('.viewport').setAttribute('aria-busy',String(state==='loading'));
+  $('state-message').setAttribute('role',failed?'alert':'status');
+  $('state-title').textContent=title||'';$('state-description').textContent=description;
+  if(state!=='ready')$('state-illustration').replaceChildren(createIllustration({loading:'document-loading',error:'document-unavailable',empty:'document-empty'}[state]));
+  $('retry').hidden=!failed;$('state-details').hidden=!failed;$('state-details').open=false;
+  $('error-detail').textContent=error?.message||'';
+  if(state!=='ready')frame.hidden=true;
+  editorAvailable(state==='ready');
+}
+function fail(error){viewState('error',{title:'暂时无法打开作品',description:'请重新载入。如果仍无法打开，请刷新 MineDesign 的插件连接后再试。',error});}
 async function api(action,body){const r=await fetch(new URL(config.api).pathname+action,{method:body?'POST':'GET',...(body?{headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}:{})});const result=await r.json();if(!r.ok)throw new Error(result.error);return result;}
 async function tool(name,args){const result=await app.callServerTool({name,arguments:args});if(result.isError)throw new Error(result.content?.map(c=>c.text).join(' ')||`${name} 失败`);return result.structuredContent;}
 async function drafts(value){
@@ -56,11 +70,25 @@ function renderNotes(){
 async function save(){notes=await drafts(notes);renderNotes();}
 async function select(id){
   if(busy)return;
-  documentRecord=docs.find(d=>d.id===id)||docs[0];if(!documentRecord){show('请让 Agent 打开一份设计稿');return;}
-  $('documents').value=documentRecord.id;notes=await drafts();renderNotes();
-  const ticket=++loading;show(`正在载入 ${documentRecord.title}…`);
-  const html=await bridge.html(documentRecord.editorPath);
-  if(ticket===loading)frame.srcdoc=html;
+  const record=docs.find(d=>d.id===id)||docs[0];if(!record){viewState('empty',{title:'还没有打开的作品',description:'请让 Agent 创建或打开一份设计稿。'});return;}
+  const ticket=++loading;
+  const changed=documentRecord?.id!==record.id;
+  documentRecord=record;$('documents').value=record.id;
+  if(changed){notes=[];renderNotes();}
+  viewState('loading',{title:'正在打开作品',description:record.title});
+  try{
+    // 宿主会缓存页面；grant 属于服务进程，必须按稳定目录重新打开，不能复用缓存地址。
+    const args={path:record.path,kind:record.kind};
+    const current=app?(await tool('minedesign_open_document',args)).document:await api('open',args);
+    if(ticket!==loading)return;
+    documentRecord=current;docs=docs.map(d=>d.id===record.id?current:d);
+    const savedNotes=await drafts();
+    if(ticket!==loading)return;
+    notes=savedNotes;renderNotes();
+    const html=await bridge.html(current.editorPath);
+    if(ticket!==loading)return;
+    frame.srcdoc=html;frame.hidden=false;
+  }catch(error){if(ticket===loading)fail(error);}
 }
 function refreshDocuments(){
   $('documents').replaceChildren(...docs.map(d=>{const o=document.createElement('option');o.value=d.id;o.textContent=`${d.kind==='design'?'设计稿':'设计系统'} · ${d.title}`;return o;}));
@@ -76,13 +104,13 @@ $('panel').onclick=()=>{const open=document.body.dataset.panel==='closed';docume
 $('annotate').onclick=()=>{mode=!mode;$('annotate').setAttribute('aria-pressed',String(mode));post({type:'editor:set-mode',on:mode});};
 $('compose').addEventListener('close',async()=>{
   if(!pending)return;
-  try{if($('compose').returnValue==='add'&&$('comment').value.trim()){notes.push({id:crypto.randomUUID(),anchor:pending.anchor,label:pending.label,detail:pending.detail,section:pending.section,text:$('comment').value.trim(),createdAt:new Date().toISOString()});await save();}}catch(e){show(e.message);}
+  try{if($('compose').returnValue==='add'&&$('comment').value.trim()){notes.push({id:crypto.randomUUID(),anchor:pending.anchor,label:pending.label,detail:pending.detail,section:pending.section,text:$('comment').value.trim(),createdAt:new Date().toISOString()});await save();}}catch(e){$('delivery').textContent=e.message;}
   post({type:'editor:composer-closed',requestId:pending.requestId});pending=null;
 });
 window.addEventListener('message',e=>{
   if(e.source!==frame.contentWindow)return;
   const m=readEditorMessage(e.data);if(!m)return;
-  if(m.type==='editor:ready'){threads();setTheme(theme);post({type:'editor:set-mode',on:mode});show('');}
+  if(m.type==='editor:ready'&&!frame.hidden){threads();setTheme(theme);post({type:'editor:set-mode',on:mode});viewState('ready');}
   if(m.type==='editor:mode'){mode=m.on;$('annotate').setAttribute('aria-pressed',String(mode));}
   if(m.type==='editor:compose'){
     if(pending){post({type:'editor:compose-result',requestId:m.requestId,opened:false});return;}
@@ -104,7 +132,7 @@ $('send').onclick=async()=>{
 async function initialize(){
   if(window.parent!==window){
     app=new App({name:'MineDesign',version:__MDN_VERSION__});
-    app.ontoolresult=async result=>{const next=result.structuredContent?.document;if(next){docs=docs.filter(d=>d.id!==next.id).concat(next);refreshDocuments();await select(next.id).catch(fail);}};
+    app.ontoolresult=async result=>{const data=result.structuredContent;if(data?.documents){docs=data.documents;refreshDocuments();if(bridge)await select(documentRecord?.id).catch(fail);}else if(data?.document){const next=data.document;docs=docs.filter(d=>d.id!==next.id).concat(next);refreshDocuments();if(bridge)await select(next.id).catch(fail);}};
     // 宿主只推送变化的字段，合并后整体应用
     app.addEventListener('hostcontextchanged',()=>applyContext(app.getHostContext()));
     await app.connect();applyContext(app.getHostContext());
