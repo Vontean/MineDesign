@@ -1,0 +1,11 @@
+{
+  "manifestVersion": 3,
+  "name": "Mine Studio",
+  "namespace": "MineStudio",
+  "files": [
+    "tokens.css"
+  ],
+  "libraries": [],
+  "components": [],
+  "assetGroups": []
+}

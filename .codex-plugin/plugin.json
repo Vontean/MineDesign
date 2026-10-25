@@ -1,0 +1,23 @@
+{
+  "name": "minedesign",
+  "version": "0.0.3",
+  "description": "Local experimental design canvas and design-system editor",
+  "author": {
+    "name": "Vontean"
+  },
+  "mcpServers": "./.mcp.json",
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "MineDesign",
+    "shortDescription": "Design and iterate with your Codex agent",
+    "category": "Design",
+    "capabilities": [
+      "Interactive",
+      "Read",
+      "Write"
+    ],
+    "logo": "./assets/brand/0.0.3/minedesign-icon-light.svg",
+    "composerIcon": "./assets/brand/0.0.3/favicon.svg",
+    "logoDark": "./assets/brand/0.0.3/minedesign-icon-dark.svg"
+  }
+}

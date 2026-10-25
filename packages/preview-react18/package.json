@@ -1,0 +1,10 @@
+{
+  "name": "@minedesign/preview-react18",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
+  }
+}

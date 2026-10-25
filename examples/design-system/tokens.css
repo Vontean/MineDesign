@@ -1,0 +1,9 @@
+/* Mine Studio — generated from tokens.json */
+:root, [data-theme="light"] {
+  --surface: #ffffff; /* Canvas surface */
+  --text: #0d0d0d; /* Primary content */
+}
+:root {
+  --space-4: 20px; /* Content gaps */
+  --radius-md: 16px; /* Cards */
+}

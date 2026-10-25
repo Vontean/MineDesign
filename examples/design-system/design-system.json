@@ -1,0 +1,19 @@
+{
+  "v": 3,
+  "assetGroups": {},
+  "blobs": {},
+  "createdOnFiles": {
+    "at": "2026-10-25T00:00:00Z",
+    "v": 1
+  },
+  "docs": {
+    "readme": "project/README.md",
+    "sections": []
+  },
+  "groups": [],
+  "layout": "files",
+  "libraries": [],
+  "namespace": "MineStudio",
+  "sections": {},
+  "title": "Mine Studio"
+}
