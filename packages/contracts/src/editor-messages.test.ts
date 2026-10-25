@@ -104,5 +104,7 @@ describe('MineDesign 顶栏的视图消息', () => {
     expect(readHostMessage({ type: 'editor:view-action', action: 'play', file: 'Login.dc.html' })).toEqual({ type: 'editor:view-action', action: 'play', file: 'Login.dc.html' });
     expect(readHostMessage({ type: 'editor:view-action', action: 'zoom', scale: -1 })).toBeNull();
     expect(readHostMessage({ type: 'editor:view-action', action: 'reload' })).toBeNull();
+    expect(readHostMessage({ type: 'editor:locale', locale: 'en' })).toEqual({ type: 'editor:locale', locale: 'en' });
+    expect(readHostMessage({ type: 'editor:locale', locale: 'fr' })).toBeNull();
   });
 });

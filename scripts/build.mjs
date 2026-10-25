@@ -24,6 +24,9 @@ const illustrationsCss=await fs.readFile(path.join(root,'assets/illustrations/il
 let html=await fs.readFile(path.join(root,'src/frontend/app.html'),'utf8');
 const logo=(await fs.readFile(path.join(root,'assets/brand/minedesign-icon-selected.svg'),'utf8')).replace(/<!--[\s\S]*?-->/g,'').replace('role="img" aria-label="MineDesign"','aria-hidden="true" class="brand-icon"');
 const favicon=Buffer.from(await fs.readFile(path.join(root,'assets/brand/favicon.svg'),'utf8')).toString('base64');
+// 弹窗关闭沿用 Codex 原生路径；About 用同一品牌图形的大尺寸
+const close='<svg viewBox="0 0 21 21" aria-hidden="true"><path d="M14.6549 5.57307C14.9283 5.2997 15.3718 5.2997 15.6451 5.57307C15.9185 5.84643 15.9185 6.28993 15.6451 6.5633L11.3903 10.8182L15.6451 15.0731L15.735 15.1834C15.9141 15.4551 15.8842 15.8242 15.6451 16.0633C15.4061 16.3024 15.0369 16.3322 14.7653 16.1531L14.6549 16.0633L10.4 11.8084L6.14515 16.0633C5.87178 16.3367 5.42828 16.3367 5.15492 16.0633C4.88155 15.7899 4.88155 15.3464 5.15492 15.0731L9.4098 10.8182L5.15492 6.5633L5.06507 6.45295C4.88597 6.18128 4.91584 5.81214 5.15492 5.57307C5.39399 5.33399 5.76313 5.30413 6.0348 5.48322L6.14515 5.57307L10.4 9.82795L14.6549 5.57307Z" fill="currentColor"/></svg>';
+html=html.replaceAll('<!--__CLOSE__-->',()=>close).replace('<!--__BRAND_ABOUT__-->',()=>logo.replace('class="brand-icon"','class="about-logo"'));
 html=html.replace('<!--__BRAND__-->',()=>logo).replace('</head>',`<link rel="icon" href="data:image/svg+xml;base64,${favicon}"></head>`);
 await fs.writeFile(path.join(root,'dist/app.html'),html.replace('/*__STYLES__*/',[tokens,css,illustrationsCss].join('\n')).replace('/*__APP__*/',()=>js));
 await build({entryPoints:[path.join(root,'src/backend/service.mjs')],outfile:path.join(root,'dist/backend.mjs'),bundle:true,format:'esm',platform:'node',logLevel:'warning'});

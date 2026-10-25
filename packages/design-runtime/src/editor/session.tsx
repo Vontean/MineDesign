@@ -9209,6 +9209,7 @@ export function installEditorSession(runtime: RuntimeBindings): () => void {
     // MineDesign：「评论」是右侧面板的第四个标签，与评论模式双向联动（comments/feedback-panel.tsx）
     let mdnFeedback: Dynamic =
         (0, runtime.getCachedHostCapability)("feedback") ?? null,
+      mdnText: Dynamic = (0, runtime.useUiText)(),
       mdnCommenting: Dynamic =
         (0, runtime.reactCanvasShape_2.useSyncExternalStore)(
           runtime.mdnCommentMode.subscribe,
@@ -9348,7 +9349,7 @@ export function installEditorSession(runtime: RuntimeBindings): () => void {
       items: Dynamic = [
         {
           value: "pro",
-          label: "Properties",
+          label: mdnText.tabProperties,
           "data-testid": "dc-mode-pro",
           onClick: (): Dynamic => value295("edit"),
         },
@@ -9356,14 +9357,14 @@ export function installEditorSession(runtime: RuntimeBindings): () => void {
           ? [
               {
                 value: "outline",
-                label: "Outline",
+                label: mdnText.tabOutline,
                 "data-testid": "dc-mode-outline",
               },
             ]
           : []),
         {
           value: "code",
-          label: "Code",
+          label: mdnText.tabCode,
           "data-testid": "dc-mode-code",
           onClick: (): Dynamic => {
             value242 === "code"
@@ -9375,7 +9376,7 @@ export function installEditorSession(runtime: RuntimeBindings): () => void {
           ? [
               {
                 value: "tweaks",
-                label: "Tweaks",
+                label: mdnText.tabTweaks,
                 "data-testid": "dc-mode-tweaks",
               },
             ]
@@ -9384,7 +9385,7 @@ export function installEditorSession(runtime: RuntimeBindings): () => void {
           ? [
               {
                 value: "comments",
-                label: mdnFeedbackCount ? "评论 " + mdnFeedbackCount : "评论",
+                label: mdnText.tabComments(mdnFeedbackCount),
                 "data-testid": "mdn-tab-comments",
               },
             ]
@@ -9398,7 +9399,7 @@ export function installEditorSession(runtime: RuntimeBindings): () => void {
             tab={mdnCommenting ? "comments" : value302}
             onTabChange={(input?: Dynamic): Dynamic => callback6(input)}
             activateOnFocus={false}
-            tabsLabel={"Panel view"}
+            tabsLabel={mdnText.panelTabs}
             trailing={
               // MineDesign：面板开关在外壳顶栏，不再重复关闭按钮
               mdnFeedback ? null : (
@@ -10326,11 +10327,11 @@ export function installEditorSession(runtime: RuntimeBindings): () => void {
             "flex min-h-0 flex-1 flex-col items-center justify-center gap-1 px-7 py-6 text-center text-secondary"
           }
         >
-          <div className={"text-[12.5px]"}>{"Nothing selected"}</div>
+          <div className={"text-[12.5px]"}>{mdnText.nothingSelected}</div>
           <div className={"text-[11.5px] leading-normal opacity-75"}>
             {value242 === "code"
-              ? "Click any element in the design to edit its code here."
-              : "Click any element in the design to edit it here."}
+              ? mdnText.clickToEditCode
+              : mdnText.clickToEdit}
           </div>
         </div>
       );

@@ -19,7 +19,7 @@ test('built plugin exposes both editors and design tools via real stdio MCP',asy
     assert.equal(entry._meta.ui.resourceUri,APP_URI);
     assert.deepEqual(entry._meta['openai/ui'].entrypoints,[{type:'global'},{type:'thread'}]);
     const {resources}=await client.listResources();assert.deepEqual(resources.map(r=>r.uri),[APP_URI]);
-    for(const name of ['minedesign_http','minedesign_events','minedesign_annotations','minedesign_prepare_feedback','minedesign_shell'])assert.deepEqual(tools.find(t=>t.name===name)._meta.ui.visibility,['app']);
+    for(const name of ['minedesign_http','minedesign_events','minedesign_annotations','minedesign_prepare_feedback','minedesign_shell','minedesign_about','minedesign_settings','minedesign_update'])assert.deepEqual(tools.find(t=>t.name===name)._meta.ui.visibility,['app']);
     // 已打开的外壳按构建标识轮询：标识不同才返回整页，且与资源同为当前构建
     const latest=(await client.callTool({name:'minedesign_shell',arguments:{build:'stale'}})).structuredContent;
     assert.match(latest.html,/MineDesign/);assert.ok(resource.contents[0].text.includes(`"build":"${latest.build}"`));

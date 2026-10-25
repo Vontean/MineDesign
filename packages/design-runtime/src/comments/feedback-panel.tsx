@@ -2,6 +2,7 @@
  * MineDesign：设计稿右侧面板的「评论」标签，与 Properties / Code / Tweaks 并列；切到这个标签即进入评论模式。
  * 草稿由父窗口经宿主的 `feedback` 能力推送（packages/editor-host/src/design/feedback-bridge.ts），保存、版本核对与发送也在父窗口。
  */
+import { uiText } from "@minedesign/contracts/ui-text";
 import {
   bindRuntimeValue,
   type Dynamic,
@@ -11,6 +12,18 @@ import {
 export function installCommentsFeedbackPanel(
   runtime: RuntimeBindings,
 ): () => void {
+  // MineDesign 接管的界面文案：语言由外壳经 feedback 能力推送；编辑器单独打开时没有该能力，按英文
+  const noSubscription = (): (() => void) => () => {};
+  const english = (): "en" => "en";
+  function useUiText(): Dynamic {
+    const host: Dynamic = (0, runtime.getCachedHostCapability)("feedback");
+    const locale = runtime.reactCanvasShape_2.useSyncExternalStore(
+      host?.subscribeLocale ?? noSubscription,
+      host?.locale ?? english,
+      english,
+    );
+    return uiText(locale);
+  }
   // 补充说明跨评论模式开关保留：离开「评论」标签时视图会卸载
   let draft = "";
   // 评论模式由画布持有（canvas/design-canvas.tsx），属性面板的标签栏在编辑会话里（editor/session.tsx），经这里共享
@@ -41,12 +54,13 @@ export function installCommentsFeedbackPanel(
       host.read,
     );
     const [message, setMessage]: Dynamic = react.useState(draft);
+    const t: Dynamic = useUiText();
     const items: Dynamic[] = state.items;
     return (
       <runtime.CdsIsland density={"compact"} className={"contents"}>
         <section
           className={"mdn-feedback"}
-          aria-label={"评论"}
+          aria-label={t.comment}
           data-mega-chrome={"comments"}
           data-testid={"mdn-feedback"}
         >
@@ -59,7 +73,7 @@ export function installCommentsFeedbackPanel(
                     <button
                       type={"button"}
                       className={"mdn-feedback-target"}
-                      title={"在画板中定位：" + item.label}
+                      title={t.locate(item.label)}
                       onClick={(): Dynamic => host.reveal(item.id)}
                     >
                       {item.label}
@@ -70,8 +84,8 @@ export function installCommentsFeedbackPanel(
                       size={"xxs"}
                       iconOnly={true}
                       icon={<runtime.Icon name={"Trash"} size={"sm"} />}
-                      aria-label={"删除评论 " + item.n}
-                      title={"删除评论"}
+                      aria-label={t.removeCommentN(item.n)}
+                      title={t.removeComment}
                       className={"mdn-feedback-remove"}
                       onClick={(): Dynamic => host.remove(item.id)}
                     />
@@ -81,16 +95,16 @@ export function installCommentsFeedbackPanel(
             </ol>
           ) : (
             <div className={"mdn-feedback-empty"}>
-              <p className={"mdn-feedback-empty-title"}>{"还没有评论"}</p>
-              <p>{"在画板上点选元素或拖出区域，添加评论。"}</p>
+              <p className={"mdn-feedback-empty-title"}>{t.noComments}</p>
+              <p>{t.noCommentsEditorHint}</p>
             </div>
           )}
           <div className={"mdn-feedback-composer"}>
             <textarea
               rows={3}
               value={message}
-              aria-label={"给 Agent 的补充说明"}
-              placeholder={"补充说明，例如整体方向或优先级"}
+              aria-label={t.messageLabel}
+              placeholder={t.messagePlaceholder}
               onChange={(event: Dynamic): Dynamic => {
                 draft = event.target.value;
                 setMessage(draft);
@@ -102,8 +116,8 @@ export function installCommentsFeedbackPanel(
                 size={"sm"}
                 iconOnly={true}
                 icon={<runtime.Icon name={"Copy"} size={"sm"} />}
-                aria-label={"复制反馈"}
-                title={"复制反馈"}
+                aria-label={t.copyFeedback}
+                title={t.copyFeedback}
                 onClick={(): Dynamic => host.copy(message)}
               />
               <runtime.Button
@@ -113,7 +127,7 @@ export function installCommentsFeedbackPanel(
                 data-testid={"mdn-feedback-send"}
                 onClick={(): Dynamic => host.send(message)}
               >
-                {"发送到当前聊天"}
+                {t.send}
               </runtime.Button>
             </div>
           </div>
@@ -125,6 +139,7 @@ export function installCommentsFeedbackPanel(
     );
   }
   bindRuntimeValue(runtime, "FeedbackPanel", () => FeedbackPanel);
+  bindRuntimeValue(runtime, "useUiText", () => useUiText);
   bindRuntimeValue(runtime, "mdnCommentMode", () => commentMode);
   bindRuntimeValue(runtime, "mdnToggleCommentMode", () => toggleCommentMode);
   return () => {};

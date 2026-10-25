@@ -7,6 +7,7 @@
     "./file-protocol": "./src/file-protocol.ts",
     "./editor-messages": "./src/editor-messages.ts",
     "./i18n": "./src/i18n.ts",
+    "./ui-text": "./src/ui-text.ts",
     "./document-info": "./src/document-info.ts",
     "./service": "./src/service.mjs"
   },

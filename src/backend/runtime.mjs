@@ -38,7 +38,7 @@ export async function startRuntime(options,loadService=loadBuiltService){
     },
     async close(){if(reloading)await reloading.catch(()=>{});await current.close();},
   };
-  for(const operation of ['open','check','importAsset','annotations','prepareFeedback','proxy','events']){
+  for(const operation of ['open','check','importAsset','annotations','prepareFeedback','proxy','events','about','settings','update']){
     runtime[operation]=async(...args)=>{
       if(reloading)await reloading;
       const work=Promise.resolve().then(()=>current[operation](...args));

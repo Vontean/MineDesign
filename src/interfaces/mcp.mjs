@@ -32,6 +32,11 @@ export async function serveMcp(service) {
   registerBrandedTool(server,OPERATIONS.http.tool,{description:'Relay one editor request to the local design service.',inputSchema:{method:z.enum(['GET','HEAD','POST']).default('GET'),path:z.string(),headers:z.record(z.string(),z.string()).optional(),body:z.string().optional(),offset:z.number().int().min(0).default(0)},_meta:{ui:{resourceUri:uri,visibility:['app']}}},async input=>({content:[],structuredContent:await service.proxy(input)}));
   registerBrandedTool(server,OPERATIONS.events.tool,{description:'Wait for external changes to an open design document.',inputSchema:{path:z.string(),after:z.number().int().min(-1).default(-1),waitMs:z.number().int().min(0).max(25000).default(15000)},_meta:{ui:{resourceUri:uri,visibility:['app']}}},async input=>({content:[],structuredContent:await service.events(input)}));
   registerBrandedTool(server,OPERATIONS.shell.tool,{description:'Return the latest built shell when it differs from the given build.',inputSchema:{build:z.string().optional()},annotations:{readOnlyHint:true},_meta:{ui:{resourceUri:uri,visibility:['app']}}},async({build})=>({content:[],structuredContent:await shellUpdate({documents:service.documents()},build)}));
+  // About：版本、本机更新与界面语言，只向插件页开放
+  const appOnly={ui:{resourceUri:uri,visibility:['app']}};
+  registerBrandedTool(server,OPERATIONS.about.tool,{description:'Read MineDesign version, update status and UI settings; optionally check the upstream for updates.',inputSchema:{check:z.boolean().optional()},annotations:{readOnlyHint:true},_meta:appOnly},async input=>({content:[],structuredContent:await service.about(input)}));
+  registerBrandedTool(server,OPERATIONS.settings.tool,{description:'Update MineDesign UI settings such as the interface language.',inputSchema:{language:z.enum(['system','zh-Hans','en']).optional()},_meta:appOnly},async input=>({content:[],structuredContent:await service.settings(input)}));
+  registerBrandedTool(server,OPERATIONS.update.tool,{description:'Fast-forward this MineDesign checkout to its upstream, rebuild and reload the backend.',inputSchema:{},_meta:appOnly},async()=>({content:[],structuredContent:await service.update()}));
   registerAppResource(server,'editor',uri,{},async()=>{
     const {html}=await readShell({documents:service.documents()});
     // 编辑器经 MCP 工具读写；沙箱只需放行插件页自己生成的 blob/data 资源

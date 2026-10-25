@@ -20968,7 +20968,8 @@ export function installCanvasDesignCanvas(
       </span>
     );
     // toolbarDensity 内部调用 hook，必须在顶层无条件调用，不能放进按展开状态渲染的分支
-    let mdnDockDensity: Dynamic = (0, runtime.toolbarDensity)();
+    let mdnDockDensity: Dynamic = (0, runtime.toolbarDensity)(),
+      mdnText: Dynamic = (0, runtime.useUiText)();
     return (
       <runtime.ViewportContext.Provider value={value105}>
         <runtime.CanvasWorkingStateContext.Provider value={current}>
@@ -21083,7 +21084,7 @@ export function installCanvasDesignCanvas(
                         <span data-mega-chrome={"comments"} className={"contents"}>
                           <runtime.ToolbarPrimitivesComponent
                             icon={"Chat"}
-                            label={"评论"}
+                            label={mdnText.comment}
                             tipSide={"top"}
                             shortcut={"c"}
                             pressed={value220}

@@ -23,5 +23,8 @@ export function createServiceClient({app,apiBase,fetchImpl=(...args)=>fetch(...a
     http:args=>call('http',args),
     events:args=>call('events',args),
     shell:build=>call('shell',{build}),
+    about:(check=false)=>call('about',{check}),
+    settings:patch=>call('settings',patch),
+    update:()=>call('update',{}),
   };
 }

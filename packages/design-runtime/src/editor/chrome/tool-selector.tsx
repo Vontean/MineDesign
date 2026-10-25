@@ -22,7 +22,8 @@ export function installEditorChromeToolSelector(
       onPick: onPick,
       canvasTools = true,
     }: Dynamic): Dynamic {
-      let value: Dynamic = (0, runtime.usePhoneCanvas)(),
+      let t: Dynamic = (0, runtime.useUiText)(),
+        value: Dynamic = (0, runtime.usePhoneCanvas)(),
         value2: Dynamic = value
           ? runtime.insertDesignTools
           : runtime.shapeDesignTools,
@@ -95,14 +96,14 @@ export function installEditorChromeToolSelector(
         };
       return (
         <runtime.TooltipGroup>
-          {callback4("select", "Select", "esc", {
+          {callback4("select", t.toolSelect, "esc", {
             icon: "Cursor",
           })}
           {value ? null : (
             <runtime.jsxInspectorEditor.Fragment>
               {callback4(
                 "hand",
-                "Hand",
+                t.toolHand,
                 "h",
                 {
                   icon: "Hand",
@@ -111,26 +112,26 @@ export function installEditorChromeToolSelector(
               )}
               {callback4(
                 "frame",
-                "Frame",
+                t.toolFrame,
                 "f",
                 {
                   glyph: runtime.SessionTouchAndHistoryJsxValue_2,
                 },
                 value5,
               )}
-              {callback4("text", "Text", "t", {
+              {callback4("text", t.toolText, "t", {
                 glyph: runtime.SessionTouchAndHistoryJsxValue,
               })}
               {callback4(
                 "note",
-                "Note",
+                t.toolNote,
                 "n",
                 {
                   icon: "Note",
                 },
                 value5,
               )}
-              {callback4("draw", "Draw", "p", {
+              {callback4("draw", t.toolDraw, "p", {
                 icon: "Edit",
               })}
             </runtime.jsxInspectorEditor.Fragment>
@@ -145,50 +146,50 @@ export function installEditorChromeToolSelector(
               label={
                 value
                   ? runtime.designToolLabels[tool]
-                    ? "Tools: " + runtime.designToolLabels[tool]
-                    : "Tools"
-                  : "Shapes"
+                    ? t.toolTools + ": " + runtime.designToolLabels[tool]
+                    : t.toolTools
+                  : t.toolShapes
               }
-              tip={value ? "Hand, insert and draw tools" : "Shapes and lines"}
+              tip={value ? t.toolsTip : t.shapesTip}
               pressed={value2.includes(tool)}
               data-testid={value ? "dc-tool-add" : "dc-tool-shapes"}
               open={value3}
               onOpenChange={value4}
             >
               <runtime.MenuMenuAssignValue.Group
-                aria-label={value ? "Tools" : "Shapes and lines"}
+                aria-label={value ? t.toolTools : t.shapesTip}
                 data-dc-tool-menu={""}
               >
                 {value ? (
                   <runtime.jsxInspectorEditor.Fragment>
                     {callback5({
                       tool: "hand",
-                      label: "Hand",
+                      label: t.toolHand,
                       shortcut: "h",
                       icon: "Hand",
                     })}
                     <runtime.MenuMenuAssignValue.Separator />
                     {callback5({
                       tool: "frame",
-                      label: "Frame",
+                      label: t.toolFrame,
                       shortcut: "f",
                       icon: runtime.SessionTouchAndHistoryJsxValue_2,
                     })}
                     {callback5({
                       tool: "text",
-                      label: "Text",
+                      label: t.toolText,
                       shortcut: "t",
                       icon: runtime.SessionTouchAndHistoryJsxValue,
                     })}
                     {callback5({
                       tool: "note",
-                      label: "Note",
+                      label: t.toolNote,
                       shortcut: "n",
                       icon: "Note",
                     })}
                     {callback5({
                       tool: "draw",
-                      label: "Draw",
+                      label: t.toolDraw,
                       shortcut: "p",
                       icon: "Edit",
                     })}
@@ -197,7 +198,7 @@ export function installEditorChromeToolSelector(
                 ) : null}
                 {callback5({
                   tool: "rect",
-                  label: "Rectangle",
+                  label: t.shapeRect,
                   shortcut: "r",
                   icon: (0, runtime.ShapeToolGlyph)(
                     runtime.ChromeToolIconsRectOvalConfig.rect,
@@ -205,7 +206,7 @@ export function installEditorChromeToolSelector(
                 })}
                 {callback5({
                   tool: "oval",
-                  label: "Oval",
+                  label: t.shapeOval,
                   shortcut: "o",
                   icon: (0, runtime.ShapeToolGlyph)(
                     runtime.ChromeToolIconsRectOvalConfig.oval,
@@ -214,13 +215,13 @@ export function installEditorChromeToolSelector(
                 <runtime.MenuMenuAssignValue.Separator />
                 {callback5({
                   tool: "arrow",
-                  label: "Arrow",
+                  label: t.shapeArrow,
                   shortcut: "shift+l",
                   icon: "ArrowLine",
                 })}
                 {callback5({
                   tool: "line",
-                  label: "Line",
+                  label: t.shapeLine,
                   shortcut: "l",
                   icon: "LineSegment",
                 })}

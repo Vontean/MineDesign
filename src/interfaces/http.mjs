@@ -21,6 +21,9 @@ export function createHttpHandler({service,editors,token,getOrigin}) {
         if(action===OPERATIONS.prepareFeedback.http && req.method==='POST')return json(res,200,await service.prepareFeedback(body.id));
         if(action===OPERATIONS.http.http && req.method==='POST')return json(res,200,await service.proxy(body));
         if(action===OPERATIONS.events.http && req.method==='POST')return json(res,200,await service.events(body));
+        if(action===OPERATIONS.about.http && req.method==='POST')return json(res,200,await service.about(body));
+        if(action===OPERATIONS.settings.http && req.method==='POST')return json(res,200,await service.settings(body));
+        if(action===OPERATIONS.update.http && req.method==='POST')return json(res,200,await service.update());
         if(action===OPERATIONS.shell.http && req.method==='POST')return json(res,200,await shellUpdate(appConfig(),body.build));
         return json(res,404,{error:'Unknown action'});
       }

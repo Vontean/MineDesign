@@ -113,7 +113,9 @@ export type HostToEditorMessage =
   /** MineDesign：父窗口顶栏的面板开关。 */
   | { type: 'editor:set-panel'; open: boolean }
   /** MineDesign：外壳顶栏的缩放、播放等操作。 */
-  | ({ type: 'editor:view-action' } & ViewAction);
+  | ({ type: 'editor:view-action' } & ViewAction)
+  /** MineDesign：界面语言（About 里设置，缺省跟随 Codex），编辑器里由 MineDesign 接管的界面据此切换中英文。 */
+  | { type: 'editor:locale'; locale: 'zh-Hans' | 'en' };
 
 /** 父窗口保存导出文件的结果（`editor:save-file-result`）。 */
 export type SaveFileOutcome = 'saved' | 'declined' | 'failed';
@@ -142,6 +144,7 @@ const HOST_TYPES = new Set<HostToEditorMessage['type']>([
   'editor:feedback',
   'editor:set-panel',
   'editor:view-action',
+  'editor:locale',
 ]);
 const SAVE_FILE_OUTCOMES = new Set<SaveFileOutcome>(['saved', 'declined', 'failed']);
 
@@ -326,6 +329,8 @@ export function readHostMessage(data: unknown): HostToEditorMessage | null {
         : null;
     case 'editor:set-panel':
       return typeof data.open === 'boolean' ? { type: data.type, open: data.open } : null;
+    case 'editor:locale':
+      return data.locale === 'zh-Hans' || data.locale === 'en' ? { type: data.type, locale: data.locale } : null;
     case 'editor:view-action':
       switch (data.action) {
         case 'zoom-in':

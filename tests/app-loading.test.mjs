@@ -163,7 +163,7 @@ test('design feedback lives in the editor panel: drafts are pushed in, editor ac
     const items=id=>[...d.querySelectorAll(`#${id}-menu .menu-item`)];
     items('zoom').find(b=>b.textContent==='100%').click();
     assert.deepEqual({...sent.at(-1)},{type:'editor:view-action',action:'zoom',scale:1});
-    assert.match(d.getElementById('play-menu').textContent,/原型/);
+    assert.match(d.getElementById('play-menu').textContent,/原型|Prototypes/);
     items('play').find(b=>b.textContent==='登录').click();
     assert.deepEqual({...sent.at(-1)},{type:'editor:view-action',action:'play',file:'Login.dc.html'});
   }finally{if(ui)await ui.close();await service.close();await fs.rm(noteFile,{force:true});await fs.rm(tmp,{recursive:true,force:true});}

@@ -6,4 +6,7 @@ export const OPERATIONS = Object.freeze({
   http: {http:'http',tool:'minedesign_http'},
   events: {http:'events',tool:'minedesign_events'},
   shell: {http:'shell',tool:'minedesign_shell'},
+  about: {http:'about',tool:'minedesign_about'},
+  settings: {http:'settings',tool:'minedesign_settings'},
+  update: {http:'update',tool:'minedesign_update'},
 });

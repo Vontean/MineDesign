@@ -42,6 +42,7 @@ flowchart TB
 | --- | --- |
 | `app.html` | 顶栏、作品视窗、中央状态、反馈侧栏和批注对话框的语义结构 |
 | `app.mjs` | 作品选择、用户可见加载状态、主题、批注与显式反馈交互；设计稿的评论列表、面板开关、顶栏缩放与播放经编辑器消息驱动 |
+| `about.mjs` | About 弹窗：版本与更新状态、语言切换、联系方式；更新期间轮询任务进度 |
 | `service-client.mjs` | 统一 open、annotations、prepareFeedback、http、events；处理 MCP 结果封装与 HTTP 请求差异 |
 | `virtual.mjs` | 虚拟 URL、blob 资源、HTML/CSS 改写、请求分块与事件传输 |
 | `frame-shim.js` | 注入 srcdoc，接管 fetch、SSE、嵌套 frame 和存储命名空间；构建时作为文本嵌入 |
@@ -55,6 +56,8 @@ flowchart TB
 | `src/backend/service.mjs` | 创建编辑器文件服务、注入依赖、监听回环端口与关闭资源；不包含作品操作规则 |
 | `src/backend/documents.mjs` | 打开/识别作品、检查、素材导入、批注持久化、反馈版本检查；不决定 HTTP 或 MCP 响应封装 |
 | `src/backend/workspace.mjs` | 真实路径授权；工作区和符号链接边界 |
+| `src/backend/settings.mjs` | 本机界面偏好（`.local/settings.json`，目前只有界面语言） |
+| `src/backend/updates.mjs` | About 的版本与本机更新：对比当前分支上游、拒绝脏工作区、快进合并、按需安装依赖、构建并经 SIGHUP 入口重新加载后端；任务状态写在 `.local/update.json` |
 | `src/backend/editor-relay.mjs` | 已授权编辑器请求代理、分块、SSE 到长轮询的适配和订阅生命周期 |
 | `src/interfaces/shell.mjs` | 读取构建后的外壳、注入配置并计算构建标识；HTTP 与 MCP 共用 |
 | `src/interfaces/http.mjs` | HTTP 方法、路径、Host/Origin、请求大小与错误状态；提供外壳 HTML，适配后端操作与编辑器文件路由 |
@@ -77,7 +80,7 @@ flowchart TB
 | `packages/editor-host/src/shared/` | 浏览器 HTTP 文件客户端、发布/上传/flush、SSE、批注、chat 桥、语言标签与宿主能力类型 |
 | `packages/editor-host/src/design/` | 设计稿宿主安装、下载桥与 MineDesign 反馈桥（feedback-bridge：评论草稿、面板开关、视图状态与操作）；不包含 Node 文件服务 |
 | `packages/editor-host/src/design-system/` | 设计系统宿主安装、当前用户名、批注目标读取与定位 |
-| `packages/contracts/` | 平台无关的 file-protocol、editor-messages、service 操作名称、作品概要类型、i18n；前后端共享 |
+| `packages/contracts/` | 平台无关的 file-protocol、editor-messages、service 操作名称、作品概要类型、i18n，以及 MineDesign 中英文界面文案 ui-text；前后端共享 |
 | `packages/document-store/` | Node 的 document-store、document-routes：文件清单、内容版本、原子发布、素材、目录监听、grant、HTTP/CSP；不依赖浏览器宿主 |
 | `packages/design-files/` | Node 的 canvas-layout、canvas-check 与编辑器产物定位；设计稿格式规则 |
 | `packages/design-system-files/` | Node 的 layout、check、tokens-check 与产物定位；设计系统格式规则 |
@@ -143,7 +146,7 @@ flowchart TB
 
 Codex 中通过接口工具把编辑器装为 srcdoc，图片、字体、脚本和 CSS 改为 blob 资源；浏览器模式仅更换 transport。路径授权检查 realpath；写入检查 grant、origin、ifMatch。Codex 消息保留精确 scheme/origin、source 和 MessagePort 检查。
 
-设计稿的评论列表显示在编辑器右侧面板的「评论」标签里，外壳经 `editor:feedback` 推送草稿与发送状态，面板里的定位、删除、复制、发送以 `editor:feedback-action` 交回外壳执行；面板开关用 `editor:set-panel`/`editor:panel`，顶栏缩放与播放用 `editor:view`/`editor:view-action`。这些都经编辑器宿主的 `feedback` 能力进入运行时；编辑器单独打开时没有该能力，界面保持原样。设计系统仍用外壳反馈侧栏。
+设计稿的评论列表显示在编辑器右侧面板的「评论」标签里，外壳经 `editor:feedback` 推送草稿与发送状态，面板里的定位、删除、复制、发送以 `editor:feedback-action` 交回外壳执行；面板开关用 `editor:set-panel`/`editor:panel`，顶栏缩放与播放用 `editor:view`/`editor:view-action`。界面语言由外壳解析（About 偏好，缺省跟随宿主 locale）后经 `editor:locale` 推送，运行时用 `useUiText()` 读取 `ui-text` 目录。这些都经编辑器宿主的 `feedback` 能力进入运行时；编辑器单独打开时没有该能力，界面保持原样。设计系统仍用外壳反馈侧栏。
 
 批注按稳定作品 id 保存在 `.local/annotations/`。发送先 flush 编辑器，再检查来源版本，经宿主显式提交；失败保留批注。补充说明文本框尚无持久化保证。发送成功与 Agent 修改完成分别判断。
 

@@ -8,6 +8,8 @@ import { DESIGN_SYSTEM_LAYOUT } from '@minedesign/design-system-files';
 import { ROOT } from '../paths.mjs';
 import { createDocumentService } from './documents.mjs';
 import { createEditorRelay } from './editor-relay.mjs';
+import { createSettings } from './settings.mjs';
+import { createUpdates } from './updates.mjs';
 import { createHttpHandler } from '../interfaces/http.mjs';
 export { ROOT } from '../paths.mjs';
 export { inside } from './workspace.mjs';
@@ -25,7 +27,13 @@ export async function startService({workspace=ROOT,port=0}={}) {
   const getOrigin=()=>origin;
   const documents=createDocumentService({workspace,editors,origin:getOrigin,annotationRoot:path.join(ROOT,'.local/annotations')});
   const relay=createEditorRelay(getOrigin);
-  const service={...documents,proxy:relay.proxy,events:relay.events};
+  const settings=createSettings(path.join(ROOT,'.local/settings.json'));
+  // 更新完成后按 MCP 模式的 SIGHUP 入口重新加载后端；HTTP 模式没有该入口，需重启服务
+  const updates=createUpdates({root:ROOT,statusFile:path.join(ROOT,'.local/update.json'),reload:async()=>{if(process.listenerCount('SIGHUP'))process.emit('SIGHUP');}});
+  const service={...documents,proxy:relay.proxy,events:relay.events,
+    about:async(input={})=>({...await updates.about(input),settings:await settings.read()}),
+    settings:patch=>settings.update(patch),
+    update:async()=>({...await updates.update(),settings:await settings.read()})};
   const server=http.createServer(createHttpHandler({service,editors,token,getOrigin}));
   await new Promise((resolve,reject)=>{server.once('error',reject);server.listen(port,'127.0.0.1',resolve);});
   origin=`http://127.0.0.1:${server.address().port}`;
