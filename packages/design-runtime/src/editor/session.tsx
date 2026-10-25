@@ -9400,6 +9400,8 @@ export function installEditorSession(runtime: RuntimeBindings): () => void {
             activateOnFocus={false}
             tabsLabel={"Panel view"}
             trailing={
+              // MineDesign：面板开关在外壳顶栏，不再重复关闭按钮
+              mdnFeedback ? null : (
               <runtime.Button
                 variant={"ghost"}
                 iconOnly={true}
@@ -9416,6 +9418,7 @@ export function installEditorSession(runtime: RuntimeBindings): () => void {
                 {...value291}
                 onClick={(): Dynamic => value290(false)}
               />
+              )
             }
           />
         </runtime.CdsIsland>
