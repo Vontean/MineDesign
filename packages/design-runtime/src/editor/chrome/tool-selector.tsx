@@ -112,7 +112,7 @@ export function installEditorChromeToolSelector(
               {callback4(
                 "frame",
                 "Frame",
-                "a",
+                "f",
                 {
                   glyph: runtime.SessionTouchAndHistoryJsxValue_2,
                 },
@@ -171,7 +171,7 @@ export function installEditorChromeToolSelector(
                     {callback5({
                       tool: "frame",
                       label: "Frame",
-                      shortcut: "a",
+                      shortcut: "f",
                       icon: runtime.SessionTouchAndHistoryJsxValue_2,
                     })}
                     {callback5({

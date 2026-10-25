@@ -79,7 +79,7 @@ export function installEditorTools(runtime: RuntimeBindings): () => void {
         return "hand";
       case "r":
         return "rect";
-      case "a":
+      case "f":
         return "frame";
       case "n":
         return "note";
