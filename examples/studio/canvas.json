@@ -29,7 +29,15 @@
     "at": "2026-10-25T00:00:00Z",
     "v": 1
   },
-  "designSystems": [],
+  "designSystems": [
+    {
+      "artifact": "../design-system",
+      "copiedAt": "2026-10-26T00:00:00Z",
+      "namespace": "minestudio",
+      "title": "Mine Studio",
+      "version": null
+    }
+  ],
   "launch": {
     "view": "canvas"
   },
