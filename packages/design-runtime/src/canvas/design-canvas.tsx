@@ -20948,27 +20948,7 @@ export function installCanvasDesignCanvas(
                     )
                   }
                 >
-                  {value347 ? (
-                    value640
-                  ) : (
-                    <div
-                      id={runtime.editorToolbarId}
-                      hidden={value492}
-                      data-tb-seat={""}
-                      data-testid={"dc-tool-row"}
-                      data-tb-cluster={""}
-                      className={
-                        "flex shrink-0 items-center gap-1 empty:hidden pointer-coarse:gap-1.5"
-                      }
-                    >
-                      {value352 && (
-                        <runtime.DesignToolToolbar
-                          tool={value337}
-                          onTool={value338}
-                        />
-                      )}
-                    </div>
-                  )}
+                  {value347 ? value640 : null}
                 </runtime.EditorToolbar>
                 <runtime.DocumentSaveStatus
                   doc={doc}
@@ -20977,7 +20957,48 @@ export function installCanvasDesignCanvas(
                   belowPickerBar={value492}
                 />
                 <div className={"relative flex min-h-0 flex-1"}>
-                  {null}
+                  {/* MineDesign：工具栏移到画布底部居中，缩短鼠标往返；评论放在最右侧并默认显示文字 */}
+                  {value347 ? null : (
+                    <runtime.CdsIsland
+                      density={(0, runtime.toolbarDensity)()}
+                      className={"mdn-tool-dock"}
+                      hidden={value492}
+                    >
+                      <runtime.Surface
+                        elevation={runtime.PanelValue}
+                        className={"mdn-tool-dock-card"}
+                      >
+                        <div
+                          id={runtime.editorToolbarId}
+                          data-testid={"dc-tool-row"}
+                          className={
+                            "flex shrink-0 items-center gap-1 empty:hidden pointer-coarse:gap-1.5"
+                          }
+                        >
+                          {value352 && (
+                            <runtime.DesignToolToolbar
+                              tool={value337}
+                              onTool={value338}
+                            />
+                          )}
+                        </div>
+                        <runtime.ToolbarDivider />
+                        <span data-mega-chrome={"comments"} className={"contents"}>
+                          <runtime.ToolbarPrimitivesComponent
+                            icon={"Chat"}
+                            label={"评论"}
+                            tipSide={"top"}
+                            shortcut={"c"}
+                            pressed={value220}
+                            data-testid={"dc-tool-comment"}
+                            onClick={(): Dynamic =>
+                              window.dispatchEvent(new Event("canvas-comment-key"))
+                            }
+                          />
+                        </span>
+                      </runtime.Surface>
+                    </runtime.CdsIsland>
+                  )}
                   <runtime.FindBar {...value574.find.bar} />
                   {null}
                   <main

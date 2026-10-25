@@ -13159,3 +13159,31 @@ html[data-theme-switching] *::after {
   --font-anthropic-sans:
     ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 }
+
+/* MineDesign：画布底部居中的工具栏（tool modules），与顶部浮动卡片同一外观 */
+.mdn-tool-dock {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 16px;
+  z-index: 49; /* 与 .z-toolbar 相同层级 */
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+}
+.mdn-tool-dock[hidden] {
+  display: none;
+}
+.mdn-tool-dock-card {
+  --tb-plane: var(--cds-page-bg);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: calc(var(--cds-h-control) + 10px);
+  padding: 1px 5px;
+  pointer-events: auto;
+}
+@media (pointer: coarse) {
+  .mdn-tool-dock-card {
+    height: 48px;
+  }
+}

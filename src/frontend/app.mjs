@@ -73,6 +73,8 @@ async function select(id){
   const ticket=++loading;
   const changed=documentRecord?.id!==record.id;
   documentRecord=record;$('documents').value=record.id;
+  // 设计稿的评论入口在画布底部工具栏；设计系统没有该工具栏，保留顶栏入口
+  $('annotate').hidden=record.kind==='design';
   if(changed){notes=[];renderNotes();}
   viewState('loading',{title:'正在打开作品',description:record.title});
   try{

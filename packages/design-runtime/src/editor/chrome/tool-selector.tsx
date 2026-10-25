@@ -64,6 +64,7 @@ export function installEditorChromeToolSelector(
             iconOnly={true}
             label={options}
             shortcut={context}
+            tipSide={"top"}
             pressed={
               tool === input || (input === "select" && tool === "vector")
             }
@@ -108,18 +109,18 @@ export function installEditorChromeToolSelector(
                 },
                 value6,
               )}
-              {callback4("text", "Text", "t", {
-                glyph: runtime.SessionTouchAndHistoryJsxValue,
-              })}
               {callback4(
                 "frame",
-                "Artboard",
+                "Frame",
                 "a",
                 {
                   glyph: runtime.SessionTouchAndHistoryJsxValue_2,
                 },
                 value5,
               )}
+              {callback4("text", "Text", "t", {
+                glyph: runtime.SessionTouchAndHistoryJsxValue,
+              })}
               {callback4(
                 "note",
                 "Note",
@@ -168,16 +169,16 @@ export function installEditorChromeToolSelector(
                     })}
                     <runtime.MenuMenuAssignValue.Separator />
                     {callback5({
+                      tool: "frame",
+                      label: "Frame",
+                      shortcut: "a",
+                      icon: runtime.SessionTouchAndHistoryJsxValue_2,
+                    })}
+                    {callback5({
                       tool: "text",
                       label: "Text",
                       shortcut: "t",
                       icon: runtime.SessionTouchAndHistoryJsxValue,
-                    })}
-                    {callback5({
-                      tool: "frame",
-                      label: "Artboard",
-                      shortcut: "a",
-                      icon: runtime.SessionTouchAndHistoryJsxValue_2,
                     })}
                     {callback5({
                       tool: "note",

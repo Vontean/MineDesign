@@ -269,7 +269,7 @@ export function installEditorTools(runtime: RuntimeBindings): () => void {
     designToolLabels = {
       hand: "Hand",
       text: "Text",
-      frame: "Artboard",
+      frame: "Frame",
       note: "Note",
       draw: "Draw",
       rect: "Rectangle",
