@@ -84,9 +84,11 @@ h2, p, ol { margin: 0; }
 
 /* 主区：编辑器 + 右侧反馈侧栏 */
 main { display: flex; flex: 1; min-height: 0; }
-.viewport { position: relative; display: flex; flex: 1; min-width: 0; background: var(--mdn-surface-sunken); }
-iframe { flex: 1; min-width: 0; border: 0; background: var(--mdn-surface-sunken); }
-.viewport-state { position: absolute; inset: 0; z-index: 1; display: grid; place-items: center; overflow: auto; padding: calc(var(--mdn-space) * 6); background: var(--mdn-surface-sunken); }
+/* 视窗底色与正在打开的编辑器一致：设计稿画布为页面色，设计系统页面为下沉层，加载与切换时不闪色 */
+.viewport { --viewport-bg: var(--mdn-surface); position: relative; display: flex; flex: 1; min-width: 0; background: var(--viewport-bg); }
+body[data-feedback="shell"] .viewport { --viewport-bg: var(--mdn-surface-sunken); }
+iframe { flex: 1; min-width: 0; border: 0; background: var(--viewport-bg); }
+.viewport-state { position: absolute; inset: 0; z-index: 1; display: grid; place-items: center; overflow: auto; padding: calc(var(--mdn-space) * 6); background: var(--viewport-bg); }
 .error-content { width: min(100%, 360px); margin: auto; display: flex; flex-direction: column; align-items: center; gap: calc(var(--mdn-space) * 5); text-align: center; }
 .error-content h2 { font-size: var(--mdn-text-lg); font-weight: var(--mdn-weight-strong); text-wrap: balance; }
 .error-content p { margin-top: calc(var(--mdn-space) * 2); color: var(--mdn-text-secondary); line-height: 1.6; text-wrap: pretty; }

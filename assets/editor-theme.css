@@ -39,7 +39,7 @@
   --cds-radius: var(--mdn-radius-md);
   --cds-radius-composer: var(--mdn-radius-2xl);
 
-  /* 表面：画布为下沉层，面板为主表面，菜单与弹层为不透明浮层 */
+  /* 表面：设计稿画布与面板同为主表面（Codex 内容区为白底，深色为主背景），设计系统页面底为下沉层，菜单与弹层为不透明浮层 */
   --cds-surface-0: var(--mdn-surface-sunken);
   --cds-surface-1: var(--mdn-surface);
   --cds-surface-2: var(--mdn-elevated);
@@ -47,7 +47,7 @@
   --cds-surface-popover: var(--mdn-elevated);
   --cds-surface-panel: var(--mdn-surface);
   --cds-page-bg: var(--mdn-surface);
-  --om-bg-canvas: var(--mdn-surface-sunken);
+  --om-bg-canvas: var(--mdn-surface);
   --om-bg-hover-opaque: color-mix(in srgb, var(--mdn-text) 5%, var(--mdn-elevated));
 
   /* 文字与边缘 */
