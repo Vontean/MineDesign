@@ -59,6 +59,9 @@
     "vendor/baocut/packages/design-runtime/README.md",
     "vendor/baocut/packages/design-system-runtime/README.md",
     "vendor/baocut/apps/design-editor/dist/",
-    "vendor/baocut/apps/design-system-editor/dist/"
+    "vendor/baocut/apps/design-system-editor/dist/",
+    "AGENTS.md",
+    "ARCHITECTURE.md",
+    "docs/"
   ]
 }
