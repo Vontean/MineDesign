@@ -2,6 +2,14 @@
   "v": 3,
   "attachments": {},
   "boards": {
+    "Artboard-gldo.dc.html": {
+      "h": 600,
+      "page": "page-hobi4n",
+      "title": "Artboard 1",
+      "w": 800,
+      "x": 0,
+      "y": 0
+    },
     "Detail.dc.html": {
       "h": 600,
       "title": "项目详情",
@@ -28,8 +36,18 @@
   "notes": {},
   "order": [
     "Main.dc.html",
-    "Detail.dc.html"
+    "Detail.dc.html",
+    "Artboard-gldo.dc.html"
   ],
-  "pages": [],
+  "pages": [
+    {
+      "id": "page-1",
+      "name": "Page 1"
+    },
+    {
+      "id": "page-hobi4n",
+      "name": "Page 2"
+    }
+  ],
   "title": "Mine Studio"
 }
