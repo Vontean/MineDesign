@@ -92,5 +92,36 @@
     return setAttribute.apply(this,arguments);
   };
 
-  bridge.watch(window);
+  // 跟随本文档与同源子文档里新增或变化的资源引用，改写交给插件页的桥。
+  // 遍历与监听必须在本文档的脚本里：节点的 JS 对象由第一个访问它的脚本所在窗口创建。插件页的函数若先碰到
+  // head/body（编辑器在后台载入时会这样），它们就带上插件页的原型，定位库的 instanceof 判断失效，弹层全部落到左上角。
+  var watched=new WeakSet();
+  function watch(win){
+    var doc;try{doc=win.document;}catch(e){return;}
+    // 自带 shim 的子文档自己监听
+    if(!doc||watched.has(doc)||(win!==window&&win.__mdnShim))return;
+    watched.add(doc);
+    var rewrite=function(node){bridge.rewrite(node,doc.baseURI);};
+    var visitTree=function(node){
+      if(node.nodeType!==1)return;
+      if(node.matches(bridge.selector))rewrite(node);
+      node.querySelectorAll(bridge.selector).forEach(rewrite);
+      var frames=node.localName==='iframe'?[node]:node.querySelectorAll('iframe');
+      for(var i=0;i<frames.length;i++)try{if(frames[i].contentDocument&&frames[i].contentDocument.readyState!=='loading')watch(frames[i].contentWindow);}catch(e){}
+    };
+    // 属性变化只看这一个属性，避免拖动时反复扫描整棵树
+    var visitAttribute=function(node,name){
+      if(!node.matches(bridge.selector))return;
+      var value=node.getAttribute(name);if(!value)return;
+      if(name==='style'?value.indexOf('url(')>=0:name==='srcset'||bridge.toPath(value,doc.baseURI))rewrite(node);
+    };
+    new win.MutationObserver(function(records){records.forEach(function(record){
+      if(record.type==='attributes')visitAttribute(record.target,record.attributeName);
+      else if(record.type==='characterData'){var style=record.target.parentElement;if(style&&style.localName==='style')rewrite(style);}
+      else{record.addedNodes.forEach(visitTree);if(record.target.localName==='style')rewrite(record.target);}
+    });}).observe(doc,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:['src','href','srcset','style','xlink:href']});
+    doc.addEventListener('load',function(event){if(event.target.localName==='iframe')try{watch(event.target.contentWindow);}catch(e){}},true);
+    if(doc.documentElement)visitTree(doc.documentElement);
+  }
+  watch(window);
 })();

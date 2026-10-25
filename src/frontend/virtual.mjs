@@ -24,7 +24,6 @@ export function createBridge(transport){
   const root=new URL('/__mdn/',location.href).href;
   const blobRoot=new URL('/_blob/',location.href).href;
   const cache=new Map();
-  const watched=new WeakSet();
 
   // 编辑器内的地址 → 本地服务路径；不属于虚拟来源时返回 null
   function toPath(url,base){
@@ -137,34 +136,10 @@ export function createBridge(transport){
     return true;
   }
 
-  // 跟随同源子文档（画板、组件预览）：新增或变化的引用改成 blob URL
-  function watch(win){
-    let doc;try{doc=win.document;}catch{return;}
-    if(!doc||watched.has(doc))return;
-    watched.add(doc);
-    const rewrite=node=>rewriteElement(node,doc.baseURI).catch(()=>{});
-    const visitTree=node=>{
-      if(node.nodeType!==1)return;
-      if(node.matches(SELECTOR))rewrite(node);
-      node.querySelectorAll(SELECTOR).forEach(rewrite);
-      for(const frame of node.localName==='iframe'?[node]:node.querySelectorAll('iframe'))try{if(frame.contentDocument&&frame.contentDocument.readyState!=='loading')watch(frame.contentWindow);}catch{}
-    };
-    // 属性变化只看这一个属性，避免拖动时反复扫描整棵树
-    const visitAttribute=(node,name)=>{
-      if(!node.matches(SELECTOR))return;
-      const value=node.getAttribute(name);if(!value)return;
-      if(name==='style'?value.includes('url('):name==='srcset'||toPath(value,doc.baseURI))rewrite(node);
-    };
-    new win.MutationObserver(records=>{for(const record of records){
-      if(record.type==='attributes')visitAttribute(record.target,record.attributeName);
-      else if(record.type==='characterData'){const style=record.target.parentElement;if(style?.localName==='style')rewrite(style);}
-      else{record.addedNodes.forEach(visitTree);if(record.target.localName==='style')rewrite(record.target);}
-    }}).observe(doc,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:['src','href','srcset','style','xlink:href']});
-    doc.addEventListener('load',event=>{if(event.target.localName==='iframe')try{watch(event.target.contentWindow);}catch{}},true);
-    if(doc.documentElement)visitTree(doc.documentElement);
-  }
+  // 资源引用改成 blob URL；遍历与监听在编辑器文档自己的 shim 里进行（见 frame-shim.js）
+  const rewrite=(node,base)=>rewriteElement(node,base).catch(()=>{});
 
   async function events(servicePath,after){return transport.events({path:servicePath,after});}
 
-  return {root,toPath,request,html,adoptFrame,watch,events};
+  return {root,toPath,request,html,adoptFrame,rewrite,selector:SELECTOR,events};
 }

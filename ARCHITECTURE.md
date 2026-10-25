@@ -45,7 +45,7 @@ flowchart TB
 | `about.mjs` | About 弹窗：版本与更新状态、语言切换、联系方式；更新期间轮询任务进度 |
 | `service-client.mjs` | 统一 open、annotations、prepareFeedback、http、events；处理 MCP 结果封装与 HTTP 请求差异 |
 | `virtual.mjs` | 虚拟 URL、blob 资源、HTML/CSS 改写、请求分块与事件传输 |
-| `frame-shim.js` | 注入 srcdoc，接管 fetch、SSE、嵌套 frame 和存储命名空间；构建时作为文本嵌入 |
+| `frame-shim.js` | 注入 srcdoc，接管 fetch、SSE、嵌套 frame 和存储命名空间，并在本文档内遍历和监听资源引用（改写交给 `virtual.mjs`）；构建时作为文本嵌入 |
 | `AGENTS.md` | 修改这一层时的局部约束，按目录自动披露 |
 
 ### 后端与接口
