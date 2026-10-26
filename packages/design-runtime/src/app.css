@@ -13160,6 +13160,50 @@ html[data-theme-switching] *::after {
     ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 }
 
+/* MineDesign：属性面板采用 Figma 式版式——标签在字段上方；只含一个数字/文本输入的紧凑行两两并排，
+   下拉、分段控件、颜色等宽行占满一行；字段为填充底色、无描边，悬停时才显示描边。
+   边距从行内移到分组容器，避免并排时两份内边距叠加 */
+[data-testid="dc-edit-side-panel"] {
+  --pp-gutter-l: var(--mdn-panel-gutter);
+  --pp-gutter-r: var(--mdn-panel-gutter);
+  --cds-radius: var(--mdn-radius-sm);
+  --cds-fill-field: var(--mdn-field-fill);
+  --cds-fill-field-ring: transparent;
+}
+[data-testid="dc-edit-side-panel"] [data-pp-section-body] {
+  --pp-gutter-l: 0px;
+  --pp-gutter-r: 0px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--mdn-field-gap);
+  padding: 0 var(--mdn-panel-gutter) 16px;
+}
+/* 子分组嵌在父分组里，边距已由父级提供 */
+[data-testid="dc-edit-side-panel"] [data-pp-section-body] [data-pp-section-body] {
+  padding-inline: 0;
+}
+/* 分组内的项目（含 display: contents 包装里的行）默认占满一行 */
+[data-testid="dc-edit-side-panel"] [data-pp-section-body] > *,
+[data-testid="dc-edit-side-panel"] [data-pp-section-body] > .contents > * {
+  grid-column: 1 / -1;
+}
+[data-testid="dc-edit-side-panel"] [data-property-row] {
+  grid-template-columns: minmax(0, 1fr);
+  row-gap: var(--mdn-field-label-gap);
+  min-height: 0;
+  padding-block: 0;
+}
+/* 紧凑行：控件区以单个输入框开头、没有下拉或分段控件，两两并排；内含多字段网格的展开行（如四边内边距）仍占满一行 */
+[data-testid="dc-edit-side-panel"] [data-pp-section-body] > [data-property-row]:has(> :last-child > input:first-child, > :last-child > :first-child > input):not(:has([role="radiogroup"], [data-kit="PropertySelect"], > :last-child > :first-child > div ~ div)),
+[data-testid="dc-edit-side-panel"] [data-pp-section-body] > .contents > [data-property-row]:has(> :last-child > input:first-child, > :last-child > :first-child > input):not(:has([role="radiogroup"], [data-kit="PropertySelect"], > :last-child > :first-child > div ~ div)) {
+  grid-column: auto;
+}
+/* 单列时，无尾部图标的行在右侧预留图标列，让字段右缘对齐；并排后左列的预留会把两个字段推开，因此紧凑行不预留 */
+[data-testid="dc-edit-side-panel"] [data-pp-section-body] > [data-property-row]:has(> :last-child > input:first-child, > :last-child > :first-child > input):not(:has([role="radiogroup"], [data-kit="PropertySelect"], > :last-child > :first-child > div ~ div)) > :last-child,
+[data-testid="dc-edit-side-panel"] [data-pp-section-body] > .contents > [data-property-row]:has(> :last-child > input:first-child, > :last-child > :first-child > input):not(:has([role="radiogroup"], [data-kit="PropertySelect"], > :last-child > :first-child > div ~ div)) > :last-child {
+  padding-right: 0;
+}
+
 /* MineDesign：画布网点纸。间距与偏移由相机（viewport-store paintDotGrid）写入，点为 2px 屏幕像素，不随缩放变大 */
 .mdn-dot-grid {
   background-image: radial-gradient(circle, var(--mdn-canvas-dot) 1px, transparent 1.5px);

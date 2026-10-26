@@ -78,6 +78,11 @@
   --mdn-heading: var(--font-heading-sm-size);
 
   --mdn-space: 4px;
+  /* 属性面板（Figma 式版式）：16px 边距，字段之间 8px，标签与字段 4px；字段为填充底色、无描边 */
+  --mdn-panel-gutter: 16px;
+  --mdn-field-gap: 8px;
+  --mdn-field-label-gap: 4px;
+  --mdn-field-fill: var(--mdn-ghost-hover);
   --mdn-control-sm: 28px;
   --mdn-control-md: 32px;
   --mdn-control-lg: 36px;

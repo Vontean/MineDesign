@@ -200,7 +200,9 @@ export function installEditorPropertiesSection(
           />
         ) : null,
       value16: Dynamic = (
-        <div className={"flex min-w-0 flex-col pb-2"}>{children}</div>
+        <div data-pp-section-body={""} className={"flex min-w-0 flex-col pb-2"}>
+          {children}
+        </div>
       );
     return value6 !== undefined ? (
       <runtime.ComponentsCollapsibleRootTriggerPanelConfig.Root
