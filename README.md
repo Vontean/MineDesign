@@ -1,6 +1,6 @@
 # MineDesign
 
-面向 Codex 的设计插件：在聊天中生成设计稿，在侧栏查看、编辑和批注，并复用已有设计系统。当前生产版是 **0.1.1**，通过 [npm](https://www.npmjs.com/package/@vontean/minedesign) 分发。
+面向 Codex 的设计插件：在聊天中生成设计稿，在侧栏查看、编辑和批注，并复用已有设计系统。当前生产版是 **0.1.2**，通过 [npm](https://www.npmjs.com/package/@vontean/minedesign) 分发。
 
 ## 可以做什么
 
@@ -41,7 +41,7 @@ mdn --version
 codex plugin list --json
 ```
 
-默认作品目录为 `~/MineDesign`，首次安装会放入示例；评论和设置在 `~/.minedesign`。也可以选择已有作品目录，之后更新会沿用：
+默认作品目录为 `~/MineDesign`；新安装为空工作区，不附带 Pine 等演示作品；评论和设置在 `~/.minedesign`。也可以选择已有作品目录，之后更新会沿用：
 
 ```sh
 mdn plugin install --workspace /path/to/design-workspace

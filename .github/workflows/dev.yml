@@ -25,6 +25,16 @@ jobs:
         with:
           node-version: '24'
           package-manager-cache: false
+      - name: Require production metadata before merging main
+        if: github.event_name == 'pull_request' && github.base_ref == 'main'
+        run: |
+          node --input-type=module <<'JS'
+          import assert from 'node:assert/strict';
+          import {readFileSync} from 'node:fs';
+          const pkg=JSON.parse(readFileSync('package.json'));
+          assert.notEqual(pkg.private,true,'Dev package must be promoted explicitly');
+          assert.match(pkg.version,/^\d+\.\d+\.\d+$/,'main requires a stable version');
+          JS
       - run: npm ci --no-audit --no-fund
       - run: npm run build
       - run: npm run check:i18n
