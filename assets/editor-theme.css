@@ -151,17 +151,17 @@
   background-attachment: local;
 }
 
-/* 窄屏收起的章节导航：与画布浮动条同一外观——44px 胶囊、浮层底色、composer 投影，悬停与展开只叠一层底色 */
+/* 窄屏收起的章节导航：单按钮浮层，与左上页面切换同为 32px 胶囊、浮层底色、浮起投影，悬停与展开只叠一层底色 */
 .cds-root .ds-nav-fab-btn.ds-nav-fab-btn {
-  height: var(--mdn-floatbar-h);
-  min-width: var(--mdn-floatbar-h);
-  padding-inline: 14px;
+  height: var(--mdn-floatbtn-h);
+  min-width: var(--mdn-floatbtn-h);
+  padding-inline: 8px;
   border-radius: var(--mdn-radius-full);
   background: var(--mdn-elevated);
   box-shadow: var(--mdn-shadow-float);
 }
-.cds-root .ds-nav-fab-btn.ds-nav-fab-btn[data-wide] { padding-inline: 14px 16px; }
-/* 图标去掉 CDS 的 -4px 光学偏移：左内边距 14px = (44 - 16) / 2，收起时图标正在圆心，展开成胶囊时图标位置不动 */
+.cds-root .ds-nav-fab-btn.ds-nav-fab-btn[data-wide] { padding-inline: 8px 12px; }
+/* 图标去掉 CDS 的 -4px 光学偏移：左内边距 8px = (32 - 16) / 2，收起时图标正在圆心，展开成胶囊时图标位置不动 */
 .cds-root .ds-nav-fab-btn.ds-nav-fab-btn svg { margin-inline-start: 0; }
 .cds-root .ds-nav-fab-btn.ds-nav-fab-btn:hover { background-image: linear-gradient(var(--mdn-ghost-hover), var(--mdn-ghost-hover)); }
 .cds-root .ds-nav-fab-btn.ds-nav-fab-btn:is([aria-expanded="true"], [data-popup-open]) { background-image: linear-gradient(var(--mdn-ghost-active), var(--mdn-ghost-active)); }

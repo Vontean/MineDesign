@@ -49,6 +49,8 @@
   --mdn-border-strong: var(--color-border-primary);
   --mdn-ring: var(--color-ring-primary);
   --mdn-accent: var(--color-ring-primary);
+  /* 模式开关开启（如评论模式）：Codex 蓝的浅底，配蓝色图标；当前工具用实心蓝 */
+  --mdn-accent-soft: light-dark(color-mix(in srgb, var(--mdn-accent) 10%, transparent), color-mix(in srgb, var(--mdn-accent) 20%, transparent));
   /* 评论目标：取自 Codex 原生评论模式截图（描边 #0069fb、内部 4% 蓝色覆盖、光标 #339cff）；宿主未推送这些角色 */
   --mdn-comment: #0069fb;
   --mdn-comment-fill: color-mix(in srgb, #0069fb 4%, transparent);
@@ -83,6 +85,8 @@
   /* 画布浮动条（页面切换、底部工具栏、选中编辑条）：胶囊高 44px，按钮热区 36px，与外轮廓同心 */
   --mdn-floatbar-h: 44px;
   --mdn-floatbar-control: 36px;
+  /* 单按钮浮层（左上页面切换、设计系统收起导航）：按 Codex 浏览器工具栏的秀气尺寸，32px 高 */
+  --mdn-floatbtn-h: var(--mdn-control-md);
   --mdn-panel-gutter: 16px;
   --mdn-field-gap: 8px;
   --mdn-field-label-gap: 4px;

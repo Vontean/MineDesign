@@ -42,7 +42,7 @@ export interface PinLayer {
   clear(): void;
 }
 
-/** 文档里的一层绝对定位的编号标记（S2 蓝底白字的圆）。 */
+/** 文档里的一层绝对定位的编号标记：与评论面板的编号同为 Codex 蓝底白字（--mdn-accent，编辑器文档未注入 token 时取快照值）。 */
 export function domPinLayer(doc: Document): PinLayer {
   let layer: HTMLDivElement | null = null;
   const ensure = () => {
@@ -73,9 +73,9 @@ export function domPinLayer(doc: Document): PinLayer {
               'padding:0 6px',
               'box-sizing:border-box',
               'border-radius:999px',
-              'background:#3B63FB',
-              'color:#FFFFFF',
-              'font:700 12px/24px system-ui,sans-serif',
+              'background:var(--mdn-accent,#3a83f7)',
+              'color:var(--mdn-on-accent,#ffffff)',
+              'font:500 12px/24px system-ui,sans-serif',
               'text-align:center',
               'box-shadow:0 1px 4px rgba(0,0,0,.3)',
             ].join(';');

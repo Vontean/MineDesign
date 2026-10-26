@@ -13251,14 +13251,15 @@ html[data-theme-switching] *::after {
 [data-mega-selection-strip].cds-root.cds-root.cds-root.cds-root.cds-root {
   --cds-h-control: var(--mdn-floatbar-control);
 }
-/* 页面切换只有一个下拉：触发器本身就是整个胶囊（同 Select Trigger、Codex 模型选择），悬停与展开整块变色，不做胶囊套胶囊 */
+/* 页面切换只有一个下拉：触发器本身就是整个胶囊（同 Select Trigger、Codex 模型选择），悬停与展开整块变色，不做胶囊套胶囊；
+   单按钮浮层按 Codex 浏览器工具栏的秀气尺寸，32px 高、留白小 */
 .tb-root[data-tb-overlay] .tb-card {
-  --cds-h-control: var(--mdn-floatbar-h);
-  height: var(--mdn-floatbar-h);
+  --cds-h-control: var(--mdn-floatbtn-h);
+  height: var(--mdn-floatbtn-h);
   padding: 0;
 }
 .tb-root[data-tb-overlay] .tb-card .cds-root.cds-root.cds-root.cds-root.cds-root {
-  --cds-h-control: var(--mdn-floatbar-h);
+  --cds-h-control: var(--mdn-floatbtn-h);
 }
 .tb-root[data-tb-overlay] .tb-card .tb-scroll {
   margin-inline: 0;
@@ -13266,7 +13267,7 @@ html[data-theme-switching] *::after {
 }
 /* 前缀与下方共用按钮规则的 :is() 相同，使优先级高于它的 10px */
 :is(.mdn-tool-dock-card, .tb-root[data-tb-overlay] .tb-card, [data-mega-selection-strip]).tb-card [data-cds="Button"]:not([data-cds-icon-only]) {
-  padding-inline: 14px 12px;
+  padding-inline: 12px 10px;
 }
 [data-mc-strip][data-mega-selection-strip] {
   --mc-strip-pad: var(--mdn-floatbar-inset);
@@ -13300,6 +13301,13 @@ html[data-theme-switching] *::after {
 }
 :is(.mdn-tool-dock-card, .tb-root[data-tb-overlay] .tb-card, [data-mega-selection-strip]).mdn-tool-dock-card [data-cds="Button"][aria-pressed="true"] > .cds-btn-squish {
   background-color: var(--mdn-accent);
+}
+/* 评论模式开启：Codex 的模式开关用浅蓝底、蓝色图标，与「当前工具」的实心蓝区分 */
+:is(.mdn-tool-dock-card, .tb-root[data-tb-overlay] .tb-card, [data-mega-selection-strip]).mdn-tool-dock-card [data-testid="dc-tool-comment"][aria-pressed="true"] {
+  color: var(--mdn-accent);
+}
+:is(.mdn-tool-dock-card, .tb-root[data-tb-overlay] .tb-card, [data-mega-selection-strip]).mdn-tool-dock-card [data-testid="dc-tool-comment"][aria-pressed="true"] > .cds-btn-squish {
+  background-color: var(--mdn-accent-soft);
 }
 :is(.mdn-tool-dock-card, .tb-root[data-tb-overlay] .tb-card) .tb-divider,
 [data-mega-selection-strip] [data-mc-divider] {

@@ -26,6 +26,8 @@ h2, p, ol { margin: 0; }
 .btn-ghost { color: var(--mdn-text-secondary); }
 .btn-ghost:hover:not(:disabled) { background: var(--mdn-ghost-hover); color: var(--mdn-text); }
 .btn-ghost[aria-pressed="true"] { background: var(--mdn-ghost-active); color: var(--mdn-text); }
+/* 设计系统顶栏的评论开关是模式开关：开启时同画布工具栏的评论按钮，浅蓝底、蓝色字 */
+#annotate[aria-pressed="true"] { background: var(--mdn-accent-soft); color: var(--mdn-accent); }
 .btn-icon { width: var(--mdn-control-sm); padding: 0; color: var(--mdn-text-tertiary); }
 .btn-icon:hover:not(:disabled) { background: var(--mdn-ghost-hover); color: var(--mdn-text); }
 .btn-icon[aria-pressed="true"] { color: var(--mdn-text-secondary); }
