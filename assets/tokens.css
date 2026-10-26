@@ -115,8 +115,8 @@
   --mdn-tooltip-pad-block: 5px;
   --mdn-tooltip-pad-inline: 12px;
   --mdn-tooltip-line: 18px;
-  /* 顶栏文件标签：选中为浮在下沉顶栏上的卡片，浅色白底、深色浮层底 */
-  --mdn-tab-active-bg: light-dark(#ffffff, var(--mdn-elevated));
+  /* 顶栏文件标签：顶栏为页面白底（插件在 Codex 中浮于灰色底层容器上），选中标签取底层容器的下沉色 */
+  --mdn-tab-active-bg: var(--mdn-surface-sunken);
   --mdn-tab-active-shadow: 0 0 0 .5px var(--mdn-border), 0 1px 2px #0000000f;
   --mdn-shadow-overlay: 0 0 0 .5px var(--mdn-border), 0 8px 16px -4px #0000001f;
   --mdn-shadow-dialog: 0 0 0 .5px var(--mdn-border), var(--shadow-lg);
