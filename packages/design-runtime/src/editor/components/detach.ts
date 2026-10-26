@@ -1,3 +1,4 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -450,29 +451,29 @@ export function installEditorComponentsDetach(
     () => detachImportedComponent,
   );
   return () => {
-    ComponentsDetachLabel = "Select a component instance to detach it";
-    ComponentsDetachLabel_2 = "Design system components can\u2019t be detached";
-    ComponentsDetachLabel_3 = "Code components can\u2019t be detached";
+    ComponentsDetachLabel = uiMessage("inspector.detach.selectAComponentInstanceTo");
+    ComponentsDetachLabel_2 = uiMessage("inspector.detach.designSystemComponentsCanT");
+    ComponentsDetachLabel_3 = uiMessage("inspector.detach.codeComponentsCanTBe");
     ThisComponentManagesItselfSoItMessage_3 =
-      "This component manages itself, so it can\u2019t be detached";
+      uiMessage("inspector.detach.thisComponentManagesItselfSo");
     ComponentsDetachLabel_4 =
-      "A repeated instance can\u2019t be detached on its own";
+      uiMessage("inspector.detach.aRepeatedInstanceCanT");
     ThisInstanceTakesValuesFromTheMessage =
-      "This instance takes values from the page\u2019s script, so it can\u2019t be detached";
+      uiMessage("inspector.detach.thisInstanceTakesValuesFrom");
     ComponentsDetachLabel_5 =
-      "An instance with content of its own can\u2019t be detached";
+      uiMessage("inspector.detach.anInstanceWithContentOf");
     ComponentsDetachLabel_6 =
-      "An instance inside text or a button can\u2019t be detached";
+      uiMessage("inspector.detach.anInstanceInsideTextOr");
     ThisInstanceCanTBeDetachedWhereMessage =
-      "This instance can\u2019t be detached where it sits: the copy couldn\u2019t keep its structure there (a link inside a link, a form inside a form). Edit it in its own artboard.";
+      uiMessage("inspector.detach.thisInstanceCanTBe");
     CouldnTFindThisComponentSArtboardOnMessage =
-      "Couldn\u2019t find this component\u2019s artboard on this canvas, so the instance can\u2019t be detached.";
+      uiMessage("inspector.detach.couldnTFindThisComponent");
     ThisInstanceIsnTShownOnTheMessage =
-      "This instance isn\u2019t shown on the page right now, so it can\u2019t be detached. Show it first.";
+      uiMessage("inspector.detach.thisInstanceIsnTShown");
     CouldnTDetachThisInstanceRightNowMessage =
-      "Couldn\u2019t detach this instance right now. Try again.";
+      uiMessage("inspector.detach.couldnTDetachThisInstance");
     PartsOfThisComponentCanTBeMessage =
-      "Parts of this component can\u2019t be turned into plain elements yet, so it can\u2019t be detached. Edit it in its own artboard.";
+      uiMessage("inspector.detach.partsOfThisComponentCan");
     ComponentsDetachNameComponentPattern =
       /^(name|component|style|sc-name|hint-size|dc-props|dcProps|key|ref|children|style-.*)$/;
     ComponentsDetachPositionLeftRightSet = new Set([

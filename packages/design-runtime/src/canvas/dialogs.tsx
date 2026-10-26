@@ -1,3 +1,5 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
+import { useUiLocale } from '../ui-locale.ts';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -72,6 +74,7 @@ export function installCanvasDialogs(runtime: RuntimeBindings): () => void {
     footer: footer,
     children: children,
   }: Dynamic): Dynamic {
+    useUiLocale();
     return (
       <runtime.DialogDialogRootTriggerPopupConfig.Root
         open={true}
@@ -92,6 +95,7 @@ export function installCanvasDialogs(runtime: RuntimeBindings): () => void {
     );
   }
   function CanvasConfirmationDialog({ p: p }: Dynamic): Dynamic {
+    useUiLocale();
     let { opts: value }: Dynamic = p,
       callback: Dynamic = (): Dynamic => dismissMatchingCanvasDialog(p);
     return (
@@ -103,7 +107,7 @@ export function installCanvasDialogs(runtime: RuntimeBindings): () => void {
         }}
         title={value.title}
         description={value.message}
-        confirmLabel={value.confirmLabel ?? (value.danger ? "Delete" : "OK")}
+        confirmLabel={value.confirmLabel ?? (value.danger ? (uiMessage("canvas.dialogs.delete")) : (uiMessage("canvas.dialogs.oK")))}
         cancelLabel={value.cancelLabel ?? "Cancel"}
         confirmVariant={value.danger ? "danger" : "primary"}
         size={"sm"}
@@ -112,6 +116,7 @@ export function installCanvasDialogs(runtime: RuntimeBindings): () => void {
     );
   }
   function CanvasValuePromptDialog({ p: p }: Dynamic): Dynamic {
+    useUiLocale();
     let { opts: value }: Dynamic = p,
       [value2, value3]: Dynamic = (0, react_M6.useState)(
         value.initialValue ?? "",
@@ -129,7 +134,7 @@ export function installCanvasDialogs(runtime: RuntimeBindings): () => void {
         footer={
           <jsx_Af.Fragment>
             <runtime.Button onClick={callback2}>
-              {value.cancelLabel ?? "Cancel"}
+              {value.cancelLabel ?? (uiMessage("canvas.dialogs.cancel"))}
             </runtime.Button>
             <runtime.DisabledReasonTooltip
               wrapperClassName={"grid"}
@@ -141,19 +146,17 @@ export function installCanvasDialogs(runtime: RuntimeBindings): () => void {
                 data-testid={"mc-alert-confirm"}
                 onClick={callback}
               >
-                {value.confirmLabel ?? "OK"}
+                {value.confirmLabel ?? (uiMessage("canvas.dialogs.oK"))}
               </runtime.Button>
             </runtime.DisabledReasonTooltip>
           </jsx_Af.Fragment>
         }
       >
-        {value.message ? (
-          <p className={"text-fg-secondary"}>{value.message}</p>
-        ) : null}
+        {value.message ? (<p className={"text-fg-secondary"}>{value.message}</p>) : (null)}
         <runtime.TextInput
           className={value.message ? "mt-2" : undefined}
           data-testid={"mc-alert-input"}
-          aria-label={value.inputLabel ?? value.title}
+          aria-label={value.inputLabel ?? (value.title)}
           autoFocus={true}
           value={value2}
           placeholder={value.placeholder}
@@ -173,6 +176,7 @@ export function installCanvasDialogs(runtime: RuntimeBindings): () => void {
     );
   }
   function CanvasDialogHost(): Dynamic {
+    useUiLocale();
     let [value, value2]: Dynamic = (0, react_M6.useState)(activeCanvasDialog);
     (0, runtime.usePanelClose)(
       value,

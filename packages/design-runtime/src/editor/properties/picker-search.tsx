@@ -1,3 +1,4 @@
+import { useUiLocale } from '../../ui-locale.ts';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -95,6 +96,7 @@ export function installEditorPropertiesPickerSearch(
     className: className,
     "data-testid": dataTestid,
   }: Dynamic): Dynamic {
+    useUiLocale();
     return (
       <div className={className ?? "mt-0.5 mb-2 w-0 min-w-full"}>
         <runtime.TextInput

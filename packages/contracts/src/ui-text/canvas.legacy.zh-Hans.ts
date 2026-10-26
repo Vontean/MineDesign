@@ -1,0 +1,25 @@
+import type { en } from './canvas.legacy.en.ts';
+export const zh: typeof en = {
+  tabProperties: '属性',
+  tabOutline: '大纲',
+  tabTweaks: '调整',
+  tabComments: (n: number) => n ? `评论 ${n}` : '评论',
+  panelTabs: '面板视图',
+  nothingSelected: '未选中任何元素',
+  clickToEdit: "\u70B9\u9009\u8BBE\u8BA1\u7A3F\u4E2D\u7684\u4EFB\u610F\u5143\u7D20\uFF0C\u5728\u8FD9\u91CC\u7F16\u8F91\u3002",
+  toolSelect: '选择',
+  toolHand: '抓手',
+  toolFrame: "\u753B\u6846",
+  toolText: '文字',
+  toolNote: '便签',
+  toolDraw: '画笔',
+  toolShapes: '形状',
+  toolTools: '工具',
+  toolsTip: '抓手、插入与绘制工具',
+  shapesTip: '形状与线条',
+  shapeRect: '矩形',
+  shapeOval: '椭圆',
+  shapeArrow: '箭头',
+  shapeLine: '直线',
+  pages: '页面'
+};

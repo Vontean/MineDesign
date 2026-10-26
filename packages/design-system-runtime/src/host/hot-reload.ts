@@ -1,3 +1,4 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 import type * as Host from "../contracts/platform-host";
 import type * as React from "react";
 /** Restored application module; prepare first, initialize in original order. */
@@ -155,9 +156,7 @@ export function installHostHotReload(runtime: RuntimeBindings): () => void {
       value7({
         ...options2,
         decision: "defer",
-        why:
-          value12 +
-          "; the editor is still booting, so the restart waits until it has attached",
+        get why() { return (value12) + ("; the editor is still booting, so the restart waits until it has attached"); },
       });
       value7({
         type: "deferred",

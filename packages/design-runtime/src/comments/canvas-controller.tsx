@@ -1,3 +1,4 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -2087,8 +2088,7 @@ export function installCommentsCanvasController(
         }}
         onWheel={callback37}
       >
-        {value63?.deg ? (
-          <div
+        {value63?.deg ? (<div
             className={"pointer-events-none absolute h-0 w-0"}
             style={{
               left: value63.x + value63.w / 2,
@@ -2105,10 +2105,7 @@ export function installCommentsCanvasController(
               }}
               kind={"thread"}
             />
-          </div>
-        ) : (
-          value63 && (
-            <runtime.CommentAreaOutline
+          </div>) : (value63 && (<runtime.CommentAreaOutline
               rect={{
                 left: value63.x,
                 top: value63.y,
@@ -2141,11 +2138,8 @@ export function installCommentsCanvasController(
                   }));
               }}
               kind={value35 ? "marquee" : value59 ? "thread" : "drawn"}
-            />
-          )
-        )}
-        {mdnTargetRect && !value35 && (
-          <div
+            />))}
+        {mdnTargetRect && !value35 && (<div
             aria-hidden={true}
             className={
               "pointer-events-none absolute rounded border-2 border-editor-comment-target"
@@ -2158,8 +2152,7 @@ export function installCommentsCanvasController(
               width: mdnTargetRect.w * value8.scale,
               height: mdnTargetRect.h * value8.scale,
             }}
-          />
-        )}
+          />)}
         {value39.map((input?: Dynamic): Dynamic => {
           let value64: Dynamic = callback10(input),
             value65: Dynamic = (0, runtime.clampCommentAreaToViewport)(
@@ -2198,8 +2191,7 @@ export function installCommentsCanvasController(
             return <_Component key={_key} {..._props} />;
           })();
         })}
-        {value40 && (
-          <div
+        {value40 && (<div
             ref={callback28(canvasCommentScopeKey)}
             role={"button"}
             tabIndex={0}
@@ -2213,18 +2205,14 @@ export function installCommentsCanvasController(
             aria-describedby={value56}
             className={"pointer-events-none absolute inset-0 outline-none"}
             {...callback36(canvasCommentScopeKey)}
-          />
-        )}
-        {value41.length > 0 && (
-          <span id={value56} hidden={true}>
+          />)}
+        {value41.length > 0 && (<span id={value56} hidden={true}>
             {(0, runtime.commentTargetKeyboardHint)({
               several: value41.length > 1,
               canvas: value40,
             })}
-          </span>
-        )}
-        {value62 && (
-          <jsx_mg.Fragment>
+          </span>)}
+        {value62 && (<jsx_mg.Fragment>
             <div
               aria-hidden={true}
               data-testid={"mega-comment-focus-ring"}
@@ -2249,17 +2237,14 @@ export function installCommentsCanvasController(
                 background: "var(--cds-bg-editor-comment-target, transparent)",
               }}
             />
-            {value50 && (
-              <runtime.CommentPointer
+            {value50 && (<runtime.CommentPointer
                 data-testid={"mega-comment-focus-pin"}
                 at={{
                   x: value62.px,
                   y: value62.py,
                 }}
-              />
-            )}
-          </jsx_mg.Fragment>
-        )}
+              />)}
+          </jsx_mg.Fragment>)}
       </div>
     );
   }

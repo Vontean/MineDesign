@@ -1,3 +1,4 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 import type * as Boot from "../contracts/boot";
 import type * as Model from "../contracts";
 import type * as Storage from "../contracts/model-storage";
@@ -14,29 +15,29 @@ export function installFilesSaveMessages(runtime: RuntimeBindings): () => void {
     now: number = Date.now(),
   ): string {
     let retentionMessage: string = stuck.stashed
-        ? "Your edit is kept in this browser for up to " +
+        ? uiMessage("design-system.saveMessages.yourEditIsKeptIn") +
           runtime.CRASH_STASH_RETENTION_LABEL +
           ". If this tab closes, open this page again in this browser to get it back."
-        : "Your edit is kept only while this tab stays open.",
+        : uiMessage("design-system.saveMessages.yourEditIsKeptOnly"),
       indexDescription: string =
-        "the file that lists what is on this page (" +
-        (stuck.file ?? "its index") +
+        uiMessage("design-system.saveMessages.theFileThatListsWhat") +
+        (stuck.file ?? uiMessage("design-system.saveMessages.itsIndex")) +
         ")";
     if (stuck.code === "index_newer_build") {
       return (
-        "Not saved: a newer version of this editor has saved " +
+        uiMessage("design-system.saveMessages.notSavedANewerVersion") +
         indexDescription +
         ", and this tab cannot read it. " +
         (stuck.stashed
-          ? "Your edit is kept in this browser for up to " +
+          ? uiMessage("design-system.saveMessages.yourEditIsKeptIn") +
             runtime.CRASH_STASH_RETENTION_LABEL +
             ": reload the page to get the newer editor, and it is offered back to you."
-          : "Your edit is kept only while this tab stays open: copy what you need, then reload the page to get the newer editor.")
+          : uiMessage("design-system.saveMessages.yourEditIsKeptOnly2"))
       );
     }
     if (stuck.code === "index_damaged") {
       return (
-        "Not saved: " +
+        uiMessage("design-system.saveMessages.notSaved") +
         indexDescription +
         // MineDesign: user-facing copy calls the agent "the agent", not Claude.
         " cannot be read because it is not in the form this editor writes, so nothing can be saved from here. It is looked at again whenever you make a change. If it still cannot be read, ask whoever manages this project, or the agent in the chat, to restore that file. " +
@@ -45,7 +46,7 @@ export function installFilesSaveMessages(runtime: RuntimeBindings): () => void {
     }
     if (stuck.code === "conflict") {
       return (
-        "Not saved yet: a newer version of this page was saved first. " +
+        uiMessage("design-system.saveMessages.notSavedYetANewer") +
         retentionMessage +
         (stuck.nextRetryAt !== undefined
           ? " Still trying; you can retry now."
@@ -54,7 +55,7 @@ export function installFilesSaveMessages(runtime: RuntimeBindings): () => void {
     }
     if (stuck.code === "upstream_error") {
       return (
-        "Not saved yet: the server could not be reached. " +
+        uiMessage("design-system.saveMessages.notSavedYetTheServer") +
         retentionMessage +
         " Still trying; you can retry now."
       );
@@ -65,7 +66,7 @@ export function installFilesSaveMessages(runtime: RuntimeBindings): () => void {
           ? 0
           : Math.ceil((stuck.nextRetryAt - now) / 1000);
       return (
-        "Not saved yet: too many saves in a short time. " +
+        uiMessage("design-system.saveMessages.notSavedYetTooMany") +
         retentionMessage +
         (value > 0
           ? " Trying again in about " +
@@ -75,9 +76,9 @@ export function installFilesSaveMessages(runtime: RuntimeBindings): () => void {
       );
     }
     return (
-      "Not saved: " +
+      uiMessage("design-system.saveMessages.notSaved") +
       (STUCK_SAVE_REASON_MESSAGES[stuck.code] ??
-        "this change could not be saved as it is. Undo your last change, then try again") +
+        uiMessage("design-system.saveMessages.thisChangeCouldNotBe")) +
       ". " +
       retentionMessage
     );
@@ -91,12 +92,12 @@ export function installFilesSaveMessages(runtime: RuntimeBindings): () => void {
       singular: boolean = leftOut.length === 1,
       retention: string =
         options.stashed === true
-          ? "kept in this browser for up to " +
+          ? uiMessage("design-system.saveMessages.keptInThisBrowserFor") +
             runtime.CRASH_STASH_RETENTION_LABEL
-          : "kept only while this tab stays open",
+          : uiMessage("design-system.saveMessages.keptOnlyWhileThisTab"),
       suffix: string =
         " Until then " +
-        (singular ? "it is" : "they are") +
+        (singular ? uiMessage("design-system.saveMessages.itIs") : uiMessage("design-system.saveMessages.theyAre")) +
         " not saved, and " +
         retention +
         ".";
@@ -116,10 +117,10 @@ export function installFilesSaveMessages(runtime: RuntimeBindings): () => void {
     }
     return (
       (singular
-        ? 'Everything else is saved, but "' +
+        ? uiMessage("design-system.saveMessages.everythingElseIsSavedBut") +
           basename(first.path) +
           '" is not: '
-        : "Everything else is saved, but " +
+        : uiMessage("design-system.saveMessages.everythingElseIsSavedBut2") +
           String(leftOut.length) +
           ' files are not. The first, "' +
           basename(first.path) +

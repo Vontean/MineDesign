@@ -1,3 +1,5 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
+import { useUiLocale } from '../../ui-locale.ts';
 import type {
   CheckboxGlyphProps,
   CheckboxVisualProps,
@@ -14,6 +16,7 @@ export function installCdsComponentsCheckbox(
   function CheckboxGlyph({
     indeterminate = false,
   }: CheckboxGlyphProps): React.ReactElement {
+    useUiLocale();
     return (
       <runtime.Icon
         name={indeterminate ? "Minus" : "Check"}
@@ -30,6 +33,7 @@ export function installCdsComponentsCheckbox(
     indeterminate = false,
     className: className,
   }: CheckboxVisualProps): React.ReactElement {
+    useUiLocale();
     let value = checked || indeterminate;
     return (
       <span
@@ -42,11 +46,9 @@ export function installCdsComponentsCheckbox(
           className,
         )}
       >
-        {value && (
-          <span className={"text-on-accent"}>
+        {value && (<span className={"text-on-accent"}>
             <CheckboxGlyph indeterminate={indeterminate} />
-          </span>
-        )}
+          </span>)}
       </span>
     );
   }

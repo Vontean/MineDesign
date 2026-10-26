@@ -1,3 +1,4 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 import type { DesignStyle, SheetFrameState } from "../../contracts/ui";
 import type * as React from "react";
 /** Restored application module; prepare first, initialize in original order. */
@@ -154,20 +155,20 @@ export function installCdsSheetsLayout(runtime: RuntimeBindings): () => void {
       (0, runtime.initializeSheetsGesturePhysics)();
       SheetsLayoutPositionTopRightConfig = {
         position: "fixed",
-        top: "auto",
+        get top() { return uiMessage("canvas.layout.auto"); },
         right: 0,
         bottom: 0,
         left: 0,
         width: "auto",
         minWidth: 0,
         maxWidth: "none",
-        transform: "none",
+        get transform() { return uiMessage("canvas.layout.none"); },
       };
       SheetsLayoutDisableAnchorTrackingCollisionAvoidanceConfig = {
         disableAnchorTracking: true,
         collisionAvoidance: {
           side: "none",
-          align: "none",
+          get align() { return uiMessage("canvas.layout.none"); },
         },
       };
       SheetsLayoutConstant = 0.9;

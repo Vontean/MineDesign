@@ -1,3 +1,5 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
+import { useUiLocale } from '../../ui-locale.ts';
 import type { Elevation } from "../../contracts/ui";
 import type * as React from "react";
 import { lucideIcons, lucideRotations } from "./lucide-icons";
@@ -93,6 +95,7 @@ export function installCdsComponentsIcon(runtime: RuntimeBindings): () => void {
     });
   }
   function Icon(props?: Dynamic): Dynamic {
+    useUiLocale();
     let defaultSize: Dynamic = useDefaultIconSize();
     if (props.customIcon) {
       let {
@@ -130,7 +133,7 @@ export function installCdsComponentsIcon(runtime: RuntimeBindings): () => void {
           {...value33}
           role={value33.role ?? (value27 ? "img" : undefined)}
           aria-hidden={value33["aria-hidden"] ?? (value27 ? undefined : true)}
-          aria-label={value33["aria-label"] ?? (value27 || undefined)}
+          aria-label={value33["aria-label"] ?? (value27 || (undefined))}
         >
           {value26.paths.map(
             (input?: Dynamic, options?: Dynamic): Dynamic =>
@@ -242,7 +245,7 @@ export function installCdsComponentsIcon(runtime: RuntimeBindings): () => void {
           {...value9}
           role={value9.role ?? (value ? "img" : undefined)}
           aria-hidden={value9["aria-hidden"] ?? (value ? undefined : true)}
-          aria-label={value9["aria-label"] ?? (value || undefined)}
+          aria-label={value9["aria-label"] ?? (value || (undefined))}
         >
           {lucideNode.map(([Tag, attrs]: Dynamic, index: number): Dynamic => (
             <Tag key={index} {...attrs} />
@@ -269,14 +272,12 @@ export function installCdsComponentsIcon(runtime: RuntimeBindings): () => void {
         {...value9}
         role={value9.role ?? (value ? "img" : undefined)}
         aria-hidden={value9["aria-hidden"] ?? (value ? undefined : true)}
-        aria-label={value9["aria-label"] ?? (value || undefined)}
+        aria-label={value9["aria-label"] ?? (value || (undefined))}
       >
-        {value18 !== undefined && (
-          <span data-cds-icon-layer={"secondary"} aria-hidden={"true"}>
+        {value18 !== undefined && (<span data-cds-icon-layer={"secondary"} aria-hidden={"true"}>
             {String.fromCodePoint(value18)}
-          </span>
-        )}
-        {value17 !== undefined ? String.fromCodePoint(value17) : null}
+          </span>)}
+        {value17 !== undefined ? (String.fromCodePoint(value17)) : (null)}
       </span>
     );
   }
@@ -284,9 +285,10 @@ export function installCdsComponentsIcon(runtime: RuntimeBindings): () => void {
     return typeof input == "string";
   }
   function IconRenderer({ icon: icon }: Dynamic): Dynamic {
+    useUiLocale();
     return (
       <span className={"flex size-icon shrink-0 items-center justify-center"}>
-        {isIconName(icon) ? <Icon name={icon} size={"auto"} /> : icon}
+        {isIconName(icon) ? (<Icon name={icon} size={"auto"} />) : (icon)}
       </span>
     );
   }
@@ -400,6 +402,7 @@ export function installCdsComponentsIcon(runtime: RuntimeBindings): () => void {
     provideInherit = false,
     children: children,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let value: Dynamic = useCollisionPadding(override, container),
       value2: Dynamic = (0, reactComponentsIcon.useMemo)(
         (): Dynamic => ({

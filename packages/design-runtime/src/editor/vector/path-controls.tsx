@@ -1,3 +1,4 @@
+import { useUiLocale } from '../../ui-locale.ts';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -18,6 +19,7 @@ export function installEditorVectorPathControls(
     hitRadiusPx: hitRadiusPx,
     controls: controls,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let value: Dynamic = Math.max(3.5, hitRadiusPx * 0.45),
       items: Dynamic = [];
     path.contours.forEach((input?: Dynamic, options?: Dynamic): Dynamic => {

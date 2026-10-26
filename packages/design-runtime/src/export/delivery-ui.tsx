@@ -1,3 +1,5 @@
+import { useUiLocale } from '../ui-locale.ts';
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -104,9 +106,7 @@ export function installExportDeliveryUi(runtime: RuntimeBindings): () => void {
             data-testid={"export-delivery-dialog"}
           >
             <runtime.DialogDialogRootTriggerPopupConfig.Header>
-              {value.length === 1
-                ? "Export ready"
-                : String(value.length) + " exports ready"}
+              {value.length === 1 ? (uiMessage("canvas.deliveryUi.exportReady")) : (uiMessage("canvas.deliveryUi.exportsReady", { value1: String(String(value.length)) }))}
             </runtime.DialogDialogRootTriggerPopupConfig.Header>
             <div className={"flex max-h-[60vh] flex-col gap-2 overflow-auto"}>
               {value.map(
@@ -127,6 +127,7 @@ export function installExportDeliveryUi(runtime: RuntimeBindings): () => void {
     );
   }
   function ExportDeliveryNotice({ delivery: delivery }: Dynamic): Dynamic {
+    useUiLocale();
     let { showToast: value }: Dynamic = (0, runtime.useToast)(),
       value2: Dynamic = delivery.file == null,
       value3: Dynamic = (0, reactExportDeliveryUi.useMemo)((): Dynamic => {
@@ -237,8 +238,7 @@ export function installExportDeliveryUi(runtime: RuntimeBindings): () => void {
               "flex min-w-0 flex-1 cursor-grab items-center gap-2.5 select-none active:cursor-grabbing"
             }
           >
-            {value2 ? (
-              <img
+            {value2 ? (<img
                 src={delivery.url}
                 alt={""}
                 draggable={true}
@@ -246,16 +246,13 @@ export function installExportDeliveryUi(runtime: RuntimeBindings): () => void {
                 className={
                   "h-9 w-12 shrink-0 rounded border bg-white object-contain"
                 }
-              />
-            ) : (
-              <span
+              />) : (<span
                 className={
                   "flex h-9 w-9 shrink-0 items-center justify-center rounded border bg-surface-2 text-muted"
                 }
               >
                 <runtime.Icon name={"File"} size={"sm"} />
-              </span>
-            )}
+              </span>)}
             <div className={"min-w-0 flex-1"}>
               <div className={"truncate text-body font-medium text-primary"}>
                 {delivery.filename}
@@ -275,7 +272,7 @@ export function installExportDeliveryUi(runtime: RuntimeBindings): () => void {
               onClick={callback2}
               data-testid={"export-delivery-download"}
             >
-              {"Download"}
+              {uiMessage("canvas.deliveryUi.download")}
             </runtime.Button>
           </runtime.DisabledReasonTooltip>
           <span
@@ -286,16 +283,12 @@ export function installExportDeliveryUi(runtime: RuntimeBindings): () => void {
               "inline-flex h-control pointer-coarse:min-h-10 shrink-0 cursor-grab items-center rounded border border-strong px-2 text-footnote font-medium text-primary select-none hover:bg-fill-ghost-hover active:cursor-grabbing"
             }
           >
-            {"Drag out\u2026"}
+            {uiMessage("canvas.deliveryUi.dragOut")}
           </span>
         </div>
-        {delivery.embedWarningCount > 0 && (
-          <div className={"px-1 text-footnote text-danger"}>
-            {delivery.embedWarningCount === 1
-              ? "One image could not be embedded and renders blank in the export."
-              : `${delivery.embedWarningCount} images could not be embedded and render blank in the export.`}
-          </div>
-        )}
+        {delivery.embedWarningCount > 0 && (<div className={"px-1 text-footnote text-danger"}>
+            {delivery.embedWarningCount === 1 ? (uiMessage("canvas.deliveryUi.oneImageCouldNotBe")) : (`${delivery.embedWarningCount} images could not be embedded and render blank in the export.`)}
+          </div>)}
       </div>
     );
   }

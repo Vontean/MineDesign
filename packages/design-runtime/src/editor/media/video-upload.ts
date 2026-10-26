@@ -1,3 +1,4 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -265,24 +266,24 @@ export function installEditorMediaVideoUpload(
   function videoUploadFailureMessage(input?: Dynamic): Dynamic {
     switch (input) {
       case "unsupported_type":
-        return "Only .mp4, .mov and .webm videos can be added. Convert it to .mp4 (H.264) first.";
+        return uiMessage("inspector.videoUpload.onlyMp4MovAndWebm");
       case "old_quicktime":
-        return "This .mov is in an older QuickTime format that can't be added. Convert it to .mp4 (H.264) first.";
+        return uiMessage("inspector.videoUpload.thisMovIsInAn");
       case "too_large":
-        return "Videos over 20 MB can't be added. Trim or compress it first.";
+        return uiMessage("inspector.videoUpload.videosOver20MBCan");
       case "unplayable":
-        return "This browser can't play that video, so it wasn't added. Try an H.264 .mp4.";
+        return uiMessage("inspector.videoUpload.thisBrowserCanTPlay");
       case "probe_timeout":
-        return "Couldn't read that video. Try again.";
+        return uiMessage("inspector.videoUpload.couldnTReadThatVideo");
       case "quota_or_state":
-        return "No more uploads can be added here right now (storage may be full).";
+        return uiMessage("inspector.videoUpload.noMoreUploadsCanBe");
       case "unavailable":
       case "not_granted":
       case "capability_disabled":
       case "capability_removed":
-        return "Uploads aren't available in this view, so videos can't be added.";
+        return uiMessage("inspector.videoUpload.uploadsArenTAvailableIn");
       default:
-        return "The video couldn't be uploaded. Try again in a moment.";
+        return uiMessage("inspector.videoUpload.theVideoCouldnTBe");
     }
   }
   function uploadedVideoHtml(input?: Dynamic, options?: Dynamic): Dynamic {

@@ -1,3 +1,4 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -156,7 +157,7 @@ export function installFastEditTemplateValidation(
         ok: false,
         code: "not_template",
         detail: "threw",
-        what: "threw",
+        get what() { return uiMessage("canvas.templateValidation.threw"); },
       };
     }
   }

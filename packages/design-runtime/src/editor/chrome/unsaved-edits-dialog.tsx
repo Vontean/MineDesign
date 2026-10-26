@@ -1,3 +1,5 @@
+import { useUiLocale } from '../../ui-locale.ts';
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -12,6 +14,7 @@ export function installEditorChromeUnsavedEditsDialog(
     editCount: editCount,
     onChoose: onChoose,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let [value, value2]: Dynamic = (0,
     runtime.reactCodeDesignColorTokens.useState)("keep");
     (0, runtime.reactCodeDesignColorTokens.useEffect)((): Dynamic => {
@@ -19,10 +22,10 @@ export function installEditorChromeUnsavedEditsDialog(
     }, [open]);
     let value3: Dynamic =
       editCount === 1
-        ? "your unsaved edit"
+        ? uiMessage("inspector.unsavedEditsDialog.yourUnsavedEdit")
         : editCount > 1
           ? `your ${editCount} unsaved edits`
-          : "your unsaved edits";
+          : uiMessage("inspector.unsavedEditsDialog.yourUnsavedEdits");
     return (
       <runtime.CdsIsland className={"contents"}>
         <runtime.DialogDialogRootTriggerPopupConfig.Root
@@ -34,9 +37,9 @@ export function installEditorChromeUnsavedEditsDialog(
           <runtime.DialogDialogRootTriggerPopupConfig.Popup size={"sm"}>
             <runtime.DialogDialogRootTriggerPopupConfig.Header
               showClose={false}
-              description={`It was updated outside this editor. What do you want to do with ${value3}?`}
+              description={uiMessage("inspector.unsavedEditsDialog.itWasUpdatedOutsideThisEditorWhatDoYouWantToDoWith", { value1: String(value3) })}
             >
-              {"This file changed"}
+              {uiMessage("inspector.unsavedEditsDialog.thisFileChanged")}
             </runtime.DialogDialogRootTriggerPopupConfig.Header>
             <runtime.ComponentsRadioGroupAssignValue
               value={value}
@@ -44,16 +47,13 @@ export function installEditorChromeUnsavedEditsDialog(
               options={[
                 {
                   value: "reload",
-                  label: "Discard and reload",
-                  description:
-                    "Load the latest version. The edits from this session are removed.",
+                  get label() { return uiMessage("inspector.unsavedEditsDialog.discardAndReload"); },
+                  get description() { return uiMessage("inspector.unsavedEditsDialog.loadTheLatestVersionThe"); },
                 },
                 {
                   value: "keep",
-                  label: "Keep them",
-                  description:
-                    // MineDesign: user-facing copy calls the agent "the agent", not Claude.
-                    "Your edits stay in this session, and the agent merges them with the latest version when you save.",
+                  get label() { return uiMessage("inspector.unsavedEditsDialog.keepThem"); },
+                  get description() { return uiMessage("inspector.unsavedEditsDialog.yourEditsStayInThis"); },
                 },
               ]}
             />
@@ -62,7 +62,7 @@ export function installEditorChromeUnsavedEditsDialog(
                 variant={"primary"}
                 onClick={(): Dynamic => onChoose(value)}
               >
-                {"Okay"}
+                {uiMessage("inspector.unsavedEditsDialog.okay")}
               </runtime.Button>
             </runtime.DialogDialogRootTriggerPopupConfig.Footer>
           </runtime.DialogDialogRootTriggerPopupConfig.Popup>

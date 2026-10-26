@@ -1,3 +1,5 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
+import { useUiLocale } from '../../ui-locale.ts';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -175,6 +177,7 @@ export function installCdsComponentsSkeleton(
     as: as,
     motion = WaveValue,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let value: Dynamic = (0, reactComponentsSkeleton.useContext)(
         runtime.SkeletonDecorativeContext,
       ),
@@ -450,13 +453,10 @@ export function installCdsComponentsSkeleton(
                 }
               }}
             >
-              {decorative ? null : (
-                <span className={"sr-only"} data-skeleton-label={true}>
-                  {value17 ? "" : value18}
-                </span>
-              )}
-              {motion === "sweep"
-                ? (() => {
+              {decorative ? (null) : (<span className={"sr-only"} data-skeleton-label={true}>
+                  {value17 ? ("") : (value18)}
+                </span>)}
+              {motion === "sweep" ? ((() => {
                     const _Component3 = value4;
                     return (
                       <_Component3
@@ -475,8 +475,7 @@ export function installCdsComponentsSkeleton(
                         })()}
                       </_Component3>
                     );
-                  })()
-                : null}
+                  })()) : (null)}
               <runtime.SkeletonDecorativeContext.Provider value={true}>
                 <runtime.SkeletonElementContext.Provider value={value3}>
                   <runtime.SkeletonMotionContext.Provider value={value8}>
@@ -502,6 +501,7 @@ export function installCdsComponentsSkeleton(
     decorative = false,
     as: as,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let value: Dynamic = (0, reactComponentsSkeleton.useContext)(
         runtime.SkeletonDecorativeContext,
       ),
@@ -547,12 +547,13 @@ export function installCdsComponentsSkeleton(
                 height: height,
               }}
             >
-              {decorative ? null : <span className={"sr-only"}>{value5}</span>}
+              {decorative ? (null) : (<span className={"sr-only"}>{value5}</span>)}
             </_Component7>
           );
         })();
   }
   function SkeletonRows({ rows = 3, icon = true }: Dynamic): Dynamic {
+    useUiLocale();
     let value: Dynamic =
         ComponentsSkeletonDivSpanConfig[
           (0, reactComponentsSkeleton.useContext)(
@@ -620,6 +621,7 @@ export function installCdsComponentsSkeleton(
     })();
   }
   function SkeletonChip({ width = 120, shape = "pill" }: Dynamic): Dynamic {
+    useUiLocale();
     return (
       <ComponentsSkeletonAssignValue
         className={
@@ -635,6 +637,7 @@ export function installCdsComponentsSkeleton(
     lines = 8,
     className: className,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let value: Dynamic =
       ComponentsSkeletonDivSpanConfig[
         (0, reactComponentsSkeleton.useContext)(runtime.SkeletonElementContext)
@@ -674,6 +677,7 @@ export function installCdsComponentsSkeleton(
     height: height,
     className: className,
   }: Dynamic): Dynamic {
+    useUiLocale();
     return (
       <ComponentsSkeletonAssignValue
         className={className}

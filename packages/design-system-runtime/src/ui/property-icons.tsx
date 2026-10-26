@@ -1,3 +1,4 @@
+import { useUiLocale } from '../ui-locale.ts';
 import type * as React from "react";
 import type * as Color from "../contracts/color-controls";
 /** Restored application module; prepare first, initialize in original order. */
@@ -13,6 +14,7 @@ export function installUiPropertyIcons(runtime: RuntimeBindings): () => void {
     className: className,
     style: style,
   }: Color.KitIconProps): React.ReactElement {
+    useUiLocale();
     return (
       <runtime.Icon
         name={name}

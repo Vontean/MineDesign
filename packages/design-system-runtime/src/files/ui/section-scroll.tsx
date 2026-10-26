@@ -1,3 +1,4 @@
+import { useUiLocale } from '../../ui-locale.ts';
 /** Restored application module; prepare first, initialize in original order. */
 import type * as React from "react";
 import type * as JsxRuntime from "react/jsx-runtime";
@@ -400,6 +401,7 @@ export function installFilesUiSectionScroll(
     standIn: standIn,
     children: children,
   }: LazySectionProps) {
+    useUiLocale();
     let [value, value2] = reactSectionScroller.useState(false),
       value3 = eager || value,
       ref = reactSectionScroller.useRef<HTMLDivElement | null>(null);

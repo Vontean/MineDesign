@@ -1,3 +1,5 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
+import { useUiLocale } from '../../ui-locale.ts';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -47,6 +49,7 @@ export function installEditorPropertiesFontFamilyRow(
     pageWebfonts = [],
     shell: shell,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let value: Dynamic = (0, runtime.inspectorFieldDisplay)(state);
     if (!value.isLiteral && value.text)
       return (
@@ -87,11 +90,9 @@ export function installEditorPropertiesFontFamilyRow(
           aria-label={state.label}
           items={value7}
           value={state.mixed ? null : value8}
-          placeholder={state.mixed ? "Mixed" : value3 || "\u2014"}
+          placeholder={state.mixed ? (uiMessage("inspector.fontFamilyRow.mixed")) : (value3 || ("\u2014"))}
           title={
-            value8 === null && !state.mixed && !state.inheritedFrom
-              ? "Inherited \u2014 right-click to keep unset"
-              : undefined
+            value8 === null && !state.mixed && !state.inheritedFrom ? (uiMessage("inspector.fontFamilyRow.inheritedRightClickToKeep")) : (undefined)
           }
           disabled={state.disabled}
           searchable={true}

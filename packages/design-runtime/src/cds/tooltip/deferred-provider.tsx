@@ -1,3 +1,5 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
+import { useUiLocale } from '../../ui-locale.ts';
 import type {
   DeferredTooltipLoad,
   DeferredTooltipNode,
@@ -140,6 +142,7 @@ export function installCdsTooltipDeferredProvider(
   function DeferredTooltipProvider({
     children: children,
   }: React.PropsWithChildren): React.ReactElement {
+    useUiLocale();
     let value = (0, reactTooltipDeferredProvider.useContext)(
         runtime.TooltipImplementationContext,
       ),
@@ -415,6 +418,7 @@ export function installCdsTooltipDeferredProvider(
       : input;
   }
   function DeferredTooltip(input: TooltipProps): React.ReactElement {
+    useUiLocale();
     let {
         impl: value,
         wasCold: value2,
@@ -450,6 +454,7 @@ export function installCdsTooltipDeferredProvider(
   function DeferredDisabledReasonTooltip(
     input: DisabledTooltipProps,
   ): React.ReactElement {
+    useUiLocale();
     let {
         impl: value,
         wasCold: value2,
@@ -468,7 +473,7 @@ export function installCdsTooltipDeferredProvider(
     return (
       <span
         {...(0, runtime.disabledReasonWrapperProps)(value5, value4, value6)}
-        title={typeof value5 == "string" ? value5 : undefined}
+        title={typeof value5 == "string" ? (value5) : (undefined)}
         {...value3({})}
         {...TooltipDeferredProviderDataCdsTooltipPendingConfig}
       >

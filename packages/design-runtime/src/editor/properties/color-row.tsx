@@ -1,3 +1,4 @@
+import { useUiLocale } from '../../ui-locale.ts';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -42,6 +43,7 @@ export function installEditorPropertiesColorRow(
     onCommit: onCommit,
     shell: shell,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let {
         dsColorTokens: value,
         artboardColors: value2,

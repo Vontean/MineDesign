@@ -1,3 +1,4 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 import type * as Boot from "../contracts/boot";
 import type * as Model from "../contracts";
 import type * as Storage from "../contracts/model-storage";
@@ -24,7 +25,7 @@ export function installFilesLegacyStorePort(
         return value;
       }
       if (index + 1 >= LEGACY_DATABASE_FRESH_READ_ATTEMPTS) {
-        throw Object.assign(Error("the store answered from its cache only"), {
+        throw Object.assign(Error(uiMessage("design-system.legacyStorePort.theStoreAnsweredFromIts")), {
           code: "not_authoritative",
         });
       }

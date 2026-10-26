@@ -1,3 +1,4 @@
+import { useUiLocale } from '../../ui-locale.ts';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -116,6 +117,7 @@ export function installCdsEditorSelectionGeometry(
     disabled: disabled2,
     variant: variant,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let grip: Dynamic = selectionMetrics.grip,
       value: Dynamic = variant === "component",
       value2: Dynamic = value
@@ -159,6 +161,7 @@ export function installCdsEditorSelectionGeometry(
     children: children,
     ...props
   }: Dynamic): Dynamic {
+    useUiLocale();
     let value: Dynamic = 1 / scale,
       value2: Dynamic = normalizeSelectionRotation(rotation),
       value3: Dynamic = typeof at.left == "number" && typeof at.top == "number",

@@ -1,3 +1,5 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
+import { useUiLocale } from '../../ui-locale.ts';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -78,6 +80,7 @@ export function installEditorComponentsPropEditors(
     size = "card",
     "aria-label": ariaLabel,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let callback: Dynamic = (input?: Dynamic): Dynamic =>
         String(JSON.stringify(input)).toLowerCase(),
       value2: Dynamic = callback(value),
@@ -124,8 +127,7 @@ export function installEditorComponentsPropEditors(
                 background: (0, runtime.sanitizeCssBackground)(value5),
               }}
             >
-              {value7.length > 0 && (
-                <span
+              {value7.length > 0 && (<span
                   className={
                     "absolute inset-y-0 right-0 flex w-[34%] flex-col shadow-[-1px_0_0_rgba(0,0,0,0.1)]"
                   }
@@ -147,10 +149,8 @@ export function installEditorComponentsPropEditors(
                       />
                     ),
                   )}
-                </span>
-              )}
-              {value8 && (
-                <svg
+                </span>)}
+              {value8 && (<svg
                   viewBox={"0 0 14 14"}
                   aria-hidden={"true"}
                   className={(0, runtime.cn)(
@@ -170,8 +170,7 @@ export function installEditorComponentsPropEditors(
                       isLightHexColor(value5) ? "rgba(0,0,0,.78)" : "#fff"
                     }
                   />
-                </svg>
-              )}
+                </svg>)}
             </button>
           );
         })}
@@ -256,6 +255,7 @@ export function installEditorComponentsPropEditors(
     onChange: onChange,
     onReset: onReset,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let value: Dynamic = numericPropValue(cur) ?? min2,
       value2: Dynamic = (0, runtime.reactInspectorContext_3.useRef)(value);
     value2.current = value;
@@ -284,6 +284,7 @@ export function installEditorComponentsPropEditors(
     onReset: onReset,
     tweak: tweak,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let value: Dynamic = typeof cur == "string" ? cur.trim() : "",
       value2: Dynamic =
         value !== "" && (0, runtime.sanitizeCssColor)(value) === value
@@ -336,6 +337,7 @@ export function installEditorComponentsPropEditors(
     tweak = false,
     unsetHint: unsetHint,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let value2: Dynamic =
       value === undefined &&
       (unsetHint === undefined || meta.editor === "boolean")
@@ -474,9 +476,7 @@ export function installEditorComponentsPropEditors(
             }
             value={value6 < 0 ? "" : String(value6)}
             placeholder={
-              value2 === undefined && unsetHint !== undefined
-                ? undefined
-                : primitivePropText(value5)
+              value2 === undefined && unsetHint !== undefined ? (undefined) : (primitivePropText(value5))
             }
             hint={unsetHint}
             searchable={value4.length > 12}

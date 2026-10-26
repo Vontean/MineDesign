@@ -1,3 +1,5 @@
+import { useUiLocale } from '../../ui-locale.ts';
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -14,6 +16,7 @@ export function installEditorTypographyStyleSelect(
     onApply: onApply,
     onDetach: onDetach,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let value: Dynamic = model.options.map(
       (input?: Dynamic): Dynamic => ({
         value: input.value,
@@ -39,17 +42,13 @@ export function installEditorTypographyStyleSelect(
     );
     return (
       <runtime.PropertySelectRow
-        label={"Text style"}
+        label={uiMessage("inspector.styleSelect.textStyle")}
         icon={attached ? "TextAa" : undefined}
         options={value}
         value={attached ? (model.value ?? "") : ""}
-        placeholder={model.mixed ? "Mixed" : attached ? "" : "Custom"}
+        placeholder={model.mixed ? (uiMessage("inspector.styleSelect.mixed")) : (attached ? ("") : (uiMessage("inspector.styleSelect.custom")))}
         title={
-          value.length === 0
-            ? "No type styles in this design system"
-            : !attached && !model.mixed && model.matchedName !== null
-              ? "Custom \u2014 matches " + model.matchedName
-              : undefined
+          value.length === 0 ? (uiMessage("inspector.styleSelect.noTypeStylesInThis")) : (!attached && !model.mixed && model.matchedName !== null ? (uiMessage("inspector.styleSelect.customMatches", { value1: String(model.matchedName) })) : (undefined))
         }
         searchable={true}
         searchLabel={"Search styles"}
@@ -60,9 +59,9 @@ export function installEditorTypographyStyleSelect(
               variant={"ghost"}
               iconOnly={true}
               icon={"Minus"}
-              aria-label={"Detach from the text style"}
+              aria-label={uiMessage("inspector.styleSelect.detachFromTheTextStyle")}
               tooltip={
-                "Detach \u2014 edit font, weight, size, line height and letter spacing on this text"
+                uiMessage("inspector.styleSelect.detachEditFontWeightSizeLineHeightAndLetterSpacingOnThisText")
               }
               data-testid={"dc-text-detach"}
               disabled={disabled2}
@@ -82,19 +81,20 @@ export function installEditorTypographyStyleSelect(
     onChange: onChange,
     onReset: onReset,
   }: Dynamic): Dynamic {
+    useUiLocale();
     return (
       <div
         className={"contents"}
         onMouseDown={(event?: Dynamic): Dynamic => event.preventDefault()}
       >
         <runtime.PropertySegmentsRow
-          label={"List"}
+          label={uiMessage("inspector.styleSelect.list")}
           data-testid={"dc-text-list"}
           options={runtime.SessionStripTextItems}
           value={value}
           mixed={mixed}
           disabled={disabled2 || disabledReason != null}
-          title={disabledReason ?? undefined}
+          title={disabledReason ?? (undefined)}
           onReset={onReset}
           onChange={onChange}
         />

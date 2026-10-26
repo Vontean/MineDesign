@@ -1,3 +1,5 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
+import { useUiLocale } from '../../ui-locale.ts';
 import type * as React from "react";
 import type * as Preview from "../../contracts/preview";
 import type * as Model from "../../contracts";
@@ -142,7 +144,7 @@ export function installFilesUiPreviewAvailability(
       ),
       fromProps: stage !== undefined,
       staticReason:
-        previewHead.staticReason !== "" ? STATIC_PREVIEW_NOTE : undefined,
+        previewHead.staticReason !== "" ? uiMessage("design-system.previewAvailability.staticPreviewSeeTheNote") : undefined,
     };
   }
   function FluidComponentPreview({
@@ -151,6 +153,7 @@ export function installFilesUiPreviewAvailability(
     ph: ph,
     stage: stage,
   }: Preview.FluidComponentPreviewProps): React.ReactElement {
+    useUiLocale();
     let [value, value2] = reactComponentPreviews.useState(false);
     reactComponentPreviews.useEffect(() => value2(true), []);
     let ref = reactComponentPreviews.useRef<HTMLDivElement | null>(null),
@@ -179,22 +182,20 @@ export function installFilesUiPreviewAvailability(
           minHeight: value5,
         }}
       >
-        {value && value6.html !== undefined ? (
-          <runtime.ComponentPreview
+        {value && value6.html !== undefined ? (<runtime.ComponentPreview
             html={value6.html}
             cardFile={value6.file}
             fromProps={value6.fromProps}
             head={ph.head}
             height={value5}
-            title={c.name + " preview"}
+            title={uiMessage("design-system.previewAvailability.preview", { value1: String(c.name) })}
             {...(value6.staticReason !== undefined
               ? {
                   staticReason: value6.staticReason,
                 }
               : {})}
             data-testid={"ds-comp-preview-" + c.name}
-          />
-        ) : null}
+          />) : (null)}
       </div>
     );
   }
@@ -205,26 +206,25 @@ export function installFilesUiPreviewAvailability(
     ph: ph,
     stage: stage,
   }: Preview.ScaledComponentPreviewProps): React.ReactElement {
+    useUiLocale();
     let [value, value2] = reactComponentPreviews.useState(false);
     reactComponentPreviews.useEffect(() => value2(true), []);
     let [value3, value4] = reactComponentPreviews.useState<string | null>(null),
       value5 = componentPreviewSource(c, ph, stage);
     return (
       <div className={"ds-comp-preview-fill"}>
-        {[
-          <runtime.PreviewFitBox
+        {[<runtime.PreviewFitBox
             width={width}
             height={height}
             data-testid={"ds-comp-scaled-" + c.name}
           >
-            {value && value5.html !== undefined ? (
-              <runtime.ComponentPreview
+            {value && value5.html !== undefined ? (<runtime.ComponentPreview
                 html={value5.html}
                 cardFile={value5.file}
                 fromProps={value5.fromProps}
                 head={ph.head}
                 height={height}
-                title={c.name + " preview"}
+                title={uiMessage("design-system.previewAvailability.preview", { value1: String(c.name) })}
                 {...(value5.staticReason !== undefined
                   ? {
                       staticReason: value5.staticReason,
@@ -233,18 +233,15 @@ export function installFilesUiPreviewAvailability(
                 staticPageWidth={width}
                 onStaticNote={value4}
                 data-testid={"ds-comp-preview-" + c.name}
-              />
-            ) : null}
-          </runtime.PreviewFitBox>,
-          value3 !== null ? (
+              />) : (null)}
+          </runtime.PreviewFitBox>, value3 !== null ? (
             <p
               className={"ds-swatch-note ds-pad mt-xs text-footnote text-muted"}
               data-testid={"ds-comp-preview-note-" + c.name}
             >
               {value3}
             </p>
-          ) : null,
-        ]}
+          ) : null]}
       </div>
     );
   }
@@ -398,7 +395,7 @@ export function installFilesUiPreviewAvailability(
   bindRuntimeValue(
     runtime,
     "STATIC_PREVIEW_NOTE",
-    () => STATIC_PREVIEW_NOTE,
+    () => uiMessage("design-system.previewAvailability.staticPreviewSeeTheNote"),
     (value) => {
       STATIC_PREVIEW_NOTE = value;
     },

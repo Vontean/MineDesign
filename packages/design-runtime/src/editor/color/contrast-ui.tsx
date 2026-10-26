@@ -1,3 +1,5 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
+import { useUiLocale } from '../../ui-locale.ts';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -90,6 +92,7 @@ export function installEditorColorContrastUi(
     sentence = true,
     className: className,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let value: Dynamic = summarizeContrastResults(results),
       worst: Dynamic = value.worst;
     return (
@@ -110,7 +113,7 @@ export function installEditorColorContrastUi(
             {(0, runtime.formatContrastRatio)(worst.ratio)}
           </span>
         </span>
-        {sentence ? <span className={"sr-only"}>{value.sentence}</span> : null}
+        {sentence ? (<span className={"sr-only"}>{value.sentence}</span>) : (null)}
       </span>
     );
   }
@@ -119,6 +122,7 @@ export function installEditorColorContrastUi(
     results: results,
     className: className,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let value: Dynamic = summarizeContrastResults(results),
       worst: Dynamic = value.worst;
     return (
@@ -149,9 +153,7 @@ export function installEditorColorContrastUi(
           <runtime.Icon name={"TextAa"} size={"xs"} />
         </span>
         <span className={worst.passes ? "text-primary" : "text-warning"}>
-          {worst.passes
-            ? runtime.ColorContrastCopyLabel_9
-            : runtime.ColorContrastCopyLabel_10}
+          {worst.passes ? (runtime.ColorContrastCopyLabel_9) : (runtime.ColorContrastCopyLabel_10)}
         </span>
       </span>
     );
@@ -165,6 +167,7 @@ export function installEditorColorContrastUi(
     fixRef: fixRef,
     onFixGoneFocused: onFixGoneFocused,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let value: Dynamic = summarizeContrastResults(results),
       worst: Dynamic = value.worst;
     return (
@@ -183,14 +186,12 @@ export function installEditorColorContrastUi(
             {value.sentence}
           </span>
         </span>
-        {fix !== undefined ? (
-          <ReadableShadeButton
+        {fix !== undefined ? (<ReadableShadeButton
             fix={fix}
             held={fixHeld}
             rootRef={fixRef}
             onGoneFocused={onFixGoneFocused}
-          />
-        ) : null}
+          />) : (null)}
       </div>
     );
   }
@@ -200,6 +201,7 @@ export function installEditorColorContrastUi(
     rootRef: rootRef,
     onGoneFocused: onGoneFocused,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let value: Dynamic = (0, runtime.reactColorContrastCopy.useId)(),
       value2: Dynamic = (0, runtime.reactColorContrastCopy.useRef)(false),
       value3: Dynamic = (0, runtime.reactColorContrastCopy.useRef)(null),
@@ -243,13 +245,7 @@ export function installEditorColorContrastUi(
         <runtime.Button
           variant={"secondary"}
           title={
-            fix.css +
-            " \xB7 " +
-            (0, runtime.formatContrastRatio)(fix.ratio) +
-            " " +
-            runtime.OnValue +
-            " " +
-            fix.ground
+            ((((((fix.css) + (" \xB7 ")) + ((0, runtime.formatContrastRatio)(fix.ratio))) + (" ")) + (runtime.OnValue)) + (" ")) + (fix.ground)
           }
           aria-describedby={value}
           disabled={held}

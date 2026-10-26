@@ -1,3 +1,4 @@
+import { useUiLocale } from '../../ui-locale.ts';
 import type {
   ColorMode,
   ControlSize,
@@ -309,6 +310,7 @@ export function installCdsThemeRoot(runtime: RuntimeBindings): () => void {
     className: className,
     children: children,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let value: Dynamic = (0, reactThemeRoot.useContext)(DensityContext),
       value2: Dynamic = (0, reactThemeRoot.useContext)(PlatformContext),
       value3: Dynamic = (0, reactThemeRoot.useContext)(LocaleContext),

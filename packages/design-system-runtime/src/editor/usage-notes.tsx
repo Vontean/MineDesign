@@ -1,3 +1,5 @@
+import { useUiLocale } from '../ui-locale.ts';
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import { bindRuntimeValue, type RuntimeBindings } from "../runtime-types";
 import type * as React from "react";
@@ -41,12 +43,13 @@ export function installEditorUsageNotes(runtime: RuntimeBindings): () => void {
     label: label,
     onChange: onChange,
     onDone: onDone,
-    title = "Usage notes",
-    placeholder = "When to use it, and when not to…",
+    title = uiMessage("design-system.usageNotes.usageNotes"),
+    placeholder = uiMessage("design-system.usageNotes.whenToUseItAnd"),
     size = "note",
     "data-testid": dataTestid,
     anchorKey: anchorKey,
   }: UsageNoteEditorProps) {
+    useUiLocale();
     let value2: boolean = onChange !== undefined,
       value3 = hasUsageNote(value),
       [value4, value5] = reactUsageEditor.useState(false),
@@ -73,7 +76,7 @@ export function installEditorUsageNotes(runtime: RuntimeBindings): () => void {
       return null;
     }
     let value6 =
-        value4 || value3 || !value2 ? title : "Add " + title.toLowerCase(),
+        value4 || value3 || !value2 ? title : uiMessage("design-system.usageNotes.add") + title.toLowerCase(),
       callback = (): void => {
         value5(false);
         if (!ref.current && !ref2.current) {
@@ -117,7 +120,7 @@ export function installEditorUsageNotes(runtime: RuntimeBindings): () => void {
           align={"right"}
           padding={"none"}
           focusOnOpen={ref.current}
-          aria-label={title + ": " + label}
+          aria-label={((title) + (": ")) + (label)}
           trigger={
             <runtime.Button
               variant={"ghost"}
@@ -130,7 +133,7 @@ export function installEditorUsageNotes(runtime: RuntimeBindings): () => void {
                   className={value3 ? "text-warning" : "text-muted"}
                 />
               }
-              aria-label={value6 + ": " + label}
+              aria-label={((value6) + (": ")) + (label)}
               tooltip={value6}
               className={(0, runtime.joinClassNames)(
                 "ds-nmark",
@@ -147,8 +150,7 @@ export function installEditorUsageNotes(runtime: RuntimeBindings): () => void {
             />
           }
         >
-          {value4 ? (
-            <NotesPopoverEditor
+          {value4 ? (<NotesPopoverEditor
               value={value}
               label={label}
               title={title}
@@ -164,8 +166,7 @@ export function installEditorUsageNotes(runtime: RuntimeBindings): () => void {
               onClose={callback}
               testid={dataTestid}
               anchorKey={anchorKey}
-            />
-          ) : null}
+            />) : (null)}
         </runtime.PropertyPopup>
       </span>
     );
@@ -185,6 +186,7 @@ export function installEditorUsageNotes(runtime: RuntimeBindings): () => void {
     testid: testid,
     anchorKey: anchorKey,
   }: NotesPopoverEditorProps) {
+    useUiLocale();
     let value2: boolean = onChange !== undefined,
       ref = reactUsageEditor.useRef<{
         open: boolean;
@@ -293,35 +295,31 @@ export function installEditorUsageNotes(runtime: RuntimeBindings): () => void {
           size === "doc" ? "ds-postit-doc" : undefined,
         )}
         role={"group"}
-        aria-label={title + ": " + label}
+        aria-label={((title) + (": ")) + (label)}
         data-testid={testid !== undefined ? testid + "-note" : undefined}
         {...(anchorKey !== undefined
           ? (0, runtime.commentTargetProps)("note", anchorKey)
           : {})}
       >
-        {[
-          <div className={"ds-postit-head flex items-center gap-xs"}>
-            {[
-              <runtime.Icon
+        {[<div className={"ds-postit-head flex items-center gap-xs"}>
+            {[<runtime.Icon
                 name={"Note"}
                 size={"sm"}
                 className={"text-muted"}
-              />,
-              <span
+              />, <span
                 className={
                   "min-w-0 flex-1 truncate text-footnote font-semibold text-primary"
                 }
               >
                 {title}
-              </span>,
-              value2 && hasUsageNote(value) ? (
+              </span>, value2 && hasUsageNote(value) ? (
                 <runtime.Button
                   variant={"ghost"}
                   size={"xs"}
                   iconOnly={true}
                   icon={"Trash"}
-                  aria-label={"Delete " + title.toLowerCase()}
-                  tooltip={"Delete"}
+                  aria-label={uiMessage("design-system.usageNotes.delete2", { value1: String(title.toLowerCase()) })}
+                  tooltip={uiMessage("design-system.usageNotes.delete")}
                   onMouseDown={(event: React.MouseEvent<HTMLButtonElement>) =>
                     event.preventDefault()
                   }
@@ -336,23 +334,20 @@ export function installEditorUsageNotes(runtime: RuntimeBindings): () => void {
                     testid !== undefined ? testid + "-delete" : undefined
                   }
                 />
-              ) : null,
-              <runtime.Button
+              ) : null, <runtime.Button
                 variant={"ghost"}
                 size={"xs"}
                 iconOnly={true}
                 icon={"X"}
-                aria-label={"Close"}
-                tooltip={"Close"}
+                aria-label={uiMessage("design-system.usageNotes.close")}
+                tooltip={uiMessage("design-system.usageNotes.close")}
                 onClick={onClose}
                 data-note-close={""}
                 data-testid={
                   testid !== undefined ? testid + "-close" : undefined
                 }
-              />,
-            ]}
-          </div>,
-          <div
+              />]}
+          </div>, <div
             ref={ref2}
             className={"ds-postit-body ds-desc ds-comp-about prose min-w-0"}
             onMouseDown={value2 ? focusUsageEditorBackground : undefined}
@@ -362,7 +357,7 @@ export function installEditorUsageNotes(runtime: RuntimeBindings): () => void {
               markdown={value!}
               readOnly={!value2}
               placeholder={placeholder}
-              label={label + " " + title.toLowerCase()}
+              label={((label) + (" ")) + (title.toLowerCase())}
               {...(testid !== undefined
                 ? {
                     testId: testid,
@@ -378,8 +373,7 @@ export function installEditorUsageNotes(runtime: RuntimeBindings): () => void {
                 : {})}
               onDone={callback}
             />
-          </div>,
-        ]}
+          </div>]}
       </div>
     );
   }

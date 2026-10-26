@@ -1,3 +1,5 @@
+import { useUiLocale } from '../ui-locale.ts';
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 import type * as React from "react";
 import type * as Editor from "../contracts/editor-runtime";
 import type * as Model from "../contracts";
@@ -24,9 +26,10 @@ export function installEditorAssetContextMenu(
     onDownload: onDownload,
     edit: edit,
   }: Editor.AssetContextMenuProps): React.ReactElement {
+    useUiLocale();
     let value = items.length === 1 ? items[0] : undefined,
       value2: string | undefined =
-        value === undefined ? SINGLE_FILE_ACTION_REASON : undefined,
+        value === undefined ? uiMessage("design-system.assetContextMenu.worksOnOneFileAt") : undefined,
       value3 = (0, runtime.useDownloadsWithheld)(),
       value4 =
         value2 ??
@@ -44,45 +47,35 @@ export function installEditorAssetContextMenu(
         title={value6}
         className={"min-w-[12rem]"}
       >
-        {[
-          <runtime.Menu.Item
+        {[<runtime.Menu.Item
             icon={"Expand"}
             {...assetActionDisabledProps(value2)}
             onClick={() => value !== undefined && onOpen(value)}
             data-testid={"ds-amenu-open"}
           >
-            {"Open"}
-          </runtime.Menu.Item>,
-          edit !== undefined ? (
+            {uiMessage("design-system.assetContextMenu.open")}
+          </runtime.Menu.Item>, edit !== undefined ? (
             <runtime.Menu.Item
               icon={"Edit"}
               {...assetActionDisabledProps(value2)}
               onClick={() => value !== undefined && edit.rename(value)}
               data-testid={"ds-amenu-rename"}
             >
-              {"Rename…"}
+              {uiMessage("design-system.assetContextMenu.rename")}
             </runtime.Menu.Item>
-          ) : null,
-          <runtime.Menu.Item
+          ) : null, <runtime.Menu.Item
             icon={"Download"}
             {...assetActionDisabledProps(value4)}
             onClick={() => value !== undefined && onDownload(value)}
             data-testid={"ds-amenu-download"}
           >
-            {"Download"}
-          </runtime.Menu.Item>,
-          edit !== undefined ? (
+            {uiMessage("design-system.assetContextMenu.download")}
+          </runtime.Menu.Item>, edit !== undefined ? (
             <jsxAssetActions.Fragment>
-              {[
-                <runtime.Menu.Separator />,
-                <runtime.Menu.Group>
-                  {[
-                    <runtime.Menu.GroupLabel>
-                      {length > 1
-                        ? "Move " + String(length) + " files to"
-                        : "Move to"}
-                    </runtime.Menu.GroupLabel>,
-                    groups.map((input) =>
+              {[<runtime.Menu.Separator />, <runtime.Menu.Group>
+                  {[<runtime.Menu.GroupLabel>
+                      {length > 1 ? (uiMessage("design-system.assetContextMenu.moveFilesTo", { value1: String(String(length)) })) : (uiMessage("design-system.assetContextMenu.moveTo"))}
+                    </runtime.Menu.GroupLabel>, groups.map((input) =>
                       (() => {
                         const _Element = runtime.Menu.Item;
                         const _elementProps = {
@@ -92,8 +85,8 @@ export function installEditorAssetContextMenu(
                               (input2): boolean => input2.group === input.name,
                             )
                               ? (length > 1
-                                  ? "They are all in "
-                                  : "Already in ") + value5(input.name)
+                                  ? uiMessage("design-system.assetContextMenu.theyAreAllIn")
+                                  : uiMessage("design-system.assetContextMenu.alreadyIn")) + value5(input.name)
                               : undefined,
                           ),
                           onClick: () => edit.moveTo(items, input.name),
@@ -105,33 +98,25 @@ export function installEditorAssetContextMenu(
                           <_Element key={_elementKey} {..._elementProps} />
                         );
                       })(),
-                    ),
-                    <runtime.Menu.Item
+                    ), <runtime.Menu.Item
                       icon={"FolderPlus"}
                       onClick={() =>
                         edit.moveTo(items, NEW_ASSET_GROUP_SENTINEL)
                       }
                       data-testid={"ds-amenu-move-new"}
                     >
-                      {"New set…"}
-                    </runtime.Menu.Item>,
-                  ]}
-                </runtime.Menu.Group>,
-                <runtime.Menu.Separator />,
-                <runtime.Menu.Item
+                      {uiMessage("design-system.assetContextMenu.newSet")}
+                    </runtime.Menu.Item>]}
+                </runtime.Menu.Group>, <runtime.Menu.Separator />, <runtime.Menu.Item
                   icon={"Trash"}
                   variant={"danger"}
                   onClick={() => edit.remove(items)}
                   data-testid={"ds-amenu-remove"}
                 >
-                  {length > 1
-                    ? "Remove " + String(length) + " files"
-                    : "Remove"}
-                </runtime.Menu.Item>,
-              ]}
+                  {length > 1 ? (uiMessage("design-system.assetContextMenu.removeFiles", { value1: String(String(length)) })) : (uiMessage("design-system.assetContextMenu.remove"))}
+                </runtime.Menu.Item>]}
             </jsxAssetActions.Fragment>
-          ) : null,
-        ]}
+          ) : null]}
       </runtime.ContextMenu>
     );
   }
@@ -154,7 +139,7 @@ export function installEditorAssetContextMenu(
   bindRuntimeValue(
     runtime,
     "SINGLE_FILE_ACTION_REASON",
-    () => SINGLE_FILE_ACTION_REASON,
+    () => uiMessage("design-system.assetContextMenu.worksOnOneFileAt"),
     (value) => {
       SINGLE_FILE_ACTION_REASON = value;
     },
@@ -173,7 +158,7 @@ export function installEditorAssetContextMenu(
       (0, runtime.loadJsxNamespace)(),
       1,
     );
-    NEW_ASSET_GROUP_SENTINEL = Symbol("new group");
+    NEW_ASSET_GROUP_SENTINEL = Symbol(uiMessage("design-system.assetContextMenu.newGroup"));
     SINGLE_FILE_ACTION_REASON = "Works on one file at a time";
     assetActionDisabledProps = (reason: string | undefined) => ({
       disabled: reason !== undefined,

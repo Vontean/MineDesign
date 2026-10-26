@@ -1,3 +1,5 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
+import { useUiLocale } from '../ui-locale.ts';
 /** Restored application module; prepare first, initialize in original order. */
 import { bindRuntimeValue, type RuntimeBindings } from "../runtime-types";
 import type * as React from "react";
@@ -22,6 +24,7 @@ export function installUiContextMenu(runtime: RuntimeBindings): () => void {
     className: className,
     focusFirstItem = false,
   }: ContextMenuProps) {
+    useUiLocale();
     let open = at2 !== null,
       popupRef = reactContextMenu.useRef<HTMLDivElement | null>(null),
       onCloseRef = reactContextMenu.useRef(onClose);
@@ -126,11 +129,9 @@ export function installUiContextMenu(runtime: RuntimeBindings): () => void {
     }, [open, focusFirstItem]);
     return (
       <jsxChromeContextMenu.Fragment>
-        {[
-          open ? (
+        {[open ? (
             <runtime.PopupScrim onClose={() => onCloseRef.current()} />
-          ) : null,
-          <runtime.Menu.Root
+          ) : null, <runtime.Menu.Root
             open={open}
             modal={false}
             onOpenChange={(input: boolean, options: PopupChangeDetails) => {
@@ -192,17 +193,13 @@ export function installUiContextMenu(runtime: RuntimeBindings): () => void {
               }}
               className={className}
             >
-              {[
-                content?.title !== undefined ? (
+              {[content?.title !== undefined ? (
                   <runtime.Menu.Header className={"truncate"}>
                     {content.title}
                   </runtime.Menu.Header>
-                ) : null,
-                content?.children,
-              ]}
+                ) : null, content?.children]}
             </runtime.Menu.Popup>
-          </runtime.Menu.Root>,
-        ]}
+          </runtime.Menu.Root>]}
       </jsxChromeContextMenu.Fragment>
     );
   }

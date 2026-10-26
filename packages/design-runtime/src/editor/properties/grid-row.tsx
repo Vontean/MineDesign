@@ -1,3 +1,5 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
+import { useUiLocale } from '../../ui-locale.ts';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -12,6 +14,7 @@ export function installEditorPropertiesGridRow(
     onCommit: onCommit,
     shell: shell,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let value: Dynamic = (0, runtime.parseEqualGridColumns)(
         state.mixed ? null : state.value,
       ),
@@ -41,7 +44,7 @@ export function installEditorPropertiesGridRow(
         <runtime.PropertyTextInput
           display={state.mixed || value == null ? "" : String(value)}
           placeholder={
-            state.mixed ? "Mixed" : value2 != null ? String(value2) : "auto"
+            state.mixed ? (uiMessage("inspector.gridRow.mixed")) : (value2 != null ? (String(value2)) : (uiMessage("inspector.gridRow.auto")))
           }
           title={state.spec?.hint}
           aria-label={state.label}
@@ -70,6 +73,7 @@ export function installEditorPropertiesGridRow(
     onCommit: onCommit,
     shell: shell,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let value: Dynamic = parseGridSpan(state.mixed ? null : state.value),
       value2: Dynamic = state.inheritedFrom
         ? parseGridSpan(state.fallback ?? null)
@@ -86,9 +90,7 @@ export function installEditorPropertiesGridRow(
         <runtime.PropertyTextInput
           display={state.mixed || value == null ? "" : String(value)}
           placeholder={
-            state.mixed
-              ? "Mixed"
-              : String(parseGridSpan(state.fallback ?? null) ?? 1)
+            state.mixed ? (uiMessage("inspector.gridRow.mixed")) : (String(parseGridSpan(state.fallback ?? null) ?? 1))
           }
           aria-label={state.label}
           disabled={state.disabled}

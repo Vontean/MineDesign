@@ -1,3 +1,5 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
+import { useUiLocale } from '../ui-locale.ts';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -11,6 +13,7 @@ export function installCanvasLayoutGuides(
   var jsx_MN: Dynamic;
   var ArtboardLayoutGuides: Dynamic;
   function SquareGridGuide({ size: size, color: color }: Dynamic): Dynamic {
+    useUiLocale();
     let value: Dynamic = (0, runtime.useViewportStore)(),
       value2: Dynamic = (0, runtime.sanitizeCssColor)(color),
       callback: Dynamic = (input?: Dynamic): Dynamic =>
@@ -28,9 +31,10 @@ export function installCanvasLayoutGuides(
     );
   }
   function RowColumnLayoutGuide({ r: r8 }: Dynamic): Dynamic {
+    useUiLocale();
     let value: Dynamic = r8.kind === "columns",
       value2: Dynamic = (0, runtime.sanitizeCssColor)(r8.color),
-      value3: Dynamic = value ? "to right" : "to bottom";
+      value3: Dynamic = value ? uiMessage("canvas.layoutGuides.toRight") : uiMessage("canvas.layoutGuides.toBottom");
     if (r8.align === "stretch") {
       let value7: Dynamic = `calc((100% + ${r8.gutter}px) / ${r8.count})`;
       return (

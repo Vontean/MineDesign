@@ -1,3 +1,5 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
+import { useUiLocale } from '../ui-locale.ts';
 import type { PublicOverlayActions } from "../contracts/overlays";
 import type {
   MenuRootState,
@@ -83,6 +85,7 @@ export function installUiMenu(runtime: RuntimeBindings): () => void {
     context: React.RefObject<OverlayActions | null>,
     value: boolean = false,
   ): React.ReactElement {
+    useUiLocale();
     let value2 = (
       <runtime.passiveOpenStateContext.Provider value={options}>
         <runtime.menuRootIdentityContext.Provider value={context}>
@@ -92,13 +95,9 @@ export function installUiMenu(runtime: RuntimeBindings): () => void {
                 value={runtime.defaultSubmenuState}
               >
                 <runtime.contextMenuContext.Provider value={value}>
-                  {value ? (
-                    input
-                  ) : (
-                    <runtime.TooltipImplementationProvider>
+                  {value ? (input) : (<runtime.TooltipImplementationProvider>
                       {input}
-                    </runtime.TooltipImplementationProvider>
-                  )}
+                    </runtime.TooltipImplementationProvider>)}
                 </runtime.contextMenuContext.Provider>
               </runtime.submenuStateContext.Provider>
             </runtime.menuTriggerContext.Provider>
@@ -239,6 +238,7 @@ export function installUiMenu(runtime: RuntimeBindings): () => void {
     }
   }
   function MenuShortcut({ keys: keys }: { keys: string }): React.ReactElement {
+    useUiLocale();
     return (
       <runtime.Shortcut
         keys={keys}
@@ -414,6 +414,7 @@ export function installUiMenu(runtime: RuntimeBindings): () => void {
     actionsRef: actionsRef,
     ...props
   }: MenuSubmenuProps): React.ReactElement {
+    useUiLocale();
     let [value, value2] = reactForUiMenu.useState(
         props.open ?? props.defaultOpen ?? false,
       ),
@@ -521,6 +522,7 @@ export function installUiMenu(runtime: RuntimeBindings): () => void {
     );
   }
   function MenuSeparator(): React.ReactElement {
+    useUiLocale();
     return (
       <runtime.baseMenu.Separator
         className={"compact:mx-2 comfortable:mx-2.5 my-1 h-px bg-border"}
@@ -533,6 +535,7 @@ export function installUiMenu(runtime: RuntimeBindings): () => void {
   }: React.PropsWithChildren<{
     className?: string;
   }>): React.ReactElement {
+    useUiLocale();
     let value = (0, runtime.useIsSheet)(),
       value2 =
         reactForUiMenu.useContext<MenuRootState | null>(
@@ -566,6 +569,7 @@ export function installUiMenu(runtime: RuntimeBindings): () => void {
   }: React.PropsWithChildren<{
     className?: string;
   }>): React.ReactElement {
+    useUiLocale();
     return (
       <runtime.baseMenu.GroupLabel
         className={(0, runtime.cn)(menuGroupLabelClasses, className)}
@@ -605,12 +609,9 @@ export function installUiMenu(runtime: RuntimeBindings): () => void {
             children: [
               event.separatorBefore && <MenuSeparator />,
               <MenuSubmenu disabled={event.disabled}>
-                {[
-                  <MenuSubmenuTrigger icon={event.icon} hint={event.hint}>
+                {[<MenuSubmenuTrigger icon={event.icon} hint={event.hint}>
                     {event.label}
-                  </MenuSubmenuTrigger>,
-                  <MenuPopup>{renderMenuItems(event.items)}</MenuPopup>,
-                ]}
+                  </MenuSubmenuTrigger>, <MenuPopup>{renderMenuItems(event.items)}</MenuPopup>]}
               </MenuSubmenu>,
             ],
           };
@@ -667,6 +668,7 @@ export function installUiMenu(runtime: RuntimeBindings): () => void {
   }: {
     size?: ControlSize;
   }): React.ReactElement {
+    useUiLocale();
     let value = (0, runtime.useDensity)(),
       value2 = (0, runtime.useButtonGroup)();
     return (
@@ -693,6 +695,7 @@ export function installUiMenu(runtime: RuntimeBindings): () => void {
     dataCds?: string;
     items: MenuItemsContent;
   }): React.ReactElement {
+    useUiLocale();
     return (
       <runtime.ContextMenuPopupFrame
         side={side}
@@ -707,6 +710,7 @@ export function installUiMenu(runtime: RuntimeBindings): () => void {
     );
   }
   function SimpleMenu(input: MenuProps): React.ReactElement {
+    useUiLocale();
     let value = (0, runtime.useSheetCapablePresentation)(),
       value2 = reactForUiMenu.useContext<boolean>(runtime.menuBarContext),
       value3: React.RefObject<OverlayActions | null> = (0,
@@ -736,6 +740,7 @@ export function installUiMenu(runtime: RuntimeBindings): () => void {
     });
   }
   function MenuRootProviders(input: MenuProps): React.ReactElement {
+    useUiLocale();
     let {
         open: value,
         sheetTitle: value2,
@@ -818,11 +823,9 @@ export function installUiMenu(runtime: RuntimeBindings): () => void {
             >
               {MenuContextProviders(
                 <jsxForUiMenu.Fragment>
-                  {[
-                    <runtime.baseContextMenu.Trigger className={value9}>
+                  {[<runtime.baseContextMenu.Trigger className={value9}>
                       {input.children}
-                    </runtime.baseContextMenu.Trigger>,
-                    <MenuPopup
+                    </runtime.baseContextMenu.Trigger>, <MenuPopup
                       side={value2}
                       align={value3}
                       sideOffset={value4}
@@ -831,8 +834,7 @@ export function installUiMenu(runtime: RuntimeBindings): () => void {
                       data-cds={value11 ?? "Menu"}
                     >
                       {renderMenuItems(value)}
-                    </MenuPopup>,
-                  ]}
+                    </MenuPopup>]}
                 </jsxForUiMenu.Fragment>,
                 null,
                 context.actionsRef,
@@ -849,11 +851,9 @@ export function installUiMenu(runtime: RuntimeBindings): () => void {
             onOpenChange={context.contextMenuOnOpenChange as import("../contracts/overlays").ContextMenuChange}
             actionsRef={context.actionsRef}
           >
-            {[
-              <runtime.baseContextMenu.Trigger className={value9}>
+            {[<runtime.baseContextMenu.Trigger className={value9}>
                 {input.children}
-              </runtime.baseContextMenu.Trigger>,
-              <runtime.baseContextMenu.Portal container={(options) as import("../contracts/overlays").BaseUIPortalContainer}>
+              </runtime.baseContextMenu.Trigger>, <runtime.baseContextMenu.Portal container={(options) as import("../contracts/overlays").BaseUIPortalContainer}>
                 <runtime.menuRootIdentityContext.Provider
                   value={context.actionsRef}
                 >
@@ -867,8 +867,7 @@ export function installUiMenu(runtime: RuntimeBindings): () => void {
                     items={value}
                   />
                 </runtime.menuRootIdentityContext.Provider>
-              </runtime.baseContextMenu.Portal>,
-            ]}
+              </runtime.baseContextMenu.Portal>]}
           </runtime.baseContextMenu.Root>
         </runtime.CloseOnActivityHideProvider>
       );
@@ -956,9 +955,7 @@ export function installUiMenu(runtime: RuntimeBindings): () => void {
           >
             {MenuContextProviders(
               <jsxForUiMenu.Fragment>
-                {[
-                  value12,
-                  <MenuPopup
+                {[value12, <MenuPopup
                     side={value2}
                     align={value3}
                     sideOffset={value4}
@@ -967,8 +964,7 @@ export function installUiMenu(runtime: RuntimeBindings): () => void {
                     data-cds={value11}
                   >
                     {renderMenuItems(value)}
-                  </MenuPopup>,
-                ]}
+                  </MenuPopup>]}
               </jsxForUiMenu.Fragment>,
               null,
               context.actionsRef,
@@ -985,6 +981,7 @@ export function installUiMenu(runtime: RuntimeBindings): () => void {
     return shouldRefuseNestedMenuClose(false, input, options);
   }
   function MenuRoot(input: MenuRootProps): React.ReactElement {
+    useUiLocale();
     let {
         children: value,
         sheetTitle: value2,
@@ -1016,16 +1013,15 @@ export function installUiMenu(runtime: RuntimeBindings): () => void {
             actionsRef={value11}
             onOpenChange={value10.onOpenChange}
           >
-            {typeof value === "function"
-              ? (input2: {payload:void}) =>
-                  MenuContextProviders(value(input2), value10.cell, value11)
-              : MenuContextProviders(value, value10.cell, value11)}
+            {typeof value === "function" ? ((input2: {payload:void}) =>
+                  MenuContextProviders(value(input2), value10.cell, value11)) : (MenuContextProviders(value, value10.cell, value11))}
           </runtime.baseMenu.Root>
         </runtime.CloseOnActivityHideProvider>
       </runtime.MenuOpenerProvider>
     );
   }
   function ControlledMenuRoot(input: MenuRootProps): React.ReactElement {
+    useUiLocale();
     let {
         children: value,
         sheetTitle: value2,
@@ -1076,14 +1072,12 @@ export function installUiMenu(runtime: RuntimeBindings): () => void {
               onOpenChange={value12.onOpenChange}
               onOpenChangeComplete={value12.onOpenChangeComplete}
             >
-              {typeof value === "function"
-                ? (input2: {payload:void}) =>
+              {typeof value === "function" ? ((input2: {payload:void}) =>
                     MenuContextProviders(
                       value(input2),
                       value9.cell,
                       value12.actionsRef,
-                    )
-                : MenuContextProviders(value, value9.cell, value12.actionsRef)}
+                    )) : (MenuContextProviders(value, value9.cell, value12.actionsRef))}
             </runtime.baseMenu.Root>
           </runtime.menuSheetLabelsContext.Provider>
         </runtime.SheetContextProvider>
@@ -1211,6 +1205,7 @@ export function installUiMenu(runtime: RuntimeBindings): () => void {
     stableWhileOpen = true,
     ...props
   }: MenuSearchProps): React.ReactElement {
+    useUiLocale();
     let [value, value2] = reactForUiMenu.useState(""),
       value3 = query ?? value,
       value4: (input: string) => void = (0, runtime.useEventCallback)(
@@ -1400,8 +1395,7 @@ export function installUiMenu(runtime: RuntimeBindings): () => void {
         }}
         header={
           <jsxForUiMenu.Fragment>
-            {[
-              beforeSearch !== undefined && (
+            {[beforeSearch !== undefined && (
                 <div
                   ref={ref2}
                   role={"presentation"}
@@ -1419,8 +1413,7 @@ export function installUiMenu(runtime: RuntimeBindings): () => void {
                 >
                   {beforeSearch}
                 </div>
-              ),
-              <runtime.TextInput
+              ), <runtime.TextInput
                 ref={ref3}
                 value={value3}
                 onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
@@ -1504,23 +1497,16 @@ export function installUiMenu(runtime: RuntimeBindings): () => void {
                 className={
                   "!border-transparent !bg-transparent !shadow-none compact:!pl-2 comfortable:!pl-2.5"
                 }
-              />,
-              <runtime.baseMenu.Separator
+              />, <runtime.baseMenu.Separator
                 className={"-mx-1 my-1 h-px bg-border"}
-              />,
-            ]}
+              />]}
           </jsxForUiMenu.Fragment>
         }
       >
-        {[
-          resetQueryOnClose && <ResetQueryOnUnmount reset={value5} />,
-          value8 && <MenuSearchTriggerFocusBridge inputRef={ref3} />,
-          <MenuSearchTriggerKeyboardBridge
+        {[resetQueryOnClose && <ResetQueryOnUnmount reset={value5} />, value8 && <MenuSearchTriggerFocusBridge inputRef={ref3} />, <MenuSearchTriggerKeyboardBridge
             inputRef={ref3}
             applyKey={callback}
-          />,
-          children(value3.trim().toLowerCase(), value3.trim()),
-        ]}
+          />, children(value3.trim().toLowerCase(), value3.trim())]}
       </MenuPopup>
     );
   }
@@ -1576,6 +1562,7 @@ export function installUiMenu(runtime: RuntimeBindings): () => void {
     icon = false,
     children: children,
   }: MenuPendingProps): React.ReactElement {
+    useUiLocale();
     let ref = reactForUiMenu.useRef<HTMLDivElement | null>(null),
       ref2 = reactForUiMenu.useRef(emptyMenuSize);
     reactForUiMenu.useEffect(() => {
@@ -1625,8 +1612,7 @@ export function installUiMenu(runtime: RuntimeBindings): () => void {
         }
         className={value4 ? "overflow-hidden" : undefined}
       >
-        {loading ? (
-          <runtime.SkeletonGroup>
+        {loading ? (<runtime.SkeletonGroup>
             <runtime.SkeletonPrimitive.Rows
               icon={icon}
               rows={
@@ -1635,10 +1621,7 @@ export function installUiMenu(runtime: RuntimeBindings): () => void {
                   : placeholderRows
               }
             />
-          </runtime.SkeletonGroup>
-        ) : (
-          children
-        )}
+          </runtime.SkeletonGroup>) : (children)}
       </div>
     );
   }
@@ -1912,12 +1895,9 @@ export function installUiMenu(runtime: RuntimeBindings): () => void {
         }
         return (
           <jsxForUiMenu.Fragment>
-            {[
-              value5,
-              value2 && value3 === null ? (
+            {[value5, value2 && value3 === null ? (
                 <runtime.PendingSheetBackdrop kind={value4} />
-              ) : null,
-            ]}
+              ) : null]}
           </jsxForUiMenu.Fragment>
         );
       },
@@ -2002,13 +1982,10 @@ export function installUiMenu(runtime: RuntimeBindings): () => void {
                 closeOnClick={false}
               >
                 <div role={"none"}>
-                  {[
-                    input,
-                    <runtime.DisabledReasonAnnouncement
+                  {[input, <runtime.DisabledReasonAnnouncement
                       id={value6}
                       reason={value11 ? disabledReason : undefined}
-                    />,
-                  ]}
+                    />]}
                 </div>
               </runtime.Tooltip>
             ),
@@ -2046,47 +2023,33 @@ export function installUiMenu(runtime: RuntimeBindings): () => void {
                     }
               }
             >
-              {value ? (
-                <span data-size={"xs"} className={"flex shrink-0"}>
+              {value ? (<span data-size={"xs"} className={"flex shrink-0"}>
                   <runtime.CheckboxVisual
                     checked={value2}
                     indeterminate={indeterminate}
                   />
-                </span>
-              ) : (
-                value2 && (
-                  <runtime.Icon name={"Check"} size={"auto"} bold={true} />
-                )
-              )}
+                </span>) : (value2 && (<runtime.Icon name={"Check"} size={"auto"} bold={true} />))}
             </span>
           ),
           value16 = (
             <jsxForUiMenu.Fragment>
-              {[
-                leading,
-                value4 === "leading" && value15,
-                icon !== undefined && <runtime.IconSlot icon={icon} />,
-                description ? (
+              {[leading, value4 === "leading" && value15, icon !== undefined && <runtime.IconSlot icon={icon} />, description ? (
                   <span className={"flex min-w-0 flex-1 flex-col"}>
-                    {[
-                      <span ref={value8} className={"truncate"}>
+                    {[<span ref={value8} className={"truncate"}>
                         {children}
-                      </span>,
-                      <span
+                      </span>, <span
                         className={
                           "truncate py-[0.125em] -my-[0.125em] text-footnote text-muted group-data-[highlighted]/menu-danger:text-on-danger"
                         }
                       >
                         {description}
-                      </span>,
-                    ]}
+                      </span>]}
                   </span>
                 ) : (
                   <span ref={value8} className={"min-w-0 flex-1 truncate"}>
                     {children}
                   </span>
-                ),
-                Boolean(
+                ), Boolean(
                   trailing ||
                     (value2 !== undefined && value4 === "trailing") ||
                     hint ||
@@ -2103,21 +2066,15 @@ export function installUiMenu(runtime: RuntimeBindings): () => void {
                       ) && "pointer-coarse:hidden",
                     )}
                   >
-                    {[
-                      trailing,
-                      value4 === "trailing" && value15,
-                      hint && (
+                    {[trailing, value4 === "trailing" && value15, hint && (
                         <span
                           className={`max-w-[160px] shrink-0 truncate py-[0.125em] -my-[0.125em] text-footnote text-muted group-data-[highlighted]/menu-danger:text-on-danger ${getShortcutNumeralClasses(hint)}`}
                         >
                           {hint}
                         </span>
-                      ),
-                      shortcut && <MenuShortcut keys={shortcut} />,
-                    ]}
+                      ), shortcut && <MenuShortcut keys={shortcut} />]}
                   </span>
-                ),
-              ]}
+                )]}
             </jsxForUiMenu.Fragment>
           );
         if (href !== undefined) {
@@ -2234,29 +2191,21 @@ export function installUiMenu(runtime: RuntimeBindings): () => void {
               className,
             )}
           >
-            {[
-              leading,
-              icon !== undefined && <runtime.IconSlot icon={icon} />,
-              <span ref={value5} className={"min-w-0 flex-1 truncate"}>
+            {[leading, icon !== undefined && <runtime.IconSlot icon={icon} />, <span ref={value5} className={"min-w-0 flex-1 truncate"}>
                 {children}
-              </span>,
-              trailing || hint ? (
+              </span>, trailing || hint ? (
                 <span className={"ml-md flex shrink-0 items-center gap-xs"}>
-                  {[
-                    trailing,
-                    hint && (
+                  {[trailing, hint && (
                       <span
                         className={`max-w-[160px] shrink-0 truncate py-[0.125em] -my-[0.125em] text-footnote text-muted ${getShortcutNumeralClasses(hint)}`}
                       >
                         {hint}
                       </span>
-                    ),
-                    <runtime.Icon
+                    ), <runtime.Icon
                       name={"CaretRight"}
                       size={"sm"}
                       className={"-mr-1 shrink-0 text-muted"}
-                    />,
-                  ]}
+                    />]}
                 </span>
               ) : (
                 <runtime.Icon
@@ -2264,8 +2213,7 @@ export function installUiMenu(runtime: RuntimeBindings): () => void {
                   size={"sm"}
                   className={"-mr-1 shrink-0 text-muted"}
                 />
-              ),
-            ]}
+              )]}
           </runtime.baseMenu.SubmenuTrigger>
         );
       },

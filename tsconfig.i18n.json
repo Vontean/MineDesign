@@ -1,0 +1,11 @@
+{
+  "extends": "./tsconfig.json",
+  "include": [
+    "packages/contracts/src/ui-*.ts",
+    "packages/contracts/src/ui-text/**/*.ts",
+    "tests/i18n-types.ts"
+  ],
+  "exclude": [
+    "**/*.test.ts"
+  ]
+}

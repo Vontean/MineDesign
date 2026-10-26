@@ -1,3 +1,5 @@
+import { useUiLocale } from '../../ui-locale.ts';
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -20,6 +22,7 @@ export function installEditorCodeInspectorCodePanel(
     onHoverTid: onHoverTid,
     onEdits: onEdits,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let [value, value2]: Dynamic = (0,
       runtime.reactInspectorAnnotation.useState)(
         (): Dynamic => (0, runtime.selectionCodeText)(model, tids),
@@ -145,23 +148,23 @@ export function installEditorCodeInspectorCodePanel(
           )));
       },
       value18: Dynamic = tids.length > 1,
-      value19: Dynamic = value18 ? "these elements" : "this element",
+      value19: Dynamic = value18 ? uiMessage("inspector.inspectorCodePanel.theseElements") : uiMessage("inspector.inspectorCodePanel.thisElement"),
       callback4: Dynamic = (input?: Dynamic, options?: Dynamic): Dynamic => {
         if (readOnly)
           return (
-            (value18 ? "These elements are" : "This element is") +
+            (value18 ? uiMessage("inspector.inspectorCodePanel.theseElementsAre") : uiMessage("inspector.inspectorCodePanel.thisElementIs")) +
             " read-only here."
           );
         if ((0, runtime.isTextStyleProperty)(input, options))
-          return "This value is relative to its parent. Type one in the field instead.";
+          return uiMessage("inspector.inspectorCodePanel.thisValueIsRelativeTo");
         if (/var\(|\{\{/i.test(options))
-          return "This value depends on where it is read. Type one in the field instead.";
+          return uiMessage("inspector.inspectorCodePanel.thisValueDependsOnWhere");
         let value30: Dynamic = (0, runtime.parseInspectorCode)(value);
-        if (!value30.ok) return "Fix the marked line in the field first.";
+        if (!value30.ok) return uiMessage("inspector.inspectorCodePanel.fixTheMarkedLineIn");
         if (value30.map.has(input))
-          return "The field already has a line for " + input + ".";
+          return uiMessage("inspector.inspectorCodePanel.theFieldAlreadyHasA") + input + ".";
         if (!(0, runtime.parseInspectorCode)(input + ": " + options + ";").ok)
-          return "This value can't be written as one line. Type one in the field instead.";
+          return uiMessage("inspector.inspectorCodePanel.thisValueCanTBe");
       },
       value20: Dynamic = (0, runtime.reactInspectorAnnotation.useRef)(null),
       value21: Dynamic = (0, runtime.reactInspectorAnnotation.useRef)(null),
@@ -247,7 +250,7 @@ export function installEditorCodeInspectorCodePanel(
           ? (0, runtime.findInspectorOutlineNode)(outline, tids[0])
           : null,
       value28: Dynamic = tids.length === 1 ? model.tagName?.(tids[0]) : null,
-      value29: Dynamic = "Nothing set on " + value19;
+      value29: Dynamic = uiMessage("inspector.inspectorCodePanel.nothingSetOn") + value19;
     return (
       <div
         data-testid={"dc-code-pane"}
@@ -267,19 +270,15 @@ export function installEditorCodeInspectorCodePanel(
               value7.current.setSelectionRange(value.length, value.length));
           }}
         >
-          {value28 && (
-            <div
+          {value28 && (<div
               data-testid={"dc-code-subject"}
               className={
                 "truncate px-3.5 pt-2.5 font-mono text-[11px] text-muted select-none"
               }
             >
-              {"<" + value28 + ">"}
-              {value27?.detail ? (
-                <span className={"ml-2 font-sans"}>{value27.detail}</span>
-              ) : null}
-            </div>
-          )}
+              {(("<") + (value28)) + (">")}
+              {value27?.detail ? (<span className={"ml-2 font-sans"}>{value27.detail}</span>) : (null)}
+            </div>)}
           <textarea
             ref={value8}
             data-testid={"dc-code-text"}
@@ -288,13 +287,11 @@ export function installEditorCodeInspectorCodePanel(
             spellCheck={false}
             autoCapitalize={"off"}
             autoCorrect={"off"}
-            aria-label={"CSS and attributes"}
+            aria-label={uiMessage("inspector.inspectorCodePanel.cSSAndAttributes")}
             aria-invalid={value5 != null}
             aria-describedby={value16 === undefined ? undefined : value17}
             title={
-              value5
-                ? "Line " + String(value5.line) + ": " + value5.message
-                : undefined
+              value5 ? (uiMessage("inspector.inspectorCodePanel.line", { value1: String(String(value5.line)), value2: String(value5.message) })) : (undefined)
             }
             onChange={(event?: Dynamic): Dynamic =>
               callback3(event.target.value)
@@ -326,15 +323,9 @@ export function installEditorCodeInspectorCodePanel(
               (value5 ? "shadow-[inset_-3px_0_0_#b42318]" : "")
             }
             placeholder={
-              tids.length === 0
-                ? "Select an element to see its CSS."
-                : readOnly
-                  ? value29 + "."
-                  : value29 +
+              tids.length === 0 ? (uiMessage("inspector.inspectorCodePanel.selectAnElementToSee")) : (readOnly ? ((value29) + (".")) : (value29 +
                     ` yet.
-Type  color: red;  to style ` +
-                    (value18 ? "them" : "it") +
-                    "."
+Type  color: red;  to style ` + value18 ? (uiMessage("inspector.inspectorCodePanel.them")) : ((uiMessage("inspector.inspectorCodePanel.it")) + ("."))))
             }
           />
           <div ref={value20} className={"contents"}>
@@ -350,11 +341,9 @@ Type  color: red;  to style ` +
           </div>
         </div>
         <runtime.FloatingScrollbar target={value23} />
-        {value16 !== undefined && (
-          <span id={value17} hidden={true}>
+        {value16 !== undefined && (<span id={value17} hidden={true}>
             {value16}
-          </span>
-        )}
+          </span>)}
       </div>
     );
   }

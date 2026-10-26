@@ -1,3 +1,5 @@
+import { useUiLocale } from '../../ui-locale.ts';
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -184,6 +186,7 @@ export function installEditorComponentsAttributePropsPanel(
     onEditInCode: onEditInCode,
     mixed: mixed,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let value: Dynamic = Object.entries(declared ?? {}).filter(
         ([input, input2]: Dynamic): Dynamic =>
           (0, runtime.isEditablePropMetadata)(input2) &&
@@ -219,38 +222,33 @@ export function installEditorComponentsAttributePropsPanel(
         ),
       ];
     return !onEditComponent && items.length === 0 && !emptyNote ? null : (
-      <runtime.PropertySection title={`${importName} props`}>
-        {items.length === 0 && emptyNote && (
-          <div
+      <runtime.PropertySection title={uiMessage("inspector.attributePropsPanel.props", { value1: String(importName) })}>
+        {items.length === 0 && emptyNote && (<div
             className={"px-3.5 pt-3 pb-1 text-caption text-muted"}
             data-testid={"dc-import-props-empty"}
           >
             {emptyNote}
-          </div>
-        )}
-        {onEditComponent && (
-          <div className={"flex flex-col items-stretch gap-1 pt-3 px-3.5 pb-1"}>
+          </div>)}
+        {onEditComponent && (<div className={"flex flex-col items-stretch gap-1 pt-3 px-3.5 pb-1"}>
             <runtime.Button
               variant={"secondary"}
               onClick={onEditComponent}
               data-testid={"dc-edit-imported-component"}
             >
-              {disabled2 ? "Open" : "Edit"} {importName}
+              {disabled2 ? (uiMessage("inspector.attributePropsPanel.open")) : (uiMessage("inspector.attributePropsPanel.edit"))} {importName}
               {" \u2192"}
             </runtime.Button>
             <span className={"text-caption text-muted"}>
-              {"Opens the "}
+              {uiMessage("inspector.attributePropsPanel.opensThe")}
               {importName}
-              {" artboard."}
+              {uiMessage("inspector.attributePropsPanel.artboard")}
             </span>
-          </div>
-        )}
-        {items.length > 0 && (
-          <div
+          </div>)}
+        {items.length > 0 && (<div
             data-testid={"dc-import-props"}
             className={disabled2 ? "opacity-60" : "contents"}
             title={
-              disabled2 ? runtime.ViewOnlyYouCanInspectThisMessage : undefined
+              disabled2 ? (runtime.ViewOnlyYouCanInspectThisMessage) : (undefined)
             }
             aria-disabled={disabled2 || undefined}
           >
@@ -301,13 +299,13 @@ export function installEditorComponentsAttributePropsPanel(
                         onEditInCode !== undefined,
                       value17: Dynamic = value14
                         // MineDesign: user-facing copy calls the agent "the agent", not Claude.
-                        ? "This attribute can\u2019t be edited here. Ask the agent in chat to change it."
+                        ? uiMessage("inspector.attributePropsPanel.thisAttributeCanTBe")
                         : value15 &&
                             !value13 &&
                             !disabled2 &&
                             onEditInCode !== undefined
-                          ? "The selected instances set this differently. Select one to open it in Code."
-                          : "Set by the page\u2019s script." +
+                          ? uiMessage("inspector.attributePropsPanel.theSelectedInstancesSetThis")
+                          : uiMessage("inspector.attributePropsPanel.setByThePageS") +
                             (value16
                               ? " Click to open it in Code."
                               : value13
@@ -324,7 +322,7 @@ export function installEditorComponentsAttributePropsPanel(
                           className={"w-full"}
                           data-testid={"dc-import-prop-bound"}
                           title={value17}
-                          aria-label={`${value8}: ${value12 || "not set"}`}
+                          aria-label={uiMessage("inspector.attributePropsPanel.undefined", { value1: String(value8), value2: String((value12) || (uiMessage("inspector.attributePropsPanel.notSet"))) })}
                           muted={value12 === ""}
                           disabled={!value16}
                           onClick={
@@ -342,7 +340,7 @@ export function installEditorComponentsAttributePropsPanel(
                             )
                           }
                         >
-                          {value12 || "\u2014"}
+                          {value12 || ("\u2014")}
                         </runtime.PropertyPickerButton>
                       </runtime.PropertyTextRow>
                     );
@@ -393,8 +391,7 @@ export function installEditorComponentsAttributePropsPanel(
                 },
               )}
             </div>
-          </div>
-        )}
+          </div>)}
       </runtime.PropertySection>
     );
   }

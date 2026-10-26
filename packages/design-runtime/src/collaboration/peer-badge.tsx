@@ -1,3 +1,4 @@
+import { useUiLocale } from '../ui-locale.ts';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -23,6 +24,7 @@ export function installCollaborationPeerBadge(
     inMs: inMs,
     shimmer: shimmer,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let [value, value2]: Dynamic = (0, reactCollaborationPeerBadge.useState)({
         a: text,
         b: "",
@@ -124,6 +126,7 @@ export function installCollaborationPeerBadge(
     );
   }
   function PeerBadgeLabel({ tint: tint, label: label }: Dynamic): Dynamic {
+    useUiLocale();
     let value: Dynamic = "var(--cds-" + tint + "-500)";
     return label.kind === "name" ? (
       <span
@@ -162,6 +165,7 @@ export function installCollaborationPeerBadge(
     hidden = false,
     arrowRef: arrowRef,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let value: Dynamic =
         glyphScale !== undefined &&
         Number.isFinite(glyphScale) &&

@@ -1,3 +1,5 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
+import { useUiLocale } from '../ui-locale.ts';
 import type * as React from "react";
 import type * as Token from "../contracts/token-editors";
 import type * as Model from "../contracts";
@@ -29,7 +31,7 @@ export function installEditorEditableName(
     taken: ReadonlySet<string>,
   ): string | null {
     if (name === "") {
-      return "A token needs a name.";
+      return uiMessage("design-system.editableName.aTokenNeedsAName");
     }
     if (!runtime.TOKEN_NAME_PATTERN.test(name)) {
       return (
@@ -104,6 +106,7 @@ export function installEditorEditableName(
     tabIndex = 0,
     ...props
   }: Token.EditableNameProps): React.ReactElement {
+    useUiLocale();
     let ref = reactTokenRename.useRef<Token.RenameFocusContext | null>(null),
       value: string =
         "ds-rn" +
@@ -121,7 +124,7 @@ export function installEditorEditableName(
           let value6 = normalizeSectionTitle(input, defaultTitle),
             value7 = commit(value6);
           if (value7 === false) {
-            showEditorNotification("Could not rename " + name + ".");
+            showEditorNotification(uiMessage("design-system.editableName.couldNotRename") + name + ".");
             return name;
           }
           if (typeof value7 === "string") {
@@ -148,7 +151,7 @@ export function installEditorEditableName(
         }
         let value4 = commit(value2);
         if (value4 === false) {
-          showEditorNotification("Could not rename " + name + ".");
+          showEditorNotification(uiMessage("design-system.editableName.couldNotRename") + name + ".");
           return name;
         }
         if (typeof value4 === "string") {
@@ -209,7 +212,7 @@ export function installEditorEditableName(
           defaultEditing={autoEdit}
           initialDraft={autoEdit ? "" : undefined}
           placeholder={
-            kind === "title" ? (placeholder ?? defaultTitle) : undefined
+            kind === "title" ? (placeholder ?? (defaultTitle)) : (undefined)
           }
           tabIndex={tabIndex}
           className={value}

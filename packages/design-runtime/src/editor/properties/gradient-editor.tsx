@@ -1,3 +1,5 @@
+import { useUiLocale } from '../../ui-locale.ts';
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -65,6 +67,7 @@ export function installEditorPropertiesGradientEditor(
     renderStopPicker: renderStopPicker,
     testid: testid,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let [value, value2]: Dynamic = (0,
       runtime.reactPropertiesTooltip_2.useState)(null),
       value3: Dynamic = value ?? stops,
@@ -467,11 +470,11 @@ export function installEditorPropertiesGradientEditor(
         data-kit={"gradient-editor"}
         className={"flex flex-col"}
       >
-        <runtime.PropertyRow label={"Style"}>
+        <runtime.PropertyRow label={uiMessage("inspector.gradientEditor.style")}>
           <div className={"flex min-w-0 flex-1 items-center gap-2"}>
             <div className={"min-w-0 flex-1"}>
               <runtime.PropertySelect
-                aria-label={"Gradient style"}
+                aria-label={uiMessage("inspector.gradientEditor.gradientStyle")}
                 items={PropertiesGradientEditorHandler_2(
                   onRadial !== undefined,
                 )}
@@ -485,17 +488,17 @@ export function installEditorPropertiesGradientEditor(
             </div>
             <div
               className={"w-[4.75rem] shrink-0"}
-              title={radial ? "A radial gradient has no angle." : undefined}
+              title={radial ? (uiMessage("inspector.gradientEditor.aRadialGradientHasNo")) : (undefined)}
             >
               <runtime.NumericInput
-                aria-label={"Angle"}
+                aria-label={uiMessage("inspector.gradientEditor.angle")}
                 prefix={
                   <runtime.PropertyOptionIcon
                     icon={runtime.PropertiesTooltipNameViewBoxPathsConfig_13}
                   />
                 }
                 value={radial ? undefined : angle}
-                placeholder={radial ? "\u2013" : "180"}
+                placeholder={radial ? ("\u2013") : ("180")}
                 ownUnit={"deg"}
                 min={0}
                 max={360}
@@ -549,7 +552,7 @@ export function installEditorPropertiesGradientEditor(
                     const _props = {
                       type: "button",
                       role: "slider",
-                      "aria-label": "Stop " + String(options + 1) + " position",
+                      get "aria-label"() { return uiMessage("inspector.gradientEditor.stopPosition", { value1: String(String(options + 1)) }); },
                       "aria-valuemin": 0,
                       "aria-valuemax": 100,
                       "aria-valuenow": Math.round(value6[options]),
@@ -595,23 +598,23 @@ export function installEditorPropertiesGradientEditor(
             </div>
           </div>
         </div>
-        <runtime.PropertyRow label={"Stops"}>
+        <runtime.PropertyRow label={uiMessage("inspector.gradientEditor.stops")}>
           <div className={"flex min-w-0 flex-1 justify-end"}>
             <runtime.Button
               variant={"ghost"}
               size={"sm"}
               iconOnly={true}
               icon={"Add"}
-              aria-label={"Add stop"}
+              aria-label={uiMessage("inspector.gradientEditor.addStop")}
               disabled={disabled2 || value3.length >= maxStops}
-              disabledReason={String(maxStops) + " stops at most."}
+              disabledReason={uiMessage("inspector.gradientEditor.stopsAtMost", { value1: String(String(maxStops)) })}
               onClick={callback11}
             />
           </div>
         </runtime.PropertyRow>
         <div
           role={"list"}
-          aria-label={"Stops"}
+          aria-label={uiMessage("inspector.gradientEditor.stops")}
           className={(0, runtime.joinClassNames)(
             runtime.PropertiesPrimitivesClassNames_3,
             "mt-1 flex flex-col gap-2",
@@ -629,7 +632,7 @@ export function installEditorPropertiesGradientEditor(
                 children: [
                   <div className={"w-[3.75rem] shrink-0"}>
                     <runtime.NumericInput
-                      aria-label={"Stop " + String(options + 1) + " position"}
+                      aria-label={uiMessage("inspector.gradientEditor.stopPosition", { value1: String(String(options + 1)) })}
                       value={Math.round(value6[options])}
                       unit={"%"}
                       min={0}
@@ -639,9 +642,7 @@ export function installEditorPropertiesGradientEditor(
                       steppers={false}
                       disabled={disabled2 || input.locked === true}
                       title={
-                        input.locked === true
-                          ? WrittenByHandInAFormMessage
-                          : undefined
+                        input.locked === true ? (WrittenByHandInAFormMessage) : (undefined)
                       }
                       onValue={(input2?: Dynamic): Dynamic =>
                         callback8(
@@ -668,10 +669,7 @@ export function installEditorPropertiesGradientEditor(
                       trigger={
                         <runtime.PropertyPickerButton
                           aria-label={
-                            "Stop " +
-                            String(options + 1) +
-                            " color: " +
-                            PropertiesGradientEditorTest(input.color)
+                            uiMessage("inspector.gradientEditor.stopColor", { value1: String(String(options + 1)), value2: String(PropertiesGradientEditorTest(input.color)) })
                           }
                           data-selected={options === value9 ? "" : undefined}
                           disabled={disabled2}
@@ -703,7 +701,7 @@ export function installEditorPropertiesGradientEditor(
                         "data-kit-stop-picker": String(options),
                       }}
                     >
-                      {value18 === options ? renderStopPicker(options) : null}
+                      {value18 === options ? (renderStopPicker(options)) : (null)}
                     </runtime.EditorPopover>
                   </span>,
                   value24 ? (
@@ -712,10 +710,10 @@ export function installEditorPropertiesGradientEditor(
                       size={"sm"}
                       iconOnly={true}
                       icon={"Minus"}
-                      aria-label={"Remove stop " + String(options + 1)}
+                      aria-label={uiMessage("inspector.gradientEditor.removeStop", { value1: String(String(options + 1)) })}
                       disabled={!callback9(options)}
                       disabledReason={
-                        "A gradient needs " + String(minStops) + " color stops."
+                        (("A gradient needs ") + (String(minStops))) + (" color stops.")
                       }
                       onClick={(): Dynamic => callback10(options)}
                     />
@@ -827,17 +825,17 @@ export function installEditorPropertiesGradientEditor(
       /\b(var|env|attr|calc|color-mix)\(|^\s*(currentcolor|inherit|initial|unset)\s*$/i;
     PropertiesGradientEditorPattern = /^\s*-?[\d.]+[a-z%]*\s*$/i;
     WrittenByHandInAFormMessage =
-      "Written by hand in a form this editor keeps as is.";
+      uiMessage("inspector.gradientEditor.writtenByHandInA");
     PropertiesGradientEditorHandler_2 = (input?: Dynamic): Dynamic => [
       {
         value: "linear",
-        label: "Linear",
+        get label() { return uiMessage("inspector.gradientEditor.linear"); },
       },
       {
         value: "radial",
-        label: "Radial",
+        get label() { return uiMessage("inspector.gradientEditor.radial"); },
         disabled: !input,
-        title: input ? undefined : "Linear gradients only here.",
+        get title() { return input ? (undefined) : (uiMessage("inspector.gradientEditor.linearGradientsOnlyHere")); },
       },
     ];
     jsxPropertiesGradientEditor = (0, runtime.toModuleNamespace)(

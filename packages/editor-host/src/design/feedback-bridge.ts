@@ -5,7 +5,7 @@
  * 父窗口经 `editor:feedback` 推送草稿与发送状态，运行时用 `read`/`subscribe` 显示；面板里的定位、删除、复制、发送
  * 转成 `editor:feedback-action` 交回父窗口。面板显示与否经 `editor:panel` 告诉父窗口，父窗口顶栏的开关经 `editor:set-panel` 请求开关。
  * 缩放与播放也在父窗口顶栏：运行时经 `viewChanged` 报告视图状态（`editor:view`），顶栏的操作经 `editor:view-action` 交给 `onViewAction`。
- * 界面语言由父窗口经 `editor:locale` 推送，运行时用 `locale`/`subscribeLocale` 读取；没收到前按英文。
+ * 界面语言独立于评论，在 shared/ui-locale.ts 中接收。
  */
 import type { EditorView, FeedbackItem, ViewAction } from '@minedesign/contracts/editor-messages';
 import type { ParentLink } from '@minedesign/editor-host';
@@ -29,8 +29,6 @@ export interface HostFeedbackCapability {
   /** 父窗口请求打开或关上右侧面板。 */
   onPanelRequest(listener: (open: boolean) => void): () => void;
   viewChanged(view: EditorView): void;
-  locale(): 'zh-Hans' | 'en';
-  subscribeLocale(listener: () => void): () => void;
   onViewAction(listener: (action: ViewAction) => void): () => void;
 }
 
@@ -47,18 +45,12 @@ export function createFeedbackBridge(link: ParentLink): FeedbackBridge {
   const listeners = new Set<() => void>();
   const panelListeners = new Set<(open: boolean) => void>();
   const viewListeners = new Set<(action: ViewAction) => void>();
-  const localeListeners = new Set<() => void>();
-  let locale: 'zh-Hans' | 'en' = 'en';
   const stop = link.onMessage(message => {
     if (message.type === 'editor:feedback') {
       state = { items: message.items, status: message.status, canSend: message.canSend, busy: message.busy };
       for (const listener of listeners) listener();
     } else if (message.type === 'editor:set-panel') {
       for (const listener of panelListeners) listener(message.open);
-    } else if (message.type === 'editor:locale') {
-      if (locale === message.locale) return;
-      locale = message.locale;
-      for (const listener of localeListeners) listener();
     } else if (message.type === 'editor:view-action') {
       const { type: _type, ...action } = message;
       for (const listener of viewListeners) listener(action);
@@ -84,15 +76,12 @@ export function createFeedbackBridge(link: ParentLink): FeedbackBridge {
       onPanelRequest: listener => subscribe(panelListeners, listener),
       viewChanged: view => link.post({ type: 'editor:view', ...view }),
       onViewAction: listener => subscribe(viewListeners, listener),
-      locale: () => locale,
-      subscribeLocale: listener => subscribe(localeListeners, listener),
     },
     dispose() {
       stop();
       listeners.clear();
       panelListeners.clear();
       viewListeners.clear();
-      localeListeners.clear();
     },
   };
 }

@@ -1,3 +1,4 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -31,14 +32,14 @@ export function installEditorSessionErrors(
     SessionBusyError = class extends Error {
       declare name: Dynamic;
       constructor() {
-        super("An open dialog owns the edit session");
+        super(uiMessage("inspector.errors.anOpenDialogOwnsThe"));
         this.name = "SessionBusyError";
       }
     };
     UnsettledEditsError = class extends Error {
       declare name: Dynamic;
       constructor() {
-        super("Some edits could not be written into the document");
+        super(uiMessage("inspector.errors.someEditsCouldNotBe"));
         this.name = "SettleIncompleteError";
       }
     };

@@ -1,3 +1,5 @@
+import { useUiLocale } from '../../ui-locale.ts';
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -12,6 +14,7 @@ export function installEditorInspectorArtboard(
     readOnly = false,
     pngFollowsPrint = true,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let value: Dynamic = readOnly
         ? {
             ...settings,
@@ -46,18 +49,18 @@ export function installEditorInspectorArtboard(
         data-testid={"dc-artboard-settings"}
         className={"[--pp-label-w:84px]"}
       >
-        <runtime.PropertySection title={value.label ?? "Artboard"}>
+        <runtime.PropertySection title={value.label ?? (uiMessage("inspector.artboard.artboard"))}>
           {["w", "h"].map(
             (input?: Dynamic): Dynamic => (
               <runtime.PropertyRow
                 key={input}
-                label={input === "w" ? "Width" : "Height"}
+                label={input === "w" ? (uiMessage("inspector.artboard.width")) : (uiMessage("inspector.artboard.height"))}
                 data-testid={"dc-artboard-" + input}
                 title={runtime.InspectorEditorLabel_4}
                 disabled={true}
               >
                 <runtime.NumericInput
-                  aria-label={input === "w" ? "Width" : "Height"}
+                  aria-label={input === "w" ? (uiMessage("inspector.artboard.width")) : (uiMessage("inspector.artboard.height"))}
                   value={Math.round(value[input])}
                   unit={"px"}
                   refuseLetters={true}
@@ -75,19 +78,19 @@ export function installEditorInspectorArtboard(
         data-testid={"dc-artboard-settings"}
         className={"[--pp-label-w:84px]"}
       >
-        <runtime.PropertySection title={"Artboard"}>
+        <runtime.PropertySection title={uiMessage("inspector.artboard.artboard")}>
           {["w", "h"].map(
             (input?: Dynamic): Dynamic => (
               <runtime.PropertyRow
                 key={input}
-                label={input === "w" ? "Width" : "Height"}
+                label={input === "w" ? (uiMessage("inspector.artboard.width")) : (uiMessage("inspector.artboard.height"))}
                 data-testid={"dc-artboard-" + input}
                 title={value4}
                 {...(input === "h" && value.onFitHeight
                   ? {
                       actions: [
                         {
-                          label: "Fit to content",
+                          get label() { return uiMessage("inspector.artboard.fitToContent"); },
                           onSelect: value.onFitHeight,
                         },
                       ],
@@ -97,7 +100,7 @@ export function installEditorInspectorArtboard(
               >
                 <runtime.NumericInput
                   aria-label={
-                    input === "w" ? "Artboard width" : "Artboard height"
+                    input === "w" ? (uiMessage("inspector.artboard.artboardWidth")) : (uiMessage("inspector.artboard.artboardHeight"))
                   }
                   value={Math.round(value[input])}
                   unit={"px"}
@@ -129,37 +132,30 @@ export function installEditorInspectorArtboard(
             ),
           )}
           <runtime.PropertyRow
-            label={"Print mode"}
+            label={uiMessage("inspector.artboard.printMode")}
             data-testid={"dc-artboard-print"}
             title={value4}
           >
             <runtime.SegmentedControl
-              aria-label={"Print mode"}
+              aria-label={uiMessage("inspector.artboard.printMode")}
               fullWidth={true}
               value={value.print}
               segments={[
                 {
                   value: "flow",
-                  label: "Flow",
-                  tooltip:
-                    "Content flows onto Letter/A4 pages (up to 100)" +
-                    (pngFollowsPrint
+                  get label() { return uiMessage("inspector.artboard.flow"); },
+                  get tooltip() { return "Content flows onto Letter/A4 pages (up to 100)" + pngFollowsPrint
                       ? ", and a PNG keeps its full length"
-                      : "") +
-                    "\u2014for document-like artboards (memos, reports)",
+                      : "" + "\u2014for document-like artboards (memos, reports)"; },
                   disabled: readOnly,
                   disabledReason: value4,
                 },
                 {
                   value: "fixed",
-                  label: "Fixed",
-                  tooltip: value.fillPaginates
-                    ? runtime.inspectorSingleSelectionMessage
-                    : "Exactly one page at the frame\u2019s size" +
-                      (pngFollowsPrint
+                  get label() { return uiMessage("inspector.artboard.fixed"); },
+                  get tooltip() { return value.fillPaginates ? (runtime.inspectorSingleSelectionMessage) : ("Exactly one page at the frame\u2019s size" + pngFollowsPrint
                         ? ", and a PNG stops at the frame"
-                        : "") +
-                      "\u2014for single-page layouts (posters, brochure pages)",
+                        : "" + "\u2014for single-page layouts (posters, brochure pages)"); },
                   disabled: readOnly,
                   disabledReason: value4,
                 },
@@ -170,37 +166,25 @@ export function installEditorInspectorArtboard(
             />
           </runtime.PropertyRow>
           <runtime.PropertyRow
-            label={"Paper"}
+            label={uiMessage("inspector.artboard.paper")}
             data-testid={"dc-artboard-paper"}
             title={
-              value4 ??
-              (value3
-                ? value.paperSet === undefined
-                  ? "Not set \u2014 currently " +
-                    runtime.paperSizes[value.paper].label +
-                    " (from the frame\u2019s shape or your locale)"
-                  : undefined
-                : "Applies to Flow\u2014Fixed exports one page at the frame\u2019s size")
+              value4 ?? (value3 ? (value.paperSet === undefined ? (uiMessage("inspector.artboard.notSetCurrentlyFromThe", { value1: String(runtime.paperSizes[value.paper].label) })) : (undefined)) : (uiMessage("inspector.artboard.appliesToFlowFixedExports")))
             }
           >
             <runtime.SegmentedControl
-              aria-label={"Paper"}
+              aria-label={uiMessage("inspector.artboard.paper")}
               fullWidth={true}
               value={value3 ? (value.paperSet ?? "") : ""}
               segments={["letter", "a4"].map(
                 (input?: Dynamic): Dynamic => ({
                   value: input,
                   label: runtime.paperSizes[input].label,
-                  tooltip: value3
-                    ? (value2
+                  get tooltip() { return value3 ? (uiMessage("inspector.artboard.pages", { value1: String(value2
                         ? "Export PDF paginates onto "
-                        : "When Export PDF paginates, it uses ") +
-                      runtime.paperSizes[input].label +
-                      " pages" +
-                      (value.paperSet === undefined && value.paper === input
+                        : "When Export PDF paginates, it uses "), value2: String(runtime.paperSizes[input].label), value3: String(value.paperSet === undefined && value.paper === input
                         ? " (the current default)"
-                        : "")
-                    : undefined,
+                        : "") })) : (undefined); },
                   disabled: !value3 || readOnly,
                   disabledReason: value4,
                 }),
@@ -211,7 +195,7 @@ export function installEditorInspectorArtboard(
             />
           </runtime.PropertyRow>
         </runtime.PropertySection>
-        <runtime.PropertySection title={"Appearance"} iconColumn={true}>
+        <runtime.PropertySection title={uiMessage("inspector.artboard.appearance")} iconColumn={true}>
           <runtime.InspectorContext.Provider value={value6}>
             <runtime.PropertyInspectorField
               state={{

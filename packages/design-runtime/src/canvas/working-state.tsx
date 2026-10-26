@@ -1,3 +1,4 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -2874,7 +2875,7 @@ export function installCanvasWorkingState(
           value4.files.size > 0 &&
           !value4.last.alt &&
           input.say(
-            "That artboard is playing. Stop it to move elements into it.",
+            uiMessage("canvas.workingState.thatArtboardIsPlayingStop"),
           );
         await value4.starting;
         if (value4.done) return;
@@ -3008,15 +3009,15 @@ export function installCanvasWorkingState(
                 (cancelAnimationFrame(value17.raf), (value17.raf = 0)),
               input.handle(value16)?.moveCancel(value4.key));
           let value15: Dynamic = value4.blockedTarget
-            ? "that artboard is playing."
+            ? uiMessage("canvas.workingState.thatArtboardIsPlaying")
             : target && !target.canvas
-              ? "that artboard did not answer in time; try again."
+              ? uiMessage("canvas.workingState.thatArtboardDidNotAnswer")
               : target
-                ? "nothing could travel; try again."
+                ? uiMessage("canvas.workingState.nothingCouldTravelTryAgain")
                 : input.piecesAllowed()
-                  ? "release over an artboard or the bare canvas."
-                  : "release over an artboard.";
-          input.say("Nothing copied \u2014 " + value15);
+                  ? uiMessage("canvas.workingState.releaseOverAnArtboardOr")
+                  : uiMessage("canvas.workingState.releaseOverAnArtboard");
+          input.say(uiMessage("canvas.workingState.nothingCopied") + value15);
           target &&
             !target.canvas &&
             (input.handle(target.file)?.dropPlanClear(value4.key),
@@ -4339,14 +4340,14 @@ export function installCanvasWorkingState(
         : context;
     CanvasWorkingStateReplace = (input?: Dynamic): Dynamic =>
       input
-        .replace("so videos can't be added", "so the video can't be replaced")
-        .replace("so it wasn't added", "so the video wasn't replaced")
-        .replace("videos can be added", "videos can be used")
+        .replace(uiMessage("canvas.workingState.soVideosCanTBe"), uiMessage("canvas.workingState.soTheVideoCanT"))
+        .replace(uiMessage("canvas.workingState.soItWasnTAdded"), uiMessage("canvas.workingState.soTheVideoWasnT"))
+        .replace(uiMessage("canvas.workingState.videosCanBeAdded"), uiMessage("canvas.workingState.videosCanBeUsed"))
         .replace(
-          "No more uploads can be added",
-          "No more files can be uploaded",
+          uiMessage("canvas.workingState.noMoreUploadsCanBe"),
+          uiMessage("canvas.workingState.noMoreFilesCanBe"),
         )
-        .replace("can't be added", "can't be used");
+        .replace(uiMessage("canvas.workingState.canTBeAdded"), uiMessage("canvas.workingState.canTBeUsed"));
     CanvasWorkingStateHandler = (input?: Dynamic): Dynamic =>
       `A slide deck can't take videos yet. Add the video to another ${input}.`;
     CanvasWorkingStateConstant_5 = 4;

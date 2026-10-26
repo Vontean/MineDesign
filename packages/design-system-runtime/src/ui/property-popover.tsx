@@ -1,3 +1,5 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
+import { useUiLocale } from '../ui-locale.ts';
 /** Restored application module; prepare first, initialize in original order. */
 import { bindRuntimeValue, type RuntimeBindings } from "../runtime-types";
 import type * as React from "react";
@@ -30,6 +32,7 @@ export function installUiPropertyPopover(runtime: RuntimeBindings): () => void {
     }
   }
   function PopupScrim({ onClose: onClose }: { onClose(): void }) {
+    useUiLocale();
     let ref = reactForUiPropertyPopover.useRef(onClose);
     ref.current = onClose;
     let ref2 = reactForUiPropertyPopover.useRef<HTMLDivElement | null>(null),
@@ -221,6 +224,7 @@ export function installUiPropertyPopover(runtime: RuntimeBindings): () => void {
     initialFocus: initialFocus,
     keepFocus = false,
   }: PropertyPopupProps) {
+    useUiLocale();
     let ref = reactForUiPropertyPopover2.useRef<HTMLDivElement | null>(null);
     usePopupOpenFocus(open && focusOnOpen);
     let ref2 = reactForUiPropertyPopover2.useRef<HTMLSpanElement | null>(null),
@@ -371,10 +375,7 @@ export function installUiPropertyPopover(runtime: RuntimeBindings): () => void {
     }, [open]);
     return (
       <CanvasEditorJsx.Fragment>
-        {[
-          <span ref={ref2} className={"hidden"} aria-hidden={"true"} />,
-          open ? <PopupScrim onClose={() => ref3.current()} /> : null,
-          <runtime.PopoverComponents.Root
+        {[<span ref={ref2} className={"hidden"} aria-hidden={"true"} />, open ? <PopupScrim onClose={() => ref3.current()} /> : null, <runtime.PopoverComponents.Root
             open={open}
             onOpenChange={(
               input: boolean,
@@ -411,11 +412,9 @@ export function installUiPropertyPopover(runtime: RuntimeBindings): () => void {
               options.cancel();
             }}
           >
-            {[
-              trigger !== undefined ? (
+            {[trigger !== undefined ? (
                 <runtime.PopoverComponents.Trigger render={trigger} />
-              ) : null,
-              <runtime.PopoverComponents.Popup
+              ) : null, <runtime.PopoverComponents.Popup
                 ref={ref}
                 aria-label={ariaLabel}
                 anchor={() =>
@@ -495,10 +494,8 @@ export function installUiPropertyPopover(runtime: RuntimeBindings): () => void {
                     {children}
                   </runtime.ToolbarTooltipSideContext.Provider>
                 </div>
-              </runtime.PopoverComponents.Popup>,
-            ]}
-          </runtime.PopoverComponents.Root>,
-        ]}
+              </runtime.PopoverComponents.Popup>]}
+          </runtime.PopoverComponents.Root>]}
       </CanvasEditorJsx.Fragment>
     );
   }

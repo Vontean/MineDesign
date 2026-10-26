@@ -1,3 +1,4 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -297,7 +298,7 @@ export function installEditorSessionElementState(
     };
     SessionElementStateCache_3 = new Map();
     CropIsNotAvailableHereForMessage =
-      "Crop is not available here, for example inside a component or scrolled out of view.";
+      uiMessage("inspector.elementState.cropIsNotAvailableHere");
     SessionElementStateUnloadedTurnedAutoConfig = {
       unloaded:
         "This has not loaded, or its file is missing, so there is nothing to crop.",

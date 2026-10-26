@@ -1,3 +1,5 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
+import { useUiLocale } from '../../ui-locale.ts';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -24,6 +26,7 @@ export function installEditorPropertiesPrimitives(
     className: className,
     style: style,
   }: Dynamic): Dynamic {
+    useUiLocale();
     return (
       <runtime.Icon
         name={name}
@@ -37,6 +40,7 @@ export function installEditorPropertiesPrimitives(
     );
   }
   function ZoomToolIcon(): Dynamic {
+    useUiLocale();
     return (
       <runtime.Icon name={"ZoomIn"} size={"auto"} className={"shrink-0"} />
     );
@@ -65,6 +69,7 @@ export function installEditorPropertiesPrimitives(
     defaultOpen = false,
     "data-testid": dataTestid,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let [value, value2]: Dynamic = (0, reactPropertiesPrimitives.useState)(
         defaultOpen,
       ),
@@ -119,6 +124,7 @@ export function installEditorPropertiesPrimitives(
     children: children,
     ...props
   }: Dynamic): Dynamic {
+    useUiLocale();
     return (
       <span
         aria-hidden={"true"}
@@ -128,14 +134,12 @@ export function installEditorPropertiesPrimitives(
           className,
         )}
       >
-        {background !== undefined ? (
-          <span
+        {background !== undefined ? (<span
             className={"absolute inset-0"}
             style={{
               background: background,
             }}
-          />
-        ) : null}
+          />) : (null)}
         {children}
       </span>
     );
@@ -304,9 +308,7 @@ export function installEditorPropertiesPrimitives(
             >
               {children}
             </span>
-            {caption != null ? (
-              <span className={"text-caption text-muted"}>{caption}</span>
-            ) : null}
+            {caption != null ? (<span className={"text-caption text-muted"}>{caption}</span>) : (null)}
             {trailing}
           </button>
         );

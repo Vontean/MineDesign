@@ -1,3 +1,5 @@
+import { useUiLocale } from '../ui-locale.ts';
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 import type * as React from "react";
 import type * as Editor from "../contracts/editor-runtime";
 import type * as Model from "../contracts";
@@ -26,6 +28,7 @@ export function installEditorCoverPreview(
     cover: cover,
     head: head,
   }: Editor.CoverPreviewProps): React.ReactElement {
+    useUiLocale();
     let [value, value2] = (
       runtime.reactPreviewComponents as typeof React
     ).useState(false);
@@ -43,22 +46,19 @@ export function installEditorCoverPreview(
       ).useState<string | null>(null);
     return (
       <jsxCoverPreview.Fragment>
-        {[
-          <div
+        {[<div
             className={"ds-cover ds-comp-preview-box relative"}
             role={"group"}
-            aria-label={"Cover"}
+            aria-label={uiMessage("design-system.coverPreview.cover")}
             data-testid={"ds-cover"}
             {...(0, runtime.commentTargetProps)("ds", "cover")}
           >
-            {[
-              <runtime.PreviewFitBox
+            {[<runtime.PreviewFitBox
                 width={COVER_PREVIEW_WIDTH}
                 height={value3}
                 data-testid={"ds-cover"}
               >
-                {value ? (
-                  <runtime.ComponentPreview
+                {value ? (<runtime.ComponentPreview
                     html={cover.previewHtml}
                     cardFile={(0, runtime.projectFilePath)(
                       (0, runtime.componentPreviewPath)(
@@ -69,19 +69,15 @@ export function installEditorCoverPreview(
                     height={value3}
                     staticPageWidth={COVER_PREVIEW_WIDTH}
                     onStaticNote={value5}
-                    title={"Cover"}
+                    title={uiMessage("design-system.coverPreview.cover")}
                     data-testid={"ds-cover-preview"}
-                  />
-                ) : null}
-              </runtime.PreviewFitBox>,
-              <span
+                  />) : (null)}
+              </runtime.PreviewFitBox>, <span
                 className={"ds-page-shield rounded-[inherit]"}
                 aria-hidden={"true"}
                 data-testid={"ds-cover-shield"}
-              />,
-            ]}
-          </div>,
-          value4 !== null ? (
+              />]}
+          </div>, value4 !== null ? (
             <p
               className={"ds-swatch-note text-footnote text-muted"}
               role={"note"}
@@ -90,8 +86,7 @@ export function installEditorCoverPreview(
             >
               {value4}
             </p>
-          ) : null,
-        ]}
+          ) : null]}
       </jsxCoverPreview.Fragment>
     );
   }

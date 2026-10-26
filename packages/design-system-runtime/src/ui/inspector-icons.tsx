@@ -1,3 +1,4 @@
+import { useUiLocale } from '../ui-locale.ts';
 /** @jsxRuntime classic */
 /** @jsx React.createElement */
 /** @jsxFrag React.Fragment */
@@ -68,6 +69,7 @@ export function installUiInspectorIcons(runtime: RuntimeBindings): () => void {
     icon: icon,
     className: className,
   }: Color.PropertyIconProps): React.ReactElement {
+    useUiLocale();
     let value = className ?? "shrink-0";
     if (typeof icon === "string") {
       return <runtime.Icon name={icon} size={"auto"} className={value} />;

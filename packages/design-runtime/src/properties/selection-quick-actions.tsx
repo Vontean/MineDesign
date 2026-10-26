@@ -1,3 +1,5 @@
+import { useUiLocale } from '../ui-locale.ts';
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -170,6 +172,7 @@ export function installPropertiesSelectionQuickActions(
     coarse = false,
     compact = false,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let [value, value2]: Dynamic = (0, react_Gw.useState)({}),
       [value3, value4]: Dynamic = (0, react_Gw.useState)(seed?.epoch);
     value3 !== seed?.epoch &&
@@ -302,7 +305,7 @@ export function installPropertiesSelectionQuickActions(
         state.get("background-image") === undefined &&
         state.get("background") === undefined,
       text2: Dynamic =
-        "This text\u2019s fill comes from a stylesheet\u2014change it in Properties",
+        uiMessage("inspector.selectionQuickActions.thisTextSFillComes"),
       state2: Dynamic = {
         kind: value19
           ? {
@@ -334,33 +337,27 @@ export function installPropertiesSelectionQuickActions(
       value22: Dynamic =
         value21 === null && value20 === "hidden" ? null : (
           <runtime.SessionStripGroup>
-            {value21 !== null && (
-              <runtime.SessionStripButton
+            {value21 !== null && (<runtime.SessionStripButton
                 icon={"ChatAdd"}
                 data-testid={"mega-sel-comment"}
-                title={"Comment on this element"}
-                aria-label={"Comment"}
+                title={uiMessage("inspector.selectionQuickActions.commentOnThisElement")}
+                aria-label={uiMessage("inspector.selectionQuickActions.comment")}
                 onClick={(input?: Dynamic): Dynamic =>
                   value21(input.currentTarget)
                 }
-              />
-            )}
-            {value20 !== "hidden" && (
-              <runtime.SessionStripButton
+              />)}
+            {value20 !== "hidden" && (<runtime.SessionStripButton
                 icon={"DotsVertical"}
                 data-testid={"mega-sel-props"}
                 title={
-                  value20 === "disabled-with-reason"
-                    ? "Properties edits one artboard at a time \u2014 narrow the selection"
-                    : "Open the Properties panel"
+                  value20 === "disabled-with-reason" ? (uiMessage("inspector.selectionQuickActions.propertiesEditsOneArtboardAt")) : (uiMessage("inspector.selectionQuickActions.openThePropertiesPanel"))
                 }
-                aria-label={"Properties"}
+                aria-label={uiMessage("inspector.selectionQuickActions.properties")}
                 disabled={value20 === "disabled-with-reason"}
                 onClick={(): Dynamic => {
                   crossFile || onOpenProps();
                 }}
-              />
-            )}
+              />)}
           </runtime.SessionStripGroup>
         ),
       length: Dynamic = [
@@ -392,20 +389,16 @@ export function installPropertiesSelectionQuickActions(
             data-testid={"mega-sel-duplicate"}
             icon={"Copy"}
             title={
-              "Duplicate " +
-              value26 +
-              " (" +
-              (0, runtime.keyboardShortcutLabel)("D") +
-              ")"
+              uiMessage("inspector.selectionQuickActions.duplicate2", { value1: String(value26), value2: String((0, runtime.keyboardShortcutLabel)("D")) })
             }
-            aria-label={"Duplicate"}
+            aria-label={uiMessage("inspector.selectionQuickActions.duplicate")}
             onClick={crossFile.onDuplicate}
           />
           <runtime.SessionStripButton
             data-testid={"mega-sel-delete"}
             icon={"Trash"}
-            title={"Delete " + value26}
-            aria-label={"Delete"}
+            title={uiMessage("inspector.selectionQuickActions.delete2", { value1: String(value26) })}
+            aria-label={uiMessage("inspector.selectionQuickActions.delete")}
             onClick={crossFile.onDelete}
           />
         </runtime.SessionStripGroup>
@@ -417,11 +410,9 @@ export function installPropertiesSelectionQuickActions(
     if (other > 0 && !value23 && primaryTag === "video")
       return (
         <jsx_Ki.Fragment>
-          {findVideo && (
-            <runtime.SessionStripGroup>
+          {findVideo && (<runtime.SessionStripGroup>
               <runtime.VideoPlayControl find={findVideo} />
-            </runtime.SessionStripGroup>
-          )}
+            </runtime.SessionStripGroup>)}
           <runtime.ImageQuickPanel
             io={state}
             src={undefined}
@@ -437,9 +428,7 @@ export function installPropertiesSelectionQuickActions(
             cropReason={cropping ? undefined : cropReason}
             noun={"video"}
           />
-          {compact || (value27 === null && value22 === null) ? null : (
-            <runtime.SessionStripDivider />
-          )}
+          {compact || (value27 === null && value22 === null) ? (null) : (<runtime.SessionStripDivider />)}
           {value27}
           {value28}
           {value22}
@@ -453,8 +442,7 @@ export function installPropertiesSelectionQuickActions(
       );
       return (
         <jsx_Ki.Fragment>
-          {text + box + shape + line > 0 &&
-            ((): Dynamic => {
+          {text + box + shape + line > 0 && (((): Dynamic => {
               let items: Dynamic = [
                   ...(text > 0 ? ["color"] : []),
                   ...(box > 0 || shape > 0 ? ["background-color", "fill"] : []),
@@ -476,7 +464,7 @@ export function installPropertiesSelectionQuickActions(
                 <runtime.SessionStripGroup>
                   <runtime.SessionActionsPopover
                     testid={"mega-qp-color"}
-                    title={"Color"}
+                    title={uiMessage("inspector.selectionQuickActions.color")}
                     paint={value31.paint}
                     swatches={value11}
                     value={null}
@@ -507,10 +495,8 @@ export function installPropertiesSelectionQuickActions(
                   />
                 </runtime.SessionStripGroup>
               );
-            })()}
-          {value27 !== null && !compact && text + box + shape + line > 0 ? (
-            <runtime.SessionStripDivider />
-          ) : null}
+            })())}
+          {value27 !== null && !compact && text + box + shape + line > 0 ? (<runtime.SessionStripDivider />) : (null)}
           {value27}
           {value28}
           {value22}
@@ -623,11 +609,11 @@ export function installPropertiesSelectionQuickActions(
       let value51: Dynamic = textEdit != null && value24 === null,
         value52: Dynamic = seed?.list ?? "none",
         value53: Dynamic = value51
-          ? "This text is bound to the script \u2014 formatting is off"
+          ? uiMessage("inspector.selectionQuickActions.thisTextIsBoundTo")
           : value23 && !value30
-            ? "one text at a time"
+            ? uiMessage("inspector.selectionQuickActions.oneTextAtATime")
             : !value30 && !onEditText
-              ? "This text is not editable inline \u2014 select the text inside it"
+              ? uiMessage("inspector.selectionQuickActions.thisTextIsNotEditable")
               : null,
         value54: Dynamic =
           !value30 &&
@@ -770,7 +756,7 @@ export function installPropertiesSelectionQuickActions(
             },
             lineHeight: {
               value: callback3(state.get("line-height")),
-              placeholder: seed?.rendered?.lineHeight ?? "Auto",
+              get placeholder() { return seed?.rendered?.lineHeight ?? (uiMessage("inspector.selectionQuickActions.auto")); },
               clearable: true,
               min: 0.5,
               max: 4,
@@ -817,7 +803,7 @@ export function installPropertiesSelectionQuickActions(
           },
         },
         state4: Dynamic = {
-          title: "Text color",
+          get title() { return uiMessage("inspector.selectionQuickActions.textColor"); },
           editsAreUndoSteps: value25,
           paint: value56 ?? value48.paint,
           swatches: value11,
@@ -861,7 +847,7 @@ export function installPropertiesSelectionQuickActions(
                 {...state4}
               />
             </runtime.SessionStripGroup>
-            {compact ? null : <runtime.SessionStripDivider />}
+            {compact ? (null) : (<runtime.SessionStripDivider />)}
             <runtime.CssBorderQuickPanel
               io={state}
               swatches={value11}
@@ -871,15 +857,13 @@ export function installPropertiesSelectionQuickActions(
             />
             {value27}
             {value28}
-            {coarse && onEditText ? (
-              <runtime.SessionStripButton
+            {coarse && onEditText ? (<runtime.SessionStripButton
                 data-testid={"mega-text-edit"}
                 icon={"Edit"}
-                title={"Edit the text"}
-                aria-label={"Edit text"}
+                title={uiMessage("inspector.selectionQuickActions.editTheText")}
+                aria-label={uiMessage("inspector.selectionQuickActions.editText")}
                 onClick={onEditText}
-              />
-            ) : null}
+              />) : (null)}
             {value22}
           </jsx_Ki.Fragment>
         );
@@ -969,12 +953,7 @@ export function installPropertiesSelectionQuickActions(
                 : value23
                   ? null
                   : value52,
-              disabledReason:
-                value53 !== null
-                  ? value23 && !value30
-                    ? "Make lists one text at a time"
-                    : value53
-                  : null,
+              get disabledReason() { return value53 !== null ? (value23 && !value30 ? (uiMessage("inspector.selectionQuickActions.makeListsOneTextAt")) : (value53)) : (null); },
               onChange: (input?: Dynamic): Dynamic => {
                 let value62: Dynamic = (0, runtime.listKindToTag)(
                   input,

@@ -1,3 +1,4 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import { bindRuntimeValue, type RuntimeBindings } from "../runtime-types";
 import type {
@@ -31,7 +32,7 @@ export function installFilesIndexConflicts(
     let parts = path.split("/");
     if (parts[0] === "sections") {
       return (
-        "the card title “" +
+        uiMessage("design-system.indexConflicts.theCardTitle") +
         (typeof index.sections?.[parts[1] ?? ""] === "string"
           ? index.sections[parts[1]]
           : (0, runtime.decodeFileIndexKey)(parts[1] ?? "")) +
@@ -40,14 +41,14 @@ export function installFilesIndexConflicts(
     }
     if (parts[0] === "assetGroups" && parts[2] === "order") {
       return (
-        "the order of " +
+        uiMessage("design-system.indexConflicts.theOrderOf") +
         (index.assetGroups?.[parts[1] ?? ""]?.name ??
           (0, runtime.decodeFileIndexKey)(parts[1] ?? ""))
       );
     }
     if (parts[0] === "assetGroups" && parts[2] === "tile") {
       return (
-        "the tile size of " +
+        uiMessage("design-system.indexConflicts.theTileSizeOf") +
         (index.assetGroups?.[parts[1] ?? ""]?.name ??
           (0, runtime.decodeFileIndexKey)(parts[1] ?? ""))
       );
@@ -61,15 +62,15 @@ export function installFilesIndexConflicts(
       );
     }
     if (parts[0] === "groups") {
-      return "the order of the asset groups";
+      return uiMessage("design-system.indexConflicts.theOrderOfTheAsset");
     }
     if (parts[0] === "title") {
-      return "the name of the system";
+      return uiMessage("design-system.indexConflicts.theNameOfTheSystem");
     }
     if (parts[0] === "libraries") {
-      return "the runtime libraries";
+      return uiMessage("design-system.indexConflicts.theRuntimeLibraries");
     }
-    return "this design system’s list of its files";
+    return uiMessage("design-system.indexConflicts.thisDesignSystemSList");
   }
   function invalidAssetGroupOrders(
     index: Files.FilesIndex,

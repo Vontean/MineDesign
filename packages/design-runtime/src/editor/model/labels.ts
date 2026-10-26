@@ -1,3 +1,4 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -60,7 +61,7 @@ export function installEditorModelLabels(runtime: RuntimeBindings): () => void {
   }
   function slideElementLabel(element?: Dynamic): Dynamic {
     let value: Dynamic = (element.getAttribute("data-deck-slide") ?? "").trim();
-    if (/^\d+$/.test(value)) return `Slide ${parseInt(value, 10) + 1}`;
+    if (/^\d+$/.test(value)) return uiMessage("inspector.labels.slideValue1", { value1: String(parseInt(value, 10) + 1) });
     let parentElement: Dynamic = element.parentElement;
     if (!parentElement || parentElement.tagName.toLowerCase() !== "deck-stage")
       return null;
@@ -69,7 +70,7 @@ export function installEditorModelLabels(runtime: RuntimeBindings): () => void {
       index: Dynamic = 0;
     for (let value3 of parentElement.children as Dynamic)
       if (!value2.test(value3.tagName.toLowerCase())) {
-        if (value3 === element) return `Slide ${index + 1}`;
+        if (value3 === element) return uiMessage("inspector.labels.slideValue1", { value1: String(index + 1) });
         index++;
       }
     return null;

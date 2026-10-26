@@ -1,3 +1,5 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
+import { useUiLocale } from '../ui-locale.ts';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -31,6 +33,7 @@ export function installCanvasShape(runtime: RuntimeBindings): () => void {
     vectorEdit = false,
     onEditPoints: onEditPoints,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let value: Dynamic = (0, runtime.annotationBounds)(spec),
       value2: Dynamic =
         spec.kind === "line" || spec.kind === "arrow" ? spec : null,
@@ -260,8 +263,7 @@ export function installCanvasShape(runtime: RuntimeBindings): () => void {
             : undefined
         }
       >
-        {value5 &&
-          (() => {
+        {value5 && ((() => {
             const _Component = "div";
             const _props = {
               "data-testid": "mega-shape-body-" + spec.id,
@@ -291,9 +293,8 @@ export function installCanvasShape(runtime: RuntimeBindings): () => void {
               value5.kind === "oval",
             );
             return <_Component key={_key} {..._props} />;
-          })()}
-        {value7 && value21 && (
-          <runtime.AnnotationShapeBody
+          })())}
+        {value7 && value21 && (<runtime.AnnotationShapeBody
             on={value7.crop !== undefined}
             id={spec.id}
             css={value7.css}
@@ -375,10 +376,8 @@ export function installCanvasShape(runtime: RuntimeBindings): () => void {
                 ) && value23.current?.toggle();
               }}
             />
-          </runtime.AnnotationShapeBody>
-        )}
-        {value7 && !value21 && value7.crop !== undefined && value11 !== null ? (
-          <div
+          </runtime.AnnotationShapeBody>)}
+        {value7 && !value21 && value7.crop !== undefined && value11 !== null ? (<div
             data-testid={"mega-shape-body-" + spec.id}
             className={(0, runtime.joinClassNames)(
               "absolute inset-0 box-border overflow-hidden",
@@ -402,11 +401,8 @@ export function installCanvasShape(runtime: RuntimeBindings): () => void {
               className={"block select-none"}
               style={(0, runtime.imageCropCss)(value7.crop)}
             />
-          </div>
-        ) : (
-          value7 &&
-          !value21 && (
-            <img
+          </div>) : (value7 &&
+          !value21 && (<img
               data-testid={"mega-shape-body-" + spec.id}
               data-mega-picture={value11 === null ? "placeholder" : ""}
               src={value11 ?? runtime.PreviewBlobPathsResolvedValue}
@@ -435,11 +431,8 @@ export function installCanvasShape(runtime: RuntimeBindings): () => void {
                 value28 && value11 !== null ? onCropStart : undefined
               }
               {...value30}
-            />
-          )
-        )}
-        {value2 && (
-          <svg
+            />))}
+        {value2 && (<svg
             data-testid={"mega-shape-svg-" + spec.id}
             className={"pointer-events-none absolute"}
             style={{
@@ -451,8 +444,7 @@ export function installCanvasShape(runtime: RuntimeBindings): () => void {
             width={value.w + 2 * runtime.CanvasAnnotationShapeStyleConstant_3}
             height={value.h + 2 * runtime.CanvasAnnotationShapeStyleConstant_3}
           >
-            {value3 && (value3.start !== "none" || value3.end !== "none") && (
-              <defs>
+            {value3 && (value3.start !== "none" || value3.end !== "none") && (<defs>
                 {["start", "end"].map((input?: Dynamic): Dynamic => {
                   let value41: Dynamic = value3[input];
                   return value41 === "none" ? null : (
@@ -476,8 +468,7 @@ export function installCanvasShape(runtime: RuntimeBindings): () => void {
                     </marker>
                   );
                 })}
-              </defs>
-            )}
+              </defs>)}
             <line
               x1={
                 (value4?.sx ?? value2.x) -
@@ -550,10 +541,8 @@ export function installCanvasShape(runtime: RuntimeBindings): () => void {
               }}
               {...value30}
             />
-          </svg>
-        )}
-        {value6 && value26 && (
-          <svg
+          </svg>)}
+        {value6 && value26 && (<svg
             data-testid={"mega-shape-svg-" + spec.id}
             className={"pointer-events-none absolute inset-0"}
             style={{
@@ -592,14 +581,11 @@ export function installCanvasShape(runtime: RuntimeBindings): () => void {
               }}
               {...value30}
             />
-          </svg>
-        )}
-        {value28 && selected && (
-          <runtime.ViewportScale>
+          </svg>)}
+        {value28 && selected && (<runtime.ViewportScale>
             {(input?: Dynamic): Dynamic => (
               <runtime.jsxCanvasAnnotationShapeStyle.Fragment>
-                {value37 && value6 && value26 && (
-                  <div
+                {value37 && value6 && value26 && (<div
                     data-mega-chrome={"annotation-resize"}
                     className={"pointer-events-none absolute left-0 top-0"}
                     style={{
@@ -616,11 +602,9 @@ export function installCanvasShape(runtime: RuntimeBindings): () => void {
                       onGesture={onGesture}
                       armWindowGestureEnd={armWindowGestureEnd}
                     />
-                  </div>
-                )}
-                {((value5 ?? (value37 ? null : value6) ?? value7) ||
-                  grouped) && (
-                  <div
+                  </div>)}
+                {(value5 ?? (value37 ? null : value6) ?? value7) ||
+                  grouped && (<div
                     data-mega-chrome={"annotation-resize"}
                     data-testid={"mega-annotation-resize-" + spec.id}
                     data-grouped={grouped ? "" : undefined}
@@ -718,10 +702,8 @@ export function installCanvasShape(runtime: RuntimeBindings): () => void {
                         value38 !== null ? String(value38) + "\xB0" : undefined
                       }
                     />
-                  </div>
-                )}
-                {value2 && !grouped && (
-                  <runtime.SelectionPoints
+                  </div>)}
+                {value2 && !grouped && (<runtime.SelectionPoints
                     data-mega-chrome={"annotation-resize"}
                     data-testid={"mega-shape-ends-" + spec.id}
                     points={[
@@ -790,12 +772,10 @@ export function installCanvasShape(runtime: RuntimeBindings): () => void {
                             },
                       );
                     }}
-                  />
-                )}
+                  />)}
               </runtime.jsxCanvasAnnotationShapeStyle.Fragment>
             )}
-          </runtime.ViewportScale>
-        )}
+          </runtime.ViewportScale>)}
       </div>
     );
   }

@@ -1,3 +1,5 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
+import { useUiLocale } from '../ui-locale.ts';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -128,6 +130,7 @@ export function installApplicationDesignCover(
     maySnapshot = true,
     Board = runtime.ArtboardFrame,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let exitGuardRef: Dynamic = (0, ReactCover.useRef)(null),
       textEditOpenRef: Dynamic = (0, ReactCover.useRef)(null),
       settleSessionRef: Dynamic = (0, ReactCover.useRef)(null),
@@ -242,8 +245,7 @@ export function installApplicationDesignCover(
     return (
       <runtime.EditorChromeRoot>
         <runtime.EditorToastProvider>
-          {isSnapshot ? (
-            <CanvasSnapshotCover
+          {isSnapshot ? (<CanvasSnapshotCover
               boards={boards}
               veiled={!hasPaintedBoard}
               empty={(input?: Dynamic): Dynamic =>
@@ -251,16 +253,13 @@ export function installApplicationDesignCover(
               }
             >
               {renderBoard}
-            </CanvasSnapshotCover>
-          ) : (
-            <SingleArtboardCover
+            </CanvasSnapshotCover>) : (<SingleArtboardCover
               w={firstBoard?.w}
               h={firstBoard?.h}
               veiled={firstBoard !== undefined && !hasPaintedBoard}
             >
-              {firstBoard !== undefined ? renderBoard(firstBoard) : null}
-            </SingleArtboardCover>
-          )}
+              {firstBoard !== undefined ? (renderBoard(firstBoard)) : (null)}
+            </SingleArtboardCover>)}
         </runtime.EditorToastProvider>
       </runtime.EditorChromeRoot>
     );
@@ -271,6 +270,7 @@ export function installApplicationDesignCover(
     veiled: veiled,
     children: children,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let containerRef: Dynamic = (0, ReactCover.useRef)(null),
       [scale, setScale]: Dynamic = (0, ReactCover.useState)(1);
     (0, ReactCover.useLayoutEffect)((): Dynamic => {
@@ -296,10 +296,7 @@ export function installApplicationDesignCover(
           "fixed inset-0 flex items-start justify-center overflow-clip bg-om-bg-canvas"
         }
       >
-        {width === undefined || height === undefined ? (
-          children
-        ) : (
-          <div
+        {width === undefined || height === undefined ? (children) : (<div
             style={{
               width: width * scale,
               height: height * scale,
@@ -317,14 +314,11 @@ export function installApplicationDesignCover(
             >
               {children}
             </div>
-          </div>
-        )}
-        {veiled ? (
-          <div
+          </div>)}
+        {veiled ? (<div
             data-design-cover-veil={""}
             className={"absolute inset-0 bg-om-bg-canvas"}
-          />
-        ) : null}
+          />) : (null)}
       </div>
     );
   }
@@ -334,6 +328,7 @@ export function installApplicationDesignCover(
     empty: isEmptyBoard,
     children: renderBoard,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let containerRef: Dynamic = (0, ReactCover.useRef)(null),
       [viewport, setViewport]: Dynamic = (0, ReactCover.useState)({
         w: 0,
@@ -418,12 +413,10 @@ export function installApplicationDesignCover(
             )}
           </div>
         </div>
-        {veiled ? (
-          <div
+        {veiled ? (<div
             data-design-cover-veil={""}
             className={"absolute inset-0 bg-om-bg-canvas"}
-          />
-        ) : null}
+          />) : (null)}
       </div>
     );
   }

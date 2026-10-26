@@ -1,3 +1,4 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 import type * as Host from "../contracts/platform-host";
 import type * as React from "react";
 /** Restored application module; prepare first, initialize in original order. */
@@ -1027,7 +1028,7 @@ export function installDocumentsStorage(runtime: RuntimeBindings): () => void {
           ),
         });
         return {
-          label: "Restore unsaved changes",
+          get label() { return uiMessage("design-system.storage.restoreUnsavedChanges"); },
           do(): void {
             stashOffer = undefined;
             updateLocalState({

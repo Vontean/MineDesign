@@ -1,3 +1,4 @@
+import { useUiLocale } from '../../ui-locale.ts';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -40,6 +41,7 @@ export function installEditorInspectorAnnotation(
     settings: settings,
     readOnly = false,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let { showToast: value }: Dynamic = (0, runtime.useToast)(),
       value2: Dynamic = settings.kind === "image",
       value3: Dynamic = value2 && settings.video !== undefined,

@@ -1,3 +1,4 @@
+import { useUiLocale } from '../../ui-locale.ts';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -227,6 +228,7 @@ export function installEditorToolbarLayout(
     );
   }
   function ToolbarDivider(): Dynamic {
+    useUiLocale();
     return (
       <span
         aria-hidden={"true"}

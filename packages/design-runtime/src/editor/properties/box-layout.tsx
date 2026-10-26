@@ -1,3 +1,5 @@
+import { useUiLocale } from '../../ui-locale.ts';
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -66,6 +68,7 @@ export function installEditorPropertiesBoxLayout(
     renderRows: renderRows,
     onCommitMany: onCommitMany,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let value: Dynamic = (0, runtime.inheritedFieldsDisabledReason)(
         ...["top", "right", "bottom", "left"].map(
           (input?: Dynamic): Dynamic =>
@@ -185,6 +188,7 @@ export function installEditorPropertiesBoxLayout(
     renderRows: renderRows,
     onCommitMany: onCommitMany,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let callback: Dynamic = (input?: Dynamic): Dynamic => {
       let value4: Dynamic = (input.value ?? "").trim();
       return (
@@ -197,11 +201,11 @@ export function installEditorPropertiesBoxLayout(
           {renderRows([
             {
               ...left,
-              label: "Offset X",
+              get label() { return uiMessage("inspector.boxLayout.offsetX"); },
             },
             {
               ...top,
-              label: "Offset Y",
+              get label() { return uiMessage("inspector.boxLayout.offsetY"); },
             },
           ])}
         </runtime.jsxMediaPlaybackControls.Fragment>
@@ -226,14 +230,10 @@ export function installEditorPropertiesBoxLayout(
             prefix={options}
             value={value4 ? value4.value : undefined}
             placeholder={
-              input.mixed
-                ? undefined
-                : value5
-                  ? (0, runtime.formatCssNumber)(
+              input.mixed ? (undefined) : (value5 ? ((0, runtime.formatCssNumber)(
                       (0, runtime.roundCssNumber)(value5.value, value5.unit),
                       "",
-                    )
-                  : input.fallback || "auto"
+                    )) : (input.fallback || (uiMessage("inspector.boxLayout.auto"))))
             }
             mixed={input.mixed}
             clearable={true}
@@ -261,7 +261,7 @@ export function installEditorPropertiesBoxLayout(
         (0, runtime.PropertiesInheritedFieldMixedAlias)(top);
     return (
       <runtime.PropertyRow
-        label={"Offset"}
+        label={uiMessage("inspector.boxLayout.offset")}
         data-testid={"dc-offset"}
         title={value}
         description={value2}
@@ -285,8 +285,8 @@ export function installEditorPropertiesBoxLayout(
         }
       >
         <div className={"grid min-w-0 flex-1 grid-cols-2 gap-2"}>
-          {callback2(left, "X", "Offset X")}
-          {callback2(top, "Y", "Offset Y")}
+          {callback2(left, "X", uiMessage("inspector.boxLayout.offsetX"))}
+          {callback2(top, "Y", uiMessage("inspector.boxLayout.offsetY"))}
         </div>
       </runtime.PropertyRow>
     );
@@ -298,6 +298,7 @@ export function installEditorPropertiesBoxLayout(
     vertical: vertical,
     onCommitMany: onCommitMany,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let value: Dynamic = (0, runtime.inheritedFieldsDisabledReason)(
         justify,
         align,
@@ -355,12 +356,12 @@ export function installEditorPropertiesBoxLayout(
         input[options];
     return (
       <runtime.PropertyRow
-        label={"Align"}
+        label={uiMessage("inspector.boxLayout.align")}
         data-testid={"dc-alignment"}
         title={
-          justify.mixed || align.mixed ? "Mixed across the selection" : value
+          justify.mixed || align.mixed ? (uiMessage("inspector.boxLayout.mixedAcrossTheSelection")) : (value)
         }
-        description={justify.mixed || align.mixed ? undefined : value2}
+        description={justify.mixed || align.mixed ? (undefined) : (value2)}
         onReset={
           value11 && !value10
             ? (): Dynamic =>
@@ -390,12 +391,9 @@ export function installEditorPropertiesBoxLayout(
                   }
                 />
               }
-              aria-label={"Distribute"}
+              aria-label={uiMessage("inspector.boxLayout.distribute")}
               tooltip={
-                value6
-                  ? "Distribute: space between \u2014 click to pack" +
-                    (value5 ? "" : " (inherited)")
-                  : "Distribute (space between)"
+                value6 ? (uiMessage("inspector.boxLayout.distributeSpaceBetweenClickTo", { value1: String(value5 ? ("") : (uiMessage("inspector.boxLayout.inherited"))) })) : (uiMessage("inspector.boxLayout.distributeSpaceBetween"))
               }
               pressed={value6}
               disabled={value10}
@@ -422,14 +420,12 @@ export function installEditorPropertiesBoxLayout(
           <span
             className={"min-w-[calc(var(--cds-h-control)*3)] flex-1"}
             title={
-              value6
-                ? "Computed \u2014 Distribute decides this axis"
-                : undefined
+              value6 ? (uiMessage("inspector.boxLayout.computedDistributeDecidesThisAxis")) : (undefined)
             }
             data-testid={"dc-justify-group"}
           >
             <runtime.PropertySegments
-              label={"Justify"}
+              label={uiMessage("inspector.boxLayout.justify")}
               compact={true}
               value={
                 value6 || justify.mixed
@@ -462,7 +458,7 @@ export function installEditorPropertiesBoxLayout(
               options={value7.map(
                 (input?: Dynamic, options?: Dynamic): Dynamic => ({
                   value: input,
-                  label: "Justify " + ["start", "center", "end"][options],
+                  get label() { return uiMessage("inspector.boxLayout.justify2", { value1: String(["start", "center", "end"][options]) }); },
                   glyph: callback4(
                     runtime.PropertiesSizingRowFlexStartStartCenterConfig,
                     input,
@@ -476,7 +472,7 @@ export function installEditorPropertiesBoxLayout(
             data-testid={"dc-align-group"}
           >
             <runtime.PropertySegments
-              label={"Align"}
+              label={uiMessage("inspector.boxLayout.align")}
               compact={true}
               value={
                 align.mixed
@@ -508,7 +504,7 @@ export function installEditorPropertiesBoxLayout(
               options={items.map(
                 (input?: Dynamic, options?: Dynamic): Dynamic => ({
                   value: input,
-                  label: "Align " + ["start", "center", "end"][options],
+                  get label() { return uiMessage("inspector.boxLayout.align2", { value1: String(["start", "center", "end"][options]) }); },
                   glyph: callback4(
                     runtime.PropertiesSizingRowFlexStartStartCenterConfig_2,
                     input,
@@ -542,7 +538,7 @@ export function installEditorPropertiesBoxLayout(
       static: "Inline",
       relative: "Relative",
       absolute: "Absolute",
-      fixed: "Fixed",
+      get fixed() { return uiMessage("inspector.boxLayout.fixed"); },
       sticky: "Sticky",
     };
   };

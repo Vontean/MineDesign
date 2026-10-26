@@ -1,3 +1,4 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -91,7 +92,7 @@ export function installEditorClipboardWorkingFiles(
   return () => {
     ClipboardWorkingFilesHandler = (input?: Dynamic): Dynamic =>
       // MineDesign: user-facing copy calls the agent "the agent", not Claude.
-      "The agent is adding " +
+      uiMessage("inspector.workingFiles.theAgentIsAdding") +
       (0, runtime.AccessibilityAnnouncementsHandler)(input);
     reactClipboardWorkingFiles = (0, runtime.toModuleNamespace)(
       (0, runtime.load_react)(),

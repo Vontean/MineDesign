@@ -1,3 +1,4 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import { bindRuntimeValue, type RuntimeBindings } from "../runtime-types";
 import type {
@@ -65,13 +66,13 @@ export function installFilesPaths(runtime: RuntimeBindings): () => void {
       path === "" ||
       (0, runtime.encodeFileUtf8)(path).length > MAX_FILE_PATH_UTF8_BYTES
     ) {
-      return "its name is empty or too long. Rename it";
+      return uiMessage("design-system.paths.itsNameIsEmptyOr");
     }
     if (/[\u0000-\u001f\u007f%;:\\]/.test(path)) {
-      return "its name has a character that cannot be saved (% ; : \\ or a control character). Rename it";
+      return uiMessage("design-system.paths.itsNameHasACharacter");
     }
     if (path.endsWith(".cmekshadow")) {
-      return "its name ends in .cmekshadow, which is reserved. Rename it";
+      return uiMessage("design-system.paths.itsNameEndsInCmekshadow");
     }
     let parts = path.split("/");
     if (
@@ -80,10 +81,10 @@ export function installFilesPaths(runtime: RuntimeBindings): () => void {
         (input: string) => input === "" || input === "." || input === "..",
       )
     ) {
-      return "its path has an empty part, or a part that is only dots. Rename it";
+      return uiMessage("design-system.paths.itsPathHasAnEmpty");
     }
     if (parts[0].startsWith("_")) {
-      return "its top-level name starts with an underscore, which is reserved. Rename it";
+      return uiMessage("design-system.paths.itsTopLevelNameStarts");
     }
     return;
   }
@@ -148,10 +149,7 @@ export function installFilesPaths(runtime: RuntimeBindings): () => void {
     }
     if (isTextFileWithInvalidUnicode(path, input)) {
       return {
-        why:
-          "it holds a character that did not decode (it shows as " +
-          UNICODE_REPLACEMENT_CHARACTER +
-          "). Find it and type it again",
+        get why() { return ((uiMessage("design-system.paths.itHoldsACharacterThat")) + (UNICODE_REPLACEMENT_CHARACTER)) + ("). Find it and type it again"); },
         cause: "damaged_text",
       };
     } else {
@@ -274,7 +272,7 @@ export function installFilesPaths(runtime: RuntimeBindings): () => void {
           ? MAX_FILE_PUBLISH_ENCODED_BYTES
           : (MAX_FILE_PUBLISH_ENCODED_BYTES / 4) * 3) / 1048576;
     return (
-      "it is over the " +
+      uiMessage("design-system.paths.itIsOverThe") +
       String(limitMb) +
       " MB limit for one file. Make it smaller" +
       (isText ? " (an image or a font pasted into it is the usual cause)" : "")
@@ -488,7 +486,7 @@ export function installFilesPaths(runtime: RuntimeBindings): () => void {
         code: "http",
         status: 403,
         narrowed: true,
-        message: "_files.json: marked as narrowed",
+        get message() { return uiMessage("design-system.paths.filesJsonMarkedAsNarrowed"); },
       };
     }
     return listing;
@@ -573,7 +571,7 @@ export function installFilesPaths(runtime: RuntimeBindings): () => void {
         path: input,
         why:
           filePublishRejectionReason(input, input2) ??
-          "its text cannot be saved",
+          uiMessage("design-system.paths.itsTextCannotBeSaved"),
       }));
   }
   function removeUnpublishableMigrationFiles(
@@ -585,7 +583,7 @@ export function installFilesPaths(runtime: RuntimeBindings): () => void {
       let value3 =
         restrictedFileNameReason(value) ??
         (type !== undefined && isPrivateProjectFile(type, value)
-          ? "this name is used by the page itself; rename this one to bring it over"
+          ? uiMessage("design-system.paths.thisNameIsUsedBy")
           : undefined) ??
         ((0, runtime.isPublishableFilePath)(value)
           ? filePublishRejectionReason(value, value2)

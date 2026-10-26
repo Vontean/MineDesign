@@ -1,3 +1,5 @@
+import { useUiLocale } from '../ui-locale.ts';
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -10,6 +12,7 @@ export function installCanvasPictureDropGhost(
   var reactCanvasPictureDropGhost: Dynamic;
   var jsxCanvasPictureDropGhost: Dynamic;
   function UploadingOverlay({ quiet = false }: Dynamic): Dynamic {
+    useUiLocale();
     let [value]: Dynamic = (0, reactCanvasPictureDropGhost.useState)(
       runtime.uploadingAnimationDelay,
     );
@@ -23,11 +26,9 @@ export function installCanvasPictureDropGhost(
           animationDelay: value,
         }}
       >
-        {!quiet && (
-          <span role={"status"} className={"sr-only"}>
-            {"Uploading image"}
-          </span>
-        )}
+        {!quiet && (<span role={"status"} className={"sr-only"}>
+            {uiMessage("canvas.pictureDropGhost.uploadingImage")}
+          </span>)}
       </span>
     );
   }
@@ -38,6 +39,7 @@ export function installCanvasPictureDropGhost(
     h: h,
     clip: clip,
   }: Dynamic): Dynamic {
+    useUiLocale();
     (0, reactCanvasPictureDropGhost.useLayoutEffect)(
       (): Dynamic => (0, runtime.markDropPerformance)("ghost"),
       [],
@@ -73,6 +75,7 @@ export function installCanvasPictureDropGhost(
     page: page,
     artboards: artboards,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let value: Dynamic = (0, reactCanvasPictureDropGhost.useSyncExternalStore)(
       runtime.subscribeDropGhosts,
       runtime.getDropGhosts,

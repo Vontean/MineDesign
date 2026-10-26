@@ -1,3 +1,4 @@
+import { useUiLocale } from '../ui-locale.ts';
 import type * as React from "react";
 import type * as Core from "../contracts";
 import type * as M from "../contracts/documentation";
@@ -40,6 +41,7 @@ export function installEditorReadmeArticle(
 `);
   }
   function ReadmeArticle({ children: children }: React.PropsWithChildren) {
+    useUiLocale();
     return (
       <article
         className={"ds-overview prose w-full"}

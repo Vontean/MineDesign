@@ -1,3 +1,5 @@
+import { useUiLocale } from '../ui-locale.ts';
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 import type * as React from "react";
 import type * as Editor from "../contracts/editor-runtime";
 import type * as Model from "../contracts";
@@ -13,10 +15,11 @@ export function installEditorFileDrop(runtime: RuntimeBindings): () => void {
     onLeftOut: onLeftOut,
     folder = false,
     large = false,
-    line = "Drop files here or",
+    line = uiMessage("design-system.fileDrop.dropFilesHereOr"),
     hint: hint,
     testid: testid,
   }: Editor.FileDropZoneProps): React.ReactElement {
+    useUiLocale();
     let [value, value2] = reactFileDrop.useState(false),
       ref = reactFileDrop.useRef<HTMLInputElement | null>(null),
       callback = (items: File[], options: number = 0): void => {
@@ -65,27 +68,21 @@ export function installEditorFileDrop(runtime: RuntimeBindings): () => void {
         onDragLeave={() => value2(false)}
         onDrop={callback2}
       >
-        {[
-          <runtime.Icon name={"Upload"} size={large ? "lg" : "md"} />,
-          <span className={"text-center text-body text-secondary"}>
+        {[<runtime.Icon name={"Upload"} size={large ? "lg" : "md"} />, <span className={"text-center text-body text-secondary"}>
             {line}
-          </span>,
-          hint !== undefined ? (
+          </span>, hint !== undefined ? (
             <span className={"text-center text-footnote text-secondary"}>
               {hint}
             </span>
-          ) : null,
-          <span className={"flex flex-wrap items-center justify-center gap-sm"}>
-            {[
-              <runtime.Button
+          ) : null, <span className={"flex flex-wrap items-center justify-center gap-sm"}>
+            {[<runtime.Button
                 variant={large ? "ghost" : "secondary"}
                 size={"sm"}
                 onClick={() => ref.current?.click()}
                 data-testid={testid + "-choose"}
               >
-                {"Choose files…"}
-              </runtime.Button>,
-              folder ? (
+                {uiMessage("design-system.fileDrop.chooseFiles")}
+              </runtime.Button>, folder ? (
                 <runtime.Button
                   variant={large ? "ghost" : "secondary"}
                   size={"sm"}
@@ -96,12 +93,10 @@ export function installEditorFileDrop(runtime: RuntimeBindings): () => void {
                   }
                   data-testid={testid + "-folder"}
                 >
-                  {"Choose a folder…"}
+                  {uiMessage("design-system.fileDrop.chooseAFolder")}
                 </runtime.Button>
-              ) : null,
-            ]}
-          </span>,
-          <input
+              ) : null]}
+          </span>, <input
             ref={ref}
             type={"file"}
             multiple={true}
@@ -111,8 +106,7 @@ export function installEditorFileDrop(runtime: RuntimeBindings): () => void {
               callback(Array.from(input.currentTarget.files ?? []));
               input.currentTarget.value = "";
             }}
-          />,
-        ]}
+          />]}
       </div>
     );
   }
@@ -121,6 +115,7 @@ export function installEditorFileDrop(runtime: RuntimeBindings): () => void {
     onRemove: onRemove,
     testid: testid,
   }: Editor.PendingUploadFilesProps): React.ReactElement {
+    useUiLocale();
     return (
       <ul
         className={"ds-file-rows flex flex-col"}
@@ -144,8 +139,8 @@ export function installEditorFileDrop(runtime: RuntimeBindings): () => void {
                     size={"sm"}
                     iconOnly={true}
                     icon={"X"}
-                    aria-label={"Remove " + input.name}
-                    tooltip={"Remove"}
+                    aria-label={uiMessage("design-system.fileDrop.remove2", { value1: String(input.name) })}
+                    tooltip={uiMessage("design-system.fileDrop.remove")}
                     onClick={() => onRemove(options)}
                     data-testid={testid + "-remove-" + String(options)}
                   />

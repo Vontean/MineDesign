@@ -1,3 +1,4 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 import type * as React from "react";
 import type * as Editor from "../contracts/editor-runtime";
 import type * as Model from "../contracts";
@@ -171,7 +172,7 @@ export function installEditorDownloadPermission(
   bindRuntimeValue(
     runtime,
     "DOWNLOADS_UNAVAILABLE_MESSAGE",
-    () => DOWNLOADS_UNAVAILABLE_MESSAGE,
+    () => uiMessage("design-system.downloadPermission.downloadsArenTAvailableTo"),
     (value) => {
       DOWNLOADS_UNAVAILABLE_MESSAGE = value;
     },

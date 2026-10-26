@@ -1,3 +1,5 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
+import { useUiLocale } from '../ui-locale.ts';
 import type * as React from "react";
 import type * as Editor from "../contracts/editor-runtime";
 import type * as Model from "../contracts";
@@ -96,6 +98,7 @@ export function installEditorComponentPreview(
     onStaticNote: onStaticNote,
     "data-testid": dataTestid,
   }: Editor.ComponentPreviewProps): React.ReactElement {
+    useUiLocale();
     let debouncedHead = useDebouncedPreviewValue(
         head,
         (0, runtime.swatchHeadKey)(head),
@@ -401,13 +404,13 @@ export function installEditorComponentPreview(
       urlFailureGeneration,
     ]);
     let staticNotice: string | null = PREVIEW_POOL_ENABLED_BY_DEFAULT
-      ? STATIC_PREVIEW_NOTICE
+      ? uiMessage("design-system.componentPreview.staticPreviewInteractiveSwatchesAre")
       : hasStaticReason
         ? staticReason!
         : navigated
-          ? "Live preview stopped — the preview navigated away."
+          ? uiMessage("design-system.componentPreview.livePreviewStoppedThePreview")
           : bootFailed
-            ? "This preview could not run: a script it needs did not load, or threw while loading. Showing the static preview."
+            ? uiMessage("design-system.componentPreview.thisPreviewCouldNotRun")
             : null;
     (runtime.reactSwatchPreview as typeof React).useEffect((): void => {
       onStaticNote?.(staticNotice);
@@ -427,16 +430,14 @@ export function installEditorComponentPreview(
       },
       renderStaticPreview = (input: string | null) => (
         <div data-testid={dataTestid}>
-          {[
-            <runtime.StaticPreviewFrame
+          {[<runtime.StaticPreviewFrame
               html={html}
               head={debouncedHead}
               pageW={staticPageWidth}
               pageH={effectiveHeight}
               fitWidth={staticPageWidth}
-              title={title + " (static preview)"}
-            />,
-            onStaticNote === undefined ? (
+              title={uiMessage("design-system.componentPreview.staticPreview", { value1: String(title) })}
+            />, onStaticNote === undefined ? (
               <p
                 className={
                   "ds-swatch-note ds-pad mt-xs text-footnote text-muted"
@@ -444,8 +445,7 @@ export function installEditorComponentPreview(
               >
                 {input}
               </p>
-            ) : null,
-          ]}
+            ) : null]}
         </div>
       );
     if (
@@ -574,7 +574,7 @@ export function installEditorComponentPreview(
   bindRuntimeValue(
     runtime,
     "STATIC_PREVIEW_NOTICE",
-    () => STATIC_PREVIEW_NOTICE,
+    () => uiMessage("design-system.componentPreview.staticPreviewInteractiveSwatchesAre"),
     (value) => {
       STATIC_PREVIEW_NOTICE = value;
     },

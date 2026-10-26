@@ -1,3 +1,5 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
+import { useUiLocale } from '../../ui-locale.ts';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -30,6 +32,7 @@ export function installEditorOutlineGlyphs(
   var OutlineGlyphsNativeEvent: Dynamic;
   var OutlineGlyphsLabel: Dynamic;
   function OutlineElementGlyph({ dimmed: dimmed }: Dynamic): Dynamic {
+    useUiLocale();
     return (
       <span
         aria-hidden={true}
@@ -53,6 +56,7 @@ export function installEditorOutlineGlyphs(
     dimmed: dimmed,
     ink: ink,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let value: Dynamic = (0, runtime.cn)(
         OutlineGlyphsClassNames,
         dimmed ? "opacity-50" : "opacity-100",
@@ -69,21 +73,17 @@ export function installEditorOutlineGlyphs(
           : undefined;
     return (
       <span aria-hidden={true} className={value}>
-        {icon.custom ? (
-          <runtime.Icon
+        {icon.custom ? (<runtime.Icon
             customIcon={icon.custom}
             size={"xs"}
             className={value2}
             style={value3}
-          />
-        ) : (
-          <runtime.Icon
+          />) : (<runtime.Icon
             name={icon.name}
             size={"xs"}
             className={value2}
             style={value3}
-          />
-        )}
+          />)}
       </span>
     );
   }
@@ -268,7 +268,7 @@ export function installEditorOutlineGlyphs(
   return () => {
     CanTReadThisArtboardSFileAskMessage =
       // MineDesign: user-facing copy calls the agent "the agent", not Claude.
-      "Can\u2019t read this artboard\u2019s file \u2014 ask the agent to repair it.";
+      uiMessage("inspector.glyphs.canTReadThisArtboard");
     OutlineGlyphsTest = (input?: Dynamic): Dynamic =>
       /<x-dc[\s/>]/i.test(input);
     jsxOutlineGlyphs = (0, runtime.toModuleNamespace)(
@@ -330,7 +330,7 @@ export function installEditorOutlineGlyphs(
       };
     };
     OutlineGlyphsLabel = (input?: Dynamic): Dynamic => ({
-      label: input.label,
+      get label() { return input.label; },
       shortcut: input.hotkey,
       disabled: input.disabled,
       disabledReason: input.disabledReason,

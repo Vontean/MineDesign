@@ -1,3 +1,4 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -142,7 +143,7 @@ export function installEditorCodePropertyCode(
         return {
           ok: false,
           line: index + 1,
-          message: "unterminated comment",
+          get message() { return uiMessage("inspector.propertyCode.unterminatedComment"); },
         };
       }
       value2.endsWith(";") && (value2 = value2.slice(0, -1).trimEnd());
@@ -155,7 +156,7 @@ export function installEditorCodePropertyCode(
         return {
           ok: false,
           line: index + 1,
-          message: "expected  name: value",
+          get message() { return uiMessage("inspector.propertyCode.expectedNameValue"); },
         };
       let value4: Dynamic = value3[1].startsWith("@")
           ? value3[1]
@@ -165,7 +166,7 @@ export function installEditorCodePropertyCode(
         return {
           ok: false,
           line: index + 1,
-          message: "missing value",
+          get message() { return uiMessage("inspector.propertyCode.missingValue"); },
         };
       if (!value4.startsWith("@")) {
         let index2: Dynamic = 0,
@@ -187,7 +188,7 @@ export function installEditorCodePropertyCode(
                 return {
                   ok: false,
                   line: index + 1,
-                  message: "unexpected ;",
+                  get message() { return uiMessage("inspector.propertyCode.unexpected"); },
                 };
               text += value9;
               index3 = value8 + 1;
@@ -204,20 +205,20 @@ export function installEditorCodePropertyCode(
             return {
               ok: false,
               line: index + 1,
-              message: "unexpected " + value7,
+              message: uiMessage("inspector.propertyCode.unexpected2") + value7,
             };
           if (index2 < 0)
             return {
               ok: false,
               line: index + 1,
-              message: "unbalanced )",
+              get message() { return uiMessage("inspector.propertyCode.unbalanced"); },
             };
         }
         if (index2 !== 0 || value6)
           return {
             ok: false,
             line: index + 1,
-            message: "unbalanced ( or quote",
+            get message() { return uiMessage("inspector.propertyCode.unbalancedOrQuote"); },
           };
         if (/[{}]/.test(value5)) {
           let value7: Dynamic = (0, runtime.parseStyleDeclarations)(
@@ -233,7 +234,7 @@ export function installEditorCodePropertyCode(
             return {
               ok: false,
               line: index + 1,
-              message: value8 ? "unbalanced ( or quote" : "unexpected {",
+              message: value8 ? uiMessage("inspector.propertyCode.unbalancedOrQuote2") : uiMessage("inspector.propertyCode.unexpected3"),
             };
           }
         }
@@ -242,7 +243,7 @@ export function installEditorCodePropertyCode(
         return {
           ok: false,
           line: index + 1,
-          message: "duplicate " + value4,
+          message: uiMessage("inspector.propertyCode.duplicate") + value4,
         };
       entries.set(value4, value5);
     }

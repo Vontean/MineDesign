@@ -1,3 +1,5 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
+import { useUiLocale } from '../ui-locale.ts';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -40,6 +42,7 @@ export function installFindBar(runtime: RuntimeBindings): () => void {
           (status.capped ? "+" : "");
   }
   function FindBar(props?: Dynamic): Dynamic {
+    useUiLocale();
     let { onMounted: value }: Dynamic = props;
     (0, react_Kw.useEffect)(
       (): Dynamic => (value(true), (): Dynamic => value(false)),
@@ -65,6 +68,7 @@ export function installFindBar(runtime: RuntimeBindings): () => void {
     onStep: onStep,
     onClose: onClose,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let value: Dynamic = (0, react_Kw.useMemo)(
         (): Dynamic => createStableFindStatusReader(getStatus),
         [getStatus],
@@ -157,14 +161,12 @@ export function installFindBar(runtime: RuntimeBindings): () => void {
           >
             <span aria-hidden={"true"}>{findMatchCountText(value2)}</span>
             <span style={findLiveAnnouncementStyle}>
-              {findMatchCountText(value2) === ""
-                ? ""
-                : findMatchAriaStatus(
+              {findMatchCountText(value2) === "" ? ("") : (findMatchAriaStatus(
                     value2.current,
                     value2.total,
                     value2.capped,
                     value2.place,
-                  )}
+                  ))}
             </span>
           </span>
           <runtime.ToolbarPrimitivesComponent

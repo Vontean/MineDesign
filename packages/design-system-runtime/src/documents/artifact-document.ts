@@ -1,3 +1,4 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 import type * as Host from "../contracts/platform-host";
 import type * as React from "react";
 /** Restored application module; prepare first, initialize in original order. */
@@ -61,7 +62,7 @@ export function installDocumentsArtifactDocument(
       if (readOnly) {
         return {
           status: "readonly",
-          message: "This view cannot edit the document.",
+          get message() { return uiMessage("design-system.artifactDocument.thisViewCannotEditTheDocument"); },
         };
       }
       if (saveError !== undefined) {
@@ -219,7 +220,7 @@ export function installDocumentsArtifactDocument(
           return {
             status: "blocked",
             pending: size,
-            message: "This view cannot edit the document.",
+            get message() { return uiMessage("design-system.artifactDocument.thisViewCannotEditTheDocument"); },
           };
         }
         if (saveError !== undefined && size > 0) {

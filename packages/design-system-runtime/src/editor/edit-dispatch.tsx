@@ -1,3 +1,4 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 import type * as React from "react";
 import type * as Editor from "../contracts/editor-runtime";
 import type * as Model from "../contracts";
@@ -18,7 +19,7 @@ export function installEditorEditDispatch(
   ): boolean | void {
     let value = options.say ?? runtime.showEditorNotification;
     if (document2.busy()) {
-      value("Still working on your previous change. Try again in a moment.");
+      value(uiMessage("design-system.editDispatch.stillWorkingOnYourPrevious"));
       return false;
     }
     if (document2.needs(edit).length === 0) {
@@ -33,7 +34,7 @@ export function installEditorEditDispatch(
         }
         if (input.tooMany) {
           value(
-            "That is too much to change at once (more than 64 files, or about 48 MB). Select fewer files, or move some out of the group first, then try again.",
+            uiMessage("design-system.editDispatch.thatIsTooMuchTo"),
           );
           return;
         }
@@ -43,7 +44,7 @@ export function installEditorEditDispatch(
           value3: string = input.failed.length === 1 ? "it" : "them";
         if (verb === "removal" && options.ask !== undefined) {
           options.ask({
-            title: "Remove anyway?",
+            get title() { return uiMessage("design-system.editDispatch.removeAnyway"); },
             body:
               value2 +
               " could not be loaded, so removing " +
@@ -62,7 +63,7 @@ export function installEditorEditDispatch(
             " could not be loaded, so nothing was changed. Try again, or reload the page if it keeps happening.",
         );
       })
-      .catch(() => value("That change could not be made. Try again."));
+      .catch(() => value(uiMessage("design-system.editDispatch.thatChangeCouldNotBe")));
     return true;
   }
   bindRuntimeValue(

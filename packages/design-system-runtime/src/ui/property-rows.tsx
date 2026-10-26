@@ -1,3 +1,5 @@
+import { useUiLocale } from '../ui-locale.ts';
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import { bindRuntimeValue, type RuntimeBindings } from "../runtime-types";
 import type * as React from "react";
@@ -40,6 +42,7 @@ export function installUiPropertyRows(runtime: RuntimeBindings): () => void {
     title: title,
     description: description,
   }: NumberPropertyRowProps) {
+    useUiLocale();
     let ref = reactForUiPropertyRows.useRef(false),
       callback = () => {
         ref.current = true;
@@ -91,8 +94,7 @@ export function installUiPropertyRows(runtime: RuntimeBindings): () => void {
           element.querySelector("input")?.focus();
         }}
       >
-        {[
-          <runtime.PropertyNumberInput
+        {[<runtime.PropertyNumberInput
             aria-label={label}
             prefix={prefix}
             unit={value6 ? undefined : unit}
@@ -110,12 +112,11 @@ export function installUiPropertyRows(runtime: RuntimeBindings): () => void {
             clearable={clearable}
             mixed={mixed}
             disabled={disabled}
-          />,
-          value6 ? (
+          />, value6 ? (
             <runtime.Select
               compact={true}
-              aria-label={label + " unit"}
-              title={"Unit"}
+              aria-label={uiMessage("design-system.propertyRows.unit2", { value1: String(label) })}
+              title={uiMessage("design-system.propertyRows.unit")}
               items={units!.map((input: string) => ({
                 value: input,
                 label: input,
@@ -125,9 +126,7 @@ export function installUiPropertyRows(runtime: RuntimeBindings): () => void {
               disabled={disabled}
               align={"end"}
             />
-          ) : null,
-          adornment,
-        ]}
+          ) : null, adornment]}
       </runtime.PropertyRow>
     );
   }
@@ -136,6 +135,7 @@ export function installUiPropertyRows(runtime: RuntimeBindings): () => void {
     alpha = 100,
     className: className,
   }: ColorChipProps) {
+    useUiLocale();
     return (
       <span
         aria-hidden={"true"}
@@ -144,25 +144,20 @@ export function installUiPropertyRows(runtime: RuntimeBindings): () => void {
           className,
         )}
       >
-        {hex !== null ? (
-          <jsxmq.Fragment>
-            {[
-              <span
+        {hex !== null ? (<jsxmq.Fragment>
+            {[<span
                 className={"absolute inset-y-0 left-0 w-1/2"}
                 style={{
                   backgroundColor: hex,
                 }}
-              />,
-              <span
+              />, <span
                 className={"absolute inset-y-0 right-0 w-1/2"}
                 style={{
                   backgroundColor: hex,
                   opacity: Math.round(alpha * 100) / 1e4,
                 }}
-              />,
-            ]}
-          </jsxmq.Fragment>
-        ) : null}
+              />]}
+          </jsxmq.Fragment>) : (null)}
       </span>
     );
   }
@@ -218,6 +213,7 @@ export function installUiPropertyRows(runtime: RuntimeBindings): () => void {
     title: title,
     testid: testid,
   }: ColorPropertyRowProps) {
+    useUiLocale();
     let [value2, value3] = reactForUiPropertyRows.useState(false),
       value4 = open ?? value2,
       callback = (input: boolean) => {
@@ -351,7 +347,7 @@ export function installUiPropertyRows(runtime: RuntimeBindings): () => void {
     let value22 = (
       <runtime.ColorSelect
         testid={testid !== undefined ? testid + "-menu" : undefined}
-        title={popoverTitle ?? label}
+        title={popoverTitle ?? (label)}
         swatches={swatches}
         current={current}
         onSwatch={onSwatch}
@@ -428,32 +424,18 @@ export function installUiPropertyRows(runtime: RuntimeBindings): () => void {
       <span
         ref={ref2}
         className={"relative flex min-w-0 flex-1"}
-        title={disabled ? disabledReason : undefined}
+        title={disabled ? (disabledReason) : (undefined)}
       >
-        {[
-          <runtime.PropertyPopup
+        {[<runtime.PropertyPopup
             open={value4}
             onOpen={() => callback(true)}
             onClose={() => callback(false)}
             trigger={
               <runtime.FieldButton
                 data-testid={testid}
-                title={disabled ? (disabledReason ?? title) : title}
+                title={disabled ? (disabledReason ?? (title)) : (title)}
                 aria-label={
-                  label +
-                  ": " +
-                  (mixed
-                    ? runtime.MIXED_LABEL
-                    : chip !== undefined
-                      ? chip.text
-                      : value !== undefined
-                        ? value10 + (value11 !== undefined ? " " + value11 : "")
-                        : clearLabel !== undefined &&
-                            /[\p{L}\p{N}]/u.test(clearLabel)
-                          ? clearLabel
-                          : clearLabel !== undefined
-                            ? "none"
-                            : "unset")
+                  label + ": " + (mixed ? runtime.MIXED_LABEL : chip !== undefined ? chip.text : value !== undefined ? value10 + (value11 !== undefined ? " " + value11 : "") : clearLabel !== undefined && /[\p{L}\p{N}]/u.test(clearLabel) ? clearLabel : clearLabel !== undefined ? uiMessage("design-system.propertyRows.none") : uiMessage("design-system.propertyRows.unset"))
                 }
                 aria-describedby={value14 !== undefined ? value15 : undefined}
                 disabled={disabled}
@@ -467,20 +449,17 @@ export function installUiPropertyRows(runtime: RuntimeBindings): () => void {
                 chip={
                   mixed ? (
                     <runtime.PropertyColorPreview data-kit={"swatch-mixed"}>
-                      {[
-                        <span
+                      {[<span
                           className={"absolute inset-y-0 left-0 w-1/2"}
                           style={{
                             backgroundColor: "#ffffff",
                           }}
-                        />,
-                        <span
+                        />, <span
                           className={"absolute inset-y-0 right-0 w-1/2"}
                           style={{
                             backgroundColor: "#141413",
                           }}
-                        />,
-                      ]}
+                        />]}
                     </runtime.PropertyColorPreview>
                   ) : chip !== undefined ? (
                     <runtime.PropertyColorPreview
@@ -505,18 +484,14 @@ export function installUiPropertyRows(runtime: RuntimeBindings): () => void {
                   ) : undefined
                 }
               >
-                {mixed
-                  ? runtime.MIXED_LABEL
-                  : chip !== undefined
-                    ? chip.text
-                    : value10}
+                {mixed ? (runtime.MIXED_LABEL) : (chip !== undefined ? (chip.text) : (value10))}
               </runtime.FieldButton>
             }
             align={"left"}
             side={popover?.side}
             positionAnchor={value8}
             padding={"none"}
-            aria-label={popoverTitle ?? label}
+            aria-label={popoverTitle ?? (label)}
             className={runtime.COLOR_PICKER_POPOVER_CLASS}
             popupAttrs={popupAttrs}
             editsAreUndoSteps={editsAreUndoSteps}
@@ -528,23 +503,17 @@ export function installUiPropertyRows(runtime: RuntimeBindings): () => void {
                 : undefined
             }
           >
-            {keepFocus ? (
-              <div
+            {keepFocus ? (<div
                 data-session-strip={""}
                 onKeyDownCapture={runtime.popupPointerEvent}
               >
                 {value22}
-              </div>
-            ) : (
-              value22
-            )}
-          </runtime.PropertyPopup>,
-          value14 !== undefined ? (
+              </div>) : (value22)}
+          </runtime.PropertyPopup>, value14 !== undefined ? (
             <span id={value15} hidden={true} data-kit={"field-description"}>
               {value14}
             </span>
-          ) : null,
-        ]}
+          ) : null]}
       </span>
     );
   }
@@ -565,6 +534,7 @@ export function installUiPropertyRows(runtime: RuntimeBindings): () => void {
     description: description,
     ...remainingProps
   }: ColorTextPropertyRowProps) {
+    useUiLocale();
     let [value2, value3] = reactForUiPropertyRows.useState(false);
     return (
       <runtime.PropertyRow
@@ -596,8 +566,7 @@ export function installUiPropertyRows(runtime: RuntimeBindings): () => void {
           }
         }}
       >
-        {[
-          <ColorPropertyRow
+        {[<ColorPropertyRow
             {...remainingProps}
             label={label}
             value={value}
@@ -611,9 +580,7 @@ export function installUiPropertyRows(runtime: RuntimeBindings): () => void {
             disabled={disabled}
             open={value2}
             onOpenChange={value3}
-          />,
-          adornment,
-        ]}
+          />, adornment]}
       </runtime.PropertyRow>
     );
   }

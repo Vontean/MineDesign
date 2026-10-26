@@ -1,3 +1,5 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
+import { useUiLocale } from '../../ui-locale.ts';
 import type { TabMenuItem, TabsListMenuProps } from "../../contracts/ui";
 import type * as React from "react";
 /** Restored application module; prepare first, initialize in original order. */
@@ -110,6 +112,7 @@ export function installCdsComponentsNumberInput(
     listRef: listRef,
     triggerHadFocusRef: triggerHadFocusRef,
   }: TabsListMenuProps): React.ReactElement {
+    useUiLocale();
     let value = (0, runtime.useFlipIndicatorContext)(),
       value2 = (0, reactTabsListMenu.useRef)<HTMLButtonElement | null>(null),
       value3 = (0, reactTabsListMenu.useId)(),
@@ -182,32 +185,26 @@ export function installCdsComponentsNumberInput(
           data-cds-part={runtime.TabsMenuTriggerValue}
           className={"max-w-full min-w-0"}
         >
-          {ariaLabel !== undefined && ariaLabelledby === undefined ? (
-            <span id={value3} className={"sr-only"}>
+          {ariaLabel !== undefined && ariaLabelledby === undefined ? (<span id={value3} className={"sr-only"}>
               {ariaLabel}
-            </span>
-          ) : null}
-          {value8 !== undefined ? (
-            <span
+            </span>) : (null)}
+          {value8 !== undefined ? (<span
               id={value4}
               data-cds-part={runtime.TabsMenuLabelValue}
               className={"max-w-40 min-w-0 truncate"}
             >
               {value8.text}
-            </span>
-          ) : ariaLabel !== undefined ? (
-            <span
+            </span>) : (ariaLabel !== undefined ? (<span
               aria-hidden={true}
               data-cds-part={runtime.TabsMenuLabelValue}
               className={"max-w-40 min-w-0 truncate"}
             >
               {ariaLabel}
-            </span>
-          ) : null}
+            </span>) : (null))}
         </runtime.MenuMenuAssignValue.TriggerButton>
         <runtime.MenuMenuAssignValue.Popup>
           <runtime.MenuMenuAssignValue.Group
-            aria-label={ariaLabelledby === undefined ? ariaLabel : undefined}
+            aria-label={ariaLabelledby === undefined ? (ariaLabel) : (undefined)}
             aria-labelledby={ariaLabelledby}
           >
             {value5.map((input, options) =>

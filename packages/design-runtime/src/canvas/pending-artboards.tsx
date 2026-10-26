@@ -1,3 +1,5 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
+import { useUiLocale } from '../ui-locale.ts';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -15,6 +17,7 @@ export function installCanvasPendingArtboards(
     tone: tone,
     className: className,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let value: Dynamic = (0, runtime.useViewportStore)();
     return (
       <div
@@ -35,7 +38,7 @@ export function installCanvasPendingArtboards(
         }}
       >
         <span className={"truncate"}>
-          {spec.title ?? spec.file.replace(/\.dc\.html$/, "")}
+          {spec.title ?? (spec.file.replace(/\.dc\.html$/, ""))}
         </span>
       </div>
     );
@@ -45,6 +48,7 @@ export function installCanvasPendingArtboards(
     sheen: sheen,
     className: className,
   }: Dynamic): Dynamic {
+    useUiLocale();
     return (
       <div
         aria-hidden={"true"}
@@ -64,6 +68,7 @@ export function installCanvasPendingArtboards(
     boards: boards,
     sheen: sheen,
   }: Dynamic): Dynamic {
+    useUiLocale();
     return boards.map(
       (input?: Dynamic): Dynamic =>
         (() => {

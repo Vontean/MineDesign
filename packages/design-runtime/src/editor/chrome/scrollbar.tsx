@@ -1,3 +1,4 @@
+import { useUiLocale } from '../../ui-locale.ts';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -60,6 +61,7 @@ export function installEditorChromeScrollbar(
     target: target,
     className: className,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let value: Dynamic = (0, reactChromeScrollbar.useRef)(null),
       value2: Dynamic = (0, reactChromeScrollbar.useRef)(null),
       [value3, value4]: Dynamic = (0, reactChromeScrollbar.useState)(null),

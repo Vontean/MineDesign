@@ -1,3 +1,5 @@
+import { useUiLocale } from '../../ui-locale.ts';
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -138,6 +140,7 @@ export function installEditorPropertiesColorSwatches(
     testid: testid,
     className: className,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let value: Dynamic = swatches.some(
         (input?: Dynamic): Dynamic => !PropertiesColorSwatchesEmpty(input),
       ),
@@ -322,43 +325,34 @@ export function installEditorPropertiesColorSwatches(
             )}
             data-kit={"color-popover-header"}
           >
-            {value2 ? (
-              <runtime.ColorHexInput
+            {value2 ? (<runtime.ColorHexInput
                 value={value7}
                 onChange={callback}
                 className={""}
-              />
-            ) : (
-              <span
+              />) : (<span
                 className={
                   "min-w-0 flex-1 truncate pl-2 text-body-semibold text-primary"
                 }
               >
                 {heading}
-              </span>
-            )}
-            {title !== undefined && value2 ? (
-              <span className={"sr-only"}>{title}</span>
-            ) : null}
+              </span>)}
+            {title !== undefined && value2 ? (<span className={"sr-only"}>{title}</span>) : (null)}
             {headerEnd}
           </div>
         ) : null,
       value19: Dynamic = !value2 && color !== undefined ? value13 : [],
       value20: Dynamic = (
         <runtime.jsxPropertiesGradientEditor.Fragment>
-          {value19.length > 0 ? (
-            <div className={"-mx-2 mb-1 flex flex-col"}>
+          {value19.length > 0 ? (<div className={"-mx-2 mb-1 flex flex-col"}>
               {callback3(value19)}
-            </div>
-          ) : null}
-          {value3 !== undefined ? (
-            <runtime.PropertyRow
+            </div>) : (null)}
+          {value3 !== undefined ? (<runtime.PropertyRow
               label={runtime.TypeValue}
               className={value4 ? "mb-1" : undefined}
               {...runtime.PropertiesSelectOnKeyDownCaptureConfig}
             >
               <runtime.SegmentedControl
-                aria-label={value3.label ?? "Fill type"}
+                aria-label={value3.label ?? (uiMessage("inspector.colorSwatches.fillType"))}
                 fullWidth={true}
                 segments={value3.options.map(
                   (input?: Dynamic): Dynamic => ({
@@ -384,13 +378,8 @@ export function installEditorPropertiesColorSwatches(
                   value3.onChange(input)
                 }
               />
-            </runtime.PropertyRow>
-          ) : null}
-          {value4 && color !== undefined ? (
-            <runtime.ColorPicker {...color} />
-          ) : (
-            face
-          )}
+            </runtime.PropertyRow>) : (null)}
+          {value4 && color !== undefined ? (<runtime.ColorPicker {...color} />) : (face)}
         </runtime.jsxPropertiesGradientEditor.Fragment>
       );
     return (
@@ -403,35 +392,27 @@ export function installEditorPropertiesColorSwatches(
           className,
         )}
       >
-        {value2 ? value18 : null}
-        {value7 === "system" ? (
-          <div
+        {value2 ? (value18) : (null)}
+        {value7 === "system" ? (<div
             className={(0, runtime.joinClassNames)(
               "flex min-h-0 flex-col",
               value2 ? "-mx-2" : "-m-2",
             )}
           >
             {value17}
-            {value16.length > 0 ? (
-              callback3(
+            {value16.length > 0 ? (callback3(
                 value16,
                 value2
                   ? "mb-[calc(-1*var(--cs-bottom,16px))] pb-[var(--cs-bottom,16px)]"
                   : undefined,
-              )
-            ) : (
-              <p
+              )) : (<p
                 role={"status"}
                 className={"px-2 py-1 text-footnote text-muted"}
               >
                 {runtime.ColorContrastCopyLabel_3}
-              </p>
-            )}
-          </div>
-        ) : (
-          value20
-        )}
-        {value2 ? null : value18}
+              </p>)}
+          </div>) : (value20)}
+        {value2 ? (null) : (value18)}
       </div>
     );
   }
@@ -465,7 +446,7 @@ export function installEditorPropertiesColorSwatches(
     if (!options) return value;
     let state: Dynamic = {
       name: NoneValue,
-      label: "None",
+      get label() { return uiMessage("inspector.colorSwatches.none"); },
       color: "transparent",
       empty: true,
       group: value[0]?.group,

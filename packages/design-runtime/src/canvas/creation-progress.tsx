@@ -1,3 +1,4 @@
+import { useUiLocale } from '../ui-locale.ts';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -35,6 +36,7 @@ export function installCanvasCreationProgress(
     artboards: artboards,
     scale: scale,
   }: Dynamic): Dynamic {
+    useUiLocale();
     if (cursor.at !== "box" && cursor.at !== "rest") return null;
     let value: Dynamic = (cursor.at === "box" ? boards : artboards).find(
       (input?: Dynamic): Dynamic => input.file === cursor.file,

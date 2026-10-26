@@ -1,3 +1,5 @@
+import { useUiLocale } from '../ui-locale.ts';
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 import type * as React from "react";
 import type * as Token from "../contracts/token-editors";
 import type * as Model from "../contracts";
@@ -134,6 +136,7 @@ export function installEditorShadows(runtime: RuntimeBindings): () => void {
     anchorKey: anchorKey,
     editsAreUndoSteps: editsAreUndoSteps,
   }: Token.ShadowValueEditorProps): React.ReactElement {
+    useUiLocale();
     let value2 = splitBoxShadowLayers(value),
       value3 = value2.length === 0 ? [""] : value2,
       value4: boolean = value3.length <= 1,
@@ -229,8 +232,8 @@ export function installEditorShadows(runtime: RuntimeBindings): () => void {
           size={"sm"}
           iconOnly={true}
           icon={"Add"}
-          aria-label={"Add a layer"}
-          tooltip={"Add layer"}
+          aria-label={uiMessage("design-system.shadows.addALayer")}
+          tooltip={uiMessage("design-system.shadows.addLayer")}
           className={"ml-auto"}
           onClick={callback6}
           data-testid={testid + "-add-layer"}
@@ -238,10 +241,7 @@ export function installEditorShadows(runtime: RuntimeBindings): () => void {
       ),
       callback10 = (input: React.ReactNode, options: boolean) => (
         <span className={"flex w-full items-center gap-1"}>
-          {[
-            <span className={"min-w-0 truncate"}>{input}</span>,
-            options ? value10 : null,
-          ]}
+          {[<span className={"min-w-0 truncate"}>{input}</span>, options ? value10 : null]}
         </span>
       ),
       value11 =
@@ -325,17 +325,12 @@ export function installEditorShadows(runtime: RuntimeBindings): () => void {
                 className={"px-md pb-sm text-footnote text-muted"}
                 data-testid={testid + "-cssnote"}
               >
-                {[
-                  "Written as CSS",
-                  <span
+                {[uiMessage("design-system.shadows.writtenAsCSS"), <span
                     className={"block truncate font-mono text-caption"}
                     title={value14}
                   >
                     {value14}
-                  </span>,
-                  // MineDesign: user-facing copy calls the agent "the agent", not Claude.
-                  "Ask the agent to change it.",
-                ]}
+                  </span>, uiMessage("design-system.shadows.askTheAgentToChange")]}
               </p>
             </runtime.PropertyPopoverPanel>
           );
@@ -377,7 +372,7 @@ export function installEditorShadows(runtime: RuntimeBindings): () => void {
               {...(anchorKey !== undefined
                 ? {
                     role: "group",
-                    "aria-label": "Shadow " + label,
+                    get "aria-label"() { return (uiMessage("design-system.shadows.shadow")) + (label); },
                     ...(0, runtime.commentTargetProps)(
                       "editor",
                       "shadow/" + anchorKey,
@@ -387,18 +382,12 @@ export function installEditorShadows(runtime: RuntimeBindings): () => void {
                     className: "contents",
                   })}
             >
-              {!value5 ? null : value4 ? (
-                <jsxShadowEditors.Fragment>
-                  {[
-                    callback11(0, "Shadow", true, (): void => {
+              {!value5 ? (null) : (value4 ? (<jsxShadowEditors.Fragment>
+                  {[callback11(0, "Shadow", true, (): void => {
                       callback4();
                       value6(false);
-                    }),
-                    value11,
-                  ]}
-                </jsxShadowEditors.Fragment>
-              ) : (
-                <runtime.PropertyPopoverPanel
+                    }), value11]}
+                </jsxShadowEditors.Fragment>) : (<runtime.PropertyPopoverPanel
                   title={callback10("Shadow", true)}
                   onClose={(): void => {
                     callback4();
@@ -406,8 +395,7 @@ export function installEditorShadows(runtime: RuntimeBindings): () => void {
                   }}
                   labelWidth={"0px"}
                 >
-                  {[
-                    <div
+                  {[<div
                       ref={ref5}
                       className={"flex flex-col gap-1 px-md pb-sm"}
                       data-step={"2"}
@@ -436,9 +424,7 @@ export function installEditorShadows(runtime: RuntimeBindings): () => void {
                                   trigger={
                                     <runtime.PropertyPopoverTrigger
                                       label={
-                                        label +
-                                        " · layer " +
-                                        String(options + 1)
+                                        ((label) + (" · layer ")) + (String(options + 1))
                                       }
                                       color={
                                         value13.color !== null
@@ -466,10 +452,7 @@ export function installEditorShadows(runtime: RuntimeBindings): () => void {
                                       value12 === options
                                         ? {
                                             role: "group",
-                                            "aria-label":
-                                              label +
-                                              " layer " +
-                                              String(options + 1),
+                                            get "aria-label"() { return uiMessage("design-system.shadows.layer", { value1: String(label), value2: String(String(options + 1)) }); },
                                             ...(0, runtime.commentTargetProps)(
                                               "editor",
                                               "shadow/" +
@@ -482,23 +465,21 @@ export function installEditorShadows(runtime: RuntimeBindings): () => void {
                                             className: "contents",
                                           })}
                                     >
-                                      {value12 === options
-                                        ? callback11(
+                                      {value12 === options ? (callback11(
                                             options,
-                                            "Layer " + String(options + 1),
+                                            uiMessage("design-system.shadows.layer2") + String(options + 1),
                                             false,
                                             (): void => {
                                               callback4();
                                               value8(null);
                                             },
-                                          )
-                                        : null}
+                                          )) : (null)}
                                     </div>
                                   </runtime.CdsRoot>
                                 </runtime.PropertyPopover>
                               </span>,
                               <runtime.RemovePropertyButton
-                                label={"layer " + String(options + 1)}
+                                label={(uiMessage("design-system.shadows.layer3")) + (String(options + 1))}
                                 disabled={value3.length === 1}
                                 onClick={() => callback5(options)}
                               />,
@@ -510,11 +491,8 @@ export function installEditorShadows(runtime: RuntimeBindings): () => void {
                           );
                         })();
                       })}
-                    </div>,
-                    value11,
-                  ]}
-                </runtime.PropertyPopoverPanel>
-              )}
+                    </div>, value11]}
+                </runtime.PropertyPopoverPanel>))}
             </div>
           </runtime.CdsRoot>
         </runtime.PropertyPopover>
@@ -527,11 +505,12 @@ export function installEditorShadows(runtime: RuntimeBindings): () => void {
     edit: edit,
     testid: testid,
   }: Token.ShadowValueCellProps): React.ReactElement {
+    useUiLocale();
     let value = t.value[theme.id] ?? "";
     if (edit === undefined) {
       let value2 = boxShadowSummary(value);
       return (
-        <runtime.TooltipWrapper tip={"Copy " + value}>
+        <runtime.TooltipWrapper tip={uiMessage("design-system.shadows.copy2", { value1: String(value) })}>
           <runtime.Button
             variant={"ghost"}
             size={"sm"}
@@ -547,7 +526,7 @@ export function installEditorShadows(runtime: RuntimeBindings): () => void {
                 aria-hidden={"true"}
               />
             }
-            aria-label={t.name + " · " + theme.name + ": " + value + " — copy"}
+            aria-label={uiMessage("design-system.shadows.copy", { value1: String(t.name), value2: String(theme.name), value3: String(value) })}
             data-testid={testid}
             onClick={() =>
               void (0, runtime.copyTextToClipboard)(value).then(
@@ -567,7 +546,7 @@ export function installEditorShadows(runtime: RuntimeBindings): () => void {
     }
     return (
       <ShadowValueEditor
-        label={t.name + " · " + theme.name}
+        label={((t.name) + (" · ")) + (theme.name)}
         anchorKey={t.name + ":" + theme.id}
         value={value}
         editsAreUndoSteps={true}
@@ -590,6 +569,7 @@ export function installEditorShadows(runtime: RuntimeBindings): () => void {
     taken: taken,
     edit: edit,
   }: Token.ShadowTokenRowProps): React.ReactElement {
+    useUiLocale();
     let value = (0, runtime.useRowContextMenu)(
         edit !== undefined || (t.value[preview.id] ?? "") !== "",
       ),
@@ -614,8 +594,7 @@ export function installEditorShadows(runtime: RuntimeBindings): () => void {
         {...(0, runtime.commentTargetProps)("token", t.name)}
         {...value.rowProps}
       >
-        {[
-          <span
+        {[<span
             className={"ds-cname ds-shname flex min-w-0 items-start font-mono"}
             role={"rowheader"}
             data-testid={"ds-shadow-line-" + t.name}
@@ -626,8 +605,7 @@ export function installEditorShadows(runtime: RuntimeBindings): () => void {
               commit={value2}
               data-testid={"ds-shadow-name-" + t.name}
             />
-          </span>,
-          <span className={"ds-ccells contents"}>
+          </span>, <span className={"ds-ccells contents"}>
             {themes.map((input) =>
               (() => {
                 const _Element2 = "span";
@@ -677,16 +655,14 @@ export function installEditorShadows(runtime: RuntimeBindings): () => void {
                 return <_Element2 key={_elementKey2} {..._elementProps2} />;
               })(),
             )}
-          </span>,
-          <span
+          </span>, <span
             className={
               "ds-cacts ds-cgutter relative flex items-start justify-center"
             }
             role={"cell"}
             {...runtime.UNCOMMENTABLE_PROPS}
           >
-            {[
-              <runtime.UsageNoteEditor
+            {[<runtime.UsageNoteEditor
                 value={t.usage ?? ""}
                 label={t.name}
                 anchorKey={"shadow/" + t.name}
@@ -697,17 +673,14 @@ export function installEditorShadows(runtime: RuntimeBindings): () => void {
                 }
                 onDone={edit?.done}
                 data-testid={"ds-shadow-usage-" + t.name}
-              />,
-              edit !== undefined ? (
+              />, edit !== undefined ? (
                 <runtime.RemoveRowButton
-                  label={"Remove " + t.name}
+                  label={uiMessage("design-system.shadows.remove", { value1: String(t.name) })}
                   onRemove={() => edit.remove(t.name)}
                   data-testid={"ds-shadow-remove-" + t.name}
                 />
-              ) : null,
-            ]}
-          </span>,
-          <runtime.RowContextMenu
+              ) : null]}
+          </span>, <runtime.RowContextMenu
             title={t.name}
             at={value.at}
             anchor={value.anchor}
@@ -718,13 +691,12 @@ export function installEditorShadows(runtime: RuntimeBindings): () => void {
                 ? {
                     rename: callback,
                     remove: () => edit.remove(t.name),
-                    removeLabel: "Remove " + t.name,
+                    get removeLabel() { return uiMessage("design-system.shadows.remove", { value1: String(t.name) }); },
                   }
                 : {}),
               copy: t.value[preview.id] ?? "",
             }}
-          />,
-        ]}
+          />]}
       </div>
     );
   }
@@ -736,6 +708,7 @@ export function installEditorShadows(runtime: RuntimeBindings): () => void {
     edit: edit,
     head: head,
   }: Token.ShadowsSectionProps): React.ReactElement | null {
+    useUiLocale();
     if (shadows.tokens.length === 0) {
       return null;
     }
@@ -750,27 +723,24 @@ export function installEditorShadows(runtime: RuntimeBindings): () => void {
         className={"ds-scale ds-scale-shadow"}
         name={null}
         data-testid={"ds-shadows"}
-        aria-label={head?.title ?? "Shadows"}
+        aria-label={head?.title ?? (uiMessage("design-system.shadows.shadows"))}
       >
         <div className={"ds-cscroll overflow-x-auto"}>
           <div
             className={"ds-ctable ds-shtable"}
             role={"table"}
-            aria-label={"Shadows"}
+            aria-label={uiMessage("design-system.shadows.shadows")}
             style={{
               ["--ds-themes"]: String(themes.length),
             } as import("../contracts/controls").DesignStyle}
             data-edit={edit !== undefined ? "" : undefined}
           >
-            {[
-              <div
+            {[<div
                 className={"ds-crow ds-chead text-caption text-muted"}
                 role={"row"}
                 {...runtime.UNCOMMENTABLE_PROPS}
               >
-                {[
-                  <span role={"columnheader"}>{"Name"}</span>,
-                  themes.map((input) =>
+                {[<span role={"columnheader"}>{uiMessage("design-system.shadows.name")}</span>, themes.map((input) =>
                     (() => {
                       const _Element3 = "span";
                       const _elementProps3 = {
@@ -784,15 +754,12 @@ export function installEditorShadows(runtime: RuntimeBindings): () => void {
                         <_Element3 key={_elementKey3} {..._elementProps3} />
                       );
                     })(),
-                  ),
-                  <span
+                  ), <span
                     role={"columnheader"}
                     className={"ds-cgutter"}
                     aria-hidden={"true"}
-                  />,
-                ]}
-              </div>,
-              shadows.tokens.map((input) =>
+                  />]}
+              </div>, shadows.tokens.map((input) =>
                 (() => {
                   const _Element4 = ShadowTokenRow;
                   const _elementProps4 = {
@@ -806,8 +773,7 @@ export function installEditorShadows(runtime: RuntimeBindings): () => void {
                   const _elementKey4 = input.name;
                   return <_Element4 key={_elementKey4} {..._elementProps4} />;
                 })(),
-              ),
-            ]}
+              )]}
           </div>
         </div>
       </runtime.TokenTableSection>

@@ -1,3 +1,5 @@
+import { useUiLocale } from '../ui-locale.ts';
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import { bindRuntimeValue, type RuntimeBindings } from "../runtime-types";
 import type * as React from "react";
@@ -22,6 +24,7 @@ export function installUiArtifactShell(runtime: RuntimeBindings): () => void {
     doc: ArtifactShellDocument<Seed>;
     undo?: ArtifactShellUndo<Seed> | null;
   }) {
+    useUiLocale();
     let value = doc.stashOffer(),
       ref = (runtime.reactForUiDisclosure as typeof import("react")).useRef<{
         at: number;
@@ -36,15 +39,13 @@ export function installUiArtifactShell(runtime: RuntimeBindings): () => void {
     let value2 = value ? (ref.current?.mins ?? 1) : 0;
     return (
       <div data-mc-chrome={""} role={"status"} className={"shrink-0"}>
-        {value ? (
-          <div className={"px-md pt-md"}>
+        {value ? (<div className={"px-md pt-md"}>
             <runtime.Callout
               variant={"warning"}
               role={"none"}
               action={
                 <jsxForUiArtifactShell.Fragment>
-                  {[
-                    <runtime.Button
+                  {[<runtime.Button
                       variant={"secondary"}
                       onClick={() => {
                         let value3 = doc.restoreStash();
@@ -53,9 +54,8 @@ export function installUiArtifactShell(runtime: RuntimeBindings): () => void {
                         }
                       }}
                     >
-                      {"Restore"}
-                    </runtime.Button>,
-                    <runtime.Button
+                      {uiMessage("design-system.artifactShell.restore")}
+                    </runtime.Button>, <runtime.Button
                       variant={"ghost"}
                       onClick={() => {
                         let value3 = !undo || undo.redoDepth() <= 1;
@@ -65,28 +65,14 @@ export function installUiArtifactShell(runtime: RuntimeBindings): () => void {
                         }
                       }}
                     >
-                      {"Discard"}
-                    </runtime.Button>,
-                  ]}
+                      {uiMessage("design-system.artifactShell.discard")}
+                    </runtime.Button>]}
                 </jsxForUiArtifactShell.Fragment>
               }
             >
-              {[
-                "Unsaved changes from about ",
-                value2,
-                " minute",
-                value2 === 1 ? "" : "s",
-                " ago were found on this page — from before the last reload (a save elsewhere, or this tab closing).",
-                " ",
-                doc.readOnly()
-                  ? "Restore them here to keep working with them; this view can’t publish."
-                  : doc.saveMode() === "auto"
-                    ? "Restore puts them back over this version and saves automatically; Undo reverts."
-                    : "Restore them here, then Save to publish.",
-              ]}
+              {[uiMessage(value2 === 1 ? "design-system.artifactShell.unsavedMinute" : "design-system.artifactShell.unsavedMinutes", { minutes: value2 }), " ", doc.readOnly() ? (uiMessage("design-system.artifactShell.restoreThemHereToKeep")) : (doc.saveMode() === "auto" ? (uiMessage("design-system.artifactShell.restorePutsThemBackOver")) : (uiMessage("design-system.artifactShell.restoreThemHereThenSave")))]}
             </runtime.Callout>
-          </div>
-        ) : null}
+          </div>) : (null)}
       </div>
     );
   }
@@ -116,6 +102,7 @@ export function installUiArtifactShell(runtime: RuntimeBindings): () => void {
     hideToolbar = false,
     toolbarVariant = "docked",
   }: ArtifactShellProps<Seed>) {
+    useUiLocale();
     let [, value] = runtime.reactForUiDisclosure.useState(0),
       [value2, value3] = runtime.reactForUiDisclosure.useState(doc.saveState());
     runtime.reactForUiDisclosure.useEffect(() => {
@@ -168,7 +155,7 @@ export function installUiArtifactShell(runtime: RuntimeBindings): () => void {
           <fieldset
             disabled={true}
             aria-busy={"true"}
-            title={"Loading the latest content…"}
+            title={uiMessage("design-system.artifactShell.loadingTheLatestContent")}
             className={"contents"}
           >
             {input}
@@ -185,21 +172,19 @@ export function installUiArtifactShell(runtime: RuntimeBindings): () => void {
             tabs={tabs}
             value={tab}
             onChange={onTabChange}
-            label={"Editor mode"}
+            label={uiMessage("design-system.artifactShell.editorMode")}
           />
         ) : null,
       value10 = toolbarVariant === "floating" && value9 === null;
     return (
       <runtime.AppDesignProvider>
         <ArtifactErrorBoundary>
-          {[
-            <runtime.PanedLayout
+          {[<runtime.PanedLayout
               leading={leading}
               toolbarVariant={value10 ? "floating" : "docked"}
               toolbar={
                 <jsxForUiArtifactShell.Fragment>
-                  {[
-                    hideToolbar ? null : (
+                  {[hideToolbar ? null : (
                       <runtime.ArtifactToolbar
                         title={doc.title()}
                         saveState={value2}
@@ -231,41 +216,29 @@ export function installUiArtifactShell(runtime: RuntimeBindings): () => void {
                         readOnly={value4}
                         variant={value10 ? "floating" : "docked"}
                       >
-                        {!value4 || alwaysShowExtras
-                          ? callback(toolbarExtras)
-                          : null}
+                        {!value4 || alwaysShowExtras ? (callback(toolbarExtras)) : (null)}
                       </runtime.ArtifactToolbar>
-                    ),
-                    value9,
-                  ]}
+                    ), value9]}
                 </jsxForUiArtifactShell.Fragment>
               }
             >
-              {[
-                value10 ? (
+              {[value10 ? (
                   <div
                     data-tb-overlay-clear={""}
                     className={"flex shrink-0 flex-col"}
                   >
-                    {[
-                      <LocalStashRecoveryOffer doc={doc} undo={undo} />,
-                      <div
+                    {[<LocalStashRecoveryOffer doc={doc} undo={undo} />, <div
                         data-tb-clear-above={""}
                         className={"flex shrink-0 flex-col"}
                       >
                         {aboveContent}
-                      </div>,
-                    ]}
+                      </div>]}
                   </div>
                 ) : (
                   <jsxForUiArtifactShell.Fragment>
-                    {[
-                      <LocalStashRecoveryOffer doc={doc} undo={undo} />,
-                      aboveContent,
-                    ]}
+                    {[<LocalStashRecoveryOffer doc={doc} undo={undo} />, aboveContent]}
                   </jsxForUiArtifactShell.Fragment>
-                ),
-                <div
+                ), <div
                   data-appifact-content={""}
                   className={"isolate min-h-0 min-w-0 flex-1 overflow-auto"}
                   style={{
@@ -279,11 +252,8 @@ export function installUiArtifactShell(runtime: RuntimeBindings): () => void {
                   >
                     {children}
                   </runtime.ArtifactLoadBoundary>
-                </div>,
-              ]}
-            </runtime.PanedLayout>,
-            <runtime.useToastBridge />,
-          ]}
+                </div>]}
+            </runtime.PanedLayout>, <runtime.useToastBridge />]}
         </ArtifactErrorBoundary>
       </runtime.AppDesignProvider>
     );
@@ -347,17 +317,13 @@ export function installUiArtifactShell(runtime: RuntimeBindings): () => void {
                 "m-6 rounded-lg border border-border-line bg-panel p-4 text-sm"
               }
             >
-              {[
-                <p className={"font-semibold"}>
-                  {"This appifact hit a rendering error."}
-                </p>,
-                <p className={"mt-1 text-fg-muted"}>{this.state.error}</p>,
-                <p className={"mt-2 text-fg-muted"}>
+              {[<p className={"font-semibold"}>
+                  {uiMessage("design-system.artifactShell.thisAppifactHitARenderingError")}
+                </p>, <p className={"mt-1 text-fg-muted"}>{this.state.error}</p>, <p className={"mt-2 text-fg-muted"}>
                   {
-                    "Reload to try again. If it persists, a stored value may be malformed."
+                    uiMessage("design-system.artifactShell.reloadToTryAgainIf")
                   }
-                </p>,
-              ]}
+                </p>]}
             </div>
           );
         }

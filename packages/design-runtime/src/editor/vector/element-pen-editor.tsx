@@ -1,3 +1,4 @@
+import { useUiLocale } from '../../ui-locale.ts';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -16,6 +17,7 @@ export function installEditorVectorElementPenEditor(
     onCommitStroke: onCommitStroke,
     onGesture: onGesture,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let value: Dynamic =
         pen.d + "|" + [pen.x, pen.y, pen.w, pen.h, pen.vbW, pen.vbH].join(","),
       [value2, value3]: Dynamic = (0,

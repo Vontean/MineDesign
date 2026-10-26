@@ -1,3 +1,4 @@
+import { useUiLocale } from '../../ui-locale.ts';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -18,6 +19,7 @@ export function installEditorPropertiesTransformRow(
     disabled: disabled2,
     onChange: onChange,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let value2: Dynamic =
         (0, runtime.getFineUnitStep)(unit, undefined) != null ? 0.1 : step,
       value3: Dynamic = (0, runtime.useStyleCommitScrub)(
@@ -61,6 +63,7 @@ export function installEditorPropertiesTransformRow(
     onCommit: onCommit,
     shell: shell,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let value: Dynamic = state.mixed ? "" : (state.value ?? ""),
       value2: Dynamic = (0, runtime.parseCssTransform)(value);
     if (!value2)

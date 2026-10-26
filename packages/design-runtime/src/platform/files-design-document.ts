@@ -1,3 +1,4 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 import type { DataRecord } from "../contracts/storage";
 /** Restored application module; prepare first, initialize in original order. */
 import {
@@ -506,7 +507,7 @@ export function installPlatformFilesDesignDocument(
             : syncState.lastError !== undefined && syncState.dirty > 0
               ? {
                   status: "error",
-                  message: "Changes are waiting to save.",
+                  get message() { return uiMessage("canvas.filesDesignDocument.changesAreWaitingToSave"); },
                 }
               : syncState.inFlight ||
                   syncState.dirty > 0 ||
@@ -2043,7 +2044,7 @@ export function installPlatformFilesDesignDocument(
               ...(context
                 ? {}
                 : {
-                    title: (value18?.title ?? value14) + " (my copy)",
+                    get title() { return value18?.title ?? value14 + " (my copy)"; },
                   }),
             },
           ],

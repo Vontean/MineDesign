@@ -1,3 +1,5 @@
+import { useUiLocale } from '../../ui-locale.ts';
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import type * as React from "react";
 import type * as JsxRuntime from "react/jsx-runtime";
@@ -54,6 +56,7 @@ export function installFilesUiNavigation(
     } catch {}
   }
   function NavigationConflictMark() {
+    useUiLocale();
     return (
       <span
         className={
@@ -61,16 +64,13 @@ export function installFilesUiNavigation(
         }
         data-testid={"ds-navmark"}
         title={
-          "A file here was changed by someone else while you were editing it. Choose theirs or yours at the top of the page."
+          uiMessage("design-system.navigation.aFileHereWasChangedBySomeoneElseWhileYouWereEditingItChooseTheirsOrYoursAtTheTop")
         }
       >
-        {[
-          <span
+        {[<span
             aria-hidden={"true"}
             className={"inline-block size-2 rounded-full bg-warning"}
-          />,
-          <span className={"sr-only"}>{"needs your choice"}</span>,
-        ]}
+          />, <span className={"sr-only"}>{uiMessage("design-system.navigation.needsYourChoice")}</span>]}
       </span>
     );
   }
@@ -80,6 +80,7 @@ export function installFilesUiNavigation(
     tipId: tipId,
     panel: panel,
   }: PendingSectionRowProps) {
+    useUiLocale();
     let [value, value2] = runtime.reactSectionNavigation.useState(false),
       ref = runtime.reactSectionNavigation.useRef(false);
     return (
@@ -117,7 +118,7 @@ export function installFilesUiNavigation(
             </runtime.TooltipWrapper>
           )}
         >
-          {value ? panel(row, () => value2(false)) : null}
+          {value ? (panel(row, () => value2(false))) : (null)}
         </runtime.PropertyPopup>
       </div>
     );
@@ -131,6 +132,7 @@ export function installFilesUiNavigation(
     hits: hits,
     pending: pending,
   }: NavigationRowsProps) {
+    useUiLocale();
     let items = [...sections, ...tail],
       value =
         hits === undefined
@@ -166,22 +168,15 @@ export function installFilesUiNavigation(
                       value3.id === current ? "location" : undefined
                     }
                     aria-label={
-                      value3.count !== undefined && value3.count > 0
-                        ? value3.label +
-                          ", " +
-                          value3.count.toLocaleString("en-US")
-                        : undefined
+                      value3.count !== undefined && value3.count > 0 ? (((value3.label) + (", ")) + (value3.count.toLocaleString("en-US"))) : (undefined)
                     }
                     className={"ds-navrow w-full justify-start"}
                     data-testid={"ds-jump-" + value3.id}
                     onClick={() => onJump(value3.id)}
                   >
-                    {[
-                      value3.label,
-                      marks?.has(value3.id) === true ? (
+                    {[value3.label, marks?.has(value3.id) === true ? (
                         <NavigationConflictMark />
-                      ) : null,
-                      value3.count !== undefined && value3.count > 0 ? (
+                      ) : null, value3.count !== undefined && value3.count > 0 ? (
                         <span
                           className={
                             "pl-xs text-caption tabular-nums text-muted"
@@ -191,8 +186,7 @@ export function installFilesUiNavigation(
                         >
                           {value3.count.toLocaleString("en-US")}
                         </span>
-                      ) : null,
-                    ]}
+                      ) : null]}
                   </runtime.Button>,
                   input.hits.map((input2, options) =>
                     (() => {
@@ -200,10 +194,7 @@ export function installFilesUiNavigation(
                       const _elementProps = {
                         variant: "ghost" as const,
                         size: "sm" as const,
-                        "aria-label":
-                          input2.detail !== undefined
-                            ? input2.entry.label + ", " + input2.detail
-                            : undefined,
+                        get "aria-label"() { return input2.detail !== undefined ? (((input2.entry.label) + (", ")) + (input2.detail)) : (undefined); },
                         className: "ds-navrow ds-navhit w-full justify-start",
                         "data-testid": "ds-search-hit",
                         onClick: () => hits?.onPick(input2.entry),
@@ -230,11 +221,9 @@ export function installFilesUiNavigation(
                   value3 === sections[sections.length - 1] &&
                   pending !== undefined ? (
                     <runtime.TooltipProvider>
-                      {[
-                        <span id={value2} hidden={true}>
+                      {[<span id={value2} hidden={true}>
                           {pending.tip}
-                        </span>,
-                        pending.rows.map((input2) =>
+                        </span>, pending.rows.map((input2) =>
                           (() => {
                             const _Element2 = PendingSectionRow;
                             const _elementProps2 = {
@@ -251,8 +240,7 @@ export function installFilesUiNavigation(
                               />
                             );
                           })(),
-                        ),
-                      ]}
+                        )]}
                     </runtime.TooltipProvider>
                   ) : null,
                 ],
@@ -376,6 +364,7 @@ export function installFilesUiNavigation(
     box: box,
     escapeToRow = false,
   }: SectionSearchFieldProps) {
+    useUiLocale();
     let value = useSearchEscapeToRow(),
       value2 = runtime.reactSectionNavigation.useId();
     runtime.reactSectionNavigation.useEffect(() => {
@@ -390,20 +379,17 @@ export function installFilesUiNavigation(
         render={escapeToRow ? <div {...value} /> : undefined}
       >
         <span ref={box} className={"contents"}>
-          {[
-            <runtime.OptionList
+          {[<runtime.OptionList
               value={query}
               onChange={setQuery}
-              label={"Search"}
+              label={uiMessage("design-system.navigation.search")}
               rowSelector={".ds-navrow"}
               onEnterIndex={() => result?.bestRow ?? 0}
               className={"mb-sm w-0 min-w-full"}
               data-testid={"ds-search"}
-            />,
-            <span id={value2} hidden={true}>
+            />, <span id={value2} hidden={true}>
               {NAV_SEARCH_BROWSER_FIND_HINT}
-            </span>,
-          ]}
+            </span>]}
         </span>
       </runtime.CdsRoot>
     );
@@ -412,22 +398,19 @@ export function installFilesUiNavigation(
     query: query,
     result: result,
   }: Pick<NavigationSearchState, "query" | "result">) {
+    useUiLocale();
     let value =
         result === null
           ? null
           : result.total === 0
-            ? "No matches for “" + query.trim() + "”"
+            ? uiMessage("design-system.navigation.noMatchesFor") + query.trim() + "”"
             : result.hidden > 0
-              ? "Showing " +
-                String(result.total - result.hidden) +
-                " of " +
-                String(result.total) +
-                " matches. Keep typing to narrow it down."
+              ? uiMessage("design-system.navigation.searchHidden", {shown: result.total-result.hidden, total: result.total})
               : null,
       value2 =
         result === null
           ? ""
-          : String(result.total) + (result.total === 1 ? " match" : " matches");
+          : uiMessage(result.total === 1 ? "design-system.navigation.match" : "design-system.navigation.matches", {count: result.total});
     return (
       <p
         className={
@@ -438,7 +421,7 @@ export function installFilesUiNavigation(
         role={"status"}
         data-testid={"ds-search-note"}
       >
-        {value ?? value2}
+        {value ?? (value2)}
       </p>
     );
   }
@@ -454,6 +437,7 @@ export function installFilesUiNavigation(
     search: search,
     pending: pending,
   }: NavigationProps) {
+    useUiLocale();
     let value = useSectionNavigationSearch(
       search,
       (input) =>
@@ -464,7 +448,7 @@ export function installFilesUiNavigation(
         className={
           "ds-section-nav flex h-full w-60 shrink-0 flex-col border-r border-border-line bg-surface-1 p-2"
         }
-        aria-label={"Sections"}
+        aria-label={uiMessage("design-system.navigation.sections")}
         data-testid={"ds-section-nav"}
         data-search-scope={search !== undefined ? "" : undefined}
         onKeyDown={search !== undefined ? handleNavigationRowKey : undefined}
@@ -472,13 +456,10 @@ export function installFilesUiNavigation(
         {...runtime.UNCOMMENTABLE_PROPS}
         {...dropProps}
       >
-        {[
-          search !== undefined ? (
+        {[search !== undefined ? (
             <SectionSearchField {...value} escapeToRow={true} />
-          ) : null,
-          <div className={NAV_SECTION_LIST_CLASS}>
-            {[
-              <SectionNavigationRows
+          ) : null, <div className={NAV_SECTION_LIST_CLASS}>
+            {[<SectionNavigationRows
                 sections={sections}
                 tail={tail}
                 current={current}
@@ -493,24 +474,20 @@ export function installFilesUiNavigation(
                       }
                     : undefined
                 }
-              />,
-              search !== undefined ? (
+              />, search !== undefined ? (
                 <SectionSearchStatus
                   query={value.query}
                   result={value.result}
                 />
-              ) : null,
-            ]}
-          </div>,
-          footer !== undefined ? (
+              ) : null]}
+          </div>, footer !== undefined ? (
             <div
               className={"ds-nav-foot flex items-center gap-xs pt-sm"}
               data-testid={"ds-nav-foot"}
             >
               {footer}
             </div>
-          ) : null,
-        ]}
+          ) : null]}
       </nav>
     );
   }
@@ -586,6 +563,7 @@ export function installFilesUiNavigation(
     search: search,
     pending: pending,
   }: FloatingNavigationProps) {
+    useUiLocale();
     let [value, value2] = runtime.reactSectionNavigation.useState(false),
       [value3, value4] = runtime.reactSectionNavigation.useState(false),
       [value5, value6] = runtime.reactSectionNavigation.useState(false),
@@ -656,8 +634,7 @@ export function installFilesUiNavigation(
             "ds-nav-fab-live relative inline-flex max-w-full items-center gap-xs"
           }
         >
-          {[
-            <runtime.PropertyPopup
+          {[<runtime.PropertyPopup
               open={value}
               onOpen={() => value2(true)}
               onClose={callback}
@@ -665,7 +642,7 @@ export function installFilesUiNavigation(
                 <runtime.Button
                   variant={"secondary"}
                   icon={value12 ? sectionIconName(current) : "Menu"}
-                  aria-label={"Sections"}
+                  aria-label={uiMessage("design-system.navigation.sections")}
                   aria-describedby={
                     value11 === undefined
                       ? undefined
@@ -690,41 +667,33 @@ export function installFilesUiNavigation(
                 >
                   <span className={"ds-nav-fab-label"} aria-hidden={"true"}>
                     <span className={"ds-nav-fab-text"}>
-                      {[
-                        <span
+                      {[<span
                           className={"truncate"}
                           id={value9 + "-n"}
                           data-testid={"ds-section-pill-name"}
                         >
-                          {value11?.label ?? ""}
-                        </span>,
-                        <span
+                          {value11?.label ?? ("")}
+                        </span>, <span
                           className={"text-caption tabular-nums text-muted"}
                           id={value9 + "-c"}
                           data-testid={"ds-section-pill-at"}
                         >
-                          {value11 === undefined
-                            ? ""
-                            : String(value10 + 1) +
-                              " of " +
-                              String(sections.length)}
-                        </span>,
-                      ]}
+                          {value11 === undefined ? ("") : uiMessage("design-system.navigation.position", {current: value10 + 1, total: sections.length})}
+                        </span>]}
                     </span>
                   </span>
                 </runtime.Button>
               }
               align={"left"}
-              aria-label={"Sections"}
+              aria-label={uiMessage("design-system.navigation.sections")}
               popupAttrs={runtime.UNCOMMENTABLE_PROPS}
               focusOnOpen={ref.current}
             >
-              {value ? (
-                <nav
+              {value ? (<nav
                   className={
                     "ds-section-nav ds-section-pop flex max-h-[min(70vh,32rem)] w-60 flex-col p-2"
                   }
-                  aria-label={"Sections"}
+                  aria-label={uiMessage("design-system.navigation.sections")}
                   data-testid={"ds-section-nav"}
                   data-search-scope={search !== undefined ? "" : undefined}
                   onKeyDown={
@@ -732,13 +701,10 @@ export function installFilesUiNavigation(
                   }
                   {...runtime.UNCOMMENTABLE_PROPS}
                 >
-                  {[
-                    search !== undefined ? (
+                  {[search !== undefined ? (
                       <SectionSearchField {...value7} />
-                    ) : null,
-                    <div className={NAV_SECTION_LIST_CLASS}>
-                      {[
-                        <SectionNavigationRows
+                    ) : null, <div className={NAV_SECTION_LIST_CLASS}>
+                      {[<SectionNavigationRows
                           sections={sections}
                           tail={tail}
                           current={current}
@@ -756,16 +722,13 @@ export function installFilesUiNavigation(
                                 }
                               : undefined
                           }
-                        />,
-                        search !== undefined ? (
+                        />, search !== undefined ? (
                           <SectionSearchStatus
                             query={value7.query}
                             result={value7.result}
                           />
-                        ) : null,
-                      ]}
-                    </div>,
-                    footer !== undefined ? (
+                        ) : null]}
+                    </div>, footer !== undefined ? (
                       <div
                         className={
                           "ds-nav-foot mt-sm flex items-center gap-xs border-t border-alpha-2 pt-sm"
@@ -774,13 +737,9 @@ export function installFilesUiNavigation(
                       >
                         {footer}
                       </div>
-                    ) : null,
-                  ]}
-                </nav>
-              ) : null}
-            </runtime.PropertyPopup>,
-            status,
-          ]}
+                    ) : null]}
+                </nav>) : (null)}
+            </runtime.PropertyPopup>, status]}
         </span>
       </div>
     );
@@ -933,7 +892,7 @@ export function installFilesUiNavigation(
       files: "Folder",
     };
     NAV_SEARCH_BROWSER_FIND_HINT =
-      "Press " +
+      uiMessage("design-system.navigation.press") +
       ((0, runtime.isApplePlatform)() ? "Command+F" : "Ctrl+F") +
       " in this field to find text on the page instead.";
     NAV_SECTION_LIST_CLASS =

@@ -1,3 +1,6 @@
+import { uiNodeLabel } from '@minedesign/contracts/ui-value';
+import { useUiLocale } from '../../ui-locale.ts';
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -27,6 +30,7 @@ export function installEditorOutlineDcOutline(
     fill: fill,
     artboards: artboards,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let [value, value2]: Dynamic = (0,
       runtime.reactKeyboardEditActions.useState)(
         runtime.OutlineGlyphsConstant_3,
@@ -512,8 +516,8 @@ export function installEditorOutlineDcOutline(
           value53: Dynamic = input.hidden || input.grayed === true,
           value54: Dynamic = input.component != null,
           value55: Dynamic = input.detail
-            ? `${input.label} ${input.detail}`
-            : input.label,
+            ? `${uiNodeLabel(input)} ${input.detail}`
+            : uiNodeLabel(input),
           value56: Dynamic = input.glyph
             ? runtime.ChromeToolIconsColumnRowTextConfig[input.glyph]
             : undefined,
@@ -554,7 +558,7 @@ export function installEditorOutlineDcOutline(
                 aria-expanded={value48 ? value47 : undefined}
                 aria-selected={value52}
                 aria-label={[
-                  input.label,
+                  uiNodeLabel(input),
                   value54 ? "component" : null,
                   value58,
                   input.detail,
@@ -613,7 +617,7 @@ export function installEditorOutlineDcOutline(
                     value14({
                       ...(0, runtime.OutlineGlyphsNativeEvent)(event),
                       items: value59.map(runtime.OutlineGlyphsLabel),
-                      label: input.label + " actions",
+                      get label() { return uiMessage("inspector.dcOutline.actions", { value1: String(uiNodeLabel(input)) }); },
                     });
                 }}
                 onMouseEnter={(): Dynamic => {
@@ -678,13 +682,12 @@ export function installEditorOutlineDcOutline(
                     value20(null));
                 }}
               >
-                {value48 ? (
-                  <runtime.Button
+                {value48 ? (<runtime.Button
                     variant={"ghost"}
                     size={"xs"}
                     iconOnly={true}
                     tooltip={false}
-                    aria-label={(value47 ? "Collapse " : "Expand ") + value55}
+                    aria-label={(value47 ? uiMessage("inspector.dcOutline.collapse") : uiMessage("inspector.dcOutline.expand")) + value55}
                     aria-expanded={value47}
                     tabIndex={-1}
                     className={"shrink-0"}
@@ -711,18 +714,14 @@ export function installEditorOutlineDcOutline(
                     onDoubleClick={(input2?: Dynamic): Dynamic =>
                       input2.stopPropagation()
                     }
-                  />
-                ) : (
-                  <span
+                  />) : (<span
                     aria-hidden={true}
                     className={"shrink-0"}
                     style={{
                       width: runtime.OutlineGlyphsConstant_6,
                     }}
-                  />
-                )}
-                {value56 ? (
-                  <runtime.OutlineIconGlyph
+                  />)}
+                {value56 ? (<runtime.OutlineIconGlyph
                     icon={value56}
                     dimmed={value53}
                     ink={
@@ -730,19 +729,15 @@ export function installEditorOutlineDcOutline(
                         ? runtime.OutlineGlyphsColorConfig.color
                         : undefined
                     }
-                  />
-                ) : (
-                  <runtime.OutlineElementGlyph dimmed={value53} />
-                )}
-                {value9 === input.tid && value45 == null ? (
-                  <runtime.TextInput
+                  />) : (<runtime.OutlineElementGlyph dimmed={value53} />)}
+                {value9 === input.tid && value45 == null ? (<runtime.TextInput
                     size={"sm"}
                     fullWidth={false}
                     className={"min-w-0 flex-1"}
-                    aria-label={"Layer name"}
+                    aria-label={uiMessage("inspector.dcOutline.layerName")}
                     autoFocus={true}
                     value={value11}
-                    placeholder={input.label}
+                    placeholder={uiNodeLabel(input)}
                     onChange={(event?: Dynamic): Dynamic =>
                       value12(event.target.value)
                     }
@@ -769,9 +764,7 @@ export function installEditorOutlineDcOutline(
                       } else input2.key === "Escape" && value10(null);
                       input2.stopPropagation();
                     }}
-                  />
-                ) : (
-                  <span
+                  />) : (<span
                     className={(0, runtime.cn)(
                       "min-w-0 flex-initial truncate",
                       runtime.OutlineGlyphsClassNames_3,
@@ -787,11 +780,9 @@ export function installEditorOutlineDcOutline(
                     }
                     title={input.component?.ref}
                   >
-                    {input.label}
-                  </span>
-                )}
-                {value58 != null && (
-                  <runtime.Badge
+                    {uiNodeLabel(input)}
+                  </span>)}
+                {value58 != null && (<runtime.Badge
                     variant={"neutral"}
                     size={"xxs"}
                     className={(0, runtime.cn)(
@@ -800,10 +791,8 @@ export function installEditorOutlineDcOutline(
                     )}
                   >
                     {value58}
-                  </runtime.Badge>
-                )}
-                {value9 !== input.tid && (
-                  <span
+                  </runtime.Badge>)}
+                {value9 !== input.tid && (<span
                     className={(0, runtime.cn)(
                       "mx-1.5 min-w-0 flex-auto shrink-[9999] truncate",
                       runtime.OutlineGlyphsClassNames_3,
@@ -819,11 +808,9 @@ export function installEditorOutlineDcOutline(
                     }
                     title={input.component?.ref}
                   >
-                    {input.detail ?? ""}
-                  </span>
-                )}
-                {!input.noHide && value45 == null && onToggleHidden && (
-                  <runtime.Button
+                    {input.detail ?? ("")}
+                  </span>)}
+                {!input.noHide && value45 == null && onToggleHidden && (<runtime.Button
                     variant={"ghost"}
                     size={"xs"}
                     iconOnly={true}
@@ -836,8 +823,8 @@ export function installEditorOutlineDcOutline(
                         }
                       />
                     }
-                    aria-label={(input.hidden ? "Show " : "Hide ") + value55}
-                    tooltip={input.hidden ? "Show" : "Hide"}
+                    aria-label={(input.hidden ? uiMessage("inspector.dcOutline.show2") : uiMessage("inspector.dcOutline.hide")) + value55}
+                    tooltip={input.hidden ? (uiMessage("inspector.dcOutline.show")) : ("Hide")}
                     tabIndex={value49 === value42 ? 0 : -1}
                     className={(0, runtime.cn)(
                       "group/eye shrink-0",
@@ -852,8 +839,7 @@ export function installEditorOutlineDcOutline(
                     onDoubleClick={(input2?: Dynamic): Dynamic =>
                       input2.stopPropagation()
                     }
-                  />
-                )}
+                  />)}
               </div>,
               value51 && value19?.position === "after" && (
                 <div
@@ -899,8 +885,8 @@ export function installEditorOutlineDcOutline(
             "aria-setsize": artboards.objects.length + artboards.rows.length,
             "aria-selected": value46,
             "aria-label": input.detail
-              ? `${input.label}, ${input.detail}`
-              : input.label,
+              ? `${uiNodeLabel(input)}, ${input.detail}`
+              : uiNodeLabel(input),
             tabIndex: value45 === value42 ? 0 : -1,
             "data-row-key": value45,
             className: (0, runtime.cn)(
@@ -935,7 +921,7 @@ export function installEditorOutlineDcOutline(
                 value14({
                   ...(0, runtime.OutlineGlyphsNativeEvent)(event),
                   items: value47.map(runtime.OutlineGlyphsLabel),
-                  label: input.label + " actions",
+                  get label() { return uiMessage("inspector.dcOutline.actions", { value1: String(uiNodeLabel(input)) }); },
                 });
             },
             onMouseEnter: (): Dynamic => onHover(null),
@@ -958,7 +944,7 @@ export function installEditorOutlineDcOutline(
                   runtime.OutlineGlyphsClassNames_3,
                 )}
               >
-                {input.label}
+                {uiNodeLabel(input)}
               </span>,
               <span
                 className={(0, runtime.cn)(
@@ -967,7 +953,7 @@ export function installEditorOutlineDcOutline(
                 )}
                 title={input.detailTitle}
               >
-                {input.detail ?? ""}
+                {input.detail ?? ("")}
               </span>,
             ],
           } as const;
@@ -987,7 +973,7 @@ export function installEditorOutlineDcOutline(
           <div
             ref={value29}
             role={"tree"}
-            aria-label={"Layers"}
+            aria-label={uiMessage("inspector.dcOutline.layers")}
             aria-multiselectable={"true"}
             className={(0, runtime.cn)(
               "overflow-y-auto px-1.5 pb-0.5 pt-1.5",
@@ -1056,8 +1042,7 @@ export function installEditorOutlineDcOutline(
             data-testid={"dc-outline"}
           >
             {artboards?.objects.map(callback15)}
-            {artboards ? (
-              artboards.rows.map(
+            {artboards ? (artboards.rows.map(
                 (input?: Dynamic, options?: Dynamic): Dynamic => {
                   let value45: Dynamic = input.file === artboards.focused,
                     value46: Dynamic = (0, runtime.OutlineTreeHandler)(
@@ -1091,9 +1076,7 @@ export function installEditorOutlineDcOutline(
                           aria-selected={artboards.selected.has(input.file)}
                           aria-current={value45 || undefined}
                           aria-label={
-                            input.label +
-                            (value51 ? ", component" : "") +
-                            (value50 ? ", thumbnail" : "")
+                            uiNodeLabel(input) + (value51 ? uiMessage("inspector.dcOutline.component") : "") + (value50 ? uiMessage("inspector.dcOutline.thumbnail") : "")
                           }
                           aria-describedby={value52}
                           tabIndex={value46 === value42 ? 0 : -1}
@@ -1137,20 +1120,18 @@ export function installEditorOutlineDcOutline(
                               value14({
                                 ...(0, runtime.OutlineGlyphsNativeEvent)(event),
                                 items: value53.map(runtime.OutlineGlyphsLabel),
-                                label: input.label + " actions",
+                                get label() { return uiMessage("inspector.dcOutline.actions", { value1: String(uiNodeLabel(input)) }); },
                               });
                           }}
                           data-testid={`dc-outline-artboard-${input.file}`}
                         >
-                          {value48 ? (
-                            <runtime.Button
+                          {value48 ? (<runtime.Button
                               variant={"ghost"}
                               size={"xs"}
                               iconOnly={true}
                               tooltip={false}
                               aria-label={
-                                (value49 ? "Collapse " : "Expand ") +
-                                input.label
+                                (value49 ? uiMessage("inspector.dcOutline.collapse") : uiMessage("inspector.dcOutline.expand")) + uiNodeLabel(input)
                               }
                               aria-expanded={value49}
                               tabIndex={-1}
@@ -1172,16 +1153,13 @@ export function installEditorOutlineDcOutline(
                               onDoubleClick={(input2?: Dynamic): Dynamic =>
                                 input2.stopPropagation()
                               }
-                            />
-                          ) : (
-                            <span
+                            />) : (<span
                               aria-hidden={true}
                               className={"shrink-0"}
                               style={{
                                 width: runtime.OutlineGlyphsConstant_6,
                               }}
-                            />
-                          )}
+                            />)}
                           <div
                             className={"flex min-w-0 flex-auto items-center"}
                           >
@@ -1196,9 +1174,8 @@ export function installEditorOutlineDcOutline(
                                   : undefined
                               }
                             />
-                            {artboards.renaming === input.file ? (
-                              <runtime.OutlineRenameInput
-                                label={input.label}
+                            {artboards.renaming === input.file ? (<runtime.OutlineRenameInput
+                                label={uiNodeLabel(input)}
                                 onDone={(
                                   input2?: Dynamic,
                                   options2?: Dynamic,
@@ -1209,9 +1186,7 @@ export function installEditorOutlineDcOutline(
                                       preventScroll: true,
                                     });
                                 }}
-                              />
-                            ) : (
-                              <span
+                              />) : (<span
                                 className={(0, runtime.cn)(
                                   "min-w-0 flex-auto truncate",
                                   runtime.OutlineGlyphsClassNames_3,
@@ -1222,11 +1197,9 @@ export function installEditorOutlineDcOutline(
                                     : undefined
                                 }
                               >
-                                {input.label}
-                              </span>
-                            )}
-                            {value50 && artboards.renaming !== input.file && (
-                              <runtime.Icon
+                                {uiNodeLabel(input)}
+                              </span>)}
+                            {value50 && artboards.renaming !== input.file && (<runtime.Icon
                                 name={"Image"}
                                 size={"xs"}
                                 data-testid={"dc-outline-cover"}
@@ -1234,13 +1207,10 @@ export function installEditorOutlineDcOutline(
                                   "mx-1.5 shrink-0 text-muted",
                                   runtime.OutlineGlyphsClassNames_3,
                                 )}
-                              />
-                            )}
-                            {value52 != null && (
-                              <span id={value52} hidden={true}>
+                              />)}
+                            {value52 != null && (<span id={value52} hidden={true}>
                                 {runtime.CanTReadThisArtboardSFileAskMessage}
-                              </span>
-                            )}
+                              </span>)}
                           </div>
                         </div>,
                         value49 &&
@@ -1262,27 +1232,21 @@ export function installEditorOutlineDcOutline(
                     return <_Component3 key={_key3} {..._props3} />;
                   })();
                 },
-              )
-            ) : nodes.length === 0 ? (
-              <div className={"px-3.5 py-2.5 text-caption text-muted"}>
-                {"No elements yet"}
-              </div>
-            ) : (
-              nodes.map(
+              )) : (nodes.length === 0 ? (<div className={"px-3.5 py-2.5 text-caption text-muted"}>
+                {uiMessage("inspector.dcOutline.noElementsYet")}
+              </div>) : (nodes.map(
                 (input?: Dynamic, options?: Dynamic): Dynamic =>
                   callback14(input, 0, {
                     index: options,
                     count: nodes.length,
                   }),
-              )
-            )}
+              )))}
             <runtime.FloatingScrollbar />
           </div>
         </runtime.DeferredTooltipProvider>
-        {!fill && (
-          <runtime.ComponentsSelectionPointsComponent
+        {!fill && (<runtime.ComponentsSelectionPointsComponent
             side={"bottom"}
-            aria-label={"Resize layers list"}
+            aria-label={uiMessage("inspector.dcOutline.resizeLayersList")}
             aria-valuenow={value}
             aria-valuemin={runtime.OutlineGlyphsConstant}
             aria-valuemax={runtime.OutlineGlyphsConstant_2}
@@ -1297,8 +1261,7 @@ export function installEditorOutlineDcOutline(
                 input.key === " ") &&
                 input.stopPropagation();
             }}
-          />
-        )}
+          />)}
         <runtime.EditorMenu
           at={value13}
           onClose={(): Dynamic => value14(null)}

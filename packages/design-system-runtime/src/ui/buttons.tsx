@@ -1,3 +1,4 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import type * as React from "react";
 import type * as C from "../contracts/controls";
@@ -413,8 +414,7 @@ export function installUiButtons(runtime: RuntimeBindings): () => void {
           ),
           value24 = (
             <jsxForUiButtons.Fragment>
-              {[
-                <span
+              {[<span
                   aria-hidden={true}
                   className={(0, runtime.getButtonBackgroundLayerClasses)({
                     joined: !!value2,
@@ -431,23 +431,18 @@ export function installUiButtons(runtime: RuntimeBindings): () => void {
                       variant: value3,
                     })} ${runtime.buttonPressedFillClasses} ${value3 === "secondary" && !value2 ? runtime.buttonJoinedFillClasses : ""}`}
                   />
-                </span>,
-                <span
+                </span>, <span
                   className={`inline-flex min-w-0 items-center gap-1 ${busy ? "opacity-0" : ""}`}
                 >
                   <buttonIconSizeContext.Provider value={value14}>
-                    {value15 ? (
-                      indicator ? (
-                        <span className={"grid"}>
-                          {[
-                            <span
+                    {value15 ? (indicator ? (<span className={"grid"}>
+                          {[<span
                               className={
                                 "col-start-1 row-start-1 [--btn-dot-r:calc(0.1875rem*var(--cds-rem-scale,1))] [--btn-dot-x:calc(100%_-_var(--btn-dot-r)_+_1px)] [&:dir(rtl)]:[--btn-dot-x:calc(var(--btn-dot-r)_-_1px)] not-forced-colors:has-[~[data-cds-part=indicator]>[data-cds=Pulse]]:[mask-image:radial-gradient(circle_at_var(--btn-dot-x)_calc(var(--btn-dot-r)_-_1px),transparent_calc(var(--btn-dot-r)_+_2px),black_calc(var(--btn-dot-r)_+_2.5px))]"
                               }
                             >
                               {value15}
-                            </span>,
-                            <span
+                            </span>, <span
                               aria-hidden={true}
                               data-cds-part={"indicator"}
                               className={
@@ -455,23 +450,11 @@ export function installUiButtons(runtime: RuntimeBindings): () => void {
                               }
                             >
                               {indicator}
-                            </span>,
-                          ]}
-                        </span>
-                      ) : value6 ? (
-                        <jsxForUiButtons.Fragment>
-                          {[
-                            value15,
-                            <span className={"sr-only"}>{value9}</span>,
-                          ]}
-                        </jsxForUiButtons.Fragment>
-                      ) : (
-                        value15
-                      )
-                    ) : (
-                      <jsxForUiButtons.Fragment>
-                        {[
-                          value8 &&
+                            </span>]}
+                        </span>) : (value6 ? (<jsxForUiButtons.Fragment>
+                          {[value15, <span className={"sr-only"}>{value9}</span>]}
+                        </jsxForUiButtons.Fragment>) : (value15))) : (<jsxForUiButtons.Fragment>
+                        {[value8 &&
                             iconPosition === "start" &&
                             ((0, runtime.isIconName)(value8) ? (
                               <runtime.Icon
@@ -483,9 +466,7 @@ export function installUiButtons(runtime: RuntimeBindings): () => void {
                               <span className={"-ms-1 inline-flex"}>
                                 {value8}
                               </span>
-                            )),
-                          children,
-                          value8 &&
+                            )), children, value8 &&
                             iconPosition === "end" &&
                             ((0, runtime.isIconName)(value8) ? (
                               <runtime.Icon
@@ -497,8 +478,7 @@ export function installUiButtons(runtime: RuntimeBindings): () => void {
                               <span className={"-me-1 inline-flex"}>
                                 {value8}
                               </span>
-                            )),
-                          shortcut && (
+                            )), shortcut && (
                             <runtime.Shortcut
                               keys={shortcut}
                               aria-hidden={true}
@@ -508,13 +488,10 @@ export function installUiButtons(runtime: RuntimeBindings): () => void {
                                   buttonIndicatorMarginClass,
                               )}
                             />
-                          ),
-                        ]}
-                      </jsxForUiButtons.Fragment>
-                    )}
+                          )]}
+                      </jsxForUiButtons.Fragment>)}
                   </buttonIconSizeContext.Provider>
-                </span>,
-                busy && (
+                </span>, busy && (
                   <span
                     className={
                       "absolute inset-0 grid place-items-center leading-[0]"
@@ -526,8 +503,7 @@ export function installUiButtons(runtime: RuntimeBindings): () => void {
                       label={busyLabel}
                     />
                   </span>
-                ),
-              ]}
+                )]}
             </jsxForUiButtons.Fragment>
           ),
           value25: React.AnchorHTMLAttributes<HTMLAnchorElement> = (0,

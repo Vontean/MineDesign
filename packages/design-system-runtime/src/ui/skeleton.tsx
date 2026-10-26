@@ -1,3 +1,5 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
+import { useUiLocale } from '../ui-locale.ts';
 /** Restored application module; prepare first, initialize in original order. */
 import type * as React from "react";
 import type * as C from "../contracts/controls";
@@ -192,6 +194,7 @@ export function installUiSkeleton(runtime: RuntimeBindings): () => void {
     as: as2,
     motion = DEFAULT_SKELETON_MOTION,
   }: C.SkeletonGroupProps) {
+    useUiLocale();
     let value = reactForUiSkeleton.useContext<boolean>(
         runtime.skeletonActiveContext,
       ),
@@ -513,7 +516,7 @@ export function installUiSkeleton(runtime: RuntimeBindings): () => void {
         children: [
           decorative ? null : (
             <span className={"sr-only"} data-skeleton-label={true}>
-              {value15 ? "" : value16}
+              {value15 ? ("") : (value16)}
             </span>
           ),
           motion === "sweep"
@@ -564,6 +567,7 @@ export function installUiSkeleton(runtime: RuntimeBindings): () => void {
     decorative = false,
     as: as2,
   }: C.SkeletonProps) {
+    useUiLocale();
     let value = reactForUiSkeleton.useContext<boolean>(
         runtime.skeletonActiveContext,
       ),
@@ -615,6 +619,7 @@ export function installUiSkeleton(runtime: RuntimeBindings): () => void {
     })();
   }
   function SkeletonRows({ rows = 3, icon = true }: C.SkeletonRowsProps) {
+    useUiLocale();
     let value =
         skeletonElementTags[
           reactForUiSkeleton.useContext<C.SkeletonTag>(
@@ -684,6 +689,7 @@ export function installUiSkeleton(runtime: RuntimeBindings): () => void {
     })();
   }
   function SkeletonChip({ width = 120, shape = "pill" }: C.SkeletonChipProps) {
+    useUiLocale();
     return (
       <SkeletonPrimitive
         className={
@@ -699,6 +705,7 @@ export function installUiSkeleton(runtime: RuntimeBindings): () => void {
     lines = 8,
     className: className,
   }: C.SkeletonLinesProps) {
+    useUiLocale();
     let value =
       skeletonElementTags[
         reactForUiSkeleton.useContext<C.SkeletonTag>(
@@ -740,6 +747,7 @@ export function installUiSkeleton(runtime: RuntimeBindings): () => void {
     height: height,
     className: className,
   }: C.SkeletonBlockProps) {
+    useUiLocale();
     return (
       <SkeletonPrimitive className={className} width={"100%"} height={height} />
     );

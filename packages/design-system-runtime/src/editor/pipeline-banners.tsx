@@ -1,3 +1,7 @@
+import { uiRelativeTime } from '@minedesign/contracts/ui-format';
+import { getUiLocale } from '@minedesign/contracts/ui-locale';
+import { uiMessage } from '@minedesign/contracts/ui-messages';
+import { useUiLocale } from '../ui-locale.ts';
 import type * as React from "react";
 import type * as Editor from "../contracts/editor-runtime";
 import type * as Model from "../contracts";
@@ -11,29 +15,10 @@ export function installEditorPipelineBanners(
   var jsxPipelineBanners: typeof import("react/jsx-runtime");
   var PIPELINE_BANNER_STORAGE_PREFIX: string;
   var LEFT_OUT_BANNER_STORAGE_PREFIX: string;
-  function relativeChangeTime(
-    timestamp: string,
-    now: number = Date.now(),
-  ): string {
-    let value = Date.parse(timestamp);
-    if (Number.isNaN(value)) {
-      return "";
-    }
-    let value2: number = Math.floor(Math.max(0, now - value) / 60000);
-    if (value2 < 1) {
-      return "just now";
-    }
-    if (value2 < 60) {
-      return countedChangeNoun(value2, "minute") + " ago";
-    }
-    let value3: number = Math.floor(value2 / 60);
-    if (value3 < 24) {
-      return countedChangeNoun(value3, "hour") + " ago";
-    }
-    return countedChangeNoun(Math.floor(value3 / 24), "day") + " ago";
-  }
+  function relativeChangeTime(timestamp: string, now: number = Date.now()): string { return uiRelativeTime(timestamp, now); }
   function countedChangeNoun(count: number, noun: string): string {
-    return String(count) + " " + (count === 1 ? noun : noun + "s");
+    if (noun === 'file') return uiMessage(count === 1 ? 'design-system.count.file' : 'design-system.count.files', { count });
+    return String(count) + ' ' + noun;
   }
   function PipelineChangeSummary({
     change: change,
@@ -42,6 +27,7 @@ export function installEditorPipelineBanners(
     change: Model.LastChange | null;
     now?: number;
   }): React.ReactElement | null {
+    useUiLocale();
     if (change === null) {
       return null;
     }
@@ -50,11 +36,8 @@ export function installEditorPipelineBanners(
     return (
       <runtime.TooltipWrapper
         tip={
-          change.by +
-          value2 +
-          " · " +
-          change.at +
-          (change.note !== undefined ? " — " + change.note : "")
+          (((change.by +
+          value2) + (" · ")) + (change.at)) + (change.note !== undefined ? ((" — ") + (change.note)) : (""))
         }
         wrap={true}
       >
@@ -63,19 +46,13 @@ export function installEditorPipelineBanners(
           data-testid={"ds-last-change"}
           {...runtime.UNCOMMENTABLE_PROPS}
         >
-          {[
-            "Last change: ",
-            <span className={"ds-last-change-by text-secondary"}>
+          {[uiMessage("design-system.pipelineBanners.lastChange"), <span className={"ds-last-change-by text-secondary"}>
               {change.by}
-            </span>,
-            value2,
-            value !== "" ? " · " + value : "",
-            change.note !== undefined ? (
+            </span>, value2, value !== "" ? ((" · ") + (value)) : (""), change.note !== undefined ? (
               <span className={"ds-last-change-note"}>
                 {[" — “", change.note, "”"]}
               </span>
-            ) : null,
-          ]}
+            ) : null]}
         </span>
       </runtime.TooltipWrapper>
     );
@@ -97,6 +74,7 @@ export function installEditorPipelineBanners(
     change: Model.LastChange;
     now?: number;
   }): React.ReactElement | null {
+    useUiLocale();
     let [value, value2] = reactPipelineBanners.useState(() =>
       isPipelineBannerDismissed(change.at),
     );
@@ -121,19 +99,14 @@ export function installEditorPipelineBanners(
           className={"ds-pipeline-banner"}
         >
           <span className={"ds-pipeline-banner-text"}>
-            {[
-              "Written by a pipeline (",
-              <span className={"font-mono"}>{change.via ?? ""}</span>,
-              ")",
-              value3 !== "" ? " " + value3 : "",
-              ". Edits here may be overwritten on its next run.",
-            ]}
+            {[uiMessage("design-system.pipelineBanners.writtenByAPipeline"), <span className={"font-mono"}>{change.via ?? ("")}</span>, ")", value3 !== "" ? ((" ") + (value3)) : (""), ". Edits here may be overwritten on its next run."]}
           </span>
         </runtime.Callout>
       </div>
     );
   }
   function MigrationLeftOutBanner(): React.ReactElement | null {
+    useUiLocale();
     let value = reactPipelineBanners.useSyncExternalStore(
         runtime.subscribeStoredSystemStatus,
         runtime.getStoredSystemStatus as () => Editor.PipelineStoredStatus,
@@ -168,11 +141,7 @@ export function installEditorPipelineBanners(
           className={"ds-left-out-banner"}
         >
           <span className={"ds-left-out-banner-text"}>
-            {[
-              (value.carriedMore > 0 ? "At least " : "") +
-                countedChangeNoun(value6, "file") +
-                " couldn’t be kept when this design system moved to live editing: ",
-              value7.map((input, options) =>
+            {[uiMessage("design-system.pipelineBanners.couldnTBeKeptWhen", { value1: String(value.carriedMore > 0 ? (uiMessage("design-system.pipelineBanners.atLeast")) : ("")), value2: String(countedChangeNoun(value6, "file")) }), value7.map((input, options) =>
                 (() => {
                   const _Element = "span";
                   const _elementProps = {
@@ -187,14 +156,7 @@ export function installEditorPipelineBanners(
                   const _elementKey = input.path;
                   return <_Element key={_elementKey} {..._elementProps} />;
                 })(),
-              ),
-              value5.length > value7.length
-                ? " and " + String(value6 - value7.length) + " more."
-                : ".",
-              " They remain in this artifact",
-              "’",
-              "s earlier versions.",
-            ]}
+              ), value5.length > value7.length ? (uiMessage("design-system.pipelineBanners.andMore", { value1: String(String(value6 - value7.length)) })) : ("."), uiMessage("design-system.pipelineBanners.theyRemainInThisArtifact"), "’", uiMessage("design-system.pipelineBanners.sEarlierVersions")]}
           </span>
         </runtime.Callout>
       </div>
@@ -208,6 +170,7 @@ export function installEditorPipelineBanners(
     }
   }
   function IndexRecoveryBanner(): React.ReactElement | null {
+    useUiLocale();
     let value = reactPipelineBanners.useSyncExternalStore(
         runtime.subscribeRemoteTextProblems,
         runtime.getRemoteTextProblems as () => Map<string, string>,
@@ -227,10 +190,7 @@ export function installEditorPipelineBanners(
           className={"ds-left-out-banner"}
         >
           <span className={"ds-left-out-banner-text"}>
-            {[
-              countedChangeNoun(value.size, "file") +
-                " added here could not be stored: ",
-              value4.map(([input, input2], options) =>
+            {[uiMessage("design-system.pipelineBanners.addedHereCouldNotBe", { value1: String(countedChangeNoun(value.size, "file")) }), value4.map(([input, input2], options) =>
                 (() => {
                   const _Element2 = "span";
                   const _elementProps2 = {
@@ -245,11 +205,7 @@ export function installEditorPipelineBanners(
                   const _elementKey2 = input;
                   return <_Element2 key={_elementKey2} {..._elementProps2} />;
                 })(),
-              ),
-              value.size > value4.length
-                ? " and " + String(value.size - value4.length) + " more."
-                : ".",
-            ]}
+              ), value.size > value4.length ? (uiMessage("design-system.pipelineBanners.andMore", { value1: String(String(value.size - value4.length)) })) : (".")]}
           </span>
         </runtime.Callout>
       </div>

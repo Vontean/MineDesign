@@ -1,3 +1,5 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
+import { useUiLocale } from '../../ui-locale.ts';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -68,6 +70,7 @@ export function installCdsComponentsSelectionRing(
     );
   }
   function SelectionPointGlyph(): Dynamic {
+    useUiLocale();
     let point: Dynamic =
         ComponentsSelectionRingPointPointStrokeGripHitConfig.point,
       pointStroke: Dynamic =
@@ -715,8 +718,7 @@ export function installCdsComponentsSelectionRing(
                   className,
                 )}
               >
-                {shaft !== undefined && shaft.length > 1 ? (
-                  <svg
+                {shaft !== undefined && shaft.length > 1 ? (<svg
                     data-selection-shaft={""}
                     className={
                       "pointer-events-none absolute top-0 left-0 overflow-visible"
@@ -734,8 +736,7 @@ export function installCdsComponentsSelectionRing(
                       stroke={runtime.tokens.fill.accent.cssVar}
                       strokeWidth={1 / value2}
                     />
-                  </svg>
-                ) : null}
+                  </svg>) : (null)}
                 {points.map(
                   (input?: Dynamic, options2?: Dynamic): Dynamic => (
                     <div
@@ -764,11 +765,7 @@ export function installCdsComponentsSelectionRing(
                             : undefined
                         }
                       >
-                        {shape === "square" ? (
-                          <runtime.SelectionGrip />
-                        ) : (
-                          <SelectionPointGlyph />
-                        )}
+                        {shape === "square" ? (<runtime.SelectionGrip />) : (<SelectionPointGlyph />)}
                       </div>
                     </div>
                   ),
@@ -1132,8 +1129,7 @@ export function installCdsComponentsSelectionRing(
                     );
                   })}
                 </runtime.TooltipGroup>
-                {angleLabel !== undefined && value3 === undefined ? (
-                  <runtime.SelectionPoint
+                {angleLabel !== undefined && value3 === undefined ? (<runtime.SelectionPoint
                     data-selection-angle={""}
                     scale={1}
                     rotation={rotation}
@@ -1142,8 +1138,7 @@ export function installCdsComponentsSelectionRing(
                     variant={variant}
                   >
                     {angleLabel}
-                  </runtime.SelectionPoint>
-                ) : null}
+                  </runtime.SelectionPoint>) : (null)}
               </div>
             );
           },
@@ -1300,14 +1295,12 @@ export function installCdsComponentsSelectionRing(
                   className,
                 )}
               >
-                {value9 ? (
-                  <span
+                {value9 ? (<span
                     aria-hidden={value11}
                     className={"flex shrink-0 items-center text-muted"}
                   >
                     {value9}
-                  </span>
-                ) : null}
+                  </span>) : (null)}
                 <runtime.npm_NumberField_mU.Input
                   ref={value18}
                   aria-invalid={
@@ -1320,14 +1313,12 @@ export function installCdsComponentsSelectionRing(
                     "disabled:opacity-100",
                   )}
                 />
-                {value10 ? (
-                  <span
+                {value10 ? (<span
                     aria-hidden={value11}
                     className={"flex shrink-0 items-center text-muted"}
                   >
                     {value10}
-                  </span>
-                ) : null}
+                  </span>) : (null)}
               </runtime.npm_NumberField_mU.Root>
             );
           },

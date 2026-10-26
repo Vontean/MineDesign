@@ -1,3 +1,4 @@
+import { useUiLocale } from '../../ui-locale.ts';
 import type { DelayedSpinnerProps, SpinnerProps } from "../../contracts/ui";
 import type * as React from "react";
 /** Restored application module; prepare first, initialize in original order. */
@@ -25,6 +26,7 @@ export function installCdsComponentsSpinner(
     label: label,
     className: className,
   }: SpinnerProps): React.ReactElement | null {
+    useUiLocale();
     let [value, value2] = (0, reactComponentsSpinner.useState)(delay <= 0),
       [value3, value4] = (0, reactComponentsSpinner.useState)(delay);
     delay !== value3 && (value4(delay), delay > 0 && value && value2(false));
@@ -90,6 +92,7 @@ export function installCdsComponentsSpinner(
     show: show,
     children: children,
   }: DelayedSpinnerProps): React.ReactElement | null {
+    useUiLocale();
     let [value, value2] = (0, reactComponentsSpinner.useState)(false);
     (0, reactComponentsSpinner.useEffect)(() => {
       let value3 = window.setTimeout(() => value2(true), 100);

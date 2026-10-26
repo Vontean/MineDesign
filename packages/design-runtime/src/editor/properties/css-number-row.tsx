@@ -1,3 +1,5 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
+import { useUiLocale } from '../../ui-locale.ts';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -30,6 +32,7 @@ export function installEditorPropertiesCssNumberRow(
     onCommitText: onCommitText,
     onArrowStep: onArrowStep,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let [value, value2]: Dynamic = (0,
       runtime.reactPropertiesDropShadowEditor_2.useState)(display),
       value3: Dynamic = (0, runtime.reactPropertiesDropShadowEditor_2.useRef)(
@@ -52,7 +55,7 @@ export function installEditorPropertiesCssNumberRow(
       <runtime.TextInput
         type={"text"}
         value={value}
-        placeholder={value7 && hint !== undefined ? hint : placeholder}
+        placeholder={value7 && hint !== undefined ? (hint) : (placeholder)}
         title={title}
         disabled={disabled2}
         aria-label={ariaLabel}
@@ -159,11 +162,7 @@ export function installEditorPropertiesCssNumberRow(
             (value5.current = false);
         }}
       >
-        {value3 ? (
-          <PropertyCssNumberRow {...input} />
-        ) : (
-          <runtime.PropertyCssTextRow {...input} />
-        )}
+        {value3 ? (<PropertyCssNumberRow {...input} />) : (<runtime.PropertyCssTextRow {...input} />)}
       </div>
     );
   }
@@ -172,6 +171,7 @@ export function installEditorPropertiesCssNumberRow(
     onCommit: onCommit,
     shell: shell,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let { text: value, placeholder: value2 }: Dynamic = (0,
       runtime.inspectorFieldDisplay)(state),
       spec: Dynamic = state.spec,
@@ -262,12 +262,7 @@ export function installEditorPropertiesCssNumberRow(
           value={value17 ?? value14}
           mixed={state.mixed && value17 == null}
           placeholder={
-            value5
-              ? String((0, runtime.roundCssNumber)(value5.value, value5.unit)) +
-                (value8 ? "" : value5.unit)
-              : value2 === runtime.Value_6
-                ? undefined
-                : value2
+            value5 ? (String((0, runtime.roundCssNumber)(value5.value, value5.unit)) + value8 ? "" : value5.unit) : (value2 === runtime.Value_6 ? (undefined) : (value2))
           }
           hint={runtime.Value_6}
           unit={

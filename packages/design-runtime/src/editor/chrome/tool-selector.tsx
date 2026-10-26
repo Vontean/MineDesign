@@ -1,3 +1,4 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -99,8 +100,7 @@ export function installEditorChromeToolSelector(
           {callback4("select", t.toolSelect, "esc", {
             icon: "Cursor",
           })}
-          {value ? null : (
-            <runtime.jsxInspectorEditor.Fragment>
+          {value ? (null) : (<runtime.jsxInspectorEditor.Fragment>
               {callback4(
                 "hand",
                 t.toolHand,
@@ -134,8 +134,7 @@ export function installEditorChromeToolSelector(
               {callback4("draw", t.toolDraw, "p", {
                 icon: "Edit",
               })}
-            </runtime.jsxInspectorEditor.Fragment>
-          )}
+            </runtime.jsxInspectorEditor.Fragment>)}
           <span className={"contents"} onKeyDownCapture={callback3}>
             <runtime.SessionStripPopover
               {...(value
@@ -144,11 +143,7 @@ export function installEditorChromeToolSelector(
               iconOnly={true}
               caret={true}
               label={
-                value
-                  ? runtime.designToolLabels[tool]
-                    ? t.toolTools + ": " + runtime.designToolLabels[tool]
-                    : t.toolTools
-                  : t.toolShapes
+                value ? (runtime.designToolLabels[tool] ? (((t.toolTools) + (": ")) + (runtime.designToolLabels[tool])) : (t.toolTools)) : (t.toolShapes)
               }
               tip={value ? t.toolsTip : t.shapesTip}
               pressed={value2.includes(tool)}
@@ -157,48 +152,46 @@ export function installEditorChromeToolSelector(
               onOpenChange={value4}
             >
               <runtime.MenuMenuAssignValue.Group
-                aria-label={value ? t.toolTools : t.shapesTip}
+                aria-label={value ? (t.toolTools) : (t.shapesTip)}
                 data-dc-tool-menu={""}
               >
-                {value ? (
-                  <runtime.jsxInspectorEditor.Fragment>
+                {value ? (<runtime.jsxInspectorEditor.Fragment>
                     {callback5({
                       tool: "hand",
-                      label: t.toolHand,
+                      get label() { return t.toolHand; },
                       shortcut: "h",
                       icon: "Hand",
                     })}
                     <runtime.MenuMenuAssignValue.Separator />
                     {callback5({
                       tool: "frame",
-                      label: t.toolFrame,
+                      get label() { return t.toolFrame; },
                       shortcut: "f",
                       icon: runtime.SessionTouchAndHistoryJsxValue_2,
                     })}
                     {callback5({
                       tool: "text",
-                      label: t.toolText,
+                      get label() { return t.toolText; },
                       shortcut: "t",
                       icon: runtime.SessionTouchAndHistoryJsxValue,
                     })}
                     {callback5({
                       tool: "note",
-                      label: t.toolNote,
+                      get label() { return t.toolNote; },
                       shortcut: "n",
                       icon: "Note",
                     })}
                     {callback5({
                       tool: "draw",
-                      label: t.toolDraw,
+                      get label() { return t.toolDraw; },
                       shortcut: "p",
                       icon: "Edit",
                     })}
                     <runtime.MenuMenuAssignValue.Separator />
-                  </runtime.jsxInspectorEditor.Fragment>
-                ) : null}
+                  </runtime.jsxInspectorEditor.Fragment>) : (null)}
                 {callback5({
                   tool: "rect",
-                  label: t.shapeRect,
+                  get label() { return t.shapeRect; },
                   shortcut: "r",
                   icon: (0, runtime.ShapeToolGlyph)(
                     runtime.ChromeToolIconsRectOvalConfig.rect,
@@ -206,7 +199,7 @@ export function installEditorChromeToolSelector(
                 })}
                 {callback5({
                   tool: "oval",
-                  label: t.shapeOval,
+                  get label() { return t.shapeOval; },
                   shortcut: "o",
                   icon: (0, runtime.ShapeToolGlyph)(
                     runtime.ChromeToolIconsRectOvalConfig.oval,
@@ -215,13 +208,13 @@ export function installEditorChromeToolSelector(
                 <runtime.MenuMenuAssignValue.Separator />
                 {callback5({
                   tool: "arrow",
-                  label: t.shapeArrow,
+                  get label() { return t.shapeArrow; },
                   shortcut: "shift+l",
                   icon: "ArrowLine",
                 })}
                 {callback5({
                   tool: "line",
-                  label: t.shapeLine,
+                  get label() { return t.shapeLine; },
                   shortcut: "l",
                   icon: "LineSegment",
                 })}

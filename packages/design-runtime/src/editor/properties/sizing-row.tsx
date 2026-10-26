@@ -1,3 +1,5 @@
+import { useUiLocale } from '../../ui-locale.ts';
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -35,6 +37,7 @@ export function installEditorPropertiesSizingRow(
     fixedOnlyReason: fixedOnlyReason,
     onCommitMany: onCommitMany,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let [value2, value3]: Dynamic = (0,
       runtime.reactPropertiesAssetPicker_3.useState)(value ?? ""),
       value4: Dynamic = (0, runtime.reactPropertiesAssetPicker_3.useRef)(false),
@@ -103,12 +106,10 @@ export function installEditorPropertiesSizingRow(
       >
         <runtime.TextInput
           value={value2}
-          placeholder={mixed ? "Mixed" : value10}
+          placeholder={mixed ? (uiMessage("inspector.sizingRow.mixed")) : (value10)}
           aria-label={label}
           title={
-            !mixed && fallback && value10 !== fallback
-              ? `Rendered size: ${fallback}`
-              : undefined
+            !mixed && fallback && value10 !== fallback ? (uiMessage("inspector.sizingRow.renderedSizeValue1", { value1: String(fallback) })) : (undefined)
           }
           disabled={disabled2}
           className={(0, runtime.cn)(
@@ -197,14 +198,14 @@ export function installEditorPropertiesSizingRow(
         />
         <runtime.PropertySelect
           compact={true}
-          aria-label={`${label} mode`}
+          aria-label={uiMessage("inspector.sizingRow.mode", { value1: String(label) })}
           data-testid={`dc-size-mode-${prop}`}
           items={
             fixedOnlyReason !== undefined
               ? [
                   {
                     value: "fixed",
-                    label: "Fixed",
+                    get label() { return uiMessage("inspector.sizingRow.fixed"); },
                   },
                 ]
               : [
@@ -213,21 +214,21 @@ export function installEditorPropertiesSizingRow(
                     : [
                         {
                           value: "hug",
-                          label: "Hug",
+                          get label() { return uiMessage("inspector.sizingRow.hug"); },
                         },
                       ]),
                   {
                     value: "fixed",
-                    label: "Fixed",
+                    get label() { return uiMessage("inspector.sizingRow.fixed"); },
                   },
                   {
                     value: "fill",
-                    label: "Fill",
+                    get label() { return uiMessage("inspector.sizingRow.fill"); },
                   },
                 ]
           }
           value={fixedOnlyReason !== undefined ? "fixed" : value17}
-          placeholder={"Mixed"}
+          placeholder={uiMessage("inspector.sizingRow.mixed")}
           disabled={disabled2 || fixedOnlyReason !== undefined}
           title={fixedOnlyReason}
           onChange={(input?: Dynamic): Dynamic => {

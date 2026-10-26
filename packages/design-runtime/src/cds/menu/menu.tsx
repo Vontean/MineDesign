@@ -1,3 +1,5 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
+import { useUiLocale } from '../../ui-locale.ts';
 import type {
   CollisionPadding,
   ContextMenuState,
@@ -142,6 +144,7 @@ export function installCdsMenuMenu(runtime: RuntimeBindings): () => void {
     context: React.RefObject<OverlayActions | null>,
     value: boolean = false,
   ): React.ReactElement {
+    useUiLocale();
     let value2 = (
       <runtime.PassiveOpenCellContext.Provider value={options}>
         <runtime.MenuTriggerContext.Provider value={context}>
@@ -151,13 +154,9 @@ export function installCdsMenuMenu(runtime: RuntimeBindings): () => void {
                 value={runtime.MenuConfigurationLabelOpenConfig}
               >
                 <runtime.MenuConfigurationContext.Provider value={value}>
-                  {value ? (
-                    input
-                  ) : (
-                    <runtime.TooltipImplProvider>
+                  {value ? (input) : (<runtime.TooltipImplProvider>
                       {input}
-                    </runtime.TooltipImplProvider>
-                  )}
+                    </runtime.TooltipImplProvider>)}
                 </runtime.MenuConfigurationContext.Provider>
               </runtime.MenuItemContext.Provider>
             </runtime.MenuRootContext.Provider>
@@ -275,6 +274,7 @@ export function installCdsMenuMenu(runtime: RuntimeBindings): () => void {
   }: {
     keys: string | readonly string[];
   }): React.ReactElement {
+    useUiLocale();
     return (
       <runtime.Shortcut
         keys={keys}
@@ -293,6 +293,7 @@ export function installCdsMenuMenu(runtime: RuntimeBindings): () => void {
     context: boolean,
     value: boolean,
   ): React.ReactElement {
+    useUiLocale();
     let {
         side: value2,
         align: value17 = "start",
@@ -459,6 +460,7 @@ export function installCdsMenuMenu(runtime: RuntimeBindings): () => void {
     actionsRef: actionsRef,
     ...props
   }: MenuSubmenuProps): React.ReactElement {
+    useUiLocale();
     let [value, value2] = (0, reactMenuMenu_2.useState)(
         props.open ?? props.defaultOpen ?? false,
       ),
@@ -557,6 +559,7 @@ export function installCdsMenuMenu(runtime: RuntimeBindings): () => void {
     );
   }
   function MenuSeparator(): React.ReactElement {
+    useUiLocale();
     return (
       <runtime.npm_Menu_La.Separator
         className={"compact:mx-2 comfortable:mx-2.5 my-1 h-px bg-border"}
@@ -569,6 +572,7 @@ export function installCdsMenuMenu(runtime: RuntimeBindings): () => void {
   }: React.PropsWithChildren<{
     className?: string;
   }>): React.ReactElement {
+    useUiLocale();
     let value = (0, runtime.useIsSheet)(),
       value2 =
         (0, reactMenuMenu_2.useContext)(runtime.MenuRootContext) !== null,
@@ -600,6 +604,7 @@ export function installCdsMenuMenu(runtime: RuntimeBindings): () => void {
   }: React.PropsWithChildren<{
     className?: string;
   }>): React.ReactElement {
+    useUiLocale();
     return (
       <runtime.npm_Menu_La.GroupLabel
         className={(0, runtime.cn)(MenuMenuClassNames, className)}
@@ -621,7 +626,7 @@ export function installCdsMenuMenu(runtime: RuntimeBindings): () => void {
             event.label === "" ||
             event.label === false ? null : event.items ? (
             <reactMenuMenu_2.Fragment key={options}>
-              {event.separatorBefore && <MenuSeparator />}
+              {event.separatorBefore && (<MenuSeparator />)}
               <MenuSubmenu disabled={event.disabled}>
                 <MenuSubmenuTrigger icon={event.icon} hint={event.hint}>
                   {event.label}
@@ -631,7 +636,7 @@ export function installCdsMenuMenu(runtime: RuntimeBindings): () => void {
             </reactMenuMenu_2.Fragment>
           ) : (
             <reactMenuMenu_2.Fragment key={options}>
-              {event.separatorBefore && <MenuSeparator />}
+              {event.separatorBefore && (<MenuSeparator />)}
               <MenuItem
                 icon={event.icon}
                 shortcut={event.shortcut}
@@ -667,6 +672,7 @@ export function installCdsMenuMenu(runtime: RuntimeBindings): () => void {
   }: {
     size?: ControlSize;
   }): React.ReactElement {
+    useUiLocale();
     let value = (0, runtime.useDensity)(),
       value2 = (0, runtime.useButtonGroupOptions)();
     return (
@@ -693,6 +699,7 @@ export function installCdsMenuMenu(runtime: RuntimeBindings): () => void {
     dataCds?: string;
     items: MenuItemsContent;
   }): React.ReactElement {
+    useUiLocale();
     return (
       <runtime.ContextMenuPopupFrame
         side={side}
@@ -707,6 +714,7 @@ export function installCdsMenuMenu(runtime: RuntimeBindings): () => void {
     );
   }
   function Menu(input: MenuProps): React.ReactElement {
+    useUiLocale();
     let value = (0, runtime.useSheetInteractionMode)(),
       value2 = (0, reactMenuMenu_2.useContext)(
         runtime.MenuConfigurationContext_2,
@@ -786,6 +794,7 @@ export function installCdsMenuMenu(runtime: RuntimeBindings): () => void {
     options: HTMLElement | undefined,
     context: ContextMenuState,
   ): React.ReactElement {
+    useUiLocale();
     let {
       items: value,
       side: value2,
@@ -970,6 +979,7 @@ export function installCdsMenuMenu(runtime: RuntimeBindings): () => void {
     return shouldKeepNestedMenuOpen(false, input, options);
   }
   function MenuRoot(input: MenuRootProps): React.ReactElement {
+    useUiLocale();
     let {
         children: value,
         sheetTitle: value2,
@@ -1000,16 +1010,15 @@ export function installCdsMenuMenu(runtime: RuntimeBindings): () => void {
             actionsRef={value11}
             onOpenChange={value10.onOpenChange}
           >
-            {typeof value == "function"
-              ? (input2: never) =>
-                  MenuContextProviders(value(input2), value10.cell, value11)
-              : MenuContextProviders(value, value10.cell, value11)}
+            {typeof value == "function" ? ((input2: never) =>
+                  MenuContextProviders(value(input2), value10.cell, value11)) : (MenuContextProviders(value, value10.cell, value11))}
           </runtime.npm_Menu_La.Root>
         </runtime.ActivityBoundary>
       </runtime.MenuItemStylesProviderValue>
     );
   }
   function MenuRoot_2(input: MenuRootProps): React.ReactElement {
+    useUiLocale();
     let {
         children: value,
         sheetTitle: value2,
@@ -1062,14 +1071,12 @@ export function installCdsMenuMenu(runtime: RuntimeBindings): () => void {
               onOpenChange={value13.onOpenChange}
               onOpenChangeComplete={value13.onOpenChangeComplete}
             >
-              {typeof value == "function"
-                ? (input2: never) =>
+              {typeof value == "function" ? ((input2: never) =>
                     MenuContextProviders(
                       value(input2),
                       value10.cell,
                       value13.actionsRef,
-                    )
-                : MenuContextProviders(value, value10.cell, value13.actionsRef)}
+                    )) : (MenuContextProviders(value, value10.cell, value13.actionsRef))}
             </runtime.npm_Menu_La.Root>
           </runtime.MenuSheetLabelsContext.Provider>
         </runtime.SheetPopupProvider>
@@ -1181,6 +1188,7 @@ export function installCdsMenuMenu(runtime: RuntimeBindings): () => void {
     stableWhileOpen = true,
     ...props
   }: MenuSearchProps): React.ReactElement {
+    useUiLocale();
     let [value, value2] = (0, reactMenuMenu_2.useState)(""),
       value3 = query ?? value,
       value4: (input: string) => void = (0, runtime.useStableCallback)(
@@ -1297,8 +1305,7 @@ export function installCdsMenuMenu(runtime: RuntimeBindings): () => void {
         }}
         header={
           <jsxMenuMenu_2.Fragment>
-            {beforeSearch !== undefined && (
-              <div
+            {beforeSearch !== undefined && (<div
                 ref={value13}
                 role={"presentation"}
                 className={"px-sm pt-sm"}
@@ -1310,8 +1317,7 @@ export function installCdsMenuMenu(runtime: RuntimeBindings): () => void {
                 }}
               >
                 {beforeSearch}
-              </div>
-            )}
+              </div>)}
             <runtime.TextInput
               ref={value14}
               value={value3}
@@ -1392,8 +1398,8 @@ export function installCdsMenuMenu(runtime: RuntimeBindings): () => void {
           </jsxMenuMenu_2.Fragment>
         }
       >
-        {resetQueryOnClose && <ResetOnUnmount reset={value5} />}
-        {value9 && <MenuSearchTriggerWatcher inputRef={value14} />}
+        {resetQueryOnClose && (<ResetOnUnmount reset={value5} />)}
+        {value9 && (<MenuSearchTriggerWatcher inputRef={value14} />)}
         <MenuSearchTypingWatcher inputRef={value14} applyKey={value15} />
         {children(value3.trim().toLowerCase(), value3.trim())}
       </MenuPopup>
@@ -1441,6 +1447,7 @@ export function installCdsMenuMenu(runtime: RuntimeBindings): () => void {
     icon = false,
     children: children,
   }: MenuPendingProps): React.ReactElement {
+    useUiLocale();
     let value = (0, reactMenuMenu_2.useRef)<HTMLDivElement | null>(null),
       value2 = (0, reactMenuMenu_2.useRef)(MenuMenuWidthHeightConfig);
     (0, reactMenuMenu_2.useEffect)(() => {
@@ -1490,8 +1497,7 @@ export function installCdsMenuMenu(runtime: RuntimeBindings): () => void {
         }
         className={value6 ? "overflow-hidden" : undefined}
       >
-        {loading ? (
-          <runtime.SkeletonGroup>
+        {loading ? (<runtime.SkeletonGroup>
             <runtime.ComponentsSkeletonAssignValue.Rows
               icon={icon}
               rows={
@@ -1500,10 +1506,7 @@ export function installCdsMenuMenu(runtime: RuntimeBindings): () => void {
                   : placeholderRows
               }
             />
-          </runtime.SkeletonGroup>
-        ) : (
-          children
-        )}
+          </runtime.SkeletonGroup>) : (children)}
       </div>
     );
   }
@@ -1937,9 +1940,7 @@ export function installCdsMenuMenu(runtime: RuntimeBindings): () => void {
           ) : (
             <jsxMenuMenu_2.Fragment>
               {value5}
-              {value2 && value3 === null ? (
-                <runtime.OverlayBackdrop kind={value4} />
-              ) : null}
+              {value2 && value3 === null ? (<runtime.OverlayBackdrop kind={value4} />) : (null)}
             </jsxMenuMenu_2.Fragment>
           );
         },
@@ -2066,27 +2067,20 @@ export function installCdsMenuMenu(runtime: RuntimeBindings): () => void {
                       }
                 }
               >
-                {value ? (
-                  <span data-size={"xs"} className={"flex shrink-0"}>
+                {value ? (<span data-size={"xs"} className={"flex shrink-0"}>
                     <runtime.CheckboxVisual
                       checked={value2}
                       indeterminate={indeterminate}
                     />
-                  </span>
-                ) : (
-                  value2 && (
-                    <runtime.Icon name={"Check"} size={"auto"} bold={true} />
-                  )
-                )}
+                  </span>) : (value2 && (<runtime.Icon name={"Check"} size={"auto"} bold={true} />))}
               </span>
             ),
             value16 = (
               <jsxMenuMenu_2.Fragment>
                 {leading}
-                {value4 === "leading" && value15}
-                {icon !== undefined && <runtime.IconRenderer icon={icon} />}
-                {description ? (
-                  <span className={"flex min-w-0 flex-1 flex-col"}>
+                {value4 === "leading" && (value15)}
+                {icon !== undefined && (<runtime.IconRenderer icon={icon} />)}
+                {description ? (<span className={"flex min-w-0 flex-1 flex-col"}>
                     <span ref={value8} className={"truncate"}>
                       {children}
                     </span>
@@ -2097,19 +2091,15 @@ export function installCdsMenuMenu(runtime: RuntimeBindings): () => void {
                     >
                       {description}
                     </span>
-                  </span>
-                ) : (
-                  <span ref={value8} className={"min-w-0 flex-1 truncate"}>
+                  </span>) : (<span ref={value8} className={"min-w-0 flex-1 truncate"}>
                     {children}
-                  </span>
-                )}
+                  </span>)}
                 {!!(
                   trailing ||
                   (value2 !== undefined && value4 === "trailing") ||
                   hint ||
                   shortcut
-                ) && (
-                  <span
+                ) && (<span
                     className={(0, runtime.npm_clsx_Ea)(
                       "ml-md flex shrink-0 items-center gap-xs",
                       !!(
@@ -2121,17 +2111,14 @@ export function installCdsMenuMenu(runtime: RuntimeBindings): () => void {
                     )}
                   >
                     {trailing}
-                    {value4 === "trailing" && value15}
-                    {hint && (
-                      <span
+                    {value4 === "trailing" && (value15)}
+                    {hint && (<span
                         className={`max-w-[160px] shrink-0 truncate py-[0.125em] -my-[0.125em] text-footnote text-muted group-data-[highlighted]/menu-danger:text-on-danger ${menuShortcutClassName(hint)}`}
                       >
                         {hint}
-                      </span>
-                    )}
-                    {shortcut && <MenuShortcut keys={shortcut} />}
-                  </span>
-                )}
+                      </span>)}
+                    {shortcut && (<MenuShortcut keys={shortcut} />)}
+                  </span>)}
               </jsxMenuMenu_2.Fragment>
             );
           if (href !== undefined) {
@@ -2246,33 +2233,27 @@ export function installCdsMenuMenu(runtime: RuntimeBindings): () => void {
               )}
             >
               {leading}
-              {icon !== undefined && <runtime.IconRenderer icon={icon} />}
+              {icon !== undefined && (<runtime.IconRenderer icon={icon} />)}
               <span ref={value5} className={"min-w-0 flex-1 truncate"}>
                 {children}
               </span>
-              {trailing || hint ? (
-                <span className={"ml-md flex shrink-0 items-center gap-xs"}>
+              {trailing || hint ? (<span className={"ml-md flex shrink-0 items-center gap-xs"}>
                   {trailing}
-                  {hint && (
-                    <span
+                  {hint && (<span
                       className={`max-w-[160px] shrink-0 truncate py-[0.125em] -my-[0.125em] text-footnote text-muted ${menuShortcutClassName(hint)}`}
                     >
                       {hint}
-                    </span>
-                  )}
+                    </span>)}
                   <runtime.Icon
                     name={"CaretRight"}
                     size={"sm"}
                     className={"-mr-1 shrink-0 text-muted"}
                   />
-                </span>
-              ) : (
-                <runtime.Icon
+                </span>) : (<runtime.Icon
                   name={"CaretRight"}
                   size={"sm"}
                   className={"-mr-1 shrink-0 text-muted"}
-                />
-              )}
+                />)}
             </runtime.npm_Menu_La.SubmenuTrigger>
           );
         },

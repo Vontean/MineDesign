@@ -1,3 +1,5 @@
+import { useUiLocale } from '../../ui-locale.ts';
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -12,6 +14,7 @@ export function installEditorColorPicker(runtime: RuntimeBindings): () => void {
     onChange: onChange,
     className = "mb-2",
   }: Dynamic): Dynamic {
+    useUiLocale();
     let value2: Dynamic = (0, runtime.reactAccessibilityAnnouncer.useRef)(null),
       callback: Dynamic = (input?: Dynamic): Dynamic => {
         let activeElement: Dynamic = (document as Dynamic).activeElement,
@@ -32,15 +35,15 @@ export function installEditorColorPicker(runtime: RuntimeBindings): () => void {
         onValueChange={(input?: Dynamic): Dynamic => callback(input)}
       >
         <runtime.TabsTabsRootListTabConfig.List
-          aria-label={"Source"}
+          aria-label={uiMessage("inspector.picker.source")}
           className={className}
           onMouseDown={(event?: Dynamic): Dynamic => event.preventDefault()}
         >
           <runtime.TabsTabsRootListTabConfig.Tab value={"system"}>
-            {"Theme"}
+            {uiMessage("inspector.picker.theme")}
           </runtime.TabsTabsRootListTabConfig.Tab>
           <runtime.TabsTabsRootListTabConfig.Tab value={"custom"}>
-            {"Custom"}
+            {uiMessage("inspector.picker.custom")}
           </runtime.TabsTabsRootListTabConfig.Tab>
         </runtime.TabsTabsRootListTabConfig.List>
       </runtime.TabsTabsRootListTabConfig.Root>
@@ -54,6 +57,7 @@ export function installEditorColorPicker(runtime: RuntimeBindings): () => void {
     onPickEnd: onPickEnd,
     contrast: contrast,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let callback: Dynamic = (input?: Dynamic): Dynamic =>
         opaque
           ? {
@@ -409,8 +413,7 @@ export function installEditorColorPicker(runtime: RuntimeBindings): () => void {
             />
           </div>
         </div>
-        {!opaque && (
-          <div
+        {!opaque && (<div
             className={"relative touch-none py-1 pointer-coarse:py-3.5"}
             onPointerDown={callback7}
           >
@@ -430,22 +433,19 @@ export function installEditorColorPicker(runtime: RuntimeBindings): () => void {
                 }}
               />
             </div>
-          </div>
-        )}
+          </div>)}
         <div className={"mt-1 flex items-center gap-2"}>
-          {(0, runtime.supportsEyeDropper)() && (
-            <button
+          {(0, runtime.supportsEyeDropper)() && (<button
               type={"button"}
-              title={"Pick color from screen"}
-              aria-label={"Pick color from screen"}
+              title={uiMessage("inspector.picker.pickColorFromScreen")}
+              aria-label={uiMessage("inspector.picker.pickColorFromScreen")}
               onClick={callback8}
               className={
                 "flex h-6 w-6 shrink-0 items-center justify-center rounded text-muted outline-none hover:bg-alpha-1 hover:text-primary focus-visible:outline-hidden focus-visible:shadow-focus pointer-coarse:h-10 pointer-coarse:w-10"
               }
             >
               <runtime.Icon name={"EyeDropper"} size={"sm"} />
-            </button>
-          )}
+            </button>)}
           <div
             className={
               "flex h-6 min-w-0 flex-1 items-center rounded bg-fill-field shadow-field-ring transition duration-fast hover:not-focus-within:shadow-field-hover has-[:focus-visible]:shadow-focus pointer-coarse:h-10"
@@ -457,7 +457,7 @@ export function installEditorColorPicker(runtime: RuntimeBindings): () => void {
                 "h-full min-w-0 flex-1 bg-transparent px-1.5 font-mono text-[11px] text-primary outline-none focus-visible:outline-hidden"
               }
               value={value6}
-              aria-label={"Hex color"}
+              aria-label={uiMessage("inspector.picker.hexColor")}
               aria-describedby={value38}
               onChange={(event?: Dynamic): Dynamic => {
                 value17.current = true;
@@ -479,8 +479,7 @@ export function installEditorColorPicker(runtime: RuntimeBindings): () => void {
                 event.stopPropagation();
               }}
             />
-            {!opaque && (
-              <runtime.jsxColorPickerPrimitives.Fragment>
+            {!opaque && (<runtime.jsxColorPickerPrimitives.Fragment>
                 <div className={"my-1 w-px shrink-0 self-stretch bg-alpha-2"} />
                 <input
                   ref={value11}
@@ -488,7 +487,7 @@ export function installEditorColorPicker(runtime: RuntimeBindings): () => void {
                     "h-full w-[34px] bg-transparent pl-1.5 pr-1 text-right font-mono text-[11px] text-primary outline-none focus-visible:outline-hidden"
                   }
                   value={value8}
-                  aria-label={"Alpha percent"}
+                  aria-label={uiMessage("inspector.picker.alphaPercent")}
                   aria-describedby={value38}
                   onChange={(event?: Dynamic): Dynamic =>
                     value9(event.target.value)
@@ -507,12 +506,10 @@ export function installEditorColorPicker(runtime: RuntimeBindings): () => void {
                   }}
                 />
                 <span className={"pr-1.5 text-[10px] text-muted"}>{"%"}</span>
-              </runtime.jsxColorPickerPrimitives.Fragment>
-            )}
+              </runtime.jsxColorPickerPrimitives.Fragment>)}
           </div>
         </div>
-        {value33 !== undefined ? (
-          <runtime.ContrastAdvice
+        {value33 !== undefined ? (<runtime.ContrastAdvice
             fg={value30}
             results={value33}
             sentenceId={value37}
@@ -529,8 +526,7 @@ export function installEditorColorPicker(runtime: RuntimeBindings): () => void {
                   onFixGoneFocused: callback12,
                 }
               : {})}
-          />
-        ) : null}
+          />) : (null)}
       </div>
     );
   }

@@ -1,3 +1,5 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
+import { useUiLocale } from '../../ui-locale.ts';
 import type {
   AccessibleNameProps,
   ComboboxBridgeProps,
@@ -421,6 +423,7 @@ export function installCdsComboboxCombobox(
     getItemKey: getItemKey,
     renderRow: renderRow,
   }: VirtualComboboxProps): React.ReactElement {
+    useUiLocale();
     "use no memo";
 
     let callback = (input: number): number =>
@@ -459,8 +462,7 @@ export function installCdsComboboxCombobox(
           position: "relative",
         }}
       >
-        {value2.length > 0 ? (
-          value2.map((input) =>
+        {value2.length > 0 ? (value2.map((input) =>
             (() => {
               const _Component = "div";
               const _props = {
@@ -478,9 +480,7 @@ export function installCdsComboboxCombobox(
               const _key = input.key;
               return <_Component key={_key} {..._props} />;
             })(),
-          )
-        ) : count > 0 ? (
-          <div aria-hidden={true} className={"flex flex-col gap-1 px-md py-1"}>
+          )) : (count > 0 ? (<div aria-hidden={true} className={"flex flex-col gap-1 px-md py-1"}>
             {Array.from<undefined, React.ReactElement>(
               {
                 length: ComboboxComboboxConstant_3,
@@ -493,8 +493,7 @@ export function installCdsComboboxCombobox(
                 />
               ),
             )}
-          </div>
-        ) : null}
+          </div>) : (null))}
       </div>
     );
   }
@@ -590,6 +589,7 @@ export function installCdsComboboxCombobox(
   function Combobox<Value extends ComboboxKey>(
     input: ComboboxProps<Value>,
   ): React.ReactElement {
+    useUiLocale();
     let {
         "data-cds": value34 = "Combobox",
         mode: value35 = "select",
@@ -981,11 +981,9 @@ export function installCdsComboboxCombobox(
           return (
             <span className={"flex min-w-0 items-baseline gap-1.5"}>
               <span className={"shrink-0 text-muted"}>{value6}</span>
-              {value125 !== undefined && (
-                <span className={"min-w-0 truncate"} title={value70?.label}>
+              {value125 !== undefined && (<span className={"min-w-0 truncate"} title={value70?.label}>
                   {callback2(value125)}
-                </span>
-              )}
+                </span>)}
             </span>
           );
         }
@@ -996,7 +994,7 @@ export function installCdsComboboxCombobox(
         return value70 ? (
           callback2(value70.label)
         ) : (
-          <span className={"font-normal text-muted"}>{value4 ?? "\xA0"}</span>
+          <span className={"font-normal text-muted"}>{value4 ?? ("\xA0")}</span>
         );
       },
       value110 = value106 && (
@@ -1119,8 +1117,7 @@ export function installCdsComboboxCombobox(
           required={value30}
           name={value31}
         >
-          {value54 === "chips" ? (
-            <div
+          {value54 === "chips" ? (<div
               ref={value97}
               data-cds={value34}
               {...(0, runtime.getSizeAttribute)(value32)}
@@ -1153,7 +1150,7 @@ export function installCdsComboboxCombobox(
                 )}
                 <runtime.npm_Combobox_Yi.Input
                   className={`${ComboboxComboboxClassNames_5} ${value69.length === 0 && value4 === undefined ? "min-w-[2ch]" : ""}`}
-                  placeholder={value69.length === 0 ? value4 : undefined}
+                  placeholder={value69.length === 0 ? (value4) : (undefined)}
                   disabled={value62}
                   {...state}
                   autoComplete={"off"}
@@ -1162,9 +1159,7 @@ export function installCdsComboboxCombobox(
                 />
               </runtime.npm_Combobox_Yi.Chips>
               {value110}
-            </div>
-          ) : value35 === "input" ? (
-            <div
+            </div>) : (value35 === "input" ? (<div
               ref={value97}
               data-cds={value34}
               {...(0, runtime.getSizeAttribute)(value32)}
@@ -1198,9 +1193,7 @@ export function installCdsComboboxCombobox(
               />
               {value112}
               {value110}
-            </div>
-          ) : (
-            <div
+            </div>) : (<div
               ref={value97}
               data-cds={value34}
               {...(0, runtime.getSizeAttribute)(value32)}
@@ -1216,19 +1209,16 @@ export function installCdsComboboxCombobox(
                 <span id={value117} className={"min-w-0 flex-1 truncate"}>
                   {callback()}
                 </span>
-                {value106 && (
-                  <runtime.Icon
+                {value106 && (<runtime.Icon
                     name={"CaretDown"}
                     size={"sm"}
                     className={
                       "mr-0.5 shrink-0 text-muted transition-colors group-hover/cbx:text-secondary"
                     }
-                  />
-                )}
+                  />)}
               </runtime.npm_Combobox_Yi.Trigger>
               {value112}
-            </div>
-          )}
+            </div>))}
           <runtime.npm_Combobox_Yi.Portal
             container={(0, runtime.useOverlayRoot)()}
           >
@@ -1280,8 +1270,7 @@ export function installCdsComboboxCombobox(
       ),
       value124 = (
         <runtime.ActivityBoundary actionsRef={value86}>
-          {value122 ? (
-            <runtime.SheetPopupRender
+          {value122 ? (<runtime.SheetPopupRender
               open={value78}
               close={value85}
               onOpenChange={value84}
@@ -1301,10 +1290,7 @@ export function installCdsComboboxCombobox(
                   },
                 )
               }
-            </runtime.SheetPopupRender>
-          ) : (
-            value123
-          )}
+            </runtime.SheetPopupRender>) : (value123)}
         </runtime.ActivityBoundary>
       );
     return value115 === undefined ? (
@@ -1337,6 +1323,7 @@ export function installCdsComboboxCombobox(
   function ComboboxSheetBridge<Value extends ComboboxKey>(
     input: ComboboxBridgeProps<Value>,
   ): React.ReactElement {
+    useUiLocale();
     return (0, runtime.isInsideSheetPopup)() ? (
       <ComboboxSheetPopup {...input} />
     ) : (
@@ -1350,6 +1337,7 @@ export function installCdsComboboxCombobox(
   function ComboboxSheetPopup<Value extends ComboboxKey>(
     input: ComboboxBridgeProps<Value>,
   ): React.ReactElement {
+    useUiLocale();
     return (
       <runtime.SheetCapablePopup kind={"combobox"}>
         {(input2: SheetRenderState, options: MobileSheetParts | null) => (
@@ -1405,6 +1393,7 @@ export function installCdsComboboxCombobox(
     close: close,
     closeLabel: closeLabel,
   }: ComboboxHostProps<Value>): React.ReactElement {
+    useUiLocale();
     let value = (0, runtime.useLabel)("loadingOptions", "Loading options"),
       value2 = (0, runtime.useLabel)(
         "loadingMoreOptions",
@@ -1592,9 +1581,7 @@ export function installCdsComboboxCombobox(
         density={sheet ? runtime.ComfortableValue : undefined}
         closeOnActivityHide={true}
       >
-        {value28 !== null && sheetPopup.sheet && (
-          <value28.ComboboxSheetBackdrop sheetPopup={sheetPopup} />
-        )}
+        {value28 !== null && sheetPopup.sheet && (<value28.ComboboxSheetBackdrop sheetPopup={sheetPopup} />)}
         <runtime.LayerBaseContext.Provider value={value26.base}>
           <runtime.npm_Combobox_Yi.Positioner
             style={
@@ -1653,13 +1640,12 @@ export function installCdsComboboxCombobox(
               }}
               aria-busy={isLoading || isFetchingMore}
             >
-              {value27 !== null && <value27.Handle />}
+              {value27 !== null && (<value27.Handle />)}
               <runtime.SheetStackContext.Provider
                 value={sheet ? sheetPopup.stack : value29}
               >
                 <div className={ComboboxComboboxClassNames_7}>
-                  {showPopupSearch && (
-                    <runtime.npm_Combobox_Yi.Input
+                  {showPopupSearch && (<runtime.npm_Combobox_Yi.Input
                       className={ComboboxComboboxClassNames_9}
                       placeholder={searchPlaceholder}
                       disabled={disabled2}
@@ -1667,8 +1653,7 @@ export function installCdsComboboxCombobox(
                       autoComplete={"off"}
                       data-1p-ignore={true}
                       data-lpignore={"true"}
-                    />
-                  )}
+                    />)}
                   <div
                     ref={virtualized || value20 ? value7 : undefined}
                     tabIndex={-1}
@@ -1681,7 +1666,7 @@ export function installCdsComboboxCombobox(
                       <runtime.npm_Combobox_Yi.Empty
                         className={ComboboxComboboxCss_4}
                       >
-                        {isLoading || isFetchingMore ? null : emptyMessage}
+                        {isLoading || isFetchingMore ? (null) : (emptyMessage)}
                       </runtime.npm_Combobox_Yi.Empty>
                       <runtime.npm_Combobox_Yi.List
                         ref={value36}
@@ -1689,8 +1674,7 @@ export function installCdsComboboxCombobox(
                         {...value37}
                         className={`cds-reset outline-none focus-visible:outline-hidden ${groupSelected ? comboboxInputClasses : ""}`}
                       >
-                        {virtualized ? (
-                          <VirtualComboboxRows
+                        {virtualized ? (<VirtualComboboxRows
                             count={displayedItems.length}
                             estimateItemSize={value30}
                             estimateRowSize={value31}
@@ -1698,18 +1682,13 @@ export function installCdsComboboxCombobox(
                             actionsRef={virtualRowsRef}
                             getItemKey={value18}
                             renderRow={value19}
-                          />
-                        ) : (
-                          value17
-                        )}
+                          />) : (value17)}
                       </runtime.npm_Combobox_Yi.List>
-                      {hasMore && value20 && !isLoading && (
-                        <div
+                      {hasMore && value20 && !isLoading && (<div
                           ref={value22}
                           aria-hidden={true}
                           className={"h-px"}
-                        />
-                      )}
+                        />)}
                       <ComboboxStatus
                         delay={0}
                         loading={value3 || isFetchingMore}
@@ -1717,14 +1696,11 @@ export function installCdsComboboxCombobox(
                       />
                     </jsxComboboxCombobox_3.Fragment>
                   </div>
-                  {(showSelectAllFooter || footer) && (
-                    <jsxComboboxCombobox_3.Fragment>
-                      {footerDivider && (
-                        <div
+                  {showSelectAllFooter || footer && (<jsxComboboxCombobox_3.Fragment>
+                      {footerDivider && (<div
                           aria-hidden={true}
                           className={ComboboxComboboxClassNames_12}
-                        />
-                      )}
+                        />)}
                       <div
                         className={
                           footerDivider
@@ -1732,8 +1708,7 @@ export function installCdsComboboxCombobox(
                             : "shrink-0"
                         }
                       >
-                        {showSelectAllFooter && (
-                          <div
+                        {showSelectAllFooter && (<div
                             className={
                               "flex items-center justify-between gap-sm p-1"
                             }
@@ -1754,23 +1729,16 @@ export function installCdsComboboxCombobox(
                             >
                               {value5}
                             </runtime.Button>
-                          </div>
-                        )}
-                        {footer &&
-                          (typeof footer == "function"
-                            ? footer({
+                          </div>)}
+                        {footer && (typeof footer == "function" ? (footer({
                                 close: close,
-                              })
-                            : footer)}
+                              })) : (footer))}
                       </div>
-                    </jsxComboboxCombobox_3.Fragment>
-                  )}
-                  {value27 !== null && (
-                    <value27.DismissButton
+                    </jsxComboboxCombobox_3.Fragment>)}
+                  {value27 !== null && (<value27.DismissButton
                       onDismiss={close}
                       label={closeLabel}
-                    />
-                  )}
+                    />)}
                 </div>
               </runtime.SheetStackContext.Provider>
             </runtime.npm_Combobox_Yi.Popup>
@@ -1881,6 +1849,7 @@ export function installCdsComboboxCombobox(
   }: {
     className?: string;
   }): React.ReactElement {
+    useUiLocale();
     return (
       <span
         aria-hidden={true}
@@ -1898,6 +1867,7 @@ export function installCdsComboboxCombobox(
   }: {
     className?: string;
   }): React.ReactElement {
+    useUiLocale();
     return (
       <runtime.npm_Combobox_Yi.Separator
         className={(0, runtime.cn)(ComboboxComboboxClassNames_10, className)}
@@ -1911,6 +1881,7 @@ export function installCdsComboboxCombobox(
   }: React.PropsWithChildren<{
     className?: string;
   }>): React.ReactElement {
+    useUiLocale();
     return (
       <jsxComboboxCombobox_3.Fragment>
         <div aria-hidden={true} className={ComboboxComboboxClassNames_12} />
@@ -1944,6 +1915,7 @@ export function installCdsComboboxCombobox(
       Multiple
     >,
   ): React.ReactElement {
+    useUiLocale();
     let value: React.RefObject<{
         inputOutsidePopup: number;
         trigger: HTMLElement | null;
@@ -1988,11 +1960,7 @@ export function installCdsComboboxCombobox(
       <ComboboxRegistrationContext.Provider value={value4}>
         <ComboboxTriggerHiddenContext.Provider value={value2}>
           <ComboboxInputInsidePopupContext.Provider value={false}>
-            {value5 ? (
-              <RegisteredComboboxRoot rootProps={input} registration={value4} />
-            ) : (
-              <runtime.npm_Combobox_Yi.Root {...input} />
-            )}
+            {value5 ? (<RegisteredComboboxRoot rootProps={input} registration={value4} />) : (<runtime.npm_Combobox_Yi.Root {...input} />)}
           </ComboboxInputInsidePopupContext.Provider>
         </ComboboxTriggerHiddenContext.Provider>
       </ComboboxRegistrationContext.Provider>
@@ -2008,6 +1976,7 @@ export function installCdsComboboxCombobox(
     >;
     registration: ComboboxRegistration;
   }): React.ReactElement {
+    useUiLocale();
     let value = (0, runtime.useOverlayOpenState)(rootProps),
       { onOpenChange: value2 } = value,
       value3 = (0, reactComboboxCombobox_4.useCallback)(() => {
@@ -2880,14 +2849,12 @@ export function installCdsComboboxCombobox(
           );
           return (
             <runtime.npm_Combobox_Yi.Status ref={options} {...props}>
-              {loading && (
-                <DelayedContent ms={delay}>
+              {loading && (<DelayedContent ms={delay}>
                   <div className={ComboboxComboboxCss}>
                     <runtime.Spinner size={"sm"} />
-                    <span>{loadingLabel ?? value}</span>
+                    <span>{loadingLabel ?? (value)}</span>
                   </div>
-                </DelayedContent>
-              )}
+                </DelayedContent>)}
             </runtime.npm_Combobox_Yi.Status>
           );
         },
@@ -3075,7 +3042,7 @@ export function installCdsComboboxCombobox(
                 className,
               )}
             >
-              {children ?? <runtime.Icon name={"X"} size={"sm"} />}
+              {children ?? (<runtime.Icon name={"X"} size={"sm"} />)}
             </runtime.npm_Combobox_Yi.ChipRemove>
           );
         },
@@ -3105,68 +3072,52 @@ export function installCdsComboboxCombobox(
               ) : null;
           return (
             <jsxComboboxCombobox_3.Fragment>
-              {!leadsList && (item.separatorBefore || separatorAbove) && (
-                <runtime.npm_Combobox_Yi.Separator
+              {!leadsList && (item.separatorBefore || separatorAbove) && (<runtime.npm_Combobox_Yi.Separator
                   className={ComboboxComboboxClassNames_10}
                   data-cds-part={SeparatorValue}
-                />
-              )}
-              {groupCaption !== undefined && (
-                <div
+                />)}
+              {groupCaption !== undefined && (<div
                   aria-hidden={true}
                   className={ComboboxComboboxClassNames_11}
                 >
                   {groupCaption}
-                </div>
-              )}
+                </div>)}
               <runtime.npm_Combobox_Yi.Item
                 value={item}
                 index={index}
                 disabled={item.disabled}
                 data-stale={stale || undefined}
                 className={comboboxGroupLabelClasses}
-                title={renderItem ? undefined : item.label}
+                title={renderItem ? (undefined) : (item.label)}
               >
-                {value && (
-                  <span
+                {value && (<span
                     data-size={"xs"}
                     className={
                       "flex shrink-0 -ml-[calc(var(--cds-pad-md)-(var(--cds-h-control)-var(--cds-checkbox))/2)]"
                     }
                   >
                     <runtime.CheckboxVisual checked={selected} />
-                  </span>
-                )}
-                {item.icon !== undefined && (
-                  <runtime.IconRenderer icon={item.icon} />
-                )}
-                {renderItem ? (
-                  <div className={"min-w-0 flex-1"}>
+                  </span>)}
+                {item.icon !== undefined && (<runtime.IconRenderer icon={item.icon} />)}
+                {renderItem ? (<div className={"min-w-0 flex-1"}>
                     {renderItem(item, searchQuery)}
                     {value2}
-                  </div>
-                ) : (
-                  <div className={"flex min-w-0 flex-1 flex-col gap-0.5"}>
+                  </div>) : (<div className={"flex min-w-0 flex-1 flex-col gap-0.5"}>
                     <span className={"truncate"}>
                       {item.label}
                       {value2}
                     </span>
-                    {item.description !== undefined && (
-                      <span
+                    {item.description !== undefined && (<span
                         className={`text-footnote leading-snug text-muted ${wrapDescription ? "whitespace-normal break-words" : "truncate"}`}
                       >
                         {item.description}
-                      </span>
-                    )}
-                  </div>
-                )}
-                {indicator === "check" && (
-                  <runtime.npm_Combobox_Yi.ItemIndicator
+                      </span>)}
+                  </div>)}
+                {indicator === "check" && (<runtime.npm_Combobox_Yi.ItemIndicator
                     className={"shrink-0 text-accent"}
                   >
                     <runtime.Icon name={"Check"} size={"auto"} bold={true} />
-                  </runtime.npm_Combobox_Yi.ItemIndicator>
-                )}
+                  </runtime.npm_Combobox_Yi.ItemIndicator>)}
               </runtime.npm_Combobox_Yi.Item>
             </jsxComboboxCombobox_3.Fragment>
           );
@@ -3214,13 +3165,9 @@ export function installCdsComboboxCombobox(
                 className,
               )}
             >
-              {value3 ? (
-                children
-              ) : (
-                <span id={value} className={"contents"}>
+              {value3 ? (children) : (<span id={value} className={"contents"}>
                   {children}
-                </span>
-              )}
+                </span>)}
             </runtime.npm_Combobox_Yi.Trigger>
           );
         },
@@ -3245,12 +3192,9 @@ export function installCdsComboboxCombobox(
               className,
             )}
           >
-            {children !== undefined ? (
-              <runtime.npm_Combobox_Yi.Value>
+            {children !== undefined ? (<runtime.npm_Combobox_Yi.Value>
                 {children}
-              </runtime.npm_Combobox_Yi.Value>
-            ) : placeholder !== undefined ? (
-              <runtime.npm_Combobox_Yi.Value>
+              </runtime.npm_Combobox_Yi.Value>) : (placeholder !== undefined ? (<runtime.npm_Combobox_Yi.Value>
                 {(input: React.ReactNode) =>
                   input == null || input === "" ? (
                     <span className={"text-muted"}>{placeholder}</span>
@@ -3258,10 +3202,7 @@ export function installCdsComboboxCombobox(
                     input
                   )
                 }
-              </runtime.npm_Combobox_Yi.Value>
-            ) : (
-              <runtime.npm_Combobox_Yi.Value />
-            )}
+              </runtime.npm_Combobox_Yi.Value>) : (<runtime.npm_Combobox_Yi.Value />))}
           </span>
         ),
       );
@@ -3365,7 +3306,7 @@ export function installCdsComboboxCombobox(
                   variant={"ghost"}
                   size={"sm"}
                   icon={children || "X"}
-                  aria-label={ariaLabel ?? value}
+                  aria-label={ariaLabel ?? (value)}
                   tooltip={false}
                   className={(0, runtime.cn)(
                     "data-[ending-style]:hidden",
@@ -3407,8 +3348,7 @@ export function installCdsComboboxCombobox(
               className,
             )}
           >
-            {icon && (
-              <runtime.IconRenderer
+            {icon && (<runtime.IconRenderer
                 icon={
                   <runtime.Icon
                     name={icon}
@@ -3416,8 +3356,7 @@ export function installCdsComboboxCombobox(
                     className={"text-muted"}
                   />
                 }
-              />
-            )}
+              />)}
             {children}
           </button>
         ),
@@ -3589,9 +3528,7 @@ export function installCdsComboboxCombobox(
               surface={runtime.surfaceBackgroundTokens.popover}
               density={sheet ? runtime.ComfortableValue : undefined}
             >
-              {value20 !== null && sheetPopup.sheet && (
-                <value20.ComboboxSheetBackdrop sheetPopup={sheetPopup} />
-              )}
+              {value20 !== null && sheetPopup.sheet && (<value20.ComboboxSheetBackdrop sheetPopup={sheetPopup} />)}
               <runtime.LayerBaseContext.Provider value={value18.base}>
                 <runtime.npm_Combobox_Yi.Positioner
                   style={
@@ -3641,8 +3578,7 @@ export function installCdsComboboxCombobox(
                     )}
                   >
                     <ComboboxInputInsidePopupContext.Provider value={true}>
-                      {value19 !== null ? (
-                        <runtime.SheetStackContext.Provider
+                      {value19 !== null ? (<runtime.SheetStackContext.Provider
                           value={sheetPopup.stack}
                         >
                           <value19.Handle />
@@ -3655,12 +3591,9 @@ export function installCdsComboboxCombobox(
                               />
                             </div>
                           </value19.Body>
-                        </runtime.SheetStackContext.Provider>
-                      ) : (
-                        <div className={ComboboxComboboxClassNames_7}>
+                        </runtime.SheetStackContext.Provider>) : (<div className={ComboboxComboboxClassNames_7}>
                           {value10}
-                        </div>
-                      )}
+                        </div>)}
                     </ComboboxInputInsidePopupContext.Provider>
                   </runtime.npm_Combobox_Yi.Popup>
                 </runtime.npm_Combobox_Yi.Positioner>
@@ -3734,7 +3667,7 @@ export function installCdsComboboxCombobox(
               {...props}
               className={(0, runtime.cn)(ComboboxComboboxCss_4, className)}
             >
-              {children === undefined ? value : children}
+              {children === undefined ? (value) : (children)}
             </runtime.npm_Combobox_Yi.Empty>
           );
         },
@@ -3761,18 +3694,16 @@ export function installCdsComboboxCombobox(
             {...props}
             className={(0, runtime.cn)(comboboxGroupLabelClasses, className)}
           >
-            {icon !== undefined && <runtime.IconRenderer icon={icon} />}
+            {icon !== undefined && (<runtime.IconRenderer icon={icon} />)}
             <div className={"flex min-w-0 flex-1 flex-col gap-0.5"}>
               <span className={"truncate"}>{children}</span>
-              {description !== undefined && (
-                <span
+              {description !== undefined && (<span
                   className={
                     "whitespace-normal break-words text-footnote leading-snug text-muted"
                   }
                 >
                   {description}
-                </span>
-              )}
+                </span>)}
             </div>
             <ComboboxItemIndicator />
           </runtime.npm_Combobox_Yi.Item>
@@ -3796,9 +3727,7 @@ export function installCdsComboboxCombobox(
             {...props}
             className={(0, runtime.cn)("shrink-0 text-accent", className)}
           >
-            {children ?? (
-              <runtime.Icon name={"Check"} size={"md"} bold={true} />
-            )}
+            {children ?? (<runtime.Icon name={"Check"} size={"md"} bold={true} />)}
           </runtime.npm_Combobox_Yi.ItemIndicator>
         ),
       );

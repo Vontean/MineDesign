@@ -1,3 +1,4 @@
+import { useUiLocale } from '../ui-locale.ts';
 /** Restored application module; prepare first, initialize in original order. */
 import type * as React from "react";
 import type * as C from "../contracts/controls";
@@ -32,6 +33,7 @@ export function installUiTextInputOverlay(
     }, []);
   }
   function PendingSheetBackdrop({ kind: kind }: { kind: C.OverlayKind }) {
+    useUiLocale();
     let value = reactiZ.useContext<
         import("../contracts/overlays").SheetFrameContext | null
       >(runtime.sheetFrameContext),

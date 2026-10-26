@@ -1,3 +1,5 @@
+import { useUiLocale } from '../ui-locale.ts';
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 import type * as React from "react";
 import type * as Token from "../contracts/token-editors";
 import type * as Model from "../contracts";
@@ -13,6 +15,7 @@ export function installEditorEmptyStates(runtime: RuntimeBindings): () => void {
   }: {
     text: React.ReactNode;
   }): React.ReactElement {
+    useUiLocale();
     return (
       <p
         className={"ds-empty-list ds-pad py-md text-body text-secondary"}
@@ -30,6 +33,7 @@ export function installEditorEmptyStates(runtime: RuntimeBindings): () => void {
     disabled: disabled,
     why: why,
   }: Token.EditorActionButtonProps): React.ReactElement {
+    useUiLocale();
     return (
       <runtime.Button
         variant={"ghost"}
@@ -52,6 +56,7 @@ export function installEditorEmptyStates(runtime: RuntimeBindings): () => void {
     note: React.ReactNode;
     edgeRef?: React.Ref<HTMLDivElement>;
   }): React.ReactElement {
+    useUiLocale();
     return (
       <div
         ref={edgeRef}
@@ -70,13 +75,14 @@ export function installEditorEmptyStates(runtime: RuntimeBindings): () => void {
     kind: Token.EmptySectionKind;
     readOnly?: boolean;
   }): React.ReactElement {
+    useUiLocale();
     return (
       <p
         className={"text-body text-secondary"}
         data-testid={"ds-empty-" + kind}
         {...runtime.UNCOMMENTABLE_PROPS}
       >
-        {readOnly ? "Nothing here yet." : READ_ONLY_EMPTY_SECTION_HINTS[kind]}
+        {readOnly ? (uiMessage("design-system.emptyStates.nothingHereYet")) : (READ_ONLY_EMPTY_SECTION_HINTS[kind])}
       </p>
     );
   }
@@ -115,31 +121,24 @@ export function installEditorEmptyStates(runtime: RuntimeBindings): () => void {
     );
     // MineDesign: user-facing copy calls the agent "the agent", not Claude.
     EMPTY_SECTION_HINTS = {
-      colors:
-        "Ask the agent for a palette, a dark or high-contrast theme, a check for contrast and colour-blind safety, or to pull the colours from your repo — or add groups by hand.",
-      type: "Ask the agent to pick a type pairing, set up display, heading and body styles, or load your brand fonts — or add styles yourself.",
-      spacing:
-        "Ask the agent for a spacing scale — a few steps from tight to roomy — or add values yourself, with a note on when to use each.",
-      corners:
-        "Ask the agent for the corner radii, from sharp to fully round, or add them yourself.",
-      shadows:
-        "Ask the agent for an elevation scale, one shadow per level in each theme, or add them yourself.",
-      components:
-        "Ask the agent to build components from your code or a description — buttons, inputs, cards — and their previews and usage notes land here.",
-      assets:
-        "Ask the agent to gather your logos and icons from a repo, or drop files anywhere on the page.",
-      family:
-        "Ask the agent to fill this in, or add values with a note on when to use each.",
+      get colors() { return uiMessage("design-system.emptyStates.askTheAgentForAPaletteADarkOrHighContrastThemeACheckForContrastAndColourBlindSaf"); },
+      get type() { return uiMessage("design-system.emptyStates.askTheAgentToPickATypePairingSetUpDisplayHeadingAndBodyStylesOrLoadYourBrandFont"); },
+      get spacing() { return uiMessage("design-system.emptyStates.askTheAgentForASpacingScaleAFewStepsFromTightToRoomyOrAddValuesYourselfWithANote"); },
+      get corners() { return uiMessage("design-system.emptyStates.askTheAgentForTheCornerRadiiFromSharpToFullyRoundOrAddThemYourself"); },
+      get shadows() { return uiMessage("design-system.emptyStates.askTheAgentForAnElevationScaleOneShadowPerLevelInEachThemeOrAddThemYourself"); },
+      get components() { return uiMessage("design-system.emptyStates.askTheAgentToBuildComponentsFromYourCodeOrADescriptionButtonsInputsCardsAndTheir"); },
+      get assets() { return uiMessage("design-system.emptyStates.askTheAgentToGatherYourLogosAndIconsFromARepoOrDropFilesAnywhereOnThePage"); },
+      get family() { return uiMessage("design-system.emptyStates.askTheAgentToFillThisInOrAddValuesWithANoteOnWhenToUseEach"); },
     };
     READ_ONLY_EMPTY_SECTION_HINTS = {
-      colors: "No colors yet.",
-      type: "No type styles or font files yet.",
-      spacing: "No spacing values yet.",
-      corners: "No corner radii yet.",
-      shadows: "No shadows yet.",
-      components: "No components yet.",
-      assets: "No files yet.",
-      family: "No tokens yet.",
+      get colors() { return uiMessage("design-system.emptyStates.noColorsYet"); },
+      get type() { return uiMessage("design-system.emptyStates.noTypeStylesOrFontFilesYet"); },
+      get spacing() { return uiMessage("design-system.emptyStates.noSpacingValuesYet"); },
+      get corners() { return uiMessage("design-system.emptyStates.noCornerRadiiYet"); },
+      get shadows() { return uiMessage("design-system.emptyStates.noShadowsYet"); },
+      get components() { return uiMessage("design-system.emptyStates.noComponentsYet"); },
+      get assets() { return uiMessage("design-system.emptyStates.noFilesYet"); },
+      get family() { return uiMessage("design-system.emptyStates.noTokensYet"); },
     };
   };
 }

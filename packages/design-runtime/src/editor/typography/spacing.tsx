@@ -1,3 +1,5 @@
+import { useUiLocale } from '../../ui-locale.ts';
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -15,6 +17,7 @@ export function installEditorTypographySpacing(
     renderRows: renderRows,
     onCommitMany: onCommitMany,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let value: Dynamic = (0, runtime.useStyleCommitScrub)(
         (input?: Dynamic): Dynamic => onCommitMany(input),
       ),
@@ -95,7 +98,7 @@ export function installEditorTypographySpacing(
           max={input.spec?.max}
           emptyStepFrom={callback5(options, extra, input)}
           placeholder={
-            input.mixed ? undefined : callback4(options, extra, input)
+            input.mixed ? (undefined) : (callback4(options, extra, input))
           }
           mixed={input.mixed}
           step={callback6(input, options, extra)}
@@ -144,12 +147,11 @@ export function installEditorTypographySpacing(
         PropertiesInheritedFieldMixedAlias_3(value5);
     return (
       <runtime.PropertyRow
-        label={"Spacing"}
+        label={uiMessage("inspector.spacing.spacing")}
         data-testid={"dc-text-spacing"}
         disabled={value4.disabled || value5.disabled}
         title={
-          "Line height \xB7 Letter spacing" +
-          (value2 ? " \u2014 " + value2 : "")
+          uiMessage("inspector.spacing.lineHeightLetterSpacing", { value1: String(value2 ? (" \u2014 " + value2) : ("")) })
         }
         description={value3}
         onReset={
@@ -176,14 +178,14 @@ export function installEditorTypographySpacing(
             value4,
             value6,
             <runtime.PropertyOptionIcon icon={runtime.LineHeightValue} />,
-            "Line height",
+            uiMessage("inspector.spacing.lineHeight"),
             "",
           )}
           {callback7(
             value5,
             value7,
             <runtime.PropertyOptionIcon icon={"LetterSpacing"} />,
-            "Letter spacing",
+            uiMessage("inspector.spacing.letterSpacing"),
             "px",
           )}
         </div>

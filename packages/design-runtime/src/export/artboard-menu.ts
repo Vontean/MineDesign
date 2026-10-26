@@ -1,3 +1,4 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -36,14 +37,10 @@ export function installExportArtboardMenu(
           (input2?: Dynamic): Dynamic => input2.scale === input,
         );
         return {
-          label: "PNG " + String(input) + "\xD7",
-          description: value4
-            ? String(value4.outW) +
-              ((0, runtime.getArtboardCaptureMode)(value, extra) === "full"
+          get label() { return (("PNG ") + (String(input))) + ("\xD7"); },
+          get description() { return value4 ? (String(value4.outW) + (0, runtime.getArtboardCaptureMode)(value, extra) === "full"
                 ? " px wide, full length"
-                : " \xD7 " + String(value4.outH) + " px") +
-              (value4.fits ? "" : " \u2014 too large")
-            : undefined,
+                : " \xD7 " + String(value4.outH) + " px" + value4.fits ? "" : " \u2014 too large") : (undefined); },
           disabled: value4 ? !value4.fits : false,
           onSelect: (): Dynamic => onExportArtboard(file, input),
         };
@@ -72,12 +69,7 @@ export function installExportArtboardMenu(
         value4: Dynamic = callback2(value);
       items.push({
         label: "PDF (.pdf)",
-        description:
-          value4 === "page"
-            ? "One page at this artboard\u2019s size"
-            : value4 === "pages"
-              ? "Paginated onto " + callback3(value)
-              : "One page, or " + callback3(value) + " if it scrolls",
+        get description() { return value4 === "page" ? ("One page at this artboard\u2019s size") : (value4 === "pages" ? (("Paginated onto ") + (callback3(value))) : ((("One page, or ") + (callback3(value))) + (" if it scrolls"))); },
         onSelect: (): Dynamic => onExportArtboardPdf(file),
       });
     }
@@ -85,17 +77,15 @@ export function installExportArtboardMenu(
       let onExportArtboardHtmlZip: Dynamic = callbacks.onExportArtboardHtmlZip;
       items.push({
         label: "HTML (.zip)",
-        description: "Page + its images and runtime",
+        get description() { return uiMessage("canvas.artboardMenu.pageItsImagesAndRuntime"); },
         onSelect: (): Dynamic => onExportArtboardHtmlZip(file),
       });
     }
     if (callbacks.onExportAllArtboardsPdf) {
       let onExportAllArtboardsPdf: Dynamic = callbacks.onExportAllArtboardsPdf;
       items.push({
-        label: "All artboards (.pdf)",
-        description:
-          length === 1
-            ? (
+        get label() { return uiMessage("canvas.artboardMenu.allArtboardsPdf"); },
+        get description() { return length === 1 ? ((
                 {
                   page: "1 artboard, one PDF page",
                   pages: "1 artboard, paginated onto " + callback3(value3[0]),
@@ -104,12 +94,7 @@ export function installExportArtboardMenu(
                     callback3(value3[0]) +
                     " if it scrolls",
                 } as Dynamic
-              )[callback2(value3[0])]
-            : length === 0
-              ? undefined
-              : "All " +
-                String(length) +
-                " artboards in order of canvas position",
+              )[callback2(value3[0])]) : (length === 0 ? (undefined) : ("All " + String(length) + " artboards in order of canvas position")); },
         separatorBefore: true,
         disabled: length === 0,
         disabledReason: noExportableArtboardsMessage,
@@ -125,10 +110,8 @@ export function installExportArtboardMenu(
         ).length,
         value4: Dynamic = length2 >= 2;
       items.push({
-        label: "Selected artboards (.pdf)",
-        description: value4
-          ? String(length2) + " artboards in order of canvas position"
-          : undefined,
+        get label() { return uiMessage("canvas.artboardMenu.selectedArtboardsPdf"); },
+        get description() { return value4 ? ((String(length2)) + (" artboards in order of canvas position")) : (undefined); },
         separatorBefore: !callbacks.onExportAllArtboardsPdf,
         disabled: !value4,
         disabledReason: exportSelectionHint,

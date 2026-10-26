@@ -1,3 +1,5 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
+import { useUiLocale } from '../../ui-locale.ts';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -308,6 +310,7 @@ export function installEditorChromeInspectorSheet(
     children: children,
     "data-testid": dataTestid,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let value: Dynamic = useInspectorSheetHeight(posture === "sheet" && filled),
       value2: Dynamic = inspectorShellStyle(posture, filled, value.heightPx),
       value3: Dynamic =
@@ -342,15 +345,11 @@ export function installEditorChromeInspectorSheet(
             : null),
         }}
       >
-        {posture === "wide" ? (
-          <jsxChromeInspectorSheet.Fragment>
-            {headerRow && <div className={"shrink-0"}>{headerRow}</div>}
+        {posture === "wide" ? (<jsxChromeInspectorSheet.Fragment>
+            {headerRow && (<div className={"shrink-0"}>{headerRow}</div>)}
             {value4}
-          </jsxChromeInspectorSheet.Fragment>
-        ) : (
-          <jsxChromeInspectorSheet.Fragment>
-            {value2.showHandle && (
-              <div
+          </jsxChromeInspectorSheet.Fragment>) : (<jsxChromeInspectorSheet.Fragment>
+            {value2.showHandle && (<div
                 data-testid={"dc-sheet-handle"}
                 className={
                   "absolute inset-x-0 -top-1.5 z-10 h-3 cursor-row-resize touch-none"
@@ -364,21 +363,15 @@ export function installEditorChromeInspectorSheet(
                     "absolute top-0 left-1/2 hidden h-10 w-24 -translate-x-1/2 pointer-coarse:block"
                   }
                 />
-              </div>
-            )}
-            {headerRow != null && headerAt === "top" && (
-              <div className={"shrink-0 border-b"}>{headerRow}</div>
-            )}
+              </div>)}
+            {headerRow != null && headerAt === "top" && (<div className={"shrink-0 border-b"}>{headerRow}</div>)}
             {value4}
-            {headerRow && headerAt === "bottom" && (
-              <div
+            {headerRow && headerAt === "bottom" && (<div
                 className={(0, runtime.cn)("shrink-0", filled && "border-t")}
               >
                 {headerRow}
-              </div>
-            )}
-          </jsxChromeInspectorSheet.Fragment>
-        )}
+              </div>)}
+          </jsxChromeInspectorSheet.Fragment>)}
       </div>
     );
   }

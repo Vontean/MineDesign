@@ -1,3 +1,4 @@
+import { useUiLocale } from '../../ui-locale.ts';
 import type { ActivityBoundaryProps } from "../../contracts/ui";
 import type * as React from "react";
 /** Restored application module; prepare first, initialize in original order. */
@@ -99,6 +100,7 @@ export function installCdsDomRefComposition(
     actionsRef: actionsRef,
     children: children,
   }: ActivityBoundaryProps): React.ReactElement {
+    useUiLocale();
     let [value] = (0, reactDomRefComposition_2.useState)(
         () => new Set<Element>(),
       ),

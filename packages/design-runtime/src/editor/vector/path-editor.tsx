@@ -1,3 +1,4 @@
+import { useUiLocale } from '../../ui-locale.ts';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -21,6 +22,7 @@ export function installEditorVectorPathEditor(
     onGesture: onGesture,
     testId: testId,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let [value, value2]: Dynamic = (0,
       runtime.reactHooksLatestCallback_3.useState)(undefined),
       value3: Dynamic = (0, runtime.reactHooksLatestCallback_3.useRef)(null),

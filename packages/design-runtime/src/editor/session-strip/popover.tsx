@@ -1,3 +1,5 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
+import { useUiLocale } from '../../ui-locale.ts';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -11,6 +13,7 @@ export function installEditorSessionStripPopover(
   var reactSessionStripPopover: Dynamic;
   var jsxSessionStripPopover_2: Dynamic;
   function SessionStripPopover(input?: Dynamic): Dynamic {
+    useUiLocale();
     let {
         label: value,
         tip: value2,
@@ -124,18 +127,14 @@ export function installEditorSessionStripPopover(
                 data-testid={value10}
                 className={"shrink-0 tabular-nums"}
               >
-                {input.readoutSizer === undefined ? (
-                  input.readout
-                ) : (
-                  <span
+                {input.readoutSizer === undefined ? (input.readout) : (<span
                     data-sizer={input.readoutSizer}
                     className={
                       "inline-flex flex-col items-center before:invisible before:h-0 before:content-[attr(data-sizer)]"
                     }
                   >
                     {input.readout}
-                  </span>
-                )}
+                  </span>)}
                 <runtime.ToolbarCaret />
               </runtime.Button>
             }
@@ -170,10 +169,8 @@ export function installEditorSessionStripPopover(
                   data-testid={value10}
                   className={"shrink-0"}
                 >
-                  {value31 ? null : value}
-                  {input.caret === true ? (
-                    <runtime.ToolbarCaret inherit={value30 && !value13} />
-                  ) : null}
+                  {value31 ? (null) : (value)}
+                  {input.caret === true ? (<runtime.ToolbarCaret inherit={value30 && !value13} />) : (null)}
                 </runtime.Button>
               )
             }

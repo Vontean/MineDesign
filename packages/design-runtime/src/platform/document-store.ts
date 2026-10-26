@@ -1,3 +1,4 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -764,7 +765,7 @@ export function installPlatformDocumentStore(
           comments: (0, runtime.applyCommentOperations)(value7.comments, items),
         });
         return {
-          label: "Restore unsaved changes",
+          get label() { return uiMessage("canvas.documentStore.restoreUnsavedChanges"); },
           do(): Dynamic {
             value21 = undefined;
             value25({

@@ -1,3 +1,6 @@
+import { uiOperation } from '@minedesign/contracts/ui-value';
+import { useUiLocale } from '../ui-locale.ts';
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -68,7 +71,7 @@ export function installCanvasDesignCanvas(
               status: "dirty",
               ...(synced
                 ? {
-                    message: "Changes waiting to sync",
+                    get message() { return uiMessage("canvas.designCanvas.changesWaitingToSync"); },
                   }
                 : {}),
             }
@@ -167,6 +170,7 @@ export function installCanvasDesignCanvas(
     assets: assets,
     doc: doc,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let { showToast: showToast, hideToast: hideToast }: Dynamic = (0,
       runtime.useToast)(),
       value: Dynamic = (0, runtime.reactChromeTheme.useRef)(null),
@@ -226,12 +230,12 @@ export function installCanvasDesignCanvas(
             let value655: Dynamic = "loadState" in doc ? "sync" : "Save";
             showToast(
               value654 instanceof runtime.SessionBusyError
-                ? "Close the open dialog first, then " + value655 + "."
+                ? uiMessage("canvas.designCanvas.closeTheOpenDialogFirst") + value655 + "."
                 : value654 instanceof runtime.UnsettledEditsError
-                  ? "Some edits could not be written. Fix the reported error, then " +
+                  ? uiMessage("canvas.designCanvas.someEditsCouldNotBe") +
                     value655 +
                     "."
-                  : (value655 === "Save" ? "Save failed: " : "Sync failed: ") +
+                  : (value655 === "Save" ? uiMessage("canvas.designCanvas.saveFailed") : uiMessage("canvas.designCanvas.syncFailed")) +
                     (value654 instanceof Error
                       ? value654.message
                       : String(value654)),
@@ -1358,7 +1362,7 @@ export function installCanvasDesignCanvas(
                 status: "dirty",
                 ...(supportsLoadState
                   ? {
-                      message: "Changes waiting to sync",
+                      get message() { return uiMessage("canvas.designCanvas.changesWaitingToSync"); },
                     }
                   : {}),
               }
@@ -1495,7 +1499,7 @@ export function installCanvasDesignCanvas(
     value80.current = value79;
     let value81: Dynamic =
         value77.find((input?: Dynamic): Dynamic => input.id === value79)
-          ?.name ?? "Page 1",
+          ?.name ?? uiMessage("canvas.designCanvas.page1"),
       value82: Dynamic = (0, runtime.reactChromeTheme.useSyncExternalStore)(
         noopCanvasSubscription,
         zeroCanvasRevision,
@@ -1611,7 +1615,7 @@ export function installCanvasDesignCanvas(
             .catch(
               (input2?: Dynamic): Dynamic =>
                 showToast(
-                  "Couldn't save the layout: " + String(input2),
+                  uiMessage("canvas.designCanvas.couldnTSaveTheLayout") + String(input2),
                   "error",
                 ),
             );
@@ -1857,7 +1861,7 @@ export function installCanvasDesignCanvas(
         value653.theirsOnItsWay
           ? (input?: Dynamic): Dynamic => value653.theirsOnItsWay(input)
           : value653.releaseHold
-            ? "cannot tell"
+            ? uiMessage("canvas.designCanvas.cannotTell")
             : null,
       );
       return (): Dynamic => (0, runtime.setArtboardWritableCheck)(null);
@@ -1908,12 +1912,12 @@ export function installCanvasDesignCanvas(
       (): Dynamic => (
         (0, runtime.setFilePublishHandler)((input?: Dynamic): Dynamic => {
           showToast(
-            "Stored a compressed copy of the image (" +
+            uiMessage("canvas.designCanvas.storedACompressedCopyOf") +
               (input === "unavailable"
-                ? "uploads are unavailable here"
+                ? uiMessage("canvas.designCanvas.uploadsAreUnavailableHere")
                 : input === "unsupported_type" || input === "too_large"
-                  ? "this file type or size can\u2019t be uploaded as-is"
-                  : "the upload did not go through") +
+                  ? uiMessage("canvas.designCanvas.thisFileTypeOrSize")
+                  : uiMessage("canvas.designCanvas.theUploadDidNotGo")) +
               ").",
           );
         }),
@@ -2055,7 +2059,7 @@ export function installCanvasDesignCanvas(
                 value448.current(
                   value659
                     ? input + " \u2014 one artboard's delete failed"
-                    : "Nothing deleted \u2014 an artboard could not apply the delete.",
+                    : uiMessage("canvas.designCanvas.nothingDeletedAnArtboardCould"),
                 );
                 return;
               }
@@ -2074,7 +2078,7 @@ export function installCanvasDesignCanvas(
               }
               items.every((input2?: Dynamic): Dynamic => !input2)
                 ? value448.current(
-                    "Nothing deleted \u2014 repeated rows are generated by the layout's data and stay with it.",
+                    uiMessage("canvas.designCanvas.nothingDeletedRepeatedRowsAre"),
                   )
                 : (0, runtime.announce)(
                     items.every(Boolean)
@@ -2161,8 +2165,8 @@ export function installCanvasDesignCanvas(
               ) {
                 value448.current(
                   value659
-                    ? "Duplicated \u2014 one artboard's duplicate failed"
-                    : "Nothing duplicated \u2014 an artboard could not apply the duplicate.",
+                    ? uiMessage("canvas.designCanvas.duplicatedOneArtboardSDuplicate")
+                    : uiMessage("canvas.designCanvas.nothingDuplicatedAnArtboardCould"),
                 );
                 return;
               }
@@ -2182,7 +2186,7 @@ export function installCanvasDesignCanvas(
               items.length > 0 &&
                 items.every((input2?: Dynamic): Dynamic => !input2) &&
                 value448.current(
-                  "Nothing duplicated \u2014 repeated rows are generated by the layout's data and stay with it.",
+                  uiMessage("canvas.designCanvas.nothingDuplicatedRepeatedRowsAre"),
                 );
             });
           return true;
@@ -2399,7 +2403,7 @@ export function installCanvasDesignCanvas(
             await value662;
             value448.current(
               value663 === false
-                ? "Nothing " +
+                ? uiMessage("canvas.designCanvas.nothing") +
                     (input.copy ? "copied" : "moved") +
                     " \u2014 the drag was interrupted; try it again."
                 : input2,
@@ -2425,7 +2429,7 @@ export function installCanvasDesignCanvas(
           };
         if (!value654 || value655.length === 0)
           return callback17(
-            "Nothing " + (input.copy ? "copied" : "moved") + ".",
+            uiMessage("canvas.designCanvas.nothing") + (input.copy ? "copied" : "moved") + ".",
           );
         callback15();
         let files: Dynamic = doc.content().files;
@@ -2435,9 +2439,9 @@ export function installCanvasDesignCanvas(
         )
           return callback17(
             (input.canvasMoved
-              ? "The rest " + (input.copy ? "copied" : "moved") + "; "
+              ? uiMessage("canvas.designCanvas.theRest") + (input.copy ? "copied" : "moved") + "; "
               : "") +
-              "couldn't make new artboards \u2014 the canvas is at its " +
+              uiMessage("canvas.designCanvas.couldnTMakeNewArtboards") +
               String(runtime.PlatformFileContentFilesValue) +
               "-file limit; delete something first",
           );
@@ -2494,7 +2498,7 @@ export function installCanvasDesignCanvas(
           for (let value662 of value654.travellers as Dynamic)
             value654.endHome(value662.file, false);
           value448.current(
-            "Nothing " +
+            uiMessage("canvas.designCanvas.nothing") +
               (value654.copy ? "copied" : "moved") +
               " \u2014 the drag was interrupted; try it again.",
           );
@@ -2543,9 +2547,9 @@ export function installCanvasDesignCanvas(
             value654.endHome(value662.file, false);
           value448.current(
             (input.canvasMoved
-              ? "The rest " + (value654.copy ? "copied" : "moved") + "; "
+              ? uiMessage("canvas.designCanvas.theRest") + (value654.copy ? "copied" : "moved") + "; "
               : "") +
-              "couldn't make new artboards \u2014 the canvas is at its " +
+              uiMessage("canvas.designCanvas.couldnTMakeNewArtboards") +
               String(runtime.PlatformFileContentFilesValue) +
               "-file limit; delete something first",
           );
@@ -2658,10 +2662,10 @@ export function installCanvasDesignCanvas(
           console.error("set pieces:", value662);
           value448.current(
             input.canvasMoved
-              ? "The rest " +
+              ? uiMessage("canvas.designCanvas.theRest") +
                   (value654.copy ? "copied" : "moved") +
                   "; the elements could not be lifted and stayed."
-              : "Nothing " +
+              : uiMessage("canvas.designCanvas.nothing") +
                   (value654.copy ? "copied" : "moved") +
                   " \u2014 the elements could not be lifted.",
           );
@@ -2673,10 +2677,10 @@ export function installCanvasDesignCanvas(
             value654.endHome(value662.file, false);
           value448.current(
             (input.canvasMoved
-              ? "The rest " +
+              ? uiMessage("canvas.designCanvas.theRest") +
                 (value654.copy ? "copied" : "moved") +
                 "; the elements stayed \u2014 "
-              : "Nothing " +
+              : uiMessage("canvas.designCanvas.nothing") +
                 (value654.copy ? "copied" : "moved") +
                 " \u2014 ") +
               "repeated, nested or locked elements stay with their artboard.",
@@ -2689,12 +2693,12 @@ export function installCanvasDesignCanvas(
             value654.endHome(value662.file, false);
           value448.current(
             (input.canvasMoved
-              ? "The rest " +
+              ? uiMessage("canvas.designCanvas.theRest") +
                 (value654.copy ? "copied" : "moved") +
                 "; the elements stayed \u2014 "
-              : "Nothing " +
+              : uiMessage("canvas.designCanvas.nothing") +
                 (value654.copy ? "copied" : "moved") +
-                " \u2014 ") + "the canvas is read-only now.",
+                " \u2014 ") + uiMessage("canvas.designCanvas.theCanvasIsReadOnly"),
           );
           return callback16();
         }
@@ -2745,7 +2749,7 @@ export function installCanvasDesignCanvas(
             value654.endHome(value663.file, false);
           console.error("set pieces:", value662);
           value448.current(
-            "Couldn't finish the drop \u2014 some of the pieces may be missing; " +
+            uiMessage("canvas.designCanvas.couldnTFinishTheDrop") +
               (0, runtime.keyboardShortcutLabel)("Z") +
               " takes back what was made.",
           );
@@ -2826,10 +2830,10 @@ export function installCanvasDesignCanvas(
         if (value659.length > 0) {
           let value662: Dynamic = value659.map(callback2);
           value448.current(
-            "Moved onto the canvas, but " +
+            uiMessage("canvas.designCanvas.movedOntoTheCanvasBut") +
               callback20(value662) +
               " kept what was dragged, so it is now in both places. Check " +
-              (value662.length === 1 ? "that artboard" : "those artboards") +
+              (value662.length === 1 ? uiMessage("canvas.designCanvas.thatArtboard") : uiMessage("canvas.designCanvas.thoseArtboards")) +
               ".",
           );
         } else
@@ -2918,7 +2922,7 @@ export function installCanvasDesignCanvas(
           value659.length === 0 &&
           entries3.size === 0 &&
           value448.current(
-            "Nothing moved inside " +
+            uiMessage("canvas.designCanvas.nothingMovedInside") +
               callback20(value661.map(callback2)) +
               "; the rest " +
               (value654.copy ? "copied" : "moved") +
@@ -3205,7 +3209,7 @@ export function installCanvasDesignCanvas(
               value671: Dynamic = value662 ? "copy" : "move";
             value669?.how === "reverted"
               ? value448.current(
-                  "Couldn't " +
+                  uiMessage("canvas.designCanvas.couldnT") +
                     value671 +
                     " to " +
                     value668(target) +
@@ -3217,7 +3221,7 @@ export function installCanvasDesignCanvas(
                 )
               : items9.length > 0
                 ? value448.current(
-                    "The move landed in " +
+                    uiMessage("canvas.designCanvas.theMoveLandedIn") +
                       value668(target) +
                       " but could not leave " +
                       callback16(items9.map(value668)) +
@@ -3227,16 +3231,16 @@ export function installCanvasDesignCanvas(
                   )
                 : items10.length > 0 && value666 !== "failed"
                   ? value448.current(
-                      "Nowhere to land in " +
+                      uiMessage("canvas.designCanvas.nowhereToLandIn") +
                         value668(target) +
                         " for " +
                         callback16(items10.map(value668)) +
                         "'s selection; " +
-                        (value662 ? "nothing of it was copied." : "it stayed."),
+                        (value662 ? uiMessage("canvas.designCanvas.nothingOfItWasCopied") : uiMessage("canvas.designCanvas.itStayed")),
                     )
                   : value670.length > 0 &&
                     value448.current(
-                      "Part of " +
+                      uiMessage("canvas.designCanvas.partOf") +
                         callback16(value670.map(value668)) +
                         "'s selection could not land in " +
                         value668(target) +
@@ -3320,7 +3324,7 @@ export function installCanvasDesignCanvas(
         }
         input.canvasDropped &&
           value448.current(
-            "The artboards and notes in the drag did not " +
+            uiMessage("canvas.designCanvas.theArtboardsAndNotesIn") +
               (input.copy ? "copy" : "move") +
               " \u2014 the drag was interrupted; try it again.",
           );
@@ -3398,10 +3402,10 @@ export function installCanvasDesignCanvas(
             value662: Dynamic = items3.length === 0;
           value448.current(
             value662 && !input.canvasMoved
-              ? "Nothing moved."
+              ? uiMessage("canvas.designCanvas.nothingMoved")
               : value662
-                ? "The rest moved; nothing moved inside " + value661 + "."
-                : "Nothing moved inside " + value661 + "; the rest moved.",
+                ? uiMessage("canvas.designCanvas.theRestMovedNothingMoved") + value661 + "."
+                : uiMessage("canvas.designCanvas.nothingMovedInside") + value661 + "; the rest moved.",
           );
         }
         return {
@@ -3556,7 +3560,7 @@ export function installCanvasDesignCanvas(
               value654 === "undo" ? current4.undo() : current4.redo();
             value655 === "skipped-all"
               ? value448.current?.(
-                  "Nothing left to " +
+                  uiMessage("canvas.designCanvas.nothingLeftTo") +
                     value654 +
                     " \u2014 that artboard's history changed.",
                 )
@@ -3672,7 +3676,7 @@ export function installCanvasDesignCanvas(
                     }) &&
                       (0, runtime.boardSelectionCount)(value654) > 0 &&
                       value161(
-                        "The artboards and notes stay selected \u2014 press Delete again to remove them",
+                        uiMessage("canvas.designCanvas.theArtboardsAndNotesStay"),
                       );
                   } else value146();
                 }),
@@ -3733,7 +3737,7 @@ export function installCanvasDesignCanvas(
                                     value656,
                                   ) + ". "
                                 : "") +
-                              "Press " +
+                              uiMessage("canvas.designCanvas.press") +
                               value655 +
                               " again to flip what is outside the artboards, which stays selected.",
                           ),
@@ -3757,7 +3761,7 @@ export function installCanvasDesignCanvas(
               (0, runtime.boardSelectionCount)(value654) > 0 &&
               (applyCanvasSelection((0, runtime.selectionFromBoards)(value654)),
               value161(
-                "The artboards and notes stay selected \u2014 press " +
+                uiMessage("canvas.designCanvas.theArtboardsAndNotesStay2") +
                   (0, runtime.keyboardShortcutLabel)("D") +
                   " again to copy them",
               ));
@@ -4640,7 +4644,7 @@ export function installCanvasDesignCanvas(
             setTimeout((): Dynamic => callback15(false), 3500);
           })) ||
             value448.current(
-              "Couldn't undo the move into " +
+              uiMessage("canvas.designCanvas.couldnTUndoTheMove") +
                 callback2(input) +
                 ". The " +
                 context +
@@ -4725,10 +4729,10 @@ export function installCanvasDesignCanvas(
                   );
                 value188(
                   value663
-                    ? "Nothing moved. This piece holds " +
+                    ? uiMessage("canvas.designCanvas.nothingMovedThisPieceHolds") +
                         String(value664) +
                         " elements; a piece with one element can join an artboard."
-                    : "Nothing moved. This " +
+                    : uiMessage("canvas.designCanvas.nothingMovedThis") +
                         value660 +
                         " has nothing that can go into an artboard.",
                 );
@@ -4771,7 +4775,7 @@ export function installCanvasDesignCanvas(
                 )
               ) {
                 let value674: Dynamic = Date.now() + 1500,
-                  value675: Dynamic = Symbol("timed out"),
+                  value675: Dynamic = Symbol(uiMessage("canvas.designCanvas.timedOut")),
                   callback15: Dynamic = (input2?: Dynamic): Dynamic => {
                     let index: Dynamic = 0,
                       promise: Dynamic = new Promise(
@@ -4815,7 +4819,7 @@ export function installCanvasDesignCanvas(
                         : value676;
                   if (value677 === value675) {
                     value188(
-                      "Nothing moved. " +
+                      uiMessage("canvas.designCanvas.nothingMoved2") +
                         callback2(value653) +
                         " did not answer; try the drag again.",
                     );
@@ -4904,7 +4908,7 @@ export function installCanvasDesignCanvas(
                 }
               }
               if (!flag2) {
-                value188("Could not move \u2014 nothing changed.");
+                value188(uiMessage("canvas.designCanvas.couldNotMoveNothingChanged"));
                 return;
               }
               value276.current = {
@@ -4931,13 +4935,13 @@ export function installCanvasDesignCanvas(
               if (!value459.current(value659, value667)) {
                 await value213(value653, value667, value660);
                 value188(
-                  "Nothing moved. The " +
+                  uiMessage("canvas.designCanvas.nothingMovedThe") +
                     value660 +
                     " could not leave the canvas.",
                 );
                 return;
               }
-              value189("Moved into " + callback2(value653));
+              value189(uiMessage("canvas.designCanvas.movedInto") + callback2(value653));
               if (value673) {
                 value155.current++;
                 try {
@@ -4960,7 +4964,7 @@ export function installCanvasDesignCanvas(
               }, 160);
             } catch (value663: Dynamic) {
               showToast(
-                "Couldn't finish the drop: " + String(value663),
+                uiMessage("canvas.designCanvas.couldnTFinishTheDrop2") + String(value663),
                 "error",
               );
               if (value662 && value661?.target) {
@@ -5014,7 +5018,7 @@ export function installCanvasDesignCanvas(
           if (value345.current) {
             callback15();
             value188(
-              "Nothing moved \u2014 only this artboard is on screen; drag the element within its frame.",
+              uiMessage("canvas.designCanvas.nothingMovedOnlyThisArtboard"),
             );
             return;
           }
@@ -5032,7 +5036,7 @@ export function installCanvasDesignCanvas(
           if (value655 != null && value655.file === value271.current) {
             callback15();
             value188(
-              "Nothing moved. That artboard is playing. Press Edit on it first.",
+              uiMessage("canvas.designCanvas.nothingMovedThatArtboardIs"),
             );
             return;
           }
@@ -5058,7 +5062,7 @@ export function installCanvasDesignCanvas(
                   });
                 if (!value658) {
                   value188(
-                    "Nothing moved \u2014 repeated or root-level elements stay with their artboard.",
+                    uiMessage("canvas.designCanvas.nothingMovedRepeatedOrRoot"),
                   );
                   return;
                 }
@@ -5068,7 +5072,7 @@ export function installCanvasDesignCanvas(
                   runtime.PlatformFileContentFilesValue
                 ) {
                   showToast(
-                    "Couldn't make a new artboard \u2014 the canvas is at its " +
+                    uiMessage("canvas.designCanvas.couldnTMakeANew") +
                       String(runtime.PlatformFileContentFilesValue) +
                       "-file limit; delete something first",
                     "error",
@@ -5165,7 +5169,7 @@ export function installCanvasDesignCanvas(
                   }
                   if (!flag2) {
                     value188(
-                      "Copied onto the canvas \u2014 the original could not be removed.",
+                      uiMessage("canvas.designCanvas.copiedOntoTheCanvasThe"),
                     );
                     return;
                   }
@@ -5178,7 +5182,7 @@ export function installCanvasDesignCanvas(
                 );
               } catch (value657: Dynamic) {
                 showToast(
-                  "Couldn't finish the drop: " + String(value657),
+                  uiMessage("canvas.designCanvas.couldnTFinishTheDrop2") + String(value657),
                   "error",
                 );
               } finally {
@@ -5190,7 +5194,7 @@ export function installCanvasDesignCanvas(
           }
           if (value655.file === input.file) {
             value188(
-              "Released over the same artboard \u2014 drag the element itself to move it within its frame.",
+              uiMessage("canvas.designCanvas.releasedOverTheSameArtboard"),
             );
             return;
           }
@@ -5212,7 +5216,7 @@ export function installCanvasDesignCanvas(
               });
               if (!value659) {
                 value188(
-                  "Nothing moved \u2014 repeated or root-level elements stay with their artboard.",
+                  uiMessage("canvas.designCanvas.nothingMovedRepeatedOrRoot"),
                 );
                 return;
               }
@@ -5244,7 +5248,7 @@ export function installCanvasDesignCanvas(
                     : (0, runtime.randomSessionToken)();
                 value656 = false;
                 let value666: Dynamic = Date.now() + 1500,
-                  value667: Dynamic = Symbol("timed out"),
+                  value667: Dynamic = Symbol(uiMessage("canvas.designCanvas.timedOut")),
                   callback16: Dynamic = (input2?: Dynamic): Dynamic => {
                     let index: Dynamic = 0,
                       promise: Dynamic = new Promise(
@@ -5286,7 +5290,7 @@ export function installCanvasDesignCanvas(
                         : value668;
                   if (value669 === value667) {
                     value188(
-                      "Nothing moved. " +
+                      uiMessage("canvas.designCanvas.nothingMoved2") +
                         callback2(value655.file) +
                         " did not answer; try the drag again.",
                     );
@@ -5332,7 +5336,7 @@ export function installCanvasDesignCanvas(
                     flag3 && entry2.dropPlanClear(value665, true);
                     flag3 &&
                       value671.written.includes(input.file) &&
-                      value189("Moved to " + callback2(value655.file));
+                      value189(uiMessage("canvas.designCanvas.movedTo") + callback2(value655.file));
                     return;
                   }
                 } finally {
@@ -5376,12 +5380,12 @@ export function installCanvasDesignCanvas(
                 at: Date.now(),
               };
               if (value664.length === 0) {
-                value188("Could not move \u2014 nothing changed.");
+                value188(uiMessage("canvas.designCanvas.couldNotMoveNothingChanged"));
                 return;
               }
               if (value653)
                 value189(
-                  "Copied to " + value655.file.replace(/\.dc\.html$/, ""),
+                  uiMessage("canvas.designCanvas.copiedTo") + value655.file.replace(/\.dc\.html$/, ""),
                 );
               else {
                 value657?.admit(input.file);
@@ -5398,12 +5402,12 @@ export function installCanvasDesignCanvas(
                   value666 && entry2.dropRedo();
                   value188(
                     value666
-                      ? "Could not move \u2014 reverted."
-                      : "Move failed halfway \u2014 check both artboards.",
+                      ? uiMessage("canvas.designCanvas.couldNotMoveReverted")
+                      : uiMessage("canvas.designCanvas.moveFailedHalfwayCheckBoth"),
                   );
                   return;
                 }
-                value189("Moved to " + callback2(value655.file));
+                value189(uiMessage("canvas.designCanvas.movedTo") + callback2(value655.file));
               }
               abandonSelectionGesture();
               setSelection(
@@ -5527,7 +5531,7 @@ export function installCanvasDesignCanvas(
             current4 && current4.file === input && current4.key === options.key
               ? (current4.pendingDrop &&
                   value188(
-                    "Nothing moved \u2014 the artboard ended the drag first.",
+                    uiMessage("canvas.designCanvas.nothingMovedTheArtboardEnded"),
                   ),
                 value208())
               : !current4 && !value216.current && value200(null);
@@ -5702,7 +5706,7 @@ export function installCanvasDesignCanvas(
               value201.current = setTimeout((): Dynamic => {
                 value193.current?.pendingDrop &&
                   value188(
-                    "Nothing moved \u2014 the artboard did not answer; try the drag again.",
+                    uiMessage("canvas.designCanvas.nothingMovedTheArtboardDid"),
                   );
                 value210();
               }, 1500);
@@ -6745,7 +6749,7 @@ export function installCanvasDesignCanvas(
             : [runtime.defaultCanvasPage];
         if (value654.length >= runtime.PlatformFileContentLimit_3) {
           showToast(
-            "This canvas is at its page limit (" +
+            uiMessage("canvas.designCanvas.thisCanvasIsAtIts") +
               String(runtime.PlatformFileContentLimit_3) +
               ").",
           );
@@ -6785,10 +6789,10 @@ export function installCanvasDesignCanvas(
                   );
           if (!value653) return;
           let value654: Dynamic = await (0, runtime.promptCanvasValue)({
-            title: "Rename page",
+            get title() { return uiMessage("canvas.designCanvas.renamePage"); },
             initialValue: value653.name,
             inputLabel: "Page name",
-            confirmLabel: "Rename",
+            get confirmLabel() { return uiMessage("canvas.designCanvas.rename"); },
             maxLength: 120,
           });
           (0, runtime.clearEscapeReleaseSuppression)();
@@ -6978,7 +6982,7 @@ export function installCanvasDesignCanvas(
               context?.doneSay && value189(context.doneSay);
             } catch (value654: Dynamic) {
               showToast(
-                "Couldn't add an artboard: " + String(value654),
+                uiMessage("canvas.designCanvas.couldnTAddAnArtboard") + String(value654),
                 "error",
               );
             }
@@ -7014,7 +7018,7 @@ export function installCanvasDesignCanvas(
           let value653: Dynamic = value73.current.annotations ?? [];
           if (value653.length >= runtime.PlatformFileContentLimit_5) {
             value188(
-              "This canvas is at its limit for notes and shapes (" +
+              uiMessage("canvas.designCanvas.thisCanvasIsAtIts2") +
                 String(runtime.PlatformFileContentLimit_5) +
                 ").",
             );
@@ -7890,13 +7894,13 @@ export function installCanvasDesignCanvas(
           if (value655.length === 0 && value656.length === 0) {
             items.length > 0 &&
               value188(
-                `Only images and .mp4, .mov or .webm videos can be ${value653} on the canvas.`,
+                uiMessage("canvas.designCanvas.onlyImagesAndMp4Mov", { value1: uiOperation(value653) }),
               );
             return;
           }
           if (!editable) {
             value188(
-              `This design is view-only \u2014 ${value657} can't be added.`,
+              uiMessage("canvas.designCanvas.thisDesignIsViewOnly", { value1: uiOperation(value657) }),
             );
             return;
           }
@@ -7904,7 +7908,7 @@ export function installCanvasDesignCanvas(
           let value658: Dynamic = extra;
           value654.length > value655.length &&
             value188(
-              `Placing the first ${6} images \u2014 add the rest separately.`,
+              uiMessage("canvas.designCanvas.placingTheFirstValue1Images", { value1: String(6) }),
             );
           value655.length > 0 &&
             value324.current(value655, options, context, value653, value658);
@@ -7966,12 +7970,12 @@ export function installCanvasDesignCanvas(
               let value654: Dynamic = value332(options, context, extra);
               if (value654 != null && value654.file === value271.current) {
                 value188(
-                  "Nothing added. That artboard is playing. Press Edit on it first.",
+                  uiMessage("canvas.designCanvas.nothingAddedThatArtboardIs"),
                 );
                 return;
               }
               if (extra != null && !value654) {
-                value188(`Could not place the ${value653} image.`);
+                value188(uiMessage("canvas.designCanvas.couldNotPlaceTheValue1", { value1: uiOperation(value653) }));
                 return;
               }
               let callback16: Dynamic = (
@@ -8155,7 +8159,7 @@ export function installCanvasDesignCanvas(
                 value659[options2] == null &&
                   !value658[options2] &&
                   value660[options2] == null &&
-                  (value659[options2] = "too large to place here");
+                  (value659[options2] = uiMessage("canvas.designCanvas.tooLargeToPlaceHere"));
               });
               items.forEach((input?: Dynamic, options2?: Dynamic): Dynamic => {
                 value659[options2] != null && callback19(options2, "cancel");
@@ -8171,8 +8175,8 @@ export function installCanvasDesignCanvas(
               length > 0 &&
                 value188(
                   length === items.length
-                    ? `Couldn't use the ${value653} image file` +
-                        (items.length > 1 ? "s \u2014 " : " \u2014 ") +
+                    ? uiMessage("canvas.designCanvas.couldnTUseTheValue1", { value1: uiOperation(value653) }) +
+                        (items.length > 1 ? uiMessage("canvas.designCanvas.s") : " \u2014 ") +
                         [
                           ...new Set(
                             value659.filter(
@@ -8234,14 +8238,14 @@ export function installCanvasDesignCanvas(
                       })) ||
                         (await callback22(),
                         value188(
-                          "Image kept as an embedded preview (upload settle was refused).",
+                          uiMessage("canvas.designCanvas.imageKeptAsAnEmbedded"),
                         ));
                     })
                     .catch(
                       async (): Promise<Dynamic> => (
                         await callback22(),
                         value188(
-                          `Image upload failed \u2014 the ${value653} preview was kept.`,
+                          uiMessage("canvas.designCanvas.imageUploadFailedTheValue1", { value1: uiOperation(value653) }),
                         ),
                         false
                       ),
@@ -8260,7 +8264,7 @@ export function installCanvasDesignCanvas(
                 if (value662 <= 0) {
                   callback15();
                   value188(
-                    "This canvas is at its limit for notes and shapes (" +
+                    uiMessage("canvas.designCanvas.thisCanvasIsAtIts2") +
                       String(runtime.PlatformFileContentLimit_5) +
                       ").",
                   );
@@ -8283,7 +8287,7 @@ export function installCanvasDesignCanvas(
                     let value664: Dynamic = index4 - items2.length,
                       value665: Dynamic =
                         items2.length === 1
-                          ? `Picture from the ${value653} image`
+                          ? uiMessage("canvas.designCanvas.pictureFromTheValue1Image", { value1: uiOperation(value653) })
                           : `${items2.length} pictures from the ${value653} images`,
                       value666: Dynamic = `${value664} of the ${value653} images ${value664 === 1 ? "was" : "were"} not placed.`;
                     value664 > 0 && value188(value666);
@@ -8347,7 +8351,7 @@ export function installCanvasDesignCanvas(
                       runtime.PlatformFileContentTest_2)(src);
                       if (value668 === null) {
                         value188(
-                          `Could not place the ${value653} image on the canvas here.`,
+                          uiMessage("canvas.designCanvas.couldNotPlaceTheValue12", { value1: uiOperation(value653) }),
                         );
                         return callback22();
                       }
@@ -8398,7 +8402,7 @@ export function installCanvasDesignCanvas(
                   ).catch((): Dynamic => {
                     callback23();
                     value188(
-                      `Couldn't use the ${value653} image \u2014 it was not placed.`,
+                      uiMessage("canvas.designCanvas.couldnTUseTheValue12", { value1: uiOperation(value653) }),
                     );
                     callback22();
                   });
@@ -8409,7 +8413,7 @@ export function installCanvasDesignCanvas(
                 let length2: Dynamic = value658.filter(Boolean).length;
                 index4 < length2 &&
                   value188(
-                    "Placing the first " +
+                    uiMessage("canvas.designCanvas.placingTheFirst") +
                       String(index4) +
                       " \u2014 this canvas is at its limit for notes and shapes (" +
                       String(runtime.PlatformFileContentLimit_5) +
@@ -8420,7 +8424,7 @@ export function installCanvasDesignCanvas(
               let entry: Dynamic = value177.current.get(value654.file);
               if (!entry) {
                 callback15();
-                value188(`Could not place the ${value653} image.`);
+                value188(uiMessage("canvas.designCanvas.couldNotPlaceTheValue1", { value1: uiOperation(value653) }));
                 return;
               }
               let index: Dynamic = 0;
@@ -8473,7 +8477,7 @@ export function installCanvasDesignCanvas(
                         ? `; ${length} of the ${value653} files couldn't be used`
                         : ""),
                   )
-                : value188(`Could not place the ${value653} image.`);
+                : value188(uiMessage("canvas.designCanvas.couldNotPlaceTheValue1", { value1: uiOperation(value653) }));
             })().finally((): Dynamic => callback15()),
           );
         },
@@ -8496,13 +8500,13 @@ export function installCanvasDesignCanvas(
             let value654: Dynamic = value332(options, context, extra);
             if (value654 != null && value654.file === value271.current) {
               value188(
-                "Nothing added. That artboard is playing. Press Edit on it first.",
+                uiMessage("canvas.designCanvas.nothingAddedThatArtboardIs"),
               );
               return;
             }
             if (extra != null && !value654) {
               value188(
-                `Could not place the ${value653} video: that artboard is gone.`,
+                uiMessage("canvas.designCanvas.couldNotPlaceTheValue13", { value1: uiOperation(value653) }),
               );
               return;
             }
@@ -8511,7 +8515,7 @@ export function installCanvasDesignCanvas(
               value177.current.get(value654.file)?.isReady() !== true
             ) {
               value188(
-                "Nothing added. That artboard isn't loaded yet. Click it, then add the video again.",
+                uiMessage("canvas.designCanvas.nothingAddedThatArtboardIsn"),
               );
               return;
             }
@@ -8536,7 +8540,7 @@ export function installCanvasDesignCanvas(
               );
             value655.length > value656.length &&
               callback16(
-                `Adding the first ${runtime.CanvasWorkingStateConstant_5} videos. Add the rest separately.`,
+                uiMessage("canvas.designCanvas.addingTheFirstValue1Videos", { value1: String(runtime.CanvasWorkingStateConstant_5) }),
               );
             if (value656.length === 0) return;
             if (
@@ -8547,7 +8551,7 @@ export function installCanvasDesignCanvas(
                 runtime.PlatformFileContentLimit_5
             ) {
               value188(
-                "This canvas is at its limit for notes and shapes (" +
+                uiMessage("canvas.designCanvas.thisCanvasIsAtIts2") +
                   String(runtime.PlatformFileContentLimit_5) +
                   ").",
               );
@@ -8690,8 +8694,8 @@ export function installCanvasDesignCanvas(
             value660.some(Boolean) &&
               (0, runtime.announce)(
                 value660.filter(Boolean).length > 1
-                  ? "Uploading videos"
-                  : "Uploading video",
+                  ? uiMessage("canvas.designCanvas.uploadingVideos")
+                  : uiMessage("canvas.designCanvas.uploadingVideo"),
               );
             let index2: Dynamic = 0,
               value661: Dynamic = null,
@@ -8731,7 +8735,7 @@ export function installCanvasDesignCanvas(
                 if (value664 === null) {
                   callback19(index3, "cancel");
                   callback16(
-                    `Couldn't store a still of the ${value653} video, so it wasn't added. Try again.`,
+                    uiMessage("canvas.designCanvas.couldnTStoreAStill2", { value1: uiOperation(value653) }),
                   );
                   continue;
                 }
@@ -8783,7 +8787,7 @@ export function installCanvasDesignCanvas(
                   (value73.current.annotations ?? []).length <
                     runtime.PlatformFileContentLimit_5 &&
                     callback16(
-                      `Couldn't add the ${value653} video to the canvas. Add it again.`,
+                      uiMessage("canvas.designCanvas.couldnTAddTheValue1", { value1: uiOperation(value653) }),
                     );
                   continue;
                 }
@@ -8845,8 +8849,8 @@ export function installCanvasDesignCanvas(
                 callback19(index3, "cancel");
                 callback16(
                   value666
-                    ? `Could not place the ${value653} video.`
-                    : "The video uploaded, but its artboard did not come back within a minute, so it wasn't placed. Add it again.",
+                    ? uiMessage("canvas.designCanvas.couldNotPlaceTheValue14", { value1: uiOperation(value653) })
+                    : uiMessage("canvas.designCanvas.theVideoUploadedButIts"),
                 );
                 continue;
               }
@@ -8906,10 +8910,10 @@ export function installCanvasDesignCanvas(
           )[input];
           value188(
             options === "blocked"
-              ? "That artboard didn't load \u2014 pick another one to add " +
+              ? uiMessage("canvas.designCanvas.thatArtboardDidnTLoad") +
                   value653 +
                   "."
-              : "Click inside an artboard to add " + value653 + ".",
+              : uiMessage("canvas.designCanvas.clickInsideAnArtboardTo") + value653 + ".",
           );
         },
         [value188],
@@ -8988,7 +8992,7 @@ export function installCanvasDesignCanvas(
                 runtime.PlatformFileContentFilesValue
               ) {
                 showToast(
-                  "Couldn't duplicate \u2014 the canvas would pass its " +
+                  uiMessage("canvas.designCanvas.couldnTDuplicateTheCanvas") +
                     String(runtime.PlatformFileContentFilesValue) +
                     "-file limit; delete something first",
                   "error",
@@ -9020,13 +9024,13 @@ export function installCanvasDesignCanvas(
                   (0, runtime.isLoadingArtboardHtml)(value662)
                 ) {
                   let value665: Dynamic =
-                    value655.length === 1 ? "the artboard" : "an artboard";
+                    value655.length === 1 ? uiMessage("canvas.designCanvas.theArtboard") : uiMessage("canvas.designCanvas.anArtboard");
                   showToast(
                     typeof value662 == "string"
-                      ? "Couldn't duplicate \u2014 " +
+                      ? uiMessage("canvas.designCanvas.couldnTDuplicate") +
                           value665 +
                           " is still loading"
-                      : "Couldn't duplicate \u2014 " +
+                      : uiMessage("canvas.designCanvas.couldnTDuplicate") +
                           value665 +
                           " has no source",
                     "error",
@@ -9096,7 +9100,7 @@ export function installCanvasDesignCanvas(
               !value656 &&
                 items.length > 0 &&
                 showToast(
-                  "The artboards were copied; the notes and shapes were not \u2014 this canvas is at its limit (" +
+                  uiMessage("canvas.designCanvas.theArtboardsWereCopiedThe") +
                     String(runtime.PlatformFileContentLimit_5) +
                     ").",
                   "error",
@@ -9151,7 +9155,7 @@ export function installCanvasDesignCanvas(
                   runtime.designAnalyticsEvents.artboardInserted,
                 );
             } catch (value655: Dynamic) {
-              showToast("Couldn't duplicate: " + String(value655), "error");
+              showToast(uiMessage("canvas.designCanvas.couldnTDuplicate2") + String(value655), "error");
             } finally {
               value654 !== undefined &&
                 !value142.current.has(value654) &&
@@ -9214,7 +9218,7 @@ export function installCanvasDesignCanvas(
               runtime.PlatformFileContentLimit_5
           ) {
             value188(
-              "Couldn't copy \u2014 this canvas is at its limit for notes and shapes (" +
+              uiMessage("canvas.designCanvas.couldnTCopyThisCanvas") +
                 String(runtime.PlatformFileContentLimit_5) +
                 ").",
             );
@@ -11264,7 +11268,7 @@ export function installCanvasDesignCanvas(
           value413(
             {
               kind: "transform",
-              label: "Flip",
+              get label() { return uiMessage("canvas.designCanvas.flip"); },
               boards: [],
               anns: value654,
             },
@@ -11515,7 +11519,7 @@ export function installCanvasDesignCanvas(
               value396.current(
                 {
                   kind: "transform",
-                  label: "Resize",
+                  get label() { return uiMessage("canvas.designCanvas.resize"); },
                   boards: [],
                   anns: [
                     {
@@ -11615,7 +11619,7 @@ export function installCanvasDesignCanvas(
           }
           flag2 &&
             value188(
-              "That value isn\u2019t one a canvas object can take (colours, lengths, gradients and shadows \u2014 nothing that loads a file).",
+              uiMessage("canvas.designCanvas.thatValueIsnTOne"),
             );
           let value656: Dynamic =
             Object.keys(state).length > 0 ? state : undefined;
@@ -11860,7 +11864,7 @@ export function installCanvasDesignCanvas(
                 src,
               );
               if (value655 === null) {
-                value188("Could not replace the picture here.");
+                value188(uiMessage("canvas.designCanvas.couldNotReplaceThePicture"));
                 return false;
               }
               let value656: Dynamic = value73.current.annotations ?? [],
@@ -11918,7 +11922,7 @@ export function installCanvasDesignCanvas(
           ).catch(
             (input2?: Dynamic): Dynamic =>
               value188(
-                `The picture was not replaced \u2014 ${input2 instanceof runtime.CanvasImagePlacementError ? input2.message : "the upload failed"}.`,
+                uiMessage("canvas.designCanvas.thePictureWasNotReplaced", { value1: uiOperation(input2 instanceof runtime.CanvasImagePlacementError ? input2.message : "the upload failed") }),
               ),
           );
         },
@@ -12067,7 +12071,7 @@ export function installCanvasDesignCanvas(
                 );
                 return value656 === null
                   ? (value188(
-                      "Could not replace the video with that picture here.",
+                      uiMessage("canvas.designCanvas.couldNotReplaceTheVideo"),
                     ),
                     false)
                   : callback15(
@@ -12083,7 +12087,7 @@ export function installCanvasDesignCanvas(
             ).catch(
               (input2?: Dynamic): Dynamic => (
                 value188(
-                  `The video was not replaced: ${input2 instanceof runtime.CanvasImagePlacementError ? input2.message : "the upload failed"}.`,
+                  uiMessage("canvas.designCanvas.theVideoWasNotReplaced", { value1: uiOperation(input2 instanceof runtime.CanvasImagePlacementError ? input2.message : "the upload failed") }),
                 ),
                 false
               ),
@@ -12101,7 +12105,7 @@ export function installCanvasDesignCanvas(
             );
             return;
           }
-          (0, runtime.announce)("Uploading video");
+          (0, runtime.announce)(uiMessage("canvas.designCanvas.uploadingVideo"));
           (0, runtime.trackEmbeddedWrite)(
             (async (): Promise<Dynamic> => {
               let value656: Dynamic = await (0, runtime.captureVideoPoster)(
@@ -12133,7 +12137,7 @@ export function installCanvasDesignCanvas(
               if ((0, runtime.isEmbedFrozen)()) return false;
               if (value657 === null) {
                 value188(
-                  "Couldn't store a still of that video, so it wasn't replaced. Try again.",
+                  uiMessage("canvas.designCanvas.couldnTStoreAStill"),
                 );
                 return false;
               }
@@ -12152,7 +12156,7 @@ export function installCanvasDesignCanvas(
                 value658.src,
               );
               if (value659 === null) {
-                value188("Couldn't replace the video here. Try again.");
+                value188(uiMessage("canvas.designCanvas.couldnTReplaceTheVideo"));
                 return false;
               }
               let value660: Dynamic = callback15(
@@ -12165,7 +12169,7 @@ export function installCanvasDesignCanvas(
                 ),
                 value656,
               );
-              value660 && (0, runtime.announce)("Video replaced");
+              value660 && (0, runtime.announce)(uiMessage("canvas.designCanvas.videoReplaced"));
               return value660;
             })(),
           );
@@ -12350,9 +12354,9 @@ export function installCanvasDesignCanvas(
                   tweak: "Tweak",
                 },
                 state2: Dynamic = {
-                  move: ["Artboard move", "artboard moves"],
-                  add: ["New artboard", "new artboards"],
-                  delete: ["Artboard delete", "artboard deletes"],
+                  move: [uiMessage("canvas.designCanvas.artboardMove"), uiMessage("canvas.designCanvas.artboardMoves")],
+                  add: [uiMessage("canvas.designCanvas.newArtboard"), uiMessage("canvas.designCanvas.newArtboards")],
+                  delete: [uiMessage("canvas.designCanvas.artboardDelete"), uiMessage("canvas.designCanvas.artboardDeletes")],
                 },
                 state3: Dynamic = {
                   move: "Move",
@@ -12368,7 +12372,7 @@ export function installCanvasDesignCanvas(
                       : 0,
                 value658: Dynamic =
                   op2.kind === "delete" && op2.page !== undefined
-                    ? "Page delete"
+                    ? uiMessage("canvas.designCanvas.pageDelete")
                     : op2.kind === "move" ||
                         op2.kind === "add" ||
                         op2.kind === "delete"
@@ -12382,14 +12386,14 @@ export function installCanvasDesignCanvas(
                         ? op2.spec.kind === "image"
                           ? op2.spec.video !== undefined
                             ? op2.kind === "ann-add"
-                              ? "New video"
-                              : "Video delete"
+                              ? uiMessage("canvas.designCanvas.newVideo")
+                              : uiMessage("canvas.designCanvas.videoDelete")
                             : op2.kind === "ann-add"
-                              ? "New picture"
-                              : "Picture delete"
+                              ? uiMessage("canvas.designCanvas.newPicture")
+                              : uiMessage("canvas.designCanvas.pictureDelete")
                           : op2.kind === "ann-add"
-                            ? "New shape"
-                            : "Shape delete"
+                            ? uiMessage("canvas.designCanvas.newShape")
+                            : uiMessage("canvas.designCanvas.shapeDelete")
                         : op2.kind === "transform"
                           ? op2.label
                           : op2.kind === "ann-box" &&
@@ -12403,7 +12407,7 @@ export function installCanvasDesignCanvas(
                             : op2.kind === "ann-src" &&
                                 (op2.from.video !== undefined ||
                                   op2.to.video !== undefined)
-                              ? "Video replace"
+                              ? uiMessage("canvas.designCanvas.videoReplace")
                               : op2.kind === "ann-box" &&
                                   (value73.current.annotations ?? []).some(
                                     (source?: Dynamic): Dynamic =>
@@ -12416,12 +12420,12 @@ export function installCanvasDesignCanvas(
                                       source.kind === "image" &&
                                       source.video !== undefined,
                                   )
-                                  ? "Video move/resize"
-                                  : "Picture move/resize"
+                                  ? uiMessage("canvas.designCanvas.videoMoveResize")
+                                  : uiMessage("canvas.designCanvas.pictureMoveResize")
                                 : state[op2.kind];
               value188(
                 input2 === false
-                  ? "That artboard isn't open here. Its tweak was left as is."
+                  ? uiMessage("canvas.designCanvas.thatArtboardIsnTOpen")
                   : value658 + (input === "undo" ? " undone." : " redone."),
               );
               value427.current = null;
@@ -12435,7 +12439,7 @@ export function installCanvasDesignCanvas(
               callback15(
                 value656 !== undefined
                   ? value656 + (0, runtime.errorMessage)(input2)
-                  : "Couldn't undo the artboard change: " + String(input2),
+                  : uiMessage("canvas.designCanvas.couldnTUndoTheArtboard") + String(input2),
                 "error",
               );
             });
@@ -12597,7 +12601,7 @@ export function installCanvasDesignCanvas(
                     source.dir,
                     value70.current?.pages?.find(
                       (input?: Dynamic): Dynamic => input.id === source.page,
-                    )?.name ?? "Page 1",
+                    )?.name ?? uiMessage("canvas.designCanvas.page1"),
                   ),
                 );
           },
@@ -12677,10 +12681,10 @@ export function installCanvasDesignCanvas(
         )
           return;
         let text: Dynamic =
-          "That move across artboards can no longer be undone or redone as one step. An artboard it changed started its history over.";
+          uiMessage("canvas.designCanvas.thatMoveAcrossArtboardsCan");
         value448.current?.(
           options !== "stale"
-            ? "Couldn't undo or redo that move across artboards whole. Check both artboards."
+            ? uiMessage("canvas.designCanvas.couldnTUndoOrRedo")
             : context === "others"
               ? value653 !== undefined
                 ? text +
@@ -12731,7 +12735,7 @@ export function installCanvasDesignCanvas(
                   input.split("/").pop() ?? input
                 ).replace(/\.dc\.html$/, "");
                 value448.current?.(
-                  (options === "undo" ? "Undid on " : "Redid on ") + value653,
+                  (options === "undo" ? uiMessage("canvas.designCanvas.undidOn") : uiMessage("canvas.designCanvas.redidOn")) + value653,
                 );
               });
       },
@@ -12863,7 +12867,7 @@ export function installCanvasDesignCanvas(
         (value653 === "undo" ? current4.undo() : current4.redo()) ===
           "skipped-all" &&
           value188(
-            "Nothing left to " +
+            uiMessage("canvas.designCanvas.nothingLeftTo") +
               value653 +
               " \u2014 that artboard's history changed.",
           );
@@ -12908,7 +12912,7 @@ export function installCanvasDesignCanvas(
           let value653: Dynamic = value432.current?.undo();
           value653 === "skipped-all"
             ? value448.current?.(
-                "Nothing left to undo \u2014 that artboard's history changed.",
+                uiMessage("canvas.designCanvas.nothingLeftToUndoThat"),
               )
             : value653 === "empty" &&
               (0, runtime.announce)(
@@ -12925,7 +12929,7 @@ export function installCanvasDesignCanvas(
           let value653: Dynamic = value432.current?.redo();
           value653 === "skipped-all"
             ? value448.current?.(
-                "Nothing left to redo \u2014 that artboard's history changed.",
+                uiMessage("canvas.designCanvas.nothingLeftToRedoThat"),
               )
             : value653 === "empty" &&
               (0, runtime.announce)(
@@ -13149,7 +13153,7 @@ export function installCanvasDesignCanvas(
                     );
                 } catch (value655: Dynamic) {
                   showToast(
-                    "Couldn't delete the " +
+                    uiMessage("canvas.designCanvas.couldnTDeleteThe") +
                       (value653 !== undefined ? "page" : "artboard") +
                       ": " +
                       String(value655),
@@ -13344,7 +13348,7 @@ export function installCanvasDesignCanvas(
               : (value396.current(
                   {
                     kind: "transform",
-                    label: "Resize",
+                    get label() { return uiMessage("canvas.designCanvas.resize"); },
                     boards: items,
                     anns: [],
                   },
@@ -13662,11 +13666,11 @@ export function installCanvasDesignCanvas(
             value188(
               context === "self"
                 ? options < 2
-                  ? "That element is a repeating row driven by code, so it can\u2019t be dragged on the canvas."
-                  : "That element repeats \xD7" +
+                  ? uiMessage("canvas.designCanvas.thatElementIsARepeating")
+                  : uiMessage("canvas.designCanvas.thatElementRepeats") +
                     String(options) +
                     " \u2014 its copies are one shared design, so it can\u2019t be dragged out on its own."
-                : "That layout has repeating rows that can\u2019t be pinned in place \u2014 dragging out of it would scramble them, so it stays put.",
+                : uiMessage("canvas.designCanvas.thatLayoutHasRepeatingRows"),
             ));
         },
         [value188],
@@ -13824,7 +13828,7 @@ export function installCanvasDesignCanvas(
                 runtime.PlatformFileContentFilesValue
               ) {
                 showToast(
-                  `Couldn't paste: this canvas would pass its ${String(runtime.PlatformFileContentFilesValue)}-file limit. Delete something first.`,
+                  uiMessage("canvas.designCanvas.couldnTPasteThisCanvas", { value1: String(String(runtime.PlatformFileContentFilesValue)) }),
                   "error",
                 );
                 return;
@@ -13923,8 +13927,8 @@ export function installCanvasDesignCanvas(
                 items2.length > 0 &&
                 showToast(
                   (items4.length > 0
-                    ? "The artboards were pasted; the notes and shapes were not"
-                    : "Couldn't paste") +
+                    ? uiMessage("canvas.designCanvas.theArtboardsWerePastedThe")
+                    : uiMessage("canvas.designCanvas.couldnTPaste")) +
                     " \u2014 this canvas is at its limit for notes and shapes (" +
                     String(runtime.PlatformFileContentLimit_5) +
                     ").",
@@ -13960,7 +13964,7 @@ export function installCanvasDesignCanvas(
                   ...(value660.length > 0
                     ? {
                         anns: value660,
-                        label: "Paste",
+                        get label() { return uiMessage("canvas.designCanvas.paste"); },
                       }
                     : {}),
                 },
@@ -13990,7 +13994,7 @@ export function installCanvasDesignCanvas(
                 );
             } catch (value654: Dynamic) {
               console.error("[design/paste]", value654);
-              showToast("Couldn't paste.", "error");
+              showToast(uiMessage("canvas.designCanvas.couldnTPaste2"), "error");
             } finally {
               for (let value654 of items3 as Dynamic)
                 value461.current.delete(value654);
@@ -14018,7 +14022,7 @@ export function installCanvasDesignCanvas(
           if (!value653 && input.size > 0) return {};
           if (value653?.tooLarge) {
             value188(
-              `Copied. This selection is too large to paste into another canvas (limit ${String(runtime.ClipboardArtboardsResolvedValue >> 20)} MB). Paste here still works; copy fewer artboards to take them elsewhere.`,
+              uiMessage("canvas.designCanvas.copiedThisSelectionIsToo", { value1: String(String(runtime.ClipboardArtboardsResolvedValue >> 20)) }),
             );
             return {};
           }
@@ -14043,11 +14047,11 @@ export function installCanvasDesignCanvas(
             callback16: Dynamic = (input2?: Dynamic): Dynamic =>
               input2 === 1
                 ? "Copied. One uploaded file wasn't read yet, so another canvas would go without it. Copy again in a moment."
-                : `Copied. ${String(input2)} uploaded files weren't read yet, so another canvas would go without them. Copy again in a moment.`,
+                : uiMessage("canvas.designCanvas.copiedValue1UploadedFilesWeren", { value1: String(String(input2)) }),
             callback17: Dynamic = (input2?: Dynamic): Dynamic =>
               input2 === 1
                 ? "Copied. One uploaded file can't travel to another canvas (only images, stylesheets, scripts, fonts and JSON under 4 MB do); add it again there."
-                : `Copied. ${String(input2)} uploaded files can't travel to another canvas (only images, stylesheets, scripts, fonts and JSON under 4 MB do); add them again there.`,
+                : uiMessage("canvas.designCanvas.copiedValue1UploadedFilesCan", { value1: String(String(input2)) }),
             { left: value656 }: Dynamic = value655;
           if (!value653) {
             value655.tooLarge
@@ -14106,7 +14110,7 @@ export function installCanvasDesignCanvas(
             ? callback18(
                 length === 1
                   ? "Copied. One artboard has unsaved edits, so another canvas would get its last saved version. Click outside it, then copy again."
-                  : `Copied. ${String(length)} artboards have unsaved edits, so another canvas would get their last saved versions. Click outside them, then copy again.`,
+                  : uiMessage("canvas.designCanvas.copiedValue1ArtboardsHaveUnsaved", { value1: String(String(length)) }),
               )
             : value653.missingAssets > 0
               ? callback18(
@@ -14195,16 +14199,16 @@ export function installCanvasDesignCanvas(
               options2?: Dynamic,
             ): Dynamic =>
               input2.aborted
-                ? "Paste cancelled: this canvas was closed meanwhile."
+                ? uiMessage("canvas.designCanvas.pasteCancelledThisCanvasWas")
                 : value224.current
                   ? options2 !== undefined &&
                     options2 !== "" &&
                     !(value73.current.pages ?? []).some(
                       (input3?: Dynamic): Dynamic => input3.id === options2,
                     )
-                    ? "Paste cancelled: the page you pasted into was deleted meanwhile."
+                    ? uiMessage("canvas.designCanvas.pasteCancelledThePageYou")
                     : null
-                  : "Paste cancelled: this canvas stopped being editable meanwhile.",
+                  : uiMessage("canvas.designCanvas.pasteCancelledThisCanvasStopped"),
             callback16: Dynamic = (
               input2?: Dynamic,
               options2?: Dynamic,
@@ -14356,7 +14360,7 @@ export function installCanvasDesignCanvas(
                       kind: "add",
                       entries: [],
                       anns: value668,
-                      label: "Paste",
+                      get label() { return uiMessage("canvas.designCanvas.paste"); },
                       files: items2
                         .filter(
                           (input2?: Dynamic): Dynamic =>
@@ -14404,7 +14408,7 @@ export function installCanvasDesignCanvas(
                 } catch (value658: Dynamic) {
                   console.error("[design/paste]", value658);
                   flag2 || (await callback21(items2));
-                  showToast("Couldn't paste.", "error");
+                  showToast(uiMessage("canvas.designCanvas.couldnTPaste2"), "error");
                 } finally {
                   value369.current = null;
                   callback20();
@@ -14458,7 +14462,7 @@ export function installCanvasDesignCanvas(
             value654: Dynamic = (0, runtime.parseArtboardClipboard)(input);
           if (!value654) {
             value188(
-              "Nothing to paste: the copied artboards could not be read." +
+              uiMessage("canvas.designCanvas.nothingToPasteTheCopied") +
                 value653,
             );
             return;
@@ -14559,7 +14563,7 @@ export function installCanvasDesignCanvas(
                 );
               if (callback21(value667, doc.content().files)) {
                 showToast(
-                  `Couldn't paste: this canvas would pass its ${String(runtime.PlatformFileContentFilesValue)}-file limit. Delete something first.` +
+                  uiMessage("canvas.designCanvas.couldnTPasteThisCanvas", { value1: String(String(runtime.PlatformFileContentFilesValue)) }) +
                     value653,
                   "error",
                 );
@@ -14636,8 +14640,8 @@ export function installCanvasDesignCanvas(
                 let length3: Dynamic = value667.boards.length;
                 value188(
                   (length3 === 1
-                    ? "Pasting an artboard"
-                    : `Pasting ${String(length3)} artboards`) +
+                    ? uiMessage("canvas.designCanvas.pastingAnArtboard")
+                    : uiMessage("canvas.designCanvas.pastingValue1Artboards", { value1: String(String(length3)) })) +
                     `, bringing over ${String(value670)} file${value670 === 1 ? "" : "s"}\u2026`,
                 );
               }
@@ -14803,7 +14807,7 @@ export function installCanvasDesignCanvas(
               );
               if (callback21(value667, doc.content().files)) {
                 showToast(
-                  `Couldn't paste: this canvas would pass its ${String(runtime.PlatformFileContentFilesValue)}-file limit. Delete something first.` +
+                  uiMessage("canvas.designCanvas.couldnTPasteThisCanvas", { value1: String(String(runtime.PlatformFileContentFilesValue)) }) +
                     value653,
                   "error",
                 );
@@ -14844,7 +14848,7 @@ export function installCanvasDesignCanvas(
                 value675: Dynamic = value667.boards.length - value674.length;
               if (value674.length === 0) {
                 showToast(
-                  "Couldn't paste: every copied artboard is over the 2 MiB per-artboard limit once its images are inlined." +
+                  uiMessage("canvas.designCanvas.couldnTPasteEveryCopied") +
                     value653,
                   "error",
                 );
@@ -15045,7 +15049,7 @@ export function installCanvasDesignCanvas(
                   ...(value686.length > 0
                     ? {
                         anns: value686,
-                        label: "Paste",
+                        get label() { return uiMessage("canvas.designCanvas.paste"); },
                       }
                     : {}),
                 },
@@ -15209,8 +15213,8 @@ export function installCanvasDesignCanvas(
                           )}${value667.dropped.length > 3 ? "\u2026" : ""}`,
                 value690: Dynamic =
                   (length === 1
-                    ? "Pasted an artboard"
-                    : `Pasted ${String(length)} artboards`) +
+                    ? uiMessage("canvas.designCanvas.pastedAnArtboard")
+                    : uiMessage("canvas.designCanvas.pastedValue1Artboards", { value1: String(String(length)) })) +
                   (value686.length > 0
                     ? runtime.ClipboardFileTransferRegistry.withObjects(
                         value686,
@@ -15288,7 +15292,7 @@ export function installCanvasDesignCanvas(
                   .catch((): Dynamic => false);
               showToast(
                 (0, runtime.fileCapFailureMessage)(value657) ??
-                  "Couldn't paste the artboards: " +
+                  uiMessage("canvas.designCanvas.couldnTPasteTheArtboards") +
                     (0, runtime.errorMessage)(value657),
                 "error",
               );
@@ -15320,7 +15324,7 @@ export function installCanvasDesignCanvas(
               value653 || ((0, runtime.getElementClipboard)() ?? "").trim();
           if (!value654) {
             value188(
-              "Nothing to paste here. Copy some text, an image or an artboard first.",
+              uiMessage("canvas.designCanvas.nothingToPasteHereCopy"),
             );
             return;
           }
@@ -15341,7 +15345,7 @@ export function installCanvasDesignCanvas(
             );
             if (!/<[a-z]/i.test(value657)) {
               value188(
-                "Nothing to paste here: the copied markup has no elements.",
+                uiMessage("canvas.designCanvas.nothingToPasteHereThe"),
               );
               return;
             }
@@ -15371,7 +15375,7 @@ export function installCanvasDesignCanvas(
             );
           if (!entry || !value656) {
             value188(
-              `Couldn't paste into ${value655}: it isn't loaded yet. Click it, then paste again.`,
+              uiMessage("canvas.designCanvas.couldnTPasteIntoValue1", { value1: String(value655) }),
             );
             return;
           }
@@ -15407,7 +15411,7 @@ export function installCanvasDesignCanvas(
           ).then((items3?: Dynamic): Dynamic => {
             if (items3 != null) {
               if (items3.length === 0) {
-                value188("Could not paste: nothing changed.");
+                value188(uiMessage("canvas.designCanvas.couldNotPasteNothingChanged"));
                 return;
               }
               abandonSelectionGesture();
@@ -15425,7 +15429,7 @@ export function installCanvasDesignCanvas(
                   false,
                 ),
               );
-              value189("Pasted into " + value655);
+              value189(uiMessage("canvas.designCanvas.pastedInto") + value655);
             }
           });
         },
@@ -15905,7 +15909,7 @@ export function installCanvasDesignCanvas(
         },
         onLapse: (): Dynamic =>
           showToast(
-            "No artboard was chosen in time, so the export was cancelled. Open Share to export again.",
+            uiMessage("canvas.designCanvas.noArtboardWasChosenIn"),
           ),
         onStage: runtime.reportExportDeliveryEvent,
         homeFocus: (): Dynamic =>
@@ -16101,7 +16105,7 @@ export function installCanvasDesignCanvas(
       runtime.reactChromeTheme.useCallback)((): Dynamic => {
         value491() &&
           showToast(
-            "Leaving that view cancelled the export. Open Share to export again.",
+            uiMessage("canvas.designCanvas.leavingThatViewCancelledThe"),
           );
       }, [value491, showToast]);
     (0, runtime.reactChromeTheme.useEffect)((): Dynamic => {
@@ -16119,7 +16123,7 @@ export function installCanvasDesignCanvas(
           options?.();
           if (!editableRef.current) {
             showToast(
-              "This canvas is read-only now, so its frames can\u2019t be changed.",
+              uiMessage("canvas.designCanvas.thisCanvasIsReadOnly"),
             );
             return;
           }
@@ -16133,7 +16137,7 @@ export function installCanvasDesignCanvas(
             value654: Dynamic =
               items.length > 1
                 ? showToast(
-                    "Measuring " + String(items.length) + " artboards\u2026",
+                    uiMessage("canvas.designCanvas.measuring") + String(items.length) + " artboards\u2026",
                     "info",
                     {
                       pinned: true,
@@ -16141,7 +16145,7 @@ export function installCanvasDesignCanvas(
                   )
                 : value653 && (0, runtime.isFillPagedExport)(value653)
                   ? showToast(
-                      'Measuring "' + callback2(value653.file) + '"\u2026',
+                      uiMessage("canvas.designCanvas.measuring2") + callback2(value653.file) + '"\u2026',
                       "info",
                       {
                         pinned: true,
@@ -16284,7 +16288,7 @@ export function installCanvasDesignCanvas(
           }
           if (flag2) {
             showToast(
-              "This canvas is read-only now, so its frames can\u2019t be changed.",
+              uiMessage("canvas.designCanvas.thisCanvasIsReadOnly"),
             );
             return;
           }
@@ -16332,14 +16336,14 @@ export function installCanvasDesignCanvas(
           let items2: Dynamic = [...callback2(items[0] ?? "")],
             value654: Dynamic =
               items.length > 1
-                ? "Fit " + String(items.length) + " frames to content"
+                ? uiMessage("canvas.designCanvas.fit2") + String(items.length) + " frames to content"
                 : options
-                  ? 'Fit "' +
+                  ? uiMessage("canvas.designCanvas.fit3") +
                     (items2.length > 24
                       ? items2.slice(0, 23).join("") + "\u2026"
                       : items2.join("")) +
                     '" to content'
-                  : "Fit height to content";
+                  : uiMessage("canvas.designCanvas.fitHeightToContent");
           value653 ||
             (window as Dynamic).setTimeout(
               context,
@@ -16379,8 +16383,8 @@ export function installCanvasDesignCanvas(
               ) {
                 showToast(
                   value177.current.get(input)?.isBlocked()
-                    ? "This artboard\u2019s preview is stopped \u2014 reload it before exporting."
-                    : "This artboard isn\u2019t visible to capture \u2014 try again in a moment.",
+                    ? uiMessage("canvas.designCanvas.thisArtboardSPreviewIs")
+                    : uiMessage("canvas.designCanvas.thisArtboardIsnTVisible"),
                 );
                 runtime.healthReporter.report(
                   ...(0, runtime.classifyExportAbort)("image"),
@@ -16426,7 +16430,7 @@ export function installCanvasDesignCanvas(
                     : undefined;
               if (!value657.ok)
                 showToast(
-                  "Couldn't capture this artboard to download.",
+                  uiMessage("canvas.designCanvas.couldnTCaptureThisArtboard"),
                   "error",
                 );
               else if (value657.saveOutcome === "withheld")
@@ -16497,7 +16501,7 @@ export function installCanvasDesignCanvas(
             } catch (value653: Dynamic) {
               console.error("[download-artboard]", value653);
               showToast(
-                "Couldn't export this artboard as a PNG: " +
+                uiMessage("canvas.designCanvas.couldnTExportThisArtboard") +
                   (0, runtime.errorMessage)(value653) +
                   ".",
                 "error",
@@ -16971,12 +16975,12 @@ export function installCanvasDesignCanvas(
                 );
               value658.outcome === "saved" &&
                 value659 === undefined &&
-                showToast("Saved " + value657 + ".", "success");
+                showToast(uiMessage("canvas.designCanvas.saved") + value657 + ".", "success");
               value658.outcome !== "withheld" &&
                 value658.outcome !== "declined" &&
                 value659 !== undefined &&
                 showToast(
-                  (value658.outcome === "saved" ? "Saved " : "Built ") +
+                  (value658.outcome === "saved" ? uiMessage("canvas.designCanvas.saved") : uiMessage("canvas.designCanvas.built")) +
                     value657 +
                     ", " +
                     value659,
@@ -17025,7 +17029,7 @@ export function installCanvasDesignCanvas(
                 ...(0, runtime.classifyExportFailure)("zip"),
               );
               showToast(
-                "Couldn't build the HTML zip: " + String(value653),
+                uiMessage("canvas.designCanvas.couldnTBuildTheHTML") + String(value653),
                 "error",
               );
             } finally {
@@ -17152,14 +17156,14 @@ export function installCanvasDesignCanvas(
               value653 instanceof runtime.ExportHtmlError &&
                 value653.code === "too_large"
                 ? // MineDesign: the export limit is no longer 16 MB (export/downloads.tsx).
-                  `This design is too large to send as one file (over ${String(runtime.ExportDownloadsResolvedValue >> 20)} MB).`
+                  uiMessage("canvas.designCanvas.thisDesignIsTooLarge", { value1: String(String(runtime.ExportDownloadsResolvedValue >> 20)) })
                 : value653 instanceof runtime.ExportHtmlError &&
                     value653.code === "not_loaded"
-                  ? "An artboard is still loading. Try sending again in a moment."
+                  ? uiMessage("canvas.designCanvas.anArtboardIsStillLoading")
                   : value653 instanceof runtime.ExportHtmlError &&
                       value653.code === "timeout"
-                    ? "Preparing this design to send took too long. Try again."
-                    : "Couldn't prepare this design to send: " +
+                    ? uiMessage("canvas.designCanvas.preparingThisDesignToSend")
+                    : uiMessage("canvas.designCanvas.couldnTPrepareThisDesign") +
                       (0, runtime.errorMessage)(value653) +
                       ".",
               "error",
@@ -17200,8 +17204,8 @@ export function installCanvasDesignCanvas(
               if (!value654 || value654.getBoundingClientRect().width === 0) {
                 showToast(
                   value177.current.get(input)?.isBlocked()
-                    ? "This artboard\u2019s preview is stopped \u2014 reload it before exporting."
-                    : "This artboard isn\u2019t visible to capture \u2014 try again in a moment.",
+                    ? uiMessage("canvas.designCanvas.thisArtboardSPreviewIs")
+                    : uiMessage("canvas.designCanvas.thisArtboardIsnTVisible"),
                 );
                 runtime.healthReporter.report(
                   ...(0, runtime.classifyExportAbort)("pdf"),
@@ -17271,7 +17275,7 @@ export function installCanvasDesignCanvas(
               reason:
                 options > 1
                   ? runtime.exportSelectionHint
-                  : "None of the artboards you chose are still on this page.",
+                  : uiMessage("canvas.designCanvas.noneOfTheArtboardsYou"),
               stopped: false,
             };
           if (value653.length === 0)
@@ -17400,7 +17404,7 @@ export function installCanvasDesignCanvas(
               );
             },
             text: Dynamic =
-              "Another export is still running. Try again when it finishes.";
+              uiMessage("canvas.designCanvas.anotherExportIsStillRunning");
           if (value494()) return callback15(text);
           let value653: Dynamic = null;
           if (
@@ -17490,7 +17494,7 @@ export function installCanvasDesignCanvas(
             console.error("[design/export]", value659);
             if (value656.aborted && value659 === value656.reason)
               return callback15(
-                "Preparing this design\u2019s PDF took too long. Try again.",
+                uiMessage("canvas.designCanvas.preparingThisDesignSPDF"),
                 "error",
                 "timedOut",
               );
@@ -17649,7 +17653,7 @@ export function installCanvasDesignCanvas(
                       hiddenContent: value661.hiddenContent,
                     })
                   : callback15(
-                      "Couldn\u2019t capture " +
+                      uiMessage("canvas.designCanvas.couldnTCapture") +
                         value658 +
                         " \u2014 it has nothing visible to export.",
                       "error",
@@ -17671,7 +17675,7 @@ export function installCanvasDesignCanvas(
             value519.current.notes = [
               ...(items2.length > 0
                 ? [
-                    "Saved " +
+                    uiMessage("canvas.designCanvas.saved") +
                       (items2.length > 3
                         ? String(items2.length) + " artboards"
                         : items2.join(", ")) +
@@ -17716,9 +17720,9 @@ export function installCanvasDesignCanvas(
             );
             if (value655.aborted && value657 === value655.reason)
               return callback15(
-                "Preparing these artboards\u2019 PNGs took too long. Try " +
+                uiMessage("canvas.designCanvas.preparingTheseArtboardsPNGsTook") +
                   (options.scale === 2 ? "1\xD7, or " : "") +
-                  "fewer artboards.",
+                  uiMessage("canvas.designCanvas.fewerArtboards"),
                 "error",
                 "timedOut",
               );
@@ -17726,13 +17730,13 @@ export function installCanvasDesignCanvas(
               (0, runtime.reportExportEvent)("failed"),
               showToast(
                 value656 !== null
-                  ? "Couldn\u2019t capture " +
+                  ? uiMessage("canvas.designCanvas.couldnTCapture") +
                       value656 +
                       " as a PNG. " +
                       (options.scale === 2
-                        ? "Try 1\xD7, or export without it."
-                        : "Try again without it.")
-                  : "Couldn\u2019t export these artboards as PNGs. Reload this tab and try again.",
+                        ? uiMessage("canvas.designCanvas.try1OrExportWithout")
+                        : uiMessage("canvas.designCanvas.tryAgainWithoutIt"))
+                  : uiMessage("canvas.designCanvas.couldnTExportTheseArtboards"),
                 "error",
               ),
               value657
@@ -17765,7 +17769,7 @@ export function installCanvasDesignCanvas(
               );
             },
             text: Dynamic =
-              "Another export is still running. Try again when it finishes.";
+              uiMessage("canvas.designCanvas.anotherExportIsStillRunning");
           if (value494()) return callback15(text);
           let value654: Dynamic,
             value655: Dynamic,
@@ -17916,7 +17920,7 @@ export function installCanvasDesignCanvas(
                 (0, runtime.reportExportEvent)("tooLarge");
               return callback15(
                 value664.reason === "nothing"
-                  ? "Couldn\u2019t capture " +
+                  ? uiMessage("canvas.designCanvas.couldnTCapture") +
                       value658 +
                       " \u2014 it has nothing visible to export."
                   : value664.reason === "no_time"
@@ -17977,7 +17981,7 @@ export function installCanvasDesignCanvas(
             value519.current.notes = [
               ...(value665 !== "" || !value655
                 ? [
-                    "Saved " +
+                    uiMessage("canvas.designCanvas.saved") +
                       value658 +
                       value665 +
                       "." +
@@ -18033,7 +18037,7 @@ export function installCanvasDesignCanvas(
                   (console.error("[design/export]", value660),
                   (0, runtime.reportExportEvent)("failed"),
                   showToast(
-                    "Couldn\u2019t export " +
+                    uiMessage("canvas.designCanvas.couldnTExport") +
                       value658 +
                       " as a PNG: " +
                       (0, runtime.errorMessage)(value660) +
@@ -19080,7 +19084,7 @@ export function installCanvasDesignCanvas(
                 value19(input),
               )
                 ? value19(input)
-                : "that component",
+                : uiMessage("canvas.designCanvas.thatComponent"),
               value656: Dynamic = [
                 ...new Set(
                   current4.artboards
@@ -19097,12 +19101,12 @@ export function installCanvasDesignCanvas(
                 (input2?: Dynamic): Dynamic =>
                   current4.pages?.find(
                     (input3?: Dynamic): Dynamic => input3.id === input2,
-                  )?.name ?? "this page",
+                  )?.name ?? uiMessage("canvas.designCanvas.thisPage2"),
               );
             showToast(
               value653
-                ? `There's more than one ${value655} artboard (on ${value656.join(", ")}) \u2014 select the one you mean on the canvas.`
-                : `There's no ${value655} artboard in this design.`,
+                ? uiMessage("canvas.designCanvas.thereSMoreThanOne", { value1: String(value655), value2: String(value656.join(", ")) })
+                : uiMessage("canvas.designCanvas.thereSNoValue1Artboard", { value1: String(value655) }),
             );
             return;
           }
@@ -19477,13 +19481,7 @@ export function installCanvasDesignCanvas(
         return {
           label: runtime.KeyboardEditActionsCutCopyPasteConfig.paste.label,
           hotkey: runtime.KeyboardEditActionsCutCopyPasteConfig.paste.shortcut,
-          disabledReason: value224.current
-            ? value653
-              ? undefined
-              : "No artboard or object copied in this tab yet. Press " +
-                (0, runtime.keyboardShortcutLabel)("V") +
-                " to paste anything else."
-            : runtime.ViewOnlyYouCanInspectThisMessage,
+          get disabledReason() { return value224.current ? (value653 ? (undefined) : (uiMessage("canvas.designCanvas.noArtboardOrObjectCopied") + (0, runtime.keyboardShortcutLabel)("V") + " to paste anything else.")) : (runtime.ViewOnlyYouCanInspectThisMessage); },
           onClick: (): Dynamic => {
             value224.current &&
               value653 &&
@@ -19520,7 +19518,7 @@ export function installCanvasDesignCanvas(
                   : undefined;
           return [
             {
-              label: "Copy" + value655,
+              get label() { return uiMessage("canvas.designCanvas.copy", { value1: String(value655) }); },
               hotkey: "cmd+c",
               disabledReason: undefined,
               onClick: (): Dynamic => {
@@ -19533,7 +19531,7 @@ export function installCanvasDesignCanvas(
             ...(value92 && (0, runtime.supportsClipboardImages)()
               ? [
                   {
-                    label: "Copy as PNG",
+                    get label() { return uiMessage("canvas.designCanvas.copyAsPNG"); },
                     disabledReason: value480
                       ? runtime.DownloadsArenTAvailableToYouForMessage
                       : size > 1
@@ -19542,7 +19540,7 @@ export function installCanvasDesignCanvas(
                     onClick: (): Dynamic => value505(input),
                   },
                   {
-                    label: "Copy as SVG",
+                    get label() { return uiMessage("canvas.designCanvas.copyAsSVG"); },
                     disabledReason: value480
                       ? runtime.DownloadsArenTAvailableToYouForMessage
                       : size > 1
@@ -19595,7 +19593,7 @@ export function installCanvasDesignCanvas(
               }),
             ),
             {
-              label: "Rename",
+              get label() { return uiMessage("canvas.designCanvas.rename"); },
               separatorBefore: true,
               disabledReason:
                 value656 ??
@@ -19617,7 +19615,7 @@ export function installCanvasDesignCanvas(
               },
             },
             {
-              label: "Set as thumbnail",
+              get label() { return uiMessage("canvas.designCanvas.setAsThumbnail"); },
               disabledReason: value224.current
                 ? current5.cover === input
                   ? existingThumbnailMessage
@@ -19634,11 +19632,7 @@ export function installCanvasDesignCanvas(
               },
             },
             {
-              label: value658
-                ? value224.current
-                  ? "Edit"
-                  : "Stop"
-                : "Play on canvas",
+              get label() { return value658 ? (value224.current ? (uiMessage("canvas.designCanvas.edit")) : ("Stop")) : (uiMessage("canvas.designCanvas.playOnCanvas")); },
               disabledReason: value659,
               onClick: (): Dynamic => {
                 value658
@@ -19649,17 +19643,14 @@ export function installCanvasDesignCanvas(
               },
             },
             {
-              label:
-                value657?.is_interactive === true && !value657.frameless
-                  ? "Play full screen"
-                  : "Open full window",
+              get label() { return value657?.is_interactive === true && !value657.frameless ? (uiMessage("canvas.designCanvas.playFullScreen")) : (uiMessage("canvas.designCanvas.openFullWindow")); },
               disabledReason: undefined,
               onClick: (): Dynamic => {
                 value379.current(input);
               },
             },
             {
-              label: "Delete" + value655,
+              get label() { return uiMessage("canvas.designCanvas.delete2", { value1: String(value655) }); },
               separatorBefore: true,
               danger: true,
               ...(value653 &&
@@ -19718,9 +19709,7 @@ export function installCanvasDesignCanvas(
             };
           return [
             {
-              label:
-                "Copy" +
-                (value655 > 1 ? " " + String(value655) + " objects" : ""),
+              get label() { return uiMessage("canvas.designCanvas.copy", { value1: String(value655 > 1 ? " " + String(value655) + " objects" : "") }); },
               hotkey: "cmd+c",
               disabledReason: value224.current
                 ? undefined
@@ -19731,9 +19720,7 @@ export function installCanvasDesignCanvas(
             },
             value591(),
             {
-              label:
-                runtime.KeyboardEditActionsCutCopyPasteConfig.duplicate.label +
-                (value655 > 1 ? " " + String(value655) + " objects" : ""),
+              get label() { return runtime.KeyboardEditActionsCutCopyPasteConfig.duplicate.label + value655 > 1 ? " " + String(value655) + " objects" : ""; },
               hotkey:
                 runtime.KeyboardEditActionsCutCopyPasteConfig.duplicate
                   .shortcut,
@@ -19756,7 +19743,7 @@ export function installCanvasDesignCanvas(
               : ["horizontal", "vertical"]
             ).map(
               (input2?: Dynamic, options?: Dynamic): Dynamic => ({
-                label: "Flip " + input2,
+                get label() { return uiMessage("canvas.designCanvas.flip2", { value1: String(input2) }); },
                 separatorBefore: options === 0,
                 hotkey: input2 === "horizontal" ? "shift+h" : "shift+v",
                 disabledReason: value224.current
@@ -19770,8 +19757,7 @@ export function installCanvasDesignCanvas(
               }),
             ),
             {
-              label:
-                "Delete" + (size > 1 ? " " + String(size) + " objects" : ""),
+              get label() { return uiMessage("canvas.designCanvas.delete2", { value1: String(size > 1 ? " " + String(size) + " objects" : "") }); },
               separatorBefore: true,
               danger: true,
               ...(value653 &&
@@ -19847,7 +19833,7 @@ export function installCanvasDesignCanvas(
             y: options.y,
             keyboard: options.keyboard === true,
             items: value653.map(runtime.OutlineGlyphsLabel),
-            label: value654 + " actions",
+            get label() { return uiMessage("canvas.designCanvas.actions", { value1: String(value654) }); },
           });
         },
         [value278, value592, value593, value594, value596],
@@ -20100,13 +20086,7 @@ export function installCanvasDesignCanvas(
             value655: Dynamic = input === value271.current,
             value656: Dynamic = showToast(
               <span data-testid={"dc-preview-drop-toast"}>
-                {flag2
-                  ? value654 +
-                    " dropped \u2014 open the Properties panel to place it."
-                  : value655
-                    ? value654 +
-                      " dropped. Press Edit on that artboard to place it."
-                    : value654 + " dropped \u2014 switch to Edit to place it."}
+                {flag2 ? (uiMessage("canvas.designCanvas.droppedOpenThePropertiesPanel", { value1: String(value654) })) : (value655 ? (uiMessage("canvas.designCanvas.droppedPressEditOnThat", { value1: String(value654) })) : (uiMessage("canvas.designCanvas.droppedSwitchToEditTo", { value1: String(value654) })))}
               </span>,
               "info",
               {
@@ -20122,7 +20102,7 @@ export function installCanvasDesignCanvas(
                       flag2 && value96(true);
                     }}
                   >
-                    {flag2 ? "Open Properties" : "Edit"}
+                    {flag2 ? (uiMessage("canvas.designCanvas.openProperties")) : (uiMessage("canvas.designCanvas.edit"))}
                   </runtime.Button>
                 ),
               },
@@ -20383,7 +20363,7 @@ export function installCanvasDesignCanvas(
         : "Pages: switch pages",
       value625: Dynamic = (0, runtime.useToolbarItemAccessibility)({
         disabled: false,
-        name: value283 ? "All files" : value81,
+        name: value283 ? uiMessage("canvas.designCanvas.allFiles") : value81,
         tip: value624,
       }),
       value626: Dynamic = (
@@ -20408,11 +20388,7 @@ export function installCanvasDesignCanvas(
                     icon={value85 ? "Files" : undefined}
                     data-testid={"dc-pages"}
                     aria-label={
-                      value283
-                        ? "All files, pages"
-                        : value81 +
-                          ", " +
-                          (value623 > 0 ? String(value623) + " pages" : "pages")
+                      value283 ? (uiMessage("canvas.designCanvas.allFilesPages")) : (value81 + ", " + value623 > 0 ? (uiMessage("canvas.designCanvas.pages2", { value1: String(String(value623)) })) : (uiMessage("canvas.designCanvas.pages3")))
                     }
                     className={"shrink-0"}
                     onClick={(input2?: Dynamic): Dynamic => {
@@ -20427,11 +20403,9 @@ export function installCanvasDesignCanvas(
                       size={"xs"}
                       data-testid={"dc-pages-count"}
                     />
-                    {value85 ? null : (
-                      <span className={"max-w-[10rem] truncate"}>
-                        {value283 ? "All files" : value81}
-                      </span>
-                    )}
+                    {value85 ? (null) : (<span className={"max-w-[10rem] truncate"}>
+                        {value283 ? (uiMessage("canvas.designCanvas.allFiles")) : (value81)}
+                      </span>)}
                     <runtime.ToolbarCaret />
                   </runtime.Button>
                 </runtime.Tooltip>
@@ -20439,7 +20413,7 @@ export function installCanvasDesignCanvas(
             )}
             align={"left"}
             className={"w-60 p-1"}
-            aria-label={"Pages"}
+            aria-label={uiMessage("canvas.designCanvas.pages")}
             focusOnOpen={value289}
             initialFocus={(): Dynamic => {
               let value653: Dynamic = Array.from(
@@ -20512,19 +20486,19 @@ export function installCanvasDesignCanvas(
                         disabled={false}
                         disabledReason={undefined}
                         aria-label={
-                          "Page \u201C" + input.name + "\u201D actions"
+                          uiMessage("canvas.designCanvas.pageActions", { value1: String(input.name) })
                         }
                         className={"shrink-0"}
                         items={[
                           {
-                            label: "Rename",
+                            get label() { return uiMessage("canvas.designCanvas.rename"); },
                             onSelect: (): Dynamic => {
                               value281(false);
                               value306(input.id);
                             },
                           },
                           {
-                            label: "Delete",
+                            get label() { return uiMessage("canvas.designCanvas.delete"); },
                             variant: "danger",
                             disabled: value77.length < 2,
                             disabledReason: canvasNeedsPageMessage,
@@ -20545,8 +20519,7 @@ export function installCanvasDesignCanvas(
               })();
             })}
             {null}
-            {editing && (
-              <runtime.jsx_Gn.Fragment>
+            {editing && (<runtime.jsx_Gn.Fragment>
                 <div
                   aria-hidden={"true"}
                   className={"mx-2 my-1 h-px bg-border-line"}
@@ -20560,10 +20533,9 @@ export function installCanvasDesignCanvas(
                     value275(value305);
                   }}
                 >
-                  {"New page"}
+                  {uiMessage("canvas.designCanvas.newPage")}
                 </runtime.EditorMenuItem>
-              </runtime.jsx_Gn.Fragment>
-            )}
+              </runtime.jsx_Gn.Fragment>)}
           </runtime.EditorPopover>
           {value625.mirror}
         </span>
@@ -20597,8 +20569,8 @@ export function installCanvasDesignCanvas(
       ),
       value635: Dynamic = value634
         // MineDesign: user-facing copy calls the agent "the agent", not Claude.
-        ? "Let the agent add artboards, or use the Artboard tool."
-        : (value67.artboards.length === 0 ? "This canvas" : "This page") +
+        ? uiMessage("canvas.designCanvas.letTheAgentAddArtboards")
+        : (value67.artboards.length === 0 ? uiMessage("canvas.designCanvas.thisCanvas") : uiMessage("canvas.designCanvas.thisPage")) +
           " has no artboards yet. Add one, or let the agent add some.",
       value636: Dynamic =
         value633 &&
@@ -20621,13 +20593,11 @@ export function installCanvasDesignCanvas(
                 className={"max-[599px]:rotate-90"}
               />
             }
-            label={"Properties"}
+            label={uiMessage("canvas.designCanvas.properties")}
             iconOnly={true}
             data-testid={"dc-props-toggle"}
             tip={
-              value95
-                ? "Hide the properties panel"
-                : "Show the properties panel"
+              value95 ? (uiMessage("canvas.designCanvas.hideThePropertiesPanel")) : (uiMessage("canvas.designCanvas.showThePropertiesPanel"))
             }
             shortcut={"cmd+\\"}
             pressed={value95}
@@ -20640,31 +20610,27 @@ export function installCanvasDesignCanvas(
         ) : null,
       value640: Dynamic = value347 ? (
         <runtime.jsx_Gn.Fragment>
-          {flag ? null : (
-            <runtime.ToolbarPrimitivesComponent
+          {flag ? (null) : (<runtime.ToolbarPrimitivesComponent
               icon={"CaretLeft"}
-              label={"Back to canvas"}
+              label={uiMessage("canvas.designCanvas.backToCanvas")}
               shortcut={value220 ? undefined : "esc"}
               iconOnly={true}
               data-testid={"mega-collapse"}
               data-view-control={""}
               onClick={value389}
-            />
-          )}
-          {flag ? value626 : null}
+            />)}
+          {flag ? (value626) : (null)}
           {value283 ||
           (flag &&
             (value627?.title ?? value347.file.replace(/\.dc\.html$/, "")) ===
-              value81) ? null : (
-            <span
+              value81) ? (null) : (<span
               data-testid={"mega-expanded-name"}
               className={
                 "tb-yields min-w-0 max-w-[40vw] truncate px-1 text-sm text-fg"
               }
             >
-              {value627?.title ?? value347.file.replace(/\.dc\.html$/, "")}
-            </span>
-          )}
+              {value627?.title ?? (value347.file.replace(/\.dc\.html$/, ""))}
+            </span>)}
         </runtime.jsx_Gn.Fragment>
       ) : null,
       value641: Dynamic = (0, runtime.reactChromeTheme.useMemo)(
@@ -20689,9 +20655,9 @@ export function installCanvasDesignCanvas(
           <span data-view-control={""} className={"contents"}>
             <runtime.SessionStripPopover
               icon={"Play"}
-              label={"Play"}
+              label={uiMessage("canvas.designCanvas.play")}
               iconOnly={true}
-              tip={"Play an artboard"}
+              tip={uiMessage("canvas.designCanvas.playAnArtboard")}
               disabled={
                 value641.prototypes.length + value641.others.length === 0
               }
@@ -20699,38 +20665,31 @@ export function installCanvasDesignCanvas(
               align={"end"}
               data-testid={"dc-play"}
             >
-              {value641.prototypes.length > 0 ? (
-                <runtime.MenuMenuAssignValue.Group>
+              {value641.prototypes.length > 0 ? (<runtime.MenuMenuAssignValue.Group>
                   <runtime.MenuMenuAssignValue.GroupLabel>
                     {runtime.artboardNavigationGroupLabels.prototypes}
                   </runtime.MenuMenuAssignValue.GroupLabel>
                   {callback14(value641.prototypes)}
-                </runtime.MenuMenuAssignValue.Group>
-              ) : null}
-              {value641.prototypes.length > 0 && value641.others.length > 0 ? (
-                <runtime.MenuMenuAssignValue.Separator />
-              ) : null}
-              {value641.others.length > 0 ? (
-                <runtime.MenuMenuAssignValue.Group>
+                </runtime.MenuMenuAssignValue.Group>) : (null)}
+              {value641.prototypes.length > 0 && value641.others.length > 0 ? (<runtime.MenuMenuAssignValue.Separator />) : (null)}
+              {value641.others.length > 0 ? (<runtime.MenuMenuAssignValue.Group>
                   <runtime.MenuMenuAssignValue.GroupLabel>
                     {runtime.artboardNavigationGroupLabels.others}
                   </runtime.MenuMenuAssignValue.GroupLabel>
                   {callback14(value641.others)}
-                </runtime.MenuMenuAssignValue.Group>
-              ) : null}
+                </runtime.MenuMenuAssignValue.Group>) : (null)}
             </runtime.SessionStripPopover>
           </span>
         ),
       value643: Dynamic = value347 ? (
         <runtime.jsx_Gn.Fragment>
           {null}
-          {value283 ? null : (
-            <runtime.jsx_Gn.Fragment>
+          {value283 ? (null) : (<runtime.jsx_Gn.Fragment>
               <runtime.SessionStripPopover
                 icon={"Download"}
-                label={"Export"}
+                label={uiMessage("canvas.designCanvas.export")}
                 iconOnly={true}
-                tip={"Export this artboard"}
+                tip={uiMessage("canvas.designCanvas.exportThisArtboard")}
                 disabled={value480}
                 disabledTip={runtime.DownloadsArenTAvailableToYouForMessage}
                 align={"end"}
@@ -20774,18 +20733,18 @@ export function installCanvasDesignCanvas(
                 className={"inline-flex shrink-0"}
               >
                 <runtime.SegmentedControl
-                  aria-label={"Artboard size"}
+                  aria-label={uiMessage("canvas.designCanvas.artboardSize")}
                   tooltipSide={"bottom"}
                   segments={[
                     {
                       value: "fill",
-                      label: "Fill",
-                      tooltip: "Fill the window",
+                      get label() { return uiMessage("canvas.designCanvas.fill"); },
+                      get tooltip() { return uiMessage("canvas.designCanvas.fillTheWindow"); },
                     },
                     {
                       value: "fit",
-                      label: "Fit",
-                      tooltip: "At its own size, scaled down to fit",
+                      get label() { return uiMessage("canvas.designCanvas.fit"); },
+                      get tooltip() { return uiMessage("canvas.designCanvas.atItsOwnSizeScaled"); },
                     },
                   ]}
                   value={value347.fit ? "fit" : "fill"}
@@ -20800,8 +20759,7 @@ export function installCanvasDesignCanvas(
                   }
                 />
               </span>
-            </runtime.jsx_Gn.Fragment>
-          )}
+            </runtime.jsx_Gn.Fragment>)}
         </runtime.jsx_Gn.Fragment>
       ) : null,
       value644: Dynamic = (0, runtime.reactChromeTheme.useCallback)(
@@ -20833,7 +20791,7 @@ export function installCanvasDesignCanvas(
       value650: Dynamic = (0, runtime.reactChromeTheme.useMemo)(
         (): Dynamic => [
           {
-            label: "Layout guides",
+            get label() { return uiMessage("canvas.designCanvas.layoutGuides"); },
             checked: value12,
             shortcut: "shift+g",
             onToggle: (): Dynamic =>
@@ -20960,9 +20918,7 @@ export function installCanvasDesignCanvas(
           viewToggles={value650}
           fitLabel={fitArtboardsLabel}
           tip={
-            (0, runtime.isApplePlatform)()
-              ? "Zoom: \u23180 fit, \u2318+ / \u2318\u2212 step"
-              : "Zoom: Ctrl+0 fit, Ctrl and + / \u2212 step"
+            (0, runtime.isApplePlatform)() ? (uiMessage("canvas.designCanvas.zoom0FitStep")) : (uiMessage("canvas.designCanvas.zoomCtrl0FitCtrl"))
           }
         />
       </span>
@@ -20988,7 +20944,7 @@ export function installCanvasDesignCanvas(
               />
               <div className={"relative flex min-h-0 min-w-0 flex-1 flex-col"}>
                 <runtime.EditorToolbar
-                  title={(document as Dynamic).title || filePath}
+                  title={(document as Dynamic).title || (filePath)}
                   saveState={value66}
                   saveMode={doc.saveMode()}
                   syncDot={supportsLoadState}
@@ -21008,7 +20964,7 @@ export function installCanvasDesignCanvas(
                           className={"flex shrink-0 items-center gap-1"}
                         >
                           {null}
-                          {value283 ? null : value639}
+                          {value283 ? (null) : (value639)}
                           {value652}
                         </span>
                       ) : (
@@ -21019,9 +20975,9 @@ export function installCanvasDesignCanvas(
                         data-testid={"dc-save"}
                         className={"flex shrink-0 items-center gap-1"}
                       >
-                        {mdnFeedback ? null : value639}
-                        {!mdnFeedback && value639 ? <runtime.ToolbarDivider /> : null}
-                        {mdnFeedback ? null : mdnZoom}
+                        {mdnFeedback ? (null) : (value639)}
+                        {!mdnFeedback && value639 ? (<runtime.ToolbarDivider />) : (null)}
+                        {mdnFeedback ? (null) : (mdnZoom)}
                         {value652}
                       </span>
                     )
@@ -21031,22 +20987,20 @@ export function installCanvasDesignCanvas(
                     value492 ? null : (
                       <runtime.jsx_Gn.Fragment>
                         {value630}
-                        {value347 ? value643 : value629}
-                        {editing && (
-                          <div
+                        {value347 ? (value643) : (value629)}
+                        {editing && (<div
                             id={runtime.ChatColumnOverlayActionsSlotValue}
                             data-tb-seat={""}
                             className={
                               "flex shrink-0 items-center gap-2 empty:hidden"
                             }
-                          />
-                        )}
-                        {mdnFeedback ? null : value642}
+                          />)}
+                        {mdnFeedback ? (null) : (value642)}
                       </runtime.jsx_Gn.Fragment>
                     )
                   }
                 >
-                  {value347 ? value640 : null}
+                  {value347 ? (value640) : (null)}
                 </runtime.EditorToolbar>
                 <runtime.DocumentSaveStatus
                   doc={doc}
@@ -21056,8 +21010,7 @@ export function installCanvasDesignCanvas(
                 />
                 <div className={"relative flex min-h-0 flex-1"}>
                   {/* MineDesign：工具栏移到画布底部居中，缩短鼠标往返；评论放在最右侧并默认显示文字 */}
-                  {value347 ? null : (
-                    <runtime.CdsIsland
+                  {value347 ? (null) : (<runtime.CdsIsland
                       density={mdnDockDensity}
                       className={"mdn-tool-dock"}
                       hidden={value492}
@@ -21073,12 +21026,10 @@ export function installCanvasDesignCanvas(
                             "flex shrink-0 items-center gap-1 empty:hidden pointer-coarse:gap-1.5"
                           }
                         >
-                          {value352 && (
-                            <runtime.DesignToolToolbar
+                          {value352 && (<runtime.DesignToolToolbar
                               tool={value337}
                               onTool={value338}
-                            />
-                          )}
+                            />)}
                         </div>
                         <runtime.ToolbarDivider />
                         <span data-mega-chrome={"comments"} className={"contents"}>
@@ -21095,20 +21046,18 @@ export function installCanvasDesignCanvas(
                           />
                         </span>
                       </runtime.Surface>
-                    </runtime.CdsIsland>
-                  )}
+                    </runtime.CdsIsland>)}
                   <runtime.FindBar {...value574.find.bar} />
                   {null}
                   <main
-                    aria-label={"Canvas"}
+                    aria-label={uiMessage("canvas.designCanvas.canvas")}
                     inert={value283}
                     className={
                       "relative min-h-0 min-w-0 flex-1 bg-om-bg-canvas"
                     }
                     ref={value119}
                   >
-                    {value454 !== null && (
-                      <runtime.HostedEditor
+                    {value454 !== null && (<runtime.HostedEditor
                         host={(): Dynamic => ({
                           selected:
                             value169.size === 0
@@ -21150,8 +21099,7 @@ export function installCanvasDesignCanvas(
                           saveNow: (): Dynamic => doc.flushNow?.(),
                           canvas: value454,
                         })}
-                      />
-                    )}
+                      />)}
                     <runtime.CanvasInteractionLayer
                       manifest={value86}
                       viewSettled={value99 && !flag ? value311 : undefined}
@@ -21186,7 +21134,7 @@ export function installCanvasDesignCanvas(
                               store={value179}
                               file={input}
                             />
-                            {value492 && callback13(input)}
+                            {value492 && (callback13(input))}
                           </runtime.jsx_Gn.Fragment>
                         )
                       }
@@ -21200,8 +21148,7 @@ export function installCanvasDesignCanvas(
                               store={value179}
                               fullFile={value373}
                             />
-                            {!value347 && (
-                              <runtime.ViewportScale>
+                            {!value347 && (<runtime.ViewportScale>
                                 {(input?: Dynamic): Dynamic => (
                                   <runtime.jsx_Gn.Fragment>
                                     <runtime.PeerCursors
@@ -21223,8 +21170,7 @@ export function installCanvasDesignCanvas(
                                     />
                                   </runtime.jsx_Gn.Fragment>
                                 )}
-                              </runtime.ViewportScale>
-                            )}
+                              </runtime.ViewportScale>)}
                           </runtime.jsx_Gn.Fragment>
                         )
                       }
@@ -21679,7 +21625,7 @@ export function installCanvasDesignCanvas(
                           value413(
                             {
                               kind: "transform",
-                              label: "Resize",
+                              get label() { return uiMessage("canvas.designCanvas.resize"); },
                               boards: [],
                               anns: [
                                 {
@@ -21785,7 +21731,7 @@ export function installCanvasDesignCanvas(
                           value413(
                             {
                               kind: "transform",
-                              label: "Rotate",
+                              get label() { return uiMessage("canvas.designCanvas.rotate"); },
                               boards: [],
                               anns: [
                                 {
@@ -22436,10 +22382,7 @@ export function installCanvasDesignCanvas(
                       rules={value93}
                     />
                     {value86.artboards.length === 0 &&
-                      value89.boxesHere.length === 0 &&
-                      (editing ? (
-                        (value632 || value633) && (
-                          <div
+                      value89.boxesHere.length === 0 && (editing ? (value632 || value633 && (<div
                             className={
                               "pointer-events-none absolute inset-0 z-[35] flex flex-col items-center justify-center gap-3 text-center" +
                               (value636
@@ -22447,8 +22390,7 @@ export function installCanvasDesignCanvas(
                                 : "")
                             }
                           >
-                            {value632 && value89.cursor.at === "tips" ? (
-                              <runtime.DesignCreationPrompt
+                            {value632 && value89.cursor.at === "tips" ? (<runtime.DesignCreationPrompt
                                 tip={value89.tip}
                                 card={value636}
                                 prompt={value633}
@@ -22456,25 +22398,17 @@ export function installCanvasDesignCanvas(
                                 sentence={value635}
                                 busy={value637}
                                 onAdd={(): Dynamic => value313()}
-                              />
-                            ) : value632 ? (
-                              <runtime.BusyCanvasPrompt
+                              />) : (value632 ? (<runtime.BusyCanvasPrompt
                                 prompt={value633}
                                 tucked={value634}
                                 sentence={value635}
                                 busy={value637}
                                 onAdd={(): Dynamic => value313()}
-                              />
-                            ) : (
-                              <runtime.EmptyCanvasPrompt
+                              />) : (<runtime.EmptyCanvasPrompt
                                 sentence={value635}
                                 onAdd={(): Dynamic => value313()}
-                              />
-                            )}
-                          </div>
-                        )
-                      ) : (
-                        <div
+                              />))}
+                          </div>)) : (<div
                           className={
                             "pointer-events-none absolute inset-0 z-[35] flex flex-col items-center justify-center gap-1 text-center"
                           }
@@ -22484,14 +22418,10 @@ export function installCanvasDesignCanvas(
                             reason={saveState.message}
                             wholeCanvas={value631}
                           />
-                        </div>
-                      ))}
-                    {value89.workingLabel ? (
-                      <runtime.CreationWorkingAnnouncement />
-                    ) : null}
+                        </div>))}
+                    {value89.workingLabel ? (<runtime.CreationWorkingAnnouncement />) : (null)}
                   </main>
-                  {editable ? (
-                    <runtime.useCanvasWorkingState
+                  {editable ? (<runtime.useCanvasWorkingState
                       doc={doc}
                       empty={
                         editing && value86.artboards.length === 0 && value632
@@ -22503,43 +22433,36 @@ export function installCanvasDesignCanvas(
                         runtime.AccessibilityAnnouncementsReadyUpdatedChangedConfig
                       }
                       onBusy={value638}
-                    />
-                  ) : null}
-                  {value351 == null && editing && value541 != null && (
-                    <runtime.AnchoredDesignProperties
+                    />) : (null)}
+                  {value351 == null && editing && value541 != null && (<runtime.AnchoredDesignProperties
                       settings={value541}
                       readOnly={!editable}
-                    />
-                  )}
+                    />)}
                 </div>
               </div>
-              {mdnFeedback ? (
-                <div
+              {mdnFeedback ? (<div
                   className={"mdn-right-panel"}
                   hidden={!mdnPanelOpen || value283}
                   data-testid={"mdn-right-panel"}
                 >
                   <aside
                     id={runtime.inspectorPanelId}
-                    aria-label={"Properties panel"}
+                    aria-label={uiMessage("canvas.designCanvas.propertiesPanel")}
                     inert={value283}
                     className={
                       (value283 ? "hidden" : "flex") +
                       " isolate z-40 min-h-0 flex-1 shrink-0"
                     }
                   />
-                </div>
-              ) : (
-                <aside
+                </div>) : (<aside
                   id={runtime.inspectorPanelId}
-                  aria-label={"Properties panel"}
+                  aria-label={uiMessage("canvas.designCanvas.propertiesPanel")}
                   inert={value283}
                   className={
                     (value283 ? "hidden" : "flex") +
                     " isolate z-40 h-full shrink-0 max-[599px]:h-auto max-[599px]:w-full max-[599px]:flex-col"
                   }
-                />
-              )}
+                />)}
             </div>
           </runtime.InspectorOpenContext.Provider>
         </runtime.CanvasWorkingStateContext.Provider>
@@ -22912,24 +22835,24 @@ export function installCanvasDesignCanvas(
   return () => {
     noopCanvasSubscription = (): Dynamic => (): Dynamic => {};
     zeroCanvasRevision = (): Dynamic => 0;
-    canvasNeedsPageMessage = "A canvas needs at least one page.";
-    fitArtboardsLabel = "Fit artboards";
+    canvasNeedsPageMessage = uiMessage("canvas.designCanvas.aCanvasNeedsAtLeast");
+    fitArtboardsLabel = uiMessage("canvas.designCanvas.fitArtboards");
     loosePieceRenameHint =
-      "A loose piece shows no title on the canvas. Rename it in Layers.";
+      uiMessage("canvas.designCanvas.aLoosePieceShowsNo");
     staleDeleteFailureMessage = (input?: Dynamic): Dynamic =>
-      "Nothing was deleted: \u201C" + input + "\u201D is now the only page.";
+      uiMessage("canvas.designCanvas.nothingWasDeleted") + input + "\u201D is now the only page.";
     singleArtboardPngCopyMessage =
-      "Select just one artboard to copy it as a PNG.";
+      uiMessage("canvas.designCanvas.selectJustOneArtboardTo");
     singleArtboardSvgCopyMessage =
-      "Select just one artboard to copy it as an SVG.";
+      uiMessage("canvas.designCanvas.selectJustOneArtboardTo2");
     staticArtboardPlaybackMessage =
-      "Only prototype artboards (marked interactive) play on the canvas.";
+      uiMessage("canvas.designCanvas.onlyPrototypeArtboardsMarkedInteractive");
     loosePiecePlaybackMessage =
-      "A loose piece doesn\u2019t play on its own; only artboards do.";
-    pageHasNoArtboardsMessage = "This page has no artboards to play yet.";
-    existingThumbnailMessage = "This artboard is already the thumbnail.";
+      uiMessage("canvas.designCanvas.aLoosePieceDoesnT");
+    pageHasNoArtboardsMessage = uiMessage("canvas.designCanvas.thisPageHasNoArtboards");
+    existingThumbnailMessage = uiMessage("canvas.designCanvas.thisArtboardIsAlreadyThe");
     oversizedThumbnailMessage =
-      "This artboard is too large to use as the thumbnail.";
+      uiMessage("canvas.designCanvas.thisArtboardIsTooLarge");
     MemoizedCanvasZoomControl = (0, runtime.reactChromeTheme.memo)(
       runtime.CanvasZoomControl,
     );
@@ -22975,7 +22898,7 @@ export function installCanvasDesignCanvas(
     previewDropNoticeDurationMs = 8e3;
     canvasExportSettleTimeoutMs = 2e4;
     exportAlreadyRunningMessage =
-      "Another export is still running. Try again when it finishes.";
+      uiMessage("canvas.designCanvas.anotherExportIsStillRunning");
     maxSessionDirtyFlushRetries = 3;
     canvasExitExportWaitTimeoutMs = 1e4;
     crossCanvasPasteConfirmFeatureFlag = "design_cross_canvas_paste_confirm";

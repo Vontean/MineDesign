@@ -1,3 +1,5 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
+import { useUiLocale } from '../ui-locale.ts';
 /** Restored application module; prepare first, initialize in original order. */
 import type * as React from "react";
 import type * as C from "../contracts/controls";
@@ -72,6 +74,7 @@ export function installUiIcons(runtime: RuntimeBindings): () => void {
     "data-testid": dataTestid,
     children: children,
   }: C.CalloutProps) {
+    useUiLocale();
     let value: string = (0, runtime.useTranslation)("dismiss", "Dismiss"),
       value2 = dismissLabel ?? value,
       value3: C.Density = (0, runtime.useDensity)(),
@@ -206,8 +209,7 @@ export function installUiIcons(runtime: RuntimeBindings): () => void {
           className,
         )}
       >
-        {[
-          icon !== null && !value20 && (
+        {[icon !== null && !value20 && (
             <span
               className={(0, runtime.cn)(
                 value22 ? "flex min-h-[1lh] shrink-0 items-center" : "shrink-0",
@@ -215,17 +217,12 @@ export function installUiIcons(runtime: RuntimeBindings): () => void {
                 value6 && "ms-[4px] -me-[4px]",
               )}
             >
-              {value7 ? (
-                icon
-              ) : (
-                <runtime.Icon
+              {value7 ? (icon) : (<runtime.Icon
                   name={calloutDefaultIcons[value4]}
                   size={"auto"}
-                />
-              )}
+                />)}
             </span>
-          ),
-          value9 ? (
+          ), value9 ? (
             <div
               className={(0, runtime.cn)(
                 "flex min-w-0 flex-1 flex-col",
@@ -237,14 +234,12 @@ export function installUiIcons(runtime: RuntimeBindings): () => void {
                 open={value21}
                 onOpenChange={callback}
               >
-                {[
-                  <div
+                {[<div
                     className={
                       "flex min-w-0 flex-wrap items-start gap-y-sm gap-x-md"
                     }
                   >
-                    {[
-                      <runtime.Collapsible.Trigger
+                    {[<runtime.Collapsible.Trigger
                         render={
                           <button
                             type={"button"}
@@ -252,26 +247,19 @@ export function installUiIcons(runtime: RuntimeBindings): () => void {
                               "cds-reset flex min-w-0 grow select-none items-center gap-x-[2px] border-0 text-start outline-none focus-visible:shadow-focus focus-visible:outline-hidden rounded transition-shadow duration-fast"
                             }
                           >
-                            {[
-                              <div className={"min-w-0"}>{children}</div>,
-                              <runtime.Icon
+                            {[<div className={"min-w-0"}>{children}</div>, <runtime.Icon
                                 name={"CaretDown"}
                                 size={"sm"}
                                 className={`shrink-0 text-secondary transition-transform ${value21 ? "rotate-0" : "-rotate-90 rtl:rotate-90"}`}
-                              />,
-                            ]}
+                              />]}
                           </button>
                         }
-                      />,
-                      value23,
-                    ]}
-                  </div>,
-                  <runtime.Collapsible.Panel
+                      />, value23]}
+                  </div>, <runtime.Collapsible.Panel
                     className={"w-full text-secondary"}
                   >
                     <div className={"pt-[var(--cds-gap-sm)]"}>{details}</div>
-                  </runtime.Collapsible.Panel>,
-                ]}
+                  </runtime.Collapsible.Panel>]}
               </runtime.Collapsible.Root>
             </div>
           ) : (
@@ -284,8 +272,7 @@ export function installUiIcons(runtime: RuntimeBindings): () => void {
                 value5 && leadingIconInsetClasses[value5],
               )}
             >
-              {[
-                <div
+              {[<div
                   ref={ref2}
                   className={
                     !value16
@@ -296,12 +283,9 @@ export function installUiIcons(runtime: RuntimeBindings): () => void {
                   }
                 >
                   {children}
-                </div>,
-                value23,
-              ]}
+                </div>, value23]}
             </div>
-          ),
-          onDismiss && (
+          ), onDismiss && (
             <span
               {...state}
               className={`${value5 !== undefined ? trailingIconOutsetClasses[value5] : "-me-[calc(var(--cds-pad-md)-2px)]"} flex h-[1lh] shrink-0 items-center`}
@@ -315,8 +299,7 @@ export function installUiIcons(runtime: RuntimeBindings): () => void {
                 onClick={onDismiss}
               />
             </span>
-          ),
-        ]}
+          )]}
       </div>
     );
   }

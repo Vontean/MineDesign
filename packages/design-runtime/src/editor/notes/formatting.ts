@@ -1,3 +1,4 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -245,7 +246,7 @@ export function installEditorNotesFormatting(
   return () => {
     NotesFormattingStyledNestsConfig = {
       styled: (input?: Dynamic): Dynamic =>
-        "The whole note is already " + input + " (its style)",
+        uiMessage("inspector.formatting.theWholeNoteIsAlready") + input + " (its style)",
       nests: "Bold and italic do not combine in a note",
     };
     noteFormattingExecuting = false;

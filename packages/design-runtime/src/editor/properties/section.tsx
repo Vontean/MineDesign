@@ -1,3 +1,5 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
+import { useUiLocale } from '../../ui-locale.ts';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -19,6 +21,7 @@ export function installEditorPropertiesSection(
     subsection: subsection,
     className: className,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let value: Dynamic = onToggle !== undefined,
       value2: Dynamic = (0, runtime.joinClassNames)(
         "flex min-w-0 shrink-0 items-center gap-xs select-none",
@@ -78,8 +81,7 @@ export function installEditorPropertiesSection(
         )}
       >
         <h3 className={"contents"}>
-          {value ? (
-            <button
+          {value ? (<button
               type={"button"}
               aria-expanded={!collapsed}
               onClick={(input?: Dynamic): Dynamic => {
@@ -91,13 +93,9 @@ export function installEditorPropertiesSection(
               }
             >
               {title}
-            </button>
-          ) : (
-            <span className={"min-w-0 flex-1 truncate"}>{title}</span>
-          )}
+            </button>) : (<span className={"min-w-0 flex-1 truncate"}>{title}</span>)}
         </h3>
-        {actions ? (
-          <span
+        {actions ? (<span
             className={(0, runtime.joinClassNames)(
               "-my-1 flex shrink-0 items-center gap-0.5",
               runtime.PropertiesPrimitivesClassNames_4,
@@ -109,8 +107,7 @@ export function installEditorPropertiesSection(
             }
           >
             {actions}
-          </span>
-        ) : null}
+          </span>) : (null)}
         {value3}
       </div>
     );
@@ -146,6 +143,7 @@ export function installEditorPropertiesSection(
     className: className,
     "data-testid": dataTestid,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let value: Dynamic =
         runtime.reactInspectorContext_4.Children.toArray(children).length > 0,
       [value2, value3]: Dynamic = (0, runtime.reactInspectorContext_4.useState)(
@@ -179,7 +177,7 @@ export function installEditorPropertiesSection(
         value12 !== null || value11 ? (
           <runtime.jsxPropertiesPrimitives_2.Fragment>
             {value12}
-            {value11 ? value10 : null}
+            {value11 ? (value10) : (null)}
           </runtime.jsxPropertiesPrimitives_2.Fragment>
         ) : undefined,
       value14: Dynamic = (0, runtime.joinClassNames)(
@@ -211,16 +209,14 @@ export function installEditorPropertiesSection(
         className={value14}
       >
         {value15}
-        {value ? (
-          <runtime.ComponentsCollapsibleRootTriggerPanelConfig.Panel>
+        {value ? (<runtime.ComponentsCollapsibleRootTriggerPanelConfig.Panel>
             {value16}
-          </runtime.ComponentsCollapsibleRootTriggerPanelConfig.Panel>
-        ) : null}
+          </runtime.ComponentsCollapsibleRootTriggerPanelConfig.Panel>) : (null)}
       </runtime.ComponentsCollapsibleRootTriggerPanelConfig.Root>
     ) : (
       <div data-testid={dataTestid} className={value14}>
         {value15}
-        {value ? value16 : null}
+        {value ? (value16) : (null)}
       </div>
     );
   }

@@ -43,6 +43,7 @@ function fakeWindow(respond: (url: string) => Response, framed = false) {
   const win = {
     location: { href: 'http://127.0.0.1:24321/design-system/g1/?path=brand%2Facme&lang=en', search: '?path=brand%2Facme&lang=en' },
     fetch: impl,
+    navigator: { language: 'en' },
     addEventListener: (type: string, listener: (event: MessageEvent) => void) => {
       types.push(type);
       if (type === 'message') listeners.push(listener);

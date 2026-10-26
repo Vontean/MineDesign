@@ -1,3 +1,5 @@
+import { useUiLocale } from '../../ui-locale.ts';
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -10,6 +12,7 @@ export function installEditorChromeLoading(
   var ChromeLoadingLabel: Dynamic;
   var ChromeLoadingDelayMs: Dynamic;
   function ChromeSkeleton({ className: className }: Dynamic): Dynamic {
+    useUiLocale();
     return (
       <span aria-hidden={"true"} className={"contents"}>
         <runtime.ComponentsSkeletonAssignValue
@@ -19,6 +22,7 @@ export function installEditorChromeLoading(
     );
   }
   function ChromeTextSkeleton({ chars = 12 }: Dynamic): Dynamic {
+    useUiLocale();
     return (
       <span aria-hidden={"true"} className={"contents"}>
         <runtime.ComponentsSkeletonAssignValue
@@ -29,9 +33,10 @@ export function installEditorChromeLoading(
     );
   }
   function ChromeLoadingSpinner({ className: className }: Dynamic): Dynamic {
+    useUiLocale();
     return (
       <span className={(0, runtime.joinClassNames)("inline-flex", className)}>
-        <runtime.Spinner label={"Loading"} />
+        <runtime.Spinner label={uiMessage("inspector.loading.loading")} />
       </span>
     );
   }
@@ -41,6 +46,7 @@ export function installEditorChromeLoading(
     skeletonFlush: skeletonFlush,
     children: children,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let callback: Dynamic = (): Dynamic => {
         let value8: Dynamic =
           typeof doc.loadState == "function" ? doc.loadState() : "live";
@@ -113,7 +119,7 @@ export function installEditorChromeLoading(
         )}
         aria-busy={value === "loading"}
       >
-        {skeleton ?? <ChromeSkeleton className={"m-6 h-48 rounded-lg"} />}
+        {skeleton ?? (<ChromeSkeleton className={"m-6 h-48 rounded-lg"} />)}
         <span
           className={"sr-only"}
           role={"status"}
@@ -128,10 +134,7 @@ export function installEditorChromeLoading(
             "pointer-events-none absolute inset-x-0 top-[calc(var(--tb-overlay-h,0px)+1rem)] flex justify-center"
           }
         >
-          {value === "loading" ? (
-            <ChromeLoadingSpinner />
-          ) : (
-            <span
+          {value === "loading" ? (<ChromeLoadingSpinner />) : (<span
               className={
                 "pointer-events-auto inline-flex items-center gap-2 rounded-md border border-border-line bg-panel px-3 py-1.5 text-xs text-fg-muted shadow-sm"
               }
@@ -144,10 +147,9 @@ export function installEditorChromeLoading(
                   doc.save?.();
                 }}
               >
-                {"Retry"}
+                {uiMessage("inspector.loading.retry")}
               </runtime.TextLink>
-            </span>
-          )}
+            </span>)}
         </div>
       </div>
     );
@@ -173,7 +175,7 @@ export function installEditorChromeLoading(
   );
   bindRuntimeValue(runtime, "DocumentLoadGate", () => DocumentLoadGate);
   return () => {
-    ChromeLoadingLabel = "The latest content failed to load";
+    ChromeLoadingLabel = uiMessage("inspector.loading.theLatestContentFailedTo");
     ChromeLoadingDelayMs = 100;
   };
 }

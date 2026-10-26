@@ -1,3 +1,4 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import { bindRuntimeValue, type RuntimeBindings } from "../../runtime-types";
 import type * as React from "react";
@@ -66,10 +67,10 @@ export function installFilesUiFileTree(runtime: RuntimeBindings): () => void {
   }
   function fileBrowserFolderLabel(folder: string) {
     if (folder === "_ds") {
-      return "Design system files";
+      return uiMessage("design-system.fileTree.designSystemFiles");
     } else {
       if (folder === "_fig") {
-        return "Figma files";
+        return uiMessage("design-system.fileTree.figmaFiles");
       } else {
         return folder;
       }
@@ -369,12 +370,12 @@ export function installFilesUiFileTree(runtime: RuntimeBindings): () => void {
       size: 0,
     };
     if (fileBrowserPreviewKind(probe, options) !== "text") {
-      return "Preview isn’t available for this file type";
+      return uiMessage("design-system.fileTree.previewIsnTAvailableFor");
     }
     if (entry.size === undefined) {
-      return "This file’s size isn’t known, so it isn’t previewed";
+      return uiMessage("design-system.fileTree.thisFileSSizeIsn");
     } else {
-      return "This file is too large to preview";
+      return uiMessage("design-system.fileTree.thisFileIsTooLarge");
     }
   }
   function folderFileCount(folder: BrowserFolder): number {

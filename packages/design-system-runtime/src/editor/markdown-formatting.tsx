@@ -1,3 +1,5 @@
+import { useUiLocale } from '../ui-locale.ts';
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 import type * as React from "react";
 import type * as Core from "../contracts";
 import type * as M from "../contracts/documentation";
@@ -32,28 +34,28 @@ export function installEditorMarkdownFormatting(
         selectedStyles.code ||
         selectedStyles.link ||
         (!format.bold && (hasLink || format.italic || format.code))
-          ? "The README can’t show two styles on the same text yet"
+          ? uiMessage("design-system.markdownFormatting.theREADMECanTShow")
           : undefined,
       italic:
         selectedStyles.bold ||
         selectedStyles.code ||
         selectedStyles.link ||
         (!format.italic && (hasLink || format.bold || format.code))
-          ? "The README can’t show two styles on the same text yet"
+          ? uiMessage("design-system.markdownFormatting.theREADMECanTShow")
           : undefined,
       link: hasLink
         ? undefined
         : format.code
-          ? "Code can’t carry a link"
+          ? uiMessage("design-system.markdownFormatting.codeCanTCarryA")
           : format.bold ||
               format.italic ||
               selectedStyles.bold ||
               selectedStyles.italic ||
               selectedStyles.code ||
               selectedStyles.link
-            ? "The README can’t show two styles on the same text yet"
+            ? uiMessage("design-system.markdownFormatting.theREADMECanTShow")
             : !hasSelection
-              ? "Select some text to link"
+              ? uiMessage("design-system.markdownFormatting.selectSomeTextToLink")
               : undefined,
     };
   }
@@ -84,6 +86,7 @@ export function installEditorMarkdownFormatting(
     onLeave: onLeave,
     className: className,
   }: M.MarkdownFormattingToolbarProps) {
+    useUiLocale();
     let value = (0, runtime.useSelectionToolbar)(root, {
         holdWhileFocusIn: hold,
       }),
@@ -257,15 +260,13 @@ export function installEditorMarkdownFormatting(
             }
           }}
         >
-          <runtime.ToolbarStrip aria-label={"Format"} placed={value.placed}>
-            {value5 !== null ? (
-              <jsxMarkdownToolbar.Fragment>
-                {[
-                  <input
+          <runtime.ToolbarStrip aria-label={uiMessage("design-system.markdownFormatting.format")} placed={value.placed}>
+            {value5 !== null ? (<jsxMarkdownToolbar.Fragment>
+                {[<input
                     autoFocus={true}
                     value={value5}
-                    placeholder={"Paste a link, then Enter"}
-                    aria-label={"Link URL"}
+                    placeholder={uiMessage("design-system.markdownFormatting.pasteALinkThenEnter")}
+                    aria-label={uiMessage("design-system.markdownFormatting.linkURL")}
                     aria-invalid={value7}
                     spellCheck={false}
                     className={(0, runtime.joinClassNames)(
@@ -308,45 +309,37 @@ export function installEditorMarkdownFormatting(
                         callback2();
                       }
                     }}
-                  />,
-                  <runtime.ToolbarStripButton
-                    title={"Cancel"}
-                    aria-label={"Cancel"}
+                  />, <runtime.ToolbarStripButton
+                    title={uiMessage("design-system.markdownFormatting.cancel")}
+                    aria-label={uiMessage("design-system.markdownFormatting.cancel")}
                     icon={"X"}
                     onClick={(): void => {
                       value6(null);
                       value8(false);
                       callback2();
                     }}
-                  />,
-                ]}
-              </jsxMarkdownToolbar.Fragment>
-            ) : (
-              <jsxMarkdownToolbar.Fragment>
-                {[
-                  <runtime.ToolbarStripButton
-                    title={value16.bold ?? "Bold"}
-                    aria-label={"Bold"}
+                  />]}
+              </jsxMarkdownToolbar.Fragment>) : (<jsxMarkdownToolbar.Fragment>
+                {[<runtime.ToolbarStripButton
+                    title={value16.bold ?? (uiMessage("design-system.markdownFormatting.bold"))}
+                    aria-label={uiMessage("design-system.markdownFormatting.bold")}
                     icon={"TextBold"}
                     aria-pressed={value3.bold}
                     disabled={value16.bold !== undefined}
                     onClick={() => callback("bold")}
-                  />,
-                  <runtime.ToolbarStripButton
-                    title={value16.italic ?? "Italic"}
-                    aria-label={"Italic"}
+                  />, <runtime.ToolbarStripButton
+                    title={value16.italic ?? (uiMessage("design-system.markdownFormatting.italic"))}
+                    aria-label={uiMessage("design-system.markdownFormatting.italic")}
                     icon={"TextItalics"}
                     aria-pressed={value3.italic}
                     disabled={value16.italic !== undefined}
                     onClick={() => callback("italic")}
-                  />,
-                  <runtime.ToolbarStripButton
+                  />, <runtime.ToolbarStripButton
                     title={
-                      value16.link ??
-                      (value3.link !== undefined ? "Remove link" : "Link")
+                      value16.link ?? (value3.link !== undefined ? (uiMessage("design-system.markdownFormatting.removeLink")) : (uiMessage("design-system.markdownFormatting.link")))
                     }
                     aria-label={
-                      value3.link !== undefined ? "Remove link" : "Link"
+                      value3.link !== undefined ? (uiMessage("design-system.markdownFormatting.removeLink")) : (uiMessage("design-system.markdownFormatting.link"))
                     }
                     icon={"Link"}
                     aria-pressed={value3.link !== undefined}
@@ -359,14 +352,10 @@ export function installEditorMarkdownFormatting(
                         value6("");
                       }
                     }}
-                  />,
-                  <runtime.ToolbarDivider />,
-                  (() => {
+                  />, <runtime.ToolbarDivider />, (() => {
                     const _Element = runtime.ToolbarSelect;
                     const _elementProps = {
-                      title: value13
-                        ? "A list item stays a paragraph"
-                        : "Block style",
+                      get title() { return value13 ? (uiMessage("design-system.markdownFormatting.aListItemStaysA")) : (uiMessage("design-system.markdownFormatting.blockStyle")); },
                       testid: "ds-readme-block-menu",
                       disabled: value13,
                       value:
@@ -387,30 +376,26 @@ export function installEditorMarkdownFormatting(
                     };
                     const _elementKey = value.open ? "open" : "shut";
                     return <_Element key={_elementKey} {..._elementProps} />;
-                  })(),
-                  <runtime.ToolbarStripButton
+                  })(), <runtime.ToolbarStripButton
                     title={
-                      value15 ? "Bulleted list" : "Only paragraphs become lists"
+                      value15 ? (uiMessage("design-system.markdownFormatting.bulletedList")) : (uiMessage("design-system.markdownFormatting.onlyParagraphsBecomeLists"))
                     }
-                    aria-label={"Bulleted list"}
+                    aria-label={uiMessage("design-system.markdownFormatting.bulletedList")}
                     icon={"ListBullet"}
                     aria-pressed={value3.ul}
                     disabled={!value15}
                     onClick={() => callback("ul")}
-                  />,
-                  <runtime.ToolbarStripButton
+                  />, <runtime.ToolbarStripButton
                     title={
-                      value15 ? "Numbered list" : "Only paragraphs become lists"
+                      value15 ? (uiMessage("design-system.markdownFormatting.numberedList")) : (uiMessage("design-system.markdownFormatting.onlyParagraphsBecomeLists"))
                     }
-                    aria-label={"Numbered list"}
+                    aria-label={uiMessage("design-system.markdownFormatting.numberedList")}
                     icon={"ListNumbered"}
                     aria-pressed={value3.ol}
                     disabled={!value15}
                     onClick={() => callback("ol")}
-                  />,
-                ]}
-              </jsxMarkdownToolbar.Fragment>
-            )}
+                  />]}
+              </jsxMarkdownToolbar.Fragment>)}
           </runtime.ToolbarStrip>
         </div>
       </div>,
@@ -421,6 +406,7 @@ export function installEditorMarkdownFormatting(
     root: root,
     className: className,
   }: M.MarkdownLinkPopoverProps) {
+    useUiLocale();
     let value = (0, runtime.useCdsLayerAwareZIndex)(45),
       ref = runtime.reactMarkdownToolbar.useRef<HTMLDivElement>(null),
       [value2, value3] =
@@ -520,7 +506,7 @@ export function installEditorMarkdownFormatting(
         data-testid={"ds-readme-link-bubble"}
       >
         <runtime.ToolbarStrip
-          aria-label={"Link"}
+          aria-label={uiMessage("design-system.markdownFormatting.link")}
           surface={"popover"}
           style={
             {
@@ -536,12 +522,9 @@ export function installEditorMarkdownFormatting(
               "inline-flex max-w-64 items-center gap-1 px-1 text-xs text-blue-text hover:underline pointer-coarse:min-h-10 pointer-coarse:text-sm"
             }
           >
-            {[
-              <span className={"truncate"}>
+            {[<span className={"truncate"}>
                 {externalLinkDisplayLabel(value2.href)}
-              </span>,
-              <runtime.KitIcon name={"ArrowUpRight"} size={12} />,
-            ]}
+              </span>, <runtime.KitIcon name={"ArrowUpRight"} size={12} />]}
           </a>
         </runtime.ToolbarStrip>
       </div>,

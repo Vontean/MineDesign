@@ -1,3 +1,5 @@
+import { useUiLocale } from '../ui-locale.ts';
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import { bindRuntimeValue, type RuntimeBindings } from "../runtime-types";
 import type * as React from "react";
@@ -434,6 +436,7 @@ export function installEditorMarkdownEditor(
     testId: testId,
     stripClassName: stripClassName,
   }: MarkdownEditorProps) {
+    useUiLocale();
     let ref = runtime.DesignSystemReactRuntime.useRef<HTMLDivElement | null>(
         null,
       ),
@@ -599,8 +602,7 @@ export function installEditorMarkdownEditor(
       value6: boolean = ref5.current.trim() === "";
     return (
       <jsxEditableMarkdown.Fragment>
-        {[
-          (() => {
+        {[(() => {
             const _Element = "div";
             const _elementProps = {
               ref: ref,
@@ -777,8 +779,7 @@ export function installEditorMarkdownEditor(
             };
             const _elementKey = value3;
             return <_Element key={_elementKey} {..._elementProps} />;
-          })(),
-          readOnly ? null : (
+          })(), readOnly ? null : (
             <p
               className={
                 "ds-readme-hint not-prose mt-sm min-h-4 text-caption text-muted transition-opacity duration-base " +
@@ -786,27 +787,22 @@ export function installEditorMarkdownEditor(
               }
               aria-hidden={!value}
             >
-              {"Markdown shortcuts · select text to format"}
+              {uiMessage("design-system.markdownEditor.markdownShortcutsSelectTextToFormat")}
             </p>
-          ),
-          readOnly || !value ? null : (
+          ), readOnly || !value ? null : (
             <jsxEditableMarkdown.Fragment>
-              {[
-                <runtime.MarkdownFormattingToolbar
+              {[<runtime.MarkdownFormattingToolbar
                   root={ref}
                   hold={ref3}
                   onApplied={callback2}
                   onLeave={callback}
                   className={stripClassName}
-                />,
-                <runtime.MarkdownLinkPopover
+                />, <runtime.MarkdownLinkPopover
                   root={ref}
                   className={stripClassName}
-                />,
-              ]}
+                />]}
             </jsxEditableMarkdown.Fragment>
-          ),
-        ]}
+          )]}
       </jsxEditableMarkdown.Fragment>
     );
   }

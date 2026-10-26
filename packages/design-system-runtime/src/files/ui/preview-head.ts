@@ -1,3 +1,4 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 import type * as React from "react";
 import type * as Preview from "../../contracts/preview";
 import type * as Model from "../../contracts";
@@ -195,7 +196,7 @@ html{color-scheme:` +
         );
       return {
         staticReason:
-          "Previews can’t run: " +
+          uiMessage("design-system.previewHead.previewsCanTRun") +
           (value3.length === 1
             ? "1 file is missing."
             : String(value3.length) + " files are missing."),
@@ -207,7 +208,7 @@ html{color-scheme:` +
         system.components.length > 0 &&
         system.bundle.js === null &&
         (0, runtime.hasBundleMetadata)(system.bundle)
-          ? "Previews can’t run: components/bundle.js is missing."
+          ? uiMessage("design-system.previewHead.previewsCanTRunComponents")
           : "",
       staticMissing: Object.freeze([]),
     };

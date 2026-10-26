@@ -1,3 +1,5 @@
+import { useUiLocale } from '../../ui-locale.ts';
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 import type * as React from "react";
 import type * as Color from "../../contracts/color-controls";
 /** Restored application module; prepare first, initialize in original order. */
@@ -231,6 +233,7 @@ export function installUiColorPicker(runtime: RuntimeBindings): () => void {
     text: text,
     title = false,
   }: Color.ColorPickerLabelProps): React.ReactElement {
+    useUiLocale();
     return (
       <div
         className={joinPickerClasses(
@@ -250,6 +253,7 @@ export function installUiColorPicker(runtime: RuntimeBindings): () => void {
     scroll = true,
     children: children,
   }: Color.ColorPickerGroupProps): React.ReactElement {
+    useUiLocale();
     return (
       <div
         role={role}
@@ -269,6 +273,7 @@ export function installUiColorPicker(runtime: RuntimeBindings): () => void {
     text: text,
     title: title,
   }: Color.ColorPickerLabelProps): React.ReactElement {
+    useUiLocale();
     return (
       <div
         role={"presentation"}
@@ -282,6 +287,7 @@ export function installUiColorPicker(runtime: RuntimeBindings): () => void {
     paint: paint,
     current = false,
   }: Color.SwatchDotProps): React.ReactElement {
+    useUiLocale();
     return (
       <span
         aria-hidden={"true"}
@@ -305,16 +311,14 @@ export function installUiColorPicker(runtime: RuntimeBindings): () => void {
     title: title,
     ...remainingProps
   }: Color.SwatchButtonProps): React.ReactElement {
+    useUiLocale();
     let value = (
       <jsxForUiColorPicker.Fragment>
-        {[
-          <SwatchDot paint={paint} current={current} />,
-          <span
+        {[<SwatchDot paint={paint} current={current} />, <span
             className={"min-w-0 flex-1 truncate text-footnote text-primary"}
           >
             {label}
-          </span>,
-          current ? (
+          </span>, current ? (
             <span
               data-swatch-check={""}
               aria-hidden={"true"}
@@ -327,15 +331,14 @@ export function installUiColorPicker(runtime: RuntimeBindings): () => void {
             >
               <runtime.Icon name={"Check"} size={"auto"} bold={true} />
             </span>
-          ) : null,
-        ]}
+          ) : null]}
       </jsxForUiColorPicker.Fragment>
     );
     if (readOnly) {
       return (
         <div
           role={"listitem"}
-          title={title ?? label}
+          title={title ?? (label)}
           aria-label={label}
           className={joinPickerClasses(
             COLOR_SWATCH_BUTTON_CLASS,
@@ -350,7 +353,7 @@ export function installUiColorPicker(runtime: RuntimeBindings): () => void {
     return (
       <button
         type={"button"}
-        title={disabled ? undefined : (title ?? label)}
+        title={disabled ? (undefined) : (title ?? (label))}
         aria-label={label}
         aria-pressed={current}
         disabled={disabled}
@@ -373,6 +376,7 @@ export function installUiColorPicker(runtime: RuntimeBindings): () => void {
     onChange: onChange,
     className = "mb-2",
   }: Color.ColorHexInputProps): React.ReactElement {
+    useUiLocale();
     let ref = (
         runtime.reactForUiColorPicker as typeof React
       ).useRef<HTMLDivElement | null>(null),
@@ -398,16 +402,13 @@ export function installUiColorPicker(runtime: RuntimeBindings): () => void {
         onValueChange={(input: unknown) => callback(input as string)}
       >
         <runtime.Tabs.List
-          aria-label={"Source"}
+          aria-label={uiMessage("design-system.picker.source")}
           className={className}
           onMouseDown={(event: React.MouseEvent<HTMLElement>) =>
             event.preventDefault()
           }
         >
-          {[
-            <runtime.Tabs.Tab value={"system"}>{"Theme"}</runtime.Tabs.Tab>,
-            <runtime.Tabs.Tab value={"custom"}>{"Custom"}</runtime.Tabs.Tab>,
-          ]}
+          {[<runtime.Tabs.Tab value={"system"}>{uiMessage("design-system.picker.theme")}</runtime.Tabs.Tab>, <runtime.Tabs.Tab value={"custom"}>{uiMessage("design-system.picker.custom")}</runtime.Tabs.Tab>]}
         </runtime.Tabs.List>
       </runtime.Tabs.Root>
     );
@@ -420,6 +421,7 @@ export function installUiColorPicker(runtime: RuntimeBindings): () => void {
     onPickEnd: onPickEnd,
     contrast: contrast,
   }: Color.ColorPickerProps): React.ReactElement {
+    useUiLocale();
     let callback = (input: Color.HsvaColor) =>
         opaque
           ? {
@@ -778,8 +780,7 @@ export function installUiColorPicker(runtime: RuntimeBindings): () => void {
       value17 = memo2 === undefined ? undefined : value16;
     return (
       <div className={"flex w-full min-w-56 flex-col"}>
-        {[
-          <div
+        {[<div
             className={"relative aspect-[3/2] w-full touch-none rounded-md"}
             style={{
               background: `linear-gradient(to top, #000, transparent), linear-gradient(to right, #fff, hsl(${value2.h}, 100%, 50%))`,
@@ -796,8 +797,7 @@ export function installUiColorPicker(runtime: RuntimeBindings): () => void {
                 background: value11,
               }}
             />
-          </div>,
-          <div
+          </div>, <div
             className={"relative touch-none pt-2 pb-1 pointer-coarse:py-3.5"}
             onPointerDown={callback11}
           >
@@ -816,8 +816,7 @@ export function installUiColorPicker(runtime: RuntimeBindings): () => void {
                 }}
               />
             </div>
-          </div>,
-          !opaque && (
+          </div>, !opaque && (
             <div
               className={"relative touch-none py-1 pointer-coarse:py-3.5"}
               onPointerDown={callback12}
@@ -839,14 +838,12 @@ export function installUiColorPicker(runtime: RuntimeBindings): () => void {
                 />
               </div>
             </div>
-          ),
-          <div className={"mt-1 flex items-center gap-2"}>
-            {[
-              isEyeDropperAvailable() && (
+          ), <div className={"mt-1 flex items-center gap-2"}>
+            {[isEyeDropperAvailable() && (
                 <button
                   type={"button"}
-                  title={"Pick color from screen"}
-                  aria-label={"Pick color from screen"}
+                  title={uiMessage("design-system.picker.pickColorFromScreen")}
+                  aria-label={uiMessage("design-system.picker.pickColorFromScreen")}
                   onClick={callback13}
                   className={
                     "flex h-6 w-6 shrink-0 items-center justify-center rounded text-muted outline-none hover:bg-alpha-1 hover:text-primary focus-visible:outline-hidden focus-visible:shadow-focus pointer-coarse:h-10 pointer-coarse:w-10"
@@ -854,20 +851,18 @@ export function installUiColorPicker(runtime: RuntimeBindings): () => void {
                 >
                   <runtime.Icon name={"EyeDropper"} size={"sm"} />
                 </button>
-              ),
-              <div
+              ), <div
                 className={
                   "flex h-6 min-w-0 flex-1 items-center rounded bg-fill-field shadow-field-ring transition duration-fast hover:not-focus-within:shadow-field-hover has-[:focus-visible]:shadow-focus pointer-coarse:h-10"
                 }
               >
-                {[
-                  <input
+                {[<input
                     ref={ref3}
                     className={
                       "h-full min-w-0 flex-1 bg-transparent px-1.5 font-mono text-[11px] text-primary outline-none focus-visible:outline-hidden"
                     }
                     value={value4}
-                    aria-label={"Hex color"}
+                    aria-label={uiMessage("design-system.picker.hexColor")}
                     aria-describedby={value17}
                     onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
                       ref9.current = true;
@@ -893,22 +888,19 @@ export function installUiColorPicker(runtime: RuntimeBindings): () => void {
                       }
                       event.stopPropagation();
                     }}
-                  />,
-                  !opaque && (
+                  />, !opaque && (
                     <jsxForUiColorPicker.Fragment>
-                      {[
-                        <div
+                      {[<div
                           className={
                             "my-1 w-px shrink-0 self-stretch bg-alpha-2"
                           }
-                        />,
-                        <input
+                        />, <input
                           ref={ref4}
                           className={
                             "h-full w-[34px] bg-transparent pl-1.5 pr-1 text-right font-mono text-[11px] text-primary outline-none focus-visible:outline-hidden"
                           }
                           value={value6}
-                          aria-label={"Alpha percent"}
+                          aria-label={uiMessage("design-system.picker.alphaPercent")}
                           aria-describedby={value17}
                           onChange={(
                             event: React.ChangeEvent<HTMLInputElement>,
@@ -930,18 +922,13 @@ export function installUiColorPicker(runtime: RuntimeBindings): () => void {
                             }
                             event.stopPropagation();
                           }}
-                        />,
-                        <span className={"pr-1.5 text-[10px] text-muted"}>
+                        />, <span className={"pr-1.5 text-[10px] text-muted"}>
                           {"%"}
-                        </span>,
-                      ]}
+                        </span>]}
                     </jsxForUiColorPicker.Fragment>
-                  ),
-                ]}
-              </div>,
-            ]}
-          </div>,
-          memo2 !== undefined ? (
+                  )]}
+              </div>]}
+          </div>, memo2 !== undefined ? (
             <runtime.ContrastColorDetails
               fg={value12}
               results={memo2}
@@ -960,8 +947,7 @@ export function installUiColorPicker(runtime: RuntimeBindings): () => void {
                   }
                 : {})}
             />
-          ) : null,
-        ]}
+          ) : null]}
       </div>
     );
   }

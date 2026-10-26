@@ -1,3 +1,4 @@
+import { useUiLocale } from '../../ui-locale.ts';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -126,6 +127,7 @@ export function installEditorPropertiesTokenColorPicker(
     contrast: contrast,
     ...props
   }: Dynamic): Dynamic {
+    useUiLocale();
     let value2: Dynamic = (0,
       runtime.reactPropertiesDropShadowEditor_3.useMemo)(
         (): Dynamic =>

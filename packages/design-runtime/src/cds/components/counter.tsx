@@ -1,3 +1,5 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
+import { useUiLocale } from '../../ui-locale.ts';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -78,6 +80,7 @@ export function installCdsComponentsCounter(
     "data-testid": dataTestid,
     children: children,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let value: Dynamic = (0, runtime.useLabel)("dismiss", "Dismiss"),
       value2: Dynamic = dismissLabel ?? value,
       value3: Dynamic = (0, runtime.useDensity)(),
@@ -192,26 +195,19 @@ export function installCdsComponentsCounter(
           className,
         )}
       >
-        {icon !== null && !value23 && (
-          <span
+        {icon !== null && !value23 && (<span
             className={(0, runtime.cn)(
               value25 ? "flex min-h-[1lh] shrink-0 items-center" : "shrink-0",
               ComponentsCounterNeutralWarningDangerConfig_2[value4],
               value6 && "ms-[4px] -me-[4px]",
             )}
           >
-            {value7 ? (
-              icon
-            ) : (
-              <runtime.Icon
+            {value7 ? (icon) : (<runtime.Icon
                 name={ComponentsCounterNeutralWarningDangerConfig_3[value4]}
                 size={"auto"}
-              />
-            )}
-          </span>
-        )}
-        {value9 ? (
-          <div
+              />)}
+          </span>)}
+        {value9 ? (<div
             className={(0, runtime.cn)(
               "flex min-w-0 flex-1 flex-col",
               value5 && ComponentsCounterGlyphTextConfig[value5],
@@ -252,9 +248,7 @@ export function installCdsComponentsCounter(
                 <div className={"pt-[var(--cds-gap-sm)]"}>{details}</div>
               </runtime.ComponentsCollapsibleRootTriggerPanelConfig.Panel>
             </runtime.ComponentsCollapsibleRootTriggerPanelConfig.Root>
-          </div>
-        ) : (
-          <div
+          </div>) : (<div
             className={(0, runtime.cn)(
               "flex min-w-0 flex-wrap",
               value20 ? "items-center" : "items-start",
@@ -274,10 +268,8 @@ export function installCdsComponentsCounter(
               {children}
             </div>
             {value26}
-          </div>
-        )}
-        {onDismiss && (
-          <span
+          </div>)}
+        {onDismiss && (<span
             {...state}
             className={`${value5 !== undefined ? ComponentsCounterGlyphTextConfig_3[value5] : "-me-[calc(var(--cds-pad-md)-2px)]"} flex h-[1lh] shrink-0 items-center`}
           >
@@ -289,8 +281,7 @@ export function installCdsComponentsCounter(
               tooltip={false}
               onClick={onDismiss}
             />
-          </span>
-        )}
+          </span>)}
       </div>
     );
   }
@@ -312,6 +303,7 @@ export function installCdsComponentsCounter(
     actionDisabled: actionDisabled,
     rest: rest,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let value: Dynamic = (0, reactComponentsCounter_4.isValidElement)(render),
       value2: Dynamic = (0, runtime.useLinkProps)({
         ...linkInput,
@@ -370,6 +362,7 @@ export function installCdsComponentsCounter(
     );
   }
   function TextLinkIcon(input?: Dynamic): Dynamic {
+    useUiLocale();
     return (0, runtime.isIconName)(input) ? (
       <runtime.Icon
         name={input}
@@ -798,8 +791,8 @@ export function installCdsComponentsCounter(
       };
       ComponentsCounterNeutralWarningDangerConfig_3 = {
         neutral: "Info",
-        warning: "Warning",
-        danger: "Warning",
+        get warning() { return uiMessage("canvas.counter.warning"); },
+        get danger() { return uiMessage("canvas.counter.warning"); },
       };
     });
     initializeComponentsCounter_6 = (0, runtime.initializeOnce)((): Dynamic => {

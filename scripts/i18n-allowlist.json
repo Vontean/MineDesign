@@ -1,0 +1,82 @@
+[
+  {
+    "file": "packages/design-runtime/src/editor/html/dc-props.ts",
+    "text": "<!DOCTYPE",
+    "reason": "HTML 语法示例"
+  },
+  {
+    "file": "packages/design-runtime/src/editor/html/dc-props.ts",
+    "text": "<html>",
+    "reason": "HTML 语法示例"
+  },
+  {
+    "file": "packages/design-runtime/src/editor/html/dc-props.ts",
+    "text": "<head>",
+    "reason": "HTML 语法示例"
+  },
+  {
+    "file": "packages/design-runtime/src/editor/html/dc-props.ts",
+    "text": "<body>",
+    "reason": "HTML 语法示例"
+  },
+  {
+    "file": "packages/design-runtime/src/editor/html/dc-props.ts",
+    "text": "<x-dc>",
+    "reason": "HTML 语法示例"
+  },
+  {
+    "file": "packages/design-runtime/src/editor/html/dc-props.ts",
+    "text": "data-dc-script",
+    "reason": "HTML 语法示例"
+  },
+  {
+    "file": "packages/design-runtime/src/editor/model/publishing.ts",
+    "text": "a label",
+    "reason": "模型发布描述，保持内容协议"
+  },
+  {
+    "file": "packages/design-runtime/src/export/artboard-menu.ts",
+    "text": "PDF (.pdf)",
+    "reason": "导出格式名"
+  },
+  {
+    "file": "packages/design-runtime/src/export/artboard-menu.ts",
+    "text": "HTML (.zip)",
+    "reason": "导出格式名"
+  },
+  {
+    "file": "packages/design-runtime/src/export/delivery-ui.tsx",
+    "text": " KB",
+    "reason": "单位"
+  },
+  {
+    "file": "packages/design-runtime/src/fast-edit/debug-panel.tsx",
+    "text": " ms",
+    "reason": "单位"
+  },
+  {
+    "file": "packages/design-system-runtime/src/editor/add-token-dialog.tsx",
+    "text": "Aa",
+    "reason": "字体预览样本"
+  },
+  {
+    "file": "packages/design-system-runtime/src/editor/asset-details.tsx",
+    "text": "Ag",
+    "reason": "字体预览样本"
+  },
+  {
+    "file": "packages/design-system-runtime/src/editor/markdown-editor.tsx",
+    "text": "README",
+    "reason": "文件名"
+  },
+  {
+    "file": "packages/design-system-runtime/src/files/ui/file-browser.tsx",
+    "text": "card",
+    "reason": "传入回调的视图枚举，不是文案"
+  },
+  {
+    "file": "packages/design-system-runtime/src/files/ui/file-browser.tsx",
+    "text": "row",
+    "reason": "传入回调的视图枚举，不是文案"
+  }
+]

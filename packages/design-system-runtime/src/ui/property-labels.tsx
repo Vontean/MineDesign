@@ -1,3 +1,4 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 import type * as React from "react";
 import type * as Color from "../contracts/color-controls";
 /** Restored application module; prepare first, initialize in original order. */
@@ -25,10 +26,10 @@ export function installUiPropertyLabels(runtime: RuntimeBindings): () => void {
   var REDO_UNAVAILABLE_LABEL: string;
   function numberChangeRefusalMessage(label?: string, unit?: string): string {
     return (
-      "Nothing changed. " +
-      (label ?? "This field") +
+      uiMessage("design-system.propertyLabels.nothingChanged") +
+      (label ?? uiMessage("design-system.propertyLabels.thisField")) +
       " takes a number " +
-      (unit ? "in " + unit : "only") +
+      (unit ? uiMessage("design-system.propertyLabels.in") + unit : "only") +
       "."
     );
   }
@@ -45,7 +46,7 @@ export function installUiPropertyLabels(runtime: RuntimeBindings): () => void {
   }
   function contrastResultSummary(result: Color.ContrastSentence): string {
     return (
-      (result.passes ? CONTRAST_PASSES_LABEL : CONTRAST_FAILS_LABEL) +
+      (result.passes ? uiMessage("design-system.propertyLabels.goodContrast") : uiMessage("design-system.propertyLabels.poorContrast")) +
       ", " +
       result.ratio +
       " " +
@@ -85,7 +86,7 @@ export function installUiPropertyLabels(runtime: RuntimeBindings): () => void {
     ground: string;
   }): string {
     return (
-      "Changes the color to " +
+      uiMessage("design-system.propertyLabels.changesTheColorTo") +
       fix.hex +
       ", contrast " +
       fix.ratio +
@@ -112,7 +113,7 @@ export function installUiPropertyLabels(runtime: RuntimeBindings): () => void {
   bindRuntimeValue(
     runtime,
     "MORE_ACTIONS_LABEL",
-    () => MORE_ACTIONS_LABEL,
+    () => uiMessage("design-system.propertyLabels.moreActions"),
     (value) => {
       MORE_ACTIONS_LABEL = value;
     },
@@ -152,7 +153,7 @@ export function installUiPropertyLabels(runtime: RuntimeBindings): () => void {
   bindRuntimeValue(
     runtime,
     "COLOR_SEARCH_LABEL",
-    () => COLOR_SEARCH_LABEL,
+    () => uiMessage("design-system.propertyLabels.searchColors"),
     (value) => {
       COLOR_SEARCH_LABEL = value;
     },
@@ -160,7 +161,7 @@ export function installUiPropertyLabels(runtime: RuntimeBindings): () => void {
   bindRuntimeValue(
     runtime,
     "NO_COLOR_MATCHES_LABEL",
-    () => NO_COLOR_MATCHES_LABEL,
+    () => uiMessage("design-system.propertyLabels.noMatches"),
     (value) => {
       NO_COLOR_MATCHES_LABEL = value;
     },
@@ -197,7 +198,7 @@ export function installUiPropertyLabels(runtime: RuntimeBindings): () => void {
   bindRuntimeValue(
     runtime,
     "CONTRAST_POOR_GROUND_PREPOSITION",
-    () => CONTRAST_POOR_GROUND_PREPOSITION,
+    () => uiMessage("design-system.propertyLabels.hardToReadOn"),
     (value) => {
       CONTRAST_POOR_GROUND_PREPOSITION = value;
     },
@@ -205,7 +206,7 @@ export function installUiPropertyLabels(runtime: RuntimeBindings): () => void {
   bindRuntimeValue(
     runtime,
     "CONTRAST_PASSES_LABEL",
-    () => CONTRAST_PASSES_LABEL,
+    () => uiMessage("design-system.propertyLabels.goodContrast"),
     (value) => {
       CONTRAST_PASSES_LABEL = value;
     },
@@ -213,7 +214,7 @@ export function installUiPropertyLabels(runtime: RuntimeBindings): () => void {
   bindRuntimeValue(
     runtime,
     "CONTRAST_FAILS_LABEL",
-    () => CONTRAST_FAILS_LABEL,
+    () => uiMessage("design-system.propertyLabels.poorContrast"),
     (value) => {
       CONTRAST_FAILS_LABEL = value;
     },
@@ -241,7 +242,7 @@ export function installUiPropertyLabels(runtime: RuntimeBindings): () => void {
   bindRuntimeValue(
     runtime,
     "COLOR_FIX_LABEL",
-    () => COLOR_FIX_LABEL,
+    () => uiMessage("design-system.propertyLabels.useAReadableShade"),
     (value) => {
       COLOR_FIX_LABEL = value;
     },
@@ -270,7 +271,7 @@ export function installUiPropertyLabels(runtime: RuntimeBindings): () => void {
   bindRuntimeValue(
     runtime,
     "UNDO_UNAVAILABLE_LABEL",
-    () => UNDO_UNAVAILABLE_LABEL,
+    () => uiMessage("design-system.propertyLabels.nothingToUndo"),
     (value) => {
       UNDO_UNAVAILABLE_LABEL = value;
     },
@@ -278,7 +279,7 @@ export function installUiPropertyLabels(runtime: RuntimeBindings): () => void {
   bindRuntimeValue(
     runtime,
     "REDO_UNAVAILABLE_LABEL",
-    () => REDO_UNAVAILABLE_LABEL,
+    () => uiMessage("design-system.propertyLabels.nothingToRedo"),
     (value) => {
       REDO_UNAVAILABLE_LABEL = value;
     },

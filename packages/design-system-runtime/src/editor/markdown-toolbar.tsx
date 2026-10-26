@@ -1,3 +1,5 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
+import { useUiLocale } from '../ui-locale.ts';
 /** Restored application module; prepare first, initialize in original order. */
 import { bindRuntimeValue, type RuntimeBindings } from "../runtime-types";
 import type * as React from "react";
@@ -27,6 +29,7 @@ export function installEditorMarkdownToolbar(
     disabled = false,
     popupAttrs: popupAttrs,
   }: ToolbarSelectProps) {
+    useUiLocale();
     let value2 =
         reactToolbarPicker.useContext(runtime.ToolbarTooltipSideContext) ??
         "bottom",
@@ -61,9 +64,7 @@ export function installEditorMarkdownToolbar(
             : title + ": " + value11;
     return (
       <span className={"inline-flex"}>
-        {[
-          value7 ? <runtime.PopupScrim onClose={() => value6(false)} /> : null,
-          <runtime.Menu.Root
+        {[value7 ? <runtime.PopupScrim onClose={() => value6(false)} /> : null, <runtime.Menu.Root
             open={value7}
             disabled={disabled}
             modal={false}
@@ -88,8 +89,7 @@ export function installEditorMarkdownToolbar(
               value6(input);
             }}
           >
-            {[
-              <runtime.Menu.Trigger
+            {[<runtime.Menu.Trigger
                 render={
                   <runtime.ToolbarStripButton
                     data-testid={testid}
@@ -101,8 +101,7 @@ export function installEditorMarkdownToolbar(
                     {value10}
                   </runtime.ToolbarStripButton>
                 }
-              />,
-              <runtime.Menu.Popup
+              />, <runtime.Menu.Popup
                 {...popupAttrs}
                 ref={ref}
                 aria-label={title}
@@ -158,10 +157,8 @@ export function installEditorMarkdownToolbar(
                     })(),
                   )}
                 </runtime.Menu.Group>
-              </runtime.Menu.Popup>,
-            ]}
-          </runtime.Menu.Root>,
-        ]}
+              </runtime.Menu.Popup>]}
+          </runtime.Menu.Root>]}
       </span>
     );
   }

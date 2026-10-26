@@ -1,3 +1,5 @@
+import { useUiLocale } from '../ui-locale.ts';
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 import type * as React from "react";
 import type * as Core from "../contracts";
 import type * as M from "../contracts/documentation";
@@ -52,6 +54,7 @@ export function installEditorDocumentSections(
     edit: edit,
     headFor: headFor,
   }: M.DocumentSectionsProps) {
+    useUiLocale();
     return (
       <jsxDocumentSections.Fragment>
         {docs.map((input: Core.ParsedDesignSystem["docs"][number]) =>
@@ -78,7 +81,7 @@ export function installEditorDocumentSections(
                     readOnly={edit === undefined}
                     placeholder={
                       // MineDesign: user-facing copy calls the agent "the agent", not Claude.
-                      "Guidance for the agent — voice, do's and don'ts, anything the tokens can't say."
+                      uiMessage("design-system.documentSections.guidanceForTheAgentVoiceDoSAndDonTsAnythingTheTokensCanTSay")
                     }
                     label={input.title}
                     testId={"ds-guidance-text-" + input.path}

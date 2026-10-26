@@ -1,3 +1,5 @@
+import { useUiLocale } from '../ui-locale.ts';
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 import type * as React from "react";
 import type * as Editor from "../contracts/editor-runtime";
 import type * as Model from "../contracts";
@@ -27,19 +29,19 @@ export function installEditorAssetGroups(runtime: RuntimeBindings): () => void {
   } {
     if (asset.kind === "font") {
       return {
-        label: "Font",
+        get label() { return uiMessage("design-system.assetGroups.font"); },
         icon: "TextAa",
       };
     }
     if (asset.kind === "video") {
       return {
-        label: "Video",
+        get label() { return uiMessage("design-system.assetGroups.video"); },
         icon: "Play",
       };
     }
     if (asset.kind === "audio") {
       return {
-        label: "Audio",
+        get label() { return uiMessage("design-system.assetGroups.audio"); },
         icon: "Voice",
       };
     }
@@ -68,7 +70,7 @@ export function installEditorAssetGroups(runtime: RuntimeBindings): () => void {
         };
       default:
         return {
-          label: asset.ext !== "" ? asset.ext.toUpperCase() : "File",
+          get label() { return asset.ext !== "" ? (asset.ext.toUpperCase()) : (uiMessage("design-system.assetGroups.file")); },
           icon: "File",
         };
     }
@@ -163,6 +165,7 @@ export function installEditorAssetGroups(runtime: RuntimeBindings): () => void {
     onRename: onRename,
     reveal: reveal,
   }: Editor.AssetGroupsListProps): React.ReactElement | null {
+    useUiLocale();
     let memo = (runtime.reactAssetGroups as typeof React).useMemo(
         () => groups.filter((input): boolean => input.assets.length > 0),
         [groups],
@@ -195,8 +198,7 @@ export function installEditorAssetGroups(runtime: RuntimeBindings): () => void {
       value4 = value !== null && tiles?.editable === true;
     return (
       <jsxAssetGroups.Fragment>
-        {[
-          memo.map((input, options) =>
+        {[memo.map((input, options) =>
             (() => {
               const _Element = AssetGroupGrid;
               const _elementProps = {
@@ -221,14 +223,12 @@ export function installEditorAssetGroups(runtime: RuntimeBindings): () => void {
               const _elementKey = input.name;
               return <_Element key={_elementKey} {..._elementProps} />;
             })(),
-          ),
-          value4 ? (
+          ), value4 ? (
             <NewAssetGroupDropZone
               targeted={value3?.kind === "new"}
               count={value!.ids.length}
             />
-          ) : null,
-          memo.length === 0 && footer !== undefined && footer !== null ? (
+          ) : null, memo.length === 0 && footer !== undefined && footer !== null ? (
             <div
               className={runtime.SECTION_CARD_CLASS_NAME}
               data-testid={"ds-assets-pane"}
@@ -240,16 +240,14 @@ export function installEditorAssetGroups(runtime: RuntimeBindings): () => void {
                 {footer}
               </div>
             </div>
-          ) : null,
-          value !== null && tiles !== undefined ? (
+          ) : null, value !== null && tiles !== undefined ? (
             <AssetDragOverlay
               drag={value}
               tiles={tiles}
               lookup={memo3}
               renderThumb={renderThumb}
             />
-          ) : null,
-        ]}
+          ) : null]}
       </jsxAssetGroups.Fragment>
     );
   }
@@ -260,6 +258,7 @@ export function installEditorAssetGroups(runtime: RuntimeBindings): () => void {
     targeted: boolean;
     count: number;
   }): React.ReactElement {
+    useUiLocale();
     return (
       <div
         className={(0, runtime.joinClassNames)(
@@ -270,15 +269,11 @@ export function installEditorAssetGroups(runtime: RuntimeBindings): () => void {
         data-testid={"ds-newgroup-zone"}
         {...runtime.UNCOMMENTABLE_PROPS}
       >
-        {[
-          <runtime.KitIcon name={"FolderPlus"} size={14} />,
-          <span className={"font-medium"}>{"New set"}</span>,
-          targeted ? (
+        {[<runtime.KitIcon name={"FolderPlus"} size={14} />, <span className={"font-medium"}>{uiMessage("design-system.assetGroups.newSet")}</span>, targeted ? (
             <span className={"text-secondary"}>
-              {["· ", String(count), " ", count === 1 ? "file" : "files"]}
+              {["· ", String(count), " ", count === 1 ? (uiMessage("design-system.assetGroups.file2")) : (uiMessage("design-system.assetGroups.files2"))]}
             </span>
-          ) : null,
-        ]}
+          ) : null]}
       </div>
     );
   }
@@ -288,6 +283,7 @@ export function installEditorAssetGroups(runtime: RuntimeBindings): () => void {
     lookup: lookup,
     renderThumb: renderThumb,
   }: Editor.AssetDragOverlayProps): React.ReactElement | null {
+    useUiLocale();
     let entry = lookup.get(drag.lead);
     if (entry === undefined) {
       return null;
@@ -316,8 +312,7 @@ export function installEditorAssetGroups(runtime: RuntimeBindings): () => void {
             width: value ? value2 : undefined,
           }}
         >
-          {[
-            value3.map((input, options) =>
+          {[value3.map((input, options) =>
               (() => {
                 const _Element2 = "div";
                 const _elementProps2 = {
@@ -342,8 +337,7 @@ export function installEditorAssetGroups(runtime: RuntimeBindings): () => void {
                 const _elementKey2 = input.a.path;
                 return <_Element2 key={_elementKey2} {..._elementProps2} />;
               })(),
-            ),
-            <div
+            ), <div
               className={"ds-ghost-tile relative"}
               data-tone={isReversedLogoAsset(entry.a) ? "dark" : undefined}
               style={{
@@ -351,26 +345,18 @@ export function installEditorAssetGroups(runtime: RuntimeBindings): () => void {
                 height: value ? value2 : 28,
               }}
             >
-              {value ? (
-                renderThumb(entry.a)
-              ) : (
-                <span
+              {value ? (renderThumb(entry.a)) : (<span
                   className={"flex h-full items-center gap-sm px-md text-body"}
                 >
-                  {[
-                    <runtime.KitIcon
+                  {[<runtime.KitIcon
                       name={assetKindLabel(entry.a).icon}
                       size={14}
                       className={"shrink-0 text-muted"}
-                    />,
-                    <span className={"truncate font-mono"}>
+                    />, <span className={"truncate font-mono"}>
                       {entry.a.name}
-                    </span>,
-                  ]}
-                </span>
-              )}
-            </div>,
-            drag.ids.length > 1 ? (
+                    </span>]}
+                </span>)}
+            </div>, drag.ids.length > 1 ? (
               <span
                 className={
                   "absolute -top-2 -right-2 flex h-6 min-w-6 items-center justify-center rounded-full bg-app-accent px-1.5 text-xs font-medium text-app-accent-fg shadow-sm"
@@ -379,8 +365,7 @@ export function installEditorAssetGroups(runtime: RuntimeBindings): () => void {
               >
                 {drag.ids.length}
               </span>
-            ) : null,
-          ]}
+            ) : null]}
         </div>
       </div>,
       document.body,
@@ -472,6 +457,7 @@ export function installEditorAssetGroups(runtime: RuntimeBindings): () => void {
     a: Editor.AssetThumbnail;
     renderThumb: Editor.AssetGroupsListProps["renderThumb"];
   }): React.ReactElement {
+    useUiLocale();
     if (isFileIconAsset(a)) {
       return (
         <span
@@ -508,6 +494,7 @@ export function installEditorAssetGroups(runtime: RuntimeBindings): () => void {
     targeted: targeted,
     footer: footer,
   }: Editor.AssetGroupGridProps): React.ReactElement {
+    useUiLocale();
     (0, runtime.useAssetThumbnailSources)();
     let [value, value2] = (runtime.reactAssetGroups as typeof React).useState(
         false,
@@ -622,8 +609,8 @@ export function installEditorAssetGroups(runtime: RuntimeBindings): () => void {
               size={"sm"}
               iconOnly={true}
               icon={"Upload"}
-              aria-label={"Upload file to " + value7}
-              tooltip={"Upload file"}
+              aria-label={uiMessage("design-system.assetGroups.uploadFileTo", { value1: String(value7) })}
+              tooltip={uiMessage("design-system.assetGroups.uploadFile")}
               onClick={() => onUpload(group)}
               data-testid={"ds-assets-upload-" + group.name}
               {...runtime.UNCOMMENTABLE_PROPS}
@@ -632,34 +619,25 @@ export function installEditorAssetGroups(runtime: RuntimeBindings): () => void {
         }
       >
         <div ref={ref} className={"flex flex-col"}>
-          {[
-            <div
+          {[<div
               className={"ds-atable ds-ctable"}
               role={"listbox"}
               aria-multiselectable={"true"}
-              aria-label={value7 + " files"}
+              aria-label={uiMessage("design-system.assetGroups.files", { value1: String(value7) })}
               data-testid={"ds-flist"}
             >
-              {[
-                <div
+              {[<div
                   className={"ds-arow ds-crow ds-chead text-caption text-muted"}
                   aria-hidden={"true"}
                   {...runtime.UNCOMMENTABLE_PROPS}
                 >
-                  {[
-                    <span>{"Name"}</span>,
-                    <span>{"Preview"}</span>,
-                    <span>{"Type"}</span>,
-                    <span className={"ds-cgutter"} />,
-                  ]}
-                </div>,
-                items.length === 0 && group.assets.length > 0 ? (
+                  {[<span>{uiMessage("design-system.assetGroups.name")}</span>, <span>{uiMessage("design-system.assetGroups.preview")}</span>, <span>{uiMessage("design-system.assetGroups.type")}</span>, <span className={"ds-cgutter"} />]}
+                </div>, items.length === 0 && group.assets.length > 0 ? (
                   <div
                     className={"ds-arow ds-tokrow ds-crow"}
                     aria-hidden={"true"}
                   />
-                ) : null,
-                value5.map((source) => {
+                ) : null, value5.map((source) => {
                   if (source.kind === "slot") {
                     return (() => {
                       const _Element3 = "div";
@@ -706,7 +684,7 @@ export function installEditorAssetGroups(runtime: RuntimeBindings): () => void {
                               kind={"title"}
                               name={source.a.name}
                               taken={EMPTY_ASSET_SELECTION_SET}
-                              placeholder={"File name"}
+                              placeholder={uiMessage("design-system.assetGroups.fileName")}
                               tabIndex={-1}
                               commit={(input: string) =>
                                 input === "" ||
@@ -737,8 +715,7 @@ export function installEditorAssetGroups(runtime: RuntimeBindings): () => void {
                             "ds-bcell ds-atype min-w-0 truncate text-footnote text-muted"
                           }
                         >
-                          {value9.label +
-                            (value10 !== "" ? " · " + value10 : "")}
+                          {value9.label + (value10 !== "" ? " · " + value10 : "")}
                         </span>,
                         <span
                           className={"ds-cgutter"}
@@ -750,42 +727,36 @@ export function installEditorAssetGroups(runtime: RuntimeBindings): () => void {
                           }
                           {...runtime.UNCOMMENTABLE_PROPS}
                         >
-                          {value8 ? (
-                            <runtime.RemoveRowButton
-                              label={"Remove " + source.a.name}
+                          {value8 ? (<runtime.RemoveRowButton
+                              label={uiMessage("design-system.assetGroups.remove", { value1: String(source.a.name) })}
                               onRemove={() => tiles!.remove([source.a.path])}
                               tabIndex={-1}
                               data-testid={"ds-asset-remove-" + source.a.path}
-                            />
-                          ) : null}
+                            />) : (null)}
                         </span>,
                       ],
                     };
                     const _elementKey4 = source.a.path;
                     return <_Element4 key={_elementKey4} {..._elementProps4} />;
                   })();
-                }),
-              ]}
-            </div>,
-            items.length > value5.length ? (
+                })]}
+            </div>, items.length > value5.length ? (
               <runtime.TextLink
                 className={"ds-apad mt-sm w-fit text-footnote"}
                 onClick={() => value2(true)}
                 data-testid={"ds-wall-all"}
                 {...runtime.UNCOMMENTABLE_PROPS}
               >
-                {["Show all ", String(group.assets.length), " files"]}
+                {[uiMessage("design-system.assetGroups.showAll"), String(group.assets.length), uiMessage("design-system.assetGroups.files3")]}
               </runtime.TextLink>
-            ) : null,
-            footer !== undefined && footer !== null ? (
+            ) : null, footer !== undefined && footer !== null ? (
               <div
                 className={"ds-assets-foot ds-apad pt-md"}
                 {...runtime.UNCOMMENTABLE_PROPS}
               >
                 {footer}
               </div>
-            ) : null,
-          ]}
+            ) : null]}
         </div>
       </runtime.SectionCard>
     );

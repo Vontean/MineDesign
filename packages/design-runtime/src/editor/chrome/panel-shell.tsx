@@ -1,3 +1,5 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
+import { useUiLocale } from '../../ui-locale.ts';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -25,11 +27,11 @@ export function installEditorChromePanelShell(
     closeLabel = runtime.CloseValue,
     trailing: trailing,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let value: Dynamic = tabs !== undefined && tabs.length > 0;
     return (
       <jsxChromePanelShell.Fragment>
-        {value ? (
-          <runtime.TabsTabsRootListTabConfig.List
+        {value ? (<runtime.TabsTabsRootListTabConfig.List
             aria-label={tabsLabel}
             activateOnFocus={activateOnFocus}
             className={"min-w-0 flex-1"}
@@ -48,21 +50,15 @@ export function installEditorChromePanelShell(
                   return <_Component key={_key} {..._props} />;
                 })(),
             )}
-          </runtime.TabsTabsRootListTabConfig.List>
-        ) : title != null && title !== false ? (
-          <span
+          </runtime.TabsTabsRootListTabConfig.List>) : (title != null && title !== false ? (<span
             className={
               "min-w-0 flex-1 truncate pl-[calc(var(--pp-gutter-l,var(--cds-pad-lg))-var(--cds-pad-sm))] text-body-semibold text-primary"
             }
           >
             {title}
-          </span>
-        ) : (
-          <span aria-hidden={"true"} className={"flex-1"} />
-        )}
+          </span>) : (<span aria-hidden={"true"} className={"flex-1"} />))}
         {trailing}
-        {onClose !== undefined ? (
-          <runtime.Button
+        {onClose !== undefined ? (<runtime.Button
             variant={"ghost"}
             iconOnly={true}
             icon={
@@ -75,8 +71,7 @@ export function installEditorChromePanelShell(
             aria-label={closeLabel}
             onClick={onClose}
             className={"relative shrink-0"}
-          />
-        ) : null}
+          />) : (null)}
       </jsxChromePanelShell.Fragment>
     );
   }
@@ -93,6 +88,7 @@ export function installEditorChromePanelShell(
     ];
   }
   function PanelShell(input?: Dynamic): Dynamic {
+    useUiLocale();
     let {
         tabs: value,
         className: value2,

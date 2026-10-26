@@ -1,3 +1,4 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import type * as React from "react";
 import type * as C from "../contracts/controls";
@@ -369,13 +370,11 @@ export function installUiTextInput(runtime: RuntimeBindings): () => void {
                 className,
               )}
             >
-              {[
-                slotStart ? (
+              {[slotStart ? (
                   <span className={"flex shrink-0 items-center text-muted"}>
                     {slotStart}
                   </span>
-                ) : null,
-                <runtime.baseField.Control
+                ) : null, <runtime.baseField.Control
                   {...state}
                   render={
                     <input
@@ -390,13 +389,11 @@ export function installUiTextInput(runtime: RuntimeBindings): () => void {
                       )}
                     />
                   }
-                />,
-                value22 || slotEnd ? (
+                />, value22 || slotEnd ? (
                   <span data-cds-end-slot={""} className={value24}>
                     {[slotEnd, value22]}
                   </span>
-                ) : null,
-              ]}
+                ) : null]}
             </div>
           );
         }

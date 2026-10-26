@@ -1,3 +1,4 @@
+import { useUiLocale } from '../ui-locale.ts';
 /** Restored application module; prepare first, initialize in original order. */
 import { bindRuntimeValue, type RuntimeBindings } from "../runtime-types";
 import type * as React from "react";
@@ -14,6 +15,7 @@ export function installUiToolbarTabs(runtime: RuntimeBindings): () => void {
     onChange: onChange,
     label: label,
   }: ToolbarTabsProps) {
+    useUiLocale();
     return (
       <div className={"mc-tabbar"}>
         <runtime.Tabs.Root

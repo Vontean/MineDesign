@@ -1,3 +1,5 @@
+import { useUiLocale } from '../../ui-locale.ts';
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -16,6 +18,7 @@ export function installEditorPropertiesShadowRow(
     inherited: inherited,
     onCommitMany: onCommitMany,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let value2: Dynamic = prop === "text-shadow",
       [value3, value4]: Dynamic = (0,
       runtime.reactPropertiesAssetPicker_3.useState)(false),
@@ -64,7 +67,7 @@ export function installEditorPropertiesShadowRow(
         data-testid={"dc-shadow-popover"}
         trigger={
           <runtime.PropertySelectTrigger
-            aria-label={`${label}: ${value7}`}
+            aria-label={uiMessage("inspector.shadowRow.undefined", { value1: String(label), value2: String(value7) })}
             disabled={disabled2}
             chip={
               <runtime.CssColorWell
@@ -81,8 +84,7 @@ export function installEditorPropertiesShadowRow(
           </runtime.PropertySelectTrigger>
         }
       >
-        {!value6 && (value || mixed) && (
-          <runtime.PropertyRow>
+        {!value6 && (value || mixed) && (<runtime.PropertyRow>
             <runtime.Button
               variant={"secondary"}
               size={"sm"}
@@ -91,13 +93,11 @@ export function installEditorPropertiesShadowRow(
                 callback(runtime.CssGradientsXYBlurConfig)
               }
             >
-              {"Add shadow"}
+              {uiMessage("inspector.shadowRow.addShadow")}
             </runtime.Button>
-          </runtime.PropertyRow>
-        )}
-        {value6 && (
-          <runtime.jsxPropertiesAssetPicker_3.Fragment>
-            <runtime.PropertyRow label={"Offset"}>
+          </runtime.PropertyRow>)}
+        {value6 && (<runtime.jsxPropertiesAssetPicker_3.Fragment>
+            <runtime.PropertyRow label={uiMessage("inspector.shadowRow.offset")}>
               <div className={"flex min-w-0 flex-1 items-center gap-2"}>
                 <runtime.CssNumericPopupInput
                   name={"Horizontal offset"}
@@ -130,7 +130,7 @@ export function installEditorPropertiesShadowRow(
               </div>
             </runtime.PropertyRow>
             <runtime.CssNumericPopupRow
-              label={"Blur"}
+              label={uiMessage("inspector.shadowRow.blur")}
               value={value8.blur}
               disabled={disabled2}
               min={0}
@@ -141,9 +141,8 @@ export function installEditorPropertiesShadowRow(
                 })
               }
             />
-            {!value2 && (
-              <runtime.CssNumericPopupRow
-                label={"Spread"}
+            {!value2 && (<runtime.CssNumericPopupRow
+                label={uiMessage("inspector.shadowRow.spread")}
                 value={value8.spread}
                 disabled={disabled2}
                 onChange={(input?: Dynamic): Dynamic =>
@@ -152,9 +151,8 @@ export function installEditorPropertiesShadowRow(
                     spread: input,
                   })
                 }
-              />
-            )}
-            <runtime.PropertyPopupField label={"Color"}>
+              />)}
+            <runtime.PropertyPopupField label={uiMessage("inspector.shadowRow.color")}>
               <runtime.AuthoredColorPicker
                 value={value8.color}
                 disabled={disabled2}
@@ -167,8 +165,7 @@ export function installEditorPropertiesShadowRow(
                 }
               />
             </runtime.PropertyPopupField>
-          </runtime.jsxPropertiesAssetPicker_3.Fragment>
-        )}
+          </runtime.jsxPropertiesAssetPicker_3.Fragment>)}
       </runtime.PropertyAssetPopup>
     );
   }

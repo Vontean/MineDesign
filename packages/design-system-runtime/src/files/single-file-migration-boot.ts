@@ -1,3 +1,4 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 import type * as FilesCore from "../contracts/files-core";
 import type * as Docs from "../contracts/design-system-document";
 import type * as Boot from "../contracts/boot";
@@ -224,10 +225,10 @@ export function installFilesSingleFileMigrationBoot(
               sessionStorage.removeItem(runtime.ARTIFACT_REOPENED_STORAGE_KEY);
             } catch {}
             (0, runtime.showEditorPromiseNotification)(
-              MIGRATION_REOPEN_UNAVAILABLE_MESSAGE,
+              uiMessage("design-system.singleFileMigrationBoot.thisDesignSystemWasGoing2"),
               null,
             );
-            (0, runtime.announceLiveMessage)(MIGRATION_UNCHANGED_MESSAGE);
+            (0, runtime.announceLiveMessage)(uiMessage("design-system.singleFileMigrationBoot.thisDesignSystemWasNot3"));
           },
         });
         return;
@@ -353,8 +354,8 @@ export function installFilesSingleFileMigrationBoot(
                   (0, runtime.reopenAfterFilesMigration)(
                     "move_stopped",
                     true,
-                    MIGRATION_OTHER_TAB_TIMEOUT_MESSAGE,
-                    MIGRATION_STOPPED_RELOAD_MESSAGE,
+                    uiMessage("design-system.singleFileMigrationBoot.theMoveOfThisDesign"),
+                    uiMessage("design-system.singleFileMigrationBoot.thisDesignSystemWasNot"),
                   );
                 }),
               5000,
@@ -364,14 +365,14 @@ export function installFilesSingleFileMigrationBoot(
           (0, runtime.reopenAfterFilesMigration)(
             "move_stopped",
             true,
-            MIGRATION_STOPPED_REOPEN_MESSAGE,
-            MIGRATION_STOPPED_RELOAD_MESSAGE,
+            uiMessage("design-system.singleFileMigrationBoot.thisDesignSystemWasNot2"),
+            uiMessage("design-system.singleFileMigrationBoot.thisDesignSystemWasNot"),
           ),
         reload: () =>
           (0, runtime.reopenAfterFilesMigration)(
             "move_stopped",
             false,
-            MIGRATION_STOPPED_REOPEN_MESSAGE,
+            uiMessage("design-system.singleFileMigrationBoot.thisDesignSystemWasNot2"),
           ),
       });
     }
@@ -503,9 +504,9 @@ export function installFilesSingleFileMigrationBoot(
     paths: readonly string[],
   ): string {
     return (
-      "This design system was going to be moved to a newer way of saving, but " +
+      uiMessage("design-system.singleFileMigrationBoot.thisDesignSystemWasGoing") +
       (paths.length === 0
-        ? "one of its files"
+        ? uiMessage("design-system.singleFileMigrationBoot.oneOfItsFiles")
         : paths
             .slice(0, 3)
             .map((input): string => '"' + input + '"')
@@ -522,7 +523,7 @@ export function installFilesSingleFileMigrationBoot(
     paths: readonly string[],
   ): string {
     return (
-      "This design system was going to be moved to a newer way of saving, but " +
+      uiMessage("design-system.singleFileMigrationBoot.thisDesignSystemWasGoing") +
       (paths
         .slice(0, 3)
         .map((input): string => '"' + input + '"')
@@ -565,7 +566,7 @@ export function installFilesSingleFileMigrationBoot(
   bindRuntimeValue(
     runtime,
     "MIGRATION_REOPEN_UNAVAILABLE_MESSAGE",
-    () => MIGRATION_REOPEN_UNAVAILABLE_MESSAGE,
+    () => uiMessage("design-system.singleFileMigrationBoot.thisDesignSystemWasGoing2"),
     (value) => {
       MIGRATION_REOPEN_UNAVAILABLE_MESSAGE = value;
     },
@@ -573,7 +574,7 @@ export function installFilesSingleFileMigrationBoot(
   bindRuntimeValue(
     runtime,
     "MIGRATION_STOPPED_RELOAD_MESSAGE",
-    () => MIGRATION_STOPPED_RELOAD_MESSAGE,
+    () => uiMessage("design-system.singleFileMigrationBoot.thisDesignSystemWasNot"),
     (value) => {
       MIGRATION_STOPPED_RELOAD_MESSAGE = value;
     },
@@ -581,7 +582,7 @@ export function installFilesSingleFileMigrationBoot(
   bindRuntimeValue(
     runtime,
     "MIGRATION_STOPPED_REOPEN_MESSAGE",
-    () => MIGRATION_STOPPED_REOPEN_MESSAGE,
+    () => uiMessage("design-system.singleFileMigrationBoot.thisDesignSystemWasNot2"),
     (value) => {
       MIGRATION_STOPPED_REOPEN_MESSAGE = value;
     },
@@ -589,7 +590,7 @@ export function installFilesSingleFileMigrationBoot(
   bindRuntimeValue(
     runtime,
     "MIGRATION_UNCHANGED_MESSAGE",
-    () => MIGRATION_UNCHANGED_MESSAGE,
+    () => uiMessage("design-system.singleFileMigrationBoot.thisDesignSystemWasNot3"),
     (value) => {
       MIGRATION_UNCHANGED_MESSAGE = value;
     },
@@ -597,7 +598,7 @@ export function installFilesSingleFileMigrationBoot(
   bindRuntimeValue(
     runtime,
     "MIGRATION_OTHER_TAB_TIMEOUT_MESSAGE",
-    () => MIGRATION_OTHER_TAB_TIMEOUT_MESSAGE,
+    () => uiMessage("design-system.singleFileMigrationBoot.theMoveOfThisDesign"),
     (value) => {
       MIGRATION_OTHER_TAB_TIMEOUT_MESSAGE = value;
     },
@@ -676,7 +677,7 @@ export function installFilesSingleFileMigrationBoot(
   bindRuntimeValue(
     runtime,
     "MIGRATION_INTERRUPTED_MESSAGE",
-    () => MIGRATION_INTERRUPTED_MESSAGE,
+    () => uiMessage("design-system.singleFileMigrationBoot.thisDesignSystemWasNot4"),
     (value) => {
       MIGRATION_INTERRUPTED_MESSAGE = value;
     },
@@ -804,7 +805,7 @@ export function installFilesSingleFileMigrationBoot(
   bindRuntimeValue(
     runtime,
     "MIGRATION_UNREADABLE_FILE_MESSAGE",
-    () => MIGRATION_UNREADABLE_FILE_MESSAGE,
+    () => uiMessage("design-system.singleFileMigrationBoot.thisDesignSystemWasGoing3"),
     (value) => {
       MIGRATION_UNREADABLE_FILE_MESSAGE = value;
     },

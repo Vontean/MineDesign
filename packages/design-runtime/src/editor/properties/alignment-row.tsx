@@ -1,3 +1,5 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
+import { useUiLocale } from '../../ui-locale.ts';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -36,6 +38,7 @@ export function installEditorPropertiesAlignmentRow(
     onCommit: onCommit,
     shell: shell,
   }: Dynamic): Dynamic {
+    useUiLocale();
     if (
       (0, runtime.classifyStyleValue)(state.value).kind !== "literal" &&
       (state.value ?? "").trim()
@@ -84,11 +87,7 @@ export function installEditorPropertiesAlignmentRow(
           aria-label={context}
           pressed={input && !options}
           tooltip={
-            options
-              ? `${context} \u2014 mixed`
-              : input && !detail
-                ? `${context} (inherited)`
-                : context
+            options ? (`${context} \u2014 mixed`) : (input && !detail ? (`${context} (inherited)`) : (context))
           }
           disabled={state.disabled}
           data-testid={`dc-typestyle-${context.toLowerCase()}`}
@@ -138,6 +137,7 @@ export function installEditorPropertiesAlignmentRow(
     onCommit: onCommit,
     shell: shell,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let { text: value, isLiteral: value2 }: Dynamic = (0,
     runtime.inspectorFieldDisplay)(state);
     if (!value2 && value)

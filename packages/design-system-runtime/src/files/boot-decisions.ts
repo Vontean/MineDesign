@@ -1,3 +1,4 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 import type * as Boot from "../contracts/boot";
 import type * as Model from "../contracts";
 import type * as Storage from "../contracts/model-storage";
@@ -218,7 +219,7 @@ export function installFilesBootDecisions(
     if (options.project === "unread") {
       return {
         boot: "readonly",
-        reason: FILES_UNREADABLE_MESSAGE,
+        reason: uiMessage("design-system.bootDecisions.couldnTReadThisDesign"),
       };
     }
     if (options.origin === "instance" && options.tree) {
@@ -226,11 +227,11 @@ export function installFilesBootDecisions(
         boot: "tree",
         ...(options.pipeline
           ? {
-              readOnly: PIPELINE_READONLY_MESSAGE,
+              readOnly: uiMessage("design-system.bootDecisions.thisDesignSystemIsKept"),
             }
           : options.editingOff
             ? {
-                readOnly: MIGRATED_READONLY_MESSAGE,
+                readOnly: uiMessage("design-system.bootDecisions.migratedFromTheStandaloneVersion"),
               }
             : {}),
       };
@@ -250,7 +251,7 @@ export function installFilesBootDecisions(
       boot: "empty",
       ...(options.pipeline
         ? {
-            readOnly: PIPELINE_READONLY_MESSAGE,
+            readOnly: uiMessage("design-system.bootDecisions.thisDesignSystemIsKept"),
           }
         : {}),
     };
@@ -419,9 +420,9 @@ export function installFilesBootDecisions(
       return false;
     }
     if (options.started === "exists" || options.started === "unsure") {
-      options.mount(FILES_UNREADABLE_MESSAGE);
+      options.mount(uiMessage("design-system.bootDecisions.couldnTReadThisDesign"));
     } else if (
-      (options.mount(DESIGN_SYSTEM_SETUP_MESSAGE),
+      (options.mount(uiMessage("design-system.bootDecisions.thisDesignSystemIsBeing2")),
       options.started === "created")
     ) {
       options.reopen();
@@ -441,7 +442,7 @@ export function installFilesBootDecisions(
     ) {
       return reason;
     }
-    return access.reason ?? DESIGN_SYSTEM_READONLY_MESSAGE;
+    return access.reason ?? uiMessage("design-system.bootDecisions.thisDesignSystemCanT");
   }
   function editingOffTransition(options: {
     offAtBoot: boolean;
@@ -501,7 +502,7 @@ export function installFilesBootDecisions(
   bindRuntimeValue(
     runtime,
     "PIPELINE_READONLY_MESSAGE",
-    () => PIPELINE_READONLY_MESSAGE,
+    () => uiMessage("design-system.bootDecisions.thisDesignSystemIsKept"),
     (value) => {
       PIPELINE_READONLY_MESSAGE = value;
     },
@@ -509,7 +510,7 @@ export function installFilesBootDecisions(
   bindRuntimeValue(
     runtime,
     "MIGRATED_READONLY_MESSAGE",
-    () => MIGRATED_READONLY_MESSAGE,
+    () => uiMessage("design-system.bootDecisions.migratedFromTheStandaloneVersion"),
     (value) => {
       MIGRATED_READONLY_MESSAGE = value;
     },
@@ -517,7 +518,7 @@ export function installFilesBootDecisions(
   bindRuntimeValue(
     runtime,
     "DESIGN_SYSTEM_CHANGED_MESSAGE",
-    () => DESIGN_SYSTEM_CHANGED_MESSAGE,
+    () => uiMessage("design-system.bootDecisions.thisDesignSystemHasChanged"),
     (value) => {
       DESIGN_SYSTEM_CHANGED_MESSAGE = value;
     },
@@ -525,7 +526,7 @@ export function installFilesBootDecisions(
   bindRuntimeValue(
     runtime,
     "DESIGN_SYSTEM_READONLY_MESSAGE",
-    () => DESIGN_SYSTEM_READONLY_MESSAGE,
+    () => uiMessage("design-system.bootDecisions.thisDesignSystemCanT"),
     (value) => {
       DESIGN_SYSTEM_READONLY_MESSAGE = value;
     },
@@ -568,7 +569,7 @@ export function installFilesBootDecisions(
   bindRuntimeValue(
     runtime,
     "FILES_UNREADABLE_MESSAGE",
-    () => FILES_UNREADABLE_MESSAGE,
+    () => uiMessage("design-system.bootDecisions.couldnTReadThisDesign"),
     (value) => {
       FILES_UNREADABLE_MESSAGE = value;
     },
@@ -576,7 +577,7 @@ export function installFilesBootDecisions(
   bindRuntimeValue(
     runtime,
     "MOVED_RELOAD_MESSAGE",
-    () => MOVED_RELOAD_MESSAGE,
+    () => uiMessage("design-system.bootDecisions.thisDesignSystemNowSaves"),
     (value) => {
       MOVED_RELOAD_MESSAGE = value;
     },
@@ -584,7 +585,7 @@ export function installFilesBootDecisions(
   bindRuntimeValue(
     runtime,
     "PARTIAL_DESIGN_SYSTEM_MESSAGE",
-    () => PARTIAL_DESIGN_SYSTEM_MESSAGE,
+    () => uiMessage("design-system.bootDecisions.partOfThisDesignSystem"),
     (value) => {
       PARTIAL_DESIGN_SYSTEM_MESSAGE = value;
     },
@@ -592,7 +593,7 @@ export function installFilesBootDecisions(
   bindRuntimeValue(
     runtime,
     "DUPLICATE_FILE_INDEX_MESSAGE",
-    () => DUPLICATE_FILE_INDEX_MESSAGE,
+    () => uiMessage("design-system.bootDecisions.thisDesignSystemHasTwo"),
     (value) => {
       DUPLICATE_FILE_INDEX_MESSAGE = value;
     },
@@ -633,7 +634,7 @@ export function installFilesBootDecisions(
   bindRuntimeValue(
     runtime,
     "OLDER_COPY_READONLY_MESSAGE",
-    () => OLDER_COPY_READONLY_MESSAGE,
+    () => uiMessage("design-system.bootDecisions.anOlderCopyOfThis"),
     (value) => {
       OLDER_COPY_READONLY_MESSAGE = value;
     },
@@ -684,7 +685,7 @@ export function installFilesBootDecisions(
   bindRuntimeValue(
     runtime,
     "MIGRATION_RUNNING_MESSAGE",
-    () => MIGRATION_RUNNING_MESSAGE,
+    () => uiMessage("design-system.bootDecisions.thisDesignSystemIsBeing"),
     (value) => {
       MIGRATION_RUNNING_MESSAGE = value;
     },
@@ -692,7 +693,7 @@ export function installFilesBootDecisions(
   bindRuntimeValue(
     runtime,
     "DESIGN_SYSTEM_SETUP_MESSAGE",
-    () => DESIGN_SYSTEM_SETUP_MESSAGE,
+    () => uiMessage("design-system.bootDecisions.thisDesignSystemIsBeing2"),
     (value) => {
       DESIGN_SYSTEM_SETUP_MESSAGE = value;
     },
@@ -700,7 +701,7 @@ export function installFilesBootDecisions(
   bindRuntimeValue(
     runtime,
     "REOPEN_FAILED_MESSAGE",
-    () => REOPEN_FAILED_MESSAGE,
+    () => uiMessage("design-system.bootDecisions.thisDesignSystemDidNot"),
     (value) => {
       REOPEN_FAILED_MESSAGE = value;
     },
@@ -781,11 +782,11 @@ export function installFilesBootDecisions(
     REOPEN_FAILED_MESSAGE =
       "This design system did not reopen by itself. Reload the page to start editing it.";
     BOOT_LIVE_NOTICE_MESSAGES = new Set([
-      MIGRATION_RUNNING_MESSAGE,
-      PARTIAL_DESIGN_SYSTEM_MESSAGE,
-      MOVED_RELOAD_MESSAGE,
-      DESIGN_SYSTEM_SETUP_MESSAGE,
-      OLDER_COPY_READONLY_MESSAGE,
+      uiMessage("design-system.bootDecisions.thisDesignSystemIsBeing"),
+      uiMessage("design-system.bootDecisions.partOfThisDesignSystem"),
+      uiMessage("design-system.bootDecisions.thisDesignSystemNowSaves"),
+      uiMessage("design-system.bootDecisions.thisDesignSystemIsBeing2"),
+      uiMessage("design-system.bootDecisions.anOlderCopyOfThis"),
     ]);
   };
 }

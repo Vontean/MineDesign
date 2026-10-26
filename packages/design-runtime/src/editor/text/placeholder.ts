@@ -1,3 +1,4 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -28,6 +29,6 @@ export function installEditorTextPlaceholder(
     () => placeholderTextElement,
   );
   return () => {
-    TextPlaceholderLabel = "Your text here";
+    TextPlaceholderLabel = uiMessage("inspector.placeholder.yourTextHere");
   };
 }

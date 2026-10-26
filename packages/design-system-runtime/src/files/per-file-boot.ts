@@ -1,3 +1,4 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 import type * as FilesCore from "../contracts/files-core";
 import type * as Docs from "../contracts/design-system-document";
 import type * as Boot from "../contracts/boot";
@@ -86,7 +87,7 @@ export function installFilesPerFileBoot(runtime: RuntimeBindings): () => void {
             )
           : files;
     runtime.designSystemFilesDebugger?.field(
-      "can write",
+      uiMessage("design-system.perFileBoot.canWrite"),
       String(access.canWrite),
     );
     (0, runtime.setFileSystemDocumentFactory)(
@@ -184,7 +185,7 @@ export function installFilesPerFileBoot(runtime: RuntimeBindings): () => void {
                 ? '"' + value2[0].path + '"'
                 : String(value2.length) + " files") +
                 " can’t be saved here. Give " +
-                (value2.length === 1 ? "it another name" : "them other names") +
+                (value2.length === 1 ? uiMessage("design-system.perFileBoot.itAnotherName") : uiMessage("design-system.perFileBoot.themOtherNames")) +
                 " without % ; : ? or #, or add " +
                 (value2.length === 1 ? "it" : "them") +
                 " again.",
@@ -214,13 +215,13 @@ export function installFilesPerFileBoot(runtime: RuntimeBindings): () => void {
         };
         value.subscribe(callback);
         value.whenLoaded().then((): void => {
-          runtime.designSystemFilesDebugger?.phase("files read");
+          runtime.designSystemFilesDebugger?.phase(uiMessage("design-system.perFileBoot.filesRead"));
           runtime.designSystemFilesDebugger?.field(
-            "on version",
+            uiMessage("design-system.perFileBoot.onVersion"),
             files.version().version,
           );
           afterTwoAnimationFrames((): void => {
-            runtime.designSystemFilesDebugger?.phase("first paint");
+            runtime.designSystemFilesDebugger?.phase(uiMessage("design-system.perFileBoot.firstPaint"));
             (0, runtime.resolveDesignSystemFirstPaint)();
             if (
               runtime.designSystemFilesDebugger !== undefined &&
@@ -341,7 +342,7 @@ export function installFilesPerFileBoot(runtime: RuntimeBindings): () => void {
         if (input.result === "folded") {
           let value = (0, runtime.takeStoreFoldSummary)(),
             items = [
-              ...(value.came ? [EXTERNAL_CHANGES_FOLDED_MESSAGE] : []),
+              ...(value.came ? [uiMessage("design-system.perFileBoot.changesMadeToThisDesign")] : []),
               ...(value.kept.length > 0
                 ? [storeFoldKeptFilesMessage(value.kept)]
                 : []),
@@ -393,28 +394,28 @@ export function installFilesPerFileBoot(runtime: RuntimeBindings): () => void {
     return [
       ...(changed.length > 0
         ? [
-            "A change made outside this page to " +
+            uiMessage("design-system.perFileBoot.aChangeMadeOutsideThis") +
               describeFiles(changed) +
               " was not put over what is here, because " +
-              (changed.length === 1 ? "it was" : "they were") +
+              (changed.length === 1 ? uiMessage("design-system.perFileBoot.itWas") : uiMessage("design-system.perFileBoot.theyWere")) +
               ' changed here too or could not be compared. Where it is text or tokens, the other version was saved beside it with "(other version)" in its name.',
           ]
         : []),
       ...(gone.length > 0
         ? [
-            "A change made outside this page to " +
+            uiMessage("design-system.perFileBoot.aChangeMadeOutsideThis") +
               describeFiles(gone) +
               " was left out, because " +
-              (gone.length === 1 ? "that file was" : "those files were") +
+              (gone.length === 1 ? uiMessage("design-system.perFileBoot.thatFileWas") : uiMessage("design-system.perFileBoot.thoseFilesWere")) +
               " removed here.",
           ]
         : []),
       ...(cannot.length > 0
         ? [
-            "Something saved outside this page as " +
+            uiMessage("design-system.perFileBoot.somethingSavedOutsideThisPage") +
               describeFiles(cannot) +
               " was left out: " +
-              (cannot.length === 1 ? "it is" : "they are") +
+              (cannot.length === 1 ? uiMessage("design-system.perFileBoot.itIs") : uiMessage("design-system.perFileBoot.theyAre")) +
               " of a kind, or named in a way, that cannot be saved here.",
           ]
         : []),
@@ -616,7 +617,7 @@ export function installFilesPerFileBoot(runtime: RuntimeBindings): () => void {
       outcome.origin === "failed"
         ? outcome
         : (0, runtime.failedLegacyStateOutcome)(
-            Error("this design system’s list of its files could not be opened"),
+            Error(uiMessage("design-system.perFileBoot.thisDesignSystemSList")),
           ),
     );
     (0, runtime.prepareDesignSystemThumbnailCapture)();
@@ -672,7 +673,7 @@ export function installFilesPerFileBoot(runtime: RuntimeBindings): () => void {
   bindRuntimeValue(
     runtime,
     "EXTERNAL_CHANGES_FOLDED_MESSAGE",
-    () => EXTERNAL_CHANGES_FOLDED_MESSAGE,
+    () => uiMessage("design-system.perFileBoot.changesMadeToThisDesign"),
     (value) => {
       EXTERNAL_CHANGES_FOLDED_MESSAGE = value;
     },
@@ -732,7 +733,7 @@ export function installFilesPerFileBoot(runtime: RuntimeBindings): () => void {
     EXTERNAL_CHANGES_FOLDED_MESSAGE =
       "Changes made to this design system outside this page were brought in.";
     designSystemTypeReadonlyReason = (): string =>
-      "This is the Design System type itself, not a design system.";
+      uiMessage("design-system.perFileBoot.thisIsTheDesignSystem");
     MARKED_INDEX_STORAGE_PREFIX = "ds-marked-index/";
   };
 }

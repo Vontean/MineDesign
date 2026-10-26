@@ -1,3 +1,4 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -193,10 +194,10 @@ export function installEditorOutlineAnnotations(
         ? `${items.slice(0, 13)}\u2026${items.slice(-12)}`
         : items;
     ViewOnlyYouCanInspectThisMessage =
-      "View only \u2014 you can inspect this design but not change it";
-    OutlineAnnotationsLabel = "Select an element first";
+      uiMessage("inspector.annotations.viewOnlyYouCanInspect");
+    OutlineAnnotationsLabel = uiMessage("inspector.annotations.selectAnElementFirst");
     ADrawnLineOrPathCannotMessage =
-      "A drawn line or path cannot be reordered yet";
+      uiMessage("inspector.annotations.aDrawnLineOrPath");
     reactOutlineAnnotations = (0, runtime.toModuleNamespace)(
       (0, runtime.load_react)(),
       1,
@@ -325,7 +326,7 @@ export function installEditorOutlineAnnotations(
       roundtrip: (): Dynamic =>
         Promise.resolve({
           ok: false,
-          error: "no host",
+          error: uiMessage("inspector.annotations.noHost"),
         }),
       execToolInTab: (): Dynamic => Promise.reject(new Error("no host")),
       mirrorPreviewFile(): Dynamic {},

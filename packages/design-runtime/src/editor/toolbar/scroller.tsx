@@ -1,3 +1,5 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
+import { useUiLocale } from '../../ui-locale.ts';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -34,8 +36,9 @@ export function installEditorToolbarScroller(
     onPress: onPress,
     onLetGo: onLetGo,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let value: Dynamic =
-      dir === -1 ? "Scroll toolbar left" : "Scroll toolbar right";
+      dir === -1 ? uiMessage("inspector.scroller.scrollToolbarLeft") : uiMessage("inspector.scroller.scrollToolbarRight");
     return (
       <div
         data-tb-paddle={""}
@@ -63,6 +66,7 @@ export function installEditorToolbarScroller(
     revealLeading: revealLeading,
     children: children,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let value: Dynamic = (0, runtime.reactCanvasMeasurements.useRef)(null),
       value2: Dynamic = (0, runtime.reactCanvasMeasurements.useRef)(null),
       [value3, value4]: Dynamic = (0, runtime.reactCanvasMeasurements.useState)(
@@ -255,16 +259,14 @@ export function installEditorToolbarScroller(
             "tb-scroll flex min-w-0 flex-1 items-center gap-1 self-stretch overflow-x-auto pointer-coarse:gap-1.5"
           }
         >
-          {leading != null ? (
-            <span
+          {leading != null ? (<span
               data-tb-cluster={""}
               className={
                 "tb-slot flex shrink-0 items-center gap-1 pointer-coarse:gap-1.5"
               }
             >
               {leading}
-            </span>
-          ) : null}
+            </span>) : (null)}
           <div
             className={
               "tb-slot flex min-w-max items-center gap-1 pointer-coarse:gap-1.5"
@@ -273,8 +275,7 @@ export function installEditorToolbarScroller(
             {children}
           </div>
         </div>
-        {value3 ? (
-          <runtime.jsxToolbarLayout.Fragment>
+        {value3 ? (<runtime.jsxToolbarLayout.Fragment>
             <ToolbarScrollPaddle
               dir={-1}
               onPress={(input?: Dynamic): Dynamic => callback2(-1, input)}
@@ -287,10 +288,8 @@ export function installEditorToolbarScroller(
                 "pointer-events-none absolute inset-y-0 left-6 z-10 w-6 pointer-coarse:left-10"
               }
             />
-          </runtime.jsxToolbarLayout.Fragment>
-        ) : null}
-        {value5 ? (
-          <runtime.jsxToolbarLayout.Fragment>
+          </runtime.jsxToolbarLayout.Fragment>) : (null)}
+        {value5 ? (<runtime.jsxToolbarLayout.Fragment>
             <span
               aria-hidden={"true"}
               data-tb-fade={"end"}
@@ -303,8 +302,7 @@ export function installEditorToolbarScroller(
               onPress={(input?: Dynamic): Dynamic => callback2(1, input)}
               onLetGo={callback}
             />
-          </runtime.jsxToolbarLayout.Fragment>
-        ) : null}
+          </runtime.jsxToolbarLayout.Fragment>) : (null)}
       </div>
     );
   }

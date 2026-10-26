@@ -1,3 +1,5 @@
+import { useUiLocale } from '../ui-locale.ts';
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import { bindRuntimeValue, type RuntimeBindings } from "../runtime-types";
 import type * as React from "react";
@@ -15,6 +17,7 @@ export function installUiArtifactLoadBoundary(
   var ARTIFACT_LOAD_FAILURE_MESSAGE: string;
   var ARTIFACT_LOAD_DELAY_MS: number;
   function ArtifactSkeleton({ className: className }: { className?: string }) {
+    useUiLocale();
     return (
       <span aria-hidden={"true"} className={"contents"}>
         <runtime.SkeletonPrimitive
@@ -28,9 +31,10 @@ export function installUiArtifactLoadBoundary(
   }: {
     className?: string;
   }) {
+    useUiLocale();
     return (
       <span className={(0, runtime.joinClassNames)("inline-flex", className)}>
-        <runtime.Spinner label={"Loading"} />
+        <runtime.Spinner label={uiMessage("design-system.artifactLoadBoundary.loading")} />
       </span>
     );
   }
@@ -40,6 +44,7 @@ export function installUiArtifactLoadBoundary(
     skeletonFlush: skeletonFlush,
     children: children,
   }: ArtifactLoadBoundaryProps) {
+    useUiLocale();
     let callback: () => ArtifactLoadState = () => {
         let value5 =
           typeof doc.loadState === "function" ? doc.loadState() : "live";
@@ -91,7 +96,7 @@ export function installUiArtifactLoadBoundary(
       }
       let value6 = setTimeout(() => {
           ref3.current = false;
-          value4(ARTIFACT_LOAD_FAILURE_MESSAGE);
+          value4(uiMessage("design-system.artifactLoadBoundary.theLatestContentFailedTo"));
         }, ARTIFACT_LOAD_DELAY_MS),
         value7 = setTimeout(
           () => value4(""),
@@ -118,9 +123,7 @@ export function installUiArtifactLoadBoundary(
         )}
         aria-busy={value === "loading"}
       >
-        {[
-          skeleton ?? <ArtifactSkeleton className={"m-6 h-48 rounded-lg"} />,
-          <span
+        {[skeleton ?? <ArtifactSkeleton className={"m-6 h-48 rounded-lg"} />, <span
             className={"sr-only"}
             role={"status"}
             aria-live={"polite"}
@@ -128,36 +131,27 @@ export function installUiArtifactLoadBoundary(
             data-kit={"load-status"}
           >
             {value3}
-          </span>,
-          <div
+          </span>, <div
             className={
               "pointer-events-none absolute inset-x-0 top-[calc(var(--tb-overlay-h,0px)+1rem)] flex justify-center"
             }
           >
-            {value === "loading" ? (
-              <ArtifactLoadingSpinner />
-            ) : (
-              <span
+            {value === "loading" ? (<ArtifactLoadingSpinner />) : (<span
                 className={
                   "pointer-events-auto inline-flex items-center gap-2 rounded-md border border-border-line bg-panel px-3 py-1.5 text-xs text-fg-muted shadow-sm"
                 }
               >
-                {[
-                  ARTIFACT_LOAD_FAILURE_MESSAGE,
-                  <runtime.TextLink
+                {[uiMessage("design-system.artifactLoadBoundary.theLatestContentFailedTo"), <runtime.TextLink
                     ref={ref}
                     onClick={() => {
                       ref3.current = true;
                       doc.save?.();
                     }}
                   >
-                    {"Retry"}
-                  </runtime.TextLink>,
-                ]}
-              </span>
-            )}
-          </div>,
-        ]}
+                    {uiMessage("design-system.artifactLoadBoundary.retry")}
+                  </runtime.TextLink>]}
+              </span>)}
+          </div>]}
       </div>
     );
   }
@@ -186,7 +180,7 @@ export function installUiArtifactLoadBoundary(
   bindRuntimeValue(
     runtime,
     "ARTIFACT_LOAD_FAILURE_MESSAGE",
-    () => ARTIFACT_LOAD_FAILURE_MESSAGE,
+    () => uiMessage("design-system.artifactLoadBoundary.theLatestContentFailedTo"),
     (value) => {
       ARTIFACT_LOAD_FAILURE_MESSAGE = value;
     },

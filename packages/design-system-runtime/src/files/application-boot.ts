@@ -1,3 +1,4 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 import type * as FilesCore from "../contracts/files-core";
 import type * as Docs from "../contracts/design-system-document";
 import type * as Boot from "../contracts/boot";
@@ -111,7 +112,7 @@ export function installFilesApplicationBoot(
     });
     designSystemFilesDebugger = value;
     value.field("mode", "per-file (design-system.json is the index)");
-    value.phase("index read");
+    value.phase(uiMessage("design-system.applicationBoot.indexRead"));
     value.mount("files");
   }
   function readDesignSystemBootStateFile(
@@ -128,7 +129,7 @@ export function installFilesApplicationBoot(
       homes.project = marked ? "marked" : "other";
       homes.projectText = text;
       if (index === null || !marked) {
-        return "not a marked index: under project/ nothing else is this system’s";
+        return uiMessage("design-system.applicationBoot.notAMarkedIndexUnder");
       }
       return {
         envelope: {
@@ -153,7 +154,7 @@ export function installFilesApplicationBoot(
       homes.rootText = text;
     }
     if (!marked) {
-      return "an index without a files marker";
+      return uiMessage("design-system.applicationBoot.anIndexWithoutAFiles");
     }
     return {
       envelope: {
@@ -528,7 +529,7 @@ export function installFilesApplicationBoot(
   bindRuntimeValue(
     runtime,
     "IGNORED_LEGACY_ROOT_FILE_MESSAGE",
-    () => IGNORED_LEGACY_ROOT_FILE_MESSAGE,
+    () => uiMessage("design-system.applicationBoot.thisDesignSystemHasAn"),
     (value) => {
       IGNORED_LEGACY_ROOT_FILE_MESSAGE = value;
     },
@@ -536,7 +537,7 @@ export function installFilesApplicationBoot(
   bindRuntimeValue(
     runtime,
     "UNREAD_LEGACY_STORE_CHANGES_MESSAGE",
-    () => UNREAD_LEGACY_STORE_CHANGES_MESSAGE,
+    () => uiMessage("design-system.applicationBoot.somethingWasSavedForThis"),
     (value) => {
       UNREAD_LEGACY_STORE_CHANGES_MESSAGE = value;
     },

@@ -1,3 +1,4 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -63,9 +64,9 @@ export function installCanvasArtboardErrors(
     previewError?: Dynamic,
   ): Dynamic {
     return loadError != null
-      ? `Couldn't load this artboard: ${loadError}`
+      ? uiMessage("canvas.artboardErrors.couldnTLoadThisArtboard", { value1: String(loadError) })
       : previewError != null
-        ? `Preview stopped: ${previewError}`
+        ? uiMessage("canvas.artboardErrors.previewStoppedValue1", { value1: String(previewError) })
         : null;
   }
   function artboardLoadErrorMessages(

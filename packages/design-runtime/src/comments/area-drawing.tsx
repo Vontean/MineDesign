@@ -1,3 +1,5 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
+import { useUiLocale } from '../ui-locale.ts';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -18,6 +20,7 @@ export function installCommentsAreaDrawing(
     onHandlePointerDown: onHandlePointerDown,
     kind: kind,
   }: Dynamic): Dynamic {
+    useUiLocale();
     return (
       <jsx_O_.Fragment>
         <div
@@ -34,8 +37,7 @@ export function installCommentsAreaDrawing(
             height: rect.height,
           }}
         />
-        {origin ? (
-          <div
+        {origin ? (<div
             aria-hidden={true}
             data-testid={"comment-area-origin"}
             className={
@@ -49,10 +51,8 @@ export function installCommentsAreaDrawing(
               outline: "2px solid transparent",
               outlineOffset: -2,
             }}
-          />
-        ) : null}
-        {origin && handle ? (
-          <div
+          />) : (null)}
+        {origin && handle ? (<div
             data-area-handle={""}
             className={"absolute rounded-full"}
             style={{
@@ -63,8 +63,7 @@ export function installCommentsAreaDrawing(
               cursor: "nwse-resize",
             }}
             onPointerDown={onHandlePointerDown}
-          />
-        ) : null}
+          />) : (null)}
       </jsx_O_.Fragment>
     );
   }

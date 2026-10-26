@@ -1,3 +1,4 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -231,8 +232,8 @@ export function installCanvasPastePlacement(
     return value && value.toLowerCase() !== "image"
       ? (0, runtime.truncateUtf16Safely)(value, 60)
       : origin === "pasted"
-        ? "Pasted image"
-        : "Dropped image";
+        ? uiMessage("canvas.pastePlacement.pastedImage")
+        : uiMessage("canvas.pastePlacement.droppedImage");
   }
   bindRuntimeValue(runtime, "pastedObjectsOrigin", () => pastedObjectsOrigin);
   bindRuntimeValue(runtime, "pointerCoordinates", () => pointerCoordinates);

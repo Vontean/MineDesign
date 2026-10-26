@@ -1,3 +1,4 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 import type * as Host from "../contracts/platform-host";
 import type * as React from "react";
 /** Restored application module; prepare first, initialize in original order. */
@@ -72,7 +73,7 @@ export function installDocumentsSelfPublish(
       if (value === null) {
         throw {
           code: "not_granted",
-          message: "The self capability is not available to this view.",
+          get message() { return uiMessage("design-system.selfPublish.theSelfCapabilityIsNotAvailableToThisView"); },
         };
       }
       return value.publish(input);

@@ -1,3 +1,4 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -274,7 +275,7 @@ export function installPlatformFilesHotReload(
             value10({
               ...state2,
               decision: "restart",
-              why: "u.adopt() threw: " + PlatformFilesHotReloadSlice(value24),
+              get why() { return ("u.adopt() threw: ") + (PlatformFilesHotReloadSlice(value24)); },
             });
             callback2("adopt failed");
             return void input2.restart?.();
@@ -282,11 +283,7 @@ export function installPlatformFilesHotReload(
           value10({
             ...state2,
             decision: "adopt",
-            why:
-              value21 +
-              "; the person is busy, so the " +
-              String(value22.length) +
-              " content row(s) are applied in place now and the restart waits",
+            get why() { return (((value21) + ("; the person is busy, so the ")) + (String(value22.length))) + (" content row(s) are applied in place now and the restart waits"); },
           });
           value10({
             type: "deferred",
@@ -321,9 +318,7 @@ export function installPlatformFilesHotReload(
             value10({
               ...state2,
               decision: "defer",
-              why:
-                value21 +
-                "; the person is mid-gesture or typing, so the restart waits",
+              get why() { return (value21) + ("; the person is mid-gesture or typing, so the restart waits"); },
             }),
             value10({
               type: "deferred",
@@ -359,7 +354,7 @@ export function installPlatformFilesHotReload(
         value10({
           ...state2,
           decision: "restart",
-          why: "u.adopt() threw: " + PlatformFilesHotReloadSlice(value21),
+          get why() { return ("u.adopt() threw: ") + (PlatformFilesHotReloadSlice(value21)); },
         });
         callback2("adopt failed");
         return void input2.restart?.();

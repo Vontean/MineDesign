@@ -1,3 +1,4 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 import type {
   AccentColor,
   BadgeProps,
@@ -340,31 +341,20 @@ export function installCdsComponentsBadge(
               )}
             >
               {typeof icon != "number" &&
-                icon &&
-                ((0, runtime.isIconName)(icon) ? (
-                  <runtime.Icon name={icon} size={value4} className={value5} />
-                ) : (
-                  <span
+                icon && ((0, runtime.isIconName)(icon) ? (<runtime.Icon name={icon} size={value4} className={value5} />) : (<span
                     aria-hidden={true}
                     className={(0, runtime.cn)("inline-flex", value5)}
                   >
                     {icon}
-                  </span>
-                ))}
-              {truncate ? (
-                <span
+                  </span>))}
+              {truncate ? (<span
                   className={(0, runtime.cn)(
                     value6,
                     "min-w-0 overflow-x-clip text-ellipsis whitespace-nowrap",
                   )}
                 >
                   {children}
-                </span>
-              ) : length === 1 ? (
-                <span className={value6}>{children}</span>
-              ) : (
-                children
-              )}
+                </span>) : (length === 1 ? (<span className={value6}>{children}</span>) : (children))}
               {value12}
             </span>
           );

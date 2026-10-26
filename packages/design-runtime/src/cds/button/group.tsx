@@ -1,3 +1,5 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
+import { useUiLocale } from '../../ui-locale.ts';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -37,6 +39,7 @@ export function installCdsButtonGroup(runtime: RuntimeBindings): () => void {
   var jsxButtonGroup_3: Dynamic;
   var initializeButtonGroup_4: Dynamic;
   function ButtonGroupDivider({ variant: variant }: Dynamic): Dynamic {
+    useUiLocale();
     let value: Dynamic = ButtonGroupSecondaryPrimaryDangerConfig[variant];
     if (!value)
       return (
@@ -65,6 +68,7 @@ export function installCdsButtonGroup(runtime: RuntimeBindings): () => void {
     children: children,
     ...props
   }: Dynamic): Dynamic {
+    useUiLocale();
     let value: Dynamic = variant === "joined",
       value2: Dynamic = reactButtonGroup.Children.toArray(children),
       value3: Dynamic = value2.length - 1,
@@ -170,6 +174,7 @@ export function installCdsButtonGroup(runtime: RuntimeBindings): () => void {
     onOpenChange: onOpenChange,
     className: className,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let value: Dynamic = (0, runtime.useLabel)("moreOptions", "More options"),
       value2: Dynamic = menuLabel ?? value,
       value3: Dynamic = (0, runtime.useDensity)(),
@@ -204,8 +209,7 @@ export function installCdsButtonGroup(runtime: RuntimeBindings): () => void {
               : ButtonGroupWidthConfig,
       value16: Dynamic = (
         <div className={"contents"}>
-          {label === undefined ? (
-            <runtime.Button
+          {label === undefined ? (<runtime.Button
               busy={busy}
               disabled={disabled2}
               pressed={pressed}
@@ -214,7 +218,7 @@ export function installCdsButtonGroup(runtime: RuntimeBindings): () => void {
               onMouseDown={onPrimaryMouseDown}
               icon={icon}
               iconOnly={true}
-              aria-label={ariaLabel ?? ""}
+              aria-label={ariaLabel ?? ("")}
               aria-expanded={ariaExpanded}
               aria-haspopup={ariaHaspopup}
               aria-controls={ariaControls}
@@ -230,9 +234,7 @@ export function installCdsButtonGroup(runtime: RuntimeBindings): () => void {
                 value12 && ButtonGroupClassNames_3,
                 value11 && GroupDataPopupOpenSplitPointerEventsNoneValue,
               )}
-            />
-          ) : (
-            <runtime.Button
+            />) : (<runtime.Button
               busy={busy}
               disabled={disabled2}
               pressed={pressed}
@@ -263,10 +265,8 @@ export function installCdsButtonGroup(runtime: RuntimeBindings): () => void {
               }
             >
               {label}
-            </runtime.Button>
-          )}
-          {value9 && (
-            <span
+            </runtime.Button>)}
+          {value9 && (<span
               className={(0, runtime.cn)(
                 "flex shrink-0 items-center self-stretch pe-md",
                 value12 && ButtonGroupClassNames_4,
@@ -277,14 +277,13 @@ export function installCdsButtonGroup(runtime: RuntimeBindings): () => void {
               )}
             >
               {status}
-            </span>
-          )}
+            </span>)}
         </div>
       );
     return (
       <ButtonGroupLayout
         data-cds={"SplitDropdownButton"}
-        aria-label={typeof label == "string" ? label : (ariaLabel ?? value2)}
+        aria-label={typeof label == "string" ? (label) : (ariaLabel ?? (value2))}
         variant={"joined"}
         buttonVariant={variant}
         size={size}
@@ -448,6 +447,7 @@ export function installCdsButtonGroup(runtime: RuntimeBindings): () => void {
     );
   }
   function ButtonGroup(input?: Dynamic): Dynamic {
+    useUiLocale();
     let {
         variant: value3 = "spaced",
         orientation: value4 = "horizontal",
@@ -510,8 +510,7 @@ export function installCdsButtonGroup(runtime: RuntimeBindings): () => void {
         data-cds-collapsing={value8 ? "" : undefined}
         data-collapsed={value13 ? "" : undefined}
       >
-        {value13 ? (
-          <SplitButton
+        {value13 ? (<SplitButton
             {...(value7.primary.iconOnly && value7.primary.icon !== undefined
               ? {
                   icon: value7.primary.icon,
@@ -527,10 +526,7 @@ export function installCdsButtonGroup(runtime: RuntimeBindings): () => void {
             onPrimaryClick={value7.primary.onClick}
             items={value7.overflow}
             className={input.className}
-          />
-        ) : (
-          <ButtonGroupLayout {...input} />
-        )}
+          />) : (<ButtonGroupLayout {...input} />)}
       </span>
     );
   }
@@ -966,7 +962,7 @@ export function installCdsButtonGroup(runtime: RuntimeBindings): () => void {
         (0, runtime.load_react_jsx_runtime)(),
       );
       ButtonGroupAspectRatioPaddingInlineMinWidthConfig = {
-        aspectRatio: "auto",
+        get aspectRatio() { return uiMessage("canvas.group.auto"); },
         paddingInline: 4,
         minWidth: 0,
       };

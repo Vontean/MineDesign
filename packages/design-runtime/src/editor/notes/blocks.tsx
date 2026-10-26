@@ -1,3 +1,4 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -102,11 +103,7 @@ export function installEditorNotesBlocks(runtime: RuntimeBindings): () => void {
       (source?: Dynamic, options?: Dynamic): Dynamic =>
         source.kind === "p" ? (
           <div key={options}>
-            {source.text === "" ? (
-              <br />
-            ) : (
-              renderNoteInlineMarkdown(source.text)
-            )}
+            {source.text === "" ? (<br />) : (renderNoteInlineMarkdown(source.text))}
           </div>
         ) : source.kind === "ul" ? (
           <ul key={options}>{NotesBlocksMap(source.items)}</ul>
@@ -232,7 +229,7 @@ export function installEditorNotesBlocks(runtime: RuntimeBindings): () => void {
       input.map(
         (input2?: Dynamic, options?: Dynamic): Dynamic => (
           <li key={options}>
-            {input2 === "" ? <br /> : renderNoteInlineMarkdown(input2)}
+            {input2 === "" ? (<br />) : (renderNoteInlineMarkdown(input2))}
           </li>
         ),
       );

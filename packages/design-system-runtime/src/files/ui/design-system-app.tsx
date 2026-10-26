@@ -1,3 +1,5 @@
+import { useUiLocale } from '../../ui-locale.ts';
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import type * as React from "react";
 import type * as JsxRuntime from "react/jsx-runtime";
@@ -221,7 +223,7 @@ export function installFilesUiDesignSystemApp(
     suffix = "",
   ): string {
     if (result.outcome === "declined") {
-      return "Download cancelled";
+      return uiMessage("design-system.designSystemApp.downloadCancelled");
     }
     if (result.outcome === "withheld") {
       return runtime.DOWNLOADS_UNAVAILABLE_MESSAGE;
@@ -229,9 +231,10 @@ export function installFilesUiDesignSystemApp(
     if (result.outcome === "refused" || result.outcome === "failed") {
       return (0, runtime.unsupportedDownloadMessage)(name, result.shell.code);
     }
-    return "Downloaded " + name + suffix;
+    return uiMessage("design-system.designSystemApp.downloaded") + name + suffix;
   }
   function DesignSystemApp(): React.ReactElement {
+    useUiLocale();
     let runtime2: FileEditHistory = runtime.reactArtifactRoot.useMemo(
         () => (0, runtime.createFileMutationBatch)(),
         [],
@@ -655,7 +658,7 @@ export function installFilesUiDesignSystemApp(
                 editor.undo.undo();
               }}
             >
-              {"Undo"}
+              {uiMessage("design-system.designSystemApp.undo")}
             </runtime.Button>,
           );
         callback = editor.undo.subscribe(() => {
@@ -681,16 +684,16 @@ export function installFilesUiDesignSystemApp(
       },
       removeToken = (input: AddTokenKind) => (input2: string) => {
         if (
-          editable?.exec("remove " + input2, (input3) =>
+          editable?.exec(uiMessage("design-system.designSystemApp.remove") + input2, (input3) =>
             (0, runtime.deleteToken)(input3, input, input2),
           ) === true
         ) {
-          announceUndoableChange("Removed " + input2);
+          announceUndoableChange(uiMessage("design-system.designSystemApp.removed") + input2);
         }
       },
       renameToken2 =
         (input: AddTokenKind) => (input2: string, options: string) =>
-          editable?.exec("rename " + input2, (input3) =>
+          editable?.exec(uiMessage("design-system.designSystemApp.rename") + input2, (input3) =>
             (0, runtime.renameToken)(input3, input, input2, options),
           ) ?? false,
       sectionTitle = (input: string, options: string) =>
@@ -724,7 +727,7 @@ export function installFilesUiDesignSystemApp(
                   ),
                 clear: (input, options) =>
                   void editable.exec(
-                    "clear " + input + " " + options,
+                    uiMessage("design-system.designSystemApp.clear") + input + " " + options,
                     (input2) =>
                       (0, runtime.clearColorThemeOverride)(
                         input2,
@@ -744,17 +747,12 @@ export function installFilesUiDesignSystemApp(
                         : input.name,
                     length = input.tokens.length;
                   setConfirmation({
-                    title:
-                      "Delete " +
-                      value +
-                      " and its " +
-                      String(length) +
-                      (length === 1 ? " color?" : " colors?"),
-                    confirmLabel: "Delete",
+                    get title() { return uiMessage("design-system.designSystemApp.deleteAndIts", { value1: String(value), value2: String(String(length)), value3: String(length === 1 ? " color?" : " colors?") }); },
+                    get confirmLabel() { return uiMessage("design-system.designSystemApp.delete"); },
                     body:
                       (length === 1
-                        ? "It is"
-                        : "All " + String(length) + " are") +
+                        ? uiMessage("design-system.designSystemApp.itIs")
+                        : uiMessage("design-system.designSystemApp.all") + String(length) + " are") +
                       " removed from tokens.json; colors in other groups that alias them keep their resolved values. Undo brings the group back.",
                     run: () => {
                       let value2 = (
@@ -764,11 +762,11 @@ export function installFilesUiDesignSystemApp(
                       ).map((input2) => input2.name);
                       if (
                         value2.length > 0 &&
-                        editable.exec("remove group " + value, (input2) =>
+                        editable.exec(uiMessage("design-system.designSystemApp.removeGroup") + value, (input2) =>
                           (0, runtime.deleteColorTokens)(input2, value2),
                         )
                       ) {
-                        announceUndoableChange("Deleted " + value);
+                        announceUndoableChange(uiMessage("design-system.designSystemApp.deleted") + value);
                       } else {
                         (0, runtime.showEditorNotification)(
                           value + " changed meanwhile. Nothing was deleted.",
@@ -796,7 +794,7 @@ export function installFilesUiDesignSystemApp(
                     return false;
                   }
                   return editable.exec(
-                    "rename group " +
+                    uiMessage("design-system.designSystemApp.renameGroup") +
                       (input.name === "" ? "palette" : input.name),
                     (input2) =>
                       (0, runtime.renameColorTokensAtomically)(input2, value),
@@ -828,7 +826,7 @@ export function installFilesUiDesignSystemApp(
                 ),
               note: (input2) =>
                 void editable.exec(
-                  "edit " + (options ?? input) + " note",
+                  uiMessage("design-system.designSystemApp.edit") + (options ?? input) + " note",
                   (input3) =>
                     (0, runtime.setTokenFamilyNote)(
                       input3,
@@ -866,7 +864,7 @@ export function installFilesUiDesignSystemApp(
             : {
                 value: (input, options, context) =>
                   void editable.exec(
-                    "edit " + input + " " + options,
+                    uiMessage("design-system.designSystemApp.edit") + input + " " + options,
                     (input2) =>
                       (0, runtime.setShadowTokenValue)(
                         input2,
@@ -928,7 +926,7 @@ export function installFilesUiDesignSystemApp(
                     (0, runtime.showEditorNotification)(value);
                     return;
                   }
-                  editable.exec("font " + input, (input2) =>
+                  editable.exec(uiMessage("design-system.designSystemApp.font") + input, (input2) =>
                     (0, runtime.setTypographyFontFamily)(
                       input2,
                       input,
@@ -949,11 +947,11 @@ export function installFilesUiDesignSystemApp(
                 rename: renameToken2("type"),
                 dropMissingFonts: () => {
                   if (
-                    editable.exec("drop missing font references", (input) =>
+                    editable.exec(uiMessage("design-system.designSystemApp.dropMissingFontReferences"), (input) =>
                       (0, runtime.removeMissingFontReferences)(input),
                     )
                   ) {
-                    (0, runtime.announceLiveMessage)("Reference removed");
+                    (0, runtime.announceLiveMessage)(uiMessage("design-system.designSystemApp.referenceRemoved"));
                   }
                 },
               },
@@ -1008,12 +1006,12 @@ export function installFilesUiDesignSystemApp(
           ? undefined
           : (input: Pick<EditorFont, "path">) => {
               if (
-                editable.exec("remove font " + input.path, (input2) =>
+                editable.exec(uiMessage("design-system.designSystemApp.removeFont") + input.path, (input2) =>
                   (0, runtime.deleteFontFace)(input2, input.path),
                 )
               ) {
                 announceUndoableChange(
-                  "Removed " + input.path.replace(/^(?:fonts|assets)\//, ""),
+                  uiMessage("design-system.designSystemApp.removed") + input.path.replace(/^(?:fonts|assets)\//, ""),
                 );
               }
             },
@@ -1077,7 +1075,7 @@ export function installFilesUiDesignSystemApp(
         }
         if (system.holdAutosave) {
           return (0, runtime.showEditorNotification)(
-            "Adding your files first. Try again once they are in.",
+            uiMessage("design-system.designSystemApp.addingYourFilesFirstTry"),
           );
         }
         document2.save().then(() => {
@@ -1087,7 +1085,7 @@ export function installFilesUiDesignSystemApp(
           let value = document2.saveState();
           (0, runtime.showEditorNotification)(
             value.status === "error"
-              ? "Your latest changes could not be saved yet: " +
+              ? uiMessage("design-system.designSystemApp.yourLatestChangesCouldNot") +
                   (value.message ?? "")
               : runtime.RECLAIM_SAVING_MESSAGE,
           );
@@ -1177,12 +1175,12 @@ export function installFilesUiDesignSystemApp(
               return;
             }
             setConfirmation({
-              title: "Free space?",
+              get title() { return uiMessage("design-system.designSystemApp.freeSpace"); },
               body: (0, runtime.reclaimAssetsConfirmation)(
                 value.reclaimable.length,
                 value.reclaimableBytes,
               ),
-              confirmLabel: "Delete permanently",
+              get confirmLabel() { return uiMessage("design-system.designSystemApp.deletePermanently"); },
               run: freeStorage,
             });
           });
@@ -1196,7 +1194,7 @@ export function installFilesUiDesignSystemApp(
           if (input2 === null) {
             runtime.artifactHealth.report(...runtime.DOWNLOAD_INTERNAL_FAILURE);
             (0, runtime.showEditorNotification)(
-              "Could not read " + input.name + " here",
+              uiMessage("design-system.designSystemApp.couldNotRead") + input.name + " here",
             );
             return;
           }
@@ -1266,7 +1264,7 @@ export function installFilesUiDesignSystemApp(
         void (0, runtime.copyTextToClipboard)(input).then((input2) =>
           input2
             ? (0, runtime.showEditorNotification)("Copied")
-            : noticeWithAction("Copy failed", "Copy it", () =>
+            : noticeWithAction(uiMessage("design-system.designSystemApp.copyFailed"), uiMessage("design-system.designSystemApp.copyIt"), () =>
                 copyHandoffPrompt(input),
               ),
         ),
@@ -1298,7 +1296,7 @@ export function installFilesUiDesignSystemApp(
               noticeWithAction(
                 (0, runtime.claudeSendResultMessage)("unanswered"),
                 // MineDesign: user-facing copy calls the agent "the agent", not Claude.
-                "Ask the agent",
+                uiMessage("design-system.designSystemApp.askTheAgent"),
                 context,
               );
               return;
@@ -1310,7 +1308,7 @@ export function installFilesUiDesignSystemApp(
               return;
             }
             if (source.kind === "sent") {
-              (0, runtime.showEditorNotification)(CLAUDE_COMMENT_SENT_MESSAGE);
+              (0, runtime.showEditorNotification)(uiMessage("design-system.designSystemApp.sentToTheAgentIt"));
               return;
             }
             setHandoffNotice({
@@ -1327,7 +1325,7 @@ export function installFilesUiDesignSystemApp(
           : (input: Element) =>
               askClaude(
                 {
-                  label: "Sync from GitHub",
+                  get label() { return uiMessage("design-system.designSystemApp.syncFromGitHub"); },
                   request: (0, runtime.viewerGitHubSyncPrompt)(
                     (0, runtime.artifactPageAddress)(),
                   ),
@@ -1526,7 +1524,7 @@ export function installFilesUiDesignSystemApp(
             editable,
             callback2,
             (input2) => {
-              if (!editable.exec("remove " + entry, callback2, input2)) {
+              if (!editable.exec(uiMessage("design-system.designSystemApp.remove") + entry, callback2, input2)) {
                 return false;
               }
               setIntakeFilePaths((input3) => {
@@ -1627,7 +1625,7 @@ export function installFilesUiDesignSystemApp(
             let value2 = document2.saveState();
             if (value2.status === "error") {
               (0, runtime.showEditorNotification)(
-                "The files are in but not saved yet: " +
+                uiMessage("design-system.designSystemApp.theFilesAreInBut") +
                   (value2.message ?? "") +
                   (document2.saveMode() === "auto"
                     ? ""
@@ -1668,18 +1666,18 @@ export function installFilesUiDesignSystemApp(
             noticeWithAction(
               (0, runtime.claudeSendResultMessage)("unanswered"),
               // MineDesign: user-facing copy calls the agent "the agent", not Claude.
-              "Ask the agent",
+              uiMessage("design-system.designSystemApp.askTheAgent"),
               options,
             );
           } else if (source.kind === "sent") {
-            (0, runtime.showEditorNotification)(CLAUDE_COMMENT_SENT_MESSAGE);
+            (0, runtime.showEditorNotification)(uiMessage("design-system.designSystemApp.sentToTheAgentIt"));
           } else if (source.kind === "failed") {
             noticeWithAction(
               (0, runtime.claudeDeliveryStatusMessage)(
                 "failed",
                 source.held === true,
               ),
-              "Copy it",
+              uiMessage("design-system.designSystemApp.copyIt"),
               () => copyHandoffPrompt(input.prompt),
             );
           } else {
@@ -1697,8 +1695,8 @@ export function installFilesUiDesignSystemApp(
           let value =
             items.length === 1
               ? // MineDesign: user-facing copy calls the agent "the agent", not Claude.
-                "Ask the agent about this file"
-              : "Ask the agent about " + String(items.length) + " files";
+                uiMessage("design-system.designSystemApp.askTheAgentAboutThis")
+              : uiMessage("design-system.designSystemApp.askTheAgentAbout") + String(items.length) + " files";
           sendFileHandoff(
             {
               label: value,
@@ -1738,7 +1736,7 @@ export function installFilesUiDesignSystemApp(
           noticeWithAction(
             value.text,
             // MineDesign: user-facing copy calls the agent "the agent", not Claude.
-            "Ask the agent",
+            uiMessage("design-system.designSystemApp.askTheAgent"),
             fileHandoffAction(value.handOff),
           );
         } else {
@@ -1769,7 +1767,7 @@ export function installFilesUiDesignSystemApp(
               }
               if (intakeSavingRef.current) {
                 (0, runtime.showEditorNotification)(
-                  "Saving what you just added. Drop these again in a moment.",
+                  uiMessage("design-system.designSystemApp.savingWhatYouJustAdded"),
                 );
                 return false;
               }
@@ -1945,7 +1943,7 @@ export function installFilesUiDesignSystemApp(
                   let value4 = document2.saveState();
                   if (value4.status === "error") {
                     (0, runtime.showEditorNotification)(
-                      "The files are in but not saved yet: " +
+                      uiMessage("design-system.designSystemApp.theFilesAreInBut") +
                         value4.message +
                         (document2.saveMode() === "auto"
                           ? ""
@@ -2083,7 +2081,7 @@ export function installFilesUiDesignSystemApp(
         let value = source.values[defaultValueThemeId] ?? "#888888";
         if (
           editable.exec(
-            source.newGroup ? "add color group" : "add color",
+            source.newGroup ? uiMessage("design-system.designSystemApp.addColorGroup") : uiMessage("design-system.designSystemApp.addColor"),
             (input) => {
               let value2 = (0, runtime.addColorToken)(
                 input,
@@ -2122,7 +2120,7 @@ export function installFilesUiDesignSystemApp(
           );
         } else {
           (0, runtime.showEditorNotification)(
-            "Could not add " + source.name + ".",
+            uiMessage("design-system.designSystemApp.couldNotAdd") + source.name + ".",
           );
         }
       },
@@ -2204,15 +2202,15 @@ export function installFilesUiDesignSystemApp(
       > = {
         spacing: {
           value: "8px",
-          label: "spacing value",
+          get label() { return uiMessage("design-system.designSystemApp.spacingValue"); },
         },
         radius: {
           value: "4px",
-          label: "corner radius",
+          get label() { return uiMessage("design-system.designSystemApp.cornerRadius"); },
         },
         extra: {
           value: "1",
-          label: "token",
+          get label() { return uiMessage("design-system.designSystemApp.token"); },
         },
       },
       commonNumericNameStem = (input: string[]): string => {
@@ -2275,7 +2273,7 @@ export function installFilesUiDesignSystemApp(
               ? undefined
               : value5.map((input) => ({
                   key: input.name === "" ? "" : value4 + input.name,
-                  label: input.name === "" ? "Spacing" : input.name,
+                  get label() { return input.name === "" ? (uiMessage("design-system.designSystemApp.spacing")) : (input.name); },
                   seed: newTokenNameSeed(
                     kind,
                     input.name === "" ? "" : value4 + input.name,
@@ -2295,7 +2293,7 @@ export function installFilesUiDesignSystemApp(
         setTokenDialog({
           req: {
             kind: kind,
-            label: value !== undefined ? value + " token" : value2.label,
+            get label() { return value !== undefined ? ((value) + (" token")) : (value2.label); },
             taken: new Set(
               (0, runtime.conflictingTokenNames)(snapshot.tokens, kind),
             ),
@@ -2364,7 +2362,7 @@ export function installFilesUiDesignSystemApp(
               flashToken(source2.name);
             } else {
               (0, runtime.showEditorNotification)(
-                "Could not add " + source2.name + ".",
+                uiMessage("design-system.designSystemApp.couldNotAdd") + source2.name + ".",
               );
             }
           },
@@ -2515,7 +2513,7 @@ export function installFilesUiDesignSystemApp(
               flashToken(source.name);
             } else {
               (0, runtime.showEditorNotification)(
-                "Could not add " + source.name + ".",
+                uiMessage("design-system.designSystemApp.couldNotAdd") + source.name + ".",
               );
             }
           },
@@ -2580,7 +2578,7 @@ export function installFilesUiDesignSystemApp(
               flashToken(source.name);
             } else {
               (0, runtime.showEditorNotification)(
-                "Could not add " + source.name + ".",
+                uiMessage("design-system.designSystemApp.couldNotAdd") + source.name + ".",
               );
             }
           },
@@ -2729,7 +2727,7 @@ export function installFilesUiDesignSystemApp(
         if (input === "shadows") {
           return (
             <runtime.SectionAddButton
-              label={"Add"}
+              label={uiMessage("design-system.designSystemApp.add")}
               what={"Add shadow"}
               onClick={() => showAddShadow()}
               data-testid={"ds-page-add-" + input}
@@ -2741,7 +2739,7 @@ export function installFilesUiDesignSystemApp(
             input === "spacing" ? "spacing" : "radius";
           return (
             <runtime.SectionAddButton
-              label={"Add"}
+              label={uiMessage("design-system.designSystemApp.add")}
               what={"Add " + TOKEN_DEFAULTS[value].label}
               onClick={() =>
                 showAddScaleToken(
@@ -2765,7 +2763,7 @@ export function installFilesUiDesignSystemApp(
           } else {
             return (
               <runtime.SectionAddButton
-                label={"New set"}
+                label={uiMessage("design-system.designSystemApp.newSet")}
                 onClick={showNewAssetGroup}
                 data-testid={"ds-page-add-" + input}
               />
@@ -2788,7 +2786,7 @@ export function installFilesUiDesignSystemApp(
           } else {
             return (
               <runtime.SectionAddButton
-                label={"Add"}
+                label={uiMessage("design-system.designSystemApp.add")}
                 what={"Add " + value!.title.toLowerCase() + " token"}
                 onClick={() => value3(value2)}
                 data-testid={"ds-page-add-" + input}
@@ -2831,7 +2829,7 @@ export function installFilesUiDesignSystemApp(
             markdown: value2,
             readOnly: readOnly || editable === undefined,
             // MineDesign: user-facing copy calls the agent "the agent", not Claude.
-            placeholder: "Write the brand book here — or ask the agent to.",
+            get placeholder() { return uiMessage("design-system.designSystemApp.writeTheBrandBookHereOrAskTheAgentTo"); },
             onMarkdown: (input: string) => {
               let current = readmeTouchedRef.current,
                 flag = false,
@@ -2916,10 +2914,8 @@ export function installFilesUiDesignSystemApp(
           case "readme":
             return (
               <jsxDesignSystemApp.Fragment>
-                {[
-                  <runtime.SectionSheet>
-                    {[
-                      snapshot.cover !== null ? (
+                {[<runtime.SectionSheet>
+                    {[snapshot.cover !== null ? (
                         <runtime.CoverPreview
                           cover={snapshot.cover}
                           head={(0, runtime.createPreviewHead)(
@@ -2929,13 +2925,10 @@ export function installFilesUiDesignSystemApp(
                             false,
                           )}
                         />
-                      ) : null,
-                      <runtime.ReadmeArticle>
+                      ) : null, <runtime.ReadmeArticle>
                         {renderReadme()}
-                      </runtime.ReadmeArticle>,
-                    ]}
-                  </runtime.SectionSheet>,
-                  showWelcome &&
+                      </runtime.ReadmeArticle>]}
+                  </runtime.SectionSheet>, showWelcome &&
                   editable !== undefined &&
                   addFiles !== undefined ? (
                     <runtime.WelcomeSheet
@@ -2983,8 +2976,7 @@ export function installFilesUiDesignSystemApp(
                         ) : undefined
                       }
                     />
-                  ) : null,
-                  <runtime.DocumentSections
+                  ) : null, <runtime.DocumentSections
                     docs={view.docs}
                     edit={
                       editable === undefined
@@ -3004,7 +2996,7 @@ export function installFilesUiDesignSystemApp(
                     headFor={(input2: ApplicationView["docs"][number]) => ({
                       title: input2.title,
                       defaultTitle: input2.title,
-                      placeholder: "e.g. Voice and tone",
+                      get placeholder() { return uiMessage("design-system.designSystemApp.eGVoiceAndTone"); },
                       "data-testid": "ds-card-guidance-" + input2.path,
                       onRename:
                         editable === undefined
@@ -3101,8 +3093,7 @@ export function installFilesUiDesignSystemApp(
                               }
                             },
                     })}
-                  />,
-                ]}
+                  />]}
               </jsxDesignSystemApp.Fragment>
             );
           case "colors":
@@ -3153,17 +3144,10 @@ export function installFilesUiDesignSystemApp(
                       ? undefined
                       : () =>
                           setConfirmation({
-                            title:
-                              "Delete " +
-                              input2.name +
-                              (input2.styles.length > 0
-                                ? " and its " +
-                                  String(input2.styles.length) +
-                                  (input2.styles.length === 1
+                            get title() { return uiMessage("design-system.designSystemApp.delete2", { value1: String(input2.name), value2: String(input2.styles.length > 0 ? (" and its " + String(input2.styles.length) + input2.styles.length === 1
                                     ? " style?"
-                                    : " styles?")
-                                : "?"),
-                            confirmLabel: "Delete",
+                                    : " styles?") : ("?")) }); },
+                            get confirmLabel() { return uiMessage("design-system.designSystemApp.delete"); },
                             body: "The set and every style in it leave tokens.json. Undo brings the set back.",
                             run: () => {
                               if (
@@ -3333,23 +3317,16 @@ export function installFilesUiDesignSystemApp(
                       className={"text-caption text-muted"}
                       data-testid={"ds-storage-used"}
                     >
-                      {[
-                        storageUsageText,
-                        freeSpaceText !== "" ? (
+                      {[storageUsageText, freeSpaceText !== "" ? (
                           <jsxDesignSystemApp.Fragment>
-                            {[
-                              " ",
-                              <runtime.TextLink
+                            {[" ", <runtime.TextLink
                                 onClick={askFreeStorage}
                                 data-testid={"ds-free-space"}
                               >
                                 {freeSpaceText}
-                              </runtime.TextLink>,
-                            ]}
+                              </runtime.TextLink>]}
                           </jsxDesignSystemApp.Fragment>
-                        ) : null,
-                        freeingStorage ? " Freeing…" : null,
-                      ]}
+                        ) : null, freeingStorage ? " Freeing…" : null]}
                     </span>
                   ) : undefined
                 }
@@ -3552,8 +3529,7 @@ export function installFilesUiDesignSystemApp(
         !toolbarIsShown,
       saveControls = (
         <jsxDesignSystemApp.Fragment>
-          {[
-            hasAutoSave && editable !== undefined ? (
+          {[hasAutoSave && editable !== undefined ? (
               <runtime.SaveStatusControl
                 state={saveState}
                 onRetry={() => {
@@ -3562,29 +3538,23 @@ export function installFilesUiDesignSystemApp(
                 }}
                 tipSide={"top"}
               />
-            ) : null,
-            showReadonlyChip ? (
-              <runtime.TooltipWrapper tip={saveState.message ?? "Read-only"}>
+            ) : null, showReadonlyChip ? (
+              <runtime.TooltipWrapper tip={(saveState.message) ?? (uiMessage("design-system.designSystemApp.readOnly"))}>
                 <runtime.Badge
                   icon={"Lock"}
                   size={"sm"}
                   role={"status"}
                   data-testid={"ds-readonly-chip"}
                 >
-                  {"Read-only"}
+                  {uiMessage("design-system.designSystemApp.readOnly")}
                 </runtime.Badge>
               </runtime.TooltipWrapper>
-            ) : null,
-            !hasAutoSave &&
+            ) : null, !hasAutoSave &&
             editable !== undefined &&
             document2.saveMode() === "manual" ? (
               <runtime.TooltipWrapper
                 tip={
-                  saveState.status === "error"
-                    ? (saveState.message ?? "Couldn’t save — try again")
-                    : saveState.status === "dirty"
-                      ? "Save changes"
-                      : "All changes saved"
+                  saveState.status === "error" ? ((saveState.message) ?? (uiMessage("design-system.designSystemApp.couldnTSaveTryAgain"))) : (saveState.status === "dirty" ? (uiMessage("design-system.designSystemApp.saveChanges")) : (uiMessage("design-system.designSystemApp.allChangesSaved")))
                 }
               >
                 <runtime.Button
@@ -3603,11 +3573,10 @@ export function installFilesUiDesignSystemApp(
                   }}
                   data-testid={"ds-save"}
                 >
-                  {saveState.status === "saving" ? "Saving…" : "Save"}
+                  {saveState.status === "saving" ? (uiMessage("design-system.designSystemApp.saving")) : (uiMessage("design-system.designSystemApp.save"))}
                 </runtime.Button>
               </runtime.TooltipWrapper>
-            ) : null,
-          ]}
+            ) : null]}
         </jsxDesignSystemApp.Fragment>
       ),
       showSaveControls =
@@ -3696,14 +3665,12 @@ export function installFilesUiDesignSystemApp(
         }
       >
         <runtime.CdsRoot density={"compact"} className={"contents"}>
-          {[
-            <div
+          {[<div
               className={"relative h-full min-h-0"}
               data-testid={"ds-drop-target"}
               {...dropTarget.targetProps}
             >
-              {[
-                <div
+              {[<div
                   className={
                     "ds-main relative flex h-full min-h-0 flex-col gap-lg overflow-x-hidden overflow-y-auto scroll-smooth bg-bg-warm px-lg text-body text-primary motion-reduce:scroll-auto pointer-coarse:[--prop-row-h:40px] data-[covered]:invisible [&>:first-child]:mt-lg"
                   }
@@ -3714,8 +3681,7 @@ export function installFilesUiDesignSystemApp(
                   data-testid={"ds-main"}
                   ref={attachScroller}
                 >
-                  {[
-                    showNavigation && !wideLayout ? (
+                  {[showNavigation && !wideLayout ? (
                       <runtime.FloatingSectionNavigation
                         pending={pendingSections}
                         navRef={navigationRef}
@@ -3733,8 +3699,7 @@ export function installFilesUiDesignSystemApp(
                         marks={flaggedSections}
                         search={navigationSearch}
                       />
-                    ) : null,
-                    saveState.status === "readonly" &&
+                    ) : null, saveState.status === "readonly" &&
                     saveState.message !== undefined &&
                     runtime.BOOT_LIVE_NOTICE_MESSAGES.has(saveState.message) ? (
                       <div {...runtime.UNCOMMENTABLE_PROPS}>
@@ -3746,9 +3711,7 @@ export function installFilesUiDesignSystemApp(
                           {saveState.message}
                         </runtime.Callout>
                       </div>
-                    ) : null,
-                    <runtime.SaveConflictBanners doc={document2} />,
-                    <runtime.MigrationCleanupBanner
+                    ) : null, <runtime.SaveConflictBanners doc={document2} />, <runtime.MigrationCleanupBanner
                       ask={
                         editable === undefined &&
                         saveState.message !== runtime.MIGRATED_READONLY_MESSAGE
@@ -3756,8 +3719,7 @@ export function installFilesUiDesignSystemApp(
                           : askClaude
                       }
                       busy={handoffBusy}
-                    />,
-                    lastChange !== null &&
+                    />, lastChange !== null &&
                     (0, runtime.isCiLastChange)(lastChange) &&
                     !readOnly
                       ? (() => {
@@ -3770,16 +3732,12 @@ export function installFilesUiDesignSystemApp(
                             <_Element2 key={_elementKey2} {..._elementProps2} />
                           );
                         })()
-                      : null,
-                    <runtime.MigrationLeftOutBanner />,
-                    <runtime.IndexRecoveryBanner />,
-                    !showWelcome && handoffNote !== null ? (
+                      : null, <runtime.MigrationLeftOutBanner />, <runtime.IndexRecoveryBanner />, !showWelcome && handoffNote !== null ? (
                       <runtime.SectionUsageNote
                         note={handoffNote}
                         edgeRef={handoffNoticeRef}
                       />
-                    ) : null,
-                    emptySystem && editable === undefined ? (
+                    ) : null, emptySystem && editable === undefined ? (
                       <runtime.EmptyDesignSystem />
                     ) : (
                       sections.map((input, options) =>
@@ -3814,60 +3772,50 @@ export function installFilesUiDesignSystemApp(
                                 {() =>
                                   input.id === "colors" ? (
                                     <runtime.SectionSheet>
-                                      {[
-                                        <runtime.ColorsSectionHeader
+                                      {[<runtime.ColorsSectionHeader
                                           edit={colorEdit}
                                           note={starterSectionNote("colors")}
-                                        />,
-                                        sectionIsEmptyOrStarter("colors") ? (
+                                        />, sectionIsEmptyOrStarter("colors") ? (
                                           <runtime.EmptySectionHint
                                             kind={"colors"}
                                             readOnly={editable === undefined}
                                           />
                                         ) : (
                                           renderSection("colors")
-                                        ),
-                                      ]}
+                                        )]}
                                     </runtime.SectionSheet>
                                   ) : input.id === "type" ? (
                                     <runtime.SectionSheet>
-                                      {[
-                                        <runtime.TypographySectionHeader
+                                      {[<runtime.TypographySectionHeader
                                           edit={typeEditWithActions}
                                           note={starterSectionNote("type")}
-                                        />,
-                                        sectionIsEmptyOrStarter("type") ? (
+                                        />, sectionIsEmptyOrStarter("type") ? (
                                           <runtime.EmptySectionHint
                                             kind={"type"}
                                             readOnly={editable === undefined}
                                           />
                                         ) : (
                                           renderSection("type")
-                                        ),
-                                      ]}
+                                        )]}
                                     </runtime.SectionSheet>
                                   ) : input.id === "readme" ? (
                                     editable === undefined &&
                                     view.readme.trim() === "" &&
                                     view.docs.length === 0 ? (
                                       <runtime.SectionSheet>
-                                        {[
-                                          <runtime.SectionHeader
+                                        {[<runtime.SectionHeader
                                             title={input.label}
                                             pageId={input.id}
-                                          />,
-                                          <runtime.EmptyEditorList
+                                          />, <runtime.EmptyEditorList
                                             text={"Nothing here yet."}
-                                          />,
-                                        ]}
+                                          />]}
                                       </runtime.SectionSheet>
                                     ) : (
                                       renderSection("readme")
                                     )
                                   ) : (
                                     <runtime.SectionSheet>
-                                      {[
-                                        <runtime.SectionHeader
+                                      {[<runtime.SectionHeader
                                           title={input.label}
                                           pageId={input.id}
                                           data-testid={
@@ -3879,8 +3827,7 @@ export function installFilesUiDesignSystemApp(
                                               : sectionHeaderActions(input.id)
                                           }
                                           note={starterSectionNote(input.id)}
-                                        />,
-                                        sectionIsEmptyOrStarter(input.id) ? (
+                                        />, sectionIsEmptyOrStarter(input.id) ? (
                                           <runtime.EmptySectionHint
                                             kind={
                                               isExtraTokenSection(input.id)
@@ -3891,8 +3838,7 @@ export function installFilesUiDesignSystemApp(
                                           />
                                         ) : isDesignSystemSection(input.id) ? (
                                           renderSection(input.id)
-                                        ) : null,
-                                      ]}
+                                        ) : null]}
                                     </runtime.SectionSheet>
                                   )
                                 }
@@ -3905,14 +3851,12 @@ export function installFilesUiDesignSystemApp(
                           );
                         })(),
                       )
-                    ),
-                    intakeProgress !== null ? (
+                    ), intakeProgress !== null ? (
                       <runtime.IntakeProgressStatus
                         text={intakeProgress}
                         quiet={dropTarget.over}
                       />
-                    ) : null,
-                    emptySystem ? null : (
+                    ) : null, emptySystem ? null : (
                       <footer
                         className={"ds-page-footer px-xs"}
                         data-testid={"ds-page-footer"}
@@ -3920,8 +3864,7 @@ export function installFilesUiDesignSystemApp(
                       >
                         <runtime.PipelineChangeSummary change={lastChange} />
                       </footer>
-                    ),
-                    openAsset !== null
+                    ), openAsset !== null
                       ? (() => {
                           const _Element4 = runtime.AssetDetailsDialog;
                           const _elementProps4 = {
@@ -3995,10 +3938,7 @@ export function installFilesUiDesignSystemApp(
                             <_Element4 key={_elementKey4} {..._elementProps4} />
                           );
                         })()
-                      : null,
-                    assetManager.overlay,
-                    assetGroupDialog,
-                    tokenDialog !== null ? (
+                      : null, assetManager.overlay, assetGroupDialog, tokenDialog !== null ? (
                       <runtime.AddTokenDialog
                         req={tokenDialog.req}
                         onClose={() => setTokenDialog(null)}
@@ -4008,8 +3948,7 @@ export function installFilesUiDesignSystemApp(
                           land(input);
                         }}
                       />
-                    ) : null,
-                    confirmation !== null ? (
+                    ) : null, confirmation !== null ? (
                       <runtime.ConfirmRemoveDialog
                         title={confirmation.title}
                         confirmLabel={confirmation.confirmLabel}
@@ -4022,19 +3961,13 @@ export function installFilesUiDesignSystemApp(
                       >
                         {confirmation.body}
                       </runtime.ConfirmRemoveDialog>
-                    ) : null,
-                  ]}
-                </div>,
-                filesBrowser.layer,
-                <runtime.FileDropOverlay
+                    ) : null]}
+                </div>, filesBrowser.layer, <runtime.FileDropOverlay
                   show={dropTarget.over}
-                  label={"Drop to add to this design system"}
+                  label={uiMessage("design-system.designSystemApp.dropToAddToThisDesignSystem")}
                   hint={"Fonts, logos, images, reference files — folders too"}
-                />,
-              ]}
-            </div>,
-            <runtime.LiveAnnouncer />,
-          ]}
+                />]}
+            </div>, <runtime.LiveAnnouncer />]}
         </runtime.CdsRoot>
       </runtime.ArtifactShell>
     );
@@ -4136,7 +4069,7 @@ export function installFilesUiDesignSystemApp(
   bindRuntimeValue(
     runtime,
     "CLAUDE_COMMENT_SENT_MESSAGE",
-    () => CLAUDE_COMMENT_SENT_MESSAGE,
+    () => uiMessage("design-system.designSystemApp.sentToTheAgentIt"),
     (value) => {
       CLAUDE_COMMENT_SENT_MESSAGE = value;
     },
@@ -4188,37 +4121,37 @@ export function installFilesUiDesignSystemApp(
     CORE_DESIGN_SYSTEM_SECTIONS = [
       {
         id: "readme",
-        label: "Overview",
+        get label() { return uiMessage("design-system.designSystemApp.overview"); },
       },
       {
         id: "colors",
-        label: "Colors",
+        get label() { return uiMessage("design-system.designSystemApp.colors"); },
       },
       {
         id: "type",
-        label: "Typography",
+        get label() { return uiMessage("design-system.designSystemApp.typography"); },
       },
       {
         id: "spacing",
-        label: "Spacing",
+        get label() { return uiMessage("design-system.designSystemApp.spacing"); },
       },
       {
         id: "corners",
-        label: "Corner radius",
+        get label() { return uiMessage("design-system.designSystemApp.cornerRadius"); },
       },
       {
         id: "shadows",
-        label: "Shadows",
+        get label() { return uiMessage("design-system.designSystemApp.shadows"); },
       },
     ];
     CONTENT_DESIGN_SYSTEM_SECTIONS = [
       {
         id: "components",
-        label: "Components",
+        get label() { return uiMessage("design-system.designSystemApp.components"); },
       },
       {
         id: "assets",
-        label: "Assets",
+        get label() { return uiMessage("design-system.designSystemApp.assets"); },
       },
     ];
     BUILTIN_DESIGN_SYSTEM_SECTION_IDS = [
@@ -4253,7 +4186,7 @@ export function installFilesUiDesignSystemApp(
     CLAUDE_COMMENT_SENT_MESSAGE =
       "Sent to the agent — it will reply in the comment thread";
     README_SIZE_EXCEEDED_MESSAGE =
-      "That is more text than the README can keep (" +
+      uiMessage("design-system.designSystemApp.thatIsMoreTextThan") +
       String(runtime.DESIGN_SYSTEM_INLINE_LIMITS.readme / 1024) +
       " KB), so it was not added. The text from before is unchanged.";
     BACKGROUND_COLOR_TOKEN_PATTERNS = [

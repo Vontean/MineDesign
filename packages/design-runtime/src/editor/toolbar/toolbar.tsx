@@ -1,3 +1,5 @@
+import { useUiLocale } from '../../ui-locale.ts';
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -28,6 +30,7 @@ export function installEditorToolbarToolbar(
     children: children,
     extrasEnd: extrasEnd,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let [, value]: Dynamic = (0, runtime.reactCanvasMeasurements.useState)(0);
     (0, runtime.reactCanvasMeasurements.useEffect)(
       (): Dynamic =>
@@ -164,12 +167,11 @@ export function installEditorToolbarToolbar(
                   leading={
                     <runtime.jsxToolbarLayout.Fragment>
                       {leading}
-                      {undo && !value2 && undoButtons ? (
-                        <runtime.jsxToolbarLayout.Fragment>
+                      {undo && !value2 && undoButtons ? (<runtime.jsxToolbarLayout.Fragment>
                           <runtime.ToolbarPrimitivesComponent
                             iconOnly={true}
                             icon={"ArrowCounterClockwise"}
-                            label={"Undo"}
+                            label={uiMessage("inspector.toolbar.undo")}
                             disabledTip={"Nothing to undo yet"}
                             shortcut={"cmd+z"}
                             disabled={!undo.canUndo()}
@@ -178,27 +180,18 @@ export function installEditorToolbarToolbar(
                           <runtime.ToolbarPrimitivesComponent
                             iconOnly={true}
                             icon={"ArrowClockwise"}
-                            label={"Redo"}
+                            label={uiMessage("inspector.toolbar.redo")}
                             disabledTip={"Nothing to redo"}
                             shortcut={"shift+cmd+z"}
                             disabled={!undo.canRedo()}
                             onClick={(): Dynamic => undo.redo()}
                           />
-                        </runtime.jsxToolbarLayout.Fragment>
-                      ) : null}
+                        </runtime.jsxToolbarLayout.Fragment>) : (null)}
                       {afterUndo}
                       {saveState.status === "readonly" &&
                       quietReadOnlyReason !== undefined &&
                       saveState.message ===
-                        quietReadOnlyReason ? null : syncDot ? (
-                        saveState.status === "readonly" ? (
-                          <runtime.ToolbarSaveFailure state={saveState} />
-                        ) : null
-                      ) : saveMode === "auto" ? (
-                        <runtime.ToolbarSaveStatus state={saveState} />
-                      ) : (
-                        <runtime.ToolbarSaveFailure state={saveState} />
-                      )}
+                        quietReadOnlyReason ? (null) : (syncDot ? (saveState.status === "readonly" ? (<runtime.ToolbarSaveFailure state={saveState} />) : (null)) : (saveMode === "auto" ? (<runtime.ToolbarSaveStatus state={saveState} />) : (<runtime.ToolbarSaveFailure state={saveState} />)))}
                     </runtime.jsxToolbarLayout.Fragment>
                   }
                 >
@@ -211,46 +204,37 @@ export function installEditorToolbarToolbar(
                   "tb-card tb-card-end ml-auto flex items-center gap-1 pointer-coarse:gap-1.5"
                 }
               >
-                {extrasEnd != null ? (
-                  <span
+                {extrasEnd != null ? (<span
                     data-tb-cluster={""}
                     className={
                       "tb-slot flex shrink-0 items-center gap-1 pointer-coarse:gap-1.5"
                     }
                   >
                     {extrasEnd}
-                  </span>
-                ) : null}
-                {(pinned != null && value9) || trailing != null ? (
-                  <span
+                  </span>) : (null)}
+                {(pinned != null && value9) || trailing != null ? (<span
                     className={
                       "tb-tail flex items-center gap-1 pointer-coarse:gap-1.5"
                     }
                   >
-                    {pinned != null && value9 ? (
-                      <span
+                    {pinned != null && value9 ? (<span
                         data-tb-cluster={""}
                         className={
                           "tb-pin-fixed flex shrink-0 items-center gap-1 empty:hidden pointer-coarse:gap-1.5"
                         }
                       >
                         {pinned}
-                      </span>
-                    ) : null}
-                    {trailing != null ? (
-                      <span
+                      </span>) : (null)}
+                    {trailing != null ? (<span
                         data-tb-cluster={""}
                         className={
                           "tb-slot flex items-center gap-1 pointer-coarse:gap-1.5"
                         }
                       >
                         {trailing}
-                      </span>
-                    ) : null}
-                  </span>
-                ) : null}
-                {publishControls ? (
-                  <span
+                      </span>) : (null)}
+                  </span>) : (null)}
+                {publishControls ? (<span
                     className={
                       "tb-publish flex shrink-0 items-center gap-1 pointer-coarse:gap-1.5"
                     }
@@ -261,8 +245,7 @@ export function installEditorToolbarToolbar(
                       syncDot={syncDot}
                       onSave={onSave}
                     />
-                  </span>
-                ) : null}
+                  </span>) : (null)}
               </runtime.ToolbarSurface>
             </runtime.ToolbarPrimitivesContext_2.Provider>
           </runtime.ToolbarPrimitivesContext.Provider>

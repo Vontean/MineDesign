@@ -1,3 +1,4 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -15,17 +16,17 @@ export function installEditorSelectionActions(
     options?: Dynamic,
     context?: Dynamic,
   ): Dynamic {
-    let value: Dynamic = input === "delete" ? "press Delete" : "duplicate";
+    let value: Dynamic = input === "delete" ? uiMessage("inspector.actions.pressDelete") : "duplicate";
     if (!context)
       return (
-        "Couldn\u2019t " +
+        uiMessage("inspector.actions.couldnT") +
         input +
         " the elements you selected: someone else\u2019s edit arrived first. Select them again and " +
         value +
         "."
       );
     let value2: Dynamic =
-      options === 1 ? "one artboard" : options + " artboards";
+      options === 1 ? uiMessage("inspector.actions.oneArtboard") : options + " artboards";
     return (
       (input === "delete" ? "Deleted" : "Duplicated") +
       ", except in " +

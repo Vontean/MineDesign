@@ -1,3 +1,5 @@
+import { useUiLocale } from '../../ui-locale.ts';
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -15,6 +17,7 @@ export function installEditorChromeSaveStatus(
     docked = false,
     belowPickerBar = false,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let [, value]: Dynamic = (0, reactChromeSaveStatus.useState)(0);
     (0, reactChromeSaveStatus.useEffect)((): Dynamic => {
       let value3: Dynamic = doc.subscribe(
@@ -55,10 +58,8 @@ export function installEditorChromeSaveStatus(
           }
         >
           <span className={"min-w-0 text-footnote text-secondary"}>
-            {"You have unsaved work from a previous session."}
-            {value2
-              ? " This view can\u2019t save it; restore it to look at or export it."
-              : ""}
+            {uiMessage("inspector.saveStatus.youHaveUnsavedWorkFromAPreviousSession")}
+            {value2 ? (uiMessage("inspector.saveStatus.thisViewCanTSave")) : ("")}
           </span>
           <span className={"ml-auto flex shrink-0 items-center gap-1"}>
             <runtime.Button
@@ -66,14 +67,14 @@ export function installEditorChromeSaveStatus(
               variant={"primary"}
               onClick={(): Dynamic => doc.restoreStash()}
             >
-              {"Restore"}
+              {uiMessage("inspector.saveStatus.restore")}
             </runtime.Button>
             <runtime.Button
               type={"button"}
               variant={"ghost"}
               onClick={(): Dynamic => doc.discardStash()}
             >
-              {"Discard"}
+              {uiMessage("inspector.saveStatus.discard")}
             </runtime.Button>
           </span>
         </div>

@@ -44,6 +44,8 @@
 | 预览桥 | origin/source 回归与真实 iframe 内容 | Codex 中的内容证据；本地预览不能代替宿主验收 |
 | 发布或安装包 | 打包名单、隔离安装、版本一致性 | 源码、包、注册、实际宿主分别报告 |
 
+修改界面文案或语言桥先运行 `npm run check:i18n`，再按 [i18n 维护](i18n.md) 核对真实中英切换。
+
 文件模块与浏览器宿主的原生回归使用 `npm run test:modules`。跨层重构先在隔离目录保存旧 service bundle 与两套编辑器产物，再执行 `npm run verify:equivalence -- <旧 service.mjs>`；同一路径重置夹具，对比实际响应，仅归一化进程 grant/origin。视觉与交互使用同一窗口、作品与状态进行前后截图及操作比较，记录范围。
 
 可写测试使用 `tests/fixtures/` 复制到临时工作区。`examples/` 是可被用户编辑的作品，不作为可覆盖的数据。测试产生的批注或临时目录在 finally 清理。

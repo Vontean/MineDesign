@@ -1,3 +1,5 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
+import { useUiLocale } from '../../ui-locale.ts';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -14,6 +16,7 @@ export function installEditorPropertiesFontWeightRow(
     onFacesOpen: onFacesOpen,
     shell: shell,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let { text: value, isLiteral: value2 }: Dynamic = (0,
       runtime.inspectorFieldDisplay)(state),
       callback: Dynamic = (input?: Dynamic): Dynamic =>
@@ -59,15 +62,11 @@ export function installEditorPropertiesFontWeightRow(
               : (0, runtime.fontVariantKey)(state2.weight, state2.italic)
           }
           placeholder={
-            value6
-              ? "Mixed"
-              : (0, runtime.fontVariantLabel)(state2.weight, state2.italic)
+            value6 ? (uiMessage("inspector.fontWeightRow.mixed")) : ((0, runtime.fontVariantLabel)(state2.weight, state2.italic))
           }
           hint={runtime.Value_6}
           title={
-            !value5 && !value6 && !state.inheritedFrom
-              ? "Inherited \u2014 right-click to keep unset"
-              : undefined
+            !value5 && !value6 && !state.inheritedFrom ? (uiMessage("inspector.fontWeightRow.inheritedRightClickToKeep")) : (undefined)
           }
           disabled={state.disabled}
           onOpenChange={(input?: Dynamic): Dynamic => input && onFacesOpen?.()}

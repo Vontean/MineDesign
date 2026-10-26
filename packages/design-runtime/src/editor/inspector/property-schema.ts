@@ -1,3 +1,5 @@
+import { uiPropertyLabel } from '@minedesign/contracts/ui-value';
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -161,7 +163,7 @@ export function installEditorInspectorPropertySchema(
       value: Dynamic = {},
     ): Dynamic => ({
       prop: input,
-      label: options,
+      get label() { return uiPropertyLabel(input, options); },
       editor: "number",
       section: context,
       unit: "px",
@@ -175,7 +177,7 @@ export function installEditorInspectorPropertySchema(
       extra: Dynamic = {},
     ): Dynamic => ({
       prop: input,
-      label: options,
+      get label() { return uiPropertyLabel(input, options); },
       editor: "select",
       section: context,
       options: value,
@@ -184,14 +186,14 @@ export function installEditorInspectorPropertySchema(
     InspectorPropertySchemaItems_2 = [
       {
         prop: "font-family",
-        label: "Font",
+        get label() { return uiMessage("inspector.propertySchema.font"); },
         editor: "font",
         section: "typography",
         defaultValue: "",
       },
       {
         prop: "font-weight",
-        label: "Weight",
+        get label() { return uiMessage("inspector.propertySchema.weight"); },
         editor: "fontFace",
         section: "typography",
         defaultValue: "400",
@@ -203,37 +205,37 @@ export function installEditorInspectorPropertySchema(
       }),
       InspectorPropertySchemaHandler(
         "line-height",
-        "Line height",
+        uiMessage("inspector.propertySchema.lineHeight"),
         "typography",
         {
           unit: "",
           step: 0.05,
           scrub: 0.05,
           min: 0,
-          hint: "Unitless multiplies the font size (1.5); for a length such as 24px use right-click \u2192 Edit as text",
+          get hint() { return uiMessage("inspector.propertySchema.unitlessMultipliesTheFontSize15ForALengthSuchAs24pxUseRightClickEditAsText"); },
           scrubFrom: 1.2,
         },
       ),
       InspectorPropertySchemaHandler(
         "letter-spacing",
-        "Letter spacing",
+        uiMessage("inspector.propertySchema.letterSpacing"),
         "typography",
         {
           step: 0.1,
           scrub: 0.1,
           defaultValue: "0px",
-          hint: "Length \u2014 em scales with the font size, px is fixed; for another unit use right-click \u2192 Edit as text",
+          get hint() { return uiMessage("inspector.propertySchema.lengthEmScalesWithTheFontSizePxIsFixedForAnotherUnitUseRightClickEditAsText"); },
         },
       ),
       {
         prop: "color",
-        label: "Color",
+        get label() { return uiMessage("inspector.propertySchema.color"); },
         editor: "color",
         section: "typography",
       },
       {
         prop: "font-style",
-        label: "Emphasis",
+        get label() { return uiMessage("inspector.propertySchema.emphasis"); },
         editor: "typeStyle",
         section: "typography",
         defaultValue: "normal",
@@ -241,7 +243,7 @@ export function installEditorInspectorPropertySchema(
       },
       {
         prop: "text-align",
-        label: "Align",
+        get label() { return uiMessage("inspector.propertySchema.align"); },
         editor: "flexSeg",
         section: "typography",
         options: ["left", "center", "right", "justify"],
@@ -259,7 +261,7 @@ export function installEditorInspectorPropertySchema(
       ),
       {
         prop: "display",
-        label: "Layout",
+        get label() { return uiMessage("inspector.propertySchema.layout"); },
         editor: "select",
         section: "layout",
         options: ["block", "flex", "grid"],
@@ -272,7 +274,7 @@ export function installEditorInspectorPropertySchema(
       },
       {
         prop: "flex-direction",
-        label: "Direction",
+        get label() { return uiMessage("inspector.propertySchema.direction"); },
         editor: "flexSeg",
         section: "layout",
         options: ["row", "column", "row-reverse", "column-reverse"],
@@ -289,7 +291,7 @@ export function installEditorInspectorPropertySchema(
       ),
       {
         prop: "justify-content",
-        label: "Justify",
+        get label() { return uiMessage("inspector.propertySchema.justify"); },
         editor: "flexSeg",
         section: "layout",
         options: [
@@ -312,7 +314,7 @@ export function installEditorInspectorPropertySchema(
       },
       {
         prop: "justify-items",
-        label: "Justify",
+        get label() { return uiMessage("inspector.propertySchema.justify"); },
         editor: "flexSeg",
         section: "layout",
         options: ["start", "center", "end", "stretch"],
@@ -326,7 +328,7 @@ export function installEditorInspectorPropertySchema(
       },
       {
         prop: "align-items",
-        label: "Align",
+        get label() { return uiMessage("inspector.propertySchema.align"); },
         editor: "flexSeg",
         section: "layout",
         options: ["flex-start", "center", "flex-end", "stretch", "baseline"],
@@ -345,21 +347,21 @@ export function installEditorInspectorPropertySchema(
       }),
       {
         prop: "grid-template-columns",
-        label: "Columns",
+        get label() { return uiMessage("inspector.propertySchema.columns"); },
         editor: "gridTracks",
         section: "layout",
         min: 1,
         max: 12,
-        hint: "Track count (equal columns), or any CSS track list (160px 1fr)",
+        get hint() { return uiMessage("inspector.propertySchema.trackCountEqualColumnsOrAnyCSSTrackList160px1fr"); },
       },
       {
         prop: "grid-template-rows",
-        label: "Rows",
+        get label() { return uiMessage("inspector.propertySchema.rows"); },
         editor: "gridTracks",
         section: "layout",
         min: 1,
         max: 12,
-        hint: "Track count (equal rows); unset lets rows size to content",
+        get hint() { return uiMessage("inspector.propertySchema.trackCountEqualRowsUnsetLetsRowsSizeToContent"); },
       },
       InspectorPropertySchemaHandler_2(
         "position",
@@ -419,29 +421,29 @@ export function installEditorInspectorPropertySchema(
       }),
       {
         prop: "width",
-        label: "Width",
+        get label() { return uiMessage("inspector.propertySchema.width"); },
         editor: "size",
         section: "sizing",
       },
       {
         prop: "height",
-        label: "Height",
+        get label() { return uiMessage("inspector.propertySchema.height"); },
         editor: "size",
         section: "sizing",
       },
-      InspectorPropertySchemaHandler("min-width", "Min width", "sizing", {
+      InspectorPropertySchemaHandler("min-width", uiMessage("inspector.propertySchema.minWidth"), "sizing", {
         min: 0,
         longTail: true,
       }),
-      InspectorPropertySchemaHandler("max-width", "Max width", "sizing", {
+      InspectorPropertySchemaHandler("max-width", uiMessage("inspector.propertySchema.maxWidth"), "sizing", {
         min: 0,
         longTail: true,
       }),
-      InspectorPropertySchemaHandler("min-height", "Min height", "sizing", {
+      InspectorPropertySchemaHandler("min-height", uiMessage("inspector.propertySchema.minHeight"), "sizing", {
         min: 0,
         longTail: true,
       }),
-      InspectorPropertySchemaHandler("max-height", "Max height", "sizing", {
+      InspectorPropertySchemaHandler("max-height", uiMessage("inspector.propertySchema.maxHeight"), "sizing", {
         min: 0,
         longTail: true,
       }),
@@ -453,7 +455,7 @@ export function installEditorInspectorPropertySchema(
       }),
       {
         prop: "align-self",
-        label: "Align self",
+        get label() { return uiMessage("inspector.propertySchema.alignSelf"); },
         editor: "flexSeg",
         section: "sizing",
         options: ["auto", "flex-start", "center", "flex-end", "stretch"],
@@ -468,7 +470,7 @@ export function installEditorInspectorPropertySchema(
       },
       {
         prop: "grid-column",
-        label: "Column span",
+        get label() { return uiMessage("inspector.propertySchema.columnSpan"); },
         editor: "gridSpan",
         section: "sizing",
         min: 1,
@@ -477,7 +479,7 @@ export function installEditorInspectorPropertySchema(
       },
       {
         prop: "grid-row",
-        label: "Row span",
+        get label() { return uiMessage("inspector.propertySchema.rowSpan"); },
         editor: "gridSpan",
         section: "sizing",
         min: 1,
@@ -486,7 +488,7 @@ export function installEditorInspectorPropertySchema(
       },
       {
         prop: "justify-self",
-        label: "Justify self",
+        get label() { return uiMessage("inspector.propertySchema.justifySelf"); },
         editor: "flexSeg",
         section: "sizing",
         options: ["auto", "start", "center", "end", "stretch"],
@@ -501,7 +503,7 @@ export function installEditorInspectorPropertySchema(
       },
       {
         prop: "background",
-        label: "Fill",
+        get label() { return uiMessage("inspector.propertySchema.fill"); },
         editor: "fill",
         section: "appearance",
       },
@@ -519,7 +521,7 @@ export function installEditorInspectorPropertySchema(
       }),
       InspectorPropertySchemaHandler(
         "border-top-left-radius",
-        "Radius top left",
+        uiMessage("inspector.propertySchema.radiusTopLeft"),
         "radius",
         {
           min: 0,
@@ -528,7 +530,7 @@ export function installEditorInspectorPropertySchema(
       ),
       InspectorPropertySchemaHandler(
         "border-top-right-radius",
-        "Radius top right",
+        uiMessage("inspector.propertySchema.radiusTopRight"),
         "radius",
         {
           min: 0,
@@ -537,7 +539,7 @@ export function installEditorInspectorPropertySchema(
       ),
       InspectorPropertySchemaHandler(
         "border-bottom-right-radius",
-        "Radius bottom right",
+        uiMessage("inspector.propertySchema.radiusBottomRight"),
         "radius",
         {
           min: 0,
@@ -546,20 +548,20 @@ export function installEditorInspectorPropertySchema(
       ),
       InspectorPropertySchemaHandler(
         "border-bottom-left-radius",
-        "Radius bottom left",
+        uiMessage("inspector.propertySchema.radiusBottomLeft"),
         "radius",
         {
           min: 0,
           defaultValue: "0px",
         },
       ),
-      InspectorPropertySchemaHandler("border-width", "Border width", "border", {
+      InspectorPropertySchemaHandler("border-width", uiMessage("inspector.propertySchema.borderWidth"), "border", {
         min: 0,
         defaultValue: "0px",
       }),
       InspectorPropertySchemaHandler(
         "border-top-width",
-        "Border width top",
+        uiMessage("inspector.propertySchema.borderWidthTop"),
         "borderSides",
         {
           min: 0,
@@ -568,7 +570,7 @@ export function installEditorInspectorPropertySchema(
       ),
       InspectorPropertySchemaHandler(
         "border-right-width",
-        "Border width right",
+        uiMessage("inspector.propertySchema.borderWidthRight"),
         "borderSides",
         {
           min: 0,
@@ -577,7 +579,7 @@ export function installEditorInspectorPropertySchema(
       ),
       InspectorPropertySchemaHandler(
         "border-bottom-width",
-        "Border width bottom",
+        uiMessage("inspector.propertySchema.borderWidthBottom"),
         "borderSides",
         {
           min: 0,
@@ -586,7 +588,7 @@ export function installEditorInspectorPropertySchema(
       ),
       InspectorPropertySchemaHandler(
         "border-left-width",
-        "Border width left",
+        uiMessage("inspector.propertySchema.borderWidthLeft"),
         "borderSides",
         {
           min: 0,
@@ -595,7 +597,7 @@ export function installEditorInspectorPropertySchema(
       ),
       InspectorPropertySchemaHandler_2(
         "border-style",
-        "Border style",
+        uiMessage("inspector.propertySchema.borderStyle"),
         "border",
         ["none", "solid", "dashed", "dotted", "double"],
         {
@@ -604,7 +606,7 @@ export function installEditorInspectorPropertySchema(
       ),
       {
         prop: "border-color",
-        label: "Border color",
+        get label() { return uiMessage("inspector.propertySchema.borderColor"); },
         editor: "color",
         section: "border",
       },
@@ -619,7 +621,7 @@ export function installEditorInspectorPropertySchema(
       ),
       {
         prop: "box-shadow",
-        label: "Shadow",
+        get label() { return uiMessage("inspector.propertySchema.shadow"); },
         editor: "shadow",
         section: "effects",
         defaultValue: "none",
@@ -627,7 +629,7 @@ export function installEditorInspectorPropertySchema(
       },
       {
         prop: "text-shadow",
-        label: "Text shadow",
+        get label() { return uiMessage("inspector.propertySchema.textShadow"); },
         editor: "shadow",
         section: "effects",
         defaultValue: "none",
@@ -635,21 +637,21 @@ export function installEditorInspectorPropertySchema(
       },
       {
         prop: "filter",
-        label: "Filter",
+        get label() { return uiMessage("inspector.propertySchema.filter"); },
         editor: "string",
         section: "effects",
         longTail: true,
       },
       {
         prop: "backdrop-filter",
-        label: "Backdrop filter",
+        get label() { return uiMessage("inspector.propertySchema.backdropFilter"); },
         editor: "string",
         section: "effects",
         longTail: true,
       },
       {
         prop: "transform",
-        label: "Transform",
+        get label() { return uiMessage("inspector.propertySchema.transform"); },
         editor: "transform",
         section: "effects",
         longTail: true,

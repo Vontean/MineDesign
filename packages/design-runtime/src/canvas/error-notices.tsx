@@ -1,3 +1,5 @@
+import { useUiLocale } from '../ui-locale.ts';
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -26,6 +28,7 @@ export function installCanvasErrorNotices(
     open: open,
     onOpenChange: onOpenChange,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let value: Dynamic = canEdit && !hosted,
       value2: Dynamic = (0, runtime.react_sm.useId)(),
       value3: Dynamic = (0, runtime.react_sm.useRef)(null),
@@ -160,13 +163,10 @@ export function installCanvasErrorNotices(
                 })(),
             )}
           </ul>
-          {canEdit || hosted ? null : (
-            <p className={"mt-2 whitespace-normal text-body text-secondary"}>
+          {canEdit || hosted ? (null) : (<p className={"mt-2 whitespace-normal text-body text-secondary"}>
               {artboardErrorsUiLabels.viewOnly}
-            </p>
-          )}
-          {value11 !== null ? (
-            <div
+            </p>)}
+          {value11 !== null ? (<div
               className={"mt-2 flex flex-col gap-1"}
               data-testid={"design-problems-prompt"}
             >
@@ -180,11 +180,9 @@ export function installCanvasErrorNotices(
               >
                 {value11}
               </pre>
-            </div>
-          ) : null}
+            </div>) : (null)}
         </runtime.MenuMenuAssignValue.Header>
-        {value ? (
-          <jsx_sp.Fragment>
+        {value ? (<jsx_sp.Fragment>
             <runtime.MenuMenuAssignValue.Separator />
             <runtime.MenuMenuAssignValue.Item
               icon={"Chat"}
@@ -194,8 +192,7 @@ export function installCanvasErrorNotices(
             >
               {artboardErrorsUiLabels.ask}
             </runtime.MenuMenuAssignValue.Item>
-          </jsx_sp.Fragment>
-        ) : null}
+          </jsx_sp.Fragment>) : (null)}
       </runtime.SessionStripPopover>
     );
   }
@@ -406,9 +403,9 @@ export function installCanvasErrorNotices(
         input === 1 ? "1 error" : String(input) + " errors",
       pillTip: (input?: Dynamic): Dynamic =>
         input === 1
-          ? "Show errors on 1 artboard"
-          : "Show errors on " + String(input) + " artboards",
-      title: "Artboards with errors",
+          ? uiMessage("canvas.errorNotices.showErrorsOn1Artboard")
+          : uiMessage("canvas.errorNotices.showErrorsOn") + String(input) + " artboards",
+      get title() { return uiMessage("canvas.errorNotices.artboardsWithErrors"); },
       // MineDesign: user-facing copy calls the agent "the agent", not Claude.
       ask: "Ask the agent to fix",
       viewOnly: "Someone who can edit this canvas can ask the agent to fix them.",
@@ -423,12 +420,12 @@ export function installCanvasErrorNotices(
       1,
     );
     artboardErrorNoticeLabels = {
-      group: (input?: Dynamic): Dynamic => "Errors on artboard " + input,
+      group: (input?: Dynamic): Dynamic => uiMessage("canvas.errorNotices.errorsOnArtboard") + input,
       list: "Show all artboards with errors",
       dismiss: (input?: Dynamic): Dynamic =>
-        "Dismiss error notice on artboard " + input,
+        uiMessage("canvas.errorNotices.dismissErrorNoticeOnArtboard") + input,
       dismissTip: "Dismiss",
-      refused: `Couldn\u2019t copy the prompt. Select \u201C${artboardErrorsUiLabels.ask}\u201D in the \u201C${artboardErrorsUiLabels.title}\u201D menu to see the prompt and copy it yourself.`,
+      refused: uiMessage("canvas.errorNotices.couldnTCopyThePrompt", { value1: String(artboardErrorsUiLabels.ask), value2: String(artboardErrorsUiLabels.title) }),
     };
     stopErrorNoticePropagation = (input?: Dynamic): Dynamic =>
       input.stopPropagation();
@@ -533,8 +530,7 @@ export function installCanvasErrorNotices(
               >
                 {artboardErrorsUiLabels.pill(messages.length)}
               </span>
-              {canAsk && (
-                <runtime.Button
+              {canAsk && (<runtime.Button
                   variant={"secondary"}
                   size={"xs"}
                   data-testid={"mega-artboard-notice-ask-" + file}
@@ -549,8 +545,7 @@ export function installCanvasErrorNotices(
                   onClick={callback}
                 >
                   {artboardErrorsUiLabels.ask}
-                </runtime.Button>
-              )}
+                </runtime.Button>)}
               <runtime.Button
                 variant={"ghost"}
                 size={"xxs"}

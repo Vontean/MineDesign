@@ -1,3 +1,5 @@
+import { useUiLocale } from '../ui-locale.ts';
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 import type * as React from "react";
 import type * as Editor from "../contracts/editor-runtime";
 import type * as Model from "../contracts";
@@ -146,29 +148,29 @@ export function installEditorConflictBanners(
         flag.clash !== undefined ? " You both changed " + flag.clash + "." : "";
     if (flag.why === "undo") {
       if (value) {
-        return "Someone else deleted it since the step you undid. Your version shows here and is not saved.";
+        return uiMessage("design-system.conflictBanners.someoneElseDeletedItSince");
       } else {
-        return "Someone else saved a newer version since the step you undid. Your version shows here and is not saved over theirs.";
+        return uiMessage("design-system.conflictBanners.someoneElseSavedANewer");
       }
     }
     if (flag.why === "restored") {
       return (
-        "Your unsaved version came back after the page reloaded. It is still not saved over " +
-        (value ? "their delete." : "theirs.")
+        uiMessage("design-system.conflictBanners.yourUnsavedVersionCameBack") +
+        (value ? uiMessage("design-system.conflictBanners.theirDelete") : "theirs.")
       );
     }
     if (flag.why === "overwritten") {
       return (
-        "Someone else saved it at the same moment as you, and their version replaced yours." +
+        uiMessage("design-system.conflictBanners.someoneElseSavedItAt") +
         value2 +
         " Yours is back here and is not saved."
       );
     }
     if (value) {
-      return "Someone else deleted it while you were editing. Your version shows here and is not saved.";
+      return uiMessage("design-system.conflictBanners.someoneElseDeletedItWhile");
     } else {
       return (
-        "Someone else saved a newer version while you were editing." +
+        uiMessage("design-system.conflictBanners.someoneElseSavedANewer2") +
         value2 +
         " Your version shows here and is not saved over theirs."
       );
@@ -181,6 +183,7 @@ export function installEditorConflictBanners(
     doc: Editor.ConflictDocument;
     flag: Editor.ConflictFlag;
   }): React.ReactElement {
+    useUiLocale();
     let [value, value2] = reactConflictBanners.useState(false),
       [value3, value4] = reactConflictBanners.useState<
         Editor.ConflictSides | "loading" | null
@@ -210,18 +213,14 @@ export function installEditorConflictBanners(
       value6 = sectionForFilePath(flag.path),
       value7 =
         value3 === null || value3 === "loading" ? (
-          <span className={"text-muted"}>{"Reading both versions…"}</span>
+          <span className={"text-muted"}>{uiMessage("design-system.conflictBanners.readingBothVersions")}</span>
         ) : value5 === null ? (
           <span className={"text-muted"}>
-            {[
-              "Theirs: " + conflictFileSummary(flag.path, value3.theirs) + " ",
-              "Mine: " + conflictFileSummary(flag.path, value3.mine),
-              " Too large, or not text, to compare line by line here.",
-            ]}
+            {[uiMessage("design-system.conflictBanners.theirs", { value1: String(conflictFileSummary(flag.path, value3.theirs)) }), uiMessage("design-system.conflictBanners.mine", { value1: String(conflictFileSummary(flag.path, value3.mine)) }), uiMessage("design-system.conflictBanners.tooLargeOrNotText")]}
           </span>
         ) : value5.every((source): boolean => source.kind === "same") ? (
           <span className={"text-muted"}>
-            {"Both versions hold the same text."}
+            {uiMessage("design-system.conflictBanners.bothVersionsHoldTheSameText")}
           </span>
         ) : (
           <pre
@@ -243,9 +242,9 @@ export function installEditorConflictBanners(
                         : "text-muted",
                   children:
                     (source.kind === "mine"
-                      ? "mine   + "
+                      ? uiMessage("design-system.conflictBanners.mine2")
                       : source.kind === "theirs"
-                        ? "theirs - "
+                        ? uiMessage("design-system.conflictBanners.theirs2")
                         : "         ") + source.text,
                 };
                 const _elementKey = options;
@@ -259,58 +258,44 @@ export function installEditorConflictBanners(
         className={"ds-flagged-file flex flex-col gap-xs"}
         data-testid={"ds-flagged-" + flag.path}
       >
-        {[
-          <runtime.Callout
+        {[<runtime.Callout
             variant={"warning"}
             role={"status"}
             action={
               <span className={"flex flex-wrap items-center gap-xs"}>
-                {[
-                  <runtime.Button
+                {[<runtime.Button
                     variant={"ghost"}
                     onClick={() => value2((input): boolean => !input)}
                     aria-expanded={value}
                     data-testid={"ds-flagged-diff"}
                   >
-                    {value ? "Hide diff" : "Diff"}
-                  </runtime.Button>,
-                  <runtime.Button
+                    {value ? ("Hide diff") : ("Diff")}
+                  </runtime.Button>, <runtime.Button
                     variant={"secondary"}
                     onClick={() => doc.resolveFlagged(flag.path, "theirs")}
                     data-testid={"ds-flagged-theirs"}
                   >
-                    {flag.theirsSha === null
-                      ? "Use theirs (delete it)"
-                      : "Use theirs"}
-                  </runtime.Button>,
-                  <runtime.Button
+                    {flag.theirsSha === null ? ("Use theirs (delete it)") : ("Use theirs")}
+                  </runtime.Button>, <runtime.Button
                     variant={"secondary"}
                     onClick={() => doc.resolveFlagged(flag.path, "mine")}
                     data-testid={"ds-flagged-mine"}
                   >
-                    {"Keep mine"}
-                  </runtime.Button>,
-                  <runtime.Button
+                    {uiMessage("design-system.conflictBanners.keepMine")}
+                  </runtime.Button>, <runtime.Button
                     variant={"primary"}
                     onClick={() => doc.resolveFlagged(flag.path, "copy")}
                     data-testid={"ds-flagged-copy"}
                   >
-                    {"Keep mine as a copy"}
-                  </runtime.Button>,
-                ]}
+                    {uiMessage("design-system.conflictBanners.keepMineAsACopy")}
+                  </runtime.Button>]}
               </span>
             }
           >
             <span>
-              {[
-                <span className={"font-mono"}>{flag.path}</span>,
-                <span className={"text-muted"}>{[" (in ", value6, ")"]}</span>,
-                ": ",
-                conflictBannerDescription(flag),
-              ]}
+              {[<span className={"font-mono"}>{flag.path}</span>, <span className={"text-muted"}>{[uiMessage("design-system.conflictBanners.in"), value6, ")"]}</span>, ": ", conflictBannerDescription(flag)]}
             </span>
-          </runtime.Callout>,
-          value ? (
+          </runtime.Callout>, value ? (
             <div
               className={
                 "ds-flagged-diff-panel rounded-md border border-border-line bg-surface-1 p-sm"
@@ -319,8 +304,7 @@ export function installEditorConflictBanners(
             >
               {value7}
             </div>
-          ) : null,
-        ]}
+          ) : null]}
       </div>
     );
   }
@@ -331,6 +315,7 @@ export function installEditorConflictBanners(
     doc: Editor.ConflictDocument;
     stuck: Editor.StuckSave;
   }): React.ReactElement {
+    useUiLocale();
     return (
       <div className={"ds-stuck-save"} data-testid={"ds-stuck-save"}>
         <runtime.Callout
@@ -343,7 +328,7 @@ export function installEditorConflictBanners(
                 onClick={() => doc.retryStuck()}
                 data-testid={"ds-stuck-retry"}
               >
-                {"Retry now"}
+                {uiMessage("design-system.conflictBanners.retryNow")}
               </runtime.Button>
             ) : undefined
           }
@@ -396,6 +381,7 @@ export function installEditorConflictBanners(
   }: {
     doc: Partial<Editor.ConflictDocument>;
   }): React.ReactElement | null {
+    useUiLocale();
     let value = doc,
       value2 = useFileConflictFlags(value),
       value3 = useStuckSave(value);
@@ -411,11 +397,9 @@ export function installEditorConflictBanners(
         data-testid={"ds-flagged-files"}
         {...runtime.UNCOMMENTABLE_PROPS}
       >
-        {[
-          value3 !== undefined ? (
+        {[value3 !== undefined ? (
             <StuckSaveBanner doc={value as Editor.ConflictDocument} stuck={value3} />
-          ) : null,
-          value2.map((input) =>
+          ) : null, value2.map((input) =>
             (() => {
               const _Element2 = FileConflictBanner;
               const _elementProps2 = {
@@ -425,8 +409,7 @@ export function installEditorConflictBanners(
               const _elementKey2 = input.path;
               return <_Element2 key={_elementKey2} {..._elementProps2} />;
             })(),
-          ),
-        ]}
+          )]}
       </div>
     );
   }
@@ -519,9 +502,9 @@ export function installEditorConflictBanners(
       );
     conflictFileSummary = (path: string, value: string | null): string =>
       value === null
-        ? "the file is deleted."
+        ? uiMessage("design-system.conflictBanners.theFileIsDeleted")
         : (0, runtime.isHeldFilePointer)(path, value)
-          ? "the file is kept as published."
+          ? uiMessage("design-system.conflictBanners.theFileIsKeptAs")
           : String(value.length) + " characters.";
     EMPTY_CONFLICT_FLAGS = new Map();
   };

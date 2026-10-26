@@ -11,6 +11,9 @@ test('built plugin exposes both editors and design tools via real stdio MCP',asy
   const transport=new StdioClientTransport({command:process.execPath,args:[path.join(ROOT,'dist/cli.mjs'),'mcp','--workspace',ROOT]});
   try{
     await client.connect(transport);
+    const unknown=await client.callTool({name:'minedesign_annotations',arguments:{id:'missing-i18n-document'}});
+    assert.equal(unknown.isError,true);
+    assert.deepEqual(unknown.structuredContent.error,{code:'unknown_document',message:'未知作品'});
     const {tools}=await client.listTools();assert.ok(tools.some(t=>t.name==='design_check'));assert.ok(tools.some(t=>t.name==='design_system_check'));
     const result=await client.callTool({name:'minedesign_open',arguments:{}});assert.equal(result.structuredContent.documents.length,4);
     const entry=tools.find(t=>t.name==='minedesign_open');assert.deepEqual(entry.icons.map(i=>i.theme),[undefined,'light','dark']);

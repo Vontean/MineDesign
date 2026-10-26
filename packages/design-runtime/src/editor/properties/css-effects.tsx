@@ -1,3 +1,5 @@
+import { useUiLocale } from '../../ui-locale.ts';
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -240,6 +242,7 @@ export function installEditorPropertiesCssEffects(
     addItemsFor: addItemsFor,
     fallback: fallback,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let value: Dynamic = useEditorColorSwatches(),
       entries: Dynamic = new Map(
         rows.map((input?: Dynamic): Dynamic => [input.prop, input]),
@@ -404,7 +407,7 @@ export function installEditorPropertiesCssEffects(
         ...(entry2 && !value2 && !value3 && !value13 && !value15
           ? [
               {
-                label: "Text shadow",
+                get label() { return uiMessage("inspector.cssEffects.textShadow"); },
                 disabled: entry2.disabled,
                 disabledReason: entry2.disabled
                   ? entry2.whyDisabled
@@ -450,8 +453,7 @@ export function installEditorPropertiesCssEffects(
         }}
         addItems={items}
       >
-        {entry2 && value15 !== undefined && (
-          <runtime.DropShadowEditor
+        {entry2 && value15 !== undefined && (<runtime.DropShadowEditor
             value={value15}
             open={value12}
             onOpenChange={callback2}
@@ -479,8 +481,7 @@ export function installEditorPropertiesCssEffects(
               value9.current = {};
               value8.onScrubEnd();
             }}
-          />
-        )}
+          />)}
         {renderRows(value14)}
       </runtime.EffectsSection>
     );
@@ -606,8 +607,8 @@ export function installEditorPropertiesCssEffects(
       "backdropFilter",
     ];
     ThisTextAlreadyHasAShadowMessage =
-      "This text already has a shadow that can't be edited here";
-    NotOnShapesInsideAGraphicMessage = "Not on shapes inside a graphic";
+      uiMessage("inspector.cssEffects.thisTextAlreadyHasA");
+    NotOnShapesInsideAGraphicMessage = uiMessage("inspector.cssEffects.notOnShapesInsideA");
     WebkitBackdropFilterValue = "-webkit-backdrop-filter";
     PropertiesCssEffectsXYBlurConfig = {
       x: 0,

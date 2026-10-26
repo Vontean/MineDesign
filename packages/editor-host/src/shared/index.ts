@@ -1,3 +1,5 @@
+import { getUiLocale } from '@minedesign/contracts/ui-locale';
+import { installUiLocale } from './ui-locale.ts';
 /**
  * 编辑器页面的入口（`@minedesign/editor-host`）：apps/slides-editor 的 main.ts 先调 installEditorHost 装好 globalThis.slidesHost，
  * 再启动 Slides 运行时（运行时启动时就读宿主能力）。docs/design/slides §5。设计稿编辑器用 connectEditorHost 拿同一个宿主对象，
@@ -82,6 +84,8 @@ export function connectEditorHost(options: InstallEditorHostOptions = {}): Slide
   const backend = createHttpBackend(base, (...args) => win.fetch(...args));
   const canEdit = readSessionCanEdit(base, (...args) => win.fetch(...args));
   const link = windowParentLink(win);
+  const disposeLocale = installUiLocale(win, link);
+  win.addEventListener('pagehide', disposeLocale, { once: true });
   const bridge = link ? createCommentsBridge(link, domPinLayer(win.document)) : null;
   // 页面单独打开（不在 MineDesign 的 iframe 里）时没有会话可放提示，不提供 chat，运行时直接复制到剪贴板
   const chat = link ? createChatBridge(link) : null;
@@ -110,6 +114,6 @@ export function installEditorHost(options: InstallEditorHostOptions = {}): void 
     ...options,
     win,
     // 标注位置标签跟随 MineDesign 的界面语言（地址上的 ?lang=）；单独打开时没带，保持英文
-    commentLabels: options.commentLabels ?? createCommentLabels(localeFromSearch(win.location.search)),
+    commentLabels: options.commentLabels ?? createCommentLabels(getUiLocale()),
   });
 }

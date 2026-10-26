@@ -1,3 +1,5 @@
+import { useUiLocale } from '../../ui-locale.ts';
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -8,6 +10,7 @@ export function installEditorToolbarSaveStatus(
   runtime: RuntimeBindings,
 ): () => void {
   function ToolbarSaveStatus({ state: state }: Dynamic): Dynamic {
+    useUiLocale();
     if (state.status === "error" || state.status === "readonly")
       return <ToolbarSaveFailure state={state} />;
     let value: Dynamic = state.status === "saving",
@@ -16,11 +19,7 @@ export function installEditorToolbarSaveStatus(
       <span
         role={"status"}
         title={
-          value
-            ? "Saving\u2026"
-            : value2
-              ? "Edits are held in the editor \u2014 they save when applied"
-              : "Every change saves automatically"
+          value ? (uiMessage("inspector.saveStatus.saving")) : (value2 ? (uiMessage("inspector.saveStatus.editsAreHeldInThe")) : (uiMessage("inspector.saveStatus.everyChangeSavesAutomatically")))
         }
         className={
           "inline-flex shrink-0 items-center gap-1.5 text-xs whitespace-nowrap text-fg-muted"
@@ -33,11 +32,7 @@ export function installEditorToolbarSaveStatus(
           }
         />
         <span className={"tb-status-text truncate"}>
-          {value
-            ? "Saving\u2026"
-            : value2
-              ? "Unsaved edits"
-              : "Saved automatically"}
+          {value ? (uiMessage("inspector.saveStatus.saving")) : (value2 ? (uiMessage("inspector.saveStatus.unsavedEdits")) : (uiMessage("inspector.saveStatus.savedAutomatically")))}
         </span>
       </span>
     );
@@ -47,6 +42,7 @@ export function installEditorToolbarSaveStatus(
     onRetry: onRetry,
     tipSide = "bottom",
   }: Dynamic): Dynamic {
+    useUiLocale();
     let value: Dynamic = (0,
       runtime.reactCanvasMeasurements.useSyncExternalStore)(
         runtime.subscribeHostChrome,
@@ -88,8 +84,8 @@ export function installEditorToolbarSaveStatus(
         (value11 === "pending"
           ? "Syncing\u2026"
           : value11 === "error"
-            ? "Couldn\u2019t sync \u2014 click to retry"
-            : "All changes synced"),
+            ? uiMessage("inspector.saveStatus.couldnTSyncClickTo")
+            : uiMessage("inspector.saveStatus.allChangesSynced")),
       value14: Dynamic = status === "error" || status === "dirty";
     return (
       <runtime.Tooltip
@@ -122,6 +118,7 @@ export function installEditorToolbarSaveStatus(
     );
   }
   function ToolbarSaveFailure({ state: state }: Dynamic): Dynamic {
+    useUiLocale();
     let value: Dynamic = (0,
     runtime.reactCanvasMeasurements.useSyncExternalStore)(
       runtime.subscribeHostChrome,
@@ -129,7 +126,7 @@ export function installEditorToolbarSaveStatus(
       (): Dynamic => false,
     );
     if (state.status === "error") {
-      let value2: Dynamic = state.message ?? "Couldn\u2019t save";
+      let value2: Dynamic = state.message ?? uiMessage("inspector.saveStatus.couldnTSave");
       return (
         <span
           role={"status"}
@@ -149,13 +146,13 @@ export function installEditorToolbarSaveStatus(
       value ? null : (
         <span
           role={"status"}
-          title={state.message ?? "Read-only"}
+          title={state.message ?? (uiMessage("inspector.saveStatus.readOnly"))}
           className={
             "tb-lock inline-flex shrink-0 items-center gap-1.5 px-1 text-body whitespace-nowrap text-fg-muted"
           }
         >
           <runtime.Icon name={"Lock"} size={"auto"} className={"shrink-0"} />
-          <span className={"tb-lock-words truncate"}>{"Read-only"}</span>
+          <span className={"tb-lock-words truncate"}>{uiMessage("inspector.saveStatus.readOnly")}</span>
         </span>
       )
     ) : null;

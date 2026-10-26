@@ -1,3 +1,4 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -234,10 +235,7 @@ export function installPlatformFileContent(
             }
       : isTextFileContent(input, options)
         ? {
-            why:
-              "it holds a character that did not decode (it shows as " +
-              Value_2 +
-              "). Find it and type it again",
+            get why() { return (("it holds a character that did not decode (it shows as ") + (Value_2)) + ("). Find it and type it again"); },
             cause: "damaged_text",
           }
         : undefined;

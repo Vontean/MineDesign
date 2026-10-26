@@ -1,3 +1,5 @@
+import { useUiLocale } from '../ui-locale.ts';
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import type * as React from "react";
 import type * as JsxRuntime from "react/jsx-runtime";
@@ -25,13 +27,13 @@ export function installEditorAddTokenDialog(
   function addTokenDialogTitle(request: AddTokenRequest): string {
     switch (request.kind) {
       case "color":
-        return "New color";
+        return uiMessage("design-system.addTokenDialog.newColor");
       case "type":
-        return "New type style";
+        return uiMessage("design-system.addTokenDialog.newTypeStyle");
       case "shadow":
-        return "New shadow";
+        return uiMessage("design-system.addTokenDialog.newShadow");
       default:
-        return "New " + request.label;
+        return uiMessage("design-system.addTokenDialog.new2") + request.label;
     }
   }
   function normalizeNewTokenName(value: string): string {
@@ -48,21 +50,21 @@ export function installEditorAddTokenDialog(
       if (allowEmpty) {
         return null;
       } else {
-        return "A color is needed.";
+        return uiMessage("design-system.addTokenDialog.colorRequired");
       }
     }
     if (!(0, runtime.isColorOrAlias)(value2)) {
-      return "Not a color — try #rrggbb, rgb(), oklch() or {token}.";
+      return uiMessage("design-system.addTokenDialog.notAColorTryRrggbb", { token: "{token}" });
     }
     let value3 = (0, runtime.colorAliasTarget)(value2);
     if (value3 === undefined) {
       return null;
     }
     if (value3 === names) {
-      return "A token cannot alias itself.";
+      return uiMessage("design-system.addTokenDialog.selfAlias");
     }
     if (!tokenName.has(value3)) {
-      return "Names no color token.";
+      return uiMessage("design-system.addTokenDialog.namesNoColorToken");
     }
     return null;
   }
@@ -101,13 +103,13 @@ export function installEditorAddTokenDialog(
             false,
           ) === undefined
         ) {
-          return "Not a size — try 16 or 1rem.";
+          return uiMessage("design-system.addTokenDialog.notASizeTry16");
         } else {
           return null;
         }
       case "lineHeight":
         if ((0, runtime.normalizeLineHeight)(value2) === undefined) {
-          return "Not a line height — try 1.5 or 24px.";
+          return uiMessage("design-system.addTokenDialog.notALineHeightTry");
         } else {
           return null;
         }
@@ -121,7 +123,7 @@ export function installEditorAddTokenDialog(
         ) {
           return null;
         } else {
-          return "Not a length — try 0.2px or -0.01em.";
+          return uiMessage("design-system.addTokenDialog.notALengthTry0");
         }
     }
   }
@@ -146,6 +148,7 @@ export function installEditorAddTokenDialog(
     top = false,
     children: children,
   }: AddDialogFieldProps) {
+    useUiLocale();
     return (
       <runtime.FieldComponents.Root
         invalid={hint !== null || undefined}
@@ -160,23 +163,19 @@ export function installEditorAddTokenDialog(
         data-testid={testid}
         data-knob={knob}
       >
-        {[
-          <runtime.FieldComponents.Label
+        {[<runtime.FieldComponents.Label
             className={ADD_DIALOG_HELP_CLASS_NAME + (top ? " pt-[5px]" : "")}
             title={label}
           >
             {label}
-          </runtime.FieldComponents.Label>,
-          <div className={"flex min-w-0 items-center gap-1"}>{children}</div>,
-          hint !== null ? (
+          </runtime.FieldComponents.Label>, <div className={"flex min-w-0 items-center gap-1"}>{children}</div>, hint !== null ? (
             <runtime.FieldComponents.Error
               match={true}
               className={"col-start-2"}
             >
               {hint}
             </runtime.FieldComponents.Error>
-          ) : null,
-        ]}
+          ) : null]}
       </runtime.FieldComponents.Root>
     );
   }
@@ -185,14 +184,12 @@ export function installEditorAddTokenDialog(
     testid: testid,
     children: children,
   }: AddDialogFieldProps) {
+    useUiLocale();
     return (
       <div className={ADD_DIALOG_ROW_CLASS_NAME} data-testid={testid}>
-        {[
-          <span className={ADD_DIALOG_HELP_CLASS_NAME} title={label}>
+        {[<span className={ADD_DIALOG_HELP_CLASS_NAME} title={label}>
             {label}
-          </span>,
-          <div className={"flex min-w-0 items-center gap-1"}>{children}</div>,
-        ]}
+          </span>, <div className={"flex min-w-0 items-center gap-1"}>{children}</div>]}
       </div>
     );
   }
@@ -202,6 +199,7 @@ export function installEditorAddTokenDialog(
     onClose: onClose,
     "data-testid": dataTestid = "ds-add-dialog",
   }: AddTokenDialogProps) {
+    useUiLocale();
     let ref = runtime.reactDesignSystemEditors.useRef<HTMLFormElement | null>(
         null,
       ),
@@ -408,10 +406,10 @@ export function installEditorAddTokenDialog(
         ? null
         : value32
           ? value13
-            ? "A " + value31 + " needs a name."
+            ? uiMessage("design-system.addTokenDialog.a") + value31 + " needs a name."
             : null
           : value30
-            ? "There is already a " + value31 + " called " + value28 + "."
+            ? uiMessage("design-system.addTokenDialog.thereIsAlreadyA") + value31 + " called " + value28 + "."
             : null,
       value34 = normalizeNewTokenName(value15),
       value35 = value34 === "" || /[-.]$/.test(value34),
@@ -419,7 +417,7 @@ export function installEditorAddTokenDialog(
       value37: React.ReactNode = value36
         ? null
         : ((0, runtime.validateTokenRename)(value34, "", req.taken) ??
-          (value35 ? "Finish the name — e.g. " + value34 + "500." : null)),
+          (value35 ? uiMessage("design-system.addTokenDialog.finishTheNameEG") + value34 + "500." : null)),
       value38 = value36 || value37 !== null ? null : value39();
     if (value38 !== null) {
       let callback15 = () => {
@@ -431,16 +429,12 @@ export function installEditorAddTokenDialog(
           value38.say
         ) : (
           <jsxAddTokenDialog.Fragment>
-            {[
-              value38.say,
-              " ",
-              <runtime.TextLink
+            {[value38.say, " ", <runtime.TextLink
                 onClick={callback15}
                 data-testid={dataTestid + "-regroup"}
               >
                 {value38.verb}
-              </runtime.TextLink>,
-            ]}
+              </runtime.TextLink>]}
           </jsxAddTokenDialog.Fragment>
         );
     }
@@ -457,10 +451,10 @@ export function installEditorAddTokenDialog(
           : value34;
         return {
           say:
-            "Every name here starts with " +
+            uiMessage("design-system.addTokenDialog.everyNameHereStartsWith") +
             value49 +
             "; without it this one would regroup the card.",
-          verb: "Start it with " + value49,
+          verb: uiMessage("design-system.addTokenDialog.startItWith") + value49,
           run: () => value16(value49 + value56),
         };
       }
@@ -487,7 +481,7 @@ export function installEditorAddTokenDialog(
       ) {
         return {
           say: value50 + " has " + value49 + " twice.",
-          verb: "Use " + value49 + value34.slice(2 * value49.length),
+          verb: uiMessage("design-system.addTokenDialog.use") + value49 + value34.slice(2 * value49.length),
           run: () => value16(value49 + value34.slice(2 * value49.length)),
         };
       }
@@ -504,7 +498,7 @@ export function installEditorAddTokenDialog(
             ", not " +
             value53 +
             ".",
-          verb: "Put it in " + value54.label,
+          verb: uiMessage("design-system.addTokenDialog.putItIn") + value54.label,
           run: () => value7(value54.key),
         };
       }
@@ -519,7 +513,7 @@ export function installEditorAddTokenDialog(
       ) {
         return {
           say: value50 + " would start a new group, " + value52 + ".",
-          verb: "Make " + value52 + " a new group",
+          verb: uiMessage("design-system.addTokenDialog.make") + value52 + " a new group",
           run: () => {
             value9(value52);
             value7(NEW_TOKEN_GROUP_SENTINEL);
@@ -530,7 +524,7 @@ export function installEditorAddTokenDialog(
         value51 === ""
           ? value49 !== ""
             ? value49 + " and one plain word"
-            : "one plain word"
+            : uiMessage("design-system.addTokenDialog.onePlainWord")
           : value49 + value51 + "-";
       return {
         say:
@@ -567,10 +561,10 @@ export function installEditorAddTokenDialog(
         state[value49.id] =
           value50 === ""
             ? value49.id === value41
-              ? "A box-shadow is needed."
+              ? uiMessage("design-system.addTokenDialog.aBoxShadowIsNeeded")
               : null
             : (0, runtime.normalizeBoxShadow)(value50) === undefined
-              ? "Not a box-shadow — try 0 1px 2px rgba(0,0,0,.2)."
+              ? uiMessage("design-system.addTokenDialog.notABoxShadowTry")
               : null;
       }
     }
@@ -809,7 +803,7 @@ export function installEditorAddTokenDialog(
                 type: "Style name",
                 color: "Color name",
               } as Record<string, string>
-            )[req.kind] ?? "Name"
+            )[req.kind] ?? (uiMessage("design-system.addTokenDialog.name"))
           }
           hint={value37}
         >
@@ -820,7 +814,7 @@ export function installEditorAddTokenDialog(
             value={value15}
             placeholder={state2[req.kind]}
             spellCheck={false}
-            aria-label={"Name"}
+            aria-label={uiMessage("design-system.addTokenDialog.name")}
             data-testid={dataTestid + "-name"}
             onChange={(
               input: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
@@ -841,8 +835,7 @@ export function installEditorAddTokenDialog(
         value49 = true,
       ) => (
         <jsxAddTokenDialog.Fragment>
-          {[
-            <AddDialogFieldGroup
+          {[<AddDialogFieldGroup
               label={input}
               testid={dataTestid + "-" + input.toLowerCase() + "-row"}
             >
@@ -854,7 +847,7 @@ export function installEditorAddTokenDialog(
                         ...items,
                         {
                           value: NEW_TOKEN_GROUP_SENTINEL,
-                          label: "New " + input.toLowerCase() + "…",
+                          get label() { return uiMessage("design-system.addTokenDialog.new", { value1: String(input.toLowerCase()) }); },
                           separatorBefore: items.length > 0,
                         },
                       ]
@@ -865,9 +858,8 @@ export function installEditorAddTokenDialog(
                 data-testid={dataTestid + "-" + input.toLowerCase()}
                 onChange={callback4}
               />
-            </AddDialogFieldGroup>,
-            value27 ? (
-              <AddDialogField label={input + " name"} hint={value33}>
+            </AddDialogFieldGroup>, value27 ? (
+              <AddDialogField label={uiMessage("design-system.addTokenDialog.name2", { value1: String(input) })} hint={value33}>
                 <runtime.TextInput
                   {...PASSWORD_MANAGER_IGNORE_PROPS}
                   data-field={"fresh"}
@@ -875,7 +867,7 @@ export function installEditorAddTokenDialog(
                   placeholder={context}
                   maxLength={runtime.MAX_TOKEN_LABEL_LENGTH}
                   spellCheck={false}
-                  aria-label={input + " name"}
+                  aria-label={uiMessage("design-system.addTokenDialog.name2", { value1: String(input) })}
                   data-testid={
                     dataTestid +
                     "-" +
@@ -890,12 +882,11 @@ export function installEditorAddTokenDialog(
                   }}
                 />
               </AddDialogField>
-            ) : null,
-          ]}
+            ) : null]}
         </jsxAddTokenDialog.Fragment>
       ),
       value46 = (
-        <AddDialogField label={"Usage note"} top={true}>
+        <AddDialogField label={uiMessage("design-system.addTokenDialog.usageNote")} top={true}>
           <runtime.TextArea
             {...PASSWORD_MANAGER_IGNORE_PROPS}
             rows={2}
@@ -904,11 +895,9 @@ export function installEditorAddTokenDialog(
             value={value19}
             placeholder={
               // MineDesign: user-facing copy calls the agent "the agent", not Claude.
-              "Optional — when should the agent use " +
-              (value35 ? "it" : value34) +
-              "?"
+              uiMessage("design-system.addTokenDialog.optionalWhenShouldTheAgent", { value1: String(value35 ? (uiMessage("design-system.addTokenDialog.it")) : (value34)) })
             }
-            aria-label={"Usage note"}
+            aria-label={uiMessage("design-system.addTokenDialog.usageNote")}
             data-testid={dataTestid + "-usage"}
             onChange={(
               input: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
@@ -959,17 +948,14 @@ export function installEditorAddTokenDialog(
         );
         value47 = (
           <jsxAddTokenDialog.Fragment>
-            {[
-              callback14(
+            {[callback14(
                 "Group",
                 req.groups.map((input) => ({
                   value: input.key,
                   label: input.label,
                 })),
                 "e.g. brand",
-              ),
-              value45,
-              value40.map((input, options) => {
+              ), value45, value40.map((input, options) => {
                 let value49 = (0, runtime.normalizeColorEditorInput)(
                     value21[input.id] ?? "",
                   ),
@@ -984,7 +970,7 @@ export function installEditorAddTokenDialog(
                     "data-testid": dataTestid + "-value-" + input.id,
                     children: (
                       <runtime.ColorTextPropertyRow
-                        label={value40.length > 1 ? input.name : "Value"}
+                        label={value40.length > 1 ? (input.name) : (uiMessage("design-system.addTokenDialog.value"))}
                         popupAttrs={(0, runtime.commentTargetProps)(
                           "picker",
                           "add-dialog:" + input.id,
@@ -997,7 +983,7 @@ export function installEditorAddTokenDialog(
                         {...(options > 0
                           ? {
                               clearLabel:
-                                "Inherits " + (value40[0]?.name ?? ""),
+                                uiMessage("design-system.addTokenDialog.inherits") + (value40[0]?.name ?? ""),
                               ...((0, runtime.isColorLiteral)(value50)
                                 ? {
                                     placeholder: value50,
@@ -1014,9 +1000,7 @@ export function installEditorAddTokenDialog(
                   const _elementKey2 = input.id;
                   return <_Element2 key={_elementKey2} {..._elementProps2} />;
                 })();
-              }),
-              value46,
-            ]}
+              }), value46]}
           </jsxAddTokenDialog.Fragment>
         );
         break;
@@ -1024,18 +1008,16 @@ export function installEditorAddTokenDialog(
       case "shadow": {
         value47 = (
           <jsxAddTokenDialog.Fragment>
-            {[
-              value45,
-              value40.map((input, options) =>
+            {[value45, value40.map((input, options) =>
                 (() => {
                   const _Element3 = AddDialogField;
                   const _elementProps3 = {
-                    label: value40.length > 1 ? input.name : "Value",
+                    label: value40.length > 1 ? input.name : uiMessage("design-system.addTokenDialog.value"),
                     hint: state[input.id] ?? null,
                     testid: dataTestid + "-value-" + input.id,
                     children: (
                       <runtime.ShadowValueEditor
-                        label={input.name + " value"}
+                        label={uiMessage("design-system.addTokenDialog.value2", { value1: String(input.name) })}
                         anchorKey={"add-dialog:" + input.id}
                         value={value21[input.id] ?? ""}
                         onChange={(input2: string | undefined) =>
@@ -1045,7 +1027,7 @@ export function installEditorAddTokenDialog(
                         {...(options > 0
                           ? {
                               clear: {
-                                label: "Inherit " + (value40[0]?.name ?? ""),
+                                label: uiMessage("design-system.addTokenDialog.inherit") + (value40[0]?.name ?? ""),
                                 run: () => callback12(input.id, ""),
                               },
                             }
@@ -1056,9 +1038,7 @@ export function installEditorAddTokenDialog(
                   const _elementKey3 = input.id;
                   return <_Element3 key={_elementKey3} {..._elementProps3} />;
                 })(),
-              ),
-              value46,
-            ]}
+              ), value46]}
           </jsxAddTokenDialog.Fragment>
         );
         let value49 = (value21[value41 ?? ""] ?? "").trim();
@@ -1171,17 +1151,14 @@ export function installEditorAddTokenDialog(
         };
         value47 = (
           <jsxAddTokenDialog.Fragment>
-            {[
-              callback14(
+            {[callback14(
                 "Set",
                 req.sets.map((input) => ({
                   value: input,
                   label: input,
                 })),
                 "e.g. Display",
-              ),
-              value45,
-              <runtime.TypeStyleFields
+              ), value45, <runtime.TypeStyleFields
                 v={{
                   family: value10 !== null ? "" : value25.family,
                   fontSize: appendDefaultLengthUnit(value25.fontSize),
@@ -1214,9 +1191,7 @@ export function installEditorAddTokenDialog(
                     </AddDialogFieldGroup>
                   )
                 }
-              />,
-              value46,
-            ]}
+              />, value46]}
           </jsxAddTokenDialog.Fragment>
         );
         break;
@@ -1242,10 +1217,7 @@ export function installEditorAddTokenDialog(
                     "px",
                 }}
               >
-                {[
-                  <span className={"ds-addd-card"} />,
-                  <span className={"ds-addd-card"} />,
-                ]}
+                {[<span className={"ds-addd-card"} />, <span className={"ds-addd-card"} />]}
               </span>
             </div>
           );
@@ -1276,13 +1248,13 @@ export function installEditorAddTokenDialog(
           };
           value51 = (
             <AddDialogField
-              label={"Value"}
+              label={uiMessage("design-system.addTokenDialog.value")}
               hint={value42}
               testid={dataTestid + "-value"}
               knob={"value"}
             >
               <runtime.PropertyNumberInput
-                aria-label={"Value"}
+                aria-label={uiMessage("design-system.addTokenDialog.value")}
                 inputRef={ignorePasswordManagerForInput}
                 refuseLetters={true}
                 unit={value52.unit}
@@ -1300,13 +1272,13 @@ export function installEditorAddTokenDialog(
           );
         } else {
           value51 = (
-            <AddDialogField label={"Value"} hint={value42}>
+            <AddDialogField label={uiMessage("design-system.addTokenDialog.value")} hint={value42}>
               <runtime.TextInput
                 {...PASSWORD_MANAGER_IGNORE_PROPS}
                 className={"font-mono"}
                 value={value23}
                 spellCheck={false}
-                aria-label={"Value"}
+                aria-label={uiMessage("design-system.addTokenDialog.value")}
                 data-testid={dataTestid + "-value"}
                 onChange={(
                   input: React.ChangeEvent<
@@ -1319,8 +1291,7 @@ export function installEditorAddTokenDialog(
         }
         value47 = (
           <jsxAddTokenDialog.Fragment>
-            {[
-              value3.length > 1
+            {[value3.length > 1
                 ? callback14(
                     "Group",
                     value3.map((input) => ({
@@ -1330,11 +1301,7 @@ export function installEditorAddTokenDialog(
                     "",
                     false,
                   )
-                : null,
-              value45,
-              value51,
-              value46,
-            ]}
+                : null, value45, value51, value46]}
           </jsxAddTokenDialog.Fragment>
         );
       }
@@ -1357,11 +1324,9 @@ export function installEditorAddTokenDialog(
               data-testid={dataTestid}
               {...(0, runtime.commentTargetProps)("dialog", "add")}
             >
-              {[
-                <runtime.Dialog.Header showClose={true}>
+              {[<runtime.Dialog.Header showClose={true}>
                   {addTokenDialogTitle(req)}
-                </runtime.Dialog.Header>,
-                <form
+                </runtime.Dialog.Header>, <form
                   ref={ref}
                   className={
                     "ds-addd-form flex flex-col gap-2 [--pp-label-w:6rem]"
@@ -1371,31 +1336,23 @@ export function installEditorAddTokenDialog(
                   onSubmit={callback10}
                   onKeyDown={callback13}
                 >
-                  {[
-                    value48,
-                    value47,
-                    <runtime.Dialog.Footer align={"end"}>
-                      {[
-                        <runtime.Button
+                  {[value48, value47, <runtime.Dialog.Footer align={"end"}>
+                      {[<runtime.Button
                           variant={"ghost"}
                           onClick={onClose}
                           data-testid={dataTestid + "-cancel"}
                         >
-                          {"Cancel"}
-                        </runtime.Button>,
-                        <runtime.Button
+                          {uiMessage("design-system.addTokenDialog.cancel")}
+                        </runtime.Button>, <runtime.Button
                           variant={"primary"}
                           type={"submit"}
                           disabled={!value44}
                           data-testid={dataTestid + "-submit"}
                         >
-                          {"Add"}
-                        </runtime.Button>,
-                      ]}
-                    </runtime.Dialog.Footer>,
-                  ]}
-                </form>,
-              ]}
+                          {uiMessage("design-system.addTokenDialog.add")}
+                        </runtime.Button>]}
+                    </runtime.Dialog.Footer>]}
+                </form>]}
             </runtime.Dialog.Popup>
           </runtime.Dialog.Root>
         </runtime.CdsRoot>

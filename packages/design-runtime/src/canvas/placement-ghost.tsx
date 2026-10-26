@@ -1,3 +1,5 @@
+import { useUiLocale } from '../ui-locale.ts';
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -11,6 +13,7 @@ export function installCanvasPlacementGhost(
     ghost: ghost,
     style: style,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let value: Dynamic = (0, runtime.reactVectorToolState_2.useRef)(null),
       value2: Dynamic = (0, runtime.reactVectorToolState_2.useRef)(false),
       [value3, value4]: Dynamic = (0, runtime.reactVectorToolState_2.useState)(
@@ -37,7 +40,7 @@ export function installCanvasPlacementGhost(
     return (
       <iframe
         ref={value}
-        title={"Drag preview"}
+        title={uiMessage("canvas.placementGhost.dragPreview")}
         aria-hidden={true}
         tabIndex={-1}
         sandbox={"allow-scripts allow-same-origin"}

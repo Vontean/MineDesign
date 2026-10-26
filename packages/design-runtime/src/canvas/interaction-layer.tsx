@@ -1,3 +1,5 @@
+import { useUiLocale } from '../ui-locale.ts';
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -27,6 +29,7 @@ export function installCanvasInteractionLayer(
       );
   }
   function CanvasInteractionLayer(options?: Dynamic): Dynamic {
+    useUiLocale();
     let {
         manifest: manifest,
         onManifestChange: onManifestChange,
@@ -2105,7 +2108,7 @@ export function installCanvasInteractionLayer(
             true,
           );
           (0, runtime.announce)(
-            value251 || value252 ? "Cropped." : "Crop removed.",
+            value251 || value252 ? "Cropped." : uiMessage("canvas.interactionLayer.cropRemoved"),
           );
         },
       ),
@@ -4395,7 +4398,7 @@ export function installCanvasInteractionLayer(
       value244: Dynamic = value232 && value230.length === 0,
       value245: Dynamic =
         value232 && value231.length > 0 && value230.length > 0
-          ? "This selection can't be rotated because it includes an artboard."
+          ? uiMessage("canvas.interactionLayer.thisSelectionCanTBe")
           : undefined,
       value246: Dynamic =
         !value18 ||
@@ -5483,8 +5486,7 @@ export function installCanvasInteractionLayer(
             {value240 &&
               value18 &&
               fullscreenFile == null &&
-              (armedTool == null || armedTool === "select") && (
-                <div
+              (armedTool == null || armedTool === "select") && (<div
                   data-mega-chrome={"set-box-pad"}
                   data-testid={"mega-set-box-pad"}
                   className={"absolute cursor-grab"}
@@ -5519,11 +5521,9 @@ export function installCanvasInteractionLayer(
                         heldCover: null,
                       }));
                   }}
-                />
-              )}
+                />)}
             {value224 &&
-              fullscreenFile == null &&
-              callback7(
+              fullscreenFile == null && (callback7(
                 "set-ghost",
                 <div
                   data-testid={"mega-set-ghost"}
@@ -5552,11 +5552,10 @@ export function installCanvasInteractionLayer(
                     ),
                   )}
                 </div>,
-              )}
+              ))}
             {options.pendingBoards != null &&
               options.pendingBoards.length > 0 &&
-              fullscreenFile == null && (
-                <runtime.ConditionalPortal on={value35} to={value50}>
+              fullscreenFile == null && (<runtime.ConditionalPortal on={value35} to={value50}>
                   <div
                     ref={value35 ? callback5 : undefined}
                     className={
@@ -5572,8 +5571,7 @@ export function installCanvasInteractionLayer(
                       sheen={!value35}
                     />
                   </div>
-                </runtime.ConditionalPortal>
-              )}
+                </runtime.ConditionalPortal>)}
             <runtime.ConditionalPortal on={value35} to={value36}>
               <div
                 style={{
@@ -5904,13 +5902,12 @@ export function installCanvasInteractionLayer(
                                 value105(spec.file));
                             }}
                           >
-                            {value104 === spec.file ? (
-                              <input
+                            {value104 === spec.file ? (<input
                                 data-mega-chrome={"rename"}
                                 data-testid={
                                   "mega-artboard-rename-" + spec.file
                                 }
-                                aria-label={"Artboard name"}
+                                aria-label={uiMessage("canvas.interactionLayer.artboardName")}
                                 defaultValue={value257}
                                 autoFocus={true}
                                 onFocus={(input?: Dynamic): Dynamic =>
@@ -5944,9 +5941,7 @@ export function installCanvasInteractionLayer(
                                     input.currentTarget.value,
                                   );
                                 }}
-                              />
-                            ) : (
-                              <runtime.ArtboardFocusOverlay
+                              />) : (<runtime.ArtboardFocusOverlay
                                 file={spec.file}
                                 title={value257}
                                 name={(0, runtime.artboardPositionAnnouncement)(
@@ -5970,10 +5965,8 @@ export function installCanvasInteractionLayer(
                                     : undefined
                                 }
                                 yieldsEscape={value145}
-                              />
-                            )}
-                            {value255 && value104 !== spec.file && (
-                              <span
+                              />)}
+                            {value255 && value104 !== spec.file && (<span
                                 aria-hidden={"true"}
                                 data-mega-chrome={"inside-caption"}
                                 data-testid={
@@ -5986,10 +5979,8 @@ export function installCanvasInteractionLayer(
                                 {
                                   runtime.AccessibilityAnnouncementsResolvedValue
                                 }
-                              </span>
-                            )}
-                            {!value271 && (
-                              <runtime.ArtboardHeaderActions
+                              </span>)}
+                            {!value271 && (<runtime.ArtboardHeaderActions
                                 file={spec.file}
                                 title={value257}
                                 inert={value126}
@@ -6065,8 +6056,7 @@ export function installCanvasInteractionLayer(
                                 onPlay={value157}
                                 onExpand={value156}
                                 onExportOpenChange={value173}
-                              />
-                            )}
+                              />)}
                           </div>
                         ),
                         value272 != null && (
@@ -6483,15 +6473,11 @@ export function installCanvasInteractionLayer(
                           {options.guidesVisible &&
                             spec.guides !== undefined &&
                             fullscreenFile == null &&
-                            !value259 &&
-                            (value269 ? (
-                              <runtime.ArtboardLayoutGuides
+                            !value259 && (value269 ? (<runtime.ArtboardLayoutGuides
                                 guides={spec.guides}
                                 w={spec.w}
                                 h={spec.h}
-                              />
-                            ) : (
-                              <runtime.CanvasRectVisibility
+                              />) : (<runtime.CanvasRectVisibility
                                 rect={spec}
                                 surfaceRef={value9}
                               >
@@ -6504,11 +6490,9 @@ export function installCanvasInteractionLayer(
                                     />
                                   ) : null
                                 }
-                              </runtime.CanvasRectVisibility>
-                            ))}
+                              </runtime.CanvasRectVisibility>))}
                           {(!value269 || value264) &&
-                            !value213.has(spec.file) && (
-                              <runtime.CanvasRectVisibility
+                            !value213.has(spec.file) && (<runtime.CanvasRectVisibility
                                 rect={spec}
                                 surfaceRef={value9}
                               >
@@ -6533,9 +6517,7 @@ export function installCanvasInteractionLayer(
                                         : undefined
                                     }
                                     aria-label={
-                                      (value264
-                                        ? "Open artboard "
-                                        : "Load artboard ") + value257
+                                      (value264 ? uiMessage("canvas.interactionLayer.openArtboard") : uiMessage("canvas.interactionLayer.loadArtboard2")) + value257
                                     }
                                     className={
                                       "absolute inset-0 z-10 flex cursor-pointer items-center justify-center overflow-hidden select-none"
@@ -6588,14 +6570,11 @@ export function installCanvasInteractionLayer(
                                         );
                                     }}
                                   >
-                                    {value21 && !value269 && !value252 && (
-                                      <runtime.RunWhenSeen
+                                    {value21 && !value269 && !value252 && (<runtime.RunWhenSeen
                                         seen={input}
                                         then={(): Dynamic => value42(spec.file)}
-                                      />
-                                    )}
-                                    {!value269 && (
-                                      <runtime.ViewportScaleThreshold
+                                      />)}
+                                    {!value269 && (<runtime.ViewportScaleThreshold
                                         min={
                                           value21
                                             ? Math.max(
@@ -6636,28 +6615,23 @@ export function installCanvasInteractionLayer(
                                                   "pointer-coarse:hidden"
                                                 }
                                               >
-                                                {"Click to load"}
+                                                {uiMessage("canvas.interactionLayer.clickToLoad")}
                                               </span>
                                               <span
                                                 className={
                                                   "hidden pointer-coarse:inline"
                                                 }
                                               >
-                                                {value264
-                                                  ? "Tap to open"
-                                                  : "Tap to load"}
+                                                {value264 ? (uiMessage("canvas.interactionLayer.tapToOpen")) : (uiMessage("canvas.interactionLayer.tapToLoad"))}
                                               </span>
                                             </span>
                                           )
                                         }
-                                      </runtime.ViewportScaleThreshold>
-                                    )}
+                                      </runtime.ViewportScaleThreshold>)}
                                   </div>
                                 )}
-                              </runtime.CanvasRectVisibility>
-                            )}
-                          {value266 && (
-                            <div
+                              </runtime.CanvasRectVisibility>)}
+                          {value266 && (<div
                               data-mega-chrome={value262}
                               data-testid={
                                 runtime.artboardOverlayIdPrefixes[value262] +
@@ -6964,15 +6938,12 @@ export function installCanvasInteractionLayer(
                                 callback49(input);
                               }}
                               onPointerLeave={value32}
-                            />
-                          )}
-                          {value271 && (
-                            <runtime.PendingArtboardFace
+                            />)}
+                          {value271 && (<runtime.PendingArtboardFace
                               spec={spec}
                               sheen={false}
                               className={"z-[16]"}
-                            />
-                          )}
+                            />)}
                         </div>,
                       ],
                     } as const;
@@ -6982,8 +6953,7 @@ export function installCanvasInteractionLayer(
                 })}
               </div>
             </runtime.ConditionalPortal>
-            {fullscreenFile == null &&
-              ((): Dynamic => {
+            {fullscreenFile == null && (((): Dynamic => {
                 let value250: Dynamic = (manifest.annotations ?? []).map(
                   (source?: Dynamic): Dynamic => {
                     let value251: Dynamic = (0, runtime.isShapeAnnotation)(
@@ -7148,15 +7118,14 @@ export function installCanvasInteractionLayer(
                 ) : (
                   value250.map((input?: Dynamic): Dynamic => input.node)
                 );
-              })()}
+              })())}
             {artboardNotice &&
-              fullscreenFile == null &&
-              manifest.artboards.map((input?: Dynamic): Dynamic => {
+              fullscreenFile == null && (manifest.artboards.map((input?: Dynamic): Dynamic => {
                 let value250: Dynamic = artboardNotice(input.file);
                 return (
                   value250 != null &&
                   callback7(
-                    "notice " + input.file,
+                    uiMessage("canvas.interactionLayer.notice") + input.file,
                     (() => {
                       const _Component5 = runtime.ArtboardNoticeAnchor;
                       const _props5 = {
@@ -7172,10 +7141,9 @@ export function installCanvasInteractionLayer(
                     })(),
                   )
                 );
-              })}
+              }))}
             {value241 &&
-              fullscreenFile == null &&
-              callback7(
+              fullscreenFile == null && (callback7(
                 "group-box",
                 <div
                   data-mega-chrome={"group-resize"}
@@ -7217,10 +7185,9 @@ export function installCanvasInteractionLayer(
                     )}
                   </runtime.ViewportScale>
                 </div>,
-              )}
+              ))}
             {value114 &&
-              value121?.kind === "image" &&
-              ((): Dynamic => {
+              value121?.kind === "image" && (((): Dynamic => {
                 let value250: Dynamic = callback27(value114) ?? value121;
                 return callback7(
                   "crop",
@@ -7311,9 +7278,8 @@ export function installCanvasInteractionLayer(
                     </div>
                   </div>,
                 );
-              })()}
-            {value75 && armedTool === "note" && (
-              <div
+              })())}
+            {value75 && armedTool === "note" && (<div
                 data-testid={"mega-note-ghost"}
                 aria-hidden={"true"}
                 className={
@@ -7332,10 +7298,8 @@ export function installCanvasInteractionLayer(
                   }),
                   background: runtime.Fef3a2Value,
                 }}
-              />
-            )}
-            {value82 && (
-              <div
+              />)}
+            {value82 && (<div
                 data-testid={"mega-pen-ghost"}
                 className={"pointer-events-none contents"}
               >
@@ -7353,10 +7317,8 @@ export function installCanvasInteractionLayer(
                   onGesture={(): Dynamic => {}}
                   armWindowGestureEnd={(): Dynamic => {}}
                 />
-              </div>
-            )}
-            {value80 && value80.onCanvas && value80.tool !== "text" && (
-              <div
+              </div>)}
+            {value80 && value80.onCanvas && value80.tool !== "text" && (<div
                 data-testid={"mega-place-ghost"}
                 className={"pointer-events-none contents"}
               >
@@ -7370,10 +7332,8 @@ export function installCanvasInteractionLayer(
                   onGesture={(): Dynamic => {}}
                   armWindowGestureEnd={(): Dynamic => {}}
                 />
-              </div>
-            )}
-            {value80 && !(value80.onCanvas && value80.tool !== "text") && (
-              <div
+              </div>)}
+            {value80 && !(value80.onCanvas && value80.tool !== "text") && (<div
                 data-testid={"mega-place-ghost"}
                 className={(0, runtime.joinClassNames)(
                   "pointer-events-none absolute z-30",
@@ -7390,8 +7350,7 @@ export function installCanvasInteractionLayer(
                   height: Math.max(value80.h, value247 ? 8 : 0),
                 }}
               >
-                {value247 && (
-                  <svg
+                {value247 && (<svg
                     width={"100%"}
                     height={"100%"}
                     viewBox={
@@ -7441,12 +7400,9 @@ export function installCanvasInteractionLayer(
                           : undefined
                       }
                     />
-                  </svg>
-                )}
-              </div>
-            )}
-            {value77 && (
-              <div
+                  </svg>)}
+              </div>)}
+            {value77 && (<div
                 data-testid={"mega-draw-ghost"}
                 className={
                   "pointer-events-none absolute z-30 rounded-sm border-2 border-dashed border-app-accent/70 bg-app-accent/5"
@@ -7458,8 +7414,7 @@ export function installCanvasInteractionLayer(
                   width: value77.w,
                   height: value77.h,
                 }}
-              />
-            )}
+              />)}
             <runtime.PictureDropGhosts
               page={options.ghostPage ?? ""}
               artboards={
@@ -7472,8 +7427,7 @@ export function installCanvasInteractionLayer(
               }
             />
             {options.pendingPictures != null &&
-              options.pendingPictures.length > 0 &&
-              callback7(
+              options.pendingPictures.length > 0 && (callback7(
                 "pending",
                 options.pendingPictures.map(
                   (input?: Dynamic): Dynamic =>
@@ -7507,10 +7461,9 @@ export function installCanvasInteractionLayer(
                       return <_Component6 key={_key6} {..._props6} />;
                     })(),
                 ),
-              )}
+              ))}
             {value73 != null &&
-              value73.length > 0 &&
-              callback7(
+              value73.length > 0 && (callback7(
                 "dup-ghosts",
                 value73.map(
                   (input?: Dynamic, options2?: Dynamic): Dynamic => (
@@ -7530,58 +7483,43 @@ export function installCanvasInteractionLayer(
                     />
                   ),
                 ),
-              )}
+              ))}
             {options.worldOverlay}
           </div>
-          {value35 && (
-            <div
+          {value35 && (<div
               ref={value51}
               data-mega-lifted={"under"}
               aria-busy={options.turnBusy ? true : undefined}
               className={"absolute left-0 top-0 h-0 w-0"}
-            />
-          )}
-          {value35 && (
-            <div
+            />)}
+          {value35 && (<div
               ref={value37}
               data-mega-lifted={"tiles"}
               aria-busy={options.turnBusy ? true : undefined}
               className={"absolute left-0 top-0 h-0 w-0"}
-            />
-          )}
-          {value35 && (
-            <div
+            />)}
+          {value35 && (<div
               ref={value47}
               data-mega-lifted={"notes"}
               aria-busy={options.turnBusy ? true : undefined}
               className={"absolute left-0 top-0 h-0 w-0"}
-            />
-          )}
-          {value35 && (
-            <div
+            />)}
+          {value35 && (<div
               ref={value54}
               data-mega-lifted={"chrome"}
               className={"absolute left-0 top-0 h-0 w-0"}
-            />
-          )}
-          {value86 && (
-            <div
+            />)}
+          {value86 && (<div
               ref={value90}
               data-testid={"mega-marquee"}
               aria-hidden={"true"}
               className={
                 "pointer-events-none absolute z-30 bg-accent-muted outline-1 -outline-offset-1 outline-fill-accent"
               }
-            />
-          )}
-          {value69 && fullscreenFile == null && (
-            <runtime.CanvasSnapGuides guides={value69} />
-          )}
-          {value71 && fullscreenFile == null && (
-            <runtime.CanvasGapGuides gaps={value71} />
-          )}
-          {dragToast && (
-            <div
+            />)}
+          {value69 && fullscreenFile == null && (<runtime.CanvasSnapGuides guides={value69} />)}
+          {value71 && fullscreenFile == null && (<runtime.CanvasGapGuides gaps={value71} />)}
+          {dragToast && (<div
               data-mega-chrome={"drag-toast"}
               data-testid={"mega-drag-toast"}
               className={
@@ -7589,14 +7527,12 @@ export function installCanvasInteractionLayer(
               }
             >
               {dragToast}
-            </div>
-          )}
-          {dragGhost && value249 && (
-            <div
+            </div>)}
+          {dragGhost && value249 && (<div
               data-mega-chrome={"drag-ghost"}
               data-testid={"mega-drag-ghost"}
               data-ghost={dragGhost.alt ? "copy" : "move"}
-              aria-label={(dragGhost.alt ? "Copy " : "Move ") + dragGhost.label}
+              aria-label={(dragGhost.alt ? uiMessage("canvas.interactionLayer.copy") : uiMessage("canvas.interactionLayer.move")) + dragGhost.label}
               className={"pointer-events-none absolute z-40"}
               style={{
                 ...runtime.PickerRuntimeScriptTAppAccentConfig,
@@ -7611,8 +7547,7 @@ export function installCanvasInteractionLayer(
                   "absolute inset-0 overflow-hidden rounded-sm border border-dashed border-app-accent/70"
                 }
               >
-                {dragGhost.ghost != null &&
-                  (() => {
+                {dragGhost.ghost != null && ((() => {
                     const _Component7 = runtime.PlacementGhostFrame;
                     const _props7 = {
                       ghost: dragGhost.ghost,
@@ -7625,22 +7560,18 @@ export function installCanvasInteractionLayer(
                     } as const;
                     const _key7 = dragGhost.key;
                     return <_Component7 key={_key7} {..._props7} />;
-                  })()}
+                  })())}
               </div>
-              {dragGhost.alt && (
-                <span
+              {dragGhost.alt && (<span
                   data-testid={"mega-drag-ghost-copy"}
                   className={
                     "absolute -right-2 -top-2 flex h-4 w-4 items-center justify-center rounded-full bg-app-accent text-[11px] font-semibold leading-none text-white shadow-md"
                   }
                 >
                   {"+"}
-                </span>
-              )}
-            </div>
-          )}
-          {dragGhost && !value249 && (
-            <div
+                </span>)}
+            </div>)}
+          {dragGhost && !value249 && (<div
               data-mega-chrome={"drag-ghost"}
               data-testid={"mega-drag-ghost"}
               className={
@@ -7652,26 +7583,22 @@ export function installCanvasInteractionLayer(
                 top: (dragGhost.y - entry.y) * entry.scale + 8,
               }}
             >
-              {dragGhost.alt ? "Copy " : "Move "}
+              {dragGhost.alt ? (uiMessage("canvas.interactionLayer.copy")) : (uiMessage("canvas.interactionLayer.move"))}
               {dragGhost.label}
-            </div>
-          )}
-          {value129 && fullscreenFile == null ? (
-            <div
+            </div>)}
+          {value129 && fullscreenFile == null ? (<div
               data-mega-pan-blanket={""}
               data-testid={"mega-pan-overlay"}
               className={
                 "absolute inset-0 z-[35] cursor-grab active:cursor-grabbing"
               }
-            />
-          ) : null}
+            />) : (null)}
           {value18 &&
             !value124 &&
             fullscreenFile == null &&
             value59 != null &&
             !(0, runtime.supportsClickPlacement)(armedTool) &&
-            armedTool !== "draw" &&
-            ((): Dynamic => {
+            armedTool !== "draw" && (((): Dynamic => {
               let value250: Dynamic = (manifest.annotations ?? []).find(
                 (input?: Dynamic): Dynamic => input.id === value59,
               );
@@ -7702,16 +7629,13 @@ export function installCanvasInteractionLayer(
                       data-testid={"mega-note-strip"}
                       data-mega-selection-strip={""}
                       aria-label={
-                        (0, runtime.isShapeAnnotation)(value250)
-                          ? "Shape actions"
-                          : "Note actions"
+                        (0, runtime.isShapeAnnotation)(value250) ? (uiMessage("canvas.interactionLayer.shapeActions")) : (uiMessage("canvas.interactionLayer.noteActions"))
                       }
                       surface={"popover"}
                       wrap={value17}
                       onKeyDown={runtime.handleQuickActionsArrowKeys}
                     >
-                      {(0, runtime.isShapeAnnotation)(value250)
-                        ? (() => {
+                      {(0, runtime.isShapeAnnotation)(value250) ? ((() => {
                             const _Component8 =
                               runtime.CanvasObjectQuickActions;
                             const _props8 = {
@@ -7749,7 +7673,7 @@ export function installCanvasInteractionLayer(
                                     ? (0, runtime.imageFlipCss)(value250)
                                       ? runtime.CropDoesNotWorkWhileThisMessage
                                       : undefined
-                                    : "This picture has not loaded, so there is nothing to crop yet.",
+                                    : uiMessage("canvas.interactionLayer.thisPictureHasNotLoaded"),
                               clip:
                                 value250.kind === "image" &&
                                 value250.video !== undefined &&
@@ -7788,9 +7712,7 @@ export function installCanvasInteractionLayer(
                                 ",",
                               );
                             return <_Component8 key={_key8} {..._props8} />;
-                          })()
-                        : value251
-                          ? (() => {
+                          })()) : (value251 ? ((() => {
                               const _Component9 =
                                 runtime.EditingNoteQuickActions;
                               const _props9 = {
@@ -7811,8 +7733,7 @@ export function installCanvasInteractionLayer(
                                   value250.w,
                                 ].join(",");
                               return <_Component9 key={_key9} {..._props9} />;
-                            })()
-                          : (() => {
+                            })()) : ((() => {
                               const _Component0 = runtime.NoteQuickActions;
                               const _props0 = {
                                 spec: value250,
@@ -7834,12 +7755,12 @@ export function installCanvasInteractionLayer(
                                   value250.w,
                                 ].join(",");
                               return <_Component0 key={_key0} {..._props0} />;
-                            })()}
+                            })()))}
                     </runtime.SessionStrip>
                   )}
                 </runtime.CanvasAnchoredPopover>
               );
-            })()}
+            })())}
           <runtime.useCanvasComments
             manifest={manifest}
             annBox={callback44}
@@ -7886,8 +7807,7 @@ export function installCanvasInteractionLayer(
               textEdit: value140,
               editDoor: quickProps?.onEditText != null,
               commentDoor: value7 != null,
-            }) &&
-            ((): Dynamic => {
+            }) && (((): Dynamic => {
               let value250: Dynamic = manifest.artboards.find(
                 (input?: Dynamic): Dynamic =>
                   input.file === elementSelection.file,
@@ -7916,7 +7836,7 @@ export function installCanvasInteractionLayer(
                   {(input?: Dynamic): Dynamic => (
                     <runtime.SessionStrip
                       data-mega-selection-strip={""}
-                      aria-label={"Selection actions"}
+                      aria-label={uiMessage("canvas.interactionLayer.selectionActions")}
                       surface={"popover"}
                       wrap={value17}
                       onKeyDown={runtime.handleQuickActionsArrowKeys}
@@ -7970,7 +7890,7 @@ export function installCanvasInteractionLayer(
                   )}
                 </runtime.CanvasAnchoredPopover>
               );
-            })()}
+            })())}
         </div>
       </runtime.ViewportContext.Provider>
     );

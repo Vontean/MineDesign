@@ -1,3 +1,5 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
+import { useUiLocale } from '../ui-locale.ts';
 import type * as React from "react";
 import type * as Token from "../contracts/token-editors";
 import type * as Model from "../contracts";
@@ -143,13 +145,14 @@ export function installEditorSectionCard(runtime: RuntimeBindings): () => void {
     label: label,
     "data-testid": dataTestid,
   }: Token.SectionCollapseButtonProps): React.ReactElement {
+    useUiLocale();
     return (
       <runtime.Button
         variant={"ghost"}
         size={"sm"}
         iconOnly={true}
         icon={"CaretRight"}
-        aria-label={(open ? "Collapse " : "Expand ") + label}
+        aria-label={(open ? uiMessage("design-system.sectionCard.collapse") : uiMessage("design-system.sectionCard.expand")) + label}
         aria-expanded={open}
         tooltip={false}
         className={(0, runtime.joinClassNames)(
@@ -167,20 +170,21 @@ export function installEditorSectionCard(runtime: RuntimeBindings): () => void {
     why: why,
     onRemove: onRemove,
     icon = "X",
-    verb = "Delete",
+    verb = uiMessage("design-system.sectionCard.delete"),
     "data-testid": dataTestid,
   }: Token.RemoveSectionButtonProps): React.ReactElement {
+    useUiLocale();
     let value = why !== undefined || onRemove === undefined;
     return (
       <runtime.DisabledReasonTooltip
-        reason={value ? (why ?? "Read-only document") : undefined}
+        reason={value ? (why ?? uiMessage("design-system.sectionCard.readOnly")) : undefined}
       >
         <runtime.Button
           variant={"ghost"}
           size={"sm"}
           iconOnly={true}
           icon={icon}
-          aria-label={verb + " " + label}
+          aria-label={((verb) + (" ")) + (label)}
           tooltip={verb}
           disabled={value}
           onClick={
@@ -216,6 +220,7 @@ export function installEditorSectionCard(runtime: RuntimeBindings): () => void {
     flat = false,
     children: children,
   }: Token.SectionCardProps): React.ReactElement {
+    useUiLocale();
     let [value, value2] = reactSectionCollapse.useState(false),
       ref = reactSectionCollapse.useRef<HTMLDivElement | null>(null);
     reactSectionCollapse.useLayoutEffect((): void => {
@@ -261,9 +266,7 @@ export function installEditorSectionCard(runtime: RuntimeBindings): () => void {
       value6 =
         actions !== undefined || head.onRemove !== undefined || value4 ? (
           <jsxSectionCard.Fragment>
-            {[
-              actions,
-              head.onRemove !== undefined ? (
+            {[actions, head.onRemove !== undefined ? (
                 <RemoveSectionButton
                   label={head.title}
                   why={head.removeWhy}
@@ -273,15 +276,13 @@ export function installEditorSectionCard(runtime: RuntimeBindings): () => void {
                     value3 !== undefined ? value3 + "-delete" : undefined
                   }
                 />
-              ) : null,
-              value4 && !flat ? (
+              ) : null, value4 && !flat ? (
                 <SectionCollapseButton
                   open={!value}
                   onToggle={callback}
                   label={head.title}
                 />
-              ) : null,
-            ]}
+              ) : null]}
           </jsxSectionCard.Fragment>
         ) : undefined;
     return (
@@ -298,8 +299,7 @@ export function installEditorSectionCard(runtime: RuntimeBindings): () => void {
         data-collapsed={value ? "" : undefined}
         {...dropHandlers}
       >
-        {[
-          <div
+        {[<div
             ref={ref}
             className={(0, runtime.joinClassNames)(
               "ds-sh sticky top-0 z-[2] bg-surface-1",
@@ -326,12 +326,9 @@ export function installEditorSectionCard(runtime: RuntimeBindings): () => void {
               collapsed={value}
               onToggle={value4 || flat ? undefined : callback}
             />
-          </div>,
-          <runtime.Collapsible.Panel keepMounted={true}>
+          </div>, <runtime.Collapsible.Panel keepMounted={true}>
             <div className={"flex min-w-0 flex-col"}>{children}</div>
-          </runtime.Collapsible.Panel>,
-          overlay,
-        ]}
+          </runtime.Collapsible.Panel>, overlay]}
       </runtime.Collapsible.Root>
     );
   }

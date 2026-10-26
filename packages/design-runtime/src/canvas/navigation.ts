@@ -1,3 +1,4 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -425,7 +426,7 @@ export function installCanvasNavigation(runtime: RuntimeBindings): () => void {
       options ? prototypePlaceFragment(input) : artboardPlaceFragment(input);
     artboardNavigationGroupLabels = {
       prototypes: "Prototypes",
-      others: "Static artboards",
+      get others() { return uiMessage("canvas.navigation.staticArtboards"); },
     };
   };
 }

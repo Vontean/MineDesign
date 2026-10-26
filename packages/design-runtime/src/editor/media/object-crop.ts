@@ -1,3 +1,4 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -263,11 +264,11 @@ export function installEditorMediaObjectCrop(
       typeof CSS.supports == "function" &&
       CSS.supports("object-view-box", "inset(0%)");
     ThisBrowserCanTZoomAPictureMessage =
-      "This browser can't zoom a picture inside an artboard, so you can crop in one direction only. Use Chrome or Edge.";
+      uiMessage("inspector.objectCrop.thisBrowserCanTZoom");
     YouCanTCropAnyFurtherAtMessage =
-      "You can't crop any further: at least 1% of the picture's width and height has to stay in view.";
+      uiMessage("inspector.objectCrop.youCanTCropAny");
     ThePageLayoutPlacesTheTopMessage =
-      "The page layout places the top and left edges here, so they cannot be cropped. Crop from the right or the bottom.";
+      uiMessage("inspector.objectCrop.thePageLayoutPlacesThe");
     MediaObjectCropPattern = /^(-?\d+(?:\.\d+)?)(%|px)$/;
     MediaObjectCropInsetPattern = /^inset\(((?:\d+(?:\.\d+)?% ?){1,4})\)$/;
     MediaObjectCropMin = (input?: Dynamic): Dynamic =>

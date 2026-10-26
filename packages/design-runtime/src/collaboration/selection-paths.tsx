@@ -1,3 +1,4 @@
+import { useUiLocale } from '../ui-locale.ts';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -389,6 +390,7 @@ export function installCollaborationSelectionPaths(
     box: box,
     scroll: scroll,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let entry: Dynamic = (0,
       runtime.reactCollaborationPeerCursors.useSyncExternalStore)(
         store.subscribe,

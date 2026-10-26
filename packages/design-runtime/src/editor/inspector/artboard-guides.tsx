@@ -1,3 +1,5 @@
+import { useUiLocale } from '../../ui-locale.ts';
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -64,6 +66,7 @@ export function installEditorInspectorArtboardGuides(
     onRemove: onRemove,
     ...props
   }: Dynamic): Dynamic {
+    useUiLocale();
     let [value, value2]: Dynamic = (0,
       runtime.reactChromeInspectorSheet.useState)(false),
       value3: Dynamic = (0, runtime.reactChromeInspectorSheet.useRef)(null),
@@ -88,7 +91,7 @@ export function installEditorInspectorArtboardGuides(
             onOpenChange={onOpenChange}
             trigger={
               <runtime.ColorEffectButton
-                label={value4 + " guide"}
+                label={uiMessage("inspector.artboardGuides.guide", { value1: String(value4) })}
                 color={value6.color}
                 text={artboardGuideDescription(value6)}
                 onClick={(input?: Dynamic): Dynamic =>
@@ -114,9 +117,9 @@ export function installEditorInspectorArtboardGuides(
           size={"sm"}
           iconOnly={true}
           icon={value5 ? "EyeSlash" : "Eye"}
-          aria-label={"Hide " + value4.toLowerCase() + " guide"}
+          aria-label={uiMessage("inspector.artboardGuides.hideGuide", { value1: String(value4.toLowerCase()) })}
           aria-pressed={value5}
-          tooltip={value5 ? "Show on the canvas" : "Hide on the canvas"}
+          tooltip={value5 ? (uiMessage("inspector.artboardGuides.showOnTheCanvas")) : (uiMessage("inspector.artboardGuides.hideOnTheCanvas"))}
           className={(0, runtime.joinClassNames)(
             "shrink-0",
             value5 && "text-muted",
@@ -135,7 +138,7 @@ export function installEditorInspectorArtboardGuides(
           }}
         />
         <runtime.RemovePropertyButton
-          label={value4 + " guide"}
+          label={uiMessage("inspector.artboardGuides.guide", { value1: String(value4) })}
           onClick={onRemove}
         />
       </runtime.PropertyRow>
@@ -149,6 +152,7 @@ export function installEditorInspectorArtboardGuides(
     onLiveEnd: onLiveEnd,
     onClose: onClose,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let callback: Dynamic = (input?: Dynamic, options?: Dynamic): Dynamic => ({
         onValue: (input2?: Dynamic): Dynamic =>
           onChange({
@@ -164,7 +168,7 @@ export function installEditorInspectorArtboardGuides(
       }),
       value: Dynamic = (
         <runtime.PropertyHexRow
-          label={"Color"}
+          label={uiMessage("inspector.artboardGuides.color")}
           value={r8.color}
           onChange={(input?: Dynamic): Dynamic => {
             let { color: value3, ...value4 }: Dynamic = guide;
@@ -188,9 +192,9 @@ export function installEditorInspectorArtboardGuides(
       );
     if (r8.kind === "grid")
       return (
-        <runtime.PropertyPopupBody title={"Grid"} onClose={onClose}>
+        <runtime.PropertyPopupBody title={uiMessage("inspector.artboardGuides.grid")} onClose={onClose}>
           <runtime.PropertyNumberRow
-            label={"Size"}
+            label={uiMessage("inspector.artboardGuides.size")}
             value={r8.size}
             {...runtime.PlatformFileContentGridSizeCountSizeConfig.gridSize}
             step={1}
@@ -211,9 +215,9 @@ export function installEditorInspectorArtboardGuides(
         onClose={onClose}
       >
         <runtime.PropertyNumberRow
-          label={"Count"}
+          label={uiMessage("inspector.artboardGuides.count")}
           value={r8.auto ? undefined : r8.count}
-          placeholder={value2 ? undefined : "Auto"}
+          placeholder={value2 ? (undefined) : (uiMessage("inspector.artboardGuides.auto"))}
           emptyStepFrom={r8.count}
           clearable={!value2}
           {...runtime.PlatformFileContentGridSizeCountSizeConfig.count}
@@ -222,7 +226,7 @@ export function installEditorInspectorArtboardGuides(
           {...callback("count", (input?: Dynamic): Dynamic => input ?? "auto")}
         />
         <runtime.PropertySelectRow
-          label={"Type"}
+          label={uiMessage("inspector.artboardGuides.type")}
           value={r8.align}
           options={InspectorArtboardGuidesStretchStartCenterValues.map(
             (input?: Dynamic): Dynamic => ({
@@ -246,20 +250,17 @@ export function installEditorInspectorArtboardGuides(
             })
           }
         />
-        {value2 ? (
-          <runtime.PropertyNumberRow
-            label={"Margin"}
+        {value2 ? (<runtime.PropertyNumberRow
+            label={uiMessage("inspector.artboardGuides.margin")}
             value={r8.margin}
             {...runtime.PlatformFileContentGridSizeCountSizeConfig.margin}
             step={1}
             smallStep={1}
             unit={"px"}
             {...callback("margin", (input?: Dynamic): Dynamic => input ?? 0)}
-          />
-        ) : (
-          <jsxInspectorArtboardGuides.Fragment>
+          />) : (<jsxInspectorArtboardGuides.Fragment>
             <runtime.PropertyNumberRow
-              label={r8.kind === "columns" ? "Width" : "Height"}
+              label={r8.kind === "columns" ? (uiMessage("inspector.artboardGuides.width")) : (uiMessage("inspector.artboardGuides.height"))}
               value={r8.size}
               {...runtime.PlatformFileContentGridSizeCountSizeConfig.size}
               step={1}
@@ -270,9 +271,8 @@ export function installEditorInspectorArtboardGuides(
                 (input?: Dynamic): Dynamic => input ?? r8.size,
               )}
             />
-            {r8.align !== "center" && (
-              <runtime.PropertyNumberRow
-                label={"Offset"}
+            {r8.align !== "center" && (<runtime.PropertyNumberRow
+                label={uiMessage("inspector.artboardGuides.offset")}
                 value={r8.offset}
                 {...runtime.PlatformFileContentGridSizeCountSizeConfig.offset}
                 step={1}
@@ -282,12 +282,10 @@ export function installEditorInspectorArtboardGuides(
                   "offset",
                   (input?: Dynamic): Dynamic => input ?? 0,
                 )}
-              />
-            )}
-          </jsxInspectorArtboardGuides.Fragment>
-        )}
+              />)}
+          </jsxInspectorArtboardGuides.Fragment>)}
         <runtime.PropertyNumberRow
-          label={"Gutter"}
+          label={uiMessage("inspector.artboardGuides.gutter")}
           value={r8.gutter}
           {...runtime.PlatformFileContentGridSizeCountSizeConfig.gutter}
           step={1}
@@ -353,8 +351,8 @@ export function installEditorInspectorArtboardGuides(
       1,
     );
     InspectorArtboardGuidesColumnsRowsGridConfig = {
-      columns: "Columns",
-      rows: "Rows",
+      get columns() { return uiMessage("inspector.artboardGuides.columns"); },
+      get rows() { return uiMessage("inspector.artboardGuides.rows"); },
       grid: "Grid",
     };
     InspectorArtboardGuidesColumnsRowsConfig = {
@@ -393,7 +391,7 @@ export function installEditorInspectorArtboardGuides(
             value.length >= 6
               ? {
                   disabled: true,
-                  description: `At most ${6} per artboard`,
+                  description: uiMessage("inspector.artboardGuides.atMostPerArtboard", { value1: String(6) }),
                 }
               : {},
           value10: Dynamic = ["columns", "rows", "grid"].map(
@@ -413,10 +411,10 @@ export function installEditorInspectorArtboardGuides(
             );
         return (
           <runtime.PropertySection
-            title={"Layout guide"}
+            title={uiMessage("inspector.artboardGuides.layoutGuide")}
             actions={
               <runtime.PropertyActions
-                aria-label={"Add layout guide"}
+                aria-label={uiMessage("inspector.artboardGuides.addLayoutGuide")}
                 items={value10}
               />
             }

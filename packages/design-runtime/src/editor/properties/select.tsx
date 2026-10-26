@@ -1,3 +1,5 @@
+import { useUiLocale } from '../../ui-locale.ts';
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -18,6 +20,7 @@ export function installEditorPropertiesSelect(
     children: children,
     ...props
   }: Dynamic): Dynamic {
+    useUiLocale();
     let value: Dynamic = runtime.PropertiesPickerSearchMdLgConfig[rowSize],
       value2: Dynamic =
         hint !== undefined && hint !== "" ? (
@@ -39,7 +42,7 @@ export function installEditorPropertiesSelect(
         {...props}
         className={value3}
         disabled={props.disabled === true || value4}
-        disabledReason={value4 ? disabledReason : undefined}
+        disabledReason={value4 ? (disabledReason) : (undefined)}
       >
         {value2}
       </runtime.MenuMenuAssignValue.Item>
@@ -65,6 +68,7 @@ export function installEditorPropertiesSelect(
     className: className,
     "data-testid": dataTestid,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let value2: Dynamic =
         value === null
           ? undefined
@@ -146,7 +150,7 @@ export function installEditorPropertiesSelect(
               type={"button"}
               data-kit={"PropertySelect"}
               data-testid={dataTestid}
-              aria-label={value6 === "" ? ariaLabel : ariaLabel + ": " + value6}
+              aria-label={value6 === "" ? (ariaLabel) : (((ariaLabel) + (": ")) + (value6))}
               title={title}
               className={(0, runtime.joinClassNames)(
                 runtime.joinClassNamesValue_3,
@@ -154,15 +158,13 @@ export function installEditorPropertiesSelect(
                 className,
               )}
             >
-              {value3 != null ? (
-                <runtime.EditorIcon
+              {value3 != null ? (<runtime.EditorIcon
                   name={value3}
                   size={13}
                   className={
                     value2?.icon != null ? "text-primary" : "text-muted"
                   }
-                />
-              ) : null}
+                />) : (null)}
               <span
                 className={(0, runtime.joinClassNames)(
                   "min-w-0 flex-1 truncate",
@@ -289,22 +291,16 @@ export function installEditorPropertiesSelect(
                     value13 !== undefined &&
                     value13 !== context[options - 1]?.[0]?.group ? (
                       <runtime.jsxPropertiesPickerSearch.Fragment>
-                        {options > 0 ? (
-                          <runtime.MenuMenuAssignValue.Separator />
-                        ) : null}
+                        {options > 0 ? (<runtime.MenuMenuAssignValue.Separator />) : (null)}
                         <runtime.PickerListHeader text={value13} title={true} />
                       </runtime.jsxPropertiesPickerSearch.Fragment>
                     ) : null,
                     <runtime.MenuMenuAssignValue.Group
                       aria-label={
-                        value13 !== undefined && value14 !== undefined
-                          ? value13 + " \xB7 " + value14
-                          : value13
+                        value13 !== undefined && value14 !== undefined ? (((value13) + (" \xB7 ")) + (value14)) : (value13)
                       }
                     >
-                      {value14 !== undefined ? (
-                        <runtime.PickerListHeader text={value14} />
-                      ) : null}
+                      {value14 !== undefined ? (<runtime.PickerListHeader text={value14} />) : (null)}
                       {input.map(
                         (input2?: Dynamic): Dynamic =>
                           (() => {
@@ -323,9 +319,7 @@ export function installEditorPropertiesSelect(
                                   disabled={input2.disabled}
                                   title={input2.title}
                                   disabledReason={
-                                    input2.disabled === true
-                                      ? input2.title
-                                      : undefined
+                                    input2.disabled === true ? (input2.title) : (undefined)
                                   }
                                   hint={input2.hint}
                                   rowSize={
@@ -338,18 +332,14 @@ export function installEditorPropertiesSelect(
                                       onChange(input2.value);
                                   }}
                                 >
-                                  {input2.labelStyle !== undefined ? (
-                                    <span
+                                  {input2.labelStyle !== undefined ? (<span
                                       className={
                                         "truncate leading-tight [font-variation-settings:normal]"
                                       }
                                       style={input2.labelStyle}
                                     >
                                       {input2.label}
-                                    </span>
-                                  ) : (
-                                    input2.label
-                                  )}
+                                    </span>) : (input2.label)}
                                 </PropertyPickerRow>,
                               ],
                             } as const;
@@ -370,11 +360,9 @@ export function installEditorPropertiesSelect(
               })();
             },
           )}
-          {searchable && value12.length === 0 ? (
-            <runtime.MenuMenuAssignValue.Item disabled={true}>
-              {"No matches"}
-            </runtime.MenuMenuAssignValue.Item>
-          ) : null}
+          {searchable && value12.length === 0 ? (<runtime.MenuMenuAssignValue.Item disabled={true}>
+              {uiMessage("inspector.select.noMatches")}
+            </runtime.MenuMenuAssignValue.Item>) : (null)}
         </runtime.MenuMenuAssignValue.Popup>
       </runtime.MenuMenuAssignValue.Root>
     );

@@ -1,3 +1,4 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import type * as React from "react";
 import type * as C from "../contracts/controls";
@@ -235,7 +236,7 @@ export function installUiBadges(runtime: RuntimeBindings): () => void {
         let value = variant ?? "accent",
           value2: string = (0, runtime.useTranslation)(
             "removeItem",
-            "Remove {item}",
+            uiMessage("design-system.badges.removeItem", { item: typeof children === "string" ? children : uiMessage("design-system.badges.item") }),
             {
               item: typeof children === "string" ? children : "item",
             },
@@ -359,8 +360,7 @@ export function installUiBadges(runtime: RuntimeBindings): () => void {
               className,
             )}
           >
-            {[
-              typeof icon !== "number" &&
+            {[typeof icon !== "number" &&
                 icon &&
                 ((0, runtime.isIconName)(icon) ? (
                   <runtime.Icon name={icon} size={value4} className={value5} />
@@ -371,8 +371,7 @@ export function installUiBadges(runtime: RuntimeBindings): () => void {
                   >
                     {icon}
                   </span>
-                )),
-              truncate ? (
+                )), truncate ? (
                 <span
                   className={(0, runtime.cn)(
                     value6,
@@ -385,9 +384,7 @@ export function installUiBadges(runtime: RuntimeBindings): () => void {
                 <span className={value6}>{children}</span>
               ) : (
                 children
-              ),
-              value12,
-            ]}
+              ), value12]}
           </span>
         );
       },

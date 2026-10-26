@@ -1,3 +1,4 @@
+import { useUiLocale } from '../ui-locale.ts';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -102,6 +103,7 @@ export function installCommentsPageSurfaces(
     box: box,
     store: store,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let value: Dynamic = (0, runtime.react_YEt.useSyncExternalStore)(
       store.subscribe,
       (): Dynamic => store.get(file),

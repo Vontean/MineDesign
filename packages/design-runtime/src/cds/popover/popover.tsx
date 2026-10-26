@@ -1,3 +1,5 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
+import { useUiLocale } from '../../ui-locale.ts';
 import type {
   ForwardComponent,
   InnerOverlayStack,
@@ -69,6 +71,7 @@ export function installCdsPopoverPopover(runtime: RuntimeBindings): () => void {
       parts: MobileSheetParts | null,
     ) => React.ReactNode;
   }): React.ReactElement {
+    useUiLocale();
     let value = (0, runtime.useAvailableSheetParts)(),
       { pending: value2 } = (0, runtime.useSheetState)();
     return value !== null ? (
@@ -83,7 +86,7 @@ export function installCdsPopoverPopover(runtime: RuntimeBindings): () => void {
             : runtime.SheetsPopupStackSheetConcealedChromeConfig,
           null,
         )}
-        {value2 ? <runtime.OverlayBackdrop kind={kind} /> : null}
+        {value2 ? (<runtime.OverlayBackdrop kind={kind} />) : (null)}
       </jsxPopoverPopover.Fragment>
     );
   }
@@ -154,6 +157,7 @@ export function installCdsPopoverPopover(runtime: RuntimeBindings): () => void {
     actionsRef: actionsRef,
     ...props
   }: PopoverRootProps<Payload>): React.ReactElement {
+    useUiLocale();
     let value = usePopoverInnerOverlays(onOpenChange),
       value2 = (0, runtime.useSheetInteractionMode)(),
       value3 = (0, reactPopoverPopover.useRef)<OverlayActions | null>(null);
@@ -161,8 +165,7 @@ export function installCdsPopoverPopover(runtime: RuntimeBindings): () => void {
     return (
       <PopoverPopoverContext_2.Provider value={value.innerOverlays}>
         <runtime.ActivityBoundary actionsRef={value3}>
-          {value2 ? (
-            (() => {
+          {value2 ? ((() => {
               const _Component = usePopoverRoot;
               return (
                 <_Component
@@ -172,14 +175,11 @@ export function installCdsPopoverPopover(runtime: RuntimeBindings): () => void {
                   consumerHandlesOpenChange={onOpenChange !== undefined}
                 />
               );
-            })()
-          ) : (
-            <runtime.npm_Popover_$f.Root
+            })()) : (<runtime.npm_Popover_$f.Root
               {...props}
               actionsRef={value3}
               onOpenChange={value.onOpenChange}
-            />
-          )}
+            />)}
         </runtime.ActivityBoundary>
       </PopoverPopoverContext_2.Provider>
     );
@@ -683,9 +683,7 @@ export function installCdsPopoverPopover(runtime: RuntimeBindings): () => void {
               companionModalCatcher={!sheet}
               closeOnActivityHide={true}
             >
-              {value22 !== null && sheetPopup.sheet && (
-                <value22.PopoverSheetBackdrop sheetPopup={sheetPopup} />
-              )}
+              {value22 !== null && sheetPopup.sheet && (<value22.PopoverSheetBackdrop sheetPopup={sheetPopup} />)}
               <runtime.LayerBaseContext.Provider value={value28.base}>
                 <runtime.npm_Popover_$f.Positioner
                   style={
@@ -806,8 +804,7 @@ export function installCdsPopoverPopover(runtime: RuntimeBindings): () => void {
                       !sheet && value7,
                     )}
                   >
-                    {value22 !== null && sheetPopup.sheet ? (
-                      <value22.PopoverSheetContent
+                    {value22 !== null && sheetPopup.sheet ? (<value22.PopoverSheetContent
                         sheetPopup={sheetPopup}
                         className={value7}
                         bodyRef={value18}
@@ -819,9 +816,7 @@ export function installCdsPopoverPopover(runtime: RuntimeBindings): () => void {
                         closeLabel={value5}
                       >
                         {value31}
-                      </value22.PopoverSheetContent>
-                    ) : (
-                      <jsxPopoverPopover_2.Fragment>
+                      </value22.PopoverSheetContent>) : (<jsxPopoverPopover_2.Fragment>
                         <div
                           ref={value18}
                           tabIndex={-1}
@@ -838,8 +833,7 @@ export function installCdsPopoverPopover(runtime: RuntimeBindings): () => void {
                           {value31}
                         </div>
                         {value30}
-                      </jsxPopoverPopover_2.Fragment>
-                    )}
+                      </jsxPopoverPopover_2.Fragment>)}
                   </PopoverPopupInner>
                 </runtime.npm_Popover_$f.Positioner>
               </runtime.LayerBaseContext.Provider>

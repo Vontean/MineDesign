@@ -45,6 +45,7 @@ const inputs = [
   join(appDir, 'package.json'),
   join(repoRoot, 'packages', 'design-system', 'src'),
   join(repoRoot, 'packages', 'editor-host', 'src'),
+  join(repoRoot, 'packages', 'contracts', 'src'),
 ];
 if (!process.argv.includes('--force') && outputs.every(file => existsSync(file))) {
   const built = Math.min(...outputs.map(file => statSync(file).mtimeMs));

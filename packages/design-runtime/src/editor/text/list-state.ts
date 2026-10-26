@@ -1,3 +1,4 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -94,11 +95,11 @@ export function installEditorTextListState(
         items.some((input?: Dynamic): Dynamic => input !== items[0]),
       value6: Dynamic =
         items.length !== 1
-          ? "Make lists one text at a time"
+          ? uiMessage("inspector.listState.makeListsOneTextAt")
           : value2?.plain
-            ? "This text is bound to the script \u2014 formatting is off"
+            ? uiMessage("inspector.listState.thisTextIsBoundTo")
             : value3 === null && !value
-              ? "This text is not editable inline \u2014 select the text inside it"
+              ? uiMessage("inspector.listState.thisTextIsNotEditable")
               : null;
     return {
       value: value4,

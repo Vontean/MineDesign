@@ -1,3 +1,5 @@
+import { useUiLocale } from '../ui-locale.ts';
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -8,6 +10,7 @@ export function installEditorPropertiesPanel(
   runtime: RuntimeBindings,
 ): () => void {
   function DesignPropertiesSidebar({ children: children }: Dynamic): Dynamic {
+    useUiLocale();
     let value: Dynamic = (0, runtime.usePanelWidth)(312);
     return (
       <div
@@ -21,7 +24,7 @@ export function installEditorPropertiesPanel(
         }}
       >
         {children}
-        <runtime.PanelWidthGrip {...value} label={"Resize properties panel"} />
+        <runtime.PanelWidthGrip {...value} label={uiMessage("inspector.propertiesPanel.resizePropertiesPanel")} />
       </div>
     );
   }
@@ -29,6 +32,7 @@ export function installEditorPropertiesPanel(
     settings: settings,
     readOnly = false,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let value: Dynamic = (0, runtime.useInspectorPosture)(),
       value2: Dynamic = (0, runtime.useElementById)(runtime.inspectorPanelId),
       [value3]: Dynamic = (0, runtime.useInspectorOpen)(),
@@ -67,18 +71,14 @@ export function installEditorPropertiesPanel(
     );
     return (0, runtime.reactDomCanvasShape_2.createPortal)(
       <runtime.CdsIsland density={"compact"} className={"contents"}>
-        {value === "wide" ? (
-          <DesignPropertiesSidebar>{value6}</DesignPropertiesSidebar>
-        ) : (
-          <runtime.InspectorPanelShell
+        {value === "wide" ? (<DesignPropertiesSidebar>{value6}</DesignPropertiesSidebar>) : (<runtime.InspectorPanelShell
             posture={"sheet"}
             filled={true}
             headerAt={"top"}
             data-testid={"dc-edit-side-panel"}
           >
             {value6}
-          </runtime.InspectorPanelShell>
-        )}
+          </runtime.InspectorPanelShell>)}
       </runtime.CdsIsland>,
       value2,
     );

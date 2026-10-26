@@ -1,3 +1,5 @@
+import { useUiLocale } from '../../ui-locale.ts';
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -62,6 +64,7 @@ export function installEditorPropertiesAssetPicker(
     children: children,
     "data-testid": dataTestid,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let value: Dynamic = (0, reactPropertiesAssetPicker_2.useRef)(null),
       value2: Dynamic = (0, reactPropertiesAssetPicker_2.useRef)(null),
       [value3, value4]: Dynamic = (0, reactPropertiesAssetPicker_2.useState)({
@@ -200,38 +203,32 @@ export function installEditorPropertiesAssetPicker(
                 header !== undefined ? "pb-1 pl-md" : "pb-xs pl-lg",
               )}
             >
-              {header !== undefined ? (
-                <jsxPropertiesAssetPicker.Fragment>
+              {header !== undefined ? (<jsxPropertiesAssetPicker.Fragment>
                   <runtime.PopoverPopoverRootTriggerPopupConfig.Title
                     className={"sr-only"}
                   >
                     {title}
                   </runtime.PopoverPopoverRootTriggerPopupConfig.Title>
                   <div className={"min-w-0 flex-1"}>{header}</div>
-                </jsxPropertiesAssetPicker.Fragment>
-              ) : (
-                <runtime.PopoverPopoverRootTriggerPopupConfig.Title
+                </jsxPropertiesAssetPicker.Fragment>) : (<runtime.PopoverPopoverRootTriggerPopupConfig.Title
                   className={
                     "min-w-0 flex-1 truncate text-body-semibold text-primary"
                   }
                 >
                   {title}
-                </runtime.PopoverPopoverRootTriggerPopupConfig.Title>
-              )}
-              {onRemove !== undefined ? (
-                <runtime.Button
+                </runtime.PopoverPopoverRootTriggerPopupConfig.Title>)}
+              {onRemove !== undefined ? (<runtime.Button
                   variant={"ghost"}
                   size={"sm"}
                   iconOnly={true}
                   icon={"Trash"}
-                  aria-label={removeLabel ?? "Remove"}
+                  aria-label={removeLabel ?? (uiMessage("inspector.assetPicker.remove"))}
                   disabled={removeDisabled}
                   onClick={(): Dynamic => {
                     onRemove();
                     onOpenChange(false);
                   }}
-                />
-              ) : null}
+                />) : (null)}
               <runtime.PopoverPopoverRootTriggerPopupConfig.Close
                 render={
                   <runtime.Button
@@ -239,7 +236,7 @@ export function installEditorPropertiesAssetPicker(
                     size={"sm"}
                     iconOnly={true}
                     icon={"X"}
-                    aria-label={"Close"}
+                    aria-label={uiMessage("inspector.assetPicker.close")}
                   />
                 }
               />
@@ -256,6 +253,7 @@ export function installEditorPropertiesAssetPicker(
     children: children,
     ...props
   }: Dynamic): Dynamic {
+    useUiLocale();
     return (
       <div
         className={(0, runtime.cn)(
@@ -264,11 +262,9 @@ export function installEditorPropertiesAssetPicker(
         )}
         {...props}
       >
-        {label !== undefined && (
-          <span className={"text-footnote text-muted select-none"}>
+        {label !== undefined && (<span className={"text-footnote text-muted select-none"}>
             {label}
-          </span>
-        )}
+          </span>)}
         {children}
       </div>
     );
@@ -290,6 +286,7 @@ export function installEditorPropertiesAssetPicker(
     );
   }
   function AssetColorWell({ src: src }: Dynamic): Dynamic {
+    useUiLocale();
     let { projectPath: value }: Dynamic = useAssetPickerContext(),
       value2: Dynamic = resolveAssetPreviewUrl(value, src);
     return (
@@ -310,6 +307,7 @@ export function installEditorPropertiesAssetPicker(
     onPickFile: onPickFile,
     uploadOnlyReason: uploadOnlyReason,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let { projectPath: value2 }: Dynamic = useAssetPickerContext(),
       { files: value3 }: Dynamic = useProjectFiles(value2),
       { showToast: value4 }: Dynamic = (0, runtime.useToast)(),
@@ -340,7 +338,7 @@ export function installEditorPropertiesAssetPicker(
           return true;
         } catch (value13: Dynamic) {
           console.error("[dc-editor] image upload failed:", value13);
-          value4("Could not upload the image.", "error");
+          value4(uiMessage("inspector.assetPicker.couldNotUploadTheImage"), "error");
           return false;
         }
       },
@@ -348,8 +346,7 @@ export function installEditorPropertiesAssetPicker(
       value12: Dynamic = `repeating-conic-gradient(${runtime.editorThemeTokens.bg.muted} 0% 25%, ${runtime.editorThemeTokens.bg.elevated} 0% 50%) 0 / 8px 8px`;
     return (
       <jsxPropertiesAssetPicker_2.Fragment>
-        {previewSize && (
-          <runtime.PropertyRow className={"my-[3px]"}>
+        {previewSize && (<runtime.PropertyRow className={"my-[3px]"}>
             <div
               data-testid={"dc-image-preview"}
               className={"h-24 min-w-0 flex-1 rounded-md shadow-card-ring"}
@@ -359,14 +356,13 @@ export function installEditorPropertiesAssetPicker(
                   : value12,
               }}
             />
-          </runtime.PropertyRow>
-        )}
-        <runtime.PropertyRow label={"Source"} title={uploadOnlyReason}>
+          </runtime.PropertyRow>)}
+        <runtime.PropertyRow label={uiMessage("inspector.assetPicker.source")} title={uploadOnlyReason}>
           <runtime.TextInput
             fullWidth={true}
             value={value5}
-            placeholder={"https://\u2026 or ./file.png"}
-            aria-label={"Image source"}
+            placeholder={uiMessage("inspector.assetPicker.httpsOrFilePng")}
+            aria-label={uiMessage("inspector.assetPicker.imageSource")}
             inputMode={"url"}
             disabled={disabled2 || uploadOnlyReason !== undefined}
             onFocus={(input?: Dynamic): Dynamic => {
@@ -392,7 +388,7 @@ export function installEditorPropertiesAssetPicker(
             }}
           />
         </runtime.PropertyRow>
-        <runtime.PropertyRow label={"Upload"}>
+        <runtime.PropertyRow label={uiMessage("inspector.assetPicker.upload")}>
           <runtime.Button
             variant={"secondary"}
             icon={"Upload"}
@@ -400,7 +396,7 @@ export function installEditorPropertiesAssetPicker(
             disabled={disabled2}
             onClick={(): Dynamic => value9.current?.click()}
           >
-            {"Upload image\u2026"}
+            {uiMessage("inspector.assetPicker.uploadImage")}
           </runtime.Button>
           <input
             ref={value9}
@@ -419,8 +415,7 @@ export function installEditorPropertiesAssetPicker(
             }}
           />
         </runtime.PropertyRow>
-        {!previewSize && value10.length > 0 && (
-          <PropertyPopupField label={"Project images"}>
+        {!previewSize && value10.length > 0 && (<PropertyPopupField label={uiMessage("inspector.assetPicker.projectImages")}>
             <div className={"-mx-1 flex max-h-40 flex-col overflow-y-auto"}>
               {value10.map((input?: Dynamic): Dynamic => {
                 let value13: Dynamic = value === `./${input.name}`;
@@ -456,17 +451,12 @@ export function installEditorPropertiesAssetPicker(
                 })();
               })}
             </div>
-          </PropertyPopupField>
-        )}
-        {!previewSize && value10.length === 0 && (
-          <PropertyPopupField>
+          </PropertyPopupField>)}
+        {!previewSize && value10.length === 0 && (<PropertyPopupField>
             <span className={"text-caption text-muted"}>
-              {uploadOnlyReason !== undefined
-                ? "No images in this project yet \u2014 upload one."
-                : "No images in this project yet \u2014 upload one or paste a URL."}
+              {uploadOnlyReason !== undefined ? (uiMessage("inspector.assetPicker.noImagesInThisProject")) : (uiMessage("inspector.assetPicker.noImagesInThisProject2"))}
             </span>
-          </PropertyPopupField>
-        )}
+          </PropertyPopupField>)}
       </jsxPropertiesAssetPicker_2.Fragment>
     );
   }
@@ -479,13 +469,14 @@ export function installEditorPropertiesAssetPicker(
     onPickFile: onPickFile,
     uploadOnlyReason: uploadOnlyReason,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let [value2, value3]: Dynamic = (0,
       runtime.reactPropertiesTokenColorPicker.useState)(false),
       value4: Dynamic = mixed
         ? "Mixed"
         : value?.startsWith("data:") && value.includes("#drop")
           ? "Uploading\u2026"
-          : value || "Choose image\u2026";
+          : value || uiMessage("inspector.assetPicker.chooseImage");
     return (
       <PropertyAssetPopup
         open={value2}
@@ -499,7 +490,7 @@ export function installEditorPropertiesAssetPicker(
         data-testid={"dc-image-popover"}
         trigger={
           <runtime.PropertyPickerButton
-            aria-label={`${label}: ${value4}`}
+            aria-label={uiMessage("inspector.assetPicker.undefined", { value1: String(label), value2: String(value4) })}
             className={"w-full"}
             disabled={disabled2}
             chip={<AssetColorWell src={value} />}

@@ -1,3 +1,5 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
+import { useUiLocale } from '../ui-locale.ts';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -27,6 +29,7 @@ export function installCollaborationPeerCursors(
   var PeerCursorLabel: Dynamic;
   var CollaborationPeerCursorsCache_2: Dynamic;
   function PeerCursorGlyph({ color: color }: Dynamic): Dynamic {
+    useUiLocale();
     return (
       <svg
         aria-hidden={"true"}
@@ -424,6 +427,7 @@ export function installCollaborationPeerCursors(
     now: now,
     working: working,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let value: Dynamic = usePeerCursors(surface, now),
       value2: Dynamic =
         glyphScale !== undefined &&
@@ -704,9 +708,9 @@ export function installCollaborationPeerCursors(
     CollaborationPeerCursorsConstant_4 = 600;
     CollaborationPeerCursorsDelayMs_2 = 150;
     CollaborationPeerCursorsMcChatHoldMcChatFadeMcChatExitConfig = {
-      "--mc-chat-hold": CollaborationPeerCursorsConstant_3 + "ms",
-      "--mc-chat-fade": CollaborationPeerCursorsConstant_4 + "ms",
-      "--mc-chat-exit": CollaborationPeerCursorsDelayMs_2 + "ms",
+      get "--mc-chat-hold"() { return (CollaborationPeerCursorsConstant_3) + ("ms"); },
+      get "--mc-chat-fade"() { return (CollaborationPeerCursorsConstant_4) + ("ms"); },
+      get "--mc-chat-exit"() { return (CollaborationPeerCursorsDelayMs_2) + ("ms"); },
     };
     PeerCursorLabel = (0, reactCollaborationPeerCursors_3.memo)(function ({
       name: name,
@@ -750,22 +754,16 @@ export function installCollaborationPeerCursors(
               value3(value.current.n);
           }}
         >
-          {value4 === "name" ? (
-            <span key={"name"} className={"mc-peer-tag-name"}>
+          {value4 === "name" ? (<span key={"name"} className={"mc-peer-tag-name"}>
               {(name || "Someone").slice(0, 16)}
-            </span>
-          ) : (
-            <span key={"line"} className={"mc-peer-tag-line"}>
+            </span>) : (<span key={"line"} className={"mc-peer-tag-line"}>
               {message}
-            </span>
-          )}
-          {working && value4 === "name" ? (
-            <span className={"mc-peer-tag-dots"}>
+            </span>)}
+          {working && value4 === "name" ? (<span className={"mc-peer-tag-dots"}>
               <i />
               <i />
               <i />
-            </span>
-          ) : null}
+            </span>) : (null)}
         </span>
       );
     });

@@ -1,3 +1,4 @@
+import { useUiLocale } from '../ui-locale.ts';
 import type * as Overlays from "../contracts/overlays";
 import type * as React from "react";
 import type {
@@ -1718,6 +1719,7 @@ export function installUiFoundation(runtime: RuntimeBindings): () => void {
   function ResetSheetContexts({
     children: children,
   }: React.PropsWithChildren): React.ReactElement {
+    useUiLocale();
     return (
       <sheetStateContext.Provider value={defaultSheetState}>
         <sheetParentContext.Provider value={null}>
@@ -1737,6 +1739,7 @@ export function installUiFoundation(runtime: RuntimeBindings): () => void {
       children(value: Overlays.SheetPopupResult<Details>): React.ReactNode;
     },
   ): React.ReactElement {
+    useUiLocale();
     let { children: children, ...remainingProps } = props,
       value = useAdaptiveSheet(remainingProps);
     return (
@@ -1752,6 +1755,7 @@ export function installUiFoundation(runtime: RuntimeBindings): () => void {
     value: Overlays.SheetPopupResult<Overlays.OverlayEventDetails>;
     children?: React.ReactNode;
   }): React.ReactElement {
+    useUiLocale();
     return (
       <sheetStateContext.Provider value={value.state}>
         <sheetCoverContext.Provider value={value.stack.cover}>

@@ -1,3 +1,5 @@
+import { useUiLocale } from '../../ui-locale.ts';
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -81,6 +83,7 @@ export function installEditorInspectorEditor(
     };
   }
   function InspectorEmptyState(input?: Dynamic): Dynamic {
+    useUiLocale();
     return (
       <div
         {...input}
@@ -333,7 +336,7 @@ export function installEditorInspectorEditor(
     InspectorEditorSubscribers = new Set();
     InspectorEditorConstant_3 = 5e3;
     InspectorEditorLabel =
-      "Editor is still loading \u2014 try again in a moment.";
+      uiMessage("inspector.editor.editorIsStillLoadingTry");
     InspectorEditorResolvedValue = 2 * 1024 * 1024;
     InspectorEditorMetaControlShiftSet = new Set([
       "Meta",
@@ -404,20 +407,20 @@ export function installEditorInspectorEditor(
     InspectorEditorResolvedValue_2 = runtime.HostValue + "followed";
     InspectorEditorPropLabelSpecConfig = {
       prop: "background",
-      label: "Background",
+      get label() { return uiMessage("inspector.editor.background"); },
       spec: {
         ...runtime.InspectorPropertySchemaItems_2.find(
           (input?: Dynamic): Dynamic => input.prop === "background",
         ),
-        label: "Background",
+        get label() { return uiMessage("inspector.editor.background"); },
       },
       value: null,
     };
-    InspectorEditorLabel_2 = "Select just one element to copy it as a PNG";
-    InspectorEditorLabel_3 = "Select just one element to copy it as an SVG";
+    InspectorEditorLabel_2 = uiMessage("inspector.editor.selectJustOneElementTo");
+    InspectorEditorLabel_3 = uiMessage("inspector.editor.selectJustOneElementTo2");
     InspectorEditorLabel_4 =
-      "Sized by its content \u2014 double-click it to edit";
+      uiMessage("inspector.editor.sizedByItsContentDouble");
     inspectorSingleSelectionMessage =
-      "One page at the frame\u2019s size while the content fits the frame and the frame fits a sheet; Letter/A4 pages beyond that, and a PNG keeps its full length\u2014for an artboard that fills the window and scrolls";
+      uiMessage("inspector.editor.onePageAtTheFrame");
   };
 }

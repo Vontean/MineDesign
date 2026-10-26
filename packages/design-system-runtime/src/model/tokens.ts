@@ -1,3 +1,4 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import type * as Model from "../contracts";
 import type * as Core from "../contracts/model-core";
@@ -896,9 +897,7 @@ export function installModelTokens(
       let entry = tokensByName.get(value);
       if (entry === undefined) {
         return {
-          why:
-            (index === 0 ? "" : "reaches {" + value + "}, which ") +
-            "names no color token",
+          get why() { return (index === 0 ? ("") : ((("reaches {") + (value)) + ("}, which "))) + ("names no color token"); },
           own: index === 0,
         };
       }
@@ -912,7 +911,7 @@ export function installModelTokens(
       currentToken = entry;
     }
     return {
-      why: "chains deeper than " + String(MAX_COLOR_ALIAS_DEPTH),
+      get why() { return ("chains deeper than ") + (String(MAX_COLOR_ALIAS_DEPTH)); },
       own: true,
     };
   }

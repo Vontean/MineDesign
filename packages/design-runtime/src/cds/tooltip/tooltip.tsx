@@ -1,3 +1,5 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
+import { useUiLocale } from '../../ui-locale.ts';
 import type {
   CollisionPadding,
   DisabledTooltipProps,
@@ -81,6 +83,7 @@ export function installCdsTooltipTooltip(runtime: RuntimeBindings): () => void {
     keys?: string | readonly string[];
     className?: string;
   }): React.ReactElement {
+    useUiLocale();
     return (
       <runtime.Shortcut
         keys={keys}
@@ -116,6 +119,7 @@ export function installCdsTooltipTooltip(runtime: RuntimeBindings): () => void {
     className: className,
     children: children,
   }: TooltipProps): React.ReactElement {
+    useUiLocale();
     let value = (0, runtime.useOverlayRoot)(),
       value2 = (0, runtime.useShrinkWrap)({
         immediate: true,
@@ -383,8 +387,7 @@ export function installCdsTooltipTooltip(runtime: RuntimeBindings): () => void {
                         )}
                       >
                         <runtime.DarkScope>
-                          {multiline || detail || secondaryHint ? (
-                            <jsxTooltipTooltip.Fragment>
+                          {multiline || detail || secondaryHint ? (<jsxTooltipTooltip.Fragment>
                               <span
                                 className={
                                   "inline-flex min-w-0 items-center gap-2"
@@ -393,12 +396,9 @@ export function installCdsTooltipTooltip(runtime: RuntimeBindings): () => void {
                                 <span className={runtime.TooltipStylesLabel_2}>
                                   {value14}
                                 </span>
-                                {shortcut && (
-                                  <TooltipShortcut keys={shortcut} />
-                                )}
+                                {shortcut && (<TooltipShortcut keys={shortcut} />)}
                               </span>
-                              {secondaryHint && (
-                                <span
+                              {secondaryHint && (<span
                                   className={
                                     "inline-flex min-w-0 items-center gap-2"
                                   }
@@ -409,31 +409,23 @@ export function installCdsTooltipTooltip(runtime: RuntimeBindings): () => void {
                                   <TooltipShortcut
                                     keys={secondaryHint.shortcut}
                                   />
-                                </span>
-                              )}
-                              {detail && (
-                                <span
+                                </span>)}
+                              {detail && (<span
                                   className={
                                     "break-words text-[calc(0.6875rem*var(--cds-rem-scale,1))]/[calc(0.875rem*var(--cds-rem-scale,1))] text-secondary"
                                   }
                                 >
                                   {detail}
-                                </span>
-                              )}
-                            </jsxTooltipTooltip.Fragment>
-                          ) : (
-                            <jsxTooltipTooltip.Fragment>
+                                </span>)}
+                            </jsxTooltipTooltip.Fragment>) : (<jsxTooltipTooltip.Fragment>
                               <span className={runtime.TooltipStylesLabel_2}>
                                 {value14}
                               </span>
-                              {shortcut && (
-                                <TooltipShortcut
+                              {shortcut && (<TooltipShortcut
                                   keys={shortcut}
                                   className={SelfStartValue}
-                                />
-                              )}
-                            </jsxTooltipTooltip.Fragment>
-                          )}
+                                />)}
+                            </jsxTooltipTooltip.Fragment>)}
                         </runtime.DarkScope>
                       </runtime.npm_Tooltip_Ax.Popup>
                     </runtime.npm_Tooltip_Ax.Positioner>
@@ -452,8 +444,7 @@ export function installCdsTooltipTooltip(runtime: RuntimeBindings): () => void {
             {value36}
           </runtime.TooltipTriggerContext.Provider>
         </runtime.TooltipImplementationContext.Provider>
-        {value24 && (
-          <runtime.npm_Tooltip_Ax.Root
+        {value24 && (<runtime.npm_Tooltip_Ax.Root
             handle={value21}
             open={value16}
             disableHoverablePopup={!hoverable}
@@ -465,8 +456,7 @@ export function installCdsTooltipTooltip(runtime: RuntimeBindings): () => void {
             triggerId={value3}
           >
             {value37}
-          </runtime.npm_Tooltip_Ax.Root>
-        )}
+          </runtime.npm_Tooltip_Ax.Root>)}
       </jsxTooltipTooltip.Fragment>
     ) : (
       <runtime.npm_Tooltip_Ax.Root
@@ -503,6 +493,7 @@ export function installCdsTooltipTooltip(runtime: RuntimeBindings): () => void {
     wrapperClassName: wrapperClassName,
     children: children,
   }: DisabledTooltipProps): React.ReactElement {
+    useUiLocale();
     let value = (0, reactTooltipTooltip.useId)();
     return (
       <Tooltip
@@ -534,6 +525,7 @@ export function installCdsTooltipTooltip(runtime: RuntimeBindings): () => void {
   function TooltipImplProvider({
     children: children,
   }: React.PropsWithChildren): React.ReactElement {
+    useUiLocale();
     return (
       <runtime.TooltipImplementationContext.Provider
         value={TooltipTooltipTooltipDisabledReasonTooltipConfig}
@@ -553,6 +545,7 @@ export function installCdsTooltipTooltip(runtime: RuntimeBindings): () => void {
     delay?: number;
     closeDelay?: number;
   }>): React.ReactElement {
+    useUiLocale();
     return (
       <TooltipTooltipContext.Provider value={true}>
         <runtime.npm_Tooltip_Ax.Provider delay={delay} closeDelay={closeDelay}>

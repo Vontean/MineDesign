@@ -1,0 +1,25 @@
+export const en = {
+  // 编辑器
+  tabProperties: 'Properties',
+  tabOutline: 'Outline',
+  tabTweaks: 'Tweaks',
+  tabComments: (n: number) => n ? `Comments ${n}` : 'Comments',
+  panelTabs: 'Panel view',
+  nothingSelected: 'Nothing selected',
+  clickToEdit: 'Click any element in the design to edit it here.',
+  toolSelect: 'Select',
+  toolHand: 'Hand',
+  toolFrame: 'Frame',
+  toolText: 'Text',
+  toolNote: 'Note',
+  toolDraw: 'Draw',
+  toolShapes: 'Shapes',
+  toolTools: 'Tools',
+  toolsTip: 'Hand, insert and draw tools',
+  shapesTip: 'Shapes and lines',
+  shapeRect: 'Rectangle',
+  shapeOval: 'Oval',
+  shapeArrow: 'Arrow',
+  shapeLine: 'Line',
+  pages: 'Pages'
+};

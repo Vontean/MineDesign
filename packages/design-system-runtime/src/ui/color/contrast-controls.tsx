@@ -1,3 +1,5 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
+import { useUiLocale } from '../../ui-locale.ts';
 import type * as React from "react";
 import type * as Color from "../../contracts/color-controls";
 /** Restored application module; prepare first, initialize in original order. */
@@ -85,6 +87,7 @@ export function installUiColorContrastControls(
     sentence = true,
     className: className,
   }: Color.ContrastMarkProps): React.ReactElement {
+    useUiLocale();
     let value = contrastDisplayInfo(results),
       worst = value.worst;
     return (
@@ -99,20 +102,14 @@ export function installUiColorContrastControls(
           className,
         )}
       >
-        {[
-          <span aria-hidden={"true"} className={"flex items-center gap-0.5"}>
-            {[
-              <runtime.Icon
+        {[<span aria-hidden={"true"} className={"flex items-center gap-0.5"}>
+            {[<runtime.Icon
                 name={worst.passes ? "Check" : "Warning"}
                 size={"xs"}
-              />,
-              <span className={"tabular-nums"}>
+              />, <span className={"tabular-nums"}>
                 {(0, runtime.contrastRatioReadout)(worst.ratio)}
-              </span>,
-            ]}
-          </span>,
-          sentence ? <span className={"sr-only"}>{value.sentence}</span> : null,
-        ]}
+              </span>]}
+          </span>, sentence ? <span className={"sr-only"}>{value.sentence}</span> : null]}
       </span>
     );
   }
@@ -121,6 +118,7 @@ export function installUiColorContrastControls(
     name: name,
     className: className,
   }: Color.ContrastCaptionProps): React.ReactElement {
+    useUiLocale();
     return (
       <span
         data-kit={"contrast-caption"}
@@ -131,18 +129,12 @@ export function installUiColorContrastControls(
           className,
         )}
       >
-        {[
-          <span>
-            {result.passes
-              ? runtime.CONTRAST_GROUND_PREPOSITION
-              : runtime.CONTRAST_POOR_GROUND_PREPOSITION}
-          </span>,
-          <span className={"inline-flex min-w-0 items-center gap-1"}>
-            {[
-              <span className={"min-w-0 break-words"}>
-                {name ?? result.ground.label}
-              </span>,
-              <span
+        {[<span>
+            {result.passes ? (runtime.CONTRAST_GROUND_PREPOSITION) : (runtime.CONTRAST_POOR_GROUND_PREPOSITION)}
+          </span>, <span className={"inline-flex min-w-0 items-center gap-1"}>
+            {[<span className={"min-w-0 break-words"}>
+                {name ?? (result.ground.label)}
+              </span>, <span
                 className={
                   "inline-block size-3 shrink-0 rounded-[3px] shadow-field-ring"
                 }
@@ -151,10 +143,8 @@ export function installUiColorContrastControls(
                     (0, runtime.parseContrastColor)(result.ground.css),
                   ),
                 }}
-              />,
-            ]}
-          </span>,
-        ]}
+              />]}
+          </span>]}
       </span>
     );
   }
@@ -163,6 +153,7 @@ export function installUiColorContrastControls(
     results: results,
     className: className,
   }: Color.ContrastLockupProps): React.ReactElement {
+    useUiLocale();
     let value = contrastDisplayInfo(results),
       worst = value.worst;
     return (
@@ -176,8 +167,7 @@ export function installUiColorContrastControls(
           className,
         )}
       >
-        {[
-          <span
+        {[<span
             data-kit={"contrast-swatch"}
             className={
               "inline-flex size-4 shrink-0 items-center justify-center rounded-[4px] shadow-card-ring"
@@ -196,13 +186,9 @@ export function installUiColorContrastControls(
             }}
           >
             <runtime.Icon name={"TextAa"} size={"xs"} />
-          </span>,
-          <span className={worst.passes ? "text-primary" : "text-warning"}>
-            {worst.passes
-              ? runtime.CONTRAST_PASSES_LABEL
-              : runtime.CONTRAST_FAILS_LABEL}
-          </span>,
-        ]}
+          </span>, <span className={worst.passes ? "text-primary" : "text-warning"}>
+            {worst.passes ? (runtime.CONTRAST_PASSES_LABEL) : (runtime.CONTRAST_FAILS_LABEL)}
+          </span>]}
       </span>
     );
   }
@@ -215,6 +201,7 @@ export function installUiColorContrastControls(
     fixRef: fixRef,
     onFixGoneFocused: onFixGoneFocused,
   }: Color.ContrastColorDetailsProps): React.ReactElement {
+    useUiLocale();
     let value = contrastDisplayInfo(results),
       worst = value.worst;
     return (
@@ -223,28 +210,22 @@ export function installUiColorContrastControls(
           "mt-1.5 flex min-h-4 min-w-0 flex-wrap items-center gap-x-2 gap-y-1"
         }
       >
-        {[
-          <span
+        {[<span
             data-kit={"contrast-readout"}
             data-verdict={worst.passes ? "pass" : "fail"}
             className={"inline-flex min-w-0 items-center"}
           >
-            {[
-              <ContrastLockup fg={fg} results={results} />,
-              <span id={sentenceId} className={"sr-only"}>
+            {[<ContrastLockup fg={fg} results={results} />, <span id={sentenceId} className={"sr-only"}>
                 {value.sentence}
-              </span>,
-            ]}
-          </span>,
-          fix !== undefined ? (
+              </span>]}
+          </span>, fix !== undefined ? (
             <ContrastFixButton
               fix={fix}
               held={fixHeld}
               rootRef={fixRef}
               onGoneFocused={onFixGoneFocused}
             />
-          ) : null,
-        ]}
+          ) : null]}
       </div>
     );
   }
@@ -254,6 +235,7 @@ export function installUiColorContrastControls(
     rootRef: rootRef,
     onGoneFocused: onGoneFocused,
   }: Color.ContrastFixButtonProps): React.ReactElement {
+    useUiLocale();
     let value = (runtime.reactForUiContrastControls as typeof React).useId(),
       ref = (runtime.reactForUiContrastControls as typeof React).useRef(false),
       ref2 = (
@@ -301,17 +283,10 @@ export function installUiColorContrastControls(
           held && "invisible",
         )}
       >
-        {[
-          <runtime.Button
+        {[<runtime.Button
             variant={"secondary"}
             title={
-              fix.css +
-              " · " +
-              (0, runtime.contrastRatioReadout)(fix.ratio) +
-              " " +
-              runtime.CONTRAST_GROUND_PREPOSITION +
-              " " +
-              fix.ground
+              ((((((fix.css) + (" · ")) + ((0, runtime.contrastRatioReadout)(fix.ratio))) + (" ")) + (runtime.CONTRAST_GROUND_PREPOSITION)) + (" ")) + (fix.ground)
             }
             aria-describedby={value}
             disabled={held}
@@ -326,15 +301,13 @@ export function installUiColorContrastControls(
             }}
           >
             {runtime.COLOR_FIX_LABEL}
-          </runtime.Button>,
-          <span id={value} className={"sr-only"}>
+          </runtime.Button>, <span id={value} className={"sr-only"}>
             {(0, runtime.contrastFixDescription)({
               hex: fix.css,
               ratio: (0, runtime.contrastRatioSpoken)(fix.ratio),
               ground: fix.ground,
             })}
-          </span>,
-        ]}
+          </span>]}
       </span>
     );
   }

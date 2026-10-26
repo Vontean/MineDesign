@@ -1,3 +1,5 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
+import { useUiLocale } from '../ui-locale.ts';
 import type * as Overlays from "../contracts/overlays";
 import type { Tooltip as TooltipPrimitive } from "@base-ui/react/tooltip";
 import type * as React from "react";
@@ -139,6 +141,7 @@ export function installUiAvatars(runtime: RuntimeBindings): () => void {
     className: className,
     ...props
   }: ShortcutProps): React.ReactElement {
+    useUiLocale();
     let value = useAppleKeyboard(),
       value2 = (0, runtime.useTranslation)(
         "sequenceThen",
@@ -196,20 +199,11 @@ export function installUiAvatars(runtime: RuntimeBindings): () => void {
                                 : getKeycapClasses(label)
                             }
                           >
-                            {spoken === undefined ? (
-                              label
-                            ) : value4 ? (
-                              spoken
-                            ) : (
-                              <jsxShortcut.Fragment>
-                                {[
-                                  <span aria-hidden={"true"}>{label}</span>,
-                                  <span className={"sr-only select-none"}>
+                            {spoken === undefined ? (label) : (value4 ? (spoken) : (<jsxShortcut.Fragment>
+                                {[<span aria-hidden={"true"}>{label}</span>, <span className={"sr-only select-none"}>
                                     {spoken}
-                                  </span>,
-                                ]}
-                              </jsxShortcut.Fragment>
-                            )}
+                                  </span>]}
+                              </jsxShortcut.Fragment>))}
                           </kbd>,
                         ],
                       };
@@ -1261,6 +1255,7 @@ export function installUiAvatars(runtime: RuntimeBindings): () => void {
     id?: string;
     reason?: React.ReactNode;
   }): React.ReactElement {
+    useUiLocale();
     let ref = reactDisabledReason.useRef<HTMLSpanElement | null>(null);
     reactDisabledReason.useEffect(() => {
       return;
@@ -1274,13 +1269,14 @@ export function installUiAvatars(runtime: RuntimeBindings): () => void {
           [DISABLED_REASON_ATTRIBUTE]: "",
         }}
       >
-        {hasDisabledReason(reason) ? reason : null}
+        {hasDisabledReason(reason) ? (reason) : (null)}
       </span>
     );
   }
   function DarkTooltipScope({
     children: children,
   }: React.PropsWithChildren): React.ReactElement {
+    useUiLocale();
     return (
       <div className={"cds-dark-scope contents"} data-mode={"dark"}>
         {children}
@@ -1338,6 +1334,7 @@ export function installUiAvatars(runtime: RuntimeBindings): () => void {
     keys: string;
     className?: string;
   }): React.ReactElement {
+    useUiLocale();
     return (
       <Shortcut
         keys={keys}
@@ -1373,6 +1370,7 @@ export function installUiAvatars(runtime: RuntimeBindings): () => void {
     className: className,
     children: children,
   }: Overlays.TooltipProps): React.ReactElement {
+    useUiLocale();
     let value = (0, runtime.usePortalContainer)(),
       value2 = useShrinkWrapRef({
         immediate: true,
@@ -1654,42 +1652,32 @@ export function installUiAvatars(runtime: RuntimeBindings): () => void {
                         )}
                       >
                         <DarkTooltipScope>
-                          {multiline || detail || secondaryHint ? (
-                            <jsxTooltip.Fragment>
-                              {[
-                                <span
+                          {multiline || detail || secondaryHint ? (<jsxTooltip.Fragment>
+                              {[<span
                                   className={
                                     "inline-flex min-w-0 items-center gap-2"
                                   }
                                 >
-                                  {[
-                                    <span
+                                  {[<span
                                       className={multilineTooltipArrowClass}
                                     >
                                       {value12}
-                                    </span>,
-                                    shortcut && (
+                                    </span>, shortcut && (
                                       <TooltipShortcut keys={shortcut} />
-                                    ),
-                                  ]}
-                                </span>,
-                                secondaryHint && (
+                                    )]}
+                                </span>, secondaryHint && (
                                   <span
                                     className={
                                       "inline-flex min-w-0 items-center gap-2"
                                     }
                                   >
-                                    {[
-                                      <span className={"min-w-0 break-words"}>
+                                    {[<span className={"min-w-0 break-words"}>
                                         {secondaryHint.label}
-                                      </span>,
-                                      <TooltipShortcut
+                                      </span>, <TooltipShortcut
                                         keys={secondaryHint.shortcut}
-                                      />,
-                                    ]}
+                                      />]}
                                   </span>
-                                ),
-                                detail && (
+                                ), detail && (
                                   <span
                                     className={
                                       "break-words text-[calc(0.6875rem*var(--cds-rem-scale,1))]/[calc(0.875rem*var(--cds-rem-scale,1))] text-secondary"
@@ -1697,24 +1685,17 @@ export function installUiAvatars(runtime: RuntimeBindings): () => void {
                                   >
                                     {detail}
                                   </span>
-                                ),
-                              ]}
-                            </jsxTooltip.Fragment>
-                          ) : (
-                            <jsxTooltip.Fragment>
-                              {[
-                                <span className={multilineTooltipArrowClass}>
+                                )]}
+                            </jsxTooltip.Fragment>) : (<jsxTooltip.Fragment>
+                              {[<span className={multilineTooltipArrowClass}>
                                   {value12}
-                                </span>,
-                                shortcut && (
+                                </span>, shortcut && (
                                   <TooltipShortcut
                                     keys={shortcut}
                                     className={tooltipContentAlignmentClass}
                                   />
-                                ),
-                              ]}
-                            </jsxTooltip.Fragment>
-                          )}
+                                )]}
+                            </jsxTooltip.Fragment>)}
                         </DarkTooltipScope>
                       </runtime.baseTooltip.Popup>
                     </runtime.baseTooltip.Positioner>
@@ -1727,15 +1708,13 @@ export function installUiAvatars(runtime: RuntimeBindings): () => void {
     if (value17) {
       return (
         <jsxTooltip.Fragment>
-          {[
-            <tooltipImplementationContext.Provider
+          {[<tooltipImplementationContext.Provider
               value={defaultTooltipImplementation}
             >
               <tooltipsDisabledContext.Provider value={value11}>
                 {value27}
               </tooltipsDisabledContext.Provider>
-            </tooltipImplementationContext.Provider>,
-            value20 && (
+            </tooltipImplementationContext.Provider>, value20 && (
               <runtime.baseTooltip.Root
                 handle={value17}
                 open={value14}
@@ -1749,8 +1728,7 @@ export function installUiAvatars(runtime: RuntimeBindings): () => void {
               >
                 {value28}
               </runtime.baseTooltip.Root>
-            ),
-          ]}
+            )]}
         </jsxTooltip.Fragment>
       );
     }
@@ -1765,16 +1743,13 @@ export function installUiAvatars(runtime: RuntimeBindings): () => void {
         onOpenChangeComplete={callback2}
         triggerId={value3}
       >
-        {[
-          <tooltipImplementationContext.Provider
+        {[<tooltipImplementationContext.Provider
             value={defaultTooltipImplementation}
           >
             <tooltipsDisabledContext.Provider value={value11}>
               {value27}
             </tooltipsDisabledContext.Provider>
-          </tooltipImplementationContext.Provider>,
-          value28,
-        ]}
+          </tooltipImplementationContext.Provider>, value28]}
       </runtime.baseTooltip.Root>
     );
   }
@@ -1791,6 +1766,7 @@ export function installUiAvatars(runtime: RuntimeBindings): () => void {
     wrapperClassName: wrapperClassName,
     children: children,
   }: Overlays.DisabledTooltipProps): React.ReactElement {
+    useUiLocale();
     let value = reactTooltip.useId();
     return (
       <Tooltip
@@ -1809,10 +1785,7 @@ export function installUiAvatars(runtime: RuntimeBindings): () => void {
         <span
           {...getDisabledReasonWrapperProps(reason, value, wrapperClassName)}
         >
-          {[
-            children,
-            <DisabledReasonAnnouncement id={value} reason={reason} />,
-          ]}
+          {[children, <DisabledReasonAnnouncement id={value} reason={reason} />]}
         </span>
       </Tooltip>
     );
@@ -1820,6 +1793,7 @@ export function installUiAvatars(runtime: RuntimeBindings): () => void {
   function TooltipImplementationProvider({
     children: children,
   }: React.PropsWithChildren): React.ReactElement {
+    useUiLocale();
     return (
       <tooltipImplementationContext.Provider
         value={defaultTooltipImplementation}
@@ -1839,6 +1813,7 @@ export function installUiAvatars(runtime: RuntimeBindings): () => void {
     delay?: number;
     closeDelay?: number;
   }>): React.ReactElement {
+    useUiLocale();
     return (
       <tooltipProviderContext.Provider value={true}>
         <runtime.baseTooltip.Provider delay={delay} closeDelay={closeDelay}>

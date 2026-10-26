@@ -87,6 +87,7 @@ jobs:
       - run: npm run build
       - run: npm test
       - run: npm run test:modules
+      - run: npm run check:i18n
 
       - name: Pack validated release
         id: pack

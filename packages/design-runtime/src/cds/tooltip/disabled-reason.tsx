@@ -1,3 +1,5 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
+import { useUiLocale } from '../../ui-locale.ts';
 import type * as React from "react";
 /** Restored application module; prepare first, initialize in original order. */
 import { bindRuntimeValue, type RuntimeBindings } from "../../runtime-types";
@@ -34,6 +36,7 @@ export function installCdsTooltipDisabledReason(
     id?: string;
     reason?: React.ReactNode;
   }): React.ReactElement {
+    useUiLocale();
     let value = (0, reactTooltipDisabledReason.useRef)<HTMLSpanElement | null>(
       null,
     );
@@ -47,7 +50,7 @@ export function installCdsTooltipDisabledReason(
           [CdsDisabledReasonAttribute]: "",
         }}
       >
-        {hasDisabledReason(reason) ? reason : null}
+        {hasDisabledReason(reason) ? (reason) : (null)}
       </span>
     );
   }

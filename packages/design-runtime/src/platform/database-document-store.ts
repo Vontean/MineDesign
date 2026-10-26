@@ -1,3 +1,4 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -58,7 +59,7 @@ export function installPlatformDatabaseDocumentStore(
         : value3
           ? {
               status: "readonly",
-              message: "This view cannot edit the document.",
+              get message() { return uiMessage("canvas.databaseDocumentStore.thisViewCannotEditTheDocument"); },
             }
           : value5 !== undefined
             ? {
@@ -183,7 +184,7 @@ export function installPlatformDatabaseDocumentStore(
           ? {
               status: "blocked",
               pending: size,
-              message: "This view cannot edit the document.",
+              get message() { return uiMessage("canvas.databaseDocumentStore.thisViewCannotEditTheDocument"); },
             }
           : value5 !== undefined && size > 0
             ? {

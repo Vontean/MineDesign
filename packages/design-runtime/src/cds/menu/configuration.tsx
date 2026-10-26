@@ -1,3 +1,5 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
+import { useUiLocale } from '../../ui-locale.ts';
 import type {
   MenuItemState,
   MenuLabels,
@@ -49,6 +51,7 @@ export function installCdsMenuConfiguration(
     fill = false,
     children: children,
   }: PopupScrollAreaProps): React.ReactElement {
+    useUiLocale();
     let value =
       maxVisibleItems !== undefined
         ? `calc(${maxVisibleItems} * ${runtime.SheetsScrollAreaLabel} + 0.5rem)`
@@ -60,16 +63,14 @@ export function installCdsMenuConfiguration(
           fill && "flex-1",
         )}
       >
-        {header && (
-          <div
+        {header && (<div
             className={(0, runtime.cn)(
               runtime.SheetsScrollAreaClassNames_3,
               headerClassName,
             )}
           >
             {header}
-          </div>
-        )}
+          </div>)}
         <div
           style={{
             maxHeight: value,
@@ -81,9 +82,7 @@ export function installCdsMenuConfiguration(
         >
           {children}
         </div>
-        {footer && (
-          <div className={runtime.SheetsScrollAreaClassNames_4}>{footer}</div>
-        )}
+        {footer && (<div className={runtime.SheetsScrollAreaClassNames_4}>{footer}</div>)}
       </div>
     ) : (
       <div

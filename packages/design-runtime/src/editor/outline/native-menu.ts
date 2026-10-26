@@ -1,3 +1,4 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -85,40 +86,40 @@ export function installEditorOutlineNativeMenu(
   return () => {
     OutlineNativeMenuTitle1RectOvalConfig = {
       title1: {
-        label: "Title",
+        get label() { return uiMessage("inspector.nativeMenu.title"); },
         glyph: "title",
       },
       rect: {
-        label: "Rectangle",
+        get label() { return uiMessage("inspector.nativeMenu.rectangle"); },
         glyph: "rect",
       },
       oval: {
-        label: "Oval",
+        get label() { return uiMessage("inspector.nativeMenu.oval"); },
         glyph: "oval",
       },
       line: {
-        label: "Line",
+        get label() { return uiMessage("inspector.nativeMenu.line"); },
         glyph: "line",
       },
       arrow: {
-        label: "Arrow",
+        get label() { return uiMessage("inspector.nativeMenu.arrow"); },
         glyph: "arrow",
       },
       pen: {
-        label: "Drawing",
+        get label() { return uiMessage("inspector.nativeMenu.drawing"); },
         glyph: "pen",
       },
       image: {
-        label: "Image",
+        get label() { return uiMessage("inspector.nativeMenu.image"); },
         glyph: "image",
       },
     };
     OutlineNativeMenuLabelGlyphConfig = {
-      label: "Note",
+      get label() { return uiMessage("inspector.nativeMenu.note"); },
       glyph: "note",
     };
     OutlineNativeMenuLabelGlyphConfig_2 = {
-      label: "Video",
+      get label() { return uiMessage("inspector.nativeMenu.video"); },
       glyph: "image",
     };
     OutlineNativeMenuLimit = 26;

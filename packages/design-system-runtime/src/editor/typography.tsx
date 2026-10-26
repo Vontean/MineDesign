@@ -1,3 +1,6 @@
+import { uiFontWeight } from '@minedesign/contracts/ui-format';
+import { useUiLocale } from '../ui-locale.ts';
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 import type * as React from "react";
 import type * as Token from "../contracts/token-editors";
 import type * as Model from "../contracts";
@@ -75,14 +78,7 @@ export function installEditorTypography(runtime: RuntimeBindings): () => void {
     }
     return state;
   }
-  function fontWeightLabel(weight: string | number): string {
-    let value =
-      typeof weight === "number" ? weight : parseInt(String(weight), 10);
-    return (
-      FONT_WEIGHT_LABELS.find(([input]): boolean => input === value)?.[1] ??
-      String(weight)
-    );
-  }
+  function fontWeightLabel(weight: string | number): string { return uiFontWeight(weight); }
   function groupFontsByFamily(
     fonts: Token.EditorFont[],
   ): [string, Token.EditorFont[]][] {
@@ -101,6 +97,7 @@ export function installEditorTypography(runtime: RuntimeBindings): () => void {
     missing: missing,
     edit: edit,
   }: Token.MissingFontNoticeProps): React.ReactElement {
+    useUiLocale();
     let value: boolean = missing.length === 1;
     return (
       <div className={"contents"} {...runtime.UNCOMMENTABLE_PROPS}>
@@ -114,25 +111,16 @@ export function installEditorTypography(runtime: RuntimeBindings): () => void {
                 onClick={edit.dropMissingFonts}
                 data-testid={"ds-fonts-drop-missing"}
               >
-                {value ? "Drop the reference" : "Drop the references"}
+                {value ? ("Drop the reference") : ("Drop the references")}
               </runtime.Button>
             ) : undefined
           }
         >
-          {[
-            value
-              ? "A font file is"
-              : String(missing.length) + " font files are",
-            " referenced but not uploaded: ",
-            <span className={"font-mono"}>
+          {[value ? (uiMessage("design-system.typography.aFontFileIs")) : (uiMessage("design-system.typography.fontFilesAre", { value1: String(String(missing.length)) })), uiMessage("design-system.typography.referencedButNotUploaded"), <span className={"font-mono"}>
               {missing
                 .map((input) => fontFileDisplayPath(input.path))
                 .join(", ")}
-            </span>,
-            edit !== undefined
-              ? " — add " + (value ? "it" : "them") + " with Upload font."
-              : " — an editor can upload " + (value ? "it" : "them") + ".",
-          ]}
+            </span>, edit !== undefined ? (uiMessage("design-system.typography.addWithUploadFont", { value1: String(value ? (uiMessage("design-system.typography.it")) : (uiMessage("design-system.typography.them"))) })) : (uiMessage("design-system.typography.anEditorCanUpload", { value1: String(value ? (uiMessage("design-system.typography.it")) : (uiMessage("design-system.typography.them"))) }))]}
         </runtime.Callout>
       </div>
     );
@@ -141,6 +129,7 @@ export function installEditorTypography(runtime: RuntimeBindings): () => void {
     fams: fams,
     onRemoveFont: onRemoveFont,
   }: Token.FontFilesListProps): React.ReactElement {
+    useUiLocale();
     return (
       <div
         className={"ds-fontrows flex flex-col"}
@@ -172,8 +161,7 @@ export function installEditorTypography(runtime: RuntimeBindings): () => void {
                 children: [
                   <runtime.TooltipWrapper
                     tip={
-                      input3.path +
-                      (input3.asset === true
+                      (input3.path) + (input3.asset === true
                         ? " — a font file under assets/, not a face of the type system"
                         : input3.stray === true
                           ? " — not referenced by any tokens.json font face"
@@ -182,16 +170,13 @@ export function installEditorTypography(runtime: RuntimeBindings): () => void {
                     className={"min-w-0 flex-[1_1_10rem]"}
                   >
                     <span className={"min-w-0 truncate text-body text-primary"}>
-                      {[
-                        fontFileDisplayPath(input3.path),
-                        input3.asset === true ? (
+                      {[fontFileDisplayPath(input3.path), input3.asset === true ? (
                           <span className={"text-muted"}>{" · asset"}</span>
                         ) : input3.stray === true ? (
                           <span className={"text-muted"}>
                             {" · unreferenced"}
                           </span>
-                        ) : null,
-                      ]}
+                        ) : null]}
                     </span>
                   </runtime.TooltipWrapper>,
                   <span
@@ -208,12 +193,7 @@ export function installEditorTypography(runtime: RuntimeBindings): () => void {
                     }}
                     aria-hidden={"true"}
                   >
-                    {[
-                      input,
-                      " ",
-                      fontFileSlantLabel(input3.weight),
-                      input3.style === "italic" ? " italic" : "",
-                    ]}
+                    {[input, " ", fontFileSlantLabel(input3.weight), input3.style === "italic" ? " italic" : ""]}
                   </span>,
                   <runtime.RemoveSectionButton
                     label={fontFileDisplayPath(input3.path)}
@@ -246,6 +226,7 @@ export function installEditorTypography(runtime: RuntimeBindings): () => void {
     testid: testid,
     disabled: disabled,
   }: Token.FontFamilyPickerProps): React.ReactElement {
+    useUiLocale();
     let callback = (input: string) => {
         let value6 = input.trim().toLowerCase();
         return Object.keys(families).find(
@@ -274,7 +255,7 @@ export function installEditorTypography(runtime: RuntimeBindings): () => void {
           labelStyle: {
             fontFamily: families[input],
           },
-          group: "This system",
+          get group() { return uiMessage("design-system.typography.thisSystem"); },
         })),
         ...fontNames.filter(callback2).map((input) => ({
           value: "font:" + input,
@@ -282,7 +263,7 @@ export function installEditorTypography(runtime: RuntimeBindings): () => void {
           labelStyle: {
             fontFamily: "'" + input + "'",
           },
-          group: "Font files",
+          get group() { return uiMessage("design-system.typography.fontFiles"); },
         })),
         ...runtime.WEB_SAFE_FONT_CATALOG.map(
           (input: { family: string }) => input.family,
@@ -294,7 +275,7 @@ export function installEditorTypography(runtime: RuntimeBindings): () => void {
             labelStyle: {
               fontFamily: input,
             },
-            group: "Web safe",
+            get group() { return uiMessage("design-system.typography.webSafe"); },
           })),
         ...runtime.GOOGLE_FONT_FAMILY_NAMES.filter(callback2).map(
           (input: string) => ({
@@ -308,7 +289,7 @@ export function installEditorTypography(runtime: RuntimeBindings): () => void {
         ),
         {
           value: CUSTOM_FONT_FAMILY_SENTINEL,
-          label: "Custom…",
+          get label() { return uiMessage("design-system.typography.custom"); },
           separatorBefore: true,
         },
       ],
@@ -402,13 +383,12 @@ export function installEditorTypography(runtime: RuntimeBindings): () => void {
         className={"ds-fontfield block min-w-0 flex-1"}
         data-testid={testid}
       >
-        {[
-          <runtime.Select
-            aria-label={"Font"}
+        {[<runtime.Select
+            aria-label={uiMessage("design-system.typography.font")}
             popupAttrs={runtime.UNCOMMENTABLE_PROPS}
             items={items}
             value={value3}
-            placeholder={value === "" ? undefined : value}
+            placeholder={value === "" ? (undefined) : (value)}
             hint={value === "" ? "Font" : undefined}
             disabled={disabled}
             searchable={true}
@@ -422,13 +402,12 @@ export function installEditorTypography(runtime: RuntimeBindings): () => void {
             }}
             onChange={callback4}
             data-testid={testid + "-menu"}
-          />,
-          value4 ? (
+          />, value4 ? (
             <span className={"mt-1 block"}>
               <runtime.TextInput
                 autoFocus={true}
-                placeholder={"Font name, e.g. Söhne"}
-                aria-label={"Custom font name"}
+                placeholder={uiMessage("design-system.typography.fontNameEGSHne")}
+                aria-label={uiMessage("design-system.typography.customFontName")}
                 spellCheck={false}
                 autoComplete={"off"}
                 data-1p-ignore={"true"}
@@ -468,8 +447,7 @@ export function installEditorTypography(runtime: RuntimeBindings): () => void {
                 }}
               />
             </span>
-          ) : null,
-        ]}
+          ) : null]}
       </span>
     );
   }
@@ -488,9 +466,10 @@ export function installEditorTypography(runtime: RuntimeBindings): () => void {
     row: row,
     anchorKey: anchorKey,
   }: Token.TypeStyleFieldsProps): React.ReactElement {
+    useUiLocale();
     let value = FONT_WEIGHT_LABELS.map(([input, input2]) => ({
         value: String(input),
-        label: input2,
+        label: uiFontWeight(input),
       })),
       value2 = (0, runtime.parseEditableCssLength)(v.fontSize) ?? {
         n: parseTypographyLength(v.fontSize, 16),
@@ -596,7 +575,7 @@ export function installEditorTypography(runtime: RuntimeBindings): () => void {
       value9 = (
         <span className={"min-w-0"} {...callback4("weight", "Weight")}>
           <runtime.Select
-            aria-label={"Weight"}
+            aria-label={uiMessage("design-system.typography.weight")}
             popupAttrs={runtime.UNCOMMENTABLE_PROPS}
             items={value}
             value={String(v.fontWeight)}
@@ -617,7 +596,7 @@ export function installEditorTypography(runtime: RuntimeBindings): () => void {
           {...callback4("size", "Size")}
         >
           <runtime.PropertyNumberInput
-            aria-label={"Size"}
+            aria-label={uiMessage("design-system.typography.size")}
             inputRef={inputRef}
             unit={value2.unit || "px"}
             value={value2.n}
@@ -639,10 +618,10 @@ export function installEditorTypography(runtime: RuntimeBindings): () => void {
           data-testid={testid + "-lh"}
           data-knob={"lh"}
           className={"min-w-0"}
-          {...callback4("line-height", "Line height")}
+          {...callback4("line-height", uiMessage("design-system.typography.lineHeight"))}
         >
           <runtime.PropertyNumberInput
-            aria-label={"Line height"}
+            aria-label={uiMessage("design-system.typography.lineHeight")}
             inputRef={inputRef}
             prefix={<LineHeightIcon />}
             unit={value3.unit !== "" ? value3.unit : undefined}
@@ -671,10 +650,10 @@ export function installEditorTypography(runtime: RuntimeBindings): () => void {
           data-testid={testid + "-ls"}
           data-knob={"ls"}
           className={"min-w-0"}
-          {...callback4("letter-spacing", "Letter spacing")}
+          {...callback4("letter-spacing", uiMessage("design-system.typography.letterSpacing"))}
         >
           <runtime.PropertyNumberInput
-            aria-label={"Tracking"}
+            aria-label={uiMessage("design-system.typography.tracking")}
             inputRef={inputRef}
             prefix={<LetterSpacingIcon />}
             unit={value6}
@@ -698,23 +677,13 @@ export function installEditorTypography(runtime: RuntimeBindings): () => void {
     if (row !== undefined) {
       return (
         <jsxTypographyEditors.Fragment>
-          {[
-            row("Font", value8),
-            row("Weight", callback5(value9, value10)),
-            row("Line height", callback5(value11, value12)),
-          ]}
+          {[row(uiMessage("design-system.typography.font"), value8), row(uiMessage("design-system.typography.weight"), callback5(value9, value10)), row(uiMessage("design-system.typography.lineHeight"), callback5(value11, value12))]}
         </jsxTypographyEditors.Fragment>
       );
     }
     return (
       <div className={"ds-tedit grid grid-cols-2 gap-sm"} data-testid={testid}>
-        {[
-          <span className={"col-span-2 min-w-0"}>{value8}</span>,
-          value9,
-          value10,
-          value11,
-          value12,
-        ]}
+        {[<span className={"col-span-2 min-w-0"}>{value8}</span>, value9, value10, value11, value12]}
       </div>
     );
   }
@@ -726,6 +695,7 @@ export function installEditorTypography(runtime: RuntimeBindings): () => void {
     fontNames: fontNames,
     edit: edit,
   }: Token.TypeStyleMetricEditorsProps): React.ReactElement {
+    useUiLocale();
     return (
       <div
         className={"px-md pb-sm"}
@@ -765,6 +735,7 @@ export function installEditorTypography(runtime: RuntimeBindings): () => void {
     fontNames: fontNames,
     edit: edit,
   }: Token.TypeStyleSpecimenProps): React.ReactElement {
+    useUiLocale();
     let [value, value2] = (
         runtime.reactGoogleFontCatalog as typeof React
       ).useState(false),
@@ -811,7 +782,7 @@ export function installEditorTypography(runtime: RuntimeBindings): () => void {
           onOpenChange={value2}
           trigger={
             <runtime.PropertyPopoverTrigger
-              label={"Edit " + s.name}
+              label={uiMessage("design-system.typography.edit", { value1: String(s.name) })}
               text={value3}
               onClick={(input: React.MouseEvent<HTMLButtonElement>): void => {
                 ref.current = input.detail === 0;
@@ -823,18 +794,17 @@ export function installEditorTypography(runtime: RuntimeBindings): () => void {
           focusOnOpen={ref.current}
           className={"w-[17rem]"}
         >
-          {value ? (
-            <runtime.CdsRoot density={"compact"} className={"contents"}>
+          {value ? (<runtime.CdsRoot density={"compact"} className={"contents"}>
               <div
                 role={"group"}
-                aria-label={"Text style " + s.name}
+                aria-label={uiMessage("design-system.typography.textStyle", { value1: String(s.name) })}
                 {...(0, runtime.commentTargetProps)(
                   "editor",
                   "style/" + s.name,
                 )}
               >
                 <runtime.PropertyPopoverPanel
-                  title={"Text"}
+                  title={uiMessage("design-system.typography.text")}
                   onClose={() => value2(false)}
                 >
                   <TypeStyleMetricEditors
@@ -847,8 +817,7 @@ export function installEditorTypography(runtime: RuntimeBindings): () => void {
                   />
                 </runtime.PropertyPopoverPanel>
               </div>
-            </runtime.CdsRoot>
-          ) : null}
+            </runtime.CdsRoot>) : (null)}
         </runtime.PropertyPopover>
       </span>
     );
@@ -875,6 +844,7 @@ export function installEditorTypography(runtime: RuntimeBindings): () => void {
     taken: taken,
     edit: edit,
   }: Token.TypeStyleRowProps): React.ReactElement {
+    useUiLocale();
     let familyKey = s.familyKey ?? g.family,
       z = families[familyKey] ?? "system-ui, sans-serif",
       value = typeStylePreviewStyle(s, z),
@@ -915,8 +885,7 @@ export function installEditorTypography(runtime: RuntimeBindings): () => void {
         {...(0, runtime.commentTargetProps)("style", s.name)}
         {...value4.rowProps}
       >
-        {[
-          <span
+        {[<span
             className={
               "ds-cname ds-shname ds-tname flex min-w-0 items-start font-mono"
             }
@@ -934,40 +903,34 @@ export function installEditorTypography(runtime: RuntimeBindings): () => void {
               }
               data-testid={"ds-style-name-" + s.name}
             />
-          </span>,
-          <span
+          </span>, <span
             className={
               "ds-bcell ds-wcell flex min-w-0 flex-col items-start gap-xs"
             }
             role={"cell"}
           >
-            {[
-              <span
+            {[<span
                 className={"ds-tspec truncate text-primary"}
                 style={state}
                 data-testid={"ds-style-sample-" + s.name}
               >
-                {DEFAULT_TYPE_SAMPLE}
-              </span>,
-              <TypeStyleSpecimen
+                {uiMessage("design-system.typography.theQuickBrownFoxJumps")}
+              </span>, <TypeStyleSpecimen
                 s={s}
                 famKey={familyKey}
                 families={families}
                 familyNames={familyNames}
                 fontNames={fontNames}
                 edit={edit}
-              />,
-            ]}
-          </span>,
-          <span
+              />]}
+          </span>, <span
             className={
               "ds-cacts ds-cgutter relative flex items-start justify-center"
             }
             role={"cell"}
             {...runtime.UNCOMMENTABLE_PROPS}
           >
-            {[
-              <runtime.UsageNoteEditor
+            {[<runtime.UsageNoteEditor
                 value={s.usage ?? ""}
                 label={s.name}
                 anchorKey={"style/" + s.name}
@@ -978,17 +941,14 @@ export function installEditorTypography(runtime: RuntimeBindings): () => void {
                 }
                 onDone={edit?.done}
                 data-testid={"ds-style-usage-" + s.name}
-              />,
-              edit !== undefined ? (
+              />, edit !== undefined ? (
                 <runtime.RemoveRowButton
-                  label={"Remove " + s.name}
+                  label={uiMessage("design-system.typography.remove", { value1: String(s.name) })}
                   onRemove={() => edit.remove(s.name)}
                   data-testid={"ds-style-remove-" + s.name}
                 />
-              ) : null,
-            ]}
-          </span>,
-          <runtime.RowContextMenu
+              ) : null]}
+          </span>, <runtime.RowContextMenu
             title={s.name}
             at={value4.at}
             anchor={value4.anchor}
@@ -999,13 +959,12 @@ export function installEditorTypography(runtime: RuntimeBindings): () => void {
                 ? {
                     rename: callback,
                     remove: () => edit.remove(s.name),
-                    removeLabel: "Remove " + s.name,
+                    get removeLabel() { return uiMessage("design-system.typography.remove", { value1: String(s.name) }); },
                   }
                 : {}),
               copy: s.fontSize + " / " + s.lineHeight,
             }}
-          />,
-        ]}
+          />]}
       </div>
     );
   }
@@ -1013,6 +972,7 @@ export function installEditorTypography(runtime: RuntimeBindings): () => void {
     edit: edit,
     note: note,
   }: Token.EditorSectionHeaderProps<Token.TypographyEdit>): React.ReactElement {
+    useUiLocale();
     return (
       <runtime.SectionHeader
         title={TYPOGRAPHY_SECTION_LABEL}
@@ -1022,24 +982,21 @@ export function installEditorTypography(runtime: RuntimeBindings): () => void {
         actions={
           edit === undefined ? undefined : (
             <jsxTypographyEditors.Fragment>
-              {[
-                edit.addSet !== undefined ? (
+              {[edit.addSet !== undefined ? (
                   <runtime.SectionAddButton
-                    label={"Add"}
+                    label={uiMessage("design-system.typography.add")}
                     what={"Add type set"}
                     onClick={() => edit.addSet?.()}
                     data-testid={"ds-add-type-set"}
                   />
-                ) : null,
-                edit.uploadFont !== undefined ? (
+                ) : null, edit.uploadFont !== undefined ? (
                   <runtime.SectionAddButton
-                    label={"Upload font"}
+                    label={uiMessage("design-system.typography.uploadFont")}
                     icon={"Upload"}
                     onClick={() => edit.uploadFont?.()}
                     data-testid={"ds-fonts-upload-menu"}
                   />
-                ) : null,
-              ]}
+                ) : null]}
             </jsxTypographyEditors.Fragment>
           )
         }
@@ -1055,6 +1012,7 @@ export function installEditorTypography(runtime: RuntimeBindings): () => void {
     edit: edit,
     headFor: headFor,
   }: Token.TypographySectionProps): React.ReactElement | null {
+    useUiLocale();
     let value = fonts.filter((input): boolean => input.missing === true),
       value2 = groupFontsByFamily(
         fonts.filter((input): boolean => input.missing !== true),
@@ -1083,7 +1041,7 @@ export function installEditorTypography(runtime: RuntimeBindings): () => void {
         edit?.uploadFont !== undefined ? (
           <runtime.EditorActionButton
             onClick={edit.uploadFont}
-            label={"Upload font"}
+            label={uiMessage("design-system.typography.uploadFont")}
             icon={"Upload"}
             data-testid={"ds-fonts-upload"}
           />
@@ -1094,15 +1052,11 @@ export function installEditorTypography(runtime: RuntimeBindings): () => void {
           role={"row"}
           {...runtime.UNCOMMENTABLE_PROPS}
         >
-          {[
-            <span role={"columnheader"}>{"Name"}</span>,
-            <span role={"columnheader"}>{"Preview"}</span>,
-            <span
+          {[<span role={"columnheader"}>{uiMessage("design-system.typography.name")}</span>, <span role={"columnheader"}>{uiMessage("design-system.typography.preview")}</span>, <span
               role={"columnheader"}
               className={"ds-cgutter"}
               aria-hidden={"true"}
-            />,
-          ]}
+            />]}
         </div>
       );
     return (
@@ -1110,11 +1064,9 @@ export function installEditorTypography(runtime: RuntimeBindings): () => void {
         className={"ds-type flex flex-col gap-[48px]"}
         data-testid={"ds-type"}
       >
-        {[
-          groups.length === 0 && edit !== undefined ? (
+        {[groups.length === 0 && edit !== undefined ? (
             <runtime.EmptyEditorList text={"No type sets yet"} />
-          ) : null,
-          groups.map((input) => {
+          ) : null, groups.map((input) => {
             let state: Token.SectionHead = {
                 title: input.name,
                 defaultTitle: input.name,
@@ -1139,8 +1091,7 @@ export function installEditorTypography(runtime: RuntimeBindings): () => void {
                     data-testid={"ds-type-" + input.name + "-head"}
                     {...runtime.COMMENT_TARGET_PROPS}
                   >
-                    {[
-                      <span className={"min-w-0 flex-1"}>
+                    {[<span className={"min-w-0 flex-1"}>
                         <runtime.EditableName
                           kind={"title"}
                           name={state.title}
@@ -1156,8 +1107,7 @@ export function installEditorTypography(runtime: RuntimeBindings): () => void {
                           data-testid={value5 + "-title"}
                           inputTestId={value5 + "-field"}
                         />
-                      </span>,
-                      state.onRemove !== undefined ? (
+                      </span>, state.onRemove !== undefined ? (
                         <runtime.RemoveSectionButton
                           label={state.title}
                           icon={"Trash"}
@@ -1165,21 +1115,19 @@ export function installEditorTypography(runtime: RuntimeBindings): () => void {
                           onRemove={state.onRemove}
                           data-testid={value5 + "-delete"}
                         />
-                      ) : null,
-                      edit?.add !== undefined ? (
+                      ) : null, edit?.add !== undefined ? (
                         <runtime.Button
                           variant={"ghost"}
                           size={"sm"}
                           iconOnly={true}
                           icon={"Add"}
-                          aria-label={"Add a type style to " + state.title}
-                          tooltip={"Add style"}
+                          aria-label={uiMessage("design-system.typography.addATypeStyleTo", { value1: String(state.title) })}
+                          tooltip={uiMessage("design-system.typography.addStyle")}
                           onClick={() => edit.add?.(input.name)}
                           data-testid={"ds-style-add-" + input.name}
                           {...runtime.UNCOMMENTABLE_PROPS}
                         />
-                      ) : null,
-                    ]}
+                      ) : null]}
                   </div>,
                   input.styles.length === 0 ? (
                     <runtime.EmptyEditorList text={"No type styles yet"} />
@@ -1188,13 +1136,11 @@ export function installEditorTypography(runtime: RuntimeBindings): () => void {
                     <div
                       className={"ds-ttable ds-ctable ds-wtable"}
                       role={"table"}
-                      aria-label={state.title + " styles"}
+                      aria-label={(state.title) + (" styles")}
                       hidden={input.styles.length === 0}
                       data-edit={edit !== undefined ? "" : undefined}
                     >
-                      {[
-                        value4,
-                        input.styles.map((input2) =>
+                      {[value4, input.styles.map((input2) =>
                           (() => {
                             const _Element2 = TypeStyleRow;
                             const _elementProps2 = {
@@ -1214,8 +1160,7 @@ export function installEditorTypography(runtime: RuntimeBindings): () => void {
                               />
                             );
                           })(),
-                        ),
-                      ]}
+                        )]}
                     </div>
                   </div>,
                 ],
@@ -1223,50 +1168,39 @@ export function installEditorTypography(runtime: RuntimeBindings): () => void {
               const _elementKey3 = input.name;
               return <_Element3 key={_elementKey3} {..._elementProps3} />;
             })();
-          }),
-          fonts.length > 0 || edit !== undefined ? (
+          }), fonts.length > 0 || edit !== undefined ? (
             <section
               className={"ds-tgroup flex min-w-0 flex-col"}
-              aria-label={"Font files"}
+              aria-label={uiMessage("design-system.typography.fontFiles")}
               data-testid={"ds-fonts"}
               data-id={(0, runtime.commentTargetId)("ds", "font-files")}
             >
-              {[
-                <div
+              {[<div
                   className={
                     "ds-cgroup-head flex min-h-10 min-w-0 items-center gap-xs pb-xs"
                   }
                   {...runtime.COMMENT_TARGET_PROPS}
                 >
-                  {[
-                    <span
+                  {[<span
                       className={"ds-gname min-w-0 flex-1"}
                       data-testid={"ds-card-fonts-title"}
                     >
-                      {"Font files"}
-                    </span>,
-                    value3,
-                  ]}
-                </div>,
-                <div className={"ds-ttable ds-tfonts"}>
-                  {[
-                    value.length > 0 ? (
+                      {uiMessage("design-system.typography.fontFiles")}
+                    </span>, value3]}
+                </div>, <div className={"ds-ttable ds-tfonts"}>
+                  {[value.length > 0 ? (
                       <MissingFontNotice missing={value} edit={edit} />
-                    ) : null,
-                    value2.length > 0 ? (
+                    ) : null, value2.length > 0 ? (
                       <FontFilesList
                         fams={value2}
                         onRemoveFont={onRemoveFont}
                       />
                     ) : (
                       <runtime.EmptyEditorList text={"No font files yet"} />
-                    ),
-                  ]}
-                </div>,
-              ]}
+                    )]}
+                </div>]}
             </section>
-          ) : null,
-        ]}
+          ) : null]}
       </div>
     );
   }
@@ -1307,7 +1241,7 @@ export function installEditorTypography(runtime: RuntimeBindings): () => void {
   bindRuntimeValue(
     runtime,
     "DEFAULT_TYPE_SAMPLE",
-    () => DEFAULT_TYPE_SAMPLE,
+    () => uiMessage("design-system.typography.theQuickBrownFoxJumps"),
     (value) => {
       DEFAULT_TYPE_SAMPLE = value;
     },

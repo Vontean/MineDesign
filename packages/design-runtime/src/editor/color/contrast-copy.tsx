@@ -1,3 +1,4 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -40,10 +41,10 @@ export function installEditorColorContrastCopy(
     options?: Dynamic,
   ): Dynamic {
     return (
-      "Nothing changed. " +
-      (input ?? "This field") +
+      uiMessage("inspector.contrastCopy.nothingChanged") +
+      (input ?? uiMessage("inspector.contrastCopy.thisField")) +
       " takes a number " +
-      (options ? "in " + options : "only") +
+      (options ? uiMessage("inspector.contrastCopy.in") + options : "only") +
       "."
     );
   }
@@ -87,7 +88,7 @@ export function installEditorColorContrastCopy(
   }
   function readableShadeDescription(input?: Dynamic): Dynamic {
     return (
-      "Changes the color to " +
+      uiMessage("inspector.contrastCopy.changesTheColorTo") +
       input.hex +
       ", contrast " +
       input.ratio +
@@ -344,36 +345,36 @@ export function installEditorColorContrastCopy(
     );
     (0, runtime.initializeCdsIndex)();
     ResetValue = "Reset";
-    ColorContrastCopyLabel = "More actions";
-    ColorContrastCopyHandler = (input?: Dynamic): Dynamic => "Add to " + input;
+    ColorContrastCopyLabel = uiMessage("inspector.contrastCopy.moreActions");
+    ColorContrastCopyHandler = (input?: Dynamic): Dynamic => uiMessage("inspector.contrastCopy.addTo") + input;
     CloseValue = "Close";
     TypeValue = "Type";
     MixedValue = "Mixed";
     ColorValue = "Color";
-    ColorContrastCopyLabel_2 = "Search colors";
-    ColorContrastCopyLabel_3 = "No matches";
-    InThisArtboardMessage = "In this artboard";
-    ColorContrastCopyLabel_4 = "In these artboards";
-    ColorContrastCopyLabel_5 = "Search styles";
+    ColorContrastCopyLabel_2 = uiMessage("inspector.contrastCopy.searchColors");
+    ColorContrastCopyLabel_3 = uiMessage("inspector.contrastCopy.noMatches");
+    InThisArtboardMessage = uiMessage("inspector.contrastCopy.inThisArtboard");
+    ColorContrastCopyLabel_4 = uiMessage("inspector.contrastCopy.inTheseArtboards");
+    ColorContrastCopyLabel_5 = uiMessage("inspector.contrastCopy.searchStyles");
     IncreaseValue = "Increase";
     DecreaseValue = "Decrease";
     InheritedValue = "inherited";
-    ColorContrastCopyLabel_6 = "Per side";
-    ColorContrastCopyLabel_7 = "Per corner";
+    ColorContrastCopyLabel_6 = uiMessage("inspector.contrastCopy.perSide");
+    ColorContrastCopyLabel_7 = uiMessage("inspector.contrastCopy.perCorner");
     EditValue = "Edit";
     HideValue = "Hide";
     ColorContrastCopyLabel_8 =
-      "The values differ \u2014 make them equal to use one field";
+      uiMessage("inspector.contrastCopy.theValuesDifferMakeThem");
     ColorContrastCopyTopRightBottomValues = ["Top", "Right", "Bottom", "Left"];
     ColorContrastCopyItems = [
-      "Top left",
-      "Top right",
-      "Bottom right",
-      "Bottom left",
+      uiMessage("inspector.contrastCopy.topLeft"),
+      uiMessage("inspector.contrastCopy.topRight"),
+      uiMessage("inspector.contrastCopy.bottomRight"),
+      uiMessage("inspector.contrastCopy.bottomLeft"),
     ];
     OnValue = "on";
-    ColorContrastCopyLabel_9 = "Good contrast";
-    ColorContrastCopyLabel_10 = "Poor contrast";
-    ColorContrastCopyLabel_11 = "Use a readable shade";
+    ColorContrastCopyLabel_9 = uiMessage("inspector.contrastCopy.goodContrast");
+    ColorContrastCopyLabel_10 = uiMessage("inspector.contrastCopy.poorContrast");
+    ColorContrastCopyLabel_11 = uiMessage("inspector.contrastCopy.useAReadableShade");
   };
 }

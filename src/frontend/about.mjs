@@ -1,3 +1,5 @@
+import { uiError } from '@minedesign/contracts/ui-error';
+import { getUiLocale } from '@minedesign/contracts/ui-locale';
 import { createElement, FolderGit2, UserRound, Mail, ArrowUpRight } from 'lucide';
 import { PROJECT_LINKS } from '../../packages/contracts/src/ui-text.ts';
 
@@ -5,18 +7,18 @@ import { PROJECT_LINKS } from '../../packages/contracts/src/ui-text.ts';
 export function createAbout({ $, text, client, openLink, preference, onLanguage, version }) {
   const dialog = $('about');
   let info = null, checking = false, failure = null, poll = null;
-  const reason = code => ({ dirty: text().blockedDirty, 'no-upstream': text().blockedNoUpstream })[code] ?? code;
+  const reason = code => ({ dirty: text().blockedDirty, 'no-upstream': text().blockedNoUpstream })[code] ?? uiError({code},getUiLocale());
 
   function action() {
     const t = text(), job = info?.job, status = info?.status;
     if (job?.state === 'running') return { status: t.updateSteps[job.step] ?? t.updating, label: t.updating, disabled: true };
     if (checking) return { status: t.checking, label: t.checking, disabled: true };
     const check = { label: t.checkUpdates, run: check_ };
-    if (failure) return { status: t.checkFailed(failure), ...check };
+    if (failure) return { status: t.checkFailed(uiError(failure,getUiLocale())), ...check };
     // 刚完成或失败的更新先于检查结果展示，直到下一次检查
     if (job?.state === 'done' && !status) return { status: job.reconnect ? t.updatedReconnect : t.updated, ...check };
     if (job?.state === 'failed' && !status) return { status: t.updateFailed(reason(job.error)), ...check };
-    if (status?.error) return { status: t.checkFailed(status.error), ...check };
+    if (status?.error) return { status: t.checkFailed(uiError({code:status.error},getUiLocale())), ...check };
     if (status?.blocked) return { status: reason(status.blocked), ...check };
     if (status?.behind > 0) return { status: status.source === 'npm' ? t.releaseAvailable(status.latest) : t.updateAvailable(status.behind, status.latest), label: t.update, primary: true, run: update };
     if (status) return { status: t.upToDate, ...check };
@@ -67,7 +69,7 @@ export function createAbout({ $, text, client, openLink, preference, onLanguage,
       info = await client().about(check);
       failure = null;
     } catch (error) {
-      failure = error.message;
+      failure = error;
     }
     render();
     if (info?.job?.state === 'running') poll = setTimeout(() => refresh(), 1500);
@@ -84,7 +86,7 @@ export function createAbout({ $, text, client, openLink, preference, onLanguage,
       info = await client().update();
       failure = null;
     } catch (error) {
-      failure = reason(error.message);
+      failure = error;
     }
     render();
     if (info?.job?.state === 'running') poll = setTimeout(() => refresh(), 1500);

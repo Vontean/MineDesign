@@ -1,3 +1,5 @@
+import { useUiLocale } from '../ui-locale.ts';
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import { bindRuntimeValue, type RuntimeBindings } from "../runtime-types";
 import type * as React from "react";
@@ -12,6 +14,7 @@ export function installUiCommitTextInput(runtime: RuntimeBindings): () => void {
   var reactJW: ReactNamespace;
   var jsxForUiCommitTextInput: JsxNamespace;
   function AppDesignProvider({ children: children }: React.PropsWithChildren) {
+    useUiLocale();
     return (
       <runtime.CdsRoot
         density={runtime.APP_DENSITY}
@@ -36,6 +39,7 @@ export function installUiCommitTextInput(runtime: RuntimeBindings): () => void {
     onBlur: onBlur,
     ...remainingProps
   }: CommitTextInputProps) {
+    useUiLocale();
     let [value2, value3] = reactJW.useState(value),
       ref = reactJW.useRef(false),
       ref2 = reactJW.useRef(false),
@@ -120,6 +124,7 @@ export function installUiCommitTextInput(runtime: RuntimeBindings): () => void {
     "aria-label": ariaLabel,
     "data-testid": testId,
   }: EditableTextProps) {
+    useUiLocale();
     let [editing, setEditing] = reactJW.useState(defaultEditing && !readOnly),
       initialRenderRef = reactJW.useRef(true),
       editingChangeRef = reactJW.useRef(onEditingChange);
@@ -164,7 +169,7 @@ export function installUiCommitTextInput(runtime: RuntimeBindings): () => void {
           )}
           role={"button"}
           tabIndex={tabIndex}
-          aria-description={"Click to rename"}
+          aria-description={uiMessage("design-system.commitTextInput.clickToRename")}
           data-testid={testId}
           onClick={(input: React.MouseEvent<HTMLSpanElement>) => {
             input.stopPropagation();
@@ -197,7 +202,7 @@ export function installUiCommitTextInput(runtime: RuntimeBindings): () => void {
           }
           placeholder={placeholder}
           maxLength={maxLength}
-          aria-label={ariaLabel ?? "Rename " + value}
+          aria-label={ariaLabel ?? (uiMessage("design-system.commitTextInput.rename", { value1: String(value) }))}
           data-testid={
             inputTestId ??
             (testId !== undefined ? testId + "-input" : undefined)

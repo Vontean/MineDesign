@@ -1,3 +1,5 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
+import { useUiLocale } from '../ui-locale.ts';
 /** Restored application module; prepare first, initialize in original order. */
 import type * as React from "react";
 import type * as C from "../contracts/controls";
@@ -8,6 +10,7 @@ export function installUiControlLabels(runtime: RuntimeBindings): () => void {
   var CONTROL_LABEL_CLASS: string;
   var CHECKBOX_LABEL_ALIGNMENT_CLASS: string;
   function CheckboxGlyph({ indeterminate = false }: C.CheckboxGlyphProps) {
+    useUiLocale();
     return (
       <runtime.Icon
         name={indeterminate ? "Minus" : "Check"}
@@ -24,6 +27,7 @@ export function installUiControlLabels(runtime: RuntimeBindings): () => void {
     indeterminate = false,
     className: className,
   }: C.CheckboxVisualProps) {
+    useUiLocale();
     let value = checked || indeterminate;
     return (
       <span
@@ -36,11 +40,9 @@ export function installUiControlLabels(runtime: RuntimeBindings): () => void {
           className,
         )}
       >
-        {value && (
-          <span className={"text-on-accent"}>
+        {value && (<span className={"text-on-accent"}>
             <CheckboxGlyph indeterminate={indeterminate} />
-          </span>
-        )}
+          </span>)}
       </span>
     );
   }

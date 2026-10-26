@@ -1,3 +1,4 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -136,7 +137,7 @@ export function installFastEditSandboxAdapter(
               } catch {
                 flag = true;
                 input.onError({
-                  message: "the sandbox frame is gone",
+                  get message() { return uiMessage("canvas.sandboxAdapter.theSandboxFrameIsGone"); },
                   fatal: true,
                 });
               }

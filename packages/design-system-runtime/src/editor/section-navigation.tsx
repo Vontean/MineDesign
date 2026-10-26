@@ -1,3 +1,4 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 import type * as React from "react";
 import type * as Core from "../contracts";
 import type * as M from "../contracts/documentation";
@@ -298,10 +299,10 @@ export function installEditorSectionNavigation(
       shown: (input: Application.EditorSectionReveal): void => {
         mark(input.section);
         say(
-          "In view: " +
+          uiMessage("design-system.sectionNavigation.inView") +
             input.label +
             ", in " +
-            (sectionLabel(input.section) ?? "this page") +
+            (sectionLabel(input.section) ?? uiMessage("design-system.sectionNavigation.thisPage")) +
             ".",
         );
       },
@@ -316,7 +317,7 @@ export function installEditorSectionNavigation(
           document.activeElement === activeElement ||
           document.activeElement !== sectionEl(input.section)
         ) {
-          say("In view: " + value + ".");
+          say(uiMessage("design-system.sectionNavigation.inView") + value + ".");
         }
       },
     };

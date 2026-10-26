@@ -1,3 +1,5 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
+import { useUiLocale } from '../../ui-locale.ts';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -15,6 +17,7 @@ export function installCdsSheetsChrome(runtime: RuntimeBindings): () => void {
   var reactSheetsChrome_3: Dynamic;
   var initializeSheetsChrome_3: Dynamic;
   function SheetHandle({ drawPill = true }: Dynamic): Dynamic {
+    useUiLocale();
     let value: Dynamic = (0, runtime.useSheetState_2)();
     return (
       <div
@@ -35,6 +38,7 @@ export function installCdsSheetsChrome(runtime: RuntimeBindings): () => void {
     );
   }
   function SheetHeading({ leading: leading, title: title }: Dynamic): Dynamic {
+    useUiLocale();
     let value: Dynamic = (0, runtime.useSheetState_2)(),
       value2: Dynamic = leading != null && leading !== false;
     return !value2 &&
@@ -45,7 +49,7 @@ export function installCdsSheetsChrome(runtime: RuntimeBindings): () => void {
           "order-first flex min-h-control shrink-0 touch-none items-center gap-xs px-1.5 pb-1 select-none"
         }
       >
-        {value2 && <span className={"-me-2.5 shrink-0"}>{leading}</span>}
+        {value2 && (<span className={"-me-2.5 shrink-0"}>{leading}</span>)}
         <span
           aria-hidden={true}
           className={(0, runtime.npm_clsx_Ea)(
@@ -62,6 +66,7 @@ export function installCdsSheetsChrome(runtime: RuntimeBindings): () => void {
     className: className,
     children: children,
   }: Dynamic): Dynamic {
+    useUiLocale();
     return (
       <div
         className={(0, runtime.cn)(

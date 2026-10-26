@@ -1,3 +1,5 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
+import { useUiLocale } from '../ui-locale.ts';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -23,6 +25,7 @@ export function installEditorTools(runtime: RuntimeBindings): () => void {
   var clickPlacementTools: Dynamic;
   var defaultClickPlacementSizes: Dynamic;
   function DesignToolToolbar({ tool: tool, onTool: onTool }: Dynamic): Dynamic {
+    useUiLocale();
     let value: Dynamic = (0, runtime.toolbarDensity)(),
       value2: Dynamic = (0, runtime.useLatestCallback)(
         (input?: Dynamic): Dynamic =>
@@ -267,15 +270,15 @@ export function installEditorTools(runtime: RuntimeBindings): () => void {
       ...shapeDesignTools,
     ];
     designToolLabels = {
-      hand: "Hand",
-      text: "Text",
-      frame: "Frame",
-      note: "Note",
-      draw: "Draw",
-      rect: "Rectangle",
-      oval: "Oval",
-      arrow: "Arrow",
-      line: "Line",
+      get hand() { return uiMessage("inspector.tools.hand"); },
+      get text() { return uiMessage("inspector.tools.text"); },
+      get frame() { return uiMessage("inspector.tools.frame"); },
+      get note() { return uiMessage("inspector.tools.note"); },
+      get draw() { return uiMessage("inspector.tools.draw"); },
+      get rect() { return uiMessage("inspector.tools.rectangle"); },
+      get oval() { return uiMessage("inspector.tools.oval"); },
+      get arrow() { return uiMessage("inspector.tools.arrow"); },
+      get line() { return uiMessage("inspector.tools.line"); },
     };
     ShapeToolGlyph = (input?: Dynamic): Dynamic => (
       <runtime.Icon customIcon={input} size={"auto"} className={"shrink-0"} />

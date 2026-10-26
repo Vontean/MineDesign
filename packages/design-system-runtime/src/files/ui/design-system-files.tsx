@@ -1,3 +1,5 @@
+import { useUiLocale } from '../../ui-locale.ts';
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import { bindRuntimeValue, type RuntimeBindings } from "../../runtime-types";
 import type * as React from "react";
@@ -139,6 +141,7 @@ export function installFilesUiDesignSystemFiles(
     jump: jump,
     mayEdit: mayEdit,
   }: DesignFilesBrowserProps) {
+    const uiLocale = useUiLocale();
     let {
         files: files,
         otherFiles: otherFiles,
@@ -201,7 +204,7 @@ export function installFilesUiDesignSystemFiles(
                   typeof input3.files !== "object" ||
                   Array.isArray(input3.files)
                 ) {
-                  throw Error("not a listing");
+                  throw Error(uiMessage("design-system.designSystemFiles.notAListing"));
                 }
                 let value2 = input3.narrowed === true;
                 setListing({
@@ -461,7 +464,7 @@ export function installFilesUiDesignSystemFiles(
             : [
                 {
                   section: FILES_SECTION_ID,
-                  label: FILES_SECTION_LABEL,
+                  label: uiMessage("design-system.fileBrowser.files"),
                   words: [],
                 },
                 ...unshownPaths.map((input: string) => ({
@@ -473,18 +476,17 @@ export function installFilesUiDesignSystemFiles(
                   target: input,
                 })),
               ],
-        [usesFilePort, unshownPaths],
+        [usesFilePort, unshownPaths, uiLocale],
       ),
       fileCount = browserPaths.length;
     return {
       row: usesFilePort
         ? {
             id: FILES_SECTION_ID,
-            label: FILES_SECTION_LABEL,
+            label: uiMessage("design-system.fileBrowser.files"),
             count: fileCount,
             countLabel:
-              fileCount.toLocaleString("en-US") +
-              (fileCount === 1 ? " file" : " files"),
+              uiMessage(fileCount===1 ? "design-system.designSystemFiles.filesOne" : "design-system.designSystemFiles.filesMany", {count:fileCount}),
           }
         : undefined,
       open: open && usesFilePort,
@@ -515,6 +517,7 @@ export function installFilesUiDesignSystemFiles(
     onClose: onClose,
     goTo: goTo,
   }: DesignFilesLayerProps) {
+    useUiLocale();
     let memo = runtime.reactDesignSystemFiles.useMemo(() => {
         let entries = new Map<string, BrowserListingEntry>(
           listed.map((input: BrowserListingEntry) => [input.path, input]),
@@ -603,8 +606,7 @@ export function installFilesUiDesignSystemFiles(
         data-testid={"ds-files-layer"}
         {...runtime.UNCOMMENTABLE_PROPS}
       >
-        {[
-          unsure === null ? null : (
+        {[unsure === null ? null : (
             <div
               role={"status"}
               data-testid={"ds-files-unsure"}
@@ -612,26 +614,22 @@ export function installFilesUiDesignSystemFiles(
                 "flex shrink-0 items-center justify-center gap-2 border-b px-3 py-1.5 text-xs text-secondary"
               }
             >
-              {[
-                FILES_LISTING_UNCERTAIN_MESSAGES[unsure],
-                unsure === "failed" ? (
+              {[FILES_LISTING_UNCERTAIN_MESSAGES[unsure], unsure === "failed" ? (
                   <runtime.Button
                     variant={"ghost"}
                     size={"sm"}
                     data-testid={"ds-files-retry"}
                     onClick={retry}
                   >
-                    {"Try again"}
+                    {uiMessage("design-system.designSystemFiles.tryAgain")}
                   </runtime.Button>
-                ) : null,
-              ]}
+                ) : null]}
             </div>
-          ),
-          <div className={"min-h-0 flex-1"}>
+          ), <div className={"min-h-0 flex-1"}>
             <runtime.FilesBrowser
               tree={memo}
               onClose={onClose}
-              rootLabel={FILES_SECTION_LABEL}
+              rootLabel={uiMessage("design-system.fileBrowser.files")}
               sourceOf={(input: BrowserFile) =>
                 heldFileBrowserSource(input.path, callback2(input))
               }
@@ -640,11 +638,7 @@ export function installFilesUiDesignSystemFiles(
               reveal={reveal}
               htmlAsText={true}
               emptyText={
-                unsure === "listing"
-                  ? ""
-                  : unsure !== null
-                    ? FILES_LISTING_EMPTY_MESSAGES[unsure]
-                    : "This design system has no files yet"
+                unsure === "listing" ? ("") : (unsure !== null ? (FILES_LISTING_EMPTY_MESSAGES[unsure]) : (uiMessage("design-system.designSystemFiles.thisDesignSystemHasNo")))
               }
               downloadOf={() => ({})}
               kindLine={(input: BrowserFile, options: string) => {
@@ -674,24 +668,19 @@ export function installFilesUiDesignSystemFiles(
                         data-testid={"ds-files-home"}
                         onClick={() => goTo(value4.id)}
                       >
-                        {"Go to " + value4.label}
+                        {uiMessage("design-system.designSystemFiles.goTo", {label:value4.label})}
                       </runtime.Button>
                     ),
                   entry = memo2.get(input.path);
                 if (entry !== undefined) {
                   return (
                     <jsxDesignSystemFiles.Fragment>
-                      {[
-                        <p
+                      {[<p
                           data-testid={"ds-files-note"}
                           className={FILES_BROWSER_NOTE_CLASS}
                         >
-                          {"This file was not saved: " +
-                            entry +
-                            ". Close Files to change it on the page."}
-                        </p>,
-                        value5,
-                      ]}
+                          {uiMessage("design-system.designSystemFiles.notSaved", {file:entry})}
+                        </p>, value5]}
                     </jsxDesignSystemFiles.Fragment>
                   );
                 }
@@ -708,7 +697,7 @@ export function installFilesUiDesignSystemFiles(
                       className={FILES_BROWSER_NOTE_CLASS}
                     >
                       {
-                        "This is the copy from the last version this page loaded. A newer save may not show here yet."
+                        uiMessage("design-system.designSystemFiles.olderCopy")
                       }
                     </p>
                   );
@@ -716,8 +705,7 @@ export function installFilesUiDesignSystemFiles(
                 return null;
               }}
             />
-          </div>,
-        ]}
+          </div>]}
       </div>
     );
   }
@@ -757,7 +745,7 @@ export function installFilesUiDesignSystemFiles(
   bindRuntimeValue(
     runtime,
     "FILES_SECTION_LABEL",
-    () => FILES_SECTION_LABEL,
+    () => uiMessage("design-system.fileBrowser.files"),
     (value) => {
       FILES_SECTION_LABEL = value;
     },
@@ -855,7 +843,7 @@ export function installFilesUiDesignSystemFiles(
   bindRuntimeValue(
     runtime,
     "FILES_BROWSER_CONFLICT_REASON",
-    () => FILES_BROWSER_CONFLICT_REASON,
+    () => uiMessage("design-system.designSystemFiles.someoneElseSavedANewer"),
     (value) => {
       FILES_BROWSER_CONFLICT_REASON = value;
     },
@@ -925,14 +913,13 @@ export function installFilesUiDesignSystemFiles(
     FILES_BROWSER_NOTE_CLASS =
       "mt-3 max-w-[36ch] text-center text-[11px] leading-[1.4] text-secondary";
     FILES_LISTING_UNCERTAIN_MESSAGES = {
-      listing: "Listing files…",
-      failed: "Couldn’t list every file of this design system.",
-      narrowed:
-        "Some files may be missing here: you may not have access to all of this design system’s files.",
+      get listing() { return uiMessage("design-system.designSystemFiles.listing"); },
+      get failed() { return uiMessage("design-system.designSystemFiles.listingFailed"); },
+      get narrowed() { return uiMessage("design-system.designSystemFiles.listingNarrowed"); },
     };
     FILES_LISTING_EMPTY_MESSAGES = {
-      failed: "No files could be listed here",
-      narrowed: "No files are listed for you here",
+      get failed() { return uiMessage("design-system.designSystemFiles.emptyFailed"); },
+      get narrowed() { return uiMessage("design-system.designSystemFiles.emptyNarrowed"); },
     };
     FILES_BROWSER_CONFLICT_REASON =
       "someone else saved a newer version, and this tab has changes of its own that are not saved";

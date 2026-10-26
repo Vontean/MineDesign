@@ -1,3 +1,5 @@
+import { useUiLocale } from '../../ui-locale.ts';
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -16,6 +18,7 @@ export function installEditorPropertiesRows(
     children: children,
     ...props
   }: Dynamic): Dynamic {
+    useUiLocale();
     return (
       <runtime.CdsRoot
         density={"compact"}
@@ -44,6 +47,7 @@ export function installEditorPropertiesRows(
     trailing: trailing,
     children: children,
   }: Dynamic): Dynamic {
+    useUiLocale();
     return (
       <runtime.PropertyRow
         label={label}
@@ -84,6 +88,7 @@ export function installEditorPropertiesRows(
     title: title,
     description: description,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let value2: Dynamic = (0, runtime.reactPropertiesSection.useRef)(false),
       callback: Dynamic = (): Dynamic => {
         value2.current = true;
@@ -151,11 +156,10 @@ export function installEditorPropertiesRows(
           mixed={mixed}
           disabled={disabled2}
         />
-        {value7 ? (
-          <runtime.PropertySelect
+        {value7 ? (<runtime.PropertySelect
             compact={true}
-            aria-label={label + " unit"}
-            title={"Unit"}
+            aria-label={uiMessage("inspector.rows.unit2", { value1: String(label) })}
+            title={uiMessage("inspector.rows.unit")}
             items={units.map(
               (input?: Dynamic): Dynamic => ({
                 value: input,
@@ -166,8 +170,7 @@ export function installEditorPropertiesRows(
             onChange={onUnit}
             disabled={disabled2}
             align={"end"}
-          />
-        ) : null}
+          />) : (null)}
         {adornment}
       </runtime.PropertyRow>
     );
@@ -218,6 +221,7 @@ export function installEditorPropertiesRows(
     title: title,
     description: description,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let value2: Dynamic = (0, runtime.reactPropertiesSection.useRef)(new Set()),
       value3: Dynamic = (0, runtime.reactPropertiesSection.useRef)(onLiveEnd);
     value3.current = onLiveEnd;
@@ -344,17 +348,14 @@ export function installEditorPropertiesRows(
           }
         >
           <div className={"h-0.5 w-full rounded-full bg-alpha-2"}>
-            {mixed ? null : (
-              <div
+            {mixed ? (null) : (<div
                 className={"h-full rounded-full bg-fill-accent"}
                 style={{
                   width: String(value5 * 100) + "%",
                 }}
-              />
-            )}
+              />)}
           </div>
-          {mixed ? null : (
-            <div
+          {mixed ? (null) : (<div
               data-kit={"slider-thumb"}
               className={(0, runtime.joinClassNames)(
                 "pointer-events-none absolute h-3 w-3 -translate-x-1/2 rounded-full",
@@ -363,8 +364,7 @@ export function installEditorPropertiesRows(
               style={{
                 left: "calc(" + String(value5) + " * (100% - 12px) + 6px)",
               }}
-            />
-          )}
+            />)}
         </div>
         {adornment}
       </runtime.PropertyRow>
@@ -379,6 +379,7 @@ export function installEditorPropertiesRows(
     title: title,
     description: description,
   }: Dynamic): Dynamic {
+    useUiLocale();
     return (
       <runtime.PropertyRow
         label={label}
@@ -408,6 +409,7 @@ export function installEditorPropertiesRows(
     title: title,
     description: description,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let value2: Dynamic = options.length > PropertiesRowsLimit;
     return (
       <runtime.PropertyRow
@@ -423,8 +425,7 @@ export function installEditorPropertiesRows(
             : undefined
         }
       >
-        {value2 ? (
-          <runtime.PropertySelect
+        {value2 ? (<runtime.PropertySelect
             aria-label={label}
             items={options.map(
               (input?: Dynamic): Dynamic => ({
@@ -436,9 +437,7 @@ export function installEditorPropertiesRows(
             onChange={onChange}
             disabled={disabled2}
             popupAttrs={popupAttrs}
-          />
-        ) : (
-          <runtime.SegmentedControl
+          />) : (<runtime.SegmentedControl
             aria-label={label}
             fullWidth={
               !options.every(
@@ -466,8 +465,7 @@ export function installEditorPropertiesRows(
             })}
             value={value}
             onChange={disabled2 ? (): Dynamic => {} : onChange}
-          />
-        )}
+          />)}
       </runtime.PropertyRow>
     );
   }
@@ -489,6 +487,7 @@ export function installEditorPropertiesRows(
     title: title,
     description: description,
   }: Dynamic): Dynamic {
+    useUiLocale();
     return (
       <runtime.PropertyRow
         label={label}
@@ -523,6 +522,7 @@ export function installEditorPropertiesRows(
     alpha = 100,
     className: className,
   }: Dynamic): Dynamic {
+    useUiLocale();
     return (
       <span
         aria-hidden={"true"}
@@ -531,8 +531,7 @@ export function installEditorPropertiesRows(
           className,
         )}
       >
-        {hex !== null ? (
-          <runtime.jsxPropertiesColorPicker.Fragment>
+        {hex !== null ? (<runtime.jsxPropertiesColorPicker.Fragment>
             <span
               className={"absolute inset-y-0 left-0 w-1/2"}
               style={{
@@ -546,8 +545,7 @@ export function installEditorPropertiesRows(
                 opacity: Math.round(alpha * 100) / 1e4,
               }}
             />
-          </runtime.jsxPropertiesColorPicker.Fragment>
-        ) : null}
+          </runtime.jsxPropertiesColorPicker.Fragment>) : (null)}
       </span>
     );
   }
@@ -601,6 +599,7 @@ export function installEditorPropertiesRows(
     title: title,
     testid: testid,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let [value2, value3]: Dynamic = (0,
       runtime.reactPropertiesSection.useState)(false),
       value4: Dynamic = open ?? value2,
@@ -718,7 +717,7 @@ export function installEditorPropertiesRows(
     let value27: Dynamic = (
       <runtime.ColorPickerWithSwatches
         testid={testid !== undefined ? testid + "-menu" : undefined}
-        title={popoverTitle ?? label}
+        title={popoverTitle ?? (label)}
         swatches={swatches}
         current={current}
         onSwatch={onSwatch}
@@ -791,7 +790,7 @@ export function installEditorPropertiesRows(
       <span
         ref={value8}
         className={"relative flex min-w-0 flex-1"}
-        title={disabled2 ? disabledReason : undefined}
+        title={disabled2 ? (disabledReason) : (undefined)}
       >
         <runtime.EditorPopover
           open={value4}
@@ -800,22 +799,9 @@ export function installEditorPropertiesRows(
           trigger={
             <runtime.PropertyPickerButton
               data-testid={testid}
-              title={disabled2 ? (disabledReason ?? title) : title}
+              title={disabled2 ? (disabledReason ?? (title)) : (title)}
               aria-label={
-                label +
-                ": " +
-                (mixed
-                  ? runtime.MixedValue
-                  : chip !== undefined
-                    ? chip.text
-                    : value !== undefined
-                      ? value14 + (value15 !== undefined ? " " + value15 : "")
-                      : clearLabel !== undefined &&
-                          /[\p{L}\p{N}]/u.test(clearLabel)
-                        ? clearLabel
-                        : clearLabel !== undefined
-                          ? "none"
-                          : "unset")
+                label + ": " + (mixed ? runtime.MixedValue : chip !== undefined ? chip.text : value !== undefined ? value14 + (value15 !== undefined ? " " + value15 : "") : clearLabel !== undefined && /[\p{L}\p{N}]/u.test(clearLabel) ? clearLabel : clearLabel !== undefined ? uiMessage("inspector.rows.none") : uiMessage("inspector.rows.unset"))
               }
               aria-describedby={value19 !== undefined ? value20 : undefined}
               disabled={disabled2}
@@ -863,18 +849,14 @@ export function installEditorPropertiesRows(
                 ) : undefined
               }
             >
-              {mixed
-                ? runtime.MixedValue
-                : chip !== undefined
-                  ? chip.text
-                  : value14}
+              {mixed ? (runtime.MixedValue) : (chip !== undefined ? (chip.text) : (value14))}
             </runtime.PropertyPickerButton>
           }
           align={"left"}
           side={popover?.side}
           positionAnchor={value10}
           padding={"none"}
-          aria-label={popoverTitle ?? label}
+          aria-label={popoverTitle ?? (label)}
           className={runtime.ColorPickerLabel}
           popupAttrs={popupAttrs}
           editsAreUndoSteps={editsAreUndoSteps}
@@ -886,22 +868,16 @@ export function installEditorPropertiesRows(
               : undefined
           }
         >
-          {keepFocus ? (
-            <div
+          {keepFocus ? (<div
               data-session-strip={""}
               onKeyDownCapture={runtime.preventInputEnterSubmit}
             >
               {value27}
-            </div>
-          ) : (
-            value27
-          )}
+            </div>) : (value27)}
         </runtime.EditorPopover>
-        {value19 !== undefined ? (
-          <span id={value20} hidden={true} data-kit={"field-description"}>
+        {value19 !== undefined ? (<span id={value20} hidden={true} data-kit={"field-description"}>
             {value19}
-          </span>
-        ) : null}
+          </span>) : (null)}
       </span>
     );
   }
@@ -922,6 +898,7 @@ export function installEditorPropertiesRows(
     description: description,
     ...props
   }: Dynamic): Dynamic {
+    useUiLocale();
     let [value2, value3]: Dynamic = (0,
     runtime.reactPropertiesSection.useState)(false);
     return (

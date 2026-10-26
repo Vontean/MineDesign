@@ -1,3 +1,4 @@
+import { useUiLocale } from '../ui-locale.ts';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -22,6 +23,7 @@ export function installCanvasMeasurements(
   var CanvasMeasurementsConstant_4: Dynamic;
   var CanvasMeasurementsPattern_4: Dynamic;
   function MeasurementOverlay({ m: m, scale: scale }: Dynamic): Dynamic {
+    useUiLocale();
     return (
       <runtime.jsxCanvasNote.Fragment>
         <svg

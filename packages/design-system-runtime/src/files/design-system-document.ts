@@ -1,3 +1,4 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 import type * as Core from "../contracts";
 import type * as M from "../contracts/design-system-document";
 import type * as F from "../contracts/files-core";
@@ -410,11 +411,11 @@ export function installFilesDesignSystemDocument(
         notice(
           value ??
             (context === null
-              ? "Someone else deleted " +
+              ? uiMessage("design-system.designSystemDocument.someoneElseDeleted") +
                 (0, runtime.fileBaseName)(input) +
                 " while you were editing it. Your version is kept here and was not saved." +
                 runtime.FILE_CONFLICT_CHOICE_SUFFIX
-              : "Someone else changed " +
+              : uiMessage("design-system.designSystemDocument.someoneElseChanged") +
                 (0, runtime.fileBaseName)(input) +
                 " while you were editing it. Your version is kept here and was not saved over theirs." +
                 runtime.FILE_CONFLICT_CHOICE_SUFFIX),
@@ -539,7 +540,7 @@ export function installFilesDesignSystemDocument(
             if (flags.has(input)) {
               unflagFile(input);
             }
-            pruneUndoPaths(new Set([input]), "took theirs", true);
+            pruneUndoPaths(new Set([input]), uiMessage("design-system.designSystemDocument.tookTheirs"), true);
             notice(
               (0, runtime.fileBaseName)(input) +
                 (currentFileText(input) === null
@@ -660,7 +661,7 @@ export function installFilesDesignSystemDocument(
             recentPublishes.delete(input);
           }
           advancePathRevision(input);
-          pruneUndoPaths(new Set([input]), "took theirs");
+          pruneUndoPaths(new Set([input]), uiMessage("design-system.designSystemDocument.tookTheirs"));
         };
       callback2();
     }
@@ -778,7 +779,7 @@ export function installFilesDesignSystemDocument(
           options2,
           value3.sha256,
           value6 !== undefined
-            ? "You and someone else both changed " +
+            ? uiMessage("design-system.designSystemDocument.youAndSomeoneElseBoth") +
                 value6 +
                 " in " +
                 (0, runtime.fileBaseName)(input) +
@@ -900,7 +901,7 @@ export function installFilesDesignSystemDocument(
             timers.now() - entry.at <= runtime.RECENT_PUBLISH_CLASH_NOTICE_MS)
         ) {
           notice(
-            "Someone else saved " +
+            uiMessage("design-system.designSystemDocument.someoneElseSaved") +
               (0, runtime.fileBaseName)(input) +
               " at the same moment as you. For " +
               (0, runtime.summarizeConflictNames)(value2.kept) +
@@ -925,7 +926,7 @@ export function installFilesDesignSystemDocument(
         input,
         "overwritten",
         options2,
-        "Someone else saved " +
+        uiMessage("design-system.designSystemDocument.someoneElseSaved") +
           (0, runtime.fileBaseName)(input) +
           " at the same moment as you, and their version replaced yours. Yours is back here and is not saved." +
           runtime.FILE_CONFLICT_CHOICE_SUFFIX,
@@ -1049,7 +1050,7 @@ export function installFilesDesignSystemDocument(
       });
       if (!context) {
         notice(
-          "Someone else changed " +
+          uiMessage("design-system.designSystemDocument.someoneElseChanged") +
             (0, runtime.summarizeFileNames)([...input]) +
             ", so your earlier edits to " +
             (input.size === 1 ? "it" : "them") +
@@ -1078,7 +1079,7 @@ export function installFilesDesignSystemDocument(
         });
         if (input.skipped.length + input.indexKept.length > 0) {
           notice(
-            "Nothing to " +
+            uiMessage("design-system.designSystemDocument.nothingTo") +
               options2 +
               " there any more: " +
               [
@@ -1106,7 +1107,7 @@ export function installFilesDesignSystemDocument(
           value2,
           "undo",
           liveSha(value2),
-          "Someone else saved a newer " +
+          uiMessage("design-system.designSystemDocument.someoneElseSavedANewer") +
             (0, runtime.fileBaseName)(value2) +
             " since that step. Your " +
             options2 +
@@ -1116,7 +1117,7 @@ export function installFilesDesignSystemDocument(
       }
       if (input.indexKept.length > 0) {
         notice(
-          "Part of that " +
+          uiMessage("design-system.designSystemDocument.partOfThat") +
             options2 +
             " was left as it is because someone else changed it since: " +
             (0, runtime.describeIndexConflicts)(
@@ -1375,7 +1376,7 @@ export function installFilesDesignSystemDocument(
       },
       readmeHeading = (): string =>
         "# " +
-        (document2.title().replace(/\s+/g, " ").trim() || "Design system") +
+        (document2.title().replace(/\s+/g, " ").trim() || uiMessage("design-system.designSystemDocument.designSystem")) +
         `
 `;
     function ensureReactPreviewLibraries(): void {
@@ -1539,7 +1540,7 @@ export function installFilesDesignSystemDocument(
           if (!ownershipFailureNoticed) {
             ownershipFailureNoticed = true;
             notice(
-              "The files this editor makes from your content (tokens.css, the cards under api/, manifest.json) could not all be checked against what is published, so some may not have been updated. The editor checks again the next time you change something.",
+              uiMessage("design-system.designSystemDocument.theFilesThisEditorMakes"),
             );
           }
           return;
@@ -2286,7 +2287,7 @@ export function installFilesDesignSystemDocument(
               paths: value.map(runtime.projectFilePath),
             });
             notice(
-              "The page said a moment ago that your rename or removal of " +
+              uiMessage("design-system.designSystemDocument.thePageSaidAMoment") +
                 (0, runtime.summarizeFileNames)(value) +
                 " did not go through. It did: it had already been sent when the page reloaded, and it has been saved now. There is nothing to do again.",
             );
@@ -2373,7 +2374,7 @@ export function installFilesDesignSystemDocument(
             );
           if (value3.length > 0) {
             notice(
-              "Someone else changed " +
+              uiMessage("design-system.designSystemDocument.someoneElseChanged") +
                 (0, runtime.describeIndexConflicts)(value3, input.merged).join(
                   ", ",
                 ) +
@@ -2781,7 +2782,7 @@ export function installFilesDesignSystemDocument(
         document2.loadState() === "failed" &&
         document2.bootFailure() === "access_revoked"
       ) {
-        purgeCarryStorage("access revoked");
+        purgeCarryStorage(uiMessage("design-system.designSystemDocument.accessRevoked"));
       }
     });
     function unsavedTextPaths(): string[] {
@@ -3057,7 +3058,7 @@ export function installFilesDesignSystemDocument(
           why: "the page that reloaded was an older build",
         });
         notice(
-          "The page reloaded, and your unsaved changes" +
+          uiMessage("design-system.designSystemDocument.thePageReloadedAndYour") +
             (value3.length > 0
               ? " to " + (0, runtime.summarizeFileNames)(value3)
               : "") +
@@ -3122,7 +3123,7 @@ export function installFilesDesignSystemDocument(
           ),
         });
         notice(
-          "The page reloaded, and your unsaved changes to " +
+          uiMessage("design-system.designSystemDocument.thePageReloadedAndYour2") +
             (0, runtime.summarizeFileNames)(items) +
             " could not be carried across. What is saved is shown; those changes are gone.",
         );
@@ -3197,12 +3198,12 @@ export function installFilesDesignSystemDocument(
             }
             let value18: boolean = value16.length === 1;
             notice(
-              "The page reloaded before your rename or removal of " +
+              uiMessage("design-system.designSystemDocument.thePageReloadedBeforeYour") +
                 (0, runtime.summarizeFileNames)(value16) +
                 " was saved, so it did not go through: " +
                 (value18
                   ? (0, runtime.summarizeFileNames)(value16) + " is"
-                  : "they are") +
+                  : uiMessage("design-system.designSystemDocument.theyAre")) +
                 " still here. Do it again. If you had renamed " +
                 (value18 ? "it" : "one") +
                 " and " +
@@ -3255,7 +3256,7 @@ export function installFilesDesignSystemDocument(
                 value18,
                 "restored",
                 value21,
-                "Someone else changed " +
+                uiMessage("design-system.designSystemDocument.someoneElseChanged") +
                   (0, runtime.fileBaseName)(value18) +
                   " while the page reloaded. Your unsaved version is back on screen and was not saved over theirs." +
                   runtime.FILE_CONFLICT_CHOICE_SUFFIX,
@@ -3298,12 +3299,12 @@ export function installFilesDesignSystemDocument(
           }
           if (items4.length > 0) {
             notice(
-              "You had removed " +
+              uiMessage("design-system.designSystemDocument.youHadRemoved") +
                 (0, runtime.summarizeFileNames)(items4) +
                 " just before the page reloaded, and someone else changed " +
                 (items4.length === 1 ? "it" : "them") +
                 " meanwhile, so " +
-                (items4.length === 1 ? "it was" : "they were") +
+                (items4.length === 1 ? uiMessage("design-system.designSystemDocument.itWas") : uiMessage("design-system.designSystemDocument.theyWere")) +
                 " left in place.",
             );
           }
@@ -3368,7 +3369,7 @@ export function installFilesDesignSystemDocument(
             }
             if (items5.length > 0) {
               notice(
-                "Part of your unsaved change was left as it is because someone else changed it while the page reloaded: " +
+                uiMessage("design-system.designSystemDocument.partOfYourUnsavedChange") +
                   (0, runtime.describeIndexConflicts)(
                     items5,
                     document2.index().get(),
@@ -3386,12 +3387,12 @@ export function installFilesDesignSystemDocument(
               paths: value17.map(runtime.projectFilePath),
             });
             notice(
-              "The page reloaded before " +
+              uiMessage("design-system.designSystemDocument.thePageReloadedBefore") +
                 (0, runtime.summarizeFileNames)(value17) +
                 " " +
                 (value17.length === 1 ? "was" : "were") +
                 " saved, so " +
-                (value17.length === 1 ? "it is" : "they are") +
+                (value17.length === 1 ? uiMessage("design-system.designSystemDocument.itIs") : uiMessage("design-system.designSystemDocument.theyAre")) +
                 " gone. Add " +
                 (value17.length === 1 ? "it" : "them") +
                 " again.",
@@ -3500,10 +3501,10 @@ export function installFilesDesignSystemDocument(
               paths: callback4([...items2, ...value19]),
             });
           }
-          let text: string = "The page reloaded and opened read-only. ",
+          let text: string = uiMessage("design-system.designSystemDocument.thePageReloadedAndOpened"),
             value20: string =
               value18.length > 0
-                ? "Your version of " +
+                ? uiMessage("design-system.designSystemDocument.yourVersionOf") +
                   (0, runtime.summarizeFileNames)(value18) +
                   " is kept on this device for " +
                   runtime.CRASH_STASH_RETENTION_LABEL +
@@ -3511,16 +3512,16 @@ export function installFilesDesignSystemDocument(
                 : "",
             value21: string =
               items2.length > 0
-                ? "Your unsaved changes to " +
+                ? uiMessage("design-system.designSystemDocument.yourUnsavedChangesTo") +
                   (0, runtime.summarizeFileNames)(items2) +
                   " could not be kept here and are gone. "
                 : "",
             value22: string =
               value19.length > 0
-                ? "You had removed " +
+                ? uiMessage("design-system.designSystemDocument.youHadRemoved") +
                   (0, runtime.summarizeFileNames)(value19) +
                   "; that was not kept, and " +
-                  (value19.length === 1 ? "the file is" : "the files are") +
+                  (value19.length === 1 ? uiMessage("design-system.designSystemDocument.theFileIs") : uiMessage("design-system.designSystemDocument.theFilesAre")) +
                   " still here."
                 : "";
           notice((text + value20 + value21 + value22).trim());
@@ -3722,7 +3723,7 @@ export function installFilesDesignSystemDocument(
                 });
         if (value4 === null || value2 === null) {
           notice(
-            "There is no free name beside " +
+            uiMessage("design-system.designSystemDocument.thereIsNoFreeName") +
               (0, runtime.fileBaseName)(input) +
               " for a copy. Choose theirs or yours instead.",
           );
@@ -3737,11 +3738,11 @@ export function installFilesDesignSystemDocument(
         replaceFileText(value4, value2);
         advancePathRevision(input);
         unflagFile(input);
-        pruneUndoPaths(new Set([input]), "kept as a copy");
+        pruneUndoPaths(new Set([input]), uiMessage("design-system.designSystemDocument.keptAsACopy"));
         keepOutOfUndo(input);
         takeRemoteFile(input);
         notice(
-          "Your version of " +
+          uiMessage("design-system.designSystemDocument.yourVersionOf") +
             (0, runtime.fileBaseName)(input) +
             " is kept as " +
             (0, runtime.fileBaseName)(value4) +
@@ -3760,7 +3761,7 @@ export function installFilesDesignSystemDocument(
       if (options2 === "theirs") {
         advancePathRevision(input);
         unflagFile(input);
-        pruneUndoPaths(new Set([input]), "took theirs");
+        pruneUndoPaths(new Set([input]), uiMessage("design-system.designSystemDocument.tookTheirs"));
         keepOutOfUndo(input);
         takeRemoteFile(input);
         return;
@@ -3906,13 +3907,13 @@ export function installFilesDesignSystemDocument(
             (0, runtime.projectFilePath)(value6),
           )
             ? /[%;:?#\\]/.test(value6)
-              ? "Choose a name without % ; : ? # or a backslash."
+              ? uiMessage("design-system.designSystemDocument.chooseANameWithoutOr")
               : new TextEncoder().encode((0, runtime.projectFilePath)(value6))
                     .length > 512
-                ? "Choose a shorter name."
-                : "Choose another name."
+                ? uiMessage("design-system.designSystemDocument.chooseAShorterName")
+                : uiMessage("design-system.designSystemDocument.chooseAnotherName")
             : value8 && !(0, runtime.isTextFilePath)(value6)
-              ? "It is too large for the page to save again (over " +
+              ? uiMessage("design-system.designSystemDocument.itIsTooLargeFor") +
                 String(
                   ((runtime.MAX_FILE_PUBLISH_ENCODED_BYTES / 4) * 3) / 1048576,
                 ) +
@@ -3921,7 +3922,7 @@ export function installFilesDesignSystemDocument(
                 value7.slice(1) +
                 (/[.!?]$/.test(value7) ? "" : "."),
           value11: string =
-            'Nothing was changed: "' +
+            uiMessage("design-system.designSystemDocument.nothingWasChanged") +
             value9 +
             '" cannot be saved, so "' +
             (0, runtime.fileBaseName)(value3) +

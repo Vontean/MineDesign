@@ -1,3 +1,5 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
+import { useUiLocale } from '../ui-locale.ts';
 import type * as React from "react";
 import type * as Token from "../contracts/token-editors";
 import type * as Model from "../contracts";
@@ -15,20 +17,18 @@ export function installEditorSectionHeaders(
     pageId: pageId,
     "data-testid": dataTestid,
   }: Token.SectionHeaderProps): React.ReactElement {
+    useUiLocale();
     return (
       <header className={"ds-page-head"} data-testid={dataTestid}>
-        {[
-          <div className={"flex min-w-0 flex-col gap-md"}>
-            {[
-              <h1
+        {[<div className={"flex min-w-0 flex-col gap-md"}>
+            {[<h1
                 className={"ds-page-title min-w-0"}
                 {...(pageId !== undefined
                   ? (0, runtime.commentTargetProps)("page", pageId)
                   : {})}
               >
                 {title}
-              </h1>,
-              note !== undefined ? (
+              </h1>, note !== undefined ? (
                 <p
                   className={
                     "ds-page-note max-w-[400px] text-body text-secondary"
@@ -40,18 +40,15 @@ export function installEditorSectionHeaders(
                 >
                   {note}
                 </p>
-              ) : null,
-            ]}
-          </div>,
-          actions !== undefined && actions !== null ? (
+              ) : null]}
+          </div>, actions !== undefined && actions !== null ? (
             <div
               className={"ds-page-actions flex items-center gap-sm"}
               {...runtime.UNCOMMENTABLE_PROPS}
             >
               {actions}
             </div>
-          ) : null,
-        ]}
+          ) : null]}
       </header>
     );
   }
@@ -59,6 +56,7 @@ export function installEditorSectionHeaders(
     children: children,
     "data-testid": dataTestid,
   }: Token.SectionSheetProps): React.ReactElement {
+    useUiLocale();
     return (
       <div
         className={"ds-sheet flex min-w-0 flex-col gap-xl"}
@@ -76,6 +74,7 @@ export function installEditorSectionHeaders(
     disabled: disabled,
     "data-testid": dataTestid,
   }: Token.SectionAddButtonProps): React.ReactElement {
+    useUiLocale();
     let value = (
       <runtime.Button
         variant={"secondary"}
@@ -108,6 +107,7 @@ export function installEditorSectionHeaders(
     "aria-label": ariaLabel,
     ...props
   }: Token.TokenTableSectionProps): React.ReactElement {
+    useUiLocale();
     return (
       <section
         className={
@@ -118,22 +118,16 @@ export function installEditorSectionHeaders(
         data-testid={dataTestid}
         {...props}
       >
-        {[
-          name !== null || (actions !== undefined && actions !== null) ? (
+        {[name !== null || (actions !== undefined && actions !== null) ? (
             <div
               className={
                 "ds-cgroup-head flex min-h-10 min-w-0 items-center gap-xs pb-xs"
               }
               data-testid={headTestId}
             >
-              {[
-                <span className={"ds-gname min-w-0 flex-1"}>{name}</span>,
-                actions,
-              ]}
+              {[<span className={"ds-gname min-w-0 flex-1"}>{name}</span>, actions]}
             </div>
-          ) : null,
-          children,
-        ]}
+          ) : null, children]}
       </section>
     );
   }

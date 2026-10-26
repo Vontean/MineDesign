@@ -1,3 +1,5 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
+import { useUiLocale } from '../../ui-locale.ts';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -41,6 +43,7 @@ export function installEditorVectorAnnotationPenEditor(
     onGesture: onGesture,
     armWindowGestureEnd: armWindowGestureEnd,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let value: Dynamic = annotationVectorKey(spec),
       [value2, value3]: Dynamic = (0,
       runtime.reactHooksLatestCallback_3.useState)(
@@ -207,7 +210,7 @@ export function installEditorVectorAnnotationPenEditor(
   return () => {
     VectorAnnotationPenEditorOverflowTouchActionConfig = {
       overflow: "visible",
-      touchAction: "none",
+      get touchAction() { return uiMessage("inspector.annotationPenEditor.none"); },
     };
     VectorAnnotationPenEditorConstant = 1.25;
     annotationVectorKey = (input?: Dynamic): Dynamic =>

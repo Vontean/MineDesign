@@ -1,3 +1,5 @@
+import { useUiLocale } from '../ui-locale.ts';
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import type * as React from "react";
 import type * as C from "../contracts/controls";
@@ -39,16 +41,14 @@ export function installUiSelect(runtime: RuntimeBindings): () => void {
     children: children,
     ...props
   }: C.SelectOptionRowProps) {
+    useUiLocale();
     let value = selectRowSizes[rowSize],
       value2 =
         hint !== undefined && hint !== "" ? (
           <span className={"flex min-w-0 flex-1 items-center gap-1.5"}>
-            {[
-              <span className={"min-w-0 truncate"}>{children}</span>,
-              <span className={"shrink-0 text-footnote text-muted"}>
+            {[<span className={"min-w-0 truncate"}>{children}</span>, <span className={"shrink-0 text-footnote text-muted"}>
                 {hint}
-              </span>,
-            ]}
+              </span>]}
           </span>
         ) : (
           children
@@ -66,7 +66,7 @@ export function installUiSelect(runtime: RuntimeBindings): () => void {
         {...props}
         className={value3}
         disabled={props.disabled === true || value4}
-        disabledReason={value4 ? disabledReason : undefined}
+        disabledReason={value4 ? (disabledReason) : (undefined)}
       >
         {value2}
       </runtime.Menu.Item>
@@ -92,6 +92,7 @@ export function installUiSelect(runtime: RuntimeBindings): () => void {
     className: className,
     "data-testid": dataTestid,
   }: C.SelectProps<Value>) {
+    useUiLocale();
     let value2 =
         value === null
           ? undefined
@@ -175,8 +176,7 @@ export function installUiSelect(runtime: RuntimeBindings): () => void {
           onOpenChange?.(input);
         }}
       >
-        {[
-          <runtime.Menu.Trigger
+        {[<runtime.Menu.Trigger
             disabled={disabled}
             render={
               <button
@@ -184,7 +184,7 @@ export function installUiSelect(runtime: RuntimeBindings): () => void {
                 data-kit={"PropertySelect"}
                 data-testid={dataTestid}
                 aria-label={
-                  value6 === "" ? ariaLabel : ariaLabel + ": " + value6
+                  value6 === "" ? (ariaLabel) : (((ariaLabel) + (": ")) + (value6))
                 }
                 title={title}
                 className={(0, runtime.joinClassNames)(
@@ -193,8 +193,7 @@ export function installUiSelect(runtime: RuntimeBindings): () => void {
                   className,
                 )}
               >
-                {[
-                  value3 != null ? (
+                {[value3 != null ? (
                     <runtime.KitIcon
                       name={value3}
                       size={13}
@@ -202,8 +201,7 @@ export function installUiSelect(runtime: RuntimeBindings): () => void {
                         value2?.icon != null ? "text-primary" : "text-muted"
                       }
                     />
-                  ) : null,
-                  <span
+                  ) : null, <span
                     className={(0, runtime.joinClassNames)(
                       "min-w-0 flex-1 truncate",
                       value5 === undefined && "text-muted",
@@ -213,19 +211,16 @@ export function installUiSelect(runtime: RuntimeBindings): () => void {
                     )}
                   >
                     {value6}
-                  </span>,
-                  <runtime.KitIcon
+                  </span>, <runtime.KitIcon
                     name={"CaretDown"}
                     size={16}
                     className={
                       "mr-0.5 shrink-0 text-muted transition-colors group-enabled/select:group-hover/select:text-secondary"
                     }
-                  />,
-                ]}
+                  />]}
               </button>
             }
-          />,
-          <runtime.Menu.Popup
+          />, <runtime.Menu.Popup
             {...popupAttrs}
             align={align ?? (value4 ? "end" : "start")}
             className={(0, runtime.joinClassNames)(
@@ -320,8 +315,7 @@ export function installUiSelect(runtime: RuntimeBindings): () => void {
                 }
               : {})}
           >
-            {[
-              groupAdjacentSelectOptions(value11).map(
+            {[groupAdjacentSelectOptions(value11).map(
                 (
                   input: C.SelectOption<Value>[],
                   options: number,
@@ -335,27 +329,20 @@ export function installUiSelect(runtime: RuntimeBindings): () => void {
                         value12 !== undefined &&
                         value12 !== context[options - 1]?.[0]?.group ? (
                           <SelectJsx.Fragment>
-                            {[
-                              options > 0 ? <runtime.Menu.Separator /> : null,
-                              <runtime.ColorPickerHeader
+                            {[options > 0 ? <runtime.Menu.Separator /> : null, <runtime.ColorPickerHeader
                                 text={value12}
                                 title={true}
-                              />,
-                            ]}
+                              />]}
                           </SelectJsx.Fragment>
                         ) : null,
                         <runtime.Menu.Group
                           aria-label={
-                            value12 !== undefined && value13 !== undefined
-                              ? value12 + " · " + value13
-                              : value12
+                            value12 !== undefined && value13 !== undefined ? (((value12) + (" · ")) + (value13)) : (value12)
                           }
                         >
-                          {[
-                            value13 !== undefined ? (
+                          {[value13 !== undefined ? (
                               <runtime.ColorPickerHeader text={value13} />
-                            ) : null,
-                            input.map((input2: C.SelectOption<Value>) =>
+                            ) : null, input.map((input2: C.SelectOption<Value>) =>
                               (() => {
                                 const _Element = SelectJsx.Fragment;
                                 const _elementProps = {
@@ -371,9 +358,7 @@ export function installUiSelect(runtime: RuntimeBindings): () => void {
                                       disabled={input2.disabled}
                                       title={input2.title}
                                       disabledReason={
-                                        input2.disabled === true
-                                          ? input2.title
-                                          : undefined
+                                        input2.disabled === true ? (input2.title) : (undefined)
                                       }
                                       hint={input2.hint}
                                       rowSize={
@@ -387,18 +372,14 @@ export function installUiSelect(runtime: RuntimeBindings): () => void {
                                         }
                                       }}
                                     >
-                                      {input2.labelStyle !== undefined ? (
-                                        <span
+                                      {input2.labelStyle !== undefined ? (<span
                                           className={
                                             "truncate leading-tight [font-variation-settings:normal]"
                                           }
                                           style={input2.labelStyle}
                                         >
                                           {input2.label}
-                                        </span>
-                                      ) : (
-                                        input2.label
-                                      )}
+                                        </span>) : (input2.label)}
                                     </SelectOptionRow>,
                                   ],
                                 };
@@ -410,8 +391,7 @@ export function installUiSelect(runtime: RuntimeBindings): () => void {
                                   />
                                 );
                               })(),
-                            ),
-                          ]}
+                            )]}
                         </runtime.Menu.Group>,
                       ],
                     };
@@ -424,15 +404,12 @@ export function installUiSelect(runtime: RuntimeBindings): () => void {
                     return <_Element2 key={_elementKey2} {..._elementProps2} />;
                   })();
                 },
-              ),
-              searchable && value11.length === 0 ? (
+              ), searchable && value11.length === 0 ? (
                 <runtime.Menu.Item disabled={true}>
-                  {"No matches"}
+                  {uiMessage("design-system.select.noMatches")}
                 </runtime.Menu.Item>
-              ) : null,
-            ]}
-          </runtime.Menu.Popup>,
-        ]}
+              ) : null]}
+          </runtime.Menu.Popup>]}
       </runtime.Menu.Root>
     );
   }

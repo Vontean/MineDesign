@@ -1,3 +1,6 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
+import { useUiLocale } from '../ui-locale.ts';
+import { getUiLocale, subscribeUiLocale } from '@minedesign/contracts/ui-locale';
 /**
  * MineDesign：设计稿右侧面板的「评论」标签，与 Properties / Code / Tweaks 并列；切到这个标签即进入评论模式。
  * 草稿由父窗口经宿主的 `feedback` 能力推送（packages/editor-host/src/design/feedback-bridge.ts），保存、版本核对与发送也在父窗口。
@@ -12,16 +15,8 @@ import {
 export function installCommentsFeedbackPanel(
   runtime: RuntimeBindings,
 ): () => void {
-  // MineDesign 接管的界面文案：语言由外壳经 feedback 能力推送；编辑器单独打开时没有该能力，按英文
-  const noSubscription = (): (() => void) => () => {};
-  const english = (): "en" => "en";
   function useUiText(): Dynamic {
-    const host: Dynamic = (0, runtime.getCachedHostCapability)("feedback");
-    const locale = runtime.reactCanvasShape_2.useSyncExternalStore(
-      host?.subscribeLocale ?? noSubscription,
-      host?.locale ?? english,
-      english,
-    );
+    const locale = runtime.reactCanvasShape_2.useSyncExternalStore(subscribeUiLocale, getUiLocale, getUiLocale);
     return uiText(locale);
   }
   // 补充说明跨评论模式开关保留：离开「评论」标签时视图会卸载
@@ -47,6 +42,7 @@ export function installCommentsFeedbackPanel(
   const toggleCommentMode = (): void =>
     void window.dispatchEvent(new Event("canvas-comment-key"));
   function FeedbackPanel({ host }: Dynamic): Dynamic {
+    useUiLocale();
     const react: Dynamic = runtime.reactCanvasShape_2;
     const state: Dynamic = react.useSyncExternalStore(
       host.subscribe,
@@ -64,8 +60,7 @@ export function installCommentsFeedbackPanel(
           data-mega-chrome={"comments"}
           data-testid={"mdn-feedback"}
         >
-          {items.length > 0 ? (
-            <ol className={"mdn-feedback-list"}>
+          {items.length > 0 ? (<ol className={"mdn-feedback-list"}>
               {items.map(
                 (item: Dynamic): Dynamic => (
                   <li key={item.id}>
@@ -92,13 +87,10 @@ export function installCommentsFeedbackPanel(
                   </li>
                 ),
               )}
-            </ol>
-          ) : (
-            <div className={"mdn-feedback-empty"}>
+            </ol>) : (<div className={"mdn-feedback-empty"}>
               <p className={"mdn-feedback-empty-title"}>{t.noComments}</p>
               <p>{t.noCommentsEditorHint}</p>
-            </div>
-          )}
+            </div>)}
           <div className={"mdn-feedback-composer"}>
             <textarea
               rows={3}

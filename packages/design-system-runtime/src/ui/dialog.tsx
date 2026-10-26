@@ -1,3 +1,5 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
+import { useUiLocale } from '../ui-locale.ts';
 import type {
   AlertDialogRootProps,
   BrowserWindow,
@@ -163,6 +165,7 @@ export function installUiDialog(runtime: RuntimeBindings): () => void {
     );
   }
   function DesktopWindowDragStrip(): React.ReactElement {
+    useUiLocale();
     return (
       <div
         aria-hidden={true}
@@ -269,6 +272,7 @@ export function installUiDialog(runtime: RuntimeBindings): () => void {
     className?: string;
     flush?: boolean;
   }): React.ReactElement {
+    useUiLocale();
     let value = (0, runtime.useTranslation)("close", "Close");
     return (
       <runtime.baseAlertDialog.Close
@@ -277,7 +281,7 @@ export function installUiDialog(runtime: RuntimeBindings): () => void {
             variant={"ghost"}
             iconOnly={true}
             icon={"X"}
-            aria-label={ariaLabel ?? value}
+            aria-label={ariaLabel ?? (value)}
             tooltip={false}
             className={(0, runtime.cn)(
               flush && dialogCloseButtonOutsetClasses,
@@ -296,6 +300,7 @@ export function installUiDialog(runtime: RuntimeBindings): () => void {
     className: className,
     children: children,
   }: DialogHeaderProps): React.ReactElement {
+    useUiLocale();
     let value = runtime.reactForUiTooltips2.useContext(
       confirmationDialogContext,
     );
@@ -306,8 +311,7 @@ export function installUiDialog(runtime: RuntimeBindings): () => void {
           className,
         )}
       >
-        {[
-          <div
+        {[<div
             className={(0, runtime.clsx)(
               value
                 ? dialogDescriptionSmallSpacing
@@ -315,22 +319,16 @@ export function installUiDialog(runtime: RuntimeBindings): () => void {
               "flex min-w-0 flex-1 flex-col gap-1",
             )}
           >
-            {[
-              <DialogTitle>{children}</DialogTitle>,
-              description && (
+            {[<DialogTitle>{children}</DialogTitle>, description && (
                 <runtime.baseAlertDialog.Description
                   className={"text-body font-normal text-secondary break-words"}
                 >
                   {description}
                 </runtime.baseAlertDialog.Description>
-              ),
-            ]}
-          </div>,
-          actions && <div className={"-mt-pad-sm"}>{actions}</div>,
-          showClose && (
+              )]}
+          </div>, actions && <div className={"-mt-pad-sm"}>{actions}</div>, showClose && (
             <DialogCloseButton aria-label={closeLabel} flush={true} />
-          ),
-        ]}
+          )]}
       </div>
     );
   }
@@ -339,6 +337,7 @@ export function installUiDialog(runtime: RuntimeBindings): () => void {
     className: className,
     children: children,
   }: DialogFooterProps): React.ReactElement {
+    useUiLocale();
     return (
       <div
         className={(0, runtime.cn)(
@@ -358,6 +357,7 @@ export function installUiDialog(runtime: RuntimeBindings): () => void {
     actionsRef: actionsRef,
     ...props
   }: DialogRootProps<Payload>): React.ReactElement {
+    useUiLocale();
     let ref = runtime.reactForUiTooltips2.useRef<HTMLButtonElement | null>(
         null,
       ),
@@ -387,6 +387,7 @@ export function installUiDialog(runtime: RuntimeBindings): () => void {
     actionsRef: actionsRef,
     ...props
   }: AlertDialogRootProps<Payload>): React.ReactElement {
+    useUiLocale();
     let ref = runtime.reactForUiTooltips2.useRef<OverlayActions | null>(null);
     (0, runtime.useForwardedOverlayActions)(ref, actionsRef);
     return (
@@ -419,6 +420,7 @@ export function installUiDialog(runtime: RuntimeBindings): () => void {
     closeOnConfirm = false,
     children: children,
   }: ConfirmationDialogProps): React.ReactElement {
+    useUiLocale();
     let value = (0, runtime.useTranslation)("confirm", "Confirm"),
       value2 = (0, runtime.useTranslation)("cancel", "Cancel"),
       value3 = confirmLabel ?? value,
@@ -591,17 +593,14 @@ export function installUiDialog(runtime: RuntimeBindings): () => void {
               closeOnActivityHide={true}
             >
               <runtime.layerBaseContext.Provider value={value13.base}>
-                {[
-                  <runtime.baseDialog.Backdrop
+                {[<runtime.baseDialog.Backdrop
                     forceRender={true}
                     onMouseDown={preventDialogBackdropDefault}
                     className={(0, runtime.clsx)(
                       dialogBackdropClasses,
                       dialogStartingOpacityClass,
                     )}
-                  />,
-                  <DesktopWindowDragStrip />,
-                  <ConfirmationDialogPopupInner
+                  />, <DesktopWindowDragStrip />, <ConfirmationDialogPopupInner
                     data-cds={"ConfirmationDialog"}
                     ref={value8 as React.Ref<HTMLDivElement>}
                     onKeyDownCapture={callback3}
@@ -619,8 +618,7 @@ export function installUiDialog(runtime: RuntimeBindings): () => void {
                     )}
                   >
                     <div className={dialogPopupPositionClasses}>
-                      {[
-                        <runtime.baseDialog.Title
+                      {[<runtime.baseDialog.Title
                           className={(0, runtime.clsx)(
                             dialogDescriptionSmallSpacing,
                             dialogTitleClasses,
@@ -628,18 +626,14 @@ export function installUiDialog(runtime: RuntimeBindings): () => void {
                           )}
                         >
                           {title}
-                        </runtime.baseDialog.Title>,
-                        description && (
+                        </runtime.baseDialog.Title>, description && (
                           <runtime.baseDialog.Description
                             className={dialogDescriptionClasses}
                           >
                             {description}
                           </runtime.baseDialog.Description>
-                        ),
-                        children,
-                        <DialogFooter>
-                          {[
-                            <runtime.baseDialog.Close
+                        ), children, <DialogFooter>
+                          {[<runtime.baseDialog.Close
                               render={
                                 <runtime.Button
                                   ref={ref}
@@ -652,14 +646,10 @@ export function installUiDialog(runtime: RuntimeBindings): () => void {
                                   {value4}
                                 </runtime.Button>
                               }
-                            />,
-                            value14,
-                          ]}
-                        </DialogFooter>,
-                      ]}
+                            />, value14]}
+                        </DialogFooter>]}
                     </div>
-                  </ConfirmationDialogPopupInner>,
-                ]}
+                  </ConfirmationDialogPopupInner>]}
               </runtime.layerBaseContext.Provider>
             </runtime.PortalRoot>
           </runtime.baseDialog.Portal>
@@ -1125,8 +1115,7 @@ export function installUiDialog(runtime: RuntimeBindings): () => void {
               closeOnActivityHide={true}
             >
               <runtime.layerBaseContext.Provider value={value2.base}>
-                {[
-                  <runtime.baseAlertDialog.Backdrop
+                {[<runtime.baseAlertDialog.Backdrop
                     forceRender={value5}
                     onMouseDown={
                       value4
@@ -1140,9 +1129,7 @@ export function installUiDialog(runtime: RuntimeBindings): () => void {
                       backdropClassName,
                     )}
                     style={backdropStyle}
-                  />,
-                  <DesktopWindowDragStrip />,
-                  <DialogPopupInner
+                  />, <DesktopWindowDragStrip />, <DialogPopupInner
                     data-cds={"Dialog"}
                     ref={options}
                     {...props}
@@ -1154,15 +1141,10 @@ export function installUiDialog(runtime: RuntimeBindings): () => void {
                       className,
                     )}
                   >
-                    {unstyled ? (
-                      children
-                    ) : (
-                      <div className={dialogPopupPositionClasses}>
+                    {unstyled ? (children) : (<div className={dialogPopupPositionClasses}>
                         {children}
-                      </div>
-                    )}
-                  </DialogPopupInner>,
-                ]}
+                      </div>)}
+                  </DialogPopupInner>]}
               </runtime.layerBaseContext.Provider>
             </runtime.PortalRoot>
           </runtime.baseAlertDialog.Portal>

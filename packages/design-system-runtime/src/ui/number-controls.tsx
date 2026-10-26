@@ -1,3 +1,5 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
+import { useUiLocale } from '../ui-locale.ts';
 import type * as React from "react";
 import type * as Color from "../contracts/color-controls";
 /** Restored application module; prepare first, initialize in original order. */
@@ -226,6 +228,7 @@ export function installUiNumberControls(runtime: RuntimeBindings): () => void {
     inputRef: inputRef,
     className: className,
   }: Color.PropertyNumberInputProps): React.ReactElement {
+    useUiLocale();
     let ref = reactForUiNumberControls2.useRef<HTMLInputElement | null>(null),
       callback = reactForUiNumberControls2.useCallback(
         (input: HTMLInputElement | null) => {
@@ -560,8 +563,7 @@ export function installUiNumberControls(runtime: RuntimeBindings): () => void {
         slotEnd={
           value2 || value13 ? (
             <span className={"flex items-center gap-2"}>
-              {[
-                value2 ? (
+              {[value2 ? (
                   <span
                     data-scrub={""}
                     onMouseDown={value9 && unitScrubs ? callback5 : undefined}
@@ -577,21 +579,17 @@ export function installUiNumberControls(runtime: RuntimeBindings): () => void {
                   >
                     {unit}
                   </span>
-                ) : null,
-                value13 ? (
+                ) : null, value13 ? (
                   <span
                     className={
                       "hidden flex-col group-focus-within/field:flex pointer-coarse:hidden!"
                     }
                   >
-                    {[
-                      <button
+                    {[<button
                         type={"button"}
                         tabIndex={-1}
                         aria-label={
-                          value7
-                            ? runtime.INCREASE_LABEL + " " + value7
-                            : runtime.INCREASE_LABEL
+                          value7 ? (((runtime.INCREASE_LABEL) + (" ")) + (value7)) : (runtime.INCREASE_LABEL)
                         }
                         className={PROPERTY_NUMBER_STEPPER_CLASS}
                         disabled={disabled}
@@ -610,14 +608,11 @@ export function installUiNumberControls(runtime: RuntimeBindings): () => void {
                         }
                       >
                         <runtime.KitIcon name={"CaretUp"} size={12} />
-                      </button>,
-                      <button
+                      </button>, <button
                         type={"button"}
                         tabIndex={-1}
                         aria-label={
-                          value7
-                            ? runtime.DECREASE_LABEL + " " + value7
-                            : runtime.DECREASE_LABEL
+                          value7 ? (((runtime.DECREASE_LABEL) + (" ")) + (value7)) : (runtime.DECREASE_LABEL)
                         }
                         className={PROPERTY_NUMBER_STEPPER_CLASS}
                         disabled={disabled}
@@ -636,11 +631,9 @@ export function installUiNumberControls(runtime: RuntimeBindings): () => void {
                         }
                       >
                         <runtime.KitIcon name={"CaretDown"} size={12} />
-                      </button>,
-                    ]}
+                      </button>]}
                   </span>
-                ) : null,
-              ]}
+                ) : null]}
             </span>
           ) : undefined
         }

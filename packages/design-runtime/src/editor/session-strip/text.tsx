@@ -1,3 +1,5 @@
+import { useUiLocale } from '../../ui-locale.ts';
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -23,6 +25,7 @@ export function installEditorSessionStripText(
     onCancel: onCancel,
     onRemove: onRemove,
   }: Dynamic): Dynamic {
+    useUiLocale();
     return (
       <span
         className={"flex items-center gap-1"}
@@ -43,7 +46,7 @@ export function installEditorSessionStripText(
         </span>
         <input
           autoFocus={true}
-          aria-label={"Link URL"}
+          aria-label={uiMessage("inspector.text.linkURL")}
           placeholder={"https://\u2026"}
           value={value}
           aria-invalid={invalid || undefined}
@@ -56,23 +59,19 @@ export function installEditorSessionStripText(
           }}
           className={SessionStripTextClassNames}
           title={
-            invalid
-              ? (invalidHint ?? "Enter an http:// or https:// address")
-              : undefined
+            invalid ? (invalidHint ?? (uiMessage("inspector.text.enterAnHttpOrHttps"))) : (undefined)
           }
         />
-        {onRemove !== undefined && (
-          <runtime.SessionStripButton
+        {onRemove !== undefined && (<runtime.SessionStripButton
             icon={"Trash"}
-            aria-label={"Remove link"}
-            title={"Remove the link"}
+            aria-label={uiMessage("inspector.text.removeLink")}
+            title={uiMessage("inspector.text.removeTheLink")}
             onClick={onRemove}
-          />
-        )}
+          />)}
         <runtime.SessionStripButton
           icon={"X"}
-          aria-label={"Cancel link"}
-          title={"Cancel (Esc)"}
+          aria-label={uiMessage("inspector.text.cancelLink")}
+          title={uiMessage("inspector.text.cancelEsc")}
           onClick={onCancel}
         />
       </span>
@@ -91,6 +90,7 @@ export function installEditorSessionStripText(
       : null;
   }
   function TextSessionStrip(input?: Dynamic): Dynamic {
+    useUiLocale();
     let value: Dynamic = input.testidPrefix ?? "frame-text",
       [value2, value3]: Dynamic = (0,
       runtime.reactInspectorArtboardRadius.useState)(null),
@@ -150,13 +150,9 @@ export function installEditorSessionStripText(
         <runtime.SessionStripButton
           data-testid={value + "-" + input2.toLowerCase()}
           title={
-            context.disabledReason ??
-            (context.title ?? input2) +
-              (value8 !== undefined && input.shortcuts !== false
-                ? " (" + (0, runtime.keyboardShortcutLabel)(value8) + ")"
-                : "")
+            (context.disabledReason) ?? ((context.title ?? ({ Bold: uiMessage("inspector.text.bold"), Italic: uiMessage("inspector.text.italic"), Underline: uiMessage("inspector.text.underline"), Link: uiMessage("inspector.text.link") }[input2])) + (value8 !== undefined && input.shortcuts !== false ? (((" (") + ((0, runtime.keyboardShortcutLabel)(value8))) + (")")) : ("")))
           }
-          aria-label={input2}
+          aria-label={({ Bold: uiMessage("inspector.text.bold"), Italic: uiMessage("inspector.text.italic"), Underline: uiMessage("inspector.text.underline"), Link: uiMessage("inspector.text.link") }[input2])}
           aria-pressed={
             context.disabledReason != null ? undefined : context.pressed
           }
@@ -178,8 +174,7 @@ export function installEditorSessionStripText(
     return (
       <jsxSessionStripText.Fragment>
         <runtime.SessionStripGroup wrap={true}>
-          {input.style !== undefined && (
-            <runtime.SessionTypographyPopup
+          {input.style !== undefined && (<runtime.SessionTypographyPopup
               key={"ts:" + selKey}
               testid={value + "-style"}
               value={input.style.value}
@@ -187,34 +182,21 @@ export function installEditorSessionStripText(
               options={input.style.options}
               onChange={input.style.onChange}
               custom={input.style.custom}
-            />
-          )}
-          {input.color !== undefined && (
-            <runtime.SessionActionsPopover
+            />)}
+          {input.color !== undefined && (<runtime.SessionActionsPopover
               key={"c:" + selKey}
               {...input.color}
               testid={input.color.testid ?? value + "-color"}
-            />
-          )}
+            />)}
           {callback2("Bold", "TextBold", input.bold, "B")}
           {callback2("Italic", "TextItalics", input.italic, "I")}
-          {input.underline !== undefined &&
-            callback2("Underline", "TextUnderline", input.underline, "U")}
-          {input.link !== undefined &&
-            (value6 !== null ? (
-              <runtime.SessionStripButton
+          {input.underline !== undefined && (callback2("Underline", "TextUnderline", input.underline, "U"))}
+          {input.link !== undefined && (value6 !== null ? (<runtime.SessionStripButton
                 data-testid={value + "-link"}
                 icon={"Link"}
-                aria-label={"Link"}
+                aria-label={uiMessage("inspector.text.link")}
                 title={
-                  value6.disabledReason ??
-                  (value6.editable
-                    ? value6.href !== undefined
-                      ? "Edit the link (" + value6.href + ")"
-                      : "Set the link"
-                    : value6.href !== undefined
-                      ? "Remove the link (" + value6.href + ")"
-                      : "Link the whole text")
+                  value6.disabledReason ?? (value6.editable ? (value6.href !== undefined ? (uiMessage("inspector.text.editTheLink", { value1: String(value6.href) })) : (uiMessage("inspector.text.setTheLink"))) : (value6.href !== undefined ? (uiMessage("inspector.text.removeTheLink2", { value1: String(value6.href) })) : (uiMessage("inspector.text.linkTheWholeText"))))
                 }
                 aria-pressed={value6.href !== undefined}
                 disabled={value6.disabledReason != null}
@@ -225,27 +207,18 @@ export function installEditorSessionStripText(
                       ? value6.onChange(undefined)
                       : value3("")
                 }
-              />
-            ) : (
-              callback2("Link", "Link", input.link)
-            ))}
+              />) : (callback2("Link", "Link", input.link)))}
         </runtime.SessionStripGroup>
-        {(input.list !== undefined || input.align !== undefined) && (
-          <jsxSessionStripText.Fragment>
-            {input.compact ? null : <runtime.SessionStripDivider />}
+        {input.list !== undefined || input.align !== undefined && (<jsxSessionStripText.Fragment>
+            {input.compact ? (null) : (<runtime.SessionStripDivider />)}
             <runtime.SessionStripGroup wrap={true}>
-              {input.list !== undefined && (
-                <runtime.SessionChoicePopup
+              {input.list !== undefined && (<runtime.SessionChoicePopup
                   key={"li:" + selKey}
                   testid={value + "-list"}
                   title={
-                    input.list.disabledReason ??
-                    "List: " +
-                      (input.list.value === null
-                        ? "mixed"
-                        : SessionStripTextNoneBulletNumberConfig[
+                    input.list.disabledReason ?? (uiMessage("inspector.text.list", { value1: String(input.list.value === null ? (uiMessage("inspector.text.mixed")) : (SessionStripTextNoneBulletNumberConfig[
                             input.list.value
-                          ])
+                          ])) }))
                   }
                   face={
                     input.list.value === "number"
@@ -256,17 +229,12 @@ export function installEditorSessionStripText(
                   options={SessionStripTextItems}
                   onChange={input.list.onChange}
                   disabled={input.list.disabledReason != null}
-                />
-              )}
-              {input.align !== undefined && (
-                <runtime.SessionChoicePopup
+                />)}
+              {input.align !== undefined && (<runtime.SessionChoicePopup
                   key={"al:" + selKey}
                   testid={value + "-align"}
                   title={
-                    "Alignment: " +
-                    (input.align.value === null
-                      ? "mixed"
-                      : SessionStripTextStartCenterEndConfig[input.align.value])
+                    uiMessage("inspector.text.alignment", { value1: String(input.align.value === null ? (uiMessage("inspector.text.mixed")) : (SessionStripTextStartCenterEndConfig[input.align.value])) })
                   }
                   face={
                     SessionStripTextStartCenterEndConfig_2[
@@ -276,39 +244,32 @@ export function installEditorSessionStripText(
                   value={input.align.value}
                   options={value7}
                   onChange={input.align.onChange}
-                />
-              )}
+                />)}
             </runtime.SessionStripGroup>
-          </jsxSessionStripText.Fragment>
-        )}
-        {input.extra != null && (
-          <jsxSessionStripText.Fragment>
-            {input.compact ? null : <runtime.SessionStripDivider />}
+          </jsxSessionStripText.Fragment>)}
+        {input.extra != null && (<jsxSessionStripText.Fragment>
+            {input.compact ? (null) : (<runtime.SessionStripDivider />)}
             <runtime.reactInspectorArtboardRadius.Fragment key={"x:" + selKey}>
               {input.extra}
             </runtime.reactInspectorArtboardRadius.Fragment>
-          </jsxSessionStripText.Fragment>
-        )}
-        {input.trailing != null && (
-          <jsxSessionStripText.Fragment>
-            {input.compact ? null : <runtime.SessionStripDivider />}
+          </jsxSessionStripText.Fragment>)}
+        {input.trailing != null && (<jsxSessionStripText.Fragment>
+            {input.compact ? (null) : (<runtime.SessionStripDivider />)}
             {input.trailing}
-          </jsxSessionStripText.Fragment>
-        )}
-        {(input.onEdit !== undefined ||
+          </jsxSessionStripText.Fragment>)}
+        {input.onEdit !== undefined ||
           input.onComment !== null ||
           input.onOpenInspector !== undefined ||
-          input.inspectorDisabledReason !== undefined) && (
-          <jsxSessionStripText.Fragment>
-            {input.compact ? null : <runtime.SessionStripDivider />}
+          input.inspectorDisabledReason !== undefined && (<jsxSessionStripText.Fragment>
+            {input.compact ? (null) : (<runtime.SessionStripDivider />)}
             <runtime.SelectionSessionActions
               lead={
                 input.onEdit !== undefined ? (
                   <runtime.SessionStripButton
                     data-testid={value + "-edit"}
                     icon={"Edit"}
-                    title={"Edit the text"}
-                    aria-label={"Edit text"}
+                    title={uiMessage("inspector.text.editTheText")}
+                    aria-label={uiMessage("inspector.text.editText")}
                     onClick={input.onEdit}
                   />
                 ) : undefined
@@ -318,8 +279,7 @@ export function installEditorSessionStripText(
               disabledReason={input.inspectorDisabledReason}
               testids={input.tailTestids}
             />
-          </jsxSessionStripText.Fragment>
-        )}
+          </jsxSessionStripText.Fragment>)}
       </jsxSessionStripText.Fragment>
     );
   }
@@ -380,24 +340,24 @@ export function installEditorSessionStripText(
       1,
     );
     SessionStripTextNoneBulletNumberConfig = {
-      none: "None",
-      bullet: "Bulleted list",
-      number: "Numbered list",
+      get none() { return uiMessage("inspector.text.none"); },
+      get bullet() { return uiMessage("inspector.text.bulletedList"); },
+      get number() { return uiMessage("inspector.text.numberedList"); },
     };
     SessionStripTextItems = [
       {
         value: "none",
-        label: SessionStripTextNoneBulletNumberConfig.none,
+        get label() { return SessionStripTextNoneBulletNumberConfig.none; },
         icon: "Prohibit",
       },
       {
         value: "bullet",
-        label: SessionStripTextNoneBulletNumberConfig.bullet,
+        get label() { return SessionStripTextNoneBulletNumberConfig.bullet; },
         icon: "ListBullet",
       },
       {
         value: "number",
-        label: SessionStripTextNoneBulletNumberConfig.number,
+        get label() { return SessionStripTextNoneBulletNumberConfig.number; },
         icon: "ListNumbered",
       },
     ];
@@ -405,7 +365,7 @@ export function installEditorSessionStripText(
       start: "Left",
       center: "Center",
       end: "Right",
-      justify: "Justify",
+      get justify() { return uiMessage("inspector.text.justify"); },
     };
     SessionStripTextStartCenterEndConfig_2 = {
       start: runtime.TextAlignLeftValue,

@@ -1,3 +1,4 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 import type {
   PaperSize,
   PaperSizeName,
@@ -213,7 +214,7 @@ export function installExportPaperAndScale(
   return () => {
     paperSizes = {
       letter: {
-        label: "Letter",
+        get label() { return uiMessage("canvas.paperAndScale.letter"); },
         wPt: 612,
         hPt: 792,
       },

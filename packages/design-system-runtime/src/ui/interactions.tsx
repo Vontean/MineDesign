@@ -1,3 +1,5 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
+import { useUiLocale } from '../ui-locale.ts';
 import type * as I from "../contracts/interactions";
 import type * as C from "../contracts/controls";
 import type * as O from "../contracts/overlays";
@@ -214,6 +216,7 @@ export function installUiInteractions(runtime: RuntimeBindings): () => void {
     );
   }
   function SheetHandle({ drawPill = true }: I.SheetHandleProps) {
+    useUiLocale();
     let dragHandlers: Pick<
       React.DOMAttributes<HTMLElement>,
       | "onPointerDown"
@@ -244,6 +247,7 @@ export function installUiInteractions(runtime: RuntimeBindings): () => void {
     leading: leading,
     title: title,
   }: I.SheetTitleBarProps) {
+    useUiLocale();
     let dragHandlers: Pick<
         React.DOMAttributes<HTMLElement>,
         | "onPointerDown"
@@ -272,9 +276,7 @@ export function installUiInteractions(runtime: RuntimeBindings): () => void {
           "order-first flex min-h-control shrink-0 touch-none items-center gap-xs px-1 pb-1 select-none"
         }
       >
-        {[
-          hasLeading && <span className={"-me-2.5 shrink-0"}>{leading}</span>,
-          <span
+        {[hasLeading && <span className={"-me-2.5 shrink-0"}>{leading}</span>, <span
             aria-hidden={true}
             className={(0, runtime.clsx)(
               "min-w-0 flex-1 truncate text-start text-heading font-semibold text-primary",
@@ -282,8 +284,7 @@ export function installUiInteractions(runtime: RuntimeBindings): () => void {
             )}
           >
             {title}
-          </span>,
-        ]}
+          </span>]}
       </div>
     );
   }
@@ -291,6 +292,7 @@ export function installUiInteractions(runtime: RuntimeBindings): () => void {
     className: className,
     children: children,
   }: I.SheetBodyProps) {
+    useUiLocale();
     return (
       <div className={cn("flex min-h-0 flex-auto flex-col", className)}>
         {children}
@@ -1071,6 +1073,7 @@ export function installUiInteractions(runtime: RuntimeBindings): () => void {
     base: base,
     render: render,
   }: LayerProps): React.ReactElement {
+    useUiLocale();
     let value = reactLayers.useContext(layerBaseContext),
       value2 = base ?? value + LAYER_BAND_SIZE;
     if (base === undefined) {
@@ -1093,7 +1096,7 @@ export function installUiInteractions(runtime: RuntimeBindings): () => void {
           );
     return (
       <layerBaseContext.Provider value={value2}>
-        {value3 ?? children}
+        {value3 ?? (children)}
       </layerBaseContext.Provider>
     );
   }
@@ -1166,6 +1169,7 @@ export function installUiInteractions(runtime: RuntimeBindings): () => void {
   }: React.PropsWithChildren<{
     className?: string;
   }>): React.ReactElement {
+    useUiLocale();
     let value = reactLayers.useContext(layerBaseContext);
     return (
       <div
@@ -1419,6 +1423,7 @@ export function installUiInteractions(runtime: RuntimeBindings): () => void {
     actionsRef: actionsRef,
     children: children,
   }: I.ActivityHideProviderProps) {
+    useUiLocale();
     let [value] = reactActivityHide.useState(() => new Set<Element>()),
       ref = reactActivityHide.useRef(false);
     reactActivityHide.useEffect(() => {
@@ -1554,6 +1559,7 @@ export function installUiInteractions(runtime: RuntimeBindings): () => void {
   function ResetSkeletonContexts({
     children: children,
   }: React.PropsWithChildren) {
+    useUiLocale();
     return (
       <skeletonActiveContext.Provider value={false}>
         <skeletonElementContext.Provider value={"div"}>
@@ -1575,6 +1581,7 @@ export function installUiInteractions(runtime: RuntimeBindings): () => void {
     companionModalCatcher = false,
     closeOnActivityHide = false,
   }: I.PortalRootProps) {
+    useUiLocale();
     let value = useCloseOnActivityHideRef(closeOnActivityHide),
       value2 = useMergedRefs(runtime.trackInputForElement, value),
       value3 = (0, runtime.useDensity)(),
@@ -1793,6 +1800,7 @@ export function installUiInteractions(runtime: RuntimeBindings): () => void {
     });
   }
   function Icon(input: I.IconProps): React.ReactElement {
+    useUiLocale();
     let value = useDensityIconSize();
     if (input.customIcon) {
       let {
@@ -1830,7 +1838,7 @@ export function installUiInteractions(runtime: RuntimeBindings): () => void {
           {...value34}
           role={value34.role ?? (value28 ? "img" : undefined)}
           aria-hidden={value34["aria-hidden"] ?? (value28 ? undefined : true)}
-          aria-label={value34["aria-label"] ?? (value28 || undefined)}
+          aria-label={value34["aria-label"] ?? (value28 || (undefined))}
         >
           {value27.paths.map(
             (input2: string | I.CustomIconStrokePath, options: number) =>
@@ -1947,7 +1955,7 @@ export function installUiInteractions(runtime: RuntimeBindings): () => void {
           {...value10}
           role={value10.role ?? (value2 ? "img" : undefined)}
           aria-hidden={value10["aria-hidden"] ?? (value2 ? undefined : true)}
-          aria-label={value10["aria-label"] ?? (value2 || undefined)}
+          aria-label={value10["aria-label"] ?? (value2 || (undefined))}
         >
           {lucideNode.map(([Tag, attrs], index) => (
             <Tag key={index} {...attrs} />
@@ -1974,16 +1982,13 @@ export function installUiInteractions(runtime: RuntimeBindings): () => void {
         {...value10}
         role={value10.role ?? (value2 ? "img" : undefined)}
         aria-hidden={value10["aria-hidden"] ?? (value2 ? undefined : true)}
-        aria-label={value10["aria-label"] ?? (value2 || undefined)}
+        aria-label={value10["aria-label"] ?? (value2 || (undefined))}
       >
-        {[
-          value19 !== undefined && (
+        {[value19 !== undefined && (
             <span data-cds-icon-layer={"secondary"} aria-hidden={"true"}>
               {String.fromCodePoint(value19)}
             </span>
-          ),
-          value18 !== undefined ? String.fromCodePoint(value18) : null,
-        ]}
+          ), value18 !== undefined ? String.fromCodePoint(value18) : null]}
       </span>
     );
   }
@@ -1991,9 +1996,10 @@ export function installUiInteractions(runtime: RuntimeBindings): () => void {
     return typeof input === "string";
   }
   function IconSlot({ icon: icon }: { icon?: React.ReactNode }) {
+    useUiLocale();
     return (
       <span className={"flex size-icon shrink-0 items-center justify-center"}>
-        {isIconName(icon) ? <Icon name={icon} size={"auto"} /> : icon}
+        {isIconName(icon) ? (<Icon name={icon} size={"auto"} />) : (icon)}
       </span>
     );
   }
@@ -2143,6 +2149,7 @@ export function installUiInteractions(runtime: RuntimeBindings): () => void {
     provideInherit = false,
     children: children,
   }: I.CollisionPaddingProviderProps) {
+    useUiLocale();
     let value = useCollisionPadding(override, container),
       memo = reactCollisionPadding.useMemo(
         () => ({
@@ -2224,6 +2231,7 @@ export function installUiInteractions(runtime: RuntimeBindings): () => void {
     fill = false,
     children: children,
   }: O.PopupScrollAreaProps) {
+    useUiLocale();
     let value =
       maxVisibleItems !== undefined
         ? `calc(${maxVisibleItems} * ${MENU_ITEM_HEIGHT_CSS} + 0.5rem)`
@@ -2236,13 +2244,11 @@ export function installUiInteractions(runtime: RuntimeBindings): () => void {
             fill && "flex-1",
           )}
         >
-          {[
-            header && (
+          {[header && (
               <div className={cn(menuHeaderClasses, headerClassName)}>
                 {header}
               </div>
-            ),
-            <div
+            ), <div
               style={{
                 maxHeight: value,
               }}
@@ -2252,9 +2258,7 @@ export function installUiInteractions(runtime: RuntimeBindings): () => void {
               }}
             >
               {children}
-            </div>,
-            footer && <div className={menuFooterClasses}>{footer}</div>,
-          ]}
+            </div>, footer && <div className={menuFooterClasses}>{footer}</div>]}
         </div>
       );
     }

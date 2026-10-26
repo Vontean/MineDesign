@@ -1,3 +1,4 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -326,7 +327,7 @@ export function installEditorInspectorSelection(
       value4 >= 0 &&
         (items2[value4] = {
           ...items2[value4],
-          title: `${items.length} Text`,
+          title: uiMessage("inspector.selection.text", { value1: String(items.length) }),
         });
     }
     orderInspectorSections(items2);
@@ -350,7 +351,7 @@ export function installEditorInspectorSelection(
           ) &&
           value4.advanced.push({
             prop: "@target",
-            label: "target",
+            get label() { return uiMessage("inspector.selection.target"); },
             value: value5.value,
             disabled: value5.disabled,
           });

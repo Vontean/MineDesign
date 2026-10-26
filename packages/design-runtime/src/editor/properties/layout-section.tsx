@@ -1,3 +1,5 @@
+import { useUiLocale } from '../../ui-locale.ts';
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -19,6 +21,7 @@ export function installEditorPropertiesLayoutSection(
     noMargins: noMargins,
     onCommitMany: onCommitMany,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let entries: Dynamic = new Map(
         rows.map((input?: Dynamic): Dynamic => [input.prop, input]),
       ),
@@ -77,19 +80,19 @@ export function installEditorPropertiesLayoutSection(
         : noMargins && !value2
           ? noMargins
           : value7
-            ? "The selection mixes positioned and in-flow elements \u2014 align them one at a time"
+            ? uiMessage("inspector.layoutSection.theSelectionMixesPositionedAnd")
             : value8
-              ? "The selected elements carry different transforms \u2014 align them one at a time"
+              ? uiMessage("inspector.layoutSection.theSelectedElementsCarryDifferent")
               : standaloneTranslate
-                ? "This element is shifted with the translate property \u2014 remove it (Advanced) or align it by hand"
+                ? uiMessage("inspector.layoutSection.thisElementIsShiftedWith")
                 : value4 && !value2
-                  ? "Placed by its parent \u2014 select the parent and use its Align"
+                  ? uiMessage("inspector.layoutSection.placedByItsParentSelect")
                   : multi && !value2
                     ? "In-flow elements align one at a time \u2014 select one"
                     : !value2 && !value10
-                      ? "An inline element ignores auto margins \u2014 make it a Block first, or position it"
+                      ? uiMessage("inspector.layoutSection.anInlineElementIgnoresAuto")
                       : !value2 && !value5
-                        ? "Give it a Fixed width first (an auto width spans the parent)"
+                        ? uiMessage("inspector.layoutSection.giveItAFixedWidth")
                         : undefined,
       callback3: Dynamic = (
         input?: Dynamic,
@@ -291,57 +294,57 @@ export function installEditorPropertiesLayoutSection(
           ? noMargins
           : input === "hcenter" && value13 && !value5
             ? entries.get("width")?.mixed
-              ? "the selected elements need one shared Fixed width"
-              : "give it a Fixed width first (an auto width would stretch edge to edge)"
+              ? uiMessage("inspector.layoutSection.theSelectedElementsNeedOne")
+              : uiMessage("inspector.layoutSection.giveItAFixedWidth2")
             : input === "vcenter" && value14 && !value6
               ? entries.get("height")?.mixed
-                ? "the selected elements need one shared Fixed height"
-                : "give it a Fixed height first (an auto height would stretch edge to edge)"
+                ? uiMessage("inspector.layoutSection.theSelectedElementsNeedOne2")
+                : uiMessage("inspector.layoutSection.giveItAFixedHeight")
               : (input === "top" ||
                     input === "vcenter" ||
                     input === "bottom") &&
                   !value2
-                ? "position it first (Absolute or Fixed) to align it vertically"
+                ? uiMessage("inspector.layoutSection.positionItFirstAbsoluteOr")
                 : ""),
       items2: Dynamic = [
         {
           key: "left",
-          label: "Align left",
+          get label() { return uiMessage("inspector.layoutSection.alignLeft"); },
           glyph: runtime.PropertiesSizingRowLeftHcenterRightConfig.left,
           on: value13,
           edits: value21.left,
         },
         {
           key: "hcenter",
-          label: "Align horizontal centers",
+          get label() { return uiMessage("inspector.layoutSection.alignHorizontalCenters"); },
           glyph: runtime.PropertiesSizingRowLeftHcenterRightConfig.hcenter,
           on: value15,
           edits: value21.hcenter,
         },
         {
           key: "right",
-          label: "Align right",
+          get label() { return uiMessage("inspector.layoutSection.alignRight"); },
           glyph: runtime.PropertiesSizingRowLeftHcenterRightConfig.right,
           on: value13,
           edits: value21.right,
         },
         {
           key: "top",
-          label: "Align top",
+          get label() { return uiMessage("inspector.layoutSection.alignTop"); },
           glyph: runtime.PropertiesSizingRowLeftHcenterRightConfig.top,
           on: value14,
           edits: state.top,
         },
         {
           key: "vcenter",
-          label: "Align vertical centers",
+          get label() { return uiMessage("inspector.layoutSection.alignVerticalCenters"); },
           glyph: runtime.PropertiesSizingRowLeftHcenterRightConfig.vcenter,
           on: value16,
           edits: state.vcenter,
         },
         {
           key: "bottom",
-          label: "Align bottom",
+          get label() { return uiMessage("inspector.layoutSection.alignBottom"); },
           glyph: runtime.PropertiesSizingRowLeftHcenterRightConfig.bottom,
           on: value14,
           edits: state.bottom,
@@ -369,8 +372,7 @@ export function installEditorPropertiesLayoutSection(
                   icon: <runtime.PropertyOptionIcon icon={input.glyph} />,
                   "aria-label": input.label,
                   tooltip: input.label,
-                  disabledReason:
-                    input.label + " \u2014 " + callback7(input.key),
+                  get disabledReason() { return ((input.label) + (" \u2014 ")) + (callback7(input.key)); },
                   disabled: !input.on,
                   "data-testid": `dc-align-${input.key}`,
                   onClick: (): Dynamic => {
@@ -390,6 +392,7 @@ export function installEditorPropertiesLayoutSection(
     wrap: wrap,
     onCommitMany: onCommitMany,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let value: Dynamic = (0, runtime.inheritedFieldForEdit)(wrap),
       value2: Dynamic = (
         (value.mixed ? "" : (value.value ?? "")) ||
@@ -405,14 +408,9 @@ export function installEditorPropertiesLayoutSection(
         variant={"ghost"}
         iconOnly={true}
         icon={"ArrowReturn"}
-        aria-label={"Wrap"}
+        aria-label={uiMessage("inspector.layoutSection.wrap")}
         tooltip={
-          (value2 ? "Wraps onto new lines" : "No wrap") +
-          (value3
-            ? ""
-            : wrap.inheritedFrom && !wrap.mixed
-              ? ` (from ${wrap.inheritedFrom})`
-              : " (inherited)")
+          (value2 ? uiMessage("inspector.layoutSection.wrapsOntoNewLines") : uiMessage("inspector.layoutSection.noWrap")) + (value3 ? "" : wrap.inheritedFrom && !wrap.mixed ? ` (from ${wrap.inheritedFrom})` : uiMessage("inspector.layoutSection.inherited"))
         }
         pressed={value2}
         data-inherited={value2 && !value3 ? "" : undefined}
@@ -436,6 +434,7 @@ export function installEditorPropertiesLayoutSection(
     renderRows: renderRows,
     onCommitMany: onCommitMany,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let callback: Dynamic = (input?: Dynamic): Dynamic =>
       !input.mixed &&
       (!(input.value ?? "").trim() ||
@@ -461,13 +460,9 @@ export function installEditorPropertiesLayoutSection(
           prefix={<runtime.PropertyOptionIcon icon={options} />}
           value={(0, runtime.parseEqualGridColumns)(input.value) ?? undefined}
           placeholder={
-            input.mixed
-              ? undefined
-              : (0, runtime.parseEqualGridColumns)(input.fallback ?? "") != null
-                ? String(
+            input.mixed ? (undefined) : ((0, runtime.parseEqualGridColumns)(input.fallback ?? "") != null ? (String(
                     (0, runtime.parseEqualGridColumns)(input.fallback ?? ""),
-                  )
-                : value4
+                  )) : (value4))
           }
           mixed={input.mixed}
           min={1}
@@ -497,11 +492,10 @@ export function installEditorPropertiesLayoutSection(
         (0, runtime.PropertiesInheritedFieldMixedAlias)(rows);
     return (
       <runtime.PropertyRow
-        label={"Grid"}
+        label={uiMessage("inspector.layoutSection.grid")}
         data-testid={"dc-grid-row"}
         title={
-          (value ? value + ". " : "") +
-          "Columns \xD7 rows, as counts of equal tracks (a custom track list keeps its own text rows)"
+          uiMessage("inspector.layoutSection.columnsRowsAsCountsOf", { value1: String(value ? (value + ". ") : ("")) })
         }
         description={value2}
         onReset={
@@ -550,6 +544,7 @@ export function installEditorPropertiesLayoutSection(
     addItemsFor: addItemsFor,
     onCommitMany: onCommitMany,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let entries: Dynamic = new Map(
         sec.rows.map((input?: Dynamic): Dynamic => [input.prop, input]),
       ),
@@ -617,10 +612,10 @@ export function installEditorPropertiesLayoutSection(
       value16: Dynamic = !!entry && !entry.mixed && value15 !== "static",
       value17: Dynamic = entry && {
         ...entry,
-        label: "Position",
+        get label() { return uiMessage("inspector.layoutSection.position"); },
         spec: {
           ...entry.spec,
-          label: "Position",
+          get label() { return uiMessage("inspector.layoutSection.position"); },
           editor: "select",
           optionLabels: runtime.PropertiesBoxLayoutStaticRelativeAbsoluteConfig,
         },
@@ -673,7 +668,7 @@ export function installEditorPropertiesLayoutSection(
             ...(value6 && !value14
               ? [
                   {
-                    label: "Margin",
+                    get label() { return uiMessage("inspector.layoutSection.margin"); },
                     onSelect: (): Dynamic => value13(selKey),
                   },
                 ]
@@ -696,49 +691,43 @@ export function installEditorPropertiesLayoutSection(
       >
         {renderRows(value)}
         {renderRows(value2)}
-        {value17 &&
-          renderRow(value17, {
+        {value17 && (renderRow(value17, {
             onCommit: callback2,
-          })}
+          }))}
         {entry &&
           entry2 &&
           entry3 &&
           (value16 ||
             (0, runtime.PropertiesInheritedFieldValueAlias)(entry2) ||
-            (0, runtime.PropertiesInheritedFieldValueAlias)(entry3)) && (
-            <runtime.PropertyPositionXY
+            (0, runtime.PropertiesInheritedFieldValueAlias)(entry3)) && (<runtime.PropertyPositionXY
               key={`${selKey}|offset`}
               left={entry3}
               top={entry2}
               renderRows={renderRows}
               onCommitMany={onCommitMany}
-            />
-          )}
-        {!entry &&
-          renderRows(
+            />)}
+        {!entry && (renderRows(
             [entry2, entry3].filter(
               (input?: Dynamic): Dynamic =>
                 !!input &&
                 (0, runtime.PropertiesInheritedFieldValueAlias)(input),
             ),
-          )}
+          ))}
         {renderRows(
           value16
             ? value3
             : value3.filter(runtime.PropertiesInheritedFieldValueAlias),
         )}
         {renderRows(value4)}
-        {entry4 && renderRow(entry4)}
-        {entry5 &&
-          renderRow(entry5, {
+        {entry4 && (renderRow(entry4))}
+        {entry5 && (renderRow(entry5, {
             trailing:
               entry6 && value8 ? (
                 <PropertyFlexWrap wrap={entry6} onCommitMany={onCommitMany} />
               ) : undefined,
-          })}
+          }))}
         {entry6 &&
-          !value8 &&
-          renderRows([
+          !value8 && (renderRows([
             {
               ...entry6,
               spec: {
@@ -746,30 +735,24 @@ export function installEditorPropertiesLayoutSection(
                 editor: "string",
               },
             },
-          ])}
-        {entry7 && entry8 ? (
-          <PropertyGridTracks
+          ]))}
+        {entry7 && entry8 ? (<PropertyGridTracks
             key={`${selKey}|grid`}
             cols={entry7}
             rows={entry8}
             renderRows={renderRows}
             onCommitMany={onCommitMany}
-          />
-        ) : (
-          renderRows(
+          />) : (renderRows(
             [entry7, entry8].filter((input?: Dynamic): Dynamic => !!input),
-          )
-        )}
-        {sec.mode === "flex" && value9 && entry9 && (
-          <runtime.PropertyFlexAlignment
+          ))}
+        {sec.mode === "flex" && value9 && entry9 && (<runtime.PropertyFlexAlignment
             key={`${selKey}|align`}
             justify={value9}
             align={entry9}
             stack={true}
             vertical={value10}
             onCommitMany={onCommitMany}
-          />
-        )}
+          />)}
         {sec.mode === "flex" &&
           value9 &&
           callback(value9, [
@@ -783,17 +766,16 @@ export function installEditorPropertiesLayoutSection(
             "normal",
             "space-between",
             "legacy",
-          ]) &&
-          renderRows([
+          ]) && (renderRows([
             {
               ...value9,
-              label: "Justify",
+              get label() { return uiMessage("inspector.layoutSection.justify"); },
               spec: {
                 ...value9.spec,
                 editor: "string",
               },
             },
-          ])}
+          ]))}
         {sec.mode === "flex" &&
           entry9 &&
           callback(entry9, [
@@ -804,21 +786,19 @@ export function installEditorPropertiesLayoutSection(
             "end",
             "self-start",
             "self-end",
-          ]) &&
-          renderRows([
+          ]) && (renderRows([
             {
               ...entry9,
-              label: "Align",
+              get label() { return uiMessage("inspector.layoutSection.align"); },
               spec: {
                 ...entry9.spec,
                 editor: "string",
               },
             },
-          ])}
+          ]))}
         {sec.mode === undefined &&
           !value9 &&
-          entry9 &&
-          renderRows([
+          entry9 && (renderRows([
             {
               ...entry9,
               spec: {
@@ -826,29 +806,25 @@ export function installEditorPropertiesLayoutSection(
                 longTail: false,
               },
             },
-          ])}
-        {entry10 && renderRows([entry10])}
+          ]))}
+        {entry10 && (renderRows([entry10]))}
         {renderRows(value18)}
-        {value5 && (
-          <runtime.PropertyBoxSides
+        {value5 && (<runtime.PropertyBoxSides
             key={`${selKey}|padding`}
-            label={"Padding"}
+            label={uiMessage("inspector.layoutSection.padding")}
             base={"padding"}
             rows={sec.rows}
             renderRows={renderRows}
             onCommitMany={onCommitMany}
-          />
-        )}
-        {value14 && (
-          <runtime.PropertyBoxSides
+          />)}
+        {value14 && (<runtime.PropertyBoxSides
             key={`${selKey}|margin`}
-            label={"Margin"}
+            label={uiMessage("inspector.layoutSection.margin")}
             base={"margin"}
             rows={sec.rows}
             renderRows={renderRows}
             onCommitMany={onCommitMany}
-          />
-        )}
+          />)}
       </runtime.PropertySection>
     );
   }

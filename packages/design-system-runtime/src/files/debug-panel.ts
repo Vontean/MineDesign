@@ -1,3 +1,4 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 import type * as Debug from "../contracts/debug-panel";
 import type * as Core from "../contracts/files-core";
 import type * as Model from "../contracts";
@@ -175,33 +176,33 @@ export function installFilesDebugPanel(runtime: RuntimeBindings): () => void {
       reloadReason: string;
     if (restartBreadcrumb?.phase === "hot-restart") {
       reloadReason =
-        "hot restart: " + (restartBreadcrumb.reason ?? "asked by this page");
+        uiMessage("design-system.debugPanel.hotRestart") + (restartBreadcrumb.reason ?? uiMessage("design-system.debugPanel.askedByThisPage"));
     } else if (restartBreadcrumb?.phase === "publishing") {
       reloadReason =
-        "reloaded during a publish of " +
+        uiMessage("design-system.debugPanel.reloadedDuringAPublishOf") +
         (restartBreadcrumb.paths ?? []).join(", ") +
         " (likely a conflict: the shell reboots the tab that lost)";
     } else if (cameFromHotRestart) {
       reloadReason =
-        "hot restart by the shell" +
+        uiMessage("design-system.debugPanel.hotRestartByTheShell") +
         (hotRestartNote !== undefined
           ? " (note: " + hotRestartNote + ")"
           : " (no reason recorded here: no accept handler was registered in time, or the kernel restarted on its own)");
     } else if (loadedBefore) {
-      reloadReason = "plain reload";
+      reloadReason = uiMessage("design-system.debugPanel.plainReload");
     } else {
-      reloadReason = "first load";
+      reloadReason = uiMessage("design-system.debugPanel.firstLoad");
     }
     let reloadReasonKey: string =
         restartBreadcrumb?.phase === "hot-restart"
-          ? "hot restart: " + (restartBreadcrumb.reason ?? "?")
+          ? uiMessage("design-system.debugPanel.hotRestart") + (restartBreadcrumb.reason ?? "?")
           : restartBreadcrumb?.phase === "publishing"
-            ? "during a publish"
+            ? uiMessage("design-system.debugPanel.duringAPublish")
             : cameFromHotRestart
-              ? "hot restart by the shell"
+              ? uiMessage("design-system.debugPanel.hotRestartByTheShell")
               : loadedBefore
-                ? "plain reload"
-                : "first load",
+                ? uiMessage("design-system.debugPanel.plainReload")
+                : uiMessage("design-system.debugPanel.firstLoad"),
       reasonCounts = readStored("reasons", {});
     reasonCounts[reloadReasonKey] = (reasonCounts[reloadReasonKey] ?? 0) + 1;
     writeStored("reasons", reasonCounts);
@@ -321,7 +322,7 @@ export function installFilesDebugPanel(runtime: RuntimeBindings): () => void {
       };
       peerPings.push(state);
       prunePeerPings();
-      recordTiming("room ping", Math.max(0, state.recvAt - state.at));
+      recordTiming(uiMessage("design-system.debugPanel.roomPing"), Math.max(0, state.recvAt - state.at));
       recordEvent("peer-" + state.phase, {
         from: state.tab,
         n: state.n,
@@ -475,7 +476,7 @@ export function installFilesDebugPanel(runtime: RuntimeBindings): () => void {
       }
       let value = entry !== undefined ? clockNow() - entry.t : NaN;
       if (options2.ok) {
-        recordTiming("publish call", value);
+        recordTiming(uiMessage("design-system.debugPanel.publishCall"), value);
         lastPublish = {
           n: input,
           ms: Math.round(value),
@@ -589,8 +590,8 @@ export function installFilesDebugPanel(runtime: RuntimeBindings): () => void {
         let value8: number = value - value7.recvAt;
         recordTiming(
           options2 === "adopted"
-            ? "save → visible, adopted"
-            : "save → visible, restarted",
+            ? uiMessage("design-system.debugPanel.saveVisibleAdopted")
+            : uiMessage("design-system.debugPanel.saveVisibleRestarted"),
           value8,
         );
         visibilitySeries.push({
@@ -616,7 +617,7 @@ export function installFilesDebugPanel(runtime: RuntimeBindings): () => void {
       if (input.type === "update") {
         fields.set(
           "hot shape",
-          input.shape === "calls" ? "three calls" : "string verdicts",
+          input.shape === "calls" ? uiMessage("design-system.debugPanel.threeCalls") : uiMessage("design-system.debugPanel.stringVerdicts"),
         );
         fields.set(
           "live seen",
@@ -643,7 +644,7 @@ export function installFilesDebugPanel(runtime: RuntimeBindings): () => void {
       if (input.type === "applied") {
         lastUpdateRestarted = false;
         if (input.grantLagMs !== undefined) {
-          recordTiming("adopt → first 200 (grant lag)", input.grantLagMs);
+          recordTiming(uiMessage("design-system.debugPanel.adoptFirst200GrantLag"), input.grantLagMs);
         }
         for (let value of input.paths ?? []) {
           lastVersionByPath.set(value, input.to);
@@ -675,10 +676,10 @@ export function installFilesDebugPanel(runtime: RuntimeBindings): () => void {
         ms: value,
       });
       if (input === "first artboard painted" || input === "first paint") {
-        recordTiming("boot → first paint", value);
+        recordTiming(uiMessage("design-system.debugPanel.bootFirstPaint"), value);
       }
       if (input === "all painted") {
-        recordTiming("boot → all painted", value);
+        recordTiming(uiMessage("design-system.debugPanel.bootAllPainted"), value);
       }
       recordEvent("boot-phase", {
         name: input,
@@ -1083,10 +1084,10 @@ export function installFilesDebugPanel(runtime: RuntimeBindings): () => void {
       callback(
         "status",
         status === "ok"
-          ? "level with live"
+          ? uiMessage("design-system.debugPanel.levelWithLive")
           : status === "behind"
-            ? "behind live"
-            : "last update restarted",
+            ? uiMessage("design-system.debugPanel.behindLive")
+            : uiMessage("design-system.debugPanel.lastUpdateRestarted"),
       );
     }
     function filteredEvents(): Debug.DebugEvent[] {
@@ -1125,14 +1126,14 @@ export function installFilesDebugPanel(runtime: RuntimeBindings): () => void {
           value5 = filesDebugEventLevel(value3),
           value6 = element(
             "div",
-            "row " + (value5 === "error" ? "error" : value4.cls),
+            uiMessage("design-system.debugPanel.row") + (value5 === "error" ? "error" : value4.cls),
           );
         value6.append(
           element("span", "t", formatFilesDebugTimestamp(value3.t)),
           element("span", "ty", value3.type),
           element("span", "s", value4.text),
         );
-        value6.title = "click for the raw event";
+        value6.title = uiMessage("design-system.debugPanel.clickForTheRawEvent");
         value6.addEventListener("click", (): void => {
           if (expandedEvents.has(value3)) {
             expandedEvents.delete(value3);
@@ -1158,8 +1159,8 @@ export function installFilesDebugPanel(runtime: RuntimeBindings): () => void {
             "div",
             "pad mut",
             eventLog.length === 0
-              ? "Nothing logged yet."
-              : "No event matches the filters.",
+              ? uiMessage("design-system.debugPanel.nothingLoggedYet")
+              : uiMessage("design-system.debugPanel.noEventMatchesTheFilters"),
           ),
         );
       }
@@ -1216,7 +1217,7 @@ export function installFilesDebugPanel(runtime: RuntimeBindings): () => void {
         }
         let value4 = element("input");
         value4.type = "text";
-        value4.placeholder = "filter (path, version, reason…)";
+        value4.placeholder = uiMessage("design-system.debugPanel.filterPathVersionReason");
         value4.value = ui2.text;
         value4.addEventListener("input", (): void => {
           ui2.text = value4.value;
@@ -1225,7 +1226,7 @@ export function installFilesDebugPanel(runtime: RuntimeBindings): () => void {
         });
         let value5 = element("button", "fchip", ui2.paused ? "paused" : "live");
         value5.setAttribute("aria-pressed", String(!ui2.paused));
-        value5.title = "pause the list (events keep being recorded)";
+        value5.title = uiMessage("design-system.debugPanel.pauseTheListEventsKeep");
         value5.addEventListener("click", (): void => {
           ui2.paused = !ui2.paused;
           value5.textContent = ui2.paused ? "paused" : "live";
@@ -1251,7 +1252,7 @@ export function installFilesDebugPanel(runtime: RuntimeBindings): () => void {
       let value2 = element("div", "pad");
       value.append(value2);
       if (ui2.tab === "timing") {
-        value2.append(element("h4", undefined, "timing · ms"));
+        value2.append(element("h4", undefined, uiMessage("design-system.debugPanel.timingMs")));
         let value3 = [...timingSamples.entries()].map(([input, input2]) => {
           let value7 = [...input2].sort(
             (input3, options2) => input3 - options2,
@@ -1270,7 +1271,7 @@ export function installFilesDebugPanel(runtime: RuntimeBindings): () => void {
             : element(
                 "div",
                 "mut",
-                "No samples yet. Save in another tab and watch this one.",
+                uiMessage("design-system.debugPanel.noSamplesYetSaveIn"),
               ),
         );
         if (hiddenSamplesExcluded > 0) {
@@ -1286,7 +1287,7 @@ export function installFilesDebugPanel(runtime: RuntimeBindings): () => void {
           element(
             "h4",
             undefined,
-            "save → visible, newest on the right · green adopted, red restarted",
+            uiMessage("design-system.debugPanel.saveVisibleNewestOnThe"),
           ),
         );
         let value4 = element("div", "spark"),
@@ -1367,8 +1368,8 @@ export function installFilesDebugPanel(runtime: RuntimeBindings): () => void {
               "div",
               "mut",
               providers.files === undefined
-                ? "This editor did not provide its file list."
-                : "No files.",
+                ? uiMessage("design-system.debugPanel.thisEditorDidNotProvide")
+                : uiMessage("design-system.debugPanel.noFiles"),
             ),
           );
           return;
@@ -1378,10 +1379,10 @@ export function installFilesDebugPanel(runtime: RuntimeBindings): () => void {
         for (let value5 of [
           "path",
           "state",
-          "on screen",
+          uiMessage("design-system.debugPanel.onScreen"),
           "live",
           "size",
-          "last changed at",
+          uiMessage("design-system.debugPanel.lastChangedAt"),
         ]) {
           value4.append(element("th", undefined, value5));
         }
@@ -1453,7 +1454,7 @@ export function installFilesDebugPanel(runtime: RuntimeBindings): () => void {
                     : value3.dirty.join(", "),
               ],
               [
-                "in flight",
+                uiMessage("design-system.debugPanel.inFlight"),
                 inFlightPublishes.size > 0
                   ? [...inFlightPublishes.values()]
                       .map((input) => input.paths.join(", "))
@@ -1469,12 +1470,12 @@ export function installFilesDebugPanel(runtime: RuntimeBindings): () => void {
                   : "none",
               ],
               [
-                "last publish",
+                uiMessage("design-system.debugPanel.lastPublish"),
                 lastPublish === undefined
                   ? "—"
                   : `#${String(lastPublish.n)} · ${String(lastPublish.ms)} ms → ${shortDebugValue(lastPublish.version)} · ${formatFilesDebugTimestamp(lastPublish.at)}`,
               ],
-              ["queue says", value3?.lastError ?? "ok"],
+              [uiMessage("design-system.debugPanel.queueSays"), value3?.lastError ?? "ok"],
               ["publishes", String(publishCount)],
               [
                 "errors",
@@ -1483,13 +1484,13 @@ export function installFilesDebugPanel(runtime: RuntimeBindings): () => void {
               [
                 "catch-up waits",
                 value3?.note ??
-                  "this editor does not wait for a newer version before saving yet",
+                  uiMessage("design-system.debugPanel.thisEditorDoesNotWait"),
               ],
             ],
             "l",
           ),
         );
-        value2.append(element("h4", undefined, "publish errors, newest first"));
+        value2.append(element("h4", undefined, uiMessage("design-system.debugPanel.publishErrorsNewestFirst")));
         if (publishErrors.length === 0) {
           value2.append(element("div", "mut", "none"));
         }
@@ -1513,9 +1514,9 @@ export function installFilesDebugPanel(runtime: RuntimeBindings): () => void {
         }
         return;
       }
-      value2.append(element("h4", undefined, "this tab last loaded because"));
+      value2.append(element("h4", undefined, uiMessage("design-system.debugPanel.thisTabLastLoadedBecause")));
       value2.append(element("div", undefined, reloadReason));
-      value2.append(element("h4", undefined, "counts by reason"));
+      value2.append(element("h4", undefined, uiMessage("design-system.debugPanel.countsByReason")));
       value2.append(
         table(
           ["reason", "times"],
@@ -1549,7 +1550,7 @@ export function installFilesDebugPanel(runtime: RuntimeBindings): () => void {
         return;
       }
       themeElement.className = "t-" + themeMode();
-      panelElement.className = "panel " + ui2.side;
+      panelElement.className = uiMessage("design-system.debugPanel.panel") + ui2.side;
       let value = clampPanelSize(ui2.side, ui2.size[ui2.side]);
       if (ui2.side === "bottom") {
         panelElement.style.height = String(value) + "px";
@@ -1611,11 +1612,11 @@ export function installFilesDebugPanel(runtime: RuntimeBindings): () => void {
         element("span", "mono", tabId),
       );
       chipElement.addEventListener("click", () => setOpen(true));
-      panelElement = element("div", "panel " + ui2.side);
+      panelElement = element("div", uiMessage("design-system.debugPanel.panel") + ui2.side);
       panelElement.style.display = "none";
       panelElement.tabIndex = -1;
       let value2 = element("div", "grip");
-      value2.title = "drag to resize · double-click to reset";
+      value2.title = uiMessage("design-system.debugPanel.dragToResizeDoubleClick");
       value2.addEventListener("dblclick", (): void => {
         ui2.size[ui2.side] = FILES_DEBUG_PANEL_DEFAULT_SIZE[ui2.side];
         saveUi();
@@ -1676,21 +1677,21 @@ export function installFilesDebugPanel(runtime: RuntimeBindings): () => void {
         value3.append(value9);
       };
       callback2(
-        "dock ⇄",
-        "dock to the other side (bottom / right)",
+        uiMessage("design-system.debugPanel.dock"),
+        uiMessage("design-system.debugPanel.dockToTheOtherSide"),
         (): void => {
           ui2.side = ui2.side === "bottom" ? "right" : "bottom";
           saveUi();
           applyPanelLayout();
         },
       );
-      callback2("clear", "clear the log", (): void => {
+      callback2("clear", uiMessage("design-system.debugPanel.clearTheLog"), (): void => {
         eventLog.length = 0;
         expandedEvents.clear();
         writeStored("log", eventLog);
         paintActiveTab();
       });
-      callback2("copy log", "copy the whole log as JSON", (): void => {
+      callback2(uiMessage("design-system.debugPanel.copyLog"), uiMessage("design-system.debugPanel.copyTheWholeLogAs"), (): void => {
         let value9 = exportJson(),
           flag: boolean = false;
         try {
@@ -1716,7 +1717,7 @@ export function installFilesDebugPanel(runtime: RuntimeBindings): () => void {
       });
       callback2(
         "✕",
-        "close (Esc while the panel has focus, or " +
+        uiMessage("design-system.debugPanel.closeEscWhileThePanel") +
           FILES_DEBUG_TOGGLE_SHORTCUT +
           ")",
         () => setOpen(false),
@@ -1726,7 +1727,7 @@ export function installFilesDebugPanel(runtime: RuntimeBindings): () => void {
         ["events", "Events"],
         ["timing", "Timing"],
         ["files", "Files"],
-        ["queue", "Save queue"],
+        ["queue", uiMessage("design-system.debugPanel.saveQueue")],
         ["reloads", "Reloads"],
       ]) {
         let value11 = element("button", "tab", value10);

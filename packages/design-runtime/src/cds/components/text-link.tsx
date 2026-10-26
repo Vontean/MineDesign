@@ -1,3 +1,4 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -523,7 +524,7 @@ export function installCdsComponentsTextLink(
             value11: Dynamic = `${(0, runtime.cn)(value10 ? (0, runtime.npm_clsx_Ea)(ComponentsTextLinkCss_2, icon ? "gap-[0.25em]" : "gap-0") : ComponentsTextLinkCss, value3 && ComponentsTextLinkClassNames_3)}`,
             value12: Dynamic = value10 ? (
               <jsxComponentsTextLink.Fragment>
-                {iconPosition === "start" && (0, runtime.TextLinkIcon)(value9)}
+                {iconPosition === "start" && ((0, runtime.TextLinkIcon)(value9))}
                 <span
                   className={(0, runtime.npm_clsx_Ea)(
                     ComponentsTextLinkClassNamesAlias,
@@ -532,8 +533,8 @@ export function installCdsComponentsTextLink(
                 >
                   {children}
                 </span>
-                {iconPosition === "end" && (0, runtime.TextLinkIcon)(value9)}
-                {value4 && value8}
+                {iconPosition === "end" && ((0, runtime.TextLinkIcon)(value9))}
+                {value4 && (value8)}
               </jsxComponentsTextLink.Fragment>
             ) : value4 ? (
               <jsxComponentsTextLink.Fragment>

@@ -1,3 +1,5 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
+import { useUiLocale } from '../../ui-locale.ts';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -38,6 +40,7 @@ export function installCdsComponentsShortcut(
     className: className,
     ...props
   }: Dynamic): Dynamic {
+    useUiLocale();
     let value: Dynamic = useAppleKeyboard(),
       value2: Dynamic = splitShortcutChords(keys).map(
         (input?: Dynamic): Dynamic => formatShortcutChord(input, value),
@@ -57,28 +60,24 @@ export function installCdsComponentsShortcut(
         {value2.map(
           (input?: Dynamic, options?: Dynamic): Dynamic => (
             <reactComponentsShortcut.Fragment key={options}>
-              {options > 0 && (
-                <span
+              {options > 0 && (<span
                   className={"px-[2px] [color:var(--cds-shortcut-cap-ink)]"}
                 >
                   {ThenValue}
-                </span>
-              )}
+                </span>)}
               {input.map(
                 (
                   { label: label, spoken: spoken }: Dynamic,
                   options2?: Dynamic,
                 ): Dynamic => (
                   <reactComponentsShortcut.Fragment key={options2}>
-                    {value3 && options2 > 0 && (
-                      <span
+                    {value3 && options2 > 0 && (<span
                         className={
                           "mx-[-0.3em] [color:var(--cds-shortcut-cap-ink)]"
                         }
                       >
                         {Value}
-                      </span>
-                    )}
+                      </span>)}
                     <kbd
                       className={
                         variant === "text"
@@ -86,18 +85,12 @@ export function installCdsComponentsShortcut(
                           : shortcutKeycapClassName(label)
                       }
                     >
-                      {spoken === undefined ? (
-                        label
-                      ) : value3 ? (
-                        spoken
-                      ) : (
-                        <jsxComponentsShortcut.Fragment>
+                      {spoken === undefined ? (label) : (value3 ? (spoken) : (<jsxComponentsShortcut.Fragment>
                           <span aria-hidden={"true"}>{label}</span>
                           <span className={"sr-only select-none"}>
                             {spoken}
                           </span>
-                        </jsxComponentsShortcut.Fragment>
-                      )}
+                        </jsxComponentsShortcut.Fragment>))}
                     </kbd>
                   </reactComponentsShortcut.Fragment>
                 ),
@@ -513,8 +506,8 @@ export function installCdsComponentsShortcut(
         cmd: "Command",
         command: "Command",
         meta: "Command",
-        ctrl: "Control",
-        control: "Control",
+        get ctrl() { return uiMessage("canvas.shortcut.control"); },
+        get control() { return uiMessage("canvas.shortcut.control"); },
         alt: "Option",
         option: "Option",
         shift: "Shift",
@@ -522,16 +515,16 @@ export function installCdsComponentsShortcut(
         return: "Enter",
         space: "Space",
         tab: "Tab",
-        delete: "Delete",
-        backspace: "Delete",
+        get delete() { return uiMessage("canvas.shortcut.delete"); },
+        get backspace() { return uiMessage("canvas.shortcut.delete"); },
         up: "Up",
         down: "Down",
         left: "Left",
         right: "Right",
       };
       ComponentsShortcutCtrlControlAltConfig_3 = {
-        ctrl: "Control",
-        control: "Control",
+        get ctrl() { return uiMessage("canvas.shortcut.control"); },
+        get control() { return uiMessage("canvas.shortcut.control"); },
         alt: "Alt",
         option: "Alt",
         shift: "Shift",

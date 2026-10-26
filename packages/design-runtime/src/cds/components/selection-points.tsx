@@ -1,3 +1,5 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
+import { useUiLocale } from '../../ui-locale.ts';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -32,6 +34,7 @@ export function installCdsComponentsSelectionPoints(
     thumbPosition: thumbPosition,
     className: className,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let value2: Dynamic = (0, runtime.reactComponentsSelectionRing.useRef)(
       null,
     );
@@ -209,12 +212,11 @@ export function installCdsComponentsSelectionPoints(
                 <runtime.npm_Radio_iP.Root
                   value={input.value}
                   disabled={input.disabled}
-                  aria-label={value12 ? value14 : undefined}
+                  aria-label={value12 ? (value14) : (undefined)}
                   onMouseDown={(0, runtime.withSelectionPrevention)(undefined)}
                   className={`${runtime.selectionRingClasses} ${value9 ? runtime.ComponentsSelectionRingClassNames_3 : runtime.ComponentsSelectionRingClassNames_4} ${value12 ? runtime.AspectSquareValue : runtime.ComponentsSelectionRingClassNames}${fullWidth ? " flex-1" : ""}`}
                 >
-                  {value15 && input.indicator ? (
-                    <span className={"grid"}>
+                  {value15 && input.indicator ? (<span className={"grid"}>
                       <span
                         className={
                           "col-start-1 row-start-1 [--seg-dot-r:calc(0.1875rem*var(--cds-rem-scale,1))] [--seg-dot-x:calc(100%_-_var(--seg-dot-r)_+_1px)] [&:dir(rtl)]:[--seg-dot-x:calc(var(--seg-dot-r)_-_1px)] not-forced-colors:has-[~[data-cds-part=indicator]>*]:[mask-image:radial-gradient(circle_at_var(--seg-dot-x)_calc(var(--seg-dot-r)_-_1px),transparent_calc(var(--seg-dot-r)_+_2px),black_calc(var(--seg-dot-r)_+_2.5px))]"
@@ -231,10 +233,7 @@ export function installCdsComponentsSelectionPoints(
                       >
                         {input.indicator}
                       </span>
-                    </span>
-                  ) : (
-                    value15
-                  )}
+                    </span>) : (value15)}
                   {input.label}
                 </runtime.npm_Radio_iP.Root>
               ),

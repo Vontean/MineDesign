@@ -1,3 +1,4 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -941,7 +942,7 @@ export function installDesignSystemTypeDeclarations(
     let value: Dynamic = boundedDesignSystemText(options, 2e3),
       value2: Dynamic = boundedDesignSystemText(context, 80);
     return {
-      title: boundedDesignSystemText(input, 80) ?? "Design system",
+      get title() { return boundedDesignSystemText(input, 80) ?? (uiMessage("canvas.typeDeclarations.designSystem")); },
       ...(value !== undefined && /^https:\/\//.test(value)
         ? {
             url: value,

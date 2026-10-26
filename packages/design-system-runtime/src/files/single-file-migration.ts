@@ -1,3 +1,4 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import type * as Migration from "../contracts/migration";
 import type * as Model from "../contracts";
@@ -397,7 +398,7 @@ export function installFilesSingleFileMigration(
             {
               path: runtime.DESIGN_SYSTEM_ENVELOPE_PATH,
               reason:
-                "it holds a character that did not decode (it shows as " +
+                uiMessage("design-system.singleFileMigration.itHoldsACharacterThat") +
                 SINGLE_FILE_REPLACEMENT_CHARACTER +
                 "); find it and type it again",
             },
@@ -570,7 +571,7 @@ export function installFilesSingleFileMigration(
   bindRuntimeValue(
     runtime,
     "OLDER_SINGLE_FILE_COPY_MESSAGE",
-    () => OLDER_SINGLE_FILE_COPY_MESSAGE,
+    () => uiMessage("design-system.singleFileMigration.anOlderCopyOfThis"),
     (value) => {
       OLDER_SINGLE_FILE_COPY_MESSAGE = value;
     },

@@ -1,3 +1,4 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 import type * as React from "react";
 import type * as Editor from "../contracts/editor-runtime";
 import type * as Model from "../contracts";
@@ -91,7 +92,7 @@ export function installEditorAssetResources(
         return {
           mode: "reject",
           reason:
-            "Fonts store up to " +
+            uiMessage("design-system.assetResources.fontsStoreUpTo") +
             formatFileSize(MAX_INLINE_FONT_BYTES) +
             " — this one is " +
             formatFileSize(bytes) +
@@ -106,7 +107,7 @@ export function installEditorAssetResources(
         return {
           mode: "original",
           warning:
-            "Stored as " +
+            uiMessage("design-system.assetResources.storedAs") +
             extension +
             " — woff2 is preferred (smaller, same fidelity).",
         };
@@ -121,7 +122,7 @@ export function installEditorAssetResources(
         return {
           mode: "reject",
           reason:
-            "Video stores up to " +
+            uiMessage("design-system.assetResources.videoStoresUpTo") +
             formatFileSize(MAX_INLINE_VIDEO_BYTES) +
             " — this one is " +
             formatFileSize(bytes) +
@@ -139,7 +140,7 @@ export function installEditorAssetResources(
       reason:
         (extension === "svg"
           ? "SVG assets store as text up to "
-          : "Files store as given up to ") +
+          : uiMessage("design-system.assetResources.filesStoreAsGivenUp")) +
         formatFileSize(MAX_INLINE_ASSET_BYTES) +
         " — this one is " +
         formatFileSize(bytes) +
@@ -162,7 +163,7 @@ export function installEditorAssetResources(
       .replace(/[-_]+/g, " ")
       .trim();
     if (name === "") {
-      return "Untitled asset";
+      return uiMessage("design-system.assetResources.untitledAsset");
     } else {
       return name;
     }
@@ -237,7 +238,7 @@ export function installEditorAssetResources(
         try {
           let value = await fetchBlob(fetchUrl);
           if (!value.ok) {
-            throw Error("not ok");
+            throw Error(uiMessage("design-system.assetResources.notOk"));
           }
           let value2 = new Uint8Array(await value.arrayBuffer());
           if (value2.length > MAX_BLOB_READ_BYTES) {

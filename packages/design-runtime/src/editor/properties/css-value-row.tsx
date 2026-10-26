@@ -1,3 +1,6 @@
+import { uiCssLabel } from '@minedesign/contracts/ui-value';
+import { uiMessage } from '@minedesign/contracts/ui-messages';
+import { useUiLocale } from '../../ui-locale.ts';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -12,6 +15,7 @@ export function installEditorPropertiesCssValueRow(
     onCommit: onCommit,
     shell: shell,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let { text: value, placeholder: value2 }: Dynamic = (0,
     runtime.inspectorFieldDisplay)(state);
     return (
@@ -36,15 +40,16 @@ export function installEditorPropertiesCssValueRow(
   }
   function propertyOptionLabel(input?: Dynamic, options?: Dynamic): Dynamic {
     let value: Dynamic = input?.optionLabels?.[options];
-    if (value) return value;
+    if (value) return uiCssLabel(options, value);
     let value2: Dynamic = options.replace(/-/g, " ");
-    return value2.charAt(0).toUpperCase() + value2.slice(1);
+    return uiCssLabel(options, value2.charAt(0).toUpperCase() + value2.slice(1));
   }
   function PropertyCssEnumRow({
     state: state,
     onCommit: onCommit,
     shell: shell,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let { text: value, isLiteral: value2 }: Dynamic = (0,
     runtime.inspectorFieldDisplay)(state);
     if (!value2 && value)
@@ -75,12 +80,10 @@ export function installEditorPropertiesCssValueRow(
             }),
           )}
           value={state.mixed ? null : value4 || null}
-          placeholder={state.mixed ? "Mixed" : value5 ? value8 : undefined}
+          placeholder={state.mixed ? (uiMessage("inspector.cssValueRow.mixed")) : (value5 ? (value8) : (undefined))}
           hint={runtime.Value_6}
           title={
-            value6 && !state.inheritedFrom
-              ? "Inherited \u2014 right-click to keep unset"
-              : undefined
+            value6 && !state.inheritedFrom ? (uiMessage("inspector.cssValueRow.inheritedRightClickToKeep")) : (undefined)
           }
           disabled={state.disabled}
           onChange={(input?: Dynamic): Dynamic => {

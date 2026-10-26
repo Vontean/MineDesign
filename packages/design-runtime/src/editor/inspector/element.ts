@@ -1,3 +1,4 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -52,10 +53,10 @@ export function installEditorInspectorElement(
       items: Dynamic = [],
       state: Dynamic = {
         prop: "object-fit",
-        label: "Fit",
+        get label() { return uiMessage("inspector.element.fit"); },
         spec: {
           prop: "object-fit",
-          label: "Fit",
+          get label() { return uiMessage("inspector.element.fit"); },
           editor: "select",
           section: "advanced",
           options: ["fill", "contain", "cover", "none", "scale-down"],
@@ -67,14 +68,14 @@ export function installEditorInspectorElement(
     input.tag === "img" &&
       items.push({
         id: "image",
-        title: "Image",
+        get title() { return uiMessage("inspector.element.image"); },
         rows: [
           {
             prop: "@src",
-            label: "Source",
+            get label() { return uiMessage("inspector.element.source"); },
             spec: {
               prop: "@src",
-              label: "Source",
+              get label() { return uiMessage("inspector.element.source"); },
               editor: "image",
               section: "advanced",
             },
@@ -140,10 +141,10 @@ export function installEditorInspectorElement(
         ((flag = target == null || target.trim().toLowerCase() === "_blank"),
         items6.push({
           prop: "@target",
-          label: "Open in new tab",
+          get label() { return uiMessage("inspector.element.openInNewTab"); },
           spec: {
             prop: "@target",
-            label: "Open in new tab",
+            get label() { return uiMessage("inspector.element.openInNewTab"); },
             editor: "bool",
             section: "advanced",
             boolOnValue: "_blank",
@@ -169,14 +170,14 @@ export function installEditorInspectorElement(
         }));
       items.push({
         id: "link",
-        title: "Link",
+        get title() { return uiMessage("inspector.element.link"); },
         rows: items6,
       });
     }
     (input.tag === "video" || input.tag === "iframe") &&
       items.push({
         id: "media",
-        title: input.tag === "video" ? "Video" : "Embed",
+        get title() { return input.tag === "video" ? (uiMessage("inspector.element.video")) : ("Embed"); },
         rows: [
           callback4("src", "Source", "string", {
             placeholder: "https://\u2026",
@@ -188,14 +189,14 @@ export function installEditorInspectorElement(
       let value26: Dynamic = input.tag === "ol";
       items.push({
         id: "list",
-        title: "List",
+        get title() { return uiMessage("inspector.element.list"); },
         rows: [
           {
             prop: "list-style-type",
-            label: "Style",
+            get label() { return uiMessage("inspector.element.style"); },
             spec: {
               prop: "list-style-type",
-              label: "Style",
+              get label() { return uiMessage("inspector.element.style"); },
               editor: "select",
               section: "advanced",
               options: value26
@@ -251,7 +252,7 @@ export function installEditorInspectorElement(
       });
       items.push({
         id: "divider",
-        title: "Divider",
+        get title() { return uiMessage("inspector.element.divider"); },
         rows: [
           callback10("border-top-width", "Thickness", "number", {
             unit: "px",
@@ -282,7 +283,7 @@ export function installEditorInspectorElement(
         value2 && input.canvasEditable === false
           ? {
               prop: "__text",
-              label: "Content",
+              get label() { return uiMessage("inspector.element.content"); },
               value: input.text,
               disabled: input.disabled,
             }
@@ -331,7 +332,7 @@ export function installEditorInspectorElement(
       });
       items.push({
         id: "svgPaint",
-        title: value5 ? "Stroke" : "Fill & stroke",
+        get title() { return value5 ? (uiMessage("inspector.element.stroke")) : (uiMessage("inspector.element.fillStroke")); },
         rows: [
           ...(value5 ? [] : [callback10("fill", "Fill", "color")]),
           callback10("stroke", value5 ? "Color" : "Stroke", "color"),
@@ -405,10 +406,10 @@ export function installEditorInspectorElement(
         value26 &&
           items5.push({
             prop: "@checked",
-            label: "Checked",
+            get label() { return uiMessage("inspector.element.checked"); },
             spec: {
               prop: "@checked",
-              label: "Checked",
+              get label() { return uiMessage("inspector.element.checked"); },
               editor: "bool",
               section: "advanced",
               boolOnValue: "checked",
@@ -418,11 +419,11 @@ export function installEditorInspectorElement(
           });
       } else
         input.tag === "input" &&
-          items5.push(callback10("value", "Prefilled text", "string"));
+          items5.push(callback10("value", uiMessage("inspector.element.prefilledText"), "string"));
       input.tag === "textarea" &&
         items5.push({
           prop: "__text",
-          label: "Prefilled text",
+          get label() { return uiMessage("inspector.element.prefilledText"); },
           value: input.text,
           disabled: input.disabled,
         });
@@ -433,7 +434,7 @@ export function installEditorInspectorElement(
       items5.length &&
         items.push({
           id: "control",
-          title: "Control",
+          get title() { return uiMessage("inspector.element.control"); },
           rows: items5,
         });
     }
@@ -505,7 +506,7 @@ export function installEditorInspectorElement(
       ];
       items.push({
         id: "stroke",
-        title: value28 ? "Fill & stroke" : "Stroke",
+        get title() { return value28 ? (uiMessage("inspector.element.fillStroke")) : (uiMessage("inspector.element.stroke")); },
         rows: items2,
       });
     }
@@ -614,7 +615,7 @@ export function installEditorInspectorElement(
           value17 &&
             ((value26.disabled = true),
             (value26.whyDisabled =
-              "This background fills the text \u2014 change it under Text \u203A Color"));
+              uiMessage("inspector.element.thisBackgroundFillsTheText")));
         }
         input2.prop === "font-style" &&
           ((value26.companionValue = callback2(
@@ -736,10 +737,10 @@ export function installEditorInspectorElement(
                 : [
                     {
                       prop: "fill",
-                      label: "Color",
+                      get label() { return uiMessage("inspector.element.color"); },
                       spec: {
                         prop: "fill",
-                        label: "Color",
+                        get label() { return uiMessage("inspector.element.color"); },
                         editor: "color",
                         section: "typography",
                       },
@@ -764,7 +765,7 @@ export function installEditorInspectorElement(
     ) {
       let state3: Dynamic = {
         id: "text",
-        title: "Text",
+        get title() { return uiMessage("inspector.element.text"); },
         rows: [...(value3 ? [value3] : []), ...value25],
       };
       value21 ? items.unshift(state3) : items.push(state3);
@@ -814,7 +815,7 @@ export function installEditorInspectorElement(
           ) &&
           (callback9({
             ...entry,
-            label: "Display",
+            get label() { return uiMessage("inspector.element.display"); },
           }),
           (entry = {
             ...entry,
@@ -865,7 +866,7 @@ export function installEditorInspectorElement(
             value38.prop === "display"
               ? {
                   ...value38,
-                  label: "Display",
+                  get label() { return uiMessage("inspector.element.display"); },
                 }
               : value38,
           );
@@ -949,13 +950,13 @@ export function installEditorInspectorElement(
       items6.length > 0 &&
         items.push({
           id: "size",
-          title: "Size",
+          get title() { return uiMessage("inspector.element.size"); },
           rows: items6,
         });
       items7.length > 0 &&
         items.push({
           id: "sizing",
-          title: "Layout",
+          get title() { return uiMessage("inspector.element.layout"); },
           rows: items7,
           ...(value32 !== undefined
             ? {
@@ -997,7 +998,7 @@ export function installEditorInspectorElement(
       (items5.length > 0 || !value7) &&
         items.push({
           id: "appearance",
-          title: "Appearance",
+          get title() { return uiMessage("inspector.element.appearance"); },
           rows: items5,
         });
     }
@@ -1045,7 +1046,7 @@ export function installEditorInspectorElement(
       value26.filter(callback10).forEach(callback9);
       items.push({
         id: "effects",
-        title: "Effects",
+        get title() { return uiMessage("inspector.element.effects"); },
         rows: value26.filter(
           (input2?: Dynamic): Dynamic => !callback10(input2),
         ),

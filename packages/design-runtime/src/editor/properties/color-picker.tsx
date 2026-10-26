@@ -1,3 +1,4 @@
+import { useUiLocale } from '../../ui-locale.ts';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -21,6 +22,7 @@ export function installEditorPropertiesColorPicker(
     onSwatch: onSwatch,
     ...props
   }: Dynamic): Dynamic {
+    useUiLocale();
     let value2: Dynamic = (0, runtime.reactPropertiesTooltip.useMemo)(
         (): Dynamic =>
           (0, runtime.normalizeColorSwatches)(

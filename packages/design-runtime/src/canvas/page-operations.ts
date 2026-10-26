@@ -1,3 +1,4 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -132,12 +133,12 @@ export function installCanvasPageOperations(
     for (
       ;
       pages.some(
-        (input?: Dynamic): Dynamic => input.name === "Page " + String(value),
+        (input?: Dynamic): Dynamic => input.name === uiMessage("canvas.pageOperations.page") + String(value),
       );
 
     )
       value += 1;
-    return "Page " + String(value);
+    return uiMessage("canvas.pageOperations.page") + String(value);
   }
   function canvasPageDeleteConfirmation(
     pageName?: Dynamic,
@@ -152,22 +153,22 @@ export function installCanvasPageOperations(
       noteCount > 0
         ? pluralCanvasObjectCount(
             noteCount,
-            "one " + otherCanvasObjectWord(artboardCount > 0) + "object",
+            uiMessage("canvas.pageOperations.one") + otherCanvasObjectWord(artboardCount > 0) + "object",
             otherCanvasObjectWord(artboardCount > 0) + "objects",
           )
         : "",
     ].filter((input?: Dynamic): Dynamic => input !== "");
     return {
-      title: "Delete page \u201C" + pageName + "\u201D?",
+      get title() { return uiMessage("canvas.pageOperations.deletePage2", { value1: String(pageName) }); },
       message:
-        "Its " +
+        uiMessage("canvas.pageOperations.its") +
         value.join(" and ") +
         " will be deleted too. Undo (" +
         hasOtherObjects +
         ") brings " +
         (artboardCount + noteCount === 1 ? "it" : "them") +
         " back until the editor reloads.",
-      confirmLabel: "Delete page",
+      get confirmLabel() { return uiMessage("canvas.pageOperations.deletePage"); },
       danger: true,
     };
   }
@@ -231,6 +232,6 @@ export function installCanvasPageOperations(
       context?: Dynamic,
     ): Dynamic => (input === 1 ? options : String(input) + " " + context);
     otherCanvasObjectWord = (input?: Dynamic): Dynamic =>
-      input ? "other " : "";
+      input ? uiMessage("canvas.pageOperations.other") : "";
   };
 }

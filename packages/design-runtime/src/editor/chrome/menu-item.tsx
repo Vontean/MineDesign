@@ -1,3 +1,5 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
+import { useUiLocale } from '../../ui-locale.ts';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -20,6 +22,7 @@ export function installEditorChromeMenuItem(
     icon: icon,
     "data-testid": dataTestid,
   }: Dynamic): Dynamic {
+    useUiLocale();
     return (
       <button
         type={"button"}
@@ -40,28 +43,16 @@ export function installEditorChromeMenuItem(
             : "enabled:hover:bg-fill-ghost-hover focus-visible:bg-fill-ghost-hover",
         )}
       >
-        {icon !== undefined ? (
-          <span
+        {icon !== undefined ? (<span
             className={"flex size-icon shrink-0 items-center justify-center"}
           >
-            {typeof icon == "string" ? (
-              <runtime.Icon name={icon} size={"auto"} />
-            ) : (
-              icon || null
-            )}
-          </span>
-        ) : null}
-        {typeof children == "string" || typeof children == "number" ? (
-          <span className={"min-w-0 flex-1 truncate"}>{children}</span>
-        ) : (
-          <span className={"flex min-w-0 flex-1 items-center gap-xs"}>
+            {typeof icon == "string" ? (<runtime.Icon name={icon} size={"auto"} />) : (icon || (null))}
+          </span>) : (null)}
+        {typeof children == "string" || typeof children == "number" ? (<span className={"min-w-0 flex-1 truncate"}>{children}</span>) : (<span className={"flex min-w-0 flex-1 items-center gap-xs"}>
             {children}
-          </span>
-        )}
-        {checked !== undefined || hint ? (
-          <span className={"ml-md flex shrink-0 items-center gap-xs"}>
-            {hint ? (
-              <span
+          </span>)}
+        {checked !== undefined || hint ? (<span className={"ml-md flex shrink-0 items-center gap-xs"}>
+            {hint ? (<span
                 className={(0, runtime.joinClassNames)(
                   "max-w-[160px] shrink-0 truncate py-[0.125em] -my-[0.125em] text-footnote tabular-nums text-muted",
                   danger &&
@@ -70,10 +61,8 @@ export function installEditorChromeMenuItem(
                 )}
               >
                 {hint}
-              </span>
-            ) : null}
-            {checked !== undefined ? (
-              <span
+              </span>) : (null)}
+            {checked !== undefined ? (<span
                 className={
                   "-mr-1 flex size-icon shrink-0 items-center justify-center"
                 }
@@ -81,13 +70,9 @@ export function installEditorChromeMenuItem(
                   color: "var(--cds-fill-accent)",
                 }}
               >
-                {checked ? (
-                  <runtime.Icon name={"Check"} size={"auto"} bold={true} />
-                ) : null}
-              </span>
-            ) : null}
-          </span>
-        ) : null}
+                {checked ? (<runtime.Icon name={"Check"} size={"auto"} bold={true} />) : (null)}
+              </span>) : (null)}
+          </span>) : (null)}
       </button>
     );
   }

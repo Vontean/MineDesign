@@ -1,3 +1,4 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -241,7 +242,7 @@ export function installEditorKeyboardFind(
       ancestor.closest("[" + DcKeyBrowsedAttribute + "]") == null
       ? null
       : {
-          name: ancestor.getAttribute("aria-label") || "This row",
+          name: ancestor.getAttribute("aria-label") || uiMessage("inspector.find.thisRow"),
           onRow: ancestor === value,
         };
   }

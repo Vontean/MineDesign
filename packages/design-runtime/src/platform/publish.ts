@@ -1,3 +1,4 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -61,7 +62,7 @@ export function installPlatformPublish(runtime: RuntimeBindings): () => void {
       if (value === null)
         throw {
           code: "not_granted",
-          message: "The self capability is not available to this view.",
+          get message() { return uiMessage("canvas.publish.theSelfCapabilityIsNotAvailableToThisView"); },
         };
       return value.publish(input);
     };

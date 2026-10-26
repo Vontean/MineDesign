@@ -1,3 +1,5 @@
+import { useUiLocale } from '../ui-locale.ts';
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -24,6 +26,7 @@ export function installFastEditDraftPreviews(
   var DRAFT_PREVIEW_EXPIRY_MS: Dynamic;
   var DRAFT_IFRAME_STYLE: Dynamic;
   function DraftArtboardPreviews({ boards: boards }: Dynamic): Dynamic {
+    useUiLocale();
     let documentPreviews: Dynamic = (0,
       ReactDraftPreviews.useSyncExternalStore)(
         draftDocumentPreviewStore.subscribe,
@@ -74,7 +77,7 @@ export function installFastEditDraftPreviews(
             >
               <iframe
                 // MineDesign: user-facing copy calls the agent "the agent", not Claude.
-                title={"What the agent is making"}
+                title={uiMessage("canvas.draftPreviews.whatTheAgentIsMaking")}
                 sandbox={""}
                 srcDoc={input2.doc}
                 tabIndex={-1}
@@ -108,16 +111,14 @@ export function installFastEditDraftPreviews(
                 cursor: input2.cover ? "progress" : undefined,
               }}
             >
-              {input2.doc !== null && (
-                <iframe
+              {input2.doc !== null && (<iframe
                   // MineDesign: user-facing copy calls the agent "the agent", not Claude.
-                  title={"What the agent has written so far"}
+                  title={uiMessage("canvas.draftPreviews.whatTheAgentHasWrittenSoFar")}
                   sandbox={""}
                   srcDoc={input2.doc}
                   tabIndex={-1}
                   style={DRAFT_IFRAME_STYLE}
-                />
-              )}
+                />)}
             </div>
           );
         })}

@@ -1,3 +1,5 @@
+import { useUiLocale } from '../ui-locale.ts';
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 import type * as React from "react";
 import type * as Editor from "../contracts/editor-runtime";
 import type * as Model from "../contracts";
@@ -14,6 +16,7 @@ export function installEditorAssetDetails(
     storage: storage,
     size: size,
   }: Editor.AssetDetailsPreviewProps): React.ReactElement {
+    useUiLocale();
     let value =
         asset.kind === "image" || asset.kind === "svg" || asset.kind === "video"
           ? (0, runtime.filePreviewUrl)(files, asset.path, storage)
@@ -104,16 +107,12 @@ export function installEditorAssetDetails(
           " ds-thumb-generic inline-flex flex-col items-center gap-sm text-muted"
         }
       >
-        {[
-          <runtime.KitIcon
+        {[<runtime.KitIcon
             name={value4.icon}
             size={size === "full" ? 36 : 22}
-          />,
-          <span className={"font-mono text-caption"}>
-            {value4.label +
-              (size === "full" && value5 !== "" ? " · " + value5 : "")}
-          </span>,
-        ]}
+          />, <span className={"font-mono text-caption"}>
+            {value4.label + (size === "full" && value5 !== "" ? " · " + value5 : "")}
+          </span>]}
       </span>
     );
   }
@@ -145,6 +144,7 @@ export function installEditorAssetDetails(
     onRemove: onRemove,
     focusName = false,
   }: Editor.AssetDetailsDialogProps): React.ReactElement {
+    useUiLocale();
     (0, runtime.useAssetThumbnailSources)();
     let ref = (
         runtime.reactAssetUpload as typeof React
@@ -173,7 +173,7 @@ export function installEditorAssetDetails(
           return;
         }
         if (onRename?.(value7) === false) {
-          value5("That name is taken or not a file name.");
+          value5(uiMessage("design-system.assetDetails.thatNameIsTakenOr"));
         } else {
           value5(null);
         }
@@ -202,17 +202,10 @@ export function installEditorAssetDetails(
                 focusName && onRename !== undefined ? ref : undefined
               }
             >
-              {[
-                <runtime.Dialog.Header showClose={true}>
-                  {value6
-                    ? asset.kind === "video"
-                      ? "Video"
-                      : "Image"
-                    : (0, runtime.assetKindLabel)(asset).label}
-                </runtime.Dialog.Header>,
-                <div className={"flex flex-col gap-md"}>
-                  {[
-                    <div
+              {[<runtime.Dialog.Header showClose={true}>
+                  {value6 ? (asset.kind === "video" ? (uiMessage("design-system.assetDetails.video")) : (uiMessage("design-system.assetDetails.image"))) : ((0, runtime.assetKindLabel)(asset).label)}
+                </runtime.Dialog.Header>, <div className={"flex flex-col gap-md"}>
+                  {[<div
                       className={"ds-lb-prev" + (value6 ? "" : " ds-lb-file")}
                       data-tone={
                         value6 && (0, runtime.isReversedLogoAsset)(asset)
@@ -226,11 +219,10 @@ export function installEditorAssetDetails(
                         storage={storage}
                         size={"full"}
                       />
-                    </div>,
-                    onRename !== undefined ? (
+                    </div>, onRename !== undefined ? (
                       <runtime.FieldComponents.TextInput
                         ref={ref}
-                        label={"File name"}
+                        label={uiMessage("design-system.assetDetails.fileName")}
                         onFocus={
                           focusName
                             ? (input: React.FocusEvent<HTMLInputElement>) =>
@@ -278,8 +270,7 @@ export function installEditorAssetDetails(
                       />
                     ) : (
                       <p className={"flex items-baseline gap-sm text-body"}>
-                        {[
-                          <span
+                        {[<span
                             className={
                               "min-w-0 truncate font-mono text-primary"
                             }
@@ -287,8 +278,7 @@ export function installEditorAssetDetails(
                             title={asset.path}
                           >
                             {asset.name}
-                          </span>,
-                          <span
+                          </span>, <span
                             className={"font-mono text-footnote text-muted"}
                           >
                             {(0, runtime.assetFileSizeLabel)(
@@ -298,15 +288,11 @@ export function installEditorAssetDetails(
                                 asset.bytes,
                               ),
                             )}
-                          </span>,
-                        ]}
+                          </span>]}
                       </p>
-                    ),
-                  ]}
-                </div>,
-                <runtime.Dialog.Footer align={"between"}>
-                  {[
-                    onRemove !== undefined ? (
+                    )]}
+                </div>, <runtime.Dialog.Footer align={"between"}>
+                  {[onRemove !== undefined ? (
                       <runtime.Button
                         variant={"ghost"}
                         icon={"Trash"}
@@ -314,12 +300,11 @@ export function installEditorAssetDetails(
                         onClick={onRemove}
                         data-testid={"ds-asset-lb-remove"}
                       >
-                        {"Delete"}
+                        {uiMessage("design-system.assetDetails.delete")}
                       </runtime.Button>
                     ) : (
                       <span />
-                    ),
-                    onDownload !== undefined ? (
+                    ), onDownload !== undefined ? (
                       <runtime.DisabledReasonTooltip reason={value}>
                         <runtime.Button
                           icon={"Download"}
@@ -328,13 +313,11 @@ export function installEditorAssetDetails(
                           data-testid={"ds-asset-lb-download"}
                           data-why={value}
                         >
-                          {"Download"}
+                          {uiMessage("design-system.assetDetails.download")}
                         </runtime.Button>
                       </runtime.DisabledReasonTooltip>
-                    ) : null,
-                  ]}
-                </runtime.Dialog.Footer>,
-              ]}
+                    ) : null]}
+                </runtime.Dialog.Footer>]}
             </runtime.Dialog.Popup>
           </runtime.Dialog.Root>
         </runtime.CdsRoot>

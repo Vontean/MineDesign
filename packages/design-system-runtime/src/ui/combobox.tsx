@@ -1,3 +1,5 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
+import { useUiLocale } from '../ui-locale.ts';
 import type { RestoredComboboxRootProps } from "../contracts/overlays";
 import type { SheetPopupResult } from "../contracts/overlays";
 import type { FieldComboboxProps } from "../contracts/overlays";
@@ -175,6 +177,7 @@ export function installUiCombobox(runtime: RuntimeBindings): () => void {
     getItemKey: getItemKey,
     renderRow: renderRow,
   }: VirtualComboboxProps): React.ReactElement {
+    useUiLocale();
     let callback = (input: number): number =>
         estimateRowSize?.(input) ?? estimateItemSize,
       value = (0, runtime.useVirtualizer)({
@@ -218,8 +221,7 @@ export function installUiCombobox(runtime: RuntimeBindings): () => void {
           position: "relative",
         }}
       >
-        {value2.length > 0 ? (
-          value2.map((input: import("@tanstack/virtual-core").VirtualItem) =>
+        {value2.length > 0 ? (value2.map((input: import("@tanstack/virtual-core").VirtualItem) =>
             (() => {
               const _Element = "div";
               const _elementProps = {
@@ -237,9 +239,7 @@ export function installUiCombobox(runtime: RuntimeBindings): () => void {
               const _elementKey = input.key;
               return <_Element key={_elementKey} {..._elementProps} />;
             })(),
-          )
-        ) : count > 0 ? (
-          <div aria-hidden={true} className={"flex flex-col gap-1 px-md py-1"}>
+          )) : (count > 0 ? (<div aria-hidden={true} className={"flex flex-col gap-1 px-md py-1"}>
             {Array.from(
               {
                 length: runtime.COMBOBOX_SKELETON_ROW_COUNT,
@@ -255,8 +255,7 @@ export function installUiCombobox(runtime: RuntimeBindings): () => void {
                   return <_Element2 key={_elementKey2} {..._elementProps2} />;
                 })(),
             )}
-          </div>
-        ) : null}
+          </div>) : (null))}
       </div>
     );
   }
@@ -367,6 +366,7 @@ export function installUiCombobox(runtime: RuntimeBindings): () => void {
   function Combobox<Value extends ComboboxKey>(
     props: ComboboxProps<Value>,
   ): React.ReactElement {
+    useUiLocale();
     let {
         "data-cds": value5 = "Combobox",
         mode = "select",
@@ -418,11 +418,11 @@ export function installUiCombobox(runtime: RuntimeBindings): () => void {
       value6 = reactForUiInputs25.useContext<LabelResolver | undefined>(
         runtime.translationContext,
       ),
-      value7 = (0, runtime.useTranslation)("clearSelection", "Clear selection"),
+      value7 = (0, runtime.useTranslation)("clearSelection", uiMessage("design-system.combobox.clearSelection")),
       value8 = clearLabel ?? value7,
       value9 = (0, runtime.useTranslation)(
         "noResults",
-        COMBOBOX_NO_RESULTS_LABEL,
+        uiMessage("design-system.combobox.noResults"),
       ),
       value10 = emptyMessage ?? value9,
       value11 = searchable ?? (items.length > 5 || onInputChange !== undefined),
@@ -810,17 +810,14 @@ export function installUiCombobox(runtime: RuntimeBindings): () => void {
             input
           ) : (
             <span className={"flex min-w-0 items-center gap-2"}>
-              {[
-                <runtime.IconSlot icon={value32.icon} />,
-                <span
+              {[<runtime.IconSlot icon={value32.icon} />, <span
                   className={(0, runtime.cn)(
                     "min-w-0 truncate",
                     options && "self-baseline",
                   )}
                 >
                   {input}
-                </span>,
-              ]}
+                </span>]}
             </span>
           );
         if (props.multiple) {
@@ -832,12 +829,9 @@ export function installUiCombobox(runtime: RuntimeBindings): () => void {
           if (triggerPrefix !== undefined) {
             return (
               <span className={"flex min-w-0 items-baseline gap-1.5"}>
-                {[
-                  <span className={"shrink-0 text-muted"}>
+                {[<span className={"shrink-0 text-muted"}>
                     {triggerPrefix}
-                  </span>,
-                  <span className={"min-w-0 truncate"}>{value58}</span>,
-                ]}
+                  </span>, <span className={"min-w-0 truncate"}>{value58}</span>]}
               </span>
             );
           }
@@ -853,14 +847,11 @@ export function installUiCombobox(runtime: RuntimeBindings): () => void {
             placeholder;
           return (
             <span className={"flex min-w-0 items-baseline gap-1.5"}>
-              {[
-                <span className={"shrink-0 text-muted"}>{triggerPrefix}</span>,
-                value58 !== undefined && (
+              {[<span className={"shrink-0 text-muted"}>{triggerPrefix}</span>, value58 !== undefined && (
                   <span className={"min-w-0 truncate"} title={value32?.label}>
                     {callback11(value58, true)}
                   </span>
-                ),
-              ]}
+                )]}
             </span>
           );
         }
@@ -873,7 +864,7 @@ export function installUiCombobox(runtime: RuntimeBindings): () => void {
         if (!value32) {
           return (
             <span className={"font-normal text-muted"}>
-              {placeholder ?? " "}
+              {placeholder ?? (" ")}
             </span>
           );
         }
@@ -999,8 +990,7 @@ export function installUiCombobox(runtime: RuntimeBindings): () => void {
           required={required}
           name={name}
         >
-          {[
-            value13 === "chips" ? (
+          {[value13 === "chips" ? (
               <div
                 ref={ref9}
                 data-cds={value5}
@@ -1021,12 +1011,10 @@ export function installUiCombobox(runtime: RuntimeBindings): () => void {
                       }
                 }
               >
-                {[
-                  <runtime.baseCombobox.Chips
+                {[<runtime.baseCombobox.Chips
                     className={`${COMBOBOX_CHIP_LIST_CLASS} ${value34 ? "" : "pointer-events-none"}`}
                   >
-                    {[
-                      memo2.map((input: ComboboxOption<Value>) =>
+                    {[memo2.map((input: ComboboxOption<Value>) =>
                         (() => {
                           const _Element4 = ComboboxChip;
                           const _elementProps4 = {
@@ -1038,22 +1026,18 @@ export function installUiCombobox(runtime: RuntimeBindings): () => void {
                             <_Element4 key={_elementKey4} {..._elementProps4} />
                           );
                         })(),
-                      ),
-                      <runtime.baseCombobox.Input
+                      ), <runtime.baseCombobox.Input
                         className={`${COMBOBOX_SEARCH_INPUT_CLASS} ${memo2.length === 0 && placeholder === undefined ? "min-w-[2ch]" : ""}`}
                         placeholder={
-                          memo2.length === 0 ? placeholder : undefined
+                          memo2.length === 0 ? (placeholder) : (undefined)
                         }
                         disabled={value26}
                         {...state}
                         autoComplete={"off"}
                         data-1p-ignore={true}
                         data-lpignore={"true"}
-                      />,
-                    ]}
-                  </runtime.baseCombobox.Chips>,
-                  value47,
-                ]}
+                      />]}
+                  </runtime.baseCombobox.Chips>, value47]}
               </div>
             ) : mode === "input" ? (
               <div
@@ -1087,8 +1071,7 @@ export function installUiCombobox(runtime: RuntimeBindings): () => void {
                       }
                 }
               >
-                {[
-                  <runtime.baseCombobox.Input
+                {[<runtime.baseCombobox.Input
                     className={COMBOBOX_INLINE_INPUT_CLASS}
                     placeholder={placeholder}
                     disabled={value26}
@@ -1096,10 +1079,7 @@ export function installUiCombobox(runtime: RuntimeBindings): () => void {
                     autoComplete={"off"}
                     data-1p-ignore={true}
                     data-lpignore={"true"}
-                  />,
-                  value49,
-                  value47,
-                ]}
+                  />, value49, value47]}
               </div>
             ) : (
               <div
@@ -1110,14 +1090,12 @@ export function installUiCombobox(runtime: RuntimeBindings): () => void {
                 data-disabled={value26 || undefined}
                 data-invalid={value23 || undefined}
               >
-                {[
-                  <runtime.baseCombobox.Trigger
+                {[<runtime.baseCombobox.Trigger
                     disabled={value26}
                     {...state}
                     className={COMBOBOX_TRIGGER_BUTTON_CLASS}
                   >
-                    {[
-                      (() => {
+                    {[(() => {
                         const _Element5 = "span";
                         const _elementProps5 = {
                           id: triggerValueId,
@@ -1130,8 +1108,7 @@ export function installUiCombobox(runtime: RuntimeBindings): () => void {
                         return (
                           <_Element5 key={_elementKey5} {..._elementProps5} />
                         );
-                      })(),
-                      value43 && (
+                      })(), value43 && (
                         <runtime.Icon
                           name={"CaretDown"}
                           size={"sm"}
@@ -1139,14 +1116,10 @@ export function installUiCombobox(runtime: RuntimeBindings): () => void {
                             "mr-0.5 shrink-0 text-muted transition-colors group-hover/cbx:text-secondary"
                           }
                         />
-                      ),
-                    ]}
-                  </runtime.baseCombobox.Trigger>,
-                  value49,
-                ]}
+                      )]}
+                  </runtime.baseCombobox.Trigger>, value49]}
               </div>
-            ),
-            <runtime.baseCombobox.Portal
+            ), <runtime.baseCombobox.Portal
               container={((0, runtime.usePortalContainer)()) as import("../contracts/overlays").BaseUIPortalContainer}
             >
               <ComboboxPopupResponsive
@@ -1193,14 +1166,12 @@ export function installUiCombobox(runtime: RuntimeBindings): () => void {
                 close={callback6}
                 closeLabel={closeLabel}
               />
-            </runtime.baseCombobox.Portal>,
-          ]}
+            </runtime.baseCombobox.Portal>]}
         </runtime.baseCombobox.Root>
       ),
       value57 = (
         <runtime.CloseOnActivityHideProvider actionsRef={ref7}>
-          {value55 ? (
-            <runtime.FloatingPositionRenderProp
+          {value55 ? (<runtime.FloatingPositionRenderProp
               open={value34}
               close={callback6}
               onOpenChange={callback5}
@@ -1227,10 +1198,7 @@ export function installUiCombobox(runtime: RuntimeBindings): () => void {
                   },
                 )
               }
-            </runtime.FloatingPositionRenderProp>
-          ) : (
-            value56
-          )}
+            </runtime.FloatingPositionRenderProp>) : (value56)}
         </runtime.CloseOnActivityHideProvider>
       );
     if (labelId === undefined) {
@@ -1240,16 +1208,13 @@ export function installUiCombobox(runtime: RuntimeBindings): () => void {
       <div
         className={`gap-xs flex-col font-sans ${fullWidth ? "flex w-full" : "inline-flex"}`}
       >
-        {[
-          <label
+        {[<label
             id={labelId}
             htmlFor={triggerId}
             className={"text-body text-primary font-medium leading-none"}
           >
             {label}
-          </label>,
-          value57,
-        ]}
+          </label>, value57]}
       </div>
     );
   }
@@ -1267,6 +1232,7 @@ export function installUiCombobox(runtime: RuntimeBindings): () => void {
   function ComboboxPopupResponsive<Value extends ComboboxKey>(
     props: ComboboxBridgeProps<Value>,
   ): React.ReactElement {
+    useUiLocale();
     if ((0, runtime.useHasSheetFrame)()) {
       return <ComboboxPopupAsSheet {...props} />;
     } else {
@@ -1282,6 +1248,7 @@ export function installUiCombobox(runtime: RuntimeBindings): () => void {
   function ComboboxPopupAsSheet<Value extends ComboboxKey>(
     props: ComboboxBridgeProps<Value>,
   ): React.ReactElement {
+    useUiLocale();
     return (
       <runtime.AdaptiveSheetPopupHost kind={"combobox"}>
         {(input: SheetRenderState, options: MobileSheetParts | null) => (
@@ -1337,16 +1304,17 @@ export function installUiCombobox(runtime: RuntimeBindings): () => void {
     close: close,
     closeLabel: closeLabel,
   }: ComboboxHostProps<Value>): React.ReactElement {
+    useUiLocale();
     let selectAllDisabled2 = (0, runtime.useTranslation)(
         "loadingOptions",
-        "Loading options",
+        uiMessage("design-system.combobox.loadingOptions"),
       ),
       value = (0, runtime.useTranslation)(
         "loadingMoreOptions",
-        "Loading more options",
+        uiMessage("design-system.combobox.loadingMoreOptions"),
       ),
       value2 = isLoading && displayedItems === 0,
-      value3 = (0, runtime.useTranslation)("selectAll", "Select all"),
+      value3 = (0, runtime.useTranslation)("selectAll", uiMessage("design-system.combobox.selectAll")),
       closeLabel2 = (0, runtime.useTranslation)("clear", "Clear"),
       [value4, value5] = reactForUiInputs25.useState<HTMLDivElement | null>(
         null,
@@ -1535,11 +1503,9 @@ export function installUiCombobox(runtime: RuntimeBindings): () => void {
         density={sheet ? runtime.SHEET_DENSITY : undefined}
         closeOnActivityHide={true}
       >
-        {[
-          value18 !== null && anchorRef.sheet && (
+        {[value18 !== null && anchorRef.sheet && (
             <value18.ComboboxSheetBackdrop sheetPopup={anchorRef} />
-          ),
-          <runtime.layerBaseContext.Provider value={value16.base}>
+          ), <runtime.layerBaseContext.Provider value={value16.base}>
             <runtime.baseCombobox.Positioner
               style={
                 anchorRef.positionerStyle !== undefined
@@ -1592,14 +1558,11 @@ export function installUiCombobox(runtime: RuntimeBindings): () => void {
                 }}
                 aria-busy={isLoading || onLoadMore}
               >
-                {[
-                  value17 !== null && <value17.Handle />,
-                  <runtime.sheetParentContext.Provider
+                {[value17 !== null && <value17.Handle />, <runtime.sheetParentContext.Provider
                     value={sheet ? anchorRef.stack : value19}
                   >
                     <div className={COMBOBOX_POPUP_BODY_CLASS}>
-                      {[
-                        focusListOnOpen && (
+                      {[focusListOnOpen && (
                           <runtime.baseCombobox.Input
                             className={COMBOBOX_POPUP_SEARCH_CLASS}
                             placeholder={searchPlaceholder}
@@ -1609,8 +1572,7 @@ export function installUiCombobox(runtime: RuntimeBindings): () => void {
                             data-1p-ignore={true}
                             data-lpignore={"true"}
                           />
-                        ),
-                        <div
+                        ), <div
                           ref={triggerPrefix || value13 ? value5 : undefined}
                           tabIndex={-1}
                           className={COMBOBOX_LIST_CLASS}
@@ -1619,22 +1581,17 @@ export function installUiCombobox(runtime: RuntimeBindings): () => void {
                           }}
                         >
                           <jsxForUiInputs24.Fragment>
-                            {[
-                              <runtime.baseCombobox.Empty
+                            {[<runtime.baseCombobox.Empty
                                 className={COMBOBOX_EMPTY_CLASS}
                               >
-                                {isLoading || onLoadMore
-                                  ? null
-                                  : isFetchingMore}
-                              </runtime.baseCombobox.Empty>,
-                              <runtime.baseCombobox.List
+                                {isLoading || onLoadMore ? (null) : (isFetchingMore)}
+                              </runtime.baseCombobox.Empty>, <runtime.baseCombobox.List
                                 ref={value22}
                                 tabIndex={-1}
                                 {...value23}
                                 className={`cds-reset outline-none focus-visible:outline-hidden ${paginationKey ? COMBOBOX_SELECTED_SEPARATOR_CLASS : ""}`}
                               >
-                                {triggerPrefix ? (
-                                  <VirtualizedComboboxRows
+                                {triggerPrefix ? (<VirtualizedComboboxRows
                                     count={virtualized.length}
                                     estimateItemSize={value20}
                                     estimateRowSize={callback3}
@@ -1642,96 +1599,76 @@ export function installUiCombobox(runtime: RuntimeBindings): () => void {
                                     actionsRef={renderedItemCount}
                                     getItemKey={callback2}
                                     renderRow={clearAllDisabled2}
-                                  />
-                                ) : (
-                                  callback
-                                )}
-                              </runtime.baseCombobox.List>,
-                              virtualRowsRef && value13 && !isLoading && (
+                                  />) : (callback)}
+                              </runtime.baseCombobox.List>, virtualRowsRef && value13 && !isLoading && (
                                 <div
                                   ref={value15}
                                   aria-hidden={true}
                                   className={"h-px"}
                                 />
-                              ),
-                              <runtime.ComboboxStatus
+                              ), <runtime.ComboboxStatus
                                 delay={0}
                                 loading={value2 || onLoadMore}
                                 loadingLabel={
                                   value2 ? selectAllDisabled2 : value
                                 }
-                              />,
-                            ]}
+                              />]}
                           </jsxForUiInputs24.Fragment>
-                        </div>,
-                        (footer || footer2) && (
+                        </div>, (footer || footer2) && (
                           <jsxForUiInputs24.Fragment>
-                            {[
-                              handleSelectAll && (
+                            {[handleSelectAll && (
                                 <div
                                   aria-hidden={true}
                                   className={COMBOBOX_FOOTER_DIVIDER_CLASS}
                                 />
-                              ),
-                              <div
+                              ), <div
                                 className={
                                   handleSelectAll
                                     ? COMBOBOX_FOOTER_CLASS
                                     : "shrink-0"
                                 }
                               >
-                                {[
-                                  footer && (
+                                {[footer && (
                                     <div
                                       className={
                                         "flex items-center justify-between gap-sm p-1"
                                       }
                                     >
-                                      {[
-                                        <runtime.Button
+                                      {[<runtime.Button
                                           variant={"ghost"}
                                           size={"sm"}
                                           onClick={footerDivider}
                                           disabled={selectAllDisabled}
                                         >
                                           {value3}
-                                        </runtime.Button>,
-                                        <runtime.Button
+                                        </runtime.Button>, <runtime.Button
                                           variant={"ghost"}
                                           size={"sm"}
                                           onClick={handleClearAll}
                                           disabled={clearAllDisabled}
                                         >
                                           {closeLabel2}
-                                        </runtime.Button>,
-                                      ]}
+                                        </runtime.Button>]}
                                     </div>
-                                  ),
-                                  footer2 &&
+                                  ), footer2 &&
                                     (typeof footer2 === "function"
                                       ? footer2({
                                           close: close,
                                         })
-                                      : footer2),
-                                ]}
-                              </div>,
-                            ]}
+                                      : footer2)]}
+                              </div>]}
                           </jsxForUiInputs24.Fragment>
-                        ),
-                        value17 !== null && (
+                        ), value17 !== null && (
                           <value17.DismissButton
                             onDismiss={close}
                             label={closeLabel}
                           />
-                        ),
-                      ]}
+                        )]}
                     </div>
-                  </runtime.sheetParentContext.Provider>,
-                ]}
+                  </runtime.sheetParentContext.Provider>]}
               </runtime.baseCombobox.Popup>
             </runtime.baseCombobox.Positioner>
-          </runtime.layerBaseContext.Provider>,
-        ]}
+          </runtime.layerBaseContext.Provider>]}
       </runtime.PortalRoot>
     );
   }
@@ -1832,6 +1769,7 @@ export function installUiCombobox(runtime: RuntimeBindings): () => void {
   }: {
     className?: string;
   }): React.ReactElement {
+    useUiLocale();
     return (
       <span
         aria-hidden={true}
@@ -1849,6 +1787,7 @@ export function installUiCombobox(runtime: RuntimeBindings): () => void {
   }: {
     className?: string;
   }): React.ReactElement {
+    useUiLocale();
     return (
       <runtime.baseCombobox.Separator
         className={(0, runtime.cn)(COMBOBOX_SEPARATOR_CLASS, className)}
@@ -1862,14 +1801,12 @@ export function installUiCombobox(runtime: RuntimeBindings): () => void {
   }: React.PropsWithChildren<{
     className?: string;
   }>): React.ReactElement {
+    useUiLocale();
     return (
       <jsxForUiInputs24.Fragment>
-        {[
-          <div aria-hidden={true} className={COMBOBOX_FOOTER_DIVIDER_CLASS} />,
-          <div className={(0, runtime.cn)(COMBOBOX_FOOTER_CLASS, className)}>
+        {[<div aria-hidden={true} className={COMBOBOX_FOOTER_DIVIDER_CLASS} />, <div className={(0, runtime.cn)(COMBOBOX_FOOTER_CLASS, className)}>
             {children}
-          </div>,
-        ]}
+          </div>]}
       </jsxForUiInputs24.Fragment>
     );
   }
@@ -1892,6 +1829,7 @@ export function installUiCombobox(runtime: RuntimeBindings): () => void {
   function ComboboxRoot<Value, Multiple extends boolean = false>(
     input: RestoredComboboxRootProps<Value, Multiple>,
   ): React.ReactElement {
+    useUiLocale();
     let ref = reactForUiInputs25.useRef<{
         inputOutsidePopup: number;
         trigger: HTMLElement | null;
@@ -1935,11 +1873,7 @@ export function installUiCombobox(runtime: RuntimeBindings): () => void {
       <ComboboxRegistrationContext.Provider value={memo}>
         <ComboboxChipsContext.Provider value={value}>
           <ComboboxPopupInputContext.Provider value={false}>
-            {value3 ? (
-              <ComboboxRootRegistration rootProps={input} registration={memo} />
-            ) : (
-              <runtime.baseCombobox.Root {...input} />
-            )}
+            {value3 ? (<ComboboxRootRegistration rootProps={input} registration={memo} />) : (<runtime.baseCombobox.Root {...input} />)}
           </ComboboxPopupInputContext.Provider>
         </ComboboxChipsContext.Provider>
       </ComboboxRegistrationContext.Provider>
@@ -1952,6 +1886,7 @@ export function installUiCombobox(runtime: RuntimeBindings): () => void {
     rootProps: RestoredComboboxRootProps<Value, Multiple>;
     registration: ComboboxRegistration;
   }): React.ReactElement {
+    useUiLocale();
     let value = (0, runtime.useControllableOpen)(rootProps),
       { onOpenChange: onOpenChange } = value,
       callback = reactForUiInputs25.useCallback(() => {
@@ -1992,6 +1927,7 @@ export function installUiCombobox(runtime: RuntimeBindings): () => void {
     fieldClassName: fieldClassName,
     ...remainingProps
   }: FieldComboboxProps): React.ReactElement {
+    useUiLocale();
     if (
       (error === undefined || error === null) &&
       (hint === undefined || hint === null) &&
@@ -2238,7 +2174,7 @@ export function installUiCombobox(runtime: RuntimeBindings): () => void {
   bindRuntimeValue(
     runtime,
     "COMBOBOX_NO_RESULTS_LABEL",
-    () => COMBOBOX_NO_RESULTS_LABEL,
+    () => uiMessage("design-system.combobox.noResults"),
     (value) => {
       COMBOBOX_NO_RESULTS_LABEL = value;
     },
@@ -2691,7 +2627,7 @@ export function installUiCombobox(runtime: RuntimeBindings): () => void {
         }: ComboboxPartProps<"ChipRemove">,
         options: React.ForwardedRef<HTMLButtonElement>,
       ): React.ReactElement => {
-        let value = (0, runtime.useTranslation)("removeItem", "Remove {item}", {
+        let value = (0, runtime.useTranslation)("removeItem", uiMessage("design-system.combobox.removeItem", { item: uiMessage("design-system.badges.item") }), {
           item: "item",
         });
         return (
@@ -2701,7 +2637,7 @@ export function installUiCombobox(runtime: RuntimeBindings): () => void {
             {...props}
             className={(0, runtime.cn)(COMBOBOX_CHIP_REMOVE_CLASS, className)}
           >
-            {children ?? <runtime.Icon name={"X"} size={"sm"} />}
+            {children ?? (<runtime.Icon name={"X"} size={"sm"} />)}
           </runtime.baseCombobox.ChipRemove>
         );
       },
@@ -2734,28 +2670,24 @@ export function installUiCombobox(runtime: RuntimeBindings): () => void {
             ) : null;
         return (
           <jsxForUiInputs24.Fragment>
-            {[
-              !leadsList && (item.separatorBefore || separatorAbove) && (
+            {[!leadsList && (item.separatorBefore || separatorAbove) && (
                 <runtime.baseCombobox.Separator
                   className={COMBOBOX_SEPARATOR_CLASS}
                   data-cds-part={COMBOBOX_SEPARATOR_PART}
                 />
-              ),
-              groupCaption !== undefined && (
+              ), groupCaption !== undefined && (
                 <div aria-hidden={true} className={COMBOBOX_GROUP_LABEL_CLASS}>
                   {groupCaption}
                 </div>
-              ),
-              <runtime.baseCombobox.Item
+              ), <runtime.baseCombobox.Item
                 value={item}
                 index={index}
                 disabled={item.disabled}
                 data-stale={stale || undefined}
                 className={COMBOBOX_ITEM_CLASS}
-                title={renderItem ? undefined : item.label}
+                title={renderItem ? (undefined) : (item.label)}
               >
-                {[
-                  value && (
+                {[value && (
                     <span
                       data-size={"xs"}
                       className={
@@ -2764,40 +2696,32 @@ export function installUiCombobox(runtime: RuntimeBindings): () => void {
                     >
                       <runtime.CheckboxVisual checked={selected} />
                     </span>
-                  ),
-                  item.icon !== undefined && (
+                  ), item.icon !== undefined && (
                     <runtime.IconSlot icon={item.icon} />
-                  ),
-                  renderItem ? (
+                  ), renderItem ? (
                     <div className={"min-w-0 flex-1"}>
                       {[renderItem(item, searchQuery), value2]}
                     </div>
                   ) : (
                     <div className={"flex min-w-0 flex-1 flex-col gap-0.5"}>
-                      {[
-                        <span className={"truncate"}>
+                      {[<span className={"truncate"}>
                           {[item.label, value2]}
-                        </span>,
-                        item.description !== undefined && (
+                        </span>, item.description !== undefined && (
                           <span
                             className={`text-footnote leading-snug text-muted ${wrapDescription ? "whitespace-normal break-words" : "truncate"}`}
                           >
                             {item.description}
                           </span>
-                        ),
-                      ]}
+                        )]}
                     </div>
-                  ),
-                  indicator === "check" && (
+                  ), indicator === "check" && (
                     <runtime.baseCombobox.ItemIndicator
                       className={"shrink-0 text-accent"}
                     >
                       <runtime.Icon name={"Check"} size={"auto"} bold={true} />
                     </runtime.baseCombobox.ItemIndicator>
-                  ),
-                ]}
-              </runtime.baseCombobox.Item>,
-            ]}
+                  )]}
+              </runtime.baseCombobox.Item>]}
           </jsxForUiInputs24.Fragment>
         );
       },
@@ -2841,13 +2765,9 @@ export function installUiCombobox(runtime: RuntimeBindings): () => void {
               className,
             )}
           >
-            {value3 ? (
-              children
-            ) : (
-              <span id={value} className={"contents"}>
+            {value3 ? (children) : (<span id={value} className={"contents"}>
                 {children}
-              </span>
-            )}
+              </span>)}
           </runtime.baseCombobox.Trigger>
         );
       },
@@ -2869,10 +2789,7 @@ export function installUiCombobox(runtime: RuntimeBindings): () => void {
             className,
           )}
         >
-          {children !== undefined ? (
-            <runtime.baseCombobox.Value>{children}</runtime.baseCombobox.Value>
-          ) : placeholder !== undefined ? (
-            <runtime.baseCombobox.Value>
+          {children !== undefined ? (<runtime.baseCombobox.Value>{children}</runtime.baseCombobox.Value>) : (placeholder !== undefined ? (<runtime.baseCombobox.Value>
               {(input: React.ReactNode) =>
                 input === null || input === undefined || input === "" ? (
                   <span className={"text-muted"}>{placeholder}</span>
@@ -2880,10 +2797,7 @@ export function installUiCombobox(runtime: RuntimeBindings): () => void {
                   input
                 )
               }
-            </runtime.baseCombobox.Value>
-          ) : (
-            <runtime.baseCombobox.Value />
-          )}
+            </runtime.baseCombobox.Value>) : (<runtime.baseCombobox.Value />))}
         </span>
       ),
     );
@@ -2960,7 +2874,7 @@ export function installUiCombobox(runtime: RuntimeBindings): () => void {
       ): React.ReactElement => {
         let value = (0, runtime.useTranslation)(
           "clearSelection",
-          "Clear selection",
+          uiMessage("design-system.combobox.clearSelection"),
         );
         return (
           <runtime.baseCombobox.Clear
@@ -2972,7 +2886,7 @@ export function installUiCombobox(runtime: RuntimeBindings): () => void {
                 variant={"ghost"}
                 size={"sm"}
                 icon={children || "X"}
-                aria-label={ariaLabel ?? value}
+                aria-label={ariaLabel ?? (value)}
                 tooltip={false}
                 className={(0, runtime.cn)(
                   "data-[ending-style]:hidden",
@@ -3011,8 +2925,7 @@ export function installUiCombobox(runtime: RuntimeBindings): () => void {
             className,
           )}
         >
-          {[
-            icon && (
+          {[icon && (
               <runtime.IconSlot
                 icon={
                   <runtime.Icon
@@ -3022,9 +2935,7 @@ export function installUiCombobox(runtime: RuntimeBindings): () => void {
                   />
                 }
               />
-            ),
-            children,
-          ]}
+            ), children]}
         </button>
       ),
     );
@@ -3185,11 +3096,9 @@ export function installUiCombobox(runtime: RuntimeBindings): () => void {
             surface={runtime.elevationSurfaceNames.popover}
             density={sheet ? runtime.SHEET_DENSITY : undefined}
           >
-            {[
-              value20 !== null && sheetPopup.sheet && (
+            {[value20 !== null && sheetPopup.sheet && (
                 <value20.ComboboxSheetBackdrop sheetPopup={sheetPopup} />
-              ),
-              <runtime.layerBaseContext.Provider value={value18.base}>
+              ), <runtime.layerBaseContext.Provider value={value18.base}>
                 <runtime.baseCombobox.Positioner
                   style={
                     sheetPopup.positionerStyle !== undefined
@@ -3233,35 +3142,24 @@ export function installUiCombobox(runtime: RuntimeBindings): () => void {
                     )}
                   >
                     <ComboboxPopupInputContext.Provider value={true}>
-                      {value19 !== null ? (
-                        <runtime.sheetParentContext.Provider
+                      {value19 !== null ? (<runtime.sheetParentContext.Provider
                           value={sheetPopup.stack}
                         >
-                          {[
-                            <value19.Handle />,
-                            <value19.Body>
+                          {[<value19.Handle />, <value19.Body>
                               <div className={COMBOBOX_POPUP_BODY_CLASS}>
-                                {[
-                                  value10,
-                                  <value19.DismissButton
+                                {[value10, <value19.DismissButton
                                     onDismiss={sheetPopup.frame?.dismiss}
                                     label={value7}
-                                  />,
-                                ]}
+                                  />]}
                               </div>
-                            </value19.Body>,
-                          ]}
-                        </runtime.sheetParentContext.Provider>
-                      ) : (
-                        <div className={COMBOBOX_POPUP_BODY_CLASS}>
+                            </value19.Body>]}
+                        </runtime.sheetParentContext.Provider>) : (<div className={COMBOBOX_POPUP_BODY_CLASS}>
                           {value10}
-                        </div>
-                      )}
+                        </div>)}
                     </ComboboxPopupInputContext.Provider>
                   </runtime.baseCombobox.Popup>
                 </runtime.baseCombobox.Positioner>
-              </runtime.layerBaseContext.Provider>,
-            ]}
+              </runtime.layerBaseContext.Provider>]}
           </runtime.PortalRoot>
         </runtime.baseCombobox.Portal>
       );
@@ -3315,7 +3213,7 @@ export function installUiCombobox(runtime: RuntimeBindings): () => void {
       ): React.ReactElement => {
         let value = (0, runtime.useTranslation)(
           "noResults",
-          COMBOBOX_NO_RESULTS_LABEL,
+          uiMessage("design-system.combobox.noResults"),
         );
         return (
           <runtime.baseCombobox.Empty
@@ -3323,7 +3221,7 @@ export function installUiCombobox(runtime: RuntimeBindings): () => void {
             {...props}
             className={(0, runtime.cn)(COMBOBOX_EMPTY_CLASS, className)}
           >
-            {children === undefined ? value : children}
+            {children === undefined ? (value) : (children)}
           </runtime.baseCombobox.Empty>
         );
       },
@@ -3347,12 +3245,8 @@ export function installUiCombobox(runtime: RuntimeBindings): () => void {
           {...props}
           className={(0, runtime.cn)(COMBOBOX_ITEM_CLASS, className)}
         >
-          {[
-            icon !== undefined && <runtime.IconSlot icon={icon} />,
-            <div className={"flex min-w-0 flex-1 flex-col gap-0.5"}>
-              {[
-                <span className={"truncate"}>{children}</span>,
-                description !== undefined && (
+          {[icon !== undefined && <runtime.IconSlot icon={icon} />, <div className={"flex min-w-0 flex-1 flex-col gap-0.5"}>
+              {[<span className={"truncate"}>{children}</span>, description !== undefined && (
                   <span
                     className={
                       "whitespace-normal break-words text-footnote leading-snug text-muted"
@@ -3360,11 +3254,8 @@ export function installUiCombobox(runtime: RuntimeBindings): () => void {
                   >
                     {description}
                   </span>
-                ),
-              ]}
-            </div>,
-            <ComboboxItemIndicator />,
-          ]}
+                )]}
+            </div>, <ComboboxItemIndicator />]}
         </runtime.baseCombobox.Item>
       ),
     );
@@ -3383,7 +3274,7 @@ export function installUiCombobox(runtime: RuntimeBindings): () => void {
           {...props}
           className={(0, runtime.cn)("shrink-0 text-accent", className)}
         >
-          {children ?? <runtime.Icon name={"Check"} size={"md"} bold={true} />}
+          {children ?? (<runtime.Icon name={"Check"} size={"md"} bold={true} />)}
         </runtime.baseCombobox.ItemIndicator>
       ),
     );

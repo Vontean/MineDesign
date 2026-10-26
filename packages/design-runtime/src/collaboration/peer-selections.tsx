@@ -1,3 +1,4 @@
+import { useUiLocale } from '../ui-locale.ts';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -79,6 +80,7 @@ export function installCollaborationPeerSelections(
     rings: rings,
     scale: scale,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let value: Dynamic = Number.isFinite(scale) && scale > 0 ? scale : 1;
     return (
       <div

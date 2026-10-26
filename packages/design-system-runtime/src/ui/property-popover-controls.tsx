@@ -1,3 +1,5 @@
+import { useUiLocale } from '../ui-locale.ts';
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import { bindRuntimeValue, type RuntimeBindings } from "../runtime-types";
 import type * as React from "react";
@@ -28,10 +30,11 @@ export function installUiPropertyPopoverControls(
     labelWidth = "3rem",
     children: children,
   }: PropertyPopoverPanelProps) {
+    useUiLocale();
     return (
       <div
         role={"dialog"}
-        aria-label={typeof title === "string" ? title : undefined}
+        aria-label={typeof title === "string" ? (title) : (undefined)}
         className={"flex flex-col py-sm"}
         style={{
           ["--pp-label-w"]: labelWidth,
@@ -39,29 +42,23 @@ export function installUiPropertyPopoverControls(
         } as import("../contracts/controls").DesignStyle}
         data-kit={"effect-editor"}
       >
-        {[
-          <div className={"flex items-center pr-xs pb-xs pl-md"}>
-            {[
-              <h3
+        {[<div className={"flex items-center pr-xs pb-xs pl-md"}>
+            {[<h3
                 className={
                   "min-w-0 flex-1 truncate text-body-semibold text-primary"
                 }
               >
                 {title}
-              </h3>,
-              <runtime.Button
+              </h3>, <runtime.Button
                 variant={"ghost"}
                 size={"sm"}
                 iconOnly={true}
                 icon={"X"}
-                aria-label={"Close"}
-                tooltip={"Close"}
+                aria-label={uiMessage("design-system.propertyPopoverControls.close")}
+                tooltip={uiMessage("design-system.propertyPopoverControls.close")}
                 onClick={onClose}
-              />,
-            ]}
-          </div>,
-          children,
-        ]}
+              />]}
+          </div>, children]}
       </div>
     );
   }
@@ -79,6 +76,7 @@ export function installUiPropertyPopoverControls(
     unifiedPopover: unifiedPopover,
     editsAreUndoSteps: editsAreUndoSteps,
   }: ShadowPropertyEditorProps) {
+    useUiLocale();
     let callback = (input: Partial<ShadowValue>) =>
         onChange({
           ...value,
@@ -97,18 +95,16 @@ export function installUiPropertyPopoverControls(
           : {};
     return (
       <PropertyPopoverPanel title={title} onClose={onClose}>
-        {[
-          <runtime.PropertyRow
-            label={"Offset"}
+        {[<runtime.PropertyRow
+            label={uiMessage("design-system.propertyPopoverControls.offset")}
             disabled={disabled}
             onPress={(element: HTMLElement) =>
               element.querySelector("input")?.focus()
             }
           >
             <div className={"flex min-w-0 flex-1 items-center gap-2"}>
-              {[
-                <runtime.PropertyNumberInput
-                  aria-label={"Horizontal offset"}
+              {[<runtime.PropertyNumberInput
+                  aria-label={uiMessage("design-system.propertyPopoverControls.horizontalOffset")}
                   prefix={"X"}
                   steppers={false}
                   value={value.x}
@@ -121,9 +117,8 @@ export function installUiPropertyPopoverControls(
                   disabled={disabled}
                   {...bounds.x}
                   {...callback2("x")}
-                />,
-                <runtime.PropertyNumberInput
-                  aria-label={"Vertical offset"}
+                />, <runtime.PropertyNumberInput
+                  aria-label={uiMessage("design-system.propertyPopoverControls.verticalOffset")}
                   prefix={"Y"}
                   steppers={false}
                   value={value.y}
@@ -136,12 +131,10 @@ export function installUiPropertyPopoverControls(
                   disabled={disabled}
                   {...bounds.y}
                   {...callback2("y")}
-                />,
-              ]}
+                />]}
             </div>
-          </runtime.PropertyRow>,
-          <runtime.NumberPropertyRow
-            label={"Blur"}
+          </runtime.PropertyRow>, <runtime.NumberPropertyRow
+            label={uiMessage("design-system.propertyPopoverControls.blur")}
             unit={"px"}
             value={value.blur}
             onValue={(input: number | undefined) =>
@@ -154,10 +147,9 @@ export function installUiPropertyPopoverControls(
             min={0}
             {...bounds.blur}
             {...callback2("blur")}
-          />,
-          spread && (
+          />, spread && (
             <runtime.NumberPropertyRow
-              label={"Spread"}
+              label={uiMessage("design-system.propertyPopoverControls.spread")}
               unit={"px"}
               value={value.spread ?? 0}
               onValue={(input: number | undefined) =>
@@ -170,9 +162,8 @@ export function installUiPropertyPopoverControls(
               {...bounds.spread}
               {...callback2("spread")}
             />
-          ),
-          <runtime.ColorTextPropertyRow
-            label={"Color"}
+          ), <runtime.ColorTextPropertyRow
+            label={uiMessage("design-system.propertyPopoverControls.color")}
             value={value.color}
             disabled={disabled}
             swatches={swatches}
@@ -194,8 +185,7 @@ export function installUiPropertyPopoverControls(
                   onLiveEnd: () => onLiveEnd!(),
                 }
               : {})}
-          />,
-        ]}
+          />]}
       </PropertyPopoverPanel>
     );
   }
@@ -210,6 +200,7 @@ export function installUiPropertyPopoverControls(
     editsAreUndoSteps: editsAreUndoSteps,
     children: children,
   }: PropertyPopoverProps) {
+    useUiLocale();
     return (
       <runtime.PropertyPopup
         open={open}
@@ -236,7 +227,8 @@ export function installUiPropertyPopoverControls(
     disabled: disabled,
     disabledReason: disabledReason,
   }: RemovePropertyButtonProps) {
-    let value = "Remove " + label.toLowerCase();
+    useUiLocale();
+    let value = uiMessage("design-system.propertyPopoverControls.remove") + label.toLowerCase();
     return (
       <runtime.Button
         variant={"ghost"}
@@ -350,7 +342,7 @@ export function installUiPropertyPopoverControls(
             : undefined)}
           {...props}
           ref={options}
-          aria-label={label + ": " + text}
+          aria-label={((label) + (": ")) + (text)}
           disabled={disabled}
           onClick={onClick}
           chip={

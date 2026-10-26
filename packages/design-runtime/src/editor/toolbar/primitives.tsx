@@ -1,3 +1,5 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
+import { useUiLocale } from '../../ui-locale.ts';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -20,6 +22,7 @@ export function installEditorToolbarPrimitives(
   var ToolbarPrimitivesMediaQuery: Dynamic;
   var ToolbarPrimitivesLabel: Dynamic;
   function ToolbarCaret({ inherit: input = false }: Dynamic = {}): Dynamic {
+    useUiLocale();
     return (
       <runtime.Icon
         name={"CaretDown"}
@@ -395,8 +398,8 @@ export function installEditorToolbarPrimitives(
     ToolbarPrimitivesContext_2 = (0,
     runtime.reactPlatformFrameHostBridge.createContext)(false);
     ToolbarPrimitivesCtrlControlAltConfig = {
-      ctrl: ["Control", "Ctrl"],
-      control: ["Control", "Ctrl"],
+      get ctrl() { return [uiMessage("inspector.primitives.control"), "Ctrl"]; },
+      get control() { return [uiMessage("inspector.primitives.control"), "Ctrl"]; },
       alt: ["Option", "Alt"],
       option: ["Option", "Alt"],
       shift: ["Shift", "Shift"],
@@ -417,8 +420,8 @@ export function installEditorToolbarPrimitives(
       escape: "Escape",
       enter: ["Return", "Enter"],
       return: ["Return", "Enter"],
-      delete: ["Delete", "Backspace"],
-      backspace: ["Delete", "Backspace"],
+      get delete() { return [uiMessage("inspector.primitives.delete"), "Backspace"]; },
+      get backspace() { return [uiMessage("inspector.primitives.delete"), "Backspace"]; },
       space: "Space",
       tab: "Tab",
       up: "Up Arrow",
@@ -538,38 +541,26 @@ export function installEditorToolbarPrimitives(
               className,
             )}
           >
-            {value9 ? (
-              caret === true ? (
-                <runtime.Button {...state} icon={value4}>
+            {value9 ? (caret === true ? (<runtime.Button {...state} icon={value4}>
                   <ToolbarCaret />
-                </runtime.Button>
-              ) : (
-                <runtime.Button
+                </runtime.Button>) : (<runtime.Button
                   {...state}
                   iconOnly={true}
                   icon={value4}
                   tooltip={false}
-                />
-              )
-            ) : (
-              <runtime.Button {...state} icon={value4}>
+                />)) : (<runtime.Button {...state} icon={value4}>
                 {label}
                 {children}
-                {caret === true ? (
-                  <ToolbarCaret inherit={variant === "primary"} />
-                ) : null}
-              </runtime.Button>
-            )}
-            {count ? (
-              <span
+                {caret === true ? (<ToolbarCaret inherit={variant === "primary"} />) : (null)}
+              </runtime.Button>)}
+            {count ? (<span
                 aria-hidden={"true"}
                 className={
                   "pointer-events-none absolute -top-0.5 -right-0.5 flex"
                 }
               >
                 <runtime.Counter value={count} variant={"accent"} size={"xs"} />
-              </span>
-            ) : null}
+              </span>) : (null)}
             {value6.mirror}
             {value7.mirror}
           </span>

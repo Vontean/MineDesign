@@ -1,3 +1,5 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
+import { useUiLocale } from '../ui-locale.ts';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -22,6 +24,7 @@ export function installCanvasNote(runtime: RuntimeBindings): () => void {
     snapLines: snapLines,
     onSnapGuides: onSnapGuides,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let [value, value2]: Dynamic = (0, runtime.reactCanvasPanZoom.useState)(
       autoEdit === true,
     );
@@ -279,14 +282,14 @@ export function installCanvasNote(runtime: RuntimeBindings): () => void {
           else if (input === "escape" && !value33.current) {
             value33.current = true;
             (0, runtime.showEditorToast)(
-              "This note is over its " +
+              uiMessage("canvas.note.thisNoteIsOverIts") +
                 String(runtime.PlatformFileContentLimit_4) +
                 "-character limit. Shorten it to save; leaving discards the edit.",
             );
             return;
           } else
             (0, runtime.showEditorToast)(
-              "Edit discarded. The note was over its " +
+              uiMessage("canvas.note.editDiscardedTheNoteWas") +
                 String(runtime.PlatformFileContentLimit_4) +
                 "-character limit.",
             );
@@ -453,7 +456,7 @@ export function installCanvasNote(runtime: RuntimeBindings): () => void {
           onScroll={value7 ? undefined : value18}
           tabIndex={!editing && value38 ? 0 : undefined}
           role={!editing && value38 ? "region" : undefined}
-          aria-label={!editing && value38 ? "Sticky note, scrolls" : undefined}
+          aria-label={!editing && value38 ? (uiMessage("canvas.note.stickyNoteScrolls")) : (undefined)}
           onPointerDown={!value7 && !editing ? callback3 : undefined}
           style={
             value7
@@ -496,8 +499,7 @@ export function installCanvasNote(runtime: RuntimeBindings): () => void {
                 : undefined
             }
           >
-            {value ? (
-              <div
+            {value ? (<div
                 key={"edit"}
                 ref={value3}
                 contentEditable={true}
@@ -562,9 +564,7 @@ export function installCanvasNote(runtime: RuntimeBindings): () => void {
                   "select-text whitespace-pre-wrap break-words outline-none"
                 }
                 style={value44}
-              />
-            ) : (
-              <div
+              />) : (<div
                 key={"view"}
                 data-note-text={""}
                 className={"whitespace-pre-wrap break-words"}
@@ -583,24 +583,18 @@ export function installCanvasNote(runtime: RuntimeBindings): () => void {
                     : value44
                 }
               >
-                {spec.text.length > 0 ? (
-                  value35
-                ) : (
-                  <span
+                {spec.text.length > 0 ? (value35) : (<span
                     className={"opacity-40 whitespace-nowrap"}
                     style={{
                       fontSize: "min(1em, 24px)",
                     }}
                   >
-                    {editing ? "Double-click to type" : ""}
-                  </span>
-                )}
-              </div>
-            )}
+                    {editing ? (uiMessage("canvas.note.doubleClickToType")) : ("")}
+                  </span>)}
+              </div>)}
           </div>
         </div>
-        {value7 && (
-          <div
+        {value7 && (<div
             ref={value19}
             aria-hidden={"true"}
             className={
@@ -609,10 +603,8 @@ export function installCanvasNote(runtime: RuntimeBindings): () => void {
             style={(0, runtime.NotesLinkEditingSize)(spec)}
           >
             {(value ? value22 : null) ?? value35}
-          </div>
-        )}
-        {editing && selected && !value && (
-          <div
+          </div>)}
+        {editing && selected && !value && (<div
             data-mega-chrome={"annotation-resize"}
             data-testid={"mega-annotation-resize-" + spec.id}
             data-grouped={grouped ? "" : undefined}
@@ -801,8 +793,7 @@ export function installCanvasNote(runtime: RuntimeBindings): () => void {
                 />
               )}
             </runtime.ViewportScale>
-          </div>
-        )}
+          </div>)}
       </div>
     );
   }

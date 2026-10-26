@@ -1,3 +1,5 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
+import { useUiLocale } from '../ui-locale.ts';
 /** Restored application module; prepare first, initialize in original order. */
 import { bindRuntimeValue, type RuntimeBindings } from "../runtime-types";
 import type * as React from "react";
@@ -44,23 +46,21 @@ export function installUiPropertyRow(runtime: RuntimeBindings): () => void {
     children: children,
     ...remainingProps
   }: PropertyColorPreviewProps) {
+    useUiLocale();
     return (
       <span
         aria-hidden={"true"}
         {...remainingProps}
         className={(0, runtime.joinClassNames)(COLOR_SWATCH_CLASS, className)}
       >
-        {[
-          background !== undefined ? (
+        {[background !== undefined ? (
             <span
               className={"absolute inset-0"}
               style={{
                 background: background,
               }}
             />
-          ) : null,
-          children,
-        ]}
+          ) : null, children]}
       </span>
     );
   }
@@ -81,6 +81,7 @@ export function installUiPropertyRow(runtime: RuntimeBindings): () => void {
     className: className,
     ...remainingProps
   }: PropertyRowProps) {
+    useUiLocale();
     let value = typeof label === "string" ? label : undefined,
       ref = reactForUiPropertyRow2.useRef<HTMLDivElement | null>(null),
       value2 = reactForUiPropertyRow2.useId(),
@@ -149,17 +150,15 @@ export function installUiPropertyRow(runtime: RuntimeBindings): () => void {
           className,
         )}
       >
-        {[
-          label !== undefined && (
+        {[label !== undefined && (
             <div
               className={(0, runtime.joinClassNames)(
                 "flex min-w-0 items-center",
                 disabled && "opacity-50",
               )}
             >
-              {[
-                <span
-                  title={title === undefined ? value : undefined}
+              {[<span
+                  title={title === undefined ? (value) : (undefined)}
                   {...labelProps}
                   className={(0, runtime.joinClassNames)(
                     "min-w-0 truncate text-footnote text-muted select-none",
@@ -167,8 +166,7 @@ export function installUiPropertyRow(runtime: RuntimeBindings): () => void {
                   )}
                 >
                   {label}
-                </span>,
-                onReset && !disabled && (
+                </span>, onReset && !disabled && (
                   <span
                     className={(0, runtime.joinClassNames)(
                       "flex w-0 shrink-0 overflow-hidden",
@@ -183,10 +181,7 @@ export function installUiPropertyRow(runtime: RuntimeBindings): () => void {
                       iconOnly={true}
                       icon={"ArrowCounterClockwise"}
                       aria-label={
-                        resetLabel ??
-                        (value
-                          ? runtime.RESET_LABEL + " " + value
-                          : runtime.RESET_LABEL)
+                        (resetLabel) ?? (value ? (((runtime.RESET_LABEL) + (" ")) + (value)) : (runtime.RESET_LABEL))
                       }
                       tooltipSide={"left"}
                       disabled={disabled}
@@ -216,11 +211,9 @@ export function installUiPropertyRow(runtime: RuntimeBindings): () => void {
                       className={"ml-xs shrink-0"}
                     />
                   </span>
-                ),
-              ]}
+                )]}
             </div>
-          ),
-          <div
+          ), <div
             ref={ref}
             className={(0, runtime.joinClassNames)(
               "flex min-w-0 items-center gap-2",
@@ -228,14 +221,11 @@ export function installUiPropertyRow(runtime: RuntimeBindings): () => void {
                 "pr-[calc(var(--pp-iconcol,-4px)+4px)] pointer-coarse:pr-[calc(var(--pp-iconcol,-8px)+8px)]",
             )}
           >
-            {[
-              children,
-              description ? (
+            {[children, description ? (
                 <span id={value2} hidden={true} data-kit={"row-description"}>
                   {description}
                 </span>
-              ) : null,
-              value5 !== undefined ? (
+              ) : null, value5 !== undefined ? (
                 <runtime.Menu
                   iconOnly={true}
                   icon={"DotsHorizontal"}
@@ -255,8 +245,7 @@ export function installUiPropertyRow(runtime: RuntimeBindings): () => void {
                   }))}
                   className={"-ml-1 pointer-coarse:ml-0 shrink-0"}
                 />
-              ) : null,
-              trailing !== undefined ? (
+              ) : null, trailing !== undefined ? (
                 <span
                   data-kit={"row-trailing"}
                   className={(0, runtime.joinClassNames)(
@@ -266,10 +255,8 @@ export function installUiPropertyRow(runtime: RuntimeBindings): () => void {
                 >
                   {trailing}
                 </span>
-              ) : null,
-            ]}
-          </div>,
-        ]}
+              ) : null]}
+          </div>]}
       </div>
     );
   }
@@ -281,6 +268,7 @@ export function installUiPropertyRow(runtime: RuntimeBindings): () => void {
     subsection: subsection,
     className: className,
   }: PropertySectionHeaderProps) {
+    useUiLocale();
     let value = onToggle !== undefined,
       value2 = (0, runtime.joinClassNames)(
         "flex min-w-0 shrink-0 items-center gap-xs select-none",
@@ -319,10 +307,7 @@ export function installUiPropertyRow(runtime: RuntimeBindings): () => void {
               "w-full cursor-default text-left outline-none focus-visible:outline-hidden focus-visible:shadow-focus",
             )}
           >
-            {[
-              <span className={"min-w-0 flex-1 truncate"}>{title}</span>,
-              value3,
-            ]}
+            {[<span className={"min-w-0 flex-1 truncate"}>{title}</span>, value3]}
           </button>
         </h3>
       );
@@ -349,10 +334,8 @@ export function installUiPropertyRow(runtime: RuntimeBindings): () => void {
           value && "cursor-default",
         )}
       >
-        {[
-          <h3 className={"contents"}>
-            {value ? (
-              <button
+        {[<h3 className={"contents"}>
+            {value ? (<button
                 type={"button"}
                 aria-expanded={!collapsed}
                 onClick={(input: React.MouseEvent<HTMLElement>) => {
@@ -364,12 +347,8 @@ export function installUiPropertyRow(runtime: RuntimeBindings): () => void {
                 }
               >
                 {title}
-              </button>
-            ) : (
-              <span className={"min-w-0 flex-1 truncate"}>{title}</span>
-            )}
-          </h3>,
-          actions ? (
+              </button>) : (<span className={"min-w-0 flex-1 truncate"}>{title}</span>)}
+          </h3>, actions ? (
             <span
               className={(0, runtime.joinClassNames)(
                 "-my-1 flex shrink-0 items-center gap-0.5",
@@ -384,9 +363,7 @@ export function installUiPropertyRow(runtime: RuntimeBindings): () => void {
             >
               {actions}
             </span>
-          ) : null,
-          value3,
-        ]}
+          ) : null, value3]}
       </div>
     );
   }
@@ -558,21 +535,16 @@ export function installUiPropertyRow(runtime: RuntimeBindings): () => void {
             className,
           )}
         >
-          {[
-            chip,
-            <span
+          {[chip, <span
               className={(0, runtime.joinClassNames)(
                 "min-w-0 flex-1 truncate",
                 muted && "text-muted",
               )}
             >
               {children}
-            </span>,
-            caption !== undefined && caption !== null ? (
+            </span>, caption !== undefined && caption !== null ? (
               <span className={"text-caption text-muted"}>{caption}</span>
-            ) : null,
-            trailing,
-          ]}
+            ) : null, trailing]}
         </button>
       );
     });

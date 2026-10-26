@@ -82,7 +82,7 @@ flowchart TB
 | `packages/editor-host/src/shared/` | 浏览器 HTTP 文件客户端、发布/上传/flush、SSE、批注、chat 桥、语言标签与宿主能力类型 |
 | `packages/editor-host/src/design/` | 设计稿宿主安装、下载桥与 MineDesign 反馈桥（feedback-bridge：评论草稿、面板开关、视图状态与操作）；不包含 Node 文件服务 |
 | `packages/editor-host/src/design-system/` | 设计系统宿主安装、当前用户名、批注目标读取与定位 |
-| `packages/contracts/` | 平台无关的 file-protocol、editor-messages、service 操作名称、作品概要类型、i18n，以及 MineDesign 中英文界面文案 ui-text；前后端共享 |
+| `packages/contracts/` | 平台无关的 file-protocol、editor-messages、service 操作名称、作品概要类型、i18n，以及平台无关的语言状态、按功能拆分的中英文案与错误码；前后端共享 |
 | `packages/document-store/` | Node 的 document-store、document-routes：文件清单、内容版本、原子发布、素材、目录监听、grant、HTTP/CSP；不依赖浏览器宿主 |
 | `packages/design-files/` | Node 的 canvas-layout、canvas-check 与编辑器产物定位；设计稿格式规则 |
 | `packages/design-system-files/` | Node 的 layout、check、tokens-check 与产物定位；设计系统格式规则 |
@@ -151,7 +151,7 @@ flowchart TB
 
 Codex 中通过接口工具把编辑器装为 srcdoc，图片、字体、脚本和 CSS 改为 blob 资源；浏览器模式仅更换 transport。路径授权检查 realpath；写入检查 grant、origin、ifMatch。Codex 消息保留精确 scheme/origin、source 和 MessagePort 检查。
 
-设计稿的评论列表显示在编辑器右侧面板的「评论」标签里，外壳经 `editor:feedback` 推送草稿与发送状态，面板里的定位、删除、复制、发送以 `editor:feedback-action` 交回外壳执行；面板开关用 `editor:set-panel`/`editor:panel`，顶栏缩放与播放用 `editor:view`/`editor:view-action`。界面语言由外壳解析（About 偏好，缺省跟随宿主 locale）后经 `editor:locale` 推送，运行时用 `useUiText()` 读取 `ui-text` 目录。这些都经编辑器宿主的 `feedback` 能力进入运行时；编辑器单独打开时没有该能力，界面保持原样。设计系统仍用外壳反馈侧栏。
+设计稿的评论列表显示在编辑器右侧面板的「评论」标签里，外壳经 `editor:feedback` 推送草稿与发送状态，面板里的定位、删除、复制、发送以 `editor:feedback-action` 交回外壳执行；面板开关用 `editor:set-panel`/`editor:panel`，顶栏缩放与播放用 `editor:view`/`editor:view-action`。界面语言由外壳解析（About 偏好 → 宿主 locale → 浏览器 → 英文）并经 `editor:locale` 推送；`editor-host/shared/ui-locale.ts` 将结果交给 contracts 的页面级语言状态。两套 runtime 的 React 组件独立订阅，语言不再依附反馈能力。静态标签在渲染或 getter 取值时解析；切换不重建作品，不更改用户内容。目录、术语和完成标准统一见 [i18n 维护](docs/i18n.md)。设计系统仍用外壳反馈侧栏。
 
 批注按稳定作品 id 保存在本机数据目录的 `annotations/`。发送先 flush 编辑器，再检查来源版本，经宿主显式提交；失败保留批注。补充说明文本框尚无持久化保证。发送成功与 Agent 修改完成分别判断。
 

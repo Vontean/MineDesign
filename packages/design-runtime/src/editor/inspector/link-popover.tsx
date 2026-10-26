@@ -1,3 +1,5 @@
+import { useUiLocale } from '../../ui-locale.ts';
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -23,6 +25,7 @@ export function installEditorInspectorLinkPopover(
     onCancel: onCancel,
     onActivity: onActivity,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let [value, value2]: Dynamic = (0, reactInspectorLinkPopover.useState)(
         href,
       ),
@@ -121,7 +124,7 @@ export function installEditorInspectorLinkPopover(
             }}
             padding={"sm"}
             finalFocus={false}
-            aria-label={"Edit link"}
+            aria-label={uiMessage("inspector.linkPopover.editLink")}
             className={"w-80"}
             {...{
               [runtime.linkPopoverAttribute]: "",
@@ -143,7 +146,7 @@ export function installEditorInspectorLinkPopover(
                     inputMode={"url"}
                     value={value}
                     placeholder={"https://\u2026"}
-                    aria-label={"Link URL"}
+                    aria-label={uiMessage("inspector.linkPopover.linkURL")}
                     autoFocus={true}
                     onFocus={(input?: Dynamic): Dynamic =>
                       input.currentTarget.select()
@@ -165,32 +168,25 @@ export function installEditorInspectorLinkPopover(
                     onClick={callback}
                     data-testid={"dc-link-apply"}
                   >
-                    {"Apply"}
+                    {uiMessage("inspector.linkPopover.apply")}
                   </runtime.Button>
                 </div>
-                {value3 && (
-                  <runtime.FieldExports.Error match={true}>
-                    {"Enter a web address like https://example.com"}
-                  </runtime.FieldExports.Error>
-                )}
-                {value13 && (
-                  <runtime.FieldExports.Description className={"text-caption"}>
-                    {"Select some text to link it."}
-                  </runtime.FieldExports.Description>
-                )}
-                {value15 && !value13 && (
-                  <runtime.FieldExports.Description
+                {value3 && (<runtime.FieldExports.Error match={true}>
+                    {uiMessage("inspector.linkPopover.enterAWebAddressLikeHttpsExampleCom")}
+                  </runtime.FieldExports.Error>)}
+                {value13 && (<runtime.FieldExports.Description className={"text-caption"}>
+                    {uiMessage("inspector.linkPopover.selectSomeTextToLinkIt")}
+                  </runtime.FieldExports.Description>)}
+                {value15 && !value13 && (<runtime.FieldExports.Description
                     className={"text-caption"}
                     data-testid={"dc-link-relative-hint"}
                   >
                     {
-                      "Links to a page inside this project \u2014 for a website, start with https://"
+                      uiMessage("inspector.linkPopover.linksToAPageInside")
                     }
-                  </runtime.FieldExports.Description>
-                )}
+                  </runtime.FieldExports.Description>)}
               </runtime.FieldExports.Root>
-              {(isElementLink || href.trim() !== "") && (
-                <div className={"flex"}>
+              {isElementLink || href.trim() !== "" && (<div className={"flex"}>
                   <runtime.Button
                     variant={"ghost"}
                     size={"sm"}
@@ -198,10 +194,9 @@ export function installEditorInspectorLinkPopover(
                     onClick={(): Dynamic => onApply(null)}
                     data-testid={"dc-link-remove"}
                   >
-                    {"Remove link"}
+                    {uiMessage("inspector.linkPopover.removeLink")}
                   </runtime.Button>
-                </div>
-              )}
+                </div>)}
             </div>
           </runtime.PopoverPopoverRootTriggerPopupConfig.Popup>
         </runtime.PopoverPopoverRootTriggerPopupConfig.Root>

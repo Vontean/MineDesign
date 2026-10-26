@@ -1,3 +1,5 @@
+import { useUiLocale } from '../../ui-locale.ts';
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -21,6 +23,7 @@ export function installEditorPropertiesDropShadowEditor(
     onLive: onLive,
     onLiveEnd: onLiveEnd,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let value2: Dynamic = (0, runtime.useEditorColorSwatches)(),
       [value3, value4]: Dynamic = (0,
       runtime.reactComponentsPropsPanel.useState)(false),
@@ -39,12 +42,12 @@ export function installEditorPropertiesDropShadowEditor(
       });
     return (
       <runtime.PropertyRow
-        label={"Text shadow"}
+        label={uiMessage("inspector.dropShadowEditor.textShadow")}
         disabled={disabled2}
         data-testid={"dc-prop-text-shadow"}
         trailing={
           <runtime.RemovePropertyButton
-            label={"Text shadow"}
+            label={uiMessage("inspector.dropShadowEditor.textShadow")}
             disabled={disabled2}
             onClick={(): Dynamic => {
               onOpenChange(false);
@@ -59,7 +62,7 @@ export function installEditorPropertiesDropShadowEditor(
             onOpenChange={onOpenChange}
             trigger={
               <runtime.ColorEffectButton
-                label={"Text shadow"}
+                label={uiMessage("inspector.dropShadowEditor.textShadow")}
                 color={value.color}
                 text={`${value.x}, ${value.y} \xB7 ${value.blur}px`}
                 disabled={disabled2}
@@ -74,7 +77,7 @@ export function installEditorPropertiesDropShadowEditor(
             focusOnOpen={value3}
           >
             <runtime.ShadowEditor
-              title={"Text shadow"}
+              title={uiMessage("inspector.dropShadowEditor.textShadow")}
               value={state}
               spread={false}
               bounds={runtime.PropertiesCssEffectsXYBlurConfig_2}

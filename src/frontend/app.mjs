@@ -1,3 +1,6 @@
+import { setUiLocale } from '@minedesign/contracts/ui-locale';
+import { uiError } from '@minedesign/contracts/ui-error';
+import { serviceError } from '@minedesign/contracts/service-errors';
 import { App } from '@modelcontextprotocol/ext-apps';
 import { readEditorMessage, saveFileName } from '../../packages/contracts/src/editor-messages.ts';
 import { createServiceClient } from './service-client.mjs';
@@ -29,7 +32,7 @@ const post=data=>frame.contentWindow?.postMessage(data,'*');
 // 界面语言：About 里的偏好，缺省跟随 Codex（宿主上下文的 locale），取不到再看系统语言
 let preference='system',locale='en',t=uiText(locale);
 function applyLocale(){
-  locale=resolveUiLocale(preference,[app?.getHostContext()?.locale,navigator.language]);t=uiText(locale);
+  locale=resolveUiLocale(preference,[app?.getHostContext()?.locale,navigator.language]);setUiLocale(locale);t=uiText(locale);
   document.documentElement.lang=locale==='zh-Hans'?'zh-CN':'en';
   for(const el of document.querySelectorAll('[data-i18n]'))el.textContent=t[el.dataset.i18n];
   for(const el of document.querySelectorAll('[data-i18n-label]')){el.setAttribute('aria-label',t[el.dataset.i18nLabel]);el.title=t[el.dataset.i18nLabel];}
@@ -38,7 +41,7 @@ function applyLocale(){
   for(const el of document.querySelectorAll('[data-i18n-placeholder]'))el.placeholder=t[el.dataset.i18nPlaceholder];
   if(!app)$('send').title=t.sendUnavailable;
   post({type:'editor:locale',locale});
-  renderProjects();renderNotes();renderView();syncPanelButton();renderState();about.render();tooltips.refresh();
+  renderProjects();renderNotes();renderView();syncPanelButton();renderState();renderStatus();about.render();tooltips.refresh();
 }
 // 宿主推送的 MCP 标准样式变量覆盖 tokens.css 的本地快照；切换主题时先清掉上一套，缺失的变量回到快照
 function applyHostStyles(next={}){
@@ -87,7 +90,9 @@ function syncFeedback(){
   if(!editorFeedback())return;
   post({type:'editor:feedback',items:notes.map((n,i)=>({id:n.id,n:i+1,label:String(n.label??'').slice(0,1000),text:String(n.text??'').slice(0,4000)})),status:$('delivery').textContent,canSend:!!app,busy});
 }
-function status(text){$('delivery').textContent=text;syncFeedback();}
+let shownStatus = '';
+function renderStatus(){ $('delivery').textContent = typeof shownStatus==='function' ? shownStatus() : shownStatus instanceof Error ? uiError(shownStatus,locale) : shownStatus;syncFeedback(); }
+function status(value){shownStatus=value;renderStatus();}
 const svg=paths=>`<svg class="icon" viewBox="0 0 24 24" aria-hidden="true">${paths}</svg>`;
 function renderNotes(){
   const items=notes.map((note,i)=>{
@@ -172,7 +177,7 @@ $('files').addEventListener('keydown',e=>{
 function feedback(message){return JSON.stringify({kind:'minedesign-feedback',document:documentRecord.path,editor:documentRecord.kind,annotations:notes,message},null,2);}
 async function flush(){
   const requestId=crypto.randomUUID();
-  return new Promise((resolve,reject)=>{const timer=setTimeout(()=>{flushes.delete(requestId);reject(new Error(t.saveTimeout));},10000);flushes.set(requestId,saved=>{clearTimeout(timer);saved?resolve():reject(new Error(t.notSaved));});post({type:'editor:flush',requestId});});
+  return new Promise((resolve,reject)=>{const timer=setTimeout(()=>{flushes.delete(requestId);reject(serviceError('save_timeout',t.saveTimeout));},10000);flushes.set(requestId,saved=>{clearTimeout(timer);saved?resolve():reject(serviceError('not_saved',t.notSaved));});post({type:'editor:flush',requestId});});
 }
 $('retry').onclick=()=>(bridge?select(documentRecord):initialize()).catch(fail);
 function syncPanelButton(){
@@ -248,7 +253,7 @@ function fitComment(){const c=$('comment');c.style.height='auto';c.style.height=
 async function closeComposer(add){
   if(!pending)return;
   const m=pending,text=$('comment').value.trim();pending=null;$('compose').hidden=true;
-  try{if(add&&text){notes.push({id:crypto.randomUUID(),anchor:m.anchor,label:m.label,detail:m.detail,section:m.section,text,createdAt:new Date().toISOString()});await save();}}catch(e){status(e.message);}
+  try{if(add&&text){notes.push({id:crypto.randomUUID(),anchor:m.anchor,label:m.label,detail:m.detail,section:m.section,text,createdAt:new Date().toISOString()});await save();}}catch(e){status(e);}
   post({type:'editor:composer-closed',requestId:m.requestId});
 }
 let dismissedAt=0;
@@ -283,7 +288,7 @@ window.addEventListener('message',e=>{
   if(m.type==='editor:view'){view=m;renderView();}
   if(m.type==='editor:feedback-action'){
     if(m.action==='reveal')post({type:'editor:reveal',id:m.id});
-    else if(m.action==='remove'){notes=notes.filter(n=>n.id!==m.id);save().catch(e=>status(e.message));}
+    else if(m.action==='remove'){notes=notes.filter(n=>n.id!==m.id);save().catch(e=>status(e));}
     else if(m.action==='copy')copyFeedback(m.message);
     else sendFeedback(m.message);
   }
@@ -294,11 +299,11 @@ window.addEventListener('message',e=>{
     const url=URL.createObjectURL(new Blob([m.data]));const a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),10000);post({type:'editor:save-file-result',requestId:m.requestId,outcome:'saved'});
   }
 });
-async function copyFeedback(message){try{await navigator.clipboard.writeText(feedback(message));status(t.copied);}catch(e){status(e.message);}}
+async function copyFeedback(message){try{await navigator.clipboard.writeText(feedback(message));status(()=>t.copied);}catch(e){status(e);}}
 async function sendFeedback(message){
   if(!app||busy)return;
   busy=true;$('send').disabled=true;renderProjects();syncFeedback();
-  try{await flush();const prepared=await client.prepareFeedback(documentRecord.id);if(prepared.stale)throw new Error(t.stale);const text=feedback(message);if(text===sessionStorage.getItem(`sent:${documentRecord.id}`))throw new Error(t.duplicate);const result=await app.sendMessage({role:'user',content:[{type:'text',text:t.agentPrompt(text)} ]});if(result?.isError)throw new Error(t.rejected);sessionStorage.setItem(`sent:${documentRecord.id}`,text);status(t.sent);}catch(e){status(e.message);}finally{busy=false;$('send').disabled=false;renderProjects();syncFeedback();}
+  try{await flush();const prepared=await client.prepareFeedback(documentRecord.id);if(prepared.stale)throw serviceError('feedback_stale',t.stale);const text=feedback(message);if(text===sessionStorage.getItem(`sent:${documentRecord.id}`))throw serviceError('feedback_duplicate',t.duplicate);const result=await app.sendMessage({role:'user',content:[{type:'text',text:t.agentPrompt(text)} ]});if(result?.isError)throw serviceError('feedback_rejected',t.rejected);sessionStorage.setItem(`sent:${documentRecord.id}`,text);status(()=>t.sent);}catch(e){status(e);}finally{busy=false;$('send').disabled=false;renderProjects();syncFeedback();}
 }
 $('copy').onclick=()=>copyFeedback($('message').value);
 $('send').onclick=()=>sendFeedback($('message').value);

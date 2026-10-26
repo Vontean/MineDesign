@@ -1,3 +1,5 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
+import { useUiLocale } from '../../ui-locale.ts';
 import type { LayerProps, LayerValue, OverlayKind } from "../../contracts/ui";
 import type * as React from "react";
 /** Restored application module; prepare first, initialize in original order. */
@@ -16,6 +18,7 @@ export function installCdsOverlaysLayers(runtime: RuntimeBindings): () => void {
     base: base,
     render: render,
   }: LayerProps): React.ReactElement {
+    useUiLocale();
     let parentBase = (0, reactOverlaysLayers.useContext)(LayerBaseContext),
       layerBase = base ?? parentBase + LAYER_BAND_SIZE;
     base === undefined && undefined;
@@ -36,7 +39,7 @@ export function installCdsOverlaysLayers(runtime: RuntimeBindings): () => void {
           );
     return (
       <LayerBaseContext.Provider value={layerBase}>
-        {rendered ?? children}
+        {rendered ?? (children)}
       </LayerBaseContext.Provider>
     );
   }
@@ -92,6 +95,7 @@ export function installCdsOverlaysLayers(runtime: RuntimeBindings): () => void {
   }: React.PropsWithChildren<{
     className?: string;
   }>): React.ReactElement {
+    useUiLocale();
     let value = (0, reactOverlaysLayers.useContext)(LayerBaseContext);
     return (
       <div

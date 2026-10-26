@@ -1,3 +1,5 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
+import { useUiLocale } from '../ui-locale.ts';
 /** Restored application module; prepare first, initialize in original order. */
 import type * as React from "react";
 import type * as C from "../contracts/controls";
@@ -245,6 +247,7 @@ export function installUiSegmentedControl(
     thumbPosition: thumbPosition,
     className: className,
   }: C.SegmentedControlProps) {
+    useUiLocale();
     let ref = reactForUiSegmentedControl2.useRef<HTMLDivElement>(null);
     (0, runtime.useCompactableControlDebug)(ref, "SegmentedControl");
     let ref2 = reactForUiSegmentedControl2.useRef<HTMLDivElement>(null),
@@ -413,8 +416,7 @@ export function installUiSegmentedControl(
             className,
           )}
         >
-          {[
-            <div
+          {[<div
               aria-hidden={true}
               className={`pointer-events-none absolute inset-0 overflow-clip ${value5 ? "rounded" : ""}`}
             >
@@ -422,8 +424,7 @@ export function installUiSegmentedControl(
                 ref={ref2}
                 className={`${segmentedControlThumbClasses} ${value5 ? containedSegmentThumbClasses : ghostSegmentThumbClasses}`}
               />
-            </div>,
-            segments.map((input: C.SegmentOption) => {
+            </div>, segments.map((input: C.SegmentOption) => {
               let value8 = input.icon && input.label === undefined,
                 value9 = value8
                   ? (input.tooltip ?? String(input.value))
@@ -439,7 +440,7 @@ export function installUiSegmentedControl(
                   <runtime.baseRadio.Root
                     value={input.value}
                     disabled={input.disabled}
-                    aria-label={value8 ? value10 : undefined}
+                    aria-label={value8 ? (value10) : (undefined)}
                     aria-keyshortcuts={
                       input.shortcut
                         ? (0, runtime.shortcutToAriaKeyShortcuts)(
@@ -452,18 +453,15 @@ export function installUiSegmentedControl(
                     runtime.withRepeatedClickSelectionPrevention)(undefined)}
                     className={`${segmentedControlSegmentClasses} ${value5 ? segmentedControlTextClasses : ghostSegmentHoverClasses} ${value8 ? segmentedControlIconAspectClasses : segmentedControlTextPaddingClasses}${fullWidth ? " flex-1" : ""}`}
                   >
-                    {[
-                      value11 && input.indicator ? (
+                    {[value11 && input.indicator ? (
                         <span className={"grid"}>
-                          {[
-                            <span
+                          {[<span
                               className={
                                 "col-start-1 row-start-1 [--seg-dot-r:calc(0.1875rem*var(--cds-rem-scale,1))] [--seg-dot-x:calc(100%_-_var(--seg-dot-r)_+_1px)] [&:dir(rtl)]:[--seg-dot-x:calc(var(--seg-dot-r)_-_1px)] not-forced-colors:has-[~[data-cds-part=indicator]>*]:[mask-image:radial-gradient(circle_at_var(--seg-dot-x)_calc(var(--seg-dot-r)_-_1px),transparent_calc(var(--seg-dot-r)_+_2px),black_calc(var(--seg-dot-r)_+_2.5px))]"
                               }
                             >
                               {value11}
-                            </span>,
-                            <span
+                            </span>, <span
                               aria-hidden={true}
                               data-cds-part={"indicator"}
                               className={
@@ -471,14 +469,11 @@ export function installUiSegmentedControl(
                               }
                             >
                               {input.indicator}
-                            </span>,
-                          ]}
+                            </span>]}
                         </span>
                       ) : (
                         value11
-                      ),
-                      input.label,
-                    ]}
+                      ), input.label]}
                   </runtime.baseRadio.Root>
                 ),
                 value13 =
@@ -528,8 +523,7 @@ export function installUiSegmentedControl(
                   return <_Element2 key={_elementKey2} {..._elementProps2} />;
                 })();
               }
-            }),
-          ]}
+            })]}
         </runtime.baseRadioGroup>
       );
     if (value6) {
@@ -1095,8 +1089,7 @@ export function installUiSegmentedControl(
             className,
           )}
         >
-          {[
-            <div
+          {[<div
               aria-hidden={true}
               className={(0, runtime.clsx)(
                 "absolute rounded-full transition-shadow duration-fast group-focus-visible/resize:shadow-focus",
@@ -1104,8 +1097,7 @@ export function installUiSegmentedControl(
                   ? "inset-y-0 left-1/2 w-3 -translate-x-1/2 cursor-col-resize"
                   : "inset-x-0 top-1/2 h-3 -translate-y-1/2 cursor-row-resize",
               )}
-            />,
-            <div
+            />, <div
               aria-hidden={true}
               data-cds-part={"resize-pill"}
               className={(0, runtime.clsx)(
@@ -1118,8 +1110,7 @@ export function installUiSegmentedControl(
                   : "text-muted opacity-[var(--cds-resize-pill-force,0)] delay-200 duration-base group-hover/resize:opacity-100",
                 "group-focus-visible/resize:bg-fill-accent group-focus-visible/resize:opacity-100 group-focus-visible/resize:delay-0",
               )}
-            />,
-          ]}
+            />]}
         </div>
       );
     });

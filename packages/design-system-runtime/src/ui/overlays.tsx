@@ -1,3 +1,5 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
+import { useUiLocale } from '../ui-locale.ts';
 import type * as Layers from "../contracts/layers";
 import type * as Dom from "../contracts/dom";
 import type * as Overlays from "../contracts/overlays";
@@ -998,6 +1000,7 @@ export function installUiOverlays(runtime: RuntimeBindings): () => void {
     nested: nested,
     children: children,
   }: PassiveGateProps): React.ReactElement {
+    useUiLocale();
     let value = reactPassiveOpen.useSyncExternalStore(
         cell === null ? subscribePassiveOpenNoop : cell.subscribe,
         cell === null ? getPassiveOffSnapshot : cell.getLevel,
@@ -1007,11 +1010,9 @@ export function installUiOverlays(runtime: RuntimeBindings): () => void {
         cell === null ? "off" : nested && value === "hover" ? "off" : value;
     return (
       <passiveFocusDeclinedContext.Provider value={value2 === "declared"}>
-        {[
-          value2 === "declared" && !nested && cell !== null ? (
+        {[value2 === "declared" && !nested && cell !== null ? (
             <PassiveOpenKeyboardBridge cell={cell} />
-          ) : null,
-          children(
+          ) : null, children(
             cell === null || value2 === "off"
               ? unchangedPopupProps
               : value2 === "hover"
@@ -1055,8 +1056,7 @@ export function installUiOverlays(runtime: RuntimeBindings): () => void {
                       }
                     },
                   }),
-          ),
-        ]}
+          )]}
       </passiveFocusDeclinedContext.Provider>
     );
   }
@@ -1587,6 +1587,7 @@ export function installUiOverlays(runtime: RuntimeBindings): () => void {
   }: {
     nested: boolean;
   }): React.ReactElement {
+    useUiLocale();
     let value = reactMenuSheetPopup.useContext<Overlays.MenuRootState | null>(
         runtime.menuTriggerContext,
       ),
@@ -1601,7 +1602,7 @@ export function installUiOverlays(runtime: RuntimeBindings): () => void {
       value5 = value3.backLabel ?? value4;
     return (
       <runtime.SheetTitleBar
-        title={nested ? value2 : value3.sheetTitle}
+        title={nested ? (value2) : (value3.sheetTitle)}
         leading={
           nested ? (
             <runtime.baseMenu.Item
@@ -1632,6 +1633,7 @@ export function installUiOverlays(runtime: RuntimeBindings): () => void {
     );
   }
   function MenuSheetCloseButton(): React.ReactElement {
+    useUiLocale();
     let value =
         reactMenuSheetPopup.useContext<Overlays.SheetFrameContext | null>(
           runtime.sheetFrameContext,
@@ -1662,10 +1664,7 @@ export function installUiOverlays(runtime: RuntimeBindings): () => void {
             "group-data-[highlighted]/sheet-close:bg-fill-ghost-hover",
           )}
         >
-          {[
-            <runtime.IconSlot icon={"X"} />,
-            <span className={"min-w-0 flex-1 truncate"}>{value3}</span>,
-          ]}
+          {[<runtime.IconSlot icon={"X"} />, <span className={"min-w-0 flex-1 truncate"}>{value3}</span>]}
         </span>
       </runtime.baseMenu.Item>
     );
@@ -1675,6 +1674,7 @@ export function installUiOverlays(runtime: RuntimeBindings): () => void {
   }: {
     sheetPopup: Overlays.SheetRenderState;
   }): React.ReactElement {
+    useUiLocale();
     return (
       <runtime.basePopover.Backdrop
         data-presentation={"sheet"}
@@ -1695,19 +1695,17 @@ export function installUiOverlays(runtime: RuntimeBindings): () => void {
     closeLabel: closeLabel,
     children: children,
   }: Layers.PopoverSheetBodyProps): React.ReactElement {
+    useUiLocale();
     let { chrome: value } = sheetPopup;
     return (
       <runtime.sheetParentContext.Provider value={sheetPopup.stack}>
-        {[
-          <value.Handle />,
-          <value.Body
+        {[<value.Handle />, <value.Body
             className={(0, runtime.cn)(
               className,
               "h-auto max-h-none min-h-0 w-full min-w-0 max-w-none flex-auto",
             )}
           >
-            {[
-              <div
+            {[<div
                 ref={bodyRef}
                 tabIndex={-1}
                 data-cds-popover-body={""}
@@ -1717,14 +1715,11 @@ export function installUiOverlays(runtime: RuntimeBindings): () => void {
                 className={bodyClassName}
               >
                 {children}
-              </div>,
-              <value.DismissButton
+              </div>, <value.DismissButton
                 as={runtime.basePopover.Close}
                 label={closeLabel}
-              />,
-            ]}
-          </value.Body>,
-        ]}
+              />]}
+          </value.Body>]}
       </runtime.sheetParentContext.Provider>
     );
   }
@@ -1733,6 +1728,7 @@ export function installUiOverlays(runtime: RuntimeBindings): () => void {
   }: {
     sheetPopup: Overlays.SheetRenderState;
   }): React.ReactElement {
+    useUiLocale();
     return (
       <runtime.baseCombobox.Backdrop
         data-presentation={"sheet"}
@@ -1919,12 +1915,12 @@ export function installUiOverlays(runtime: RuntimeBindings): () => void {
     }
     let value = normalizeHrefWhitespace(input);
     if (forbiddenHrefControlCharacterPattern.test(value)) {
-      return rejectUnsafeHref(value, "it contains a control character");
+      return rejectUnsafeHref(value, uiMessage("design-system.overlays.itContainsAControlCharacter"));
     }
     if (leadingHrefWhitespacePattern.test(value)) {
       return rejectUnsafeHref(
         value,
-        "it starts with whitespace the browser keeps",
+        uiMessage("design-system.overlays.itStartsWithWhitespaceThe"),
       );
     }
     if (absoluteHrefPattern.test(value)) {
@@ -1937,7 +1933,7 @@ export function installUiOverlays(runtime: RuntimeBindings): () => void {
         } else {
           return rejectUnsafeHref(
             value,
-            "only an Anthropic Android app's own sign-in intent: shape is followed",
+            uiMessage("design-system.overlays.onlyAnAnthropicAndroidApp"),
           );
         }
       }
@@ -1947,14 +1943,14 @@ export function installUiOverlays(runtime: RuntimeBindings): () => void {
         } else {
           return rejectUnsafeHref(
             value,
-            "only an Anthropic extension's marketplace page or a VS Code settings link is followed",
+            uiMessage("design-system.overlays.onlyAnAnthropicExtensionS"),
           );
         }
       }
       if (!allowedHrefSchemePattern.test(value)) {
         return rejectUnsafeHref(
           value,
-          "its scheme is not one CDS links navigate",
+          uiMessage("design-system.overlays.itsSchemeIsNotOne"),
         );
       }
       return value;
@@ -2022,7 +2018,7 @@ export function installUiOverlays(runtime: RuntimeBindings): () => void {
       if (value) {
         return rejectUnsafeHref(
           input,
-          "it names a host this URL parser cannot parse",
+          uiMessage("design-system.overlays.itNamesAHostThis"),
         );
       }
     }
@@ -2689,6 +2685,7 @@ export function installUiOverlays(runtime: RuntimeBindings): () => void {
     className: className,
     children: children,
   }: Layers.CdsRootProps): React.ReactElement {
+    useUiLocale();
     let parentDensity = reactCdsRoot.useContext(densityContext),
       parentPlatform = reactCdsRoot.useContext(platformContext),
       parentFont = reactCdsRoot.useContext(fontContext),
@@ -5380,8 +5377,7 @@ export function installUiOverlays(runtime: RuntimeBindings): () => void {
                 companionModalCatcher={!value4}
                 closeOnActivityHide={true}
               >
-                {[
-                  value4 && !value5 && (
+                {[value4 && !value5 && (
                     <runtime.baseMenu.Backdrop
                       data-presentation={"sheet"}
                       data-sheet-scrim={value10?.treeId}
@@ -5391,8 +5387,7 @@ export function installUiOverlays(runtime: RuntimeBindings): () => void {
                           : runtime.sheetBackdropClasses
                       }
                     />
-                  ),
-                  <runtime.CollisionPaddingProvider
+                  ), <runtime.CollisionPaddingProvider
                     override={value7}
                     container={container ?? value}
                     provideInherit={true}
@@ -5486,21 +5481,17 @@ export function installUiOverlays(runtime: RuntimeBindings): () => void {
                                   className,
                                 )}
                               >
-                                {value4 ? (
-                                  <runtime.sheetParentContext.Provider
+                                {value4 ? (<runtime.sheetParentContext.Provider
                                     value={memo2}
                                   >
-                                    {[
-                                      <runtime.SheetHandle
+                                    {[<runtime.SheetHandle
                                         drawPill={!value5}
-                                      />,
-                                      <div
+                                      />, <div
                                         className={
                                           runtime.sheetDrillBodyClasses
                                         }
                                       >
-                                        {[
-                                          <runtime.MenuScrollContent
+                                        {[<runtime.MenuScrollContent
                                             header={header}
                                             headerClassName={
                                               runtime.sheetSeparatorClasses
@@ -5508,35 +5499,25 @@ export function installUiOverlays(runtime: RuntimeBindings): () => void {
                                             footer={footer}
                                             fill={true}
                                           >
-                                            {[
-                                              children,
-                                              !value5 && (
+                                            {[children, !value5 && (
                                                 <MenuSheetCloseButton />
-                                              ),
-                                            ]}
-                                          </runtime.MenuScrollContent>,
-                                          <MenuSheetTitleBar nested={value5} />,
-                                        ]}
-                                      </div>,
-                                    ]}
-                                  </runtime.sheetParentContext.Provider>
-                                ) : (
-                                  <runtime.MenuScrollContent
+                                              )]}
+                                          </runtime.MenuScrollContent>, <MenuSheetTitleBar nested={value5} />]}
+                                      </div>]}
+                                  </runtime.sheetParentContext.Provider>) : (<runtime.MenuScrollContent
                                     header={header}
                                     footer={footer}
                                     maxVisibleItems={maxVisibleItems}
                                   >
                                     {children}
-                                  </runtime.MenuScrollContent>
-                                )}
+                                  </runtime.MenuScrollContent>)}
                               </MenuPopupElement>
                             )}
                           </PassiveOpenGate>
                         </runtime.baseMenu.Positioner>
                       </runtime.layerBaseContext.Provider>
                     )}
-                  </runtime.CollisionPaddingProvider>,
-                ]}
+                  </runtime.CollisionPaddingProvider>]}
               </runtime.PortalRoot>
             </runtime.baseMenu.Portal>
           );

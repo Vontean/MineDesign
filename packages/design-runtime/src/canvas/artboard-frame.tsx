@@ -1,3 +1,5 @@
+import { useUiLocale } from '../ui-locale.ts';
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -22,6 +24,7 @@ export function installCanvasArtboardFrame(
     vectorEdit: vectorEdit,
     board: board,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let [value, value2]: Dynamic = (0, runtime.reactCanvasShape.useState)(null);
     sinkRef.current = value2;
     let value3: Dynamic = (0, runtime.useViewportScale)(live && value !== null),
@@ -56,8 +59,7 @@ export function installCanvasArtboardFrame(
               crop={interactive && value4 ? crop : null}
               board={board}
             />
-            {value.pen && vectorEdit && interactive && value4 && (
-              <div
+            {value.pen && vectorEdit && interactive && value4 && (<div
                 className={"pointer-events-none absolute left-0 top-0"}
                 style={{
                   ...runtime.PickerRuntimeScriptTAppAccentConfig,
@@ -77,8 +79,7 @@ export function installCanvasArtboardFrame(
                   const _key = value.pen.tid;
                   return <_Component key={_key} {..._props} />;
                 })()}
-              </div>
-            )}
+              </div>)}
           </runtime.jsx_ip.Fragment>,
           slot,
         );
@@ -376,8 +377,8 @@ export function installCanvasArtboardFrame(
                   file: value2,
                   how:
                     "copied" in value298
-                      ? "the /appifact/ base"
-                      : "the published base",
+                      ? uiMessage("canvas.artboardFrame.theAppifactBase")
+                      : uiMessage("canvas.artboardFrame.thePublishedBase"),
                   ...("copied" in value298
                     ? {
                         why: value298.copied,
@@ -542,7 +543,7 @@ export function installCanvasArtboardFrame(
             value124.current != null ||
             value125.current != null
           )
-            return "the frame is not live";
+            return uiMessage("canvas.artboardFrame.theFrameIsNotLive");
           let value287: Dynamic = (0, runtime.compareDesignSourceScripts)(
             current,
             value286,
@@ -561,14 +562,14 @@ export function installCanvasArtboardFrame(
               value290.pendingScript !== undefined ||
               value290.pendingProps !== undefined)
           )
-            return "this board has unsaved local edits";
+            return uiMessage("canvas.artboardFrame.thisBoardHasUnsavedLocal");
           if (value290 && value290.src === value286) {
             value290.stampGen = (value290.stampGen ?? -1) + 1;
             value290.liveStampsStale = false;
             value159.current.pushLive(value288);
           } else {
             if (value290)
-              return "the model did not adopt the new bytes (its own guards refused)";
+              return uiMessage("canvas.artboardFrame.theModelDidNotAdopt");
             (0, runtime.emitEditorEvent)("dc-update", {
               name: value288,
               path: value2,
@@ -587,8 +588,8 @@ export function installCanvasArtboardFrame(
             (0, runtime.notifyUndoGesture)("board-remote", {
               file: value2,
               how:
-                "the text box or drag ended: " +
-                (input2 === "rebuild" ? "reloading now" : "redrawing now"),
+                uiMessage("canvas.artboardFrame.theTextBoxOrDrag") +
+                (input2 === "rebuild" ? uiMessage("canvas.artboardFrame.reloadingNow") : uiMessage("canvas.artboardFrame.redrawingNow")),
             });
             input2 === "rebuild"
               ? value140()
@@ -647,7 +648,7 @@ export function installCanvasArtboardFrame(
                   (0, runtime.notifyUndoGesture)("board-remote", {
                     file: value2,
                     how: "rebuilt iframe",
-                    why: "in-place threw: " + String(input3),
+                    get why() { return ("in-place threw: ") + (String(input3)); },
                   });
                   value140();
                 },
@@ -657,10 +658,7 @@ export function installCanvasArtboardFrame(
             (0, runtime.notifyUndoGesture)("board-remote", {
               file: value2,
               how: "rebuilt iframe",
-              why:
-                value287.length === 1 && value287[0] === value2
-                  ? "in-place is off"
-                  : "a file this board imports changed: " + value287.join(", "),
+              get why() { return value287.length === 1 && value287[0] === value2 ? ("in-place is off") : ((uiMessage("canvas.artboardFrame.aFileThisBoardImports")) + (value287.join(", "))); },
             });
             value140();
           }
@@ -802,7 +800,7 @@ export function installCanvasArtboardFrame(
                 " did not boot: " +
                 String(data.e).slice(0, 200),
             );
-            value98("its content didn't load. Reload to try again");
+            value98(uiMessage("canvas.artboardFrame.itsContentDidnTLoad"));
             (0, runtime.unblockDesignFramesReady)();
             return;
           }
@@ -828,7 +826,7 @@ export function installCanvasArtboardFrame(
               (0, runtime.notifyUndoGesture)("board-address", {
                 file: value2,
                 how: "built again after a failed load",
-                why: "a published file did not load: " + value296,
+                get why() { return (uiMessage("canvas.artboardFrame.aPublishedFileDidNot")) + (value296); },
               });
               value297 === "first" &&
                 console.warn(
@@ -1610,7 +1608,7 @@ export function installCanvasArtboardFrame(
                 ? value131.current.onWriteError(input2)
                 : value(
                     (0, runtime.fileCapFailureMessage)(input2) ??
-                      "Couldn't save edits in " +
+                      uiMessage("canvas.artboardFrame.couldnTSaveEditsIn") +
                         value2 +
                         " \u2014 focus that artboard to retry.",
                     "error",
@@ -1623,14 +1621,14 @@ export function installCanvasArtboardFrame(
               value286?: Dynamic,
             ): Dynamic => {
               value(
-                "Save conflicted with another change \u2014 reloaded.",
+                uiMessage("canvas.artboardFrame.saveConflictedWithAnotherChange"),
                 "error",
               );
             },
             onWriteReverted: (input2?: Dynamic, options?: Dynamic): Dynamic =>
               value(
                 (0, runtime.fileCapFailureMessage)(options) ??
-                  "Couldn't save that change \u2014 reverted.",
+                  uiMessage("canvas.artboardFrame.couldnTSaveThatChange"),
                 "error",
               ),
             awaitWriteClearance: async (): Promise<Dynamic> => {},
@@ -2461,10 +2459,10 @@ export function installCanvasArtboardFrame(
               value289 &&
               !value286 &&
               ((0, runtime.announce)(
-                "The picture changed while you were cropping, so the crop was not kept.",
+                uiMessage("canvas.artboardFrame.thePictureChangedWhileYou"),
               ),
               value(
-                "The picture changed while you were cropping, so the crop was not kept.",
+                uiMessage("canvas.artboardFrame.thePictureChangedWhileYou"),
               ));
             current.closed =
               !input2 || !value286 ? "dropped" : value289 ? "wrote" : "held";
@@ -5466,15 +5464,14 @@ export function installCanvasArtboardFrame(
             "absolute inset-0 z-[15] flex items-center justify-center bg-danger p-4 text-center text-sm text-danger"
           }
           title={
-            (0, runtime.artboardLoadErrorMessage)(value97, value95) ?? undefined
+            (0, runtime.artboardLoadErrorMessage)(value97, value95) ?? (undefined)
           }
         >
-          {"An error occurred"}
+          {uiMessage("canvas.artboardFrame.anErrorOccurred")}
         </div>
       ) : (
         <runtime.jsx_ip.Fragment>
-          {value8 && value148.hasProps && value71 && flag && (
-            <runtime.ViewportScaleThreshold
+          {value8 && value148.hasProps && value71 && flag && (<runtime.ViewportScaleThreshold
               min={runtime.selectionChromeMinimumScale}
             >
               {(input2?: Dynamic): Dynamic => (
@@ -5488,11 +5485,9 @@ export function installCanvasArtboardFrame(
                   onOpenTweaks={value12}
                 />
               )}
-            </runtime.ViewportScaleThreshold>
-          )}
+            </runtime.ViewportScaleThreshold>)}
           {false}
-          {value70 && value24 && value88 != null && value126 && (
-            <iframe
+          {value70 && value24 && value88 != null && value126 && (<iframe
               key={value93}
               ref={value130}
               title={value2}
@@ -5574,10 +5569,8 @@ export function installCanvasArtboardFrame(
                 display: "block",
                 pointerEvents: value79 ? "none" : undefined,
               }}
-            />
-          )}
-          {value70 && (!value24 || value88 == null || !value106) && (
-            <div
+            />)}
+          {value70 && (!value24 || value88 == null || !value106) && (<div
               data-testid={"mega-artboard-loading"}
               className={
                 "absolute inset-0 z-10 bg-om-bg-canvas"
@@ -5585,13 +5578,10 @@ export function installCanvasArtboardFrame(
             >
               {/* MineDesign：载入中的画板显示为骨块（assets/skeleton/skeleton.css），文字只留给读屏 */}
               <span className={"mdn-skel-bone absolute inset-0"} />
-              {!value74 && (
-                <span className={"sr-only"}>
-                  {"Loading\u2026"}
-                </span>
-              )}
-            </div>
-          )}
+              {!value74 && (<span className={"sr-only"}>
+                  {uiMessage("canvas.artboardFrame.loading")}
+                </span>)}
+            </div>)}
           {value285}
           <ArtboardSelectionChrome
             slot={value77}

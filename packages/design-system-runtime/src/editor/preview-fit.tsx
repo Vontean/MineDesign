@@ -1,3 +1,4 @@
+import { useUiLocale } from '../ui-locale.ts';
 import type * as React from "react";
 import type * as Editor from "../contracts/editor-runtime";
 import type * as Model from "../contracts";
@@ -14,6 +15,7 @@ export function installEditorPreviewFit(runtime: RuntimeBindings): () => void {
     "data-testid": dataTestid,
     children: children,
   }: Editor.PreviewFitBoxProps): React.ReactElement {
+    useUiLocale();
     let ref = reactPreviewFit.useRef<HTMLDivElement | null>(null),
       ref2 = reactPreviewFit.useRef<HTMLDivElement | null>(null),
       [value, value2] = reactPreviewFit.useState(height);

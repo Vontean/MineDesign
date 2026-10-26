@@ -1,3 +1,4 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -164,10 +165,7 @@ export function installDesignSystemInstallIdentifiers(
         " characters",
       react: "A copy of React, which the page already has",
       tool: "A name a build tool or a test runner looks for, such as package.json or x.test.js",
-      disk:
-        'A path this install does not save to disk when the bytes are sent: a space in it, a name that begins with "_" and then anything but a letter or a digit, or, for a font that is not directly under fonts/, "..", a device name such as "con" or more than ' +
-        String(runtime.DesignSystemPathsConstant_4) +
-        " characters",
+      get disk() { return 'A path this install does not save to disk when the bytes are sent: a space in it, a name that begins with "_" and then anything but a letter or a digit, or, for a font that is not directly under fonts/, "..", a device name such as "con" or more than ' + String(runtime.DesignSystemPathsConstant_4) + " characters"; },
     };
     DsInstallJsonValue = "ds-install.json";
     DesignSystemInstallIdentifiersResolvedValue_2 = 4 * 1024 * 1024;

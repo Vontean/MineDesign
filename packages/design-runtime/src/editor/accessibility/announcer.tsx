@@ -1,3 +1,4 @@
+import { useUiLocale } from '../../ui-locale.ts';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -28,6 +29,7 @@ export function installEditorAccessibilityAnnouncer(
     settleMs = AccessibilityAnnouncerConstant,
     clearMs = AccessibilityAnnouncerConstant_2,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let [value, value2]: Dynamic = (0, reactAccessibilityAnnouncer_2.useState)(
       "",
     );

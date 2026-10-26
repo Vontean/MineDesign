@@ -1,3 +1,4 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 import type * as Storage from "../contracts/model-storage";
 import type * as Model from "../contracts";
 import type * as Host from "../contracts/platform-host";
@@ -30,7 +31,7 @@ export function installModelBoot(runtime: RuntimeBindings): () => void {
   }
   function makeLoadFailureState(error: string): Storage.RawDocumentSeed {
     return {
-      title: "Couldn’t load this design system",
+      get title() { return uiMessage("design-system.boot.couldnTLoadThisDesignSystem"); },
       content: {
         v: 2,
         files: {
@@ -202,7 +203,7 @@ Its files could not be read (` +
       content: EMPTY_DESIGN_SYSTEM_CONTENT,
     };
     DESIGN_SYSTEM_TYPE_DEMO_STATE = {
-      title: "Design System",
+      get title() { return uiMessage("design-system.boot.designSystem"); },
       content: {
         v: 2,
         files: {

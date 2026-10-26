@@ -1,3 +1,4 @@
+import { useUiLocale } from '../ui-locale.ts';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -20,6 +21,7 @@ export function installCommentsPointer(runtime: RuntimeBindings): () => void {
     className: className,
     "data-testid": dataTestid,
   }: Dynamic): Dynamic {
+    useUiLocale();
     return (
       <svg
         aria-hidden={true}

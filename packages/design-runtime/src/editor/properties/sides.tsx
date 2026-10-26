@@ -1,3 +1,5 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
+import { useUiLocale } from '../../ui-locale.ts';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -48,6 +50,7 @@ export function installEditorPropertiesSides(
     partLabels: partLabels,
     "data-testid": dataTestid,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let value: Dynamic =
         expandLabel ??
         (kind === "corner"
@@ -117,11 +120,7 @@ export function installEditorPropertiesSides(
             iconOnly={true}
             icon={<runtime.PropertyOptionIcon icon={value3} />}
             aria-label={
-              (value8 ? runtime.HideValue : runtime.EditValue) +
-              " " +
-              value12 +
-              " " +
-              value.toLowerCase()
+              (value8 ? runtime.HideValue : runtime.EditValue) + " " + value12 + " " + value.toLowerCase()
             }
             pressed={value8}
             disabled={
@@ -191,8 +190,7 @@ export function installEditorPropertiesSides(
             onScrubEnd={callback2}
           />
         </runtime.PropertyRow>
-        {value8 ? (
-          <runtime.PropertyRow
+        {value8 ? (<runtime.PropertyRow
             label={""}
             title={title}
             disabled={disabled2}
@@ -203,12 +201,12 @@ export function installEditorPropertiesSides(
                 (input?: Dynamic): Dynamic => (
                   <runtime.NumericInput
                     key={input}
-                    aria-label={label + " " + value2[input].toLowerCase()}
+                    aria-label={((label) + (" ")) + (value2[input].toLowerCase())}
                     title={value2[input]}
                     prefix={<PropertySideGlyph kind={kind} index={input} />}
                     value={mixed ? undefined : values[input]}
                     placeholder={
-                      mixed ? undefined : (placeholders?.[input] ?? "")
+                      mixed ? (undefined) : (placeholders?.[input] ?? (""))
                     }
                     emptyStepFrom={callback(placeholders?.[input])}
                     mixed={mixed}
@@ -244,15 +242,16 @@ export function installEditorPropertiesSides(
                 ),
               )}
             </div>
-          </runtime.PropertyRow>
-        ) : null}
+          </runtime.PropertyRow>) : (null)}
       </runtime.jsxPropertiesSegments.Fragment>
     );
   }
   function PropertyCornersRow(input?: Dynamic): Dynamic {
+    useUiLocale();
     return <PropertySidesRow {...input} kind={"corner"} />;
   }
   function PropertySideGlyph({ kind: kind, index: index }: Dynamic): Dynamic {
+    useUiLocale();
     return (
       <runtime.EditorIcon
         name={

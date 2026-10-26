@@ -1,3 +1,4 @@
+import { useUiLocale } from '../../ui-locale.ts';
 import type { OverlayKind } from "../../contracts/ui";
 import type * as React from "react";
 /** Restored application module; prepare first, initialize in original order. */
@@ -39,6 +40,7 @@ export function installCdsOverlaysBackdrop(
   }: {
     kind: OverlayKind;
   }): React.ReactPortal | null {
+    useUiLocale();
     let value = (0, reactOverlaysBackdrop.useContext)(
         runtime.SheetPopupContext,
       ),

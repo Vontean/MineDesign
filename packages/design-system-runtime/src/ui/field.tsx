@@ -1,3 +1,4 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import type * as React from "react";
 import type * as C from "../contracts/controls";
@@ -335,14 +336,11 @@ export function installUiField(runtime: RuntimeBindings): () => void {
           )}
           render={(input: React.HTMLAttributes<HTMLDivElement>) => (
             <div {...input}>
-              {[
-                <runtime.Icon
+              {[<runtime.Icon
                   name={"WarningCircle"}
                   size={"sm"}
                   className={"mt-px shrink-0"}
-                />,
-                <span>{children ?? input.children}</span>,
-              ]}
+                />, <span>{children ?? (input.children)}</span>]}
             </div>
           )}
         />
@@ -360,16 +358,11 @@ export function installUiField(runtime: RuntimeBindings): () => void {
         invalid={Boolean(error) || undefined}
         className={fieldClassName}
       >
-        {[
-          label !== undefined && label !== null && (
+        {[label !== undefined && label !== null && (
             <FieldLabel>{label}</FieldLabel>
-          ),
-          children,
-          hint !== undefined && hint !== null && (
+          ), children, hint !== undefined && hint !== null && (
             <FieldDescription>{hint}</FieldDescription>
-          ),
-          Boolean(error) && <FieldError match={true}>{error}</FieldError>,
-        ]}
+          ), Boolean(error) && <FieldError match={true}>{error}</FieldError>]}
       </FieldRoot>
     );
     FieldRootWithLabel = runtime.baseField.Control;

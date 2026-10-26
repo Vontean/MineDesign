@@ -1,3 +1,4 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -127,9 +128,7 @@ export function installPlatformHotReload(runtime: RuntimeBindings): () => void {
       value7({
         ...options,
         decision: "defer",
-        why:
-          value12 +
-          "; the editor is still booting, so the restart waits until it has attached",
+        get why() { return (value12) + ("; the editor is still booting, so the restart waits until it has attached"); },
       });
       value7({
         type: "deferred",

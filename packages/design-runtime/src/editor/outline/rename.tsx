@@ -1,3 +1,5 @@
+import { useUiLocale } from '../../ui-locale.ts';
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -12,6 +14,7 @@ export function installEditorOutlineRename(
     label: label,
     onDone: onDone,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let [value, value2]: Dynamic = (0,
       runtime.reactKeyboardEditActions.useState)(label),
       value3: Dynamic = (0, runtime.reactKeyboardEditActions.useRef)(false),
@@ -30,7 +33,7 @@ export function installEditorOutlineRename(
         size={"sm"}
         fullWidth={false}
         className={"min-w-0 flex-1"}
-        aria-label={"Artboard name"}
+        aria-label={uiMessage("inspector.rename.artboardName")}
         autoFocus={true}
         value={value}
         onChange={(event?: Dynamic): Dynamic => value2(event.target.value)}

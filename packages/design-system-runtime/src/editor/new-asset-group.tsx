@@ -1,3 +1,5 @@
+import { useUiLocale } from '../ui-locale.ts';
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 import type * as React from "react";
 import type * as Editor from "../contracts/editor-runtime";
 import type * as Model from "../contracts";
@@ -19,6 +21,7 @@ export function installEditorNewAssetGroup(
     onLeftOut: onLeftOut,
     "data-testid": dataTestid = "ds-newset",
   }: Editor.NewAssetGroupDialogProps): React.ReactElement {
+    useUiLocale();
     let [value, value2] = (runtime.reactAssetFileDrop as typeof React).useState(
         "",
       ),
@@ -32,11 +35,11 @@ export function installEditorNewAssetGroup(
           : (0, runtime.validateAssetGroupName)(value5, "", groups),
       value7 =
         value5 === ""
-          ? "Name the set"
+          ? uiMessage("design-system.newAssetGroup.nameTheSet")
           : value6 !== null
             ? value6
             : value3.length === 0
-              ? "A set starts with its first files — drop or choose some"
+              ? uiMessage("design-system.newAssetGroup.aSetStartsWithIts")
               : undefined,
       callback = (input: File[]) =>
         value4((input2) => [
@@ -69,15 +72,13 @@ export function installEditorNewAssetGroup(
             <runtime.Dialog.Popup
               size={"sm"}
               className={"max-w-[22.5rem]"}
-              aria-label={"New set"}
+              aria-label={uiMessage("design-system.newAssetGroup.newSet")}
               data-testid={dataTestid}
               {...(0, runtime.commentTargetProps)("dialog", "new-set")}
             >
-              {[
-                <runtime.Dialog.Header showClose={true}>
-                  {"New set"}
-                </runtime.Dialog.Header>,
-                <form
+              {[<runtime.Dialog.Header showClose={true}>
+                  {uiMessage("design-system.newAssetGroup.newSet")}
+                </runtime.Dialog.Header>, <form
                   className={"mt-md flex flex-col gap-2"}
                   autoComplete={"off"}
                   noValidate={true}
@@ -86,40 +87,33 @@ export function installEditorNewAssetGroup(
                     callback2();
                   }}
                 >
-                  {[
-                    <runtime.FieldComponents.Root
+                  {[<runtime.FieldComponents.Root
                       invalid={value6 !== null || undefined}
                       className={"flex flex-col gap-xs"}
                     >
-                      {[
-                        <runtime.FieldComponents.Label>
-                          {"Name"}
-                        </runtime.FieldComponents.Label>,
-                        <runtime.TextInput
+                      {[<runtime.FieldComponents.Label>
+                          {uiMessage("design-system.newAssetGroup.name")}
+                        </runtime.FieldComponents.Label>, <runtime.TextInput
                           {...NEW_ASSET_GROUP_INPUT_PROPS}
                           autoFocus={true}
                           value={value}
-                          placeholder={"e.g. Logos"}
+                          placeholder={uiMessage("design-system.newAssetGroup.eGLogos")}
                           spellCheck={false}
-                          aria-label={"Name"}
+                          aria-label={uiMessage("design-system.newAssetGroup.name")}
                           data-testid={dataTestid + "-name"}
                           onChange={(
                             input: React.ChangeEvent<HTMLInputElement>,
                           ) => value2(input.currentTarget.value)}
-                        />,
-                        value6 !== null ? (
+                        />, value6 !== null ? (
                           <runtime.FieldComponents.Error match={true}>
                             {value6}
                           </runtime.FieldComponents.Error>
-                        ) : null,
-                      ]}
-                    </runtime.FieldComponents.Root>,
-                    <runtime.FileDropZone
+                        ) : null]}
+                    </runtime.FieldComponents.Root>, <runtime.FileDropZone
                       onFiles={callback}
                       onLeftOut={onLeftOut}
                       testid={dataTestid}
-                    />,
-                    value3.length > 0 ? (
+                    />, value3.length > 0 ? (
                       <runtime.PendingUploadFiles
                         files={value3}
                         onRemove={(input: number) =>
@@ -131,31 +125,25 @@ export function installEditorNewAssetGroup(
                         }
                         testid={dataTestid}
                       />
-                    ) : null,
-                    <runtime.Dialog.Footer align={"end"}>
-                      {[
-                        <runtime.Button
+                    ) : null, <runtime.Dialog.Footer align={"end"}>
+                      {[<runtime.Button
                           variant={"ghost"}
                           onClick={onClose}
                           data-testid={dataTestid + "-cancel"}
                         >
-                          {"Cancel"}
-                        </runtime.Button>,
-                        <runtime.DisabledReasonTooltip reason={value7}>
+                          {uiMessage("design-system.newAssetGroup.cancel")}
+                        </runtime.Button>, <runtime.DisabledReasonTooltip reason={value7}>
                           <runtime.Button
                             variant={"primary"}
                             type={"submit"}
                             disabled={value7 !== undefined}
                             data-testid={dataTestid + "-submit"}
                           >
-                            {"Create set"}
+                            {uiMessage("design-system.newAssetGroup.createSet")}
                           </runtime.Button>
-                        </runtime.DisabledReasonTooltip>,
-                      ]}
-                    </runtime.Dialog.Footer>,
-                  ]}
-                </form>,
-              ]}
+                        </runtime.DisabledReasonTooltip>]}
+                    </runtime.Dialog.Footer>]}
+                </form>]}
             </runtime.Dialog.Popup>
           </runtime.Dialog.Root>
         </runtime.CdsRoot>

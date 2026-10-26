@@ -1,3 +1,5 @@
+import { useUiLocale } from '../../ui-locale.ts';
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -12,6 +14,7 @@ export function installEditorPropertiesBackgroundEditor(
     className: className,
     ...props
   }: Dynamic): Dynamic {
+    useUiLocale();
     return (
       <runtime.PropertyPickerButton
         className={(0, runtime.cn)("w-full", className)}
@@ -20,6 +23,7 @@ export function installEditorPropertiesBackgroundEditor(
     );
   }
   function CssColorWell({ css: css }: Dynamic): Dynamic {
+    useUiLocale();
     return (
       <runtime.PropertyColorWell
         background={css ? (0, runtime.sanitizeCssBackground)(css) : undefined}
@@ -35,6 +39,7 @@ export function installEditorPropertiesBackgroundEditor(
     plain = false,
     ...props
   }: Dynamic): Dynamic {
+    useUiLocale();
     let {
         dsColorTokens: value2,
         artboardColors: value3,
@@ -71,6 +76,7 @@ export function installEditorPropertiesBackgroundEditor(
     disabled: disabled2,
     onChange: onChange,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let [value2, value3]: Dynamic = (0,
       runtime.reactPropertiesAssetPicker_3.useState)(null),
       value4: Dynamic = (0, runtime.useStyleCommitScrub)(
@@ -114,6 +120,7 @@ export function installEditorPropertiesBackgroundEditor(
     disabled: disabled2,
     onChange: onChange,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let { start: value2, live: value3 }: Dynamic = (0,
     runtime.useLiveStyleScrub)({
       value: Number.isFinite(value) ? value : 0,
@@ -494,28 +501,28 @@ export function installEditorPropertiesBackgroundEditor(
               }
             />
             <runtime.PropertyRow
-              label={"Size"}
-              title={value10 ? undefined : "Pick an image first"}
+              label={uiMessage("inspector.backgroundEditor.size")}
+              title={value10 ? (undefined) : (uiMessage("inspector.backgroundEditor.pickAnImageFirst"))}
             >
               <runtime.PropertySelect
-                aria-label={"Image size"}
+                aria-label={uiMessage("inspector.backgroundEditor.imageSize")}
                 data-testid={"dc-fill-image-size"}
                 items={[
                   {
                     value: "cover",
-                    label: "Cover",
+                    get label() { return uiMessage("inspector.backgroundEditor.cover2"); },
                   },
                   {
                     value: "contain",
-                    label: "Contain",
+                    get label() { return uiMessage("inspector.backgroundEditor.contain"); },
                   },
                   {
                     value: "auto",
-                    label: "Original",
+                    get label() { return uiMessage("inspector.backgroundEditor.original"); },
                   },
                 ]}
                 value={value10 ? value14 : null}
-                placeholder={value10 ? value13 : "Cover"}
+                placeholder={value10 ? (value13) : (uiMessage("inspector.backgroundEditor.cover"))}
                 disabled={disabled2 || !value10}
                 onChange={(input?: Dynamic): Dynamic => {
                   !value10 || input === value14 || callback6(value10, input);
@@ -680,15 +687,15 @@ export function installEditorPropertiesBackgroundEditor(
         options: [
           {
             value: "color",
-            label: "Color",
+            get label() { return uiMessage("inspector.backgroundEditor.color"); },
           },
           {
             value: "gradient",
-            label: "Gradient",
+            get label() { return uiMessage("inspector.backgroundEditor.gradient"); },
           },
           {
             value: "image",
-            label: "Image",
+            get label() { return uiMessage("inspector.backgroundEditor.image"); },
             ...(noImageReason !== undefined
               ? {
                   disabledReason: noImageReason,
@@ -725,6 +732,7 @@ export function installEditorPropertiesBackgroundEditor(
     contrast: contrast,
     ...props
   }: Dynamic): Dynamic {
+    useUiLocale();
     let [value, value2]: Dynamic = (0,
       runtime.reactPropertiesAssetPicker_3.useState)(false),
       {
@@ -774,7 +782,7 @@ export function installEditorPropertiesBackgroundEditor(
         data-testid={"dc-fill-popover"}
         trigger={
           <PropertySelectTrigger
-            aria-label={`${label}: ${value8 ? "Mixed" : value6.summary}`}
+            aria-label={uiMessage("inspector.backgroundEditor.undefined", { value1: String(label), value2: String(value8 ? (uiMessage("inspector.backgroundEditor.mixed")) : (value6.summary)) })}
             disabled={value7}
             data-testid={testId}
             chip={

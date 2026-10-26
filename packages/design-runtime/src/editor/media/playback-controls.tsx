@@ -1,3 +1,5 @@
+import { useUiLocale } from '../../ui-locale.ts';
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -118,6 +120,7 @@ export function installEditorMediaPlaybackControls(
     gen = 0,
     whyAbsent: whyAbsent,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let {
         at: value,
         found: value2,
@@ -148,7 +151,7 @@ export function installEditorMediaPlaybackControls(
           />
         }
         aria-label={value5}
-        title={value4 ?? value5 + " video"}
+        title={value4 ?? (uiMessage("inspector.playbackControls.video", { value1: String(value5) }))}
         disabled={value4 !== undefined}
         onClick={value3}
       />
@@ -159,6 +162,7 @@ export function installEditorMediaPlaybackControls(
     gen = 0,
     whyAbsent: whyAbsent,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let {
         at: value,
         found: value2,
@@ -177,7 +181,7 @@ export function installEditorMediaPlaybackControls(
       value6: Dynamic = value2 && value.ready;
     return (
       <runtime.PropertyRangeRow
-        label={"Time"}
+        label={uiMessage("inspector.playbackControls.time")}
         value={Math.round(value.currentTime * 10) / 10}
         min={0}
         max={Math.max(0.1, Math.round(value.duration * 10) / 10)}
@@ -185,12 +189,7 @@ export function installEditorMediaPlaybackControls(
         unit={"s"}
         disabled={value5 !== undefined}
         title={
-          value5 ??
-          runtime.MediaVideoPlaybackPlayPauseSeekConfig.seek +
-            ": " +
-            (0, runtime.formatVideoTime)(value.currentTime) +
-            " / " +
-            (0, runtime.formatVideoTime)(value.duration)
+          (value5) ?? (((((runtime.MediaVideoPlaybackPlayPauseSeekConfig.seek) + (": ")) + ((0, runtime.formatVideoTime)(value.currentTime))) + (" / ")) + ((0, runtime.formatVideoTime)(value.duration)))
         }
         onLive={value4}
         onValue={value4}
@@ -200,11 +199,9 @@ export function installEditorMediaPlaybackControls(
             size={"xxs"}
             data-testid={"dc-video-playpause"}
             aria-label={
-              value.paused
-                ? runtime.MediaVideoPlaybackPlayPauseSeekConfig.play
-                : runtime.MediaVideoPlaybackPlayPauseSeekConfig.pause
+              value.paused ? (runtime.MediaVideoPlaybackPlayPauseSeekConfig.play) : (runtime.MediaVideoPlaybackPlayPauseSeekConfig.pause)
             }
-            title={value6 ? undefined : value5}
+            title={value6 ? (undefined) : (value5)}
             disabled={!value6}
             onClick={value3}
           >
@@ -335,14 +332,14 @@ export function installEditorMediaPlaybackControls(
   );
   return () => {
     ThisVideoIsnTPlayingHereRightMessage =
-      "This video isn't playing here right now. Scroll it into view to play it.";
-    MediaPlaybackControlsLabel = "The video hasn't loaded yet.";
-    ThisVideoCouldnTBeLoadedMessage = "This video couldn't be loaded.";
+      uiMessage("inspector.playbackControls.thisVideoIsnTPlaying");
+    MediaPlaybackControlsLabel = uiMessage("inspector.playbackControls.theVideoHasnTLoaded");
+    ThisVideoCouldnTBeLoadedMessage = uiMessage("inspector.playbackControls.thisVideoCouldnTBe");
     ThisVideoCouldnTBeLoadedSoMessage =
-      "This video couldn't be loaded, so only its still is shown.";
+      uiMessage("inspector.playbackControls.thisVideoCouldnTBe2");
     MediaPlaybackControlsQuerySelector = (input?: Dynamic): Dynamic =>
       (0, runtime.isImageDecodeQueued)(input)
-        ? "Only " +
+        ? uiMessage("inspector.playbackControls.only") +
           String(4) +
           " videos play at once on a page. This one starts when another is deleted or leaves view."
         : (document as Dynamic).querySelector(
@@ -353,7 +350,7 @@ export function installEditorMediaPlaybackControls(
           ? ThisVideoCouldnTBeLoadedSoMessage
           : undefined;
     ThisVideoDoesnTSayHowLongMessage =
-      "This video doesn't say how long it is (a screen recording often doesn't), so it can be played and paused but not scrubbed.";
+      uiMessage("inspector.playbackControls.thisVideoDoesnTSay");
     MediaPlaybackControlsFound = (
       input?: Dynamic,
       options?: Dynamic,

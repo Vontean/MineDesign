@@ -1,3 +1,4 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 import type * as React from "react";
 import type * as Editor from "../contracts/editor-runtime";
 import type * as Model from "../contracts";
@@ -259,7 +260,7 @@ export function installEditorSwatchRuntime(
     withUrlFallback: boolean = false,
   ): string {
     if (!/^h[0-9]+$/.test(id)) {
-      throw Error("swatch head id outside its grammar: " + id);
+      throw Error(uiMessage("design-system.swatchRuntime.swatchHeadIdOutsideIts") + id);
     }
     if (pieces !== ALL_SWATCH_HEAD_PIECES) {
       return swatchHeadPiecesScript(id, pieces, withUrlFallback);
@@ -297,7 +298,7 @@ export function installEditorSwatchRuntime(
       if (typeof input === "number") {
         if (!Number.isInteger(input) || input < 0) {
           throw Error(
-            "swatch head piece outside its grammar: " + String(input),
+            uiMessage("design-system.swatchRuntime.swatchHeadPieceOutsideIts") + String(input),
           );
         }
         return (
@@ -464,7 +465,7 @@ export function installEditorSwatchRuntime(
       !SWATCH_RUNTIME_TAG_URL_PATTERN.test(tag.src) ||
       !SWATCH_SHA384_INTEGRITY_PATTERN.test(tag.integrity)
     ) {
-      throw Error("swatch runtime tag outside its grammar: " + tag.src);
+      throw Error(uiMessage("design-system.swatchRuntime.swatchRuntimeTagOutsideIts") + tag.src);
     }
     return (
       '<script src="' +
@@ -853,7 +854,7 @@ export function installEditorSwatchRuntime(
           );
         }
         if (previewFramePathname(value4) === value8.runner) {
-          return value14("unclear", "it did not reach its card’s address");
+          return value14("unclear", uiMessage("design-system.swatchRuntime.itDidNotReachIts"));
         }
         value13 = true;
         (0, runtime.recordPreviewRunnerOutcome)(value2, "worked", value10);

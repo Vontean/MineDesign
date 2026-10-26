@@ -1,3 +1,5 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
+import { useUiLocale } from '../../ui-locale.ts';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -16,9 +18,10 @@ export function installEditorChromeResizeGrip(
     max: max,
     defaultWidth: defaultWidth,
     gesture: gesture,
-    label = "Resize panel",
+    label = uiMessage("inspector.resizeGrip.resizePanel"),
     className: className,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let callback: Dynamic =
       (input?: Dynamic): Dynamic =>
       (): Dynamic => {
@@ -64,6 +67,7 @@ export function installEditorChromeResizeGrip(
     grabClassName = "justify-center pointer-coarse:flex",
     grabTargetClassName: grabTargetClassName,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let value: Dynamic = side === "inline-start",
       value2: Dynamic = (0, runtime.reactChromePanelShell.useRef)(gesture);
     value2.current = gesture;
@@ -206,8 +210,7 @@ export function installEditorChromeResizeGrip(
       );
     return (
       <runtime.jsxChromePanelShell_2.Fragment>
-        {disabled2 ? null : (
-          <div
+        {disabled2 ? (null) : (<div
             data-kit={name + "-grab"}
             onPointerDown={(input?: Dynamic): Dynamic =>
               callback(input, value ? "all" : "touch")
@@ -227,8 +230,7 @@ export function installEditorChromeResizeGrip(
                 grabTargetClassName,
               )}
             />
-          </div>
-        )}
+          </div>)}
         <runtime.Tooltip
           content={value15 ?? ""}
           side={value ? "left" : "top"}
@@ -239,8 +241,7 @@ export function installEditorChromeResizeGrip(
         >
           {value17}
         </runtime.Tooltip>
-        {value15 !== undefined ? (
-          <runtime.jsxChromePanelShell_2.Fragment>
+        {value15 !== undefined ? (<runtime.jsxChromePanelShell_2.Fragment>
             <span id={value10} hidden={true}>
               {value15}
             </span>
@@ -255,8 +256,7 @@ export function installEditorChromeResizeGrip(
             >
               <span className={"size-full"} />
             </runtime.EditorTooltip>
-          </runtime.jsxChromePanelShell_2.Fragment>
-        ) : null}
+          </runtime.jsxChromePanelShell_2.Fragment>) : (null)}
       </runtime.jsxChromePanelShell_2.Fragment>
     );
   }

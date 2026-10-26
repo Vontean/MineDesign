@@ -1,3 +1,5 @@
+import { useUiLocale } from '../ui-locale.ts';
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -30,6 +32,7 @@ export function installCanvasZoom(runtime: RuntimeBindings): () => void {
     zoomRowsDisabledTip: zoomRowsDisabledTip,
     viewToggles = [],
   }: Dynamic): Dynamic {
+    useUiLocale();
     let [value, value2]: Dynamic = (0, react_F_.useState)(1),
       [value3, value4]: Dynamic = (0, react_F_.useState)(
         (): Dynamic => (readout ? getScale() : 1),
@@ -71,8 +74,7 @@ export function installCanvasZoom(runtime: RuntimeBindings): () => void {
             : null,
       value13: Dynamic = (
         <jsx_Wl.Fragment>
-          {onStepZoom !== undefined ? (
-            <jsx_Wl.Fragment>
+          {onStepZoom !== undefined ? (<jsx_Wl.Fragment>
               <runtime.MenuMenuAssignValue.Item
                 disabled={zoomRowsDisabled || value8 >= value10}
                 disabledReason={value12}
@@ -80,7 +82,7 @@ export function installCanvasZoom(runtime: RuntimeBindings): () => void {
                 aria-keyshortcuts={value11 ? "Meta+=" : "Control+="}
                 onClick={(): Dynamic => onStepZoom(1)}
               >
-                {"Zoom in"}
+                {uiMessage("canvas.zoom.zoomIn")}
               </runtime.MenuMenuAssignValue.Item>
               <runtime.MenuMenuAssignValue.Item
                 disabled={zoomRowsDisabled || value8 <= value9}
@@ -89,10 +91,9 @@ export function installCanvasZoom(runtime: RuntimeBindings): () => void {
                 aria-keyshortcuts={value11 ? "Meta+-" : "Control+-"}
                 onClick={(): Dynamic => onStepZoom(-1)}
               >
-                {"Zoom out"}
+                {uiMessage("canvas.zoom.zoomOut")}
               </runtime.MenuMenuAssignValue.Item>
-            </jsx_Wl.Fragment>
-          ) : null}
+            </jsx_Wl.Fragment>) : (null)}
           <runtime.MenuMenuAssignValue.Item
             disabled={zoomRowsDisabled}
             disabledReason={value12}
@@ -104,15 +105,13 @@ export function installCanvasZoom(runtime: RuntimeBindings): () => void {
           <runtime.MenuMenuAssignValue.Group>
             {zoomScalePresets.every(
               (input?: Dynamic): Dynamic => Math.round(input * 100) !== value8,
-            ) ? (
-              <runtime.MenuMenuAssignValue.GroupLabel>
+            ) ? (<runtime.MenuMenuAssignValue.GroupLabel>
                 <span className={"tabular-nums"}>
-                  {"Now "}
+                  {uiMessage("canvas.zoom.now")}
                   {value8}
                   {"%"}
                 </span>
-              </runtime.MenuMenuAssignValue.GroupLabel>
-            ) : null}
+              </runtime.MenuMenuAssignValue.GroupLabel>) : (null)}
             {zoomScalePresets.map((input?: Dynamic): Dynamic => {
               let value14: Dynamic = Math.round(input * 100),
                 value15: Dynamic =
@@ -143,8 +142,7 @@ export function installCanvasZoom(runtime: RuntimeBindings): () => void {
               );
             })}
           </runtime.MenuMenuAssignValue.Group>
-          {viewToggles.length > 0 ? (
-            <jsx_Wl.Fragment>
+          {viewToggles.length > 0 ? (<jsx_Wl.Fragment>
               <runtime.MenuMenuAssignValue.Separator />
               {viewToggles.map(
                 (input?: Dynamic): Dynamic =>
@@ -162,36 +160,33 @@ export function installCanvasZoom(runtime: RuntimeBindings): () => void {
                     return <_Component key={_key} {..._props} />;
                   })(),
               )}
-            </jsx_Wl.Fragment>
-          ) : null}
-          {undo !== undefined ? (
-            <jsx_Wl.Fragment>
+            </jsx_Wl.Fragment>) : (null)}
+          {undo !== undefined ? (<jsx_Wl.Fragment>
               <runtime.MenuMenuAssignValue.Separator />
               <runtime.MenuMenuAssignValue.Item
                 disabled={!undo.canUndo()}
-                disabledReason={"Nothing to undo yet"}
+                disabledReason={uiMessage("canvas.zoom.nothingToUndoYet")}
                 shortcut={"cmd+z"}
                 onClick={(): Dynamic => undo.undo()}
               >
-                {"Undo"}
+                {uiMessage("canvas.zoom.undo")}
               </runtime.MenuMenuAssignValue.Item>
               <runtime.MenuMenuAssignValue.Item
                 disabled={!undo.canRedo()}
-                disabledReason={"Nothing to redo"}
+                disabledReason={uiMessage("canvas.zoom.nothingToRedo")}
                 shortcut={"shift+cmd+z"}
                 onClick={(): Dynamic => undo.redo()}
               >
-                {"Redo"}
+                {uiMessage("canvas.zoom.redo")}
               </runtime.MenuMenuAssignValue.Item>
-            </jsx_Wl.Fragment>
-          ) : null}
+            </jsx_Wl.Fragment>) : (null)}
         </jsx_Wl.Fragment>
       );
     return readout ? (
       <runtime.SessionStripPopover
         readout={String(zoomScalePercent(value3)) + "%"}
         readoutSizer={"100%"}
-        label={"Zoom"}
+        label={uiMessage("canvas.zoom.zoom")}
         tip={tip}
         disabled={disabled2}
         disabledTip={disabledTip}
@@ -205,7 +200,7 @@ export function installCanvasZoom(runtime: RuntimeBindings): () => void {
       <runtime.SessionStripPopover
         glyph={zoomControlGlyph}
         iconOnly={true}
-        label={"Zoom"}
+        label={uiMessage("canvas.zoom.zoom")}
         tip={tip}
         disabled={disabled2}
         disabledTip={disabledTip}

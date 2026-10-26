@@ -1,3 +1,4 @@
+import { useUiLocale } from '../../ui-locale.ts';
 import type * as React from "react";
 /** Restored application module; prepare first, initialize in original order. */
 import {
@@ -32,6 +33,7 @@ export function installCdsPlatformRootFontSize(
   var iconFontMetadata: Dynamic;
   var initializePlatformRootFontSize_4: Dynamic;
   function ResetSkeletonContext({ children: children }: Dynamic): Dynamic {
+    useUiLocale();
     return (
       <SkeletonDecorativeContext.Provider value={false}>
         <SkeletonElementContext.Provider value={"div"}>
@@ -53,6 +55,7 @@ export function installCdsPlatformRootFontSize(
     companionModalCatcher: companionModalCatcher2 = false,
     closeOnActivityHide = false,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let value: Dynamic = (0, runtime.useCloseOnHiddenActivity)(
         closeOnActivityHide,
       ),

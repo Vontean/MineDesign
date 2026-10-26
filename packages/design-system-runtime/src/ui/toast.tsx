@@ -1,3 +1,5 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
+import { useUiLocale } from '../ui-locale.ts';
 import type * as React from "react";
 import type {
   ToastVariant,
@@ -52,6 +54,7 @@ export function installUiToast(runtime: RuntimeBindings): () => void {
     frontHeight?: number;
     zIndex: number;
   }): React.ReactElement {
+    useUiLocale();
     let value =
         toast.data?.variant ??
         (toast.type as ToastVariant | undefined) ??
@@ -151,53 +154,38 @@ export function installUiToast(runtime: RuntimeBindings): () => void {
                 : undefined
             }
           >
-            {[
-              value2 !== null && (
+            {[value2 !== null && (
                 <span
                   className={`shrink-0 ${toastSecondaryTextClasses[value]}`}
                 >
-                  {value3 ? (
-                    value2
-                  ) : (
-                    <runtime.Icon
+                  {value3 ? (value2) : (<runtime.Icon
                       name={toastDefaultIconNames[value]}
                       size={"md"}
-                    />
-                  )}
+                    />)}
                 </span>
-              ),
-              <div className={toastBodyClasses}>
-                {[
-                  <runtime.baseToast.Title
+              ), <div className={toastBodyClasses}>
+                {[<runtime.baseToast.Title
                     className={"font-medium"}
                     aria-atomic={"true"}
                   >
-                    {[
-                      <span ref={ref}>{value9 ?? toast.data?.baseTitle}</span>,
-                      value10 > 1 && (
+                    {[<span ref={ref}>{value9 ?? (toast.data?.baseTitle)}</span>, value10 > 1 && (
                         <span
                           aria-live={value10 > 2 ? "off" : undefined}
                           data-cds-toast-count={""}
                         >{` (×${value10})`}</span>
-                      ),
-                    ]}
-                  </runtime.baseToast.Title>,
-                  <runtime.baseToast.Description />,
-                  toast.data?.action && (
+                      )]}
+                  </runtime.baseToast.Title>, <runtime.baseToast.Description />, toast.data?.action && (
                     <div className={"mt-pad-md empty:hidden"}>
                       {toast.data.action}
                     </div>
-                  ),
-                ]}
-              </div>,
-              <runtime.baseToast.Close
+                  )]}
+              </div>, <runtime.baseToast.Close
                 aria-label={value6}
                 className={toastDismissButtonClasses}
                 onClick={callback}
               >
                 <runtime.Icon name={"X"} size={"sm"} />
-              </runtime.baseToast.Close>,
-            ]}
+              </runtime.baseToast.Close>]}
           </div>
         </div>
       </runtime.baseToast.Root>
@@ -210,6 +198,7 @@ export function installUiToast(runtime: RuntimeBindings): () => void {
     pinned: PinnedToast;
     onDismiss(): void;
   }): React.ReactElement {
+    useUiLocale();
     let value = pinned.variant ?? "neutral",
       value2 = (0, runtime.useTranslation)("dismiss", "Dismiss");
     return (
@@ -218,32 +207,24 @@ export function installUiToast(runtime: RuntimeBindings): () => void {
         className={`pointer-events-auto relative w-full ${toastSurfaceClasses} ${toastVariantClasses[value]} ${toastVariantTextClasses[value]}`}
       >
         <div className={toastContentClasses}>
-          {[
-            <span className={`shrink-0 ${toastSecondaryTextClasses[value]}`}>
+          {[<span className={`shrink-0 ${toastSecondaryTextClasses[value]}`}>
               <runtime.Icon name={toastDefaultIconNames[value]} size={"md"} />
-            </span>,
-            <div className={toastBodyClasses}>
-              {[
-                <div className={"font-medium"}>{pinned.title}</div>,
-                pinned.description && <div>{pinned.description}</div>,
-                pinned.action && (
+            </span>, <div className={toastBodyClasses}>
+              {[<div className={"font-medium"}>{pinned.title}</div>, pinned.description && <div>{pinned.description}</div>, pinned.action && (
                   <div className={"mt-pad-md empty:hidden"}>
                     {pinned.action}
                   </div>
-                ),
-              ]}
-            </div>,
-            pinned.dismissible && (
+                )]}
+            </div>, pinned.dismissible && (
               <button
                 type={"button"}
-                aria-label={pinned.dismissLabel ?? value2}
+                aria-label={pinned.dismissLabel ?? (value2)}
                 onClick={onDismiss}
                 className={toastDismissButtonClasses}
               >
                 <runtime.Icon name={"X"} size={"sm"} />
               </button>
-            ),
-          ]}
+            )]}
         </div>
       </div>
     );
@@ -266,6 +247,7 @@ export function installUiToast(runtime: RuntimeBindings): () => void {
   }: {
     ctx: PinnedToastContext;
   }): React.ReactElement {
+    useUiLocale();
     let {
         pinned: value,
         setPinned: value2,
@@ -329,9 +311,7 @@ export function installUiToast(runtime: RuntimeBindings): () => void {
           }
         }}
       >
-        {value && (
-          <PinnedToastView pinned={value} onDismiss={() => value2(null)} />
-        )}
+        {value && (<PinnedToastView pinned={value} onDismiss={() => value2(null)} />)}
       </div>
     );
   }
@@ -340,6 +320,7 @@ export function installUiToast(runtime: RuntimeBindings): () => void {
   }: {
     className?: string;
   }): React.ReactElement {
+    useUiLocale();
     let { toasts: value } = runtime.baseToast.useToastManager<ToastData>(),
       value2 = reactForUiToast.useContext(pinnedToastContext);
     (0, runtime.useIsomorphicLayoutEffect)(() => {
@@ -363,9 +344,7 @@ export function installUiToast(runtime: RuntimeBindings): () => void {
               />
             }
           >
-            {[
-              value2 && <PinnedToastSlot ctx={value2} />,
-              <runtime.baseToast.Viewport
+            {[value2 && <PinnedToastSlot ctx={value2} />, <runtime.baseToast.Viewport
                 className={
                   "pointer-events-auto relative outline-none focus-visible:outline-hidden"
                 }
@@ -386,8 +365,7 @@ export function installUiToast(runtime: RuntimeBindings): () => void {
                     return <_Element key={_elementKey} {..._elementProps} />;
                   })(),
                 )}
-              </runtime.baseToast.Viewport>,
-            ]}
+              </runtime.baseToast.Viewport>]}
           </runtime.CdsLayer>
         </runtime.PortalRoot>
       </runtime.baseToast.Portal>
@@ -407,6 +385,7 @@ export function installUiToast(runtime: RuntimeBindings): () => void {
     limit: limit,
     viewportClassName: viewportClassName,
   }: ToastProviderProps): React.ReactElement {
+    useUiLocale();
     let [value, value2] = reactForUiToast.useState<PinnedToast | null>(null),
       ref = reactForUiToast.useRef(value),
       ref2 = reactForUiToast.useRef<HTMLElement | null>(null),

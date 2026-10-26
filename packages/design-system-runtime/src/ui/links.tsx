@@ -1,3 +1,5 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
+import { useUiLocale } from '../ui-locale.ts';
 /** Restored application module; prepare first, initialize in original order. */
 import type * as React from "react";
 import type * as C from "../contracts/controls";
@@ -45,6 +47,7 @@ export function installUiLinks(runtime: RuntimeBindings): () => void {
     actionDisabled: actionDisabled,
     rest: rest,
   }: C.InteractiveLinkElementProps) {
+    useUiLocale();
     let value = runtime.reactForUiIcons2.isValidElement(render),
       value2: import("../contracts/overlays").LinkAttributes = (0,
       runtime.useCdsLink)({
@@ -103,6 +106,7 @@ export function installUiLinks(runtime: RuntimeBindings): () => void {
     );
   }
   function NewTabAnnouncement({ id: id }: { id: string }) {
+    useUiLocale();
     return (
       <span id={id} hidden={true} className={"sr-only"}>
         {(0, runtime.useTranslation)("opensInNewTab", "(opens in new tab)")}
@@ -110,6 +114,7 @@ export function installUiLinks(runtime: RuntimeBindings): () => void {
     );
   }
   function TextLinkIcon(input: React.ReactNode) {
+    useUiLocale();
     if ((0, runtime.isIconName)(input)) {
       return (
         <runtime.Icon
@@ -308,19 +313,14 @@ export function installUiLinks(runtime: RuntimeBindings): () => void {
           value11 = `${(0, runtime.cn)(value10 ? (0, runtime.clsx)(textLinkWithIconClasses, icon ? "gap-[0.25em]" : "gap-0") : inlineTextLinkClasses, value3 && inheritedTextLinkColorClasses)}`,
           value12 = value10 ? (
             <jsxForUiLinks2.Fragment>
-              {[
-                iconPosition === "start" && TextLinkIcon(value9),
-                <span
+              {[iconPosition === "start" && TextLinkIcon(value9), <span
                   className={(0, runtime.clsx)(
                     textLinkDecorationAlias,
                     value3 && textLinkDecorationTransitionClasses,
                   )}
                 >
                   {children}
-                </span>,
-                iconPosition === "end" && TextLinkIcon(value9),
-                value4 && value8,
-              ]}
+                </span>, iconPosition === "end" && TextLinkIcon(value9), value4 && value8]}
             </jsxForUiLinks2.Fragment>
           ) : value4 ? (
             <jsxForUiLinks2.Fragment>

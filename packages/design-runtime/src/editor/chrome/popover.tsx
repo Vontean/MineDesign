@@ -1,3 +1,5 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
+import { useUiLocale } from '../../ui-locale.ts';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -168,6 +170,7 @@ export function installEditorChromePopover(
     initialFocus: initialFocus,
     keepFocus = false,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let value: Dynamic = (0, runtime.reactChromeTheme_3.useRef)(null);
     useEscapeReleaseSuppression(open && focusOnOpen);
     let value2: Dynamic = (0, runtime.reactChromeTheme_3.useRef)(null),
@@ -284,12 +287,10 @@ export function installEditorChromePopover(
     return (
       <jsxChromePopover.Fragment>
         <span ref={value2} className={"hidden"} aria-hidden={"true"} />
-        {open
-          ? (() => {
+        {open ? ((() => {
               const _Component = usePopoverDismissal;
               return <_Component onClose={(): Dynamic => value11.current()} />;
-            })()
-          : null}
+            })()) : (null)}
         <runtime.PopoverPopoverRootTriggerPopupConfig.Root
           open={open}
           onOpenChange={(input?: Dynamic, options?: Dynamic): Dynamic => {
@@ -319,11 +320,9 @@ export function installEditorChromePopover(
             options.cancel();
           }}
         >
-          {trigger !== undefined ? (
-            <runtime.PopoverPopoverRootTriggerPopupConfig.Trigger
+          {trigger !== undefined ? (<runtime.PopoverPopoverRootTriggerPopupConfig.Trigger
               render={trigger}
-            />
-          ) : null}
+            />) : (null)}
           <runtime.PopoverPopoverRootTriggerPopupConfig.Popup
             ref={value}
             aria-label={ariaLabel}

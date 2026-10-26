@@ -1,3 +1,5 @@
+import { useUiLocale } from '../../ui-locale.ts';
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -11,12 +13,13 @@ export function installEditorSessionStripSelectionActions(
     lead: lead,
     onComment: onComment,
     onDelete: onDelete,
-    deleteTitle = "Delete this element",
+    deleteTitle = uiMessage("inspector.selectionActions.deleteThisElement"),
     onOpenInspector: onOpenInspector,
     disabledReason: disabledReason,
     moreMenu: moreMenu,
     testids: testids,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let value: Dynamic = (0, runtime.useTouchToolbar)() ? onDelete : undefined,
       value2: Dynamic =
         typeof disabledReason == "string"
@@ -31,42 +34,36 @@ export function installEditorSessionStripSelectionActions(
       value2.more === undefined ? null : (
       <runtime.SessionStripGroup>
         {lead}
-        {onComment !== null && (
-          <runtime.SessionStripButton
+        {onComment !== null && (<runtime.SessionStripButton
             icon={"ChatAdd"}
             data-testid={testids?.comment}
-            title={value2.comment ?? "Comment on this element"}
-            aria-label={"Comment"}
+            title={value2.comment ?? (uiMessage("inspector.selectionActions.commentOnThisElement"))}
+            aria-label={uiMessage("inspector.selectionActions.comment")}
             disabled={value2.comment !== undefined}
             onClick={(input?: Dynamic): Dynamic =>
               onComment(input.currentTarget)
             }
-          />
-        )}
-        {value !== undefined && (
-          <runtime.SessionStripButton
+          />)}
+        {value !== undefined && (<runtime.SessionStripButton
             icon={"Trash"}
             data-testid={testids?.delete ?? "frame-delete"}
-            title={value2.delete ?? deleteTitle}
-            aria-label={"Delete"}
+            title={value2.delete ?? (deleteTitle)}
+            aria-label={uiMessage("inspector.selectionActions.delete")}
             disabled={value2.delete !== undefined}
             onClick={value}
-          />
-        )}
-        {(onOpenInspector !== undefined || value2.more !== undefined) && (
-          <runtime.SessionStripButton
+          />)}
+        {onOpenInspector !== undefined || value2.more !== undefined && (<runtime.SessionStripButton
             icon={"DotsVertical"}
             data-testid={testids?.more ?? "frame-more"}
             title={
-              value2.more ?? moreMenu?.label ?? "Open the Properties panel"
+              value2.more ?? moreMenu?.label ?? (uiMessage("inspector.selectionActions.openThePropertiesPanel"))
             }
-            aria-label={moreMenu?.label ?? "Properties"}
+            aria-label={moreMenu?.label ?? (uiMessage("inspector.selectionActions.properties"))}
             aria-haspopup={moreMenu ? "menu" : undefined}
             aria-expanded={moreMenu?.open}
             disabled={value2.more !== undefined}
             onClick={onOpenInspector}
-          />
-        )}
+          />)}
       </runtime.SessionStripGroup>
     );
   }

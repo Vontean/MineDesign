@@ -1,3 +1,4 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -92,7 +93,7 @@ export function installApplicationDesignBootstrap(
             recovery.discard();
           }}
         >
-          {"Discard"}
+          {uiMessage("canvas.designBootstrap.discard")}
         </runtime.Button>
         <runtime.Button
           type={"button"}
@@ -102,7 +103,7 @@ export function installApplicationDesignBootstrap(
             recovery.restore();
           }}
         >
-          {"Put back"}
+          {uiMessage("canvas.designBootstrap.putBack")}
         </runtime.Button>
       </span>,
     );
@@ -114,7 +115,7 @@ export function installApplicationDesignBootstrap(
     let title: Dynamic = edit.file.replace(/\.dc\.html$/, ""),
       noticeId: Dynamic = 0;
     noticeId = (0, runtime.showEditorActionToast)(
-      `\u201C${title}\u201D was saved over by a version that leaves out a change you had saved. Their version is on screen.`,
+      uiMessage("canvas.designBootstrap.value1WasSavedOverBy", { value1: String(title) }),
       <runtime.Button
         type={"button"}
         variant={"primary"}
@@ -123,7 +124,7 @@ export function installApplicationDesignBootstrap(
           edit.putBack();
         }}
       >
-        {"Put my change back"}
+        {uiMessage("canvas.designBootstrap.putMyChangeBack")}
       </runtime.Button>,
     );
   }

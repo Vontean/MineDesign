@@ -1,3 +1,4 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 import type * as FilesCore from "../contracts/files-core";
 import type * as Docs from "../contracts/design-system-document";
 import type * as Boot from "../contracts/boot";
@@ -92,7 +93,7 @@ export function installFilesReopen(runtime: RuntimeBindings): () => void {
         (0, runtime.restartWithReloadFallback)({
           restart: restart,
           note:
-            "design system: the editing-off entry was " +
+            uiMessage("design-system.reopen.designSystemTheEditingOff") +
             (transition === "on" ? "removed" : "added"),
           ask: fallback,
           watchdogMs: DESIGN_SYSTEM_REOPEN_WATCHDOG_MS,
@@ -108,7 +109,7 @@ export function installFilesReopen(runtime: RuntimeBindings): () => void {
       },
       note: {
         store: safeReopenSessionStorage(),
-        why: "editing_" + transition,
+        get why() { return ("editing_") + (transition); },
         focus: location.hash.replace(/^#/, ""),
       },
     });
@@ -168,8 +169,8 @@ export function installFilesReopen(runtime: RuntimeBindings): () => void {
       message:
         message ??
         (restart
-          ? MIGRATION_DONE_REOPEN_MESSAGE
-          : MIGRATION_ENDED_REOPEN_MESSAGE),
+          ? uiMessage("design-system.reopen.thisDesignSystemHasMoved")
+          : uiMessage("design-system.reopen.theMoveOfThisDesign")),
       isTyping: (): boolean => Date.now() - lastDesignSystemTypingAt < 2000,
       hasUnsentEdits: activeDesignSystemHasUnsentEdits,
       reopen: reopen,
@@ -195,8 +196,8 @@ export function installFilesReopen(runtime: RuntimeBindings): () => void {
       message: (): string =>
         activeDesignSystemDocument !== undefined &&
         !activeDesignSystemDocument.readOnly()
-          ? EDITABLE_DESIGN_SYSTEM_REOPENED_MESSAGE
-          : DESIGN_SYSTEM_REOPENED_MESSAGE,
+          ? uiMessage("design-system.reopen.theDesignSystemHasReopened")
+          : uiMessage("design-system.reopen.theDesignSystemHasReopened2"),
       focus: (input: string | undefined) =>
         (0, runtime.restoreReopenedFocus)(window, input),
     });
@@ -226,7 +227,7 @@ export function installFilesReopen(runtime: RuntimeBindings): () => void {
   bindRuntimeValue(
     runtime,
     "MIGRATION_DONE_REOPEN_MESSAGE",
-    () => MIGRATION_DONE_REOPEN_MESSAGE,
+    () => uiMessage("design-system.reopen.thisDesignSystemHasMoved"),
     (value) => {
       MIGRATION_DONE_REOPEN_MESSAGE = value;
     },
@@ -234,7 +235,7 @@ export function installFilesReopen(runtime: RuntimeBindings): () => void {
   bindRuntimeValue(
     runtime,
     "MIGRATION_ENDED_REOPEN_MESSAGE",
-    () => MIGRATION_ENDED_REOPEN_MESSAGE,
+    () => uiMessage("design-system.reopen.theMoveOfThisDesign"),
     (value) => {
       MIGRATION_ENDED_REOPEN_MESSAGE = value;
     },
@@ -242,7 +243,7 @@ export function installFilesReopen(runtime: RuntimeBindings): () => void {
   bindRuntimeValue(
     runtime,
     "MIGRATION_STARTING_REOPEN_MESSAGE",
-    () => MIGRATION_STARTING_REOPEN_MESSAGE,
+    () => uiMessage("design-system.reopen.thisDesignSystemIsAbout"),
     (value) => {
       MIGRATION_STARTING_REOPEN_MESSAGE = value;
     },
@@ -250,7 +251,7 @@ export function installFilesReopen(runtime: RuntimeBindings): () => void {
   bindRuntimeValue(
     runtime,
     "EDITABLE_DESIGN_SYSTEM_REOPENED_MESSAGE",
-    () => EDITABLE_DESIGN_SYSTEM_REOPENED_MESSAGE,
+    () => uiMessage("design-system.reopen.theDesignSystemHasReopened"),
     (value) => {
       EDITABLE_DESIGN_SYSTEM_REOPENED_MESSAGE = value;
     },
@@ -258,7 +259,7 @@ export function installFilesReopen(runtime: RuntimeBindings): () => void {
   bindRuntimeValue(
     runtime,
     "DESIGN_SYSTEM_REOPENED_MESSAGE",
-    () => DESIGN_SYSTEM_REOPENED_MESSAGE,
+    () => uiMessage("design-system.reopen.theDesignSystemHasReopened2"),
     (value) => {
       DESIGN_SYSTEM_REOPENED_MESSAGE = value;
     },
@@ -419,15 +420,15 @@ export function installFilesReopen(runtime: RuntimeBindings): () => void {
       [runtime.MOVED_RELOAD_MESSAGE, runtime.MOVED_RELOAD_MESSAGE],
       [
         runtime.MIGRATION_RUNNING_MESSAGE,
-        "This design system is being moved. Editing is off until the page reopens.",
+        uiMessage("design-system.reopen.thisDesignSystemIsBeing"),
       ],
       [
         runtime.PARTIAL_DESIGN_SYSTEM_MESSAGE,
-        "Part of this design system could not be found. Editing is off, and what is shown may be incomplete.",
+        uiMessage("design-system.reopen.partOfThisDesignSystem"),
       ],
       [
         runtime.OLDER_COPY_READONLY_MESSAGE,
-        "An older copy of this design system was saved over the current one. Editing is off here.",
+        uiMessage("design-system.reopen.anOlderCopyOfThis"),
       ],
     ]);
     legacyDesignSystemIsBusy = (): boolean => false;

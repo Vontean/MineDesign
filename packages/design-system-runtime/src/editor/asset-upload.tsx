@@ -1,3 +1,4 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 import type * as React from "react";
 import type * as Editor from "../contracts/editor-runtime";
 import type * as Model from "../contracts";
@@ -269,21 +270,21 @@ export function installEditorAssetUpload(runtime: RuntimeBindings): () => void {
     let extension = (0, runtime.fileExtension)(path),
       fileKind: string =
         extension === ""
-          ? "files with no extension"
+          ? uiMessage("design-system.assetUpload.filesWithNoExtension")
           : "." + extension + " files";
     switch (shellError) {
       case "rejected_extension":
-        return "This host can’t save " + fileKind;
+        return uiMessage("design-system.assetUpload.thisHostCanTSave") + fileKind;
       case "extension_not_enabled":
-        return "This host can’t save " + fileKind + " yet";
+        return uiMessage("design-system.assetUpload.thisHostCanTSave") + fileKind + " yet";
       case "too_large":
-        return "This host wouldn’t save a file the size of " + path;
+        return uiMessage("design-system.assetUpload.thisHostWouldnTSave") + path;
       case "rate_limited":
-        return "The save didn’t go through (another prompt may be open). Try Download again";
+        return uiMessage("design-system.assetUpload.theSaveDidnTGo");
       case "unavailable":
-        return "The save didn’t go through. Try Download again";
+        return uiMessage("design-system.assetUpload.theSaveDidnTGo2");
       default:
-        return "Could not download " + path + " here";
+        return uiMessage("design-system.assetUpload.couldNotDownload") + path + " here";
     }
   }
   async function preflightDownloadFiles(

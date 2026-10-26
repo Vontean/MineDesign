@@ -1,3 +1,4 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 import type * as React from "react";
 import type * as Editor from "../contracts/editor-runtime";
 import type * as Model from "../contracts";
@@ -443,7 +444,7 @@ export function installEditorPublishedPreview(
         failedAddressRoots.add(value);
         let value2: string =
           context === undefined
-            ? "could not load " + options2 + " from its URL"
+            ? uiMessage("design-system.publishedPreview.couldNotLoad") + options2 + " from its URL"
             : options2 +
               " did not finish loading from its URL in " +
               context +

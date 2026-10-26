@@ -1,3 +1,4 @@
+import { getUiLocale } from '@minedesign/contracts/ui-locale';
 /**
  * 设计稿编辑器页面的入口（`@minedesign/editor-host/design`）：apps/design-editor 的 main.ts 先调 installDesignEditorHost
  * 装好 globalThis.designHost，再启动设计稿运行时（运行时启动时就读宿主能力）。docs/design/canvas §4、§5。
@@ -6,7 +7,7 @@
  * 与父窗口的消息也是同一套（packages/slides/src/editor-messages.ts）。设计稿另加 `downloads`（导出的文件交给父窗口保存），
  * 并让运行时自己的 frame 协议信任父窗口，MineDesign 由此问它能导出哪些格式、要它导出整份设计稿（§8.3）。
  */
-import { connectEditorHost, windowParentLink } from '@minedesign/editor-host';
+import { connectEditorHost, windowParentLink, createCommentLabels } from '@minedesign/editor-host';
 import { createDownloadsBridge } from './downloads-bridge.ts';
 import { createFeedbackBridge } from './feedback-bridge.ts';
 
@@ -29,7 +30,7 @@ interface FramePreamble {
 /** 在页面上装好 globalThis.designHost（设计稿编辑器）。 */
 export function installDesignEditorHost(options: InstallDesignEditorHostOptions = {}): void {
   const win = options.win ?? window;
-  const host = connectEditorHost({ base: options.base, win });
+  const host = connectEditorHost({ base: options.base, win, commentLabels: createCommentLabels(getUiLocale()) });
   const link = windowParentLink(win);
   if (!link) {
     // 页面单独打开（不在 MineDesign 的 iframe 里）：没有父窗口可交，运行时退回浏览器下载

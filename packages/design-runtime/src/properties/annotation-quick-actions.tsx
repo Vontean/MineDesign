@@ -1,3 +1,5 @@
+import { useUiLocale } from '../ui-locale.ts';
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -18,6 +20,7 @@ export function installPropertiesAnnotationQuickActions(
     chords = false,
     testid: testid,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let [, value]: Dynamic = (0, react_Nse.useState)(0);
     (0, react_Nse.useEffect)((): Dynamic => {
       let callback2: Dynamic = (): Dynamic =>
@@ -49,13 +52,7 @@ export function installPropertiesAnnotationQuickActions(
               testid === undefined ? undefined : testid + "-" + input
             }
             title={
-              value4 ||
-              (chords
-                ? options +
-                  " (" +
-                  (0, runtime.keyboardShortcutLabel)(value3) +
-                  ")"
-                : options)
+              (value4) || (chords ? ((((options) + (" (")) + ((0, runtime.keyboardShortcutLabel)(value3))) + (")")) : (options))
             }
             aria-label={options}
             aria-pressed={value4 === "" && extra}
@@ -71,8 +68,8 @@ export function installPropertiesAnnotationQuickActions(
       };
     return (
       <runtime.SessionStripGroup>
-        {callback("bold", "Bold", "TextBold", "B", value2.allBold)}
-        {callback("italic", "Italic", "TextItalics", "I", value2.allItalic)}
+        {callback("bold", uiMessage("inspector.annotationQuickActions.bold"), "TextBold", "B", value2.allBold)}
+        {callback("italic", uiMessage("inspector.annotationQuickActions.italic"), "TextItalics", "I", value2.allItalic)}
       </runtime.SessionStripGroup>
     );
   }
@@ -81,6 +78,7 @@ export function installPropertiesAnnotationQuickActions(
     onRestyle: onRestyle,
     typing = false,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let value: Dynamic = (0, runtime.annotationTextStyle)(spec),
       value2: Dynamic = [
         "default",
@@ -89,10 +87,7 @@ export function installPropertiesAnnotationQuickActions(
         (input?: Dynamic): Dynamic => ({
           name: input,
           color: (0, runtime.NotesLinkEditingHandler_2)(value.kind, input),
-          label:
-            input === "default"
-              ? "Default ink"
-              : input[0].toUpperCase() + input.slice(1),
+          get label() { return input === "default" ? (uiMessage("inspector.annotationQuickActions.defaultInk")) : (input[0].toUpperCase() + input.slice(1)); },
         }),
       ),
       value3: Dynamic = noteFontSizePresets.find(
@@ -107,7 +102,7 @@ export function installPropertiesAnnotationQuickActions(
           systemHeader={
             <div className={"mb-2"} data-testid={"mega-note-kind"}>
               <runtime.SegmentedControl
-                aria-label={"Note style"}
+                aria-label={uiMessage("inspector.annotationQuickActions.noteStyle")}
                 fullWidth={true}
                 value={value.kind}
                 onChange={(input?: Dynamic): Dynamic =>
@@ -118,7 +113,7 @@ export function installPropertiesAnnotationQuickActions(
                 segments={["note", "title1"].map(
                   (input?: Dynamic): Dynamic => ({
                     value: input,
-                    label: input === "note" ? "Sticky" : "Title",
+                    get label() { return input === "note" ? ("Sticky") : (uiMessage("inspector.annotationQuickActions.title")); },
                     disabled: typing && input !== value.kind,
                     disabledReason: "Finish typing to change the note's kind",
                   }),
@@ -140,7 +135,7 @@ export function installPropertiesAnnotationQuickActions(
                   {input.label}
                 </span>
               ),
-              hint: String(input.px) + "px",
+              get hint() { return (String(input.px)) + ("px"); },
             }),
           )}
           onChange={(input?: Dynamic): Dynamic =>
@@ -151,10 +146,10 @@ export function installPropertiesAnnotationQuickActions(
           custom={{
             body: (
               <runtime.NumericInput
-                aria-label={"Size"}
+                aria-label={uiMessage("inspector.annotationQuickActions.size")}
                 unit={"px"}
                 title={
-                  typing ? "Finish typing to set a custom size" : "Size (px)"
+                  typing ? ("Finish typing to set a custom size") : ("Size (px)")
                 }
                 disabled={typing}
                 value={value.size}
@@ -172,7 +167,7 @@ export function installPropertiesAnnotationQuickActions(
         />
         <runtime.SessionActionsPopover
           testid={"mega-note-color"}
-          title={"Ink"}
+          title={uiMessage("inspector.annotationQuickActions.ink")}
           paint={(0, runtime.NotesLinkEditingHandler_2)(
             value.kind,
             value.color,
@@ -194,6 +189,7 @@ export function installPropertiesAnnotationQuickActions(
     onRestyle: onRestyle,
     typing = false,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let value: Dynamic = (0, runtime.annotationTextStyle)(spec);
     if (value.kind !== "note") return null;
     let value2: Dynamic = [
@@ -203,10 +199,7 @@ export function installPropertiesAnnotationQuickActions(
       (input?: Dynamic): Dynamic => ({
         name: input,
         color: (0, runtime.NotesLinkEditingHandler)(input),
-        label:
-          input === "default"
-            ? "Default yellow"
-            : input[0].toUpperCase() + input.slice(1),
+        get label() { return input === "default" ? (uiMessage("inspector.annotationQuickActions.defaultYellow")) : (input[0].toUpperCase() + input.slice(1)); },
       }),
     );
     return (
@@ -215,7 +208,7 @@ export function installPropertiesAnnotationQuickActions(
         <runtime.SessionStripGroup>
           <runtime.SessionActionsPopover
             testid={"mega-note-fill"}
-            title={"Fill"}
+            title={uiMessage("inspector.annotationQuickActions.fill")}
             paint={(0, runtime.NotesLinkEditingHandler)(value.fill)}
             swatches={value2}
             value={value.fill}
@@ -236,6 +229,7 @@ export function installPropertiesAnnotationQuickActions(
     onDelete: onDelete,
     onComment: onComment,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let value: Dynamic = (0, runtime.annotationTextStyle)(spec),
       value2: Dynamic =
         typeof window !== "undefined" &&
@@ -246,8 +240,8 @@ export function installPropertiesAnnotationQuickActions(
         <runtime.SessionStripGroup>
           <runtime.SessionStripButton
             data-testid={"mega-note-bold"}
-            title={"Bold"}
-            aria-label={"Bold"}
+            title={uiMessage("inspector.annotationQuickActions.bold")}
+            aria-label={uiMessage("inspector.annotationQuickActions.bold")}
             aria-pressed={value.bold}
             icon={"TextBold"}
             onClick={(): Dynamic =>
@@ -258,8 +252,8 @@ export function installPropertiesAnnotationQuickActions(
           />
           <runtime.SessionStripButton
             data-testid={"mega-note-italic"}
-            title={"Italic"}
-            aria-label={"Italic"}
+            title={uiMessage("inspector.annotationQuickActions.italic")}
+            aria-label={uiMessage("inspector.annotationQuickActions.italic")}
             aria-pressed={value.italic}
             icon={"TextItalics"}
             onClick={(): Dynamic =>
@@ -270,36 +264,32 @@ export function installPropertiesAnnotationQuickActions(
           />
         </runtime.SessionStripGroup>
         <NoteFillQuickActions spec={spec} onRestyle={onRestyle} />
-        {onComment != null && (
-          <jsx_Eo.Fragment>
+        {onComment != null && (<jsx_Eo.Fragment>
             <runtime.SessionStripDivider />
             <runtime.SessionStripGroup>
               <runtime.SessionStripButton
                 data-testid={"mega-note-comment"}
                 icon={"ChatAdd"}
-                title={"Comment on this note"}
-                aria-label={"Comment"}
+                title={uiMessage("inspector.annotationQuickActions.commentOnThisNote")}
+                aria-label={uiMessage("inspector.annotationQuickActions.comment")}
                 onClick={(input?: Dynamic): Dynamic =>
                   onComment(input.currentTarget)
                 }
               />
             </runtime.SessionStripGroup>
-          </jsx_Eo.Fragment>
-        )}
-        {value2 && (
-          <jsx_Eo.Fragment>
+          </jsx_Eo.Fragment>)}
+        {value2 && (<jsx_Eo.Fragment>
             <runtime.SessionStripDivider />
             <runtime.SessionStripGroup>
               <runtime.SessionStripButton
                 data-testid={"mega-note-delete"}
-                title={"Delete note \u2014 undo restores it"}
-                aria-label={"Delete"}
+                title={uiMessage("inspector.annotationQuickActions.deleteNoteUndoRestoresIt")}
+                aria-label={uiMessage("inspector.annotationQuickActions.delete")}
                 icon={"Trash"}
                 onClick={onDelete}
               />
             </runtime.SessionStripGroup>
-          </jsx_Eo.Fragment>
-        )}
+          </jsx_Eo.Fragment>)}
       </jsx_Eo.Fragment>
     );
   }
@@ -308,6 +298,7 @@ export function installPropertiesAnnotationQuickActions(
     onRestyle: onRestyle,
     onComment: onComment,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let value: Dynamic = (0, runtime.annotationTextStyle)(spec),
       [, value2]: Dynamic = (0, react_RB.useState)(0);
     (0, react_RB.useEffect)((): Dynamic => {
@@ -351,29 +342,24 @@ export function installPropertiesAnnotationQuickActions(
           <runtime.SessionChoicePopup
             testid={"mega-note-list"}
             title={
-              "List: " +
-              (value4 === "none"
-                ? "None"
-                : value4 === "bullet"
-                  ? "Bulleted list"
-                  : "Numbered list")
+              uiMessage("inspector.annotationQuickActions.list", { value1: String(value4 === "none" ? (uiMessage("inspector.annotationQuickActions.none")) : (value4 === "bullet" ? (uiMessage("inspector.annotationQuickActions.bulletedList")) : (uiMessage("inspector.annotationQuickActions.numberedList")))) })
             }
             face={value4 === "number" ? "ListNumbered" : "ListBullet"}
             value={value4}
             options={[
               {
                 value: "none",
-                label: "None",
+                get label() { return uiMessage("inspector.annotationQuickActions.none"); },
                 icon: "Prohibit",
               },
               {
                 value: "bullet",
-                label: "Bulleted list",
+                get label() { return uiMessage("inspector.annotationQuickActions.bulletedList"); },
                 icon: "ListBullet",
               },
               {
                 value: "number",
-                label: "Numbered list",
+                get label() { return uiMessage("inspector.annotationQuickActions.numberedList"); },
                 icon: "ListNumbered",
               },
             ]}
@@ -391,15 +377,14 @@ export function installPropertiesAnnotationQuickActions(
           />
         </runtime.SessionStripGroup>
         <NoteFillQuickActions spec={spec} onRestyle={onRestyle} typing={true} />
-        {onComment != null && (
-          <jsx_Eo.Fragment>
+        {onComment != null && (<jsx_Eo.Fragment>
             <runtime.SessionStripDivider />
             <runtime.SessionStripGroup>
               <runtime.SessionStripButton
                 data-testid={"mega-note-comment"}
                 icon={"ChatAdd"}
-                title={"Comment on this note"}
-                aria-label={"Comment"}
+                title={uiMessage("inspector.annotationQuickActions.commentOnThisNote")}
+                aria-label={uiMessage("inspector.annotationQuickActions.comment")}
                 onPointerDown={(event?: Dynamic): Dynamic =>
                   event.preventDefault()
                 }
@@ -408,8 +393,7 @@ export function installPropertiesAnnotationQuickActions(
                 }
               />
             </runtime.SessionStripGroup>
-          </jsx_Eo.Fragment>
-        )}
+          </jsx_Eo.Fragment>)}
       </span>
     );
   }
@@ -423,6 +407,7 @@ export function installPropertiesAnnotationQuickActions(
     cropReason: cropReason,
     clip: clip,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let value: Dynamic = (0, react_RB.useRef)([]);
     if (
       spec.kind === "image" &&
@@ -484,42 +469,36 @@ export function installPropertiesAnnotationQuickActions(
           />
           <runtime.SessionStripDivider />
           <runtime.SessionStripGroup>
-            {onComment != null && (
-              <runtime.SessionStripButton
+            {onComment != null && (<runtime.SessionStripButton
                 data-testid={"mega-note-comment"}
                 icon={"ChatAdd"}
-                title={"Comment on this video"}
-                aria-label={"Comment"}
+                title={uiMessage("inspector.annotationQuickActions.commentOnThisVideo")}
+                aria-label={uiMessage("inspector.annotationQuickActions.comment")}
                 onClick={(input?: Dynamic): Dynamic =>
                   onComment(input.currentTarget)
                 }
-              />
-            )}
-            {clip.onOpenProps && (
-              <runtime.SessionStripButton
+              />)}
+            {clip.onOpenProps && (<runtime.SessionStripButton
                 data-testid={"mega-note-props"}
                 icon={"DotsVertical"}
-                title={"Open the Properties panel"}
-                aria-label={"Properties"}
+                title={uiMessage("inspector.annotationQuickActions.openThePropertiesPanel")}
+                aria-label={uiMessage("inspector.annotationQuickActions.properties")}
                 onClick={clip.onOpenProps}
-              />
-            )}
+              />)}
           </runtime.SessionStripGroup>
           {typeof window !== "undefined" &&
-            (window as Dynamic).matchMedia("(pointer: coarse)").matches && (
-              <jsx_Eo.Fragment>
+            (window as Dynamic).matchMedia("(pointer: coarse)").matches && (<jsx_Eo.Fragment>
                 <runtime.SessionStripDivider />
                 <runtime.SessionStripGroup>
                   <runtime.SessionStripButton
                     data-testid={"mega-note-delete"}
-                    title={"Delete video \u2014 undo restores it"}
-                    aria-label={"Delete"}
+                    title={uiMessage("inspector.annotationQuickActions.deleteVideoUndoRestoresIt")}
+                    aria-label={uiMessage("inspector.annotationQuickActions.delete")}
                     icon={"Trash"}
                     onClick={onDelete}
                   />
                 </runtime.SessionStripGroup>
-              </jsx_Eo.Fragment>
-            )}
+              </jsx_Eo.Fragment>)}
         </jsx_Eo.Fragment>
       );
     }
@@ -536,10 +515,7 @@ export function installPropertiesAnnotationQuickActions(
         (input?: Dynamic): Dynamic => ({
           name: input,
           color: (0, runtime.annotationColor)(spec.kind, input),
-          label:
-            input === "default"
-              ? "Default gray"
-              : input[0].toUpperCase() + input.slice(1),
+          get label() { return input === "default" ? (uiMessage("inspector.annotationQuickActions.defaultGray")) : (input[0].toUpperCase() + input.slice(1)); },
         }),
       ),
       value7: Dynamic =
@@ -547,11 +523,10 @@ export function installPropertiesAnnotationQuickActions(
         (window as Dynamic).matchMedia("(pointer: coarse)").matches;
     return (
       <jsx_Eo.Fragment>
-        {!value3 && (
-          <runtime.SessionStripGroup>
+        {!value3 && (<runtime.SessionStripGroup>
             <runtime.SessionActionsPopover
               testid={"mega-shape-color"}
-              title={value2 ? "Stroke" : "Fill"}
+              title={value2 ? (uiMessage("inspector.annotationQuickActions.stroke")) : (uiMessage("inspector.annotationQuickActions.fill"))}
               paint={value5 ?? (0, runtime.annotationColor)(spec.kind, value4)}
               swatches={value6}
               value={value5 !== undefined ? null : value4}
@@ -560,72 +535,51 @@ export function installPropertiesAnnotationQuickActions(
               }
               editsAreUndoSteps={true}
             />
-          </runtime.SessionStripGroup>
-        )}
-        {value3 && onCrop && (
-          <runtime.SessionStripGroup>
+          </runtime.SessionStripGroup>)}
+        {value3 && onCrop && (<runtime.SessionStripGroup>
             <runtime.SessionStripButton
               data-testid={"mega-picture-crop"}
               data-media-crop-keep={""}
               icon={<runtime.PropertyOptionIcon icon={runtime.CropValue} />}
               title={
-                cropReason ??
-                (cropping
-                  ? "Done cropping (or press Enter)"
-                  : "Crop (or double-click the picture)")
+                cropReason ?? (cropping ? (uiMessage("inspector.annotationQuickActions.doneCroppingOrPressEnter")) : (uiMessage("inspector.annotationQuickActions.cropOrDoubleClickThe")))
               }
-              aria-label={"Crop"}
+              aria-label={uiMessage("inspector.annotationQuickActions.crop")}
               aria-pressed={cropping}
               onClick={onCrop}
               disabled={cropReason !== undefined}
             />
-          </runtime.SessionStripGroup>
-        )}
-        {onComment != null && (
-          <jsx_Eo.Fragment>
-            {(!value3 || onCrop) && <runtime.SessionStripDivider />}
+          </runtime.SessionStripGroup>)}
+        {onComment != null && (<jsx_Eo.Fragment>
+            {!value3 || onCrop && (<runtime.SessionStripDivider />)}
             <runtime.SessionStripGroup>
               <runtime.SessionStripButton
                 data-testid={"mega-note-comment"}
                 icon={"ChatAdd"}
                 title={
-                  value3
-                    ? "Comment on this " +
-                      (spec.kind === "image" && spec.video !== undefined
-                        ? "video"
-                        : "picture")
-                    : "Comment on this shape"
+                  value3 ? (uiMessage("inspector.annotationQuickActions.commentOnThis", { value1: String(spec.kind === "image" && spec.video !== undefined ? (uiMessage("inspector.annotationQuickActions.video")) : (uiMessage("inspector.annotationQuickActions.picture"))) })) : (uiMessage("inspector.annotationQuickActions.commentOnThisShape"))
                 }
-                aria-label={"Comment"}
+                aria-label={uiMessage("inspector.annotationQuickActions.comment")}
                 onClick={(input?: Dynamic): Dynamic =>
                   onComment(input.currentTarget)
                 }
               />
             </runtime.SessionStripGroup>
-          </jsx_Eo.Fragment>
-        )}
-        {value7 && (
-          <jsx_Eo.Fragment>
-            {(!value3 || onComment != null || onCrop) && (
-              <runtime.SessionStripDivider />
-            )}
+          </jsx_Eo.Fragment>)}
+        {value7 && (<jsx_Eo.Fragment>
+            {!value3 || onComment != null || onCrop && (<runtime.SessionStripDivider />)}
             <runtime.SessionStripGroup>
               <runtime.SessionStripButton
                 data-testid={"mega-note-delete"}
                 title={
-                  (value3
-                    ? spec.kind === "image" && spec.video !== undefined
-                      ? "Delete video"
-                      : "Delete picture"
-                    : "Delete shape") + " \u2014 undo restores it"
+                  uiMessage("inspector.annotationQuickActions.undoRestoresIt", { value1: String(value3 ? (spec.kind === "image" && spec.video !== undefined ? (uiMessage("inspector.annotationQuickActions.deleteVideo")) : (uiMessage("inspector.annotationQuickActions.deletePicture"))) : (uiMessage("inspector.annotationQuickActions.deleteShape"))) })
                 }
-                aria-label={"Delete"}
+                aria-label={uiMessage("inspector.annotationQuickActions.delete")}
                 icon={"Trash"}
                 onClick={onDelete}
               />
             </runtime.SessionStripGroup>
-          </jsx_Eo.Fragment>
-        )}
+          </jsx_Eo.Fragment>)}
       </jsx_Eo.Fragment>
     );
   }
@@ -701,23 +655,23 @@ export function installPropertiesAnnotationQuickActions(
     );
     noteFontSizePresets = [
       {
-        label: "Small",
+        get label() { return uiMessage("inspector.annotationQuickActions.small"); },
         px: runtime.PlatformFileContentSMLConfig.s,
       },
       {
-        label: "Medium",
+        get label() { return uiMessage("inspector.annotationQuickActions.medium"); },
         px: runtime.PlatformFileContentSMLConfig.m,
       },
       {
-        label: "Large",
+        get label() { return uiMessage("inspector.annotationQuickActions.large"); },
         px: runtime.PlatformFileContentSMLConfig.l,
       },
       {
-        label: "Extra large",
+        get label() { return uiMessage("inspector.annotationQuickActions.extraLarge"); },
         px: runtime.PlatformFileContentSMLConfig.xl,
       },
       {
-        label: "Huge",
+        get label() { return uiMessage("inspector.annotationQuickActions.huge"); },
         px: runtime.PlatformFileContentSMLConfig.xxl,
       },
     ];

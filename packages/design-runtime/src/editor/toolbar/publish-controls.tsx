@@ -1,3 +1,5 @@
+import { useUiLocale } from '../../ui-locale.ts';
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -15,6 +17,7 @@ export function installEditorToolbarPublishControls(
     editing: editing,
     onToggleEdit: onToggleEdit,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let value: Dynamic = saveState.status === "readonly",
       value2: Dynamic =
         saveState.status === "dirty" || saveState.status === "error",
@@ -24,8 +27,8 @@ export function installEditorToolbarPublishControls(
       value6: Dynamic = value4
         ? value5
         : value2
-          ? "Publish your changes \u2014 every open view updates"
-          : "Everything is published",
+          ? uiMessage("inspector.publishControls.publishYourChangesEveryOpen")
+          : uiMessage("inspector.publishControls.everythingIsPublished"),
       value7: Dynamic = (0, runtime.useDisabledToolbarItem)({
         disabled: value3,
         name: value5,
@@ -35,21 +38,16 @@ export function installEditorToolbarPublishControls(
     (0, runtime.useToolbarPress)(value8, value3);
     return (
       <runtime.jsxToolbarLayout.Fragment>
-        {!value && onToggleEdit ? (
-          <runtime.ToolbarPrimitivesComponent
+        {!value && onToggleEdit ? (<runtime.ToolbarPrimitivesComponent
             icon={"Edit"}
-            label={"Edit"}
-            tip={editing ? "Done editing \u2014 back to the live view" : "Edit"}
+            label={uiMessage("inspector.publishControls.edit")}
+            tip={editing ? (uiMessage("inspector.publishControls.doneEditingBackToThe")) : (uiMessage("inspector.publishControls.edit"))}
             pressed={editing === true}
             onClick={onToggleEdit}
             data-testid={"dc-mode-edit"}
-          />
-        ) : null}
-        {!value && syncDot ? (
-          <runtime.ToolbarSyncStatus state={saveState} onRetry={onSave} />
-        ) : null}
-        {!value && saveMode === "manual" && !syncDot ? (
-          <runtime.Tooltip
+          />) : (null)}
+        {!value && syncDot ? (<runtime.ToolbarSyncStatus state={saveState} onRetry={onSave} />) : (null)}
+        {!value && saveMode === "manual" && !syncDot ? (<runtime.Tooltip
             content={value6}
             shortcut={value2 ? "cmd+s" : undefined}
             side={"bottom"}
@@ -76,12 +74,12 @@ export function installEditorToolbarPublishControls(
               </runtime.Button>
               {value7.mirror}
             </span>
-          </runtime.Tooltip>
-        ) : null}
+          </runtime.Tooltip>) : (null)}
       </runtime.jsxToolbarLayout.Fragment>
     );
   }
   function ToolbarSurface({ floating: floating, ...props }: Dynamic): Dynamic {
+    useUiLocale();
     return floating ? (
       <runtime.Surface elevation={runtime.PanelValue} {...props} />
     ) : (

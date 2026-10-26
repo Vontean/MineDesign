@@ -1,3 +1,5 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
+import { useUiLocale } from '../ui-locale.ts';
 import type * as React from "react";
 import type * as Editor from "../contracts/editor-runtime";
 import type * as Model from "../contracts";
@@ -43,6 +45,7 @@ export function installEditorStaticPreview(
     title: title,
     ...props
   }: Editor.StaticPreviewFrameProps): React.ReactElement {
+    useUiLocale();
     let memo = reactStaticPreview.useMemo(
         () =>
           head === undefined ? html : staticPreviewDocumentHtml(html, head),
@@ -67,8 +70,7 @@ export function installEditorStaticPreview(
       };
     return (
       <div className={"ds-page-box"} style={state}>
-        {[
-          <iframe
+        {[<iframe
             {...props}
             sandbox={EMPTY_STATIC_PREVIEW_HTML}
             srcDoc={memo}
@@ -76,9 +78,7 @@ export function installEditorStaticPreview(
             loading={"lazy"}
             tabIndex={-1}
             style={state2}
-          />,
-          <span className={"ds-page-shield"} />,
-        ]}
+          />, <span className={"ds-page-shield"} />]}
       </div>
     );
   }

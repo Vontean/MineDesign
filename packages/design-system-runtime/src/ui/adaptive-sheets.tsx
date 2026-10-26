@@ -1,3 +1,5 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
+import { useUiLocale } from '../ui-locale.ts';
 import type * as React from "react";
 import type {
   AdaptiveSheetPopupHostProps,
@@ -12,6 +14,7 @@ export function installUiAdaptiveSheets(runtime: RuntimeBindings): () => void {
     kind: kind,
     children: children,
   }: AdaptiveSheetPopupHostProps): React.ReactElement {
+    useUiLocale();
     let value: MobileSheetParts | null = (0, runtime.useSheetImplementation)(),
       { pending: value2 } = (0, runtime.useSheetState)();
     if (value !== null) {
@@ -23,13 +26,10 @@ export function installUiAdaptiveSheets(runtime: RuntimeBindings): () => void {
     }
     return (
       <jsxtK.Fragment>
-        {[
-          children(
+        {[children(
             value2 ? runtime.concealedSheetHost : runtime.defaultSheetHost,
             null,
-          ),
-          value2 ? <runtime.PendingSheetBackdrop kind={kind} /> : null,
-        ]}
+          ), value2 ? <runtime.PendingSheetBackdrop kind={kind} /> : null]}
       </jsxtK.Fragment>
     );
   }

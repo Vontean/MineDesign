@@ -9,7 +9,13 @@
     "./i18n": "./src/i18n.ts",
     "./ui-text": "./src/ui-text.ts",
     "./document-info": "./src/document-info.ts",
-    "./service": "./src/service.mjs"
+    "./service": "./src/service.mjs",
+    "./ui-locale": "./src/ui-locale.ts",
+    "./ui-messages": "./src/ui-messages.ts",
+    "./service-errors": "./src/service-errors.mjs",
+    "./ui-error": "./src/ui-error.ts",
+    "./ui-format": "./src/ui-format.ts",
+    "./ui-value": "./src/ui-value.ts"
   },
   "dependencies": {}
 }

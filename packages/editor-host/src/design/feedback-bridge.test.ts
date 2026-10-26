@@ -58,20 +58,6 @@ describe('createFeedbackBridge', () => {
   });
 });
 
-describe('createFeedbackBridge 的界面语言', () => {
-  it('没收到前按英文，父窗口切换后通知订阅者', () => {
-    const parent = fakeLink();
-    const { capability } = createFeedbackBridge(parent.link);
-    expect(capability.locale()).toBe('en');
-    let notified = 0;
-    capability.subscribeLocale(() => notified++);
-    parent.deliver({ type: 'editor:locale', locale: 'zh-Hans' });
-    parent.deliver({ type: 'editor:locale', locale: 'zh-Hans' });
-    expect(capability.locale()).toBe('zh-Hans');
-    expect(notified).toBe(1);
-  });
-});
-
 describe('createFeedbackBridge 的视图状态与操作', () => {
   it('视图状态发给父窗口，父窗口的操作去掉消息类型交给运行时', () => {
     const parent = fakeLink();

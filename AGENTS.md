@@ -24,6 +24,7 @@
 | 理解功能用途、当前限制 | [CONTEXT.md](CONTEXT.md) | 产品语义；首版目标另见 [PRD.md](PRD.md) |
 | 定位模块、改变依赖或接口、增加文件 | [ARCHITECTURE.md](ARCHITECTURE.md) | 完整文件地图、领域术语、关键数据流 |
 | 修改界面、主题、状态或插画 | [DESIGN.md](DESIGN.md) | `src/frontend/app.*`、`assets/`；插画另读 [资源目录](assets/illustrations/README.md) |
+| 修改可见文案、语言或错误提示 | [i18n 维护](docs/i18n.md) | `packages/contracts/src/ui-text/`、`ui-locale.ts`、`ui-error.ts` |
 | 修改加载、保存、素材、反馈或 MCP | [架构契约](ARCHITECTURE.md#运行时契约) | `src/backend/`、`src/interfaces/`、`src/frontend/service-client.mjs` |
 | 构建、安装、连接恢复、打包 | [docs/development.md](docs/development.md) | `package.json`、`scripts/`、`bin/mdn.mjs`、插件 manifest |
 | 发布版本、npm 与 GitHub Release | [docs/releasing.md](docs/releasing.md) | `.github/workflows/publish.yml`、`docs/releases/` |

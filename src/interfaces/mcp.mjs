@@ -1,3 +1,4 @@
+import { errorRecord } from '@minedesign/contracts/service-errors';
 import { OPERATIONS } from '@minedesign/contracts/service';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
@@ -13,8 +14,12 @@ export async function serveMcp(service) {
   const appTools=[];
   // 与 MCX 同样补齐公开 tools/list 的图标；SDK 高层注册不转发此字段。
   function registerBrandedTool(target,name,config,handler){
-    if(config._meta?.ui)registerAppTool(target,name,config,handler);
-    else target.registerTool(name,config,handler);
+    const run = async (...args) => {
+      try { return await handler(...args); }
+      catch (error) { const detail=errorRecord(error);return {isError:true,content:[{type:'text',text:detail.message}],structuredContent:{error:detail}}; }
+    };
+    if(config._meta?.ui)registerAppTool(target,name,config,run);
+    else target.registerTool(name,config,run);
     appTools.push({name,title:config.title,description:config.description,inputSchema:z.toJSONSchema(z.object(config.inputSchema)),annotations:config.annotations,_meta:config._meta,icons:BRAND_ICONS});
   }
   const ui={resourceUri:uri};

@@ -1,3 +1,4 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -628,10 +629,7 @@ export function installFastEditSession(runtime: RuntimeBindings): () => void {
         "The browser would reshape this markup, so it was not saved. Every element stands where it may stand: a table part needs its table round it, a cell in a row and a row in a table.",
       changed:
         "Someone changed that artboard while you were writing: look at it as it is now.",
-      cap_news:
-        "Add at most " +
-        String(runtime.FAST_EDIT_OPERATION_LIMITS.news) +
-        " artboards in one reply.",
+      get cap_news() { return "Add at most " + String(runtime.FAST_EDIT_OPERATION_LIMITS.news) + " artboards in one reply."; },
       no_match:
         "Your selectors matched nothing: start every selector with the id of a file shown below and use the handle ids and tags you see in it.",
       already_so:

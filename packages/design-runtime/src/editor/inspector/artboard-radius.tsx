@@ -1,3 +1,5 @@
+import { useUiLocale } from '../../ui-locale.ts';
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -17,6 +19,7 @@ export function installEditorInspectorArtboardRadius(
     readOnly = false,
     onSetRadius: onSetRadius,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let value: Dynamic = (0, runtime.artboardRadiusCorners)(radius),
       callback: Dynamic = (input?: Dynamic): Dynamic => {
         let items: Dynamic = [...value];
@@ -26,9 +29,9 @@ export function installEditorInspectorArtboardRadius(
       };
     return (
       <runtime.PropertyCornersRow
-        label={"Radius"}
+        label={uiMessage("inspector.artboardRadius.radius")}
         data-testid={"dc-artboard-radius"}
-        title={readOnly ? runtime.ViewOnlyYouCanInspectThisMessage : undefined}
+        title={readOnly ? (runtime.ViewOnlyYouCanInspectThisMessage) : (undefined)}
         values={radius === undefined ? InspectorArtboardRadiusItems : value}
         placeholders={InspectorArtboardRadiusItems_2}
         unit={"px"}

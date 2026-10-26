@@ -1,3 +1,5 @@
+import { useUiLocale } from '../../ui-locale.ts';
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import { bindRuntimeValue, type RuntimeBindings } from "../../runtime-types";
 import type * as React from "react";
@@ -88,9 +90,10 @@ export function installFilesUiFileBrowser(
     tipOf: tipOf,
     footerOf: footerOf,
     rootLabel = "project",
-    emptyText = "No files in this project",
+    emptyText = uiMessage("design-system.fileBrowser.noFilesInThisProject"),
     reveal: reveal,
   }: FilesBrowserProps) {
+    useUiLocale();
     let [folderPath, setFolderPath] = runtime.reactFilesBrowser.useState(() =>
         reveal ? parentFolderPath(reveal.path) : "",
       ),
@@ -523,14 +526,12 @@ export function installFilesUiFileBrowser(
         }
         onKeyDown={handlePreviewEscape}
       >
-        {[
-          <div
+        {[<div
             className={
               "flex shrink-0 items-center gap-1.5 border-b bg-surface-2 px-2.5 py-1.5"
             }
           >
-            {[
-              mobilePreviewVisible ? (
+            {[mobilePreviewVisible ? (
                 <runtime.Button
                   ref={mobileBackRef}
                   variant={"ghost"}
@@ -539,7 +540,7 @@ export function installFilesUiFileBrowser(
                   data-testid={"files-browser-back"}
                   onClick={backToTree}
                 >
-                  {"Files"}
+                  {uiMessage("design-system.fileBrowser.files")}
                 </runtime.Button>
               ) : (
                 <FileBrowserBreadcrumbs
@@ -547,9 +548,7 @@ export function installFilesUiFileBrowser(
                   folder={validFolderPath}
                   onEnter={enterFolder}
                 />
-              ),
-              <span className={"flex-1"} />,
-              <runtime.Tooltip
+              ), <span className={"flex-1"} />, <runtime.Tooltip
                 content={"Close (Esc)"}
                 side={"bottom"}
                 hoverable={false}
@@ -559,16 +558,13 @@ export function installFilesUiFileBrowser(
                   size={"sm"}
                   iconOnly={true}
                   icon={"X"}
-                  aria-label={"Close the file browser"}
+                  aria-label={uiMessage("design-system.fileBrowser.closeTheFileBrowser")}
                   data-testid={"files-browser-close"}
                   onClick={onClose}
                 />
-              </runtime.Tooltip>,
-            ]}
-          </div>,
-          <div className={"flex min-h-0 flex-1"}>
-            {[
-              rows.length === 0
+              </runtime.Tooltip>]}
+          </div>, <div className={"flex min-h-0 flex-1"}>
+            {[rows.length === 0
                 ? (() => {
                     const _Element = "div";
                     const _elementProps = {
@@ -578,7 +574,7 @@ export function installFilesUiFileBrowser(
                       children:
                         validFolderPath === ""
                           ? emptyText
-                          : "This folder is empty",
+                          : uiMessage("design-system.fileBrowser.thisFolderIsEmpty"),
                     };
                     const _elementKey = "empty";
                     return <_Element key={_elementKey} {..._elementProps} />;
@@ -588,7 +584,7 @@ export function installFilesUiFileBrowser(
                     const _elementProps4 = {
                       ref: treeRef,
                       role: "tree",
-                      "aria-label": "Files",
+                      get "aria-label"() { return uiMessage("design-system.fileBrowser.files"); },
                       "aria-activedescendant": selectedEntry
                         ? entryDomId(selectedEntry)
                         : undefined,
@@ -686,11 +682,8 @@ export function installFilesUiFileBrowser(
                     };
                     const _elementKey4 = "list";
                     return <_Element4 key={_elementKey4} {..._elementProps4} />;
-                  })(),
-              mobile && !mobilePreviewVisible ? null : previewPanel,
-            ]}
-          </div>,
-        ]}
+                  })(), mobile && !mobilePreviewVisible ? null : previewPanel]}
+          </div>]}
       </div>
     );
   }
@@ -699,6 +692,7 @@ export function installFilesUiFileBrowser(
     folder: folder,
     onEnter: onEnter,
   }: BrowserBreadcrumbProps) {
+    useUiLocale();
     let ref = runtime.reactFilesBrowser.useRef<HTMLElement | null>(null);
     runtime.reactFilesBrowser.useLayoutEffect(() => {
       if (ref.current !== null) {
@@ -709,7 +703,7 @@ export function installFilesUiFileBrowser(
     return (
       <nav
         ref={ref}
-        aria-label={"Folder"}
+        aria-label={uiMessage("design-system.fileBrowser.folder")}
         className={
           "flex min-w-0 items-center gap-0.5 overflow-x-auto p-px [scrollbar-width:none]"
         }
@@ -744,11 +738,9 @@ export function installFilesUiFileBrowser(
                     }
                   }}
                 >
-                  {options === 0
-                    ? input
-                    : (0, runtime.visibleFileName)(
+                  {options === 0 ? (input) : ((0, runtime.visibleFileName)(
                         (0, runtime.fileBrowserFolderLabel)(input),
-                      )}
+                      ))}
                 </button>,
               ],
             };
@@ -765,6 +757,7 @@ export function installFilesUiFileBrowser(
     top: top,
     pinned: pinned,
   }: BrowserHeadingProps) {
+    useUiLocale();
     return (
       <div
         aria-hidden={"true"}
@@ -800,6 +793,7 @@ export function installFilesUiFileBrowser(
     onOpen: onOpen,
     onToggle: onToggle,
   }: BrowserRowProps) {
+    useUiLocale();
     let { entry: value, depth: value2 } = row,
       value3 = (0, runtime.visibleFileName)(
         value.kind === "folder"
@@ -823,7 +817,7 @@ export function installFilesUiFileBrowser(
         data-testid={"files-browser-row"}
         data-path={value.path}
         title={
-          dimmed ?? tip ?? (value4 !== "" ? value3 + " · " + value4 : value3)
+          (dimmed ?? tip) ?? (value4 !== "" ? (((value3) + (" · ")) + (value4)) : (value3))
         }
         className={(0, runtime.joinClassNames)(
           "group absolute inset-x-0 flex cursor-default items-center gap-2 border-b-[0.5px] pr-3.5",
@@ -840,8 +834,7 @@ export function installFilesUiFileBrowser(
         onClick={onSelect}
         onDoubleClick={dimmed !== undefined ? undefined : onOpen}
       >
-        {[
-          value.kind === "folder" ? (
+        {[value.kind === "folder" ? (
             <span
               aria-hidden={"true"}
               data-testid={"files-browser-caret"}
@@ -866,11 +859,8 @@ export function installFilesUiFileBrowser(
             </span>
           ) : (
             <span aria-hidden={"true"} className={"w-3.5 shrink-0"} />
-          ),
-          <FileBrowserIcon type={type} size={FILE_BROWSER_ROW_ICON_SIZE} />,
-          <span className={"flex min-w-0 flex-1 flex-col justify-center"}>
-            {[
-              <span
+          ), <FileBrowserIcon type={type} size={FILE_BROWSER_ROW_ICON_SIZE} />, <span className={"flex min-w-0 flex-1 flex-col justify-center"}>
+            {[<span
                 className={(0, runtime.joinClassNames)(
                   "truncate text-xs font-medium",
                   selected ? "text-on-accent" : "text-primary",
@@ -878,8 +868,7 @@ export function installFilesUiFileBrowser(
                 )}
               >
                 {value3}
-              </span>,
-              <span
+              </span>, <span
                 className={(0, runtime.joinClassNames)(
                   "mt-px min-h-[13px] truncate text-[10px]",
                   selected ? "text-on-accent/60" : "text-secondary",
@@ -887,10 +876,8 @@ export function installFilesUiFileBrowser(
                 )}
               >
                 {kind}
-              </span>,
-            ]}
-          </span>,
-          <span
+              </span>]}
+          </span>, <span
             className={(0, runtime.joinClassNames)(
               "w-20 shrink-0 text-right text-[11px]",
               selected ? "text-on-accent/50" : "text-secondary",
@@ -898,12 +885,12 @@ export function installFilesUiFileBrowser(
             )}
           >
             {value4}
-          </span>,
-        ]}
+          </span>]}
       </div>
     );
   }
   function FileBrowserIcon({ type: type, size: size }: BrowserIconProps) {
+    useUiLocale();
     let state = {
         width: size,
         height: size,
@@ -924,8 +911,7 @@ export function installFilesUiFileBrowser(
             display: "block",
           }}
         >
-          {[
-            <span
+          {[<span
               style={{
                 position: "absolute",
                 top: -4,
@@ -938,8 +924,7 @@ export function installFilesUiFileBrowser(
                 borderRight: "1px solid " + FILE_BROWSER_ICON_COLORS.line,
                 borderTop: "1px solid " + FILE_BROWSER_ICON_COLORS.line,
               }}
-            />,
-            <span
+            />, <span
               style={{
                 position: "absolute",
                 top: 5,
@@ -949,8 +934,7 @@ export function installFilesUiFileBrowser(
                 background: FILE_BROWSER_ICON_COLORS.hover,
                 borderTop: "1px solid " + FILE_BROWSER_ICON_COLORS.line,
               }}
-            />,
-          ]}
+            />]}
         </span>
       );
     } else if (type === "deck") {
@@ -965,8 +949,7 @@ export function installFilesUiFileBrowser(
             display: "block",
           }}
         >
-          {[
-            <span
+          {[<span
               style={{
                 position: "absolute",
                 top: 0,
@@ -977,8 +960,7 @@ export function installFilesUiFileBrowser(
                 border: "1px solid " + FILE_BROWSER_ICON_COLORS.line,
                 borderRadius: 3,
               }}
-            />,
-            <span
+            />, <span
               style={{
                 position: "absolute",
                 bottom: 0,
@@ -1002,8 +984,7 @@ export function installFilesUiFileBrowser(
                   borderRadius: 1,
                 }}
               />
-            </span>,
-          ]}
+            </span>]}
         </span>
       );
     } else {
@@ -1022,8 +1003,7 @@ export function installFilesUiFileBrowser(
             boxShadow: FILE_BROWSER_ICON_SHADOW,
           }}
         >
-          {[
-            <span
+          {[<span
               style={{
                 position: "absolute",
                 top: 0,
@@ -1035,8 +1015,7 @@ export function installFilesUiFileBrowser(
                 borderLeft: "0.5px solid " + FILE_BROWSER_ICON_COLORS.line,
                 borderBottom: "0.5px solid " + FILE_BROWSER_ICON_COLORS.line,
               }}
-            />,
-            type === "image" ? (
+            />, type === "image" ? (
               <span
                 style={{
                   flex: 1,
@@ -1062,35 +1041,30 @@ export function installFilesUiFileBrowser(
                   gap: 2,
                 }}
               >
-                {[
-                  <span
+                {[<span
                     style={{
                       height: 1.5,
                       background: "rgba(0,0,0,0.12)",
                       borderRadius: 1,
                       width: "55%",
                     }}
-                  />,
-                  <span
+                  />, <span
                     style={{
                       height: 1,
                       background: "rgba(0,0,0,0.08)",
                       borderRadius: 1,
                       width: "80%",
                     }}
-                  />,
-                  <span
+                  />, <span
                     style={{
                       height: 1,
                       background: "rgba(0,0,0,0.08)",
                       borderRadius: 1,
                       width: "65%",
                     }}
-                  />,
-                ]}
+                  />]}
               </span>
-            ),
-          ]}
+            )]}
         </span>
       );
     }
@@ -1120,6 +1094,7 @@ export function installFilesUiFileBrowser(
     footer: footer,
     onOpen: onOpen,
   }: BrowserPreviewProps) {
+    useUiLocale();
     let value = (0, runtime.useMediaQuery)(FILE_BROWSER_NO_HOVER_QUERY),
       value2 = (0, runtime.joinClassNames)(
         "flex flex-col items-center overflow-auto bg-page p-5",
@@ -1133,7 +1108,7 @@ export function installFilesUiFileBrowser(
               "flex flex-1 items-center justify-center text-xs text-secondary"
             }
           >
-            {"Select a file to preview"}
+            {uiMessage("design-system.fileBrowser.selectAFileToPreview")}
           </div>
         </div>
       );
@@ -1161,8 +1136,7 @@ export function installFilesUiFileBrowser(
           : undefined;
     return (
       <div data-testid={"files-browser-preview"} className={value2}>
-        {[
-          (() => {
+        {[(() => {
             const _Element6 = FileBrowserPreviewCard;
             const _elementProps6 = {
               entry: entry,
@@ -1177,12 +1151,10 @@ export function installFilesUiFileBrowser(
             };
             const _elementKey6 = entry.kind + ":" + entry.path;
             return <_Element6 key={_elementKey6} {..._elementProps6} />;
-          })(),
-          <div
+          })(), <div
             className={"my-3 flex flex-wrap items-center justify-center gap-2"}
           >
-            {[
-              onOpen !== undefined || whyNot !== undefined ? (
+            {[onOpen !== undefined || whyNot !== undefined ? (
                 <runtime.Button
                   variant={"secondary"}
                   size={"sm"}
@@ -1194,10 +1166,9 @@ export function installFilesUiFileBrowser(
                   disabledReason={whyNot}
                   onClick={onOpen}
                 >
-                  {entry.kind === "folder" ? "Open folder" : "Open"}
+                  {entry.kind === "folder" ? (uiMessage("design-system.fileBrowser.openFolder")) : (uiMessage("design-system.fileBrowser.open"))}
                 </runtime.Button>
-              ) : null,
-              entry.kind === "file" &&
+              ) : null, entry.kind === "file" &&
               download !== undefined &&
               source !== undefined
                 ? (() => {
@@ -1213,8 +1184,7 @@ export function installFilesUiFileBrowser(
                     const _elementKey7 = "dl:" + entry.path;
                     return <_Element7 key={_elementKey7} {..._elementProps7} />;
                   })()
-                : null,
-              value && whyNot !== undefined ? (
+                : null, value && whyNot !== undefined ? (
                 <div
                   data-testid={"files-browser-open-note"}
                   className={
@@ -1223,8 +1193,7 @@ export function installFilesUiFileBrowser(
                 >
                   {whyNot}
                 </div>
-              ) : null,
-              value && whyNot === undefined && value6 !== undefined ? (
+              ) : null, value && whyNot === undefined && value6 !== undefined ? (
                 <div
                   data-testid={"files-browser-preview-note"}
                   className={
@@ -1233,30 +1202,24 @@ export function installFilesUiFileBrowser(
                 >
                   {value6}
                 </div>
-              ) : null,
-            ]}
-          </div>,
-          <div
+              ) : null]}
+          </div>, <div
             className={
               "mb-1 text-center text-sm font-semibold break-words text-primary"
             }
           >
             {value3}
-          </div>,
-          <div
+          </div>, <div
             className={
               "mb-3.5 text-center text-[11px] leading-[1.4] text-secondary"
             }
           >
             {kind}
-          </div>,
-          value5 === "" ? null : (
+          </div>, value5 === "" ? null : (
             <div className={"text-center text-[11px] text-secondary"}>
               {value5}
             </div>
-          ),
-          footer,
-        ]}
+          ), footer]}
       </div>
     );
   }
@@ -1269,21 +1232,21 @@ export function installFilesUiFileBrowser(
           : cleanName.slice(dot).toLowerCase(),
       kindLabel =
         extension === ""
-          ? "Files with no extension"
+          ? uiMessage("design-system.fileBrowser.filesWithNoExtension")
           : extension.length > MAX_DOWNLOAD_EXTENSION_LABEL_LENGTH
-            ? "Files of this kind"
-            : "Files ending in " + extension;
+            ? uiMessage("design-system.fileBrowser.filesOfThisKind")
+            : uiMessage("design-system.fileBrowser.filesEndingIn") + extension;
     switch (code) {
       case "rejected_extension":
         return kindLabel + " can’t be downloaded here";
       case "extension_not_enabled":
         return kindLabel + " can’t be downloaded here yet";
       case "too_large":
-        return "This file is too large to download here";
+        return uiMessage("design-system.fileBrowser.thisFileIsTooLarge");
       case "rate_limited":
-        return "The save didn’t go through (another prompt may be open). Try Download again";
+        return uiMessage("design-system.fileBrowser.theSaveDidnTGo");
       default:
-        return "The save didn’t go through. Try Download again";
+        return uiMessage("design-system.fileBrowser.theSaveDidnTGo2");
     }
   }
   function fileDownloadDisabledReason(name: string, withheld: boolean | undefined) {
@@ -1393,7 +1356,7 @@ export function installFilesUiFileBrowser(
     signal?: AbortSignal,
   ): Promise<DownloadData> {
     if (!(0, runtime.isStoredBlobReference)(url)) {
-      throw Error("not a blob of this artifact");
+      throw Error(uiMessage("design-system.fileBrowser.notABlobOfThis"));
     }
     let response = await fetch(url, {
       credentials: "same-origin",
@@ -1431,10 +1394,10 @@ export function installFilesUiFileBrowser(
         let value = (abortRef.current = new AbortController());
         (async (): Promise<void> => {
           setBusy(true);
-          setNote("Reading this file…");
+          setNote(uiMessage("design-system.fileBrowser.readingThisFile"));
           try {
             if (!(0, runtime.hasDownloadCapability)()) {
-              setNote("Downloads aren’t available in this view");
+              setNote(uiMessage("design-system.fileBrowser.downloadsArenTAvailableIn"));
               return;
             }
             let value2 = await (0, runtime.downloadsWithheld)();
@@ -1464,12 +1427,12 @@ export function installFilesUiFileBrowser(
                 ?.status;
               setNote(
                 value6 === 404 || value6 === 403 || value6 === 401
-                  ? "This file isn’t available. It may have been removed, or your account may not have access to it"
+                  ? uiMessage("design-system.fileBrowser.thisFileIsnTAvailable")
                   : typeof value6 === "number" && value6 > 0
-                    ? "Couldn’t download this file (HTTP " +
+                    ? uiMessage("design-system.fileBrowser.couldnTDownloadThisFile") +
                       String(value6) +
                       "). Try again"
-                    : "Couldn’t download this file. Try again",
+                    : uiMessage("design-system.fileBrowser.couldnTDownloadThisFile2"),
               );
               return;
             }
@@ -1485,7 +1448,7 @@ export function installFilesUiFileBrowser(
               )
             ) {
               setNote(
-                "This isn’t the kind of file its name says, so it was not downloaded",
+                uiMessage("design-system.fileBrowser.thisIsnTTheKind"),
               );
               return;
             }
@@ -1499,19 +1462,19 @@ export function installFilesUiFileBrowser(
               return;
             }
             if (value4.outcome === "saved") {
-              setNote("Saved " + (0, runtime.visibleFileName)(name));
+              setNote(uiMessage("design-system.fileBrowser.saved") + (0, runtime.visibleFileName)(name));
             } else if (value4.outcome === "withheld") {
               setNote(runtime.DOWNLOADS_UNAVAILABLE_MESSAGE);
             } else if (value4.outcome === "unsupported") {
               setNote(
                 value4.code === "no_shell_save"
-                  ? "Downloads aren’t available in this view"
+                  ? uiMessage("design-system.fileBrowser.downloadsArenTAvailableIn")
                   : fileDownloadFailureMessage(name, value4.code),
               );
             }
           } catch {
             if (!value.signal.aborted) {
-              setNote("Couldn’t download this file. Try again");
+              setNote(uiMessage("design-system.fileBrowser.couldnTDownloadThisFile2"));
             }
           } finally {
             if (!value.signal.aborted) {
@@ -1530,12 +1493,12 @@ export function installFilesUiFileBrowser(
     withheld: withheld,
     noHover: noHover,
   }: BrowserDownloadButtonProps) {
+    useUiLocale();
     let value = useFileBrowserDownload(file, from, source, reads, withheld),
       value2 = value.note ?? (noHover ? (value.tip ?? null) : null);
     return (
       <jsxFilesBrowser.Fragment>
-        {[
-          <runtime.Button
+        {[<runtime.Button
             variant={"secondary"}
             size={"sm"}
             icon={"Download"}
@@ -1544,9 +1507,8 @@ export function installFilesUiFileBrowser(
             disabledReason={value.tip}
             onClick={value.run}
           >
-            {"Download"}
-          </runtime.Button>,
-          <div
+            {uiMessage("design-system.fileBrowser.download")}
+          </runtime.Button>, <div
             role={"status"}
             data-testid={"files-browser-download-note"}
             className={(0, runtime.joinClassNames)(
@@ -1554,9 +1516,8 @@ export function installFilesUiFileBrowser(
               value2 === null && "sr-only",
             )}
           >
-            {value2 ?? ""}
-          </div>,
-        ]}
+            {value2 ?? ("")}
+          </div>]}
       </jsxFilesBrowser.Fragment>
     );
   }
@@ -1594,6 +1555,7 @@ export function installFilesUiFileBrowser(
     preview: preview,
     onOpen: onOpen,
   }: BrowserPreviewCardProps) {
+    useUiLocale();
     let [value, value2] = useFilePreviewWidth(),
       value3 =
         entry.kind === "file" && preview !== undefined
@@ -1610,9 +1572,9 @@ export function installFilesUiFileBrowser(
           )}
           style={fileBrowserPreviewCardStyle(false)}
           onClick={onOpen}
-          title={onOpen ? "Click to open" : undefined}
+          title={onOpen ? (uiMessage("design-system.fileBrowser.clickToOpen")) : (undefined)}
         >
-          {value2 > 0 ? value3 : null}
+          {value2 > 0 ? (value3) : (null)}
         </div>
       );
     }
@@ -1647,14 +1609,9 @@ export function installFilesUiFileBrowser(
         style={fileBrowserPreviewCardStyle(false)}
         onClick={onOpen}
         title={
-          onOpen
-            ? "Click to open"
-            : (tip ??
-              (entry.kind === "file"
-                ? (0, runtime.fileBrowserNoPreviewReason)(entry, {
+          onOpen ? (uiMessage("design-system.fileBrowser.clickToOpen")) : (tip ?? (entry.kind === "file" ? ((0, runtime.fileBrowserNoPreviewReason)(entry, {
                     htmlAsText: htmlAsText,
-                  })
-                : undefined))
+                  })) : (undefined)))
         }
       >
         <FileBrowserIcon type={type} size={48} />
@@ -1667,6 +1624,7 @@ export function installFilesUiFileBrowser(
     retryMs: retryMs,
     tall: tall,
   }: BrowserImagePreviewProps) {
+    useUiLocale();
     let value = "url" in source ? source.url : null,
       value2 = "text" in source ? source.text : null,
       value3 = "dataUri" in source ? source.dataUri : null,
@@ -1718,7 +1676,7 @@ export function installFilesUiFileBrowser(
                 status: state.status,
               })
             ) {
-              throw Error("will not draw");
+              throw Error(uiMessage("design-system.fileBrowser.willNotDraw"));
             }
             return new Promise((input: (value?: unknown) => void) =>
               setTimeout(input, state.ok ? 0 : value9),
@@ -1742,16 +1700,11 @@ export function installFilesUiFileBrowser(
         className={FILE_BROWSER_PREVIEW_CARD_CLASS}
         style={fileBrowserPreviewCardStyle(tall)}
       >
-        {value7 === "failed" || memo === null ? (
-          <div className={"text-xs text-secondary"}>
-            {FILE_BROWSER_LOAD_ERROR_TEXT}
-          </div>
-        ) : value7 === "waiting" ? (
-          <div className={"text-xs text-secondary"}>
+        {value7 === "failed" || memo === null ? (<div className={"text-xs text-secondary"}>
+            {uiMessage("design-system.fileBrowser.couldnTLoadThisFile")}
+          </div>) : (value7 === "waiting" ? (<div className={"text-xs text-secondary"}>
             {FILE_BROWSER_LOADING_TEXT}
-          </div>
-        ) : (
-          (() => {
+          </div>) : ((() => {
             const _Element8 = "img";
             const _elementProps8 = {
               src: memo,
@@ -1763,8 +1716,7 @@ export function installFilesUiFileBrowser(
             };
             const _elementKey8 = value5;
             return <_Element8 key={_elementKey8} {..._elementProps8} />;
-          })()
-        )}
+          })()))}
       </div>
     );
   }
@@ -1773,6 +1725,7 @@ export function installFilesUiFileBrowser(
     reads: reads,
     tall: tall,
   }: BrowserTextPreviewProps) {
+    useUiLocale();
     let { retryMs: value, fresh: value2 } = reads,
       value3 = "url" in source ? source.url : null,
       value4 = "text" in source ? source.text : null,
@@ -1836,18 +1789,13 @@ export function installFilesUiFileBrowser(
         }
         style={fileBrowserPreviewCardStyle(tall)}
       >
-        {value8 === "failed" || value8 === null ? (
-          <div
+        {value8 === "failed" || value8 === null ? (<div
             className={
               "flex h-full items-center justify-center text-xs text-secondary"
             }
           >
-            {value8 === null
-              ? FILE_BROWSER_LOADING_TEXT
-              : FILE_BROWSER_LOAD_ERROR_TEXT}
-          </div>
-        ) : (
-          <pre
+            {value8 === null ? (FILE_BROWSER_LOADING_TEXT) : (uiMessage("design-system.fileBrowser.couldnTLoadThisFile"))}
+          </div>) : (<pre
             data-testid={"files-browser-text"}
             className={(0, runtime.joinClassNames)(
               "m-0 h-full w-full overflow-auto p-3 font-mono leading-[1.45] whitespace-pre text-secondary",
@@ -1855,8 +1803,7 @@ export function installFilesUiFileBrowser(
             )}
           >
             {value9}
-          </pre>
-        )}
+          </pre>)}
       </div>
     );
   }
@@ -2163,7 +2110,7 @@ export function installFilesUiFileBrowser(
   bindRuntimeValue(
     runtime,
     "FILE_BROWSER_LOAD_ERROR_TEXT",
-    () => FILE_BROWSER_LOAD_ERROR_TEXT,
+    () => uiMessage("design-system.fileBrowser.couldnTLoadThisFile"),
     (value) => {
       FILE_BROWSER_LOAD_ERROR_TEXT = value;
     },

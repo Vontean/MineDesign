@@ -1,3 +1,4 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import { bindRuntimeValue, type RuntimeBindings } from "../runtime-types";
 import type {
@@ -553,15 +554,12 @@ export function installEditorFilesIndex(runtime: RuntimeBindings): () => void {
       }
       if (decodeFileDataUrl(contents) === null) {
         return {
-          why: "its contents could not be read; add the file again",
+          why: uiMessage("design-system.filesIndex.itsContentsCouldNotBe"),
           cause: "unreadable",
         };
       }
       return {
-        why:
-          "it does not look like a ." +
-          (0, runtime.fileExtension)(path) +
-          " file inside (it may be damaged, password-protected or another format renamed). Replace it with a fresh copy, or remove it",
+        get why() { return ((uiMessage("design-system.filesIndex.itDoesNotLookLike")) + ((0, runtime.fileExtension)(path))) + (" file inside (it may be damaged, password-protected or another format renamed). Replace it with a fresh copy, or remove it"); },
         cause: "kind",
       };
     }
@@ -952,7 +950,7 @@ export function installEditorFilesIndex(runtime: RuntimeBindings): () => void {
         unpublishableFileReason(value, value2) ??
         (!(0, runtime.isTextFilePath)(value) &&
         decodeFileDataUrl(value2) === null
-          ? "its contents could not be read; add the file again"
+          ? uiMessage("design-system.filesIndex.itsContentsCouldNotBe")
           : null);
       if (value4 !== null) {
         leftOut.push({

@@ -1,3 +1,5 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
+import { useUiLocale } from '../ui-locale.ts';
 import type {
   BrowserWindow,
   CompactableControlState,
@@ -197,6 +199,7 @@ export function installUiDisclosure(runtime: RuntimeBindings): () => void {
     label: label,
     className: className,
   }: SpinnerProps): React.ReactElement | null {
+    useUiLocale();
     let [value, value2] = reactcK.useState(delay <= 0),
       [value3, value4] = reactcK.useState(delay);
     if (delay !== value3) {
@@ -238,14 +241,12 @@ export function installUiDisclosure(runtime: RuntimeBindings): () => void {
           }}
           aria-hidden={true}
         >
-          {[
-            <span
+          {[<span
               className={"absolute inset-0 rounded-full"}
               style={{
                 border: `${value10} solid ${value8}`,
               }}
-            />,
-            <span
+            />, <span
               className={
                 "absolute inset-0 rounded-full animate-[spin_1s_linear_infinite] motion-reduce:animate-none"
               }
@@ -254,8 +255,7 @@ export function installUiDisclosure(runtime: RuntimeBindings): () => void {
                 WebkitMask: value12,
                 mask: value12,
               }}
-            />,
-          ]}
+            />]}
         </span>
       );
     if (!label) {
@@ -263,12 +263,9 @@ export function installUiDisclosure(runtime: RuntimeBindings): () => void {
     }
     return (
       <span role={"status"} className={"leading-[0]"}>
-        {[
-          value13,
-          <DelayedScreenReaderLabel show={value5}>
+        {[value13, <DelayedScreenReaderLabel show={value5}>
             {label}
-          </DelayedScreenReaderLabel>,
-        ]}
+          </DelayedScreenReaderLabel>]}
       </span>
     );
   }
@@ -276,6 +273,7 @@ export function installUiDisclosure(runtime: RuntimeBindings): () => void {
     show: show,
     children: children,
   }: DelayedSpinnerProps): React.ReactElement | null {
+    useUiLocale();
     let [value, value2] = reactcK.useState(false);
     reactcK.useEffect(() => {
       let value3 = window.setTimeout(() => value2(true), 100);
@@ -694,6 +692,7 @@ export function installUiDisclosure(runtime: RuntimeBindings): () => void {
     }
   }
   function DeferredTooltip(input: TooltipProps): React.ReactElement {
+    useUiLocale();
     let {
         impl: value,
         wasCold: value2,
@@ -727,6 +726,7 @@ export function installUiDisclosure(runtime: RuntimeBindings): () => void {
   function DeferredDisabledReasonTooltip(
     input: DisabledTooltipProps,
   ): React.ReactElement {
+    useUiLocale();
     let {
         impl: value,
         wasCold: value2,
@@ -748,14 +748,11 @@ export function installUiDisclosure(runtime: RuntimeBindings): () => void {
     return (
       <span
         {...(0, runtime.getDisabledReasonWrapperProps)(value5, value4, value6)}
-        title={typeof value5 === "string" ? value5 : undefined}
+        title={typeof value5 === "string" ? (value5) : (undefined)}
         {...value3({})}
         {...pendingTooltipProps}
       >
-        {[
-          value7,
-          <runtime.DisabledReasonAnnouncement id={value4} reason={value5} />,
-        ]}
+        {[value7, <runtime.DisabledReasonAnnouncement id={value4} reason={value5} />]}
       </span>
     );
   }
@@ -1325,11 +1322,7 @@ export function installUiDisclosure(runtime: RuntimeBindings): () => void {
               className={(0, runtime.cn)(collapsibleTriggerClasses, className)}
               onMouseDown={value}
             >
-              {[
-                caretPosition !== "end" && value2,
-                children,
-                caretPosition === "end" && value2,
-              ]}
+              {[caretPosition !== "end" && value2, children, caretPosition === "end" && value2]}
             </runtime.baseCollapsible.Trigger>
           );
         }

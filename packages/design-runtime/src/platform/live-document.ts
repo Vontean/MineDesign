@@ -1,3 +1,4 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -251,23 +252,23 @@ export function installPlatformLiveDocument(
       if (value7 !== undefined)
         return {
           status: "readonly",
-          message: "Live sync ended for this view. Reload to continue.",
+          get message() { return uiMessage("canvas.liveDocument.liveSyncEndedForThisViewReloadToContinue"); },
         };
       if (loadState === "loading")
         return {
           status: "loading",
-          message: "Loading the latest content\u2026",
+          get message() { return uiMessage("canvas.liveDocument.loadingTheLatestContent"); },
         };
       if (loadState === "failed")
         return {
           status: "error",
-          message: "The latest content failed to load. Click to retry.",
+          get message() { return uiMessage("canvas.liveDocument.theLatestContentFailedToLoadClickToRetry"); },
         };
       if (loadState === "cached") {
         if (!canWrite)
           return {
             status: "readonly",
-            message: "Showing a saved copy. Reconnecting\u2026",
+            get message() { return uiMessage("canvas.liveDocument.showingASavedCopyReconnecting"); },
           };
         if (
           pendingWriteCount() === 0 &&
@@ -277,24 +278,22 @@ export function installPlatformLiveDocument(
           return values.size > 0
             ? {
                 status: "cached",
-                message:
-                  "Showing your saved copy. Your changes will sync when you\u2019re back online.",
+                get message() { return uiMessage("canvas.liveDocument.showingYourSavedCopyYourChangesWillSyncWhenYouReBackOnline"); },
               }
             : {
                 status: "cached",
-                message: "Showing your saved copy. Reconnecting\u2026",
+                get message() { return uiMessage("canvas.liveDocument.showingYourSavedCopyReconnecting"); },
               };
       }
       if (flag)
         return canWrite
           ? {
               status: "error",
-              message:
-                "Live updates stopped. Reconnecting; click to retry now. Your edits are kept on this screen.",
+              get message() { return uiMessage("canvas.liveDocument.liveUpdatesStoppedReconnectingClickToRetryNowYourEditsAreKeptOnThisScreen"); },
             }
           : {
               status: "readonly",
-              message: "Live updates stopped. Reconnecting\u2026",
+              get message() { return uiMessage("canvas.liveDocument.liveUpdatesStoppedReconnecting"); },
             };
       if (!canWrite)
         return {
@@ -333,7 +332,7 @@ export function installPlatformLiveDocument(
         : inFlightWrites.size > 0
           ? {
               status: "saving",
-              message: "Syncing\u2026",
+              get message() { return uiMessage("canvas.liveDocument.syncing"); },
             }
           : value23 > 0
             ? {
@@ -353,11 +352,11 @@ export function installPlatformLiveDocument(
                   )),
                   {
                     status: "saving",
-                    message: "Syncing\u2026",
+                    get message() { return uiMessage("canvas.liveDocument.syncing"); },
                   })
                 : {
                     status: "dirty",
-                    message: "Changes saved on this device, not yet synced.",
+                    get message() { return uiMessage("canvas.liveDocument.changesSavedOnThisDeviceNotYetSynced"); },
                   }
               : {
                   status: "ready",
@@ -2031,7 +2030,7 @@ export function installPlatformLiveDocument(
             }
             value15 = {
               code: "timeout",
-              message: "initial snapshots did not arrive",
+              get message() { return uiMessage("canvas.liveDocument.initialSnapshotsDidNotArrive"); },
             };
             setLoadState("failed");
           }
@@ -2105,7 +2104,7 @@ export function installPlatformLiveDocument(
           ((flag = false),
           handleStoreError({
             code: "unavailable",
-            message: "re-subscribe stayed silent",
+            get message() { return uiMessage("canvas.liveDocument.reSubscribeStayedSilent"); },
           }));
       }, input);
     }

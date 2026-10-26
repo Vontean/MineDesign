@@ -1,3 +1,5 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
+import { useUiLocale } from '../ui-locale.ts';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -17,6 +19,7 @@ export function installApplicationDocumentRoot(
     );
   }
   function DesignDocumentRoot(props?: Dynamic): Dynamic {
+    useUiLocale();
     let loadState: Dynamic = (0, runtime.useCanvasLoadState)(props.doc),
       [restoreCount, setRestoreCount]: Dynamic = (0,
       runtime.reactChromeTheme.useState)(
@@ -36,14 +39,10 @@ export function installApplicationDocumentRoot(
     return (
       <runtime.EditorChromeRoot>
         <runtime.EditorToastProvider>
-          {loadState === "live" ? (
-            <runtime.DesignCanvas key={restoreCount} {...props} />
-          ) : (
-            <runtime.CanvasLoadFailure
+          {loadState === "live" ? (<runtime.DesignCanvas key={restoreCount} {...props} />) : (<runtime.CanvasLoadFailure
               doc={props.doc}
               filePath={props.filePath}
-            />
-          )}
+            />)}
           <runtime.useExportDeliveries />
           <runtime.PendingEditorToasts />
           <runtime.ScreenReaderAnnouncer />

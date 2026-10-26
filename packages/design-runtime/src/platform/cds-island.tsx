@@ -1,3 +1,4 @@
+import { useUiLocale } from '../ui-locale.ts';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -9,6 +10,7 @@ export function installPlatformCdsIsland(runtime: RuntimeBindings): () => void {
   var cdsIslandClassName: Dynamic;
   var initializePlatformCdsIsland: Dynamic;
   function CdsIsland({ className: className, ...props }: Dynamic): Dynamic {
+    useUiLocale();
     let { resolved: value }: Dynamic = (0, runtime.useDocumentTheme)();
     return (
       <runtime.CdsRoot

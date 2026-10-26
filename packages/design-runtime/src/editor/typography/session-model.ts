@@ -1,3 +1,4 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -57,7 +58,7 @@ export function installEditorTypographySessionModel(
           return {
             value: String(input2),
             text: value19,
-            hint: String(input2) + "px",
+            get hint() { return (String(input2)) + ("px"); },
             labelStyle: {
               fontFamily: value7.get(input2) ?? (value4 || undefined),
               fontSize: Math.min(20, Math.max(13, input2 / 2.4)),
@@ -74,7 +75,7 @@ export function installEditorTypographySessionModel(
           }: Dynamic): Dynamic => ({
             value: id,
             text: style.name,
-            hint: String((0, runtime.TypographyMetricsFontSize)(style)) + "px",
+            get hint() { return (String((0, runtime.TypographyMetricsFontSize)(style))) + ("px"); },
             labelStyle: {
               fontFamily: style.family?.stack,
               fontWeight: (0, runtime.TypographyMetricsHandler)(
@@ -83,7 +84,7 @@ export function installEditorTypographySessionModel(
               fontStyle: style.italic ? "italic" : undefined,
               fontSize: Math.min(20, Math.max(13, style.fontSize / 2.4)),
             },
-            title: style.name + " \xB7 " + subtitle,
+            get title() { return ((style.name) + (" \xB7 ")) + (subtitle); },
             ...(group !== undefined
               ? {
                   group: group,

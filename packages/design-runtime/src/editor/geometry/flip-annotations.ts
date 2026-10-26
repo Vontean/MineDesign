@@ -1,3 +1,4 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -307,16 +308,16 @@ export function installEditorGeometryFlipAnnotations(
   bindRuntimeValue(runtime, "flipAnnotations", () => flipAnnotations);
   bindRuntimeValue(runtime, "imageFlipCss", () => imageFlipCss);
   return () => {
-    GeometryFlipAnnotationsLabel = "Notes and titles can\u2019t be flipped";
+    GeometryFlipAnnotationsLabel = uiMessage("inspector.flipAnnotations.notesAndTitlesCanT");
     ThisDrawingHasTooManyPointsMessage =
-      "This drawing has too many points to flip";
+      uiMessage("inspector.flipAnnotations.thisDrawingHasTooMany");
     ThisDrawingSSavedPathCouldnTBeMessage =
-      "This drawing\u2019s saved path couldn\u2019t be read, so it can\u2019t be flipped";
+      uiMessage("inspector.flipAnnotations.thisDrawingSSavedPath");
     GeometryFlipAnnotationsLabel_2 =
-      "Artboards can\u2019t be flipped. Select what is inside one.";
+      uiMessage("inspector.flipAnnotations.artboardsCanTBeFlipped");
     PartOfTheSelectionCouldnTBeMessage =
-      "Part of the selection couldn\u2019t be flipped. Undo if you want it all to match.";
-    GeometryFlipAnnotationsLabel_3 = "Still finishing the last flip";
+      uiMessage("inspector.flipAnnotations.partOfTheSelectionCouldn");
+    GeometryFlipAnnotationsLabel_3 = uiMessage("inspector.flipAnnotations.stillFinishingTheLastFlip");
     GeometryFlipAnnotationsWytKytYtConfig = {
       [GeometryFlipAnnotationsLabel]: "notes and titles",
       [ThisDrawingHasTooManyPointsMessage]: "a drawing with too many points",
@@ -324,7 +325,7 @@ export function installEditorGeometryFlipAnnotations(
         "a drawing whose saved path couldn\u2019t be read",
     };
     CropDoesNotWorkWhileThisMessage =
-      "Crop does not work while this is flipped. Flip it back first.";
+      uiMessage("inspector.flipAnnotations.cropDoesNotWorkWhile");
     GeometryFlipAnnotationsPattern = /\d+(?:\.\d+)?/g;
     GeometryFlipAnnotationsHandler = (input?: Dynamic): Dynamic =>
       Math.round(input * 100) / 100 || 0;

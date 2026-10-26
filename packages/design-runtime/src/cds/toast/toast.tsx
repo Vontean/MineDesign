@@ -1,3 +1,5 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
+import { useUiLocale } from '../../ui-locale.ts';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -37,6 +39,7 @@ export function installCdsToastToast(runtime: RuntimeBindings): () => void {
     frontHeight: frontHeight,
     zIndex: zIndex,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let value: Dynamic = toast.data?.variant ?? toast.type ?? "neutral",
       value2: Dynamic = toast.data?.icon,
       value3: Dynamic = value2 != null && typeof value2 != "boolean",
@@ -120,37 +123,27 @@ export function installCdsToastToast(runtime: RuntimeBindings): () => void {
                 : undefined
             }
           >
-            {value2 !== null && (
-              <span
+            {value2 !== null && (<span
                 className={`shrink-0 ${ToastToastNeutralWarningDangerConfig_4[value]}`}
               >
-                {value3 ? (
-                  value2
-                ) : (
-                  <runtime.Icon
+                {value3 ? (value2) : (<runtime.Icon
                     name={ToastToastNeutralWarningDangerConfig_3[value]}
                     size={"md"}
-                  />
-                )}
-              </span>
-            )}
+                  />)}
+              </span>)}
             <div className={ToastToastClassNames_2}>
               <runtime.npm_Toast_Ty.Title
                 className={"font-medium"}
                 aria-atomic={"true"}
               >
-                <span ref={value9}>{value11 ?? toast.data?.baseTitle}</span>
-                {value12 > 1 && (
-                  <span
+                <span ref={value9}>{value11 ?? (toast.data?.baseTitle)}</span>
+                {value12 > 1 && (<span
                     aria-live={value12 > 2 ? "off" : undefined}
                     data-cds-toast-count={""}
-                  >{` (\xD7${value12})`}</span>
-                )}
+                  >{` (\xD7${value12})`}</span>)}
               </runtime.npm_Toast_Ty.Title>
               <runtime.npm_Toast_Ty.Description />
-              {toast.data?.action && (
-                <div className={"mt-pad-md"}>{toast.data.action}</div>
-              )}
+              {toast.data?.action && (<div className={"mt-pad-md"}>{toast.data.action}</div>)}
             </div>
             <runtime.npm_Toast_Ty.Close
               aria-label={value6}
@@ -168,6 +161,7 @@ export function installCdsToastToast(runtime: RuntimeBindings): () => void {
     pinned: pinned,
     onDismiss: onDismiss,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let value: Dynamic = pinned.variant ?? "neutral",
       value2: Dynamic = (0, runtime.useLabel)("dismiss", "Dismiss");
     return (
@@ -186,21 +180,17 @@ export function installCdsToastToast(runtime: RuntimeBindings): () => void {
           </span>
           <div className={ToastToastClassNames_2}>
             <div className={"font-medium"}>{pinned.title}</div>
-            {pinned.description && <div>{pinned.description}</div>}
-            {pinned.action && (
-              <div className={"mt-pad-md"}>{pinned.action}</div>
-            )}
+            {pinned.description && (<div>{pinned.description}</div>)}
+            {pinned.action && (<div className={"mt-pad-md"}>{pinned.action}</div>)}
           </div>
-          {pinned.dismissible && (
-            <button
+          {pinned.dismissible && (<button
               type={"button"}
-              aria-label={pinned.dismissLabel ?? value2}
+              aria-label={pinned.dismissLabel ?? (value2)}
               onClick={onDismiss}
               className={ToastToastClassNames_3}
             >
               <runtime.Icon name={"X"} size={"sm"} />
-            </button>
-          )}
+            </button>)}
         </div>
       </div>
     );
@@ -215,6 +205,7 @@ export function installCdsToastToast(runtime: RuntimeBindings): () => void {
     }
   }
   function PinnedToastFocusManager({ ctx: ctx }: Dynamic): Dynamic {
+    useUiLocale();
     let {
         pinned: value,
         setPinned: value2,
@@ -270,16 +261,15 @@ export function installCdsToastToast(runtime: RuntimeBindings): () => void {
             value2(null);
         }}
       >
-        {value && (
-          <PinnedToastCard
+        {value && (<PinnedToastCard
             pinned={value}
             onDismiss={(): Dynamic => value2(null)}
-          />
-        )}
+          />)}
       </div>
     );
   }
   function ToastViewport({ className: className }: Dynamic): Dynamic {
+    useUiLocale();
     let { toasts: value }: Dynamic = runtime.npm_Toast_Ty.useToastManager(),
       value2: Dynamic = (0, reactToastToast.useContext)(ToastContext);
     (0, runtime.useIsomorphicLayoutEffect)((): Dynamic => {
@@ -303,7 +293,7 @@ export function installCdsToastToast(runtime: RuntimeBindings): () => void {
               />
             }
           >
-            {value2 && <PinnedToastFocusManager ctx={value2} />}
+            {value2 && (<PinnedToastFocusManager ctx={value2} />)}
             <runtime.npm_Toast_Ty.Viewport
               className={
                 "pointer-events-auto relative outline-none focus-visible:outline-hidden"
@@ -346,6 +336,7 @@ export function installCdsToastToast(runtime: RuntimeBindings): () => void {
     limit: limit,
     viewportClassName: viewportClassName,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let [value, value2]: Dynamic = (0, reactToastToast.useState)(null),
       value3: Dynamic = (0, reactToastToast.useRef)(value),
       value4: Dynamic = (0, reactToastToast.useRef)(null),
@@ -798,7 +789,7 @@ export function installCdsToastToast(runtime: RuntimeBindings): () => void {
       };
       ToastToastNeutralWarningDangerConfig_3 = {
         neutral: "Info",
-        warning: "Warning",
+        get warning() { return uiMessage("canvas.toast.warning"); },
         danger: "WarningCircle",
       };
       ToastToastNeutralWarningDangerConfig_4 = {

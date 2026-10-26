@@ -1,3 +1,5 @@
+import { useUiLocale } from '../ui-locale.ts';
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import { bindRuntimeValue, type RuntimeBindings } from "../runtime-types";
 import type * as React from "react";
@@ -162,6 +164,7 @@ export function installUiArtifactToolbar(runtime: RuntimeBindings): () => void {
     }
   }
   function SaveStatusDot({ state: state }: SaveStatusProps) {
+    useUiLocale();
     if (state.status === "error" || state.status === "readonly") {
       return <SaveProblemStatus state={state} />;
     }
@@ -171,31 +174,20 @@ export function installUiArtifactToolbar(runtime: RuntimeBindings): () => void {
       <span
         role={"status"}
         title={
-          value
-            ? "Saving…"
-            : value2
-              ? "Edits are held in the editor — they save when applied"
-              : "Every change saves automatically"
+          value ? (uiMessage("design-system.artifactToolbar.saving")) : (value2 ? (uiMessage("design-system.artifactToolbar.editsAreHeldInThe")) : (uiMessage("design-system.artifactToolbar.everyChangeSavesAutomatically")))
         }
         className={
           "inline-flex shrink-0 items-center gap-1.5 text-xs whitespace-nowrap text-fg-muted"
         }
       >
-        {[
-          <span
+        {[<span
             className={
               "h-1.5 w-1.5 shrink-0 rounded-full " +
               (value || value2 ? "bg-fill-warning" : "bg-fill-success")
             }
-          />,
-          <span className={"tb-status-text truncate"}>
-            {value
-              ? "Saving…"
-              : value2
-                ? "Unsaved edits"
-                : "Saved automatically"}
-          </span>,
-        ]}
+          />, <span className={"tb-status-text truncate"}>
+            {value ? (uiMessage("design-system.artifactToolbar.saving")) : (value2 ? (uiMessage("design-system.artifactToolbar.unsavedEdits")) : (uiMessage("design-system.artifactToolbar.savedAutomatically")))}
+          </span>]}
       </span>
     );
   }
@@ -204,6 +196,7 @@ export function installUiArtifactToolbar(runtime: RuntimeBindings): () => void {
     onRetry: onRetry,
     tipSide = "bottom",
   }: SaveStatusControlProps) {
+    useUiLocale();
     let value = reactForUiArtifactToolbar.useSyncExternalStore(
         runtime.subscribeHostSaveChrome,
         runtime.hostDrawsSave,
@@ -241,8 +234,8 @@ export function installUiArtifactToolbar(runtime: RuntimeBindings): () => void {
         (value11 === "pending"
           ? "Syncing…"
           : value11 === "error"
-            ? "Couldn’t sync — click to retry"
-            : "All changes synced"),
+            ? uiMessage("design-system.artifactToolbar.couldnTSyncClickTo")
+            : uiMessage("design-system.artifactToolbar.allChangesSynced")),
       value14 = status === "error" || status === "dirty";
     return (
       <runtime.Tooltip
@@ -281,13 +274,14 @@ export function installUiArtifactToolbar(runtime: RuntimeBindings): () => void {
     );
   }
   function SaveProblemStatus({ state: state }: SaveStatusProps) {
+    useUiLocale();
     let value = reactForUiArtifactToolbar.useSyncExternalStore(
       runtime.subscribeHostSaveChrome,
       runtime.hostDrawsReadOnly,
       () => false,
     );
     if (state.status === "error") {
-      let value2 = state.message ?? "Couldn’t save";
+      let value2 = state.message ?? uiMessage("design-system.artifactToolbar.couldnTSave");
       return (
         <span
           role={"status"}
@@ -296,12 +290,9 @@ export function installUiArtifactToolbar(runtime: RuntimeBindings): () => void {
             "inline-flex max-w-80 shrink-0 items-center gap-1.5 truncate rounded-full bg-bad/10 px-2 py-0.5 text-xs font-medium whitespace-nowrap text-bad"
           }
         >
-          {[
-            <span
+          {[<span
               className={"h-1.5 w-1.5 shrink-0 rounded-full bg-fill-danger"}
-            />,
-            <span className={"tb-status-text truncate"}>{value2}</span>,
-          ]}
+            />, <span className={"tb-status-text truncate"}>{value2}</span>]}
         </span>
       );
     }
@@ -312,15 +303,12 @@ export function installUiArtifactToolbar(runtime: RuntimeBindings): () => void {
       return (
         <span
           role={"status"}
-          title={state.message ?? "Read-only"}
+          title={state.message ?? (uiMessage("design-system.artifactToolbar.readOnly"))}
           className={
             "tb-lock inline-flex shrink-0 items-center gap-1.5 px-1 text-body whitespace-nowrap text-fg-muted"
           }
         >
-          {[
-            <runtime.Icon name={"Lock"} size={"auto"} className={"shrink-0"} />,
-            <span className={"tb-lock-words truncate"}>{"Read-only"}</span>,
-          ]}
+          {[<runtime.Icon name={"Lock"} size={"auto"} className={"shrink-0"} />, <span className={"tb-lock-words truncate"}>{uiMessage("design-system.artifactToolbar.readOnly")}</span>]}
         </span>
       );
     }
@@ -356,7 +344,8 @@ export function installUiArtifactToolbar(runtime: RuntimeBindings): () => void {
     onPress: onPress,
     onLetGo: onLetGo,
   }: ToolbarScrollPaddleProps) {
-    let value = dir === -1 ? "Scroll toolbar left" : "Scroll toolbar right";
+    useUiLocale();
+    let value = dir === -1 ? uiMessage("design-system.artifactToolbar.scrollToolbarLeft") : uiMessage("design-system.artifactToolbar.scrollToolbarRight");
     return (
       <div
         data-tb-paddle={""}
@@ -386,6 +375,7 @@ export function installUiArtifactToolbar(runtime: RuntimeBindings): () => void {
     revealLeading: revealLeading,
     children: children,
   }: ToolbarScrollAreaProps) {
+    useUiLocale();
     let ref = reactForUiArtifactToolbar.useRef<HTMLDivElement | null>(null),
       ref2 = reactForUiArtifactToolbar.useRef<HTMLDivElement | null>(null),
       [value, value2] = reactForUiArtifactToolbar.useState(false),
@@ -589,16 +579,14 @@ export function installUiArtifactToolbar(runtime: RuntimeBindings): () => void {
         ref={ref2}
         className={"relative flex min-w-0 flex-1 items-center self-stretch"}
       >
-        {[
-          <div
+        {[<div
             ref={ref}
             onScroll={callback}
             className={
               "tb-scroll flex min-w-0 flex-1 items-center gap-1 self-stretch overflow-x-auto pointer-coarse:gap-1.5"
             }
           >
-            {[
-              leading != null ? (
+            {[leading != null ? (
                 <span
                   data-tb-cluster={""}
                   className={
@@ -607,53 +595,42 @@ export function installUiArtifactToolbar(runtime: RuntimeBindings): () => void {
                 >
                   {leading}
                 </span>
-              ) : null,
-              <div
+              ) : null, <div
                 className={
                   "tb-slot flex min-w-max items-center gap-1 pointer-coarse:gap-1.5"
                 }
               >
                 {children}
-              </div>,
-            ]}
-          </div>,
-          value ? (
+              </div>]}
+          </div>, value ? (
             <jsxForUiArtifactToolbar.Fragment>
-              {[
-                <ToolbarScrollPaddle
+              {[<ToolbarScrollPaddle
                   dir={-1}
                   onPress={(input: boolean) => callback3(-1, input)}
                   onLetGo={callback2}
-                />,
-                <span
+                />, <span
                   aria-hidden={"true"}
                   data-tb-fade={"start"}
                   className={
                     "pointer-events-none absolute inset-y-0 left-6 z-10 w-6 pointer-coarse:left-10"
                   }
-                />,
-              ]}
+                />]}
             </jsxForUiArtifactToolbar.Fragment>
-          ) : null,
-          value3 ? (
+          ) : null, value3 ? (
             <jsxForUiArtifactToolbar.Fragment>
-              {[
-                <span
+              {[<span
                   aria-hidden={"true"}
                   data-tb-fade={"end"}
                   className={
                     "pointer-events-none absolute inset-y-0 right-6 z-10 w-6 pointer-coarse:right-10"
                   }
-                />,
-                <ToolbarScrollPaddle
+                />, <ToolbarScrollPaddle
                   dir={1}
                   onPress={(input: boolean) => callback3(1, input)}
                   onLetGo={callback2}
-                />,
-              ]}
+                />]}
             </jsxForUiArtifactToolbar.Fragment>
-          ) : null,
-        ]}
+          ) : null]}
       </div>
     );
   }
@@ -665,6 +642,7 @@ export function installUiArtifactToolbar(runtime: RuntimeBindings): () => void {
     editing: editing,
     onToggleEdit: onToggleEdit,
   }: ToolbarSaveControlsProps) {
+    useUiLocale();
     let value = saveState.status === "readonly",
       value2 = saveState.status === "dirty" || saveState.status === "error",
       value3 = !value2 || saveState.status === "saving",
@@ -673,8 +651,8 @@ export function installUiArtifactToolbar(runtime: RuntimeBindings): () => void {
       value6 = value4
         ? value5
         : value2
-          ? "Publish your changes — every open view updates"
-          : "Everything is published",
+          ? uiMessage("design-system.artifactToolbar.publishYourChangesEveryOpen")
+          : uiMessage("design-system.artifactToolbar.everythingIsPublished"),
       value7 = (0, runtime.useDisabledButtonDescription)({
         disabled: value3,
         name: value5,
@@ -684,21 +662,18 @@ export function installUiArtifactToolbar(runtime: RuntimeBindings): () => void {
     (0, runtime.useDeferredTooltipFocus)(ref, value3);
     return (
       <jsxForUiArtifactToolbar.Fragment>
-        {[
-          !value && onToggleEdit ? (
+        {[!value && onToggleEdit ? (
             <runtime.ToolbarButton
               icon={"Edit"}
-              label={"Edit"}
-              tip={editing ? "Done editing — back to the live view" : "Edit"}
+              label={uiMessage("design-system.artifactToolbar.edit")}
+              tip={editing ? (uiMessage("design-system.artifactToolbar.doneEditingBackToThe")) : (uiMessage("design-system.artifactToolbar.edit"))}
               pressed={editing === true}
               onClick={onToggleEdit}
               data-testid={"dc-mode-edit"}
             />
-          ) : null,
-          !value && syncDot ? (
+          ) : null, !value && syncDot ? (
             <SaveStatusControl state={saveState} onRetry={onSave} />
-          ) : null,
-          !value && saveMode === "manual" && !syncDot ? (
+          ) : null, !value && saveMode === "manual" && !syncDot ? (
             <runtime.Tooltip
               content={value6}
               shortcut={value2 ? "cmd+s" : undefined}
@@ -715,8 +690,7 @@ export function installUiArtifactToolbar(runtime: RuntimeBindings): () => void {
                   "inline-flex shrink-0 rounded outline-none focus-visible:outline-hidden focus-visible:shadow-focus"
                 }
               >
-                {[
-                  <runtime.Button
+                {[<runtime.Button
                     variant={value2 ? "primary" : "secondary"}
                     disabled={value3}
                     onClick={onSave}
@@ -724,13 +698,10 @@ export function installUiArtifactToolbar(runtime: RuntimeBindings): () => void {
                     {...value7.inner}
                   >
                     {value5}
-                  </runtime.Button>,
-                  value7.mirror,
-                ]}
+                  </runtime.Button>, value7.mirror]}
               </span>
             </runtime.Tooltip>
-          ) : null,
-        ]}
+          ) : null]}
       </jsxForUiArtifactToolbar.Fragment>
     );
   }
@@ -738,6 +709,7 @@ export function installUiArtifactToolbar(runtime: RuntimeBindings): () => void {
     floating: floating,
     ...remainingProps
   }: ToolbarSurfaceProps) {
+    useUiLocale();
     if (floating) {
       return (
         <runtime.Surface
@@ -770,6 +742,7 @@ export function installUiArtifactToolbar(runtime: RuntimeBindings): () => void {
     children: children,
     extrasEnd: extrasEnd,
   }: ArtifactToolbarProps) {
+    useUiLocale();
     let [, value] = reactForUiArtifactToolbar.useState(0);
     reactForUiArtifactToolbar.useEffect(
       () => undo?.subscribe(() => value((input: number) => input + 1)),
@@ -891,8 +864,7 @@ export function installUiArtifactToolbar(runtime: RuntimeBindings): () => void {
         <runtime.TooltipProvider>
           <runtime.ToolbarFloatingContext.Provider value={value6}>
             <runtime.ToolbarQuietContext.Provider value={value2}>
-              {[
-                <ToolbarSurface
+              {[<ToolbarSurface
                   floating={value11}
                   className={"tb-card tb-card-start flex min-w-0 items-center"}
                 >
@@ -905,34 +877,27 @@ export function installUiArtifactToolbar(runtime: RuntimeBindings): () => void {
                     }
                     leading={
                       <jsxForUiArtifactToolbar.Fragment>
-                        {[
-                          leading,
-                          undo && !value2 && undoButtons ? (
+                        {[leading, undo && !value2 && undoButtons ? (
                             <jsxForUiArtifactToolbar.Fragment>
-                              {[
-                                <runtime.ToolbarButton
+                              {[<runtime.ToolbarButton
                                   iconOnly={true}
                                   icon={"ArrowCounterClockwise"}
-                                  label={"Undo"}
+                                  label={uiMessage("design-system.artifactToolbar.undo")}
                                   disabledTip={"Nothing to undo yet"}
                                   shortcut={"cmd+z"}
                                   disabled={!undo.canUndo()}
                                   onClick={() => undo.undo()}
-                                />,
-                                <runtime.ToolbarButton
+                                />, <runtime.ToolbarButton
                                   iconOnly={true}
                                   icon={"ArrowClockwise"}
-                                  label={"Redo"}
+                                  label={uiMessage("design-system.artifactToolbar.redo")}
                                   disabledTip={"Nothing to redo"}
                                   shortcut={"shift+cmd+z"}
                                   disabled={!undo.canRedo()}
                                   onClick={() => undo.redo()}
-                                />,
-                              ]}
+                                />]}
                             </jsxForUiArtifactToolbar.Fragment>
-                          ) : null,
-                          afterUndo,
-                          saveState.status === "readonly" &&
+                          ) : null, afterUndo, saveState.status === "readonly" &&
                           quietReadOnlyReason !== undefined &&
                           saveState.message ===
                             quietReadOnlyReason ? null : syncDot ? (
@@ -943,22 +908,19 @@ export function installUiArtifactToolbar(runtime: RuntimeBindings): () => void {
                             <SaveStatusDot state={saveState} />
                           ) : (
                             <SaveProblemStatus state={saveState} />
-                          ),
-                        ]}
+                          )]}
                       </jsxForUiArtifactToolbar.Fragment>
                     }
                   >
                     {children}
                   </ToolbarScrollArea>
-                </ToolbarSurface>,
-                <ToolbarSurface
+                </ToolbarSurface>, <ToolbarSurface
                   floating={value11}
                   className={
                     "tb-card tb-card-end ml-auto flex items-center gap-1 pointer-coarse:gap-1.5"
                   }
                 >
-                  {[
-                    extrasEnd != null ? (
+                  {[extrasEnd != null ? (
                       <span
                         data-tb-cluster={""}
                         className={
@@ -967,15 +929,13 @@ export function installUiArtifactToolbar(runtime: RuntimeBindings): () => void {
                       >
                         {extrasEnd}
                       </span>
-                    ) : null,
-                    (pinned != null && value8) || trailing != null ? (
+                    ) : null, (pinned != null && value8) || trailing != null ? (
                       <span
                         className={
                           "tb-tail flex items-center gap-1 pointer-coarse:gap-1.5"
                         }
                       >
-                        {[
-                          pinned != null && value8 ? (
+                        {[pinned != null && value8 ? (
                             <span
                               data-tb-cluster={""}
                               className={
@@ -984,8 +944,7 @@ export function installUiArtifactToolbar(runtime: RuntimeBindings): () => void {
                             >
                               {pinned}
                             </span>
-                          ) : null,
-                          trailing != null ? (
+                          ) : null, trailing != null ? (
                             <span
                               data-tb-cluster={""}
                               className={
@@ -994,11 +953,9 @@ export function installUiArtifactToolbar(runtime: RuntimeBindings): () => void {
                             >
                               {trailing}
                             </span>
-                          ) : null,
-                        ]}
+                          ) : null]}
                       </span>
-                    ) : null,
-                    publishControls ? (
+                    ) : null, publishControls ? (
                       <span
                         className={
                           "tb-publish flex shrink-0 items-center gap-1 pointer-coarse:gap-1.5"
@@ -1011,10 +968,8 @@ export function installUiArtifactToolbar(runtime: RuntimeBindings): () => void {
                           onSave={onSave}
                         />
                       </span>
-                    ) : null,
-                  ]}
-                </ToolbarSurface>,
-              ]}
+                    ) : null]}
+                </ToolbarSurface>]}
             </runtime.ToolbarQuietContext.Provider>
           </runtime.ToolbarFloatingContext.Provider>
         </runtime.TooltipProvider>

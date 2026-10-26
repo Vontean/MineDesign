@@ -1,3 +1,5 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
+import { useUiLocale } from '../ui-locale.ts';
 import type * as React from "react";
 import type {
   ForwardComponent,
@@ -142,6 +144,7 @@ export function installUiPopover(runtime: RuntimeBindings): () => void {
     actionsRef: actionsRef,
     ...props
   }: PopoverRootProps<Payload>): React.ReactElement {
+    useUiLocale();
     let value = usePopoverOverlayStack(onOpenChange),
       value2 = (0, runtime.useSheetCapablePresentation)(),
       ref = reactForUiPopover.useRef<OverlayActions | null>(null);
@@ -149,20 +152,16 @@ export function installUiPopover(runtime: RuntimeBindings): () => void {
     return (
       <popoverControlledStateContext.Provider value={value.innerOverlays}>
         <runtime.CloseOnActivityHideProvider actionsRef={ref}>
-          {value2 ? (
-            <ControlledPopoverRoot
+          {value2 ? (<ControlledPopoverRoot
               {...props}
               actionsRef={ref}
               onOpenChange={value.onOpenChange}
               consumerHandlesOpenChange={onOpenChange !== undefined}
-            />
-          ) : (
-            <runtime.basePopover.Root
+            />) : (<runtime.basePopover.Root
               {...props}
               actionsRef={ref}
               onOpenChange={value.onOpenChange}
-            />
-          )}
+            />)}
         </runtime.CloseOnActivityHideProvider>
       </popoverControlledStateContext.Provider>
     );
@@ -173,6 +172,7 @@ export function installUiPopover(runtime: RuntimeBindings): () => void {
   }: PopoverRootProps<Payload> & {
     consumerHandlesOpenChange: boolean;
   }): React.ReactElement {
+    useUiLocale();
     let value = (0, runtime.useControllableOpen)(props),
       ref = reactForUiPopover.useRef<PopoverAnchorState>({
         popupMounted: false,
@@ -601,11 +601,9 @@ export function installUiPopover(runtime: RuntimeBindings): () => void {
             companionModalCatcher={!sheet}
             closeOnActivityHide={true}
           >
-            {[
-              value21 !== null && sheetPopup.sheet && (
+            {[value21 !== null && sheetPopup.sheet && (
                 <value21.PopoverSheetBackdrop sheetPopup={sheetPopup} />
-              ),
-              <runtime.layerBaseContext.Provider value={value27.base}>
+              ), <runtime.layerBaseContext.Provider value={value27.base}>
                 <runtime.basePopover.Positioner
                   style={
                     sheetPopup.positionerStyle !== undefined
@@ -697,8 +695,7 @@ export function installUiPopover(runtime: RuntimeBindings): () => void {
                       !sheet && value7,
                     )}
                   >
-                    {value21 !== null && sheetPopup.sheet ? (
-                      <value21.PopoverSheetContent
+                    {value21 !== null && sheetPopup.sheet ? (<value21.PopoverSheetContent
                         sheetPopup={sheetPopup as SheetRenderState & {chrome: NonNullable<SheetRenderState["chrome"]>}}
                         className={value7}
                         bodyRef={ref}
@@ -710,11 +707,8 @@ export function installUiPopover(runtime: RuntimeBindings): () => void {
                         closeLabel={value5}
                       >
                         {value30}
-                      </value21.PopoverSheetContent>
-                    ) : (
-                      <jsxForUiPopover.Fragment>
-                        {[
-                          <div
+                      </value21.PopoverSheetContent>) : (<jsxForUiPopover.Fragment>
+                        {[<div
                             ref={ref}
                             tabIndex={-1}
                             data-cds-popover-body={""}
@@ -728,15 +722,11 @@ export function installUiPopover(runtime: RuntimeBindings): () => void {
                             )}
                           >
                             {value30}
-                          </div>,
-                          value29,
-                        ]}
-                      </jsxForUiPopover.Fragment>
-                    )}
+                          </div>, value29]}
+                      </jsxForUiPopover.Fragment>)}
                   </PopoverPopupInner>
                 </runtime.basePopover.Positioner>
-              </runtime.layerBaseContext.Provider>,
-            ]}
+              </runtime.layerBaseContext.Provider>]}
           </runtime.PortalRoot>
         </runtime.basePopover.Portal>
       );

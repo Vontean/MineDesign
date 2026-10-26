@@ -1,3 +1,5 @@
+import { useUiLocale } from '../ui-locale.ts';
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 import type * as React from "react";
 import type * as Token from "../contracts/token-editors";
 import type * as Model from "../contracts";
@@ -35,6 +37,7 @@ export function installEditorTokenScales(runtime: RuntimeBindings): () => void {
     edit: edit,
     testid: testid,
   }: Token.PlainTokenValueEditorProps): React.ReactElement {
+    useUiLocale();
     let value = (0, runtime.useTextCommit)({
       value: t.value,
       validate: (input: string) =>
@@ -52,21 +55,18 @@ export function installEditorTokenScales(runtime: RuntimeBindings): () => void {
         className={"min-w-0 flex-1"}
         data-testid={"ds-strip-value"}
       >
-        {[
-          <runtime.TextInput
+        {[<runtime.TextInput
             {...value.props}
             className={"font-mono"}
-            aria-label={t.name + " value"}
+            aria-label={uiMessage("design-system.tokenScales.value2", { value1: String(t.name) })}
             data-testid={testid}
             spellCheck={false}
             autoComplete={"off"}
-          />,
-          value.error !== null ? (
+          />, value.error !== null ? (
             <runtime.FieldComponents.Error match={true}>
               {value.error}
             </runtime.FieldComponents.Error>
-          ) : null,
-        ]}
+          ) : null]}
       </runtime.FieldComponents.Root>
     );
   }
@@ -76,6 +76,7 @@ export function installEditorTokenScales(runtime: RuntimeBindings): () => void {
     edit: edit,
     testid: testid,
   }: Token.LengthTokenValueEditorProps): React.ReactElement {
+    useUiLocale();
     let value = (0, runtime.parseEditableCssLength)(t.value) ?? {
         n: 0,
         unit: "px",
@@ -100,7 +101,7 @@ export function installEditorTokenScales(runtime: RuntimeBindings): () => void {
         data-testid={testid}
       >
         <runtime.PropertyNumberInput
-          aria-label={t.name + " value"}
+          aria-label={uiMessage("design-system.tokenScales.value2", { value1: String(t.name) })}
           refuseLetters={true}
           fullWidth={true}
           unit={value.unit}
@@ -130,6 +131,7 @@ export function installEditorTokenScales(runtime: RuntimeBindings): () => void {
     taken: taken,
     edit: edit,
   }: Token.TokenScaleRowProps): React.ReactElement {
+    useUiLocale();
     let value = TOKEN_SCALE_SECTION_IDS[kind],
       value2 = (0, runtime.useRowContextMenu)(
         edit !== undefined || t.value !== "",
@@ -149,8 +151,7 @@ export function installEditorTokenScales(runtime: RuntimeBindings): () => void {
         {...(0, runtime.commentTargetProps)("token", t.name)}
         {...value2.rowProps}
       >
-        {[
-          <span
+        {[<span
             className={"ds-cname ds-brow-name min-w-0 font-mono"}
             role={"rowheader"}
           >
@@ -164,37 +165,28 @@ export function installEditorTokenScales(runtime: RuntimeBindings): () => void {
               }
               data-testid={"ds-" + value + "-name-" + t.name}
             />
-          </span>,
-          <span className={"ds-bcell ds-brow-val min-w-0 gap-xs"} role={"cell"}>
-            {edit === undefined ? (
-              <span
+          </span>, <span className={"ds-bcell ds-brow-val min-w-0 gap-xs"} role={"cell"}>
+            {edit === undefined ? (<span
                 className={
                   "ds-brow-value min-w-0 truncate font-mono text-body text-muted"
                 }
                 data-testid={value3}
               >
                 {t.value}
-              </span>
-            ) : kind === "extra" ? (
-              <PlainTokenValueEditor t={t} edit={edit} testid={value3} />
-            ) : (
-              <LengthTokenValueEditor
+              </span>) : (kind === "extra" ? (<PlainTokenValueEditor t={t} edit={edit} testid={value3} />) : (<LengthTokenValueEditor
                 t={t}
                 kind={kind}
                 edit={edit}
                 testid={value3}
-              />
-            )}
-          </span>,
-          <span
+              />))}
+          </span>, <span
             className={
               "ds-cacts ds-cgutter ds-brow-trash relative flex items-center justify-center"
             }
             role={"cell"}
             {...runtime.UNCOMMENTABLE_PROPS}
           >
-            {[
-              <runtime.UsageNoteEditor
+            {[<runtime.UsageNoteEditor
                 value={t.usage ?? ""}
                 label={t.name}
                 anchorKey={section + "/" + t.name}
@@ -205,17 +197,14 @@ export function installEditorTokenScales(runtime: RuntimeBindings): () => void {
                 }
                 onDone={edit?.done}
                 data-testid={"ds-" + value + "-usage-" + t.name}
-              />,
-              edit !== undefined ? (
+              />, edit !== undefined ? (
                 <runtime.RemoveRowButton
-                  label={"Remove " + t.name}
+                  label={uiMessage("design-system.tokenScales.remove", { value1: String(t.name) })}
                   onRemove={() => edit.remove(t.name)}
                   data-testid={"ds-" + value + "-remove-" + t.name}
                 />
-              ) : null,
-            ]}
-          </span>,
-          <runtime.RowContextMenu
+              ) : null]}
+          </span>, <runtime.RowContextMenu
             title={t.name}
             at={value2.at}
             anchor={value2.anchor}
@@ -226,13 +215,12 @@ export function installEditorTokenScales(runtime: RuntimeBindings): () => void {
                 ? {
                     rename: callback,
                     remove: () => edit.remove(t.name),
-                    removeLabel: "Remove " + t.name,
+                    get removeLabel() { return uiMessage("design-system.tokenScales.remove", { value1: String(t.name) }); },
                   }
                 : {}),
               copy: t.value,
             }}
-          />,
-        ]}
+          />]}
       </div>
     );
   }
@@ -297,6 +285,7 @@ export function installEditorTokenScales(runtime: RuntimeBindings): () => void {
     editFor: editFor,
     headFor: headFor,
   }: Token.TokenScaleSectionsProps): React.ReactElement | null {
+    useUiLocale();
     if (groups.length === 0) {
       return null;
     }
@@ -325,28 +314,22 @@ export function installEditorTokenScales(runtime: RuntimeBindings): () => void {
                     className={"ds-bars ds-ctable"}
                     role={"table"}
                     aria-label={
-                      source.family?.title ?? TOKEN_SCALE_LABELS[source.kind]
+                      source.family?.title ?? (TOKEN_SCALE_LABELS[source.kind])
                     }
                     data-edit={value !== undefined ? "" : undefined}
                   >
-                    {[
-                      <div
+                    {[<div
                         className={
                           "ds-brow ds-crow ds-chead text-caption text-muted"
                         }
                         role={"row"}
                         {...runtime.UNCOMMENTABLE_PROPS}
                       >
-                        {[
-                          <span role={"columnheader"}>{"Name"}</span>,
-                          <span role={"columnheader"}>{"Value"}</span>,
-                          <span
+                        {[<span role={"columnheader"}>{uiMessage("design-system.tokenScales.name")}</span>, <span role={"columnheader"}>{uiMessage("design-system.tokenScales.value")}</span>, <span
                             className={"ds-cgutter"}
                             aria-hidden={"true"}
-                          />,
-                        ]}
-                      </div>,
-                      source.tokens.map((input) =>
+                          />]}
+                      </div>, source.tokens.map((input) =>
                         (() => {
                           const _Element = TokenScaleRow;
                           const _elementProps = {
@@ -364,8 +347,7 @@ export function installEditorTokenScales(runtime: RuntimeBindings): () => void {
                             <_Element key={_elementKey} {..._elementProps} />
                           );
                         })(),
-                      ),
-                    ]}
+                      )]}
                   </div>
                 </div>
               ),

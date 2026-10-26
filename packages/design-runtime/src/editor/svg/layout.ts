@@ -1,3 +1,4 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -424,11 +425,11 @@ export function installEditorSvgLayout(runtime: RuntimeBindings): () => void {
         .childTids(options)
         .some((input2?: Dynamic): Dynamic => input.tagName(input2) === "defs");
     SvgLayoutStrokeStrokeWidthStrokeLinecapConfig = {
-      stroke: "none",
+      get stroke() { return uiMessage("inspector.layout.none"); },
       "stroke-width": "1px",
       "stroke-linecap": "butt",
       "stroke-linejoin": "miter",
-      "stroke-dasharray": "none",
+      get "stroke-dasharray"() { return uiMessage("inspector.layout.none"); },
       "stroke-dashoffset": "0px",
       "stroke-opacity": "1",
       "stroke-miterlimit": "4",

@@ -1,3 +1,4 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -108,13 +109,13 @@ export function installEditorSvgArrowProperties(
       __headEnd: "End",
     };
     SvgArrowPropertiesNoneOpenFilledConfig = {
-      none: "None",
-      open: "Open",
+      get none() { return uiMessage("inspector.arrowProperties.none"); },
+      get open() { return uiMessage("inspector.arrowProperties.open"); },
       filled: "Filled",
     };
     SvgArrowPropertiesLabel =
-      "To choose an arrowhead, first type a Thickness in px";
+      uiMessage("inspector.arrowProperties.toChooseAnArrowheadFirst");
     SvgArrowPropertiesLabel_2 =
-      "To choose an arrowhead, first give every selected line a Thickness in px";
+      uiMessage("inspector.arrowProperties.toChooseAnArrowheadFirst2");
   };
 }

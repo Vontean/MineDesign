@@ -1,3 +1,4 @@
+import { useUiLocale } from '../../ui-locale.ts';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -8,6 +9,7 @@ export function installEditorInspectorHelp(
   runtime: RuntimeBindings,
 ): () => void {
   function InspectorCodePreview(input?: Dynamic): Dynamic {
+    useUiLocale();
     return (
       <pre
         {...input}
@@ -19,6 +21,7 @@ export function installEditorInspectorHelp(
     );
   }
   function InspectorHelpText(input?: Dynamic): Dynamic {
+    useUiLocale();
     return (
       <div
         {...input}

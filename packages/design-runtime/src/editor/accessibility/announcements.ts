@@ -1,3 +1,4 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -153,10 +154,10 @@ export function installEditorAccessibilityAnnouncements(
   }
   function pageUndoFailureMessage(input?: Dynamic, options?: Dynamic): Dynamic {
     return input === "redo"
-      ? "Couldn't delete the page again: "
+      ? uiMessage("inspector.announcements.couldnTDeleteThePage")
       : options
-        ? "The page is back, but not everything on it: "
-        : "Couldn't bring the page back: ";
+        ? uiMessage("inspector.announcements.thePageIsBackBut")
+        : uiMessage("inspector.announcements.couldnTBringThePage");
   }
   function clipboardActionFailureMessage(
     input?: Dynamic,
@@ -179,31 +180,31 @@ export function installEditorAccessibilityAnnouncements(
       (value ??
         (value2 === undefined
           ? input === "undo"
-            ? "Couldn't bring back " +
-              (extra ? "the rest of " : "") +
-              "what you deleted: "
-            : "Couldn't add " +
-              (extra ? "the rest of " : "") +
-              "the copies again: "
+            ? uiMessage("inspector.announcements.couldnTBringBack") +
+              (extra ? uiMessage("inspector.announcements.theRestOf") : "") +
+              uiMessage("inspector.announcements.whatYouDeleted")
+            : uiMessage("inspector.announcements.couldnTAdd") +
+              (extra ? uiMessage("inspector.announcements.theRestOf") : "") +
+              uiMessage("inspector.announcements.theCopiesAgain")
           : input === "undo"
-            ? "Couldn't bring the " + value2 + " back: "
-            : "Couldn't add the " + value2 + " again: ")) +
-      "this canvas is at its limit for notes and shapes (" +
+            ? uiMessage("inspector.announcements.couldnTBringThe") + value2 + " back: "
+            : uiMessage("inspector.announcements.couldnTAddThe") + value2 + " again: ")) +
+      uiMessage("inspector.announcements.thisCanvasIsAtIts") +
       String(options) +
       ")."
     );
   }
   function undoTargetAnnouncement(input?: Dynamic, options?: Dynamic): Dynamic {
     return input === "undo"
-      ? "The change to undo is on " + options + ". Undo again to take it back."
-      : "The change to redo is on " + options + ". Redo again to apply it.";
+      ? uiMessage("inspector.announcements.theChangeToUndoIs") + options + ". Undo again to take it back."
+      : uiMessage("inspector.announcements.theChangeToRedoIs") + options + ". Redo again to apply it.";
   }
   function pendingUndoAnnouncement(
     input?: Dynamic,
     options?: Dynamic,
   ): Dynamic {
     return (
-      "Still loading " +
+      uiMessage("inspector.announcements.stillLoading") +
       options +
       ". " +
       (input === "undo" ? "Undo" : "Redo") +
@@ -223,7 +224,7 @@ export function installEditorAccessibilityAnnouncements(
           text
       : (value
           ? String(items[0]) + "\u2019s undo history was cleared"
-          : "Undo history was cleared for " +
+          : uiMessage("inspector.announcements.undoHistoryWasClearedFor") +
             String(items.length) +
             " artboards") +
           ", so earlier changes to " +
@@ -248,14 +249,14 @@ export function installEditorAccessibilityAnnouncements(
         };
   }
   function pngCopyFailureMessage(input?: Dynamic, options?: Dynamic): Dynamic {
-    return pictureCopyFailureMessage("a PNG", input, options);
+    return pictureCopyFailureMessage(uiMessage("inspector.announcements.aPNG"), input, options);
   }
   function svgCopyFailureMessage(input?: Dynamic, options?: Dynamic): Dynamic {
     return (
-      "Couldn\u2019t copy this " +
+      uiMessage("inspector.announcements.couldnTCopyThis") +
       input +
       " as an SVG: " +
-      (options ?? "the browser didn\u2019t allow copying here") +
+      (options ?? uiMessage("inspector.announcements.theBrowserDidnTAllow")) +
       "."
     );
   }
@@ -265,13 +266,13 @@ export function installEditorAccessibilityAnnouncements(
     context?: Dynamic,
   ): Dynamic {
     return (
-      "Couldn\u2019t copy this " +
+      uiMessage("inspector.announcements.couldnTCopyThis") +
       options +
       " as " +
       input +
       ": " +
       (context ??
-        "the browser didn\u2019t allow copying the picture here. Use Export instead") +
+        uiMessage("inspector.announcements.theBrowserDidnTAllow2")) +
       "."
     );
   }
@@ -286,19 +287,19 @@ export function installEditorAccessibilityAnnouncements(
   }
   function missingSvgImagesMessage(input?: Dynamic): Dynamic {
     return input === 1
-      ? "One picture couldn\u2019t be copied into the SVG and is left empty."
+      ? uiMessage("inspector.announcements.onePictureCouldnTBe")
       : String(input) +
           " pictures couldn\u2019t be copied into the SVG and are left empty.";
   }
   function missingCopiedImagesMessage(input?: Dynamic): Dynamic {
     return input === 1
-      ? "One image couldn\u2019t be drawn and is blank in the copied picture."
+      ? uiMessage("inspector.announcements.oneImageCouldnTBe")
       : String(input) +
           " images couldn\u2019t be drawn and are blank in the copied picture.";
   }
   function emptyClipboardMessage(input?: Dynamic): Dynamic {
     return (
-      "Nothing copied in this Design to paste. Press " +
+      uiMessage("inspector.announcements.nothingCopiedInThisDesign") +
       input +
       " to paste a picture or something copied elsewhere."
     );
@@ -312,7 +313,7 @@ export function installEditorAccessibilityAnnouncements(
       length: Dynamic = items.filter(callback).length;
     if (length > 0 && items.length === 1) return null;
     if (length === items.length)
-      return "Fitted " + String(length) + " artboards to their content.";
+      return uiMessage("inspector.announcements.fitted") + String(length) + " artboards to their content.";
     if (length > 0) {
       let value3: Dynamic = fitContentResultMessage(
         items.filter((input?: Dynamic): Dynamic => !callback(input)),
@@ -322,7 +323,7 @@ export function installEditorAccessibilityAnnouncements(
         ),
       );
       return (
-        "Fitted " +
+        uiMessage("inspector.announcements.fitted") +
         String(length) +
         " of " +
         String(items.length) +
@@ -336,7 +337,7 @@ export function installEditorAccessibilityAnnouncements(
       callback3: Dynamic = (input?: Dynamic): Dynamic =>
         options[input] !== undefined
           ? '"' + options[input] + '"'
-          : "That artboard",
+          : uiMessage("inspector.announcements.thatArtboard"),
       value: Dynamic = items.length > 1,
       value2: Dynamic;
     return (value2 = callback2("unsettled")) >= 0
@@ -361,7 +362,7 @@ export function installEditorAccessibilityAnnouncements(
                   ? callback3(value2) +
                     "\u2019s preview is stopped. Reload it, then try again."
                   : (value2 = callback2("unmeasured")) >= 0
-                    ? "Couldn\u2019t measure " +
+                    ? uiMessage("inspector.announcements.couldnTMeasure") +
                       callback3(value2) +
                       " yet. Try again once it has finished loading."
                     : (value2 = callback2("keeps")) >= 0
@@ -371,25 +372,25 @@ export function installEditorAccessibilityAnnouncements(
                             (input?: Dynamic): Dynamic => input === "gone",
                           )
                         ? value
-                          ? "Those artboards aren\u2019t on the page you have open."
-                          : "That artboard isn\u2019t on the page you have open."
+                          ? uiMessage("inspector.announcements.thoseArtboardsArenTOn")
+                          : uiMessage("inspector.announcements.thatArtboardIsnTOn")
                         : items.every(
                               (input?: Dynamic): Dynamic =>
                                 input === "matches" || input === "gone",
                             )
                           ? value
-                            ? "Nothing to fit: those frames are already about as tall as their pages."
-                            : "Nothing to fit: " +
+                            ? uiMessage("inspector.announcements.nothingToFitThoseFrames")
+                            : uiMessage("inspector.announcements.nothingToFit") +
                               callback3(callback2("matches")) +
                               "\u2019s frame is already about as tall as its page."
                           : value
-                            ? "Nothing to fit: those pages are no taller than their frames."
-                            : "Nothing to fit: " +
+                            ? uiMessage("inspector.announcements.nothingToFitThosePages")
+                            : uiMessage("inspector.announcements.nothingToFit") +
                               callback3(callback2("fits")) +
                               "\u2019s page is no taller than its frame.";
   }
   function zoomAnnouncement(input?: Dynamic): Dynamic {
-    return "Zoom " + String(Math.round(input * 100)) + "%";
+    return uiMessage("inspector.announcements.zoom") + String(Math.round(input * 100)) + "%";
   }
   function pageAnnouncement(input?: Dynamic): Dynamic {
     return "Page: " + input;
@@ -468,7 +469,7 @@ export function installEditorAccessibilityAnnouncements(
     if (input.notes.size === 0 && index === 0) {
       if (input.artboards.size === 1) {
         let [artboards]: Dynamic = input.artboards;
-        return "Artboard \u201C" + context(artboards) + "\u201D selected";
+        return uiMessage("inspector.announcements.artboard") + context(artboards) + "\u201D selected";
       }
       return String(input.artboards.size) + " artboards selected";
     }
@@ -515,7 +516,7 @@ export function installEditorAccessibilityAnnouncements(
     context?: Dynamic,
   ): Dynamic {
     return (
-      "Artboard " +
+      uiMessage("inspector.announcements.artboard2") +
       String(input + 1) +
       " of " +
       String(options) +
@@ -531,7 +532,7 @@ export function installEditorAccessibilityAnnouncements(
       value2: Dynamic =
         " selected, " +
         (value
-          ? "the only layer at this level"
+          ? uiMessage("inspector.announcements.theOnlyLayerAtThis")
           : outlineSiblingPosition(input)) +
         (input.node.hidden ? ", hidden" : "") +
         (value && input.node.children.length > 0 ? ". Return goes deeper" : ""),
@@ -556,11 +557,11 @@ export function installEditorAccessibilityAnnouncements(
     );
   }
   function exitOutlineAnnouncement(input?: Dynamic): Dynamic {
-    return "Out of the layers. Artboard \u201C" + input + "\u201D selected";
+    return uiMessage("inspector.announcements.outOfTheLayersArtboard") + input + "\u201D selected";
   }
   function artboardNotSelectedAnnouncement(input?: Dynamic): Dynamic {
     return (
-      "Artboard \u201C" + input + "\u201D is not selected. Nothing deleted"
+      uiMessage("inspector.announcements.artboard") + input + "\u201D is not selected. Nothing deleted"
     );
   }
   function elementSelectionAnnouncement(
@@ -584,8 +585,8 @@ export function installEditorAccessibilityAnnouncements(
         ? value
         : "";
     /^(Note|Shape|Picture|Video) selected$/.test(value2)
-      ? (value2 = "A " + value2.toLowerCase())
-      : value2 === items + " selected" && (value2 = "Another " + value2);
+      ? (value2 = uiMessage("inspector.announcements.a") + value2.toLowerCase())
+      : value2 === items + " selected" && (value2 = uiMessage("inspector.announcements.another") + value2);
     let value3: Dynamic = " is not selected. Nothing " + options + ". ",
       value4: Dynamic =
         value2 !== ""
@@ -593,8 +594,8 @@ export function installEditorAccessibilityAnnouncements(
             ? truncateAccessibleLabel(value2.slice(0, -9), 47) + " selected"
             : value2
           : context
-            ? "Return selects it"
-            : "Return on the row itself selects it",
+            ? uiMessage("inspector.announcements.returnSelectsIt")
+            : uiMessage("inspector.announcements.returnOnTheRowItself"),
       value5: Dynamic =
         AccessibilityAnnouncementsConstant - value3.length - value4.length;
     return (
@@ -604,23 +605,23 @@ export function installEditorAccessibilityAnnouncements(
     );
   }
   function emptyArtboardSelectionAnnouncement(input?: Dynamic): Dynamic {
-    return "Artboard \u201C" + input + "\u201D selected. It has no layers";
+    return uiMessage("inspector.announcements.artboard") + input + "\u201D selected. It has no layers";
   }
   function artboardLoadingAnnouncement(input?: Dynamic): Dynamic {
-    return "Loading artboard \u201C" + input + "\u201D\u2026";
+    return uiMessage("inspector.announcements.loadingArtboard") + input + "\u201D\u2026";
   }
   function artboardLoadFailureAnnouncement(input?: Dynamic): Dynamic {
-    return "Couldn\u2019t load artboard \u201C" + input + "\u201D";
+    return uiMessage("inspector.announcements.couldnTLoadArtboard") + input + "\u201D";
   }
   function selectingAnnouncement(input?: Dynamic): Dynamic {
-    return "Still selecting " + input;
+    return uiMessage("inspector.announcements.stillSelecting") + input;
   }
   function selectionReadyAnnouncement(input?: Dynamic): Dynamic {
     return input + ". " + AccessibilityAnnouncementsLabel_16;
   }
   function artboardsDeletedAnnouncement(items?: Dynamic): Dynamic {
     return items.length === 1
-      ? "Artboard \u201C" + items[0] + "\u201D deleted"
+      ? uiMessage("inspector.announcements.artboard") + items[0] + "\u201D deleted"
       : String(items.length) + " artboards deleted";
   }
   function pageDeletedAnnouncement(
@@ -641,7 +642,7 @@ export function installEditorAccessibilityAnnouncements(
         (value.length > 0 ? " with its " + value.join(" and ") : ""),
       value3: Dynamic = AccessibilityAnnouncementsConstant - 6 - value2.length;
     return (
-      "Page \u201C" +
+      uiMessage("inspector.announcements.page") +
       (items.length > value3 ? truncateAccessibleLabel(items, value3) : items) +
       value2
     );
@@ -655,36 +656,36 @@ export function installEditorAccessibilityAnnouncements(
   ): Dynamic {
     return input !== 0 && options === 0
       ? input < 0
-        ? "Moved left"
-        : "Moved right"
+        ? uiMessage("inspector.announcements.movedLeft")
+        : uiMessage("inspector.announcements.movedRight")
       : options !== 0 && input === 0
         ? options < 0
-          ? "Moved up"
-          : "Moved down"
+          ? uiMessage("inspector.announcements.movedUp")
+          : uiMessage("inspector.announcements.movedDown")
         : "Moved";
   }
   function flipDirectionAnnouncement(input?: Dynamic): Dynamic {
     return input === "horizontal"
-      ? "Flipped horizontally"
-      : "Flipped vertically";
+      ? uiMessage("inspector.announcements.flippedHorizontally")
+      : uiMessage("inspector.announcements.flippedVertically");
   }
   function reorderAnnouncement(input?: Dynamic, options?: Dynamic): Dynamic {
     return options
       ? input < 0
-        ? "Moved to first"
-        : "Moved to last"
+        ? uiMessage("inspector.announcements.movedToFirst")
+        : uiMessage("inspector.announcements.movedToLast")
       : input < 0
-        ? "Moved up"
-        : "Moved down";
+        ? uiMessage("inspector.announcements.movedUp")
+        : uiMessage("inspector.announcements.movedDown");
   }
   function stackingAnnouncement(input?: Dynamic, options?: Dynamic): Dynamic {
     return options
       ? input === "front"
-        ? "Brought to the front"
-        : "Sent to the back"
+        ? uiMessage("inspector.announcements.broughtToTheFront")
+        : uiMessage("inspector.announcements.sentToTheBack")
       : input === "front"
-        ? "Already at the front"
-        : "Already at the back";
+        ? uiMessage("inspector.announcements.alreadyAtTheFront")
+        : uiMessage("inspector.announcements.alreadyAtTheBack");
   }
   function propertyAnnouncementLabel(input?: Dynamic): Dynamic {
     if (input === "__text") return "Content";
@@ -747,7 +748,7 @@ export function installEditorAccessibilityAnnouncements(
     options?: Dynamic,
   ): Dynamic {
     return (
-      "Line " +
+      uiMessage("inspector.announcements.line") +
       String(input) +
       ": " +
       (AccessibilityAnnouncementsUnexpectedUnexpectedUnexpectedConfig[
@@ -763,7 +764,7 @@ export function installEditorAccessibilityAnnouncements(
   }
   function discardedCodeChangesAnnouncement(input?: Dynamic): Dynamic {
     return (
-      "Unapplied changes in the Code tab were discarded: line " +
+      uiMessage("inspector.announcements.unappliedChangesInTheCode") +
       String(input) +
       " could not be read"
     );
@@ -774,10 +775,10 @@ export function installEditorAccessibilityAnnouncements(
   ): Dynamic {
     let items: Dynamic = [];
     Math.round(input.w) !== Math.round(options.w) &&
-      items.push("Width " + String(Math.round(options.w)) + "px");
+      items.push(uiMessage("inspector.announcements.width") + String(Math.round(options.w)) + "px");
     Math.round(input.h) !== Math.round(options.h) &&
       items.push(
-        (items.length > 0 ? "height " : "Height ") +
+        (items.length > 0 ? uiMessage("inspector.announcements.height2") : uiMessage("inspector.announcements.height")) +
           String(Math.round(options.h)) +
           "px",
       );
@@ -786,8 +787,8 @@ export function installEditorAccessibilityAnnouncements(
   function backgroundEditAnnouncement(items?: Dynamic): Dynamic {
     return items.length > 0 &&
       items.every((input?: Dynamic): Dynamic => input.value == null)
-      ? "Background reset"
-      : "Background updated";
+      ? uiMessage("inspector.announcements.backgroundReset")
+      : uiMessage("inspector.announcements.backgroundUpdated");
   }
   bindRuntimeValue(
     runtime,
@@ -1404,45 +1405,45 @@ export function installEditorAccessibilityAnnouncements(
     },
   );
   return () => {
-    AccessibilityAnnouncementsLabel = "background color";
+    AccessibilityAnnouncementsLabel = uiMessage("inspector.announcements.backgroundColor");
     AccessibilityAnnouncementsUndoRedoConfig = {
-      undo: "Nothing to undo",
-      redo: "Nothing to redo",
+      get undo() { return uiMessage("inspector.announcements.nothingToUndo"); },
+      get redo() { return uiMessage("inspector.announcements.nothingToRedo"); },
     };
     NothingChangedThatStepNoLongerMessage =
-      "Nothing changed: that step no longer applies, so it was skipped";
+      uiMessage("inspector.announcements.nothingChangedThatStepNo");
     AccessibilityAnnouncementsUndoRedoConfig_2 = {
       undo: "Undone",
       redo: "Redone",
     };
-    NothingSelectedMessage = "Nothing selected";
-    AccessibilityAnnouncementsLabel_2 = "Copied as a PNG";
-    AccessibilityAnnouncementsLabel_3 = "Copied as an SVG";
-    AccessibilityAnnouncementsLabel_4 = "the conversion failed. Try again";
+    NothingSelectedMessage = uiMessage("inspector.announcements.nothingSelected");
+    AccessibilityAnnouncementsLabel_2 = uiMessage("inspector.announcements.copiedAsAPNG");
+    AccessibilityAnnouncementsLabel_3 = uiMessage("inspector.announcements.copiedAsAnSVG");
+    AccessibilityAnnouncementsLabel_4 = uiMessage("inspector.announcements.theConversionFailedTryAgain");
     AccessibilityAnnouncementsLabel_5 =
-      "Another export is still running. Try again when it finishes.";
+      uiMessage("inspector.announcements.anotherExportIsStillRunning");
     ItsPictureCouldnTBeMadeTryMessage =
-      "its picture couldn\u2019t be made. Try again";
+      uiMessage("inspector.announcements.itsPictureCouldnTBe");
     AccessibilityAnnouncementsLabel_6 =
-      "it isn\u2019t selected any more. Select it and try again";
-    AccessibilityAnnouncementsLabel_7 = "it has no width or height to draw";
-    ItsPageHasNothingToDrawMessage = "its page has nothing to draw";
+      uiMessage("inspector.announcements.itIsnTSelectedAny");
+    AccessibilityAnnouncementsLabel_7 = uiMessage("inspector.announcements.itHasNoWidthOr");
+    ItsPageHasNothingToDrawMessage = uiMessage("inspector.announcements.itsPageHasNothingTo");
     AccessibilityAnnouncementsLabel_8 =
-      "its preview is stopped. Reload it first";
+      uiMessage("inspector.announcements.itsPreviewIsStoppedReload");
     AccessibilityAnnouncementsLabel_9 =
-      "it isn\u2019t visible to capture. Try again in a moment";
+      uiMessage("inspector.announcements.itIsnTVisibleTo");
     AccessibilityAnnouncementsLabel_10 =
-      "Paste here places one copied element at a time. Use Paste for several.";
-    AccessibilityAnnouncementsLabel_11 = "Note selected";
-    AccessibilityAnnouncementsLabel_12 = "Shape selected";
-    AccessibilityAnnouncementsLabel_13 = "Picture selected";
-    AccessibilityAnnouncementsLabel_14 = "Video selected";
+      uiMessage("inspector.announcements.pasteHerePlacesOneCopied");
+    AccessibilityAnnouncementsLabel_11 = uiMessage("inspector.announcements.noteSelected");
+    AccessibilityAnnouncementsLabel_12 = uiMessage("inspector.announcements.shapeSelected");
+    AccessibilityAnnouncementsLabel_13 = uiMessage("inspector.announcements.pictureSelected");
+    AccessibilityAnnouncementsLabel_14 = uiMessage("inspector.announcements.videoSelected");
     AccessibilityAnnouncementsLimit = 40;
     PressReturnToGoIntoThisMessage =
-      "Press Return to go into this artboard, then Tab to move between its layers. Escape comes back here.";
-    ThisIsTheFirstArtboardMessage = "This is the first artboard";
-    ThisIsTheLastArtboardMessage = "This is the last artboard";
-    ThisIsTheOnlyArtboardMessage = "This is the only artboard";
+      uiMessage("inspector.announcements.pressReturnToGoInto");
+    ThisIsTheFirstArtboardMessage = uiMessage("inspector.announcements.thisIsTheFirstArtboard");
+    ThisIsTheLastArtboardMessage = uiMessage("inspector.announcements.thisIsTheLastArtboard");
+    ThisIsTheOnlyArtboardMessage = uiMessage("inspector.announcements.thisIsTheOnlyArtboard");
     AccessibilityAnnouncementsResolvedValue =
       "Tab: next layer \xB7 " +
       ((0, runtime.isApplePlatform)()
@@ -1450,32 +1451,32 @@ export function installEditorAccessibilityAnnouncements(
         : "Enter: deeper \xB7 Shift+Enter: up") +
       " \xB7 Esc: leave";
     AccessibilityAnnouncementsLabel_15 =
-      "Tab next, Return deeper, Escape leaves";
+      uiMessage("inspector.announcements.tabNextReturnDeeperEscape");
     AccessibilityAnnouncementsConstant = 120;
-    NoLayersInsideThisOneMessage = "No layers inside this one";
+    NoLayersInsideThisOneMessage = uiMessage("inspector.announcements.noLayersInsideThisOne");
     AccessibilityAnnouncementsLabel_16 =
-      "Editing text. Escape or Tab when done";
-    AccessibilityAnnouncementsLabel_17 = "Text updated";
+      uiMessage("inspector.announcements.editingTextEscapeOrTab");
+    AccessibilityAnnouncementsLabel_17 = uiMessage("inspector.announcements.textUpdated");
     DeletedValue = "Deleted";
     CutValue = "Cut";
-    AccessibilityAnnouncementsLabel_18 = "Note deleted";
-    AccessibilityAnnouncementsLabel_19 = "Shape deleted";
-    AccessibilityAnnouncementsLabel_20 = "Picture deleted";
-    AccessibilityAnnouncementsLabel_21 = "Video deleted";
-    AccessibilityAnnouncementsLabel_22 = "Link removed";
-    AccessibilityAnnouncementsLabel_23 = "Empty text box removed";
+    AccessibilityAnnouncementsLabel_18 = uiMessage("inspector.announcements.noteDeleted");
+    AccessibilityAnnouncementsLabel_19 = uiMessage("inspector.announcements.shapeDeleted");
+    AccessibilityAnnouncementsLabel_20 = uiMessage("inspector.announcements.pictureDeleted");
+    AccessibilityAnnouncementsLabel_21 = uiMessage("inspector.announcements.videoDeleted");
+    AccessibilityAnnouncementsLabel_22 = uiMessage("inspector.announcements.linkRemoved");
+    AccessibilityAnnouncementsLabel_23 = uiMessage("inspector.announcements.emptyTextBoxRemoved");
     AccessibilityAnnouncementsHrefSrcAltConfig = {
       href: "Destination",
-      src: "Source",
+      get src() { return uiMessage("inspector.announcements.source"); },
       alt: "Alt text",
       target: "Target",
-      placeholder: "Placeholder",
+      get placeholder() { return uiMessage("inspector.announcements.placeholder"); },
     };
     AccessibilityAnnouncementsPattern =
       /^-?\d+(\.\d+)?\s?(px|%|em|rem|pt|vw|vh|ch|deg|ms|s|fr)?$/;
     AccessibilityAnnouncementsPaddingMarginConfig = {
-      padding: "Padding",
-      margin: "Margin",
+      get padding() { return uiMessage("inspector.announcements.padding"); },
+      get margin() { return uiMessage("inspector.announcements.margin"); },
     };
     AccessibilityAnnouncementsUnexpectedUnexpectedUnexpectedConfig = {
       "unexpected {": "unexpected opening brace",
@@ -1484,18 +1485,18 @@ export function installEditorAccessibilityAnnouncements(
       "unbalanced )": "unbalanced closing parenthesis",
       "unbalanced ( or quote": "unbalanced parenthesis or quote",
     };
-    AccessibilityAnnouncementsLabel_24 = "Comment mode paused";
+    AccessibilityAnnouncementsLabel_24 = uiMessage("inspector.announcements.commentModePaused");
     AccessibilityAnnouncementsHandler = (input?: Dynamic): Dynamic =>
       String(input) + (input === 1 ? " artboard" : " artboards");
     AccessibilityAnnouncementsReadyUpdatedChangedConfig = {
       ready: (input?: Dynamic): Dynamic =>
-        "Design ready, " + AccessibilityAnnouncementsHandler(input),
+        uiMessage("inspector.announcements.designReady") + AccessibilityAnnouncementsHandler(input),
       updated: (input?: Dynamic): Dynamic =>
         AccessibilityAnnouncementsHandler(input) + " updated",
       changed: (input?: Dynamic): Dynamic =>
-        "Design updated, " +
+        uiMessage("inspector.announcements.designUpdated") +
         (input === 0
-          ? "no artboards left"
+          ? uiMessage("inspector.announcements.noArtboardsLeft")
           : AccessibilityAnnouncementsHandler(input) + " in all"),
     };
   };

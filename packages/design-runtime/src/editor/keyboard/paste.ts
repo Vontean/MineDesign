@@ -1,3 +1,4 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -171,11 +172,11 @@ export function installEditorKeyboardPaste(
   bindRuntimeValue(runtime, "isCanvasEnterAction", () => isCanvasEnterAction);
   return () => {
     KeyboardPasteLabel =
-      "The image wasn't pasted. Close the open menu or popup, then paste again.";
+      uiMessage("inspector.paste.theImageWasnTPasted");
     KeyboardPasteLabel_2 =
-      "The image wasn't pasted. Click the design, then paste again.";
+      uiMessage("inspector.paste.theImageWasnTPasted2");
     KeyboardPasteReplace = (input?: Dynamic): Dynamic =>
-      input.replace("The image", "The video");
+      input.replace(uiMessage("inspector.paste.theImage"), uiMessage("inspector.paste.theVideo"));
     KeyboardPasteJoinValue = [
       "button",
       "summary",

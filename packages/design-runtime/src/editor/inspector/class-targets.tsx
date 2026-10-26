@@ -1,3 +1,5 @@
+import { useUiLocale } from '../../ui-locale.ts';
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -75,6 +77,7 @@ export function installEditorInspectorClassTargets(
     onSelectTid: onSelectTid,
     onHoverTid: onHoverTid,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let value: Dynamic = (0, runtime.reactInspectorAnnotation_2.useRef)(
       onHoverTid,
     );
@@ -84,7 +87,7 @@ export function installEditorInspectorClassTargets(
       [],
     );
     if (groups.length === 0) return null;
-    let value2: Dynamic = many ? "these elements" : "this element";
+    let value2: Dynamic = many ? uiMessage("inspector.classTargets.theseElements") : uiMessage("inspector.classTargets.thisElement");
     return (
       <runtime.CdsIsland density={"compact"} className={"contents"}>
         <div
@@ -120,21 +123,20 @@ export function installEditorInspectorClassTargets(
               const _Component2 = "div";
               const _props2 = {
                 role: "group",
-                "aria-label": "From " + input.from,
+                get "aria-label"() { return uiMessage("inspector.classTargets.from2", { value1: String(input.from) }); },
                 className: "flex min-w-0 flex-col",
                 children: [
                   <div className={"flex min-w-0 items-center gap-1 text-muted"}>
-                    <span className={"shrink-0"}>{"From"}</span>
-                    {input.fromTid != null && onSelectTid ? (
-                      <runtime.EditorTooltip
-                        tip={"Select " + input.from}
+                    <span className={"shrink-0"}>{uiMessage("inspector.classTargets.from")}</span>
+                    {input.fromTid != null && onSelectTid ? (<runtime.EditorTooltip
+                        tip={uiMessage("inspector.classTargets.select", { value1: String(input.from) })}
                         className={"min-w-0"}
                       >
                         <runtime.Button
                           variant={"ghost"}
                           size={"xs"}
                           icon={value5}
-                          aria-label={"Select " + input.from}
+                          aria-label={uiMessage("inspector.classTargets.select", { value1: String(input.from) })}
                           className={
                             "min-w-0 font-mono " + InspectorClassTargetsLabel
                           }
@@ -151,16 +153,13 @@ export function installEditorInspectorClassTargets(
                         >
                           {input.from}
                         </runtime.Button>
-                      </runtime.EditorTooltip>
-                    ) : (
-                      <span
+                      </runtime.EditorTooltip>) : (<span
                         className={
                           "min-w-0 truncate px-1.5 font-mono text-secondary"
                         }
                       >
                         {input.from}
-                      </span>
-                    )}
+                      </span>)}
                   </div>,
                   input.decls.map((input2?: Dynamic): Dynamic => {
                     let value6: Dynamic =
@@ -206,10 +205,10 @@ export function installEditorInspectorClassTargets(
                             iconOnly={true}
                             icon={"Add"}
                             data-inherited-set={""}
-                            aria-label={"Set " + input2.prop + " on " + value2}
-                            tooltip={"Set on " + value2}
+                            aria-label={uiMessage("inspector.classTargets.setOn", { value1: String(input2.prop), value2: String(value2) })}
+                            tooltip={uiMessage("inspector.classTargets.setOn2", { value1: String(value2) })}
                             disabled={value7 !== undefined}
-                            disabledReason={value7 ?? "Set on " + value2}
+                            disabledReason={(value7) ?? (uiMessage("inspector.classTargets.setOn2", { value1: String(value2) }))}
                             className={"shrink-0 " + InspectorClassTargetsLabel}
                             onClick={(): Dynamic =>
                               onSet(input2.prop, input2.value)

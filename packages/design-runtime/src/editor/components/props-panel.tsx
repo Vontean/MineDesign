@@ -1,3 +1,5 @@
+import { useUiLocale } from '../../ui-locale.ts';
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -39,6 +41,7 @@ export function installEditorComponentsPropsPanel(
       : items;
   }
   function ComponentPropsPanel({ dcProps: dcProps }: Dynamic): Dynamic {
+    useUiLocale();
     let value: Dynamic = Object.entries(dcProps.propsMeta).filter(
       ([, input]: Dynamic): Dynamic =>
         (0, runtime.isEditablePropMetadata)(input),
@@ -46,7 +49,7 @@ export function installEditorComponentsPropsPanel(
     if (value.length === 0)
       return (
         <div className={"px-lg py-4 text-center text-caption text-muted"}>
-          {"This component has no tweakable props."}
+          {uiMessage("inspector.propsPanel.thisComponentHasNoTweakableProps")}
         </div>
       );
     let value2: Dynamic = groupComponentProps(value);
@@ -99,8 +102,7 @@ export function installEditorComponentsPropsPanel(
           )}
           <runtime.FloatingScrollbar />
         </div>
-        {dcProps.dirty && !dcProps.autoSavesDefaults && (
-          <div
+        {dcProps.dirty && !dcProps.autoSavesDefaults && (<div
             data-tweaks-surface={""}
             className={
               "flex shrink-0 justify-end gap-1.5 border-t border-alpha-2 px-md py-3"
@@ -111,7 +113,7 @@ export function installEditorComponentsPropsPanel(
               onClick={dcProps.reset}
               disabled={dcProps.saving}
             >
-              {"Reset"}
+              {uiMessage("inspector.propsPanel.reset")}
             </runtime.Button>
             <runtime.Button
               variant={"primary"}
@@ -121,10 +123,9 @@ export function installEditorComponentsPropsPanel(
                 dcProps.saveAsDefaults();
               }}
             >
-              {"Save as defaults"}
+              {uiMessage("inspector.propsPanel.saveAsDefaults")}
             </runtime.Button>
-          </div>
-        )}
+          </div>)}
       </runtime.jsxPropertiesRows.Fragment>
     );
   }

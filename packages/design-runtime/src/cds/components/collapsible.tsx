@@ -1,3 +1,4 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 import type {
   CollapsiblePanelProps,
   CollapsibleRootProps,
@@ -183,9 +184,9 @@ export function installCdsComponentsCollapsible(
               className={(0, runtime.cn)(collapsibleTriggerClasses, className)}
               onMouseDown={value}
             >
-              {caretPosition !== "end" && value2}
+              {caretPosition !== "end" && (value2)}
               {children}
-              {caretPosition === "end" && value2}
+              {caretPosition === "end" && (value2)}
             </runtime.npm_Collapsible_a1.Trigger>
           );
         },

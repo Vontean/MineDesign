@@ -1,3 +1,5 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
+import { useUiLocale } from '../ui-locale.ts';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -64,6 +66,7 @@ export function installFastEditComposer(runtime: RuntimeBindings): () => void {
       .map((input?: Dynamic): Dynamic => input.f);
   }
   function FastEditComposer({ host: host, parts: parts }: Dynamic): Dynamic {
+    useUiLocale();
     let hostRef: Dynamic = (0, runtime.ReactFastEdit.useRef)(host);
     hostRef.current = host;
     let sample: Dynamic = useSamplingCapability(
@@ -299,7 +302,7 @@ export function installFastEditComposer(runtime: RuntimeBindings): () => void {
         <runtime.DraftArtboardPreviews
           boards={(): Dynamic => hostRef.current.canvas.boards()}
         />
-        {debugEnabled && !host.hidden && <runtime.FastEditDebugPanel />}
+        {debugEnabled && !host.hidden && (<runtime.FastEditDebugPanel />)}
       </fastEditUiJsxRuntime.Fragment>
     ) : null;
   }

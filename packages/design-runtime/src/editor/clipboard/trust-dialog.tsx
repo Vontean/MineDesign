@@ -1,3 +1,5 @@
+import { useUiLocale } from '../../ui-locale.ts';
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -40,6 +42,7 @@ export function installEditorClipboardTrustDialog(
     });
   }
   function CodePasteTrustDialog(): Dynamic {
+    useUiLocale();
     let [value, value2]: Dynamic = (0, reactClipboardTrustDialog.useState)(
       (): Dynamic =>
         ClipboardTrustDialogAlias
@@ -191,11 +194,11 @@ export function installEditorClipboardTrustDialog(
       1,
     );
     ClipboardTrustDialogTitleMessageKeepCodeConfig = {
-      title: "Paste with code?",
+      get title() { return uiMessage("inspector.trustDialog.pasteWithCode"); },
       message: (input?: Dynamic): Dynamic =>
         input === 1
-          ? "Only if you copied this artboard from a canvas you trust."
-          : "Only if you copied these artboards from a canvas you trust.",
+          ? uiMessage("inspector.trustDialog.onlyIfYouCopiedThis")
+          : uiMessage("inspector.trustDialog.onlyIfYouCopiedThese"),
       keepCode: "Paste with code",
       dropCode: "Paste without code",
       dropped: (input?: Dynamic): Dynamic =>

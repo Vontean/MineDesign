@@ -1,3 +1,5 @@
+import { useUiLocale } from '../ui-locale.ts';
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -109,7 +111,7 @@ export function installExportPicker(runtime: RuntimeBindings): () => void {
     if (value === undefined)
       return {
         offered: true,
-        title: "Export at " + String(scale) + "\xD7",
+        get title() { return uiMessage("canvas.picker.exportAt", { value1: String(String(scale)) }); },
       };
     if (artboards.length > 1) {
       let value3: Dynamic = artboards.find(
@@ -119,30 +121,17 @@ export function installExportPicker(runtime: RuntimeBindings): () => void {
       if (value3)
         return {
           offered: false,
-          title:
-            "\u201C" +
-            exportArtboardTitle(value3) +
-            "\u201D is too large to export at " +
-            String(scale) +
-            "\xD7",
+          get title() { return "\u201C" + exportArtboardTitle(value3) + "\u201D is too large to export at " + String(scale) + "\xD7"; },
         };
       let value4: Dynamic = artboards.find(artboardNeedsScaledDownExport);
       return value4
         ? {
             offered: true,
-            title:
-              "\u201C" +
-              exportArtboardTitle(value4) +
-              "\u201D exports smaller than full size: it is over the capture limit",
+            get title() { return "\u201C" + exportArtboardTitle(value4) + "\u201D exports smaller than full size: it is over the capture limit"; },
           }
         : {
             offered: true,
-            title:
-              "Export " +
-              String(artboards.length) +
-              " artboards at " +
-              String(scale) +
-              "\xD7",
+            get title() { return "Export " + String(artboards.length) + " artboards at " + String(scale) + "\xD7"; },
           };
     }
     let value2: Dynamic = (0, runtime.imageCaptureScaleOptions)(
@@ -152,24 +141,18 @@ export function installExportPicker(runtime: RuntimeBindings): () => void {
     return value2?.fits
       ? {
           offered: true,
-          title:
-            String(value2.outW) +
-            ((0, runtime.getArtboardCaptureMode)(value, options) === "full"
+          get title() { return String(value2.outW) + (0, runtime.getArtboardCaptureMode)(value, options) === "full"
               ? " px wide, full length"
-              : " \xD7 " + String(value2.outH) + " px"),
+              : " \xD7 " + String(value2.outH) + " px"; },
         }
       : scale === 1
         ? {
             offered: true,
-            title:
-              "Exports smaller than full size: this artboard is over the capture limit",
+            get title() { return uiMessage("canvas.picker.exportsSmallerThanFullSizeThisArtboardIsOverTheCaptureLimit"); },
           }
         : {
             offered: false,
-            title:
-              "This artboard is too large to export at " +
-              String(scale) +
-              "\xD7",
+            get title() { return "This artboard is too large to export at " + String(scale) + "\xD7"; },
           };
   }
   function exportPickedArtboardsLabel(
@@ -196,12 +179,12 @@ export function installExportPicker(runtime: RuntimeBindings): () => void {
   ): Dynamic {
     return format === "png"
       ? {
-          hint: "Choose an artboard to export",
+          get hint() { return uiMessage("canvas.picker.chooseAnArtboardToExport"); },
           action: "Export PNG",
         }
       : format === "pngs"
         ? {
-            hint: "Choose artboards to export",
+            get hint() { return uiMessage("canvas.picker.chooseArtboardsToExport"); },
             action:
               pickedCount > 1
                 ? "Export " +
@@ -212,7 +195,7 @@ export function installExportPicker(runtime: RuntimeBindings): () => void {
                   : "Export PNG",
           }
         : {
-            hint: "Choose artboards to include",
+            get hint() { return uiMessage("canvas.picker.chooseArtboardsToInclude"); },
             action:
               pickedCount === 0
                 ? "Export PDF"
@@ -549,6 +532,7 @@ export function installExportPicker(runtime: RuntimeBindings): () => void {
     artboards: artboards,
     rules: rules,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let session: Dynamic = picker.session;
     if (!session) return null;
     let value: Dynamic = pickedExportArtboards(artboards, session.picked),
@@ -582,8 +566,7 @@ export function installExportPicker(runtime: RuntimeBindings): () => void {
             {value2.hint}
           </span>
           <runtime.SessionStripDivider />
-          {exportSupportsScale(session.kind) && (
-            <runtime.SessionStripGroup role={"group"} aria-label={"Scale"}>
+          {exportSupportsScale(session.kind) && (<runtime.SessionStripGroup role={"group"} aria-label={uiMessage("canvas.picker.scale")}>
               {[1, 2].map((input?: Dynamic): Dynamic => {
                 let { offered: value4, title: value5 }: Dynamic =
                   describeExportScaleOption(value, input, rules);
@@ -596,18 +579,14 @@ export function installExportPicker(runtime: RuntimeBindings): () => void {
                     title={value5}
                     onClick={(): Dynamic => picker.setScale(input)}
                   >
-                    {String(input) + "\xD7"}
+                    {(String(input)) + ("\xD7")}
                   </runtime.SessionStripButton>
                 );
               })}
-            </runtime.SessionStripGroup>
-          )}
+            </runtime.SessionStripGroup>)}
           {exportSupportsScale(session.kind) &&
-            exportSupportsMultipleArtboards(session.kind) && (
-              <runtime.SessionStripDivider />
-            )}
-          {exportSupportsMultipleArtboards(session.kind) && (
-            <runtime.SessionStripButton
+            exportSupportsMultipleArtboards(session.kind) && (<runtime.SessionStripDivider />)}
+          {exportSupportsMultipleArtboards(session.kind) && (<runtime.SessionStripButton
               data-testid={"artboard-pick-all"}
               className={
                 "aria-disabled:opacity-disabled aria-disabled:[&_[data-cds-part=paint]]:bg-transparent!"
@@ -617,16 +596,15 @@ export function installExportPicker(runtime: RuntimeBindings): () => void {
               }
               onClick={picker.selectAll}
             >
-              {"Select all"}
-            </runtime.SessionStripButton>
-          )}
+              {uiMessage("canvas.picker.selectAll")}
+            </runtime.SessionStripButton>)}
           <runtime.SessionStripDivider />
           <runtime.SessionStripGroup>
             <runtime.SessionStripButton
               data-testid={"artboard-pick-cancel"}
               onClick={picker.cancel}
             >
-              {"Cancel"}
+              {uiMessage("canvas.picker.cancel")}
             </runtime.SessionStripButton>
             <runtime.Button
               variant={"primary"}
@@ -648,6 +626,7 @@ export function installExportPicker(runtime: RuntimeBindings): () => void {
     artboard: artboard,
     picker: picker,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let value: Dynamic = (0, runtime.useViewportStore)(),
       session: Dynamic = picker.session;
     if (!session) return null;
@@ -660,11 +639,7 @@ export function installExportPicker(runtime: RuntimeBindings): () => void {
         data-testid={"artboard-pick-" + artboard.file}
         aria-pressed={value2}
         aria-label={
-          (exportSupportsMultipleArtboards(session.kind)
-            ? 'Include "'
-            : 'Choose "') +
-          exportArtboardTitle(artboard) +
-          '"'
+          (exportSupportsMultipleArtboards(session.kind) ? uiMessage("canvas.picker.include") : uiMessage("canvas.picker.choose")) + exportArtboardTitle(artboard) + '"'
         }
         aria-disabled={session.busy || undefined}
         className={
@@ -677,14 +652,11 @@ export function installExportPicker(runtime: RuntimeBindings): () => void {
           session.busy || picker.pick([artboard.file], true);
         }}
       >
-        {!value2 && (
-          <span
+        {!value2 && (<span
             aria-hidden={"true"}
             className={"absolute inset-0 bg-white/55"}
-          />
-        )}
-        {value2 && (
-          <runtime.ViewportScale>
+          />)}
+        {value2 && (<runtime.ViewportScale>
             {(input?: Dynamic): Dynamic => (
               <runtime.SelectionRing
                 frame={{
@@ -697,8 +669,7 @@ export function installExportPicker(runtime: RuntimeBindings): () => void {
                 grips={"none"}
               />
             )}
-          </runtime.ViewportScale>
-        )}
+          </runtime.ViewportScale>)}
         <span
           ref={value.stamp}
           aria-hidden={"true"}

@@ -1,3 +1,4 @@
+import { getUiLocale } from '@minedesign/contracts/ui-locale';
 /**
  * 设计系统编辑器页面的入口（`@minedesign/editor-host/design-system`）：apps/design-system-editor 的 main.ts 先调
  * installDesignSystemEditorHost 装好 globalThis.designSystemHost，再启动设计系统运行时（运行时启动时就读宿主能力）。
@@ -62,5 +63,5 @@ export function installDesignSystemEditorHost(options: InstallDesignSystemEditor
   const base = options.base ?? new URL('./', win.location.href).href;
   const editor = connectEditorHost({ base, win });
   win.designSystemHost = createDesignSystemHost(editor, readSessionUserName(base, (...args) => win.fetch(...args)));
-  if (editor.comments) installCommentTargets({ win, comments: editor.comments, labels: createCommentLabels(localeFromSearch(win.location.search)) });
+  if (editor.comments) installCommentTargets({ win, comments: editor.comments, labels: createCommentLabels(getUiLocale()) });
 }

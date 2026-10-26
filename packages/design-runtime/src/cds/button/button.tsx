@@ -1,3 +1,4 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 import type { ControlSize } from "../../contracts/ui";
 import type * as React from "react";
 /** Restored application module; prepare first, initialize in original order. */
@@ -523,9 +524,7 @@ export function installCdsButtonButton(runtime: RuntimeBindings): () => void {
                   className={`inline-flex min-w-0 items-center gap-1 ${busy ? "opacity-0" : ""}`}
                 >
                   <ButtonIconSizeContext.Provider value={value15}>
-                    {value16 ? (
-                      indicator ? (
-                        <span className={"grid"}>
+                    {value16 ? (indicator ? (<span className={"grid"}>
                           <span
                             className={
                               "col-start-1 row-start-1 [--btn-dot-r:calc(0.1875rem*var(--cds-rem-scale,1))] [--btn-dot-x:calc(100%_-_var(--btn-dot-r)_+_1px)] [&:dir(rtl)]:[--btn-dot-x:calc(var(--btn-dot-r)_-_1px)] not-forced-colors:has-[~[data-cds-part=indicator]>[data-cds=Pulse]]:[mask-image:radial-gradient(circle_at_var(--btn-dot-x)_calc(var(--btn-dot-r)_-_1px),transparent_calc(var(--btn-dot-r)_+_2px),black_calc(var(--btn-dot-r)_+_2.5px))]"
@@ -542,46 +541,28 @@ export function installCdsButtonButton(runtime: RuntimeBindings): () => void {
                           >
                             {indicator}
                           </span>
-                        </span>
-                      ) : value6 ? (
-                        <jsxButtonButton.Fragment>
+                        </span>) : (value6 ? (<jsxButtonButton.Fragment>
                           {value16}
                           <span className={"sr-only"}>{value9}</span>
-                        </jsxButtonButton.Fragment>
-                      ) : (
-                        value16
-                      )
-                    ) : (
-                      <jsxButtonButton.Fragment>
+                        </jsxButtonButton.Fragment>) : (value16))) : (<jsxButtonButton.Fragment>
                         {value8 &&
-                          iconPosition === "start" &&
-                          ((0, runtime.isIconName)(value8) ? (
-                            <runtime.Icon
+                          iconPosition === "start" && ((0, runtime.isIconName)(value8) ? (<runtime.Icon
                               name={value8}
                               size={value15}
                               className={"-ms-1"}
-                            />
-                          ) : (
-                            <span className={"-ms-1 inline-flex"}>
+                            />) : (<span className={"-ms-1 inline-flex"}>
                               {value8}
-                            </span>
-                          ))}
+                            </span>))}
                         {children}
                         {value8 &&
-                          iconPosition === "end" &&
-                          ((0, runtime.isIconName)(value8) ? (
-                            <runtime.Icon
+                          iconPosition === "end" && ((0, runtime.isIconName)(value8) ? (<runtime.Icon
                               name={value8}
                               size={value15}
                               className={"-me-1"}
-                            />
-                          ) : (
-                            <span className={"-me-1 inline-flex"}>
+                            />) : (<span className={"-me-1 inline-flex"}>
                               {value8}
-                            </span>
-                          ))}
-                        {shortcut && (
-                          <runtime.Shortcut
+                            </span>))}
+                        {shortcut && (<runtime.Shortcut
                             keys={shortcut}
                             aria-hidden={true}
                             className={(0, runtime.npm_clsx_Ea)(
@@ -589,14 +570,11 @@ export function installCdsButtonButton(runtime: RuntimeBindings): () => void {
                               (!value2 || value2 === "end") &&
                                 MeCalcVarCdsHControl1em6px2VarCdsPadMdValue,
                             )}
-                          />
-                        )}
-                      </jsxButtonButton.Fragment>
-                    )}
+                          />)}
+                      </jsxButtonButton.Fragment>)}
                   </ButtonIconSizeContext.Provider>
                 </span>
-                {busy && (
-                  <span
+                {busy && (<span
                     className={
                       "absolute inset-0 grid place-items-center leading-[0]"
                     }
@@ -606,8 +584,7 @@ export function installCdsButtonButton(runtime: RuntimeBindings): () => void {
                       inheritColor={true}
                       label={busyLabel}
                     />
-                  </span>
-                )}
+                  </span>)}
               </jsxButtonButton.Fragment>
             ),
             value26: Dynamic = (0, runtime.useLinkProps)({

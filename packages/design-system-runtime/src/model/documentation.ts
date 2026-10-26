@@ -1,3 +1,4 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 import type * as Core from "../contracts";
 import type * as M from "../contracts/documentation";
 /** Restored application module; prepare first, initialize in original order. */
@@ -4272,32 +4273,32 @@ export function installModelDocumentation(
     COLOR_DOCUMENTATION_GROUPS = [
       {
         key: "surface",
-        title: "Surfaces",
+        get title() { return uiMessage("design-system.documentation.surfaces"); },
         test: /^(?:surface|page|backdrop|background|canvas|paper|ground)/,
       },
       {
         key: "text",
-        title: "Text",
+        get title() { return uiMessage("design-system.documentation.text"); },
         test: /^(?:text|oncolor|ink|fg|foreground)/,
       },
       {
         key: "fill",
-        title: "Fills and status backgrounds",
+        get title() { return uiMessage("design-system.documentation.fillsAndStatusBackgrounds"); },
         test: /^(?:fill|on|bg|accent)-/,
       },
       {
         key: "border",
-        title: "Borders and rings",
+        get title() { return uiMessage("design-system.documentation.bordersAndRings"); },
         test: /^(?:border|ring|alpha|shadow-color|divider|stroke|outline|hairline)/,
       },
       {
         key: "chart",
-        title: "Charts",
+        get title() { return uiMessage("design-system.documentation.charts"); },
         test: /^chart-/,
       },
       {
         key: "palette",
-        title: "Palette ramps and brand",
+        get title() { return uiMessage("design-system.documentation.paletteRampsAndBrand"); },
         test: /^/,
       },
     ];

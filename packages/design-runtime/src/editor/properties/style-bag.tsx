@@ -1,3 +1,4 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -257,7 +258,7 @@ export function installEditorPropertiesStyleBag(
   }
   function shadowEffectLabel(input?: Dynamic, options?: Dynamic): Dynamic {
     return input === "boxShadow" && asStyleRecord(options)?.inset === true
-      ? "Inner shadow"
+      ? uiMessage("inspector.styleBag.innerShadow")
       : propertyEffectLabel(input);
   }
   function propertyEffectLabel(input?: Dynamic): Dynamic {
@@ -530,12 +531,7 @@ export function installEditorPropertiesStyleBag(
         "borderBottomWidth",
         "borderLeftWidth",
       ],
-      borderRadius: [
-        "borderTopLeftRadius",
-        "borderTopRightRadius",
-        "borderBottomRightRadius",
-        "borderBottomLeftRadius",
-      ],
+      get borderRadius() { return ["borderTopLeftRadius", "borderTopRightRadius", "borderBottomRightRadius", "borderBottomLeftRadius"]; },
     };
     PropertiesStyleBagItems = [
       styleRangeField(
@@ -635,7 +631,7 @@ export function installEditorPropertiesStyleBag(
       styleRangeField(
         runtime.styleFieldBoundsValue_2,
         "translateX",
-        "Move X",
+        uiMessage("inspector.styleBag.moveX"),
         "len",
         1,
         "px",
@@ -643,7 +639,7 @@ export function installEditorPropertiesStyleBag(
       styleRangeField(
         runtime.styleFieldBoundsValue_2,
         "translateY",
-        "Move Y",
+        uiMessage("inspector.styleBag.moveY"),
         "len",
         1,
         "px",
@@ -666,7 +662,7 @@ export function installEditorPropertiesStyleBag(
       styleRangeField(
         runtime.styleFieldBoundsValue_2,
         "skewX",
-        "Skew X",
+        uiMessage("inspector.styleBag.skewX"),
         "num",
         1,
         "\xB0",
@@ -674,14 +670,14 @@ export function installEditorPropertiesStyleBag(
       styleRangeField(
         runtime.styleFieldBoundsValue_2,
         "skewY",
-        "Skew Y",
+        uiMessage("inspector.styleBag.skewY"),
         "num",
         1,
         "\xB0",
       ),
     ];
     PropertiesStyleBagTextAlignTextDecorationLineTextDecorationStyleConfig = {
-      textAlign: "Align",
+      get textAlign() { return uiMessage("inspector.styleBag.align"); },
       textDecorationLine: "Decoration",
       textDecorationStyle: "Line style",
       textDecorationColor: "Line color",
@@ -690,10 +686,10 @@ export function installEditorPropertiesStyleBag(
       fontVariantNumeric: "Numerals",
       letterSpacing: "Letter space",
       textStrokeWidth: "Stroke width",
-      textStrokeColor: "Stroke color",
-      backgroundColor: "Background",
-      backgroundGradient: "Gradient",
-      boxShadow: "Drop shadow",
+      get textStrokeColor() { return uiMessage("inspector.styleBag.strokeColor"); },
+      get backgroundColor() { return uiMessage("inspector.styleBag.background"); },
+      get backgroundGradient() { return uiMessage("inspector.styleBag.gradient"); },
+      get boxShadow() { return uiMessage("inspector.styleBag.dropShadow"); },
       backdropFilter: "Backdrop",
       mixBlendMode: "Blend mode",
     };
@@ -703,7 +699,7 @@ export function installEditorPropertiesStyleBag(
     };
     PropertiesStyleBagConstant = 4;
     InnerShadowNeedsAFillOrMessage =
-      "Inner shadow needs a fill or border on this text";
-    NotOnDiamondOrArrowShapesMessage = "Not on diamond or arrow shapes";
+      uiMessage("inspector.styleBag.innerShadowNeedsAFill");
+    NotOnDiamondOrArrowShapesMessage = uiMessage("inspector.styleBag.notOnDiamondOrArrow");
   };
 }

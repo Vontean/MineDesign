@@ -1,3 +1,5 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
+import { useUiLocale } from '../ui-locale.ts';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -27,6 +29,7 @@ export function installCanvasSelectionChrome(
     crop: crop,
     board: board,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let stroke: Dynamic = chrome.stroke,
       value: Dynamic = [...chrome.rings].sort(
         (input?: Dynamic, options?: Dynamic): Dynamic =>
@@ -45,8 +48,7 @@ export function installCanvasSelectionChrome(
         data-testid={"mega-element-chrome"}
         onContextMenu={onContextMenu}
       >
-        {chrome.artboard && board && (
-          <runtime.SelectionRing
+        {chrome.artboard && board && (<runtime.SelectionRing
             data-testid={"mega-artboard-hover"}
             className={"[[data-mega-selected]_&]:hidden"}
             frame={{
@@ -58,8 +60,7 @@ export function installCanvasSelectionChrome(
             scale={scale}
             state={"hover"}
             variant={board.component ? "component" : "object"}
-          />
-        )}
+          />)}
         {value.map(
           (input?: Dynamic, options?: Dynamic): Dynamic =>
             input.k === "busy"
@@ -264,14 +265,9 @@ export function installCanvasSelectionChrome(
                       return <_Component3 key={_key3} {..._props3} />;
                     })(),
         )}
-        {chrome.measure ? (
-          <runtime.MeasurementOverlay m={chrome.measure} scale={scale} />
-        ) : null}
-        {chrome.guides ? (
-          <runtime.AlignmentGuides guides={chrome.guides} scale={scale} />
-        ) : null}
-        {stroke ? (
-          <runtime.SelectionPoints
+        {chrome.measure ? (<runtime.MeasurementOverlay m={chrome.measure} scale={scale} />) : (null)}
+        {chrome.guides ? (<runtime.AlignmentGuides guides={chrome.guides} scale={scale} />) : (null)}
+        {stroke ? (<runtime.SelectionPoints
             data-testid={"mega-element-line"}
             points={[
               {
@@ -307,8 +303,7 @@ export function installCanvasSelectionChrome(
                     )
                 : undefined
             }
-          />
-        ) : null}
+          />) : (null)}
       </div>
     );
   }
@@ -377,7 +372,7 @@ export function installCanvasSelectionChrome(
     };
     noopResizeGrip = (): Dynamic => {};
     selectionResizeDisabledMessage =
-      "Nothing in this selection can be resized by dragging.";
+      uiMessage("canvas.selectionChrome.nothingInThisSelectionCan");
     selectionRotateDisabledMessages = {
       none: "Nothing in this selection can be rotated.",
       layout:

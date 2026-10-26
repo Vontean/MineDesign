@@ -1,3 +1,4 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -1010,9 +1011,7 @@ export function installFastEditRequest(runtime: RuntimeBindings): () => void {
                   ) + "</section>",
             }),
           ),
-          title:
-            (0, runtime.sanitizeArtboardTitle)(host.canvasTitle, 300) ||
-            "Canvas",
+          get title() { return (0, runtime.sanitizeArtboardTitle)(host.canvasTitle, 300) || (uiMessage("canvas.request.canvas")); },
           ...(value5
             ? {}
             : {

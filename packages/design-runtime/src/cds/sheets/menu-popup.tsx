@@ -1,3 +1,5 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
+import { useUiLocale } from '../../ui-locale.ts';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -245,6 +247,7 @@ export function installCdsSheetsMenuPopup(
       : "now";
   }
   function SheetBackButton({ nested: nested }: Dynamic): Dynamic {
+    useUiLocale();
     let value: Dynamic = (0, reactSheetsMenuPopup_3.useContext)(
         runtime.MenuRootContext,
       ),
@@ -258,7 +261,7 @@ export function installCdsSheetsMenuPopup(
       value5: Dynamic = value3.backLabel ?? value4;
     return (
       <runtime.SheetHeading
-        title={nested ? value2 : value3.sheetTitle}
+        title={nested ? (value2) : (value3.sheetTitle)}
         leading={
           nested ? (
             <runtime.npm_Menu_La.Item
@@ -285,6 +288,7 @@ export function installCdsSheetsMenuPopup(
     );
   }
   function SheetCloseButton(): Dynamic {
+    useUiLocale();
     let value: Dynamic = (0, reactSheetsMenuPopup_3.useContext)(
         runtime.SheetPopupContext,
       ),
@@ -320,6 +324,7 @@ export function installCdsSheetsMenuPopup(
   function MobileSheetsPopoverSheetBackdrop({
     sheetPopup: sheetPopup,
   }: Dynamic): Dynamic {
+    useUiLocale();
     return (
       <runtime.npm_Popover_$f.Backdrop
         data-presentation={"sheet"}
@@ -340,6 +345,7 @@ export function installCdsSheetsMenuPopup(
     closeLabel: closeLabel,
     children: children,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let { chrome: value }: Dynamic = sheetPopup;
     return (
       <runtime.SheetStackContext.Provider value={sheetPopup.stack}>
@@ -372,6 +378,7 @@ export function installCdsSheetsMenuPopup(
   function MobileSheetsComboboxSheetBackdrop({
     sheetPopup: sheetPopup,
   }: Dynamic): Dynamic {
+    useUiLocale();
     return (
       <runtime.npm_Combobox_Yi.Backdrop
         data-presentation={"sheet"}
@@ -1129,8 +1136,7 @@ export function installCdsSheetsMenuPopup(
                 companionModalCatcher={!value4}
                 closeOnActivityHide={true}
               >
-                {value4 && !value5 && (
-                  <runtime.npm_Menu_La.Backdrop
+                {value4 && !value5 && (<runtime.npm_Menu_La.Backdrop
                     data-presentation={"sheet"}
                     data-sheet-scrim={value11?.treeId}
                     className={
@@ -1138,8 +1144,7 @@ export function installCdsSheetsMenuPopup(
                         ? "draggable-none fixed inset-0 bg-transparent"
                         : runtime.PlatformReducedMotionCss_4
                     }
-                  />
-                )}
+                  />)}
                 <runtime.CollisionPaddingProvider
                   override={value7}
                   container={container ?? value}
@@ -1232,8 +1237,7 @@ export function installCdsSheetsMenuPopup(
                                 className,
                               )}
                             >
-                              {value4 ? (
-                                <runtime.SheetStackContext.Provider
+                              {value4 ? (<runtime.SheetStackContext.Provider
                                   value={value54}
                                 >
                                   <runtime.SheetHandle drawPill={!value5} />
@@ -1251,20 +1255,17 @@ export function installCdsSheetsMenuPopup(
                                       fill={true}
                                     >
                                       {children}
-                                      {!value5 && <SheetCloseButton />}
+                                      {!value5 && (<SheetCloseButton />)}
                                     </runtime.PopupScrollArea>
                                     <SheetBackButton nested={value5} />
                                   </div>
-                                </runtime.SheetStackContext.Provider>
-                              ) : (
-                                <runtime.PopupScrollArea
+                                </runtime.SheetStackContext.Provider>) : (<runtime.PopupScrollArea
                                   header={header}
                                   footer={footer}
                                   maxVisibleItems={maxVisibleItems}
                                 >
                                   {children}
-                                </runtime.PopupScrollArea>
-                              )}
+                                </runtime.PopupScrollArea>)}
                             </runtime.MenuPopupElement>
                           )}
                         </runtime.PassiveOpenGate>

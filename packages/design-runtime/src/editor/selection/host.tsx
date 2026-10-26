@@ -1,3 +1,4 @@
+import { useUiLocale } from '../../ui-locale.ts';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -37,6 +38,7 @@ export function installEditorSelectionHost(
     }
   }
   function HostedEditor({ host: host }: Dynamic): Dynamic {
+    useUiLocale();
     let value: Dynamic = (0, reactSelectionHost.useSyncExternalStore)(
       SelectionHostAdd,
       (): Dynamic => SelectionHostAlias_3,

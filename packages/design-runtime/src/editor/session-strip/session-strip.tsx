@@ -1,3 +1,5 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
+import { useUiLocale } from '../../ui-locale.ts';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -58,6 +60,7 @@ export function installEditorSessionStripSessionStrip(
     wrap = false,
     ...props
   }: Dynamic): Dynamic {
+    useUiLocale();
     (0, runtime.reactSessionStripPointerState.useEffect)(
       (): Dynamic => (0, runtime.observeSessionStripPointers)(document),
       [],
@@ -239,6 +242,7 @@ export function installEditorSessionStripSessionStrip(
     className: className,
     ...props
   }: Dynamic): Dynamic {
+    useUiLocale();
     let value: Dynamic = (0, runtime.reactSessionStripPointerState.useContext)(
       runtime.SessionStripContext,
     );
@@ -256,6 +260,7 @@ export function installEditorSessionStripSessionStrip(
     );
   }
   function SessionStripDivider(): Dynamic {
+    useUiLocale();
     return (
       <span
         aria-hidden={"true"}
@@ -360,19 +365,17 @@ export function installEditorSessionStripSessionStrip(
                 {...state}
                 iconOnly={true}
                 icon={icon}
-                aria-label={ariaLabel ?? ""}
+                aria-label={ariaLabel ?? ("")}
                 tooltip={false}
               />
             ) : (
               <runtime.Button {...state} icon={icon} aria-label={ariaLabel}>
                 {children}
-                {chevron === true ? (
-                  <runtime.Icon
+                {chevron === true ? (<runtime.Icon
                     name={"CaretDown"}
                     size={"sm"}
                     className={"shrink-0 opacity-60"}
-                  />
-                ) : null}
+                  />) : (null)}
               </runtime.Button>
             );
         return title === undefined ? (
@@ -398,11 +401,9 @@ export function installEditorSessionStripSessionStrip(
               }
             >
               {value10}
-              {value8 ? (
-                <span hidden={true} id={value7}>
+              {value8 ? (<span hidden={true} id={value7}>
                   {title}
-                </span>
-              ) : null}
+                </span>) : (null)}
               {value5.mirror}
             </span>
           </runtime.Tooltip>

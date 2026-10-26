@@ -1,3 +1,5 @@
+import { useUiLocale } from '../../ui-locale.ts';
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -15,6 +17,7 @@ export function installEditorPropertiesInspectorField(
   var PropertiesInspectorFieldTest: Dynamic;
   var PropertiesInspectorFieldNameComponentFromSet: Dynamic;
   function PropertyInspectorField(input?: Dynamic): Dynamic {
+    useUiLocale();
     let [value, value2]: Dynamic = (0,
       runtime.reactPropertiesDropShadowEditor_2.useState)(null),
       { textContrast: value3 = null }: Dynamic = (0,
@@ -156,17 +159,17 @@ export function installEditorPropertiesInspectorField(
         ? []
         : [
             {
-              label: "Unset property",
+              get label() { return uiMessage("inspector.inspectorField.unsetProperty"); },
               onSelect: callback,
               disabled: !value17 || !!value8.disabled,
             },
             {
-              label: "Edit as text",
+              get label() { return uiMessage("inspector.inspectorField.editAsText"); },
               onSelect: (): Dynamic => value5(true),
               disabled: !!value8.disabled,
             },
             {
-              label: "Copy declaration",
+              get label() { return uiMessage("inspector.inspectorField.copyDeclaration"); },
               onSelect: value15,
             },
             ...((value7.onRemoveRow && !value6 && !value8.disabled) ||
@@ -176,7 +179,7 @@ export function installEditorPropertiesInspectorField(
             ...(value7.onRemoveRow && !value6 && !value8.disabled
               ? [
                   {
-                    label: "Remove row",
+                    get label() { return uiMessage("inspector.inspectorField.removeRow"); },
                     variant: "danger",
                     onSelect: (): Dynamic => {
                       value17 && callback();
@@ -223,16 +226,16 @@ export function installEditorPropertiesInspectorField(
           value8.whyDisabled ??
           (0, runtime.inheritedFieldTooltip)(input.state) ??
           (value8.varSource
-            ? `Authored as ${value8.varSource} \u2014 editing writes the resolved value`
+            ? uiMessage("inspector.inspectorField.authoredAsValue1EditingWrites", { value1: String(value8.varSource) })
             : undefined),
         description: (0, runtime.inheritedFieldDescription)(input.state),
         onReset: value21,
         trailing: value7.trailing,
         resetLabel: value7.onRemoveRow
           ? value17
-            ? `Unset ${value8.label} and remove row`
-            : `Remove ${value8.label} row`
-          : `Unset ${value8.label} (use inherited)`,
+            ? uiMessage("inspector.inspectorField.unsetValue1AndRemoveRow", { value1: String(value8.label) })
+            : uiMessage("inspector.inspectorField.removeValue1Row", { value1: String(value8.label) })
+          : uiMessage("inspector.inspectorField.unsetValue1UseInherited", { value1: String(value8.label) }),
         onContextMenu: value18
           ? undefined
           : (event?: Dynamic): Dynamic => {
@@ -284,10 +287,7 @@ export function installEditorPropertiesInspectorField(
           <runtime.PropertyRow
             {...state}
             title={
-              value6
-                ? `From ${value8.inheritedFrom} \u2014 it has no row in the current layout; right-click to edit`
-                : (state.title ??
-                  "Set on this element; it has no row in the current layout \u2014 reset, or right-click to edit")
+              value6 ? (uiMessage("inspector.inspectorField.fromValue1ItHasNo", { value1: String(value8.inheritedFrom) })) : (state.title ?? (uiMessage("inspector.inspectorField.setOnThisElementIt")))
             }
           >
             <span
@@ -305,7 +305,7 @@ export function installEditorPropertiesInspectorField(
             onClose={(): Dynamic => value2(null)}
             items={value19}
             minWidth={170}
-            label={(value8.label || value8.prop) + " actions"}
+            label={uiMessage("inspector.inspectorField.actions", { value1: String(value8.label || (value8.prop)) })}
           />
         </runtime.jsxPropertiesSizingRow.Fragment>
       );
@@ -383,11 +383,7 @@ export function installEditorPropertiesInspectorField(
             <runtime.PropertyRow
               {...state}
               description={
-                value28 === undefined
-                  ? state.description
-                  : state.description
-                    ? state.description.replace(/\.?\s*$/, ". ") + value28
-                    : value28
+                value28 === undefined ? (state.description) : (state.description ? (state.description.replace(/\.?\s*$/, ". ") + value28) : (value28))
               }
             >
               <runtime.PropertyBackgroundRow
@@ -409,14 +405,12 @@ export function installEditorPropertiesInspectorField(
         value25 = (
           <div data-dc={"contrast-row"}>
             {value29}
-            {value27 !== undefined && value3 ? (
-              <runtime.PropertyRow
+            {value27 !== undefined && value3 ? (<runtime.PropertyRow
                 label={""}
                 className={"-mt-0.5 pb-1 [--prop-row-h:0px]"}
               >
                 <runtime.ContrastLockup fg={value3.ink} results={value27} />
-              </runtime.PropertyRow>
-            ) : null}
+              </runtime.PropertyRow>) : (null)}
           </div>
         );
         break;
@@ -560,7 +554,7 @@ export function installEditorPropertiesInspectorField(
           onClose={(): Dynamic => value2(null)}
           items={value19}
           minWidth={170}
-          label={(value8.label || value8.prop) + " actions"}
+          label={uiMessage("inspector.inspectorField.actions", { value1: String(value8.label || (value8.prop)) })}
         />
       </runtime.jsxPropertiesSizingRow.Fragment>
     );

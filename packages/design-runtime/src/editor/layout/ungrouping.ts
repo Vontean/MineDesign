@@ -1,3 +1,4 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -156,14 +157,14 @@ export function installEditorLayoutUngrouping(
   bindRuntimeValue(runtime, "ungroupModelElement", () => ungroupModelElement);
   return () => {
     NothingToUngroupSelectAGroupMessage =
-      "Nothing to ungroup. Select a group, or a layer that holds other layers.";
+      uiMessage("inspector.ungrouping.nothingToUngroupSelectA");
     ThisComponentManagesItselfSoItMessage_2 =
-      "This component manages itself, so it can\u2019t be ungrouped";
-    LayoutUngroupingLabel = "A component instance can\u2019t be ungrouped";
+      uiMessage("inspector.ungrouping.thisComponentManagesItselfSo");
+    LayoutUngroupingLabel = uiMessage("inspector.ungrouping.aComponentInstanceCanT");
     LayoutUngroupingLabel_2 =
-      "A slide can\u2019t be ungrouped. Ungroup what is inside it.";
+      uiMessage("inspector.ungrouping.aSlideCanTBe");
     LayoutUngroupingLabel_3 =
-      "A repeated or conditional layer follows the layout\u2019s data, so it can\u2019t be ungrouped";
-    LayoutUngroupingLabel_4 = "Parts of a drawing can\u2019t be ungrouped";
+      uiMessage("inspector.ungrouping.aRepeatedOrConditionalLayer");
+    LayoutUngroupingLabel_4 = uiMessage("inspector.ungrouping.partsOfADrawingCan");
   };
 }

@@ -1,3 +1,4 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 import type * as React from "react";
 import type * as Host from "../../contracts/platform-host";
 /** Restored application module; prepare first, initialize in original order. */
@@ -33,18 +34,18 @@ export function installFilesUiHandoffRuntime(
       case "staged":
       case "waiting":
         return (
-          "Added to your message to the agent. Send it when you're ready." + suffix
+          uiMessage("design-system.handoffRuntime.addedToYourMessageTo") + suffix
         );
       case "unanswered":
-        return "Couldn't reach the agent just now. Try again in a moment.";
+        return uiMessage("design-system.handoffRuntime.couldnTReachTheAgent");
       case "sent":
-        return "Sent to the agent." + suffix;
+        return uiMessage("design-system.handoffRuntime.sentToTheAgent") + suffix;
       case "started":
-        return "Sending to the agent…" + suffix;
+        return uiMessage("design-system.handoffRuntime.sendingToTheAgent") + suffix;
       case "copied":
-        return "Prompt copied. Paste it to the agent." + suffix;
+        return uiMessage("design-system.handoffRuntime.promptCopiedPasteItTo") + suffix;
       case "failed":
-        return "Couldn't copy the prompt. Try again, or copy the text yourself.";
+        return uiMessage("design-system.handoffRuntime.couldnTCopyThePrompt");
     }
   }
   function previewLibraryScripts(

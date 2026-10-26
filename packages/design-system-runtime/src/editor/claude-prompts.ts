@@ -1,3 +1,4 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 import type * as React from "react";
 import type * as Editor from "../contracts/editor-runtime";
 import type * as Model from "../contracts";
@@ -66,7 +67,7 @@ export function installEditorClaudePrompts(
   }
   function viewerEmptySystemPrompt(address: string, action: string): string {
     return (
-      "The viewer pressed " +
+      uiMessage("design-system.claudePrompts.theViewerPressed") +
       action +
       " on this empty design system, " +
       address +
@@ -77,7 +78,7 @@ export function installEditorClaudePrompts(
   }
   function viewerGitHubSyncPrompt(address: string): string {
     return (
-      "The viewer pressed Sync from GitHub on this design system and wants it started from a GitHub repository with " +
+      uiMessage("design-system.claudePrompts.theViewerPressedSyncFrom") +
       fromCodeGuidePrompt(address, "them")
     );
   }
@@ -153,8 +154,8 @@ export function installEditorClaudePrompts(
     address: string,
   ): string {
     return (
-      "The viewer pressed " +
-      FIX_WITH_CLAUDE_LABEL +
+      uiMessage("design-system.claudePrompts.theViewerPressed") +
+      uiMessage("design-system.claudePrompts.fixWithTheAgent") +
       " in the Colors table: " +
       colorContrastFixDescription(request, address, {
         my: "their",
@@ -291,7 +292,7 @@ export function installEditorClaudePrompts(
       text = "";
     if (length > 0) {
       text +=
-        "The viewer tried to add " +
+        uiMessage("design-system.claudePrompts.theViewerTriedToAdd") +
         countedPromptNoun(length, "a design file", "design files") +
         " (named below) to this design system; the page can’t use .fig files. Ask them to attach " +
         (length === 1
@@ -307,7 +308,7 @@ export function installEditorClaudePrompts(
     if (value > 0) {
       text +=
         text === ""
-          ? "The viewer tried to add " +
+          ? uiMessage("design-system.claudePrompts.theViewerTriedToAdd") +
             countedPromptNoun(value, "a file", "files") +
             " (named below) to this design system and the page could not store " +
             (value === 1 ? "it" : "them") +
@@ -358,7 +359,7 @@ export function installEditorClaudePrompts(
     action: string,
   ): string {
     return (
-      "The viewer pressed " +
+      uiMessage("design-system.claudePrompts.theViewerPressed") +
       action +
       " and added " +
       countedPromptNoun(count, "a file", "files") +
@@ -395,30 +396,30 @@ export function installEditorClaudePrompts(
     if (ownerChat) {
       if (outcome === "suggested") {
         return (
-          "Your changes weren’t saved yet, so a chat with the agent wasn’t opened. Press again once they’re saved" +
+          uiMessage("design-system.claudePrompts.yourChangesWerenTSaved") +
           ", or send the request yourself: it’s in your chat box."
         );
       }
       if (outcome === "copied") {
         return (
-          "Your changes weren’t saved yet, so a chat with the agent wasn’t opened. Press again once they’re saved" +
+          uiMessage("design-system.claudePrompts.yourChangesWerenTSaved") +
           ", or paste the request into a chat yourself: it was copied."
         );
       }
       return (
-        "Your changes weren’t saved yet, so a chat with the agent wasn’t opened. Press again once they’re saved" +
+        uiMessage("design-system.claudePrompts.yourChangesWerenTSaved") +
         ". The request couldn’t be copied."
       );
     }
     if (outcome === "suggested") {
       // MineDesign: there is no room or comment sender, so putting the request in the session's chat box is the normal
       // road, not the no-session fallback; without a session the request is copied instead ("copied" below).
-      return "The request is in your chat box — send it to the agent.";
+      return uiMessage("design-system.claudePrompts.theRequestIsInYour");
     }
     if (outcome === "copied") {
-      return "No agent session found — the request was copied for you to paste and send to the agent.";
+      return uiMessage("design-system.claudePrompts.noAgentSessionFoundThe");
     }
-    return "No agent session found, and the request couldn’t be copied.";
+    return uiMessage("design-system.claudePrompts.noAgentSessionFoundAnd");
   }
   bindRuntimeValue(runtime, "artifactPageAddress", () => artifactPageAddress);
   bindRuntimeValue(runtime, "fromCodeGuidePrompt", () => fromCodeGuidePrompt);
@@ -449,7 +450,7 @@ export function installEditorClaudePrompts(
   bindRuntimeValue(
     runtime,
     "FIX_WITH_CLAUDE_LABEL",
-    () => FIX_WITH_CLAUDE_LABEL,
+    () => uiMessage("design-system.claudePrompts.fixWithTheAgent"),
     (value) => {
       FIX_WITH_CLAUDE_LABEL = value;
     },

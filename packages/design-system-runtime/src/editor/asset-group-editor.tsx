@@ -1,3 +1,4 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 import type * as React from "react";
 import type * as Editor from "../contracts/editor-runtime";
 import type * as Model from "../contracts";
@@ -15,11 +16,11 @@ export function installEditorAssetGroupEditor(
     taken: string[],
   ): string | null {
     if (/[/\\]/.test(name)) {
-      return "Set names can’t contain slashes. Use a name without / or \\.";
+      return uiMessage("design-system.assetGroupEditor.setNamesCanTContain");
     }
     if (name.length > runtime.MAX_ASSET_GROUP_NAME_LENGTH) {
       return (
-        "That name is too long. Keep it under " +
+        uiMessage("design-system.assetGroupEditor.thatNameIsTooLong") +
         String(runtime.MAX_ASSET_GROUP_NAME_LENGTH) +
         " characters."
       );
@@ -28,7 +29,7 @@ export function installEditorAssetGroupEditor(
       !(0, runtime.isAssetGroupName)(name) ||
       !(0, runtime.isValidDesignSystemPath)("assets/" + name + "/x")
     ) {
-      return "Set names can’t contain hidden or special characters. Type it with plain letters, numbers and spaces.";
+      return uiMessage("design-system.assetGroupEditor.setNamesCanTContain2");
     }
     if (
       name === "." ||
@@ -41,7 +42,7 @@ export function installEditorAssetGroupEditor(
     }
     if (name !== currentName && taken.includes(name)) {
       return (
-        "There is already a set called “" +
+        uiMessage("design-system.assetGroupEditor.thereIsAlreadyASet") +
         name +
         "”. Pick another name, or drag these files onto it."
       );
@@ -51,7 +52,7 @@ export function installEditorAssetGroupEditor(
   function nextAssetGroupName(names: string[]): string {
     let name: string = "Set";
     for (let count: number = 2; names.includes(name); count++) {
-      name = "Set " + String(count);
+      name = uiMessage("design-system.assetGroupEditor.set") + String(count);
     }
     return name;
   }
@@ -135,7 +136,7 @@ export function installEditorAssetGroupEditor(
               let files = value2.content().files;
               if (
                 !value2.exec(
-                  (value16 ? "reorder " : "move ") +
+                  (value16 ? uiMessage("design-system.assetGroupEditor.reorder") : uiMessage("design-system.assetGroupEditor.move")) +
                     assetFileCountLabel(items.length) +
                     " to " +
                     value14,
@@ -232,7 +233,7 @@ export function installEditorAssetGroupEditor(
               (input?: { withoutBytes: string[] }): boolean => {
                 if (
                   !value2.exec(
-                    "remove " + assetFileCountLabel(items.length),
+                    uiMessage("design-system.assetGroupEditor.remove2") + assetFileCountLabel(items.length),
                     callback6,
                     input,
                   )
@@ -240,7 +241,7 @@ export function installEditorAssetGroupEditor(
                   return false;
                 }
                 let value16: string =
-                    "Removed " +
+                    uiMessage("design-system.assetGroupEditor.removed") +
                     (items.length === 1
                       ? (memo2.get(items[0])?.name ?? "1 file")
                       : assetFileCountLabel(items.length)),
@@ -270,7 +271,7 @@ export function installEditorAssetGroupEditor(
             callback5();
           } else {
             ref.current.askRemove({
-              title: "Remove " + assetFileCountLabel(items.length) + "?",
+              get title() { return uiMessage("design-system.assetGroupEditor.remove", { value1: String(assetFileCountLabel(items.length)) }); },
               body: "The files are deleted from assets/. Anything linking to them will break. Undo brings them back.",
               run: callback5,
             });
@@ -372,9 +373,9 @@ export function installEditorAssetGroupEditor(
                   value2,
                   callback5,
                   (): boolean => {
-                    if (!value2.exec("rename group " + input.name, callback5)) {
+                    if (!value2.exec(uiMessage("design-system.assetGroupEditor.renameGroup") + input.name, callback5)) {
                       (0, runtime.showEditorNotification)(
-                        "Could not rename " +
+                        uiMessage("design-system.assetGroupEditor.couldNotRename") +
                           value4(input.name) +
                           " to “" +
                           value13 +
@@ -443,14 +444,9 @@ export function installEditorAssetGroupEditor(
                   return;
                 }
                 ref.current.askRemove({
-                  title:
-                    "Remove " +
-                    value4(input.name) +
-                    " and its " +
-                    assetFileCountLabel(value15.length) +
-                    "?",
+                  get title() { return uiMessage("design-system.assetGroupEditor.removeAndIts", { value1: String(value4(input.name)), value2: String(assetFileCountLabel(value15.length)) }); },
                   body:
-                    "The files are deleted from " +
+                    uiMessage("design-system.assetGroupEditor.theFilesAreDeletedFrom") +
                     input.folder +
                     ". Anything linking to them will break. Undo brings them back.",
                   run: (): void => {
@@ -479,7 +475,7 @@ export function installEditorAssetGroupEditor(
                       (input2?: { withoutBytes: string[] }): boolean => {
                         if (
                           !value2.exec(
-                            "remove group " + input.name,
+                            uiMessage("design-system.assetGroupEditor.removeGroup") + input.name,
                             callback5,
                             input2,
                           )
@@ -487,7 +483,7 @@ export function installEditorAssetGroupEditor(
                           return false;
                         }
                         let value18: string =
-                            "Removed " +
+                            uiMessage("design-system.assetGroupEditor.removed") +
                             value4(input.name) +
                             " and its " +
                             assetFileCountLabel(value15.length) +
@@ -524,7 +520,7 @@ export function installEditorAssetGroupEditor(
               autoEdit:
                 value6 === input.name
                   ? {
-                      placeholder: NEW_ASSET_GROUP_PLACEHOLDER,
+                      placeholder: uiMessage("design-system.assetGroupEditor.nameThisSet"),
                       onEnd: () => value7(null),
                     }
                   : undefined,
@@ -553,7 +549,7 @@ export function installEditorAssetGroupEditor(
   bindRuntimeValue(
     runtime,
     "NEW_ASSET_GROUP_PLACEHOLDER",
-    () => NEW_ASSET_GROUP_PLACEHOLDER,
+    () => uiMessage("design-system.assetGroupEditor.nameThisSet"),
     (value) => {
       NEW_ASSET_GROUP_PLACEHOLDER = value;
     },

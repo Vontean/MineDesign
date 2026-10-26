@@ -1,3 +1,4 @@
+import { useUiLocale } from '../ui-locale.ts';
 /** Restored application module; prepare first, initialize in original order. */
 import { bindRuntimeValue, type RuntimeBindings } from "../runtime-types";
 import type * as React from "react";
@@ -106,6 +107,7 @@ export function installUiPropertySearch(runtime: RuntimeBindings): () => void {
     className: className,
     "data-testid": dataTestid,
   }: OptionListProps) {
+    useUiLocale();
     return (
       <div className={className ?? "mt-0.5 mb-2 w-0 min-w-full"}>
         <runtime.TextInput

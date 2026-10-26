@@ -1,3 +1,5 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
+import { useUiLocale } from '../ui-locale.ts';
 import type * as React from "react";
 import type {
   ForwardComponent,
@@ -217,6 +219,7 @@ export function installUiTabs(runtime: RuntimeBindings): () => void {
     listRef: listRef,
     triggerHadFocusRef: triggerHadFocusRef,
   }: TabsListMenuProps): React.ReactElement {
+    useUiLocale();
     let value = useTabsOverflow(),
       ref = reactForUiTabs.useRef<HTMLButtonElement | null>(null),
       value2 = reactForUiTabs.useId(),
@@ -286,8 +289,7 @@ export function installUiTabs(runtime: RuntimeBindings): () => void {
         .join(" ");
     return (
       <runtime.Menu.Root sheetTitle={ariaLabel}>
-        {[
-          <runtime.Menu.TriggerButton
+        {[<runtime.Menu.TriggerButton
             ref={ref}
             variant={"secondary"}
             size={size}
@@ -295,13 +297,11 @@ export function installUiTabs(runtime: RuntimeBindings): () => void {
             data-cds-part={TABS_MENU_TRIGGER_ID}
             className={"max-w-full min-w-0"}
           >
-            {[
-              ariaLabel !== undefined && ariaLabelledby === undefined ? (
+            {[ariaLabel !== undefined && ariaLabelledby === undefined ? (
                 <span id={value2} className={"sr-only"}>
                   {ariaLabel}
                 </span>
-              ) : null,
-              value6 !== undefined ? (
+              ) : null, value6 !== undefined ? (
                 <span
                   id={value3}
                   data-cds-part={TABS_MENU_LABEL_ID}
@@ -317,12 +317,10 @@ export function installUiTabs(runtime: RuntimeBindings): () => void {
                 >
                   {ariaLabel}
                 </span>
-              ) : null,
-            ]}
-          </runtime.Menu.TriggerButton>,
-          <runtime.Menu.Popup>
+              ) : null]}
+          </runtime.Menu.TriggerButton>, <runtime.Menu.Popup>
             <runtime.Menu.Group
-              aria-label={ariaLabelledby === undefined ? ariaLabel : undefined}
+              aria-label={ariaLabelledby === undefined ? (ariaLabel) : (undefined)}
               aria-labelledby={ariaLabelledby}
             >
               {value4.map((input: TabMenuItem, options: number) =>
@@ -346,8 +344,7 @@ export function installUiTabs(runtime: RuntimeBindings): () => void {
                 })(),
               )}
             </runtime.Menu.Group>
-          </runtime.Menu.Popup>,
-        ]}
+          </runtime.Menu.Popup>]}
       </runtime.Menu.Root>
     );
   }
@@ -839,8 +836,7 @@ export function installUiTabs(runtime: RuntimeBindings): () => void {
         }, [value3]);
         return (
           <jsxrZ.Fragment>
-            {[
-              <runtime.baseTabs.List
+            {[<runtime.baseTabs.List
                 ref={value}
                 activateOnFocus={activateOnFocus}
                 {...props}
@@ -859,8 +855,7 @@ export function installUiTabs(runtime: RuntimeBindings): () => void {
                   className,
                   value3 && stashedTabsClasses,
                 )}
-              />,
-              value3 ? (
+              />, value3 ? (
                 <TabsListMenu
                   size={size}
                   aria-label={props["aria-label"]}
@@ -868,8 +863,7 @@ export function installUiTabs(runtime: RuntimeBindings): () => void {
                   listRef={ref}
                   triggerHadFocusRef={ref2}
                 />
-              ) : null,
-            ]}
+              ) : null]}
           </jsxrZ.Fragment>
         );
       },
@@ -922,15 +916,12 @@ export function installUiTabs(runtime: RuntimeBindings): () => void {
                 props.onMouseDown,
               )}
             >
-              {[
-                children,
-                disabledReason !== undefined && (
+              {[children, disabledReason !== undefined && (
                   <runtime.DisabledReasonAnnouncement
                     id={value}
                     reason={value2 ? disabledReason : undefined}
                   />
-                ),
-              ]}
+                )]}
             </runtime.baseTabs.Tab>
           );
         if (disabledReason === undefined) {

@@ -1,3 +1,4 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -518,8 +519,8 @@ export function installEditorGeometryFlipElements(
       GeometryFlipElementsYtMytOytConfig[input] ?? context[input];
     return options
       ? value !== undefined
-        ? "Couldn\u2019t flip " + value + ". The rest flipped."
-        : "Part of the selection couldn\u2019t be flipped. The rest flipped."
+        ? uiMessage("inspector.flipElements.couldnTFlip") + value + ". The rest flipped."
+        : uiMessage("inspector.flipElements.partOfTheSelectionCouldn")
       : input.endsWith(".")
         ? input
         : input + ".";
@@ -734,35 +735,35 @@ export function installEditorGeometryFlipElements(
   bindRuntimeValue(runtime, "flipModelSelection", () => flipModelSelection);
   bindRuntimeValue(runtime, "partialFlipMessage", () => partialFlipMessage);
   return () => {
-    GeometryFlipElementsLabel = "A component instance can\u2019t be flipped";
+    GeometryFlipElementsLabel = uiMessage("inspector.flipElements.aComponentInstanceCanT");
     ThisComponentManagesItselfSoItMessage =
-      "This component manages itself, so it can\u2019t be flipped";
+      uiMessage("inspector.flipElements.thisComponentManagesItselfSo");
     GeometryFlipElementsLabel_2 =
-      "A conditional or repeating group can\u2019t be flipped. Flip what is inside it.";
+      uiMessage("inspector.flipElements.aConditionalOrRepeatingGroup");
     ThisOnlyWrapsOtherLayersSoMessage =
-      "This only wraps other layers, so it can\u2019t be flipped. Flip what is inside it.";
+      uiMessage("inspector.flipElements.thisOnlyWrapsOtherLayers");
     ThisHasNoWidthOfItsMessage =
-      "This has no width of its own, so it can\u2019t be flipped this way. Flip what\u2019s inside it.";
+      uiMessage("inspector.flipElements.thisHasNoWidthOf");
     ThisHasNoHeightOfItsMessage =
-      "This has no height of its own, so it can\u2019t be flipped this way. Flip what\u2019s inside it.";
+      uiMessage("inspector.flipElements.thisHasNoHeightOf");
     ThisIsnTShownOnThePageMessage =
-      "This isn\u2019t shown on the page right now, so it can\u2019t be flipped. Show it first.";
+      uiMessage("inspector.flipElements.thisIsnTShownOn");
     GeometryFlipElementsLabel_3 =
       // MineDesign: user-facing copy calls the agent "the agent", not Claude.
-      "Its rotation or scale is set in code the editor can\u2019t change, so it can\u2019t be flipped here. Ask the agent in chat to flip it.";
+      uiMessage("inspector.flipElements.itsRotationOrScaleIs");
     GeometryFlipElementsLabel_4 =
-      "Part of a line of text can\u2019t be flipped on its own. Flip the whole text block.";
+      uiMessage("inspector.flipElements.partOfALineOf");
     GeometryFlipElementsLabel_5 =
-      "Its position is set in a way the editor can\u2019t adjust, so it can\u2019t be flipped in place. Ask the agent in chat to flip it.";
+      uiMessage("inspector.flipElements.itsPositionIsSetIn");
     ThisRepeatedElementCanTBeFlippedMessage =
-      "This repeated element can\u2019t be flipped in place. Ask the agent in chat to flip it.";
+      uiMessage("inspector.flipElements.thisRepeatedElementCanT");
     FlippingThisWayWouldnTChangeItMessage =
-      "Flipping this way wouldn\u2019t change it";
+      uiMessage("inspector.flipElements.flippingThisWayWouldnT");
     FinishEditingThisDrawingSPointsToMessage =
-      "Finish editing this drawing\u2019s points to flip it";
-    GeometryFlipElementsLabel_6 = "Finish cropping to flip";
+      uiMessage("inspector.flipElements.finishEditingThisDrawingS");
+    GeometryFlipElementsLabel_6 = uiMessage("inspector.flipElements.finishCroppingToFlip");
     CouldnTFlipRightNowTryAgainMessage =
-      "Couldn\u2019t flip right now. Try again.";
+      uiMessage("inspector.flipElements.couldnTFlipRightNow");
     GeometryFlipElementsYtMytOytConfig = {
       [GeometryFlipElementsLabel]: "a component instance",
       [ThisComponentManagesItselfSoItMessage]:

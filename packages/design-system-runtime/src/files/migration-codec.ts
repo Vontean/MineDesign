@@ -1,3 +1,4 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import type * as Migration from "../contracts/migration";
 import type * as Model from "../contracts";
@@ -71,7 +72,7 @@ export function installFilesMigrationCodec(
     }
     return {
       next: "stay",
-      why: outcome.stage + ": " + outcome.code,
+      get why() { return ((outcome.stage) + (": ")) + (outcome.code); },
       ...(outcome.code === "collection_too_large"
         ? {
             notice: MIGRATION_TOO_LARGE_MESSAGE,
@@ -475,13 +476,13 @@ export function installFilesMigrationCodec(
       runtime.SYSTEM_COLLECTION + "/convert-lock";
     MAX_DESIGN_SYSTEM_INDEX_CHARS = 2000000;
     MIGRATION_GREW_TOO_LARGE_MESSAGE =
-      "This design system was being moved to a newer way of saving, but it grew past the size limit on the way (the limit is " +
+      uiMessage("design-system.migrationCodec.thisDesignSystemWasBeing") +
       String(runtime.ARTIFACT_FILE_CAPACITY.files) +
       " files or " +
       String(runtime.ARTIFACT_FILE_CAPACITY.bytes / 1048576) +
       " MB), so it stays as it is. Nothing is needed from you.";
     MIGRATION_TOO_LARGE_MESSAGE =
-      "This design system was going to be moved to a newer way of saving, but it is too large for that for now (the limit is " +
+      uiMessage("design-system.migrationCodec.thisDesignSystemWasGoing") +
       String(runtime.ARTIFACT_FILE_CAPACITY.files) +
       " files or " +
       String(runtime.ARTIFACT_FILE_CAPACITY.bytes / 1048576) +

@@ -1,3 +1,5 @@
+import { useUiLocale } from '../../ui-locale.ts';
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 import type * as React from "react";
 import type * as Preview from "../../contracts/preview";
 import type * as Model from "../../contracts";
@@ -25,6 +27,7 @@ export function installFilesUiWelcome(runtime: RuntimeBindings): () => void {
     size = 14,
     className: className,
   }: Preview.WelcomeIconProps): React.ReactElement {
+    useUiLocale();
     return (
       <svg
         viewBox={"0 0 16 16"}
@@ -48,6 +51,7 @@ export function installFilesUiWelcome(runtime: RuntimeBindings): () => void {
     onCopy: onCopy,
     prompt: prompt,
   }: Preview.HandoffNoticeProps): React.ReactElement {
+    useUiLocale();
     return (
       <div
         className={
@@ -56,32 +60,20 @@ export function installFilesUiWelcome(runtime: RuntimeBindings): () => void {
         role={"status"}
         data-testid={"ds-handoff-note"}
       >
-        {[
-          <p>
-            {kind === "failed" ? (
-              <jsxWelcome.Fragment>
-                {[
-                  (0, runtime.claudeDeliveryStatusMessage)("failed", held),
-                  " ",
-                  <runtime.TextLink
+        {[<p>
+            {kind === "failed" ? (<jsxWelcome.Fragment>
+                {[(0, runtime.claudeDeliveryStatusMessage)("failed", held), " ", <runtime.TextLink
                     onClick={onCopy}
                     data-testid={"ds-handoff-copy"}
                   >
-                    {"Copy it"}
-                  </runtime.TextLink>,
-                ]}
-              </jsxWelcome.Fragment>
-            ) : (
-              (0, runtime.claudeDeliveryStatusMessage)(kind, held)
-            )}
-          </p>,
-          kind === "failed" && prompt !== undefined ? (
+                    {uiMessage("design-system.welcome.copyIt")}
+                  </runtime.TextLink>]}
+              </jsxWelcome.Fragment>) : ((0, runtime.claudeDeliveryStatusMessage)(kind, held))}
+          </p>, kind === "failed" && prompt !== undefined ? (
             <runtime.Collapsible.Root>
-              {[
-                <runtime.Collapsible.Trigger className={"w-fit text-secondary"}>
-                  {"Show the request"}
-                </runtime.Collapsible.Trigger>,
-                <runtime.Collapsible.Panel keepMounted={true}>
+              {[<runtime.Collapsible.Trigger className={"w-fit text-secondary"}>
+                  {uiMessage("design-system.welcome.showTheRequest")}
+                </runtime.Collapsible.Trigger>, <runtime.Collapsible.Panel keepMounted={true}>
                   <pre
                     className={
                       "mt-xs max-h-48 overflow-auto rounded bg-surface-2 p-md font-mono text-caption whitespace-pre-wrap text-secondary select-all"
@@ -90,11 +82,9 @@ export function installFilesUiWelcome(runtime: RuntimeBindings): () => void {
                   >
                     {prompt}
                   </pre>
-                </runtime.Collapsible.Panel>,
-              ]}
+                </runtime.Collapsible.Panel>]}
             </runtime.Collapsible.Root>
-          ) : null,
-        ]}
+          ) : null]}
       </div>
     );
   }
@@ -106,6 +96,7 @@ export function installFilesUiWelcome(runtime: RuntimeBindings): () => void {
     note: note,
     panel: panel,
   }: Preview.WelcomeSheetProps): React.ReactElement {
+    useUiLocale();
     let ref = reactWelcome.useRef(false),
       ref2 = reactWelcome.useRef<HTMLDivElement | null>(null);
     reactWelcome.useEffect(() => {
@@ -165,10 +156,10 @@ export function installFilesUiWelcome(runtime: RuntimeBindings): () => void {
     ) => {
       let value5 =
         detail === undefined
-          ? WELCOME_TYPE_REQUIRED_MESSAGE
+          ? uiMessage("design-system.welcome.worksInADesignSystem")
           : argument && busy === true
             ? // MineDesign: user-facing copy calls the agent "the agent", not Claude.
-              "A request to the agent is on its way"
+              uiMessage("design-system.welcome.aRequestToTheAgent")
             : undefined;
       return (
         <runtime.DisabledReasonTooltip reason={value5}>
@@ -181,22 +172,16 @@ export function installFilesUiWelcome(runtime: RuntimeBindings): () => void {
             }
             data-testid={input}
           >
-            {[
-              <span
+            {[<span
                 className={"ds-welcome-icon ds-tone-" + options}
                 aria-hidden={"true"}
               >
                 {context}
-              </span>,
-              <span className={"flex min-w-0 flex-col gap-0.5 text-left"}>
-                {[
-                  <span className={"text-body font-medium text-primary"}>
+              </span>, <span className={"flex min-w-0 flex-col gap-0.5 text-left"}>
+                {[<span className={"text-body font-medium text-primary"}>
                     {value4}
-                  </span>,
-                  <span className={"text-body text-secondary"}>{extra}</span>,
-                ]}
-              </span>,
-            ]}
+                  </span>, <span className={"text-body text-secondary"}>{extra}</span>]}
+              </span>]}
           </button>
         </runtime.DisabledReasonTooltip>
       );
@@ -216,24 +201,19 @@ export function installFilesUiWelcome(runtime: RuntimeBindings): () => void {
           data-testid={"ds-welcome"}
           {...runtime.UNCOMMENTABLE_PROPS}
         >
-          {[
-            panel ?? (
+          {[panel ?? (
               <jsxWelcome.Fragment>
-                {[
-                  <h2 className={"ds-welcome-title"}>
-                    {"Not sure where to start?"}
-                  </h2>,
-                  <div className={"ds-welcome-options"} ref={ref2}>
-                    {[
-                      callback(
+                {[<h2 className={"ds-welcome-title"}>
+                    {uiMessage("design-system.welcome.notSureWhereToStart")}
+                  </h2>, <div className={"ds-welcome-options"} ref={ref2}>
+                    {[callback(
                         "ds-welcome-github",
                         "green",
                         <WelcomeIcon name={"github"} size={20} />,
                         WELCOME_OPTIONS.github[0],
                         WELCOME_OPTIONS.github[1],
                         onGithub,
-                      ),
-                      callback(
+                      ), callback(
                         "ds-welcome-connect",
                         "clay",
                         <runtime.Icon
@@ -243,8 +223,7 @@ export function installFilesUiWelcome(runtime: RuntimeBindings): () => void {
                         WELCOME_OPTIONS.connect[0],
                         WELCOME_OPTIONS.connect[1],
                         onConnect,
-                      ),
-                      callback(
+                      ), callback(
                         "ds-welcome-upload",
                         "blue",
                         <runtime.Icon
@@ -255,19 +234,16 @@ export function installFilesUiWelcome(runtime: RuntimeBindings): () => void {
                         WELCOME_OPTIONS.upload[1],
                         () => onUpload(),
                         false,
-                      ),
-                    ]}
-                  </div>,
-                ]}
+                      )]}
+                  </div>]}
               </jsxWelcome.Fragment>
-            ),
-            note,
-          ]}
+            ), note]}
         </div>
       </runtime.SectionSheet>
     );
   }
   function EmptyDesignSystem(): React.ReactElement {
+    useUiLocale();
     return (
       <runtime.SectionSheet>
         <div
@@ -276,20 +252,18 @@ export function installFilesUiWelcome(runtime: RuntimeBindings): () => void {
           }
           data-testid={"ds-empty"}
         >
-          {[
-            <h2 className={"ds-page-title"}>{"Just getting started"}</h2>,
-            <p className={"text-body text-secondary"}>
+          {[<h2 className={"ds-page-title"}>{uiMessage("design-system.welcome.justGettingStarted")}</h2>, <p className={"text-body text-secondary"}>
               {
                 // MineDesign: user-facing copy calls the agent "the agent", not Claude.
-                "Nothing has been added to this design system yet. Once the brand’s files are in, the agent drafts it from there."
+                uiMessage("design-system.welcome.nothingHasBeenAddedTo")
               }
-            </p>,
-          ]}
+            </p>]}
         </div>
       </runtime.SectionSheet>
     );
   }
   function IntakeProgressDot(): React.ReactElement {
+    useUiLocale();
     return (
       <span
         className={
@@ -303,6 +277,7 @@ export function installFilesUiWelcome(runtime: RuntimeBindings): () => void {
     text: text,
     quiet = false,
   }: Preview.IntakeProgressStatusProps): React.ReactElement {
+    useUiLocale();
     return (
       <div
         className={
@@ -323,7 +298,7 @@ export function installFilesUiWelcome(runtime: RuntimeBindings): () => void {
       return BRAND_UPLOAD_TEXT.adding;
     }
     if (intake.kept === 0) {
-      return "None of them could be kept.";
+      return uiMessage("design-system.welcome.noneOfThemCouldBe");
     }
     let singular = intake.kept === 1;
     return (
@@ -335,7 +310,7 @@ export function installFilesUiWelcome(runtime: RuntimeBindings): () => void {
         : "") +
       // MineDesign: user-facing copy calls the agent "the agent", not Claude.
       ". Create the design system and the agent will draft from " +
-      (singular ? "that file" : "them") +
+      (singular ? uiMessage("design-system.welcome.thatFile") : "them") +
       "." +
       BRAND_UPLOAD_TEXT.save[intake.save]
     );
@@ -355,6 +330,7 @@ export function installFilesUiWelcome(runtime: RuntimeBindings): () => void {
     removeDisabledReason: removeDisabledReason,
     testid: testid,
   }: Preview.BrandUploadGridProps): React.ReactElement {
+    useUiLocale();
     return (
       <ul className={"ds-upload-grid"} data-testid={testid + "-files"}>
         {files.map((input, options) =>
@@ -379,8 +355,8 @@ export function installFilesUiWelcome(runtime: RuntimeBindings): () => void {
                       size={"sm"}
                       iconOnly={true}
                       icon={"X"}
-                      aria-label={"Remove " + input.name}
-                      tooltip={"Remove"}
+                      aria-label={uiMessage("design-system.welcome.remove2", { value1: String(input.name) })}
+                      tooltip={uiMessage("design-system.welcome.remove")}
                       disabled={removeDisabledReason !== undefined}
                       onClick={() => onRemove(options)}
                       data-testid={testid + "-remove-" + String(options)}
@@ -408,6 +384,7 @@ export function installFilesUiWelcome(runtime: RuntimeBindings): () => void {
     onBack: onBack,
     "data-testid": dataTestid = "ds-upload",
   }: Preview.BrandUploadPanelProps): React.ReactElement {
+    useUiLocale();
     let value = BRAND_UPLOAD_TEXT,
       value2 = files.length > 0,
       value3 = !value2
@@ -491,11 +468,8 @@ export function installFilesUiWelcome(runtime: RuntimeBindings): () => void {
         className={"flex min-h-0 flex-1 flex-col gap-md"}
         data-testid={dataTestid}
       >
-        {[
-          <div className={"flex items-center justify-between gap-md"}>
-            {[
-              <h2 className={"ds-welcome-title"}>{value.title}</h2>,
-              onBack !== undefined ? (
+        {[<div className={"flex items-center justify-between gap-md"}>
+            {[<h2 className={"ds-welcome-title"}>{value.title}</h2>, onBack !== undefined ? (
                 <span className={"text-footnote text-secondary"}>
                   <runtime.TextLink
                     inheritColor={true}
@@ -507,10 +481,8 @@ export function installFilesUiWelcome(runtime: RuntimeBindings): () => void {
                     {value.back}
                   </runtime.TextLink>
                 </span>
-              ) : null,
-            ]}
-          </div>,
-          <runtime.FileDropZone
+              ) : null]}
+          </div>, <runtime.FileDropZone
             large={true}
             folder={true}
             line={value.line}
@@ -518,8 +490,7 @@ export function installFilesUiWelcome(runtime: RuntimeBindings): () => void {
             onFiles={onFiles}
             onLeftOut={onLeftOut}
             testid={dataTestid}
-          />,
-          value2 ? (
+          />, value2 ? (
             <BrandUploadGrid
               files={files}
               thumb={thumb}
@@ -527,15 +498,13 @@ export function installFilesUiWelcome(runtime: RuntimeBindings): () => void {
               removeDisabledReason={intake.busy ? value.removeLater : undefined}
               testid={dataTestid}
             />
-          ) : null,
-          <div
+          ) : null, <div
             className={
               "flex flex-wrap items-center justify-between gap-md" +
               (value2 && !intake.busy ? " ds-upload-foot" : "")
             }
           >
-            {[
-              <p
+            {[<p
                 className={
                   "flex min-h-6 items-center gap-sm text-footnote text-secondary"
                 }
@@ -543,12 +512,8 @@ export function installFilesUiWelcome(runtime: RuntimeBindings): () => void {
                 aria-live={"polite"}
                 data-testid={dataTestid + "-status"}
               >
-                {[
-                  value2 && intake.busy ? <IntakeProgressDot /> : null,
-                  value2 ? brandUploadStatusText(intake) : "",
-                ]}
-              </p>,
-              <runtime.DisabledReasonTooltip reason={value3}>
+                {[value2 && intake.busy ? <IntakeProgressDot /> : null, value2 ? brandUploadStatusText(intake) : ""]}
+              </p>, <runtime.DisabledReasonTooltip reason={value3}>
                 <runtime.Button
                   ref={ref2}
                   data-initial-focus={""}
@@ -559,10 +524,8 @@ export function installFilesUiWelcome(runtime: RuntimeBindings): () => void {
                 >
                   {value.create}
                 </runtime.Button>
-              </runtime.DisabledReasonTooltip>,
-            ]}
-          </div>,
-        ]}
+              </runtime.DisabledReasonTooltip>]}
+          </div>]}
       </div>
     );
   }
@@ -618,7 +581,7 @@ export function installFilesUiWelcome(runtime: RuntimeBindings): () => void {
   bindRuntimeValue(
     runtime,
     "WELCOME_TYPE_REQUIRED_MESSAGE",
-    () => WELCOME_TYPE_REQUIRED_MESSAGE,
+    () => uiMessage("design-system.welcome.worksInADesignSystem"),
     (value) => {
       WELCOME_TYPE_REQUIRED_MESSAGE = value;
     },
@@ -712,7 +675,7 @@ export function installFilesUiWelcome(runtime: RuntimeBindings): () => void {
     README_STARTER_TEXT = [
       "# Your design system…",
       "",
-      "This page is yours to edit. Click anywhere and write what this system is for, the rules it follows, and how to use its tokens and components — the agent reads it before it designs anything.",
+      uiMessage("design-system.welcome.thisPageIsYoursTo"),
       "",
       "## Principles",
       "",
@@ -721,15 +684,15 @@ export function installFilesUiWelcome(runtime: RuntimeBindings): () => void {
       "",
       "## Using tokens",
       "",
-      "Which colours, type and spacing to reach for, and when.",
+      uiMessage("design-system.welcome.whichColoursTypeAndSpacing"),
       "",
       "## Using components",
       "",
-      "Where the components come from, and the one or two that are easy to misuse.",
+      uiMessage("design-system.welcome.whereTheComponentsComeFrom"),
       "",
       "## Accessibility",
       "",
-      "Which text and background pairs are guaranteed legible, the focus ring, and what never relies on colour alone.",
+      uiMessage("design-system.welcome.whichTextAndBackgroundPairs"),
       "",
     ].join(`
 `);
@@ -738,17 +701,17 @@ export function installFilesUiWelcome(runtime: RuntimeBindings): () => void {
     WELCOME_OPTIONS = {
       // MineDesign: user-facing copy calls the agent "the agent", not Claude.
       github: [
-        "Sync from GitHub",
-        "Point the agent at a repository; it imports tokens and components from code.",
+        uiMessage("design-system.welcome.syncFromGitHub"),
+        uiMessage("design-system.welcome.pointTheAgentAtA"),
       ],
       connect: [
-        "Build from connectors",
-        "The agent builds from your connected tools, or asks you a few questions first.",
+        uiMessage("design-system.welcome.buildFromConnectors"),
+        uiMessage("design-system.welcome.theAgentBuildsFromYour"),
         "Connectors",
       ],
       upload: [
-        "Upload brand files",
-        "Drop in logos, fonts, guidelines and token files; the agent drafts from them.",
+        uiMessage("design-system.welcome.uploadBrandFiles"),
+        uiMessage("design-system.welcome.dropInLogosFontsGuidelines"),
         "FileUpload",
       ],
     };
@@ -757,16 +720,16 @@ export function installFilesUiWelcome(runtime: RuntimeBindings): () => void {
       1,
     );
     BRAND_UPLOAD_TEXT = {
-      title: "Upload your brand’s files",
+      get title() { return uiMessage("design-system.welcome.uploadYourBrandSFiles"); },
       line: "Drop logos, fonts, brand guidelines and token files here",
-      hint: "Images, font files, PDFs, CSS or JSON tokens, screenshots — a folder keeps its name as a group.",
+      get hint() { return uiMessage("design-system.welcome.imagesFontFilesPDFsCSSOrJSONTokensScreenshotsAFolderKeepsItsNameAsAGroup"); },
       create: "Create design system",
       back: "Back",
       noFiles: "Drop or choose the brand’s files first",
       adding: "Adding them to the page…",
       noneKept: "The page couldn’t keep any of them — try other files",
       // MineDesign: user-facing copy calls the agent "the agent", not Claude.
-      waiting: "A request to the agent is on its way",
+      waiting: uiMessage("design-system.welcome.aRequestToTheAgent"),
       removeLater: "You can remove it once the upload finishes",
       save: {
         clean: "",

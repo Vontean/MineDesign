@@ -1,3 +1,5 @@
+import { useUiLocale } from '../ui-locale.ts';
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 import type * as React from "react";
 import type * as Token from "../contracts/token-editors";
 import type * as Model from "../contracts";
@@ -41,6 +43,7 @@ export function installEditorColors(runtime: RuntimeBindings): () => void {
     inherited: inherited,
     small: small,
   }: Token.ColorSwatchProps): React.ReactElement {
+    useUiLocale();
     let value = (0, runtime.isColorLiteral)(css as string) ? css! : null;
     return (
       <span
@@ -155,7 +158,7 @@ export function installEditorColors(runtime: RuntimeBindings): () => void {
             return [
               {
                 css: value5,
-                label: value2 ? input2 + " (" + value3 + ")" : input2,
+                get label() { return value2 ? ((((input2) + (" (")) + (value3)) + (")")) : (input2); },
               },
             ];
           });
@@ -181,6 +184,7 @@ export function installEditorColors(runtime: RuntimeBindings): () => void {
     askClaude: askClaude,
     busy = false,
   }: Token.ColorValueCellProps): React.ReactElement {
+    useUiLocale();
     let value = colorValueForTheme(token, theme.id, firstId),
       [value2, value3] = (runtime.reactColorEditors as typeof React).useState(
         false,
@@ -203,8 +207,8 @@ export function installEditorColors(runtime: RuntimeBindings): () => void {
         theme.name +
         ": " +
         (value.to !== undefined
-          ? "alias of " + value.to
-          : (value.css ?? "no value")) +
+          ? uiMessage("design-system.colors.aliasOf2") + value.to
+          : (value.css ?? uiMessage("design-system.colors.noValue"))) +
         (value.inherited ? " (inherited)" : ""),
       callback = (): void => {
         let value12 = value.css ?? "";
@@ -232,9 +236,7 @@ export function installEditorColors(runtime: RuntimeBindings): () => void {
           )}
           aria-label={value6}
           tooltip={
-            (themes.length > 1 ? theme.name + ": " : "") +
-            "Copy " +
-            (value.css ?? "")
+            uiMessage("design-system.colors.copy", { value1: String(themes.length > 1 ? (theme.name + ": ") : ("")), value2: String(value.css ?? ("")) })
           }
           data-testid={"ds-chip-" + token.name + "-" + theme.id}
           onClick={(event: React.MouseEvent<HTMLButtonElement>): void => {
@@ -267,8 +269,7 @@ export function installEditorColors(runtime: RuntimeBindings): () => void {
           : (0, runtime.worstContrastResult)(memo3),
       value11 = (
         <jsxColorEditors.Fragment>
-          {[
-            edit !== undefined ? (
+          {[edit !== undefined ? (
               <span
                 className={
                   "ds-crowfield min-w-0 flex-1 [--pp-label-w:0px] [--pp-gutter-l:0px] [--pp-gutter-r:0px]"
@@ -276,7 +277,7 @@ export function installEditorColors(runtime: RuntimeBindings): () => void {
                 data-testid={"ds-hex-" + token.name + "-" + theme.id}
               >
                 <runtime.ColorTextPropertyRow
-                  label={token.name + " · " + theme.name}
+                  label={((token.name) + (" · ")) + (theme.name)}
                   value={value9}
                   editsAreUndoSteps={true}
                   popupAttrs={(0, runtime.commentTargetProps)(
@@ -290,13 +291,13 @@ export function installEditorColors(runtime: RuntimeBindings): () => void {
                     : {})}
                   {...(value.inherited && value7 !== undefined
                     ? {
-                        clearLabel: "Inherits " + value7.name,
+                        clearLabel: uiMessage("design-system.colors.inherits") + value7.name,
                       }
                     : {})}
                   {...(value.to !== undefined
                     ? {
-                        title: "Alias of " + value.to,
-                        description: "Alias of " + value.to,
+                        title: uiMessage("design-system.colors.aliasOf") + value.to,
+                        description: uiMessage("design-system.colors.aliasOf") + value.to,
                       }
                     : {})}
                   {...(memo !== undefined
@@ -326,8 +327,7 @@ export function installEditorColors(runtime: RuntimeBindings): () => void {
               >
                 {value8}
               </span>
-            ),
-            edit !== undefined ? null : value.to !== undefined ? (
+            ), edit !== undefined ? null : value.to !== undefined ? (
               <runtime.TextLink
                 className={(0, runtime.joinClassNames)(
                   "ds-calias min-w-0 truncate font-mono text-footnote",
@@ -351,11 +351,9 @@ export function installEditorColors(runtime: RuntimeBindings): () => void {
               >
                 {value.css}
               </span>
-            ) : null,
-            edit === undefined && memo3 !== undefined ? (
+            ) : null, edit === undefined && memo3 !== undefined ? (
               <runtime.ContrastMark results={memo3} />
-            ) : null,
-          ]}
+            ) : null]}
         </jsxColorEditors.Fragment>
       );
     return (
@@ -370,42 +368,33 @@ export function installEditorColors(runtime: RuntimeBindings): () => void {
         )}
       >
         <span className={"flex min-w-0 flex-1 flex-col gap-0.5"}>
-          {[
-            <span className={"flex min-w-0 items-center gap-sm"}>
+          {[<span className={"flex min-w-0 items-center gap-sm"}>
               {value11}
-            </span>,
-            memo3 !== undefined && value10 !== undefined && !value10.passes ? (
+            </span>, memo3 !== undefined && value10 !== undefined && !value10.passes ? (
               <span
                 className={
                   "flex min-w-0 flex-wrap items-center gap-x-sm gap-y-0.5"
                 }
               >
-                {[
-                  <runtime.ContrastCaption
+                {[<runtime.ContrastCaption
                     result={value10}
                     name={stripThemeSuffixFromColorLabel(
                       value10.ground.label,
                       theme,
                       themes,
                     )}
-                  />,
-                  edit !== undefined && askClaude !== undefined ? (
+                  />, edit !== undefined && askClaude !== undefined ? (
                     <runtime.DisabledReasonTooltip
                       reason={
                         busy && !value2
-                          ? COLOR_REQUEST_PENDING_MESSAGE
+                          ? uiMessage("design-system.colors.aRequestToTheAgent")
                           : undefined
                       }
                     >
                       <runtime.Button
                         variant={"secondary"}
                         aria-label={
-                          runtime.FIX_WITH_CLAUDE_LABEL +
-                          ": " +
-                          token.name +
-                          (themes.length > 1
-                            ? ", " + theme.name + " theme"
-                            : "")
+                          runtime.FIX_WITH_CLAUDE_LABEL + ": " + token.name + (themes.length > 1 ? ", " + theme.name + uiMessage("design-system.colors.theme2") : "")
                         }
                         data-testid={"ds-fix-" + token.name + "-" + theme.id}
                         busy={busy && value2}
@@ -430,11 +419,9 @@ export function installEditorColors(runtime: RuntimeBindings): () => void {
                         {runtime.FIX_WITH_CLAUDE_LABEL}
                       </runtime.Button>
                     </runtime.DisabledReasonTooltip>
-                  ) : null,
-                ]}
+                  ) : null]}
               </span>
-            ) : null,
-          ]}
+            ) : null]}
         </span>
       </span>
     );
@@ -497,6 +484,7 @@ export function installEditorColors(runtime: RuntimeBindings): () => void {
     askClaude: askClaude,
     busy: busy,
   }: Token.ColorTokenRowProps): React.ReactElement {
+    useUiLocale();
     let value = colorValueForTheme(token, firstId ?? "", firstId),
       value2 = (0, runtime.useRowContextMenu)(
         edit !== undefined || (value.css ?? "") !== "",
@@ -520,8 +508,7 @@ export function installEditorColors(runtime: RuntimeBindings): () => void {
         {...(0, runtime.commentTargetProps)("token", token.name)}
         {...value2.rowProps}
       >
-        {[
-          <span className={"ds-cname min-w-0 font-mono"} role={"rowheader"}>
+        {[<span className={"ds-cname min-w-0 font-mono"} role={"rowheader"}>
             <runtime.EditableName
               name={token.name}
               taken={names}
@@ -532,8 +519,7 @@ export function installEditorColors(runtime: RuntimeBindings): () => void {
               }
               data-testid={"ds-color-name-" + token.name}
             />
-          </span>,
-          <span className={"ds-ccells contents"} role={"none"}>
+          </span>, <span className={"ds-ccells contents"} role={"none"}>
             {themes.map((input) =>
               (() => {
                 const _Element = ColorValueCell;
@@ -560,16 +546,14 @@ export function installEditorColors(runtime: RuntimeBindings): () => void {
                 return <_Element key={_elementKey} {..._elementProps} />;
               })(),
             )}
-          </span>,
-          <span
+          </span>, <span
             className={
               "ds-cacts ds-cgutter relative flex items-center justify-center"
             }
             role={"cell"}
             {...runtime.UNCOMMENTABLE_PROPS}
           >
-            {[
-              <runtime.UsageNoteEditor
+            {[<runtime.UsageNoteEditor
                 value={token.usage ?? ""}
                 label={token.name}
                 anchorKey={"color/" + token.name}
@@ -580,17 +564,14 @@ export function installEditorColors(runtime: RuntimeBindings): () => void {
                 }
                 onDone={edit?.done}
                 data-testid={"ds-color-usage-" + token.name}
-              />,
-              edit !== undefined ? (
+              />, edit !== undefined ? (
                 <runtime.RemoveRowButton
-                  label={"Remove " + token.name}
+                  label={uiMessage("design-system.colors.remove", { value1: String(token.name) })}
                   onRemove={() => edit.remove(token.name)}
                   data-testid={"ds-color-remove-" + token.name}
                 />
-              ) : null,
-            ]}
-          </span>,
-          <runtime.RowContextMenu
+              ) : null]}
+          </span>, <runtime.RowContextMenu
             title={token.name}
             at={value2.at}
             anchor={value2.anchor}
@@ -601,7 +582,7 @@ export function installEditorColors(runtime: RuntimeBindings): () => void {
                 ? {
                     rename: callback,
                     remove: () => edit.remove(token.name),
-                    removeLabel: "Remove " + token.name,
+                    get removeLabel() { return uiMessage("design-system.colors.remove", { value1: String(token.name) }); },
                   }
                 : {}),
               copy: value.css ?? "",
@@ -621,14 +602,13 @@ export function installEditorColors(runtime: RuntimeBindings): () => void {
                             .inherited,
                       )
                       .map((input) => ({
-                        label: input.name + ": inherit " + themes[0].name,
+                        get label() { return ((input.name) + (": inherit ")) + (themes[0].name); },
                         run: () => edit.clear?.(token.name, input.id),
                       })),
                   }
                 : {}),
             }}
-          />,
-        ]}
+          />]}
       </div>
     );
   }
@@ -653,6 +633,7 @@ export function installEditorColors(runtime: RuntimeBindings): () => void {
     edit: edit,
     note: note,
   }: Token.EditorSectionHeaderProps<Token.ColorEdit>): React.ReactElement {
+    useUiLocale();
     let value = edit?.addGroup;
     return (
       <runtime.SectionHeader
@@ -664,7 +645,7 @@ export function installEditorColors(runtime: RuntimeBindings): () => void {
           value === undefined ? undefined : (
             <jsxColorEditors.Fragment>
               <runtime.SectionAddButton
-                label={"Add"}
+                label={uiMessage("design-system.colors.add")}
                 what={"Add color group"}
                 onClick={() => value(true)}
                 data-testid={"ds-add-color-group"}
@@ -683,6 +664,7 @@ export function installEditorColors(runtime: RuntimeBindings): () => void {
     askClaude: askClaude,
     busy: busy,
   }: Token.ColorsSectionProps): React.ReactElement | null {
+    useUiLocale();
     let value =
         themes.length > 0
           ? themes
@@ -761,9 +743,7 @@ export function installEditorColors(runtime: RuntimeBindings): () => void {
           style={value8.style}
           {...runtime.UNCOMMENTABLE_PROPS}
         >
-          {[
-            <span role={"columnheader"}>{"Name"}</span>,
-            value.map((input) =>
+          {[<span role={"columnheader"}>{uiMessage("design-system.colors.name")}</span>, value.map((input) =>
               (() => {
                 const _Element2 = "span";
                 const _elementProps2 = {
@@ -774,13 +754,11 @@ export function installEditorColors(runtime: RuntimeBindings): () => void {
                 const _elementKey2 = input.id;
                 return <_Element2 key={_elementKey2} {..._elementProps2} />;
               })(),
-            ),
-            <span
+            ), <span
               role={"columnheader"}
               className={"ds-cgutter"}
               aria-hidden={"true"}
-            />,
-          ]}
+            />]}
         </div>
       ),
       callback2 = (input: Token.EditorColorToken[], options: string) => (
@@ -788,12 +766,10 @@ export function installEditorColors(runtime: RuntimeBindings): () => void {
           <div
             className={"ds-ctable"}
             role={"table"}
-            aria-label={options + " colors"}
+            aria-label={uiMessage("design-system.colors.colors", { value1: String(options) })}
             data-edit={edit !== undefined ? "" : undefined}
           >
-            {[
-              value9,
-              input.map((input2) => {
+            {[value9, input.map((input2) => {
                 return (() => {
                   const _Element3 = ColorTokenRow;
                   const _elementProps3 = {
@@ -827,8 +803,7 @@ export function installEditorColors(runtime: RuntimeBindings): () => void {
                   const _elementKey3 = input2.name;
                   return <_Element3 key={_elementKey3} {..._elementProps3} />;
                 })();
-              }),
-            ]}
+              })]}
           </div>
         </div>
       ),
@@ -847,7 +822,7 @@ export function installEditorColors(runtime: RuntimeBindings): () => void {
         return (input2: string) => {
           let value11 = normalizeThemeId(input2);
           if (value11 === "") {
-            (0, runtime.showEditorNotification)("A group needs a name.");
+            (0, runtime.showEditorNotification)(uiMessage("design-system.colors.aGroupNeedsAName"));
             return true;
           }
           if (
@@ -859,13 +834,13 @@ export function installEditorColors(runtime: RuntimeBindings): () => void {
           }
           if (values.has(value11)) {
             (0, runtime.showEditorNotification)(
-              "There is already a " + value11 + " group",
+              uiMessage("design-system.colors.thereIsAlreadyA") + value11 + " group",
             );
             return true;
           }
           if (!value10(input, value11)) {
             (0, runtime.showEditorNotification)(
-              "Could not rename " +
+              uiMessage("design-system.colors.couldNotRename") +
                 callback3(input) +
                 " — a token name is already taken.",
             );
@@ -900,8 +875,7 @@ export function installEditorColors(runtime: RuntimeBindings): () => void {
                   data-testid={"ds-color-group-" + value10 + "-head"}
                   {...runtime.COMMENT_TARGET_PROPS}
                 >
-                  {[
-                    <span className={"min-w-0 flex-1"}>
+                  {[<span className={"min-w-0 flex-1"}>
                       <runtime.EditableName
                         name={value11}
                         taken={values}
@@ -909,8 +883,7 @@ export function installEditorColors(runtime: RuntimeBindings): () => void {
                         className={"ds-gname"}
                         data-testid={"ds-color-group-" + value10 + "-name"}
                       />
-                    </span>,
-                    edit?.removeGroup !== undefined ? (
+                    </span>, edit?.removeGroup !== undefined ? (
                       <runtime.RemoveSectionButton
                         label={value11}
                         icon={"Trash"}
@@ -918,21 +891,19 @@ export function installEditorColors(runtime: RuntimeBindings): () => void {
                         onRemove={() => edit.removeGroup?.(input)}
                         data-testid={"ds-color-group-" + value10 + "-delete"}
                       />
-                    ) : null,
-                    edit?.addTo !== undefined ? (
+                    ) : null, edit?.addTo !== undefined ? (
                       <runtime.Button
                         variant={"ghost"}
                         size={"sm"}
                         iconOnly={true}
                         icon={"Add"}
-                        aria-label={"Add color to " + value11}
-                        tooltip={"Add color"}
+                        aria-label={uiMessage("design-system.colors.addColorTo", { value1: String(value11) })}
+                        tooltip={uiMessage("design-system.colors.addColor")}
                         onClick={() => edit.addTo?.(input)}
                         data-testid={"ds-add-color-" + value10}
                         {...runtime.UNCOMMENTABLE_PROPS}
                       />
-                    ) : null,
-                  ]}
+                    ) : null]}
                 </div>,
                 callback2(input.tokens, value11),
               ],
@@ -963,7 +934,7 @@ export function installEditorColors(runtime: RuntimeBindings): () => void {
   bindRuntimeValue(
     runtime,
     "COLOR_REQUEST_PENDING_MESSAGE",
-    () => COLOR_REQUEST_PENDING_MESSAGE,
+    () => uiMessage("design-system.colors.aRequestToTheAgent"),
     (value) => {
       COLOR_REQUEST_PENDING_MESSAGE = value;
     },

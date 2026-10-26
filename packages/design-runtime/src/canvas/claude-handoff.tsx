@@ -1,3 +1,4 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -295,18 +296,18 @@ export function installCanvasClaudeHandoff(
       case "waiting":
         return (
           // MineDesign: user-facing copy calls the agent "the agent", not Claude.
-          "Added to your message to the agent. Send it when you're ready." + suffix
+          uiMessage("canvas.claudeHandoff.addedToYourMessageTo") + suffix
         );
       case "unanswered":
-        return "Couldn't reach the agent just now. Try again in a moment.";
+        return uiMessage("canvas.claudeHandoff.couldnTReachTheAgent");
       case "sent":
-        return "Sent to the agent." + suffix;
+        return uiMessage("canvas.claudeHandoff.sentToTheAgent") + suffix;
       case "started":
-        return "Sending to the agent\u2026" + suffix;
+        return uiMessage("canvas.claudeHandoff.sendingToTheAgent") + suffix;
       case "copied":
-        return "Prompt copied. Paste it to the agent." + suffix;
+        return uiMessage("canvas.claudeHandoff.promptCopiedPasteItTo") + suffix;
       case "failed":
-        return "Couldn't copy the prompt. Try again, or copy the text yourself.";
+        return uiMessage("canvas.claudeHandoff.couldnTCopyThePrompt");
     }
   }
   bindRuntimeValue(

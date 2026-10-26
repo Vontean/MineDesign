@@ -1,3 +1,5 @@
+import { useUiLocale } from '../ui-locale.ts';
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 import type * as React from "react";
 import type * as Token from "../contracts/token-editors";
 import type * as Model from "../contracts";
@@ -36,6 +38,7 @@ export function installEditorRowContextMenu(
     tabIndex: tabIndex,
     "data-testid": dataTestid,
   }: Token.RemoveRowButtonProps): React.ReactElement {
+    useUiLocale();
     return (
       <runtime.Button
         variant={"ghost"}
@@ -206,21 +209,20 @@ export function installEditorRowContextMenu(
     actions: actions,
     testid: testid,
   }: Token.RowContextMenuProps): React.ReactElement {
+    useUiLocale();
     let {
         rename: value,
         copy: value2,
         remove: value3,
         removeLabel: value5 = "Remove",
         goto: value4,
-        gotoLabel: value6 = "Go to target",
+        gotoLabel: value6 = uiMessage("design-system.rowContextMenu.goToTarget"),
         inherit: value7 = [],
       } = actions,
       ref = reactRowContextMenu.useRef<HTMLSpanElement | null>(null);
     return (
       <jsxRowContextMenu.Fragment>
-        {[
-          <span ref={ref} hidden={true} />,
-          <runtime.ContextMenu
+        {[<span ref={ref} hidden={true} />, <runtime.ContextMenu
             at={at2}
             {...(anchor !== undefined
               ? {
@@ -231,8 +233,7 @@ export function installEditorRowContextMenu(
             title={title}
             className={"min-w-[11rem]"}
           >
-            {[
-              value4 !== undefined ? (
+            {[value4 !== undefined ? (
                 <runtime.Menu.Item
                   icon={"ArrowRight"}
                   onClick={() => requestAnimationFrame(value4)}
@@ -242,8 +243,7 @@ export function installEditorRowContextMenu(
                 >
                   {value6}
                 </runtime.Menu.Item>
-              ) : null,
-              value7.map((input, options) =>
+              ) : null, value7.map((input, options) =>
                 (() => {
                   const _Element = runtime.Menu.Item;
                   const _elementProps = {
@@ -258,8 +258,7 @@ export function installEditorRowContextMenu(
                   const _elementKey = "inh" + String(options);
                   return <_Element key={_elementKey} {..._elementProps} />;
                 })(),
-              ),
-              value !== undefined ? (
+              ), value !== undefined ? (
                 <runtime.Menu.Item
                   icon={"Edit"}
                   onClick={() => requestAnimationFrame(value)}
@@ -267,10 +266,9 @@ export function installEditorRowContextMenu(
                     testid !== undefined ? testid + "-rename" : undefined
                   }
                 >
-                  {"Rename…"}
+                  {uiMessage("design-system.rowContextMenu.rename")}
                 </runtime.Menu.Item>
-              ) : null,
-              value2 !== undefined && value2 !== "" ? (
+              ) : null, value2 !== undefined && value2 !== "" ? (
                 <runtime.Menu.Item
                   icon={"Copy"}
                   onClick={() =>
@@ -284,17 +282,14 @@ export function installEditorRowContextMenu(
                     testid !== undefined ? testid + "-copy" : undefined
                   }
                 >
-                  {"Copy value"}
+                  {uiMessage("design-system.rowContextMenu.copyValue")}
                 </runtime.Menu.Item>
-              ) : null,
-              value3 !== undefined ? (
+              ) : null, value3 !== undefined ? (
                 <jsxRowContextMenu.Fragment>
-                  {[
-                    value !== undefined ||
+                  {[value !== undefined ||
                     (value2 !== undefined && value2 !== "") ? (
                       <runtime.Menu.Separator />
-                    ) : null,
-                    <runtime.Menu.Item
+                    ) : null, <runtime.Menu.Item
                       icon={"Trash"}
                       variant={"danger"}
                       onClick={(): void => {
@@ -315,13 +310,10 @@ export function installEditorRowContextMenu(
                       }
                     >
                       {value5}
-                    </runtime.Menu.Item>,
-                  ]}
+                    </runtime.Menu.Item>]}
                 </jsxRowContextMenu.Fragment>
-              ) : null,
-            ]}
-          </runtime.ContextMenu>,
-        ]}
+              ) : null]}
+          </runtime.ContextMenu>]}
       </jsxRowContextMenu.Fragment>
     );
   }

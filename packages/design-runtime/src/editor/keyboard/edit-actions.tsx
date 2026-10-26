@@ -1,3 +1,4 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -59,43 +60,43 @@ export function installEditorKeyboardEditActions(
     );
     KeyboardEditActionsCutCopyPasteConfig = {
       cut: {
-        label: "Cut",
+        get label() { return uiMessage("inspector.editActions.cut"); },
         shortcut: "cmd+x",
       },
       copy: {
-        label: "Copy",
+        get label() { return uiMessage("inspector.editActions.copy"); },
         shortcut: "cmd+c",
       },
       paste: {
-        label: "Paste",
+        get label() { return uiMessage("inspector.editActions.paste"); },
         shortcut: "cmd+v",
       },
       duplicate: {
-        label: "Duplicate",
+        get label() { return uiMessage("inspector.editActions.duplicate"); },
         shortcut: "cmd+d",
       },
       front: {
-        label: "Bring to front",
+        get label() { return uiMessage("inspector.editActions.bringToFront"); },
         shortcut: "]",
       },
       back: {
-        label: "Send to back",
+        get label() { return uiMessage("inspector.editActions.sendToBack"); },
         shortcut: "[",
       },
       group: {
-        label: "Group",
+        get label() { return uiMessage("inspector.editActions.group"); },
         shortcut: "cmd+g",
       },
       ungroup: {
-        label: "Ungroup",
+        get label() { return uiMessage("inspector.editActions.ungroup"); },
         shortcut: "shift+cmd+g",
       },
       delete: {
-        label: "Delete",
+        get label() { return uiMessage("inspector.editActions.delete"); },
         shortcut: "backspace",
       },
       "select-all": {
-        label: "Select all",
+        get label() { return uiMessage("inspector.editActions.selectAll"); },
         shortcut: "cmd+a",
       },
     };

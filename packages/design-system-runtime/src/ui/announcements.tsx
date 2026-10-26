@@ -1,3 +1,4 @@
+import { useUiLocale } from '../ui-locale.ts';
 /** Restored application module; prepare first, initialize in original order. */
 import type * as React from "react";
 import type * as C from "../contracts/controls";
@@ -28,6 +29,7 @@ export function installUiAnnouncements(runtime: RuntimeBindings): () => void {
     settleMs = ANNOUNCEMENT_SETTLE_MS,
     clearMs = ANNOUNCEMENT_CLEAR_MS,
   }: C.LiveAnnouncerProps) {
+    useUiLocale();
     let [value, value2] = reactLC.useState("");
     reactLC.useEffect(() => {
       let value3: ReturnType<typeof setTimeout> | undefined,

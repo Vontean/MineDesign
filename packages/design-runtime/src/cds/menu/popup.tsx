@@ -1,3 +1,5 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
+import { useUiLocale } from '../../ui-locale.ts';
 import type {
   ClickToFocusOptions,
   CollisionPadding,
@@ -423,6 +425,7 @@ export function installCdsMenuPopup(runtime: RuntimeBindings): () => void {
     nested: nested,
     children: children,
   }: PassiveGateProps): React.ReactElement {
+    useUiLocale();
     let value = (0, runtime.reactMenuPassiveOpenGate.useSyncExternalStore)(
         cell === null ? runtime.MenuPassiveOpenGateHandler : cell.subscribe,
         cell === null ? runtime.MenuPassiveOpenGateDefaultText : cell.getLevel,
@@ -433,9 +436,7 @@ export function installCdsMenuPopup(runtime: RuntimeBindings): () => void {
       <runtime.PassiveOpenDisabledContext.Provider
         value={value2 === "declared"}
       >
-        {value2 === "declared" && !nested && cell !== null ? (
-          <PassiveOpenTypingWatcher cell={cell} />
-        ) : null}
+        {value2 === "declared" && !nested && cell !== null ? (<PassiveOpenTypingWatcher cell={cell} />) : (null)}
         {children(
           cell === null || value2 === "off"
             ? runtime.MenuPassiveOpenGateHandler_2

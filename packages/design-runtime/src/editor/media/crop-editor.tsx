@@ -1,3 +1,5 @@
+import { useUiLocale } from '../../ui-locale.ts';
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -34,6 +36,7 @@ export function installEditorMediaCropEditor(
     snapFrame: snapFrame,
     onSideStart: onSideStart,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let value: Dynamic = (0, runtime.reactPropertiesSides.useRef)({
       frame: frame,
       natural: natural,
@@ -108,8 +111,8 @@ export function installEditorMediaCropEditor(
       let current: Dynamic = value.current;
       (0, runtime.announce)(
         "Cropping. Press Enter when done. " +
-          (current.onFrame ? "Drag an edge to crop. " : "") +
-          "Arrow keys move the picture." +
+          (current.onFrame ? uiMessage("inspector.cropEditor.dragAnEdgeToCrop") : "") +
+          uiMessage("inspector.cropEditor.arrowKeysMoveThePicture") +
           (current.zoomDisabledReason === undefined
             ? " Plus and minus zoom it."
             : ""),
@@ -525,7 +528,7 @@ export function installEditorMediaCropEditor(
         ref={value2}
         data-media-crop={""}
         role={"group"}
-        aria-label={"Crop"}
+        aria-label={uiMessage("inspector.cropEditor.crop")}
         style={{
           position: "absolute",
           inset: 0,
@@ -547,21 +550,15 @@ export function installEditorMediaCropEditor(
             (): Dynamic => value9(true),
           )}
         >
-          {src !== null &&
-            (video ? (
-              <video
+          {src !== null && (video ? (<video
                 src={src}
                 muted={true}
                 playsInline={true}
                 preload={"metadata"}
                 style={state4}
-              />
-            ) : (
-              <img src={src} alt={""} draggable={false} style={state4} />
-            ))}
+              />) : (<img src={src} alt={""} draggable={false} style={state4} />))}
         </div>
-        {value16 && (
-          <div
+        {value16 && (<div
             data-media-crop-inside={""}
             style={{
               ...state5,
@@ -573,8 +570,7 @@ export function installEditorMediaCropEditor(
               },
               (): Dynamic => value9(false),
             )}
-          />
-        )}
+          />)}
         <div
           style={{
             position: "absolute",
@@ -587,8 +583,7 @@ export function installEditorMediaCropEditor(
             outlineColor: "var(--t-app-accent)",
           }}
         />
-        {value16 && value8 && (
-          <div
+        {value16 && value8 && (<div
             style={{
               position: "absolute",
               left: value10.x,
@@ -600,10 +595,8 @@ export function installEditorMediaCropEditor(
               outlineStyle: "solid",
               outlineColor: "var(--t-app-accent)",
             }}
-          />
-        )}
-        {value16 &&
-          runtime.PropertiesSidesNESValues.map((items3?: Dynamic): Dynamic => {
+          />)}
+        {value16 && (runtime.PropertiesSidesNESValues.map((items3?: Dynamic): Dynamic => {
             let value22: Dynamic = frameHandleOff?.[items3],
               value23: Dynamic = items3.length === 2;
             if (
@@ -640,9 +633,9 @@ export function installEditorMediaCropEditor(
                 data-media-crop-side={items3}
                 role={"img"}
                 aria-label={
-                  "Crop handle, " + runtime.PropertiesSidesNESConfig[items3]
+                  uiMessage("inspector.cropEditor.cropHandle", { value1: String(runtime.PropertiesSidesNESConfig[items3]) })
                 }
-                title={value22 ?? "Drag to crop."}
+                title={value22 ?? (uiMessage("inspector.cropEditor.dragToCrop"))}
                 aria-disabled={value22 !== undefined || undefined}
                 style={{
                   position: "absolute",
@@ -662,8 +655,7 @@ export function installEditorMediaCropEditor(
                   ? callback7(value22)
                   : callback6(items3))}
               >
-                {value23 ? (
-                  [state3, state2].map(
+                {value23 ? ([state3, state2].map(
                     (input?: Dynamic, options?: Dynamic): Dynamic => (
                       <runtime.reactPropertiesSides.Fragment key={options}>
                         <div
@@ -686,9 +678,7 @@ export function installEditorMediaCropEditor(
                         />
                       </runtime.reactPropertiesSides.Fragment>
                     ),
-                  )
-                ) : items3 === "n" || items3 === "s" ? (
-                  <div
+                  )) : (items3 === "n" || items3 === "s" ? (<div
                     style={{
                       ...state,
                       width: items * 1.5,
@@ -696,9 +686,7 @@ export function installEditorMediaCropEditor(
                       left: value14 / 2 - (items * 1.5) / 2,
                       top: value14 / 2 - items2 / 2,
                     }}
-                  />
-                ) : (
-                  <div
+                  />) : (<div
                     style={{
                       ...state,
                       width: items2,
@@ -706,22 +694,20 @@ export function installEditorMediaCropEditor(
                       left: value14 / 2 - items2 / 2,
                       top: value14 / 2 - (items * 1.5) / 2,
                     }}
-                  />
-                )}
+                  />))}
               </div>
             );
-          })}
-        {(!value16 || value8) &&
-          runtime.PropertiesSidesNwNeSeValues.map(
+          }))}
+        {!value16 || value8 && (runtime.PropertiesSidesNwNeSeValues.map(
             (input?: Dynamic): Dynamic => (
               <div
                 key={input}
                 data-media-crop-handle={input}
                 role={"img"}
                 aria-label={
-                  "Zoom handle, " + runtime.PropertiesSidesNwNeSeConfig[input]
+                  uiMessage("inspector.cropEditor.zoomHandle", { value1: String(runtime.PropertiesSidesNwNeSeConfig[input]) })
                 }
-                title={zoomDisabledReason ?? "Drag to zoom."}
+                title={zoomDisabledReason ?? (uiMessage("inspector.cropEditor.dragToZoom"))}
                 aria-disabled={value15 || undefined}
                 style={{
                   position: "absolute",
@@ -769,7 +755,7 @@ export function installEditorMediaCropEditor(
                 />
               </div>
             ),
-          )}
+          ))}
       </div>
     );
   }

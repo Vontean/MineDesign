@@ -1,3 +1,5 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
+import { useUiLocale } from '../../ui-locale.ts';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -24,6 +26,7 @@ export function installEditorPropertiesRow(
     className: className,
     ...props
   }: Dynamic): Dynamic {
+    useUiLocale();
     let value: Dynamic = typeof label == "string" ? label : undefined,
       value2: Dynamic = (0, runtime.reactInspectorContext_4.useRef)(null),
       value3: Dynamic = (0, runtime.reactInspectorContext_4.useId)(),
@@ -78,15 +81,14 @@ export function installEditorPropertiesRow(
           className,
         )}
       >
-        {label !== undefined && (
-          <div
+        {label !== undefined && (<div
             className={(0, runtime.joinClassNames)(
               "flex min-w-0 items-center",
               disabled2 && "opacity-50",
             )}
           >
             <span
-              title={title === undefined ? value : undefined}
+              title={title === undefined ? (value) : (undefined)}
               {...labelProps}
               className={(0, runtime.joinClassNames)(
                 "min-w-0 truncate text-footnote text-muted select-none",
@@ -95,8 +97,7 @@ export function installEditorPropertiesRow(
             >
               {label}
             </span>
-            {onReset && !disabled2 && (
-              <span
+            {onReset && !disabled2 && (<span
                 className={(0, runtime.joinClassNames)(
                   "flex w-0 shrink-0 overflow-hidden",
                   "focus-within:w-auto focus-within:overflow-visible",
@@ -110,10 +111,7 @@ export function installEditorPropertiesRow(
                   iconOnly={true}
                   icon={"ArrowCounterClockwise"}
                   aria-label={
-                    resetLabel ??
-                    (value
-                      ? runtime.ResetValue + " " + value
-                      : runtime.ResetValue)
+                    (resetLabel) ?? (value ? (((runtime.ResetValue) + (" ")) + (value)) : (runtime.ResetValue))
                   }
                   tooltipSide={"left"}
                   disabled={disabled2}
@@ -137,10 +135,8 @@ export function installEditorPropertiesRow(
                   data-kit={"row-reset"}
                   className={"ml-xs shrink-0"}
                 />
-              </span>
-            )}
-          </div>
-        )}
+              </span>)}
+          </div>)}
         <div
           ref={value2}
           className={(0, runtime.joinClassNames)(
@@ -150,13 +146,10 @@ export function installEditorPropertiesRow(
           )}
         >
           {children}
-          {description ? (
-            <span id={value3} hidden={true} data-kit={"row-description"}>
+          {description ? (<span id={value3} hidden={true} data-kit={"row-description"}>
               {description}
-            </span>
-          ) : null}
-          {value7 !== undefined ? (
-            <runtime.MenuMenuAssignValue
+            </span>) : (null)}
+          {value7 !== undefined ? (<runtime.MenuMenuAssignValue
               iconOnly={true}
               icon={"DotsHorizontal"}
               variant={"ghost"}
@@ -176,10 +169,8 @@ export function installEditorPropertiesRow(
                 }),
               )}
               className={"-ml-1 pointer-coarse:ml-0 shrink-0"}
-            />
-          ) : null}
-          {trailing !== undefined ? (
-            <span
+            />) : (null)}
+          {trailing !== undefined ? (<span
               data-kit={"row-trailing"}
               className={(0, runtime.joinClassNames)(
                 "-ml-1 pointer-coarse:ml-0 flex w-[var(--pp-iconcol,auto)] shrink-0 items-center justify-center",
@@ -187,8 +178,7 @@ export function installEditorPropertiesRow(
               )}
             >
               {trailing}
-            </span>
-          ) : null}
+            </span>) : (null)}
         </div>
       </div>
     );

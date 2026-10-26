@@ -1,3 +1,5 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
+import { useUiLocale } from '../ui-locale.ts';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -300,6 +302,7 @@ export function installCanvasWorkingLabelAnimation(
     action: action,
     busy: busy,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let value: Dynamic = (0, reactCanvasWorkingLabelAnimation_2.useRef)(null),
       value2: Dynamic = (0, reactCanvasWorkingLabelAnimation_2.useRef)(null),
       value3: Dynamic = (0, reactCanvasWorkingLabelAnimation_2.useRef)(null);
@@ -368,9 +371,7 @@ export function installCanvasWorkingLabelAnimation(
           </div>
         </div>
         {action}
-        {working ? (
-          <span className={"sr-only"}>{CanvasWorkingLabelAnimationLabel}</span>
-        ) : null}
+        {working ? (<span className={"sr-only"}>{CanvasWorkingLabelAnimationLabel}</span>) : (null)}
       </div>
     );
   }
@@ -536,7 +537,7 @@ export function installCanvasWorkingLabelAnimation(
       1,
     );
     // MineDesign: user-facing copy calls the agent "the agent", not Claude.
-    CanvasWorkingLabelAnimationLabel = "The agent is working\u2026";
+    CanvasWorkingLabelAnimationLabel = uiMessage("canvas.workingLabelAnimation.theAgentIsWorking");
     CanvasWorkingLabelAnimationConstant = 176;
     CanvasWorkingLabelAnimationConstant_2 = 56;
     CanvasWorkingLabelAnimationConstant_3 = 8;

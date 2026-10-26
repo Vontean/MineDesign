@@ -1,3 +1,4 @@
+import { useUiLocale } from '../../ui-locale.ts';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -14,6 +15,7 @@ export function installEditorChromeRoot(runtime: RuntimeBindings): () => void {
   var reactChromeRoot_2: Dynamic;
   var jsxChromeRoot_5: Dynamic;
   function EditorChromeRoot({ children: children }: Dynamic): Dynamic {
+    useUiLocale();
     return (
       <runtime.CdsRoot
         density={runtime.defaultDensity}

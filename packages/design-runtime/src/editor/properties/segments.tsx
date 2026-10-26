@@ -1,3 +1,4 @@
+import { useUiLocale } from '../../ui-locale.ts';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -24,6 +25,7 @@ export function installEditorPropertiesSegments(
     compact: compact,
     "data-testid": dataTestid,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let value2: Dynamic =
         value === undefined && !mixed && inherited !== undefined,
       value3: Dynamic = options.every(
@@ -104,6 +106,7 @@ export function installEditorPropertiesSegments(
     );
   }
   function PropertySegmentsRow(input?: Dynamic): Dynamic {
+    useUiLocale();
     let {
         label: value,
         onReset: value2,

@@ -1,3 +1,4 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -640,12 +641,12 @@ export function installCommentsLabels(runtime: RuntimeBindings): () => void {
     commentAreaPartLabel = (input?: Dynamic): Dynamic =>
       input ? " (" + input + ")" : "";
     commentAnnotationKindLabels = {
-      title1: "Title",
-      rect: "Rectangle",
-      oval: "Oval",
-      line: "Line",
-      arrow: "Arrow",
-      pen: "Drawing",
+      get title1() { return uiMessage("feedback.labels.title"); },
+      get rect() { return uiMessage("feedback.labels.rectangle"); },
+      get oval() { return uiMessage("feedback.labels.oval"); },
+      get line() { return uiMessage("feedback.labels.line"); },
+      get arrow() { return uiMessage("feedback.labels.arrow"); },
+      get pen() { return uiMessage("feedback.labels.drawing"); },
       image: "Picture",
     };
     commentAnnotationKindLabel = (input?: Dynamic): Dynamic =>

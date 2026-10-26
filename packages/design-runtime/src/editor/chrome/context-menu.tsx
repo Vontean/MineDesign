@@ -1,3 +1,5 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
+import { useUiLocale } from '../../ui-locale.ts';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -24,6 +26,7 @@ export function installEditorChromeContextMenu(
     returnFocus: returnFocus,
     focusFirstItem = false,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let value: Dynamic = at !== null;
     (0, runtime.useEscapeReleaseSuppression)(value && focusFirstItem);
     let value2: Dynamic = (0, runtime.reactChromeTheme_2.useRef)(null),
@@ -115,11 +118,9 @@ export function installEditorChromeContextMenu(
     }, [value, focusFirstItem]);
     return (
       <jsxChromeContextMenu.Fragment>
-        {value ? (
-          <runtime.usePopoverDismissal
+        {value ? (<runtime.usePopoverDismissal
             onClose={(): Dynamic => value3.current()}
-          />
-        ) : null}
+          />) : (null)}
         <runtime.MenuMenuAssignValue.Root
           open={value}
           modal={false}
@@ -189,11 +190,9 @@ export function installEditorChromeContextMenu(
                 : undefined
             }
           >
-            {value7?.title !== undefined ? (
-              <runtime.MenuMenuAssignValue.Header className={"truncate"}>
+            {value7?.title !== undefined ? (<runtime.MenuMenuAssignValue.Header className={"truncate"}>
                 {value7.title}
-              </runtime.MenuMenuAssignValue.Header>
-            ) : null}
+              </runtime.MenuMenuAssignValue.Header>) : (null)}
             {value7?.children}
           </runtime.MenuMenuAssignValue.Popup>
         </runtime.MenuMenuAssignValue.Root>
@@ -222,6 +221,7 @@ export function installEditorChromeContextMenu(
     label: label,
     focusFirstItem: focusFirstItem,
   }: Dynamic): Dynamic {
+    useUiLocale();
     return (
       <EditorContextMenu
         at={at}
@@ -238,7 +238,7 @@ export function installEditorChromeContextMenu(
             : undefined
         }
       >
-        {at !== null ? normalizeEditorMenuItems(items) : null}
+        {at !== null ? (normalizeEditorMenuItems(items)) : (null)}
       </EditorContextMenu>
     );
   }

@@ -1,3 +1,4 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import type * as React from "react";
 import type * as C from "../contracts/controls";
@@ -271,16 +272,14 @@ export function installUiNumberInput(runtime: RuntimeBindings): () => void {
               className,
             )}
           >
-            {[
-              value8 ? (
+            {[value8 ? (
                 <span
                   aria-hidden={value10}
                   className={"flex shrink-0 items-center text-muted"}
                 >
                   {value8}
                 </span>
-              ) : null,
-              <runtime.baseNumberField.Input
+              ) : null, <runtime.baseNumberField.Input
                 ref={value16}
                 aria-invalid={value3["aria-invalid"] ?? (value11 || undefined)}
                 {...value3}
@@ -289,16 +288,14 @@ export function installUiNumberInput(runtime: RuntimeBindings): () => void {
                   runtime.inputElementClasses,
                   "disabled:opacity-100",
                 )}
-              />,
-              value9 ? (
+              />, value9 ? (
                 <span
                   aria-hidden={value10}
                   className={"flex shrink-0 items-center text-muted"}
                 >
                   {value9}
                 </span>
-              ) : null,
-            ]}
+              ) : null]}
           </runtime.baseNumberField.Root>
         );
       },

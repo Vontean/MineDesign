@@ -1,3 +1,4 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import { bindRuntimeValue, type RuntimeBindings } from "../runtime-types";
 import type {
@@ -283,12 +284,12 @@ export function installFilesHotUpdates(runtime: RuntimeBindings): () => void {
       if (value4 !== undefined) {
         let value6: string =
             value4 === "code"
-              ? "a changed path is the page’s own code: " +
+              ? uiMessage("design-system.hotUpdates.aChangedPathIsThe") +
                 (input.changed ?? [])
                   .filter((input2) => isCodePath(input2.path))
                   .map((input2) => input2.path)
                   .join(", ")
-              : "required is " + String(input.required),
+              : uiMessage("design-system.hotUpdates.requiredIs") + String(input.required),
           value7 =
             value4 === "code" && input.changed !== null
               ? input.changed.filter(
@@ -307,19 +308,15 @@ export function installFilesHotUpdates(runtime: RuntimeBindings): () => void {
             emitEvent({
               ...state,
               decision: "restart",
-              why: "u.adopt() threw: " + shortHotErrorMessage(value9),
+              get why() { return ("u.adopt() threw: ") + (shortHotErrorMessage(value9)); },
             });
-            beforeRestart("adopt failed");
+            beforeRestart(uiMessage("design-system.hotUpdates.adoptFailed"));
             return void input.restart?.();
           }
           emitEvent({
             ...state,
             decision: "adopt",
-            why:
-              value6 +
-              "; the person is busy, so the " +
-              String(value7.length) +
-              " content row(s) are applied in place now and the restart waits",
+            get why() { return (((value6) + ("; the person is busy, so the ")) + (String(value7.length))) + (" content row(s) are applied in place now and the restart waits"); },
           });
           emitEvent({
             type: "deferred",
@@ -354,9 +351,7 @@ export function installFilesHotUpdates(runtime: RuntimeBindings): () => void {
           emitEvent({
             ...state,
             decision: "defer",
-            why:
-              value6 +
-              "; the person is mid-gesture or typing, so the restart waits",
+            get why() { return (value6) + ("; the person is mid-gesture or typing, so the restart waits"); },
           });
           emitEvent({
             type: "deferred",
@@ -382,7 +377,7 @@ export function installFilesHotUpdates(runtime: RuntimeBindings): () => void {
         });
         beforeRestart(
           value4 === "code"
-            ? "code changed"
+            ? uiMessage("design-system.hotUpdates.codeChanged")
             : "required: " + String(input.required),
         );
         return void input.restart?.();
@@ -393,9 +388,9 @@ export function installFilesHotUpdates(runtime: RuntimeBindings): () => void {
         emitEvent({
           ...state,
           decision: "restart",
-          why: "u.adopt() threw: " + shortHotErrorMessage(value6),
+          get why() { return ("u.adopt() threw: ") + (shortHotErrorMessage(value6)); },
         });
-        beforeRestart("adopt failed");
+        beforeRestart(uiMessage("design-system.hotUpdates.adoptFailed"));
         return void input.restart?.();
       }
       emitEvent({
@@ -403,8 +398,8 @@ export function installFilesHotUpdates(runtime: RuntimeBindings): () => void {
         decision: "adopt",
         why:
           input.changed === null
-            ? "the shell sent no diff (changed: null); the listing is diffed after adopt"
-            : "content only",
+            ? uiMessage("design-system.hotUpdates.theShellSentNoDiff")
+            : uiMessage("design-system.hotUpdates.contentOnly"),
       });
       let value5 = now();
       try {

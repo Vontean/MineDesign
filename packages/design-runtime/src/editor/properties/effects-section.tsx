@@ -1,3 +1,5 @@
+import { useUiLocale } from '../../ui-locale.ts';
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -26,7 +28,7 @@ export function installEditorPropertiesEffectsSection(
         value4: Dynamic =
           value3.length >= runtime.StyleSchemaValuesLimit
             ? {
-                disabledReason: `At most ${runtime.StyleSchemaValuesLimit} per element`,
+                disabledReason: uiMessage("inspector.effectsSection.atMostValue1PerElement", { value1: String(runtime.StyleSchemaValuesLimit) }),
               }
             : {},
         callback: Dynamic =
@@ -39,31 +41,31 @@ export function installEditorPropertiesEffectsSection(
         value5: Dynamic =
           extra ??
           (value3.length >= runtime.StyleSchemaValuesLimit
-            ? `At most ${runtime.StyleSchemaValuesLimit} per element`
+            ? uiMessage("inspector.effectsSection.atMostValue1PerElement", { value1: String(runtime.StyleSchemaValuesLimit) })
             : undefined);
       items.push(
         value5 !== undefined
           ? {
-              label: "Drop shadow",
+              get label() { return uiMessage("inspector.effectsSection.dropShadow"); },
               onSelect: (): Dynamic => {},
               disabledReason: value5,
             }
           : {
-              label: "Drop shadow",
+              get label() { return uiMessage("inspector.effectsSection.dropShadow"); },
               onSelect: callback(false),
             },
       );
       items.push(
         value2 === "textShadow"
           ? {
-              label: "Inner shadow",
+              get label() { return uiMessage("inspector.effectsSection.innerShadow"); },
               onSelect: (): Dynamic => {},
               disabledReason: detail
                 ? argument
                 : runtime.InnerShadowNeedsAFillOrMessage,
             }
           : {
-              label: "Inner shadow",
+              get label() { return uiMessage("inspector.effectsSection.innerShadow"); },
               onSelect: callback(true),
               ...value4,
               ...(detail
@@ -109,6 +111,7 @@ export function installEditorPropertiesEffectsSection(
       : "boxShadow";
   }
   function EffectsSection(input?: Dynamic): Dynamic {
+    useUiLocale();
     let {
         kind: value,
         bag: value2,
@@ -167,15 +170,15 @@ export function installEditorPropertiesEffectsSection(
         value7 !== "text"
           ? (0, runtime.shadowEffectLabel)(input2, options)
           : input2 === "textShadow"
-            ? "Drop shadow"
+            ? uiMessage("inspector.effectsSection.dropShadow")
             : input2 === "boxShadow"
               ? (0, runtime.asStyleRecord)(options)?.inset === true
-                ? "Inner shadow"
-                : "Box shadow"
+                ? uiMessage("inspector.effectsSection.innerShadow")
+                : uiMessage("inspector.effectsSection.boxShadow")
               : (0, runtime.shadowEffectLabel)(input2, options);
     return (
       <runtime.PropertySection
-        title={"Effects"}
+        title={uiMessage("inspector.effectsSection.effects")}
         subsection={value3}
         iconColumn={true}
         actions={
@@ -207,8 +210,7 @@ export function installEditorPropertiesEffectsSection(
               })(),
           );
         })}
-        {value6 &&
-          ["filter", "backdropFilter"].map((input2?: Dynamic): Dynamic => {
+        {value6 && (["filter", "backdropFilter"].map((input2?: Dynamic): Dynamic => {
             let value12: Dynamic = (0, runtime.asStyleRecord)(
               (0, runtime.ownStyleBagValue)(value2, input2),
             );
@@ -219,14 +221,14 @@ export function installEditorPropertiesEffectsSection(
                 label={
                   runtime.PropertiesStyleBagFilterBackdropFilterConfig[
                     input2
-                  ] ?? (0, runtime.propertyEffectLabel)(input2)
+                  ] ?? ((0, runtime.propertyEffectLabel)(input2))
                 }
                 propKey={input2}
                 rec={value12}
                 ed={state}
               />
             ) : null;
-          })}
+          }))}
         {value4}
       </runtime.PropertySection>
     );

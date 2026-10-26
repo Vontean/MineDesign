@@ -1,3 +1,5 @@
+import { useUiLocale } from '../ui-locale.ts';
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 import type * as React from "react";
 import type * as Editor from "../contracts/editor-runtime";
 import type * as Model from "../contracts";
@@ -206,10 +208,10 @@ export function installEditorMigrationBanners(
   function viewerMigrationCleanupPrompt(address: string): string {
     return (
       (isArtifactAddress(address)
-        ? "The person using this design system (" + address + ")"
-        : "The person using the design system this request came from") +
+        ? uiMessage("design-system.migrationBanners.thePersonUsingThisDesign") + address + ")"
+        : uiMessage("design-system.migrationBanners.thePersonUsingTheDesign")) +
       " pressed “" +
-      "Finish the migration" +
+      uiMessage("design-system.migrationBanners.finishTheMigration") +
       "”. They want" +
       MIGRATION_FILES_REORGANIZATION_PROMPT +
       MIGRATION_FORMAT_PROMPT
@@ -217,8 +219,8 @@ export function installEditorMigrationBanners(
   }
   function ownerMigrationCleanupPrompt(address: string): string {
     return (
-      "I pressed “" +
-      "Finish the migration" +
+      uiMessage("design-system.migrationBanners.iPressed") +
+      uiMessage("design-system.migrationBanners.finishTheMigration") +
       "” on this design system’s page" +
       (isArtifactAddress(address) ? " (" + address + ")" : "") +
       ". I want" +
@@ -230,7 +232,7 @@ export function installEditorMigrationBanners(
     address: string,
   ): Editor.TrackedClaudeRequest {
     return {
-      label: "Finish the migration",
+      get label() { return uiMessage("design-system.migrationBanners.finishTheMigration"); },
       request: viewerMigrationCleanupPrompt(address),
       prompt: ownerMigrationCleanupPrompt(address),
       deliver: "send",
@@ -268,6 +270,7 @@ export function installEditorMigrationBanners(
     ask: ask,
     busy: busy,
   }: Editor.MigrationCleanupBannerProps): React.ReactElement | null {
+    useUiLocale();
     let value = reactMigrationBanners.useSyncExternalStore(
         runtime.subscribeStoredSystemStatus,
         runtime.getStoredSystemStatus,
@@ -321,23 +324,17 @@ export function installEditorMigrationBanners(
         <div {...runtime.UNCOMMENTABLE_PROPS}>
           <runtime.SectionSheet data-testid={"ds-migrated-banner"}>
             <div className={"flex flex-col items-center gap-lg text-center"}>
-              {[
-                <div className={"flex flex-col items-center gap-md"}>
-                  {[
-                    <h2 className={"ds-page-title ds-migrated-banner-title"}>
-                      {EDITING_OFF_BANNER_TITLE}
-                    </h2>,
-                    <p
+              {[<div className={"flex flex-col items-center gap-md"}>
+                  {[<h2 className={"ds-page-title ds-migrated-banner-title"}>
+                      {uiMessage("design-system.migrationBanners.oneStepLeftInThe")}
+                    </h2>, <p
                       className={
                         "ds-migrated-banner-text max-w-xl text-body text-secondary"
                       }
                     >
-                      {EDITING_OFF_BANNER_EXPLANATION}
-                    </p>,
-                  ]}
-                </div>,
-                value7,
-              ]}
+                      {uiMessage("design-system.migrationBanners.theAgentReorganizesTheFiles")}
+                    </p>]}
+                </div>, value7]}
             </div>
           </runtime.SectionSheet>
         </div>
@@ -356,21 +353,15 @@ export function installEditorMigrationBanners(
           data-testid={"ds-migrated-banner"}
           className={"ds-migrated-banner"}
         >
-          {[
-            value6 ? null : (
+          {[value6 ? null : (
               <span className={"ds-migrated-banner-title font-medium"}>
-                {MIGRATION_UNAVAILABLE_MESSAGE}
+                {uiMessage("design-system.migrationBanners.migrationsArenTPerfect")}
               </span>
-            ),
-            <div className={"ds-migrated-banner-text text-secondary"}>
-              {value6
-                ? MIGRATION_READ_ONLY_MESSAGE
-                : MIGRATED_BANNER_EXPLANATION}
-            </div>,
-            value4 ? (
+            ), <div className={"ds-migrated-banner-text text-secondary"}>
+              {value6 ? (uiMessage("design-system.migrationBanners.migratedFromTheStandaloneVersion")) : (uiMessage("design-system.migrationBanners.thisDesignSystemWasMigrated"))}
+            </div>, value4 ? (
               <div className={"ds-migrated-banner-action mt-sm"}>{value7}</div>
-            ) : null,
-          ]}
+            ) : null]}
         </runtime.Callout>
       </div>
     );
@@ -380,9 +371,10 @@ export function installEditorMigrationBanners(
     onPress: onPress,
     "data-testid": dataTestid,
   }: Editor.MigrationCleanupButtonProps): React.ReactElement {
+    useUiLocale();
     return (
       <runtime.DisabledReasonTooltip
-        reason={busy === true ? MIGRATION_CLAUDE_PENDING_MESSAGE : undefined}
+        reason={busy === true ? uiMessage("design-system.migrationBanners.aRequestToTheAgent") : undefined}
       >
         <runtime.Button
           variant={"primary"}
@@ -392,7 +384,7 @@ export function installEditorMigrationBanners(
           }
           data-testid={dataTestid}
         >
-          {MIGRATION_CLEANUP_LABEL}
+          {uiMessage("design-system.migrationBanners.finishTheMigration")}
         </runtime.Button>
       </runtime.DisabledReasonTooltip>
     );
@@ -403,20 +395,18 @@ export function installEditorMigrationBanners(
     busy: busy,
     onAsked: onAsked,
   }: Editor.ClaudeRequestButtonProps): React.ReactElement {
+    useUiLocale();
     return (
       <runtime.CdsRoot density={"compact"} className={"contents"}>
         <div
           className={"flex w-56 flex-col items-start gap-sm p-sm"}
           data-testid={"ds-pending-panel"}
         >
-          {[
-            <span className={"text-body font-medium text-primary"}>
+          {[<span className={"text-body font-medium text-primary"}>
               {label}
-            </span>,
-            <p className={"text-body text-secondary"}>
-              {MIGRATION_EMPTY_PAGE_MESSAGE}
-            </p>,
-            <MigrationCleanupButton
+            </span>, <p className={"text-body text-secondary"}>
+              {uiMessage("design-system.migrationBanners.thisPageOpensWhenThe")}
+            </p>, <MigrationCleanupButton
               busy={busy}
               onPress={(): void => {
                 ask(
@@ -426,8 +416,7 @@ export function installEditorMigrationBanners(
                 onAsked();
               }}
               data-testid={"ds-pending-upgrade"}
-            />,
-          ]}
+            />]}
         </div>
       </runtime.CdsRoot>
     );
@@ -532,7 +521,7 @@ export function installEditorMigrationBanners(
   bindRuntimeValue(
     runtime,
     "MIGRATION_CLEANUP_LABEL",
-    () => MIGRATION_CLEANUP_LABEL,
+    () => uiMessage("design-system.migrationBanners.finishTheMigration"),
     (value) => {
       MIGRATION_CLEANUP_LABEL = value;
     },
@@ -540,7 +529,7 @@ export function installEditorMigrationBanners(
   bindRuntimeValue(
     runtime,
     "MIGRATION_UNAVAILABLE_MESSAGE",
-    () => MIGRATION_UNAVAILABLE_MESSAGE,
+    () => uiMessage("design-system.migrationBanners.migrationsArenTPerfect"),
     (value) => {
       MIGRATION_UNAVAILABLE_MESSAGE = value;
     },
@@ -548,7 +537,7 @@ export function installEditorMigrationBanners(
   bindRuntimeValue(
     runtime,
     "MIGRATED_BANNER_EXPLANATION",
-    () => MIGRATED_BANNER_EXPLANATION,
+    () => uiMessage("design-system.migrationBanners.thisDesignSystemWasMigrated"),
     (value) => {
       MIGRATED_BANNER_EXPLANATION = value;
     },
@@ -556,7 +545,7 @@ export function installEditorMigrationBanners(
   bindRuntimeValue(
     runtime,
     "EDITING_OFF_BANNER_TITLE",
-    () => EDITING_OFF_BANNER_TITLE,
+    () => uiMessage("design-system.migrationBanners.oneStepLeftInThe"),
     (value) => {
       EDITING_OFF_BANNER_TITLE = value;
     },
@@ -564,7 +553,7 @@ export function installEditorMigrationBanners(
   bindRuntimeValue(
     runtime,
     "EDITING_OFF_BANNER_EXPLANATION",
-    () => EDITING_OFF_BANNER_EXPLANATION,
+    () => uiMessage("design-system.migrationBanners.theAgentReorganizesTheFiles"),
     (value) => {
       EDITING_OFF_BANNER_EXPLANATION = value;
     },
@@ -572,7 +561,7 @@ export function installEditorMigrationBanners(
   bindRuntimeValue(
     runtime,
     "MIGRATION_EMPTY_PAGE_TITLE",
-    () => MIGRATION_EMPTY_PAGE_TITLE,
+    () => uiMessage("design-system.migrationBanners.finishTheMigrationToGet"),
     (value) => {
       MIGRATION_EMPTY_PAGE_TITLE = value;
     },
@@ -580,7 +569,7 @@ export function installEditorMigrationBanners(
   bindRuntimeValue(
     runtime,
     "MIGRATION_EMPTY_PAGE_MESSAGE",
-    () => MIGRATION_EMPTY_PAGE_MESSAGE,
+    () => uiMessage("design-system.migrationBanners.thisPageOpensWhenThe"),
     (value) => {
       MIGRATION_EMPTY_PAGE_MESSAGE = value;
     },
@@ -588,7 +577,7 @@ export function installEditorMigrationBanners(
   bindRuntimeValue(
     runtime,
     "MIGRATION_READ_ONLY_MESSAGE",
-    () => MIGRATION_READ_ONLY_MESSAGE,
+    () => uiMessage("design-system.migrationBanners.migratedFromTheStandaloneVersion"),
     (value) => {
       MIGRATION_READ_ONLY_MESSAGE = value;
     },
@@ -669,7 +658,7 @@ export function installEditorMigrationBanners(
   bindRuntimeValue(
     runtime,
     "MIGRATION_CLAUDE_PENDING_MESSAGE",
-    () => MIGRATION_CLAUDE_PENDING_MESSAGE,
+    () => uiMessage("design-system.migrationBanners.aRequestToTheAgent"),
     (value) => {
       MIGRATION_CLAUDE_PENDING_MESSAGE = value;
     },

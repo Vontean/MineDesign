@@ -1,3 +1,5 @@
+import { useUiLocale } from '../ui-locale.ts';
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 import type * as Boot from "../contracts/boot";
 import type * as Model from "../contracts";
 import type * as Storage from "../contracts/model-storage";
@@ -179,6 +181,7 @@ export function installFilesCoverCapture(runtime: RuntimeBindings): () => void {
     captured: Boot.CapturedCover;
     onPainted(): void;
   }): React.ReactElement | null {
+    useUiLocale();
     let { system: value } = captured,
       ref = reactCoverCapture.useRef<HTMLDivElement | null>(null),
       value2 = (0, runtime.useHostThemeMode)(),
@@ -261,7 +264,7 @@ export function installFilesCoverCapture(runtime: RuntimeBindings): () => void {
             pageW={COVER_CAPTURE_PAGE_WIDTH}
             pageH={value5}
             fitWidth={value6}
-            title={"Cover"}
+            title={uiMessage("design-system.coverCapture.cover")}
           />
         </div>
       </div>

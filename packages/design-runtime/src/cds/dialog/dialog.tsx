@@ -1,3 +1,5 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
+import { useUiLocale } from '../../ui-locale.ts';
 import type {
   AlertDialogRootProps,
   BrowserWindow,
@@ -104,6 +106,7 @@ export function installCdsDialogDialog(runtime: RuntimeBindings): () => void {
   };
   var initializeDialogDialog: () => void;
   function WindowDragStrip(): React.ReactElement {
+    useUiLocale();
     return (
       <div
         aria-hidden={true}
@@ -197,6 +200,7 @@ export function installCdsDialogDialog(runtime: RuntimeBindings): () => void {
     className?: string;
     flush?: boolean;
   }): React.ReactElement {
+    useUiLocale();
     let value = (0, runtime.useLabel)("close", "Close");
     return (
       <runtime.npm_Dialog_Xg.Close
@@ -205,7 +209,7 @@ export function installCdsDialogDialog(runtime: RuntimeBindings): () => void {
             variant={"ghost"}
             iconOnly={true}
             icon={"X"}
-            aria-label={ariaLabel ?? value}
+            aria-label={ariaLabel ?? (value)}
             tooltip={false}
             className={(0, runtime.cn)(flush && DialogDialogLabel_2, className)}
           />
@@ -221,6 +225,7 @@ export function installCdsDialogDialog(runtime: RuntimeBindings): () => void {
     className: className,
     children: children,
   }: DialogHeaderProps): React.ReactElement {
+    useUiLocale();
     let value = (0, reactDialogDialog.useContext)(DialogDialogContext_2);
     return (
       <div
@@ -236,18 +241,14 @@ export function installCdsDialogDialog(runtime: RuntimeBindings): () => void {
           )}
         >
           <DialogTitle className={"break-words"}>{children}</DialogTitle>
-          {description && (
-            <runtime.npm_Dialog_Xg.Description
+          {description && (<runtime.npm_Dialog_Xg.Description
               className={"text-body font-normal text-secondary"}
             >
               {description}
-            </runtime.npm_Dialog_Xg.Description>
-          )}
+            </runtime.npm_Dialog_Xg.Description>)}
         </div>
-        {actions && <div className={"-mt-pad-sm"}>{actions}</div>}
-        {showClose && (
-          <DialogCloseButton aria-label={closeLabel} flush={true} />
-        )}
+        {actions && (<div className={"-mt-pad-sm"}>{actions}</div>)}
+        {showClose && (<DialogCloseButton aria-label={closeLabel} flush={true} />)}
       </div>
     );
   }
@@ -256,6 +257,7 @@ export function installCdsDialogDialog(runtime: RuntimeBindings): () => void {
     className: className,
     children: children,
   }: DialogFooterProps): React.ReactElement {
+    useUiLocale();
     return (
       <div
         className={(0, runtime.cn)(
@@ -274,6 +276,7 @@ export function installCdsDialogDialog(runtime: RuntimeBindings): () => void {
     actionsRef: actionsRef,
     ...props
   }: DialogRootProps<Payload>): React.ReactElement {
+    useUiLocale();
     let value = (0, reactDialogDialog.useRef)<HTMLButtonElement | null>(null),
       value2 = (0, reactDialogDialog.useRef)<OverlayActions | null>(null);
     (0, runtime.useOverlayImperativeHandle)(value2, actionsRef);
@@ -301,6 +304,7 @@ export function installCdsDialogDialog(runtime: RuntimeBindings): () => void {
     actionsRef: actionsRef,
     ...props
   }: AlertDialogRootProps<Payload>): React.ReactElement {
+    useUiLocale();
     let value = (0, reactDialogDialog.useRef)<OverlayActions | null>(null);
     (0, runtime.useOverlayImperativeHandle)(value, actionsRef);
     return (
@@ -333,6 +337,7 @@ export function installCdsDialogDialog(runtime: RuntimeBindings): () => void {
     closeOnConfirm = false,
     children: children,
   }: ConfirmationDialogProps): React.ReactElement {
+    useUiLocale();
     let value = (0, runtime.useLabel)("confirm", "Confirm"),
       value2 = (0, runtime.useLabel)("cancel", "Cancel"),
       value3 = confirmLabel ?? value,
@@ -530,13 +535,11 @@ export function installCdsDialogDialog(runtime: RuntimeBindings): () => void {
                     >
                       {title}
                     </runtime.npm_AlertDialog_Dh.Title>
-                    {description && (
-                      <runtime.npm_AlertDialog_Dh.Description
+                    {description && (<runtime.npm_AlertDialog_Dh.Description
                         className={DialogDialogClassNames_7}
                       >
                         {description}
-                      </runtime.npm_AlertDialog_Dh.Description>
-                    )}
+                      </runtime.npm_AlertDialog_Dh.Description>)}
                     {children}
                     <DialogFooter>
                       <runtime.npm_AlertDialog_Dh.Close
@@ -553,16 +556,12 @@ export function installCdsDialogDialog(runtime: RuntimeBindings): () => void {
                           </runtime.Button>
                         }
                       />
-                      {confirmDisabledReason === undefined ? (
-                        value27
-                      ) : (
-                        <runtime.DeferredDisabledReasonTooltip
+                      {confirmDisabledReason === undefined ? (value27) : (<runtime.DeferredDisabledReasonTooltip
                           reason={disabled2 ? confirmDisabledReason : undefined}
                           wrapperClassName={"flex-col"}
                         >
                           {value27}
-                        </runtime.DeferredDisabledReasonTooltip>
-                      )}
+                        </runtime.DeferredDisabledReasonTooltip>)}
                     </DialogFooter>
                   </div>
                 </ConfirmationDialogPopupInner>
@@ -1103,11 +1102,7 @@ export function installCdsDialogDialog(runtime: RuntimeBindings): () => void {
                       className,
                     )}
                   >
-                    {unstyled ? (
-                      children
-                    ) : (
-                      <div className={DialogDialogClassNames_2}>{children}</div>
-                    )}
+                    {unstyled ? (children) : (<div className={DialogDialogClassNames_2}>{children}</div>)}
                   </DialogPopupInner>
                 </runtime.LayerBaseContext.Provider>
               </runtime.PopupSurface>

@@ -1,3 +1,4 @@
+import { useUiLocale } from '../ui-locale.ts';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -104,6 +105,7 @@ export function installCanvasAnnotationShapeStyle(
     mirror: mirror,
     children: children,
   }: Dynamic): Dynamic {
+    useUiLocale();
     return (
       <div
         data-testid={on ? "mega-shape-body-" + id : undefined}

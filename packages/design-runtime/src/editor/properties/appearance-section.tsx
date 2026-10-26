@@ -1,3 +1,5 @@
+import { useUiLocale } from '../../ui-locale.ts';
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -67,6 +69,7 @@ export function installEditorPropertiesAppearanceSection(
     renderRows: renderRows,
     onCommitMany: onCommitMany,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let value: Dynamic = (0, runtime.useStyleCommitScrub)(
         (input?: Dynamic): Dynamic => onCommitMany(input),
       ),
@@ -209,7 +212,7 @@ export function installEditorPropertiesAppearanceSection(
       };
     return (
       <runtime.PropertyCornersRow
-        label={"Radius"}
+        label={uiMessage("inspector.appearanceSection.radius")}
         data-testid={"dc-radius"}
         title={value5}
         description={value6}
@@ -253,6 +256,7 @@ export function installEditorPropertiesAppearanceSection(
     classHasBorder: classHasBorder,
     uaBorder: uaBorder,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let value: Dynamic = (0, runtime.useStyleCommitScrub)(
         (input?: Dynamic): Dynamic => onCommitMany(input),
       ),
@@ -572,7 +576,7 @@ export function installEditorPropertiesAppearanceSection(
     return (
       <jsxPropertiesAppearanceSection.Fragment>
         <runtime.PropertySegmentsRow
-          label={"Border"}
+          label={uiMessage("inspector.appearanceSection.border")}
           data-testid={"dc-border-style"}
           options={PropertiesAppearanceSectionItems}
           value={
@@ -585,7 +589,7 @@ export function installEditorPropertiesAppearanceSection(
           inherited={value22 || value21 === "none" ? undefined : value21}
           mixed={!!value5.mixed}
           disabled={value5.disabled}
-          title={value10 ?? (value22 || value20 ? undefined : "No border")}
+          title={value10 ?? (value22 || value20 ? (undefined) : (uiMessage("inspector.appearanceSection.noBorder")))}
           description={value11}
           onChange={callback2}
           onReset={
@@ -594,23 +598,19 @@ export function installEditorPropertiesAppearanceSection(
               : undefined
           }
         />
-        {value21 !== "none" && !value5.mixed ? (
-          <jsxPropertiesAppearanceSection.Fragment>
+        {value21 !== "none" && !value5.mixed ? (<jsxPropertiesAppearanceSection.Fragment>
             {renderRow({
               ...value7,
-              label: "Color",
+              get label() { return uiMessage("inspector.appearanceSection.color"); },
             })}
-            {value25 ? (
-              renderRows([
+            {value25 ? (renderRows([
                 {
                   ...value6,
-                  label: "Width",
+                  get label() { return uiMessage("inspector.appearanceSection.width"); },
                 },
                 ...value9.filter(PropertiesInheritedFieldValueAlias_2),
-              ])
-            ) : (
-              <runtime.PropertySidesRow
-                label={"Width"}
+              ])) : (<runtime.PropertySidesRow
+                label={uiMessage("inspector.appearanceSection.width")}
                 data-testid={"dc-border-width"}
                 title={value12}
                 description={value13}
@@ -653,11 +653,8 @@ export function installEditorPropertiesAppearanceSection(
                         ])
                     : undefined
                 }
-              />
-            )}
-          </jsxPropertiesAppearanceSection.Fragment>
-        ) : (
-          renderRows(
+              />)}
+          </jsxPropertiesAppearanceSection.Fragment>) : (renderRows(
             [value7, value6, ...value9]
               .filter(
                 (input?: Dynamic): Dynamic =>
@@ -669,12 +666,11 @@ export function installEditorPropertiesAppearanceSection(
                   input === value7
                     ? {
                         ...input,
-                        label: "Border color",
+                        get label() { return uiMessage("inspector.appearanceSection.borderColor"); },
                       }
                     : input,
               ),
-          )
-        )}
+          ))}
       </jsxPropertiesAppearanceSection.Fragment>
     );
   }
@@ -782,6 +778,7 @@ export function installEditorPropertiesAppearanceSection(
     uaBorder: uaBorder,
     classHasBorder: classHasBorder,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let {
         isShown: value,
         addItemsFor: value2,
@@ -836,7 +833,7 @@ export function installEditorPropertiesAppearanceSection(
               trailing:
                 value11 && !value10.disabled ? (
                   <runtime.RemovePropertyButton
-                    label={"fill"}
+                    label={uiMessage("inspector.appearanceSection.fill")}
                     onClick={(): Dynamic =>
                       onCommitMany([
                         {
@@ -892,8 +889,7 @@ export function installEditorPropertiesAppearanceSection(
         }
       >
         {items}
-        {value5.length > 0 ? (
-          <PropertyBorderSection
+        {value5.length > 0 ? (<PropertyBorderSection
             key={`${selKey}|border`}
             rows={value5}
             renderRows={value4}
@@ -902,8 +898,7 @@ export function installEditorPropertiesAppearanceSection(
             hasInline={hasInline}
             uaBorder={uaBorder}
             classHasBorder={classHasBorder}
-          />
-        ) : null}
+          />) : (null)}
       </runtime.PropertySection>
     );
   }
@@ -1207,22 +1202,22 @@ export function installEditorPropertiesAppearanceSection(
     PropertiesAppearanceSectionItems = [
       {
         value: "none",
-        label: "None",
+        get label() { return uiMessage("inspector.appearanceSection.none"); },
         icon: "Prohibit",
       },
       {
         value: "solid",
-        label: "Solid",
+        get label() { return uiMessage("inspector.appearanceSection.solid"); },
         glyph: runtime.PropertiesTooltipNameViewBoxPathsConfig_6,
       },
       {
         value: "dashed",
-        label: "Dashed",
+        get label() { return uiMessage("inspector.appearanceSection.dashed"); },
         glyph: runtime.PropertiesTooltipNameViewBoxPathsConfig_7,
       },
       {
         value: "dotted",
-        label: "Dotted",
+        get label() { return uiMessage("inspector.appearanceSection.dotted"); },
         glyph: runtime.PropertiesTooltipNameViewBoxPathsConfig_8,
       },
     ];
@@ -1246,16 +1241,16 @@ export function installEditorPropertiesAppearanceSection(
       runtime.PlatformFileContentBackgroundBackgroundColorOpacityValues,
     );
     PropertiesAppearanceSectionLabel =
-      "Canvas objects are placed freely on the canvas";
+      uiMessage("inspector.appearanceSection.canvasObjectsArePlacedFreely");
     PropertiesAppearanceSectionLabel_2 =
-      "A canvas object has a fixed size \u2014 there is no parent to hug or fill";
+      uiMessage("inspector.appearanceSection.aCanvasObjectHasA");
     ACanvasPictureShowsAnUploadedMessage =
-      "A canvas picture shows an uploaded file or a project image, not an outside address";
+      uiMessage("inspector.appearanceSection.aCanvasPictureShowsAn");
     PropertiesAppearanceSectionLabel_3 =
-      "A note is as tall as its text, up to its max height";
+      uiMessage("inspector.appearanceSection.aNoteIsAsTall");
     PropertiesAppearanceSectionLabel_4 =
-      "A title is as wide and tall as its text, up to its max width and height";
-    PropertiesAppearanceSectionLabel_5 = "An oval is always round";
+      uiMessage("inspector.appearanceSection.aTitleIsAsWide");
+    PropertiesAppearanceSectionLabel_5 = uiMessage("inspector.appearanceSection.anOvalIsAlwaysRound");
     PropertiesAppearanceSectionItems_2 = [
       {
         weight: 400,
@@ -1275,9 +1270,9 @@ export function installEditorPropertiesAppearanceSection(
       },
     ];
     PropertiesAppearanceSectionLabel_6 =
-      "A canvas object paints a colour or gradient \u2014 place a picture for an image";
+      uiMessage("inspector.appearanceSection.aCanvasObjectPaintsA");
     PropertiesAppearanceSectionLabel_7 =
-      "Replace it from the strip above the video on the canvas.";
+      uiMessage("inspector.appearanceSection.replaceItFromTheStrip");
     PropertiesAppearanceSectionImageVideoRectConfig = {
       image: new Set(["size", "sizing", "image", "appearance", "effects"]),
       video: new Set(["size", "sizing", "media", "appearance", "effects"]),

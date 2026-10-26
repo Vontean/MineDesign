@@ -1,3 +1,5 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
+import { useUiLocale } from '../ui-locale.ts';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -23,6 +25,7 @@ export function installCanvasArtboardTweaks(
     readonly = false,
     onOpenTweaks: onOpenTweaks,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let value: Dynamic = (0, react_Uu.useMemo)(
         (): Dynamic =>
           (0, runtime.groupComponentProps)(
@@ -109,18 +112,10 @@ export function installCanvasArtboardTweaks(
           }
           disabled={readonly}
           title={
-            readonly
-              ? runtime.ViewOnlyYouCanInspectThisMessage
-              : "Show all tweaks"
+            readonly ? (runtime.ViewOnlyYouCanInspectThisMessage) : (uiMessage("canvas.artboardTweaks.showAllTweaks"))
           }
           aria-label={
-            input === value.length
-              ? undefined
-              : "+" +
-                String(input) +
-                ", show all " +
-                String(value.length) +
-                " tweaks"
+            input === value.length ? (undefined) : (uiMessage("canvas.artboardTweaks.showAllTweaks2", { value1: String(String(input)), value2: String(String(value.length)) }))
           }
           className={
             "pointer-events-auto inline-flex h-6 shrink-0 items-center whitespace-nowrap text-secondary hover:text-primary disabled:opacity-50"
@@ -133,9 +128,7 @@ export function installCanvasArtboardTweaks(
             options || onOpenTweaks?.(file);
           }}
         >
-          {input === value.length
-            ? String(input) + (input === 1 ? " tweak" : " tweaks")
-            : "+" + String(input)}
+          {input === value.length ? (String(input) + input === 1 ? (uiMessage("canvas.artboardTweaks.tweak")) : (uiMessage("canvas.artboardTweaks.tweaks"))) : (("+") + (String(input)))}
         </button>
       );
     return (
@@ -165,7 +158,7 @@ export function installCanvasArtboardTweaks(
           }}
         >
           {callback2(false)}
-          {value9 > 0 && callback3(value9, false)}
+          {value9 > 0 && (callback3(value9, false))}
         </div>
         <div
           ref={value2}
@@ -240,6 +233,7 @@ export function installCanvasArtboardTweaks(
     onOpenChange: onOpenChange,
     inert: inert,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let [value2, value3]: Dynamic = (0, react_Uu.useState)(false),
       value4: Dynamic = (0, react_Uu.useRef)(null),
       [value5, value6]: Dynamic = (0, react_Uu.useState)({
@@ -288,8 +282,7 @@ export function installCanvasArtboardTweaks(
               "absolute top-1/2 left-1/2 hidden h-10 w-full min-w-10 -translate-x-1/2 -translate-y-1/2 pointer-coarse:block"
             }
           />
-          {"color" in value9 ? (
-            <span
+          {"color" in value9 ? (<span
               className={
                 "block h-2.5 w-2.5 rounded-[3px] shadow-[inset_0_0_0_1px_rgba(0,0,0,0.15)]"
               }
@@ -299,12 +292,9 @@ export function installCanvasArtboardTweaks(
                     ? "#000000"
                     : (0, runtime.sanitizeCssColor)(value9.color),
               }}
-            />
-          ) : null}
+            />) : (null)}
           <span className={tweaksSecondaryTextClass}>{name}</span>
-          {value9.text != null && (
-            <span className={tweaksValueTextClass}>{value9.text}</span>
-          )}
+          {value9.text != null && (<span className={tweaksValueTextClass}>{value9.text}</span>)}
           <runtime.EditorIcon name={"CaretDown"} size={11} />
         </button>
       );
@@ -371,6 +361,7 @@ export function installCanvasArtboardTweaks(
     cur: cur,
     onChange: onChange,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let value: Dynamic = (0, react_Uu.useMemo)(
         (): Dynamic =>
           (Array.isArray(meta.options) ? meta.options : []).slice(0, 64),

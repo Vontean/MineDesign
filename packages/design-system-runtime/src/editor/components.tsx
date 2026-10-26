@@ -1,3 +1,5 @@
+import { useUiLocale } from '../ui-locale.ts';
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 import type * as React from "react";
 import type * as Editor from "../contracts/editor-runtime";
 import type * as Model from "../contracts";
@@ -110,14 +112,10 @@ export function installEditorComponents(runtime: RuntimeBindings): () => void {
   }: {
     name: string;
   }): React.ReactElement {
+    useUiLocale();
     return (
       <p className={"ds-stage-doc ds-pad py-md text-body text-secondary"}>
-        {[
-          // MineDesign: user-facing copy calls the agent "the agent", not Claude.
-          "No preview yet — ask the agent for components/",
-          name,
-          "/preview.html.",
-        ]}
+        {[uiMessage("design-system.components.noPreviewYetAskThe"), name, uiMessage("design-system.components.previewHtml")]}
       </p>
     );
   }
@@ -127,6 +125,7 @@ export function installEditorComponents(runtime: RuntimeBindings): () => void {
     tweaks: tweaks,
     renderPreview: renderPreview,
   }: Editor.ComponentStageProps): React.ReactElement {
+    useUiLocale();
     if (c.previewHtml === undefined) {
       return <EmptyComponentPreview name={c.name} />;
     }
@@ -159,6 +158,7 @@ export function installEditorComponents(runtime: RuntimeBindings): () => void {
     c: c,
     edit: edit,
   }: Editor.ComponentGuidelinesProps): React.ReactElement {
+    useUiLocale();
     let guidelines = c.guidelines ?? "",
       value = stripMatchingComponentHeading(guidelines, c.name),
       value2 = guidelines.slice(0, guidelines.length - value.length),
@@ -169,7 +169,7 @@ export function installEditorComponents(runtime: RuntimeBindings): () => void {
         label={c.name}
         anchorKey={"comp/" + c.name}
         size={"doc"}
-        placeholder={"Usage guidelines: when to use it, do/don't…"}
+        placeholder={uiMessage("design-system.components.usageGuidelinesWhenToUseItDoDonT")}
         data-testid={"ds-comp-guide-" + c.name}
         {...(edit !== undefined
           ? {
@@ -198,6 +198,7 @@ export function installEditorComponents(runtime: RuntimeBindings): () => void {
     placeholder: placeholder,
     onChange: onChange,
   }: Editor.ComponentPropFieldProps): React.ReactElement {
+    useUiLocale();
     let value2: string = "ds-prop-" + spec.name;
     if (spec.kind === "boolean") {
       return (
@@ -252,7 +253,7 @@ export function installEditorComponents(runtime: RuntimeBindings): () => void {
       <runtime.TextInput
         aria-label={spec.name}
         value={typeof value === "string" ? value : ""}
-        placeholder={placeholder ?? spec.typeName ?? ""}
+        placeholder={placeholder ?? spec.typeName ?? ("")}
         onChange={(input: React.ChangeEvent<HTMLInputElement>) =>
           onChange(
             input.currentTarget.value === ""
@@ -271,19 +272,19 @@ export function installEditorComponents(runtime: RuntimeBindings): () => void {
     onChange: onChange,
     onReset: onReset,
   }: Editor.ComponentPropsEditorProps): React.ReactElement {
+    useUiLocale();
     return (
       <div
         className={
           "ds-props-pop flex w-[min(18rem,calc(100vw-2rem))] flex-col py-xs [--pp-label-w:6rem]"
         }
         role={"group"}
-        aria-label={c.name + " props"}
+        aria-label={uiMessage("design-system.components.props2", { value1: String(c.name) })}
         data-testid={"ds-comp-props-" + c.name}
         {...(0, runtime.commentTargetProps)("props", c.name)}
       >
-        {[
-          <runtime.PropertySectionHeader
-            title={<span className={"ds-pop-name"}>{"Props"}</span>}
+        {[<runtime.PropertySectionHeader
+            title={<span className={"ds-pop-name"}>{uiMessage("design-system.components.props")}</span>}
             actions={
               values !== undefined ? (
                 <runtime.Button
@@ -292,14 +293,13 @@ export function installEditorComponents(runtime: RuntimeBindings): () => void {
                   onClick={onReset}
                   data-testid={"ds-comp-props-reset-" + c.name}
                 >
-                  {"Reset"}
+                  {uiMessage("design-system.components.reset")}
                 </runtime.Button>
               ) : undefined
             }
-          />,
-          specs.length === 0 ? (
+          />, specs.length === 0 ? (
             <p className={"px-lg py-sm text-footnote text-muted"}>
-              {"This component declares no props."}
+              {uiMessage("design-system.components.thisComponentDeclaresNoProps")}
             </p>
           ) : (
             <div className={"ds-props-list flex flex-col"}>
@@ -337,8 +337,7 @@ export function installEditorComponents(runtime: RuntimeBindings): () => void {
                 })(),
               )}
             </div>
-          ),
-        ]}
+          )]}
       </div>
     );
   }
@@ -352,6 +351,7 @@ export function installEditorComponents(runtime: RuntimeBindings): () => void {
     staticNote: staticNote,
     staticFiles: staticFiles,
   }: Editor.ComponentsSectionProps): React.ReactElement | null {
+    useUiLocale();
     let [value, value2] = reactComponentsSection.useState<string | null>(null),
       [value3, value4] = reactComponentsSection.useState<
         Record<string, Editor.ComponentPropValues>
@@ -397,11 +397,10 @@ export function installEditorComponents(runtime: RuntimeBindings): () => void {
     return (
       <section
         className={"ds-components-sec"}
-        aria-label={head?.title ?? "Components"}
+        aria-label={head?.title ?? (uiMessage("design-system.components.components"))}
         data-testid={"ds-components-pane"}
       >
-        {[
-          staticNote !== undefined &&
+        {[staticNote !== undefined &&
           staticNote !== "" &&
           components.some(
             (input): boolean => input.previewHtml !== undefined,
@@ -412,13 +411,10 @@ export function installEditorComponents(runtime: RuntimeBindings): () => void {
               data-testid={"ds-components-static-note"}
               {...runtime.UNCOMMENTABLE_PROPS}
             >
-              {staticFiles !== undefined && staticFiles.length > 0 ? (
-                <details>
-                  {[
-                    <summary className={"cursor-pointer"}>
+              {staticFiles !== undefined && staticFiles.length > 0 ? (<details>
+                  {[<summary className={"cursor-pointer"}>
                       {staticNote}
-                    </summary>,
-                    <ul
+                    </summary>, <ul
                       role={"list"}
                       className={"mt-xs font-mono break-all"}
                       data-testid={"ds-components-static-files"}
@@ -435,33 +431,22 @@ export function installEditorComponents(runtime: RuntimeBindings): () => void {
                           );
                         })(),
                       )}
-                    </ul>,
-                  ]}
-                </details>
-              ) : (
-                staticNote
-              )}
+                    </ul>]}
+                </details>) : (staticNote)}
             </div>
-          ) : null,
-          <div
+          ) : null, <div
             className={"ds-comptable"}
             role={"table"}
-            aria-label={"Components"}
+            aria-label={uiMessage("design-system.components.components")}
             data-testid={"ds-components"}
           >
-            {[
-              <div
+            {[<div
                 className={"ds-cmrow ds-chead text-caption text-muted"}
                 role={"row"}
                 {...runtime.UNCOMMENTABLE_PROPS}
               >
-                {[
-                  <span role={"columnheader"}>{"Name"}</span>,
-                  <span role={"columnheader"}>{"Preview"}</span>,
-                  <span className={"ds-cgutter"} aria-hidden={"true"} />,
-                ]}
-              </div>,
-              components.map((input) => {
+                {[<span role={"columnheader"}>{uiMessage("design-system.components.name")}</span>, <span role={"columnheader"}>{uiMessage("design-system.components.preview")}</span>, <span className={"ds-cgutter"} aria-hidden={"true"} />]}
+              </div>, components.map((input) => {
                 let componentProps = editorFeatureFlags.componentProps,
                   value5 = componentProps
                     ? (propsOf?.(input) ?? EMPTY_COMPONENT_PROPS)
@@ -495,24 +480,20 @@ export function installEditorComponents(runtime: RuntimeBindings): () => void {
                         className={"ds-cmname flex min-w-0 flex-col gap-0.5"}
                         role={"rowheader"}
                       >
-                        {[
-                          <span className={"flex min-w-0 items-center gap-xs"}>
-                            {[
-                              <span
+                        {[<span className={"flex min-w-0 items-center gap-xs"}>
+                            {[<span
                                 className={"ds-comprow-name min-w-0 truncate"}
                                 data-testid={"ds-comp-name-" + input.name}
                               >
                                 {input.name}
-                              </span>,
-                              componentProps ? (
+                              </span>, componentProps ? (
                                 <span
                                   className={
                                     "ds-cact-anchor relative inline-flex"
                                   }
                                   {...runtime.UNCOMMENTABLE_PROPS}
                                 >
-                                  {[
-                                    <runtime.Button
+                                  {[<runtime.Button
                                       variant={"ghost"}
                                       size={"sm"}
                                       iconOnly={true}
@@ -523,8 +504,8 @@ export function installEditorComponents(runtime: RuntimeBindings): () => void {
                                           "ds-cact-on text-accent",
                                       )}
                                       pressed={value === input.name}
-                                      aria-label={"Props: " + input.name}
-                                      tooltip={"Props"}
+                                      aria-label={("Props: ") + (input.name)}
+                                      tooltip={uiMessage("design-system.components.props")}
                                       aria-expanded={value === input.name}
                                       onClick={(
                                         input2: React.MouseEvent<HTMLButtonElement>,
@@ -539,16 +520,14 @@ export function installEditorComponents(runtime: RuntimeBindings): () => void {
                                       data-testid={
                                         "ds-comp-props-btn-" + input.name
                                       }
-                                    />,
-                                    <runtime.PropertyPopup
+                                    />, <runtime.PropertyPopup
                                       open={value === input.name}
                                       onClose={() => value2(null)}
                                       align={"left"}
                                       padding={"none"}
-                                      aria-label={"Props: " + input.name}
+                                      aria-label={("Props: ") + (input.name)}
                                     >
-                                      {value === input.name ? (
-                                        <ComponentPropsEditor
+                                      {value === input.name ? (<ComponentPropsEditor
                                           c={input}
                                           specs={value5}
                                           values={value6}
@@ -565,28 +544,23 @@ export function installEditorComponents(runtime: RuntimeBindings): () => void {
                                             )
                                           }
                                           onReset={() => callback2(input.name)}
-                                        />
-                                      ) : null}
-                                    </runtime.PropertyPopup>,
-                                  ]}
+                                        />) : (null)}
+                                    </runtime.PropertyPopup>]}
                                 </span>
-                              ) : null,
-                            ]}
-                          </span>,
-                          input.floor === true ? (
+                              ) : null]}
+                          </span>, input.floor === true ? (
                             <span
                               className={
                                 "ds-comp-floor w-fit text-caption text-muted"
                               }
                               data-floor={""}
                               title={
-                                "A generated floor card: the repository has no story or docs example for this component"
+                                uiMessage("design-system.components.aGeneratedFloorCardTheRepositoryHasNoStoryOrDocsExampleForThisComponent")
                               }
                             >
-                              {"no example"}
+                              {uiMessage("design-system.components.noExample")}
                             </span>
-                          ) : null,
-                        ]}
+                          ) : null]}
                       </span>,
                       <span className={"ds-cmprev min-w-0"} role={"cell"}>
                         <StickyComponentNote
@@ -625,10 +599,8 @@ export function installEditorComponents(runtime: RuntimeBindings): () => void {
                   const _elementKey3 = input.name;
                   return <_Element3 key={_elementKey3} {..._elementProps3} />;
                 })();
-              }),
-            ]}
-          </div>,
-        ]}
+              })]}
+          </div>]}
       </section>
     );
   }
@@ -639,6 +611,7 @@ export function installEditorComponents(runtime: RuntimeBindings): () => void {
     children: React.ReactNode;
     reserve?: React.CSSProperties;
   }): React.ReactElement {
+    useUiLocale();
     let ref = reactComponentsSection.useRef<HTMLSpanElement | null>(null),
       [value, value2] = reactComponentsSection.useState(false);
     reactComponentsSection.useLayoutEffect(() => {
@@ -673,15 +646,11 @@ export function installEditorComponents(runtime: RuntimeBindings): () => void {
     }, [value]);
     return (
       <span ref={ref} className={"ds-cmstage block"}>
-        {value ? (
-          children
-        ) : (
-          <span
+        {value ? (children) : (<span
             className={"ds-cmstage-ph block"}
             style={reserve}
             aria-hidden={"true"}
-          />
-        )}
+          />)}
       </span>
     );
   }

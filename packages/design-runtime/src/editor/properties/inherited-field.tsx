@@ -1,3 +1,5 @@
+import { useUiLocale } from '../../ui-locale.ts';
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -17,6 +19,7 @@ export function installEditorPropertiesInheritedField(
     disabled: disabled2,
     onToggle: onToggle,
   }: Dynamic): Dynamic {
+    useUiLocale();
     return (
       <runtime.PropertyRow
         label={label}
@@ -41,7 +44,7 @@ export function installEditorPropertiesInheritedField(
     if (input.mixed)
       return {
         text: "",
-        placeholder: "Mixed",
+        get placeholder() { return uiMessage("inspector.inheritedField.mixed"); },
         isLiteral: false,
       };
     let value: Dynamic = input.value ?? "",
@@ -81,11 +84,11 @@ export function installEditorPropertiesInheritedField(
   function inheritedFieldTooltip(input?: Dynamic): Dynamic {
     if (!isInheritedInspectorField(input)) return;
     let value: Dynamic = input.varSource ? ` (${input.varSource})` : "";
-    return `From ${input.inheritedFrom}${value} \u2014 edit to override it here`;
+    return uiMessage("inspector.inheritedField.fromValue1Value2EditTo", { value1: String(input.inheritedFrom), value2: String(value) });
   }
   function inheritedFieldDescription(input?: Dynamic): Dynamic {
     if (isInheritedInspectorField(input))
-      return `Inherited from ${input.inheritedFrom} \u2014 edit to override`;
+      return uiMessage("inspector.inheritedField.inheritedFromValue1EditTo", { value1: String(input.inheritedFrom) });
   }
   function inheritedFieldsDisabledReason(...input: Dynamic[]): Dynamic {
     let value: Dynamic = input.find(
@@ -95,14 +98,14 @@ export function installEditorPropertiesInheritedField(
     let { names: value2, partly: value3 }: Dynamic =
       summarizeInheritedFields(input);
     return value2.length > 0
-      ? `${value3 ? "Partly from" : "From"} ${value2.join(", ")} \u2014 edit to override it here`
+      ? `${value3 ? uiMessage("inspector.inheritedField.partlyFrom") : "From"} ${value2.join(", ")} \u2014 edit to override it here`
       : undefined;
   }
   function inheritedFieldsDescription(...input: Dynamic[]): Dynamic {
     let { names: value, partly: value2 }: Dynamic =
       summarizeInheritedFields(input);
     return value.length > 0
-      ? `${value2 ? "Partly inherited" : "Inherited"} from ${value.join(", ")} \u2014 edit to override`
+      ? `${value2 ? uiMessage("inspector.inheritedField.partlyInherited") : "Inherited"} from ${value.join(", ")} \u2014 edit to override`
       : undefined;
   }
   function summarizeInheritedFields(input?: Dynamic): Dynamic {

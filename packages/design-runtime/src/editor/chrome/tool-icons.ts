@@ -1,3 +1,4 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -41,22 +42,18 @@ export function installEditorChromeToolIcons(
       rect: {
         name: "Rect",
         viewBox: 16,
-        paths: [
-          {
+        get paths() { return [{
             d: "M3.5 4.5h9a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1h-9a1 1 0 0 1-1-1v-5a1 1 0 0 1 1-1Z",
             strokeWidth: 1,
-          },
-        ],
+          }]; },
       },
       oval: {
         name: "Oval",
         viewBox: 16,
-        paths: [
-          {
+        get paths() { return [{
             d: "M8 3a5 5 0 1 0 0 10a5 5 0 1 0 0-10Z",
             strokeWidth: 1,
-          },
-        ],
+          }]; },
       },
     };
     ChromeToolIconsColumnRowTextConfig = {

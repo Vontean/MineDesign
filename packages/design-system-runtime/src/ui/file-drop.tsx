@@ -1,3 +1,5 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
+import { useUiLocale } from '../ui-locale.ts';
 /** Restored application module; prepare first, initialize in original order. */
 import { bindRuntimeValue, type RuntimeBindings } from "../runtime-types";
 import type * as React from "react";
@@ -194,6 +196,7 @@ export function installUiFileDrop(runtime: RuntimeBindings): () => void {
     label: label,
     hint: hint,
   }: FileDropOverlayProps) {
+    useUiLocale();
     if (!show) {
       return null;
     }
@@ -203,28 +206,22 @@ export function installUiFileDrop(runtime: RuntimeBindings): () => void {
         data-testid={"drop-overlay"}
         className={"pointer-events-none absolute inset-0 z-10"}
       >
-        {[
-          <div
+        {[<div
             className={`absolute inset-0 backdrop-blur-[12px] ${FILE_DROP_FADE_CLASS}`}
-          />,
-          <div
+          />, <div
             className={`absolute inset-0 bg-page opacity-60 ${FILE_DROP_FADE_CLASS}`}
-          />,
-          <div
+          />, <div
             className={`absolute inset-3.5 flex flex-col items-center justify-center gap-sm rounded-card px-lg text-center ${FILE_DROP_RING_CLASS} ${FILE_DROP_RING_ENTER_CLASS}`}
           >
-            {[
-              <div
+            {[<div
                 className={`absolute inset-0 rounded-[inherit] shadow-[inset_0_0_24px_0_color-mix(in_srgb,var(--cds-fill-accent)_20%,transparent)] ${FILE_DROP_LABEL_ENTER_CLASS}`}
-              />,
-              <div
+              />, <div
                 className={"flex items-end gap-md"}
                 style={{
                   color: "var(--cds-fill-accent)",
                 }}
               >
-                {[
-                  <span className={"-rotate-[14deg]"}>
+                {[<span className={"-rotate-[14deg]"}>
                     <runtime.KitIcon
                       name={"Image"}
                       size={28}
@@ -233,15 +230,13 @@ export function installUiFileDrop(runtime: RuntimeBindings): () => void {
                         ["--rise-delay"]: "60ms",
                       }}
                     />
-                  </span>,
-                  <span className={"-translate-y-3"}>
+                  </span>, <span className={"-translate-y-3"}>
                     <runtime.KitIcon
                       name={"Files"}
                       size={28}
                       className={FILE_DROP_ICON_ENTER_CLASS}
                     />
-                  </span>,
-                  <span className={"rotate-[14deg]"}>
+                  </span>, <span className={"rotate-[14deg]"}>
                     <runtime.KitIcon
                       name={"Folder"}
                       size={28}
@@ -250,18 +245,13 @@ export function installUiFileDrop(runtime: RuntimeBindings): () => void {
                         ["--rise-delay"]: "120ms",
                       }}
                     />
-                  </span>,
-                ]}
-              </div>,
-              <span className={"text-body font-medium text-accent"}>
+                  </span>]}
+              </div>, <span className={"text-body font-medium text-accent"}>
                 {label}
-              </span>,
-              hint !== undefined ? (
+              </span>, hint !== undefined ? (
                 <span className={"text-footnote text-secondary"}>{hint}</span>
-              ) : null,
-            ]}
-          </div>,
-        ]}
+              ) : null]}
+          </div>]}
       </div>
     );
   }

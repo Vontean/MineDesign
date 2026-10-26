@@ -1,3 +1,4 @@
+import { useUiLocale } from '../../ui-locale.ts';
 import type { TooltipImplementation } from "../../contracts/ui";
 import type * as React from "react";
 /** Restored application module; prepare first, initialize in original order. */
@@ -15,6 +16,7 @@ export function installCdsTooltipStyles(runtime: RuntimeBindings): () => void {
   function DarkScope({
     children: children,
   }: React.PropsWithChildren): React.ReactElement {
+    useUiLocale();
     return (
       <div className={"cds-dark-scope contents"} data-mode={"dark"}>
         {children}

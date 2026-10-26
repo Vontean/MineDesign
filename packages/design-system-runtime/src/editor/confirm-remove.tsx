@@ -1,3 +1,5 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
+import { useUiLocale } from '../ui-locale.ts';
 import type * as React from "react";
 import type * as Token from "../contracts/token-editors";
 import type * as Model from "../contracts";
@@ -15,6 +17,7 @@ export function installEditorConfirmRemove(
     onCancel: onCancel,
     onConfirm: onConfirm,
   }: Token.ConfirmRemoveDialogProps): React.ReactElement {
+    useUiLocale();
     return (
       <div className={"contents"} {...runtime.BLOCK_FILE_DROP_HANDLERS}>
         <runtime.CdsRoot density={"compact"} className={"contents"}>
@@ -27,7 +30,7 @@ export function installEditorConfirmRemove(
               }
             }}
             title={title}
-            description={children ?? "Undo brings it back."}
+            description={children ?? (uiMessage("design-system.confirmRemove.undoBringsItBack"))}
             confirmLabel={confirmLabel}
             confirmVariant={"danger"}
             onConfirm={onConfirm}

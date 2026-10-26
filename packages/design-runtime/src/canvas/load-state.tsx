@@ -1,3 +1,5 @@
+import { useUiLocale } from '../ui-locale.ts';
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -28,6 +30,7 @@ export function installCanvasLoadState(runtime: RuntimeBindings): () => void {
     return value;
   }
   function CanvasLoadingPlaceholder(): Dynamic {
+    useUiLocale();
     return (
       <div
         className={
@@ -49,6 +52,7 @@ export function installCanvasLoadState(runtime: RuntimeBindings): () => void {
     doc: doc,
     filePath: filePath,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let [value, value2]: Dynamic = (0, runtime.reactChromeTheme.useState)(
       doc.saveState(),
     );
@@ -67,7 +71,7 @@ export function installCanvasLoadState(runtime: RuntimeBindings): () => void {
         }
       >
         <runtime.EditorToolbar
-          title={(document as Dynamic).title || filePath}
+          title={(document as Dynamic).title || (filePath)}
           saveState={value}
           saveMode={doc.saveMode()}
           syncDot={true}
@@ -80,7 +84,7 @@ export function installCanvasLoadState(runtime: RuntimeBindings): () => void {
           extrasEnd={
             <runtime.SessionStripPopover
               icon={"Play"}
-              label={"Play"}
+              label={uiMessage("canvas.loadState.play")}
               iconOnly={true}
               disabled={true}
               disabledTip={canvasNotLoadedMessage}
@@ -99,7 +103,7 @@ export function installCanvasLoadState(runtime: RuntimeBindings): () => void {
                       className={"max-[599px]:rotate-90"}
                     />
                   }
-                  label={"Properties"}
+                  label={uiMessage("canvas.loadState.properties")}
                   iconOnly={true}
                   tip={canvasNotLoadedMessage}
                   onClick={(): Dynamic => {}}
@@ -161,7 +165,7 @@ export function installCanvasLoadState(runtime: RuntimeBindings): () => void {
   );
   bindRuntimeValue(runtime, "CanvasLoadFailure", () => CanvasLoadFailure);
   return () => {
-    canvasNotLoadedMessage = "Available once the canvas has loaded";
+    canvasNotLoadedMessage = uiMessage("canvas.loadState.availableOnceTheCanvasHas");
     unavailableCanvasHistory = {
       exec(): Dynamic {},
       seed(): Dynamic {},

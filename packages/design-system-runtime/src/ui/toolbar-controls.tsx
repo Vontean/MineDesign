@@ -1,3 +1,5 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
+import { useUiLocale } from '../ui-locale.ts';
 import type * as React from "react";
 import type * as Color from "../contracts/color-controls";
 /** Restored application module; prepare first, initialize in original order. */
@@ -63,6 +65,7 @@ export function installUiToolbarControls(runtime: RuntimeBindings): () => void {
   }: {
     inherit?: boolean;
   } = {}): React.ReactElement {
+    useUiLocale();
     return (
       <runtime.Icon
         name={"CaretDown"}
@@ -692,6 +695,7 @@ export function installUiToolbarControls(runtime: RuntimeBindings): () => void {
     wrap = false,
     ...remainingProps
   }: Color.ToolbarStripProps): React.ReactElement {
+    useUiLocale();
     reactForUiToolbarControls.useEffect(
       () => installToolbarPointerTracking(document),
       [],
@@ -833,8 +837,7 @@ export function installUiToolbarControls(runtime: RuntimeBindings): () => void {
         }
       >
         <div className={"relative min-w-0 flex-auto rounded-[inherit]"}>
-          {[
-            <div
+          {[<div
               ref={ref2}
               data-mc-row={""}
               onScroll={(input: React.UIEvent<HTMLDivElement>) => {
@@ -860,8 +863,7 @@ export function installUiToolbarControls(runtime: RuntimeBindings): () => void {
                   <runtime.TooltipProvider>{children}</runtime.TooltipProvider>
                 </ToolbarGroupWrapContext.Provider>
               </runtime.ToolbarTooltipSideContext.Provider>
-            </div>,
-            <span
+            </div>, <span
               aria-hidden={"true"}
               data-tb-fade={"start"}
               className={
@@ -873,8 +875,7 @@ export function installUiToolbarControls(runtime: RuntimeBindings): () => void {
                   "pointer-events-auto absolute inset-y-0 left-0 w-[30%]"
                 }
               />
-            </span>,
-            <span
+            </span>, <span
               aria-hidden={"true"}
               data-tb-fade={"end"}
               className={
@@ -886,13 +887,13 @@ export function installUiToolbarControls(runtime: RuntimeBindings): () => void {
                   "pointer-events-auto absolute inset-y-0 right-0 w-[30%]"
                 }
               />
-            </span>,
-          ]}
+            </span>]}
         </div>
       </runtime.CdsRoot>
     );
   }
   function ToolbarDivider(): React.ReactElement {
+    useUiLocale();
     return (
       <span
         aria-hidden={"true"}
@@ -1492,8 +1493,7 @@ export function installUiToolbarControls(runtime: RuntimeBindings): () => void {
               className,
             )}
           >
-            {[
-              value8 ? (
+            {[value8 ? (
                 caret === true ? (
                   <runtime.Button {...state} icon={value4}>
                     <ToolbarCaret />
@@ -1508,16 +1508,11 @@ export function installUiToolbarControls(runtime: RuntimeBindings): () => void {
                 )
               ) : (
                 <runtime.Button {...state} icon={value4}>
-                  {[
-                    label,
-                    children,
-                    caret === true ? (
+                  {[label, children, caret === true ? (
                       <ToolbarCaret inherit={variant === "primary"} />
-                    ) : null,
-                  ]}
+                    ) : null]}
                 </runtime.Button>
-              ),
-              count ? (
+              ), count ? (
                 <span
                   aria-hidden={"true"}
                   className={
@@ -1530,10 +1525,7 @@ export function installUiToolbarControls(runtime: RuntimeBindings): () => void {
                     size={"xs"}
                   />
                 </span>
-              ) : null,
-              value6.mirror,
-              value7.mirror,
-            ]}
+              ) : null, value6.mirror, value7.mirror]}
           </span>
         </runtime.Tooltip>
       );
@@ -1658,21 +1650,18 @@ export function installUiToolbarControls(runtime: RuntimeBindings): () => void {
               {...state}
               iconOnly={true}
               icon={icon}
-              aria-label={ariaLabel ?? ""}
+              aria-label={ariaLabel ?? ("")}
               tooltip={false}
             />
           ) : (
             <runtime.Button {...state} icon={icon} aria-label={ariaLabel}>
-              {[
-                children,
-                chevron === true ? (
+              {[children, chevron === true ? (
                   <runtime.Icon
                     name={"CaretDown"}
                     size={"sm"}
                     className={"shrink-0 opacity-60"}
                   />
-                ) : null,
-              ]}
+                ) : null]}
             </runtime.Button>
           );
       if (title === undefined) {
@@ -1698,15 +1687,11 @@ export function installUiToolbarControls(runtime: RuntimeBindings): () => void {
               "relative inline-flex shrink-0 rounded align-top outline-none focus-visible:outline-hidden focus-visible:shadow-focus"
             }
           >
-            {[
-              value9,
-              value7 ? (
+            {[value9, value7 ? (
                 <span hidden={true} id={value6}>
                   {title}
                 </span>
-              ) : null,
-              value5.mirror,
-            ]}
+              ) : null, value5.mirror]}
           </span>
         </runtime.Tooltip>
       );

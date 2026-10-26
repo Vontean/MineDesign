@@ -1,3 +1,4 @@
+import { useUiLocale } from '../../ui-locale.ts';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -414,6 +415,7 @@ export function installCdsSheetsPopupStack(
     };
   }
   function ResetSheetContext({ children: children }: Dynamic): Dynamic {
+    useUiLocale();
     return (
       <SheetStateContext.Provider
         value={SheetsPopupStackSheetPendingCoveredConfig}
@@ -429,6 +431,7 @@ export function installCdsSheetsPopupStack(
     );
   }
   function SheetPopupRender(input?: Dynamic): Dynamic {
+    useUiLocale();
     let { children: value, ...value2 }: Dynamic = input,
       value3: Dynamic = useSheetPopup(value2);
     return (
@@ -439,6 +442,7 @@ export function installCdsSheetsPopupStack(
     value: value,
     children: children,
   }: Dynamic): Dynamic {
+    useUiLocale();
     return (
       <SheetStateContext.Provider value={value.state}>
         <SheetPopupBridgeContext.Provider value={value.stack.cover}>

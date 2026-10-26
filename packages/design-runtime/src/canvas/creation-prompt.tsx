@@ -1,3 +1,5 @@
+import { useUiLocale } from '../ui-locale.ts';
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -23,6 +25,7 @@ export function installCanvasCreationPrompt(
     sentence: sentence,
     onAdd: onAdd,
   }: Dynamic): Dynamic {
+    useUiLocale();
     return (
       <jsx_xu.Fragment>
         <p className={"m-0 text-[12.5px] text-secondary"}>{sentence}</p>
@@ -37,6 +40,7 @@ export function installCanvasCreationPrompt(
     busy: busy,
     onAdd: onAdd,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let value: Dynamic = (0, runtime.useClaudeActivity)() === "working";
     return (
       <runtime.ClaudeWorkingLabel
@@ -66,18 +70,17 @@ export function installCanvasCreationPrompt(
     busy: busy,
     onAdd: onAdd,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let value: Dynamic = (0, runtime.useHostDrawsClaudeTips)(),
       value2: Dynamic = (
         <runtime.PeerBadge
           tint={"violet"}
           label={
-            value
-              ? {
+            value ? ({
                   kind: "name",
                   // MineDesign: user-facing copy calls the agent "the agent", not Claude.
                   text: "Agent",
-                }
-              : {
+                }) : ({
                   kind: "words",
                   text:
                     tip < 0
@@ -87,7 +90,7 @@ export function installCanvasCreationPrompt(
                   shimmer: true,
                   outMs: 80,
                   inMs: 120,
-                }
+                })
           }
         />
       );
@@ -115,7 +118,7 @@ export function installCanvasCreationPrompt(
             {value2}
           </div>
         </div>
-        {prompt ? AddArtboardPromptButton(onAdd, true) : null}
+        {prompt ? (AddArtboardPromptButton(onAdd, true)) : (null)}
         <span className={"sr-only"}>
           {runtime.CanvasWorkingLabelAnimationLabel}
         </span>
@@ -144,7 +147,7 @@ export function installCanvasCreationPrompt(
             {value2}
           </div>
         </div>
-        {prompt ? AddArtboardPromptButton(onAdd, tucked) : null}
+        {prompt ? (AddArtboardPromptButton(onAdd, tucked)) : (null)}
         <span className={"sr-only"}>
           {runtime.CanvasWorkingLabelAnimationLabel}
         </span>
@@ -201,14 +204,14 @@ export function installCanvasCreationPrompt(
     designCreationTips = [
       "Double-click text to edit it.",
       // MineDesign: user-facing copy calls the agent "the agent", not Claude.
-      "Comment on any part, and the agent can revise it.",
-      "Invite people to view, comment, or edit.",
-      "Use @ in a comment to mention someone.",
-      "Drag in a picture from your computer.",
-      "Every edit saves automatically.",
-      "People you share with see your changes live.",
-      "Drag an artboard by its title to move it.",
-      "Select any element to comment on it.",
+      uiMessage("canvas.creationPrompt.commentOnAnyPartAnd"),
+      uiMessage("canvas.creationPrompt.invitePeopleToViewComment"),
+      uiMessage("canvas.creationPrompt.useInACommentTo"),
+      uiMessage("canvas.creationPrompt.dragInAPictureFrom"),
+      uiMessage("canvas.creationPrompt.everyEditSavesAutomatically"),
+      uiMessage("canvas.creationPrompt.peopleYouShareWithSee"),
+      uiMessage("canvas.creationPrompt.dragAnArtboardByIts"),
+      uiMessage("canvas.creationPrompt.selectAnyElementToComment"),
     ];
     jsx_xu = (0, runtime.toModuleNamespace)(
       (0, runtime.load_react_jsx_runtime)(),
@@ -230,7 +233,7 @@ export function installCanvasCreationPrompt(
           data-testid={"dc-empty-page-add"}
           onClick={input}
         >
-          {"Add an artboard"}
+          {uiMessage("canvas.creationPrompt.addAnArtboard")}
         </runtime.Button>
       </span>
     );

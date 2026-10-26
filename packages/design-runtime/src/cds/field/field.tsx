@@ -1,3 +1,5 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
+import { useUiLocale } from '../../ui-locale.ts';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -40,6 +42,7 @@ export function installCdsFieldField(runtime: RuntimeBindings): () => void {
     fieldClassName: fieldClassName,
     ...props
   }: Dynamic): Dynamic {
+    useUiLocale();
     return label == null &&
       hint == null &&
       !error &&
@@ -395,7 +398,7 @@ export function installCdsFieldField(runtime: RuntimeBindings): () => void {
                   size={"sm"}
                   className={"mt-px shrink-0"}
                 />
-                <span>{children ?? input.children}</span>
+                <span>{children ?? (input.children)}</span>
               </div>
             )}
           />
@@ -410,10 +413,10 @@ export function installCdsFieldField(runtime: RuntimeBindings): () => void {
         children: children,
       }: Dynamic): Dynamic => (
         <FieldRoot invalid={!!error || undefined} className={fieldClassName}>
-          {label != null && <FieldLabel>{label}</FieldLabel>}
+          {label != null && (<FieldLabel>{label}</FieldLabel>)}
           {children}
-          {hint != null && <FieldDescription>{hint}</FieldDescription>}
-          {!!error && <FieldError match={true}>{error}</FieldError>}
+          {hint != null && (<FieldDescription>{hint}</FieldDescription>)}
+          {!!error && (<FieldError match={true}>{error}</FieldError>)}
         </FieldRoot>
       );
       FieldControl = runtime.npm_Field_qg.Control;

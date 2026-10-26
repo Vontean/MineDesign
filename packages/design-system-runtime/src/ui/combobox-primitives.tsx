@@ -1,3 +1,4 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 import type {
   AccessibleNameProps,
   ComboboxBridgeProps,
@@ -575,20 +576,15 @@ export function installUiComboboxPrimitives(
       ): React.ReactElement => {
         let value = (0, runtime.useTranslation)(
           "loadingOptions",
-          "Loading options",
+          uiMessage("design-system.comboboxPrimitives.loadingOptions"),
         );
         return (
           <runtime.baseCombobox.Status ref={options} {...props}>
-            {loading && (
-              <DelayedVisible ms={delay}>
+            {loading && (<DelayedVisible ms={delay}>
                 <div className={COMBOBOX_LOADING_CLASS}>
-                  {[
-                    <runtime.Spinner size={"sm"} />,
-                    <span>{loadingLabel ?? value}</span>,
-                  ]}
+                  {[<runtime.Spinner size={"sm"} />, <span>{loadingLabel ?? (value)}</span>]}
                 </div>
-              </DelayedVisible>
-            )}
+              </DelayedVisible>)}
           </runtime.baseCombobox.Status>
         );
       },

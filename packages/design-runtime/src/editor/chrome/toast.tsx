@@ -1,3 +1,4 @@
+import { useUiLocale } from '../../ui-locale.ts';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -10,6 +11,7 @@ export function installEditorChromeToast(runtime: RuntimeBindings): () => void {
   var ChromeToastInfoSuccessWarningConfig: Dynamic;
   var EditorToastContext: Dynamic;
   function EditorToastProvider({ children: children }: Dynamic): Dynamic {
+    useUiLocale();
     let value: Dynamic = (0, runtime.useToastManager)(),
       value2: Dynamic = (0, reactChromeToast.useRef)(value);
     (0, reactChromeToast.useLayoutEffect)((): Dynamic => {

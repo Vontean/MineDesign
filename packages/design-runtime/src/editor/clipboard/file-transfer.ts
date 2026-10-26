@@ -1,3 +1,4 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -311,10 +312,7 @@ export function installEditorClipboardFileTransfer(
       ) {
         items2.push({
           path: value4,
-          why:
-            "over this canvas's " +
-            String(Math.floor(extra / 1024)) +
-            " KB file limit",
+          get why() { return ((uiMessage("inspector.fileTransfer.overThisCanvasS")) + (String(Math.floor(extra / 1024)))) + (" KB file limit"); },
         });
         if (value6 !== undefined || callback2(value4) || value === "unknown") {
           let value7: Dynamic = callback5(value4);
@@ -639,7 +637,7 @@ export function installEditorClipboardFileTransfer(
     ClipboardFileTransferHandler_3 = (input?: Dynamic): Dynamic =>
       `; ${input === 1 ? "1 shape" : String(input) + " shapes"} left out (copy ${input === 1 ? "it" : "them"} with an artboard to bring ${input === 1 ? "it" : "them"})`;
     VideosCanTBePastedFromAnotherMessage =
-      "videos can't be pasted from another canvas yet";
+      uiMessage("inspector.fileTransfer.videosCanTBePasted");
     ClipboardFileTransferToUpperCase = (input?: Dynamic): Dynamic =>
       input.charAt(0).toUpperCase() + input.slice(1);
     ClipboardFileTransferHandler_4 = (
@@ -659,7 +657,7 @@ export function installEditorClipboardFileTransfer(
     ClipboardFileTransferHandler_5 = (input?: Dynamic): Dynamic =>
       `copy ${input === 1 ? "it" : "them"} again, or add ${input === 1 ? "it" : "them"} to this canvas instead`;
     ClipboardFileTransferHandler_6 = (input?: Dynamic): Dynamic =>
-      `the copied ${input === 1 ? "picture wasn't" : "pictures weren't"} included`;
+      `the copied ${input === 1 ? uiMessage("inspector.fileTransfer.pictureWasnT") : uiMessage("inspector.fileTransfer.picturesWerenT")} included`;
     ClipboardFileTransferRegistry = {
       pasted: (
         items?: Dynamic,
@@ -669,10 +667,10 @@ export function installEditorClipboardFileTransfer(
         extra: Dynamic = {},
       ): Dynamic =>
         (items.length > 0
-          ? "Pasted " +
+          ? uiMessage("inspector.fileTransfer.pasted") +
             ClipboardFileTransferKind(items) +
             " from another canvas"
-          : "Nothing pasted") +
+          : uiMessage("inspector.fileTransfer.nothingPasted")) +
         (context > 0 ? ClipboardFileTransferHandler_2(context) : "") +
         (value > 0 ? ClipboardFileTransferHandler_3(value) : "") +
         (items.length > 0 && (extra.plain ?? 0) > 0
@@ -682,15 +680,15 @@ export function installEditorClipboardFileTransfer(
           ? ClipboardFileTransferRegistry.notBrought(extra.failed ?? 0)
           : "") +
         ((extra.overCap ?? 0) > 0
-          ? `; ${ClipboardFileTransferHandler(extra.overCap ?? 0, "more picture")} left out (a paste brings up to ${String(runtime.ClipboardAnnotationsLimit)}: copy the rest separately)`
+          ? `; ${ClipboardFileTransferHandler(extra.overCap ?? 0, uiMessage("inspector.fileTransfer.morePicture"))} left out (a paste brings up to ${String(runtime.ClipboardAnnotationsLimit)}: copy the rest separately)`
           : "") +
         ClipboardFileTransferHandler_4(options, extra.videos),
       withObjects: (input?: Dynamic): Dynamic =>
         " with " + ClipboardFileTransferKind(input),
       onlyLeftOut: (input?: Dynamic, options: Dynamic = 0): Dynamic =>
         input - options <= 0
-          ? `Nothing to paste: ${VideosCanTBePastedFromAnotherMessage}. Add ${options === 1 ? "the video" : "them"} to this canvas instead.`
-          : `Nothing to paste: ${ClipboardFileTransferHandler_6(input - options)}. ${ClipboardFileTransferToUpperCase(ClipboardFileTransferHandler_5(input - options))}.` +
+          ? uiMessage("inspector.fileTransfer.nothingToPasteValue1Add", { value1: String(VideosCanTBePastedFromAnotherMessage), value2: String(options === 1 ? "the video" : "them") })
+          : uiMessage("inspector.fileTransfer.nothingToPasteValue1Value2", { value1: String(ClipboardFileTransferHandler_6(input - options)), value2: String(ClipboardFileTransferToUpperCase(ClipboardFileTransferHandler_5(input - options))) }) +
             (options > 0
               ? ` ${ClipboardFileTransferToUpperCase(VideosCanTBePastedFromAnotherMessage)}.`
               : ""),
@@ -706,19 +704,19 @@ export function installEditorClipboardFileTransfer(
       notBrought: (input?: Dynamic): Dynamic =>
         `; ${ClipboardFileTransferHandler(input, "picture")} could not be brought over (try again, or add ${input === 1 ? "it" : "them"} to this canvas instead)`,
       bringing: (input?: Dynamic): Dynamic =>
-        `Pasting ${input === 1 ? "a picture" : String(input) + " pictures"} from another canvas\u2026`,
+        uiMessage("inspector.fileTransfer.pastingValue1FromAnotherCanvas", { value1: String(input === 1 ? "a picture" : String(input) + " pictures") }),
       stillPasting: "Still working on the previous paste\u2026",
       picturesNotReady: (input?: Dynamic): Dynamic =>
-        `Copied. ${input === 1 ? "One picture wasn't" : String(input) + " pictures weren't"} ready yet, so another canvas would go without ${input === 1 ? "it" : "them"}. Copy again in a moment. Paste here still works.`,
+        uiMessage("inspector.fileTransfer.copiedValue1ReadyYetSo", { value1: String(input === 1 ? uiMessage("inspector.fileTransfer.onePictureWasnT") : String(input) + " pictures weren't"), value2: String(input === 1 ? "it" : "them") }),
       picturesCantGo: (input?: Dynamic): Dynamic =>
-        `Copied. ${input === 1 ? "One picture" : String(input) + " pictures"} can't go to another canvas; add ${input === 1 ? "it" : "them"} to that canvas instead. Paste here still works.`,
+        uiMessage("inspector.fileTransfer.copiedValue1CanTGo", { value1: String(input === 1 ? uiMessage("inspector.fileTransfer.onePicture") : String(input) + " pictures"), value2: String(input === 1 ? "it" : "them") }),
       picturesWontFit: (input?: Dynamic): Dynamic =>
-        `Copied. ${input === 1 ? "One picture" : String(input) + " pictures"} didn't fit with the rest to go to another canvas: copy fewer at a time. Paste here still works.`,
+        uiMessage("inspector.fileTransfer.copiedValue1DidnTFit", { value1: String(input === 1 ? uiMessage("inspector.fileTransfer.onePicture") : String(input) + " pictures") }),
       picturesOverCap: (input?: Dynamic): Dynamic =>
-        `Copied. Another canvas takes ${String(runtime.ClipboardAnnotationsLimit)} pictures a paste: copy the other ${input === 1 ? "one" : String(input)} separately. Paste here still works.`,
+        uiMessage("inspector.fileTransfer.copiedAnotherCanvasTakesValue1", { value1: String(String(runtime.ClipboardAnnotationsLimit)), value2: String(input === 1 ? "one" : String(input)) }),
       wontFitPictures:
         "Couldn't paste: this would make the canvas too large to save. Delete something here first.",
-      atLimit: `Couldn't paste: this would take the canvas past its limit of ${String(runtime.PlatformFileContentLimit_5)} notes, shapes and pictures. Delete some here first, or paste fewer.`,
+      atLimit: uiMessage("inspector.fileTransfer.couldnTPasteThisWould", { value1: String(String(runtime.PlatformFileContentLimit_5)) }),
       tooMuchUnasked:
         "Nothing pasted: this is more than can be pasted from another canvas at once. Copy fewer notes at a time.",
       tooMuchStayed:
@@ -742,7 +740,7 @@ export function installEditorClipboardFileTransfer(
       plainShapes: (input?: Dynamic): Dynamic =>
         `; ${input === 1 ? "1 shape lost its styling" : String(input) + " shapes lost their styling"} (Paste with code keeps it)`,
       plainPictures: (input?: Dynamic, options?: Dynamic): Dynamic =>
-        `; ${ClipboardFileTransferHandler(input, "picture")} lost some effects (${options ? "Paste with code keeps them" : `to keep them, copy ${input === 1 ? "it" : "them"} with an artboard and choose Paste with code`})`,
+        `; ${ClipboardFileTransferHandler(input, "picture")} lost some effects (${options ? uiMessage("inspector.fileTransfer.pasteWithCodeKeepsThem") : `to keep them, copy ${input === 1 ? "it" : "them"} with an artboard and choose Paste with code`})`,
       notesTooMuch:
         "; the notes were left out: copy fewer at a time (this is more than can be pasted from another canvas at once)",
       someUnread: ClipboardFileTransferHandler_2,
@@ -752,7 +750,7 @@ export function installEditorClipboardFileTransfer(
         " The notes and shapes are too large to go with the artboards: copy fewer of them with the artboards.",
       notEither: " The notes and shapes were not pasted either.",
       pressAgain: (input?: Dynamic): Dynamic =>
-        `Press ${input} again to paste what you copied in another canvas.`,
+        uiMessage("inspector.fileTransfer.pressValue1AgainToPaste", { value1: String(input) }),
     };
     ClipboardFileTransferPasted = (input?: Dynamic, items?: Dynamic): Dynamic =>
       items.length > 0 &&

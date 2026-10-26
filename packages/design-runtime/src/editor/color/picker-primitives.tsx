@@ -1,3 +1,5 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
+import { useUiLocale } from '../../ui-locale.ts';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -202,6 +204,7 @@ export function installEditorColorPickerPrimitives(
     );
   }
   function PickerRowText({ text: text, title = false }: Dynamic): Dynamic {
+    useUiLocale();
     return (
       <div
         className={joinPickerClasses(
@@ -221,6 +224,7 @@ export function installEditorColorPickerPrimitives(
     scroll = true,
     children: children,
   }: Dynamic): Dynamic {
+    useUiLocale();
     return (
       <div
         role={role}
@@ -237,6 +241,7 @@ export function installEditorColorPickerPrimitives(
     );
   }
   function PickerListHeader({ text: text, title: title }: Dynamic): Dynamic {
+    useUiLocale();
     return (
       <div
         role={"presentation"}
@@ -247,6 +252,7 @@ export function installEditorColorPickerPrimitives(
     );
   }
   function ColorSwatchDot({ paint: paint, current = false }: Dynamic): Dynamic {
+    useUiLocale();
     return (
       <span
         aria-hidden={"true"}
@@ -270,14 +276,14 @@ export function installEditorColorPickerPrimitives(
     title: title,
     ...props
   }: Dynamic): Dynamic {
+    useUiLocale();
     let value: Dynamic = (
       <jsxColorPickerPrimitives.Fragment>
         <ColorSwatchDot paint={paint} current={current} />
         <span className={"min-w-0 flex-1 truncate text-footnote text-primary"}>
           {label}
         </span>
-        {current ? (
-          <span
+        {current ? (<span
             data-swatch-check={""}
             aria-hidden={"true"}
             className={
@@ -288,14 +294,13 @@ export function installEditorColorPickerPrimitives(
             }}
           >
             <runtime.Icon name={"Check"} size={"auto"} bold={true} />
-          </span>
-        ) : null}
+          </span>) : (null)}
       </jsxColorPickerPrimitives.Fragment>
     );
     return readOnly ? (
       <div
         role={"listitem"}
-        title={title ?? label}
+        title={title ?? (label)}
         aria-label={label}
         className={joinPickerClasses(
           ColorPickerPrimitivesClassNames,
@@ -308,7 +313,7 @@ export function installEditorColorPickerPrimitives(
     ) : (
       <button
         type={"button"}
-        title={disabled2 ? undefined : (title ?? label)}
+        title={disabled2 ? (undefined) : (title ?? (label))}
         aria-label={label}
         aria-pressed={current}
         disabled={disabled2}

@@ -1,3 +1,4 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -263,12 +264,12 @@ export function installCollaborationPresenceComposer(
           }}
         >
           <span className={"mc-cursor-chat-sizer"} aria-hidden={"true"}>
-            {value5 || " "}
+            {value5 || (" ")}
           </span>
           <input
             ref={value17}
             className={"mc-cursor-chat-input"}
-            aria-label={"Cursor chat"}
+            aria-label={uiMessage("canvas.presenceComposer.cursorChat")}
             autoFocus={true}
             autoComplete={"off"}
             spellCheck={false}

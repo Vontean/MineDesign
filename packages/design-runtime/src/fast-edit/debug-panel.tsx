@@ -1,3 +1,5 @@
+import { useUiLocale } from '../ui-locale.ts';
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -25,6 +27,7 @@ export function installFastEditDebugPanel(
     strong: strong,
     children: children,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let [open, setOpen]: Dynamic = (0, ReactFastEditDebug.useState)(
       openInitially,
     );
@@ -60,11 +63,9 @@ export function installFastEditDebugPanel(
             {note}
           </span>
         </button>
-        {open && (
-          <div className={strong === true ? "" : "px-2 pb-2 pl-[26px]"}>
+        {open && (<div className={strong === true ? "" : "px-2 pb-2 pl-[26px]"}>
             {children}
-          </div>
-        )}
+          </div>)}
       </div>
     );
   }
@@ -75,6 +76,7 @@ export function installFastEditDebugPanel(
     text: text,
     open0: openInitially,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let sections: Dynamic = (0, runtime.splitFastEditMessageSections)(text);
     return (
       <FastEditDebugDisclosure
@@ -85,10 +87,7 @@ export function installFastEditDebugPanel(
         note={formatDebugCharacterCount(text.length)}
         open0={openInitially}
       >
-        {sections.length < 2 ? (
-          <pre className={FAST_EDIT_DEBUG_TIER_LABELS + " p-2"}>{text}</pre>
-        ) : (
-          sections.map(
+        {sections.length < 2 ? (<pre className={FAST_EDIT_DEBUG_TIER_LABELS + " p-2"}>{text}</pre>) : (sections.map(
             (input?: Dynamic, options?: Dynamic): Dynamic => (
               <FastEditDebugDisclosure
                 key={options}
@@ -109,12 +108,12 @@ export function installFastEditDebugPanel(
                 <pre className={FAST_EDIT_DEBUG_TIER_LABELS}>{input.text}</pre>
               </FastEditDebugDisclosure>
             ),
-          )
-        )}
+          ))}
       </FastEditDebugDisclosure>
     );
   }
   function FastEditDebugCallDetail({ c: call }: Dynamic): Dynamic {
+    useUiLocale();
     let lastMessageIndex: Dynamic = call.messages.length - 1;
     return (
       <div data-testid={"fast-edit-debug-detail"}>
@@ -155,6 +154,7 @@ export function installFastEditDebugPanel(
     );
   }
   function FastEditDebugCallRow({ c: call, onOpen: onOpen }: Dynamic): Dynamic {
+    useUiLocale();
     if (call.ended !== undefined)
       return (
         <div
@@ -163,11 +163,7 @@ export function installFastEditDebugPanel(
             "border-0 border-b border-solid border-[var(--t-border)] px-3 py-1.5 font-mono text-[11px] leading-[17px] text-[var(--t-fg-muted)]"
           }
         >
-          {String(call.n) +
-            " " +
-            formatFastEditDebugTime(call.at) +
-            " " +
-            (0, runtime.describeFastEditDebugCompletion)(call)}
+          {((((String(call.n)) + (" ")) + (formatFastEditDebugTime(call.at))) + (" ")) + ((0, runtime.describeFastEditDebugCompletion)(call))}
         </div>
       );
     let value: Dynamic = (0, runtime.classifyFastEditDebugCall)(call);
@@ -187,12 +183,9 @@ export function installFastEditDebugPanel(
           <span className={"font-semibold"}>{String(call.n)}</span>
           <span>{formatFastEditDebugTime(call.at)}</span>
           <span className={"font-semibold"}>{value.road}</span>
-          {value.later && <span>{"call 2"}</span>}
+          {value.later && (<span>{uiMessage("canvas.debugPanel.call2")}</span>)}
           <span className={"ml-auto shrink-0 text-[var(--t-fg-muted)]"}>
-            {formatDebugDuration(call.msFirst) +
-              " / " +
-              formatDebugDuration(call.ms) +
-              " ms"}
+            {(((formatDebugDuration(call.msFirst)) + (" / ")) + (formatDebugDuration(call.ms))) + (" ms")}
           </span>
         </div>
         <div className={"[overflow-wrap:anywhere]"}>
@@ -200,20 +193,17 @@ export function installFastEditDebugPanel(
         </div>
         <div className={"flex gap-2 text-[var(--t-fg-muted)]"}>
           <span className={"font-mono text-[11px] [overflow-wrap:anywhere]"}>
-            {call.error !== undefined
-              ? call.error.code + " " + compactDebugText(call.reply, 50)
-              : compactDebugText(call.reply)}
+            {call.error !== undefined ? (((call.error.code) + (" ")) + (compactDebugText(call.reply, 50))) : (compactDebugText(call.reply))}
           </span>
           <span className={"ml-auto shrink-0"}>
-            {String(call.messages.length) +
-              " turns \xB7 " +
-              formatDebugCharacterCount(value.chars)}
+            {uiMessage("canvas.debugPanel.turns", { value1: String(String(call.messages.length)), value2: String(formatDebugCharacterCount(value.chars)) })}
           </span>
         </div>
       </button>
     );
   }
   function FastEditDebugPanel(): Dynamic {
+    useUiLocale();
     let [, rerender]: Dynamic = (0, ReactFastEditDebug.useReducer)(
       (input?: Dynamic): Dynamic => input + 1,
       0,
@@ -262,7 +252,7 @@ export function installFastEditDebugPanel(
             variant={"secondary"}
             size={"sm"}
             data-testid={"fast-edit-debug"}
-            aria-label={"Fast Edit calls"}
+            aria-label={uiMessage("canvas.debugPanel.fastEditCalls")}
             aria-expanded={open}
             onClick={(): Dynamic => setOpen(!open)}
           >
@@ -298,12 +288,11 @@ export function installFastEditDebugPanel(
     return (
       <fastEditDebugJsxRuntime.Fragment>
         {value4}
-        {open &&
-          (0, fastEditDebugPortal.createPortal)(
+        {open && ((0, fastEditDebugPortal.createPortal)(
             <div
               data-testid={"fast-edit-debug-panel"}
               role={"dialog"}
-              aria-label={"Fast Edit calls"}
+              aria-label={uiMessage("canvas.debugPanel.fastEditCalls")}
               className={
                 "pointer-events-auto fixed z-[1000] flex max-h-[80vh] w-[560px] max-w-[calc(100vw_-_32px)] flex-col overflow-hidden rounded-[10px] border border-solid border-[var(--t-border)] bg-[var(--t-panel)] text-[var(--t-fg)] shadow-panel-sm " +
                 FAST_EDIT_DEBUG_POSITION.panel
@@ -315,35 +304,20 @@ export function installFastEditDebugPanel(
                     "flex shrink-0 items-center gap-2 border-0 border-b border-solid border-[var(--t-border)] px-3 py-2 text-[12px]"
                   }
                 >
-                  {value2 !== undefined && (
-                    <runtime.Button
+                  {value2 !== undefined && (<runtime.Button
                       variant={"secondary"}
                       size={"xs"}
-                      aria-label={"Back to the list"}
+                      aria-label={uiMessage("canvas.debugPanel.backToTheList")}
                       data-testid={"fast-edit-debug-back"}
                       onClick={(): Dynamic => setActiveCall(null)}
                     >
                       <runtime.Icon name={"ArrowLeft"} size={"xs"} />
-                    </runtime.Button>
-                  )}
+                    </runtime.Button>)}
                   <span className={"font-semibold"}>
-                    {value2 !== undefined
-                      ? "Call " +
-                        String(value2.n) +
-                        " \xB7 " +
-                        formatFastEditDebugTime(value2.at) +
-                        " \xB7 " +
-                        value2.tier +
-                        " \xB7 " +
-                        formatDebugDuration(value2.msFirst) +
-                        " / " +
-                        formatDebugDuration(value2.ms) +
-                        " ms"
-                      : "Fast Edit calls"}
+                    {value2 !== undefined ? (uiMessage("canvas.debugPanel.callMs", { value1: String(String(value2.n)), value2: String(formatFastEditDebugTime(value2.at)), value3: String(value2.tier), value4: String(formatDebugDuration(value2.msFirst)), value5: String(formatDebugDuration(value2.ms)) })) : (uiMessage("canvas.debugPanel.fastEditCalls"))}
                   </span>
                   <span className={"ml-auto flex gap-1"}>
-                    {value2 !== undefined ? (
-                      <runtime.Button
+                    {value2 !== undefined ? (<runtime.Button
                         variant={"secondary"}
                         size={"xs"}
                         data-testid={"fast-edit-debug-copy"}
@@ -351,10 +325,8 @@ export function installFastEditDebugPanel(
                           FAST_EDIT_DEBUG_OUTCOME_LABELS(value2)
                         }
                       >
-                        {"Copy call"}
-                      </runtime.Button>
-                    ) : (
-                      <fastEditDebugJsxRuntime.Fragment>
+                        {uiMessage("canvas.debugPanel.copyCall")}
+                      </runtime.Button>) : (<fastEditDebugJsxRuntime.Fragment>
                         <runtime.Button
                           variant={"secondary"}
                           size={"xs"}
@@ -363,7 +335,7 @@ export function installFastEditDebugPanel(
                             FAST_EDIT_DEBUG_OUTCOME_LABELS(value)
                           }
                         >
-                          {"Copy all"}
+                          {uiMessage("canvas.debugPanel.copyAll")}
                         </runtime.Button>
                         <runtime.Button
                           variant={"secondary"}
@@ -373,10 +345,9 @@ export function installFastEditDebugPanel(
                             runtime.fastEditDebugStore.clear()
                           }
                         >
-                          {"Clear"}
+                          {uiMessage("canvas.debugPanel.clear")}
                         </runtime.Button>
-                      </fastEditDebugJsxRuntime.Fragment>
-                    )}
+                      </fastEditDebugJsxRuntime.Fragment>)}
                   </span>
                 </div>
               </runtime.CdsIsland>
@@ -387,23 +358,18 @@ export function installFastEditDebugPanel(
                   (value2 !== undefined ? "p-2" : "")
                 }
               >
-                {value2 !== undefined ? (
-                  (() => {
+                {value2 !== undefined ? ((() => {
                     const _Component = FastEditDebugCallDetail;
                     const _props = {
                       c: value2,
                     } as const;
                     const _key = value2.n;
                     return <_Component key={_key} {..._props} />;
-                  })()
-                ) : value.length === 0 ? (
-                  <div
+                  })()) : (value.length === 0 ? (<div
                     className={"px-3 py-4 text-[12px] text-[var(--t-fg-muted)]"}
                   >
-                    {"No calls yet."}
-                  </div>
-                ) : (
-                  value.map(
+                    {uiMessage("canvas.debugPanel.noCallsYet")}
+                  </div>) : (value.map(
                     (input?: Dynamic): Dynamic =>
                       (() => {
                         const _Component2 = FastEditDebugCallRow;
@@ -414,19 +380,18 @@ export function installFastEditDebugPanel(
                         const _key2 = input.n;
                         return <_Component2 key={_key2} {..._props2} />;
                       })(),
-                  )
-                )}
+                  )))}
               </div>
               <div
                 className={
                   "shrink-0 border-0 border-t border-solid border-[var(--t-border)] px-3 py-1 text-[11px] text-[var(--t-fg-muted)]"
                 }
               >
-                {"In memory: a reload clears."}
+                {uiMessage("canvas.debugPanel.inMemoryAReloadClears")}
               </div>
             </div>,
             (document as Dynamic).body,
-          )}
+          ))}
       </fastEditDebugJsxRuntime.Fragment>
     );
   }

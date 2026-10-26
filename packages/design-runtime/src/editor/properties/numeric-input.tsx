@@ -1,3 +1,5 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
+import { useUiLocale } from '../../ui-locale.ts';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -38,6 +40,7 @@ export function installEditorPropertiesNumericInput(
     inputRef: inputRef,
     className: className,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let value2: Dynamic = (0, runtime.reactPropertiesToolOptions.useRef)(null),
       value3: Dynamic = (0, runtime.reactPropertiesToolOptions.useCallback)(
         (input?: Dynamic): Dynamic => {
@@ -331,8 +334,7 @@ export function installEditorPropertiesNumericInput(
         slotEnd={
           value4 || value20 ? (
             <span className={"flex items-center gap-2"}>
-              {value4 ? (
-                <span
+              {value4 ? (<span
                   data-scrub={""}
                   onMouseDown={value16 && unitScrubs ? callback4 : undefined}
                   onPointerDown={
@@ -346,10 +348,8 @@ export function installEditorPropertiesNumericInput(
                   )}
                 >
                   {unit}
-                </span>
-              ) : null}
-              {value20 ? (
-                <span
+                </span>) : (null)}
+              {value20 ? (<span
                   className={
                     "hidden flex-col group-focus-within/field:flex pointer-coarse:hidden!"
                   }
@@ -358,9 +358,7 @@ export function installEditorPropertiesNumericInput(
                     type={"button"}
                     tabIndex={-1}
                     aria-label={
-                      value14
-                        ? runtime.IncreaseValue + " " + value14
-                        : runtime.IncreaseValue
+                      value14 ? (((runtime.IncreaseValue) + (" ")) + (value14)) : (runtime.IncreaseValue)
                     }
                     className={runtime.PropertiesNumericScrubberClassNames_2}
                     disabled={disabled2}
@@ -377,9 +375,7 @@ export function installEditorPropertiesNumericInput(
                     type={"button"}
                     tabIndex={-1}
                     aria-label={
-                      value14
-                        ? runtime.DecreaseValue + " " + value14
-                        : runtime.DecreaseValue
+                      value14 ? (((runtime.DecreaseValue) + (" ")) + (value14)) : (runtime.DecreaseValue)
                     }
                     className={runtime.PropertiesNumericScrubberClassNames_2}
                     disabled={disabled2}
@@ -392,8 +388,7 @@ export function installEditorPropertiesNumericInput(
                   >
                     <runtime.EditorIcon name={"CaretDown"} size={12} />
                   </button>
-                </span>
-              ) : null}
+                </span>) : (null)}
             </span>
           ) : undefined
         }

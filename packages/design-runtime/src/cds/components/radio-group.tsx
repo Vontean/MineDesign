@@ -1,3 +1,5 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
+import { useUiLocale } from '../../ui-locale.ts';
 import type {
   ForwardComponent,
   RadioCardProps,
@@ -29,6 +31,7 @@ export function installCdsComponentsRadioGroup(
     topAlign = false,
     focusRing = false,
   }: RadioGlyphProps): React.ReactElement {
+    useUiLocale();
     return (
       <span
         className={(0, runtime.npm_clsx_Ea)(
@@ -49,6 +52,7 @@ export function installCdsComponentsRadioGroup(
   var RadioGroup: React.FC<RadioGroupProps> = function (
     input: RadioGroupProps,
   ): React.ReactElement {
+    useUiLocale();
     let {
       value: value,
       defaultValue: value2,
@@ -215,14 +219,12 @@ export function installCdsComponentsRadioGroup(
                 <RadioGlyph focusRing={true} topAlign={!!description} />
                 <span className={"flex min-w-0 flex-col"}>
                   <span id={value3}>{label}</span>
-                  {description && (
-                    <span
+                  {description && (<span
                       id={value4}
                       className={"text-footnote leading-snug text-muted"}
                     >
                       {description}
-                    </span>
-                  )}
+                    </span>)}
                 </span>
               </runtime.npm_Radio_iP.Root>
             );
@@ -269,25 +271,21 @@ export function installCdsComponentsRadioGroup(
                 className={(0, runtime.cn)(radioItemClasses, className)}
               >
                 <RadioGlyph topAlign={true} />
-                {leading ? <span className={"shrink-0"}>{leading}</span> : null}
+                {leading ? (<span className={"shrink-0"}>{leading}</span>) : (null)}
                 <span className={"flex min-w-0 flex-1 flex-col gap-xs"}>
                   <span className={"flex min-w-0 flex-col"}>
                     <span className={"flex items-start justify-between gap-sm"}>
                       <span id={value3} className={"min-w-0 font-medium"}>
                         {label}
                       </span>
-                      {trailing ? (
-                        <span className={"shrink-0"}>{trailing}</span>
-                      ) : null}
+                      {trailing ? (<span className={"shrink-0"}>{trailing}</span>) : (null)}
                     </span>
-                    {description && (
-                      <span
+                    {description && (<span
                         id={value4}
                         className={"text-footnote leading-snug text-muted"}
                       >
                         {description}
-                      </span>
-                    )}
+                      </span>)}
                   </span>
                   {children}
                 </span>

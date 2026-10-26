@@ -1,3 +1,5 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
+import { useUiLocale } from '../../ui-locale.ts';
 import type * as React from "react";
 import type * as Color from "../../contracts/color-controls";
 /** Restored application module; prepare first, initialize in original order. */
@@ -20,6 +22,7 @@ export function installUiColorGradientStops(
     className: className,
     children: children,
   }: Color.TooltipWrapperProps): React.ReactElement {
+    useUiLocale();
     return (
       <runtime.Tooltip
         content={tip}
@@ -33,7 +36,7 @@ export function installUiColorGradientStops(
         hoverable={false}
       >
         <span
-          data-tip={typeof tip === "string" ? tip : undefined}
+          data-tip={typeof tip === "string" ? (tip) : (undefined)}
           className={(0, runtime.joinClassNames)(
             "relative inline-flex align-top",
             className,

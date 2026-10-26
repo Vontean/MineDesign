@@ -1,3 +1,5 @@
+import { useUiLocale } from '../ui-locale.ts';
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 import type * as React from "react";
 import type * as Color from "../contracts/color-controls";
 /** Restored application module; prepare first, initialize in original order. */
@@ -37,11 +39,11 @@ export function installUiSidePanels(runtime: RuntimeBindings): () => void {
     closeLabel = runtime.DEFAULT_CLOSE_LABEL,
     trailing: trailing,
   }: Color.PanelHeaderProps): React.ReactElement {
+    useUiLocale();
     let value = tabs !== undefined && tabs.length > 0;
     return (
       <jsxForUiSidePanels.Fragment>
-        {[
-          value ? (
+        {[value ? (
             <runtime.Tabs.List
               aria-label={tabsLabel}
               activateOnFocus={activateOnFocus}
@@ -71,9 +73,7 @@ export function installUiSidePanels(runtime: RuntimeBindings): () => void {
             </span>
           ) : (
             <span aria-hidden={"true"} className={"flex-1"} />
-          ),
-          trailing,
-          onClose !== undefined ? (
+          ), trailing, onClose !== undefined ? (
             <runtime.Button
               variant={"ghost"}
               iconOnly={true}
@@ -88,8 +88,7 @@ export function installUiSidePanels(runtime: RuntimeBindings): () => void {
               onClick={onClose}
               className={"relative shrink-0"}
             />
-          ) : null,
-        ]}
+          ) : null]}
       </jsxForUiSidePanels.Fragment>
     );
   }
@@ -108,6 +107,7 @@ export function installUiSidePanels(runtime: RuntimeBindings): () => void {
     ];
   }
   function PanelHeader(props: Color.PanelHeaderProps): React.ReactElement {
+    useUiLocale();
     let { tabs: tabs, className: className, "data-testid": value } = props,
       [value2, value3] = usePanelHeaderTab(props);
     if (tabs !== undefined && tabs.length > 0) {
@@ -136,6 +136,7 @@ export function installUiSidePanels(runtime: RuntimeBindings): () => void {
   function SidePanelProvider({
     children: children,
   }: React.PropsWithChildren): React.ReactElement {
+    useUiLocale();
     let [value, value2] =
         reactForUiSidePanels.useState<Color.SidePanelMeta | null>(null),
       [value3, value4] = reactForUiSidePanels.useState<HTMLDivElement | null>(
@@ -431,9 +432,10 @@ export function installUiSidePanels(runtime: RuntimeBindings): () => void {
     max: max,
     defaultWidth: defaultWidth,
     gesture: gesture,
-    label = "Resize panel",
+    label = uiMessage("design-system.sidePanels.resizePanel"),
     className: className,
   }: Color.PanelWidthHandleProps): React.ReactElement {
+    useUiLocale();
     let callback = (input: number) => () => {
       gesture.onResizeStart("keys");
       gesture.onResize(width - input, "keys");
@@ -477,6 +479,7 @@ export function installUiSidePanels(runtime: RuntimeBindings): () => void {
     grabClassName: grabTargetClassName2 = "justify-center pointer-coarse:flex",
     grabTargetClassName: grabTargetClassName,
   }: Color.PanelResizeHandleProps): React.ReactElement {
+    useUiLocale();
     let value = side === "inline-start",
       grabClassName = reactForUiSidePanels.useRef(gesture);
     grabClassName.current = gesture;
@@ -639,8 +642,7 @@ export function installUiSidePanels(runtime: RuntimeBindings): () => void {
       );
     return (
       <jsxForUiSidePanels2.Fragment>
-        {[
-          disabled ? null : (
+        {[disabled ? null : (
             <div
               data-kit={name + "-grab"}
               onPointerDown={(input: React.PointerEvent<HTMLElement>) =>
@@ -662,8 +664,7 @@ export function installUiSidePanels(runtime: RuntimeBindings): () => void {
                 )}
               />
             </div>
-          ),
-          <runtime.Tooltip
+          ), <runtime.Tooltip
             content={value9 ?? ""}
             side={value ? "left" : "top"}
             open={value10}
@@ -674,14 +675,11 @@ export function installUiSidePanels(runtime: RuntimeBindings): () => void {
             }}
           >
             {value11}
-          </runtime.Tooltip>,
-          value9 !== undefined ? (
+          </runtime.Tooltip>, value9 !== undefined ? (
             <jsxForUiSidePanels2.Fragment>
-              {[
-                <span id={value8} hidden={true}>
+              {[<span id={value8} hidden={true}>
                   {value9}
-                </span>,
-                <runtime.TooltipWrapper
+                </span>, <runtime.TooltipWrapper
                   tip={value9}
                   side={value ? "left" : "top"}
                   className={
@@ -691,15 +689,14 @@ export function installUiSidePanels(runtime: RuntimeBindings): () => void {
                   }
                 >
                   <span className={"size-full"} />
-                </runtime.TooltipWrapper>,
-              ]}
+                </runtime.TooltipWrapper>]}
             </jsxForUiSidePanels2.Fragment>
-          ) : null,
-        ]}
+          ) : null]}
       </jsxForUiSidePanels2.Fragment>
     );
   }
   function SidePanelHost(): React.ReactElement | null {
+    useUiLocale();
     let value = reactForUiSidePanels.useContext(SidePanelHostContext);
     if (!value) {
       throw Error("SidePanelHost requires a SidePanelProvider");
@@ -1099,20 +1096,20 @@ export function installUiSidePanels(runtime: RuntimeBindings): () => void {
                   tabs: value25,
                   tab: meta.tab ?? value25[0]?.value,
                   onTabChange: meta.onTabChange,
-                  tabsLabel: meta.tabsLabel ?? "Panel view",
+                  tabsLabel: meta.tabsLabel ?? uiMessage("design-system.sidePanels.panelView"),
                   trailing: value22 ? (
                     <runtime.Button
                       iconOnly={true}
                       variant={"ghost"}
                       icon={"SidebarRight"}
-                      aria-label={"Dock panel"}
-                      tooltip={"Dock back to the side"}
+                      aria-label={uiMessage("design-system.sidePanels.dockPanel")}
+                      tooltip={uiMessage("design-system.sidePanels.dockBackToTheSide")}
                       className={"relative shrink-0"}
                       onClick={callback4}
                     />
                   ) : undefined,
                   onClose: () => meta.onClose(),
-                  closeLabel: "Close panel",
+                  get closeLabel() { return uiMessage("design-system.sidePanels.closePanel"); },
                 };
                 const _elementKey2 = meta.id;
                 return <_Element2 key={_elementKey2} {..._elementProps2} />;
@@ -1132,37 +1129,31 @@ export function installUiSidePanels(runtime: RuntimeBindings): () => void {
               value11 && (value15 ? "cursor-grabbing" : "cursor-grab"),
             )}
           >
-            {[
-              <span
+            {[<span
                 ref={setLeadingEl}
                 className={"-ml-[5px] flex shrink-0 items-center empty:hidden"}
-              />,
-              <span className={"min-w-0 flex-1 truncate text-body-semibold"}>
-                {meta.hideTitle === true ? null : meta.title}
-              </span>,
-              <span
+              />, <span className={"min-w-0 flex-1 truncate text-body-semibold"}>
+                {meta.hideTitle === true ? (null) : (meta.title)}
+              </span>, <span
                 ref={setTrailingEl}
                 className={
                   "relative z-20 flex shrink-0 items-center gap-1.5 pointer-coarse:gap-4 empty:hidden"
                 }
-              />,
-              value22 ? (
+              />, value22 ? (
                 <PanelIconButton
                   icon={"SidebarRight"}
-                  aria-label={"Dock panel"}
-                  tooltip={"Dock back to the side"}
+                  aria-label={uiMessage("design-system.sidePanels.dockPanel")}
+                  tooltip={uiMessage("design-system.sidePanels.dockBackToTheSide")}
                   onClick={callback4}
                 />
-              ) : null,
-              <PanelIconButton
+              ) : null, <PanelIconButton
                 icon={"X"}
-                aria-label={"Close panel"}
+                aria-label={uiMessage("design-system.sidePanels.closePanel")}
                 className={
                   meta.closeInset === "shell" ? undefined : "-mr-[5px]"
                 }
                 onClick={() => meta.onClose()}
-              />,
-            ]}
+              />]}
           </div>
         );
     return (
@@ -1214,11 +1205,10 @@ export function installUiSidePanels(runtime: RuntimeBindings): () => void {
               ),
         )}
       >
-        {[
-          !value22 && meta.narrow === "sheet" && !value23 ? (
+        {[!value22 && meta.narrow === "sheet" && !value23 ? (
             <PanelResizeHandle
               name={"sheet"}
-              label={"Resize sheet"}
+              label={uiMessage("design-system.sidePanels.resizeSheet")}
               now={value24}
               valueText={String(value24) + " pixels tall"}
               min={minimumPanelHeight(value6, value4)}
@@ -1231,24 +1221,18 @@ export function installUiSidePanels(runtime: RuntimeBindings): () => void {
               )}
               grabTargetClassName={value26 ? undefined : "ml-14"}
             />
-          ) : null,
-          value27,
-          <div className={"relative flex min-h-0 flex-1 flex-col"}>
-            {[
-              <div
+          ) : null, value27, <div className={"relative flex min-h-0 flex-1 flex-col"}>
+            {[<div
                 ref={callback2}
                 className={"flex min-h-0 flex-1 flex-col overflow-hidden"}
-              />,
-              value18 && meta.narrow === "sheet" ? null : (
+              />, value18 && meta.narrow === "sheet" ? null : (
                 <PanelWidthResizeHandle
                   {...value17}
                   gesture={memo}
                   label={meta.resizeLabel}
                 />
-              ),
-            ]}
-          </div>,
-        ]}
+              )]}
+          </div>]}
       </div>
     );
   }
@@ -1258,6 +1242,7 @@ export function installUiSidePanels(runtime: RuntimeBindings): () => void {
     toolbarVariant = "docked",
     children: children,
   }: Color.PanedLayoutProps): React.ReactElement {
+    useUiLocale();
     let value =
         leading == null ? null : (
           <div data-mc-chrome={""} className={"contents"}>
@@ -1274,42 +1259,26 @@ export function installUiSidePanels(runtime: RuntimeBindings): () => void {
       );
     return (
       <SidePanelProvider>
-        {toolbarVariant === "floating" ? (
-          <div
+        {toolbarVariant === "floating" ? (<div
             data-mc-paned={""}
             className={"relative flex h-dvh overflow-hidden max-md:flex-col"}
           >
-            {[
-              <div className={"flex min-h-0 min-w-0 flex-1"}>
-                {[
-                  value,
-                  <div
+            {[<div className={"flex min-h-0 min-w-0 flex-1"}>
+                {[value, <div
                     className={"relative flex min-h-0 min-w-0 flex-1 flex-col"}
                   >
                     {[toolbar, value2]}
-                  </div>,
-                ]}
-              </div>,
-              <SidePanelHost />,
-            ]}
-          </div>
-        ) : (
-          <div data-mc-paned={""} className={"flex h-dvh overflow-hidden"}>
-            {[
-              value,
-              <div className={"flex min-h-0 min-w-0 flex-1 flex-col"}>
-                {[
-                  toolbar,
-                  <div
+                  </div>]}
+              </div>, <SidePanelHost />]}
+          </div>) : (<div data-mc-paned={""} className={"flex h-dvh overflow-hidden"}>
+            {[value, <div className={"flex min-h-0 min-w-0 flex-1 flex-col"}>
+                {[toolbar, <div
                     className={"relative flex min-h-0 flex-1 max-md:flex-col"}
                   >
                     {[value2, <SidePanelHost />]}
-                  </div>,
-                ]}
-              </div>,
-            ]}
-          </div>
-        )}
+                  </div>]}
+              </div>]}
+          </div>)}
       </SidePanelProvider>
     );
   }

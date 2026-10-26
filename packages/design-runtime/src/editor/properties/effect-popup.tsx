@@ -1,3 +1,5 @@
+import { useUiLocale } from '../../ui-locale.ts';
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import type { CSSProperties } from "react";
 import {
@@ -15,10 +17,11 @@ export function installEditorPropertiesEffectPopup(
     labelWidth = "3rem",
     children: children,
   }: Dynamic): Dynamic {
+    useUiLocale();
     return (
       <div
         role={"dialog"}
-        aria-label={typeof title == "string" ? title : undefined}
+        aria-label={typeof title == "string" ? (title) : (undefined)}
         className={"flex flex-col py-sm"}
         style={
           {
@@ -41,8 +44,8 @@ export function installEditorPropertiesEffectPopup(
             size={"sm"}
             iconOnly={true}
             icon={"X"}
-            aria-label={"Close"}
-            tooltip={"Close"}
+            aria-label={uiMessage("inspector.effectPopup.close")}
+            tooltip={uiMessage("inspector.effectPopup.close")}
             onClick={onClose}
           />
         </div>
@@ -64,6 +67,7 @@ export function installEditorPropertiesEffectPopup(
     unifiedPopover: unifiedPopover,
     editsAreUndoSteps: editsAreUndoSteps,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let callback: Dynamic = (input?: Dynamic): Dynamic =>
         onChange({
           ...value,
@@ -83,7 +87,7 @@ export function installEditorPropertiesEffectPopup(
     return (
       <PropertyPopupBody title={title} onClose={onClose}>
         <runtime.PropertyRow
-          label={"Offset"}
+          label={uiMessage("inspector.effectPopup.offset")}
           disabled={disabled2}
           onPress={(element?: Dynamic): Dynamic =>
             element.querySelector("input")?.focus()
@@ -91,7 +95,7 @@ export function installEditorPropertiesEffectPopup(
         >
           <div className={"flex min-w-0 flex-1 items-center gap-2"}>
             <runtime.NumericInput
-              aria-label={"Horizontal offset"}
+              aria-label={uiMessage("inspector.effectPopup.horizontalOffset")}
               prefix={"X"}
               steppers={false}
               value={value.x}
@@ -106,7 +110,7 @@ export function installEditorPropertiesEffectPopup(
               {...callback2("x")}
             />
             <runtime.NumericInput
-              aria-label={"Vertical offset"}
+              aria-label={uiMessage("inspector.effectPopup.verticalOffset")}
               prefix={"Y"}
               steppers={false}
               value={value.y}
@@ -123,7 +127,7 @@ export function installEditorPropertiesEffectPopup(
           </div>
         </runtime.PropertyRow>
         <runtime.PropertyNumberRow
-          label={"Blur"}
+          label={uiMessage("inspector.effectPopup.blur")}
           unit={"px"}
           value={value.blur}
           onValue={(input?: Dynamic): Dynamic =>
@@ -137,9 +141,8 @@ export function installEditorPropertiesEffectPopup(
           {...bounds.blur}
           {...callback2("blur")}
         />
-        {spread && (
-          <runtime.PropertyNumberRow
-            label={"Spread"}
+        {spread && (<runtime.PropertyNumberRow
+            label={uiMessage("inspector.effectPopup.spread")}
             unit={"px"}
             value={value.spread ?? 0}
             onValue={(input?: Dynamic): Dynamic =>
@@ -151,10 +154,9 @@ export function installEditorPropertiesEffectPopup(
             disabled={disabled2}
             {...bounds.spread}
             {...callback2("spread")}
-          />
-        )}
+          />)}
         <runtime.PropertyHexRow
-          label={"Color"}
+          label={uiMessage("inspector.effectPopup.color")}
           value={value.color}
           disabled={disabled2}
           swatches={swatches}
@@ -191,6 +193,7 @@ export function installEditorPropertiesEffectPopup(
     editsAreUndoSteps: editsAreUndoSteps,
     children: children,
   }: Dynamic): Dynamic {
+    useUiLocale();
     return (
       <runtime.EditorPopover
         open={open}
@@ -217,7 +220,8 @@ export function installEditorPropertiesEffectPopup(
     disabled: disabled2,
     disabledReason: disabledReason,
   }: Dynamic): Dynamic {
-    let value: Dynamic = "Remove " + label.toLowerCase();
+    useUiLocale();
+    let value: Dynamic = uiMessage("inspector.effectPopup.remove") + label.toLowerCase();
     return (
       <runtime.Button
         variant={"ghost"}
@@ -279,7 +283,7 @@ export function installEditorPropertiesEffectPopup(
               : undefined)}
             {...props}
             ref={options}
-            aria-label={label + ": " + text}
+            aria-label={((label) + (": ")) + (text)}
             disabled={disabled2}
             onClick={onClick}
             chip={

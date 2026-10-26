@@ -1,3 +1,5 @@
+import { useUiLocale } from '../ui-locale.ts';
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -33,12 +35,13 @@ export function installPropertiesQuickPanels(
     hint: hint,
     onClick: onClick,
   }: Dynamic): Dynamic {
+    useUiLocale();
     return (
       <runtime.SessionStripButton
         icon={<runtime.PropertyOptionIcon icon={icon} />}
         aria-label={label}
         aria-pressed={pressed}
-        title={disabledReason ?? hint}
+        title={disabledReason ?? (hint)}
         disabled={disabledReason !== undefined}
         onClick={onClick}
       />
@@ -55,6 +58,7 @@ export function installPropertiesQuickPanels(
     supports: supports,
     widths: widths,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let value: Dynamic =
         widths !== undefined
           ? borderSides
@@ -83,7 +87,7 @@ export function installPropertiesQuickPanels(
       callback2: Dynamic = (): Dynamic => (
         <QuickPanelIconButton
           icon={runtime.PropertiesTooltipNameViewBoxPathsConfig_2}
-          label={"Individual borders"}
+          label={uiMessage("inspector.quickPanels.individualBorders")}
           pressed={value7}
           hint={
             widths !== undefined
@@ -91,11 +95,7 @@ export function installPropertiesQuickPanels(
               : "Choose which sides draw"
           }
           disabledReason={
-            supports.sides === true
-              ? value5
-                ? "Pick a border style first"
-                : undefined
-              : supports.sides
+            supports.sides === true ? (value5 ? (uiMessage("inspector.quickPanels.pickABorderStyleFirst")) : (undefined)) : (supports.sides)
           }
           onClick={(): Dynamic => {
             value7
@@ -115,7 +115,7 @@ export function installPropertiesQuickPanels(
         data-quick-panel={"border"}
       >
         <runtime.SegmentedControl
-          aria-label={"Border style"}
+          aria-label={uiMessage("inspector.quickPanels.borderStyle")}
           fullWidth={true}
           value={style ?? "none"}
           onChange={(input?: Dynamic): Dynamic =>
@@ -160,11 +160,10 @@ export function installPropertiesQuickPanels(
             className={"grid grid-cols-[1fr_1fr_auto] items-center gap-1.5"}
             role={"group"}
             aria-label={
-              value7 && widths !== undefined ? "Side widths" : undefined
+              value7 && widths !== undefined ? (uiMessage("inspector.quickPanels.sideWidths")) : (undefined)
             }
           >
-            {value7 && widths !== undefined ? (
-              borderSideMenuOrder.map(
+            {value7 && widths !== undefined ? (borderSideMenuOrder.map(
                 (input?: Dynamic, options?: Dynamic): Dynamic =>
                   input === null ? (
                     options === 2 ? (
@@ -178,9 +177,9 @@ export function installPropertiesQuickPanels(
                     <runtime.NumericInput
                       key={input}
                       prefix={borderSideInitials[input]}
-                      aria-label={borderSideLabels[input] + " border width"}
+                      aria-label={uiMessage("inspector.quickPanels.borderWidth", { value1: String(borderSideLabels[input]) })}
                       title={
-                        borderSideLabels[input] + " border width (px; 0 = none)"
+                        uiMessage("inspector.quickPanels.borderWidthPx0None", { value1: String(borderSideLabels[input]) })
                       }
                       value={widths.value[input]}
                       min={0}
@@ -203,9 +202,7 @@ export function installPropertiesQuickPanels(
                       onScrubEnd={widths.onLiveEnd}
                     />
                   ),
-              )
-            ) : (
-              <jsx_os.Fragment>
+              )) : (<jsx_os.Fragment>
                 <div className={"col-span-2 min-w-0"}>
                   <runtime.NumericInput
                     prefix={
@@ -213,15 +210,15 @@ export function installPropertiesQuickPanels(
                         icon={runtime.PropertiesTooltipNameViewBoxPathsConfig}
                       />
                     }
-                    aria-label={"Border weight"}
+                    aria-label={uiMessage("inspector.quickPanels.borderWeight")}
                     unit={"px"}
-                    title={"Border weight"}
+                    title={uiMessage("inspector.quickPanels.borderWeight")}
                     value={value2 ? undefined : width}
                     min={1}
                     max={supports.widthMax}
                     step={1}
                     clearable={!value2}
-                    placeholder={value2 ? "Mixed" : "0"}
+                    placeholder={value2 ? (uiMessage("inspector.quickPanels.mixed")) : ("0")}
                     disabled={value5}
                     onValue={(input?: Dynamic): Dynamic => {
                       (input !== undefined || !value2) &&
@@ -241,16 +238,14 @@ export function installPropertiesQuickPanels(
                   />
                 </div>
                 {callback2()}
-              </jsx_os.Fragment>
-            )}
+              </jsx_os.Fragment>)}
           </div>
-          {value7 && widths === undefined && (
-            <div
+          {value7 && widths === undefined && (<div
               className={
                 "grid grid-cols-4 gap-0.5 rounded-md bg-fill-field p-0.5"
               }
               role={"group"}
-              aria-label={"Sides"}
+              aria-label={uiMessage("inspector.quickPanels.sides")}
             >
               {borderSides.map((input?: Dynamic): Dynamic => {
                 let value8: Dynamic = value6.includes(input),
@@ -258,14 +253,12 @@ export function installPropertiesQuickPanels(
                 return (
                   <runtime.SessionStripButton
                     key={input}
-                    aria-label={borderSideLabels[input] + " border"}
+                    aria-label={uiMessage("inspector.quickPanels.border", { value1: String(borderSideLabels[input]) })}
                     aria-pressed={value8}
                     className={"justify-center"}
                     disabled={value5 || value9}
                     title={
-                      value9
-                        ? "Set the style to None to remove the border"
-                        : borderSideLabels[input] + " border"
+                      value9 ? (uiMessage("inspector.quickPanels.setTheStyleToNone")) : (uiMessage("inspector.quickPanels.border", { value1: String(borderSideLabels[input]) }))
                     }
                     onClick={(): Dynamic => callback(input)}
                   >
@@ -273,8 +266,7 @@ export function installPropertiesQuickPanels(
                   </runtime.SessionStripButton>
                 );
               })}
-            </div>
-          )}
+            </div>)}
         </fieldset>
       </div>
     );
@@ -285,11 +277,12 @@ export function installPropertiesQuickPanels(
     context?: Dynamic,
     value?: Dynamic,
   ): Dynamic {
+    useUiLocale();
     return (
       <runtime.NumericInput
         prefix={options.toUpperCase()}
-        aria-label={radiusCornerLabels[options] + " radius"}
-        title={radiusCornerLabels[options] + " radius"}
+        aria-label={uiMessage("inspector.quickPanels.radius", { value1: String(radiusCornerLabels[options]) })}
+        title={uiMessage("inspector.quickPanels.radius", { value1: String(radiusCornerLabels[options]) })}
         value={input.value[options]}
         min={0}
         max={context}
@@ -322,6 +315,7 @@ export function installPropertiesQuickPanels(
     individualReason: individualReason,
     corners: corners,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let value: Dynamic =
         corners !== undefined &&
         new Set(
@@ -332,13 +326,11 @@ export function installPropertiesQuickPanels(
       value5: Dynamic = (
         <QuickPanelIconButton
           icon={runtime.PropertiesTooltipNameViewBoxPathsConfig_4}
-          label={"Individual corners"}
+          label={uiMessage("inspector.quickPanels.individualCorners")}
           pressed={value4}
           hint={"Set each corner"}
           disabledReason={
-            corners === undefined
-              ? (individualReason ?? "One radius for every corner")
-              : undefined
+            corners === undefined ? (individualReason ?? (uiMessage("inspector.quickPanels.oneRadiusForEveryCorner"))) : (undefined)
           }
           onClick={(): Dynamic => {
             value4 &&
@@ -361,36 +353,32 @@ export function installPropertiesQuickPanels(
         onMouseDown={preserveQuickPanelInputFocus}
         data-quick-panel={"corner"}
       >
-        {value4 && corners !== undefined ? (
-          <div className={"grid grid-cols-[1fr_1fr_auto] items-center gap-1.5"}>
+        {value4 && corners !== undefined ? (<div className={"grid grid-cols-[1fr_1fr_auto] items-center gap-1.5"}>
             {RadiusCornerInput(corners, "tl", max, radius)}
             {RadiusCornerInput(corners, "tr", max, radius)}
             {value5}
             {RadiusCornerInput(corners, "bl", max, radius)}
             {RadiusCornerInput(corners, "br", max, radius)}
             <span />
-          </div>
-        ) : (
-          <div className={"flex items-center gap-1.5"}>
+          </div>) : (<div className={"flex items-center gap-1.5"}>
             <div className={"min-w-0 flex-1"}>
               <runtime.NumericInput
-                aria-label={"Corner radius"}
+                aria-label={uiMessage("inspector.quickPanels.cornerRadius")}
                 unit={"px"}
-                title={"Corner radius"}
+                title={uiMessage("inspector.quickPanels.cornerRadius")}
                 value={value ? undefined : radius}
                 min={0}
                 max={max}
                 step={1}
                 clearable={!value}
-                placeholder={value ? "Mixed" : "0"}
+                placeholder={value ? (uiMessage("inspector.quickPanels.mixed")) : ("0")}
                 onValue={onChange}
                 onScrub={onLive}
                 onScrubEnd={onLiveEnd}
               />
             </div>
             {value5}
-          </div>
-        )}
+          </div>)}
       </div>
     );
   }
@@ -402,6 +390,7 @@ export function installPropertiesQuickPanels(
     onLiveEnd: onLiveEnd,
     margin: margin,
   }: Dynamic): Dynamic {
+    useUiLocale();
     return (
       <div
         className={quickPanelBodyClass}
@@ -409,7 +398,7 @@ export function installPropertiesQuickPanels(
         data-quick-panel={"spacing"}
       >
         <SpacingSidesEditor
-          title={"Padding"}
+          title={uiMessage("inspector.quickPanels.padding")}
           max={max}
           binding={{
             value: padding,
@@ -418,13 +407,11 @@ export function installPropertiesQuickPanels(
             onLiveEnd: onLiveEnd,
           }}
         />
-        {margin !== undefined && (
-          <SpacingSidesEditor
-            title={"Margin"}
+        {margin !== undefined && (<SpacingSidesEditor
+            title={uiMessage("inspector.quickPanels.margin")}
             max={margin.max ?? max}
             binding={margin}
-          />
-        )}
+          />)}
       </div>
     );
   }
@@ -433,6 +420,7 @@ export function installPropertiesQuickPanels(
     max: max,
     binding: binding,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let {
         value: value,
         onChange: value2,
@@ -461,10 +449,10 @@ export function installPropertiesQuickPanels(
           <runtime.NumericInput
             key={input}
             prefix={input}
-            aria-label={title + " " + options}
-            title={title + " " + options}
+            aria-label={((title) + (" ")) + (options)}
+            title={((title) + (" ")) + (options)}
             value={value9 ? value8[0] : undefined}
-            placeholder={value9 ? "0" : "Mixed"}
+            placeholder={value9 ? ("0") : (uiMessage("inspector.quickPanels.mixed"))}
             min={0}
             max={max}
             step={1}
@@ -484,7 +472,7 @@ export function installPropertiesQuickPanels(
       value7: Dynamic = (
         <QuickPanelIconButton
           icon={runtime.PropertiesTooltipNameViewBoxPathsConfig_2}
-          label={"Individual " + title.toLowerCase()}
+          label={uiMessage("inspector.quickPanels.individual", { value1: String(title.toLowerCase()) })}
           pressed={value5}
           hint={"Set each side"}
           onClick={(): Dynamic => value6(!value5)}
@@ -498,22 +486,18 @@ export function installPropertiesQuickPanels(
       >
         <div className={quickPanelHintClass}>{title}</div>
         <div className={"grid grid-cols-[1fr_1fr_auto] items-center gap-1.5"}>
-          {value5 ? (
-            <jsx_os.Fragment>
+          {value5 ? (<jsx_os.Fragment>
               {callback("T", "top", ["top"])}
               {callback("R", "right", ["right"])}
               {value7}
               {callback("B", "bottom", ["bottom"])}
               {callback("L", "left", ["left"])}
               <span />
-            </jsx_os.Fragment>
-          ) : (
-            <jsx_os.Fragment>
-              {callback("H", "left and right", ["left", "right"])}
-              {callback("V", "top and bottom", ["top", "bottom"])}
+            </jsx_os.Fragment>) : (<jsx_os.Fragment>
+              {callback("H", uiMessage("inspector.quickPanels.leftAndRight"), ["left", "right"])}
+              {callback("V", uiMessage("inspector.quickPanels.topAndBottom"), ["top", "bottom"])}
               {value7}
-            </jsx_os.Fragment>
-          )}
+            </jsx_os.Fragment>)}
         </div>
       </div>
     );
@@ -664,10 +648,10 @@ export function installPropertiesQuickPanels(
     };
     borderStyleOptions = ["none", "solid", "dashed", "dotted"];
     borderStyleLabels = {
-      none: "None",
+      get none() { return uiMessage("inspector.quickPanels.none"); },
       solid: "Solid",
-      dashed: "Dashed",
-      dotted: "Dotted",
+      get dashed() { return uiMessage("inspector.quickPanels.dashed"); },
+      get dotted() { return uiMessage("inspector.quickPanels.dotted"); },
     };
     borderStyleGlyphs = {
       solid: runtime.PropertiesTooltipNameViewBoxPathsConfig_6,
@@ -682,10 +666,10 @@ export function installPropertiesQuickPanels(
     quickPanelHintClass = "px-0.5 pt-0.5 text-footnote text-muted select-none";
     radiusCorners = ["tl", "tr", "bl", "br"];
     radiusCornerLabels = {
-      tl: "Top left",
-      tr: "Top right",
-      bl: "Bottom left",
-      br: "Bottom right",
+      get tl() { return uiMessage("inspector.quickPanels.topLeft"); },
+      get tr() { return uiMessage("inspector.quickPanels.topRight"); },
+      get bl() { return uiMessage("inspector.quickPanels.bottomLeft"); },
+      get br() { return uiMessage("inspector.quickPanels.bottomRight"); },
     };
   };
 }

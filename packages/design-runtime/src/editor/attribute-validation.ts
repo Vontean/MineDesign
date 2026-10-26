@@ -1,3 +1,4 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -112,20 +113,17 @@ export function installEditorAttributeValidation(
     if (value === "handler")
       return {
         ok: false,
-        message:
-          "Event-handler attributes are code and can\u2019t be edited here \u2014 ask in chat to change the behavior instead.",
+        get message() { return uiMessage("inspector.attributeValidation.eventHandlerAttributesAreCodeAndCanTBeEditedHereAskInChatToChangeTheBehaviorInst"); },
       };
     if (value === "srcdoc")
       return {
         ok: false,
-        message:
-          "srcdoc is a full HTML document and can\u2019t be edited here \u2014 ask in chat to change the embedded content instead.",
+        get message() { return uiMessage("inspector.attributeValidation.srcdocIsAFullHTMLDocumentAndCanTBeEditedHereAskInChatToChangeTheEmbeddedContentI"); },
       };
     if (value === "script-src")
       return {
         ok: false,
-        message:
-          "A script\u2019s source is code and can\u2019t be edited here \u2014 ask in chat to change the script instead.",
+        get message() { return uiMessage("inspector.attributeValidation.aScriptSSourceIsCodeAndCanTBeEditedHereAskInChatToChangeTheScriptInstead"); },
       };
     if (value === "keyframe-track") {
       let value2: Dynamic = /^@data-keyframes-attr-(.+)$/.exec(
@@ -141,8 +139,7 @@ export function installEditorAttributeValidation(
       return value2 == null
         ? {
             ok: false,
-            message:
-              "That link can\u2019t be used \u2014 enter a web address (https://\u2026), a project page path, mailto: or tel: link.",
+            get message() { return uiMessage("inspector.attributeValidation.thatLinkCanTBeUsedEnterAWebAddressHttpsAProjectPagePathMailtoOrTelLink"); },
           }
         : {
             ok: true,
@@ -154,8 +151,7 @@ export function installEditorAttributeValidation(
       return value2 == null
         ? {
             ok: false,
-            message:
-              "That action can\u2019t be used \u2014 enter a web address (https://\u2026), a path, mailto: or tel:.",
+            get message() { return uiMessage("inspector.attributeValidation.thatActionCanTBeUsedEnterAWebAddressHttpsAPathMailtoOrTel"); },
           }
         : {
             ok: true,
@@ -167,8 +163,7 @@ export function installEditorAttributeValidation(
       return value2 == null
         ? {
             ok: false,
-            message:
-              "That source can\u2019t be used \u2014 enter a web address (https://\u2026) or a project file path.",
+            get message() { return uiMessage("inspector.attributeValidation.thatSourceCanTBeUsedEnterAWebAddressHttpsOrAProjectFilePath"); },
           }
         : {
             ok: true,
@@ -192,8 +187,7 @@ export function installEditorAttributeValidation(
     )
       return {
         ok: false,
-        message:
-          "This keyframe track targets an attribute that can\u2019t be edited here \u2014 ask in chat instead.",
+        get message() { return uiMessage("inspector.attributeValidation.thisKeyframeTrackTargetsAnAttributeThatCanTBeEditedHereAskInChatInstead"); },
       };
     let value: Dynamic;
     try {
@@ -201,7 +195,7 @@ export function installEditorAttributeValidation(
     } catch {
       return {
         ok: false,
-        message: "Keyframes must be a JSON array of {t, v} objects.",
+        get message() { return uiMessage("inspector.attributeValidation.keyframesMustBeAJSONArrayOfObjects"); },
       };
     }
     for (let value2 of (Array.isArray(value) ? value : []) as Dynamic) {
@@ -214,8 +208,7 @@ export function installEditorAttributeValidation(
       )
         return {
           ok: false,
-          message:
-            "A keyframe value isn\u2019t a usable URL \u2014 use a web address (https://\u2026) or a project file path.",
+          get message() { return uiMessage("inspector.attributeValidation.aKeyframeValueIsnTAUsableURLUseAWebAddressHttpsOrAProjectFilePath"); },
         };
     }
     return {

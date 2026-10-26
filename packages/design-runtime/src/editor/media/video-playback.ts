@@ -1,3 +1,4 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -126,7 +127,7 @@ export function installEditorMediaVideoPlayback(
     defaultAnnotationStrokeColor = "#8a8378";
     (0, runtime.initializeCdsIndex)();
     MediaVideoPlaybackPlayPauseSeekConfig = {
-      play: "Play",
+      get play() { return uiMessage("inspector.videoPlayback.play"); },
       pause: "Pause",
       seek: "Seek",
     };

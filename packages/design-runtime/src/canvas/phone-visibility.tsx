@@ -1,3 +1,4 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -183,7 +184,7 @@ export function installCanvasPhoneVisibility(
   return () => {
     (0, runtime.initializeNpm_usehooks_ts_p0)();
     react_uPt = (0, runtime.toModuleNamespace)((0, runtime.load_react)(), 1);
-    phoneCanvasShowingPrefix = "showing ";
+    phoneCanvasShowingPrefix = uiMessage("canvas.phoneVisibility.showing");
     phoneCanvasKilledMarker = "killed";
     phoneCanvasDocumentMarker = "__designPhoneCanvasDocument";
     phoneCanvasDocumentId =

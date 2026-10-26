@@ -1,3 +1,5 @@
+import { useUiLocale } from '../ui-locale.ts';
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -113,6 +115,7 @@ export function installPropertiesQuickPanelBindings(
     testid = "mega-qp-bg",
     editsAreUndoSteps: editsAreUndoSteps,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let entry: Dynamic = io.get("background-color"),
       [value, value2]: Dynamic = (0, react_mEt.useState)(false),
       value3: Dynamic = (0, runtime.useBackgroundEditor)({
@@ -132,12 +135,12 @@ export function installPropertiesQuickPanelBindings(
       <runtime.SessionActionsPopover
         testid={testid}
         editsAreUndoSteps={editsAreUndoSteps}
-        title={"Background color"}
+        title={uiMessage("inspector.quickPanelBindings.backgroundColor")}
         paint={value4}
         swatches={[
           {
             name: "none",
-            label: "No fill",
+            get label() { return uiMessage("inspector.quickPanelBindings.noFill"); },
             color: "transparent",
             empty: true,
           },
@@ -184,6 +187,7 @@ export function installPropertiesQuickPanelBindings(
     );
   }
   function CornerRadiusQuickPanel({ io: io }: Dynamic): Dynamic {
+    useUiLocale();
     let state: Dynamic = {
         tl: parseOptionalPixelValue(io.get(radiusCssProperties.tl)),
         tr: parseOptionalPixelValue(io.get(radiusCssProperties.tr)),
@@ -203,7 +207,7 @@ export function installPropertiesQuickPanelBindings(
     return (
       <runtime.SessionPopup
         testid={"mega-qp-corner"}
-        title={"Corner radius"}
+        title={uiMessage("inspector.quickPanelBindings.cornerRadius")}
         icon={runtime.PropertiesTooltipNameViewBoxPathsConfig_3}
       >
         <runtime.RadiusQuickPanel
@@ -247,6 +251,7 @@ export function installPropertiesQuickPanelBindings(
     faces: faces,
     editsAreUndoSteps: editsAreUndoSteps,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let entry: Dynamic = io.get("border-style"),
       value: Dynamic =
         entry === "double"
@@ -317,7 +322,7 @@ export function installPropertiesQuickPanelBindings(
           />
           <runtime.SessionPopup
             testid={"mega-qp-border"}
-            title={"Border"}
+            title={uiMessage("inspector.quickPanelBindings.border")}
             icon={runtime.PropertiesTooltipNameViewBoxPathsConfig}
             editsAreUndoSteps={editsAreUndoSteps}
           >
@@ -329,8 +334,8 @@ export function installPropertiesQuickPanelBindings(
                 <runtime.PropertyColorRow
                   testid={"mega-qp-border-color"}
                   editsAreUndoSteps={editsAreUndoSteps}
-                  label={"Border color"}
-                  title={"Border color"}
+                  label={uiMessage("inspector.quickPanelBindings.borderColor")}
+                  title={uiMessage("inspector.quickPanelBindings.borderColor")}
                   value={value7}
                   swatches={swatches}
                   fold={true}
@@ -344,7 +349,7 @@ export function installPropertiesQuickPanelBindings(
                     value8 !== undefined && io.set([["border-color", value8]]);
                   }}
                   disabled={!value2}
-                  disabledReason={"Pick a border style first"}
+                  disabledReason={uiMessage("inspector.quickPanelBindings.pickABorderStyleFirst")}
                   onChange={(input?: Dynamic): Dynamic => {
                     input !== undefined && io.set([["border-color", input]]);
                   }}
@@ -456,12 +461,12 @@ export function installPropertiesQuickPanelBindings(
             />
           </runtime.SessionPopup>
         </runtime.SessionStripGroup>
-        {compact ? null : <runtime.SessionStripDivider />}
+        {compact ? (null) : (<runtime.SessionStripDivider />)}
         <runtime.SessionStripGroup wrap={true}>
           <CornerRadiusQuickPanel io={io} />
           <runtime.SessionPopup
             testid={"mega-qp-spacing"}
-            title={"Spacing"}
+            title={uiMessage("inspector.quickPanelBindings.spacing")}
             icon={runtime.PropertiesTooltipNameViewBoxPathsConfig_5}
           >
             <runtime.SpacingQuickPanel
@@ -486,7 +491,7 @@ export function installPropertiesQuickPanelBindings(
             />
           </runtime.SessionPopup>
         </runtime.SessionStripGroup>
-        {compact ? null : <runtime.SessionStripDivider />}
+        {compact ? (null) : (<runtime.SessionStripDivider />)}
       </jsx_il.Fragment>
     );
   }
@@ -495,6 +500,7 @@ export function installPropertiesQuickPanelBindings(
     swatches: swatches,
     defined: defined,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let value: Dynamic = io.get("fill") ?? io.get("background-color"),
       entry: Dynamic = io.get("stroke"),
       entry2: Dynamic = io.get("stroke-dasharray"),
@@ -511,7 +517,7 @@ export function installPropertiesQuickPanelBindings(
       <runtime.SessionStripGroup wrap={true}>
         <runtime.SessionActionsPopover
           testid={"mega-qp-fill"}
-          title={"Fill color"}
+          title={uiMessage("inspector.quickPanelBindings.fillColor")}
           paint={
             parseQuickPanelColor(value) ??
             parseQuickPanelColor(io.rendered?.background)
@@ -519,7 +525,7 @@ export function installPropertiesQuickPanelBindings(
           swatches={[
             {
               name: "none",
-              label: "No fill",
+              get label() { return uiMessage("inspector.quickPanelBindings.noFill"); },
               color: "transparent",
               empty: true,
             },
@@ -552,7 +558,7 @@ export function installPropertiesQuickPanelBindings(
         />
         <runtime.SessionPopup
           testid={"mega-qp-stroke"}
-          title={"Stroke"}
+          title={uiMessage("inspector.quickPanelBindings.stroke")}
           icon={runtime.PropertiesTooltipNameViewBoxPathsConfig}
         >
           <runtime.BorderQuickPanel
@@ -562,8 +568,8 @@ export function installPropertiesQuickPanelBindings(
             color={
               <runtime.PropertyColorRow
                 testid={"mega-qp-stroke-color"}
-                label={"Stroke color"}
-                title={"Stroke color"}
+                label={uiMessage("inspector.quickPanelBindings.strokeColor")}
+                title={uiMessage("inspector.quickPanelBindings.strokeColor")}
                 value={
                   entry === "none"
                     ? undefined
@@ -597,7 +603,7 @@ export function installPropertiesQuickPanelBindings(
                   value4 !== undefined && io.set([["stroke", value4]]);
                 }}
                 disabled={value3 === undefined}
-                disabledReason={"Pick a stroke style first"}
+                disabledReason={uiMessage("inspector.quickPanelBindings.pickAStrokeStyleFirst")}
                 onChange={(input?: Dynamic): Dynamic => {
                   input !== undefined && io.set([["stroke", input]]);
                 }}
@@ -660,38 +666,34 @@ export function installPropertiesQuickPanelBindings(
     src: src,
     onReplace: onReplace,
     replaceReason: replaceReason,
-    replaceTitle = "Replace image",
+    replaceTitle = uiMessage("inspector.quickPanelBindings.replaceImage"),
     ownAsset = false,
     onCrop: onCrop,
     cropping: cropping,
     cropReason: cropReason,
     noun = "image",
   }: Dynamic): Dynamic {
+    useUiLocale();
     return (
       <runtime.SessionStripGroup wrap={true}>
         <runtime.SessionImageReplaceButton
           src={ownAsset ? src : inlineImageUrl(src)}
-          title={replaceReason ?? replaceTitle}
+          title={replaceReason ?? (replaceTitle)}
           onClick={onReplace}
           disabled={replaceReason !== undefined}
         />
-        {onCrop && (
-          <runtime.SessionStripButton
+        {onCrop && (<runtime.SessionStripButton
             data-testid={"mega-qp-crop"}
             data-media-crop-keep={""}
             icon={<runtime.PropertyOptionIcon icon={runtime.CropValue} />}
             title={
-              cropReason ??
-              (cropping
-                ? "Done cropping (or press Enter)"
-                : "Crop (or double-click the " + noun + ")")
+              cropReason ?? (cropping ? (uiMessage("inspector.quickPanelBindings.doneCroppingOrPressEnter")) : (uiMessage("inspector.quickPanelBindings.cropOrDoubleClickThe", { value1: String(noun) })))
             }
-            aria-label={"Crop"}
+            aria-label={uiMessage("inspector.quickPanelBindings.crop")}
             aria-pressed={cropping === true}
             onClick={onCrop}
             disabled={cropReason !== undefined}
-          />
-        )}
+          />)}
         <CornerRadiusQuickPanel io={io} />
       </runtime.SessionStripGroup>
     );
@@ -701,12 +703,13 @@ export function installPropertiesQuickPanelBindings(
     swatches: swatches,
     defined: defined,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let value: Dynamic = io.get("stroke") ?? io.get("border-color");
     return (
       <runtime.SessionStripGroup>
         <runtime.SessionActionsPopover
           testid={"mega-qp-stroke-line"}
-          title={"Stroke color"}
+          title={uiMessage("inspector.quickPanelBindings.strokeColor")}
           paint={
             parseQuickPanelColor(value) ??
             parseQuickPanelColor(io.rendered?.stroke) ??
@@ -920,7 +923,7 @@ export function installPropertiesQuickPanelBindings(
         (input2?: Dynamic): Dynamic => [input2.prop, input2.value ?? undefined],
       );
     unsupportedQuickPanelValueMessage =
-      "That value can\u2019t be set from this menu. Set it in Properties.";
+      uiMessage("inspector.quickPanelBindings.thatValueCanTBe");
     areStyleEditsSupported = (items?: Dynamic): Dynamic =>
       (0, runtime.normalizeStyleEdits)(
         items.map((input?: Dynamic): Dynamic => [input.prop, input.value]),

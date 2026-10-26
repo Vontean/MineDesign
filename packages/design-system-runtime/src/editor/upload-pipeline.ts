@@ -1,3 +1,4 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 import type * as Storage from "../contracts/model-storage";
 import type * as React from "react";
 import type * as Editor from "../contracts/editor-runtime";
@@ -255,7 +256,7 @@ export function installEditorUploadPipeline(
           return {
             ok: false,
             reason:
-              "no room: a design system holds " +
+              uiMessage("design-system.uploadPipeline.noRoomADesignSystem") +
               (0, runtime.formatInlineBudgetBytes)(
                 runtime.DESIGN_SYSTEM_INLINE_LIMITS.total,
               ) +
@@ -282,7 +283,7 @@ export function installEditorUploadPipeline(
       return callback(
         value.rateLimited &&
           (0, runtime.chooseFileStorageRoute)(state, value3).to === "blob"
-          ? "stored in the page instead — the store is rate-limited (drop it again later to move it)"
+          ? uiMessage("design-system.uploadPipeline.storedInThePageInstead")
           : undefined,
       );
     }
@@ -297,12 +298,12 @@ export function installEditorUploadPipeline(
     }
     options.onProgress?.(
       (progress.n > 1
-        ? "Uploading " +
+        ? uiMessage("design-system.uploadPipeline.uploading") +
           String(progress.i) +
           " of " +
           String(progress.n) +
           " · "
-        : "Uploading ") + uploaded.name,
+        : uiMessage("design-system.uploadPipeline.uploading")) + uploaded.name,
     );
     let value12 =
         uploaded.file.type === value5.type
@@ -324,8 +325,8 @@ export function installEditorUploadPipeline(
           onWait: (input: number, options2: string) =>
             options.onProgress?.(
               (options2 === "rate_limited"
-                ? "Uploads are being rate-limited — retrying "
-                : "The store did not answer — retrying ") +
+                ? uiMessage("design-system.uploadPipeline.uploadsAreBeingRateLimited")
+                : uiMessage("design-system.uploadPipeline.theStoreDidNotAnswer")) +
                 uploaded.name +
                 " in " +
                 String(Math.round(input / 1000)) +
@@ -392,7 +393,7 @@ export function installEditorUploadPipeline(
       return callback(
         value13.kind === "inline-if-fits" || value13.kind === "quota"
           ? undefined
-          : "stored in the page instead — the upload failed (" +
+          : uiMessage("design-system.uploadPipeline.storedInThePageInstead2") +
               value13.code +
               ")",
       );
@@ -480,7 +481,7 @@ export function installEditorUploadPipeline(
     path: path,
   }: Editor.UploadProblem): string {
     if (problem.forNow === true) {
-      return "can’t be saved right now: reload the page, then add again";
+      return uiMessage("design-system.uploadPipeline.canTBeSavedRight");
     }
     if (problem.cause === "kind") {
       let value4 = (0, runtime.fileExtension)(path);
@@ -489,15 +490,15 @@ export function installEditorUploadPipeline(
       }
       if (["docx", "pptx", "xlsx"].includes(value4)) {
         return (
-          "won’t open as a ." +
+          uiMessage("design-system.uploadPipeline.wonTOpenAsA") +
           value4 +
           " file, perhaps damaged or password-protected: use a fresh copy"
         );
       }
       if (value4 === "zip") {
-        return "won’t open as a .zip file, perhaps damaged: use a fresh copy";
+        return uiMessage("design-system.uploadPipeline.wonTOpenAsA2");
       }
-      return UNSUPPORTED_UPLOAD_KIND_MESSAGE;
+      return uiMessage("design-system.uploadPipeline.thisKindOfFileCan");
     }
     if (problem.cause !== "name") {
       return UPLOAD_REASON_MESSAGES[problem.cause];
@@ -507,24 +508,24 @@ export function installEditorUploadPipeline(
       value3 = /[%;#]/.test(value);
     if (/[%;:?#]/.test(value2)) {
       if (value3) {
-        return "choose a set or folder name, and a file name, without % ; : ? or #";
+        return uiMessage("design-system.uploadPipeline.chooseASetOrFolder");
       } else {
-        return "choose a set or folder name without % ; : ? or #";
+        return uiMessage("design-system.uploadPipeline.chooseASetOrFolder2");
       }
     }
     if (value3) {
-      return "rename the file without % ; or #";
+      return uiMessage("design-system.uploadPipeline.renameTheFileWithoutOr");
     }
     if ((0, runtime.hasDamagedUnicode)(value)) {
-      return "rename the file: the name has a damaged character";
+      return uiMessage("design-system.uploadPipeline.renameTheFileTheName");
     }
     if (value.endsWith(".cmekshadow")) {
-      return UNSUPPORTED_UPLOAD_KIND_MESSAGE;
+      return uiMessage("design-system.uploadPipeline.thisKindOfFileCan");
     }
     if ((0, runtime.hasDamagedUnicode)(value2)) {
-      return "choose a set or folder name with no damaged character";
+      return uiMessage("design-system.uploadPipeline.chooseASetOrFolder3");
     } else {
-      return "choose a shorter set or folder name";
+      return uiMessage("design-system.uploadPipeline.chooseAShorterSetOr");
     }
   }
   async function uploadAssetFiles(
@@ -562,12 +563,12 @@ export function installEditorUploadPipeline(
         value3 = uploadedAssetFile(value);
       group.onProgress?.(
         (resolvedFiles.length > 1
-          ? "Adding " +
+          ? uiMessage("design-system.uploadPipeline.adding") +
             String(index) +
             " of " +
             String(resolvedFiles.length) +
             " · "
-          : "Adding ") + value3.name,
+          : uiMessage("design-system.uploadPipeline.adding")) + value3.name,
       );
       let value4 = await uploadAssetFile(value3, value2.to === "fonts", group, {
         i: index,
@@ -754,7 +755,7 @@ export function installEditorUploadPipeline(
       parts.push(String(result.fonts) + " to Font files");
     }
     let callback = (input: string) =>
-      [runtime.ASSETS_SECTION_LABEL, "Font files"].some(
+      [runtime.ASSETS_SECTION_LABEL, uiMessage("design-system.uploadPipeline.fontFiles")].some(
         (input2): boolean => input2.toLowerCase() === input.toLowerCase(),
       );
     for (let [value, value2] of Object.entries(result.assets)) {
@@ -777,7 +778,7 @@ export function installEditorUploadPipeline(
     }
     let destinations = uploadDestinationSummary(result);
     return (
-      ADDED_FILES_PREFIX +
+      uiMessage("design-system.uploadPipeline.added") +
       countedFileLabel(count) +
       (destinations.length === 1
         ? destinations[0].slice(String(count).length)
@@ -791,7 +792,7 @@ export function installEditorUploadPipeline(
     if (count === 0) {
       return "";
     } else {
-      return "Uploaded " + countedFileLabel(count) + " to build from";
+      return uiMessage("design-system.uploadPipeline.uploaded") + countedFileLabel(count) + " to build from";
     }
   }
   function uploadResultSummary(
@@ -817,7 +818,7 @@ export function installEditorUploadPipeline(
     }
     if (result.warnings.length > 0) {
       items.push(
-        "Kept in the page: " + joinLimitedUploadMessages(result.warnings) + ".",
+        uiMessage("design-system.uploadPipeline.keptInThePage") + joinLimitedUploadMessages(result.warnings) + ".",
       );
     }
     for (let value of ["figma", "too-large", undefined]) {
@@ -880,7 +881,7 @@ export function installEditorUploadPipeline(
         ) +
         value2 +
         " — add the " +
-        (value ? "file or its share link" : "files or their share links") +
+        (value ? uiMessage("design-system.uploadPipeline.fileOrItsShareLink") : uiMessage("design-system.uploadPipeline.filesOrTheirShareLinks")) +
         " in the chat instead."
       );
     }
@@ -891,7 +892,7 @@ export function installEditorUploadPipeline(
         ) +
         value2 +
         " — " +
-        (value ? "it’s" : "they’re") +
+        (value ? uiMessage("design-system.uploadPipeline.itS") : uiMessage("design-system.uploadPipeline.theyRe")) +
         " too large, attach " +
         (value ? "it" : "them") +
         " in the chat instead."
@@ -1046,7 +1047,7 @@ export function installEditorUploadPipeline(
   bindRuntimeValue(
     runtime,
     "UNSUPPORTED_UPLOAD_KIND_MESSAGE",
-    () => UNSUPPORTED_UPLOAD_KIND_MESSAGE,
+    () => uiMessage("design-system.uploadPipeline.thisKindOfFileCan"),
     (value) => {
       UNSUPPORTED_UPLOAD_KIND_MESSAGE = value;
     },
@@ -1096,7 +1097,7 @@ export function installEditorUploadPipeline(
   bindRuntimeValue(
     runtime,
     "ADDED_FILES_PREFIX",
-    () => ADDED_FILES_PREFIX,
+    () => uiMessage("design-system.uploadPipeline.added"),
     (value) => {
       ADDED_FILES_PREFIX = value;
     },

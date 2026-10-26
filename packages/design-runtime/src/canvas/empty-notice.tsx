@@ -1,3 +1,5 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
+import { useUiLocale } from '../ui-locale.ts';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -12,6 +14,7 @@ export function installCanvasEmptyNotice(runtime: RuntimeBindings): () => void {
     reason: reason,
     wholeCanvas: wholeCanvas,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let value: Dynamic = (0, react_HAt.useSyncExternalStore)(
       runtime.subscribeCanvasLoadFailure,
       runtime.getCanvasLoadFailure,
@@ -30,13 +33,9 @@ export function installCanvasEmptyNotice(runtime: RuntimeBindings): () => void {
           data-testid={"dc-empty-page-note"}
           className={"text-[12.5px] text-secondary"}
         >
-          {editable
-            ? "No artboards yet."
-            : "No artboards to show in this view."}
+          {editable ? (uiMessage("canvas.emptyNotice.noArtboardsYet")) : (uiMessage("canvas.emptyNotice.noArtboardsToShowIn"))}
         </p>
-        {!editable && reason !== undefined && (
-          <p className={"max-w-sm text-[11.5px] text-secondary"}>{reason}</p>
-        )}
+        {!editable && reason !== undefined && (<p className={"max-w-sm text-[11.5px] text-secondary"}>{reason}</p>)}
       </jsx_H_.Fragment>
     );
   }

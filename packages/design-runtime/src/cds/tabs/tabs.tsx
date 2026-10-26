@@ -1,3 +1,4 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -395,15 +396,13 @@ export function installCdsTabsTabs(runtime: RuntimeBindings): () => void {
                   value4 && TabsTabsClassNames_2,
                 )}
               />
-              {value4 ? (
-                <runtime.TabsListMenu
+              {value4 ? (<runtime.TabsListMenu
                   size={size}
                   aria-label={props["aria-label"]}
                   aria-labelledby={props["aria-labelledby"]}
                   listRef={value}
                   triggerHadFocusRef={value6}
-                />
-              ) : null}
+                />) : (null)}
             </jsxTabsTabs.Fragment>
           );
         },
@@ -460,12 +459,10 @@ export function installCdsTabsTabs(runtime: RuntimeBindings): () => void {
                 )}
               >
                 {children}
-                {disabledReason !== undefined && (
-                  <runtime.DisabledReasonDescription
+                {disabledReason !== undefined && (<runtime.DisabledReasonDescription
                     id={value}
                     reason={value2 ? disabledReason : undefined}
-                  />
-                )}
+                  />)}
               </runtime.npm_Tabs_C1.Tab>
             );
           return disabledReason === undefined ? (

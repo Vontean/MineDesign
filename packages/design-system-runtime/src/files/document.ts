@@ -1,3 +1,4 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import { bindRuntimeValue, type RuntimeBindings } from "../runtime-types";
 import type {
@@ -123,7 +124,7 @@ export function installFilesDocument(runtime: RuntimeBindings): () => void {
             options.onConflict(input);
           } else {
             options.onNotice?.(
-              "Someone else changed " +
+              uiMessage("design-system.document.someoneElseChanged") +
                 input.path.slice(input.path.lastIndexOf("/") + 1) +
                 " while you were editing it. Your version was not saved over theirs.",
             );
@@ -835,7 +836,7 @@ export function installFilesDocument(runtime: RuntimeBindings): () => void {
           restoreCount += 1;
           notifyChange();
           return {
-            label: "Restore unsaved edits",
+            get label() { return uiMessage("design-system.document.restoreUnsavedEdits"); },
             do: (): void => {
               restoreStashEdits(value);
               notifyChange();

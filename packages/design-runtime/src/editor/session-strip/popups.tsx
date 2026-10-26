@@ -1,3 +1,5 @@
+import { useUiLocale } from '../../ui-locale.ts';
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -95,6 +97,7 @@ export function installEditorSessionStripPopups(
     editsAreUndoSteps: editsAreUndoSteps,
     children: children,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let [value, value2]: Dynamic = (0,
       runtime.reactInspectorArtboardRadius_2.useState)(false),
       {
@@ -158,9 +161,7 @@ export function installEditorSessionStripPopups(
             data-session-strip={""}
             onKeyDownCapture={runtime.preventInputEnterSubmit}
           >
-            {typeof children == "function"
-              ? children((): Dynamic => value2(false))
-              : children}
+            {typeof children == "function" ? (children((): Dynamic => value2(false))) : (children)}
           </div>
         </runtime.EditorPopover>
       </span>
@@ -175,6 +176,7 @@ export function installEditorSessionStripPopups(
     onChange: onChange,
     disabled: disabled2,
   }: Dynamic): Dynamic {
+    useUiLocale();
     return (
       <SessionPopup
         testid={testid}
@@ -241,6 +243,7 @@ export function installEditorSessionStripPopups(
     custom: custom,
     systemHeader: systemHeader,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let [value2, value3]: Dynamic = (0,
       runtime.reactInspectorArtboardRadius_2.useState)(false),
       {
@@ -300,7 +303,7 @@ export function installEditorSessionStripPopups(
         <runtime.SessionStripButton
           data-testid={testid}
           data-mc-bordered={""}
-          title={"Text style"}
+          title={uiMessage("inspector.popups.textStyle")}
           chevron={true}
           className={(0, runtime.joinClassNames)(
             "rounded-lg border border-border-line px-2",
@@ -340,11 +343,8 @@ export function installEditorSessionStripPopups(
             data-session-strip={""}
             onKeyDownCapture={runtime.preventInputEnterSubmit}
           >
-            {value8 ? (
-              <runtime.ColorHexInput value={value11} onChange={value10} />
-            ) : null}
-            {value11 === "system" ? (
-              <div role={"group"} aria-label={"Text style"}>
+            {value8 ? (<runtime.ColorHexInput value={value11} onChange={value10} />) : (null)}
+            {value11 === "system" ? (<div role={"group"} aria-label={uiMessage("inspector.popups.textStyle")}>
                 {systemHeader}
                 <div
                   data-search-scope={""}
@@ -352,8 +352,7 @@ export function installEditorSessionStripPopups(
                     '[data-kit="MenuItem"]',
                   )}
                 >
-                  {value12 ? (
-                    <runtime.PickerSearchInput
+                  {value12 ? (<runtime.PickerSearchInput
                       value={value13}
                       onChange={value14}
                       label={runtime.ColorContrastCopyLabel_5}
@@ -365,16 +364,13 @@ export function installEditorSessionStripPopups(
                         )
                       }
                       data-testid={testid ? testid + "-search" : undefined}
-                    />
-                  ) : null}
-                  {value16.length === 0 ? (
-                    <p
+                    />) : (null)}
+                  {value16.length === 0 ? (<p
                       role={"status"}
                       className={"px-2 py-1 text-footnote text-muted"}
                     >
                       {runtime.ColorContrastCopyLabel_3}
-                    </p>
-                  ) : null}
+                    </p>) : (null)}
                   <div
                     className={
                       "kit-scrollbar max-h-[min(24rem,max(6rem,calc(var(--available-height,100vh)_-_8rem)))] overflow-y-auto"
@@ -435,15 +431,13 @@ export function installEditorSessionStripPopups(
                                   >
                                     {input.label}
                                   </span>
-                                  {input.hint !== undefined ? (
-                                    <span
+                                  {input.hint !== undefined ? (<span
                                       className={
                                         "shrink-0 text-footnote text-muted"
                                       }
                                     >
                                       {input.hint}
-                                    </span>
-                                  ) : null}
+                                    </span>) : (null)}
                                 </span>
                               </runtime.EditorMenuItem>,
                             ],
@@ -455,28 +449,24 @@ export function installEditorSessionStripPopups(
                     )}
                   </div>
                 </div>
-              </div>
-            ) : "body" in custom ? (
-              <div
+              </div>) : ("body" in custom ? (<div
                 className={"flex flex-col gap-2"}
-                aria-label={"Custom text style"}
+                aria-label={uiMessage("inspector.popups.customTextStyle")}
               >
                 {custom.body}
-              </div>
-            ) : (
-              <CustomTypographyEditor c={custom} />
-            )}
+              </div>) : (<CustomTypographyEditor c={custom} />))}
           </div>
         </runtime.EditorPopover>
       </span>
     );
   }
   function CustomTypographyEditor({ c: c }: Dynamic): Dynamic {
+    useUiLocale();
     return (
-      <div className={"flex flex-col gap-2"} aria-label={"Custom text style"}>
+      <div className={"flex flex-col gap-2"} aria-label={uiMessage("inspector.popups.customTextStyle")}>
         <div className={"flex"}>
           <runtime.PropertySelect
-            aria-label={"Font"}
+            aria-label={uiMessage("inspector.popups.font")}
             items={c.family.options}
             value={c.family.value}
             onChange={c.family.onChange}
@@ -488,7 +478,7 @@ export function installEditorSessionStripPopups(
         </div>
         <div className={"grid grid-cols-2 gap-2"}>
           <runtime.PropertySelect
-            aria-label={"Weight"}
+            aria-label={uiMessage("inspector.popups.weight")}
             items={(0, runtime.includeCurrentFontVariant)(c.face.faces, c.face)}
             value={(0, runtime.fontVariantKey)(c.face.weight, c.face.italic)}
             onOpenChange={c.face.onOpenChange}
@@ -500,9 +490,9 @@ export function installEditorSessionStripPopups(
             popupAttrs={SessionStripPopupsDataSessionStripConfig}
           />
           <runtime.NumericInput
-            aria-label={"Font size"}
+            aria-label={uiMessage("inspector.popups.fontSize")}
             unit={"px"}
-            title={"Font size (px); clear it for the style's own"}
+            title={uiMessage("inspector.popups.fontSizePxClearItForTheStyleSOwn")}
             clearable={true}
             {...c.size}
           />
@@ -510,17 +500,17 @@ export function installEditorSessionStripPopups(
             prefix={
               <runtime.PropertyOptionIcon icon={runtime.LineHeightValue} />
             }
-            aria-label={"Line height"}
-            title={"Line height (\xD7 the font size)"}
+            aria-label={uiMessage("inspector.popups.lineHeight")}
+            title={uiMessage("inspector.popups.lineHeightTheFontSize")}
             clearable={true}
             {...c.lineHeight}
             step={c.lineHeight.step ?? 0.05}
           />
           <runtime.NumericInput
             prefix={<runtime.PropertyOptionIcon icon={"LetterSpacing"} />}
-            aria-label={"Letter spacing"}
+            aria-label={uiMessage("inspector.popups.letterSpacing")}
             unit={"px"}
-            title={"Letter spacing (px)"}
+            title={uiMessage("inspector.popups.letterSpacingPx")}
             clearable={true}
             {...c.letterSpacing}
             step={c.letterSpacing.step ?? 0.5}
@@ -530,6 +520,7 @@ export function installEditorSessionStripPopups(
     );
   }
   function SessionActionsPopover(source?: Dynamic): Dynamic {
+    useUiLocale();
     let [value, value2]: Dynamic = (0,
       runtime.reactInspectorArtboardRadius_2.useState)(false),
       value3: Dynamic = (0, runtime.reactInspectorArtboardRadius_2.useRef)(
@@ -638,6 +629,7 @@ export function installEditorSessionStripPopups(
     );
   }
   function SessionColorSwatch({ css: css }: Dynamic): Dynamic {
+    useUiLocale();
     return (
       <span
         aria-hidden={"true"}
@@ -663,6 +655,7 @@ export function installEditorSessionStripPopups(
     onClick: onClick,
     disabled: disabled2,
   }: Dynamic): Dynamic {
+    useUiLocale();
     return (
       <runtime.SessionStripButton
         data-testid={"frame-image-replace"}
@@ -672,8 +665,7 @@ export function installEditorSessionStripPopups(
         onClick={onClick}
         className={"px-1"}
       >
-        {src !== undefined ? (
-          <img
+        {src !== undefined ? (<img
             alt={""}
             aria-hidden={"true"}
             src={src}
@@ -684,15 +676,12 @@ export function installEditorSessionStripPopups(
             className={
               "h-5 w-5 shrink-0 rounded-[4px] border border-border-strong object-cover pointer-coarse:h-7 pointer-coarse:w-7"
             }
-          />
-        ) : (
-          <span
+          />) : (<span
             aria-hidden={"true"}
             className={
               "inline-block h-5 w-5 rounded-[4px] border border-dashed border-border-strong pointer-coarse:h-7 pointer-coarse:w-7"
             }
-          />
-        )}
+          />)}
       </runtime.SessionStripButton>
     );
   }

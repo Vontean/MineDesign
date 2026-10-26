@@ -1,3 +1,4 @@
+import { useUiLocale } from '../../ui-locale.ts';
 /** Restored application module; prepare first, initialize in original order. */
 import {
   bindRuntimeValue,
@@ -124,6 +125,7 @@ export function installEditorPropertiesShadowEffects(
     ed: ed2,
     label: label,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let {
         open: value,
         setOpen: value2,
@@ -264,6 +266,7 @@ export function installEditorPropertiesShadowEffects(
     rec: rec,
     ed: ed2,
   }: Dynamic): Dynamic {
+    useUiLocale();
     let value: Dynamic = runtime.PropertiesStyleBagItems_2.find(
         (input?: Dynamic): Dynamic => input.field === "blur",
       ),

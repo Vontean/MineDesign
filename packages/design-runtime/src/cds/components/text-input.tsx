@@ -1,3 +1,4 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 import type { ForwardComponent, TextInputProps } from "../../contracts/ui";
 import type * as React from "react";
 /** Restored application module; prepare first, initialize in original order. */
@@ -224,11 +225,9 @@ export function installCdsComponentsTextInput(
                   className,
                 )}
               >
-                {slotStart ? (
-                  <span className={"flex shrink-0 items-center text-muted"}>
+                {slotStart ? (<span className={"flex shrink-0 items-center text-muted"}>
                     {slotStart}
-                  </span>
-                ) : null}
+                  </span>) : (null)}
                 <runtime.npm_Field_qg.Control
                   {...state}
                   render={
@@ -244,12 +243,10 @@ export function installCdsComponentsTextInput(
                     />
                   }
                 />
-                {value20 || slotEnd ? (
-                  <span data-cds-end-slot={""} className={value23}>
+                {value20 || slotEnd ? (<span data-cds-end-slot={""} className={value23}>
                     {value20}
                     {slotEnd}
-                  </span>
-                ) : null}
+                  </span>) : (null)}
               </div>
             );
           }

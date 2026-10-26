@@ -1,3 +1,4 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import type * as React from "react";
 import type * as C from "../contracts/controls";
@@ -160,8 +161,7 @@ export function installUiCheckbox(runtime: RuntimeBindings): () => void {
               className,
             )}
           >
-            {[
-              <span
+            {[<span
                 className={(0, runtime.clsx)(
                   CHECKBOX_INDICATOR_CLASS,
                   value3 && "mt-[calc((1lh_-_var(--cds-checkbox,1rem))_/_2)]",
@@ -174,24 +174,19 @@ export function installUiCheckbox(runtime: RuntimeBindings): () => void {
                 >
                   <runtime.CheckboxGlyph indeterminate={value7} />
                 </span>
-              </span>,
-              value3 &&
+              </span>, value3 &&
                 (value4 ? (
                   <span className={"flex min-w-0 flex-col"}>
-                    {[
-                      <span id={value}>{label}</span>,
-                      <span
+                    {[<span id={value}>{label}</span>, <span
                         id={value2}
                         className={"text-footnote leading-snug text-muted"}
                       >
                         {description}
-                      </span>,
-                    ]}
+                      </span>]}
                   </span>
                 ) : (
                   <span>{label}</span>
-                )),
-            ]}
+                ))]}
           </runtime.baseCheckbox.Root>
         );
         if (disabledReason === undefined) {
@@ -244,8 +239,7 @@ export function installUiCheckbox(runtime: RuntimeBindings): () => void {
                 className,
               )}
             >
-              {[
-                <span
+              {[<span
                   className={(0, runtime.clsx)(
                     "flex",
                     runtime.CHECKBOX_LABEL_ALIGNMENT_CLASS,
@@ -261,16 +255,13 @@ export function installUiCheckbox(runtime: RuntimeBindings): () => void {
                     }
                     {...props}
                   />
-                </span>,
-                <span
+                </span>, <span
                   className={(0, runtime.clsx)(
                     "flex min-w-0 flex-col",
                     props.disabled && "text-disabled",
                   )}
                 >
-                  {[
-                    <span id={value}>{label}</span>,
-                    !!description && (
+                  {[<span id={value}>{label}</span>, !!description && (
                       <span
                         id={value2}
                         className={(0, runtime.cn)(
@@ -280,10 +271,8 @@ export function installUiCheckbox(runtime: RuntimeBindings): () => void {
                       >
                         {description}
                       </span>
-                    ),
-                  ]}
-                </span>,
-              ]}
+                    )]}
+                </span>]}
             </label>
           </runtime.FieldWrapper>
         );

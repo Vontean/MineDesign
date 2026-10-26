@@ -1,3 +1,4 @@
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 import type * as Storage from "../contracts/model-storage";
 import type * as Model from "../contracts";
 import type * as Host from "../contracts/platform-host";
@@ -182,7 +183,7 @@ export function installModelPublish(runtime: RuntimeBindings): () => void {
       if (value === null) {
         throw {
           code: "not_granted",
-          message: "The artifact capability is not available to this view.",
+          get message() { return uiMessage("design-system.publish.theArtifactCapabilityIsNotAvailableToThisView"); },
         };
       }
       let value2 =
@@ -280,14 +281,13 @@ export function installModelPublish(runtime: RuntimeBindings): () => void {
       if (value === null) {
         throw {
           code: "not_granted",
-          message: "The artifact capability is not available to this view.",
+          get message() { return uiMessage("design-system.publish.theArtifactCapabilityIsNotAvailableToThisView"); },
         };
       }
       if (options2 === undefined) {
         throw {
           code: "invalid_content",
-          message:
-            "A system made from the shared type saves its files, never a page.",
+          get message() { return uiMessage("design-system.publish.aSystemMadeFromTheSharedTypeSavesItsFilesNeverAPage"); },
         };
       }
       let value2 = fileTableOrNull(options2.published.content),
@@ -295,7 +295,7 @@ export function installModelPublish(runtime: RuntimeBindings): () => void {
       if (value2 === null || value3 === null) {
         throw {
           code: "invalid_content",
-          message: "The document has no file table to save.",
+          get message() { return uiMessage("design-system.publish.theDocumentHasNoFileTableToSave"); },
         };
       }
       let state = {

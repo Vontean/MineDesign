@@ -1,3 +1,5 @@
+import { useUiLocale } from '../ui-locale.ts';
+import { uiMessage } from '@minedesign/contracts/ui-messages';
 import type * as React from "react";
 import type * as Color from "../contracts/color-controls";
 /** Restored application module; prepare first, initialize in original order. */
@@ -67,6 +69,7 @@ export function installUiColorSelect(runtime: RuntimeBindings): () => void {
     testid: testid,
     className: className,
   }: Color.SwatchPaletteProps): React.ReactElement {
+    useUiLocale();
     let value = swatches.some((input) => !isEmptySwatch(input)),
       value2 = value && color !== undefined,
       value3 = kind !== undefined && kind.options.length > 1 ? kind : undefined,
@@ -247,8 +250,7 @@ export function installUiColorSelect(runtime: RuntimeBindings): () => void {
             )}
             data-kit={"color-popover-header"}
           >
-            {[
-              value2 ? (
+            {[value2 ? (
                 <runtime.ColorHexInput
                   value={value7}
                   onChange={callback}
@@ -262,31 +264,26 @@ export function installUiColorSelect(runtime: RuntimeBindings): () => void {
                 >
                   {heading}
                 </span>
-              ),
-              title !== undefined && value2 ? (
+              ), title !== undefined && value2 ? (
                 <span className={"sr-only"}>{title}</span>
-              ) : null,
-              headerEnd,
-            ]}
+              ) : null, headerEnd]}
           </div>
         ) : null,
       value17 = !value2 && color !== undefined ? memo : [],
       value18 = (
         <ColorSelectJsx.Fragment>
-          {[
-            value17.length > 0 ? (
+          {[value17.length > 0 ? (
               <div className={"-mx-2 mb-1 flex flex-col"}>
                 {callback3(value17)}
               </div>
-            ) : null,
-            value3 !== undefined ? (
+            ) : null, value3 !== undefined ? (
               <runtime.PropertyRow
                 label={runtime.TYPE_LABEL}
                 className={value4 ? "mb-1" : undefined}
                 {...runtime.gradientStopKeyboardHandlers}
               >
                 <runtime.SegmentedControl
-                  aria-label={value3.label ?? "Fill type"}
+                  aria-label={value3.label ?? (uiMessage("design-system.colorSelect.fillType"))}
                   fullWidth={true}
                   segments={value3.options.map((input) => ({
                     ...(0, runtime.fillModeOption)(
@@ -311,13 +308,11 @@ export function installUiColorSelect(runtime: RuntimeBindings): () => void {
                   }
                 />
               </runtime.PropertyRow>
-            ) : null,
-            value4 && color !== undefined ? (
+            ) : null, value4 && color !== undefined ? (
               <runtime.ColorPicker {...color} />
             ) : (
               face
-            ),
-          ]}
+            )]}
         </ColorSelectJsx.Fragment>
       );
     return (
@@ -330,18 +325,14 @@ export function installUiColorSelect(runtime: RuntimeBindings): () => void {
           className,
         )}
       >
-        {[
-          value2 ? value16 : null,
-          value7 === "system" ? (
+        {[value2 ? value16 : null, value7 === "system" ? (
             <div
               className={(0, runtime.joinClassNames)(
                 "flex min-h-0 flex-col",
                 value2 ? "-mx-2" : "-m-2",
               )}
             >
-              {[
-                value15,
-                value14.length > 0 ? (
+              {[value15, value14.length > 0 ? (
                   callback3(
                     value14,
                     value2
@@ -355,14 +346,11 @@ export function installUiColorSelect(runtime: RuntimeBindings): () => void {
                   >
                     {runtime.NO_COLOR_MATCHES_LABEL}
                   </p>
-                ),
-              ]}
+                )]}
             </div>
           ) : (
             value18
-          ),
-          value2 ? null : value16,
-        ]}
+          ), value2 ? null : value16]}
       </div>
     );
   }
@@ -397,7 +385,7 @@ export function installUiColorSelect(runtime: RuntimeBindings): () => void {
     }
     let state: Color.ColorSwatch = {
       name: emptySwatchValue,
-      label: "None",
+      get label() { return uiMessage("design-system.colorSelect.none"); },
       color: "transparent",
       empty: true,
       group: value[0]?.group,
@@ -421,6 +409,7 @@ export function installUiColorSelect(runtime: RuntimeBindings): () => void {
     onSwatch: onSwatch,
     ...props
   }: Color.ColorSelectProps): React.ReactElement {
+    useUiLocale();
     let memo = (runtime.ColorSelectReact as typeof React).useMemo(
         () =>
           normalizeColorSwatches(
