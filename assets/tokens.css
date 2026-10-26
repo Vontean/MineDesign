@@ -61,6 +61,7 @@
   --mdn-solid: var(--color-text-primary);
   --mdn-solid-hover: color-mix(in srgb, var(--color-text-primary) 88%, var(--color-background-primary));
   --mdn-on-solid: var(--color-background-primary);
+  --mdn-on-accent: #ffffff;
   --mdn-danger-soft: color-mix(in oklab, var(--color-text-danger) 12%, transparent);
   --mdn-danger-soft-hover: color-mix(in oklab, var(--color-text-danger) 20%, transparent);
   --mdn-overlay: light-dark(#e3e3e380, #00000080);
@@ -79,6 +80,9 @@
 
   --mdn-space: 4px;
   /* 属性面板（Figma 式版式）：16px 边距，字段之间 8px，标签与字段 4px；字段为填充底色、无描边 */
+  /* 画布浮动条（页面切换、底部工具栏、选中编辑条）：胶囊高 44px，按钮热区 36px，与外轮廓同心 */
+  --mdn-floatbar-h: 44px;
+  --mdn-floatbar-control: 36px;
   --mdn-panel-gutter: 16px;
   --mdn-field-gap: 8px;
   --mdn-field-label-gap: 4px;

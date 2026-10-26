@@ -13228,40 +13228,50 @@ html[data-theme-switching] *::after {
   display: flex;
   align-items: center;
   gap: 4px;
-  height: calc(var(--cds-h-control) + 16px);
-  padding: 0 8px;
+  height: var(--mdn-floatbar-h);
+  padding: 0 var(--mdn-floatbar-inset);
   pointer-events: auto;
-}
-@media (pointer: coarse) {
-  .mdn-tool-dock .mdn-tool-dock-card {
-    height: 52px;
-  }
 }
 
 /* MineDesign：画布上的三种浮动条——左上页面切换（tb-card）、底部工具栏、选中元素的编辑条——统一为 Codex 单行 composer：
-   胶囊外形、浮层底色、composer 投影，高度 = 28px 按钮 + 上下各 8px。选择器叠加属性以高于 Surface 的 rounded-card / shadow-panel */
+   胶囊外形、浮层底色、composer 投影。按钮热区 36px、距外轮廓 4px，与胶囊同心。选择器叠加属性以高于 Surface 的 rounded-card / shadow-panel */
 .mdn-tool-dock .mdn-tool-dock-card,
 .tb-root[data-tb-overlay] .tb-card,
 [data-mc-strip][data-mega-selection-strip] {
+  --cds-h-control: var(--mdn-floatbar-control);
+  --mdn-floatbar-inset: calc((var(--mdn-floatbar-h) - var(--mdn-floatbar-control)) / 2);
   --tb-plane: var(--mdn-elevated);
   --tb-ring-inside: var(--mdn-radius-full);
   border-radius: var(--mdn-radius-full);
   background-color: var(--mdn-elevated);
   box-shadow: var(--mdn-shadow-composer);
 }
+/* 浮动条里的按钮各自包在编辑器岛（.cds-root）里，岛会用 editor-theme 的五重 .cds-root 重设控件高度，这里同样叠加以覆盖 */
+:is(.mdn-tool-dock-card, .tb-root[data-tb-overlay] .tb-card, [data-mega-selection-strip]) .cds-root.cds-root.cds-root.cds-root.cds-root,
+[data-mega-selection-strip].cds-root.cds-root.cds-root.cds-root.cds-root {
+  --cds-h-control: var(--mdn-floatbar-control);
+}
+/* 页面切换只有一个下拉：触发器本身就是整个胶囊（同 Select Trigger、Codex 模型选择），悬停与展开整块变色，不做胶囊套胶囊 */
 .tb-root[data-tb-overlay] .tb-card {
-  height: calc(var(--cds-h-control) + 16px);
-  padding: 0 4px; /* 内层 tb-scroll 再加 4px，合计 8px */
+  --cds-h-control: var(--mdn-floatbar-h);
+  height: var(--mdn-floatbar-h);
+  padding: 0;
+}
+.tb-root[data-tb-overlay] .tb-card .cds-root.cds-root.cds-root.cds-root.cds-root {
+  --cds-h-control: var(--mdn-floatbar-h);
+}
+.tb-root[data-tb-overlay] .tb-card .tb-scroll {
+  margin-inline: 0;
+  padding-inline: 0;
+}
+/* 前缀与下方共用按钮规则的 :is() 相同，使优先级高于它的 10px */
+:is(.mdn-tool-dock-card, .tb-root[data-tb-overlay] .tb-card, [data-mega-selection-strip]).tb-card [data-cds="Button"]:not([data-cds-icon-only]) {
+  padding-inline: 14px 12px;
 }
 [data-mc-strip][data-mega-selection-strip] {
-  --mc-strip-pad: 8px;
+  --mc-strip-pad: var(--mdn-floatbar-inset);
 }
-@media (pointer: coarse) {
-  .tb-root[data-tb-overlay] .tb-card {
-    height: 52px;
-  }
-}
-/* Codex composer 按钮：圆形热区，ghost 悬停 5%；当前工具或已开启的样式用中性选中底与主文字，不用蓝色；下拉触发器无描边 */
+/* Codex composer 按钮：圆形热区，ghost 悬停 5%；已开启的样式与展开的下拉用 Codex 的选中灰（ghost-active 8%），只有一层；下拉触发器无描边 */
 :is(.mdn-tool-dock-card, .tb-root[data-tb-overlay] .tb-card, [data-mega-selection-strip]) [data-cds="Button"] {
   border-radius: var(--mdn-radius-full);
   border-color: transparent;
@@ -13270,11 +13280,26 @@ html[data-theme-switching] *::after {
 :is(.mdn-tool-dock-card, .tb-root[data-tb-overlay] .tb-card, [data-mega-selection-strip]) [data-cds="Button"]:not([data-cds-icon-only]) {
   padding-inline: 10px;
 }
+/* 按钮本身和内部 paint 层原有的悬停/展开底色会与 squish 层叠加成约 15% 的灰，这里只保留 squish 一层 */
+:is(.mdn-tool-dock-card, .tb-root[data-tb-overlay] .tb-card, [data-mega-selection-strip]) [data-cds="Button"],
+:is(.mdn-tool-dock-card, .tb-root[data-tb-overlay] .tb-card, [data-mega-selection-strip]) [data-cds="Button"] [data-cds-part="paint"] {
+  background-color: transparent;
+}
 :is(.mdn-tool-dock-card, .tb-root[data-tb-overlay] .tb-card, [data-mega-selection-strip]) [data-cds="Button"]:not(:disabled):hover > .cds-btn-squish {
   background-color: var(--mdn-ghost-hover);
 }
-:is(.mdn-tool-dock-card, .tb-root[data-tb-overlay] .tb-card, [data-mega-selection-strip]) [data-cds="Button"]:is([aria-pressed="true"], [data-state="open"], [aria-expanded="true"]) > .cds-btn-squish {
+:is(.mdn-tool-dock-card, .tb-root[data-tb-overlay] .tb-card, [data-mega-selection-strip]) [data-cds="Button"][aria-pressed="true"] > .cds-btn-squish {
   background-color: var(--mdn-ghost-active);
+}
+:is(.mdn-tool-dock-card, .tb-root[data-tb-overlay] .tb-card, [data-mega-selection-strip]) [data-cds="Button"]:is([data-state="open"], [aria-expanded="true"], [data-popup-open]) > .cds-btn-squish {
+  background-color: var(--mdn-ghost-active);
+}
+/* 底部工具栏的当前工具：Codex 蓝底、白色图标。前缀与上面共用规则相同的 :is()，使优先级不低于它 */
+:is(.mdn-tool-dock-card, .tb-root[data-tb-overlay] .tb-card, [data-mega-selection-strip]).mdn-tool-dock-card [data-cds="Button"][aria-pressed="true"] {
+  color: var(--mdn-on-accent);
+}
+:is(.mdn-tool-dock-card, .tb-root[data-tb-overlay] .tb-card, [data-mega-selection-strip]).mdn-tool-dock-card [data-cds="Button"][aria-pressed="true"] > .cds-btn-squish {
+  background-color: var(--mdn-accent);
 }
 :is(.mdn-tool-dock-card, .tb-root[data-tb-overlay] .tb-card) .tb-divider,
 [data-mega-selection-strip] [data-mc-divider] {
