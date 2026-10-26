@@ -96,6 +96,8 @@
 
   --mdn-shadow-overlay: 0 0 0 .5px var(--mdn-border), 0 8px 16px -4px #0000001f;
   --mdn-shadow-dialog: 0 0 0 .5px var(--mdn-border), var(--shadow-lg);
+  /* Codex composer：浅色为 elevation-composer（1px 4% 轮廓 + 两层柔和投影），深色只有 20% 白色内描边 */
+  --mdn-shadow-composer: 0 0 0 1px light-dark(#0000000a, transparent), 0 2px 8px 0 light-dark(#0000000a, transparent), 0 4px 40px 8px light-dark(#00000006, transparent), inset 0 0 1px 0 light-dark(transparent, #fff3);
   --mdn-duration: .15s;
   --mdn-ease: ease;
 }
