@@ -10,7 +10,6 @@ export function installCanvasChrome(runtime: RuntimeBindings): () => void {
   var PositionedSelectionQuickActions: Dynamic;
   var artboardHeaderTextClass: Dynamic;
   var artboardHeaderButtonClass: Dynamic;
-  var artboardPlayButtonClass: Dynamic;
   var hideProblemAtNarrowHeaderClass: Dynamic;
   var hideTweaksAtNarrowHeaderClass: Dynamic;
   var hideDownloadAtNarrowHeaderClass: Dynamic;
@@ -405,14 +404,6 @@ export function installCanvasChrome(runtime: RuntimeBindings): () => void {
   );
   bindRuntimeValue(
     runtime,
-    "artboardPlayButtonClass",
-    () => artboardPlayButtonClass,
-    (value) => {
-      artboardPlayButtonClass = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
     "hideProblemAtNarrowHeaderClass",
     () => hideProblemAtNarrowHeaderClass,
     (value) => {
@@ -482,10 +473,6 @@ export function installCanvasChrome(runtime: RuntimeBindings): () => void {
     );
     artboardHeaderTextClass = "text-inherit";
     artboardHeaderButtonClass = "shrink-0 " + artboardHeaderTextClass;
-    artboardPlayButtonClass = (0, runtime.joinClassNames)(
-      artboardHeaderTextClass,
-      "h-4 shrink border border-current px-1 py-0 text-[9px] leading-none font-medium uppercase tracking-[0.05em]",
-    );
     hideProblemAtNarrowHeaderClass = "@max-[12.125rem]/hdr:hidden";
     hideTweaksAtNarrowHeaderClass = "@max-[10.5rem]/hdr:hidden";
     hideDownloadAtNarrowHeaderClass = "@max-[8.75rem]/hdr:hidden";
@@ -583,21 +570,6 @@ export function installCanvasChrome(runtime: RuntimeBindings): () => void {
                 />
               </runtime.DisabledReasonTooltip>
             )}
-            {input.expand && input.play == null && (
-              <runtime.Button
-                variant={"ghost"}
-                size={"xxs"}
-                iconOnly={true}
-                data-mega-chrome={"expand"}
-                data-testid={"mega-artboard-expand-" + value}
-                tabIndex={input.inert ? -1 : undefined}
-                aria-label={"Open artboard " + value2 + " full window"}
-                tooltip={"Open full window"}
-                icon={<runtime.Icon name={"Expand"} size={"sm"} />}
-                className={artboardHeaderButtonClass}
-                onClick={(): Dynamic => input.onExpand(value)}
-              />
-            )}
             {input.download && (
               <runtime.MenuMenuAssignValue.Root
                 open={input.exportOpen}
@@ -639,6 +611,22 @@ export function installCanvasChrome(runtime: RuntimeBindings): () => void {
                 </runtime.MenuMenuAssignValue.Popup>
               </runtime.MenuMenuAssignValue.Root>
             )}
+            {/* MineDesign：打开全窗口用得更频繁，放在下载右侧 */}
+            {input.expand && input.play == null && (
+              <runtime.Button
+                variant={"ghost"}
+                size={"xxs"}
+                iconOnly={true}
+                data-mega-chrome={"expand"}
+                data-testid={"mega-artboard-expand-" + value}
+                tabIndex={input.inert ? -1 : undefined}
+                aria-label={"Open artboard " + value2 + " full window"}
+                tooltip={"Open full window"}
+                icon={<runtime.Icon name={"Expand"} size={"sm"} />}
+                className={artboardHeaderButtonClass}
+                onClick={(): Dynamic => input.onExpand(value)}
+              />
+            )}
             {input.play === "play" && (
               <runtime.MenuMenuAssignValue.Root>
                 <runtime.MenuMenuAssignValue.Trigger
@@ -646,18 +634,15 @@ export function installCanvasChrome(runtime: RuntimeBindings): () => void {
                     <runtime.Button
                       variant={"ghost"}
                       size={"xxs"}
+                      iconOnly={true}
                       data-mega-chrome={"play"}
                       data-testid={"mega-artboard-play-" + value}
                       tabIndex={input.inert ? -1 : undefined}
                       aria-label={"Play prototype " + value2}
-                      className={(0, runtime.joinClassNames)(
-                        artboardPlayButtonClass,
-                        "pl-[3px] [&>span]:gap-0",
-                      )}
-                    >
-                      <runtime.Icon name={"Play"} size={"xs"} />
-                      {"Play"}
-                    </runtime.Button>
+                      tooltip={"Play prototype"}
+                      icon={<runtime.Icon name={"Play"} size={"sm"} />}
+                      className={artboardHeaderButtonClass}
+                    />
                   }
                 />
                 <runtime.MenuMenuAssignValue.Popup
@@ -681,22 +666,24 @@ export function installCanvasChrome(runtime: RuntimeBindings): () => void {
               <runtime.Button
                 variant={"ghost"}
                 size={"xxs"}
+                iconOnly={true}
                 data-mega-chrome={"play"}
                 data-testid={"mega-artboard-play-" + value}
                 tabIndex={input.inert ? -1 : undefined}
                 aria-label={
                   (input.play === "edit" ? "Edit " : "Stop playing ") + value2
                 }
-                className={(0, runtime.joinClassNames)(
-                  artboardPlayButtonClass,
-                  "bg-current",
-                )}
+                tooltip={input.play === "edit" ? "Edit" : "Stop playing"}
+                pressed={input.play === "stop"}
+                icon={
+                  <runtime.Icon
+                    name={input.play === "edit" ? "Edit" : "Stop"}
+                    size={"sm"}
+                  />
+                }
+                className={artboardHeaderButtonClass}
                 onClick={(): Dynamic => input.onPlay(value)}
-              >
-                <span className={"text-(--cds-page-bg)"}>
-                  {input.play === "edit" ? "Edit" : "Stop"}
-                </span>
-              </runtime.Button>
+              />
             )}
           </runtime.CdsIsland>
         </div>
