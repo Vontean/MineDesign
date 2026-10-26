@@ -6,10 +6,10 @@ import { registerAppTool, registerAppResource, RESOURCE_MIME_TYPE } from '@model
 import { z } from 'zod';
 import { readShell, shellUpdate } from './shell.mjs';
 import { ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';
-import { VERSION, APP_URI, BRAND_ICONS, BRAND_STATES } from '../brand.mjs';
+import { VERSION, MCP_NAME, DISPLAY_NAME, APP_URI, BRAND_ICONS, BRAND_STATES } from '../brand.mjs';
 
 export async function serveMcp(service) {
-  const server=new McpServer({name:'minedesign',version:VERSION,icons:BRAND_ICONS});
+  const server=new McpServer({name:MCP_NAME,version:VERSION,icons:BRAND_ICONS});
   const uri=APP_URI;
   const appTools=[];
   // 与 MCX 同样补齐公开 tools/list 的图标；SDK 高层注册不转发此字段。
@@ -23,7 +23,7 @@ export async function serveMcp(service) {
     appTools.push({name,title:config.title,description:config.description,inputSchema:z.toJSONSchema(z.object(config.inputSchema)),annotations:config.annotations,_meta:config._meta,icons:BRAND_ICONS});
   }
   const ui={resourceUri:uri};
-  registerBrandedTool(server,'minedesign_open',{title:'MineDesign',description:'Open the design canvas and design-system editor.',inputSchema:{},annotations:{readOnlyHint:true},_meta:{ui,'minedesign/iconStates':BRAND_STATES,'openai/ui':{entrypoints:[{type:'global'},{type:'thread'}]}}},async()=>({content:[],structuredContent:{documents:service.documents()}}));
+  registerBrandedTool(server,'minedesign_open',{title:DISPLAY_NAME,description:'Open the design canvas and design-system editor.',inputSchema:{},annotations:{readOnlyHint:true},_meta:{ui,'minedesign/iconStates':BRAND_STATES,'openai/ui':{entrypoints:[{type:'global'},{type:'thread'}]}}},async()=>({content:[],structuredContent:{documents:service.documents()}}));
   registerBrandedTool(server,'minedesign_reload',{description:'Reload the built backend without closing this MCP connection; preserve open documents and annotation drafts.',inputSchema:{},_meta:{ui}},async()=>({content:[{type:'text',text:'后端已更新，MCP 连接保持'}],structuredContent:await service.reload()}));
   registerBrandedTool(server,OPERATIONS.open.tool,{description:'Open a MineDesign-format design or design-system directory within the authorized workspace.',inputSchema:{path:z.string(),kind:z.enum(['design','design-system']).default('design')},_meta:{ui}},async({path,kind})=>({content:[{type:'text',text:'作品已在 MineDesign 打开'}],structuredContent:{document:await service.open(path,kind)}}));
   for(const kind of ['design','design-system']){

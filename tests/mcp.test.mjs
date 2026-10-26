@@ -1,3 +1,4 @@
+import { DATA } from '../src/paths.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
@@ -61,7 +62,7 @@ test('backend reload preserves the same stdio connection, documents and persiste
     assert.ok((await client.listTools()).tools.some(t=>t.name==='minedesign_reload'));
   }finally{
     await client.close();
-    if(doc)await fs.rm(path.join(ROOT,'.local/annotations',doc.id+'.json'),{force:true});
+    if(doc)await fs.rm(path.join(DATA,'annotations',doc.id+'.json'),{force:true});
     await fs.rm(tmp,{recursive:true,force:true});
   }
 });

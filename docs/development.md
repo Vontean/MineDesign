@@ -71,7 +71,7 @@
 
 `main` 对应 npm 生产版本；日常工作在 `dev`，独立工作分支从它创建，完成后合回开发分支。只有用户明确批准合入生产，才创建面向 `main` 的 PR；不自动发布、不从 Dev 更新生产插件。
 
-生产版用 npm 安装并运行 `mdn plugin install`。源码切到 `dev` 后，运行 `npm run build && npm run install:dev` 注册 MineDesign dev。两版安装、数据与 MCP 身份分开，Dev 的重新构建不影响生产包。详细命令以开发分支的 CLI 和安装脚本为准。
+生产版用 npm 安装并运行 `mdn plugin install`。源码切到 `dev` 后，运行 `npm run build && npm run install:dev` 注册 MineDesign dev。两版安装、数据与 MCP 身份分开，Dev 的重新构建不影响生产包。详细命令以开发分支的 CLI 和安装脚本为准。`install:local` 是 `install:dev` 的兼容别名。Dev 使用 `-dev.N` 版本且 npm package 标为 private；生产发布前，用户必须明确批准合入、改为稳定版本并移除 private。
 
 ## 验收边界
 

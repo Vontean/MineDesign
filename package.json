@@ -1,6 +1,6 @@
 {
   "name": "@vontean/minedesign",
-  "version": "0.1.1",
+  "version": "0.1.2-dev.0",
   "type": "module",
   "description": "Independent Codex design and design-system plugin",
   "engines": {
@@ -15,13 +15,14 @@
     "build": "npm run build:icons && npm run build:editors && node scripts/build.mjs",
     "start": "node dist/cli.mjs",
     "test": "node --test tests/*.test.mjs",
-    "install:local": "node scripts/install-local.mjs",
+    "install:local": "npm run install:dev",
     "build:icons": "node scripts/build-brand-icons.mjs",
     "prepack": "npm run build",
     "test:modules": "vitest run packages --maxWorkers=2",
     "verify:equivalence": "node scripts/verify-equivalence.mjs",
     "check:i18n": "tsc -p tsconfig.i18n.json && node scripts/check-i18n.mjs",
-    "export:i18n": "node scripts/export-i18n.mjs"
+    "export:i18n": "node scripts/export-i18n.mjs",
+    "install:dev": "node scripts/install-local.mjs --dev"
   },
   "dependencies": {
     "@modelcontextprotocol/ext-apps": "^1.0.1",
@@ -75,5 +76,6 @@
   },
   "publishConfig": {
     "access": "public"
-  }
+  },
+  "private": true
 }

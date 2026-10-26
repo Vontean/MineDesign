@@ -166,3 +166,10 @@ Codex 中通过接口工具把编辑器装为 srcdoc，图片、字体、脚本�
 CLI 和 MCP 注册保持运行；后端单独构建到 `dist/backend.mjs`，runtime 按构建内容摘要加载。`minedesign_reload` 等待在途操作、创建新后端、重新打开原作品后再替换旧服务，失败时继续使用旧服务。返回的 documents 让外壳按稳定身份重开，批注继续来自原持久化目录。MCP 模式的 SIGHUP 走同一入口；信号更新后已打开外壳可点重新载入取得新 grant。
 
 这条路径更新后端实现，不更新已注册的 MCP schema；外壳脚本由上节的构建标识轮询更新。改变接口、manifest 或稳定 CLI 时，由宿主重新建立连接；禁止把结束 stdio 进程当作宿主重连。桌面当前连接已经关闭时，插件代码无法在同一条已关闭的通道内执行修复。
+
+
+### 本机生产与 Dev 身份
+
+生产插件 `minedesign@minedesign-local` 使用 npm 包；开发插件 `minedesign-dev@minedesign-dev-local` 由源码安装，显示 MineDesign dev。源码安装必须显式 `--dev`，不能占用生产身份。两版分别使用 `minedesign` / `minedesign-dev` MCP 标识和对应的 `ui://…/editor.html` 资源，数据默认在 `~/.minedesign` / `.local/dev`；显式 `MINEDESIGN_HOME` 可供隔离验证使用。源码默认作品目录仍为仓库，生产默认 `~/MineDesign`。
+
+开发分支版本使用 `-dev.N` 且 package 标为 private，防止误发 npm；只有用户明确要求合入生产时，才经 PR 升级稳定版本、解除 private 并运行生产发布流程。

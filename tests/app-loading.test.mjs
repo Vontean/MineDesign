@@ -1,3 +1,4 @@
+import { DATA } from '../src/paths.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
@@ -70,7 +71,7 @@ test('load failure stays in the viewport; retry reopens the document and preserv
   await fs.cp(path.join(ROOT,'tests/fixtures/studio'),path.join(tmp,'studio'),{recursive:true});
   const service=await startService({workspace:tmp});
   const doc=await service.open('studio');
-  const noteFile=path.join(ROOT,'.local/annotations',`${doc.id}.json`);
+  const noteFile=path.join(DATA,'annotations',`${doc.id}.json`);
   let ui;
   try{
     await service.annotations(doc.id,[{id:'kept',label:'标题',text:'保留这条意见'}]);
@@ -128,7 +129,7 @@ test('design feedback lives in the editor panel: drafts are pushed in, editor ac
   await fs.cp(path.join(ROOT,'tests/fixtures/studio'),path.join(tmp,'studio'),{recursive:true});
   const service=await startService({workspace:tmp});
   const doc=await service.open('studio');
-  const noteFile=path.join(ROOT,'.local/annotations',`${doc.id}.json`);
+  const noteFile=path.join(DATA,'annotations',`${doc.id}.json`);
   let ui;
   try{
     await service.annotations(doc.id,[{id:'keep',label:'标题',text:'保留'},{id:'drop',label:'按钮',text:'删除这条'}]);

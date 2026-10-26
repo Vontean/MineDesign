@@ -12,6 +12,10 @@ import { createElement, PanelsTopLeft, Component, MessageCircle, Undo2, Redo2 } 
 import { installTooltips } from './tooltip.mjs';
 const config=window.MINEDESIGN_CONFIG;
 const $=id=>document.getElementById(id);
+const displayName=config.displayName??'MineDesign';
+document.title=displayName;
+$('about-open').querySelector('strong').textContent=displayName;
+$('about-name').textContent=displayName;
 const frame=$('editor');
 $('state-illustration').append(createIllustration('document-loading'));
 // 评论图标与画布工具栏的评论按钮同一个（CDS Chat → Lucide MessageCircle），保持语义一致
@@ -333,7 +337,7 @@ $('about-open').onclick=()=>about.open();
 applyLocale();
 async function initialize(){
   if(window.parent!==window){
-    app=new App({name:'MineDesign',version:__MDN_VERSION__});
+    app=new App({name:displayName,version:__MDN_VERSION__});
     app.ontoolresult=async result=>{const data=result.structuredContent;if(data?.documents){docs=data.documents;renderProjects();if(bridge)await select(documentRecord).catch(fail);}else if(data?.document){const next=data.document;docs=docs.filter(d=>d.id!==next.id).concat(next);renderProjects();if(bridge)await select(next.id).catch(fail);}};
     // 宿主只推送变化的字段，合并后整体应用
     app.addEventListener('hostcontextchanged',()=>{applyContext(app.getHostContext());applyLocale();});

@@ -1,3 +1,4 @@
+import { DATA } from '../src/paths.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
@@ -17,7 +18,7 @@ test('design editor serves real files, preserves ifMatch and rejects workspace e
     assert.equal(unknown.status,400);
     assert.deepEqual(await unknown.json(),{error:'未知作品',code:'unknown_document'});
     const doc=await service.open('studio');
-    const noteFile=path.join(ROOT,'.local/annotations',`${doc.id}.json`);
+    const noteFile=path.join(DATA,'annotations',`${doc.id}.json`);
     const savedNotes=await service.annotations(doc.id,[{id:'test-note',anchor:'Main.dc.html',label:'工作台',text:'缩短说明'}]);
     assert.ok(savedNotes[0].sourceVersion);
     assert.equal((await service.prepareFeedback(doc.id)).stale,false);
