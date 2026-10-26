@@ -1,5 +1,5 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>MineDesign</title><style>/*__STYLES__*/</style></head><body>
-<!-- 界面文案在 app.mjs 按当前语言填入：data-i18n 写文字，data-i18n-label 写 aria-label 与 title，data-i18n-aria 只写 aria-label，data-i18n-placeholder 写占位文字 -->
+<!-- 界面文案在 app.mjs 按当前语言填入：data-i18n 写文字，data-i18n-label 写 aria-label 与 title，data-i18n-tip 写 aria-label 与顶栏提示气泡（tooltip.mjs），data-i18n-aria 只写 aria-label，data-i18n-placeholder 写占位文字 -->
 <header class="topbar">
   <button id="about-open" class="brand" type="button" aria-haspopup="dialog" data-i18n-label="about"><!--__BRAND__--><strong>MineDesign</strong></button>
   <div class="menu-wrap"><button id="project" class="btn btn-ghost project" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="project-menu" data-i18n-label="pickProject"><span id="project-name"></span><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button><div id="project-menu" class="menu menu-start" role="menu" data-i18n-aria="pickProject" hidden></div></div>
@@ -7,8 +7,10 @@
   <span class="spacer"></span>
   <button id="annotate" class="btn btn-ghost" type="button" aria-pressed="false" disabled><span data-comment-icon></span><span data-i18n="comment"></span></button>
   <div id="view-controls" class="view-controls" hidden>
-    <div class="menu-wrap"><button id="zoom" class="btn btn-ghost zoom" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="zoom-menu" data-i18n-label="zoom"><span id="zoom-readout">100%</span><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button><div id="zoom-menu" class="menu" role="menu" data-i18n-aria="zoom" hidden></div></div>
-    <div class="menu-wrap"><button id="play" class="btn btn-icon" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="play-menu" data-i18n-label="play"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><polygon points="6 3 20 12 6 21 6 3"/></svg></button><div id="play-menu" class="menu" role="menu" data-i18n-aria="play" hidden></div></div>
+    <div class="menu-wrap"><button id="zoom" class="btn btn-ghost zoom" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="zoom-menu" data-i18n-tip="zoom"><span id="zoom-readout">100%</span><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button><div id="zoom-menu" class="menu" role="menu" data-i18n-aria="zoom" hidden></div></div>
+    <button id="undo" class="btn btn-icon" type="button" aria-disabled="true" data-i18n-tip="undo"></button>
+    <button id="redo" class="btn btn-icon" type="button" aria-disabled="true" data-i18n-tip="redo"></button>
+    <div class="menu-wrap"><button id="play" class="btn btn-icon" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="play-menu" data-i18n-tip="play"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><polygon points="6 3 20 12 6 21 6 3"/></svg></button><div id="play-menu" class="menu" role="menu" data-i18n-aria="play" hidden></div></div>
   </div>
   <button id="panel" class="btn btn-icon" type="button" aria-pressed="true" aria-controls="notes"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M15 3v18"/></svg></button>
 </header>

@@ -5,7 +5,8 @@ import { createBridge } from './virtual.mjs';
 import { createIllustration } from '../../assets/illustrations/index.mjs';
 import { uiText, resolveUiLocale } from '../../packages/contracts/src/ui-text.ts';
 import { createAbout } from './about.mjs';
-import { createElement, PanelsTopLeft, Component, MessageCircle } from 'lucide';
+import { createElement, PanelsTopLeft, Component, MessageCircle, Undo2, Redo2 } from 'lucide';
+import { installTooltips } from './tooltip.mjs';
 const config=window.MINEDESIGN_CONFIG;
 const $=id=>document.getElementById(id);
 const frame=$('editor');
@@ -13,6 +14,7 @@ $('state-illustration').append(createIllustration('document-loading'));
 // 评论图标与画布工具栏的评论按钮同一个（CDS Chat → Lucide MessageCircle），保持语义一致
 for(const slot of document.querySelectorAll('[data-comment-icon]'))slot.replaceWith(createElement(MessageCircle,{class:'icon','aria-hidden':'true'}));
 let app,client,bridge,documentRecord,notes=[],pending,mode=false,busy=false,loading=0,editorPanel=false,view=null;
+const mac=/Mac|iPhone|iPad/.test(navigator.platform),tooltips=installTooltips();
 // 失焦（按下鼠标）到 iframe 发来 compose（松开鼠标后）之间的上限；长按拖动框选超过它时照常开始新评论
 const COMPOSE_DISMISS_MS=600;
 let docs=config.documents;
@@ -31,11 +33,12 @@ function applyLocale(){
   document.documentElement.lang=locale==='zh-Hans'?'zh-CN':'en';
   for(const el of document.querySelectorAll('[data-i18n]'))el.textContent=t[el.dataset.i18n];
   for(const el of document.querySelectorAll('[data-i18n-label]')){el.setAttribute('aria-label',t[el.dataset.i18nLabel]);el.title=t[el.dataset.i18nLabel];}
+  for(const el of document.querySelectorAll('[data-i18n-tip]')){el.setAttribute('aria-label',t[el.dataset.i18nTip]);el.dataset.tip=t[el.dataset.i18nTip];}
   for(const el of document.querySelectorAll('[data-i18n-aria]'))el.setAttribute('aria-label',t[el.dataset.i18nAria]);
   for(const el of document.querySelectorAll('[data-i18n-placeholder]'))el.placeholder=t[el.dataset.i18nPlaceholder];
   if(!app)$('send').title=t.sendUnavailable;
   post({type:'editor:locale',locale});
-  renderProjects();renderNotes();renderView();syncPanelButton();renderState();about.render();
+  renderProjects();renderNotes();renderView();syncPanelButton();renderState();about.render();tooltips.refresh();
 }
 // 宿主推送的 MCP 标准样式变量覆盖 tokens.css 的本地快照；切换主题时先清掉上一套，缺失的变量回到快照
 function applyHostStyles(next={}){
@@ -175,7 +178,7 @@ $('retry').onclick=()=>(bridge?select(documentRecord):initialize()).catch(fail);
 function syncPanelButton(){
   const editor=editorFeedback(),open=editor?editorPanel:document.body.dataset.panel!=='closed';
   const label=editor?(open?t.hidePanel:t.showPanel):(open?t.hideSidebar:t.showSidebar);
-  $('panel').setAttribute('aria-pressed',String(open));$('panel').setAttribute('aria-label',label);$('panel').title=label;
+  $('panel').setAttribute('aria-pressed',String(open));$('panel').setAttribute('aria-label',label);$('panel').dataset.tip=label;tooltips.refresh();
 }
 // 顶栏的缩放与播放：设计稿编辑器经 editor:view 报告状态，这里显示菜单并把操作发回编辑器
 // 编辑器报告的视图开关与分组名是英文原名，这里映射到当前语言
@@ -193,7 +196,7 @@ function menuPart(className,text){const part=document.createElement('div');part.
 function renderView(){
   $('view-controls').hidden=!editorFeedback()||!view;
   if(!view)return;
-  const now=percent(view.scale),min=percent(view.minScale),max=percent(view.maxScale),mac=/Mac|iPhone|iPad/.test(navigator.platform);
+  const now=percent(view.scale),min=percent(view.minScale),max=percent(view.maxScale);
   $('zoom-readout').textContent=`${now}%`;
   $('zoom-menu').replaceChildren(
     menuItem(t.zoomIn,{trailing:mac?'⌘+':'Ctrl +',disabled:now>=max,onClick:()=>viewAction({action:'zoom-in'})}),
@@ -202,12 +205,12 @@ function renderView(){
     menuPart('menu-separator'),
     ...view.presets.map(scale=>menuItem(`${percent(scale)}%`,{role:'menuitemradio',checked:percent(scale)===now,disabled:percent(scale)<min||percent(scale)>max,onClick:()=>viewAction({action:'zoom',scale})})),
     ...(view.toggles.length?[menuPart('menu-separator'),...view.toggles.map(toggle=>menuItem(viewLabel(toggle.label),{role:'menuitemcheckbox',checked:toggle.checked,onClick:()=>viewAction({action:'toggle',id:toggle.id})}))]:[]),
-    menuPart('menu-separator'),
-    menuItem(t.undo,{trailing:mac?'⌘Z':'Ctrl Z',disabled:!view.canUndo,onClick:()=>viewAction({action:'undo'})}),
-    menuItem(t.redo,{trailing:mac?'⇧⌘Z':'Ctrl ⇧ Z',disabled:!view.canRedo,onClick:()=>viewAction({action:'redo'})}),
   );
-  $('play').disabled=!view.play.length;
-  $('play').title=view.play.length?t.play:t.noPlayable;
+  // 撤销、重做与播放不可用时用 aria-disabled：仍可悬停与聚焦，提示照常显示
+  $('undo').setAttribute('aria-disabled',String(!view.canUndo));$('redo').setAttribute('aria-disabled',String(!view.canRedo));
+  $('play').setAttribute('aria-disabled',String(!view.play.length));
+  const playTip=view.play.length?t.play:t.noPlayable;$('play').dataset.tip=playTip;$('play').setAttribute('aria-label',playTip);
+  tooltips.refresh();
   $('play-menu').replaceChildren(...view.play.flatMap((group,i)=>[
     ...(i?[menuPart('menu-separator')]:[]),menuPart('menu-label',viewLabel(group.label)),
     ...group.items.map(item=>menuItem(item.title,{onClick:()=>viewAction({action:'play',file:item.file})})),
@@ -220,7 +223,12 @@ function toggleMenu(id){
 }
 $('project').onclick=()=>toggleMenu('project');
 $('zoom').onclick=()=>toggleMenu('zoom');
-$('play').onclick=()=>toggleMenu('play');
+$('play').onclick=()=>{if($('play').getAttribute('aria-disabled')!=='true')toggleMenu('play');};
+// 撤销与重做：图标按钮，快捷键与编辑器内一致（显示在提示气泡里）
+for(const [id,icon,action,key,keys] of [['undo',Undo2,'undo',mac?'⌘Z':'Ctrl Z',mac?'Meta+Z':'Control+Z'],['redo',Redo2,'redo',mac?'⇧⌘Z':'Ctrl ⇧ Z',mac?'Shift+Meta+Z':'Control+Shift+Z']]){
+  const button=$(id);button.append(createElement(icon,{class:'icon','aria-hidden':'true'}));button.dataset.tipKey=key;button.setAttribute('aria-keyshortcuts',keys);
+  button.onclick=()=>{if(button.getAttribute('aria-disabled')!=='true')viewAction({action});};
+}
 document.addEventListener('pointerdown',e=>{if(!e.target.closest('.menu-wrap'))closeMenus();});
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeMenus();});
 // 点进编辑器 iframe 时本页失去焦点，菜单随之关闭

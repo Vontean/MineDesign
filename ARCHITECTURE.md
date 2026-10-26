@@ -41,7 +41,8 @@ flowchart TB
 | 文件 | 用途 |
 | --- | --- |
 | `app.html` | 顶栏、作品视窗、中央状态、反馈侧栏和批注对话框的语义结构 |
-| `app.mjs` | 项目菜单与文件标签、用户可见加载状态、主题、批注与显式反馈交互；设计稿的评论列表、面板开关、顶栏缩放与播放经编辑器消息驱动 |
+| `app.mjs` | 项目菜单与文件标签、用户可见加载状态、主题、批注与显式反馈交互；设计稿的评论列表、面板开关、顶栏缩放、撤销重做与播放经编辑器消息驱动 |
+| `tooltip.mjs` | 顶栏控件的提示气泡（与编辑器 Tooltip 同一样式与时机），读取触发元素的 `data-tip` / `data-tip-key` |
 | `about.mjs` | About 弹窗：版本与更新状态、语言切换、联系方式；更新期间轮询任务进度 |
 | `service-client.mjs` | 统一 open、annotations、prepareFeedback、http、events；处理 MCP 结果封装与 HTTP 请求差异 |
 | `virtual.mjs` | 虚拟 URL、blob 资源、HTML/CSS 改写、请求分块与事件传输 |

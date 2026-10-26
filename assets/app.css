@@ -24,14 +24,17 @@ h2, p, ol { margin: 0; }
 .btn:focus-visible, .file-tab:focus-visible, .close:focus-visible, #annotation-list button:focus-visible { outline: 2px solid var(--mdn-ring); outline-offset: 0; }
 .btn:disabled { opacity: .4; cursor: default; }
 .btn-ghost { color: var(--mdn-text-secondary); }
-.btn-ghost:hover:not(:disabled) { background: var(--mdn-ghost-hover); color: var(--mdn-text); }
+.btn-ghost:hover:not(:disabled, [aria-disabled="true"]) { background: var(--mdn-ghost-hover); color: var(--mdn-text); }
 .btn-ghost[aria-pressed="true"] { background: var(--mdn-ghost-active); color: var(--mdn-text); }
 /* 设计系统顶栏的评论开关是模式开关：与画布工具栏的评论按钮同为全圆角胶囊，开启时浅蓝底、蓝色字 */
 #annotate { border-radius: var(--mdn-radius-full); padding: 0 calc(var(--mdn-space) * 3) 0 calc(var(--mdn-space) * 2.5); }
 #annotate[aria-pressed="true"] { background: var(--mdn-accent-soft); color: var(--mdn-accent); }
 .btn-icon { width: var(--mdn-control-sm); padding: 0; color: var(--mdn-text-tertiary); }
-.btn-icon:hover:not(:disabled) { background: var(--mdn-ghost-hover); color: var(--mdn-text); }
+.btn-icon:hover:not(:disabled, [aria-disabled="true"]) { background: var(--mdn-ghost-hover); color: var(--mdn-text); }
 .btn-icon[aria-pressed="true"] { color: var(--mdn-text-secondary); }
+/* 按下：叠 8% 一层底色；aria-disabled 的控件（撤销、重做、无可播放画板）与 disabled 同样变淡，但保留悬停与焦点以显示提示 */
+.btn-icon:active:not(:disabled, [aria-disabled="true"]) { background: var(--mdn-ghost-active); color: var(--mdn-text); }
+.btn[aria-disabled="true"] { opacity: .4; cursor: default; }
 .btn-outline { color: var(--mdn-text); box-shadow: inset 0 0 0 1px var(--mdn-border-strong); }
 .btn-outline:hover:not(:disabled) { background: var(--mdn-outline-hover); }
 .btn-solid { background: var(--mdn-solid); color: var(--mdn-on-solid); }
@@ -50,11 +53,17 @@ h2, p, ol { margin: 0; }
 .brand strong { font-size: var(--mdn-text-sm); font-weight: var(--mdn-weight-strong); }
 .brand-icon { width: 20px; height: 20px; display: block; }
 .spacer { flex: 1; }
-/* 顶栏的缩放与播放：设计稿编辑器经消息驱动，顺序为缩放、播放、面板开关 */
+/* 顶栏的缩放、撤销重做与播放：设计稿编辑器经消息驱动，顺序为缩放、撤销、重做、播放、面板开关 */
 .view-controls { display: flex; align-items: center; gap: var(--mdn-space); }
 .menu-wrap { position: relative; }
 .zoom { gap: 2px; padding: 0 calc(var(--mdn-space) * 1.5) 0 calc(var(--mdn-space) * 2); font-variant-numeric: tabular-nums; }
 .zoom .icon { width: 14px; height: 14px; color: var(--mdn-text-tertiary); }
+/* 顶栏提示气泡（tooltip.mjs）：与编辑器里的 Tooltip 同一套 token，明暗都是深底白字；快捷键为 25% 白的小胶囊 */
+.tooltip { position: fixed; z-index: 30; display: flex; align-items: center; gap: calc(var(--mdn-space) * 2); max-width: 280px; padding: var(--mdn-tooltip-pad-block) var(--mdn-tooltip-pad-inline); border: 1px solid var(--mdn-tooltip-border); border-radius: var(--mdn-radius-2xl); corner-shape: superellipse(1.5); background: var(--mdn-tooltip-bg); color: var(--mdn-tooltip-fg); box-shadow: var(--mdn-tooltip-shadow); font-size: var(--mdn-text-sm); line-height: var(--mdn-tooltip-line); letter-spacing: -.15px; white-space: nowrap; pointer-events: none; animation: tooltip-in var(--mdn-duration) var(--mdn-ease); }
+.tooltip[hidden] { display: none; }
+.tooltip-key { display: inline-flex; align-items: center; justify-content: center; min-width: 16px; height: var(--mdn-tooltip-line); padding: 0 6px; margin-inline-end: calc(var(--mdn-tooltip-pad-block) - var(--mdn-tooltip-pad-inline)); border-radius: var(--mdn-radius-lg); corner-shape: superellipse(1.5); background: var(--mdn-tooltip-shortcut-bg); font: inherit; }
+.tooltip-key[hidden] { display: none; }
+@keyframes tooltip-in { from { opacity: 0; } }
 .menu { position: absolute; top: calc(100% + var(--mdn-space)); right: 0; z-index: 10; min-width: 200px; max-height: 70vh; overflow-y: auto; padding: var(--mdn-space); border-radius: var(--mdn-radius-xl); background: var(--mdn-elevated); box-shadow: var(--mdn-shadow-overlay); }
 .menu-item { display: flex; align-items: center; gap: calc(var(--mdn-space) * 3); width: 100%; height: var(--mdn-control-md); padding: 0 calc(var(--mdn-space) * 2); border: 0; border-radius: var(--mdn-radius-md); background: none; text-align: left; cursor: pointer; }
 .menu-item > span:first-child { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
