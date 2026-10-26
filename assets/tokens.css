@@ -127,6 +127,11 @@
   /* Codex elevation-prominent：浮起的小控件（画布浮动条、收起导航）。0.5px 发丝描边 + 0 3px 7.5px 4% + 0 0 20px 5%；
      深色沿用 Codex 深色的 20% 白色内描边。composer 投影的 40px 光晕只适合大面积输入框，放在小控件上会显脏 */
   --mdn-shadow-float: 0 0 0 .5px light-dark(var(--mdn-border-strong), transparent), 0 3px 7.5px light-dark(#0000000a, #00000033), 0 0 20px light-dark(#0000000d, transparent), inset 0 0 1px 0 light-dark(transparent, #fff3);
+  /* 骨架屏：骨块为主文字混入页面色的不透明灰（网点纸不透出来），光带浅色取页面色提亮、深色取白色提亮；
+     一个周期 1.6s，外壳与编辑器按同一挂钟相位扫过，交接时光带不跳 */
+  --mdn-skeleton: light-dark(color-mix(in srgb, var(--color-text-primary) 6%, var(--color-background-primary)), color-mix(in srgb, var(--color-text-primary) 8%, var(--color-background-primary)));
+  --mdn-skeleton-sheen: light-dark(color-mix(in srgb, var(--color-background-primary) 70%, transparent), color-mix(in srgb, var(--color-text-primary) 6%, transparent));
+  --mdn-skeleton-period: 1.6s;
   --mdn-duration: .15s;
   --mdn-ease: ease;
 }

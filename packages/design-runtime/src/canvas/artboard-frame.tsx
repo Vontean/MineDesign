@@ -5580,11 +5580,13 @@ export function installCanvasArtboardFrame(
             <div
               data-testid={"mega-artboard-loading"}
               className={
-                "absolute inset-0 z-10 flex items-center justify-center bg-om-bg-canvas"
+                "absolute inset-0 z-10 bg-om-bg-canvas"
               }
             >
+              {/* MineDesign：载入中的画板显示为骨块（assets/skeleton/skeleton.css），文字只留给读屏 */}
+              <span className={"mdn-skel-bone absolute inset-0"} />
               {!value74 && (
-                <span className={"text-xs text-fg-muted"}>
+                <span className={"sr-only"}>
                   {"Loading\u2026"}
                 </span>
               )}

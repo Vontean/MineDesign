@@ -96,6 +96,7 @@ flowchart TB
 | `assets/tokens.css` | 基础与语义 token，以及宿主变量缺失时的回退 |
 | `assets/app.css` | 外壳布局与组件；插画构图由独立资源模块管理 |
 | `assets/editor-theme.css` | 编辑器 chrome 的主题适配；作品品牌不在此覆盖 |
+| `assets/skeleton/` | 设计稿与设计系统的加载骨架屏结构与样式；构建时注入外壳和两个编辑器页面 |
 | `assets/illustrations/` | 插画注册入口、实现和样式；读取其中 README 了解用途与替换契约 |
 | `assets/brand/` | Logo、favicon、明暗/选中状态、许可与版本缓存资源 |
 | `scripts/build-brand-icons.mjs` | 从品牌来源生成状态和主题资源 |

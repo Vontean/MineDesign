@@ -1,0 +1,90 @@
+/* 打开作品时的骨架屏：按设计稿与设计系统编辑器的真实布局摆骨块（尺寸取自编辑器实测，见 DESIGN.md「加载骨架屏」）。
+   同一份结构由外壳（拉取作品时）与编辑器页面（运行时挂载前）共用，构建时注入两处。 */
+.mdn-skel {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  overflow: hidden;
+  background: var(--mdn-surface);
+  container: skel / inline-size;
+  cursor: progress;
+}
+/* 编辑器页面里盖在 #root 之上，运行时内容就绪后淡出 */
+body > .mdn-skel { position: fixed; z-index: 2147483000; transition: opacity var(--mdn-duration) var(--mdn-ease); }
+body > .mdn-skel[data-leaving] { opacity: 0; }
+
+/* 骨块：底色 + 横向光带。光带按视口固定定位、800px 一格平铺，所有骨块共用一道光；相位由脚本按挂钟写入 */
+.mdn-skel-bone {
+  --skel-tile: 800px;
+  display: block;
+  flex: none;
+  width: var(--w, auto);
+  max-width: 100%;
+  background-color: var(--mdn-skeleton);
+  background-image: linear-gradient(90deg, transparent 30%, var(--mdn-skeleton-sheen) 50%, transparent 70%);
+  background-size: var(--skel-tile) 100%;
+  background-repeat: repeat-x;
+  background-attachment: fixed;
+  animation: mdn-skel-sweep var(--mdn-skeleton-period) linear infinite;
+  animation-delay: var(--mdn-skel-phase, 0s);
+}
+@keyframes mdn-skel-sweep {
+  from { background-position: calc(var(--skel-tile) * -1) 0; }
+  to { background-position: 0 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mdn-skel-bone { animation: none; background-image: none; }
+}
+:where(.mdn-skel) .mdn-skel-bone { border-radius: var(--mdn-radius-full); }
+.mdn-skel-line { height: 12px; }
+.mdn-skel-icon { width: 16px; height: 16px; border-radius: var(--mdn-radius-sm); }
+
+/* 共用：左上的页面切换 / 收起导航，32px 胶囊 */
+.mdn-skel-page { position: absolute; top: 12px; left: 12px; width: 104px; height: var(--mdn-floatbtn-h); border-radius: var(--mdn-radius-full); }
+
+/* 设计稿：网点纸画布（左上页面切换、居中一排画板、底部工具栏）+ 右侧 312px 面板 */
+.mdn-skel[data-kind="design"] .mdn-skel-canvas {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  place-items: center;
+  container: skel-canvas / inline-size;
+  background-image: radial-gradient(circle, var(--mdn-canvas-dot) 1px, transparent 1.5px);
+  background-size: 20px 20px;
+}
+.mdn-skel-boards { display: flex; flex-direction: column; gap: 16px; width: min(100% - 96px, 896px); }
+.mdn-skel-board-row { display: flex; gap: 24px; }
+.mdn-skel-board { display: flex; flex: 1; min-width: 0; flex-direction: column; gap: 8px; }
+.mdn-skel-board-face { aspect-ratio: 4 / 3; border-radius: var(--mdn-radius-md); }
+@container skel-canvas (max-width: 720px) { .mdn-skel-board:nth-child(n + 4) { display: none; } }
+@container skel-canvas (max-width: 480px) { .mdn-skel-board:nth-child(n + 3) { display: none; } }
+.mdn-skel-dock { position: absolute; bottom: 16px; left: 50%; width: min(416px, 100% - 24px); height: var(--mdn-floatbar-h); border-radius: var(--mdn-radius-full); transform: translateX(-50%); }
+.mdn-skel-panel { display: flex; flex: none; flex-direction: column; width: 312px; border-left: 1px solid var(--mdn-border); background: var(--mdn-surface); }
+.mdn-skel-tabs { display: flex; gap: 8px; padding: 18px 16px 10px; }
+.mdn-skel-tabs > .mdn-skel-bone { height: 12px; }
+.mdn-skel-rows { display: flex; flex-direction: column; padding: 10px 0; }
+.mdn-skel-row { display: flex; align-items: center; gap: 8px; height: 28px; padding-inline: 28px 16px; }
+@container skel (max-width: 599px) { .mdn-skel-panel { display: none; } }
+
+/* 设计系统：宽屏（≥1000px，与编辑器的导航断点一致）左侧 240px 章节导航；窄屏收起为左上胶囊。主区为网点纸上的文档页 */
+.mdn-skel-nav { display: none; flex: none; flex-direction: column; gap: 20px; width: 240px; padding: 16px; border-right: 1px solid var(--mdn-border); background: var(--mdn-surface); }
+.mdn-skel-nav-list { display: flex; flex-direction: column; gap: 16px; }
+.mdn-skel-main {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  padding: 64px 12px 0;
+  background-image: radial-gradient(circle, var(--mdn-canvas-dot) 1px, transparent 1.5px);
+  background-size: 20px 20px;
+}
+.mdn-skel[data-kind="design-system"] .mdn-skel-page { width: 148px; }
+.mdn-skel-doc { display: flex; flex-direction: column; gap: 12px; max-width: 960px; margin-inline: auto; padding-inline: 32px; }
+.mdn-skel-hero { max-width: none; height: 280px; margin: 0 -32px 20px; border-radius: var(--mdn-radius-xl); }
+.mdn-skel-title { height: 28px; margin-bottom: 4px; }
+.mdn-skel-heading { height: 16px; margin-top: 16px; }
+@container skel (min-width: 1000px) {
+  .mdn-skel-nav { display: flex; }
+  .mdn-skel-main { padding-top: 20px; }
+  .mdn-skel[data-kind="design-system"] .mdn-skel-page { display: none; }
+}

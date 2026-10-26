@@ -16,6 +16,7 @@
   <section class="viewport" data-i18n-aria="viewport" aria-busy="true">
     <iframe id="editor" data-i18n-label="editorTitle" sandbox="allow-scripts allow-same-origin allow-downloads allow-modals" allow="clipboard-write" hidden></iframe>
     <div id="viewport-state" class="viewport-state" data-state="loading">
+      <!--__SKELETONS__-->
       <div class="error-content">
         <div id="state-illustration"></div>
         <div id="state-message" role="status" aria-live="polite"><h2 id="state-title"></h2><p id="state-description"></p></div>
@@ -27,6 +28,7 @@
   <aside id="notes" aria-labelledby="notes-title">
     <div class="notes-head"><h2 id="notes-title" data-i18n="feedbackTitle"></h2><span id="count" class="count" hidden></span></div>
     <ol id="annotation-list"></ol>
+    <ol class="notes-skel" aria-hidden="true"><li><span class="mdn-skel-bone notes-skel-index"></span><span class="mdn-skel-bone mdn-skel-line" style="--w:40%"></span><span class="mdn-skel-bone mdn-skel-line" style="--w:88%"></span></li><li><span class="mdn-skel-bone notes-skel-index"></span><span class="mdn-skel-bone mdn-skel-line" style="--w:56%"></span><span class="mdn-skel-bone mdn-skel-line" style="--w:72%"></span></li><li><span class="mdn-skel-bone notes-skel-index"></span><span class="mdn-skel-bone mdn-skel-line" style="--w:32%"></span><span class="mdn-skel-bone mdn-skel-line" style="--w:80%"></span></li></ol>
     <div id="empty" class="empty"><span data-comment-icon></span><p class="empty-title" data-i18n="noComments"></p><p data-i18n="noCommentsHint"></p></div>
     <div class="composer">
       <textarea id="message" rows="3" data-i18n-aria="messageLabel" data-i18n-placeholder="messagePlaceholder"></textarea>

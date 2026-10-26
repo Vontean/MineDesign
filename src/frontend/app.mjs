@@ -57,9 +57,15 @@ function editorAvailable(available){$('annotate').disabled=!available;$('send').
 let shownState=['loading',{title:()=>t.connecting,description:()=>t.pleaseWait}];
 function viewState(state,options={}){shownState=[state,options];renderState();}
 function renderState(){
-  const [state,{title,description='',error}]=shownState,value=v=>typeof v==='function'?v():v;
+  const [state,{title,description='',error,kind}]=shownState,value=v=>typeof v==='function'?v():v;
   const panel=$('viewport-state'),failed=state==='error';
   panel.hidden=state==='ready';panel.dataset.state=state;
+  // 打开已知类型的作品时显示该编辑器布局的骨架屏，标题与说明只留给读屏；光带相位按挂钟，与编辑器页面里的骨架屏接上
+  // 外壳的反馈侧栏同时显示列表骨架屏：评论还没读到时不显示「暂无评论」
+  const skeleton=state==='loading'&&!!kind;
+  if(skeleton){panel.dataset.kind=kind;const period=parseFloat(getComputedStyle(panel).getPropertyValue('--mdn-skeleton-period'))*1000||1600;document.body.style.setProperty('--mdn-skel-phase',-(Date.now()%period)+'ms');}
+  else delete panel.dataset.kind;
+  document.body.toggleAttribute('data-loading',skeleton);
   panel.closest('.viewport').setAttribute('aria-busy',String(state==='loading'));
   $('state-message').setAttribute('role',failed?'alert':'status');
   $('state-title').textContent=value(title)||'';$('state-description').textContent=value(description);
@@ -113,7 +119,7 @@ async function select(target){
   if(changed){editorPanel=false;view=null;}
   syncPanelButton();renderView();
   if(changed){notes=[];renderNotes();}
-  viewState('loading',{title:()=>t.opening,description:record.title});
+  viewState('loading',{title:()=>t.opening,description:record.title,kind:record.kind});
   try{
     // 宿主会缓存页面；grant 属于服务进程，必须按稳定目录重新打开，不能复用缓存地址。
     const args={path:record.path,kind:record.kind};
