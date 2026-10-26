@@ -6,3 +6,4 @@ dist/
 output/
 
 /.mcp.json
+/.claude/
