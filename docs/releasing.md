@@ -44,5 +44,5 @@ npm trust github @vontean/minedesign --repository Vontean/MineDesign --file publ
 - 首次发起人的固定账号 ID、重跑人的账号名、仓库 ID 和 main 分支全部匹配才会继续；其他人发起或重跑在 prepare 即失败，拿不到发布权限。
 - `npm-release` environment 仅允许 main 部署；npm 可信发布绑定本仓库、`publish.yml` 与该 environment。
 - prepare 只读仓库，无 OIDC 权限；publish 只下载本次验证的产物、核对 SHA-256 后发布，不执行 package lifecycle；release 只有写 Release 的权限。
-- 仓库为私有，npm 不生成 provenance；包本身公开。改变仓库可见性后可加 `--provenance`。
+- 仓库公开，npm 发布使用 `--provenance` 关联源码与 Action；打包检查拒绝示例数据目录，隔离安装从空白工作区启动。
 - 包按原始许可免费、非商业分发，`FORK.md` 随包携带完整许可，编辑器产物附 `third-party-licenses.txt`。不得收费分发或并入收费产品。

@@ -12,7 +12,7 @@ const args=process.argv.slice(2);
 const saved=await fs.readFile(path.join(data,'install.json'),'utf8').then(JSON.parse,()=>({}));
 // 更新后重装沿用上次选的作品目录
 const workspace=path.resolve(args.includes('--workspace')?args[args.indexOf('--workspace')+1]:saved.workspace??(checkout?root:path.join(os.homedir(),'MineDesign')));
-if(!checkout&&!existsSync(workspace))await fs.cp(path.join(root,'examples'),path.join(workspace,'examples'),{recursive:true});
+await fs.mkdir(workspace,{recursive:true});
 await fs.mkdir(data,{recursive:true});
 await fs.writeFile(path.join(data,'install.json'),JSON.stringify({workspace},null,2));
 const version=JSON.parse(await fs.readFile(path.join(root,'package.json'),'utf8')).version;

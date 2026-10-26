@@ -1,6 +1,6 @@
 {
   "name": "@vontean/minedesign",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "type": "module",
   "description": "Independent Codex design and design-system plugin",
   "engines": {
@@ -53,7 +53,6 @@
     "assets/tokens.css",
     "assets/editor-theme.css",
     "skills/",
-    "examples/",
     "DESIGN.md",
     "CONTEXT.md",
     "PRD.md",
