@@ -5,11 +5,13 @@ import { createBridge } from './virtual.mjs';
 import { createIllustration } from '../../assets/illustrations/index.mjs';
 import { uiText, resolveUiLocale } from '../../packages/contracts/src/ui-text.ts';
 import { createAbout } from './about.mjs';
-import { createElement, PanelsTopLeft, Component } from 'lucide';
+import { createElement, PanelsTopLeft, Component, MessageCircle } from 'lucide';
 const config=window.MINEDESIGN_CONFIG;
 const $=id=>document.getElementById(id);
 const frame=$('editor');
 $('state-illustration').append(createIllustration('document-loading'));
+// 评论图标与画布工具栏的评论按钮同一个（CDS Chat → Lucide MessageCircle），保持语义一致
+for(const slot of document.querySelectorAll('[data-comment-icon]'))slot.replaceWith(createElement(MessageCircle,{class:'icon','aria-hidden':'true'}));
 let app,client,bridge,documentRecord,notes=[],pending,mode=false,busy=false,loading=0,editorPanel=false,view=null;
 // 失焦（按下鼠标）到 iframe 发来 compose（松开鼠标后）之间的上限；长按拖动框选超过它时照常开始新评论
 const COMPOSE_DISMISS_MS=600;

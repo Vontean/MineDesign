@@ -5,7 +5,7 @@
   <div class="menu-wrap"><button id="project" class="btn btn-ghost project" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="project-menu" data-i18n-label="pickProject"><span id="project-name"></span><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button><div id="project-menu" class="menu menu-start" role="menu" data-i18n-aria="pickProject" hidden></div></div>
   <div id="files" class="file-tabs" role="tablist" data-i18n-aria="projectFiles"></div>
   <span class="spacer"></span>
-  <button id="annotate" class="btn btn-ghost" type="button" aria-pressed="false" disabled><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M12 7v6"/><path d="M9 10h6"/></svg><span data-i18n="comment"></span></button>
+  <button id="annotate" class="btn btn-ghost" type="button" aria-pressed="false" disabled><span data-comment-icon></span><span data-i18n="comment"></span></button>
   <div id="view-controls" class="view-controls" hidden>
     <div class="menu-wrap"><button id="zoom" class="btn btn-ghost zoom" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="zoom-menu" data-i18n-label="zoom"><span id="zoom-readout">100%</span><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button><div id="zoom-menu" class="menu" role="menu" data-i18n-aria="zoom" hidden></div></div>
     <div class="menu-wrap"><button id="play" class="btn btn-icon" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="play-menu" data-i18n-label="play"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><polygon points="6 3 20 12 6 21 6 3"/></svg></button><div id="play-menu" class="menu" role="menu" data-i18n-aria="play" hidden></div></div>
@@ -27,7 +27,7 @@
   <aside id="notes" aria-labelledby="notes-title">
     <div class="notes-head"><h2 id="notes-title" data-i18n="feedbackTitle"></h2><span id="count" class="count" hidden></span></div>
     <ol id="annotation-list"></ol>
-    <div id="empty" class="empty"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M13 8H7"/><path d="M17 12H7"/></svg><p class="empty-title" data-i18n="noComments"></p><p data-i18n="noCommentsHint"></p></div>
+    <div id="empty" class="empty"><span data-comment-icon></span><p class="empty-title" data-i18n="noComments"></p><p data-i18n="noCommentsHint"></p></div>
     <div class="composer">
       <textarea id="message" rows="3" data-i18n-aria="messageLabel" data-i18n-placeholder="messagePlaceholder"></textarea>
       <div class="composer-actions">

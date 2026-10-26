@@ -13447,6 +13447,24 @@ html[data-theme-switching] *::after {
   justify-content: space-between;
   padding: 8px;
 }
+/* 与外壳反馈栏（设计系统）的输入区按钮同一规格：CDS 的 sm 在编辑器主题里只有 20px，这里改回 28px——
+   复制为方形 ghost 图标按钮，发送为实心胶囊（底色在内部 paint 层，圆角随按钮继承） */
+.mdn-feedback-actions [data-cds="Button"] {
+  height: var(--mdn-control-sm);
+  font-size: var(--mdn-text-sm);
+}
+.mdn-feedback-actions [data-cds="Button"][data-cds-icon-only] {
+  width: var(--mdn-control-sm);
+  border-radius: var(--mdn-radius-md);
+  color: var(--mdn-text-tertiary);
+}
+.mdn-feedback-actions [data-cds="Button"][data-cds-icon-only]:not(:disabled):hover {
+  color: var(--mdn-text);
+}
+.mdn-feedback-actions [data-testid="mdn-feedback-send"] {
+  padding-inline: 12px;
+  border-radius: var(--mdn-radius-full);
+}
 .mdn-feedback-status {
   min-height: 16px;
   padding-inline: 4px;
