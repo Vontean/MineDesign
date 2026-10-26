@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       release_tag:
-        description: '已推送到 main 的版本标签，例如 v0.1.0'
+        description: '已推送到 main 的版本标签，例如 v0.1.1'
         required: true
         type: string
       publish:
@@ -173,13 +173,18 @@ jobs:
           RELEASE_TAG: ${{ inputs.release_tag }}
         run: |
           node --input-type=module <<'JS'
+          import {readFileSync,readdirSync} from 'node:fs';
+          import {createHash} from 'node:crypto';
+          const file=readdirSync('release').find(name=>name.endsWith('.tgz'));
+          const integrity='sha512-'+createHash('sha512').update(readFileSync(`release/${file}`)).digest('base64');
           const version=process.env.RELEASE_TAG.slice(1);
           for(let attempt=0;attempt<12;attempt++) {
             const response=await fetch(`https://registry.npmjs.org/@vontean%2fminedesign?release_check=${Date.now()}`);
             if(response.ok) {
               const data=await response.json();
               if(data.versions?.[version]?.version===version && data['dist-tags']?.latest===version) {
-                console.log(`Published @vontean/minedesign@${version}; latest=${version}`);
+                if(data.versions[version].dist?.integrity!==integrity)throw new Error('Registry tarball differs from the validated artifact');
+                console.log(`Published @vontean/minedesign@${version}; latest=${version}; artifact integrity matched`);
                 process.exit(0);
               }
             }
@@ -225,3 +230,16 @@ jobs:
           else
             gh release create "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --verify-tag --title "$TITLE" --notes-file "$NOTES" --latest "$PACKAGE_NAME" "$PACKAGE_NAME.sha256"
           fi
+
+      - name: Summarize published version
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        run: |
+          RELEASE_URL=$(gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --json url --jq .url)
+          {
+            echo "## MineDesign ${RELEASE_TAG#v}"
+            echo "- npm: https://www.npmjs.com/package/@vontean/minedesign/v/${RELEASE_TAG#v}"
+            echo "- GitHub Release: $RELEASE_URL"
+            echo "- npm 与 Release 使用本次 prepare 验证的同一个安装包。"
+          } >> "$GITHUB_STEP_SUMMARY"

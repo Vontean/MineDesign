@@ -17,9 +17,9 @@ gh workflow run publish.yml --repo Vontean/MineDesign --ref main -f release_tag=
 
 工作流依次：
 
-- **prepare**（macOS）：核对发起人、仓库与 main；标签须在 main 历史中，包名、package／lock／plugin 版本与标签一致，发布说明存在；`npm ci`、完整构建、`npm test`、`npm run test:modules`；打包，检查必需文件存在且本机数据与源码工作区不进包；隔离目录全局安装，核对 `mdn --version` 并启动本地服务取到页面。
-- **publish**（`npm-release` environment）：核对压缩包 SHA-256 后用 OIDC 可信发布，不保存 npm Token；版本已在 npm 时跳过，只补后续步骤；再向公共 registry 确认版本与 `latest`。
-- **release**：用标签对应的发布说明创建 GitHub Release（`--verify-tag`，设为 Latest），附上同一个压缩包与 `.sha256`；已有同版本 Release 时更新正文与附件。
+- **prepare**（macOS）：核对发起人、仓库与 main；标签须在 main 历史中，包名、package／lock／plugin 版本与标签一致，发布说明存在；`npm ci`、完整构建、`npm test`、`npm run test:modules`、`npm run check:i18n`；打包，检查必需文件存在且本机数据与源码工作区不进包；隔离目录全局安装，核对 `mdn --version` 并启动本地服务取到页面。
+- **publish**（`npm-release` environment）：核对压缩包 SHA-256 后用 OIDC 可信发布，不保存 npm Token；版本已在 npm 时跳过，只补后续步骤；再向公共 registry 确认版本、`latest` 与包的 SHA-512 integrity，避免已存在版本与本次产物不一致。
+- **release**：用标签对应的发布说明创建 GitHub Release（`--verify-tag`，设为 Latest），附上同一个压缩包与 `.sha256`；已有同版本 Release 时更新正文与附件；Action 摘要列出 npm 和 GitHub Release 链接。
 
 4. 核对：`npm view @vontean/minedesign version dist-tags`、`gh release view vX.Y.Z --repo Vontean/MineDesign`，报告中给出工作流与 Release 链接。本机安装 `npm install -g @vontean/minedesign@X.Y.Z && mdn plugin install` 后在 Codex 中实际打开，宿主验收单独报告。
 
