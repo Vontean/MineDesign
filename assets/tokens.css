@@ -53,6 +53,8 @@
   --mdn-comment: #0069fb;
   --mdn-comment-fill: color-mix(in srgb, #0069fb 4%, transparent);
   --mdn-comment-pointer: #339cff;
+  /* 画布网点纸：主文字的低透明度，浅色深点、深色浅点，只作底纹不抢画板 */
+  --mdn-canvas-dot: light-dark(color-mix(in srgb, var(--color-text-primary) 16%, transparent), color-mix(in srgb, var(--color-text-primary) 14%, transparent));
   --mdn-ghost-hover: light-dark(color-mix(in srgb, var(--color-text-primary) 5%, transparent), color-mix(in srgb, var(--color-text-primary) 8%, transparent));
   --mdn-ghost-active: light-dark(color-mix(in srgb, var(--color-text-primary) 8%, transparent), color-mix(in srgb, var(--color-text-primary) 12%, transparent));
   --mdn-outline-hover: light-dark(color-mix(in srgb, var(--color-text-primary) 2%, transparent), color-mix(in srgb, var(--color-text-primary) 4%, transparent));

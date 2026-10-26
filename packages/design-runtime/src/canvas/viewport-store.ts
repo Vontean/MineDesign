@@ -44,6 +44,21 @@ export function installCanvasViewportStore(
           y: value6 - value2 / input.scale - value3 / input.scale / 2,
         };
   }
+  // MineDesign：网点纸背景画在视口（世界层的父元素）上，随相机平移；
+  // 间距以 20 个世界单位为基准按 2 的倍数取舍，使屏幕间距保持在 16–32px，缩小时不会糊成一片
+  function paintDotGrid(world?: Dynamic, input?: Dynamic): Dynamic {
+    let host: Dynamic = world?.parentElement;
+    if (!host) return;
+    let size: Dynamic = 20 * input.scale;
+    while (size < 16) size *= 2;
+    while (size >= 32) size /= 2;
+    // 网点落在世界坐标的网格交点上：瓦片中心对齐交点
+    let offset: Dynamic = (value?: Dynamic): Dynamic =>
+      String(((-value * input.scale) % size) - size / 2) + "px";
+    host.style.setProperty("--mdn-dot-size", String(size) + "px");
+    host.style.setProperty("--mdn-dot-x", offset(input.x));
+    host.style.setProperty("--mdn-dot-y", offset(input.y));
+  }
   function viewportTransformCss(input?: Dynamic): Dynamic {
     return (
       "translate(" +
@@ -117,7 +132,9 @@ export function installCanvasViewportStore(
         let value8: Dynamic = value3;
         if (!sameViewport(value2, value8)) {
           value3 = value2;
-          value5 && (value5.style.transform = viewportTransformCss(value2));
+          value5 &&
+            ((value5.style.transform = viewportTransformCss(value2)),
+            paintDotGrid(value5, value2));
           if (value2.scale !== value8.scale)
             for (let value9 of values2 as Dynamic) callback(value9);
           for (let value9 of values as Dynamic) value9(value2, value8);
@@ -224,6 +241,7 @@ export function installCanvasViewportStore(
         value5 = input2;
         if (value5) {
           value5.style.transform = viewportTransformCss(value2);
+          paintDotGrid(value5, value2);
           value3 = value2;
           return;
         }

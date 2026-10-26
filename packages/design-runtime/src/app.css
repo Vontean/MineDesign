@@ -13160,6 +13160,13 @@ html[data-theme-switching] *::after {
     ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 }
 
+/* MineDesign：画布网点纸。间距与偏移由相机（viewport-store paintDotGrid）写入，点为 2px 屏幕像素，不随缩放变大 */
+.mdn-dot-grid {
+  background-image: radial-gradient(circle, var(--mdn-canvas-dot) 1px, transparent 1.5px);
+  background-size: var(--mdn-dot-size, 20px) var(--mdn-dot-size, 20px);
+  background-position: var(--mdn-dot-x, 0) var(--mdn-dot-y, 0);
+}
+
 /* MineDesign：画布底部居中的工具栏（tool modules）；外观见下方三种浮动条的共用规则 */
 .mdn-tool-dock {
   position: absolute;

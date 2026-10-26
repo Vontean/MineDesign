@@ -4828,7 +4828,7 @@ export function installCanvasInteractionLayer(
             value30 && value31(false);
           }}
           className={(0, runtime.joinClassNames)(
-            "relative h-full w-full select-none overflow-clip bg-om-bg-canvas",
+            "relative h-full w-full select-none overflow-clip bg-om-bg-canvas mdn-dot-grid",
             armedTool === "frame" && "cursor-crosshair [&_*]:!cursor-crosshair",
             armedTool === "note" &&
               !value129 &&
