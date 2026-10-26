@@ -168,3 +168,28 @@
 .cds-root .ds-nav-fab-btn.ds-nav-fab-btn:focus-visible { box-shadow: var(--mdn-shadow-float), var(--cds-focus-shadow); }
 /* 内部 paint 层带 secondary 按钮自己的 1px 内描边与投影，会和外层浮起投影叠成粗边，一并清掉 */
 .cds-root .ds-nav-fab-btn.ds-nav-fab-btn :is(.cds-btn-squish, [data-cds-part="paint"]) { background: transparent; box-shadow: none; }
+
+/* 设计系统选中文本的格式条：与设计稿的选中编辑条同为 Codex 浮动条——胶囊、浮层底、浮起投影，高 44px、按钮热区 36px 圆形、距外轮廓 4px；
+   悬停叠 5%、开启与展开叠 8% 一层底色（规则同 packages/design-runtime/src/app.css 的画布浮动条） */
+[data-testid="ds-readme-strip"] [data-mc-strip][data-mc-strip],
+[data-testid="ds-readme-strip"] .cds-root.cds-root.cds-root.cds-root.cds-root {
+  --cds-h-control: var(--mdn-floatbar-control);
+}
+[data-testid="ds-readme-strip"] [data-mc-strip][data-mc-strip] {
+  --mc-strip-pad: calc((var(--mdn-floatbar-h) - var(--mdn-floatbar-control)) / 2);
+  --tb-plane: var(--mdn-elevated);
+  border-radius: var(--mdn-radius-full);
+  background-color: var(--mdn-elevated);
+  box-shadow: var(--mdn-shadow-float);
+}
+[data-testid="ds-readme-strip"] [data-mc-strip] [data-cds="Button"][data-cds="Button"] {
+  border-radius: var(--mdn-radius-full);
+  border-color: transparent;
+  background-color: transparent;
+  color: var(--mdn-text);
+}
+[data-testid="ds-readme-strip"] [data-mc-strip] [data-cds="Button"][data-cds="Button"]:not([data-cds-icon-only]) { padding-inline: 12px; }
+[data-testid="ds-readme-strip"] [data-mc-strip] [data-cds="Button"] [data-cds-part="paint"] { background-color: transparent; }
+[data-testid="ds-readme-strip"] [data-mc-strip] [data-cds="Button"]:not(:disabled):hover > .cds-btn-squish { background-color: var(--mdn-ghost-hover); }
+[data-testid="ds-readme-strip"] [data-mc-strip] [data-cds="Button"]:is([aria-pressed="true"], [data-state="open"], [aria-expanded="true"], [data-popup-open]) > .cds-btn-squish { background-color: var(--mdn-ghost-active); }
+[data-testid="ds-readme-strip"] [data-mc-strip] [data-mc-divider] { height: 16px; }

@@ -13198,10 +13198,13 @@ html[data-theme-switching] *::after {
 [data-testid="dc-edit-side-panel"] [data-pp-section-body] > .contents > [data-property-row]:has(> :last-child > input:first-child, > :last-child > :first-child > input):not(:has([role="radiogroup"], [data-kit="PropertySelect"], > :last-child > :first-child > div ~ div)) {
   grid-column: auto;
 }
-/* 单列时，无尾部图标的行在右侧预留图标列，让字段右缘对齐；并排后左列的预留会把两个字段推开，因此紧凑行不预留 */
-[data-testid="dc-edit-side-panel"] [data-pp-section-body] > [data-property-row]:has(> :last-child > input:first-child, > :last-child > :first-child > input):not(:has([role="radiogroup"], [data-kit="PropertySelect"], > :last-child > :first-child > div ~ div)) > :last-child,
-[data-testid="dc-edit-side-panel"] [data-pp-section-body] > .contents > [data-property-row]:has(> :last-child > input:first-child, > :last-child > :first-child > input):not(:has([role="radiogroup"], [data-kit="PropertySelect"], > :last-child > :first-child > div ~ div)) > :last-child {
+/* 字段右缘统一对齐面板边距（Figma 式）：无尾部图标的行不再预留图标列，有尾部图标的行由图标占住右侧 */
+[data-testid="dc-edit-side-panel"] [data-property-row] > :last-child {
   padding-right: 0;
+}
+/* 分组里不是属性行的块（导出预览、导出按钮行等）自带 14px 左右外边距，与行的旧内边距对应；边距已由分组提供，去掉 */
+[data-testid="dc-edit-side-panel"] [data-pp-section-body] .mx-3\.5 {
+  margin-inline: 0;
 }
 
 /* MineDesign：画布网点纸。间距与偏移由相机（viewport-store paintDotGrid）写入，点为 2px 屏幕像素，不随缩放变大 */
