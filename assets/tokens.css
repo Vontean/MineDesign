@@ -105,6 +105,16 @@
   --mdn-icon-stroke: 1.5;
   --mdn-icon-stroke-strong: 2;
 
+  /* Tooltip：Codex 26.1021 Electron 窗口原值。浅色为实心主文字底（#0d0d0d），深色为浮层底，文字都是白色；
+     1px 描边为文字 5%，圆角 2xl（16px × 1.25），投影 0 8px 18px #0f172a33；快捷键底为文字 25%、圆角 lg */
+  --mdn-tooltip-bg: light-dark(var(--color-text-primary), var(--mdn-elevated));
+  --mdn-tooltip-fg: #ffffff;
+  --mdn-tooltip-border: color-mix(in oklab, var(--mdn-tooltip-fg) 5%, transparent);
+  --mdn-tooltip-shortcut-bg: color-mix(in oklab, var(--mdn-tooltip-fg) 25%, transparent);
+  --mdn-tooltip-shadow: 0 8px 18px #0f172a33;
+  --mdn-tooltip-pad-block: 5px;
+  --mdn-tooltip-pad-inline: 12px;
+  --mdn-tooltip-line: 18px;
   --mdn-shadow-overlay: 0 0 0 .5px var(--mdn-border), 0 8px 16px -4px #0000001f;
   --mdn-shadow-dialog: 0 0 0 .5px var(--mdn-border), var(--shadow-lg);
   /* Codex composer：浅色为 elevation-composer（1px 4% 轮廓 + 两层柔和投影），深色只有 20% 白色内描边 */

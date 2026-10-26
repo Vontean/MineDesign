@@ -96,8 +96,8 @@
   --cds-shadow-md: var(--mdn-shadow-overlay);
   --cds-shadow-lg: var(--mdn-shadow-dialog);
   --cds-backdrop: var(--mdn-overlay);
-  --cds-tooltip-bg: var(--mdn-elevated);
-  --cds-tooltip-fg: var(--mdn-text);
+  --cds-tooltip-bg: var(--mdn-tooltip-bg);
+  --cds-tooltip-fg: var(--mdn-tooltip-fg);
 
   /* 动效：Codex 基础过渡 */
   --cds-dur-base: var(--mdn-duration);
@@ -111,3 +111,33 @@
 
 /* 设计系统章节标题：Codex 页面标题为系统字体 24px 半粗 */
 .cds-root .ds-page-title { font-size: 24px; font-weight: var(--mdn-weight-strong); font-variation-settings: normal; letter-spacing: normal; line-height: 1.25; }
+
+/* Tooltip 与快捷键：对齐 Codex 原生（明暗都是深底白字）。CDS 的 Tooltip 弹层以 --cds-tooltip-bg 为底，按此识别 */
+[role="tooltip"][class*="--cds-tooltip-bg"] {
+  padding: var(--mdn-tooltip-pad-block) var(--mdn-tooltip-pad-inline);
+  border: 1px solid var(--mdn-tooltip-border);
+  border-radius: var(--mdn-radius-2xl);
+  corner-shape: superellipse(1.5);
+  box-shadow: var(--mdn-tooltip-shadow);
+  font-size: 13px;
+  font-weight: var(--mdn-weight);
+  line-height: var(--mdn-tooltip-line);
+  letter-spacing: -.15px;
+}
+/* 快捷键为文字 25% 的小胶囊，右侧负外边距使它与气泡右缘的距离等于上下内边距 */
+[role="tooltip"][class*="--cds-tooltip-bg"] [data-cds="Shortcut"] {
+  --cds-shortcut-cap-ink: currentColor;
+  display: inline-flex;
+  align-items: center;
+  align-self: center;
+  justify-content: center;
+  min-width: 16px;
+  height: var(--mdn-tooltip-line);
+  padding: 0 6px;
+  margin-inline-end: calc(var(--mdn-tooltip-pad-block) - var(--mdn-tooltip-pad-inline));
+  border-radius: var(--mdn-radius-lg);
+  corner-shape: superellipse(1.5);
+  background: var(--mdn-tooltip-shortcut-bg);
+  font-size: inherit;
+  line-height: var(--mdn-tooltip-line);
+}
