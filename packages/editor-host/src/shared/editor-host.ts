@@ -3,7 +3,7 @@
  * （类型见 slides-host.ts，docs/design/slides §4、§5）。
  *
  * 文件、素材、外部改动走同源 HTTP（Runtime 的幻灯片路由，deck-routes.ts），不经父窗口；
- * 标注要 BaoCut 界面，经 postMessage 交给父窗口（comments-bridge.ts）。
+ * 标注要 MineDesign 界面，经 postMessage 交给父窗口（comments-bridge.ts）。
  * 评论线程、协作、智能体会话留空，运行时按「没有这项能力」走自己的降级路径。
  */
 import { DECK_ROUTES, isPublishError, isWriteEntry, type PublishBatch, type PublishError, type PublishResult, type UploadOptions, type UploadResult, type WirePublishRequest } from '../../../contracts/src/file-protocol.ts';
@@ -75,7 +75,7 @@ export function createHttpBackend(base: string, fetchImpl: typeof fetch = (...ar
   };
 }
 
-/** BaoCut 里只有一个用户（§4）。名字只在运行时自己的协作界面里出现，BaoCut 不提供协作，所以不进文案目录。 */
+/** MineDesign 里只有一个用户（§4）。名字只在运行时自己的协作界面里出现，MineDesign 不提供协作，所以不进文案目录。 */
 export const LOCAL_USER = { id: 'user_local', name: 'You' } as const;
 
 export interface EditorHostOptions {

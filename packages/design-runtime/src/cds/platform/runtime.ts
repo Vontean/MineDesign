@@ -36,7 +36,7 @@ export function installCdsPlatformRuntime(
   );
   return () => {
     initializePlatformRuntime = (0, runtime.initializeOnce)(() => {
-      // BaoCut: the desktop app is told apart by Electron alone.
+      // MineDesign: the desktop app is told apart by Electron alone.
       PlatformRuntimeClaudeNestPattern = /\bElectron\//i;
     });
   };

@@ -8,7 +8,7 @@ export function installHostHotReload(runtime: RuntimeBindings): () => void {
   var activeHotReloadSession: Host.HotReloadBridge | undefined;
   function resolveClaudeHotApi(): Host.HotCapability | null {
     try {
-      // BaoCut: the host is globalThis.designSystemHost (packages/design-system/src/editor/design-system-host.ts), not globalThis.claude.
+      // MineDesign: the host is globalThis.designSystemHost (packages/design-system/src/editor/design-system-host.ts), not globalThis.claude.
       let value = (
         globalThis as typeof globalThis &
           Pick<Host.ProtocolGlobal, "designSystemHost">

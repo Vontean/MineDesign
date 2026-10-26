@@ -139,14 +139,14 @@ describe('installDesignSystemEditorHost', () => {
     expect(calls.map(c => c.url)).toEqual([base + '__deck/session', base + '__deck/session', base + '__deck/publish']);
   });
 
-  it('在 BaoCut 的 iframe 里时有 chat（提示交给父窗口）；运行时不调 comments，标注交给目标层', async () => {
+  it('在 MineDesign 的 iframe 里时有 chat（提示交给父窗口）；运行时不调 comments，标注交给目标层', async () => {
     const { win, posted, types } = fakeWindow(() => Response.json({ canEdit: true }), true);
     installDesignSystemEditorHost({ win });
     const ds = win.designSystemHost!;
     expect(Object.keys(ds).sort()).toEqual(['artifact', 'assets', 'chat', 'self', 'user']);
     // 目标层（comment-targets.ts）在页面上拦点击、听 C 与 Esc，样式只装一份
     expect(types).toEqual(expect.arrayContaining(['click', 'pointerdown', 'keydown']));
-    expect(document.querySelectorAll('#baocut-comment-targets')).toHaveLength(1);
+    expect(document.querySelectorAll('#minedesign-comment-targets')).toHaveLength(1);
     void ds.chat!.suggestPrompt('Agent: read the design-system skill').catch(() => {});
     expect(posted).toContainEqual(expect.objectContaining({ type: 'editor:suggest-prompt', prompt: 'Agent: read the design-system skill' }));
     expect(await ds.user.name()).toBe('');

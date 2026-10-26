@@ -5605,7 +5605,7 @@ export function installUiOverlays(runtime: RuntimeBindings): () => void {
       );
     });
     initializeCdsPlatform = (0, runtime.initializeOnce)(() => {
-      // BaoCut: the desktop app is told apart by Electron alone.
+      // MineDesign: the desktop app is told apart by Electron alone.
       desktopPlatformUserAgentPattern = /\bElectron\//i;
     });
     MAX_LINK_DEBUG_WARNINGS = 50;
@@ -5642,11 +5642,11 @@ export function installUiOverlays(runtime: RuntimeBindings): () => void {
       relativePathDotSegmentPattern = /\/(?:\.|%2e){1,2}(?:\/|$)/i;
       dotSegmentPattern = /^(?:\.|%2e){1,2}$/i;
       encodedOrBackslashPathPattern = /\\|%2e/i;
-      // BaoCut: the Claude app schemes (claude, claude-cli, claude-nest) are not link targets here.
+      // MineDesign: the Claude app schemes (claude, claude-cli, claude-nest) are not link targets here.
       allowedHrefSchemePattern = /^(?:https?|mailto|tel|slack|blob):/i;
       androidIntentHrefPattern = /^intent:/i;
       editorHrefSchemePattern = /^(?:vscode|cursor):/i;
-      // BaoCut: no first-party editor extensions; only VS Code settings links are followed.
+      // MineDesign: no first-party editor extensions; only VS Code settings links are followed.
       allowedEditorHrefPattern =
         /^vscode:\/\/settings\/[A-Za-z0-9][A-Za-z0-9_.-]*$/;
       allowedIntentPropertyNames = new Set([
@@ -5655,7 +5655,7 @@ export function installUiOverlays(runtime: RuntimeBindings): () => void {
         "S.browser_fallback_url",
       ]);
       absoluteHrefPattern = /^(?:[a-z][a-z\d+.-]*:|\/\/)/i;
-      // BaoCut: no first-party web domains or Android apps; every external link is treated as "other".
+      // MineDesign: no first-party web domains or Android apps; every external link is treated as "other".
       trustedAnthropicDomains = [];
       trustedAndroidIntentPackages = new Set();
       linkEventPropNames = [

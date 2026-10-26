@@ -60,7 +60,7 @@ export function installCanvasCreationProgress(
           tint={"violet"}
           label={{
             kind: "name",
-            // BaoCut: user-facing copy calls the agent "the agent", not Claude.
+            // MineDesign: user-facing copy calls the agent "the agent", not Claude.
             text: "Agent",
           }}
           at={value2}

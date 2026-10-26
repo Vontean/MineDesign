@@ -73,7 +73,7 @@ export function installFastEditDraftPreviews(
               }}
             >
               <iframe
-                // BaoCut: user-facing copy calls the agent "the agent", not Claude.
+                // MineDesign: user-facing copy calls the agent "the agent", not Claude.
                 title={"What the agent is making"}
                 sandbox={""}
                 srcDoc={input2.doc}
@@ -110,7 +110,7 @@ export function installFastEditDraftPreviews(
             >
               {input2.doc !== null && (
                 <iframe
-                  // BaoCut: user-facing copy calls the agent "the agent", not Claude.
+                  // MineDesign: user-facing copy calls the agent "the agent", not Claude.
                   title={"What the agent has written so far"}
                   sandbox={""}
                   srcDoc={input2.doc}

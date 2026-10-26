@@ -535,7 +535,7 @@ export function installCanvasWorkingLabelAnimation(
       (0, runtime.load_react_jsx_runtime)(),
       1,
     );
-    // BaoCut: user-facing copy calls the agent "the agent", not Claude.
+    // MineDesign: user-facing copy calls the agent "the agent", not Claude.
     CanvasWorkingLabelAnimationLabel = "The agent is working\u2026";
     CanvasWorkingLabelAnimationConstant = 176;
     CanvasWorkingLabelAnimationConstant_2 = 56;

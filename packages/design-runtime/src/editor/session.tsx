@@ -3256,7 +3256,7 @@ export function installEditorSession(runtime: RuntimeBindings): () => void {
           )
             return;
           if (value307.foreign === true) {
-            // BaoCut: user-facing copy calls the agent "the agent", not Claude.
+            // MineDesign: user-facing copy calls the agent "the agent", not Claude.
             showDeduplicatedToast("Ask the agent to edit this code-drawn text.");
             return;
           }
@@ -3281,7 +3281,7 @@ export function installEditorSession(runtime: RuntimeBindings): () => void {
               value308.model.tagName(Number(value307.tid)) !== "x-import"
             )
               return;
-            // BaoCut: user-facing copy calls the agent "the agent", not Claude.
+            // MineDesign: user-facing copy calls the agent "the agent", not Claude.
             showDeduplicatedToast("Ask the agent to edit this code component.");
             return;
           }
@@ -3304,7 +3304,7 @@ export function installEditorSession(runtime: RuntimeBindings): () => void {
             showDeduplicatedToast(
               value317
                 ? "This text sits directly on the component \u2014 edit it in the Tweaks tab."
-                // BaoCut: user-facing copy calls the agent "the agent", not Claude.
+                // MineDesign: user-facing copy calls the agent "the agent", not Claude.
                 : "This text sits directly on the component and can\u2019t be edited on the canvas \u2014 ask the agent in chat to change it.",
             );
             return;
@@ -3341,7 +3341,7 @@ export function installEditorSession(runtime: RuntimeBindings): () => void {
               )
                 ? showInstanceTextHint(value315, value309)
                 : showDeduplicatedToast(
-                    // BaoCut: user-facing copy calls the agent "the agent", not Claude.
+                    // MineDesign: user-facing copy calls the agent "the agent", not Claude.
                     `This text sits directly in the ${value309} component and can\u2019t be edited on the canvas \u2014 ask the agent in chat to change it.`,
                   );
             })();
@@ -9426,7 +9426,7 @@ export function installEditorSession(runtime: RuntimeBindings): () => void {
             <runtime.CdsIsland density={"compact"} className={"contents"}>
               <runtime.Alert className={"mx-3.5 mt-2.5"}>
                 {
-                  // BaoCut: user-facing copy calls the agent "the agent", not Claude.
+                  // MineDesign: user-facing copy calls the agent "the agent", not Claude.
                   "This file does not support automatic edits. You can edit the preview; we will describe changes to the agent to apply on exit."
                 }
               </runtime.Alert>
@@ -9450,7 +9450,7 @@ export function installEditorSession(runtime: RuntimeBindings): () => void {
                   }}
                 >
                   {
-                    // BaoCut: user-facing copy calls the agent "the agent", not Claude.
+                    // MineDesign: user-facing copy calls the agent "the agent", not Claude.
                     "This design has no tweakable controls yet \u2014 describe what you want to adjust and the agent will add a tweaks panel for it. The controls appear here when it finishes."
                   }
                 </div>
@@ -9550,7 +9550,7 @@ export function installEditorSession(runtime: RuntimeBindings): () => void {
                     >
                       <runtime.Alert className={"mx-3.5 mt-2.5"}>
                         {value2.instances <= 1
-                          // BaoCut: user-facing copy calls the agent "the agent", not Claude.
+                          // MineDesign: user-facing copy calls the agent "the agent", not Claude.
                           ? "This element is code-driven. Ask the agent in chat to make changes to it."
                           : `These ${value2.instances} elements are code-driven. Ask the agent in chat to make changes to them.`}
                       </runtime.Alert>

@@ -1,8 +1,8 @@
 /**
  * 设计系统标注的目标层（docs/design/canvas §10.6）：设计系统运行时不画批注层，只在 DOM 上标目标——
  * `data-comment-target` 标可点的那一块，`data-id`（它自己或最近的祖先）是锚点，`data-comment-name` 是原名
- * （editor/comment-anchors.ts，原名是 BaoCut 加的），`data-uncommentable` 标不收批注的区域。原版的批注层归宿主；
- * 在 BaoCut 里宿主的这一半在 iframe 里（父窗口跨源，读不到 DOM），就是这里。
+ * （editor/comment-anchors.ts，原名是 MineDesign 加的），`data-uncommentable` 标不收批注的区域。原版的批注层归宿主；
+ * 在 MineDesign 里宿主的这一半在 iframe 里（父窗口跨源，读不到 DOM），就是这里。
  *
  * 这里扮演幻灯片运行时在标注桥（@minedesign/document-store 的 comments-bridge.ts）另一头的角色：经 `comments.customAnchors`
  * 拿到控制器，消息、批注框的超时与编号标记的图层都用桥的。
@@ -12,15 +12,15 @@
  * - 点一个目标：在点的位置弹批注框（`compose`），给人看的位置是「章节 › 种类 “名字”」，给模型看的带种类、名字、章节、
  *   所在文件与锚点；章节 id 另带上（`section`），跳回去时要先到那一章。不在目标上、或在不收批注的区域里的点击照常交给页面。
  * - 编号标记：标注模式开着时画在目标的右上角，随滚动、尺寸与内容变化重算；目标不在页面上、或被滚出了它的滚动容器就不画。
- * - 跳回一处（`reveal`）：派发 `baocut:reveal-comment-target`，运行时照搜索里选中一条的路去那一章、等目标出现、滚到它并闪一下
- *   （files/ui/design-system-app.tsx 里 `BaoCut:` 那段）。
+ * - 跳回一处（`reveal`）：派发 `minedesign:reveal-comment-target`，运行时照搜索里选中一条的路去那一章、等目标出现、滚到它并闪一下
+ *   （files/ui/design-system-app.tsx 里 `MineDesign:` 那段）。
  */
 import type { EditorPoint } from '@minedesign/contracts/editor-messages';
 import type { CommentAnchorController, CommentAnchorHandlers, HostCommentsCapability } from '@minedesign/editor-host';
 import type { DesignSystemCommentLabels } from './comment-labels.ts';
 
 /** 跳回一处时派发给运行时的事件（files/ui/design-system-app.tsx 监听）。`detail` 是 `{ target, section?, label? }`。 */
-export const REVEAL_COMMENT_TARGET_EVENT = 'baocut:reveal-comment-target';
+export const REVEAL_COMMENT_TARGET_EVENT = 'minedesign:reveal-comment-target';
 /** 章节的 `data-testid` 前缀（files/ui/design-system-app.tsx：`ds-section-<章节 id>`，`aria-label` 是章节名）。 */
 const SECTION_TEST_ID_PREFIX = 'ds-section-';
 /** 位置标签里引用名字的长度；给模型的定位里长一些。 */
@@ -29,9 +29,9 @@ const DETAIL_QUOTE_MAX = 80;
 /** 编号标记离目标右上角的距离（CSS 像素）。 */
 const PIN_INSET = 14;
 /** 标注模式开着时 `<html>` 上的属性，与点中的目标上的属性（样式见 `STYLE`）。 */
-const MODE_ATTR = 'data-baocut-annotating';
-const PICKED_ATTR = 'data-baocut-picked';
-const STYLE_ID = 'baocut-comment-targets';
+const MODE_ATTR = 'data-minedesign-annotating';
+const PICKED_ATTR = 'data-minedesign-picked';
+const STYLE_ID = 'minedesign-comment-targets';
 /** 标注模式的样式；颜色与编号标记同一个 S2 蓝（comments-bridge.ts 的 domPinLayer）。嵌套的目标只框最里面那个。 */
 const STYLE = `
 html[${MODE_ATTR}] [data-comment-target] { cursor: crosshair; }

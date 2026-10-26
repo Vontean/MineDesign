@@ -141,7 +141,7 @@ export function installDesignSystemInstallIdentifiers(
         base58ArtifactIdPatternSource +
         ")/*$",
     );
-    // BaoCut: design systems are not installed from hosted artifact addresses; only bare ids reach the install.
+    // MineDesign: design systems are not installed from hosted artifact addresses; only bare ids reach the install.
     DesignSystemInstallIdentifiersClaudeAiClaudeComPreviewClaudeAiConfig = {};
     DesignSystemInstallIdentifiersResolvedValue =
       "The address given for the design system is on a host this tool does not know (it knows " +

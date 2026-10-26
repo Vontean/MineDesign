@@ -214,7 +214,7 @@ export interface ClaudeBridge {
   [capability: string]: unknown;
 }
 export interface ProtocolGlobal extends Window {
-  // BaoCut: the host is globalThis.designSystemHost (packages/design-system/src/editor/design-system-host.ts), not globalThis.claude.
+  // MineDesign: the host is globalThis.designSystemHost (packages/design-system/src/editor/design-system-host.ts), not globalThis.claude.
   designSystemHost?: ClaudeBridge;
   appifact?: { ready(): Promise<AutoSavingRuntime> };
   __appifact_health?: HealthReporter;

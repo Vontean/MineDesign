@@ -298,7 +298,7 @@ export function installModelRemoteText(runtime: RuntimeBindings): () => void {
       recordRemoteTextUploadFailure(
         key,
         path,
-        // BaoCut: the system is files in the working directory; there is no Artifact tool.
+        // MineDesign: the system is files in the working directory; there is no Artifact tool.
         "cannot be stored from this view (no asset store) — add it as a file in this system’s directory; it is shown this session only",
       );
       return;
@@ -331,7 +331,7 @@ export function installModelRemoteText(runtime: RuntimeBindings): () => void {
           recordRemoteTextUploadFailure(
             key,
             path,
-            // BaoCut: the system is files in the working directory; there is no Artifact tool.
+            // MineDesign: the system is files in the working directory; there is no Artifact tool.
             "the asset store gave no id for it — add it as a file in this system’s directory; it is shown this session only",
           );
           return;
@@ -382,7 +382,7 @@ export function installModelRemoteText(runtime: RuntimeBindings): () => void {
                 (input as { message?: unknown } | null | undefined)?.message ??
                   input,
               )) +
-            // BaoCut: the system is files in the working directory; there is no Artifact tool.
+            // MineDesign: the system is files in the working directory; there is no Artifact tool.
             ") — add it as a file in this system’s directory; it is shown this session only",
         );
       },

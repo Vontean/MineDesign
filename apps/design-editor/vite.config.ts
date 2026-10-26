@@ -9,11 +9,11 @@ const generated = resolve(import.meta.dirname, '../../packages/design-runtime/sr
 /**
  * 画板运行时与快速编辑 Worker 按原页面的布局放在 artifact-type/ 下，页面模板的 dc-runtime-file / fast-edit-worker-file
  * 指向这里（相对页面地址）。运行时把 artifact-type/ 下的路径当作编辑器自己的文件，不当作设计稿的文件。
- * Babel standalone 也放在这里（dc-babel-file，BaoCut 加的）：原版从 CDN 按需加载，BaoCut 的 CSP 不放行 CDN。
+ * Babel standalone 也放在这里（dc-babel-file，MineDesign 加的）：原版从 CDN 按需加载，MineDesign 的 CSP 不放行 CDN。
  */
 function designRuntimeFiles(): Plugin {
   return {
-    name: 'baocut-design-runtime-files',
+    name: 'minedesign-design-runtime-files',
     apply: 'build',
     generateBundle() {
       for (const file of ['dc-runtime.js', 'babel.min.js', 'fast-edit-worker.js']) {
@@ -26,7 +26,7 @@ function designRuntimeFiles(): Plugin {
 /** 页面与上面两个文件打进去的第三方代码的原始许可，放在产物根目录的 third-party-licenses.txt。 */
 function editorLicenses(): Plugin {
   return {
-    name: 'baocut-design-editor-licenses',
+    name: 'minedesign-design-editor-licenses',
     apply: 'build',
     generateBundle() {
       const scripts = JSON.parse(readFileSync(resolve(generated, 'bundled-inputs.json'), 'utf8')) as string[];
@@ -38,7 +38,7 @@ function editorLicenses(): Plugin {
 
 /**
  * 设计稿编辑器页面（docs/design/canvas §3、§5）：由 Runtime 在 `/design/<grant>/` 下提供，所以资源用相对地址。
- * 运行时是工作区里的 @baocut/design-runtime，页面模板是本目录的 index.html。
+ * 运行时是工作区里的 @minedesign/design-runtime，页面模板是本目录的 index.html。
  */
 export default defineConfig({
   root: import.meta.dirname,

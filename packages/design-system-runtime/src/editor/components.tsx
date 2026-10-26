@@ -113,7 +113,7 @@ export function installEditorComponents(runtime: RuntimeBindings): () => void {
     return (
       <p className={"ds-stage-doc ds-pad py-md text-body text-secondary"}>
         {[
-          // BaoCut: user-facing copy calls the agent "the agent", not Claude.
+          // MineDesign: user-facing copy calls the agent "the agent", not Claude.
           "No preview yet — ask the agent for components/",
           name,
           "/preview.html.",

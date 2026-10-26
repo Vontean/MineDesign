@@ -117,7 +117,7 @@ export function installPreviewRuntimeLoading(
       }
   }
   /**
-   * BaoCut: where the editor serves Babel standalone (`dc-babel-file`, beside dc-runtime.js). The artboard runtime loads it
+   * MineDesign: where the editor serves Babel standalone (`dc-babel-file`, beside dc-runtime.js). The artboard runtime loads it
    * only for a JSX x-import, from the CDN URL unless `window.__resources` maps it; the CSP blocks the CDN, so the preview
    * maps it here and the HTML export embeds this file (docs/design/canvas §3).
    */

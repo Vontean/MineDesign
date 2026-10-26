@@ -117,7 +117,7 @@ export function installModelDeriveSystem(
   }
   function isClaudeEmulator() {
     let runtime2 = globalThis as Core.EmulatorFlags;
-    // BaoCut: the host is globalThis.designSystemHost (packages/design-system/src/editor/design-system-host.ts), not globalThis.claude.
+    // MineDesign: the host is globalThis.designSystemHost (packages/design-system/src/editor/design-system-host.ts), not globalThis.claude.
     return (
       runtime2.designSystemHost?.__emulator === true ||
       runtime2.window?.designSystemHost?.__emulator === true

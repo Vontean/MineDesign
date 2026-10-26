@@ -455,7 +455,7 @@ export function installFilesReopen(runtime: RuntimeBindings): () => void {
       if (!(0, runtime.canRestartArtifact)()) {
         return;
       }
-      // BaoCut: the host is globalThis.designSystemHost (packages/design-system/src/editor/design-system-host.ts), not globalThis.claude.
+      // MineDesign: the host is globalThis.designSystemHost (packages/design-system/src/editor/design-system-host.ts), not globalThis.claude.
       let value = (
         globalThis as typeof globalThis &
           Pick<Host.ProtocolGlobal, "designSystemHost">

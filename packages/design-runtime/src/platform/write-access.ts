@@ -141,7 +141,7 @@ export function installPlatformWriteAccess(
   );
   return () => {
     SIGN_IN_REQUIRED_REASON =
-      // BaoCut: user-facing copy calls the agent "the agent", not Claude.
+      // MineDesign: user-facing copy calls the agent "the agent", not Claude.
       "Sign in to see this content, then reload the page. If you\u2019re already signed in, you might not have access to it.";
     EDITING_UNAVAILABLE_REASON = "Editing isn\u2019t available in this view.";
     LIVE_READONLY_REASON = "Read-only. You can view live changes.";

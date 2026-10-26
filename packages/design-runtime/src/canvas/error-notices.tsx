@@ -409,7 +409,7 @@ export function installCanvasErrorNotices(
           ? "Show errors on 1 artboard"
           : "Show errors on " + String(input) + " artboards",
       title: "Artboards with errors",
-      // BaoCut: user-facing copy calls the agent "the agent", not Claude.
+      // MineDesign: user-facing copy calls the agent "the agent", not Claude.
       ask: "Ask the agent to fix",
       viewOnly: "Someone who can edit this canvas can ask the agent to fix them.",
       paste: "Copy this and paste it to the agent:",

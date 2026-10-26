@@ -16,7 +16,7 @@ function packageDir(name: string): string {
 
 /**
  * 组件预览用的 React 18.3.1 UMD（npm 别名 react-18 / react-dom-18 的原文件）。运行时原本从 jsDelivr 加载，
- * BaoCut 改成页面自带的这两份（packages/design-system-runtime/src/model/libraries.ts），放在 artifact-type/vendor/。
+ * MineDesign 改成页面自带的这两份（packages/design-system-runtime/src/model/libraries.ts），放在 artifact-type/vendor/。
  */
 const VENDOR_FILES = [
   { fileName: 'artifact-type/vendor/react.production.min.js', source: () => join(packageDir('react-18'), 'umd', 'react.production.min.js') },
@@ -25,7 +25,7 @@ const VENDOR_FILES = [
 
 function previewVendorFiles(): Plugin {
   return {
-    name: 'baocut-design-system-vendor-files',
+    name: 'minedesign-design-system-vendor-files',
     apply: 'build',
     generateBundle() {
       for (const file of VENDOR_FILES) this.emitFile({ type: 'asset', fileName: file.fileName, source: readFileSync(file.source()) });
@@ -36,7 +36,7 @@ function previewVendorFiles(): Plugin {
 /** 页面与上面两个文件打进去的第三方代码的原始许可，放在产物根目录的 third-party-licenses.txt。 */
 function editorLicenses(): Plugin {
   return {
-    name: 'baocut-design-system-editor-licenses',
+    name: 'minedesign-design-system-editor-licenses',
     apply: 'build',
     generateBundle() {
       const source = thirdPartyLicenses(bundledPackageDirs([...this.getModuleIds(), ...VENDOR_FILES.map(file => file.source())]));
@@ -47,7 +47,7 @@ function editorLicenses(): Plugin {
 
 /**
  * 设计系统编辑器页面（docs/design/canvas §10.2）：由 Runtime 在 `/design-system/<grant>/` 下提供，所以资源用相对地址。
- * 运行时是工作区里的 @baocut/design-system-runtime，页面模板是本目录的 index.html；public/artifact-type/run.html 是预览的
+ * 运行时是工作区里的 @minedesign/design-system-runtime，页面模板是本目录的 index.html；public/artifact-type/run.html 是预览的
  * runner，原样拷进产物。
  */
 export default defineConfig({

@@ -144,9 +144,9 @@ export function installPlatformHealthAndAnalytics(
         return await value2;
       },
     };
-    // BaoCut: no analytics. The page is never treated as framed for analytics, so no `__frame_cap` analytics
-    // message is posted to the parent window (BaoCut's UI). Health reports need globalThis.__appifact_health,
-    // which the BaoCut page template does not install, so they are dropped by the code above unchanged.
+    // MineDesign: no analytics. The page is never treated as framed for analytics, so no `__frame_cap` analytics
+    // message is posted to the parent window (MineDesign's UI). Health reports need globalThis.__appifact_health,
+    // which the MineDesign page template does not install, so they are dropped by the code above unchanged.
     PlatformHealthAndAnalyticsFramedPostConfig = {
       framed: (): Dynamic => false,
       post: (input?: Dynamic): Dynamic => {},

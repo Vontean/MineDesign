@@ -1,5 +1,5 @@
 /**
- * 设计稿运行时的 `downloads` 能力（docs/design/canvas §4、§8.3）：导出的文件在 iframe 里，保存要由 BaoCut 界面来做。
+ * 设计稿运行时的 `downloads` 能力（docs/design/canvas §4、§8.3）：导出的文件在 iframe 里，保存要由 MineDesign 界面来做。
  *
  * 运行时导出（整份设计稿、单个画板、选区）时调 `save({ filename, data })`，这里转成 `editor:save-file` 发给父窗口；
  * 父窗口交给浏览器下载或弹存储对话框，回 `editor:save-file-result`。`declined`（用户取消了）与 `failed` 都拒绝，
@@ -12,7 +12,7 @@ import type { ParentLink } from '@minedesign/editor-host';
 export interface HostSaveFile {
   filename: string;
   data: Blob | ArrayBuffer;
-  /** 父窗口经 frame 协议要的那次导出的编号；BaoCut 不用它对应。 */
+  /** 父窗口经 frame 协议要的那次导出的编号；MineDesign 不用它对应。 */
   request?: string;
 }
 

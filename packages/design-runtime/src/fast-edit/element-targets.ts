@@ -219,7 +219,7 @@ export function installFastEditElementTargets(
           (input2?: Dynamic): Dynamic => Number.isFinite(input2),
         ),
       value7: Dynamic = -1;
-    // BaoCut: restorer fix — the pointer's x is the outer `x` (click.x), as in the original; the restored code compared the
+    // MineDesign: restorer fix — the pointer's x is the outer `x` (click.x), as in the original; the restored code compared the
     // element entry (`input`) with the rect, so no artboard child ever matched the click horizontally.
     items.forEach((input?: Dynamic, options2?: Dynamic): Dynamic => {
       let value10: Dynamic = value6[options2];
@@ -239,7 +239,7 @@ export function installFastEditElementTargets(
         !callback2(value10) ||
         (value10.y + value10.h <= y3
           ? (value8 = input.id)
-          : value10.x + value10.w <= x && // BaoCut: restorer fix — outer `x` (click.x), as above
+          : value10.x + value10.w <= x && // MineDesign: restorer fix — outer `x` (click.x), as above
             y3 >= value10.y &&
             y3 <= value10.y + value10.h &&
             (value9 = input.id));

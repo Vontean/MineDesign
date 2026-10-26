@@ -409,7 +409,7 @@ export function installEditorColors(runtime: RuntimeBindings): () => void {
                         }
                         data-testid={"ds-fix-" + token.name + "-" + theme.id}
                         busy={busy && value2}
-                        // BaoCut: user-facing copy calls the agent "the agent", not Claude.
+                        // MineDesign: user-facing copy calls the agent "the agent", not Claude.
                         busyLabel={"Asking the agent"}
                         disabled={busy && !value2}
                         onClick={(
@@ -1003,7 +1003,7 @@ export function installEditorColors(runtime: RuntimeBindings): () => void {
       1,
     );
     COLORS_SECTION_LABEL = "Colors";
-    // BaoCut: user-facing copy calls the agent "the agent", not Claude.
+    // MineDesign: user-facing copy calls the agent "the agent", not Claude.
     COLOR_REQUEST_PENDING_MESSAGE = "A request to the agent is on its way";
     colorCssConversionCache = new Map();
   };

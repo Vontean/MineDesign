@@ -7,12 +7,12 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 /**
- * 找编辑器的构建产物目录（里面有 `index.html`）：`BAOCUT_DESIGN_SYSTEM_EDITOR_DIST` 环境变量；打包后的应用里是
+ * 找编辑器的构建产物目录（里面有 `index.html`）：`MINEDESIGN_DESIGN_SYSTEM_EDITOR_DIST` 环境变量；打包后的应用里是
  * `<resources>/design-system-editor`；开发时从本模块往上找仓库里的 `apps/design-system-editor/dist`。都没有时 null。
  * 环境变量指的目录里没有 `index.html` 也是 null。
  */
 export function resolveDesignSystemEditorDist(env: NodeJS.ProcessEnv = process.env): string | null {
-  const given = env.BAOCUT_DESIGN_SYSTEM_EDITOR_DIST;
+  const given = env.MINEDESIGN_DESIGN_SYSTEM_EDITOR_DIST;
   if (given) return fs.existsSync(path.join(given, 'index.html')) ? given : null;
   const resources = (process as { resourcesPath?: string }).resourcesPath;
   if (resources) {

@@ -1297,7 +1297,7 @@ export function installFilesUiDesignSystemApp(
             if (source.kind === "unanswered" && context !== undefined) {
               noticeWithAction(
                 (0, runtime.claudeSendResultMessage)("unanswered"),
-                // BaoCut: user-facing copy calls the agent "the agent", not Claude.
+                // MineDesign: user-facing copy calls the agent "the agent", not Claude.
                 "Ask the agent",
                 context,
               );
@@ -1667,7 +1667,7 @@ export function installFilesUiDesignSystemApp(
           } else if (source.kind === "unanswered") {
             noticeWithAction(
               (0, runtime.claudeSendResultMessage)("unanswered"),
-              // BaoCut: user-facing copy calls the agent "the agent", not Claude.
+              // MineDesign: user-facing copy calls the agent "the agent", not Claude.
               "Ask the agent",
               options,
             );
@@ -1696,7 +1696,7 @@ export function installFilesUiDesignSystemApp(
         let callback = () => {
           let value =
             items.length === 1
-              ? // BaoCut: user-facing copy calls the agent "the agent", not Claude.
+              ? // MineDesign: user-facing copy calls the agent "the agent", not Claude.
                 "Ask the agent about this file"
               : "Ask the agent about " + String(items.length) + " files";
           sendFileHandoff(
@@ -1737,7 +1737,7 @@ export function installFilesUiDesignSystemApp(
         if (value.handOff !== undefined) {
           noticeWithAction(
             value.text,
-            // BaoCut: user-facing copy calls the agent "the agent", not Claude.
+            // MineDesign: user-facing copy calls the agent "the agent", not Claude.
             "Ask the agent",
             fileHandoffAction(value.handOff),
           );
@@ -2830,7 +2830,7 @@ export function installFilesUiDesignSystemApp(
           const _elementProps = {
             markdown: value2,
             readOnly: readOnly || editable === undefined,
-            // BaoCut: user-facing copy calls the agent "the agent", not Claude.
+            // MineDesign: user-facing copy calls the agent "the agent", not Claude.
             placeholder: "Write the brand book here — or ask the agent to.",
             onMarkdown: (input: string) => {
               let current = readmeTouchedRef.current,
@@ -3451,8 +3451,8 @@ export function installFilesUiDesignSystemApp(
       setSaveState(document2.saveState());
       return value;
     }, [document2]);
-    // BaoCut: 标注跳回一处（docs/design/canvas §10.6）：宿主的标注层（packages/design-system/src/editor/comment-targets.ts）
-    // 派发 `baocut:reveal-comment-target`，这里与搜索里选中一条走同一条路——索引里有这个目标就照它（素材另展开那一张），
+    // MineDesign: 标注跳回一处（docs/design/canvas §10.6）：宿主的标注层（packages/design-system/src/editor/comment-targets.ts）
+    // 派发 `minedesign:reveal-comment-target`，这里与搜索里选中一条走同一条路——索引里有这个目标就照它（素材另展开那一张），
     // 没有时按给的章节去等它出现
     let commentRevealRef = runtime.reactArtifactRoot.useRef({
       index: searchIndex,
@@ -3485,9 +3485,9 @@ export function installFilesUiDesignSystemApp(
           pick(entry);
         }
       };
-      window.addEventListener("baocut:reveal-comment-target", callback);
+      window.addEventListener("minedesign:reveal-comment-target", callback);
       return () =>
-        window.removeEventListener("baocut:reveal-comment-target", callback);
+        window.removeEventListener("minedesign:reveal-comment-target", callback);
     }, []);
     let loaded = runtime.reactArtifactRoot.useSyncExternalStore(
         runtime.subscribeStoredSystemStatus,
@@ -4249,7 +4249,7 @@ export function installFilesUiDesignSystemApp(
       assets: "assets",
       guidance: "readme",
     };
-    // BaoCut: user-facing copy calls the agent "the agent", not Claude.
+    // MineDesign: user-facing copy calls the agent "the agent", not Claude.
     CLAUDE_COMMENT_SENT_MESSAGE =
       "Sent to the agent — it will reply in the comment thread";
     README_SIZE_EXCEEDED_MESSAGE =

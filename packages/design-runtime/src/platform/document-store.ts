@@ -90,7 +90,7 @@ export function installPlatformDocumentStore(
         value12 ??
         (value6
           ? undefined
-          : // BaoCut: the host global is designHost.
+          : // MineDesign: the host global is designHost.
             "This view\u2019s runtime does not offer self-publish (window.designHost.self is absent) \u2014 content can be viewed but not saved from here.");
     if (!value13) {
       let value36: Dynamic = value5.read();

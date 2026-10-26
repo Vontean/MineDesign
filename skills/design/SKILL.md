@@ -118,6 +118,6 @@ return { accent: this.props.accent ?? '#666666' };
 
 ## MineDesign Codex 适配（优先于上方原始流程）
 
-本技能改编自固定提交的 BaoCut，来源和许可见 FORK.md。先读取项目 DESIGN.md 和用户指定设计系统。使用 Codex 原生文件工具读取和修改文件，references 按技能所在目录读取，不依赖 BaoCut skills_read 服务。保留 canvas.json、.dc.html、DCLogic 和设计系统文件协议，使用本插件的 design_check / design_system_check 检查；通过后调用 minedesign_open_document 打开作品。不能声称自动出现 BaoCut 卡片。design_import_asset 使用 canvas 参数，支持图片与字体；design_system_import_asset 使用 system 参数，额外支持视频和 PDF，可传 group 并返回 record 与 indexPath。工具返回的 src 或 url 写入原引用位置。
+来源和许可统一见 FORK.md。先读取项目 DESIGN.md 和用户指定设计系统。使用 Codex 原生文件工具读取和修改文件，references 按技能所在目录读取，不依赖外部 skills_read 服务。保留 canvas.json、.dc.html、DCLogic 和设计系统文件协议，使用本插件的 design_check / design_system_check 检查；通过后调用 minedesign_open_document 打开作品。使用打开工具展示作品，不承诺自动出现卡片。design_import_asset 使用 canvas 参数，支持图片与字体；design_system_import_asset 使用 system 参数，额外支持视频和 PDF，可传 group 并返回 record 与 indexPath。工具返回的 src 或 url 写入原引用位置。
 
 上游“只做结构检查、禁止渲染验证”的规定在这里不适用：交付前实际打开预览，验证关键行为。用户的反馈通过 JSON kind=minedesign-feedback 传来，其中 document 是目录，annotations 是本轮反馈；修改前重新读取文件，批注定位失效时不可猜测。不要改变用户作品配色来匹配编辑器外壳。Space、分享、多人协作和 sample 目前没有宿主能力。

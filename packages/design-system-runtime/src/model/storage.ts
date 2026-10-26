@@ -189,7 +189,7 @@ export function installModelStorage(runtime: RuntimeBindings): () => void {
           formatUploadBytes(blobMaxBytes) +
           ", " +
           String(budget.blobCount) +
-          // BaoCut: user-facing copy calls the agent "the agent", not Claude.
+          // MineDesign: user-facing copy calls the agent "the agent", not Claude.
           " files) — free space under Assets, or ask the agent to start a fresh system.",
       };
     }

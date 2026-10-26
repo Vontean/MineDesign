@@ -267,7 +267,7 @@ export function installEditorOutlineGlyphs(
   );
   return () => {
     CanTReadThisArtboardSFileAskMessage =
-      // BaoCut: user-facing copy calls the agent "the agent", not Claude.
+      // MineDesign: user-facing copy calls the agent "the agent", not Claude.
       "Can\u2019t read this artboard\u2019s file \u2014 ask the agent to repair it.";
     OutlineGlyphsTest = (input?: Dynamic): Dynamic =>
       /<x-dc[\s/>]/i.test(input);

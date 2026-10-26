@@ -52,7 +52,7 @@ export function installEditorChromeUnsavedEditsDialog(
                   value: "keep",
                   label: "Keep them",
                   description:
-                    // BaoCut: user-facing copy calls the agent "the agent", not Claude.
+                    // MineDesign: user-facing copy calls the agent "the agent", not Claude.
                     "Your edits stay in this session, and the agent merges them with the latest version when you save.",
                 },
               ]}

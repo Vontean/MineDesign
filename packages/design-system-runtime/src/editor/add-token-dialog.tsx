@@ -903,7 +903,7 @@ export function installEditorAddTokenDialog(
             resize={"none"}
             value={value19}
             placeholder={
-              // BaoCut: user-facing copy calls the agent "the agent", not Claude.
+              // MineDesign: user-facing copy calls the agent "the agent", not Claude.
               "Optional — when should the agent use " +
               (value35 ? "it" : value34) +
               "?"

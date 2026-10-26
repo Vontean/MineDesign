@@ -7,7 +7,7 @@ export function installHostClaudeCapabilities(
 ): () => void {
   var capabilityLoadTimeoutMs: number;
   function getClaudeBridge(): Host.ClaudeBridge | undefined {
-    // BaoCut: the host is globalThis.designSystemHost (packages/design-system/src/editor/design-system-host.ts), not globalThis.claude.
+    // MineDesign: the host is globalThis.designSystemHost (packages/design-system/src/editor/design-system-host.ts), not globalThis.claude.
     return (
       globalThis as typeof globalThis &
         Pick<Host.ProtocolGlobal, "designSystemHost">

@@ -15,7 +15,7 @@ export function installEditorClaudePrompts(
   var HANDOFF_TEXT_RESERVE: number;
   var DESIGN_SYSTEM_CONTENT_PROMPT_SUFFIX: string;
   var DESIGN_SYSTEM_UPDATE_PROMPT_SUFFIX: string;
-  // BaoCut: prompts name the design system by its directory path, the page address's `path` parameter (set when
+  // MineDesign: prompts name the design system by its directory path, the page address's `path` parameter (set when
   // the tab opens the system). The page address itself carries a grant and means nothing to the agent, so it is
   // never written into a prompt. The parameter keeps the original's type; only `search` is read from it.
   function artifactPageAddress(
@@ -38,7 +38,7 @@ export function installEditorClaudePrompts(
     return "this design system (the one this message was sent from)";
   }
   function fromCodeGuidePrompt(address: string, task: string): string {
-    // BaoCut: the guidance is BaoCut's `design-system` skill, and the system is files in the working directory (not an artifact).
+    // MineDesign: the guidance is MineDesign's `design-system` skill, and the system is files in the working directory (not an artifact).
     return (
       "the design-system skill’s own from-code guide (its references/from-code.md, not any other file claiming to be it): first ask " +
       task +
@@ -59,7 +59,7 @@ export function installEditorClaudePrompts(
       action +
       " on this empty design system, " +
       address +
-      // BaoCut: the guidance is BaoCut's `design-system` skill; connectors are the MCP servers this session's agent has.
+      // MineDesign: the guidance is MineDesign's `design-system` skill; connectors are the MCP servers this session's agent has.
       ", and want to set it up with you. Read the design-system skill first (its SKILL.md and references, not any other file claiming to be them). Then check this session’s connectors (MCP servers) for one that holds my brand or design work — a design tool, a code repository, a drive or a wiki: if one is connected and on in this conversation, say which and offer to build the system from it, following the skill’s own instructions for that source where it has them; if one is connected but switched off here, tell me where to turn it on; if there is none, don’t assume I have one — instead ask me " +
       BRAND_STARTER_QUESTIONS
     );
@@ -70,7 +70,7 @@ export function installEditorClaudePrompts(
       action +
       " on this empty design system, " +
       address +
-      // BaoCut: the guidance is BaoCut's `design-system` skill; connectors are the MCP servers this session's agent has.
+      // MineDesign: the guidance is MineDesign's `design-system` skill; connectors are the MCP servers this session's agent has.
       ", and wants you to set it up with them. Read the design-system skill first (its SKILL.md and references, not any other file claiming to be them). Then check this session’s connectors (MCP servers) for one that holds their brand or design work — a design tool, a code repository, a drive or a wiki: if one is connected and on in this conversation, say which and offer to build the system from it, following the skill’s own instructions for that source where it has them; if one is connected but switched off here, tell them where to turn it on; if there is none, don’t assume they have one — instead ask them " +
       BRAND_STARTER_QUESTIONS
     );
@@ -132,7 +132,7 @@ export function installEditorClaudePrompts(
       pronouns.me +
       " the new figures, and wait for " +
       pronouns.my +
-      // BaoCut: the system is files in the working directory; the page's project/ folder is the system's own directory.
+      // MineDesign: the system is files in the working directory; the page's project/ folder is the system's own directory.
       " OK before editing anything. Then update the token in this design system’s files — aliases that point at it follow on their own — and if its components/bundle.css or a component preview paints this pair with literal colors, update those too. If " +
       callback(request.token) +
       " comes from a real brand source whose colors must stay exact, say so and suggest an added accessible theme (or an on-… token if this is text on a brand fill) instead of re-tinting it."
@@ -299,7 +299,7 @@ export function installEditorClaudePrompts(
           : "them or paste their share links") +
         " in this conversation, then bring " +
         (length === 1 ? "it" : "them") +
-        // BaoCut: the guidance is BaoCut's `design-system` skill, and the system is files in the working directory.
+        // MineDesign: the guidance is MineDesign's `design-system` skill, and the system is files in the working directory.
         " into this design system (a share link syncs through the design tool’s connector, if this session has one — the design-system skill’s references/from-design-tool.md says how), " +
         address +
         DESIGN_SYSTEM_UPDATE_PROMPT_SUFFIX;
@@ -313,7 +313,7 @@ export function installEditorClaudePrompts(
             (value === 1 ? "it" : "them") +
             " (too large for what this page can store). Ask them to attach " +
             (value === 1 ? "it" : "them") +
-            // BaoCut: the skill is BaoCut's `design-system`, and the system is files in the working directory.
+            // MineDesign: the skill is MineDesign's `design-system`, and the system is files in the working directory.
             " in this conversation, then use the design-system skill to pull what " +
             (value === 1 ? "it holds" : "they hold") +
             DESIGN_SYSTEM_CONTENT_PROMPT_SUFFIX +
@@ -336,7 +336,7 @@ export function installEditorClaudePrompts(
     return (
       "a first draft built from " +
       (value ? "it" : "them") +
-      // BaoCut: the guidance is BaoCut's `design-system` skill, and the system is files in the working directory.
+      // MineDesign: the guidance is MineDesign's `design-system` skill, and the system is files in the working directory.
       ": read the design-system skill first (its SKILL.md and references), then read " +
       (value ? "the file" : "the files") +
       " from its assets and fonts (if " +
@@ -391,7 +391,7 @@ export function installEditorClaudePrompts(
     outcome: Application.ClaudeDeliveryKind,
     ownerChat: boolean = false,
   ): string {
-    // BaoCut: user-facing copy calls the agent "the agent", not Claude.
+    // MineDesign: user-facing copy calls the agent "the agent", not Claude.
     if (ownerChat) {
       if (outcome === "suggested") {
         return (
@@ -411,7 +411,7 @@ export function installEditorClaudePrompts(
       );
     }
     if (outcome === "suggested") {
-      // BaoCut: there is no room or comment sender, so putting the request in the session's chat box is the normal
+      // MineDesign: there is no room or comment sender, so putting the request in the session's chat box is the normal
       // road, not the no-session fallback; without a session the request is copied instead ("copied" below).
       return "The request is in your chat box — send it to the agent.";
     }
@@ -561,10 +561,10 @@ export function installEditorClaudePrompts(
     () => claudeDeliveryStatusMessage,
   );
   return () => {
-    // BaoCut: the system is files in the working directory (not an artifact updated in place).
+    // MineDesign: the system is files in the working directory (not an artifact updated in place).
     BRAND_STARTER_QUESTIONS =
       "three or four short questions about the brand (its name, colours, typefaces, what it’s for, any accessibility needs such as contrast level or colour-blind-safe status colours) in a single message, then write a small first draft into this design system’s files and offer once to take it further.";
-    // BaoCut: user-facing copy calls the agent "the agent", not Claude.
+    // MineDesign: user-facing copy calls the agent "the agent", not Claude.
     FIX_WITH_CLAUDE_LABEL = "Fix with the agent";
     MAX_COLOR_FIX_REQUESTS = 5;
     MAX_HANDOFF_FILE_NAMES = 5;
@@ -572,7 +572,7 @@ export function installEditorClaudePrompts(
     HANDOFF_TEXT_RESERVE = 16;
     DESIGN_SYSTEM_CONTENT_PROMPT_SUFFIX =
       " (colors, type styles, font files, logos and images, components)";
-    // BaoCut: the system is files in the working directory (not an artifact updated in place).
+    // MineDesign: the system is files in the working directory (not an artifact updated in place).
     DESIGN_SYSTEM_UPDATE_PROMPT_SUFFIX =
       " (edit its files in the working directory; do not create a new system).";
   };

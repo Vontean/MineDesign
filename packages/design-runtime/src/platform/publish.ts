@@ -53,7 +53,7 @@ export function installPlatformPublish(runtime: RuntimeBindings): () => void {
   function requirePublishCapability(): Dynamic {
     if (!canRequestPublishCapability())
       throw new Error(
-        // BaoCut: the host global is designHost.
+        // MineDesign: the host global is designHost.
         "window.designHost.self is missing \u2014 this view\u2019s runtime predates the self capability (or this page is running outside a Frame shell and the emulator). Content cannot be saved from here.",
       );
     return async (input?: Dynamic): Promise<Dynamic> => {

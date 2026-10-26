@@ -148,7 +148,7 @@ export function installPlatformFrameHostBridge(
   }
   function createFrameHostBridge(input?: Dynamic): Dynamic {
     let parentWindow: Dynamic = input.parentWindow,
-      // BaoCut: trustParent (from __FRAME_PREAMBLE) trusts window.parent itself instead of an origin list.
+      // MineDesign: trustParent (from __FRAME_PREAMBLE) trusts window.parent itself instead of an origin list.
       // The desktop parent page is file:// (opaque origin "null", which postMessage cannot target), so replies go to "*".
       trustParent: Dynamic = input.trustParent === true,
       value: Dynamic = null,
@@ -536,7 +536,7 @@ export function installPlatformFrameHostBridge(
         ownWindow: window,
         parentWindow: value ? (window as Dynamic).parent : null,
         origins: allowedFrameHostOrigins,
-        // BaoCut: set by packages/design/src/editor before the runtime starts (docs/design/canvas §5).
+        // MineDesign: set by packages/design/src/editor before the runtime starts (docs/design/canvas §5).
         trustParent: (window as Dynamic).__FRAME_PREAMBLE?.trustParent === true,
       });
     }
@@ -705,9 +705,9 @@ export function installPlatformFrameHostBridge(
     },
   );
   return () => {
-    // BaoCut: no host frame is trusted by default; the editor talks to BaoCut through its own shim
+    // MineDesign: no host frame is trusted by default; the editor talks to MineDesign through its own shim
     // (packages/design/src/editor). A page that needs this bridge declares origins in __FRAME_PREAMBLE,
-    // or trustParent: the design editor does, so BaoCut can drive whole-design export (createFrameHostBridge).
+    // or trustParent: the design editor does, so MineDesign can drive whole-design export (createFrameHostBridge).
     PlatformFrameHostBridgeItems = [];
     allowedFrameHostOrigins = ((): Dynamic => {
       try {

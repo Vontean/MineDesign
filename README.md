@@ -55,6 +55,6 @@ npm run install:local
 
 ## 来源与许可
 
-复用固定版本的 BaoCut 设计编辑器、运行时与文件协议，来源和补丁见 [FORK.md](FORK.md)。原始许可及第三方声明统一保留在 FORK.md 中。npm 包按该许可免费、非商业分发，不据此宣称已取得任何商业分发权利。
+来源、修改说明、原始许可及第三方声明统一见 [FORK.md](FORK.md)。npm 包按该许可免费、非商业分发，不据此宣称已取得任何商业分发权利。
 
 品牌为 MineDesign，缩写 MDN。图标来源与生成方式见 [品牌说明](assets/brand/README.md)。

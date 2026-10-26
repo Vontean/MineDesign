@@ -28,7 +28,7 @@ export function installFilesUiHandoffRuntime(
     kind: string,
     suffix: string = "",
   ): string | undefined {
-    // BaoCut: user-facing copy calls the agent "the agent", not Claude.
+    // MineDesign: user-facing copy calls the agent "the agent", not Claude.
     switch (kind) {
       case "staged":
       case "waiting":

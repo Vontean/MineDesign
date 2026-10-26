@@ -519,7 +519,7 @@ export function installFastEditSession(runtime: RuntimeBindings): () => void {
     OPEN_ARTBOARD_PLACEHOLDER_ID = "~open";
     FAST_EDIT_ERROR_MESSAGES = {
       rate_limited:
-        // BaoCut: user-facing copy calls the agent "the agent", not Claude.
+        // MineDesign: user-facing copy calls the agent "the agent", not Claude.
         "The agent is busy, or your usage limit is reached. Try again later.",
       queue_overflow:
         "The agent is busy, or your usage limit is reached. Try again later.",

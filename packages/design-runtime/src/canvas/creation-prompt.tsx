@@ -74,7 +74,7 @@ export function installCanvasCreationPrompt(
             value
               ? {
                   kind: "name",
-                  // BaoCut: user-facing copy calls the agent "the agent", not Claude.
+                  // MineDesign: user-facing copy calls the agent "the agent", not Claude.
                   text: "Agent",
                 }
               : {
@@ -200,7 +200,7 @@ export function installCanvasCreationPrompt(
     (0, runtime.initializeCdsIndex)();
     designCreationTips = [
       "Double-click text to edit it.",
-      // BaoCut: user-facing copy calls the agent "the agent", not Claude.
+      // MineDesign: user-facing copy calls the agent "the agent", not Claude.
       "Comment on any part, and the agent can revise it.",
       "Invite people to view, comment, or edit.",
       "Use @ in a comment to mention someone.",

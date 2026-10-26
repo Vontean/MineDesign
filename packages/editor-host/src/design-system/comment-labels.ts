@@ -1,5 +1,5 @@
 /**
- * 设计系统标注位置标签里的词（docs/design/canvas §10.6），跟随 BaoCut 的界面语言（编辑器地址上的 `?lang=`）。
+ * 设计系统标注位置标签里的词（docs/design/canvas §10.6），跟随 MineDesign 的界面语言（编辑器地址上的 `?lang=`）。
  * `label` 给人看（批注框、输入框上的标注、发出的消息），`detail` 给智能体定位，保持英文，不经这里（comment-targets.ts）。
  *
  * 键是设计系统运行时标目标用的前缀（editor/comment-anchors.ts 的 `commentTargetProps(prefix, name)` / `commentTargetId`）：

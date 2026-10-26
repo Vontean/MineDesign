@@ -810,7 +810,7 @@ export function installEditorUploadPipeline(
           (handoffs.length > 0 || build
             ? "."
             : leftOut
-              ? // BaoCut: user-facing copy calls the agent "the agent", not Claude.
+              ? // MineDesign: user-facing copy calls the agent "the agent", not Claude.
                 " — the agent will take it from here."
               : ". Save when you’re ready and the agent will take it from here."),
       );

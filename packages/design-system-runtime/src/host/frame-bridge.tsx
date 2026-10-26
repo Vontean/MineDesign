@@ -874,7 +874,7 @@ export function installHostFrameBridge(runtime: RuntimeBindings): () => void {
     MAX_HOST_COMMANDS = 8;
     MAX_HOST_FOOT_INSET = 9999;
     HOST_BACKGROUND_HEX_PATTERN = /^#[0-9a-f]{6}$/;
-    // BaoCut: no host frame origin is trusted by default. The editor talks to BaoCut through its own shim
+    // MineDesign: no host frame origin is trusted by default. The editor talks to MineDesign through its own shim
     // (packages/design-system/src/editor), not this frame bridge; a page that needs the bridge declares its
     // origins in __FRAME_PREAMBLE.
     DEFAULT_HOST_ORIGINS = [];

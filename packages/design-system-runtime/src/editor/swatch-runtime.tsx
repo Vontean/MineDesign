@@ -1585,7 +1585,7 @@ export function installEditorSwatchRuntime(
     SWATCH_LOCAL_URL_PATTERN = /^\/(?!\/)[^\s"<>&\\]*$/;
     SWATCH_SHA256_INTEGRITY_PATTERN = /^sha256-[A-Za-z0-9+/]{43}=$/;
     SWATCH_THEME_ID_PATTERN = /^[a-z0-9][a-z0-9_.-]{0,63}$/;
-    // BaoCut: a runtime tag is the editor page's own vendor copy (model/libraries.ts), a root-relative path under
+    // MineDesign: a runtime tag is the editor page's own vendor copy (model/libraries.ts), a root-relative path under
     // the page's artifact-type/vendor/, not a jsDelivr npm UMD address.
     SWATCH_RUNTIME_TAG_URL_PATTERN =
       /^\/(?!\/)(?:[A-Za-z0-9._~%-]+\/)*artifact-type\/vendor\/[a-z][a-z0-9.-]*\.js$/;

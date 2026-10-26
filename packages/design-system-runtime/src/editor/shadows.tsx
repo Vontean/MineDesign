@@ -333,7 +333,7 @@ export function installEditorShadows(runtime: RuntimeBindings): () => void {
                   >
                     {value14}
                   </span>,
-                  // BaoCut: user-facing copy calls the agent "the agent", not Claude.
+                  // MineDesign: user-facing copy calls the agent "the agent", not Claude.
                   "Ask the agent to change it.",
                 ]}
               </p>

@@ -300,7 +300,7 @@ export function installEditorComponentsAttributePropsPanel(
                         !disabled2 &&
                         onEditInCode !== undefined,
                       value17: Dynamic = value14
-                        // BaoCut: user-facing copy calls the agent "the agent", not Claude.
+                        // MineDesign: user-facing copy calls the agent "the agent", not Claude.
                         ? "This attribute can\u2019t be edited here. Ask the agent in chat to change it."
                         : value15 &&
                             !value13 &&

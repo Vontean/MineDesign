@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { LOCALES, setLocale } from '@minedesign/contracts/i18n';
 import { createCommentLabels, localeFromSearch } from './comment-labels.ts';
 
-/** 标注位置标签的词表（docs/design/slides §8.2）：跟随 BaoCut 的界面语言，英文与运行时原文逐字一致。 */
+/** 标注位置标签的词表（docs/design/slides §8.2）：跟随 MineDesign 的界面语言，英文与运行时原文逐字一致。 */
 
 const ROLES = ['display', 'h1', 'h2', 'h3', 'lead', 'eyebrow', 'body', 'caption'];
 const ELEMENTS = ['img', 'icon', 'stack', 'grid', 'overlay', 'html', 'spacer'];
@@ -14,8 +14,8 @@ const PARTS = [
 ];
 
 beforeEach(() => {
-  // 测试进程钉在简体中文（vitest.config.ts 的 BAOCUT_LOCALE）；这里要按参数换语言
-  vi.stubEnv('BAOCUT_LOCALE', '');
+  // 测试进程钉在简体中文（vitest.config.ts 的 MINEDESIGN_LOCALE）；这里要按参数换语言
+  vi.stubEnv('MINEDESIGN_LOCALE', '');
 });
 
 afterEach(() => {

@@ -43,7 +43,7 @@ export function loadScript(url?: RuntimeValue, integrity?: RuntimeValue): Runtim
   });
 }
 /**
- * BaoCut: restored from the shipped dc-runtime. The live preview prepends React to support.js and dc-runtime.js
+ * MineDesign: restored from the shipped dc-runtime. The live preview prepends React to support.js and dc-runtime.js
  * bundles its own, so both skip loading; the whole-design HTML export embeds React under the CDN URLs
  * (`window.__resources`), which only this lookup reaches (docs/design/canvas §8.3).
  */

@@ -10,14 +10,14 @@ afterAll(async () => {
 });
 
 describe('resolveDesignSystemEditorDist', () => {
-  it('BAOCUT_DESIGN_SYSTEM_EDITOR_DIST 指的目录有 index.html 时用它，没有时 null（不再往别处找）', async () => {
+  it('MINEDESIGN_DESIGN_SYSTEM_EDITOR_DIST 指的目录有 index.html 时用它，没有时 null（不再往别处找）', async () => {
     const built = await mkdtemp(path.join(tmpdir(), 'design-system-dist-'));
     roots.push(built);
     await writeFile(path.join(built, 'index.html'), '<!doctype html>');
-    expect(resolveDesignSystemEditorDist({ BAOCUT_DESIGN_SYSTEM_EDITOR_DIST: built })).toBe(built);
+    expect(resolveDesignSystemEditorDist({ MINEDESIGN_DESIGN_SYSTEM_EDITOR_DIST: built })).toBe(built);
     const empty = await mkdtemp(path.join(tmpdir(), 'design-system-dist-'));
     roots.push(empty);
-    expect(resolveDesignSystemEditorDist({ BAOCUT_DESIGN_SYSTEM_EDITOR_DIST: empty })).toBeNull();
+    expect(resolveDesignSystemEditorDist({ MINEDESIGN_DESIGN_SYSTEM_EDITOR_DIST: empty })).toBeNull();
   });
 
   it('打包后的应用里是 <resources>/design-system-editor', async () => {

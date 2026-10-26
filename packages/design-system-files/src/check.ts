@@ -11,7 +11,7 @@
  *   - preview.html：第一行 `<!-- @dsCard … -->`，不用 iframe / frame / object / embed / portal / noscript，不链接 bundle.js 与库
  *   - bundle.js：经典脚本（不 import / export）、赋值 `window.<namespace>`、不连网、不含 `</script` 与 `<!--`；`@ds-bundle` 头行
  *   - 字体：fonts/ 里只放 woff2 / woff / ttf / otf，扩展名与文件头一致，tokens.json 的 `type.fonts` 列出的都在、在的都列出
- *   - 预览与 lib/ 里指向网上的脚本、样式与图片（BaoCut 的 CSP 不放行 CDN，§10.2）；`/_blob/<id>` 引用都在 `_blobs/` 里
+ *   - 预览与 lib/ 里指向网上的脚本、样式与图片（MineDesign 的 CSP 不放行 CDN，§10.2）；`/_blob/<id>` 引用都在 `_blobs/` 里
  * manifest.json、tokens.css、api/ 由编辑器保存时生成，不查（`notChecked`）。组件能不能渲染不在检查范围内。问题是给智能体看的英文，不进界面文案目录。
  */
 // i18n-ignore-file: 给模型的校验结果
@@ -101,7 +101,7 @@ const ASSET_TILE_SIZES = new Set(['xs', 's', 'm', 'l', 'xl']);
 const MAX_ASSET_GROUP_NAME_LENGTH = 80;
 const RESERVED_PROTOTYPE_NAMES = new Set(['__proto__', 'constructor', 'prototype']);
 const TEXT_EXTENSIONS = new Set(['md', 'mdx', 'markdown', 'txt', 'json', 'js', 'mjs', 'cjs', 'jsx', 'ts', 'tsx', 'css', 'html', 'htm', 'svg', 'xml', 'csv', 'yml', 'yaml', 'toml']);
-/** 原版的 `blob` 记录只认上传给的 id；BaoCut 的 id 是 32 位小写十六进制（docs/design/canvas §2.1）。 */
+/** 原版的 `blob` 记录只认上传给的 id；MineDesign 的 id 是 32 位小写十六进制（docs/design/canvas §2.1）。 */
 const BLOB_ID = BLOB_ID_PATTERN;
 
 type FileKind =
@@ -287,7 +287,7 @@ function checkBlobRefs(file: string, text: string, blobs: ReadonlySet<string>, i
   }
 }
 
-const NO_CDN = 'BaoCut previews load nothing from the network but Google Fonts (no CDN in the page CSP)';
+const NO_CDN = 'MineDesign previews load nothing from the network but Google Fonts (no CDN in the page CSP)';
 
 /** 脚本里指向网上的加载：`import()`、`fetch()`、`importScripts()`、给 `src` 赋网址、`<script src>` 字符串。 */
 function remoteScriptLoads(code: string): string[] {

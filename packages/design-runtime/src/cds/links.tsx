@@ -699,11 +699,11 @@ export function installCdsLinks(runtime: RuntimeBindings): () => void {
       CdsLinksPattern_7 = /\/(?:\.|%2e){1,2}(?:\/|$)/i;
       CdsLinksPattern_8 = /^(?:\.|%2e){1,2}$/i;
       CdsLinksPattern_9 = /\\|%2e/i;
-      // BaoCut: the Claude app schemes (claude, claude-cli, claude-nest) are not link targets here.
+      // MineDesign: the Claude app schemes (claude, claude-cli, claude-nest) are not link targets here.
       CdsLinksHttpsMailtoPattern = /^(?:https?|mailto|tel|slack|blob):/i;
       CdsLinksIntentPattern = /^intent:/i;
       CdsLinksVscodeCursorPattern = /^(?:vscode|cursor):/i;
-      // BaoCut: no first-party editor extensions; only VS Code settings links are followed.
+      // MineDesign: no first-party editor extensions; only VS Code settings links are followed.
       CdsLinksVscodeCursorPattern_2 =
         /^vscode:\/\/settings\/[A-Za-z0-9][A-Za-z0-9_.-]*$/;
       CdsLinksSubscribers_2 = new Set([
@@ -712,7 +712,7 @@ export function installCdsLinks(runtime: RuntimeBindings): () => void {
         "S.browser_fallback_url",
       ]);
       CdsLinksPattern_10 = /^(?:[a-z][a-z\d+.-]*:|\/\/)/i;
-      // BaoCut: no first-party web domains or Android apps; every external link is treated as "other".
+      // MineDesign: no first-party web domains or Android apps; every external link is treated as "other".
       CdsLinksItems = [];
       CdsLinksSubscribers_3 = new Set();
       trustedClaudeOrigin = "https://cds-relative-href.invalid";

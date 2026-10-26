@@ -57,7 +57,7 @@ export function installPlatformMigrationState(
     let value: Dynamic =
         input.hot !== undefined
           ? input.hot
-          // BaoCut: the host is globalThis.designHost (packages/design/src/editor/design-host.ts), not globalThis.claude.
+          // MineDesign: the host is globalThis.designHost (packages/design/src/editor/design-host.ts), not globalThis.claude.
           : (globalThis as Dynamic).designHost?.hot,
       value2: Dynamic = input.show ?? runtime.showEditorToast,
       value3: Dynamic =

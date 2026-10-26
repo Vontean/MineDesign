@@ -233,7 +233,7 @@ export function installExportDownloads(runtime: RuntimeBindings): () => void {
     );
     DownloadsArenTAvailableToYouForMessage =
       "Downloads aren't available to you for this artifact.";
-    // BaoCut: the original hands the host at most 16 MB. BaoCut saves to disk instead of sending, so a file may be as large as a
+    // MineDesign: the original hands the host at most 16 MB. MineDesign saves to disk instead of sending, so a file may be as large as a
     // design's own files (256 MB, docs/design/canvas §2); the save bridge allows 512 MB (SAVE_FILE_MAX_BYTES).
     ExportDownloadsResolvedValue = 256 * 1024 * 1024;
     ExportDownloadsGifPngJpgSet = new Set([

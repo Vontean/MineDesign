@@ -644,7 +644,7 @@ export function installFilesSingleFileMigration(
   );
   return () => {
     OLDER_SINGLE_FILE_COPY_MESSAGE =
-      // BaoCut: user-facing copy calls the agent "the agent", not Claude.
+      // MineDesign: user-facing copy calls the agent "the agent", not Claude.
       "An older copy of this design system was saved over the current one, and that older copy is what you see. Before editing, ask the agent to compare the two and keep the one you want.";
     SINGLE_FILE_MIGRATION_BACKUP_PATH =
       "project/design-system.before-files.json";

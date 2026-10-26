@@ -2,7 +2,7 @@
 //   index.html、assets/**              编辑器页面，Runtime 在 /design/<grant>/ 下提供
 //   artifact-type/dc-runtime.js        画板运行时（内含 React 18.3.1）；画板不能用 blob: 脚本时从这里加载
 //   artifact-type/babel.min.js         Babel standalone 原文件（与原版 CDN 上的逐字节相同）：画板 x-import 了 JSX 时才加载，导出时内嵌
-//   artifact-type/fast-edit-worker.js  快速编辑的 Worker。BaoCut 不提供 sample，快速编辑关着，照原样产出
+//   artifact-type/fast-edit-worker.js  快速编辑的 Worker。MineDesign 不提供 sample，快速编辑关着，照原样产出
 //   third-party-licenses.txt           打进去的第三方代码的原始许可
 //
 // 1. esbuild 把画板运行时、注入脚本与 Worker 打成脚本文本，连同 React 18 的 UMD 文件与 Babel standalone 放进

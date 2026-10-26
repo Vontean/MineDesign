@@ -22,7 +22,7 @@ export function installModelAssetStore(runtime: RuntimeBindings): () => void {
   var RECLAIM_RECONNECTING_MESSAGE: string;
   var RECLAIM_WINDOWED_COLLECTION_MESSAGE: string;
   function assetCapabilityRuntime(): Storage.AssetSdk | undefined {
-    // BaoCut: the host is globalThis.designSystemHost (packages/design-system/src/editor/design-system-host.ts), not globalThis.claude.
+    // MineDesign: the host is globalThis.designSystemHost (packages/design-system/src/editor/design-system-host.ts), not globalThis.claude.
     let runtime2 = globalThis as typeof globalThis & {
       designSystemHost?: Storage.AssetSdk;
       window?: Window & { designSystemHost?: Storage.AssetSdk };

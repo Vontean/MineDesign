@@ -1,5 +1,5 @@
 /**
- * 标注位置标签里的词（docs/design/slides §8.2）：运行时拼 `label` 时向宿主要（`slidesHost.commentLabels`），跟随 BaoCut 的界面语言。
+ * 标注位置标签里的词（docs/design/slides §8.2）：运行时拼 `label` 时向宿主要（`slidesHost.commentLabels`），跟随 MineDesign 的界面语言。
  * `label` 给人看（批注框、输入框上的标注、发出的消息），`detail` 给智能体定位，保持运行时的英文，不经这里。
  *
  * 键对应运行时里的闭集：文字角色（model/deck.ts 的 textRoleLabels）、节点种类、形状变体（shapeVariantLabels）、

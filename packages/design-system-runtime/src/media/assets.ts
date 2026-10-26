@@ -6,7 +6,7 @@ import { bindRuntimeValue, type RuntimeBindings } from "../runtime-types";
 export function installMediaAssets(runtime: RuntimeBindings): () => void {
   var storedBlobPattern: RegExp;
   async function getAssetsCapability(): Promise<Host.AssetsCapability | null> {
-    // BaoCut: the host is globalThis.designSystemHost (packages/design-system/src/editor/design-system-host.ts), not globalThis.claude.
+    // MineDesign: the host is globalThis.designSystemHost (packages/design-system/src/editor/design-system-host.ts), not globalThis.claude.
     let claude = (
       globalThis as typeof globalThis &
         Pick<Host.ProtocolGlobal, "designSystemHost">

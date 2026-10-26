@@ -3,7 +3,7 @@
  *
  * - 出货语言见 `LOCALES`；英文是缺省与兜底：系统语言没有对应的出货语言时用英文，译文缺条目时回退英文。
  * - 进程里只有一个当前语言（`getLocale`）。界面按偏好与系统语言解析后 `setLocale`；Runtime 按 `ui.language` 设置；
- *   CLI 按环境。环境变量 `BAOCUT_LOCALE` 优先于一切（测试与排查用）。
+ *   CLI 按环境。环境变量 `MINEDESIGN_LOCALE` 优先于一切（测试与排查用）。
  * - 文案按模块写成目录：`defineMessages(en, { 'zh-Hans': zh })`。英文目录决定键与类型，其他语言必须逐键对上；条目可以是
  *   字符串，也可以是函数（语序、单复数各语言自己处理）。返回的对象在每次读属性时取当前语言，所以**不要在模块顶层读它**
  *   （那样会把读到的文字冻结在加载时的语言里）。
@@ -84,19 +84,19 @@ export function resolveLanguage(preference: LanguagePreference | null | undefine
   return isLocale(preference) ? preference : matchLocale(systemTags);
 }
 
-/** `BAOCUT_LOCALE` 指定的语言；没设或不认识时 null。 */
+/** `MINEDESIGN_LOCALE` 指定的语言；没设或不认识时 null。 */
 export function localeOverride(): Locale | null {
-  const env = typeof process === 'undefined' ? undefined : process.env?.BAOCUT_LOCALE;
+  const env = typeof process === 'undefined' ? undefined : process.env?.MINEDESIGN_LOCALE;
   return env ? localeOfTag(env) : null;
 }
 
 /**
- * 非界面进程（Runtime、CLI）眼里的系统语言，按优先顺序：桌面端拉起 Runtime 时传的 `BAOCUT_SYSTEM_LANGUAGES`（逗号分隔，
+ * 非界面进程（Runtime、CLI）眼里的系统语言，按优先顺序：桌面端拉起 Runtime 时传的 `MINEDESIGN_SYSTEM_LANGUAGES`（逗号分隔，
  * 取自操作系统的首选语言）、POSIX 的 `LC_ALL` / `LC_MESSAGES` / `LANG`，最后是 `Intl` 的缺省语言。
  */
 export function processLanguageTags(): string[] {
   const env = typeof process === 'undefined' ? {} : (process.env ?? {});
-  const tags = (env.BAOCUT_SYSTEM_LANGUAGES ?? '').split(',').map((t) => t.trim());
+  const tags = (env.MINEDESIGN_SYSTEM_LANGUAGES ?? '').split(',').map((t) => t.trim());
   tags.push(env.LC_ALL ?? '', env.LC_MESSAGES ?? '', env.LANG ?? '');
   try {
     tags.push(Intl.DateTimeFormat().resolvedOptions().locale);
@@ -113,7 +113,7 @@ export function getLocale(): Locale {
   return current;
 }
 
-/** 换当前语言。`BAOCUT_LOCALE` 设了时以它为准，这里的取值被忽略。 */
+/** 换当前语言。`MINEDESIGN_LOCALE` 设了时以它为准，这里的取值被忽略。 */
 export function setLocale(locale: Locale): void {
   const next = localeOverride() ?? locale;
   if (next === current) return;

@@ -1662,7 +1662,7 @@ export function installFilesDebugPanel(runtime: RuntimeBindings): () => void {
       value3.append(value4);
       callback("tab", "tab");
       callback("version", "ver");
-      // BaoCut: the host global is designSystemHost, not claude.
+      // MineDesign: the host global is designSystemHost, not claude.
       callback("designSystemHost.hot", "hot");
       value3.append(element("span", "sp"));
       let callback2 = (

@@ -6962,7 +6962,7 @@ export interface ReviewedRuntimeBindings
   rgbToOklch: (
     color: ColorControls_ColorControls.RgbaColor,
   ) => ColorControls_ColorControls.OklchColor;
-  // BaoCut: the host is globalThis.designSystemHost (packages/design-system/src/editor/design-system-host.ts), not globalThis.claude.
+  // MineDesign: the host is globalThis.designSystemHost (packages/design-system/src/editor/design-system-host.ts), not globalThis.claude.
   roomApiOwner: EditorRuntime_EditorRuntime.ClaudeEnvironment["designSystemHost"];
   roomApiPromise:
     | Promise<EditorRuntime_EditorRuntime.RoomCapability | null>

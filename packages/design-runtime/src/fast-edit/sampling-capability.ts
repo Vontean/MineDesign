@@ -17,7 +17,7 @@ export function installFastEditSamplingCapability(
     if (!(samplingCapabilityIntercepted || embedded)) {
       samplingCapabilityIntercepted = true;
       try {
-        // BaoCut: the host is globalThis.designHost (packages/design/src/editor/design-host.ts), not globalThis.claude.
+        // MineDesign: the host is globalThis.designHost (packages/design/src/editor/design-host.ts), not globalThis.claude.
         let claude: Dynamic = (globalThis as Dynamic).designHost;
         if (typeof claude?.use != "function") return;
         let value: Dynamic = claude.use.bind(claude);

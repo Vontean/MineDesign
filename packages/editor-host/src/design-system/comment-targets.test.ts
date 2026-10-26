@@ -11,15 +11,15 @@ import { describeTarget, fileOf, findTarget, installCommentTargets, pinPoint, pr
 const win = window as unknown as Window & typeof globalThis;
 
 beforeEach(() => {
-  // 测试进程钉在简体中文（vitest.config.ts 的 BAOCUT_LOCALE）；这里要按参数换语言
-  vi.stubEnv('BAOCUT_LOCALE', '');
+  // 测试进程钉在简体中文（vitest.config.ts 的 MINEDESIGN_LOCALE）；这里要按参数换语言
+  vi.stubEnv('MINEDESIGN_LOCALE', '');
 });
 
 afterEach(() => {
   vi.unstubAllEnvs();
   setLocale('zh-Hans');
   document.body.replaceChildren();
-  document.documentElement.removeAttribute('data-baocut-annotating');
+  document.documentElement.removeAttribute('data-minedesign-annotating');
 });
 
 /** 一页设计系统：Colors 一章里一个颜色组（标题行是目标、组上是锚点）与一个 token，Components 一章里一个组件，另有一个弹层。 */
@@ -197,7 +197,7 @@ describe('installCommentTargets', () => {
     $('inner').addEventListener('click', pageClicks);
     $('plain').addEventListener('click', pageClicks);
     parent.deliver({ type: 'editor:set-mode', on: true });
-    expect(document.documentElement.hasAttribute('data-baocut-annotating')).toBe(true);
+    expect(document.documentElement.hasAttribute('data-minedesign-annotating')).toBe(true);
     expect(parent.sent).toContainEqual({ type: 'editor:mode', on: true });
 
     click($('inner'));
@@ -211,10 +211,10 @@ describe('installCommentTargets', () => {
       detail: 'Component "Button" in section components (components/Button/) · comp-Button',
       section: 'components',
     });
-    expect($('comp').hasAttribute('data-baocut-picked')).toBe(true);
+    expect($('comp').hasAttribute('data-minedesign-picked')).toBe(true);
     parent.deliver({ type: 'editor:compose-result', requestId: 'r1', opened: true });
     parent.deliver({ type: 'editor:composer-closed', requestId: 'r1' });
-    expect($('comp').hasAttribute('data-baocut-picked')).toBe(false);
+    expect($('comp').hasAttribute('data-minedesign-picked')).toBe(false);
 
     // 不在目标上的、不收批注区域里的点击照常交给页面
     const sent = parent.sent.length;
@@ -244,7 +244,7 @@ describe('installCommentTargets', () => {
     expect(parent.sent.at(-1)).toEqual({ type: 'editor:mode', on: true });
     key(document.body, 'Escape');
     expect(parent.sent.at(-1)).toEqual({ type: 'editor:mode', on: false });
-    expect(document.documentElement.hasAttribute('data-baocut-annotating')).toBe(false);
+    expect(document.documentElement.hasAttribute('data-minedesign-annotating')).toBe(false);
     key(document.body, 'C');
     key(document.body, 'c');
     expect(parent.sent.filter((m) => m.type === 'editor:mode').map((m) => (m as { on: boolean }).on)).toEqual([true, false, true, false]);
@@ -291,7 +291,7 @@ describe('installCommentTargets', () => {
     const { parent, dispose } = await setup();
     parent.deliver({ type: 'editor:set-mode', on: true });
     dispose();
-    expect(document.documentElement.hasAttribute('data-baocut-annotating')).toBe(false);
+    expect(document.documentElement.hasAttribute('data-minedesign-annotating')).toBe(false);
     const pageClicks = vi.fn();
     $('inner').addEventListener('click', pageClicks);
     click($('inner'));

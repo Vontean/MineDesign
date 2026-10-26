@@ -764,7 +764,7 @@ export function installFilesBootDecisions(
       "Couldn’t read this design system’s files. Reload to try again.";
     MOVED_RELOAD_MESSAGE =
       "This design system now saves in a newer way. Reload the page to keep editing it.";
-    // BaoCut: user-facing copy calls the agent "the agent", not Claude.
+    // MineDesign: user-facing copy calls the agent "the agent", not Claude.
     PARTIAL_DESIGN_SYSTEM_MESSAGE =
       "Part of this design system could not be found just now, so editing is off, and what is shown here may be out of date or incomplete. Reload to try again; if it stays like this, ask the agent to restore this design system’s design-system.json from its version history.";
     DUPLICATE_FILE_INDEX_MESSAGE =

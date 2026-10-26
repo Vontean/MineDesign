@@ -10,7 +10,7 @@ export function installPlatformHostCapabilities(
 ): () => void {
   var capabilityTimeoutMs: Dynamic;
   function getClaudeHost(): Dynamic {
-    // BaoCut: the host is globalThis.designHost (packages/design/src/editor/design-host.ts), not globalThis.claude.
+    // MineDesign: the host is globalThis.designHost (packages/design/src/editor/design-host.ts), not globalThis.claude.
     return (globalThis as Dynamic).designHost;
   }
   function hasCapabilityLoader(): Dynamic {

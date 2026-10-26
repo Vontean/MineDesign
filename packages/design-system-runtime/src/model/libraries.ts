@@ -205,8 +205,8 @@ export function installModelLibraries(
     () => inferDeclaredLibraries,
   );
   return () => {
-    // BaoCut: previews take React 18.3.1 from the editor page's own copy (artifact-type/vendor/, put there by
-    // apps/design-system-editor/build.mjs), not from jsDelivr: BaoCut's CSP admits no CDN, and the desktop app
+    // MineDesign: previews take React 18.3.1 from the editor page's own copy (artifact-type/vendor/, put there by
+    // apps/design-system-editor/build.mjs), not from jsDelivr: MineDesign's CSP admits no CDN, and the desktop app
     // works offline. The files are the npm package's UMD builds, the same bytes jsDelivr serves, so the integrity
     // values stay. The address is root-relative, as editor/swatch-runtime.tsx requires.
     let pageVendorUrl = (file: string): string => {

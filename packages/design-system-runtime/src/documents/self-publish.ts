@@ -62,7 +62,7 @@ export function installDocumentsSelfPublish(
   function createSelfPublisher(): Host.Publisher {
     if (!selfPublishAvailable()) {
       throw Error(
-        // BaoCut: the host global is designSystemHost, not claude.
+        // MineDesign: the host global is designSystemHost, not claude.
         "window.designSystemHost.self is missing — this view’s runtime predates " +
           "the self capability (or this page is running outside a Frame shell and the emulator). Content cannot be saved from here.",
       );

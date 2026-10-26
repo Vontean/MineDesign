@@ -13,7 +13,7 @@ export function installPlatformHotReload(runtime: RuntimeBindings): () => void {
   var hotReloadController: Dynamic;
   function getHotReloadCapability(): Dynamic {
     try {
-      // BaoCut: the host is globalThis.designHost (packages/design/src/editor/design-host.ts), not globalThis.claude.
+      // MineDesign: the host is globalThis.designHost (packages/design/src/editor/design-host.ts), not globalThis.claude.
       let value: Dynamic = (globalThis as Dynamic).designHost?.hot;
       return (typeof value == "object" || typeof value == "function") &&
         value !== null

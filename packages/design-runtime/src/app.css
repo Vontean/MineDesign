@@ -13155,7 +13155,7 @@ html[data-theme-switching] *::after {
 }
 
 :root {
-  /* BaoCut: the platform's Anthropic Sans is not bundled; the "anthropic" font is the system UI font. */
+  /* MineDesign: the platform's Anthropic Sans is not bundled; the "anthropic" font is the system UI font. */
   --font-anthropic-sans:
     ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 }

@@ -620,7 +620,7 @@ export function installFilesApplicationBoot(
     IGNORED_LEGACY_ROOT_FILE_MESSAGE =
       "This design system has an extra file named design-system.json that the page does not use. Nothing is wrong with what you see here; you can leave the file alone.";
     UNREAD_LEGACY_STORE_CHANGES_MESSAGE =
-      // BaoCut: user-facing copy calls the agent "the agent", not Claude.
+      // MineDesign: user-facing copy calls the agent "the agent", not Claude.
       "Something was saved for this design system in a place this page no longer reads, after it was set up, so it is not shown here. If a change the agent made seems to be missing, ask the agent to make it again in this design system’s files.";
     unreadDesignSystemFileHomes = () => ({
       project: "unread",

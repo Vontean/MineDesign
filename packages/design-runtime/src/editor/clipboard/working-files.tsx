@@ -90,7 +90,7 @@ export function installEditorClipboardWorkingFiles(
   );
   return () => {
     ClipboardWorkingFilesHandler = (input?: Dynamic): Dynamic =>
-      // BaoCut: user-facing copy calls the agent "the agent", not Claude.
+      // MineDesign: user-facing copy calls the agent "the agent", not Claude.
       "The agent is adding " +
       (0, runtime.AccessibilityAnnouncementsHandler)(input);
     reactClipboardWorkingFiles = (0, runtime.toModuleNamespace)(

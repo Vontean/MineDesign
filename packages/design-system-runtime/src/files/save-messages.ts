@@ -38,7 +38,7 @@ export function installFilesSaveMessages(runtime: RuntimeBindings): () => void {
       return (
         "Not saved: " +
         indexDescription +
-        // BaoCut: user-facing copy calls the agent "the agent", not Claude.
+        // MineDesign: user-facing copy calls the agent "the agent", not Claude.
         " cannot be read because it is not in the form this editor writes, so nothing can be saved from here. It is looked at again whenever you make a change. If it still cannot be read, ask whoever manages this project, or the agent in the chat, to restore that file. " +
         retentionMessage
       );

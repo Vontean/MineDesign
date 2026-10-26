@@ -4,7 +4,7 @@
  *
  * 宿主对象由幻灯片编辑器的 connectEditorHost 做：文件、素材、外部改动走同源 HTTP（`_files.json`、`__deck/*`），
  * 与父窗口的消息也是同一套（packages/slides/src/editor-messages.ts）。设计稿另加 `downloads`（导出的文件交给父窗口保存），
- * 并让运行时自己的 frame 协议信任父窗口，BaoCut 由此问它能导出哪些格式、要它导出整份设计稿（§8.3）。
+ * 并让运行时自己的 frame 协议信任父窗口，MineDesign 由此问它能导出哪些格式、要它导出整份设计稿（§8.3）。
  */
 import { connectEditorHost, windowParentLink } from '@minedesign/editor-host';
 import { createDownloadsBridge } from './downloads-bridge.ts';
@@ -32,7 +32,7 @@ export function installDesignEditorHost(options: InstallDesignEditorHostOptions 
   const host = connectEditorHost({ base: options.base, win });
   const link = windowParentLink(win);
   if (!link) {
-    // 页面单独打开（不在 BaoCut 的 iframe 里）：没有父窗口可交，运行时退回浏览器下载
+    // 页面单独打开（不在 MineDesign 的 iframe 里）：没有父窗口可交，运行时退回浏览器下载
     win.designHost = host;
     return;
   }

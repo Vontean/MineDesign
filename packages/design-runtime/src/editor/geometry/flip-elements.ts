@@ -748,7 +748,7 @@ export function installEditorGeometryFlipElements(
     ThisIsnTShownOnThePageMessage =
       "This isn\u2019t shown on the page right now, so it can\u2019t be flipped. Show it first.";
     GeometryFlipElementsLabel_3 =
-      // BaoCut: user-facing copy calls the agent "the agent", not Claude.
+      // MineDesign: user-facing copy calls the agent "the agent", not Claude.
       "Its rotation or scale is set in code the editor can\u2019t change, so it can\u2019t be flipped here. Ask the agent in chat to flip it.";
     GeometryFlipElementsLabel_4 =
       "Part of a line of text can\u2019t be flipped on its own. Flip the whole text block.";

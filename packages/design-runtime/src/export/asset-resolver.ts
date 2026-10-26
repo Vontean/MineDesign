@@ -65,7 +65,7 @@ export function installExportAssetResolver(
           data: exportAssetTextEncoder.encode(entry),
           mime: "text/javascript",
         };
-      // BaoCut: Babel (embedded only for a JSX x-import) comes from the editor's own copy, the same bytes as the CDN
+      // MineDesign: Babel (embedded only for a JSX x-import) comes from the editor's own copy, the same bytes as the CDN
       // file; the CSP blocks the CDN (getBabelFileUrl, docs/design/canvas §8.3).
       let babelFile: Dynamic =
         input === runtime.exportBabelStandaloneUrl

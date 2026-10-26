@@ -1,4 +1,4 @@
-/* 编辑器适配：只作用于 BaoCut 编辑器 chrome（CDS 组件），画板文档保持作者自己的主题。
+/* 编辑器适配：只作用于 MineDesign 编辑器 chrome（CDS 组件），画板文档保持作者自己的主题。
    选择器重复 .cds-root 是为了高于 CDS 深色规则 `[data-mode=dark] .cds-root:not(…):not(…)` 的优先级；
    取值引用 tokens.css 的 --mdn-*，明暗由 light-dark() 与宿主变量决定，不再分模式维护两份。 */
 .cds-root.cds-root.cds-root.cds-root.cds-root {

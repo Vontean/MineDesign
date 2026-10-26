@@ -300,7 +300,7 @@ export function installExportHtmlProducer(
         console.warn("[design/export] " + value11),
         new ExportHtmlError(
           "blocked",
-          // BaoCut: user-facing copy calls the agent "the agent", not Claude.
+          // MineDesign: user-facing copy calls the agent "the agent", not Claude.
           "the design contains what looks like a live access link, which cannot be sent",
         )
       );
@@ -312,7 +312,7 @@ export function installExportHtmlProducer(
         "too_large",
         "the single-file export is " +
           (value12.size / 1048576).toFixed(1) +
-          // BaoCut: the limit is no longer 16 MiB (export/downloads.tsx).
+          // MineDesign: the limit is no longer 16 MiB (export/downloads.tsx).
           " MiB; the most that can be sent is " +
           (designExportRuntimeSource >> 20) +
           " MiB",

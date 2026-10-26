@@ -240,7 +240,7 @@ import type { Dynamic } from "../runtime-types";
     ): Dynamic {
       var value_d: Dynamic = this.ownerDocument || value_doc;
       var value_before: Dynamic = value_deepActive(this, value_d);
-      // BaoCut: restorer fix — call the saved native focus, as the original script does (`native.call`); the restored
+      // MineDesign: restorer fix — call the saved native focus, as the original script does (`native.call`); the restored
       // code called the wrapper itself and recursed until the stack overflowed whenever an artboard element was focused.
       focus.call(
         this,

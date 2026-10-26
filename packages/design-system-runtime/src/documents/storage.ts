@@ -219,7 +219,7 @@ export function installDocumentsStorage(runtime: RuntimeBindings): () => void {
         contentHoldReason ??
         (canPublish
           ? undefined
-          : // BaoCut: the host global is designSystemHost, not claude.
+          : // MineDesign: the host global is designSystemHost, not claude.
             "This view’s runtime does not offer self-publish (window." +
             "designSystemHost.self is absent) — content can be viewed but not saved " +
             "from here.");

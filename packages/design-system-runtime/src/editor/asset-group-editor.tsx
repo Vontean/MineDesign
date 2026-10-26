@@ -201,7 +201,7 @@ export function installEditorAssetGroupEditor(
                 : assetFileCountLabel(value13.length) + " are") +
                 " kept in this system’s store as code — remove " +
                 (value13.length === 1 ? "it" : "them") +
-                // BaoCut: user-facing copy calls the agent "the agent", not Claude.
+                // MineDesign: user-facing copy calls the agent "the agent", not Claude.
                 " with the agent for now",
             );
             items = items.filter(
@@ -437,7 +437,7 @@ export function installEditorAssetGroupEditor(
                       (value14.length === 1 ? "is" : "are") +
                       " kept in this system’s store as code — remove " +
                       (value14.length === 1 ? "it" : "them") +
-                      // BaoCut: user-facing copy calls the agent "the agent", not Claude.
+                      // MineDesign: user-facing copy calls the agent "the agent", not Claude.
                       " with the agent for now",
                   );
                   return;
@@ -494,7 +494,7 @@ export function installEditorAssetGroupEditor(
                             (value14.length > 0
                               ? " (" +
                                 assetFileCountLabel(value14.length) +
-                                // BaoCut: user-facing copy calls the agent "the agent", not Claude.
+                                // MineDesign: user-facing copy calls the agent "the agent", not Claude.
                                 " of stored code kept — remove with the agent)"
                               : ""),
                           length = value2.lastNotUndoable().length;

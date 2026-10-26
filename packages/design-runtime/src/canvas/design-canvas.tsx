@@ -17151,7 +17151,7 @@ export function installCanvasDesignCanvas(
             showToast(
               value653 instanceof runtime.ExportHtmlError &&
                 value653.code === "too_large"
-                ? // BaoCut: the export limit is no longer 16 MB (export/downloads.tsx).
+                ? // MineDesign: the export limit is no longer 16 MB (export/downloads.tsx).
                   `This design is too large to send as one file (over ${String(runtime.ExportDownloadsResolvedValue >> 20)} MB).`
                 : value653 instanceof runtime.ExportHtmlError &&
                     value653.code === "not_loaded"
@@ -20596,7 +20596,7 @@ export function installCanvasDesignCanvas(
         (): Dynamic => value349 && value632 && doc.indexSaved?.() === false,
       ),
       value635: Dynamic = value634
-        // BaoCut: user-facing copy calls the agent "the agent", not Claude.
+        // MineDesign: user-facing copy calls the agent "the agent", not Claude.
         ? "Let the agent add artboards, or use the Artboard tool."
         : (value67.artboards.length === 0 ? "This canvas" : "This page") +
           " has no artboards yet. Add one, or let the agent add some.",

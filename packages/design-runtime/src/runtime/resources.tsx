@@ -65,7 +65,7 @@ export function createExternalModuleLoader(onChange?: RuntimeValue): RuntimeValu
   const errors: RuntimeValue = new Map(),
     pollingGlobals: RuntimeValue = new Set();
   /**
-   * BaoCut: restored from the shipped dc-runtime. The reconstruction bundled `@babel/standalone` into support.js and
+   * MineDesign: restored from the shipped dc-runtime. The reconstruction bundled `@babel/standalone` into support.js and
    * dc-runtime.js (about 3 MB in every exported artboard); the original loads it only when a JSX x-import needs it,
    * from the CDN URL or the copy mapped in `window.__resources`. The editor preview maps it to the editor's own
    * `artifact-type/babel.min.js` and the whole-design HTML export embeds it once (docs/design/canvas §3, §8.3).

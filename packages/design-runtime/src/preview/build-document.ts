@@ -206,7 +206,7 @@ export function installPreviewBuildDocument(
           ? (state5[value13] = value15)
           : (state4[value13] = value14);
     }
-    // BaoCut: the artboard runtime loads Babel from this URL instead of the CDN the CSP blocks (getBabelFileUrl).
+    // MineDesign: the artboard runtime loads Babel from this URL instead of the CDN the CSP blocks (getBabelFileUrl).
     let babelFile: Dynamic = (0, runtime.getBabelFileUrl)(),
       babelResources: Dynamic = babelFile
         ? ` window.__resources = ${JSON.stringify({ [runtime.exportBabelStandaloneUrl]: babelFile }).replace(/</g, "\\u003c")};`

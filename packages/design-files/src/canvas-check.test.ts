@@ -315,7 +315,7 @@ class Comp extends Base {
 describe('resolveDesignEditorDist（docs/design/canvas §3）', () => {
   it('环境变量指的目录要有 index.html', async () => {
     const dist = await tempDir({ 'index.html': '<!doctype html>' });
-    expect(resolveDesignEditorDist({ BAOCUT_DESIGN_EDITOR_DIST: dist })).toBe(dist);
-    expect(resolveDesignEditorDist({ BAOCUT_DESIGN_EDITOR_DIST: path.join(dist, 'nope') })).toBeNull();
+    expect(resolveDesignEditorDist({ MINEDESIGN_DESIGN_EDITOR_DIST: dist })).toBe(dist);
+    expect(resolveDesignEditorDist({ MINEDESIGN_DESIGN_EDITOR_DIST: path.join(dist, 'nope') })).toBeNull();
   });
 });

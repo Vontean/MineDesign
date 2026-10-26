@@ -143,7 +143,7 @@ import type { Dynamic } from "../runtime-types";
         ? new TextDecoder().decode(f2.bytes)
         : f2.text;
       var value_body: Dynamic = value_text;
-      // BaoCut: restorer fix — the branches below test the request's responseType (`text`, `rt` in the original script);
+      // MineDesign: restorer fix — the branches below test the request's responseType (`text`, `rt` in the original script);
       // the restored code tested the response text, so arraybuffer / blob / json / document responses came back as text.
       try {
         if (text === "arraybuffer")

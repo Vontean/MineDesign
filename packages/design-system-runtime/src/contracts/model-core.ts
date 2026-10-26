@@ -321,7 +321,7 @@ export interface ComponentManifestEntry {
   page?: true;
 }
 export interface EmulatorFlags {
-  // BaoCut: the host is globalThis.designSystemHost (packages/design-system/src/editor/design-system-host.ts), not globalThis.claude.
+  // MineDesign: the host is globalThis.designSystemHost (packages/design-system/src/editor/design-system-host.ts), not globalThis.claude.
   designSystemHost?: { __emulator?: boolean };
   window?: { designSystemHost?: { __emulator?: boolean } };
 }

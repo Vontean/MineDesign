@@ -9,7 +9,7 @@ export function installEditorClaudeDelivery(
 ): () => void {
   var reactDesignSystemEditors: typeof import("react");
   var reactColorEditors: typeof import("react");
-  // BaoCut: the host is globalThis.designSystemHost (packages/design-system/src/editor/design-system-host.ts), not globalThis.claude.
+  // MineDesign: the host is globalThis.designSystemHost (packages/design-system/src/editor/design-system-host.ts), not globalThis.claude.
   var roomApiOwner: Editor.ClaudeEnvironment["designSystemHost"];
   var roomApiPromise: Promise<Editor.RoomCapability | null> | undefined;
   var EMPTY_ROOM_PEERS: readonly Editor.RoomPeer[];
@@ -35,7 +35,7 @@ export function installEditorClaudeDelivery(
   var UNSAFE_ARTIFACT_LABEL_PATTERN: RegExp;
   var EMPTY_CLAUDE_DELIVERY_CONTEXT: Application.ClaudeDeliveryContext;
   async function resolveClaudeRoom(): Promise<Editor.RoomCapability | null> {
-    // BaoCut: the host is globalThis.designSystemHost (packages/design-system/src/editor/design-system-host.ts), not globalThis.claude.
+    // MineDesign: the host is globalThis.designSystemHost (packages/design-system/src/editor/design-system-host.ts), not globalThis.claude.
     let claude = (globalThis as Editor.ClaudeEnvironment).designSystemHost;
     try {
       if (typeof claude?.use === "function") {
@@ -56,7 +56,7 @@ export function installEditorClaudeDelivery(
     }
   }
   function cachedClaudeRoom(): Promise<Editor.RoomCapability | null> {
-    // BaoCut: the host is globalThis.designSystemHost (packages/design-system/src/editor/design-system-host.ts), not globalThis.claude.
+    // MineDesign: the host is globalThis.designSystemHost (packages/design-system/src/editor/design-system-host.ts), not globalThis.claude.
     let claude = (globalThis as Editor.ClaudeEnvironment).designSystemHost;
     if (roomApiPromise === undefined || roomApiOwner !== claude) {
       roomApiOwner = claude;
@@ -133,7 +133,7 @@ export function installEditorClaudeDelivery(
   function resolvePromptSuggestion(
     environment: unknown = globalThis,
   ): ((prompt: string) => Promise<void>) | undefined {
-    // BaoCut: the host is globalThis.designSystemHost (packages/design-system/src/editor/design-system-host.ts), not globalThis.claude.
+    // MineDesign: the host is globalThis.designSystemHost (packages/design-system/src/editor/design-system-host.ts), not globalThis.claude.
     let value = getObjectProperty(
         getObjectProperty(environment, "designSystemHost"),
         "chat",
@@ -479,7 +479,7 @@ export function installEditorClaudeDelivery(
   async function resolveOwnerChatCapability(
     environment: Editor.ClaudeEnvironment = globalThis as Editor.ClaudeEnvironment,
   ): Promise<Editor.OwnerChatCapability | null> {
-    // BaoCut: the host is globalThis.designSystemHost (packages/design-system/src/editor/design-system-host.ts), not globalThis.claude.
+    // MineDesign: the host is globalThis.designSystemHost (packages/design-system/src/editor/design-system-host.ts), not globalThis.claude.
     let claude = environment.designSystemHost;
     try {
       if (typeof claude?.use === "function") {

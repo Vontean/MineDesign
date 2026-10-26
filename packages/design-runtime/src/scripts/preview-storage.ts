@@ -54,7 +54,7 @@ import type { Dynamic } from "../runtime-types";
       ..._extraArguments8: Dynamic[]
     ): Dynamic {
       var items: Dynamic = [];
-      // BaoCut: restorer fix — read the scoped storage `n` (`real` in the original script); the restored code read
+      // MineDesign: restorer fix — read the scoped storage `n` (`real` in the original script); the restored code read
       // `length.length` / `length.key` off the loop bound, which is undefined, so listing an artboard's keys threw.
       for (
         var index: Dynamic = 0, length: Dynamic = n.length;

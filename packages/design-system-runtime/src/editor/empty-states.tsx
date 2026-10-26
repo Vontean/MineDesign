@@ -113,7 +113,7 @@ export function installEditorEmptyStates(runtime: RuntimeBindings): () => void {
       (0, runtime.loadJsxNamespace)(),
       1,
     );
-    // BaoCut: user-facing copy calls the agent "the agent", not Claude.
+    // MineDesign: user-facing copy calls the agent "the agent", not Claude.
     EMPTY_SECTION_HINTS = {
       colors:
         "Ask the agent for a palette, a dark or high-contrast theme, a check for contrast and colour-blind safety, or to pull the colours from your repo — or add groups by hand.",

@@ -1,5 +1,5 @@
 /**
- * 编辑器页面（iframe 里的宿主 shim）与 BaoCut 界面（父窗口）之间的 postMessage 协议（docs/design/slides §5、§8.2）。
+ * 编辑器页面（iframe 里的宿主 shim）与 MineDesign 界面（父窗口）之间的 postMessage 协议（docs/design/slides §5、§8.2）。
  * 幻灯片与设计稿编辑器用同一套消息（docs/design/canvas §5），父窗口按消息来自哪个 iframe 区分。
  * 两边都只认这里列出的消息类型；消息里只有标注要的位置与文字，不带 deck 或设计稿文件的内容。
  * 例外是设计稿编辑器导出的文件（`editor:save-file`）：运行时的 `downloads` 能力把导出结果交给父窗口保存（docs/design/canvas §4、§8.3）。
@@ -7,7 +7,7 @@
  * - iframe → 父窗口用 `targetOrigin: "*"`（桌面端父页面是 file://，origin 为 null），父窗口按
  *   `event.source === iframe.contentWindow` 认消息；父窗口 → iframe 指定编辑器地址的 origin，shim 按
  *   `event.source === window.parent` 认消息。
- * - 本文件不依赖 DOM 与 Node，界面与编辑器两边都能导入（`@baocut/slides/editor-messages`）。
+ * - 本文件不依赖 DOM 与 Node，界面与编辑器两边都能导入（`@minedesign/slides/editor-messages`）。
  */
 
 /** 批注框旁边要的位置：iframe 视口里的坐标（CSS 像素）。 */
@@ -197,7 +197,7 @@ export function saveFileName(name: string): string | null {
 const isFileData = (value: unknown): value is ArrayBuffer | Blob =>
   value instanceof ArrayBuffer ? value.byteLength <= SAVE_FILE_MAX_BYTES : typeof Blob === 'function' && value instanceof Blob && value.size <= SAVE_FILE_MAX_BYTES;
 
-/** 编辑器地址上带 BaoCut 界面语言的查询参数（值是 `Locale`，如 `zh-Hans`）：标注位置标签按它写（editor/comment-labels.ts）。 */
+/** 编辑器地址上带 MineDesign 界面语言的查询参数（值是 `Locale`，如 `zh-Hans`）：标注位置标签按它写（editor/comment-labels.ts）。 */
 export const EDITOR_LOCALE_PARAM = 'lang';
 
 const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null && !Array.isArray(value);

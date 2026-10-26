@@ -77,7 +77,7 @@ export function installEditorDocumentSections(
                     markdown={input.markdown}
                     readOnly={edit === undefined}
                     placeholder={
-                      // BaoCut: user-facing copy calls the agent "the agent", not Claude.
+                      // MineDesign: user-facing copy calls the agent "the agent", not Claude.
                       "Guidance for the agent — voice, do's and don'ts, anything the tokens can't say."
                     }
                     label={input.title}

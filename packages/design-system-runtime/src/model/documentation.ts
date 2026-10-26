@@ -2856,7 +2856,7 @@ export function installModelDocumentation(
             markdownCodeSpan(
               runtime.DESIGN_SYSTEM_PATHS.assetsDir + value.name + "/",
             ) +
-            // BaoCut: uploads are files in the system's _blobs/ folder, read like any file, and a consumer imports
+            // MineDesign: uploads are files in the system's _blobs/ folder, read like any file, and a consumer imports
             // them with its own tool (design_import_asset), not the Artifact tool's read and publish.
             ", held in the system’s upload store: read one as the file " +
             markdownCodeSpan("_blobs/<id>.<ext>") +
@@ -3232,7 +3232,7 @@ export function installModelDocumentation(
           (cardsOfKind("assets").length > 0 ? " and assets" : "") +
           ", no components: take colours, type and fonts from the tokens card below for any page, deck or mock-up; a Slides deck or Design canvas also takes " +
           markdownCodeSpan(runtime.DESIGN_SYSTEM_PATHS.tokens) +
-          // BaoCut: BaoCut's skills, not the platform types' SKILL.md files.
+          // MineDesign: MineDesign's skills, not the platform types' SKILL.md files.
           " by file path (that kind’s skill says how).",
         "",
       );
@@ -3289,7 +3289,7 @@ export function installModelDocumentation(
             (longReadmes.length === 1 ? " is" : " are") +
             " the long-form second read a card links to; "
           : "") +
-        // BaoCut: the authoring guidance is BaoCut's design-system skill; no SKILL.md or artifact-type/ sits beside the files.
+        // MineDesign: the authoring guidance is MineDesign's design-system skill; no SKILL.md or artifact-type/ sits beside the files.
         (longReadmes.length > 0 ? "the " : "The ") +
         markdownCodeSpan("design-system") +
         " skill is authoring guidance, not needed to consume the system.",
@@ -4193,7 +4193,7 @@ export function installModelDocumentation(
       /\.(?:woff2?|ttf|otf)$/i.test(input) &&
       !/(?:^|\/)node_modules\//i.test(input);
     OTHER_PAGE_FONT_GUIDANCE =
-      // BaoCut: a font is a file in the system's directory (an id is its _blobs/<id>.<ext>), copied or imported with
+      // MineDesign: a font is a file in the system's directory (an id is its _blobs/<id>.<ext>), copied or imported with
       // the consumer's own tools, not the Artifact tool's read and publish.
       "one file per family is enough (below: the upright face nearest regular weight; bold and italic synthesize). Fetch it as the fetch column says (read the file: a path is in this system’s directory, an id is its " +
       markdownCodeSpan("_blobs/<id>.<ext>") +

@@ -99,7 +99,7 @@ export function installDocumentsWriteAccess(
   );
   return () => {
     CONTENT_SIGN_IN_REQUIRED_MESSAGE =
-      // BaoCut: user-facing copy calls the agent "the agent", not Claude.
+      // MineDesign: user-facing copy calls the agent "the agent", not Claude.
       "Sign in to see this content, then reload the page. If you’re already signed in, you might not have access to it.";
     EDITING_UNAVAILABLE_MESSAGE = "Editing isn’t available in this view.";
     LIVE_READ_ONLY_MESSAGE = "Read-only. You can view live changes.";

@@ -7,7 +7,7 @@
  *   assets   media/assets.ts（upload 返回 /_blob/<id>）
  *   comments comments/capability.ts 的 customAnchors（标注：运行时算锚点，宿主弹批注框）
  *   chat     host/agent-session.ts 的 resolvePromptSuggestion（「让智能体修好这页」：提示放进会话的输入框）
- *   commentLabels comments/labels.ts（标注位置标签里的词，跟随 BaoCut 的界面语言；BaoCut 加的，不是原宿主能力）
+ *   commentLabels comments/labels.ts（标注位置标签里的词，跟随 MineDesign 的界面语言；MineDesign 加的，不是原宿主能力）
  * 不提供 db（文件模式不读）、room（单用户）、hot（外部改动时重新载入）与 downloads。
  */
 import type { AnchorDescription, EditorPoint } from '../../../contracts/src/editor-messages.ts';
@@ -44,7 +44,7 @@ export interface CommentAnchorHandlers {
   threads(list: { id: string; anchor: string; active: boolean; section?: string }[]): void;
   /** 批注框是否开着。 */
   composing(on: boolean): void;
-  /** 拖动标记换位置；BaoCut 不支持，不调用。 */
+  /** 拖动标记换位置；MineDesign 不支持，不调用。 */
   move(input: unknown, options?: unknown): Promise<unknown>;
   /** 为 true 时运行时自己绑定快捷键 C 开关标注模式（调 enterMode / exitMode）。 */
   hotkey?: boolean;
@@ -100,7 +100,7 @@ export interface SlidesHost {
   comments?: HostCommentsCapability;
   chat?: HostChatCapability;
   commentLabels?: HostCommentLabels;
-  /** 按名字异步加载能力（environment/host-capabilities.ts）。BaoCut 不提供，运行时就直接读上面的字段。 */
+  /** 按名字异步加载能力（environment/host-capabilities.ts）。MineDesign 不提供，运行时就直接读上面的字段。 */
   use?(name: string): Promise<unknown>;
 }
 

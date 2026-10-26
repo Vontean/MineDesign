@@ -17,7 +17,7 @@ export function installPlatformImageUpload(
   var expectedUploadFailureReasons: Dynamic;
   var uploadFailureCodeMap: Dynamic;
   async function getAssetsCapability(): Promise<Dynamic> {
-    // BaoCut: the host is globalThis.designHost (packages/design/src/editor/design-host.ts), not globalThis.claude.
+    // MineDesign: the host is globalThis.designHost (packages/design/src/editor/design-host.ts), not globalThis.claude.
     let claude: Dynamic = (globalThis as Dynamic).designHost;
     return typeof claude?.use == "function"
       ? (0, runtime.awaitHostCapability)(

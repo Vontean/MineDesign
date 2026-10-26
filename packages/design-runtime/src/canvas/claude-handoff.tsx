@@ -74,7 +74,7 @@ export function installCanvasClaudeHandoff(
   }
   function resolveClaudeSuggestPrompt(host: Dynamic = globalThis): Dynamic {
     let value: Dynamic = readObjectProperty(
-        // BaoCut: the host is globalThis.designHost (packages/design/src/editor/design-host.ts), not globalThis.claude.
+        // MineDesign: the host is globalThis.designHost (packages/design/src/editor/design-host.ts), not globalThis.claude.
         readObjectProperty(host, "designHost"),
         "chat",
       ),
@@ -294,7 +294,7 @@ export function installCanvasClaudeHandoff(
       case "staged":
       case "waiting":
         return (
-          // BaoCut: user-facing copy calls the agent "the agent", not Claude.
+          // MineDesign: user-facing copy calls the agent "the agent", not Claude.
           "Added to your message to the agent. Send it when you're ready." + suffix
         );
       case "unanswered":

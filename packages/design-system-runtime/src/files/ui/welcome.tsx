@@ -167,7 +167,7 @@ export function installFilesUiWelcome(runtime: RuntimeBindings): () => void {
         detail === undefined
           ? WELCOME_TYPE_REQUIRED_MESSAGE
           : argument && busy === true
-            ? // BaoCut: user-facing copy calls the agent "the agent", not Claude.
+            ? // MineDesign: user-facing copy calls the agent "the agent", not Claude.
               "A request to the agent is on its way"
             : undefined;
       return (
@@ -280,7 +280,7 @@ export function installFilesUiWelcome(runtime: RuntimeBindings): () => void {
             <h2 className={"ds-page-title"}>{"Just getting started"}</h2>,
             <p className={"text-body text-secondary"}>
               {
-                // BaoCut: user-facing copy calls the agent "the agent", not Claude.
+                // MineDesign: user-facing copy calls the agent "the agent", not Claude.
                 "Nothing has been added to this design system yet. Once the brand’s files are in, the agent drafts it from there."
               }
             </p>,
@@ -333,7 +333,7 @@ export function installFilesUiWelcome(runtime: RuntimeBindings): () => void {
       (intake.refused.length > 0
         ? " · " + String(intake.refused.length) + " couldn’t be kept"
         : "") +
-      // BaoCut: user-facing copy calls the agent "the agent", not Claude.
+      // MineDesign: user-facing copy calls the agent "the agent", not Claude.
       ". Create the design system and the agent will draft from " +
       (singular ? "that file" : "them") +
       "." +
@@ -708,7 +708,7 @@ export function installFilesUiWelcome(runtime: RuntimeBindings): () => void {
       (0, runtime.loadJsxNamespace)(),
       1,
     );
-    // BaoCut: user-facing copy calls the agent "the agent", not Claude.
+    // MineDesign: user-facing copy calls the agent "the agent", not Claude.
     README_STARTER_TEXT = [
       "# Your design system…",
       "",
@@ -736,7 +736,7 @@ export function installFilesUiWelcome(runtime: RuntimeBindings): () => void {
     WELCOME_TYPE_REQUIRED_MESSAGE =
       "Works in a design system made from the Design System type";
     WELCOME_OPTIONS = {
-      // BaoCut: user-facing copy calls the agent "the agent", not Claude.
+      // MineDesign: user-facing copy calls the agent "the agent", not Claude.
       github: [
         "Sync from GitHub",
         "Point the agent at a repository; it imports tokens and components from code.",
@@ -765,7 +765,7 @@ export function installFilesUiWelcome(runtime: RuntimeBindings): () => void {
       noFiles: "Drop or choose the brand’s files first",
       adding: "Adding them to the page…",
       noneKept: "The page couldn’t keep any of them — try other files",
-      // BaoCut: user-facing copy calls the agent "the agent", not Claude.
+      // MineDesign: user-facing copy calls the agent "the agent", not Claude.
       waiting: "A request to the agent is on its way",
       removeLater: "You can remove it once the upload finishes",
       save: {

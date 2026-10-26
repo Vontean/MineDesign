@@ -54,8 +54,8 @@ export function createDesignSystemHost(host: SlidesHost, userName: () => Promise
 }
 
 /**
- * 在页面上装好 globalThis.designSystemHost（设计系统编辑器）；在 BaoCut 的 iframe 里时另装标注的目标层，
- * 位置标签跟随 BaoCut 的界面语言（地址上的 ?lang=），单独打开时没带，保持英文。
+ * 在页面上装好 globalThis.designSystemHost（设计系统编辑器）；在 MineDesign 的 iframe 里时另装标注的目标层，
+ * 位置标签跟随 MineDesign 的界面语言（地址上的 ?lang=），单独打开时没带，保持英文。
  */
 export function installDesignSystemEditorHost(options: InstallDesignSystemEditorHostOptions = {}): void {
   const win: DesignSystemHostWindow = options.win ?? window;

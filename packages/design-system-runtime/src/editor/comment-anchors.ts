@@ -38,7 +38,7 @@ export function installEditorCommentAnchors(
     return {
       "data-id": commentTargetId(prefix, name),
       "data-comment-target": "",
-      // BaoCut: 另带原名，宿主的标注层（packages/design-system/src/editor/comment-targets.ts）写位置标签用；
+      // MineDesign: 另带原名，宿主的标注层（packages/design-system/src/editor/comment-targets.ts）写位置标签用；
       // 名字不干净或太长时 data-id 是截短加哈希，认不回原名
       "data-comment-name": name,
     };

@@ -1610,7 +1610,7 @@ export function installFastEditJournal(runtime: RuntimeBindings): () => void {
     MAX_FAST_EDIT_JOURNAL_ENTRIES = 200;
     HISTORY_TURN_COMPLETION_MESSAGES = {
       done: "done",
-      // BaoCut: user-facing copy calls the agent "the agent", not Claude.
+      // MineDesign: user-facing copy calls the agent "the agent", not Claude.
       handed: "handed to the agent, nothing changed here",
       not_applied: "not done here, it went to the agent",
       unconfirmed: "made, but the save was not confirmed",

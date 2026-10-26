@@ -764,7 +764,7 @@ export function installFastEditController(
       in_list:
         "Done. This element is drawn once for every item of a list, so the change shows on all of them.",
       save_clash:
-        // BaoCut: user-facing copy calls the agent "the agent", not Claude.
+        // MineDesign: user-facing copy calls the agent "the agent", not Claude.
         "Somebody else saved this artboard at the same moment, so one of the two changes may not have been kept. The comment has gone on to the agent.",
       removed: (input?: Dynamic): Dynamic =>
         input === 1

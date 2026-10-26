@@ -3,12 +3,12 @@
 <head>
 <meta charset="utf-8">
 <!--
-  BaoCut 设计系统编辑器页面（docs/design/canvas §10.2），照原 Design System 类型的页面改来。Runtime 在 /design-system/<grant>/ 下提供，
+  MineDesign 设计系统编辑器页面（docs/design/canvas §10.2），照原 Design System 类型的页面改来。Runtime 在 /design-system/<grant>/ 下提供，
   宿主由 src/main.ts 装上。与原页面不同的地方：
   - 原页面开头的内联脚本向父窗口要功能开关（__appifact_flags）并装健康上报（__appifact_health）。这里只装固定取值的
     __appifact_flags（下一个 script），不装健康上报。
   - appifact-capabilities 去掉 room（单用户）；其余照原样，运行时只读其中的 db（判断存储方式）与 downloads（是否声明了下载）。
-  - 不带 README 注释与 meta（写给托管平台上的 Claude 看的，BaoCut 的说明在 skill design-system 里）。
+  - 不带 README 注释与 meta（写给托管平台上的 Claude 看的，MineDesign 的说明在 skill design-system 里）。
   - 样式与脚本由 Vite 从 src/main.ts 打进 assets/，不再是 artifact-type/app.css、artifact-type/app.js；artifact-type/ 下只有
     预览的 run.html（原样）与预览用的 React UMD（vendor/）。
 -->

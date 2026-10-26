@@ -459,7 +459,7 @@ export interface RoomCapability {
   ) => unknown;
 }
 export interface ClaudeEnvironment {
-  // BaoCut: the host is globalThis.designSystemHost (packages/design-system/src/editor/design-system-host.ts), not globalThis.claude.
+  // MineDesign: the host is globalThis.designSystemHost (packages/design-system/src/editor/design-system-host.ts), not globalThis.claude.
   designSystemHost?: {
     use?: (capability: string) => Promise<unknown> | unknown;
     room?: RoomCapability;

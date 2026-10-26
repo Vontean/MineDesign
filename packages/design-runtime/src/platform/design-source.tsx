@@ -132,7 +132,7 @@ export function installPlatformDesignSource(
       (0, runtime.load_react)(),
       1,
     );
-    // BaoCut: no host frame is trusted by default; a page that needs one declares origins in __FRAME_PREAMBLE.
+    // MineDesign: no host frame is trusted by default; a page that needs one declares origins in __FRAME_PREAMBLE.
     PlatformDesignSourceItems = [];
     getTrustedHostOriginsValue = getTrustedHostOrigins();
     PlatformDesignSourceAlias = null;

@@ -128,7 +128,7 @@ export function installCommentsHostController(
         let value4: Dynamic = (0, runtime.getCachedHostCapability)("comments");
         if (customAnchorsHostMethod(value4))
           return (value = connectCustomAnchors(value4, state2));
-        // BaoCut: the host is globalThis.designHost (packages/design/src/editor/design-host.ts), not globalThis.claude.
+        // MineDesign: the host is globalThis.designHost (packages/design/src/editor/design-host.ts), not globalThis.claude.
         let claude: Dynamic = (globalThis as Dynamic).designHost;
         return typeof claude?.use != "function"
           ? (value = Promise.resolve(null))
