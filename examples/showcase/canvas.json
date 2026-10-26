@@ -150,9 +150,10 @@
     },
     "flow-login": {
       "fill": "orange",
+      "maxH": 113,
       "page": "flow",
       "text": "校验在点“登录”时触发，不在输入时打断。错误信息写清怎么改，不只说“格式错误”。",
-      "w": 320,
+      "w": 282,
       "x": 0,
       "y": 800
     },
@@ -174,12 +175,20 @@
     },
     "flow-title": {
       "kind": "title1",
-      "maxW": 5160,
       "page": "flow",
       "text": "核心流程：登录 → 工作台 → 看板 → 任务详情",
       "w": 240,
       "x": 0,
       "y": -320
+    },
+    "note-snk04k": {
+      "bold": false,
+      "kind": "title1",
+      "size": 24,
+      "text": "123",
+      "w": 240,
+      "x": 2132,
+      "y": 1165
     },
     "states-dark": {
       "fill": "gray",

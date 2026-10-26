@@ -35,7 +35,7 @@
           <span style="color: var(--ink-subtle); font-weight: 400;">{{lane.count}}</span>
         </div>
         <sc-for list="{{lane.tasks}}" as="task" hint-placeholder-count="2">
-          <dc-import name="TaskCard" task="{{task}}" hint-size="264px,124px"></dc-import>
+          <div style="box-sizing: border-box; display: flex; flex-direction: column; gap: 12px"><dc-import name="TaskCard" task="{{task}}" hint-size="264px,124px"></dc-import></div>
         </sc-for>
       </section>
     </sc-for>
