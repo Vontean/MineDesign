@@ -11,6 +11,8 @@ const $=id=>document.getElementById(id);
 const frame=$('editor');
 $('state-illustration').append(createIllustration('document-loading'));
 let app,client,bridge,documentRecord,notes=[],pending,mode=false,busy=false,loading=0,editorPanel=false,view=null;
+// 失焦（按下鼠标）到 iframe 发来 compose（松开鼠标后）之间的上限；长按拖动框选超过它时照常开始新评论
+const COMPOSE_DISMISS_MS=600;
 let docs=config.documents;
 const system=matchMedia('(prefers-color-scheme: dark)');
 let theme=system.matches?'dark':'light',variables={},hostTheme=false;
@@ -218,7 +220,7 @@ window.addEventListener('blur',closeMenus);
 function setPanel(open){document.body.dataset.panel=open?'open':'closed';syncPanelButton();}
 $('panel').onclick=()=>editorFeedback()?post({type:'editor:set-panel',open:!editorPanel}):setPanel(document.body.dataset.panel==='closed');
 $('annotate').onclick=()=>{mode=!mode;$('annotate').setAttribute('aria-pressed',String(mode));post({type:'editor:set-mode',on:mode});};
-// 评论输入框：点中目标后浮在落点旁（钉子尖角指着落点），不遮挡目标；Enter 提交，Shift+Enter 换行，Esc 取消
+// 评论输入框：点中目标后浮在落点旁（钉子尖角指着落点），不遮挡目标；Enter 提交，Shift+Enter 换行，Esc 或空内容时点到外部取消
 function placeComposer(point){
   const box=frame.getBoundingClientRect(),x=box.left+point.x,y=box.top+point.y,bar=$('compose-form');
   $('compose').style.setProperty('--pin-x',`${x}px`);$('compose').style.setProperty('--pin-y',`${y}px`);
@@ -233,7 +235,12 @@ async function closeComposer(add){
   try{if(add&&text){notes.push({id:crypto.randomUUID(),anchor:m.anchor,label:m.label,detail:m.detail,section:m.section,text,createdAt:new Date().toISOString()});await save();}}catch(e){status(e.message);}
   post({type:'editor:composer-closed',requestId:m.requestId});
 }
+let dismissedAt=0;
 function openComposer(m){
+  // 刚因点到外部而取消时，同一次点击在评论模式下会再发一次 compose：这次点击只用来关闭，拒绝它
+  if(performance.now()-dismissedAt<COMPOSE_DISMISS_MS){dismissedAt=0;post({type:'editor:compose-result',requestId:m.requestId,opened:false});return;}
+  // 已写了内容时点到别处不另起一条，保留原输入框并把焦点交回，避免丢字
+  if(pending&&$('comment').value.trim()){post({type:'editor:compose-result',requestId:m.requestId,opened:false});$('comment').focus();return;}
   if(pending)closeComposer(false);
   pending=m;$('compose').setAttribute('aria-label',`${t.composeTitle}: ${m.label}`);$('comment').value='';$('compose').hidden=false;fitComment();placeComposer(m.point);
   post({type:'editor:compose-result',requestId:m.requestId,opened:true});$('comment').focus();
@@ -244,6 +251,12 @@ $('comment').onkeydown=e=>{
   if(e.key==='Escape'){e.preventDefault();e.stopPropagation();closeComposer(false);}
   else if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing){e.preventDefault();closeComposer(true);}
 };
+// 未输入内容时点到输入框以外（画布 iframe 或外壳其他控件）即取消这次评论；已有内容时保留，避免丢字。
+// 画布在 iframe 里，外壳收不到点击，只能看焦点去向；切到别的应用时整页失焦（hasFocus 为 false），不算取消。
+$('compose').addEventListener('focusout',()=>setTimeout(()=>{
+  if(!pending||$('comment').value.trim()||$('compose').contains(document.activeElement)||!document.hasFocus())return;
+  dismissedAt=performance.now();closeComposer(false);
+}));
 window.addEventListener('message',e=>{
   if(e.source!==frame.contentWindow)return;
   const m=readEditorMessage(e.data);if(!m)return;
