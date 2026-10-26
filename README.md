@@ -55,7 +55,7 @@ mdn plugin install --workspace /path/to/design-workspace
 | --- | --- | --- |
 | Codex 名称 | MineDesign | MineDesign dev |
 | 来源 | npm 的 latest 发布包 | 本地源码与构建 |
-| Git 分支 | main；版本标签 vX.Y.Z | codex/dev |
+| Git 分支 | main；版本标签 vX.Y.Z | dev |
 | 本机数据 | ~/.minedesign | 源码目录的 .local/dev |
 | 作品目录 | ~/MineDesign 或安装时指定 | 开发安装时指定，默认源码工作区 |
 | 更新方式 | npm 发布版本 | 当前开发分支的上游 |
@@ -65,7 +65,7 @@ mdn plugin install --workspace /path/to/design-workspace
 开发者安装：
 
 ```sh
-git clone --branch codex/dev https://github.com/Vontean/MineDesign.git
+git clone --branch dev https://github.com/Vontean/MineDesign.git
 cd MineDesign
 npm ci --ignore-scripts
 npm run build
