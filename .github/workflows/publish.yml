@@ -75,6 +75,7 @@ jobs:
           const plugin=JSON.parse(readFileSync('.codex-plugin/plugin.json'));
           const tag=process.env.RELEASE_TAG;
           assert.equal(pkg.name,'@vontean/minedesign');
+          assert.notEqual(pkg.private,true,'development packages cannot be released');
           assert.equal(`v${pkg.version}`,tag);
           assert.equal(lock.version,pkg.version);
           assert.equal(lock.packages[''].version,pkg.version);

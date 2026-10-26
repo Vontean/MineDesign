@@ -15,9 +15,9 @@
 | manifest、技能 | 同步版本与锁文件、运行本地安装 | 官方注册结果与缓存配置正确 |
 | 打包清单或运行依赖 | `npm pack --dry-run --ignore-scripts`；需要时隔离目录安装包 | 必需资源存在，无本地私有链接依赖 |
 
-安装脚本使用当前 Node 的绝对路径，生成独立 `minedesign-local` marketplace；CLI 按 CODEX_BIN、PATH、应用内置路径查找。构建指纹覆盖 dist、两套编辑器产物并进入启动配置，使后端独立打包后的变化也可识别。移动项目或更换 Node 后重新安装；安装成功不代表旧的宿主连接已替换。
+安装脚本使用当前 Node 的绝对路径；生产版使用 `minedesign-local`，开发版使用独立的 `minedesign-dev-local` marketplace。CLI 按 CODEX_BIN、PATH、应用内置路径查找。构建指纹覆盖 dist、两套编辑器产物并进入启动配置，使后端独立打包后的变化也可识别。移动项目或更换 Node 后重新安装；安装成功不代表旧的宿主连接已替换。
 
-源码检出的默认工作区为项目自身，npm 安装默认 `~/MineDesign`（规则见 `src/paths.mjs`）；其他项目使用 CLI 的 `--workspace`。发版与 npm 安装包见 [发布](releasing.md)。这里没有通用跨项目授权 UI，路径边界测试必须保留。
+开发版默认工作区为源码目录，数据在 `.local/dev/`；npm 安装默认 `~/MineDesign`，数据在 `~/.minedesign`（规则见 `src/paths.mjs`）；其他项目使用 CLI 的 `--workspace`。发版与 npm 安装包见 [发布](releasing.md)。这里没有通用跨项目授权 UI，路径边界测试必须保留。
 
 ## 故障与恢复
 
@@ -50,7 +50,7 @@
 
 可写测试使用 `tests/fixtures/` 复制到临时工作区。`examples/` 是可被用户编辑的作品，不作为可覆盖的数据。测试产生的批注或临时目录在 finally 清理。
 
-界面交付的截图规则由 AGENTS.md 统一维护。实际验收记录见 [verification.md](verification.md)，不要把本次未运行的历史记录写成新证据。
+界面交付的截图规则由 AGENTS.md 统一维护。过程证据保存在本机 `output/` 或 `docs/process/`，不提交。不要把本次未运行的历史记录写成新证据。
 
 ## CodeGraph 工作流
 
@@ -65,3 +65,14 @@
 提交前检查全部差异与打包名单，排除 `.mcp.json`、运行数据、凭据、索引数据库和生成物。文档、测试及资源随对应逻辑提交；来源和许可统一维护在 FORK.md。
 
 仓库可见性通过 `gh repo view --json nameWithOwner,visibility,url` 实时核对；推送后核对分支 upstream 和远端提交 SHA。创建仓库、推送源码和发布安装包是不同动作，分别记录授权及结果。
+
+
+## 生产与开发
+
+`main` 对应 npm 生产版本；日常工作在 `codex/dev`，独立工作分支从它创建，完成后合回开发分支。只有用户明确批准合入生产，才创建面向 `main` 的 PR；不自动发布、不从 Dev 更新生产插件。
+
+生产版用 npm 安装并运行 `mdn plugin install`。源码切到 `codex/dev` 后，运行 `npm run build && npm run install:dev` 注册 MineDesign dev。两版安装、数据与 MCP 身份分开，Dev 的重新构建不影响生产包。详细命令以开发分支的 CLI 和安装脚本为准。
+
+## 验收边界
+
+构建与测试、隔离服务、真实浏览器、Codex 宿主和用户验收分别报告。浏览器能显示页面不等于宿主里的发送、下载或完整 Agent 修改闭环已验证；这些能力应在对应运行环境逐项确认。过程日志、截图、CSV 和交流稿保存在 `output/`、`Doc/` 或 `docs/process/`，不作为仓库长期文档或 npm 交付内容。

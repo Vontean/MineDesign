@@ -200,4 +200,4 @@ Reference 与组件库不必等待全部设备预设；Figma 也不必等待完�
 | 组件浏览、预览与参数推断 | [components.tsx](packages/design-system-runtime/src/editor/components.tsx)、[component-inference.ts](packages/design-system-runtime/src/model/component-inference.ts)、[设计系统格式](skills/design-system/references/format.md) |
 | 设计工具来源整理方法 | [from-design-tool.md](skills/design-system/references/from-design-tool.md) |
 | 素材、检查与持久化操作 | [documents.mjs](src/backend/documents.mjs)、[document-store](packages/document-store)、[设计系统技能](skills/design-system/SKILL.md) |
-| 已有验证与宿主边界 | [verification.md](docs/verification.md) |
+| 已有验证与宿主边界 | [验收边界](docs/development.md#验收边界) |

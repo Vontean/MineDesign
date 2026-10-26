@@ -1,5 +1,13 @@
 # MineDesign · Agent 入口
 
+## 生产与开发
+
+- `main` 是生产分支，npm `latest` 是用户实际安装的生产版。生产插件只使用 npm 发布包，不能指向本仓库的构建。
+- 后续代码修改、构建和验收都在 `codex/dev`（或从它创建的 `codex/` 工作分支）进行，使用独立的 **MineDesign dev** 插件。开始任务先核对当前分支与插件来源；在 `main` 上收到开发任务时先切到开发分支。
+- 除非用户明确要求“合入生产”或“发布生产版”，不得把开发改动推入 `main`、移动生产标签、发布 npm latest，或用源码覆盖生产插件。用户同意后，通过 PR 合入并按发布流程验证。
+- 生产与开发的插件 ID、MCP 标识和本机数据目录必须独立；重新安装 Dev 不得移除或改写生产配置。
+- `Doc/`、`docs/process/`、`docs/notes/`、`docs/drafts/` 与 `output/` 放交流草稿和过程证据，不提交。正式产品、架构、设计、操作和发布文档继续维护；不要批量忽略 Markdown。
+
 ## 开始与完成
 
 1. 先看工作区差异，明确本轮目标与可检查结果；已有作品和未提交修改属于用户数据。
@@ -28,7 +36,7 @@
 | 修改加载、保存、素材、反馈或 MCP | [架构契约](ARCHITECTURE.md#运行时契约) | `src/backend/`、`src/interfaces/`、`src/frontend/service-client.mjs` |
 | 构建、安装、连接恢复、打包 | [docs/development.md](docs/development.md) | `package.json`、`scripts/`、`bin/mdn.mjs`、插件 manifest |
 | 发布版本、npm 与 GitHub Release | [docs/releasing.md](docs/releasing.md) | `.github/workflows/publish.yml`、`docs/releases/` |
-| 选择测试、判断某项是否验收 | [验证路由](docs/development.md#按风险验证)、[证据记录](docs/verification.md) | `tests/`；修改测试用独立夹具，不覆盖示例作品 |
+| 选择测试、判断某项是否验收 | [验证路由](docs/development.md#按风险验证)、[验收边界](docs/development.md#验收边界) | `tests/`；修改测试用独立夹具，不覆盖示例作品 |
 | 改设计生成方法或文件格式 | 对应 `skills/design/SKILL.md` 或 `skills/design-system/SKILL.md` | 再按技能指针读取 references；不用整批加载 |
 | 修改编辑器、选择性合入外部更新或评估分发 | [ARCHITECTURE.md](ARCHITECTURE.md)、[FORK.md](FORK.md) | 模块自行维护；FORK 统一记录固定来源、接管映射与许可 |
 

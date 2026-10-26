@@ -7,3 +7,12 @@ output/
 
 /.mcp.json
 /.claude/
+
+# 本机交流、草稿与过程验证记录；正式维护文档继续跟踪
+/Doc/
+/doc/
+/docs/process/
+/docs/notes/
+/docs/drafts/
+/docs/verification/
+/docs/verification.md

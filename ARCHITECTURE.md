@@ -129,7 +129,7 @@ flowchart TB
 | `CONTEXT.md` / `PRD.md` | 当前功能用途 / 首版目标；实现边界以本文为准 |
 | `DESIGN.md` / `README.md` | 视觉约定 / 产品与快速启动入口 |
 | `FORK.md` | 唯一分叉记录、固定提交、接管映射、完整许可与来源限制；按需阅读 |
-| `docs/development.md` / `docs/verification.md` | 工作流、恢复方式 / 验证证据及能力限制 |
+| `docs/development.md` / `docs/development.md#验收边界` | 工作流、恢复方式 / 验证证据及能力限制 |
 
 `.mcp.json` 是本机绝对路径启动配置；`.local/`（源码检出）或 `~/.minedesign/`（npm 安装）保存批注、设置、更新状态和本机插件登记；`.claude/` 是本地工具状态；`.codegraph/` 是本地索引；`output/` 是验证交付物；`dist/`、`apps/*/dist/`、`packages/*/src/generated/` 和 `node_modules/` 是生成或安装产物。上述本机数据不入库；保留 `.codegraph/.gitignore`。安装包按 package files 收集构建产物和 FORK 许可，运行不依赖源码工作区链接。
 
@@ -159,7 +159,7 @@ Codex 中通过接口工具把编辑器装为 srcdoc，图片、字体、脚本�
 
 页面用语义名引用插画，资源模块不引用服务。编辑器主题只影响 chrome，作品 token/品牌独立。目录和内部包名迁移不改变文件格式、用户文案、CSS、消息值与外部文件路径。
 
-跨层重构先保存旧构建和状态基线，再比较实际响应、真实页面截图与交互。自动化、浏览器预览、Codex 宿主和用户验收分别记录；不能用测试数量或目录完成代替交互等价证据。当前证据与边界见 docs/verification.md。
+跨层重构先保存旧构建和状态基线，再比较实际响应、真实页面截图与交互。自动化、浏览器预览、Codex 宿主和用户验收分别记录；不能用测试数量或目录完成代替交互等价证据。当前证据与边界见 docs/development.md#验收边界。
 
 ### 不断连的后端更新
 
