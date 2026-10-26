@@ -25,7 +25,9 @@ gh workflow run publish.yml --repo Vontean/MineDesign --ref main -f release_tag=
 
 ## 首次发布（一次性）
 
-npm 的可信发布只能绑在已存在的包上，所以第一个版本由本人在本机发布：
+本仓库已在 2026-10-26 完成初始化：现有 GitHub Release 的 `0.1.0` 包经校验后在本机首次发布，随后绑定本仓库、`publish.yml` 和 `npm-release` environment。`0.1.1` 已由 [正式 Action](https://github.com/Vontean/MineDesign/actions/runs/40287954328) 通过 OIDC 发布到 npm，并同步 [GitHub Release](https://github.com/Vontean/MineDesign/releases/tag/v0.1.1)；后续版本直接按上方“每次发布”执行，不重复初始化。
+
+以下保留首次配置流程，供迁移或新包使用。npm 的可信发布只能绑在已存在的包上，所以第一个版本由本人在本机发布：
 
 1. 跑一次只验证的工作流，下载它验证过的包：`gh run download <run-id> --repo Vontean/MineDesign -n minedesign-npm-package`。
 2. 本人登录 npm 并发布该文件（需要 2FA）：`npm login`，`npm publish ./vontean-minedesign-X.Y.Z.tgz --access public`。
