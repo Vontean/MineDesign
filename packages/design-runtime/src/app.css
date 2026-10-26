@@ -13279,7 +13279,12 @@ html[data-theme-switching] *::after {
   color: var(--mdn-text);
 }
 :is(.mdn-tool-dock-card, .tb-root[data-tb-overlay] .tb-card, [data-mega-selection-strip]) [data-cds="Button"]:not([data-cds-icon-only]) {
-  padding-inline: 10px;
+  padding-inline: 12px;
+}
+/* 工具栏里「图标 + 文字」的按钮（评论）：前置图标带 CDS 的 -4px 光学偏移，左 16px 时图标实际距左缘 12px，
+   与文字距右缘的 12px 相等，视觉左右均衡 */
+:is(.mdn-tool-dock-card, .tb-root[data-tb-overlay] .tb-card, [data-mega-selection-strip]).mdn-tool-dock-card [data-cds="Button"]:not([data-cds-icon-only]) {
+  padding-inline: 16px 12px;
 }
 /* 按钮本身和内部 paint 层原有的悬停/展开底色会与 squish 层叠加成约 15% 的灰，这里只保留 squish 一层 */
 :is(.mdn-tool-dock-card, .tb-root[data-tb-overlay] .tb-card, [data-mega-selection-strip]) [data-cds="Button"],

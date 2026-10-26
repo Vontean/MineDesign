@@ -166,4 +166,5 @@
 .cds-root .ds-nav-fab-btn.ds-nav-fab-btn:hover { background-image: linear-gradient(var(--mdn-ghost-hover), var(--mdn-ghost-hover)); }
 .cds-root .ds-nav-fab-btn.ds-nav-fab-btn:is([aria-expanded="true"], [data-popup-open]) { background-image: linear-gradient(var(--mdn-ghost-active), var(--mdn-ghost-active)); }
 .cds-root .ds-nav-fab-btn.ds-nav-fab-btn:focus-visible { box-shadow: var(--mdn-shadow-float), var(--cds-focus-shadow); }
-.cds-root .ds-nav-fab-btn.ds-nav-fab-btn :is(.cds-btn-squish, [data-cds-part="paint"]) { background: transparent; }
+/* 内部 paint 层带 secondary 按钮自己的 1px 内描边与投影，会和外层浮起投影叠成粗边，一并清掉 */
+.cds-root .ds-nav-fab-btn.ds-nav-fab-btn :is(.cds-btn-squish, [data-cds-part="paint"]) { background: transparent; box-shadow: none; }
