@@ -13160,7 +13160,7 @@ html[data-theme-switching] *::after {
     ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 }
 
-/* MineDesign：画布底部居中的工具栏（tool modules），外观对齐 Codex 单行 composer */
+/* MineDesign：画布底部居中的工具栏（tool modules）；外观见下方三种浮动条的共用规则 */
 .mdn-tool-dock {
   position: absolute;
   inset-inline: 0;
@@ -13173,17 +13173,12 @@ html[data-theme-switching] *::after {
 .mdn-tool-dock[hidden] {
   display: none;
 }
-/* 胶囊外形、composer 投影；高度 = 28px 按钮 + 上下各 8px。选择器带 .mdn-tool-dock 以高于 Surface 的 rounded-card / shadow-panel-sm */
 .mdn-tool-dock .mdn-tool-dock-card {
-  --tb-plane: var(--mdn-elevated);
   display: flex;
   align-items: center;
   gap: 4px;
   height: calc(var(--cds-h-control) + 16px);
   padding: 0 8px;
-  border-radius: var(--mdn-radius-full);
-  background-color: var(--mdn-elevated);
-  box-shadow: var(--mdn-shadow-composer);
   pointer-events: auto;
 }
 @media (pointer: coarse) {
@@ -13191,22 +13186,47 @@ html[data-theme-switching] *::after {
     height: 52px;
   }
 }
-/* Codex composer 按钮：圆形热区，ghost 悬停 5%；当前工具用中性选中底与主文字，不用蓝色 */
-.mdn-tool-dock-card [data-cds="Button"] {
+
+/* MineDesign：画布上的三种浮动条——左上页面切换（tb-card）、底部工具栏、选中元素的编辑条——统一为 Codex 单行 composer：
+   胶囊外形、浮层底色、composer 投影，高度 = 28px 按钮 + 上下各 8px。选择器叠加属性以高于 Surface 的 rounded-card / shadow-panel */
+.mdn-tool-dock .mdn-tool-dock-card,
+.tb-root[data-tb-overlay] .tb-card,
+[data-mc-strip][data-mega-selection-strip] {
+  --tb-plane: var(--mdn-elevated);
+  --tb-ring-inside: var(--mdn-radius-full);
   border-radius: var(--mdn-radius-full);
+  background-color: var(--mdn-elevated);
+  box-shadow: var(--mdn-shadow-composer);
+}
+.tb-root[data-tb-overlay] .tb-card {
+  height: calc(var(--cds-h-control) + 16px);
+  padding: 0 4px; /* 内层 tb-scroll 再加 4px，合计 8px */
+}
+[data-mc-strip][data-mega-selection-strip] {
+  --mc-strip-pad: 8px;
+}
+@media (pointer: coarse) {
+  .tb-root[data-tb-overlay] .tb-card {
+    height: 52px;
+  }
+}
+/* Codex composer 按钮：圆形热区，ghost 悬停 5%；当前工具或已开启的样式用中性选中底与主文字，不用蓝色；下拉触发器无描边 */
+:is(.mdn-tool-dock-card, .tb-root[data-tb-overlay] .tb-card, [data-mega-selection-strip]) [data-cds="Button"] {
+  border-radius: var(--mdn-radius-full);
+  border-color: transparent;
   color: var(--mdn-text);
 }
-.mdn-tool-dock-card [data-cds="Button"]:not([data-cds-icon-only]) {
+:is(.mdn-tool-dock-card, .tb-root[data-tb-overlay] .tb-card, [data-mega-selection-strip]) [data-cds="Button"]:not([data-cds-icon-only]) {
   padding-inline: 10px;
 }
-.mdn-tool-dock-card [data-cds="Button"]:not(:disabled):hover > .cds-btn-squish {
+:is(.mdn-tool-dock-card, .tb-root[data-tb-overlay] .tb-card, [data-mega-selection-strip]) [data-cds="Button"]:not(:disabled):hover > .cds-btn-squish {
   background-color: var(--mdn-ghost-hover);
 }
-.mdn-tool-dock-card [data-cds="Button"][aria-pressed="true"] > .cds-btn-squish,
-.mdn-tool-dock-card [data-cds="Button"][data-state="open"] > .cds-btn-squish {
+:is(.mdn-tool-dock-card, .tb-root[data-tb-overlay] .tb-card, [data-mega-selection-strip]) [data-cds="Button"]:is([aria-pressed="true"], [data-state="open"], [aria-expanded="true"]) > .cds-btn-squish {
   background-color: var(--mdn-ghost-active);
 }
-.mdn-tool-dock-card .tb-divider {
+:is(.mdn-tool-dock-card, .tb-root[data-tb-overlay] .tb-card) .tb-divider,
+[data-mega-selection-strip] [data-mc-divider] {
   height: 16px;
 }
 
