@@ -120,8 +120,9 @@
   --mdn-tab-active-shadow: 0 0 0 .5px var(--mdn-border), 0 1px 2px #0000000f;
   --mdn-shadow-overlay: 0 0 0 .5px var(--mdn-border), 0 8px 16px -4px #0000001f;
   --mdn-shadow-dialog: 0 0 0 .5px var(--mdn-border), var(--shadow-lg);
-  /* Codex composer：浅色为 elevation-composer（1px 4% 轮廓 + 两层柔和投影），深色只有 20% 白色内描边 */
-  --mdn-shadow-composer: 0 0 0 1px light-dark(#0000000a, transparent), 0 2px 8px 0 light-dark(#0000000a, transparent), 0 4px 40px 8px light-dark(#00000006, transparent), inset 0 0 1px 0 light-dark(transparent, #fff3);
+  /* Codex elevation-prominent：浮起的小控件（画布浮动条、收起导航）。0.5px 发丝描边 + 0 3px 7.5px 4% + 0 0 20px 5%；
+     深色沿用 Codex 深色的 20% 白色内描边。composer 投影的 40px 光晕只适合大面积输入框，放在小控件上会显脏 */
+  --mdn-shadow-float: 0 0 0 .5px light-dark(var(--mdn-border-strong), transparent), 0 3px 7.5px light-dark(#0000000a, #00000033), 0 0 20px light-dark(#0000000d, transparent), inset 0 0 1px 0 light-dark(transparent, #fff3);
   --mdn-duration: .15s;
   --mdn-ease: ease;
 }

@@ -13244,7 +13244,7 @@ html[data-theme-switching] *::after {
   --tb-ring-inside: var(--mdn-radius-full);
   border-radius: var(--mdn-radius-full);
   background-color: var(--mdn-elevated);
-  box-shadow: var(--mdn-shadow-composer);
+  box-shadow: var(--mdn-shadow-float);
 }
 /* 浮动条里的按钮各自包在编辑器岛（.cds-root）里，岛会用 editor-theme 的五重 .cds-root 重设控件高度，这里同样叠加以覆盖 */
 :is(.mdn-tool-dock-card, .tb-root[data-tb-overlay] .tb-card, [data-mega-selection-strip]) .cds-root.cds-root.cds-root.cds-root.cds-root,
