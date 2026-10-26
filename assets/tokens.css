@@ -115,6 +115,9 @@
   --mdn-tooltip-pad-block: 5px;
   --mdn-tooltip-pad-inline: 12px;
   --mdn-tooltip-line: 18px;
+  /* 顶栏文件标签：选中为浮在下沉顶栏上的卡片，浅色白底、深色浮层底 */
+  --mdn-tab-active-bg: light-dark(#ffffff, var(--mdn-elevated));
+  --mdn-tab-active-shadow: 0 0 0 .5px var(--mdn-border), 0 1px 2px #0000000f;
   --mdn-shadow-overlay: 0 0 0 .5px var(--mdn-border), 0 8px 16px -4px #0000001f;
   --mdn-shadow-dialog: 0 0 0 .5px var(--mdn-border), var(--shadow-lg);
   /* Codex composer：浅色为 elevation-composer（1px 4% 轮廓 + 两层柔和投影），深色只有 20% 白色内描边 */
