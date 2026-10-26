@@ -109,13 +109,13 @@ jobs:
             grep -qx "$required" <<<"$FILES"
           done
           # 本机数据、验证产物、源码工作区与依赖不进包
-          ! grep -E '^package/(\.local|output|node_modules|packages|src|tests|\.codegraph)/' <<<"$FILES"
+          ! grep -E '^package/(examples|\.local|output|node_modules|packages|src|tests|\.codegraph)/' <<<"$FILES"
           # 隔离目录安装，确认命令可用、版本一致、本地服务能起来
           PREFIX="$RUNNER_TEMP/install"
           npm install --global --prefix "$PREFIX" "$PACKAGE" --no-audit --no-fund
           test "$("$PREFIX/bin/mdn" --version)" = "MDN ${RELEASE_TAG#v}"
           export MINEDESIGN_HOME="$RUNNER_TEMP/home"
-          "$PREFIX/bin/mdn" --port 0 --workspace "$PREFIX/lib/node_modules/@vontean/minedesign/examples" > "$RUNNER_TEMP/serve.log" 2>&1 &
+          "$PREFIX/bin/mdn" --port 0 --workspace "$RUNNER_TEMP/empty-workspace" > "$RUNNER_TEMP/serve.log" 2>&1 &
           SERVER=$!
           for attempt in $(seq 1 30); do grep -q 'http://' "$RUNNER_TEMP/serve.log" && break; sleep 1; done
           URL=$(grep -o 'http://[^ ]*' "$RUNNER_TEMP/serve.log" | head -1)
@@ -166,7 +166,7 @@ jobs:
           if npm view "@vontean/minedesign@${RELEASE_TAG#v}" version >/dev/null 2>&1; then
             echo "@vontean/minedesign@${RELEASE_TAG#v} already on npm; skipping publish"
           else
-            npm publish "$PACKAGE" --access public --tag latest --ignore-scripts
+            npm publish "$PACKAGE" --access public --tag latest --ignore-scripts --provenance
           fi
 
       - name: Verify public registry
