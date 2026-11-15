@@ -1,0 +1,89 @@
+/* Pine — generated from tokens.json */
+:root, [data-theme="light"] {
+  --surface: #ffffff; /* 页面底色。 */
+  --surface-sunken: #f5f6f7; /* 侧栏、分组背景和输入框底色。 */
+  --surface-raised: #ffffff; /* 卡片、菜单和对话框。浅色主题靠 line 与阴影区分层级。 */
+  --line: #e6e8eb; /* 分隔线和卡片描边，只做装饰。 */
+  --border: #c9cdd3; /* 输入框和可操作控件的边框，对 surface 至少 3:1。 */
+  --ink: #15171a; /* 主要文字。 */
+  --ink-muted: #5f6670; /* 次要文字、说明和元信息。 */
+  --ink-subtle: #8a9099; /* 占位符和不可用状态。不用于正文。 */
+  --accent: #2f6f4f; /* 主操作、选中状态和链接。每屏只有一个主操作。 */
+  --accent-hover: #255c41; /* 主操作的悬停与按下。 */
+  --accent-soft: #e6f2eb; /* 选中行、强调标签的底色。 */
+  --on-accent: #ffffff; /* accent 底色上的文字和图标。 */
+  --info: #2563eb; /* 提示信息。 */
+  --info-soft: #e8efff; /* 提示信息的底色。 */
+  --success: #1f8a4c; /* 完成、通过。 */
+  --success-soft: #e5f5ec; /* 完成状态的底色。 */
+  --warning: #b45309; /* 需要注意但不阻塞。 */
+  --warning-soft: #fdf1e3; /* 注意状态的底色。 */
+  --danger: #c2352b; /* 错误和破坏性操作。 */
+  --danger-soft: #fbe9e7; /* 错误状态的底色。 */
+  --focus: var(--accent); /* 键盘焦点环，与 accent 相同。 */
+  --overlay: #0f111466; /* 对话框背后的遮罩。 */
+  --shadow-sm: 0 1px 2px rgba(15, 17, 20, 0.06); /* 卡片。 */
+  --shadow-md: 0 4px 16px rgba(15, 17, 20, 0.08); /* 菜单、浮层。 */
+  --shadow-lg: 0 16px 48px rgba(15, 17, 20, 0.16); /* 对话框。 */
+}
+[data-theme="dark"] {
+  --surface: #17181a; /* 页面底色。 */
+  --surface-sunken: #111214; /* 侧栏、分组背景和输入框底色。 */
+  --surface-raised: #202124; /* 卡片、菜单和对话框。浅色主题靠 line 与阴影区分层级。 */
+  --line: #2c2e33; /* 分隔线和卡片描边，只做装饰。 */
+  --border: #474a51; /* 输入框和可操作控件的边框，对 surface 至少 3:1。 */
+  --ink: #eef0f2; /* 主要文字。 */
+  --ink-muted: #a0a6af; /* 次要文字、说明和元信息。 */
+  --ink-subtle: #767c85; /* 占位符和不可用状态。不用于正文。 */
+  --accent: #5fbf8a; /* 主操作、选中状态和链接。每屏只有一个主操作。 */
+  --accent-hover: #7bd0a0; /* 主操作的悬停与按下。 */
+  --accent-soft: #1d3a2b; /* 选中行、强调标签的底色。 */
+  --on-accent: #0f1f17; /* accent 底色上的文字和图标。 */
+  --info: #6b9cff; /* 提示信息。 */
+  --info-soft: #1c2a4a; /* 提示信息的底色。 */
+  --success: #4cc27e; /* 完成、通过。 */
+  --success-soft: #183526; /* 完成状态的底色。 */
+  --warning: #f0a64a; /* 需要注意但不阻塞。 */
+  --warning-soft: #3d2a12; /* 注意状态的底色。 */
+  --danger: #f07167; /* 错误和破坏性操作。 */
+  --danger-soft: #3d1c1a; /* 错误状态的底色。 */
+  --focus: var(--accent); /* 键盘焦点环，与 accent 相同。 */
+  --overlay: #00000099; /* 对话框背后的遮罩。 */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4); /* 卡片。 */
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.5); /* 菜单、浮层。 */
+  --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.6); /* 对话框。 */
+}
+:root {
+  --space-1: 4px; /* 图标与文字之间。 */
+  --space-2: 8px; /* 同组控件之间。 */
+  --space-3: 12px; /* 列表行内边距。 */
+  --space-4: 16px; /* 卡片内边距、表单项之间。 */
+  --space-5: 20px; /* 卡片之间。 */
+  --space-6: 24px; /* 对话框内边距。 */
+  --space-8: 32px; /* 区块之间。 */
+  --space-10: 40px; /* 页面边距。 */
+  --space-12: 48px; /* 落地页区块之间。 */
+  --space-16: 64px; /* 落地页大区块之间。 */
+  --radius-xs: 4px; /* 复选框、小标签。 */
+  --radius-sm: 6px; /* 小按钮。 */
+  --radius-md: 10px; /* 按钮、输入框。 */
+  --radius-lg: 14px; /* 卡片。 */
+  --radius-xl: 20px; /* 对话框、大面板。 */
+  --radius-full: 999px; /* 标签、头像、开关。 */
+  --duration-fast: 120ms; /* 悬停、按下。 */
+  --duration-normal: 200ms; /* 展开、对话框出现。 */
+  --z-dropdown: 20; /* 下拉菜单。 */
+  --z-dialog: 40; /* 对话框与遮罩。 */
+  --z-toast: 60; /* 全局提示。 */
+  --font-sans: -apple-system, BlinkMacSystemFont, "PingFang SC", "Segoe UI", sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, monospace;
+}
+.display-lg { font-family: var(--font-sans); font-size: 40px; line-height: 48px; font-weight: 600; letter-spacing: -0.8px; }
+.display-md { font-family: var(--font-sans); font-size: 32px; line-height: 40px; font-weight: 600; letter-spacing: -0.5px; }
+.heading-lg { font-family: var(--font-sans); font-size: 24px; line-height: 32px; font-weight: 600; }
+.heading-md { font-family: var(--font-sans); font-size: 18px; line-height: 26px; font-weight: 600; }
+.heading-sm { font-family: var(--font-sans); font-size: 15px; line-height: 22px; font-weight: 600; }
+.body-lg { font-family: var(--font-sans); font-size: 16px; line-height: 26px; font-weight: 400; }
+.body-md { font-family: var(--font-sans); font-size: 14px; line-height: 22px; font-weight: 400; }
+.body-sm { font-family: var(--font-sans); font-size: 12px; line-height: 18px; font-weight: 400; }
+.code { font-family: var(--font-mono); font-size: 13px; line-height: 20px; font-weight: 400; }

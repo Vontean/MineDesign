@@ -5,6 +5,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { checkCanvas } from '@minedesign/design-files';
+import { checkDesignSystem } from '@minedesign/design-system-files';
 import { REPO, FIXTURES, launchBrowser, openSession, writeEvidence, compareEvidence } from './harness.mjs';
 
 const args = process.argv.slice(2);
@@ -23,8 +24,8 @@ if (!scenarios.length) { console.error(`没有匹配的场景：${only.join(', '
 for (const file of ['dist/cli.mjs', 'apps/design-editor/dist']) if (!fs.existsSync(path.join(REPO, file))) { console.error(`缺少 ${file}，先运行 npm run build`); process.exit(2); }
 
 // 夹具先过结构校验（与 design_check 同一逻辑），避免把无效作品记成基线
-for (const fixture of new Set(scenarios.map(s => s.fixture))) {
-  const result = await checkCanvas(path.join(FIXTURES, fixture));
+for (const { fixture, kind } of new Map(scenarios.map(s => [s.fixture, s])).values()) {
+  const result = await (kind === 'design-system' ? checkDesignSystem : checkCanvas)(path.join(FIXTURES, fixture));
   if (result.issues.length) { console.error(`夹具 ${fixture} 结构校验未通过：`, result.issues); process.exit(2); }
 }
 

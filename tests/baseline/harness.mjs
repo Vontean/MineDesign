@@ -146,7 +146,7 @@ const READY = {
     const editor = session.editor();
     await editor.waitForSelector('[data-testid="ds-section-nav"] [data-testid="ds-jump-readme"]', { timeout: SETTLE_TIMEOUT_MS });
     await editor.waitForSelector('[data-testid="ds-readme-rendered"]', { timeout: SETTLE_TIMEOUT_MS });
-    await editor.waitForTimeout(3000); console.log("SYNC", await editor.evaluate(() => [...document.querySelectorAll("[data-testid=sync-dot]")].map(e => e.outerHTML)));
+    await editor.waitForTimeout(3000);
   },
 };
 

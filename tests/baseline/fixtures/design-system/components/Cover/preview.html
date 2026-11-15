@@ -1,0 +1,48 @@
+<!-- @dsCard height=288 -->
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>Pine</title>
+<style>
+  html, body { margin: 0; height: 100%; }
+  body { overflow: hidden; background: var(--surface); color: var(--ink); font-family: var(--font-sans); }
+  .cover { position: relative; height: 288px; overflow: hidden; }
+  .words { position: absolute; left: var(--space-10); bottom: var(--space-10); max-width: 400px; }
+  .name { margin: 0; font-size: 96px; line-height: 0.95; font-weight: 600; letter-spacing: -3px; }
+  .tag { margin: var(--space-3) 0 0; font-size: 15px; line-height: 22px; color: var(--ink-muted); }
+  .board { position: absolute; top: var(--space-10); right: calc(var(--space-10) * -1); display: flex; gap: var(--space-4); }
+  .lane { display: flex; flex-direction: column; gap: var(--space-3); width: 168px; padding: var(--space-3); border-radius: var(--radius-lg); background: var(--surface-sunken); }
+  .lane-head { display: flex; align-items: center; gap: var(--space-2); font-size: 12px; font-weight: 600; color: var(--ink-muted); }
+  .dot { width: 8px; height: 8px; border-radius: 50%; }
+  .task { display: flex; flex-direction: column; gap: var(--space-2); padding: var(--space-3); border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--surface-raised); box-shadow: var(--shadow-sm); }
+  .bar { height: 6px; border-radius: 3px; background: var(--line); }
+  .accent { background: var(--accent); }
+</style>
+</head>
+<body>
+<div class="cover">
+  <div class="board" aria-hidden="true">
+    <div class="lane">
+      <div class="lane-head"><span class="dot" style="background:var(--info)"></span>进行中</div>
+      <div class="task"><div class="bar" style="width:80%"></div><div class="bar" style="width:50%"></div></div>
+      <div class="task"><div class="bar" style="width:65%"></div><div class="bar accent" style="width:35%"></div></div>
+    </div>
+    <div class="lane">
+      <div class="lane-head"><span class="dot" style="background:var(--warning)"></span>待评审</div>
+      <div class="task"><div class="bar" style="width:70%"></div><div class="bar" style="width:40%"></div></div>
+    </div>
+    <div class="lane">
+      <div class="lane-head"><span class="dot" style="background:var(--success)"></span>已完成</div>
+      <div class="task"><div class="bar" style="width:75%"></div><div class="bar accent" style="width:60%"></div></div>
+      <div class="task"><div class="bar" style="width:55%"></div></div>
+      <div class="task"><div class="bar" style="width:85%"></div><div class="bar" style="width:30%"></div></div>
+    </div>
+  </div>
+  <div class="words">
+    <h1 class="name">Pine</h1>
+    <p class="tag">安静、可靠、有条理。让小团队把事做完。</p>
+  </div>
+</div>
+</body>
+</html>

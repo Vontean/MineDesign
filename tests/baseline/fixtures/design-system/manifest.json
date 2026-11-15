@@ -1,0 +1,53 @@
+{
+  "manifestVersion": 3,
+  "name": "Pine",
+  "namespace": "Pine",
+  "files": [
+    "tokens.css",
+    "components/bundle.css",
+    "components/bundle.js",
+    "components/index.d.ts",
+    "components/lib/react.production.min.js",
+    "components/lib/react-dom.production.min.js"
+  ],
+  "libraries": [
+    {
+      "name": "react",
+      "version": "18.3.1",
+      "global": "React",
+      "file": "components/lib/react.production.min.js"
+    },
+    {
+      "name": "react-dom",
+      "version": "18.3.1",
+      "global": "ReactDOM",
+      "file": "components/lib/react-dom.production.min.js"
+    }
+  ],
+  "components": [
+    {
+      "name": "Button",
+      "group": "操作",
+      "summary": "每屏最多一个 primary，用于这一屏最重要的那件事；其余用 secondary 或 ghost。"
+    },
+    {
+      "name": "Badge",
+      "group": "基础",
+      "summary": "一到四个字的状态。"
+    }
+  ],
+  "lastChange": {
+    "by": "Baseline",
+    "via": "page",
+    "at": "2026-10-24T09:30:00.000Z",
+    "note": "基线夹具"
+  },
+  "assetGroups": [
+    {
+      "name": "Logos"
+    },
+    {
+      "name": "Icons"
+    }
+  ]
+}

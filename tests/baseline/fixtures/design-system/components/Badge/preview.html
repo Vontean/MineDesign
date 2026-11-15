@@ -1,0 +1,12 @@
+<!-- @dsCard group="基础" height=72 -->
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><title>Badge</title></head>
+<body>
+<div id="root"></div>
+<script>
+  var P = window.Pine, h = React.createElement;
+  ReactDOM.createRoot(document.getElementById('root')).render(h('div',{className:'pn-row'},h(P.Badge,null,'草稿'),h(P.Badge,{tone:'accent'},'新'),h(P.Badge,{tone:'info',dot:true},'进行中'),h(P.Badge,{tone:'success',dot:true},'已完成'),h(P.Badge,{tone:'warning',dot:true},'有风险'),h(P.Badge,{tone:'danger',dot:true},'已阻塞')));
+</script>
+</body>
+</html>
