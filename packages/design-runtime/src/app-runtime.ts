@@ -491,9 +491,6 @@ import { installCanvasArtboardFrame } from "./canvas/artboard-frame";
 import { installCanvasLayoutGuides } from "./canvas/layout-guides";
 import { installCommentsAreaDrawing } from "./comments/area-drawing";
 import { installCommentsPointer } from "./comments/pointer";
-import { installCommentsAreaGeometry } from "./comments/area-geometry";
-import { installCommentsObjectGeometry } from "./comments/object-geometry";
-import { installCommentsLabels } from "./comments/labels";
 import { installCanvasPageOperations } from "./canvas/page-operations";
 import { installCanvasSpacePan } from "./canvas/space-pan";
 import { installCanvasKeyboardActivation } from "./canvas/keyboard-activation";
@@ -1105,9 +1102,6 @@ export function createDesignRuntime(
     installCanvasLayoutGuides(),
     installCommentsAreaDrawing(),
     installCommentsPointer(),
-    installCommentsAreaGeometry(),
-    installCommentsObjectGeometry(),
-    installCommentsLabels(),
     installCanvasPageOperations(),
     installCanvasSpacePan(),
     installCanvasKeyboardActivation(),

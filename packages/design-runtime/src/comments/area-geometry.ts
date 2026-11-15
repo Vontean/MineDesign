@@ -1,88 +1,123 @@
-/** Restored application module; prepare first, initialize in original order. */
-import {
-  type Dynamic,
-} from "../runtime-types";
+/** 评论区域的几何计算：矩形相交、归一化（0–1）、角点与位置描述。 */
 
-var clampCommentFraction: Dynamic;
-var intersectCommentRects: Dynamic;
-function artboardsCoveredByCommentArea(
-  area?: Dynamic,
-  artboards?: Dynamic,
-  limit: Dynamic = 1 / 0,
-): Dynamic {
-  let value: Dynamic = Math.max(1e-6, area.w * area.h),
-    items: Dynamic = [];
-  artboards.forEach(({ board: board, frame: frame }: Dynamic): Dynamic => {
-    let value2: Dynamic = intersectCommentRects(area, frame);
-    if (!value2) return;
-    let value3: Dynamic = value2.w * value2.h,
-      value4: Dynamic = Math.max(1e-6, frame.w * frame.h);
-    (value3 < 0.04 * value4 && value3 < 0.25 * value) ||
-      items.push({
-        board: board,
-        frame: frame,
-        inter: value2,
-        cov: value3 / value4,
+export interface CommentRect {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
+/** 以所在盒子为基准的归一化区域，坐标范围 0–1。 */
+export interface CommentArea {
+  x0: number;
+  y0: number;
+  x1: number;
+  y1: number;
+}
+
+export interface CommentArtboard<Board = unknown> {
+  board: Board;
+  frame: CommentRect;
+}
+
+/** 评论区域覆盖到的一块画板，inter 是相交矩形，cov 是覆盖画板的比例，b 是相交部分在画板内的归一化区域。 */
+export interface CoveredArtboard<Board = unknown> {
+  board: Board;
+  frame: CommentRect;
+  inter: CommentRect;
+  cov: number;
+  b: CommentArea;
+}
+
+export interface CommentPoint {
+  x: number;
+  y: number;
+}
+
+export interface CommentOperationToken {
+  begin(): { readonly live: boolean };
+  cancel(): void;
+}
+
+export const clampCommentFraction = (value: number): number => Math.min(1, Math.max(0, value));
+
+export const intersectCommentRects = (first: CommentRect, second: CommentRect): CommentRect | null => {
+  const left = Math.max(first.x, second.x);
+  const top = Math.max(first.y, second.y);
+  const right = Math.min(first.x + first.w, second.x + second.w);
+  const bottom = Math.min(first.y + first.h, second.y + second.h);
+  return right > left && bottom > top ? { x: left, y: top, w: right - left, h: bottom - top } : null;
+};
+
+/** 找出评论区域覆盖的画板；覆盖太少的忽略，超过 limit 时保留相交面积最大的。 */
+export function artboardsCoveredByCommentArea<Board>(
+  area: CommentRect,
+  artboards: readonly CommentArtboard<Board>[],
+  limit: number = 1 / 0,
+): CoveredArtboard<Board>[] {
+  const areaSize = Math.max(1e-6, area.w * area.h);
+  const covered: CoveredArtboard<Board>[] = [];
+  artboards.forEach(({ board, frame }) => {
+    const inter = intersectCommentRects(area, frame);
+    if (!inter) return;
+    const interSize = inter.w * inter.h;
+    const frameSize = Math.max(1e-6, frame.w * frame.h);
+    (interSize < 0.04 * frameSize && interSize < 0.25 * areaSize) ||
+      covered.push({
+        board,
+        frame,
+        inter,
+        cov: interSize / frameSize,
         b: {
-          x0: (value2.x - frame.x) / frame.w,
-          y0: (value2.y - frame.y) / frame.h,
-          x1: (value2.x + value2.w - frame.x) / frame.w,
-          y1: (value2.y + value2.h - frame.y) / frame.h,
+          x0: (inter.x - frame.x) / frame.w,
+          y0: (inter.y - frame.y) / frame.h,
+          x1: (inter.x + inter.w - frame.x) / frame.w,
+          y1: (inter.y + inter.h - frame.y) / frame.h,
         },
       });
   });
-  if (items.length <= limit) return items;
-  let values: Dynamic = new Set(
-    [...items]
-      .sort(
-        (input?: Dynamic, options?: Dynamic): Dynamic =>
-          options.inter.w * options.inter.h - input.inter.w * input.inter.h,
-      )
-      .slice(0, limit),
+  if (covered.length <= limit) return covered;
+  const kept = new Set(
+    [...covered].sort((a, b) => b.inter.w * b.inter.h - a.inter.w * a.inter.h).slice(0, limit),
   );
-  return items.filter((input?: Dynamic): Dynamic => values.has(input));
+  return covered.filter((item) => kept.has(item));
 }
-function commentAreaWithinArtboardContent(
-  coveredArtboard?: Dynamic,
-  contentBox?: Dynamic,
-): Dynamic {
+
+/** 把相交部分换算成画板内容盒中的归一化区域；内容盒无面积或结果为空时返回 null。 */
+export function commentAreaWithinArtboardContent(
+  coveredArtboard: Pick<CoveredArtboard, 'inter' | 'frame'>,
+  contentBox: CommentRect,
+): CommentArea | null {
   if (!(contentBox.w > 0 && contentBox.h > 0)) return null;
-  let value: Dynamic = coveredArtboard.inter.x - coveredArtboard.frame.x,
-    value2: Dynamic = coveredArtboard.inter.y - coveredArtboard.frame.y,
-    state: Dynamic = {
-      x0: clampCommentFraction((value - contentBox.x) / contentBox.w),
-      y0: clampCommentFraction((value2 - contentBox.y) / contentBox.h),
-      x1: clampCommentFraction(
-        (value + coveredArtboard.inter.w - contentBox.x) / contentBox.w,
-      ),
-      y1: clampCommentFraction(
-        (value2 + coveredArtboard.inter.h - contentBox.y) / contentBox.h,
-      ),
-    };
-  return state.x1 > state.x0 && state.y1 > state.y0 ? state : null;
-}
-function unionCommentRects(rects?: Dynamic): Dynamic {
-  if (rects.length === 0) return null;
-  let minX: Dynamic = 1 / 0,
-    minY: Dynamic = 1 / 0,
-    maxX: Dynamic = -1 / 0,
-    maxY: Dynamic = -1 / 0;
-  for (let value of rects as Dynamic) {
-    minX = Math.min(minX, value.x);
-    minY = Math.min(minY, value.y);
-    maxX = Math.max(maxX, value.x + value.w);
-    maxY = Math.max(maxY, value.y + value.h);
-  }
-  return {
-    x: minX,
-    y: minY,
-    w: maxX - minX,
-    h: maxY - minY,
+  const offsetX = coveredArtboard.inter.x - coveredArtboard.frame.x;
+  const offsetY = coveredArtboard.inter.y - coveredArtboard.frame.y;
+  const area: CommentArea = {
+    x0: clampCommentFraction((offsetX - contentBox.x) / contentBox.w),
+    y0: clampCommentFraction((offsetY - contentBox.y) / contentBox.h),
+    x1: clampCommentFraction((offsetX + coveredArtboard.inter.w - contentBox.x) / contentBox.w),
+    y1: clampCommentFraction((offsetY + coveredArtboard.inter.h - contentBox.y) / contentBox.h),
   };
+  return area.x1 > area.x0 && area.y1 > area.y0 ? area : null;
 }
-function normalizeCommentArea(area?: Dynamic, box?: Dynamic): Dynamic {
-  let width: Dynamic = Math.max(1e-6, box.w),
-    height: Dynamic = Math.max(1e-6, box.h);
+
+export function unionCommentRects(rects: readonly CommentRect[]): CommentRect | null {
+  if (rects.length === 0) return null;
+  let minX = 1 / 0;
+  let minY = 1 / 0;
+  let maxX = -1 / 0;
+  let maxY = -1 / 0;
+  for (const rect of rects) {
+    minX = Math.min(minX, rect.x);
+    minY = Math.min(minY, rect.y);
+    maxX = Math.max(maxX, rect.x + rect.w);
+    maxY = Math.max(maxY, rect.y + rect.h);
+  }
+  return { x: minX, y: minY, w: maxX - minX, h: maxY - minY };
+}
+
+export function normalizeCommentArea(area: CommentRect, box: CommentRect): CommentArea {
+  const width = Math.max(1e-6, box.w);
+  const height = Math.max(1e-6, box.h);
   return {
     x0: clampCommentFraction((area.x - box.x) / width),
     y0: clampCommentFraction((area.y - box.y) / height),
@@ -90,7 +125,8 @@ function normalizeCommentArea(area?: Dynamic, box?: Dynamic): Dynamic {
     y1: clampCommentFraction((area.y + area.h - box.y) / height),
   };
 }
-function denormalizeCommentArea(box?: Dynamic, area?: Dynamic): Dynamic {
+
+export function denormalizeCommentArea(box: CommentRect, area: CommentArea): CommentRect {
   return {
     x: box.x + area.x0 * box.w,
     y: box.y + area.y0 * box.h,
@@ -98,103 +134,72 @@ function denormalizeCommentArea(box?: Dynamic, area?: Dynamic): Dynamic {
     h: (area.y1 - area.y0) * box.h,
   };
 }
-function nearestCommentAreaCorner(box?: Dynamic, point?: Dynamic): Dynamic {
-  let value: Dynamic = point.x > box.x + box.w / 2 ? 1 : 0,
-    value2: Dynamic = point.y > box.y + box.h / 2 ? 2 : 0;
-  return value + value2;
+
+/** 离点最近的角：0 左上、1 右上、2 左下、3 右下。 */
+export function nearestCommentAreaCorner(box: CommentRect, point: CommentPoint): number {
+  const horizontal = point.x > box.x + box.w / 2 ? 1 : 0;
+  const vertical = point.y > box.y + box.h / 2 ? 2 : 0;
+  return horizontal + vertical;
 }
-function commentAreaHandlePoint(box?: Dynamic, corner?: Dynamic): Dynamic {
+
+/** 角点坐标；corner 为 null 或 undefined 时取中心。 */
+export function commentAreaHandlePoint(box: CommentRect, corner?: number | null): CommentPoint {
   return corner == null
-    ? {
-        x: box.x + box.w / 2,
-        y: box.y + box.h / 2,
-      }
+    ? { x: box.x + box.w / 2, y: box.y + box.h / 2 }
     : {
         x: corner & 1 ? box.x + box.w : box.x,
         y: corner & 2 ? box.y + box.h : box.y,
       };
 }
-function describeCommentAreaLocation(
-  area?: Dynamic,
-  coverage?: Dynamic,
-): Dynamic {
-  if (coverage >= 0.85) return "";
-  if (area.x1 <= 0.15) return "left edge";
-  if (area.x0 >= 0.85) return "right edge";
-  if (area.y1 <= 0.15) return "top edge";
-  if (area.y0 >= 0.85) return "bottom edge";
-  let value: Dynamic = (area.y0 + area.y1) / 2,
-    value2: Dynamic = (area.x0 + area.x1) / 2,
-    value3: Dynamic =
-      area.y1 <= 0.55 && value <= 0.35
-        ? "top"
-        : area.y0 >= 0.45 && value >= 0.65
-          ? "bottom"
-          : area.y1 - area.y0 <= 0.5
-            ? "middle"
-            : "",
-    value4: Dynamic =
-      area.x1 <= 0.55 && value2 <= 0.35
-        ? "left"
-        : area.x0 >= 0.45 && value2 >= 0.65
-          ? "right"
-          : area.x1 - area.x0 <= 0.5
-            ? "centre"
-            : "",
-    value5: Dynamic = [value3, value4].filter(Boolean).join(" ");
-  return value5 === "top" || value5 === "bottom"
-    ? value5 + " half"
-    : value5 === "left" || value5 === "right"
-      ? value5 + " side"
-      : value5 || "part";
+
+/** 用文字描述区域在画板中的位置；覆盖 85% 以上返回空字符串。 */
+export function describeCommentAreaLocation(area: CommentArea, coverage: number): string {
+  if (coverage >= 0.85) return '';
+  if (area.x1 <= 0.15) return 'left edge';
+  if (area.x0 >= 0.85) return 'right edge';
+  if (area.y1 <= 0.15) return 'top edge';
+  if (area.y0 >= 0.85) return 'bottom edge';
+  const centerY = (area.y0 + area.y1) / 2;
+  const centerX = (area.x0 + area.x1) / 2;
+  const vertical =
+    area.y1 <= 0.55 && centerY <= 0.35
+      ? 'top'
+      : area.y0 >= 0.45 && centerY >= 0.65
+        ? 'bottom'
+        : area.y1 - area.y0 <= 0.5
+          ? 'middle'
+          : '';
+  const horizontal =
+    area.x1 <= 0.55 && centerX <= 0.35
+      ? 'left'
+      : area.x0 >= 0.45 && centerX >= 0.65
+        ? 'right'
+        : area.x1 - area.x0 <= 0.5
+          ? 'centre'
+          : '';
+  const phrase = [vertical, horizontal].filter(Boolean).join(' ');
+  return phrase === 'top' || phrase === 'bottom'
+    ? phrase + ' half'
+    : phrase === 'left' || phrase === 'right'
+      ? phrase + ' side'
+      : phrase || 'part';
 }
-function createCommentOperationToken(): Dynamic {
-  let index: Dynamic = 0;
+
+/** 操作令牌：begin 之后若再次 begin 或 cancel，上一次的 live 变为 false。 */
+export function createCommentOperationToken(): CommentOperationToken {
+  let counter = 0;
   return {
-    begin(): Dynamic {
-      index += 1;
-      let value: Dynamic = index;
+    begin() {
+      counter += 1;
+      const mine = counter;
       return {
-        get live(): Dynamic {
-          return index === value;
+        get live() {
+          return counter === mine;
         },
       };
     },
-    cancel(): Dynamic {
-      index += 1;
+    cancel() {
+      counter += 1;
     },
-  };
-}
-export {
-  artboardsCoveredByCommentArea,
-  clampCommentFraction,
-  commentAreaHandlePoint,
-  commentAreaWithinArtboardContent,
-  createCommentOperationToken,
-  denormalizeCommentArea,
-  describeCommentAreaLocation,
-  intersectCommentRects,
-  nearestCommentAreaCorner,
-  normalizeCommentArea,
-  unionCommentRects,
-};
-export function installCommentsAreaGeometry(): () => void {
-  return () => {
-    clampCommentFraction = (input?: Dynamic): Dynamic =>
-      Math.min(1, Math.max(0, input));
-    intersectCommentRects = (first?: Dynamic, second?: Dynamic): Dynamic => {
-      let left: Dynamic = Math.max(first.x, second.x),
-        top: Dynamic = Math.max(first.y, second.y),
-        right: Dynamic = Math.min(first.x + first.w, second.x + second.w),
-        bottom: Dynamic = Math.min(first.y + first.h, second.y + second.h);
-      return right > left && bottom > top
-        ? {
-            x: left,
-            y: top,
-            w: right - left,
-            h: bottom - top,
-          }
-        : null;
-    };
   };
 }

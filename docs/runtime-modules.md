@@ -98,3 +98,4 @@
 | 模块 | interface | 说明 |
 | --- | --- | --- |
 | 画板选择框数据（`canvas/frame-payloads.ts`） | `SelectionChrome`、`ChromeRing`、`ChromeMeasure`、`ChromeGuide`、`ChromePen`、`parseSelectionChromePayload` | 画布扩展 seam。画板内的选择脚本计算元素位置，以画板像素坐标发给画布；选择框、测距、参考线、钢笔路径的叠层只依赖这些类型。新增叠层功能（例如评论卡片）沿用同一通道：选择脚本提供位置，叠层在画板坐标里渲染 |
+| 评论的几何与锚点（`comments/area-geometry.ts`、`object-geometry.ts`、`anchor-codec.tsx`、`labels.ts`） | `CommentRect`、`CommentArea`、`DesignCommentAnchor` 及各锚点类型、`CommentLabelAnchor` | 区域与对象的归一化坐标、锚点字符串的编码与解析、给人看的位置描述。评论的界面控制（`canvas-controller.tsx`）尚未改写，归入画布主函数收尾 |

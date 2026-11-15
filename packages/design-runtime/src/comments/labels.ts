@@ -1,508 +1,397 @@
+/** 评论标签文案：锚点的简短标题、详细描述，以及按字节预算截断。 */
 import { uiMessage } from '@minedesign/contracts/ui-messages';
-/** Restored application module; prepare first, initialize in original order. */
-import {
-  type Dynamic,
-} from "../runtime-types";
-import { encodeArtboardSelectionPath } from "../collaboration/selection-paths";
-import { describeCommentAreaLocation } from "./area-geometry";
-import { classifyElementStyleKind } from "../editor/insert/element-kinds";
+import { encodeArtboardSelectionPath } from '../collaboration/selection-paths';
+import { classifyElementStyleKind } from '../editor/insert/element-kinds';
+import { describeCommentAreaLocation, type CommentArea, type CommentRect } from './area-geometry';
 
-var commentLabelTextEncoder: Dynamic;
-var commentLabelByteLength: Dynamic;
-var quoteCommentLabelText: Dynamic;
-var commentBreadcrumbSeparator: Dynamic;
-var commentElementDetail: Dynamic;
-var commentElementsDetail: Dynamic;
-var commentAreaPartLabel: Dynamic;
-var commentAnnotationKindLabels: Dynamic;
-var commentAnnotationKindLabel: Dynamic;
-var formatCommentPercent: Dynamic;
-var commentObjectTransformSuffix: Dynamic;
-var commentObjectDetail: Dynamic;
-var commentAnchorInsetPixels: Dynamic;
-var commentAnchorInsetFraction: Dynamic;
-function replaceUnpairedSurrogates(value?: Dynamic): Dynamic {
-  return value.replace(
-    /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/g,
-    "\uFFFD",
-  );
+export interface CommentArtboardRef {
+  file: string;
+  title?: string | null;
 }
-function shortenCommentLabelText(
-  value?: Dynamic,
-  limit: Dynamic = 40,
-): Dynamic {
-  let value2: Dynamic = Array.from(
-    replaceUnpairedSurrogates(value ?? "")
-      .replace(/\s+/g, " ")
-      .trim()
-      .replace(/"/g, "\u2019"),
-  );
-  return value2.length <= limit
-    ? value2.join("")
-    : value2
-        .slice(0, Math.max(0, limit - 1))
-        .join("")
-        .trimEnd() + "\u2026";
-}
-function truncateCommentLabelBytes(
-  value?: Dynamic,
-  maxBytes?: Dynamic,
-): Dynamic {
-  if (commentLabelByteLength(value) <= maxBytes) return value;
-  let value2: Dynamic = Array.from(value),
-    length: Dynamic = value2.length;
-  for (
-    ;
-    length > 0 &&
-    commentLabelByteLength(
-      value2.slice(0, length).join("").trimEnd() + "\u2026",
-    ) > maxBytes;
 
-  )
-    length--;
-  return value2.slice(0, length).join("").trimEnd() + "\u2026";
+/** 评论里提到的元素：path 是元素编号，kind 是元素类别，text 是文字内容。 */
+export interface CommentElementInfo {
+  path: string | number;
+  kind?: string | null;
+  text?: string | null;
 }
-function fitCommentDetailToByteBudget(format?: Dynamic): Dynamic {
-  for (let value of [40, 16, null] as Dynamic) {
-    let value2: Dynamic = format(value);
-    if (commentLabelByteLength(value2) <= 512) return value2;
+
+/** 区域覆盖到的一块画板：cov 是覆盖比例，part 是位置描述，els 是区域内的元素，total 是元素总数。 */
+export interface CommentCoveredBoard {
+  board: CommentArtboardRef;
+  cov: number;
+  part?: string | null;
+  total?: number;
+  els?: CommentElementInfo[];
+}
+
+/** 评论所在的对象（备注或设计稿里的标注）。 */
+export interface CommentLabelObject {
+  kind?: string;
+  text?: string | null;
+  rotate?: unknown;
+  flipX?: unknown;
+  flipY?: unknown;
+}
+
+export interface CommentPage {
+  id: unknown;
+  name: string;
+}
+export interface CanvasLabelAnchor {
+  kind: 'canvas';
+  pages?: CommentPage[] | null;
+  pageKey?: unknown;
+}
+export interface NoteLabelAnchor {
+  kind: 'note';
+  note: { kind?: string; text?: string | null };
+}
+export interface ArtboardLabelAnchor {
+  kind: 'artboard';
+  board: CommentArtboardRef;
+}
+export interface ElementLabelAnchor {
+  kind: 'el';
+  board: CommentArtboardRef;
+  el: { kind?: string | null; text?: string | null };
+}
+export type CommentLabelAnchor = CanvasLabelAnchor | NoteLabelAnchor | ArtboardLabelAnchor | ElementLabelAnchor;
+
+export interface CommentTargetHint {
+  canvas?: boolean;
+  several?: boolean;
+}
+
+/** 评论组件实例里查视图元素的最小接口。 */
+export interface CommentElementModel {
+  viewEntries(ids: unknown[]): ({ kind: string; words(): string } | undefined)[];
+}
+
+export const commentLabelTextEncoder = new TextEncoder();
+export const commentLabelByteLength = (text: string): number => commentLabelTextEncoder.encode(text).length;
+export const quoteCommentLabelText = (text: string): string => (text ? ' "' + text + '"' : '');
+export const commentBreadcrumbSeparator = ' › ';
+export const commentAnchorInsetPixels = 16;
+export const commentAnchorInsetFraction = 0.25;
+
+/** 标注类型的显示名；多数走文案表，所以用 getter 取当前语言。 */
+export const commentAnnotationKindLabels: Record<string, string> = {
+  get title1() {
+    return uiMessage('feedback.labels.title');
+  },
+  get rect() {
+    return uiMessage('feedback.labels.rectangle');
+  },
+  get oval() {
+    return uiMessage('feedback.labels.oval');
+  },
+  get line() {
+    return uiMessage('feedback.labels.line');
+  },
+  get arrow() {
+    return uiMessage('feedback.labels.arrow');
+  },
+  get pen() {
+    return uiMessage('feedback.labels.drawing');
+  },
+  image: 'Picture',
+};
+
+/** 没有类型的是备注；表里没有的类型返回 undefined。 */
+export const commentAnnotationKindLabel = (kind: string | undefined): string =>
+  kind === undefined ? 'Note' : commentAnnotationKindLabels[kind];
+
+export const formatCommentPercent = (fraction: number): string => String(Math.round(fraction * 100)) + '%';
+
+/** "#编号 类别 "文字""；textLimit 为空时不带文字。 */
+export const commentElementDetail = (element: CommentElementInfo, textLimit?: number | null): string =>
+  '#' +
+  element.path +
+  ' ' +
+  (element.kind === 'box' ? 'shape' : element.kind) +
+  (textLimit == null ? '' : quoteCommentLabelText(shortenCommentLabelText(element.text, textLimit)));
+
+/** 区域内的元素列表，最多 maxElements 个，其余写成"+N more"。 */
+export const commentElementsDetail = (
+  board: Pick<CommentCoveredBoard, 'els' | 'total'>,
+  maxElements: number | undefined,
+  textLimit: number | null,
+): string => {
+  const elements = board.els ?? [];
+  const shown = elements.slice(0, maxElements);
+  const hidden = (board.total ?? elements.length) - shown.length;
+  const details = shown.map((element) => commentElementDetail(element, textLimit));
+  hidden > 0 && details.push('+' + String(hidden) + ' more');
+  return details.join(', ');
+};
+
+export const commentAreaPartLabel = (part?: string | null): string => (part ? ' (' + part + ')' : '');
+
+/** 旋转和翻转的说明后缀，用于说明相对位置的参照。 */
+export const commentObjectTransformSuffix = (object: CommentLabelObject): string => {
+  const transform = [object.rotate ? 'turn' : '', object.flipX || object.flipY ? 'flip' : '']
+    .filter(Boolean)
+    .join(' and ');
+  return ' from its top left' + (transform ? ', before its ' + transform : '');
+};
+
+export const commentObjectDetail = (object: CommentLabelObject, textLimit?: number | null): string =>
+  commentAnnotationKindLabel(object.kind).toLowerCase() +
+  (textLimit == null || object.text == null
+    ? ''
+    : quoteCommentLabelText(shortenCommentLabelText(object.text.trim().split('\n')[0], textLimit)));
+
+/** 把孤立的代理项替换成 U+FFFD，避免编码出非法 UTF-8。 */
+export function replaceUnpairedSurrogates(text: string): string {
+  return text.replace(/[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/g, '�');
+}
+
+/** 压缩空白、引号换成弯引号，超过 limit 个字符时截断加省略号。 */
+export function shortenCommentLabelText(text: string | null | undefined, limit: number = 40): string {
+  const chars = Array.from(replaceUnpairedSurrogates(text ?? '').replace(/\s+/g, ' ').trim().replace(/"/g, '’'));
+  return chars.length <= limit ? chars.join('') : chars.slice(0, Math.max(0, limit - 1)).join('').trimEnd() + '…';
+}
+
+/** 按 UTF-8 字节数截断，超出时加省略号。 */
+export function truncateCommentLabelBytes(text: string, maxBytes: number): string {
+  if (commentLabelByteLength(text) <= maxBytes) return text;
+  const chars = Array.from(text);
+  let length = chars.length;
+  while (length > 0 && commentLabelByteLength(chars.slice(0, length).join('').trimEnd() + '…') > maxBytes) length--;
+  return chars.slice(0, length).join('').trimEnd() + '…';
+}
+
+/** 依次用 40、16 个字符和不带文字的写法，选第一个不超过 512 字节的；都超出就截断。 */
+export function fitCommentDetailToByteBudget(format: (textLimit: number | null) => string): string {
+  for (const textLimit of [40, 16, null]) {
+    const detail = format(textLimit);
+    if (commentLabelByteLength(detail) <= 512) return detail;
   }
   return truncateCommentLabelBytes(format(null), 512);
 }
-function commentArtboardTitle(artboard?: Dynamic): Dynamic {
-  return replaceUnpairedSurrogates(
-    artboard.title?.trim() || artboard.file.replace(/\.dc\.html$/, ""),
-  );
+
+export function commentArtboardTitle(artboard: CommentArtboardRef): string {
+  return replaceUnpairedSurrogates(artboard.title?.trim() || artboard.file.replace(/\.dc\.html$/, ''));
 }
-function commentElementKindLabel(kind?: Dynamic): Dynamic {
-  return kind === "box" || kind === "shape"
-    ? "shape"
-    : kind == null || kind === "other"
-      ? "element"
-      : kind;
+
+export function commentElementKindLabel(kind?: string | null): string {
+  return kind === 'box' || kind === 'shape' ? 'shape' : kind == null || kind === 'other' ? 'element' : kind;
 }
-function commentObjectShortLabel(
-  kind?: Dynamic,
-  text?: Dynamic,
-  reservedBytes: Dynamic = 0,
-): Dynamic {
-  for (let count: Dynamic = 40; count >= 8; count -= 8) {
-    let value: Dynamic =
-      kind + quoteCommentLabelText(shortenCommentLabelText(text, count));
-    if (commentLabelByteLength(value) <= 128 - reservedBytes) return value;
+
+/** "类别 "文字""，总长不超过 128 字节（减去 reservedBytes）。 */
+export function commentObjectShortLabel(kind: string, text: string | null | undefined, reservedBytes: number = 0): string {
+  for (let limit = 40; limit >= 8; limit -= 8) {
+    const label = kind + quoteCommentLabelText(shortenCommentLabelText(text, limit));
+    if (commentLabelByteLength(label) <= 128 - reservedBytes) return label;
   }
   return truncateCommentLabelBytes(kind, 128 - reservedBytes);
 }
-function describeCommentElement(model?: Dynamic, target?: Dynamic): Dynamic {
-  let value: Dynamic =
-    target.tid != null ? model?.viewEntries([target.tid])[0] : undefined;
-  return value
-    ? {
-        kind: value.kind,
-        text: value.words(),
-      }
-    : {
-        kind: target.tag
-          ? (0, classifyElementStyleKind)(target.tag)
-          : null,
-        text: target.text,
-      };
+
+/** 元素的类别与文字：优先取视图里的元素，否则按标签名推断。 */
+export function describeCommentElement(
+  model: CommentElementModel | null | undefined,
+  target: { tid?: number | null; tag?: string; text?: string | null },
+): { kind: string | null | undefined; text: string | null | undefined } {
+  const entry = target.tid != null ? model?.viewEntries([target.tid])[0] : undefined;
+  return entry
+    ? { kind: entry.kind, text: entry.words() }
+    : { kind: target.tag ? classifyElementStyleKind(target.tag) : null, text: target.text };
 }
-function commentAnchorShortLabel(anchor?: Dynamic): Dynamic {
-  if (anchor.kind === "canvas") {
-    let value2: Dynamic = anchor.pages ?? [],
-      value3: Dynamic =
-        value2.length > 1
-          ? anchor.pageKey
-            ? value2.find(
-                (input?: Dynamic): Dynamic => input.id === anchor.pageKey,
-              )
-            : value2[0]
-          : undefined,
-      text: Dynamic = " \xB7 canvas";
-    return value3
-      ? truncateCommentLabelBytes(
-          replaceUnpairedSurrogates(value3.name),
-          128 - commentLabelByteLength(text),
-        ) + text
-      : "Canvas";
+
+export function commentAnchorShortLabel(anchor: CommentLabelAnchor): string {
+  if (anchor.kind === 'canvas') {
+    const pages = anchor.pages ?? [];
+    const page = pages.length > 1 ? (anchor.pageKey ? pages.find((item) => item.id === anchor.pageKey) : pages[0]) : undefined;
+    const suffix = ' \xB7 canvas';
+    return page
+      ? truncateCommentLabelBytes(replaceUnpairedSurrogates(page.name), 128 - commentLabelByteLength(suffix)) + suffix
+      : 'Canvas';
   }
-  if (anchor.kind === "note")
-    return commentObjectShortLabel(
-      commentAnnotationKindLabel(anchor.note.kind),
-      (anchor.note.text ?? "").trim().split(`
-`)[0],
-    );
-  let value: Dynamic = commentArtboardTitle(anchor.board);
-  return anchor.kind === "artboard"
-    ? truncateCommentLabelBytes(value, 128)
+  if (anchor.kind === 'note')
+    return commentObjectShortLabel(commentAnnotationKindLabel(anchor.note.kind), (anchor.note.text ?? '').trim().split('\n')[0]);
+  const title = commentArtboardTitle(anchor.board);
+  return anchor.kind === 'artboard'
+    ? truncateCommentLabelBytes(title, 128)
     : commentObjectShortLabel(
-        truncateCommentLabelBytes(value, 128) +
-          commentBreadcrumbSeparator +
-          commentElementKindLabel(anchor.el.kind),
+        truncateCommentLabelBytes(title, 128) + commentBreadcrumbSeparator + commentElementKindLabel(anchor.el.kind),
         anchor.el.text,
       );
 }
-function commentFileLabel(file?: Dynamic): Dynamic {
-  return (
-    (0, encodeArtboardSelectionPath)(file) ??
-    replaceUnpairedSurrogates(file)
-  );
+
+/** 画板文件的显示路径：有选择路径编码时用编码。 */
+export function commentFileLabel(file: string): string {
+  return encodeArtboardSelectionPath(file) ?? replaceUnpairedSurrogates(file);
 }
-function commentArtboardAreaShortLabel(artboards?: Dynamic): Dynamic {
+
+/** 区域覆盖画板的简短标题；一块画板时带位置和元素数，多块时列出名称并在超长时写"+N more"。 */
+export function commentArtboardAreaShortLabel(artboards: CommentCoveredBoard[]): string {
   if (artboards.length === 1) {
-    let value2: Dynamic = artboards[0],
-      value3: Dynamic =
-        value2.cov < 0.85 ? (value2.total ?? value2.els?.length ?? 0) : 0,
-      value4: Dynamic =
-        value3 === 0
-          ? ""
-          : " \xB7 " +
-            String(value3) +
-            (value3 === 1 ? " element" : " elements"),
-      value5: Dynamic =
-        (value2.cov < 0.85 ? commentAreaPartLabel(value2.part) : "") + value4;
-    return (
-      truncateCommentLabelBytes(
-        commentArtboardTitle(value2.board),
-        128 - commentLabelByteLength(value5),
-      ) + value5
-    );
+    const only = artboards[0];
+    const count = only.cov < 0.85 ? (only.total ?? only.els?.length ?? 0) : 0;
+    const countText = count === 0 ? '' : ' \xB7 ' + String(count) + (count === 1 ? ' element' : ' elements');
+    const tail = (only.cov < 0.85 ? commentAreaPartLabel(only.part) : '') + countText;
+    return truncateCommentLabelBytes(commentArtboardTitle(only.board), 128 - commentLabelByteLength(tail)) + tail;
   }
-  let value: Dynamic = artboards.map(
-    (input?: Dynamic): Dynamic =>
-      commentArtboardTitle(input.board) +
-      (input.cov < 0.85 ? commentAreaPartLabel(input.part) : ""),
+  const names = artboards.map(
+    (item) => commentArtboardTitle(item.board) + (item.cov < 0.85 ? commentAreaPartLabel(item.part) : ''),
   );
-  for (let length: Dynamic = value.length; length >= 1; length--) {
-    let value2: Dynamic =
-        length < value.length
-          ? " +" + String(value.length - length) + " more"
-          : "",
-      value3: Dynamic =
-        "Artboards: " + value.slice(0, length).join(", ") + value2;
-    if (commentLabelByteLength(value3) <= 128) return value3;
+  for (let length = names.length; length >= 1; length--) {
+    const more = length < names.length ? ' +' + String(names.length - length) + ' more' : '';
+    const label = 'Artboards: ' + names.slice(0, length).join(', ') + more;
+    if (commentLabelByteLength(label) <= 128) return label;
     if (length === 1) {
-      let value4: Dynamic = artboards[0],
-        value5: Dynamic =
-          value4.cov < 0.85 ? commentAreaPartLabel(value4.part) : "";
+      const first = artboards[0];
+      const part = first.cov < 0.85 ? commentAreaPartLabel(first.part) : '';
       return (
         truncateCommentLabelBytes(
-          "Artboards: " + commentArtboardTitle(value4.board),
-          128 - commentLabelByteLength(value5 + value2),
+          'Artboards: ' + commentArtboardTitle(first.board),
+          128 - commentLabelByteLength(part + more),
         ) +
-        value5 +
-        value2
+        part +
+        more
       );
     }
   }
-  return "Artboards";
+  return 'Artboards';
 }
-function commentObjectPointDetail(
-  object?: Dynamic,
-  point?: Dynamic,
-): Dynamic {
-  let value: Dynamic = point
-    ? object.kind === "line" || object.kind === "arrow"
-      ? " at " + formatCommentPercent(point.fx) + " along from its start"
-      : " at " +
+
+export function commentObjectPointDetail(
+  object: CommentLabelObject,
+  point?: { fx: number; fy: number } | null,
+): string {
+  const placement = point
+    ? object.kind === 'line' || object.kind === 'arrow'
+      ? ' at ' + formatCommentPercent(point.fx) + ' along from its start'
+      : ' at ' +
         formatCommentPercent(point.fx) +
-        " across, " +
+        ' across, ' +
         formatCommentPercent(point.fy) +
-        " down" +
+        ' down' +
         commentObjectTransformSuffix(object)
-    : "";
-  return fitCommentDetailToByteBudget(
-    (input?: Dynamic): Dynamic => commentObjectDetail(object, input) + value,
-  );
+    : '';
+  return fitCommentDetailToByteBudget((textLimit) => commentObjectDetail(object, textLimit) + placement);
 }
-function commentObjectAreaShortLabel(
-  object?: Dynamic,
-  area?: Dynamic,
-): Dynamic {
-  let value: Dynamic = (0, describeCommentAreaLocation)(
-      area,
-      (area.x1 - area.x0) * (area.y1 - area.y0),
-    ),
-    value2: Dynamic = value ? " (" + value + ")" : "";
+
+export function commentObjectAreaShortLabel(object: CommentLabelObject, area: CommentArea): string {
+  const location = describeCommentAreaLocation(area, (area.x1 - area.x0) * (area.y1 - area.y0));
+  const suffix = location ? ' (' + location + ')' : '';
   return (
     commentObjectShortLabel(
       commentAnnotationKindLabel(object.kind),
-      (object.text ?? "").trim().split(`
-`)[0],
-      commentLabelByteLength(value2),
-    ) + value2
+      (object.text ?? '').trim().split('\n')[0],
+      commentLabelByteLength(suffix),
+    ) + suffix
   );
 }
-function commentObjectAreaDetail(object?: Dynamic, area?: Dynamic): Dynamic {
-  let value: Dynamic =
+
+export function commentObjectAreaDetail(object: CommentLabelObject, area: CommentArea): string {
+  const extent =
     (area.x1 - area.x0) * (area.y1 - area.y0) >= 0.85
-      ? " (whole)"
-      : ": " +
+      ? ' (whole)'
+      : ': ' +
         formatCommentPercent(area.x0) +
-        " to " +
+        ' to ' +
         formatCommentPercent(area.x1) +
-        " across, " +
+        ' across, ' +
         formatCommentPercent(area.y0) +
-        " to " +
+        ' to ' +
         formatCommentPercent(area.y1) +
-        " down" +
+        ' down' +
         commentObjectTransformSuffix(object);
-  return fitCommentDetailToByteBudget(
-    (input?: Dynamic): Dynamic =>
-      "area over " + commentObjectDetail(object, input) + value,
+  return fitCommentDetailToByteBudget((textLimit) => 'area over ' + commentObjectDetail(object, textLimit) + extent);
+}
+
+export function commentCanvasPointDetail(x: number, y: number): string {
+  return 'canvas ' + String(Math.round(x)) + ',' + String(Math.round(y));
+}
+
+export function commentArtboardElementDetail(
+  artboard: { file: string },
+  element?: CommentElementInfo | null,
+): string {
+  const file = commentFileLabel(artboard.file);
+  return fitCommentDetailToByteBudget((textLimit) =>
+    element ? file + ': ' + commentElementDetail(element, textLimit) : file,
   );
 }
-function commentCanvasPointDetail(x?: Dynamic, y?: Dynamic): Dynamic {
-  return "canvas " + String(Math.round(x)) + "," + String(Math.round(y));
-}
-function commentArtboardElementDetail(
-  artboard?: Dynamic,
-  element?: Dynamic,
-): Dynamic {
-  let value: Dynamic = commentFileLabel(artboard.file);
-  return fitCommentDetailToByteBudget(
-    (input?: Dynamic): Dynamic =>
-      element ? value + ": " + commentElementDetail(element, input) : value,
-  );
-}
-function commentArtboardAreaDetail(artboards?: Dynamic): Dynamic {
-  let callback: Dynamic = (
-      input?: Dynamic,
-      options?: Dynamic,
-      context?: Dynamic,
-      value?: Dynamic,
-    ): Dynamic => {
-      let value2: Dynamic = artboards
-          .slice(0, value)
-          .map((input2?: Dynamic): Dynamic => {
-            let value4: Dynamic =
-                commentFileLabel(input2.board.file) +
-                " (" +
-                (input2.cov >= 0.85 ? "whole" : input2.part || "part") +
-                ")",
-              value5: Dynamic =
-                context && input2.cov < 0.85 && (input2.els?.length ?? 0) > 0
-                  ? ": " + commentElementsDetail(input2, options, input)
-                  : "";
-            return value4 + value5;
-          }),
-        value3: Dynamic = artboards.length - value;
-      return (
-        "Area over " +
-        value2.join("; ") +
-        (value3 > 0
-          ? "; +" + String(value3) + (value3 === 1 ? " board" : " boards")
-          : "")
-      );
-    },
-    items: Dynamic = [
-      [40, 8, true],
-      [16, 8, true],
-      [null, 8, true],
-      [null, 4, true],
-      [null, 2, true],
-      [null, 0, false],
-    ];
-  for (let [value, value2, value3] of items as Dynamic) {
-    let value4: Dynamic = callback(value, value2, value3, artboards.length);
-    if (commentLabelByteLength(value4) <= 512) return value4;
-  }
-  for (let value: Dynamic = artboards.length - 1; value >= 1; value--) {
-    let value2: Dynamic = callback(null, 0, false, value);
-    if (commentLabelByteLength(value2) <= 512) return value2;
-  }
-  return fitCommentDetailToByteBudget(
-    (): Dynamic => callback(null, 0, false, 1),
-  );
-}
-function defaultArtboardCommentPoint(
-  box?: Dynamic,
-  scale?: Dynamic,
-): Dynamic {
-  let value: Dynamic = Number.isFinite(scale) && scale > 0 ? scale : 1,
-    value2: Dynamic = Math.max(0, box.w) || 1,
-    value3: Dynamic = Math.max(0, box.h) || 1,
-    value4: Dynamic = Math.min(
-      commentAnchorInsetPixels / value,
-      value2 * commentAnchorInsetFraction,
-      value3 * commentAnchorInsetFraction,
+
+/** 区域覆盖画板的详细描述，不超过 512 字节：先逐级收紧元素文字和个数，再减少画板数。 */
+export function commentArtboardAreaDetail(artboards: CommentCoveredBoard[]): string {
+  const describe = (textLimit: number | null, maxElements: number, withElements: boolean, boardCount: number): string => {
+    const boards = artboards.slice(0, boardCount).map((item) => {
+      const head = commentFileLabel(item.board.file) + ' (' + (item.cov >= 0.85 ? 'whole' : item.part || 'part') + ')';
+      const elements =
+        withElements && item.cov < 0.85 && (item.els?.length ?? 0) > 0
+          ? ': ' + commentElementsDetail(item, maxElements, textLimit)
+          : '';
+      return head + elements;
+    });
+    const omitted = artboards.length - boardCount;
+    return (
+      'Area over ' +
+      boards.join('; ') +
+      (omitted > 0 ? '; +' + String(omitted) + (omitted === 1 ? ' board' : ' boards') : '')
     );
-  return {
-    fx: 1 - value4 / value2,
-    fy: value4 / value3,
   };
+  const levels: [number | null, number, boolean][] = [
+    [40, 8, true],
+    [16, 8, true],
+    [null, 8, true],
+    [null, 4, true],
+    [null, 2, true],
+    [null, 0, false],
+  ];
+  for (const [textLimit, maxElements, withElements] of levels) {
+    const detail = describe(textLimit, maxElements, withElements, artboards.length);
+    if (commentLabelByteLength(detail) <= 512) return detail;
+  }
+  for (let boardCount = artboards.length - 1; boardCount >= 1; boardCount--) {
+    const detail = describe(null, 0, false, boardCount);
+    if (commentLabelByteLength(detail) <= 512) return detail;
+  }
+  return fitCommentDetailToByteBudget(() => describe(null, 0, false, 1));
 }
-function commentSurfaceAriaLabel(surface?: Dynamic): Dynamic {
-  if (surface.kind === "artboard")
-    return "Comment on artboard " + commentAnchorShortLabel(surface);
-  let value: Dynamic = surface.pages ?? [],
-    value2: Dynamic =
-      value.length > 1
-        ? surface.pageKey
-          ? value.find(
-              (input?: Dynamic): Dynamic => input.id === surface.pageKey,
-            )
-          : value[0]
-        : undefined;
-  return "Comment on the canvas" + (value2 ? ", page " + value2.name : "");
+
+/** 画板上默认评论点：右上角往内缩，缩进取 16 屏幕像素与画板宽高 25% 中较小的。 */
+export function defaultArtboardCommentPoint(box: { w: number; h: number }, scale?: number): { fx: number; fy: number } {
+  const zoom = Number.isFinite(scale) && (scale as number) > 0 ? (scale as number) : 1;
+  const width = Math.max(0, box.w) || 1;
+  const height = Math.max(0, box.h) || 1;
+  const inset = Math.min(commentAnchorInsetPixels / zoom, width * commentAnchorInsetFraction, height * commentAnchorInsetFraction);
+  return { fx: 1 - inset / width, fy: inset / height };
 }
-function commentTargetKeyboardHint(target?: Dynamic): Dynamic {
+
+export function commentSurfaceAriaLabel(surface: ArtboardLabelAnchor | CanvasLabelAnchor): string {
+  if (surface.kind === 'artboard') return 'Comment on artboard ' + commentAnchorShortLabel(surface);
+  const pages = surface.pages ?? [];
+  const page = pages.length > 1 ? (surface.pageKey ? pages.find((item) => item.id === surface.pageKey) : pages[0]) : undefined;
+  return 'Comment on the canvas' + (page ? ', page ' + page.name : '');
+}
+
+export function commentTargetKeyboardHint(target: CommentTargetHint): string {
   return [
-    "Enter or Space comments on " +
-      (target.canvas ? "the canvas" : "this artboard"),
-    ...(target.several ? ["Tab moves between artboards"] : []),
-    "Escape leaves comment mode",
-  ].join("; ");
+    'Enter or Space comments on ' + (target.canvas ? 'the canvas' : 'this artboard'),
+    ...(target.several ? ['Tab moves between artboards'] : []),
+    'Escape leaves comment mode',
+  ].join('; ');
 }
-function isCommentTargetEvent(event?: Dynamic): Dynamic {
-  return (
-    event.target instanceof Element &&
-    event.target.hasAttribute("data-mega-comment-target")
-  );
+
+export function isCommentTargetEvent(event: { target: unknown }): boolean {
+  return event.target instanceof Element && event.target.hasAttribute('data-mega-comment-target');
 }
-function clampCommentAreaToViewport(
-  area?: Dynamic,
-  viewportWidth?: Dynamic,
-  viewportHeight?: Dynamic,
-  minSize: Dynamic = 8,
-): Dynamic {
-  let callback: Dynamic = (
-      input?: Dynamic,
-      options?: Dynamic,
-      context?: Dynamic,
-    ): Dynamic => Math.max(options, Math.min(context, input)),
-    value: Dynamic = callback(
-      area.x,
-      0,
-      Math.max(0, viewportWidth - minSize),
-    ),
-    value2: Dynamic = callback(
-      area.y,
-      0,
-      Math.max(0, viewportHeight - minSize),
-    ),
-    value3: Dynamic = callback(
-      area.x + area.w,
-      value + minSize,
-      Math.max(viewportWidth, value + minSize),
-    ),
-    value4: Dynamic = callback(
-      area.y + area.h,
-      value2 + minSize,
-      Math.max(viewportHeight, value2 + minSize),
-    );
-  return {
-    x: value,
-    y: value2,
-    w: value3 - value,
-    h: value4 - value2,
-  };
-}
-export {
-  clampCommentAreaToViewport,
-  commentAnchorInsetFraction,
-  commentAnchorInsetPixels,
-  commentAnchorShortLabel,
-  commentAnnotationKindLabel,
-  commentAnnotationKindLabels,
-  commentAreaPartLabel,
-  commentArtboardAreaDetail,
-  commentArtboardAreaShortLabel,
-  commentArtboardElementDetail,
-  commentArtboardTitle,
-  commentBreadcrumbSeparator,
-  commentCanvasPointDetail,
-  commentElementDetail,
-  commentElementKindLabel,
-  commentElementsDetail,
-  commentFileLabel,
-  commentLabelByteLength,
-  commentLabelTextEncoder,
-  commentObjectAreaDetail,
-  commentObjectAreaShortLabel,
-  commentObjectDetail,
-  commentObjectPointDetail,
-  commentObjectShortLabel,
-  commentObjectTransformSuffix,
-  commentSurfaceAriaLabel,
-  commentTargetKeyboardHint,
-  defaultArtboardCommentPoint,
-  describeCommentElement,
-  fitCommentDetailToByteBudget,
-  formatCommentPercent,
-  isCommentTargetEvent,
-  quoteCommentLabelText,
-  replaceUnpairedSurrogates,
-  shortenCommentLabelText,
-  truncateCommentLabelBytes,
-};
-export function installCommentsLabels(): () => void {
-  return () => {
-    commentLabelTextEncoder = new TextEncoder();
-    commentLabelByteLength = (input?: Dynamic): Dynamic =>
-      commentLabelTextEncoder.encode(input).length;
-    quoteCommentLabelText = (input?: Dynamic): Dynamic =>
-      input ? ' "' + input + '"' : "";
-    commentBreadcrumbSeparator = " \u203A ";
-    commentElementDetail = (source?: Dynamic, options?: Dynamic): Dynamic =>
-      "#" +
-      source.path +
-      " " +
-      (source.kind === "box" ? "shape" : source.kind) +
-      (options == null
-        ? ""
-        : quoteCommentLabelText(shortenCommentLabelText(source.text, options)));
-    commentElementsDetail = (
-      input?: Dynamic,
-      options?: Dynamic,
-      context?: Dynamic,
-    ): Dynamic => {
-      let value: Dynamic = input.els ?? [],
-        value2: Dynamic = value.slice(0, options),
-        value3: Dynamic = (input.total ?? value.length) - value2.length,
-        value4: Dynamic = value2.map(
-          (input2?: Dynamic): Dynamic => commentElementDetail(input2, context),
-        );
-      value3 > 0 && value4.push("+" + String(value3) + " more");
-      return value4.join(", ");
-    };
-    commentAreaPartLabel = (input?: Dynamic): Dynamic =>
-      input ? " (" + input + ")" : "";
-    commentAnnotationKindLabels = {
-      get title1() { return uiMessage("feedback.labels.title"); },
-      get rect() { return uiMessage("feedback.labels.rectangle"); },
-      get oval() { return uiMessage("feedback.labels.oval"); },
-      get line() { return uiMessage("feedback.labels.line"); },
-      get arrow() { return uiMessage("feedback.labels.arrow"); },
-      get pen() { return uiMessage("feedback.labels.drawing"); },
-      image: "Picture",
-    };
-    commentAnnotationKindLabel = (input?: Dynamic): Dynamic =>
-      input === undefined ? "Note" : commentAnnotationKindLabels[input];
-    formatCommentPercent = (input?: Dynamic): Dynamic =>
-      String(Math.round(input * 100)) + "%";
-    commentObjectTransformSuffix = (input?: Dynamic): Dynamic => {
-      let value: Dynamic = [
-        input.rotate ? "turn" : "",
-        input.flipX || input.flipY ? "flip" : "",
-      ]
-        .filter(Boolean)
-        .join(" and ");
-      return " from its top left" + (value ? ", before its " + value : "");
-    };
-    commentObjectDetail = (source?: Dynamic, options?: Dynamic): Dynamic =>
-      commentAnnotationKindLabel(source.kind).toLowerCase() +
-      (options == null || source.text == null
-        ? ""
-        : quoteCommentLabelText(
-            shortenCommentLabelText(
-              source.text.trim().split(`
-`)[0],
-              options,
-            ),
-          ));
-    commentAnchorInsetPixels = 16;
-    commentAnchorInsetFraction = 0.25;
-  };
+
+/** 把区域限制在视口内，宽高至少 minSize。 */
+export function clampCommentAreaToViewport(
+  area: CommentRect,
+  viewportWidth: number,
+  viewportHeight: number,
+  minSize: number = 8,
+): CommentRect {
+  const clamp = (value: number, low: number, high: number): number => Math.max(low, Math.min(high, value));
+  const x = clamp(area.x, 0, Math.max(0, viewportWidth - minSize));
+  const y = clamp(area.y, 0, Math.max(0, viewportHeight - minSize));
+  const right = clamp(area.x + area.w, x + minSize, Math.max(viewportWidth, x + minSize));
+  const bottom = clamp(area.y + area.h, y + minSize, Math.max(viewportHeight, y + minSize));
+  return { x, y, w: right - x, h: bottom - y };
 }
