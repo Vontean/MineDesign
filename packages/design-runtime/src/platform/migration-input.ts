@@ -1,151 +1,68 @@
 /** Restored application module; prepare first, initialize in original order. */
 import {
-  bindRuntimeValue,
   type Dynamic,
-  type RuntimeBindings,
 } from "../runtime-types";
+import { PlatformMigrationStateAlias } from "./migration-state";
 
-export function installPlatformMigrationInput(
-  runtime: RuntimeBindings,
-): () => void {
-  var PlatformMigrationInputTest: Dynamic;
-  var PlatformMigrationInputKeydownKeypressKeyupValues: Dynamic;
-  var PlatformMigrationInputConstant: Dynamic;
-  var PlatformMigrationInputStartsWith: Dynamic;
-  var PlatformMigrationInputCurrentState: Dynamic;
-  var CouldnTOpenTheCurrentVersionOfMessage: Dynamic;
-  var CouldnTLoadThisCanvasReloadToMessage: Dynamic;
-  var PlatformMigrationInputAlias: Dynamic;
-  var PlatformMigrationInputSubscribers: Dynamic;
-  var getCanvasLoadFailure: Dynamic;
-  function installMigrationInputBlocker(
-    input: Dynamic = typeof window === "undefined" ? undefined : window,
-  ): Dynamic {
-    for (let value of PlatformMigrationInputKeydownKeypressKeyupValues as Dynamic)
-      input?.addEventListener(value, PlatformMigrationInputStartsWith, {
-        capture: true,
-      });
+var PlatformMigrationInputTest: Dynamic;
+var PlatformMigrationInputKeydownKeypressKeyupValues: Dynamic;
+var PlatformMigrationInputConstant: Dynamic;
+var PlatformMigrationInputStartsWith: Dynamic;
+var PlatformMigrationInputCurrentState: Dynamic;
+var CouldnTOpenTheCurrentVersionOfMessage: Dynamic;
+var CouldnTLoadThisCanvasReloadToMessage: Dynamic;
+var PlatformMigrationInputAlias: Dynamic;
+var PlatformMigrationInputSubscribers: Dynamic;
+var getCanvasLoadFailure: Dynamic;
+function installMigrationInputBlocker(
+  input: Dynamic = typeof window === "undefined" ? undefined : window,
+): Dynamic {
+  for (let value of PlatformMigrationInputKeydownKeypressKeyupValues as Dynamic)
+    input?.addEventListener(value, PlatformMigrationInputStartsWith, {
+      capture: true,
+    });
+}
+function clearMigrationInputBlocker(): Dynamic {
+  PlatformMigrationInputConstant = 0;
+  PlatformMigrationInputCurrentState?.removeAttribute("inert");
+  PlatformMigrationInputCurrentState?.removeAttribute("aria-busy");
+}
+function isMovedToFiles(): Dynamic {
+  return PlatformMigrationStateAlias;
+}
+function setCanvasLoadFailure(input?: Dynamic): Dynamic {
+  if (PlatformMigrationInputAlias !== input) {
+    PlatformMigrationInputAlias = input;
+    for (let value of [...PlatformMigrationInputSubscribers] as Dynamic)
+      try {
+        value();
+      } catch {}
   }
-  function clearMigrationInputBlocker(): Dynamic {
-    PlatformMigrationInputConstant = 0;
-    PlatformMigrationInputCurrentState?.removeAttribute("inert");
-    PlatformMigrationInputCurrentState?.removeAttribute("aria-busy");
-  }
-  function isMovedToFiles(): Dynamic {
-    return runtime.PlatformMigrationStateAlias;
-  }
-  function setCanvasLoadFailure(input?: Dynamic): Dynamic {
-    if (PlatformMigrationInputAlias !== input) {
-      PlatformMigrationInputAlias = input;
-      for (let value of [...PlatformMigrationInputSubscribers] as Dynamic)
-        try {
-          value();
-        } catch {}
-    }
-  }
-  function subscribeCanvasLoadFailure(input?: Dynamic): Dynamic {
-    PlatformMigrationInputSubscribers.add(input);
-    return (): Dynamic => {
-      PlatformMigrationInputSubscribers.delete(input);
-    };
-  }
-  bindRuntimeValue(
-    runtime,
-    "PlatformMigrationInputTest",
-    () => PlatformMigrationInputTest,
-    (value) => {
-      PlatformMigrationInputTest = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "PlatformMigrationInputKeydownKeypressKeyupValues",
-    () => PlatformMigrationInputKeydownKeypressKeyupValues,
-    (value) => {
-      PlatformMigrationInputKeydownKeypressKeyupValues = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "PlatformMigrationInputConstant",
-    () => PlatformMigrationInputConstant,
-    (value) => {
-      PlatformMigrationInputConstant = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "PlatformMigrationInputStartsWith",
-    () => PlatformMigrationInputStartsWith,
-    (value) => {
-      PlatformMigrationInputStartsWith = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "installMigrationInputBlocker",
-    () => installMigrationInputBlocker,
-  );
-  bindRuntimeValue(
-    runtime,
-    "PlatformMigrationInputCurrentState",
-    () => PlatformMigrationInputCurrentState,
-    (value) => {
-      PlatformMigrationInputCurrentState = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "clearMigrationInputBlocker",
-    () => clearMigrationInputBlocker,
-  );
-  bindRuntimeValue(
-    runtime,
-    "CouldnTOpenTheCurrentVersionOfMessage",
-    () => CouldnTOpenTheCurrentVersionOfMessage,
-    (value) => {
-      CouldnTOpenTheCurrentVersionOfMessage = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "CouldnTLoadThisCanvasReloadToMessage",
-    () => CouldnTLoadThisCanvasReloadToMessage,
-    (value) => {
-      CouldnTLoadThisCanvasReloadToMessage = value;
-    },
-  );
-  bindRuntimeValue(runtime, "isMovedToFiles", () => isMovedToFiles);
-  bindRuntimeValue(
-    runtime,
-    "PlatformMigrationInputAlias",
-    () => PlatformMigrationInputAlias,
-    (value) => {
-      PlatformMigrationInputAlias = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "PlatformMigrationInputSubscribers",
-    () => PlatformMigrationInputSubscribers,
-    (value) => {
-      PlatformMigrationInputSubscribers = value;
-    },
-  );
-  bindRuntimeValue(runtime, "setCanvasLoadFailure", () => setCanvasLoadFailure);
-  bindRuntimeValue(
-    runtime,
-    "getCanvasLoadFailure",
-    () => getCanvasLoadFailure,
-    (value) => {
-      getCanvasLoadFailure = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "subscribeCanvasLoadFailure",
-    () => subscribeCanvasLoadFailure,
-  );
+}
+function subscribeCanvasLoadFailure(input?: Dynamic): Dynamic {
+  PlatformMigrationInputSubscribers.add(input);
+  return (): Dynamic => {
+    PlatformMigrationInputSubscribers.delete(input);
+  };
+}
+export {
+  clearMigrationInputBlocker,
+  CouldnTLoadThisCanvasReloadToMessage,
+  CouldnTOpenTheCurrentVersionOfMessage,
+  getCanvasLoadFailure,
+  installMigrationInputBlocker,
+  isMovedToFiles,
+  PlatformMigrationInputAlias,
+  PlatformMigrationInputConstant,
+  PlatformMigrationInputCurrentState,
+  PlatformMigrationInputKeydownKeypressKeyupValues,
+  PlatformMigrationInputStartsWith,
+  PlatformMigrationInputSubscribers,
+  PlatformMigrationInputTest,
+  setCanvasLoadFailure,
+  subscribeCanvasLoadFailure,
+};
+export function installPlatformMigrationInput(): () => void {
   return () => {
     PlatformMigrationInputTest = (input?: Dynamic): Dynamic =>
       input === "Escape" || input === "Tab" || /^F\d{1,2}$/.test(input ?? "");

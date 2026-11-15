@@ -16,437 +16,318 @@ import type {
 } from "../../contracts/ui";
 import type * as React from "react";
 /** Restored application module; prepare first, initialize in original order. */
-import { bindRuntimeValue, type RuntimeBindings } from "../../runtime-types";
-export function installCdsPopoverPopover(runtime: RuntimeBindings): () => void {
-  var jsxPopoverPopover: typeof import("react/jsx-runtime");
-  var initializePopoverPopover: () => void;
-  var reactPopoverPopover: typeof React;
-  var jsxPopoverPopover_2: typeof import("react/jsx-runtime");
-  var PopoverPopoverCss: string;
-  var popoverPopupClassNames: string;
-  var PopoverPopoverNoneXsSmConfig: {
-    none: string;
-    xs: string;
-    sm: string;
-    md: string;
-    lg: string;
+import { popupSurfaceClassName } from "../components/icon";
+import { ActivityBoundary, initializeDomRefComposition, initializeDomRefComposition_3, useMergedRefs } from "../dom/ref-composition";
+import { initializeHooksLayoutEffect, useIsomorphicLayoutEffect } from "../hooks/layout-effect";
+import { asElement, initializeHooksStableCallback } from "../hooks/stable-callback";
+import { initializeMenuPopup_3, isInteractivePressTarget } from "../menu/popup";
+import { initializeOverlaysBackdrop, OverlayBackdrop, OverlaysBackdropVisibilityOpacityConfig, useRestoreFocusOnClose } from "../overlays/backdrop";
+import { initializeOverlaysImperativeHandle, useOverlayImperativeHandle } from "../overlays/imperative-handle";
+import { initializeOverlaysLayers, LayerBaseContext, useLayer } from "../overlays/layers";
+import { initializePlatformReducedMotion_2, PlatformReducedMotionClassNames_3, PlatformReducedMotionCss_2 } from "../platform/reduced-motion";
+import { initializePlatformRootFontSize_2, PopupSurface } from "../platform/root-font-size";
+import { initializeSheetsKeyboardViewport, isTextInputElement } from "../sheets/keyboard-viewport";
+import { ComfortableValue, initializeSheetsLayout, SheetsLayoutDisableAnchorTrackingCollisionAvoidanceConfig } from "../sheets/layout";
+import { initializeSheetsPopupStack, isInsideSheetPopup, SheetPopupContext, SheetPopupProvider, SheetsPopupStackConcealedConfig, SheetsPopupStackSheetConcealedChromeConfig, useAvailableSheetParts, useOverlayOpenState, useSheetInteractionMode, useSheetPopup, useSheetState } from "../sheets/popup-stack";
+import { initializeSheetsPresentation, sheetScrollAttribute, useOpenSnapshot } from "../sheets/presentation";
+import { closeInnerOverlayOnEscape, createInnerOverlayStack, initializeOverlayAttributes, initializeSheetsScrollArea_6, initializeSheetsScrollArea_7, InnerOverlaysContext, overlayAttribute, useOpenerReturn } from "../sheets/scroll-area";
+import { cn, initializeClassNames } from "../theme/class-names";
+import { initializeCdsRoot, useOverlayRoot } from "../theme/root";
+import { initializeThemeSurfaces, surfaceBackgroundTokens } from "../theme/surfaces";
+import { initializeNpm__base_ui_react_pge, load_react, load_react_jsx_runtime, npm_Popover_$f } from "../../dependencies";
+import { initializeOnce, toModuleNamespace } from "../../module-helpers";
+
+var jsxPopoverPopover: typeof import("react/jsx-runtime");
+var initializePopoverPopover: () => void;
+var reactPopoverPopover: typeof React;
+var jsxPopoverPopover_2: typeof import("react/jsx-runtime");
+var PopoverPopoverCss: string;
+var popoverPopupClassNames: string;
+var PopoverPopoverNoneXsSmConfig: {
+  none: string;
+  xs: string;
+  sm: string;
+  md: string;
+  lg: string;
+};
+var PopoverPopoverXysetrblOverflowPattern: RegExp;
+var PopoverPopoverPaddingOverflowPattern: RegExp;
+var PopoverPopupInner: ForwardComponent<
+  HTMLDivElement,
+  PopoverPopupInnerProps
+>;
+var PopoverPopup: ForwardComponent<HTMLDivElement, PopoverPopupProps>;
+var PopoverSheetCapablePopup: ForwardComponent<
+  HTMLDivElement,
+  PopoverPopupProps
+>;
+var PopoverPopupView: ForwardComponent<HTMLDivElement, PopoverPopupViewProps>;
+var PopoverPopoverContext: React.Context<PopoverAnchorStore | null>;
+var PopoverPopoverContext_2: React.Context<InnerOverlayStack | null>;
+var PopoverTrigger: ForwardComponent<
+  HTMLButtonElement,
+  import("@base-ui/react/popover").Popover.Trigger.Props<void>
+>;
+var PopoverTriggerAlias: typeof PopoverTrigger;
+var PopoverPopoverRootTriggerPopupConfig: {
+  Root: typeof PopoverRoot;
+  Trigger: typeof PopoverTrigger;
+  Popup: typeof PopoverPopup;
+  Title: typeof import("@base-ui/react/popover").Popover.Title;
+  Description: typeof import("@base-ui/react/popover").Popover.Description;
+  Close: typeof import("@base-ui/react/popover").Popover.Close;
+  Arrow: typeof import("@base-ui/react/popover").Popover.Arrow;
+  createHandle: typeof import("@base-ui/react/popover").Popover.createHandle;
+};
+var initializePopoverPopover_2: () => void;
+function SheetCapablePopup({
+  kind: kind,
+  children: children,
+}: {
+  kind: OverlayKind;
+  children: (
+    state: SheetRenderState,
+    parts: MobileSheetParts | null,
+  ) => React.ReactNode;
+}): React.ReactElement {
+  useUiLocale();
+  let value = (0, useAvailableSheetParts)(),
+    { pending: value2 } = (0, useSheetState)();
+  return value !== null ? (
+    <value.SheetPopupHost>
+      {(input: SheetRenderState) => children(input, value)}
+    </value.SheetPopupHost>
+  ) : (
+    <jsxPopoverPopover.Fragment>
+      {children(
+        value2
+          ? SheetsPopupStackConcealedConfig
+          : SheetsPopupStackSheetConcealedChromeConfig,
+        null,
+      )}
+      {value2 ? (<OverlayBackdrop kind={kind} />) : (null)}
+    </jsxPopoverPopover.Fragment>
+  );
+}
+function usePopoverAnimation(
+  input: string | undefined,
+  options: import("@base-ui/react/popover").Popover.Popup.Props["style"],
+): void {
+  let value = (0, reactPopoverPopover.useRef)(false);
+  (0, reactPopoverPopover.useEffect)(() => {}, [input, options]);
+}
+function isPopoverArrow(input: React.ReactNode): boolean {
+  return (
+    (0, reactPopoverPopover.isValidElement)(input) &&
+    input.type === npm_Popover_$f.Arrow
+  );
+}
+function usePopoverInnerOverlays(
+  input: import("@base-ui/react/popover").Popover.Root.Props<void>["onOpenChange"],
+): {
+  innerOverlays: InnerOverlayStack;
+  onOpenChange: NonNullable<
+    import("@base-ui/react/popover").Popover.Root.Props<void>["onOpenChange"]
+  >;
+} {
+  let [value] = (0, reactPopoverPopover.useState)<InnerOverlayStack>(
+    createInnerOverlayStack,
+  );
+  return {
+    innerOverlays: value,
+    onOpenChange: (0, reactPopoverPopover.useCallback)(
+      (input2, options) => {
+        (0, closeInnerOverlayOnEscape)(value, input2, options) ||
+          input?.(input2, options);
+      },
+      [value, input],
+    ),
   };
-  var PopoverPopoverXysetrblOverflowPattern: RegExp;
-  var PopoverPopoverPaddingOverflowPattern: RegExp;
-  var PopoverPopupInner: ForwardComponent<
-    HTMLDivElement,
-    PopoverPopupInnerProps
-  >;
-  var PopoverPopup: ForwardComponent<HTMLDivElement, PopoverPopupProps>;
-  var PopoverSheetCapablePopup: ForwardComponent<
-    HTMLDivElement,
-    PopoverPopupProps
-  >;
-  var PopoverPopupView: ForwardComponent<HTMLDivElement, PopoverPopupViewProps>;
-  var PopoverPopoverContext: React.Context<PopoverAnchorStore | null>;
-  var PopoverPopoverContext_2: React.Context<InnerOverlayStack | null>;
-  var PopoverTrigger: ForwardComponent<
-    HTMLButtonElement,
-    import("@base-ui/react/popover").Popover.Trigger.Props<void>
-  >;
-  var PopoverTriggerAlias: typeof PopoverTrigger;
-  var PopoverPopoverRootTriggerPopupConfig: {
-    Root: typeof PopoverRoot;
-    Trigger: typeof PopoverTrigger;
-    Popup: typeof PopoverPopup;
-    Title: typeof import("@base-ui/react/popover").Popover.Title;
-    Description: typeof import("@base-ui/react/popover").Popover.Description;
-    Close: typeof import("@base-ui/react/popover").Popover.Close;
-    Arrow: typeof import("@base-ui/react/popover").Popover.Arrow;
-    createHandle: typeof import("@base-ui/react/popover").Popover.createHandle;
-  };
-  var initializePopoverPopover_2: () => void;
-  function SheetCapablePopup({
-    kind: kind,
-    children: children,
-  }: {
-    kind: OverlayKind;
-    children: (
-      state: SheetRenderState,
-      parts: MobileSheetParts | null,
-    ) => React.ReactNode;
-  }): React.ReactElement {
-    useUiLocale();
-    let value = (0, runtime.useAvailableSheetParts)(),
-      { pending: value2 } = (0, runtime.useSheetState)();
-    return value !== null ? (
-      <value.SheetPopupHost>
-        {(input: SheetRenderState) => children(input, value)}
-      </value.SheetPopupHost>
-    ) : (
-      <jsxPopoverPopover.Fragment>
-        {children(
-          value2
-            ? runtime.SheetsPopupStackConcealedConfig
-            : runtime.SheetsPopupStackSheetConcealedChromeConfig,
-          null,
-        )}
-        {value2 ? (<runtime.OverlayBackdrop kind={kind} />) : (null)}
-      </jsxPopoverPopover.Fragment>
-    );
+}
+function resolvePopoverAnchor(
+  input: PopoverAnchorState,
+): Element | null | "virtual" {
+  let anchor = input.anchor;
+  if (anchor == null) return input.triggerEl;
+  if (anchor instanceof Element) return anchor;
+  if (typeof anchor == "object" && "current" in anchor) {
+    let current = anchor.current;
+    return current instanceof Element ? current : null;
   }
-  function usePopoverAnimation(
-    input: string | undefined,
-    options: import("@base-ui/react/popover").Popover.Popup.Props["style"],
-  ): void {
-    let value = (0, reactPopoverPopover.useRef)(false);
-    (0, reactPopoverPopover.useEffect)(() => {}, [input, options]);
-  }
-  function isPopoverArrow(input: React.ReactNode): boolean {
-    return (
-      (0, reactPopoverPopover.isValidElement)(input) &&
-      input.type === runtime.npm_Popover_$f.Arrow
-    );
-  }
-  function usePopoverInnerOverlays(
-    input: import("@base-ui/react/popover").Popover.Root.Props<void>["onOpenChange"],
-  ): {
-    innerOverlays: InnerOverlayStack;
-    onOpenChange: NonNullable<
-      import("@base-ui/react/popover").Popover.Root.Props<void>["onOpenChange"]
-    >;
-  } {
-    let [value] = (0, reactPopoverPopover.useState)<InnerOverlayStack>(
-      runtime.createInnerOverlayStack,
-    );
-    return {
-      innerOverlays: value,
-      onOpenChange: (0, reactPopoverPopover.useCallback)(
-        (input2, options) => {
-          (0, runtime.closeInnerOverlayOnEscape)(value, input2, options) ||
-            input?.(input2, options);
-        },
-        [value, input],
-      ),
-    };
-  }
-  function resolvePopoverAnchor(
-    input: PopoverAnchorState,
-  ): Element | null | "virtual" {
-    let anchor = input.anchor;
-    if (anchor == null) return input.triggerEl;
-    if (anchor instanceof Element) return anchor;
-    if (typeof anchor == "object" && "current" in anchor) {
-      let current = anchor.current;
-      return current instanceof Element ? current : null;
-    }
-    return "virtual";
-  }
-  function hasPopoverInputAnchor(input: PopoverAnchorState): boolean {
-    if (!input.popupMounted || !input.declinesFocus) return false;
-    let value = resolvePopoverAnchor(input);
-    return value === "virtual"
-      ? true
-      : value === null
-        ? false
-        : (0, runtime.isTextInputElement)(value) ||
-          value.querySelector(
-            'input:not([type=button],[type=checkbox],[type=radio],[type=range],[type=submit],[type=reset],[type=color],[type=file],[type=image],[type=hidden],[readonly]), textarea:not([readonly]), [contenteditable=""], [contenteditable="true"], [contenteditable="plaintext-only"]',
-          ) !== null ||
-          value.closest(
-            'input:not([type=button],[type=checkbox],[type=radio],[type=range],[type=submit],[type=reset],[type=color],[type=file],[type=image],[type=hidden],[readonly]), textarea:not([readonly]), [contenteditable=""], [contenteditable="true"], [contenteditable="plaintext-only"]',
-          ) !== null;
-  }
-  function PopoverRoot<Payload = void>({
-    onOpenChange: onOpenChange,
-    actionsRef: actionsRef,
-    ...props
-  }: PopoverRootProps<Payload>): React.ReactElement {
-    useUiLocale();
-    let value = usePopoverInnerOverlays(onOpenChange),
-      value2 = (0, runtime.useSheetInteractionMode)(),
-      value3 = (0, reactPopoverPopover.useRef)<OverlayActions | null>(null);
-    (0, runtime.useOverlayImperativeHandle)(value3, actionsRef);
-    return (
-      <PopoverPopoverContext_2.Provider value={value.innerOverlays}>
-        <runtime.ActivityBoundary actionsRef={value3}>
-          {value2 ? ((() => {
-              const _Component = usePopoverRoot;
-              return (
-                <_Component
-                  {...props}
-                  actionsRef={value3}
-                  onOpenChange={value.onOpenChange}
-                  consumerHandlesOpenChange={onOpenChange !== undefined}
-                />
-              );
-            })()) : (<runtime.npm_Popover_$f.Root
-              {...props}
-              actionsRef={value3}
-              onOpenChange={value.onOpenChange}
-            />)}
-        </runtime.ActivityBoundary>
-      </PopoverPopoverContext_2.Provider>
-    );
-  }
-  function usePopoverRoot<Payload = void>({
-    consumerHandlesOpenChange: consumerHandlesOpenChange,
-    ...props
-  }: PopoverRootProps<Payload> & {
-    consumerHandlesOpenChange: boolean;
-  }): React.ReactElement {
-    let value = (0, runtime.useOverlayOpenState)(props),
-      value2: React.RefObject<PopoverAnchorState> = (0,
-      reactPopoverPopover.useRef)({
-        popupMounted: false,
-        declinesFocus: false,
-        anchor: undefined,
-        triggerEl: null,
-      }),
-      value3: PopoverAnchorStore = (0, reactPopoverPopover.useMemo)(
-        () => ({
-          update: (input) => {
-            Object.assign(value2.current, input);
-          },
-          read: () => value2.current,
-        }),
-        [],
-      ),
-      value4 = (0, runtime.useOpenSnapshot)(
-        value.open,
-        () => {
-          let value6 = value3.read();
-          return !value6.popupMounted || hasPopoverInputAnchor(value6);
-        },
-        false,
-      ),
-      value5 = (0, runtime.useSheetPopup)({
-        open: value.open,
-        actionsRef: props.actionsRef,
-        onOpenChange: value.onOpenChange,
-        onOpenChangeComplete: props.onOpenChangeComplete,
-        structurallyAnchored: value4,
-        closable: !(props.open !== undefined && !consumerHandlesOpenChange),
-      });
-    return (
-      <PopoverPopoverContext.Provider value={value3}>
-        <runtime.SheetPopupProvider value={value5}>
-          <runtime.npm_Popover_$f.Root
+  return "virtual";
+}
+function hasPopoverInputAnchor(input: PopoverAnchorState): boolean {
+  if (!input.popupMounted || !input.declinesFocus) return false;
+  let value = resolvePopoverAnchor(input);
+  return value === "virtual"
+    ? true
+    : value === null
+      ? false
+      : (0, isTextInputElement)(value) ||
+        value.querySelector(
+          'input:not([type=button],[type=checkbox],[type=radio],[type=range],[type=submit],[type=reset],[type=color],[type=file],[type=image],[type=hidden],[readonly]), textarea:not([readonly]), [contenteditable=""], [contenteditable="true"], [contenteditable="plaintext-only"]',
+        ) !== null ||
+        value.closest(
+          'input:not([type=button],[type=checkbox],[type=radio],[type=range],[type=submit],[type=reset],[type=color],[type=file],[type=image],[type=hidden],[readonly]), textarea:not([readonly]), [contenteditable=""], [contenteditable="true"], [contenteditable="plaintext-only"]',
+        ) !== null;
+}
+function PopoverRoot<Payload = void>({
+  onOpenChange: onOpenChange,
+  actionsRef: actionsRef,
+  ...props
+}: PopoverRootProps<Payload>): React.ReactElement {
+  useUiLocale();
+  let value = usePopoverInnerOverlays(onOpenChange),
+    value2 = (0, useSheetInteractionMode)(),
+    value3 = (0, reactPopoverPopover.useRef)<OverlayActions | null>(null);
+  (0, useOverlayImperativeHandle)(value3, actionsRef);
+  return (
+    <PopoverPopoverContext_2.Provider value={value.innerOverlays}>
+      <ActivityBoundary actionsRef={value3}>
+        {value2 ? ((() => {
+            const _Component = usePopoverRoot;
+            return (
+              <_Component
+                {...props}
+                actionsRef={value3}
+                onOpenChange={value.onOpenChange}
+                consumerHandlesOpenChange={onOpenChange !== undefined}
+              />
+            );
+          })()) : (<npm_Popover_$f.Root
             {...props}
-            modal={value5.modal ?? props.modal}
-            actionsRef={value5.actionsRef}
-            onOpenChange={value5.onOpenChange}
-            onOpenChangeComplete={value5.onOpenChangeComplete}
-          />
-        </runtime.SheetPopupProvider>
-      </PopoverPopoverContext.Provider>
-    );
-  }
-  bindRuntimeValue(runtime, "SheetCapablePopup", () => SheetCapablePopup);
-  bindRuntimeValue(
-    runtime,
-    "jsxPopoverPopover",
-    () => jsxPopoverPopover,
-    (value) => {
-      jsxPopoverPopover = value;
-    },
+            actionsRef={value3}
+            onOpenChange={value.onOpenChange}
+          />)}
+      </ActivityBoundary>
+    </PopoverPopoverContext_2.Provider>
   );
-  bindRuntimeValue(
-    runtime,
-    "initializePopoverPopover",
-    () => initializePopoverPopover,
-    (value) => {
-      initializePopoverPopover = value;
-    },
+}
+function usePopoverRoot<Payload = void>({
+  consumerHandlesOpenChange: consumerHandlesOpenChange,
+  ...props
+}: PopoverRootProps<Payload> & {
+  consumerHandlesOpenChange: boolean;
+}): React.ReactElement {
+  let value = (0, useOverlayOpenState)(props),
+    value2: React.RefObject<PopoverAnchorState> = (0,
+    reactPopoverPopover.useRef)({
+      popupMounted: false,
+      declinesFocus: false,
+      anchor: undefined,
+      triggerEl: null,
+    }),
+    value3: PopoverAnchorStore = (0, reactPopoverPopover.useMemo)(
+      () => ({
+        update: (input) => {
+          Object.assign(value2.current, input);
+        },
+        read: () => value2.current,
+      }),
+      [],
+    ),
+    value4 = (0, useOpenSnapshot)(
+      value.open,
+      () => {
+        let value6 = value3.read();
+        return !value6.popupMounted || hasPopoverInputAnchor(value6);
+      },
+      false,
+    ),
+    value5 = (0, useSheetPopup)({
+      open: value.open,
+      actionsRef: props.actionsRef,
+      onOpenChange: value.onOpenChange,
+      onOpenChangeComplete: props.onOpenChangeComplete,
+      structurallyAnchored: value4,
+      closable: !(props.open !== undefined && !consumerHandlesOpenChange),
+    });
+  return (
+    <PopoverPopoverContext.Provider value={value3}>
+      <SheetPopupProvider value={value5}>
+        <npm_Popover_$f.Root
+          {...props}
+          modal={value5.modal ?? props.modal}
+          actionsRef={value5.actionsRef}
+          onOpenChange={value5.onOpenChange}
+          onOpenChangeComplete={value5.onOpenChangeComplete}
+        />
+      </SheetPopupProvider>
+    </PopoverPopoverContext.Provider>
   );
-  bindRuntimeValue(runtime, "usePopoverAnimation", () => usePopoverAnimation);
-  bindRuntimeValue(runtime, "isPopoverArrow", () => isPopoverArrow);
-  bindRuntimeValue(
-    runtime,
-    "usePopoverInnerOverlays",
-    () => usePopoverInnerOverlays,
-  );
-  bindRuntimeValue(runtime, "resolvePopoverAnchor", () => resolvePopoverAnchor);
-  bindRuntimeValue(
-    runtime,
-    "hasPopoverInputAnchor",
-    () => hasPopoverInputAnchor,
-  );
-  bindRuntimeValue(runtime, "PopoverRoot", () => PopoverRoot);
-  bindRuntimeValue(runtime, "usePopoverRoot", () => usePopoverRoot);
-  bindRuntimeValue(
-    runtime,
-    "reactPopoverPopover",
-    () => reactPopoverPopover,
-    (value) => {
-      reactPopoverPopover = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "jsxPopoverPopover_2",
-    () => jsxPopoverPopover_2,
-    (value) => {
-      jsxPopoverPopover_2 = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "PopoverPopoverCss",
-    () => PopoverPopoverCss,
-    (value) => {
-      PopoverPopoverCss = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "popoverPopupClassNames",
-    () => popoverPopupClassNames,
-    (value) => {
-      popoverPopupClassNames = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "PopoverPopoverNoneXsSmConfig",
-    () => PopoverPopoverNoneXsSmConfig,
-    (value) => {
-      PopoverPopoverNoneXsSmConfig = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "PopoverPopoverXysetrblOverflowPattern",
-    () => PopoverPopoverXysetrblOverflowPattern,
-    (value) => {
-      PopoverPopoverXysetrblOverflowPattern = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "PopoverPopoverPaddingOverflowPattern",
-    () => PopoverPopoverPaddingOverflowPattern,
-    (value) => {
-      PopoverPopoverPaddingOverflowPattern = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "PopoverPopupInner",
-    () => PopoverPopupInner,
-    (value) => {
-      PopoverPopupInner = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "PopoverPopup",
-    () => PopoverPopup,
-    (value) => {
-      PopoverPopup = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "PopoverSheetCapablePopup",
-    () => PopoverSheetCapablePopup,
-    (value) => {
-      PopoverSheetCapablePopup = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "PopoverPopupView",
-    () => PopoverPopupView,
-    (value) => {
-      PopoverPopupView = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "PopoverPopoverContext",
-    () => PopoverPopoverContext,
-    (value) => {
-      PopoverPopoverContext = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "PopoverPopoverContext_2",
-    () => PopoverPopoverContext_2,
-    (value) => {
-      PopoverPopoverContext_2 = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "PopoverTrigger",
-    () => PopoverTrigger,
-    (value) => {
-      PopoverTrigger = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "PopoverTriggerAlias",
-    () => PopoverTriggerAlias,
-    (value) => {
-      PopoverTriggerAlias = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "PopoverPopoverRootTriggerPopupConfig",
-    () => PopoverPopoverRootTriggerPopupConfig,
-    (value) => {
-      PopoverPopoverRootTriggerPopupConfig = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "initializePopoverPopover_2",
-    () => initializePopoverPopover_2,
-    (value) => {
-      initializePopoverPopover_2 = value;
-    },
-  );
+}
+export {
+  hasPopoverInputAnchor,
+  initializePopoverPopover,
+  initializePopoverPopover_2,
+  isPopoverArrow,
+  jsxPopoverPopover,
+  jsxPopoverPopover_2,
+  PopoverPopoverContext,
+  PopoverPopoverContext_2,
+  PopoverPopoverCss,
+  PopoverPopoverNoneXsSmConfig,
+  PopoverPopoverPaddingOverflowPattern,
+  PopoverPopoverRootTriggerPopupConfig,
+  PopoverPopoverXysetrblOverflowPattern,
+  PopoverPopup,
+  popoverPopupClassNames,
+  PopoverPopupInner,
+  PopoverPopupView,
+  PopoverRoot,
+  PopoverSheetCapablePopup,
+  PopoverTrigger,
+  PopoverTriggerAlias,
+  reactPopoverPopover,
+  resolvePopoverAnchor,
+  SheetCapablePopup,
+  usePopoverAnimation,
+  usePopoverInnerOverlays,
+  usePopoverRoot,
+};
+export function installCdsPopoverPopover(): () => void {
   return () => {
-    initializePopoverPopover = (0, runtime.initializeOnce)(() => {
+    initializePopoverPopover = (0, initializeOnce)(() => {
       "use client";
 
-      (0, runtime.initializeSheetsPopupStack)();
-      (0, runtime.initializeOverlaysBackdrop)();
-      jsxPopoverPopover = (0, runtime.toModuleNamespace)(
-        (0, runtime.load_react_jsx_runtime)(),
+      (0, initializeSheetsPopupStack)();
+      (0, initializeOverlaysBackdrop)();
+      jsxPopoverPopover = (0, toModuleNamespace)(
+        (0, load_react_jsx_runtime)(),
       );
     });
-    initializePopoverPopover_2 = (0, runtime.initializeOnce)(() => {
+    initializePopoverPopover_2 = (0, initializeOnce)(() => {
       "use client";
 
-      (0, runtime.initializeHooksLayoutEffect)();
-      (0, runtime.initializeClassNames)();
-      (0, runtime.initializeCdsRoot)();
-      (0, runtime.initializeHooksStableCallback)();
-      (0, runtime.initializeOverlaysLayers)();
-      (0, runtime.initializeOverlayAttributes)();
-      (0, runtime.initializeDomRefComposition_3)();
-      (0, runtime.initializeDomRefComposition)();
-      (0, runtime.initializePlatformRootFontSize_2)();
-      (0, runtime.initializeThemeSurfaces)();
-      (0, runtime.initializeOverlaysImperativeHandle)();
-      (0, runtime.initializeSheetsKeyboardViewport)();
-      (0, runtime.initializeSheetsLayout)();
-      (0, runtime.initializeSheetsPresentation)();
-      (0, runtime.initializeSheetsPopupStack)();
-      (0, runtime.initializePlatformReducedMotion_2)();
-      (0, runtime.initializeOverlaysBackdrop)();
+      (0, initializeHooksLayoutEffect)();
+      (0, initializeClassNames)();
+      (0, initializeCdsRoot)();
+      (0, initializeHooksStableCallback)();
+      (0, initializeOverlaysLayers)();
+      (0, initializeOverlayAttributes)();
+      (0, initializeDomRefComposition_3)();
+      (0, initializeDomRefComposition)();
+      (0, initializePlatformRootFontSize_2)();
+      (0, initializeThemeSurfaces)();
+      (0, initializeOverlaysImperativeHandle)();
+      (0, initializeSheetsKeyboardViewport)();
+      (0, initializeSheetsLayout)();
+      (0, initializeSheetsPresentation)();
+      (0, initializeSheetsPopupStack)();
+      (0, initializePlatformReducedMotion_2)();
+      (0, initializeOverlaysBackdrop)();
       initializePopoverPopover();
-      (0, runtime.initializeSheetsScrollArea_6)();
-      (0, runtime.initializeSheetsScrollArea_7)();
-      (0, runtime.initializeMenuPopup_3)();
-      reactPopoverPopover = (0, runtime.toModuleNamespace)(
-        (0, runtime.load_react)(),
+      (0, initializeSheetsScrollArea_6)();
+      (0, initializeSheetsScrollArea_7)();
+      (0, initializeMenuPopup_3)();
+      reactPopoverPopover = (0, toModuleNamespace)(
+        (0, load_react)(),
       );
-      jsxPopoverPopover_2 = (0, runtime.toModuleNamespace)(
-        (0, runtime.load_react_jsx_runtime)(),
+      jsxPopoverPopover_2 = (0, toModuleNamespace)(
+        (0, load_react_jsx_runtime)(),
       );
-      (0, runtime.initializeNpm__base_ui_react_pge)();
-      PopoverPopoverCss = `draggable-none max-w-[320px] max-h-[var(--available-height)] ${(0, runtime.popupSurfaceClassName)("popover")} cds-reset text-body font-normal text-primary outline-none focus-visible:outline-hidden`;
+      (0, initializeNpm__base_ui_react_pge)();
+      PopoverPopoverCss = `draggable-none max-w-[320px] max-h-[var(--available-height)] ${(0, popupSurfaceClassName)("popover")} cds-reset text-body font-normal text-primary outline-none focus-visible:outline-hidden`;
       popoverPopupClassNames =
         "[display:inherit] [flex-direction:inherit] [flex-wrap:inherit] [align-items:inherit] [justify-content:inherit] [justify-items:inherit] [gap:inherit] [grid-template-columns:inherit] [grid-template-rows:inherit] [grid-auto-flow:inherit] [grid-auto-columns:inherit] [grid-auto-rows:inherit] col-span-full row-span-full self-stretch justify-self-stretch max-h-[inherit] min-h-0 min-w-0 flex-auto overflow-y-auto rounded-[inherit] outline-none focus-visible:outline-hidden";
       PopoverPopoverNoneXsSmConfig = {
@@ -474,20 +355,20 @@ export function installCdsPopoverPopover(runtime: RuntimeBindings): () => void {
           options: React.ForwardedRef<HTMLDivElement>,
         ): React.ReactElement => {
           let value =
-              (0, reactPopoverPopover.useContext)(runtime.SheetPopupContext)
+              (0, reactPopoverPopover.useContext)(SheetPopupContext)
                 ?.open ?? true,
             value2 = anchored && finalFocus === undefined,
-            value3 = (0, runtime.useOpenerReturn)({
+            value3 = (0, useOpenerReturn)({
               skipRestoreOnOutsideFocus: true,
               open: value,
               registerOpenerReturn: value2,
             }),
-            value4 = (0, runtime.useMergedRefs)(options, value3.popupRef);
+            value4 = (0, useMergedRefs)(options, value3.popupRef);
           return (
-            <runtime.npm_Popover_$f.Popup
+            <npm_Popover_$f.Popup
               data-cds={"Popover"}
               {...{
-                [runtime.overlayAttribute]: "",
+                [overlayAttribute]: "",
               }}
               ref={value4}
               finalFocus={value2 ? value3.finalFocus : finalFocus}
@@ -495,7 +376,7 @@ export function installCdsPopoverPopover(runtime: RuntimeBindings): () => void {
               className={className}
             >
               {children}
-            </runtime.npm_Popover_$f.Popup>
+            </npm_Popover_$f.Popup>
           );
         },
       );
@@ -523,13 +404,13 @@ export function installCdsPopoverPopover(runtime: RuntimeBindings): () => void {
             scrollFade: scrollFade,
             ...props,
           };
-          return (0, runtime.isInsideSheetPopup)() ? (
+          return (0, isInsideSheetPopup)() ? (
             <PopoverSheetCapablePopup {...state} ref={options} />
           ) : (
             <PopoverPopupView
               {...state}
               ref={options}
-              sheetPopup={runtime.SheetsPopupStackSheetConcealedChromeConfig}
+              sheetPopup={SheetsPopupStackSheetConcealedChromeConfig}
               sheetParts={null}
             />
           );
@@ -592,11 +473,11 @@ export function installCdsPopoverPopover(runtime: RuntimeBindings): () => void {
           ),
           sheet = sheetPopup.sheet,
           value19 = (0, reactPopoverPopover.useContext)(
-            runtime.SheetPopupContext,
+            SheetPopupContext,
           ),
           value20 = (value19?.open ?? false) && value19?.height !== undefined,
           value21 = value19?.setDetent;
-        (0, runtime.useIsomorphicLayoutEffect)(() => {
+        (0, useIsomorphicLayoutEffect)(() => {
           let current = value18.current;
           sheet &&
             value20 &&
@@ -612,11 +493,11 @@ export function installCdsPopoverPopover(runtime: RuntimeBindings): () => void {
           value23 = (0, reactPopoverPopover.useContext)(PopoverPopoverContext),
           value24 = value11.initialFocus === false,
           callback: React.MouseEventHandler<HTMLDivElement> = (event) => {
-            let value32 = (0, runtime.asElement)(event.target);
+            let value32 = (0, asElement)(event.target);
             !value17 ||
               value32 === null ||
               !event.currentTarget.contains(value32) ||
-              (0, runtime.isInteractivePressTarget)(event, {
+              (0, isInteractivePressTarget)(event, {
                 draggable: true,
               }) ||
               event.preventDefault();
@@ -624,7 +505,7 @@ export function installCdsPopoverPopover(runtime: RuntimeBindings): () => void {
           value25 = (0, reactPopoverPopover.useContext)(
             PopoverPopoverContext_2,
           );
-        (0, runtime.useIsomorphicLayoutEffect)(() => {
+        (0, useIsomorphicLayoutEffect)(() => {
           if (value23 !== null) {
             value23.update({
               popupMounted: true,
@@ -638,15 +519,15 @@ export function installCdsPopoverPopover(runtime: RuntimeBindings): () => void {
             };
           }
         }, [value23, value24, value2]);
-        let value26 = (0, runtime.useRestoreFocusOnClose)(
+        let value26 = (0, useRestoreFocusOnClose)(
             sheetPopup.concealed && !value24,
           ),
-          value27 = (0, runtime.useMergedRefs)(
+          value27 = (0, useMergedRefs)(
             options,
             sheetPopup.ref,
             value26,
           ),
-          value28 = (0, runtime.useLayer)("popover", value4);
+          value28 = (0, useLayer)("popover", value4);
         usePopoverAnimation(
           value7,
           (
@@ -660,32 +541,32 @@ export function installCdsPopoverPopover(runtime: RuntimeBindings): () => void {
         let value29 = reactPopoverPopover.Children.toArray(value8),
           value30 = value29.filter(isPopoverArrow),
           value31 = (
-            <runtime.InnerOverlaysContext.Provider value={value25}>
+            <InnerOverlaysContext.Provider value={value25}>
               {value29.filter((input) => !isPopoverArrow(input))}
-            </runtime.InnerOverlaysContext.Provider>
+            </InnerOverlaysContext.Provider>
           );
         return (
-          <runtime.npm_Popover_$f.Portal
-            container={(0, runtime.useOverlayRoot)()}
+          <npm_Popover_$f.Portal
+            container={(0, useOverlayRoot)()}
           >
-            <runtime.PopupSurface
+            <PopupSurface
               {...value28.portalProps}
               style={
                 sheetPopup.concealed
                   ? {
                       ...value28.portalProps.style,
-                      ...runtime.OverlaysBackdropVisibilityOpacityConfig,
+                      ...OverlaysBackdropVisibilityOpacityConfig,
                     }
                   : value28.portalProps.style
               }
-              surface={runtime.surfaceBackgroundTokens.popover}
-              density={sheet ? runtime.ComfortableValue : undefined}
+              surface={surfaceBackgroundTokens.popover}
+              density={sheet ? ComfortableValue : undefined}
               companionModalCatcher={!sheet}
               closeOnActivityHide={true}
             >
               {value22 !== null && sheetPopup.sheet && (<value22.PopoverSheetBackdrop sheetPopup={sheetPopup} />)}
-              <runtime.LayerBaseContext.Provider value={value28.base}>
-                <runtime.npm_Popover_$f.Positioner
+              <LayerBaseContext.Provider value={value28.base}>
+                <npm_Popover_$f.Positioner
                   style={
                     sheetPopup.positionerStyle !== undefined
                       ? {
@@ -701,7 +582,7 @@ export function installCdsPopoverPopover(runtime: RuntimeBindings): () => void {
                   anchor={value2}
                   collisionPadding={value3}
                   {...(sheet
-                    ? runtime.SheetsLayoutDisableAnchorTrackingCollisionAvoidanceConfig
+                    ? SheetsLayoutDisableAnchorTrackingCollisionAvoidanceConfig
                     : {})}
                   className={
                     sheet &&
@@ -710,7 +591,7 @@ export function installCdsPopoverPopover(runtime: RuntimeBindings): () => void {
                         depth: number;
                       }
                     ).depth === 0
-                      ? runtime.PlatformReducedMotionClassNames_3
+                      ? PlatformReducedMotionClassNames_3
                       : undefined
                   }
                 >
@@ -793,9 +674,9 @@ export function installCdsPopoverPopover(runtime: RuntimeBindings): () => void {
                           preventScroll: true,
                         });
                     }}
-                    className={(0, runtime.cn)(
+                    className={(0, cn)(
                       PopoverPopoverCss,
-                      sheet && runtime.PlatformReducedMotionCss_2,
+                      sheet && PlatformReducedMotionCss_2,
                       sheet &&
                         "data-[starting-style]:translate-y-[calc(100%+1.5rem)] data-[ending-style]:translate-y-[calc(100%+1.5rem)]",
                       sheet &&
@@ -808,7 +689,7 @@ export function installCdsPopoverPopover(runtime: RuntimeBindings): () => void {
                         sheetPopup={sheetPopup}
                         className={value7}
                         bodyRef={value18}
-                        bodyClassName={(0, runtime.cn)(
+                        bodyClassName={(0, cn)(
                           popoverPopupClassNames,
                           value16 && "scroll-fade-y",
                           PopoverPopoverNoneXsSmConfig[value15],
@@ -822,9 +703,9 @@ export function installCdsPopoverPopover(runtime: RuntimeBindings): () => void {
                           tabIndex={-1}
                           data-cds-popover-body={""}
                           {...{
-                            [runtime.sheetScrollAttribute]: "",
+                            [sheetScrollAttribute]: "",
                           }}
-                          className={(0, runtime.cn)(
+                          className={(0, cn)(
                             popoverPopupClassNames,
                             value16 && "scroll-fade-y",
                             PopoverPopoverNoneXsSmConfig[value15],
@@ -835,10 +716,10 @@ export function installCdsPopoverPopover(runtime: RuntimeBindings): () => void {
                         {value30}
                       </jsxPopoverPopover_2.Fragment>)}
                   </PopoverPopupInner>
-                </runtime.npm_Popover_$f.Positioner>
-              </runtime.LayerBaseContext.Provider>
-            </runtime.PopupSurface>
-          </runtime.npm_Popover_$f.Portal>
+                </npm_Popover_$f.Positioner>
+              </LayerBaseContext.Provider>
+            </PopupSurface>
+          </npm_Popover_$f.Portal>
         );
       });
       PopoverPopupView.displayName = "PopoverPopupView";
@@ -863,8 +744,8 @@ export function installCdsPopoverPopover(runtime: RuntimeBindings): () => void {
             },
             [value],
           ),
-          value3 = (0, runtime.useMergedRefs)(options, value2);
-        return <runtime.npm_Popover_$f.Trigger {...input} ref={value3} />;
+          value3 = (0, useMergedRefs)(options, value2);
+        return <npm_Popover_$f.Trigger {...input} ref={value3} />;
       });
       PopoverTrigger.displayName = "Popover.Trigger";
       PopoverTriggerAlias = PopoverTrigger;
@@ -872,11 +753,11 @@ export function installCdsPopoverPopover(runtime: RuntimeBindings): () => void {
         Root: PopoverRoot,
         Trigger: PopoverTriggerAlias,
         Popup: PopoverPopup,
-        Title: runtime.npm_Popover_$f.Title,
-        Description: runtime.npm_Popover_$f.Description,
-        Close: runtime.npm_Popover_$f.Close,
-        Arrow: runtime.npm_Popover_$f.Arrow,
-        createHandle: runtime.npm_Popover_$f.createHandle,
+        Title: npm_Popover_$f.Title,
+        Description: npm_Popover_$f.Description,
+        Close: npm_Popover_$f.Close,
+        Arrow: npm_Popover_$f.Arrow,
+        createHandle: npm_Popover_$f.createHandle,
       };
     });
   };

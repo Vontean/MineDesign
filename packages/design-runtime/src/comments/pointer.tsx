@@ -1,133 +1,67 @@
 import { useUiLocale } from '../ui-locale.ts';
 /** Restored application module; prepare first, initialize in original order. */
 import {
-  bindRuntimeValue,
   type Dynamic,
-  type RuntimeBindings,
 } from "../runtime-types";
-export function installCommentsPointer(runtime: RuntimeBindings): () => void {
-  var commentPointerTip: Dynamic;
-  var commentPointerPath: Dynamic;
-  var commentPointerFill: Dynamic;
-  var commentPointerStroke: Dynamic;
-  var commentPointerStrokeWidth: Dynamic;
-  var commentPointerSvg: Dynamic;
-  var commentPointerCursorUrl: Dynamic;
-  var commentPointerCursor: Dynamic;
-  var jsx_r1e: Dynamic;
-  var subtractCssPixels: Dynamic;
-  function CommentPointer({
-    at: at,
-    className: className,
-    "data-testid": dataTestid,
-  }: Dynamic): Dynamic {
-    useUiLocale();
-    return (
-      <svg
-        aria-hidden={true}
-        data-testid={dataTestid}
-        className={(0, runtime.joinClassNames)(
-          "pointer-events-none absolute",
-          className,
-        )}
-        width={28}
-        height={28}
-        viewBox={`0 0 ${28} ${28}`}
-        style={{
-          left: subtractCssPixels(at.x, commentPointerTip.x),
-          top: subtractCssPixels(at.y, commentPointerTip.y),
-        }}
-      >
-        <path
-          d={commentPointerPath}
-          fill={commentPointerFill}
-          stroke={commentPointerStroke}
-          strokeWidth={commentPointerStrokeWidth}
-        />
-      </svg>
-    );
-  }
-  bindRuntimeValue(
-    runtime,
-    "commentPointerTip",
-    () => commentPointerTip,
-    (value) => {
-      commentPointerTip = value;
-    },
+import { load_react_jsx_runtime } from "../dependencies";
+import { joinClassNames } from "../editor/chrome/overlay-state";
+import { toModuleNamespace } from "../module-helpers";
+
+var commentPointerTip: Dynamic;
+var commentPointerPath: Dynamic;
+var commentPointerFill: Dynamic;
+var commentPointerStroke: Dynamic;
+var commentPointerStrokeWidth: Dynamic;
+var commentPointerSvg: Dynamic;
+var commentPointerCursorUrl: Dynamic;
+var commentPointerCursor: Dynamic;
+var jsx_r1e: Dynamic;
+var subtractCssPixels: Dynamic;
+function CommentPointer({
+  at: at,
+  className: className,
+  "data-testid": dataTestid,
+}: Dynamic): Dynamic {
+  useUiLocale();
+  return (
+    <svg
+      aria-hidden={true}
+      data-testid={dataTestid}
+      className={(0, joinClassNames)(
+        "pointer-events-none absolute",
+        className,
+      )}
+      width={28}
+      height={28}
+      viewBox={`0 0 ${28} ${28}`}
+      style={{
+        left: subtractCssPixels(at.x, commentPointerTip.x),
+        top: subtractCssPixels(at.y, commentPointerTip.y),
+      }}
+    >
+      <path
+        d={commentPointerPath}
+        fill={commentPointerFill}
+        stroke={commentPointerStroke}
+        strokeWidth={commentPointerStrokeWidth}
+      />
+    </svg>
   );
-  bindRuntimeValue(
-    runtime,
-    "commentPointerPath",
-    () => commentPointerPath,
-    (value) => {
-      commentPointerPath = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "commentPointerFill",
-    () => commentPointerFill,
-    (value) => {
-      commentPointerFill = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "commentPointerStroke",
-    () => commentPointerStroke,
-    (value) => {
-      commentPointerStroke = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "commentPointerStrokeWidth",
-    () => commentPointerStrokeWidth,
-    (value) => {
-      commentPointerStrokeWidth = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "commentPointerSvg",
-    () => commentPointerSvg,
-    (value) => {
-      commentPointerSvg = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "commentPointerCursorUrl",
-    () => commentPointerCursorUrl,
-    (value) => {
-      commentPointerCursorUrl = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "commentPointerCursor",
-    () => commentPointerCursor,
-    (value) => {
-      commentPointerCursor = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "jsx_r1e",
-    () => jsx_r1e,
-    (value) => {
-      jsx_r1e = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "subtractCssPixels",
-    () => subtractCssPixels,
-    (value) => {
-      subtractCssPixels = value;
-    },
-  );
-  bindRuntimeValue(runtime, "CommentPointer", () => CommentPointer);
+}
+export {
+  CommentPointer,
+  commentPointerCursor,
+  commentPointerCursorUrl,
+  commentPointerFill,
+  commentPointerPath,
+  commentPointerStroke,
+  commentPointerStrokeWidth,
+  commentPointerSvg,
+  commentPointerTip,
+  jsx_r1e,
+  subtractCssPixels,
+};
+export function installCommentsPointer(): () => void {
   return () => {
     // MineDesign：形状不变，尖角按 Codex 原生评论光标翻到左下（热点就是尖角），填充改用 Codex 的蓝
     commentPointerTip = {
@@ -145,8 +79,8 @@ export function installCommentsPointer(runtime: RuntimeBindings): () => void {
         "%" + input.charCodeAt(0).toString(16).toUpperCase(),
     );
     commentPointerCursor = `url("data:image/svg+xml,${commentPointerCursorUrl}") ${commentPointerTip.x} ${commentPointerTip.y}, crosshair`;
-    jsx_r1e = (0, runtime.toModuleNamespace)(
-      (0, runtime.load_react_jsx_runtime)(),
+    jsx_r1e = (0, toModuleNamespace)(
+      (0, load_react_jsx_runtime)(),
       1,
     );
     subtractCssPixels = (input?: Dynamic, options?: Dynamic): Dynamic =>

@@ -6,189 +6,65 @@ import type {
 } from "../../contracts/ui";
 import type * as React from "react";
 /** Restored application module; prepare first, initialize in original order. */
-import { bindRuntimeValue, type RuntimeBindings } from "../../runtime-types";
-export function installCdsThemeClassNames(
-  runtime: RuntimeBindings,
-): () => void {
-  var ThemeClassNamesLabel: string;
-  var typographyScaleNames: string[];
-  var typographyWeightNames: string[];
-  var ThemeClassNamesBorderRadiusBoxShadowCursorConfig: Record<
-    ThemeClassGroup,
-    string[]
-  >;
-  var themeClassKeys: ThemeClassKeys;
-  var initializeThemeClassNames: () => void;
-  var themeClassKeysByGroup: Record<ThemeClassGroup, string[]>;
-  var typographyScaleClassKeys: string[];
-  var typographyWeightClassKeys: string[];
-  var getThemeClassKeys: (input: ThemeClassGroup) => string[];
-  var getThemeClassKeysValue: string[];
-  var getThemeClassKeysValue_2: string[];
-  var getThemeClassKeysValue_3: string[];
-  var ThemeClassNamesFromEntries: (
-    input: string,
-    options: string[],
-  ) => Record<
-    string,
-    {
-      [key: string]: string[];
-    }[]
-  >;
-  var ThemeClassNamesAlias: string[];
-  var ThemeClassNamesFlatMapValue: string[];
-  var mergeCdsClasses: (classes: string) => string;
-  var initializeClassNames: () => void;
-  function cn(...inputs: ClassValue[]): string {
-    return mergeCdsClasses((0, runtime.npm_clsx_Ea)(inputs));
-  }
-  bindRuntimeValue(
-    runtime,
-    "ThemeClassNamesLabel",
-    () => ThemeClassNamesLabel,
-    (value) => {
-      ThemeClassNamesLabel = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "typographyScaleNames",
-    () => typographyScaleNames,
-    (value) => {
-      typographyScaleNames = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "typographyWeightNames",
-    () => typographyWeightNames,
-    (value) => {
-      typographyWeightNames = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "ThemeClassNamesBorderRadiusBoxShadowCursorConfig",
-    () => ThemeClassNamesBorderRadiusBoxShadowCursorConfig,
-    (value) => {
-      ThemeClassNamesBorderRadiusBoxShadowCursorConfig = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "themeClassKeys",
-    () => themeClassKeys,
-    (value) => {
-      themeClassKeys = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "initializeThemeClassNames",
-    () => initializeThemeClassNames,
-    (value) => {
-      initializeThemeClassNames = value;
-    },
-  );
-  bindRuntimeValue(runtime, "cn", () => cn);
-  bindRuntimeValue(
-    runtime,
-    "themeClassKeysByGroup",
-    () => themeClassKeysByGroup,
-    (value) => {
-      themeClassKeysByGroup = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "typographyScaleClassKeys",
-    () => typographyScaleClassKeys,
-    (value) => {
-      typographyScaleClassKeys = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "typographyWeightClassKeys",
-    () => typographyWeightClassKeys,
-    (value) => {
-      typographyWeightClassKeys = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "getThemeClassKeys",
-    () => getThemeClassKeys,
-    (value) => {
-      getThemeClassKeys = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "getThemeClassKeysValue",
-    () => getThemeClassKeysValue,
-    (value) => {
-      getThemeClassKeysValue = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "getThemeClassKeysValue_2",
-    () => getThemeClassKeysValue_2,
-    (value) => {
-      getThemeClassKeysValue_2 = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "getThemeClassKeysValue_3",
-    () => getThemeClassKeysValue_3,
-    (value) => {
-      getThemeClassKeysValue_3 = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "ThemeClassNamesFromEntries",
-    () => ThemeClassNamesFromEntries,
-    (value) => {
-      ThemeClassNamesFromEntries = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "ThemeClassNamesAlias",
-    () => ThemeClassNamesAlias,
-    (value) => {
-      ThemeClassNamesAlias = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "ThemeClassNamesFlatMapValue",
-    () => ThemeClassNamesFlatMapValue,
-    (value) => {
-      ThemeClassNamesFlatMapValue = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "mergeCdsClasses",
-    () => mergeCdsClasses,
-    (value) => {
-      mergeCdsClasses = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "initializeClassNames",
-    () => initializeClassNames,
-    (value) => {
-      initializeClassNames = value;
-    },
-  );
+import { initializeNpm_clsx_xh, initializeNpm_tailwind_merge_Kze, npm_clsx_Ea, npm_extendTailwindMerge_Wze, npm_validators_Efe } from "../../dependencies";
+import { initializeOnce } from "../../module-helpers";
+
+var ThemeClassNamesLabel: string;
+var typographyScaleNames: string[];
+var typographyWeightNames: string[];
+var ThemeClassNamesBorderRadiusBoxShadowCursorConfig: Record<
+  ThemeClassGroup,
+  string[]
+>;
+var themeClassKeys: ThemeClassKeys;
+var initializeThemeClassNames: () => void;
+var themeClassKeysByGroup: Record<ThemeClassGroup, string[]>;
+var typographyScaleClassKeys: string[];
+var typographyWeightClassKeys: string[];
+var getThemeClassKeys: (input: ThemeClassGroup) => string[];
+var getThemeClassKeysValue: string[];
+var getThemeClassKeysValue_2: string[];
+var getThemeClassKeysValue_3: string[];
+var ThemeClassNamesFromEntries: (
+  input: string,
+  options: string[],
+) => Record<
+  string,
+  {
+    [key: string]: string[];
+  }[]
+>;
+var ThemeClassNamesAlias: string[];
+var ThemeClassNamesFlatMapValue: string[];
+var mergeCdsClasses: (classes: string) => string;
+var initializeClassNames: () => void;
+function cn(...inputs: ClassValue[]): string {
+  return mergeCdsClasses((0, npm_clsx_Ea)(inputs));
+}
+export {
+  cn,
+  getThemeClassKeys,
+  getThemeClassKeysValue,
+  getThemeClassKeysValue_2,
+  getThemeClassKeysValue_3,
+  initializeClassNames,
+  initializeThemeClassNames,
+  mergeCdsClasses,
+  themeClassKeys,
+  themeClassKeysByGroup,
+  ThemeClassNamesAlias,
+  ThemeClassNamesBorderRadiusBoxShadowCursorConfig,
+  ThemeClassNamesFlatMapValue,
+  ThemeClassNamesFromEntries,
+  ThemeClassNamesLabel,
+  typographyScaleClassKeys,
+  typographyScaleNames,
+  typographyWeightClassKeys,
+  typographyWeightNames,
+};
+export function installCdsThemeClassNames(): () => void {
   return () => {
-    initializeThemeClassNames = (0, runtime.initializeOnce)(() => {
+    initializeThemeClassNames = (0, initializeOnce)(() => {
       ThemeClassNamesLabel =
         "GENERATED by `yarn gen:tokens` from tokens/theme.ts (key names of theme-extend.json sections, for src/utils/cn.ts)";
       typographyScaleNames = [
@@ -226,10 +102,10 @@ export function installCdsThemeClassNames(
         themeKeys: ThemeClassNamesBorderRadiusBoxShadowCursorConfig,
       };
     });
-    initializeClassNames = (0, runtime.initializeOnce)(() => {
+    initializeClassNames = (0, initializeOnce)(() => {
       initializeThemeClassNames();
-      (0, runtime.initializeNpm_clsx_xh)();
-      (0, runtime.initializeNpm_tailwind_merge_Kze)();
+      (0, initializeNpm_clsx_xh)();
+      (0, initializeNpm_tailwind_merge_Kze)();
       ({
         themeKeys: themeClassKeysByGroup,
         TYPE_SCALE: typographyScaleClassKeys,
@@ -263,7 +139,7 @@ export function installCdsThemeClassNames(
       ThemeClassNamesFlatMapValue = typographyScaleClassKeys.flatMap((input) =>
         typographyWeightClassKeys.map((input2) => `${input}-${input2}`),
       );
-      mergeCdsClasses = (0, runtime.npm_extendTailwindMerge_Wze)({
+      mergeCdsClasses = (0, npm_extendTailwindMerge_Wze)({
         extend: {
           conflictingClassGroups: {
             "font-size-weight": ["font-size", "font-weight", "leading"],
@@ -298,8 +174,8 @@ export function installCdsThemeClassNames(
                 grad: [
                   "semibold",
                   "bold",
-                  runtime.npm_validators_Efe.isInteger,
-                  runtime.npm_validators_Efe.isArbitraryValue,
+                  npm_validators_Efe.isInteger,
+                  npm_validators_Efe.isArbitraryValue,
                 ],
               },
             ],

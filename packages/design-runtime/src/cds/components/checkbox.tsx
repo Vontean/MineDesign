@@ -6,84 +6,67 @@ import type {
 } from "../../contracts/ui";
 import type * as React from "react";
 /** Restored application module; prepare first, initialize in original order. */
-import { bindRuntimeValue, type RuntimeBindings } from "../../runtime-types";
-export function installCdsComponentsCheckbox(
-  runtime: RuntimeBindings,
-): () => void {
-  var jsxComponentsCheckbox: typeof import("react/jsx-runtime");
-  var ComponentsCheckboxClassNames: string;
-  var initializeComponentsCheckbox: () => void;
-  function CheckboxGlyph({
-    indeterminate = false,
-  }: CheckboxGlyphProps): React.ReactElement {
-    useUiLocale();
-    return (
-      <runtime.Icon
-        name={indeterminate ? "Minus" : "Check"}
-        size={"sm"}
-        bold={true}
-        style={{
-          fontSize: "var(--cds-checkbox-glyph)",
-        }}
-      />
-    );
-  }
-  function CheckboxVisual({
-    checked: checked,
-    indeterminate = false,
-    className: className,
-  }: CheckboxVisualProps): React.ReactElement {
-    useUiLocale();
-    let value = checked || indeterminate;
-    return (
-      <span
-        data-checked={checked && !indeterminate ? "" : undefined}
-        data-indeterminate={indeterminate ? "" : undefined}
-        data-unchecked={value ? undefined : ""}
-        className={(0, runtime.cn)(
-          ComponentsCheckboxClassNames,
-          value && "bg-fill-accent border-transparent",
-          className,
-        )}
-      >
-        {value && (<span className={"text-on-accent"}>
-            <CheckboxGlyph indeterminate={indeterminate} />
-          </span>)}
-      </span>
-    );
-  }
-  bindRuntimeValue(runtime, "CheckboxGlyph", () => CheckboxGlyph);
-  bindRuntimeValue(runtime, "CheckboxVisual", () => CheckboxVisual);
-  bindRuntimeValue(
-    runtime,
-    "jsxComponentsCheckbox",
-    () => jsxComponentsCheckbox,
-    (value) => {
-      jsxComponentsCheckbox = value;
-    },
+import { Icon, initializeComponentsIcon_2 } from "./icon";
+import { cn, initializeClassNames } from "../theme/class-names";
+import { load_react_jsx_runtime } from "../../dependencies";
+import { initializeOnce, toModuleNamespace } from "../../module-helpers";
+
+var jsxComponentsCheckbox: typeof import("react/jsx-runtime");
+var ComponentsCheckboxClassNames: string;
+var initializeComponentsCheckbox: () => void;
+function CheckboxGlyph({
+  indeterminate = false,
+}: CheckboxGlyphProps): React.ReactElement {
+  useUiLocale();
+  return (
+    <Icon
+      name={indeterminate ? "Minus" : "Check"}
+      size={"sm"}
+      bold={true}
+      style={{
+        fontSize: "var(--cds-checkbox-glyph)",
+      }}
+    />
   );
-  bindRuntimeValue(
-    runtime,
-    "ComponentsCheckboxClassNames",
-    () => ComponentsCheckboxClassNames,
-    (value) => {
-      ComponentsCheckboxClassNames = value;
-    },
+}
+function CheckboxVisual({
+  checked: checked,
+  indeterminate = false,
+  className: className,
+}: CheckboxVisualProps): React.ReactElement {
+  useUiLocale();
+  let value = checked || indeterminate;
+  return (
+    <span
+      data-checked={checked && !indeterminate ? "" : undefined}
+      data-indeterminate={indeterminate ? "" : undefined}
+      data-unchecked={value ? undefined : ""}
+      className={(0, cn)(
+        ComponentsCheckboxClassNames,
+        value && "bg-fill-accent border-transparent",
+        className,
+      )}
+    >
+      {value && (<span className={"text-on-accent"}>
+          <CheckboxGlyph indeterminate={indeterminate} />
+        </span>)}
+    </span>
   );
-  bindRuntimeValue(
-    runtime,
-    "initializeComponentsCheckbox",
-    () => initializeComponentsCheckbox,
-    (value) => {
-      initializeComponentsCheckbox = value;
-    },
-  );
+}
+export {
+  CheckboxGlyph,
+  CheckboxVisual,
+  ComponentsCheckboxClassNames,
+  initializeComponentsCheckbox,
+  jsxComponentsCheckbox,
+};
+export function installCdsComponentsCheckbox(): () => void {
   return () => {
-    initializeComponentsCheckbox = (0, runtime.initializeOnce)(() => {
-      (0, runtime.initializeClassNames)();
-      (0, runtime.initializeComponentsIcon_2)();
-      jsxComponentsCheckbox = (0, runtime.toModuleNamespace)(
-        (0, runtime.load_react_jsx_runtime)(),
+    initializeComponentsCheckbox = (0, initializeOnce)(() => {
+      (0, initializeClassNames)();
+      (0, initializeComponentsIcon_2)();
+      jsxComponentsCheckbox = (0, toModuleNamespace)(
+        (0, load_react_jsx_runtime)(),
       );
       ComponentsCheckboxClassNames =
         "flex shrink-0 size-[var(--cds-checkbox)] items-center justify-center rounded-[var(--cds-checkbox-radius)] border border-strong bg-transparent";

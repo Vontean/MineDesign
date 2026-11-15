@@ -1,60 +1,39 @@
 /** Restored application module; prepare first, initialize in original order. */
 import {
-  bindRuntimeValue,
   type Dynamic,
-  type RuntimeBindings,
 } from "../runtime-types";
+import { isProjectSourcePath } from "./component-imports";
 
-export function installPreviewBlobPaths(runtime: RuntimeBindings): () => void {
-  var PreviewBlobPathsResolvedValue: Dynamic;
-  var PreviewBlobPathsBlobPattern: Dynamic;
-  function normalizeBlobAssetPaths(input?: Dynamic): Dynamic {
-    return input.includes("_blob/")
-      ? input.replace(
-          PreviewBlobPathsBlobPattern,
-          (input2?: Dynamic, options?: Dynamic, context?: Dynamic): Dynamic =>
-            options + "/_blob/" + context,
-        )
-      : input;
+var PreviewBlobPathsResolvedValue: Dynamic;
+var PreviewBlobPathsBlobPattern: Dynamic;
+function normalizeBlobAssetPaths(input?: Dynamic): Dynamic {
+  return input.includes("_blob/")
+    ? input.replace(
+        PreviewBlobPathsBlobPattern,
+        (input2?: Dynamic, options?: Dynamic, context?: Dynamic): Dynamic =>
+          options + "/_blob/" + context,
+      )
+    : input;
+}
+function normalizeProjectBlobPaths(input?: Dynamic): Dynamic {
+  let value: Dynamic = null;
+  for (let [value2, value3] of Object.entries(input) as Dynamic) {
+    if (!(0, isProjectSourcePath)(value2)) continue;
+    let value4: Dynamic = normalizeBlobAssetPaths(value3);
+    value4 !== value3 &&
+      ((value ??= {
+        ...input,
+      })[value2] = value4);
   }
-  function normalizeProjectBlobPaths(input?: Dynamic): Dynamic {
-    let value: Dynamic = null;
-    for (let [value2, value3] of Object.entries(input) as Dynamic) {
-      if (!(0, runtime.isProjectSourcePath)(value2)) continue;
-      let value4: Dynamic = normalizeBlobAssetPaths(value3);
-      value4 !== value3 &&
-        ((value ??= {
-          ...input,
-        })[value2] = value4);
-    }
-    return value ?? input;
-  }
-  bindRuntimeValue(
-    runtime,
-    "PreviewBlobPathsResolvedValue",
-    () => PreviewBlobPathsResolvedValue,
-    (value) => {
-      PreviewBlobPathsResolvedValue = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "PreviewBlobPathsBlobPattern",
-    () => PreviewBlobPathsBlobPattern,
-    (value) => {
-      PreviewBlobPathsBlobPattern = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "normalizeBlobAssetPaths",
-    () => normalizeBlobAssetPaths,
-  );
-  bindRuntimeValue(
-    runtime,
-    "normalizeProjectBlobPaths",
-    () => normalizeProjectBlobPaths,
-  );
+  return value ?? input;
+}
+export {
+  normalizeBlobAssetPaths,
+  normalizeProjectBlobPaths,
+  PreviewBlobPathsBlobPattern,
+  PreviewBlobPathsResolvedValue,
+};
+export function installPreviewBlobPaths(): () => void {
   return () => {
     PreviewBlobPathsResolvedValue =
       "data:image/svg+xml," +

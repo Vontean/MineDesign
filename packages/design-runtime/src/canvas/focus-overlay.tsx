@@ -1,23 +1,19 @@
 /** Restored application module; prepare first, initialize in original order. */
 import {
-  bindRuntimeValue,
   type Dynamic,
-  type RuntimeBindings,
 } from "../runtime-types";
-export function installCanvasFocusOverlay(
-  runtime: RuntimeBindings,
-): () => void {
-  var ArtboardFocusOverlay: Dynamic;
-  bindRuntimeValue(
-    runtime,
-    "ArtboardFocusOverlay",
-    () => ArtboardFocusOverlay,
-    (value) => {
-      ArtboardFocusOverlay = value;
-    },
-  );
+import { isCanvasReservedShortcut } from "./interaction-geometry";
+import { buttonKeyboardActivation } from "./keyboard-activation";
+import { joinClassNames } from "../editor/chrome/overlay-state";
+import { reactVectorToolState_2 } from "../editor/vector/tool-state";
+
+var ArtboardFocusOverlay: Dynamic;
+export {
+  ArtboardFocusOverlay,
+};
+export function installCanvasFocusOverlay(): () => void {
   return () => {
-    ArtboardFocusOverlay = (0, runtime.reactVectorToolState_2.memo)(function ({
+    ArtboardFocusOverlay = (0, reactVectorToolState_2.memo)(function ({
       file: file,
       title: title,
       name: name,
@@ -36,7 +32,7 @@ export function installCanvasFocusOverlay(
               ? keys.onDescend(file)
               : keys.onEnter(file)
             : onActivate(file, false),
-        value: Dynamic = (0, runtime.buttonKeyboardActivation)(
+        value: Dynamic = (0, buttonKeyboardActivation)(
           (input?: Dynamic): Dynamic => {
             (inside && keys) ||
               onActivate(file, input.shiftKey || input.metaKey);
@@ -53,7 +49,7 @@ export function installCanvasFocusOverlay(
           data-mega-inside={inside ? "" : undefined}
           data-testid={testId}
           inert={inert ? true : undefined}
-          className={(0, runtime.joinClassNames)(
+          className={(0, joinClassNames)(
             "peer min-w-16 truncate rounded-sm outline-none group-data-[proto]/hdr:@max-[7.25rem]/hdr:min-w-8 focus-visible:outline-hidden focus-visible:shadow-focus",
             inside && "focus:outline-hidden focus:shadow-focus",
           )}
@@ -119,7 +115,7 @@ export function installCanvasFocusOverlay(
               event.repeat || keys.onLeave(file);
               return;
             }
-            !(0, runtime.isCanvasReservedShortcut)(event) &&
+            !(0, isCanvasReservedShortcut)(event) &&
               keys.holdKey(file) &&
               (event.preventDefault(), event.stopPropagation());
           }}

@@ -1,5 +1,4 @@
 /** Public application contracts; implementations use the same domain definitions. */
-import type { ApplicationContracts } from "./runtime-contracts";
 export type {
   JsonValue,
   DataRecord,
@@ -52,7 +51,4 @@ export interface Disposable {
 }
 export type Unsubscribe = () => void;
 /** Untyped UI/host bindings remain unknown; reviewed operations have concrete signatures. */
-export interface DesignRuntime extends Readonly<ApplicationContracts> {
-  [name: string]: unknown;
-}
 export * from "./contracts/ui";

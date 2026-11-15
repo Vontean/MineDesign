@@ -1,33 +1,22 @@
 /** Restored application module; prepare first, initialize in original order. */
 import {
-  bindRuntimeValue,
   type Dynamic,
-  type RuntimeBindings,
 } from "../runtime-types";
 
-export function installExportSettlement(runtime: RuntimeBindings): () => void {
-  var settlementRuntimeScript: Dynamic;
-  function buildSettlementScript(input?: Dynamic): Dynamic {
-    return settlementRuntimeScript
-      .replace("__CAP__", String(input.capMs))
-      .replace("__EAGER__", input.eagerImages ? "1" : "0")
-      .replace("__SCROLL__", input.scrollThrough ? "1" : "0")
-      .replace("__OPEN__", input.openDetails ? "1" : "0")
-      .replace("__FINISH__", input.finishAnimations ? "1" : "0");
-  }
-  bindRuntimeValue(
-    runtime,
-    "buildSettlementScript",
-    () => buildSettlementScript,
-  );
-  bindRuntimeValue(
-    runtime,
-    "settlementRuntimeScript",
-    () => settlementRuntimeScript,
-    (value) => {
-      settlementRuntimeScript = value;
-    },
-  );
+var settlementRuntimeScript: Dynamic;
+function buildSettlementScript(input?: Dynamic): Dynamic {
+  return settlementRuntimeScript
+    .replace("__CAP__", String(input.capMs))
+    .replace("__EAGER__", input.eagerImages ? "1" : "0")
+    .replace("__SCROLL__", input.scrollThrough ? "1" : "0")
+    .replace("__OPEN__", input.openDetails ? "1" : "0")
+    .replace("__FINISH__", input.finishAnimations ? "1" : "0");
+}
+export {
+  buildSettlementScript,
+  settlementRuntimeScript,
+};
+export function installExportSettlement(): () => void {
   return () => {
     settlementRuntimeScript = `(async function(){
   var t0=performance.now(),cap=__CAP__,eager=__EAGER__,scroll=__SCROLL__,openDets=__OPEN__,fin=__FINISH__;

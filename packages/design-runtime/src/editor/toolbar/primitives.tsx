@@ -2,401 +2,309 @@ import { uiMessage } from '@minedesign/contracts/ui-messages';
 import { useUiLocale } from '../../ui-locale.ts';
 /** Restored application module; prepare first, initialize in original order. */
 import {
-  bindRuntimeValue,
   type Dynamic,
-  type RuntimeBindings,
 } from "../../runtime-types";
-export function installEditorToolbarPrimitives(
-  runtime: RuntimeBindings,
-): () => void {
-  var jsxToolbarPrimitives: Dynamic;
-  var ToolbarPrimitivesContext: Dynamic;
-  var ToolbarPrimitivesContext_2: Dynamic;
-  var ToolbarPrimitivesCtrlControlAltConfig: Dynamic;
-  var ToolbarPrimitivesControlCtrlOptionValues: Dynamic;
-  var ToolbarPrimitivesEscEscapeEnterConfig: Dynamic;
-  var ToolbarPrimitivesHandler: Dynamic;
-  var ToolbarPrimitivesItems: Dynamic;
-  var ToolbarPrimitivesComponent: Dynamic;
-  var reactToolbarPrimitives: Dynamic;
-  var ToolbarPrimitivesMediaQuery: Dynamic;
-  var ToolbarPrimitivesLabel: Dynamic;
-  function ToolbarCaret({ inherit: input = false }: Dynamic = {}): Dynamic {
-    useUiLocale();
-    return (
-      <runtime.Icon
-        name={"CaretDown"}
-        size={"xs"}
-        className={(0, runtime.joinClassNames)(
-          "-mx-0.5 shrink-0",
-          !input && "text-fg-muted",
-        )}
-      />
-    );
-  }
-  function toolbarItemTooltip(input?: Dynamic): Dynamic {
-    return input.disabled
-      ? {
-          content: input.disabledTip ?? input.tip ?? input.label,
-          shortcut: undefined,
-        }
-      : {
-          content: input.tip ?? input.label,
-          shortcut: input.shortcut,
-        };
-  }
-  function useDisabledToolbarItem(input?: Dynamic): Dynamic {
-    let value: Dynamic = (0, runtime.reactPlatformFrameHostBridge.useId)();
-    if (!input.disabled)
-      return {
-        props: {},
-        inner: {},
-        mirror: null,
+import { Button } from "../../cds/button/button";
+import { Counter } from "../../cds/components/counter";
+import { Icon } from "../../cds/components/icon";
+import { parseSingleShortcut, useAppleKeyboard } from "../../cds/components/shortcut";
+import { Tooltip } from "../../cds/tooltip/tooltip";
+import { load_react, load_react_jsx_runtime } from "../../dependencies";
+import { joinClassNames } from "../chrome/overlay-state";
+import { toModuleNamespace } from "../../module-helpers";
+import { reactPlatformFrameHostBridge } from "../../platform/frame-host-bridge";
+
+var jsxToolbarPrimitives: Dynamic;
+var ToolbarPrimitivesContext: Dynamic;
+var ToolbarPrimitivesContext_2: Dynamic;
+var ToolbarPrimitivesCtrlControlAltConfig: Dynamic;
+var ToolbarPrimitivesControlCtrlOptionValues: Dynamic;
+var ToolbarPrimitivesEscEscapeEnterConfig: Dynamic;
+var ToolbarPrimitivesHandler: Dynamic;
+var ToolbarPrimitivesItems: Dynamic;
+var ToolbarPrimitivesComponent: Dynamic;
+var reactToolbarPrimitives: Dynamic;
+var ToolbarPrimitivesMediaQuery: Dynamic;
+var ToolbarPrimitivesLabel: Dynamic;
+function ToolbarCaret({ inherit: input = false }: Dynamic = {}): Dynamic {
+  useUiLocale();
+  return (
+    <Icon
+      name={"CaretDown"}
+      size={"xs"}
+      className={(0, joinClassNames)(
+        "-mx-0.5 shrink-0",
+        !input && "text-fg-muted",
+      )}
+    />
+  );
+}
+function toolbarItemTooltip(input?: Dynamic): Dynamic {
+  return input.disabled
+    ? {
+        content: input.disabledTip ?? input.tip ?? input.label,
+        shortcut: undefined,
+      }
+    : {
+        content: input.tip ?? input.label,
+        shortcut: input.shortcut,
       };
-    let value2: Dynamic = !!input.reason && input.reason !== input.name;
+}
+function useDisabledToolbarItem(input?: Dynamic): Dynamic {
+  let value: Dynamic = (0, reactPlatformFrameHostBridge.useId)();
+  if (!input.disabled)
     return {
-      props: {
-        role: "button",
-        "aria-disabled": true,
-        "aria-label": input.name,
-        "aria-describedby": value2 ? value : undefined,
-        "aria-pressed": input.pressed,
-        "aria-expanded": input.expanded,
-        "aria-haspopup": input.hasPopup,
-      },
-      inner: {
-        "aria-hidden": true,
-      },
-      mirror: value2 ? (
-        <span hidden={true} id={value}>
-          {input.reason}
-        </span>
-      ) : null,
+      props: {},
+      inner: {},
+      mirror: null,
     };
-  }
-  function useToolbarPress(input?: Dynamic, options?: Dynamic): Dynamic {
-    let value: Dynamic = (0, runtime.reactPlatformFrameHostBridge.useRef)(
-      options,
-    );
-    value.current = options;
-    let value2: Dynamic = (0, runtime.reactPlatformFrameHostBridge.useRef)(
-        undefined,
-      ),
-      value3: Dynamic = (0, runtime.reactPlatformFrameHostBridge.useRef)(false),
-      current: Dynamic = (0, runtime.reactPlatformFrameHostBridge.useRef)(
-        (event?: Dynamic): Dynamic => {
-          let currentTarget: Dynamic = event.currentTarget;
-          if (event.type === "pointerdown") value2.current = false;
-          else if (event.type === "focusout") {
-            let relatedTarget: Dynamic = event.relatedTarget;
+  let value2: Dynamic = !!input.reason && input.reason !== input.name;
+  return {
+    props: {
+      role: "button",
+      "aria-disabled": true,
+      "aria-label": input.name,
+      "aria-describedby": value2 ? value : undefined,
+      "aria-pressed": input.pressed,
+      "aria-expanded": input.expanded,
+      "aria-haspopup": input.hasPopup,
+    },
+    inner: {
+      "aria-hidden": true,
+    },
+    mirror: value2 ? (
+      <span hidden={true} id={value}>
+        {input.reason}
+      </span>
+    ) : null,
+  };
+}
+function useToolbarPress(input?: Dynamic, options?: Dynamic): Dynamic {
+  let value: Dynamic = (0, reactPlatformFrameHostBridge.useRef)(
+    options,
+  );
+  value.current = options;
+  let value2: Dynamic = (0, reactPlatformFrameHostBridge.useRef)(
+      undefined,
+    ),
+    value3: Dynamic = (0, reactPlatformFrameHostBridge.useRef)(false),
+    current: Dynamic = (0, reactPlatformFrameHostBridge.useRef)(
+      (event?: Dynamic): Dynamic => {
+        let currentTarget: Dynamic = event.currentTarget;
+        if (event.type === "pointerdown") value2.current = false;
+        else if (event.type === "focusout") {
+          let relatedTarget: Dynamic = event.relatedTarget;
+          event.target === currentTarget &&
+            relatedTarget instanceof Node &&
+            relatedTarget.isConnected &&
+            !currentTarget.contains(relatedTarget) &&
+            (value3.current = false);
+        } else {
+          value2.current =
+            event.target instanceof Element &&
+            event.target.matches(":focus-visible");
+          event.type === "focusin" &&
             event.target === currentTarget &&
-              relatedTarget instanceof Node &&
-              relatedTarget.isConnected &&
-              !currentTarget.contains(relatedTarget) &&
-              (value3.current = false);
-          } else {
-            value2.current =
-              event.target instanceof Element &&
-              event.target.matches(":focus-visible");
-            event.type === "focusin" &&
-              event.target === currentTarget &&
-              value.current &&
-              (value3.current = value2.current);
-          }
-        },
-      ).current,
-      current2: Dynamic = (0, runtime.reactPlatformFrameHostBridge.useRef)(
-        (): Dynamic => {
-          value3.current = false;
-        },
-      ).current,
-      value4: Dynamic = (0, runtime.reactPlatformFrameHostBridge.useRef)(null),
-      callback: Dynamic = (element?: Dynamic): Dynamic => {
-        let current3: Dynamic = value4.current;
-        if (element === current3) return;
-        let items: Dynamic = ["focusin", "focusout", "keydown", "pointerdown"];
-        if (current3 !== null) {
-          for (let value5 of items as Dynamic)
-            current3.removeEventListener(value5, current);
-          current3.ownerDocument.removeEventListener(
-            "pointerdown",
-            current2,
-            true,
-          );
+            value.current &&
+            (value3.current = value2.current);
         }
-        value4.current = element;
-        if (element !== null) {
-          for (let value5 of items as Dynamic)
-            element.addEventListener(value5, current);
-          element.ownerDocument.addEventListener("pointerdown", current2, true);
-        }
-      };
-    (0, runtime.reactPlatformFrameHostBridge.useLayoutEffect)(
-      (): Dynamic => callback(input.current),
-    );
-    (0, runtime.reactPlatformFrameHostBridge.useLayoutEffect)(
-      (): Dynamic => (): Dynamic => callback(null),
-      [],
-    );
-    (0, runtime.reactPlatformFrameHostBridge.useLayoutEffect)((): Dynamic => {
-      let current3: Dynamic = input.current;
-      if (current3 === null) return;
-      let ownerDocument: Dynamic = current3.ownerDocument,
-        value5: Dynamic =
-          ownerDocument.activeElement instanceof HTMLElement ||
-          ownerDocument.activeElement instanceof SVGElement
-            ? ownerDocument.activeElement
-            : null,
-        value6: Dynamic =
-          value5 === null ||
-          value5 === ownerDocument.body ||
-          value5 === ownerDocument.documentElement;
-      if (options)
-        ownerDocument.hasFocus() &&
-          !value6 &&
-          value5 !== current3 &&
-          current3.contains(value5) &&
-          (value2.current ?? value5.matches(":focus-visible")) &&
-          current3.focus({
-            preventScroll: true,
-          });
-      else {
-        let current4: Dynamic = value3.current;
+      },
+    ).current,
+    current2: Dynamic = (0, reactPlatformFrameHostBridge.useRef)(
+      (): Dynamic => {
         value3.current = false;
-        current4 &&
-          (value5 === current3 || (value6 && ownerDocument.hasFocus())) &&
-          current3.querySelector("button")?.focus({
-            preventScroll: true,
-          });
+      },
+    ).current,
+    value4: Dynamic = (0, reactPlatformFrameHostBridge.useRef)(null),
+    callback: Dynamic = (element?: Dynamic): Dynamic => {
+      let current3: Dynamic = value4.current;
+      if (element === current3) return;
+      let items: Dynamic = ["focusin", "focusout", "keydown", "pointerdown"];
+      if (current3 !== null) {
+        for (let value5 of items as Dynamic)
+          current3.removeEventListener(value5, current);
+        current3.ownerDocument.removeEventListener(
+          "pointerdown",
+          current2,
+          true,
+        );
       }
-    }, [options]);
-  }
-  function formatToolbarShortcut(input?: Dynamic, options?: Dynamic): Dynamic {
-    let value: Dynamic = input.trim().replace(/\s*\+\s*/g, "+");
-    if (value === "" || /\s/.test(value)) return;
-    let items: Dynamic = [],
-      items2: Dynamic = [];
-    for (let value2 of value.split("+") as Dynamic) {
-      let value3: Dynamic = value2.toLowerCase();
-      if (value3 === "") continue;
-      let value4: Dynamic = ToolbarPrimitivesHandler(
-        ToolbarPrimitivesCtrlControlAltConfig,
-        value3,
-      );
-      if (value4 !== undefined) {
-        let value6: Dynamic = value4[options ? 0 : 1];
-        items.includes(value6) || items.push(value6);
-        continue;
+      value4.current = element;
+      if (element !== null) {
+        for (let value5 of items as Dynamic)
+          element.addEventListener(value5, current);
+        element.ownerDocument.addEventListener("pointerdown", current2, true);
       }
-      let value5: Dynamic = ToolbarPrimitivesHandler(
-        ToolbarPrimitivesEscEscapeEnterConfig,
-        value3,
-      );
-      items2.push(
-        value5 !== undefined
-          ? typeof value5 == "string"
-            ? value5
-            : value5[options ? 0 : 1]
-          : value3.length === 1
-            ? value3.toUpperCase()
-            : value3.charAt(0).toUpperCase() + value3.slice(1),
-      );
-    }
-    if (items2.length !== 0) {
-      items.sort(
-        (input2?: Dynamic, options2?: Dynamic): Dynamic =>
-          ToolbarPrimitivesControlCtrlOptionValues.indexOf(input2) -
-          ToolbarPrimitivesControlCtrlOptionValues.indexOf(options2),
-      );
-      return [...items, ...items2].join("+");
-    }
-  }
-  function normalizeToolbarTooltip(
-    input?: Dynamic,
-    options?: Dynamic,
-  ): Dynamic {
-    let value: Dynamic = input;
-    for (let [value2, value3, value4] of ToolbarPrimitivesItems as Dynamic)
-      value = value.replace(value2, options ? value3 : value4);
-    return value.replace(/ {2,}/g, " ").trim();
-  }
-  function useToolbarItemAccessibility(input?: Dynamic): Dynamic {
-    let value: Dynamic = (0, runtime.reactPlatformFrameHostBridge.useId)(),
-      value2: Dynamic = (0, runtime.useAppleKeyboard)(),
-      value3: Dynamic = !input.disabled,
-      value4: Dynamic = input.tip !== "" && !input.name.includes(input.tip),
+    };
+  (0, reactPlatformFrameHostBridge.useLayoutEffect)(
+    (): Dynamic => callback(input.current),
+  );
+  (0, reactPlatformFrameHostBridge.useLayoutEffect)(
+    (): Dynamic => (): Dynamic => callback(null),
+    [],
+  );
+  (0, reactPlatformFrameHostBridge.useLayoutEffect)((): Dynamic => {
+    let current3: Dynamic = input.current;
+    if (current3 === null) return;
+    let ownerDocument: Dynamic = current3.ownerDocument,
       value5: Dynamic =
-        value3 && input.shortcut !== undefined
-          ? formatToolbarShortcut(input.shortcut, value2)
-          : undefined,
+        ownerDocument.activeElement instanceof HTMLElement ||
+        ownerDocument.activeElement instanceof SVGElement
+          ? ownerDocument.activeElement
+          : null,
       value6: Dynamic =
-        value3 && input.shortcut !== undefined
-          ? (0, runtime.parseSingleShortcut)(input.shortcut, value2)
-          : undefined,
-      value7: Dynamic =
-        value3 && input.descriptionSuffix ? input.descriptionSuffix : undefined,
-      value8: Dynamic =
-        value3 && (value4 || value5 !== undefined || value7 !== undefined),
-      value9: Dynamic =
-        [input.describedBy, value8 ? value : undefined]
-          .filter(Boolean)
-          .join(" ") || undefined;
-    if (!value8)
-      return {
-        describedBy: value9,
-        keyShortcuts: value6,
-        mirror: null,
-      };
-    let value10: Dynamic = [
-        value4 ? normalizeToolbarTooltip(input.tip, value2) : undefined,
-        value5 !== undefined ? "Shortcut: " + value5 : undefined,
-      ]
+        value5 === null ||
+        value5 === ownerDocument.body ||
+        value5 === ownerDocument.documentElement;
+    if (options)
+      ownerDocument.hasFocus() &&
+        !value6 &&
+        value5 !== current3 &&
+        current3.contains(value5) &&
+        (value2.current ?? value5.matches(":focus-visible")) &&
+        current3.focus({
+          preventScroll: true,
+        });
+    else {
+      let current4: Dynamic = value3.current;
+      value3.current = false;
+      current4 &&
+        (value5 === current3 || (value6 && ownerDocument.hasFocus())) &&
+        current3.querySelector("button")?.focus({
+          preventScroll: true,
+        });
+    }
+  }, [options]);
+}
+function formatToolbarShortcut(input?: Dynamic, options?: Dynamic): Dynamic {
+  let value: Dynamic = input.trim().replace(/\s*\+\s*/g, "+");
+  if (value === "" || /\s/.test(value)) return;
+  let items: Dynamic = [],
+    items2: Dynamic = [];
+  for (let value2 of value.split("+") as Dynamic) {
+    let value3: Dynamic = value2.toLowerCase();
+    if (value3 === "") continue;
+    let value4: Dynamic = ToolbarPrimitivesHandler(
+      ToolbarPrimitivesCtrlControlAltConfig,
+      value3,
+    );
+    if (value4 !== undefined) {
+      let value6: Dynamic = value4[options ? 0 : 1];
+      items.includes(value6) || items.push(value6);
+      continue;
+    }
+    let value5: Dynamic = ToolbarPrimitivesHandler(
+      ToolbarPrimitivesEscEscapeEnterConfig,
+      value3,
+    );
+    items2.push(
+      value5 !== undefined
+        ? typeof value5 == "string"
+          ? value5
+          : value5[options ? 0 : 1]
+        : value3.length === 1
+          ? value3.toUpperCase()
+          : value3.charAt(0).toUpperCase() + value3.slice(1),
+    );
+  }
+  if (items2.length !== 0) {
+    items.sort(
+      (input2?: Dynamic, options2?: Dynamic): Dynamic =>
+        ToolbarPrimitivesControlCtrlOptionValues.indexOf(input2) -
+        ToolbarPrimitivesControlCtrlOptionValues.indexOf(options2),
+    );
+    return [...items, ...items2].join("+");
+  }
+}
+function normalizeToolbarTooltip(
+  input?: Dynamic,
+  options?: Dynamic,
+): Dynamic {
+  let value: Dynamic = input;
+  for (let [value2, value3, value4] of ToolbarPrimitivesItems as Dynamic)
+    value = value.replace(value2, options ? value3 : value4);
+  return value.replace(/ {2,}/g, " ").trim();
+}
+function useToolbarItemAccessibility(input?: Dynamic): Dynamic {
+  let value: Dynamic = (0, reactPlatformFrameHostBridge.useId)(),
+    value2: Dynamic = (0, useAppleKeyboard)(),
+    value3: Dynamic = !input.disabled,
+    value4: Dynamic = input.tip !== "" && !input.name.includes(input.tip),
+    value5: Dynamic =
+      value3 && input.shortcut !== undefined
+        ? formatToolbarShortcut(input.shortcut, value2)
+        : undefined,
+    value6: Dynamic =
+      value3 && input.shortcut !== undefined
+        ? (0, parseSingleShortcut)(input.shortcut, value2)
+        : undefined,
+    value7: Dynamic =
+      value3 && input.descriptionSuffix ? input.descriptionSuffix : undefined,
+    value8: Dynamic =
+      value3 && (value4 || value5 !== undefined || value7 !== undefined),
+    value9: Dynamic =
+      [input.describedBy, value8 ? value : undefined]
         .filter(Boolean)
-        .join(". "),
-      value11: Dynamic =
-        value7 === undefined
-          ? value10
-          : value10 === ""
-            ? value7
-            : value10 + (/[.!?]$/.test(value10) ? " " : ". ") + value7;
+        .join(" ") || undefined;
+  if (!value8)
     return {
       describedBy: value9,
       keyShortcuts: value6,
-      mirror: (
-        <span hidden={true} id={value}>
-          {value11}
-        </span>
-      ),
+      mirror: null,
     };
-  }
-  bindRuntimeValue(
-    runtime,
-    "jsxToolbarPrimitives",
-    () => jsxToolbarPrimitives,
-    (value) => {
-      jsxToolbarPrimitives = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "ToolbarPrimitivesContext",
-    () => ToolbarPrimitivesContext,
-    (value) => {
-      ToolbarPrimitivesContext = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "ToolbarPrimitivesContext_2",
-    () => ToolbarPrimitivesContext_2,
-    (value) => {
-      ToolbarPrimitivesContext_2 = value;
-    },
-  );
-  bindRuntimeValue(runtime, "ToolbarCaret", () => ToolbarCaret);
-  bindRuntimeValue(runtime, "toolbarItemTooltip", () => toolbarItemTooltip);
-  bindRuntimeValue(
-    runtime,
-    "useDisabledToolbarItem",
-    () => useDisabledToolbarItem,
-  );
-  bindRuntimeValue(runtime, "useToolbarPress", () => useToolbarPress);
-  bindRuntimeValue(
-    runtime,
-    "ToolbarPrimitivesCtrlControlAltConfig",
-    () => ToolbarPrimitivesCtrlControlAltConfig,
-    (value) => {
-      ToolbarPrimitivesCtrlControlAltConfig = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "ToolbarPrimitivesControlCtrlOptionValues",
-    () => ToolbarPrimitivesControlCtrlOptionValues,
-    (value) => {
-      ToolbarPrimitivesControlCtrlOptionValues = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "ToolbarPrimitivesEscEscapeEnterConfig",
-    () => ToolbarPrimitivesEscEscapeEnterConfig,
-    (value) => {
-      ToolbarPrimitivesEscEscapeEnterConfig = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "ToolbarPrimitivesHandler",
-    () => ToolbarPrimitivesHandler,
-    (value) => {
-      ToolbarPrimitivesHandler = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "formatToolbarShortcut",
-    () => formatToolbarShortcut,
-  );
-  bindRuntimeValue(
-    runtime,
-    "ToolbarPrimitivesItems",
-    () => ToolbarPrimitivesItems,
-    (value) => {
-      ToolbarPrimitivesItems = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "normalizeToolbarTooltip",
-    () => normalizeToolbarTooltip,
-  );
-  bindRuntimeValue(
-    runtime,
-    "useToolbarItemAccessibility",
-    () => useToolbarItemAccessibility,
-  );
-  bindRuntimeValue(
-    runtime,
-    "ToolbarPrimitivesComponent",
-    () => ToolbarPrimitivesComponent,
-    (value) => {
-      ToolbarPrimitivesComponent = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "reactToolbarPrimitives",
-    () => reactToolbarPrimitives,
-    (value) => {
-      reactToolbarPrimitives = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "ToolbarPrimitivesMediaQuery",
-    () => ToolbarPrimitivesMediaQuery,
-    (value) => {
-      ToolbarPrimitivesMediaQuery = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "ToolbarPrimitivesLabel",
-    () => ToolbarPrimitivesLabel,
-    (value) => {
-      ToolbarPrimitivesLabel = value;
-    },
-  );
+  let value10: Dynamic = [
+      value4 ? normalizeToolbarTooltip(input.tip, value2) : undefined,
+      value5 !== undefined ? "Shortcut: " + value5 : undefined,
+    ]
+      .filter(Boolean)
+      .join(". "),
+    value11: Dynamic =
+      value7 === undefined
+        ? value10
+        : value10 === ""
+          ? value7
+          : value10 + (/[.!?]$/.test(value10) ? " " : ". ") + value7;
+  return {
+    describedBy: value9,
+    keyShortcuts: value6,
+    mirror: (
+      <span hidden={true} id={value}>
+        {value11}
+      </span>
+    ),
+  };
+}
+export {
+  formatToolbarShortcut,
+  jsxToolbarPrimitives,
+  normalizeToolbarTooltip,
+  reactToolbarPrimitives,
+  ToolbarCaret,
+  toolbarItemTooltip,
+  ToolbarPrimitivesComponent,
+  ToolbarPrimitivesContext,
+  ToolbarPrimitivesContext_2,
+  ToolbarPrimitivesControlCtrlOptionValues,
+  ToolbarPrimitivesCtrlControlAltConfig,
+  ToolbarPrimitivesEscEscapeEnterConfig,
+  ToolbarPrimitivesHandler,
+  ToolbarPrimitivesItems,
+  ToolbarPrimitivesLabel,
+  ToolbarPrimitivesMediaQuery,
+  useDisabledToolbarItem,
+  useToolbarItemAccessibility,
+  useToolbarPress,
+};
+export function installEditorToolbarPrimitives(): () => void {
   return () => {
-    jsxToolbarPrimitives = (0, runtime.toModuleNamespace)(
-      (0, runtime.load_react_jsx_runtime)(),
+    jsxToolbarPrimitives = (0, toModuleNamespace)(
+      (0, load_react_jsx_runtime)(),
       1,
     );
     ToolbarPrimitivesContext = (0,
-    runtime.reactPlatformFrameHostBridge.createContext)(false);
+    reactPlatformFrameHostBridge.createContext)(false);
     ToolbarPrimitivesContext_2 = (0,
-    runtime.reactPlatformFrameHostBridge.createContext)(false);
+    reactPlatformFrameHostBridge.createContext)(false);
     ToolbarPrimitivesCtrlControlAltConfig = {
       get ctrl() { return [uiMessage("inspector.primitives.control"), "Ctrl"]; },
       get control() { return [uiMessage("inspector.primitives.control"), "Ctrl"]; },
@@ -453,7 +361,7 @@ export function installEditorToolbarPrimitives(
       [/⌫/g, "Delete", "Backspace"],
     ];
     ToolbarPrimitivesComponent = (0,
-    runtime.reactPlatformFrameHostBridge.forwardRef)(function (
+    reactPlatformFrameHostBridge.forwardRef)(function (
       {
         icon: icon,
         glyph: glyph,
@@ -477,7 +385,7 @@ export function installEditorToolbarPrimitives(
       }: Dynamic,
       options?: Dynamic,
     ): Dynamic {
-      let value: Dynamic = (0, runtime.reactPlatformFrameHostBridge.useContext)(
+      let value: Dynamic = (0, reactPlatformFrameHostBridge.useContext)(
           ToolbarPrimitivesContext,
         ),
         value2: Dynamic = props.disabled === true,
@@ -506,7 +414,7 @@ export function installEditorToolbarPrimitives(
           expanded: expanded ?? ariaExpanded,
           hasPopup: props["aria-haspopup"],
         }),
-        value8: Dynamic = (0, runtime.reactPlatformFrameHostBridge.useRef)(
+        value8: Dynamic = (0, reactPlatformFrameHostBridge.useRef)(
           null,
         );
       useToolbarPress(value8, value2);
@@ -525,7 +433,7 @@ export function installEditorToolbarPrimitives(
         value9: Dynamic = iconOnly === true || (value && variant !== "primary"),
         value10: Dynamic = value9 && caret !== true;
       return (
-        <runtime.Tooltip
+        <Tooltip
           content={value5.content}
           shortcut={value5.shortcut}
           side={tipSide}
@@ -536,39 +444,39 @@ export function installEditorToolbarPrimitives(
             tabIndex={value2 ? 0 : -1}
             {...value7.props}
             data-tb-icon={value10 ? "" : undefined}
-            className={(0, runtime.joinClassNames)(
+            className={(0, joinClassNames)(
               "relative inline-flex shrink-0 rounded align-top outline-none focus-visible:outline-hidden focus-visible:shadow-focus",
               className,
             )}
           >
-            {value9 ? (caret === true ? (<runtime.Button {...state} icon={value4}>
+            {value9 ? (caret === true ? (<Button {...state} icon={value4}>
                   <ToolbarCaret />
-                </runtime.Button>) : (<runtime.Button
+                </Button>) : (<Button
                   {...state}
                   iconOnly={true}
                   icon={value4}
                   tooltip={false}
-                />)) : (<runtime.Button {...state} icon={value4}>
+                />)) : (<Button {...state} icon={value4}>
                 {label}
                 {children}
                 {caret === true ? (<ToolbarCaret inherit={variant === "primary"} />) : (null)}
-              </runtime.Button>)}
+              </Button>)}
             {count ? (<span
                 aria-hidden={"true"}
                 className={
                   "pointer-events-none absolute -top-0.5 -right-0.5 flex"
                 }
               >
-                <runtime.Counter value={count} variant={"accent"} size={"xs"} />
+                <Counter value={count} variant={"accent"} size={"xs"} />
               </span>) : (null)}
             {value6.mirror}
             {value7.mirror}
           </span>
-        </runtime.Tooltip>
+        </Tooltip>
       );
     });
-    reactToolbarPrimitives = (0, runtime.toModuleNamespace)(
-      (0, runtime.load_react)(),
+    reactToolbarPrimitives = (0, toModuleNamespace)(
+      (0, load_react)(),
       1,
     );
     ToolbarPrimitivesMediaQuery = "(pointer: coarse)";

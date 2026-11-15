@@ -2,270 +2,155 @@ import { useUiLocale } from '../ui-locale.ts';
 import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
-  bindRuntimeValue,
   type Dynamic,
-  type RuntimeBindings,
 } from "../runtime-types";
-export function installFastEditDraftPreviews(
-  runtime: RuntimeBindings,
-): () => void {
-  var ReactDraftPreviews: Dynamic;
-  var draftPreviewPortal: Dynamic;
-  var draftDocumentPreviews: Dynamic;
-  var draftPreviewListeners: Dynamic;
-  var draftPreviewSnapshot: Dynamic;
-  var notifyDraftPreviewListeners: Dynamic;
-  var draftDocumentPreviewStore: Dynamic;
-  var draftHtmlPreviews: Dynamic;
-  var draftHtmlPreviewListeners: Dynamic;
-  var draftHtmlPreviewSnapshot: Dynamic;
-  var notifyDraftHtmlPreviewListeners: Dynamic;
-  var setDraftHtmlPreview: Dynamic;
-  var draftHtmlPreviewStore: Dynamic;
-  var draftJsxRuntime: Dynamic;
-  var DRAFT_PREVIEW_EXPIRY_MS: Dynamic;
-  var DRAFT_IFRAME_STYLE: Dynamic;
-  function DraftArtboardPreviews({ boards: boards }: Dynamic): Dynamic {
-    useUiLocale();
-    let documentPreviews: Dynamic = (0,
-      ReactDraftPreviews.useSyncExternalStore)(
-        draftDocumentPreviewStore.subscribe,
-        draftDocumentPreviewStore.all,
-      ),
-      htmlPreviews: Dynamic = (0, ReactDraftPreviews.useSyncExternalStore)(
-        draftHtmlPreviewStore.subscribe,
-        draftHtmlPreviewStore.all,
-      ),
-      hasPreviews: Dynamic = documentPreviews.length + htmlPreviews.length > 0,
-      [activePreview, setActivePreview]: Dynamic = (0,
-      ReactDraftPreviews.useState)(null);
-    (0, ReactDraftPreviews.useEffect)((): Dynamic => {
-      if (!hasPreviews) return;
-      let callback: Dynamic = (): Dynamic => {
-        let element: Dynamic = (document as Dynamic).querySelector(
-          "[data-mega-world]",
+import { load_react, load_react_dom, load_react_jsx_runtime } from "../dependencies";
+import { toModuleNamespace } from "../module-helpers";
+
+var ReactDraftPreviews: Dynamic;
+var draftPreviewPortal: Dynamic;
+var draftDocumentPreviews: Dynamic;
+var draftPreviewListeners: Dynamic;
+var draftPreviewSnapshot: Dynamic;
+var notifyDraftPreviewListeners: Dynamic;
+var draftDocumentPreviewStore: Dynamic;
+var draftHtmlPreviews: Dynamic;
+var draftHtmlPreviewListeners: Dynamic;
+var draftHtmlPreviewSnapshot: Dynamic;
+var notifyDraftHtmlPreviewListeners: Dynamic;
+var setDraftHtmlPreview: Dynamic;
+var draftHtmlPreviewStore: Dynamic;
+var draftJsxRuntime: Dynamic;
+var DRAFT_PREVIEW_EXPIRY_MS: Dynamic;
+var DRAFT_IFRAME_STYLE: Dynamic;
+function DraftArtboardPreviews({ boards: boards }: Dynamic): Dynamic {
+  useUiLocale();
+  let documentPreviews: Dynamic = (0,
+    ReactDraftPreviews.useSyncExternalStore)(
+      draftDocumentPreviewStore.subscribe,
+      draftDocumentPreviewStore.all,
+    ),
+    htmlPreviews: Dynamic = (0, ReactDraftPreviews.useSyncExternalStore)(
+      draftHtmlPreviewStore.subscribe,
+      draftHtmlPreviewStore.all,
+    ),
+    hasPreviews: Dynamic = documentPreviews.length + htmlPreviews.length > 0,
+    [activePreview, setActivePreview]: Dynamic = (0,
+    ReactDraftPreviews.useState)(null);
+  (0, ReactDraftPreviews.useEffect)((): Dynamic => {
+    if (!hasPreviews) return;
+    let callback: Dynamic = (): Dynamic => {
+      let element: Dynamic = (document as Dynamic).querySelector(
+        "[data-mega-world]",
+      );
+      setActivePreview(
+        (input?: Dynamic): Dynamic => (input === element ? input : element),
+      );
+    };
+    callback();
+    let value2: Dynamic = setInterval(callback, 500);
+    return (): Dynamic => clearInterval(value2);
+  }, [hasPreviews]);
+  if (activePreview === null || !activePreview.isConnected || !hasPreviews)
+    return null;
+  let value: Dynamic = boards();
+  return (0, draftPreviewPortal.createPortal)(
+    <draftJsxRuntime.Fragment>
+      {documentPreviews.map(
+        ([input, input2]: Dynamic): Dynamic => (
+          <div
+            key={"g" + input}
+            data-fast-edit-ghost={input}
+            aria-hidden={"true"}
+            style={{
+              position: "absolute",
+              left: input2.x,
+              top: input2.y,
+              width: input2.w,
+              height: input2.h,
+              zIndex: DRAFT_PREVIEW_EXPIRY_MS,
+              pointerEvents: "none",
+              overflow: "hidden",
+            }}
+          >
+            <iframe
+              // MineDesign: user-facing copy calls the agent "the agent", not Claude.
+              title={uiMessage("canvas.draftPreviews.whatTheAgentIsMaking")}
+              sandbox={""}
+              srcDoc={input2.doc}
+              tabIndex={-1}
+              style={DRAFT_IFRAME_STYLE}
+            />
+          </div>
+        ),
+      )}
+      {htmlPreviews.map(([input, input2]: Dynamic): Dynamic => {
+        let value2: Dynamic = value.find(
+          (input3?: Dynamic): Dynamic => input3.file === input,
         );
-        setActivePreview(
-          (input?: Dynamic): Dynamic => (input === element ? input : element),
-        );
-      };
-      callback();
-      let value2: Dynamic = setInterval(callback, 500);
-      return (): Dynamic => clearInterval(value2);
-    }, [hasPreviews]);
-    if (activePreview === null || !activePreview.isConnected || !hasPreviews)
-      return null;
-    let value: Dynamic = boards();
-    return (0, draftPreviewPortal.createPortal)(
-      <draftJsxRuntime.Fragment>
-        {documentPreviews.map(
-          ([input, input2]: Dynamic): Dynamic => (
-            <div
-              key={"g" + input}
-              data-fast-edit-ghost={input}
-              aria-hidden={"true"}
-              style={{
-                position: "absolute",
-                left: input2.x,
-                top: input2.y,
-                width: input2.w,
-                height: input2.h,
-                zIndex: DRAFT_PREVIEW_EXPIRY_MS,
-                pointerEvents: "none",
-                overflow: "hidden",
-              }}
-            >
-              <iframe
+        return value2 === undefined ||
+          activePreview.querySelector(
+            '[data-mega-artboard="' + CSS.escape(input) + '"]',
+          ) === null ? null : (
+          <div
+            key={"p" + input}
+            data-fast-edit-preview={input}
+            role={input2.cover ? "status" : undefined}
+            aria-hidden={input2.cover ? undefined : "true"}
+            style={{
+              position: "absolute",
+              left: value2.x,
+              top: value2.y,
+              width: value2.w,
+              height: value2.h,
+              zIndex: DRAFT_PREVIEW_EXPIRY_MS,
+              overflow: "hidden",
+              pointerEvents: input2.cover ? "auto" : "none",
+              cursor: input2.cover ? "progress" : undefined,
+            }}
+          >
+            {input2.doc !== null && (<iframe
                 // MineDesign: user-facing copy calls the agent "the agent", not Claude.
-                title={uiMessage("canvas.draftPreviews.whatTheAgentIsMaking")}
+                title={uiMessage("canvas.draftPreviews.whatTheAgentHasWrittenSoFar")}
                 sandbox={""}
                 srcDoc={input2.doc}
                 tabIndex={-1}
                 style={DRAFT_IFRAME_STYLE}
-              />
-            </div>
-          ),
-        )}
-        {htmlPreviews.map(([input, input2]: Dynamic): Dynamic => {
-          let value2: Dynamic = value.find(
-            (input3?: Dynamic): Dynamic => input3.file === input,
-          );
-          return value2 === undefined ||
-            activePreview.querySelector(
-              '[data-mega-artboard="' + CSS.escape(input) + '"]',
-            ) === null ? null : (
-            <div
-              key={"p" + input}
-              data-fast-edit-preview={input}
-              role={input2.cover ? "status" : undefined}
-              aria-hidden={input2.cover ? undefined : "true"}
-              style={{
-                position: "absolute",
-                left: value2.x,
-                top: value2.y,
-                width: value2.w,
-                height: value2.h,
-                zIndex: DRAFT_PREVIEW_EXPIRY_MS,
-                overflow: "hidden",
-                pointerEvents: input2.cover ? "auto" : "none",
-                cursor: input2.cover ? "progress" : undefined,
-              }}
-            >
-              {input2.doc !== null && (<iframe
-                  // MineDesign: user-facing copy calls the agent "the agent", not Claude.
-                  title={uiMessage("canvas.draftPreviews.whatTheAgentHasWrittenSoFar")}
-                  sandbox={""}
-                  srcDoc={input2.doc}
-                  tabIndex={-1}
-                  style={DRAFT_IFRAME_STYLE}
-                />)}
-            </div>
-          );
-        })}
-      </draftJsxRuntime.Fragment>,
-      activePreview,
-    );
-  }
-  bindRuntimeValue(
-    runtime,
-    "ReactDraftPreviews",
-    () => ReactDraftPreviews,
-    (value) => {
-      ReactDraftPreviews = value;
-    },
+              />)}
+          </div>
+        );
+      })}
+    </draftJsxRuntime.Fragment>,
+    activePreview,
   );
-  bindRuntimeValue(
-    runtime,
-    "draftPreviewPortal",
-    () => draftPreviewPortal,
-    (value) => {
-      draftPreviewPortal = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "draftDocumentPreviews",
-    () => draftDocumentPreviews,
-    (value) => {
-      draftDocumentPreviews = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "draftPreviewListeners",
-    () => draftPreviewListeners,
-    (value) => {
-      draftPreviewListeners = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "draftPreviewSnapshot",
-    () => draftPreviewSnapshot,
-    (value) => {
-      draftPreviewSnapshot = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "notifyDraftPreviewListeners",
-    () => notifyDraftPreviewListeners,
-    (value) => {
-      notifyDraftPreviewListeners = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "draftDocumentPreviewStore",
-    () => draftDocumentPreviewStore,
-    (value) => {
-      draftDocumentPreviewStore = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "draftHtmlPreviews",
-    () => draftHtmlPreviews,
-    (value) => {
-      draftHtmlPreviews = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "draftHtmlPreviewListeners",
-    () => draftHtmlPreviewListeners,
-    (value) => {
-      draftHtmlPreviewListeners = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "draftHtmlPreviewSnapshot",
-    () => draftHtmlPreviewSnapshot,
-    (value) => {
-      draftHtmlPreviewSnapshot = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "notifyDraftHtmlPreviewListeners",
-    () => notifyDraftHtmlPreviewListeners,
-    (value) => {
-      notifyDraftHtmlPreviewListeners = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "setDraftHtmlPreview",
-    () => setDraftHtmlPreview,
-    (value) => {
-      setDraftHtmlPreview = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "draftHtmlPreviewStore",
-    () => draftHtmlPreviewStore,
-    (value) => {
-      draftHtmlPreviewStore = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "draftJsxRuntime",
-    () => draftJsxRuntime,
-    (value) => {
-      draftJsxRuntime = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "DRAFT_PREVIEW_EXPIRY_MS",
-    () => DRAFT_PREVIEW_EXPIRY_MS,
-    (value) => {
-      DRAFT_PREVIEW_EXPIRY_MS = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "DRAFT_IFRAME_STYLE",
-    () => DRAFT_IFRAME_STYLE,
-    (value) => {
-      DRAFT_IFRAME_STYLE = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "DraftArtboardPreviews",
-    () => DraftArtboardPreviews,
-  );
+}
+export {
+  DRAFT_IFRAME_STYLE,
+  DRAFT_PREVIEW_EXPIRY_MS,
+  DraftArtboardPreviews,
+  draftDocumentPreviews,
+  draftDocumentPreviewStore,
+  draftHtmlPreviewListeners,
+  draftHtmlPreviews,
+  draftHtmlPreviewSnapshot,
+  draftHtmlPreviewStore,
+  draftJsxRuntime,
+  draftPreviewListeners,
+  draftPreviewPortal,
+  draftPreviewSnapshot,
+  notifyDraftHtmlPreviewListeners,
+  notifyDraftPreviewListeners,
+  ReactDraftPreviews,
+  setDraftHtmlPreview,
+};
+export function installFastEditDraftPreviews(): () => void {
   return () => {
-    ReactDraftPreviews = (0, runtime.toModuleNamespace)(
-      (0, runtime.load_react)(),
+    ReactDraftPreviews = (0, toModuleNamespace)(
+      (0, load_react)(),
       1,
     );
-    draftPreviewPortal = (0, runtime.toModuleNamespace)(
-      (0, runtime.load_react_dom)(),
+    draftPreviewPortal = (0, toModuleNamespace)(
+      (0, load_react_dom)(),
       1,
     );
     draftDocumentPreviews = new Map();
@@ -354,8 +239,8 @@ export function installFastEditDraftPreviews(
         };
       },
     };
-    draftJsxRuntime = (0, runtime.toModuleNamespace)(
-      (0, runtime.load_react_jsx_runtime)(),
+    draftJsxRuntime = (0, toModuleNamespace)(
+      (0, load_react_jsx_runtime)(),
       1,
     );
     DRAFT_PREVIEW_EXPIRY_MS = 9e5;

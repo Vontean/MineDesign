@@ -1,50 +1,29 @@
 /** Restored application module; prepare first, initialize in original order. */
 import {
-  bindRuntimeValue,
   type Dynamic,
-  type RuntimeBindings,
 } from "../runtime-types";
-export function installPlatformIdleScheduler(
-  runtime: RuntimeBindings,
-): () => void {
-  var PlatformIdleSchedulerRequestIdleCallbackCancelIdleCallbackImmediateConfig: Dynamic;
-  var idleTaskScheduler: Dynamic;
-  function scheduleMessageChannelTask(input?: Dynamic): Dynamic {
-    let value: Dynamic = new MessageChannel(),
-      flag: Dynamic = true;
-    value.port1.onmessage = (): Dynamic => {
-      value.port1.close();
-      flag && input();
-    };
-    value.port2.postMessage(null);
-    return (): Dynamic => {
-      flag = false;
-      value.port1.close();
-    };
-  }
-  bindRuntimeValue(
-    runtime,
-    "scheduleMessageChannelTask",
-    () => scheduleMessageChannelTask,
-  );
-  bindRuntimeValue(
-    runtime,
-    "PlatformIdleSchedulerRequestIdleCallbackCancelIdleCallbackImmediateConfig",
-    () =>
-      PlatformIdleSchedulerRequestIdleCallbackCancelIdleCallbackImmediateConfig,
-    (value) => {
-      PlatformIdleSchedulerRequestIdleCallbackCancelIdleCallbackImmediateConfig =
-        value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "idleTaskScheduler",
-    () => idleTaskScheduler,
-    (value) => {
-      idleTaskScheduler = value;
-    },
-  );
+
+var PlatformIdleSchedulerRequestIdleCallbackCancelIdleCallbackImmediateConfig: Dynamic;
+var idleTaskScheduler: Dynamic;
+function scheduleMessageChannelTask(input?: Dynamic): Dynamic {
+  let value: Dynamic = new MessageChannel(),
+    flag: Dynamic = true;
+  value.port1.onmessage = (): Dynamic => {
+    value.port1.close();
+    flag && input();
+  };
+  value.port2.postMessage(null);
+  return (): Dynamic => {
+    flag = false;
+    value.port1.close();
+  };
+}
+export {
+  idleTaskScheduler,
+  PlatformIdleSchedulerRequestIdleCallbackCancelIdleCallbackImmediateConfig,
+  scheduleMessageChannelTask,
+};
+export function installPlatformIdleScheduler(): () => void {
   return () => {
     PlatformIdleSchedulerRequestIdleCallbackCancelIdleCallbackImmediateConfig =
       {

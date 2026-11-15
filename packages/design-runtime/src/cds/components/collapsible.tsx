@@ -7,122 +7,57 @@ import type {
 } from "../../contracts/ui";
 import type * as React from "react";
 /** Restored application module; prepare first, initialize in original order. */
-import { bindRuntimeValue, type RuntimeBindings } from "../../runtime-types";
-export function installCdsComponentsCollapsible(
-  runtime: RuntimeBindings,
-): () => void {
-  var reactComponentsCollapsible: typeof React;
-  var jsxComponentsCollapsible: typeof import("react/jsx-runtime");
-  var CollapsibleRoot: ForwardComponent<HTMLDivElement, CollapsibleRootProps>;
-  var collapsibleTriggerClasses: string;
-  var ComponentsCollapsibleLabel: string;
-  var CollapsibleTrigger: ForwardComponent<
-    HTMLButtonElement,
-    CollapsibleTriggerProps
-  >;
-  var collapsiblePanelClasses: string;
-  var CollapsiblePanel: ForwardComponent<HTMLDivElement, CollapsiblePanelProps>;
-  var ComponentsCollapsibleRootTriggerPanelConfig: {
-    Root: typeof CollapsibleRoot;
-    Trigger: typeof CollapsibleTrigger;
-    Panel: typeof CollapsiblePanel;
-  };
-  var initializeComponentsCollapsible: () => void;
-  bindRuntimeValue(
-    runtime,
-    "reactComponentsCollapsible",
-    () => reactComponentsCollapsible,
-    (value) => {
-      reactComponentsCollapsible = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "jsxComponentsCollapsible",
-    () => jsxComponentsCollapsible,
-    (value) => {
-      jsxComponentsCollapsible = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "CollapsibleRoot",
-    () => CollapsibleRoot,
-    (value) => {
-      CollapsibleRoot = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "collapsibleTriggerClasses",
-    () => collapsibleTriggerClasses,
-    (value) => {
-      collapsibleTriggerClasses = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "ComponentsCollapsibleLabel",
-    () => ComponentsCollapsibleLabel,
-    (value) => {
-      ComponentsCollapsibleLabel = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "CollapsibleTrigger",
-    () => CollapsibleTrigger,
-    (value) => {
-      CollapsibleTrigger = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "collapsiblePanelClasses",
-    () => collapsiblePanelClasses,
-    (value) => {
-      collapsiblePanelClasses = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "CollapsiblePanel",
-    () => CollapsiblePanel,
-    (value) => {
-      CollapsiblePanel = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "ComponentsCollapsibleRootTriggerPanelConfig",
-    () => ComponentsCollapsibleRootTriggerPanelConfig,
-    (value) => {
-      ComponentsCollapsibleRootTriggerPanelConfig = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "initializeComponentsCollapsible",
-    () => initializeComponentsCollapsible,
-    (value) => {
-      initializeComponentsCollapsible = value;
-    },
-  );
+import { Icon, initializeComponentsIcon_2 } from "./icon";
+import { initializeDomSelectionPrevention, withSelectionPrevention } from "../dom/selection-prevention";
+import { cn, initializeClassNames } from "../theme/class-names";
+import { initializeNpm__base_ui_react_iqe, initializeNpm_clsx_xh, load_react, load_react_jsx_runtime, npm_clsx_Ea, npm_Collapsible_a1 } from "../../dependencies";
+import { initializeOnce, toModuleNamespace } from "../../module-helpers";
+
+var reactComponentsCollapsible: typeof React;
+var jsxComponentsCollapsible: typeof import("react/jsx-runtime");
+var CollapsibleRoot: ForwardComponent<HTMLDivElement, CollapsibleRootProps>;
+var collapsibleTriggerClasses: string;
+var ComponentsCollapsibleLabel: string;
+var CollapsibleTrigger: ForwardComponent<
+  HTMLButtonElement,
+  CollapsibleTriggerProps
+>;
+var collapsiblePanelClasses: string;
+var CollapsiblePanel: ForwardComponent<HTMLDivElement, CollapsiblePanelProps>;
+var ComponentsCollapsibleRootTriggerPanelConfig: {
+  Root: typeof CollapsibleRoot;
+  Trigger: typeof CollapsibleTrigger;
+  Panel: typeof CollapsiblePanel;
+};
+var initializeComponentsCollapsible: () => void;
+export {
+  CollapsiblePanel,
+  collapsiblePanelClasses,
+  CollapsibleRoot,
+  CollapsibleTrigger,
+  collapsibleTriggerClasses,
+  ComponentsCollapsibleLabel,
+  ComponentsCollapsibleRootTriggerPanelConfig,
+  initializeComponentsCollapsible,
+  jsxComponentsCollapsible,
+  reactComponentsCollapsible,
+};
+export function installCdsComponentsCollapsible(): () => void {
   return () => {
-    initializeComponentsCollapsible = (0, runtime.initializeOnce)(() => {
+    initializeComponentsCollapsible = (0, initializeOnce)(() => {
       "use client";
 
-      (0, runtime.initializeClassNames)();
-      (0, runtime.initializeDomSelectionPrevention)();
-      (0, runtime.initializeComponentsIcon_2)();
-      reactComponentsCollapsible = (0, runtime.toModuleNamespace)(
-        (0, runtime.load_react)(),
+      (0, initializeClassNames)();
+      (0, initializeDomSelectionPrevention)();
+      (0, initializeComponentsIcon_2)();
+      reactComponentsCollapsible = (0, toModuleNamespace)(
+        (0, load_react)(),
       );
-      (0, runtime.initializeNpm_clsx_xh)();
-      jsxComponentsCollapsible = (0, runtime.toModuleNamespace)(
-        (0, runtime.load_react_jsx_runtime)(),
+      (0, initializeNpm_clsx_xh)();
+      jsxComponentsCollapsible = (0, toModuleNamespace)(
+        (0, load_react_jsx_runtime)(),
       );
-      (0, runtime.initializeNpm__base_ui_react_iqe)();
+      (0, initializeNpm__base_ui_react_iqe)();
       CollapsibleRoot = (0, reactComponentsCollapsible.forwardRef)<
         HTMLDivElement,
         CollapsibleRootProps
@@ -131,7 +66,7 @@ export function installCdsComponentsCollapsible(
           input: CollapsibleRootProps,
           options: React.ForwardedRef<HTMLDivElement>,
         ): React.ReactElement => (
-          <runtime.npm_Collapsible_a1.Root
+          <npm_Collapsible_a1.Root
             ref={options}
             data-cds={"Collapsible"}
             {...input}
@@ -158,19 +93,19 @@ export function installCdsComponentsCollapsible(
           }: CollapsibleTriggerProps,
           options: React.ForwardedRef<HTMLButtonElement>,
         ): React.ReactElement => {
-          let value = (0, runtime.withSelectionPrevention)(props.onMouseDown),
+          let value = (0, withSelectionPrevention)(props.onMouseDown),
             value2 = hideCaret ? null : (
-              <runtime.Icon
+              <Icon
                 name={"CaretRight"}
                 size={"sm"}
-                className={(0, runtime.npm_clsx_Ea)(
+                className={(0, npm_clsx_Ea)(
                   ComponentsCollapsibleLabel,
                   caretPosition === "end" && "ms-auto",
                 )}
               />
             );
           return render ? (
-            <runtime.npm_Collapsible_a1.Trigger
+            <npm_Collapsible_a1.Trigger
               ref={options}
               render={render}
               className={className}
@@ -178,16 +113,16 @@ export function installCdsComponentsCollapsible(
               onMouseDown={value}
             />
           ) : (
-            <runtime.npm_Collapsible_a1.Trigger
+            <npm_Collapsible_a1.Trigger
               ref={options}
               {...props}
-              className={(0, runtime.cn)(collapsibleTriggerClasses, className)}
+              className={(0, cn)(collapsibleTriggerClasses, className)}
               onMouseDown={value}
             >
               {caretPosition !== "end" && (value2)}
               {children}
               {caretPosition === "end" && (value2)}
-            </runtime.npm_Collapsible_a1.Trigger>
+            </npm_Collapsible_a1.Trigger>
           );
         },
       );
@@ -202,10 +137,10 @@ export function installCdsComponentsCollapsible(
           { className: className, ...props }: CollapsiblePanelProps,
           options: React.ForwardedRef<HTMLDivElement>,
         ): React.ReactElement => (
-          <runtime.npm_Collapsible_a1.Panel
+          <npm_Collapsible_a1.Panel
             ref={options}
             {...props}
-            className={(0, runtime.cn)(collapsiblePanelClasses, className)}
+            className={(0, cn)(collapsiblePanelClasses, className)}
           />
         ),
       );

@@ -1,44 +1,21 @@
 /** Restored application module; prepare first, initialize in original order. */
 import {
-  bindRuntimeValue,
   type Dynamic,
-  type RuntimeBindings,
 } from "../runtime-types";
 
-export function installCanvasBootScheduler(
-  runtime: RuntimeBindings,
-): () => void {
-  var defaultArtboardBootEnvironment: Dynamic;
-  var ArtboardBootScheduler: Dynamic;
-  var artboardBootScheduler: Dynamic;
-  function artboardBootClock(): Dynamic {
-    return typeof performance !== "undefined" ? performance.now() : Date.now();
-  }
-  bindRuntimeValue(
-    runtime,
-    "defaultArtboardBootEnvironment",
-    () => defaultArtboardBootEnvironment,
-    (value) => {
-      defaultArtboardBootEnvironment = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "ArtboardBootScheduler",
-    () => ArtboardBootScheduler,
-    (value) => {
-      ArtboardBootScheduler = value;
-    },
-  );
-  bindRuntimeValue(runtime, "artboardBootClock", () => artboardBootClock);
-  bindRuntimeValue(
-    runtime,
-    "artboardBootScheduler",
-    () => artboardBootScheduler,
-    (value) => {
-      artboardBootScheduler = value;
-    },
-  );
+var defaultArtboardBootEnvironment: Dynamic;
+var ArtboardBootScheduler: Dynamic;
+var artboardBootScheduler: Dynamic;
+function artboardBootClock(): Dynamic {
+  return typeof performance !== "undefined" ? performance.now() : Date.now();
+}
+export {
+  artboardBootClock,
+  artboardBootScheduler,
+  ArtboardBootScheduler,
+  defaultArtboardBootEnvironment,
+};
+export function installCanvasBootScheduler(): () => void {
   return () => {
     defaultArtboardBootEnvironment = {
       busySince: (): Dynamic => null,

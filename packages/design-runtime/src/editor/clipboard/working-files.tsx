@@ -1,101 +1,69 @@
 import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
-  bindRuntimeValue,
   type Dynamic,
-  type RuntimeBindings,
 } from "../../runtime-types";
+import { Value_5 } from "../../canvas/working-state";
+import { load_react } from "../../dependencies";
+import { AccessibilityAnnouncementsHandler } from "../accessibility/announcements";
+import { toModuleNamespace } from "../../module-helpers";
+import { awaitFeatureFlag } from "../../platform/feature-flags";
+import { canvasMetadataFile, parseCanvasMetadata } from "../../platform/file-content";
 
-export function installEditorClipboardWorkingFiles(
-  runtime: RuntimeBindings,
-): () => void {
-  var ClipboardWorkingFilesHandler: Dynamic;
-  var reactClipboardWorkingFiles: Dynamic;
-  var AppifactExtraExportFormatsValue: Dynamic;
-  var ClipboardWorkingFilesConstant: Dynamic;
-  function createWorkingFileMap(input?: Dynamic): Dynamic {
-    let values: Dynamic = new Set(
-        (0, runtime.parseCanvasMetadata)(input[runtime.canvasMetadataFile], {
-          ...input,
-        }).artboards.map((input2?: Dynamic): Dynamic => input2.file),
-      ),
-      entries: Dynamic = new Map();
-    for (let [value, value2] of Object.entries(input) as Dynamic)
-      entries.set(values.has(value) ? value : runtime.Value_5 + value, value2);
-    return entries;
-  }
-  function createCurrentWorkingGeneration(): Dynamic {
-    let value: Dynamic = ++ClipboardWorkingFilesConstant;
-    return (): Dynamic => value === ClipboardWorkingFilesConstant;
-  }
-  function useClipboardFeatureFlag(): Dynamic {
-    let [value, value2]: Dynamic = (0, reactClipboardWorkingFiles.useState)(
+var ClipboardWorkingFilesHandler: Dynamic;
+var reactClipboardWorkingFiles: Dynamic;
+var AppifactExtraExportFormatsValue: Dynamic;
+var ClipboardWorkingFilesConstant: Dynamic;
+function createWorkingFileMap(input?: Dynamic): Dynamic {
+  let values: Dynamic = new Set(
+      (0, parseCanvasMetadata)(input[canvasMetadataFile], {
+        ...input,
+      }).artboards.map((input2?: Dynamic): Dynamic => input2.file),
+    ),
+    entries: Dynamic = new Map();
+  for (let [value, value2] of Object.entries(input) as Dynamic)
+    entries.set(values.has(value) ? value : Value_5 + value, value2);
+  return entries;
+}
+function createCurrentWorkingGeneration(): Dynamic {
+  let value: Dynamic = ++ClipboardWorkingFilesConstant;
+  return (): Dynamic => value === ClipboardWorkingFilesConstant;
+}
+function useClipboardFeatureFlag(): Dynamic {
+  let [value, value2]: Dynamic = (0, reactClipboardWorkingFiles.useState)(
+    false,
+  );
+  (0, reactClipboardWorkingFiles.useEffect)((): Dynamic => {
+    let flag: Dynamic = true;
+    (0, awaitFeatureFlag)(
+      AppifactExtraExportFormatsValue,
       false,
-    );
-    (0, reactClipboardWorkingFiles.useEffect)((): Dynamic => {
-      let flag: Dynamic = true;
-      (0, runtime.awaitFeatureFlag)(
-        AppifactExtraExportFormatsValue,
-        false,
-      ).then((input?: Dynamic): Dynamic => {
-        flag && value2(input);
-      });
-      return (): Dynamic => {
-        flag = false;
-      };
-    }, []);
-    return value;
-  }
-  bindRuntimeValue(runtime, "createWorkingFileMap", () => createWorkingFileMap);
-  bindRuntimeValue(
-    runtime,
-    "ClipboardWorkingFilesHandler",
-    () => ClipboardWorkingFilesHandler,
-    (value) => {
-      ClipboardWorkingFilesHandler = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "reactClipboardWorkingFiles",
-    () => reactClipboardWorkingFiles,
-    (value) => {
-      reactClipboardWorkingFiles = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "AppifactExtraExportFormatsValue",
-    () => AppifactExtraExportFormatsValue,
-    (value) => {
-      AppifactExtraExportFormatsValue = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "ClipboardWorkingFilesConstant",
-    () => ClipboardWorkingFilesConstant,
-    (value) => {
-      ClipboardWorkingFilesConstant = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "createCurrentWorkingGeneration",
-    () => createCurrentWorkingGeneration,
-  );
-  bindRuntimeValue(
-    runtime,
-    "useClipboardFeatureFlag",
-    () => useClipboardFeatureFlag,
-  );
+    ).then((input?: Dynamic): Dynamic => {
+      flag && value2(input);
+    });
+    return (): Dynamic => {
+      flag = false;
+    };
+  }, []);
+  return value;
+}
+export {
+  AppifactExtraExportFormatsValue,
+  ClipboardWorkingFilesConstant,
+  ClipboardWorkingFilesHandler,
+  createCurrentWorkingGeneration,
+  createWorkingFileMap,
+  reactClipboardWorkingFiles,
+  useClipboardFeatureFlag,
+};
+export function installEditorClipboardWorkingFiles(): () => void {
   return () => {
     ClipboardWorkingFilesHandler = (input?: Dynamic): Dynamic =>
       // MineDesign: user-facing copy calls the agent "the agent", not Claude.
       uiMessage("inspector.workingFiles.theAgentIsAdding") +
-      (0, runtime.AccessibilityAnnouncementsHandler)(input);
-    reactClipboardWorkingFiles = (0, runtime.toModuleNamespace)(
-      (0, runtime.load_react)(),
+      (0, AccessibilityAnnouncementsHandler)(input);
+    reactClipboardWorkingFiles = (0, toModuleNamespace)(
+      (0, load_react)(),
       1,
     );
     AppifactExtraExportFormatsValue = "appifact_extra_export_formats";

@@ -2,106 +2,179 @@ import { useUiLocale } from '../ui-locale.ts';
 import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
-  bindRuntimeValue,
   type Dynamic,
-  type RuntimeBindings,
 } from "../runtime-types";
-export function installCanvasArtboardFrame(
-  runtime: RuntimeBindings,
-): () => void {
-  var ArtboardFrame: Dynamic;
-  function ArtboardSelectionChrome({
-    slot: slot,
-    live: live,
-    interactive: interactive,
-    onGripDown: onGripDown,
-    onContextMenu: onContextMenu,
-    sinkRef: sinkRef,
-    crop: crop,
-    onPenPreview: onPenPreview,
-    onPenCommit: onPenCommit,
-    onPenGesture: onPenGesture,
-    vectorEdit: vectorEdit,
-    board: board,
-  }: Dynamic): Dynamic {
-    useUiLocale();
-    let [value, value2]: Dynamic = (0, runtime.reactCanvasShape.useState)(null);
-    sinkRef.current = value2;
-    let value3: Dynamic = (0, runtime.useViewportScale)(live && value !== null),
-      value4: Dynamic = (0, runtime.useViewportMinScale)(
-        runtime.selectionChromeMinimumScale,
-      ),
-      value5: Dynamic = crop !== null && !(interactive && value4);
-    (0, runtime.reactCanvasShape.useEffect)((): Dynamic => {
-      value5 && crop?.onDone(true);
-    }, [value5, crop]);
-    (0, runtime.reactCanvasShape.useEffect)((): Dynamic => {
-      live || value2(null);
-    }, [live]);
-    return !slot ||
-      !live ||
-      !value ||
-      (value.rings.length === 0 &&
-        !value.stroke &&
-        !value.measure &&
-        !value.guides &&
-        !value.artboard &&
-        !value.pen)
-      ? null
-      : (0, runtime.reactDomCanvasShape.createPortal)(
-          <runtime.jsx_ip.Fragment>
-            <runtime.SelectionChromeOverlay
-              chrome={value}
-              scale={value3}
-              interactive={interactive && value4}
-              onGripDown={onGripDown}
-              onContextMenu={onContextMenu}
-              crop={interactive && value4 ? crop : null}
-              board={board}
-            />
-            {value.pen && vectorEdit && interactive && value4 && (<div
-                className={"pointer-events-none absolute left-0 top-0"}
-                style={{
-                  ...runtime.PickerRuntimeScriptTAppAccentConfig,
-                  transform: `scale(${String(1 / value3)})`,
-                  transformOrigin: "0 0",
-                }}
-              >
-                {(() => {
-                  const _Component = runtime.ElementPenEditor;
-                  const _props = {
-                    pen: value.pen,
-                    scale: value3,
-                    onPreview: onPenPreview,
-                    onCommitStroke: onPenCommit,
-                    onGesture: onPenGesture,
-                  } as const;
-                  const _key = value.pen.tid;
-                  return <_Component key={_key} {..._props} />;
-                })()}
-              </div>)}
-          </runtime.jsx_ip.Fragment>,
-          slot,
-        );
-  }
-  bindRuntimeValue(
-    runtime,
-    "ArtboardSelectionChrome",
-    () => ArtboardSelectionChrome,
-  );
-  bindRuntimeValue(
-    runtime,
-    "ArtboardFrame",
-    () => ArtboardFrame,
-    (value) => {
-      ArtboardFrame = value;
-    },
-  );
+import { inlineImagePreview } from "../assets/image-previews";
+import { artboardLoadErrorMessage, artboardLoadErrorMessages, emptyArtboardErrors, normalizeArtboardErrorMessages, reuseEqualStringArray } from "./artboard-errors";
+import { useArtboardRuntimeInstallation } from "./artboard-focus";
+import { ArtboardTweaksRow } from "./artboard-tweaks";
+import { artboardBootScheduler } from "./boot-scheduler";
+import { cacheArtboardCompilation, createProjectAssetReadinessProbe, designEditQuietPeriodMs, effectiveDesignPartMinScale, equivalentDesignImportTags, getCachedArtboardCompilation, jsx_ip, lastDesignEditAt, navigationProbeAttempts, navigationProbeAttemptsAfterEdit, projectFileNamesKey, selectPageFiles } from "./compilation-cache";
+import { createVideoElementIdentity, extractVisibleElementText, isValidVideoDimensions, resolveVideoElementIdentity } from "./content-snapshots";
+import { refreshDesktopRendering, scheduleDesktopRenderingRefresh } from "./desktop-refresh";
+import { focusCanvasDocument } from "./focus";
+import { forceRefreshEventName, isFrameCaptureDocument, remoteFilesEventName } from "./frame-environment";
+import { artboardContentSizeDescriptor, normalizeArtboardMeasuredSize, parseSelectionChromePayload, selectionChromeMinimumScale } from "./frame-payloads";
+import { markDesignFramesReady, unblockDesignFramesReady } from "./frame-readiness";
+import { SelectionChromeOverlay } from "./selection-chrome";
+import { reactCanvasShape, reactDomCanvasShape } from "./shape";
+import { useViewportMinScale, useViewportScale, ViewportScaleThreshold } from "./viewport-store";
+import { CanvasWorkingStateContext, updateDropGhostDemand } from "./working-state";
+import { observePageScrollAndPointer } from "../comments/page-surfaces";
+import { npm_useEventListener_bc } from "../dependencies";
+import { mergeDesignSystemFileOverlay, subscribeDesignSystemFiles } from "../design-system/file-overlay";
+import { designSystemCacheKey, getCurrentPublishedProjectRoot, getDesignSystemFiles, invalidateDesignSystemUrl, invalidatePublishedRoot, lookupPublishedUrl, resolvePublishedDesignSystemFile } from "../design-system/published-files";
+import { getDesignSystemColorVariables } from "../design-system/store";
+import { subscribeHtmlReferences } from "../design-system/type-declarations";
+import { announce } from "../editor/accessibility/announcer";
+import { useToast } from "../editor/chrome/toast";
+import { positionPastedHtml, unpositionPastedHtml } from "../editor/clipboard/html-placement";
+import { parseElementMoveSnapshot, parseGroupMoveSnapshot } from "../editor/clipboard/layout-snapshots";
+import { ClipboardTemplateFlatteningTrueFalseNullSet, flattenSelectionTemplates, flattenTemplateValues, getLoopTemplateVariables } from "../editor/clipboard/template-flattening";
+import { equalPropValues, getPropCurrentValue, overridePropDefault } from "../editor/components/prop-validation";
+import { useDcProps } from "../editor/components/use-dc-props";
+import { CssEditValidationBackgroundBackgroundColorSet, frozenInheritedStyleEdits, isSafeBackgroundStyle, normalizeStyleEdits } from "../editor/css/edit-validation";
+import { emitEditorEvent } from "../editor/events/runtime";
+import { flipModelSelection, inspectFlipSelection, selectionNeedsFlipInspection } from "../editor/geometry/flip-elements";
+import { canStartCanvasDrag } from "../editor/geometry/resize";
+import { compareDesignSourceScripts, editorOwnsUndo, notifyUndoGesture } from "../editor/history-ownership";
+import { canContainHtmlTag, DcTplAttribute } from "../editor/html/authoring";
+import { artboardComponentName } from "../editor/html/dc-document";
+import { getDcPropsJson } from "../editor/html/dc-props";
+import { containsFlowPastedElements, emptyArtboardDropTarget, pasteParentTarget, wrapInlinePastedHtml } from "../editor/insert/drop-targets";
+import { classifyElementStyleKind, isTextCapableElement } from "../editor/insert/element-kinds";
+import { defaultInsertionPoint, deleteModelElements, insertHtmlIntoModel, insertionPointForSelection, sameInsertionPoint } from "../editor/insert/targets";
+import { elementMoveRefusal, moveModelElement, sameParentDropGroup } from "../editor/layout/move-elements";
+import { cropIntoFrame, resizeImageCropFrame } from "../editor/media/crop-geometry";
+import { cropFromObjectStyles, imageCropStyleEdits, isEditableComponentName, MediaObjectCropEvery, MediaObjectCropSupports, MediaObjectCropTest, MediaObjectCropZoom, ThisBrowserCanTZoomAPictureMessage, YouCanTCropAnyFurtherAtMessage } from "../editor/media/object-crop";
+import { findPreviewMediaElement } from "../editor/media/playback-controls";
+import { adoptModelAndRelocateSelection } from "../editor/model/adoption";
+import { ModelModelStateLimit, resetModelBaselines } from "../editor/model/model-state";
+import { useDcModel } from "../editor/model/use-dc-model";
+import { suppressNativeContextMenu } from "../editor/outline/native-menu";
+import { armPickerByClick, beginPickerMove, beginPickerTextPlacing, cancelPickerBox, cancelPickerMove, clearPickerDropPlan, clearPickerPart, exitPickerMove, finishExitedPickerDrag, finishPickerMove, formatPickerText, holdPickerStyle, inspectPickerSelection, patchPickerStyle, pickAtPoint, PickerBridgeLabel, pickerContextMenuAt, pickerGesturePhase, pickerMoveHold, pickerPenPreview, pickerVectorPreview, pickInBox, planPickerDrop, repostPickerChrome, resizePickerSelection, returnPickerMove, setPickerDeepSelection, setPickerHiddenTags, setPickerHostScale, setPickerInteractive, setPickerMeasure, setPickerRingsOnly, setPickerScrubbing, setPickerSelection, settlePickerMove, startPickerTextEdit, touchPickerMove, unpatchPickerStyle, updatePickerMove } from "../editor/picker/bridge";
+import { getHiddenPickerTags, subscribeHiddenPickerTags } from "../editor/picker/hidden-tags";
+import { inspectPickerProps, observePickerCssVariables, sameStringSet } from "../editor/picker/inspection";
+import { pickerElementSignature, PickerRuntimeScriptTAppAccentConfig } from "../editor/picker/runtime-script";
+import { getPrimaryModifierHeld, subscribePrimaryModifierHeld } from "../editor/primary-modifier";
+import { SelectionActionsHelmetScHelmetPattern } from "../editor/selection/actions";
+import { containsUneditableSelection, copySelectedElementsHtml, promoteSvgShapeToRoot, selectedRootElementIds } from "../editor/selection/element-order";
+import { canMovePositionedSelection, hasPositionedSelectionAxes, nudgeModelSelection } from "../editor/selection/nudge";
+import { canReorderSelection, modelIdsFromElements, reorderModelSelection } from "../editor/selection/stacking";
+import { promotedSvgSelection, selectionAdjacentSiblings, selectionChildren, selectionParents, selectionSiblingIds } from "../editor/selection/tree-navigation";
+import { DesignEditorSession } from "../editor/session";
+import { CropIsNotAvailableHereForMessage, registerElementSession, registerLateGesture, SessionElementStateGet, SessionElementStateUnloadedTurnedAutoConfig, unregisterElementSession, updateElementSessionState } from "../editor/session/element-state";
+import { arrowSnapshotsForPropertyChange, restoreArrowSnapshots } from "../editor/svg/arrow-editing";
+import { getTextListKind } from "../editor/text/list-state";
+import { collectColorTokens, collectFontFamilies, collectFontSizeFamilyUsage, collectFontSizes, collectGoogleFontFamilies, collectTypographyRoles } from "../editor/typography/census";
+import { knownWebFontFamily } from "../editor/typography/font-catalog";
+import { firstFontFamily } from "../editor/typography/font-family";
+import { applyElementUndo, validatePastedAttributeEdits } from "../editor/undo/elements";
+import { trimUndoHistory } from "../editor/undo/history";
+import { ElementPenEditor } from "../editor/vector/element-pen-editor";
+import { placeElementAtMeasuredPoint, requestInsertionContainerTransform } from "../geometry/insertion-transform";
+import { isLoadingArtboardHtml } from "../platform/design-document-adapter";
+import { artboardsAtAddressEnabled, subscribeArtboardsAtAddressFlag } from "../platform/feature-flags";
+import { currentHttpOrigin, fileCapFailureMessage, FileValue, getKvClient, isPreviewMessage, PreviewGenerationGate, probePreviewRuntime, registerImageFileUrls, setPreviewGenerationGate } from "../platform/file-content";
+import { openPreviewExternalLink } from "../platform/link-navigation";
+import { addressedArtboardCacheKey, addressedArtboardFailure, filterAddressedFiles, isRequiredProjectFile, resolveAddressedArtboard } from "../preview/addressed-artboards";
+import { PreviewAssetRewritingSlice, rewriteProjectAssets } from "../preview/asset-rewriting";
+import { normalizeBlobAssetPaths, normalizeProjectBlobPaths } from "../preview/blob-paths";
+import { buildPreviewDocument, componentRuntimeDependencies, PreviewBuildDocumentResolvedValue_3, PreviewBuildDocumentStringify, TheArtboardRuntimeDidNotLoadMessage } from "../preview/build-document";
+import { collectProjectDependencyFiles, resolveComponentFile, updateComponentRuntimeScript } from "../preview/dependency-graph";
+import { DcAddressRefusedValue, rewritePreviewAssets } from "../preview/dependency-injection";
+import { createPreviewHandle } from "../preview/evaluation";
+import { createLinkedFileScript, runtimeModuleBlobs, runtimeModuleUrls } from "../preview/module-cache";
+import { setPreviewProjectRoot } from "../preview/project-root";
+import { markRuntimeUrlBlocked } from "../preview/runtime-loading";
+import { inlineImageUrl } from "../properties/quick-panel-bindings";
+
+import { set_lastDesignEditAt } from "./compilation-cache";
+var ArtboardFrame: Dynamic;
+function ArtboardSelectionChrome({
+  slot: slot,
+  live: live,
+  interactive: interactive,
+  onGripDown: onGripDown,
+  onContextMenu: onContextMenu,
+  sinkRef: sinkRef,
+  crop: crop,
+  onPenPreview: onPenPreview,
+  onPenCommit: onPenCommit,
+  onPenGesture: onPenGesture,
+  vectorEdit: vectorEdit,
+  board: board,
+}: Dynamic): Dynamic {
+  useUiLocale();
+  let [value, value2]: Dynamic = (0, reactCanvasShape.useState)(null);
+  sinkRef.current = value2;
+  let value3: Dynamic = (0, useViewportScale)(live && value !== null),
+    value4: Dynamic = (0, useViewportMinScale)(
+      selectionChromeMinimumScale,
+    ),
+    value5: Dynamic = crop !== null && !(interactive && value4);
+  (0, reactCanvasShape.useEffect)((): Dynamic => {
+    value5 && crop?.onDone(true);
+  }, [value5, crop]);
+  (0, reactCanvasShape.useEffect)((): Dynamic => {
+    live || value2(null);
+  }, [live]);
+  return !slot ||
+    !live ||
+    !value ||
+    (value.rings.length === 0 &&
+      !value.stroke &&
+      !value.measure &&
+      !value.guides &&
+      !value.artboard &&
+      !value.pen)
+    ? null
+    : (0, reactDomCanvasShape.createPortal)(
+        <jsx_ip.Fragment>
+          <SelectionChromeOverlay
+            chrome={value}
+            scale={value3}
+            interactive={interactive && value4}
+            onGripDown={onGripDown}
+            onContextMenu={onContextMenu}
+            crop={interactive && value4 ? crop : null}
+            board={board}
+          />
+          {value.pen && vectorEdit && interactive && value4 && (<div
+              className={"pointer-events-none absolute left-0 top-0"}
+              style={{
+                ...PickerRuntimeScriptTAppAccentConfig,
+                transform: `scale(${String(1 / value3)})`,
+                transformOrigin: "0 0",
+              }}
+            >
+              {(() => {
+                const _Component = ElementPenEditor;
+                const _props = {
+                  pen: value.pen,
+                  scale: value3,
+                  onPreview: onPenPreview,
+                  onCommitStroke: onPenCommit,
+                  onGesture: onPenGesture,
+                } as const;
+                const _key = value.pen.tid;
+                return <_Component key={_key} {..._props} />;
+              })()}
+            </div>)}
+        </jsx_ip.Fragment>,
+        slot,
+      );
+}
+export {
+  ArtboardFrame,
+  ArtboardSelectionChrome,
+};
+export function installCanvasArtboardFrame(): () => void {
   return () => {
-    ArtboardFrame = (0, runtime.reactCanvasShape.memo)(function (
+    ArtboardFrame = (0, reactCanvasShape.memo)(function (
       input?: Dynamic,
     ): Dynamic {
-      let { showToast: value }: Dynamic = (0, runtime.useToast)(),
+      let { showToast: value }: Dynamic = (0, useToast)(),
         {
           vectorEdit: value69 = false,
           file: value2,
@@ -187,124 +260,124 @@ export function installCanvasArtboardFrame(
           onPlaceHandled: value68,
         }: Dynamic = input,
         flag: Dynamic = false,
-        value84: Dynamic = (0, runtime.reactCanvasShape.useRef)(null),
-        value85: Dynamic = (0, runtime.reactCanvasShape.useMemo)(
-          (): Dynamic => new runtime.PreviewGenerationGate(),
+        value84: Dynamic = (0, reactCanvasShape.useRef)(null),
+        value85: Dynamic = (0, reactCanvasShape.useMemo)(
+          (): Dynamic => new PreviewGenerationGate(),
           [],
         ),
-        [value86, value87]: Dynamic = (0, runtime.reactCanvasShape.useState)(
+        [value86, value87]: Dynamic = (0, reactCanvasShape.useState)(
           null,
         ),
         value88: Dynamic = value86?.srcdoc ?? null,
-        value89: Dynamic = (0, runtime.reactCanvasShape.useRef)(-1),
-        value90: Dynamic = (0, runtime.reactCanvasShape.useRef)(-1),
-        [value91, value92]: Dynamic = (0, runtime.reactCanvasShape.useState)(0),
-        [value93, value94]: Dynamic = (0, runtime.reactCanvasShape.useState)(0),
-        [value95, value96]: Dynamic = (0, runtime.reactCanvasShape.useState)(
+        value89: Dynamic = (0, reactCanvasShape.useRef)(-1),
+        value90: Dynamic = (0, reactCanvasShape.useRef)(-1),
+        [value91, value92]: Dynamic = (0, reactCanvasShape.useState)(0),
+        [value93, value94]: Dynamic = (0, reactCanvasShape.useState)(0),
+        [value95, value96]: Dynamic = (0, reactCanvasShape.useState)(
           null,
         ),
-        [value97, value98]: Dynamic = (0, runtime.reactCanvasShape.useState)(
+        [value97, value98]: Dynamic = (0, reactCanvasShape.useState)(
           null,
         ),
-        [value99, value100]: Dynamic = (0, runtime.reactCanvasShape.useState)(
-          runtime.emptyArtboardErrors,
+        [value99, value100]: Dynamic = (0, reactCanvasShape.useState)(
+          emptyArtboardErrors,
         ),
-        value101: Dynamic = (0, runtime.reactCanvasShape.useRef)(-1),
-        value102: Dynamic = (0, runtime.reactCanvasShape.useRef)(null),
-        value103: Dynamic = (0, runtime.reactCanvasShape.useRef)(null),
-        value104: Dynamic = (0, runtime.reactCanvasShape.useRef)(0),
-        value105: Dynamic = (0, runtime.reactCanvasShape.useRef)({
+        value101: Dynamic = (0, reactCanvasShape.useRef)(-1),
+        value102: Dynamic = (0, reactCanvasShape.useRef)(null),
+        value103: Dynamic = (0, reactCanvasShape.useRef)(null),
+        value104: Dynamic = (0, reactCanvasShape.useRef)(0),
+        value105: Dynamic = (0, reactCanvasShape.useRef)({
           why: "",
           at: 0,
         }),
-        [value106, value107]: Dynamic = (0, runtime.reactCanvasShape.useState)(
+        [value106, value107]: Dynamic = (0, reactCanvasShape.useState)(
           false,
         ),
-        value108: Dynamic = (0, runtime.reactCanvasShape.useRef)(false);
+        value108: Dynamic = (0, reactCanvasShape.useRef)(false);
       value108.current = value106;
-      let value109: Dynamic = (0, runtime.reactCanvasShape.useRef)(null);
+      let value109: Dynamic = (0, reactCanvasShape.useRef)(null);
       value109.current = value88;
-      let value110: Dynamic = (0, runtime.reactCanvasShape.useRef)(value86);
+      let value110: Dynamic = (0, reactCanvasShape.useRef)(value86);
       value110.current = value86;
-      (0, runtime.reactCanvasShape.useEffect)(
+      (0, reactCanvasShape.useEffect)(
         (): Dynamic => (): Dynamic => {},
         [value88],
       );
-      let value111: Dynamic = (0, runtime.reactCanvasShape.useRef)(-1),
-        value112: Dynamic = (0, runtime.reactCanvasShape.useRef)(-1),
-        value113: Dynamic = (0, runtime.reactCanvasShape.useRef)(value93);
+      let value111: Dynamic = (0, reactCanvasShape.useRef)(-1),
+        value112: Dynamic = (0, reactCanvasShape.useRef)(-1),
+        value113: Dynamic = (0, reactCanvasShape.useRef)(value93);
       value113.current = value93;
-      let value114: Dynamic = (0, runtime.reactCanvasShape.useRef)(value70);
+      let value114: Dynamic = (0, reactCanvasShape.useRef)(value70);
       value114.current = value70;
-      let value115: Dynamic = (0, runtime.reactCanvasShape.useRef)(new Set()),
-        value116: Dynamic = (0, runtime.reactCanvasShape.useRef)(new Set()),
-        value117: Dynamic = (0, runtime.reactCanvasShape.useRef)(new Set()),
-        value118: Dynamic = (0, runtime.reactCanvasShape.useRef)(0),
-        value119: Dynamic = (0, runtime.reactCanvasShape.useRef)(null),
-        value120: Dynamic = (0, runtime.reactCanvasShape.useRef)(new Set()),
-        value121: Dynamic = (0, runtime.reactCanvasShape.useRef)(new Set()),
-        value122: Dynamic = (0, runtime.reactCanvasShape.useRef)(null),
-        value123: Dynamic = (0, runtime.reactCanvasShape.useRef)(0),
-        value124: Dynamic = (0, runtime.reactCanvasShape.useRef)(null);
+      let value115: Dynamic = (0, reactCanvasShape.useRef)(new Set()),
+        value116: Dynamic = (0, reactCanvasShape.useRef)(new Set()),
+        value117: Dynamic = (0, reactCanvasShape.useRef)(new Set()),
+        value118: Dynamic = (0, reactCanvasShape.useRef)(0),
+        value119: Dynamic = (0, reactCanvasShape.useRef)(null),
+        value120: Dynamic = (0, reactCanvasShape.useRef)(new Set()),
+        value121: Dynamic = (0, reactCanvasShape.useRef)(new Set()),
+        value122: Dynamic = (0, reactCanvasShape.useRef)(null),
+        value123: Dynamic = (0, reactCanvasShape.useRef)(0),
+        value124: Dynamic = (0, reactCanvasShape.useRef)(null);
       value124.current = value95;
-      let value125: Dynamic = (0, runtime.reactCanvasShape.useRef)(null);
+      let value125: Dynamic = (0, reactCanvasShape.useRef)(null);
       value125.current = value97;
       let [value126, value127]: Dynamic = (0,
-        runtime.reactCanvasShape.useState)(false),
+        reactCanvasShape.useState)(false),
         value128: Dynamic = value88 != null,
         value129: Dynamic = value95 != null || value97 != null;
-      (0, runtime.reactCanvasShape.useEffect)((): Dynamic => {
+      (0, reactCanvasShape.useEffect)((): Dynamic => {
         if (!(!value70 || !value24 || !value128 || value126 || value129))
-          return runtime.artboardBootScheduler.request(
+          return artboardBootScheduler.request(
             value2,
             (): Dynamic =>
               value114.current
                 ? value127(true)
-                : runtime.artboardBootScheduler.done(value2),
+                : artboardBootScheduler.done(value2),
           );
       }, [value70, value24, value128, value126, value129, value2]);
-      (0, runtime.reactCanvasShape.useEffect)((): Dynamic => {
-        value106 && runtime.artboardBootScheduler.done(value2);
+      (0, reactCanvasShape.useEffect)((): Dynamic => {
+        value106 && artboardBootScheduler.done(value2);
       }, [value106, value2]);
-      (0, runtime.reactCanvasShape.useEffect)((): Dynamic => {
+      (0, reactCanvasShape.useEffect)((): Dynamic => {
         (value95 == null && value97 == null) ||
-          (runtime.artboardBootScheduler.done(value2), value127(false));
+          (artboardBootScheduler.done(value2), value127(false));
       }, [value95, value97, value2]);
-      (0, runtime.reactCanvasShape.useEffect)(
+      (0, reactCanvasShape.useEffect)(
         (): Dynamic => (): Dynamic =>
-          runtime.artboardBootScheduler.done(value2),
+          artboardBootScheduler.done(value2),
         [value2],
       );
-      let value130: Dynamic = (0, runtime.reactCanvasShape.useCallback)(
+      let value130: Dynamic = (0, reactCanvasShape.useCallback)(
           (input2?: Dynamic): Dynamic => {
             value84.current = input2;
             input2 != null &&
-              ((0, runtime.setPreviewGenerationGate)(input2, value85),
+              ((0, setPreviewGenerationGate)(input2, value85),
               value85.generationMounted(value93));
           },
           [value85, value93],
         ),
-        value131: Dynamic = (0, runtime.reactCanvasShape.useRef)({}),
-        value132: Dynamic = (0, runtime.reactCanvasShape.useRef)(0),
-        value133: Dynamic = (0, runtime.reactCanvasShape.useRef)(null),
+        value131: Dynamic = (0, reactCanvasShape.useRef)({}),
+        value132: Dynamic = (0, reactCanvasShape.useRef)(0),
+        value133: Dynamic = (0, reactCanvasShape.useRef)(null),
         value134: Dynamic = (0,
-        runtime.reactCanvasShape.useCallback)((): Dynamic => {
+        reactCanvasShape.useCallback)((): Dynamic => {
           value123.current = value85.mountedGeneration;
           value85.frameRetired();
           value87(null);
           value107(false);
         }, [value85]);
-      (0, runtime.reactCanvasShape.useEffect)(
+      (0, reactCanvasShape.useEffect)(
         (): Dynamic => value134,
         [value134],
       );
       let [value135, value136]: Dynamic = (0,
-        runtime.reactCanvasShape.useState)(false),
+        reactCanvasShape.useState)(false),
         value137: Dynamic = value25 && !value135,
-        value138: Dynamic = (0, runtime.reactCanvasShape.useRef)(0),
-        value139: Dynamic = (0, runtime.reactCanvasShape.useRef)(new Map()),
+        value138: Dynamic = (0, reactCanvasShape.useRef)(0),
+        value139: Dynamic = (0, reactCanvasShape.useRef)(new Map()),
         value140: Dynamic = (0,
-        runtime.reactCanvasShape.useCallback)(async (): Promise<Dynamic> => {
+        reactCanvasShape.useCallback)(async (): Promise<Dynamic> => {
           value139.current.clear();
           let callback5: Dynamic = (): Dynamic =>
             value85.blocked == null &&
@@ -315,21 +388,21 @@ export function installCanvasArtboardFrame(
           let value286: Dynamic = ++value138.current,
             callback6: Dynamic = (): Dynamic => value286 !== value138.current;
           try {
-            let value287: Dynamic = await (0, runtime.getKvClient)().list(
-                runtime.FileValue,
+            let value287: Dynamic = await (0, getKvClient)().list(
+                FileValue,
               ),
               state2: Dynamic = {
-                ...(0, runtime.getDesignSystemFiles)(),
+                ...(0, getDesignSystemFiles)(),
               };
             for (let value297 of value287 as Dynamic) {
-              let value298: Dynamic = await (0, runtime.getKvClient)().get(
+              let value298: Dynamic = await (0, getKvClient)().get(
                 value297,
               );
               value298 != null &&
-                (state2[value297.slice(runtime.FileValue.length)] = value298);
+                (state2[value297.slice(FileValue.length)] = value298);
             }
-            (0, runtime.registerImageFileUrls)(state2);
-            value136((0, runtime.isLoadingArtboardHtml)(state2[value2] ?? ""));
+            (0, registerImageFileUrls)(state2);
+            value136((0, isLoadingArtboardHtml)(state2[value2] ?? ""));
             try {
               await value133.current?.(value2);
             } catch {
@@ -342,27 +415,27 @@ export function installCanvasArtboardFrame(
                 : (value134(),
                   value96(null),
                   value98(null),
-                  value100(runtime.emptyArtboardErrors),
+                  value100(emptyArtboardErrors),
                   true);
             if (callback6() || callback7() || callback5()) return;
             let value288: Dynamic = null,
-              value289: Dynamic = (0, runtime.artboardsAtAddressEnabled)(),
-              value290: Dynamic = (0, runtime.PreviewBuildDocumentStringify)({
-                partMin: (0, runtime.effectiveDesignPartMinScale)(),
+              value289: Dynamic = (0, artboardsAtAddressEnabled)(),
+              value290: Dynamic = (0, PreviewBuildDocumentStringify)({
+                partMin: (0, effectiveDesignPartMinScale)(),
                 frameless: value74,
                 assets: value14,
-                installed: (0, runtime.designSystemCacheKey)(),
-                address: (0, runtime.addressedArtboardCacheKey)(value289),
+                installed: (0, designSystemCacheKey)(),
+                address: (0, addressedArtboardCacheKey)(value289),
               }),
-              value291: Dynamic = (0, runtime.getCachedArtboardCompilation)(
+              value291: Dynamic = (0, getCachedArtboardCompilation)(
                 value2,
                 state2,
                 value290,
               );
             if (value291 === null) {
               let value297: Dynamic = (0,
-                runtime.collectProjectDependencyFiles)(state2, value2),
-                value298: Dynamic = (0, runtime.resolveAddressedArtboard)(
+                collectProjectDependencyFiles)(state2, value2),
+                value298: Dynamic = (0, resolveAddressedArtboard)(
                   value297,
                   value2,
                   value289,
@@ -373,7 +446,7 @@ export function installCanvasArtboardFrame(
                     : value298;
               value289 &&
                 value298 !== undefined &&
-                (0, runtime.notifyUndoGesture)("board-address", {
+                (0, notifyUndoGesture)("board-address", {
                   file: value2,
                   how:
                     "copied" in value298
@@ -385,7 +458,7 @@ export function installCanvasArtboardFrame(
                       }
                     : {}),
                 });
-              let value300: Dynamic = (0, runtime.normalizeProjectBlobPaths)(
+              let value300: Dynamic = (0, normalizeProjectBlobPaths)(
                   value299?.files ?? value297,
                 ),
                 values: Dynamic = new Set(),
@@ -394,7 +467,7 @@ export function installCanvasArtboardFrame(
                   parts: value302,
                   sheetUrls: value303,
                   byAddress: value304,
-                }: Dynamic = (0, runtime.buildPreviewDocument)(
+                }: Dynamic = (0, buildPreviewDocument)(
                   value300,
                   value2,
                   value14,
@@ -408,17 +481,17 @@ export function installCanvasArtboardFrame(
                         },
                       }
                     : {
-                        partMin: (0, runtime.effectiveDesignPartMinScale)(),
+                        partMin: (0, effectiveDesignPartMinScale)(),
                         frameless: value74,
                         sheetUrlFor: (0,
-                        runtime.createProjectAssetReadinessProbe)(state2),
+                        createProjectAssetReadinessProbe)(state2),
                         installedUrlFor:
-                          runtime.resolvePublishedDesignSystemFile,
-                        fileUrlFor: runtime.createLinkedFileScript,
+                          resolvePublishedDesignSystemFile,
+                        fileUrlFor: createLinkedFileScript,
                       },
                 );
               value291 = {
-                names: (0, runtime.projectFileNamesKey)(state2),
+                names: (0, projectFileNamesKey)(state2),
                 opts: value290,
                 closure: value297,
                 doc: value301,
@@ -432,7 +505,7 @@ export function installCanvasArtboardFrame(
                     }
                   : {}),
               };
-              (0, runtime.cacheArtboardCompilation)(value2, value291);
+              (0, cacheArtboardCompilation)(value2, value291);
             }
             let {
               doc: value292,
@@ -449,12 +522,12 @@ export function installCanvasArtboardFrame(
               : value87(
                   Object.keys(value293).length > 0
                     ? {
-                        srcdoc: runtime.PreviewBuildDocumentResolvedValue_3,
+                        srcdoc: PreviewBuildDocumentResolvedValue_3,
                         boot: {
                           doc: value292,
-                          parts: (0, runtime.runtimeModuleBlobs)(value293),
+                          parts: (0, runtimeModuleBlobs)(value293),
                           urls: {
-                            ...(0, runtime.runtimeModuleUrls)(value293),
+                            ...(0, runtimeModuleUrls)(value293),
                             ...value296,
                           },
                         },
@@ -475,33 +548,33 @@ export function installCanvasArtboardFrame(
             value98(null);
           } catch (value287: Dynamic) {
             value98(String(value287));
-            (0, runtime.unblockDesignFramesReady)();
+            (0, unblockDesignFramesReady)();
           }
         }, [value2, value85, value134, value74]);
-      (0, runtime.reactCanvasShape.useEffect)(
+      (0, reactCanvasShape.useEffect)(
         (): Dynamic =>
-          (0, runtime.subscribeArtboardsAtAddressFlag)((): Dynamic => {
+          (0, subscribeArtboardsAtAddressFlag)((): Dynamic => {
             value140();
           }),
         [value140],
       );
-      let value141: Dynamic = (0, runtime.reactCanvasShape.useRef)([]),
-        value142: Dynamic = (0, runtime.reactCanvasShape.useCallback)(
+      let value141: Dynamic = (0, reactCanvasShape.useRef)([]),
+        value142: Dynamic = (0, reactCanvasShape.useCallback)(
           (): Dynamic => false,
           [value140],
         );
-      (0, runtime.reactCanvasShape.useEffect)((): Dynamic => {
+      (0, reactCanvasShape.useEffect)((): Dynamic => {
         value140();
-        let value286: Dynamic = (0, runtime.subscribeDesignSystemFiles)(
+        let value286: Dynamic = (0, subscribeDesignSystemFiles)(
             (): Dynamic => {
               value140();
             },
           ),
-          value287: Dynamic = (0, runtime.subscribeHtmlReferences)(
+          value287: Dynamic = (0, subscribeHtmlReferences)(
             (input2?: Dynamic): Dynamic => {
               input2.some(
                 (input3?: Dynamic): Dynamic =>
-                  (0, runtime.isRequiredProjectFile)(
+                  (0, isRequiredProjectFile)(
                     input3,
                     value2,
                     value116.current,
@@ -515,41 +588,41 @@ export function installCanvasArtboardFrame(
           value287();
         };
       }, [value140]);
-      let value143: Dynamic = (0, runtime.reactCanvasShape.useRef)(value70);
-      (0, runtime.reactCanvasShape.useLayoutEffect)((): Dynamic => {
+      let value143: Dynamic = (0, reactCanvasShape.useRef)(value70);
+      (0, reactCanvasShape.useLayoutEffect)((): Dynamic => {
         if (value70 !== value143.current) {
           value143.current = value70;
           if (!value70) {
             value109.current != null &&
               value124.current == null &&
               value125.current == null &&
-              (runtime.lastDesignEditAt = performance.now());
+              (set_lastDesignEditAt(performance.now()));
             value134();
             value127(false);
-            runtime.artboardBootScheduler.done(value2);
+            artboardBootScheduler.done(value2);
             return;
           }
           value124.current != null || value125.current != null || value140();
         }
       }, [value70, value140, value134]);
-      let value144: Dynamic = (0, runtime.reactCanvasShape.useRef)(undefined),
+      let value144: Dynamic = (0, reactCanvasShape.useRef)(undefined),
         value145: Dynamic = (0,
-        runtime.reactCanvasShape.useCallback)(async (): Promise<Dynamic> => {
+        reactCanvasShape.useCallback)(async (): Promise<Dynamic> => {
           let value286: Dynamic = value15.content().files[value2],
             current: Dynamic = value144.current;
           if (value286 !== undefined && value286 === current) return null;
           if (
-            !(0, runtime.createPreviewHandle)(value84.current) ||
+            !(0, createPreviewHandle)(value84.current) ||
             value124.current != null ||
             value125.current != null
           )
             return uiMessage("canvas.artboardFrame.theFrameIsNotLive");
-          let value287: Dynamic = (0, runtime.compareDesignSourceScripts)(
+          let value287: Dynamic = (0, compareDesignSourceScripts)(
             current,
             value286,
           );
           if (!value287.ok) return value287.why;
-          let value288: Dynamic = (0, runtime.artboardComponentName)(value2);
+          let value288: Dynamic = (0, artboardComponentName)(value2);
           try {
             await value133.current?.(value2);
           } catch {}
@@ -570,7 +643,7 @@ export function installCanvasArtboardFrame(
           } else {
             if (value290)
               return uiMessage("canvas.artboardFrame.theModelDidNotAdopt");
-            (0, runtime.emitEditorEvent)("dc-update", {
+            (0, emitEditorEvent)("dc-update", {
               name: value288,
               path: value2,
               kind: "html",
@@ -583,9 +656,9 @@ export function installCanvasArtboardFrame(
           value144.current = value286;
           return null;
         }, [value2]),
-        value146: Dynamic = (0, runtime.reactCanvasShape.useCallback)(
+        value146: Dynamic = (0, reactCanvasShape.useCallback)(
           (input2?: Dynamic): Dynamic => {
-            (0, runtime.notifyUndoGesture)("board-remote", {
+            (0, notifyUndoGesture)("board-remote", {
               file: value2,
               how:
                 uiMessage("canvas.artboardFrame.theTextBoxOrDrag") +
@@ -594,29 +667,29 @@ export function installCanvasArtboardFrame(
             input2 === "rebuild"
               ? value140()
               : value159.current.pushLive(
-                  (0, runtime.artboardComponentName)(value2),
+                  (0, artboardComponentName)(value2),
                 );
           },
           [value140, value2],
         );
-      (0, runtime.npm_useEventListener_bc)(
-        runtime.forceRefreshEventName,
+      (0, npm_useEventListener_bc)(
+        forceRefreshEventName,
         (): Dynamic => {
           value140();
         },
       );
-      (0, runtime.npm_useEventListener_bc)(
-        runtime.remoteFilesEventName,
+      (0, npm_useEventListener_bc)(
+        remoteFilesEventName,
         (input2?: Dynamic): Dynamic => {
           let value286: Dynamic = input2.detail?.paths ?? [],
-            value287: Dynamic = (0, runtime.filterAddressedFiles)(
+            value287: Dynamic = (0, filterAddressedFiles)(
               value286,
               value2,
               value116.current,
               value115.current,
               (): Dynamic =>
-                (0, runtime.collectProjectDependencyFiles)(
-                  (0, runtime.mergeDesignSystemFileOverlay)(
+                (0, collectProjectDependencyFiles)(
+                  (0, mergeDesignSystemFileOverlay)(
                     value15.content().files,
                   ),
                   value2,
@@ -626,18 +699,18 @@ export function installCanvasArtboardFrame(
             if (
               value287.length === 1 &&
               value287[0] === value2 &&
-              (0, runtime.editorOwnsUndo)()
+              (0, editorOwnsUndo)()
             ) {
               let value288: Dynamic = performance.now();
               value145().then(
                 (input3?: Dynamic): Dynamic => {
                   input3 === null
-                    ? (0, runtime.notifyUndoGesture)("board-remote", {
+                    ? (0, notifyUndoGesture)("board-remote", {
                         file: value2,
                         how: "in place (__dcUpdate)",
                         ms: Math.round(performance.now() - value288),
                       })
-                    : ((0, runtime.notifyUndoGesture)("board-remote", {
+                    : ((0, notifyUndoGesture)("board-remote", {
                         file: value2,
                         how: "rebuilt iframe",
                         why: input3,
@@ -645,7 +718,7 @@ export function installCanvasArtboardFrame(
                       value140());
                 },
                 (input3?: Dynamic): Dynamic => {
-                  (0, runtime.notifyUndoGesture)("board-remote", {
+                  (0, notifyUndoGesture)("board-remote", {
                     file: value2,
                     how: "rebuilt iframe",
                     get why() { return ("in-place threw: ") + (String(input3)); },
@@ -655,7 +728,7 @@ export function installCanvasArtboardFrame(
               );
               return;
             }
-            (0, runtime.notifyUndoGesture)("board-remote", {
+            (0, notifyUndoGesture)("board-remote", {
               file: value2,
               how: "rebuilt iframe",
               get why() { return value287.length === 1 && value287[0] === value2 ? ("in-place is off") : ((uiMessage("canvas.artboardFrame.aFileThisBoardImports")) + (value287.join(", "))); },
@@ -664,15 +737,15 @@ export function installCanvasArtboardFrame(
           }
         },
       );
-      (0, runtime.reactCanvasShape.useEffect)(
+      (0, reactCanvasShape.useEffect)(
         (): Dynamic =>
-          (0, runtime.scheduleDesktopRenderingRefresh)(
+          (0, scheduleDesktopRenderingRefresh)(
             (): Dynamic => value84.current,
           ),
         [value91],
       );
-      let value147: Dynamic = (0, runtime.reactCanvasShape.useRef)(null),
-        value148: Dynamic = (0, runtime.useDcProps)({
+      let value147: Dynamic = (0, reactCanvasShape.useRef)(null),
+        value148: Dynamic = (0, useDcProps)({
           webviewRef: value84,
           readyGen: value91,
           projectPath: "appifact",
@@ -680,21 +753,21 @@ export function installCanvasArtboardFrame(
           enabled: true,
           onWritten: (input2?: Dynamic, options?: Dynamic): Dynamic =>
             value147.current?.(
-              (0, runtime.artboardComponentName)(input2),
+              (0, artboardComponentName)(input2),
               options,
             ),
         });
-      (0, runtime.reactCanvasShape.useEffect)((): Dynamic => {
+      (0, reactCanvasShape.useEffect)((): Dynamic => {
         value10?.(value2, value148.hasProps);
       }, [value2, value148.hasProps, value10]);
       let value149: Dynamic = (0,
-      runtime.reactCanvasShape.useCallback)(async (): Promise<Dynamic> => {
+      reactCanvasShape.useCallback)(async (): Promise<Dynamic> => {
         await value148.saveAsDefaults();
         try {
           await value133.current?.(value2);
         } catch {}
       }, [value2, value148.saveAsDefaults]);
-      (0, runtime.reactCanvasShape.useEffect)((): Dynamic => {
+      (0, reactCanvasShape.useEffect)((): Dynamic => {
         value11?.(value2, value137 && value148.dirty ? value149 : null);
       }, [
         value2,
@@ -704,19 +777,19 @@ export function installCanvasArtboardFrame(
         value149,
         value11,
       ]);
-      (0, runtime.reactCanvasShape.useEffect)(
+      (0, reactCanvasShape.useEffect)(
         (): Dynamic => (): Dynamic => value11?.(value2, null),
         [value2, value11],
       );
-      let value150: Dynamic = (0, runtime.reactCanvasShape.useRef)(value59);
+      let value150: Dynamic = (0, reactCanvasShape.useRef)(value59);
       value150.current = value59;
-      (0, runtime.reactCanvasShape.useEffect)((): Dynamic => {
+      (0, reactCanvasShape.useEffect)((): Dynamic => {
         value23 || value150.current?.(value2, null);
       }, [value23, value2]);
-      (0, runtime.reactCanvasShape.useEffect)((): Dynamic => {
+      (0, reactCanvasShape.useEffect)((): Dynamic => {
         value150.current?.(value2, null);
       }, [value93, value2]);
-      (0, runtime.npm_useEventListener_bc)(
+      (0, npm_useEventListener_bc)(
         "message",
         (dataset?: Dynamic): Dynamic => {
           let data: Dynamic = dataset.data;
@@ -725,7 +798,7 @@ export function installCanvasArtboardFrame(
             if (
               value286 != null &&
               dataset.source === value286 &&
-              dataset.origin === (0, runtime.currentHttpOrigin)()
+              dataset.origin === (0, currentHttpOrigin)()
             ) {
               let value287: Dynamic = dataset.ports[0];
               value287 != null && value85.helloReceived(value287);
@@ -733,16 +806,16 @@ export function installCanvasArtboardFrame(
             return;
           }
           if (data?.__om_nav_away === 1) {
-            if (dataset.origin !== (0, runtime.currentHttpOrigin)()) return;
+            if (dataset.origin !== (0, currentHttpOrigin)()) return;
             let mountedGeneration: Dynamic = value85.mountedGeneration,
               helloPort: Dynamic = value85.helloPort;
             if (helloPort == null) return;
             let value286: Dynamic =
-              performance.now() - runtime.lastDesignEditAt <
-              runtime.designEditQuietPeriodMs
-                ? runtime.navigationProbeAttemptsAfterEdit
-                : runtime.navigationProbeAttempts;
-            (0, runtime.probePreviewRuntime)(helloPort, {
+              performance.now() - lastDesignEditAt <
+              designEditQuietPeriodMs
+                ? navigationProbeAttemptsAfterEdit
+                : navigationProbeAttempts;
+            (0, probePreviewRuntime)(helloPort, {
               attempts: value286,
             }).then((input2?: Dynamic): Dynamic => {
               mountedGeneration <= value123.current ||
@@ -750,19 +823,19 @@ export function installCanvasArtboardFrame(
                 value85.blocked != null &&
                   !value142() &&
                   (value96(value85.blocked),
-                  (0, runtime.unblockDesignFramesReady)()));
+                  (0, unblockDesignFramesReady)()));
             });
             return;
           }
         },
       );
-      (0, runtime.npm_useEventListener_bc)(
+      (0, npm_useEventListener_bc)(
         "message",
         (dataset?: Dynamic): Dynamic => {
-          if (!(0, runtime.isPreviewMessage)(dataset, value84.current)) return;
+          if (!(0, isPreviewMessage)(dataset, value84.current)) return;
           let data: Dynamic = dataset.data;
           if (data != null && typeof data == "object" && "__om_link" in data) {
-            (0, runtime.openPreviewExternalLink)(data.__om_link);
+            (0, openPreviewExternalLink)(data.__om_link);
             return;
           }
           if (
@@ -774,18 +847,18 @@ export function installCanvasArtboardFrame(
               value90.current === value113.current ||
               (value110.current?.boot != null &&
                 value89.current !== value113.current) ||
-              (data.e === runtime.TheArtboardRuntimeDidNotLoadMessage &&
+              (data.e === TheArtboardRuntimeDidNotLoadMessage &&
                 dataset.source !== null &&
                 value119.current === dataset.source)
             )
               return;
             if (
-              data.e === runtime.TheArtboardRuntimeDidNotLoadMessage &&
+              data.e === TheArtboardRuntimeDidNotLoadMessage &&
               value118.current < 2
             ) {
               value118.current++;
               value119.current = dataset.source;
-              (0, runtime.markRuntimeUrlBlocked)(data.u);
+              (0, markRuntimeUrlBlocked)(data.u);
               console.warn(
                 "[design] artboard " +
                   value2 +
@@ -801,29 +874,29 @@ export function installCanvasArtboardFrame(
                 String(data.e).slice(0, 200),
             );
             value98(uiMessage("canvas.artboardFrame.itsContentDidnTLoad"));
-            (0, runtime.unblockDesignFramesReady)();
+            (0, unblockDesignFramesReady)();
             return;
           }
           if (
             data != null &&
             typeof data == "object" &&
-            runtime.DcAddressRefusedValue in data
+            DcAddressRefusedValue in data
           ) {
             let u: Dynamic = data.u,
               current: Dynamic = value110.current;
             if (current?.projectRoot !== undefined) {
               if (value122.current === current.srcdoc) return;
-              let value296: Dynamic = (0, runtime.lookupPublishedUrl)(
+              let value296: Dynamic = (0, lookupPublishedUrl)(
                   current.projectRoot,
                   u,
                 ),
-                value297: Dynamic = (0, runtime.invalidatePublishedRoot)(
+                value297: Dynamic = (0, invalidatePublishedRoot)(
                   current.projectRoot,
                   u,
                 );
               if (value297 === undefined || value296 === undefined) return;
               value122.current = current.srcdoc;
-              (0, runtime.notifyUndoGesture)("board-address", {
+              (0, notifyUndoGesture)("board-address", {
                 file: value2,
                 how: "built again after a failed load",
                 get why() { return (uiMessage("canvas.artboardFrame.aPublishedFileDidNot")) + (value296); },
@@ -832,7 +905,7 @@ export function installCanvasArtboardFrame(
                 console.warn(
                   "[design] Could not load " +
                     value296 +
-                    ((0, runtime.getCurrentPublishedProjectRoot)() === undefined
+                    ((0, getCurrentPublishedProjectRoot)() === undefined
                       ? " from where this canvas is published. Artboards are drawn from the editor's own copy of the files instead."
                       : " from an older saved version. The artboard is drawn again from the version this page shows now.") +
                     " Your files are not changed.",
@@ -840,7 +913,7 @@ export function installCanvasArtboardFrame(
               value140();
               return;
             }
-            let value295: Dynamic = (0, runtime.invalidateDesignSystemUrl)(
+            let value295: Dynamic = (0, invalidateDesignSystemUrl)(
               value121.current,
               u,
             );
@@ -854,12 +927,12 @@ export function installCanvasArtboardFrame(
             return;
           }
           if (data?.type === "__dc_render_errors") {
-            let value295: Dynamic = (0, runtime.normalizeArtboardErrorMessages)(
+            let value295: Dynamic = (0, normalizeArtboardErrorMessages)(
               data.errors,
             );
             value100(
               (input2?: Dynamic): Dynamic =>
-                (0, runtime.reuseEqualStringArray)(input2, value295),
+                (0, reuseEqualStringArray)(input2, value295),
             );
             return;
           }
@@ -881,11 +954,11 @@ export function installCanvasArtboardFrame(
             data?.type === "__dc_booted" &&
             typeof data.rootName == "string"
           ) {
-            runtime.artboardBootScheduler.done(value2);
+            artboardBootScheduler.done(value2);
             value101.current = value113.current;
-            data.tellsErrors !== true && value100(runtime.emptyArtboardErrors);
+            data.tellsErrors !== true && value100(emptyArtboardErrors);
             data.mounted === true &&
-              data.rootName !== (0, runtime.artboardComponentName)(value2) &&
+              data.rootName !== (0, artboardComponentName)(value2) &&
               value112.current !== value113.current &&
               ((value112.current = value113.current),
               console.error(
@@ -894,7 +967,7 @@ export function installCanvasArtboardFrame(
                   ' booted as "' +
                   data.rootName.slice(0, 80) +
                   '", host pushes to "' +
-                  (0, runtime.artboardComponentName)(value2) +
+                  (0, artboardComponentName)(value2) +
                   '" \u2014 live edits will not render',
               ));
             value148.lifecycleCallbacks.onDcBooted({
@@ -1126,7 +1199,7 @@ export function installCanvasArtboardFrame(
           if (value289 && value289.type === "panHold") {
             let value295: Dynamic = value289.on === true;
             (!value295 || value23) &&
-              (0, runtime.suppressNativeContextMenu)(value295);
+              (0, suppressNativeContextMenu)(value295);
             return;
           }
           let value290: Dynamic = data?.__dcEditorEvt;
@@ -1180,9 +1253,9 @@ export function installCanvasArtboardFrame(
             value292.type === "chrome" &&
             value8 &&
             (value23 || (value137 && value78)) &&
-            (0, runtime.updateDropGhostDemand)(
+            (0, updateDropGhostDemand)(
               value2,
-              (0, runtime.parseSelectionChromePayload)(
+              (0, parseSelectionChromePayload)(
                 value292,
                 value8,
               ).rings.reduce(
@@ -1193,7 +1266,7 @@ export function installCanvasArtboardFrame(
             );
           if (value292 && value292.type === "chrome") {
             if (!value8 || !(value23 || (value137 && value78))) return;
-            let value295: Dynamic = (0, runtime.parseSelectionChromePayload)(
+            let value295: Dynamic = (0, parseSelectionChromePayload)(
                 value292,
                 value8,
                 {
@@ -1208,11 +1281,11 @@ export function installCanvasArtboardFrame(
             value103.current = value296?.media ? value296 : null;
             let value297: Dynamic =
               value296?.media !== undefined &&
-              !(0, runtime.MediaObjectCropSupports)() &&
+              !(0, MediaObjectCropSupports)() &&
               !!value159.current
                 .state(value169)
                 ?.model.inlineStyleValue(value296.media.tid, "object-view-box");
-            (0, runtime.updateElementSessionState)(value2, {
+            (0, updateElementSessionState)(value2, {
               target: value296?.media
                 ? value297
                   ? {
@@ -1244,12 +1317,12 @@ export function installCanvasArtboardFrame(
               value198.current ||
               !value295 ||
               !Number.isSafeInteger(tid) ||
-              (0, runtime.SessionElementStateGet)(value2).selected !== tid ||
+              (0, SessionElementStateGet)(value2).selected !== tid ||
               Date.now() - value104.current < 500
             )
               return;
             value104.current = Date.now();
-            let target: Dynamic = (0, runtime.SessionElementStateGet)(
+            let target: Dynamic = (0, SessionElementStateGet)(
               value2,
             ).target;
             if (target !== null && "tid" in target && target.tid === tid)
@@ -1257,10 +1330,10 @@ export function installCanvasArtboardFrame(
             else if (value208.current) {
               let value296: Dynamic =
                 target !== null && "off" in target
-                  ? runtime.SessionElementStateUnloadedTurnedAutoConfig[
+                  ? SessionElementStateUnloadedTurnedAutoConfig[
                       target.off
                     ]
-                  : runtime.CropIsNotAvailableHereForMessage;
+                  : CropIsNotAvailableHereForMessage;
               (value105.current.why !== value296 ||
                 Date.now() - value105.current.at > 5e3) &&
                 value(value296);
@@ -1276,7 +1349,7 @@ export function installCanvasArtboardFrame(
             if (value292.empty === true) value7?.(value2, null);
             else {
               let value295: Dynamic = (0,
-              runtime.normalizeArtboardMeasuredSize)(value292);
+              normalizeArtboardMeasuredSize)(value292);
               value295 && value7?.(value2, value295);
             }
             return;
@@ -1327,8 +1400,8 @@ export function installCanvasArtboardFrame(
             if (
               value294.name != null &&
               (typeof value294.name != "string" ||
-                !(0, runtime.isEditableComponentName)(value294.name) ||
-                value294.name !== (0, runtime.artboardComponentName)(value2))
+                !(0, isEditableComponentName)(value294.name) ||
+                value294.name !== (0, artboardComponentName)(value2))
             )
               return;
             let value300: Dynamic =
@@ -1368,23 +1441,23 @@ export function installCanvasArtboardFrame(
         },
       );
       let [value151, value152]: Dynamic = (0,
-        runtime.reactCanvasShape.useState)(0),
-        value153: Dynamic = (0, runtime.reactCanvasShape.useRef)(null);
-      (0, runtime.reactCanvasShape.useEffect)(
+        reactCanvasShape.useState)(0),
+        value153: Dynamic = (0, reactCanvasShape.useRef)(null);
+      (0, reactCanvasShape.useEffect)(
         (): Dynamic => (): Dynamic => {
           value153.current && clearTimeout(value153.current);
         },
         [],
       );
-      (0, runtime.npm_useEventListener_bc)(
+      (0, npm_useEventListener_bc)(
         "dc-update",
         (input2?: Dynamic): Dynamic => {
           let detail: Dynamic = input2.detail;
-          if (!(0, runtime.createPreviewHandle)(value84.current)) return;
-          let value286: Dynamic = (0, runtime.mergeDesignSystemFileOverlay)(
+          if (!(0, createPreviewHandle)(value84.current)) return;
+          let value286: Dynamic = (0, mergeDesignSystemFileOverlay)(
               value15.content().files,
             ),
-            value287: Dynamic = (0, runtime.resolveComponentFile)(value286, {
+            value287: Dynamic = (0, resolveComponentFile)(value286, {
               ...detail,
               kind: "html",
             });
@@ -1399,7 +1472,7 @@ export function installCanvasArtboardFrame(
             value289: Dynamic = value110.current?.projectRoot,
             flag2: Dynamic = false;
           if (value289 !== undefined && detail.kind === "html") {
-            let value296: Dynamic = (0, runtime.addressedArtboardFailure)(
+            let value296: Dynamic = (0, addressedArtboardFailure)(
               {
                 ...value286,
                 [value288]: detail.content,
@@ -1409,14 +1482,14 @@ export function installCanvasArtboardFrame(
             );
             flag2 = value296 === undefined;
             value296 !== undefined &&
-              (0, runtime.notifyUndoGesture)("board-address", {
+              (0, notifyUndoGesture)("board-address", {
                 file: value2,
                 how: "a push prepared by copying files in",
                 why: value296,
               });
           }
           let value290: Dynamic = flag2
-              ? (0, runtime.selectPageFiles)(value286)
+              ? (0, selectPageFiles)(value286)
               : value286,
             value291: Dynamic =
               value287 === value2 && detail.kind === "html"
@@ -1431,20 +1504,20 @@ export function installCanvasArtboardFrame(
                 },
             value293: Dynamic =
               detail.kind === "html"
-                ? (0, runtime.rewritePreviewAssets)(
+                ? (0, rewritePreviewAssets)(
                     detail.content,
                     value290,
                     value288,
                     value292,
                   )
-                : (0, runtime.rewriteProjectAssets)(
+                : (0, rewriteProjectAssets)(
                     detail.content,
                     value290,
-                    (0, runtime.PreviewAssetRewritingSlice)(value288),
+                    (0, PreviewAssetRewritingSlice)(value288),
                   );
           value291 && (value120.current = value291);
           let current: Dynamic = value115.current,
-            value294: Dynamic = (0, runtime.componentRuntimeDependencies)(
+            value294: Dynamic = (0, componentRuntimeDependencies)(
               value290,
               value2,
               current,
@@ -1453,11 +1526,11 @@ export function installCanvasArtboardFrame(
             ),
             value295: Dynamic = Object.keys(value294);
           ((input3?: Dynamic, options?: Dynamic): Dynamic => {
-            let value296: Dynamic = (0, runtime.createPreviewHandle)(
+            let value296: Dynamic = (0, createPreviewHandle)(
               value84.current,
             );
             if (!value296) return;
-            let value297: Dynamic = `${value295.length > 0 ? `window.__dcFiles=Object.assign(window.__dcFiles||{},${JSON.stringify(options)});` : ""}${(0, runtime.updateComponentRuntimeScript)(value2, detail, input3)}${detail.kind === "html" ? runtime.PickerBridgeLabel : ""}`;
+            let value297: Dynamic = `${value295.length > 0 ? `window.__dcFiles=Object.assign(window.__dcFiles||{},${JSON.stringify(options)});` : ""}${(0, updateComponentRuntimeScript)(value2, detail, input3)}${detail.kind === "html" ? PickerBridgeLabel : ""}`;
             value291 &&
               !detail.streaming &&
               (value153.current && clearTimeout(value153.current),
@@ -1481,16 +1554,16 @@ export function installCanvasArtboardFrame(
               (): Dynamic => {},
             );
           })(
-            (0, runtime.normalizeBlobAssetPaths)(value293),
-            (0, runtime.normalizeProjectBlobPaths)(value294),
+            (0, normalizeBlobAssetPaths)(value293),
+            (0, normalizeProjectBlobPaths)(value294),
           );
         },
       );
       let value154: Dynamic = "loadState" in value15,
-        value155: Dynamic = (0, runtime.reactCanvasShape.useContext)(
-          runtime.CanvasWorkingStateContext,
+        value155: Dynamic = (0, reactCanvasShape.useContext)(
+          CanvasWorkingStateContext,
         ),
-        value156: Dynamic = (0, runtime.reactCanvasShape.useRef)(
+        value156: Dynamic = (0, reactCanvasShape.useRef)(
           value155?.peekEpoch(value2),
         ),
         callback: Dynamic = (
@@ -1498,11 +1571,11 @@ export function installCanvasArtboardFrame(
           options?: Dynamic,
           context?: Dynamic,
         ): Dynamic =>
-          (0, runtime.adoptModelAndRelocateSelection)({
+          (0, adoptModelAndRelocateSelection)({
             adopt: context,
             own: (): Dynamic => {
               let value286: Dynamic = value159.current.state(input2);
-              return input2 === (0, runtime.artboardComponentName)(value2) &&
+              return input2 === (0, artboardComponentName)(value2) &&
                 value286?.path === value2
                 ? value286.model
                 : undefined;
@@ -1531,7 +1604,7 @@ export function installCanvasArtboardFrame(
                 options2,
               ),
           }),
-        value157: Dynamic = (0, runtime.useDcModel)("appifact", value2, {
+        value157: Dynamic = (0, useDcModel)("appifact", value2, {
           enabled: true,
           historyKeeper: value155 ?? undefined,
           get historyEpoch(): Dynamic {
@@ -1547,7 +1620,7 @@ export function installCanvasArtboardFrame(
             value39?.(value2);
           },
           holdPush: (input2?: Dynamic): Dynamic =>
-            input2 === (0, runtime.artboardComponentName)(value2) &&
+            input2 === (0, artboardComponentName)(value2) &&
             value131.current.holdFrame?.("push") === true,
           onPushLive: (input2?: Dynamic): Dynamic => {
             value132.current += 1;
@@ -1607,7 +1680,7 @@ export function installCanvasArtboardFrame(
               value131.current.onWriteError
                 ? value131.current.onWriteError(input2)
                 : value(
-                    (0, runtime.fileCapFailureMessage)(input2) ??
+                    (0, fileCapFailureMessage)(input2) ??
                       uiMessage("canvas.artboardFrame.couldnTSaveEditsIn") +
                         value2 +
                         " \u2014 focus that artboard to retry.",
@@ -1627,7 +1700,7 @@ export function installCanvasArtboardFrame(
             },
             onWriteReverted: (input2?: Dynamic, options?: Dynamic): Dynamic =>
               value(
-                (0, runtime.fileCapFailureMessage)(options) ??
+                (0, fileCapFailureMessage)(options) ??
                   uiMessage("canvas.artboardFrame.couldnTSaveThatChange"),
                 "error",
               ),
@@ -1637,7 +1710,7 @@ export function installCanvasArtboardFrame(
       value133.current = value157.adoptExternal;
       value147.current = value157.noteOwnWrite;
       let { installGen: value158 }: Dynamic = (0,
-      runtime.useArtboardRuntimeInstallation)(
+      useArtboardRuntimeInstallation)(
         value84,
         value91,
         value23,
@@ -1646,28 +1719,28 @@ export function installCanvasArtboardFrame(
         false,
         value83,
       );
-      (0, runtime.reactCanvasShape.useEffect)((): Dynamic => {
+      (0, reactCanvasShape.useEffect)((): Dynamic => {
         if (value158 === 0) return;
-        let value286: Dynamic = (0, runtime.createPreviewHandle)(
+        let value286: Dynamic = (0, createPreviewHandle)(
           value84.current,
         );
         if (value286) {
-          (0, runtime.setPickerInteractive)(
+          (0, setPickerInteractive)(
             value286,
             value71 ? "scroll" : value72 ? "play" : true,
           );
           let value287: Dynamic = value13?.current;
           value287 !== undefined &&
             value287 !== 1 &&
-            (0, runtime.setPickerHostScale)(value286, value287);
+            (0, setPickerHostScale)(value286, value287);
         }
       }, [value158, value13, value71, value72]);
-      (0, runtime.reactCanvasShape.useEffect)((): Dynamic => {
+      (0, reactCanvasShape.useEffect)((): Dynamic => {
         if (!value71 || value91 === 0 || (!value5 && !value6)) return;
         let value286: Dynamic = value84.current?.contentWindow;
         if (value286)
           return (
-            (0, runtime.observePageScrollAndPointer)(
+            (0, observePageScrollAndPointer)(
               value286,
               (input2?: Dynamic, options?: Dynamic): Dynamic =>
                 value5?.(value2, input2, options),
@@ -1676,16 +1749,16 @@ export function installCanvasArtboardFrame(
             ) ?? undefined
           );
       }, [value71, value91, value2, value5, value6]);
-      let value159: Dynamic = (0, runtime.reactCanvasShape.useRef)(value157);
+      let value159: Dynamic = (0, reactCanvasShape.useRef)(value157);
       value159.current = value157;
-      let value160: Dynamic = (0, runtime.reactCanvasShape.useRef)(value148);
+      let value160: Dynamic = (0, reactCanvasShape.useRef)(value148);
       value160.current = value148;
-      let value161: Dynamic = (0, runtime.reactCanvasShape.useRef)(value53);
+      let value161: Dynamic = (0, reactCanvasShape.useRef)(value53);
       value161.current = value53;
-      let value162: Dynamic = (0, runtime.reactCanvasShape.useCallback)(
+      let value162: Dynamic = (0, reactCanvasShape.useCallback)(
           (input2?: Dynamic, options?: Dynamic): Dynamic => {
             let current: Dynamic = value160.current,
-              value286: Dynamic = (0, runtime.getPropCurrentValue)(
+              value286: Dynamic = (0, getPropCurrentValue)(
                 current,
                 input2,
               ),
@@ -1693,7 +1766,7 @@ export function installCanvasArtboardFrame(
                 options === undefined
                   ? current.propsMeta[input2]?.default
                   : options;
-            (0, runtime.equalPropValues)(value286, value287) ||
+            (0, equalPropValues)(value286, value287) ||
               value161.current?.(
                 value2,
                 {
@@ -1705,13 +1778,13 @@ export function installCanvasArtboardFrame(
               );
             current.setProp(
               input2,
-              (0, runtime.overridePropDefault)(current, input2, options),
+              (0, overridePropDefault)(current, input2, options),
             );
           },
           [value2],
         ),
         value163: Dynamic = (0,
-        runtime.reactCanvasShape.useCallback)((): Dynamic => {
+        reactCanvasShape.useCallback)((): Dynamic => {
           let current: Dynamic = value160.current,
             state2: Dynamic = {},
             state3: Dynamic = {};
@@ -1729,39 +1802,39 @@ export function installCanvasArtboardFrame(
           reset: value163,
           autoSavesDefaults: value154,
         },
-        value164: Dynamic = (0, runtime.reactCanvasShape.useRef)(value52);
+        value164: Dynamic = (0, reactCanvasShape.useRef)(value52);
       value164.current = value52;
-      let value165: Dynamic = (0, runtime.reactCanvasShape.useCallback)(
+      let value165: Dynamic = (0, reactCanvasShape.useCallback)(
           (input2?: Dynamic): Dynamic => value164.current?.(value2, input2),
           [value2],
         ),
-        value166: Dynamic = (0, runtime.reactCanvasShape.useCallback)(
+        value166: Dynamic = (0, reactCanvasShape.useCallback)(
           (input2?: Dynamic): Dynamic => {
             let current: Dynamic = value160.current;
             for (let [value286, value287] of Object.entries(input2) as Dynamic)
               current.setProp(
                 value286,
-                (0, runtime.overridePropDefault)(current, value286, value287),
+                (0, overridePropDefault)(current, value286, value287),
               );
           },
           [],
         ),
-        value167: Dynamic = (0, runtime.reactCanvasShape.useRef)(value23),
-        value168: Dynamic = (0, runtime.reactCanvasShape.useRef)(value82);
+        value167: Dynamic = (0, reactCanvasShape.useRef)(value23),
+        value168: Dynamic = (0, reactCanvasShape.useRef)(value82);
       value168.current = value82;
       value167.current = value23;
-      (0, runtime.reactCanvasShape.useEffect)((): Dynamic => {
+      (0, reactCanvasShape.useEffect)((): Dynamic => {
         !(value23 || (value137 && value78)) ||
           value54 === undefined ||
           (value156.current !== value54 &&
             ((value156.current = value54),
-            (0, runtime.resetModelBaselines)(value159.current)));
+            (0, resetModelBaselines)(value159.current)));
       }, [value23, value137, value78, value54]);
-      let value169: Dynamic = (0, runtime.reactCanvasShape.useMemo)(
-          (): Dynamic => (0, runtime.artboardComponentName)(value2),
+      let value169: Dynamic = (0, reactCanvasShape.useMemo)(
+          (): Dynamic => (0, artboardComponentName)(value2),
           [value2],
         ),
-        value170: Dynamic = (0, runtime.reactCanvasShape.useCallback)(
+        value170: Dynamic = (0, reactCanvasShape.useCallback)(
           (input2?: Dynamic): Dynamic => {
             if (input2 !== value169) return null;
             let value286: Dynamic = value159.current.state(input2);
@@ -1769,7 +1842,7 @@ export function installCanvasArtboardFrame(
           },
           [value169, value2],
         ),
-        value171: Dynamic = (0, runtime.reactCanvasShape.useCallback)(
+        value171: Dynamic = (0, reactCanvasShape.useCallback)(
           (input2?: Dynamic, options?: Dynamic): Dynamic => {
             let value286: Dynamic = value170(input2);
             return !value286 || !value286.model.element(options)
@@ -1778,22 +1851,22 @@ export function installCanvasArtboardFrame(
           },
           [value170],
         ),
-        value172: Dynamic = (0, runtime.reactCanvasShape.useCallback)(
+        value172: Dynamic = (0, reactCanvasShape.useCallback)(
           (input2?: Dynamic): Dynamic =>
-            (0, runtime.getTextListKind)(
+            (0, getTextListKind)(
               value170(value169)?.model.element(input2),
             ),
           [value170, value169],
         ),
-        value173: Dynamic = (0, runtime.reactCanvasShape.useCallback)(
+        value173: Dynamic = (0, reactCanvasShape.useCallback)(
           (input2?: Dynamic): Dynamic => {
             input2 === value169 && value159.current.ensureModel(input2);
           },
           [value169],
         ),
-        value174: Dynamic = (0, runtime.reactCanvasShape.useRef)(null),
+        value174: Dynamic = (0, reactCanvasShape.useRef)(null),
         value175: Dynamic = (0,
-        runtime.reactCanvasShape.useCallback)((): Dynamic => {
+        reactCanvasShape.useCallback)((): Dynamic => {
           let current: Dynamic = value174.current;
           if (current) return current;
           let value286: Dynamic = value159.current
@@ -1808,7 +1881,7 @@ export function installCanvasArtboardFrame(
           value174.current = value286;
           return value286;
         }, [value169]),
-        value176: Dynamic = (0, runtime.reactCanvasShape.useCallback)(
+        value176: Dynamic = (0, reactCanvasShape.useCallback)(
           (input2?: Dynamic, options?: Dynamic, context?: Dynamic): Dynamic => {
             let value286: Dynamic = value170(input2);
             return !value286 || !value286.model.element(options)
@@ -1817,26 +1890,26 @@ export function installCanvasArtboardFrame(
           },
           [value170],
         ),
-        value177: Dynamic = (0, runtime.reactCanvasShape.useCallback)(
+        value177: Dynamic = (0, reactCanvasShape.useCallback)(
           (input2?: Dynamic, options?: Dynamic): Dynamic => {
             let value286: Dynamic = value170(value169);
             if (!value286) return null;
-            let value287: Dynamic = (0, runtime.copySelectedElementsHtml)(
+            let value287: Dynamic = (0, copySelectedElementsHtml)(
               value286.model,
               input2,
             );
             value287 != null &&
               options?.lift &&
-              (value287 = (0, runtime.flattenSelectionTemplates)(
+              (value287 = (0, flattenSelectionTemplates)(
                 value286.model,
                 input2,
-                (0, runtime.positionPastedHtml)(value287, options.lift),
+                (0, positionPastedHtml)(value287, options.lift),
               ));
             if (value287 == null || !options?.bakeProps) return value287;
             let state2: Dynamic = {};
             try {
               let value291: Dynamic = JSON.parse(
-                (0, runtime.getDcPropsJson)(value286.src) ?? "{}",
+                (0, getDcPropsJson)(value286.src) ?? "{}",
               );
               value291 &&
                 typeof value291 == "object" &&
@@ -1848,15 +1921,15 @@ export function installCanvasArtboardFrame(
             let values: Dynamic = value160.current.values,
               value288: Dynamic = value286.pendingProps ?? {},
               value289: Dynamic = options?.vals,
-              value290: Dynamic = (0, runtime.getLoopTemplateVariables)(
+              value290: Dynamic = (0, getLoopTemplateVariables)(
                 value287,
               );
-            return (0, runtime.flattenTemplateValues)(
+            return (0, flattenTemplateValues)(
               value287,
               (input3?: Dynamic): Dynamic => {
                 if (
                   input3.startsWith("$") ||
-                  runtime.ClipboardTemplateFlatteningTrueFalseNullSet.has(
+                  ClipboardTemplateFlatteningTrueFalseNullSet.has(
                     input3,
                   )
                 )
@@ -1878,14 +1951,14 @@ export function installCanvasArtboardFrame(
           },
           [value170, value169],
         ),
-        value178: Dynamic = (0, runtime.reactCanvasShape.useCallback)(
+        value178: Dynamic = (0, reactCanvasShape.useCallback)(
           async (input2?: Dynamic): Promise<Dynamic> => {
             let value286: Dynamic = await value159.current.mutate(
               value169,
               (input3?: Dynamic, options?: Dynamic): Dynamic =>
                 options.path !== value2
                   ? false
-                  : (0, runtime.deleteModelElements)(options, input2) > 0,
+                  : (0, deleteModelElements)(options, input2) > 0,
               {
                 structural: true,
               },
@@ -1894,19 +1967,19 @@ export function installCanvasArtboardFrame(
           },
           [value169, value2],
         ),
-        value179: Dynamic = (0, runtime.reactCanvasShape.useCallback)(
+        value179: Dynamic = (0, reactCanvasShape.useCallback)(
           async (input2?: Dynamic): Promise<Dynamic> => {
             let value286: Dynamic = await value159.current.mutate(
               value169,
               (input3?: Dynamic, options?: Dynamic): Dynamic => {
                 if (
                   options.path !== value2 ||
-                  (0, runtime.containsUneditableSelection)(options.model, [
+                  (0, containsUneditableSelection)(options.model, [
                     ...input2,
                   ])
                 )
                   return false;
-                let value287: Dynamic = (0, runtime.selectedRootElementIds)(
+                let value287: Dynamic = (0, selectedRootElementIds)(
                   options.model,
                   [...input2],
                 ).filter(
@@ -1929,19 +2002,19 @@ export function installCanvasArtboardFrame(
           },
           [value169, value2],
         ),
-        value180: Dynamic = (0, runtime.reactCanvasShape.useCallback)(
+        value180: Dynamic = (0, reactCanvasShape.useCallback)(
           async (input2?: Dynamic, options?: Dynamic): Promise<Dynamic> => {
             let value286: Dynamic =
               await value159.current.ensureModel(value169);
             if (!value286 || value286.path !== value2) return null;
             let model: Dynamic = value286.model;
             return options === "children"
-              ? (0, runtime.selectionChildren)(model, input2)
+              ? (0, selectionChildren)(model, input2)
               : options === "parents"
-                ? (0, runtime.selectionParents)(model, input2)
+                ? (0, selectionParents)(model, input2)
                 : options === "siblings"
-                  ? (0, runtime.selectionSiblingIds)(model, input2)
-                  : (0, runtime.selectionAdjacentSiblings)(
+                  ? (0, selectionSiblingIds)(model, input2)
+                  : (0, selectionAdjacentSiblings)(
                       model,
                       input2,
                       options,
@@ -1949,8 +2022,8 @@ export function installCanvasArtboardFrame(
           },
           [value169, value2],
         ),
-        value181: Dynamic = (0, runtime.reactCanvasShape.useRef)(null),
-        value182: Dynamic = (0, runtime.reactCanvasShape.useCallback)(
+        value181: Dynamic = (0, reactCanvasShape.useRef)(null),
+        value182: Dynamic = (0, reactCanvasShape.useCallback)(
           async (
             input2?: Dynamic,
             options?: Dynamic,
@@ -1971,13 +2044,13 @@ export function installCanvasArtboardFrame(
               await value159.current.ensureModel(value169);
             if (!value287 || value287.path !== value2) return state2;
             let { targets: value288 }: Dynamic = (0,
-            runtime.promotedSvgSelection)(value287.model, input2);
+            promotedSvgSelection)(value287.model, input2);
             if (value288.length === 0) return state2;
             if (
-              (0, runtime.canMovePositionedSelection)(value287.model, value288)
+              (0, canMovePositionedSelection)(value287.model, value288)
             ) {
               if (
-                !(0, runtime.hasPositionedSelectionAxes)(
+                !(0, hasPositionedSelectionAxes)(
                   value287.model,
                   value288,
                   options,
@@ -1991,7 +2064,7 @@ export function installCanvasArtboardFrame(
                 value294: Dynamic =
                   current != null &&
                   current.key === value292 &&
-                  value293 - current.at < runtime.ModelModelStateLimit &&
+                  value293 - current.at < ModelModelStateLimit &&
                   value287.undo.length === current.depth &&
                   value287.undo[current.depth - 1] === current.top,
                 value295: Dynamic = await value159.current.mutate(
@@ -1999,7 +2072,7 @@ export function installCanvasArtboardFrame(
                   (input3?: Dynamic, options2?: Dynamic): Dynamic =>
                     options2.path !== value2
                       ? false
-                      : ((0, runtime.nudgeModelSelection)(
+                      : ((0, nudgeModelSelection)(
                           input3,
                           value288,
                           options,
@@ -2035,7 +2108,7 @@ export function installCanvasArtboardFrame(
                   value287.model.element(input3) != null,
               );
             if (
-              !(0, runtime.canReorderSelection)(
+              !(0, canReorderSelection)(
                 value287.model,
                 value290,
                 options < 0 || context < 0 ? -1 : 1,
@@ -2048,7 +2121,7 @@ export function installCanvasArtboardFrame(
               (input3?: Dynamic, options2?: Dynamic): Dynamic =>
                 options2.path !== value2
                   ? false
-                  : ((value289 = (0, runtime.reorderModelSelection)(
+                  : ((value289 = (0, reorderModelSelection)(
                       input3,
                       value290,
                       options < 0 || context < 0 ? -1 : 1,
@@ -2063,16 +2136,16 @@ export function installCanvasArtboardFrame(
               value289 == null
               ? state2
               : {
-                  tids: (0, runtime.modelIdsFromElements)(value289),
+                  tids: (0, modelIdsFromElements)(value289),
                   did: "reordered",
                 };
           },
           [value169, value2],
         ),
-        value183: Dynamic = (0, runtime.reactCanvasShape.useRef)(
+        value183: Dynamic = (0, reactCanvasShape.useRef)(
           Promise.resolve(),
         ),
-        value184: Dynamic = (0, runtime.reactCanvasShape.useCallback)(
+        value184: Dynamic = (0, reactCanvasShape.useCallback)(
           (
             input2?: Dynamic,
             options?: Dynamic,
@@ -2104,18 +2177,18 @@ export function installCanvasArtboardFrame(
           },
           [value182],
         ),
-        value185: Dynamic = (0, runtime.reactCanvasShape.useCallback)(
+        value185: Dynamic = (0, reactCanvasShape.useCallback)(
           async (input2?: Dynamic): Promise<Dynamic> => {
             let value286: Dynamic =
                 await value159.current.ensureModel(value169),
-              value287: Dynamic = (0, runtime.createPreviewHandle)(
+              value287: Dynamic = (0, createPreviewHandle)(
                 value84.current,
               );
             if (!value286 || value286.path !== value2 || !value287) return null;
             let value288: Dynamic = input2.map(
                 (input3?: Dynamic): Dynamic => value286.model.element(input3),
               ),
-              value289: Dynamic = await (0, runtime.inspectFlipSelection)(
+              value289: Dynamic = await (0, inspectFlipSelection)(
                 value286.model,
                 input2,
                 (
@@ -2123,7 +2196,7 @@ export function installCanvasArtboardFrame(
                   options?: Dynamic,
                   context?: Dynamic,
                 ): Dynamic =>
-                  (0, runtime.inspectPickerSelection)(
+                  (0, inspectPickerSelection)(
                     value287,
                     input3,
                     value169,
@@ -2134,7 +2207,7 @@ export function installCanvasArtboardFrame(
                     },
                   ),
               );
-            return (0, runtime.selectionNeedsFlipInspection)(
+            return (0, selectionNeedsFlipInspection)(
               value286.model,
               input2,
               value289,
@@ -2148,7 +2221,7 @@ export function installCanvasArtboardFrame(
           },
           [value169, value2],
         ),
-        value186: Dynamic = (0, runtime.reactCanvasShape.useCallback)(
+        value186: Dynamic = (0, reactCanvasShape.useCallback)(
           async (
             { tids: tids, picked: picked, facts: facts }: Dynamic,
             options?: Dynamic,
@@ -2165,7 +2238,7 @@ export function installCanvasArtboardFrame(
                       input2.element(input3) !== picked[options3],
                   )
                     ? false
-                    : ((state2 = (0, runtime.flipModelSelection)(
+                    : ((state2 = (0, flipModelSelection)(
                         input2,
                         tids,
                         options,
@@ -2191,10 +2264,10 @@ export function installCanvasArtboardFrame(
           },
           [value169, value2],
         ),
-        value187: Dynamic = (0, runtime.reactCanvasShape.useRef)(
+        value187: Dynamic = (0, reactCanvasShape.useRef)(
           Promise.resolve(),
         ),
-        value188: Dynamic = (0, runtime.reactCanvasShape.useCallback)(
+        value188: Dynamic = (0, reactCanvasShape.useCallback)(
           (input2?: Dynamic): Dynamic => {
             let value286: Dynamic = value187.current.then(input2, input2);
             value187.current = value286.catch((): Dynamic => {});
@@ -2202,11 +2275,11 @@ export function installCanvasArtboardFrame(
           },
           [],
         ),
-        value189: Dynamic = (0, runtime.reactCanvasShape.useCallback)(
+        value189: Dynamic = (0, reactCanvasShape.useCallback)(
           (input2?: Dynamic, options?: Dynamic): Dynamic => {
             let entries: Dynamic = new Map();
             for (let [value286, value287] of input2 as Dynamic) {
-              let value288: Dynamic = (0, runtime.normalizeStyleEdits)(
+              let value288: Dynamic = (0, normalizeStyleEdits)(
                 value287,
               );
               value288.length > 0 && entries.set(value286, value288);
@@ -2220,7 +2293,7 @@ export function installCanvasArtboardFrame(
                       if (options2.path !== value2) return false;
                       let flag2: Dynamic = false,
                         value287: Dynamic = (0,
-                        runtime.arrowSnapshotsForPropertyChange)(
+                        arrowSnapshotsForPropertyChange)(
                           options2.model,
                           entries.keys(),
                           [...entries.values()]
@@ -2236,7 +2309,7 @@ export function installCanvasArtboardFrame(
                               value291,
                             ) && (flag2 = true);
                       flag2 &&
-                        (0, runtime.restoreArrowSnapshots)(
+                        (0, restoreArrowSnapshots)(
                           options2.model,
                           value287,
                         );
@@ -2246,8 +2319,8 @@ export function installCanvasArtboardFrame(
                         ].flat() as Dynamic) {
                           let value290: Dynamic =
                             value288 === "font-family" && value289
-                              ? (0, runtime.knownWebFontFamily)(
-                                  (0, runtime.firstFontFamily)(value289),
+                              ? (0, knownWebFontFamily)(
+                                  (0, firstFontFamily)(value289),
                                 )
                               : undefined;
                           value290 !== undefined &&
@@ -2265,7 +2338,7 @@ export function installCanvasArtboardFrame(
           },
           [value169, value2, value188],
         ),
-        value190: Dynamic = (0, runtime.reactCanvasShape.useCallback)(
+        value190: Dynamic = (0, reactCanvasShape.useCallback)(
           (): Dynamic =>
             value159.current
               .ensureModel(value169)
@@ -2277,8 +2350,8 @@ export function installCanvasArtboardFrame(
               ),
           [value169, value2],
         ),
-        value191: Dynamic = (0, runtime.reactCanvasShape.useRef)(null),
-        value192: Dynamic = (0, runtime.reactCanvasShape.useCallback)(
+        value191: Dynamic = (0, reactCanvasShape.useRef)(null),
+        value192: Dynamic = (0, reactCanvasShape.useCallback)(
           (input2?: Dynamic): Dynamic => {
             let value286: Dynamic = input2.map(
               (input3?: Dynamic): Dynamic => ({
@@ -2286,7 +2359,7 @@ export function installCanvasArtboardFrame(
                 value:
                   input3.value === null
                     ? null
-                    : (0, runtime.isSafeBackgroundStyle)(
+                    : (0, isSafeBackgroundStyle)(
                         input3.prop,
                         input3.value,
                       ),
@@ -2295,7 +2368,7 @@ export function installCanvasArtboardFrame(
             return value286.length === 0 ||
               value286.some(
                 (input3?: Dynamic, options?: Dynamic): Dynamic =>
-                  !runtime.CssEditValidationBackgroundBackgroundColorSet.has(
+                  !CssEditValidationBackgroundBackgroundColorSet.has(
                     input3.prop,
                   ) ||
                   (input2[options].value !== null && input3.value === null),
@@ -2312,7 +2385,7 @@ export function installCanvasArtboardFrame(
                       current != null &&
                       value287 != null &&
                       current.key === value288 &&
-                      value289 - current.at < runtime.ModelModelStateLimit &&
+                      value289 - current.at < ModelModelStateLimit &&
                       value287.undo.length === current.depth &&
                       value287.undo[current.depth - 1] === current.top,
                     value291: Dynamic = await value159.current.mutate(
@@ -2342,15 +2415,15 @@ export function installCanvasArtboardFrame(
           },
           [value169, value2, value188, value170],
         ),
-        value193: Dynamic = (0, runtime.reactCanvasShape.useRef)(null),
+        value193: Dynamic = (0, reactCanvasShape.useRef)(null),
         value194: Dynamic = (0,
-        runtime.reactCanvasShape.useCallback)((): Dynamic => {
+        reactCanvasShape.useCallback)((): Dynamic => {
           value188((): Dynamic => {
             let value286: Dynamic = value170(value169);
             value193.current = value286 ? value286.model.serialize() : null;
           });
         }, [value188, value170, value169]),
-        value195: Dynamic = (0, runtime.reactCanvasShape.useCallback)(
+        value195: Dynamic = (0, reactCanvasShape.useCallback)(
           (): Dynamic =>
             value188((): Dynamic => {
               let current: Dynamic = value193.current;
@@ -2361,17 +2434,17 @@ export function installCanvasArtboardFrame(
             }),
           [value188, value169],
         ),
-        [value196, value197]: Dynamic = (0, runtime.reactCanvasShape.useState)(
+        [value196, value197]: Dynamic = (0, reactCanvasShape.useState)(
           null,
         ),
-        value198: Dynamic = (0, runtime.reactCanvasShape.useRef)(null),
-        value199: Dynamic = (0, runtime.reactCanvasShape.useRef)(false),
-        value200: Dynamic = (0, runtime.reactCanvasShape.useRef)(0),
+        value198: Dynamic = (0, reactCanvasShape.useRef)(null),
+        value199: Dynamic = (0, reactCanvasShape.useRef)(false),
+        value200: Dynamic = (0, reactCanvasShape.useRef)(0),
         value201: Dynamic = (0,
-        runtime.reactCanvasShape.useCallback)((): Dynamic => {
+        reactCanvasShape.useCallback)((): Dynamic => {
           let [items, items2]: Dynamic = [value198.current, value170(value169)],
             value286: Dynamic = parseInt(
-              items?.el.getAttribute(runtime.DcTplAttribute) ?? "",
+              items?.el.getAttribute(DcTplAttribute) ?? "",
               10,
             );
           return items &&
@@ -2381,8 +2454,8 @@ export function installCanvasArtboardFrame(
             ? value286
             : null;
         }, [value169, value170]),
-        value202: Dynamic = (0, runtime.reactCanvasShape.useRef)(new WeakMap()),
-        value203: Dynamic = (0, runtime.reactCanvasShape.useCallback)(
+        value202: Dynamic = (0, reactCanvasShape.useRef)(new WeakMap()),
+        value203: Dynamic = (0, reactCanvasShape.useCallback)(
           (input2?: Dynamic): Dynamic => {
             let value286: Dynamic = (value202.current.get(input2) ?? 0) + 1;
             value202.current.set(input2, value286);
@@ -2390,7 +2463,7 @@ export function installCanvasArtboardFrame(
           },
           [],
         ),
-        value204: Dynamic = (0, runtime.reactCanvasShape.useCallback)(
+        value204: Dynamic = (0, reactCanvasShape.useCallback)(
           (element?: Dynamic, options?: Dynamic): Dynamic => (
             value203(element),
             value188(
@@ -2399,7 +2472,7 @@ export function installCanvasArtboardFrame(
                   value169,
                   (input2?: Dynamic, options2?: Dynamic): Dynamic => {
                     let value286: Dynamic = parseInt(
-                      element.getAttribute(runtime.DcTplAttribute) ?? "",
+                      element.getAttribute(DcTplAttribute) ?? "",
                       10,
                     );
                     return options2.path !== value2 ||
@@ -2421,34 +2494,34 @@ export function installCanvasArtboardFrame(
           ),
           [value2, value169, value188, value203],
         ),
-        value205: Dynamic = (0, runtime.reactCanvasShape.useRef)(value204);
+        value205: Dynamic = (0, reactCanvasShape.useRef)(value204);
       value205.current = value204;
-      let value206: Dynamic = (0, runtime.reactCanvasShape.useCallback)(
+      let value206: Dynamic = (0, reactCanvasShape.useCallback)(
           (input2?: Dynamic): Dynamic => {
             let current: Dynamic = value198.current;
             if (!current) return;
             let value286: Dynamic = value201() !== null;
             value198.current = null;
             value197(null);
-            (0, runtime.updateElementSessionState)(value2, {
+            (0, updateElementSessionState)(value2, {
               cropping: null,
             });
-            let value287: Dynamic = (0, runtime.createPreviewHandle)(
+            let value287: Dynamic = (0, createPreviewHandle)(
               value84.current,
             );
-            value287 && (0, runtime.setPickerScrubbing)(value287, false);
+            value287 && (0, setPickerScrubbing)(value287, false);
             let callback5: Dynamic = (): Dynamic => {
                 if (value287)
                   for (let value290 of current.tids as Dynamic)
-                    (0, runtime.unpatchPickerStyle)(
+                    (0, unpatchPickerStyle)(
                       value287,
                       value169,
                       [value290],
                       current.token,
                     );
               },
-              value288: Dynamic = (0, runtime.normalizeStyleEdits)(
-                (0, runtime.imageCropStyleEdits)(
+              value288: Dynamic = (0, normalizeStyleEdits)(
+                (0, imageCropStyleEdits)(
                   current.at.frame,
                   current.at.natural,
                   current.live,
@@ -2458,7 +2531,7 @@ export function installCanvasArtboardFrame(
             input2 &&
               value289 &&
               !value286 &&
-              ((0, runtime.announce)(
+              ((0, announce)(
                 uiMessage("canvas.artboardFrame.thePictureChangedWhileYou"),
               ),
               value(
@@ -2469,35 +2542,35 @@ export function installCanvasArtboardFrame(
             if (current.closed !== "wrote") return callback5();
             value199.current = true;
             value103.current = null;
-            (0, runtime.updateElementSessionState)(value2, {
+            (0, updateElementSessionState)(value2, {
               target: null,
             });
             value204(current.el, value288)
               .then((input3?: Dynamic): Dynamic => {
                 input3 === "applied" || input3 === "applied-dirty"
-                  ? (0, runtime.announce)("Cropped.", {
+                  ? (0, announce)("Cropped.", {
                       ifIdle: true,
                     })
                   : callback5();
               }, callback5)
               .finally((): Dynamic => {
                 value199.current = false;
-                value287 && (0, runtime.repostPickerChrome)(value287);
+                value287 && (0, repostPickerChrome)(value287);
               });
           },
           [value2, value169, value201, value204, value],
         ),
         value207: Dynamic = value137 === true && !value83,
-        value208: Dynamic = (0, runtime.reactCanvasShape.useRef)(value207);
+        value208: Dynamic = (0, reactCanvasShape.useRef)(value207);
       value208.current = value207;
-      let value209: Dynamic = (0, runtime.reactCanvasShape.useCallback)(
+      let value209: Dynamic = (0, reactCanvasShape.useCallback)(
           (input2?: Dynamic, options: Dynamic = false): Dynamic => {
             if (value198.current) return value206(true);
             let current: Dynamic = value103.current,
               value286: Dynamic = value170(value169)
                 ?.model.tagName(input2)
                 ?.toLowerCase(),
-              value287: Dynamic = (0, runtime.createPreviewHandle)(
+              value287: Dynamic = (0, createPreviewHandle)(
                 value84.current,
               );
             if (
@@ -2506,8 +2579,8 @@ export function installCanvasArtboardFrame(
               !value287 ||
               !current?.media ||
               current.media.tid !== input2 ||
-              (0, runtime.SessionElementStateGet)(value2).target === null ||
-              "off" in (0, runtime.SessionElementStateGet)(value2).target ||
+              (0, SessionElementStateGet)(value2).target === null ||
+              "off" in (0, SessionElementStateGet)(value2).target ||
               (value286 !== "img" && value286 !== "video")
             )
               return;
@@ -2518,10 +2591,10 @@ export function installCanvasArtboardFrame(
                 w: current.w * (1 - value289.inset[0] - value289.inset[2]),
                 h: current.h * (1 - value289.inset[1] - value289.inset[3]),
               },
-              value290: Dynamic = (0, runtime.MediaObjectCropEvery)(
+              value290: Dynamic = (0, MediaObjectCropEvery)(
                 state2,
                 value289,
-                (0, runtime.cropFromObjectStyles)(
+                (0, cropFromObjectStyles)(
                   state2,
                   value289,
                   value289.view,
@@ -2532,15 +2605,15 @@ export function installCanvasArtboardFrame(
                   (document as Dynamic).activeElement.tagName === "IFRAME" &&
                   (document as Dynamic).activeElement.blur(),
                 (window as Dynamic).focus())
-              : (0, runtime.focusCanvasDocument)();
+              : (0, focusCanvasDocument)();
             let value291: Dynamic = "crop-" + String(Date.now());
-            (0, runtime.setPickerScrubbing)(value287, true);
-            (0, runtime.patchPickerStyle)(
+            (0, setPickerScrubbing)(value287, true);
+            (0, patchPickerStyle)(
               value287,
               value169,
               [input2],
               Object.fromEntries(
-                (0, runtime.imageCropStyleEdits)(
+                (0, imageCropStyleEdits)(
                   state2,
                   value289,
                   value290,
@@ -2561,8 +2634,8 @@ export function installCanvasArtboardFrame(
               el: value288,
               live: value290,
               wrote: JSON.stringify(
-                (0, runtime.normalizeStyleEdits)(
-                  (0, runtime.imageCropStyleEdits)(state2, value289, value290),
+                (0, normalizeStyleEdits)(
+                  (0, imageCropStyleEdits)(state2, value289, value290),
                 ),
               ),
               at: {
@@ -2575,36 +2648,36 @@ export function installCanvasArtboardFrame(
             };
             let value292: Dynamic =
                 value170(value169)?.model.attributes(input2)?.src,
-              value293: Dynamic = (0, runtime.MediaObjectCropSupports)()
+              value293: Dynamic = (0, MediaObjectCropSupports)()
                 ? undefined
-                : runtime.ThisBrowserCanTZoomAPictureMessage;
+                : ThisBrowserCanTZoomAPictureMessage;
             value197({
               tid: input2,
               live: value290,
               src:
-                (0, runtime.inlineImageUrl)(value292) ??
+                (0, inlineImageUrl)(value292) ??
                 (value292 !== undefined
-                  ? (0, runtime.inlineImagePreview)(value292)
+                  ? (0, inlineImagePreview)(value292)
                   : null),
               noZoom: value293,
             });
-            (0, runtime.updateElementSessionState)(value2, {
+            (0, updateElementSessionState)(value2, {
               cropping: input2,
             });
           },
           [value2, value169, value170, value207, value206],
         ),
         value210: Dynamic = (0,
-        runtime.reactCanvasShape.useCallback)((): Dynamic => {
+        reactCanvasShape.useCallback)((): Dynamic => {
           let [items, items2, items3]: Dynamic = [
             value198.current,
-            (0, runtime.createPreviewHandle)(value84.current),
+            (0, createPreviewHandle)(value84.current),
             value201(),
           ];
           return !items || !items2 || items3 === null
             ? false
             : (items3 === items.tid ||
-                ((0, runtime.unpatchPickerStyle)(
+                ((0, unpatchPickerStyle)(
                   items2,
                   value169,
                   [items.tid],
@@ -2612,12 +2685,12 @@ export function installCanvasArtboardFrame(
                 ),
                 (items.tid = items3),
                 items.tids.add(items3),
-                (0, runtime.patchPickerStyle)(
+                (0, patchPickerStyle)(
                   items2,
                   value169,
                   [items3],
                   Object.fromEntries(
-                    (0, runtime.imageCropStyleEdits)(
+                    (0, imageCropStyleEdits)(
                       items.at.frame,
                       items.at.natural,
                       items.live,
@@ -2637,32 +2710,32 @@ export function installCanvasArtboardFrame(
                       tid: items3,
                     },
                 ),
-                (0, runtime.updateElementSessionState)(value2, {
+                (0, updateElementSessionState)(value2, {
                   cropping: items3,
                 })),
               true);
         }, [value2, value169, value201]),
-        value211: Dynamic = (0, runtime.reactCanvasShape.useRef)(value210);
+        value211: Dynamic = (0, reactCanvasShape.useRef)(value210);
       value211.current = value210;
-      let value212: Dynamic = (0, runtime.reactCanvasShape.useRef)(value206);
+      let value212: Dynamic = (0, reactCanvasShape.useRef)(value206);
       value212.current = value206;
-      let value213: Dynamic = (0, runtime.reactCanvasShape.useRef)(value209);
+      let value213: Dynamic = (0, reactCanvasShape.useRef)(value209);
       value213.current = value209;
-      (0, runtime.reactCanvasShape.useEffect)(
+      (0, reactCanvasShape.useEffect)(
         (): Dynamic => (): Dynamic => value212.current(false),
         [],
       );
-      (0, runtime.reactCanvasShape.useEffect)((): Dynamic => {
+      (0, reactCanvasShape.useEffect)((): Dynamic => {
         value207 || value212.current(false);
       }, [value207]);
-      (0, runtime.reactCanvasShape.useEffect)(
+      (0, reactCanvasShape.useEffect)(
         (): Dynamic => (): Dynamic => value212.current(false),
         [value93],
       );
-      (0, runtime.reactCanvasShape.useEffect)((): Dynamic => {
+      (0, reactCanvasShape.useEffect)((): Dynamic => {
         value23 !== true && value212.current(true);
       }, [value23]);
-      let value214: Dynamic = (0, runtime.reactCanvasShape.useMemo)(
+      let value214: Dynamic = (0, reactCanvasShape.useMemo)(
           (): Dynamic =>
             value196 && {
               tid: value196.tid,
@@ -2675,17 +2748,17 @@ export function installCanvasArtboardFrame(
                 context?: Dynamic,
               ): Dynamic => {
                 let current: Dynamic = value198.current,
-                  value286: Dynamic = (0, runtime.createPreviewHandle)(
+                  value286: Dynamic = (0, createPreviewHandle)(
                     value84.current,
                   );
                 if (!(!current || !value286 || !value210())) {
                   if (
                     input2.zoom > current.live.zoom &&
-                    (0, runtime.MediaObjectCropZoom)(options, context, input2)
+                    (0, MediaObjectCropZoom)(options, context, input2)
                   ) {
                     Date.now() - value200.current > 2e3 &&
-                      (0, runtime.announce)(
-                        runtime.YouCanTCropAnyFurtherAtMessage,
+                      (0, announce)(
+                        YouCanTCropAnyFurtherAtMessage,
                       );
                     value200.current = Date.now();
                     return;
@@ -2702,12 +2775,12 @@ export function installCanvasArtboardFrame(
                         live: input2,
                       },
                   );
-                  (0, runtime.holdPickerStyle)(
+                  (0, holdPickerStyle)(
                     value286,
                     value169,
                     [current.tid],
                     Object.fromEntries(
-                      (0, runtime.imageCropStyleEdits)(
+                      (0, imageCropStyleEdits)(
                         options,
                         context,
                         input2,
@@ -2733,7 +2806,7 @@ export function installCanvasArtboardFrame(
             },
           [value196, value169, value210, value206, value9],
         ),
-        value215: Dynamic = (0, runtime.reactCanvasShape.useCallback)(
+        value215: Dynamic = (0, reactCanvasShape.useCallback)(
           (input2?: Dynamic): Dynamic => {
             let value286: Dynamic = value170(value169);
             if (!value286) return [];
@@ -2754,10 +2827,10 @@ export function installCanvasArtboardFrame(
                 callback5: Dynamic = (input3?: Dynamic): Dynamic =>
                   value289 === "img"
                     ? (value288.getAttribute("alt") ?? "")
-                    : (0, runtime.extractVisibleElementText)(value288, {
+                    : (0, extractVisibleElementText)(value288, {
                         visits: input3,
                       }),
-                value290: Dynamic = (0, runtime.isTextCapableElement)(
+                value290: Dynamic = (0, isTextCapableElement)(
                   value288,
                   value286.model.isTextEditable(value287),
                 );
@@ -2771,7 +2844,7 @@ export function installCanvasArtboardFrame(
           },
           [value170, value169],
         ),
-        value216: Dynamic = (0, runtime.reactCanvasShape.useCallback)(
+        value216: Dynamic = (0, reactCanvasShape.useCallback)(
           (input2?: Dynamic): Dynamic => {
             let value286: Dynamic = value170(value169);
             return value286
@@ -2785,7 +2858,7 @@ export function installCanvasArtboardFrame(
                       value288: Dynamic = value286.model.isTextEditable(input3);
                     return {
                       tid: input3,
-                      kind: (0, runtime.isTextCapableElement)(
+                      kind: (0, isTextCapableElement)(
                         value287,
                         value288,
                       ),
@@ -2797,7 +2870,7 @@ export function installCanvasArtboardFrame(
           },
           [value170, value169],
         ),
-        value217: Dynamic = (0, runtime.reactCanvasShape.useCallback)(
+        value217: Dynamic = (0, reactCanvasShape.useCallback)(
           async (
             input2?: Dynamic,
             options: Dynamic = "root-end",
@@ -2815,7 +2888,7 @@ export function installCanvasArtboardFrame(
                           .topLevelTags(input4)
                           .filter(
                             (input5?: Dynamic): Dynamic =>
-                              !runtime.SelectionActionsHelmetScHelmetPattern.test(
+                              !SelectionActionsHelmetScHelmetPattern.test(
                                 input5,
                               ),
                           ).length === 1
@@ -2823,12 +2896,12 @@ export function installCanvasArtboardFrame(
                           : null,
                       value291: Dynamic =
                         value290 != null || options === "page"
-                          ? (0, runtime.emptyArtboardDropTarget)(
+                          ? (0, emptyArtboardDropTarget)(
                               options2.model,
                               input4,
                             )
                           : null,
-                      value292: Dynamic = (0, runtime.pasteParentTarget)(
+                      value292: Dynamic = (0, pasteParentTarget)(
                         options,
                         value290,
                         value291,
@@ -2836,19 +2909,19 @@ export function installCanvasArtboardFrame(
                       ),
                       value293: Dynamic =
                         options === "root-end" &&
-                        (0, runtime.containsFlowPastedElements)(
+                        (0, containsFlowPastedElements)(
                           value292 != null,
                           input4,
                         ),
                       value294: Dynamic = value291
                         ? value291.placement
                         : options === "stage"
-                          ? (0, runtime.defaultInsertionPoint)(
+                          ? (0, defaultInsertionPoint)(
                               options2.model,
                               input4,
                             )
                           : value293
-                            ? (0, runtime.insertionPointForSelection)(
+                            ? (0, insertionPointForSelection)(
                                 options2.model,
                                 [],
                                 input4,
@@ -2859,7 +2932,7 @@ export function installCanvasArtboardFrame(
                               };
                     return {
                       html: value292
-                        ? (0, runtime.positionPastedHtml)(input4, value292)
+                        ? (0, positionPastedHtml)(input4, value292)
                         : input4,
                       placement: value294,
                     };
@@ -2867,19 +2940,19 @@ export function installCanvasArtboardFrame(
                   value286: Dynamic = callback5(input2),
                   value287: Dynamic =
                     options === "stage"
-                      ? (0, runtime.wrapInlinePastedHtml)(input2)
+                      ? (0, wrapInlinePastedHtml)(input2)
                       : input2,
                   value288: Dynamic =
                     value287 !== input2 ? callback5(value287) : null,
                   value289: Dynamic =
                     value288 &&
-                    (0, runtime.sameInsertionPoint)(
+                    (0, sameInsertionPoint)(
                       value288.placement,
                       value286.placement,
                     )
                       ? value288
                       : value286;
-                items = (0, runtime.insertHtmlIntoModel)(
+                items = (0, insertHtmlIntoModel)(
                   options2,
                   value289.html,
                   value289.placement,
@@ -2894,17 +2967,17 @@ export function installCanvasArtboardFrame(
           },
           [value169, value2],
         ),
-        value218: Dynamic = (0, runtime.reactCanvasShape.useCallback)(
+        value218: Dynamic = (0, reactCanvasShape.useCallback)(
           (
             input2?: Dynamic,
             options?: Dynamic,
             context?: Dynamic,
             value286?: Dynamic,
           ): Dynamic => {
-            let value287: Dynamic = (0, runtime.createPreviewHandle)(
+            let value287: Dynamic = (0, createPreviewHandle)(
               value84.current,
             );
-            return (0, runtime.placeElementAtMeasuredPoint)(
+            return (0, placeElementAtMeasuredPoint)(
               {
                 state: (): Dynamic => value170(value169),
                 measure: (
@@ -2913,7 +2986,7 @@ export function installCanvasArtboardFrame(
                   context2?: Dynamic,
                 ): Dynamic =>
                   value287
-                    ? (0, runtime.requestInsertionContainerTransform)(
+                    ? (0, requestInsertionContainerTransform)(
                         value287,
                         value169,
                         input3,
@@ -2944,27 +3017,27 @@ export function installCanvasArtboardFrame(
           },
           [value170, value169, value2],
         ),
-        value219: Dynamic = (0, runtime.reactCanvasShape.useCallback)(
+        value219: Dynamic = (0, reactCanvasShape.useCallback)(
           (input2?: Dynamic, options?: Dynamic, context?: Dynamic): Dynamic =>
             value218(input2, options, context, (): Dynamic => null),
           [value218],
         ),
-        value220: Dynamic = (0, runtime.reactCanvasShape.useCallback)(
+        value220: Dynamic = (0, reactCanvasShape.useCallback)(
           (input2?: Dynamic): Dynamic => {
-            let value286: Dynamic = (0, runtime.createPreviewHandle)(
+            let value286: Dynamic = (0, createPreviewHandle)(
               value84.current,
             );
-            value286 && (0, runtime.formatPickerText)(value286, input2);
+            value286 && (0, formatPickerText)(value286, input2);
           },
           [],
         ),
-        value221: Dynamic = (0, runtime.reactCanvasShape.useCallback)(
+        value221: Dynamic = (0, reactCanvasShape.useCallback)(
           (input2?: Dynamic, options?: Dynamic, context?: Dynamic): Dynamic => {
-            let value286: Dynamic = (0, runtime.createPreviewHandle)(
+            let value286: Dynamic = (0, createPreviewHandle)(
               value84.current,
             );
             value286 &&
-              (0, runtime.startPickerTextEdit)(
+              (0, startPickerTextEdit)(
                 value286,
                 options,
                 input2,
@@ -2974,7 +3047,7 @@ export function installCanvasArtboardFrame(
           [],
         ),
         value222: Dynamic = (0,
-        runtime.reactCanvasShape.useCallback)((): Dynamic => {
+        reactCanvasShape.useCallback)((): Dynamic => {
           if (value170(value169)?.model.findDeckStage() != null) return true;
           try {
             return (
@@ -2986,19 +3059,19 @@ export function installCanvasArtboardFrame(
           }
         }, [value170, value169]),
         value223: Dynamic = (0,
-        runtime.reactCanvasShape.useCallback)((): Dynamic => {
+        reactCanvasShape.useCallback)((): Dynamic => {
           let value286: Dynamic = value170(value169);
           return value286
-            ? (0, runtime.collectFontFamilies)(value286.model.serialize())
+            ? (0, collectFontFamilies)(value286.model.serialize())
             : [];
         }, [value170, value169]),
-        value224: Dynamic = (0, runtime.reactCanvasShape.useRef)(null),
+        value224: Dynamic = (0, reactCanvasShape.useRef)(null),
         value225: Dynamic = (0,
-        runtime.reactCanvasShape.useCallback)((): Dynamic => {
+        reactCanvasShape.useCallback)((): Dynamic => {
           let value286: Dynamic = value170(value169),
             current: Dynamic = value224.current,
             value287: Dynamic = value286?.stampGen ?? -1,
-            value288: Dynamic = (0, runtime.getDesignSystemColorVariables)();
+            value288: Dynamic = (0, getDesignSystemColorVariables)();
           if (
             current &&
             value286 &&
@@ -3010,19 +3083,19 @@ export function installCanvasArtboardFrame(
             return current.census;
           let value289: Dynamic = value286 ? value286.model.serialize() : "",
             state2: Dynamic = {
-              fonts: value286 ? (0, runtime.collectFontFamilies)(value289) : [],
+              fonts: value286 ? (0, collectFontFamilies)(value289) : [],
               webfonts: value286
-                ? (0, runtime.collectGoogleFontFamilies)(value289)
+                ? (0, collectGoogleFontFamilies)(value289)
                 : [],
-              sizes: value286 ? (0, runtime.collectFontSizes)(value289) : [],
+              sizes: value286 ? (0, collectFontSizes)(value289) : [],
               colors: value286
-                ? (0, runtime.collectColorTokens)(value289, value288)
+                ? (0, collectColorTokens)(value289, value288)
                 : new Map(),
               roles: value286
-                ? (0, runtime.collectFontSizeFamilyUsage)(value289)
+                ? (0, collectFontSizeFamilyUsage)(value289)
                 : new Map(),
               families: value286
-                ? (0, runtime.collectTypographyRoles)(value289)
+                ? (0, collectTypographyRoles)(value289)
                 : new Map(),
             };
           value224.current = value286
@@ -3036,9 +3109,9 @@ export function installCanvasArtboardFrame(
             : null;
           return state2;
         }, [value170, value169]),
-        value226: Dynamic = (0, runtime.reactCanvasShape.useCallback)(
+        value226: Dynamic = (0, reactCanvasShape.useCallback)(
           async (input2?: Dynamic, options?: Dynamic): Promise<Dynamic> => {
-            if (!(0, runtime.validatePastedAttributeEdits)(options))
+            if (!(0, validatePastedAttributeEdits)(options))
               return false;
             let flag2: Dynamic = false;
             await value159.current.mutate(
@@ -3072,9 +3145,9 @@ export function installCanvasArtboardFrame(
           },
           [value169, value2],
         ),
-        value227: Dynamic = (0, runtime.reactCanvasShape.useCallback)(
+        value227: Dynamic = (0, reactCanvasShape.useCallback)(
           async (input2?: Dynamic, options?: Dynamic): Promise<Dynamic> => {
-            if (!(0, runtime.validatePastedAttributeEdits)(options))
+            if (!(0, validatePastedAttributeEdits)(options))
               return false;
             value212.current(false);
             let value286: Dynamic = await value159.current.mutate(
@@ -3089,7 +3162,7 @@ export function installCanvasArtboardFrame(
                 ) as Dynamic)
                   options2.model.setAttribute(input2, value288, value289);
                 if (
-                  (0, runtime.MediaObjectCropTest)(
+                  (0, MediaObjectCropTest)(
                     (input4?: Dynamic): Dynamic =>
                       options2.model.inlineStyleValue(input2, input4),
                   )
@@ -3110,12 +3183,12 @@ export function installCanvasArtboardFrame(
           },
           [value169, value2],
         ),
-        value228: Dynamic = (0, runtime.reactCanvasShape.useCallback)(
+        value228: Dynamic = (0, reactCanvasShape.useCallback)(
           (input2?: Dynamic): Dynamic => {
             try {
-              return (0, runtime.findPreviewMediaElement)(
+              return (0, findPreviewMediaElement)(
                 value84.current?.contentDocument,
-                runtime.DcTplAttribute,
+                DcTplAttribute,
                 input2,
                 value169,
               );
@@ -3125,18 +3198,18 @@ export function installCanvasArtboardFrame(
           },
           [value169],
         ),
-        value229: Dynamic = (0, runtime.reactCanvasShape.useCallback)(
+        value229: Dynamic = (0, reactCanvasShape.useCallback)(
           (input2?: Dynamic): Dynamic => {
             let value286: Dynamic = value170(value169);
             return value286
-              ? (0, runtime.createVideoElementIdentity)(value286.model, input2)
+              ? (0, createVideoElementIdentity)(value286.model, input2)
               : null;
           },
           [value170, value169],
         ),
-        value230: Dynamic = (0, runtime.reactCanvasShape.useCallback)(
+        value230: Dynamic = (0, reactCanvasShape.useCallback)(
           async (input2?: Dynamic, options?: Dynamic): Promise<Dynamic> => {
-            if (!(0, runtime.isValidVideoDimensions)(options)) return "refused";
+            if (!(0, isValidVideoDimensions)(options)) return "refused";
             let text: Dynamic = "gone";
             value212.current(false);
             let value286: Dynamic = await value159.current.mutate(
@@ -3144,13 +3217,13 @@ export function installCanvasArtboardFrame(
               (input3?: Dynamic, options2?: Dynamic): Dynamic => {
                 if (options2.path !== value2) return false;
                 let value287: Dynamic = (0,
-                runtime.resolveVideoElementIdentity)(options2.model, input2);
+                resolveVideoElementIdentity)(options2.model, input2);
                 if (typeof value287 != "number") {
                   text = value287;
                   return false;
                 }
                 if (
-                  (0, runtime.MediaObjectCropTest)(
+                  (0, MediaObjectCropTest)(
                     (input4?: Dynamic): Dynamic =>
                       options2.model.inlineStyleValue(value287, input4),
                   )
@@ -3185,9 +3258,9 @@ export function installCanvasArtboardFrame(
           },
           [value169, value2],
         ),
-        value231: Dynamic = (0, runtime.reactCanvasShape.useRef)(null),
+        value231: Dynamic = (0, reactCanvasShape.useRef)(null),
         value232: Dynamic = (0,
-        runtime.reactCanvasShape.useCallback)((): Dynamic => {
+        reactCanvasShape.useCallback)((): Dynamic => {
           let value286: Dynamic = value159.current.state(value169);
           if (!value286) return null;
           let value287: Dynamic = value286.model.serialize(),
@@ -3204,19 +3277,19 @@ export function installCanvasArtboardFrame(
           };
           return value288;
         }, [value169]),
-        value233: Dynamic = (0, runtime.reactCanvasShape.useCallback)(
+        value233: Dynamic = (0, reactCanvasShape.useCallback)(
           async (
             input2?: Dynamic,
             options?: Dynamic,
             context: Dynamic = "plain",
             value286: Dynamic = [],
           ): Promise<Dynamic> => {
-            let value287: Dynamic = (0, runtime.createPreviewHandle)(
+            let value287: Dynamic = (0, createPreviewHandle)(
               value84.current,
             );
             if (!value287 || !(await value159.current.ensureModel(value169)))
               return null;
-            let value288: Dynamic = await (0, runtime.pickAtPoint)(
+            let value288: Dynamic = await (0, pickAtPoint)(
               value287,
               input2,
               options,
@@ -3231,7 +3304,7 @@ export function installCanvasArtboardFrame(
                     .childTids(null)
                     .filter(
                       (input3?: Dynamic): Dynamic =>
-                        !runtime.SelectionActionsHelmetScHelmetPattern.test(
+                        !SelectionActionsHelmetScHelmetPattern.test(
                           value289.model.tagName(input3) ?? "",
                         ),
                     )
@@ -3244,10 +3317,10 @@ export function installCanvasArtboardFrame(
                   : null;
               return value290.length === 0 ||
                 (value295 != null &&
-                  (0, runtime.pickerElementSignature)(
+                  (0, pickerElementSignature)(
                     value295,
                     (input3?: Dynamic): Dynamic =>
-                      (0, runtime.classifyElementStyleKind)(input3) === "text",
+                      (0, classifyElementStyleKind)(input3) === "text",
                   ))
                 ? value288
                 : null;
@@ -3256,7 +3329,7 @@ export function installCanvasArtboardFrame(
             let value291: Dynamic =
               value289.model.tagName(value288.tid)?.toLowerCase() ?? "";
             if (
-              !(0, runtime.equivalentDesignImportTags)(value291, value288.tag)
+              !(0, equivalentDesignImportTags)(value291, value288.tag)
             )
               return null;
             let value292: Dynamic =
@@ -3270,7 +3343,7 @@ export function installCanvasArtboardFrame(
                 text &&
                 value293 &&
                 value289.model.element(value288.tid)?.contains(value293) &&
-                (0, runtime.equivalentDesignImportTags)(
+                (0, equivalentDesignImportTags)(
                   value289.model.tagName(text.tid)?.toLowerCase() ?? "",
                   text.tag,
                 ) &&
@@ -3291,14 +3364,14 @@ export function installCanvasArtboardFrame(
           },
           [value169, value232],
         ),
-        value234: Dynamic = (0, runtime.reactCanvasShape.useCallback)(
+        value234: Dynamic = (0, reactCanvasShape.useCallback)(
           async (input2?: Dynamic, options?: Dynamic): Promise<Dynamic> => {
-            let value286: Dynamic = (0, runtime.createPreviewHandle)(
+            let value286: Dynamic = (0, createPreviewHandle)(
               value84.current,
             );
             if (!value286 || !(await value159.current.ensureModel(value169)))
               return null;
-            let value287: Dynamic = await (0, runtime.pickInBox)(
+            let value287: Dynamic = await (0, pickInBox)(
               value286,
               input2,
               options,
@@ -3312,7 +3385,7 @@ export function installCanvasArtboardFrame(
                       .filter(
                         (input3?: Dynamic): Dynamic =>
                           value288.model.element(input3.tid) != null &&
-                          (0, runtime.equivalentDesignImportTags)(
+                          (0, equivalentDesignImportTags)(
                             value288.model.tagName(input3.tid)?.toLowerCase() ??
                               "",
                             input3.tag,
@@ -3325,18 +3398,18 @@ export function installCanvasArtboardFrame(
           },
           [value169],
         ),
-        value235: Dynamic = (0, runtime.reactCanvasShape.useCallback)(
+        value235: Dynamic = (0, reactCanvasShape.useCallback)(
           (
             input2?: Dynamic,
             options?: Dynamic,
             context?: Dynamic,
             value286?: Dynamic,
           ): Dynamic => {
-            let value287: Dynamic = (0, runtime.createPreviewHandle)(
+            let value287: Dynamic = (0, createPreviewHandle)(
               value84.current,
             );
             return value287
-              ? ((0, runtime.setPickerSelection)(
+              ? ((0, setPickerSelection)(
                   value287,
                   input2 ? [...input2] : null,
                   options,
@@ -3349,19 +3422,19 @@ export function installCanvasArtboardFrame(
           [],
         ),
         value236: Dynamic = (0,
-        runtime.reactCanvasShape.useCallback)((): Dynamic => {
-          let value286: Dynamic = (0, runtime.createPreviewHandle)(
+        reactCanvasShape.useCallback)((): Dynamic => {
+          let value286: Dynamic = (0, createPreviewHandle)(
             value84.current,
           );
-          value286 && (0, runtime.clearPickerPart)(value286);
+          value286 && (0, clearPickerPart)(value286);
         }, []),
-        value237: Dynamic = (0, runtime.reactCanvasShape.useCallback)(
+        value237: Dynamic = (0, reactCanvasShape.useCallback)(
           (input2?: Dynamic, options?: Dynamic, context?: Dynamic): Dynamic => {
-            let value286: Dynamic = (0, runtime.createPreviewHandle)(
+            let value286: Dynamic = (0, createPreviewHandle)(
               value84.current,
             );
             value286 &&
-              (0, runtime.finishExitedPickerDrag)(
+              (0, finishExitedPickerDrag)(
                 value286,
                 input2,
                 options,
@@ -3370,35 +3443,35 @@ export function installCanvasArtboardFrame(
           },
           [],
         ),
-        value238: Dynamic = (0, runtime.reactCanvasShape.useCallback)(
+        value238: Dynamic = (0, reactCanvasShape.useCallback)(
           (input2?: Dynamic): Dynamic => {
-            let value286: Dynamic = (0, runtime.createPreviewHandle)(
+            let value286: Dynamic = (0, createPreviewHandle)(
               value84.current,
             );
-            value286 && (0, runtime.cancelPickerBox)(value286, input2);
+            value286 && (0, cancelPickerBox)(value286, input2);
           },
           [],
         ),
-        value239: Dynamic = (0, runtime.reactCanvasShape.useCallback)(
+        value239: Dynamic = (0, reactCanvasShape.useCallback)(
           (input2?: Dynamic, options?: Dynamic): Dynamic => {
-            let value286: Dynamic = (0, runtime.createPreviewHandle)(
+            let value286: Dynamic = (0, createPreviewHandle)(
               value84.current,
             );
             value286 &&
-              (0, runtime.armPickerByClick)(value286, input2, options);
+              (0, armPickerByClick)(value286, input2, options);
           },
           [],
         ),
         value240: Dynamic = (0,
-        runtime.reactCanvasShape.useCallback)((): Dynamic => {
-          let value286: Dynamic = (0, runtime.createPreviewHandle)(
+        reactCanvasShape.useCallback)((): Dynamic => {
+          let value286: Dynamic = (0, createPreviewHandle)(
             value84.current,
           );
-          value286 && (0, runtime.beginPickerTextPlacing)(value286);
+          value286 && (0, beginPickerTextPlacing)(value286);
         }, []),
-        value241: Dynamic = (0, runtime.reactCanvasShape.useCallback)(
+        value241: Dynamic = (0, reactCanvasShape.useCallback)(
           async (input2?: Dynamic, options?: Dynamic): Promise<Dynamic> => {
-            let value286: Dynamic = (0, runtime.createPreviewHandle)(
+            let value286: Dynamic = (0, createPreviewHandle)(
                 value84.current,
               ),
               value287: Dynamic = value159.current.state(value169);
@@ -3408,7 +3481,7 @@ export function installCanvasArtboardFrame(
               value287.model.element(input2.tid) !== input2.el
             )
               return;
-            let value288: Dynamic = await (0, runtime.inspectPickerSelection)(
+            let value288: Dynamic = await (0, inspectPickerSelection)(
               value286,
               input2.tid,
               value169,
@@ -3430,7 +3503,7 @@ export function installCanvasArtboardFrame(
                 }, 300);
               return;
             }
-            let value289: Dynamic = (0, runtime.frozenInheritedStyleEdits)(
+            let value289: Dynamic = (0, frozenInheritedStyleEdits)(
               input2.pinned,
               value288.computed,
               input2.freeze,
@@ -3460,7 +3533,7 @@ export function installCanvasArtboardFrame(
           },
           [value169, value2],
         ),
-        value242: Dynamic = (0, runtime.reactCanvasShape.useCallback)(
+        value242: Dynamic = (0, reactCanvasShape.useCallback)(
           async (
             input2?: Dynamic,
             options?: Dynamic,
@@ -3468,7 +3541,7 @@ export function installCanvasArtboardFrame(
             value286?: Dynamic,
             extra?: Dynamic,
           ): Promise<Dynamic> => {
-            let value287: Dynamic = (0, runtime.createPreviewHandle)(
+            let value287: Dynamic = (0, createPreviewHandle)(
               value84.current,
             );
             if (
@@ -3477,7 +3550,7 @@ export function installCanvasArtboardFrame(
               !(await value159.current.ensureModel(value169))
             )
               return null;
-            let value288: Dynamic = await (0, runtime.beginPickerMove)(
+            let value288: Dynamic = await (0, beginPickerMove)(
               value287,
               input2,
               options,
@@ -3491,7 +3564,7 @@ export function installCanvasArtboardFrame(
               !Array.isArray(value288.tids) ||
               value288.tids.length > 500
             ) {
-              (0, runtime.cancelPickerMove)(value287, input2);
+              (0, cancelPickerMove)(value287, input2);
               return null;
             }
             let value289: Dynamic = value288.tids.filter(
@@ -3505,7 +3578,7 @@ export function installCanvasArtboardFrame(
                 (input3?: Dynamic): Dynamic => extra.includes(input3),
               )
             ) {
-              (0, runtime.cancelPickerMove)(value287, input2);
+              (0, cancelPickerMove)(value287, input2);
               return null;
             }
             let value290: Dynamic = value159.current.state(value169);
@@ -3515,12 +3588,12 @@ export function installCanvasArtboardFrame(
                 (input3?: Dynamic): Dynamic => !value290.model.element(input3),
               ) ||
               typeof value288.tag != "string" ||
-              !(0, runtime.equivalentDesignImportTags)(
+              !(0, equivalentDesignImportTags)(
                 value290.model.tagName(options)?.toLowerCase() ?? "",
                 value288.tag,
               )
             ) {
-              (0, runtime.cancelPickerMove)(value287, input2);
+              (0, cancelPickerMove)(value287, input2);
               return null;
             }
             let rect: Dynamic = value288.rect,
@@ -3546,7 +3619,7 @@ export function installCanvasArtboardFrame(
               value291.w == null ||
               value291.h == null
             ) {
-              (0, runtime.cancelPickerMove)(value287, input2);
+              (0, cancelPickerMove)(value287, input2);
               return null;
             }
             let items: Dynamic = [],
@@ -3561,7 +3634,7 @@ export function installCanvasArtboardFrame(
                   !value289.includes(tid) ||
                   typeof value293.tag != "string" ||
                   !/^[a-z][a-z0-9-]{0,63}$/.test(value293.tag) ||
-                  !(0, runtime.equivalentDesignImportTags)(
+                  !(0, equivalentDesignImportTags)(
                     value290.model.tagName(tid)?.toLowerCase() ?? "",
                     value293.tag,
                   )
@@ -3607,13 +3680,13 @@ export function installCanvasArtboardFrame(
           },
           [value169],
         ),
-        value243: Dynamic = (0, runtime.reactCanvasShape.useCallback)(
+        value243: Dynamic = (0, reactCanvasShape.useCallback)(
           (input2?: Dynamic, options?: Dynamic, context?: Dynamic): Dynamic => {
-            let value286: Dynamic = (0, runtime.createPreviewHandle)(
+            let value286: Dynamic = (0, createPreviewHandle)(
               value84.current,
             );
             value286 &&
-              (0, runtime.updatePickerMove)(
+              (0, updatePickerMove)(
                 value286,
                 input2,
                 options.x,
@@ -3623,34 +3696,34 @@ export function installCanvasArtboardFrame(
           },
           [],
         ),
-        value244: Dynamic = (0, runtime.reactCanvasShape.useCallback)(
+        value244: Dynamic = (0, reactCanvasShape.useCallback)(
           (input2?: Dynamic): Dynamic => {
-            let value286: Dynamic = (0, runtime.createPreviewHandle)(
+            let value286: Dynamic = (0, createPreviewHandle)(
               value84.current,
             );
-            value286 && (0, runtime.cancelPickerMove)(value286, input2);
+            value286 && (0, cancelPickerMove)(value286, input2);
           },
           [],
         ),
         value245: Dynamic = (0,
-        runtime.reactCanvasShape.useCallback)((): Dynamic => {
-          let value286: Dynamic = (0, runtime.createPreviewHandle)(
+        reactCanvasShape.useCallback)((): Dynamic => {
+          let value286: Dynamic = (0, createPreviewHandle)(
             value84.current,
           );
-          value286 && (0, runtime.settlePickerMove)(value286);
+          value286 && (0, settlePickerMove)(value286);
         }, []),
-        value246: Dynamic = (0, runtime.reactCanvasShape.useCallback)(
+        value246: Dynamic = (0, reactCanvasShape.useCallback)(
           async (
             input2?: Dynamic,
             options?: Dynamic,
             context?: Dynamic,
             value286?: Dynamic,
           ): Promise<Dynamic> => {
-            let value287: Dynamic = (0, runtime.createPreviewHandle)(
+            let value287: Dynamic = (0, createPreviewHandle)(
               value84.current,
             );
             if (!value287) return null;
-            let value288: Dynamic = await (0, runtime.finishPickerMove)(
+            let value288: Dynamic = await (0, finishPickerMove)(
               value287,
               input2,
               options.x,
@@ -3661,11 +3734,11 @@ export function installCanvasArtboardFrame(
               typeof value288 != "object" ||
               value288.plan == null
               ? null
-              : (0, runtime.parseElementMoveSnapshot)(value288.plan, value286);
+              : (0, parseElementMoveSnapshot)(value288.plan, value286);
           },
           [],
         ),
-        value247: Dynamic = (0, runtime.reactCanvasShape.useCallback)(
+        value247: Dynamic = (0, reactCanvasShape.useCallback)(
           async (items?: Dynamic): Promise<Dynamic> => {
             if (items.length !== 1) return "refused";
             let items2: Dynamic = [],
@@ -3684,7 +3757,7 @@ export function installCanvasArtboardFrame(
                       (input3?: Dynamic): Dynamic => {
                         let value289: Dynamic =
                           input3.block ??
-                          (0, runtime.sameParentDropGroup)(
+                          (0, sameParentDropGroup)(
                             options.model,
                             input3.tid,
                             input3.group,
@@ -3701,7 +3774,7 @@ export function installCanvasArtboardFrame(
                   if (
                     value288.every(
                       (input3?: Dynamic): Dynamic =>
-                        (0, runtime.elementMoveRefusal)(
+                        (0, elementMoveRefusal)(
                           options.model,
                           input3,
                         ) === "in-place",
@@ -3711,7 +3784,7 @@ export function installCanvasArtboardFrame(
                     return false;
                   }
                   for (let value289 of value288 as Dynamic) {
-                    let value290: Dynamic = (0, runtime.moveModelElement)(
+                    let value290: Dynamic = (0, moveModelElement)(
                       options,
                       value289,
                     );
@@ -3753,7 +3826,7 @@ export function installCanvasArtboardFrame(
           [value169, value2, value241],
         ),
         value248: Dynamic = (0,
-        runtime.reactCanvasShape.useCallback)(async (): Promise<Dynamic> => {
+        reactCanvasShape.useCallback)(async (): Promise<Dynamic> => {
           if (!(await value159.current.ensureModel(value169))) return false;
           let value286: Dynamic = value159.current.state(value169);
           if (!value286) return false;
@@ -3761,7 +3834,7 @@ export function installCanvasArtboardFrame(
               .childTids(null)
               .filter(
                 (input2?: Dynamic): Dynamic =>
-                  !runtime.SelectionActionsHelmetScHelmetPattern.test(
+                  !SelectionActionsHelmetScHelmetPattern.test(
                     value286.model.tagName(input2) ?? "",
                   ),
               ),
@@ -3772,64 +3845,64 @@ export function installCanvasArtboardFrame(
           return (
             value287.length === 0 ||
             (value288 != null &&
-              (0, runtime.pickerElementSignature)(
+              (0, pickerElementSignature)(
                 value288,
                 (input2?: Dynamic): Dynamic =>
-                  (0, runtime.classifyElementStyleKind)(input2) === "text",
+                  (0, classifyElementStyleKind)(input2) === "text",
               ))
           );
         }, [value169]),
-        value249: Dynamic = (0, runtime.reactCanvasShape.useCallback)(
+        value249: Dynamic = (0, reactCanvasShape.useCallback)(
           async (input2?: Dynamic): Promise<Dynamic> => {
             if (!(await value159.current.ensureModel(value169))) return false;
             let value286: Dynamic = value159.current.state(value169);
             return (
               value286 != null &&
-              (0, runtime.emptyArtboardDropTarget)(value286.model, input2) !=
+              (0, emptyArtboardDropTarget)(value286.model, input2) !=
                 null
             );
           },
           [value169],
         ),
-        value250: Dynamic = (0, runtime.reactCanvasShape.useCallback)(
+        value250: Dynamic = (0, reactCanvasShape.useCallback)(
           async (input2?: Dynamic, options?: Dynamic): Promise<Dynamic> => {
-            let value286: Dynamic = (0, runtime.createPreviewHandle)(
+            let value286: Dynamic = (0, createPreviewHandle)(
               value84.current,
             );
             return value286
-              ? (0, runtime.pickerMoveHold)(value286, input2, options)
+              ? (0, pickerMoveHold)(value286, input2, options)
               : false;
           },
           [],
         ),
-        value251: Dynamic = (0, runtime.reactCanvasShape.useCallback)(
+        value251: Dynamic = (0, reactCanvasShape.useCallback)(
           (input2?: Dynamic): Dynamic => {
-            let value286: Dynamic = (0, runtime.createPreviewHandle)(
+            let value286: Dynamic = (0, createPreviewHandle)(
               value84.current,
             );
-            value286 && (0, runtime.exitPickerMove)(value286, input2);
+            value286 && (0, exitPickerMove)(value286, input2);
           },
           [],
         ),
-        value252: Dynamic = (0, runtime.reactCanvasShape.useCallback)(
+        value252: Dynamic = (0, reactCanvasShape.useCallback)(
           (input2?: Dynamic): Dynamic => {
-            let value286: Dynamic = (0, runtime.createPreviewHandle)(
+            let value286: Dynamic = (0, createPreviewHandle)(
               value84.current,
             );
-            value286 && (0, runtime.returnPickerMove)(value286, input2);
+            value286 && (0, returnPickerMove)(value286, input2);
           },
           [],
         ),
-        value253: Dynamic = (0, runtime.reactCanvasShape.useCallback)(
+        value253: Dynamic = (0, reactCanvasShape.useCallback)(
           (input2?: Dynamic): Dynamic => {
-            let value286: Dynamic = (0, runtime.createPreviewHandle)(
+            let value286: Dynamic = (0, createPreviewHandle)(
               value84.current,
             );
-            value286 && (0, runtime.touchPickerMove)(value286, input2);
+            value286 && (0, touchPickerMove)(value286, input2);
           },
           [],
         ),
-        value254: Dynamic = (0, runtime.reactCanvasShape.useCallback)(
+        value254: Dynamic = (0, reactCanvasShape.useCallback)(
           (
             input2?: Dynamic,
             options?: Dynamic,
@@ -3841,7 +3914,7 @@ export function installCanvasArtboardFrame(
               let value289: Dynamic = input2.element(targetTid);
               if (
                 !value289 ||
-                (0, runtime.containsUneditableSelection)(input2, [targetTid]) ||
+                (0, containsUneditableSelection)(input2, [targetTid]) ||
                 input2.isUneditable(targetTid) ||
                 value289.closest("svg") ||
                 input2.targetParentLocked(targetTid, options.position)
@@ -3857,14 +3930,14 @@ export function installCanvasArtboardFrame(
             if (
               value287 != null &&
               (input2.isTextEditable(value287) ||
-                (0, runtime.containsUneditableSelection)(input2, [value287]))
+                (0, containsUneditableSelection)(input2, [value287]))
             )
               return false;
             let value288: Dynamic =
               value287 != null
                 ? (input2.tagName(value287)?.toLowerCase() ?? "div")
                 : "div";
-            if (!(0, runtime.canContainHtmlTag)(value288, context))
+            if (!(0, canContainHtmlTag)(value288, context))
               return false;
             if (value286 != null) {
               let value289: Dynamic = input2
@@ -3873,7 +3946,7 @@ export function installCanvasArtboardFrame(
               if (
                 value289.length !== 1 ||
                 value289[0] !== context ||
-                !(0, runtime.canContainHtmlTag)(value288, value289[0])
+                !(0, canContainHtmlTag)(value288, value289[0])
               )
                 return false;
             }
@@ -3881,18 +3954,18 @@ export function installCanvasArtboardFrame(
           },
           [],
         ),
-        value255: Dynamic = (0, runtime.reactCanvasShape.useCallback)(
+        value255: Dynamic = (0, reactCanvasShape.useCallback)(
           async (
             input2?: Dynamic,
             options?: Dynamic,
             items?: Dynamic,
             value286?: Dynamic,
           ): Promise<Dynamic> => {
-            let value287: Dynamic = (0, runtime.createPreviewHandle)(
+            let value287: Dynamic = (0, createPreviewHandle)(
               value84.current,
             );
             if (!value287 || items.length > 500) return null;
-            let value288: Dynamic = await (0, runtime.planPickerDrop)(
+            let value288: Dynamic = await (0, planPickerDrop)(
                 value287,
                 input2,
                 options.x,
@@ -3900,7 +3973,7 @@ export function installCanvasArtboardFrame(
                 items,
                 value286,
               ),
-              value289: Dynamic = (0, runtime.parseGroupMoveSnapshot)(
+              value289: Dynamic = (0, parseGroupMoveSnapshot)(
                 value288,
                 items.map((input3?: Dynamic): Dynamic => input3.tid),
               );
@@ -3937,17 +4010,17 @@ export function installCanvasArtboardFrame(
           },
           [value170, value169, value254],
         ),
-        value256: Dynamic = (0, runtime.reactCanvasShape.useCallback)(
+        value256: Dynamic = (0, reactCanvasShape.useCallback)(
           (input2?: Dynamic, options: Dynamic = false): Dynamic => {
-            let value286: Dynamic = (0, runtime.createPreviewHandle)(
+            let value286: Dynamic = (0, createPreviewHandle)(
               value84.current,
             );
             value286 &&
-              (0, runtime.clearPickerDropPlan)(value286, input2, options);
+              (0, clearPickerDropPlan)(value286, input2, options);
           },
           [],
         ),
-        value257: Dynamic = (0, runtime.reactCanvasShape.useCallback)(
+        value257: Dynamic = (0, reactCanvasShape.useCallback)(
           async (
             items?: Dynamic,
             items2?: Dynamic,
@@ -3996,7 +4069,7 @@ export function installCanvasArtboardFrame(
                       let value294: Dynamic = items2[0],
                         value295: Dynamic =
                           value294.block ??
-                          (0, runtime.sameParentDropGroup)(
+                          (0, sameParentDropGroup)(
                             options.model,
                             value294.tid,
                             value294.group,
@@ -4009,14 +4082,14 @@ export function installCanvasArtboardFrame(
                               : null,
                         };
                       if (
-                        (0, runtime.elementMoveRefusal)(
+                        (0, elementMoveRefusal)(
                           options.model,
                           state2,
                         ) === "in-place"
                       )
                         value286 = "in-place";
                       else {
-                        let value296: Dynamic = (0, runtime.moveModelElement)(
+                        let value296: Dynamic = (0, moveModelElement)(
                           options,
                           state2,
                         );
@@ -4222,7 +4295,7 @@ export function installCanvasArtboardFrame(
           },
           [value169, value2, value241, value254],
         ),
-        value258: Dynamic = (0, runtime.reactCanvasShape.useCallback)(
+        value258: Dynamic = (0, reactCanvasShape.useCallback)(
           async (items?: Dynamic, options?: Dynamic): Promise<Dynamic> => {
             let value286: Dynamic = value170(value169);
             if (!value286) return "refused";
@@ -4291,28 +4364,28 @@ export function installCanvasArtboardFrame(
           [value170, value169, value2],
         ),
         value259: Dynamic = (0,
-        runtime.reactCanvasShape.useCallback)((): Dynamic => {
+        reactCanvasShape.useCallback)((): Dynamic => {
           let value286: Dynamic = value170(value169);
           return value286 ? value286.undo.length : null;
         }, [value170, value169]),
         value260: Dynamic = (0,
-        runtime.reactCanvasShape.useCallback)((): Dynamic => {
+        reactCanvasShape.useCallback)((): Dynamic => {
           let value286: Dynamic = value170(value169);
           return value286 ? (value286.undoFloor ?? 0) : null;
         }, [value170, value169]),
         value261: Dynamic = (0,
-        runtime.reactCanvasShape.useCallback)((): Dynamic => {
+        reactCanvasShape.useCallback)((): Dynamic => {
           let value286: Dynamic = value170(value169);
           return value286 ? value286.redo.length : null;
         }, [value170, value169]),
-        value262: Dynamic = (0, runtime.reactCanvasShape.useCallback)(
+        value262: Dynamic = (0, reactCanvasShape.useCallback)(
           (input2?: Dynamic): Dynamic => {
             let value286: Dynamic = value170(value169);
-            value286 && (0, runtime.trimUndoHistory)(value286, input2);
+            value286 && (0, trimUndoHistory)(value286, input2);
           },
           [value170, value169],
         ),
-        value263: Dynamic = (0, runtime.reactCanvasShape.useCallback)(
+        value263: Dynamic = (0, reactCanvasShape.useCallback)(
           (input2?: Dynamic): Dynamic => {
             let value286: Dynamic = value170(value169),
               value287: Dynamic = value286?.redo;
@@ -4331,17 +4404,17 @@ export function installCanvasArtboardFrame(
           [value170, value169],
         ),
         value264: Dynamic = (0,
-        runtime.reactCanvasShape.useCallback)(async (): Promise<Dynamic> => {
+        reactCanvasShape.useCallback)(async (): Promise<Dynamic> => {
           await value159.current.writeNow(value169);
         }, [value169, value2]),
-        value265: Dynamic = (0, runtime.reactCanvasShape.useCallback)(
+        value265: Dynamic = (0, reactCanvasShape.useCallback)(
           async (input2?: Dynamic, options?: Dynamic): Promise<Dynamic> => {
             let value286: Dynamic = value170(input2);
             if (!value286) return false;
             let length: Dynamic = value286[options].length,
               length2: Dynamic = value286.redo.length,
               model: Dynamic = value286.model,
-              value287: Dynamic = (0, runtime.applyElementUndo)(
+              value287: Dynamic = (0, applyElementUndo)(
                 value286,
                 options,
                 {
@@ -4365,7 +4438,7 @@ export function installCanvasArtboardFrame(
             return value287.kind === "prop" || value287.kind === "script"
               ? (value287.kind === "prop"
                   ? value160.current.setProp(value287.prop, value287.liveValue)
-                  : (0, runtime.emitEditorEvent)("dc-update", {
+                  : (0, emitEditorEvent)("dc-update", {
                       name: input2,
                       path: value286.path,
                       kind: "js",
@@ -4387,18 +4460,18 @@ export function installCanvasArtboardFrame(
           },
           [],
         ),
-        value266: Dynamic = (0, runtime.reactCanvasShape.useCallback)(
+        value266: Dynamic = (0, reactCanvasShape.useCallback)(
           (): Dynamic =>
             value114.current && value108.current && value84.current != null,
           [],
         ),
-        value267: Dynamic = (0, runtime.reactCanvasShape.useCallback)(
+        value267: Dynamic = (0, reactCanvasShape.useCallback)(
           (): Dynamic => value124.current != null || value125.current != null,
           [],
         ),
         value268: Dynamic = (0,
-        runtime.reactCanvasShape.useCallback)(async (): Promise<Dynamic> => {
-          let value286: Dynamic = (0, runtime.createPreviewHandle)(
+        reactCanvasShape.useCallback)(async (): Promise<Dynamic> => {
+          let value286: Dynamic = (0, createPreviewHandle)(
               value84.current,
             ),
             value287: Dynamic = value170(value169);
@@ -4406,7 +4479,7 @@ export function installCanvasArtboardFrame(
           let state2: Dynamic = {};
           try {
             let value288: Dynamic = JSON.parse(
-              (0, runtime.getDcPropsJson)(value287.src) ?? "{}",
+              (0, getDcPropsJson)(value287.src) ?? "{}",
             );
             if (
               value288 &&
@@ -4426,10 +4499,10 @@ export function installCanvasArtboardFrame(
             value287.pendingProps ?? {},
             value160.current.values,
           );
-          return (0, runtime.inspectPickerProps)(value286, state2);
+          return (0, inspectPickerProps)(value286, state2);
         }, [value266, value170, value169]),
         value269: Dynamic = (0,
-        runtime.reactCanvasShape.useCallback)(async (): Promise<Dynamic> => {
+        reactCanvasShape.useCallback)(async (): Promise<Dynamic> => {
           let value286: Dynamic =
             (await value159.current
               .ensureModel(value169)
@@ -4439,7 +4512,7 @@ export function installCanvasArtboardFrame(
             .childTids(null)
             .filter(
               (input2?: Dynamic): Dynamic =>
-                !runtime.SelectionActionsHelmetScHelmetPattern.test(
+                !SelectionActionsHelmetScHelmetPattern.test(
                   value286.model.tagName(input2) ?? "",
                 ) &&
                 !value286.model.isUneditable(input2) &&
@@ -4450,16 +4523,16 @@ export function installCanvasArtboardFrame(
             bakeProps: true,
             vals: await value268(),
           });
-          return value288 ? (0, runtime.unpositionPastedHtml)(value288) : null;
+          return value288 ? (0, unpositionPastedHtml)(value288) : null;
         }, [value170, value169, value177, value268]),
-        value270: Dynamic = (0, runtime.reactCanvasShape.useCallback)(
+        value270: Dynamic = (0, reactCanvasShape.useCallback)(
           async (input2?: Dynamic): Promise<Dynamic> => {
             let value286: Dynamic = value170(value169);
             return !value286 ||
               !value286.model.element(input2) ||
               value286.model.isUneditable(input2) ||
               value286.model.isLoopDriven(input2) ||
-              (0, runtime.promoteSvgShapeToRoot)(value286.model, input2) !==
+              (0, promoteSvgShapeToRoot)(value286.model, input2) !==
                 input2
               ? null
               : value177([input2], {
@@ -4470,13 +4543,13 @@ export function installCanvasArtboardFrame(
           [value170, value169, value177, value268],
         ),
         value271: Dynamic = (0,
-        runtime.reactCanvasShape.useCallback)(async (): Promise<Dynamic> => {
+        reactCanvasShape.useCallback)(async (): Promise<Dynamic> => {
           let value286: Dynamic = await value159.current.ensureModel(value169);
           return value286 && value286.path === value2
             ? value286.model.serialize()
             : null;
         }, [value169, value2]),
-        value272: Dynamic = (0, runtime.reactCanvasShape.useCallback)(
+        value272: Dynamic = (0, reactCanvasShape.useCallback)(
           async (input2?: Dynamic, options?: Dynamic): Promise<Dynamic> => {
             let flag2: Dynamic = false,
               flag3: Dynamic = false,
@@ -4573,7 +4646,7 @@ export function installCanvasArtboardFrame(
           },
           [value169, value2],
         );
-      (0, runtime.reactCanvasShape.useEffect)(
+      (0, reactCanvasShape.useEffect)(
         (): Dynamic => (
           value26(value2, {
             file: value2,
@@ -4730,41 +4803,41 @@ export function installCanvasArtboardFrame(
           value272,
         ],
       );
-      let value273: Dynamic = (0, runtime.reactCanvasShape.useRef)(value26);
+      let value273: Dynamic = (0, reactCanvasShape.useRef)(value26);
       value273.current = value26;
-      (0, runtime.reactCanvasShape.useEffect)(
+      (0, reactCanvasShape.useEffect)(
         (): Dynamic => (): Dynamic => value273.current(value2, null, true),
         [value2],
       );
-      (0, runtime.reactCanvasShape.useEffect)((): Dynamic => {
+      (0, reactCanvasShape.useEffect)((): Dynamic => {
         value91 > 0 && value28?.(value2, value91);
       }, [value91]);
       let [value274, value275]: Dynamic = (0,
-      runtime.reactCanvasShape.useState)(undefined);
-      (0, runtime.reactCanvasShape.useEffect)((): Dynamic => {
+      reactCanvasShape.useState)(undefined);
+      (0, reactCanvasShape.useEffect)((): Dynamic => {
         value23 && value152((input2?: Dynamic): Dynamic => input2 + 1);
       }, [value23]);
-      (0, runtime.reactCanvasShape.useEffect)((): Dynamic => {
+      (0, reactCanvasShape.useEffect)((): Dynamic => {
         if (!value29 || value29.length === 0) {
           value275(undefined);
           return;
         }
         if (value91 === 0) return;
-        let value286: Dynamic = (0, runtime.createPreviewHandle)(
+        let value286: Dynamic = (0, createPreviewHandle)(
           value84.current,
         );
         if (value286)
-          return (0, runtime.observePickerCssVariables)(
+          return (0, observePickerCssVariables)(
             value286,
             value29,
             (input2?: Dynamic): Dynamic =>
               value275(
                 (input3?: Dynamic): Dynamic =>
-                  (0, runtime.sameStringSet)(input3, input2) ? input3 : input2,
+                  (0, sameStringSet)(input3, input2) ? input3 : input2,
               ),
           );
       }, [value91, value29, value151]);
-      (0, runtime.reactCanvasShape.useEffect)(
+      (0, reactCanvasShape.useEffect)(
         (): Dynamic => (
           value30?.(value2, value274),
           (): Dynamic => value30?.(value2, undefined)
@@ -4772,37 +4845,37 @@ export function installCanvasArtboardFrame(
         [value2, value274, value30],
       );
       let value276: Dynamic = value95 != null || value97 != null;
-      (0, runtime.reactCanvasShape.useEffect)((): Dynamic => {
+      (0, reactCanvasShape.useEffect)((): Dynamic => {
         value31?.(value2, value276);
       }, [value276]);
-      let value277: Dynamic = (0, runtime.reactCanvasShape.useRef)(value32);
+      let value277: Dynamic = (0, reactCanvasShape.useRef)(value32);
       value277.current = value32;
-      (0, runtime.reactCanvasShape.useEffect)((): Dynamic => {
+      (0, reactCanvasShape.useEffect)((): Dynamic => {
         value277.current?.(
           value2,
-          (0, runtime.artboardLoadErrorMessages)(value97, value95, value99),
+          (0, artboardLoadErrorMessages)(value97, value95, value99),
         );
       }, [value2, value97, value95, value99]);
-      (0, runtime.reactCanvasShape.useEffect)(
+      (0, reactCanvasShape.useEffect)(
         (): Dynamic => (): Dynamic =>
-          value277.current?.(value2, runtime.emptyArtboardErrors),
+          value277.current?.(value2, emptyArtboardErrors),
         [value2],
       );
       let value278: Dynamic = value137 && !value23 && value78,
         value279: Dynamic = (value23 === true || value278 === true) && value106;
-      (0, runtime.reactCanvasShape.useEffect)((): Dynamic => {
+      (0, reactCanvasShape.useEffect)((): Dynamic => {
         value102.current?.(null);
       }, [value93]);
-      (0, runtime.reactCanvasShape.useEffect)((): Dynamic => {
+      (0, reactCanvasShape.useEffect)((): Dynamic => {
         if (!value279) return;
-        let value286: Dynamic = (0, runtime.createPreviewHandle)(
+        let value286: Dynamic = (0, createPreviewHandle)(
           value84.current,
         );
-        value286 && (0, runtime.repostPickerChrome)(value286);
+        value286 && (0, repostPickerChrome)(value286);
       }, [value279, value82]);
       let callback2: Dynamic = (event?: Dynamic): Dynamic => {
           if (!value77 || !value8) return;
-          let value286: Dynamic = (0, runtime.createPreviewHandle)(
+          let value286: Dynamic = (0, createPreviewHandle)(
             value84.current,
           );
           if (!value286) return;
@@ -4810,20 +4883,20 @@ export function installCanvasArtboardFrame(
           event.stopPropagation();
           let bounds: Dynamic = value77.getBoundingClientRect(),
             value287: Dynamic = bounds.width > 0 ? bounds.width / value8.w : 1;
-          (0, runtime.pickerContextMenuAt)(
+          (0, pickerContextMenuAt)(
             value286,
             (event.clientX - bounds.left) / value287,
             (event.clientY - bounds.top) / value287,
           );
         },
-        value280: Dynamic = (0, runtime.reactCanvasShape.useRef)(false),
+        value280: Dynamic = (0, reactCanvasShape.useRef)(false),
         callback3: Dynamic = (
           items?: Dynamic,
           options?: Dynamic,
           context?: Dynamic,
         ): Dynamic => {
           let current: Dynamic = value198.current,
-            value286: Dynamic = (0, runtime.createPreviewHandle)(
+            value286: Dynamic = (0, createPreviewHandle)(
               value84.current,
             ),
             current2: Dynamic = value103.current;
@@ -4835,7 +4908,7 @@ export function installCanvasArtboardFrame(
             !value8 ||
             value280.current ||
             !value210() ||
-            !(0, runtime.canStartCanvasDrag)(options)
+            !(0, canStartCanvasDrag)(options)
           )
             return true;
           options.stopPropagation();
@@ -4872,7 +4945,7 @@ export function installCanvasArtboardFrame(
             }: Dynamic = context,
             [items6, items7, items8]: Dynamic = [
               current.live,
-              (0, runtime.MediaObjectCropSupports)(),
+              (0, MediaObjectCropSupports)(),
               current.tid,
             ],
             callback7: Dynamic = (): Dynamic =>
@@ -4922,8 +4995,8 @@ export function installCanvasArtboardFrame(
                       : value291
                         ? "ne"
                         : "n";
-          (0, runtime.registerElementSession)(value169, current.el);
-          (0, runtime.pickerGesturePhase)(value286, {
+          (0, registerElementSession)(value169, current.el);
+          (0, pickerGesturePhase)(value286, {
             phase: "start",
             kind: "resize",
             dir: value293,
@@ -4936,7 +5009,7 @@ export function installCanvasArtboardFrame(
               options2?: Dynamic,
             ): Dynamic =>
               Object.fromEntries(
-                (0, runtime.imageCropStyleEdits)(
+                (0, imageCropStyleEdits)(
                   options2,
                   value289,
                   input2,
@@ -4988,7 +5061,7 @@ export function installCanvasArtboardFrame(
                 ],
                 callback18: Dynamic = (input3?: Dynamic): Dynamic =>
                   !items7 && input3.zoom > Math.max(1, items6.zoom) + 0.001,
-                value295: Dynamic = (0, runtime.resizeImageCropFrame)(
+                value295: Dynamic = (0, resizeImageCropFrame)(
                   value288,
                   value289,
                   items6,
@@ -4998,7 +5071,7 @@ export function installCanvasArtboardFrame(
                   items20,
                 ),
                 value296: Dynamic = callback9(value295.frame),
-                value297: Dynamic = (0, runtime.cropIntoFrame)(
+                value297: Dynamic = (0, cropIntoFrame)(
                   value288,
                   value289,
                   items6,
@@ -5007,7 +5080,7 @@ export function installCanvasArtboardFrame(
               for (let value301 of (callback18(value297) && items.length === 2
                 ? [items[1], items[0]]
                 : []) as Dynamic) {
-                let value302: Dynamic = (0, runtime.resizeImageCropFrame)(
+                let value302: Dynamic = (0, resizeImageCropFrame)(
                     value288,
                     value289,
                     items6,
@@ -5018,7 +5091,7 @@ export function installCanvasArtboardFrame(
                   ),
                   [items21, items22]: Dynamic = [
                     callback8(value301, value302.frame),
-                    (0, runtime.cropIntoFrame)(
+                    (0, cropIntoFrame)(
                       value288,
                       value289,
                       items6,
@@ -5033,7 +5106,7 @@ export function installCanvasArtboardFrame(
               let value298: Dynamic =
                 (value296.w < current.at.frame.w ||
                   value296.h < current.at.frame.h) &&
-                (0, runtime.MediaObjectCropZoom)(
+                (0, MediaObjectCropZoom)(
                   {
                     w: value296.w,
                     h: value296.h,
@@ -5043,10 +5116,10 @@ export function installCanvasArtboardFrame(
                 );
               if (callback18(value297) || value298) {
                 items12 ||
-                  (0, runtime.announce)(
+                  (0, announce)(
                     callback18(value297)
-                      ? runtime.ThisBrowserCanTZoomAPictureMessage
-                      : runtime.YouCanTCropAnyFurtherAtMessage,
+                      ? ThisBrowserCanTZoomAPictureMessage
+                      : YouCanTCropAnyFurtherAtMessage,
                   );
                 items12 = true;
                 return;
@@ -5061,12 +5134,12 @@ export function installCanvasArtboardFrame(
                   : items.includes("n")
                     ? value295.frame.y
                     : 0;
-              (0, runtime.resizePickerSelection)(
+              (0, resizePickerSelection)(
                 value286,
                 callback10(value297, value296),
               );
               items13 = true;
-              (0, runtime.pickerGesturePhase)(value286, {
+              (0, pickerGesturePhase)(value286, {
                 phase: "move",
                 kind: "resize",
                 x: value287.x + value299 * items16 - value300 * items17,
@@ -5096,7 +5169,7 @@ export function installCanvasArtboardFrame(
               );
               value280.current = false;
               value9?.("element-crop", false);
-              (0, runtime.unregisterElementSession)(
+              (0, unregisterElementSession)(
                 value169,
                 current.el,
                 items13,
@@ -5108,8 +5181,8 @@ export function installCanvasArtboardFrame(
                 (Math.abs(current.at.frame.w - value288.w) >= 0.5 ||
                   Math.abs(current.at.frame.h - value288.h) >= 0.5);
               if (value294) {
-                let value295: Dynamic = (0, runtime.normalizeStyleEdits)(
-                    (0, runtime.imageCropStyleEdits)(
+                let value295: Dynamic = (0, normalizeStyleEdits)(
+                    (0, imageCropStyleEdits)(
                       current.at.frame,
                       value289,
                       current.live,
@@ -5117,7 +5190,7 @@ export function installCanvasArtboardFrame(
                   ),
                   value296: Dynamic = JSON.stringify(value295),
                   value297: Dynamic = value203(current.el);
-                (0, runtime.registerLateGesture)(value169, items8, {
+                (0, registerLateGesture)(value169, items8, {
                   el: current.el,
                   edits: value295,
                   lapsed: (input3?: Dynamic): Dynamic => {
@@ -5125,7 +5198,7 @@ export function installCanvasArtboardFrame(
                     value198.current === current
                       ? ((current.wrote = ""),
                         callback7() &&
-                          (0, runtime.patchPickerStyle)(
+                          (0, patchPickerStyle)(
                             value286,
                             value169,
                             [current.tid],
@@ -5143,13 +5216,13 @@ export function installCanvasArtboardFrame(
                 items11 &&
                   value198.current === current &&
                   callback11(items6, value288);
-              (0, runtime.pickerGesturePhase)(value286, {
+              (0, pickerGesturePhase)(value286, {
                 phase: "end",
                 kind: "resize",
                 commit: value294,
               });
               callback7() &&
-                (0, runtime.holdPickerStyle)(
+                (0, holdPickerStyle)(
                   value286,
                   value169,
                   [current.tid],
@@ -5179,25 +5252,25 @@ export function installCanvasArtboardFrame(
           (window as Dynamic).addEventListener("keydown", callback16, true);
           return true;
         },
-        value281: Dynamic = (0, runtime.reactCanvasShape.useRef)(callback3);
+        value281: Dynamic = (0, reactCanvasShape.useRef)(callback3);
       value281.current = callback3;
-      let value282: Dynamic = (0, runtime.reactCanvasShape.useCallback)(
+      let value282: Dynamic = (0, reactCanvasShape.useCallback)(
           (input2?: Dynamic, options?: Dynamic): Dynamic => {
-            let value286: Dynamic = (0, runtime.createPreviewHandle)(
+            let value286: Dynamic = (0, createPreviewHandle)(
               value84.current,
             );
             value286 &&
-              (0, runtime.pickerPenPreview)(value286, input2, options);
+              (0, pickerPenPreview)(value286, input2, options);
           },
           [],
         ),
-        value283: Dynamic = (0, runtime.reactCanvasShape.useCallback)(
+        value283: Dynamic = (0, reactCanvasShape.useCallback)(
           (input2?: Dynamic, options?: Dynamic, context?: Dynamic): Dynamic => {
-            let value286: Dynamic = (0, runtime.createPreviewHandle)(
+            let value286: Dynamic = (0, createPreviewHandle)(
               value84.current,
             );
             value286 &&
-              (0, runtime.pickerVectorPreview)(
+              (0, pickerVectorPreview)(
                 value286,
                 input2,
                 options,
@@ -5206,17 +5279,17 @@ export function installCanvasArtboardFrame(
           },
           [],
         ),
-        value284: Dynamic = (0, runtime.reactCanvasShape.useCallback)(
+        value284: Dynamic = (0, reactCanvasShape.useCallback)(
           (input2?: Dynamic): Dynamic => value9?.("element-grip", input2),
           [value9],
         ),
         callback4: Dynamic = (source?: Dynamic, options?: Dynamic): Dynamic => {
           if (value280.current || !value77 || !value8) return;
-          let value286: Dynamic = (0, runtime.createPreviewHandle)(
+          let value286: Dynamic = (0, createPreviewHandle)(
             value84.current,
           );
-          if (!value286 || !(0, runtime.canStartCanvasDrag)(options)) return;
-          (0, runtime.focusCanvasDocument)();
+          if (!value286 || !(0, canStartCanvasDrag)(options)) return;
+          (0, focusCanvasDocument)();
           options.stopPropagation();
           value280.current = true;
           let currentTarget: Dynamic = options.currentTarget;
@@ -5241,7 +5314,7 @@ export function installCanvasArtboardFrame(
               };
             },
             value288: Dynamic = callback5(clientX, clientY);
-          (0, runtime.pickerGesturePhase)(value286, {
+          (0, pickerGesturePhase)(value286, {
             phase: "start",
             ...source,
             x: value288.x,
@@ -5260,7 +5333,7 @@ export function installCanvasArtboardFrame(
                 return;
               flag2 = true;
               let value289: Dynamic = callback5(input2.clientX, input2.clientY);
-              (0, runtime.pickerGesturePhase)(value286, {
+              (0, pickerGesturePhase)(value286, {
                 phase: "move",
                 kind: source.kind,
                 x: value289.x,
@@ -5298,7 +5371,7 @@ export function installCanvasArtboardFrame(
               );
               value280.current = false;
               value9?.("element-grip", false);
-              (0, runtime.pickerGesturePhase)(value286, {
+              (0, pickerGesturePhase)(value286, {
                 phase: "end",
                 kind: source.kind,
                 commit: input2,
@@ -5321,54 +5394,54 @@ export function installCanvasArtboardFrame(
           (window as Dynamic).addEventListener("pointercancel", callback10);
           (window as Dynamic).addEventListener("keydown", callback11, true);
         };
-      (0, runtime.reactCanvasShape.useEffect)((): Dynamic => {
+      (0, reactCanvasShape.useEffect)((): Dynamic => {
         if (value158 === 0) return;
-        let value286: Dynamic = (0, runtime.createPreviewHandle)(
+        let value286: Dynamic = (0, createPreviewHandle)(
           value84.current,
         );
         if (value286) {
-          (0, runtime.setPickerRingsOnly)(value286, value278);
+          (0, setPickerRingsOnly)(value286, value278);
           return (): Dynamic => {
-            let value287: Dynamic = (0, runtime.createPreviewHandle)(
+            let value287: Dynamic = (0, createPreviewHandle)(
               value84.current,
             );
-            value287 && (0, runtime.setPickerRingsOnly)(value287, false);
+            value287 && (0, setPickerRingsOnly)(value287, false);
           };
         }
       }, [value278, value158, value91]);
-      (0, runtime.reactCanvasShape.useEffect)(
+      (0, reactCanvasShape.useEffect)(
         (): Dynamic => (): Dynamic =>
-          (0, runtime.updateDropGhostDemand)(value2, 0),
+          (0, updateDropGhostDemand)(value2, 0),
         [value2],
       );
-      (0, runtime.reactCanvasShape.useEffect)((): Dynamic => {
+      (0, reactCanvasShape.useEffect)((): Dynamic => {
         if (value158 === 0 || !value137) return;
         let callback5: Dynamic = (): Dynamic => {
-          let value286: Dynamic = (0, runtime.createPreviewHandle)(
+          let value286: Dynamic = (0, createPreviewHandle)(
             value84.current,
           );
           value286 &&
-            (0, runtime.setPickerHiddenTags)(
+            (0, setPickerHiddenTags)(
               value286,
-              (0, runtime.getHiddenPickerTags)(),
+              (0, getHiddenPickerTags)(),
             );
         };
         callback5();
-        return (0, runtime.subscribeHiddenPickerTags)(callback5);
+        return (0, subscribeHiddenPickerTags)(callback5);
       }, [value137, value158, value91]);
-      (0, runtime.reactCanvasShape.useEffect)((): Dynamic => {
+      (0, reactCanvasShape.useEffect)((): Dynamic => {
         if (!value23 || value158 === 0) return;
         let callback5: Dynamic = (input2?: Dynamic): Dynamic => {
-            let value287: Dynamic = (0, runtime.createPreviewHandle)(
+            let value287: Dynamic = (0, createPreviewHandle)(
               value84.current,
             );
-            value287 && (0, runtime.setPickerMeasure)(value287, input2);
+            value287 && (0, setPickerMeasure)(value287, input2);
           },
           callback6: Dynamic = (input2?: Dynamic): Dynamic => {
-            let value287: Dynamic = (0, runtime.createPreviewHandle)(
+            let value287: Dynamic = (0, createPreviewHandle)(
               value84.current,
             );
-            value287 && (0, runtime.setPickerDeepSelection)(value287, input2);
+            value287 && (0, setPickerDeepSelection)(value287, input2);
           },
           callback7: Dynamic = (input2?: Dynamic): Dynamic => {
             input2.key === "Alt" &&
@@ -5381,10 +5454,10 @@ export function installCanvasArtboardFrame(
         (window as Dynamic).addEventListener("keydown", callback7, true);
         (window as Dynamic).addEventListener("keyup", callback7, true);
         (window as Dynamic).addEventListener("blur", callback8);
-        let value286: Dynamic = (0, runtime.subscribePrimaryModifierHeld)(
+        let value286: Dynamic = (0, subscribePrimaryModifierHeld)(
           callback6,
         );
-        (0, runtime.getPrimaryModifierHeld)() && callback6(true);
+        (0, getPrimaryModifierHeld)() && callback6(true);
         return (): Dynamic => {
           (window as Dynamic).removeEventListener("keydown", callback7, true);
           (window as Dynamic).removeEventListener("keyup", callback7, true);
@@ -5395,7 +5468,7 @@ export function installCanvasArtboardFrame(
         };
       }, [value23, value158, value91]);
       let value285: Dynamic = value23 ? (
-        <runtime.DesignEditorSession
+        <DesignEditorSession
           webviewRef={value84}
           projectPath={"appifact"}
           filePath={value2}
@@ -5464,18 +5537,18 @@ export function installCanvasArtboardFrame(
             "absolute inset-0 z-[15] flex items-center justify-center bg-danger p-4 text-center text-sm text-danger"
           }
           title={
-            (0, runtime.artboardLoadErrorMessage)(value97, value95) ?? (undefined)
+            (0, artboardLoadErrorMessage)(value97, value95) ?? (undefined)
           }
         >
           {uiMessage("canvas.artboardFrame.anErrorOccurred")}
         </div>
       ) : (
-        <runtime.jsx_ip.Fragment>
-          {value8 && value148.hasProps && value71 && flag && (<runtime.ViewportScaleThreshold
-              min={runtime.selectionChromeMinimumScale}
+        <jsx_ip.Fragment>
+          {value8 && value148.hasProps && value71 && flag && (<ViewportScaleThreshold
+              min={selectionChromeMinimumScale}
             >
               {(input2?: Dynamic): Dynamic => (
-                <runtime.ArtboardTweaksRow
+                <ArtboardTweaksRow
                   file={value2}
                   dcProps={state}
                   width={value8.w}
@@ -5485,7 +5558,7 @@ export function installCanvasArtboardFrame(
                   onOpenTweaks={value12}
                 />
               )}
-            </runtime.ViewportScaleThreshold>)}
+            </ViewportScaleThreshold>)}
           {false}
           {value70 && value24 && value88 != null && value126 && (<iframe
               key={value93}
@@ -5513,7 +5586,7 @@ export function installCanvasArtboardFrame(
                   );
                   return;
                 }
-                (0, runtime.setPreviewProjectRoot)(
+                (0, setPreviewProjectRoot)(
                   value84.current?.contentWindow,
                   value86?.projectRoot === undefined
                     ? undefined
@@ -5523,7 +5596,7 @@ export function installCanvasArtboardFrame(
                 if (value287.kind === "foreign") {
                   value142() ||
                     (value96(value85.blocked),
-                    (0, runtime.unblockDesignFramesReady)());
+                    (0, unblockDesignFramesReady)());
                   return;
                 }
                 (async (): Promise<Dynamic> => {
@@ -5531,7 +5604,7 @@ export function installCanvasArtboardFrame(
                     value289: Dynamic =
                       value288 == null
                         ? "dead"
-                        : await (0, runtime.probePreviewRuntime)(value288, {
+                        : await (0, probePreviewRuntime)(value288, {
                             attempts: 3,
                           });
                   if (!(value287.gen <= value123.current)) {
@@ -5539,17 +5612,17 @@ export function installCanvasArtboardFrame(
                     if (value85.blocked != null) {
                       value142() ||
                         (value96(value85.blocked),
-                        (0, runtime.unblockDesignFramesReady)());
+                        (0, unblockDesignFramesReady)());
                       return;
                     }
                     value90.current = value287.gen;
                     value287.gen === value113.current &&
                       value101.current !== value287.gen &&
-                      value100(runtime.emptyArtboardErrors);
+                      value100(emptyArtboardErrors);
                     !(
-                      (0, runtime.isFrameCaptureDocument)() &&
+                      (0, isFrameCaptureDocument)() &&
                       !value135 &&
-                      (await (0, runtime.createPreviewHandle)(
+                      (await (0, createPreviewHandle)(
                         value84.current,
                       )?.awaitSettled({
                         capMs: 1200,
@@ -5559,8 +5632,8 @@ export function installCanvasArtboardFrame(
                     ) &&
                       (value107(true),
                       value92((input2?: Dynamic): Dynamic => input2 + 1),
-                      (0, runtime.refreshDesktopRendering)(value84.current),
-                      value135 || (0, runtime.markDesignFramesReady)());
+                      (0, refreshDesktopRendering)(value84.current),
+                      value135 || (0, markDesignFramesReady)());
                   }
                 })();
               }}
@@ -5595,13 +5668,13 @@ export function installCanvasArtboardFrame(
             onPenCommit={value283}
             onPenGesture={value284}
             vectorEdit={value69}
-            board={(0, runtime.artboardContentSizeDescriptor)(
+            board={(0, artboardContentSizeDescriptor)(
               value8,
               value75,
               value76,
             )}
           />
-        </runtime.jsx_ip.Fragment>
+        </jsx_ip.Fragment>
       );
     });
   };

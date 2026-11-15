@@ -1,40 +1,21 @@
 import type * as React from "react";
 /** Restored application module; prepare first, initialize in original order. */
-import { bindRuntimeValue, type RuntimeBindings } from "../../runtime-types";
-export function installCdsHooksLayoutEffect(
-  runtime: RuntimeBindings,
-): () => void {
-  var reactHooksLayoutEffect: typeof React;
-  var useIsomorphicLayoutEffect: typeof React.useLayoutEffect;
-  var initializeHooksLayoutEffect: () => void;
-  bindRuntimeValue(
-    runtime,
-    "reactHooksLayoutEffect",
-    () => reactHooksLayoutEffect,
-    (value) => {
-      reactHooksLayoutEffect = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "useIsomorphicLayoutEffect",
-    () => useIsomorphicLayoutEffect,
-    (value) => {
-      useIsomorphicLayoutEffect = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "initializeHooksLayoutEffect",
-    () => initializeHooksLayoutEffect,
-    (value) => {
-      initializeHooksLayoutEffect = value;
-    },
-  );
+import { load_react } from "../../dependencies";
+import { initializeOnce, toModuleNamespace } from "../../module-helpers";
+
+var reactHooksLayoutEffect: typeof React;
+var useIsomorphicLayoutEffect: typeof React.useLayoutEffect;
+var initializeHooksLayoutEffect: () => void;
+export {
+  initializeHooksLayoutEffect,
+  reactHooksLayoutEffect,
+  useIsomorphicLayoutEffect,
+};
+export function installCdsHooksLayoutEffect(): () => void {
   return () => {
-    initializeHooksLayoutEffect = (0, runtime.initializeOnce)(() => {
-      reactHooksLayoutEffect = (0, runtime.toModuleNamespace)(
-        (0, runtime.load_react)(),
+    initializeHooksLayoutEffect = (0, initializeOnce)(() => {
+      reactHooksLayoutEffect = (0, toModuleNamespace)(
+        (0, load_react)(),
       );
       useIsomorphicLayoutEffect =
         typeof window !== "undefined"

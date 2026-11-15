@@ -2,106 +2,47 @@ import { useUiLocale } from '../../ui-locale.ts';
 import type { TooltipImplementation } from "../../contracts/ui";
 import type * as React from "react";
 /** Restored application module; prepare first, initialize in original order. */
-import { bindRuntimeValue, type RuntimeBindings } from "../../runtime-types";
-export function installCdsTooltipStyles(runtime: RuntimeBindings): () => void {
-  var jsxTooltipStyles: typeof import("react/jsx-runtime");
-  var TooltipStylesClassNames: string;
-  var TooltipStylesCss: string;
-  var tooltipPopupClasses: string;
-  var TooltipStylesLabel: string;
-  var TooltipStylesCss_2: string;
-  var TooltipStylesLabel_2: string;
-  var initializeTooltipStyles: () => void;
-  var tooltipImplementationExports: Partial<TooltipImplementation>;
-  function DarkScope({
-    children: children,
-  }: React.PropsWithChildren): React.ReactElement {
-    useUiLocale();
-    return (
-      <div className={"cds-dark-scope contents"} data-mode={"dark"}>
-        {children}
-      </div>
-    );
-  }
-  bindRuntimeValue(runtime, "DarkScope", () => DarkScope);
-  bindRuntimeValue(
-    runtime,
-    "jsxTooltipStyles",
-    () => jsxTooltipStyles,
-    (value) => {
-      jsxTooltipStyles = value;
-    },
+import { load_react_jsx_runtime } from "../../dependencies";
+import { initializeOnce, toModuleNamespace } from "../../module-helpers";
+
+var jsxTooltipStyles: typeof import("react/jsx-runtime");
+var TooltipStylesClassNames: string;
+var TooltipStylesCss: string;
+var tooltipPopupClasses: string;
+var TooltipStylesLabel: string;
+var TooltipStylesCss_2: string;
+var TooltipStylesLabel_2: string;
+var initializeTooltipStyles: () => void;
+var tooltipImplementationExports: Partial<TooltipImplementation>;
+function DarkScope({
+  children: children,
+}: React.PropsWithChildren): React.ReactElement {
+  useUiLocale();
+  return (
+    <div className={"cds-dark-scope contents"} data-mode={"dark"}>
+      {children}
+    </div>
   );
-  bindRuntimeValue(
-    runtime,
-    "TooltipStylesClassNames",
-    () => TooltipStylesClassNames,
-    (value) => {
-      TooltipStylesClassNames = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "TooltipStylesCss",
-    () => TooltipStylesCss,
-    (value) => {
-      TooltipStylesCss = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "tooltipPopupClasses",
-    () => tooltipPopupClasses,
-    (value) => {
-      tooltipPopupClasses = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "TooltipStylesLabel",
-    () => TooltipStylesLabel,
-    (value) => {
-      TooltipStylesLabel = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "TooltipStylesCss_2",
-    () => TooltipStylesCss_2,
-    (value) => {
-      TooltipStylesCss_2 = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "TooltipStylesLabel_2",
-    () => TooltipStylesLabel_2,
-    (value) => {
-      TooltipStylesLabel_2 = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "initializeTooltipStyles",
-    () => initializeTooltipStyles,
-    (value) => {
-      initializeTooltipStyles = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "tooltipImplementationExports",
-    () => tooltipImplementationExports,
-    (value) => {
-      tooltipImplementationExports = value;
-    },
-  );
+}
+export {
+  DarkScope,
+  initializeTooltipStyles,
+  jsxTooltipStyles,
+  tooltipImplementationExports,
+  tooltipPopupClasses,
+  TooltipStylesClassNames,
+  TooltipStylesCss,
+  TooltipStylesCss_2,
+  TooltipStylesLabel,
+  TooltipStylesLabel_2,
+};
+export function installCdsTooltipStyles(): () => void {
   return () => {
-    initializeTooltipStyles = (0, runtime.initializeOnce)(() => {
+    initializeTooltipStyles = (0, initializeOnce)(() => {
       "use client";
 
-      jsxTooltipStyles = (0, runtime.toModuleNamespace)(
-        (0, runtime.load_react_jsx_runtime)(),
+      jsxTooltipStyles = (0, toModuleNamespace)(
+        (0, load_react_jsx_runtime)(),
       );
       TooltipStylesClassNames =
         "rounded-[calc(0.375rem*var(--cds-rem-scale,1))] bg-[var(--cds-tooltip-bg)] text-[var(--cds-tooltip-fg)] shadow-sm dark:shadow-panel-sm text-[calc(0.8125rem*var(--cds-rem-scale,1))]/[calc(1.125rem*var(--cds-rem-scale,1))] font-normal";

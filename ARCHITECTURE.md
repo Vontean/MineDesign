@@ -77,7 +77,7 @@ flowchart TB
 | --- | --- |
 | `apps/design-editor/` | 设计稿编辑器浏览器入口；先安装 host，再启动 runtime。含 Vite 配置、构建和第三方许可收集 |
 | `apps/design-system-editor/` | 设计系统编辑器浏览器入口；同时提供组件预览 runner 与 React 18 静态资源 |
-| `packages/design-runtime/` | 设计稿浏览器实现：画布、属性、预览、DCLogic、导出、worker；`src/generated/` 由构建生成 |
+| `packages/design-runtime/` | 设计稿浏览器实现：画布、属性、预览、DCLogic、导出、worker；`src/generated/` 由构建生成。文件之间用 import 表达依赖，分层与反向依赖的现状见 [runtime 模块划分](docs/runtime-modules.md) |
 | `packages/design-system-runtime/` | 设计系统浏览器实现：章节、token、排版、组件、素材、预览与文档 |
 | `packages/editor-host/src/shared/` | 浏览器 HTTP 文件客户端、发布/上传/flush、SSE、批注、chat 桥、语言标签与宿主能力类型 |
 | `packages/editor-host/src/design/` | 设计稿宿主安装、下载桥与 MineDesign 反馈桥（feedback-bridge：评论草稿、面板开关、视图状态与操作）；不包含 Node 文件服务 |
@@ -124,6 +124,8 @@ flowchart TB
 | `tests/service.test.mjs` | 文件响应、ifMatch、工作区、批注版本与 token 来源 |
 | `tests/preview-origin.test.mjs` | Codex/HTTP/opaque origin 与窗口来源 |
 | `tests/architecture.test.mjs` | 前后端依赖图和两种服务客户端适配结果 |
+| `tests/runtime-layers.test.mjs` | 两个 runtime 内部的分层：反向 import 的数量不得超过记录值 |
+| `tests/runtime-deps.test.mjs`、`tests/runtime-to-imports.test.mjs` | 依赖地图脚本与注册表迁移脚本的行为 |
 | `packages/**/src/*.test.ts`、`packages/editor-host/src/**/*.test.ts` | 自行维护的文件模块与浏览器宿主协议回归；独立 test:modules 命令 |
 | `AGENTS.md` | 每轮入口、完成标准和条件路由；各层局部 AGENTS 按路径披露 |
 | `ARCHITECTURE.md` | 本文：唯一当前模块地图与依赖契约 |

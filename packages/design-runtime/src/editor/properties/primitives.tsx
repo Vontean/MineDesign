@@ -2,274 +2,200 @@ import { uiMessage } from '@minedesign/contracts/ui-messages';
 import { useUiLocale } from '../../ui-locale.ts';
 /** Restored application module; prepare first, initialize in original order. */
 import {
-  bindRuntimeValue,
   type Dynamic,
-  type RuntimeBindings,
 } from "../../runtime-types";
-export function installEditorPropertiesPrimitives(
-  runtime: RuntimeBindings,
-): () => void {
-  var PropertiesPrimitivesLabel: Dynamic;
-  var reactPropertiesPrimitives: Dynamic;
-  var jsxPropertiesPrimitives: Dynamic;
-  var jsxPropertiesPrimitives_2: Dynamic;
-  var PropertiesPrimitivesClassNames: Dynamic;
-  var joinClassNamesValue: Dynamic;
-  var joinClassNamesValue_2: Dynamic;
-  var PropertiesPrimitivesClassNames_2: Dynamic;
-  var PropertyPickerButton: Dynamic;
-  var PropertiesPrimitivesClassNames_3: Dynamic;
-  var PropertiesPrimitivesClassNames_4: Dynamic;
-  function EditorIcon({
-    name: name,
-    size = 14,
-    className: className,
-    style: style,
-  }: Dynamic): Dynamic {
-    useUiLocale();
-    return (
-      <runtime.Icon
-        name={name}
-        customSize={size}
-        className={(0, runtime.joinClassNames)("shrink-0", className)}
-        style={{
-          display: "inline-flex",
-          ...style,
+import { Icon } from "../../cds/components/icon";
+import { initializeCdsIndex } from "../../cds/index";
+import { MenuMenuAssignValue } from "../../cds/menu/menu";
+import { load_react, load_react_jsx_runtime } from "../../dependencies";
+import { blockingOverlaySelector, joinClassNames } from "../chrome/overlay-state";
+import { ColorContrastCopyHandler } from "../color/contrast-copy";
+import { reactInspectorContext_4 } from "../inspector/context-part-2";
+import { toModuleNamespace } from "../../module-helpers";
+
+var PropertiesPrimitivesLabel: Dynamic;
+var reactPropertiesPrimitives: Dynamic;
+var jsxPropertiesPrimitives: Dynamic;
+var jsxPropertiesPrimitives_2: Dynamic;
+var PropertiesPrimitivesClassNames: Dynamic;
+var joinClassNamesValue: Dynamic;
+var joinClassNamesValue_2: Dynamic;
+var PropertiesPrimitivesClassNames_2: Dynamic;
+var PropertyPickerButton: Dynamic;
+var PropertiesPrimitivesClassNames_3: Dynamic;
+var PropertiesPrimitivesClassNames_4: Dynamic;
+function EditorIcon({
+  name: name,
+  size = 14,
+  className: className,
+  style: style,
+}: Dynamic): Dynamic {
+  useUiLocale();
+  return (
+    <Icon
+      name={name}
+      customSize={size}
+      className={(0, joinClassNames)("shrink-0", className)}
+      style={{
+        display: "inline-flex",
+        ...style,
+      }}
+    />
+  );
+}
+function ZoomToolIcon(): Dynamic {
+  useUiLocale();
+  return (
+    <Icon name={"ZoomIn"} size={"auto"} className={"shrink-0"} />
+  );
+}
+function isNestedPropertyControl(
+  input?: Dynamic,
+  options?: Dynamic,
+): Dynamic {
+  if (
+    options.closest(PropertiesPrimitivesLabel) ||
+    options.closest('[data-kit="row-trailing"]') ||
+    options.closest("[data-mc-scrim], [data-base-ui-inert]")
+  )
+    return true;
+  let ancestor: Dynamic = options.closest(blockingOverlaySelector);
+  return ancestor !== null && !ancestor.contains(input);
+}
+function PropertyActions({
+  section: section,
+  "aria-label": ariaLabel,
+  items: items,
+  align = "end",
+  disabled: disabled2,
+  open: open,
+  onOpenChange: onOpenChange,
+  defaultOpen = false,
+  "data-testid": dataTestid,
+}: Dynamic): Dynamic {
+  useUiLocale();
+  let [value, value2]: Dynamic = (0, reactPropertiesPrimitives.useState)(
+      defaultOpen,
+    ),
+    value3: Dynamic = open !== undefined;
+  if (items.length === 0) {
+    !value3 && value && value2(false);
+    return null;
+  }
+  let value4: Dynamic =
+      ariaLabel ??
+      (section !== undefined && section !== ""
+        ? (0, ColorContrastCopyHandler)(section)
+        : "Add"),
+    value5: Dynamic = (
+      <MenuMenuAssignValue
+        iconOnly={true}
+        icon={"Add"}
+        variant={"ghost"}
+        aria-label={value4}
+        tooltip={value4}
+        disabled={disabled2}
+        align={align}
+        open={value3 ? open : value}
+        onOpenChange={(input?: Dynamic): Dynamic => {
+          value3 || value2(input);
+          onOpenChange?.(input);
         }}
+        items={items.map((input?: Dynamic): Dynamic => {
+          let value6: Dynamic =
+            input.disabledReason !== undefined && input.disabledReason !== "";
+          return {
+            label: input.label,
+            onSelect: input.onSelect,
+            disabled: input.disabled === true || value6,
+            disabledReason: value6 ? input.disabledReason : undefined,
+            description: input.description,
+          };
+        })}
       />
     );
-  }
-  function ZoomToolIcon(): Dynamic {
-    useUiLocale();
-    return (
-      <runtime.Icon name={"ZoomIn"} size={"auto"} className={"shrink-0"} />
-    );
-  }
-  function isNestedPropertyControl(
-    input?: Dynamic,
-    options?: Dynamic,
-  ): Dynamic {
-    if (
-      options.closest(PropertiesPrimitivesLabel) ||
-      options.closest('[data-kit="row-trailing"]') ||
-      options.closest("[data-mc-scrim], [data-base-ui-inert]")
-    )
-      return true;
-    let ancestor: Dynamic = options.closest(runtime.blockingOverlaySelector);
-    return ancestor !== null && !ancestor.contains(input);
-  }
-  function PropertyActions({
-    section: section,
-    "aria-label": ariaLabel,
-    items: items,
-    align = "end",
-    disabled: disabled2,
-    open: open,
-    onOpenChange: onOpenChange,
-    defaultOpen = false,
-    "data-testid": dataTestid,
-  }: Dynamic): Dynamic {
-    useUiLocale();
-    let [value, value2]: Dynamic = (0, reactPropertiesPrimitives.useState)(
-        defaultOpen,
-      ),
-      value3: Dynamic = open !== undefined;
-    if (items.length === 0) {
-      !value3 && value && value2(false);
-      return null;
-    }
-    let value4: Dynamic =
-        ariaLabel ??
-        (section !== undefined && section !== ""
-          ? (0, runtime.ColorContrastCopyHandler)(section)
-          : "Add"),
-      value5: Dynamic = (
-        <runtime.MenuMenuAssignValue
-          iconOnly={true}
-          icon={"Add"}
-          variant={"ghost"}
-          aria-label={value4}
-          tooltip={value4}
-          disabled={disabled2}
-          align={align}
-          open={value3 ? open : value}
-          onOpenChange={(input?: Dynamic): Dynamic => {
-            value3 || value2(input);
-            onOpenChange?.(input);
+  return dataTestid === undefined ? (
+    value5
+  ) : (
+    <span data-testid={dataTestid} className={"inline-flex"}>
+      {value5}
+    </span>
+  );
+}
+function PropertyColorWell({
+  background: background,
+  className: className,
+  children: children,
+  ...props
+}: Dynamic): Dynamic {
+  useUiLocale();
+  return (
+    <span
+      aria-hidden={"true"}
+      {...props}
+      className={(0, joinClassNames)(
+        PropertiesPrimitivesClassNames_2,
+        className,
+      )}
+    >
+      {background !== undefined ? (<span
+          className={"absolute inset-0"}
+          style={{
+            background: background,
           }}
-          items={items.map((input?: Dynamic): Dynamic => {
-            let value6: Dynamic =
-              input.disabledReason !== undefined && input.disabledReason !== "";
-            return {
-              label: input.label,
-              onSelect: input.onSelect,
-              disabled: input.disabled === true || value6,
-              disabledReason: value6 ? input.disabledReason : undefined,
-              description: input.description,
-            };
-          })}
-        />
-      );
-    return dataTestid === undefined ? (
-      value5
-    ) : (
-      <span data-testid={dataTestid} className={"inline-flex"}>
-        {value5}
-      </span>
-    );
-  }
-  function PropertyColorWell({
-    background: background,
-    className: className,
-    children: children,
-    ...props
-  }: Dynamic): Dynamic {
-    useUiLocale();
-    return (
-      <span
-        aria-hidden={"true"}
-        {...props}
-        className={(0, runtime.joinClassNames)(
-          PropertiesPrimitivesClassNames_2,
-          className,
-        )}
-      >
-        {background !== undefined ? (<span
-            className={"absolute inset-0"}
-            style={{
-              background: background,
-            }}
-          />) : (null)}
-        {children}
-      </span>
-    );
-  }
-  bindRuntimeValue(runtime, "EditorIcon", () => EditorIcon);
-  bindRuntimeValue(runtime, "ZoomToolIcon", () => ZoomToolIcon);
-  bindRuntimeValue(
-    runtime,
-    "PropertiesPrimitivesLabel",
-    () => PropertiesPrimitivesLabel,
-    (value) => {
-      PropertiesPrimitivesLabel = value;
-    },
+        />) : (null)}
+      {children}
+    </span>
   );
-  bindRuntimeValue(
-    runtime,
-    "isNestedPropertyControl",
-    () => isNestedPropertyControl,
-  );
-  bindRuntimeValue(
-    runtime,
-    "reactPropertiesPrimitives",
-    () => reactPropertiesPrimitives,
-    (value) => {
-      reactPropertiesPrimitives = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "jsxPropertiesPrimitives",
-    () => jsxPropertiesPrimitives,
-    (value) => {
-      jsxPropertiesPrimitives = value;
-    },
-  );
-  bindRuntimeValue(runtime, "PropertyActions", () => PropertyActions);
-  bindRuntimeValue(
-    runtime,
-    "jsxPropertiesPrimitives_2",
-    () => jsxPropertiesPrimitives_2,
-    (value) => {
-      jsxPropertiesPrimitives_2 = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "PropertiesPrimitivesClassNames",
-    () => PropertiesPrimitivesClassNames,
-    (value) => {
-      PropertiesPrimitivesClassNames = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "joinClassNamesValue",
-    () => joinClassNamesValue,
-    (value) => {
-      joinClassNamesValue = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "joinClassNamesValue_2",
-    () => joinClassNamesValue_2,
-    (value) => {
-      joinClassNamesValue_2 = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "PropertiesPrimitivesClassNames_2",
-    () => PropertiesPrimitivesClassNames_2,
-    (value) => {
-      PropertiesPrimitivesClassNames_2 = value;
-    },
-  );
-  bindRuntimeValue(runtime, "PropertyColorWell", () => PropertyColorWell);
-  bindRuntimeValue(
-    runtime,
-    "PropertyPickerButton",
-    () => PropertyPickerButton,
-    (value) => {
-      PropertyPickerButton = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "PropertiesPrimitivesClassNames_3",
-    () => PropertiesPrimitivesClassNames_3,
-    (value) => {
-      PropertiesPrimitivesClassNames_3 = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "PropertiesPrimitivesClassNames_4",
-    () => PropertiesPrimitivesClassNames_4,
-    (value) => {
-      PropertiesPrimitivesClassNames_4 = value;
-    },
-  );
+}
+export {
+  EditorIcon,
+  isNestedPropertyControl,
+  joinClassNamesValue,
+  joinClassNamesValue_2,
+  jsxPropertiesPrimitives,
+  jsxPropertiesPrimitives_2,
+  PropertiesPrimitivesClassNames,
+  PropertiesPrimitivesClassNames_2,
+  PropertiesPrimitivesClassNames_3,
+  PropertiesPrimitivesClassNames_4,
+  PropertiesPrimitivesLabel,
+  PropertyActions,
+  PropertyColorWell,
+  PropertyPickerButton,
+  reactPropertiesPrimitives,
+  ZoomToolIcon,
+};
+export function installEditorPropertiesPrimitives(): () => void {
   return () => {
     PropertiesPrimitivesLabel =
       'button,input,select,textarea,label,[role="slider"],[role="switch"],[role="radio"],[role="checkbox"],[role="menuitem"]';
-    reactPropertiesPrimitives = (0, runtime.toModuleNamespace)(
-      (0, runtime.load_react)(),
+    reactPropertiesPrimitives = (0, toModuleNamespace)(
+      (0, load_react)(),
       1,
     );
-    (0, runtime.initializeCdsIndex)();
-    jsxPropertiesPrimitives = (0, runtime.toModuleNamespace)(
-      (0, runtime.load_react_jsx_runtime)(),
+    (0, initializeCdsIndex)();
+    jsxPropertiesPrimitives = (0, toModuleNamespace)(
+      (0, load_react_jsx_runtime)(),
       1,
     );
-    jsxPropertiesPrimitives_2 = (0, runtime.toModuleNamespace)(
-      (0, runtime.load_react_jsx_runtime)(),
+    jsxPropertiesPrimitives_2 = (0, toModuleNamespace)(
+      (0, load_react_jsx_runtime)(),
       1,
     );
     PropertiesPrimitivesClassNames =
       "rounded bg-fill-field text-primary shadow-field-ring outline-none transition duration-fast placeholder:text-muted enabled:hover:shadow-field-hover focus-visible:outline-hidden focus-visible:shadow-focus aria-expanded:shadow-field-hover disabled:opacity-50";
-    joinClassNamesValue = (0, runtime.joinClassNames)(
+    joinClassNamesValue = (0, joinClassNames)(
       "h-control min-w-0 px-md text-body pointer-coarse:h-10",
       PropertiesPrimitivesClassNames,
     );
-    joinClassNamesValue_2 = (0, runtime.joinClassNames)(
+    joinClassNamesValue_2 = (0, joinClassNames)(
       "flex h-control min-w-0 items-center gap-sm pr-md pl-1 text-left text-body pointer-coarse:h-10",
       PropertiesPrimitivesClassNames,
     );
     PropertiesPrimitivesClassNames_2 =
       "relative inline-block h-4 w-4 shrink-0 overflow-hidden rounded-[4px] shadow-card-ring bg-[repeating-conic-gradient(var(--cds-alpha-2)_0_25%,transparent_0_50%)] bg-[length:8px_8px]";
-    PropertyPickerButton = (0, runtime.reactInspectorContext_4.forwardRef)(
+    PropertyPickerButton = (0, reactInspectorContext_4.forwardRef)(
       function (
         {
           chip: chip,
@@ -288,10 +214,10 @@ export function installEditorPropertiesPrimitives(
             {...props}
             ref={options}
             type={type}
-            className={(0, runtime.joinClassNames)(
+            className={(0, joinClassNames)(
               chip != null
                 ? joinClassNamesValue_2
-                : (0, runtime.joinClassNames)(
+                : (0, joinClassNames)(
                     joinClassNamesValue,
                     "flex items-center gap-sm text-left",
                   ),
@@ -301,7 +227,7 @@ export function installEditorPropertiesPrimitives(
           >
             {chip}
             <span
-              className={(0, runtime.joinClassNames)(
+              className={(0, joinClassNames)(
                 "min-w-0 flex-1 truncate",
                 muted && "text-muted",
               )}

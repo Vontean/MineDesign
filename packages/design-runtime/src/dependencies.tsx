@@ -29,83 +29,148 @@ import reactDom18UmdSource from "./generated/react-dom.js?raw";
 import dcSupportSource from "./generated/support.js?raw";
 import propertyScrubberSource from "./generated/property-scrubber.js?raw";
 import { buildCaptureTemplate } from "./scripts/page-capture";
-import type { Dynamic, RuntimeBindings } from "./runtime-types";
-export function installDependencies(runtime: RuntimeBindings): void {
-  runtime.load_react = () => (npm0 as Dynamic).default ?? npm0;
-  runtime.load_scheduler = () => (npm1 as Dynamic).default ?? npm1;
-  runtime.load_react_dom = () => (npm2 as Dynamic).default ?? npm2;
-  runtime.load_react_dom_client = () => (npm3 as Dynamic).default ?? npm3;
-  runtime.load_react_jsx_runtime = () => (npm4 as Dynamic).default ?? npm4;
-  runtime.npm_clsx_hfe = npm5["clsx"];
-  runtime.npm_clsx_Ea = npm5["clsx"];
-  runtime.initializeNpm_clsx_xh = () => {};
-  runtime.npm_extendTailwindMerge_Wze = npm6["extendTailwindMerge"];
-  runtime.npm_validators_Efe = npm6["validators"];
-  runtime.initializeNpm_tailwind_merge_Kze = () => {};
-  runtime.npm_cva_Kj = npm7["cva"];
-  runtime.initializeNpm_class_variance_authority_Zhe = () => {};
-  runtime.npm_Menu_La = npm8["Menu"];
-  runtime.npm_ContextMenu_Ex = npm8["ContextMenu"];
-  runtime.npm_Popover_$f = npm8["Popover"];
-  runtime.npm_Combobox_Yi = npm8["Combobox"];
-  runtime.npm_Tooltip_Ax = npm8["Tooltip"];
-  runtime.npm_Collapsible_a1 = npm8["Collapsible"];
-  runtime.npm_Field_qg = npm8["Field"];
-  runtime.npm_AlertDialog_Dh = npm8["AlertDialog"];
-  runtime.npm_Dialog_Xg = npm8["Dialog"];
-  runtime.npm_Switch_sU = npm8["Switch"];
-  runtime.npm_Radio_iP = npm8["Radio"];
-  runtime.npm_RadioGroup_uF = npm8["RadioGroup"];
-  runtime.npm_NumberField_mU = npm8["NumberField"];
-  runtime.npm_Tabs_C1 = npm8["Tabs"];
-  runtime.npm_Toast_Ty = npm8["Toast"];
-  runtime.npm_Menubar_yye = npm8["Menubar"];
-  runtime.npm_Button_Dye = npm8["Button"];
-  runtime.initializeNpm__base_ui_react_gx = () => {};
-  runtime.initializeNpm__base_ui_react_jj = () => {};
-  runtime.initializeNpm__base_ui_react_jhe = () => {};
-  runtime.initializeNpm__base_ui_react_pge = () => {};
-  runtime.initializeNpm__base_ui_react_wY = () => {};
-  runtime.initializeNpm__base_ui_react_SY = () => {};
-  runtime.initializeNpm__base_ui_react_V8e = () => {};
-  runtime.initializeNpm__base_ui_react_iqe = () => {};
-  runtime.initializeNpm__base_ui_react_H5 = () => {};
-  runtime.initializeNpm__base_ui_react_x7 = () => {};
-  runtime.initializeNpm__base_ui_react_BXe = () => {};
-  runtime.initializeNpm__base_ui_react_R9e = () => {};
-  runtime.initializeNpm__base_ui_react_sYe = () => {};
-  runtime.initializeNpm__base_ui_react_uYe = () => {};
-  runtime.initializeNpm__base_ui_react_CZe = () => {};
-  runtime.initializeNpm__base_ui_react_zve = () => {};
-  runtime.initializeNpm__base_ui_react_jve = () => {};
-  runtime.initializeNpm__base_ui_react_VJe = () => {};
-  runtime.initializeNpm__base_ui_react_oQe = () => {};
-  runtime.initializeNpm__base_ui_react_oet = () => {};
-  runtime.npm_mergeProps_Ac = npm9["mergeProps"];
-  runtime.npm_useRender_LL = npm10["useRender"];
-  runtime.npm_LabelableProvider_NR = npm11["LabelableProvider"];
-  runtime.npm_useVirtualizer_m7e = npm12["useVirtualizer"];
-  runtime.initializeNpm__tanstack_react_virtual_h7e = () => {};
-  runtime.npm_measureElement_mve = npm13["measureElement"];
-  runtime.load_lodash_debounce = () => (npm14 as Dynamic).default ?? npm14;
-  runtime.npm_useEventListener_bc = npm15["useEventListener"];
-  runtime.npm_useEventCallback_Gpt = npm15["useEventCallback"];
-  runtime.npm_useLocalStorage_QP = npm15["useLocalStorage"];
-  runtime.npm_useMediaQuery_Wpt = npm15["useMediaQuery"];
-  runtime.initializeNpm_usehooks_ts_p0 = () => {};
-  runtime.injected_E7t = injected_E7t;
-  runtime.injected_$7t = injected_$7t;
-  runtime.injected_q7t = injected_q7t;
-  runtime.injected_X7t = injected_X7t;
-  runtime.injected_Y7t = injected_Y7t;
-  runtime.injected_Z7t = injected_Z7t;
-  runtime.injected_wZt = injected_wZt;
-  runtime.injected_svgCapture = injected_svgCapture;
-  runtime.injected_PTt = injected_PTt;
-  runtime.injected_K7t = injected_K7t;
-  runtime.react18UmdSource = react18UmdSource;
-  runtime.reactDom18UmdSource = reactDom18UmdSource;
-  runtime.dcSupportSource = dcSupportSource;
-  runtime.propertyScrubberSource = propertyScrubberSource;
-  runtime.buildCaptureTemplate = buildCaptureTemplate;
+import type { Dynamic, } from "./runtime-types";
+
+const load_react = () => (npm0 as Dynamic).default ?? npm0;
+const load_scheduler = () => (npm1 as Dynamic).default ?? npm1;
+const load_react_dom = () => (npm2 as Dynamic).default ?? npm2;
+const load_react_dom_client = () => (npm3 as Dynamic).default ?? npm3;
+const load_react_jsx_runtime = () => (npm4 as Dynamic).default ?? npm4;
+const npm_clsx_hfe = npm5["clsx"];
+const npm_clsx_Ea = npm5["clsx"];
+const initializeNpm_clsx_xh = () => {};
+const npm_extendTailwindMerge_Wze = npm6["extendTailwindMerge"];
+const npm_validators_Efe = npm6["validators"];
+const initializeNpm_tailwind_merge_Kze = () => {};
+const npm_cva_Kj = npm7["cva"];
+const initializeNpm_class_variance_authority_Zhe = () => {};
+const npm_Menu_La = npm8["Menu"];
+const npm_ContextMenu_Ex = npm8["ContextMenu"];
+const npm_Popover_$f = npm8["Popover"];
+const npm_Combobox_Yi = npm8["Combobox"];
+const npm_Tooltip_Ax = npm8["Tooltip"];
+const npm_Collapsible_a1 = npm8["Collapsible"];
+const npm_Field_qg = npm8["Field"];
+const npm_AlertDialog_Dh = npm8["AlertDialog"];
+const npm_Dialog_Xg = npm8["Dialog"];
+const npm_Switch_sU = npm8["Switch"];
+const npm_Radio_iP = npm8["Radio"];
+const npm_RadioGroup_uF = npm8["RadioGroup"];
+const npm_NumberField_mU = npm8["NumberField"];
+const npm_Tabs_C1 = npm8["Tabs"];
+const npm_Toast_Ty = npm8["Toast"];
+const npm_Menubar_yye = npm8["Menubar"];
+const npm_Button_Dye = npm8["Button"];
+const initializeNpm__base_ui_react_gx = () => {};
+const initializeNpm__base_ui_react_jj = () => {};
+const initializeNpm__base_ui_react_jhe = () => {};
+const initializeNpm__base_ui_react_pge = () => {};
+const initializeNpm__base_ui_react_wY = () => {};
+const initializeNpm__base_ui_react_SY = () => {};
+const initializeNpm__base_ui_react_V8e = () => {};
+const initializeNpm__base_ui_react_iqe = () => {};
+const initializeNpm__base_ui_react_H5 = () => {};
+const initializeNpm__base_ui_react_x7 = () => {};
+const initializeNpm__base_ui_react_BXe = () => {};
+const initializeNpm__base_ui_react_R9e = () => {};
+const initializeNpm__base_ui_react_sYe = () => {};
+const initializeNpm__base_ui_react_uYe = () => {};
+const initializeNpm__base_ui_react_CZe = () => {};
+const initializeNpm__base_ui_react_zve = () => {};
+const initializeNpm__base_ui_react_jve = () => {};
+const initializeNpm__base_ui_react_VJe = () => {};
+const initializeNpm__base_ui_react_oQe = () => {};
+const initializeNpm__base_ui_react_oet = () => {};
+const npm_mergeProps_Ac = npm9["mergeProps"];
+const npm_useRender_LL = npm10["useRender"];
+const npm_LabelableProvider_NR = npm11["LabelableProvider"];
+const npm_useVirtualizer_m7e = npm12["useVirtualizer"];
+const initializeNpm__tanstack_react_virtual_h7e = () => {};
+const npm_measureElement_mve = npm13["measureElement"];
+const load_lodash_debounce = () => (npm14 as Dynamic).default ?? npm14;
+const npm_useEventListener_bc = npm15["useEventListener"];
+const npm_useEventCallback_Gpt = npm15["useEventCallback"];
+const npm_useLocalStorage_QP = npm15["useLocalStorage"];
+const npm_useMediaQuery_Wpt = npm15["useMediaQuery"];
+const initializeNpm_usehooks_ts_p0 = () => {};
+export {
+  buildCaptureTemplate,
+  dcSupportSource,
+  initializeNpm__base_ui_react_BXe,
+  initializeNpm__base_ui_react_CZe,
+  initializeNpm__base_ui_react_gx,
+  initializeNpm__base_ui_react_H5,
+  initializeNpm__base_ui_react_iqe,
+  initializeNpm__base_ui_react_jhe,
+  initializeNpm__base_ui_react_jj,
+  initializeNpm__base_ui_react_jve,
+  initializeNpm__base_ui_react_oet,
+  initializeNpm__base_ui_react_oQe,
+  initializeNpm__base_ui_react_pge,
+  initializeNpm__base_ui_react_R9e,
+  initializeNpm__base_ui_react_SY,
+  initializeNpm__base_ui_react_sYe,
+  initializeNpm__base_ui_react_uYe,
+  initializeNpm__base_ui_react_V8e,
+  initializeNpm__base_ui_react_VJe,
+  initializeNpm__base_ui_react_wY,
+  initializeNpm__base_ui_react_x7,
+  initializeNpm__base_ui_react_zve,
+  initializeNpm__tanstack_react_virtual_h7e,
+  initializeNpm_class_variance_authority_Zhe,
+  initializeNpm_clsx_xh,
+  initializeNpm_tailwind_merge_Kze,
+  initializeNpm_usehooks_ts_p0,
+  injected_$7t,
+  injected_E7t,
+  injected_K7t,
+  injected_PTt,
+  injected_q7t,
+  injected_svgCapture,
+  injected_wZt,
+  injected_X7t,
+  injected_Y7t,
+  injected_Z7t,
+  load_lodash_debounce,
+  load_react,
+  load_react_dom,
+  load_react_dom_client,
+  load_react_jsx_runtime,
+  load_scheduler,
+  npm_AlertDialog_Dh,
+  npm_Button_Dye,
+  npm_clsx_Ea,
+  npm_clsx_hfe,
+  npm_Collapsible_a1,
+  npm_Combobox_Yi,
+  npm_ContextMenu_Ex,
+  npm_cva_Kj,
+  npm_Dialog_Xg,
+  npm_extendTailwindMerge_Wze,
+  npm_Field_qg,
+  npm_LabelableProvider_NR,
+  npm_measureElement_mve,
+  npm_Menu_La,
+  npm_Menubar_yye,
+  npm_mergeProps_Ac,
+  npm_NumberField_mU,
+  npm_Popover_$f,
+  npm_Radio_iP,
+  npm_RadioGroup_uF,
+  npm_Switch_sU,
+  npm_Tabs_C1,
+  npm_Toast_Ty,
+  npm_Tooltip_Ax,
+  npm_useEventCallback_Gpt,
+  npm_useEventListener_bc,
+  npm_useLocalStorage_QP,
+  npm_useMediaQuery_Wpt,
+  npm_useRender_LL,
+  npm_useVirtualizer_m7e,
+  npm_validators_Efe,
+  propertyScrubberSource,
+  react18UmdSource,
+  reactDom18UmdSource,
+};
+export function installDependencies(): void {
 }

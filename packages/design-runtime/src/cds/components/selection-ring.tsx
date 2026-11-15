@@ -2,622 +2,308 @@ import { uiMessage } from '@minedesign/contracts/ui-messages';
 import { useUiLocale } from '../../ui-locale.ts';
 /** Restored application module; prepare first, initialize in original order. */
 import {
-  bindRuntimeValue,
   type Dynamic,
-  type RuntimeBindings,
 } from "../../runtime-types";
-export function installCdsComponentsSelectionRing(
-  runtime: RuntimeBindings,
-): () => void {
-  var reactComponentsSelectionRing: Dynamic;
-  var jsxComponentsSelectionRing: Dynamic;
-  var selectionRingClasses: Dynamic;
-  var ComponentsSelectionRingClassNames: Dynamic;
-  var AspectSquareValue: Dynamic;
-  var HFullValue: Dynamic;
-  var ComponentsSelectionRingLabel: Dynamic;
-  var ComponentsSelectionRingClassNames_2: Dynamic;
-  var ComponentsSelectionRingClassNames_3: Dynamic;
-  var ComponentsSelectionRingClassNames_4: Dynamic;
-  var ComponentsSelectionRingClassNames_5: Dynamic;
-  var ComponentsSelectionRingLabel_2: Dynamic;
-  var ComponentsSelectionRingClassNames_6: Dynamic;
-  var ComponentsSelectionRingConstant: Dynamic;
-  var ComponentsSelectionRingConstant_2: Dynamic;
-  var ComponentsSelectionRingLimit: Dynamic;
-  var initializeComponentsSelectionRing: Dynamic;
-  var ComponentsSelectionRingPointPointStrokeGripHitConfig: Dynamic;
-  var initializeComponentsSelectionRing_2: Dynamic;
-  var reactComponentsSelectionRing_2: Dynamic;
-  var jsxComponentsSelectionRing_2: Dynamic;
-  var SelectionPoints: Dynamic;
-  var initializeComponentsSelectionRing_3: Dynamic;
-  var ComponentsSelectionRingNwNeSeValues: Dynamic;
-  var ComponentsSelectionRingEwResizeNwseResizeNsResizeValues: Dynamic;
-  var ComponentsSelectionRingNeSeSwConfig: Dynamic;
-  var ImageSvgXmlValue: Dynamic;
-  var ComponentsSelectionRingLabel_3: Dynamic;
-  var rotationCursorBodySvg: Dynamic;
-  var ComponentsSelectionRingResolvedValue: Dynamic;
-  var initializeComponentsSelectionRing_4: Dynamic;
-  var reactComponentsSelectionRing_3: Dynamic;
-  var jsxComponentsSelectionRing_3: Dynamic;
-  var SelectionRing: Dynamic;
-  var initializeComponentsSelectionRing_5: Dynamic;
-  var ComponentsSelectionRingSGDAUDNZDSet: Dynamic;
-  var ComponentsSelectionRingIntegerGroupDecimalSet: Dynamic;
-  var initializeComponentsSelectionRing_6: Dynamic;
-  var reactComponentsSelectionRing_4: Dynamic;
-  var jsxComponentsSelectionRing_4: Dynamic;
-  var ComponentsSelectionRingHandler: Dynamic;
-  var ComponentsSelectionRingHandler_2: Dynamic;
-  var NumberInput: Dynamic;
-  var initializeComponentsSelectionRing_7: Dynamic;
-  function selectionGripHitSize(
-    input?: Dynamic,
-    options?: Dynamic,
-    context?: Dynamic,
-  ): Dynamic {
-    if (context)
-      return ComponentsSelectionRingPointPointStrokeGripHitConfig.gripHitTouch;
-    let value: Dynamic = Math.min(input.w, input.h) * options;
-    return Math.max(
-      ComponentsSelectionRingPointPointStrokeGripHitConfig.grip,
-      Math.min(
-        ComponentsSelectionRingPointPointStrokeGripHitConfig.gripHit,
-        value / 2,
+import { ButtonButtonClassNames_4, ButtonButtonCss, initializeButtonButton_2 } from "../button/button";
+import { initializeButtonContext_2 } from "../button/context";
+import { initializeComponentsIcon_2 } from "./icon";
+import { initializeDomOwnerWindow } from "../dom/owner-window";
+import { initializeDomRefComposition, useMergedRefs } from "../dom/ref-composition";
+import { initializeDomSelectionPrevention } from "../dom/selection-prevention";
+import { EditorSelectionGeometryFilterValue, EditorSelectionGeometryLeftTopConfig, initializeEditorSelectionGeometry, normalizeCollaboratorIndex, normalizeSelectionRotation, normalizeSelectionScale, OutlineFillAccentValue, resolveSelectionPoints, sameSelectionPoint, SelectionGrip, selectionMetrics, SelectionPoint, selectionPointPosition, selectionRingStroke, SelectionRingSvg } from "../editor/selection-geometry";
+import { initializeFieldContext, useFieldDisabled, useFieldInvalid } from "../field/context";
+import { initializeMenuPopup_2, useClickToFocus } from "../menu/popup";
+import { initializeSheetsMenuPopup_2, subscribeSheetMedia, usesCoarsePointer } from "../sheets/menu-popup";
+import { initializeSwitchContext } from "../switch/context";
+import { cn, initializeClassNames } from "../theme/class-names";
+import { getSizeAttribute, initializeCdsRoot, useExperimentalSettings } from "../theme/root";
+import { initializeTokens, tokens } from "../theme/tokens";
+import { hasDisabledReason, initializeTooltipDisabledReason } from "../tooltip/disabled-reason";
+import { initializeTooltipTooltip, Tooltip, TooltipGroup } from "../tooltip/tooltip";
+import { initializeTooltipTrigger_2 } from "../tooltip/trigger";
+import { initializeNpm__base_ui_react_H5, initializeNpm__base_ui_react_jve, initializeNpm__base_ui_react_VJe, initializeNpm__base_ui_react_zve, load_react, load_react_jsx_runtime, npm_NumberField_mU } from "../../dependencies";
+import { initializeOnce, toModuleNamespace } from "../../module-helpers";
+
+var reactComponentsSelectionRing: Dynamic;
+var jsxComponentsSelectionRing: Dynamic;
+var selectionRingClasses: Dynamic;
+var ComponentsSelectionRingClassNames: Dynamic;
+var AspectSquareValue: Dynamic;
+var HFullValue: Dynamic;
+var ComponentsSelectionRingLabel: Dynamic;
+var ComponentsSelectionRingClassNames_2: Dynamic;
+var ComponentsSelectionRingClassNames_3: Dynamic;
+var ComponentsSelectionRingClassNames_4: Dynamic;
+var ComponentsSelectionRingClassNames_5: Dynamic;
+var ComponentsSelectionRingLabel_2: Dynamic;
+var ComponentsSelectionRingClassNames_6: Dynamic;
+var ComponentsSelectionRingConstant: Dynamic;
+var ComponentsSelectionRingConstant_2: Dynamic;
+var ComponentsSelectionRingLimit: Dynamic;
+var initializeComponentsSelectionRing: Dynamic;
+var ComponentsSelectionRingPointPointStrokeGripHitConfig: Dynamic;
+var initializeComponentsSelectionRing_2: Dynamic;
+var reactComponentsSelectionRing_2: Dynamic;
+var jsxComponentsSelectionRing_2: Dynamic;
+var SelectionPoints: Dynamic;
+var initializeComponentsSelectionRing_3: Dynamic;
+var ComponentsSelectionRingNwNeSeValues: Dynamic;
+var ComponentsSelectionRingEwResizeNwseResizeNsResizeValues: Dynamic;
+var ComponentsSelectionRingNeSeSwConfig: Dynamic;
+var ImageSvgXmlValue: Dynamic;
+var ComponentsSelectionRingLabel_3: Dynamic;
+var rotationCursorBodySvg: Dynamic;
+var ComponentsSelectionRingResolvedValue: Dynamic;
+var initializeComponentsSelectionRing_4: Dynamic;
+var reactComponentsSelectionRing_3: Dynamic;
+var jsxComponentsSelectionRing_3: Dynamic;
+var SelectionRing: Dynamic;
+var initializeComponentsSelectionRing_5: Dynamic;
+var ComponentsSelectionRingSGDAUDNZDSet: Dynamic;
+var ComponentsSelectionRingIntegerGroupDecimalSet: Dynamic;
+var initializeComponentsSelectionRing_6: Dynamic;
+var reactComponentsSelectionRing_4: Dynamic;
+var jsxComponentsSelectionRing_4: Dynamic;
+var ComponentsSelectionRingHandler: Dynamic;
+var ComponentsSelectionRingHandler_2: Dynamic;
+var NumberInput: Dynamic;
+var initializeComponentsSelectionRing_7: Dynamic;
+function selectionGripHitSize(
+  input?: Dynamic,
+  options?: Dynamic,
+  context?: Dynamic,
+): Dynamic {
+  if (context)
+    return ComponentsSelectionRingPointPointStrokeGripHitConfig.gripHitTouch;
+  let value: Dynamic = Math.min(input.w, input.h) * options;
+  return Math.max(
+    ComponentsSelectionRingPointPointStrokeGripHitConfig.grip,
+    Math.min(
+      ComponentsSelectionRingPointPointStrokeGripHitConfig.gripHit,
+      value / 2,
+    ),
+  );
+}
+function SelectionPointGlyph(): Dynamic {
+  useUiLocale();
+  let point: Dynamic =
+      ComponentsSelectionRingPointPointStrokeGripHitConfig.point,
+    pointStroke: Dynamic =
+      ComponentsSelectionRingPointPointStrokeGripHitConfig.pointStroke;
+  return (
+    <span
+      data-selection-grip={""}
+      className={(0, cn)(
+        "absolute top-1/2 left-1/2 box-border block -translate-x-1/2 -translate-y-1/2 rounded-full",
+        OutlineFillAccentValue,
+      )}
+      style={{
+        width: point,
+        height: point,
+        backgroundColor: tokens.on.accent.cssVar,
+        outlineStyle: "solid",
+        outlineWidth: pointStroke,
+        outlineOffset: -pointStroke,
+        pointerEvents: "none",
+      }}
+    />
+  );
+}
+function selectionResizeCursor(
+  input?: Dynamic,
+  options: Dynamic = 0,
+): Dynamic {
+  let value: Dynamic = input.x === "left" ? -1 : input.x === "right" ? 1 : 0,
+    value2: Dynamic = input.y === "top" ? -1 : input.y === "bottom" ? 1 : 0;
+  return (
+    ComponentsSelectionRingEwResizeNwseResizeNsResizeValues[
+      ((Math.round((Math.atan2(value2, value) + options) / (Math.PI / 4)) %
+        4) +
+        4) %
+        4
+    ] ?? "ew-resize"
+  );
+}
+function selectionRotationCursor(
+  input?: Dynamic,
+  options: Dynamic = 0,
+): Dynamic {
+  let value: Dynamic = Math.round(
+    ComponentsSelectionRingNeSeSwConfig[input] + (options * 180) / Math.PI,
+  );
+  return `url("data:${ImageSvgXmlValue},${ComponentsSelectionRingLabel_3}${String(value)}${ComponentsSelectionRingResolvedValue}") 12 12, grab`;
+}
+function preventSelectionHandleEvent(event?: Dynamic): Dynamic {
+  event.preventDefault();
+  event.stopPropagation();
+}
+function selectionHandleTooltip(
+  input?: Dynamic,
+  options?: Dynamic,
+  context?: Dynamic,
+): Dynamic {
+  return (0, hasDisabledReason)(options.content) ? (
+    <Tooltip
+      key={input}
+      lazy={true}
+      content={options.content}
+      multiline={options.reason}
+      hoverable={false}
+      closeOnClick={options.reason ? false : undefined}
+      trackCursorAxis={options.followPointer ? "both" : undefined}
+    >
+      {context}
+    </Tooltip>
+  ) : (
+    (0, reactComponentsSelectionRing_3.cloneElement)(context, {
+      key: input,
+    })
+  );
+}
+function isOutsideSelectionGrip(
+  input?: Dynamic,
+  options?: Dynamic,
+  context?: Dynamic,
+  value?: Dynamic,
+): Dynamic {
+  let value2: Dynamic =
+    input.currentTarget.parentElement?.getBoundingClientRect();
+  if (value2 === undefined) return false;
+  let value3: Dynamic = input.clientX - (value2.left + value2.width / 2),
+    value4: Dynamic = input.clientY - (value2.top + value2.height / 2),
+    value5: Dynamic = value3 * Math.cos(value) + value4 * Math.sin(value),
+    value6: Dynamic = value4 * Math.cos(value) - value3 * Math.sin(value);
+  return Math.abs(value5) <= options && Math.abs(value6) <= context;
+}
+function selectionPointKey(input?: Dynamic): Dynamic {
+  return `${input.x ?? "mid"}-${input.y ?? "mid"}`;
+}
+function currencySymbol(input?: Dynamic, options?: Dynamic): Dynamic {
+  let value: Dynamic = input.toUpperCase();
+  try {
+    let value2: Dynamic = new Intl.NumberFormat(options, {
+        style: "currency",
+        currency: value,
+        currencyDisplay: ComponentsSelectionRingSGDAUDNZDSet.has(value)
+          ? "code"
+          : "symbol",
+      }).formatToParts(1),
+      value3: Dynamic = value2.findIndex(
+        (input2?: Dynamic): Dynamic => input2.type === "currency",
       ),
-    );
-  }
-  function SelectionPointGlyph(): Dynamic {
-    useUiLocale();
-    let point: Dynamic =
-        ComponentsSelectionRingPointPointStrokeGripHitConfig.point,
-      pointStroke: Dynamic =
-        ComponentsSelectionRingPointPointStrokeGripHitConfig.pointStroke;
-    return (
-      <span
-        data-selection-grip={""}
-        className={(0, runtime.cn)(
-          "absolute top-1/2 left-1/2 box-border block -translate-x-1/2 -translate-y-1/2 rounded-full",
-          runtime.OutlineFillAccentValue,
-        )}
-        style={{
-          width: point,
-          height: point,
-          backgroundColor: runtime.tokens.on.accent.cssVar,
-          outlineStyle: "solid",
-          outlineWidth: pointStroke,
-          outlineOffset: -pointStroke,
-          pointerEvents: "none",
-        }}
-      />
-    );
-  }
-  function selectionResizeCursor(
-    input?: Dynamic,
-    options: Dynamic = 0,
-  ): Dynamic {
-    let value: Dynamic = input.x === "left" ? -1 : input.x === "right" ? 1 : 0,
-      value2: Dynamic = input.y === "top" ? -1 : input.y === "bottom" ? 1 : 0;
-    return (
-      ComponentsSelectionRingEwResizeNwseResizeNsResizeValues[
-        ((Math.round((Math.atan2(value2, value) + options) / (Math.PI / 4)) %
-          4) +
-          4) %
-          4
-      ] ?? "ew-resize"
-    );
-  }
-  function selectionRotationCursor(
-    input?: Dynamic,
-    options: Dynamic = 0,
-  ): Dynamic {
-    let value: Dynamic = Math.round(
-      ComponentsSelectionRingNeSeSwConfig[input] + (options * 180) / Math.PI,
-    );
-    return `url("data:${ImageSvgXmlValue},${ComponentsSelectionRingLabel_3}${String(value)}${ComponentsSelectionRingResolvedValue}") 12 12, grab`;
-  }
-  function preventSelectionHandleEvent(event?: Dynamic): Dynamic {
-    event.preventDefault();
-    event.stopPropagation();
-  }
-  function selectionHandleTooltip(
-    input?: Dynamic,
-    options?: Dynamic,
-    context?: Dynamic,
-  ): Dynamic {
-    return (0, runtime.hasDisabledReason)(options.content) ? (
-      <runtime.Tooltip
-        key={input}
-        lazy={true}
-        content={options.content}
-        multiline={options.reason}
-        hoverable={false}
-        closeOnClick={options.reason ? false : undefined}
-        trackCursorAxis={options.followPointer ? "both" : undefined}
-      >
-        {context}
-      </runtime.Tooltip>
-    ) : (
-      (0, reactComponentsSelectionRing_3.cloneElement)(context, {
-        key: input,
-      })
-    );
-  }
-  function isOutsideSelectionGrip(
-    input?: Dynamic,
-    options?: Dynamic,
-    context?: Dynamic,
-    value?: Dynamic,
-  ): Dynamic {
-    let value2: Dynamic =
-      input.currentTarget.parentElement?.getBoundingClientRect();
-    if (value2 === undefined) return false;
-    let value3: Dynamic = input.clientX - (value2.left + value2.width / 2),
-      value4: Dynamic = input.clientY - (value2.top + value2.height / 2),
-      value5: Dynamic = value3 * Math.cos(value) + value4 * Math.sin(value),
-      value6: Dynamic = value4 * Math.cos(value) - value3 * Math.sin(value);
-    return Math.abs(value5) <= options && Math.abs(value6) <= context;
-  }
-  function selectionPointKey(input?: Dynamic): Dynamic {
-    return `${input.x ?? "mid"}-${input.y ?? "mid"}`;
-  }
-  function currencySymbol(input?: Dynamic, options?: Dynamic): Dynamic {
-    let value: Dynamic = input.toUpperCase();
-    try {
-      let value2: Dynamic = new Intl.NumberFormat(options, {
-          style: "currency",
-          currency: value,
-          currencyDisplay: ComponentsSelectionRingSGDAUDNZDSet.has(value)
-            ? "code"
-            : "symbol",
-        }).formatToParts(1),
-        value3: Dynamic = value2.findIndex(
-          (input2?: Dynamic): Dynamic => input2.type === "currency",
-        ),
-        value4: Dynamic = value2[value3];
-      if (value4 === undefined)
-        return {
-          symbol: value,
-          side: "start",
-        };
-      let value5: Dynamic = value2
-        .slice(0, value3)
-        .some(
-          (input2?: Dynamic): Dynamic =>
-            ComponentsSelectionRingIntegerGroupDecimalSet.has(input2.type),
-        )
-        ? "end"
-        : "start";
-      return {
-        symbol: value4.value,
-        side: value5,
-      };
-    } catch {
+      value4: Dynamic = value2[value3];
+    if (value4 === undefined)
       return {
         symbol: value,
         side: "start",
       };
-    }
+    let value5: Dynamic = value2
+      .slice(0, value3)
+      .some(
+        (input2?: Dynamic): Dynamic =>
+          ComponentsSelectionRingIntegerGroupDecimalSet.has(input2.type),
+      )
+      ? "end"
+      : "start";
+    return {
+      symbol: value4.value,
+      side: value5,
+    };
+  } catch {
+    return {
+      symbol: value,
+      side: "start",
+    };
   }
-  function useHydratedNumberInput(): Dynamic {
-    return (0, reactComponentsSelectionRing_4.useSyncExternalStore)(
-      ComponentsSelectionRingHandler_2,
-      (): Dynamic => true,
-      (): Dynamic => false,
-    );
-  }
-  bindRuntimeValue(
-    runtime,
-    "reactComponentsSelectionRing",
-    () => reactComponentsSelectionRing,
-    (value) => {
-      reactComponentsSelectionRing = value;
-    },
+}
+function useHydratedNumberInput(): Dynamic {
+  return (0, reactComponentsSelectionRing_4.useSyncExternalStore)(
+    ComponentsSelectionRingHandler_2,
+    (): Dynamic => true,
+    (): Dynamic => false,
   );
-  bindRuntimeValue(
-    runtime,
-    "jsxComponentsSelectionRing",
-    () => jsxComponentsSelectionRing,
-    (value) => {
-      jsxComponentsSelectionRing = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "selectionRingClasses",
-    () => selectionRingClasses,
-    (value) => {
-      selectionRingClasses = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "ComponentsSelectionRingClassNames",
-    () => ComponentsSelectionRingClassNames,
-    (value) => {
-      ComponentsSelectionRingClassNames = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "AspectSquareValue",
-    () => AspectSquareValue,
-    (value) => {
-      AspectSquareValue = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "HFullValue",
-    () => HFullValue,
-    (value) => {
-      HFullValue = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "ComponentsSelectionRingLabel",
-    () => ComponentsSelectionRingLabel,
-    (value) => {
-      ComponentsSelectionRingLabel = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "ComponentsSelectionRingClassNames_2",
-    () => ComponentsSelectionRingClassNames_2,
-    (value) => {
-      ComponentsSelectionRingClassNames_2 = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "ComponentsSelectionRingClassNames_3",
-    () => ComponentsSelectionRingClassNames_3,
-    (value) => {
-      ComponentsSelectionRingClassNames_3 = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "ComponentsSelectionRingClassNames_4",
-    () => ComponentsSelectionRingClassNames_4,
-    (value) => {
-      ComponentsSelectionRingClassNames_4 = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "ComponentsSelectionRingClassNames_5",
-    () => ComponentsSelectionRingClassNames_5,
-    (value) => {
-      ComponentsSelectionRingClassNames_5 = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "ComponentsSelectionRingLabel_2",
-    () => ComponentsSelectionRingLabel_2,
-    (value) => {
-      ComponentsSelectionRingLabel_2 = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "ComponentsSelectionRingClassNames_6",
-    () => ComponentsSelectionRingClassNames_6,
-    (value) => {
-      ComponentsSelectionRingClassNames_6 = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "ComponentsSelectionRingConstant",
-    () => ComponentsSelectionRingConstant,
-    (value) => {
-      ComponentsSelectionRingConstant = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "ComponentsSelectionRingConstant_2",
-    () => ComponentsSelectionRingConstant_2,
-    (value) => {
-      ComponentsSelectionRingConstant_2 = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "ComponentsSelectionRingLimit",
-    () => ComponentsSelectionRingLimit,
-    (value) => {
-      ComponentsSelectionRingLimit = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "initializeComponentsSelectionRing",
-    () => initializeComponentsSelectionRing,
-    (value) => {
-      initializeComponentsSelectionRing = value;
-    },
-  );
-  bindRuntimeValue(runtime, "selectionGripHitSize", () => selectionGripHitSize);
-  bindRuntimeValue(
-    runtime,
-    "ComponentsSelectionRingPointPointStrokeGripHitConfig",
-    () => ComponentsSelectionRingPointPointStrokeGripHitConfig,
-    (value) => {
-      ComponentsSelectionRingPointPointStrokeGripHitConfig = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "initializeComponentsSelectionRing_2",
-    () => initializeComponentsSelectionRing_2,
-    (value) => {
-      initializeComponentsSelectionRing_2 = value;
-    },
-  );
-  bindRuntimeValue(runtime, "SelectionPointGlyph", () => SelectionPointGlyph);
-  bindRuntimeValue(
-    runtime,
-    "reactComponentsSelectionRing_2",
-    () => reactComponentsSelectionRing_2,
-    (value) => {
-      reactComponentsSelectionRing_2 = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "jsxComponentsSelectionRing_2",
-    () => jsxComponentsSelectionRing_2,
-    (value) => {
-      jsxComponentsSelectionRing_2 = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "SelectionPoints",
-    () => SelectionPoints,
-    (value) => {
-      SelectionPoints = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "initializeComponentsSelectionRing_3",
-    () => initializeComponentsSelectionRing_3,
-    (value) => {
-      initializeComponentsSelectionRing_3 = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "selectionResizeCursor",
-    () => selectionResizeCursor,
-  );
-  bindRuntimeValue(
-    runtime,
-    "selectionRotationCursor",
-    () => selectionRotationCursor,
-  );
-  bindRuntimeValue(
-    runtime,
-    "ComponentsSelectionRingNwNeSeValues",
-    () => ComponentsSelectionRingNwNeSeValues,
-    (value) => {
-      ComponentsSelectionRingNwNeSeValues = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "ComponentsSelectionRingEwResizeNwseResizeNsResizeValues",
-    () => ComponentsSelectionRingEwResizeNwseResizeNsResizeValues,
-    (value) => {
-      ComponentsSelectionRingEwResizeNwseResizeNsResizeValues = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "ComponentsSelectionRingNeSeSwConfig",
-    () => ComponentsSelectionRingNeSeSwConfig,
-    (value) => {
-      ComponentsSelectionRingNeSeSwConfig = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "ImageSvgXmlValue",
-    () => ImageSvgXmlValue,
-    (value) => {
-      ImageSvgXmlValue = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "ComponentsSelectionRingLabel_3",
-    () => ComponentsSelectionRingLabel_3,
-    (value) => {
-      ComponentsSelectionRingLabel_3 = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "rotationCursorBodySvg",
-    () => rotationCursorBodySvg,
-    (value) => {
-      rotationCursorBodySvg = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "ComponentsSelectionRingResolvedValue",
-    () => ComponentsSelectionRingResolvedValue,
-    (value) => {
-      ComponentsSelectionRingResolvedValue = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "initializeComponentsSelectionRing_4",
-    () => initializeComponentsSelectionRing_4,
-    (value) => {
-      initializeComponentsSelectionRing_4 = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "preventSelectionHandleEvent",
-    () => preventSelectionHandleEvent,
-  );
-  bindRuntimeValue(
-    runtime,
-    "selectionHandleTooltip",
-    () => selectionHandleTooltip,
-  );
-  bindRuntimeValue(
-    runtime,
-    "isOutsideSelectionGrip",
-    () => isOutsideSelectionGrip,
-  );
-  bindRuntimeValue(runtime, "selectionPointKey", () => selectionPointKey);
-  bindRuntimeValue(
-    runtime,
-    "reactComponentsSelectionRing_3",
-    () => reactComponentsSelectionRing_3,
-    (value) => {
-      reactComponentsSelectionRing_3 = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "jsxComponentsSelectionRing_3",
-    () => jsxComponentsSelectionRing_3,
-    (value) => {
-      jsxComponentsSelectionRing_3 = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "SelectionRing",
-    () => SelectionRing,
-    (value) => {
-      SelectionRing = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "initializeComponentsSelectionRing_5",
-    () => initializeComponentsSelectionRing_5,
-    (value) => {
-      initializeComponentsSelectionRing_5 = value;
-    },
-  );
-  bindRuntimeValue(runtime, "currencySymbol", () => currencySymbol);
-  bindRuntimeValue(
-    runtime,
-    "ComponentsSelectionRingSGDAUDNZDSet",
-    () => ComponentsSelectionRingSGDAUDNZDSet,
-    (value) => {
-      ComponentsSelectionRingSGDAUDNZDSet = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "ComponentsSelectionRingIntegerGroupDecimalSet",
-    () => ComponentsSelectionRingIntegerGroupDecimalSet,
-    (value) => {
-      ComponentsSelectionRingIntegerGroupDecimalSet = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "initializeComponentsSelectionRing_6",
-    () => initializeComponentsSelectionRing_6,
-    (value) => {
-      initializeComponentsSelectionRing_6 = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "useHydratedNumberInput",
-    () => useHydratedNumberInput,
-  );
-  bindRuntimeValue(
-    runtime,
-    "reactComponentsSelectionRing_4",
-    () => reactComponentsSelectionRing_4,
-    (value) => {
-      reactComponentsSelectionRing_4 = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "jsxComponentsSelectionRing_4",
-    () => jsxComponentsSelectionRing_4,
-    (value) => {
-      jsxComponentsSelectionRing_4 = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "ComponentsSelectionRingHandler",
-    () => ComponentsSelectionRingHandler,
-    (value) => {
-      ComponentsSelectionRingHandler = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "ComponentsSelectionRingHandler_2",
-    () => ComponentsSelectionRingHandler_2,
-    (value) => {
-      ComponentsSelectionRingHandler_2 = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "NumberInput",
-    () => NumberInput,
-    (value) => {
-      NumberInput = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "initializeComponentsSelectionRing_7",
-    () => initializeComponentsSelectionRing_7,
-    (value) => {
-      initializeComponentsSelectionRing_7 = value;
-    },
-  );
+}
+export {
+  AspectSquareValue,
+  ComponentsSelectionRingClassNames,
+  ComponentsSelectionRingClassNames_2,
+  ComponentsSelectionRingClassNames_3,
+  ComponentsSelectionRingClassNames_4,
+  ComponentsSelectionRingClassNames_5,
+  ComponentsSelectionRingClassNames_6,
+  ComponentsSelectionRingConstant,
+  ComponentsSelectionRingConstant_2,
+  ComponentsSelectionRingEwResizeNwseResizeNsResizeValues,
+  ComponentsSelectionRingHandler,
+  ComponentsSelectionRingHandler_2,
+  ComponentsSelectionRingIntegerGroupDecimalSet,
+  ComponentsSelectionRingLabel,
+  ComponentsSelectionRingLabel_2,
+  ComponentsSelectionRingLabel_3,
+  ComponentsSelectionRingLimit,
+  ComponentsSelectionRingNeSeSwConfig,
+  ComponentsSelectionRingNwNeSeValues,
+  ComponentsSelectionRingPointPointStrokeGripHitConfig,
+  ComponentsSelectionRingResolvedValue,
+  ComponentsSelectionRingSGDAUDNZDSet,
+  currencySymbol,
+  HFullValue,
+  ImageSvgXmlValue,
+  initializeComponentsSelectionRing,
+  initializeComponentsSelectionRing_2,
+  initializeComponentsSelectionRing_3,
+  initializeComponentsSelectionRing_4,
+  initializeComponentsSelectionRing_5,
+  initializeComponentsSelectionRing_6,
+  initializeComponentsSelectionRing_7,
+  isOutsideSelectionGrip,
+  jsxComponentsSelectionRing,
+  jsxComponentsSelectionRing_2,
+  jsxComponentsSelectionRing_3,
+  jsxComponentsSelectionRing_4,
+  NumberInput,
+  preventSelectionHandleEvent,
+  reactComponentsSelectionRing,
+  reactComponentsSelectionRing_2,
+  reactComponentsSelectionRing_3,
+  reactComponentsSelectionRing_4,
+  rotationCursorBodySvg,
+  selectionGripHitSize,
+  selectionHandleTooltip,
+  SelectionPointGlyph,
+  selectionPointKey,
+  SelectionPoints,
+  selectionResizeCursor,
+  SelectionRing,
+  selectionRingClasses,
+  selectionRotationCursor,
+  useHydratedNumberInput,
+};
+export function installCdsComponentsSelectionRing(): () => void {
   return () => {
-    initializeComponentsSelectionRing = (0, runtime.initializeOnce)(
+    initializeComponentsSelectionRing = (0, initializeOnce)(
       (): Dynamic => {
         "use client";
 
-        (0, runtime.initializeClassNames)();
-        (0, runtime.initializeDomOwnerWindow)();
-        (0, runtime.initializeCdsRoot)();
-        (0, runtime.initializeDomSelectionPrevention)();
-        (0, runtime.initializeComponentsIcon_2)();
-        (0, runtime.initializeTooltipTrigger_2)();
-        (0, runtime.initializeTooltipTooltip)();
-        (0, runtime.initializeButtonContext_2)();
-        (0, runtime.initializeFieldContext)();
-        (0, runtime.initializeSwitchContext)();
-        reactComponentsSelectionRing = (0, runtime.toModuleNamespace)(
-          (0, runtime.load_react)(),
+        (0, initializeClassNames)();
+        (0, initializeDomOwnerWindow)();
+        (0, initializeCdsRoot)();
+        (0, initializeDomSelectionPrevention)();
+        (0, initializeComponentsIcon_2)();
+        (0, initializeTooltipTrigger_2)();
+        (0, initializeTooltipTooltip)();
+        (0, initializeButtonContext_2)();
+        (0, initializeFieldContext)();
+        (0, initializeSwitchContext)();
+        reactComponentsSelectionRing = (0, toModuleNamespace)(
+          (0, load_react)(),
         );
-        jsxComponentsSelectionRing = (0, runtime.toModuleNamespace)(
-          (0, runtime.load_react_jsx_runtime)(),
+        jsxComponentsSelectionRing = (0, toModuleNamespace)(
+          (0, load_react_jsx_runtime)(),
         );
-        (0, runtime.initializeNpm__base_ui_react_H5)();
-        (0, runtime.initializeNpm__base_ui_react_zve)();
-        (0, runtime.initializeNpm__base_ui_react_jve)();
+        (0, initializeNpm__base_ui_react_H5)();
+        (0, initializeNpm__base_ui_react_zve)();
+        (0, initializeNpm__base_ui_react_jve)();
         selectionRingClasses =
           "cds-reset relative z-[1] inline-flex h-full items-center justify-center gap-1.5 select-none border-0 bg-transparent outline-none focus-visible:outline-hidden rounded-[calc(var(--cds-radius)-2px)] text-body font-normal [&:not([data-disabled])]:hover:text-primary data-[checked]:text-primary data-[disabled]:opacity-disabled transition-shadow duration-fast focus-visible:shadow-focus";
         ComponentsSelectionRingClassNames = "px-md";
@@ -639,11 +325,11 @@ export function installCdsComponentsSelectionRing(
         ComponentsSelectionRingLimit = 600;
       },
     );
-    initializeComponentsSelectionRing_2 = (0, runtime.initializeOnce)(
+    initializeComponentsSelectionRing_2 = (0, initializeOnce)(
       (): Dynamic => {
-        (0, runtime.initializeEditorSelectionGeometry)();
+        (0, initializeEditorSelectionGeometry)();
         ComponentsSelectionRingPointPointStrokeGripHitConfig = {
-          ...runtime.selectionMetrics,
+          ...selectionMetrics,
           point: 10,
           pointStroke: 1.5,
           gripHit: 24,
@@ -653,20 +339,20 @@ export function installCdsComponentsSelectionRing(
         };
       },
     );
-    initializeComponentsSelectionRing_3 = (0, runtime.initializeOnce)(
+    initializeComponentsSelectionRing_3 = (0, initializeOnce)(
       (): Dynamic => {
         "use client";
 
-        (0, runtime.initializeClassNames)();
-        (0, runtime.initializeTokens)();
-        (0, runtime.initializeSheetsMenuPopup_2)();
-        (0, runtime.initializeEditorSelectionGeometry)();
+        (0, initializeClassNames)();
+        (0, initializeTokens)();
+        (0, initializeSheetsMenuPopup_2)();
+        (0, initializeEditorSelectionGeometry)();
         initializeComponentsSelectionRing_2();
-        reactComponentsSelectionRing_2 = (0, runtime.toModuleNamespace)(
-          (0, runtime.load_react)(),
+        reactComponentsSelectionRing_2 = (0, toModuleNamespace)(
+          (0, load_react)(),
         );
-        jsxComponentsSelectionRing_2 = (0, runtime.toModuleNamespace)(
-          (0, runtime.load_react_jsx_runtime)(),
+        jsxComponentsSelectionRing_2 = (0, toModuleNamespace)(
+          (0, load_react_jsx_runtime)(),
         );
         SelectionPoints = (0, reactComponentsSelectionRing_2.forwardRef)(
           function (
@@ -684,11 +370,11 @@ export function installCdsComponentsSelectionRing(
           ): Dynamic {
             let value: Dynamic = (0,
               reactComponentsSelectionRing_2.useSyncExternalStore)(
-                runtime.subscribeSheetMedia,
-                runtime.usesCoarsePointer,
+                subscribeSheetMedia,
+                usesCoarsePointer,
                 (): Dynamic => false,
               ),
-              value2: Dynamic = (0, runtime.normalizeSelectionScale)(scale),
+              value2: Dynamic = (0, normalizeSelectionScale)(scale),
               index: Dynamic = 0;
             for (let value5 of points as Dynamic)
               for (let value6 of points as Dynamic)
@@ -713,7 +399,7 @@ export function installCdsComponentsSelectionRing(
                 ref={options}
                 data-cds={"SelectionPoints"}
                 aria-hidden={"true"}
-                className={(0, runtime.cn)(
+                className={(0, cn)(
                   "pointer-events-none absolute top-0 left-0",
                   className,
                 )}
@@ -733,7 +419,7 @@ export function installCdsComponentsSelectionRing(
                         )
                         .join(" ")}
                       fill={"none"}
-                      stroke={runtime.tokens.fill.accent.cssVar}
+                      stroke={tokens.fill.accent.cssVar}
                       strokeWidth={1 / value2}
                     />
                   </svg>) : (null)}
@@ -765,7 +451,7 @@ export function installCdsComponentsSelectionRing(
                             : undefined
                         }
                       >
-                        {shape === "square" ? (<runtime.SelectionGrip />) : (<SelectionPointGlyph />)}
+                        {shape === "square" ? (<SelectionGrip />) : (<SelectionPointGlyph />)}
                       </div>
                     </div>
                   ),
@@ -777,7 +463,7 @@ export function installCdsComponentsSelectionRing(
         SelectionPoints.displayName = "SelectionPoints";
       },
     );
-    initializeComponentsSelectionRing_4 = (0, runtime.initializeOnce)(
+    initializeComponentsSelectionRing_4 = (0, initializeOnce)(
       (): Dynamic => {
         ComponentsSelectionRingNwNeSeValues = ["nw", "ne", "se", "sw"];
         ComponentsSelectionRingEwResizeNwseResizeNsResizeValues = [
@@ -808,22 +494,22 @@ export function installCdsComponentsSelectionRing(
           "%3C/g%3E%3C/svg%3E";
       },
     );
-    initializeComponentsSelectionRing_5 = (0, runtime.initializeOnce)(
+    initializeComponentsSelectionRing_5 = (0, initializeOnce)(
       (): Dynamic => {
         "use client";
 
-        (0, runtime.initializeClassNames)();
-        (0, runtime.initializeSheetsMenuPopup_2)();
-        (0, runtime.initializeEditorSelectionGeometry)();
-        (0, runtime.initializeTooltipDisabledReason)();
-        (0, runtime.initializeTooltipTooltip)();
+        (0, initializeClassNames)();
+        (0, initializeSheetsMenuPopup_2)();
+        (0, initializeEditorSelectionGeometry)();
+        (0, initializeTooltipDisabledReason)();
+        (0, initializeTooltipTooltip)();
         initializeComponentsSelectionRing_2();
         initializeComponentsSelectionRing_4();
-        reactComponentsSelectionRing_3 = (0, runtime.toModuleNamespace)(
-          (0, runtime.load_react)(),
+        reactComponentsSelectionRing_3 = (0, toModuleNamespace)(
+          (0, load_react)(),
         );
-        jsxComponentsSelectionRing_3 = (0, runtime.toModuleNamespace)(
-          (0, runtime.load_react_jsx_runtime)(),
+        jsxComponentsSelectionRing_3 = (0, toModuleNamespace)(
+          (0, load_react_jsx_runtime)(),
         );
         SelectionRing = (0, reactComponentsSelectionRing_3.forwardRef)(
           function (
@@ -851,31 +537,31 @@ export function installCdsComponentsSelectionRing(
           ): Dynamic {
             let value: Dynamic = (0,
               reactComponentsSelectionRing_3.useSyncExternalStore)(
-                runtime.subscribeSheetMedia,
-                runtime.usesCoarsePointer,
+                subscribeSheetMedia,
+                usesCoarsePointer,
                 (): Dynamic => false,
               ),
-              value2: Dynamic = (0, runtime.normalizeSelectionScale)(scale),
-              value3: Dynamic = (0, runtime.normalizeCollaboratorIndex)(
+              value2: Dynamic = (0, normalizeSelectionScale)(scale),
+              value3: Dynamic = (0, normalizeCollaboratorIndex)(
                 collaborator,
               );
             if (collaborator !== undefined && value3 === undefined) return null;
-            let value4: Dynamic = (0, runtime.selectionRingStroke)(
+            let value4: Dynamic = (0, selectionRingStroke)(
                 state,
                 value3,
               ),
-              value5: Dynamic = (0, runtime.resolveSelectionPoints)(
+              value5: Dynamic = (0, resolveSelectionPoints)(
                 grips,
                 state,
                 value3,
               ),
-              value6: Dynamic = (0, runtime.normalizeSelectionRotation)(
+              value6: Dynamic = (0, normalizeSelectionRotation)(
                 rotation,
               ),
-              value7: Dynamic = (0, runtime.hasDisabledReason)(
+              value7: Dynamic = (0, hasDisabledReason)(
                 resizeDisabledReason,
               ),
-              value8: Dynamic = (0, runtime.hasDisabledReason)(
+              value8: Dynamic = (0, hasDisabledReason)(
                 rotateDisabledReason,
               ),
               value9: Dynamic = value3 === undefined && state === "selected",
@@ -888,11 +574,11 @@ export function installCdsComponentsSelectionRing(
                 ComponentsSelectionRingPointPointStrokeGripHitConfig.edgeHit,
               value14: Dynamic =
                 typeof grips == "object"
-                  ? runtime.EditorSelectionGeometryFilterValue.filter(
+                  ? EditorSelectionGeometryFilterValue.filter(
                       (input?: Dynamic): Dynamic =>
                         grips.some(
                           (input2?: Dynamic): Dynamic =>
-                            (0, runtime.sameSelectionPoint)(input2, input),
+                            (0, sameSelectionPoint)(input2, input),
                         ),
                     )
                   : [],
@@ -905,7 +591,7 @@ export function installCdsComponentsSelectionRing(
                   ? []
                   : value14.length > 0
                     ? value14
-                    : runtime.EditorSelectionGeometryFilterValue,
+                    : EditorSelectionGeometryFilterValue,
               callback: Dynamic = (input?: Dynamic): Dynamic =>
                 input >=
                 3 *
@@ -941,13 +627,13 @@ export function installCdsComponentsSelectionRing(
                 data-variant={value3 === undefined ? variant : undefined}
                 data-collaborator={value3}
                 aria-hidden={"true"}
-                className={(0, runtime.cn)(
-                  runtime.OutlineFillAccentValue,
+                className={(0, cn)(
+                  OutlineFillAccentValue,
                   className,
                 )}
                 style={{
                   ...style,
-                  ...(0, runtime.SelectionRingSvg)({
+                  ...(0, SelectionRingSvg)({
                     frame: frame,
                     scale: value2,
                     rotation: rotation,
@@ -957,7 +643,7 @@ export function installCdsComponentsSelectionRing(
                   }),
                 }}
               >
-                <runtime.TooltipGroup>
+                <TooltipGroup>
                   {value17.map((input?: Dynamic): Dynamic => {
                     let state2: Dynamic = {
                       position: "absolute",
@@ -1059,7 +745,7 @@ export function installCdsComponentsSelectionRing(
                     );
                   })}
                   {value5.map((input?: Dynamic): Dynamic => {
-                    let value20: Dynamic = (0, runtime.selectionPointPosition)(
+                    let value20: Dynamic = (0, selectionPointPosition)(
                       input,
                     );
                     if (!value10)
@@ -1069,7 +755,7 @@ export function installCdsComponentsSelectionRing(
                           className: "absolute block size-0",
                           style: value20,
                           children: (
-                            <runtime.SelectionGrip
+                            <SelectionGrip
                               stroke={value4}
                               disabled={value9 && value7}
                               variant={variant}
@@ -1120,7 +806,7 @@ export function installCdsComponentsSelectionRing(
                               }
                         }
                       >
-                        <runtime.SelectionGrip
+                        <SelectionGrip
                           stroke={value4}
                           disabled={value7}
                           variant={variant}
@@ -1128,17 +814,17 @@ export function installCdsComponentsSelectionRing(
                       </div>,
                     );
                   })}
-                </runtime.TooltipGroup>
-                {angleLabel !== undefined && value3 === undefined ? (<runtime.SelectionPoint
+                </TooltipGroup>
+                {angleLabel !== undefined && value3 === undefined ? (<SelectionPoint
                     data-selection-angle={""}
                     scale={1}
                     rotation={rotation}
                     anchor={"center"}
-                    at={runtime.EditorSelectionGeometryLeftTopConfig}
+                    at={EditorSelectionGeometryLeftTopConfig}
                     variant={variant}
                   >
                     {angleLabel}
-                  </runtime.SelectionPoint>) : (null)}
+                  </SelectionPoint>) : (null)}
               </div>
             );
           },
@@ -1146,7 +832,7 @@ export function installCdsComponentsSelectionRing(
         SelectionRing.displayName = "SelectionRing";
       },
     );
-    initializeComponentsSelectionRing_6 = (0, runtime.initializeOnce)(
+    initializeComponentsSelectionRing_6 = (0, initializeOnce)(
       (): Dynamic => {
         ComponentsSelectionRingSGDAUDNZDSet = new Set(["SGD", "AUD", "NZD"]);
         ComponentsSelectionRingIntegerGroupDecimalSet = new Set([
@@ -1161,24 +847,24 @@ export function installCdsComponentsSelectionRing(
         ]);
       },
     );
-    initializeComponentsSelectionRing_7 = (0, runtime.initializeOnce)(
+    initializeComponentsSelectionRing_7 = (0, initializeOnce)(
       (): Dynamic => {
         "use client";
 
-        (0, runtime.initializeClassNames)();
-        (0, runtime.initializeCdsRoot)();
-        (0, runtime.initializeMenuPopup_2)();
-        (0, runtime.initializeDomRefComposition)();
-        (0, runtime.initializeButtonButton_2)();
-        (0, runtime.initializeFieldContext)();
+        (0, initializeClassNames)();
+        (0, initializeCdsRoot)();
+        (0, initializeMenuPopup_2)();
+        (0, initializeDomRefComposition)();
+        (0, initializeButtonButton_2)();
+        (0, initializeFieldContext)();
         initializeComponentsSelectionRing_6();
-        reactComponentsSelectionRing_4 = (0, runtime.toModuleNamespace)(
-          (0, runtime.load_react)(),
+        reactComponentsSelectionRing_4 = (0, toModuleNamespace)(
+          (0, load_react)(),
         );
-        jsxComponentsSelectionRing_4 = (0, runtime.toModuleNamespace)(
-          (0, runtime.load_react_jsx_runtime)(),
+        jsxComponentsSelectionRing_4 = (0, toModuleNamespace)(
+          (0, load_react_jsx_runtime)(),
         );
-        (0, runtime.initializeNpm__base_ui_react_VJe)();
+        (0, initializeNpm__base_ui_react_VJe)();
         ComponentsSelectionRingHandler = (): Dynamic => {};
         ComponentsSelectionRingHandler_2 = (): Dynamic =>
           ComponentsSelectionRingHandler;
@@ -1216,7 +902,7 @@ export function installCdsComponentsSelectionRing(
             "use no memo";
 
             let { id: value2, ...value3 }: Dynamic = props,
-              value4: Dynamic = (0, runtime.useExperimentalSettings)(),
+              value4: Dynamic = (0, useExperimentalSettings)(),
               value5: Dynamic = locale ?? value4,
               value6: Dynamic = useHydratedNumberInput(),
               value7: Dynamic = value5 ?? (value6 ? undefined : "en-US"),
@@ -1234,14 +920,14 @@ export function installCdsComponentsSelectionRing(
               value10: Dynamic =
                 slotEnd ?? (value8?.side === "end" ? value8.symbol : null),
               value11: Dynamic = value8 !== null || undefined,
-              value12: Dynamic = (0, runtime.useFieldInvalid)(),
-              value13: Dynamic = (0, runtime.useFieldDisabled)(),
+              value12: Dynamic = (0, useFieldInvalid)(),
+              value13: Dynamic = (0, useFieldDisabled)(),
               value14: Dynamic = fullWidth ? "w-full" : "",
               value15: Dynamic = (0, reactComponentsSelectionRing_4.useRef)(
                 null,
               ),
               { clickToFocusProps: value16 }: Dynamic = (0,
-              runtime.useClickToFocus)(
+              useClickToFocus)(
                 (): Dynamic => value15.current?.focus(),
                 {
                   disabled: disabled2 || value13,
@@ -1257,11 +943,11 @@ export function installCdsComponentsSelectionRing(
                 value3.onBlur?.(input);
                 value17();
               },
-              value18: Dynamic = (0, runtime.useMergedRefs)(value15, options);
+              value18: Dynamic = (0, useMergedRefs)(value15, options);
             return (
-              <runtime.npm_NumberField_mU.Root
+              <npm_NumberField_mU.Root
                 data-cds={"NumberInput"}
-                {...(0, runtime.getSizeAttribute)(size)}
+                {...(0, getSizeAttribute)(size)}
                 data-invalid={value12 || undefined}
                 id={value2}
                 value={value}
@@ -1283,8 +969,8 @@ export function installCdsComponentsSelectionRing(
                 name={name}
                 form={form}
                 onMouseDown={value16.onMouseDown}
-                className={(0, runtime.cn)(
-                  runtime.ButtonButtonCss,
+                className={(0, cn)(
+                  ButtonButtonCss,
                   "pr-md",
                   "inline-flex",
                   value14,
@@ -1301,15 +987,15 @@ export function installCdsComponentsSelectionRing(
                   >
                     {value9}
                   </span>) : (null)}
-                <runtime.npm_NumberField_mU.Input
+                <npm_NumberField_mU.Input
                   ref={value18}
                   aria-invalid={
                     value3["aria-invalid"] ?? (value12 || undefined)
                   }
                   {...value3}
                   onBlur={callback}
-                  className={(0, runtime.cn)(
-                    runtime.ButtonButtonClassNames_4,
+                  className={(0, cn)(
+                    ButtonButtonClassNames_4,
                     "disabled:opacity-100",
                   )}
                 />
@@ -1319,7 +1005,7 @@ export function installCdsComponentsSelectionRing(
                   >
                     {value10}
                   </span>) : (null)}
-              </runtime.npm_NumberField_mU.Root>
+              </npm_NumberField_mU.Root>
             );
           },
         );

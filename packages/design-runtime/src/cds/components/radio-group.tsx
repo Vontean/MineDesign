@@ -10,178 +10,121 @@ import type {
 } from "../../contracts/ui";
 import type * as React from "react";
 /** Restored application module; prepare first, initialize in original order. */
-import { bindRuntimeValue, type RuntimeBindings } from "../../runtime-types";
-export function installCdsComponentsRadioGroup(
-  runtime: RuntimeBindings,
-): () => void {
-  var reactComponentsRadioGroup: typeof React;
-  var jsxComponentsRadioGroup: typeof import("react/jsx-runtime");
-  var radioGlyphClasses: string;
-  var RadioGroupItem: ForwardComponent<HTMLButtonElement, RadioItemProps>;
-  var radioItemClasses: string;
-  var RadioGroupCard: ForwardComponent<HTMLButtonElement, RadioCardProps>;
-  var RadioGroupRoot: ForwardComponent<HTMLDivElement, RadioRootProps>;
-  var ComponentsRadioGroupAssignValue: typeof RadioGroup & {
-    Root: typeof RadioGroupRoot;
-    Item: typeof RadioGroupItem;
-    Card: typeof RadioGroupCard;
-  };
-  var initializeComponentsRadioGroup: () => void;
-  function RadioGlyph({
-    topAlign = false,
-    focusRing = false,
-  }: RadioGlyphProps): React.ReactElement {
-    useUiLocale();
-    return (
-      <span
-        className={(0, runtime.npm_clsx_Ea)(
-          radioGlyphClasses,
-          focusRing && "group-focus-visible/rd:shadow-focus",
-          topAlign && "mt-[calc((1lh_-_var(--cds-checkbox,1rem))_/_2)]",
-        )}
-      >
-        <runtime.npm_Radio_iP.Indicator
-          className={
-            "size-[calc(var(--cds-checkbox,1rem)-calc(0.625rem*var(--cds-rem-scale,1)))] rounded-full bg-[var(--cds-on-accent)] data-[unchecked]:hidden"
-          }
-          keepMounted={true}
-        />
-      </span>
-    );
-  }
-  var RadioGroup: React.FC<RadioGroupProps> = function (
-    input: RadioGroupProps,
-  ): React.ReactElement {
-    useUiLocale();
-    let {
-      value: value,
-      defaultValue: value2,
-      onChange: value3,
-      options: value4,
-      disabled: value5,
-      size: value6,
-      name: value7,
-      className: value8,
-    } = input;
-    return (
-      <runtime.npm_RadioGroup_uF
-        data-cds={"RadioGroup"}
-        value={value}
-        defaultValue={value2}
-        onValueChange={value3 ? (input2: string) => value3(input2) : undefined}
-        disabled={value5}
-        name={value7}
-        {...(0, runtime.getSizeAttribute)(value6)}
-        className={(0, runtime.cn)("flex flex-col gap-2 font-sans", value8)}
-      >
-        {value4.map((input2) =>
-          (() => {
-            const _Component = RadioGroupItem;
-            const _props = {
-              value: input2.value,
-              label: input2.label,
-              description: input2.description,
-              disabled: input2.disabled,
-            } as const;
-            const _key = input2.value;
-            return <_Component key={_key} {..._props} />;
-          })(),
-        )}
-      </runtime.npm_RadioGroup_uF>
-    );
-  };
-  bindRuntimeValue(runtime, "RadioGlyph", () => RadioGlyph);
-  bindRuntimeValue(runtime, "RadioGroup", () => RadioGroup);
-  bindRuntimeValue(
-    runtime,
-    "reactComponentsRadioGroup",
-    () => reactComponentsRadioGroup,
-    (value) => {
-      reactComponentsRadioGroup = value;
-    },
+import { initializeDomSelectionPrevention, withSelectionPrevention } from "../dom/selection-prevention";
+import { initializeFieldContext, isInsideField } from "../field/context";
+import { cn, initializeClassNames } from "../theme/class-names";
+import { getSizeAttribute, initializeCdsRoot } from "../theme/root";
+import { initializeNpm__base_ui_react_H5, initializeNpm__base_ui_react_jve, initializeNpm__base_ui_react_zve, initializeNpm_clsx_xh, load_react, load_react_jsx_runtime, npm_clsx_Ea, npm_LabelableProvider_NR as R_npm_LabelableProvider_NR, npm_Radio_iP, npm_RadioGroup_uF as R_npm_RadioGroup_uF } from "../../dependencies";
+import { initializeOnce, toModuleNamespace } from "../../module-helpers";
+
+var reactComponentsRadioGroup: typeof React;
+var jsxComponentsRadioGroup: typeof import("react/jsx-runtime");
+var radioGlyphClasses: string;
+var RadioGroupItem: ForwardComponent<HTMLButtonElement, RadioItemProps>;
+var radioItemClasses: string;
+var RadioGroupCard: ForwardComponent<HTMLButtonElement, RadioCardProps>;
+var RadioGroupRoot: ForwardComponent<HTMLDivElement, RadioRootProps>;
+var ComponentsRadioGroupAssignValue: typeof RadioGroup & {
+  Root: typeof RadioGroupRoot;
+  Item: typeof RadioGroupItem;
+  Card: typeof RadioGroupCard;
+};
+var initializeComponentsRadioGroup: () => void;
+function RadioGlyph({
+  topAlign = false,
+  focusRing = false,
+}: RadioGlyphProps): React.ReactElement {
+  useUiLocale();
+  return (
+    <span
+      className={(0, npm_clsx_Ea)(
+        radioGlyphClasses,
+        focusRing && "group-focus-visible/rd:shadow-focus",
+        topAlign && "mt-[calc((1lh_-_var(--cds-checkbox,1rem))_/_2)]",
+      )}
+    >
+      <npm_Radio_iP.Indicator
+        className={
+          "size-[calc(var(--cds-checkbox,1rem)-calc(0.625rem*var(--cds-rem-scale,1)))] rounded-full bg-[var(--cds-on-accent)] data-[unchecked]:hidden"
+        }
+        keepMounted={true}
+      />
+    </span>
   );
-  bindRuntimeValue(
-    runtime,
-    "jsxComponentsRadioGroup",
-    () => jsxComponentsRadioGroup,
-    (value) => {
-      jsxComponentsRadioGroup = value;
-    },
+}
+var RadioGroup: React.FC<RadioGroupProps> = function (
+  input: RadioGroupProps,
+): React.ReactElement {
+  useUiLocale();
+  let {
+    value: value,
+    defaultValue: value2,
+    onChange: value3,
+    options: value4,
+    disabled: value5,
+    size: value6,
+    name: value7,
+    className: value8,
+  } = input;
+  return (
+    <R_npm_RadioGroup_uF
+      data-cds={"RadioGroup"}
+      value={value}
+      defaultValue={value2}
+      onValueChange={value3 ? (input2: string) => value3(input2) : undefined}
+      disabled={value5}
+      name={value7}
+      {...(0, getSizeAttribute)(value6)}
+      className={(0, cn)("flex flex-col gap-2 font-sans", value8)}
+    >
+      {value4.map((input2) =>
+        (() => {
+          const _Component = RadioGroupItem;
+          const _props = {
+            value: input2.value,
+            label: input2.label,
+            description: input2.description,
+            disabled: input2.disabled,
+          } as const;
+          const _key = input2.value;
+          return <_Component key={_key} {..._props} />;
+        })(),
+      )}
+    </R_npm_RadioGroup_uF>
   );
-  bindRuntimeValue(
-    runtime,
-    "radioGlyphClasses",
-    () => radioGlyphClasses,
-    (value) => {
-      radioGlyphClasses = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "RadioGroupItem",
-    () => RadioGroupItem,
-    (value) => {
-      RadioGroupItem = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "radioItemClasses",
-    () => radioItemClasses,
-    (value) => {
-      radioItemClasses = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "RadioGroupCard",
-    () => RadioGroupCard,
-    (value) => {
-      RadioGroupCard = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "RadioGroupRoot",
-    () => RadioGroupRoot,
-    (value) => {
-      RadioGroupRoot = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "ComponentsRadioGroupAssignValue",
-    () => ComponentsRadioGroupAssignValue,
-    (value) => {
-      ComponentsRadioGroupAssignValue = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "initializeComponentsRadioGroup",
-    () => initializeComponentsRadioGroup,
-    (value) => {
-      initializeComponentsRadioGroup = value;
-    },
-  );
+};
+export {
+  ComponentsRadioGroupAssignValue,
+  initializeComponentsRadioGroup,
+  jsxComponentsRadioGroup,
+  RadioGlyph,
+  radioGlyphClasses,
+  RadioGroup,
+  RadioGroupCard,
+  RadioGroupItem,
+  RadioGroupRoot,
+  radioItemClasses,
+  reactComponentsRadioGroup,
+};
+export function installCdsComponentsRadioGroup(): () => void {
   return () => {
-    initializeComponentsRadioGroup = (0, runtime.initializeOnce)(() => {
+    initializeComponentsRadioGroup = (0, initializeOnce)(() => {
       "use client";
 
-      (0, runtime.initializeClassNames)();
-      (0, runtime.initializeCdsRoot)();
-      (0, runtime.initializeDomSelectionPrevention)();
-      (0, runtime.initializeFieldContext)();
-      reactComponentsRadioGroup = (0, runtime.toModuleNamespace)(
-        (0, runtime.load_react)(),
+      (0, initializeClassNames)();
+      (0, initializeCdsRoot)();
+      (0, initializeDomSelectionPrevention)();
+      (0, initializeFieldContext)();
+      reactComponentsRadioGroup = (0, toModuleNamespace)(
+        (0, load_react)(),
       );
-      (0, runtime.initializeNpm_clsx_xh)();
-      jsxComponentsRadioGroup = (0, runtime.toModuleNamespace)(
-        (0, runtime.load_react_jsx_runtime)(),
+      (0, initializeNpm_clsx_xh)();
+      jsxComponentsRadioGroup = (0, toModuleNamespace)(
+        (0, load_react_jsx_runtime)(),
       );
-      (0, runtime.initializeNpm__base_ui_react_H5)();
-      (0, runtime.initializeNpm__base_ui_react_zve)();
-      (0, runtime.initializeNpm__base_ui_react_jve)();
+      (0, initializeNpm__base_ui_react_H5)();
+      (0, initializeNpm__base_ui_react_zve)();
+      (0, initializeNpm__base_ui_react_jve)();
       radioGlyphClasses =
         "flex shrink-0 size-[var(--cds-checkbox)] items-center justify-center rounded-full border border-strong bg-transparent group-hover/rd:border-stronger group-data-[checked]/rd:bg-fill-accent group-data-[checked]/rd:border-0 group-data-[checked]/rd:group-hover/rd:bg-fill-accent-hover group-data-[disabled]/rd:group-hover/rd:border-strong";
       RadioGroupItem = (0, reactComponentsRadioGroup.forwardRef)<
@@ -198,18 +141,18 @@ export function installCdsComponentsRadioGroup(
           }: RadioItemProps,
           options: React.ForwardedRef<HTMLButtonElement>,
         ): React.ReactElement => {
-          let value2 = (0, runtime.isInsideField)(),
+          let value2 = (0, isInsideField)(),
             value3 = (0, reactComponentsRadioGroup.useId)(),
             value4 = (0, reactComponentsRadioGroup.useId)(),
             value5 = (
-              <runtime.npm_Radio_iP.Root
+              <npm_Radio_iP.Root
                 ref={options}
                 value={value}
                 disabled={disabled2}
                 aria-labelledby={value3}
                 aria-describedby={description ? value4 : undefined}
-                onMouseDown={(0, runtime.withSelectionPrevention)(undefined)}
-                className={(0, runtime.cn)(
+                onMouseDown={(0, withSelectionPrevention)(undefined)}
+                className={(0, cn)(
                   "cds-reset group/rd inline-flex",
                   description ? "items-start" : "items-center",
                   "gap-2 border-0 outline-none focus-visible:outline-hidden text-start text-body font-normal text-primary data-[disabled]:opacity-disabled",
@@ -226,12 +169,12 @@ export function installCdsComponentsRadioGroup(
                       {description}
                     </span>)}
                 </span>
-              </runtime.npm_Radio_iP.Root>
+              </npm_Radio_iP.Root>
             );
           return value2 ? (
-            <runtime.npm_LabelableProvider_NR>
+            <R_npm_LabelableProvider_NR>
               {value5}
-            </runtime.npm_LabelableProvider_NR>
+            </R_npm_LabelableProvider_NR>
           ) : (
             value5
           );
@@ -257,18 +200,18 @@ export function installCdsComponentsRadioGroup(
           }: RadioCardProps,
           options: React.ForwardedRef<HTMLButtonElement>,
         ): React.ReactElement => {
-          let value2 = (0, runtime.isInsideField)(),
+          let value2 = (0, isInsideField)(),
             value3 = (0, reactComponentsRadioGroup.useId)(),
             value4 = (0, reactComponentsRadioGroup.useId)(),
             value5 = (
-              <runtime.npm_Radio_iP.Root
+              <npm_Radio_iP.Root
                 ref={options}
                 value={value}
                 disabled={disabled2}
                 aria-labelledby={value3}
                 aria-describedby={description ? value4 : undefined}
-                onMouseDown={(0, runtime.withSelectionPrevention)(undefined)}
-                className={(0, runtime.cn)(radioItemClasses, className)}
+                onMouseDown={(0, withSelectionPrevention)(undefined)}
+                className={(0, cn)(radioItemClasses, className)}
               >
                 <RadioGlyph topAlign={true} />
                 {leading ? (<span className={"shrink-0"}>{leading}</span>) : (null)}
@@ -289,12 +232,12 @@ export function installCdsComponentsRadioGroup(
                   </span>
                   {children}
                 </span>
-              </runtime.npm_Radio_iP.Root>
+              </npm_Radio_iP.Root>
             );
           return value2 ? (
-            <runtime.npm_LabelableProvider_NR>
+            <R_npm_LabelableProvider_NR>
               {value5}
-            </runtime.npm_LabelableProvider_NR>
+            </R_npm_LabelableProvider_NR>
           ) : (
             value5
           );
@@ -310,12 +253,12 @@ export function installCdsComponentsRadioGroup(
           { className: className, size: size, ...props }: RadioRootProps,
           options: React.ForwardedRef<HTMLDivElement>,
         ): React.ReactElement => (
-          <runtime.npm_RadioGroup_uF
+          <R_npm_RadioGroup_uF
             data-cds={"RadioGroup"}
             ref={options}
             {...props}
-            {...(0, runtime.getSizeAttribute)(size)}
-            className={(0, runtime.cn)(
+            {...(0, getSizeAttribute)(size)}
+            className={(0, cn)(
               "flex flex-col gap-2 font-sans",
               className,
             )}

@@ -1,164 +1,54 @@
 import type * as React from "react";
 /** Restored application module; prepare first, initialize in original order. */
-import { bindRuntimeValue, type RuntimeBindings } from "../../runtime-types";
-export function installCdsPlatformReducedMotion(
-  runtime: RuntimeBindings,
-): () => void {
-  var reactPlatformReducedMotion: typeof React;
-  var reducedMotionMediaQuery: string;
-  var reducedMotionAttribute: string;
-  var initializePlatformReducedMotion: () => void;
-  var DurationSheetValue: string;
-  var PlatformReducedMotionCss: string;
-  var PlatformReducedMotionClassNames: string;
-  var PlatformReducedMotionCss_2: string;
-  var PlatformReducedMotionLabel: string;
-  var PlatformReducedMotionCss_3: string;
-  var PlatformReducedMotionCss_4: string;
-  var PlatformReducedMotionClassNames_2: string;
-  var PlatformReducedMotionClassNames_3: string;
-  var ClipPathInset00200vh0Value: string;
-  var PlatformReducedMotionLabel_2: string;
-  var initializePlatformReducedMotion_2: () => void;
-  bindRuntimeValue(
-    runtime,
-    "reactPlatformReducedMotion",
-    () => reactPlatformReducedMotion,
-    (value) => {
-      reactPlatformReducedMotion = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "reducedMotionMediaQuery",
-    () => reducedMotionMediaQuery,
-    (value) => {
-      reducedMotionMediaQuery = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "reducedMotionAttribute",
-    () => reducedMotionAttribute,
-    (value) => {
-      reducedMotionAttribute = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "initializePlatformReducedMotion",
-    () => initializePlatformReducedMotion,
-    (value) => {
-      initializePlatformReducedMotion = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "DurationSheetValue",
-    () => DurationSheetValue,
-    (value) => {
-      DurationSheetValue = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "PlatformReducedMotionCss",
-    () => PlatformReducedMotionCss,
-    (value) => {
-      PlatformReducedMotionCss = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "PlatformReducedMotionClassNames",
-    () => PlatformReducedMotionClassNames,
-    (value) => {
-      PlatformReducedMotionClassNames = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "PlatformReducedMotionCss_2",
-    () => PlatformReducedMotionCss_2,
-    (value) => {
-      PlatformReducedMotionCss_2 = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "PlatformReducedMotionLabel",
-    () => PlatformReducedMotionLabel,
-    (value) => {
-      PlatformReducedMotionLabel = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "PlatformReducedMotionCss_3",
-    () => PlatformReducedMotionCss_3,
-    (value) => {
-      PlatformReducedMotionCss_3 = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "PlatformReducedMotionCss_4",
-    () => PlatformReducedMotionCss_4,
-    (value) => {
-      PlatformReducedMotionCss_4 = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "PlatformReducedMotionClassNames_2",
-    () => PlatformReducedMotionClassNames_2,
-    (value) => {
-      PlatformReducedMotionClassNames_2 = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "PlatformReducedMotionClassNames_3",
-    () => PlatformReducedMotionClassNames_3,
-    (value) => {
-      PlatformReducedMotionClassNames_3 = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "ClipPathInset00200vh0Value",
-    () => ClipPathInset00200vh0Value,
-    (value) => {
-      ClipPathInset00200vh0Value = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "PlatformReducedMotionLabel_2",
-    () => PlatformReducedMotionLabel_2,
-    (value) => {
-      PlatformReducedMotionLabel_2 = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "initializePlatformReducedMotion_2",
-    () => initializePlatformReducedMotion_2,
-    (value) => {
-      initializePlatformReducedMotion_2 = value;
-    },
-  );
+import { load_react } from "../../dependencies";
+import { initializeOnce, toModuleNamespace } from "../../module-helpers";
+
+var reactPlatformReducedMotion: typeof React;
+var reducedMotionMediaQuery: string;
+var reducedMotionAttribute: string;
+var initializePlatformReducedMotion: () => void;
+var DurationSheetValue: string;
+var PlatformReducedMotionCss: string;
+var PlatformReducedMotionClassNames: string;
+var PlatformReducedMotionCss_2: string;
+var PlatformReducedMotionLabel: string;
+var PlatformReducedMotionCss_3: string;
+var PlatformReducedMotionCss_4: string;
+var PlatformReducedMotionClassNames_2: string;
+var PlatformReducedMotionClassNames_3: string;
+var ClipPathInset00200vh0Value: string;
+var PlatformReducedMotionLabel_2: string;
+var initializePlatformReducedMotion_2: () => void;
+export {
+  ClipPathInset00200vh0Value,
+  DurationSheetValue,
+  initializePlatformReducedMotion,
+  initializePlatformReducedMotion_2,
+  PlatformReducedMotionClassNames,
+  PlatformReducedMotionClassNames_2,
+  PlatformReducedMotionClassNames_3,
+  PlatformReducedMotionCss,
+  PlatformReducedMotionCss_2,
+  PlatformReducedMotionCss_3,
+  PlatformReducedMotionCss_4,
+  PlatformReducedMotionLabel,
+  PlatformReducedMotionLabel_2,
+  reactPlatformReducedMotion,
+  reducedMotionAttribute,
+  reducedMotionMediaQuery,
+};
+export function installCdsPlatformReducedMotion(): () => void {
   return () => {
-    initializePlatformReducedMotion = (0, runtime.initializeOnce)(() => {
+    initializePlatformReducedMotion = (0, initializeOnce)(() => {
       "use client";
 
-      reactPlatformReducedMotion = (0, runtime.toModuleNamespace)(
-        (0, runtime.load_react)(),
+      reactPlatformReducedMotion = (0, toModuleNamespace)(
+        (0, load_react)(),
       );
       reducedMotionMediaQuery = "(prefers-reduced-motion: reduce)";
       reducedMotionAttribute = "data-reduce-motion";
     });
-    initializePlatformReducedMotion_2 = (0, runtime.initializeOnce)(() => {
+    initializePlatformReducedMotion_2 = (0, initializeOnce)(() => {
       DurationSheetValue = "duration-sheet";
       PlatformReducedMotionCss = `${DurationSheetValue} ease-out motion-reduce:transition-none`;
       PlatformReducedMotionClassNames = "rounded-t-card rounded-b-none";

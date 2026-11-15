@@ -1,122 +1,64 @@
 /** Restored application module; prepare first, initialize in original order. */
 import {
-  bindRuntimeValue,
   type Dynamic,
-  type RuntimeBindings,
 } from "../../runtime-types";
 
-export function installEditorTypographyFontCatalog(
-  runtime: RuntimeBindings,
-): () => void {
-  var builtInUtilityCss: Dynamic;
-  var TypographyFontCatalogItems: Dynamic;
-  var TypographyFontCatalogItems_2: Dynamic;
-  var TypographyFontCatalogMapValue: Dynamic;
-  var TypographyFontCatalogCache: Dynamic;
-  var TypographyFontCatalogFromEntriesValue: Dynamic;
-  var TypographyFontCatalogAZaZAZaZPattern: Dynamic;
-  var TypographyFontCatalogSerifSansSerifPattern: Dynamic;
-  function getKnownWebFont(input?: Dynamic): Dynamic {
-    return TypographyFontCatalogCache.get(input.trim().toLowerCase());
+var builtInUtilityCss: Dynamic;
+var TypographyFontCatalogItems: Dynamic;
+var TypographyFontCatalogItems_2: Dynamic;
+var TypographyFontCatalogMapValue: Dynamic;
+var TypographyFontCatalogCache: Dynamic;
+var TypographyFontCatalogFromEntriesValue: Dynamic;
+var TypographyFontCatalogAZaZAZaZPattern: Dynamic;
+var TypographyFontCatalogSerifSansSerifPattern: Dynamic;
+function getKnownWebFont(input?: Dynamic): Dynamic {
+  return TypographyFontCatalogCache.get(input.trim().toLowerCase());
+}
+function knownWebFontFamily(input?: Dynamic): Dynamic {
+  return getKnownWebFont(input)?.family;
+}
+function buildGoogleFontsUrl(input?: Dynamic): Dynamic {
+  let value: Dynamic = getKnownWebFont(input),
+    value2: Dynamic = value
+      ? ":wght@" + (value.weights ?? [400, 500, 600, 700]).join(";")
+      : "";
+  return (
+    "https://fonts.googleapis.com/css2?family=" +
+    (value?.family ?? input.trim()).replace(/ +/g, "+") +
+    value2 +
+    "&display=swap"
+  );
+}
+function ensureWebFonts(input?: Dynamic, doc: Dynamic = document): Dynamic {
+  for (let value of input as Dynamic) {
+    if (
+      TypographyFontCatalogSerifSansSerifPattern.test(value) ||
+      !TypographyFontCatalogAZaZAZaZPattern.test(value)
+    )
+      continue;
+    let value2: Dynamic = buildGoogleFontsUrl(value);
+    if (doc.head.querySelector('link[href="' + value2 + '"]')) continue;
+    let value3: Dynamic = doc.createElement("link");
+    value3.rel = "stylesheet";
+    value3.href = value2;
+    doc.head.appendChild(value3);
   }
-  function knownWebFontFamily(input?: Dynamic): Dynamic {
-    return getKnownWebFont(input)?.family;
-  }
-  function buildGoogleFontsUrl(input?: Dynamic): Dynamic {
-    let value: Dynamic = getKnownWebFont(input),
-      value2: Dynamic = value
-        ? ":wght@" + (value.weights ?? [400, 500, 600, 700]).join(";")
-        : "";
-    return (
-      "https://fonts.googleapis.com/css2?family=" +
-      (value?.family ?? input.trim()).replace(/ +/g, "+") +
-      value2 +
-      "&display=swap"
-    );
-  }
-  function ensureWebFonts(input?: Dynamic, doc: Dynamic = document): Dynamic {
-    for (let value of input as Dynamic) {
-      if (
-        TypographyFontCatalogSerifSansSerifPattern.test(value) ||
-        !TypographyFontCatalogAZaZAZaZPattern.test(value)
-      )
-        continue;
-      let value2: Dynamic = buildGoogleFontsUrl(value);
-      if (doc.head.querySelector('link[href="' + value2 + '"]')) continue;
-      let value3: Dynamic = doc.createElement("link");
-      value3.rel = "stylesheet";
-      value3.href = value2;
-      doc.head.appendChild(value3);
-    }
-  }
-  bindRuntimeValue(
-    runtime,
-    "builtInUtilityCss",
-    () => builtInUtilityCss,
-    (value) => {
-      builtInUtilityCss = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "TypographyFontCatalogItems",
-    () => TypographyFontCatalogItems,
-    (value) => {
-      TypographyFontCatalogItems = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "TypographyFontCatalogItems_2",
-    () => TypographyFontCatalogItems_2,
-    (value) => {
-      TypographyFontCatalogItems_2 = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "TypographyFontCatalogMapValue",
-    () => TypographyFontCatalogMapValue,
-    (value) => {
-      TypographyFontCatalogMapValue = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "TypographyFontCatalogCache",
-    () => TypographyFontCatalogCache,
-    (value) => {
-      TypographyFontCatalogCache = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "TypographyFontCatalogFromEntriesValue",
-    () => TypographyFontCatalogFromEntriesValue,
-    (value) => {
-      TypographyFontCatalogFromEntriesValue = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "TypographyFontCatalogAZaZAZaZPattern",
-    () => TypographyFontCatalogAZaZAZaZPattern,
-    (value) => {
-      TypographyFontCatalogAZaZAZaZPattern = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "TypographyFontCatalogSerifSansSerifPattern",
-    () => TypographyFontCatalogSerifSansSerifPattern,
-    (value) => {
-      TypographyFontCatalogSerifSansSerifPattern = value;
-    },
-  );
-  bindRuntimeValue(runtime, "getKnownWebFont", () => getKnownWebFont);
-  bindRuntimeValue(runtime, "knownWebFontFamily", () => knownWebFontFamily);
-  bindRuntimeValue(runtime, "buildGoogleFontsUrl", () => buildGoogleFontsUrl);
-  bindRuntimeValue(runtime, "ensureWebFonts", () => ensureWebFonts);
+}
+export {
+  buildGoogleFontsUrl,
+  builtInUtilityCss,
+  ensureWebFonts,
+  getKnownWebFont,
+  knownWebFontFamily,
+  TypographyFontCatalogAZaZAZaZPattern,
+  TypographyFontCatalogCache,
+  TypographyFontCatalogFromEntriesValue,
+  TypographyFontCatalogItems,
+  TypographyFontCatalogItems_2,
+  TypographyFontCatalogMapValue,
+  TypographyFontCatalogSerifSansSerifPattern,
+};
+export function installEditorTypographyFontCatalog(): () => void {
   return () => {
     builtInUtilityCss =
       ".fx{display:flex}.col{display:flex;flex-direction:column}.grid{display:grid}.ac{align-items:center}.jc{justify-content:center}.jb{justify-content:space-between}.f1{flex:1}.noshrink{flex-shrink:0}.wrap{flex-wrap:wrap}.fw5{font-weight:500}.fw6{font-weight:600}.fw7{font-weight:700}.fw8{font-weight:800}.fs11{font-size:11px}.fs12{font-size:12px}.fs13{font-size:13px}.fs14{font-size:14px}.fs15{font-size:15px}.fs16{font-size:16px}.fs20{font-size:20px}.fs22{font-size:22px}.upper{text-transform:uppercase}.tc{text-align:center}.nowrap{white-space:nowrap}.gap8{gap:8px}.gap10{gap:10px}.gap12{gap:12px}.gap16{gap:16px}.gap24{gap:24px}.m0{margin:0}.mt8{margin-top:8px}.mt12{margin-top:12px}.mt16{margin-top:16px}.mb8{margin-bottom:8px}.mb12{margin-bottom:12px}.mb16{margin-bottom:16px}.posrel{position:relative}.posabs{position:absolute}.round{border-radius:50%}.ohide{overflow:hidden}.bbox{box-sizing:border-box}.pointer{cursor:pointer}.w100{width:100%}.b0{border:none}";

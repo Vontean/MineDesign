@@ -1,60 +1,45 @@
 import { useUiLocale } from '../ui-locale.ts';
 /** Restored application module; prepare first, initialize in original order. */
 import {
-  bindRuntimeValue,
   type Dynamic,
-  type RuntimeBindings,
 } from "../runtime-types";
-export function installPlatformCdsIsland(runtime: RuntimeBindings): () => void {
-  var jsxPlatformCdsIsland: Dynamic;
-  var cdsIslandClassName: Dynamic;
-  var initializePlatformCdsIsland: Dynamic;
-  function CdsIsland({ className: className, ...props }: Dynamic): Dynamic {
-    useUiLocale();
-    let { resolved: value }: Dynamic = (0, runtime.useDocumentTheme)();
-    return (
-      <runtime.CdsRoot
-        mode={value}
-        className={
-          className ? cdsIslandClassName + " " + className : cdsIslandClassName
-        }
-        {...props}
-      />
-    );
-  }
-  bindRuntimeValue(runtime, "CdsIsland", () => CdsIsland);
-  bindRuntimeValue(
-    runtime,
-    "jsxPlatformCdsIsland",
-    () => jsxPlatformCdsIsland,
-    (value) => {
-      jsxPlatformCdsIsland = value;
-    },
+import { initializeCdsIndex } from "../cds/index";
+import { CdsRoot } from "../cds/theme/root";
+import { load_react_jsx_runtime } from "../dependencies";
+import { initializeOnce, toModuleNamespace } from "../module-helpers";
+import { initializePlatformTheme, useDocumentTheme } from "./theme";
+
+var jsxPlatformCdsIsland: Dynamic;
+var cdsIslandClassName: Dynamic;
+var initializePlatformCdsIsland: Dynamic;
+function CdsIsland({ className: className, ...props }: Dynamic): Dynamic {
+  useUiLocale();
+  let { resolved: value }: Dynamic = (0, useDocumentTheme)();
+  return (
+    <CdsRoot
+      mode={value}
+      className={
+        className ? cdsIslandClassName + " " + className : cdsIslandClassName
+      }
+      {...props}
+    />
   );
-  bindRuntimeValue(
-    runtime,
-    "cdsIslandClassName",
-    () => cdsIslandClassName,
-    (value) => {
-      cdsIslandClassName = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "initializePlatformCdsIsland",
-    () => initializePlatformCdsIsland,
-    (value) => {
-      initializePlatformCdsIsland = value;
-    },
-  );
+}
+export {
+  CdsIsland,
+  cdsIslandClassName,
+  initializePlatformCdsIsland,
+  jsxPlatformCdsIsland,
+};
+export function installPlatformCdsIsland(): () => void {
   return () => {
-    initializePlatformCdsIsland = (0, runtime.initializeOnce)((): Dynamic => {
+    initializePlatformCdsIsland = (0, initializeOnce)((): Dynamic => {
       "use strict";
 
-      (0, runtime.initializeCdsIndex)();
-      (0, runtime.initializePlatformTheme)();
-      jsxPlatformCdsIsland = (0, runtime.toModuleNamespace)(
-        (0, runtime.load_react_jsx_runtime)(),
+      (0, initializeCdsIndex)();
+      (0, initializePlatformTheme)();
+      jsxPlatformCdsIsland = (0, toModuleNamespace)(
+        (0, load_react_jsx_runtime)(),
         1,
       );
       cdsIslandClassName = "cds-island";

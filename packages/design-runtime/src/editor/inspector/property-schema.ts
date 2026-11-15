@@ -2,140 +2,64 @@ import { uiPropertyLabel } from '@minedesign/contracts/ui-value';
 import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
-  bindRuntimeValue,
   type Dynamic,
-  type RuntimeBindings,
 } from "../../runtime-types";
+import { normalizeCssUnit, parseCssNumber } from "../css/values";
 
-export function installEditorInspectorPropertySchema(
-  runtime: RuntimeBindings,
-): () => void {
-  var InspectorPropertySchemaBackgroundFontWeightFontStyleConfig: Dynamic;
-  var InspectorPropertySchemaItems: Dynamic;
-  var InspectorPropertySchemaTextPattern: Dynamic;
-  var InspectorPropertySchemaBackdropFilterConfig: Dynamic;
-  var InspectorPropertySchemaHandler: Dynamic;
-  var InspectorPropertySchemaHandler_2: Dynamic;
-  var InspectorPropertySchemaItems_2: Dynamic;
-  var InspectorPropertySchemaCache: Dynamic;
-  var InspectorPropertySchemaCursorPointerEventsObjectFitValues: Dynamic;
-  function hasTextBackgroundClip(input?: Dynamic): Dynamic {
-    return (
-      InspectorPropertySchemaTextPattern.test(input("background-clip") ?? "") ||
-      InspectorPropertySchemaTextPattern.test(
-        input("-webkit-background-clip") ?? "",
-      )
-    );
-  }
-  function getPropertySpecification(input?: Dynamic): Dynamic {
-    return InspectorPropertySchemaCache.get(input.toLowerCase());
-  }
-  function normalizePropertyNumber(
-    input?: Dynamic,
-    options?: Dynamic,
-  ): Dynamic {
-    let value: Dynamic = options.trim(),
-      value2: Dynamic = (0, runtime.parseCssNumber)(value);
-    return !value2 ||
-      input.startsWith("@") ||
-      /^(line-height|opacity|font-weight|z-index|order|flex|flex-grow|flex-shrink)$/.test(
-        input,
-      ) ||
-      !/(width|height|top|left|right|bottom|gap|radius|size|spacing|margin|padding|inset|indent|basis)/.test(
-        input,
-      ) ||
-      value === "0" ||
-      (value2.unit && (0, runtime.normalizeCssUnit)(value2.unit))
-      ? value
-      : `${value2.value}px`;
-  }
-  bindRuntimeValue(
-    runtime,
-    "InspectorPropertySchemaBackgroundFontWeightFontStyleConfig",
-    () => InspectorPropertySchemaBackgroundFontWeightFontStyleConfig,
-    (value) => {
-      InspectorPropertySchemaBackgroundFontWeightFontStyleConfig = value;
-    },
+var InspectorPropertySchemaBackgroundFontWeightFontStyleConfig: Dynamic;
+var InspectorPropertySchemaItems: Dynamic;
+var InspectorPropertySchemaTextPattern: Dynamic;
+var InspectorPropertySchemaBackdropFilterConfig: Dynamic;
+var InspectorPropertySchemaHandler: Dynamic;
+var InspectorPropertySchemaHandler_2: Dynamic;
+var InspectorPropertySchemaItems_2: Dynamic;
+var InspectorPropertySchemaCache: Dynamic;
+var InspectorPropertySchemaCursorPointerEventsObjectFitValues: Dynamic;
+function hasTextBackgroundClip(input?: Dynamic): Dynamic {
+  return (
+    InspectorPropertySchemaTextPattern.test(input("background-clip") ?? "") ||
+    InspectorPropertySchemaTextPattern.test(
+      input("-webkit-background-clip") ?? "",
+    )
   );
-  bindRuntimeValue(
-    runtime,
-    "InspectorPropertySchemaItems",
-    () => InspectorPropertySchemaItems,
-    (value) => {
-      InspectorPropertySchemaItems = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "InspectorPropertySchemaTextPattern",
-    () => InspectorPropertySchemaTextPattern,
-    (value) => {
-      InspectorPropertySchemaTextPattern = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "hasTextBackgroundClip",
-    () => hasTextBackgroundClip,
-  );
-  bindRuntimeValue(
-    runtime,
-    "InspectorPropertySchemaBackdropFilterConfig",
-    () => InspectorPropertySchemaBackdropFilterConfig,
-    (value) => {
-      InspectorPropertySchemaBackdropFilterConfig = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "InspectorPropertySchemaHandler",
-    () => InspectorPropertySchemaHandler,
-    (value) => {
-      InspectorPropertySchemaHandler = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "InspectorPropertySchemaHandler_2",
-    () => InspectorPropertySchemaHandler_2,
-    (value) => {
-      InspectorPropertySchemaHandler_2 = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "InspectorPropertySchemaItems_2",
-    () => InspectorPropertySchemaItems_2,
-    (value) => {
-      InspectorPropertySchemaItems_2 = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "InspectorPropertySchemaCache",
-    () => InspectorPropertySchemaCache,
-    (value) => {
-      InspectorPropertySchemaCache = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "getPropertySpecification",
-    () => getPropertySpecification,
-  );
-  bindRuntimeValue(
-    runtime,
-    "InspectorPropertySchemaCursorPointerEventsObjectFitValues",
-    () => InspectorPropertySchemaCursorPointerEventsObjectFitValues,
-    (value) => {
-      InspectorPropertySchemaCursorPointerEventsObjectFitValues = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "normalizePropertyNumber",
-    () => normalizePropertyNumber,
-  );
+}
+function getPropertySpecification(input?: Dynamic): Dynamic {
+  return InspectorPropertySchemaCache.get(input.toLowerCase());
+}
+function normalizePropertyNumber(
+  input?: Dynamic,
+  options?: Dynamic,
+): Dynamic {
+  let value: Dynamic = options.trim(),
+    value2: Dynamic = (0, parseCssNumber)(value);
+  return !value2 ||
+    input.startsWith("@") ||
+    /^(line-height|opacity|font-weight|z-index|order|flex|flex-grow|flex-shrink)$/.test(
+      input,
+    ) ||
+    !/(width|height|top|left|right|bottom|gap|radius|size|spacing|margin|padding|inset|indent|basis)/.test(
+      input,
+    ) ||
+    value === "0" ||
+    (value2.unit && (0, normalizeCssUnit)(value2.unit))
+    ? value
+    : `${value2.value}px`;
+}
+export {
+  getPropertySpecification,
+  hasTextBackgroundClip,
+  InspectorPropertySchemaBackdropFilterConfig,
+  InspectorPropertySchemaBackgroundFontWeightFontStyleConfig,
+  InspectorPropertySchemaCache,
+  InspectorPropertySchemaCursorPointerEventsObjectFitValues,
+  InspectorPropertySchemaHandler,
+  InspectorPropertySchemaHandler_2,
+  InspectorPropertySchemaItems,
+  InspectorPropertySchemaItems_2,
+  InspectorPropertySchemaTextPattern,
+  normalizePropertyNumber,
+};
+export function installEditorInspectorPropertySchema(): () => void {
   return () => {
     InspectorPropertySchemaBackgroundFontWeightFontStyleConfig = {
       background: "background-color",

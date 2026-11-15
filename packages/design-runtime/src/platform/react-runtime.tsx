@@ -1,41 +1,26 @@
 /** Restored application module; prepare first, initialize in original order. */
 import {
-  bindRuntimeValue,
   type Dynamic,
-  type RuntimeBindings,
 } from "../runtime-types";
+import { dcSupportSource, load_react_dom_client, react18UmdSource, reactDom18UmdSource } from "../dependencies";
+import { toModuleNamespace } from "../module-helpers";
 
-export function installPlatformReactRuntime(
-  runtime: RuntimeBindings,
-): () => void {
-  var reactDomClientPlatformReactRuntime: Dynamic;
-  var runtimeEmbeddedReact: Dynamic;
-
-  bindRuntimeValue(
-    runtime,
-    "reactDomClientPlatformReactRuntime",
-    () => reactDomClientPlatformReactRuntime,
-    (value) => {
-      reactDomClientPlatformReactRuntime = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "runtimeEmbeddedReact",
-    () => runtimeEmbeddedReact,
-    (value) => {
-      runtimeEmbeddedReact = value;
-    },
-  );
+var reactDomClientPlatformReactRuntime: Dynamic;
+var runtimeEmbeddedReact: Dynamic;
+export {
+  reactDomClientPlatformReactRuntime,
+  runtimeEmbeddedReact,
+};
+export function installPlatformReactRuntime(): () => void {
   return () => {
-    reactDomClientPlatformReactRuntime = (0, runtime.toModuleNamespace)(
-      (0, runtime.load_react_dom_client)(),
+    reactDomClientPlatformReactRuntime = (0, toModuleNamespace)(
+      (0, load_react_dom_client)(),
       1,
     );
     runtimeEmbeddedReact = {
-      reactUmd: runtime.react18UmdSource,
-      reactDomUmd: runtime.reactDom18UmdSource,
-      supportJs: runtime.dcSupportSource,
+      reactUmd: react18UmdSource,
+      reactDomUmd: reactDom18UmdSource,
+      supportJs: dcSupportSource,
     };
   };
 }

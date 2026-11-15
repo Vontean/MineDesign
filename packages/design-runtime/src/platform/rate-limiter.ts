@@ -1,44 +1,21 @@
 /** Restored application module; prepare first, initialize in original order. */
 import {
-  bindRuntimeValue,
   type Dynamic,
-  type RuntimeBindings,
 } from "../runtime-types";
 
-export function installPlatformRateLimiter(
-  runtime: RuntimeBindings,
-): () => void {
-  var PlatformRateLimiterResolvedValue: Dynamic;
-  var TokenBucket: Dynamic;
-  var externalLinkLimiter: Dynamic;
-  function errorMessage(error?: Dynamic): Dynamic {
-    return error instanceof Error ? error.message : String(error);
-  }
-  bindRuntimeValue(
-    runtime,
-    "PlatformRateLimiterResolvedValue",
-    () => PlatformRateLimiterResolvedValue,
-    (value) => {
-      PlatformRateLimiterResolvedValue = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "TokenBucket",
-    () => TokenBucket,
-    (value) => {
-      TokenBucket = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "externalLinkLimiter",
-    () => externalLinkLimiter,
-    (value) => {
-      externalLinkLimiter = value;
-    },
-  );
-  bindRuntimeValue(runtime, "errorMessage", () => errorMessage);
+var PlatformRateLimiterResolvedValue: Dynamic;
+var TokenBucket: Dynamic;
+var externalLinkLimiter: Dynamic;
+function errorMessage(error?: Dynamic): Dynamic {
+  return error instanceof Error ? error.message : String(error);
+}
+export {
+  errorMessage,
+  externalLinkLimiter,
+  PlatformRateLimiterResolvedValue,
+  TokenBucket,
+};
+export function installPlatformRateLimiter(): () => void {
   return () => {
     PlatformRateLimiterResolvedValue = 2 * 1024 * 1024;
     TokenBucket = class {

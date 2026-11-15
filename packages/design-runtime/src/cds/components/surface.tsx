@@ -5,67 +5,45 @@ import type {
 } from "../../contracts/ui";
 import type * as React from "react";
 /** Restored application module; prepare first, initialize in original order. */
-import { bindRuntimeValue, type RuntimeBindings } from "../../runtime-types";
-export function installCdsComponentsSurface(
-  runtime: RuntimeBindings,
-): () => void {
-  var reactComponentsSurface: typeof React;
-  var jsxComponentsSurface: typeof import("react/jsx-runtime");
-  var Surface: ForwardComponent<HTMLDivElement, SurfaceProps>;
-  var initializeComponentsSurface: () => void;
-  function surfaceFocusStyle(input?: string): DesignStyle {
-    let value = (0, runtime.useResolvedColorMode)();
-    return {
-      ...(0, runtime.pageBackgroundStyle)(input),
-      "--cds-focus-shadow": runtime.focusShadowTokens[value],
-      "--cds-focus-shadow-danger": runtime.dangerFocusShadowTokens[value],
-    };
-  }
-  bindRuntimeValue(runtime, "surfaceFocusStyle", () => surfaceFocusStyle);
-  bindRuntimeValue(
-    runtime,
-    "reactComponentsSurface",
-    () => reactComponentsSurface,
-    (value) => {
-      reactComponentsSurface = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "jsxComponentsSurface",
-    () => jsxComponentsSurface,
-    (value) => {
-      jsxComponentsSurface = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "Surface",
-    () => Surface,
-    (value) => {
-      Surface = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "initializeComponentsSurface",
-    () => initializeComponentsSurface,
-    (value) => {
-      initializeComponentsSurface = value;
-    },
-  );
+import { popupSurfaceClassName } from "./icon";
+import { cn, initializeClassNames } from "../theme/class-names";
+import { initializeCdsRoot, PageBackgroundContext, pageBackgroundStyle, useResolvedColorMode } from "../theme/root";
+import { dangerFocusShadowTokens, focusShadowTokens, initializeThemeSurfaces, surfaceBackgroundTokens } from "../theme/surfaces";
+import { load_react, load_react_jsx_runtime } from "../../dependencies";
+import { initializeOnce, toModuleNamespace } from "../../module-helpers";
+
+var reactComponentsSurface: typeof React;
+var jsxComponentsSurface: typeof import("react/jsx-runtime");
+var Surface: ForwardComponent<HTMLDivElement, SurfaceProps>;
+var initializeComponentsSurface: () => void;
+function surfaceFocusStyle(input?: string): DesignStyle {
+  let value = (0, useResolvedColorMode)();
+  return {
+    ...(0, pageBackgroundStyle)(input),
+    "--cds-focus-shadow": focusShadowTokens[value],
+    "--cds-focus-shadow-danger": dangerFocusShadowTokens[value],
+  };
+}
+export {
+  initializeComponentsSurface,
+  jsxComponentsSurface,
+  reactComponentsSurface,
+  Surface,
+  surfaceFocusStyle,
+};
+export function installCdsComponentsSurface(): () => void {
   return () => {
-    initializeComponentsSurface = (0, runtime.initializeOnce)(() => {
+    initializeComponentsSurface = (0, initializeOnce)(() => {
       "use client";
 
-      (0, runtime.initializeClassNames)();
-      (0, runtime.initializeCdsRoot)();
-      (0, runtime.initializeThemeSurfaces)();
-      reactComponentsSurface = (0, runtime.toModuleNamespace)(
-        (0, runtime.load_react)(),
+      (0, initializeClassNames)();
+      (0, initializeCdsRoot)();
+      (0, initializeThemeSurfaces)();
+      reactComponentsSurface = (0, toModuleNamespace)(
+        (0, load_react)(),
       );
-      jsxComponentsSurface = (0, runtime.toModuleNamespace)(
-        (0, runtime.load_react_jsx_runtime)(),
+      jsxComponentsSurface = (0, toModuleNamespace)(
+        (0, load_react_jsx_runtime)(),
       );
       Surface = (0, reactComponentsSurface.forwardRef)<
         HTMLDivElement,
@@ -82,7 +60,7 @@ export function installCdsComponentsSurface(
           options: React.ForwardedRef<HTMLDivElement>,
         ): React.ReactElement => {
           let value = surfaceFocusStyle(
-            runtime.surfaceBackgroundTokens[elevation],
+            surfaceBackgroundTokens[elevation],
           );
           return (
             <div
@@ -90,8 +68,8 @@ export function installCdsComponentsSurface(
               data-cds={"Surface"}
               data-surface={elevation}
               {...props}
-              className={(0, runtime.cn)(
-                (0, runtime.popupSurfaceClassName)(elevation),
+              className={(0, cn)(
+                (0, popupSurfaceClassName)(elevation),
                 className,
               )}
               style={{
@@ -99,11 +77,11 @@ export function installCdsComponentsSurface(
                 ...style,
               }}
             >
-              <runtime.PageBackgroundContext.Provider
-                value={runtime.surfaceBackgroundTokens[elevation]}
+              <PageBackgroundContext.Provider
+                value={surfaceBackgroundTokens[elevation]}
               >
                 {children}
-              </runtime.PageBackgroundContext.Provider>
+              </PageBackgroundContext.Provider>
             </div>
           );
         },

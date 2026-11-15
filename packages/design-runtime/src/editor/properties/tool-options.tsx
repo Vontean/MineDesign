@@ -1,104 +1,93 @@
 /** Restored application module; prepare first, initialize in original order. */
 import {
-  bindRuntimeValue,
   type Dynamic,
-  type RuntimeBindings,
 } from "../../runtime-types";
+import { Icon } from "../../cds/components/icon";
+import { initializeCdsIndex } from "../../cds/index";
+import { load_react } from "../../dependencies";
+import { PropertiesTooltipColorGradientConfig, reactPropertiesTooltip_3 } from "./tooltip";
+import { toModuleNamespace } from "../../module-helpers";
 
-export function installEditorPropertiesToolOptions(
-  runtime: RuntimeBindings,
-): () => void {
-  var reactPropertiesToolOptions: Dynamic;
-  var reactPropertiesToolOptions_2: Dynamic;
-  function toolSegmentOption(
-    input?: Dynamic,
-    options?: Dynamic,
-    context?: Dynamic,
-  ): Dynamic {
-    let state: Dynamic = {
-      value: input,
-      tooltip: options,
-      ...(context !== undefined
-        ? {
-            disabled: context,
-          }
-        : {}),
-    };
-    if (input === "image")
-      return {
-        ...state,
-        icon: "Image",
-      };
-    let value: Dynamic = runtime.PropertiesTooltipColorGradientConfig[input];
-    return value === undefined
+var reactPropertiesToolOptions: Dynamic;
+var reactPropertiesToolOptions_2: Dynamic;
+function toolSegmentOption(
+  input?: Dynamic,
+  options?: Dynamic,
+  context?: Dynamic,
+): Dynamic {
+  let state: Dynamic = {
+    value: input,
+    tooltip: options,
+    ...(context !== undefined
       ? {
-          ...state,
-          label: options,
+          disabled: context,
         }
-      : {
-          ...state,
-          label: (0, runtime.reactPropertiesTooltip_3.createElement)(
-            runtime.reactPropertiesTooltip_3.Fragment,
-            null,
-            (0, runtime.reactPropertiesTooltip_3.createElement)(
-              PropertyOptionIcon,
-              {
-                icon: value,
-              },
-            ),
-            (0, runtime.reactPropertiesTooltip_3.createElement)(
-              "span",
-              {
-                className: "sr-only",
-              },
-              options,
-            ),
+      : {}),
+  };
+  if (input === "image")
+    return {
+      ...state,
+      icon: "Image",
+    };
+  let value: Dynamic = PropertiesTooltipColorGradientConfig[input];
+  return value === undefined
+    ? {
+        ...state,
+        label: options,
+      }
+    : {
+        ...state,
+        label: (0, reactPropertiesTooltip_3.createElement)(
+          reactPropertiesTooltip_3.Fragment,
+          null,
+          (0, reactPropertiesTooltip_3.createElement)(
+            PropertyOptionIcon,
+            {
+              icon: value,
+            },
           ),
-        };
-  }
-  function PropertyOptionIcon({
-    icon: icon,
-    className: className,
-  }: Dynamic): Dynamic {
-    let value: Dynamic = className ?? "shrink-0";
-    return typeof icon == "string"
-      ? (0, runtime.reactPropertiesTooltip_3.createElement)(runtime.Icon, {
-          name: icon,
-          size: "auto",
-          className: value,
-        })
-      : (0, runtime.reactPropertiesTooltip_3.createElement)(runtime.Icon, {
-          customIcon: icon,
-          size: "auto",
-          className: value,
-        });
-  }
-  bindRuntimeValue(runtime, "toolSegmentOption", () => toolSegmentOption);
-  bindRuntimeValue(runtime, "PropertyOptionIcon", () => PropertyOptionIcon);
-  bindRuntimeValue(
-    runtime,
-    "reactPropertiesToolOptions",
-    () => reactPropertiesToolOptions,
-    (value) => {
-      reactPropertiesToolOptions = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "reactPropertiesToolOptions_2",
-    () => reactPropertiesToolOptions_2,
-    (value) => {
-      reactPropertiesToolOptions_2 = value;
-    },
-  );
+          (0, reactPropertiesTooltip_3.createElement)(
+            "span",
+            {
+              className: "sr-only",
+            },
+            options,
+          ),
+        ),
+      };
+}
+function PropertyOptionIcon({
+  icon: icon,
+  className: className,
+}: Dynamic): Dynamic {
+  let value: Dynamic = className ?? "shrink-0";
+  return typeof icon == "string"
+    ? (0, reactPropertiesTooltip_3.createElement)(Icon, {
+        name: icon,
+        size: "auto",
+        className: value,
+      })
+    : (0, reactPropertiesTooltip_3.createElement)(Icon, {
+        customIcon: icon,
+        size: "auto",
+        className: value,
+      });
+}
+export {
+  PropertyOptionIcon,
+  reactPropertiesToolOptions,
+  reactPropertiesToolOptions_2,
+  toolSegmentOption,
+};
+export function installEditorPropertiesToolOptions(): () => void {
   return () => {
-    reactPropertiesToolOptions = (0, runtime.toModuleNamespace)(
-      (0, runtime.load_react)(),
+    reactPropertiesToolOptions = (0, toModuleNamespace)(
+      (0, load_react)(),
       1,
     );
-    (0, runtime.initializeCdsIndex)();
-    reactPropertiesToolOptions_2 = (0, runtime.toModuleNamespace)(
-      (0, runtime.load_react)(),
+    (0, initializeCdsIndex)();
+    reactPropertiesToolOptions_2 = (0, toModuleNamespace)(
+      (0, load_react)(),
       1,
     );
   };

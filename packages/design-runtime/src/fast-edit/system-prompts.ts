@@ -1,68 +1,23 @@
 /** Restored application module; prepare first, initialize in original order. */
 import {
-  bindRuntimeValue,
   type Dynamic,
-  type RuntimeBindings,
 } from "../runtime-types";
 
-export function installFastEditSystemPrompts(
-  runtime: RuntimeBindings,
-): () => void {
-  var FAST_EDIT_BASE_SYSTEM_PROMPT: Dynamic;
-  var FAST_EDIT_CANVAS_SYSTEM_PROMPT: Dynamic;
-  var FAST_EDIT_FILE_SYSTEM_PROMPT: Dynamic;
-  var fastEditBaseSystemPrompt: Dynamic;
-  var fastEditFilesSystemPrompt: Dynamic;
-  var fastEditCanvasSystemPrompt: Dynamic;
-
-  bindRuntimeValue(
-    runtime,
-    "FAST_EDIT_BASE_SYSTEM_PROMPT",
-    () => FAST_EDIT_BASE_SYSTEM_PROMPT,
-    (value) => {
-      FAST_EDIT_BASE_SYSTEM_PROMPT = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "FAST_EDIT_CANVAS_SYSTEM_PROMPT",
-    () => FAST_EDIT_CANVAS_SYSTEM_PROMPT,
-    (value) => {
-      FAST_EDIT_CANVAS_SYSTEM_PROMPT = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "FAST_EDIT_FILE_SYSTEM_PROMPT",
-    () => FAST_EDIT_FILE_SYSTEM_PROMPT,
-    (value) => {
-      FAST_EDIT_FILE_SYSTEM_PROMPT = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "fastEditBaseSystemPrompt",
-    () => fastEditBaseSystemPrompt,
-    (value) => {
-      fastEditBaseSystemPrompt = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "fastEditFilesSystemPrompt",
-    () => fastEditFilesSystemPrompt,
-    (value) => {
-      fastEditFilesSystemPrompt = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "fastEditCanvasSystemPrompt",
-    () => fastEditCanvasSystemPrompt,
-    (value) => {
-      fastEditCanvasSystemPrompt = value;
-    },
-  );
+var FAST_EDIT_BASE_SYSTEM_PROMPT: Dynamic;
+var FAST_EDIT_CANVAS_SYSTEM_PROMPT: Dynamic;
+var FAST_EDIT_FILE_SYSTEM_PROMPT: Dynamic;
+var fastEditBaseSystemPrompt: Dynamic;
+var fastEditFilesSystemPrompt: Dynamic;
+var fastEditCanvasSystemPrompt: Dynamic;
+export {
+  FAST_EDIT_BASE_SYSTEM_PROMPT,
+  FAST_EDIT_CANVAS_SYSTEM_PROMPT,
+  FAST_EDIT_FILE_SYSTEM_PROMPT,
+  fastEditBaseSystemPrompt,
+  fastEditCanvasSystemPrompt,
+  fastEditFilesSystemPrompt,
+};
+export function installFastEditSystemPrompts(): () => void {
   return () => {
     FAST_EDIT_BASE_SYSTEM_PROMPT = `You are the fast editing agent inside an interactive design editor. People work on their designs here and ask you for changes. You change the page by writing JavaScript that runs on it. For every prompt you have two options:
 1. Preferred: make the change yourself, right away.

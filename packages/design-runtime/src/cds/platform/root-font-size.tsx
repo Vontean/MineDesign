@@ -2,429 +2,262 @@ import { useUiLocale } from '../../ui-locale.ts';
 import type * as React from "react";
 /** Restored application module; prepare first, initialize in original order. */
 import {
-  bindRuntimeValue,
   type Dynamic,
-  type RuntimeBindings,
 } from "../../runtime-types";
-export function installCdsPlatformRootFontSize(
-  runtime: RuntimeBindings,
-): () => void {
-  var reactPlatformRootFontSize: Dynamic;
-  var jsxPlatformRootFontSize: Dynamic;
-  var SkeletonDecorativeContext: Dynamic;
-  var SkeletonElementContext: Dynamic;
-  var PlatformRootFontSizeContext: Dynamic;
-  var SkeletonMotionContext: Dynamic;
-  var initializePlatformRootFontSize: Dynamic;
-  var jsxPlatformRootFontSize_2: Dynamic;
-  var initializePlatformRootFontSize_2: Dynamic;
-  var reactPlatformRootFontSize_2: Dynamic;
-  var rootRemScaleProperty: Dynamic;
-  var PlatformRootFontSizeConstant: Dynamic;
-  var PlatformRootFontSizeCss: Dynamic;
-  var PlatformRootFontSizeCss_2: Dynamic;
-  var CdsRootFontSizeProbeAttribute: Dynamic;
-  var scaleCssPixels: Dynamic;
-  var PlatformRootFontSizeIsConnectedRemoveState: Dynamic;
-  var rootFontSizeObserver: Dynamic;
-  var rootFontSizeSnapshot: Dynamic;
-  var rootFontSizeSubscribers: Dynamic;
-  var initializePlatformRootFontSize_3: Dynamic;
-  var iconFontMetadata: Dynamic;
-  var initializePlatformRootFontSize_4: Dynamic;
-  function ResetSkeletonContext({ children: children }: Dynamic): Dynamic {
-    useUiLocale();
-    return (
-      <SkeletonDecorativeContext.Provider value={false}>
-        <SkeletonElementContext.Provider value={"div"}>
-          <SkeletonMotionContext.Provider value={null}>
-            <PlatformRootFontSizeContext.Provider value={null}>
-              {children}
-            </PlatformRootFontSizeContext.Provider>
-          </SkeletonMotionContext.Provider>
-        </SkeletonElementContext.Provider>
-      </SkeletonDecorativeContext.Provider>
-    );
-  }
-  function PopupSurface({
-    children: children,
-    className: className,
-    style: style,
-    surface: surface,
-    density: density,
-    companionModalCatcher: companionModalCatcher2 = false,
-    closeOnActivityHide = false,
-  }: Dynamic): Dynamic {
-    useUiLocale();
-    let value: Dynamic = (0, runtime.useCloseOnHiddenActivity)(
-        closeOnActivityHide,
-      ),
-      value2: Dynamic = (0, runtime.useMergedRefs)(
-        runtime.ensureDocumentInputObserver,
-        value,
-      ),
-      value3: Dynamic = (0, runtime.useDensity)(),
-      value4: Dynamic = density ?? value3,
-      value5: Dynamic = (0, runtime.useColorMode)(),
-      value6: Dynamic = (0, runtime.useThemeId)(),
-      value7: Dynamic = (0, runtime.usePlatform)(),
-      value8: Dynamic = (0, runtime.useLocale)(),
-      value9: Dynamic = (0, runtime.useCdsFont)(),
-      value10: Dynamic = (0, runtime.useCdsLabels)(),
-      value11: Dynamic = (0, runtime.usePageBackground)(),
-      value12: Dynamic = surface ?? value11,
-      value13: Dynamic =
-        value12 || value9 !== undefined || style
-          ? {
-              ...(0, runtime.pageBackgroundStyle)(value12),
-              ...(0, runtime.monoFontOverrideStyle)(value9),
-              ...style,
-            }
-          : undefined;
-    return (
-      <div
-        ref={value2}
-        className={(0, runtime.cn)("cds-root pointer-events-auto", className)}
-        data-cds-portal={""}
-        data-density={value4}
-        data-mode={value5}
-        data-cds-theme={value6}
-        data-platform={value7}
-        data-font={value8}
-        data-page-bg={value10}
-        style={value13}
-        onPointerDown={
-          companionModalCatcher2
-            ? runtime.preventModalCatcherPointerFocus
-            : undefined
-        }
-        onMouseDown={
-          companionModalCatcher2
-            ? runtime.preventModalCatcherMouseFocus
-            : undefined
-        }
-        onDragStart={
-          companionModalCatcher2
-            ? runtime.handleModalCatcherDismissal
-            : undefined
-        }
-      >
-        <runtime.DensityContextAlias.Provider value={value4}>
-          <runtime.PageBackgroundContext.Provider value={value12}>
-            <runtime.RootPresenceContext.Provider value={true}>
-              <runtime.DisabledContext.Provider value={false}>
-                <ResetSkeletonContext>{children}</ResetSkeletonContext>
-              </runtime.DisabledContext.Provider>
-            </runtime.RootPresenceContext.Provider>
-          </runtime.PageBackgroundContext.Provider>
-        </runtime.DensityContextAlias.Provider>
-      </div>
-    );
-  }
-  function rootFontSizeProbe(): Dynamic {
-    (PlatformRootFontSizeIsConnectedRemoveState === null ||
-      !PlatformRootFontSizeIsConnectedRemoveState.isConnected) &&
-      (PlatformRootFontSizeIsConnectedRemoveState !== null &&
-        (rootFontSizeObserver?.unobserve(
-          PlatformRootFontSizeIsConnectedRemoveState,
-        ),
-        PlatformRootFontSizeIsConnectedRemoveState.remove()),
-      (PlatformRootFontSizeIsConnectedRemoveState =
-        (document as Dynamic).documentElement.querySelector(
-          `:scope > [${CdsRootFontSizeProbeAttribute}]`,
-        ) ?? (document as Dynamic).createElement("div")),
-      PlatformRootFontSizeIsConnectedRemoveState.setAttribute(
-        "aria-hidden",
-        "true",
-      ),
-      PlatformRootFontSizeIsConnectedRemoveState.setAttribute(
-        CdsRootFontSizeProbeAttribute,
-        "",
-      ),
-      (PlatformRootFontSizeIsConnectedRemoveState.style.cssText =
-        PlatformRootFontSizeCss_2),
-      PlatformRootFontSizeIsConnectedRemoveState.isConnected ||
-        (document as Dynamic).documentElement.appendChild(
-          PlatformRootFontSizeIsConnectedRemoveState,
-        ),
-      rootFontSizeObserver?.observe(
+import { ensureDocumentInputObserver, initializeDomInputObservation } from "../dom/input-observation";
+import { DisabledContext, handleModalCatcherDismissal, initializeDomRefComposition, initializeDomRefComposition_3, initializeDomRefComposition_4, initializeDomRefComposition_5, preventModalCatcherMouseFocus, preventModalCatcherPointerFocus, useCloseOnHiddenActivity, useMergedRefs } from "../dom/ref-composition";
+import { cn, initializeClassNames } from "../theme/class-names";
+import { initializeExperimentalTheme, useThemeId } from "../theme/experimental-theme";
+import { DensityContextAlias, initializeCdsRoot, monoFontOverrideStyle, PageBackgroundContext, pageBackgroundStyle, RootPresenceContext, useCdsFont, useCdsLabels, useColorMode, useDensity, useLocale, usePageBackground, usePlatform } from "../theme/root";
+import { load_react, load_react_jsx_runtime } from "../../dependencies";
+import { initializeOnce, toModuleNamespace } from "../../module-helpers";
+
+var reactPlatformRootFontSize: Dynamic;
+var jsxPlatformRootFontSize: Dynamic;
+var SkeletonDecorativeContext: Dynamic;
+var SkeletonElementContext: Dynamic;
+var PlatformRootFontSizeContext: Dynamic;
+var SkeletonMotionContext: Dynamic;
+var initializePlatformRootFontSize: Dynamic;
+var jsxPlatformRootFontSize_2: Dynamic;
+var initializePlatformRootFontSize_2: Dynamic;
+var reactPlatformRootFontSize_2: Dynamic;
+var rootRemScaleProperty: Dynamic;
+var PlatformRootFontSizeConstant: Dynamic;
+var PlatformRootFontSizeCss: Dynamic;
+var PlatformRootFontSizeCss_2: Dynamic;
+var CdsRootFontSizeProbeAttribute: Dynamic;
+var scaleCssPixels: Dynamic;
+var PlatformRootFontSizeIsConnectedRemoveState: Dynamic;
+var rootFontSizeObserver: Dynamic;
+var rootFontSizeSnapshot: Dynamic;
+var rootFontSizeSubscribers: Dynamic;
+var initializePlatformRootFontSize_3: Dynamic;
+var iconFontMetadata: Dynamic;
+var initializePlatformRootFontSize_4: Dynamic;
+function ResetSkeletonContext({ children: children }: Dynamic): Dynamic {
+  useUiLocale();
+  return (
+    <SkeletonDecorativeContext.Provider value={false}>
+      <SkeletonElementContext.Provider value={"div"}>
+        <SkeletonMotionContext.Provider value={null}>
+          <PlatformRootFontSizeContext.Provider value={null}>
+            {children}
+          </PlatformRootFontSizeContext.Provider>
+        </SkeletonMotionContext.Provider>
+      </SkeletonElementContext.Provider>
+    </SkeletonDecorativeContext.Provider>
+  );
+}
+function PopupSurface({
+  children: children,
+  className: className,
+  style: style,
+  surface: surface,
+  density: density,
+  companionModalCatcher: companionModalCatcher2 = false,
+  closeOnActivityHide = false,
+}: Dynamic): Dynamic {
+  useUiLocale();
+  let value: Dynamic = (0, useCloseOnHiddenActivity)(
+      closeOnActivityHide,
+    ),
+    value2: Dynamic = (0, useMergedRefs)(
+      ensureDocumentInputObserver,
+      value,
+    ),
+    value3: Dynamic = (0, useDensity)(),
+    value4: Dynamic = density ?? value3,
+    value5: Dynamic = (0, useColorMode)(),
+    value6: Dynamic = (0, useThemeId)(),
+    value7: Dynamic = (0, usePlatform)(),
+    value8: Dynamic = (0, useLocale)(),
+    value9: Dynamic = (0, useCdsFont)(),
+    value10: Dynamic = (0, useCdsLabels)(),
+    value11: Dynamic = (0, usePageBackground)(),
+    value12: Dynamic = surface ?? value11,
+    value13: Dynamic =
+      value12 || value9 !== undefined || style
+        ? {
+            ...(0, pageBackgroundStyle)(value12),
+            ...(0, monoFontOverrideStyle)(value9),
+            ...style,
+          }
+        : undefined;
+  return (
+    <div
+      ref={value2}
+      className={(0, cn)("cds-root pointer-events-auto", className)}
+      data-cds-portal={""}
+      data-density={value4}
+      data-mode={value5}
+      data-cds-theme={value6}
+      data-platform={value7}
+      data-font={value8}
+      data-page-bg={value10}
+      style={value13}
+      onPointerDown={
+        companionModalCatcher2
+          ? preventModalCatcherPointerFocus
+          : undefined
+      }
+      onMouseDown={
+        companionModalCatcher2
+          ? preventModalCatcherMouseFocus
+          : undefined
+      }
+      onDragStart={
+        companionModalCatcher2
+          ? handleModalCatcherDismissal
+          : undefined
+      }
+    >
+      <DensityContextAlias.Provider value={value4}>
+        <PageBackgroundContext.Provider value={value12}>
+          <RootPresenceContext.Provider value={true}>
+            <DisabledContext.Provider value={false}>
+              <ResetSkeletonContext>{children}</ResetSkeletonContext>
+            </DisabledContext.Provider>
+          </RootPresenceContext.Provider>
+        </PageBackgroundContext.Provider>
+      </DensityContextAlias.Provider>
+    </div>
+  );
+}
+function rootFontSizeProbe(): Dynamic {
+  (PlatformRootFontSizeIsConnectedRemoveState === null ||
+    !PlatformRootFontSizeIsConnectedRemoveState.isConnected) &&
+    (PlatformRootFontSizeIsConnectedRemoveState !== null &&
+      (rootFontSizeObserver?.unobserve(
         PlatformRootFontSizeIsConnectedRemoveState,
-      ));
-    return PlatformRootFontSizeIsConnectedRemoveState;
-  }
-  function measureRootRemScale(probe?: Dynamic): Dynamic {
-    let fontSizeMatch: Dynamic = /^([\d.]+)px$/.exec(
-        getComputedStyle(probe).fontSize,
       ),
-      scale: Dynamic =
-        fontSizeMatch === null
-          ? NaN
-          : Number(fontSizeMatch[1]) / PlatformRootFontSizeConstant;
-    return scale > 0
-      ? scale
-      : parseFloat(
-          getComputedStyle((document as Dynamic).documentElement).fontSize,
-        ) || 16;
+      PlatformRootFontSizeIsConnectedRemoveState.remove()),
+    (PlatformRootFontSizeIsConnectedRemoveState =
+      (document as Dynamic).documentElement.querySelector(
+        `:scope > [${CdsRootFontSizeProbeAttribute}]`,
+      ) ?? (document as Dynamic).createElement("div")),
+    PlatformRootFontSizeIsConnectedRemoveState.setAttribute(
+      "aria-hidden",
+      "true",
+    ),
+    PlatformRootFontSizeIsConnectedRemoveState.setAttribute(
+      CdsRootFontSizeProbeAttribute,
+      "",
+    ),
+    (PlatformRootFontSizeIsConnectedRemoveState.style.cssText =
+      PlatformRootFontSizeCss_2),
+    PlatformRootFontSizeIsConnectedRemoveState.isConnected ||
+      (document as Dynamic).documentElement.appendChild(
+        PlatformRootFontSizeIsConnectedRemoveState,
+      ),
+    rootFontSizeObserver?.observe(
+      PlatformRootFontSizeIsConnectedRemoveState,
+    ));
+  return PlatformRootFontSizeIsConnectedRemoveState;
+}
+function measureRootRemScale(probe?: Dynamic): Dynamic {
+  let fontSizeMatch: Dynamic = /^([\d.]+)px$/.exec(
+      getComputedStyle(probe).fontSize,
+    ),
+    scale: Dynamic =
+      fontSizeMatch === null
+        ? NaN
+        : Number(fontSizeMatch[1]) / PlatformRootFontSizeConstant;
+  return scale > 0
+    ? scale
+    : parseFloat(
+        getComputedStyle((document as Dynamic).documentElement).fontSize,
+      ) || 16;
+}
+function readRootFontSize(): Dynamic {
+  return typeof document === "undefined"
+    ? 16
+    : measureRootRemScale(rootFontSizeProbe());
+}
+function getRootFontSizeSnapshot(): Dynamic {
+  rootFontSizeSnapshot ??= readRootFontSize();
+  return rootFontSizeSnapshot;
+}
+function getServerRootFontSize(): Dynamic {
+  return 16;
+}
+function subscribeRootFontSize(input?: Dynamic): Dynamic {
+  rootFontSizeSubscribers.add(input);
+  if (
+    rootFontSizeObserver === null &&
+    typeof document !== "undefined" &&
+    typeof ResizeObserver !== "undefined"
+  ) {
+    let value: Dynamic = rootFontSizeProbe();
+    rootFontSizeObserver = new ResizeObserver((): Dynamic => {
+      let value2: Dynamic = readRootFontSize();
+      if (value2 !== rootFontSizeSnapshot) {
+        rootFontSizeSnapshot = value2;
+        for (let value3 of rootFontSizeSubscribers as Dynamic) value3();
+      }
+    });
+    rootFontSizeObserver.observe(value);
   }
-  function readRootFontSize(): Dynamic {
-    return typeof document === "undefined"
-      ? 16
-      : measureRootRemScale(rootFontSizeProbe());
-  }
-  function getRootFontSizeSnapshot(): Dynamic {
-    rootFontSizeSnapshot ??= readRootFontSize();
-    return rootFontSizeSnapshot;
-  }
-  function getServerRootFontSize(): Dynamic {
-    return 16;
-  }
-  function subscribeRootFontSize(input?: Dynamic): Dynamic {
-    rootFontSizeSubscribers.add(input);
-    if (
-      rootFontSizeObserver === null &&
-      typeof document !== "undefined" &&
-      typeof ResizeObserver !== "undefined"
-    ) {
-      let value: Dynamic = rootFontSizeProbe();
-      rootFontSizeObserver = new ResizeObserver((): Dynamic => {
-        let value2: Dynamic = readRootFontSize();
-        if (value2 !== rootFontSizeSnapshot) {
-          rootFontSizeSnapshot = value2;
-          for (let value3 of rootFontSizeSubscribers as Dynamic) value3();
-        }
-      });
-      rootFontSizeObserver.observe(value);
-    }
-    return (): Dynamic => {
-      rootFontSizeSubscribers.delete(input);
-      rootFontSizeSubscribers.size === 0 &&
-        (rootFontSizeObserver?.disconnect(),
-        (rootFontSizeObserver = null),
-        (rootFontSizeSnapshot = null));
-    };
-  }
-  function useRootFontSize(): Dynamic {
-    return (0, reactPlatformRootFontSize_2.useSyncExternalStore)(
-      subscribeRootFontSize,
-      getRootFontSizeSnapshot,
-      getServerRootFontSize,
-    );
-  }
-  bindRuntimeValue(runtime, "ResetSkeletonContext", () => ResetSkeletonContext);
-  bindRuntimeValue(
-    runtime,
-    "reactPlatformRootFontSize",
-    () => reactPlatformRootFontSize,
-    (value) => {
-      reactPlatformRootFontSize = value;
-    },
+  return (): Dynamic => {
+    rootFontSizeSubscribers.delete(input);
+    rootFontSizeSubscribers.size === 0 &&
+      (rootFontSizeObserver?.disconnect(),
+      (rootFontSizeObserver = null),
+      (rootFontSizeSnapshot = null));
+  };
+}
+function useRootFontSize(): Dynamic {
+  return (0, reactPlatformRootFontSize_2.useSyncExternalStore)(
+    subscribeRootFontSize,
+    getRootFontSizeSnapshot,
+    getServerRootFontSize,
   );
-  bindRuntimeValue(
-    runtime,
-    "jsxPlatformRootFontSize",
-    () => jsxPlatformRootFontSize,
-    (value) => {
-      jsxPlatformRootFontSize = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "SkeletonDecorativeContext",
-    () => SkeletonDecorativeContext,
-    (value) => {
-      SkeletonDecorativeContext = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "SkeletonElementContext",
-    () => SkeletonElementContext,
-    (value) => {
-      SkeletonElementContext = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "PlatformRootFontSizeContext",
-    () => PlatformRootFontSizeContext,
-    (value) => {
-      PlatformRootFontSizeContext = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "SkeletonMotionContext",
-    () => SkeletonMotionContext,
-    (value) => {
-      SkeletonMotionContext = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "initializePlatformRootFontSize",
-    () => initializePlatformRootFontSize,
-    (value) => {
-      initializePlatformRootFontSize = value;
-    },
-  );
-  bindRuntimeValue(runtime, "PopupSurface", () => PopupSurface);
-  bindRuntimeValue(
-    runtime,
-    "jsxPlatformRootFontSize_2",
-    () => jsxPlatformRootFontSize_2,
-    (value) => {
-      jsxPlatformRootFontSize_2 = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "initializePlatformRootFontSize_2",
-    () => initializePlatformRootFontSize_2,
-    (value) => {
-      initializePlatformRootFontSize_2 = value;
-    },
-  );
-  bindRuntimeValue(runtime, "rootFontSizeProbe", () => rootFontSizeProbe);
-  bindRuntimeValue(runtime, "measureRootRemScale", () => measureRootRemScale);
-  bindRuntimeValue(runtime, "readRootFontSize", () => readRootFontSize);
-  bindRuntimeValue(
-    runtime,
-    "getRootFontSizeSnapshot",
-    () => getRootFontSizeSnapshot,
-  );
-  bindRuntimeValue(
-    runtime,
-    "getServerRootFontSize",
-    () => getServerRootFontSize,
-  );
-  bindRuntimeValue(
-    runtime,
-    "subscribeRootFontSize",
-    () => subscribeRootFontSize,
-  );
-  bindRuntimeValue(runtime, "useRootFontSize", () => useRootFontSize);
-  bindRuntimeValue(
-    runtime,
-    "reactPlatformRootFontSize_2",
-    () => reactPlatformRootFontSize_2,
-    (value) => {
-      reactPlatformRootFontSize_2 = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "rootRemScaleProperty",
-    () => rootRemScaleProperty,
-    (value) => {
-      rootRemScaleProperty = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "PlatformRootFontSizeConstant",
-    () => PlatformRootFontSizeConstant,
-    (value) => {
-      PlatformRootFontSizeConstant = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "PlatformRootFontSizeCss",
-    () => PlatformRootFontSizeCss,
-    (value) => {
-      PlatformRootFontSizeCss = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "PlatformRootFontSizeCss_2",
-    () => PlatformRootFontSizeCss_2,
-    (value) => {
-      PlatformRootFontSizeCss_2 = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "CdsRootFontSizeProbeAttribute",
-    () => CdsRootFontSizeProbeAttribute,
-    (value) => {
-      CdsRootFontSizeProbeAttribute = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "scaleCssPixels",
-    () => scaleCssPixels,
-    (value) => {
-      scaleCssPixels = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "PlatformRootFontSizeIsConnectedRemoveState",
-    () => PlatformRootFontSizeIsConnectedRemoveState,
-    (value) => {
-      PlatformRootFontSizeIsConnectedRemoveState = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "rootFontSizeObserver",
-    () => rootFontSizeObserver,
-    (value) => {
-      rootFontSizeObserver = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "rootFontSizeSnapshot",
-    () => rootFontSizeSnapshot,
-    (value) => {
-      rootFontSizeSnapshot = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "rootFontSizeSubscribers",
-    () => rootFontSizeSubscribers,
-    (value) => {
-      rootFontSizeSubscribers = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "initializePlatformRootFontSize_3",
-    () => initializePlatformRootFontSize_3,
-    (value) => {
-      initializePlatformRootFontSize_3 = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "iconFontMetadata",
-    () => iconFontMetadata,
-    (value) => {
-      iconFontMetadata = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "initializePlatformRootFontSize_4",
-    () => initializePlatformRootFontSize_4,
-    (value) => {
-      initializePlatformRootFontSize_4 = value;
-    },
-  );
+}
+export {
+  CdsRootFontSizeProbeAttribute,
+  getRootFontSizeSnapshot,
+  getServerRootFontSize,
+  iconFontMetadata,
+  initializePlatformRootFontSize,
+  initializePlatformRootFontSize_2,
+  initializePlatformRootFontSize_3,
+  initializePlatformRootFontSize_4,
+  jsxPlatformRootFontSize,
+  jsxPlatformRootFontSize_2,
+  measureRootRemScale,
+  PlatformRootFontSizeConstant,
+  PlatformRootFontSizeContext,
+  PlatformRootFontSizeCss,
+  PlatformRootFontSizeCss_2,
+  PlatformRootFontSizeIsConnectedRemoveState,
+  PopupSurface,
+  reactPlatformRootFontSize,
+  reactPlatformRootFontSize_2,
+  readRootFontSize,
+  ResetSkeletonContext,
+  rootFontSizeObserver,
+  rootFontSizeProbe,
+  rootFontSizeSnapshot,
+  rootFontSizeSubscribers,
+  rootRemScaleProperty,
+  scaleCssPixels,
+  SkeletonDecorativeContext,
+  SkeletonElementContext,
+  SkeletonMotionContext,
+  subscribeRootFontSize,
+  useRootFontSize,
+};
+export function installCdsPlatformRootFontSize(): () => void {
   return () => {
-    initializePlatformRootFontSize = (0, runtime.initializeOnce)(
+    initializePlatformRootFontSize = (0, initializeOnce)(
       (): Dynamic => {
         "use client";
 
-        reactPlatformRootFontSize = (0, runtime.toModuleNamespace)(
-          (0, runtime.load_react)(),
+        reactPlatformRootFontSize = (0, toModuleNamespace)(
+          (0, load_react)(),
         );
-        jsxPlatformRootFontSize = (0, runtime.toModuleNamespace)(
-          (0, runtime.load_react_jsx_runtime)(),
+        jsxPlatformRootFontSize = (0, toModuleNamespace)(
+          (0, load_react_jsx_runtime)(),
         );
         SkeletonDecorativeContext = (0,
         reactPlatformRootFontSize.createContext)(false);
@@ -438,30 +271,30 @@ export function installCdsPlatformRootFontSize(
         );
       },
     );
-    initializePlatformRootFontSize_2 = (0, runtime.initializeOnce)(
+    initializePlatformRootFontSize_2 = (0, initializeOnce)(
       (): Dynamic => {
         "use client";
 
-        (0, runtime.initializeDomInputObservation)();
-        (0, runtime.initializeExperimentalTheme)();
-        (0, runtime.initializeClassNames)();
-        (0, runtime.initializeCdsRoot)();
-        (0, runtime.initializeDomRefComposition_3)();
-        (0, runtime.initializeDomRefComposition_4)();
-        (0, runtime.initializeDomRefComposition_5)();
-        (0, runtime.initializeDomRefComposition)();
+        (0, initializeDomInputObservation)();
+        (0, initializeExperimentalTheme)();
+        (0, initializeClassNames)();
+        (0, initializeCdsRoot)();
+        (0, initializeDomRefComposition_3)();
+        (0, initializeDomRefComposition_4)();
+        (0, initializeDomRefComposition_5)();
+        (0, initializeDomRefComposition)();
         initializePlatformRootFontSize();
-        jsxPlatformRootFontSize_2 = (0, runtime.toModuleNamespace)(
-          (0, runtime.load_react_jsx_runtime)(),
+        jsxPlatformRootFontSize_2 = (0, toModuleNamespace)(
+          (0, load_react_jsx_runtime)(),
         );
       },
     );
-    initializePlatformRootFontSize_3 = (0, runtime.initializeOnce)(
+    initializePlatformRootFontSize_3 = (0, initializeOnce)(
       (): Dynamic => {
         "use client";
 
-        reactPlatformRootFontSize_2 = (0, runtime.toModuleNamespace)(
-          (0, runtime.load_react)(),
+        reactPlatformRootFontSize_2 = (0, toModuleNamespace)(
+          (0, load_react)(),
         );
         rootRemScaleProperty = "--cds-rem-scale";
         PlatformRootFontSizeConstant = 16;
@@ -476,7 +309,7 @@ export function installCdsPlatformRootFontSize(
         rootFontSizeSubscribers = new Set();
       },
     );
-    initializePlatformRootFontSize_4 = (0, runtime.initializeOnce)(
+    initializePlatformRootFontSize_4 = (0, initializeOnce)(
       (): Dynamic => {
         iconFontMetadata = JSON.parse(`{
  "icons": {

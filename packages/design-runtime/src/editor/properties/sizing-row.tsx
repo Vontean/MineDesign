@@ -2,378 +2,276 @@ import { useUiLocale } from '../../ui-locale.ts';
 import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
-  bindRuntimeValue,
   type Dynamic,
-  type RuntimeBindings,
 } from "../../runtime-types";
-export function installEditorPropertiesSizingRow(
-  runtime: RuntimeBindings,
-): () => void {
-  var PropertiesSizingRowHandler: Dynamic;
-  var PropertiesSizingRowHandler_2: Dynamic;
-  var JustifyStartValue: Dynamic;
-  var JustifyCenterValue: Dynamic;
-  var JustifyEndValue: Dynamic;
-  var AlignStartValue: Dynamic;
-  var AlignCenterValue: Dynamic;
-  var AlignEndValue: Dynamic;
-  var JustifySpaceBetweenValue: Dynamic;
-  var PropertiesSizingRowFlexStartStartCenterConfig: Dynamic;
-  var PropertiesSizingRowFlexStartStartCenterConfig_2: Dynamic;
-  var PropertiesSizingRowTlTrBlConfig: Dynamic;
-  var PropertiesSizingRowHandlerValue: Dynamic;
-  var PropertiesSizingRowHandlerValue_2: Dynamic;
-  var PropertiesSizingRowLeftHcenterRightConfig: Dynamic;
-  var jsxPropertiesSizingRow: Dynamic;
-  function PropertySizingRow({
-    shell: shell,
-    label: label,
-    prop: prop,
-    value: value,
-    fallback: fallback,
-    disabled: disabled2,
-    mixed: mixed,
-    noHug: noHug,
-    fixedOnlyReason: fixedOnlyReason,
-    onCommitMany: onCommitMany,
-  }: Dynamic): Dynamic {
-    useUiLocale();
-    let [value2, value3]: Dynamic = (0,
-      runtime.reactPropertiesAssetPicker_3.useState)(value ?? ""),
-      value4: Dynamic = (0, runtime.reactPropertiesAssetPicker_3.useRef)(false),
-      value5: Dynamic = (0, runtime.reactPropertiesAssetPicker_3.useRef)(false),
-      value6: Dynamic = (0, runtime.reactPropertiesAssetPicker_3.useRef)(false),
-      callback: Dynamic = (input?: Dynamic): Dynamic =>
-        onCommitMany([
-          {
-            prop: prop,
-            value: input,
-          },
-        ]),
-      { start: value7, live: value8 }: Dynamic = (0, runtime.useLiveStyleScrub)(
+import { TextInput } from "../../cds/components/text-input";
+import { initializeCdsIndex } from "../../cds/index";
+import { cn } from "../../cds/theme/class-names";
+import { load_react_jsx_runtime } from "../../dependencies";
+import { formatCssNumber, getFineUnitStep, parseCssNumber, roundCssNumber, stepCssNumber } from "../css/values";
+import { normalizePropertyNumber } from "../inspector/property-schema";
+import { reactPropertiesAssetPicker_3 } from "./asset-picker";
+import { useLiveStyleScrub } from "./live-scrub";
+import { PropertyRow } from "./row";
+import { PropertySelect } from "./select";
+import { toModuleNamespace } from "../../module-helpers";
+
+var PropertiesSizingRowHandler: Dynamic;
+var PropertiesSizingRowHandler_2: Dynamic;
+var JustifyStartValue: Dynamic;
+var JustifyCenterValue: Dynamic;
+var JustifyEndValue: Dynamic;
+var AlignStartValue: Dynamic;
+var AlignCenterValue: Dynamic;
+var AlignEndValue: Dynamic;
+var JustifySpaceBetweenValue: Dynamic;
+var PropertiesSizingRowFlexStartStartCenterConfig: Dynamic;
+var PropertiesSizingRowFlexStartStartCenterConfig_2: Dynamic;
+var PropertiesSizingRowTlTrBlConfig: Dynamic;
+var PropertiesSizingRowHandlerValue: Dynamic;
+var PropertiesSizingRowHandlerValue_2: Dynamic;
+var PropertiesSizingRowLeftHcenterRightConfig: Dynamic;
+var jsxPropertiesSizingRow: Dynamic;
+function PropertySizingRow({
+  shell: shell,
+  label: label,
+  prop: prop,
+  value: value,
+  fallback: fallback,
+  disabled: disabled2,
+  mixed: mixed,
+  noHug: noHug,
+  fixedOnlyReason: fixedOnlyReason,
+  onCommitMany: onCommitMany,
+}: Dynamic): Dynamic {
+  useUiLocale();
+  let [value2, value3]: Dynamic = (0,
+    reactPropertiesAssetPicker_3.useState)(value ?? ""),
+    value4: Dynamic = (0, reactPropertiesAssetPicker_3.useRef)(false),
+    value5: Dynamic = (0, reactPropertiesAssetPicker_3.useRef)(false),
+    value6: Dynamic = (0, reactPropertiesAssetPicker_3.useRef)(false),
+    callback: Dynamic = (input?: Dynamic): Dynamic =>
+      onCommitMany([
         {
-          value:
-            (0, runtime.parseCssNumber)(value || fallback || "")?.value ?? 0,
-          min: 0,
-          disabled: disabled2,
-          onScrub: (input?: Dynamic): Dynamic =>
-            callback(`${Math.round(input)}px`),
+          prop: prop,
+          value: input,
         },
-      ),
-      value9: Dynamic = (0, runtime.parseCssNumber)(fallback || ""),
-      value10: Dynamic = value9
-        ? (0, runtime.formatCssNumber)(
-            (0, runtime.roundCssNumber)(value9.value, value9.unit),
-            value9.unit,
-          )
-        : fallback || "auto",
-      value11: Dynamic = !mixed && !value && !!value9,
-      value12: Dynamic = value11 ? value10 : (value ?? ""),
-      value13: Dynamic = value8 != null ? `${Math.round(value8)}px` : value12;
-    (!value4.current || !value5.current) &&
-      value13 !== value2 &&
-      value3(value13);
-    let value14: Dynamic = value == null || value === "" || value === "auto",
-      value15: Dynamic = !mixed && value14 && !noHug,
-      value16: Dynamic = !mixed && value === "100%",
-      callback2: Dynamic = (): Dynamic => {
-        let value18: Dynamic = (0, runtime.parseCssNumber)(value || ""),
-          value19: Dynamic =
-            value18 && (value18.unit === "px" || value18.unit === "")
-              ? value18
-              : (0, runtime.parseCssNumber)(fallback || "");
-        return value19 ? `${Math.round(value19.value)}px` : null;
+      ]),
+    { start: value7, live: value8 }: Dynamic = (0, useLiveStyleScrub)(
+      {
+        value:
+          (0, parseCssNumber)(value || fallback || "")?.value ?? 0,
+        min: 0,
+        disabled: disabled2,
+        onScrub: (input?: Dynamic): Dynamic =>
+          callback(`${Math.round(input)}px`),
       },
-      value17: Dynamic = mixed
-        ? null
-        : value16
-          ? "fill"
-          : value15
-            ? "hug"
-            : "fixed";
-    return (
-      <runtime.PropertyRow
-        label={label}
-        {...shell}
-        labelProps={
-          disabled2
-            ? undefined
-            : {
-                onPointerDown: value7,
-                className: "cursor-ew-resize touch-none",
-              }
+    ),
+    value9: Dynamic = (0, parseCssNumber)(fallback || ""),
+    value10: Dynamic = value9
+      ? (0, formatCssNumber)(
+          (0, roundCssNumber)(value9.value, value9.unit),
+          value9.unit,
+        )
+      : fallback || "auto",
+    value11: Dynamic = !mixed && !value && !!value9,
+    value12: Dynamic = value11 ? value10 : (value ?? ""),
+    value13: Dynamic = value8 != null ? `${Math.round(value8)}px` : value12;
+  (!value4.current || !value5.current) &&
+    value13 !== value2 &&
+    value3(value13);
+  let value14: Dynamic = value == null || value === "" || value === "auto",
+    value15: Dynamic = !mixed && value14 && !noHug,
+    value16: Dynamic = !mixed && value === "100%",
+    callback2: Dynamic = (): Dynamic => {
+      let value18: Dynamic = (0, parseCssNumber)(value || ""),
+        value19: Dynamic =
+          value18 && (value18.unit === "px" || value18.unit === "")
+            ? value18
+            : (0, parseCssNumber)(fallback || "");
+      return value19 ? `${Math.round(value19.value)}px` : null;
+    },
+    value17: Dynamic = mixed
+      ? null
+      : value16
+        ? "fill"
+        : value15
+          ? "hug"
+          : "fixed";
+  return (
+    <PropertyRow
+      label={label}
+      {...shell}
+      labelProps={
+        disabled2
+          ? undefined
+          : {
+              onPointerDown: value7,
+              className: "cursor-ew-resize touch-none",
+            }
+      }
+    >
+      <TextInput
+        value={value2}
+        placeholder={mixed ? (uiMessage("inspector.sizingRow.mixed")) : (value10)}
+        aria-label={label}
+        title={
+          !mixed && fallback && value10 !== fallback ? (uiMessage("inspector.sizingRow.renderedSizeValue1", { value1: String(fallback) })) : (undefined)
         }
-      >
-        <runtime.TextInput
-          value={value2}
-          placeholder={mixed ? (uiMessage("inspector.sizingRow.mixed")) : (value10)}
-          aria-label={label}
-          title={
-            !mixed && fallback && value10 !== fallback ? (uiMessage("inspector.sizingRow.renderedSizeValue1", { value1: String(fallback) })) : (undefined)
+        disabled={disabled2}
+        className={(0, cn)(
+          !mixed && !value11 && "placeholder:text-primary",
+        )}
+        onFocus={(input?: Dynamic): Dynamic => {
+          value4.current = true;
+          value5.current = false;
+          input.currentTarget.select();
+        }}
+        onChange={(event?: Dynamic): Dynamic => {
+          value5.current = true;
+          value3(event.target.value);
+        }}
+        onBlur={(): Dynamic => {
+          value4.current = false;
+          let current: Dynamic = value5.current;
+          value5.current = false;
+          if (value6.current) {
+            value6.current = false;
+            value3(value12);
+            return;
           }
-          disabled={disabled2}
-          className={(0, runtime.cn)(
-            !mixed && !value11 && "placeholder:text-primary",
-          )}
-          onFocus={(input?: Dynamic): Dynamic => {
-            value4.current = true;
-            value5.current = false;
-            input.currentTarget.select();
-          }}
-          onChange={(event?: Dynamic): Dynamic => {
-            value5.current = true;
-            value3(event.target.value);
-          }}
-          onBlur={(): Dynamic => {
-            value4.current = false;
-            let current: Dynamic = value5.current;
-            value5.current = false;
-            if (value6.current) {
-              value6.current = false;
-              value3(value12);
-              return;
-            }
-            let value18: Dynamic = value2.trim();
-            current &&
-            value18 !== (value ?? "") &&
-            !(value11 && value18 === value12)
-              ? callback(
-                  value18
-                    ? (0, runtime.normalizePropertyNumber)(prop, value18)
-                    : null,
-                )
-              : value3(value12);
-          }}
-          onKeyDown={(event?: Dynamic): Dynamic => {
-            if (event.key === "Enter" || event.key === "Escape") {
-              event.key === "Escape" &&
-                ((value6.current = true), value3(value12));
-              event.target.blur();
-              return;
-            }
-            if (event.key === "ArrowUp" || event.key === "ArrowDown") {
-              if (
-                event.metaKey ||
-                event.ctrlKey ||
-                event.nativeEvent.isComposing ||
-                mixed
+          let value18: Dynamic = value2.trim();
+          current &&
+          value18 !== (value ?? "") &&
+          !(value11 && value18 === value12)
+            ? callback(
+                value18
+                  ? (0, normalizePropertyNumber)(prop, value18)
+                  : null,
               )
-                return;
-              let value18: Dynamic =
-                  value11 && !value5.current ? "" : value2.trim(),
-                value19: Dynamic = (0, runtime.parseCssNumber)(value18);
-              if (value18 && !value19) return;
-              let value20: Dynamic = (0, runtime.parseCssNumber)(
-                  value || fallback || "",
-                ),
-                value21: Dynamic =
-                  value19?.value ?? (value20 ? Math.round(value20.value) : 0),
-                value22: Dynamic = value19?.unit || value20?.unit || "px";
-              event.preventDefault();
-              let value23: Dynamic =
-                  (0, runtime.getFineUnitStep)(value22, undefined) != null
-                    ? 0.1
-                    : 1,
-                value24: Dynamic = (0, runtime.stepCssNumber)(
-                  value21,
-                  event.key === "ArrowUp" ? 1 : -1,
-                  event,
-                  {
-                    step: value23,
-                    unit: value22,
-                    min: 0,
-                  },
-                ),
-                value25: Dynamic = (0, runtime.formatCssNumber)(
-                  value24,
-                  value22,
-                );
-              value3(value25);
-              value25 !== (value ?? "") &&
-                callback((0, runtime.normalizePropertyNumber)(prop, value25));
-              let target: Dynamic = event.target;
-              requestAnimationFrame((): Dynamic => target.select());
-            }
-          }}
-        />
-        <runtime.PropertySelect
-          compact={true}
-          aria-label={uiMessage("inspector.sizingRow.mode", { value1: String(label) })}
-          data-testid={`dc-size-mode-${prop}`}
-          items={
-            fixedOnlyReason !== undefined
-              ? [
-                  {
-                    value: "fixed",
-                    get label() { return uiMessage("inspector.sizingRow.fixed"); },
-                  },
-                ]
-              : [
-                  ...(noHug
-                    ? []
-                    : [
-                        {
-                          value: "hug",
-                          get label() { return uiMessage("inspector.sizingRow.hug"); },
-                        },
-                      ]),
-                  {
-                    value: "fixed",
-                    get label() { return uiMessage("inspector.sizingRow.fixed"); },
-                  },
-                  {
-                    value: "fill",
-                    get label() { return uiMessage("inspector.sizingRow.fill"); },
-                  },
-                ]
+            : value3(value12);
+        }}
+        onKeyDown={(event?: Dynamic): Dynamic => {
+          if (event.key === "Enter" || event.key === "Escape") {
+            event.key === "Escape" &&
+              ((value6.current = true), value3(value12));
+            event.target.blur();
+            return;
           }
-          value={fixedOnlyReason !== undefined ? "fixed" : value17}
-          placeholder={uiMessage("inspector.sizingRow.mixed")}
-          disabled={disabled2 || fixedOnlyReason !== undefined}
-          title={fixedOnlyReason}
-          onChange={(input?: Dynamic): Dynamic => {
-            if (input === "hug") callback(null);
-            else if (input === "fill") callback("100%");
-            else {
-              let value18: Dynamic = callback2();
-              value18 != null && callback(value18);
-            }
-          }}
-        />
-      </runtime.PropertyRow>
-    );
-  }
-  bindRuntimeValue(runtime, "PropertySizingRow", () => PropertySizingRow);
-  bindRuntimeValue(
-    runtime,
-    "PropertiesSizingRowHandler",
-    () => PropertiesSizingRowHandler,
-    (value) => {
-      PropertiesSizingRowHandler = value;
-    },
+          if (event.key === "ArrowUp" || event.key === "ArrowDown") {
+            if (
+              event.metaKey ||
+              event.ctrlKey ||
+              event.nativeEvent.isComposing ||
+              mixed
+            )
+              return;
+            let value18: Dynamic =
+                value11 && !value5.current ? "" : value2.trim(),
+              value19: Dynamic = (0, parseCssNumber)(value18);
+            if (value18 && !value19) return;
+            let value20: Dynamic = (0, parseCssNumber)(
+                value || fallback || "",
+              ),
+              value21: Dynamic =
+                value19?.value ?? (value20 ? Math.round(value20.value) : 0),
+              value22: Dynamic = value19?.unit || value20?.unit || "px";
+            event.preventDefault();
+            let value23: Dynamic =
+                (0, getFineUnitStep)(value22, undefined) != null
+                  ? 0.1
+                  : 1,
+              value24: Dynamic = (0, stepCssNumber)(
+                value21,
+                event.key === "ArrowUp" ? 1 : -1,
+                event,
+                {
+                  step: value23,
+                  unit: value22,
+                  min: 0,
+                },
+              ),
+              value25: Dynamic = (0, formatCssNumber)(
+                value24,
+                value22,
+              );
+            value3(value25);
+            value25 !== (value ?? "") &&
+              callback((0, normalizePropertyNumber)(prop, value25));
+            let target: Dynamic = event.target;
+            requestAnimationFrame((): Dynamic => target.select());
+          }
+        }}
+      />
+      <PropertySelect
+        compact={true}
+        aria-label={uiMessage("inspector.sizingRow.mode", { value1: String(label) })}
+        data-testid={`dc-size-mode-${prop}`}
+        items={
+          fixedOnlyReason !== undefined
+            ? [
+                {
+                  value: "fixed",
+                  get label() { return uiMessage("inspector.sizingRow.fixed"); },
+                },
+              ]
+            : [
+                ...(noHug
+                  ? []
+                  : [
+                      {
+                        value: "hug",
+                        get label() { return uiMessage("inspector.sizingRow.hug"); },
+                      },
+                    ]),
+                {
+                  value: "fixed",
+                  get label() { return uiMessage("inspector.sizingRow.fixed"); },
+                },
+                {
+                  value: "fill",
+                  get label() { return uiMessage("inspector.sizingRow.fill"); },
+                },
+              ]
+        }
+        value={fixedOnlyReason !== undefined ? "fixed" : value17}
+        placeholder={uiMessage("inspector.sizingRow.mixed")}
+        disabled={disabled2 || fixedOnlyReason !== undefined}
+        title={fixedOnlyReason}
+        onChange={(input?: Dynamic): Dynamic => {
+          if (input === "hug") callback(null);
+          else if (input === "fill") callback("100%");
+          else {
+            let value18: Dynamic = callback2();
+            value18 != null && callback(value18);
+          }
+        }}
+      />
+    </PropertyRow>
   );
-  bindRuntimeValue(
-    runtime,
-    "PropertiesSizingRowHandler_2",
-    () => PropertiesSizingRowHandler_2,
-    (value) => {
-      PropertiesSizingRowHandler_2 = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "JustifyStartValue",
-    () => JustifyStartValue,
-    (value) => {
-      JustifyStartValue = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "JustifyCenterValue",
-    () => JustifyCenterValue,
-    (value) => {
-      JustifyCenterValue = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "JustifyEndValue",
-    () => JustifyEndValue,
-    (value) => {
-      JustifyEndValue = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "AlignStartValue",
-    () => AlignStartValue,
-    (value) => {
-      AlignStartValue = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "AlignCenterValue",
-    () => AlignCenterValue,
-    (value) => {
-      AlignCenterValue = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "AlignEndValue",
-    () => AlignEndValue,
-    (value) => {
-      AlignEndValue = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "JustifySpaceBetweenValue",
-    () => JustifySpaceBetweenValue,
-    (value) => {
-      JustifySpaceBetweenValue = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "PropertiesSizingRowFlexStartStartCenterConfig",
-    () => PropertiesSizingRowFlexStartStartCenterConfig,
-    (value) => {
-      PropertiesSizingRowFlexStartStartCenterConfig = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "PropertiesSizingRowFlexStartStartCenterConfig_2",
-    () => PropertiesSizingRowFlexStartStartCenterConfig_2,
-    (value) => {
-      PropertiesSizingRowFlexStartStartCenterConfig_2 = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "PropertiesSizingRowTlTrBlConfig",
-    () => PropertiesSizingRowTlTrBlConfig,
-    (value) => {
-      PropertiesSizingRowTlTrBlConfig = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "PropertiesSizingRowHandlerValue",
-    () => PropertiesSizingRowHandlerValue,
-    (value) => {
-      PropertiesSizingRowHandlerValue = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "PropertiesSizingRowHandlerValue_2",
-    () => PropertiesSizingRowHandlerValue_2,
-    (value) => {
-      PropertiesSizingRowHandlerValue_2 = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "PropertiesSizingRowLeftHcenterRightConfig",
-    () => PropertiesSizingRowLeftHcenterRightConfig,
-    (value) => {
-      PropertiesSizingRowLeftHcenterRightConfig = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "jsxPropertiesSizingRow",
-    () => jsxPropertiesSizingRow,
-    (value) => {
-      jsxPropertiesSizingRow = value;
-    },
-  );
+}
+export {
+  AlignCenterValue,
+  AlignEndValue,
+  AlignStartValue,
+  jsxPropertiesSizingRow,
+  JustifyCenterValue,
+  JustifyEndValue,
+  JustifySpaceBetweenValue,
+  JustifyStartValue,
+  PropertiesSizingRowFlexStartStartCenterConfig,
+  PropertiesSizingRowFlexStartStartCenterConfig_2,
+  PropertiesSizingRowHandler,
+  PropertiesSizingRowHandler_2,
+  PropertiesSizingRowHandlerValue,
+  PropertiesSizingRowHandlerValue_2,
+  PropertiesSizingRowLeftHcenterRightConfig,
+  PropertiesSizingRowTlTrBlConfig,
+  PropertySizingRow,
+};
+export function installEditorPropertiesSizingRow(): () => void {
   return () => {
-    (0, runtime.initializeCdsIndex)();
+    (0, initializeCdsIndex)();
     PropertiesSizingRowHandler = (
       input?: Dynamic,
       options: Dynamic = 1,
@@ -484,8 +382,8 @@ export function installEditorPropertiesSizingRow(
         "M3.42 12.07H12.6M5.01 3.83V9.41M8.01 6.52V9.41M11.01 3.83V9.41",
       ),
     };
-    jsxPropertiesSizingRow = (0, runtime.toModuleNamespace)(
-      (0, runtime.load_react_jsx_runtime)(),
+    jsxPropertiesSizingRow = (0, toModuleNamespace)(
+      (0, load_react_jsx_runtime)(),
       1,
     );
   };

@@ -1,6 +1,17 @@
 # runtime 目标模块划分与迁移顺序
 
-记录日期：2026-11-15。依据 `node scripts/runtime-deps.mjs <包名>` 生成的依赖地图（输出在 `output/runtime-deps/`，不入库，可随时重新生成）。决策背景见 [规格](specs/runtime-modularization.md)。本文在各迁移批次完成后更新；注册表移除后并入 [ARCHITECTURE.md](../ARCHITECTURE.md)。
+记录日期：2026-11-15，2026-11-16 更新迁移状态。依据 `node scripts/runtime-deps.mjs <包名>` 生成的依赖地图（输出在 `output/runtime-deps/`，不入库，可随时重新生成）。决策背景见 [规格](specs/runtime-modularization.md)。本文在各迁移批次完成后更新；注册表移除后并入 [ARCHITECTURE.md](../ARCHITECTURE.md)。
+
+## 迁移状态
+
+| 包 | 状态 | 验证 |
+| --- | --- | --- |
+| design-runtime | 注册表已移除，610 个文件全部改为 import；注册表的类型定义已删除 | 17 个基线场景与迁移前零差异；`npm test`、`npm run test:modules` 通过 |
+| design-system-runtime | 未迁移，仍使用注册表 | 迁移脚本试跑无剩余问题；等设计系统基线场景就绪后应用 |
+
+迁移由 `scripts/runtime-to-imports.mjs` 完成，分两步：先把声明提到模块作用域并把读取改为 import，再删除注册表绑定（`--contract`）。被其他文件写入的 12 个名称改为提供方导出的 `set_名称` 函数。每个文件仍保留 `installXxx()`，它返回原来的初始化函数，入口按原顺序调用，所以初始化时机没有变化。
+
+反向依赖（下层 import 上层）的现有数量记录在 `tests/runtime-layers.test.mjs`，只能减少。下文"还原代码的结构"与"设计稿 runtime 的数据"描述的是迁移前的状态，保留作为设计系统 runtime 迁移的参考。
 
 ## 还原代码的结构
 

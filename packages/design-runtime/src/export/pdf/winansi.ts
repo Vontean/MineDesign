@@ -1,73 +1,55 @@
 /** Restored application module; prepare first, initialize in original order. */
 import {
-  bindRuntimeValue,
   type Dynamic,
-  type RuntimeBindings,
 } from "../../runtime-types";
 
-export function installExportPdfWinansi(runtime: RuntimeBindings): () => void {
-  var winAnsiCodepointMap: Dynamic;
-  var helveticaCharacterWidths: Dynamic;
-  function codepointToWinAnsi(input?: Dynamic): Dynamic {
-    return (input >= 32 && input <= 126) || (input >= 160 && input <= 255)
-      ? input
-      : winAnsiCodepointMap[input];
+var winAnsiCodepointMap: Dynamic;
+var helveticaCharacterWidths: Dynamic;
+function codepointToWinAnsi(input?: Dynamic): Dynamic {
+  return (input >= 32 && input <= 126) || (input >= 160 && input <= 255)
+    ? input
+    : winAnsiCodepointMap[input];
+}
+function winAnsiGlyphWidth(input?: Dynamic): Dynamic {
+  return input >= 32 && input <= 126
+    ? helveticaCharacterWidths[input - 32]
+    : 556;
+}
+function encodeWinAnsiText(input?: Dynamic): Dynamic {
+  let items: Dynamic = [],
+    flag: Dynamic = false;
+  for (let value of input as Dynamic) {
+    let value2: Dynamic = value.codePointAt(0),
+      value3: Dynamic = codepointToWinAnsi(value2);
+    value3 === undefined
+      ? items.push(32)
+      : (items.push(value3), value3 !== 32 && (flag = true));
   }
-  function winAnsiGlyphWidth(input?: Dynamic): Dynamic {
-    return input >= 32 && input <= 126
-      ? helveticaCharacterWidths[input - 32]
-      : 556;
-  }
-  function encodeWinAnsiText(input?: Dynamic): Dynamic {
-    let items: Dynamic = [],
-      flag: Dynamic = false;
-    for (let value of input as Dynamic) {
-      let value2: Dynamic = value.codePointAt(0),
-        value3: Dynamic = codepointToWinAnsi(value2);
-      value3 === undefined
-        ? items.push(32)
-        : (items.push(value3), value3 !== 32 && (flag = true));
-    }
-    return flag ? items : undefined;
-  }
-  function escapePdfLiteralBytes(input?: Dynamic): Dynamic {
-    let text: Dynamic = "";
-    for (let value of input as Dynamic)
-      value === 92
-        ? (text += "\\\\")
-        : value === 40
-          ? (text += "\\(")
-          : value === 41
-            ? (text += "\\)")
-            : value >= 32 && value <= 126
-              ? (text += String.fromCharCode(value))
-              : (text += "\\" + value.toString(8).padStart(3, "0"));
-    return text;
-  }
-  bindRuntimeValue(runtime, "codepointToWinAnsi", () => codepointToWinAnsi);
-  bindRuntimeValue(
-    runtime,
-    "winAnsiCodepointMap",
-    () => winAnsiCodepointMap,
-    (value) => {
-      winAnsiCodepointMap = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "helveticaCharacterWidths",
-    () => helveticaCharacterWidths,
-    (value) => {
-      helveticaCharacterWidths = value;
-    },
-  );
-  bindRuntimeValue(runtime, "winAnsiGlyphWidth", () => winAnsiGlyphWidth);
-  bindRuntimeValue(runtime, "encodeWinAnsiText", () => encodeWinAnsiText);
-  bindRuntimeValue(
-    runtime,
-    "escapePdfLiteralBytes",
-    () => escapePdfLiteralBytes,
-  );
+  return flag ? items : undefined;
+}
+function escapePdfLiteralBytes(input?: Dynamic): Dynamic {
+  let text: Dynamic = "";
+  for (let value of input as Dynamic)
+    value === 92
+      ? (text += "\\\\")
+      : value === 40
+        ? (text += "\\(")
+        : value === 41
+          ? (text += "\\)")
+          : value >= 32 && value <= 126
+            ? (text += String.fromCharCode(value))
+            : (text += "\\" + value.toString(8).padStart(3, "0"));
+  return text;
+}
+export {
+  codepointToWinAnsi,
+  encodeWinAnsiText,
+  escapePdfLiteralBytes,
+  helveticaCharacterWidths,
+  winAnsiCodepointMap,
+  winAnsiGlyphWidth,
+};
+export function installExportPdfWinansi(): () => void {
   return () => {
     winAnsiCodepointMap = {
       8364: 128,

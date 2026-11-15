@@ -7,7 +7,7 @@ const bundle=await build({entryPoints:['packages/design-runtime/src/platform/fil
 function runtimeFor(origin){
   const context=vm.createContext({origin,location:{origin:'null'}});
   vm.runInContext(bundle.outputFiles[0].text,context);
-  const runtime={};context.preview.installPlatformFileContent(runtime);return runtime;
+  return context.preview; // 函数由模块直接导出
 }
 test('Codex srcdoc preview keeps the exact host origin and source checks',()=>{
   const origin='codex-sandbox://mcp-app-example.web-sandbox.oaiusercontent.com';

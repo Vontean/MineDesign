@@ -3,257 +3,255 @@ import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import type { CSSProperties } from "react";
 import {
-  bindRuntimeValue,
   type Dynamic,
-  type RuntimeBindings,
 } from "../../runtime-types";
-export function installEditorPropertiesEffectPopup(
-  runtime: RuntimeBindings,
-): () => void {
-  var ColorEffectButton: Dynamic;
-  function PropertyPopupBody({
-    title: title,
-    onClose: onClose,
-    labelWidth = "3rem",
-    children: children,
-  }: Dynamic): Dynamic {
-    useUiLocale();
-    return (
-      <div
-        role={"dialog"}
-        aria-label={typeof title == "string" ? (title) : (undefined)}
-        className={"flex flex-col py-sm"}
-        style={
-          {
-            "--pp-label-w": labelWidth,
-            "--pp-gutter-l": "var(--cds-pad-md)",
-          } as CSSProperties
-        }
-        data-kit={"effect-editor"}
-      >
-        <div className={"flex items-center pr-xs pb-xs pl-md"}>
-          <h3
-            className={
-              "min-w-0 flex-1 truncate text-body-semibold text-primary"
-            }
-          >
-            {title}
-          </h3>
-          <runtime.Button
-            variant={"ghost"}
-            size={"sm"}
-            iconOnly={true}
-            icon={"X"}
-            aria-label={uiMessage("inspector.effectPopup.close")}
-            tooltip={uiMessage("inspector.effectPopup.close")}
-            onClick={onClose}
-          />
-        </div>
-        {children}
-      </div>
-    );
-  }
-  function ShadowEditor({
-    title: title,
-    value: value,
-    onChange: onChange,
-    onLive: onLive,
-    onLiveEnd: onLiveEnd,
-    onClose: onClose,
-    spread = true,
-    bounds = {},
-    disabled: disabled2,
-    swatches: swatches,
-    unifiedPopover: unifiedPopover,
-    editsAreUndoSteps: editsAreUndoSteps,
-  }: Dynamic): Dynamic {
-    useUiLocale();
-    let callback: Dynamic = (input?: Dynamic): Dynamic =>
-        onChange({
-          ...value,
-          ...input,
-        }),
-      callback2: Dynamic = (input?: Dynamic): Dynamic =>
-        onLive && onLiveEnd
-          ? {
-              onScrub: (input2?: Dynamic): Dynamic =>
-                onLive({
-                  ...value,
-                  [input]: input2,
-                }),
-              onScrubEnd: onLiveEnd,
-            }
-          : {};
-    return (
-      <PropertyPopupBody title={title} onClose={onClose}>
-        <runtime.PropertyRow
-          label={uiMessage("inspector.effectPopup.offset")}
-          disabled={disabled2}
-          onPress={(element?: Dynamic): Dynamic =>
-            element.querySelector("input")?.focus()
+import { Button } from "../../cds/button/button";
+import { joinClassNames } from "../chrome/overlay-state";
+import { EditorPopover } from "../chrome/popover";
+import { ColorValue } from "../color/contrast-copy";
+import { hsvaToRgbHex, parseHsvaColor } from "../color/picker-primitives";
+import { NumericInput } from "./numeric-input";
+import { PropertyPickerButton } from "./primitives";
+import { PropertyRow } from "./row";
+import { ColorWellFace, PropertyHexRow, PropertyNumberRow } from "./rows";
+import { reactSessionStripPopover } from "../session-strip/popover";
+
+var ColorEffectButton: Dynamic;
+function PropertyPopupBody({
+  title: title,
+  onClose: onClose,
+  labelWidth = "3rem",
+  children: children,
+}: Dynamic): Dynamic {
+  useUiLocale();
+  return (
+    <div
+      role={"dialog"}
+      aria-label={typeof title == "string" ? (title) : (undefined)}
+      className={"flex flex-col py-sm"}
+      style={
+        {
+          "--pp-label-w": labelWidth,
+          "--pp-gutter-l": "var(--cds-pad-md)",
+        } as CSSProperties
+      }
+      data-kit={"effect-editor"}
+    >
+      <div className={"flex items-center pr-xs pb-xs pl-md"}>
+        <h3
+          className={
+            "min-w-0 flex-1 truncate text-body-semibold text-primary"
           }
         >
-          <div className={"flex min-w-0 flex-1 items-center gap-2"}>
-            <runtime.NumericInput
-              aria-label={uiMessage("inspector.effectPopup.horizontalOffset")}
-              prefix={"X"}
-              steppers={false}
-              value={value.x}
-              onValue={(input?: Dynamic): Dynamic =>
-                input !== undefined &&
-                callback({
-                  x: input,
-                })
-              }
-              disabled={disabled2}
-              {...bounds.x}
-              {...callback2("x")}
-            />
-            <runtime.NumericInput
-              aria-label={uiMessage("inspector.effectPopup.verticalOffset")}
-              prefix={"Y"}
-              steppers={false}
-              value={value.y}
-              onValue={(input?: Dynamic): Dynamic =>
-                input !== undefined &&
-                callback({
-                  y: input,
-                })
-              }
-              disabled={disabled2}
-              {...bounds.y}
-              {...callback2("y")}
-            />
-          </div>
-        </runtime.PropertyRow>
-        <runtime.PropertyNumberRow
-          label={uiMessage("inspector.effectPopup.blur")}
-          unit={"px"}
-          value={value.blur}
-          onValue={(input?: Dynamic): Dynamic =>
-            input !== undefined &&
-            callback({
-              blur: input,
-            })
-          }
-          disabled={disabled2}
-          min={0}
-          {...bounds.blur}
-          {...callback2("blur")}
+          {title}
+        </h3>
+        <Button
+          variant={"ghost"}
+          size={"sm"}
+          iconOnly={true}
+          icon={"X"}
+          aria-label={uiMessage("inspector.effectPopup.close")}
+          tooltip={uiMessage("inspector.effectPopup.close")}
+          onClick={onClose}
         />
-        {spread && (<runtime.PropertyNumberRow
-            label={uiMessage("inspector.effectPopup.spread")}
-            unit={"px"}
-            value={value.spread ?? 0}
+      </div>
+      {children}
+    </div>
+  );
+}
+function ShadowEditor({
+  title: title,
+  value: value,
+  onChange: onChange,
+  onLive: onLive,
+  onLiveEnd: onLiveEnd,
+  onClose: onClose,
+  spread = true,
+  bounds = {},
+  disabled: disabled2,
+  swatches: swatches,
+  unifiedPopover: unifiedPopover,
+  editsAreUndoSteps: editsAreUndoSteps,
+}: Dynamic): Dynamic {
+  useUiLocale();
+  let callback: Dynamic = (input?: Dynamic): Dynamic =>
+      onChange({
+        ...value,
+        ...input,
+      }),
+    callback2: Dynamic = (input?: Dynamic): Dynamic =>
+      onLive && onLiveEnd
+        ? {
+            onScrub: (input2?: Dynamic): Dynamic =>
+              onLive({
+                ...value,
+                [input]: input2,
+              }),
+            onScrubEnd: onLiveEnd,
+          }
+        : {};
+  return (
+    <PropertyPopupBody title={title} onClose={onClose}>
+      <PropertyRow
+        label={uiMessage("inspector.effectPopup.offset")}
+        disabled={disabled2}
+        onPress={(element?: Dynamic): Dynamic =>
+          element.querySelector("input")?.focus()
+        }
+      >
+        <div className={"flex min-w-0 flex-1 items-center gap-2"}>
+          <NumericInput
+            aria-label={uiMessage("inspector.effectPopup.horizontalOffset")}
+            prefix={"X"}
+            steppers={false}
+            value={value.x}
             onValue={(input?: Dynamic): Dynamic =>
               input !== undefined &&
               callback({
-                spread: input,
+                x: input,
               })
             }
             disabled={disabled2}
-            {...bounds.spread}
-            {...callback2("spread")}
-          />)}
-        <runtime.PropertyHexRow
-          label={uiMessage("inspector.effectPopup.color")}
-          value={value.color}
-          disabled={disabled2}
-          swatches={swatches}
-          popoverTitle={unifiedPopover ? runtime.ColorValue : undefined}
-          editsAreUndoSteps={editsAreUndoSteps}
-          onChange={(input?: Dynamic): Dynamic =>
+            {...bounds.x}
+            {...callback2("x")}
+          />
+          <NumericInput
+            aria-label={uiMessage("inspector.effectPopup.verticalOffset")}
+            prefix={"Y"}
+            steppers={false}
+            value={value.y}
+            onValue={(input?: Dynamic): Dynamic =>
+              input !== undefined &&
+              callback({
+                y: input,
+              })
+            }
+            disabled={disabled2}
+            {...bounds.y}
+            {...callback2("y")}
+          />
+        </div>
+      </PropertyRow>
+      <PropertyNumberRow
+        label={uiMessage("inspector.effectPopup.blur")}
+        unit={"px"}
+        value={value.blur}
+        onValue={(input?: Dynamic): Dynamic =>
+          input !== undefined &&
+          callback({
+            blur: input,
+          })
+        }
+        disabled={disabled2}
+        min={0}
+        {...bounds.blur}
+        {...callback2("blur")}
+      />
+      {spread && (<PropertyNumberRow
+          label={uiMessage("inspector.effectPopup.spread")}
+          unit={"px"}
+          value={value.spread ?? 0}
+          onValue={(input?: Dynamic): Dynamic =>
             input !== undefined &&
             callback({
-              color: input,
+              spread: input,
             })
           }
-          {...(onLive && onLiveEnd
-            ? {
-                onLive: (input?: Dynamic): Dynamic =>
-                  onLive({
-                    ...value,
-                    color: input,
-                  }),
-                onLiveEnd: (): Dynamic => onLiveEnd(),
-              }
-            : {})}
-        />
-      </PropertyPopupBody>
-    );
-  }
-  function PropertyEditorPopover({
-    open: open,
-    onOpenChange: onOpenChange,
-    trigger: trigger,
-    anchor: anchor,
-    side = "left",
-    focusOnOpen: focusOnOpen,
-    className: className,
-    editsAreUndoSteps: editsAreUndoSteps,
-    children: children,
-  }: Dynamic): Dynamic {
-    useUiLocale();
-    return (
-      <runtime.EditorPopover
-        open={open}
-        onOpen={(): Dynamic => onOpenChange(true)}
-        onClose={(): Dynamic => onOpenChange(false)}
-        trigger={trigger}
-        side={side}
-        positionAnchor={anchor}
-        focusOnOpen={focusOnOpen}
-        padding={"none"}
-        className={(0, runtime.joinClassNames)(
-          "w-[14.5rem] pointer-coarse:w-[17rem]",
-          className,
-        )}
-        editsAreUndoSteps={editsAreUndoSteps}
-      >
-        {children}
-      </runtime.EditorPopover>
-    );
-  }
-  function RemovePropertyButton({
-    label: label,
-    onClick: onClick,
-    disabled: disabled2,
-    disabledReason: disabledReason,
-  }: Dynamic): Dynamic {
-    useUiLocale();
-    let value: Dynamic = uiMessage("inspector.effectPopup.remove") + label.toLowerCase();
-    return (
-      <runtime.Button
-        variant={"ghost"}
-        iconOnly={true}
-        icon={"Minus"}
-        aria-label={value}
-        tooltip={value}
+          disabled={disabled2}
+          {...bounds.spread}
+          {...callback2("spread")}
+        />)}
+      <PropertyHexRow
+        label={uiMessage("inspector.effectPopup.color")}
+        value={value.color}
         disabled={disabled2}
-        disabledReason={disabledReason}
-        onClick={onClick}
-        className={"shrink-0"}
+        swatches={swatches}
+        popoverTitle={unifiedPopover ? ColorValue : undefined}
+        editsAreUndoSteps={editsAreUndoSteps}
+        onChange={(input?: Dynamic): Dynamic =>
+          input !== undefined &&
+          callback({
+            color: input,
+          })
+        }
+        {...(onLive && onLiveEnd
+          ? {
+              onLive: (input?: Dynamic): Dynamic =>
+                onLive({
+                  ...value,
+                  color: input,
+                }),
+              onLiveEnd: (): Dynamic => onLiveEnd(),
+            }
+          : {})}
       />
-    );
-  }
-  bindRuntimeValue(runtime, "PropertyPopupBody", () => PropertyPopupBody);
-  bindRuntimeValue(runtime, "ShadowEditor", () => ShadowEditor);
-  bindRuntimeValue(
-    runtime,
-    "PropertyEditorPopover",
-    () => PropertyEditorPopover,
+    </PropertyPopupBody>
   );
-  bindRuntimeValue(
-    runtime,
-    "ColorEffectButton",
-    () => ColorEffectButton,
-    (value) => {
-      ColorEffectButton = value;
-    },
+}
+function PropertyEditorPopover({
+  open: open,
+  onOpenChange: onOpenChange,
+  trigger: trigger,
+  anchor: anchor,
+  side = "left",
+  focusOnOpen: focusOnOpen,
+  className: className,
+  editsAreUndoSteps: editsAreUndoSteps,
+  children: children,
+}: Dynamic): Dynamic {
+  useUiLocale();
+  return (
+    <EditorPopover
+      open={open}
+      onOpen={(): Dynamic => onOpenChange(true)}
+      onClose={(): Dynamic => onOpenChange(false)}
+      trigger={trigger}
+      side={side}
+      positionAnchor={anchor}
+      focusOnOpen={focusOnOpen}
+      padding={"none"}
+      className={(0, joinClassNames)(
+        "w-[14.5rem] pointer-coarse:w-[17rem]",
+        className,
+      )}
+      editsAreUndoSteps={editsAreUndoSteps}
+    >
+      {children}
+    </EditorPopover>
   );
-  bindRuntimeValue(runtime, "RemovePropertyButton", () => RemovePropertyButton);
+}
+function RemovePropertyButton({
+  label: label,
+  onClick: onClick,
+  disabled: disabled2,
+  disabledReason: disabledReason,
+}: Dynamic): Dynamic {
+  useUiLocale();
+  let value: Dynamic = uiMessage("inspector.effectPopup.remove") + label.toLowerCase();
+  return (
+    <Button
+      variant={"ghost"}
+      iconOnly={true}
+      icon={"Minus"}
+      aria-label={value}
+      tooltip={value}
+      disabled={disabled2}
+      disabledReason={disabledReason}
+      onClick={onClick}
+      className={"shrink-0"}
+    />
+  );
+}
+export {
+  ColorEffectButton,
+  PropertyEditorPopover,
+  PropertyPopupBody,
+  RemovePropertyButton,
+  ShadowEditor,
+};
+export function installEditorPropertiesEffectPopup(): () => void {
   return () => {
-    ColorEffectButton = (0, runtime.reactSessionStripPopover.forwardRef)(
+    ColorEffectButton = (0, reactSessionStripPopover.forwardRef)(
       function (
         {
           label: label,
@@ -266,15 +264,15 @@ export function installEditorPropertiesEffectPopup(
         }: Dynamic,
         options?: Dynamic,
       ): Dynamic {
-        let value: Dynamic = (0, runtime.reactSessionStripPopover.useMemo)(
+        let value: Dynamic = (0, reactSessionStripPopover.useMemo)(
           (): Dynamic =>
             typeof color == "string"
-              ? (0, runtime.parseHsvaColor)(color)
+              ? (0, parseHsvaColor)(color)
               : undefined,
           [color],
         );
         return (
-          <runtime.PropertyPickerButton
+          <PropertyPickerButton
             {...(open !== undefined
               ? {
                   "aria-haspopup": "dialog",
@@ -288,8 +286,8 @@ export function installEditorPropertiesEffectPopup(
             onClick={onClick}
             chip={
               color !== undefined ? (
-                <runtime.ColorWellFace
-                  hex={value ? (0, runtime.hsvaToRgbHex)(value) : null}
+                <ColorWellFace
+                  hex={value ? (0, hsvaToRgbHex)(value) : null}
                   alpha={(value?.a ?? 1) * 100}
                 />
               ) : undefined
@@ -299,7 +297,7 @@ export function installEditorPropertiesEffectPopup(
             }
           >
             {text}
-          </runtime.PropertyPickerButton>
+          </PropertyPickerButton>
         );
       },
     );

@@ -1,54 +1,28 @@
 /** Restored application module; prepare first, initialize in original order. */
 import {
-  bindRuntimeValue,
   type Dynamic,
-  type RuntimeBindings,
 } from "../../runtime-types";
+import { initializeCdsIndex } from "../../cds/index";
+import { load_react } from "../../dependencies";
+import { toModuleNamespace } from "../../module-helpers";
 
-export function installEditorChromeTheme(runtime: RuntimeBindings): () => void {
-  var reactChromeTheme: Dynamic;
-  var editorThemeTokens: Dynamic;
-  var reactChromeTheme_2: Dynamic;
-  var reactChromeTheme_3: Dynamic;
-
-  bindRuntimeValue(
-    runtime,
-    "reactChromeTheme",
-    () => reactChromeTheme,
-    (value) => {
-      reactChromeTheme = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "editorThemeTokens",
-    () => editorThemeTokens,
-    (value) => {
-      editorThemeTokens = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "reactChromeTheme_2",
-    () => reactChromeTheme_2,
-    (value) => {
-      reactChromeTheme_2 = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "reactChromeTheme_3",
-    () => reactChromeTheme_3,
-    (value) => {
-      reactChromeTheme_3 = value;
-    },
-  );
+var reactChromeTheme: Dynamic;
+var editorThemeTokens: Dynamic;
+var reactChromeTheme_2: Dynamic;
+var reactChromeTheme_3: Dynamic;
+export {
+  editorThemeTokens,
+  reactChromeTheme,
+  reactChromeTheme_2,
+  reactChromeTheme_3,
+};
+export function installEditorChromeTheme(): () => void {
   return () => {
-    reactChromeTheme = (0, runtime.toModuleNamespace)(
-      (0, runtime.load_react)(),
+    reactChromeTheme = (0, toModuleNamespace)(
+      (0, load_react)(),
       1,
     );
-    (0, runtime.initializeCdsIndex)();
+    (0, initializeCdsIndex)();
     editorThemeTokens = {
       bg: {
         app: "var(--cds-page-bg)",
@@ -131,16 +105,16 @@ export function installEditorChromeTheme(runtime: RuntimeBindings): () => void {
         pinHover: "var(--cds-shadow-lg)",
       },
     };
-    (0, runtime.initializeCdsIndex)();
-    reactChromeTheme_2 = (0, runtime.toModuleNamespace)(
-      (0, runtime.load_react)(),
+    (0, initializeCdsIndex)();
+    reactChromeTheme_2 = (0, toModuleNamespace)(
+      (0, load_react)(),
       1,
     );
-    (0, runtime.initializeCdsIndex)();
-    reactChromeTheme_3 = (0, runtime.toModuleNamespace)(
-      (0, runtime.load_react)(),
+    (0, initializeCdsIndex)();
+    reactChromeTheme_3 = (0, toModuleNamespace)(
+      (0, load_react)(),
       1,
     );
-    (0, runtime.initializeCdsIndex)();
+    (0, initializeCdsIndex)();
   };
 }

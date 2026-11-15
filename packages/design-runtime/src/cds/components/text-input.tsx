@@ -2,103 +2,56 @@ import { uiMessage } from '@minedesign/contracts/ui-messages';
 import type { ForwardComponent, TextInputProps } from "../../contracts/ui";
 import type * as React from "react";
 /** Restored application module; prepare first, initialize in original order. */
-import { bindRuntimeValue, type RuntimeBindings } from "../../runtime-types";
-export function installCdsComponentsTextInput(
-  runtime: RuntimeBindings,
-): () => void {
-  var reactComponentsTextInput: typeof React;
-  var jsxComponentsTextInput: typeof import("react/jsx-runtime");
-  var ButtonButtonCssAlias: string;
-  var ButtonButtonClassNamesAlias: string;
-  var ComponentsTextInputClassNames: string;
-  var ComponentsTextInputClassNames_2: string;
-  var TextInput: ForwardComponent<HTMLInputElement, TextInputProps>;
-  var initializeComponentsTextInput: () => void;
-  bindRuntimeValue(
-    runtime,
-    "reactComponentsTextInput",
-    () => reactComponentsTextInput,
-    (value) => {
-      reactComponentsTextInput = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "jsxComponentsTextInput",
-    () => jsxComponentsTextInput,
-    (value) => {
-      jsxComponentsTextInput = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "ButtonButtonCssAlias",
-    () => ButtonButtonCssAlias,
-    (value) => {
-      ButtonButtonCssAlias = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "ButtonButtonClassNamesAlias",
-    () => ButtonButtonClassNamesAlias,
-    (value) => {
-      ButtonButtonClassNamesAlias = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "ComponentsTextInputClassNames",
-    () => ComponentsTextInputClassNames,
-    (value) => {
-      ComponentsTextInputClassNames = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "ComponentsTextInputClassNames_2",
-    () => ComponentsTextInputClassNames_2,
-    (value) => {
-      ComponentsTextInputClassNames_2 = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "TextInput",
-    () => TextInput,
-    (value) => {
-      TextInput = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "initializeComponentsTextInput",
-    () => initializeComponentsTextInput,
-    (value) => {
-      initializeComponentsTextInput = value;
-    },
-  );
+import { Button, ButtonButtonClassNames_3, ButtonButtonClassNames_4, ButtonButtonCss, initializeButtonButton, initializeButtonButton_2 } from "../button/button";
+import { initializeDomRefComposition, useMergedRefs } from "../dom/ref-composition";
+import { initializeFieldContext, useFieldDisabled, useFieldInvalid } from "../field/context";
+import { initializeMenuPopup_2, useClickToFocus } from "../menu/popup";
+import { initializeSheetsStyles_2, useLabel } from "../sheets/styles";
+import { cn, initializeClassNames } from "../theme/class-names";
+import { getSizeAttribute, initializeCdsRoot } from "../theme/root";
+import { initializeNpm__base_ui_react_x7, load_react, load_react_jsx_runtime, npm_Field_qg } from "../../dependencies";
+import { initializeOnce, toModuleNamespace } from "../../module-helpers";
+
+var reactComponentsTextInput: typeof React;
+var jsxComponentsTextInput: typeof import("react/jsx-runtime");
+var ButtonButtonCssAlias: string;
+var ButtonButtonClassNamesAlias: string;
+var ComponentsTextInputClassNames: string;
+var ComponentsTextInputClassNames_2: string;
+var TextInput: ForwardComponent<HTMLInputElement, TextInputProps>;
+var initializeComponentsTextInput: () => void;
+export {
+  ButtonButtonClassNamesAlias,
+  ButtonButtonCssAlias,
+  ComponentsTextInputClassNames,
+  ComponentsTextInputClassNames_2,
+  initializeComponentsTextInput,
+  jsxComponentsTextInput,
+  reactComponentsTextInput,
+  TextInput,
+};
+export function installCdsComponentsTextInput(): () => void {
   return () => {
-    initializeComponentsTextInput = (0, runtime.initializeOnce)(() => {
+    initializeComponentsTextInput = (0, initializeOnce)(() => {
       "use client";
 
-      (0, runtime.initializeClassNames)();
-      (0, runtime.initializeSheetsStyles_2)();
-      (0, runtime.initializeCdsRoot)();
-      (0, runtime.initializeMenuPopup_2)();
-      (0, runtime.initializeDomRefComposition)();
-      (0, runtime.initializeButtonButton)();
-      (0, runtime.initializeButtonButton_2)();
-      (0, runtime.initializeFieldContext)();
-      reactComponentsTextInput = (0, runtime.toModuleNamespace)(
-        (0, runtime.load_react)(),
+      (0, initializeClassNames)();
+      (0, initializeSheetsStyles_2)();
+      (0, initializeCdsRoot)();
+      (0, initializeMenuPopup_2)();
+      (0, initializeDomRefComposition)();
+      (0, initializeButtonButton)();
+      (0, initializeButtonButton_2)();
+      (0, initializeFieldContext)();
+      reactComponentsTextInput = (0, toModuleNamespace)(
+        (0, load_react)(),
       );
-      jsxComponentsTextInput = (0, runtime.toModuleNamespace)(
-        (0, runtime.load_react_jsx_runtime)(),
+      jsxComponentsTextInput = (0, toModuleNamespace)(
+        (0, load_react_jsx_runtime)(),
       );
-      (0, runtime.initializeNpm__base_ui_react_x7)();
-      ButtonButtonCssAlias = runtime.ButtonButtonCss;
-      ButtonButtonClassNamesAlias = runtime.ButtonButtonClassNames_4;
+      (0, initializeNpm__base_ui_react_x7)();
+      ButtonButtonCssAlias = ButtonButtonCss;
+      ButtonButtonClassNamesAlias = ButtonButtonClassNames_4;
       ComponentsTextInputClassNames =
         "[&_[data-cds=Button]:not([data-cds-ghost])]:h-[var(--fhn)] [&_[data-cds=Button]:not([data-cds-ghost])]:rounded-[calc(var(--fr)-(var(--fh)-var(--fhn))/2)] [&_[data-cds=Button][data-cds-icon-only]:not([data-cds-ghost])]:w-[var(--fhn)]";
       ComponentsTextInputClassNames_2 =
@@ -134,23 +87,23 @@ export function installCdsComponentsTextInput(
               "aria-describedby": value2,
               disabled: value4,
             },
-            value6 = (0, runtime.useLabel)("clear", "Clear"),
+            value6 = (0, useLabel)("clear", "Clear"),
             value7 = clearLabel ?? value6,
-            value8 = (0, runtime.useFieldInvalid)(),
+            value8 = (0, useFieldInvalid)(),
             value9 = value8 || value3,
-            value10 = (0, runtime.useFieldDisabled)(),
+            value10 = (0, useFieldDisabled)(),
             value11 = value4 || value10,
             value12 = fullWidth ? "w-full" : "",
             value13 = (0,
             reactComponentsTextInput.useRef)<HTMLInputElement | null>(null),
-            { clickToFocusProps: value14 } = (0, runtime.useClickToFocus)(
+            { clickToFocusProps: value14 } = (0, useClickToFocus)(
               () => value13.current?.focus(),
               {
                 disabled: value11,
                 readOnly: value5.readOnly,
               },
             ),
-            value15 = (0, runtime.useMergedRefs)(value13, options),
+            value15 = (0, useMergedRefs)(value13, options),
             value16 = value5.value !== undefined,
             [value17, value18] = (0, reactComponentsTextInput.useState)(
               () =>
@@ -166,7 +119,7 @@ export function installCdsComponentsTextInput(
             },
             value20 =
               (clearable === "always" || (clearable && value19)) && !value11 ? (
-                <runtime.Button
+                <Button
                   iconOnly={true}
                   variant={"ghost"}
                   size={size === "sm" || size === "xs" ? "xs" : "sm"}
@@ -209,10 +162,10 @@ export function installCdsComponentsTextInput(
             return (
               <div
                 data-cds={"TextInput"}
-                {...(0, runtime.getSizeAttribute)(size)}
+                {...(0, getSizeAttribute)(size)}
                 data-invalid={value8 || undefined}
                 onMouseDown={value14.onMouseDown}
-                className={(0, runtime.cn)(
+                className={(0, cn)(
                   ButtonButtonCssAlias,
                   value22,
                   ComponentsTextInputClassNames_2,
@@ -221,14 +174,14 @@ export function installCdsComponentsTextInput(
                   value11 ? "cursor-default" : "cursor-text",
                   "items-center gap-[var(--cds-pad-sm,6px)] has-[:focus-visible]:shadow-focus",
                   "has-[input:disabled]:opacity-disabled",
-                  value11 ? undefined : runtime.ButtonButtonClassNames_3,
+                  value11 ? undefined : ButtonButtonClassNames_3,
                   className,
                 )}
               >
                 {slotStart ? (<span className={"flex shrink-0 items-center text-muted"}>
                     {slotStart}
                   </span>) : (null)}
-                <runtime.npm_Field_qg.Control
+                <npm_Field_qg.Control
                   {...state}
                   render={
                     <input
@@ -236,7 +189,7 @@ export function installCdsComponentsTextInput(
                       aria-invalid={value9}
                       {...value5}
                       onChange={callback}
-                      className={(0, runtime.cn)(
+                      className={(0, cn)(
                         ButtonButtonClassNamesAlias,
                         "disabled:opacity-100",
                       )}
@@ -251,18 +204,18 @@ export function installCdsComponentsTextInput(
             );
           }
           return (
-            <runtime.npm_Field_qg.Control
+            <npm_Field_qg.Control
               ref={options}
               {...state}
               render={
                 <input
                   data-cds={"TextInput"}
-                  {...(0, runtime.getSizeAttribute)(size)}
+                  {...(0, getSizeAttribute)(size)}
                   data-invalid={value8 || undefined}
                   aria-invalid={value9}
                   {...value5}
                   onChange={callback}
-                  className={(0, runtime.cn)(
+                  className={(0, cn)(
                     "cds-input cds-reset",
                     ButtonButtonCssAlias,
                     "pr-md",

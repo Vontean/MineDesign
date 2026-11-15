@@ -1,32 +1,18 @@
 /** Restored application module; prepare first, initialize in original order. */
 import {
-  bindRuntimeValue,
   type Dynamic,
-  type RuntimeBindings,
 } from "../../runtime-types";
+import { initializeOnce } from "../../module-helpers";
 
-export function installCdsThemeTokens(runtime: RuntimeBindings): () => void {
-  var tokens: Dynamic;
-  var initializeTokens: Dynamic;
-
-  bindRuntimeValue(
-    runtime,
-    "tokens",
-    () => tokens,
-    (value) => {
-      tokens = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "initializeTokens",
-    () => initializeTokens,
-    (value) => {
-      initializeTokens = value;
-    },
-  );
+var tokens: Dynamic;
+var initializeTokens: Dynamic;
+export {
+  initializeTokens,
+  tokens,
+};
+export function installCdsThemeTokens(): () => void {
   return () => {
-    initializeTokens = (0, runtime.initializeOnce)((): Dynamic => {
+    initializeTokens = (0, initializeOnce)((): Dynamic => {
       tokens = {
         radius: {
           cssVar: "var(--cds-radius)",

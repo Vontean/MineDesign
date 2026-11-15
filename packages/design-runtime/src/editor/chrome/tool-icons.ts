@@ -1,42 +1,18 @@
 import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
-  bindRuntimeValue,
   type Dynamic,
-  type RuntimeBindings,
 } from "../../runtime-types";
 
-export function installEditorChromeToolIcons(
-  runtime: RuntimeBindings,
-): () => void {
-  var ChromeToolIconsRectOvalConfig: Dynamic;
-  var ChromeToolIconsColumnRowTextConfig: Dynamic;
-  var ChromeToolIconsNoteTitleRectConfig: Dynamic;
-
-  bindRuntimeValue(
-    runtime,
-    "ChromeToolIconsRectOvalConfig",
-    () => ChromeToolIconsRectOvalConfig,
-    (value) => {
-      ChromeToolIconsRectOvalConfig = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "ChromeToolIconsColumnRowTextConfig",
-    () => ChromeToolIconsColumnRowTextConfig,
-    (value) => {
-      ChromeToolIconsColumnRowTextConfig = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "ChromeToolIconsNoteTitleRectConfig",
-    () => ChromeToolIconsNoteTitleRectConfig,
-    (value) => {
-      ChromeToolIconsNoteTitleRectConfig = value;
-    },
-  );
+var ChromeToolIconsRectOvalConfig: Dynamic;
+var ChromeToolIconsColumnRowTextConfig: Dynamic;
+var ChromeToolIconsNoteTitleRectConfig: Dynamic;
+export {
+  ChromeToolIconsColumnRowTextConfig,
+  ChromeToolIconsNoteTitleRectConfig,
+  ChromeToolIconsRectOvalConfig,
+};
+export function installEditorChromeToolIcons(): () => void {
   return () => {
     ChromeToolIconsRectOvalConfig = {
       rect: {

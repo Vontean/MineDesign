@@ -1,196 +1,128 @@
 import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
-  bindRuntimeValue,
   type Dynamic,
-  type RuntimeBindings,
 } from "../../runtime-types";
+import { initializeNpm_usehooks_ts_p0, load_react } from "../../dependencies";
+import { parseNoteBlocks } from "../notes/blocks";
+import { NotesDomHandler_2 } from "../notes/dom";
+import { parseNoteInlineMarkdown } from "../notes/inline-markdown";
+import { OutlineNativeMenuLabelGlyphConfig, OutlineNativeMenuLabelGlyphConfig_2, OutlineNativeMenuLimit, OutlineNativeMenuReplace, OutlineNativeMenuSlice, OutlineNativeMenuTitle1RectOvalConfig } from "./native-menu";
+import { toModuleNamespace } from "../../module-helpers";
 
-export function installEditorOutlineAnnotations(
-  runtime: RuntimeBindings,
-): () => void {
-  var OutlineAnnotationsSlice: Dynamic;
-  var ViewOnlyYouCanInspectThisMessage: Dynamic;
-  var OutlineAnnotationsLabel: Dynamic;
-  var ADrawnLineOrPathCannotMessage: Dynamic;
-  var reactOutlineAnnotations: Dynamic;
-  var OutlineAnnotationsIsWorkerConfig: Dynamic;
-  var OutlineAnnotationsIsWorkerOnOmEventRoundtripConfig: Dynamic;
-  var OutlineAnnotationsResolvedValue: Dynamic;
-  function annotationFirstTextLine(source?: Dynamic): Dynamic {
-    if (source.kind === "title1")
-      return (
-        (0, runtime.NotesDomHandler_2)(source.text).trim().split(`
+var OutlineAnnotationsSlice: Dynamic;
+var ViewOnlyYouCanInspectThisMessage: Dynamic;
+var OutlineAnnotationsLabel: Dynamic;
+var ADrawnLineOrPathCannotMessage: Dynamic;
+var reactOutlineAnnotations: Dynamic;
+var OutlineAnnotationsIsWorkerConfig: Dynamic;
+var OutlineAnnotationsIsWorkerOnOmEventRoundtripConfig: Dynamic;
+var OutlineAnnotationsResolvedValue: Dynamic;
+function annotationFirstTextLine(source?: Dynamic): Dynamic {
+  if (source.kind === "title1")
+    return (
+      (0, NotesDomHandler_2)(source.text).trim().split(`
 `)[0] ?? ""
-      );
-    let value: Dynamic = (0, runtime.parseNoteBlocks)(source.text.trim())[0],
-      value2: Dynamic =
-        value == null
-          ? ""
-          : value.kind === "p"
-            ? value.text
-            : (value.items[0] ?? "");
-    return (0, runtime.parseNoteInlineMarkdown)(value2, {
-      escapes: true,
-      literalUnsafeLinks: true,
-    })
-      .map((input?: Dynamic): Dynamic => input.text)
-      .join("");
-  }
-  function annotationOutlineDetail(source?: Dynamic): Dynamic {
-    if (source.kind === "image") {
-      let value2: Dynamic = (0, runtime.OutlineNativeMenuReplace)(
-        source.alt ?? "",
-      );
-      return value2
-        ? {
-            detail: OutlineAnnotationsSlice(value2),
-            ...(value2.length > runtime.OutlineNativeMenuLimit
-              ? {
-                  detailTitle: value2,
-                }
-              : {}),
-          }
-        : {};
-    }
-    if (!("text" in source)) return {};
-    let value: Dynamic = annotationFirstTextLine(source).trim();
-    return value
+    );
+  let value: Dynamic = (0, parseNoteBlocks)(source.text.trim())[0],
+    value2: Dynamic =
+      value == null
+        ? ""
+        : value.kind === "p"
+          ? value.text
+          : (value.items[0] ?? "");
+  return (0, parseNoteInlineMarkdown)(value2, {
+    escapes: true,
+    literalUnsafeLinks: true,
+  })
+    .map((input?: Dynamic): Dynamic => input.text)
+    .join("");
+}
+function annotationOutlineDetail(source?: Dynamic): Dynamic {
+  if (source.kind === "image") {
+    let value2: Dynamic = (0, OutlineNativeMenuReplace)(
+      source.alt ?? "",
+    );
+    return value2
       ? {
-          detail: `\u201C${(0, runtime.OutlineNativeMenuSlice)(value)}\u201D`,
+          detail: OutlineAnnotationsSlice(value2),
+          ...(value2.length > OutlineNativeMenuLimit
+            ? {
+                detailTitle: value2,
+              }
+            : {}),
         }
       : {};
   }
-  function annotationOutlineNode(source?: Dynamic): Dynamic {
-    let value: Dynamic =
-      source.kind === undefined
-        ? runtime.OutlineNativeMenuLabelGlyphConfig
-        : source.kind === "image" && source.video !== undefined
-          ? runtime.OutlineNativeMenuLabelGlyphConfig_2
-          : runtime.OutlineNativeMenuTitle1RectOvalConfig[source.kind];
-    return {
-      id: source.id,
-      label: value.label,
-      glyph: value.glyph,
-      ...annotationOutlineDetail(source),
-    };
-  }
-  function reconcileAnnotationOutline(
-    input?: Dynamic,
-    options?: Dynamic,
-  ): Dynamic {
-    let values: Dynamic = new Set(),
-      value: Dynamic = input.map((source?: Dynamic): Dynamic => {
-        values.add(source.id);
-        let value2: Dynamic =
-            source.kind === "image"
-              ? (source.video !== undefined ? "video:" : "") +
-                (source.alt ?? "")
-              : "text" in source
-                ? source.text
-                : undefined,
-          entry: Dynamic = options.get(source.id);
-        if (entry && entry.kind === source.kind && entry.text === value2)
-          return entry.row;
-        let value3: Dynamic = annotationOutlineNode(source);
-        options.set(source.id, {
-          kind: source.kind,
-          text: value2,
-          row: value3,
-        });
-        return value3;
+  if (!("text" in source)) return {};
+  let value: Dynamic = annotationFirstTextLine(source).trim();
+  return value
+    ? {
+        detail: `\u201C${(0, OutlineNativeMenuSlice)(value)}\u201D`,
+      }
+    : {};
+}
+function annotationOutlineNode(source?: Dynamic): Dynamic {
+  let value: Dynamic =
+    source.kind === undefined
+      ? OutlineNativeMenuLabelGlyphConfig
+      : source.kind === "image" && source.video !== undefined
+        ? OutlineNativeMenuLabelGlyphConfig_2
+        : OutlineNativeMenuTitle1RectOvalConfig[source.kind];
+  return {
+    id: source.id,
+    label: value.label,
+    glyph: value.glyph,
+    ...annotationOutlineDetail(source),
+  };
+}
+function reconcileAnnotationOutline(
+  input?: Dynamic,
+  options?: Dynamic,
+): Dynamic {
+  let values: Dynamic = new Set(),
+    value: Dynamic = input.map((source?: Dynamic): Dynamic => {
+      values.add(source.id);
+      let value2: Dynamic =
+          source.kind === "image"
+            ? (source.video !== undefined ? "video:" : "") +
+              (source.alt ?? "")
+            : "text" in source
+              ? source.text
+              : undefined,
+        entry: Dynamic = options.get(source.id);
+      if (entry && entry.kind === source.kind && entry.text === value2)
+        return entry.row;
+      let value3: Dynamic = annotationOutlineNode(source);
+      options.set(source.id, {
+        kind: source.kind,
+        text: value2,
+        row: value3,
       });
-    for (let value2 of options.keys() as Dynamic)
-      values.has(value2) || options.delete(value2);
-    return value;
-  }
-  bindRuntimeValue(
-    runtime,
-    "annotationFirstTextLine",
-    () => annotationFirstTextLine,
-  );
-  bindRuntimeValue(
-    runtime,
-    "OutlineAnnotationsSlice",
-    () => OutlineAnnotationsSlice,
-    (value) => {
-      OutlineAnnotationsSlice = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "annotationOutlineDetail",
-    () => annotationOutlineDetail,
-  );
-  bindRuntimeValue(
-    runtime,
-    "annotationOutlineNode",
-    () => annotationOutlineNode,
-  );
-  bindRuntimeValue(
-    runtime,
-    "reconcileAnnotationOutline",
-    () => reconcileAnnotationOutline,
-  );
-  bindRuntimeValue(
-    runtime,
-    "ViewOnlyYouCanInspectThisMessage",
-    () => ViewOnlyYouCanInspectThisMessage,
-    (value) => {
-      ViewOnlyYouCanInspectThisMessage = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "OutlineAnnotationsLabel",
-    () => OutlineAnnotationsLabel,
-    (value) => {
-      OutlineAnnotationsLabel = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "ADrawnLineOrPathCannotMessage",
-    () => ADrawnLineOrPathCannotMessage,
-    (value) => {
-      ADrawnLineOrPathCannotMessage = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "reactOutlineAnnotations",
-    () => reactOutlineAnnotations,
-    (value) => {
-      reactOutlineAnnotations = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "OutlineAnnotationsIsWorkerConfig",
-    () => OutlineAnnotationsIsWorkerConfig,
-    (value) => {
-      OutlineAnnotationsIsWorkerConfig = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "OutlineAnnotationsIsWorkerOnOmEventRoundtripConfig",
-    () => OutlineAnnotationsIsWorkerOnOmEventRoundtripConfig,
-    (value) => {
-      OutlineAnnotationsIsWorkerOnOmEventRoundtripConfig = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "OutlineAnnotationsResolvedValue",
-    () => OutlineAnnotationsResolvedValue,
-    (value) => {
-      OutlineAnnotationsResolvedValue = value;
-    },
-  );
+      return value3;
+    });
+  for (let value2 of options.keys() as Dynamic)
+    values.has(value2) || options.delete(value2);
+  return value;
+}
+export {
+  ADrawnLineOrPathCannotMessage,
+  annotationFirstTextLine,
+  annotationOutlineDetail,
+  annotationOutlineNode,
+  OutlineAnnotationsIsWorkerConfig,
+  OutlineAnnotationsIsWorkerOnOmEventRoundtripConfig,
+  OutlineAnnotationsLabel,
+  OutlineAnnotationsResolvedValue,
+  OutlineAnnotationsSlice,
+  reactOutlineAnnotations,
+  reconcileAnnotationOutline,
+  ViewOnlyYouCanInspectThisMessage,
+};
+export function installEditorOutlineAnnotations(): () => void {
   return () => {
     OutlineAnnotationsSlice = (items?: Dynamic): Dynamic =>
-      items.length > runtime.OutlineNativeMenuLimit
+      items.length > OutlineNativeMenuLimit
         ? `${items.slice(0, 13)}\u2026${items.slice(-12)}`
         : items;
     ViewOnlyYouCanInspectThisMessage =
@@ -198,11 +130,11 @@ export function installEditorOutlineAnnotations(
     OutlineAnnotationsLabel = uiMessage("inspector.annotations.selectAnElementFirst");
     ADrawnLineOrPathCannotMessage =
       uiMessage("inspector.annotations.aDrawnLineOrPath");
-    reactOutlineAnnotations = (0, runtime.toModuleNamespace)(
-      (0, runtime.load_react)(),
+    reactOutlineAnnotations = (0, toModuleNamespace)(
+      (0, load_react)(),
       1,
     );
-    (0, runtime.initializeNpm_usehooks_ts_p0)();
+    (0, initializeNpm_usehooks_ts_p0)();
     OutlineAnnotationsIsWorkerConfig = {
       isWorker: false,
       emitOmEvent(input: Dynamic, options: Dynamic): Dynamic {

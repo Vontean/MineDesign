@@ -2,324 +2,152 @@ import { useUiLocale } from '../../ui-locale.ts';
 import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
-  bindRuntimeValue,
   type Dynamic,
-  type RuntimeBindings,
 } from "../../runtime-types";
-export function installEditorInspectorEditor(
-  runtime: RuntimeBindings,
-): () => void {
-  var jsxInspectorEditor: Dynamic;
-  var InspectorEditorLazyComponent: Dynamic;
-  var TextListValue: Dynamic;
-  var InspectorEditorConstant: Dynamic;
-  var InspectorEditorConstant_2: Dynamic;
-  var InspectorEditorItems: Dynamic;
-  var InspectorEditorItems_2: Dynamic;
-  var InspectorEditorSubscribers: Dynamic;
-  var InspectorEditorConstant_3: Dynamic;
-  var InspectorEditorLabel: Dynamic;
-  var InspectorEditorResolvedValue: Dynamic;
-  var InspectorEditorMetaControlShiftSet: Dynamic;
-  var InspectorEditorSubscribers_2: Dynamic;
-  var InspectorEditorEvery: Dynamic;
-  var InspectorEditorKeys: Dynamic;
-  var InspectorEditorSubscribers_3: Dynamic;
-  var InspectorEditorReplace: Dynamic;
-  var InspectorEditorFontFamilyFontWeightFontSizeSet: Dynamic;
-  var InspectorEditorSubscribers_4: Dynamic;
-  var InspectorEditorResolvedValue_2: Dynamic;
-  var InspectorEditorPropLabelSpecConfig: Dynamic;
-  var InspectorEditorLabel_2: Dynamic;
-  var InspectorEditorLabel_3: Dynamic;
-  var InspectorEditorLabel_4: Dynamic;
-  var inspectorSingleSelectionMessage: Dynamic;
-  function markBlockedDragElements(
-    input?: Dynamic,
-    options?: Dynamic,
-    context?: Dynamic,
-  ): Dynamic {
-    for (let value of (options ?? []) as Dynamic)
-      value !== context &&
-        input.setAttribute(value, "data-dc-drag-block", String(value));
-  }
-  function normalizePasteStamp(input?: Dynamic): Dynamic {
-    let stamp: Dynamic = input.stamp;
-    return typeof stamp == "string" && stamp.length > 0 && stamp.length <= 64
-      ? stamp
-      : null;
-  }
-  function foreignArtboardPasteContext(input?: Dynamic): Dynamic {
-    let foreignArtboards: Dynamic = input.foreignArtboards;
-    return typeof foreignArtboards == "number" &&
-      Number.isFinite(foreignArtboards) &&
-      foreignArtboards > 0
-      ? {
-          forwarded: Math.min(Math.floor(foreignArtboards), 999),
-        }
-      : undefined;
-  }
-  function boundedPasteText(input?: Dynamic): Dynamic {
-    return typeof input.text == "string"
-      ? (0, runtime.utf16SafeSlice)(input.text, InspectorEditorResolvedValue)
-      : "";
-  }
-  function textContrastGround(input?: Dynamic, options?: Dynamic): Dynamic {
-    if (
-      input === null ||
-      options.backgroundClip === "text" ||
-      options.webkitBackgroundClip === "text"
-    )
-      return null;
-    let value: Dynamic = (0, runtime.normalizePixelValue)(options.fontSize),
-      value2: Dynamic = (0, runtime.normalizeFontWeight)(options.fontWeight);
-    return {
-      ...(0, runtime.textContrastContext)(
-        input.behind,
-        value === null ? null : parseFloat(value),
-        value2 === null ? null : parseFloat(value2),
-      ),
-      ink: input.ink,
-    };
-  }
-  function InspectorEmptyState(input?: Dynamic): Dynamic {
-    useUiLocale();
-    return (
-      <div
-        {...input}
-        className={(0, runtime.cn)(
-          "py-7 px-5 text-center text-xs text-secondary leading-normal",
-          input.className,
-        )}
-      />
-    );
-  }
-  bindRuntimeValue(
-    runtime,
-    "jsxInspectorEditor",
-    () => jsxInspectorEditor,
-    (value) => {
-      jsxInspectorEditor = value;
-    },
+import { reactCanvasShape_2 } from "../../canvas/shape";
+import { cn } from "../../cds/theme/class-names";
+import { load_react_jsx_runtime } from "../../dependencies";
+import { textContrastContext } from "../accessibility/announcements";
+import { utf16SafeSlice } from "../code/unified-diff";
+import { isEditablePropMetadata } from "../components/prop-validation";
+import { normalizeFontWeight, normalizePixelValue } from "./computed-data";
+import { initializeInspectorLinkPopover, linkPopoverExports } from "./link-popover";
+import { InspectorPropertySchemaItems_2 } from "./property-schema";
+import { PropertiesInspectorFieldNameComponentFromSet } from "../properties/inspector-field";
+import { HostValue } from "../selection/canvas-selection";
+import { toModuleNamespace } from "../../module-helpers";
+
+var jsxInspectorEditor: Dynamic;
+var InspectorEditorLazyComponent: Dynamic;
+var TextListValue: Dynamic;
+var InspectorEditorConstant: Dynamic;
+var InspectorEditorConstant_2: Dynamic;
+var InspectorEditorItems: Dynamic;
+var InspectorEditorItems_2: Dynamic;
+var InspectorEditorSubscribers: Dynamic;
+var InspectorEditorConstant_3: Dynamic;
+var InspectorEditorLabel: Dynamic;
+var InspectorEditorResolvedValue: Dynamic;
+var InspectorEditorMetaControlShiftSet: Dynamic;
+var InspectorEditorSubscribers_2: Dynamic;
+var InspectorEditorEvery: Dynamic;
+var InspectorEditorKeys: Dynamic;
+var InspectorEditorSubscribers_3: Dynamic;
+var InspectorEditorReplace: Dynamic;
+var InspectorEditorFontFamilyFontWeightFontSizeSet: Dynamic;
+var InspectorEditorSubscribers_4: Dynamic;
+var InspectorEditorResolvedValue_2: Dynamic;
+var InspectorEditorPropLabelSpecConfig: Dynamic;
+var InspectorEditorLabel_2: Dynamic;
+var InspectorEditorLabel_3: Dynamic;
+var InspectorEditorLabel_4: Dynamic;
+var inspectorSingleSelectionMessage: Dynamic;
+function markBlockedDragElements(
+  input?: Dynamic,
+  options?: Dynamic,
+  context?: Dynamic,
+): Dynamic {
+  for (let value of (options ?? []) as Dynamic)
+    value !== context &&
+      input.setAttribute(value, "data-dc-drag-block", String(value));
+}
+function normalizePasteStamp(input?: Dynamic): Dynamic {
+  let stamp: Dynamic = input.stamp;
+  return typeof stamp == "string" && stamp.length > 0 && stamp.length <= 64
+    ? stamp
+    : null;
+}
+function foreignArtboardPasteContext(input?: Dynamic): Dynamic {
+  let foreignArtboards: Dynamic = input.foreignArtboards;
+  return typeof foreignArtboards == "number" &&
+    Number.isFinite(foreignArtboards) &&
+    foreignArtboards > 0
+    ? {
+        forwarded: Math.min(Math.floor(foreignArtboards), 999),
+      }
+    : undefined;
+}
+function boundedPasteText(input?: Dynamic): Dynamic {
+  return typeof input.text == "string"
+    ? (0, utf16SafeSlice)(input.text, InspectorEditorResolvedValue)
+    : "";
+}
+function textContrastGround(input?: Dynamic, options?: Dynamic): Dynamic {
+  if (
+    input === null ||
+    options.backgroundClip === "text" ||
+    options.webkitBackgroundClip === "text"
+  )
+    return null;
+  let value: Dynamic = (0, normalizePixelValue)(options.fontSize),
+    value2: Dynamic = (0, normalizeFontWeight)(options.fontWeight);
+  return {
+    ...(0, textContrastContext)(
+      input.behind,
+      value === null ? null : parseFloat(value),
+      value2 === null ? null : parseFloat(value2),
+    ),
+    ink: input.ink,
+  };
+}
+function InspectorEmptyState(input?: Dynamic): Dynamic {
+  useUiLocale();
+  return (
+    <div
+      {...input}
+      className={(0, cn)(
+        "py-7 px-5 text-center text-xs text-secondary leading-normal",
+        input.className,
+      )}
+    />
   );
-  bindRuntimeValue(
-    runtime,
-    "InspectorEditorLazyComponent",
-    () => InspectorEditorLazyComponent,
-    (value) => {
-      InspectorEditorLazyComponent = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "TextListValue",
-    () => TextListValue,
-    (value) => {
-      TextListValue = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "InspectorEditorConstant",
-    () => InspectorEditorConstant,
-    (value) => {
-      InspectorEditorConstant = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "InspectorEditorConstant_2",
-    () => InspectorEditorConstant_2,
-    (value) => {
-      InspectorEditorConstant_2 = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "InspectorEditorItems",
-    () => InspectorEditorItems,
-    (value) => {
-      InspectorEditorItems = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "InspectorEditorItems_2",
-    () => InspectorEditorItems_2,
-    (value) => {
-      InspectorEditorItems_2 = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "InspectorEditorSubscribers",
-    () => InspectorEditorSubscribers,
-    (value) => {
-      InspectorEditorSubscribers = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "markBlockedDragElements",
-    () => markBlockedDragElements,
-  );
-  bindRuntimeValue(
-    runtime,
-    "InspectorEditorConstant_3",
-    () => InspectorEditorConstant_3,
-    (value) => {
-      InspectorEditorConstant_3 = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "InspectorEditorLabel",
-    () => InspectorEditorLabel,
-    (value) => {
-      InspectorEditorLabel = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "InspectorEditorResolvedValue",
-    () => InspectorEditorResolvedValue,
-    (value) => {
-      InspectorEditorResolvedValue = value;
-    },
-  );
-  bindRuntimeValue(runtime, "normalizePasteStamp", () => normalizePasteStamp);
-  bindRuntimeValue(
-    runtime,
-    "foreignArtboardPasteContext",
-    () => foreignArtboardPasteContext,
-  );
-  bindRuntimeValue(runtime, "boundedPasteText", () => boundedPasteText);
-  bindRuntimeValue(
-    runtime,
-    "InspectorEditorMetaControlShiftSet",
-    () => InspectorEditorMetaControlShiftSet,
-    (value) => {
-      InspectorEditorMetaControlShiftSet = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "InspectorEditorSubscribers_2",
-    () => InspectorEditorSubscribers_2,
-    (value) => {
-      InspectorEditorSubscribers_2 = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "InspectorEditorEvery",
-    () => InspectorEditorEvery,
-    (value) => {
-      InspectorEditorEvery = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "InspectorEditorKeys",
-    () => InspectorEditorKeys,
-    (value) => {
-      InspectorEditorKeys = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "InspectorEditorSubscribers_3",
-    () => InspectorEditorSubscribers_3,
-    (value) => {
-      InspectorEditorSubscribers_3 = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "InspectorEditorReplace",
-    () => InspectorEditorReplace,
-    (value) => {
-      InspectorEditorReplace = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "InspectorEditorFontFamilyFontWeightFontSizeSet",
-    () => InspectorEditorFontFamilyFontWeightFontSizeSet,
-    (value) => {
-      InspectorEditorFontFamilyFontWeightFontSizeSet = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "InspectorEditorSubscribers_4",
-    () => InspectorEditorSubscribers_4,
-    (value) => {
-      InspectorEditorSubscribers_4 = value;
-    },
-  );
-  bindRuntimeValue(runtime, "textContrastGround", () => textContrastGround);
-  bindRuntimeValue(
-    runtime,
-    "InspectorEditorResolvedValue_2",
-    () => InspectorEditorResolvedValue_2,
-    (value) => {
-      InspectorEditorResolvedValue_2 = value;
-    },
-  );
-  bindRuntimeValue(runtime, "InspectorEmptyState", () => InspectorEmptyState);
-  bindRuntimeValue(
-    runtime,
-    "InspectorEditorPropLabelSpecConfig",
-    () => InspectorEditorPropLabelSpecConfig,
-    (value) => {
-      InspectorEditorPropLabelSpecConfig = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "InspectorEditorLabel_2",
-    () => InspectorEditorLabel_2,
-    (value) => {
-      InspectorEditorLabel_2 = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "InspectorEditorLabel_3",
-    () => InspectorEditorLabel_3,
-    (value) => {
-      InspectorEditorLabel_3 = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "InspectorEditorLabel_4",
-    () => InspectorEditorLabel_4,
-    (value) => {
-      InspectorEditorLabel_4 = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "inspectorSingleSelectionMessage",
-    () => inspectorSingleSelectionMessage,
-    (value) => {
-      inspectorSingleSelectionMessage = value;
-    },
-  );
+}
+export {
+  boundedPasteText,
+  foreignArtboardPasteContext,
+  InspectorEditorConstant,
+  InspectorEditorConstant_2,
+  InspectorEditorConstant_3,
+  InspectorEditorEvery,
+  InspectorEditorFontFamilyFontWeightFontSizeSet,
+  InspectorEditorItems,
+  InspectorEditorItems_2,
+  InspectorEditorKeys,
+  InspectorEditorLabel,
+  InspectorEditorLabel_2,
+  InspectorEditorLabel_3,
+  InspectorEditorLabel_4,
+  InspectorEditorLazyComponent,
+  InspectorEditorMetaControlShiftSet,
+  InspectorEditorPropLabelSpecConfig,
+  InspectorEditorReplace,
+  InspectorEditorResolvedValue,
+  InspectorEditorResolvedValue_2,
+  InspectorEditorSubscribers,
+  InspectorEditorSubscribers_2,
+  InspectorEditorSubscribers_3,
+  InspectorEditorSubscribers_4,
+  InspectorEmptyState,
+  inspectorSingleSelectionMessage,
+  jsxInspectorEditor,
+  markBlockedDragElements,
+  normalizePasteStamp,
+  textContrastGround,
+  TextListValue,
+};
+export function installEditorInspectorEditor(): () => void {
   return () => {
-    jsxInspectorEditor = (0, runtime.toModuleNamespace)(
-      (0, runtime.load_react_jsx_runtime)(),
+    jsxInspectorEditor = (0, toModuleNamespace)(
+      (0, load_react_jsx_runtime)(),
       1,
     );
-    InspectorEditorLazyComponent = (0, runtime.reactCanvasShape_2.lazy)(
+    InspectorEditorLazyComponent = (0, reactCanvasShape_2.lazy)(
       (): Dynamic =>
         Promise.resolve()
           .then(
             (): Dynamic => (
-              (0, runtime.initializeInspectorLinkPopover)(),
-              runtime.linkPopoverExports
+              (0, initializeInspectorLinkPopover)(),
+              linkPopoverExports
             ),
           )
           .then(
@@ -372,8 +200,8 @@ export function installEditorInspectorEditor(
           (input2?: Dynamic): Dynamic =>
             !(
               options &&
-              runtime.PropertiesInspectorFieldNameComponentFromSet.has(input2)
-            ) && (0, runtime.isEditablePropMetadata)(input?.[input2]),
+              PropertiesInspectorFieldNameComponentFromSet.has(input2)
+            ) && (0, isEditablePropMetadata)(input?.[input2]),
         ),
       );
     InspectorEditorSubscribers_3 = new Set();
@@ -404,12 +232,12 @@ export function installEditorInspectorEditor(
       "backdrop-filter",
       "mix-blend-mode",
     ]);
-    InspectorEditorResolvedValue_2 = runtime.HostValue + "followed";
+    InspectorEditorResolvedValue_2 = HostValue + "followed";
     InspectorEditorPropLabelSpecConfig = {
       prop: "background",
       get label() { return uiMessage("inspector.editor.background"); },
       spec: {
-        ...runtime.InspectorPropertySchemaItems_2.find(
+        ...InspectorPropertySchemaItems_2.find(
           (input?: Dynamic): Dynamic => input.prop === "background",
         ),
         get label() { return uiMessage("inspector.editor.background"); },

@@ -1,308 +1,247 @@
 /** Restored application module; prepare first, initialize in original order. */
 import {
-  bindRuntimeValue,
   type Dynamic,
-  type RuntimeBindings,
 } from "../runtime-types";
+import { ExportDeliveryCapMsFinishAnimationsEagerImagesConfig } from "./delivery";
+import { exportHeightTolerance } from "./paper-and-scale";
+import { PlatformFileContentLimit_6 } from "../platform/file-content";
 
-export function installExportCaptureViewport(
-  runtime: RuntimeBindings,
-): () => void {
-  var ExportCaptureViewportLimit: Dynamic;
-  var ExportCaptureViewportLabel: Dynamic;
-  var measureContentHeightScript: Dynamic;
-  var ExportCaptureViewportConstant: Dynamic;
-  var ExportCaptureViewportItems: Dynamic;
-  var measureExportTailScript: Dynamic;
-  async function lockCaptureViewport(
-    input?: Dynamic,
-    options?: Dynamic,
-    context: Dynamic = null,
-  ): Promise<Dynamic> {
-    let value: Dynamic = await input
-        .executeJavaScript("[window.scrollX,window.scrollY]", 2e3)
-        .catch((): Dynamic => null),
-      { unlock: value2, resized: value3 }: Dynamic = input.lockViewportSize(
-        options.w,
-        options.h,
-      ),
-      callback: Dynamic = (): Dynamic => {
-        value2();
-        (value3 || context) &&
-          Array.isArray(value) &&
-          value.every(
-            (input2?: Dynamic): Dynamic =>
-              typeof input2 == "number" && Number.isFinite(input2),
-          ) &&
-          input.executeJavaScriptUnchecked(
-            "window.scrollTo(" +
-              String(value[0]) +
-              "," +
-              String(value[1]) +
-              ")",
-          );
-      };
-    if (!value3 && !context)
-      return {
-        release: callback,
-        settleMs: 0,
-      };
-    let index: Dynamic = 0;
-    try {
-      if (value3) {
-        let value5: Dynamic = String(Number(options.w) || 0),
-          value6: Dynamic = String(Number(options.h) || 0);
-        await input
-          .executeJavaScript(
-            "new Promise(function(r){var n=0;(function t(){(Math.abs(window.innerWidth-" +
-              value5 +
-              ")<1&&Math.abs(window.innerHeight-" +
-              value6 +
-              ")<1)||++n>30?r(null):setTimeout(t,16)})()})",
-            2e3,
-          )
-          .catch((): Dynamic => {});
-      }
-      let value4: Dynamic = Date.now();
-      await input.awaitSettled(context ?? 1500);
-      context && (index = Date.now() - value4);
-    } catch (value4: Dynamic) {
-      throw (callback(), value4);
-    }
+var ExportCaptureViewportLimit: Dynamic;
+var ExportCaptureViewportLabel: Dynamic;
+var measureContentHeightScript: Dynamic;
+var ExportCaptureViewportConstant: Dynamic;
+var ExportCaptureViewportItems: Dynamic;
+var measureExportTailScript: Dynamic;
+async function lockCaptureViewport(
+  input?: Dynamic,
+  options?: Dynamic,
+  context: Dynamic = null,
+): Promise<Dynamic> {
+  let value: Dynamic = await input
+      .executeJavaScript("[window.scrollX,window.scrollY]", 2e3)
+      .catch((): Dynamic => null),
+    { unlock: value2, resized: value3 }: Dynamic = input.lockViewportSize(
+      options.w,
+      options.h,
+    ),
+    callback: Dynamic = (): Dynamic => {
+      value2();
+      (value3 || context) &&
+        Array.isArray(value) &&
+        value.every(
+          (input2?: Dynamic): Dynamic =>
+            typeof input2 == "number" && Number.isFinite(input2),
+        ) &&
+        input.executeJavaScriptUnchecked(
+          "window.scrollTo(" +
+            String(value[0]) +
+            "," +
+            String(value[1]) +
+            ")",
+        );
+    };
+  if (!value3 && !context)
     return {
       release: callback,
-      settleMs: index,
+      settleMs: 0,
     };
+  let index: Dynamic = 0;
+  try {
+    if (value3) {
+      let value5: Dynamic = String(Number(options.w) || 0),
+        value6: Dynamic = String(Number(options.h) || 0);
+      await input
+        .executeJavaScript(
+          "new Promise(function(r){var n=0;(function t(){(Math.abs(window.innerWidth-" +
+            value5 +
+            ")<1&&Math.abs(window.innerHeight-" +
+            value6 +
+            ")<1)||++n>30?r(null):setTimeout(t,16)})()})",
+          2e3,
+        )
+        .catch((): Dynamic => {});
+    }
+    let value4: Dynamic = Date.now();
+    await input.awaitSettled(context ?? 1500);
+    context && (index = Date.now() - value4);
+  } catch (value4: Dynamic) {
+    throw (callback(), value4);
   }
-  async function measureArtboardContentHeight(
-    input?: Dynamic,
-    options?: Dynamic,
-  ): Promise<Dynamic> {
-    return withCaptureViewport(input, options, async (): Promise<Dynamic> => {
-      await input.awaitSettled(1500).catch((): Dynamic => {});
-      let value: Dynamic = await input
-        .executeJavaScript(measureContentHeightScript, 2e3)
-        .catch((): Dynamic => null);
-      return typeof value == "number" &&
-        Number.isFinite(value) &&
-        value >= 1 &&
-        value <= 1e6
-        ? value
-        : null;
-    });
-  }
-  async function measureExpandedContentHeight(
-    input?: Dynamic,
-    options?: Dynamic,
-  ): Promise<Dynamic> {
-    let value: Dynamic = await measureArtboardContentHeight(input, options);
-    if (value === null || value <= options.h + runtime.exportHeightTolerance)
-      return value;
-    let value2: Dynamic = await measureArtboardContentHeight(input, {
-      w: options.w,
-      h: Math.min(
-        runtime.PlatformFileContentLimit_6,
-        Math.ceil(value),
-        options.h + ExportCaptureViewportConstant,
-      ),
-    });
-    return value2 !== null && value2 > value + runtime.exportHeightTolerance
-      ? "unsettled"
-      : value;
-  }
-  function normalizeExportTailMetrics(input?: Dynamic): Dynamic {
-    if (typeof input != "object" || input === null) return null;
-    let { h: value, g: value2, c: value3 }: Dynamic = input,
-      callback: Dynamic = (input2?: Dynamic): Dynamic =>
-        typeof input2 == "number" &&
-        Number.isFinite(input2) &&
-        input2 >= 0 &&
-        input2 <= 1e6;
-    return callback(value) &&
+  return {
+    release: callback,
+    settleMs: index,
+  };
+}
+async function measureArtboardContentHeight(
+  input?: Dynamic,
+  options?: Dynamic,
+): Promise<Dynamic> {
+  return withCaptureViewport(input, options, async (): Promise<Dynamic> => {
+    await input.awaitSettled(1500).catch((): Dynamic => {});
+    let value: Dynamic = await input
+      .executeJavaScript(measureContentHeightScript, 2e3)
+      .catch((): Dynamic => null);
+    return typeof value == "number" &&
+      Number.isFinite(value) &&
       value >= 1 &&
-      callback(value2) &&
-      (value3 === 0 || value3 === 1)
-      ? {
-          h: value,
-          g: value2,
-          c: value3,
-        }
+      value <= 1e6
+      ? value
       : null;
-  }
-  async function measureFlowExportHeight(
-    input?: Dynamic,
-    options?: Dynamic,
-  ): Promise<Dynamic> {
-    let [value, value2]: Dynamic = ExportCaptureViewportItems,
-      callback: Dynamic = (input2?: Dynamic): Dynamic =>
-        withCaptureViewport(
-          input,
-          {
-            w: options.w,
-            h: input2,
-          },
-          async (): Promise<Dynamic> =>
-            normalizeExportTailMetrics(
-              await input
-                .executeJavaScript(measureExportTailScript, 2e3)
-                .catch((): Dynamic => null),
-            ),
-        ),
-      value3: Dynamic = await callback(value);
-    if (value3 === null) return null;
-    if (value3.c === 1) return "unsettled";
-    let value4: Dynamic = await callback(value2);
-    if (value4 === null) return null;
-    if (value4.c === 1) return "unsettled";
-    let value5: Dynamic = value3.h > value + runtime.exportHeightTolerance,
-      value6: Dynamic = value4.h > value2 + runtime.exportHeightTolerance,
-      value7: Dynamic = Math.min(value3.g, value3.h),
-      value8: Dynamic = Math.min(value4.g, value4.h),
-      value9: Dynamic;
-    if (value5) {
-      if (
-        value6 &&
-        Math.abs(value4.h - value3.h) > runtime.exportHeightTolerance
-      )
-        return "unsettled";
-      value9 = Math.max(value3.h, value7);
-    } else {
-      if (value6 || Math.abs(value8 - value7) > runtime.exportHeightTolerance)
-        return "unsettled";
-      if (value7 < 1) return "empty";
-      value9 = Math.max(value7, value8);
-    }
-    for (
-      let index: Dynamic = 0;
-      value9 + runtime.exportHeightTolerance < options.h;
-      index++
-    ) {
-      let value10: Dynamic = await measureArtboardContentHeight(input, {
-        w: options.w,
-        h: Math.ceil(value9),
-      });
-      if (value10 === null) return null;
-      if (value10 <= Math.ceil(value9) + runtime.exportHeightTolerance) break;
-      if (index === 1) return "unsettled";
-      value9 = value10;
-    }
-    return Math.min(value9, options.h);
-  }
-  async function measureEmptyExportTail(
-    input?: Dynamic,
-    options?: Dynamic,
-    context: Dynamic = 2500,
-  ): Promise<Dynamic> {
-    return withCaptureViewport(input, options, async (): Promise<Dynamic> => {
-      let value: Dynamic = normalizeExportTailMetrics(
-        await input
-          .executeJavaScript(measureExportTailScript, context)
-          .catch((): Dynamic => null),
-      );
-      return value === null ||
-        value.c === 1 ||
-        value.g < 1 ||
-        value.h > options.h + runtime.exportHeightTolerance
-        ? null
-        : Math.max(0, Math.round(options.h - value.g));
-    });
-  }
-  async function withCaptureViewport(
-    input?: Dynamic,
-    options?: Dynamic,
-    context?: Dynamic,
-    value: Dynamic = false,
-  ): Promise<Dynamic> {
-    if (!options) return context(0);
-    let { release: value2, settleMs: value3 }: Dynamic =
-      await lockCaptureViewport(
+  });
+}
+async function measureExpandedContentHeight(
+  input?: Dynamic,
+  options?: Dynamic,
+): Promise<Dynamic> {
+  let value: Dynamic = await measureArtboardContentHeight(input, options);
+  if (value === null || value <= options.h + exportHeightTolerance)
+    return value;
+  let value2: Dynamic = await measureArtboardContentHeight(input, {
+    w: options.w,
+    h: Math.min(
+      PlatformFileContentLimit_6,
+      Math.ceil(value),
+      options.h + ExportCaptureViewportConstant,
+    ),
+  });
+  return value2 !== null && value2 > value + exportHeightTolerance
+    ? "unsettled"
+    : value;
+}
+function normalizeExportTailMetrics(input?: Dynamic): Dynamic {
+  if (typeof input != "object" || input === null) return null;
+  let { h: value, g: value2, c: value3 }: Dynamic = input,
+    callback: Dynamic = (input2?: Dynamic): Dynamic =>
+      typeof input2 == "number" &&
+      Number.isFinite(input2) &&
+      input2 >= 0 &&
+      input2 <= 1e6;
+  return callback(value) &&
+    value >= 1 &&
+    callback(value2) &&
+    (value3 === 0 || value3 === 1)
+    ? {
+        h: value,
+        g: value2,
+        c: value3,
+      }
+    : null;
+}
+async function measureFlowExportHeight(
+  input?: Dynamic,
+  options?: Dynamic,
+): Promise<Dynamic> {
+  let [value, value2]: Dynamic = ExportCaptureViewportItems,
+    callback: Dynamic = (input2?: Dynamic): Dynamic =>
+      withCaptureViewport(
         input,
-        options,
-        value
-          ? runtime.ExportDeliveryCapMsFinishAnimationsEagerImagesConfig
-          : null,
-      );
-    try {
-      return await context(value3);
-    } finally {
-      value2();
-    }
+        {
+          w: options.w,
+          h: input2,
+        },
+        async (): Promise<Dynamic> =>
+          normalizeExportTailMetrics(
+            await input
+              .executeJavaScript(measureExportTailScript, 2e3)
+              .catch((): Dynamic => null),
+          ),
+      ),
+    value3: Dynamic = await callback(value);
+  if (value3 === null) return null;
+  if (value3.c === 1) return "unsettled";
+  let value4: Dynamic = await callback(value2);
+  if (value4 === null) return null;
+  if (value4.c === 1) return "unsettled";
+  let value5: Dynamic = value3.h > value + exportHeightTolerance,
+    value6: Dynamic = value4.h > value2 + exportHeightTolerance,
+    value7: Dynamic = Math.min(value3.g, value3.h),
+    value8: Dynamic = Math.min(value4.g, value4.h),
+    value9: Dynamic;
+  if (value5) {
+    if (
+      value6 &&
+      Math.abs(value4.h - value3.h) > exportHeightTolerance
+    )
+      return "unsettled";
+    value9 = Math.max(value3.h, value7);
+  } else {
+    if (value6 || Math.abs(value8 - value7) > exportHeightTolerance)
+      return "unsettled";
+    if (value7 < 1) return "empty";
+    value9 = Math.max(value7, value8);
   }
-  bindRuntimeValue(runtime, "lockCaptureViewport", () => lockCaptureViewport);
-  bindRuntimeValue(
-    runtime,
-    "ExportCaptureViewportLimit",
-    () => ExportCaptureViewportLimit,
-    (value) => {
-      ExportCaptureViewportLimit = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "ExportCaptureViewportLabel",
-    () => ExportCaptureViewportLabel,
-    (value) => {
-      ExportCaptureViewportLabel = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "measureContentHeightScript",
-    () => measureContentHeightScript,
-    (value) => {
-      measureContentHeightScript = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "measureArtboardContentHeight",
-    () => measureArtboardContentHeight,
-  );
-  bindRuntimeValue(
-    runtime,
-    "ExportCaptureViewportConstant",
-    () => ExportCaptureViewportConstant,
-    (value) => {
-      ExportCaptureViewportConstant = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "measureExpandedContentHeight",
-    () => measureExpandedContentHeight,
-  );
-  bindRuntimeValue(
-    runtime,
-    "ExportCaptureViewportItems",
-    () => ExportCaptureViewportItems,
-    (value) => {
-      ExportCaptureViewportItems = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "measureExportTailScript",
-    () => measureExportTailScript,
-    (value) => {
-      measureExportTailScript = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "normalizeExportTailMetrics",
-    () => normalizeExportTailMetrics,
-  );
-  bindRuntimeValue(
-    runtime,
-    "measureFlowExportHeight",
-    () => measureFlowExportHeight,
-  );
-  bindRuntimeValue(
-    runtime,
-    "measureEmptyExportTail",
-    () => measureEmptyExportTail,
-  );
-  bindRuntimeValue(runtime, "withCaptureViewport", () => withCaptureViewport);
+  for (
+    let index: Dynamic = 0;
+    value9 + exportHeightTolerance < options.h;
+    index++
+  ) {
+    let value10: Dynamic = await measureArtboardContentHeight(input, {
+      w: options.w,
+      h: Math.ceil(value9),
+    });
+    if (value10 === null) return null;
+    if (value10 <= Math.ceil(value9) + exportHeightTolerance) break;
+    if (index === 1) return "unsettled";
+    value9 = value10;
+  }
+  return Math.min(value9, options.h);
+}
+async function measureEmptyExportTail(
+  input?: Dynamic,
+  options?: Dynamic,
+  context: Dynamic = 2500,
+): Promise<Dynamic> {
+  return withCaptureViewport(input, options, async (): Promise<Dynamic> => {
+    let value: Dynamic = normalizeExportTailMetrics(
+      await input
+        .executeJavaScript(measureExportTailScript, context)
+        .catch((): Dynamic => null),
+    );
+    return value === null ||
+      value.c === 1 ||
+      value.g < 1 ||
+      value.h > options.h + exportHeightTolerance
+      ? null
+      : Math.max(0, Math.round(options.h - value.g));
+  });
+}
+async function withCaptureViewport(
+  input?: Dynamic,
+  options?: Dynamic,
+  context?: Dynamic,
+  value: Dynamic = false,
+): Promise<Dynamic> {
+  if (!options) return context(0);
+  let { release: value2, settleMs: value3 }: Dynamic =
+    await lockCaptureViewport(
+      input,
+      options,
+      value
+        ? ExportDeliveryCapMsFinishAnimationsEagerImagesConfig
+        : null,
+    );
+  try {
+    return await context(value3);
+  } finally {
+    value2();
+  }
+}
+export {
+  ExportCaptureViewportConstant,
+  ExportCaptureViewportItems,
+  ExportCaptureViewportLabel,
+  ExportCaptureViewportLimit,
+  lockCaptureViewport,
+  measureArtboardContentHeight,
+  measureContentHeightScript,
+  measureEmptyExportTail,
+  measureExpandedContentHeight,
+  measureExportTailScript,
+  measureFlowExportHeight,
+  normalizeExportTailMetrics,
+  withCaptureViewport,
+};
+export function installExportCaptureViewport(): () => void {
   return () => {
     ExportCaptureViewportLimit = 15e3;
     ExportCaptureViewportLabel =

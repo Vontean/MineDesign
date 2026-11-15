@@ -2,294 +2,123 @@ import { uiMessage } from '@minedesign/contracts/ui-messages';
 import { useUiLocale } from '../../ui-locale.ts';
 /** Restored application module; prepare first, initialize in original order. */
 import {
-  bindRuntimeValue,
   type Dynamic,
-  type RuntimeBindings,
 } from "../../runtime-types";
-export function installEditorPropertiesTooltip(
-  runtime: RuntimeBindings,
-): () => void {
-  var jsxPropertiesTooltip: Dynamic;
-  var reactPropertiesTooltip: Dynamic;
-  var reactPropertiesTooltip_2: Dynamic;
-  var reactPropertiesTooltip_3: Dynamic;
-  var PropertiesTooltipHandler: Dynamic;
-  var TextAlignLeftValue: Dynamic;
-  var TextAlignCenterValue: Dynamic;
-  var TextAlignRightValue: Dynamic;
-  var TextAlignJustifyValue: Dynamic;
-  var LineHeightValue: Dynamic;
-  var PropertiesTooltipNameViewBoxPathsConfig: Dynamic;
-  var PropertiesTooltipNameViewBoxPathsConfig_2: Dynamic;
-  var PropertiesTooltipNameViewBoxPathsConfig_3: Dynamic;
-  var PropertiesTooltipNameViewBoxPathsConfig_4: Dynamic;
-  var CropValue: Dynamic;
-  var PropertiesTooltipNameViewBoxPathsConfig_5: Dynamic;
-  var PropertiesTooltipNameViewBoxPathsConfig_6: Dynamic;
-  var PropertiesTooltipNameViewBoxPathsConfig_7: Dynamic;
-  var PropertiesTooltipNameViewBoxPathsConfig_8: Dynamic;
-  var PropertiesTooltipNameViewBoxPathsConfig_9: Dynamic;
-  var PropertiesTooltipNameViewBoxPathsConfig_10: Dynamic;
-  var PropertiesTooltipNameViewBoxPathsConfig_11: Dynamic;
-  var PropertiesTooltipNameViewBoxPathsConfig_12: Dynamic;
-  var PropertiesTooltipNameViewBoxPathsConfig_13: Dynamic;
-  var PropertiesTooltipColorGradientConfig: Dynamic;
-  function EditorTooltip({
-    tip: tip,
-    shortcut: shortcut,
-    side = "top",
-    align = "center",
-    wrap = false,
-    delay: delay,
-    className: className,
-    children: children,
-  }: Dynamic): Dynamic {
-    useUiLocale();
-    return (
-      <runtime.Tooltip
-        content={tip}
-        shortcut={shortcut}
-        side={side}
-        align={
-          align === "right" ? "end" : align === "left" ? "start" : "center"
-        }
-        multiline={wrap}
-        delay={delay}
-        hoverable={false}
+import { initializeCdsIndex } from "../../cds/index";
+import { Tooltip } from "../../cds/tooltip/tooltip";
+import { load_react, load_react_jsx_runtime } from "../../dependencies";
+import { joinClassNames } from "../chrome/overlay-state";
+import { toModuleNamespace } from "../../module-helpers";
+
+var jsxPropertiesTooltip: Dynamic;
+var reactPropertiesTooltip: Dynamic;
+var reactPropertiesTooltip_2: Dynamic;
+var reactPropertiesTooltip_3: Dynamic;
+var PropertiesTooltipHandler: Dynamic;
+var TextAlignLeftValue: Dynamic;
+var TextAlignCenterValue: Dynamic;
+var TextAlignRightValue: Dynamic;
+var TextAlignJustifyValue: Dynamic;
+var LineHeightValue: Dynamic;
+var PropertiesTooltipNameViewBoxPathsConfig: Dynamic;
+var PropertiesTooltipNameViewBoxPathsConfig_2: Dynamic;
+var PropertiesTooltipNameViewBoxPathsConfig_3: Dynamic;
+var PropertiesTooltipNameViewBoxPathsConfig_4: Dynamic;
+var CropValue: Dynamic;
+var PropertiesTooltipNameViewBoxPathsConfig_5: Dynamic;
+var PropertiesTooltipNameViewBoxPathsConfig_6: Dynamic;
+var PropertiesTooltipNameViewBoxPathsConfig_7: Dynamic;
+var PropertiesTooltipNameViewBoxPathsConfig_8: Dynamic;
+var PropertiesTooltipNameViewBoxPathsConfig_9: Dynamic;
+var PropertiesTooltipNameViewBoxPathsConfig_10: Dynamic;
+var PropertiesTooltipNameViewBoxPathsConfig_11: Dynamic;
+var PropertiesTooltipNameViewBoxPathsConfig_12: Dynamic;
+var PropertiesTooltipNameViewBoxPathsConfig_13: Dynamic;
+var PropertiesTooltipColorGradientConfig: Dynamic;
+function EditorTooltip({
+  tip: tip,
+  shortcut: shortcut,
+  side = "top",
+  align = "center",
+  wrap = false,
+  delay: delay,
+  className: className,
+  children: children,
+}: Dynamic): Dynamic {
+  useUiLocale();
+  return (
+    <Tooltip
+      content={tip}
+      shortcut={shortcut}
+      side={side}
+      align={
+        align === "right" ? "end" : align === "left" ? "start" : "center"
+      }
+      multiline={wrap}
+      delay={delay}
+      hoverable={false}
+    >
+      <span
+        data-tip={typeof tip == "string" ? (tip) : (undefined)}
+        className={(0, joinClassNames)(
+          "relative inline-flex align-top",
+          className,
+        )}
       >
-        <span
-          data-tip={typeof tip == "string" ? (tip) : (undefined)}
-          className={(0, runtime.joinClassNames)(
-            "relative inline-flex align-top",
-            className,
-          )}
-        >
-          {children}
-        </span>
-      </runtime.Tooltip>
-    );
-  }
-  bindRuntimeValue(runtime, "EditorTooltip", () => EditorTooltip);
-  bindRuntimeValue(
-    runtime,
-    "jsxPropertiesTooltip",
-    () => jsxPropertiesTooltip,
-    (value) => {
-      jsxPropertiesTooltip = value;
-    },
+        {children}
+      </span>
+    </Tooltip>
   );
-  bindRuntimeValue(
-    runtime,
-    "reactPropertiesTooltip",
-    () => reactPropertiesTooltip,
-    (value) => {
-      reactPropertiesTooltip = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "reactPropertiesTooltip_2",
-    () => reactPropertiesTooltip_2,
-    (value) => {
-      reactPropertiesTooltip_2 = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "reactPropertiesTooltip_3",
-    () => reactPropertiesTooltip_3,
-    (value) => {
-      reactPropertiesTooltip_3 = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "PropertiesTooltipHandler",
-    () => PropertiesTooltipHandler,
-    (value) => {
-      PropertiesTooltipHandler = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "TextAlignLeftValue",
-    () => TextAlignLeftValue,
-    (value) => {
-      TextAlignLeftValue = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "TextAlignCenterValue",
-    () => TextAlignCenterValue,
-    (value) => {
-      TextAlignCenterValue = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "TextAlignRightValue",
-    () => TextAlignRightValue,
-    (value) => {
-      TextAlignRightValue = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "TextAlignJustifyValue",
-    () => TextAlignJustifyValue,
-    (value) => {
-      TextAlignJustifyValue = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "LineHeightValue",
-    () => LineHeightValue,
-    (value) => {
-      LineHeightValue = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "PropertiesTooltipNameViewBoxPathsConfig",
-    () => PropertiesTooltipNameViewBoxPathsConfig,
-    (value) => {
-      PropertiesTooltipNameViewBoxPathsConfig = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "PropertiesTooltipNameViewBoxPathsConfig_2",
-    () => PropertiesTooltipNameViewBoxPathsConfig_2,
-    (value) => {
-      PropertiesTooltipNameViewBoxPathsConfig_2 = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "PropertiesTooltipNameViewBoxPathsConfig_3",
-    () => PropertiesTooltipNameViewBoxPathsConfig_3,
-    (value) => {
-      PropertiesTooltipNameViewBoxPathsConfig_3 = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "PropertiesTooltipNameViewBoxPathsConfig_4",
-    () => PropertiesTooltipNameViewBoxPathsConfig_4,
-    (value) => {
-      PropertiesTooltipNameViewBoxPathsConfig_4 = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "CropValue",
-    () => CropValue,
-    (value) => {
-      CropValue = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "PropertiesTooltipNameViewBoxPathsConfig_5",
-    () => PropertiesTooltipNameViewBoxPathsConfig_5,
-    (value) => {
-      PropertiesTooltipNameViewBoxPathsConfig_5 = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "PropertiesTooltipNameViewBoxPathsConfig_6",
-    () => PropertiesTooltipNameViewBoxPathsConfig_6,
-    (value) => {
-      PropertiesTooltipNameViewBoxPathsConfig_6 = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "PropertiesTooltipNameViewBoxPathsConfig_7",
-    () => PropertiesTooltipNameViewBoxPathsConfig_7,
-    (value) => {
-      PropertiesTooltipNameViewBoxPathsConfig_7 = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "PropertiesTooltipNameViewBoxPathsConfig_8",
-    () => PropertiesTooltipNameViewBoxPathsConfig_8,
-    (value) => {
-      PropertiesTooltipNameViewBoxPathsConfig_8 = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "PropertiesTooltipNameViewBoxPathsConfig_9",
-    () => PropertiesTooltipNameViewBoxPathsConfig_9,
-    (value) => {
-      PropertiesTooltipNameViewBoxPathsConfig_9 = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "PropertiesTooltipNameViewBoxPathsConfig_10",
-    () => PropertiesTooltipNameViewBoxPathsConfig_10,
-    (value) => {
-      PropertiesTooltipNameViewBoxPathsConfig_10 = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "PropertiesTooltipNameViewBoxPathsConfig_11",
-    () => PropertiesTooltipNameViewBoxPathsConfig_11,
-    (value) => {
-      PropertiesTooltipNameViewBoxPathsConfig_11 = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "PropertiesTooltipNameViewBoxPathsConfig_12",
-    () => PropertiesTooltipNameViewBoxPathsConfig_12,
-    (value) => {
-      PropertiesTooltipNameViewBoxPathsConfig_12 = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "PropertiesTooltipNameViewBoxPathsConfig_13",
-    () => PropertiesTooltipNameViewBoxPathsConfig_13,
-    (value) => {
-      PropertiesTooltipNameViewBoxPathsConfig_13 = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "PropertiesTooltipColorGradientConfig",
-    () => PropertiesTooltipColorGradientConfig,
-    (value) => {
-      PropertiesTooltipColorGradientConfig = value;
-    },
-  );
+}
+export {
+  CropValue,
+  EditorTooltip,
+  jsxPropertiesTooltip,
+  LineHeightValue,
+  PropertiesTooltipColorGradientConfig,
+  PropertiesTooltipHandler,
+  PropertiesTooltipNameViewBoxPathsConfig,
+  PropertiesTooltipNameViewBoxPathsConfig_10,
+  PropertiesTooltipNameViewBoxPathsConfig_11,
+  PropertiesTooltipNameViewBoxPathsConfig_12,
+  PropertiesTooltipNameViewBoxPathsConfig_13,
+  PropertiesTooltipNameViewBoxPathsConfig_2,
+  PropertiesTooltipNameViewBoxPathsConfig_3,
+  PropertiesTooltipNameViewBoxPathsConfig_4,
+  PropertiesTooltipNameViewBoxPathsConfig_5,
+  PropertiesTooltipNameViewBoxPathsConfig_6,
+  PropertiesTooltipNameViewBoxPathsConfig_7,
+  PropertiesTooltipNameViewBoxPathsConfig_8,
+  PropertiesTooltipNameViewBoxPathsConfig_9,
+  reactPropertiesTooltip,
+  reactPropertiesTooltip_2,
+  reactPropertiesTooltip_3,
+  TextAlignCenterValue,
+  TextAlignJustifyValue,
+  TextAlignLeftValue,
+  TextAlignRightValue,
+};
+export function installEditorPropertiesTooltip(): () => void {
   return () => {
-    jsxPropertiesTooltip = (0, runtime.toModuleNamespace)(
-      (0, runtime.load_react_jsx_runtime)(),
+    jsxPropertiesTooltip = (0, toModuleNamespace)(
+      (0, load_react_jsx_runtime)(),
       1,
     );
-    reactPropertiesTooltip = (0, runtime.toModuleNamespace)(
-      (0, runtime.load_react)(),
+    reactPropertiesTooltip = (0, toModuleNamespace)(
+      (0, load_react)(),
       1,
     );
-    (0, runtime.initializeCdsIndex)();
-    reactPropertiesTooltip_2 = (0, runtime.toModuleNamespace)(
-      (0, runtime.load_react)(),
+    (0, initializeCdsIndex)();
+    reactPropertiesTooltip_2 = (0, toModuleNamespace)(
+      (0, load_react)(),
       1,
     );
-    (0, runtime.initializeCdsIndex)();
-    reactPropertiesTooltip_3 = (0, runtime.toModuleNamespace)(
-      (0, runtime.load_react)(),
+    (0, initializeCdsIndex)();
+    reactPropertiesTooltip_3 = (0, toModuleNamespace)(
+      (0, load_react)(),
       1,
     );
-    (0, runtime.initializeCdsIndex)();
+    (0, initializeCdsIndex)();
     PropertiesTooltipHandler = (
       input?: Dynamic,
       options: Dynamic = 1,

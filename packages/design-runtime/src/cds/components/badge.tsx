@@ -9,134 +9,63 @@ import type {
 } from "../../contracts/ui";
 import type * as React from "react";
 /** Restored application module; prepare first, initialize in original order. */
-import { bindRuntimeValue, type RuntimeBindings } from "../../runtime-types";
-export function installCdsComponentsBadge(
-  runtime: RuntimeBindings,
-): () => void {
-  var reactComponentsBadge: typeof React;
-  var jsxComponentsBadge: typeof import("react/jsx-runtime");
-  var ComponentsBadgeNeutralAccentSuccessConfig: Record<BadgeVariant, string>;
-  var ComponentsBadgeNeutralAccentSuccessConfig_2: Record<BadgeVariant, string>;
-  var ComponentsBadgeRedOrangeYellowConfig: Record<AccentColor, string>;
-  var ComponentsBadgeRedOrangeYellowConfig_2: Record<AccentColor, string>;
-  var ComponentsBadgeXsSmMdConfig: Record<"xs" | "sm" | "md", string>;
-  var ComponentsBadgeClassNames: string;
-  var ComponentsBadgeComfortableCompactConfig: Record<
-    Density,
-    Record<ControlSize, "xs" | "sm" | "md">
-  >;
-  var Badge: ForwardComponent<HTMLSpanElement, BadgeProps>;
-  var initializeComponentsBadge: () => void;
-  function isBadgeVariant(
-    input: BadgeVariant | AccentColor,
-  ): input is BadgeVariant {
-    return Object.hasOwn(ComponentsBadgeNeutralAccentSuccessConfig, input);
-  }
-  bindRuntimeValue(runtime, "isBadgeVariant", () => isBadgeVariant);
-  bindRuntimeValue(
-    runtime,
-    "reactComponentsBadge",
-    () => reactComponentsBadge,
-    (value) => {
-      reactComponentsBadge = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "jsxComponentsBadge",
-    () => jsxComponentsBadge,
-    (value) => {
-      jsxComponentsBadge = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "ComponentsBadgeNeutralAccentSuccessConfig",
-    () => ComponentsBadgeNeutralAccentSuccessConfig,
-    (value) => {
-      ComponentsBadgeNeutralAccentSuccessConfig = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "ComponentsBadgeNeutralAccentSuccessConfig_2",
-    () => ComponentsBadgeNeutralAccentSuccessConfig_2,
-    (value) => {
-      ComponentsBadgeNeutralAccentSuccessConfig_2 = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "ComponentsBadgeRedOrangeYellowConfig",
-    () => ComponentsBadgeRedOrangeYellowConfig,
-    (value) => {
-      ComponentsBadgeRedOrangeYellowConfig = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "ComponentsBadgeRedOrangeYellowConfig_2",
-    () => ComponentsBadgeRedOrangeYellowConfig_2,
-    (value) => {
-      ComponentsBadgeRedOrangeYellowConfig_2 = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "ComponentsBadgeXsSmMdConfig",
-    () => ComponentsBadgeXsSmMdConfig,
-    (value) => {
-      ComponentsBadgeXsSmMdConfig = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "ComponentsBadgeClassNames",
-    () => ComponentsBadgeClassNames,
-    (value) => {
-      ComponentsBadgeClassNames = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "ComponentsBadgeComfortableCompactConfig",
-    () => ComponentsBadgeComfortableCompactConfig,
-    (value) => {
-      ComponentsBadgeComfortableCompactConfig = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "Badge",
-    () => Badge,
-    (value) => {
-      Badge = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "initializeComponentsBadge",
-    () => initializeComponentsBadge,
-    (value) => {
-      initializeComponentsBadge = value;
-    },
-  );
+import { Icon, initializeComponentsIcon_2, isIconName } from "./icon";
+import { initializeSheetsStyles_2, useLabel } from "../sheets/styles";
+import { cn, initializeClassNames } from "../theme/class-names";
+import { getControlSizeRank, getSizeAttribute, initializeCdsRoot, useDensity } from "../theme/root";
+import { initializeNpm__base_ui_react_gx, initializeNpm_clsx_xh, load_react, load_react_jsx_runtime, npm_clsx_Ea, npm_mergeProps_Ac } from "../../dependencies";
+import { initializeOnce, toModuleNamespace } from "../../module-helpers";
+
+var reactComponentsBadge: typeof React;
+var jsxComponentsBadge: typeof import("react/jsx-runtime");
+var ComponentsBadgeNeutralAccentSuccessConfig: Record<BadgeVariant, string>;
+var ComponentsBadgeNeutralAccentSuccessConfig_2: Record<BadgeVariant, string>;
+var ComponentsBadgeRedOrangeYellowConfig: Record<AccentColor, string>;
+var ComponentsBadgeRedOrangeYellowConfig_2: Record<AccentColor, string>;
+var ComponentsBadgeXsSmMdConfig: Record<"xs" | "sm" | "md", string>;
+var ComponentsBadgeClassNames: string;
+var ComponentsBadgeComfortableCompactConfig: Record<
+  Density,
+  Record<ControlSize, "xs" | "sm" | "md">
+>;
+var Badge: ForwardComponent<HTMLSpanElement, BadgeProps>;
+var initializeComponentsBadge: () => void;
+function isBadgeVariant(
+  input: BadgeVariant | AccentColor,
+): input is BadgeVariant {
+  return Object.hasOwn(ComponentsBadgeNeutralAccentSuccessConfig, input);
+}
+export {
+  Badge,
+  ComponentsBadgeClassNames,
+  ComponentsBadgeComfortableCompactConfig,
+  ComponentsBadgeNeutralAccentSuccessConfig,
+  ComponentsBadgeNeutralAccentSuccessConfig_2,
+  ComponentsBadgeRedOrangeYellowConfig,
+  ComponentsBadgeRedOrangeYellowConfig_2,
+  ComponentsBadgeXsSmMdConfig,
+  initializeComponentsBadge,
+  isBadgeVariant,
+  jsxComponentsBadge,
+  reactComponentsBadge,
+};
+export function installCdsComponentsBadge(): () => void {
   return () => {
-    initializeComponentsBadge = (0, runtime.initializeOnce)(() => {
+    initializeComponentsBadge = (0, initializeOnce)(() => {
       "use client";
 
-      (0, runtime.initializeClassNames)();
-      (0, runtime.initializeSheetsStyles_2)();
-      (0, runtime.initializeCdsRoot)();
-      (0, runtime.initializeComponentsIcon_2)();
-      reactComponentsBadge = (0, runtime.toModuleNamespace)(
-        (0, runtime.load_react)(),
+      (0, initializeClassNames)();
+      (0, initializeSheetsStyles_2)();
+      (0, initializeCdsRoot)();
+      (0, initializeComponentsIcon_2)();
+      reactComponentsBadge = (0, toModuleNamespace)(
+        (0, load_react)(),
       );
-      (0, runtime.initializeNpm_clsx_xh)();
-      jsxComponentsBadge = (0, runtime.toModuleNamespace)(
-        (0, runtime.load_react_jsx_runtime)(),
+      (0, initializeNpm_clsx_xh)();
+      jsxComponentsBadge = (0, toModuleNamespace)(
+        (0, load_react_jsx_runtime)(),
       );
-      (0, runtime.initializeNpm__base_ui_react_gx)();
+      (0, initializeNpm__base_ui_react_gx)();
       ComponentsBadgeNeutralAccentSuccessConfig = {
         neutral: "bg-neutral text-secondary",
         accent: "bg-tint-blue text-accent",
@@ -215,10 +144,10 @@ export function installCdsComponentsBadge(
           options: React.ForwardedRef<HTMLSpanElement>,
         ): React.ReactElement => {
           let value = variant ?? "accent",
-            value2 = (0, runtime.useLabel)("removeItem", "Remove {item}", {
+            value2 = (0, useLabel)("removeItem", "Remove {item}", {
               item: typeof children == "string" ? children : "item",
             }),
-            value3 = (0, runtime.useDensity)(),
+            value3 = (0, useDensity)(),
             value4 =
               ComponentsBadgeComfortableCompactConfig[value3][size ?? "base"],
             length = reactComponentsBadge.Children.toArray(children).length,
@@ -232,11 +161,11 @@ export function installCdsComponentsBadge(
             value6 =
               (size === "xxs"
                 ? 1
-                : (0, runtime.getControlSizeRank)(value3, size)) === 1
+                : (0, getControlSizeRank)(value3, size)) === 1
                 ? ComponentsBadgeClassNames
                 : "pb-[0.05em]",
             value7 = removeLabel || value2,
-            value8 = (0, runtime.npm_clsx_Ea)(
+            value8 = (0, npm_clsx_Ea)(
               "cds-reset relative inline-flex shrink-0 items-center justify-center",
               "before:absolute before:left-[-2px] before:top-1/2 before:-translate-y-1/2 before:content-['']",
               "before:h-[max(24px,100%)] before:w-[max(24px,calc(100%+2px))]",
@@ -260,7 +189,7 @@ export function installCdsComponentsBadge(
               ),
             ),
             value11 = (
-              <runtime.Icon
+              <Icon
                 name={"X"}
                 size={"xs"}
                 style={{
@@ -273,9 +202,9 @@ export function installCdsComponentsBadge(
               removeRender !== undefined
                 ? (0, reactComponentsBadge.cloneElement)(
                     removeRender,
-                    (0, runtime.npm_mergeProps_Ac)(
+                    (0, npm_mergeProps_Ac)(
                       {
-                        className: (0, runtime.cn)(value8, value9),
+                        className: (0, cn)(value8, value9),
                         "aria-label": value7,
                         children: value11,
                       },
@@ -327,9 +256,9 @@ export function installCdsComponentsBadge(
                 ? {
                     "data-step": "1",
                   }
-                : (0, runtime.getSizeAttribute)(size))}
+                : (0, getSizeAttribute)(size))}
               {...props}
-              className={(0, runtime.cn)(
+              className={(0, cn)(
                 "inline-flex items-center gap-1 align-middle h-control-nested whitespace-nowrap rounded-chip",
                 iconOnly
                   ? "aspect-square w-control-nested justify-center px-0"
@@ -341,14 +270,14 @@ export function installCdsComponentsBadge(
               )}
             >
               {typeof icon != "number" &&
-                icon && ((0, runtime.isIconName)(icon) ? (<runtime.Icon name={icon} size={value4} className={value5} />) : (<span
+                icon && ((0, isIconName)(icon) ? (<Icon name={icon} size={value4} className={value5} />) : (<span
                     aria-hidden={true}
-                    className={(0, runtime.cn)("inline-flex", value5)}
+                    className={(0, cn)("inline-flex", value5)}
                   >
                     {icon}
                   </span>))}
               {truncate ? (<span
-                  className={(0, runtime.cn)(
+                  className={(0, cn)(
                     value6,
                     "min-w-0 overflow-x-clip text-ellipsis whitespace-nowrap",
                   )}

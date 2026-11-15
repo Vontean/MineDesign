@@ -1,17 +1,20 @@
 /** Restored application module; prepare first, initialize in original order. */
 import {
-  bindRuntimeValue,
   type Dynamic,
-  type RuntimeBindings,
 } from "../runtime-types";
+import { bootstrapArtifactApplication } from "./bootstrap";
+import { loadDesignDocumentTree } from "./design-bootstrap";
+import { claimCustomAnchors } from "../comments/host-controller";
+import { initializeFastEdit } from "../fast-edit/bootstrap";
+import { interceptSamplingCapability } from "../fast-edit/sampling-capability";
 
-export function installApplicationMain(runtime: RuntimeBindings): () => void {
+export function installApplicationMain(): () => void {
   return () => {
-    (0, runtime.interceptSamplingCapability)();
-    (0, runtime.initializeFastEdit)();
-    (0, runtime.claimCustomAnchors)();
-    (0, runtime.bootstrapArtifactApplication)({
-      tree: runtime.loadDesignDocumentTree,
+    (0, interceptSamplingCapability)();
+    (0, initializeFastEdit)();
+    (0, claimCustomAnchors)();
+    (0, bootstrapArtifactApplication)({
+      tree: loadDesignDocumentTree,
     });
   };
 }

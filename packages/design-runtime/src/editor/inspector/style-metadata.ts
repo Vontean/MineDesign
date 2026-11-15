@@ -1,147 +1,62 @@
 /** Restored application module; prepare first, initialize in original order. */
 import {
-  bindRuntimeValue,
   type Dynamic,
-  type RuntimeBindings,
 } from "../../runtime-types";
+import { InspectorPropertySchemaCursorPointerEventsObjectFitValues, InspectorPropertySchemaItems_2 } from "./property-schema";
 
-export function installEditorInspectorStyleMetadata(
-  runtime: RuntimeBindings,
-): () => void {
-  var cssPropertyToComputedKey: Dynamic;
-  var InspectorStyleMetadataItems: Dynamic;
-  var InspectorStyleMetadataDataDcTplStyleSet: Dynamic;
-  var InspectorStyleMetadataInputTextareaButtonSet: Dynamic;
-  var svgShapeTags: Dynamic;
-  var InspectorStyleMetadataStrokeStrokeWidthFillValues: Dynamic;
-  var InspectorStyleMetadataTextTspanTextpathSet: Dynamic;
-  var InspectorStyleMetadataLineHeightTextAlignSet: Dynamic;
-  var InspectorStyleMetadataSubscribers: Dynamic;
-  var InspectorStyleMetadataSubscribers_2: Dynamic;
-  var InspectorStyleMetadataBackgroundColorPattern: Dynamic;
-  var InspectorStyleMetadataLabel: Dynamic;
-  function formatPropertyKey(input?: Dynamic, options?: Dynamic): Dynamic {
-    return options(input) != null ? input : `@${input}`;
-  }
-  function hasVisiblePaint(input?: Dynamic): Dynamic {
-    let value: Dynamic = (input ?? "").trim().toLowerCase();
-    return (
-      value !== "" &&
-      value !== "none" &&
-      value !== "hidden" &&
-      !isTransparentColor(value) &&
-      !/^0+(?:\.0+)?[a-z%]*$/.test(value)
-    );
-  }
-  function isTransparentColor(input?: Dynamic): Dynamic {
-    return (
-      input === "transparent" ||
-      /^(?:rgb|hsl)a?\([^,)]+,[^,)]+,[^,)]+,\s*(?:0+(?:\.0+)?|\.0+)%?\s*\)$/.test(
-        input,
-      ) ||
-      /^(?:rgb|hsl)a?\([^/)]+\/\s*(?:0+(?:\.0+)?|\.0+)%?\s*\)$/.test(input) ||
-      /^#(?:[0-9a-f]{3}0|[0-9a-f]{6}00)$/.test(input)
-    );
-  }
-  bindRuntimeValue(
-    runtime,
-    "cssPropertyToComputedKey",
-    () => cssPropertyToComputedKey,
-    (value) => {
-      cssPropertyToComputedKey = value;
-    },
+var cssPropertyToComputedKey: Dynamic;
+var InspectorStyleMetadataItems: Dynamic;
+var InspectorStyleMetadataDataDcTplStyleSet: Dynamic;
+var InspectorStyleMetadataInputTextareaButtonSet: Dynamic;
+var svgShapeTags: Dynamic;
+var InspectorStyleMetadataStrokeStrokeWidthFillValues: Dynamic;
+var InspectorStyleMetadataTextTspanTextpathSet: Dynamic;
+var InspectorStyleMetadataLineHeightTextAlignSet: Dynamic;
+var InspectorStyleMetadataSubscribers: Dynamic;
+var InspectorStyleMetadataSubscribers_2: Dynamic;
+var InspectorStyleMetadataBackgroundColorPattern: Dynamic;
+var InspectorStyleMetadataLabel: Dynamic;
+function formatPropertyKey(input?: Dynamic, options?: Dynamic): Dynamic {
+  return options(input) != null ? input : `@${input}`;
+}
+function hasVisiblePaint(input?: Dynamic): Dynamic {
+  let value: Dynamic = (input ?? "").trim().toLowerCase();
+  return (
+    value !== "" &&
+    value !== "none" &&
+    value !== "hidden" &&
+    !isTransparentColor(value) &&
+    !/^0+(?:\.0+)?[a-z%]*$/.test(value)
   );
-  bindRuntimeValue(
-    runtime,
-    "InspectorStyleMetadataItems",
-    () => InspectorStyleMetadataItems,
-    (value) => {
-      InspectorStyleMetadataItems = value;
-    },
+}
+function isTransparentColor(input?: Dynamic): Dynamic {
+  return (
+    input === "transparent" ||
+    /^(?:rgb|hsl)a?\([^,)]+,[^,)]+,[^,)]+,\s*(?:0+(?:\.0+)?|\.0+)%?\s*\)$/.test(
+      input,
+    ) ||
+    /^(?:rgb|hsl)a?\([^/)]+\/\s*(?:0+(?:\.0+)?|\.0+)%?\s*\)$/.test(input) ||
+    /^#(?:[0-9a-f]{3}0|[0-9a-f]{6}00)$/.test(input)
   );
-  bindRuntimeValue(
-    runtime,
-    "InspectorStyleMetadataDataDcTplStyleSet",
-    () => InspectorStyleMetadataDataDcTplStyleSet,
-    (value) => {
-      InspectorStyleMetadataDataDcTplStyleSet = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "InspectorStyleMetadataInputTextareaButtonSet",
-    () => InspectorStyleMetadataInputTextareaButtonSet,
-    (value) => {
-      InspectorStyleMetadataInputTextareaButtonSet = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "svgShapeTags",
-    () => svgShapeTags,
-    (value) => {
-      svgShapeTags = value;
-    },
-  );
-  bindRuntimeValue(runtime, "formatPropertyKey", () => formatPropertyKey);
-  bindRuntimeValue(
-    runtime,
-    "InspectorStyleMetadataStrokeStrokeWidthFillValues",
-    () => InspectorStyleMetadataStrokeStrokeWidthFillValues,
-    (value) => {
-      InspectorStyleMetadataStrokeStrokeWidthFillValues = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "InspectorStyleMetadataTextTspanTextpathSet",
-    () => InspectorStyleMetadataTextTspanTextpathSet,
-    (value) => {
-      InspectorStyleMetadataTextTspanTextpathSet = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "InspectorStyleMetadataLineHeightTextAlignSet",
-    () => InspectorStyleMetadataLineHeightTextAlignSet,
-    (value) => {
-      InspectorStyleMetadataLineHeightTextAlignSet = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "InspectorStyleMetadataSubscribers",
-    () => InspectorStyleMetadataSubscribers,
-    (value) => {
-      InspectorStyleMetadataSubscribers = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "InspectorStyleMetadataSubscribers_2",
-    () => InspectorStyleMetadataSubscribers_2,
-    (value) => {
-      InspectorStyleMetadataSubscribers_2 = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "InspectorStyleMetadataBackgroundColorPattern",
-    () => InspectorStyleMetadataBackgroundColorPattern,
-    (value) => {
-      InspectorStyleMetadataBackgroundColorPattern = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "InspectorStyleMetadataLabel",
-    () => InspectorStyleMetadataLabel,
-    (value) => {
-      InspectorStyleMetadataLabel = value;
-    },
-  );
-  bindRuntimeValue(runtime, "hasVisiblePaint", () => hasVisiblePaint);
-  bindRuntimeValue(runtime, "isTransparentColor", () => isTransparentColor);
+}
+export {
+  cssPropertyToComputedKey,
+  formatPropertyKey,
+  hasVisiblePaint,
+  InspectorStyleMetadataBackgroundColorPattern,
+  InspectorStyleMetadataDataDcTplStyleSet,
+  InspectorStyleMetadataInputTextareaButtonSet,
+  InspectorStyleMetadataItems,
+  InspectorStyleMetadataLabel,
+  InspectorStyleMetadataLineHeightTextAlignSet,
+  InspectorStyleMetadataStrokeStrokeWidthFillValues,
+  InspectorStyleMetadataSubscribers,
+  InspectorStyleMetadataSubscribers_2,
+  InspectorStyleMetadataTextTspanTextpathSet,
+  isTransparentColor,
+  svgShapeTags,
+};
+export function installEditorInspectorStyleMetadata(): () => void {
   return () => {
     cssPropertyToComputedKey = (input?: Dynamic): Dynamic =>
       input.replace(
@@ -150,10 +65,10 @@ export function installEditorInspectorStyleMetadata(
       );
     InspectorStyleMetadataItems = [
       ...new Set([
-        ...runtime.InspectorPropertySchemaItems_2.map(
+        ...InspectorPropertySchemaItems_2.map(
           (input?: Dynamic): Dynamic => cssPropertyToComputedKey(input.prop),
         ),
-        ...runtime.InspectorPropertySchemaCursorPointerEventsObjectFitValues.map(
+        ...InspectorPropertySchemaCursorPointerEventsObjectFitValues.map(
           (input?: Dynamic): Dynamic => cssPropertyToComputedKey(input),
         ),
         "backgroundColor",

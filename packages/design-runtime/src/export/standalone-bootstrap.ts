@@ -1,24 +1,15 @@
 /** Restored application module; prepare first, initialize in original order. */
 import {
-  bindRuntimeValue,
   type Dynamic,
-  type RuntimeBindings,
 } from "../runtime-types";
+import { injected_PTt } from "../dependencies";
 
-export function installExportStandaloneBootstrap(
-  runtime: RuntimeBindings,
-): () => void {
-  var standaloneExportBootstrapScript: Dynamic;
-
-  bindRuntimeValue(
-    runtime,
-    "standaloneExportBootstrapScript",
-    () => standaloneExportBootstrapScript,
-    (value) => {
-      standaloneExportBootstrapScript = value;
-    },
-  );
+var standaloneExportBootstrapScript: Dynamic;
+export {
+  standaloneExportBootstrapScript,
+};
+export function installExportStandaloneBootstrap(): () => void {
   return () => {
-    standaloneExportBootstrapScript = runtime.injected_PTt;
+    standaloneExportBootstrapScript = injected_PTt;
   };
 }

@@ -1,62 +1,49 @@
 /** Restored application module; prepare first, initialize in original order. */
 import {
-  bindRuntimeValue,
   type Dynamic,
-  type RuntimeBindings,
 } from "../runtime-types";
+import { buildCaptureTemplate } from "../dependencies";
+import { captureAnimationStates, captureAnimationStyles } from "./animation-snapshot";
+import { collectCssImageUrls, prepareWebGlCanvasCapture, replaceCssImageUrls, sanitizeXmlCharacters } from "./capture-assets";
+import { calculateFlowTail } from "./capture-flow";
+import { collectUsedFontFaces, resolveCaptureFonts } from "./capture-fonts";
+import { inspectCaptureLayout } from "./capture-layout";
+import { computePaginationCuts } from "./capture-pagination";
+import { captureSelectionSvg } from "./capture-selection";
+import { captureElementStyle } from "./capture-style";
+import { captureReadableText } from "./capture-text";
+import { captureDomSnapshot } from "./dom-snapshot";
 
-export function installExportCaptureRuntime(
-  runtime: RuntimeBindings,
-): () => void {
-  var maxCaptureEdge: Dynamic;
-  var maxCapturePixels: Dynamic;
-  var imageCaptureRuntimeScript: Dynamic;
-
-  bindRuntimeValue(
-    runtime,
-    "maxCaptureEdge",
-    () => maxCaptureEdge,
-    (value) => {
-      maxCaptureEdge = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "maxCapturePixels",
-    () => maxCapturePixels,
-    (value) => {
-      maxCapturePixels = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "imageCaptureRuntimeScript",
-    () => imageCaptureRuntimeScript,
-    (value) => {
-      imageCaptureRuntimeScript = value;
-    },
-  );
+var maxCaptureEdge: Dynamic;
+var maxCapturePixels: Dynamic;
+var imageCaptureRuntimeScript: Dynamic;
+export {
+  imageCaptureRuntimeScript,
+  maxCaptureEdge,
+  maxCapturePixels,
+};
+export function installExportCaptureRuntime(): () => void {
   return () => {
     maxCaptureEdge = 12e3;
     maxCapturePixels = 12e7;
-    imageCaptureRuntimeScript = runtime.buildCaptureTemplate({
-      resolveSelectionRoot: runtime.captureSelectionSvg.toString(),
+    imageCaptureRuntimeScript = buildCaptureTemplate({
+      resolveSelectionRoot: captureSelectionSvg.toString(),
       maxCaptureSide: maxCaptureEdge,
       maxCapturePixels: maxCapturePixels,
-      collectFontFaceRules: runtime.resolveCaptureFonts.toString(),
-      warnUnembeddedFonts: runtime.collectUsedFontFaces.toString(),
-      collectBackgroundUrls: runtime.collectCssImageUrls.toString(),
-      replaceBackgroundUrls: runtime.replaceCssImageUrls.toString(),
-      makeCloneStyled: runtime.captureElementStyle.toString(),
-      prepareWebGlCapture: runtime.prepareWebGlCanvasCapture.toString(),
-      settleFrozenAnimations: runtime.captureAnimationStates.toString(),
-      freezeAnimations: runtime.captureAnimationStyles.toString(),
-      measureTextOriginOffset: runtime.calculateFlowTail.toString(),
-      collectLinks: runtime.captureDomSnapshot.toString(),
-      collectTextLayer: runtime.captureReadableText.toString(),
-      countHiddenContent: runtime.inspectCaptureLayout.toString(),
-      sanitizeXmlCharacters: runtime.sanitizeXmlCharacters.toString(),
-      computePaginationCuts: runtime.computePaginationCuts.toString(),
+      collectFontFaceRules: resolveCaptureFonts.toString(),
+      warnUnembeddedFonts: collectUsedFontFaces.toString(),
+      collectBackgroundUrls: collectCssImageUrls.toString(),
+      replaceBackgroundUrls: replaceCssImageUrls.toString(),
+      makeCloneStyled: captureElementStyle.toString(),
+      prepareWebGlCapture: prepareWebGlCanvasCapture.toString(),
+      settleFrozenAnimations: captureAnimationStates.toString(),
+      freezeAnimations: captureAnimationStyles.toString(),
+      measureTextOriginOffset: calculateFlowTail.toString(),
+      collectLinks: captureDomSnapshot.toString(),
+      collectTextLayer: captureReadableText.toString(),
+      countHiddenContent: inspectCaptureLayout.toString(),
+      sanitizeXmlCharacters: sanitizeXmlCharacters.toString(),
+      computePaginationCuts: computePaginationCuts.toString(),
     });
   };
 }

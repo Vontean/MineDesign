@@ -1,70 +1,57 @@
 import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
-  bindRuntimeValue,
   type Dynamic,
-  type RuntimeBindings,
 } from "../runtime-types";
+import { load_react } from "../dependencies";
+import { createFastEditSandbox, FAST_EDIT_CANVAS_SANDBOX_LIMITS } from "./sandbox";
+import { toModuleNamespace } from "../module-helpers";
 
-export function installFastEditSandboxAdapter(
-  runtime: RuntimeBindings,
-): () => void {
-  var fastEditSandboxAdapter: Dynamic;
-  var ReactFastEdit: Dynamic;
-  function createSamplingClient(
-    sample?: Dynamic,
-    configuration?: Dynamic,
-  ): Dynamic {
-    return {
-      call({
-        turns: turns,
-        tier: tier,
-        images: images,
-        onText: onText,
-      }: Dynamic): Dynamic {
-        let controller: Dynamic = new AbortController();
-        return {
-          promise: sample([...turns], {
-            cache: false,
-            modelTier: tier,
-            ...configuration,
-            ...(images.length > 0
-              ? {
-                  images: [...images],
-                }
-              : {}),
-            signal: controller.signal,
-            onText: (input?: Dynamic): Dynamic => onText(input.text),
-          }),
-          cancel: (): Dynamic => controller.abort(),
-        };
-      },
-      maxPromptBytes: async (): Promise<Dynamic> =>
-        (await sample.limits?.())?.maxPromptBytes,
-      dispose: (): Dynamic => {},
-    };
-  }
-  bindRuntimeValue(
-    runtime,
-    "fastEditSandboxAdapter",
-    () => fastEditSandboxAdapter,
-    (value) => {
-      fastEditSandboxAdapter = value;
+var fastEditSandboxAdapter: Dynamic;
+var ReactFastEdit: Dynamic;
+function createSamplingClient(
+  sample?: Dynamic,
+  configuration?: Dynamic,
+): Dynamic {
+  return {
+    call({
+      turns: turns,
+      tier: tier,
+      images: images,
+      onText: onText,
+    }: Dynamic): Dynamic {
+      let controller: Dynamic = new AbortController();
+      return {
+        promise: sample([...turns], {
+          cache: false,
+          modelTier: tier,
+          ...configuration,
+          ...(images.length > 0
+            ? {
+                images: [...images],
+              }
+            : {}),
+          signal: controller.signal,
+          onText: (input?: Dynamic): Dynamic => onText(input.text),
+        }),
+        cancel: (): Dynamic => controller.abort(),
+      };
     },
-  );
-  bindRuntimeValue(runtime, "createSamplingClient", () => createSamplingClient);
-  bindRuntimeValue(
-    runtime,
-    "ReactFastEdit",
-    () => ReactFastEdit,
-    (value) => {
-      ReactFastEdit = value;
-    },
-  );
+    maxPromptBytes: async (): Promise<Dynamic> =>
+      (await sample.limits?.())?.maxPromptBytes,
+    dispose: (): Dynamic => {},
+  };
+}
+export {
+  createSamplingClient,
+  fastEditSandboxAdapter,
+  ReactFastEdit,
+};
+export function installFastEditSandboxAdapter(): () => void {
   return () => {
     fastEditSandboxAdapter = {
       create(input: Dynamic): Dynamic {
-        let value: Dynamic = (0, runtime.createFastEditSandbox)({
+        let value: Dynamic = (0, createFastEditSandbox)({
             sdk: 3,
             files: input.files.map(
               (input2?: Dynamic): Dynamic => ({
@@ -79,7 +66,7 @@ export function installFastEditSandboxAdapter(
                   current: input.current,
                 }
               : {}),
-            limits: runtime.FAST_EDIT_CANVAS_SANDBOX_LIMITS,
+            limits: FAST_EDIT_CANVAS_SANDBOX_LIMITS,
             onHtml: (input2?: Dynamic): Dynamic =>
               input.onHtml({
                 id: input2.slideId ?? null,
@@ -178,7 +165,7 @@ export function installFastEditSandboxAdapter(
               input2(input3);
             };
           try {
-            value = (0, runtime.createFastEditSandbox)({
+            value = (0, createFastEditSandbox)({
               html: input,
               onHtml: (input3?: Dynamic): Dynamic => {
                 input3.final === true && callback(input3.html);
@@ -202,8 +189,8 @@ export function installFastEditSandboxAdapter(
         });
       },
     };
-    ReactFastEdit = (0, runtime.toModuleNamespace)(
-      (0, runtime.load_react)(),
+    ReactFastEdit = (0, toModuleNamespace)(
+      (0, load_react)(),
       1,
     );
   };

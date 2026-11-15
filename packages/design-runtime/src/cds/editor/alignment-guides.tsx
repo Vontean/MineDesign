@@ -1,60 +1,35 @@
 /** Restored application module; prepare first, initialize in original order. */
 import {
-  bindRuntimeValue,
   type Dynamic,
-  type RuntimeBindings,
 } from "../../runtime-types";
-export function installCdsEditorAlignmentGuides(
-  runtime: RuntimeBindings,
-): () => void {
-  var reactEditorAlignmentGuides: Dynamic;
-  var jsxEditorAlignmentGuides: Dynamic;
-  var AlignmentGuides: Dynamic;
-  var initializeEditorAlignmentGuides: Dynamic;
-  bindRuntimeValue(
-    runtime,
-    "reactEditorAlignmentGuides",
-    () => reactEditorAlignmentGuides,
-    (value) => {
-      reactEditorAlignmentGuides = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "jsxEditorAlignmentGuides",
-    () => jsxEditorAlignmentGuides,
-    (value) => {
-      jsxEditorAlignmentGuides = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "AlignmentGuides",
-    () => AlignmentGuides,
-    (value) => {
-      AlignmentGuides = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "initializeEditorAlignmentGuides",
-    () => initializeEditorAlignmentGuides,
-    (value) => {
-      initializeEditorAlignmentGuides = value;
-    },
-  );
+import { initializeEditorSelectionGeometry, normalizeSelectionScale, selectionMetrics, SelectionPoint } from "./selection-geometry";
+import { cn, initializeClassNames } from "../theme/class-names";
+import { load_react, load_react_jsx_runtime } from "../../dependencies";
+import { initializeOnce, toModuleNamespace } from "../../module-helpers";
+
+var reactEditorAlignmentGuides: Dynamic;
+var jsxEditorAlignmentGuides: Dynamic;
+var AlignmentGuides: Dynamic;
+var initializeEditorAlignmentGuides: Dynamic;
+export {
+  AlignmentGuides,
+  initializeEditorAlignmentGuides,
+  jsxEditorAlignmentGuides,
+  reactEditorAlignmentGuides,
+};
+export function installCdsEditorAlignmentGuides(): () => void {
   return () => {
-    initializeEditorAlignmentGuides = (0, runtime.initializeOnce)(
+    initializeEditorAlignmentGuides = (0, initializeOnce)(
       (): Dynamic => {
         "use client";
 
-        (0, runtime.initializeClassNames)();
-        (0, runtime.initializeEditorSelectionGeometry)();
-        reactEditorAlignmentGuides = (0, runtime.toModuleNamespace)(
-          (0, runtime.load_react)(),
+        (0, initializeClassNames)();
+        (0, initializeEditorSelectionGeometry)();
+        reactEditorAlignmentGuides = (0, toModuleNamespace)(
+          (0, load_react)(),
         );
-        jsxEditorAlignmentGuides = (0, runtime.toModuleNamespace)(
-          (0, runtime.load_react_jsx_runtime)(),
+        jsxEditorAlignmentGuides = (0, toModuleNamespace)(
+          (0, load_react_jsx_runtime)(),
         );
         AlignmentGuides = (0, reactEditorAlignmentGuides.forwardRef)(function (
           {
@@ -66,8 +41,8 @@ export function installCdsEditorAlignmentGuides(
           }: Dynamic,
           options?: Dynamic,
         ): Dynamic {
-          let value: Dynamic = (0, runtime.normalizeSelectionScale)(scale),
-            guide: Dynamic = runtime.selectionMetrics.guide,
+          let value: Dynamic = (0, normalizeSelectionScale)(scale),
+            guide: Dynamic = selectionMetrics.guide,
             value2: Dynamic = 1 / value;
           return (
             <div
@@ -75,7 +50,7 @@ export function installCdsEditorAlignmentGuides(
               ref={options}
               data-cds={"AlignmentGuides"}
               aria-hidden={"true"}
-              className={(0, runtime.cn)("absolute inset-0", className)}
+              className={(0, cn)("absolute inset-0", className)}
               style={{
                 ...style,
                 pointerEvents: "none",
@@ -114,7 +89,7 @@ export function installCdsEditorAlignmentGuides(
                           }
                         />,
                         input.label !== undefined ? (
-                          <runtime.SelectionPoint
+                          <SelectionPoint
                             data-guide-label={""}
                             scale={value}
                             anchor={"start"}
@@ -131,7 +106,7 @@ export function installCdsEditorAlignmentGuides(
                             }
                           >
                             {input.label}
-                          </runtime.SelectionPoint>
+                          </SelectionPoint>
                         ) : null,
                       ],
                     } as const;

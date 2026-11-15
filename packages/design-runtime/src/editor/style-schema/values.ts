@@ -1,185 +1,50 @@
 /** Restored application module; prepare first, initialize in original order. */
 import {
-  bindRuntimeValue,
   type Dynamic,
-  type RuntimeBindings,
 } from "../../runtime-types";
+import { StyleSchemaNodeTypesAutoNoneValues, StyleSchemaNodeTypesBlockInlineBlockFlexValues, StyleSchemaNodeTypesBlockquoteBulletListOrderedListValues, StyleSchemaNodeTypesDefaultPointerTextValues, StyleSchemaNodeTypesFlat, StyleSchemaNodeTypesFlatValue, StyleSchemaNodeTypesFlatValue_2, StyleSchemaNodeTypesFlatValue_3, StyleSchemaNodeTypesFlatValue_4, StyleSchemaNodeTypesFlatValue_5, StyleSchemaNodeTypesItems, StyleSchemaNodeTypesLeftCenterRightValues, StyleSchemaNodeTypesNoneLeftRightValues, StyleSchemaNodeTypesNoneSolidDashedValues, StyleSchemaNodeTypesNoneUnderlineLineThroughValues, StyleSchemaNodeTypesNoneUppercaseLowercaseValues, StyleSchemaNodeTypesNormalItalicValues, StyleSchemaNodeTypesNormalMultiplyScreenValues, StyleSchemaNodeTypesNormalTabularNumsValues, StyleSchemaNodeTypesParagraphHeadingCodeBlockValues, StyleSchemaNodeTypesSansSerifMonoValues, StyleSchemaNodeTypesSlidesIconValues, StyleSchemaNodeTypesSlidesImgValues, StyleSchemaNodeTypesSlidesShapeValues, StyleSchemaNodeTypesSlidesStackValues, StyleSchemaNodeTypesSlidesTableValues, StyleSchemaNodeTypesSlidesTextValues, StyleSchemaNodeTypesSolidDoubleDottedValues, StyleSchemaNodeTypesStaticRelativeAbsoluteValues, StyleSchemaNodeTypesTableTableCellTableHeaderValues, StyleSchemaNodeTypesVisibleHiddenClipValues, StyleSchemaNodeTypesVisibleHiddenValues } from "./node-types";
 
-export function installEditorStyleSchemaValues(
-  runtime: RuntimeBindings,
-): () => void {
-  var StyleSchemaValuesSansSerifMonoConfig: Dynamic;
-  var StyleSchemaValuesHandler: Dynamic;
-  var StyleSchemaValuesHandler_2: Dynamic;
-  var StyleSchemaValuesHandler_3: Dynamic;
-  var StyleSchemaValuesHandler_4: Dynamic;
-  var StyleSchemaValuesKindConfig: Dynamic;
-  var StyleSchemaValuesLimit: Dynamic;
-  var StyleSchemaValuesClosestSideClosestCornerFarthestSideValues: Dynamic;
-  var StyleSchemaValuesItems: Dynamic;
-  var StyleSchemaValuesItems_2: Dynamic;
-  var StyleSchemaValuesItems_3: Dynamic;
-  var StyleSchemaValuesBoxShadowTextShadowFilterValues: Dynamic;
-  var StyleSchemaValuesTransformOpacityColorValues: Dynamic;
-  var StyleSchemaValuesColorBackgroundColorBackgroundGradientValues: Dynamic;
-  var StyleSchemaValuesSubscribers: Dynamic;
-  var StyleSchemaValuesSubscribers_2: Dynamic;
-  var StyleSchemaValuesSubscribers_3: Dynamic;
-  var StyleSchemaValuesSubscribers_4: Dynamic;
-  var StyleSchemaValuesRegistry: Dynamic;
-
-  bindRuntimeValue(
-    runtime,
-    "StyleSchemaValuesSansSerifMonoConfig",
-    () => StyleSchemaValuesSansSerifMonoConfig,
-    (value) => {
-      StyleSchemaValuesSansSerifMonoConfig = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "StyleSchemaValuesHandler",
-    () => StyleSchemaValuesHandler,
-    (value) => {
-      StyleSchemaValuesHandler = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "StyleSchemaValuesHandler_2",
-    () => StyleSchemaValuesHandler_2,
-    (value) => {
-      StyleSchemaValuesHandler_2 = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "StyleSchemaValuesHandler_3",
-    () => StyleSchemaValuesHandler_3,
-    (value) => {
-      StyleSchemaValuesHandler_3 = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "StyleSchemaValuesHandler_4",
-    () => StyleSchemaValuesHandler_4,
-    (value) => {
-      StyleSchemaValuesHandler_4 = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "StyleSchemaValuesKindConfig",
-    () => StyleSchemaValuesKindConfig,
-    (value) => {
-      StyleSchemaValuesKindConfig = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "StyleSchemaValuesLimit",
-    () => StyleSchemaValuesLimit,
-    (value) => {
-      StyleSchemaValuesLimit = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "StyleSchemaValuesClosestSideClosestCornerFarthestSideValues",
-    () => StyleSchemaValuesClosestSideClosestCornerFarthestSideValues,
-    (value) => {
-      StyleSchemaValuesClosestSideClosestCornerFarthestSideValues = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "StyleSchemaValuesItems",
-    () => StyleSchemaValuesItems,
-    (value) => {
-      StyleSchemaValuesItems = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "StyleSchemaValuesItems_2",
-    () => StyleSchemaValuesItems_2,
-    (value) => {
-      StyleSchemaValuesItems_2 = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "StyleSchemaValuesItems_3",
-    () => StyleSchemaValuesItems_3,
-    (value) => {
-      StyleSchemaValuesItems_3 = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "StyleSchemaValuesBoxShadowTextShadowFilterValues",
-    () => StyleSchemaValuesBoxShadowTextShadowFilterValues,
-    (value) => {
-      StyleSchemaValuesBoxShadowTextShadowFilterValues = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "StyleSchemaValuesTransformOpacityColorValues",
-    () => StyleSchemaValuesTransformOpacityColorValues,
-    (value) => {
-      StyleSchemaValuesTransformOpacityColorValues = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "StyleSchemaValuesColorBackgroundColorBackgroundGradientValues",
-    () => StyleSchemaValuesColorBackgroundColorBackgroundGradientValues,
-    (value) => {
-      StyleSchemaValuesColorBackgroundColorBackgroundGradientValues = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "StyleSchemaValuesSubscribers",
-    () => StyleSchemaValuesSubscribers,
-    (value) => {
-      StyleSchemaValuesSubscribers = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "StyleSchemaValuesSubscribers_2",
-    () => StyleSchemaValuesSubscribers_2,
-    (value) => {
-      StyleSchemaValuesSubscribers_2 = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "StyleSchemaValuesSubscribers_3",
-    () => StyleSchemaValuesSubscribers_3,
-    (value) => {
-      StyleSchemaValuesSubscribers_3 = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "StyleSchemaValuesSubscribers_4",
-    () => StyleSchemaValuesSubscribers_4,
-    (value) => {
-      StyleSchemaValuesSubscribers_4 = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "StyleSchemaValuesRegistry",
-    () => StyleSchemaValuesRegistry,
-    (value) => {
-      StyleSchemaValuesRegistry = value;
-    },
-  );
+var StyleSchemaValuesSansSerifMonoConfig: Dynamic;
+var StyleSchemaValuesHandler: Dynamic;
+var StyleSchemaValuesHandler_2: Dynamic;
+var StyleSchemaValuesHandler_3: Dynamic;
+var StyleSchemaValuesHandler_4: Dynamic;
+var StyleSchemaValuesKindConfig: Dynamic;
+var StyleSchemaValuesLimit: Dynamic;
+var StyleSchemaValuesClosestSideClosestCornerFarthestSideValues: Dynamic;
+var StyleSchemaValuesItems: Dynamic;
+var StyleSchemaValuesItems_2: Dynamic;
+var StyleSchemaValuesItems_3: Dynamic;
+var StyleSchemaValuesBoxShadowTextShadowFilterValues: Dynamic;
+var StyleSchemaValuesTransformOpacityColorValues: Dynamic;
+var StyleSchemaValuesColorBackgroundColorBackgroundGradientValues: Dynamic;
+var StyleSchemaValuesSubscribers: Dynamic;
+var StyleSchemaValuesSubscribers_2: Dynamic;
+var StyleSchemaValuesSubscribers_3: Dynamic;
+var StyleSchemaValuesSubscribers_4: Dynamic;
+var StyleSchemaValuesRegistry: Dynamic;
+export {
+  StyleSchemaValuesBoxShadowTextShadowFilterValues,
+  StyleSchemaValuesClosestSideClosestCornerFarthestSideValues,
+  StyleSchemaValuesColorBackgroundColorBackgroundGradientValues,
+  StyleSchemaValuesHandler,
+  StyleSchemaValuesHandler_2,
+  StyleSchemaValuesHandler_3,
+  StyleSchemaValuesHandler_4,
+  StyleSchemaValuesItems,
+  StyleSchemaValuesItems_2,
+  StyleSchemaValuesItems_3,
+  StyleSchemaValuesKindConfig,
+  StyleSchemaValuesLimit,
+  StyleSchemaValuesRegistry,
+  StyleSchemaValuesSansSerifMonoConfig,
+  StyleSchemaValuesSubscribers,
+  StyleSchemaValuesSubscribers_2,
+  StyleSchemaValuesSubscribers_3,
+  StyleSchemaValuesSubscribers_4,
+  StyleSchemaValuesTransformOpacityColorValues,
+};
+export function installEditorStyleSchemaValues(): () => void {
   return () => {
     StyleSchemaValuesSansSerifMonoConfig = {
       sans: "ui-sans-serif, system-ui, sans-serif",
@@ -412,91 +277,91 @@ export function installEditorStyleSchemaValues(
       fontSize: {
         v: StyleSchemaValuesHandler(8, 128),
         slides: StyleSchemaValuesHandler(8, 400),
-        on: runtime.StyleSchemaNodeTypesFlatValue_3,
+        on: StyleSchemaNodeTypesFlatValue_3,
       },
       fontWeight: {
         v: StyleSchemaValuesHandler_3(100, 900, 100),
-        on: runtime.StyleSchemaNodeTypesFlatValue_3,
+        on: StyleSchemaNodeTypesFlatValue_3,
       },
       fontStyle: {
         v: StyleSchemaValuesHandler_4(
-          runtime.StyleSchemaNodeTypesNormalItalicValues,
+          StyleSchemaNodeTypesNormalItalicValues,
         ),
-        on: runtime.StyleSchemaNodeTypesFlatValue_3,
+        on: StyleSchemaNodeTypesFlatValue_3,
       },
       lineHeight: {
         v: StyleSchemaValuesHandler_2(0.75, 4),
         slides: StyleSchemaValuesHandler_2(0.5, 4),
-        on: runtime.StyleSchemaNodeTypesFlatValue_3,
+        on: StyleSchemaNodeTypesFlatValue_3,
       },
       letterSpacing: {
         v: StyleSchemaValuesHandler(-4, 32),
         slides: StyleSchemaValuesHandler(-24, 32),
-        on: runtime.StyleSchemaNodeTypesFlatValue_3,
+        on: StyleSchemaNodeTypesFlatValue_3,
       },
       textAlign: {
         v: StyleSchemaValuesHandler_4(
-          runtime.StyleSchemaNodeTypesLeftCenterRightValues,
+          StyleSchemaNodeTypesLeftCenterRightValues,
         ),
-        on: (0, runtime.StyleSchemaNodeTypesFlat)(
-          runtime.StyleSchemaNodeTypesBlockquoteBulletListOrderedListValues,
-          runtime.StyleSchemaNodeTypesTableTableCellTableHeaderValues,
-          runtime.StyleSchemaNodeTypesSlidesTableValues,
+        on: (0, StyleSchemaNodeTypesFlat)(
+          StyleSchemaNodeTypesBlockquoteBulletListOrderedListValues,
+          StyleSchemaNodeTypesTableTableCellTableHeaderValues,
+          StyleSchemaNodeTypesSlidesTableValues,
         ),
-        routed: runtime.StyleSchemaNodeTypesSlidesTextValues,
+        routed: StyleSchemaNodeTypesSlidesTextValues,
       },
       textTransform: {
         v: StyleSchemaValuesHandler_4(
-          runtime.StyleSchemaNodeTypesNoneUppercaseLowercaseValues,
+          StyleSchemaNodeTypesNoneUppercaseLowercaseValues,
         ),
-        on: runtime.StyleSchemaNodeTypesFlatValue_3,
+        on: StyleSchemaNodeTypesFlatValue_3,
       },
       textDecorationLine: {
         v: StyleSchemaValuesHandler_4(
-          runtime.StyleSchemaNodeTypesNoneUnderlineLineThroughValues,
+          StyleSchemaNodeTypesNoneUnderlineLineThroughValues,
         ),
-        on: runtime.StyleSchemaNodeTypesFlatValue_3,
+        on: StyleSchemaNodeTypesFlatValue_3,
       },
       textDecorationStyle: {
         v: StyleSchemaValuesHandler_4(
-          runtime.StyleSchemaNodeTypesSolidDoubleDottedValues,
+          StyleSchemaNodeTypesSolidDoubleDottedValues,
         ),
-        on: runtime.StyleSchemaNodeTypesFlatValue_3,
+        on: StyleSchemaNodeTypesFlatValue_3,
       },
       textDecorationColor: {
         v: StyleSchemaValuesKindConfig,
-        on: runtime.StyleSchemaNodeTypesFlatValue_3,
+        on: StyleSchemaNodeTypesFlatValue_3,
       },
       fontFamily: {
         v: StyleSchemaValuesHandler_4(
-          runtime.StyleSchemaNodeTypesSansSerifMonoValues,
+          StyleSchemaNodeTypesSansSerifMonoValues,
         ),
         slides: {
           kind: "fontFamily",
         },
-        on: runtime.StyleSchemaNodeTypesFlatValue_3,
+        on: StyleSchemaNodeTypesFlatValue_3,
       },
       fontVariantNumeric: {
         v: StyleSchemaValuesHandler_4(
-          runtime.StyleSchemaNodeTypesNormalTabularNumsValues,
+          StyleSchemaNodeTypesNormalTabularNumsValues,
         ),
-        on: runtime.StyleSchemaNodeTypesFlatValue_3,
+        on: StyleSchemaNodeTypesFlatValue_3,
       },
       color: {
         v: StyleSchemaValuesKindConfig,
-        on: (0, runtime.StyleSchemaNodeTypesFlat)(
-          runtime.StyleSchemaNodeTypesBlockquoteBulletListOrderedListValues,
-          runtime.StyleSchemaNodeTypesTableTableCellTableHeaderValues,
-          runtime.StyleSchemaNodeTypesSlidesTableValues,
+        on: (0, StyleSchemaNodeTypesFlat)(
+          StyleSchemaNodeTypesBlockquoteBulletListOrderedListValues,
+          StyleSchemaNodeTypesTableTableCellTableHeaderValues,
+          StyleSchemaNodeTypesSlidesTableValues,
         ),
-        routed: (0, runtime.StyleSchemaNodeTypesFlat)(
-          runtime.StyleSchemaNodeTypesSlidesTextValues,
-          runtime.StyleSchemaNodeTypesSlidesIconValues,
+        routed: (0, StyleSchemaNodeTypesFlat)(
+          StyleSchemaNodeTypesSlidesTextValues,
+          StyleSchemaNodeTypesSlidesIconValues,
         ),
       },
       backgroundColor: {
         v: StyleSchemaValuesKindConfig,
-        on: runtime.StyleSchemaNodeTypesFlatValue,
+        on: StyleSchemaNodeTypesFlatValue,
       },
       backgroundGradient: {
         v: {
@@ -506,168 +371,168 @@ export function installEditorStyleSchemaValues(
           kind: "gradient",
           repeat: true,
         },
-        on: (0, runtime.StyleSchemaNodeTypesFlat)(
-          runtime.StyleSchemaNodeTypesBlockquoteBulletListOrderedListValues,
-          runtime.StyleSchemaNodeTypesSlidesTextValues,
-          runtime.StyleSchemaNodeTypesSlidesImgValues,
-          runtime.StyleSchemaNodeTypesSlidesStackValues,
-          runtime.StyleSchemaNodeTypesSlidesTableValues,
+        on: (0, StyleSchemaNodeTypesFlat)(
+          StyleSchemaNodeTypesBlockquoteBulletListOrderedListValues,
+          StyleSchemaNodeTypesSlidesTextValues,
+          StyleSchemaNodeTypesSlidesImgValues,
+          StyleSchemaNodeTypesSlidesStackValues,
+          StyleSchemaNodeTypesSlidesTableValues,
         ),
       },
       marginTop: {
         v: StyleSchemaValuesHandler(0, 256),
-        on: runtime.StyleSchemaNodeTypesBlockquoteBulletListOrderedListValues,
+        on: StyleSchemaNodeTypesBlockquoteBulletListOrderedListValues,
       },
       marginRight: {
         v: StyleSchemaValuesHandler(0, 256),
-        on: runtime.StyleSchemaNodeTypesBlockquoteBulletListOrderedListValues,
+        on: StyleSchemaNodeTypesBlockquoteBulletListOrderedListValues,
       },
       marginBottom: {
         v: StyleSchemaValuesHandler(0, 256),
-        on: runtime.StyleSchemaNodeTypesBlockquoteBulletListOrderedListValues,
+        on: StyleSchemaNodeTypesBlockquoteBulletListOrderedListValues,
       },
       marginLeft: {
         v: StyleSchemaValuesHandler(0, 256),
-        on: runtime.StyleSchemaNodeTypesBlockquoteBulletListOrderedListValues,
+        on: StyleSchemaNodeTypesBlockquoteBulletListOrderedListValues,
       },
       paddingTop: {
         v: StyleSchemaValuesHandler(0, 256),
-        on: (0, runtime.StyleSchemaNodeTypesFlat)(
-          runtime.StyleSchemaNodeTypesBlockquoteBulletListOrderedListValues,
-          runtime.StyleSchemaNodeTypesTableTableCellTableHeaderValues,
-          runtime.StyleSchemaNodeTypesSlidesTextValues,
-          runtime.StyleSchemaNodeTypesSlidesStackValues,
-          runtime.StyleSchemaNodeTypesSlidesTableValues,
+        on: (0, StyleSchemaNodeTypesFlat)(
+          StyleSchemaNodeTypesBlockquoteBulletListOrderedListValues,
+          StyleSchemaNodeTypesTableTableCellTableHeaderValues,
+          StyleSchemaNodeTypesSlidesTextValues,
+          StyleSchemaNodeTypesSlidesStackValues,
+          StyleSchemaNodeTypesSlidesTableValues,
         ),
       },
       paddingRight: {
         v: StyleSchemaValuesHandler(0, 256),
-        on: (0, runtime.StyleSchemaNodeTypesFlat)(
-          runtime.StyleSchemaNodeTypesBlockquoteBulletListOrderedListValues,
-          runtime.StyleSchemaNodeTypesTableTableCellTableHeaderValues,
-          runtime.StyleSchemaNodeTypesSlidesTextValues,
-          runtime.StyleSchemaNodeTypesSlidesStackValues,
-          runtime.StyleSchemaNodeTypesSlidesTableValues,
+        on: (0, StyleSchemaNodeTypesFlat)(
+          StyleSchemaNodeTypesBlockquoteBulletListOrderedListValues,
+          StyleSchemaNodeTypesTableTableCellTableHeaderValues,
+          StyleSchemaNodeTypesSlidesTextValues,
+          StyleSchemaNodeTypesSlidesStackValues,
+          StyleSchemaNodeTypesSlidesTableValues,
         ),
       },
       paddingBottom: {
         v: StyleSchemaValuesHandler(0, 256),
-        on: (0, runtime.StyleSchemaNodeTypesFlat)(
-          runtime.StyleSchemaNodeTypesBlockquoteBulletListOrderedListValues,
-          runtime.StyleSchemaNodeTypesTableTableCellTableHeaderValues,
-          runtime.StyleSchemaNodeTypesSlidesTextValues,
-          runtime.StyleSchemaNodeTypesSlidesStackValues,
-          runtime.StyleSchemaNodeTypesSlidesTableValues,
+        on: (0, StyleSchemaNodeTypesFlat)(
+          StyleSchemaNodeTypesBlockquoteBulletListOrderedListValues,
+          StyleSchemaNodeTypesTableTableCellTableHeaderValues,
+          StyleSchemaNodeTypesSlidesTextValues,
+          StyleSchemaNodeTypesSlidesStackValues,
+          StyleSchemaNodeTypesSlidesTableValues,
         ),
       },
       paddingLeft: {
         v: StyleSchemaValuesHandler(0, 256),
-        on: (0, runtime.StyleSchemaNodeTypesFlat)(
-          runtime.StyleSchemaNodeTypesBlockquoteBulletListOrderedListValues,
-          runtime.StyleSchemaNodeTypesTableTableCellTableHeaderValues,
-          runtime.StyleSchemaNodeTypesSlidesTextValues,
-          runtime.StyleSchemaNodeTypesSlidesStackValues,
-          runtime.StyleSchemaNodeTypesSlidesTableValues,
+        on: (0, StyleSchemaNodeTypesFlat)(
+          StyleSchemaNodeTypesBlockquoteBulletListOrderedListValues,
+          StyleSchemaNodeTypesTableTableCellTableHeaderValues,
+          StyleSchemaNodeTypesSlidesTextValues,
+          StyleSchemaNodeTypesSlidesStackValues,
+          StyleSchemaNodeTypesSlidesTableValues,
         ),
       },
       borderWidth: {
         v: StyleSchemaValuesHandler(0, 16),
         shape: StyleSchemaValuesHandler(0, 32),
-        on: runtime.StyleSchemaNodeTypesFlatValue,
+        on: StyleSchemaNodeTypesFlatValue,
       },
       borderStyle: {
         v: StyleSchemaValuesHandler_4(
-          runtime.StyleSchemaNodeTypesNoneSolidDashedValues,
+          StyleSchemaNodeTypesNoneSolidDashedValues,
         ),
-        on: runtime.StyleSchemaNodeTypesFlatValue,
+        on: StyleSchemaNodeTypesFlatValue,
       },
       borderColor: {
         v: StyleSchemaValuesKindConfig,
-        on: runtime.StyleSchemaNodeTypesFlatValue,
+        on: StyleSchemaNodeTypesFlatValue,
       },
       borderSides: {
-        v: StyleSchemaValuesHandler_4(runtime.StyleSchemaNodeTypesItems),
-        on: runtime.StyleSchemaNodeTypesFlatValue_2,
+        v: StyleSchemaValuesHandler_4(StyleSchemaNodeTypesItems),
+        on: StyleSchemaNodeTypesFlatValue_2,
       },
       borderTopWidth: {
         v: StyleSchemaValuesHandler(0, 16),
-        on: runtime.StyleSchemaNodeTypesFlatValue_2,
+        on: StyleSchemaNodeTypesFlatValue_2,
       },
       borderRightWidth: {
         v: StyleSchemaValuesHandler(0, 16),
-        on: runtime.StyleSchemaNodeTypesFlatValue_2,
+        on: StyleSchemaNodeTypesFlatValue_2,
       },
       borderBottomWidth: {
         v: StyleSchemaValuesHandler(0, 16),
-        on: runtime.StyleSchemaNodeTypesFlatValue_2,
+        on: StyleSchemaNodeTypesFlatValue_2,
       },
       borderLeftWidth: {
         v: StyleSchemaValuesHandler(0, 16),
-        on: runtime.StyleSchemaNodeTypesFlatValue_2,
+        on: StyleSchemaNodeTypesFlatValue_2,
       },
       borderRadius: {
         v: StyleSchemaValuesHandler(0, 256),
-        on: (0, runtime.StyleSchemaNodeTypesFlat)(
-          runtime.StyleSchemaNodeTypesBlockquoteBulletListOrderedListValues,
-          runtime.StyleSchemaNodeTypesTableTableCellTableHeaderValues,
-          runtime.StyleSchemaNodeTypesSlidesTextValues,
-          runtime.StyleSchemaNodeTypesSlidesImgValues,
-          runtime.StyleSchemaNodeTypesSlidesStackValues,
-          runtime.StyleSchemaNodeTypesSlidesTableValues,
-          runtime.StyleSchemaNodeTypesSlidesShapeValues,
+        on: (0, StyleSchemaNodeTypesFlat)(
+          StyleSchemaNodeTypesBlockquoteBulletListOrderedListValues,
+          StyleSchemaNodeTypesTableTableCellTableHeaderValues,
+          StyleSchemaNodeTypesSlidesTextValues,
+          StyleSchemaNodeTypesSlidesImgValues,
+          StyleSchemaNodeTypesSlidesStackValues,
+          StyleSchemaNodeTypesSlidesTableValues,
+          StyleSchemaNodeTypesSlidesShapeValues,
         ),
       },
       borderTopLeftRadius: {
         v: StyleSchemaValuesHandler(0, 256),
-        on: (0, runtime.StyleSchemaNodeTypesFlat)(
-          runtime.StyleSchemaNodeTypesBlockquoteBulletListOrderedListValues,
-          runtime.StyleSchemaNodeTypesTableTableCellTableHeaderValues,
-          runtime.StyleSchemaNodeTypesSlidesTextValues,
-          runtime.StyleSchemaNodeTypesSlidesImgValues,
-          runtime.StyleSchemaNodeTypesSlidesStackValues,
-          runtime.StyleSchemaNodeTypesSlidesTableValues,
-          runtime.StyleSchemaNodeTypesSlidesShapeValues,
+        on: (0, StyleSchemaNodeTypesFlat)(
+          StyleSchemaNodeTypesBlockquoteBulletListOrderedListValues,
+          StyleSchemaNodeTypesTableTableCellTableHeaderValues,
+          StyleSchemaNodeTypesSlidesTextValues,
+          StyleSchemaNodeTypesSlidesImgValues,
+          StyleSchemaNodeTypesSlidesStackValues,
+          StyleSchemaNodeTypesSlidesTableValues,
+          StyleSchemaNodeTypesSlidesShapeValues,
         ),
       },
       borderTopRightRadius: {
         v: StyleSchemaValuesHandler(0, 256),
-        on: (0, runtime.StyleSchemaNodeTypesFlat)(
-          runtime.StyleSchemaNodeTypesBlockquoteBulletListOrderedListValues,
-          runtime.StyleSchemaNodeTypesTableTableCellTableHeaderValues,
-          runtime.StyleSchemaNodeTypesSlidesTextValues,
-          runtime.StyleSchemaNodeTypesSlidesImgValues,
-          runtime.StyleSchemaNodeTypesSlidesStackValues,
-          runtime.StyleSchemaNodeTypesSlidesTableValues,
-          runtime.StyleSchemaNodeTypesSlidesShapeValues,
+        on: (0, StyleSchemaNodeTypesFlat)(
+          StyleSchemaNodeTypesBlockquoteBulletListOrderedListValues,
+          StyleSchemaNodeTypesTableTableCellTableHeaderValues,
+          StyleSchemaNodeTypesSlidesTextValues,
+          StyleSchemaNodeTypesSlidesImgValues,
+          StyleSchemaNodeTypesSlidesStackValues,
+          StyleSchemaNodeTypesSlidesTableValues,
+          StyleSchemaNodeTypesSlidesShapeValues,
         ),
       },
       borderBottomRightRadius: {
         v: StyleSchemaValuesHandler(0, 256),
-        on: (0, runtime.StyleSchemaNodeTypesFlat)(
-          runtime.StyleSchemaNodeTypesBlockquoteBulletListOrderedListValues,
-          runtime.StyleSchemaNodeTypesTableTableCellTableHeaderValues,
-          runtime.StyleSchemaNodeTypesSlidesTextValues,
-          runtime.StyleSchemaNodeTypesSlidesImgValues,
-          runtime.StyleSchemaNodeTypesSlidesStackValues,
-          runtime.StyleSchemaNodeTypesSlidesTableValues,
-          runtime.StyleSchemaNodeTypesSlidesShapeValues,
+        on: (0, StyleSchemaNodeTypesFlat)(
+          StyleSchemaNodeTypesBlockquoteBulletListOrderedListValues,
+          StyleSchemaNodeTypesTableTableCellTableHeaderValues,
+          StyleSchemaNodeTypesSlidesTextValues,
+          StyleSchemaNodeTypesSlidesImgValues,
+          StyleSchemaNodeTypesSlidesStackValues,
+          StyleSchemaNodeTypesSlidesTableValues,
+          StyleSchemaNodeTypesSlidesShapeValues,
         ),
       },
       borderBottomLeftRadius: {
         v: StyleSchemaValuesHandler(0, 256),
-        on: (0, runtime.StyleSchemaNodeTypesFlat)(
-          runtime.StyleSchemaNodeTypesBlockquoteBulletListOrderedListValues,
-          runtime.StyleSchemaNodeTypesTableTableCellTableHeaderValues,
-          runtime.StyleSchemaNodeTypesSlidesTextValues,
-          runtime.StyleSchemaNodeTypesSlidesImgValues,
-          runtime.StyleSchemaNodeTypesSlidesStackValues,
-          runtime.StyleSchemaNodeTypesSlidesTableValues,
-          runtime.StyleSchemaNodeTypesSlidesShapeValues,
+        on: (0, StyleSchemaNodeTypesFlat)(
+          StyleSchemaNodeTypesBlockquoteBulletListOrderedListValues,
+          StyleSchemaNodeTypesTableTableCellTableHeaderValues,
+          StyleSchemaNodeTypesSlidesTextValues,
+          StyleSchemaNodeTypesSlidesImgValues,
+          StyleSchemaNodeTypesSlidesStackValues,
+          StyleSchemaNodeTypesSlidesTableValues,
+          StyleSchemaNodeTypesSlidesShapeValues,
         ),
       },
       opacity: {
         v: StyleSchemaValuesHandler_2(0, 1),
-        on: runtime.StyleSchemaNodeTypesFlatValue,
+        on: StyleSchemaNodeTypesFlatValue,
       },
       boxShadow: {
         v: {
@@ -679,173 +544,173 @@ export function installEditorStyleSchemaValues(
           spread: true,
           blur: StyleSchemaValuesHandler(0, 160),
         },
-        on: runtime.StyleSchemaNodeTypesFlatValue_4,
+        on: StyleSchemaNodeTypesFlatValue_4,
       },
       textShadow: {
         v: {
           kind: "shadow",
           spread: false,
         },
-        on: (0, runtime.StyleSchemaNodeTypesFlat)(
-          runtime.StyleSchemaNodeTypesParagraphHeadingCodeBlockValues,
-          runtime.StyleSchemaNodeTypesSlidesTextValues,
-          runtime.StyleSchemaNodeTypesSlidesTableValues,
+        on: (0, StyleSchemaNodeTypesFlat)(
+          StyleSchemaNodeTypesParagraphHeadingCodeBlockValues,
+          StyleSchemaNodeTypesSlidesTextValues,
+          StyleSchemaNodeTypesSlidesTableValues,
         ),
       },
       textStrokeWidth: {
         v: StyleSchemaValuesHandler(0, 8),
-        on: (0, runtime.StyleSchemaNodeTypesFlat)(
-          runtime.StyleSchemaNodeTypesParagraphHeadingCodeBlockValues,
-          runtime.StyleSchemaNodeTypesSlidesTextValues,
-          runtime.StyleSchemaNodeTypesSlidesTableValues,
+        on: (0, StyleSchemaNodeTypesFlat)(
+          StyleSchemaNodeTypesParagraphHeadingCodeBlockValues,
+          StyleSchemaNodeTypesSlidesTextValues,
+          StyleSchemaNodeTypesSlidesTableValues,
         ),
       },
       textStrokeColor: {
         v: StyleSchemaValuesKindConfig,
-        on: (0, runtime.StyleSchemaNodeTypesFlat)(
-          runtime.StyleSchemaNodeTypesParagraphHeadingCodeBlockValues,
-          runtime.StyleSchemaNodeTypesSlidesTextValues,
-          runtime.StyleSchemaNodeTypesSlidesTableValues,
+        on: (0, StyleSchemaNodeTypesFlat)(
+          StyleSchemaNodeTypesParagraphHeadingCodeBlockValues,
+          StyleSchemaNodeTypesSlidesTextValues,
+          StyleSchemaNodeTypesSlidesTableValues,
         ),
       },
       filter: {
         v: {
           kind: "filter",
         },
-        on: runtime.StyleSchemaNodeTypesFlatValue_4,
+        on: StyleSchemaNodeTypesFlatValue_4,
       },
       backdropFilter: {
         v: {
           kind: "filter",
         },
-        on: runtime.StyleSchemaNodeTypesFlatValue_4,
+        on: StyleSchemaNodeTypesFlatValue_4,
       },
       transform: {
         v: {
           kind: "transform",
         },
-        on: runtime.StyleSchemaNodeTypesFlatValue_2,
-        routed: runtime.StyleSchemaNodeTypesSlidesShapeValues,
+        on: StyleSchemaNodeTypesFlatValue_2,
+        routed: StyleSchemaNodeTypesSlidesShapeValues,
       },
       mixBlendMode: {
         v: StyleSchemaValuesHandler_4(
-          runtime.StyleSchemaNodeTypesNormalMultiplyScreenValues,
+          StyleSchemaNodeTypesNormalMultiplyScreenValues,
         ),
-        on: runtime.StyleSchemaNodeTypesFlatValue_4,
+        on: StyleSchemaNodeTypesFlatValue_4,
       },
       position: {
         v: StyleSchemaValuesHandler_4(
-          runtime.StyleSchemaNodeTypesStaticRelativeAbsoluteValues,
+          StyleSchemaNodeTypesStaticRelativeAbsoluteValues,
         ),
-        on: runtime.StyleSchemaNodeTypesFlatValue_5,
+        on: StyleSchemaNodeTypesFlatValue_5,
       },
       top: {
         v: StyleSchemaValuesHandler(-4096, 4096),
-        on: runtime.StyleSchemaNodeTypesFlatValue_5,
+        on: StyleSchemaNodeTypesFlatValue_5,
       },
       right: {
         v: StyleSchemaValuesHandler(-4096, 4096),
-        on: runtime.StyleSchemaNodeTypesFlatValue_5,
+        on: StyleSchemaNodeTypesFlatValue_5,
       },
       bottom: {
         v: StyleSchemaValuesHandler(-4096, 4096),
-        on: runtime.StyleSchemaNodeTypesFlatValue_5,
+        on: StyleSchemaNodeTypesFlatValue_5,
       },
       left: {
         v: StyleSchemaValuesHandler(-4096, 4096),
-        on: runtime.StyleSchemaNodeTypesFlatValue_5,
+        on: StyleSchemaNodeTypesFlatValue_5,
       },
       zIndex: {
         v: StyleSchemaValuesHandler_3(-999, 999, 1),
-        on: runtime.StyleSchemaNodeTypesFlatValue_5,
+        on: StyleSchemaNodeTypesFlatValue_5,
       },
       float: {
         v: StyleSchemaValuesHandler_4(
-          runtime.StyleSchemaNodeTypesNoneLeftRightValues,
+          StyleSchemaNodeTypesNoneLeftRightValues,
         ),
-        on: runtime.StyleSchemaNodeTypesFlatValue_5,
+        on: StyleSchemaNodeTypesFlatValue_5,
       },
       display: {
         v: StyleSchemaValuesHandler_4(
-          runtime.StyleSchemaNodeTypesBlockInlineBlockFlexValues,
+          StyleSchemaNodeTypesBlockInlineBlockFlexValues,
         ),
-        on: runtime.StyleSchemaNodeTypesFlatValue_5,
+        on: StyleSchemaNodeTypesFlatValue_5,
       },
       visibility: {
         v: StyleSchemaValuesHandler_4(
-          runtime.StyleSchemaNodeTypesVisibleHiddenValues,
+          StyleSchemaNodeTypesVisibleHiddenValues,
         ),
-        on: runtime.StyleSchemaNodeTypesFlatValue,
+        on: StyleSchemaNodeTypesFlatValue,
       },
       overflow: {
         v: StyleSchemaValuesHandler_4(
-          runtime.StyleSchemaNodeTypesVisibleHiddenClipValues,
+          StyleSchemaNodeTypesVisibleHiddenClipValues,
         ),
-        on: (0, runtime.StyleSchemaNodeTypesFlat)(
-          runtime.StyleSchemaNodeTypesBlockquoteBulletListOrderedListValues,
-          runtime.StyleSchemaNodeTypesTableTableCellTableHeaderValues,
-          runtime.StyleSchemaNodeTypesSlidesStackValues,
+        on: (0, StyleSchemaNodeTypesFlat)(
+          StyleSchemaNodeTypesBlockquoteBulletListOrderedListValues,
+          StyleSchemaNodeTypesTableTableCellTableHeaderValues,
+          StyleSchemaNodeTypesSlidesStackValues,
         ),
       },
       pointerEvents: {
         v: StyleSchemaValuesHandler_4(
-          runtime.StyleSchemaNodeTypesAutoNoneValues,
+          StyleSchemaNodeTypesAutoNoneValues,
         ),
-        on: runtime.StyleSchemaNodeTypesFlatValue,
+        on: StyleSchemaNodeTypesFlatValue,
       },
       cursor: {
         v: StyleSchemaValuesHandler_4(
-          runtime.StyleSchemaNodeTypesDefaultPointerTextValues,
+          StyleSchemaNodeTypesDefaultPointerTextValues,
         ),
-        on: runtime.StyleSchemaNodeTypesFlatValue,
+        on: StyleSchemaNodeTypesFlatValue,
       },
       width: {
         v: {
           kind: "size",
         },
-        on: runtime.StyleSchemaNodeTypesFlatValue_5,
+        on: StyleSchemaNodeTypesFlatValue_5,
       },
       height: {
         v: {
           kind: "size",
         },
-        on: runtime.StyleSchemaNodeTypesFlatValue_5,
+        on: StyleSchemaNodeTypesFlatValue_5,
       },
       minWidth: {
         v: {
           kind: "size",
         },
-        on: runtime.StyleSchemaNodeTypesFlatValue_5,
+        on: StyleSchemaNodeTypesFlatValue_5,
       },
       minHeight: {
         v: {
           kind: "size",
         },
-        on: runtime.StyleSchemaNodeTypesFlatValue_5,
+        on: StyleSchemaNodeTypesFlatValue_5,
       },
       maxWidth: {
         v: {
           kind: "size",
         },
-        on: runtime.StyleSchemaNodeTypesFlatValue_5,
+        on: StyleSchemaNodeTypesFlatValue_5,
       },
       maxHeight: {
         v: {
           kind: "size",
         },
-        on: runtime.StyleSchemaNodeTypesFlatValue_5,
+        on: StyleSchemaNodeTypesFlatValue_5,
       },
       transition: {
         v: {
           kind: "transition",
         },
-        on: runtime.StyleSchemaNodeTypesFlatValue,
+        on: StyleSchemaNodeTypesFlatValue,
       },
       animation: {
         v: {
           kind: "animation",
         },
-        on: runtime.StyleSchemaNodeTypesFlatValue,
+        on: StyleSchemaNodeTypesFlatValue,
       },
     };
   };

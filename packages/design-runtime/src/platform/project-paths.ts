@@ -1,104 +1,31 @@
 /** Restored application module; prepare first, initialize in original order. */
 import {
-  bindRuntimeValue,
   type Dynamic,
-  type RuntimeBindings,
 } from "../runtime-types";
 
-export function installPlatformProjectPaths(
-  runtime: RuntimeBindings,
-): () => void {
-  var projectMetadataPaths: Dynamic;
-  var legacyMetadataPaths: Dynamic;
-  var projectPathPrefix: Dynamic;
-  var migrationMetadataPath: Dynamic;
-  var projectReservedPaths: Dynamic;
-  var isReservedProjectPath: Dynamic;
-  var toProjectContentPath: Dynamic;
-  var isApplicationCodeFile: Dynamic;
-  var fromProjectContentPath: Dynamic;
-  var isProjectMetadataFile: Dynamic;
-
-  bindRuntimeValue(
-    runtime,
-    "projectMetadataPaths",
-    () => projectMetadataPaths,
-    (value) => {
-      projectMetadataPaths = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "legacyMetadataPaths",
-    () => legacyMetadataPaths,
-    (value) => {
-      legacyMetadataPaths = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "projectPathPrefix",
-    () => projectPathPrefix,
-    (value) => {
-      projectPathPrefix = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "migrationMetadataPath",
-    () => migrationMetadataPath,
-    (value) => {
-      migrationMetadataPath = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "projectReservedPaths",
-    () => projectReservedPaths,
-    (value) => {
-      projectReservedPaths = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "isReservedProjectPath",
-    () => isReservedProjectPath,
-    (value) => {
-      isReservedProjectPath = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "toProjectContentPath",
-    () => toProjectContentPath,
-    (value) => {
-      toProjectContentPath = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "isApplicationCodeFile",
-    () => isApplicationCodeFile,
-    (value) => {
-      isApplicationCodeFile = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "fromProjectContentPath",
-    () => fromProjectContentPath,
-    (value) => {
-      fromProjectContentPath = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "isProjectMetadataFile",
-    () => isProjectMetadataFile,
-    (value) => {
-      isProjectMetadataFile = value;
-    },
-  );
+var projectMetadataPaths: Dynamic;
+var legacyMetadataPaths: Dynamic;
+var projectPathPrefix: Dynamic;
+var migrationMetadataPath: Dynamic;
+var projectReservedPaths: Dynamic;
+var isReservedProjectPath: Dynamic;
+var toProjectContentPath: Dynamic;
+var isApplicationCodeFile: Dynamic;
+var fromProjectContentPath: Dynamic;
+var isProjectMetadataFile: Dynamic;
+export {
+  fromProjectContentPath,
+  isApplicationCodeFile,
+  isProjectMetadataFile,
+  isReservedProjectPath,
+  legacyMetadataPaths,
+  migrationMetadataPath,
+  projectMetadataPaths,
+  projectPathPrefix,
+  projectReservedPaths,
+  toProjectContentPath,
+};
+export function installPlatformProjectPaths(): () => void {
   return () => {
     projectMetadataPaths = {
       design: "project/canvas.json",

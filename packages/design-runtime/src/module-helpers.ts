@@ -1,111 +1,32 @@
 /** Restored application module; prepare first, initialize in original order. */
 import {
-  bindRuntimeValue,
   type Dynamic,
-  type RuntimeBindings,
 } from "./runtime-types";
 
-export function installModuleHelpers(runtime: RuntimeBindings): () => void {
-  var createObject: Dynamic;
-  var defineProperty: Dynamic;
-  var getOwnPropertyDescriptor: Dynamic;
-  var getOwnPropertyNames: Dynamic;
-  var getPrototypeOf: Dynamic;
-  var hasOwnProperty: Dynamic;
-  var initializeOnce: Dynamic;
-  var initializeCommonJS: Dynamic;
-  var defineLiveExports: Dynamic;
-  var copyModuleProperties: Dynamic;
-  var toModuleNamespace: Dynamic;
-
-  bindRuntimeValue(
-    runtime,
-    "createObject",
-    () => createObject,
-    (value) => {
-      createObject = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "defineProperty",
-    () => defineProperty,
-    (value) => {
-      defineProperty = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "getOwnPropertyDescriptor",
-    () => getOwnPropertyDescriptor,
-    (value) => {
-      getOwnPropertyDescriptor = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "getOwnPropertyNames",
-    () => getOwnPropertyNames,
-    (value) => {
-      getOwnPropertyNames = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "getPrototypeOf",
-    () => getPrototypeOf,
-    (value) => {
-      getPrototypeOf = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "hasOwnProperty",
-    () => hasOwnProperty,
-    (value) => {
-      hasOwnProperty = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "initializeOnce",
-    () => initializeOnce,
-    (value) => {
-      initializeOnce = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "initializeCommonJS",
-    () => initializeCommonJS,
-    (value) => {
-      initializeCommonJS = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "defineLiveExports",
-    () => defineLiveExports,
-    (value) => {
-      defineLiveExports = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "copyModuleProperties",
-    () => copyModuleProperties,
-    (value) => {
-      copyModuleProperties = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "toModuleNamespace",
-    () => toModuleNamespace,
-    (value) => {
-      toModuleNamespace = value;
-    },
-  );
+var createObject: Dynamic;
+var defineProperty: Dynamic;
+var getOwnPropertyDescriptor: Dynamic;
+var getOwnPropertyNames: Dynamic;
+var getPrototypeOf: Dynamic;
+var hasOwnProperty: Dynamic;
+var initializeOnce: Dynamic;
+var initializeCommonJS: Dynamic;
+var defineLiveExports: Dynamic;
+var copyModuleProperties: Dynamic;
+var toModuleNamespace: Dynamic;
+export {
+  copyModuleProperties,
+  createObject,
+  defineLiveExports,
+  defineProperty,
+  getOwnPropertyDescriptor,
+  getOwnPropertyNames,
+  getPrototypeOf,
+  initializeCommonJS,
+  initializeOnce,
+  toModuleNamespace,
+};
+export function installModuleHelpers(): () => void {
   return () => {
     createObject = Object.create;
     defineProperty = Object.defineProperty;

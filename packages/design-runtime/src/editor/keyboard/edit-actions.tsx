@@ -1,61 +1,34 @@
 import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
-  bindRuntimeValue,
   type Dynamic,
-  type RuntimeBindings,
 } from "../../runtime-types";
+import { initializeCdsIndex } from "../../cds/index";
+import { load_react, load_react_jsx_runtime } from "../../dependencies";
+import { toModuleNamespace } from "../../module-helpers";
+import { initializePlatformCdsIsland } from "../../platform/cds-island";
 
-export function installEditorKeyboardEditActions(
-  runtime: RuntimeBindings,
-): () => void {
-  var reactKeyboardEditActions: Dynamic;
-  var jsxKeyboardEditActions: Dynamic;
-  var KeyboardEditActionsCutCopyPasteConfig: Dynamic;
-  var isContextMenuShortcut: Dynamic;
-
-  bindRuntimeValue(
-    runtime,
-    "reactKeyboardEditActions",
-    () => reactKeyboardEditActions,
-    (value) => {
-      reactKeyboardEditActions = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "jsxKeyboardEditActions",
-    () => jsxKeyboardEditActions,
-    (value) => {
-      jsxKeyboardEditActions = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "KeyboardEditActionsCutCopyPasteConfig",
-    () => KeyboardEditActionsCutCopyPasteConfig,
-    (value) => {
-      KeyboardEditActionsCutCopyPasteConfig = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "isContextMenuShortcut",
-    () => isContextMenuShortcut,
-    (value) => {
-      isContextMenuShortcut = value;
-    },
-  );
+var reactKeyboardEditActions: Dynamic;
+var jsxKeyboardEditActions: Dynamic;
+var KeyboardEditActionsCutCopyPasteConfig: Dynamic;
+var isContextMenuShortcut: Dynamic;
+export {
+  isContextMenuShortcut,
+  jsxKeyboardEditActions,
+  KeyboardEditActionsCutCopyPasteConfig,
+  reactKeyboardEditActions,
+};
+export function installEditorKeyboardEditActions(): () => void {
   return () => {
-    reactKeyboardEditActions = (0, runtime.toModuleNamespace)(
-      (0, runtime.load_react)(),
+    reactKeyboardEditActions = (0, toModuleNamespace)(
+      (0, load_react)(),
       1,
     );
-    (0, runtime.initializeCdsIndex)();
-    (0, runtime.initializePlatformCdsIsland)();
-    (0, runtime.initializeCdsIndex)();
-    jsxKeyboardEditActions = (0, runtime.toModuleNamespace)(
-      (0, runtime.load_react_jsx_runtime)(),
+    (0, initializeCdsIndex)();
+    (0, initializePlatformCdsIsland)();
+    (0, initializeCdsIndex)();
+    jsxKeyboardEditActions = (0, toModuleNamespace)(
+      (0, load_react_jsx_runtime)(),
       1,
     );
     KeyboardEditActionsCutCopyPasteConfig = {
@@ -102,6 +75,6 @@ export function installEditorKeyboardEditActions(
     };
     isContextMenuShortcut = (input?: Dynamic): Dynamic =>
       input.key === "ContextMenu" || (input.key === "F10" && input.shiftKey);
-    (0, runtime.initializeCdsIndex)();
+    (0, initializeCdsIndex)();
   };
 }

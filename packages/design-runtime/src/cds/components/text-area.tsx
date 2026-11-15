@@ -1,61 +1,39 @@
 import type { ForwardComponent, TextAreaProps } from "../../contracts/ui";
 import type * as React from "react";
 /** Restored application module; prepare first, initialize in original order. */
-import { bindRuntimeValue, type RuntimeBindings } from "../../runtime-types";
-export function installCdsComponentsTextArea(
-  runtime: RuntimeBindings,
-): () => void {
-  var reactComponentsTextArea: typeof React;
-  var jsxComponentsTextArea: typeof import("react/jsx-runtime");
-  var TextArea: ForwardComponent<HTMLTextAreaElement, TextAreaProps>;
-  var initializeComponentsTextArea: () => void;
-  bindRuntimeValue(
-    runtime,
-    "reactComponentsTextArea",
-    () => reactComponentsTextArea,
-    (value) => {
-      reactComponentsTextArea = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "jsxComponentsTextArea",
-    () => jsxComponentsTextArea,
-    (value) => {
-      jsxComponentsTextArea = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "TextArea",
-    () => TextArea,
-    (value) => {
-      TextArea = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "initializeComponentsTextArea",
-    () => initializeComponentsTextArea,
-    (value) => {
-      initializeComponentsTextArea = value;
-    },
-  );
+import { ButtonButtonCss_2, initializeButtonButton_2 } from "../button/button";
+import { initializeFieldContext, useFieldInvalid } from "../field/context";
+import { cn, initializeClassNames } from "../theme/class-names";
+import { getSizeAttribute, initializeCdsRoot } from "../theme/root";
+import { initializeNpm__base_ui_react_x7, load_react, load_react_jsx_runtime, npm_Field_qg } from "../../dependencies";
+import { initializeOnce, toModuleNamespace } from "../../module-helpers";
+
+var reactComponentsTextArea: typeof React;
+var jsxComponentsTextArea: typeof import("react/jsx-runtime");
+var TextArea: ForwardComponent<HTMLTextAreaElement, TextAreaProps>;
+var initializeComponentsTextArea: () => void;
+export {
+  initializeComponentsTextArea,
+  jsxComponentsTextArea,
+  reactComponentsTextArea,
+  TextArea,
+};
+export function installCdsComponentsTextArea(): () => void {
   return () => {
-    initializeComponentsTextArea = (0, runtime.initializeOnce)(() => {
+    initializeComponentsTextArea = (0, initializeOnce)(() => {
       "use client";
 
-      (0, runtime.initializeClassNames)();
-      (0, runtime.initializeCdsRoot)();
-      (0, runtime.initializeButtonButton_2)();
-      (0, runtime.initializeFieldContext)();
-      reactComponentsTextArea = (0, runtime.toModuleNamespace)(
-        (0, runtime.load_react)(),
+      (0, initializeClassNames)();
+      (0, initializeCdsRoot)();
+      (0, initializeButtonButton_2)();
+      (0, initializeFieldContext)();
+      reactComponentsTextArea = (0, toModuleNamespace)(
+        (0, load_react)(),
       );
-      jsxComponentsTextArea = (0, runtime.toModuleNamespace)(
-        (0, runtime.load_react_jsx_runtime)(),
+      jsxComponentsTextArea = (0, toModuleNamespace)(
+        (0, load_react_jsx_runtime)(),
       );
-      (0, runtime.initializeNpm__base_ui_react_x7)();
+      (0, initializeNpm__base_ui_react_x7)();
       TextArea = (0, reactComponentsTextArea.forwardRef)<
         HTMLTextAreaElement,
         TextAreaProps
@@ -78,7 +56,7 @@ export function installCdsComponentsTextArea(
           }: TextAreaProps,
           options: React.ForwardedRef<HTMLTextAreaElement>,
         ): React.ReactElement => {
-          let value = (0, runtime.useFieldInvalid)(),
+          let value = (0, useFieldInvalid)(),
             value2 = rows ?? 3,
             value3 = autosize && rows !== undefined,
             value4 = resize === "y" ? "resize-y" : "resize-none",
@@ -96,7 +74,7 @@ export function installCdsComponentsTextArea(
               : style,
             value8 = fullWidth ? "w-full" : "";
           return (
-            <runtime.npm_Field_qg.Control
+            <npm_Field_qg.Control
               id={id}
               aria-describedby={ariaDescribedby}
               disabled={disabled2}
@@ -106,16 +84,16 @@ export function installCdsComponentsTextArea(
                   data-cds={"TextArea"}
                   rows={value2}
                   style={value7}
-                  {...(0, runtime.getSizeAttribute)(size)}
+                  {...(0, getSizeAttribute)(size)}
                   data-invalid={value || undefined}
                   aria-invalid={value || ariaInvalid}
                   {...props}
-                  className={(0, runtime.cn)(
+                  className={(0, cn)(
                     "cds-reset",
                     value8,
                     bare
                       ? "block resize-none border-0 bg-transparent p-0 shadow-none"
-                      : `cds-input font-normal ${runtime.ButtonButtonCss_2} enabled:[&:hover:not(:focus):not([data-invalid])]:shadow-field-hover focus-visible:shadow-focus ${value4}`,
+                      : `cds-input font-normal ${ButtonButtonCss_2} enabled:[&:hover:not(:focus):not([data-invalid])]:shadow-field-hover focus-visible:shadow-focus ${value4}`,
                     "font-sans text-body text-primary placeholder:text-muted outline-none focus-visible:outline-hidden disabled:opacity-disabled",
                     value5,
                     value6,
