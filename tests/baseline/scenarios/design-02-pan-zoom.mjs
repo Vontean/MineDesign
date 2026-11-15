@@ -19,6 +19,7 @@ export default {
 
     // 键盘缩放前先让画布取得焦点（点画布左下的空白处，避开底部工具栏）
     await page.mouse.click(200, 800);
+    await session.settle(); // 焦点切换完成后再按键，否则按键偶尔丢失
     await page.keyboard.press('ControlOrMeta+Minus');
     await session.shot('key-zoom-out');
 
