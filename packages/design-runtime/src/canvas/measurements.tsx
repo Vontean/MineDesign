@@ -3,6 +3,7 @@ import { useUiLocale } from '../ui-locale.ts';
 import {
   type Dynamic,
 } from "../runtime-types";
+import type { ChromeMeasure } from "./frame-payloads";
 import { jsxCanvasNote } from "./note";
 import { initializeCdsIndex } from "../cds/index";
 import { load_react } from "../dependencies";
@@ -22,7 +23,8 @@ var CanvasMeasurementsPattern_3: Dynamic;
 var CanvasMeasurementsConstant_3: Dynamic;
 var CanvasMeasurementsConstant_4: Dynamic;
 var CanvasMeasurementsPattern_4: Dynamic;
-function MeasurementOverlay({ m: m, scale: scale }: Dynamic): Dynamic {
+/** 测距叠层：在画板坐标里画线段与数值标注，线宽和字号按画布缩放反向补偿。 */
+function MeasurementOverlay({ m: m, scale: scale }: { m: ChromeMeasure; scale: number }): Dynamic {
   useUiLocale();
   return (
     <jsxCanvasNote.Fragment>

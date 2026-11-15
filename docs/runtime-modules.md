@@ -81,3 +81,20 @@
 218 个带安装函数的文件，4746 个绑定（3085 个没有其他文件读取）。初始化循环 1 组（ui 的 foundation、interactions、overlays）。全部读取的循环最大 44 个文件，跨 editor、files、ui。不可达文件 1 个（`ui/collaborator-tints.ts`）。
 
 分层：ui → model、documents、host、platform、media → editor → files（组合根在 files）。files → editor 有 108 条边，editor → ui 有 102 条边，方向一致；需要消除的反向边是 ui → files 4 条。
+
+## 领域抽离的做法
+
+注册表移除后，按领域把还原代码改写成有类型、有测试的模块。每个模块按同一流程进行：
+
+1. 选定一个领域的纯计算部分（解析、几何、编码），它的输入输出可以脱离界面运行。
+2. 保留旧文件的副本，写出新实现：导出类型描述 interface，局部变量改为有意义的名称，初始化函数里的常量提到模块顶层。
+3. 写一个临时测试，用随机输入（有效值占多数，夹杂无效值）比较新旧实现的输出，要求逐字相同。通过后删除旧副本和临时测试。
+4. 留下少量说明行为的永久测试。
+5. `npx tsc -p tsconfig.json --noEmit` 在改写的非 JSX 文件上零错误；全项目错误数不增加。
+6. 构建后全部基线场景零差异。
+
+已完成：
+
+| 模块 | interface | 说明 |
+| --- | --- | --- |
+| 画板选择框数据（`canvas/frame-payloads.ts`） | `SelectionChrome`、`ChromeRing`、`ChromeMeasure`、`ChromeGuide`、`ChromePen`、`parseSelectionChromePayload` | 画布扩展 seam。画板内的选择脚本计算元素位置，以画板像素坐标发给画布；选择框、测距、参考线、钢笔路径的叠层只依赖这些类型。新增叠层功能（例如评论卡片）沿用同一通道：选择脚本提供位置，叠层在画板坐标里渲染 |

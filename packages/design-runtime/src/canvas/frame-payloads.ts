@@ -1,474 +1,362 @@
-/** Restored application module; prepare first, initialize in original order. */
-import {
-  type Dynamic,
-} from "../runtime-types";
+/**
+ * 画板页面发给画布的数据：实测尺寸与选择框（selection chrome）。
+ * 选择框由画板内的选择脚本计算，坐标是画板自身的像素；这里校验、裁剪后交给画布叠层渲染。
+ * 叠层功能（选择框、测距、参考线、钢笔路径）都只依赖本文件导出的类型。
+ */
 import { parseObjectClipPath, parseObjectPosition } from "../editor/media/object-crop";
 import { getHiddenPickerTags } from "../editor/picker/hidden-tags";
 import { PlatformFileContentConstant_17, PlatformFileContentLimit_6 } from "../platform/file-content";
 
-var maxSelectionChromeItems: Dynamic;
-var selectionChromeCoordinateOverscan: Dynamic;
-var selectionChromePathPattern: Dynamic;
-var maxSelectionChromePathLength: Dynamic;
-var selectionChromeMinimumScale: Dynamic;
-function normalizeArtboardMeasuredSize(box?: Dynamic): Dynamic {
-  let { w: value, h: value2 }: Dynamic = box ?? {};
+/** 画板内容区的尺寸（画板像素）。 */
+export interface ArtboardBox {
+  w: number;
+  h: number;
+}
+
+export type ObjectFit = "fill" | "contain" | "cover" | "none" | "scale-down";
+
+/** 图片裁剪不可用的原因。 */
+export type ImageCropOff = "unloaded" | "turned" | "auto" | "custom";
+
+/** 可裁剪图片的描述：模板 id、原始尺寸、四边内缩比例与当前显示方式。 */
+export interface ImageCrop {
+  tid: number;
+  w: number;
+  h: number;
+  inset: [number, number, number, number];
+  view: { fit: ObjectFit; pos: unknown; box: unknown };
+  video?: true;
+  abs?: true;
+  autoW?: true;
+  autoH?: true;
+}
+
+export type ImageCropDescriptor = ImageCrop | { off: ImageCropOff };
+
+/** sel 选中、hov 悬停、grip 带控制点的选中框（每个画板至多一个）、busy 生成中的遮罩。 */
+export type ChromeRingKind = "sel" | "hov" | "grip" | "busy";
+
+export interface ChromeRing {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  k: ChromeRingKind;
+  /** 旋转弧度；框被裁剪到画板范围时不保留。 */
+  rot?: number;
+  component?: true;
+  rotatable?: true;
+  group?: true;
+  noResize?: true;
+  noRotate?: "none" | "layout";
+  aspectLock?: true;
+  /** 旋转角度（度，取整）。 */
+  deg?: number;
+  cropOff?: ImageCropOff | "offboard";
+  media?: ImageCrop;
+}
+
+export interface ChromeLine {
+  x1: number;
+  y1: number;
+  x2: number;
+  y2: number;
+}
+
+/** 测距：线段与数值标注。ext 为 1 的线段是延长线。 */
+export interface ChromeMeasure {
+  lines: Array<ChromeLine & { ext?: 1 }>;
+  labels: Array<{ x: number; y: number; text: string; axis: "x" | "y" }>;
+}
+
+export interface ChromeGuide {
+  axis: "x" | "y";
+  pos: number;
+}
+
+/** 钢笔路径：所在盒子、viewBox 尺寸、缩放系数与路径数据。 */
+export interface ChromePen {
+  tid: number;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  vbW: number;
+  vbH: number;
+  kx: number;
+  ky: number;
+  d: string;
+}
+
+export interface SelectionChrome {
+  rings: ChromeRing[];
+  stroke: ChromeLine | null;
+  measure: ChromeMeasure | null;
+  guides: ChromeGuide[] | null;
+  /** 指针悬停在画板本身上。 */
+  artboard: boolean;
+  pen: ChromePen | null;
+}
+
+export interface SelectionChromeOptions {
+  /** 不产生带控制点的框与钢笔路径（只读或演示时）。 */
+  gripless?: boolean;
+  /** 正在裁剪的图片的模板 id；它的框允许超出画板更远。 */
+  cropTid?: number;
+}
+
+/** 裁剪图片时，框可以超出画板的最大距离。 */
+export const maxSelectionChromeItems = 8192;
+/** 选择框坐标允许超出画板边缘的距离。 */
+export const selectionChromeCoordinateOverscan = 256;
+export const selectionChromePathPattern =
+  /^M ?-?\d+(\.\d+)?[ ,]-?\d+(\.\d+)?( ?([ML] ?-?\d+(\.\d+)?[ ,]-?\d+(\.\d+)?|C ?-?\d+(\.\d+)?([ ,]-?\d+(\.\d+)?){5}))+$/;
+export const maxSelectionChromePathLength = 24e3;
+/** 低于这个缩放比例时不显示选择框。 */
+export const selectionChromeMinimumScale = 0.25;
+
+type Loose = Record<string, unknown> | null | undefined;
+
+const finite = (value: unknown): number | null => (typeof value == "number" && Number.isFinite(value) ? value : null);
+
+/** 画板上报的内容尺寸，取整并限制在允许的范围内。 */
+export function normalizeArtboardMeasuredSize(box?: { w?: unknown; h?: unknown } | null): ArtboardBox | null {
+  const { w, h } = box ?? {};
+  if (typeof w != "number" || typeof h != "number" || !Number.isFinite(w) || !Number.isFinite(h)) return null;
+  const clamp = (value: number): number =>
+    Math.min(PlatformFileContentLimit_6, Math.max(PlatformFileContentConstant_17, Math.ceil(value)));
+  return { w: clamp(w), h: clamp(h) };
+}
+
+export function parseImageCropDescriptor(value?: unknown): ImageCropDescriptor | null {
+  const media = value as Loose;
+  if (!media || typeof media != "object") return null;
+  if (media.off === "unloaded" || media.off === "turned" || media.off === "auto") return { off: media.off };
+  const isSize = (input: unknown): input is number => typeof input == "number" && input >= 1 && input <= 1e5;
   if (
-    typeof value != "number" ||
-    typeof value2 != "number" ||
-    !Number.isFinite(value) ||
-    !Number.isFinite(value2)
+    !Number.isSafeInteger(media.tid) ||
+    !isSize(media.w) ||
+    !isSize(media.h) ||
+    media.w / media.h > 20 ||
+    media.h / media.w > 20 ||
+    !Array.isArray(media.inset) ||
+    media.inset.length !== 4
   )
     return null;
-  let callback: Dynamic = (input?: Dynamic): Dynamic =>
-    Math.min(
-      PlatformFileContentLimit_6,
-      Math.max(PlatformFileContentConstant_17, Math.ceil(input)),
-    );
+  const inset = media.inset.map((input: unknown) => (typeof input == "number" && input >= 0 && input < 0.5 ? input : null));
+  if (inset.some(input => input === null)) return null;
+  // 非字符串当作空串；过长的值无法解析
+  const text = (input: unknown): string | null => (typeof input != "string" ? "" : input.length <= 120 ? input : null);
+  const [boxText, posText] = [text(media.box), text(media.pos)];
+  if (boxText === null || posText === null) return { off: "custom" };
+  const [box, pos] = [parseObjectClipPath(boxText), parseObjectPosition(posText)];
+  if (box === undefined || (pos === null && posText !== "")) return { off: "custom" };
+  const fit = text(media.fit) ?? "";
   return {
-    w: callback(value),
-    h: callback(value2),
+    tid: media.tid as number,
+    w: media.w,
+    h: media.h,
+    inset: inset as [number, number, number, number],
+    view: { fit: /^(fill|contain|cover|none|scale-down)$/.test(fit) ? (fit as ObjectFit) : "fill", pos, box },
+    ...(media.video === true ? { video: true as const } : {}),
+    ...(media.abs === true ? { abs: true as const } : {}),
+    ...(media.autoW === true ? { autoW: true as const } : {}),
+    ...(media.autoH === true ? { autoH: true as const } : {}),
   };
 }
-function parseImageCropDescriptor(value?: Dynamic): Dynamic {
-  let value2: Dynamic = value;
-  if (!value2 || typeof value2 != "object") return null;
-  if (
-    value2.off === "unloaded" ||
-    value2.off === "turned" ||
-    value2.off === "auto"
-  )
-    return {
-      off: value2.off,
-    };
-  let callback: Dynamic = (input?: Dynamic): Dynamic =>
-    typeof input == "number" && input >= 1 && input <= 1e5;
-  if (
-    !Number.isSafeInteger(value2.tid) ||
-    !callback(value2.w) ||
-    !callback(value2.h) ||
-    value2.w / value2.h > 20 ||
-    value2.h / value2.w > 20 ||
-    !Array.isArray(value2.inset) ||
-    value2.inset.length !== 4
-  )
-    return null;
-  let value3: Dynamic = value2.inset.map(
-    (input?: Dynamic): Dynamic =>
-      typeof input == "number" && input >= 0 && input < 0.5 ? input : null,
-  );
-  if (value3.some((input?: Dynamic): Dynamic => input === null)) return null;
-  let callback2: Dynamic = (items5?: Dynamic): Dynamic =>
-      typeof items5 != "string" ? "" : items5.length <= 120 ? items5 : null,
-    [items, items2]: Dynamic = [callback2(value2.box), callback2(value2.pos)];
-  if (items === null || items2 === null)
-    return {
-      off: "custom",
-    };
-  let [items3, items4]: Dynamic = [
-    (0, parseObjectClipPath)(items),
-    (0, parseObjectPosition)(items2),
-  ];
-  if (items3 === undefined || (items4 === null && items2 !== ""))
-    return {
-      off: "custom",
-    };
-  let value4: Dynamic = callback2(value2.fit) ?? "",
-    state: Dynamic = {
-      fit: /^(fill|contain|cover|none|scale-down)$/.test(value4)
-        ? value4
-        : "fill",
-      pos: items4,
-      box: items3,
-    };
-  return {
-    tid: value2.tid,
-    w: value2.w,
-    h: value2.h,
-    inset: value3,
-    view: state,
-    ...(value2.video === true
-      ? {
-          video: true,
-        }
-      : {}),
-    ...(value2.abs === true
-      ? {
-          abs: true,
-        }
-      : {}),
-    ...(value2.autoW === true
-      ? {
-          autoW: true,
-        }
-      : {}),
-    ...(value2.autoH === true
-      ? {
-          autoH: true,
-        }
-      : {}),
-  };
+
+/** 画板去掉标题行之后的内容尺寸。 */
+export function artboardContentSizeDescriptor<Component>(
+  box: ArtboardBox | null | undefined,
+  rowHeight: number,
+  component: Component,
+): (ArtboardBox & { component: Component }) | undefined {
+  return box ? { w: box.w, h: box.h - rowHeight, component } : undefined;
 }
-function artboardContentSizeDescriptor(
-  box?: Dynamic,
-  rowHeight?: Dynamic,
-  component?: Dynamic,
-): Dynamic {
-  return box
-    ? {
-        w: box.w,
-        h: box.h - rowHeight,
-        component: component,
-      }
-    : undefined;
-}
-function parseSelectionChromePayload(
-  value?: Dynamic,
-  viewport?: Dynamic,
-  options: Dynamic = {},
-): Dynamic {
-  let callback: Dynamic = (input?: Dynamic): Dynamic =>
-      typeof input == "number" && Number.isFinite(input) ? input : null,
-    value2: Dynamic = selectionChromeCoordinateOverscan,
-    callback2: Dynamic = (input?: Dynamic): Dynamic =>
-      Math.max(-value2, Math.min(viewport.w + value2, input)),
-    callback3: Dynamic = (input?: Dynamic): Dynamic =>
-      Math.max(-value2, Math.min(viewport.h + value2, input)),
-    value3: Dynamic = value,
-    items: Dynamic = [],
-    flag: Dynamic = false;
-  if (Array.isArray(value3.rings)) {
-    let index: Dynamic = 0;
-    for (let value12 of value3.rings.slice(0, 256) as Dynamic) {
-      let value13: Dynamic = callback(value12?.x),
-        value14: Dynamic = callback(value12?.y),
-        value15: Dynamic = callback(value12?.w),
-        value16: Dynamic = callback(value12?.h);
-      if (
-        value13 == null ||
-        value14 == null ||
-        value15 == null ||
-        value16 == null ||
-        value15 <= 0 ||
-        value16 <= 0
-      )
-        continue;
-      let value17: Dynamic =
-        value12.k === "hov"
-          ? "hov"
-          : value12.k === "grip" && !flag && options.gripless !== true
-            ? "grip"
-            : "sel";
-      value17 === "grip" && (flag = true);
-      let value18: Dynamic =
-        value17 === "grip" && options.cropTid !== undefined
-          ? parseImageCropDescriptor(value12.media)
-          : null;
-      value2 =
-        value18 !== null &&
-        "tid" in value18 &&
-        value18.tid === options.cropTid
+
+/**
+ * 校验画板发来的选择框数据。
+ * 无效的条目被丢弃；超出画板范围的框被裁剪到画板加 overscan 的范围内，被裁剪的框不再带控制点与旋转。
+ */
+export function parseSelectionChromePayload(
+  payload: Record<string, any>,
+  viewport: ArtboardBox,
+  options: SelectionChromeOptions = {},
+): SelectionChrome {
+  let overscan = selectionChromeCoordinateOverscan;
+  const clampX = (value: number): number => Math.max(-overscan, Math.min(viewport.w + overscan, value));
+  const clampY = (value: number): number => Math.max(-overscan, Math.min(viewport.h + overscan, value));
+
+  const rings: ChromeRing[] = [];
+  let hasGrip = false;
+  if (Array.isArray(payload.rings)) {
+    let busyCount = 0;
+    for (const source of payload.rings.slice(0, 256)) {
+      const x = finite(source?.x),
+        y = finite(source?.y),
+        w = finite(source?.w),
+        h = finite(source?.h);
+      if (x == null || y == null || w == null || h == null || w <= 0 || h <= 0) continue;
+      const kind: "hov" | "grip" | "sel" =
+        source.k === "hov" ? "hov" : source.k === "grip" && !hasGrip && options.gripless !== true ? "grip" : "sel";
+      if (kind === "grip") hasGrip = true;
+      const cropping = kind === "grip" && options.cropTid !== undefined ? parseImageCropDescriptor(source.media) : null;
+      overscan =
+        cropping !== null && "tid" in cropping && cropping.tid === options.cropTid
           ? maxSelectionChromeItems
           : selectionChromeCoordinateOverscan;
-      let value19: Dynamic = callback(value12.rot),
-        value20: Dynamic =
-          value19 != null && value19 !== 0 && Math.abs(value19) < 7
-            ? value19
-            : 0,
-        value21: Dynamic = Math.abs(Math.cos(value20)),
-        value22: Dynamic = Math.abs(Math.sin(value20)),
-        value23: Dynamic = value15 * value21 + value16 * value22,
-        value24: Dynamic = value15 * value22 + value16 * value21;
-      if (!Number.isFinite(value23 + value24)) continue;
-      let value25: Dynamic = value13 + (value15 - value23) / 2,
-        value26: Dynamic = value14 + (value16 - value24) / 2,
-        value27: Dynamic = callback2(value25),
-        value28: Dynamic = callback3(value26),
-        value29: Dynamic = callback2(value25 + value23),
-        value30: Dynamic = callback3(value26 + value24);
-      if (value29 <= value27 || value30 <= value28) continue;
-      let value31: Dynamic =
-          value27 !== value25 ||
-          value28 !== value26 ||
-          value29 !== value25 + value23 ||
-          value30 !== value26 + value24,
-        value32: Dynamic = value31
-          ? {
-              x: value27,
-              y: value28,
-              w: value29 - value27,
-              h: value30 - value28,
-              k: value17 === "grip" ? "sel" : value17,
-            }
-          : {
-              x: value13,
-              y: value14,
-              w: value15,
-              h: value16,
-              k: value17,
-            };
-      if (value12.k === "busy") {
-        let value33: Dynamic = Math.max(0, value32.x),
-          value34: Dynamic = Math.max(0, value32.y),
-          value35: Dynamic =
-            Math.min(viewport.w, value32.x + value32.w) - value33,
-          value36: Dynamic =
-            Math.min(viewport.h, value32.y + value32.h) - value34;
-        if (
-          (0, getHiddenPickerTags)().length === 0 ||
-          value35 <= 0 ||
-          value36 <= 0 ||
-          ++index > 16
-        )
-          continue;
-        let value37: Dynamic =
-          value33 === value13 &&
-          value34 === value14 &&
-          value35 === value15 &&
-          value36 === value16;
-        items.push(
-          value37 && value20 !== 0
-            ? {
-                x: value13,
-                y: value14,
-                w: value15,
-                h: value16,
-                k: "busy",
-                rot: value20,
-              }
-            : {
-                x: value33,
-                y: value34,
-                w: value35,
-                h: value36,
-                k: "busy",
-              },
-        );
+      const rawRot = finite(source.rot);
+      const rot = rawRot != null && rawRot !== 0 && Math.abs(rawRot) < 7 ? rawRot : 0;
+      // 旋转后的外接矩形
+      const cos = Math.abs(Math.cos(rot)),
+        sin = Math.abs(Math.sin(rot)),
+        boundsW = w * cos + h * sin,
+        boundsH = w * sin + h * cos;
+      if (!Number.isFinite(boundsW + boundsH)) continue;
+      const boundsX = x + (w - boundsW) / 2,
+        boundsY = y + (h - boundsH) / 2,
+        left = clampX(boundsX),
+        top = clampY(boundsY),
+        right = clampX(boundsX + boundsW),
+        bottom = clampY(boundsY + boundsH);
+      if (right <= left || bottom <= top) continue;
+      const clipped = left !== boundsX || top !== boundsY || right !== boundsX + boundsW || bottom !== boundsY + boundsH;
+      const ring: ChromeRing = clipped
+        ? { x: left, y: top, w: right - left, h: bottom - top, k: kind === "grip" ? "sel" : kind }
+        : { x, y, w, h, k: kind };
+      if (source.k === "busy") {
+        // 遮罩只画在画板内，数量有上限
+        const busyX = Math.max(0, ring.x),
+          busyY = Math.max(0, ring.y),
+          busyW = Math.min(viewport.w, ring.x + ring.w) - busyX,
+          busyH = Math.min(viewport.h, ring.y + ring.h) - busyY;
+        if (getHiddenPickerTags().length === 0 || busyW <= 0 || busyH <= 0 || ++busyCount > 16) continue;
+        const whole = busyX === x && busyY === y && busyW === w && busyH === h;
+        rings.push(whole && rot !== 0 ? { x, y, w, h, k: "busy", rot } : { x: busyX, y: busyY, w: busyW, h: busyH, k: "busy" });
         continue;
       }
-      value20 !== 0 && !value31 && (value32.rot = value20);
-      value12.component === true && (value32.component = true);
-      if (value32.k === "grip") {
-        value12.rotatable === true && (value32.rotatable = true);
-        value12.group === true &&
-          ((value32.group = true),
-          value12.noResize === true && (value32.noResize = true),
-          (value12.noRotate === "none" || value12.noRotate === "layout") &&
-            (value32.noRotate = value12.noRotate),
-          value12.aspectLock === true && (value32.aspectLock = true));
-        let value33: Dynamic = callback(value12.deg);
-        value33 != null &&
-          Math.abs(value33) <= 360 &&
-          (value32.deg = Math.round(value33));
+      if (rot !== 0 && !clipped) ring.rot = rot;
+      if (source.component === true) ring.component = true;
+      if (ring.k === "grip") {
+        if (source.rotatable === true) ring.rotatable = true;
+        if (source.group === true) {
+          ring.group = true;
+          if (source.noResize === true) ring.noResize = true;
+          if (source.noRotate === "none" || source.noRotate === "layout") ring.noRotate = source.noRotate;
+          if (source.aspectLock === true) ring.aspectLock = true;
+        }
+        const deg = finite(source.deg);
+        if (deg != null && Math.abs(deg) <= 360) ring.deg = Math.round(deg);
       }
-      if (value12.k === "grip" && value17 === "grip") {
-        let value33: Dynamic = parseImageCropDescriptor(value12.media);
-        value33 && "off" in value33
-          ? (value32.cropOff = value33.off)
-          : value33 && value32.k === "grip"
-            ? (value32.media = value33)
-            : value33 && (value32.cropOff = "offboard");
+      if (source.k === "grip" && kind === "grip") {
+        const media = parseImageCropDescriptor(source.media);
+        if (media && "off" in media) ring.cropOff = media.off;
+        else if (media && ring.k === "grip") ring.media = media;
+        else if (media) ring.cropOff = "offboard";
       }
-      items.push(value32);
+      rings.push(ring);
     }
   }
-  value2 = selectionChromeCoordinateOverscan;
-  let stroke: Dynamic = value3.stroke,
-    value4: Dynamic = callback(stroke?.x1),
-    value5: Dynamic = callback(stroke?.y1),
-    value6: Dynamic = callback(stroke?.x2),
-    value7: Dynamic = callback(stroke?.y2),
-    value8: Dynamic =
-      value4 != null &&
-      value5 != null &&
-      value6 != null &&
-      value7 != null &&
-      callback2(value4) === value4 &&
-      callback3(value5) === value5 &&
-      callback2(value6) === value6 &&
-      callback3(value7) === value7
-        ? {
-            x1: value4,
-            y1: value5,
-            x2: value6,
-            y2: value7,
-          }
-        : null,
-    value9: Dynamic = null,
-    measure: Dynamic = value3.measure;
+  overscan = selectionChromeCoordinateOverscan;
+
+  const strokeSource = payload.stroke;
+  const x1 = finite(strokeSource?.x1),
+    y1 = finite(strokeSource?.y1),
+    x2 = finite(strokeSource?.x2),
+    y2 = finite(strokeSource?.y2);
+  const stroke: ChromeLine | null =
+    x1 != null && y1 != null && x2 != null && y2 != null && clampX(x1) === x1 && clampY(y1) === y1 && clampX(x2) === x2 && clampY(y2) === y2
+      ? { x1, y1, x2, y2 }
+      : null;
+
+  let measure: ChromeMeasure | null = null;
+  const measureSource = payload.measure;
+  if (measureSource && Array.isArray(measureSource.lines) && Array.isArray(measureSource.labels)) {
+    const lines: ChromeMeasure["lines"] = [];
+    for (const line of measureSource.lines.slice(0, 12)) {
+      const lx1 = finite(line?.x1),
+        ly1 = finite(line?.y1),
+        lx2 = finite(line?.x2),
+        ly2 = finite(line?.y2);
+      if (lx1 == null || ly1 == null || lx2 == null || ly2 == null) continue;
+      lines.push({ x1: clampX(lx1), y1: clampY(ly1), x2: clampX(lx2), y2: clampY(ly2), ...(line.ext === 1 ? { ext: 1 as const } : null) });
+    }
+    const labels: ChromeMeasure["labels"] = [];
+    for (const label of measureSource.labels.slice(0, 4)) {
+      const lx = finite(label?.x),
+        ly = finite(label?.y);
+      if (lx == null || ly == null || typeof label.text != "string" || !/^\d{1,6}$/.test(label.text)) continue;
+      labels.push({ x: clampX(lx), y: clampY(ly), text: label.text, axis: label.axis === "y" ? "y" : "x" });
+    }
+    if (lines.length > 0) measure = { lines, labels };
+  }
+
+  let guides: ChromeGuide[] | null = null;
+  if (Array.isArray(payload.guides)) {
+    const seen: Partial<Record<"x" | "y", true>> = {};
+    for (const guide of payload.guides.slice(0, 4)) {
+      const axis = guide?.axis === "x" ? "x" : guide?.axis === "y" ? "y" : null;
+      const pos = finite(guide?.pos);
+      if (axis == null || pos == null || seen[axis] || pos < 0 || pos > (axis === "x" ? viewport.w : viewport.h)) continue;
+      seen[axis] = true;
+      (guides ??= []).push({ axis, pos });
+    }
+  }
+
+  let pen: ChromePen | null = null;
+  const penSource = payload.pen;
   if (
-    measure &&
-    Array.isArray(measure.lines) &&
-    Array.isArray(measure.labels)
-  ) {
-    let items2: Dynamic = [];
-    for (let value12 of measure.lines.slice(0, 12) as Dynamic) {
-      let value13: Dynamic = callback(value12?.x1),
-        value14: Dynamic = callback(value12?.y1),
-        value15: Dynamic = callback(value12?.x2),
-        value16: Dynamic = callback(value12?.y2);
-      value13 == null ||
-        value14 == null ||
-        value15 == null ||
-        value16 == null ||
-        items2.push({
-          x1: callback2(value13),
-          y1: callback3(value14),
-          x2: callback2(value15),
-          y2: callback3(value16),
-          ...(value12.ext === 1
-            ? {
-                ext: 1,
-              }
-            : null),
-        });
-    }
-    let items3: Dynamic = [];
-    for (let value12 of measure.labels.slice(0, 4) as Dynamic) {
-      let value13: Dynamic = callback(value12?.x),
-        value14: Dynamic = callback(value12?.y);
-      value13 == null ||
-        value14 == null ||
-        typeof value12.text != "string" ||
-        !/^\d{1,6}$/.test(value12.text) ||
-        items3.push({
-          x: callback2(value13),
-          y: callback3(value14),
-          text: value12.text,
-          axis: value12.axis === "y" ? "y" : "x",
-        });
-    }
-    items2.length > 0 &&
-      (value9 = {
-        lines: items2,
-        labels: items3,
-      });
-  }
-  let value10: Dynamic = null;
-  if (Array.isArray(value3.guides)) {
-    let state: Dynamic = {};
-    for (let value12 of value3.guides.slice(0, 4) as Dynamic) {
-      let value13: Dynamic =
-          value12?.axis === "x" ? "x" : value12?.axis === "y" ? "y" : null,
-        value14: Dynamic = callback(value12?.pos);
-      value13 == null ||
-        value14 == null ||
-        state[value13] ||
-        value14 < 0 ||
-        value14 > (value13 === "x" ? viewport.w : viewport.h) ||
-        ((state[value13] = true),
-        (value10 ??= []).push({
-          axis: value13,
-          pos: value14,
-        }));
-    }
-  }
-  let value11: Dynamic = null,
-    pen: Dynamic = value3.pen;
-  if (
-    pen &&
+    penSource &&
     options.gripless !== true &&
-    typeof pen.d == "string" &&
-    pen.d.length <= maxSelectionChromePathLength &&
-    selectionChromePathPattern.test(pen.d)
+    typeof penSource.d == "string" &&
+    penSource.d.length <= maxSelectionChromePathLength &&
+    selectionChromePathPattern.test(penSource.d)
   ) {
-    let [
-      items2,
-      items3,
-      items4,
-      items5,
-      items6,
-      items7,
-      items8,
-      items9,
-      items10,
-    ]: Dynamic = [
-      callback(pen.tid),
-      callback(pen.x),
-      callback(pen.y),
-      callback(pen.w),
-      callback(pen.h),
-      callback(pen.vbW),
-      callback(pen.vbH),
-      callback(pen.kx),
-      callback(pen.ky),
+    const [tid, x, y, w, h, vbW, vbH, kx, ky] = [
+      finite(penSource.tid),
+      finite(penSource.x),
+      finite(penSource.y),
+      finite(penSource.w),
+      finite(penSource.h),
+      finite(penSource.vbW),
+      finite(penSource.vbH),
+      finite(penSource.kx),
+      finite(penSource.ky),
     ];
     if (
-      items2 != null &&
-      items2 >= 0 &&
-      items3 != null &&
-      items4 != null &&
-      items5 != null &&
-      items6 != null &&
-      items5 > 0 &&
-      items6 > 0 &&
-      items7 != null &&
-      items8 != null &&
-      items7 > 0 &&
-      items8 > 0 &&
-      items9 != null &&
-      items10 != null &&
-      items9 > 0 &&
-      items10 > 0 &&
-      items9 < 1e3 &&
-      items10 < 1e3 &&
-      callback2(items3) === items3 &&
-      callback3(items4) === items4 &&
-      callback2(items3 + items5) === items3 + items5 &&
-      callback3(items4 + items6) === items4 + items6
+      tid != null &&
+      tid >= 0 &&
+      x != null &&
+      y != null &&
+      w != null &&
+      h != null &&
+      w > 0 &&
+      h > 0 &&
+      vbW != null &&
+      vbH != null &&
+      vbW > 0 &&
+      vbH > 0 &&
+      kx != null &&
+      ky != null &&
+      kx > 0 &&
+      ky > 0 &&
+      kx < 1e3 &&
+      ky < 1e3 &&
+      clampX(x) === x &&
+      clampY(y) === y &&
+      clampX(x + w) === x + w &&
+      clampY(y + h) === y + h
     ) {
-      let [items11, items12]: Dynamic = [items5 / items7, items6 / items8];
-      (pen.d.match(/-?\d+(?:\.\d+)?/g) ?? [])
+      // 路径上的每个点换算到画板坐标后也必须在允许范围内
+      const [scaleX, scaleY] = [w / vbW, h / vbH];
+      const inside = (penSource.d.match(/-?\d+(?:\.\d+)?/g) ?? [])
         .map(Number)
-        .every(
-          (input?: Dynamic, options2?: Dynamic): Dynamic =>
-            options2 % 2 === 0
-              ? callback2(items3 + input * items11) ===
-                items3 + input * items11
-              : callback3(items4 + input * items12) ===
-                items4 + input * items12,
-        ) &&
-        (value11 = {
-          tid: Math.trunc(items2),
-          x: items3,
-          y: items4,
-          w: items5,
-          h: items6,
-          vbW: items7,
-          vbH: items8,
-          kx: items9,
-          ky: items10,
-          d: pen.d,
-        });
+        .every((value: number, index: number) =>
+          index % 2 === 0 ? clampX(x + value * scaleX) === x + value * scaleX : clampY(y + value * scaleY) === y + value * scaleY,
+        );
+      if (inside) pen = { tid: Math.trunc(tid), x, y, w, h, vbW, vbH, kx, ky, d: penSource.d };
     }
   }
-  return {
-    rings: items,
-    stroke: value8,
-    measure: value9,
-    guides: value10,
-    artboard: value3.artboard === true,
-    pen: value11,
-  };
-}
-export {
-  artboardContentSizeDescriptor,
-  maxSelectionChromeItems,
-  maxSelectionChromePathLength,
-  normalizeArtboardMeasuredSize,
-  parseImageCropDescriptor,
-  parseSelectionChromePayload,
-  selectionChromeCoordinateOverscan,
-  selectionChromeMinimumScale,
-  selectionChromePathPattern,
-};
-export function installCanvasFramePayloads(): () => void {
-  return () => {
-    maxSelectionChromeItems = 8192;
-    selectionChromeCoordinateOverscan = 256;
-    selectionChromePathPattern =
-      /^M ?-?\d+(\.\d+)?[ ,]-?\d+(\.\d+)?( ?([ML] ?-?\d+(\.\d+)?[ ,]-?\d+(\.\d+)?|C ?-?\d+(\.\d+)?([ ,]-?\d+(\.\d+)?){5}))+$/;
-    maxSelectionChromePathLength = 24e3;
-    selectionChromeMinimumScale = 0.25;
-  };
+
+  return { rings, stroke, measure, guides, artboard: payload.artboard === true, pen };
 }

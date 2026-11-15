@@ -4,6 +4,7 @@ import { useUiLocale } from '../ui-locale.ts';
 import {
   type Dynamic,
 } from "../runtime-types";
+import type { ArtboardBox, SelectionChrome } from "./frame-payloads";
 import { MeasurementOverlay } from "./measurements";
 import { UploadingOverlay } from "./picture-drop-ghost";
 import { SelectionPoints, SelectionRing, SelectionRing as SelectionRing_r } from "../cds/components/selection-ring";
@@ -33,7 +34,15 @@ function SelectionChromeOverlay({
   onContextMenu: onContextMenu,
   crop: crop,
   board: board,
-}: Dynamic): Dynamic {
+}: {
+  chrome: SelectionChrome;
+  scale: number;
+  interactive?: Dynamic;
+  onGripDown?: Dynamic;
+  onContextMenu?: Dynamic;
+  crop?: Dynamic;
+  board?: (ArtboardBox & { component?: Dynamic }) | null;
+}): Dynamic {
   useUiLocale();
   let stroke: Dynamic = chrome.stroke,
     value: Dynamic = [...chrome.rings].sort(

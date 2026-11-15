@@ -487,7 +487,6 @@ import { installCanvasArtboardErrors } from "./canvas/artboard-errors";
 import { installCanvasContentSnapshots } from "./canvas/content-snapshots";
 import { installCanvasBootScheduler } from "./canvas/boot-scheduler";
 import { installCanvasCompilationCache } from "./canvas/compilation-cache";
-import { installCanvasFramePayloads } from "./canvas/frame-payloads";
 import { installCanvasArtboardFrame } from "./canvas/artboard-frame";
 import { installCanvasLayoutGuides } from "./canvas/layout-guides";
 import { installCommentsAreaDrawing } from "./comments/area-drawing";
@@ -1102,7 +1101,6 @@ export function createDesignRuntime(
     installCanvasContentSnapshots(),
     installCanvasBootScheduler(),
     installCanvasCompilationCache(),
-    installCanvasFramePayloads(),
     installCanvasArtboardFrame(),
     installCanvasLayoutGuides(),
     installCommentsAreaDrawing(),
