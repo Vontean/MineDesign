@@ -1,95 +1,50 @@
 /** Restored application module; prepare first, initialize in original order. */
 import type * as React from "react";
 import type * as C from "../contracts/controls";
-import { bindRuntimeValue, type RuntimeBindings } from "../runtime-types";
-export function installUiSwitch(runtime: RuntimeBindings): () => void {
-  var reactSwitch: typeof React;
-  var jsxSwitch: typeof import("react/jsx-runtime");
-  var SWITCH_TRACK_CLASS: string;
-  var SWITCH_KNOB_CLASS: string;
-  var SWITCH_TRACK_SIZE_CLASS: string;
-  var SWITCH_KNOB_SIZE_CLASS: string;
-  var Switch: C.ForwardComponent<HTMLElement, C.SwitchProps>;
-  function preventRepeatedSwitchEnter(
-    event: import("@base-ui/react/types").BaseUIEvent<
-      React.KeyboardEvent<HTMLSpanElement>
-    >,
-  ) {
-    if (event.repeat && event.key === "Enter") {
-      event.preventDefault();
-    }
+import { baseSwitch, loadJsxNamespace, loadReactNamespace } from "../dependencies";
+import { toModuleNamespace } from "../module-helpers";
+import { DisabledReasonTooltip, initializeTooltip } from "./avatars";
+import { withRepeatedClickSelectionPrevention } from "./disclosure";
+import { cn, initializeClassNames } from "./interactions";
+import { getControlSizeAttributes, initializeCdsRoot } from "./overlays";
+
+var reactSwitch: typeof React;
+var jsxSwitch: typeof import("react/jsx-runtime");
+var SWITCH_TRACK_CLASS: string;
+var SWITCH_KNOB_CLASS: string;
+var SWITCH_TRACK_SIZE_CLASS: string;
+var SWITCH_KNOB_SIZE_CLASS: string;
+var Switch: C.ForwardComponent<HTMLElement, C.SwitchProps>;
+function preventRepeatedSwitchEnter(
+  event: import("@base-ui/react/types").BaseUIEvent<
+    React.KeyboardEvent<HTMLSpanElement>
+  >,
+) {
+  if (event.repeat && event.key === "Enter") {
+    event.preventDefault();
   }
-  bindRuntimeValue(
-    runtime,
-    "reactSwitch",
-    () => reactSwitch,
-    (value) => {
-      reactSwitch = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "jsxSwitch",
-    () => jsxSwitch,
-    (value) => {
-      jsxSwitch = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "SWITCH_TRACK_CLASS",
-    () => SWITCH_TRACK_CLASS,
-    (value) => {
-      SWITCH_TRACK_CLASS = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "SWITCH_KNOB_CLASS",
-    () => SWITCH_KNOB_CLASS,
-    (value) => {
-      SWITCH_KNOB_CLASS = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "SWITCH_TRACK_SIZE_CLASS",
-    () => SWITCH_TRACK_SIZE_CLASS,
-    (value) => {
-      SWITCH_TRACK_SIZE_CLASS = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "SWITCH_KNOB_SIZE_CLASS",
-    () => SWITCH_KNOB_SIZE_CLASS,
-    (value) => {
-      SWITCH_KNOB_SIZE_CLASS = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "preventRepeatedSwitchEnter",
-    () => preventRepeatedSwitchEnter,
-  );
-  bindRuntimeValue(
-    runtime,
-    "Switch",
-    () => Switch,
-    (value) => {
-      Switch = value;
-    },
-  );
+}
+export {
+  jsxSwitch,
+  preventRepeatedSwitchEnter,
+  reactSwitch,
+  Switch,
+  SWITCH_KNOB_CLASS,
+  SWITCH_KNOB_SIZE_CLASS,
+  SWITCH_TRACK_CLASS,
+  SWITCH_TRACK_SIZE_CLASS,
+};
+export function installUiSwitch(): () => void {
   return () => {
-    (0, runtime.initializeClassNames)();
-    (0, runtime.initializeCdsRoot)();
-    (0, runtime.initializeTooltip)();
-    reactSwitch = (0, runtime.toModuleNamespace)(
-      (0, runtime.loadReactNamespace)(),
+    (0, initializeClassNames)();
+    (0, initializeCdsRoot)();
+    (0, initializeTooltip)();
+    reactSwitch = (0, toModuleNamespace)(
+      (0, loadReactNamespace)(),
       1,
     );
-    jsxSwitch = (0, runtime.toModuleNamespace)(
-      (0, runtime.loadJsxNamespace)(),
+    jsxSwitch = (0, toModuleNamespace)(
+      (0, loadJsxNamespace)(),
       1,
     );
     SWITCH_TRACK_CLASS =
@@ -114,12 +69,12 @@ export function installUiSwitch(runtime: RuntimeBindings): () => void {
         options: React.ForwardedRef<HTMLElement>,
       ) => {
         let value = (
-          <runtime.baseSwitch.Root
+          <baseSwitch.Root
             ref={options}
             data-cds={"Switch"}
             {...props}
-            {...(0, runtime.getControlSizeAttributes)(size)}
-            onMouseDown={(0, runtime.withRepeatedClickSelectionPrevention)(
+            {...(0, getControlSizeAttributes)(size)}
+            onMouseDown={(0, withRepeatedClickSelectionPrevention)(
               onMouseDown,
             )}
             onKeyDown={(
@@ -130,27 +85,27 @@ export function installUiSwitch(runtime: RuntimeBindings): () => void {
               preventRepeatedSwitchEnter(input);
               onKeyDown?.(input);
             }}
-            className={(0, runtime.cn)(
+            className={(0, cn)(
               SWITCH_TRACK_CLASS,
               SWITCH_TRACK_SIZE_CLASS,
               className,
             )}
           >
-            <runtime.baseSwitch.Thumb
+            <baseSwitch.Thumb
               className={`${SWITCH_KNOB_CLASS} ${SWITCH_KNOB_SIZE_CLASS}`}
             />
-          </runtime.baseSwitch.Root>
+          </baseSwitch.Root>
         );
         if (disabledReason === undefined) {
           return value;
         }
         return (
-          <runtime.DisabledReasonTooltip
+          <DisabledReasonTooltip
             side={disabledReasonSide}
             reason={props.disabled ? disabledReason : undefined}
           >
             {value}
-          </runtime.DisabledReasonTooltip>
+          </DisabledReasonTooltip>
         );
       },
     );

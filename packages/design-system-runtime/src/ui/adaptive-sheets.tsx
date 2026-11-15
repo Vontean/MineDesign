@@ -7,54 +7,50 @@ import type {
   MobileSheetParts,
 } from "../contracts/overlays";
 /** Restored application module; prepare first, initialize in original order. */
-import { bindRuntimeValue, type RuntimeBindings } from "../runtime-types";
-export function installUiAdaptiveSheets(runtime: RuntimeBindings): () => void {
-  var jsxtK: typeof import("react/jsx-runtime");
-  function AdaptiveSheetPopupHost({
-    kind: kind,
-    children: children,
-  }: AdaptiveSheetPopupHostProps): React.ReactElement {
-    useUiLocale();
-    let value: MobileSheetParts | null = (0, runtime.useSheetImplementation)(),
-      { pending: value2 } = (0, runtime.useSheetState)();
-    if (value !== null) {
-      return (
-        <value.SheetPopupHost>
-          {(input: SheetRenderState): React.ReactNode => children(input, value)}
-        </value.SheetPopupHost>
-      );
-    }
+import { loadJsxNamespace } from "../dependencies";
+import { toModuleNamespace } from "../module-helpers";
+import { concealedSheetHost, defaultSheetHost, initializeAdaptiveSheets, initializePresentationMode, initializeSheetClassNames, initializeSheetStyles, useSheetImplementation, useSheetState } from "./foundation";
+import { initializeOverlayFocus, initializeOverlayStack, initializePopupPointerFocus } from "./overlays";
+import { PendingSheetBackdrop } from "./text-input-overlay";
+
+var jsxtK: typeof import("react/jsx-runtime");
+function AdaptiveSheetPopupHost({
+  kind: kind,
+  children: children,
+}: AdaptiveSheetPopupHostProps): React.ReactElement {
+  useUiLocale();
+  let value: MobileSheetParts | null = (0, useSheetImplementation)(),
+    { pending: value2 } = (0, useSheetState)();
+  if (value !== null) {
     return (
-      <jsxtK.Fragment>
-        {[children(
-            value2 ? runtime.concealedSheetHost : runtime.defaultSheetHost,
-            null,
-          ), value2 ? <runtime.PendingSheetBackdrop kind={kind} /> : null]}
-      </jsxtK.Fragment>
+      <value.SheetPopupHost>
+        {(input: SheetRenderState): React.ReactNode => children(input, value)}
+      </value.SheetPopupHost>
     );
   }
-  bindRuntimeValue(
-    runtime,
-    "jsxtK",
-    () => jsxtK,
-    (value) => {
-      jsxtK = value;
-    },
+  return (
+    <jsxtK.Fragment>
+      {[children(
+          value2 ? concealedSheetHost : defaultSheetHost,
+          null,
+        ), value2 ? <PendingSheetBackdrop kind={kind} /> : null]}
+    </jsxtK.Fragment>
   );
-  bindRuntimeValue(
-    runtime,
-    "AdaptiveSheetPopupHost",
-    () => AdaptiveSheetPopupHost,
-  );
+}
+export {
+  AdaptiveSheetPopupHost,
+  jsxtK,
+};
+export function installUiAdaptiveSheets(): () => void {
   return () => {
-    (0, runtime.initializeSheetStyles)();
-    (0, runtime.initializePresentationMode)();
-    (0, runtime.initializeAdaptiveSheets)();
-    (0, runtime.initializeSheetClassNames)();
-    (0, runtime.initializeAdaptiveSheets)();
-    jsxtK = (0, runtime.toModuleNamespace)((0, runtime.loadJsxNamespace)(), 1);
-    (0, runtime.initializeOverlayFocus)();
-    (0, runtime.initializeOverlayStack)();
-    (0, runtime.initializePopupPointerFocus)();
+    (0, initializeSheetStyles)();
+    (0, initializePresentationMode)();
+    (0, initializeAdaptiveSheets)();
+    (0, initializeSheetClassNames)();
+    (0, initializeAdaptiveSheets)();
+    jsxtK = (0, toModuleNamespace)((0, loadJsxNamespace)(), 1);
+    (0, initializeOverlayFocus)();
+    (0, initializeOverlayStack)();
+    (0, initializePopupPointerFocus)();
   };
 }

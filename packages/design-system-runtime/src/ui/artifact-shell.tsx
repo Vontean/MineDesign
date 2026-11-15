@@ -1,7 +1,6 @@
 import { useUiLocale } from '../ui-locale.ts';
 import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
-import { bindRuntimeValue, type RuntimeBindings } from "../runtime-types";
 import type * as React from "react";
 import type {
   JsxNamespace,
@@ -9,284 +8,282 @@ import type {
   ArtifactShellDocument,
   ArtifactShellUndo,
 } from "../contracts/composition";
-export function installUiArtifactShell(runtime: RuntimeBindings): () => void {
-  var jsxForUiArtifactShell: JsxNamespace;
-  var ArtifactErrorBoundary: React.ComponentClass<
-    React.PropsWithChildren,
-    {
-      error?: string;
-    }
-  >;
-  function LocalStashRecoveryOffer<Seed>({
-    doc: doc,
-    undo: undo,
-  }: {
-    doc: ArtifactShellDocument<Seed>;
-    undo?: ArtifactShellUndo<Seed> | null;
-  }) {
-    useUiLocale();
-    let value = doc.stashOffer(),
-      ref = (runtime.reactForUiDisclosure as typeof import("react")).useRef<{
-        at: number;
-        mins: number;
-      } | null>(null);
-    if (value && ref.current?.at !== value.at) {
-      ref.current = {
-        at: value.at,
-        mins: Math.max(1, Math.round((Date.now() - value.at) / 60000)),
-      };
-    }
-    let value2 = value ? (ref.current?.mins ?? 1) : 0;
-    return (
-      <div data-mc-chrome={""} role={"status"} className={"shrink-0"}>
-        {value ? (<div className={"px-md pt-md"}>
-            <runtime.Callout
-              variant={"warning"}
-              role={"none"}
-              action={
-                <jsxForUiArtifactShell.Fragment>
-                  {[<runtime.Button
-                      variant={"secondary"}
-                      onClick={() => {
-                        let value3 = doc.restoreStash();
-                        if (value3 && undo) {
-                          undo.seed(value3);
-                        }
-                      }}
-                    >
-                      {uiMessage("design-system.artifactShell.restore")}
-                    </runtime.Button>, <runtime.Button
-                      variant={"ghost"}
-                      onClick={() => {
-                        let value3 = !undo || undo.redoDepth() <= 1;
-                        doc.discardStash();
-                        if (undo && value3) {
-                          undo.clear();
-                        }
-                      }}
-                    >
-                      {uiMessage("design-system.artifactShell.discard")}
-                    </runtime.Button>]}
-                </jsxForUiArtifactShell.Fragment>
-              }
-            >
-              {[uiMessage(value2 === 1 ? "design-system.artifactShell.unsavedMinute" : "design-system.artifactShell.unsavedMinutes", { minutes: value2 }), " ", doc.readOnly() ? (uiMessage("design-system.artifactShell.restoreThemHereToKeep")) : (doc.saveMode() === "auto" ? (uiMessage("design-system.artifactShell.restorePutsThemBackOver")) : (uiMessage("design-system.artifactShell.restoreThemHereThenSave")))]}
-            </runtime.Callout>
-          </div>) : (null)}
-      </div>
-    );
+import { loadJsxNamespace } from "../dependencies";
+import { useHostSaveState } from "../host/frame-bridge";
+import { toModuleNamespace } from "../module-helpers";
+import { ArtifactLoadBoundary } from "./artifact-load-boundary";
+import { ArtifactToolbar } from "./artifact-toolbar";
+import { Button } from "./buttons";
+import { AppDesignProvider } from "./commit-text-input";
+import { reactForUiDisclosure } from "./disclosure";
+import { Callout } from "./icons";
+import { PanedLayout } from "./side-panels";
+import { useToastBridge as R_useToastBridge } from "./toasts";
+import { ToolbarTabs } from "./toolbar-tabs";
+import { useUndoKeys } from "./undo-keys";
+
+var jsxForUiArtifactShell: JsxNamespace;
+var ArtifactErrorBoundary: React.ComponentClass<
+  React.PropsWithChildren,
+  {
+    error?: string;
   }
-  function ArtifactShell<Seed>({
-    children: children,
-    doc: doc,
-    undo: undo,
-    toolbarExtras: toolbarExtras,
-    toolbarExtrasEnd: toolbarExtrasEnd,
-    toolbarPinned: toolbarPinned,
-    toolbarAfterUndo: toolbarAfterUndo,
-    toolbarQuietReadOnlyReason: toolbarQuietReadOnlyReason,
-    toolbarLeading: toolbarLeading,
-    toolbarTrailing: toolbarTrailing,
-    toolbarUndoButtons: toolbarUndoButtons,
-    toolbarDensity: toolbarDensity,
-    toolbarTouchTargets: toolbarTouchTargets,
-    alwaysShowExtras: alwaysShowExtras,
-    undoShortcuts = true,
-    tabs: tabs,
-    tab: tab,
-    onTabChange: onTabChange,
-    aboveContent: aboveContent,
-    skeleton: skeleton,
-    skeletonFlush: skeletonFlush,
-    leading: leading,
-    hideToolbar = false,
-    toolbarVariant = "docked",
-  }: ArtifactShellProps<Seed>) {
-    useUiLocale();
-    let [, value] = runtime.reactForUiDisclosure.useState(0),
-      [value2, value3] = runtime.reactForUiDisclosure.useState(doc.saveState());
-    runtime.reactForUiDisclosure.useEffect(() => {
-      let value11 = doc.subscribe(() => value((input: number) => input + 1)),
-        value12 = doc.subscribeSave(value3);
-      value3(doc.saveState());
-      return () => {
-        value11();
-        value12();
-      };
-    }, [doc]);
-    runtime.reactForUiDisclosure.useEffect(() => {
-      let callback2 = (event: KeyboardEvent) => {
-        if (event.defaultPrevented) {
-          return;
-        }
-        if (
-          (event.metaKey || event.ctrlKey) &&
-          !event.altKey &&
-          event.key.toLowerCase() === "s"
-        ) {
-          event.preventDefault();
-          doc.save();
-        }
-      };
-      window.addEventListener("keydown", callback2);
-      return () => window.removeEventListener("keydown", callback2);
-    }, [doc]);
-    (0, runtime.useUndoKeys)(undo, undoShortcuts);
-    let value4 = doc.readOnly(),
-      value5 = doc.title(),
-      value6 = "loadState" in doc || doc.saveMode() === "auto",
-      status = doc.saveState().status,
-      value7 =
-        status === "readonly" &&
-        toolbarQuietReadOnlyReason !== undefined &&
-        doc.saveState().message === toolbarQuietReadOnlyReason;
-    (0, runtime.useHostSaveState)(
-      !value7 && (value6 || status === "readonly") ? status : null,
-      () => void doc.save(),
-    );
-    runtime.reactForUiDisclosure.useEffect(() => {
-      if (value5 !== "") {
-        document.title = value5;
-      }
-    }, [value5]);
-    let value8 = value2.status === "loading" && !value4,
-      callback = (input: React.ReactNode) =>
-        value8 && input != null ? (
-          <fieldset
-            disabled={true}
-            aria-busy={"true"}
-            title={uiMessage("design-system.artifactShell.loadingTheLatestContent")}
-            className={"contents"}
+>;
+function LocalStashRecoveryOffer<Seed>({
+  doc: doc,
+  undo: undo,
+}: {
+  doc: ArtifactShellDocument<Seed>;
+  undo?: ArtifactShellUndo<Seed> | null;
+}) {
+  useUiLocale();
+  let value = doc.stashOffer(),
+    ref = (reactForUiDisclosure as typeof import("react")).useRef<{
+      at: number;
+      mins: number;
+    } | null>(null);
+  if (value && ref.current?.at !== value.at) {
+    ref.current = {
+      at: value.at,
+      mins: Math.max(1, Math.round((Date.now() - value.at) / 60000)),
+    };
+  }
+  let value2 = value ? (ref.current?.mins ?? 1) : 0;
+  return (
+    <div data-mc-chrome={""} role={"status"} className={"shrink-0"}>
+      {value ? (<div className={"px-md pt-md"}>
+          <Callout
+            variant={"warning"}
+            role={"none"}
+            action={
+              <jsxForUiArtifactShell.Fragment>
+                {[<Button
+                    variant={"secondary"}
+                    onClick={() => {
+                      let value3 = doc.restoreStash();
+                      if (value3 && undo) {
+                        undo.seed(value3);
+                      }
+                    }}
+                  >
+                    {uiMessage("design-system.artifactShell.restore")}
+                  </Button>, <Button
+                    variant={"ghost"}
+                    onClick={() => {
+                      let value3 = !undo || undo.redoDepth() <= 1;
+                      doc.discardStash();
+                      if (undo && value3) {
+                        undo.clear();
+                      }
+                    }}
+                  >
+                    {uiMessage("design-system.artifactShell.discard")}
+                  </Button>]}
+              </jsxForUiArtifactShell.Fragment>
+            }
           >
-            {input}
-          </fieldset>
-        ) : (
-          input
-        ),
-      value9 =
-        tabs !== undefined &&
-        tabs.length > 0 &&
-        tab !== undefined &&
-        onTabChange ? (
-          <runtime.ToolbarTabs
-            tabs={tabs}
-            value={tab}
-            onChange={onTabChange}
-            label={uiMessage("design-system.artifactShell.editorMode")}
-          />
-        ) : null,
-      value10 = toolbarVariant === "floating" && value9 === null;
-    return (
-      <runtime.AppDesignProvider>
-        <ArtifactErrorBoundary>
-          {[<runtime.PanedLayout
-              leading={leading}
-              toolbarVariant={value10 ? "floating" : "docked"}
-              toolbar={
-                <jsxForUiArtifactShell.Fragment>
-                  {[hideToolbar ? null : (
-                      <runtime.ArtifactToolbar
-                        title={doc.title()}
-                        saveState={value2}
-                        saveMode={doc.saveMode()}
-                        syncDot={value6}
-                        onSave={() => void doc.save()}
-                        undo={undo}
-                        extrasEnd={
-                          !value4 || alwaysShowExtras
-                            ? callback(toolbarExtrasEnd)
-                            : null
-                        }
-                        pinned={
-                          !value4 || alwaysShowExtras
-                            ? callback(toolbarPinned)
-                            : null
-                        }
-                        afterUndo={toolbarAfterUndo}
-                        {...(toolbarQuietReadOnlyReason !== undefined
-                          ? {
-                              quietReadOnlyReason: toolbarQuietReadOnlyReason,
-                            }
-                          : {})}
-                        leading={toolbarLeading}
-                        trailing={toolbarTrailing}
-                        undoButtons={toolbarUndoButtons}
-                        density={toolbarDensity}
-                        touchTargets={toolbarTouchTargets}
-                        readOnly={value4}
-                        variant={value10 ? "floating" : "docked"}
-                      >
-                        {!value4 || alwaysShowExtras ? (callback(toolbarExtras)) : (null)}
-                      </runtime.ArtifactToolbar>
-                    ), value9]}
-                </jsxForUiArtifactShell.Fragment>
-              }
-            >
-              {[value10 ? (
-                  <div
-                    data-tb-overlay-clear={""}
-                    className={"flex shrink-0 flex-col"}
-                  >
-                    {[<LocalStashRecoveryOffer doc={doc} undo={undo} />, <div
-                        data-tb-clear-above={""}
-                        className={"flex shrink-0 flex-col"}
-                      >
-                        {aboveContent}
-                      </div>]}
-                  </div>
-                ) : (
-                  <jsxForUiArtifactShell.Fragment>
-                    {[<LocalStashRecoveryOffer doc={doc} undo={undo} />, aboveContent]}
-                  </jsxForUiArtifactShell.Fragment>
-                ), <div
-                  data-appifact-content={""}
-                  className={"isolate min-h-0 min-w-0 flex-1 overflow-auto"}
-                  style={{
-                    contain: "paint",
-                  }}
+            {[uiMessage(value2 === 1 ? "design-system.artifactShell.unsavedMinute" : "design-system.artifactShell.unsavedMinutes", { minutes: value2 }), " ", doc.readOnly() ? (uiMessage("design-system.artifactShell.restoreThemHereToKeep")) : (doc.saveMode() === "auto" ? (uiMessage("design-system.artifactShell.restorePutsThemBackOver")) : (uiMessage("design-system.artifactShell.restoreThemHereThenSave")))]}
+          </Callout>
+        </div>) : (null)}
+    </div>
+  );
+}
+function ArtifactShell<Seed>({
+  children: children,
+  doc: doc,
+  undo: undo,
+  toolbarExtras: toolbarExtras,
+  toolbarExtrasEnd: toolbarExtrasEnd,
+  toolbarPinned: toolbarPinned,
+  toolbarAfterUndo: toolbarAfterUndo,
+  toolbarQuietReadOnlyReason: toolbarQuietReadOnlyReason,
+  toolbarLeading: toolbarLeading,
+  toolbarTrailing: toolbarTrailing,
+  toolbarUndoButtons: toolbarUndoButtons,
+  toolbarDensity: toolbarDensity,
+  toolbarTouchTargets: toolbarTouchTargets,
+  alwaysShowExtras: alwaysShowExtras,
+  undoShortcuts = true,
+  tabs: tabs,
+  tab: tab,
+  onTabChange: onTabChange,
+  aboveContent: aboveContent,
+  skeleton: skeleton,
+  skeletonFlush: skeletonFlush,
+  leading: leading,
+  hideToolbar = false,
+  toolbarVariant = "docked",
+}: ArtifactShellProps<Seed>) {
+  useUiLocale();
+  let [, value] = reactForUiDisclosure.useState(0),
+    [value2, value3] = reactForUiDisclosure.useState(doc.saveState());
+  reactForUiDisclosure.useEffect(() => {
+    let value11 = doc.subscribe(() => value((input: number) => input + 1)),
+      value12 = doc.subscribeSave(value3);
+    value3(doc.saveState());
+    return () => {
+      value11();
+      value12();
+    };
+  }, [doc]);
+  reactForUiDisclosure.useEffect(() => {
+    let callback2 = (event: KeyboardEvent) => {
+      if (event.defaultPrevented) {
+        return;
+      }
+      if (
+        (event.metaKey || event.ctrlKey) &&
+        !event.altKey &&
+        event.key.toLowerCase() === "s"
+      ) {
+        event.preventDefault();
+        doc.save();
+      }
+    };
+    window.addEventListener("keydown", callback2);
+    return () => window.removeEventListener("keydown", callback2);
+  }, [doc]);
+  (0, useUndoKeys)(undo, undoShortcuts);
+  let value4 = doc.readOnly(),
+    value5 = doc.title(),
+    value6 = "loadState" in doc || doc.saveMode() === "auto",
+    status = doc.saveState().status,
+    value7 =
+      status === "readonly" &&
+      toolbarQuietReadOnlyReason !== undefined &&
+      doc.saveState().message === toolbarQuietReadOnlyReason;
+  (0, useHostSaveState)(
+    !value7 && (value6 || status === "readonly") ? status : null,
+    () => void doc.save(),
+  );
+  reactForUiDisclosure.useEffect(() => {
+    if (value5 !== "") {
+      document.title = value5;
+    }
+  }, [value5]);
+  let value8 = value2.status === "loading" && !value4,
+    callback = (input: React.ReactNode) =>
+      value8 && input != null ? (
+        <fieldset
+          disabled={true}
+          aria-busy={"true"}
+          title={uiMessage("design-system.artifactShell.loadingTheLatestContent")}
+          className={"contents"}
+        >
+          {input}
+        </fieldset>
+      ) : (
+        input
+      ),
+    value9 =
+      tabs !== undefined &&
+      tabs.length > 0 &&
+      tab !== undefined &&
+      onTabChange ? (
+        <ToolbarTabs
+          tabs={tabs}
+          value={tab}
+          onChange={onTabChange}
+          label={uiMessage("design-system.artifactShell.editorMode")}
+        />
+      ) : null,
+    value10 = toolbarVariant === "floating" && value9 === null;
+  return (
+    <AppDesignProvider>
+      <ArtifactErrorBoundary>
+        {[<PanedLayout
+            leading={leading}
+            toolbarVariant={value10 ? "floating" : "docked"}
+            toolbar={
+              <jsxForUiArtifactShell.Fragment>
+                {[hideToolbar ? null : (
+                    <ArtifactToolbar
+                      title={doc.title()}
+                      saveState={value2}
+                      saveMode={doc.saveMode()}
+                      syncDot={value6}
+                      onSave={() => void doc.save()}
+                      undo={undo}
+                      extrasEnd={
+                        !value4 || alwaysShowExtras
+                          ? callback(toolbarExtrasEnd)
+                          : null
+                      }
+                      pinned={
+                        !value4 || alwaysShowExtras
+                          ? callback(toolbarPinned)
+                          : null
+                      }
+                      afterUndo={toolbarAfterUndo}
+                      {...(toolbarQuietReadOnlyReason !== undefined
+                        ? {
+                            quietReadOnlyReason: toolbarQuietReadOnlyReason,
+                          }
+                        : {})}
+                      leading={toolbarLeading}
+                      trailing={toolbarTrailing}
+                      undoButtons={toolbarUndoButtons}
+                      density={toolbarDensity}
+                      touchTargets={toolbarTouchTargets}
+                      readOnly={value4}
+                      variant={value10 ? "floating" : "docked"}
+                    >
+                      {!value4 || alwaysShowExtras ? (callback(toolbarExtras)) : (null)}
+                    </ArtifactToolbar>
+                  ), value9]}
+              </jsxForUiArtifactShell.Fragment>
+            }
+          >
+            {[value10 ? (
+                <div
+                  data-tb-overlay-clear={""}
+                  className={"flex shrink-0 flex-col"}
                 >
-                  <runtime.ArtifactLoadBoundary
-                    doc={doc}
-                    skeleton={skeleton}
-                    skeletonFlush={skeletonFlush}
-                  >
-                    {children}
-                  </runtime.ArtifactLoadBoundary>
-                </div>]}
-            </runtime.PanedLayout>, <runtime.useToastBridge />]}
-        </ArtifactErrorBoundary>
-      </runtime.AppDesignProvider>
-    );
-  }
-  bindRuntimeValue(
-    runtime,
-    "jsxForUiArtifactShell",
-    () => jsxForUiArtifactShell,
-    (value) => {
-      jsxForUiArtifactShell = value;
-    },
+                  {[<LocalStashRecoveryOffer doc={doc} undo={undo} />, <div
+                      data-tb-clear-above={""}
+                      className={"flex shrink-0 flex-col"}
+                    >
+                      {aboveContent}
+                    </div>]}
+                </div>
+              ) : (
+                <jsxForUiArtifactShell.Fragment>
+                  {[<LocalStashRecoveryOffer doc={doc} undo={undo} />, aboveContent]}
+                </jsxForUiArtifactShell.Fragment>
+              ), <div
+                data-appifact-content={""}
+                className={"isolate min-h-0 min-w-0 flex-1 overflow-auto"}
+                style={{
+                  contain: "paint",
+                }}
+              >
+                <ArtifactLoadBoundary
+                  doc={doc}
+                  skeleton={skeleton}
+                  skeletonFlush={skeletonFlush}
+                >
+                  {children}
+                </ArtifactLoadBoundary>
+              </div>]}
+          </PanedLayout>, <R_useToastBridge />]}
+      </ArtifactErrorBoundary>
+    </AppDesignProvider>
   );
-  bindRuntimeValue(
-    runtime,
-    "ArtifactErrorBoundary",
-    () => ArtifactErrorBoundary,
-    (value) => {
-      ArtifactErrorBoundary = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "LocalStashRecoveryOffer",
-    () => LocalStashRecoveryOffer,
-  );
-  bindRuntimeValue(runtime, "ArtifactShell", () => ArtifactShell);
+}
+export {
+  ArtifactErrorBoundary,
+  ArtifactShell,
+  jsxForUiArtifactShell,
+  LocalStashRecoveryOffer,
+};
+export function installUiArtifactShell(): () => void {
   return () => {
-    jsxForUiArtifactShell = (0, runtime.toModuleNamespace)(
-      (0, runtime.loadJsxNamespace)(),
+    jsxForUiArtifactShell = (0, toModuleNamespace)(
+      (0, loadJsxNamespace)(),
       1,
     );
     ArtifactErrorBoundary = class ArtifactErrorBoundary extends (
-      (runtime.reactForUiDisclosure.Component as typeof React.Component)
+      (reactForUiDisclosure.Component as typeof React.Component)
     )<
       React.PropsWithChildren,
       {

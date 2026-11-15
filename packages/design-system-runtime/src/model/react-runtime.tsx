@@ -1,18 +1,15 @@
 /** Restored application module; prepare first, initialize in original order. */
-import { bindRuntimeValue, type RuntimeBindings } from "../runtime-types";
-export function installModelReactRuntime(runtime: RuntimeBindings): () => void {
-  var DesignSystemReactRuntime: typeof import("react");
-  bindRuntimeValue(
-    runtime,
-    "DesignSystemReactRuntime",
-    () => DesignSystemReactRuntime,
-    (value) => {
-      DesignSystemReactRuntime = value;
-    },
-  );
+import { loadReactNamespace } from "../dependencies";
+import { toModuleNamespace } from "../module-helpers";
+
+var DesignSystemReactRuntime: typeof import("react");
+export {
+  DesignSystemReactRuntime,
+};
+export function installModelReactRuntime(): () => void {
   return () => {
-    DesignSystemReactRuntime = (0, runtime.toModuleNamespace)(
-      (0, runtime.loadReactNamespace)(),
+    DesignSystemReactRuntime = (0, toModuleNamespace)(
+      (0, loadReactNamespace)(),
       1,
     );
   };

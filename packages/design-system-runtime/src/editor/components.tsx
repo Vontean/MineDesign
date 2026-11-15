@@ -5,782 +5,696 @@ import type * as Editor from "../contracts/editor-runtime";
 import type * as Model from "../contracts";
 import type * as Application from "../contracts/application";
 /** Restored application module; prepare first, initialize in original order. */
-import { bindRuntimeValue, type RuntimeBindings } from "../runtime-types";
-export function installEditorComponents(runtime: RuntimeBindings): () => void {
-  var reactComponentsSection: typeof import("react");
-  var DEFAULT_EDITOR_FEATURE_FLAGS: Partial<Record<string, boolean>>;
-  var isEditorFeatureEnabled: (flag: string, queryKey: string) => boolean;
-  var editorFeatureFlags: {
-    componentProps: boolean;
-  };
-  var jsxComponentsSection: typeof import("react/jsx-runtime");
-  var normalizedComponentTitle: (title: string) => string;
-  var DEFAULT_COMPONENT_STAGE_HEIGHT: number;
-  var MAX_COMPONENT_STAGE_HEIGHT: number;
-  var clampComponentStageHeight: (height: number | undefined) => number;
-  var componentStageStyle: (
-    component: Application.EditorComponent,
-  ) => React.CSSProperties;
-  var EMPTY_COMPONENT_PROPS: Model.InferredPropControl[];
-  function hasEditorFlagInLocation(
-    location2: Pick<Location, "search" | "hash"> | undefined,
-    key: string,
-  ): boolean {
-    try {
-      if (location2 === undefined) {
-        return false;
-      }
-      if (new URLSearchParams(location2.search).get(key) === "1") {
-        return true;
-      }
-      return location2.hash.replace(/^#/, "").split(/[&;]/).includes(key);
-    } catch {
+import { loadJsxNamespace, loadReactNamespace } from "../dependencies";
+import { commentTargetProps, UNCOMMENTABLE_PROPS } from "./comment-anchors";
+import { UsageNoteEditor } from "./usage-notes";
+import { coerceControlOption } from "../model/component-inference";
+import { toModuleNamespace } from "../module-helpers";
+import { Button } from "../ui/buttons";
+import { PropertyNumberInput } from "../ui/number-controls";
+import { joinClassNames } from "../ui/property-icons";
+import { PropertyPopup } from "../ui/property-popover";
+import { PropertyRow, PropertySectionHeader } from "../ui/property-row";
+import { Select } from "../ui/select";
+import { Switch } from "../ui/switch";
+import { TextInput } from "../ui/text-input";
+
+var reactComponentsSection: typeof import("react");
+var DEFAULT_EDITOR_FEATURE_FLAGS: Partial<Record<string, boolean>>;
+var isEditorFeatureEnabled: (flag: string, queryKey: string) => boolean;
+var editorFeatureFlags: {
+  componentProps: boolean;
+};
+var jsxComponentsSection: typeof import("react/jsx-runtime");
+var normalizedComponentTitle: (title: string) => string;
+var DEFAULT_COMPONENT_STAGE_HEIGHT: number;
+var MAX_COMPONENT_STAGE_HEIGHT: number;
+var clampComponentStageHeight: (height: number | undefined) => number;
+var componentStageStyle: (
+  component: Application.EditorComponent,
+) => React.CSSProperties;
+var EMPTY_COMPONENT_PROPS: Model.InferredPropControl[];
+function hasEditorFlagInLocation(
+  location2: Pick<Location, "search" | "hash"> | undefined,
+  key: string,
+): boolean {
+  try {
+    if (location2 === undefined) {
       return false;
     }
+    if (new URLSearchParams(location2.search).get(key) === "1") {
+      return true;
+    }
+    return location2.hash.replace(/^#/, "").split(/[&;]/).includes(key);
+  } catch {
+    return false;
   }
-  function hasEditorFlagInParentLocation(key: string): boolean {
-    let value: Location | undefined, value2: Location | undefined;
-    try {
-      value = globalThis.location;
-    } catch {
-      value = undefined;
-    }
-    try {
-      value2 =
-        globalThis.parent !== undefined && globalThis.parent !== globalThis.self
-          ? globalThis.parent.location
-          : undefined;
-    } catch {
-      value2 = undefined;
-    }
-    return (
-      hasEditorFlagInLocation(value, key) ||
-      hasEditorFlagInLocation(value2, key)
-    );
+}
+function hasEditorFlagInParentLocation(key: string): boolean {
+  let value: Location | undefined, value2: Location | undefined;
+  try {
+    value = globalThis.location;
+  } catch {
+    value = undefined;
   }
-  function hasEditorFlagInStorage(key: string): boolean {
-    try {
-      return globalThis.localStorage?.getItem("ds.flags." + key) === "1";
-    } catch {
-      return false;
-    }
+  try {
+    value2 =
+      globalThis.parent !== undefined && globalThis.parent !== globalThis.self
+        ? globalThis.parent.location
+        : undefined;
+  } catch {
+    value2 = undefined;
   }
-  function stripMatchingComponentHeading(
-    markdown: string,
-    name: string,
-  ): string {
-    let value = /^\s*#[ \t]+([^\n]*)\n?/.exec(markdown);
-    if (value === null) {
-      return markdown;
-    }
-    let value2 = normalizedComponentTitle(value[1] ?? ""),
-      value3 = normalizedComponentTitle(name);
-    if (
-      value3 === "" ||
-      (value2 !== value3 && value2 !== value3 + "s" && value2 !== value3 + "es")
-    ) {
-      return markdown;
-    }
-    return markdown.slice(value[0].length);
+  return (
+    hasEditorFlagInLocation(value, key) ||
+    hasEditorFlagInLocation(value2, key)
+  );
+}
+function hasEditorFlagInStorage(key: string): boolean {
+  try {
+    return globalThis.localStorage?.getItem("ds.flags." + key) === "1";
+  } catch {
+    return false;
   }
-  function ensureComponentGuidelinesHeading(
-    markdown: string,
-    name: string,
-    heading: string,
-  ): string {
-    let value = heading.trim() !== "" ? heading.trim() : "# " + name;
-    if (markdown.trim() === "") {
-      return (
-        value +
-        `
-`
-      );
-    }
-    if (stripMatchingComponentHeading(markdown, name) !== markdown) {
-      return markdown;
-    }
+}
+function stripMatchingComponentHeading(
+  markdown: string,
+  name: string,
+): string {
+  let value = /^\s*#[ \t]+([^\n]*)\n?/.exec(markdown);
+  if (value === null) {
+    return markdown;
+  }
+  let value2 = normalizedComponentTitle(value[1] ?? ""),
+    value3 = normalizedComponentTitle(name);
+  if (
+    value3 === "" ||
+    (value2 !== value3 && value2 !== value3 + "s" && value2 !== value3 + "es")
+  ) {
+    return markdown;
+  }
+  return markdown.slice(value[0].length);
+}
+function ensureComponentGuidelinesHeading(
+  markdown: string,
+  name: string,
+  heading: string,
+): string {
+  let value = heading.trim() !== "" ? heading.trim() : "# " + name;
+  if (markdown.trim() === "") {
     return (
       value +
       `
+`
+    );
+  }
+  if (stripMatchingComponentHeading(markdown, name) !== markdown) {
+    return markdown;
+  }
+  return (
+    value +
+    `
 
 ` +
-      markdown
-    );
+    markdown
+  );
+}
+function EmptyComponentPreview({
+  name: name,
+}: {
+  name: string;
+}): React.ReactElement {
+  useUiLocale();
+  return (
+    <p className={"ds-stage-doc ds-pad py-md text-body text-secondary"}>
+      {[uiMessage("design-system.components.noPreviewYetAskThe"), name, uiMessage("design-system.components.previewHtml")]}
+    </p>
+  );
+}
+function ComponentStage({
+  c: c,
+  mode: mode,
+  tweaks: tweaks,
+  renderPreview: renderPreview,
+}: Editor.ComponentStageProps): React.ReactElement {
+  useUiLocale();
+  if (c.previewHtml === undefined) {
+    return <EmptyComponentPreview name={c.name} />;
   }
-  function EmptyComponentPreview({
-    name: name,
-  }: {
-    name: string;
-  }): React.ReactElement {
-    useUiLocale();
-    return (
-      <p className={"ds-stage-doc ds-pad py-md text-body text-secondary"}>
-        {[uiMessage("design-system.components.noPreviewYetAskThe"), name, uiMessage("design-system.components.previewHtml")]}
-      </p>
-    );
-  }
-  function ComponentStage({
-    c: c,
-    mode: mode,
-    tweaks: tweaks,
-    renderPreview: renderPreview,
-  }: Editor.ComponentStageProps): React.ReactElement {
-    useUiLocale();
-    if (c.previewHtml === undefined) {
-      return <EmptyComponentPreview name={c.name} />;
-    }
-    let value = clampComponentStageHeight(c.previewHeight);
-    return (
-      <div
-        className={"ds-comp-preview-box"}
-        style={
-          c.previewWidth === undefined
-            ? {
-                minHeight: value,
-              }
-            : undefined
-        }
-        data-mode={mode}
-        data-tweaked={tweaks !== undefined ? "" : undefined}
-      >
-        {renderPreview(
-          c,
-          {
-            height: value,
-          },
-          mode,
-          tweaks,
-        )}
-      </div>
-    );
-  }
-  function ComponentGuidelines({
-    c: c,
-    edit: edit,
-  }: Editor.ComponentGuidelinesProps): React.ReactElement {
-    useUiLocale();
-    let guidelines = c.guidelines ?? "",
-      value = stripMatchingComponentHeading(guidelines, c.name),
-      value2 = guidelines.slice(0, guidelines.length - value.length),
-      ref = reactComponentsSection.useRef<string | null>(null);
-    return (
-      <runtime.UsageNoteEditor
-        value={value}
-        label={c.name}
-        anchorKey={"comp/" + c.name}
-        size={"doc"}
-        placeholder={uiMessage("design-system.components.usageGuidelinesWhenToUseItDoDonT")}
-        data-testid={"ds-comp-guide-" + c.name}
-        {...(edit !== undefined
+  let value = clampComponentStageHeight(c.previewHeight);
+  return (
+    <div
+      className={"ds-comp-preview-box"}
+      style={
+        c.previewWidth === undefined
           ? {
-              onChange: (input: string): void => {
-                ref.current = input.trim();
-                edit.setGuidelines(
-                  c.name,
-                  ensureComponentGuidelinesHeading(input, c.name, value2),
-                );
-              },
-              onDone: (): void => {
-                if (ref.current === "") {
-                  edit.setGuidelines(c.name, "");
-                }
-                ref.current = null;
-                edit.done();
-              },
+              minHeight: value,
             }
-          : {})}
+          : undefined
+      }
+      data-mode={mode}
+      data-tweaked={tweaks !== undefined ? "" : undefined}
+    >
+      {renderPreview(
+        c,
+        {
+          height: value,
+        },
+        mode,
+        tweaks,
+      )}
+    </div>
+  );
+}
+function ComponentGuidelines({
+  c: c,
+  edit: edit,
+}: Editor.ComponentGuidelinesProps): React.ReactElement {
+  useUiLocale();
+  let guidelines = c.guidelines ?? "",
+    value = stripMatchingComponentHeading(guidelines, c.name),
+    value2 = guidelines.slice(0, guidelines.length - value.length),
+    ref = reactComponentsSection.useRef<string | null>(null);
+  return (
+    <UsageNoteEditor
+      value={value}
+      label={c.name}
+      anchorKey={"comp/" + c.name}
+      size={"doc"}
+      placeholder={uiMessage("design-system.components.usageGuidelinesWhenToUseItDoDonT")}
+      data-testid={"ds-comp-guide-" + c.name}
+      {...(edit !== undefined
+        ? {
+            onChange: (input: string): void => {
+              ref.current = input.trim();
+              edit.setGuidelines(
+                c.name,
+                ensureComponentGuidelinesHeading(input, c.name, value2),
+              );
+            },
+            onDone: (): void => {
+              if (ref.current === "") {
+                edit.setGuidelines(c.name, "");
+              }
+              ref.current = null;
+              edit.done();
+            },
+          }
+        : {})}
+    />
+  );
+}
+function ComponentPropField({
+  spec: spec,
+  value: value,
+  placeholder: placeholder,
+  onChange: onChange,
+}: Editor.ComponentPropFieldProps): React.ReactElement {
+  useUiLocale();
+  let value2: string = "ds-prop-" + spec.name;
+  if (spec.kind === "boolean") {
+    return (
+      <Switch
+        checked={value === true}
+        onCheckedChange={(input: boolean) => onChange(input)}
+        aria-label={spec.name}
       />
     );
   }
-  function ComponentPropField({
-    spec: spec,
-    value: value,
-    placeholder: placeholder,
-    onChange: onChange,
-  }: Editor.ComponentPropFieldProps): React.ReactElement {
-    useUiLocale();
-    let value2: string = "ds-prop-" + spec.name;
-    if (spec.kind === "boolean") {
-      return (
-        <runtime.Switch
-          checked={value === true}
-          onCheckedChange={(input: boolean) => onChange(input)}
-          aria-label={spec.name}
-        />
-      );
-    }
-    if (spec.kind === "enum") {
-      return (
-        <runtime.Select
-          aria-label={spec.name}
-          popupAttrs={runtime.UNCOMMENTABLE_PROPS}
-          items={[
-            {
-              value: "",
-              label: "—",
-            },
-            ...(spec.options ?? []).map((input) => ({
-              value: input,
-              label: input,
-            })),
-          ]}
-          value={value === undefined ? "" : String(value)}
-          onChange={(input: string) =>
-            onChange(
-              input === ""
-                ? undefined
-                : (0, runtime.coerceControlOption)(spec, input),
-            )
-          }
-          data-testid={value2}
-        />
-      );
-    }
-    if (spec.kind === "number") {
-      return (
-        <span data-testid={value2} className={"contents"}>
-          <runtime.PropertyNumberInput
-            aria-label={spec.name}
-            value={typeof value === "number" ? value : undefined}
-            clearable={true}
-            steppers={false}
-            onValue={(input: number | undefined) => onChange(input)}
-          />
-        </span>
-      );
-    }
+  if (spec.kind === "enum") {
     return (
-      <runtime.TextInput
+      <Select
         aria-label={spec.name}
-        value={typeof value === "string" ? value : ""}
-        placeholder={placeholder ?? spec.typeName ?? ("")}
-        onChange={(input: React.ChangeEvent<HTMLInputElement>) =>
+        popupAttrs={UNCOMMENTABLE_PROPS}
+        items={[
+          {
+            value: "",
+            label: "—",
+          },
+          ...(spec.options ?? []).map((input) => ({
+            value: input,
+            label: input,
+          })),
+        ]}
+        value={value === undefined ? "" : String(value)}
+        onChange={(input: string) =>
           onChange(
-            input.currentTarget.value === ""
+            input === ""
               ? undefined
-              : input.currentTarget.value,
+              : (0, coerceControlOption)(spec, input),
           )
         }
         data-testid={value2}
       />
     );
   }
-  function ComponentPropsEditor({
-    c: c,
-    specs: specs,
-    values: values,
-    onChange: onChange,
-    onReset: onReset,
-  }: Editor.ComponentPropsEditorProps): React.ReactElement {
-    useUiLocale();
+  if (spec.kind === "number") {
     return (
-      <div
-        className={
-          "ds-props-pop flex w-[min(18rem,calc(100vw-2rem))] flex-col py-xs [--pp-label-w:6rem]"
-        }
-        role={"group"}
-        aria-label={uiMessage("design-system.components.props2", { value1: String(c.name) })}
-        data-testid={"ds-comp-props-" + c.name}
-        {...(0, runtime.commentTargetProps)("props", c.name)}
-      >
-        {[<runtime.PropertySectionHeader
-            title={<span className={"ds-pop-name"}>{uiMessage("design-system.components.props")}</span>}
-            actions={
-              values !== undefined ? (
-                <runtime.Button
-                  variant={"ghost"}
-                  size={"xs"}
-                  onClick={onReset}
-                  data-testid={"ds-comp-props-reset-" + c.name}
-                >
-                  {uiMessage("design-system.components.reset")}
-                </runtime.Button>
-              ) : undefined
-            }
-          />, specs.length === 0 ? (
-            <p className={"px-lg py-sm text-footnote text-muted"}>
-              {uiMessage("design-system.components.thisComponentDeclaresNoProps")}
-            </p>
-          ) : (
-            <div className={"ds-props-list flex flex-col"}>
-              {specs.map((source) =>
-                (() => {
-                  const _Element = runtime.PropertyRow;
-                  const _elementProps = {
-                    label: source.name,
-                    title: source.typeName ?? source.kind,
-                    labelProps: {
-                      className: "font-mono",
-                    },
-                    className: "ds-prow",
-                    ...(0, runtime.commentTargetProps)(
-                      "prop",
-                      c.name + "/" + source.name,
-                    ),
-                    children: (
-                      <ComponentPropField
-                        spec={source}
-                        value={values?.[source.name] ?? source.default}
-                        {...(source.name === "children"
-                          ? {
-                              placeholder: c.name,
-                            }
-                          : {})}
-                        onChange={(
-                          input: Editor.ComponentPropValue | undefined,
-                        ) => onChange(source.name, input)}
-                      />
-                    ),
-                  };
-                  const _elementKey = source.name;
-                  return <_Element key={_elementKey} {..._elementProps} />;
-                })(),
-              )}
-            </div>
-          )]}
-      </div>
-    );
-  }
-  function ComponentsSection({
-    components: components,
-    mode: mode,
-    renderPreview: renderPreview,
-    propsOf: propsOf,
-    edit: edit,
-    head: head,
-    staticNote: staticNote,
-    staticFiles: staticFiles,
-  }: Editor.ComponentsSectionProps): React.ReactElement | null {
-    useUiLocale();
-    let [value, value2] = reactComponentsSection.useState<string | null>(null),
-      [value3, value4] = reactComponentsSection.useState<
-        Record<string, Editor.ComponentPropValues>
-      >({});
-    if (components.length === 0) {
-      return null;
-    }
-    let callback = (
-        input: string,
-        options: string,
-        context: Editor.ComponentPropValue | undefined,
-      ) =>
-        value4((input2) => {
-          let state = {
-            ...(input2[input] ?? {}),
-          };
-          if (context === undefined) {
-            delete state[options];
-          } else {
-            state[options] = context;
-          }
-          let state2 = {
-            ...input2,
-          };
-          if (Object.keys(state).length === 0) {
-            delete state2[input];
-          } else {
-            state2[input] = state;
-          }
-          return state2;
-        }),
-      callback2 = (input: string) =>
-        value4((input2) => {
-          if (!(input in input2)) {
-            return input2;
-          }
-          let state = {
-            ...input2,
-          };
-          delete state[input];
-          return state;
-        });
-    return (
-      <section
-        className={"ds-components-sec"}
-        aria-label={head?.title ?? (uiMessage("design-system.components.components"))}
-        data-testid={"ds-components-pane"}
-      >
-        {[staticNote !== undefined &&
-          staticNote !== "" &&
-          components.some(
-            (input): boolean => input.previewHtml !== undefined,
-          ) ? (
-            <div
-              className={"ds-pad py-sm text-footnote text-muted"}
-              role={"note"}
-              data-testid={"ds-components-static-note"}
-              {...runtime.UNCOMMENTABLE_PROPS}
-            >
-              {staticFiles !== undefined && staticFiles.length > 0 ? (<details>
-                  {[<summary className={"cursor-pointer"}>
-                      {staticNote}
-                    </summary>, <ul
-                      role={"list"}
-                      className={"mt-xs font-mono break-all"}
-                      data-testid={"ds-components-static-files"}
-                    >
-                      {staticFiles.map((input, options) =>
-                        (() => {
-                          const _Element2 = "li";
-                          const _elementProps2 = {
-                            children: input,
-                          };
-                          const _elementKey2 = options;
-                          return (
-                            <_Element2 key={_elementKey2} {..._elementProps2} />
-                          );
-                        })(),
-                      )}
-                    </ul>]}
-                </details>) : (staticNote)}
-            </div>
-          ) : null, <div
-            className={"ds-comptable"}
-            role={"table"}
-            aria-label={uiMessage("design-system.components.components")}
-            data-testid={"ds-components"}
-          >
-            {[<div
-                className={"ds-cmrow ds-chead text-caption text-muted"}
-                role={"row"}
-                {...runtime.UNCOMMENTABLE_PROPS}
-              >
-                {[<span role={"columnheader"}>{uiMessage("design-system.components.name")}</span>, <span role={"columnheader"}>{uiMessage("design-system.components.preview")}</span>, <span className={"ds-cgutter"} aria-hidden={"true"} />]}
-              </div>, components.map((input) => {
-                let componentProps = editorFeatureFlags.componentProps,
-                  value5 = componentProps
-                    ? (propsOf?.(input) ?? EMPTY_COMPONENT_PROPS)
-                    : EMPTY_COMPONENT_PROPS,
-                  value6 = componentProps ? value3[input.name] : undefined,
-                  value7: Editor.ComponentPropValues | undefined =
-                    value6 === undefined
-                      ? undefined
-                      : Object.fromEntries([
-                          ...value5.flatMap((input2) =>
-                            input2.default !== undefined
-                              ? [[input2.name, input2.default]]
-                              : [],
-                          ),
-                          ...(value5.some(
-                            (input2): boolean => input2.name === "children",
-                          )
-                            ? [["children", input.name]]
-                            : []),
-                          ...Object.entries(value6),
-                        ]);
-                return (() => {
-                  const _Element3 = "div";
-                  const _elementProps3 = {
-                    className: "ds-cmrow ds-tokrow ds-comprow group/row",
-                    role: "row",
-                    "data-testid": "ds-comp-" + input.name,
-                    ...(0, runtime.commentTargetProps)("comp", input.name),
-                    children: [
-                      <span
-                        className={"ds-cmname flex min-w-0 flex-col gap-0.5"}
-                        role={"rowheader"}
-                      >
-                        {[<span className={"flex min-w-0 items-center gap-xs"}>
-                            {[<span
-                                className={"ds-comprow-name min-w-0 truncate"}
-                                data-testid={"ds-comp-name-" + input.name}
-                              >
-                                {input.name}
-                              </span>, componentProps ? (
-                                <span
-                                  className={
-                                    "ds-cact-anchor relative inline-flex"
-                                  }
-                                  {...runtime.UNCOMMENTABLE_PROPS}
-                                >
-                                  {[<runtime.Button
-                                      variant={"ghost"}
-                                      size={"sm"}
-                                      iconOnly={true}
-                                      icon={"Filter"}
-                                      className={(0, runtime.joinClassNames)(
-                                        "ds-cact",
-                                        value6 !== undefined &&
-                                          "ds-cact-on text-accent",
-                                      )}
-                                      pressed={value === input.name}
-                                      aria-label={("Props: ") + (input.name)}
-                                      tooltip={uiMessage("design-system.components.props")}
-                                      aria-expanded={value === input.name}
-                                      onClick={(
-                                        input2: React.MouseEvent<HTMLButtonElement>,
-                                      ): void => {
-                                        input2.stopPropagation();
-                                        value2(
-                                          value !== input.name
-                                            ? input.name
-                                            : null,
-                                        );
-                                      }}
-                                      data-testid={
-                                        "ds-comp-props-btn-" + input.name
-                                      }
-                                    />, <runtime.PropertyPopup
-                                      open={value === input.name}
-                                      onClose={() => value2(null)}
-                                      align={"left"}
-                                      padding={"none"}
-                                      aria-label={("Props: ") + (input.name)}
-                                    >
-                                      {value === input.name ? (<ComponentPropsEditor
-                                          c={input}
-                                          specs={value5}
-                                          values={value6}
-                                          onChange={(
-                                            input2: string,
-                                            options:
-                                              | Editor.ComponentPropValue
-                                              | undefined,
-                                          ) =>
-                                            callback(
-                                              input.name,
-                                              input2,
-                                              options,
-                                            )
-                                          }
-                                          onReset={() => callback2(input.name)}
-                                        />) : (null)}
-                                    </runtime.PropertyPopup>]}
-                                </span>
-                              ) : null]}
-                          </span>, input.floor === true ? (
-                            <span
-                              className={
-                                "ds-comp-floor w-fit text-caption text-muted"
-                              }
-                              data-floor={""}
-                              title={
-                                uiMessage("design-system.components.aGeneratedFloorCardTheRepositoryHasNoStoryOrDocsExampleForThisComponent")
-                              }
-                            >
-                              {uiMessage("design-system.components.noExample")}
-                            </span>
-                          ) : null]}
-                      </span>,
-                      <span className={"ds-cmprev min-w-0"} role={"cell"}>
-                        <StickyComponentNote
-                          reserve={
-                            input.previewHtml !== undefined
-                              ? componentStageStyle(input)
-                              : undefined
-                          }
-                        >
-                          <ComponentStage
-                            c={input}
-                            mode={mode}
-                            tweaks={value7}
-                            renderPreview={renderPreview}
-                          />
-                        </StickyComponentNote>
-                      </span>,
-                      <span
-                        className={
-                          "ds-cacts ds-cgutter relative flex items-start justify-center"
-                        }
-                        role={"cell"}
-                        {...runtime.UNCOMMENTABLE_PROPS}
-                      >
-                        <ComponentGuidelines
-                          c={input}
-                          {...(edit !== undefined
-                            ? {
-                                edit: edit,
-                              }
-                            : {})}
-                        />
-                      </span>,
-                    ],
-                  };
-                  const _elementKey3 = input.name;
-                  return <_Element3 key={_elementKey3} {..._elementProps3} />;
-                })();
-              })]}
-          </div>]}
-      </section>
-    );
-  }
-  function StickyComponentNote({
-    children: children,
-    reserve: reserve,
-  }: {
-    children: React.ReactNode;
-    reserve?: React.CSSProperties;
-  }): React.ReactElement {
-    useUiLocale();
-    let ref = reactComponentsSection.useRef<HTMLSpanElement | null>(null),
-      [value, value2] = reactComponentsSection.useState(false);
-    reactComponentsSection.useLayoutEffect(() => {
-      if (value) {
-        return;
-      }
-      let current = ref.current;
-      if (current === null) {
-        return;
-      }
-      if (
-        typeof IntersectionObserver === "undefined" ||
-        current.getBoundingClientRect().top < (window.innerHeight || 800) + 400
-      ) {
-        value2(true);
-        return;
-      }
-      let value3 = new IntersectionObserver(
-        (input: IntersectionObserverEntry[]): void => {
-          if (input.some((input2) => input2.isIntersecting)) {
-            value2(true);
-            value3.disconnect();
-          }
-        },
-        {
-          root: current.closest(".ds-main"),
-          rootMargin: "400px 0px",
-        },
-      );
-      value3.observe(current);
-      return () => value3.disconnect();
-    }, [value]);
-    return (
-      <span ref={ref} className={"ds-cmstage block"}>
-        {value ? (children) : (<span
-            className={"ds-cmstage-ph block"}
-            style={reserve}
-            aria-hidden={"true"}
-          />)}
+      <span data-testid={value2} className={"contents"}>
+        <PropertyNumberInput
+          aria-label={spec.name}
+          value={typeof value === "number" ? value : undefined}
+          clearable={true}
+          steppers={false}
+          onValue={(input: number | undefined) => onChange(input)}
+        />
       </span>
     );
   }
-  bindRuntimeValue(
-    runtime,
-    "reactComponentsSection",
-    () => reactComponentsSection,
-    (value) => {
-      reactComponentsSection = value;
-    },
+  return (
+    <TextInput
+      aria-label={spec.name}
+      value={typeof value === "string" ? value : ""}
+      placeholder={placeholder ?? spec.typeName ?? ("")}
+      onChange={(input: React.ChangeEvent<HTMLInputElement>) =>
+        onChange(
+          input.currentTarget.value === ""
+            ? undefined
+            : input.currentTarget.value,
+        )
+      }
+      data-testid={value2}
+    />
   );
-  bindRuntimeValue(
-    runtime,
-    "DEFAULT_EDITOR_FEATURE_FLAGS",
-    () => DEFAULT_EDITOR_FEATURE_FLAGS,
-    (value) => {
-      DEFAULT_EDITOR_FEATURE_FLAGS = value;
-    },
+}
+function ComponentPropsEditor({
+  c: c,
+  specs: specs,
+  values: values,
+  onChange: onChange,
+  onReset: onReset,
+}: Editor.ComponentPropsEditorProps): React.ReactElement {
+  useUiLocale();
+  return (
+    <div
+      className={
+        "ds-props-pop flex w-[min(18rem,calc(100vw-2rem))] flex-col py-xs [--pp-label-w:6rem]"
+      }
+      role={"group"}
+      aria-label={uiMessage("design-system.components.props2", { value1: String(c.name) })}
+      data-testid={"ds-comp-props-" + c.name}
+      {...(0, commentTargetProps)("props", c.name)}
+    >
+      {[<PropertySectionHeader
+          title={<span className={"ds-pop-name"}>{uiMessage("design-system.components.props")}</span>}
+          actions={
+            values !== undefined ? (
+              <Button
+                variant={"ghost"}
+                size={"xs"}
+                onClick={onReset}
+                data-testid={"ds-comp-props-reset-" + c.name}
+              >
+                {uiMessage("design-system.components.reset")}
+              </Button>
+            ) : undefined
+          }
+        />, specs.length === 0 ? (
+          <p className={"px-lg py-sm text-footnote text-muted"}>
+            {uiMessage("design-system.components.thisComponentDeclaresNoProps")}
+          </p>
+        ) : (
+          <div className={"ds-props-list flex flex-col"}>
+            {specs.map((source) =>
+              (() => {
+                const _Element = PropertyRow;
+                const _elementProps = {
+                  label: source.name,
+                  title: source.typeName ?? source.kind,
+                  labelProps: {
+                    className: "font-mono",
+                  },
+                  className: "ds-prow",
+                  ...(0, commentTargetProps)(
+                    "prop",
+                    c.name + "/" + source.name,
+                  ),
+                  children: (
+                    <ComponentPropField
+                      spec={source}
+                      value={values?.[source.name] ?? source.default}
+                      {...(source.name === "children"
+                        ? {
+                            placeholder: c.name,
+                          }
+                        : {})}
+                      onChange={(
+                        input: Editor.ComponentPropValue | undefined,
+                      ) => onChange(source.name, input)}
+                    />
+                  ),
+                };
+                const _elementKey = source.name;
+                return <_Element key={_elementKey} {..._elementProps} />;
+              })(),
+            )}
+          </div>
+        )]}
+    </div>
   );
-  bindRuntimeValue(
-    runtime,
-    "hasEditorFlagInLocation",
-    () => hasEditorFlagInLocation,
+}
+function ComponentsSection({
+  components: components,
+  mode: mode,
+  renderPreview: renderPreview,
+  propsOf: propsOf,
+  edit: edit,
+  head: head,
+  staticNote: staticNote,
+  staticFiles: staticFiles,
+}: Editor.ComponentsSectionProps): React.ReactElement | null {
+  useUiLocale();
+  let [value, value2] = reactComponentsSection.useState<string | null>(null),
+    [value3, value4] = reactComponentsSection.useState<
+      Record<string, Editor.ComponentPropValues>
+    >({});
+  if (components.length === 0) {
+    return null;
+  }
+  let callback = (
+      input: string,
+      options: string,
+      context: Editor.ComponentPropValue | undefined,
+    ) =>
+      value4((input2) => {
+        let state = {
+          ...(input2[input] ?? {}),
+        };
+        if (context === undefined) {
+          delete state[options];
+        } else {
+          state[options] = context;
+        }
+        let state2 = {
+          ...input2,
+        };
+        if (Object.keys(state).length === 0) {
+          delete state2[input];
+        } else {
+          state2[input] = state;
+        }
+        return state2;
+      }),
+    callback2 = (input: string) =>
+      value4((input2) => {
+        if (!(input in input2)) {
+          return input2;
+        }
+        let state = {
+          ...input2,
+        };
+        delete state[input];
+        return state;
+      });
+  return (
+    <section
+      className={"ds-components-sec"}
+      aria-label={head?.title ?? (uiMessage("design-system.components.components"))}
+      data-testid={"ds-components-pane"}
+    >
+      {[staticNote !== undefined &&
+        staticNote !== "" &&
+        components.some(
+          (input): boolean => input.previewHtml !== undefined,
+        ) ? (
+          <div
+            className={"ds-pad py-sm text-footnote text-muted"}
+            role={"note"}
+            data-testid={"ds-components-static-note"}
+            {...UNCOMMENTABLE_PROPS}
+          >
+            {staticFiles !== undefined && staticFiles.length > 0 ? (<details>
+                {[<summary className={"cursor-pointer"}>
+                    {staticNote}
+                  </summary>, <ul
+                    role={"list"}
+                    className={"mt-xs font-mono break-all"}
+                    data-testid={"ds-components-static-files"}
+                  >
+                    {staticFiles.map((input, options) =>
+                      (() => {
+                        const _Element2 = "li";
+                        const _elementProps2 = {
+                          children: input,
+                        };
+                        const _elementKey2 = options;
+                        return (
+                          <_Element2 key={_elementKey2} {..._elementProps2} />
+                        );
+                      })(),
+                    )}
+                  </ul>]}
+              </details>) : (staticNote)}
+          </div>
+        ) : null, <div
+          className={"ds-comptable"}
+          role={"table"}
+          aria-label={uiMessage("design-system.components.components")}
+          data-testid={"ds-components"}
+        >
+          {[<div
+              className={"ds-cmrow ds-chead text-caption text-muted"}
+              role={"row"}
+              {...UNCOMMENTABLE_PROPS}
+            >
+              {[<span role={"columnheader"}>{uiMessage("design-system.components.name")}</span>, <span role={"columnheader"}>{uiMessage("design-system.components.preview")}</span>, <span className={"ds-cgutter"} aria-hidden={"true"} />]}
+            </div>, components.map((input) => {
+              let componentProps = editorFeatureFlags.componentProps,
+                value5 = componentProps
+                  ? (propsOf?.(input) ?? EMPTY_COMPONENT_PROPS)
+                  : EMPTY_COMPONENT_PROPS,
+                value6 = componentProps ? value3[input.name] : undefined,
+                value7: Editor.ComponentPropValues | undefined =
+                  value6 === undefined
+                    ? undefined
+                    : Object.fromEntries([
+                        ...value5.flatMap((input2) =>
+                          input2.default !== undefined
+                            ? [[input2.name, input2.default]]
+                            : [],
+                        ),
+                        ...(value5.some(
+                          (input2): boolean => input2.name === "children",
+                        )
+                          ? [["children", input.name]]
+                          : []),
+                        ...Object.entries(value6),
+                      ]);
+              return (() => {
+                const _Element3 = "div";
+                const _elementProps3 = {
+                  className: "ds-cmrow ds-tokrow ds-comprow group/row",
+                  role: "row",
+                  "data-testid": "ds-comp-" + input.name,
+                  ...(0, commentTargetProps)("comp", input.name),
+                  children: [
+                    <span
+                      className={"ds-cmname flex min-w-0 flex-col gap-0.5"}
+                      role={"rowheader"}
+                    >
+                      {[<span className={"flex min-w-0 items-center gap-xs"}>
+                          {[<span
+                              className={"ds-comprow-name min-w-0 truncate"}
+                              data-testid={"ds-comp-name-" + input.name}
+                            >
+                              {input.name}
+                            </span>, componentProps ? (
+                              <span
+                                className={
+                                  "ds-cact-anchor relative inline-flex"
+                                }
+                                {...UNCOMMENTABLE_PROPS}
+                              >
+                                {[<Button
+                                    variant={"ghost"}
+                                    size={"sm"}
+                                    iconOnly={true}
+                                    icon={"Filter"}
+                                    className={(0, joinClassNames)(
+                                      "ds-cact",
+                                      value6 !== undefined &&
+                                        "ds-cact-on text-accent",
+                                    )}
+                                    pressed={value === input.name}
+                                    aria-label={("Props: ") + (input.name)}
+                                    tooltip={uiMessage("design-system.components.props")}
+                                    aria-expanded={value === input.name}
+                                    onClick={(
+                                      input2: React.MouseEvent<HTMLButtonElement>,
+                                    ): void => {
+                                      input2.stopPropagation();
+                                      value2(
+                                        value !== input.name
+                                          ? input.name
+                                          : null,
+                                      );
+                                    }}
+                                    data-testid={
+                                      "ds-comp-props-btn-" + input.name
+                                    }
+                                  />, <PropertyPopup
+                                    open={value === input.name}
+                                    onClose={() => value2(null)}
+                                    align={"left"}
+                                    padding={"none"}
+                                    aria-label={("Props: ") + (input.name)}
+                                  >
+                                    {value === input.name ? (<ComponentPropsEditor
+                                        c={input}
+                                        specs={value5}
+                                        values={value6}
+                                        onChange={(
+                                          input2: string,
+                                          options:
+                                            | Editor.ComponentPropValue
+                                            | undefined,
+                                        ) =>
+                                          callback(
+                                            input.name,
+                                            input2,
+                                            options,
+                                          )
+                                        }
+                                        onReset={() => callback2(input.name)}
+                                      />) : (null)}
+                                  </PropertyPopup>]}
+                              </span>
+                            ) : null]}
+                        </span>, input.floor === true ? (
+                          <span
+                            className={
+                              "ds-comp-floor w-fit text-caption text-muted"
+                            }
+                            data-floor={""}
+                            title={
+                              uiMessage("design-system.components.aGeneratedFloorCardTheRepositoryHasNoStoryOrDocsExampleForThisComponent")
+                            }
+                          >
+                            {uiMessage("design-system.components.noExample")}
+                          </span>
+                        ) : null]}
+                    </span>,
+                    <span className={"ds-cmprev min-w-0"} role={"cell"}>
+                      <StickyComponentNote
+                        reserve={
+                          input.previewHtml !== undefined
+                            ? componentStageStyle(input)
+                            : undefined
+                        }
+                      >
+                        <ComponentStage
+                          c={input}
+                          mode={mode}
+                          tweaks={value7}
+                          renderPreview={renderPreview}
+                        />
+                      </StickyComponentNote>
+                    </span>,
+                    <span
+                      className={
+                        "ds-cacts ds-cgutter relative flex items-start justify-center"
+                      }
+                      role={"cell"}
+                      {...UNCOMMENTABLE_PROPS}
+                    >
+                      <ComponentGuidelines
+                        c={input}
+                        {...(edit !== undefined
+                          ? {
+                              edit: edit,
+                            }
+                          : {})}
+                      />
+                    </span>,
+                  ],
+                };
+                const _elementKey3 = input.name;
+                return <_Element3 key={_elementKey3} {..._elementProps3} />;
+              })();
+            })]}
+        </div>]}
+    </section>
   );
-  bindRuntimeValue(
-    runtime,
-    "hasEditorFlagInParentLocation",
-    () => hasEditorFlagInParentLocation,
+}
+function StickyComponentNote({
+  children: children,
+  reserve: reserve,
+}: {
+  children: React.ReactNode;
+  reserve?: React.CSSProperties;
+}): React.ReactElement {
+  useUiLocale();
+  let ref = reactComponentsSection.useRef<HTMLSpanElement | null>(null),
+    [value, value2] = reactComponentsSection.useState(false);
+  reactComponentsSection.useLayoutEffect(() => {
+    if (value) {
+      return;
+    }
+    let current = ref.current;
+    if (current === null) {
+      return;
+    }
+    if (
+      typeof IntersectionObserver === "undefined" ||
+      current.getBoundingClientRect().top < (window.innerHeight || 800) + 400
+    ) {
+      value2(true);
+      return;
+    }
+    let value3 = new IntersectionObserver(
+      (input: IntersectionObserverEntry[]): void => {
+        if (input.some((input2) => input2.isIntersecting)) {
+          value2(true);
+          value3.disconnect();
+        }
+      },
+      {
+        root: current.closest(".ds-main"),
+        rootMargin: "400px 0px",
+      },
+    );
+    value3.observe(current);
+    return () => value3.disconnect();
+  }, [value]);
+  return (
+    <span ref={ref} className={"ds-cmstage block"}>
+      {value ? (children) : (<span
+          className={"ds-cmstage-ph block"}
+          style={reserve}
+          aria-hidden={"true"}
+        />)}
+    </span>
   );
-  bindRuntimeValue(
-    runtime,
-    "hasEditorFlagInStorage",
-    () => hasEditorFlagInStorage,
-  );
-  bindRuntimeValue(
-    runtime,
-    "isEditorFeatureEnabled",
-    () => isEditorFeatureEnabled,
-    (value) => {
-      isEditorFeatureEnabled = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "editorFeatureFlags",
-    () => editorFeatureFlags,
-    (value) => {
-      editorFeatureFlags = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "jsxComponentsSection",
-    () => jsxComponentsSection,
-    (value) => {
-      jsxComponentsSection = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "normalizedComponentTitle",
-    () => normalizedComponentTitle,
-    (value) => {
-      normalizedComponentTitle = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "stripMatchingComponentHeading",
-    () => stripMatchingComponentHeading,
-  );
-  bindRuntimeValue(
-    runtime,
-    "ensureComponentGuidelinesHeading",
-    () => ensureComponentGuidelinesHeading,
-  );
-  bindRuntimeValue(
-    runtime,
-    "DEFAULT_COMPONENT_STAGE_HEIGHT",
-    () => DEFAULT_COMPONENT_STAGE_HEIGHT,
-    (value) => {
-      DEFAULT_COMPONENT_STAGE_HEIGHT = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "MAX_COMPONENT_STAGE_HEIGHT",
-    () => MAX_COMPONENT_STAGE_HEIGHT,
-    (value) => {
-      MAX_COMPONENT_STAGE_HEIGHT = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "clampComponentStageHeight",
-    () => clampComponentStageHeight,
-    (value) => {
-      clampComponentStageHeight = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "componentStageStyle",
-    () => componentStageStyle,
-    (value) => {
-      componentStageStyle = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "EmptyComponentPreview",
-    () => EmptyComponentPreview,
-  );
-  bindRuntimeValue(runtime, "ComponentStage", () => ComponentStage);
-  bindRuntimeValue(runtime, "ComponentGuidelines", () => ComponentGuidelines);
-  bindRuntimeValue(runtime, "ComponentPropField", () => ComponentPropField);
-  bindRuntimeValue(runtime, "ComponentPropsEditor", () => ComponentPropsEditor);
-  bindRuntimeValue(
-    runtime,
-    "EMPTY_COMPONENT_PROPS",
-    () => EMPTY_COMPONENT_PROPS,
-    (value) => {
-      EMPTY_COMPONENT_PROPS = value;
-    },
-  );
-  bindRuntimeValue(runtime, "ComponentsSection", () => ComponentsSection);
-  bindRuntimeValue(runtime, "StickyComponentNote", () => StickyComponentNote);
+}
+export {
+  clampComponentStageHeight,
+  ComponentGuidelines,
+  ComponentPropField,
+  ComponentPropsEditor,
+  ComponentsSection,
+  ComponentStage,
+  componentStageStyle,
+  DEFAULT_COMPONENT_STAGE_HEIGHT,
+  DEFAULT_EDITOR_FEATURE_FLAGS,
+  editorFeatureFlags,
+  EMPTY_COMPONENT_PROPS,
+  EmptyComponentPreview,
+  ensureComponentGuidelinesHeading,
+  hasEditorFlagInLocation,
+  hasEditorFlagInParentLocation,
+  hasEditorFlagInStorage,
+  isEditorFeatureEnabled,
+  jsxComponentsSection,
+  MAX_COMPONENT_STAGE_HEIGHT,
+  normalizedComponentTitle,
+  reactComponentsSection,
+  StickyComponentNote,
+  stripMatchingComponentHeading,
+};
+export function installEditorComponents(): () => void {
   return () => {
-    reactComponentsSection = (0, runtime.toModuleNamespace)(
-      (0, runtime.loadReactNamespace)(),
+    reactComponentsSection = (0, toModuleNamespace)(
+      (0, loadReactNamespace)(),
       1,
     );
     DEFAULT_EDITOR_FEATURE_FLAGS = {
@@ -793,8 +707,8 @@ export function installEditorComponents(runtime: RuntimeBindings): () => void {
     editorFeatureFlags = {
       componentProps: isEditorFeatureEnabled("componentProps", "ds_props"),
     };
-    jsxComponentsSection = (0, runtime.toModuleNamespace)(
-      (0, runtime.loadJsxNamespace)(),
+    jsxComponentsSection = (0, toModuleNamespace)(
+      (0, loadJsxNamespace)(),
       1,
     );
     normalizedComponentTitle = (title: string) =>

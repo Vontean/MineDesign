@@ -5,235 +5,114 @@ import { useUiLocale } from '../ui-locale.ts';
 import * as React from "react";
 import type * as Color from "../contracts/color-controls";
 /** Restored application module; prepare first, initialize in original order. */
-import { bindRuntimeValue, type RuntimeBindings } from "../runtime-types";
-export function installUiInspectorIcons(runtime: RuntimeBindings): () => void {
-  var ColorSelectReact: typeof import("react");
-  var reactInspectorIcons: typeof import("react");
-  var reactForUiInspectorIcons: typeof import("react");
-  var iconStrokePath: (
-    path: string,
-    strokeWidth?: number,
-  ) => Color.PropertyIconPath;
-  var BORDER_WEIGHT_ICON: Color.PropertyIconDefinition;
-  var BORDER_SIDES_ICON: Color.PropertyIconDefinition;
-  var CORNER_RADIUS_ICON: Color.PropertyIconDefinition;
-  var INDIVIDUAL_CORNERS_ICON: Color.PropertyIconDefinition;
-  var SPACING_ICON: Color.PropertyIconDefinition;
-  var SOLID_STROKE_ICON: Color.PropertyIconDefinition;
-  var DASHED_STROKE_ICON: Color.PropertyIconDefinition;
-  var DOTTED_STROKE_ICON: Color.PropertyIconDefinition;
-  var TABLE_ROWS_ICON: Color.PropertyIconDefinition;
-  var TABLE_COLUMNS_ICON: Color.PropertyIconDefinition;
-  var SOLID_FILL_ICON: Color.PropertyIconDefinition;
-  var GRADIENT_FILL_ICON: Color.PropertyIconDefinition;
-  var ANGLE_ICON: Color.PropertyIconDefinition;
-  var FILL_MODE_ICONS: Partial<Record<string, Color.PropertyIconDefinition>>;
-  function fillModeOption(
-    mode: string,
-    tooltip: string,
-    disabled?: boolean,
-  ): Color.FillModeOption {
-    let state = {
-      value: mode,
-      tooltip: tooltip,
-      ...(disabled !== undefined
-        ? {
-            disabled: disabled,
-          }
-        : {}),
-    };
-    if (mode === "image") {
-      return {
-        ...state,
-        icon: "Image",
-      };
-    }
-    let value = FILL_MODE_ICONS[mode];
-    if (value === undefined) {
-      return {
-        ...state,
-        label: tooltip,
-      };
-    }
+import { loadReactNamespace } from "../dependencies";
+import { toModuleNamespace } from "../module-helpers";
+import { Icon } from "./interactions";
+
+var ColorSelectReact: typeof import("react");
+var reactInspectorIcons: typeof import("react");
+var reactForUiInspectorIcons: typeof import("react");
+var iconStrokePath: (
+  path: string,
+  strokeWidth?: number,
+) => Color.PropertyIconPath;
+var BORDER_WEIGHT_ICON: Color.PropertyIconDefinition;
+var BORDER_SIDES_ICON: Color.PropertyIconDefinition;
+var CORNER_RADIUS_ICON: Color.PropertyIconDefinition;
+var INDIVIDUAL_CORNERS_ICON: Color.PropertyIconDefinition;
+var SPACING_ICON: Color.PropertyIconDefinition;
+var SOLID_STROKE_ICON: Color.PropertyIconDefinition;
+var DASHED_STROKE_ICON: Color.PropertyIconDefinition;
+var DOTTED_STROKE_ICON: Color.PropertyIconDefinition;
+var TABLE_ROWS_ICON: Color.PropertyIconDefinition;
+var TABLE_COLUMNS_ICON: Color.PropertyIconDefinition;
+var SOLID_FILL_ICON: Color.PropertyIconDefinition;
+var GRADIENT_FILL_ICON: Color.PropertyIconDefinition;
+var ANGLE_ICON: Color.PropertyIconDefinition;
+var FILL_MODE_ICONS: Partial<Record<string, Color.PropertyIconDefinition>>;
+function fillModeOption(
+  mode: string,
+  tooltip: string,
+  disabled?: boolean,
+): Color.FillModeOption {
+  let state = {
+    value: mode,
+    tooltip: tooltip,
+    ...(disabled !== undefined
+      ? {
+          disabled: disabled,
+        }
+      : {}),
+  };
+  if (mode === "image") {
     return {
       ...state,
-      label: (
-        <reactForUiInspectorIcons.Fragment>
-          <PropertyIcon icon={value} />
-          <span className={"sr-only"}>{tooltip}</span>
-        </reactForUiInspectorIcons.Fragment>
-      ),
+      icon: "Image",
     };
   }
-  function PropertyIcon({
-    icon: icon,
-    className: className,
-  }: Color.PropertyIconProps): React.ReactElement {
-    useUiLocale();
-    let value = className ?? "shrink-0";
-    if (typeof icon === "string") {
-      return <runtime.Icon name={icon} size={"auto"} className={value} />;
-    } else {
-      return <runtime.Icon customIcon={icon} size={"auto"} className={value} />;
-    }
+  let value = FILL_MODE_ICONS[mode];
+  if (value === undefined) {
+    return {
+      ...state,
+      label: tooltip,
+    };
   }
-  bindRuntimeValue(
-    runtime,
-    "ColorSelectReact",
-    () => ColorSelectReact,
-    (value) => {
-      ColorSelectReact = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "reactInspectorIcons",
-    () => reactInspectorIcons,
-    (value) => {
-      reactInspectorIcons = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "reactForUiInspectorIcons",
-    () => reactForUiInspectorIcons,
-    (value) => {
-      reactForUiInspectorIcons = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "iconStrokePath",
-    () => iconStrokePath,
-    (value) => {
-      iconStrokePath = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "BORDER_WEIGHT_ICON",
-    () => BORDER_WEIGHT_ICON,
-    (value) => {
-      BORDER_WEIGHT_ICON = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "BORDER_SIDES_ICON",
-    () => BORDER_SIDES_ICON,
-    (value) => {
-      BORDER_SIDES_ICON = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "CORNER_RADIUS_ICON",
-    () => CORNER_RADIUS_ICON,
-    (value) => {
-      CORNER_RADIUS_ICON = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "INDIVIDUAL_CORNERS_ICON",
-    () => INDIVIDUAL_CORNERS_ICON,
-    (value) => {
-      INDIVIDUAL_CORNERS_ICON = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "SPACING_ICON",
-    () => SPACING_ICON,
-    (value) => {
-      SPACING_ICON = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "SOLID_STROKE_ICON",
-    () => SOLID_STROKE_ICON,
-    (value) => {
-      SOLID_STROKE_ICON = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "DASHED_STROKE_ICON",
-    () => DASHED_STROKE_ICON,
-    (value) => {
-      DASHED_STROKE_ICON = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "DOTTED_STROKE_ICON",
-    () => DOTTED_STROKE_ICON,
-    (value) => {
-      DOTTED_STROKE_ICON = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "TABLE_ROWS_ICON",
-    () => TABLE_ROWS_ICON,
-    (value) => {
-      TABLE_ROWS_ICON = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "TABLE_COLUMNS_ICON",
-    () => TABLE_COLUMNS_ICON,
-    (value) => {
-      TABLE_COLUMNS_ICON = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "SOLID_FILL_ICON",
-    () => SOLID_FILL_ICON,
-    (value) => {
-      SOLID_FILL_ICON = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "GRADIENT_FILL_ICON",
-    () => GRADIENT_FILL_ICON,
-    (value) => {
-      GRADIENT_FILL_ICON = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "ANGLE_ICON",
-    () => ANGLE_ICON,
-    (value) => {
-      ANGLE_ICON = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "FILL_MODE_ICONS",
-    () => FILL_MODE_ICONS,
-    (value) => {
-      FILL_MODE_ICONS = value;
-    },
-  );
-  bindRuntimeValue(runtime, "fillModeOption", () => fillModeOption);
-  bindRuntimeValue(runtime, "PropertyIcon", () => PropertyIcon);
+  return {
+    ...state,
+    label: (
+      <reactForUiInspectorIcons.Fragment>
+        <PropertyIcon icon={value} />
+        <span className={"sr-only"}>{tooltip}</span>
+      </reactForUiInspectorIcons.Fragment>
+    ),
+  };
+}
+function PropertyIcon({
+  icon: icon,
+  className: className,
+}: Color.PropertyIconProps): React.ReactElement {
+  useUiLocale();
+  let value = className ?? "shrink-0";
+  if (typeof icon === "string") {
+    return <Icon name={icon} size={"auto"} className={value} />;
+  } else {
+    return <Icon customIcon={icon} size={"auto"} className={value} />;
+  }
+}
+export {
+  ANGLE_ICON,
+  BORDER_SIDES_ICON,
+  BORDER_WEIGHT_ICON,
+  ColorSelectReact,
+  CORNER_RADIUS_ICON,
+  DASHED_STROKE_ICON,
+  DOTTED_STROKE_ICON,
+  FILL_MODE_ICONS,
+  fillModeOption,
+  GRADIENT_FILL_ICON,
+  iconStrokePath,
+  INDIVIDUAL_CORNERS_ICON,
+  PropertyIcon,
+  reactForUiInspectorIcons,
+  reactInspectorIcons,
+  SOLID_FILL_ICON,
+  SOLID_STROKE_ICON,
+  SPACING_ICON,
+  TABLE_COLUMNS_ICON,
+  TABLE_ROWS_ICON,
+};
+export function installUiInspectorIcons(): () => void {
   return () => {
-    ColorSelectReact = (0, runtime.toModuleNamespace)(
-      (0, runtime.loadReactNamespace)(),
+    ColorSelectReact = (0, toModuleNamespace)(
+      (0, loadReactNamespace)(),
       1,
     );
-    reactInspectorIcons = (0, runtime.toModuleNamespace)(
-      (0, runtime.loadReactNamespace)(),
+    reactInspectorIcons = (0, toModuleNamespace)(
+      (0, loadReactNamespace)(),
       1,
     );
-    reactForUiInspectorIcons = (0, runtime.toModuleNamespace)(
-      (0, runtime.loadReactNamespace)(),
+    reactForUiInspectorIcons = (0, toModuleNamespace)(
+      (0, loadReactNamespace)(),
       1,
     );
     iconStrokePath = (input: string, options: number = 1) => ({

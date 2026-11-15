@@ -2,178 +2,75 @@ import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import type * as React from "react";
 import type * as C from "../contracts/controls";
-import { bindRuntimeValue, type RuntimeBindings } from "../runtime-types";
-export function installUiTextInput(runtime: RuntimeBindings): () => void {
-  var fieldRingClasses: string;
-  var fieldHoverClasses: string;
-  var inputContainerClasses: string;
-  var inputElementClasses: string;
-  var textAreaBaseClasses: string;
-  var textAreaContainerClasses: string;
-  var reactiK: typeof React;
-  var textFieldStateContext: React.Context<C.FieldState | null>;
-  var reactoK: typeof React;
-  var jsxeJ: typeof import("react/jsx-runtime");
-  var textInputContainerBaseClasses: string;
-  var textInputElementBaseClasses: string;
-  var textInputNestedControlClasses: string;
-  var textInputTrailingControlPaddingClasses: string;
-  var textInputTrailingPaddingClasses: string;
-  var TextInput: C.ForwardComponent<HTMLInputElement, C.TextInputProps>;
-  function useFieldInvalid() {
-    return reactiK.useContext(textFieldStateContext)?.invalid ?? false;
-  }
-  function useFieldDisabled() {
-    return reactiK.useContext(textFieldStateContext)?.disabled ?? false;
-  }
-  function useFieldLabelId() {
-    let {
-      labelId: labelId,
-      controlId: controlId,
-    }: {
-      labelId?: string;
-      controlId?: string | null;
-    } = (0, runtime.baseUseLabelableContext)();
-    return labelId ?? (controlId ? `${controlId}-label` : undefined);
-  }
-  function useHasFieldContext() {
-    return reactiK.useContext(textFieldStateContext) !== null;
-  }
-  bindRuntimeValue(
-    runtime,
-    "fieldRingClasses",
-    () => fieldRingClasses,
-    (value) => {
-      fieldRingClasses = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "fieldHoverClasses",
-    () => fieldHoverClasses,
-    (value) => {
-      fieldHoverClasses = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "inputContainerClasses",
-    () => inputContainerClasses,
-    (value) => {
-      inputContainerClasses = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "inputElementClasses",
-    () => inputElementClasses,
-    (value) => {
-      inputElementClasses = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "textAreaBaseClasses",
-    () => textAreaBaseClasses,
-    (value) => {
-      textAreaBaseClasses = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "textAreaContainerClasses",
-    () => textAreaContainerClasses,
-    (value) => {
-      textAreaContainerClasses = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "reactiK",
-    () => reactiK,
-    (value) => {
-      reactiK = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "textFieldStateContext",
-    () => textFieldStateContext,
-    (value) => {
-      textFieldStateContext = value;
-    },
-  );
-  bindRuntimeValue(runtime, "useFieldInvalid", () => useFieldInvalid);
-  bindRuntimeValue(runtime, "useFieldDisabled", () => useFieldDisabled);
-  bindRuntimeValue(runtime, "useFieldLabelId", () => useFieldLabelId);
-  bindRuntimeValue(runtime, "useHasFieldContext", () => useHasFieldContext);
-  bindRuntimeValue(
-    runtime,
-    "reactoK",
-    () => reactoK,
-    (value) => {
-      reactoK = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "jsxeJ",
-    () => jsxeJ,
-    (value) => {
-      jsxeJ = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "textInputContainerBaseClasses",
-    () => textInputContainerBaseClasses,
-    (value) => {
-      textInputContainerBaseClasses = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "textInputElementBaseClasses",
-    () => textInputElementBaseClasses,
-    (value) => {
-      textInputElementBaseClasses = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "textInputNestedControlClasses",
-    () => textInputNestedControlClasses,
-    (value) => {
-      textInputNestedControlClasses = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "textInputTrailingControlPaddingClasses",
-    () => textInputTrailingControlPaddingClasses,
-    (value) => {
-      textInputTrailingControlPaddingClasses = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "textInputTrailingPaddingClasses",
-    () => textInputTrailingPaddingClasses,
-    (value) => {
-      textInputTrailingPaddingClasses = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "TextInput",
-    () => TextInput,
-    (value) => {
-      TextInput = value;
-    },
-  );
+import { baseField, baseUseLabelableContext, loadJsxNamespace, loadReactNamespace } from "../dependencies";
+import { toModuleNamespace } from "../module-helpers";
+import { initializeDisabledReason, initializeShortcuts, initializeTooltip } from "./avatars";
+import { Button } from "./buttons";
+import { initializeAdaptiveSheets, initializeAndroidCloseWatcher, initializeElementAccess, initializeEventCallbacks, initializeIsomorphicLayoutEffect, initializeMediaQueryStores, initializeOverlayActions, initializePresentationMode, initializeSheetClassNames } from "./foundation";
+import { cn, initializeClassNames, initializeCloseOnActivityHide, initializeCollisionPadding, initializeElementNamespaces, initializeIcons, initializeLayers, initializeMergedRefs, initializePortalRoot, initializeSurfaces, useMergedRefs, useTranslation } from "./interactions";
+import { getControlSizeAttributes, initializeCdsLink, initializeCdsRoot, initializeClickToFocus, useClickToFocus } from "./overlays";
+
+var fieldRingClasses: string;
+var fieldHoverClasses: string;
+var inputContainerClasses: string;
+var inputElementClasses: string;
+var textAreaBaseClasses: string;
+var textAreaContainerClasses: string;
+var reactiK: typeof React;
+var textFieldStateContext: React.Context<C.FieldState | null>;
+var reactoK: typeof React;
+var jsxeJ: typeof import("react/jsx-runtime");
+var textInputContainerBaseClasses: string;
+var textInputElementBaseClasses: string;
+var textInputNestedControlClasses: string;
+var textInputTrailingControlPaddingClasses: string;
+var textInputTrailingPaddingClasses: string;
+var TextInput: C.ForwardComponent<HTMLInputElement, C.TextInputProps>;
+function useFieldInvalid() {
+  return reactiK.useContext(textFieldStateContext)?.invalid ?? false;
+}
+function useFieldDisabled() {
+  return reactiK.useContext(textFieldStateContext)?.disabled ?? false;
+}
+function useFieldLabelId() {
+  let {
+    labelId: labelId,
+    controlId: controlId,
+  }: {
+    labelId?: string;
+    controlId?: string | null;
+  } = (0, baseUseLabelableContext)();
+  return labelId ?? (controlId ? `${controlId}-label` : undefined);
+}
+function useHasFieldContext() {
+  return reactiK.useContext(textFieldStateContext) !== null;
+}
+export {
+  fieldHoverClasses,
+  fieldRingClasses,
+  inputContainerClasses,
+  inputElementClasses,
+  jsxeJ,
+  reactiK,
+  reactoK,
+  textAreaBaseClasses,
+  textAreaContainerClasses,
+  textFieldStateContext,
+  TextInput,
+  textInputContainerBaseClasses,
+  textInputElementBaseClasses,
+  textInputNestedControlClasses,
+  textInputTrailingControlPaddingClasses,
+  textInputTrailingPaddingClasses,
+  useFieldDisabled,
+  useFieldInvalid,
+  useFieldLabelId,
+  useHasFieldContext,
+};
+export function installUiTextInput(): () => void {
   return () => {
-    (0, runtime.initializeClickToFocus)();
-    (0, runtime.initializeMergedRefs)();
+    (0, initializeClickToFocus)();
+    (0, initializeMergedRefs)();
     fieldRingClasses =
       "bg-fill-field shadow-field-ring data-[invalid]:shadow-field-invalid";
     fieldHoverClasses =
@@ -183,16 +80,16 @@ export function installUiTextInput(runtime: RuntimeBindings): () => void {
       "cds-input cds-reset min-w-0 flex-1 h-full bg-transparent border-0 p-0 outline-none focus-visible:outline-hidden text-body font-normal text-primary focus-visible:shadow-none placeholder:text-muted disabled:opacity-disabled";
     textAreaBaseClasses = `rounded ${fieldRingClasses} px-md py-sm transition duration-fast`;
     textAreaContainerClasses = `${textAreaBaseClasses} [&:hover:not(:focus-within):not([data-invalid]):not([data-disabled])]:shadow-field-hover focus-within:shadow-focus data-[invalid]:focus-within:shadow-focus-danger font-sans text-body text-primary`;
-    reactiK = (0, runtime.toModuleNamespace)(
-      (0, runtime.loadReactNamespace)(),
+    reactiK = (0, toModuleNamespace)(
+      (0, loadReactNamespace)(),
       1,
     );
     textFieldStateContext = reactiK.createContext<C.FieldState | null>(null);
-    reactoK = (0, runtime.toModuleNamespace)(
-      (0, runtime.loadReactNamespace)(),
+    reactoK = (0, toModuleNamespace)(
+      (0, loadReactNamespace)(),
       1,
     );
-    jsxeJ = (0, runtime.toModuleNamespace)((0, runtime.loadJsxNamespace)(), 1);
+    jsxeJ = (0, toModuleNamespace)((0, loadJsxNamespace)(), 1);
     textInputContainerBaseClasses = inputContainerClasses;
     textInputElementBaseClasses = inputElementClasses;
     textInputNestedControlClasses =
@@ -230,7 +127,7 @@ export function installUiTextInput(runtime: RuntimeBindings): () => void {
             "aria-describedby": value2,
             disabled: value4,
           },
-          value6: string = (0, runtime.useTranslation)("clear", "Clear"),
+          value6: string = (0, useTranslation)("clear", "Clear"),
           value7 = clearLabel ?? value6,
           value8 = useFieldInvalid(),
           value9 = value8 || value3,
@@ -243,11 +140,11 @@ export function installUiTextInput(runtime: RuntimeBindings): () => void {
             clickToFocusProps: value14,
           }: {
             clickToFocusProps: React.HTMLAttributes<HTMLDivElement>;
-          } = (0, runtime.useClickToFocus)(() => ref.current?.focus(), {
+          } = (0, useClickToFocus)(() => ref.current?.focus(), {
             disabled: value11,
             readOnly: value5.readOnly,
           }),
-          value15: React.Ref<HTMLInputElement> = (0, runtime.useMergedRefs)(
+          value15: React.Ref<HTMLInputElement> = (0, useMergedRefs)(
             ref,
             options,
           ),
@@ -291,7 +188,7 @@ export function installUiTextInput(runtime: RuntimeBindings): () => void {
             (!value16 || onClear !== undefined) &&
             !value5.readOnly,
           value22 = value20 ? (
-            <runtime.Button
+            <Button
               iconOnly={true}
               variant={"ghost"}
               size={size === "sm" || size === "xs" ? "xs" : "sm"}
@@ -354,10 +251,10 @@ export function installUiTextInput(runtime: RuntimeBindings): () => void {
           return (
             <div
               data-cds={"TextInput"}
-              {...(0, runtime.getControlSizeAttributes)(size)}
+              {...(0, getControlSizeAttributes)(size)}
               data-invalid={value8 || undefined}
               onMouseDown={value14.onMouseDown}
-              className={(0, runtime.cn)(
+              className={(0, cn)(
                 textInputContainerBaseClasses,
                 value23,
                 textInputTrailingControlPaddingClasses,
@@ -374,7 +271,7 @@ export function installUiTextInput(runtime: RuntimeBindings): () => void {
                   <span className={"flex shrink-0 items-center text-muted"}>
                     {slotStart}
                   </span>
-                ) : null, <runtime.baseField.Control
+                ) : null, <baseField.Control
                   {...state}
                   render={
                     <input
@@ -383,7 +280,7 @@ export function installUiTextInput(runtime: RuntimeBindings): () => void {
                       {...value5}
                       onChange={callback}
                       onKeyDown={callback4}
-                      className={(0, runtime.cn)(
+                      className={(0, cn)(
                         textInputElementBaseClasses,
                         "disabled:opacity-100",
                       )}
@@ -398,19 +295,19 @@ export function installUiTextInput(runtime: RuntimeBindings): () => void {
           );
         }
         return (
-          <runtime.baseField.Control
+          <baseField.Control
             ref={options}
             {...state}
             render={
               <input
                 data-cds={"TextInput"}
-                {...(0, runtime.getControlSizeAttributes)(size)}
+                {...(0, getControlSizeAttributes)(size)}
                 data-invalid={value8 || undefined}
                 aria-invalid={value9}
                 {...value5}
                 onChange={callback}
                 onKeyDown={callback4}
-                className={(0, runtime.cn)(
+                className={(0, cn)(
                   "cds-input cds-reset",
                   textInputContainerBaseClasses,
                   "pr-md",
@@ -425,33 +322,33 @@ export function installUiTextInput(runtime: RuntimeBindings): () => void {
       },
     );
     TextInput.displayName = "TextInput";
-    (0, runtime.initializeMediaQueryStores)();
-    (0, runtime.initializeIsomorphicLayoutEffect)();
-    (0, runtime.initializeClassNames)();
-    (0, runtime.initializeCdsLink)();
-    (0, runtime.initializeCdsRoot)();
-    (0, runtime.initializeElementAccess)();
-    (0, runtime.initializeLayers)();
-    (0, runtime.initializeEventCallbacks)();
-    (0, runtime.initializeClickToFocus)();
-    (0, runtime.initializeElementNamespaces)();
-    (0, runtime.initializeCloseOnActivityHide)();
-    (0, runtime.initializeMergedRefs)();
-    (0, runtime.initializePortalRoot)();
-    (0, runtime.initializeIcons)();
-    (0, runtime.initializeCollisionPadding)();
-    (0, runtime.initializeShortcuts)();
-    (0, runtime.initializeDisabledReason)();
-    (0, runtime.initializeTooltip)();
-    (0, runtime.initializeSurfaces)();
-    (0, runtime.initializeOverlayActions)();
-    (0, runtime.initializePresentationMode)();
-    (0, runtime.initializeAdaptiveSheets)();
-    (0, runtime.initializeCdsRoot)();
-    (0, runtime.initializeLayers)();
-    (0, runtime.initializeAndroidCloseWatcher)();
-    (0, runtime.initializePortalRoot)();
-    (0, runtime.initializeAdaptiveSheets)();
-    (0, runtime.initializeSheetClassNames)();
+    (0, initializeMediaQueryStores)();
+    (0, initializeIsomorphicLayoutEffect)();
+    (0, initializeClassNames)();
+    (0, initializeCdsLink)();
+    (0, initializeCdsRoot)();
+    (0, initializeElementAccess)();
+    (0, initializeLayers)();
+    (0, initializeEventCallbacks)();
+    (0, initializeClickToFocus)();
+    (0, initializeElementNamespaces)();
+    (0, initializeCloseOnActivityHide)();
+    (0, initializeMergedRefs)();
+    (0, initializePortalRoot)();
+    (0, initializeIcons)();
+    (0, initializeCollisionPadding)();
+    (0, initializeShortcuts)();
+    (0, initializeDisabledReason)();
+    (0, initializeTooltip)();
+    (0, initializeSurfaces)();
+    (0, initializeOverlayActions)();
+    (0, initializePresentationMode)();
+    (0, initializeAdaptiveSheets)();
+    (0, initializeCdsRoot)();
+    (0, initializeLayers)();
+    (0, initializeAndroidCloseWatcher)();
+    (0, initializePortalRoot)();
+    (0, initializeAdaptiveSheets)();
+    (0, initializeSheetClassNames)();
   };
 }

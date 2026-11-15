@@ -2,206 +2,105 @@ import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import type * as React from "react";
 import type * as C from "../contracts/controls";
-import { bindRuntimeValue, type RuntimeBindings } from "../runtime-types";
-export function installUiButtons(runtime: RuntimeBindings): () => void {
-  var reacttJ: typeof React;
-  var jsxForUiButtons: typeof import("react/jsx-runtime");
-  var preventAndStopEvent: (event: React.SyntheticEvent) => void;
-  var onContentButtonTextClasses: string;
-  var buttonIndicatorMarginClass: string;
-  var buttonVariants: C.VariantClasses<{
-    variant?: C.ButtonVariant;
-    iconOnly?: boolean;
-  }>;
-  var onContentButtonBackgroundClasses: string;
-  var buttonBackgroundVariants: C.VariantClasses<{
-    variant?: C.ButtonVariant;
-  }>;
-  var buttonGroupContext: React.Context<C.ButtonGroupState | null>;
-  var joinedButtonRadiusClasses: Record<"start" | "middle" | "end", string>;
-  var buttonOutsetClasses: Record<"start" | "end" | "both", string>;
-  var buttonOutsetStyle: C.DesignStyle;
-  var buttonIconSizeContext: React.Context<C.ResolvedIconSize | undefined>;
-  var Button: C.ForwardComponent<C.ButtonElement, C.ButtonProps>;
-  function isButtonActivationKey(
-    input: Pick<C.ButtonKeyEvent, "key">,
-  ): boolean {
-    return input.key === "Enter" || input.key === " ";
+import { baseUseRender, clsx, cva, loadJsxNamespace, loadReactNamespace } from "../dependencies";
+import { toModuleNamespace } from "../module-helpers";
+import { buttonFillLayerClasses, buttonFocusClasses, buttonJoinedFillClasses, buttonPressedFillClasses, dangerButtonFocusClasses, getButtonBackgroundLayerClasses, secondaryButtonFillClasses, Shortcut, shortcutToAriaKeyShortcuts, useAppleKeyboard, useTooltipsDisabled } from "./avatars";
+import { COMPACTABLE_ATTRIBUTE, DeferredDisabledReasonTooltip, DeferredTooltip, Spinner, useCompactableControl, useCompactableControlDebug, withRepeatedClickSelectionPrevention } from "./disclosure";
+import { initializeErrorReporting, initializeSafeObservers } from "./foundation";
+import { cn, Icon, iconSizeMetrics, isIconName, pixelsToScaledRem, useIconSize } from "./interactions";
+import { getControlSizeAttributes, pickLinkEventProps, useCdsLink } from "./overlays";
+
+var reacttJ: typeof React;
+var jsxForUiButtons: typeof import("react/jsx-runtime");
+var preventAndStopEvent: (event: React.SyntheticEvent) => void;
+var onContentButtonTextClasses: string;
+var buttonIndicatorMarginClass: string;
+var buttonVariants: C.VariantClasses<{
+  variant?: C.ButtonVariant;
+  iconOnly?: boolean;
+}>;
+var onContentButtonBackgroundClasses: string;
+var buttonBackgroundVariants: C.VariantClasses<{
+  variant?: C.ButtonVariant;
+}>;
+var buttonGroupContext: React.Context<C.ButtonGroupState | null>;
+var joinedButtonRadiusClasses: Record<"start" | "middle" | "end", string>;
+var buttonOutsetClasses: Record<"start" | "end" | "both", string>;
+var buttonOutsetStyle: C.DesignStyle;
+var buttonIconSizeContext: React.Context<C.ResolvedIconSize | undefined>;
+var Button: C.ForwardComponent<C.ButtonElement, C.ButtonProps>;
+function isButtonActivationKey(
+  input: Pick<C.ButtonKeyEvent, "key">,
+): boolean {
+  return input.key === "Enter" || input.key === " ";
+}
+function isUnmodifiedButtonActivation(input: C.ButtonKeyEvent): boolean {
+  return (
+    isButtonActivationKey(input) &&
+    !input.ctrlKey &&
+    !input.metaKey &&
+    !input.altKey &&
+    !input.shiftKey
+  );
+}
+function useButtonGroup() {
+  return reacttJ.useContext(buttonGroupContext);
+}
+function getButtonIconSize(input?: C.ControlSize): C.IconSize {
+  if (input === "xs" || input === "xxs") {
+    return "auto-sm";
   }
-  function isUnmodifiedButtonActivation(input: C.ButtonKeyEvent): boolean {
-    return (
-      isButtonActivationKey(input) &&
-      !input.ctrlKey &&
-      !input.metaKey &&
-      !input.altKey &&
-      !input.shiftKey
-    );
+  if (input === "lg") {
+    return "md";
+  } else {
+    return "auto";
   }
-  function useButtonGroup() {
-    return reacttJ.useContext(buttonGroupContext);
-  }
-  function getButtonIconSize(input?: C.ControlSize): C.IconSize {
-    if (input === "xs" || input === "xxs") {
-      return "auto-sm";
-    }
-    if (input === "lg") {
-      return "md";
-    } else {
-      return "auto";
-    }
-  }
-  function useButtonIconSize(input?: C.ControlSize): C.ResolvedIconSize {
-    let value = useButtonGroup(),
-      value2 = reacttJ.useContext(buttonIconSizeContext);
-    return (0, runtime.useIconSize)(
-      input !== undefined
-        ? getButtonIconSize(input)
-        : (value2 ??
-            (value?.size !== undefined
-              ? getButtonIconSize(value.size)
-              : "auto")),
-    );
-  }
-  function getButtonIconVerticalPadding(input: C.ResolvedIconSize): string {
-    return `calc((var(--cds-h-control) - ${(0, runtime.pixelsToScaledRem)(runtime.iconSizeMetrics[input].px)}) / 2)`;
-  }
-  bindRuntimeValue(
-    runtime,
-    "reacttJ",
-    () => reacttJ,
-    (value) => {
-      reacttJ = value;
-    },
+}
+function useButtonIconSize(input?: C.ControlSize): C.ResolvedIconSize {
+  let value = useButtonGroup(),
+    value2 = reacttJ.useContext(buttonIconSizeContext);
+  return (0, useIconSize)(
+    input !== undefined
+      ? getButtonIconSize(input)
+      : (value2 ??
+          (value?.size !== undefined
+            ? getButtonIconSize(value.size)
+            : "auto")),
   );
-  bindRuntimeValue(
-    runtime,
-    "jsxForUiButtons",
-    () => jsxForUiButtons,
-    (value) => {
-      jsxForUiButtons = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "preventAndStopEvent",
-    () => preventAndStopEvent,
-    (value) => {
-      preventAndStopEvent = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "isButtonActivationKey",
-    () => isButtonActivationKey,
-  );
-  bindRuntimeValue(
-    runtime,
-    "isUnmodifiedButtonActivation",
-    () => isUnmodifiedButtonActivation,
-  );
-  bindRuntimeValue(
-    runtime,
-    "onContentButtonTextClasses",
-    () => onContentButtonTextClasses,
-    (value) => {
-      onContentButtonTextClasses = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "buttonIndicatorMarginClass",
-    () => buttonIndicatorMarginClass,
-    (value) => {
-      buttonIndicatorMarginClass = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "buttonVariants",
-    () => buttonVariants,
-    (value) => {
-      buttonVariants = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "onContentButtonBackgroundClasses",
-    () => onContentButtonBackgroundClasses,
-    (value) => {
-      onContentButtonBackgroundClasses = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "buttonBackgroundVariants",
-    () => buttonBackgroundVariants,
-    (value) => {
-      buttonBackgroundVariants = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "buttonGroupContext",
-    () => buttonGroupContext,
-    (value) => {
-      buttonGroupContext = value;
-    },
-  );
-  bindRuntimeValue(runtime, "useButtonGroup", () => useButtonGroup);
-  bindRuntimeValue(
-    runtime,
-    "joinedButtonRadiusClasses",
-    () => joinedButtonRadiusClasses,
-    (value) => {
-      joinedButtonRadiusClasses = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "buttonOutsetClasses",
-    () => buttonOutsetClasses,
-    (value) => {
-      buttonOutsetClasses = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "buttonOutsetStyle",
-    () => buttonOutsetStyle,
-    (value) => {
-      buttonOutsetStyle = value;
-    },
-  );
-  bindRuntimeValue(runtime, "getButtonIconSize", () => getButtonIconSize);
-  bindRuntimeValue(
-    runtime,
-    "buttonIconSizeContext",
-    () => buttonIconSizeContext,
-    (value) => {
-      buttonIconSizeContext = value;
-    },
-  );
-  bindRuntimeValue(runtime, "useButtonIconSize", () => useButtonIconSize);
-  bindRuntimeValue(
-    runtime,
-    "getButtonIconVerticalPadding",
-    () => getButtonIconVerticalPadding,
-  );
-  bindRuntimeValue(
-    runtime,
-    "Button",
-    () => Button,
-    (value) => {
-      Button = value;
-    },
-  );
+}
+function getButtonIconVerticalPadding(input: C.ResolvedIconSize): string {
+  return `calc((var(--cds-h-control) - ${(0, pixelsToScaledRem)(iconSizeMetrics[input].px)}) / 2)`;
+}
+export {
+  Button,
+  buttonBackgroundVariants,
+  buttonGroupContext,
+  buttonIconSizeContext,
+  buttonIndicatorMarginClass,
+  buttonOutsetClasses,
+  buttonOutsetStyle,
+  buttonVariants,
+  getButtonIconSize,
+  getButtonIconVerticalPadding,
+  isButtonActivationKey,
+  isUnmodifiedButtonActivation,
+  joinedButtonRadiusClasses,
+  jsxForUiButtons,
+  onContentButtonBackgroundClasses,
+  onContentButtonTextClasses,
+  preventAndStopEvent,
+  reacttJ,
+  useButtonGroup,
+  useButtonIconSize,
+};
+export function installUiButtons(): () => void {
   return () => {
-    reacttJ = (0, runtime.toModuleNamespace)(
-      (0, runtime.loadReactNamespace)(),
+    reacttJ = (0, toModuleNamespace)(
+      (0, loadReactNamespace)(),
       1,
     );
-    jsxForUiButtons = (0, runtime.toModuleNamespace)(
-      (0, runtime.loadJsxNamespace)(),
+    jsxForUiButtons = (0, toModuleNamespace)(
+      (0, loadJsxNamespace)(),
       1,
     );
     preventAndStopEvent = (event: React.SyntheticEvent) => {
@@ -212,16 +111,16 @@ export function installUiButtons(runtime: RuntimeBindings): () => void {
       "text-primary font-medium focus-visible:shadow-[0_0_0_2px_rgb(255_255_255/0.7)] [&[data-initial-focus]:focus]:shadow-[0_0_0_2px_rgb(255_255_255/0.7)]";
     buttonIndicatorMarginClass =
       "me-[calc((var(--cds-h-control)-1em-6px)/2-var(--cds-pad-md))]";
-    buttonVariants = (0, runtime.cva)(
+    buttonVariants = (0, cva)(
       "cds-reset group/btn relative isolate inline-flex shrink-0 items-center justify-center gap-1.5 whitespace-nowrap select-none cursor-[var(--cds-cursor-interactive)] aria-disabled:cursor-default data-[disabled]:cursor-default border-0 outline-none focus-visible:outline-hidden [&[data-initial-focus]:focus]:outline-hidden rounded h-control font-sans text-body [&:disabled:not([aria-busy])]:opacity-disabled disabled:pointer-events-none transition-shadow duration-fast",
       {
         variants: {
           variant: {
-            primary: `text-on-primary font-medium [--cds-shortcut-cap-ink:currentColor] ${runtime.buttonFocusClasses}`,
-            secondary: `text-primary font-normal aria-pressed:text-accent ${runtime.buttonFocusClasses}`,
-            ghost: `text-primary font-normal aria-pressed:text-accent ${runtime.buttonFocusClasses}`,
-            danger: `text-on-danger font-medium [--cds-shortcut-cap-ink:currentColor] ${runtime.dangerButtonFocusClasses}`,
-            brand: `text-on-brand font-medium [--cds-shortcut-cap-ink:currentColor] ${runtime.buttonFocusClasses}`,
+            primary: `text-on-primary font-medium [--cds-shortcut-cap-ink:currentColor] ${buttonFocusClasses}`,
+            secondary: `text-primary font-normal aria-pressed:text-accent ${buttonFocusClasses}`,
+            ghost: `text-primary font-normal aria-pressed:text-accent ${buttonFocusClasses}`,
+            danger: `text-on-danger font-medium [--cds-shortcut-cap-ink:currentColor] ${dangerButtonFocusClasses}`,
+            brand: `text-on-brand font-medium [--cds-shortcut-cap-ink:currentColor] ${buttonFocusClasses}`,
             onContent: onContentButtonTextClasses,
             onAccent: onContentButtonTextClasses,
           },
@@ -238,14 +137,14 @@ export function installUiButtons(runtime: RuntimeBindings): () => void {
     );
     onContentButtonBackgroundClasses =
       "bg-[var(--cds-button-on-content)] backdrop-blur-md shadow-[inset_0_0_0_1px_var(--cds-button-on-content-ring)] group-focus-visible/btn:!shadow-[inset_0_0_0_1px_var(--cds-button-on-content-ring)] group-[[data-initial-focus]:focus]/btn:!shadow-[inset_0_0_0_1px_var(--cds-button-on-content-ring)] group-hover/btn:bg-[var(--cds-button-on-content-hover)] group-[[aria-haspopup][aria-expanded=true]]/btn:bg-[var(--cds-button-on-content-hover)]";
-    buttonBackgroundVariants = (0, runtime.cva)(
-      runtime.buttonFillLayerClasses,
+    buttonBackgroundVariants = (0, cva)(
+      buttonFillLayerClasses,
       {
         variants: {
           variant: {
             primary:
               "bg-fill-primary group-hover/btn:bg-fill-primary-hover group-[[aria-haspopup][aria-expanded=true]]/btn:bg-fill-primary-hover",
-            secondary: runtime.secondaryButtonFillClasses,
+            secondary: secondaryButtonFillClasses,
             ghost:
               "bg-transparent group-hover/btn:bg-fill-ghost-hover group-[[aria-haspopup][aria-expanded=true]]/btn:bg-fill-ghost-hover",
             danger:
@@ -325,7 +224,7 @@ export function installUiButtons(runtime: RuntimeBindings): () => void {
           value4: {
             icon?: React.ReactNode;
             compact: boolean;
-          } = (0, runtime.useCompactableControl)(),
+          } = (0, useCompactableControl)(),
           value5 = iconOnly === true ? undefined : value4.icon,
           value6 = value5 !== undefined && value4.compact,
           value7 = iconOnly === true || value6,
@@ -345,19 +244,19 @@ export function installUiButtons(runtime: RuntimeBindings): () => void {
             value11 !== undefined && !value2 && value3 === "ghost"
               ? value11
               : undefined,
-          value13: boolean = (0, runtime.useAppleKeyboard)(),
+          value13: boolean = (0, useAppleKeyboard)(),
           ref = reacttJ.useRef<HTMLSpanElement>(null);
-        (0, runtime.useCompactableControlDebug)(ref, "Button");
+        (0, useCompactableControlDebug)(ref, "Button");
         let value14 = useButtonIconSize(size),
           value15 =
             value7 && value8 ? (
-              (0, runtime.isIconName)(value8) ? (
-                <runtime.Icon name={value8} size={value14} />
+              (0, isIconName)(value8) ? (
+                <Icon name={value8} size={value14} />
               ) : (
                 value8
               )
             ) : null,
-          value16: boolean = (0, runtime.useTooltipsDisabled)(),
+          value16: boolean = (0, useTooltipsDisabled)(),
           value17 =
             (value7 && ariaLabel && tooltip !== false) || value5 !== undefined,
           value18 =
@@ -400,7 +299,7 @@ export function installUiButtons(runtime: RuntimeBindings): () => void {
                     "--cds-outset-x": getButtonIconVerticalPadding(value14),
                   }
                 : buttonOutsetStyle,
-          value23: string = (0, runtime.cn)(
+          value23: string = (0, cn)(
             buttonVariants({
               variant: variant,
               iconOnly: value7,
@@ -416,7 +315,7 @@ export function installUiButtons(runtime: RuntimeBindings): () => void {
             <jsxForUiButtons.Fragment>
               {[<span
                   aria-hidden={true}
-                  className={(0, runtime.getButtonBackgroundLayerClasses)({
+                  className={(0, getButtonBackgroundLayerClasses)({
                     joined: !!value2,
                     solid:
                       value3 === "primary" ||
@@ -429,7 +328,7 @@ export function installUiButtons(runtime: RuntimeBindings): () => void {
                     data-cds-part={"paint"}
                     className={`${buttonBackgroundVariants({
                       variant: value3,
-                    })} ${runtime.buttonPressedFillClasses} ${value3 === "secondary" && !value2 ? runtime.buttonJoinedFillClasses : ""}`}
+                    })} ${buttonPressedFillClasses} ${value3 === "secondary" && !value2 ? buttonJoinedFillClasses : ""}`}
                   />
                 </span>, <span
                   className={`inline-flex min-w-0 items-center gap-1 ${busy ? "opacity-0" : ""}`}
@@ -456,8 +355,8 @@ export function installUiButtons(runtime: RuntimeBindings): () => void {
                         </jsxForUiButtons.Fragment>) : (value15))) : (<jsxForUiButtons.Fragment>
                         {[value8 &&
                             iconPosition === "start" &&
-                            ((0, runtime.isIconName)(value8) ? (
-                              <runtime.Icon
+                            ((0, isIconName)(value8) ? (
+                              <Icon
                                 name={value8}
                                 size={value14}
                                 className={"-ms-1"}
@@ -468,8 +367,8 @@ export function installUiButtons(runtime: RuntimeBindings): () => void {
                               </span>
                             )), children, value8 &&
                             iconPosition === "end" &&
-                            ((0, runtime.isIconName)(value8) ? (
-                              <runtime.Icon
+                            ((0, isIconName)(value8) ? (
+                              <Icon
                                 name={value8}
                                 size={value14}
                                 className={"-me-1"}
@@ -479,10 +378,10 @@ export function installUiButtons(runtime: RuntimeBindings): () => void {
                                 {value8}
                               </span>
                             )), shortcut && (
-                            <runtime.Shortcut
+                            <Shortcut
                               keys={shortcut}
                               aria-hidden={true}
-                              className={(0, runtime.clsx)(
+                              className={(0, clsx)(
                                 "pointer-coarse:hidden ms-1",
                                 (!value2 || value2 === "end") &&
                                   buttonIndicatorMarginClass,
@@ -497,7 +396,7 @@ export function installUiButtons(runtime: RuntimeBindings): () => void {
                       "absolute inset-0 grid place-items-center leading-[0]"
                     }
                   >
-                    <runtime.Spinner
+                    <Spinner
                       size={"sm"}
                       inheritColor={true}
                       label={busyLabel}
@@ -507,15 +406,15 @@ export function installUiButtons(runtime: RuntimeBindings): () => void {
             </jsxForUiButtons.Fragment>
           ),
           value25: React.AnchorHTMLAttributes<HTMLAnchorElement> = (0,
-          runtime.useCdsLink)({
+          useCdsLink)({
             href: href,
             routerOptions: routerOptions,
             target: target,
             rel: rel,
             download: download,
-            ...(0, runtime.pickLinkEventProps)(props),
+            ...(0, pickLinkEventProps)(props),
           }),
-          value26 = (0, runtime.baseUseRender)({
+          value26 = (0, baseUseRender)({
             render:
               render ??
               (href !== undefined ? (
@@ -533,7 +432,7 @@ export function installUiButtons(runtime: RuntimeBindings): () => void {
                 : undefined),
               ...(value5 !== undefined
                 ? {
-                    [runtime.COMPACTABLE_ATTRIBUTE]: "",
+                    [COMPACTABLE_ATTRIBUTE]: "",
                   }
                 : undefined),
               ...(value3 === "ghost"
@@ -545,7 +444,7 @@ export function installUiButtons(runtime: RuntimeBindings): () => void {
                 ? {
                     "data-step": "1",
                   }
-                : (0, runtime.getControlSizeAttributes)(size)),
+                : (0, getControlSizeAttributes)(size)),
               className: value23,
               style: value22
                 ? {
@@ -558,11 +457,11 @@ export function installUiButtons(runtime: RuntimeBindings): () => void {
               "aria-disabled": value21 || undefined,
               "aria-label": ariaLabel,
               "aria-keyshortcuts": shortcut
-                ? (0, runtime.shortcutToAriaKeyShortcuts)(shortcut, value13)
+                ? (0, shortcutToAriaKeyShortcuts)(shortcut, value13)
                 : undefined,
               children: value24,
               ...props,
-              onMouseDown: (0, runtime.withRepeatedClickSelectionPrevention)(
+              onMouseDown: (0, withRepeatedClickSelectionPrevention)(
                 props.onMouseDown,
               ),
               onClick: value21 ? preventAndStopEvent : props.onClick,
@@ -572,14 +471,14 @@ export function installUiButtons(runtime: RuntimeBindings): () => void {
             },
           }),
           value27 = value17 ? (
-            <runtime.DeferredTooltip
+            <DeferredTooltip
               side={tooltipSide}
               hoverable={false}
               content={value16 || value19 ? undefined : value18}
               shortcut={shortcut}
             >
               {value26}
-            </runtime.DeferredTooltip>
+            </DeferredTooltip>
           ) : (
             value26
           );
@@ -587,17 +486,17 @@ export function installUiButtons(runtime: RuntimeBindings): () => void {
           return value27;
         }
         return (
-          <runtime.DeferredDisabledReasonTooltip
+          <DeferredDisabledReasonTooltip
             side={disabledReasonSide}
             reason={value19 ? disabledReason : undefined}
           >
             {value27}
-          </runtime.DeferredDisabledReasonTooltip>
+          </DeferredDisabledReasonTooltip>
         );
       },
     );
     Button.displayName = "Button";
-    (0, runtime.initializeErrorReporting)();
-    (0, runtime.initializeSafeObservers)();
+    (0, initializeErrorReporting)();
+    (0, initializeSafeObservers)();
   };
 }

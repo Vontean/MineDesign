@@ -3,182 +3,109 @@ import type * as Storage from "../contracts/model-storage";
 import type * as Model from "../contracts";
 import type * as Host from "../contracts/platform-host";
 /** Restored application module; prepare first, initialize in original order. */
-import { bindRuntimeValue, type RuntimeBindings } from "../runtime-types";
-export function installModelBoot(runtime: RuntimeBindings): () => void {
-  var EMPTY_DESIGN_SYSTEM_CONTENT: Model.DesignSystemContent;
-  var DESIGN_SYSTEM_TYPE_HOST_IDS: Set<string>;
-  var MIGRATION_EXEMPT_HOST_IDS: Set<string>;
-  var TYPE_READONLY_REASON: string;
-  var EMPTY_SYSTEM_READONLY_REASON: string;
-  var UNKNOWN_EDITABILITY_REASON: string;
-  var SYSTEM_LOAD_FAILURE_REASON: string;
-  var EMPTY_INSTANCE_STATE: Storage.RawDocumentSeed;
-  var DESIGN_SYSTEM_TYPE_DEMO_STATE: Storage.RawDocumentSeed;
-  function normalizeSaveHome(home: unknown): "page" | "files" {
-    if (home === "page") {
-      return "page";
-    } else {
-      return "files";
-    }
+
+var EMPTY_DESIGN_SYSTEM_CONTENT: Model.DesignSystemContent;
+var DESIGN_SYSTEM_TYPE_HOST_IDS: Set<string>;
+var MIGRATION_EXEMPT_HOST_IDS: Set<string>;
+var TYPE_READONLY_REASON: string;
+var EMPTY_SYSTEM_READONLY_REASON: string;
+var UNKNOWN_EDITABILITY_REASON: string;
+var SYSTEM_LOAD_FAILURE_REASON: string;
+var EMPTY_INSTANCE_STATE: Storage.RawDocumentSeed;
+var DESIGN_SYSTEM_TYPE_DEMO_STATE: Storage.RawDocumentSeed;
+function normalizeSaveHome(home: unknown): "page" | "files" {
+  if (home === "page") {
+    return "page";
+  } else {
+    return "files";
   }
-  function isDesignSystemTypeHostModelBoot(hostname: string): boolean {
-    return DESIGN_SYSTEM_TYPE_HOST_IDS.has(
-      hostname.split(".")[0].toLowerCase(),
-    );
-  }
-  function isMigrationExemptHost(hostname: string): boolean {
-    return MIGRATION_EXEMPT_HOST_IDS.has(hostname.split(".")[0].toLowerCase());
-  }
-  function makeLoadFailureState(error: string): Storage.RawDocumentSeed {
-    return {
-      get title() { return uiMessage("design-system.boot.couldnTLoadThisDesignSystem"); },
-      content: {
-        v: 2,
-        files: {
-          "README.md":
-            `# Couldn’t load this design system
+}
+function isDesignSystemTypeHostModelBoot(hostname: string): boolean {
+  return DESIGN_SYSTEM_TYPE_HOST_IDS.has(
+    hostname.split(".")[0].toLowerCase(),
+  );
+}
+function isMigrationExemptHost(hostname: string): boolean {
+  return MIGRATION_EXEMPT_HOST_IDS.has(hostname.split(".")[0].toLowerCase());
+}
+function makeLoadFailureState(error: string): Storage.RawDocumentSeed {
+  return {
+    get title() { return uiMessage("design-system.boot.couldnTLoadThisDesignSystem"); },
+    content: {
+      v: 2,
+      files: {
+        "README.md":
+          `# Couldn’t load this design system
 
 Its files could not be read (` +
-            error +
-            `).
+          error +
+          `).
 `,
-        },
       },
-    };
-  }
-  function chooseDesignSystemBootModeModelBoot(
-    bootResult: Storage.SystemBootResult,
-    editable: boolean | null | undefined,
-    isTypePage: boolean = false,
-  ): Storage.SystemBootMode {
-    if (isTypePage) {
-      return {
-        mode: "readonly",
-        state:
-          bootResult.origin === "instance"
-            ? bootResult.state
-            : DESIGN_SYSTEM_TYPE_DEMO_STATE,
-        reason: TYPE_READONLY_REASON,
-      };
-    }
-    if (bootResult.origin === "instance") {
-      return {
-        mode: "instance",
-        state: bootResult.state,
-      };
-    }
-    if (bootResult.origin === "demo" && bootResult.stateFileFound === false) {
-      if (editable === true) {
-        return {
-          mode: "instance",
-          state: EMPTY_INSTANCE_STATE,
-        };
-      } else {
-        return {
-          mode: "readonly",
-          state: EMPTY_INSTANCE_STATE,
-          reason:
-            editable === false
-              ? EMPTY_SYSTEM_READONLY_REASON
-              : UNKNOWN_EDITABILITY_REASON,
-        };
-      }
-    }
+    },
+  };
+}
+function chooseDesignSystemBootModeModelBoot(
+  bootResult: Storage.SystemBootResult,
+  editable: boolean | null | undefined,
+  isTypePage: boolean = false,
+): Storage.SystemBootMode {
+  if (isTypePage) {
     return {
       mode: "readonly",
-      state: makeLoadFailureState(bootResult.error ?? ""),
-      reason: SYSTEM_LOAD_FAILURE_REASON,
+      state:
+        bootResult.origin === "instance"
+          ? bootResult.state
+          : DESIGN_SYSTEM_TYPE_DEMO_STATE,
+      reason: TYPE_READONLY_REASON,
     };
   }
-  bindRuntimeValue(
-    runtime,
-    "EMPTY_DESIGN_SYSTEM_CONTENT",
-    () => EMPTY_DESIGN_SYSTEM_CONTENT,
-    (value) => {
-      EMPTY_DESIGN_SYSTEM_CONTENT = value;
-    },
-  );
-  bindRuntimeValue(runtime, "normalizeSaveHome", () => normalizeSaveHome);
-  bindRuntimeValue(
-    runtime,
-    "DESIGN_SYSTEM_TYPE_HOST_IDS",
-    () => DESIGN_SYSTEM_TYPE_HOST_IDS,
-    (value) => {
-      DESIGN_SYSTEM_TYPE_HOST_IDS = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "isDesignSystemTypeHostModelBoot",
-    () => isDesignSystemTypeHostModelBoot,
-  );
-  bindRuntimeValue(
-    runtime,
-    "MIGRATION_EXEMPT_HOST_IDS",
-    () => MIGRATION_EXEMPT_HOST_IDS,
-    (value) => {
-      MIGRATION_EXEMPT_HOST_IDS = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "isMigrationExemptHost",
-    () => isMigrationExemptHost,
-  );
-  bindRuntimeValue(
-    runtime,
-    "TYPE_READONLY_REASON",
-    () => TYPE_READONLY_REASON,
-    (value) => {
-      TYPE_READONLY_REASON = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "EMPTY_SYSTEM_READONLY_REASON",
-    () => EMPTY_SYSTEM_READONLY_REASON,
-    (value) => {
-      EMPTY_SYSTEM_READONLY_REASON = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "UNKNOWN_EDITABILITY_REASON",
-    () => UNKNOWN_EDITABILITY_REASON,
-    (value) => {
-      UNKNOWN_EDITABILITY_REASON = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "SYSTEM_LOAD_FAILURE_REASON",
-    () => SYSTEM_LOAD_FAILURE_REASON,
-    (value) => {
-      SYSTEM_LOAD_FAILURE_REASON = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "EMPTY_INSTANCE_STATE",
-    () => EMPTY_INSTANCE_STATE,
-    (value) => {
-      EMPTY_INSTANCE_STATE = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "DESIGN_SYSTEM_TYPE_DEMO_STATE",
-    () => DESIGN_SYSTEM_TYPE_DEMO_STATE,
-    (value) => {
-      DESIGN_SYSTEM_TYPE_DEMO_STATE = value;
-    },
-  );
-  bindRuntimeValue(runtime, "makeLoadFailureState", () => makeLoadFailureState);
-  bindRuntimeValue(
-    runtime,
-    "chooseDesignSystemBootModeModelBoot",
-    () => chooseDesignSystemBootModeModelBoot,
-  );
+  if (bootResult.origin === "instance") {
+    return {
+      mode: "instance",
+      state: bootResult.state,
+    };
+  }
+  if (bootResult.origin === "demo" && bootResult.stateFileFound === false) {
+    if (editable === true) {
+      return {
+        mode: "instance",
+        state: EMPTY_INSTANCE_STATE,
+      };
+    } else {
+      return {
+        mode: "readonly",
+        state: EMPTY_INSTANCE_STATE,
+        reason:
+          editable === false
+            ? EMPTY_SYSTEM_READONLY_REASON
+            : UNKNOWN_EDITABILITY_REASON,
+      };
+    }
+  }
+  return {
+    mode: "readonly",
+    state: makeLoadFailureState(bootResult.error ?? ""),
+    reason: SYSTEM_LOAD_FAILURE_REASON,
+  };
+}
+export {
+  chooseDesignSystemBootModeModelBoot,
+  DESIGN_SYSTEM_TYPE_DEMO_STATE,
+  DESIGN_SYSTEM_TYPE_HOST_IDS,
+  EMPTY_DESIGN_SYSTEM_CONTENT,
+  EMPTY_INSTANCE_STATE,
+  EMPTY_SYSTEM_READONLY_REASON,
+  isDesignSystemTypeHostModelBoot,
+  isMigrationExemptHost,
+  makeLoadFailureState,
+  MIGRATION_EXEMPT_HOST_IDS,
+  normalizeSaveHome,
+  SYSTEM_LOAD_FAILURE_REASON,
+  TYPE_READONLY_REASON,
+  UNKNOWN_EDITABILITY_REASON,
+};
+export function installModelBoot(): () => void {
   return () => {
     EMPTY_DESIGN_SYSTEM_CONTENT = {
       v: 2,

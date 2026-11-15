@@ -163,7 +163,6 @@ import { installPlatformDocumentValues } from "./platform/document-values";
 import { installPlatformCommentDocuments } from "./platform/comment-documents";
 import { installDesignSystemPaths } from "./design-system/paths";
 import { installDesignSystemInstalledSystems } from "./design-system/installed-systems";
-import { installDesignSystemInstallIdentifiers } from "./design-system/install-identifiers";
 import { installPlatformFileReferences } from "./platform/file-references";
 import { installDesignSystemPublishedFiles } from "./design-system/published-files";
 import { installDesignSystemFileOverlay } from "./design-system/file-overlay";
@@ -779,7 +778,6 @@ export function createDesignRuntime(
     installPlatformCommentDocuments(),
     installDesignSystemPaths(),
     installDesignSystemInstalledSystems(),
-    installDesignSystemInstallIdentifiers(),
     installPlatformFileReferences(),
     installDesignSystemPublishedFiles(),
     installDesignSystemFileOverlay(),

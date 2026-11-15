@@ -8,153 +8,151 @@ import type * as Dom from "../contracts/dom";
 import type * as Host from "../contracts/platform-host";
 import type * as React from "react";
 /** Restored application module; prepare first, initialize in original order. */
-import { bindRuntimeValue, type RuntimeBindings } from "../runtime-types";
-export function installFilesApplicationBoot(
-  runtime: RuntimeBindings,
-): () => void {
-  var jsxDesignSystemBootstrap: typeof import("react/jsx-runtime");
-  var isDesignSystemTypeHost: boolean;
-  var designSystemBootStartedAt: number;
-  var designSystemFilesDebugger: FilesCore.FilesDebugger | undefined;
-  var perFileDesignSystemBooted: boolean;
-  var resolveDesignSystemFirstPaint: () => void;
-  var designSystemFirstPaint: Promise<void>;
-  var hasIgnoredLegacyRootFile: boolean;
-  var IGNORED_LEGACY_ROOT_FILE_MESSAGE: string;
-  var UNREAD_LEGACY_STORE_CHANGES_MESSAGE: string;
-  var unreadDesignSystemFileHomes: () => Boot.FileHomes;
-  var designSystemFileHomeDecision: Boot.FileHomeDecision;
-  var designSystemFileHomes: Boot.FileHomes;
-  var designSystemStateLayout: (input: Boot.RawEnvelope) => "tree" | "envelope";
-  function configureLegacyDesignSystemBoot(
-    outcome: Boot.LegacyInitialState,
-    emptyWriteAccess: boolean | null = null,
-    readOnlyReason?: string,
-  ): void {
-    let {
-      boot: boot,
-      opts: options,
-      instance: instance,
-    } = (0, runtime.documentOptionsForBootMode)(
-      (0, runtime.chooseDesignSystemBootModeModelBoot)(
-        outcome,
-        emptyWriteAccess,
-        isDesignSystemTypeHost,
+import { loadJsxNamespace } from "../dependencies";
+import { CONTENT_SIGN_IN_REQUIRED_MESSAGE, determineSlidesWriteAccess } from "../documents/write-access";
+import { showEditorPromiseNotification } from "../editor/editable-name";
+import { FILES_INDEX_NAME, FILES_INDEX_PROJECT_PATH, hasFilesMigrationMarker, parseFilesIndex, readTreeIndex, TREE_INDEX_FIELD } from "../editor/files-index";
+import { BOOT_LIVE_NOTICE_MESSAGES, chooseDesignSystemBootMode, chooseDesignSystemFileHome, get_DUPLICATE_FILE_INDEX_MESSAGE, get_MIGRATION_RUNNING_MESSAGE, get_PIPELINE_READONLY_MESSAGE, get_REOPEN_FAILED_MESSAGE, isRecentMigrationAttempt, isRecentSingleFileMoveNote, mountInitializedFilesOutcome, STORE_META_LOADING_NOTICE_MS, STORE_META_RETRY_MS, STORE_MODE_DECISION_TIMEOUT_MS } from "./boot-decisions";
+import { createFilesDebugger, filesModeDebugEnabled } from "./debug-panel";
+import { BOOT_FILE_READ_RETRY_DELAYS_MS, canRestartArtifact, getHotCapability } from "./hot-updates";
+import { readLegacyDesignSystemState } from "./legacy-state-reader";
+import { MAX_DESIGN_SYSTEM_INDEX_CHARS } from "./migration-codec";
+import { afterTwoAnimationFrames, bootPerFileDesignSystem } from "./per-file-boot";
+import { installDesignSystemTypingListener, restartDesignSystemWithFallback, waitForBootLiveAnnouncer } from "./reopen";
+import { consumeMigrationNotice, consumeMigrationRunningNote, consumeSingleFileMoveNote, get_MIGRATION_INTERRUPTED_MESSAGE, mayStartEmptyFilesSystem, prepareSingleFileMigrationReopen, runSingleFileMigrationBoot, skipMigrationForTab, startEmptyFilesDesignSystem } from "./single-file-migration-boot";
+import { prepareDesignSystemThumbnailCapture, stateEnvelopeTitle, waitForThumbnailResources } from "./thumbnail-readiness";
+import { capabilityLoadTimeoutMs } from "../host/claude-capabilities";
+import { activeHotReloadSession } from "../host/hot-reload";
+import { currentUserCanEdit } from "../host/user-api";
+import { getAssetsCapability } from "../media/assets";
+import { chooseDesignSystemBootModeModelBoot, isDesignSystemTypeHostModelBoot, isMigrationExemptHost } from "../model/boot";
+import { DESIGN_SYSTEM_DEMO_PATH, parseDesignSystemEnvelope } from "../model/file-policy";
+import { bootHealthOutcome } from "../model/publish";
+import { documentOptionsForBootMode, setDocumentBootOptions } from "../model/system-store";
+import { toModuleNamespace } from "../module-helpers";
+import { isEmulatorPage } from "../platform/emulator";
+import { artifactHealth } from "../telemetry/health";
+import { initializeDocumentColorMode } from "../ui/color-mode";
+
+import { set_singleFileMigrationBootHeld } from "./single-file-migration-boot";
+var jsxDesignSystemBootstrap: typeof import("react/jsx-runtime");
+var isDesignSystemTypeHost: boolean;
+var designSystemBootStartedAt: number;
+var designSystemFilesDebugger: FilesCore.FilesDebugger | undefined;
+var perFileDesignSystemBooted: boolean;
+var resolveDesignSystemFirstPaint: () => void;
+var designSystemFirstPaint: Promise<void>;
+var hasIgnoredLegacyRootFile: boolean;
+var IGNORED_LEGACY_ROOT_FILE_MESSAGE: string;
+var UNREAD_LEGACY_STORE_CHANGES_MESSAGE: string;
+var unreadDesignSystemFileHomes: () => Boot.FileHomes;
+var designSystemFileHomeDecision: Boot.FileHomeDecision;
+var designSystemFileHomes: Boot.FileHomes;
+var designSystemStateLayout: (input: Boot.RawEnvelope) => "tree" | "envelope";
+function configureLegacyDesignSystemBoot(
+  outcome: Boot.LegacyInitialState,
+  emptyWriteAccess: boolean | null = null,
+  readOnlyReason?: string,
+): void {
+  let {
+    boot: boot,
+    opts: options,
+    instance: instance,
+  } = (0, documentOptionsForBootMode)(
+    (0, chooseDesignSystemBootModeModelBoot)(
+      outcome,
+      emptyWriteAccess,
+      isDesignSystemTypeHost,
+    ),
+    readOnlyReason,
+  );
+  if (outcome.error !== undefined && boot.mode !== "instance") {
+    console.warn("design-system (files mode): " + outcome.error);
+  }
+  let title = (0, stateEnvelopeTitle)(boot.state);
+  if (title !== undefined) {
+    document.title = title;
+  }
+  (0, setDocumentBootOptions)(options, {
+    instance: instance,
+  });
+}
+async function probeLegacyDesignSystemWriteAccess(): Promise<boolean | null> {
+  let writeDenied: boolean = false,
+    probe = new Promise<boolean | null>((input): void => {
+      let count: number = 2,
+        callback = (input2: boolean | null | undefined) => {
+          if (input2 === true) {
+            return input(true);
+          }
+          if (input2 === false) {
+            writeDenied = true;
+          }
+          if (--count === 0) {
+            input(writeDenied ? false : null);
+          }
+        };
+      (0, currentUserCanEdit)().then(callback);
+      (0, getAssetsCapability)().then((input2) =>
+        callback(input2 === null ? null : true),
+      );
+    }),
+    timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      probe,
+      new Promise<boolean | null>(
+        (input) =>
+          (timer = setTimeout(
+            () => input(writeDenied ? false : null),
+            capabilityLoadTimeoutMs,
+          )),
       ),
-      readOnlyReason,
-    );
-    if (outcome.error !== undefined && boot.mode !== "instance") {
-      console.warn("design-system (files mode): " + outcome.error);
-    }
-    let title = (0, runtime.stateEnvelopeTitle)(boot.state);
-    if (title !== undefined) {
-      document.title = title;
-    }
-    (0, runtime.setDocumentBootOptions)(options, {
-      instance: instance,
-    });
+    ]);
+  } finally {
+    clearTimeout(timer);
   }
-  async function probeLegacyDesignSystemWriteAccess(): Promise<boolean | null> {
-    let writeDenied: boolean = false,
-      probe = new Promise<boolean | null>((input): void => {
-        let count: number = 2,
-          callback = (input2: boolean | null | undefined) => {
-            if (input2 === true) {
-              return input(true);
-            }
-            if (input2 === false) {
-              writeDenied = true;
-            }
-            if (--count === 0) {
-              input(writeDenied ? false : null);
-            }
-          };
-        (0, runtime.currentUserCanEdit)().then(callback);
-        (0, runtime.getAssetsCapability)().then((input2) =>
-          callback(input2 === null ? null : true),
-        );
-      }),
-      timer: ReturnType<typeof setTimeout> | undefined;
-    try {
-      return await Promise.race([
-        probe,
-        new Promise<boolean | null>(
-          (input) =>
-            (timer = setTimeout(
-              () => input(writeDenied ? false : null),
-              runtime.capabilityLoadTimeoutMs,
-            )),
-        ),
-      ]);
-    } finally {
-      clearTimeout(timer);
-    }
+}
+function failedLegacyStateOutcome(error: unknown): Boot.LegacyInitialState {
+  return {
+    state: {},
+    origin: "failed",
+    error: error instanceof Error ? error.message : String(error),
+  };
+}
+function initializeDesignSystemFilesDebugger(): void {
+  if (
+    designSystemFilesDebugger !== undefined ||
+    typeof document === "undefined" ||
+    !(0, filesModeDebugEnabled)("files")
+  ) {
+    return;
   }
-  function failedLegacyStateOutcome(error: unknown): Boot.LegacyInitialState {
-    return {
-      state: {},
-      origin: "failed",
-      error: error instanceof Error ? error.message : String(error),
-    };
-  }
-  function initializeDesignSystemFilesDebugger(): void {
-    if (
-      designSystemFilesDebugger !== undefined ||
-      typeof document === "undefined" ||
-      !(0, runtime.filesModeDebugEnabled)("files")
-    ) {
-      return;
-    }
-    let value = (0, runtime.createFilesDebugger)({
-      product: "design-system",
-      hot: (0, runtime.getHotCapability)(),
-      bootStartedAt: designSystemBootStartedAt,
-    });
-    designSystemFilesDebugger = value;
-    value.field("mode", "per-file (design-system.json is the index)");
-    value.phase(uiMessage("design-system.applicationBoot.indexRead"));
-    value.mount("files");
-  }
-  function readDesignSystemBootStateFile(
-    text: string,
-    path: string,
-    homes: Boot.FileHomes,
-  ): Boot.LegacyReadSuccess | string {
-    let index =
-        text.length > runtime.MAX_DESIGN_SYSTEM_INDEX_CHARS
-          ? null
-          : (0, runtime.parseFilesIndex)(text),
-      marked = index !== null && (0, runtime.hasFilesMigrationMarker)(index);
-    if (path === runtime.FILES_INDEX_PROJECT_PATH) {
-      homes.project = marked ? "marked" : "other";
-      homes.projectText = text;
-      if (index === null || !marked) {
-        return uiMessage("design-system.applicationBoot.notAMarkedIndexUnder");
-      }
-      return {
-        envelope: {
-          title: index.title,
-          content: {
-            v: 2,
-            files: {},
-          },
-          [runtime.TREE_INDEX_FIELD]: index,
-        },
-      };
-    }
-    if (index === null) {
-      let value = (0, runtime.parseDesignSystemEnvelope)(text);
-      if (path === runtime.FILES_INDEX_NAME) {
-        homes.root = typeof value === "string" ? "other" : "envelope";
-      }
-      return value;
-    }
-    if (path === runtime.FILES_INDEX_NAME) {
-      homes.root = marked ? "marked" : "unmarked";
-      homes.rootText = text;
-    }
-    if (!marked) {
-      return uiMessage("design-system.applicationBoot.anIndexWithoutAFiles");
+  let value = (0, createFilesDebugger)({
+    product: "design-system",
+    hot: (0, getHotCapability)(),
+    bootStartedAt: designSystemBootStartedAt,
+  });
+  designSystemFilesDebugger = value;
+  value.field("mode", "per-file (design-system.json is the index)");
+  value.phase(uiMessage("design-system.applicationBoot.indexRead"));
+  value.mount("files");
+}
+function readDesignSystemBootStateFile(
+  text: string,
+  path: string,
+  homes: Boot.FileHomes,
+): Boot.LegacyReadSuccess | string {
+  let index =
+      text.length > MAX_DESIGN_SYSTEM_INDEX_CHARS
+        ? null
+        : (0, parseFilesIndex)(text),
+    marked = index !== null && (0, hasFilesMigrationMarker)(index);
+  if (path === FILES_INDEX_PROJECT_PATH) {
+    homes.project = marked ? "marked" : "other";
+    homes.projectText = text;
+    if (index === null || !marked) {
+      return uiMessage("design-system.applicationBoot.notAMarkedIndexUnder");
     }
     return {
       envelope: {
@@ -163,449 +161,353 @@ export function installFilesApplicationBoot(
           v: 2,
           files: {},
         },
-        [runtime.TREE_INDEX_FIELD]: index,
+        [TREE_INDEX_FIELD]: index,
       },
     };
   }
-  function recordDesignSystemFileHomeDecision(
-    outcome: Boot.LegacyInitialState,
-    decision: Boot.FileHomeDecision,
-  ): void {
-    designSystemFileHomeDecision = decision;
-    hasIgnoredLegacyRootFile =
-      designSystemFileHomeDecision.strayRoot ||
-      (designSystemFileHomeDecision.ignoredRoot &&
-        !designSystemFileHomeDecision.ignoredSingleFile);
-    if (
-      outcome.origin === "instance" &&
-      (0, runtime.readTreeIndex)(outcome.state) !== undefined
-    ) {
-      runtime.activeHotReloadSession?.armReady();
-      if (!isDesignSystemTypeHost) {
-        initializeDesignSystemFilesDebugger();
-      }
+  if (index === null) {
+    let value = (0, parseDesignSystemEnvelope)(text);
+    if (path === FILES_INDEX_NAME) {
+      homes.root = typeof value === "string" ? "other" : "envelope";
+    }
+    return value;
+  }
+  if (path === FILES_INDEX_NAME) {
+    homes.root = marked ? "marked" : "unmarked";
+    homes.rootText = text;
+  }
+  if (!marked) {
+    return uiMessage("design-system.applicationBoot.anIndexWithoutAFiles");
+  }
+  return {
+    envelope: {
+      title: index.title,
+      content: {
+        v: 2,
+        files: {},
+      },
+      [TREE_INDEX_FIELD]: index,
+    },
+  };
+}
+function recordDesignSystemFileHomeDecision(
+  outcome: Boot.LegacyInitialState,
+  decision: Boot.FileHomeDecision,
+): void {
+  designSystemFileHomeDecision = decision;
+  hasIgnoredLegacyRootFile =
+    designSystemFileHomeDecision.strayRoot ||
+    (designSystemFileHomeDecision.ignoredRoot &&
+      !designSystemFileHomeDecision.ignoredSingleFile);
+  if (
+    outcome.origin === "instance" &&
+    (0, readTreeIndex)(outcome.state) !== undefined
+  ) {
+    activeHotReloadSession?.armReady();
+    if (!isDesignSystemTypeHost) {
+      initializeDesignSystemFilesDebugger();
     }
   }
-  function applyFileHomeReadAnswers(
-    homes: Boot.FileHomes,
-    answers: Record<string, Boot.LegacyAnswerKind> | undefined,
-  ): Boot.FileHomes {
-    let answerState = (
-      input: string,
-      options: Boot.FileHomeKind,
-    ): Boot.FileHomeKind =>
-      answers?.[input] === "unread"
-        ? "unread"
-        : answers?.[input] === "missing"
-          ? "absent"
-          : options;
-    return {
-      ...homes,
-      project: answerState(runtime.FILES_INDEX_PROJECT_PATH, homes.project),
-      root: answerState(runtime.FILES_INDEX_NAME, homes.root),
-    };
-  }
-  async function readDesignSystemInitialState(
-    onOwn?: (
-      state: Boot.RawEnvelope | "missing" | "unreadable",
-      homes: Boot.FileHomeDecision,
-    ) => void,
-  ): Promise<Boot.LegacyInitialState> {
-    try {
-      let values = new Set<string>(),
-        callback = async (input: string) => {
-          let controller = new AbortController(),
-            value3 = values.has(input);
-          values.add(input);
-          let value4 = setTimeout(
-            () => controller.abort(),
-            value3
-              ? runtime.STORE_META_RETRY_MS
-              : runtime.STORE_META_LOADING_NOTICE_MS,
-          );
-          try {
-            return await fetch(input, {
-              signal: controller.signal,
-            });
-          } finally {
-            clearTimeout(value4);
-          }
-        },
-        value = unreadDesignSystemFileHomes(),
-        callback2 = (
-          input: Record<string, Boot.LegacyAnswerKind> | undefined,
-        ) => {
-          let value3 = applyFileHomeReadAnswers(value, input);
-          return (0, runtime.chooseDesignSystemFileHome)({
-            ...value3,
-            sameText:
-              value3.projectText !== undefined &&
-              value3.projectText === value3.rootText,
-          });
-        },
-        callback3 = () =>
-          (0, runtime.readLegacyDesignSystemState)({
-            stateFiles: [runtime.FILES_INDEX_PROJECT_PATH],
-            demoFile: runtime.DESIGN_SYSTEM_DEMO_PATH,
-            fetch: callback,
-            mayWrite: async () =>
-              (await (0, runtime.determineSlidesWriteAccess)()).canWrite,
-            refusedWaits: runtime.BOOT_FILE_READ_RETRY_DELAYS_MS,
-            read: (input: string, options: string) =>
-              readDesignSystemBootStateFile(input, options, value),
-            ...(onOwn !== undefined
-              ? {
-                  onOwn: (
-                    input: Boot.RawEnvelope | "missing" | "unreadable",
-                    options: Record<string, Boot.LegacyAnswerKind>,
-                  ) => onOwn(input, callback2(options)),
-                }
-              : {}),
-          }),
-        value2 = await callback3();
-      if (
-        value2.stateFileAnswers?.[runtime.FILES_INDEX_PROJECT_PATH] === "unread"
-      ) {
-        await new Promise<void>(
-          (input) =>
-            void setTimeout(input, runtime.STORE_MODE_DECISION_TIMEOUT_MS),
+}
+function applyFileHomeReadAnswers(
+  homes: Boot.FileHomes,
+  answers: Record<string, Boot.LegacyAnswerKind> | undefined,
+): Boot.FileHomes {
+  let answerState = (
+    input: string,
+    options: Boot.FileHomeKind,
+  ): Boot.FileHomeKind =>
+    answers?.[input] === "unread"
+      ? "unread"
+      : answers?.[input] === "missing"
+        ? "absent"
+        : options;
+  return {
+    ...homes,
+    project: answerState(FILES_INDEX_PROJECT_PATH, homes.project),
+    root: answerState(FILES_INDEX_NAME, homes.root),
+  };
+}
+async function readDesignSystemInitialState(
+  onOwn?: (
+    state: Boot.RawEnvelope | "missing" | "unreadable",
+    homes: Boot.FileHomeDecision,
+  ) => void,
+): Promise<Boot.LegacyInitialState> {
+  try {
+    let values = new Set<string>(),
+      callback = async (input: string) => {
+        let controller = new AbortController(),
+          value3 = values.has(input);
+        values.add(input);
+        let value4 = setTimeout(
+          () => controller.abort(),
+          value3
+            ? STORE_META_RETRY_MS
+            : STORE_META_LOADING_NOTICE_MS,
         );
-        Object.assign(value, unreadDesignSystemFileHomes());
-        value2 = await callback3();
-      }
-      designSystemFileHomes = applyFileHomeReadAnswers(
-        value,
-        value2.stateFileAnswers,
-      );
-      recordDesignSystemFileHomeDecision(
-        value2,
-        callback2(value2.stateFileAnswers),
-      );
-      return value2;
-    } catch (value: unknown) {
-      designSystemFileHomes = {
-        project: "unread",
-        root: "unread",
-      };
-      return failedLegacyStateOutcome(value);
-    }
-  }
-  async function bootLegacyDesignSystemMode(
-    readOnlyReason?: string,
-    storeHandle: Boot.NativeLegacyDatabase | null = null,
-    initialStatePromise?: Promise<Boot.LegacyInitialState>,
-    renderReport?: Boot.HealthReport,
-    storeFault?: string,
-  ): Promise<void> {
-    let recentMigration = (0, runtime.isRecentMigrationAttempt)({
-        runningAt: (0, runtime.consumeMigrationRunningNote)(),
-        now: Date.now(),
-      }),
-      carriedNotice = (0, runtime.consumeMigrationNotice)(),
-      outcome = await (initialStatePromise ?? readDesignSystemInitialState()),
-      report: Boot.HealthReport = (0, runtime.bootHealthOutcome)(
-        outcome,
-        isDesignSystemTypeHost,
-      );
-    runtime.artifactHealth.report(
-      ...(renderReport !== undefined && report[1] === "success"
-        ? renderReport
-        : report),
-    );
-    let mode = await (0, runtime.chooseDesignSystemBootMode)({
-      storeAbsent: storeHandle !== null && storeFault === undefined,
-      forcedReadOnly: readOnlyReason !== undefined,
-      typePage: isDesignSystemTypeHost,
-      emulator: (0, runtime.isEmulatorPage)(),
-      origin: outcome.origin,
-      stateFileFound: outcome.stateFileFound,
-      mayStartOnFiles: runtime.mayStartEmptyFilesSystem,
-      ownLayout: designSystemStateLayout(outcome.state),
-    });
-    if (mode === "tree") {
-      return (0, runtime.bootPerFileDesignSystem)(
-        outcome,
-        readOnlyReason ??
-          ((0, runtime.isMigrationExemptHost)(location.hostname)
-            ? runtime.PIPELINE_READONLY_MESSAGE
-            : designSystemFileHomeDecision.twoIndexes
-              ? runtime.DUPLICATE_FILE_INDEX_MESSAGE
-              : undefined),
-        storeHandle,
-      );
-    }
-    if (mode === "start-tree") {
-      let callback = (input: string): void => {
-        configureLegacyDesignSystemBoot(outcome, null, input);
-        if (runtime.BOOT_LIVE_NOTICE_MESSAGES.has(input)) {
-          (0, runtime.waitForBootLiveAnnouncer)(input);
+        try {
+          return await fetch(input, {
+            signal: controller.signal,
+          });
+        } finally {
+          clearTimeout(value4);
         }
-        (0, runtime.prepareDesignSystemThumbnailCapture)();
-      };
-      if (
-        (0, runtime.mountInitializedFilesOutcome)({
-          started: await (0, runtime.startEmptyFilesDesignSystem)(storeHandle!),
-          mount: callback,
-          reopen: () =>
-            (0, runtime.restartDesignSystemWithFallback)(
-              runtime.REOPEN_FAILED_MESSAGE,
-            ),
-          reload: () => location.reload(),
-        })
-      ) {
-        return;
-      }
-    }
-    if (mode === "readonly-store") {
-      configureLegacyDesignSystemBoot(
-        outcome,
-        null,
-        readOnlyReason ?? runtime.CONTENT_SIGN_IN_REQUIRED_MESSAGE,
+      },
+      value = unreadDesignSystemFileHomes(),
+      callback2 = (
+        input: Record<string, Boot.LegacyAnswerKind> | undefined,
+      ) => {
+        let value3 = applyFileHomeReadAnswers(value, input);
+        return (0, chooseDesignSystemFileHome)({
+          ...value3,
+          sameText:
+            value3.projectText !== undefined &&
+            value3.projectText === value3.rootText,
+        });
+      },
+      callback3 = () =>
+        (0, readLegacyDesignSystemState)({
+          stateFiles: [FILES_INDEX_PROJECT_PATH],
+          demoFile: DESIGN_SYSTEM_DEMO_PATH,
+          fetch: callback,
+          mayWrite: async () =>
+            (await (0, determineSlidesWriteAccess)()).canWrite,
+          refusedWaits: BOOT_FILE_READ_RETRY_DELAYS_MS,
+          read: (input: string, options: string) =>
+            readDesignSystemBootStateFile(input, options, value),
+          ...(onOwn !== undefined
+            ? {
+                onOwn: (
+                  input: Boot.RawEnvelope | "missing" | "unreadable",
+                  options: Record<string, Boot.LegacyAnswerKind>,
+                ) => onOwn(input, callback2(options)),
+              }
+            : {}),
+        }),
+      value2 = await callback3();
+    if (
+      value2.stateFileAnswers?.[FILES_INDEX_PROJECT_PATH] === "unread"
+    ) {
+      await new Promise<void>(
+        (input) =>
+          void setTimeout(input, STORE_MODE_DECISION_TIMEOUT_MS),
       );
-      (0, runtime.prepareDesignSystemThumbnailCapture)();
+      Object.assign(value, unreadDesignSystemFileHomes());
+      value2 = await callback3();
+    }
+    designSystemFileHomes = applyFileHomeReadAnswers(
+      value,
+      value2.stateFileAnswers,
+    );
+    recordDesignSystemFileHomeDecision(
+      value2,
+      callback2(value2.stateFileAnswers),
+    );
+    return value2;
+  } catch (value: unknown) {
+    designSystemFileHomes = {
+      project: "unread",
+      root: "unread",
+    };
+    return failedLegacyStateOutcome(value);
+  }
+}
+async function bootLegacyDesignSystemMode(
+  readOnlyReason?: string,
+  storeHandle: Boot.NativeLegacyDatabase | null = null,
+  initialStatePromise?: Promise<Boot.LegacyInitialState>,
+  renderReport?: Boot.HealthReport,
+  storeFault?: string,
+): Promise<void> {
+  let recentMigration = (0, isRecentMigrationAttempt)({
+      runningAt: (0, consumeMigrationRunningNote)(),
+      now: Date.now(),
+    }),
+    carriedNotice = (0, consumeMigrationNotice)(),
+    outcome = await (initialStatePromise ?? readDesignSystemInitialState()),
+    report: Boot.HealthReport = (0, bootHealthOutcome)(
+      outcome,
+      isDesignSystemTypeHost,
+    );
+  artifactHealth.report(
+    ...(renderReport !== undefined && report[1] === "success"
+      ? renderReport
+      : report),
+  );
+  let mode = await (0, chooseDesignSystemBootMode)({
+    storeAbsent: storeHandle !== null && storeFault === undefined,
+    forcedReadOnly: readOnlyReason !== undefined,
+    typePage: isDesignSystemTypeHost,
+    emulator: (0, isEmulatorPage)(),
+    origin: outcome.origin,
+    stateFileFound: outcome.stateFileFound,
+    mayStartOnFiles: mayStartEmptyFilesSystem,
+    ownLayout: designSystemStateLayout(outcome.state),
+  });
+  if (mode === "tree") {
+    return (0, bootPerFileDesignSystem)(
+      outcome,
+      readOnlyReason ??
+        ((0, isMigrationExemptHost)(location.hostname)
+          ? get_PIPELINE_READONLY_MESSAGE()
+          : designSystemFileHomeDecision.twoIndexes
+            ? get_DUPLICATE_FILE_INDEX_MESSAGE()
+            : undefined),
+      storeHandle,
+    );
+  }
+  if (mode === "start-tree") {
+    let callback = (input: string): void => {
+      configureLegacyDesignSystemBoot(outcome, null, input);
+      if (BOOT_LIVE_NOTICE_MESSAGES.has(input)) {
+        (0, waitForBootLiveAnnouncer)(input);
+      }
+      (0, prepareDesignSystemThumbnailCapture)();
+    };
+    if (
+      (0, mountInitializedFilesOutcome)({
+        started: await (0, startEmptyFilesDesignSystem)(storeHandle!),
+        mount: callback,
+        reopen: () =>
+          (0, restartDesignSystemWithFallback)(
+            get_REOPEN_FAILED_MESSAGE(),
+          ),
+        reload: () => location.reload(),
+      })
+    ) {
       return;
     }
-    let singleFileInstance =
-        !isDesignSystemTypeHost &&
-        outcome.origin === "instance" &&
-        readOnlyReason === undefined &&
-        storeHandle !== null &&
-        storeFault === undefined &&
-        designSystemStateLayout(outcome.state) === "envelope",
-      moveInterrupted = singleFileInstance && recentMigration;
-    if (moveInterrupted) {
-      (0, runtime.skipMigrationForTab)();
-    }
-    let notice = singleFileInstance
-      ? (carriedNotice ??
-        (moveInterrupted ? runtime.MIGRATION_INTERRUPTED_MESSAGE : null))
-      : null;
-    if (notice !== null) {
-      (0, runtime.afterTwoAnimationFrames)(() =>
-        (0, runtime.showEditorPromiseNotification)(notice, null),
-      );
-    }
-    let holdSingleFile = (runtime.singleFileMigrationBootHeld = (0,
-    runtime.isRecentSingleFileMoveNote)({
-      noteAt: singleFileInstance
-        ? (0, runtime.consumeSingleFileMoveNote)()
-        : null,
-      now: Date.now(),
-      canReopen: (0, runtime.canRestartArtifact)(),
-      singleFileHere: singleFileInstance,
-    }));
+  }
+  if (mode === "readonly-store") {
     configureLegacyDesignSystemBoot(
       outcome,
-      !isDesignSystemTypeHost &&
-        outcome.origin === "demo" &&
-        outcome.stateFileFound === false
-        ? await probeLegacyDesignSystemWriteAccess()
-        : null,
-      holdSingleFile ? runtime.MIGRATION_RUNNING_MESSAGE : readOnlyReason,
+      null,
+      readOnlyReason ?? CONTENT_SIGN_IN_REQUIRED_MESSAGE,
     );
-    let liveMessage = holdSingleFile
-      ? runtime.MIGRATION_RUNNING_MESSAGE
-      : readOnlyReason;
-    if (
-      liveMessage !== undefined &&
-      runtime.BOOT_LIVE_NOTICE_MESSAGES.has(liveMessage)
-    ) {
-      (0, runtime.installDesignSystemTypingListener)();
-      (0, runtime.waitForBootLiveAnnouncer)(liveMessage);
-    }
-    if (outcome.origin === "instance") {
-      (0, runtime.waitForThumbnailResources)();
-    } else {
-      (0, runtime.prepareDesignSystemThumbnailCapture)();
-    }
-    if (holdSingleFile) {
-      (0, runtime.afterTwoAnimationFrames)(
+    (0, prepareDesignSystemThumbnailCapture)();
+    return;
+  }
+  let singleFileInstance =
+      !isDesignSystemTypeHost &&
+      outcome.origin === "instance" &&
+      readOnlyReason === undefined &&
+      storeHandle !== null &&
+      storeFault === undefined &&
+      designSystemStateLayout(outcome.state) === "envelope",
+    moveInterrupted = singleFileInstance && recentMigration;
+  if (moveInterrupted) {
+    (0, skipMigrationForTab)();
+  }
+  let notice = singleFileInstance
+    ? (carriedNotice ??
+      (moveInterrupted ? get_MIGRATION_INTERRUPTED_MESSAGE() : null))
+    : null;
+  if (notice !== null) {
+    (0, afterTwoAnimationFrames)(() =>
+      (0, showEditorPromiseNotification)(notice, null),
+    );
+  }
+  let holdSingleFile = (set_singleFileMigrationBootHeld((0,
+  isRecentSingleFileMoveNote)({
+    noteAt: singleFileInstance
+      ? (0, consumeSingleFileMoveNote)()
+      : null,
+    now: Date.now(),
+    canReopen: (0, canRestartArtifact)(),
+    singleFileHere: singleFileInstance,
+  })));
+  configureLegacyDesignSystemBoot(
+    outcome,
+    !isDesignSystemTypeHost &&
+      outcome.origin === "demo" &&
+      outcome.stateFileFound === false
+      ? await probeLegacyDesignSystemWriteAccess()
+      : null,
+    holdSingleFile ? get_MIGRATION_RUNNING_MESSAGE() : readOnlyReason,
+  );
+  let liveMessage = holdSingleFile
+    ? get_MIGRATION_RUNNING_MESSAGE()
+    : readOnlyReason;
+  if (
+    liveMessage !== undefined &&
+    BOOT_LIVE_NOTICE_MESSAGES.has(liveMessage)
+  ) {
+    (0, installDesignSystemTypingListener)();
+    (0, waitForBootLiveAnnouncer)(liveMessage);
+  }
+  if (outcome.origin === "instance") {
+    (0, waitForThumbnailResources)();
+  } else {
+    (0, prepareDesignSystemThumbnailCapture)();
+  }
+  if (holdSingleFile) {
+    (0, afterTwoAnimationFrames)(
+      () =>
+        void (0, runSingleFileMigrationBoot)(
+          storeHandle!,
+          outcome.state,
+        ).catch((): void => {
+          return;
+        }),
+    );
+  } else if (singleFileInstance) {
+    (0, afterTwoAnimationFrames)(() =>
+      setTimeout(
         () =>
-          void (0, runtime.runSingleFileMigrationBoot)(
-            storeHandle!,
+          void (0, prepareSingleFileMigrationReopen)(
             outcome.state,
           ).catch((): void => {
             return;
           }),
-      );
-    } else if (singleFileInstance) {
-      (0, runtime.afterTwoAnimationFrames)(() =>
-        setTimeout(
-          () =>
-            void (0, runtime.prepareSingleFileMigrationReopen)(
-              outcome.state,
-            ).catch((): void => {
-              return;
-            }),
-          1000,
-        ),
-      );
-    }
+        1000,
+      ),
+    );
   }
-  bindRuntimeValue(
-    runtime,
-    "jsxDesignSystemBootstrap",
-    () => jsxDesignSystemBootstrap,
-    (value) => {
-      jsxDesignSystemBootstrap = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "isDesignSystemTypeHost",
-    () => isDesignSystemTypeHost,
-    (value) => {
-      isDesignSystemTypeHost = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "configureLegacyDesignSystemBoot",
-    () => configureLegacyDesignSystemBoot,
-  );
-  bindRuntimeValue(
-    runtime,
-    "probeLegacyDesignSystemWriteAccess",
-    () => probeLegacyDesignSystemWriteAccess,
-  );
-  bindRuntimeValue(
-    runtime,
-    "failedLegacyStateOutcome",
-    () => failedLegacyStateOutcome,
-  );
-  bindRuntimeValue(
-    runtime,
-    "designSystemBootStartedAt",
-    () => designSystemBootStartedAt,
-    (value) => {
-      designSystemBootStartedAt = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "designSystemFilesDebugger",
-    () => designSystemFilesDebugger,
-    (value) => {
-      designSystemFilesDebugger = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "perFileDesignSystemBooted",
-    () => perFileDesignSystemBooted,
-    (value) => {
-      perFileDesignSystemBooted = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "resolveDesignSystemFirstPaint",
-    () => resolveDesignSystemFirstPaint,
-    (value) => {
-      resolveDesignSystemFirstPaint = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "designSystemFirstPaint",
-    () => designSystemFirstPaint,
-    (value) => {
-      designSystemFirstPaint = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "initializeDesignSystemFilesDebugger",
-    () => initializeDesignSystemFilesDebugger,
-  );
-  bindRuntimeValue(
-    runtime,
-    "hasIgnoredLegacyRootFile",
-    () => hasIgnoredLegacyRootFile,
-    (value) => {
-      hasIgnoredLegacyRootFile = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "IGNORED_LEGACY_ROOT_FILE_MESSAGE",
-    () => uiMessage("design-system.applicationBoot.thisDesignSystemHasAn"),
-    (value) => {
-      IGNORED_LEGACY_ROOT_FILE_MESSAGE = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "UNREAD_LEGACY_STORE_CHANGES_MESSAGE",
-    () => uiMessage("design-system.applicationBoot.somethingWasSavedForThis"),
-    (value) => {
-      UNREAD_LEGACY_STORE_CHANGES_MESSAGE = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "unreadDesignSystemFileHomes",
-    () => unreadDesignSystemFileHomes,
-    (value) => {
-      unreadDesignSystemFileHomes = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "readDesignSystemBootStateFile",
-    () => readDesignSystemBootStateFile,
-  );
-  bindRuntimeValue(
-    runtime,
-    "designSystemFileHomeDecision",
-    () => designSystemFileHomeDecision,
-    (value) => {
-      designSystemFileHomeDecision = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "designSystemFileHomes",
-    () => designSystemFileHomes,
-    (value) => {
-      designSystemFileHomes = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "recordDesignSystemFileHomeDecision",
-    () => recordDesignSystemFileHomeDecision,
-  );
-  bindRuntimeValue(
-    runtime,
-    "designSystemStateLayout",
-    () => designSystemStateLayout,
-    (value) => {
-      designSystemStateLayout = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "applyFileHomeReadAnswers",
-    () => applyFileHomeReadAnswers,
-  );
-  bindRuntimeValue(
-    runtime,
-    "readDesignSystemInitialState",
-    () => readDesignSystemInitialState,
-  );
-  bindRuntimeValue(
-    runtime,
-    "bootLegacyDesignSystemMode",
-    () => bootLegacyDesignSystemMode,
-  );
+}
+function get_IGNORED_LEGACY_ROOT_FILE_MESSAGE() {
+  return uiMessage("design-system.applicationBoot.thisDesignSystemHasAn");
+}
+function get_UNREAD_LEGACY_STORE_CHANGES_MESSAGE() {
+  return uiMessage("design-system.applicationBoot.somethingWasSavedForThis");
+}
+export {
+  applyFileHomeReadAnswers,
+  bootLegacyDesignSystemMode,
+  configureLegacyDesignSystemBoot,
+  designSystemBootStartedAt,
+  designSystemFileHomeDecision,
+  designSystemFileHomes,
+  designSystemFilesDebugger,
+  designSystemFirstPaint,
+  designSystemStateLayout,
+  failedLegacyStateOutcome,
+  hasIgnoredLegacyRootFile,
+  get_IGNORED_LEGACY_ROOT_FILE_MESSAGE,
+  initializeDesignSystemFilesDebugger,
+  isDesignSystemTypeHost,
+  jsxDesignSystemBootstrap,
+  perFileDesignSystemBooted,
+  probeLegacyDesignSystemWriteAccess,
+  readDesignSystemBootStateFile,
+  readDesignSystemInitialState,
+  recordDesignSystemFileHomeDecision,
+  resolveDesignSystemFirstPaint,
+  get_UNREAD_LEGACY_STORE_CHANGES_MESSAGE,
+  unreadDesignSystemFileHomes,
+};
+export function set_perFileDesignSystemBooted(value: any): any {
+  perFileDesignSystemBooted = value;
+  return value;
+}
+export function installFilesApplicationBoot(): () => void {
   return () => {
-    jsxDesignSystemBootstrap = (0, runtime.toModuleNamespace)(
-      (0, runtime.loadJsxNamespace)(),
+    jsxDesignSystemBootstrap = (0, toModuleNamespace)(
+      (0, loadJsxNamespace)(),
       1,
     );
-    (0, runtime.initializeDocumentColorMode)(document);
-    isDesignSystemTypeHost = (0, runtime.isDesignSystemTypeHostModelBoot)(
+    (0, initializeDocumentColorMode)(document);
+    isDesignSystemTypeHost = (0, isDesignSystemTypeHostModelBoot)(
       location.hostname,
     );
     designSystemBootStartedAt =
@@ -627,7 +529,7 @@ export function installFilesApplicationBoot(
       project: "unread",
       root: "unread",
     });
-    designSystemFileHomeDecision = (0, runtime.chooseDesignSystemFileHome)({
+    designSystemFileHomeDecision = (0, chooseDesignSystemFileHome)({
       project: "absent",
       root: "absent",
     });
@@ -636,6 +538,6 @@ export function installFilesApplicationBoot(
       root: "unread",
     };
     designSystemStateLayout = (input: Boot.RawEnvelope): "tree" | "envelope" =>
-      (0, runtime.readTreeIndex)(input) !== undefined ? "tree" : "envelope";
+      (0, readTreeIndex)(input) !== undefined ? "tree" : "envelope";
   };
 }

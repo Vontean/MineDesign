@@ -2,179 +2,96 @@ import { uiMessage } from '@minedesign/contracts/ui-messages';
 import type * as React from "react";
 import type * as Host from "../../contracts/platform-host";
 /** Restored application module; prepare first, initialize in original order. */
-import { bindRuntimeValue, type RuntimeBindings } from "../../runtime-types";
-export function installFilesUiHandoffRuntime(
-  runtime: RuntimeBindings,
-): () => void {
-  var reactHandoff: typeof React;
-  var reactDomHandoff: typeof import("react-dom");
-  var jsxHandoff: typeof import("react/jsx-runtime");
-  var reactHandoffTargets: typeof React;
-  var jsxHandoffTargets: typeof import("react/jsx-runtime");
-  var HANDOFF_TARGETS: Host.HandoffTarget[];
-  var HANDOFF_TARGET_STORAGE_KEY: string;
-  var preferredHandoffTarget: Host.HandoffTarget | null;
-  var reactArtifactClipboard: typeof React;
-  var ARTIFACT_CLIPBOARD_ATTRIBUTE: string;
-  var ARTIFACT_CLIPBOARD_PATTERN: RegExp;
-  function claudeSendResultMessage(
-    kind: Host.ClaudeSendKind,
-    suffix?: string,
-  ): string;
-  function claudeSendResultMessage(
-    kind: string,
-    suffix?: string,
-  ): string | undefined;
-  function claudeSendResultMessage(
-    kind: string,
-    suffix: string = "",
-  ): string | undefined {
-    // MineDesign: user-facing copy calls the agent "the agent", not Claude.
-    switch (kind) {
-      case "staged":
-      case "waiting":
-        return (
-          uiMessage("design-system.handoffRuntime.addedToYourMessageTo") + suffix
-        );
-      case "unanswered":
-        return uiMessage("design-system.handoffRuntime.couldnTReachTheAgent");
-      case "sent":
-        return uiMessage("design-system.handoffRuntime.sentToTheAgent") + suffix;
-      case "started":
-        return uiMessage("design-system.handoffRuntime.sendingToTheAgent") + suffix;
-      case "copied":
-        return uiMessage("design-system.handoffRuntime.promptCopiedPasteItTo") + suffix;
-      case "failed":
-        return uiMessage("design-system.handoffRuntime.couldnTCopyThePrompt");
-    }
+import { loadJsxNamespace, loadReactDomNamespace, loadReactNamespace } from "../../dependencies";
+import { toModuleNamespace } from "../../module-helpers";
+
+var reactHandoff: typeof React;
+var reactDomHandoff: typeof import("react-dom");
+var jsxHandoff: typeof import("react/jsx-runtime");
+var reactHandoffTargets: typeof React;
+var jsxHandoffTargets: typeof import("react/jsx-runtime");
+var HANDOFF_TARGETS: Host.HandoffTarget[];
+var HANDOFF_TARGET_STORAGE_KEY: string;
+var preferredHandoffTarget: Host.HandoffTarget | null;
+var reactArtifactClipboard: typeof React;
+var ARTIFACT_CLIPBOARD_ATTRIBUTE: string;
+var ARTIFACT_CLIPBOARD_PATTERN: RegExp;
+function claudeSendResultMessage(
+  kind: Host.ClaudeSendKind,
+  suffix?: string,
+): string;
+function claudeSendResultMessage(
+  kind: string,
+  suffix?: string,
+): string | undefined;
+function claudeSendResultMessage(
+  kind: string,
+  suffix: string = "",
+): string | undefined {
+  // MineDesign: user-facing copy calls the agent "the agent", not Claude.
+  switch (kind) {
+    case "staged":
+    case "waiting":
+      return (
+        uiMessage("design-system.handoffRuntime.addedToYourMessageTo") + suffix
+      );
+    case "unanswered":
+      return uiMessage("design-system.handoffRuntime.couldnTReachTheAgent");
+    case "sent":
+      return uiMessage("design-system.handoffRuntime.sentToTheAgent") + suffix;
+    case "started":
+      return uiMessage("design-system.handoffRuntime.sendingToTheAgent") + suffix;
+    case "copied":
+      return uiMessage("design-system.handoffRuntime.promptCopiedPasteItTo") + suffix;
+    case "failed":
+      return uiMessage("design-system.handoffRuntime.couldnTCopyThePrompt");
   }
-  function previewLibraryScripts(
-    libraries: {
-      load: readonly {
-        file: string;
-      }[];
-    },
-    files: Readonly<Record<string, string | undefined>>,
-  ): string[] {
-    return libraries.load.map((input) => files[input.file] ?? "");
-  }
-  bindRuntimeValue(
-    runtime,
-    "reactHandoff",
-    () => reactHandoff,
-    (value) => {
-      reactHandoff = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "reactDomHandoff",
-    () => reactDomHandoff,
-    (value) => {
-      reactDomHandoff = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "jsxHandoff",
-    () => jsxHandoff,
-    (value) => {
-      jsxHandoff = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "claudeSendResultMessage",
-    () => claudeSendResultMessage,
-  );
-  bindRuntimeValue(
-    runtime,
-    "reactHandoffTargets",
-    () => reactHandoffTargets,
-    (value) => {
-      reactHandoffTargets = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "jsxHandoffTargets",
-    () => jsxHandoffTargets,
-    (value) => {
-      jsxHandoffTargets = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "HANDOFF_TARGETS",
-    () => HANDOFF_TARGETS,
-    (value) => {
-      HANDOFF_TARGETS = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "HANDOFF_TARGET_STORAGE_KEY",
-    () => HANDOFF_TARGET_STORAGE_KEY,
-    (value) => {
-      HANDOFF_TARGET_STORAGE_KEY = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "preferredHandoffTarget",
-    () => preferredHandoffTarget,
-    (value) => {
-      preferredHandoffTarget = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "reactArtifactClipboard",
-    () => reactArtifactClipboard,
-    (value) => {
-      reactArtifactClipboard = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "ARTIFACT_CLIPBOARD_ATTRIBUTE",
-    () => ARTIFACT_CLIPBOARD_ATTRIBUTE,
-    (value) => {
-      ARTIFACT_CLIPBOARD_ATTRIBUTE = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "ARTIFACT_CLIPBOARD_PATTERN",
-    () => ARTIFACT_CLIPBOARD_PATTERN,
-    (value) => {
-      ARTIFACT_CLIPBOARD_PATTERN = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "previewLibraryScripts",
-    () => previewLibraryScripts,
-  );
+}
+function previewLibraryScripts(
+  libraries: {
+    load: readonly {
+      file: string;
+    }[];
+  },
+  files: Readonly<Record<string, string | undefined>>,
+): string[] {
+  return libraries.load.map((input) => files[input.file] ?? "");
+}
+export {
+  ARTIFACT_CLIPBOARD_ATTRIBUTE,
+  ARTIFACT_CLIPBOARD_PATTERN,
+  claudeSendResultMessage,
+  HANDOFF_TARGET_STORAGE_KEY,
+  HANDOFF_TARGETS,
+  jsxHandoff,
+  jsxHandoffTargets,
+  preferredHandoffTarget,
+  previewLibraryScripts,
+  reactArtifactClipboard,
+  reactDomHandoff,
+  reactHandoff,
+  reactHandoffTargets,
+};
+export function installFilesUiHandoffRuntime(): () => void {
   return () => {
-    reactHandoff = (0, runtime.toModuleNamespace)(
-      (0, runtime.loadReactNamespace)(),
+    reactHandoff = (0, toModuleNamespace)(
+      (0, loadReactNamespace)(),
       1,
     );
-    reactDomHandoff = (0, runtime.toModuleNamespace)(
-      (0, runtime.loadReactDomNamespace)(),
+    reactDomHandoff = (0, toModuleNamespace)(
+      (0, loadReactDomNamespace)(),
       1,
     );
-    jsxHandoff = (0, runtime.toModuleNamespace)(
-      (0, runtime.loadJsxNamespace)(),
+    jsxHandoff = (0, toModuleNamespace)(
+      (0, loadJsxNamespace)(),
       1,
     );
-    reactHandoffTargets = (0, runtime.toModuleNamespace)(
-      (0, runtime.loadReactNamespace)(),
+    reactHandoffTargets = (0, toModuleNamespace)(
+      (0, loadReactNamespace)(),
       1,
     );
-    jsxHandoffTargets = (0, runtime.toModuleNamespace)(
-      (0, runtime.loadJsxNamespace)(),
+    jsxHandoffTargets = (0, toModuleNamespace)(
+      (0, loadJsxNamespace)(),
       1,
     );
     HANDOFF_TARGETS = ["cowork", "code", "coworker"];
@@ -187,8 +104,8 @@ export function installFilesUiHandoffRuntime(
     } catch {
       preferredHandoffTarget = null;
     }
-    reactArtifactClipboard = (0, runtime.toModuleNamespace)(
-      (0, runtime.loadReactNamespace)(),
+    reactArtifactClipboard = (0, toModuleNamespace)(
+      (0, loadReactNamespace)(),
       1,
     );
     ARTIFACT_CLIPBOARD_ATTRIBUTE = "data-appifact-object";

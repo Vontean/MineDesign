@@ -1,53 +1,27 @@
 import type * as Host from "../contracts/platform-host";
 import type * as React from "react";
 /** Restored application module; prepare first, initialize in original order. */
-import { bindRuntimeValue, type RuntimeBindings } from "../runtime-types";
-export function installPlatformFrameChrome(
-  runtime: RuntimeBindings,
-): () => void {
-  var reactForPlatformFrameChrome: typeof React;
-  var reactForPlatformFrameChrome2: typeof React;
-  var OPEN_OVERLAY_SELECTOR: string;
-  var MENU_POPOVER_OPEN_SELECTORS: string;
-  bindRuntimeValue(
-    runtime,
-    "reactForPlatformFrameChrome",
-    () => reactForPlatformFrameChrome,
-    (value) => {
-      reactForPlatformFrameChrome = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "reactForPlatformFrameChrome2",
-    () => reactForPlatformFrameChrome2,
-    (value) => {
-      reactForPlatformFrameChrome2 = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "OPEN_OVERLAY_SELECTOR",
-    () => OPEN_OVERLAY_SELECTOR,
-    (value) => {
-      OPEN_OVERLAY_SELECTOR = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "MENU_POPOVER_OPEN_SELECTORS",
-    () => MENU_POPOVER_OPEN_SELECTORS,
-    (value) => {
-      MENU_POPOVER_OPEN_SELECTORS = value;
-    },
-  );
+import { loadReactNamespace } from "../dependencies";
+import { toModuleNamespace } from "../module-helpers";
+
+var reactForPlatformFrameChrome: typeof React;
+var reactForPlatformFrameChrome2: typeof React;
+var OPEN_OVERLAY_SELECTOR: string;
+var MENU_POPOVER_OPEN_SELECTORS: string;
+export {
+  MENU_POPOVER_OPEN_SELECTORS,
+  OPEN_OVERLAY_SELECTOR,
+  reactForPlatformFrameChrome,
+  reactForPlatformFrameChrome2,
+};
+export function installPlatformFrameChrome(): () => void {
   return () => {
-    reactForPlatformFrameChrome = (0, runtime.toModuleNamespace)(
-      (0, runtime.loadReactNamespace)(),
+    reactForPlatformFrameChrome = (0, toModuleNamespace)(
+      (0, loadReactNamespace)(),
       1,
     );
-    reactForPlatformFrameChrome2 = (0, runtime.toModuleNamespace)(
-      (0, runtime.loadReactNamespace)(),
+    reactForPlatformFrameChrome2 = (0, toModuleNamespace)(
+      (0, loadReactNamespace)(),
       1,
     );
     OPEN_OVERLAY_SELECTOR = [

@@ -3,78 +3,61 @@ import { useUiLocale } from '../../ui-locale.ts';
 import type * as React from "react";
 import type * as Color from "../../contracts/color-controls";
 /** Restored application module; prepare first, initialize in original order. */
-import { bindRuntimeValue, type RuntimeBindings } from "../../runtime-types";
-export function installUiColorGradientStops(
-  runtime: RuntimeBindings,
-): () => void {
-  var jsxGradientStopKeyboardHandlers: typeof import("react/jsx-runtime");
-  var gradientStopKeyboardHandlers: {
-    onKeyDownCapture: React.KeyboardEventHandler<HTMLElement>;
-  };
-  var TooltipWrapperJsx: typeof import("react/jsx-runtime");
-  function TooltipWrapper({
-    tip: tip,
-    shortcut: shortcut,
-    side = "top",
-    align = "center",
-    wrap = false,
-    delay: delay,
-    className: className,
-    children: children,
-  }: Color.TooltipWrapperProps): React.ReactElement {
-    useUiLocale();
-    return (
-      <runtime.Tooltip
-        content={tip}
-        shortcut={shortcut}
-        side={side}
-        align={
-          align === "right" ? "end" : align === "left" ? "start" : "center"
-        }
-        multiline={wrap}
-        delay={delay}
-        hoverable={false}
+import { loadJsxNamespace } from "../../dependencies";
+import { toModuleNamespace } from "../../module-helpers";
+import { Tooltip } from "../avatars";
+import { joinClassNames } from "../property-icons";
+
+var jsxGradientStopKeyboardHandlers: typeof import("react/jsx-runtime");
+var gradientStopKeyboardHandlers: {
+  onKeyDownCapture: React.KeyboardEventHandler<HTMLElement>;
+};
+var TooltipWrapperJsx: typeof import("react/jsx-runtime");
+function TooltipWrapper({
+  tip: tip,
+  shortcut: shortcut,
+  side = "top",
+  align = "center",
+  wrap = false,
+  delay: delay,
+  className: className,
+  children: children,
+}: Color.TooltipWrapperProps): React.ReactElement {
+  useUiLocale();
+  return (
+    <Tooltip
+      content={tip}
+      shortcut={shortcut}
+      side={side}
+      align={
+        align === "right" ? "end" : align === "left" ? "start" : "center"
+      }
+      multiline={wrap}
+      delay={delay}
+      hoverable={false}
+    >
+      <span
+        data-tip={typeof tip === "string" ? (tip) : (undefined)}
+        className={(0, joinClassNames)(
+          "relative inline-flex align-top",
+          className,
+        )}
       >
-        <span
-          data-tip={typeof tip === "string" ? (tip) : (undefined)}
-          className={(0, runtime.joinClassNames)(
-            "relative inline-flex align-top",
-            className,
-          )}
-        >
-          {children}
-        </span>
-      </runtime.Tooltip>
-    );
-  }
-  bindRuntimeValue(
-    runtime,
-    "jsxGradientStopKeyboardHandlers",
-    () => jsxGradientStopKeyboardHandlers,
-    (value) => {
-      jsxGradientStopKeyboardHandlers = value;
-    },
+        {children}
+      </span>
+    </Tooltip>
   );
-  bindRuntimeValue(
-    runtime,
-    "gradientStopKeyboardHandlers",
-    () => gradientStopKeyboardHandlers,
-    (value) => {
-      gradientStopKeyboardHandlers = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "TooltipWrapperJsx",
-    () => TooltipWrapperJsx,
-    (value) => {
-      TooltipWrapperJsx = value;
-    },
-  );
-  bindRuntimeValue(runtime, "TooltipWrapper", () => TooltipWrapper);
+}
+export {
+  gradientStopKeyboardHandlers,
+  jsxGradientStopKeyboardHandlers,
+  TooltipWrapper,
+  TooltipWrapperJsx,
+};
+export function installUiColorGradientStops(): () => void {
   return () => {
-    jsxGradientStopKeyboardHandlers = (0, runtime.toModuleNamespace)(
-      (0, runtime.loadJsxNamespace)(),
+    jsxGradientStopKeyboardHandlers = (0, toModuleNamespace)(
+      (0, loadJsxNamespace)(),
       1,
     );
     gradientStopKeyboardHandlers = {
@@ -111,8 +94,8 @@ export function installUiColorGradientStops(
         }
       },
     };
-    TooltipWrapperJsx = (0, runtime.toModuleNamespace)(
-      (0, runtime.loadJsxNamespace)(),
+    TooltipWrapperJsx = (0, toModuleNamespace)(
+      (0, loadJsxNamespace)(),
       1,
     );
   };

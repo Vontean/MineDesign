@@ -2,160 +2,61 @@ import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import type * as React from "react";
 import type * as C from "../contracts/controls";
-import { bindRuntimeValue, type RuntimeBindings } from "../runtime-types";
-export function installUiBadges(runtime: RuntimeBindings): () => void {
-  var reactzV: typeof React;
-  var jsxs_: typeof import("react/jsx-runtime");
-  var badgeVariantClasses: Record<C.BadgeVariant, string>;
-  var solidBadgeVariantClasses: Record<C.BadgeVariant, string>;
-  var solidBadgeColorClasses: Record<C.AccentColor, string>;
-  var tintedBadgeColorClasses: Record<C.AccentColor, string>;
-  var badgeIconSpacingClasses: Record<"xs" | "sm" | "md", string>;
-  var badgeLineHeightClasses: string;
-  var badgeSizeByDensity: Record<
-    C.Density,
-    Record<C.ControlSize, "xs" | "sm" | "md">
-  >;
-  var Badge: C.ForwardComponent<HTMLSpanElement, C.BadgeProps>;
-  var reactForUiBadges: typeof React;
-  var jsxMu: typeof import("react/jsx-runtime");
-  var counterVariantClasses: Record<Exclude<C.BadgeVariant, "pro">, string>;
-  var counterFillClasses: Record<Exclude<C.BadgeVariant, "pro">, string>;
-  var Counter: C.ForwardComponent<HTMLSpanElement, C.CounterProps>;
-  function isBadgeVariant(
-    input: C.BadgeVariant | C.AccentColor,
-  ): input is C.BadgeVariant {
-    return Object.hasOwn(badgeVariantClasses, input);
-  }
-  bindRuntimeValue(
-    runtime,
-    "reactzV",
-    () => reactzV,
-    (value) => {
-      reactzV = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "jsxs_",
-    () => jsxs_,
-    (value) => {
-      jsxs_ = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "badgeVariantClasses",
-    () => badgeVariantClasses,
-    (value) => {
-      badgeVariantClasses = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "solidBadgeVariantClasses",
-    () => solidBadgeVariantClasses,
-    (value) => {
-      solidBadgeVariantClasses = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "solidBadgeColorClasses",
-    () => solidBadgeColorClasses,
-    (value) => {
-      solidBadgeColorClasses = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "tintedBadgeColorClasses",
-    () => tintedBadgeColorClasses,
-    (value) => {
-      tintedBadgeColorClasses = value;
-    },
-  );
-  bindRuntimeValue(runtime, "isBadgeVariant", () => isBadgeVariant);
-  bindRuntimeValue(
-    runtime,
-    "badgeIconSpacingClasses",
-    () => badgeIconSpacingClasses,
-    (value) => {
-      badgeIconSpacingClasses = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "badgeLineHeightClasses",
-    () => badgeLineHeightClasses,
-    (value) => {
-      badgeLineHeightClasses = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "badgeSizeByDensity",
-    () => badgeSizeByDensity,
-    (value) => {
-      badgeSizeByDensity = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "Badge",
-    () => Badge,
-    (value) => {
-      Badge = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "reactForUiBadges",
-    () => reactForUiBadges,
-    (value) => {
-      reactForUiBadges = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "jsxMu",
-    () => jsxMu,
-    (value) => {
-      jsxMu = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "counterVariantClasses",
-    () => counterVariantClasses,
-    (value) => {
-      counterVariantClasses = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "counterFillClasses",
-    () => counterFillClasses,
-    (value) => {
-      counterFillClasses = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "Counter",
-    () => Counter,
-    (value) => {
-      Counter = value;
-    },
-  );
+import { baseMergeProps, clsx, loadJsxNamespace, loadReactNamespace } from "../dependencies";
+import { toModuleNamespace } from "../module-helpers";
+import { cn, Icon, initializeClassNames, initializeIcons, isIconName, useTranslation } from "./interactions";
+import { getControlSizeAttributes, getDensitySizeIndex, initializeCdsRoot, useDensity } from "./overlays";
+
+var reactzV: typeof React;
+var jsxs_: typeof import("react/jsx-runtime");
+var badgeVariantClasses: Record<C.BadgeVariant, string>;
+var solidBadgeVariantClasses: Record<C.BadgeVariant, string>;
+var solidBadgeColorClasses: Record<C.AccentColor, string>;
+var tintedBadgeColorClasses: Record<C.AccentColor, string>;
+var badgeIconSpacingClasses: Record<"xs" | "sm" | "md", string>;
+var badgeLineHeightClasses: string;
+var badgeSizeByDensity: Record<
+  C.Density,
+  Record<C.ControlSize, "xs" | "sm" | "md">
+>;
+var Badge: C.ForwardComponent<HTMLSpanElement, C.BadgeProps>;
+var reactForUiBadges: typeof React;
+var jsxMu: typeof import("react/jsx-runtime");
+var counterVariantClasses: Record<Exclude<C.BadgeVariant, "pro">, string>;
+var counterFillClasses: Record<Exclude<C.BadgeVariant, "pro">, string>;
+var Counter: C.ForwardComponent<HTMLSpanElement, C.CounterProps>;
+function isBadgeVariant(
+  input: C.BadgeVariant | C.AccentColor,
+): input is C.BadgeVariant {
+  return Object.hasOwn(badgeVariantClasses, input);
+}
+export {
+  Badge,
+  badgeIconSpacingClasses,
+  badgeLineHeightClasses,
+  badgeSizeByDensity,
+  badgeVariantClasses,
+  Counter,
+  counterFillClasses,
+  counterVariantClasses,
+  isBadgeVariant,
+  jsxMu,
+  jsxs_,
+  reactForUiBadges,
+  reactzV,
+  solidBadgeColorClasses,
+  solidBadgeVariantClasses,
+  tintedBadgeColorClasses,
+};
+export function installUiBadges(): () => void {
   return () => {
-    (0, runtime.initializeCdsRoot)();
-    (0, runtime.initializeIcons)();
-    reactzV = (0, runtime.toModuleNamespace)(
-      (0, runtime.loadReactNamespace)(),
+    (0, initializeCdsRoot)();
+    (0, initializeIcons)();
+    reactzV = (0, toModuleNamespace)(
+      (0, loadReactNamespace)(),
       1,
     );
-    jsxs_ = (0, runtime.toModuleNamespace)((0, runtime.loadJsxNamespace)(), 1);
+    jsxs_ = (0, toModuleNamespace)((0, loadJsxNamespace)(), 1);
     badgeVariantClasses = {
       neutral: "bg-neutral text-secondary",
       accent: "bg-tint-blue text-accent",
@@ -234,14 +135,14 @@ export function installUiBadges(runtime: RuntimeBindings): () => void {
         options: React.ForwardedRef<HTMLSpanElement>,
       ) => {
         let value = variant ?? "accent",
-          value2: string = (0, runtime.useTranslation)(
+          value2: string = (0, useTranslation)(
             "removeItem",
             uiMessage("design-system.badges.removeItem", { item: typeof children === "string" ? children : uiMessage("design-system.badges.item") }),
             {
               item: typeof children === "string" ? children : "item",
             },
           ),
-          value3: C.Density = (0, runtime.useDensity)(),
+          value3: C.Density = (0, useDensity)(),
           value4 = badgeSizeByDensity[value3][size ?? "base"],
           length = reactzV.Children.toArray(children).length,
           value5 =
@@ -252,11 +153,11 @@ export function installUiBadges(runtime: RuntimeBindings): () => void {
           value6 =
             (size === "xxs"
               ? 1
-              : (0, runtime.getDensitySizeIndex)(value3, size)) === 1
+              : (0, getDensitySizeIndex)(value3, size)) === 1
               ? badgeLineHeightClasses
               : "pb-[0.05em]",
           value7 = removeLabel || value2,
-          value8 = (0, runtime.clsx)(
+          value8 = (0, clsx)(
             "cds-reset relative inline-flex shrink-0 items-center justify-center",
             "before:absolute before:left-[-2px] before:top-1/2 before:-translate-y-1/2 before:content-['']",
             "before:h-[max(24px,100%)] before:w-[max(24px,calc(100%+2px))]",
@@ -280,7 +181,7 @@ export function installUiBadges(runtime: RuntimeBindings): () => void {
             ),
           ),
           value11 = (
-            <runtime.Icon
+            <Icon
               name={"X"}
               size={"xs"}
               style={{
@@ -293,9 +194,9 @@ export function installUiBadges(runtime: RuntimeBindings): () => void {
             removeRender !== undefined
               ? reactzV.cloneElement(
                   removeRender,
-                  (0, runtime.baseMergeProps)(
+                  (0, baseMergeProps)(
                     {
-                      className: (0, runtime.cn)(value8, value9),
+                      className: (0, cn)(value8, value9),
                       "aria-label": value7,
                       children: value11,
                     },
@@ -347,9 +248,9 @@ export function installUiBadges(runtime: RuntimeBindings): () => void {
               ? {
                   "data-step": "1",
                 }
-              : (0, runtime.getControlSizeAttributes)(size))}
+              : (0, getControlSizeAttributes)(size))}
             {...props}
-            className={(0, runtime.cn)(
+            className={(0, cn)(
               "inline-flex items-center gap-1 align-middle h-control-nested whitespace-nowrap rounded-chip",
               iconOnly
                 ? "aspect-square w-control-nested justify-center px-0"
@@ -362,18 +263,18 @@ export function installUiBadges(runtime: RuntimeBindings): () => void {
           >
             {[typeof icon !== "number" &&
                 icon &&
-                ((0, runtime.isIconName)(icon) ? (
-                  <runtime.Icon name={icon} size={value4} className={value5} />
+                ((0, isIconName)(icon) ? (
+                  <Icon name={icon} size={value4} className={value5} />
                 ) : (
                   <span
                     aria-hidden={true}
-                    className={(0, runtime.cn)("inline-flex", value5)}
+                    className={(0, cn)("inline-flex", value5)}
                   >
                     {icon}
                   </span>
                 )), truncate ? (
                 <span
-                  className={(0, runtime.cn)(
+                  className={(0, cn)(
                     value6,
                     "min-w-0 overflow-x-clip text-ellipsis whitespace-nowrap",
                   )}
@@ -390,13 +291,13 @@ export function installUiBadges(runtime: RuntimeBindings): () => void {
       },
     );
     Badge.displayName = "Badge";
-    (0, runtime.initializeClassNames)();
-    (0, runtime.initializeCdsRoot)();
-    reactForUiBadges = (0, runtime.toModuleNamespace)(
-      (0, runtime.loadReactNamespace)(),
+    (0, initializeClassNames)();
+    (0, initializeCdsRoot)();
+    reactForUiBadges = (0, toModuleNamespace)(
+      (0, loadReactNamespace)(),
       1,
     );
-    jsxMu = (0, runtime.toModuleNamespace)((0, runtime.loadJsxNamespace)(), 1);
+    jsxMu = (0, toModuleNamespace)((0, loadJsxNamespace)(), 1);
     counterVariantClasses = {
       neutral: "bg-neutral text-secondary",
       accent: "bg-fill-accent text-on-accent",
@@ -432,7 +333,7 @@ export function installUiBadges(runtime: RuntimeBindings): () => void {
               data-cds={"Counter"}
               aria-hidden={"true"}
               {...props}
-              className={(0, runtime.cn)(
+              className={(0, cn)(
                 "inline-block size-2 shrink-0 rounded-full align-middle",
                 counterFillClasses[variant],
                 className,
@@ -452,9 +353,9 @@ export function installUiBadges(runtime: RuntimeBindings): () => void {
           <span
             ref={options}
             data-cds={"Counter"}
-            {...(0, runtime.getControlSizeAttributes)(size)}
+            {...(0, getControlSizeAttributes)(size)}
             {...props}
-            className={(0, runtime.cn)(
+            className={(0, cn)(
               "inline-flex shrink-0 items-center justify-center align-middle",
               "h-control-nested min-w-[var(--cds-h-control-nested)] rounded-full",
               value3.length === 1

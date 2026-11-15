@@ -3,237 +3,156 @@ import { useUiLocale } from '../ui-locale.ts';
 /** Restored application module; prepare first, initialize in original order. */
 import type * as React from "react";
 import type * as C from "../contracts/controls";
-import { bindRuntimeValue, type RuntimeBindings } from "../runtime-types";
-export function installUiLinks(runtime: RuntimeBindings): () => void {
-  var interactiveLinkReservedProps: (
-    | "href"
-    | "routerOptions"
-    | "target"
-    | "rel"
-    | "download"
-  )[];
-  var jsxForUiLinks: typeof import("react/jsx-runtime");
-  var reactyq: typeof React;
-  var jsxForUiLinks2: typeof import("react/jsx-runtime");
-  var textLinkResetClasses: string;
-  var textLinkUnderlineClass: string;
-  var inlineTextLinkClasses: string;
-  var inheritedTextLinkColorClasses: string;
-  var textLinkDecorationTransitionClasses: string;
-  var textLinkWithIconClasses: string;
-  var textLinkDecorationAlias: string;
-  var TextLink: C.ForwardComponent<HTMLElement, C.TextLinkProps>;
-  function omitProps<Props extends object, Key extends string>(
-    input: Props,
-    options: readonly Key[],
-  ): Omit<Props, Extract<keyof Props, Key>> {
-    let value = input as Record<string, unknown>,
-      state: Record<string, unknown> = {};
-    for (let value2 of Object.keys(value)) {
-      if (!(options as readonly string[]).includes(value2)) {
-        state[value2] = value[value2];
-      }
+import { baseButton as R_baseButton, baseUseRender, clsx, loadJsxNamespace, loadReactNamespace } from "../dependencies";
+import { toModuleNamespace } from "../module-helpers";
+import { reactForUiIcons2 } from "./icons";
+import { cn, Icon, initializeTranslations, isIconName, pointerDismissalContext, useTranslation } from "./interactions";
+import { getAutomaticLinkRel, isSanitizedHrefFallback, linkEventPropNames, opensInSeparateBrowsingContext, pickLinkEventProps, sanitizeHref, useCdsLink } from "./overlays";
+
+var interactiveLinkReservedProps: (
+  | "href"
+  | "routerOptions"
+  | "target"
+  | "rel"
+  | "download"
+)[];
+var jsxForUiLinks: typeof import("react/jsx-runtime");
+var reactyq: typeof React;
+var jsxForUiLinks2: typeof import("react/jsx-runtime");
+var textLinkResetClasses: string;
+var textLinkUnderlineClass: string;
+var inlineTextLinkClasses: string;
+var inheritedTextLinkColorClasses: string;
+var textLinkDecorationTransitionClasses: string;
+var textLinkWithIconClasses: string;
+var textLinkDecorationAlias: string;
+var TextLink: C.ForwardComponent<HTMLElement, C.TextLinkProps>;
+function omitProps<Props extends object, Key extends string>(
+  input: Props,
+  options: readonly Key[],
+): Omit<Props, Extract<keyof Props, Key>> {
+  let value = input as Record<string, unknown>,
+    state: Record<string, unknown> = {};
+  for (let value2 of Object.keys(value)) {
+    if (!(options as readonly string[]).includes(value2)) {
+      state[value2] = value[value2];
     }
-    return state as Omit<Props, Extract<keyof Props, Key>>;
   }
-  function InteractiveLinkElement({
-    stamp: stamp,
-    forwardedRef: forwardedRef,
-    linkInput: linkInput,
-    render: render,
-    body: body,
-    className: className,
-    actionClassName: actionClassName,
-    actionDisabled: actionDisabled,
-    rest: rest,
-  }: C.InteractiveLinkElementProps) {
-    useUiLocale();
-    let value = runtime.reactForUiIcons2.isValidElement(render),
-      value2: import("../contracts/overlays").LinkAttributes = (0,
-      runtime.useCdsLink)({
-        ...linkInput,
-        ...(0, runtime.pickLinkEventProps)(rest),
-        href: value ? undefined : linkInput.href,
-      }),
-      value3 = omitProps(rest, [...interactiveLinkReservedProps, "disabled"]),
-      value4 = (0, runtime.baseUseRender)({
-        enabled: value,
-        render: render,
-        ref: forwardedRef,
-        props: {
-          ...value3,
-          ...stamp,
-          className: className,
-          children: body,
-        },
-      });
-    if (value) {
-      return value4;
-    }
-    if (linkInput.href !== undefined) {
-      let value6 = omitProps(rest, [
-        ...interactiveLinkReservedProps,
-        ...runtime.linkEventPropNames,
-      ]);
-      return (
-        <a
-          ref={forwardedRef as React.Ref<HTMLAnchorElement>}
-          {...stamp}
-          {...value6}
-          {...value2}
-          className={className}
-        >
-          {body}
-        </a>
-      );
-    }
-    let value5 = omitProps(rest, ["href", "disabled"]);
+  return state as Omit<Props, Extract<keyof Props, Key>>;
+}
+function InteractiveLinkElement({
+  stamp: stamp,
+  forwardedRef: forwardedRef,
+  linkInput: linkInput,
+  render: render,
+  body: body,
+  className: className,
+  actionClassName: actionClassName,
+  actionDisabled: actionDisabled,
+  rest: rest,
+}: C.InteractiveLinkElementProps) {
+  useUiLocale();
+  let value = reactForUiIcons2.isValidElement(render),
+    value2: import("../contracts/overlays").LinkAttributes = (0,
+    useCdsLink)({
+      ...linkInput,
+      ...(0, pickLinkEventProps)(rest),
+      href: value ? undefined : linkInput.href,
+    }),
+    value3 = omitProps(rest, [...interactiveLinkReservedProps, "disabled"]),
+    value4 = (0, baseUseRender)({
+      enabled: value,
+      render: render,
+      ref: forwardedRef,
+      props: {
+        ...value3,
+        ...stamp,
+        className: className,
+        children: body,
+      },
+    });
+  if (value) {
+    return value4;
+  }
+  if (linkInput.href !== undefined) {
+    let value6 = omitProps(rest, [
+      ...interactiveLinkReservedProps,
+      ...linkEventPropNames,
+    ]);
     return (
-      <runtime.baseButton
-        render={<span {...stamp} />}
-        nativeButton={false}
-        {...(actionDisabled !== undefined
-          ? {
-              disabled: actionDisabled,
-            }
-          : {})}
-        ref={forwardedRef}
-        {...(value5 as Omit<typeof value5, "type">)}
-        className={actionClassName}
+      <a
+        ref={forwardedRef as React.Ref<HTMLAnchorElement>}
+        {...stamp}
+        {...value6}
+        {...value2}
+        className={className}
       >
         {body}
-      </runtime.baseButton>
+      </a>
     );
   }
-  function NewTabAnnouncement({ id: id }: { id: string }) {
-    useUiLocale();
+  let value5 = omitProps(rest, ["href", "disabled"]);
+  return (
+    <R_baseButton
+      render={<span {...stamp} />}
+      nativeButton={false}
+      {...(actionDisabled !== undefined
+        ? {
+            disabled: actionDisabled,
+          }
+        : {})}
+      ref={forwardedRef}
+      {...(value5 as Omit<typeof value5, "type">)}
+      className={actionClassName}
+    >
+      {body}
+    </R_baseButton>
+  );
+}
+function NewTabAnnouncement({ id: id }: { id: string }) {
+  useUiLocale();
+  return (
+    <span id={id} hidden={true} className={"sr-only"}>
+      {(0, useTranslation)("opensInNewTab", "(opens in new tab)")}
+    </span>
+  );
+}
+function TextLinkIcon(input: React.ReactNode) {
+  useUiLocale();
+  if ((0, isIconName)(input)) {
     return (
-      <span id={id} hidden={true} className={"sr-only"}>
-        {(0, runtime.useTranslation)("opensInNewTab", "(opens in new tab)")}
-      </span>
+      <Icon
+        name={input}
+        size={"sm"}
+        className={"self-center"}
+        style={{
+          fontSize: "1lh",
+        }}
+      />
     );
+  } else {
+    return <span className={"self-center"}>{input}</span>;
   }
-  function TextLinkIcon(input: React.ReactNode) {
-    useUiLocale();
-    if ((0, runtime.isIconName)(input)) {
-      return (
-        <runtime.Icon
-          name={input}
-          size={"sm"}
-          className={"self-center"}
-          style={{
-            fontSize: "1lh",
-          }}
-        />
-      );
-    } else {
-      return <span className={"self-center"}>{input}</span>;
-    }
-  }
-  bindRuntimeValue(
-    runtime,
-    "interactiveLinkReservedProps",
-    () => interactiveLinkReservedProps,
-    (value) => {
-      interactiveLinkReservedProps = value;
-    },
-  );
-  bindRuntimeValue(runtime, "omitProps", () => omitProps);
-  bindRuntimeValue(
-    runtime,
-    "InteractiveLinkElement",
-    () => InteractiveLinkElement,
-  );
-  bindRuntimeValue(
-    runtime,
-    "jsxForUiLinks",
-    () => jsxForUiLinks,
-    (value) => {
-      jsxForUiLinks = value;
-    },
-  );
-  bindRuntimeValue(runtime, "NewTabAnnouncement", () => NewTabAnnouncement);
-  bindRuntimeValue(
-    runtime,
-    "reactyq",
-    () => reactyq,
-    (value) => {
-      reactyq = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "jsxForUiLinks2",
-    () => jsxForUiLinks2,
-    (value) => {
-      jsxForUiLinks2 = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "textLinkResetClasses",
-    () => textLinkResetClasses,
-    (value) => {
-      textLinkResetClasses = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "textLinkUnderlineClass",
-    () => textLinkUnderlineClass,
-    (value) => {
-      textLinkUnderlineClass = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "inlineTextLinkClasses",
-    () => inlineTextLinkClasses,
-    (value) => {
-      inlineTextLinkClasses = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "inheritedTextLinkColorClasses",
-    () => inheritedTextLinkColorClasses,
-    (value) => {
-      inheritedTextLinkColorClasses = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "textLinkDecorationTransitionClasses",
-    () => textLinkDecorationTransitionClasses,
-    (value) => {
-      textLinkDecorationTransitionClasses = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "textLinkWithIconClasses",
-    () => textLinkWithIconClasses,
-    (value) => {
-      textLinkWithIconClasses = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "textLinkDecorationAlias",
-    () => textLinkDecorationAlias,
-    (value) => {
-      textLinkDecorationAlias = value;
-    },
-  );
-  bindRuntimeValue(runtime, "TextLinkIcon", () => TextLinkIcon);
-  bindRuntimeValue(
-    runtime,
-    "TextLink",
-    () => TextLink,
-    (value) => {
-      TextLink = value;
-    },
-  );
+}
+export {
+  inheritedTextLinkColorClasses,
+  inlineTextLinkClasses,
+  InteractiveLinkElement,
+  interactiveLinkReservedProps,
+  jsxForUiLinks,
+  jsxForUiLinks2,
+  NewTabAnnouncement,
+  omitProps,
+  reactyq,
+  TextLink,
+  textLinkDecorationAlias,
+  textLinkDecorationTransitionClasses,
+  TextLinkIcon,
+  textLinkResetClasses,
+  textLinkUnderlineClass,
+  textLinkWithIconClasses,
+};
+export function installUiLinks(): () => void {
   return () => {
     interactiveLinkReservedProps = [
       "href",
@@ -242,17 +161,17 @@ export function installUiLinks(runtime: RuntimeBindings): () => void {
       "rel",
       "download",
     ];
-    (0, runtime.initializeTranslations)();
-    jsxForUiLinks = (0, runtime.toModuleNamespace)(
-      (0, runtime.loadJsxNamespace)(),
+    (0, initializeTranslations)();
+    jsxForUiLinks = (0, toModuleNamespace)(
+      (0, loadJsxNamespace)(),
       1,
     );
-    reactyq = (0, runtime.toModuleNamespace)(
-      (0, runtime.loadReactNamespace)(),
+    reactyq = (0, toModuleNamespace)(
+      (0, loadReactNamespace)(),
       1,
     );
-    jsxForUiLinks2 = (0, runtime.toModuleNamespace)(
-      (0, runtime.loadJsxNamespace)(),
+    jsxForUiLinks2 = (0, toModuleNamespace)(
+      (0, loadJsxNamespace)(),
       1,
     );
     textLinkResetClasses = "cds-reset cds-text-link";
@@ -280,16 +199,16 @@ export function installUiLinks(runtime: RuntimeBindings): () => void {
         options: React.ForwardedRef<HTMLElement>,
       ) => {
         let value = "href" in props && props.href !== undefined,
-          value2 = reactyq.useContext<boolean>(runtime.pointerDismissalContext),
+          value2 = reactyq.useContext<boolean>(pointerDismissalContext),
           value3 = inheritColor ?? value2,
           value4 =
             external &&
             !(
               value &&
               !reactyq.isValidElement(render) &&
-              (0, runtime.isSanitizedHrefFallback)(
+              (0, isSanitizedHrefFallback)(
                 props.href,
-                (0, runtime.sanitizeHref)(props.href),
+                (0, sanitizeHref)(props.href),
               )
             )
               ? external
@@ -301,8 +220,8 @@ export function installUiLinks(runtime: RuntimeBindings): () => void {
             ? (props.rel ??
               (value4 &&
               value5 !== undefined &&
-              !(0, runtime.opensInSeparateBrowsingContext)(value5)
-                ? (0, runtime.getAutomaticLinkRel)(props.href, value5)
+              !(0, opensInSeparateBrowsingContext)(value5)
+                ? (0, getAutomaticLinkRel)(props.href, value5)
                 : undefined))
             : undefined,
           value7 = reactyq.useId(),
@@ -310,11 +229,11 @@ export function installUiLinks(runtime: RuntimeBindings): () => void {
           value9 =
             icon || (value4 === "with-icon" ? "ArrowUpRight" : undefined),
           value10 = !!value9,
-          value11 = `${(0, runtime.cn)(value10 ? (0, runtime.clsx)(textLinkWithIconClasses, icon ? "gap-[0.25em]" : "gap-0") : inlineTextLinkClasses, value3 && inheritedTextLinkColorClasses)}`,
+          value11 = `${(0, cn)(value10 ? (0, clsx)(textLinkWithIconClasses, icon ? "gap-[0.25em]" : "gap-0") : inlineTextLinkClasses, value3 && inheritedTextLinkColorClasses)}`,
           value12 = value10 ? (
             <jsxForUiLinks2.Fragment>
               {[iconPosition === "start" && TextLinkIcon(value9), <span
-                  className={(0, runtime.clsx)(
+                  className={(0, clsx)(
                     textLinkDecorationAlias,
                     value3 && textLinkDecorationTransitionClasses,
                   )}
@@ -329,7 +248,7 @@ export function installUiLinks(runtime: RuntimeBindings): () => void {
           ) : (
             children
           ),
-          value13: string = (0, runtime.cn)(
+          value13: string = (0, cn)(
             value11,
             "cursor-pointer",
             className,
@@ -351,7 +270,7 @@ export function installUiLinks(runtime: RuntimeBindings): () => void {
             render={render}
             body={value12}
             className={value13}
-            actionClassName={(0, runtime.cn)(
+            actionClassName={(0, cn)(
               value11,
               value14 ? "cursor-default opacity-disabled" : "cursor-pointer",
               className,

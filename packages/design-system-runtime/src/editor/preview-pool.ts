@@ -3,45 +3,26 @@ import type * as Editor from "../contracts/editor-runtime";
 import type * as Model from "../contracts";
 import type * as Application from "../contracts/application";
 /** Restored application module; prepare first, initialize in original order. */
-import { bindRuntimeValue, type RuntimeBindings } from "../runtime-types";
-export function installEditorPreviewPool(runtime: RuntimeBindings): () => void {
-  var PREVIEW_POOL_IDLE_TTL_MS: number;
-  var PreviewFramePool: new (
-    maxLive?: number,
-    now?: () => number,
-  ) => Editor.PreviewFramePool;
-  var sharedPreviewFramePool: Editor.PreviewFramePool | null;
-  function getPreviewFramePool(): Editor.PreviewFramePool {
-    if (sharedPreviewFramePool === null) {
-      sharedPreviewFramePool = new PreviewFramePool();
-    }
-    return sharedPreviewFramePool;
+
+var PREVIEW_POOL_IDLE_TTL_MS: number;
+var PreviewFramePool: new (
+  maxLive?: number,
+  now?: () => number,
+) => Editor.PreviewFramePool;
+var sharedPreviewFramePool: Editor.PreviewFramePool | null;
+function getPreviewFramePool(): Editor.PreviewFramePool {
+  if (sharedPreviewFramePool === null) {
+    sharedPreviewFramePool = new PreviewFramePool();
   }
-  bindRuntimeValue(
-    runtime,
-    "PREVIEW_POOL_IDLE_TTL_MS",
-    () => PREVIEW_POOL_IDLE_TTL_MS,
-    (value) => {
-      PREVIEW_POOL_IDLE_TTL_MS = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "PreviewFramePool",
-    () => PreviewFramePool,
-    (value) => {
-      PreviewFramePool = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "sharedPreviewFramePool",
-    () => sharedPreviewFramePool,
-    (value) => {
-      sharedPreviewFramePool = value;
-    },
-  );
-  bindRuntimeValue(runtime, "getPreviewFramePool", () => getPreviewFramePool);
+  return sharedPreviewFramePool;
+}
+export {
+  getPreviewFramePool,
+  PREVIEW_POOL_IDLE_TTL_MS,
+  PreviewFramePool,
+  sharedPreviewFramePool,
+};
+export function installEditorPreviewPool(): () => void {
   return () => {
     PREVIEW_POOL_IDLE_TTL_MS = 6000;
     PreviewFramePool = class PreviewFramePool {

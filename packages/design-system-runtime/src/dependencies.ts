@@ -1,4 +1,3 @@
-import type { RuntimeBindings } from "./runtime-types";
 import * as NpmLoadReactNamespace from "react";
 import * as NpmLoadReactDomNamespace from "react-dom";
 import * as NpmLoadReactDomClientNamespace from "react-dom/client";
@@ -33,38 +32,46 @@ import { useVirtualizer as NpmUseVirtualizer } from "@tanstack/react-virtual";
 import { measureElement as NpmMeasureVirtualElement } from "@tanstack/virtual-core";
 
 /** Load the npm packages that replace the original bundle's third-party modules. */
-export function installDependencies(runtime: RuntimeBindings): void {
-  runtime.loadReactNamespace = () => NpmLoadReactNamespace;
-  runtime.loadReactDomNamespace = () => NpmLoadReactDomNamespace;
-  runtime.loadReactDomClientNamespace = () => NpmLoadReactDomClientNamespace;
-  runtime.loadJsxNamespace = () => NpmLoadJsxNamespace;
-  runtime.baseMenu = NpmBaseMenu;
-  runtime.baseContextMenu = NpmBaseContextMenu;
-  runtime.basePopover = NpmBasePopover;
-  runtime.baseCombobox = NpmBaseCombobox;
-  runtime.baseTooltip = NpmBaseTooltip;
-  runtime.baseCollapsible = NpmBaseCollapsible;
-  runtime.baseField = NpmBaseField;
-  runtime.baseDialog = NpmBaseDialog;
-  runtime.baseAlertDialog = NpmBaseAlertDialog;
-  runtime.baseRadio = NpmBaseRadio;
-  runtime.baseCheckbox = NpmBaseCheckbox;
-  runtime.baseTabs = NpmBaseTabs;
-  runtime.baseToast = NpmBaseToast;
-  runtime.baseRadioGroup = NpmBaseRadioGroup;
-  runtime.baseButton = NpmBaseButton;
-  runtime.baseUseRender = NpmBaseUseRender;
-  runtime.baseMergeProps = NpmBaseMergeProps;
-  runtime.baseLabelableProvider = NpmBaseLabelableProvider;
-  runtime.baseSwitch = NpmBaseSwitch;
-  runtime.baseNumberField = NpmBaseNumberField;
-  runtime.baseUseLabelableContext = NpmBaseUseLabelableContext;
-  runtime.baseMenubarRoot = NpmBaseMenubarRoot;
-  runtime.clsx = NpmClsx;
-  runtime.extendTailwindMerge = NpmExtendTailwindMerge;
-  runtime.validators = NpmValidators;
-  runtime.cva = NpmCva;
-  runtime.useVirtualizer = NpmUseVirtualizer;
-  runtime.measureVirtualElement = NpmMeasureVirtualElement;
-  runtime.initializeNpmDependency = () => {};
+
+const loadReactNamespace = () => NpmLoadReactNamespace;
+const loadReactDomNamespace = () => NpmLoadReactDomNamespace;
+const loadReactDomClientNamespace = () => NpmLoadReactDomClientNamespace;
+const loadJsxNamespace = () => NpmLoadJsxNamespace;
+const initializeNpmDependency = () => {};
+export {
+  NpmBaseAlertDialog as baseAlertDialog,
+  NpmBaseButton as baseButton,
+  NpmBaseCheckbox as baseCheckbox,
+  NpmBaseCollapsible as baseCollapsible,
+  NpmBaseCombobox as baseCombobox,
+  NpmBaseContextMenu as baseContextMenu,
+  NpmBaseDialog as baseDialog,
+  NpmBaseField as baseField,
+  NpmBaseLabelableProvider as baseLabelableProvider,
+  NpmBaseMenu as baseMenu,
+  NpmBaseMenubarRoot as baseMenubarRoot,
+  NpmBaseMergeProps as baseMergeProps,
+  NpmBaseNumberField as baseNumberField,
+  NpmBasePopover as basePopover,
+  NpmBaseRadio as baseRadio,
+  NpmBaseRadioGroup as baseRadioGroup,
+  NpmBaseSwitch as baseSwitch,
+  NpmBaseTabs as baseTabs,
+  NpmBaseToast as baseToast,
+  NpmBaseTooltip as baseTooltip,
+  NpmBaseUseLabelableContext as baseUseLabelableContext,
+  NpmBaseUseRender as baseUseRender,
+  NpmClsx as clsx,
+  NpmCva as cva,
+  NpmExtendTailwindMerge as extendTailwindMerge,
+  initializeNpmDependency,
+  loadJsxNamespace,
+  loadReactDomClientNamespace,
+  loadReactDomNamespace,
+  loadReactNamespace,
+  NpmMeasureVirtualElement as measureVirtualElement,
+  NpmUseVirtualizer as useVirtualizer,
+  NpmValidators as validators,
+};
+export function installDependencies(): void {
 }

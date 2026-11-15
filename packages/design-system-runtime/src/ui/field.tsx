@@ -2,206 +2,76 @@ import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import type * as React from "react";
 import type * as C from "../contracts/controls";
-import { bindRuntimeValue, type RuntimeBindings } from "../runtime-types";
-export function installUiField(runtime: RuntimeBindings): () => void {
-  var FieldComponents: C.FieldComponents;
-  var reactField: typeof React;
-  var jsxField: typeof import("react/jsx-runtime");
-  var FIELD_DISABLED_INVALID_STATES: Record<
-    "true" | "false",
-    Record<"true" | "false", C.FieldState>
-  >;
-  var FieldRoot: C.ForwardComponent<HTMLDivElement, C.FieldRootProps>;
-  var FieldLabel: C.ForwardComponent<HTMLLabelElement, C.FieldLabelProps>;
-  var FieldDescription: C.ForwardComponent<
-    HTMLParagraphElement,
-    C.FieldDescriptionProps
-  >;
-  var FieldError: C.ForwardComponent<HTMLDivElement, C.FieldErrorProps>;
-  var FieldWrapper: React.FunctionComponent<C.FieldWrapperProps>;
-  var FieldRootWithLabel: typeof import("@base-ui/react/field").Field.Control;
-  var FieldRow: typeof import("@base-ui/react/field").Field.Validity;
-  var reactFieldTextInput: typeof React;
-  var jsxFieldTextInput: typeof import("react/jsx-runtime");
-  var FieldTextInput: C.ForwardComponent<
-    HTMLInputElement,
-    C.FieldTextInputProps
-  >;
-  var reactFieldTextArea: typeof React;
-  var jsxFieldTextArea: typeof import("react/jsx-runtime");
-  var FieldTextArea: C.ForwardComponent<
-    HTMLTextAreaElement,
-    C.FieldTextAreaProps
-  >;
-  var reactFieldNumberInput: typeof React;
-  var jsxFieldNumberInput: typeof import("react/jsx-runtime");
-  var FieldNumberInput: C.ForwardComponent<
-    HTMLInputElement,
-    C.FieldNumberInputProps
-  >;
-  bindRuntimeValue(
-    runtime,
-    "FieldComponents",
-    () => FieldComponents,
-    (value) => {
-      FieldComponents = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "reactField",
-    () => reactField,
-    (value) => {
-      reactField = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "jsxField",
-    () => jsxField,
-    (value) => {
-      jsxField = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "FIELD_DISABLED_INVALID_STATES",
-    () => FIELD_DISABLED_INVALID_STATES,
-    (value) => {
-      FIELD_DISABLED_INVALID_STATES = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "FieldRoot",
-    () => FieldRoot,
-    (value) => {
-      FieldRoot = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "FieldLabel",
-    () => FieldLabel,
-    (value) => {
-      FieldLabel = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "FieldDescription",
-    () => FieldDescription,
-    (value) => {
-      FieldDescription = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "FieldError",
-    () => FieldError,
-    (value) => {
-      FieldError = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "FieldWrapper",
-    () => FieldWrapper,
-    (value) => {
-      FieldWrapper = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "FieldRootWithLabel",
-    () => FieldRootWithLabel,
-    (value) => {
-      FieldRootWithLabel = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "FieldRow",
-    () => FieldRow,
-    (value) => {
-      FieldRow = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "reactFieldTextInput",
-    () => reactFieldTextInput,
-    (value) => {
-      reactFieldTextInput = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "jsxFieldTextInput",
-    () => jsxFieldTextInput,
-    (value) => {
-      jsxFieldTextInput = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "FieldTextInput",
-    () => FieldTextInput,
-    (value) => {
-      FieldTextInput = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "reactFieldTextArea",
-    () => reactFieldTextArea,
-    (value) => {
-      reactFieldTextArea = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "jsxFieldTextArea",
-    () => jsxFieldTextArea,
-    (value) => {
-      jsxFieldTextArea = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "FieldTextArea",
-    () => FieldTextArea,
-    (value) => {
-      FieldTextArea = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "reactFieldNumberInput",
-    () => reactFieldNumberInput,
-    (value) => {
-      reactFieldNumberInput = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "jsxFieldNumberInput",
-    () => jsxFieldNumberInput,
-    (value) => {
-      jsxFieldNumberInput = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "FieldNumberInput",
-    () => FieldNumberInput,
-    (value) => {
-      FieldNumberInput = value;
-    },
-  );
+import { baseField, loadJsxNamespace, loadReactNamespace } from "../dependencies";
+import { defineLiveExports, toModuleNamespace } from "../module-helpers";
+import { FieldCheckbox } from "./checkbox";
+import { FieldCombobox } from "./combobox";
+import { cn, Icon, initializeClassNames, initializeIcons } from "./interactions";
+import { NumberInput } from "./number-input";
+import { TextArea } from "./text-area";
+import { textFieldStateContext, TextInput, useFieldLabelId } from "./text-input";
+
+var FieldComponents: C.FieldComponents;
+var reactField: typeof React;
+var jsxField: typeof import("react/jsx-runtime");
+var FIELD_DISABLED_INVALID_STATES: Record<
+  "true" | "false",
+  Record<"true" | "false", C.FieldState>
+>;
+var FieldRoot: C.ForwardComponent<HTMLDivElement, C.FieldRootProps>;
+var FieldLabel: C.ForwardComponent<HTMLLabelElement, C.FieldLabelProps>;
+var FieldDescription: C.ForwardComponent<
+  HTMLParagraphElement,
+  C.FieldDescriptionProps
+>;
+var FieldError: C.ForwardComponent<HTMLDivElement, C.FieldErrorProps>;
+var FieldWrapper: React.FunctionComponent<C.FieldWrapperProps>;
+var FieldRootWithLabel: typeof import("@base-ui/react/field").Field.Control;
+var FieldRow: typeof import("@base-ui/react/field").Field.Validity;
+var reactFieldTextInput: typeof React;
+var jsxFieldTextInput: typeof import("react/jsx-runtime");
+var FieldTextInput: C.ForwardComponent<
+  HTMLInputElement,
+  C.FieldTextInputProps
+>;
+var reactFieldTextArea: typeof React;
+var jsxFieldTextArea: typeof import("react/jsx-runtime");
+var FieldTextArea: C.ForwardComponent<
+  HTMLTextAreaElement,
+  C.FieldTextAreaProps
+>;
+var reactFieldNumberInput: typeof React;
+var jsxFieldNumberInput: typeof import("react/jsx-runtime");
+var FieldNumberInput: C.ForwardComponent<
+  HTMLInputElement,
+  C.FieldNumberInputProps
+>;
+export {
+  FIELD_DISABLED_INVALID_STATES,
+  FieldComponents,
+  FieldDescription,
+  FieldError,
+  FieldLabel,
+  FieldNumberInput,
+  FieldRoot,
+  FieldRootWithLabel,
+  FieldRow,
+  FieldTextArea,
+  FieldTextInput,
+  FieldWrapper,
+  jsxField,
+  jsxFieldNumberInput,
+  jsxFieldTextArea,
+  jsxFieldTextInput,
+  reactField,
+  reactFieldNumberInput,
+  reactFieldTextArea,
+  reactFieldTextInput,
+};
+export function installUiField(): () => void {
   return () => {
     FieldComponents = {} as C.FieldComponents;
-    (0, runtime.defineLiveExports)(FieldComponents, {
+    (0, defineLiveExports)(FieldComponents, {
       Validity: () => FieldRow,
       TextInput: () => FieldTextInput,
       TextArea: () => FieldTextArea,
@@ -211,17 +81,17 @@ export function installUiField(runtime: RuntimeBindings): () => void {
       Error: () => FieldError,
       Description: () => FieldDescription,
       Control: () => FieldRootWithLabel,
-      Combobox: () => runtime.FieldCombobox,
-      Checkbox: () => runtime.FieldCheckbox,
+      Combobox: () => FieldCombobox,
+      Checkbox: () => FieldCheckbox,
     });
-    (0, runtime.initializeClassNames)();
-    (0, runtime.initializeIcons)();
-    reactField = (0, runtime.toModuleNamespace)(
-      (0, runtime.loadReactNamespace)(),
+    (0, initializeClassNames)();
+    (0, initializeIcons)();
+    reactField = (0, toModuleNamespace)(
+      (0, loadReactNamespace)(),
       1,
     );
-    jsxField = (0, runtime.toModuleNamespace)(
-      (0, runtime.loadJsxNamespace)(),
+    jsxField = (0, toModuleNamespace)(
+      (0, loadJsxNamespace)(),
       1,
     );
     FIELD_DISABLED_INVALID_STATES = {
@@ -255,12 +125,12 @@ export function installUiField(runtime: RuntimeBindings): () => void {
         }: C.FieldRootProps,
         options: React.ForwardedRef<HTMLDivElement>,
       ) => (
-        <runtime.baseField.Root
+        <baseField.Root
           ref={options}
           data-cds={"Field"}
           validationMode={validationMode}
           {...props}
-          className={(0, runtime.cn)(
+          className={(0, cn)(
             "flex flex-col gap-xs font-sans",
             className,
           )}
@@ -268,7 +138,7 @@ export function installUiField(runtime: RuntimeBindings): () => void {
             input: React.HTMLAttributes<HTMLDivElement>,
             options2: import("@base-ui/react/field").Field.Root.State,
           ) => (
-            <runtime.textFieldStateContext.Provider
+            <textFieldStateContext.Provider
               value={
                 FIELD_DISABLED_INVALID_STATES[`${options2.disabled}`][
                   `${options2.valid === false}`
@@ -276,7 +146,7 @@ export function installUiField(runtime: RuntimeBindings): () => void {
               }
             >
               <div {...input} />
-            </runtime.textFieldStateContext.Provider>
+            </textFieldStateContext.Provider>
           )}
         />
       ),
@@ -287,13 +157,13 @@ export function installUiField(runtime: RuntimeBindings): () => void {
         { className: className, id: id, ...props }: C.FieldLabelProps,
         options: React.ForwardedRef<HTMLLabelElement>,
       ) => {
-        let value: string | undefined = (0, runtime.useFieldLabelId)();
+        let value: string | undefined = (0, useFieldLabelId)();
         return (
-          <runtime.baseField.Label
+          <baseField.Label
             ref={options}
             id={id ?? value}
             {...props}
-            className={(0, runtime.cn)(
+            className={(0, cn)(
               "text-body font-medium leading-none text-primary",
               className,
             )}
@@ -307,10 +177,10 @@ export function installUiField(runtime: RuntimeBindings): () => void {
         { className: className, ...props }: C.FieldDescriptionProps,
         options: React.ForwardedRef<HTMLParagraphElement>,
       ) => (
-        <runtime.baseField.Description
+        <baseField.Description
           ref={options}
           {...props}
-          className={(0, runtime.cn)(
+          className={(0, cn)(
             "text-footnote font-normal leading-snug text-muted",
             className,
           )}
@@ -327,16 +197,16 @@ export function installUiField(runtime: RuntimeBindings): () => void {
         }: C.FieldErrorProps,
         options: React.ForwardedRef<HTMLDivElement>,
       ) => (
-        <runtime.baseField.Error
+        <baseField.Error
           ref={options}
           {...props}
-          className={(0, runtime.cn)(
+          className={(0, cn)(
             "flex items-start gap-1 text-footnote font-normal leading-snug text-danger",
             className,
           )}
           render={(input: React.HTMLAttributes<HTMLDivElement>) => (
             <div {...input}>
-              {[<runtime.Icon
+              {[<Icon
                   name={"WarningCircle"}
                   size={"sm"}
                   className={"mt-px shrink-0"}
@@ -365,14 +235,14 @@ export function installUiField(runtime: RuntimeBindings): () => void {
           ), Boolean(error) && <FieldError match={true}>{error}</FieldError>]}
       </FieldRoot>
     );
-    FieldRootWithLabel = runtime.baseField.Control;
-    FieldRow = runtime.baseField.Validity;
-    reactFieldTextInput = (0, runtime.toModuleNamespace)(
-      (0, runtime.loadReactNamespace)(),
+    FieldRootWithLabel = baseField.Control;
+    FieldRow = baseField.Validity;
+    reactFieldTextInput = (0, toModuleNamespace)(
+      (0, loadReactNamespace)(),
       1,
     );
-    jsxFieldTextInput = (0, runtime.toModuleNamespace)(
-      (0, runtime.loadJsxNamespace)(),
+    jsxFieldTextInput = (0, toModuleNamespace)(
+      (0, loadJsxNamespace)(),
       1,
     );
     FieldTextInput = reactFieldTextInput.forwardRef(
@@ -393,17 +263,17 @@ export function installUiField(runtime: RuntimeBindings): () => void {
           error={error}
           fieldClassName={fieldClassName}
         >
-          <runtime.TextInput ref={options} required={required} {...props} />
+          <TextInput ref={options} required={required} {...props} />
         </FieldWrapper>
       ),
     );
     FieldTextInput.displayName = "Field.TextInput";
-    reactFieldTextArea = (0, runtime.toModuleNamespace)(
-      (0, runtime.loadReactNamespace)(),
+    reactFieldTextArea = (0, toModuleNamespace)(
+      (0, loadReactNamespace)(),
       1,
     );
-    jsxFieldTextArea = (0, runtime.toModuleNamespace)(
-      (0, runtime.loadJsxNamespace)(),
+    jsxFieldTextArea = (0, toModuleNamespace)(
+      (0, loadJsxNamespace)(),
       1,
     );
     FieldTextArea = reactFieldTextArea.forwardRef(
@@ -424,17 +294,17 @@ export function installUiField(runtime: RuntimeBindings): () => void {
           error={error}
           fieldClassName={fieldClassName}
         >
-          <runtime.TextArea ref={options} required={required} {...props} />
+          <TextArea ref={options} required={required} {...props} />
         </FieldWrapper>
       ),
     );
     FieldTextArea.displayName = "Field.TextArea";
-    reactFieldNumberInput = (0, runtime.toModuleNamespace)(
-      (0, runtime.loadReactNamespace)(),
+    reactFieldNumberInput = (0, toModuleNamespace)(
+      (0, loadReactNamespace)(),
       1,
     );
-    jsxFieldNumberInput = (0, runtime.toModuleNamespace)(
-      (0, runtime.loadJsxNamespace)(),
+    jsxFieldNumberInput = (0, toModuleNamespace)(
+      (0, loadJsxNamespace)(),
       1,
     );
     FieldNumberInput = reactFieldNumberInput.forwardRef(
@@ -455,7 +325,7 @@ export function installUiField(runtime: RuntimeBindings): () => void {
           error={error}
           fieldClassName={fieldClassName}
         >
-          <runtime.NumberInput ref={options} required={required} {...props} />
+          <NumberInput ref={options} required={required} {...props} />
         </FieldWrapper>
       ),
     );

@@ -3,139 +3,83 @@ import type * as Editor from "../contracts/editor-runtime";
 import type * as Model from "../contracts";
 import type * as Application from "../contracts/application";
 /** Restored application module; prepare first, initialize in original order. */
-import { bindRuntimeValue, type RuntimeBindings } from "../runtime-types";
-export function installEditorFontCatalog(runtime: RuntimeBindings): () => void {
-  var reactGoogleFontCatalog: typeof import("react");
-  var WEB_SAFE_FONT_CATALOG: Editor.FontCatalogEntry[];
-  var GOOGLE_FONT_CATALOG: Editor.FontCatalogEntry[];
-  var GOOGLE_FONT_FAMILY_NAMES: string[];
-  var KNOWN_FONT_FAMILY_MAP: Map<string, Editor.FontCatalogEntry>;
-  var GOOGLE_FONT_VARIANTS: Record<
-    string,
-    {
-      italic?: boolean;
-      wght?: number[];
-      statics?: number[];
+import { loadReactNamespace } from "../dependencies";
+import { toModuleNamespace } from "../module-helpers";
+
+var reactGoogleFontCatalog: typeof import("react");
+var WEB_SAFE_FONT_CATALOG: Editor.FontCatalogEntry[];
+var GOOGLE_FONT_CATALOG: Editor.FontCatalogEntry[];
+var GOOGLE_FONT_FAMILY_NAMES: string[];
+var KNOWN_FONT_FAMILY_MAP: Map<string, Editor.FontCatalogEntry>;
+var GOOGLE_FONT_VARIANTS: Record<
+  string,
+  {
+    italic?: boolean;
+    wght?: number[];
+    statics?: number[];
+  }
+>;
+var LOADABLE_FONT_FAMILY_PATTERN: RegExp;
+var WEB_SAFE_FONT_FAMILY_PATTERN: RegExp;
+function knownFontFamily(
+  family: string,
+): Editor.FontCatalogEntry | undefined {
+  return KNOWN_FONT_FAMILY_MAP.get(family.trim().toLowerCase());
+}
+function knownWebFontFamily(family: string): string | undefined {
+  return knownFontFamily(family)?.family;
+}
+function googleFontStylesheetUrl(family: string): string {
+  let value = knownFontFamily(family),
+    value2: string = value
+      ? ":wght@" + (value.weights ?? [400, 500, 600, 700]).join(";")
+      : "";
+  return (
+    "https://fonts.googleapis.com/css2?family=" +
+    (value?.family ?? family.trim()).replace(/ +/g, "+") +
+    value2 +
+    "&display=swap"
+  );
+}
+function ensureGoogleFonts(
+  families: string[],
+  document2: Document = document,
+): void {
+  for (let value of families) {
+    if (
+      WEB_SAFE_FONT_FAMILY_PATTERN.test(value) ||
+      !LOADABLE_FONT_FAMILY_PATTERN.test(value)
+    ) {
+      continue;
     }
-  >;
-  var LOADABLE_FONT_FAMILY_PATTERN: RegExp;
-  var WEB_SAFE_FONT_FAMILY_PATTERN: RegExp;
-  function knownFontFamily(
-    family: string,
-  ): Editor.FontCatalogEntry | undefined {
-    return KNOWN_FONT_FAMILY_MAP.get(family.trim().toLowerCase());
-  }
-  function knownWebFontFamily(family: string): string | undefined {
-    return knownFontFamily(family)?.family;
-  }
-  function googleFontStylesheetUrl(family: string): string {
-    let value = knownFontFamily(family),
-      value2: string = value
-        ? ":wght@" + (value.weights ?? [400, 500, 600, 700]).join(";")
-        : "";
-    return (
-      "https://fonts.googleapis.com/css2?family=" +
-      (value?.family ?? family.trim()).replace(/ +/g, "+") +
-      value2 +
-      "&display=swap"
-    );
-  }
-  function ensureGoogleFonts(
-    families: string[],
-    document2: Document = document,
-  ): void {
-    for (let value of families) {
-      if (
-        WEB_SAFE_FONT_FAMILY_PATTERN.test(value) ||
-        !LOADABLE_FONT_FAMILY_PATTERN.test(value)
-      ) {
-        continue;
-      }
-      let value2 = googleFontStylesheetUrl(value);
-      if (document2.head.querySelector('link[href="' + value2 + '"]')) {
-        continue;
-      }
-      let value3 = document2.createElement("link");
-      value3.rel = "stylesheet";
-      value3.href = value2;
-      document2.head.appendChild(value3);
+    let value2 = googleFontStylesheetUrl(value);
+    if (document2.head.querySelector('link[href="' + value2 + '"]')) {
+      continue;
     }
+    let value3 = document2.createElement("link");
+    value3.rel = "stylesheet";
+    value3.href = value2;
+    document2.head.appendChild(value3);
   }
-  bindRuntimeValue(
-    runtime,
-    "reactGoogleFontCatalog",
-    () => reactGoogleFontCatalog,
-    (value) => {
-      reactGoogleFontCatalog = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "WEB_SAFE_FONT_CATALOG",
-    () => WEB_SAFE_FONT_CATALOG,
-    (value) => {
-      WEB_SAFE_FONT_CATALOG = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "GOOGLE_FONT_CATALOG",
-    () => GOOGLE_FONT_CATALOG,
-    (value) => {
-      GOOGLE_FONT_CATALOG = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "GOOGLE_FONT_FAMILY_NAMES",
-    () => GOOGLE_FONT_FAMILY_NAMES,
-    (value) => {
-      GOOGLE_FONT_FAMILY_NAMES = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "KNOWN_FONT_FAMILY_MAP",
-    () => KNOWN_FONT_FAMILY_MAP,
-    (value) => {
-      KNOWN_FONT_FAMILY_MAP = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "GOOGLE_FONT_VARIANTS",
-    () => GOOGLE_FONT_VARIANTS,
-    (value) => {
-      GOOGLE_FONT_VARIANTS = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "LOADABLE_FONT_FAMILY_PATTERN",
-    () => LOADABLE_FONT_FAMILY_PATTERN,
-    (value) => {
-      LOADABLE_FONT_FAMILY_PATTERN = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "WEB_SAFE_FONT_FAMILY_PATTERN",
-    () => WEB_SAFE_FONT_FAMILY_PATTERN,
-    (value) => {
-      WEB_SAFE_FONT_FAMILY_PATTERN = value;
-    },
-  );
-  bindRuntimeValue(runtime, "knownFontFamily", () => knownFontFamily);
-  bindRuntimeValue(runtime, "knownWebFontFamily", () => knownWebFontFamily);
-  bindRuntimeValue(
-    runtime,
-    "googleFontStylesheetUrl",
-    () => googleFontStylesheetUrl,
-  );
-  bindRuntimeValue(runtime, "ensureGoogleFonts", () => ensureGoogleFonts);
+}
+export {
+  ensureGoogleFonts,
+  GOOGLE_FONT_CATALOG,
+  GOOGLE_FONT_FAMILY_NAMES,
+  GOOGLE_FONT_VARIANTS,
+  googleFontStylesheetUrl,
+  KNOWN_FONT_FAMILY_MAP,
+  knownFontFamily,
+  knownWebFontFamily,
+  LOADABLE_FONT_FAMILY_PATTERN,
+  reactGoogleFontCatalog,
+  WEB_SAFE_FONT_CATALOG,
+  WEB_SAFE_FONT_FAMILY_PATTERN,
+};
+export function installEditorFontCatalog(): () => void {
   return () => {
-    reactGoogleFontCatalog = (0, runtime.toModuleNamespace)(
-      (0, runtime.loadReactNamespace)(),
+    reactGoogleFontCatalog = (0, toModuleNamespace)(
+      (0, loadReactNamespace)(),
       1,
     );
     WEB_SAFE_FONT_CATALOG = [

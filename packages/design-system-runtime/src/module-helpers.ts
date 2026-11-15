@@ -1,190 +1,75 @@
 /** Restored application module; prepare first, initialize in original order. */
-import { bindRuntimeValue, type RuntimeBindings } from "./runtime-types";
 import type {
   ModuleNamespace,
   ExportGetters,
   RequireFunction,
 } from "./contracts/module-helpers";
 
-export function installModuleHelpers(runtime: RuntimeBindings): () => void {
-  var createObject: (prototype: object | null) => object;
-  var getPrototypeOf: (value: object) => object | null;
-  var defineProperty: typeof Object.defineProperty;
-  var getOwnPropertyNames: (value: object) => string[];
-  var getOwnPropertyDescriptor: typeof Object.getOwnPropertyDescriptor;
-  var hasOwnProperty: typeof Object.prototype.hasOwnProperty;
-  var commonJSNamespaceCache: WeakMap<object, object> | undefined;
-  var esmNamespaceCache: WeakMap<object, object> | undefined;
-  var toModuleNamespace: <Value extends object>(
-    moduleValue: Value,
-    nodeInterop?: boolean | number,
-    namespace?: object,
-  ) => ModuleNamespace<Value>;
-  var toCommonJSNamespace: (moduleValue: object) => object;
-  var commonJSExportCache: WeakMap<object, object> | undefined;
-  var initializeCommonJS: (
-    factory: (
-      exports: Record<string, unknown>,
-      record: { exports: unknown },
-    ) => void,
-    moduleRecord?: { exports: unknown },
-  ) => () => unknown;
-  var identity: <Value>(value?: Value) => Value | undefined;
-  var defineLiveExports: (target: object, exports: ExportGetters) => void;
-  var initializeOnce: <Value>(
-    initializer: ((signal: 0) => Value) | 0 | undefined,
-    result?: Value,
-  ) => () => Value | undefined;
-  var dynamicRequire: RequireFunction;
-  var accentColorNames: string[];
-  function readBoundProperty(this: object, property: PropertyKey): unknown {
-    return (this as Record<PropertyKey, unknown>)[property];
-  }
-  function replaceExportGetter(
-    this: ExportGetters,
-    property: string,
-    value: unknown,
-  ): void {
-    this[property] = identity.bind(null, value);
-  }
-  bindRuntimeValue(
-    runtime,
-    "createObject",
-    () => createObject,
-    (value) => {
-      createObject = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "getPrototypeOf",
-    () => getPrototypeOf,
-    (value) => {
-      getPrototypeOf = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "defineProperty",
-    () => defineProperty,
-    (value) => {
-      defineProperty = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "getOwnPropertyNames",
-    () => getOwnPropertyNames,
-    (value) => {
-      getOwnPropertyNames = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "getOwnPropertyDescriptor",
-    () => getOwnPropertyDescriptor,
-    (value) => {
-      getOwnPropertyDescriptor = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "hasOwnProperty",
-    () => hasOwnProperty,
-    (value) => {
-      hasOwnProperty = value;
-    },
-  );
-  bindRuntimeValue(runtime, "readBoundProperty", () => readBoundProperty);
-  bindRuntimeValue(
-    runtime,
-    "commonJSNamespaceCache",
-    () => commonJSNamespaceCache,
-    (value) => {
-      commonJSNamespaceCache = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "esmNamespaceCache",
-    () => esmNamespaceCache,
-    (value) => {
-      esmNamespaceCache = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "toModuleNamespace",
-    () => toModuleNamespace,
-    (value) => {
-      toModuleNamespace = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "toCommonJSNamespace",
-    () => toCommonJSNamespace,
-    (value) => {
-      toCommonJSNamespace = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "commonJSExportCache",
-    () => commonJSExportCache,
-    (value) => {
-      commonJSExportCache = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "initializeCommonJS",
-    () => initializeCommonJS,
-    (value) => {
-      initializeCommonJS = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "identity",
-    () => identity,
-    (value) => {
-      identity = value;
-    },
-  );
-  bindRuntimeValue(runtime, "replaceExportGetter", () => replaceExportGetter);
-  bindRuntimeValue(
-    runtime,
-    "defineLiveExports",
-    () => defineLiveExports,
-    (value) => {
-      defineLiveExports = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "initializeOnce",
-    () => initializeOnce,
-    (value) => {
-      initializeOnce = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "dynamicRequire",
-    () => dynamicRequire,
-    (value) => {
-      dynamicRequire = value;
-    },
-  );
-  bindRuntimeValue(
-    runtime,
-    "accentColorNames",
-    () => accentColorNames,
-    (value) => {
-      accentColorNames = value;
-    },
-  );
+var createObject: (prototype: object | null) => object;
+var getPrototypeOf: (value: object) => object | null;
+var defineProperty: typeof Object.defineProperty;
+var getOwnPropertyNames: (value: object) => string[];
+var getOwnPropertyDescriptor: typeof Object.getOwnPropertyDescriptor;
+var hasOwnProperty: typeof Object.prototype.hasOwnProperty;
+var commonJSNamespaceCache: WeakMap<object, object> | undefined;
+var esmNamespaceCache: WeakMap<object, object> | undefined;
+var toModuleNamespace: <Value extends object>(
+  moduleValue: Value,
+  nodeInterop?: boolean | number,
+  namespace?: object,
+) => ModuleNamespace<Value>;
+var toCommonJSNamespace: (moduleValue: object) => object;
+var commonJSExportCache: WeakMap<object, object> | undefined;
+var initializeCommonJS: (
+  factory: (
+    exports: Record<string, unknown>,
+    record: { exports: unknown },
+  ) => void,
+  moduleRecord?: { exports: unknown },
+) => () => unknown;
+var identity: <Value>(value?: Value) => Value | undefined;
+var defineLiveExports: (target: object, exports: ExportGetters) => void;
+var initializeOnce: <Value>(
+  initializer: ((signal: 0) => Value) | 0 | undefined,
+  result?: Value,
+) => () => Value | undefined;
+var dynamicRequire: RequireFunction;
+var accentColorNames: string[];
+function readBoundProperty(this: object, property: PropertyKey): unknown {
+  return (this as Record<PropertyKey, unknown>)[property];
+}
+function replaceExportGetter(
+  this: ExportGetters,
+  property: string,
+  value: unknown,
+): void {
+  this[property] = identity.bind(null, value);
+}
+export {
+  accentColorNames,
+  commonJSExportCache,
+  commonJSNamespaceCache,
+  createObject,
+  defineLiveExports,
+  defineProperty,
+  dynamicRequire,
+  esmNamespaceCache,
+  getOwnPropertyDescriptor,
+  getOwnPropertyNames,
+  getPrototypeOf,
+  identity,
+  initializeCommonJS,
+  initializeOnce,
+  readBoundProperty,
+  replaceExportGetter,
+  toCommonJSNamespace,
+  toModuleNamespace,
+};
+export function set_accentColorNames(value: any): any {
+  accentColorNames = value;
+  return value;
+}
+export function installModuleHelpers(): () => void {
   return () => {
     createObject = Object.create;
     ({
