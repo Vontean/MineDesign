@@ -20,7 +20,8 @@ export const ENVIRONMENT = {
 };
 // 截图前指针停放的位置：画布左下角的空白处，避开顶栏提示气泡和画板悬停态。
 const REST_POINT = { x: 16, y: 884 };
-const STABLE_MS = 700, SETTLE_TIMEOUT_MS = 15000;
+// 稳定窗口要长于面板滚动后滚动条约 0.8 秒的显示时间
+const STABLE_MS = 1000, SETTLE_TIMEOUT_MS = 15000, SAVE_TIMEOUT_MS = 30000;
 const TEXT_FILE = /\.(?:html?|json|js|mjs|css|md|svg|txt)$/i;
 
 const sha256 = data => createHash('sha256').update(data).digest('hex');
@@ -80,7 +81,9 @@ function createNormalizer({ url, workspace }) {
     .replaceAll(token, '<token>')
     .replace(/\/(design-system|design)\/[A-Za-z0-9_-]{16,}\//g, '/$1/<grant>/')
     .replace(/blob:<origin>\/[0-9a-f-]{36}/g, m => idOf('blob', m))
-    .replace(/\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/g, m => idOf('uuid', m));
+    .replace(/\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/g, m => idOf('uuid', m))
+    // 批注创建时间等带毫秒的时间戳；夹具里手写的时间不带毫秒，保持原样
+    .replace(/\b\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z\b/g, '<time>');
   const value = (input, key) => {
     if (typeof input === 'string') return /requestId$/i.test(key ?? '') ? idOf('request', input) : text(input);
     if (Array.isArray(input)) return input.map(item => value(item));
@@ -88,6 +91,34 @@ function createNormalizer({ url, workspace }) {
     return input;
   };
   return { text, value };
+}
+
+// 画布说明与图形的 id 随机生成（note-xxxxxx、shape-xxxxxx），canvas.json 又按 id 排序键名；
+// 按内容给它们重新编号并排序，id 与顺序都不再随运行变化。
+const CANVAS_ID = /\b(?:note|shape)-[a-z0-9]{6}\b/g;
+function canonicalCanvasIds(text) {
+  if (!text.match(CANVAS_ID)) return text;
+  let data;
+  try { data = JSON.parse(text); } catch { return text; }
+  const found = new Map();
+  const walk = node => {
+    if (!node || typeof node !== 'object') return;
+    for (const [key, child] of Object.entries(node)) {
+      if (/^(?:note|shape)-[a-z0-9]{6}$/.test(key)) found.set(key, `${key.split('-')[0]} ${JSON.stringify(child).replace(CANVAS_ID, '<id>')}`);
+      walk(child);
+    }
+  };
+  walk(data);
+  const names = new Map([...found].sort((a, b) => a[1] < b[1] ? -1 : a[1] > b[1] ? 1 : 0).map(([id], index) => [id, `<${id.split('-')[0]}-${index + 1}>`]));
+  const renamed = JSON.parse(JSON.stringify(data).replace(CANVAS_ID, id => names.get(id) ?? id));
+  const sort = node => {
+    if (Array.isArray(node)) return node.map(sort);
+    if (!node || typeof node !== 'object') return node;
+    const entries = Object.entries(node).map(([k, v]) => [k, sort(v)]);
+    if (entries.some(([k]) => /^<(?:note|shape)-\d+>$/.test(k))) entries.sort(([a], [b]) => a.localeCompare(b, 'en', { numeric: true }));
+    return Object.fromEntries(entries);
+  };
+  return `${JSON.stringify(sort(renamed), null, 2)}\n`;
 }
 
 const CHROMIUM_ARGS = ['--disable-gpu', '--disable-partial-raster', '--num-raster-threads=1', '--force-color-profile=srgb', '--disable-skia-runtime-opts', '--disable-threaded-animation', '--disable-checker-imaging'];
@@ -108,6 +139,13 @@ const READY = {
     await session.page.waitForFunction(() => !document.getElementById('view-controls').hidden, null, { timeout: SETTLE_TIMEOUT_MS });
     await session.editor().waitForSelector('[data-testid="mega-canvas"] [data-testid^="mega-artboard-frame-"] iframe', { timeout: SETTLE_TIMEOUT_MS });
   },
+  // 设计系统：骨架屏之后出现章节导航、渲染好的说明文档，且载入完成（同步点不再是 loading）
+  async 'design-system'(session) {
+    const editor = session.editor();
+    await editor.waitForSelector('[data-testid="ds-section-nav"] [data-testid="ds-jump-readme"]', { timeout: SETTLE_TIMEOUT_MS });
+    await editor.waitForSelector('[data-testid="ds-readme-rendered"]', { timeout: SETTLE_TIMEOUT_MS });
+    await editor.waitForTimeout(3000); console.log("SYNC", await editor.evaluate(() => [...document.querySelectorAll("[data-testid=sync-dot]")].map(e => e.outerHTML)));
+  },
 };
 
 // 一个场景一次会话：临时工作区、独立数据目录、空闲端口、全新浏览器上下文。
@@ -123,9 +161,14 @@ export async function openSession(browser, { fixture, kind = 'design', name }) {
   const messages = { 'shell→editor': [], 'editor→shell': [] };
   const errors = [];
   const shots = [];
+  // 进行中的写请求（保存、批注）；构建检查、事件长轮询与只读请求不算
+  let writes = 0;
   const context = await browser.newContext(ENVIRONMENT);
   await context.exposeBinding('__mdnBaselineMessage', (_source, direction, data) => { messages[direction]?.push(data); });
   await context.addInitScript(captureMessages);
+  const isWrite = request => request.method() === 'POST' && !/\/(?:shell|events|about)$/.test(new URL(request.url()).pathname);
+  context.on('request', request => { if (isWrite(request)) writes++; });
+  for (const event of ['requestfinished', 'requestfailed']) context.on(event, request => { if (isWrite(request)) writes--; });
   const page = await context.newPage();
   page.on('console', message => {
     if (message.type() !== 'error') return;
@@ -139,7 +182,7 @@ export async function openSession(browser, { fixture, kind = 'design', name }) {
 
   const editor = () => page.frames().find(frame => frame.parentFrame() === page.mainFrame());
   const session = {
-    name, page, workspace, fixture,
+    name, page, workspace, home, fixture,
     editor,
     /** 打开外壳并等待编辑器就绪。 */
     async open() {
@@ -170,6 +213,18 @@ export async function openSession(browser, { fixture, kind = 'design', name }) {
       }
       throw new Error(`${name}：画面 ${SETTLE_TIMEOUT_MS / 1000} 秒内没有稳定`);
     },
+    /** 等编辑器把改动写回：同步点不再是待保存，且没有进行中的写请求。连续修改时编辑器会延后下一次写回，可能要等十几秒。 */
+    async saved() {
+      // 改动要过一会儿才进入待保存状态，先等画面稳定再看同步点
+      await session.settle();
+      const deadline = Date.now() + SAVE_TIMEOUT_MS;
+      for (let waited = false; ; waited = true) {
+        const pending = await editor()?.evaluate(() => document.querySelector('[data-testid="sync-dot"]')?.dataset.sync === 'pending').catch(() => false);
+        if (!pending && writes === 0) { if (waited) await session.settle(); return; }
+        if (Date.now() > deadline) throw new Error(`${name}：${SAVE_TIMEOUT_MS / 1000} 秒内没有保存完成`);
+        await page.waitForTimeout(100);
+      }
+    },
     /** 关键步骤截图：先停放指针再等稳定。 */
     async shot(step) {
       await session.rest();
@@ -179,19 +234,25 @@ export async function openSession(browser, { fixture, kind = 'design', name }) {
     /** 场景结束后的证据：截图、工作区文件、消息序列、控制台错误。 */
     async evidence() {
       // 等编辑器把未保存的改动写回，再读工作区
-      await session.settle();
+      await session.saved();
       const files = [];
+      // 文本文件的哈希按归一化后的内容计算，随机 id 与临时路径不影响清单
+      const record = (rel, bytes) => {
+        if (!TEXT_FILE.test(rel)) return { path: rel, sha256: sha256(bytes), size: bytes.length };
+        const text = canonicalCanvasIds(normalize.text(bytes.toString('utf8')));
+        return { path: rel, sha256: sha256(text), size: bytes.length, text };
+      };
       const walk = dir => {
         for (const entry of fs.readdirSync(dir, { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name))) {
           const full = path.join(dir, entry.name);
           if (entry.isDirectory()) walk(full);
-          else if (entry.isFile()) {
-            const bytes = fs.readFileSync(full), rel = path.relative(workspace, full).split(path.sep).join('/');
-            files.push({ path: rel, sha256: sha256(bytes), size: bytes.length, ...(TEXT_FILE.test(rel) ? { text: normalize.text(bytes.toString('utf8')) } : {}) });
-          }
+          else if (entry.isFile()) files.push(record(path.relative(workspace, full).split(path.sep).join('/'), fs.readFileSync(full)));
         }
       };
       walk(workspace);
+      // 批注保存在数据目录，文件名取自作品的临时路径，按顺序改名
+      const notes = path.join(home, 'annotations');
+      if (fs.existsSync(notes)) fs.readdirSync(notes).sort().forEach((file, index) => files.push(record(`home/annotations/${index + 1}.json`, fs.readFileSync(path.join(notes, file)))));
       return {
         shots,
         files,

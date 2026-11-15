@@ -23,6 +23,23 @@
       "w": 720,
       "x": 0,
       "y": 0
+    },
+    "Tweaks.dc.html": {
+      "h": 420,
+      "page": "page-3",
+      "title": "调节杆",
+      "w": 560,
+      "x": 0,
+      "y": 0
+    },
+    "Counter.dc.html": {
+      "h": 420,
+      "is_interactive": true,
+      "page": "page-3",
+      "title": "计数器",
+      "w": 560,
+      "x": 640,
+      "y": 0
     }
   },
   "createdOnFiles": {
@@ -37,7 +54,9 @@
   "order": [
     "Main.dc.html",
     "Detail.dc.html",
-    "Releases.dc.html"
+    "Releases.dc.html",
+    "Tweaks.dc.html",
+    "Counter.dc.html"
   ],
   "pages": [
     {
@@ -47,6 +66,10 @@
     {
       "id": "page-2",
       "name": "Page 2"
+    },
+    {
+      "id": "page-3",
+      "name": "Page 3"
     }
   ],
   "title": "Baseline Studio"
