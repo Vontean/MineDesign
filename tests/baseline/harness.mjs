@@ -83,6 +83,8 @@ function createNormalizer({ url, workspace }) {
     .replace(/blob:<origin>\/[0-9a-f-]{36}/g, m => idOf('blob', m))
     .replace(/\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/g, m => idOf('uuid', m))
     // 批注创建时间等带毫秒的时间戳；夹具里手写的时间不带毫秒，保持原样
+    // 粘贴等操作新建画板时的随机后缀
+    .replace(/\bArtboard-[a-z0-9]{4}\b/g, 'Artboard-<id>')
     .replace(/\b\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z\b/g, '<time>');
   const value = (input, key) => {
     if (typeof input === 'string') return /requestId$/i.test(key ?? '') ? idOf('request', input) : text(input);
@@ -240,7 +242,7 @@ export async function openSession(browser, { fixture, kind = 'design', name }) {
       const record = (rel, bytes) => {
         if (!TEXT_FILE.test(rel)) return { path: rel, sha256: sha256(bytes), size: bytes.length };
         const text = canonicalCanvasIds(normalize.text(bytes.toString('utf8')));
-        return { path: rel, sha256: sha256(text), size: bytes.length, text };
+        return { path: normalize.text(rel), sha256: sha256(text), size: bytes.length, text };
       };
       const walk = dir => {
         for (const entry of fs.readdirSync(dir, { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name))) {
