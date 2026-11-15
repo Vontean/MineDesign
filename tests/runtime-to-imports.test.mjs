@@ -82,3 +82,22 @@ export function installDeps(runtime: RuntimeBindings): void {
   assert.match(code, /export \{\n  lib,\n  load,\n\};/);
   assert.match(code, /runtime = registry;\n  runtime\.load = load;\n  runtime\.lib = lib;/);
 });
+
+test('收缩：删除注册表绑定，跨文件写入改为写入函数', async () => {
+  const { contractFile } = await import('../scripts/runtime-to-imports.mjs');
+  const all = { ...providers, counter: { file: 'lib/a.ts', local: 'counter' } };
+  const a = migrateFile('lib/a.ts', provider.replace('var LIMIT: Dynamic;', 'var LIMIT: Dynamic;\n  var counter: Dynamic;\n  bindRuntimeValue(runtime, "counter", () => counter, (value) => {\n    counter = value;\n  });'), all).code;
+  const b = migrateFile('ui/b.tsx', consumer.replace(' + runtime.other', ''), all).code;
+  const setters = { counter: { file: 'lib/a.ts', local: 'counter', external: true } };
+  const outA = contractFile('lib/a.ts', a, all, setters);
+  const outB = contractFile('ui/b.tsx', b, all, setters);
+  assert.deepEqual([outA.problems, outB.problems], [[], []]);
+  // 提供方：没有注册表变量与绑定，多出写入函数
+  assert.doesNotMatch(outA.code, /bindRuntimeValue|RuntimeBindings|var runtime/);
+  assert.match(outA.code, /export function set_counter\(value: any\): any \{\n  counter = value;\n  return value;\n\}/);
+  assert.match(outA.code, /export function installA\(\): \(\) => void \{\n  return \(\) => \{\n    LIMIT = 8;\n  \};\n\}/);
+  // 写入方：调用写入函数
+  assert.match(outB.code, /import \{ set_counter \} from "\.\.\/lib\/a";/);
+  assert.match(outB.code, /set_counter\(1\);/);
+  assert.doesNotMatch(outB.code, /\bruntime\b[^-]/);
+});
