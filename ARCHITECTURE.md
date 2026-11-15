@@ -117,6 +117,7 @@ flowchart TB
 | `examples/showcase/`、`examples/showcase-system/` | Pine 设计稿与规范；可被用户编辑的作品内容 |
 | `examples/studio/`、`examples/design-system/` | Mine Studio 作品；测试不用它们作写入夹具 |
 | `tests/fixtures/` | 可复制的独立可写夹具 |
+| `tests/baseline/` | 浏览器行为基线：场景脚本、公共启动/取证/比较逻辑与专用夹具；产物写入 `output/baseline/` |
 | `tests/app-loading.test.mjs` | 旧 grant、切换/重试中央状态与反馈保留 |
 | `tests/mcp.test.mjs` | 构建后的真实 stdio MCP 工具、资源和同一连接内后端热更新 |
 | `tests/runtime.test.mjs` | 更新模块加载失败时，原服务仍可响应 |

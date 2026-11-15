@@ -22,7 +22,9 @@
     "verify:equivalence": "node scripts/verify-equivalence.mjs",
     "check:i18n": "tsc -p tsconfig.i18n.json && node scripts/check-i18n.mjs",
     "export:i18n": "node scripts/export-i18n.mjs",
-    "install:dev": "node scripts/install-local.mjs --dev"
+    "install:dev": "node scripts/install-local.mjs --dev",
+    "baseline": "npm run build && node tests/baseline/run.mjs",
+    "baseline:record": "npm run build && node tests/baseline/run.mjs --record"
   },
   "dependencies": {
     "@modelcontextprotocol/ext-apps": "^1.0.1",
@@ -32,6 +34,7 @@
   "devDependencies": {
     "esbuild": "^0.25.12",
     "lucide": "1.61.0",
+    "playwright": "1.61.1",
     "react": "19.3.1",
     "react-dom": "19.3.1",
     "typescript": "^7.0.2",

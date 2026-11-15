@@ -48,6 +48,17 @@
 
 文件模块与浏览器宿主的原生回归使用 `npm run test:modules`。跨层重构先在隔离目录保存旧 service bundle 与两套编辑器产物，再执行 `npm run verify:equivalence -- <旧 service.mjs>`；同一路径重置夹具，对比实际响应，仅归一化进程 grant/origin。视觉与交互使用同一窗口、作品与状态进行前后截图及操作比较，记录范围。
 
+### 浏览器行为基线
+
+runtime 重构期间用基线确认编辑器行为不变（方法见 [runtime 规范化规格](specs/runtime-modularization.md#implementation-decisions)）。`npm run baseline:record` 记录基线，`npm run baseline` 与基线比较；两者先运行 `npm run build`，可在末尾加场景名只跑部分场景（如 `npm run baseline -- design-04-pages`）。
+
+- 脚本为每个场景复制 `tests/baseline/fixtures/` 到临时工作区，用独立 `MINEDESIGN_HOME` 和空闲端口启动服务，以固定视口、英文、浅色、减少动效的 Chromium 驱动外壳与编辑器。浏览器使用本机缓存中与 playwright 版本对应的 Chromium，不自动下载。
+- 证据：关键步骤截图、工作区文件（路径、哈希与文本内容）、外壳与编辑器之间的 postMessage（归一化端口、token、grant 与随机 id）、控制台错误与未处理异常。截图允许差异为零像素。
+- 产物写入 `output/baseline/`：`expected/` 是基线，`actual/` 是最近一次运行，`diff/` 是差异图与文本 diff。比较失败时输出场景、证据类型和差异路径，退出码为 1。
+- 基线只在同一台机器、同一 Chromium 版本内可比；换机器或升级 playwright 后先在改动前的提交上重新记录。
+- 出现差异时修复代码，不更新基线。只有确认原行为是缺陷时才重新记录，并在提交说明写明缺陷与受影响的场景。
+- 新场景放在 `tests/baseline/scenarios/`，一个文件一个场景，只用真实指针、键盘、外壳控件、`data-testid` 与可访问名称，不调用 runtime 内部函数。
+
 可写测试使用 `tests/fixtures/` 复制到临时工作区。`examples/` 是可被用户编辑的作品，不作为可覆盖的数据。测试产生的批注或临时目录在 finally 清理。
 
 界面交付的截图规则由 AGENTS.md 统一维护。过程证据保存在本机 `output/` 或 `docs/process/`，不提交。不要把本次未运行的历史记录写成新证据。
