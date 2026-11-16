@@ -11,7 +11,7 @@ const require = createRequire(import.meta.url);
 const { parser, traverse: traversePkg } = require('@babel/standalone').packages;
 const traverse = traversePkg.default ?? traversePkg;
 
-/** 返回 {main: 新的原文件内容, files: {相对子路径: 内容}, moved: 数量, problems: []}。 */
+/** 返回 {main: 新的原文件内容, files: {相对子路径: 内容}, moved: 数量, problems: [], kept: [留在原文件的函数]}。 */
 export function splitFunctions(source, fileName, groups) {
   const ast = parser.parse(source, { sourceType: 'module', plugins: ['typescript', 'jsx'] });
   const base = fileName.replace(/\.tsx?$/, '');
@@ -38,12 +38,21 @@ export function splitFunctions(source, fileName, groups) {
   };
 
   const byGroup = new Map();
-  const removed = [];
+  const removed = [], kept = [];
   program.get('body').forEach(statement => {
     const fn = statement.isFunctionDeclaration() ? statement : null;
     const group = fn && groups[fn.node.id.name];
     if (!group) return;
     const imports = new Set(), locals = new Set();
+    // 给原文件顶层变量赋值的函数不能移走：导入的绑定是只读的
+    let writesLocal = null;
+    fn.traverse({
+      Identifier(q) {
+        const written = (q.parentPath.isAssignmentExpression() && q.parentKey === 'left') || q.parentPath.isUpdateExpression();
+        if (written && bindings[q.node.name] && q.scope.getBinding(q.node.name) === bindings[q.node.name]) writesLocal ??= q.node.name;
+      },
+    });
+    if (writesLocal) { kept.push(`${fn.node.id.name}（给 ${writesLocal} 赋值）`); return; }
     const note = name => {
       const binding = bindings[name];
       if (!binding || name === fn.node.id.name) return;
@@ -88,7 +97,7 @@ export function splitFunctions(source, fileName, groups) {
   const lastImport = [...ast.program.body].reverse().find(s => s.type === 'ImportDeclaration');
   main = `${main.slice(0, lastImport.end)}\n${mainImports.join('\n')}${main.slice(lastImport.end)}`;
   for (const code of [main, ...Object.values(files)]) parser.parse(code, { sourceType: 'module', plugins: ['typescript', 'jsx'] });
-  return { main, files, moved: removed.length, problems };
+  return { main, files, moved: removed.length, problems, kept };
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
@@ -97,9 +106,10 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const groups = JSON.parse(fs.readFileSync(flag('--groups'), 'utf8'));
   const write = args.includes('--write');
   const file = args.find(a => !a.startsWith('--'));
-  const { main, files, moved, problems } = splitFunctions(fs.readFileSync(file, 'utf8'), file, groups);
+  const { main, files, moved, problems, kept } = splitFunctions(fs.readFileSync(file, 'utf8'), file, groups);
   console.log(`移动 ${moved} 个函数到 ${Object.keys(files).length} 个文件`);
   for (const [name, code] of Object.entries(files)) console.log(`  ${name}：${code.split('\n').length} 行`);
+  for (const k of kept) console.log(`留在原文件：${k}`);
   for (const p of problems) console.log(`需要处理：${p}`);
   if (write && !problems.length) {
     fs.writeFileSync(file, main);

@@ -75,6 +75,15 @@ import { getLinkedArtboards, resolveComponentFile } from "../preview/dependency-
 import { createPreviewHandle } from "../preview/evaluation";
 import { CanvasObjectQuickActions, EditingNoteQuickActions, NoteQuickActions } from "../properties/annotation-quick-actions";
 import { hasSelectionQuickActions } from "../properties/selection-quick-actions";
+import { openCanvasContextMenu, pressCanvasBackground } from "./interaction-layer/canvas-events";
+import { composeSelectedElementComment } from "./interaction-layer/comments";
+import { beginBoardDrag, beginHandedOffBoardDrag, subscribeHostDragPointer } from "./interaction-layer/drag";
+import { beginCanvasMarquee } from "./interaction-layer/marquee";
+import { placePastedImagesOnCanvas, resolvePointerInsertionPoint } from "./interaction-layer/paste";
+import { buildObjectPressHandlers, pressArtboardCover, waitPointerReleaseTravel } from "./interaction-layer/press";
+import { pickMountedArtboardPreviews } from "./interaction-layer/preview";
+import { renderAnnotationQuickActions, renderCanvasObjects, renderImageCropEditor, renderSelectionQuickActions } from "./interaction-layer/render";
+import { beginSelectionGroupResize, runSelectionTransformGesture, trackHandleDragGesture } from "./interaction-layer/resize";
 
 var canvasDragSequence: Dynamic;
 function toggleArtboardDragCurtain(
@@ -249,133 +258,7 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
   value6.current = value4;
   let value7: Dynamic =
       value4 && !crossFile && elementSelection?.tids?.length
-        ? (input?: Dynamic): Dynamic => {
-            let value250: Dynamic = elementSelection,
-              file: Dynamic = value250.file,
-              entry2: Dynamic = value2.current.get(file),
-              value251: Dynamic = entry2
-                ? (0, createPreviewHandle)(entry2.webviewRef.current)
-                : null,
-              current: Dynamic = value9.current;
-            if (!value251 || !current) return;
-            input.focus({
-              preventScroll: true,
-            });
-            let bounds: Dynamic = input.getBoundingClientRect(),
-              value252: Dynamic = callback16(
-                bounds.left + bounds.width / 2,
-                bounds.bottom,
-                current.getBoundingClientRect(),
-              );
-            (0, pickerCommentFor)(
-              value251,
-              value250.tids[0],
-              value250.name ?? null,
-            ).then((input2?: Dynamic): Dynamic => {
-              let value253: Dynamic = manifest.artboards.find(
-                (input3?: Dynamic): Dynamic => input3.file === file,
-              );
-              if (!input2 || !value253) return;
-              let value254: Dynamic =
-                  value20?.file === file ? value20 : value253,
-                value255: Dynamic =
-                  input2.path == null
-                    ? {
-                        x: 0,
-                        y: 0,
-                        w: value254.w,
-                        h: value254.h,
-                      }
-                    : input2.rect,
-                { px: value256, py: value257 }: Dynamic = (0,
-                commentPointWithinVisibleContent)(
-                  value252,
-                  value254,
-                  value255,
-                ),
-                value258: Dynamic =
-                  (value256 - value255.x) / (value255.w || 1),
-                value259: Dynamic =
-                  (value257 - value255.y) / (value255.h || 1),
-                value260: Dynamic = (0, serializeDesignCommentAnchor)(
-                  input2.path != null
-                    ? {
-                        kind: "el",
-                        file: file,
-                        path: input2.path,
-                        tid: input2.tid,
-                        fp: input2.fp,
-                        fx: value258,
-                        fy: value259,
-                      }
-                    : input2.page
-                      ? {
-                          kind: "artboard",
-                          file: file,
-                          px: value256 - input2.page.x,
-                          py: value257 - input2.page.y,
-                        }
-                      : {
-                          kind: "artboard",
-                          file: file,
-                          fx: value258,
-                          fy: value259,
-                        },
-                );
-              if (!value260) return;
-              let value261: Dynamic =
-                  input2.path == null
-                    ? null
-                    : (0, describeCommentElement)(entry2, input2),
-                value262: Dynamic = (0, commentAnchorShortLabel)(
-                  value261 == null
-                    ? {
-                        kind: "artboard",
-                        board: value253,
-                      }
-                    : {
-                        kind: "el",
-                        board: value253,
-                        el: value261,
-                      },
-                ),
-                value263: Dynamic =
-                  input2.path != null && input2.tid != null
-                    ? entry2?.viewEntries([input2.tid])[0]
-                    : undefined,
-                value264: Dynamic = (0, commentArtboardElementDetail)(
-                  value253,
-                  value263 && value261
-                    ? {
-                        path: value263.path,
-                        kind: value261.kind ?? value263.kind,
-                        text: value261.text ?? value263.words(),
-                      }
-                    : null,
-                ),
-                bounds2: Dynamic = current.getBoundingClientRect(),
-                entry3: Dynamic = camera.get();
-              value4
-                .compose(
-                  value260,
-                  {
-                    x:
-                      bounds2.left +
-                      (value254.x + value256 - entry3.x) * entry3.scale +
-                      (window as Dynamic).scrollX,
-                    y:
-                      bounds2.top +
-                      (value254.y + value257 - entry3.y) * entry3.scale +
-                      (window as Dynamic).scrollY,
-                  },
-                  {
-                    label: value262,
-                    detail: value264,
-                  },
-                )
-                .catch((): Dynamic => {});
-            });
-          }
+        ? (...args: Dynamic[]): Dynamic => (composeSelectedElementComment as Dynamic)({ get callback16() { return callback16; }, get camera() { return camera; }, get elementSelection() { return elementSelection; }, get manifest() { return manifest; }, get value2() { return value2; }, get value20() { return value20; }, get value4() { return value4; }, get value9() { return value9; } }, ...args)
         : null,
     value8: Dynamic = value4
       ? (input?: Dynamic, options2?: Dynamic): Dynamic => {
@@ -1009,765 +892,13 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
         y: entry2.y + (options2 - context.top) / entry2.scale,
       };
     },
-    callback17: Dynamic = (
-      input?: Dynamic,
-      options2?: Dynamic,
-      context?: Dynamic,
-      value250?: Dynamic,
-      extra?: Dynamic,
-      detail?: Dynamic,
-    ): Dynamic =>
-      detail
-        ? Promise.resolve({
-            travelled: false,
-          })
-        : new Promise((input2?: Dynamic): Dynamic => {
-            let flag2: Dynamic = false,
-              callback61: Dynamic = (input3?: Dynamic): Dynamic => {
-                input3.pointerId === input &&
-                  Math.hypot(
-                    input3.clientX - value250,
-                    input3.clientY - extra,
-                  ) >= canvasDragThresholdPixels &&
-                  (flag2 = true);
-              },
-              flag3: Dynamic = false,
-              callback62: Dynamic = (input3?: Dynamic): Dynamic => {
-                flag3 ||
-                  ((flag3 = true),
-                  (window as Dynamic).removeEventListener(
-                    "pointermove",
-                    callback61,
-                    true,
-                  ),
-                  (window as Dynamic).removeEventListener(
-                    "pointerup",
-                    callback63,
-                    true,
-                  ),
-                  (window as Dynamic).removeEventListener(
-                    "pointercancel",
-                    callback64,
-                    true,
-                  ),
-                  (window as Dynamic).removeEventListener(
-                    "keydown",
-                    callback65,
-                    true,
-                  ),
-                  (window as Dynamic).removeEventListener("blur", callback66),
-                  (window as Dynamic).removeEventListener(
-                    "contextmenu",
-                    callback67,
-                    true,
-                  ),
-                  value251?.disconnect(),
-                  (window as Dynamic).setTimeout(
-                    (): Dynamic =>
-                      input2({
-                        travelled: flag2 || input3,
-                      }),
-                    0,
-                  ));
-              },
-              callback63: Dynamic = (input3?: Dynamic): Dynamic => {
-                input3.pointerId === input && callback62(false);
-              },
-              callback64: Dynamic = (input3?: Dynamic): Dynamic => {
-                input3.pointerId === input && callback62(true);
-              },
-              callback65: Dynamic = (input3?: Dynamic): Dynamic => {
-                input3.key === "Escape" && (flag2 = true);
-              },
-              callback66: Dynamic = (): Dynamic => {
-                (document as Dynamic).hasFocus() || callback62(true);
-              },
-              callback67: Dynamic = (): Dynamic => callback62(true),
-              value251: Dynamic =
-                options2 === "mouse"
-                  ? null
-                  : new MutationObserver((): Dynamic => {
-                      !context.isConnected && callback62(false);
-                    });
-            value251?.observe(value9.current ?? (document as Dynamic).body, {
-              childList: true,
-              subtree: true,
-            });
-            (window as Dynamic).addEventListener(
-              "pointermove",
-              callback61,
-              true,
-            );
-            (window as Dynamic).addEventListener(
-              "pointerup",
-              callback63,
-              true,
-            );
-            (window as Dynamic).addEventListener(
-              "pointercancel",
-              callback64,
-              true,
-            );
-            (window as Dynamic).addEventListener("keydown", callback65, true);
-            (window as Dynamic).addEventListener("blur", callback66);
-            (window as Dynamic).addEventListener(
-              "contextmenu",
-              callback67,
-              true,
-            );
-          }),
-    callback18: Dynamic = (
-      input?: Dynamic,
-      options2?: Dynamic,
-      source?: Dynamic,
-    ): Dynamic => {
-      let x: Dynamic = source.at.x,
-        y: Dynamic = source.at.y;
-      onCoverPress?.(options2.file, {
-        x: x,
-        y: y,
-      });
-      let entry2: Dynamic = value2.current.get(options2.file),
-        callback61: Dynamic = (): Dynamic => {
-          if (source.face) {
-            value60(options2.file, true);
-            return;
-          }
-          value60(options2.file, source.toggle);
-          source.toggle || onFocus(options2.file);
-        },
-        callback62: Dynamic = (): Dynamic => {
-          source.kind !== "set" && callback61();
-        };
-      if (!entry2 || !entry2.isReady() || !onElementPress) {
-        callback62();
-        return;
-      }
-      let currentTarget: Dynamic = input.currentTarget,
-        {
-          pointerId: value250,
-          pointerType: value251,
-          clientX: value252,
-          clientY: value253,
-        }: Dynamic = input,
-        value254: Dynamic = onPressIntent?.() ?? 0,
-        callback63: Dynamic = (): Dynamic =>
-          pressIntentIs ? pressIntentIs(value254) : true,
-        value255: Dynamic = source.still === true,
-        flag2: Dynamic = false,
-        state: Dynamic = {
-          x: value252,
-          y: value253,
-        },
-        flag3: Dynamic = false,
-        value256: Dynamic = null,
-        callback64: Dynamic = (): Dynamic => {
-          (window as Dynamic).removeEventListener("pointermove", callback65);
-          (window as Dynamic).removeEventListener("pointerup", callback66);
-          (window as Dynamic).removeEventListener(
-            "pointercancel",
-            callback67,
-          );
-        },
-        callback65: Dynamic = (input2?: Dynamic): Dynamic => {
-          input2.pointerId === value250 &&
-            ((state = {
-              x: input2.clientX,
-              y: input2.clientY,
-            }),
-            Math.hypot(
-              input2.clientX - value252,
-              input2.clientY - value253,
-            ) >= canvasDragThresholdPixels && (flag2 = true));
-        },
-        callback66: Dynamic = (input2?: Dynamic): Dynamic => {
-          if (input2.pointerId !== value250) return;
-          value255 = true;
-          callback64();
-          let value260: Dynamic = value256;
-          value256 = null;
-          value260 && !flag2 && callback63() && value260();
-        },
-        callback67: Dynamic = (input2?: Dynamic): Dynamic => {
-          input2.pointerId === value250 &&
-            ((flag3 = true), (value256 = null), callback64());
-        };
-      if (!value255) {
-        try {
-          currentTarget.setPointerCapture(value250);
-        } catch {}
-        (window as Dynamic).addEventListener("pointermove", callback65);
-        (window as Dynamic).addEventListener("pointerup", callback66);
-        (window as Dynamic).addEventListener("pointercancel", callback67);
-      }
-      let callback68: Dynamic = (input2?: Dynamic): Dynamic => {
-          value255 ? flag2 || input2() : (value256 = input2);
-        },
-        value257: Dynamic = value26.current?.[options2.file] ?? [],
-        value258: Dynamic = source.deepKey ? "deep" : "plain",
-        value259: Dynamic = entry2.pickAt(x, y, value258, value257).then(
-          (input2?: Dynamic): Dynamic => {
-            if (flag3 || !callback63()) {
-              callback64();
-              return;
-            }
-            let callback69: Dynamic = (
-                input3?: Dynamic,
-                options3?: Dynamic,
-              ): Dynamic => {
-                if (value255) {
-                  flag2 || input3();
-                  return;
-                }
-                callback64();
-                callback19(input, {
-                  origin: {
-                    kind: "artboard",
-                    file: options2.file,
-                  },
-                  mode: value258,
-                  toggle: source.toggle,
-                  capture: currentTarget,
-                  onStillRelease: input3,
-                  tree: options3,
-                  from: flag2 ? state : undefined,
-                });
-              },
-              callback70: Dynamic = (): Dynamic => {
-                source.toggle
-                  ? value60(options2.file, true)
-                  : source.face || callback61();
-              };
-            if (input2 == null) {
-              callback69(callback70);
-              return;
-            }
-            if ("empty" in input2) {
-              callback64();
-              let value262: Dynamic = (0,
-              selectionPointerDownDecision)(
-                value57.current,
-                {
-                  file: options2.file,
-                },
-                source.toggle,
-              );
-              value262.selectNow && value60(options2.file, source.toggle);
-              let value263: Dynamic = Object.assign(Object.create(input), {
-                currentTarget: currentTarget,
-              });
-              value255
-                ? !flag2 &&
-                  value262.click &&
-                  onSelectObjects(
-                    (0, boardSelectionItems)({
-                      file: options2.file,
-                    }),
-                    value262.click === "toggle" ? "toggle" : "replace",
-                  )
-                : callback46(
-                    value263,
-                    {
-                      file: options2.file,
-                    },
-                    options2,
-                    value262.carry,
-                    value262.click,
-                    !source.toggle,
-                  );
-              value255 && !source.toggle && onFocus(options2.file);
-              return;
-            }
-            if (source.toggle && value57.current.files.has(options2.file)) {
-              callback68((): Dynamic => value60(options2.file, true));
-              return;
-            }
-            let value260: Dynamic = value257.includes(input2.tid);
-            if (input2.root && !value260) {
-              callback69((): Dynamic => {
-                source.toggle ||
-                  (input2.page
-                    ? callback70()
-                    : onElementPress(
-                        options2.file,
-                        input2.tid,
-                        input2.rect,
-                        "replace",
-                        true,
-                      ));
-              });
-              return;
-            }
-            if (source.deepKey && InspectorColorPickResolvedValue_2) {
-              let value262: Dynamic =
-                value92.current?.(source.toggle) ?? null;
-              if (source.toggle && value260) {
-                callback69(
-                  (): Dynamic =>
-                    onElementPress(
-                      options2.file,
-                      input2.tid,
-                      input2.rect,
-                      "remove",
-                      false,
-                    ),
-                  value262,
-                );
-                return;
-              }
-              onElementPress(
-                options2.file,
-                input2.tid,
-                input2.rect,
-                source.toggle ? "toggle" : "replace",
-                false,
-              );
-              callback69((): Dynamic => {
-                source.toggle || onArmArtboard?.(options2.file);
-              }, value262);
-              return;
-            }
-            if (source.toggle) {
-              value260
-                ? callback68(
-                    (): Dynamic =>
-                      onElementPress(
-                        options2.file,
-                        input2.tid,
-                        input2.rect,
-                        "remove",
-                        false,
-                      ),
-                  )
-                : (callback64(),
-                  onElementPress(
-                    options2.file,
-                    input2.tid,
-                    input2.rect,
-                    "toggle",
-                    false,
-                  ));
-              return;
-            }
-            if (value260) {
-              let value262: Dynamic =
-                  value257.length === 1 && input2.text ? input2.text : input2,
-                callback71: Dynamic = (): Dynamic => {
-                  onElementPress(
-                    options2.file,
-                    value262.tid,
-                    value262.rect,
-                    "narrow",
-                    true,
-                  );
-                };
-              if (onSetMoveCommit && !flag3 && !source.deepKey) {
-                callback64();
-                if (value255) {
-                  flag2 || callback71();
-                  return;
-                }
-                callback53({
-                  pointerId: value250,
-                  captureEl: currentTarget,
-                  clientX: value252,
-                  clientY: value253,
-                  leader: {
-                    file: options2.file,
-                    tid: input2.tid,
-                  },
-                  stillAction: callback71,
-                  armWait: null,
-                  heldCover: options2.file,
-                  from: flag2
-                    ? {
-                        clientX: state.x,
-                        clientY: state.y,
-                      }
-                    : null,
-                });
-                return;
-              }
-              callback68(callback71);
-              return;
-            }
-            let text: Dynamic = input2.text,
-              value261: Dynamic = text
-                ? (): Dynamic => {
-                    onElementPress(
-                      options2.file,
-                      text.tid,
-                      text.rect,
-                      "replace",
-                      true,
-                    );
-                  }
-                : null;
-            callback64();
-            if (onSetMoveCommit && !value255 && !source.deepKey) {
-              value222(options2.file);
-              let value262: Dynamic = onElementPress(
-                options2.file,
-                input2.tid,
-                input2.rect,
-                "replace",
-                true,
-              );
-              callback53({
-                pointerId: value250,
-                captureEl: currentTarget,
-                clientX: value252,
-                clientY: value253,
-                leader: {
-                  file: options2.file,
-                  tid: input2.tid,
-                },
-                files: new Map([[options2.file, [input2.tid]]]),
-                canvas: emptyBoardSelection,
-                stillAction: value261,
-                armWait:
-                  value262 instanceof Promise
-                    ? value262
-                    : Promise.resolve(true),
-                heldCover: options2.file,
-                from: flag2
-                  ? {
-                      clientX: state.x,
-                      clientY: state.y,
-                    }
-                  : null,
-              }) || value222(null);
-              return;
-            }
-            value255 && !flag2 && value261
-              ? value261()
-              : onElementPress(
-                  options2.file,
-                  input2.tid,
-                  input2.rect,
-                  "replace",
-                  true,
-                );
-          },
-          (): Dynamic => {
-            !flag3 && callback63() && callback62();
-          },
-        );
-      onCoverPick?.(options2.file, value259, {
-        gen: value254,
-        kind: source.kind ?? "focus",
-        ended: callback17(
-          value250,
-          value251,
-          currentTarget,
-          value252,
-          value253,
-          value255,
-        ),
-      });
-      value29.current = value259;
-    },
+    callback17: Dynamic = (...args: Dynamic[]): Dynamic => (waitPointerReleaseTravel as Dynamic)({ get value9() { return value9; } }, ...args),
+    callback18: Dynamic = (...args: Dynamic[]): Dynamic => (pressArtboardCover as Dynamic)({ get callback17() { return callback17; }, get callback19() { return callback19; }, get callback46() { return callback46; }, get callback53() { return callback53; }, get onArmArtboard() { return onArmArtboard; }, get onCoverPick() { return onCoverPick; }, get onCoverPress() { return onCoverPress; }, get onElementPress() { return onElementPress; }, get onFocus() { return onFocus; }, get onPressIntent() { return onPressIntent; }, get onSelectObjects() { return onSelectObjects; }, get onSetMoveCommit() { return onSetMoveCommit; }, get pressIntentIs() { return pressIntentIs; }, get value2() { return value2; }, get value222() { return value222; }, get value26() { return value26; }, get value29() { return value29; }, get value57() { return value57; }, get value60() { return value60; }, get value92() { return value92; } }, ...args),
     value92: Dynamic = (0, reactVectorToolState_2.useRef)(
       onMarqueeBegin,
     );
   value92.current = onMarqueeBegin;
-  let callback19: Dynamic = (
-      input?: Dynamic,
-      options2?: Dynamic,
-    ): Dynamic => {
-      let current: Dynamic = value9.current;
-      if (!current) return;
-      let {
-          pointerId: value250,
-          clientX: value251,
-          clientY: value252,
-        }: Dynamic = input,
-        value253: Dynamic = callback16(
-          value251,
-          value252,
-          current.getBoundingClientRect(),
-        ),
-        value254: Dynamic =
-          options2.tree !== undefined
-            ? options2.tree
-            : (value92.current?.(options2.toggle) ?? null),
-        current2: Dynamic = value57.current,
-        value255: Dynamic = options2.toggle
-          ? current2
-          : emptyBoardSelection;
-      try {
-        options2.capture.hasPointerCapture(value250) ||
-          options2.capture.setPointerCapture(value250);
-      } catch {}
-      value134("marquee", true);
-      let value256: Dynamic = null,
-        value257: Dynamic = value251,
-        value258: Dynamic = value252,
-        value259: Dynamic = null,
-        index: Dynamic = 0,
-        flag2: Dynamic = false,
-        entries2: Dynamic = new Map(),
-        values: Dynamic = new Set(),
-        entries3: Dynamic = new Map(),
-        entries4: Dynamic = new Map(),
-        values2: Dynamic = new Set(),
-        callback61: Dynamic = (
-          input2?: Dynamic,
-          options3?: Dynamic,
-        ): Dynamic => {
-          let value260: Dynamic = [
-            options3.x0,
-            options3.y0,
-            options3.x1,
-            options3.y1,
-          ]
-            .map((input3?: Dynamic): Dynamic => Math.round(input3))
-            .join(",");
-          if (entries4.get(input2) === value260) return true;
-          if (values.has(input2)) {
-            entries3.set(input2, options3);
-            return true;
-          }
-          let entry2: Dynamic = value2.current.get(input2);
-          return !entry2 || !entry2.isReady()
-            ? false
-            : (values.add(input2),
-              entries4.set(input2, value260),
-              entry2.pickIn(options3, options2.mode).then(
-                (input3?: Dynamic): Dynamic => {
-                  values.delete(input2);
-                  if (flag2 || (index && Date.now() - index > 1500)) return;
-                  input3 == null
-                    ? values2.add(input2)
-                    : entries2.set(input2, input3);
-                  callback63();
-                  let entry3: Dynamic = entries3.get(input2);
-                  entries3.delete(input2);
-                  entry3 && callback61(input2, entry3);
-                },
-                (): Dynamic => {
-                  values.delete(input2);
-                  values2.add(input2);
-                  !flag2 &&
-                    !(index && Date.now() - index > 1500) &&
-                    callback63();
-                },
-              ),
-              true);
-        },
-        callback62: Dynamic = (input2?: Dynamic): Dynamic => {
-          let current3: Dynamic = value146.current,
-            values3: Dynamic = new Set(),
-            entries5: Dynamic = new Map(),
-            value260: Dynamic =
-              options2.origin.kind === "canvas"
-                ? current3.artboards
-                : current3.artboards.filter(
-                    (input3?: Dynamic): Dynamic =>
-                      input3.file === options2.origin.file,
-                  );
-          for (let value262 of value260 as Dynamic) {
-            if (!(0, inclusiveRectIntersects)(input2, value262)) {
-              entries2.delete(value262.file);
-              entries3.delete(value262.file);
-              entries4.delete(value262.file);
-              continue;
-            }
-            let value263: Dynamic =
-              input2.x <= value262.x &&
-              value262.x + value262.w <= input2.x + input2.w &&
-              input2.y <= value262.y &&
-              value262.y + value262.h <= input2.y + input2.h;
-            if (
-              options2.origin.kind === "canvas" &&
-              (value262.frameless || (value263 && options2.mode === "plain"))
-            ) {
-              values3.add(value262.file);
-              entries2.delete(value262.file);
-              continue;
-            }
-            if (
-              !(
-                !values2.has(value262.file) &&
-                callback61(value262.file, {
-                  x0: Math.max(0, input2.x - value262.x),
-                  y0: Math.max(0, input2.y - value262.y),
-                  x1: Math.min(value262.w, input2.x + input2.w - value262.x),
-                  y1: Math.min(value262.h, input2.y + input2.h - value262.y),
-                })
-              )
-            ) {
-              options2.origin.kind === "canvas" && values3.add(value262.file);
-              continue;
-            }
-            let entry2: Dynamic = entries2.get(value262.file);
-            entry2 &&
-              entry2.length > 0 &&
-              entries5.set(value262.file, {
-                name: (0, SelectionActionsReplace)(value262.file),
-                tids: entry2,
-              });
-          }
-          let value261: Dynamic =
-              value19.current && options2.origin.kind === "canvas"
-                ? (current3.annotations ?? [])
-                : [],
-            notes: Dynamic = (0, objectsWithinCanvasMarquee)(
-              {
-                artboards: [],
-                annotations: value261,
-                annBox: value216.current,
-              },
-              input2,
-              emptyBoardSelection,
-            ).notes;
-          return {
-            files: values3,
-            notes: notes,
-            elements: entries5,
-          };
-        },
-        callback63: Dynamic = (): Dynamic => {
-          if (!value259) return;
-          let value260: Dynamic = callback62(value259),
-            value261: Dynamic =
-              [...value260.files].sort().join(`
-`) +
-              `
-
-` +
-              [...value260.notes].sort().join(`
-`) +
-              `
-
-` +
-              [...value260.elements]
-                .map(
-                  ([input2, input3]: Dynamic): Dynamic =>
-                    input2 +
-                    "#" +
-                    [...input3.tids]
-                      .sort(
-                        (input4?: Dynamic, options3?: Dynamic): Dynamic =>
-                          input4 - options3,
-                      )
-                      .join("."),
-                )
-                .sort().join(`
-`);
-          value261 !== value256 &&
-            ((value256 = value261),
-            value254
-              ? value254.sweep(value260)
-              : value61.current(
-                  {
-                    files: new Set([...value255.files, ...value260.files]),
-                    notes: new Set([...value255.notes, ...value260.notes]),
-                  },
-                  "replace",
-                ));
-        },
-        callback64: Dynamic = (): Dynamic => {
-          let value260: Dynamic = callback16(
-            value257,
-            value258,
-            current.getBoundingClientRect(),
-          );
-          value259 = {
-            x: Math.min(value253.x, value260.x),
-            y: Math.min(value253.y, value260.y),
-            w: Math.abs(value260.x - value253.x),
-            h: Math.abs(value260.y - value253.y),
-          };
-          let entry2: Dynamic = value34.current.get();
-          value88.current = {
-            x: (value259.x - entry2.x) * entry2.scale,
-            y: (value259.y - entry2.y) * entry2.scale,
-            w: value259.w * entry2.scale,
-            h: value259.h * entry2.scale,
-          };
-          (0, applyElementRectStyle)(
-            value89.current,
-            value88.current,
-          );
-          callback63();
-        };
-      value91.current = (): Dynamic => {
-        value256 != null && callback64();
-      };
-      let callback65: Dynamic = (input2?: Dynamic): Dynamic => {
-          if (input2.pointerId === value250) {
-            if (!(input2.buttons & 1)) return callback66();
-            if (value256 == null) {
-              if (
-                Math.hypot(
-                  input2.clientX - value251,
-                  input2.clientY - value252,
-                ) < canvasDragThresholdPixels
-              )
-                return;
-              value87(true);
-            }
-            value257 = input2.clientX;
-            value258 = input2.clientY;
-            callback64();
-          }
-        },
-        callback66: Dynamic = (): Dynamic => {
-          index = Date.now();
-          (window as Dynamic).removeEventListener("pointermove", callback65);
-          (window as Dynamic).removeEventListener("pointerup", callback68);
-          (window as Dynamic).removeEventListener(
-            "pointercancel",
-            callback69,
-          );
-          (window as Dynamic).removeEventListener(
-            "keydown",
-            callback70,
-            true,
-          );
-          (window as Dynamic).removeEventListener("blur", callback67);
-          (window as Dynamic).removeEventListener("contextmenu", callback66);
-          value91.current = null;
-          value88.current = null;
-          value87(false);
-          value134("marquee", false);
-        },
-        callback67: Dynamic = (): Dynamic => {
-          (document as Dynamic).hasFocus() || ((flag2 = true), callback66());
-        },
-        callback68: Dynamic = (input2?: Dynamic): Dynamic => {
-          if (input2.pointerId !== value250) return;
-          let value260: Dynamic = value256 == null;
-          callback66();
-          value260 && options2.onStillRelease?.();
-        },
-        callback69: Dynamic = (input2?: Dynamic): Dynamic => {
-          input2.pointerId === value250 && ((flag2 = true), callback66());
-        },
-        callback70: Dynamic = (event?: Dynamic): Dynamic => {
-          event.key !== "Escape" ||
-            value256 == null ||
-            (event.preventDefault(),
-            event.stopPropagation(),
-            (flag2 = true),
-            callback66(),
-            value254
-              ? value254.cancel()
-              : value61.current(current2, "replace"));
-        };
-      (window as Dynamic).addEventListener("pointermove", callback65);
-      (window as Dynamic).addEventListener("pointerup", callback68);
-      (window as Dynamic).addEventListener("pointercancel", callback69);
-      (window as Dynamic).addEventListener("keydown", callback70, true);
-      (window as Dynamic).addEventListener("blur", callback67);
-      (window as Dynamic).addEventListener("contextmenu", callback66);
-      options2.from &&
-        (value87(true),
-        (value257 = options2.from.x),
-        (value258 = options2.from.y),
-        callback64());
-    },
+  let callback19: Dynamic = (...args: Dynamic[]): Dynamic => (beginCanvasMarquee as Dynamic)({ get callback16() { return callback16; }, get value134() { return value134; }, get value146() { return value146; }, get value19() { return value19; }, get value2() { return value2; }, get value216() { return value216; }, get value34() { return value34; }, get value57() { return value57; }, get value61() { return value61; }, get value87() { return value87; }, get value88() { return value88; }, get value89() { return value89; }, get value9() { return value9; }, get value91() { return value91; }, get value92() { return value92; } }, ...args),
     value93: Dynamic = (0, reactVectorToolState_2.useCallback)(
       (input?: Dynamic, options2?: Dynamic): Dynamic => {
         if (options2.type === "drop") {
@@ -1803,78 +934,7 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
     ),
     value94: Dynamic = (0, reactVectorToolState_2.useRef)(onHostDrag);
   value94.current = onHostDrag;
-  (0, reactVectorToolState_2.useEffect)((): Dynamic => {
-    if (streamDragFile == null) return;
-    let callback61: Dynamic = (input?: Dynamic): Dynamic => {
-        let value250: Dynamic = value9.current?.getBoundingClientRect();
-        return value250
-          ? callback16(input.clientX, input.clientY, value250)
-          : null;
-      },
-      callback62: Dynamic = (): Dynamic =>
-        value94.current?.("cancel", 0, 0, false),
-      callback63: Dynamic = (input?: Dynamic): Dynamic => {
-        input.pointerType === "mouse" &&
-          value94.current?.("stale", 0, 0, false);
-      },
-      callback64: Dynamic = (input?: Dynamic): Dynamic => {
-        if (input.pointerType !== "mouse") return;
-        if (!(input.buttons & 1)) {
-          callback62();
-          return;
-        }
-        let value250: Dynamic = callback61(input);
-        value250 &&
-          value94.current?.(
-            "move",
-            value250.x,
-            value250.y,
-            input.altKey,
-            input.ctrlKey,
-          );
-      },
-      callback65: Dynamic = (event?: Dynamic): Dynamic => {
-        if (event.pointerType !== "mouse" || event.button !== 0) return;
-        let value250: Dynamic = callback61(event),
-          value251: Dynamic =
-            !!value9.current &&
-            event.target instanceof Node &&
-            value9.current.contains(event.target);
-        value250 && value251
-          ? value94.current?.(
-              "up",
-              value250.x,
-              value250.y,
-              event.altKey,
-              event.ctrlKey,
-            )
-          : callback62();
-      };
-    (window as Dynamic).addEventListener("pointerdown", callback63, true);
-    (window as Dynamic).addEventListener("pointermove", callback64, true);
-    (window as Dynamic).addEventListener("pointerup", callback65, true);
-    (window as Dynamic).addEventListener("pointercancel", callback62, true);
-    (window as Dynamic).addEventListener("blur", callback62);
-    return (): Dynamic => {
-      (window as Dynamic).removeEventListener(
-        "pointerdown",
-        callback63,
-        true,
-      );
-      (window as Dynamic).removeEventListener(
-        "pointermove",
-        callback64,
-        true,
-      );
-      (window as Dynamic).removeEventListener("pointerup", callback65, true);
-      (window as Dynamic).removeEventListener(
-        "pointercancel",
-        callback62,
-        true,
-      );
-      (window as Dynamic).removeEventListener("blur", callback62);
-    };
-  }, [streamDragFile]);
+  (0, reactVectorToolState_2.useEffect)((...args: Dynamic[]): Dynamic => (subscribeHostDragPointer as Dynamic)({ get callback16() { return callback16; }, get streamDragFile() { return streamDragFile; }, get value9() { return value9; }, get value94() { return value94; } }, ...args), [streamDragFile]);
   let callback20: Dynamic = (event?: Dynamic): Dynamic =>
       event.target instanceof Node &&
       event.currentTarget.contains(event.target),
@@ -2546,80 +1606,7 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
       },
     ),
     value176: Dynamic = (0, reactVectorToolState_2.useCallback)(
-      (input?: Dynamic): Dynamic => {
-        let current: Dynamic = value148.current,
-          current2: Dynamic = value9.current;
-        if (
-          !current ||
-          current.inFrame ||
-          !current2 ||
-          value55.current != null ||
-          value96.current ||
-          callback11()
-        )
-          return null;
-        let value250: Dynamic = (document as Dynamic).elementFromPoint(
-          current.x,
-          current.y,
-        );
-        if (!(value250 instanceof Element) || !current2.contains(value250))
-          return null;
-        let ancestor: Dynamic = value250.closest("[data-mega-artboard]"),
-          value251: Dynamic = ancestor?.dataset.megaArtboard ?? null;
-        value251 != null &&
-          value251 !== value183.current &&
-          value146.current.artboards.some(
-            (input2?: Dynamic): Dynamic =>
-              input2.file === value251 && input2.frameless,
-          ) &&
-          (value251 = null);
-        let value252: Dynamic =
-          ancestor == null &&
-          value250.closest(
-            '[data-mega-chrome="annotation"], [data-mega-chrome="picture-pending"]',
-          ) != null;
-        if (
-          (ancestor == null &&
-            !value252 &&
-            value250.closest("[data-mega-chrome]") != null &&
-            value250.getAttribute("data-mega-chrome") !== "set-box-pad") ||
-          (value251 != null &&
-            (0, insertionPointerMatchesContent)(
-              input,
-              value251,
-              value182.current,
-              value56.current,
-            ))
-        )
-          return null;
-        let value253: Dynamic = callback16(
-          current.x,
-          current.y,
-          current2.getBoundingClientRect(),
-        );
-        if (value251 == null)
-          return value252
-            ? {
-                x: value253.x,
-                y: value253.y,
-                file: null,
-                overAnnotation: value252,
-              }
-            : {
-                x: value253.x,
-                y: value253.y,
-                file: null,
-              };
-        let value254: Dynamic = value146.current.artboards.find(
-          (input2?: Dynamic): Dynamic => input2.file === value251,
-        );
-        return value254
-          ? {
-              ...(0, clampPointToRect)(value253, value254),
-              file: value251,
-            }
-          : null;
-      },
+      (...args: Dynamic[]): Dynamic => (resolvePointerInsertionPoint as Dynamic)({ get callback11() { return callback11; }, get callback16() { return callback16; }, get value146() { return value146; }, get value148() { return value148; }, get value182() { return value182; }, get value183() { return value183; }, get value55() { return value55; }, get value56() { return value56; }, get value9() { return value9; }, get value96() { return value96; } }, ...args),
       [],
     ),
     value177: Dynamic = (0, reactVectorToolState_2.useCallback)(
@@ -2685,76 +1672,7 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
   options.artboardLandingRef &&
     (options.artboardLandingRef.current = value178);
   let value179: Dynamic = (0, reactVectorToolState_2.useCallback)(
-      (input?: Dynamic, options2?: Dynamic, context?: Dynamic): Dynamic => {
-        if (!onImageDrop) return false;
-        let value250: Dynamic = navigator.userActivation?.isActive
-          ? value177()
-          : null;
-        if (value250) {
-          let current: Dynamic = value57.current,
-            value254: Dynamic =
-              value250.file == null &&
-              current.notes.size === 0 &&
-              current.files.size === 1
-                ? value146.current.artboards.find(
-                    (input2?: Dynamic): Dynamic =>
-                      current.files.has(input2.file) && !input2.frameless,
-                  )
-                : undefined;
-          if (value254) {
-            let value255: Dynamic = value9.current?.getBoundingClientRect(),
-              value256: Dynamic = (0, visibleArtboardCenter)(
-                value254,
-                value55.current == null && value255
-                  ? {
-                      ...camera.get(),
-                      width: value255.width,
-                      height: value255.height,
-                    }
-                  : null,
-              );
-            onImageDrop(
-              options2,
-              value256.x,
-              value256.y,
-              "pasted",
-              value254.file,
-            );
-          } else
-            onImageDrop(
-              options2,
-              value250.x,
-              value250.y,
-              "pasted",
-              value250.file ?? undefined,
-            );
-          return true;
-        }
-        if (context.selection) return false;
-        let value251: Dynamic = value146.current.artboards.find(
-          (input2?: Dynamic): Dynamic => input2.file === input,
-        );
-        if (!value251) return false;
-        let value252: Dynamic = value9.current?.getBoundingClientRect(),
-          value253: Dynamic = (0, visibleArtboardCenter)(
-            value251,
-            value55.current == null && value252
-              ? {
-                  ...camera.get(),
-                  width: value252.width,
-                  height: value252.height,
-                }
-              : null,
-          );
-        onImageDrop(
-          options2,
-          value253.x,
-          value253.y,
-          "pasted",
-          value251.file,
-        );
-        return true;
-      },
+      (...args: Dynamic[]): Dynamic => (placePastedImagesOnCanvas as Dynamic)({ get camera() { return camera; }, get onImageDrop() { return onImageDrop; }, get value146() { return value146; }, get value177() { return value177; }, get value55() { return value55; }, get value57() { return value57; }, get value9() { return value9; } }, ...args),
       [onImageDrop, value177, camera],
     ),
     value180: Dynamic = (0, reactVectorToolState_2.useCallback)(
@@ -2955,111 +1873,7 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
   );
   let value199: Dynamic = (0, reactVectorToolState_2.useRef)(null),
     value200: Dynamic = (0, reactVectorToolState_2.useRef)(false),
-    callback38: Dynamic = (input: Dynamic = performance.now()): Dynamic => {
-      let value250: Dynamic = callback37(),
-        artboards: Dynamic = value146.current.artboards,
-        value251: Dynamic = value55.current != null && value188 > value187;
-      value251
-        ? (value199.current ??= Math.min(
-            value188,
-            Math.max(value187, value194.current.size + 1),
-          ))
-        : (value199.current = null);
-      if (value55.current == null && value200.current) {
-        value200.current = false;
-        for (let value258 of value194.current as Dynamic)
-          value195.current.set(value258, input);
-      }
-      let value252: Dynamic = value251
-          ? artboards
-              .filter(
-                (input2?: Dynamic): Dynamic =>
-                  value194.current.has(input2.file),
-              )
-              .sort(
-                (input2?: Dynamic, options2?: Dynamic): Dynamic =>
-                  (0, previewMountPriority)(input2, value250) -
-                  (0, previewMountPriority)(options2, value250),
-              )
-              .map((input2?: Dynamic): Dynamic => input2.file)
-          : [],
-        scale: Dynamic = value34.current.get().scale,
-        value253: Dynamic = !value62.current && value130.current.size === 0,
-        value254: Dynamic =
-          !value251 &&
-          value253 &&
-          (0, previewScaleChanged)(value197.current, scale);
-      value9.current?.clientWidth &&
-        !value251 &&
-        ((0, recordVisiblePreviewTimes)(
-          value195.current,
-          artboards,
-          value250,
-          value196.current,
-          input,
-        ),
-        (value196.current = value250),
-        value253 && (value197.current = scale));
-      let value255: Dynamic = value186.current[0],
-        value256: Dynamic =
-          value255 != null
-            ? artboards.find(
-                (input2?: Dynamic): Dynamic => input2.file === value255,
-              )
-            : undefined,
-        value257: Dynamic =
-          value256 != null &&
-          (0, distanceBetweenRects)(value256, value250) === 0;
-      return (0, chooseMountedPreviews)({
-        artboards: artboards,
-        viewport: value250,
-        cap: value187,
-        ceiling: value251 ? value199.current : value188,
-        lastOnScreen: value251 ? undefined : value195.current,
-        now: input,
-        zoomed: value254,
-        areaBudget: value35
-          ? options.phoneCanvasRunsNothing === true
-            ? 0
-            : 15e5
-          : undefined,
-        required:
-          value35 && value55.current == null
-            ? (0, limitMountedPreviewPixels)(
-                [...(value184.current ?? [])],
-                [
-                  value19.current ? value182.current : null,
-                  value56.current,
-                  ...(value185.current ?? []),
-                ],
-                artboards,
-                options.phoneCanvasRunsNothing === true ? 0 : 15e5,
-              )
-            : [
-                ...(value184.current ?? []),
-                value182.current,
-                value55.current,
-                value56.current,
-                value257 && !(phone && value55.current == null)
-                  ? value255
-                  : null,
-                ...(value185.current ?? []),
-                ...value252,
-              ],
-        recent:
-          value35 && value55.current == null
-            ? value186.current.slice(0, 1)
-            : [
-                ...value186.current,
-                ...[
-                  ...(value130.current.has("marquee")
-                    ? value58.current
-                    : value57.current.files),
-                ].reverse(),
-              ],
-        current: value194.current,
-      });
-    },
+    callback38: Dynamic = (...args: Dynamic[]): Dynamic => (pickMountedArtboardPreviews as Dynamic)({ get callback37() { return callback37; }, get options() { return options; }, get phone() { return phone; }, get value130() { return value130; }, get value146() { return value146; }, get value182() { return value182; }, get value184() { return value184; }, get value185() { return value185; }, get value186() { return value186; }, get value187() { return value187; }, get value188() { return value188; }, get value19() { return value19; }, get value194() { return value194; }, get value195() { return value195; }, get value196() { return value196; }, get value197() { return value197; }, get value199() { return value199; }, get value200() { return value200; }, get value34() { return value34; }, get value35() { return value35; }, get value55() { return value55; }, get value56() { return value56; }, get value57() { return value57; }, get value58() { return value58; }, get value62() { return value62; }, get value9() { return value9; } }, ...args),
     value201: Dynamic = (0, reactVectorToolState_2.useRef)(
       value35 && options.viewSettled === false,
     ),
@@ -3298,226 +2112,7 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
         },
         false,
       ),
-    callback46: Dynamic = (
-      input?: Dynamic,
-      options2?: Dynamic,
-      context?: Dynamic,
-      value250?: Dynamic,
-      extra?: Dynamic,
-      detail: Dynamic = false,
-    ): Dynamic => {
-      if (input.button !== 0) return;
-      let current: Dynamic = value67.current;
-      current && callback47(current.pointerId);
-      let value251: Dynamic = current && current.live && !current.alt,
-        entries2: Dynamic = new Map(
-          value251
-            ? current.set.map(
-                (input2?: Dynamic): Dynamic => [input2.file, input2],
-              )
-            : [],
-        ),
-        entries3: Dynamic = new Map(
-          value251
-            ? current.notes.map(
-                (input2?: Dynamic): Dynamic => [input2.id, input2],
-              )
-            : [],
-        );
-      input.currentTarget.setPointerCapture(input.pointerId);
-      value134("frame-drag", true);
-      callback30("frame-drag");
-      let value252: Dynamic = manifest.artboards
-          .filter(
-            (input2?: Dynamic): Dynamic =>
-              (0, hasBoardSelection)(value250, {
-                file: input2.file,
-              }) ||
-              ("file" in options2 && options2.file === input2.file),
-          )
-          .map(
-            (input2?: Dynamic): Dynamic =>
-              entries2.get(input2.file) ?? {
-                file: input2.file,
-                x: input2.x,
-                y: input2.y,
-                w: input2.w,
-                h: input2.h,
-              },
-          ),
-        value253: Dynamic = (manifest.annotations ?? [])
-          .filter(
-            (input2?: Dynamic): Dynamic =>
-              (0, hasBoardSelection)(value250, {
-                note: input2.id,
-              }) ||
-              ("note" in options2 && options2.note === input2.id),
-          )
-          .map(
-            (input2?: Dynamic): Dynamic => entries3.get(input2.id) ?? input2,
-          ),
-        value254: Dynamic =
-          ("file" in options2
-            ? entries2.get(options2.file)
-            : entries3.get(options2.note)) ?? context,
-        value255: Dynamic = input.altKey && onDuplicateObjects != null,
-        value256: Dynamic = (0, unionRects)([
-          ...value252,
-          ...value253.map(
-            (input2?: Dynamic): Dynamic =>
-              (0, rotatedAnnotationBounds)(
-                input2,
-                value216.current(input2),
-              ),
-          ),
-        ]),
-        value257: Dynamic = manifest.artboards.map(
-          (input2?: Dynamic): Dynamic => entries2.get(input2.file) ?? input2,
-        ),
-        value258: Dynamic = (manifest.annotations ?? []).map(
-          (input2?: Dynamic): Dynamic => {
-            let value261: Dynamic = entries3.get(input2.id) ?? input2;
-            return {
-              id: value261.id,
-              ...(0, rotatedAnnotationBounds)(
-                value261,
-                value216.current(value261),
-              ),
-            };
-          },
-        ),
-        state: Dynamic = {
-          files: new Set(
-            value252.map((input2?: Dynamic): Dynamic => input2.file),
-          ),
-          notes: new Set(
-            value253.map((input2?: Dynamic): Dynamic => input2.id),
-          ),
-        },
-        value259: Dynamic = (0, canvasSnapReferenceObjects)(
-          value257,
-          value258,
-          state,
-          false,
-        ),
-        value260: Dynamic = (0, canvasSnapReferenceObjects)(
-          value257,
-          value258,
-          state,
-          true,
-        ),
-        pointerId: Dynamic = input.pointerId;
-      (0, focusCanvasDocument)();
-      let flag2: Dynamic = false,
-        callback61: Dynamic = (event?: Dynamic): Dynamic => {
-          let current2: Dynamic = value67.current;
-          event.key === "Escape" && event.type === "keyup" && (flag2 = false);
-          if (event.key === "Escape" && event.type === "keydown" && flag2) {
-            event.preventDefault();
-            event.stopImmediatePropagation();
-            return;
-          }
-          if (
-            !(!current2 || current2.pointerId !== pointerId || !current2.live)
-          ) {
-            if (event.key === "Escape" && event.type === "keydown") {
-              event.preventDefault();
-              event.stopImmediatePropagation();
-              flag2 = true;
-              value218.current(pointerId);
-              return;
-            }
-            event.key === "Alt" &&
-              !event.repeat &&
-              current2.last &&
-              value219.current(
-                {
-                  ...current2.last,
-                  pointerId: pointerId,
-                  altKey: event.type === "keydown",
-                },
-                false,
-              );
-            event.key === "Control" &&
-              !event.repeat &&
-              current2.last &&
-              current2.hoverKey &&
-              value219.current(
-                {
-                  ...current2.last,
-                  pointerId: pointerId,
-                  altKey: current2.alt,
-                  ctrlKey: event.type === "keydown",
-                },
-                false,
-              );
-          }
-        },
-        callback62: Dynamic = (): Dynamic => value218.current(pointerId);
-      (window as Dynamic).addEventListener("keydown", callback61, true);
-      (window as Dynamic).addEventListener("keyup", callback61, true);
-      (window as Dynamic).addEventListener("blur", callback62);
-      value67.current = {
-        ref: options2,
-        set: value252,
-        notes: value253,
-        pointerId: pointerId,
-        startX: input.clientX,
-        startY: input.clientY,
-        origX: value254.x,
-        origY: value254.y,
-        alt: value255,
-        last: null,
-        unlisten: (): Dynamic => {
-          (window as Dynamic).removeEventListener("blur", callback62);
-          if (!flag2) {
-            (window as Dynamic).removeEventListener(
-              "keydown",
-              callback61,
-              true,
-            );
-            (window as Dynamic).removeEventListener(
-              "keyup",
-              callback61,
-              true,
-            );
-            return;
-          }
-          let callback63: Dynamic = (input2?: Dynamic): Dynamic => {
-            input2.key !== "Escape" ||
-              input2.type !== "keyup" ||
-              ((window as Dynamic).removeEventListener(
-                "keydown",
-                callback61,
-                true,
-              ),
-              (window as Dynamic).removeEventListener(
-                "keyup",
-                callback61,
-                true,
-              ),
-              (window as Dynamic).removeEventListener(
-                "keyup",
-                callback63,
-                true,
-              ));
-          };
-          (window as Dynamic).addEventListener("keyup", callback63, true);
-        },
-        click: extra,
-        focus: detail && !input.altKey,
-        live: false,
-        snap: value256
-          ? {
-              box: value256,
-              moveLines: (0, rectangleSnapGuides)(value259),
-              copyLines: (0, rectangleSnapGuides)(value260),
-              moveStill: value259,
-              copyStill: value260,
-            }
-          : null,
-      };
-    },
+    callback46: Dynamic = (...args: Dynamic[]): Dynamic => (beginBoardDrag as Dynamic)({ get callback30() { return callback30; }, get callback47() { return callback47; }, get manifest() { return manifest; }, get onDuplicateObjects() { return onDuplicateObjects; }, get value134() { return value134; }, get value216() { return value216; }, get value218() { return value218; }, get value219() { return value219; }, get value67() { return value67; } }, ...args),
     callback47: Dynamic = (input?: Dynamic): Dynamic => {
       let current: Dynamic = value67.current;
       !current ||
@@ -3582,415 +2177,12 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
       value67.current &&
       value218.current(value67.current.pointerId);
   }, [value18]);
-  let callback50: Dynamic = (
-      input?: Dynamic,
-      options2?: Dynamic,
-    ): Dynamic => {
-      let current: Dynamic = value67.current;
-      if (
-        !current ||
-        input.pointerId !== current.pointerId ||
-        (current.setMove && input.fromSetMove !== true)
-      )
-        return;
-      options2 &&
-        ((value67.current = null),
-        current.unlisten(),
-        value134("frame-drag", false));
-      if (!current.live) {
-        if (
-          Math.hypot(
-            input.clientX - current.startX,
-            input.clientY - current.startY,
-          ) <
-          (input.pointerType === "touch"
-            ? 10
-            : canvasDragThresholdPixels)
-        ) {
-          options2 &&
-            (current.click &&
-              onSelectObjects(
-                (0, boardSelectionItems)(current.ref),
-                current.click === "toggle" ? "toggle" : "replace",
-              ),
-            current.focus &&
-              "file" in current.ref &&
-              onFocus(current.ref.file));
-          return;
-        }
-        if (!value18) return;
-        current.live = true;
-      }
-      current.last = {
-        clientX: input.clientX,
-        clientY: input.clientY,
-        metaKey: input.metaKey,
-        ctrlKey: input.ctrlKey,
-        pointerType: input.pointerType,
-      };
-      let value250: Dynamic = input.altKey && onDuplicateObjects != null;
-      value250 !== current.alt &&
-        (value250 ? callback48(current.set, current.notes) : value74(null),
-        (current.alt = value250));
-      let { scale: entry2 }: Dynamic = camera.get(),
-        {
-          dx: value251,
-          dy: value252,
-          guides: value253,
-          gaps: value254,
-        }: Dynamic = (0, snapCanvasDrag)(
-          (input.clientX - current.startX) / entry2,
-          (input.clientY - current.startY) / entry2,
-          current.snap
-            ? {
-                box: current.snap.box,
-                lines: value250
-                  ? current.snap.copyLines
-                  : current.snap.moveLines,
-                boxes: value250
-                  ? current.snap.copyStill
-                  : current.snap.moveStill,
-              }
-            : null,
-          canvasTouchDragThresholdPixels / entry2,
-          input.metaKey || input.ctrlKey,
-        );
-      value70(options2 || value253.length === 0 ? null : value253);
-      value72(options2 || value254.length === 0 ? null : value254);
-      let callback61: Dynamic = (input2?: Dynamic): Dynamic => ({
-          x: Math.round(input2.x + value251),
-          y: Math.round(input2.y + value252),
-        }),
-        value255: Dynamic = callback61({
-          x: current.origX,
-          y: current.origY,
-        }),
-        value256: Dynamic = !(
-          value255.x === Math.round(current.origX) &&
-          value255.y === Math.round(current.origY)
-        );
-      if (current.alt) {
-        current.hoverKey &&
-          onObjectHover?.({
-            key: current.hoverKey,
-            target: null,
-            point: {
-              x: 0,
-              y: 0,
-            },
-            object: current.set[0]
-              ? {
-                  file: current.set[0].file,
-                }
-              : {
-                  note: current.notes[0].id,
-                },
-            at: {
-              x: 0,
-              y: 0,
-              w: 0,
-              h: 0,
-            },
-            ctrl: false,
-          });
-        if (!options2) {
-          value74([
-            ...current.set.map(
-              (input2?: Dynamic): Dynamic => ({
-                ...callback61(input2),
-                w: input2.w,
-                h: input2.h,
-              }),
-            ),
-            ...current.notes.map((input2?: Dynamic): Dynamic => {
-              let value257: Dynamic = (0, rotatedAnnotationBounds)(
-                input2,
-                callback44(input2),
-              );
-              return {
-                ...value257,
-                ...callback61(value257),
-              };
-            }),
-          ]);
-          return;
-        }
-        value74(null);
-        value256
-          ? onDuplicateObjects?.(
-              current.set.map(
-                (input2?: Dynamic): Dynamic => ({
-                  file: input2.file,
-                  ...callback61(input2),
-                }),
-              ),
-              current.notes.map(
-                (input2?: Dynamic): Dynamic => ({
-                  id: input2.id,
-                  ...callback61(input2),
-                }),
-              ),
-              current.bound,
-              current.setMove != null,
-            )
-          : current.setMove != null &&
-            current.bound !== undefined &&
-            onDuplicateObjects?.([], [], current.bound, true);
-        return;
-      }
-      if (options2 && !value256) {
-        callback48(current.set, current.notes);
-        current.hoverKey &&
-          onObjectHover?.({
-            key: current.hoverKey,
-            target: null,
-            point: {
-              x: 0,
-              y: 0,
-            },
-            object: current.set[0]
-              ? {
-                  file: current.set[0].file,
-                }
-              : {
-                  note: current.notes[0].id,
-                },
-            at: {
-              x: 0,
-              y: 0,
-              w: 0,
-              h: 0,
-            },
-            ctrl: false,
-          });
-        return;
-      }
-      if (
-        !current.alt &&
-        !current.setMove &&
-        (onDropObjectInto || onObjectHover) &&
-        current.set.length + current.notes.length === 1
-      ) {
-        let value257: Dynamic = current.set[0]
-            ? {
-                file: current.set[0].file,
-              }
-            : {
-                note: current.notes[0].id,
-              },
-          value258: Dynamic =
-            "note" in value257 ||
-            manifest.artboards.find(
-              (input2?: Dynamic): Dynamic => input2.file === value257.file,
-            )?.frameless === true,
-          value259: Dynamic = value9.current?.getBoundingClientRect(),
-          value260: Dynamic =
-            value258 && value259
-              ? callback16(input.clientX, input.clientY, value259)
-              : null;
-        if (value260) {
-          let callback62: Dynamic = (
-            input2?: Dynamic,
-            options3?: Dynamic,
-          ): Dynamic =>
-            options3.x >= input2.x &&
-            options3.x <= input2.x + input2.w &&
-            options3.y >= input2.y &&
-            options3.y <= input2.y + input2.h;
-          current.left ??= new Set();
-          for (let value264 of manifest.artboards as Dynamic)
-            !value264.frameless &&
-              !callback62(value264, value260) &&
-              current.left.add(value264.file);
-          let value261: Dynamic =
-              [...manifest.artboards]
-                .reverse()
-                .find(
-                  (input2?: Dynamic): Dynamic =>
-                    !input2.frameless &&
-                    input2.file !==
-                      ("file" in value257 ? value257.file : "") &&
-                    callback62(input2, value260),
-                ) ?? null,
-            value262: Dynamic =
-              value261 && current.left.has(value261.file) ? value261 : null,
-            value263: Dynamic = current.set[0]
-              ? {
-                  ...callback61(current.set[0]),
-                  w: current.set[0].w,
-                  h: current.set[0].h,
-                }
-              : ((): Dynamic => {
-                  let value264: Dynamic = current.notes[0],
-                    value265: Dynamic = callback44(value264);
-                  return {
-                    ...callback61(value265),
-                    w: value265.w,
-                    h: value265.h,
-                  };
-                })();
-          current.hoverKey ??= "obj-" + String(++canvasDragSequence);
-          if (!options2)
-            onObjectHover?.({
-              key: current.hoverKey,
-              target: value262?.file ?? null,
-              point: value260,
-              object: value257,
-              at: value263,
-              ctrl: input.ctrlKey,
-            });
-          else if (value262 && onDropObjectInto) {
-            callback48(current.set, current.notes);
-            if (
-              onDropObjectInto({
-                key: current.hoverKey,
-                target: value262.file,
-                point: value260,
-                object: value257,
-                at: value263,
-                ctrl: input.ctrlKey,
-              })
-            )
-              return;
-            onObjectHover?.({
-              key: current.hoverKey,
-              target: null,
-              point: value260,
-              object: value257,
-              at: value263,
-              ctrl: input.ctrlKey,
-            });
-          } else
-            onObjectHover?.({
-              key: current.hoverKey,
-              target: null,
-              point: value260,
-              object: value257,
-              at: value263,
-              ctrl: input.ctrlKey,
-            });
-        }
-      }
-      let entries2: Dynamic = new Map(
-          current.set.map(
-            (input2?: Dynamic): Dynamic => [
-              input2.file,
-              (0, preserveUnroundedDragPosition)(
-                input2,
-                callback61(input2),
-              ),
-            ],
-          ),
-        ),
-        entries3: Dynamic = new Map(
-          current.notes.map(
-            (input2?: Dynamic): Dynamic => [
-              input2.id,
-              (0, preserveUnroundedDragPosition)(
-                input2,
-                callback61(input2),
-              ),
-            ],
-          ),
-        );
-      onManifestChange(
-        callback43(entries2, entries3),
-        options2,
-        options2
-          ? {
-              moved: new Map(
-                current.set.map(
-                  (input2?: Dynamic): Dynamic => [
-                    input2.file,
-                    {
-                      x: input2.x,
-                      y: input2.y,
-                    },
-                  ],
-                ),
-              ),
-              movedNotes: new Map(
-                current.notes.map(
-                  (input2?: Dynamic): Dynamic => [input2.id, input2],
-                ),
-              ),
-              ...(current.bound !== undefined
-                ? {
-                    bound: current.bound,
-                  }
-                : {}),
-            }
-          : undefined,
-      );
-    },
+  let callback50: Dynamic = (...args: Dynamic[]): Dynamic => (updateBoardDrag as Dynamic)({ get callback16() { return callback16; }, get callback43() { return callback43; }, get callback44() { return callback44; }, get callback48() { return callback48; }, get camera() { return camera; }, get manifest() { return manifest; }, get onDropObjectInto() { return onDropObjectInto; }, get onDuplicateObjects() { return onDuplicateObjects; }, get onFocus() { return onFocus; }, get onManifestChange() { return onManifestChange; }, get onObjectHover() { return onObjectHover; }, get onSelectObjects() { return onSelectObjects; }, get value134() { return value134; }, get value18() { return value18; }, get value67() { return value67; }, get value70() { return value70; }, get value72() { return value72; }, get value74() { return value74; }, get value9() { return value9; } }, ...args),
     value219: Dynamic = (0, reactVectorToolState_2.useRef)(
       callback50,
     );
   value219.current = callback50;
-  let callback51: Dynamic = (
-      input?: Dynamic,
-      options2?: Dynamic,
-      context?: Dynamic,
-      value250?: Dynamic,
-      extra?: Dynamic,
-      detail?: Dynamic,
-    ): Dynamic => {
-      let current: Dynamic = value67.current;
-      current && value218.current(current.pointerId);
-      let current2: Dynamic = value146.current,
-        value251: Dynamic = current2.artboards
-          .filter(
-            (input2?: Dynamic): Dynamic =>
-              (0, hasBoardSelection)(value250, {
-                file: input2.file,
-              }),
-          )
-          .map(
-            (input2?: Dynamic): Dynamic => ({
-              file: input2.file,
-              x: input2.x,
-              y: input2.y,
-              w: input2.w,
-              h: input2.h,
-            }),
-          ),
-        value252: Dynamic = (current2.annotations ?? []).filter(
-          (input2?: Dynamic): Dynamic =>
-            (0, hasBoardSelection)(value250, {
-              note: input2.id,
-            }),
-        ),
-        value253: Dynamic = ("file" in context
-          ? value251.find(
-              (input2?: Dynamic): Dynamic => input2.file === context.file,
-            )
-          : value252.find(
-              (input2?: Dynamic): Dynamic => input2.id === context.note,
-            )) ??
-          value251[0] ??
-          value252[0] ?? {
-            x: 0,
-            y: 0,
-          };
-      value67.current = {
-        ref: context,
-        set: value251,
-        notes: value252,
-        pointerId: options2,
-        startX: extra,
-        startY: detail,
-        origX: value253.x,
-        origY: value253.y,
-        alt: false,
-        last: null,
-        unlisten: (): Dynamic => {},
-        click: null,
-        focus: false,
-        live: true,
-        setMove: input,
-        snap: null,
-      };
-    },
+  let callback51: Dynamic = (...args: Dynamic[]): Dynamic => (beginHandedOffBoardDrag as Dynamic)({ get value146() { return value146; }, get value218() { return value218; }, get value67() { return value67; } }, ...args),
     callback52: Dynamic = (
       input?: Dynamic,
       options2?: Dynamic,
@@ -4168,89 +2360,7 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
       Object.values(value26.current ?? {}).some(
         (items?: Dynamic): Dynamic => items.length > 0,
       ),
-    callback55: Dynamic = (input?: Dynamic): Dynamic => ({
-      onPointerDown: (event?: Dynamic): Dynamic => {
-        if (event.button !== 0) return;
-        let shiftKey: Dynamic = event.shiftKey;
-        if (
-          (0, isTouchSelectionStart)(
-            event.pointerType,
-            value57.current.notes.has(input.id),
-          )
-        ) {
-          (0, watchPointerRelease)(
-            event.nativeEvent,
-            (): Dynamic =>
-              onSelectObjects(
-                (0, boardSelectionItems)({
-                  note: input.id,
-                }),
-                shiftKey ? "toggle" : "replace",
-              ),
-          );
-          return;
-        }
-        event.stopPropagation();
-        if (
-          onSetMoveCommit &&
-          event.pointerType !== "touch" &&
-          !shiftKey &&
-          !event.altKey &&
-          (0, hasBoardSelection)(value57.current, {
-            note: input.id,
-          }) &&
-          callback54()
-        ) {
-          callback53({
-            pointerId: event.pointerId,
-            captureEl: event.currentTarget,
-            clientX: event.clientX,
-            clientY: event.clientY,
-            leader: {
-              canvas: {
-                note: input.id,
-              },
-            },
-            stillAction: (): Dynamic =>
-              onSelectObjects(
-                (0, boardSelectionItems)({
-                  note: input.id,
-                }),
-                "replace",
-              ),
-            armWait: null,
-            heldCover: null,
-          });
-          return;
-        }
-        let value250: Dynamic = (0, selectionPointerDownDecision)(
-          value57.current,
-          {
-            note: input.id,
-          },
-          shiftKey,
-        );
-        value250.selectNow &&
-          onSelectObjects(
-            (0, boardSelectionItems)({
-              note: input.id,
-            }),
-            shiftKey ? "toggle" : "replace",
-          );
-        callback46(
-          event,
-          {
-            note: input.id,
-          },
-          input,
-          value250.carry,
-          value250.click,
-        );
-      },
-      onPointerMove: (input2?: Dynamic): Dynamic => callback50(input2, false),
-      onPointerUp: (input2?: Dynamic): Dynamic => callback50(input2, true),
-      onPointerCancel: callback49,
-    }),
+    callback55: Dynamic = (...args: Dynamic[]): Dynamic => (buildObjectPressHandlers as Dynamic)({ get callback46() { return callback46; }, get callback49() { return callback49; }, get callback50() { return callback50; }, get callback53() { return callback53; }, get callback54() { return callback54; }, get onSelectObjects() { return onSelectObjects; }, get onSetMoveCommit() { return onSetMoveCommit; }, get value57() { return value57; } }, ...args),
     callback56: Dynamic = (input?: Dynamic): Dynamic => {
       let current: Dynamic = value57.current;
       (current.notes.size === 1 &&
@@ -4264,90 +2374,7 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
         );
       actionsRef.current?.setTool("vector");
     },
-    callback57: Dynamic = (
-      event?: Dynamic,
-      options2?: Dynamic,
-      context?: Dynamic,
-    ): Dynamic => {
-      if (event.button !== 0 || !value18 || value130.current.has("resize"))
-        return;
-      event.preventDefault();
-      event.stopPropagation();
-      (0, focusCanvasDocument)();
-      let pointerId: Dynamic = event.pointerId,
-        ancestor: Dynamic = event.currentTarget.closest(
-          '[data-mega-chrome="' + options2 + '"]',
-        ),
-        callback61: Dynamic = (input?: Dynamic): Dynamic => {
-          try {
-            input?.setPointerCapture(pointerId);
-          } catch {}
-        };
-      callback61(event.currentTarget);
-      value134("resize", true);
-      callback30("resize");
-      let [items, items2]: Dynamic = [event.clientX, event.clientY],
-        callback62: Dynamic = (): Dynamic =>
-          !!ancestor?.isConnected && value19.current,
-        flag2: Dynamic = false,
-        callback63: Dynamic = (input?: Dynamic): Dynamic => {
-          if (input.pointerId === pointerId) {
-            if (!callback62()) return callback67();
-            (!flag2 &&
-              Math.hypot(input.clientX - items, input.clientY - items2) <
-                4) ||
-              ((flag2 = true), context.live(input));
-          }
-        },
-        callback64: Dynamic = (input?: Dynamic): Dynamic => {
-          input.pointerId === pointerId && callback61(ancestor);
-        },
-        callback65: Dynamic = (): Dynamic => {
-          (window as Dynamic).removeEventListener("pointermove", callback63);
-          (window as Dynamic).removeEventListener("pointerup", callback66);
-          (window as Dynamic).removeEventListener(
-            "pointercancel",
-            callback67,
-          );
-          (window as Dynamic).removeEventListener(
-            "keydown",
-            callback68,
-            true,
-          );
-          (document as Dynamic).removeEventListener(
-            "lostpointercapture",
-            callback64,
-            true,
-          );
-          value134("resize", false);
-          context.end?.();
-        },
-        callback66: Dynamic = (input?: Dynamic): Dynamic => {
-          input.pointerId === pointerId &&
-            (callback65(),
-            flag2 &&
-              (callback62() ? context.commit(input) : context.revert()));
-        },
-        callback67: Dynamic = (input?: Dynamic): Dynamic => {
-          (input && input.pointerId !== pointerId) ||
-            (callback65(), flag2 && context.revert());
-        },
-        callback68: Dynamic = (event2?: Dynamic): Dynamic => {
-          event2.key === "Escape" &&
-            (event2.preventDefault(),
-            event2.stopImmediatePropagation(),
-            callback67());
-        };
-      (window as Dynamic).addEventListener("pointermove", callback63);
-      (window as Dynamic).addEventListener("pointerup", callback66);
-      (window as Dynamic).addEventListener("pointercancel", callback67);
-      (window as Dynamic).addEventListener("keydown", callback68, true);
-      (document as Dynamic).addEventListener(
-        "lostpointercapture",
-        callback64,
-        true,
-      );
-    },
+    callback57: Dynamic = (...args: Dynamic[]): Dynamic => (trackHandleDragGesture as Dynamic)({ get callback30() { return callback30; }, get value130() { return value130; }, get value134() { return value134; }, get value18() { return value18; }, get value19() { return value19; } }, ...args),
     value230: Dynamic = manifest.artboards.filter(
       (input?: Dynamic): Dynamic => selectedArtboards.has(input.file),
     ),
@@ -4472,294 +2499,8 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
       (0, supportsClickPlacement)(armedTool) ||
       armedTool === "draw" ||
       value240 != null,
-    callback58: Dynamic = (
-      input?: Dynamic,
-      options2?: Dynamic,
-      context?: Dynamic,
-      value250?: Dynamic,
-      extra: Dynamic = false,
-    ): Dynamic => {
-      let entries2: Dynamic = new Map(
-          value230.map((input2?: Dynamic): Dynamic => [input2.file, input2]),
-        ),
-        entries3: Dynamic = new Map(
-          value231.map(
-            (input2?: Dynamic): Dynamic => [input2.spec.id, input2],
-          ),
-        ),
-        callback61: Dynamic = (input2?: Dynamic): Dynamic =>
-          Object.fromEntries(
-            Object.entries(input2).filter(
-              ([input3]: Dynamic): Dynamic => context.has(input3),
-            ),
-          ),
-        value251: Dynamic = value241,
-        callback62: Dynamic = (
-          input2?: Dynamic,
-          options3?: Dynamic,
-        ): Dynamic => {
-          value234(
-            input2 && !options3
-              ? {
-                  box: input2.box,
-                  deg: input2.deg,
-                  turning: options2 === "Rotate",
-                }
-              : null,
-          );
-          let current: Dynamic = value146.current,
-            state: Dynamic = {
-              ...current,
-              artboards: current.artboards.map(
-                (input3?: Dynamic): Dynamic => {
-                  let entry2: Dynamic = entries2.get(input3.file);
-                  return entry2
-                    ? {
-                        ...input3,
-                        ...(input2
-                          ? input2.board(entry2)
-                          : callback61(
-                              (0, artboardTransformSnapshot)(entry2),
-                            )),
-                      }
-                    : input3;
-                },
-              ),
-              ...(entries3.size > 0
-                ? {
-                    annotations: (current.annotations ?? []).map(
-                      (input3?: Dynamic): Dynamic => {
-                        let entry2: Dynamic = entries3.get(input3.id);
-                        return entry2
-                          ? {
-                              ...input3,
-                              ...(input2
-                                ? input2.ann(entry2)
-                                : callback61(
-                                    (0, annotationTransformSnapshot)(
-                                      entry2.spec,
-                                    ),
-                                  )),
-                            }
-                          : input3;
-                      },
-                    ),
-                  }
-                : {}),
-            };
-          options3 &&
-            input2 &&
-            (input2.deg !== 0 || extra) &&
-            value236(
-              (input3?: Dynamic): Dynamic =>
-                [
-                  {
-                    box: input2.box,
-                    deg: input2.deg,
-                    members: (0, selectionTransformMembers)(
-                      state.artboards.filter(
-                        (input4?: Dynamic): Dynamic =>
-                          entries2.has(input4.file),
-                      ),
-                      (state.annotations ?? []).filter(
-                        (input4?: Dynamic): Dynamic =>
-                          entries3.has(input4.id),
-                      ),
-                    ),
-                  },
-                  ...input3,
-                ].slice(0, 8),
-            );
-          onManifestChange(
-            state,
-            options3,
-            options3
-              ? {
-                  transformed: {
-                    label: options2,
-                    keys: context,
-                    boards: entries2,
-                    notes: new Map(
-                      value231.map(
-                        (input3?: Dynamic): Dynamic => [
-                          input3.spec.id,
-                          input3.spec,
-                        ],
-                      ),
-                    ),
-                  },
-                }
-              : undefined,
-          );
-        },
-        value252: Dynamic = null;
-      callback57(input, "group-resize", {
-        live: (input2?: Dynamic): Dynamic => {
-          value252 = value250(input2);
-          callback62(value252, false);
-          value252 ||
-            value234({
-              box: value251,
-              deg: value242,
-              turning: options2 === "Rotate",
-            });
-        },
-        commit: (): Dynamic => {
-          value252 ? callback62(value252, true) : callback62(null, false);
-        },
-        revert: (): Dynamic => callback62(null, false),
-        end: (): Dynamic => {
-          value234(null);
-          value70(null);
-        },
-      });
-    },
-    callback59: Dynamic = (input?: Dynamic, options2?: Dynamic): Dynamic => {
-      if (!value241) return;
-      let [items, items2]: Dynamic = [value241, value242],
-        { min: value250, max: value251 }: Dynamic = (0,
-        selectionScaleLimits)(items, value230, value231),
-        state: Dynamic = {
-          x: input.x !== null,
-          y: input.y !== null,
-        },
-        value252: Dynamic = state.x && state.y && items.w > 0 && items.h > 0,
-        [items3, items4]: Dynamic = [options2.clientX, options2.clientY],
-        value253: Dynamic = (0, transformTouchedProperties)(
-          items2
-            ? {
-                x: true,
-                y: true,
-              }
-            : state,
-        ),
-        value254: Dynamic = items2
-          ? []
-          : callback45({
-              files: selectedArtboards,
-              notes: selectedNotes,
-            });
-      callback58(
-        options2,
-        "Resize",
-        value253,
-        (input2?: Dynamic): Dynamic => {
-          let scale: Dynamic = camera.get().scale,
-            state2: Dynamic = {
-              dx: (input2.clientX - items3) / scale,
-              dy: (input2.clientY - items4) / scale,
-            },
-            value255: Dynamic =
-              items2 || input2.metaKey || input2.ctrlKey
-                ? {
-                    ...state2,
-                    guides: [],
-                  }
-                : (0, snapResize)(
-                    items,
-                    input,
-                    state2.dx,
-                    state2.dy,
-                    value254,
-                    canvasTouchDragThresholdPixels / scale,
-                  ),
-            [items5, items6]: Dynamic = [value255.dx, value255.dy];
-          if (items2) {
-            let value258: Dynamic = (0, resizeRotatedRect)(
-              items,
-              items2,
-              input,
-              items5,
-              items6,
-              value250,
-              value251,
-              true,
-            );
-            if (value258.w === items.w && value258.h === items.h) return null;
-            let value259: Dynamic = (0,
-            selectionUniformScaleTransform)(
-              {
-                x: items.x + items.w / 2,
-                y: items.y + items.h / 2,
-              },
-              {
-                x: value258.x + value258.w / 2,
-                y: value258.y + value258.h / 2,
-              },
-              value258.w / items.w,
-            );
-            return {
-              box: value258,
-              deg: items2,
-              keys: value253,
-              board: (input3?: Dynamic): Dynamic =>
-                (0, transformArtboardBounds)(
-                  input3,
-                  value259.from,
-                  value259.to,
-                  bothTransformAxes,
-                ),
-              ann: (input3?: Dynamic): Dynamic =>
-                (0, transformAnnotationBounds)(
-                  input3.spec,
-                  value259.from,
-                  value259.to,
-                  bothTransformAxes,
-                ),
-            };
-          }
-          let value256: Dynamic =
-              value252 && (value243 || input2.shiftKey)
-                ? (0, resizeRectKeepingAspect)(
-                    items,
-                    input,
-                    items5,
-                    items6,
-                    value250,
-                    value251,
-                  )
-                : (0, resizeRect)(
-                    items,
-                    input,
-                    items5,
-                    items6,
-                    value250,
-                    value251,
-                  ),
-            value257: Dynamic = (0, activeResizeGuides)(
-              value256,
-              input,
-              value255.guides,
-            );
-          value70(value257.length > 0 ? value257 : null);
-          return value256.x === items.x &&
-            value256.y === items.y &&
-            value256.w === items.w &&
-            value256.h === items.h
-            ? null
-            : {
-                box: value256,
-                deg: 0,
-                keys: value253,
-                board: (input3?: Dynamic): Dynamic =>
-                  (0, transformArtboardBounds)(
-                    input3,
-                    items,
-                    value256,
-                    state,
-                  ),
-                ann: (input3?: Dynamic): Dynamic =>
-                  (0, transformAnnotationBounds)(
-                    input3.spec,
-                    items,
-                    value256,
-                    state,
-                  ),
-              };
-        },
-        items2 !== 0,
-      );
-    },
+    callback58: Dynamic = (...args: Dynamic[]): Dynamic => (runSelectionTransformGesture as Dynamic)({ get callback57() { return callback57; }, get onManifestChange() { return onManifestChange; }, get value146() { return value146; }, get value230() { return value230; }, get value231() { return value231; }, get value234() { return value234; }, get value236() { return value236; }, get value241() { return value241; }, get value242() { return value242; }, get value70() { return value70; } }, ...args),
+    callback59: Dynamic = (...args: Dynamic[]): Dynamic => (beginSelectionGroupResize as Dynamic)({ get callback45() { return callback45; }, get callback58() { return callback58; }, get camera() { return camera; }, get selectedArtboards() { return selectedArtboards; }, get selectedNotes() { return selectedNotes; }, get value230() { return value230; }, get value231() { return value231; }, get value241() { return value241; }, get value242() { return value242; }, get value243() { return value243; }, get value70() { return value70; } }, ...args),
     callback60: Dynamic = (input?: Dynamic, options2?: Dynamic): Dynamic => {
       if (!value241) return;
       let value250: Dynamic = value241,
@@ -4999,544 +2740,8 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
               (event.clientY - bounds.top) / camera.get().scale,
           );
         }}
-        onContextMenu={(event?: Dynamic): Dynamic => {
-          if (
-            onCanvasMenu == null ||
-            value55.current != null ||
-            value128.current ||
-            (0, OutlineDcOutlineHandler)(event.target)
-          )
-            return;
-          if (value108.contextmenu()) return void event.preventDefault();
-          let value250: Dynamic =
-              callback20(event) && value130.current.size === 0
-                ? (0, canvasContextMenuTargetFromElement)(
-                    event.target,
-                  )
-                : null,
-            current: Dynamic = value109.current;
-          value109.current = null;
-          if (value250 === null) return;
-          let value251: Dynamic =
-            current !== null &&
-            Math.hypot(
-              event.clientX - current.x,
-              event.clientY - current.y,
-            ) <= 3;
-          if (current !== null && !value251)
-            return void event.preventDefault();
-          if (
-            (event.button >= 0 &&
-              !value251 &&
-              callback12({
-                pointerType: "mouse",
-                button: 2,
-                target: event.target,
-              })) ||
-            (event.button < 0 && event.defaultPrevented)
-          )
-            return;
-          event.preventDefault();
-          let value252: Dynamic =
-              "pointerType" in event.nativeEvent &&
-              ["touch", "pen"].includes(
-                String(event.nativeEvent.pointerType),
-              ),
-            value253: Dynamic =
-              event.button < 0 && !value252 && event.target instanceof Element
-                ? event.target.getBoundingClientRect()
-                : null;
-          value107(
-            value250,
-            value253
-              ? {
-                  x: value253.left,
-                  y: value253.bottom,
-                  keyboard: true,
-                }
-              : {
-                  x: event.clientX,
-                  y: event.clientY,
-                },
-          );
-        }}
-        onPointerDown={(event?: Dynamic): Dynamic => {
-          value108.clear();
-          if (!!callback20(event) && !value130.current.has("marquee")) {
-            if (
-              !value96.current &&
-              value85.current === "note" &&
-              event.button === 0 &&
-              value55.current == null &&
-              (!(event.target instanceof Element) ||
-                event.target.closest("[data-mega-chrome]") == null)
-            ) {
-              event.preventDefault();
-              event.stopPropagation();
-              (0, focusCanvasDocument)();
-              let bounds: Dynamic =
-                event.currentTarget.getBoundingClientRect();
-              onAddAnnotation?.(
-                camera.get().x +
-                  (event.clientX - bounds.left) / camera.get().scale,
-                camera.get().y +
-                  (event.clientY - bounds.top) / camera.get().scale,
-              );
-              return;
-            }
-            if (
-              !value96.current &&
-              value85.current === "frame" &&
-              event.button === 0 &&
-              value55.current == null &&
-              (!(event.target instanceof Element) ||
-                event.target.closest("[data-mega-chrome]") == null)
-            ) {
-              event.preventDefault();
-              event.stopPropagation();
-              (0, focusCanvasDocument)();
-              let bounds: Dynamic =
-                  event.currentTarget.getBoundingClientRect(),
-                value250: Dynamic = callback16(
-                  event.clientX,
-                  event.clientY,
-                  bounds,
-                );
-              value134("frame-tool", true);
-              callback30("frame-tool");
-              let callback61: Dynamic = (input?: Dynamic): Dynamic => {
-                  let value251: Dynamic = callback16(
-                    input.clientX,
-                    input.clientY,
-                    bounds,
-                  );
-                  return {
-                    x: Math.min(value250.x, value251.x),
-                    y: Math.min(value250.y, value251.y),
-                    w: Math.abs(value251.x - value250.x),
-                    h: Math.abs(value251.y - value250.y),
-                  };
-                },
-                callback62: Dynamic = (input?: Dynamic): Dynamic =>
-                  value78(callback61(input)),
-                callback63: Dynamic = (input?: Dynamic): Dynamic => {
-                  (window as Dynamic).removeEventListener(
-                    "pointermove",
-                    callback62,
-                  );
-                  (window as Dynamic).removeEventListener(
-                    "pointerup",
-                    callback63,
-                  );
-                  (window as Dynamic).removeEventListener(
-                    "pointercancel",
-                    callback64,
-                  );
-                  value78(null);
-                  value134("frame-tool", false);
-                  let value251: Dynamic = callback61(input);
-                  value251.w < 8 && value251.h < 8
-                    ? onDrawArtboard?.({
-                        x: value251.x,
-                        y: value251.y,
-                        w: 0,
-                        h: 0,
-                      })
-                    : onDrawArtboard?.({
-                        x: Math.round(value251.x),
-                        y: Math.round(value251.y),
-                        w: Math.round(
-                          Math.min(
-                            maximumArtboardSize.w,
-                            Math.max(
-                              value251.w,
-                              minimumArtboardSize.w,
-                            ),
-                          ),
-                        ),
-                        h: Math.round(
-                          Math.min(
-                            maximumArtboardSize.h,
-                            Math.max(
-                              value251.h,
-                              minimumArtboardSize.h,
-                            ),
-                          ),
-                        ),
-                      });
-                },
-                callback64: Dynamic = (): Dynamic => {
-                  (window as Dynamic).removeEventListener(
-                    "pointermove",
-                    callback62,
-                  );
-                  (window as Dynamic).removeEventListener(
-                    "pointerup",
-                    callback63,
-                  );
-                  (window as Dynamic).removeEventListener(
-                    "pointercancel",
-                    callback64,
-                  );
-                  value78(null);
-                  value134("frame-tool", false);
-                };
-              (window as Dynamic).addEventListener("pointermove", callback62);
-              (window as Dynamic).addEventListener("pointerup", callback63);
-              (window as Dynamic).addEventListener(
-                "pointercancel",
-                callback64,
-              );
-              return;
-            }
-            if (
-              !value96.current &&
-              value19.current &&
-              (0, supportsClickPlacement)(value85.current) &&
-              event.button === 0 &&
-              event.isPrimary &&
-              !value79.current &&
-              value55.current == null &&
-              (!(event.target instanceof Element) ||
-                event.target.closest("[data-mega-chrome]") == null)
-            ) {
-              event.preventDefault();
-              event.stopPropagation();
-              (0, focusCanvasDocument)();
-              let current: Dynamic = value85.current,
-                value250: Dynamic =
-                  (event.target instanceof Element
-                    ? event.target.closest("[data-mega-artboard]")
-                    : null
-                  )?.getAttribute("data-mega-artboard") ?? null,
-                value251: Dynamic =
-                  value250 != null
-                    ? manifest.artboards.find(
-                        (input?: Dynamic): Dynamic => input.file === value250,
-                      )
-                    : null,
-                value252: Dynamic =
-                  value251?.frameless === true &&
-                  value183.current !== value250,
-                value253: Dynamic = value252 ? null : value250,
-                value254: Dynamic = value252 ? null : value251;
-              if (
-                value254
-                  ? value213.has(value254.file)
-                  : value253 != null || !onAddShape
-              ) {
-                onPlaceBlocked?.(current, value254 ? "blocked" : "outside");
-                return;
-              }
-              let bounds: Dynamic =
-                  event.currentTarget.getBoundingClientRect(),
-                value255: Dynamic = callback16(
-                  event.clientX,
-                  event.clientY,
-                  bounds,
-                ),
-                pointerId: Dynamic = event.pointerId,
-                callback61: Dynamic = (): Dynamic => camera.get().scale,
-                value256: Dynamic = current === "arrow" || current === "line",
-                callback62: Dynamic = (input?: Dynamic): Dynamic => {
-                  let value258: Dynamic = callback16(
-                      input.clientX,
-                      input.clientY,
-                      bounds,
-                    ),
-                    value259: Dynamic =
-                      input.shiftKey && value256
-                        ? (0, constrainLineAngle)(value255, value258)
-                        : value258,
-                    value260: Dynamic = Math.abs(value259.x - value255.x),
-                    value261: Dynamic = Math.abs(value259.y - value255.y);
-                  input.shiftKey &&
-                    !value256 &&
-                    (value260 = value261 = Math.max(value260, value261));
-                  return {
-                    x:
-                      value259.x < value255.x
-                        ? value255.x - value260
-                        : value255.x,
-                    y:
-                      value259.y < value255.y
-                        ? value255.y - value261
-                        : value255.y,
-                    w: value260,
-                    h: value261,
-                    dirX: value259.x >= value255.x ? 1 : -1,
-                    dirY: value259.y >= value255.y ? 1 : -1,
-                  };
-                };
-              value79.current = true;
-              value134("place-tool", true);
-              let callback63: Dynamic = (input?: Dynamic): Dynamic => {
-                  let [items, items2]: Dynamic = [
-                    input.w * callback61(),
-                    input.h * callback61(),
-                  ];
-                  return (
-                    value256
-                      ? items > 4 || items2 > 4
-                      : items > 4 && items2 > 4
-                  )
-                    ? input
-                    : {
-                        ...input,
-                        x: value255.x,
-                        y: value255.y,
-                        w: 0,
-                        h: 0,
-                      };
-                },
-                value257: Dynamic = null,
-                callback64: Dynamic = (input?: Dynamic): Dynamic => {
-                  if (input.pointerId !== pointerId) return;
-                  let value258: Dynamic = callback62(input),
-                    value259: Dynamic =
-                      (value258.w * value258.w + value258.h * value258.h) *
-                      callback61() *
-                      callback61();
-                  (!value257 && value259 <= 16) ||
-                    ((value257 = value258),
-                    value81({
-                      tool: current,
-                      ...value258,
-                      onCanvas: !value254,
-                    }));
-                },
-                callback65: Dynamic = (): Dynamic => {
-                  (window as Dynamic).removeEventListener(
-                    "pointermove",
-                    callback64,
-                  );
-                  (window as Dynamic).removeEventListener(
-                    "pointerup",
-                    callback66,
-                  );
-                  (window as Dynamic).removeEventListener(
-                    "pointercancel",
-                    callback67,
-                  );
-                  (window as Dynamic).removeEventListener(
-                    "keydown",
-                    callback68,
-                    true,
-                  );
-                  value79.current = false;
-                  value81(null);
-                  value134("place-tool", false);
-                },
-                callback66: Dynamic = (input?: Dynamic): Dynamic => {
-                  if (
-                    input.pointerId !== pointerId ||
-                    (callback65(), !value19.current)
-                  )
-                    return;
-                  let value258: Dynamic = value257 ?? callback62(input),
-                    value259: Dynamic = value257
-                      ? callback63(value258)
-                      : {
-                          ...value258,
-                          x: value255.x,
-                          y: value255.y,
-                          w: 0,
-                          h: 0,
-                        },
-                    state: Dynamic = {
-                      x: value258.dirX,
-                      y: value258.dirY,
-                    },
-                    state2: Dynamic = {
-                      x: Math.round(value259.x - (value254?.x ?? 0)),
-                      y: Math.round(value259.y - (value254?.y ?? 0)),
-                      w: Math.round(value259.w),
-                      h: Math.round(value259.h),
-                    };
-                  value254
-                    ? onPlaceTool?.(current, value254.file, state2, state)
-                    : onAddShape?.(current, state2, state);
-                },
-                callback67: Dynamic = (input?: Dynamic): Dynamic => {
-                  input.pointerId === pointerId && callback65();
-                },
-                callback68: Dynamic = (event2?: Dynamic): Dynamic => {
-                  event2.key === "Escape" &&
-                    (event2.preventDefault(),
-                    event2.stopPropagation(),
-                    callback65());
-                };
-              (window as Dynamic).addEventListener("pointermove", callback64);
-              (window as Dynamic).addEventListener("pointerup", callback66);
-              (window as Dynamic).addEventListener(
-                "pointercancel",
-                callback67,
-              );
-              (window as Dynamic).addEventListener(
-                "keydown",
-                callback68,
-                true,
-              );
-              return;
-            }
-            if (
-              !value96.current &&
-              value19.current &&
-              value85.current === "draw" &&
-              onAddPen &&
-              event.button === 0 &&
-              event.isPrimary &&
-              !value79.current &&
-              value55.current == null &&
-              event.target instanceof Element &&
-              event.target.closest("[data-mega-chrome]") == null &&
-              event.target.closest("[data-mega-artboard]") == null
-            ) {
-              event.preventDefault();
-              event.stopPropagation();
-              (0, focusCanvasDocument)();
-              let bounds: Dynamic =
-                  event.currentTarget.getBoundingClientRect(),
-                pointerId: Dynamic = event.pointerId,
-                items: Dynamic = [[event.clientX, event.clientY]],
-                count: Dynamic = 4,
-                callback61: Dynamic = (): Dynamic =>
-                  freehandSimplifyTolerance / camera.get().scale;
-              value79.current = true;
-              value134("place-tool", true);
-              let callback62: Dynamic = (): Dynamic => {
-                  let value250: Dynamic = items.map(
-                    ([input, input2]: Dynamic): Dynamic =>
-                      callback16(input, input2, bounds),
-                  );
-                  value83(
-                    (0, freehandDrawingAnnotation)(
-                      value250,
-                      callback61(),
-                      false,
-                    ),
-                  );
-                },
-                callback63: Dynamic = (input?: Dynamic): Dynamic => {
-                  if (input.pointerId !== pointerId) return;
-                  let [value250, value251]: Dynamic = items[items.length - 1];
-                  (input.clientX - value250) ** 2 +
-                    (input.clientY - value251) ** 2 <
-                    count ||
-                    (items.push([input.clientX, input.clientY]),
-                    items.length > 3e3 &&
-                      ((items = items.filter(
-                        (input2?: Dynamic, options2?: Dynamic): Dynamic =>
-                          options2 % 2 === 0,
-                      )),
-                      (count *= 4)),
-                    callback62());
-                },
-                callback64: Dynamic = (): Dynamic => {
-                  (window as Dynamic).removeEventListener(
-                    "pointermove",
-                    callback63,
-                  );
-                  (window as Dynamic).removeEventListener(
-                    "pointerup",
-                    callback65,
-                  );
-                  (window as Dynamic).removeEventListener(
-                    "pointercancel",
-                    callback66,
-                  );
-                  (window as Dynamic).removeEventListener(
-                    "keydown",
-                    callback67,
-                    true,
-                  );
-                  value79.current = false;
-                  value83(null);
-                  value134("place-tool", false);
-                },
-                callback65: Dynamic = (input?: Dynamic): Dynamic => {
-                  input.pointerId === pointerId &&
-                    (callback64(),
-                    !(!value19.current || items.length < 2) &&
-                      onAddPen(
-                        (0, freehandDrawingAnnotation)(
-                          items.map(
-                            ([input2, input3]: Dynamic): Dynamic =>
-                              callback16(input2, input3, bounds),
-                          ),
-                          callback61(),
-                        ),
-                      ));
-                },
-                callback66: Dynamic = (input?: Dynamic): Dynamic => {
-                  input.pointerId === pointerId && callback64();
-                },
-                callback67: Dynamic = (event2?: Dynamic): Dynamic => {
-                  event2.key === "Escape" &&
-                    (event2.preventDefault(),
-                    event2.stopPropagation(),
-                    callback64());
-                };
-              (window as Dynamic).addEventListener("pointermove", callback63);
-              (window as Dynamic).addEventListener("pointerup", callback65);
-              (window as Dynamic).addEventListener(
-                "pointercancel",
-                callback66,
-              );
-              (window as Dynamic).addEventListener(
-                "keydown",
-                callback67,
-                true,
-              );
-              return;
-            }
-            if (
-              !value96.current &&
-              value55.current == null &&
-              callback14(event.nativeEvent)
-            ) {
-              callback19(event, {
-                origin: {
-                  kind: "canvas",
-                },
-                mode: (0, isPrimaryModifierEvent)(event)
-                  ? "deep"
-                  : "plain",
-                toggle: event.shiftKey,
-                capture: event.currentTarget,
-                onStillRelease: event.shiftKey ? undefined : onClearSelection,
-              });
-              return;
-            }
-            (event.target === event.currentTarget ||
-              (event.target instanceof Element &&
-                event.target.getAttribute("data-mega-chrome") ===
-                  "set-box-pad")) &&
-              event.button === 0 &&
-              !event.shiftKey &&
-              onClearSelection();
-            if (
-              value55.current == null &&
-              (callback13(event.nativeEvent) ||
-                (event.button === 0 && callback10(event.nativeEvent)))
-            ) {
-              value134("pan", true);
-              event.pointerType === "mouse" &&
-                event.currentTarget.setAttribute("data-mega-grabbing", "");
-              let value250: Dynamic =
-                event.button === 2 && !value128.current
-                  ? (0, canvasContextMenuTargetFromElement)(
-                      event.target,
-                    )
-                  : null;
-              value250 !== null && value108.down(event, value250);
-              callback30(
-                "pan",
-                event.button === 1 ? 4 : event.button === 2 ? 2 : 1,
-              );
-            }
-          }
-        }}
+        onContextMenu={(...args: Dynamic[]): Dynamic => (openCanvasContextMenu as Dynamic)({ get callback12() { return callback12; }, get callback20() { return callback20; }, get onCanvasMenu() { return onCanvasMenu; }, get value107() { return value107; }, get value108() { return value108; }, get value109() { return value109; }, get value128() { return value128; }, get value130() { return value130; }, get value55() { return value55; } }, ...args)}
+        onPointerDown={(...args: Dynamic[]): Dynamic => (pressCanvasBackground as Dynamic)({ get callback10() { return callback10; }, get callback13() { return callback13; }, get callback14() { return callback14; }, get callback16() { return callback16; }, get callback19() { return callback19; }, get callback20() { return callback20; }, get callback30() { return callback30; }, get camera() { return camera; }, get manifest() { return manifest; }, get onAddAnnotation() { return onAddAnnotation; }, get onAddPen() { return onAddPen; }, get onAddShape() { return onAddShape; }, get onClearSelection() { return onClearSelection; }, get onDrawArtboard() { return onDrawArtboard; }, get onPlaceBlocked() { return onPlaceBlocked; }, get onPlaceTool() { return onPlaceTool; }, get value108() { return value108; }, get value128() { return value128; }, get value130() { return value130; }, get value134() { return value134; }, get value183() { return value183; }, get value19() { return value19; }, get value213() { return value213; }, get value55() { return value55; }, get value78() { return value78; }, get value79() { return value79; }, get value81() { return value81; }, get value83() { return value83; }, get value85() { return value85; }, get value96() { return value96; } }, ...args)}
       >
         <span id={value143} hidden={true}>
           {PressReturnToGoIntoThisMessage}
@@ -7020,172 +4225,7 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
               })}
             </div>
           </ConditionalPortal>
-          {fullscreenFile == null && (((): Dynamic => {
-              let value250: Dynamic = (manifest.annotations ?? []).map(
-                (source?: Dynamic): Dynamic => {
-                  let value251: Dynamic = (0, isShapeAnnotation)(
-                    source,
-                  )
-                    ? (() => {
-                        const _Component2 = CanvasShape;
-                        const _props2 = {
-                          spec:
-                            value114?.id === source.id &&
-                            source.kind === "image"
-                              ? (0, updateAnnotationCrop)(
-                                  {
-                                    ...source,
-                                    ...callback27(value114),
-                                  },
-                                  value114.live,
-                                )
-                              : source,
-                          cropping: value114?.id === source.id,
-                          onCropStart: (): Dynamic => callback28(source.id),
-                          onPictureLoad: value119,
-                          scale: entry.scale,
-                          editing: value18,
-                          inert:
-                            (0, supportsClickPlacement)(armedTool) ||
-                            armedTool === "draw",
-                          commenting: value126,
-                          selected: selectedNotes.has(source.id),
-                          grouped: value232,
-                          objectPress: callback55(source),
-                          onChange: (
-                            input?: Dynamic,
-                            options2?: Dynamic,
-                          ): Dynamic =>
-                            callback34(
-                              source.id,
-                              (input2?: Dynamic): Dynamic =>
-                                (0, isShapeAnnotation)(input2)
-                                  ? {
-                                      ...input2,
-                                      ...input,
-                                    }
-                                  : input2,
-                              options2,
-                            ),
-                          onGesture: value134,
-                          armWindowGestureEnd: callback30,
-                          resolveImageSrc: value181,
-                          snapLines: (): Dynamic => ({
-                            lines: callback45({
-                              notes: [source.id],
-                            }),
-                            threshold:
-                              canvasTouchDragThresholdPixels /
-                              camera.get().scale,
-                          }),
-                          onSnapGuides: value70,
-                          vectorEdit: armedTool === "vector",
-                          onEditPoints:
-                            source.kind === "pen"
-                              ? (): Dynamic => callback56(source.id)
-                              : undefined,
-                        } as const;
-                        const _key2 = source.id;
-                        return <_Component2 key={_key2} {..._props2} />;
-                      })()
-                    : (() => {
-                        const _Component3 = CanvasNote;
-                        const _props3 = {
-                          spec: source,
-                          editing: value18,
-                          commenting: value126,
-                          selected: selectedNotes.has(source.id),
-                          grouped: value232,
-                          objectPress: callback55(source),
-                          onChange: (
-                            input?: Dynamic,
-                            options2?: Dynamic,
-                          ): Dynamic =>
-                            callback34(
-                              source.id,
-                              (input2?: Dynamic): Dynamic =>
-                                (0, isShapeAnnotation)(input2)
-                                  ? input2
-                                  : {
-                                      ...input2,
-                                      ...input,
-                                    },
-                              options2,
-                            ),
-                          onGesture: value134,
-                          armWindowGestureEnd: callback30,
-                          snapLines: (): Dynamic => ({
-                            lines: callback45({
-                              notes: [source.id],
-                            }),
-                            threshold:
-                              canvasTouchDragThresholdPixels /
-                              camera.get().scale,
-                          }),
-                          onSnapGuides: value70,
-                          onTextEditing: (input?: Dynamic): Dynamic =>
-                            value113(
-                              (input2?: Dynamic): Dynamic =>
-                                input
-                                  ? source.id
-                                  : input2 === source.id
-                                    ? null
-                                    : input2,
-                            ),
-                          autoEdit:
-                            source.text === "" && value59 === source.id,
-                          onMeasure: (input?: Dynamic): Dynamic =>
-                            value11(
-                              (input2?: Dynamic): Dynamic =>
-                                input2[source.id]?.w === input.w &&
-                                input2[source.id]?.h === input.h
-                                  ? input2
-                                  : {
-                                      ...input2,
-                                      [source.id]: input,
-                                    },
-                            ),
-                        } as const;
-                        const _key3 = source.id;
-                        return <_Component3 key={_key3} {..._props3} />;
-                      })();
-                  return {
-                    under: callback6(source),
-                    node: value35
-                      ? (() => {
-                          const _Component4 = "div";
-                          const _props4 = {
-                            ref: callback5,
-                            className: "absolute left-0 top-0 h-0 w-0",
-                            style: {
-                              transformOrigin: "0 0",
-                            },
-                            children: value251,
-                          } as const;
-                          const _key4 = source.id;
-                          return <_Component4 key={_key4} {..._props4} />;
-                        })()
-                      : value251,
-                  };
-                },
-              );
-              return value35 ? (
-                <jsx_Nn.Fragment>
-                  <ConditionalPortal on={true} to={value50}>
-                    {value250
-                      .filter((input?: Dynamic): Dynamic => input.under)
-                      .map((input?: Dynamic): Dynamic => input.node)}
-                  </ConditionalPortal>
-                  <ConditionalPortal on={true} to={value46}>
-                    {value250
-                      .filter((input?: Dynamic): Dynamic => !input.under)
-                      .map((input?: Dynamic): Dynamic => input.node)}
-                  </ConditionalPortal>
-                </jsx_Nn.Fragment>
-              ) : (
-                value250.map((input?: Dynamic): Dynamic => input.node)
-              );
-            })())}
+          {fullscreenFile == null && (((...args: Dynamic[]): Dynamic => (renderCanvasObjects as Dynamic)({ get armedTool() { return armedTool; }, get callback27() { return callback27; }, get callback28() { return callback28; }, get callback30() { return callback30; }, get callback34() { return callback34; }, get callback45() { return callback45; }, get callback5() { return callback5; }, get callback55() { return callback55; }, get callback56() { return callback56; }, get callback6() { return callback6; }, get camera() { return camera; }, get entry() { return entry; }, get manifest() { return manifest; }, get selectedNotes() { return selectedNotes; }, get value11() { return value11; }, get value113() { return value113; }, get value114() { return value114; }, get value119() { return value119; }, get value126() { return value126; }, get value134() { return value134; }, get value18() { return value18; }, get value181() { return value181; }, get value232() { return value232; }, get value35() { return value35; }, get value46() { return value46; }, get value50() { return value50; }, get value59() { return value59; }, get value70() { return value70; } }, ...args))())}
           {artboardNotice &&
             fullscreenFile == null && (manifest.artboards.map((input?: Dynamic): Dynamic => {
               let value250: Dynamic = artboardNotice(input.file);
@@ -7254,98 +4294,7 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
               </div>,
             ))}
           {value114 &&
-            value121?.kind === "image" && (((): Dynamic => {
-              let value250: Dynamic = callback27(value114) ?? value121;
-              return callback7(
-                "crop",
-                <div
-                  data-mega-chrome={"crop"}
-                  data-testid={"mega-crop"}
-                  className={"pointer-events-none absolute z-30"}
-                  style={{
-                    ...PickerRuntimeScriptTAppAccentConfig,
-                    left: value250.x,
-                    top: value250.y,
-                    width: value250.w,
-                    height: value250.h,
-                    transform: value114.rot
-                      ? "rotate(" + String(value114.rot) + "deg)"
-                      : undefined,
-                  }}
-                >
-                  <div
-                    className={"absolute"}
-                    style={{
-                      left: value114.edge.l,
-                      top: value114.edge.t,
-                      width: value114.local.w,
-                      height: value114.local.h,
-                    }}
-                  >
-                    <ViewportScale>
-                      {(input?: Dynamic): Dynamic => (
-                        <MediaCropEditor
-                          frame={{
-                            w: value114.local.w,
-                            h: value114.local.h,
-                          }}
-                          natural={value114.natural}
-                          crop={value114.live}
-                          scale={input}
-                          rotation={(value114.rot * Math.PI) / 180}
-                          src={value181(value121.src)}
-                          onLive={(input2?: Dynamic): Dynamic =>
-                            value115(
-                              (input3?: Dynamic): Dynamic =>
-                                input3 && {
-                                  ...input3,
-                                  live: input2,
-                                },
-                            )
-                          }
-                          minFrame={PlatformFileContentConstant_20}
-                          snapFrame={(input2?: Dynamic): Dynamic => {
-                            let [items, items2, items3, items4]: Dynamic = [
-                              Math.round(input2.x),
-                              Math.round(input2.y),
-                              Math.round(input2.x + input2.w),
-                              Math.round(input2.y + input2.h),
-                            ];
-                            return {
-                              x: items,
-                              y: items2,
-                              w: Math.max(
-                                PlatformFileContentConstant_20,
-                                items3 - items,
-                              ),
-                              h: Math.max(
-                                PlatformFileContentConstant_20,
-                                items4 - items2,
-                              ),
-                            };
-                          }}
-                          onFrame={(input2?: Dynamic): Dynamic =>
-                            value115(
-                              (input3?: Dynamic): Dynamic =>
-                                input3 && {
-                                  ...input3,
-                                  live: input2.crop,
-                                  local: input2.frame,
-                                },
-                            )
-                          }
-                          onDone={value120}
-                          onGesture={(input2?: Dynamic): Dynamic => {
-                            value134("crop", input2);
-                            input2 && callback30("crop");
-                          }}
-                        />
-                      )}
-                    </ViewportScale>
-                  </div>
-                </div>,
-              );
-            })())}
+            value121?.kind === "image" && (((...args: Dynamic[]): Dynamic => (renderImageCropEditor as Dynamic)({ get callback27() { return callback27; }, get callback30() { return callback30; }, get callback7() { return callback7; }, get value114() { return value114; }, get value115() { return value115; }, get value120() { return value120; }, get value121() { return value121; }, get value134() { return value134; }, get value181() { return value181; } }, ...args))())}
           {value75 && armedTool === "note" && (<div
               data-testid={"mega-note-ghost"}
               aria-hidden={"true"}
@@ -7665,169 +4614,7 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
           fullscreenFile == null &&
           value59 != null &&
           !(0, supportsClickPlacement)(armedTool) &&
-          armedTool !== "draw" && (((): Dynamic => {
-            let value250: Dynamic = (manifest.annotations ?? []).find(
-              (input?: Dynamic): Dynamic => input.id === value59,
-            );
-            if (!value250) return null;
-            let value251: Dynamic = value112 === value250.id;
-            if (value251 && value250.kind === "title1") return null;
-            let value252: Dynamic = (0, rotatedAnnotationBounds)(
-                value250,
-                callback44(value250),
-              ),
-              callback61: Dynamic = (input?: Dynamic): Dynamic =>
-                callback34(
-                  value250.id,
-                  (input2?: Dynamic): Dynamic =>
-                    (0, isShapeAnnotation)(input2)
-                      ? input2
-                      : (0, updateAnnotationTextStyle)(input2, input),
-                  true,
-                );
-            return (
-              <CanvasAnchoredPopover
-                x={value252.x + value252.w / 2}
-                y={value252.y}
-                belowSheet={value15 === "sheet"}
-              >
-                {(input?: Dynamic): Dynamic => (
-                  <SessionStrip
-                    data-testid={"mega-note-strip"}
-                    data-mega-selection-strip={""}
-                    aria-label={
-                      (0, isShapeAnnotation)(value250) ? (uiMessage("canvas.interactionLayer.shapeActions")) : (uiMessage("canvas.interactionLayer.noteActions"))
-                    }
-                    surface={"popover"}
-                    wrap={value17}
-                    onKeyDown={handleQuickActionsArrowKeys}
-                  >
-                    {(0, isShapeAnnotation)(value250) ? ((() => {
-                          const _Component8 =
-                            CanvasObjectQuickActions;
-                          const _props8 = {
-                            spec: value250,
-                            onRecolor: (input2?: Dynamic): Dynamic =>
-                              callback34(
-                                value250.id,
-                                (input3?: Dynamic): Dynamic =>
-                                  (0, isShapeAnnotation)(input3)
-                                    ? (0, updateShapeColor)(
-                                        input3,
-                                        input2,
-                                      )
-                                    : input3,
-                                true,
-                              ),
-                            onDelete: (): Dynamic =>
-                              onDeleteAnnotation?.(value250.id),
-                            onComment:
-                              value8 &&
-                              ((input2?: Dynamic): Dynamic =>
-                                value8(value250.id, input2)),
-                            cropping: value114?.id === value250.id,
-                            onCrop:
-                              value250.kind === "image"
-                                ? (): Dynamic =>
-                                    value114
-                                      ? value120(true)
-                                      : callback28(value250.id)
-                                : undefined,
-                            cropReason:
-                              value250.kind !== "image" || value114
-                                ? undefined
-                                : callback25(value250.id)
-                                  ? (0, imageFlipCss)(value250)
-                                    ? CropDoesNotWorkWhileThisMessage
-                                    : undefined
-                                  : uiMessage("canvas.interactionLayer.thisPictureHasNotLoaded"),
-                            clip:
-                              value250.kind === "image" &&
-                              value250.video !== undefined &&
-                              onAnnotationCss &&
-                              onReplaceAnnotationMedia
-                                ? {
-                                    src: value181(value250.src) ?? undefined,
-                                    onCss: (
-                                      input2?: Dynamic,
-                                      options2?: Dynamic,
-                                    ): Dynamic =>
-                                      onAnnotationCss(
-                                        value250.id,
-                                        input2,
-                                        options2,
-                                      ),
-                                    onReplace: (input2?: Dynamic): Dynamic =>
-                                      onReplaceAnnotationMedia(
-                                        value250.id,
-                                        input2,
-                                      ),
-                                    onOpenProps:
-                                      value21 && !value18
-                                        ? undefined
-                                        : (): Dynamic => {
-                                            onOpenPropsPanel?.();
-                                            value162();
-                                          },
-                                  }
-                                : undefined,
-                          } as const;
-                          const _key8 =
-                            value250.id +
-                            "@" +
-                            [input, value252.x, value252.y, value252.w].join(
-                              ",",
-                            );
-                          return <_Component8 key={_key8} {..._props8} />;
-                        })()) : (value251 ? ((() => {
-                            const _Component9 =
-                              EditingNoteQuickActions;
-                            const _props9 = {
-                              spec: value250,
-                              onRestyle: callback61,
-                              onComment:
-                                value8 &&
-                                ((input2?: Dynamic): Dynamic =>
-                                  value8(value250.id, input2)),
-                            } as const;
-                            const _key9 =
-                              value250.id +
-                              "@" +
-                              [
-                                input,
-                                value250.x,
-                                value250.y,
-                                value250.w,
-                              ].join(",");
-                            return <_Component9 key={_key9} {..._props9} />;
-                          })()) : ((() => {
-                            const _Component0 = NoteQuickActions;
-                            const _props0 = {
-                              spec: value250,
-                              onRestyle: callback61,
-                              onDelete: (): Dynamic =>
-                                onDeleteAnnotation?.(value250.id),
-                              onComment:
-                                value8 &&
-                                ((input2?: Dynamic): Dynamic =>
-                                  value8(value250.id, input2)),
-                            } as const;
-                            const _key0 =
-                              value250.id +
-                              "@" +
-                              [
-                                input,
-                                value250.x,
-                                value250.y,
-                                value250.w,
-                              ].join(",");
-                            return <_Component0 key={_key0} {..._props0} />;
-                          })()))}
-                  </SessionStrip>
-                )}
-              </CanvasAnchoredPopover>
-            );
-          })())}
+          armedTool !== "draw" && (((...args: Dynamic[]): Dynamic => (renderAnnotationQuickActions as Dynamic)({ get callback25() { return callback25; }, get callback28() { return callback28; }, get callback34() { return callback34; }, get callback44() { return callback44; }, get manifest() { return manifest; }, get onAnnotationCss() { return onAnnotationCss; }, get onDeleteAnnotation() { return onDeleteAnnotation; }, get onOpenPropsPanel() { return onOpenPropsPanel; }, get onReplaceAnnotationMedia() { return onReplaceAnnotationMedia; }, get value112() { return value112; }, get value114() { return value114; }, get value120() { return value120; }, get value15() { return value15; }, get value162() { return value162; }, get value17() { return value17; }, get value18() { return value18; }, get value181() { return value181; }, get value21() { return value21; }, get value59() { return value59; }, get value8() { return value8; } }, ...args))())}
         <R_useCanvasComments
           manifest={manifest}
           annBox={callback44}
@@ -7874,94 +4661,353 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
             textEdit: value140,
             editDoor: quickProps?.onEditText != null,
             commentDoor: value7 != null,
-          }) && (((): Dynamic => {
-            let value250: Dynamic = manifest.artboards.find(
-              (input?: Dynamic): Dynamic =>
-                input.file === elementSelection.file,
-            );
-            if (!value250) return null;
-            let rect: Dynamic = elementSelection.rect,
-              value251: Dynamic = Math.max(
-                0,
-                Math.min(value250.w, rect.x + rect.w / 2),
-              ),
-              value252: Dynamic = Math.max(0, Math.min(value250.h, rect.y)),
-              value253: Dynamic =
-                value250.file === fullscreenFile &&
-                fullscreenBox &&
-                flag &&
-                tweakRows?.[value250.file]
-                  ? artboardTweaksRowHeight
-                  : 0;
-            return (
-              <CanvasAnchoredPopover
-                x={value250.x + value251}
-                y={value250.y + value252}
-                dy={value253}
-                belowSheet={value15 === "sheet"}
-              >
-                {(input?: Dynamic): Dynamic => (
-                  <SessionStrip
-                    data-mega-selection-strip={""}
-                    aria-label={uiMessage("canvas.interactionLayer.selectionActions")}
-                    surface={"popover"}
-                    wrap={value17}
-                    onKeyDown={handleQuickActionsArrowKeys}
-                  >
-                    {(() => {
-                      const _Component1 =
-                        PositionedSelectionQuickActions;
-                      const _props1 = {
-                        at: input,
-                        text: quickProps?.text ?? 0,
-                        shape: quickProps?.shape ?? 0,
-                        box: quickProps?.box ?? 0,
-                        image: quickProps?.image ?? 0,
-                        other: quickProps?.other ?? 0,
-                        line: quickProps?.line ?? 0,
-                        primaryTag: quickProps?.primaryTag ?? "",
-                        part: elementSelection.part,
-                        seed: seed,
-                        onEditText: quickProps?.onEditText ? value166 : null,
-                        crossFile: crossFile ?? null,
-                        sidebarVisible: false,
-                        onOpenProps: value162,
-                        onApply: value163,
-                        onGesture: value164,
-                        textEdit: value140,
-                        onReplaceImage: quickProps?.onReplaceImage
-                          ? value167
-                          : undefined,
-                        onCrop: quickProps?.onCrop ? value168 : undefined,
-                        cropping: quickProps?.cropping,
-                        cropReason: quickProps?.cropReason,
-                        onReplaceVideo: quickProps?.onReplaceVideo
-                          ? value169
-                          : undefined,
-                        findVideo: quickProps?.findVideo
-                          ? value170
-                          : undefined,
-                        onElementLink: quickProps?.onElementLink
-                          ? value171
-                          : undefined,
-                        contrastRef: quickProps?.contrastRef,
-                        coarse: value16,
-                        compact: value17,
-                        onFormat: value165,
-                        onComment: value7 ? value172 : undefined,
-                      } as const;
-                      const _key1 = elementSelection.identity;
-                      return <_Component1 key={_key1} {..._props1} />;
-                    })()}
-                  </SessionStrip>
-                )}
-              </CanvasAnchoredPopover>
-            );
-          })())}
+          }) && (((...args: Dynamic[]): Dynamic => (renderSelectionQuickActions as Dynamic)({ get crossFile() { return crossFile; }, get elementSelection() { return elementSelection; }, get flag() { return flag; }, get fullscreenBox() { return fullscreenBox; }, get fullscreenFile() { return fullscreenFile; }, get manifest() { return manifest; }, get quickProps() { return quickProps; }, get seed() { return seed; }, get tweakRows() { return tweakRows; }, get value140() { return value140; }, get value15() { return value15; }, get value16() { return value16; }, get value162() { return value162; }, get value163() { return value163; }, get value164() { return value164; }, get value165() { return value165; }, get value166() { return value166; }, get value167() { return value167; }, get value168() { return value168; }, get value169() { return value169; }, get value17() { return value17; }, get value170() { return value170; }, get value171() { return value171; }, get value172() { return value172; }, get value7() { return value7; } }, ...args))())}
       </div>
     </ViewportContext.Provider>
   );
 }
+
+/** 拖动画板或便签时随指针移动与松开运行：超过阈值后计算吸附与参考线、更新位置并检测放入目标，松开时提交到画布清单（或复制、放入画板），未移动则按单击处理选中与聚焦。 */
+function updateBoardDrag(deps: { readonly callback16: Dynamic; readonly callback43: Dynamic; readonly callback44: Dynamic; readonly callback48: Dynamic; readonly camera: Dynamic; readonly manifest: Dynamic; readonly onDropObjectInto: Dynamic; readonly onDuplicateObjects: Dynamic; readonly onFocus: Dynamic; readonly onManifestChange: Dynamic; readonly onObjectHover: Dynamic; readonly onSelectObjects: Dynamic; readonly value134: Dynamic; readonly value18: Dynamic; readonly value67: Dynamic; readonly value70: Dynamic; readonly value72: Dynamic; readonly value74: Dynamic; readonly value9: Dynamic }, input?: Dynamic,
+      options2?: Dynamic): Dynamic {
+      let current: Dynamic = deps.value67.current;
+      if (
+        !current ||
+        input.pointerId !== current.pointerId ||
+        (current.setMove && input.fromSetMove !== true)
+      )
+        return;
+      options2 &&
+        ((deps.value67.current = null),
+        current.unlisten(),
+        deps.value134("frame-drag", false));
+      if (!current.live) {
+        if (
+          Math.hypot(
+            input.clientX - current.startX,
+            input.clientY - current.startY,
+          ) <
+          (input.pointerType === "touch"
+            ? 10
+            : canvasDragThresholdPixels)
+        ) {
+          options2 &&
+            (current.click &&
+              deps.onSelectObjects(
+                (0, boardSelectionItems)(current.ref),
+                current.click === "toggle" ? "toggle" : "replace",
+              ),
+            current.focus &&
+              "file" in current.ref &&
+              deps.onFocus(current.ref.file));
+          return;
+        }
+        if (!deps.value18) return;
+        current.live = true;
+      }
+      current.last = {
+        clientX: input.clientX,
+        clientY: input.clientY,
+        metaKey: input.metaKey,
+        ctrlKey: input.ctrlKey,
+        pointerType: input.pointerType,
+      };
+      let value250: Dynamic = input.altKey && deps.onDuplicateObjects != null;
+      value250 !== current.alt &&
+        (value250 ? deps.callback48(current.set, current.notes) : deps.value74(null),
+        (current.alt = value250));
+      let { scale: entry2 }: Dynamic = deps.camera.get(),
+        {
+          dx: value251,
+          dy: value252,
+          guides: value253,
+          gaps: value254,
+        }: Dynamic = (0, snapCanvasDrag)(
+          (input.clientX - current.startX) / entry2,
+          (input.clientY - current.startY) / entry2,
+          current.snap
+            ? {
+                box: current.snap.box,
+                lines: value250
+                  ? current.snap.copyLines
+                  : current.snap.moveLines,
+                boxes: value250
+                  ? current.snap.copyStill
+                  : current.snap.moveStill,
+              }
+            : null,
+          canvasTouchDragThresholdPixels / entry2,
+          input.metaKey || input.ctrlKey,
+        );
+      deps.value70(options2 || value253.length === 0 ? null : value253);
+      deps.value72(options2 || value254.length === 0 ? null : value254);
+      let callback61: Dynamic = (input2?: Dynamic): Dynamic => ({
+          x: Math.round(input2.x + value251),
+          y: Math.round(input2.y + value252),
+        }),
+        value255: Dynamic = callback61({
+          x: current.origX,
+          y: current.origY,
+        }),
+        value256: Dynamic = !(
+          value255.x === Math.round(current.origX) &&
+          value255.y === Math.round(current.origY)
+        );
+      if (current.alt) {
+        current.hoverKey &&
+          deps.onObjectHover?.({
+            key: current.hoverKey,
+            target: null,
+            point: {
+              x: 0,
+              y: 0,
+            },
+            object: current.set[0]
+              ? {
+                  file: current.set[0].file,
+                }
+              : {
+                  note: current.notes[0].id,
+                },
+            at: {
+              x: 0,
+              y: 0,
+              w: 0,
+              h: 0,
+            },
+            ctrl: false,
+          });
+        if (!options2) {
+          deps.value74([
+            ...current.set.map(
+              (input2?: Dynamic): Dynamic => ({
+                ...callback61(input2),
+                w: input2.w,
+                h: input2.h,
+              }),
+            ),
+            ...current.notes.map((input2?: Dynamic): Dynamic => {
+              let value257: Dynamic = (0, rotatedAnnotationBounds)(
+                input2,
+                deps.callback44(input2),
+              );
+              return {
+                ...value257,
+                ...callback61(value257),
+              };
+            }),
+          ]);
+          return;
+        }
+        deps.value74(null);
+        value256
+          ? deps.onDuplicateObjects?.(
+              current.set.map(
+                (input2?: Dynamic): Dynamic => ({
+                  file: input2.file,
+                  ...callback61(input2),
+                }),
+              ),
+              current.notes.map(
+                (input2?: Dynamic): Dynamic => ({
+                  id: input2.id,
+                  ...callback61(input2),
+                }),
+              ),
+              current.bound,
+              current.setMove != null,
+            )
+          : current.setMove != null &&
+            current.bound !== undefined &&
+            deps.onDuplicateObjects?.([], [], current.bound, true);
+        return;
+      }
+      if (options2 && !value256) {
+        deps.callback48(current.set, current.notes);
+        current.hoverKey &&
+          deps.onObjectHover?.({
+            key: current.hoverKey,
+            target: null,
+            point: {
+              x: 0,
+              y: 0,
+            },
+            object: current.set[0]
+              ? {
+                  file: current.set[0].file,
+                }
+              : {
+                  note: current.notes[0].id,
+                },
+            at: {
+              x: 0,
+              y: 0,
+              w: 0,
+              h: 0,
+            },
+            ctrl: false,
+          });
+        return;
+      }
+      if (
+        !current.alt &&
+        !current.setMove &&
+        (deps.onDropObjectInto || deps.onObjectHover) &&
+        current.set.length + current.notes.length === 1
+      ) {
+        let value257: Dynamic = current.set[0]
+            ? {
+                file: current.set[0].file,
+              }
+            : {
+                note: current.notes[0].id,
+              },
+          value258: Dynamic =
+            "note" in value257 ||
+            deps.manifest.artboards.find(
+              (input2?: Dynamic): Dynamic => input2.file === value257.file,
+            )?.frameless === true,
+          value259: Dynamic = deps.value9.current?.getBoundingClientRect(),
+          value260: Dynamic =
+            value258 && value259
+              ? deps.callback16(input.clientX, input.clientY, value259)
+              : null;
+        if (value260) {
+          let callback62: Dynamic = (
+            input2?: Dynamic,
+            options3?: Dynamic,
+          ): Dynamic =>
+            options3.x >= input2.x &&
+            options3.x <= input2.x + input2.w &&
+            options3.y >= input2.y &&
+            options3.y <= input2.y + input2.h;
+          current.left ??= new Set();
+          for (let value264 of deps.manifest.artboards as Dynamic)
+            !value264.frameless &&
+              !callback62(value264, value260) &&
+              current.left.add(value264.file);
+          let value261: Dynamic =
+              [...deps.manifest.artboards]
+                .reverse()
+                .find(
+                  (input2?: Dynamic): Dynamic =>
+                    !input2.frameless &&
+                    input2.file !==
+                      ("file" in value257 ? value257.file : "") &&
+                    callback62(input2, value260),
+                ) ?? null,
+            value262: Dynamic =
+              value261 && current.left.has(value261.file) ? value261 : null,
+            value263: Dynamic = current.set[0]
+              ? {
+                  ...callback61(current.set[0]),
+                  w: current.set[0].w,
+                  h: current.set[0].h,
+                }
+              : ((): Dynamic => {
+                  let value264: Dynamic = current.notes[0],
+                    value265: Dynamic = deps.callback44(value264);
+                  return {
+                    ...callback61(value265),
+                    w: value265.w,
+                    h: value265.h,
+                  };
+                })();
+          current.hoverKey ??= "obj-" + String(++canvasDragSequence);
+          if (!options2)
+            deps.onObjectHover?.({
+              key: current.hoverKey,
+              target: value262?.file ?? null,
+              point: value260,
+              object: value257,
+              at: value263,
+              ctrl: input.ctrlKey,
+            });
+          else if (value262 && deps.onDropObjectInto) {
+            deps.callback48(current.set, current.notes);
+            if (
+              deps.onDropObjectInto({
+                key: current.hoverKey,
+                target: value262.file,
+                point: value260,
+                object: value257,
+                at: value263,
+                ctrl: input.ctrlKey,
+              })
+            )
+              return;
+            deps.onObjectHover?.({
+              key: current.hoverKey,
+              target: null,
+              point: value260,
+              object: value257,
+              at: value263,
+              ctrl: input.ctrlKey,
+            });
+          } else
+            deps.onObjectHover?.({
+              key: current.hoverKey,
+              target: null,
+              point: value260,
+              object: value257,
+              at: value263,
+              ctrl: input.ctrlKey,
+            });
+        }
+      }
+      let entries2: Dynamic = new Map(
+          current.set.map(
+            (input2?: Dynamic): Dynamic => [
+              input2.file,
+              (0, preserveUnroundedDragPosition)(
+                input2,
+                callback61(input2),
+              ),
+            ],
+          ),
+        ),
+        entries3: Dynamic = new Map(
+          current.notes.map(
+            (input2?: Dynamic): Dynamic => [
+              input2.id,
+              (0, preserveUnroundedDragPosition)(
+                input2,
+                callback61(input2),
+              ),
+            ],
+          ),
+        );
+      deps.onManifestChange(
+        deps.callback43(entries2, entries3),
+        options2,
+        options2
+          ? {
+              moved: new Map(
+                current.set.map(
+                  (input2?: Dynamic): Dynamic => [
+                    input2.file,
+                    {
+                      x: input2.x,
+                      y: input2.y,
+                    },
+                  ],
+                ),
+              ),
+              movedNotes: new Map(
+                current.notes.map(
+                  (input2?: Dynamic): Dynamic => [input2.id, input2],
+                ),
+              ),
+              ...(current.bound !== undefined
+                ? {
+                    bound: current.bound,
+                  }
+                : {}),
+            }
+          : undefined,
+      );
+    }
+
 export {
   canvasDragSequence,
   CanvasInteractionLayer,
