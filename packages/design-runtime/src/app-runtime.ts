@@ -138,22 +138,15 @@ import { installEditorInspectorComputedData } from "./editor/inspector/computed-
 import { installEditorTypographyCensusStore } from "./editor/typography/census-store";
 import { installCanvasViewportMemory } from "./canvas/viewport-memory";
 import { installPlatformHealthAndAnalytics } from "./platform/health-and-analytics";
-import { installExportPdfJpeg } from "./export/pdf/jpeg";
 import { installExportPdfLossless } from "./export/pdf/lossless";
-import { installExportPdfWinansi } from "./export/pdf/winansi";
 import { installExportPdfUnicodeFont } from "./export/pdf/unicode-font";
 import { installExportPdfTextEncoding } from "./export/pdf/text-encoding";
 import { installExportPdfTextOperators } from "./export/pdf/text-operators";
-import { installExportPdfFigureOperators } from "./export/pdf/figure-operators";
-import { installExportPdfLinkAnnotations } from "./export/pdf/link-annotations";
 import { installExportPdfLanguage } from "./export/pdf/language";
 import { installExportPdfStructure } from "./export/pdf/structure";
-import { installExportPdfOutline } from "./export/pdf/outline";
 import { installExportPdfDocument } from "./export/pdf/document";
 import { installExportAnalytics } from "./export/analytics";
-import { installExportOutcomes } from "./export/outcomes";
 import { installExportPaperAndScale } from "./export/paper-and-scale";
-import { installExportWarnings } from "./export/warnings";
 import { installExportDelivery } from "./export/delivery";
 import { installExportCaptureViewport } from "./export/capture-viewport";
 import { installExportCaptureWarnings } from "./export/capture-warnings";
@@ -216,7 +209,6 @@ import { installEditorInspectorSelection } from "./editor/inspector/selection";
 import { installEditorTypographyCensus } from "./editor/typography/census";
 import { installEditorHtmlDcDocument } from "./editor/html/dc-document";
 import { installEditorHtmlDcProps } from "./editor/html/dc-props";
-import { installEditorUndoHistory } from "./editor/undo/history";
 import { installEditorSelectionCanvasSelection } from "./editor/selection/canvas-selection";
 import { installEditorSelectionActions } from "./editor/selection/actions";
 import { installEditorLayoutInsets } from "./editor/layout/insets";
@@ -226,7 +218,6 @@ import { installEditorLayoutFrozenStyle } from "./editor/layout/frozen-style";
 import { installEditorSelectionElementOrder } from "./editor/selection/element-order";
 import { installEditorClipboardTemplateFlattening } from "./editor/clipboard/template-flattening";
 import { installEditorInsertTargets } from "./editor/insert/targets";
-import { installEditorUndoElements } from "./editor/undo/elements";
 import { installEditorCssEditValidation } from "./editor/css/edit-validation";
 import { installEditorPickerHiddenTags } from "./editor/picker/hidden-tags";
 import { installEditorGeometrySnapping } from "./editor/geometry/snapping";
@@ -499,7 +490,6 @@ import { installCanvasInteractionLayer } from "./canvas/interaction-layer";
 import { installCanvasChrome } from "./canvas/chrome";
 import { installCanvasCreationPrompt } from "./canvas/creation-prompt";
 import { installCanvasCreationProgress } from "./canvas/creation-progress";
-import { installExportStoredZip } from "./export/stored-zip";
 import { installExportUploadedAssets } from "./export/uploaded-assets";
 import { installExportReadme } from "./export/readme";
 import { installExportStandaloneBootstrap } from "./export/standalone-bootstrap";
@@ -533,7 +523,6 @@ import { installCanvasKeyRouting } from "./canvas/key-routing";
 import { installFindNavigationOrigin } from "./find/navigation-origin";
 import { installCanvasKeyboardNavigation } from "./canvas/keyboard-navigation";
 import { installCanvasPhoneVisibility } from "./canvas/phone-visibility";
-import { installCanvasManifestHistory } from "./canvas/manifest-history";
 import { installAssetsImagePlacement } from "./assets/image-placement";
 import { installCanvasDesignCanvas } from "./canvas/design-canvas";
 import { installCanvasLoadState } from "./canvas/load-state";
@@ -736,22 +725,15 @@ export function createDesignRuntime(
     installEditorTypographyCensusStore(),
     installCanvasViewportMemory(),
     installPlatformHealthAndAnalytics(),
-    installExportPdfJpeg(),
     installExportPdfLossless(),
-    installExportPdfWinansi(),
     installExportPdfUnicodeFont(),
     installExportPdfTextEncoding(),
     installExportPdfTextOperators(),
-    installExportPdfFigureOperators(),
-    installExportPdfLinkAnnotations(),
     installExportPdfLanguage(),
     installExportPdfStructure(),
-    installExportPdfOutline(),
     installExportPdfDocument(),
     installExportAnalytics(),
-    installExportOutcomes(),
     installExportPaperAndScale(),
-    installExportWarnings(),
     installExportDelivery(),
     installExportCaptureViewport(),
     installExportCaptureWarnings(),
@@ -814,7 +796,6 @@ export function createDesignRuntime(
     installEditorTypographyCensus(),
     installEditorHtmlDcDocument(),
     installEditorHtmlDcProps(),
-    installEditorUndoHistory(),
     installEditorSelectionCanvasSelection(),
     installEditorSelectionActions(),
     installEditorLayoutInsets(),
@@ -824,7 +805,6 @@ export function createDesignRuntime(
     installEditorSelectionElementOrder(),
     installEditorClipboardTemplateFlattening(),
     installEditorInsertTargets(),
-    installEditorUndoElements(),
     installEditorCssEditValidation(),
     installEditorPickerHiddenTags(),
     installEditorGeometrySnapping(),
@@ -1097,7 +1077,6 @@ export function createDesignRuntime(
     installCanvasChrome(),
     installCanvasCreationPrompt(),
     installCanvasCreationProgress(),
-    installExportStoredZip(),
     installExportUploadedAssets(),
     installExportReadme(),
     installExportStandaloneBootstrap(),
@@ -1131,7 +1110,6 @@ export function createDesignRuntime(
     installFindNavigationOrigin(),
     installCanvasKeyboardNavigation(),
     installCanvasPhoneVisibility(),
-    installCanvasManifestHistory(),
     installAssetsImagePlacement(),
     installCanvasDesignCanvas(),
     installCanvasLoadState(),

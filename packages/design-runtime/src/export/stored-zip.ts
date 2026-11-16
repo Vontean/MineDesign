@@ -1,111 +1,84 @@
 import type { StoredZipEntry, OwnedBytes } from "../contracts/export";
-/** Restored application module; prepare first, initialize in original order. */
-import {
-  type Dynamic,
-} from "../runtime-types";
 
-var zipCrc32Table: Uint32Array;
-function zipCrc32(bytes: Uint8Array): number {
-  let count = 4294967295;
-  for (let index = 0; index < bytes.length; index++)
-    count = zipCrc32Table[(count ^ bytes[index]!) & 255]! ^ (count >>> 8);
-  return (count ^ 4294967295) >>> 0;
-}
-function createStoredZip(entries: readonly StoredZipEntry[]): Blob {
-  let encoder = new TextEncoder(),
-    localFileParts: OwnedBytes[] = [],
-    centralDirectoryParts: OwnedBytes[] = [],
-    archiveOffset = 0,
-    timestamp = new Date(),
-    dosTime =
-      (timestamp.getHours() << 11) |
-      (timestamp.getMinutes() << 5) |
-      (timestamp.getSeconds() >> 1),
-    dosDate =
-      ((timestamp.getFullYear() - 1980) << 9) |
-      ((timestamp.getMonth() + 1) << 5) |
-      timestamp.getDate();
-  for (let value3 of entries) {
-    let value4 = encoder.encode(value3.name),
-      value5 =
-        typeof value3.data == "string"
-          ? encoder.encode(value3.data)
-          : value3.data,
-      value6 = zipCrc32(value5),
-      value7 = new DataView(new ArrayBuffer(30));
-    value7.setUint32(0, 67324752, true);
-    value7.setUint16(4, 20, true);
-    value7.setUint16(6, 2048, true);
-    value7.setUint16(8, 0, true);
-    value7.setUint16(10, dosTime, true);
-    value7.setUint16(12, dosDate, true);
-    value7.setUint32(14, value6, true);
-    value7.setUint32(18, value5.length, true);
-    value7.setUint32(22, value5.length, true);
-    value7.setUint16(26, value4.length, true);
-    value7.setUint16(28, 0, true);
-    localFileParts.push(new Uint8Array(value7.buffer), value4, value5);
-    let value8 = new DataView(new ArrayBuffer(46));
-    value8.setUint32(0, 33639248, true);
-    value8.setUint16(4, 20, true);
-    value8.setUint16(6, 20, true);
-    value8.setUint16(8, 2048, true);
-    value8.setUint16(10, 0, true);
-    value8.setUint16(12, dosTime, true);
-    value8.setUint16(14, dosDate, true);
-    value8.setUint32(16, value6, true);
-    value8.setUint32(20, value5.length, true);
-    value8.setUint32(24, value5.length, true);
-    value8.setUint16(28, value4.length, true);
-    value8.setUint16(30, 0, true);
-    value8.setUint16(32, 0, true);
-    value8.setUint16(34, 0, true);
-    value8.setUint16(36, 0, true);
-    value8.setUint32(38, 0, true);
-    value8.setUint32(42, archiveOffset, true);
-    centralDirectoryParts.push(new Uint8Array(value8.buffer), value4);
-    archiveOffset += 30 + value4.length + value5.length;
+/** CRC-32（多项式 0xEDB88320）的查表。 */
+export const zipCrc32Table: Uint32Array = (() => {
+  const table = new Uint32Array(256);
+  for (let index = 0; index < 256; index++) {
+    let value = index;
+    for (let bit = 0; bit < 8; bit++) value = value & 1 ? 3988292384 ^ (value >>> 1) : value >>> 1;
+    table[index] = value >>> 0;
   }
-  let value = centralDirectoryParts.reduce(
-      (input, items) => input + items.length,
-      0,
-    ),
-    value2 = new DataView(new ArrayBuffer(22));
-  value2.setUint32(0, 101010256, true);
-  value2.setUint16(4, 0, true);
-  value2.setUint16(6, 0, true);
-  value2.setUint16(8, entries.length, true);
-  value2.setUint16(10, entries.length, true);
-  value2.setUint32(12, value, true);
-  value2.setUint32(16, archiveOffset, true);
-  value2.setUint16(20, 0, true);
-  return new Blob(
-    [
-      ...localFileParts,
-      ...centralDirectoryParts,
-      new Uint8Array(value2.buffer),
-    ],
-    {
-      type: "application/zip",
-    },
-  );
+  return table;
+})();
+
+export function zipCrc32(bytes: Uint8Array): number {
+  let crc = 4294967295;
+  for (let index = 0; index < bytes.length; index++)
+    crc = zipCrc32Table[(crc ^ bytes[index]!) & 255]! ^ (crc >>> 8);
+  return (crc ^ 4294967295) >>> 0;
 }
-export {
-  createStoredZip,
-  zipCrc32,
-  zipCrc32Table,
-};
-export function installExportStoredZip(): () => void {
-  return () => {
-    zipCrc32Table = ((): Dynamic => {
-      let value: Dynamic = new Uint32Array(256);
-      for (let index: Dynamic = 0; index < 256; index++) {
-        let value2: Dynamic = index;
-        for (let index2: Dynamic = 0; index2 < 8; index2++)
-          value2 = value2 & 1 ? 3988292384 ^ (value2 >>> 1) : value2 >>> 1;
-        value[index] = value2 >>> 0;
-      }
-      return value;
-    })();
-  };
+
+/** 生成不压缩（stored）的 zip；所有条目共用调用时刻作为修改时间，文件名按 UTF-8 编码。 */
+export function createStoredZip(entries: readonly StoredZipEntry[]): Blob {
+  const encoder = new TextEncoder();
+  const localFileParts: OwnedBytes[] = [];
+  const centralDirectoryParts: OwnedBytes[] = [];
+  let archiveOffset = 0;
+  const now = new Date();
+  const dosTime = (now.getHours() << 11) | (now.getMinutes() << 5) | (now.getSeconds() >> 1);
+  const dosDate = ((now.getFullYear() - 1980) << 9) | ((now.getMonth() + 1) << 5) | now.getDate();
+  for (const entry of entries) {
+    const name = encoder.encode(entry.name);
+    const data = typeof entry.data == "string" ? encoder.encode(entry.data) : entry.data;
+    const crc = zipCrc32(data);
+    // 本地文件头，30 字节
+    const local = new DataView(new ArrayBuffer(30));
+    local.setUint32(0, 67324752, true);
+    local.setUint16(4, 20, true);
+    local.setUint16(6, 2048, true);
+    local.setUint16(8, 0, true);
+    local.setUint16(10, dosTime, true);
+    local.setUint16(12, dosDate, true);
+    local.setUint32(14, crc, true);
+    local.setUint32(18, data.length, true);
+    local.setUint32(22, data.length, true);
+    local.setUint16(26, name.length, true);
+    local.setUint16(28, 0, true);
+    localFileParts.push(new Uint8Array(local.buffer), name, data);
+    // 中央目录项，46 字节
+    const central = new DataView(new ArrayBuffer(46));
+    central.setUint32(0, 33639248, true);
+    central.setUint16(4, 20, true);
+    central.setUint16(6, 20, true);
+    central.setUint16(8, 2048, true);
+    central.setUint16(10, 0, true);
+    central.setUint16(12, dosTime, true);
+    central.setUint16(14, dosDate, true);
+    central.setUint32(16, crc, true);
+    central.setUint32(20, data.length, true);
+    central.setUint32(24, data.length, true);
+    central.setUint16(28, name.length, true);
+    central.setUint16(30, 0, true);
+    central.setUint16(32, 0, true);
+    central.setUint16(34, 0, true);
+    central.setUint16(36, 0, true);
+    central.setUint32(38, 0, true);
+    central.setUint32(42, archiveOffset, true);
+    centralDirectoryParts.push(new Uint8Array(central.buffer), name);
+    archiveOffset += 30 + name.length + data.length;
+  }
+  const centralSize = centralDirectoryParts.reduce((total, part) => total + part.length, 0);
+  // 目录结束记录，22 字节
+  const end = new DataView(new ArrayBuffer(22));
+  end.setUint32(0, 101010256, true);
+  end.setUint16(4, 0, true);
+  end.setUint16(6, 0, true);
+  end.setUint16(8, entries.length, true);
+  end.setUint16(10, entries.length, true);
+  end.setUint32(12, centralSize, true);
+  end.setUint32(16, archiveOffset, true);
+  end.setUint16(20, 0, true);
+  return new Blob([...localFileParts, ...centralDirectoryParts, new Uint8Array(end.buffer)], {
+    type: "application/zip",
+  });
 }

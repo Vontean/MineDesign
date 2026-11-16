@@ -10,7 +10,7 @@ import { exportDeliveryEventName, triggerBrowserDownload } from "./delivery";
 import { downloadsWithheld, saveThroughHost } from "./downloads";
 import { exportFileName } from "./file-names";
 import { classifyExportAbort, classifyExportFailure, classifyImageSaveOutcome } from "./outcomes";
-import { exportImageMimeTypes, ExportPaperAndScaleConstant } from "./paper-and-scale";
+import { exportImageMimeTypes, artboardThumbnailWidth } from "./paper-and-scale";
 import { normalizeExportWarnings, selectionExportFileName } from "./warnings";
 import { designAnalyticsEvents, healthReporter, reportExportOutcome } from "../platform/health-and-analytics";
 
@@ -266,7 +266,7 @@ async function captureArtboardThumbnail(input?: Dynamic): Promise<Dynamic> {
     let value: Dynamic = (0, buildCaptureScript)(
         "image/png",
         1,
-        ExportPaperAndScaleConstant,
+        artboardThumbnailWidth,
         0,
         false,
         false,

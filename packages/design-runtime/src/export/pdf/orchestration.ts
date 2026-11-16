@@ -8,7 +8,7 @@ import { exportDeliveryEventName } from "../delivery";
 import { DownloadsArenTAvailableToYouForMessage, downloadsWithheld, saveThroughHost } from "../downloads";
 import { exportFileName, sanitizeExportFileName } from "../file-names";
 import { classifyExportFailure, classifyExportSaveOutcome } from "../outcomes";
-import { ExportPaperAndScaleLimit_2, getArtboardPaperSize, isFillPagedExport, isFlowExport, paperHeightForWidth, paperSizes } from "../paper-and-scale";
+import { minEmptyExportTail, getArtboardPaperSize, isFillPagedExport, isFlowExport, paperHeightForWidth, paperSizes } from "../paper-and-scale";
 import { captureArtboardPdfPages, getPdfRasterScale, PdfCaptureLimit_2 } from "./capture";
 import { buildPdfDocument } from "./document";
 import { decodeJpegDataUrl, pixelsToPoints, readJpegDimensions } from "./jpeg";
@@ -351,7 +351,7 @@ async function collectPdfExportPages(
       index += Date.now() - value19;
       value.signal?.throwIfAborted();
       value20 !== null &&
-        value20 >= ExportPaperAndScaleLimit_2 &&
+        value20 >= minEmptyExportTail &&
         (items7.push(value9),
         items8.push(value8.file),
         (index3 = Math.max(index3, value20)));

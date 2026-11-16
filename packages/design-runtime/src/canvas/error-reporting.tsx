@@ -4,7 +4,7 @@ import {
 } from "../runtime-types";
 import { CanvasWorkingStateConstant } from "./working-state";
 import { load_react } from "../dependencies";
-import { ExportOutcomesOpenAbortedValues } from "../export/outcomes";
+import { openAbortedReport } from "../export/outcomes";
 import { toModuleNamespace } from "../module-helpers";
 import { claudeActivityStore } from "../platform/claude-activity";
 import { embedMemoryPrefix } from "../platform/file-content";
@@ -32,7 +32,7 @@ function createArtboardErrorReporter(options?: Dynamic): Dynamic {
             (): Dynamic => {
               flag3 = true;
               value3?.();
-              options.report(...ExportOutcomesOpenAbortedValues);
+              options.report(...openAbortedReport);
             },
           ))
         : (value2?.(), (value2 = undefined));

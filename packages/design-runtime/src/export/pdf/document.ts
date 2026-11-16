@@ -5,11 +5,11 @@ import {
 import { buildPdfFigureOperators, mapPdfFigureLinks } from "./figure-operators";
 import { readJpegDimensions } from "./jpeg";
 import { isLanguageTag } from "./language";
-import { buildPdfLinkAnnotations, PdfLinkAnnotationsConstant_2 } from "./link-annotations";
+import { buildPdfLinkAnnotations, maxLinksPerDocument } from "./link-annotations";
 import { validateLosslessPicture } from "./lossless";
-import { buildPdfOutline, PdfOutlineConstant } from "./outline";
+import { buildPdfOutline, maxOutlineTitleLength } from "./outline";
 import { buildPdfStructureTree, collectPdfStructureRoles } from "./structure";
-import { createPdfUnicodeEncoder, PdfTextEncodingReduce, PdfTextEncodingWinansiUnicodeConfig } from "./text-encoding";
+import { createPdfUnicodeEncoder, encodeWinAnsiOperand, spaceOperands } from "./text-encoding";
 import { buildPdfTextOperators, buildPdfTextRuns, PdfTextOperatorsFreezeValue, PdfTextOperatorsFreezeValue_3, PdfTextOperatorsLimit_2, PdfTextOperatorsSubscribers, PdfTextOperatorsSubscribers_2, textRunsNeedSpace } from "./text-operators";
 import { buildPdfFontObjects, pdfHexCodeUnit, PdfUnicodeFontConstant } from "./unicode-font";
 
@@ -308,7 +308,7 @@ function buildPdfDocument(items?: Dynamic, options?: Dynamic): Dynamic {
     value4: Dynamic =
       value3 === "unicode"
         ? (0, createPdfUnicodeEncoder)(state)
-        : PdfTextEncodingReduce,
+        : encodeWinAnsiOperand,
     value5: Dynamic = 4 + 3 * items.length,
     value6: Dynamic = value2 ? (value3 === "unicode" ? 6 : 1) : 0,
     value7: Dynamic = options?.tagged === true,
@@ -369,7 +369,7 @@ function buildPdfDocument(items?: Dynamic, options?: Dynamic): Dynamic {
         for (let [value29, value30] of entries as Dynamic) {
           let value31: Dynamic = normalizePdfTitle(
             value30.text,
-            PdfOutlineConstant,
+            maxOutlineTitleLength,
           );
           value31 !== "" && entries2.set(value29, value31);
         }
@@ -377,14 +377,14 @@ function buildPdfDocument(items?: Dynamic, options?: Dynamic): Dynamic {
           let alt2: Dynamic = items[options2].blocks[value30].alt,
             value31: Dynamic =
               typeof alt2 == "string"
-                ? normalizePdfTitle(alt2, PdfOutlineConstant)
+                ? normalizePdfTitle(alt2, maxOutlineTitleLength)
                 : "";
           value31 !== "" && entries2.set(value29, value31);
         }
         return (input2?: Dynamic): Dynamic => entries2.get(input2);
       },
     ),
-    value12: Dynamic = PdfLinkAnnotationsConstant_2,
+    value12: Dynamic = maxLinksPerDocument,
     flag: Dynamic = false,
     index: Dynamic = 0,
     value13: Dynamic = items.map(
@@ -406,7 +406,7 @@ function buildPdfDocument(items?: Dynamic, options?: Dynamic): Dynamic {
   flag &&
     console.warn(
       "[pdf] the file holds " +
-        String(PdfLinkAnnotationsConstant_2) +
+        String(maxLinksPerDocument) +
         " links; any further ones are not clickable",
     );
   let value14: Dynamic = value5 + value6,
@@ -426,7 +426,7 @@ function buildPdfDocument(items?: Dynamic, options?: Dynamic): Dynamic {
       (input?: Dynamic, options2?: Dynamic): Dynamic =>
         (0, buildPdfTextOperators)(
           input,
-          PdfTextEncodingWinansiUnicodeConfig[value3],
+          spaceOperands[value3],
           value7,
           value17[options2],
           items[options2].blocks,

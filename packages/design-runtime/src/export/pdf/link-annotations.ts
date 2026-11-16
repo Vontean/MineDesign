@@ -1,150 +1,124 @@
-/** Restored application module; prepare first, initialize in original order. */
-import {
-  type Dynamic,
-} from "../../runtime-types";
 import { formatPdfNumber, pdfStringOperand } from "./document";
 
-var PdfLinkAnnotationsUffefPattern: Dynamic;
-var PdfLinkAnnotationsLimit: Dynamic;
-var PdfLinkAnnotationsConstant: Dynamic;
-var PdfLinkAnnotationsConstant_2: Dynamic;
-var PdfLinkAnnotationsLimit_2: Dynamic;
-function needsInterwordSpace(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-): Dynamic {
-  return input === "" ||
-    options === "" ||
-    /\s$/u.test(input) ||
-    /^\s/u.test(options) ||
-    (!context && /[\-\u00ad\u2010-\u2014]$/u.test(input))
+/** 不使用词间空格的文字（泰文、日文假名、汉字、全角字符）。 */
+export const noWordSpaceScriptPattern = /[\u0e00-\u0e7f\u3000-\u30ff\u3400-\u9fff\uff00-\uffef]/u;
+/** 链接地址的最大长度。 */
+export const maxPdfLinkLength = 2048;
+/** 单页最多输出的链接数。 */
+export const maxLinksPerPage = 4e3;
+/** 整个文件最多输出的可点击链接数。 */
+export const maxLinksPerDocument = 1e4;
+/** 链接区域的最小边长（pt）；更小的不输出。 */
+export const minLinkSizePt = 0.5;
+
+/** 页面上一个待输出的链接。 */
+export interface PdfLinkSpec {
+  uri?: unknown;
+  xPt?: unknown;
+  yPt?: unknown;
+  widthPt?: unknown;
+  heightPt?: unknown;
+  /** 链接所在的结构块序号 */
+  anchor?: unknown;
+}
+
+export interface PdfLinkAnnotations {
+  /** 每个链接的注释字典文本 */
+  dicts: string[];
+  /** 与 dicts 一一对应的结构块序号 */
+  anchors: (number | undefined)[];
+}
+
+/** 两段相邻文字之间是否需要补词间空格。explicit 为 false（按位置推断）时，前一段以连字符结尾则不补。 */
+export function needsInterwordSpace(before: string, after: string, explicit: boolean): boolean {
+  return before === "" ||
+    after === "" ||
+    /\s$/u.test(before) ||
+    /^\s/u.test(after) ||
+    (!explicit && /[\-\u00ad\u2010-\u2014]$/u.test(before))
     ? false
-    : !(
-        PdfLinkAnnotationsUffefPattern.test(input.slice(-1)) ||
-        PdfLinkAnnotationsUffefPattern.test(options[0])
-      );
+    : !(noWordSpaceScriptPattern.test(before.slice(-1)) || noWordSpaceScriptPattern.test(after[0]!));
 }
-function normalizePdfLink(items?: Dynamic): Dynamic {
-  if (typeof items != "string" || items.length > PdfLinkAnnotationsLimit)
-    return;
-  let value: Dynamic = items.trim();
-  if (!/^(?:https?:\/\/|mailto:)/i.test(value)) return;
-  let value2: Dynamic;
+
+/** 只接受 http、https、mailto，不带用户名密码、可打印 ASCII 且不超长；其余返回 undefined。 */
+export function normalizePdfLink(uri: unknown): string | undefined {
+  if (typeof uri != "string" || uri.length > maxPdfLinkLength) return undefined;
+  const trimmed = uri.trim();
+  if (!/^(?:https?:\/\/|mailto:)/i.test(trimmed)) return undefined;
+  let href: string;
   try {
-    let value3: Dynamic = new URL(value);
+    const url = new URL(trimmed);
     if (
-      (value3.protocol !== "http:" &&
-        value3.protocol !== "https:" &&
-        value3.protocol !== "mailto:") ||
-      value3.username !== "" ||
-      value3.password !== "" ||
-      (value3.protocol === "mailto:" && value3.pathname === "")
+      (url.protocol !== "http:" && url.protocol !== "https:" && url.protocol !== "mailto:") ||
+      url.username !== "" ||
+      url.password !== "" ||
+      (url.protocol === "mailto:" && url.pathname === "")
     )
-      return;
-    value2 = value3.href;
+      return undefined;
+    href = url.href;
   } catch {
-    return;
+    return undefined;
   }
-  if (
-    !(
-      value2.length > PdfLinkAnnotationsLimit ||
-      !/^[\x21-\x7e]+$/.test(value2)
-    )
-  )
-    return value2;
+  if (!(href.length > maxPdfLinkLength || !/^[\x21-\x7e]+$/.test(href))) return href;
 }
-function buildPdfLinkAnnotations(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
-  extra?: Dynamic,
-  detail?: Dynamic,
-  argument?: Dynamic,
-): Dynamic {
-  let items: Dynamic = [],
-    items2: Dynamic = [];
-  if (!Array.isArray(input))
-    return {
-      dicts: items,
-      anchors: items2,
-    };
-  for (let value2 of input as Dynamic) {
-    items.length >= value && extra();
-    if (items.length >= Math.min(PdfLinkAnnotationsConstant, value)) break;
-    if (typeof value2 != "object" || value2 === null) continue;
-    let value3: Dynamic = normalizePdfLink(value2.uri);
+
+/**
+ * 生成一页的链接注释。remaining 是整个文件还能输出的链接数，用尽时调用 onLimitReached；
+ * structParentStart 不为 undefined 时写入结构父项与 /Contents，说明文字由 contentFor(锚点) 提供。
+ */
+export function buildPdfLinkAnnotations(
+  links: unknown,
+  pageWidthPt: number,
+  pageHeightPt: number,
+  remaining: number,
+  onLimitReached: () => void,
+  structParentStart?: number,
+  contentFor?: (anchor: number) => string | undefined,
+): PdfLinkAnnotations {
+  const dicts: string[] = [];
+  const anchors: (number | undefined)[] = [];
+  if (!Array.isArray(links)) return { dicts, anchors };
+  for (const link of links as (PdfLinkSpec | null | undefined)[]) {
+    if (dicts.length >= remaining) onLimitReached();
+    if (dicts.length >= Math.min(maxLinksPerPage, remaining)) break;
+    if (typeof link != "object" || link === null) continue;
+    const uri = normalizePdfLink(link.uri);
     if (
-      value3 === undefined ||
-      !Number.isFinite(value2.xPt) ||
-      !Number.isFinite(value2.yPt) ||
-      !Number.isFinite(value2.widthPt) ||
-      !Number.isFinite(value2.heightPt)
+      uri === undefined ||
+      !Number.isFinite(link.xPt) ||
+      !Number.isFinite(link.yPt) ||
+      !Number.isFinite(link.widthPt) ||
+      !Number.isFinite(link.heightPt)
     )
       continue;
-    let value4: Dynamic = Math.max(0, value2.xPt),
-      value5: Dynamic = Math.max(0, value2.yPt),
-      value6: Dynamic = Math.min(options, value2.xPt + value2.widthPt),
-      value7: Dynamic = Math.min(context, value2.yPt + value2.heightPt);
-    if (
-      value6 - value4 < PdfLinkAnnotationsLimit_2 ||
-      value7 - value5 < PdfLinkAnnotationsLimit_2
-    )
-      continue;
-    let value8: Dynamic = value3.replace(/[\\()]/g, "\\$&"),
-      value9: Dynamic =
-        typeof value2.anchor == "number" &&
-        Number.isInteger(value2.anchor) &&
-        value2.anchor >= 0
-          ? value2.anchor
-          : undefined,
-      value10: Dynamic =
-        value9 !== undefined && argument !== undefined
-          ? argument(value9)
-          : undefined;
-    items2.push(value9);
-    items.push(
+    const xPt = link.xPt as number;
+    const yPt = link.yPt as number;
+    const x0 = Math.max(0, xPt);
+    const y0 = Math.max(0, yPt);
+    const x1 = Math.min(pageWidthPt, xPt + (link.widthPt as number));
+    const y1 = Math.min(pageHeightPt, yPt + (link.heightPt as number));
+    if (x1 - x0 < minLinkSizePt || y1 - y0 < minLinkSizePt) continue;
+    const escapedUri = uri.replace(/[\\()]/g, "\\$&");
+    const anchor =
+      typeof link.anchor == "number" && Number.isInteger(link.anchor) && link.anchor >= 0
+        ? link.anchor
+        : undefined;
+    const content = anchor !== undefined && contentFor !== undefined ? contentFor(anchor) : undefined;
+    anchors.push(anchor);
+    dicts.push(
       "<< /Type /Annot /Subtype /Link /Rect [" +
-        [value4, value5, value6, value7]
-          .map(formatPdfNumber)
-          .join(" ") +
+        [x0, y0, x1, y1].map(formatPdfNumber).join(" ") +
         "] /Border [0 0 0] /H /N /F 4 /A << /Type /Action /S /URI /URI (" +
-        value8 +
+        escapedUri +
         ") >>" +
-        (detail === undefined
+        (structParentStart === undefined
           ? ""
           : " /StructParent " +
-            String(detail + items.length) +
+            String(structParentStart + dicts.length) +
             " /Contents " +
-            (value10 !== undefined
-              ? (0, pdfStringOperand)(value10)
-              : "(" + value8 + ")")) +
+            (content !== undefined ? pdfStringOperand(content) : "(" + escapedUri + ")")) +
         " >>",
     );
   }
-  return {
-    dicts: items,
-    anchors: items2,
-  };
-}
-export {
-  buildPdfLinkAnnotations,
-  needsInterwordSpace,
-  normalizePdfLink,
-  PdfLinkAnnotationsConstant,
-  PdfLinkAnnotationsConstant_2,
-  PdfLinkAnnotationsLimit,
-  PdfLinkAnnotationsLimit_2,
-  PdfLinkAnnotationsUffefPattern,
-};
-export function installExportPdfLinkAnnotations(): () => void {
-  return () => {
-    PdfLinkAnnotationsUffefPattern =
-      /[\u0e00-\u0e7f\u3000-\u30ff\u3400-\u9fff\uff00-\uffef]/u;
-    PdfLinkAnnotationsLimit = 2048;
-    PdfLinkAnnotationsConstant = 4e3;
-    PdfLinkAnnotationsConstant_2 = 1e4;
-    PdfLinkAnnotationsLimit_2 = 0.5;
-  };
+  return { dicts, anchors };
 }

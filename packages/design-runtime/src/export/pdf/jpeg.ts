@@ -1,94 +1,75 @@
-/** Restored application module; prepare first, initialize in original order. */
-import {
-  type Dynamic,
-} from "../../runtime-types";
-
-function pixelsToPoints(input?: Dynamic): Dynamic {
-  return (input * 72) / 96;
+export interface JpegInfo {
+  width: number;
+  height: number;
+  /** 颜色分量数：1 为灰度，3 为 RGB */
+  components: number;
 }
-function decodeJpegDataUrl(input?: Dynamic): Dynamic {
-  let text: Dynamic = "data:image/jpeg;base64,";
-  if (input.startsWith(text))
+
+export function pixelsToPoints(pixels: number): number {
+  return (pixels * 72) / 96;
+}
+
+/** 解码 JPEG 的 data URL；不是 JPEG 的 data URL 或 base64 无效时返回 undefined。 */
+export function decodeJpegDataUrl(url: string): Uint8Array | undefined {
+  const prefix = "data:image/jpeg;base64,";
+  if (url.startsWith(prefix))
     try {
-      return decodeBase64Bytes(input.slice(text.length));
+      return decodeBase64Bytes(url.slice(prefix.length));
     } catch {
-      return;
+      return undefined;
     }
 }
-function decodeBase64Bytes(base64?: Dynamic): Dynamic {
-  let binary: Dynamic = atob(base64),
-    bytes: Dynamic = new Uint8Array(binary.length);
-  for (let index: Dynamic = 0; index < binary.length; index++)
-    bytes[index] = binary.charCodeAt(index);
+
+export function decodeBase64Bytes(base64: string): Uint8Array {
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let index = 0; index < binary.length; index++) bytes[index] = binary.charCodeAt(index);
   return bytes;
 }
-function readJpegDimensions(items?: Dynamic): Dynamic {
-  if (items.length < 4 || items[0] !== 255 || items[1] !== 216)
+
+/** 从 JPEG 字节读取尺寸与颜色分量数；只接受 8 位的灰度与 RGB，其余抛出带原因的错误。 */
+export function readJpegDimensions(bytes: ArrayLike<number>): JpegInfo {
+  if (bytes.length < 4 || bytes[0] !== 255 || bytes[1] !== 216)
     throw new Error("not a JPEG image (missing SOI marker)");
-  let count: Dynamic = 2;
+  let offset = 2;
   for (;;) {
-    if (count + 1 >= items.length)
-      throw new Error("not a valid JPEG image (no frame header found)");
-    if (items[count] !== 255)
-      throw new Error("not a valid JPEG image (corrupt marker stream)");
-    let value: Dynamic = count + 1;
-    for (; value < items.length && items[value] === 255; ) value++;
-    if (value >= items.length)
-      throw new Error("not a valid JPEG image (truncated)");
-    let value2: Dynamic = items[value];
-    if (value2 === 1 || (value2 >= 208 && value2 <= 215)) {
-      count = value + 1;
+    if (offset + 1 >= bytes.length) throw new Error("not a valid JPEG image (no frame header found)");
+    if (bytes[offset] !== 255) throw new Error("not a valid JPEG image (corrupt marker stream)");
+    // 标记前可以有多个 0xFF 填充
+    let markerPos = offset + 1;
+    while (markerPos < bytes.length && bytes[markerPos] === 255) markerPos++;
+    if (markerPos >= bytes.length) throw new Error("not a valid JPEG image (truncated)");
+    const marker = bytes[markerPos]!;
+    // TEM 与 RSTn 没有长度字段
+    if (marker === 1 || (marker >= 208 && marker <= 215)) {
+      offset = markerPos + 1;
       continue;
     }
-    if (value2 === 217 || value2 === 218)
-      throw new Error("not a valid JPEG image (no frame header found)");
-    if (count + 3 >= items.length || value + 2 >= items.length)
+    // 遇到 EOI 或 SOS 仍没有帧头
+    if (marker === 217 || marker === 218) throw new Error("not a valid JPEG image (no frame header found)");
+    if (offset + 3 >= bytes.length || markerPos + 2 >= bytes.length)
       throw new Error("not a valid JPEG image (truncated)");
-    let value3: Dynamic = (items[value + 1] << 8) | items[value + 2];
-    if (value3 < 2 || value + 1 + value3 > items.length)
+    const segmentLength = (bytes[markerPos + 1]! << 8) | bytes[markerPos + 2]!;
+    if (segmentLength < 2 || markerPos + 1 + segmentLength > bytes.length)
       throw new Error("not a valid JPEG image (truncated segment)");
-    if (value2 === 192 || value2 === 193 || value2 === 194) {
-      if (value3 < 8)
-        throw new Error("not a valid JPEG image (bad frame header)");
-      let value4: Dynamic = items[value + 3],
-        value5: Dynamic = (items[value + 4] << 8) | items[value + 5],
-        value6: Dynamic = (items[value + 6] << 8) | items[value + 7],
-        value7: Dynamic = items[value + 8];
-      if (value4 !== 8)
-        throw new Error("unsupported JPEG (only 8-bit precision embeds)");
-      if (value6 === 0 || value5 === 0)
-        throw new Error("not a valid JPEG image (zero size)");
-      if (value7 !== 1 && value7 !== 3)
+    // SOF0、SOF1、SOF2：基线、扩展顺序、渐进
+    if (marker === 192 || marker === 193 || marker === 194) {
+      if (segmentLength < 8) throw new Error("not a valid JPEG image (bad frame header)");
+      const precision = bytes[markerPos + 3];
+      const height = (bytes[markerPos + 4]! << 8) | bytes[markerPos + 5]!;
+      const width = (bytes[markerPos + 6]! << 8) | bytes[markerPos + 7]!;
+      const components = bytes[markerPos + 8];
+      if (precision !== 8) throw new Error("unsupported JPEG (only 8-bit precision embeds)");
+      if (width === 0 || height === 0) throw new Error("not a valid JPEG image (zero size)");
+      if (components !== 1 && components !== 3)
         throw new Error(
-          "unsupported JPEG color layout (" +
-            String(value7) +
-            " components \u2014 only grayscale and RGB embed)",
+          "unsupported JPEG color layout (" + String(components) + " components — only grayscale and RGB embed)",
         );
-      return {
-        width: value6,
-        height: value5,
-        components: value7,
-      };
+      return { width, height, components };
     }
-    if (
-      value2 >= 195 &&
-      value2 <= 207 &&
-      value2 !== 196 &&
-      value2 !== 200 &&
-      value2 !== 204
-    )
-      throw new Error(
-        "unsupported JPEG variant (not baseline or progressive)",
-      );
-    count = value + 1 + value3;
+    // 其余 SOFn（不含 DHT=196、JPG=200、DAC=204）是无法嵌入的变体
+    if (marker >= 195 && marker <= 207 && marker !== 196 && marker !== 200 && marker !== 204)
+      throw new Error("unsupported JPEG variant (not baseline or progressive)");
+    offset = markerPos + 1 + segmentLength;
   }
-}
-export {
-  decodeBase64Bytes,
-  decodeJpegDataUrl,
-  pixelsToPoints,
-  readJpegDimensions,
-};
-export function installExportPdfJpeg(): () => void {
-  return () => {};
 }

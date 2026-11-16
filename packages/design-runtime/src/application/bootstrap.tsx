@@ -11,7 +11,7 @@ import { getDesignSystems } from "../design-system/store";
 import { clearPendingFileOverlay, setHtmlReferenceStore, setPublishedFileReferences } from "../design-system/type-declarations";
 import { showEditorActionToast, showEditorToast } from "../editor/chrome/pending-toasts";
 import { currentEditingArtboard, currentEditingArtboardPath } from "../editor/session/artboard-state";
-import { ExportOutcomesRenderFailureInternalValues } from "../export/outcomes";
+import { renderFailureReport } from "../export/outcomes";
 import { toModuleNamespace } from "../module-helpers";
 import { getRealtimeDatabaseAdapter } from "../platform/database-adapter";
 import { initializeDatabaseRuntime } from "../platform/database-runtime";
@@ -322,7 +322,7 @@ function bootstrapArtifactApplication(options: Dynamic = {}): Dynamic {
     } catch (value16: Dynamic) {
       console.error("design: live store boot failed", value16);
       healthReporter.report(
-        ...ExportOutcomesRenderFailureInternalValues,
+        ...renderFailureReport,
       );
       return callback3("Live sync is unavailable here. Reload to retry.");
     }

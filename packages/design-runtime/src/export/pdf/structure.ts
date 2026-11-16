@@ -3,7 +3,7 @@ import {
   type Dynamic,
 } from "../../runtime-types";
 import { formatPdfNumber, pdfStringOperand, truncatePdfText } from "./document";
-import { clipPdfBlockBox, PdfFigureOperatorsConstant } from "./figure-operators";
+import { clipPdfBlockBox, maxFigureAltLength } from "./figure-operators";
 
 function collectPdfStructureRoles(
   input?: Dynamic,
@@ -217,7 +217,7 @@ function buildPdfStructureTree(
             typeof value11.alt == "string"
               ? (0, truncatePdfText)(
                   value11.alt,
-                  PdfFigureOperatorsConstant,
+                  maxFigureAltLength,
                 ).trim()
               : "",
           value14: Dynamic =

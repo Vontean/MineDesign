@@ -139,7 +139,7 @@ import { ExportCancelled, useExportFormats } from "../export/host-registry";
 import { ExportHtmlError, produceStandaloneHtmlExport, selectHtmlExportArtboards } from "../export/html-producer";
 import { captureArtboardImage, exportArtboardImage } from "../export/image";
 import { classifyExportAbort, classifyExportFailure, classifyExportSaveOutcome, classifyHtmlDelivery, classifyImageDelivery, classifyPdfDelivery } from "../export/outcomes";
-import { exportHeightTolerance, ExportPaperAndScaleLimit_2, getArtboardPaperSize, imageCaptureScaleOptions, isFillPagedExport, isFlowExport, needsPagedExport, resolveMeasuredExportHeight } from "../export/paper-and-scale";
+import { exportHeightTolerance, minEmptyExportTail, getArtboardPaperSize, imageCaptureScaleOptions, isFillPagedExport, isFlowExport, needsPagedExport, resolveMeasuredExportHeight } from "../export/paper-and-scale";
 import { collectPdfExportPages, exportPdfWithFeedback, pdfExportMessage, pdfExportWarnings } from "../export/pdf/orchestration";
 import { artboardNeedsScaledDownExport, ExportArtboardPickTarget, exportPickerChromeHeight, ExportPickerToolbar, initialExportPickedFiles, initialExportScale, interactiveExportDeadline, useExportPicker } from "../export/picker";
 import { designExportReadme, missingExportAssetSuffix } from "../export/readme";
@@ -16636,7 +16636,7 @@ function DesignCanvas({
                 }).catch((): Dynamic => null);
                 if (
                   value660 !== null &&
-                  value660 >= ExportPaperAndScaleLimit_2
+                  value660 >= minEmptyExportTail
                 ) {
                   let value661: Dynamic = value502(input),
                     value662: Dynamic = showToast(
@@ -18164,7 +18164,7 @@ function DesignCanvas({
                 ]
               : []),
             ...(value666 !== null &&
-            value666 >= ExportPaperAndScaleLimit_2
+            value666 >= minEmptyExportTail
               ? [
                   (0, emptyExportTailMessage)(
                     [

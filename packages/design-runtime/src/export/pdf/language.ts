@@ -2,7 +2,7 @@
 import {
   type Dynamic,
 } from "../../runtime-types";
-import { PdfTextEncodingPattern } from "./text-encoding";
+import { letterPattern } from "./text-encoding";
 
 var PdfLanguageItems: Dynamic;
 var PdfLanguageItems_2: Dynamic;
@@ -83,7 +83,7 @@ function inferPdfLanguage(
   for (let [value7, value8, value9] of PdfLanguageItems_3 as Dynamic) {
     let length2: Dynamic = (value6.match(value7) ?? []).filter(
       (input2?: Dynamic): Dynamic =>
-        PdfTextEncodingPattern.test(input2),
+        letterPattern.test(input2),
     ).length;
     if (length2 * 2 <= length) continue;
     if (

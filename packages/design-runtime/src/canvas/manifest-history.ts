@@ -1,845 +1,540 @@
-/** Restored application module; prepare first, initialize in original order. */
-import {
-  type Dynamic,
-} from "../runtime-types";
 import { uploadedVideoAnnotation } from "./working-state";
 import { structurallyEqual } from "../platform/document-values";
 import { annotationArrowHeads, annotationTextStyle, designPageId, isShapeAnnotation, maxDesignPages, moveAnnotation, normalizeDesignLaunch, PlatformFileContentBackgroundBackgroundColorOpacityValues, PlatformFileContentLimit_5, updateAnnotationArrowHeads, updateAnnotationColor, updateAnnotationCrop, updateAnnotationCss, updateAnnotationTextStyle, updateArtboardRadius, validCoverArtboard } from "../platform/file-content";
 
-var defaultCanvasPage: Dynamic;
-var omitDefaultCanvasPage: Dynamic;
-var changedObjectKeys: Dynamic;
-var pickObjectKeys: Dynamic;
-var canvasLaunchViewKey: Dynamic;
-function applyCanvasPageHistory(
-  manifest?: Dynamic,
-  step?: Dynamic,
-  direction?: Dynamic,
-): Dynamic {
-  let value: Dynamic = manifest.pages ?? [],
-    value2: Dynamic =
-      value.length > 0
-        ? value
-        : direction === "redo" && step.first !== undefined
-          ? [step.first]
-          : value;
+export type HistoryDirection = "undo" | "redo";
+
+export interface DesignPage {
+  id: string;
+  name: string;
+}
+
+export interface CanvasArtboard {
+  file: string;
+  [key: string]: unknown;
+}
+
+export interface CanvasAnnotation {
+  id: string;
+  kind?: string;
+  css?: Record<string, unknown>;
+  [key: string]: unknown;
+}
+
+/** 启动视图：整个画布（可带页面），或聚焦某块画板。 */
+export type CanvasLaunch = { view: "canvas"; page?: string } | { view: "focused"; file: string };
+
+/** 作品清单里与历史相关的部分。 */
+export interface CanvasManifest {
+  artboards: CanvasArtboard[];
+  annotations?: CanvasAnnotation[];
+  pages?: DesignPage[];
+  launch?: CanvasLaunch;
+  cover?: unknown;
+  migrated?: boolean;
+  [key: string]: unknown;
+}
+
+export interface Point {
+  x: number;
+  y: number;
+}
+export interface Box extends Point {
+  w: number;
+  h: number;
+}
+type Fields = Record<string, unknown>;
+
+/** 一条可撤销、可重做的清单级操作；from 是操作前，to 是操作后。 */
+export type CanvasHistoryStep =
+  | { kind: "move"; moves: { file: string; from: Point; to: Point }[]; anns?: { id: string; from: Point; to: Point }[] }
+  | { kind: "resize"; file: string; from: Box; to: Box }
+  | { kind: "transform"; boards: { file: string; from: Fields; to: Fields }[]; anns: { id: string; from: Fields; to: Fields }[] }
+  | { kind: "rename"; file: string; from?: string; to?: string }
+  | { kind: "print"; file: string; from?: string; to?: string }
+  | { kind: "paper"; file: string; from?: unknown; to?: unknown }
+  | { kind: "guides"; file: string; from?: unknown; to?: unknown }
+  | { kind: "cover"; from?: unknown; to?: unknown }
+  | { kind: "page-add"; page: DesignPage; first?: DesignPage }
+  | { kind: "page-rename"; id: string; from: string; to: string; first?: DesignPage }
+  | { kind: "ann-add" | "ann-delete"; spec: CanvasAnnotation; index: number }
+  | { kind: "ann-move"; id: string; from: Point; to: Point }
+  | { kind: "ann-resize"; id: string; from: unknown; to: unknown }
+  | { kind: "ann-text"; id: string; from: unknown; to: unknown }
+  | { kind: "ann-style"; id: string; from: Fields; to: Fields; caps?: { from?: Fields; to?: Fields } }
+  | { kind: "ann-box" | "ann-path"; id: string; from: Fields; to: Fields }
+  | { kind: "ann-color"; id: string; from: unknown; to: unknown; cssFrom?: Fields; cssTo?: Fields }
+  | { kind: "ann-heads"; id: string; from: Fields; to: Fields }
+  | { kind: "ann-css"; id: string; from: Fields; to: Fields; cropFrom?: unknown }
+  | { kind: "ann-src"; id: string; from: { crop?: unknown; [key: string]: unknown }; to: unknown }
+  | {
+      kind: "ann-crop";
+      id: string;
+      from: unknown;
+      to: unknown;
+      cssFrom?: Fields;
+      cssTo?: Fields;
+      geomFrom?: Fields;
+      geomTo?: Fields;
+    }
+  | { kind: "radius"; file: string; from: unknown; to: unknown }
+  | { kind: "order"; from: string[]; to: string[] };
+
+/** 默认的第一页。 */
+export const defaultCanvasPage: Readonly<DesignPage> = Object.freeze({
+  id: "page-1",
+  name: "Page 1",
+});
+
+/** 只剩未改名的默认页时不写入 pages。 */
+export const omitDefaultCanvasPage = (
+  pages: DesignPage[],
+  first: DesignPage | undefined,
+): DesignPage[] | undefined =>
+  first !== undefined && pages.length === 1 && pages[0].id === first.id && pages[0].name === first.name
+    ? undefined
+    : pages;
+
+/** 两个对象里取值不同的键。 */
+export const changedObjectKeys = (a?: Fields | null, b?: Fields | null): string[] =>
+  [...new Set([...Object.keys(a ?? {}), ...Object.keys(b ?? {})])].filter((key) => a?.[key] !== b?.[key]);
+
+/** 取出指定的键，缺失的键值为 undefined。 */
+export const pickObjectKeys = (source: Fields | undefined, keys: string[]): Fields =>
+  Object.fromEntries(keys.map((key) => [key, source?.[key]]));
+
+/** 启动视图的比较键。 */
+export const canvasLaunchViewKey = (launch?: CanvasLaunch): string =>
+  launch === undefined ? "" : launch.view === "focused" ? "f:" + launch.file : "c:" + (launch.page ?? "");
+
+/** 页面的新增与改名；无法应用时返回 null。 */
+export function applyCanvasPageHistory(
+  manifest: CanvasManifest,
+  step: Extract<CanvasHistoryStep, { kind: "page-add" | "page-rename" }>,
+  direction: HistoryDirection,
+): { pages: DesignPage[] | undefined } | null {
+  const pages = manifest.pages ?? [];
+  const pagesOrFirst =
+    pages.length > 0 ? pages : direction === "redo" && step.first !== undefined ? [step.first] : pages;
   if (step.kind === "page-add") {
-    let value6: Dynamic = value.some(
-      (input?: Dynamic): Dynamic => input.id === step.page.id,
-    );
+    const exists = pages.some((page) => page.id === step.page.id);
     if (direction === "redo")
-      return value6 || value2.length >= (0, maxDesignPages)()
+      return exists || pagesOrFirst.length >= maxDesignPages()
         ? null
         : {
             pages: [
-              ...(value2.length > 0 || step.page.id === defaultCanvasPage.id
-                ? value2
-                : [defaultCanvasPage]),
+              ...(pagesOrFirst.length > 0 || step.page.id === defaultCanvasPage.id ? pagesOrFirst : [defaultCanvasPage]),
               step.page,
             ],
           };
-    let callback: Dynamic = (input?: Dynamic): Dynamic =>
-      (0, designPageId)(input, value) === step.page.id;
-    return !value6 ||
-      manifest.artboards.some(callback) ||
-      (manifest.annotations ?? []).some(callback)
+    const onThisPage = (item: unknown) => designPageId(item, pages) === step.page.id;
+    return !exists || manifest.artboards.some(onThisPage) || (manifest.annotations ?? []).some(onThisPage)
       ? null
-      : {
-          pages: omitDefaultCanvasPage(
-            value.filter(
-              (input?: Dynamic): Dynamic => input.id !== step.page.id,
-            ),
-            step.first,
-          ),
-        };
+      : { pages: omitDefaultCanvasPage(pages.filter((page) => page.id !== step.page.id), step.first) };
   }
-  let value3: Dynamic = direction === "undo" ? step.from : step.to,
-    value4: Dynamic = value2.find(
-      (input?: Dynamic): Dynamic => input.id === step.id,
-    );
-  if (value4 === undefined || value4.name === value3) return null;
-  let value5: Dynamic = value2.map(
-    (input?: Dynamic): Dynamic =>
-      input.id === step.id
-        ? {
-            ...input,
-            name: value3,
-          }
-        : input,
-  );
-  return {
-    pages:
-      direction === "undo"
-        ? omitDefaultCanvasPage(value5, step.first)
-        : value5,
-  };
+  const name = direction === "undo" ? step.from : step.to;
+  const target = pagesOrFirst.find((page) => page.id === step.id);
+  if (target === undefined || target.name === name) return null;
+  const renamed = pagesOrFirst.map((page) => (page.id === step.id ? { ...page, name } : page));
+  return { pages: direction === "undo" ? omitDefaultCanvasPage(renamed, step.first) : renamed };
 }
-function updateArtboardGuides(
-  manifest?: Dynamic,
-  file?: Dynamic,
-  guides?: Dynamic,
-): Dynamic {
+
+/** 设置或清除某块画板的参考线。 */
+export function updateArtboardGuides(manifest: CanvasManifest, file: string, guides: unknown): CanvasManifest {
   return {
     ...manifest,
-    artboards: manifest.artboards.map((input?: Dynamic): Dynamic => {
-      if (input.file !== file) return input;
-      let { guides: value, ...value2 }: Dynamic = input;
-      return guides !== undefined
-        ? {
-            ...value2,
-            guides: guides,
-          }
-        : value2;
+    artboards: manifest.artboards.map((artboard) => {
+      if (artboard.file !== file) return artboard;
+      const { guides: _removed, ...rest } = artboard;
+      return guides !== undefined ? { ...rest, guides } : rest;
     }),
   };
 }
-function mergeChangedArtboardSettings(
-  current?: Dynamic,
-  before?: Dynamic,
-  after?: Dynamic,
-  restored?: Dynamic,
-): Dynamic {
-  let values: Dynamic = new Set(changedObjectKeys(before, after)),
-    state: Dynamic = {};
-  for (let value of PlatformFileContentBackgroundBackgroundColorOpacityValues as Dynamic) {
-    let value2: Dynamic = (values.has(value) ? restored : current)?.[value];
-    value2 !== undefined && (state[value] = value2);
+
+/** 只恢复这次操作改过的设置项，其余沿用当前值。 */
+export function mergeChangedArtboardSettings(
+  current?: Fields,
+  before?: Fields,
+  after?: Fields,
+  restored?: Fields,
+): Fields | undefined {
+  const changed = new Set(changedObjectKeys(before, after));
+  const merged: Fields = {};
+  for (const key of PlatformFileContentBackgroundBackgroundColorOpacityValues as string[]) {
+    const value = (changed.has(key) ? restored : current)?.[key];
+    if (value !== undefined) merged[key] = value;
   }
-  return Object.keys(state).length > 0 ? state : undefined;
+  return Object.keys(merged).length > 0 ? merged : undefined;
 }
-function artboardOrderHistoryStep(
-  before?: Dynamic,
-  after?: Dynamic,
-): Dynamic {
-  let value: Dynamic = before.flatMap(
-    (input?: Dynamic, options?: Dynamic): Dynamic =>
-      after[options]?.file !== input.file ? [options] : [],
-  );
+
+/** 画板顺序变化的历史步骤，只记录位置变了的画板。 */
+export function artboardOrderHistoryStep(
+  before: CanvasArtboard[],
+  after: CanvasArtboard[],
+): Extract<CanvasHistoryStep, { kind: "order" }> {
+  const moved = before.flatMap((artboard, index) => (after[index]?.file !== artboard.file ? [index] : []));
   return {
     kind: "order",
-    from: value.map((input?: Dynamic): Dynamic => before[input].file),
-    to: value.map((input?: Dynamic): Dynamic => after[input].file),
+    from: moved.map((index) => before[index].file),
+    to: moved.map((index) => after[index].file),
   };
 }
-function filterSettingHistoryStep(
-  step?: Dynamic,
-  property?: Dynamic,
-  current?: Dynamic,
-): Dynamic {
-  let callback: Dynamic = (input?: Dynamic): Dynamic => {
-      let value: Dynamic = input?.[property];
-      if (value === undefined) return;
-      let state: Dynamic = {};
-      state[property] = value;
-      return state;
-    },
-    [items, items2]: Dynamic = [callback(step.from), callback(current)];
-  return items?.[property] === items2?.[property]
-    ? null
-    : {
-        ...step,
-        from: items,
-        to: items2,
-      };
+
+/** 把历史步骤收窄到单个设置项；与当前值相同则返回 null。 */
+export function filterSettingHistoryStep<S extends { from?: Fields }>(
+  step: S,
+  property: string,
+  current?: Fields,
+): (S & { from: Fields | undefined; to: Fields | undefined }) | null {
+  const only = (source?: Fields): Fields | undefined => {
+    const value = source?.[property];
+    if (value === undefined) return undefined;
+    const picked: Fields = {};
+    picked[property] = value;
+    return picked;
+  };
+  const [from, to] = [only(step.from), only(current)];
+  return from?.[property] === to?.[property] ? null : { ...step, from, to };
 }
-function applyCanvasManifestHistory(
-  manifest?: Dynamic,
-  step?: Dynamic,
-  direction?: Dynamic,
-): Dynamic {
-  if (step.kind === "move") {
-    let entries: Dynamic = new Map(
-        step.moves.map(
-          (input?: Dynamic): Dynamic => [
-            input.file,
-            direction === "undo" ? input.from : input.to,
-          ],
-        ),
-      ),
-      entries2: Dynamic = new Map(
-        (step.anns ?? []).map(
-          (input?: Dynamic): Dynamic => [
-            input.id,
-            direction === "undo" ? input.from : input.to,
-          ],
-        ),
-      );
-    return {
-      ...manifest,
-      artboards: manifest.artboards.map((input?: Dynamic): Dynamic => {
-        let entry: Dynamic = entries.get(input.file);
-        return entry
-          ? {
-              ...input,
-              x: entry.x,
-              y: entry.y,
-            }
-          : input;
-      }),
-      ...(entries2.size > 0
-        ? {
-            annotations: (manifest.annotations ?? []).map(
-              (input?: Dynamic): Dynamic => {
-                let entry: Dynamic = entries2.get(input.id);
-                return entry
-                  ? (0, moveAnnotation)(input, entry.x, entry.y)
-                  : input;
-              },
-            ),
-          }
-        : {}),
-    };
-  }
-  if (step.kind === "resize") {
-    let value: Dynamic = direction === "undo" ? step.from : step.to,
-      value2: Dynamic = Object.fromEntries(
-        ["x", "y", "w", "h"]
-          .filter(
-            (input?: Dynamic): Dynamic => step.from[input] !== step.to[input],
-          )
-          .map((input?: Dynamic): Dynamic => [input, value[input]]),
-      );
-    return {
-      ...manifest,
-      artboards: manifest.artboards.map(
-        (input?: Dynamic): Dynamic =>
-          input.file === step.file
-            ? {
-                ...input,
-                ...value2,
-              }
-            : input,
-      ),
-    };
-  }
-  if (step.kind === "transform") {
-    let value: Dynamic = direction === "undo" ? "from" : "to",
-      entries: Dynamic = new Map(
-        step.boards.map(
-          (input?: Dynamic): Dynamic => [input.file, input[value]],
-        ),
-      ),
-      entries2: Dynamic = new Map(
-        step.anns.map((input?: Dynamic): Dynamic => [input.id, input[value]]),
-      );
-    return {
-      ...manifest,
-      artboards: manifest.artboards.map((input?: Dynamic): Dynamic => {
-        let entry: Dynamic = entries.get(input.file);
-        return entry
-          ? {
-              ...input,
-              ...entry,
-            }
-          : input;
-      }),
-      ...(entries2.size > 0
-        ? {
-            annotations: (manifest.annotations ?? []).map(
-              (input?: Dynamic): Dynamic => {
-                let entry: Dynamic = entries2.get(input.id);
-                return entry
-                  ? {
-                      ...input,
-                      ...entry,
-                    }
-                  : input;
-              },
-            ),
-          }
-        : {}),
-    };
-  }
-  if (step.kind === "rename") {
-    let value: Dynamic = direction === "undo" ? step.from : step.to;
-    return {
-      ...manifest,
-      artboards: manifest.artboards.map(
-        (input?: Dynamic): Dynamic =>
-          input.file === step.file
-            ? {
-                ...input,
-                ...(value
-                  ? {
-                      title: value,
-                    }
-                  : {
-                      title: undefined,
-                    }),
-              }
-            : input,
-      ),
-    };
-  }
-  if (step.kind === "print") {
-    let value: Dynamic = direction === "undo" ? step.from : step.to;
-    return {
-      ...manifest,
-      artboards: manifest.artboards.map((input?: Dynamic): Dynamic => {
-        if (input.file !== step.file) return input;
-        let { print: value2, ...value3 }: Dynamic = input;
-        return value === "flow"
-          ? {
-              ...value3,
-              print: "flow",
-            }
-          : value3;
-      }),
-    };
-  }
-  if (step.kind === "paper") {
-    let value: Dynamic = direction === "undo" ? step.from : step.to;
-    return {
-      ...manifest,
-      artboards: manifest.artboards.map((input?: Dynamic): Dynamic => {
-        if (input.file !== step.file) return input;
-        let { paper: value2, ...value3 }: Dynamic = input;
-        return value
-          ? {
-              ...value3,
-              paper: value,
-            }
-          : value3;
-      }),
-    };
-  }
-  if (step.kind === "guides")
-    return updateArtboardGuides(
-      manifest,
-      step.file,
-      direction === "undo" ? step.from : step.to,
-    );
-  if (step.kind === "cover")
-    return {
-      ...manifest,
-      cover: direction === "undo" ? step.from : step.to,
-    };
-  if (step.kind === "page-add" || step.kind === "page-rename") {
-    let value: Dynamic = applyCanvasPageHistory(manifest, step, direction);
-    return value === null
-      ? "nothing"
-      : {
-          ...manifest,
-          pages: value.pages,
-        };
-  }
-  if (step.kind === "ann-add" || step.kind === "ann-delete") {
-    let value: Dynamic = manifest.annotations ?? [];
-    if ((step.kind === "ann-add") == (direction === "redo")) {
-      if (value.some((input?: Dynamic): Dynamic => input.id === step.spec.id))
-        return "nothing";
-      if (value.length >= PlatformFileContentLimit_5) return "full";
-      let value2: Dynamic =
-          step.kind === "ann-delete"
-            ? Math.min(step.index, value.length)
-            : value.length,
-        items: Dynamic = [...value];
-      items.splice(value2, 0, step.spec);
+
+type Anns = CanvasAnnotation[];
+const mapAnnotations = (manifest: CanvasManifest, update: (annotation: CanvasAnnotation) => CanvasAnnotation): CanvasManifest => ({
+  ...manifest,
+  annotations: (manifest.annotations ?? []).map(update),
+});
+
+/** 应用一条历史步骤；"nothing" 表示没有变化，"full" 表示批注已满。 */
+export function applyCanvasManifestHistory(
+  manifest: CanvasManifest,
+  step: CanvasHistoryStep,
+  direction: HistoryDirection,
+): CanvasManifest | "nothing" | "full" {
+  const undoing = direction === "undo";
+  switch (step.kind) {
+    case "move": {
+      const boardTargets = new Map(step.moves.map((move) => [move.file, undoing ? move.from : move.to]));
+      const annTargets = new Map((step.anns ?? []).map((ann) => [ann.id, undoing ? ann.from : ann.to]));
       return {
         ...manifest,
-        annotations: items,
+        artboards: manifest.artboards.map((artboard) => {
+          const target = boardTargets.get(artboard.file);
+          return target ? { ...artboard, x: target.x, y: target.y } : artboard;
+        }),
+        ...(annTargets.size > 0
+          ? {
+              annotations: (manifest.annotations ?? []).map((annotation) => {
+                const target = annTargets.get(annotation.id);
+                return target ? moveAnnotation(annotation, target.x, target.y) : annotation;
+              }),
+            }
+          : {}),
       };
-    } else
+    }
+    case "resize": {
+      const side = undoing ? step.from : step.to;
+      const changed = Object.fromEntries(
+        (["x", "y", "w", "h"] as const).filter((key) => step.from[key] !== step.to[key]).map((key) => [key, side[key]]),
+      );
       return {
         ...manifest,
-        annotations: value.filter(
-          (input?: Dynamic): Dynamic => input.id !== step.spec.id,
+        artboards: manifest.artboards.map((artboard) => (artboard.file === step.file ? { ...artboard, ...changed } : artboard)),
+      };
+    }
+    case "transform": {
+      const side = undoing ? "from" : "to";
+      const boardTargets = new Map(step.boards.map((board) => [board.file, board[side]]));
+      const annTargets = new Map(step.anns.map((ann) => [ann.id, ann[side]]));
+      return {
+        ...manifest,
+        artboards: manifest.artboards.map((artboard) => {
+          const target = boardTargets.get(artboard.file);
+          return target ? { ...artboard, ...target } : artboard;
+        }),
+        ...(annTargets.size > 0
+          ? {
+              annotations: (manifest.annotations ?? []).map((annotation) => {
+                const target = annTargets.get(annotation.id);
+                return target ? { ...annotation, ...target } : annotation;
+              }),
+            }
+          : {}),
+      };
+    }
+    case "rename": {
+      const title = undoing ? step.from : step.to;
+      return {
+        ...manifest,
+        artboards: manifest.artboards.map((artboard) =>
+          artboard.file === step.file ? { ...artboard, ...(title ? { title } : { title: undefined }) } : artboard,
         ),
       };
-  }
-  if (step.kind === "ann-move") {
-    let value: Dynamic = direction === "undo" ? step.from : step.to;
-    return {
-      ...manifest,
-      annotations: (manifest.annotations ?? []).map(
-        (input?: Dynamic): Dynamic =>
-          input.id === step.id && !(0, isShapeAnnotation)(input)
-            ? {
-                ...input,
-                x: value.x,
-                y: value.y,
-              }
-            : input,
-      ),
-    };
-  }
-  if (step.kind === "ann-resize") {
-    let value: Dynamic = direction === "undo" ? step.from : step.to;
-    return {
-      ...manifest,
-      annotations: (manifest.annotations ?? []).map(
-        (input?: Dynamic): Dynamic =>
-          input.id === step.id && !(0, isShapeAnnotation)(input)
-            ? {
-                ...input,
-                w: value,
-              }
-            : input,
-      ),
-    };
-  }
-  if (step.kind === "ann-text") {
-    let value: Dynamic = direction === "undo" ? step.from : step.to;
-    return {
-      ...manifest,
-      annotations: (manifest.annotations ?? []).map(
-        (input?: Dynamic): Dynamic =>
-          input.id === step.id && !(0, isShapeAnnotation)(input)
-            ? {
-                ...input,
-                text: value,
-              }
-            : input,
-      ),
-    };
-  }
-  if (step.kind === "ann-style") {
-    let [value, value2]: Dynamic =
-      direction === "undo"
-        ? [step.from, step.caps?.from]
-        : [step.to, step.caps?.to];
-    return {
-      ...manifest,
-      annotations: (manifest.annotations ?? []).map(
-        (input?: Dynamic): Dynamic =>
-          input.id === step.id && !(0, isShapeAnnotation)(input)
-            ? {
-                ...(0, updateAnnotationTextStyle)(input, {
-                  ...(0, annotationTextStyle)(input),
-                  ...pickObjectKeys(
-                    value,
-                    changedObjectKeys(step.from, step.to),
-                  ),
-                }),
-                ...value2,
-              }
-            : input,
-      ),
-    };
-  }
-  if (step.kind === "ann-box" || step.kind === "ann-path") {
-    let value: Dynamic = direction === "undo" ? step.from : step.to,
-      value2: Dynamic =
-        step.kind === "ann-path" || "x2" in value
-          ? value
-          : pickObjectKeys(value, changedObjectKeys(step.from, step.to));
-    return {
-      ...manifest,
-      annotations: (manifest.annotations ?? []).map(
-        (input?: Dynamic): Dynamic =>
-          input.id === step.id && (0, isShapeAnnotation)(input)
-            ? {
-                ...input,
-                ...value2,
-              }
-            : input,
-      ),
-    };
-  }
-  if (step.kind === "ann-color") {
-    let value: Dynamic = direction === "undo" ? step.from : step.to,
-      value2: Dynamic = direction === "undo" ? step.cssFrom : step.cssTo,
-      value3: Dynamic =
-        step.cssFrom !== undefined || step.cssTo !== undefined;
-    return {
-      ...manifest,
-      annotations: (manifest.annotations ?? []).map(
-        (input?: Dynamic): Dynamic =>
-          input.id === step.id && (0, isShapeAnnotation)(input)
-            ? value3
-              ? (0, updateAnnotationCss)(
-                  (0, updateAnnotationColor)(input, value),
-                  mergeChangedArtboardSettings(
-                    input.css,
-                    step.cssFrom,
-                    step.cssTo,
-                    value2,
-                  ),
-                )
-              : (0, updateAnnotationColor)(input, value)
-            : input,
-      ),
-    };
-  }
-  if (step.kind === "ann-heads") {
-    let value: Dynamic = pickObjectKeys(
-      direction === "undo" ? step.from : step.to,
-      changedObjectKeys(step.from, step.to),
-    );
-    return {
-      ...manifest,
-      annotations: (manifest.annotations ?? []).map(
-        (source?: Dynamic): Dynamic =>
-          source.id === step.id &&
-          (source.kind === "line" || source.kind === "arrow")
-            ? (0, updateAnnotationArrowHeads)(source, {
-                ...(0, annotationArrowHeads)(source),
-                ...value,
-              })
-            : source,
-      ),
-    };
-  }
-  if (step.kind === "ann-css" || step.kind === "ann-src") {
-    let value: Dynamic = direction === "undo" ? step.from : step.to,
-      callback: Dynamic = (source?: Dynamic, options?: Dynamic): Dynamic =>
-        source.kind === "image"
-          ? (0, updateAnnotationCrop)(source, options)
-          : source;
-    return {
-      ...manifest,
-      annotations: (manifest.annotations ?? []).map(
-        (source?: Dynamic): Dynamic => {
-          if (
-            source.id !== step.id ||
-            !(0, isShapeAnnotation)(source)
-          )
-            return source;
-          if (step.kind === "ann-src")
-            return source.kind === "image"
-              ? (0, updateAnnotationCrop)(
-                  (0, uploadedVideoAnnotation)(source, value),
-                  value.crop,
-                )
-              : source;
-          let value2: Dynamic = (0, updateAnnotationCss)(
-            source,
-            mergeChangedArtboardSettings(
-              source.css,
-              step.from,
-              step.to,
-              value,
-            ),
-          );
-          return step.cropFrom !== undefined
-            ? callback(
-                value2,
-                direction === "undo" ? step.cropFrom : undefined,
-              )
-            : value2;
-        },
-      ),
-    };
-  }
-  if (step.kind === "ann-crop") {
-    let value: Dynamic =
-        step.cssFrom !== undefined || step.cssTo !== undefined,
-      value2: Dynamic = direction === "undo" ? step.geomFrom : step.geomTo;
-    return {
-      ...manifest,
-      annotations: (manifest.annotations ?? []).map(
-        (source?: Dynamic): Dynamic =>
-          source.id === step.id && source.kind === "image"
-            ? (0, updateAnnotationCrop)(
-                {
-                  ...(value
-                    ? (0, updateAnnotationCss)(
-                        source,
-                        mergeChangedArtboardSettings(
-                          source.css,
-                          step.cssFrom,
-                          step.cssTo,
-                          direction === "undo" ? step.cssFrom : step.cssTo,
-                        ),
-                      )
-                    : source),
-                  ...pickObjectKeys(
-                    value2,
-                    changedObjectKeys(step.geomFrom, step.geomTo),
-                  ),
-                },
-                direction === "undo" ? step.from : step.to,
-              )
-            : source,
-      ),
-    };
-  }
-  if (step.kind === "radius")
-    return (0, updateArtboardRadius)(
-      manifest,
-      step.file,
-      direction === "undo" ? step.from : step.to,
-    );
-  if (step.kind === "order") {
-    let entries: Dynamic = new Map(
-        (direction === "undo" ? step.from : step.to).map(
-          (input?: Dynamic, options?: Dynamic): Dynamic => [input, options],
-        ),
-      ),
-      entries2: Dynamic = new Map();
-    manifest.artboards.forEach(
-      (input?: Dynamic, options?: Dynamic): Dynamic => {
-        entries.has(input.file) &&
-          entries2.set((0, designPageId)(input, manifest.pages), [
-            ...(entries2.get(
-              (0, designPageId)(input, manifest.pages),
-            ) ?? []),
-            options,
-          ]);
-      },
-    );
-    let items: Dynamic = [...manifest.artboards];
-    for (let value of entries2.values() as Dynamic) {
-      let value2: Dynamic = value
-        .map((input?: Dynamic): Dynamic => manifest.artboards[input])
-        .sort(
-          (input?: Dynamic, options?: Dynamic): Dynamic =>
-            entries.get(input.file) - entries.get(options.file),
-        );
-      value.forEach(
-        (input?: Dynamic, options?: Dynamic): Dynamic =>
-          (items[input] = value2[options]),
+    }
+    case "print": {
+      const print = undoing ? step.from : step.to;
+      return {
+        ...manifest,
+        artboards: manifest.artboards.map((artboard) => {
+          if (artboard.file !== step.file) return artboard;
+          const { print: _removed, ...rest } = artboard;
+          return print === "flow" ? { ...rest, print: "flow" } : rest;
+        }),
+      };
+    }
+    case "paper": {
+      const paper = undoing ? step.from : step.to;
+      return {
+        ...manifest,
+        artboards: manifest.artboards.map((artboard) => {
+          if (artboard.file !== step.file) return artboard;
+          const { paper: _removed, ...rest } = artboard;
+          return paper ? { ...rest, paper } : rest;
+        }),
+      };
+    }
+    case "guides":
+      return updateArtboardGuides(manifest, step.file, undoing ? step.from : step.to);
+    case "cover":
+      return { ...manifest, cover: undoing ? step.from : step.to };
+    case "page-add":
+    case "page-rename": {
+      const result = applyCanvasPageHistory(manifest, step, direction);
+      return result === null ? "nothing" : { ...manifest, pages: result.pages };
+    }
+    case "ann-add":
+    case "ann-delete": {
+      const annotations = manifest.annotations ?? [];
+      if ((step.kind === "ann-add") == (direction === "redo")) {
+        if (annotations.some((annotation) => annotation.id === step.spec.id)) return "nothing";
+        if (annotations.length >= PlatformFileContentLimit_5) return "full";
+        const index = step.kind === "ann-delete" ? Math.min(step.index, annotations.length) : annotations.length;
+        const next: Anns = [...annotations];
+        next.splice(index, 0, step.spec);
+        return { ...manifest, annotations: next };
+      }
+      return { ...manifest, annotations: annotations.filter((annotation) => annotation.id !== step.spec.id) };
+    }
+    case "ann-move": {
+      const target = undoing ? step.from : step.to;
+      return mapAnnotations(manifest, (annotation) =>
+        annotation.id === step.id && !isShapeAnnotation(annotation) ? { ...annotation, x: target.x, y: target.y } : annotation,
       );
     }
-    return items.every(
-      (input?: Dynamic, options?: Dynamic): Dynamic =>
-        input === manifest.artboards[options],
-    )
-      ? "nothing"
-      : {
-          ...manifest,
-          artboards: items,
-        };
+    case "ann-resize": {
+      const width = undoing ? step.from : step.to;
+      return mapAnnotations(manifest, (annotation) =>
+        annotation.id === step.id && !isShapeAnnotation(annotation) ? { ...annotation, w: width } : annotation,
+      );
+    }
+    case "ann-text": {
+      const text = undoing ? step.from : step.to;
+      return mapAnnotations(manifest, (annotation) =>
+        annotation.id === step.id && !isShapeAnnotation(annotation) ? { ...annotation, text } : annotation,
+      );
+    }
+    case "ann-style": {
+      const [style, caps] = undoing ? [step.from, step.caps?.from] : [step.to, step.caps?.to];
+      return mapAnnotations(manifest, (annotation) =>
+        annotation.id === step.id && !isShapeAnnotation(annotation)
+          ? {
+              ...updateAnnotationTextStyle(annotation, {
+                ...annotationTextStyle(annotation),
+                ...pickObjectKeys(style, changedObjectKeys(step.from, step.to)),
+              }),
+              ...caps,
+            }
+          : annotation,
+      );
+    }
+    case "ann-box":
+    case "ann-path": {
+      const side = undoing ? step.from : step.to;
+      const geometry = step.kind === "ann-path" || "x2" in side ? side : pickObjectKeys(side, changedObjectKeys(step.from, step.to));
+      return mapAnnotations(manifest, (annotation) =>
+        annotation.id === step.id && isShapeAnnotation(annotation) ? { ...annotation, ...geometry } : annotation,
+      );
+    }
+    case "ann-color": {
+      const color = undoing ? step.from : step.to;
+      const cssSide = undoing ? step.cssFrom : step.cssTo;
+      const hasCss = step.cssFrom !== undefined || step.cssTo !== undefined;
+      return mapAnnotations(manifest, (annotation) =>
+        annotation.id === step.id && isShapeAnnotation(annotation)
+          ? hasCss
+            ? updateAnnotationCss(
+                updateAnnotationColor(annotation, color),
+                mergeChangedArtboardSettings(annotation.css, step.cssFrom, step.cssTo, cssSide),
+              )
+            : updateAnnotationColor(annotation, color)
+          : annotation,
+      );
+    }
+    case "ann-heads": {
+      const heads = pickObjectKeys(undoing ? step.from : step.to, changedObjectKeys(step.from, step.to));
+      return mapAnnotations(manifest, (annotation) =>
+        annotation.id === step.id && (annotation.kind === "line" || annotation.kind === "arrow")
+          ? updateAnnotationArrowHeads(annotation, { ...annotationArrowHeads(annotation), ...heads })
+          : annotation,
+      );
+    }
+    case "ann-css":
+    case "ann-src": {
+      const side = undoing ? step.from : step.to;
+      const withCrop = (annotation: CanvasAnnotation, crop: unknown) =>
+        annotation.kind === "image" ? updateAnnotationCrop(annotation, crop) : annotation;
+      return mapAnnotations(manifest, (annotation) => {
+        if (annotation.id !== step.id || !isShapeAnnotation(annotation)) return annotation;
+        if (step.kind === "ann-src")
+          return annotation.kind === "image"
+            ? updateAnnotationCrop(uploadedVideoAnnotation(annotation, side), (side as { crop?: unknown }).crop)
+            : annotation;
+        const updated = updateAnnotationCss(annotation, mergeChangedArtboardSettings(annotation.css, step.from, step.to, side as Fields));
+        return step.cropFrom !== undefined ? withCrop(updated, undoing ? step.cropFrom : undefined) : updated;
+      });
+    }
+    case "ann-crop": {
+      const hasCss = step.cssFrom !== undefined || step.cssTo !== undefined;
+      const geometry = undoing ? step.geomFrom : step.geomTo;
+      return mapAnnotations(manifest, (annotation) =>
+        annotation.id === step.id && annotation.kind === "image"
+          ? updateAnnotationCrop(
+              {
+                ...(hasCss
+                  ? updateAnnotationCss(
+                      annotation,
+                      mergeChangedArtboardSettings(annotation.css, step.cssFrom, step.cssTo, undoing ? step.cssFrom : step.cssTo),
+                    )
+                  : annotation),
+                ...pickObjectKeys(geometry, changedObjectKeys(step.geomFrom, step.geomTo)),
+              },
+              undoing ? step.from : step.to,
+            )
+          : annotation,
+      );
+    }
+    case "radius":
+      return updateArtboardRadius(manifest, step.file, undoing ? step.from : step.to);
+    case "order": {
+      // 目标位置：文件名 -> 它在 from/to 列表里的序号
+      const rank = new Map((undoing ? step.from : step.to).map((file, index) => [file, index]));
+      // 每页里被调整的画板位置（页内重排，不跨页）
+      const slotsByPage = new Map<unknown, number[]>();
+      manifest.artboards.forEach((artboard, index) => {
+        if (rank.has(artboard.file)) {
+          const pageId = designPageId(artboard, manifest.pages);
+          slotsByPage.set(pageId, [...(slotsByPage.get(pageId) ?? []), index]);
+        }
+      });
+      const reordered = [...manifest.artboards];
+      for (const slots of slotsByPage.values()) {
+        const sorted = slots
+          .map((slot) => manifest.artboards[slot])
+          .sort((a, b) => (rank.get(a.file) as number) - (rank.get(b.file) as number));
+        slots.forEach((slot, position) => (reordered[slot] = sorted[position]));
+      }
+      return reordered.every((artboard, index) => artboard === manifest.artboards[index])
+        ? "nothing"
+        : { ...manifest, artboards: reordered };
+    }
+    default:
+      throw new Error("this kind of step cannot be undone or redone: " + String((step as { kind?: unknown }).kind));
   }
-  throw new Error(
-    "this kind of step cannot be undone or redone: " + String(step.kind),
+}
+
+/** 恢复旧清单时，补回新清单缺失的元数据。 */
+export function mergeMissingCanvasManifestMetadata(manifest: CanvasManifest, previous: CanvasManifest): CanvasManifest {
+  let merged: CanvasManifest =
+    "launch" in manifest || previous.launch === undefined ? manifest : { ...manifest, launch: previous.launch };
+  if (!("annotations" in merged) && previous.annotations !== undefined)
+    merged = { ...merged, annotations: previous.annotations };
+  if (!("pages" in merged) && previous.pages !== undefined) merged = { ...merged, pages: previous.pages };
+  if (!("migrated" in merged) && previous.migrated === true) merged = { ...merged, migrated: true };
+  if (!("cover" in merged) && previous.cover !== undefined) merged = { ...merged, cover: previous.cover };
+  if ("cover" in merged && validCoverArtboard(merged.cover, merged.artboards) === undefined) {
+    merged = { ...merged };
+    delete merged.cover;
+  }
+  return merged;
+}
+
+/** 删除画板或页面后，启动视图若会随之改变则返回规整后的启动视图，否则返回 undefined。 */
+export function repairCanvasLaunchAfterDeletion(
+  manifest: CanvasManifest,
+  deletedFiles: Set<string>,
+  deletedPageId?: string,
+): CanvasLaunch | undefined {
+  const launch = normalizeDesignLaunch(manifest.launch, manifest.artboards, manifest.pages);
+  if (launch === undefined) return undefined;
+  const afterDeletion = normalizeDesignLaunch(
+    launch,
+    manifest.artboards.filter((artboard) => !deletedFiles.has(artboard.file)),
+    deletedPageId !== undefined ? (manifest.pages ?? []).filter((page) => page.id !== deletedPageId) : manifest.pages,
   );
+  return canvasLaunchViewKey(launch) === canvasLaunchViewKey(afterDeletion) ? undefined : launch;
 }
-function mergeMissingCanvasManifestMetadata(
-  manifest?: Dynamic,
-  previous?: Dynamic,
-): Dynamic {
-  let value: Dynamic =
-    "launch" in manifest || previous.launch === undefined
-      ? manifest
-      : {
-          ...manifest,
-          launch: previous.launch,
-        };
-  !("annotations" in value) &&
-    previous.annotations !== undefined &&
-    (value = {
-      ...value,
-      annotations: previous.annotations,
-    });
-  !("pages" in value) &&
-    previous.pages !== undefined &&
-    (value = {
-      ...value,
-      pages: previous.pages,
-    });
-  !("migrated" in value) &&
-    previous.migrated === true &&
-    (value = {
-      ...value,
-      migrated: true,
-    });
-  !("cover" in value) &&
-    previous.cover !== undefined &&
-    (value = {
-      ...value,
-      cover: previous.cover,
-    });
-  "cover" in value &&
-    (0, validCoverArtboard)(value.cover, value.artboards) ===
-      undefined &&
-    ((value = {
-      ...value,
-    }),
-    delete value.cover);
-  return value;
+
+/** 历史操作的播报方式。 */
+export function canvasHistoryAnnouncementMode(
+  direction: HistoryDirection,
+  fromPartner: boolean,
+  silent: boolean,
+): "silent" | "partner" | "say" {
+  return silent ? "silent" : direction === "redo" && fromPartner ? "partner" : "say";
 }
-function repairCanvasLaunchAfterDeletion(
-  manifest?: Dynamic,
-  deletedFiles?: Dynamic,
-  deletedPageId?: Dynamic,
-): Dynamic {
-  let value: Dynamic = (0, normalizeDesignLaunch)(
-    manifest.launch,
-    manifest.artboards,
-    manifest.pages,
-  );
-  if (value === undefined) return;
-  let value2: Dynamic = (0, normalizeDesignLaunch)(
-    value,
-    manifest.artboards.filter(
-      (input?: Dynamic): Dynamic => !deletedFiles.has(input.file),
-    ),
-    deletedPageId !== undefined
-      ? (manifest.pages ?? []).filter(
-          (input?: Dynamic): Dynamic => input.id !== deletedPageId,
-        )
-      : manifest.pages,
-  );
-  return canvasLaunchViewKey(value) === canvasLaunchViewKey(value2)
-    ? undefined
-    : value;
-}
-function canvasHistoryAnnouncementMode(
-  direction?: Dynamic,
-  fromPartner?: Dynamic,
-  silent?: Dynamic,
-): Dynamic {
-  return silent
-    ? "silent"
-    : direction === "redo" && fromPartner
-      ? "partner"
-      : "say";
-}
-function compatibleRestoredCanvasLaunch(
-  launch?: Dynamic,
-  previous?: Dynamic,
-): Dynamic {
+
+/** 恢复旧清单时，只有同为整画布且不带页面的启动视图才能沿用。 */
+export function compatibleRestoredCanvasLaunch(launch?: CanvasLaunch, previous?: CanvasLaunch): CanvasLaunch | undefined {
   return launch === undefined ||
     previous === undefined ||
-    (launch.view === "canvas" &&
-      previous.view === "canvas" &&
-      previous.page === undefined)
+    (launch.view === "canvas" && previous.view === "canvas" && previous.page === undefined)
     ? launch
     : undefined;
 }
-function reconcileCanvasManifestHistory(
-  manifest?: Dynamic,
-  before?: Dynamic,
-  after?: Dynamic,
-): Dynamic {
-  let callback: Dynamic = (
-      input: Dynamic = [],
-      options: Dynamic = [],
-      context: Dynamic = [],
-      value4?: Dynamic,
-      extra: Dynamic = 1 / 0,
-    ): Dynamic => {
-      if ((0, structurallyEqual)(input, options)) return [...context];
-      let entries: Dynamic = new Map(
-          options.map(
-            (input2?: Dynamic): Dynamic => [value4(input2), input2],
-          ),
-        ),
-        entries2: Dynamic = new Map(
-          context.map(
-            (input2?: Dynamic): Dynamic => [value4(input2), input2],
-          ),
-        ),
-        values: Dynamic = new Set(input.map(value4)),
-        value5: Dynamic = input.flatMap((input2?: Dynamic): Dynamic => {
-          let [items, items2]: Dynamic = [
-            entries.get(value4(input2)),
-            entries2.get(value4(input2)),
-          ];
-          return items === undefined
-            ? [input2]
-            : items2 === undefined
-              ? []
-              : [
-                  (0, structurallyEqual)(input2, items)
-                    ? items2
-                    : input2,
-                ];
-        }),
-        value6: Dynamic = context
-          .filter(
-            (input2?: Dynamic): Dynamic =>
-              !entries.has(value4(input2)) && !values.has(value4(input2)),
-          )
-          .slice(0, Math.max(0, extra - value5.length));
-      return [...value5, ...value6];
-    },
-    value: Dynamic = callback(
-      manifest.artboards,
-      before.artboards,
-      after.artboards,
-      (input?: Dynamic): Dynamic => input.file,
-    ),
-    value2: Dynamic = callback(
-      manifest.annotations,
-      before.annotations,
-      after.annotations,
-      (input?: Dynamic): Dynamic => input.id,
-      PlatformFileContentLimit_5,
-    ),
-    value3: Dynamic = callback(
-      manifest.pages,
-      before.pages,
-      after.pages,
-      (input?: Dynamic): Dynamic => input.id,
-      (0, maxDesignPages)(),
-    ),
-    callback2: Dynamic = (input?: Dynamic): Dynamic =>
-      (0, structurallyEqual)(
-        manifest[input] ?? null,
-        before[input] ?? null,
-      )
-        ? after[input]
-        : manifest[input],
-    state: Dynamic = {
-      artboards: value,
-      annotations: value2.length > 0 ? value2 : undefined,
-      pages: value3.length > 0 ? value3 : undefined,
-      launch: callback2("launch"),
-      cover:
-        (0, validCoverArtboard)(callback2("cover"), value) ??
-        (0, validCoverArtboard)(after.cover, value),
-      migrated:
-        manifest.migrated === true || after.migrated === true
-          ? true
-          : undefined,
-    };
-  return Object.fromEntries(
-    Object.entries(state).filter(
-      ([, input]: Dynamic): Dynamic => input !== undefined,
-    ),
-  );
-}
-export {
-  applyCanvasManifestHistory,
-  applyCanvasPageHistory,
-  artboardOrderHistoryStep,
-  canvasHistoryAnnouncementMode,
-  canvasLaunchViewKey,
-  changedObjectKeys,
-  compatibleRestoredCanvasLaunch,
-  defaultCanvasPage,
-  filterSettingHistoryStep,
-  mergeChangedArtboardSettings,
-  mergeMissingCanvasManifestMetadata,
-  omitDefaultCanvasPage,
-  pickObjectKeys,
-  reconcileCanvasManifestHistory,
-  repairCanvasLaunchAfterDeletion,
-  updateArtboardGuides,
-};
-export function installCanvasManifestHistory(): () => void {
-  return () => {
-    defaultCanvasPage = Object.freeze({
-      id: "page-1",
-      name: "Page 1",
+
+/**
+ * 三方合并：在当前清单上叠加"撤销前 -> 撤销后"的差异，
+ * 保留别人在此期间新增或修改的画板、批注与页面。
+ */
+export function reconcileCanvasManifestHistory(
+  manifest: CanvasManifest,
+  before: CanvasManifest,
+  after: CanvasManifest,
+): CanvasManifest {
+  const mergeList = <T>(
+    current: T[] = [],
+    beforeList: T[] = [],
+    afterList: T[] = [],
+    keyOf: (item: T) => string,
+    limit = Infinity,
+  ): T[] => {
+    if (structurallyEqual(current, beforeList)) return [...afterList];
+    const beforeByKey = new Map(beforeList.map((item) => [keyOf(item), item]));
+    const afterByKey = new Map(afterList.map((item) => [keyOf(item), item]));
+    const currentKeys = new Set(current.map(keyOf));
+    const kept = current.flatMap((item) => {
+      const [beforeItem, afterItem] = [beforeByKey.get(keyOf(item)), afterByKey.get(keyOf(item))];
+      return beforeItem === undefined
+        ? [item]
+        : afterItem === undefined
+          ? []
+          : [structurallyEqual(item, beforeItem) ? afterItem : item];
     });
-    omitDefaultCanvasPage = (items?: Dynamic, options?: Dynamic): Dynamic =>
-      options !== undefined &&
-      items.length === 1 &&
-      items[0].id === options.id &&
-      items[0].name === options.name
-        ? undefined
-        : items;
-    changedObjectKeys = (input?: Dynamic, options?: Dynamic): Dynamic =>
-      [
-        ...new Set([
-          ...Object.keys(input ?? {}),
-          ...Object.keys(options ?? {}),
-        ]),
-      ].filter(
-        (input2?: Dynamic): Dynamic => input?.[input2] !== options?.[input2],
-      );
-    pickObjectKeys = (input?: Dynamic, options?: Dynamic): Dynamic =>
-      Object.fromEntries(
-        options.map((input2?: Dynamic): Dynamic => [input2, input?.[input2]]),
-      );
-    canvasLaunchViewKey = (input?: Dynamic): Dynamic =>
-      input === undefined
-        ? ""
-        : input.view === "focused"
-          ? "f:" + input.file
-          : "c:" + (input.page ?? "");
+    const added = afterList
+      .filter((item) => !beforeByKey.has(keyOf(item)) && !currentKeys.has(keyOf(item)))
+      .slice(0, Math.max(0, limit - kept.length));
+    return [...kept, ...added];
   };
+  const artboards = mergeList(manifest.artboards, before.artboards, after.artboards, (item) => item.file);
+  const annotations = mergeList(manifest.annotations, before.annotations, after.annotations, (item) => item.id, PlatformFileContentLimit_5);
+  const pages = mergeList(manifest.pages, before.pages, after.pages, (item) => item.id, maxDesignPages());
+  const mergeField = (key: string): unknown =>
+    structurallyEqual(manifest[key] ?? null, before[key] ?? null) ? after[key] : manifest[key];
+  const merged: Record<string, unknown> = {
+    artboards,
+    annotations: annotations.length > 0 ? annotations : undefined,
+    pages: pages.length > 0 ? pages : undefined,
+    launch: mergeField("launch"),
+    cover: validCoverArtboard(mergeField("cover"), artboards) ?? validCoverArtboard(after.cover, artboards),
+    migrated: manifest.migrated === true || after.migrated === true ? true : undefined,
+  };
+  return Object.fromEntries(Object.entries(merged).filter(([, value]) => value !== undefined)) as CanvasManifest;
 }

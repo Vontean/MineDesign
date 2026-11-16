@@ -1,402 +1,357 @@
-/** Restored application module; prepare first, initialize in original order. */
-import {
-  type Dynamic,
-} from "../../runtime-types";
 import { parseDcHtmlDocument } from "../html/dc-document";
 import { getDcPropsJson } from "../html/dc-props";
 
-function trimUndoHistory(input?: Dynamic, options?: Dynamic): Dynamic {
-  let length: Dynamic = input.undo.splice(0, Math.max(0, options)).length;
-  input.undoFloor = (input.undoFloor ?? 0) + length;
+export type UndoDirection = "undo" | "redo";
+
+/** 提交前的活值记录；had 为 false 表示提交前没有这个值。 */
+export interface LiveBefore {
+  had: boolean;
+  value?: string;
 }
-function resetUndoHistory(input?: Dynamic): Dynamic {
-  input.undoFloor = (input.undoFloor ?? 0) + input.undo.length;
-  input.undo = [];
-  input.redo = [];
+
+/** 单个 data-props 默认值的编辑记录。 */
+export interface PropUndoEntry {
+  kind: "prop";
+  prop: string;
+  before?: string;
+  after: string;
+  base: string;
+  display: string;
+  liveBefore?: LiveBefore;
 }
-function dcPropValue(input?: Dynamic, options?: Dynamic): Dynamic {
-  let value: Dynamic = (0, getDcPropsJson)(input);
-  if (value != null)
-    try {
-      let value2: Dynamic = JSON.parse(value);
-      if (
-        value2 == null ||
-        typeof value2 != "object" ||
-        Array.isArray(value2)
-      )
-        return;
-      let value3: Dynamic = Object.hasOwn(value2, options)
-        ? value2[options]
-        : undefined;
-      if (value3 == null || typeof value3 != "object") return;
-      let value_default: Dynamic = value3.default;
-      return typeof value_default == "string" ? value_default : undefined;
-    } catch {
-      return;
-    }
+
+/** 组件脚本的编辑记录。 */
+export interface ScriptUndoEntry {
+  kind: "script";
+  before?: string;
+  after: string;
+  base: string;
 }
-function applyPendingUndoEntry(
-  input?: Dynamic,
-  source?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
-): Dynamic {
-  return source.kind === "prop"
-    ? applyPendingPropUndo(input, source, context, value)
-    : applyPendingScriptUndo(input, source, context);
+
+/** 撤销栈条目；字符串是整份模板的序列化快照。 */
+export type UndoEntry = string | PropUndoEntry | ScriptUndoEntry;
+
+/** 历史算法读写的会话字段。 */
+export interface UndoHistoryState {
+  src: string;
+  undo: UndoEntry[];
+  redo: UndoEntry[];
+  undoFloor?: number;
+  pendingProps?: Record<string, string> | undefined;
+  pendingPropsBase?: string | undefined;
+  pendingScript?: string | undefined;
+  pendingScriptBase?: string | undefined;
 }
-function applyPendingPropUndo(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
-): Dynamic {
-  let pendingProps: Dynamic = input.pendingProps,
-    value2: Dynamic =
-      pendingProps !== undefined && Object.hasOwn(pendingProps, options.prop),
-    value3: Dynamic = options.before ?? options.display;
-  if (value2) {
-    let value7: Dynamic = pendingProps[options.prop];
-    if (context === "undo") {
-      if (value7 !== options.after) return null;
-      if (options.before !== undefined) {
-        input.pendingProps = {
-          ...pendingProps,
-          [options.prop]: options.before,
-        };
-        return {
-          result: {
-            kind: "prop",
-            prop: options.prop,
-            liveValue: options.before,
-            episode: null,
-          },
-          twin: options,
-        };
+
+/** 活值的覆盖表，用来判断预览里的值是否已被别处改过。 */
+export interface UndoLiveContext {
+  overrides?: Record<string, unknown>;
+}
+
+export interface PropUndoResult {
+  kind: "prop";
+  prop: string;
+  liveValue: string | undefined;
+  episode: "closed" | "reopened" | null;
+}
+
+export interface ScriptUndoResult {
+  kind: "script";
+  js: string | undefined;
+}
+
+export interface AppliedUndoEntry {
+  result: PropUndoResult | ScriptUndoResult;
+  /** 放进对侧栈的条目 */
+  twin: PropUndoEntry | ScriptUndoEntry;
+}
+
+/** 连续编辑合并所需的上一次编辑信息。 */
+export interface OpenUndoEdit {
+  name: unknown;
+  key: unknown;
+  at: number;
+}
+
+export function trimUndoHistory(state: UndoHistoryState, count: number): void {
+  const removed = state.undo.splice(0, Math.max(0, count)).length;
+  state.undoFloor = (state.undoFloor ?? 0) + removed;
+}
+
+export function resetUndoHistory(state: UndoHistoryState): void {
+  state.undoFloor = (state.undoFloor ?? 0) + state.undo.length;
+  state.undo = [];
+  state.redo = [];
+}
+
+/** 读取源码里 data-props 声明的某个属性的默认值。 */
+export function dcPropValue(src: string, propName: string): string | undefined {
+  const json = getDcPropsJson(src);
+  if (json == null) return undefined;
+  try {
+    const props = JSON.parse(json);
+    if (props == null || typeof props != "object" || Array.isArray(props)) return undefined;
+    const declared = Object.hasOwn(props, propName) ? props[propName] : undefined;
+    if (declared == null || typeof declared != "object") return undefined;
+    const defaultValue = declared.default;
+    return typeof defaultValue == "string" ? defaultValue : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+export function applyPendingUndoEntry(
+  state: UndoHistoryState,
+  entry: PropUndoEntry | ScriptUndoEntry,
+  direction: UndoDirection,
+  live?: UndoLiveContext,
+): AppliedUndoEntry | null {
+  return entry.kind === "prop"
+    ? applyPendingPropUndo(state, entry, direction, live)
+    : applyPendingScriptUndo(state, entry, direction);
+}
+
+function propResult(
+  prop: string,
+  liveValue: string | undefined,
+  episode: PropUndoResult["episode"],
+): PropUndoResult {
+  return { kind: "prop", prop, liveValue, episode };
+}
+
+export function applyPendingPropUndo(
+  state: UndoHistoryState,
+  entry: PropUndoEntry,
+  direction: UndoDirection,
+  live?: UndoLiveContext,
+): AppliedUndoEntry | null {
+  const pendingProps = state.pendingProps;
+  const fallbackBefore = entry.before ?? entry.display;
+  if (pendingProps !== undefined && Object.hasOwn(pendingProps, entry.prop)) {
+    const pendingValue = pendingProps[entry.prop];
+    if (direction === "undo") {
+      if (pendingValue !== entry.after) return null;
+      if (entry.before !== undefined) {
+        state.pendingProps = { ...pendingProps, [entry.prop]: entry.before };
+        return { result: propResult(entry.prop, entry.before, null), twin: entry };
       }
-      if (options.base !== input.pendingPropsBase) {
-        input.pendingProps = {
-          ...pendingProps,
-          [options.prop]: options.display,
-        };
+      if (entry.base !== state.pendingPropsBase) {
+        state.pendingProps = { ...pendingProps, [entry.prop]: entry.display };
         return {
-          result: {
-            kind: "prop",
-            prop: options.prop,
-            liveValue: options.display,
-            episode: null,
-          },
+          result: propResult(entry.prop, entry.display, null),
           twin: {
             kind: "prop",
-            prop: options.prop,
-            before: options.display,
-            after: options.after,
-            base: input.pendingPropsBase ?? options.base,
-            display: options.display,
+            prop: entry.prop,
+            before: entry.display,
+            after: entry.after,
+            base: state.pendingPropsBase ?? entry.base,
+            display: entry.display,
           },
         };
       }
-      let state: Dynamic = {
-        ...pendingProps,
-      };
-      delete state[options.prop];
-      Object.keys(state).length === 0
-        ? ((input.pendingProps = undefined),
-          (input.pendingPropsBase = undefined))
-        : (input.pendingProps = state);
-      let value8: Dynamic = options.liveBefore ?? {
-        had: false,
-      };
+      const remaining = { ...pendingProps };
+      delete remaining[entry.prop];
+      if (Object.keys(remaining).length === 0) {
+        state.pendingProps = undefined;
+        state.pendingPropsBase = undefined;
+      } else {
+        state.pendingProps = remaining;
+      }
+      const liveBefore = entry.liveBefore ?? { had: false };
       return {
-        result: {
-          kind: "prop",
-          prop: options.prop,
-          liveValue: value8.had ? value8.value : undefined,
-          episode: "closed",
-        },
-        twin: options,
+        result: propResult(entry.prop, liveBefore.had ? liveBefore.value : undefined, "closed"),
+        twin: entry,
       };
     }
-    return options.before === undefined
-      ? value7 !== options.display
-        ? null
-        : ((input.pendingProps = {
-            ...pendingProps,
-            [options.prop]: options.after,
-          }),
-          {
-            result: {
-              kind: "prop",
-              prop: options.prop,
-              liveValue: options.after,
-              episode: null,
-            },
-            twin: {
-              kind: "prop",
-              prop: options.prop,
-              before: options.display,
-              after: options.after,
-              base: input.pendingPropsBase ?? options.base,
-              display: options.display,
-            },
-          })
-      : value7 !== options.before
-        ? null
-        : ((input.pendingProps = {
-            ...pendingProps,
-            [options.prop]: options.after,
-          }),
-          {
-            result: {
-              kind: "prop",
-              prop: options.prop,
-              liveValue: options.after,
-              episode: null,
-            },
-            twin: options,
-          });
-  }
-  if (context === "redo" && options.before === undefined) {
-    let value7: Dynamic = value?.overrides;
-    if (
-      value7 !== undefined &&
-      Object.hasOwn(value7, options.prop) &&
-      value7[options.prop] !== options.display &&
-      value7[options.prop] !==
-        (options.liveBefore?.had === true
-          ? options.liveBefore.value
-          : undefined)
-    )
-      return null;
-    if (dcPropValue(input.src, options.prop) !== options.after) {
-      input.pendingPropsBase ??=
-        (0, getDcPropsJson)(input.src) ?? options.base;
-      input.pendingProps = {
-        ...pendingProps,
-        [options.prop]: options.after,
-      };
+    if (entry.before === undefined) {
+      if (pendingValue !== entry.display) return null;
+      state.pendingProps = { ...pendingProps, [entry.prop]: entry.after };
       return {
-        result: {
+        result: propResult(entry.prop, entry.after, null),
+        twin: {
           kind: "prop",
-          prop: options.prop,
-          liveValue: options.after,
-          episode: "reopened",
+          prop: entry.prop,
+          before: entry.display,
+          after: entry.after,
+          base: state.pendingPropsBase ?? entry.base,
+          display: entry.display,
         },
-        twin: options,
       };
     }
+    if (pendingValue !== entry.before) return null;
+    state.pendingProps = { ...pendingProps, [entry.prop]: entry.after };
+    return { result: propResult(entry.prop, entry.after, null), twin: entry };
   }
-  let value4: Dynamic = dcPropValue(input.src, options.prop),
-    value5: Dynamic = context === "undo" ? options.after : value3;
-  if (value4 === undefined || value4 !== value5) return null;
-  {
-    let value7: Dynamic = value?.overrides;
+  if (direction === "redo" && entry.before === undefined) {
+    const overrides = live?.overrides;
     if (
-      value7 !== undefined &&
-      Object.hasOwn(value7, options.prop) &&
-      value7[options.prop] !== value5
+      overrides !== undefined &&
+      Object.hasOwn(overrides, entry.prop) &&
+      overrides[entry.prop] !== entry.display &&
+      overrides[entry.prop] !==
+        (entry.liveBefore?.had === true ? entry.liveBefore.value : undefined)
     )
       return null;
+    if (dcPropValue(state.src, entry.prop) !== entry.after) {
+      state.pendingPropsBase ??= getDcPropsJson(state.src) ?? entry.base;
+      state.pendingProps = { ...pendingProps, [entry.prop]: entry.after };
+      return { result: propResult(entry.prop, entry.after, "reopened"), twin: entry };
+    }
   }
-  let value6: Dynamic = context === "undo" ? value3 : options.after;
-  input.pendingPropsBase ??= (0, getDcPropsJson)(input.src) ?? "";
-  input.pendingProps = {
-    ...pendingProps,
-    [options.prop]: value6,
-  };
+  const sourceValue = dcPropValue(state.src, entry.prop);
+  const expected = direction === "undo" ? entry.after : fallbackBefore;
+  if (sourceValue === undefined || sourceValue !== expected) return null;
+  const overrides = live?.overrides;
+  if (overrides !== undefined && Object.hasOwn(overrides, entry.prop) && overrides[entry.prop] !== expected)
+    return null;
+  const target = direction === "undo" ? fallbackBefore : entry.after;
+  const base = (state.pendingPropsBase ??= getDcPropsJson(state.src) ?? "");
+  state.pendingProps = { ...pendingProps, [entry.prop]: target };
   return {
-    result: {
-      kind: "prop",
-      prop: options.prop,
-      liveValue: value6,
-      episode: "reopened",
-    },
+    result: propResult(entry.prop, target, "reopened"),
     twin: {
       kind: "prop",
-      prop: options.prop,
-      before: value3,
-      after: options.after,
-      base: input.pendingPropsBase,
-      display: value3,
+      prop: entry.prop,
+      before: fallbackBefore,
+      after: entry.after,
+      base,
+      display: fallbackBefore,
     },
   };
 }
-function applyPendingScriptUndo(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-): Dynamic {
-  let value: Dynamic = options.before ?? options.base;
-  if (input.pendingScript !== undefined)
-    return context === "undo"
-      ? input.pendingScript !== options.after
-        ? null
-        : options.before === undefined &&
-            options.base !== input.pendingScriptBase
-          ? ((input.pendingScript = options.base),
-            {
-              result: {
-                kind: "script",
-                js: options.base,
-              },
-              twin: {
-                kind: "script",
-                before: options.base,
-                after: options.after,
-                base: input.pendingScriptBase ?? options.base,
-              },
-            })
-          : ((input.pendingScript = options.before),
-            options.before === undefined &&
-              (input.pendingScriptBase = undefined),
-            {
-              result: {
-                kind: "script",
-                js: value,
-              },
-              twin: options,
-            })
-      : options.before === undefined && input.pendingScript === options.base
-        ? ((input.pendingScript = options.after),
-          {
-            result: {
-              kind: "script",
-              js: options.after,
-            },
-            twin: {
-              kind: "script",
-              before: options.base,
-              after: options.after,
-              base: input.pendingScriptBase ?? options.base,
-            },
-          })
-        : input.pendingScript !== options.before
-          ? null
-          : ((input.pendingScript = options.after),
-            {
-              result: {
-                kind: "script",
-                js: options.after,
-              },
-              twin: options,
-            });
-  let value2: Dynamic = (0, parseDcHtmlDocument)(input.src)?.js;
-  if (
-    context === "redo" &&
-    options.before === undefined &&
-    value2 !== options.after
-  )
-    return value2 !== options.base
-      ? null
-      : ((input.pendingScriptBase ??= options.base),
-        (input.pendingScript = options.after),
-        {
-          result: {
+
+export function applyPendingScriptUndo(
+  state: UndoHistoryState,
+  entry: ScriptUndoEntry,
+  direction: UndoDirection,
+): AppliedUndoEntry | null {
+  const fallbackBefore = entry.before ?? entry.base;
+  if (state.pendingScript !== undefined) {
+    if (direction === "undo") {
+      if (state.pendingScript !== entry.after) return null;
+      if (entry.before === undefined && entry.base !== state.pendingScriptBase) {
+        state.pendingScript = entry.base;
+        return {
+          result: { kind: "script", js: entry.base },
+          twin: {
             kind: "script",
-            js: options.after,
+            before: entry.base,
+            after: entry.after,
+            base: state.pendingScriptBase ?? entry.base,
           },
-          twin: options,
-        });
-  if (value2 === undefined) return null;
-  let value3: Dynamic = context === "undo" ? options.after : value;
-  if (value2 !== value3) return null;
-  let value4: Dynamic = context === "undo" ? value : options.after;
-  input.pendingScriptBase ??= value2;
-  input.pendingScript = value4;
+        };
+      }
+      state.pendingScript = entry.before;
+      if (entry.before === undefined) state.pendingScriptBase = undefined;
+      return { result: { kind: "script", js: fallbackBefore }, twin: entry };
+    }
+    if (entry.before === undefined && state.pendingScript === entry.base) {
+      state.pendingScript = entry.after;
+      return {
+        result: { kind: "script", js: entry.after },
+        twin: {
+          kind: "script",
+          before: entry.base,
+          after: entry.after,
+          base: state.pendingScriptBase ?? entry.base,
+        },
+      };
+    }
+    if (state.pendingScript !== entry.before) return null;
+    state.pendingScript = entry.after;
+    return { result: { kind: "script", js: entry.after }, twin: entry };
+  }
+  const sourceScript: string | undefined = parseDcHtmlDocument(state.src)?.js;
+  if (direction === "redo" && entry.before === undefined && sourceScript !== entry.after) {
+    if (sourceScript !== entry.base) return null;
+    state.pendingScriptBase ??= entry.base;
+    state.pendingScript = entry.after;
+    return { result: { kind: "script", js: entry.after }, twin: entry };
+  }
+  if (sourceScript === undefined) return null;
+  const expected = direction === "undo" ? entry.after : fallbackBefore;
+  if (sourceScript !== expected) return null;
+  const target = direction === "undo" ? fallbackBefore : entry.after;
+  const base = (state.pendingScriptBase ??= sourceScript);
+  state.pendingScript = target;
   return {
-    result: {
-      kind: "script",
-      js: value4,
-    },
+    result: { kind: "script", js: target },
     twin: {
       kind: "script",
-      before: value,
-      after: options.after,
-      base: input.pendingScriptBase,
+      before: fallbackBefore,
+      after: entry.after,
+      base,
     },
   };
 }
-function canContinueUndoEdit(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
-  extra?: Dynamic,
-  detail?: Dynamic,
-): Dynamic {
+
+/** 判断一次编辑能否并入上一次连续编辑。 */
+export function canContinueUndoEdit(
+  open: OpenUndoEdit | null,
+  name: unknown,
+  key: unknown,
+  now: number,
+  windowMs: number,
+  value: unknown,
+): boolean {
   return (
-    input !== null &&
-    input.name === options &&
-    input.key === context &&
-    value - input.at < extra &&
-    typeof detail == "string"
+    open !== null &&
+    open.name === name &&
+    open.key === key &&
+    now - open.at < windowMs &&
+    typeof value == "string"
   );
 }
-function combineUndoEntry(
-  input?: Dynamic,
-  source?: Dynamic,
-  context?: Dynamic,
-): Dynamic {
-  let value: Dynamic = input.undo[input.undo.length - 1];
-  return context.continues &&
-    value !== undefined &&
-    typeof value != "string" &&
-    value.kind === source.kind &&
-    (source.kind !== "prop" || value.prop === source.prop) &&
-    value.after === source.before
-    ? ((value.after = source.after), "coalesced")
-    : (input.undo.push(source),
-      trimUndoHistory(input, input.undo.length - context.limit),
-      (input.redo = []),
-      "pushed");
+
+/** 新条目能并入栈顶就合并，否则入栈、裁剪并清空重做栈。 */
+export function combineUndoEntry(
+  state: UndoHistoryState,
+  entry: PropUndoEntry | ScriptUndoEntry,
+  options: { continues: boolean; limit: number },
+): "coalesced" | "pushed" {
+  const top = state.undo[state.undo.length - 1];
+  if (
+    options.continues &&
+    top !== undefined &&
+    typeof top != "string" &&
+    top.kind === entry.kind &&
+    (entry.kind !== "prop" || (top as PropUndoEntry).prop === entry.prop) &&
+    top.after === entry.before
+  ) {
+    top.after = entry.after;
+    return "coalesced";
+  }
+  state.undo.push(entry);
+  trimUndoHistory(state, state.undo.length - options.limit);
+  state.redo = [];
+  return "pushed";
 }
-function removePropUndoEntries(input?: Dynamic, options?: Dynamic): Dynamic {
-  let callback: Dynamic = (source?: Dynamic): Dynamic =>
-      typeof source != "string" &&
-      source.kind === "prop" &&
-      options.includes(source.prop),
-    value: Dynamic = input.undo.filter(
-      (input2?: Dynamic): Dynamic => !callback(input2),
-    ),
-    value2: Dynamic = input.redo.filter(
-      (input2?: Dynamic): Dynamic => !callback(input2),
-    ),
-    value3: Dynamic =
-      value.length !== input.undo.length ||
-      value2.length !== input.redo.length;
-  value3 && ((input.undo = value), (input.redo = value2));
-  return value3;
+
+/** 从两个栈里移除指定属性的条目，返回是否有变化。 */
+export function removePropUndoEntries(state: UndoHistoryState, props: string[]): boolean {
+  const isTargeted = (entry: UndoEntry): boolean =>
+    typeof entry != "string" && entry.kind === "prop" && props.includes(entry.prop);
+  const undo = state.undo.filter((entry) => !isTargeted(entry));
+  const redo = state.redo.filter((entry) => !isTargeted(entry));
+  const changed = undo.length !== state.undo.length || redo.length !== state.redo.length;
+  if (changed) {
+    state.undo = undo;
+    state.redo = redo;
+  }
+  return changed;
 }
-function countPendingUndoEntries(input?: Dynamic): Dynamic {
-  let index: Dynamic = 0;
-  !input.undo.some(
-    (source?: Dynamic): Dynamic =>
-      typeof source != "string" && source.kind === "script",
-  ) &&
-    input.pendingScript !== undefined &&
-    input.pendingScript !== input.pendingScriptBase &&
-    (index += 1);
-  for (let value of Object.keys(input.pendingProps ?? {}) as Dynamic)
-    input.undo.some(
-      (source?: Dynamic): Dynamic =>
-        typeof source != "string" &&
-        source.kind === "prop" &&
-        source.prop === value,
-    ) || (index += 1);
-  return index;
-}
-export {
-  applyPendingPropUndo,
-  applyPendingScriptUndo,
-  applyPendingUndoEntry,
-  canContinueUndoEdit,
-  combineUndoEntry,
-  countPendingUndoEntries,
-  dcPropValue,
-  removePropUndoEntries,
-  resetUndoHistory,
-  trimUndoHistory,
-};
-export function installEditorUndoHistory(): () => void {
-  return () => {};
+
+/** 统计还没有对应撤销条目的待提交修改数。 */
+export function countPendingUndoEntries(state: UndoHistoryState): number {
+  let count = 0;
+  if (
+    !state.undo.some((entry) => typeof entry != "string" && entry.kind === "script") &&
+    state.pendingScript !== undefined &&
+    state.pendingScript !== state.pendingScriptBase
+  )
+    count += 1;
+  for (const prop of Object.keys(state.pendingProps ?? {}))
+    if (!state.undo.some((entry) => typeof entry != "string" && entry.kind === "prop" && entry.prop === prop))
+      count += 1;
+  return count;
 }
