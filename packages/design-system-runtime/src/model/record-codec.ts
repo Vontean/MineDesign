@@ -1,48 +1,79 @@
-import type * as Storage from "../contracts/model-storage";
-import type * as Model from "../contracts";
-import type * as Host from "../contracts/platform-host";
-/** Restored application module; prepare first, initialize in original order. */
+import type { ArtifactComment } from "../contracts/platform-host";
+import type {
+  DatabaseChange,
+  DatabaseError,
+  DatabaseQuerySnapshot,
+  DatabasePort,
+  DatabaseRecord,
+  DatabaseSnapshotInfo,
+  DocumentRecords,
+  NativeDatabase,
+  RawComment,
+} from "../contracts/model-storage";
 import { normalizeComments } from "../host/claude-session";
 
-var JSON_HTML_ESCAPE_PATTERN: RegExp;
-var JSON_LINE_SEPARATOR_ESCAPE_PATTERN: RegExp;
-var DELETE_DOCUMENT_RECORD: symbol;
-var canonicalJsonCache: WeakMap<object, string>;
-var COMMENT_DOCUMENT_PREFIX: string;
-var MAX_COLLECTION_DOCUMENTS: number;
-var DB_ERROR_CODES: string[];
-function estimateEmbeddedJsonBytes(value: unknown): number {
-  let json = JSON.stringify(value)!,
-    escapeBytes =
-      5 * (json.match(JSON_HTML_ESCAPE_PATTERN)?.length ?? 0) +
-      3 * (json.match(JSON_LINE_SEPARATOR_ESCAPE_PATTERN)?.length ?? 0);
+/** 内嵌进 HTML 时 JSON 里的 <、>、& 会被转义成 \uXXXX（每个多 5 字节） */
+export const JSON_HTML_ESCAPE_PATTERN = /[<>&]/g;
+/** U+2028、U+2029 内嵌时同样被转义（每个多 3 字节） */
+export const JSON_LINE_SEPARATOR_ESCAPE_PATTERN = /[\u2028\u2029]/g;
+/** 同步时标记"删除这个文档"的记录 */
+export const DELETE_DOCUMENT_RECORD = Symbol("DELETE_DOC");
+/** 规范化 JSON 的缓存，以对象身份为键 */
+export const canonicalJsonCache = new WeakMap<object, string>();
+/** 评论在数据库里存放的集合名 */
+export const COMMENT_DOCUMENT_PREFIX = "comments";
+export const MAX_COLLECTION_DOCUMENTS = 1000;
+export const DB_ERROR_CODES: string[] = [
+  "invalid_argument",
+  "resource_exhausted",
+  "quota_exceeded",
+  "unavailable",
+  "revoked",
+  "not_granted",
+  "capability_disabled",
+  "capability_removed",
+  "transform_error",
+];
+
+/** 估算 JSON 内嵌进 HTML 后的字节数：UTF-8 长度加上转义增加的部分 */
+export function estimateEmbeddedJsonBytes(value: unknown): number {
+  const json = JSON.stringify(value)!;
+  const escapeBytes =
+    5 * (json.match(JSON_HTML_ESCAPE_PATTERN)?.length ?? 0) +
+    3 * (json.match(JSON_LINE_SEPARATOR_ESCAPE_PATTERN)?.length ?? 0);
   return new TextEncoder().encode(json).length + escapeBytes;
 }
-function isCanonicalJsonObject(
+
+export function isCanonicalJsonObject(
   input: unknown,
-): input is Storage.DatabaseRecord {
+): input is DatabaseRecord {
   return typeof input === "object" && input !== null && !Array.isArray(input);
 }
-function sortJsonObjectKeys(key: string, value: unknown): unknown {
+
+/** JSON.stringify 的 replacer：对象的键按字典序排列 */
+export function sortJsonObjectKeys(_key: string, value: unknown): unknown {
   if (!isCanonicalJsonObject(value)) {
     return value;
   }
-  let sorted: Storage.DatabaseRecord = {};
-  for (let value2 of Object.keys(value).sort()) {
-    sorted[value2] = value[value2];
+  const sorted: DatabaseRecord = {};
+  for (const key of Object.keys(value).sort()) {
+    sorted[key] = value[key];
   }
   return sorted;
 }
-function canonicalJsonString(value: object): string {
-  let cached = canonicalJsonCache.get(value);
+
+export function canonicalJsonString(value: object): string {
+  const cached = canonicalJsonCache.get(value);
   if (cached !== undefined) {
     return cached;
   }
-  let canonical = JSON.stringify(value, sortJsonObjectKeys) ?? "undefined";
+  const canonical = JSON.stringify(value, sortJsonObjectKeys) ?? "undefined";
   canonicalJsonCache.set(value, canonical);
   return canonical;
 }
-function documentRecordsEqual(left: unknown, right: unknown): boolean {
+
+/** 两条记录是否相同；对象按键序无关的规范化 JSON 比较 */
+export function documentRecordsEqual(left: unknown, right: unknown): boolean {
   if (left === right) {
     return true;
   }
@@ -56,212 +87,174 @@ function documentRecordsEqual(left: unknown, right: unknown): boolean {
   }
   return canonicalJsonString(left) === canonicalJsonString(right);
 }
-function jsonValueDepth(value: unknown, maxDepth: number = 64): number {
+
+/** 嵌套深度，叶子为 0；深度达到 maxDepth 即停止下探 */
+export function jsonValueDepth(value: unknown, maxDepth: number = 64): number {
   if (typeof value !== "object" || value === null) {
     return 0;
   }
-  let depth: number = 0;
-  for (let value2 of Array.isArray(value)
+  let depth = 0;
+  for (const child of Array.isArray(value)
     ? (value as readonly unknown[])
-    : Object.values<unknown>(value as Storage.DatabaseRecord)) {
-    if (
-      ((depth = Math.max(depth, jsonValueDepth(value2, maxDepth - 1))),
-      depth >= maxDepth)
-    ) {
+    : Object.values<unknown>(value as DatabaseRecord)) {
+    depth = Math.max(depth, jsonValueDepth(child, maxDepth - 1));
+    if (depth >= maxDepth) {
       break;
     }
   }
   return depth + 1;
 }
-function decomposeCommentDocuments(
-  comments: readonly Host.ArtifactComment[],
-  previous: ReadonlyMap<string, Storage.DatabaseRecord> | undefined,
-  documents: Storage.DocumentRecords,
+
+/** 每条评论写成一个文档；内容未变时沿用上一份对象，便于后续按身份比较 */
+export function decomposeCommentDocuments(
+  comments: readonly ArtifactComment[],
+  previous: ReadonlyMap<string, DatabaseRecord> | undefined,
+  documents: DocumentRecords,
 ): void {
-  for (let value of comments) {
-    let value2: string = COMMENT_DOCUMENT_PREFIX + "/" + value.id,
-      state: Storage.DatabaseRecord = {};
-    for (let [value4, value5] of Object.entries(value) as [
+  for (const comment of comments) {
+    const path = COMMENT_DOCUMENT_PREFIX + "/" + comment.id;
+    const state: DatabaseRecord = {};
+    for (const [field, fieldValue] of Object.entries(comment) as [
       string,
       unknown,
     ][]) {
-      if (value5 !== undefined) {
-        state[value4] = value5;
+      if (fieldValue !== undefined) {
+        state[field] = fieldValue;
       }
     }
-    let value3 = previous?.get(value2);
+    const earlier = previous?.get(path);
     documents.set(
-      value2,
-      value3 !== undefined && documentRecordsEqual(value3, state)
-        ? value3
+      path,
+      earlier !== undefined && documentRecordsEqual(earlier, state)
+        ? earlier
         : state,
     );
   }
 }
-function composeCommentDocuments(
-  documents: ReadonlyMap<string, Storage.DatabaseRecord>,
-): Host.ArtifactComment[] {
-  let comments: Storage.RawComment[] = [],
-    prefix: string = COMMENT_DOCUMENT_PREFIX + "/";
-  for (let [value, value2] of documents) {
-    if (!value.startsWith(prefix) || value.indexOf("/", prefix.length) >= 0) {
+
+/** 从文档集合里取出 comments/<id> 一层的文档，还原成评论列表 */
+export function composeCommentDocuments(
+  documents: ReadonlyMap<string, DatabaseRecord>,
+): ArtifactComment[] {
+  const comments: RawComment[] = [];
+  const prefix = COMMENT_DOCUMENT_PREFIX + "/";
+  for (const [path, record] of documents) {
+    if (!path.startsWith(prefix) || path.indexOf("/", prefix.length) >= 0) {
       continue;
     }
     comments.push({
-      ...value2,
-      id: value.slice(prefix.length),
+      ...record,
+      id: path.slice(prefix.length),
     });
   }
-  return (0, normalizeComments)(comments);
+  return normalizeComments(comments);
 }
-function normalizeDatabaseError(error: unknown): Storage.DatabaseError {
-  let object: Storage.DatabaseRecord =
-      typeof error === "object" && error !== null
-        ? (error as Storage.DatabaseRecord)
-        : {},
-    isDbTypeError =
-      object.name === "TypeError" &&
-      typeof object.message === "string" &&
-      object.message.startsWith("db "),
-    code =
-      typeof object.code === "string" && DB_ERROR_CODES.includes(object.code)
-        ? object.code
-        : isDbTypeError
-          ? "invalid_argument"
-          : "unavailable",
-    message =
-      typeof object.message === "string"
-        ? object.message
-        : error instanceof Error
-          ? error.message
-          : String(code);
+
+/** 数据库错误统一成 { code, message }；"db " 开头的 TypeError 视为参数错误，其余未知错误视为不可用 */
+export function normalizeDatabaseError(error: unknown): DatabaseError {
+  const object: DatabaseRecord =
+    typeof error === "object" && error !== null
+      ? (error as DatabaseRecord)
+      : {};
+  const isDbTypeError =
+    object.name === "TypeError" &&
+    typeof object.message === "string" &&
+    object.message.startsWith("db ");
+  const code =
+    typeof object.code === "string" && DB_ERROR_CODES.includes(object.code)
+      ? object.code
+      : isDbTypeError
+        ? "invalid_argument"
+        : "unavailable";
+  const message =
+    typeof object.message === "string"
+      ? object.message
+      : error instanceof Error
+        ? error.message
+        : String(code);
   return {
-    code: code,
-    message: message,
+    code,
+    message,
   };
 }
-function createDatabaseAdapter(
-  database: Storage.NativeDatabase,
-): Storage.DatabasePort {
+
+export function createDatabaseAdapter(database: NativeDatabase): DatabasePort {
   return {
     subscribe(
-      input: string,
-      options: (
-        changes: Storage.DatabaseChange[],
-        info: Storage.DatabaseSnapshotInfo,
+      collection: string,
+      onChanges: (
+        changes: DatabaseChange[],
+        info: DatabaseSnapshotInfo,
       ) => void,
-      context: (error: Storage.DatabaseError) => void,
+      onError: (error: DatabaseError) => void,
     ): () => void {
-      let flag: boolean = true,
-        value: (() => void) | undefined;
+      let initial = true;
+      let unsubscribe: (() => void) | undefined;
       try {
-        value = database
-          .collection(input)
+        unsubscribe = database
+          .collection(collection)
           .limit(MAX_COLLECTION_DOCUMENTS)
           .onSnapshot(
-            (input2: Storage.DatabaseQuerySnapshot): void => {
-              let items: Storage.DatabaseChange[] = [];
-              for (let value3 of input2.docChanges()) {
-                let value4: string = input + "/" + value3.doc.id;
-                if (value3.type === "removed") {
-                  items.push({
+            (snapshot: DatabaseQuerySnapshot): void => {
+              const changes: DatabaseChange[] = [];
+              for (const change of snapshot.docChanges()) {
+                const path: string = collection + "/" + change.doc.id;
+                if (change.type === "removed") {
+                  changes.push({
                     type: "removed",
-                    path: value4,
+                    path,
                   });
                 } else {
-                  items.push({
-                    type: value3.type,
-                    path: value4,
-                    data: value3.doc.data() ?? {},
+                  changes.push({
+                    type: change.type,
+                    path,
+                    data: change.doc.data() ?? {},
                   });
                 }
               }
-              let value2: boolean = flag;
-              flag = false;
-              options(items, {
-                initial: value2,
-                fromCache: input2.metadata?.fromCache === true,
-                hasPendingWrites: input2.metadata?.hasPendingWrites === true,
+              const isInitial = initial;
+              initial = false;
+              onChanges(changes, {
+                initial: isInitial,
+                fromCache: snapshot.metadata?.fromCache === true,
+                hasPendingWrites: snapshot.metadata?.hasPendingWrites === true,
               });
             },
-            (input2: unknown) => context(normalizeDatabaseError(input2)),
+            (error: unknown) => onError(normalizeDatabaseError(error)),
           );
-      } catch (value2: unknown) {
-        queueMicrotask(() => context(normalizeDatabaseError(value2)));
+      } catch (error: unknown) {
+        queueMicrotask(() => onError(normalizeDatabaseError(error)));
       }
       return (): void => {
         try {
-          value?.();
+          unsubscribe?.();
         } catch {}
       };
     },
-    async set(input: string, options: Storage.DatabaseRecord): Promise<void> {
+    async set(path: string, data: DatabaseRecord): Promise<void> {
       try {
-        await database.doc(input).set({
-          ...options,
+        await database.doc(path).set({
+          ...data,
         });
-      } catch (value: unknown) {
-        throw normalizeDatabaseError(value);
+      } catch (error: unknown) {
+        throw normalizeDatabaseError(error);
       }
     },
-    async update(
-      input: string,
-      options: Storage.DatabaseRecord,
-    ): Promise<void> {
+    async update(path: string, data: DatabaseRecord): Promise<void> {
       try {
-        await database.doc(input).update({
-          ...options,
+        await database.doc(path).update({
+          ...data,
         });
-      } catch (value: unknown) {
-        throw normalizeDatabaseError(value);
+      } catch (error: unknown) {
+        throw normalizeDatabaseError(error);
       }
     },
-    async del(input: string): Promise<void> {
+    async del(path: string): Promise<void> {
       try {
-        await database.doc(input).delete();
-      } catch (value: unknown) {
-        throw normalizeDatabaseError(value);
+        await database.doc(path).delete();
+      } catch (error: unknown) {
+        throw normalizeDatabaseError(error);
       }
     },
-  };
-}
-export {
-  canonicalJsonCache,
-  canonicalJsonString,
-  COMMENT_DOCUMENT_PREFIX,
-  composeCommentDocuments,
-  createDatabaseAdapter,
-  DB_ERROR_CODES,
-  decomposeCommentDocuments,
-  DELETE_DOCUMENT_RECORD,
-  documentRecordsEqual,
-  estimateEmbeddedJsonBytes,
-  isCanonicalJsonObject,
-  JSON_HTML_ESCAPE_PATTERN,
-  JSON_LINE_SEPARATOR_ESCAPE_PATTERN,
-  jsonValueDepth,
-  MAX_COLLECTION_DOCUMENTS,
-  normalizeDatabaseError,
-  sortJsonObjectKeys,
-};
-export function installModelRecordCodec(): () => void {
-  return () => {
-    JSON_HTML_ESCAPE_PATTERN = /[<>&]/g;
-    JSON_LINE_SEPARATOR_ESCAPE_PATTERN = /[\u2028\u2029]/g;
-    DELETE_DOCUMENT_RECORD = Symbol("DELETE_DOC");
-    canonicalJsonCache = new WeakMap();
-    COMMENT_DOCUMENT_PREFIX = "comments";
-    MAX_COLLECTION_DOCUMENTS = 1000;
-    DB_ERROR_CODES = [
-      "invalid_argument",
-      "resource_exhausted",
-      "quota_exceeded",
-      "unavailable",
-      "revoked",
-      "not_granted",
-      "capability_disabled",
-      "capability_removed",
-      "transform_error",
-    ];
   };
 }

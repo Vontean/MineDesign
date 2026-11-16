@@ -1,74 +1,221 @@
-import type * as React from "react";
-import type * as Editor from "../contracts/editor-runtime";
-import type * as Model from "../contracts";
-import type * as Application from "../contracts/application";
-/** Restored application module; prepare first, initialize in original order. */
-import { commonTokenNamePrefix, NUMERIC_TOKEN_SUFFIX_PATTERN, splitTokenName, TOKEN_NAME_SEPARATOR } from "../model/component-inference";
+import type { EditorColorToken } from "../contracts/application";
+import type {
+  ContrastMatcher,
+  ContrastMention,
+  InferredContrastPair,
+} from "../contracts/editor-runtime";
+import {
+  commonTokenNamePrefix,
+  NUMERIC_TOKEN_SUFFIX_PATTERN,
+  splitTokenName,
+  TOKEN_NAME_SEPARATOR,
+} from "../model/component-inference";
 
-var COLOR_ROLE_WORDS: string[][];
-var COLOR_SURFACE_ROLE: number;
-var COLOR_TEXT_ROLE: number;
-var COLOR_BORDER_ROLE: number;
-var COLOR_ON_ROLE: number;
-var stripTokenNamespace: (name: string, namespace: string) => string;
-var CONTRAST_EXCLUDED_TOKEN_WORDS: Set<string>;
-var CONTRAST_HIGHLIGHT_WORDS: Set<string>;
-var CONTRAST_SURFACE_MODIFIER_WORDS: Set<string>;
-var CONTRAST_ON_VERB_WORDS: Set<string>;
-var CONTRAST_NEGATION_WORDS: Set<string>;
-var CONTRAST_TEXT_USAGE_PATTERN: RegExp;
-var CONTRAST_ON_WORD_PATTERN: RegExp;
-var CONTRAST_CLAUSE_BOUNDARY_PATTERN: RegExp;
-var CONTRAST_CLAUSE_BOUNDARIES_PATTERN: RegExp;
-var CONTRAST_TOKEN_JOIN_PATTERN: RegExp;
-var escapeContrastRegex: (input: string) => string;
-function colorTokenRole(name: string, namespace: string): number {
-  let value = (
-    (0, splitTokenName)(stripTokenNamespace(name, namespace))[0] ?? ""
-  ).toLowerCase();
-  return COLOR_ROLE_WORDS.findIndex((input) => input.includes(value));
+/** 颜色角色词表，下标即角色序号：表面、文字、强调、边框、on 前景 */
+export const COLOR_ROLE_WORDS: string[][] = [
+  [
+    "surface",
+    "bg",
+    "background",
+    "page",
+    "ground",
+    "canvas",
+    "paper",
+    "base",
+  ],
+  ["text", "ink", "fg", "foreground", "copy", "heading", "body"],
+  [
+    "accent",
+    "brand",
+    "primary",
+    "secondary",
+    "fill",
+    "link",
+    "action",
+    "interactive",
+  ],
+  [
+    "border",
+    "divider",
+    "line",
+    "rule",
+    "stroke",
+    "outline",
+    "separator",
+    "hairline",
+  ],
+  ["on", "oncolor"],
+];
+export const COLOR_SURFACE_ROLE = 0;
+export const COLOR_TEXT_ROLE = 1;
+export const COLOR_BORDER_ROLE = 3;
+export const COLOR_ON_ROLE = 4;
+
+export const CONTRAST_EXCLUDED_TOKEN_WORDS = new Set([
+  "disabled",
+  "inactive",
+  "inverse",
+  "inverted",
+  "reverse",
+]);
+export const CONTRAST_HIGHLIGHT_WORDS = new Set([
+  "highlight",
+  "wash",
+  "tint",
+  "selection",
+]);
+export const CONTRAST_SURFACE_MODIFIER_WORDS = new Set([
+  "default",
+  "base",
+  "main",
+  "plain",
+  "subtle",
+  "subtler",
+  "subtlest",
+  "muted",
+  "soft",
+  "secondary",
+  "tertiary",
+  "raised",
+  "sunken",
+  "inset",
+  "elevated",
+  "lowest",
+  "lower",
+  "low",
+  "high",
+  "higher",
+  "highest",
+  "dim",
+  "bright",
+  "container",
+  "card",
+  "panel",
+  "popover",
+  "sheet",
+  "page",
+  "canvas",
+  "app",
+  "body",
+  "alt",
+  "layer",
+  "level",
+]);
+export const CONTRAST_ON_VERB_WORDS = new Set([
+  "based",
+  "depend",
+  "depends",
+  "depending",
+  "rely",
+  "relies",
+  "relying",
+  "build",
+  "builds",
+  "building",
+  "built",
+  "turn",
+  "turns",
+  "turning",
+  "turned",
+  "focus",
+  "focuses",
+  "focusing",
+  "focused",
+  "click",
+  "clicking",
+  "clicked",
+]);
+export const CONTRAST_NEGATION_WORDS = new Set([
+  "never",
+  "not",
+  "avoid",
+  "dont",
+  "don’t",
+  "don't",
+  "except",
+]);
+export const CONTRAST_TEXT_USAGE_PATTERN =
+  /\b(?:text|label|copy|heading|caption|type)s?\b/i;
+export const CONTRAST_ON_WORD_PATTERN = /(?<![A-Za-z0-9_-])on(?![A-Za-z0-9_-])/gi;
+export const CONTRAST_CLAUSE_BOUNDARY_PATTERN = /[.;:()\u2014]|\s[-\u2013]\s/;
+export const CONTRAST_CLAUSE_BOUNDARIES_PATTERN = /[.;:()\u2014]|\s[-\u2013]\s/g;
+export const CONTRAST_TOKEN_JOIN_PATTERN =
+  /^[\s`,/&]*(?:(?:and|or|either|the|a|an)\b[\s`,/&]*)*$/i;
+
+/** 去掉名称开头的命名空间前缀；前缀整个就是名称时保持原样 */
+export function stripTokenNamespace(name: string, namespace: string): string {
+  return namespace !== "" &&
+    name.startsWith(namespace) &&
+    name.length > namespace.length
+    ? name.slice(namespace.length)
+    : name;
 }
-function isContrastBackgroundToken(name: string, namespace: string): boolean {
-  let value = colorTokenRole(name, namespace);
+
+/** 转成可放进 RegExp 的字面文本 */
+export function escapeContrastRegex(text: string): string {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/** 名称第一段所属的颜色角色序号（COLOR_ROLE_WORDS 的下标），不属于任何角色为 -1 */
+export function colorTokenRole(name: string, namespace: string): number {
+  const firstWord = (
+    splitTokenName(stripTokenNamespace(name, namespace))[0] ?? ""
+  ).toLowerCase();
+  return COLOR_ROLE_WORDS.findIndex((words) => words.includes(firstWord));
+}
+
+/** 能作为对比度底色的 token：不是文字、"on" 前景色或边框 */
+export function isContrastBackgroundToken(
+  name: string,
+  namespace: string,
+): boolean {
+  const role = colorTokenRole(name, namespace);
   return (
-    value !== COLOR_TEXT_ROLE &&
-    value !== COLOR_ON_ROLE &&
-    value !== COLOR_BORDER_ROLE
+    role !== COLOR_TEXT_ROLE &&
+    role !== COLOR_ON_ROLE &&
+    role !== COLOR_BORDER_ROLE
   );
 }
-function isGeneralSurfaceToken(name: string, namespace: string): boolean {
-  return (0, splitTokenName)(stripTokenNamespace(name, namespace))
+
+/** 通用的表面色：名称除第一段外只剩层级、容器之类的修饰词 */
+export function isGeneralSurfaceToken(
+  name: string,
+  namespace: string,
+): boolean {
+  return splitTokenName(stripTokenNamespace(name, namespace))
     .slice(1)
     .every(
-      (input: string) =>
-        CONTRAST_SURFACE_MODIFIER_WORDS.has(input.toLowerCase()) ||
-        colorTokenRole(input, "") === COLOR_SURFACE_ROLE,
+      (word: string) =>
+        CONTRAST_SURFACE_MODIFIER_WORDS.has(word.toLowerCase()) ||
+        colorTokenRole(word, "") === COLOR_SURFACE_ROLE,
     );
 }
-function contrastTokenMatchers(
+
+/** 为每个底色 token 生成在说明文字里查找它的正则；长名称排在前面，优先匹配 */
+export function contrastTokenMatchers(
   names: Iterable<string>,
   namespace: string,
-): Editor.ContrastMatcher[] {
-  let items: { name: string; key: string }[] = [];
-  for (let value of names) {
-    if (!isContrastBackgroundToken(value, namespace)) {
+): ContrastMatcher[] {
+  const keys: { name: string; key: string }[] = [];
+  for (const name of names) {
+    if (!isContrastBackgroundToken(name, namespace)) {
       continue;
     }
-    items.push({
-      name: value,
-      key: value,
+    keys.push({
+      name,
+      key: name,
     });
-    let value2 = stripTokenNamespace(value, namespace);
-    if (value2 !== value) {
-      items.push({
-        name: value,
-        key: value2,
+    const shortKey = stripTokenNamespace(name, namespace);
+    if (shortKey !== name) {
+      keys.push({
+        name,
+        key: shortKey,
       });
     }
   }
-  items.sort((input, options) => options.key.length - input.key.length);
-  return items.map(({ name: name, key: key }) => ({
-    name: name,
+  keys.sort((left, right) => right.key.length - left.key.length);
+  return keys.map(({ name, key }) => ({
+    name,
     re: new RegExp(
       "(^|[^A-Za-z0-9_.-])`?" +
         escapeContrastRegex(key) +
@@ -77,10 +224,15 @@ function contrastTokenMatchers(
     ),
   }));
 }
-function contrastBackgroundsInUsage(
+
+/**
+ * 从使用说明里找出 "on <底色>" 提到的底色，按出现位置排序。
+ * "on" 之前的分句里有否定词，或紧跟 depends、click 等动词时，这个 "on" 不算。
+ */
+export function contrastBackgroundsInUsage(
   usage: string | undefined,
   name: string,
-  matchers: Editor.ContrastMatcher[],
+  matchers: ContrastMatcher[],
 ): string[] {
   if (
     usage === undefined ||
@@ -89,332 +241,174 @@ function contrastBackgroundsInUsage(
   ) {
     return [];
   }
-  let entries = new Map<string, number>();
-  for (let value of usage.matchAll(CONTRAST_ON_WORD_PATTERN)) {
-    let value2 = value.index ?? 0,
-      value3 = (
-        usage
-          .slice(0, value2)
-          .split(CONTRAST_CLAUSE_BOUNDARIES_PATTERN)
-          .pop() ?? ""
-      )
-        .trimEnd()
-        .split(/\s+/)
-        .map((input) => input.toLowerCase().replace(/[^a-z'\u2019]/g, ""));
+  const positions = new Map<string, number>();
+  for (const onMatch of usage.matchAll(CONTRAST_ON_WORD_PATTERN)) {
+    const onIndex = onMatch.index ?? 0;
+    const wordsBefore = (
+      usage
+        .slice(0, onIndex)
+        .split(CONTRAST_CLAUSE_BOUNDARIES_PATTERN)
+        .pop() ?? ""
+    )
+      .trimEnd()
+      .split(/\s+/)
+      .map((word) => word.toLowerCase().replace(/[^a-z'\u2019]/g, ""));
     if (
-      value3.some((input) => CONTRAST_NEGATION_WORDS.has(input)) ||
-      CONTRAST_ON_VERB_WORDS.has(value3[value3.length - 1] ?? "")
+      wordsBefore.some((word) => CONTRAST_NEGATION_WORDS.has(word)) ||
+      CONTRAST_ON_VERB_WORDS.has(wordsBefore[wordsBefore.length - 1] ?? "")
     ) {
       continue;
     }
-    let value4 = usage.slice(value2 + value[0].length),
-      value5 = value4.search(CONTRAST_CLAUSE_BOUNDARY_PATTERN);
-    if (value5 >= 0) {
-      value4 = value4.slice(0, value5);
+    // 只看 "on" 之后、本分句结束之前的文字
+    let clause = usage.slice(onIndex + onMatch[0].length);
+    const clauseEnd = clause.search(CONTRAST_CLAUSE_BOUNDARY_PATTERN);
+    if (clauseEnd >= 0) {
+      clause = clause.slice(0, clauseEnd);
     }
-    let items: Editor.ContrastMention[] = [];
-    for (let value7 of matchers) {
+    const mentions: ContrastMention[] = [];
+    for (const matcher of matchers) {
       if (
-        value7.name === name ||
-        entries.has(value7.name) ||
-        items.some((input): boolean => input.name === value7.name)
+        matcher.name === name ||
+        positions.has(matcher.name) ||
+        mentions.some((mention): boolean => mention.name === matcher.name)
       ) {
         continue;
       }
-      let value8 = value7.re.exec(value4);
-      if (value8 === null) {
+      const found = matcher.re.exec(clause);
+      if (found === null) {
         continue;
       }
-      let value9 = value8.index + (value8[1] ?? "").length;
+      const start = found.index + (found[1] ?? "").length;
+      // 与已记录的提及重叠时，保留先匹配到的（名称更长的）
       if (
-        items.some(
-          (input) =>
-            value9 < input.end &&
-            value8.index + value8[0].length > input.start,
+        mentions.some(
+          (mention) =>
+            start < mention.end && found.index + found[0].length > mention.start,
         )
       ) {
         continue;
       }
-      items.push({
-        name: value7.name,
-        start: value9,
-        end: value8.index + value8[0].length,
+      mentions.push({
+        name: matcher.name,
+        start,
+        end: found.index + found[0].length,
       });
     }
-    items.sort((input, options) => input.start - options.start);
-    let value6 = -1;
-    for (let value7 of items) {
+    mentions.sort((left, right) => left.start - right.start);
+    // 只接受用 and、or、逗号连起来的连续提及
+    let previousEnd = -1;
+    for (const mention of mentions) {
       if (
-        value6 >= 0 &&
-        !CONTRAST_TOKEN_JOIN_PATTERN.test(value4.slice(value6, value7.start))
+        previousEnd >= 0 &&
+        !CONTRAST_TOKEN_JOIN_PATTERN.test(
+          clause.slice(previousEnd, mention.start),
+        )
       ) {
         break;
       }
-      entries.set(value7.name, value2 + value7.start);
-      value6 = value7.end;
+      positions.set(mention.name, onIndex + mention.start);
+      previousEnd = mention.end;
     }
   }
-  return [...entries.entries()]
-    .sort((input, options) => input[1] - options[1])
-    .map(([input]) => input);
+  return [...positions.entries()]
+    .sort((left, right) => left[1] - right[1])
+    .map(([tokenName]) => tokenName);
 }
-function inferColorContrastPairs(
-  tokens: Pick<Application.EditorColorToken, "name" | "usage">[],
-): Map<string, Editor.InferredContrastPair> {
-  let values = new Set(tokens.map((input) => input.name)),
-    value = (0, commonTokenNamePrefix)([...values]),
-    value2 = contrastTokenMatchers(values, value),
-    value3 = tokens
-      .filter(
-        (input) =>
-          colorTokenRole(input.name, value) === COLOR_SURFACE_ROLE &&
-          !NUMERIC_TOKEN_SUFFIX_PATTERN.test(
-            stripTokenNamespace(input.name, value),
-          ) &&
-          isGeneralSurfaceToken(input.name, value),
-      )
-      .map((input) => input.name),
-    entries = new Map<string, Editor.InferredContrastPair>();
-  for (let value4 of tokens) {
-    let value5 = colorTokenRole(value4.name, value);
-    if (value5 === COLOR_SURFACE_ROLE || value5 === COLOR_BORDER_ROLE) {
+
+/**
+ * 为文字与 "on" 前景色 token 推断要对比的底色，来源依次是：
+ * usage 说明里提到的底色、名称里 on 之后的底色（on）、所有通用表面色（name）。
+ */
+export function inferColorContrastPairs(
+  tokens: Pick<EditorColorToken, "name" | "usage">[],
+): Map<string, InferredContrastPair> {
+  const names = new Set(tokens.map((token) => token.name));
+  const namespace = commonTokenNamePrefix([...names]);
+  const matchers = contrastTokenMatchers(names, namespace);
+  const surfaceNames = tokens
+    .filter(
+      (token) =>
+        colorTokenRole(token.name, namespace) === COLOR_SURFACE_ROLE &&
+        !NUMERIC_TOKEN_SUFFIX_PATTERN.test(
+          stripTokenNamespace(token.name, namespace),
+        ) &&
+        isGeneralSurfaceToken(token.name, namespace),
+    )
+    .map((token) => token.name);
+  const pairs = new Map<string, InferredContrastPair>();
+  for (const token of tokens) {
+    const role = colorTokenRole(token.name, namespace);
+    if (role === COLOR_SURFACE_ROLE || role === COLOR_BORDER_ROLE) {
       continue;
     }
-    let value6 = (0, splitTokenName)(
-        stripTokenNamespace(value4.name, value),
-      ).map((input: string) => input.toLowerCase()),
-      value7 =
-        value5 === COLOR_ON_ROLE
-          ? 0
-          : value5 === COLOR_TEXT_ROLE
-            ? value6.indexOf("on", 1)
-            : -1;
+    const words = splitTokenName(
+      stripTokenNamespace(token.name, namespace),
+    ).map((word: string) => word.toLowerCase());
+    // "on" 所在位置：on 角色名在开头，文字角色名里 on 在第二段及以后
+    const onIndex =
+      role === COLOR_ON_ROLE
+        ? 0
+        : role === COLOR_TEXT_ROLE
+          ? words.indexOf("on", 1)
+          : -1;
     if (
-      value5 === COLOR_TEXT_ROLE &&
-      value6
-        .slice(1, value7 > 0 ? value7 : undefined)
+      role === COLOR_TEXT_ROLE &&
+      words
+        .slice(1, onIndex > 0 ? onIndex : undefined)
         .some(
-          (input: string) =>
-            CONTRAST_HIGHLIGHT_WORDS.has(input) ||
-            colorTokenRole(input, "") === COLOR_SURFACE_ROLE,
+          (word: string) =>
+            CONTRAST_HIGHLIGHT_WORDS.has(word) ||
+            colorTokenRole(word, "") === COLOR_SURFACE_ROLE,
         )
     ) {
       continue;
     }
-    if (
-      value6.some((input: string) => CONTRAST_EXCLUDED_TOKEN_WORDS.has(input))
-    ) {
+    if (words.some((word: string) => CONTRAST_EXCLUDED_TOKEN_WORDS.has(word))) {
       continue;
     }
-    let value8 =
-      value5 === COLOR_TEXT_ROLE ||
-      value5 === COLOR_ON_ROLE ||
-      (value4.usage !== undefined &&
-        CONTRAST_TEXT_USAGE_PATTERN.test(value4.usage))
-        ? contrastBackgroundsInUsage(value4.usage, value4.name, value2)
+    const fromUsage =
+      role === COLOR_TEXT_ROLE ||
+      role === COLOR_ON_ROLE ||
+      (token.usage !== undefined && CONTRAST_TEXT_USAGE_PATTERN.test(token.usage))
+        ? contrastBackgroundsInUsage(token.usage, token.name, matchers)
         : [];
-    if (value8.length > 0) {
-      entries.set(value4.name, {
-        against: value8,
+    if (fromUsage.length > 0) {
+      pairs.set(token.name, {
+        against: fromUsage,
         source: "usage",
       });
       continue;
     }
-    if (value7 >= 0) {
-      let value9 = (0, splitTokenName)(
-          stripTokenNamespace(value4.name, value),
-        )
-          .slice(value7 + 1)
-          .join(TOKEN_NAME_SEPARATOR),
-        value10 = [value + value9, value9].find(
-          (input) =>
-            input !== "" &&
-            input !== value4.name &&
-            values.has(input) &&
-            isContrastBackgroundToken(input, value),
-        );
-      if (value10 !== undefined) {
-        entries.set(value4.name, {
-          against: [value10],
+    if (onIndex >= 0) {
+      const background = splitTokenName(
+        stripTokenNamespace(token.name, namespace),
+      )
+        .slice(onIndex + 1)
+        .join(TOKEN_NAME_SEPARATOR);
+      const target = [namespace + background, background].find(
+        (candidate) =>
+          candidate !== "" &&
+          candidate !== token.name &&
+          names.has(candidate) &&
+          isContrastBackgroundToken(candidate, namespace),
+      );
+      if (target !== undefined) {
+        pairs.set(token.name, {
+          against: [target],
           source: "on",
         });
       }
       continue;
     }
-    if (value5 === COLOR_TEXT_ROLE) {
-      let value9 = value3.filter((input): boolean => input !== value4.name);
-      if (value9.length > 0) {
-        entries.set(value4.name, {
-          against: value9,
+    if (role === COLOR_TEXT_ROLE) {
+      const against = surfaceNames.filter((name): boolean => name !== token.name);
+      if (against.length > 0) {
+        pairs.set(token.name, {
+          against,
           source: "name",
         });
       }
     }
   }
-  return entries;
-}
-export {
-  COLOR_BORDER_ROLE,
-  COLOR_ON_ROLE,
-  COLOR_ROLE_WORDS,
-  COLOR_SURFACE_ROLE,
-  COLOR_TEXT_ROLE,
-  colorTokenRole,
-  CONTRAST_CLAUSE_BOUNDARIES_PATTERN,
-  CONTRAST_CLAUSE_BOUNDARY_PATTERN,
-  CONTRAST_EXCLUDED_TOKEN_WORDS,
-  CONTRAST_HIGHLIGHT_WORDS,
-  CONTRAST_NEGATION_WORDS,
-  CONTRAST_ON_VERB_WORDS,
-  CONTRAST_ON_WORD_PATTERN,
-  CONTRAST_SURFACE_MODIFIER_WORDS,
-  CONTRAST_TEXT_USAGE_PATTERN,
-  CONTRAST_TOKEN_JOIN_PATTERN,
-  contrastBackgroundsInUsage,
-  contrastTokenMatchers,
-  escapeContrastRegex,
-  inferColorContrastPairs,
-  isContrastBackgroundToken,
-  isGeneralSurfaceToken,
-  stripTokenNamespace,
-};
-export function installEditorColorContrastPairs(): () => void {
-  return () => {
-    COLOR_ROLE_WORDS = [
-      [
-        "surface",
-        "bg",
-        "background",
-        "page",
-        "ground",
-        "canvas",
-        "paper",
-        "base",
-      ],
-      ["text", "ink", "fg", "foreground", "copy", "heading", "body"],
-      [
-        "accent",
-        "brand",
-        "primary",
-        "secondary",
-        "fill",
-        "link",
-        "action",
-        "interactive",
-      ],
-      [
-        "border",
-        "divider",
-        "line",
-        "rule",
-        "stroke",
-        "outline",
-        "separator",
-        "hairline",
-      ],
-      ["on", "oncolor"],
-    ];
-    COLOR_SURFACE_ROLE = 0;
-    COLOR_TEXT_ROLE = 1;
-    COLOR_BORDER_ROLE = 3;
-    COLOR_ON_ROLE = 4;
-    stripTokenNamespace = (name: string, namespace: string) =>
-      namespace !== "" &&
-      name.startsWith(namespace) &&
-      name.length > namespace.length
-        ? name.slice(namespace.length)
-        : name;
-    CONTRAST_EXCLUDED_TOKEN_WORDS = new Set([
-      "disabled",
-      "inactive",
-      "inverse",
-      "inverted",
-      "reverse",
-    ]);
-    CONTRAST_HIGHLIGHT_WORDS = new Set([
-      "highlight",
-      "wash",
-      "tint",
-      "selection",
-    ]);
-    CONTRAST_SURFACE_MODIFIER_WORDS = new Set([
-      "default",
-      "base",
-      "main",
-      "plain",
-      "subtle",
-      "subtler",
-      "subtlest",
-      "muted",
-      "soft",
-      "secondary",
-      "tertiary",
-      "raised",
-      "sunken",
-      "inset",
-      "elevated",
-      "lowest",
-      "lower",
-      "low",
-      "high",
-      "higher",
-      "highest",
-      "dim",
-      "bright",
-      "container",
-      "card",
-      "panel",
-      "popover",
-      "sheet",
-      "page",
-      "canvas",
-      "app",
-      "body",
-      "alt",
-      "layer",
-      "level",
-    ]);
-    CONTRAST_ON_VERB_WORDS = new Set([
-      "based",
-      "depend",
-      "depends",
-      "depending",
-      "rely",
-      "relies",
-      "relying",
-      "build",
-      "builds",
-      "building",
-      "built",
-      "turn",
-      "turns",
-      "turning",
-      "turned",
-      "focus",
-      "focuses",
-      "focusing",
-      "focused",
-      "click",
-      "clicking",
-      "clicked",
-    ]);
-    CONTRAST_NEGATION_WORDS = new Set([
-      "never",
-      "not",
-      "avoid",
-      "dont",
-      "don’t",
-      "don't",
-      "except",
-    ]);
-    CONTRAST_TEXT_USAGE_PATTERN =
-      /\b(?:text|label|copy|heading|caption|type)s?\b/i;
-    CONTRAST_ON_WORD_PATTERN = /(?<![A-Za-z0-9_-])on(?![A-Za-z0-9_-])/gi;
-    CONTRAST_CLAUSE_BOUNDARY_PATTERN = /[.;:()\u2014]|\s[-\u2013]\s/;
-    CONTRAST_CLAUSE_BOUNDARIES_PATTERN = /[.;:()\u2014]|\s[-\u2013]\s/g;
-    CONTRAST_TOKEN_JOIN_PATTERN =
-      /^[\s`,/&]*(?:(?:and|or|either|the|a|an)\b[\s`,/&]*)*$/i;
-    escapeContrastRegex = (input: string) =>
-      input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  };
+  return pairs;
 }

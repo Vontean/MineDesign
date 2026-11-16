@@ -1,93 +1,85 @@
-/** Restored application module; prepare first, initialize in original order. */
 import type { FileData } from "../contracts/files-core";
-import type * as Files from "../contracts";
 import { parseDataUriHeader } from "../model/file-policy";
 
-var BASE64_ALPHABET: string;
-var BASE64_ENCODE_CHUNK_BYTES: number;
-function encodeBytesBase64(bytes: Uint8Array<ArrayBufferLike>) {
+export const BASE64_ALPHABET =
+  "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+/** 每次交给 btoa 的字节数，需是 3 的倍数，避免中间出现填充符 */
+export const BASE64_ENCODE_CHUNK_BYTES = 24576;
+
+/** 分块编码，避免一次展开超大数组触发参数个数上限 */
+export function encodeBytesBase64(bytes: Uint8Array<ArrayBufferLike>) {
   let base64 = "";
   for (
-    let index = 0;
-    index < bytes.length;
-    index += BASE64_ENCODE_CHUNK_BYTES
+    let offset = 0;
+    offset < bytes.length;
+    offset += BASE64_ENCODE_CHUNK_BYTES
   ) {
     base64 += btoa(
       String.fromCharCode.apply(
         null,
         bytes.subarray(
-          index,
-          index + BASE64_ENCODE_CHUNK_BYTES,
+          offset,
+          offset + BASE64_ENCODE_CHUNK_BYTES,
         ) as unknown as number[],
       ),
     );
   }
   return base64;
 }
-function decodeBytesBase64(text: string) {
-  let base64 = text.replace(/[^A-Za-z0-9+/]/g, ""),
-    bytes = new Uint8Array(Math.floor((base64.length * 3) / 4)),
-    written: number = 0;
-  for (let index = 0; index + 1 < base64.length; index += 4) {
-    let value = BASE64_ALPHABET.indexOf(base64[index]),
-      value2 = BASE64_ALPHABET.indexOf(base64[index + 1]),
-      value3 =
-        index + 2 < base64.length
-          ? BASE64_ALPHABET.indexOf(base64[index + 2])
-          : -1,
-      value4 =
-        index + 3 < base64.length
-          ? BASE64_ALPHABET.indexOf(base64[index + 3])
-          : -1;
-    bytes[written++] = (value << 2) | (value2 >> 4);
-    if (value3 >= 0) {
-      bytes[written++] = ((value2 & 15) << 4) | (value3 >> 2);
+
+/** 宽松解码：丢弃字母表外的字符，缺失的填充按长度推断 */
+export function decodeBytesBase64(text: string) {
+  const base64 = text.replace(/[^A-Za-z0-9+/]/g, "");
+  const bytes = new Uint8Array(Math.floor((base64.length * 3) / 4));
+  let written = 0;
+  for (let offset = 0; offset + 1 < base64.length; offset += 4) {
+    const first = BASE64_ALPHABET.indexOf(base64[offset]);
+    const second = BASE64_ALPHABET.indexOf(base64[offset + 1]);
+    const third =
+      offset + 2 < base64.length
+        ? BASE64_ALPHABET.indexOf(base64[offset + 2])
+        : -1;
+    const fourth =
+      offset + 3 < base64.length
+        ? BASE64_ALPHABET.indexOf(base64[offset + 3])
+        : -1;
+    bytes[written++] = (first << 2) | (second >> 4);
+    if (third >= 0) {
+      bytes[written++] = ((second & 15) << 4) | (third >> 2);
     }
-    if (value4 >= 0) {
-      bytes[written++] = ((value3 & 3) << 6) | value4;
+    if (fourth >= 0) {
+      bytes[written++] = ((third & 3) << 6) | fourth;
     }
   }
   return bytes.subarray(0, written);
 }
-function bytesToFileDataUri(
+
+export function bytesToFileDataUri(
   bytes: Uint8Array<ArrayBufferLike>,
   mime: string,
 ): string {
   return "data:" + mime + ";base64," + encodeBytesBase64(bytes);
 }
-function decodeHeldFileDataUri(dataUri: string): FileData | null {
-  let parsed = (0, parseDataUriHeader)(dataUri);
-  if (parsed === null) {
+
+/** 解析 data URI；头部不合法或百分号编码有误时返回 null */
+export function decodeHeldFileDataUri(dataUri: string): FileData | null {
+  const header = parseDataUriHeader(dataUri);
+  if (header === null) {
     return null;
   }
-  let payload = dataUri.slice(parsed.payloadOffset);
-  if (parsed.base64) {
+  const payload = dataUri.slice(header.payloadOffset);
+  if (header.base64) {
     return {
       bytes: decodeBytesBase64(payload),
-      type: parsed.mime,
+      type: header.mime,
     };
   }
   try {
     return {
       bytes: new TextEncoder().encode(decodeURIComponent(payload)),
-      type: parsed.mime,
+      type: header.mime,
     };
   } catch {
     return null;
   }
-}
-export {
-  BASE64_ALPHABET,
-  BASE64_ENCODE_CHUNK_BYTES,
-  bytesToFileDataUri,
-  decodeBytesBase64,
-  decodeHeldFileDataUri,
-  encodeBytesBase64,
-};
-export function installFilesDataUri(): () => void {
-  return () => {
-    BASE64_ALPHABET =
-      "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-    BASE64_ENCODE_CHUNK_BYTES = 24576;
-  };
 }

@@ -1,60 +1,98 @@
-/** Restored application module; prepare first, initialize in original order. */
 import type {
+  FileIndexDelta,
+  FileMergeOptions,
+  FileMutation,
+  FileMutationBatch,
+  IndexPresentationDelta,
+  IndexPresentationPatch,
   JsonMergeValue,
   JsonRecord,
   MergeSchema,
-  FileMergeOptions,
-  FileMergeResult,
-  FileMutation,
-  FileMutationBatch,
 } from "../contracts/files-core";
-import type * as Files from "../contracts";
-import { assetFileIndexAddress, buildFilesIndex, FILES_INDEX_MERGE_SCHEMA, projectFilePath, projectFilesForSave, relativeProjectFilePath, restoreFilesFromIndex } from "./files-index";
-import { cloneMergeValue, mergeOrderedStringList, mergeValuesEqual } from "./index-file-store";
+import type { FileTable, FilesIndex } from "../contracts";
+import {
+  assetFileIndexAddress,
+  buildFilesIndex,
+  FILES_INDEX_MERGE_SCHEMA,
+  projectFilePath,
+  projectFilesForSave,
+  relativeProjectFilePath,
+  restoreFilesFromIndex,
+} from "./files-index";
+import {
+  cloneMergeValue,
+  mergeOrderedStringList,
+  mergeValuesEqual,
+} from "./index-file-store";
 
-var relativeProjectFilesForMerge: (
-  files: Files.FileTable,
-) => Map<string, string>;
-var isFilesMergeObject: (value: unknown) => value is JsonRecord;
-var isFilesMergeStringArray: (value: unknown) => value is string[];
-var supportsDroppedPaths: (document: { dropPaths?: unknown }) => boolean;
-function isOrderSubsequence(
+/** 存盘用的项目文件，键改成相对路径 */
+export function relativeProjectFilesForMerge(
+  files: FileTable,
+): Map<string, string> {
+  const entries = new Map<string, string>();
+  for (const [path, content] of projectFilesForSave(files)) {
+    entries.set(relativeProjectFilePath(path)!, content);
+  }
+  return entries;
+}
+
+export function isFilesMergeObject(value: unknown): value is JsonRecord {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+export function isFilesMergeStringArray(value: unknown): value is string[] {
+  return (
+    Array.isArray(value) &&
+    value.every((item: unknown): boolean => typeof item === "string")
+  );
+}
+
+export function supportsDroppedPaths(document: {
+  dropPaths?: unknown;
+}): boolean {
+  return typeof document.dropPaths === "function";
+}
+
+/** subset 在 order 中出现的顺序，是否与它自身的顺序一致 */
+export function isOrderSubsequence(
   order: readonly string[],
   subset: readonly string[],
 ) {
-  let values = new Set(subset),
-    values2 = new Set(order);
-  return (0, mergeValuesEqual)(
-    order.filter((input: string) => values.has(input)),
-    subset.filter((input: string) => values2.has(input)),
+  const subsetItems = new Set(subset);
+  const orderItems = new Set(order);
+  return mergeValuesEqual(
+    order.filter((item: string) => subsetItems.has(item)),
+    subset.filter((item: string) => orderItems.has(item)),
   );
 }
-function resolveFilesMergeSchema(
+
+/** 取 key 对应的子结构：先看 schema 声明，再按各版本实际的值推断 */
+export function resolveFilesMergeSchema(
   schema: MergeSchema | undefined,
   key: string,
   ...context: JsonMergeValue[]
 ): MergeSchema {
   if (schema?.kind === "map") {
-    let value2 =
+    const declared =
       schema.keys !== undefined && Object.hasOwn(schema.keys, key)
         ? schema.keys[key]
         : undefined;
-    if (value2 !== undefined) {
-      return value2;
+    if (declared !== undefined) {
+      return declared;
     }
     if (schema.of !== undefined) {
       return schema.of;
     }
   }
-  let value = context.filter(
-    (input: JsonMergeValue): boolean => input !== undefined,
+  const present = context.filter(
+    (value: JsonMergeValue): boolean => value !== undefined,
   );
-  if (value.length > 0 && value.every(isFilesMergeObject)) {
+  if (present.length > 0 && present.every(isFilesMergeObject)) {
     return {
       kind: "map",
     };
   }
-  if (value.length > 0 && value.every(isFilesMergeStringArray)) {
+  if (present.length > 0 && present.every(isFilesMergeStringArray)) {
     return {
       kind: "list",
     };
@@ -63,7 +101,12 @@ function resolveFilesMergeSchema(
     kind: "leaf",
   };
 }
-function mergeFilesIndexKeepingLocal(
+
+/**
+ * 以对方（theirs）为准合并索引，但保留本地（ours）相对 base 的改动。
+ * 与本地改动冲突、需要取对方的路径记入 kept。
+ */
+export function mergeFilesIndexKeepingLocal(
   base: JsonMergeValue,
   ours: JsonMergeValue,
   theirs: JsonMergeValue,
@@ -71,14 +114,11 @@ function mergeFilesIndexKeepingLocal(
   path: string,
   kept: string[],
 ): JsonMergeValue {
-  if (
-    (0, mergeValuesEqual)(ours, base) ||
-    (0, mergeValuesEqual)(theirs, ours)
-  ) {
+  if (mergeValuesEqual(ours, base) || mergeValuesEqual(theirs, ours)) {
     return theirs;
   }
-  if ((0, mergeValuesEqual)(theirs, base)) {
-    return (0, cloneMergeValue)(ours);
+  if (mergeValuesEqual(theirs, base)) {
+    return cloneMergeValue(ours);
   }
   if (
     schema.kind === "map" &&
@@ -87,35 +127,35 @@ function mergeFilesIndexKeepingLocal(
     (isFilesMergeObject(ours) || ours === undefined) &&
     (isFilesMergeObject(base) || isFilesMergeObject(ours))
   ) {
-    let value = base ?? {},
-      value2 = ours ?? {},
-      state: JsonRecord = {},
-      callback = (input: JsonRecord, options: string) =>
-        Object.hasOwn(input, options) ? input[options] : undefined;
-    for (let value3 of new Set([
+    const baseRecord = base ?? {};
+    const oursRecord = ours ?? {};
+    const merged: JsonRecord = {};
+    const own = (record: JsonRecord, key: string) =>
+      Object.hasOwn(record, key) ? record[key] : undefined;
+    for (const key of new Set([
       ...Object.keys(theirs),
-      ...Object.keys(value2),
-      ...Object.keys(value),
+      ...Object.keys(oursRecord),
+      ...Object.keys(baseRecord),
     ])) {
-      let value4 = mergeFilesIndexKeepingLocal(
-        callback(value, value3),
-        callback(value2, value3),
-        callback(theirs, value3),
+      const value = mergeFilesIndexKeepingLocal(
+        own(baseRecord, key),
+        own(oursRecord, key),
+        own(theirs, key),
         resolveFilesMergeSchema(
           schema,
-          value3,
-          callback(value, value3),
-          callback(value2, value3),
-          callback(theirs, value3),
+          key,
+          own(baseRecord, key),
+          own(oursRecord, key),
+          own(theirs, key),
         ),
-        path === "" ? value3 : path + "/" + value3,
+        path === "" ? key : path + "/" + key,
         kept,
       );
-      if (value4 !== undefined) {
-        state[value3] = value4;
+      if (value !== undefined) {
+        merged[key] = value;
       }
     }
-    return state;
+    return merged;
   }
   if (
     schema.kind === "list" &&
@@ -123,25 +163,22 @@ function mergeFilesIndexKeepingLocal(
     isFilesMergeStringArray(ours) &&
     isFilesMergeStringArray(theirs)
   ) {
-    let value = (0, mergeOrderedStringList)(base, ours, theirs);
-    if (!isOrderSubsequence(ours, value)) {
+    const merged = mergeOrderedStringList(base, ours, theirs);
+    if (!isOrderSubsequence(ours, merged)) {
       kept.push(path);
     }
-    return value;
+    return merged;
   }
   kept.push(path);
   return theirs;
 }
-function mergeFilesIndex(
-  base:
-    | Partial<Files.FilesIndex>
-    | import("../contracts/files-core").IndexPresentationPatch,
-  ours:
-    | Partial<Files.FilesIndex>
-    | import("../contracts/files-core").IndexPresentationPatch,
-  theirs: Files.FilesIndex,
+
+export function mergeFilesIndex(
+  base: Partial<FilesIndex> | IndexPresentationPatch,
+  ours: Partial<FilesIndex> | IndexPresentationPatch,
+  theirs: FilesIndex,
 ) {
-  let kept: string[] = [];
+  const kept: string[] = [];
   return {
     index: mergeFilesIndexKeepingLocal(
       base as unknown as JsonRecord,
@@ -150,141 +187,172 @@ function mergeFilesIndex(
       FILES_INDEX_MERGE_SCHEMA,
       "",
       kept,
-    ) as unknown as Files.FilesIndex,
-    kept: kept,
+    ) as unknown as FilesIndex,
+    kept,
   };
 }
-function mergeDesignSystemFiles(
-  currentFiles: Files.FileTable,
+
+/** 索引里除标题与文档元数据以外的部分 */
+export function filesIndexWithoutDocumentMetadata(index: FilesIndex) {
+  const { docs: _docs, title: _title, ...rest } = index;
+  return rest;
+}
+
+/** 把 nextFiles 写到 files 上，并删掉 previousFiles 里有、nextFiles 里没有的路径 */
+export function removeDroppedFiles(
+  files: FileTable,
+  previousFiles: ReadonlyMap<string, string>,
+  nextFiles: ReadonlyMap<string, string>,
+) {
+  const result = {
+    ...files,
+  };
+  for (const path of previousFiles.keys()) {
+    if (!nextFiles.has(path)) {
+      delete result[path];
+    }
+  }
+  for (const [path, content] of nextFiles) {
+    result[path] = content;
+  }
+  return result;
+}
+
+/**
+ * 把 before 到 after 的改动应用到 currentFiles 上。
+ * 逐文件三方判断：当前文件没被改过才直接应用；被改过时先试 options.merge，
+ * 失败则跳过（skipped），已过期的文件改为只保留本地（localOnly）。
+ * 文件索引另按索引结构合并。
+ */
+export function mergeDesignSystemFiles(
+  currentFiles: FileTable,
   title: string,
-  beforeFiles: Files.FileTable,
-  afterFiles: Files.FileTable,
+  beforeFiles: FileTable,
+  afterFiles: FileTable,
   options: FileMergeOptions = {},
 ) {
-  let beforeProjectFiles = relativeProjectFilesForMerge(beforeFiles),
-    afterProjectFiles = relativeProjectFilesForMerge(afterFiles),
-    currentProjectFiles = relativeProjectFilesForMerge(currentFiles),
-    appliedPaths: string[] = [],
-    localOnlyPaths: string[] = [],
-    skippedPaths: string[] = [],
-    nextProjectFiles = new Map(currentProjectFiles);
-  for (let value of new Set([
+  const beforeProjectFiles = relativeProjectFilesForMerge(beforeFiles);
+  const afterProjectFiles = relativeProjectFilesForMerge(afterFiles);
+  const currentProjectFiles = relativeProjectFilesForMerge(currentFiles);
+  const appliedPaths: string[] = [];
+  const localOnlyPaths: string[] = [];
+  const skippedPaths: string[] = [];
+  const nextProjectFiles = new Map(currentProjectFiles);
+  for (const path of new Set([
     ...beforeProjectFiles.keys(),
     ...afterProjectFiles.keys(),
   ])) {
-    let entry = beforeProjectFiles.get(value),
-      entry2 = afterProjectFiles.get(value);
-    if (entry === entry2 || options.excluded?.has(value) === true) {
+    const before = beforeProjectFiles.get(path);
+    const after = afterProjectFiles.get(path);
+    if (before === after || options.excluded?.has(path) === true) {
       continue;
     }
-    let entry3 = currentProjectFiles.get(value);
-    if (entry3 === entry2) {
+    const current = currentProjectFiles.get(path);
+    if (current === after) {
       continue;
     }
-    let callback = (): void => {
-        if (entry2 === undefined) {
-          nextProjectFiles.delete(value);
-        } else {
-          nextProjectFiles.set(value, entry2);
-        }
-      },
-      value2: boolean = options.stale?.(value) === true;
-    if (value2 || entry3 !== entry) {
-      let value3 =
-        entry !== undefined && entry2 !== undefined && entry3 !== undefined
-          ? (options.merge?.(value, entry, entry2, entry3) ?? null)
+    const applyAfter = (): void => {
+      if (after === undefined) {
+        nextProjectFiles.delete(path);
+      } else {
+        nextProjectFiles.set(path, after);
+      }
+    };
+    const stale: boolean = options.stale?.(path) === true;
+    if (stale || current !== before) {
+      const mergedText =
+        before !== undefined && after !== undefined && current !== undefined
+          ? (options.merge?.(path, before, after, current) ?? null)
           : null;
-      if (value3 !== null) {
-        if (value3 === entry3) {
+      if (mergedText !== null) {
+        if (mergedText === current) {
           continue;
         }
-        appliedPaths.push(value);
-        nextProjectFiles.set(value, value3);
+        appliedPaths.push(path);
+        nextProjectFiles.set(path, mergedText);
         continue;
       }
-      if (value2) {
-        localOnlyPaths.push(value);
-        callback();
+      if (stale) {
+        localOnlyPaths.push(path);
+        applyAfter();
         continue;
       }
-      skippedPaths.push(value);
+      skippedPaths.push(path);
       continue;
     }
-    appliedPaths.push(value);
-    callback();
+    appliedPaths.push(path);
+    applyAfter();
   }
-  let rebaseIndex = (input: Files.FilesIndex) =>
-      (options.theirIndex ?? []).reduce(
-        (
-          input2: Files.FilesIndex,
-          options2:
-            | import("../contracts/files-core").FileIndexDelta
-            | import("../contracts/files-core").IndexPresentationDelta,
-        ) => mergeFilesIndex(options2.from, options2.to, input2).index,
-        input,
-      ),
-    removeExcludedIndexEntries = (input: Files.FilesIndex) => {
-      if (options.excluded === undefined || options.excluded.size === 0) {
-        return input;
+  // 较早的一侧缺少对方已有的索引改动时，先按 theirIndex 补上
+  const rebaseIndex = (index: FilesIndex) =>
+    (options.theirIndex ?? []).reduce(
+      (
+        merged: FilesIndex,
+        delta: FileIndexDelta | IndexPresentationDelta,
+      ) => mergeFilesIndex(delta.from, delta.to, merged).index,
+      index,
+    );
+  const removeExcludedIndexEntries = (index: FilesIndex) => {
+    if (options.excluded === undefined || options.excluded.size === 0) {
+      return index;
+    }
+    const cloned = cloneMergeValue(index);
+    for (const path of options.excluded) {
+      const address = assetFileIndexAddress(path);
+      if (address === null) {
+        continue;
       }
-      let value = (0, cloneMergeValue)(input);
-      for (let value2 of options.excluded) {
-        let value3 = (0, assetFileIndexAddress)(value2);
-        if (value3 === null) {
-          continue;
-        }
-        let value4 =
-          value3.group === null
-            ? value.blobs
-            : Object.hasOwn(value.assetGroups, value3.group)
-              ? value.assetGroups[value3.group]?.files
-              : undefined;
-        if (value4 !== undefined) {
-          delete value4[value3.key];
-        }
+      const entries =
+        address.group === null
+          ? cloned.blobs
+          : Object.hasOwn(cloned.assetGroups, address.group)
+            ? cloned.assetGroups[address.group]?.files
+            : undefined;
+      if (entries !== undefined) {
+        delete entries[address.key];
       }
-      return value;
-    },
-    beforeIndex = removeExcludedIndexEntries(
-      options.earlierSide === "from"
-        ? rebaseIndex((0, buildFilesIndex)(title, beforeFiles))
-        : (0, buildFilesIndex)(title, beforeFiles),
-    ),
-    afterIndex = removeExcludedIndexEntries(
-      options.earlierSide === "to"
-        ? rebaseIndex((0, buildFilesIndex)(title, afterFiles))
-        : (0, buildFilesIndex)(title, afterFiles),
-    ),
-    indexChanged: boolean = false,
-    keptIndexPaths: string[] = [],
-    nextFiles: Files.FileTable;
+    }
+    return cloned;
+  };
+  const beforeIndex = removeExcludedIndexEntries(
+    options.earlierSide === "from"
+      ? rebaseIndex(buildFilesIndex(title, beforeFiles))
+      : buildFilesIndex(title, beforeFiles),
+  );
+  const afterIndex = removeExcludedIndexEntries(
+    options.earlierSide === "to"
+      ? rebaseIndex(buildFilesIndex(title, afterFiles))
+      : buildFilesIndex(title, afterFiles),
+  );
+  let indexChanged = false;
+  let keptIndexPaths: string[] = [];
+  let nextFiles: FileTable;
   if (
-    !(0, mergeValuesEqual)(
+    !mergeValuesEqual(
       filesIndexWithoutDocumentMetadata(beforeIndex),
       filesIndexWithoutDocumentMetadata(afterIndex),
     )
   ) {
-    let value = (0, buildFilesIndex)(title, currentFiles),
-      { index: value2, kept: value3 } = mergeFilesIndex(
-        beforeIndex,
-        afterIndex,
-        value,
-      );
-    keptIndexPaths = value3.filter(
-      (input: string) => !input.startsWith("docs") && input !== "title",
+    const currentIndex = buildFilesIndex(title, currentFiles);
+    const { index: mergedIndex, kept } = mergeFilesIndex(
+      beforeIndex,
+      afterIndex,
+      currentIndex,
     );
-    indexChanged = !(0, mergeValuesEqual)(
-      filesIndexWithoutDocumentMetadata(value2),
-      filesIndexWithoutDocumentMetadata(value),
+    keptIndexPaths = kept.filter(
+      (path: string) => !path.startsWith("docs") && path !== "title",
     );
-    let entries = new Map<string, string>();
-    for (let [value4, value5] of nextProjectFiles) {
-      entries.set((0, projectFilePath)(value4), value5);
+    indexChanged = !mergeValuesEqual(
+      filesIndexWithoutDocumentMetadata(mergedIndex),
+      filesIndexWithoutDocumentMetadata(currentIndex),
+    );
+    const entries = new Map<string, string>();
+    for (const [path, content] of nextProjectFiles) {
+      entries.set(projectFilePath(path), content);
     }
     nextFiles = indexChanged
       ? {
-          ...(0, restoreFilesFromIndex)(value2, entries).content
-            .files,
+          ...restoreFilesFromIndex(mergedIndex, entries).content.files,
         }
       : removeDroppedFiles(
           currentFiles,
@@ -319,167 +387,116 @@ function mergeDesignSystemFiles(
     empty: appliedPaths.length + localOnlyPaths.length === 0,
   };
 }
-function filesIndexWithoutDocumentMetadata(index: Files.FilesIndex) {
-  let { docs: docs, title: title, ...rest } = index;
-  return rest;
-}
-function removeDroppedFiles(
-  files: Files.FileTable,
-  previousFiles: ReadonlyMap<string, string>,
-  nextFiles: ReadonlyMap<string, string>,
-) {
-  let result = {
-    ...files,
-  };
-  for (let value of previousFiles.keys()) {
-    if (!nextFiles.has(value)) {
-      delete result[value];
-    }
-  }
-  for (let [value, value2] of nextFiles) {
-    result[value] = value2;
-  }
-  return result;
-}
-function changedProjectFilePaths(
-  before: Files.FileTable,
-  after: Files.FileTable,
+
+/** before 与 after 之间有改动的项目文件，以及索引是否变化 */
+export function changedProjectFilePaths(
+  before: FileTable,
+  after: FileTable,
   context: string,
 ) {
-  let beforeFiles = relativeProjectFilesForMerge(before),
-    afterFiles = relativeProjectFilesForMerge(after),
-    changed = [];
-  for (let value of new Set([...beforeFiles.keys(), ...afterFiles.keys()])) {
-    if (beforeFiles.get(value) !== afterFiles.get(value)) {
-      changed.push(value);
+  const beforeFiles = relativeProjectFilesForMerge(before);
+  const afterFiles = relativeProjectFilesForMerge(after);
+  const changed = [];
+  for (const path of new Set([...beforeFiles.keys(), ...afterFiles.keys()])) {
+    if (beforeFiles.get(path) !== afterFiles.get(path)) {
+      changed.push(path);
     }
   }
   return {
     files: changed.sort(),
-    index: !(0, mergeValuesEqual)(
-      filesIndexWithoutDocumentMetadata(
-        (0, buildFilesIndex)(context, before),
-      ),
-      filesIndexWithoutDocumentMetadata(
-        (0, buildFilesIndex)(context, after),
-      ),
+    index: !mergeValuesEqual(
+      filesIndexWithoutDocumentMetadata(buildFilesIndex(context, before)),
+      filesIndexWithoutDocumentMetadata(buildFilesIndex(context, after)),
     ),
   };
 }
-function createFileMutationBatch<Mutation extends FileMutation>(
-  delay: number = 200,
+
+/**
+ * 文件操作的撤销与重做栈。exec 执行并入栈，seed 只入栈（操作已由外部完成）；
+ * 新操作入栈时清空重做栈；撤销栈超过 limit 时丢弃最早的。
+ */
+export function createFileMutationBatch<Mutation extends FileMutation>(
+  limit: number = 200,
 ): FileMutationBatch<Mutation> {
-  let items: Mutation[] = [],
-    items2: Mutation[] = [],
-    values = new Set<() => void>(),
-    callback = (): void => {
-      for (let value of [...values]) {
-        value();
-      }
-    };
+  const undoStack: Mutation[] = [];
+  const redoStack: Mutation[] = [];
+  const listeners = new Set<() => void>();
+  const notify = (): void => {
+    for (const listener of [...listeners]) {
+      listener();
+    }
+  };
   return {
-    exec(input: Mutation): void {
-      if (input.canDo?.() === false) {
+    exec(mutation: Mutation): void {
+      if (mutation.canDo?.() === false) {
         return;
       }
-      input.do();
-      items.push(input);
-      if (items.length > delay) {
-        items.shift();
+      mutation.do();
+      undoStack.push(mutation);
+      if (undoStack.length > limit) {
+        undoStack.shift();
       }
-      items2.length = 0;
-      callback();
+      redoStack.length = 0;
+      notify();
     },
-    seed(input: Mutation): void {
-      items.push(input);
-      if (items.length > delay) {
-        items.shift();
+    seed(mutation: Mutation): void {
+      undoStack.push(mutation);
+      if (undoStack.length > limit) {
+        undoStack.shift();
       }
-      items2.length = 0;
-      callback();
+      redoStack.length = 0;
+      notify();
     },
     undo(): void {
-      let value = items[items.length - 1];
-      if (!value || value.canUndo?.() === false) {
+      const mutation = undoStack[undoStack.length - 1];
+      if (!mutation || mutation.canUndo?.() === false) {
         return;
       }
-      items.pop();
-      value.undo();
-      items2.push(value);
-      callback();
+      undoStack.pop();
+      mutation.undo();
+      redoStack.push(mutation);
+      notify();
     },
     redo(): void {
-      let value = items2[items2.length - 1];
-      if (!value || value.canDo?.() === false) {
+      const mutation = redoStack[redoStack.length - 1];
+      if (!mutation || mutation.canDo?.() === false) {
         return;
       }
-      items2.pop();
-      value.do();
-      items.push(value);
-      callback();
+      redoStack.pop();
+      mutation.do();
+      undoStack.push(mutation);
+      notify();
     },
-    canUndo: (): boolean => items.length > 0,
-    canRedo: (): boolean => items2.length > 0,
-    redoDepth: () => items2.length,
+    canUndo: (): boolean => undoStack.length > 0,
+    canRedo: (): boolean => redoStack.length > 0,
+    redoDepth: () => redoStack.length,
     clear(): void {
-      if (items.length === 0 && items2.length === 0) {
+      if (undoStack.length === 0 && redoStack.length === 0) {
         return;
       }
-      items.length = 0;
-      items2.length = 0;
-      callback();
+      undoStack.length = 0;
+      redoStack.length = 0;
+      notify();
     },
-    subscribe(input: () => void) {
-      values.add(input);
-      return () => void values.delete(input);
+    subscribe(listener: () => void) {
+      listeners.add(listener);
+      return () => void listeners.delete(listener);
     },
-    prune(input: (mutation: Mutation) => boolean): number {
-      let index: number = 0;
-      for (let value of [items, items2]) {
-        for (let value2: number = value.length - 1; value2 >= 0; value2--) {
-          if (input(value[value2])) {
-            value.splice(value2, 1);
-            index++;
+    /** 移除两个栈里满足条件的操作，返回移除个数 */
+    prune(shouldRemove: (mutation: Mutation) => boolean): number {
+      let removed = 0;
+      for (const stack of [undoStack, redoStack]) {
+        for (let index = stack.length - 1; index >= 0; index--) {
+          if (shouldRemove(stack[index])) {
+            stack.splice(index, 1);
+            removed++;
           }
         }
       }
-      if (index > 0) {
-        callback();
+      if (removed > 0) {
+        notify();
       }
-      return index;
+      return removed;
     },
-  };
-}
-export {
-  changedProjectFilePaths,
-  createFileMutationBatch,
-  filesIndexWithoutDocumentMetadata,
-  isFilesMergeObject,
-  isFilesMergeStringArray,
-  isOrderSubsequence,
-  mergeDesignSystemFiles,
-  mergeFilesIndex,
-  mergeFilesIndexKeepingLocal,
-  relativeProjectFilesForMerge,
-  removeDroppedFiles,
-  resolveFilesMergeSchema,
-  supportsDroppedPaths,
-};
-export function installEditorFilesMerge(): () => void {
-  return () => {
-    relativeProjectFilesForMerge = (files: Files.FileTable) => {
-      let entries = new Map<string, string>();
-      for (let [value, value2] of (0, projectFilesForSave)(files)) {
-        entries.set((0, relativeProjectFilePath)(value)!, value2);
-      }
-      return entries;
-    };
-    isFilesMergeObject = (value: unknown): value is JsonRecord =>
-      typeof value === "object" && value !== null && !Array.isArray(value);
-    isFilesMergeStringArray = (value: unknown): value is string[] =>
-      Array.isArray(value) &&
-      value.every((input: unknown): boolean => typeof input === "string");
-    supportsDroppedPaths = (document2: { dropPaths?: unknown }): boolean =>
-      typeof document2.dropPaths === "function";
   };
 }

@@ -1,61 +1,81 @@
-import type * as React from "react";
-import type * as Core from "../contracts";
-import type * as M from "../contracts/documentation";
-import type * as Files from "../contracts/file-browser";
-import type * as Application from "../contracts/application";
-/** Restored application module; prepare first, initialize in original order. */
+import type {
+  MarkdownAutoformatState,
+  MarkdownShortcutBlock,
+} from "../contracts/documentation";
 
-var MARKDOWN_BLOCK_SHORTCUTS: [string, M.MarkdownShortcutBlock][];
-var markdownAutoformatCache: WeakMap<HTMLElement, M.MarkdownAutoformatState>;
-var markdownAutoformatExecuting: boolean;
-function noteAutoformatShortcut(
+/** 行首输入这些前缀加空格后，转成对应的块 */
+export const MARKDOWN_BLOCK_SHORTCUTS: [string, MarkdownShortcutBlock][] = [
+  ["# ", "h1"],
+  ["## ", "h2"],
+  ["### ", "h3"],
+  ["- ", "ul"],
+  ["* ", "ul"],
+  ["1. ", "ol"],
+  ["> ", "quote"],
+];
+/** 记录每个编辑区刚发生的自动转换，用于撤销与重做时还原中间态 */
+export const markdownAutoformatCache = new WeakMap<
+  HTMLElement,
+  MarkdownAutoformatState
+>();
+/** 正在回放撤销或重做时为 true，避免递归触发自动转换 */
+export let markdownAutoformatExecuting = false;
+
+/** 行首文字是否构成块快捷键；trimIndent 时额外接受缩进、"• " 与 "1. " 到 "999. " */
+export function noteAutoformatShortcut(
   text: string,
   trimIndent = false,
-): M.MarkdownShortcutBlock | null {
-  let value = text.replace(/\u00a0/g, " ");
+): MarkdownShortcutBlock | null {
+  let prefix = text.replace(/\u00a0/g, " ");
   if (trimIndent) {
-    value = value.replace(/^ +/, "");
-    if (value === "• ") {
+    prefix = prefix.replace(/^ +/, "");
+    if (prefix === "• ") {
       return "ul";
     }
-    if (/^\d{1,3}\. $/.test(value)) {
+    if (/^\d{1,3}\. $/.test(prefix)) {
       return "ol";
     }
   }
-  for (let [value2, value3] of MARKDOWN_BLOCK_SHORTCUTS) {
-    if (value === value2) {
-      return value3;
+  for (const [shortcut, block] of MARKDOWN_BLOCK_SHORTCUTS) {
+    if (prefix === shortcut) {
+      return block;
     }
   }
   return null;
 }
-function executeMarkdownBlockFormat(
-  document2: Document,
-  blockType: M.MarkdownShortcutBlock,
+
+export function executeMarkdownBlockFormat(
+  document: Document,
+  blockType: MarkdownShortcutBlock,
 ): void {
-  document2.execCommand("styleWithCSS", false, "false");
+  document.execCommand("styleWithCSS", false, "false");
   if (blockType === "ul") {
-    document2.execCommand("insertUnorderedList");
+    document.execCommand("insertUnorderedList");
   } else if (blockType === "ol") {
-    document2.execCommand("insertOrderedList");
+    document.execCommand("insertOrderedList");
   } else if (blockType === "quote") {
-    document2.execCommand("formatBlock", false, "BLOCKQUOTE");
+    document.execCommand("formatBlock", false, "BLOCKQUOTE");
   } else {
-    document2.execCommand("formatBlock", false, blockType.toUpperCase());
+    document.execCommand("formatBlock", false, blockType.toUpperCase());
   }
 }
-function autoformatMarkdownBlock(
+
+/**
+ * 输入空格（含不换行空格）后，把行首快捷键转成块；转换成功返回 true。
+ * 撤销与重做紧跟在转换之后时，先回放一次撤销或重做，让用户依次看到快捷键原文。
+ */
+export function autoformatMarkdownBlock(
   root: HTMLElement,
   event: Pick<InputEvent, "inputType" | "data">,
   serializeRoot: (root: HTMLElement) => string,
-  allowedBlocks?: readonly M.MarkdownShortcutBlock[],
+  allowedBlocks?: readonly MarkdownShortcutBlock[],
   extendedShortcuts = false,
 ): boolean {
   if (markdownAutoformatExecuting) {
     return false;
   }
-  let document2 = root.ownerDocument,
-    cachedState = markdownAutoformatCache.get(root);
+  const document = root.ownerDocument;
+  const cachedState = markdownAutoformatCache.get(root);
   markdownAutoformatCache.delete(root);
   if (
     event.inputType === "historyUndo" ||
@@ -64,8 +84,8 @@ function autoformatMarkdownBlock(
     if (cachedState === undefined) {
       return false;
     }
-    let value: boolean = event.inputType === "historyUndo";
-    if (!(value ? cachedState.undoArmed : cachedState.redoArmed)) {
+    const isUndo = event.inputType === "historyUndo";
+    if (!(isUndo ? cachedState.undoArmed : cachedState.redoArmed)) {
       return false;
     }
     if (serializeRoot(root) !== cachedState.intermediate) {
@@ -73,24 +93,24 @@ function autoformatMarkdownBlock(
     }
     markdownAutoformatExecuting = true;
     try {
-      document2.execCommand(value ? "undo" : "redo");
+      document.execCommand(isUndo ? "undo" : "redo");
     } finally {
       markdownAutoformatExecuting = false;
     }
     markdownAutoformatCache.set(root, {
       ...cachedState,
-      undoArmed: !value,
-      redoArmed: value,
+      undoArmed: !isUndo,
+      redoArmed: isUndo,
     });
     return false;
   }
   if (
     event.inputType !== "insertText" ||
-    (event.data !== " " && event.data !== " ")
+    (event.data !== " " && event.data !== "\u00a0")
   ) {
     return false;
   }
-  let selection = document2.getSelection();
+  const selection = document.getSelection();
   if (
     selection === null ||
     selection.rangeCount === 0 ||
@@ -98,15 +118,16 @@ function autoformatMarkdownBlock(
   ) {
     return false;
   }
-  let selectionRange = selection.getRangeAt(0);
+  const selectionRange = selection.getRangeAt(0);
   if (!root.contains(selectionRange.startContainer)) {
     return false;
   }
-  let paragraph: Element = root,
-    ancestor: Element | null =
-      selectionRange.startContainer.nodeType === 3
-        ? selectionRange.startContainer.parentElement
-        : (selectionRange.startContainer as Element);
+  // 向上找所在段落；位于列表、标题、引用、代码、表格或链接内时不转换
+  let paragraph: Element = root;
+  let ancestor: Element | null =
+    selectionRange.startContainer.nodeType === 3
+      ? selectionRange.startContainer.parentElement
+      : (selectionRange.startContainer as Element);
   for (
     ;
     ancestor !== null && ancestor !== root;
@@ -124,7 +145,7 @@ function autoformatMarkdownBlock(
       paragraph = ancestor;
     }
   }
-  let prefixRange = document2.createRange();
+  const prefixRange = document.createRange();
   prefixRange.selectNodeContents(paragraph);
   prefixRange.setEnd(
     selectionRange.startContainer,
@@ -135,7 +156,7 @@ function autoformatMarkdownBlock(
   ) {
     return false;
   }
-  let shortcutBlock = noteAutoformatShortcut(
+  const shortcutBlock = noteAutoformatShortcut(
     prefixRange.toString(),
     extendedShortcuts,
   );
@@ -145,51 +166,28 @@ function autoformatMarkdownBlock(
   ) {
     return false;
   }
-  let orderedListStart =
+  const orderedListStart =
     extendedShortcuts && shortcutBlock === "ol"
       ? Number.parseInt(prefixRange.toString().trim(), 10)
       : 1;
   selection.removeAllRanges();
   selection.addRange(prefixRange);
-  document2.execCommand("delete");
-  let intermediate = serializeRoot(root);
-  executeMarkdownBlockFormat(document2, shortcutBlock);
+  document.execCommand("delete");
+  const intermediate = serializeRoot(root);
+  executeMarkdownBlockFormat(document, shortcutBlock);
   if (orderedListStart > 1) {
-    let value = document2.getSelection()?.anchorNode ?? null,
-      value2 = (
-        value?.nodeType === 1 ? (value as Element) : value?.parentElement
-      )?.closest("li")?.parentElement;
-    if (value2?.tagName === "OL" && value2.childElementCount === 1) {
-      value2.setAttribute("start", String(orderedListStart));
+    const anchor = document.getSelection()?.anchorNode ?? null;
+    const list = (
+      anchor?.nodeType === 1 ? (anchor as Element) : anchor?.parentElement
+    )?.closest("li")?.parentElement;
+    if (list?.tagName === "OL" && list.childElementCount === 1) {
+      list.setAttribute("start", String(orderedListStart));
     }
   }
   markdownAutoformatCache.set(root, {
-    intermediate: intermediate,
+    intermediate,
     undoArmed: true,
     redoArmed: false,
   });
   return true;
-}
-export {
-  autoformatMarkdownBlock,
-  executeMarkdownBlockFormat,
-  MARKDOWN_BLOCK_SHORTCUTS,
-  markdownAutoformatCache,
-  markdownAutoformatExecuting,
-  noteAutoformatShortcut,
-};
-export function installEditorMarkdownAutoformat(): () => void {
-  return () => {
-    MARKDOWN_BLOCK_SHORTCUTS = [
-      ["# ", "h1"],
-      ["## ", "h2"],
-      ["### ", "h3"],
-      ["- ", "ul"],
-      ["* ", "ul"],
-      ["1. ", "ol"],
-      ["> ", "quote"],
-    ];
-    markdownAutoformatCache = new WeakMap();
-    markdownAutoformatExecuting = false;
-  };
 }

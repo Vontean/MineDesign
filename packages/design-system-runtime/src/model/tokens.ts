@@ -1,5 +1,3 @@
-import { uiMessage } from '@minedesign/contracts/ui-messages';
-/** Restored application module; prepare first, initialize in original order. */
 import type * as Model from "../contracts";
 import type * as Core from "../contracts/model-core";
 import type {
@@ -7,51 +5,87 @@ import type {
   ParseReport,
   TokenCssOptions,
 } from "../contracts";
-import { blobRelativeUrlModelFilePolicy, DESIGN_SYSTEM_PATHS, encodeRelativeUrlPath, isValidDesignSystemPath, storagePointerForFile } from "./file-policy";
+import {
+  blobRelativeUrlModelFilePolicy,
+  DESIGN_SYSTEM_PATHS,
+  encodeRelativeUrlPath,
+  isValidDesignSystemPath,
+  storagePointerForFile,
+} from "./file-policy";
 import { parseManifest } from "./file-table";
 
-var TOKEN_NAME_PATTERN: RegExp;
-var HEX_COLOR_PATTERN: RegExp;
-var COLOR_ALIAS_PATTERN: RegExp;
-var EXTRA_TOKEN_FAMILY_PATTERN: RegExp;
-var BUILTIN_TOKEN_DOCUMENT_KEYS: string[];
-var MAX_COLOR_ALIAS_DEPTH: number;
-var COLOR_FUNCTION_PATTERN: RegExp;
-var CSS_LENGTH_PATTERN: RegExp;
-var FONT_WEIGHT_PATTERN: RegExp;
-var FONT_STACK_PATTERN: RegExp;
-var MAX_COLOR_THEMES: number;
-var MAX_COLOR_TOKENS: number;
-var MAX_PARSED_FONT_FACES: number;
-var MAX_FONT_FAMILIES: number;
-var MAX_TYPOGRAPHY_GROUPS: number;
-var MAX_TYPOGRAPHY_STYLES: number;
-var MAX_TOKENS_PER_FAMILY: number;
-var MAX_EXTRA_TOKEN_FAMILIES: number;
-var MAX_TOKEN_LABEL_LENGTH: number;
-var MAX_TOKEN_NOTE_LENGTH: number;
-var MAX_TOKEN_USAGE_LENGTH: number;
-var MAX_TYPE_SAMPLE_LENGTHModelTokens: number;
-var BOX_SHADOW_PATTERN: RegExp;
-var MOTION_DURATION_PATTERN: RegExp;
-var MOTION_EASING_PATTERN: RegExp;
-var EXTRA_TOKEN_VALUE_PATTERN: RegExp;
-var isTokenObject: (value: unknown) => value is Record<string, unknown>;
-var normalizeThemeColorValue: (value: unknown) => string | undefined;
-var UNPREFIXED_HEX_COLOR_PATTERN: RegExp;
-var CSS_VARIABLE_TOKEN_FAMILIES: Core.ValueTokenKind[];
-var colorTokenIndexCache: WeakMap<
+// 数量与长度上限、各类值的格式
+export const TOKEN_NAME_PATTERN = /^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$/;
+export const HEX_COLOR_PATTERN = /^#(?:[0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})$/;
+export const COLOR_ALIAS_PATTERN = /^\{([A-Za-z0-9][A-Za-z0-9_.-]{0,63})\}$/;
+export const EXTRA_TOKEN_FAMILY_PATTERN =
+  /^(?!(?:__proto__|constructor|prototype)$)[A-Za-z][A-Za-z0-9_-]{0,31}$/;
+export const BUILTIN_TOKEN_DOCUMENT_KEYS: string[] = [
+  "version",
+  "color",
+  "type",
+  "spacing",
+  "radius",
+  "shadow",
+];
+export const MAX_COLOR_ALIAS_DEPTH = 16;
+export const COLOR_FUNCTION_PATTERN =
+  /^(?:rgb|rgba|hsl|hsla|oklch|oklab|lab|lch|color)\([0-9a-z.,%/ \-]{1,60}\)$/;
+export const CSS_LENGTH_PATTERN = /^-?\d{1,4}(?:\.\d{1,6})?(?:px|rem|em|%)$|^0$/;
+export const FONT_WEIGHT_PATTERN = /^(?:[1-9]\d{0,2}|1000)(?: (?:[1-9]\d{0,2}|1000))?$/;
+export const FONT_STACK_PATTERN = /^[^;{}<>()\\\r\n\f]{1,200}$/;
+export const MAX_COLOR_THEMES = 8;
+export const MAX_COLOR_TOKENS = 600;
+export const MAX_PARSED_FONT_FACES = 4096;
+export const MAX_FONT_FAMILIES = 12;
+export const MAX_TYPOGRAPHY_GROUPS = 12;
+export const MAX_TYPOGRAPHY_STYLES = 80;
+export const MAX_TOKENS_PER_FAMILY = 60;
+export const MAX_EXTRA_TOKEN_FAMILIES = 12;
+export const MAX_TOKEN_LABEL_LENGTH = 120;
+export const MAX_TOKEN_NOTE_LENGTH = 400;
+export const MAX_TOKEN_USAGE_LENGTH = 1000;
+export const MAX_TYPE_SAMPLE_LENGTH = 200;
+export const BOX_SHADOW_PATTERN = /^[a-z0-9 #%(),./+-]{1,400}$/;
+export const MOTION_DURATION_PATTERN = /^(?:\d{1,6}(?:\.\d{1,3})?|\.\d{1,3})m?s$/;
+export const MOTION_EASING_PATTERN =
+  /^(?:linear|ease|ease-in|ease-out|ease-in-out|step-start|step-end|cubic-bezier\([-\d., ]{1,60}\)|steps\([a-z0-9, -]{1,40}\))$/;
+export const EXTRA_TOKEN_VALUE_PATTERN = /^[A-Za-z0-9 #%(),./+_-]{1,200}$/;
+export const UNPREFIXED_HEX_COLOR_PATTERN =
+  /^(?:[0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})$/;
+export const CSS_VARIABLE_TOKEN_FAMILIES: Core.ValueTokenKind[] = [
+  "color",
+  "spacing",
+  "radius",
+  "shadow",
+  "extra",
+];
+export const FONT_FACE_FORMAT_NAMES: Record<string, string> = {
+  woff2: "woff2",
+  woff: "woff",
+  ttf: "truetype",
+  otf: "opentype",
+};
+
+export function isTokenObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+export const normalizeThemeColorValue: (value: unknown) => string | undefined =
+  normalizeColorOrAlias;
+/** 颜色 token 名称索引的缓存，以 token 数组为键 */
+export const colorTokenIndexCache = new WeakMap<
   Model.ColorToken[],
   Map<string, Model.ColorToken>
->;
-var FONT_FACE_FORMAT_NAMES: Record<string, string>;
-var cachedGeneratedTokensCss: {
+>();
+/** 最近一次生成 tokens.css 的输入与结果 */
+let cachedGeneratedTokensCss: {
   tokens: string;
   name: string;
   fonts: string;
   css: string | null;
-} | null;
-function defineOwnEnumerableProperty(
+} | null = null;
+
+export function defineOwnEnumerableProperty(
   target: object,
   key: PropertyKey,
   value: unknown,
@@ -63,7 +97,7 @@ function defineOwnEnumerableProperty(
     configurable: true,
   });
 }
-function isSafeFontStack(stack: string): boolean {
+export function isSafeFontStack(stack: string): boolean {
   if (!FONT_STACK_PATTERN.test(stack)) {
     return false;
   }
@@ -71,18 +105,18 @@ function isSafeFontStack(stack: string): boolean {
     return false;
   }
   let quote: string | null = null;
-  for (let value of stack) {
+  for (const char of stack) {
     if (quote === null) {
-      if (value === '"' || value === "'") {
-        quote = value;
+      if (char === '"' || char === "'") {
+        quote = char;
       }
-    } else if (value === quote) {
+    } else if (char === quote) {
       quote = null;
     }
   }
   return quote === null;
 }
-function isColorLiteral(value: unknown): boolean {
+export function isColorLiteral(value: unknown): boolean {
   return (
     typeof value === "string" &&
     (HEX_COLOR_PATTERN.test(value) ||
@@ -90,10 +124,10 @@ function isColorLiteral(value: unknown): boolean {
         !/url|var|expression/.test(value)))
   );
 }
-function isCssLength(value: unknown): boolean {
+export function isCssLength(value: unknown): boolean {
   return typeof value === "string" && CSS_LENGTH_PATTERN.test(value);
 }
-function isSafeBoxShadow(value: unknown): boolean {
+export function isSafeBoxShadow(value: unknown): boolean {
   if (
     typeof value !== "string" ||
     !BOX_SHADOW_PATTERN.test(value) ||
@@ -103,16 +137,16 @@ function isSafeBoxShadow(value: unknown): boolean {
     return false;
   }
   let depth: number = 0;
-  for (let value2 of value) {
-    if (value2 === "(") {
+  for (const char of value) {
+    if (char === "(") {
       depth++;
-    } else if (value2 === ")" && --depth < 0) {
+    } else if (char === ")" && --depth < 0) {
       return false;
     }
   }
   return depth === 0;
 }
-function normalizeBoxShadow(value: unknown): string | undefined {
+export function normalizeBoxShadow(value: unknown): string | undefined {
   if (typeof value !== "string") {
     return;
   }
@@ -123,7 +157,7 @@ function normalizeBoxShadow(value: unknown): string | undefined {
     return undefined;
   }
 }
-function motionValueKind(value: string): string | undefined {
+export function motionValueKind(value: string): string | undefined {
   if (MOTION_DURATION_PATTERN.test(value)) {
     return "duration";
   } else {
@@ -134,7 +168,7 @@ function motionValueKind(value: string): string | undefined {
     }
   }
 }
-function normalizeMotionValue(value: unknown): string | undefined {
+export function normalizeMotionValue(value: unknown): string | undefined {
   if (
     typeof value === "number" &&
     Number.isFinite(value) &&
@@ -156,7 +190,7 @@ function normalizeMotionValue(value: unknown): string | undefined {
     return undefined;
   }
 }
-function normalizeExtraTokenValue(value: unknown): string | undefined {
+export function normalizeExtraTokenValue(value: unknown): string | undefined {
   if (
     typeof value === "number" &&
     Number.isFinite(value) &&
@@ -175,10 +209,10 @@ function normalizeExtraTokenValue(value: unknown): string | undefined {
     return;
   }
   let depth: number = 0;
-  for (let value2 of normalized) {
-    if (value2 === "(") {
+  for (const char of normalized) {
+    if (char === "(") {
       depth++;
-    } else if (value2 === ")" && --depth < 0) {
+    } else if (char === ")" && --depth < 0) {
       return;
     }
   }
@@ -188,27 +222,27 @@ function normalizeExtraTokenValue(value: unknown): string | undefined {
     return undefined;
   }
 }
-function normalizeScalarTokenValue(family: Core.ScalarKind, value: unknown) {
+export function normalizeScalarTokenValue(family: Core.ScalarKind, value: unknown) {
   if (family === "extra") {
     return normalizeExtraTokenValue(value);
   } else {
     return normalizeCssLength(value, family === "radius");
   }
 }
-function colorAliasTarget(value: string | undefined) {
+export function colorAliasTarget(value: string | undefined) {
   if (value === undefined) {
     return undefined;
   } else {
     return COLOR_ALIAS_PATTERN.exec(value)?.[1];
   }
 }
-function isColorOrAlias(value: unknown) {
+export function isColorOrAlias(value: unknown) {
   return (
     isColorLiteral(value) ||
     (typeof value === "string" && COLOR_ALIAS_PATTERN.test(value))
   );
 }
-function truncateTokenText(value: unknown, maxLength: number) {
+export function truncateTokenText(value: unknown, maxLength: number) {
   if (typeof value !== "string") {
     return "";
   }
@@ -219,14 +253,14 @@ function truncateTokenText(value: unknown, maxLength: number) {
     return value;
   }
 }
-function asTokenArray(value: unknown): unknown[] {
+export function asTokenArray(value: unknown): unknown[] {
   if (Array.isArray(value)) {
     return value;
   } else {
     return [];
   }
 }
-function normalizeColorOrAlias(value: unknown): string | undefined {
+export function normalizeColorOrAlias(value: unknown): string | undefined {
   if (typeof value !== "string") {
     return;
   }
@@ -241,7 +275,7 @@ function normalizeColorOrAlias(value: unknown): string | undefined {
     return undefined;
   }
 }
-function normalizeColorEditorInput(input: string) {
+export function normalizeColorEditorInput(input: string) {
   let trimmed = input.trim();
   if (colorAliasTarget(trimmed) !== undefined) {
     return trimmed;
@@ -253,7 +287,7 @@ function normalizeColorEditorInput(input: string) {
     return lowered;
   }
 }
-function normalizeCssLength(
+export function normalizeCssLength(
   value: unknown,
   allowFullRadius: boolean,
 ): string | undefined {
@@ -280,7 +314,7 @@ function normalizeCssLength(
     return undefined;
   }
 }
-function normalizeFontWeight(value: unknown): string | undefined {
+export function normalizeFontWeight(value: unknown): string | undefined {
   if (
     typeof value === "number" &&
     Number.isInteger(value) &&
@@ -305,7 +339,7 @@ function normalizeFontWeight(value: unknown): string | undefined {
     return undefined;
   }
 }
-function normalizeLineHeight(value: unknown): string | undefined {
+export function normalizeLineHeight(value: unknown): string | undefined {
   if (
     typeof value === "number" &&
     Number.isFinite(value) &&
@@ -323,12 +357,12 @@ function normalizeLineHeight(value: unknown): string | undefined {
   }
   return normalizeCssLength(value, false);
 }
-function normalizeTypographyProperty<K extends Core.TypographyProperty>(
+export function normalizeTypographyProperty<K extends Core.TypographyProperty>(
   property: K,
   value: unknown,
   families: Record<string, string>,
 ): Model.TypographyStyle[K] | undefined;
-function normalizeTypographyProperty(
+export function normalizeTypographyProperty(
   property: string,
   value: unknown,
   families: Record<string, string>,
@@ -342,11 +376,11 @@ function normalizeTypographyProperty(
     case "fontWeight":
       return normalizeFontWeight(trimmed);
     case "letterSpacing": {
-      let value2 = trimmed === "" ? "0" : normalizeCssLength(trimmed, false);
-      if (typeof value2 === "string" && value2.endsWith("%")) {
+      const spacing = trimmed === "" ? "0" : normalizeCssLength(trimmed, false);
+      if (typeof spacing === "string" && spacing.endsWith("%")) {
         return undefined;
       } else {
-        return value2;
+        return spacing;
       }
     }
     case "fontStyle":
@@ -364,30 +398,34 @@ function normalizeTypographyProperty(
       ) {
         return null;
       }
-      let value2 =
+      const size =
         typeof trimmed === "number"
           ? trimmed
           : typeof trimmed === "string" &&
               /^\d{1,4}(?:\.\d{1,3})?$/.test(trimmed)
             ? Number(trimmed)
             : NaN;
-      if (Number.isFinite(value2) && value2 >= 1 && value2 <= 1000) {
-        return value2;
+      if (Number.isFinite(size) && size >= 1 && size <= 1000) {
+        return size;
       } else {
         return undefined;
       }
     }
     case "family": {
-      let value2 = typeof trimmed === "string" ? trimmed.toLowerCase() : "";
-      if (value2 === "" || Object.hasOwn(families, value2)) {
-        return value2;
+      const family = typeof trimmed === "string" ? trimmed.toLowerCase() : "";
+      if (family === "" || Object.hasOwn(families, family)) {
+        return family;
       } else {
         return undefined;
       }
     }
   }
 }
-function parseTokens(
+/**
+ * 把 tokens.json（文本或已解析的对象）读成规整的 token 集合。
+ * 不合法的项被丢弃并记入 report.dropped，超限或不识别的内容记入 warnings 与 notes。
+ */
+export function parseTokens(
   input: unknown,
   report: ParseReport = {
     dropped: [],
@@ -397,55 +435,56 @@ function parseTokens(
   let source: Record<string, unknown> = {};
   if (typeof input === "string") {
     try {
-      let value: unknown = JSON.parse(input);
-      if (isTokenObject(value)) {
-        source = value;
+      const parsed: unknown = JSON.parse(input);
+      if (isTokenObject(parsed)) {
+        source = parsed;
       } else {
         report.dropped.push("tokens.json: not a JSON object");
       }
-    } catch (value) {
+    } catch (error) {
       if (input.trim() !== "") {
         report.dropped.push(
-          "tokens.json: " + String((value as Error).message).slice(0, 120),
+          "tokens.json: " + String((error as Error).message).slice(0, 120),
         );
       }
     }
   } else if (isTokenObject(input)) {
     source = input;
   }
-  let sourceColor = isTokenObject(source.color) ? source.color : {},
-    themes: Model.ColorTheme[] = [],
-    themeIds = new Set<string>();
-  for (let value of asTokenArray(sourceColor.themes)) {
+  // 颜色主题
+  const sourceColor = isTokenObject(source.color) ? source.color : {};
+  const themes: Model.ColorTheme[] = [];
+  const themeIds = new Set<string>();
+  for (const sourceTheme of asTokenArray(sourceColor.themes)) {
     if (themes.length >= MAX_COLOR_THEMES) {
       break;
     }
-    let value2 =
-      isTokenObject(value) && typeof value.id === "string"
-        ? value.id.trim().toLowerCase()
-        : typeof value === "string"
-          ? value.trim().toLowerCase()
+    const themeId =
+      isTokenObject(sourceTheme) && typeof sourceTheme.id === "string"
+        ? sourceTheme.id.trim().toLowerCase()
+        : typeof sourceTheme === "string"
+          ? sourceTheme.trim().toLowerCase()
           : "";
     if (
-      !TOKEN_NAME_PATTERN.test(value2) ||
-      themeIds.has(value2) ||
-      value2 === "constructor" ||
-      value2 === "prototype" ||
-      Object.hasOwn(Object.prototype, value2)
+      !TOKEN_NAME_PATTERN.test(themeId) ||
+      themeIds.has(themeId) ||
+      themeId === "constructor" ||
+      themeId === "prototype" ||
+      Object.hasOwn(Object.prototype, themeId)
     ) {
       report.dropped.push(
-        "theme " + JSON.stringify(value2) + ": bad or duplicate id",
+        "theme " + JSON.stringify(themeId) + ": bad or duplicate id",
       );
       continue;
     }
-    themeIds.add(value2);
+    themeIds.add(themeId);
     themes.push({
-      id: value2,
+      id: themeId,
       name:
         truncateTokenText(
-          isTokenObject(value) ? value.name : "",
+          isTokenObject(sourceTheme) ? sourceTheme.name : "",
           MAX_TOKEN_LABEL_LENGTH,
-        ) || value2,
+        ) || themeId,
     });
   }
   if (themes.length === 0) {
@@ -454,14 +493,15 @@ function parseTokens(
       name: "Light",
     });
   }
-  let baseThemeId = themes[0].id,
-    colorNames = new Set<string>(),
-    colorTokens: Model.ColorToken[] = [],
-    sourceColorTokens = Array.isArray(sourceColor.tokens)
-      ? asTokenArray(sourceColor.tokens)
-      : asTokenArray(sourceColor.groups).flatMap((input2) =>
-          isTokenObject(input2) ? asTokenArray(input2.tokens) : [],
-        );
+  // 颜色 token；没有基础主题的值时，用第一个有效的主题值补上
+  const baseThemeId = themes[0].id;
+  const colorNames = new Set<string>();
+  const colorTokens: Model.ColorToken[] = [];
+  const sourceColorTokens = Array.isArray(sourceColor.tokens)
+    ? asTokenArray(sourceColor.tokens)
+    : asTokenArray(sourceColor.groups).flatMap((group) =>
+        isTokenObject(group) ? asTokenArray(group.tokens) : [],
+      );
   if (
     Array.isArray(sourceColor.tokens) &&
     Array.isArray(sourceColor.groups)
@@ -470,7 +510,7 @@ function parseTokens(
       'tokens.json color has both "tokens" and a legacy "groups" — only "tokens" is read',
     );
   }
-  for (let value of sourceColorTokens) {
+  for (const sourceToken of sourceColorTokens) {
     if (colorTokens.length >= MAX_COLOR_TOKENS) {
       report.warnings.push(
         "color tokens capped at " +
@@ -479,108 +519,112 @@ function parseTokens(
       );
       break;
     }
-    if (!isTokenObject(value)) {
+    if (!isTokenObject(sourceToken)) {
       continue;
     }
-    let value2 =
-      typeof value.name === "string"
-        ? value.name.trim().replace(/^--/, "")
+    const name =
+      typeof sourceToken.name === "string"
+        ? sourceToken.name.trim().replace(/^--/, "")
         : "";
-    if (!TOKEN_NAME_PATTERN.test(value2) || colorNames.has(value2)) {
+    if (!TOKEN_NAME_PATTERN.test(name) || colorNames.has(name)) {
       report.dropped.push(
-        "color " + JSON.stringify(value2) + ": bad or duplicate name",
+        "color " + JSON.stringify(name) + ": bad or duplicate name",
       );
       continue;
     }
-    let state: Record<string, string> = {};
-    if (isTokenObject(value.value)) {
-      for (let value3 of themes) {
-        let value4 = Object.hasOwn(value.value, value3.id)
-          ? normalizeThemeColorValue(value.value[value3.id])
+    const themeValues: Record<string, string> = {};
+    if (isTokenObject(sourceToken.value)) {
+      for (const theme of themes) {
+        const themeValue = Object.hasOwn(sourceToken.value, theme.id)
+          ? normalizeThemeColorValue(sourceToken.value[theme.id])
           : undefined;
-        if (value4 !== undefined) {
-          state[value3.id] = value4;
-        } else if (Object.hasOwn(value.value, value3.id)) {
+        if (themeValue !== undefined) {
+          themeValues[theme.id] = themeValue;
+        } else if (Object.hasOwn(sourceToken.value, theme.id)) {
           report.dropped.push(
-            "color " + value2 + " [" + value3.id + "]: not a color value",
+            "color " + name + " [" + theme.id + "]: not a color value",
           );
         }
       }
     } else {
-      let value3 = normalizeThemeColorValue(value.value);
-      if (value3 !== undefined) {
-        state[baseThemeId] = value3;
+      const baseValue = normalizeThemeColorValue(sourceToken.value);
+      if (baseValue !== undefined) {
+        themeValues[baseThemeId] = baseValue;
       }
     }
-    if (!Object.hasOwn(state, baseThemeId)) {
-      let value3 = themes
-        .map((input2) =>
-          Object.hasOwn(state, input2.id) ? state[input2.id] : undefined,
+    if (!Object.hasOwn(themeValues, baseThemeId)) {
+      const fallbackValue = themes
+        .map((theme) =>
+          Object.hasOwn(themeValues, theme.id)
+            ? themeValues[theme.id]
+            : undefined,
         )
-        .find((input2): boolean => input2 !== undefined);
-      if (value3 === undefined) {
-        report.dropped.push("color " + value2 + ": no valid value");
+        .find((themeValue): boolean => themeValue !== undefined);
+      if (fallbackValue === undefined) {
+        report.dropped.push("color " + name + ": no valid value");
         continue;
       }
-      state[baseThemeId] = value3;
+      themeValues[baseThemeId] = fallbackValue;
     }
-    colorNames.add(value2);
+    colorNames.add(name);
     colorTokens.push({
-      name: value2,
-      value: state,
-      usage: truncateTokenText(value.usage, MAX_TOKEN_USAGE_LENGTH),
+      name,
+      value: themeValues,
+      usage: truncateTokenText(sourceToken.usage, MAX_TOKEN_USAGE_LENGTH),
     });
   }
   removeInvalidColorAliases(themes, colorTokens, report);
-  let sourceType = isTokenObject(source.type) ? source.type : {},
-    fonts: Model.FontFace[] = [],
-    sourceFonts = asTokenArray(sourceType.fonts),
-    fontsExamined: number = 0;
-  for (let value of sourceFonts) {
+  // 字体文件；超过上限的部分原样保留在文件里（unreadFonts），不读取
+  const sourceType = isTokenObject(source.type) ? source.type : {};
+  const fonts: Model.FontFace[] = [];
+  const sourceFonts = asTokenArray(sourceType.fonts);
+  let fontsExamined = 0;
+  for (const sourceFont of sourceFonts) {
     if (fonts.length >= MAX_PARSED_FONT_FACES) {
       break;
     }
     fontsExamined++;
-    if (!isTokenObject(value)) {
+    if (!isTokenObject(sourceFont)) {
       continue;
     }
-    let value2 = truncateTokenText(
-        value.family,
-        MAX_TOKEN_LABEL_LENGTH,
-      ).trim(),
-      value3 = typeof value.file === "string" ? value.file.trim() : "";
-    if (value2 === "" || !isSafeFontStack(value2) || /["']/.test(value2)) {
+    const family = truncateTokenText(
+      sourceFont.family,
+      MAX_TOKEN_LABEL_LENGTH,
+    ).trim();
+    const fileName =
+      typeof sourceFont.file === "string" ? sourceFont.file.trim() : "";
+    if (family === "" || !isSafeFontStack(family) || /["']/.test(family)) {
       report.dropped.push(
-        "font " + JSON.stringify(value3) + ": bad family name",
+        "font " + JSON.stringify(fileName) + ": bad family name",
       );
       continue;
     }
-    let value4 = value3.includes("/") ? value3 : "fonts/" + value3;
+    const file = fileName.includes("/") ? fileName : "fonts/" + fileName;
     if (
-      value3 === "" ||
-      !(0, isValidDesignSystemPath)(value4) ||
-      /^[a-z][a-z0-9+.-]*:/i.test(value3)
+      fileName === "" ||
+      !isValidDesignSystemPath(file) ||
+      /^[a-z][a-z0-9+.-]*:/i.test(fileName)
     ) {
       report.dropped.push(
         "font " +
-          JSON.stringify(value2) +
+          JSON.stringify(family) +
           ": bad file path (a relative path into the file table, e.g. fonts/Name.woff2)",
       );
       continue;
     }
-    let value5 = normalizeFontWeight(value.weight) ?? "400",
-      value6: Model.FontFace["style"] =
-        value.style === "italic" || value.style === "oblique"
-          ? value.style
-          : "normal";
+    const weight = normalizeFontWeight(sourceFont.weight) ?? "400";
+    const style: Model.FontFace["style"] =
+      sourceFont.style === "italic" || sourceFont.style === "oblique"
+        ? sourceFont.style
+        : "normal";
     fonts.push({
-      family: value2,
-      file: value4,
-      weight: value5,
-      style: value6,
+      family,
+      file,
+      weight,
+      style,
     });
   }
-  let unreadFonts = sourceFonts.slice(fontsExamined);
+  const unreadFonts = sourceFonts.slice(fontsExamined);
   if (unreadFonts.length > 0) {
     (report.notes ??= []).push(
       "tokens.json type.fonts: " +
@@ -597,239 +641,253 @@ function parseTokens(
         " or fewer",
     );
   }
-  let families: Record<string, string> = {};
+  // 字体族
+  const families: Record<string, string> = {};
   if (isTokenObject(sourceType.families)) {
-    let index: number = 0;
-    for (let value of Object.keys(sourceType.families)) {
-      if (index >= MAX_FONT_FAMILIES) {
+    let familyCount = 0;
+    for (const key of Object.keys(sourceType.families)) {
+      if (familyCount >= MAX_FONT_FAMILIES) {
         break;
       }
-      let value2 = value.trim().toLowerCase(),
-        value3 = sourceType.families[value];
+      const familyKey = key.trim().toLowerCase();
+      const stack = sourceType.families[key];
       if (
-        !TOKEN_NAME_PATTERN.test(value2) ||
-        typeof value3 !== "string" ||
-        !isSafeFontStack(value3.trim())
+        !TOKEN_NAME_PATTERN.test(familyKey) ||
+        typeof stack !== "string" ||
+        !isSafeFontStack(stack.trim())
       ) {
         report.dropped.push(
-          "font family " + JSON.stringify(value) + ": bad key or stack",
+          "font family " + JSON.stringify(key) + ": bad key or stack",
         );
         continue;
       }
-      families[value2] = value3.trim();
-      index++;
+      families[familyKey] = stack.trim();
+      familyCount++;
     }
   }
-  let styleNames = new Set<string>(),
-    styleCount: number = 0,
-    typographyGroups: Model.TypographyGroup[] = [];
-  for (let value of asTokenArray(sourceType.groups)) {
+  // 文字样式分组；样式名全文件唯一，总数受上限约束
+  const styleNames = new Set<string>();
+  let styleCount = 0;
+  const typographyGroups: Model.TypographyGroup[] = [];
+  for (const sourceGroup of asTokenArray(sourceType.groups)) {
     if (typographyGroups.length >= MAX_TYPOGRAPHY_GROUPS) {
       break;
     }
-    if (!isTokenObject(value)) {
+    if (!isTokenObject(sourceGroup)) {
       continue;
     }
-    let value2 =
-        typeof value.family === "string" &&
-        Object.hasOwn(families, value.family.trim().toLowerCase())
-          ? value.family.trim().toLowerCase()
-          : "",
-      items: Model.TypographyStyle[] = [];
-    for (let value3 of asTokenArray(value.styles)) {
+    const groupFamily =
+      typeof sourceGroup.family === "string" &&
+      Object.hasOwn(families, sourceGroup.family.trim().toLowerCase())
+        ? sourceGroup.family.trim().toLowerCase()
+        : "";
+    const styles: Model.TypographyStyle[] = [];
+    for (const sourceStyle of asTokenArray(sourceGroup.styles)) {
       if (styleCount >= MAX_TYPOGRAPHY_STYLES) {
         break;
       }
-      if (!isTokenObject(value3)) {
+      if (!isTokenObject(sourceStyle)) {
         continue;
       }
-      let value4 =
-        typeof value3.name === "string"
-          ? value3.name.trim().replace(/^\./, "")
+      const styleName =
+        typeof sourceStyle.name === "string"
+          ? sourceStyle.name.trim().replace(/^\./, "")
           : "";
-      if (!TOKEN_NAME_PATTERN.test(value4) || styleNames.has(value4)) {
+      if (!TOKEN_NAME_PATTERN.test(styleName) || styleNames.has(styleName)) {
         report.dropped.push(
-          "type style " + JSON.stringify(value4) + ": bad or duplicate name",
+          "type style " +
+            JSON.stringify(styleName) +
+            ": bad or duplicate name",
         );
         continue;
       }
-      let value5 = normalizeCssLength(value3.fontSize, false);
-      if (value5 === undefined) {
-        report.dropped.push("type style " + value4 + ": bad fontSize");
+      const fontSize = normalizeCssLength(sourceStyle.fontSize, false);
+      if (fontSize === undefined) {
+        report.dropped.push("type style " + styleName + ": bad fontSize");
         continue;
       }
-      let value6 = normalizeLineHeight(value3.lineHeight) ?? "1.4",
-        value7 =
-          typeof value3.family === "string" &&
-          Object.hasOwn(families, value3.family.trim().toLowerCase())
-            ? value3.family.trim().toLowerCase()
-            : "";
-      items.push({
-        name: value4,
-        fontSize: value5,
-        lineHeight: value6,
-        fontWeight: normalizeFontWeight(value3.fontWeight) ?? "400",
-        letterSpacing: normalizeCssLength(value3.letterSpacing, false) ?? "0",
-        fontStyle: value3.fontStyle === "italic" ? "italic" : "normal",
+      const lineHeight = normalizeLineHeight(sourceStyle.lineHeight) ?? "1.4";
+      const styleFamily =
+        typeof sourceStyle.family === "string" &&
+        Object.hasOwn(families, sourceStyle.family.trim().toLowerCase())
+          ? sourceStyle.family.trim().toLowerCase()
+          : "";
+      styles.push({
+        name: styleName,
+        fontSize,
+        lineHeight,
+        fontWeight: normalizeFontWeight(sourceStyle.fontWeight) ?? "400",
+        letterSpacing:
+          normalizeCssLength(sourceStyle.letterSpacing, false) ?? "0",
+        fontStyle: sourceStyle.fontStyle === "italic" ? "italic" : "normal",
         opticalSize:
           normalizeTypographyProperty(
             "opticalSize",
-            value3.opticalSize,
+            sourceStyle.opticalSize,
             families,
           ) ?? null,
-        family: value7,
+        family: styleFamily,
         sample: truncateTokenText(
-          value3.sample,
-          MAX_TYPE_SAMPLE_LENGTHModelTokens,
+          sourceStyle.sample,
+          MAX_TYPE_SAMPLE_LENGTH,
         ),
-        usage: truncateTokenText(value3.usage, MAX_TOKEN_USAGE_LENGTH),
+        usage: truncateTokenText(sourceStyle.usage, MAX_TOKEN_USAGE_LENGTH),
       });
-      styleNames.add(value4);
+      styleNames.add(styleName);
       styleCount++;
     }
     typographyGroups.push({
-      name: truncateTokenText(value.name, MAX_TOKEN_LABEL_LENGTH) || "Type",
-      family: value2,
-      note: truncateTokenText(value.note, MAX_TOKEN_NOTE_LENGTH),
-      styles: items,
+      name:
+        truncateTokenText(sourceGroup.name, MAX_TOKEN_LABEL_LENGTH) || "Type",
+      family: groupFamily,
+      note: truncateTokenText(sourceGroup.note, MAX_TOKEN_NOTE_LENGTH),
+      styles,
     });
   }
-  let tokenFamiliesByName = new Map(
-    colorTokens.map((input2) => [input2.name, "color"]),
+  // 其余 token 族：名称在所有族之间唯一（对应同一个 CSS 变量）
+  const tokenFamiliesByName = new Map(
+    colorTokens.map((token) => [token.name, "color"]),
   );
   function parseScalarFamily<Value extends string | Record<string, string>>(
-    input2: unknown,
-    options: string,
-    context: (value: unknown, name: string) => Value | undefined,
+    sourceFamily: unknown,
+    familyName: string,
+    normalizeValue: (value: unknown, name: string) => Value | undefined,
   ): Model.TokenFamily<{ name: string; value: Value; usage: string }> {
-    let value = isTokenObject(input2) ? input2 : {},
-      items: { name: string; value: Value; usage: string }[] = [];
-    for (let value2 of asTokenArray(value.tokens)) {
-      if (items.length >= MAX_TOKENS_PER_FAMILY) {
+    const family = isTokenObject(sourceFamily) ? sourceFamily : {};
+    const tokens: { name: string; value: Value; usage: string }[] = [];
+    for (const sourceToken of asTokenArray(family.tokens)) {
+      if (tokens.length >= MAX_TOKENS_PER_FAMILY) {
         break;
       }
-      if (!isTokenObject(value2)) {
+      if (!isTokenObject(sourceToken)) {
         continue;
       }
-      let value3 =
-          typeof value2.name === "string"
-            ? value2.name.trim().replace(/^--/, "")
-            : "",
-        entry = tokenFamiliesByName.get(value3);
-      if (!TOKEN_NAME_PATTERN.test(value3) || entry === options) {
+      const name =
+        typeof sourceToken.name === "string"
+          ? sourceToken.name.trim().replace(/^--/, "")
+          : "";
+      const ownerFamily = tokenFamiliesByName.get(name);
+      if (!TOKEN_NAME_PATTERN.test(name) || ownerFamily === familyName) {
         report.dropped.push(
-          options + " " + JSON.stringify(value3) + ": bad or duplicate name",
+          familyName +
+            " " +
+            JSON.stringify(name) +
+            ": bad or duplicate name",
         );
         continue;
       }
-      if (entry !== undefined) {
+      if (ownerFamily !== undefined) {
         report.dropped.push(
-          options +
+          familyName +
             " " +
-            value3 +
+            name +
             ": a " +
-            entry +
+            ownerFamily +
             " token already has that name (one --" +
-            value3 +
+            name +
             " across every family)",
         );
         continue;
       }
-      let value4 = context(value2.value, value3);
-      if (value4 === undefined) {
-        report.dropped.push(options + " " + value3 + ": bad value");
+      const value = normalizeValue(sourceToken.value, name);
+      if (value === undefined) {
+        report.dropped.push(familyName + " " + name + ": bad value");
         continue;
       }
-      tokenFamiliesByName.set(value3, options);
-      items.push({
-        name: value3,
-        value: value4,
-        usage: truncateTokenText(value2.usage, MAX_TOKEN_USAGE_LENGTH),
+      tokenFamiliesByName.set(name, familyName);
+      tokens.push({
+        name,
+        value,
+        usage: truncateTokenText(sourceToken.usage, MAX_TOKEN_USAGE_LENGTH),
       });
     }
     return {
-      note: truncateTokenText(value.note, MAX_TOKEN_NOTE_LENGTH),
-      tokens: items,
+      note: truncateTokenText(family.note, MAX_TOKEN_NOTE_LENGTH),
+      tokens,
     };
   }
-  let parseShadowValue = (input2: unknown, options: string) => {
-      let state: Record<string, string> = {};
-      if (isTokenObject(input2)) {
-        for (let value of themes) {
-          if (!Object.hasOwn(input2, value.id)) {
-            continue;
-          }
-          let value2 = normalizeBoxShadow(input2[value.id]);
-          if (value2 !== undefined) {
-            state[value.id] = value2;
-          } else {
-            report.dropped.push(
-              "shadow " +
-                options +
-                " [" +
-                value.id +
-                "]: not a box-shadow value",
-            );
-          }
+  // 阴影的值按主题给出；只有一个值时归到基础主题
+  const parseShadowValue = (sourceValue: unknown, name: string) => {
+    const themeValues: Record<string, string> = {};
+    if (isTokenObject(sourceValue)) {
+      for (const theme of themes) {
+        if (!Object.hasOwn(sourceValue, theme.id)) {
+          continue;
         }
-      } else {
-        let value = normalizeBoxShadow(input2);
-        if (value !== undefined) {
-          state[baseThemeId] = value;
+        const shadowValue = normalizeBoxShadow(sourceValue[theme.id]);
+        if (shadowValue !== undefined) {
+          themeValues[theme.id] = shadowValue;
+        } else {
+          report.dropped.push(
+            "shadow " +
+              name +
+              " [" +
+              theme.id +
+              "]: not a box-shadow value",
+          );
         }
       }
-      if (!Object.hasOwn(state, baseThemeId)) {
-        let value = themes.find((input3) => Object.hasOwn(state, input3.id));
-        if (value === undefined) {
-          return;
-        }
-        state[baseThemeId] = state[value.id];
-        delete state[value.id];
+    } else {
+      const baseValue = normalizeBoxShadow(sourceValue);
+      if (baseValue !== undefined) {
+        themeValues[baseThemeId] = baseValue;
       }
-      return state;
-    },
-    spacing = parseScalarFamily(source.spacing, "spacing", (input2) =>
-      normalizeCssLength(input2, false),
-    ),
-    radius = parseScalarFamily(source.radius, "radius", (input2) =>
-      normalizeCssLength(input2, true),
-    ),
-    shadow = parseScalarFamily(source.shadow, "shadow", parseShadowValue),
-    extra: Model.ExtraTokenFamily[] = [],
-    kept: Record<string, unknown> = {};
-  for (let value of ["shadow"]) {
+    }
+    if (!Object.hasOwn(themeValues, baseThemeId)) {
+      const fallbackTheme = themes.find((theme) =>
+        Object.hasOwn(themeValues, theme.id),
+      );
+      if (fallbackTheme === undefined) {
+        return;
+      }
+      themeValues[baseThemeId] = themeValues[fallbackTheme.id];
+      delete themeValues[fallbackTheme.id];
+    }
+    return themeValues;
+  };
+  const spacing = parseScalarFamily(source.spacing, "spacing", (value) =>
+    normalizeCssLength(value, false),
+  );
+  const radius = parseScalarFamily(source.radius, "radius", (value) =>
+    normalizeCssLength(value, true),
+  );
+  const shadow = parseScalarFamily(source.shadow, "shadow", parseShadowValue);
+  const extra: Model.ExtraTokenFamily[] = [];
+  // 不识别的顶层键原样保留，序列化时写回
+  const kept: Record<string, unknown> = {};
+  for (const key of ["shadow"]) {
     if (
-      Object.hasOwn(source, value) &&
-      !(isTokenObject(source[value]) && Array.isArray(source[value].tokens))
+      Object.hasOwn(source, key) &&
+      !(isTokenObject(source[key]) && Array.isArray(source[key].tokens))
     ) {
       (report.notes ??= []).push(
         "tokens.json " +
-          JSON.stringify(value) +
+          JSON.stringify(key) +
           ' is not shaped {"tokens":[{name,value,usage}]} — kept in the file, not shown',
       );
-      defineOwnEnumerableProperty(kept, value, source[value]);
+      defineOwnEnumerableProperty(kept, key, source[key]);
     }
   }
-  for (let value of Object.keys(source)) {
-    if (BUILTIN_TOKEN_DOCUMENT_KEYS.includes(value)) {
+  for (const key of Object.keys(source)) {
+    if (BUILTIN_TOKEN_DOCUMENT_KEYS.includes(key)) {
       continue;
     }
-    let value2 = source[value];
-    if (value === "name" && typeof value2 === "string") {
-      defineOwnEnumerableProperty(kept, value, value2);
+    const sourceFamily = source[key];
+    if (key === "name" && typeof sourceFamily === "string") {
+      defineOwnEnumerableProperty(kept, key, sourceFamily);
       continue;
     }
     if (
-      !EXTRA_TOKEN_FAMILY_PATTERN.test(value) ||
-      !isTokenObject(value2) ||
-      !Array.isArray(value2.tokens)
+      !EXTRA_TOKEN_FAMILY_PATTERN.test(key) ||
+      !isTokenObject(sourceFamily) ||
+      !Array.isArray(sourceFamily.tokens)
     ) {
       (report.notes ??= []).push(
         "tokens.json " +
-          JSON.stringify(value.slice(0, 40)) +
+          JSON.stringify(key.slice(0, 40)) +
           ' is not a token family ({"tokens":[{name,value,usage}]}) — kept in the file, not shown',
       );
-      defineOwnEnumerableProperty(kept, value, value2);
+      defineOwnEnumerableProperty(kept, key, sourceFamily);
       continue;
     }
     if (extra.length >= MAX_EXTRA_TOKEN_FAMILIES) {
@@ -837,20 +895,20 @@ function parseTokens(
         "token families beyond the built-in ones are capped at " +
           String(MAX_EXTRA_TOKEN_FAMILIES) +
           " — " +
-          JSON.stringify(value) +
+          JSON.stringify(key) +
           " kept in the file, not shown",
       );
-      defineOwnEnumerableProperty(kept, value, value2);
+      defineOwnEnumerableProperty(kept, key, sourceFamily);
       continue;
     }
     extra.push({
-      key: value,
+      key,
       ...parseScalarFamily(
-        value2,
-        value,
-        value === "motion"
-          ? (input2) =>
-              normalizeMotionValue(input2) ?? normalizeExtraTokenValue(input2)
+        sourceFamily,
+        key,
+        key === "motion"
+          ? (value) =>
+              normalizeMotionValue(value) ?? normalizeExtraTokenValue(value)
           : normalizeExtraTokenValue,
       ),
     });
@@ -858,303 +916,307 @@ function parseTokens(
   return {
     version: 1,
     color: {
-      themes: themes,
+      themes,
       tokens: colorTokens,
     },
     type: {
-      fonts: fonts,
-      families: families,
+      fonts,
+      families,
       groups: typographyGroups,
       ...(unreadFonts.length > 0
         ? {
-            unreadFonts: unreadFonts,
+            unreadFonts,
           }
         : {}),
     },
-    spacing: spacing,
-    radius: radius,
-    shadow: shadow,
-    extra: extra,
-    kept: kept,
+    spacing,
+    radius,
+    shadow,
+    extra,
+    kept,
   };
 }
-function explainColorAliasError(
+/** 解释颜色别名为什么无效；own 表示问题出在这个 token 自己，而不是别名链下游 */
+export function explainColorAliasError(
   token: Model.ColorToken,
   themeId: string,
   baseThemeId: string,
   tokensByName: Map<string, Model.ColorToken>,
 ) {
-  let seenNames = new Set([token.name]),
-    currentToken = token;
-  for (let index: number = 0; index <= MAX_COLOR_ALIAS_DEPTH; index++) {
-    let value = colorAliasTarget(
+  const seenNames = new Set([token.name]);
+  let currentToken = token;
+  for (let depth = 0; depth <= MAX_COLOR_ALIAS_DEPTH; depth++) {
+    const target = colorAliasTarget(
       currentToken.value[themeId] ?? currentToken.value[baseThemeId],
     );
-    if (value === undefined) {
+    if (target === undefined) {
       return;
     }
-    let entry = tokensByName.get(value);
-    if (entry === undefined) {
+    const targetToken = tokensByName.get(target);
+    if (targetToken === undefined) {
       return {
-        get why() { return (index === 0 ? ("") : ((("reaches {") + (value)) + ("}, which "))) + ("names no color token"); },
-        own: index === 0,
+        why: (depth === 0 ? "" : "reaches {" + target + "}, which ") + "names no color token",
+        own: depth === 0,
       };
     }
-    if (seenNames.has(value)) {
+    if (seenNames.has(target)) {
       return {
         why: "is a cycle",
-        own: value === token.name,
+        own: target === token.name,
       };
     }
-    seenNames.add(value);
-    currentToken = entry;
+    seenNames.add(target);
+    currentToken = targetToken;
   }
   return {
-    get why() { return ("chains deeper than ") + (String(MAX_COLOR_ALIAS_DEPTH)); },
+    why: "chains deeper than " + String(MAX_COLOR_ALIAS_DEPTH),
     own: true,
   };
 }
-function removeInvalidColorAliases(
+/** 反复移除无效的颜色别名（悬空、循环、过深），直到稳定；失去基础主题值的 token 用其他主题值补上或删除 */
+export function removeInvalidColorAliases(
   themes: Model.ColorTheme[],
   tokens: Model.ColorToken[],
   report: ParseReport,
 ): void {
-  let baseThemeId = themes[0].id;
+  const baseThemeId = themes[0].id;
   for (;;) {
-    let entries = new Map(tokens.map((input) => [input.name, input])),
-      items: [Model.ColorToken, string, string, boolean][] = [];
-    for (let value2 of tokens) {
-      for (let value3 of themes) {
-        if (colorAliasTarget(value2.value[value3.id]) === undefined) {
+    const tokensByName = new Map(tokens.map((token) => [token.name, token]));
+    const problems: [Model.ColorToken, string, string, boolean][] = [];
+    for (const token of tokens) {
+      for (const theme of themes) {
+        if (colorAliasTarget(token.value[theme.id]) === undefined) {
           continue;
         }
-        let value4 = explainColorAliasError(
-          value2,
-          value3.id,
+        const problem = explainColorAliasError(
+          token,
+          theme.id,
           baseThemeId,
-          entries,
+          tokensByName,
         );
-        if (value4 !== undefined) {
-          items.push([value2, value3.id, value4.why, value4.own]);
+        if (problem !== undefined) {
+          problems.push([token, theme.id, problem.why, problem.own]);
         }
       }
     }
-    if (items.length === 0) {
+    if (problems.length === 0) {
       return;
     }
-    let value = items.some((input) => input[3]);
-    for (let [value2, value3, value4, value5] of items) {
-      if (value && !value5) {
+    // 有 token 自身的问题时，只处理这些；下游连带的问题等它们移除后再看
+    const hasOwnProblem = problems.some((problem) => problem[3]);
+    for (const [token, themeId, why, own] of problems) {
+      if (hasOwnProblem && !own) {
         continue;
       }
       report.dropped.push(
         "color " +
-          value2.name +
+          token.name +
           " [" +
-          value3 +
+          themeId +
           "]: " +
-          String(value2.value[value3]) +
+          String(token.value[themeId]) +
           " " +
-          value4,
+          why,
       );
-      delete value2.value[value3];
+      delete token.value[themeId];
     }
-    for (let index: number = 0; index < tokens.length; index++) {
-      let value2 = tokens[index];
-      if (Object.hasOwn(value2.value, baseThemeId)) {
+    for (let index = 0; index < tokens.length; index++) {
+      const token = tokens[index];
+      if (Object.hasOwn(token.value, baseThemeId)) {
         continue;
       }
-      let value3 = themes.find((input) =>
-        Object.hasOwn(value2.value, input.id),
+      const fallbackTheme = themes.find((theme) =>
+        Object.hasOwn(token.value, theme.id),
       );
-      if (value3 === undefined) {
-        report.dropped.push("color " + value2.name + ": no valid value");
+      if (fallbackTheme === undefined) {
+        report.dropped.push("color " + token.name + ": no valid value");
         tokens.splice(index--, 1);
       } else {
-        value2.value[baseThemeId] = value2.value[value3.id];
-        delete value2.value[value3.id];
+        token.value[baseThemeId] = token.value[fallbackTheme.id];
+        delete token.value[fallbackTheme.id];
       }
     }
   }
 }
-function serializeTokens(tokens: NormalizedTokens): string {
-  let { shadow: shadow, extra: extra, kept: kept, ...builtin } = tokens,
-    { unreadFonts: unreadFonts, ...type } = builtin.type,
-    serialized: Record<string, unknown> = {
-      ...builtin,
-      type:
-        unreadFonts === undefined
-          ? type
-          : {
-              ...type,
-              fonts: [...type.fonts, ...unreadFonts],
-            },
-    };
+/** 序列化成 tokens.json 文本（2 空格缩进，末尾换行）；未被识别的顶层键写回，不覆盖已有键 */
+export function serializeTokens(tokens: NormalizedTokens): string {
+  const { shadow, extra, kept, ...builtin } = tokens;
+  const { unreadFonts, ...type } = builtin.type;
+  const serialized: Record<string, unknown> = {
+    ...builtin,
+    type:
+      unreadFonts === undefined
+        ? type
+        : {
+            ...type,
+            fonts: [...type.fonts, ...unreadFonts],
+          },
+  };
   if (shadow.tokens.length > 0) {
     serialized.shadow = shadow;
   }
-  for (let value of extra) {
-    if (value.tokens.length > 0) {
-      serialized[value.key] = {
-        note: value.note,
-        tokens: value.tokens,
+  for (const family of extra) {
+    if (family.tokens.length > 0) {
+      serialized[family.key] = {
+        note: family.note,
+        tokens: family.tokens,
       };
     }
   }
-  for (let value of Object.keys(kept)) {
-    if (!Object.hasOwn(serialized, value)) {
-      defineOwnEnumerableProperty(serialized, value, kept[value]);
+  for (const key of Object.keys(kept)) {
+    if (!Object.hasOwn(serialized, key)) {
+      defineOwnEnumerableProperty(serialized, key, kept[key]);
     }
   }
-  return (
-    JSON.stringify(serialized, null, 2) +
-    `
-`
-  );
+  return JSON.stringify(serialized, null, 2) + "\n";
 }
-function allColorTokens(tokens: NormalizedTokens) {
+export function allColorTokens(tokens: NormalizedTokens) {
   return tokens.color.tokens;
 }
-function allTypographyStyles(tokens: NormalizedTokens) {
-  return tokens.type.groups.flatMap((input) => input.styles);
+export function allTypographyStyles(tokens: NormalizedTokens) {
+  return tokens.type.groups.flatMap((group) => group.styles);
 }
-function allExtraTokens(tokens: NormalizedTokens) {
-  return tokens.extra.flatMap((input) => input.tokens);
+export function allExtraTokens(tokens: NormalizedTokens) {
+  return tokens.extra.flatMap((family) => family.tokens);
 }
-function tokenNamesForFamily(
+export function tokenNamesForFamily(
   tokens: NormalizedTokens,
   family: Core.TokenKind,
 ) {
   if (family === "type") {
-    return allTypographyStyles(tokens).map((input) => input.name);
+    return allTypographyStyles(tokens).map((style) => style.name);
   }
   if (family === "extra") {
-    return allExtraTokens(tokens).map((input) => input.name);
+    return allExtraTokens(tokens).map((token) => token.name);
   }
-  return tokens[family].tokens.map((input) => input.name);
+  return tokens[family].tokens.map((token) => token.name);
 }
-function conflictingTokenNames(
+/** 与给定族的新 token 同名会冲突的名称：文字样式只和自己比，其余族共用一个 CSS 变量空间 */
+export function conflictingTokenNames(
   tokens: NormalizedTokens,
   family: Core.TokenKind,
 ) {
   if (family === "type") {
     return tokenNamesForFamily(tokens, "type");
   } else {
-    return CSS_VARIABLE_TOKEN_FAMILIES.flatMap((input) =>
-      tokenNamesForFamily(tokens, input),
+    return CSS_VARIABLE_TOKEN_FAMILIES.flatMap((variableFamily) =>
+      tokenNamesForFamily(tokens, variableFamily),
     );
   }
 }
-function shadowValueForTheme(
+export function shadowValueForTheme(
   token: Model.ShadowToken,
   themeId: string,
   tokens: NormalizedTokens,
 ) {
-  let baseThemeId = tokens.color.themes[0].id;
+  const baseThemeId = tokens.color.themes[0].id;
   if (Object.hasOwn(token.value, themeId)) {
     return token.value[themeId];
   } else {
     return token.value[baseThemeId];
   }
 }
-function colorValueForThemeModelTokens(
+export function colorValueForThemeModelTokens(
   token: Model.ColorToken,
   themeId: string,
   tokens: NormalizedTokens,
 ) {
-  let baseThemeId = tokens.color.themes[0].id;
+  const baseThemeId = tokens.color.themes[0].id;
   if (Object.hasOwn(token.value, themeId)) {
     return token.value[themeId];
   } else {
     return token.value[baseThemeId];
   }
 }
-function colorTokenIndex(tokens: NormalizedTokens) {
+/** 按名称索引颜色 token；以 token 数组为键缓存 */
+export function colorTokenIndex(tokens: NormalizedTokens) {
   let index = colorTokenIndexCache.get(tokens.color.tokens);
   if (index === undefined) {
-    index = new Map(tokens.color.tokens.map((input) => [input.name, input]));
+    index = new Map(tokens.color.tokens.map((token) => [token.name, token]));
     colorTokenIndexCache.set(tokens.color.tokens, index);
   }
   return index;
 }
-function resolveColorTokenValue(
+/** 沿别名链解出某个主题下的最终颜色；链断开或成环返回 undefined */
+export function resolveColorTokenValue(
   token: Model.ColorToken,
   themeId: string,
   tokens: NormalizedTokens,
 ) {
-  let index = colorTokenIndex(tokens),
-    value: string | undefined = colorValueForThemeModelTokens(
-      token,
-      themeId,
-      tokens,
-    );
-  for (let index2: number = 0; index2 <= index.size; index2++) {
-    let value2 = colorAliasTarget(value);
-    if (value2 === undefined) {
+  const index = colorTokenIndex(tokens);
+  let value: string | undefined = colorValueForThemeModelTokens(
+    token,
+    themeId,
+    tokens,
+  );
+  for (let step = 0; step <= index.size; step++) {
+    const target = colorAliasTarget(value);
+    if (target === undefined) {
       return value;
     }
-    let entry = index.get(value2);
+    const targetToken = index.get(target);
     value =
-      entry === undefined
+      targetToken === undefined
         ? undefined
-        : colorValueForThemeModelTokens(entry, themeId, tokens);
+        : colorValueForThemeModelTokens(targetToken, themeId, tokens);
   }
   return;
 }
-function detectColorAliasCycle(
+/**
+ * 把 name 在 themeId 下改成 proposedValue 后，别名是否会成环。
+ * 改的是基础主题时，继承基础值的其他主题也一并检查。via 是环上的 token，过深时为 "deep"。
+ */
+export function detectColorAliasCycle(
   tokens: NormalizedTokens,
   name: string,
   themeId: string,
   proposedValue: string,
 ): {theme: string; via: string[] | "deep"} | undefined {
-  let themes = tokens.color.themes,
-    baseThemeId = themes[0]?.id ?? "";
+  const themes = tokens.color.themes;
+  const baseThemeId = themes[0]?.id ?? "";
   if (proposedValue !== "" && colorAliasTarget(proposedValue) === undefined) {
     return;
   }
-  let index = colorTokenIndex(tokens),
-    token = index.get(name),
-    value = proposedValue !== "" ? proposedValue : token?.value[baseThemeId],
-    inheritingThemes =
-      proposedValue !== "" && themeId === baseThemeId && token !== undefined
-        ? themes
-            .filter(
-              (input) =>
-                input.id !== baseThemeId &&
-                token.value[input.id] === undefined,
-            )
-            .map((input) => input.id)
-        : [];
-  for (let value2 of [themeId, ...inheritingThemes]) {
-    let items: string[] = [],
-      value3 = colorAliasTarget(value);
+  const index = colorTokenIndex(tokens);
+  const token = index.get(name);
+  const value = proposedValue !== "" ? proposedValue : token?.value[baseThemeId];
+  const inheritingThemes =
+    proposedValue !== "" && themeId === baseThemeId && token !== undefined
+      ? themes
+          .filter(
+            (theme) =>
+              theme.id !== baseThemeId && token.value[theme.id] === undefined,
+          )
+          .map((theme) => theme.id)
+      : [];
+  for (const checkedTheme of [themeId, ...inheritingThemes]) {
+    const visited: string[] = [];
+    let target = colorAliasTarget(value);
     for (
-      let index2: number = 0;
-      index2 < MAX_COLOR_ALIAS_DEPTH &&
-      value3 !== undefined &&
-      value3 !== name;
-      index2++
+      let step = 0;
+      step < MAX_COLOR_ALIAS_DEPTH && target !== undefined && target !== name;
+      step++
     ) {
-      let value4 = items.includes(value3) ? undefined : index.get(value3);
-      if (value4 === undefined) {
-        value3 = undefined;
+      const targetToken = visited.includes(target) ? undefined : index.get(target);
+      if (targetToken === undefined) {
+        target = undefined;
       } else {
-        items.push(value3);
-        value3 = colorAliasTarget(
-          value4.value[value2] ?? value4.value[baseThemeId],
+        visited.push(target);
+        target = colorAliasTarget(
+          targetToken.value[checkedTheme] ?? targetToken.value[baseThemeId],
         );
       }
     }
-    if (value3 !== undefined) {
+    if (target !== undefined) {
       return {
-        theme: value2,
-        via: value3 === name ? items : "deep",
+        theme: checkedTheme,
+        via: target === name ? visited : "deep",
       };
     }
   }
   return;
 }
-function typographyStyleFamily(
+export function typographyStyleFamily(
   style: Model.TypographyStyle,
   group: Model.TypographyGroup,
 ) {
@@ -1164,171 +1226,177 @@ function typographyStyleFamily(
     return group.family;
   }
 }
-function typographyShorthandVariables(tokens: NormalizedTokens) {
-  let occupiedNames = new Set(
-      conflictingTokenNames(tokens, "color").map(escapeTokenCssIdentifier),
-    ),
-    variables = new Map<string, string>();
-  for (let value of tokens.type.groups) {
-    for (let value2 of value.styles) {
-      let value3: string = "text-" + escapeTokenCssIdentifier(value2.name);
-      if (!occupiedNames.has(value3)) {
-        variables.set(value2.name, "--" + value3);
+/** 文字样式的 CSS 简写变量（--text-<name>）；与颜色变量重名的样式不生成 */
+export function typographyShorthandVariables(tokens: NormalizedTokens) {
+  const occupiedNames = new Set(
+    conflictingTokenNames(tokens, "color").map(escapeTokenCssIdentifier),
+  );
+  const variables = new Map<string, string>();
+  for (const group of tokens.type.groups) {
+    for (const style of group.styles) {
+      const variable: string = "text-" + escapeTokenCssIdentifier(style.name);
+      if (!occupiedNames.has(variable)) {
+        variables.set(style.name, "--" + variable);
       }
     }
   }
   return variables;
 }
-function escapeTokenCssIdentifier(name: string): string {
+export function escapeTokenCssIdentifier(name: string): string {
   let escaped = name.replace(/\./g, "\\.");
   if (/^[0-9]/.test(escaped)) {
     escaped = "\\3" + escaped[0] + " " + escaped.slice(1);
   }
   return escaped;
 }
-function escapeTokenCssComment(usage: string) {
+export function escapeTokenCssComment(usage: string) {
   return usage
     .replace(/\*\//g, "* /")
     .replace(/<\//g, "< /")
     .replace(/[\r\n\f]+/g, " ")
     .trim();
 }
-function generateTokensCss(
+/**
+ * 生成 tokens.css：基础主题放在 :root，其他主题写成 [data-theme] 覆盖，
+ * 再接间距、圆角、扩展族、字体族、文字样式类与 @font-face。
+ */
+export function generateTokensCss(
   tokens: NormalizedTokens,
   options: TokenCssOptions = {},
 ): string {
-  let rules = [],
-    themes = tokens.color.themes,
-    baseThemeId = themes[0].id,
-    colors = allColorTokens(tokens),
-    shadows = tokens.shadow.tokens,
-    usageComment = (input: string): string =>
-      options.usageComments === true && input !== ""
-        ? " /* " + escapeTokenCssComment(input) + " */"
-        : "",
-    colorDeclaration = (
-      input: Model.ColorToken,
-      options2: string,
-      context: boolean,
-    ): string => {
-      let value = colorAliasTarget(options2);
-      return (
-        "  --" +
-        escapeTokenCssIdentifier(input.name) +
-        ": " +
-        (value !== undefined
-          ? "var(--" + escapeTokenCssIdentifier(value) + ")"
-          : options2) +
-        ";" +
-        (context ? usageComment(input.usage) : "")
-      );
-    },
-    scalarDeclaration = (
-      input: Model.ScalarToken | Model.ShadowToken,
-      options2: string,
-      context: boolean,
-    ): string =>
+  const rules = [];
+  const themes = tokens.color.themes;
+  const baseThemeId = themes[0].id;
+  const colors = allColorTokens(tokens);
+  const shadows = tokens.shadow.tokens;
+  const usageComment = (usage: string): string =>
+    options.usageComments === true && usage !== ""
+      ? " /* " + escapeTokenCssComment(usage) + " */"
+      : "";
+  // 别名写成 var(--x)；withUsage 控制是否附上 usage 注释（只在基础主题块里附）
+  const colorDeclaration = (
+    token: Model.ColorToken,
+    value: string,
+    withUsage: boolean,
+  ): string => {
+    const aliasTarget = colorAliasTarget(value);
+    return (
       "  --" +
-      escapeTokenCssIdentifier(input.name) +
+      escapeTokenCssIdentifier(token.name) +
       ": " +
-      options2 +
+      (aliasTarget !== undefined
+        ? "var(--" + escapeTokenCssIdentifier(aliasTarget) + ")"
+        : value) +
       ";" +
-      (context ? usageComment(input.usage) : "");
+      (withUsage ? usageComment(token.usage) : "")
+    );
+  };
+  const scalarDeclaration = (
+    token: Model.ScalarToken | Model.ShadowToken,
+    value: string,
+    withUsage: boolean,
+  ): string =>
+    "  --" +
+    escapeTokenCssIdentifier(token.name) +
+    ": " +
+    value +
+    ";" +
+    (withUsage ? usageComment(token.usage) : "");
   if (colors.length > 0 || shadows.length > 0) {
     rules.push(':root, [data-theme="' + baseThemeId + '"] {');
-    for (let value of colors) {
-      rules.push(colorDeclaration(value, value.value[baseThemeId], true));
+    for (const token of colors) {
+      rules.push(colorDeclaration(token, token.value[baseThemeId], true));
     }
-    for (let value of shadows) {
-      rules.push(scalarDeclaration(value, value.value[baseThemeId], true));
+    for (const token of shadows) {
+      rules.push(scalarDeclaration(token, token.value[baseThemeId], true));
     }
     rules.push("}");
-    for (let value of themes.slice(1)) {
-      let items = [
+    for (const theme of themes.slice(1)) {
+      const declarations = [
         ...colors
           .filter(
-            (input) =>
-              input.value[value.id] !== undefined ||
-              colorAliasTarget(input.value[baseThemeId]) !== undefined,
+            (token) =>
+              token.value[theme.id] !== undefined ||
+              colorAliasTarget(token.value[baseThemeId]) !== undefined,
           )
-          .map((input) =>
+          .map((token) =>
             colorDeclaration(
-              input,
-              input.value[value.id] ?? input.value[baseThemeId],
+              token,
+              token.value[theme.id] ?? token.value[baseThemeId],
               false,
             ),
           ),
         ...shadows
-          .filter((input): boolean => input.value[value.id] !== undefined)
-          .map((input) =>
-            scalarDeclaration(input, input.value[value.id], false),
+          .filter((token): boolean => token.value[theme.id] !== undefined)
+          .map((token) =>
+            scalarDeclaration(token, token.value[theme.id], false),
           ),
       ];
-      if (items.length > 0) {
-        rules.push('[data-theme="' + value.id + '"] {', ...items, "}");
+      if (declarations.length > 0) {
+        rules.push('[data-theme="' + theme.id + '"] {', ...declarations, "}");
       }
     }
   }
-  let rootVariables = [];
-  for (let value of tokens.spacing.tokens) {
+  const rootVariables = [];
+  for (const token of tokens.spacing.tokens) {
     rootVariables.push(
       "  --" +
-        escapeTokenCssIdentifier(value.name) +
+        escapeTokenCssIdentifier(token.name) +
         ": " +
-        value.value +
+        token.value +
         ";" +
-        usageComment(value.usage),
+        usageComment(token.usage),
     );
   }
-  for (let value of tokens.radius.tokens) {
+  for (const token of tokens.radius.tokens) {
     rootVariables.push(
       "  --" +
-        escapeTokenCssIdentifier(value.name) +
+        escapeTokenCssIdentifier(token.name) +
         ": " +
-        value.value +
+        token.value +
         ";" +
-        usageComment(value.usage),
+        usageComment(token.usage),
     );
   }
-  for (let value of allExtraTokens(tokens)) {
+  for (const token of allExtraTokens(tokens)) {
     rootVariables.push(
       "  --" +
-        escapeTokenCssIdentifier(value.name) +
+        escapeTokenCssIdentifier(token.name) +
         ": " +
-        value.value +
+        token.value +
         ";" +
-        usageComment(value.usage),
+        usageComment(token.usage),
     );
   }
-  for (let [value, value2] of Object.entries(tokens.type.families)) {
+  for (const [key, stack] of Object.entries(tokens.type.families)) {
     rootVariables.push(
-      "  --font-" + escapeTokenCssIdentifier(value) + ": " + value2 + ";",
+      "  --font-" + escapeTokenCssIdentifier(key) + ": " + stack + ";",
     );
   }
   if (options.styleVars === true) {
-    let value = typographyShorthandVariables(tokens);
-    for (let value2 of tokens.type.groups) {
-      for (let value3 of value2.styles) {
-        let entry = value.get(value3.name);
-        if (entry === undefined) {
+    const shorthandVariables = typographyShorthandVariables(tokens);
+    for (const group of tokens.type.groups) {
+      for (const style of group.styles) {
+        const variable = shorthandVariables.get(style.name);
+        if (variable === undefined) {
           continue;
         }
-        let value4 = typographyStyleFamily(value3, value2);
+        const family = typographyStyleFamily(style, group);
         rootVariables.push(
           "  " +
-            entry +
+            variable +
             ": " +
-            (value3.fontStyle !== "normal" ? value3.fontStyle + " " : "") +
-            String(value3.fontWeight) +
+            (style.fontStyle !== "normal" ? style.fontStyle + " " : "") +
+            String(style.fontWeight) +
             " " +
-            value3.fontSize +
+            style.fontSize +
             "/" +
-            value3.lineHeight +
-            (value4 !== ""
-              ? " var(--font-" + escapeTokenCssIdentifier(value4) + ")"
+            style.lineHeight +
+            (family !== ""
+              ? " var(--font-" + escapeTokenCssIdentifier(family) + ")"
               : " inherit") +
             ";" +
-            usageComment(value3.usage),
+            usageComment(style.usage),
         );
       }
     }
@@ -1336,35 +1404,35 @@ function generateTokensCss(
   if (rootVariables.length > 0) {
     rules.push(":root {", ...rootVariables, "}");
   }
-  for (let value of tokens.type.groups) {
-    for (let value2 of value.styles) {
-      let value3 = typographyStyleFamily(value2, value),
-        items = [
-          ...(value3 !== ""
-            ? [
-                "  font-family: var(--font-" +
-                  escapeTokenCssIdentifier(value3) +
-                  ");",
-              ]
-            : []),
-          "  font-size: " + value2.fontSize + ";",
-          "  line-height: " + value2.lineHeight + ";",
-          "  font-weight: " + value2.fontWeight + ";",
-          "  letter-spacing: " + value2.letterSpacing + ";",
-          ...(value2.fontStyle !== "normal"
-            ? ["  font-style: " + value2.fontStyle + ";"]
-            : []),
-          ...(value2.opticalSize !== null
-            ? [
-                "  font-variation-settings: 'opsz' " +
-                  String(value2.opticalSize) +
-                  ";",
-              ]
-            : []),
-        ];
+  for (const group of tokens.type.groups) {
+    for (const style of group.styles) {
+      const family = typographyStyleFamily(style, group);
+      const declarations = [
+        ...(family !== ""
+          ? [
+              "  font-family: var(--font-" +
+                escapeTokenCssIdentifier(family) +
+                ");",
+            ]
+          : []),
+        "  font-size: " + style.fontSize + ";",
+        "  line-height: " + style.lineHeight + ";",
+        "  font-weight: " + style.fontWeight + ";",
+        "  letter-spacing: " + style.letterSpacing + ";",
+        ...(style.fontStyle !== "normal"
+          ? ["  font-style: " + style.fontStyle + ";"]
+          : []),
+        ...(style.opticalSize !== null
+          ? [
+              "  font-variation-settings: 'opsz' " +
+                String(style.opticalSize) +
+                ";",
+            ]
+          : []),
+      ];
       rules.push(
-        "." + escapeTokenCssIdentifier(value2.name) + " {",
-        ...items,
+        "." + escapeTokenCssIdentifier(style.name) + " {",
+        ...declarations,
         "}",
       );
     }
@@ -1372,62 +1440,48 @@ function generateTokensCss(
   if (options.fontFaces !== false) {
     rules.push(...generateFontFaceRules(tokens, options.fontSrc));
   }
-  return (
-    rules.join(`
-`) +
-    (rules.length > 0
-      ? `
-`
-      : "")
-  );
+  return rules.join("\n") + (rules.length > 0 ? "\n" : "");
 }
-function generateFontFaceRules(
+export function generateFontFaceRules(
   tokens: NormalizedTokens,
   fontSource?: (path: string) => string | null,
 ) {
-  let rules = [];
-  for (let value of tokens.type.fonts) {
-    let value2 = fontSource
-      ? fontSource(value.file)
-      : (0, encodeRelativeUrlPath)(value.file);
-    if (value2 === null) {
+  const rules = [];
+  for (const font of tokens.type.fonts) {
+    const url = fontSource
+      ? fontSource(font.file)
+      : encodeRelativeUrlPath(font.file);
+    if (url === null) {
       continue;
     }
-    let value3 = value.file
-        .slice(value.file.lastIndexOf(".") + 1)
-        .toLowerCase(),
-      value4 = FONT_FACE_FORMAT_NAMES[value3];
+    const extension = font.file
+      .slice(font.file.lastIndexOf(".") + 1)
+      .toLowerCase();
+    const formatName = FONT_FACE_FORMAT_NAMES[extension];
     rules.push(
       "@font-face {",
-      '  font-family: "' + value.family + '";',
+      '  font-family: "' + font.family + '";',
       '  src: url("' +
-        value2.replace(/["\\\n\r\f]/g, "") +
+        url.replace(/["\\\n\r\f]/g, "") +
         '")' +
-        (value4 !== undefined ? ' format("' + value4 + '")' : "") +
+        (formatName !== undefined ? ' format("' + formatName + '")' : "") +
         ";",
-      "  font-weight: " + value.weight + ";",
-      "  font-style: " + value.style + ";",
+      "  font-weight: " + font.weight + ";",
+      "  font-style: " + font.style + ";",
       "  font-display: swap;",
       "}",
     );
   }
   return rules;
 }
-function generateFontFacesCss(
+export function generateFontFacesCss(
   tokens: NormalizedTokens,
   fontSource?: (path: string) => string | null,
 ): string {
-  let rules = generateFontFaceRules(tokens, fontSource);
-  return (
-    rules.join(`
-`) +
-    (rules.length > 0
-      ? `
-`
-      : "")
-  );
+  const rules = generateFontFaceRules(tokens, fontSource);
+  return rules.join("\n") + (rules.length > 0 ? "\n" : "");
 }
-function generateNamedTokensCss(
+export function generateNamedTokensCss(
   tokens: NormalizedTokens,
   name: string,
   fontSource?: (path: string) => string | null,
@@ -1441,8 +1495,7 @@ function generateNamedTokensCss(
           .replace(/\*\//g, "* /")
           .replace(/<\//g, "< /")
       : "Design system") +
-    ` — generated from tokens.json */
-` +
+    " — generated from tokens.json */\n" +
     generateTokensCss(tokens, {
       usageComments: true,
       styleVars: true,
@@ -1450,46 +1503,46 @@ function generateNamedTokensCss(
     })
   );
 }
-function generatedTokensCssForFiles(files: Model.FileTable) {
+/**
+ * 由文件表里的 tokens.json 生成 tokens.css；没有 tokens.json 返回 null，
+ * 结果含替换字符或 </ 时视为不安全也返回 null。
+ * 缓存最近一次的结果，输入为 tokens 文本、系统名称与字体文件内容。
+ */
+export function generatedTokensCssForFiles(files: Model.FileTable) {
   if (!Object.hasOwn(files, DESIGN_SYSTEM_PATHS.tokens)) {
     return null;
   }
-  let manifestName = (0, parseManifest)(
-      files[DESIGN_SYSTEM_PATHS.manifest] ?? "",
-    ).name,
-    name = typeof manifestName === "string" ? manifestName : "",
-    fontSource = (input: string) => {
-      let value = (0, storagePointerForFile)(
-        input,
-        files[input] ?? "",
-      );
-      if (value === null) {
-        return (0, encodeRelativeUrlPath)(input);
+  const manifestName = parseManifest(
+    files[DESIGN_SYSTEM_PATHS.manifest] ?? "",
+  ).name;
+  const name = typeof manifestName === "string" ? manifestName : "";
+  const fontSource = (path: string) => {
+    const pointer = storagePointerForFile(path, files[path] ?? "");
+    if (pointer === null) {
+      return encodeRelativeUrlPath(path);
+    } else {
+      if (pointer.store === "blob") {
+        return blobRelativeUrlModelFilePolicy(pointer.id);
       } else {
-        if (value.store === "blob") {
-          return (0, blobRelativeUrlModelFilePolicy)(value.id);
-        } else {
-          return (0, encodeRelativeUrlPath)(
-            value.rel === "" ? input : value.rel,
-          );
-        }
+        return encodeRelativeUrlPath(
+          pointer.rel === "" ? path : pointer.rel,
+        );
       }
-    },
-    tokensText = files[DESIGN_SYSTEM_PATHS.tokens],
-    fontCacheKey = Object.keys(files)
-      .filter((input) =>
-        input.startsWith(DESIGN_SYSTEM_PATHS.fontsDir),
-      )
-      .sort()
-      .map(
-        (input): string =>
-          input +
-          "=" +
-          ((0, storagePointerForFile)(input, files[input]) !== null
-            ? files[input]
-            : "inline"),
-      ).join(`
-`);
+    }
+  };
+  const tokensText = files[DESIGN_SYSTEM_PATHS.tokens];
+  const fontCacheKey = Object.keys(files)
+    .filter((path) => path.startsWith(DESIGN_SYSTEM_PATHS.fontsDir))
+    .sort()
+    .map(
+      (path): string =>
+        path +
+        "=" +
+        (storagePointerForFile(path, files[path]) !== null
+          ? files[path]
+          : "inline"),
+    )
+    .join("\n");
   if (
     cachedGeneratedTokensCss !== null &&
     cachedGeneratedTokensCss.tokens === tokensText &&
@@ -1498,204 +1551,62 @@ function generatedTokensCssForFiles(files: Model.FileTable) {
   ) {
     return cachedGeneratedTokensCss.css;
   }
-  let generatedCss = generateNamedTokensCss(
-      parseTokens(tokensText),
-      name,
-      fontSource,
-    ),
-    safeCss =
-      generatedCss.includes(String.fromCharCode(65533)) ||
-      generatedCss.includes("</")
-        ? null
-        : generatedCss;
+  const generatedCss = generateNamedTokensCss(
+    parseTokens(tokensText),
+    name,
+    fontSource,
+  );
+  const safeCss =
+    generatedCss.includes(String.fromCharCode(65533)) ||
+    generatedCss.includes("</")
+      ? null
+      : generatedCss;
   cachedGeneratedTokensCss = {
     tokens: tokensText,
-    name: name,
+    name,
     fonts: fontCacheKey,
     css: safeCss,
   };
   return safeCss;
 }
-function tokensJsonWithManifestName(files: Model.FileTable) {
-  let tokensText = files[DESIGN_SYSTEM_PATHS.tokens];
+/** 把清单里的系统名称写进 tokens.json 的 name；无需改动或结果不安全时返回原文本 */
+export function tokensJsonWithManifestName(files: Model.FileTable) {
+  const tokensText = files[DESIGN_SYSTEM_PATHS.tokens];
   if (tokensText === undefined) {
     return null;
   }
-  let name = truncateTokenText(
-    (0, parseManifest)(
-      files[DESIGN_SYSTEM_PATHS.manifest] ?? "",
-    ).name,
+  const name = truncateTokenText(
+    parseManifest(files[DESIGN_SYSTEM_PATHS.manifest] ?? "").name,
     MAX_TOKEN_LABEL_LENGTH,
   ).trim();
   if (name === "" || name.includes(String.fromCharCode(65533))) {
     return tokensText;
   }
   try {
-    let value: unknown = JSON.parse(tokensText);
+    const parsed: unknown = JSON.parse(tokensText);
     if (
-      !isTokenObject(value) ||
-      value.name === name ||
-      (value.name !== undefined && typeof value.name !== "string")
+      !isTokenObject(parsed) ||
+      parsed.name === name ||
+      (parsed.name !== undefined && typeof parsed.name !== "string")
     ) {
       return tokensText;
     }
-    let { name: value2, ...value3 } = value,
-      value4: string =
-        JSON.stringify(
-          {
-            name: name,
-            ...value3,
-          },
-          null,
-          2,
-        ) +
-        `
-`;
-    if (value4.includes(String.fromCharCode(65533))) {
+    const { name: _oldName, ...rest } = parsed;
+    const updated: string =
+      JSON.stringify(
+        {
+          name,
+          ...rest,
+        },
+        null,
+        2,
+      ) + "\n";
+    if (updated.includes(String.fromCharCode(65533))) {
       return tokensText;
     } else {
-      return value4;
+      return updated;
     }
   } catch {
     return tokensText;
   }
-}
-export {
-  allColorTokens,
-  allExtraTokens,
-  allTypographyStyles,
-  asTokenArray,
-  BOX_SHADOW_PATTERN,
-  BUILTIN_TOKEN_DOCUMENT_KEYS,
-  cachedGeneratedTokensCss,
-  COLOR_ALIAS_PATTERN,
-  COLOR_FUNCTION_PATTERN,
-  colorAliasTarget,
-  colorTokenIndex,
-  colorTokenIndexCache,
-  colorValueForThemeModelTokens,
-  conflictingTokenNames,
-  CSS_LENGTH_PATTERN,
-  CSS_VARIABLE_TOKEN_FAMILIES,
-  defineOwnEnumerableProperty,
-  detectColorAliasCycle,
-  escapeTokenCssComment,
-  escapeTokenCssIdentifier,
-  explainColorAliasError,
-  EXTRA_TOKEN_FAMILY_PATTERN,
-  EXTRA_TOKEN_VALUE_PATTERN,
-  FONT_FACE_FORMAT_NAMES,
-  FONT_STACK_PATTERN,
-  FONT_WEIGHT_PATTERN,
-  generatedTokensCssForFiles,
-  generateFontFaceRules,
-  generateFontFacesCss,
-  generateNamedTokensCss,
-  generateTokensCss,
-  HEX_COLOR_PATTERN,
-  isColorLiteral,
-  isColorOrAlias,
-  isCssLength,
-  isSafeBoxShadow,
-  isSafeFontStack,
-  isTokenObject,
-  MAX_COLOR_ALIAS_DEPTH,
-  MAX_COLOR_THEMES,
-  MAX_COLOR_TOKENS,
-  MAX_EXTRA_TOKEN_FAMILIES,
-  MAX_FONT_FAMILIES,
-  MAX_PARSED_FONT_FACES,
-  MAX_TOKEN_LABEL_LENGTH,
-  MAX_TOKEN_NOTE_LENGTH,
-  MAX_TOKEN_USAGE_LENGTH,
-  MAX_TOKENS_PER_FAMILY,
-  MAX_TYPE_SAMPLE_LENGTHModelTokens,
-  MAX_TYPOGRAPHY_GROUPS,
-  MAX_TYPOGRAPHY_STYLES,
-  MOTION_DURATION_PATTERN,
-  MOTION_EASING_PATTERN,
-  motionValueKind,
-  normalizeBoxShadow,
-  normalizeColorEditorInput,
-  normalizeColorOrAlias,
-  normalizeCssLength,
-  normalizeExtraTokenValue,
-  normalizeFontWeight,
-  normalizeLineHeight,
-  normalizeMotionValue,
-  normalizeScalarTokenValue,
-  normalizeThemeColorValue,
-  normalizeTypographyProperty,
-  parseTokens,
-  removeInvalidColorAliases,
-  resolveColorTokenValue,
-  serializeTokens,
-  shadowValueForTheme,
-  TOKEN_NAME_PATTERN,
-  tokenNamesForFamily,
-  tokensJsonWithManifestName,
-  truncateTokenText,
-  typographyShorthandVariables,
-  typographyStyleFamily,
-  UNPREFIXED_HEX_COLOR_PATTERN,
-};
-export function installModelTokens(): () => void {
-  return () => {
-    TOKEN_NAME_PATTERN = /^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$/;
-    HEX_COLOR_PATTERN = /^#(?:[0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})$/;
-    COLOR_ALIAS_PATTERN = /^\{([A-Za-z0-9][A-Za-z0-9_.-]{0,63})\}$/;
-    EXTRA_TOKEN_FAMILY_PATTERN =
-      /^(?!(?:__proto__|constructor|prototype)$)[A-Za-z][A-Za-z0-9_-]{0,31}$/;
-    BUILTIN_TOKEN_DOCUMENT_KEYS = [
-      "version",
-      "color",
-      "type",
-      "spacing",
-      "radius",
-      "shadow",
-    ];
-    MAX_COLOR_ALIAS_DEPTH = 16;
-    COLOR_FUNCTION_PATTERN =
-      /^(?:rgb|rgba|hsl|hsla|oklch|oklab|lab|lch|color)\([0-9a-z.,%/ \-]{1,60}\)$/;
-    CSS_LENGTH_PATTERN = /^-?\d{1,4}(?:\.\d{1,6})?(?:px|rem|em|%)$|^0$/;
-    FONT_WEIGHT_PATTERN = /^(?:[1-9]\d{0,2}|1000)(?: (?:[1-9]\d{0,2}|1000))?$/;
-    FONT_STACK_PATTERN = /^[^;{}<>()\\\r\n\f]{1,200}$/;
-    MAX_COLOR_THEMES = 8;
-    MAX_COLOR_TOKENS = 600;
-    MAX_PARSED_FONT_FACES = 4096;
-    MAX_FONT_FAMILIES = 12;
-    MAX_TYPOGRAPHY_GROUPS = 12;
-    MAX_TYPOGRAPHY_STYLES = 80;
-    MAX_TOKENS_PER_FAMILY = 60;
-    MAX_EXTRA_TOKEN_FAMILIES = 12;
-    MAX_TOKEN_LABEL_LENGTH = 120;
-    MAX_TOKEN_NOTE_LENGTH = 400;
-    MAX_TOKEN_USAGE_LENGTH = 1000;
-    MAX_TYPE_SAMPLE_LENGTHModelTokens = 200;
-    BOX_SHADOW_PATTERN = /^[a-z0-9 #%(),./+-]{1,400}$/;
-    MOTION_DURATION_PATTERN = /^(?:\d{1,6}(?:\.\d{1,3})?|\.\d{1,3})m?s$/;
-    MOTION_EASING_PATTERN =
-      /^(?:linear|ease|ease-in|ease-out|ease-in-out|step-start|step-end|cubic-bezier\([-\d., ]{1,60}\)|steps\([a-z0-9, -]{1,40}\))$/;
-    EXTRA_TOKEN_VALUE_PATTERN = /^[A-Za-z0-9 #%(),./+_-]{1,200}$/;
-    isTokenObject = (input: unknown): input is Record<string, unknown> =>
-      typeof input === "object" && input !== null && !Array.isArray(input);
-    normalizeThemeColorValue = normalizeColorOrAlias;
-    UNPREFIXED_HEX_COLOR_PATTERN =
-      /^(?:[0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})$/;
-    CSS_VARIABLE_TOKEN_FAMILIES = [
-      "color",
-      "spacing",
-      "radius",
-      "shadow",
-      "extra",
-    ];
-    colorTokenIndexCache = new WeakMap();
-    FONT_FACE_FORMAT_NAMES = {
-      woff2: "woff2",
-      woff: "woff",
-      ttf: "truetype",
-      otf: "opentype",
-    };
-    cachedGeneratedTokensCss = null;
-  };
 }

@@ -85,7 +85,6 @@ import { installModelFilePolicy } from "./model/file-policy";
 import { installModelFileTable } from "./model/file-table";
 import { installModelComponentInference } from "./model/component-inference";
 import { installModelLibraries } from "./model/libraries";
-import { installModelTokens } from "./model/tokens";
 import { installModelDocumentation } from "./model/documentation";
 import { installModelPublish } from "./model/publish";
 import { installModelBoot } from "./model/boot";
@@ -98,7 +97,6 @@ import { installModelTokenCommands } from "./model/token-commands";
 import { installModelFontComponentCommands } from "./model/font-component-commands";
 import { installModelAssetCommands } from "./model/asset-commands";
 import { installModelMigrationMarkers } from "./model/migration-markers";
-import { installModelRecordCodec } from "./model/record-codec";
 import { installModelStoredFileCodec } from "./model/stored-file-codec";
 import { installModelStoreConversion } from "./model/store-conversion";
 import { installModelStoreCompose } from "./model/store-compose";
@@ -110,13 +108,11 @@ import { installModelReactRuntime } from "./model/react-runtime";
 import { installEditorExternalLinks } from "./editor/external-links";
 import { installEditorInlineMarkdown } from "./editor/inline-markdown";
 import { installEditorMarkdownBlocks } from "./editor/markdown-blocks";
-import { installEditorMarkdownAutoformat } from "./editor/markdown-autoformat";
 import { installEditorMarkdownToolbar } from "./editor/markdown-toolbar";
 import { installEditorCommentAnchors } from "./editor/comment-anchors";
 import { installEditorMarkdownFormatting } from "./editor/markdown-formatting";
 import { installEditorEditableName } from "./editor/editable-name";
 import { installEditorMarkdownCommit } from "./editor/markdown-commit";
-import { installEditorMarkdownParser } from "./editor/markdown-parser";
 import { installEditorMarkdownEditor } from "./editor/markdown-editor";
 import { installEditorReadmeArticle } from "./editor/readme-article";
 import { installEditorSectionCard } from "./editor/section-card";
@@ -124,7 +120,6 @@ import { installEditorDocumentSections } from "./editor/document-sections";
 import { installEditorRowContextMenu } from "./editor/row-context-menu";
 import { installEditorUsageNotes } from "./editor/usage-notes";
 import { installEditorSectionHeaders } from "./editor/section-headers";
-import { installEditorCssLengthInput } from "./editor/css-length-input";
 import { installEditorFilesIndex } from "./editor/files-index";
 import { installEditorAddressedFiles } from "./editor/addressed-files";
 import { installEditorAssetResources } from "./editor/asset-resources";
@@ -133,7 +128,6 @@ import { installEditorViewModel } from "./editor/view-model";
 import { installEditorTokenScales } from "./editor/token-scales";
 import { installEditorClaudeDelivery } from "./editor/claude-delivery";
 import { installEditorClaudePrompts } from "./editor/claude-prompts";
-import { installEditorColorContrastPairs } from "./editor/color-contrast-pairs";
 import { installEditorColors } from "./editor/colors";
 import { installEditorShadows } from "./editor/shadows";
 import { installEditorFontCatalog } from "./editor/font-catalog";
@@ -145,7 +139,6 @@ import { installEditorPipelineBanners } from "./editor/pipeline-banners";
 import { installEditorMigrationBanners } from "./editor/migration-banners";
 import { installEditorConflictBanners } from "./editor/conflict-banners";
 import { installEditorIndexFileStore } from "./editor/index-file-store";
-import { installEditorFilesMerge } from "./editor/files-merge";
 import { installEditorPreviewRunner } from "./editor/preview-runner";
 import { installEditorSwatchRuntime } from "./editor/swatch-runtime";
 import { installEditorPreviewHeight } from "./editor/preview-height";
@@ -201,8 +194,6 @@ import { installFilesStoreFoldController } from "./files/store-fold-controller";
 import { installFilesSaveMessages } from "./files/save-messages";
 import { installFilesDocument } from "./files/document";
 import { installFilesLazyReads } from "./files/lazy-reads";
-import { installFilesTokenMerge } from "./files/token-merge";
-import { installFilesDataUri } from "./files/data-uri";
 import { installFilesDesignSystemPort } from "./files/design-system-port";
 import { installFilesCarry } from "./files/carry";
 import { installFilesIndexConflicts } from "./files/index-conflicts";
@@ -309,7 +300,6 @@ export function createDesignSystemRuntime(
     installModelFileTable(),
     installModelComponentInference(),
     installModelLibraries(),
-    installModelTokens(),
     installModelDocumentation(),
     installModelPublish(),
     installModelBoot(),
@@ -322,7 +312,6 @@ export function createDesignSystemRuntime(
     installModelFontComponentCommands(),
     installModelAssetCommands(),
     installModelMigrationMarkers(),
-    installModelRecordCodec(),
     installModelStoredFileCodec(),
     installModelStoreConversion(),
     installModelStoreCompose(),
@@ -334,13 +323,11 @@ export function createDesignSystemRuntime(
     installEditorExternalLinks(),
     installEditorInlineMarkdown(),
     installEditorMarkdownBlocks(),
-    installEditorMarkdownAutoformat(),
     installEditorMarkdownToolbar(),
     installEditorCommentAnchors(),
     installEditorMarkdownFormatting(),
     installEditorEditableName(),
     installEditorMarkdownCommit(),
-    installEditorMarkdownParser(),
     installEditorMarkdownEditor(),
     installEditorReadmeArticle(),
     installEditorSectionCard(),
@@ -348,7 +335,6 @@ export function createDesignSystemRuntime(
     installEditorRowContextMenu(),
     installEditorUsageNotes(),
     installEditorSectionHeaders(),
-    installEditorCssLengthInput(),
     installEditorFilesIndex(),
     installEditorAddressedFiles(),
     installEditorAssetResources(),
@@ -357,7 +343,6 @@ export function createDesignSystemRuntime(
     installEditorTokenScales(),
     installEditorClaudeDelivery(),
     installEditorClaudePrompts(),
-    installEditorColorContrastPairs(),
     installEditorColors(),
     installEditorShadows(),
     installEditorFontCatalog(),
@@ -369,7 +354,6 @@ export function createDesignSystemRuntime(
     installEditorMigrationBanners(),
     installEditorConflictBanners(),
     installEditorIndexFileStore(),
-    installEditorFilesMerge(),
     installEditorPreviewRunner(),
     installEditorSwatchRuntime(),
     installEditorPreviewHeight(),
@@ -425,8 +409,6 @@ export function createDesignSystemRuntime(
     installFilesSaveMessages(),
     installFilesDocument(),
     installFilesLazyReads(),
-    installFilesTokenMerge(),
-    installFilesDataUri(),
     installFilesDesignSystemPort(),
     installFilesCarry(),
     installFilesIndexConflicts(),

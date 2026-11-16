@@ -1,127 +1,123 @@
-import type * as React from "react";
-import type * as Core from "../contracts";
-import type * as M from "../contracts/documentation";
-import type * as Files from "../contracts/file-browser";
-import type * as Application from "../contracts/application";
-/** Restored application module; prepare first, initialize in original order. */
+import type {
+  MarkdownBlock,
+  MarkdownBlockSource,
+  MarkdownParseResult,
+} from "../contracts";
 import { normalizeMarkdownBlock } from "./markdown-blocks";
 
-var MAX_PARSED_MARKDOWN_BLOCKS: number;
-var MARKDOWN_IMAGE_LINE_PATTERN: RegExp;
-var MARKDOWN_ORDERED_LIST_PATTERN: RegExp;
-function parseMarkdownBlocks(markdown: string): Core.MarkdownParseResult {
-  let blocks: Core.MarkdownBlock[] = [],
-    sources: Core.MarkdownBlockSource[] = [],
-    lines = markdown.split(`
-`),
-    sourceCursor = 0,
-    appendBlock = (
-      input: Core.MarkdownBlock,
-      options: number,
-      context: number,
-      value = "",
-    ): boolean => {
-      if (blocks.length >= MAX_PARSED_MARKDOWN_BLOCKS) {
-        return false;
-      }
-      blocks.push((0, normalizeMarkdownBlock)(input));
-      sources.push({
-        text:
-          lines.slice(options, context).join(`
-`) + value,
-        lead: lines
-          .slice(sourceCursor, options)
-          .map(
-            (input2: string): string =>
-              input2 +
-              `
-`,
-          )
-          .join(""),
-      });
-      sourceCursor = context;
-      return true;
-    },
-    lineIndex = 0,
-    paragraphLines: string[] = [],
-    paragraphStart = 0,
-    flushParagraph = (): void => {
-      if (paragraphLines.length > 0) {
-        appendBlock(
-          {
-            type: "p",
-            text: paragraphLines.join(" "),
-          },
-          paragraphStart,
-          lineIndex,
-        );
-        paragraphLines = [];
-      }
-    };
+/** 单篇文档最多解析的块数，超出的内容不再解析 */
+export const MAX_PARSED_MARKDOWN_BLOCKS = 1000;
+export const MARKDOWN_IMAGE_LINE_PATTERN = /^!\[([^\]]*)\]\(([^)\s]+)\)$/;
+export const MARKDOWN_ORDERED_LIST_PATTERN = /^\d{1,4}[.)]\s+/;
+
+/**
+ * 把 Markdown 切成块，并记录每块的原文（text）与它之前被跳过的内容（lead，如空行），
+ * 供编辑后按块回写。
+ */
+export function parseMarkdownBlocks(markdown: string): MarkdownParseResult {
+  const blocks: MarkdownBlock[] = [];
+  const sources: MarkdownBlockSource[] = [];
+  const lines = markdown.split("\n");
+  let sourceCursor = 0;
+  // 加入一个块，原文取 [startLine, endLine) 行，再接上 tail
+  const appendBlock = (
+    block: MarkdownBlock,
+    startLine: number,
+    endLine: number,
+    tail = "",
+  ): boolean => {
+    if (blocks.length >= MAX_PARSED_MARKDOWN_BLOCKS) {
+      return false;
+    }
+    blocks.push(normalizeMarkdownBlock(block));
+    sources.push({
+      text: lines.slice(startLine, endLine).join("\n") + tail,
+      lead: lines
+        .slice(sourceCursor, startLine)
+        .map((line: string): string => line + "\n")
+        .join(""),
+    });
+    sourceCursor = endLine;
+    return true;
+  };
+  let lineIndex = 0;
+  let paragraphLines: string[] = [];
+  let paragraphStart = 0;
+  const flushParagraph = (): void => {
+    if (paragraphLines.length > 0) {
+      appendBlock(
+        {
+          type: "p",
+          text: paragraphLines.join(" "),
+        },
+        paragraphStart,
+        lineIndex,
+      );
+      paragraphLines = [];
+    }
+  };
   while (
     lineIndex < lines.length &&
     blocks.length < MAX_PARSED_MARKDOWN_BLOCKS
   ) {
-    let value = (lines[lineIndex] ?? "").trim();
-    if (value === "") {
+    const line = (lines[lineIndex] ?? "").trim();
+    if (line === "") {
       flushParagraph();
       lineIndex += 1;
       continue;
     }
+    // 围栏代码块：开头的反引号后不能再出现反引号；结束行以同样数量的反引号开头
     if (
-      value.startsWith("```") &&
-      !value.replace(/^\u0060+/, "").includes("`")
+      line.startsWith("```") &&
+      !line.replace(/^\u0060+/, "").includes("`")
     ) {
       flushParagraph();
-      let value3 = lineIndex,
-        length = (/^\u0060+/.exec(value)?.[0] ?? "```").length,
-        value4 = "`".repeat(length),
-        items: string[] = [],
-        flag: boolean = false;
+      const fenceStart = lineIndex;
+      const fenceLength = (/^\u0060+/.exec(line)?.[0] ?? "```").length;
+      const fence = "`".repeat(fenceLength);
+      const codeLines: string[] = [];
+      let closed = false;
       lineIndex += 1;
       while (lineIndex < lines.length) {
-        let value6 = lines[lineIndex] ?? "";
-        if (value6.trim().startsWith(value4)) {
-          flag = true;
+        const codeLine = lines[lineIndex] ?? "";
+        if (codeLine.trim().startsWith(fence)) {
+          closed = true;
           lineIndex += 1;
           break;
         }
-        items.push(value6);
+        codeLines.push(codeLine);
         lineIndex += 1;
       }
-      let value5 = lineIndex;
-      if (!flag) {
+      // 没有结束行时，原文不包含末尾的空行，回写时补上结束围栏
+      let fenceEnd = lineIndex;
+      if (!closed) {
         while (
-          value5 > value3 + 1 &&
-          (lines[value5 - 1] ?? "").trim() === ""
+          fenceEnd > fenceStart + 1 &&
+          (lines[fenceEnd - 1] ?? "").trim() === ""
         ) {
-          value5 -= 1;
+          fenceEnd -= 1;
         }
       }
       appendBlock(
         {
           type: "code",
-          text: items.join(`
-`),
+          text: codeLines.join("\n"),
         },
-        value3,
-        value5,
-        flag
-          ? ""
-          : `
-` + value4,
+        fenceStart,
+        fenceEnd,
+        closed ? "" : "\n" + fence,
       );
       continue;
     }
-    if (value.startsWith("#")) {
+    if (line.startsWith("#")) {
       flushParagraph();
-      let value3 = /^(#{1,6})\s+([\s\S]*)$/.exec(value);
-      if (value3 && value3[1] !== undefined && value3[2] !== undefined) {
-        let length = value3[1].length;
+      const heading = /^(#{1,6})\s+([\s\S]*)$/.exec(line);
+      if (heading && heading[1] !== undefined && heading[2] !== undefined) {
+        const level = heading[1].length;
         appendBlock(
           {
-            type: length === 1 ? "h1" : length === 2 ? "h2" : "h3",
-            text: value3[2],
+            type: level === 1 ? "h1" : level === 2 ? "h2" : "h3",
+            text: heading[2],
           },
           lineIndex,
           lineIndex + 1,
@@ -130,7 +126,7 @@ function parseMarkdownBlocks(markdown: string): Core.MarkdownParseResult {
         appendBlock(
           {
             type: "p",
-            text: value,
+            text: line,
           },
           lineIndex,
           lineIndex + 1,
@@ -139,7 +135,7 @@ function parseMarkdownBlocks(markdown: string): Core.MarkdownParseResult {
       lineIndex += 1;
       continue;
     }
-    if (/^(---+|\*\*\*+|___+)$/.test(value)) {
+    if (/^(---+|\*\*\*+|___+)$/.test(line)) {
       flushParagraph();
       appendBlock(
         {
@@ -151,48 +147,48 @@ function parseMarkdownBlocks(markdown: string): Core.MarkdownParseResult {
       lineIndex += 1;
       continue;
     }
-    if (value.startsWith(">")) {
+    if (line.startsWith(">")) {
       flushParagraph();
-      let value3 = lineIndex,
-        items = [];
+      const quoteStart = lineIndex;
+      const quoteLines = [];
       while (lineIndex < lines.length) {
-        let value4 = (lines[lineIndex] ?? "").trim();
-        if (!value4.startsWith(">")) {
+        const quoteLine = (lines[lineIndex] ?? "").trim();
+        if (!quoteLine.startsWith(">")) {
           break;
         }
-        items.push(value4.replace(/^>\s?/, ""));
+        quoteLines.push(quoteLine.replace(/^>\s?/, ""));
         lineIndex += 1;
       }
       appendBlock(
         {
           type: "quote",
-          text: items.join(" "),
+          text: quoteLines.join(" "),
         },
-        value3,
+        quoteStart,
         lineIndex,
       );
       continue;
     }
     if (
-      /^[-*+]\s+/.test(value) ||
-      MARKDOWN_ORDERED_LIST_PATTERN.test(value)
+      /^[-*+]\s+/.test(line) ||
+      MARKDOWN_ORDERED_LIST_PATTERN.test(line)
     ) {
       flushParagraph();
-      let value3 = MARKDOWN_ORDERED_LIST_PATTERN.test(value),
-        value4 = lineIndex,
-        items = [];
+      const ordered = MARKDOWN_ORDERED_LIST_PATTERN.test(line);
+      const listStart = lineIndex;
+      const items = [];
       while (lineIndex < lines.length) {
-        let value5 = (lines[lineIndex] ?? "").trim();
+        const itemLine = (lines[lineIndex] ?? "").trim();
         if (
-          !(value3
-            ? MARKDOWN_ORDERED_LIST_PATTERN.test(value5)
-            : /^[-*+]\s+/.test(value5))
+          !(ordered
+            ? MARKDOWN_ORDERED_LIST_PATTERN.test(itemLine)
+            : /^[-*+]\s+/.test(itemLine))
         ) {
           break;
         }
         items.push(
-          value5.replace(
-            value3 ? MARKDOWN_ORDERED_LIST_PATTERN : /^[-*+]\s+/,
+          itemLine.replace(
+            ordered ? MARKDOWN_ORDERED_LIST_PATTERN : /^[-*+]\s+/,
             "",
           ),
         );
@@ -200,22 +196,22 @@ function parseMarkdownBlocks(markdown: string): Core.MarkdownParseResult {
       }
       appendBlock(
         {
-          type: value3 ? "ol" : "ul",
-          items: items,
+          type: ordered ? "ol" : "ul",
+          items,
         },
-        value4,
+        listStart,
         lineIndex,
       );
       continue;
     }
-    let value2 = MARKDOWN_IMAGE_LINE_PATTERN.exec(value);
-    if (value2 && value2[2] !== undefined) {
+    const image = MARKDOWN_IMAGE_LINE_PATTERN.exec(line);
+    if (image && image[2] !== undefined) {
       flushParagraph();
       appendBlock(
         {
           type: "img",
-          src: value2[2],
-          alt: value2[1] ?? "",
+          src: image[2],
+          alt: image[1] ?? "",
           size: "m",
         },
         lineIndex,
@@ -224,49 +220,51 @@ function parseMarkdownBlocks(markdown: string): Core.MarkdownParseResult {
       lineIndex += 1;
       continue;
     }
-    if (value.startsWith("|") && value.endsWith("|") && value.length > 1) {
+    if (line.startsWith("|") && line.endsWith("|") && line.length > 1) {
       flushParagraph();
-      let value3 = lineIndex,
-        items: string[][] = [],
-        flag: boolean = false,
-        index = 0;
+      const tableStart = lineIndex;
+      const rows: string[][] = [];
+      let header = false;
+      let rowIndex = 0;
       while (lineIndex < lines.length) {
-        let value4 = (lines[lineIndex] ?? "").trim();
+        const rowLine = (lines[lineIndex] ?? "").trim();
         if (
           !(
-            value4.startsWith("|") &&
-            value4.endsWith("|") &&
-            value4.length > 1
+            rowLine.startsWith("|") &&
+            rowLine.endsWith("|") &&
+            rowLine.length > 1
           )
         ) {
           break;
         }
-        let value5 = value4
+        // 以未转义的 | 分列
+        const cells = rowLine
           .slice(1, -1)
           .split(/(?<!\\)\|/)
-          .map((input: string) => input.trim());
+          .map((cell: string) => cell.trim());
+        // 第二行全是 --- 时是表头分隔行，不作为数据行
         if (
-          index === 1 &&
-          value5.every((input: string) => /^:?-{2,}:?$/.test(input))
+          rowIndex === 1 &&
+          cells.every((cell: string) => /^:?-{2,}:?$/.test(cell))
         ) {
-          flag = true;
+          header = true;
         } else {
-          items.push(
-            value5.map((input: string) =>
-              input.replace(/\\\|/g, "|").replace(/^\\(?=:?-{2,}:?$)/, ""),
+          rows.push(
+            cells.map((cell: string) =>
+              cell.replace(/\\\|/g, "|").replace(/^\\(?=:?-{2,}:?$)/, ""),
             ),
           );
         }
-        index += 1;
+        rowIndex += 1;
         lineIndex += 1;
       }
       appendBlock(
         {
           type: "table",
-          header: flag,
-          rows: items,
+          header,
+          rows,
         },
-        value3,
+        tableStart,
         lineIndex,
       );
       continue;
@@ -274,25 +272,12 @@ function parseMarkdownBlocks(markdown: string): Core.MarkdownParseResult {
     if (paragraphLines.length === 0) {
       paragraphStart = lineIndex;
     }
-    paragraphLines.push(value);
+    paragraphLines.push(line);
     lineIndex += 1;
   }
   flushParagraph();
   return {
-    blocks: blocks,
-    sources: sources,
-  };
-}
-export {
-  MARKDOWN_IMAGE_LINE_PATTERN,
-  MARKDOWN_ORDERED_LIST_PATTERN,
-  MAX_PARSED_MARKDOWN_BLOCKS,
-  parseMarkdownBlocks,
-};
-export function installEditorMarkdownParser(): () => void {
-  return () => {
-    MAX_PARSED_MARKDOWN_BLOCKS = 1000;
-    MARKDOWN_IMAGE_LINE_PATTERN = /^!\[([^\]]*)\]\(([^)\s]+)\)$/;
-    MARKDOWN_ORDERED_LIST_PATTERN = /^\d{1,4}[.)]\s+/;
+    blocks,
+    sources,
   };
 }
