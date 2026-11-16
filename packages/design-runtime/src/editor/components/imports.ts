@@ -1,72 +1,74 @@
-/** Restored application module; prepare first, initialize in original order. */
-import {
-  type Dynamic,
-} from "../../runtime-types";
+/** 解析 dc-import / x-import 标签：它引用的是哪个组件。 */
 import { initializeEditorAttributeValidation } from "../attribute-validation";
 
-var ComponentsImportsComponentFromGlobalScopePattern: Dynamic;
-function parseComponentImport(input?: Dynamic, options?: Dynamic): Dynamic {
-  if (input !== "dc-import" && input !== "x-import") return null;
-  let value: Dynamic = input === "dc-import",
-    value2: Dynamic = options["component-from-global-scope"] || "",
-    value3: Dynamic = options.component || "",
-    value4: Dynamic = value
-      ? options.name || value3
-      : value2 || (options.from != null ? value3 : "");
+/** 组件引用：canvas 为同级画板，system 为设计系统组件，module 为外部模块。 */
+export interface ComponentImport {
+  kind: "canvas" | "system" | "module";
+  ref: string;
+  name: string;
+  scope?: string;
+}
+
+/** 导入标签的属性（属性名到字符串值）。 */
+export type ImportAttributes = Record<string, string | undefined>;
+
+/** 导入标签上不会被当作组件 prop 的属性名。 */
+var reservedImportAttributePattern: RegExp;
+
+export function parseComponentImport(tagName: string, attributes: ImportAttributes): ComponentImport | null {
+  if (tagName !== "dc-import" && tagName !== "x-import") return null;
+  const isCanvasImport = tagName === "dc-import";
+  const globalScopeRef = attributes["component-from-global-scope"] || "";
+  const component = attributes.component || "";
+  const ref = isCanvasImport
+    ? attributes.name || component
+    : globalScopeRef || (attributes.from != null ? component : "");
   if (
-    ((options.from || "") + " " + value2 + " " + value3)
+    ((attributes.from || "") + " " + globalScopeRef + " " + component)
       .toLowerCase()
       .includes("deck-stage") ||
-    value4.toLowerCase() === "image-slot"
+    ref.toLowerCase() === "image-slot"
   )
     return null;
-  let value5: Dynamic = value4.lastIndexOf(value ? "/" : "."),
-    value6: Dynamic = value4.slice(value5 + 1);
-  if (value6 === "" || value4.includes("{{")) return null;
-  let state: Dynamic = {
-      kind: value
-        ? "canvas"
-        : options.from == null && value2.includes(".")
-          ? "system"
-          : "module",
-      ref: value4,
-      name: value6,
-    },
-    value7: Dynamic = value4.slice(0, Math.max(value5, 0)),
-    value8: Dynamic = value
-      ? value7
-          .split("/")
-          .filter(function (input2?: Dynamic): Dynamic {
-            return input2 !== "" && input2 !== "." && input2 !== "..";
-          })
-          .join("/")
-      : value7;
-  value8 !== "" && (state.scope = value8);
-  return state;
+  const separatorIndex = ref.lastIndexOf(isCanvasImport ? "/" : ".");
+  const name = ref.slice(separatorIndex + 1);
+  if (name === "" || ref.includes("{{")) return null;
+  const result: ComponentImport = {
+    kind: isCanvasImport
+      ? "canvas"
+      : attributes.from == null && globalScopeRef.includes(".")
+        ? "system"
+        : "module",
+    ref,
+    name,
+  };
+  const prefix = ref.slice(0, Math.max(separatorIndex, 0));
+  const scope = isCanvasImport
+    ? prefix
+        .split("/")
+        .filter((part) => part !== "" && part !== "." && part !== "..")
+        .join("/")
+    : prefix;
+  if (scope !== "") result.scope = scope;
+  return result;
 }
-function sharedComponentImport(input?: Dynamic): Dynamic {
-  let value: Dynamic = input[0];
-  return value == null ||
-    input.some((input2?: Dynamic): Dynamic => input2 == null)
-    ? null
-    : {
-        shared: input.every(
-          (source?: Dynamic): Dynamic =>
-            source.kind === value.kind && source.ref === value.ref,
-        )
-          ? value
-          : null,
-      };
+
+/** 一组引用都指向同一个组件时返回它；有任一为空则整体为 null。 */
+export function sharedComponentImport(
+  imports: Array<ComponentImport | null | undefined>,
+): { shared: ComponentImport | null } | null {
+  const first = imports[0];
+  if (first == null || imports.some((item) => item == null)) return null;
+  return {
+    shared: imports.every((item) => item!.kind === first.kind && item!.ref === first.ref) ? first : null,
+  };
 }
-export {
-  ComponentsImportsComponentFromGlobalScopePattern,
-  parseComponentImport,
-  sharedComponentImport,
-};
+
+export { reservedImportAttributePattern };
 export function installEditorComponentsImports(): () => void {
   return () => {
-    ComponentsImportsComponentFromGlobalScopePattern =
+    reservedImportAttributePattern =
       /^(component(-from-global-scope|FromGlobalScope)?|from|dc-props|dcProps|sc-name|hint-size|hintSize|style-.*|data-(dc|om)-.*)$/;
-    (0, initializeEditorAttributeValidation)();
+    initializeEditorAttributeValidation();
   };
 }

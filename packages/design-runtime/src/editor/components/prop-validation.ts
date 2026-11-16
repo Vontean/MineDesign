@@ -1,131 +1,134 @@
-/** Restored application module; prepare first, initialize in original order. */
-import {
-  type Dynamic,
-} from "../../runtime-types";
-import { ComponentsPropsResolvedValue } from "./props";
+/** 组件属性（data-props 元数据与属性值）的校验、截断与比较。 */
+import { maxTextPropLength } from "./props";
 
-var ComponentsPropValidationLimit: Dynamic;
-var ComponentsPropValidationLimit_2: Dynamic;
-var ComponentsPropValidationLimitAlias: Dynamic;
-var ComponentsPropValidationLimit_3: Dynamic;
-var ComponentsPropValidationConstant: Dynamic;
-var ComponentsPropValidationConstant_2: Dynamic;
-var ComponentsPropValidationConstant_3: Dynamic;
-var ComponentsPropValidationConstant_4: Dynamic;
-var ComponentsPropValidationResolvedValue: Dynamic;
-var ComponentsPropValidationLimit_4: Dynamic;
-var ComponentsPropValidationMinMaxStepSet: Dynamic;
-var ComponentsPropValidationPrototypeValue: Dynamic;
-var ComponentsPropValidationBootedHasPropsLifecycleCallbacksConfig: Dynamic;
-function normalizePropString(items?: Dynamic): Dynamic {
-  return typeof items == "string" &&
-    items.length <= ComponentsPropValidationLimitAlias
-    ? items
-    : "";
+type PlainRecord = Record<string, unknown>;
+
+/** 元数据里最多读取多少个属性。 */
+const maxPropEntries = 128;
+/** 属性名与元数据字段名的最大长度。 */
+const maxPropKeyLength = 256;
+/** 单个属性的元数据最多读取多少个字段。 */
+const maxMetadataFields = 32;
+/** enum 的选项最多读取多少个。 */
+const maxEnumOptions = 64;
+/** 数组形式的选项（如 [值, 标签]）最多读取的项数。 */
+const maxOptionArrayLength = 5;
+/** 选项字符串的最大长度。 */
+const maxOptionStringLength = 256;
+/** 元数据里其他字符串字段的最大长度。 */
+const maxMetadataStringLength = 4096;
+/** 属性值（含默认值）的体积预算，按字符与结构粗略计数。 */
+const maxPropValueBudget = 16 * 1024;
+/** 属性值允许的嵌套深度。 */
+const maxPropValueDepth = 64;
+const numericMetadataKeys = new Set(["min", "max", "step"]);
+
+export function normalizePropString(value: unknown): string {
+  return typeof value == "string" && value.length <= maxPropKeyLength ? value : "";
 }
-function truncatePropText(items?: Dynamic, options?: Dynamic): Dynamic {
-  return items.length > options
-    ? [...items.slice(0, options)].join("")
-    : items;
+
+/** 按码点截断，避免把一个字符切成两半。 */
+export function truncatePropText(text: string, maxLength: number): string {
+  return text.length > maxLength ? [...text.slice(0, maxLength)].join("") : text;
 }
-function finitePropNumber(input?: Dynamic): Dynamic {
-  let value: Dynamic =
-    typeof input == "number"
-      ? input
-      : typeof input == "string" && input.trim() !== ""
-        ? Number(input)
+
+export function finitePropNumber(value: unknown): number | undefined {
+  const number =
+    typeof value == "number"
+      ? value
+      : typeof value == "string" && value.trim() !== ""
+        ? Number(value)
         : NaN;
-  return Number.isFinite(value) ? value : undefined;
+  return Number.isFinite(number) ? number : undefined;
 }
-function normalizePropOptionValue(input?: Dynamic): Dynamic {
-  return typeof input == "string"
-    ? truncatePropText(input, ComponentsPropValidationConstant_3)
-    : input === null || typeof input == "number" || typeof input == "boolean"
-      ? input
+
+export type PropOptionValue = string | number | boolean | null;
+
+export function normalizePropOptionValue(value: unknown): PropOptionValue {
+  return typeof value == "string"
+    ? truncatePropText(value, maxOptionStringLength)
+    : value === null || typeof value == "number" || typeof value == "boolean"
+      ? value
       : "";
 }
-function mapBoundedArray(
-  items?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-): Dynamic {
-  let value: Dynamic = Math.min(items.length, options),
-    items2: Dynamic = [];
-  for (let index: Dynamic = 0; index < value; index++)
-    items2.push(context(items[index]));
-  return items2;
+
+/** 只处理前 limit 项，再逐项转换。 */
+export function mapBoundedArray<Item, Result>(
+  items: ArrayLike<Item>,
+  limit: number,
+  convert: (item: Item) => Result,
+): Result[] {
+  const count = Math.min(items.length, limit);
+  const result: Result[] = [];
+  for (let index = 0; index < count; index++) result.push(convert(items[index]));
+  return result;
 }
-function normalizePropOption(input?: Dynamic): Dynamic {
-  if (Array.isArray(input))
-    return mapBoundedArray(
-      input,
-      ComponentsPropValidationConstant_2,
-      normalizePropOptionValue,
-    );
-  if (input !== null && typeof input == "object" && "value" in input) {
-    let value: Dynamic = input;
+
+export type PropOption = PropOptionValue | PropOptionValue[] | { value: PropOptionValue; label?: PropOptionValue };
+
+export function normalizePropOption(option: unknown): PropOption {
+  if (Array.isArray(option))
+    return mapBoundedArray(option, maxOptionArrayLength, normalizePropOptionValue);
+  if (option !== null && typeof option == "object" && "value" in option) {
+    const record = option as { value?: unknown; label?: unknown };
     return {
-      value: normalizePropOptionValue(value.value),
-      ...("label" in value
-        ? {
-            label: normalizePropOptionValue(value.label),
-          }
-        : {}),
+      value: normalizePropOptionValue(record.value),
+      ...("label" in record ? { label: normalizePropOptionValue(record.label) } : {}),
     };
   }
-  return normalizePropOptionValue(input);
+  return normalizePropOptionValue(option);
 }
-function chargePropObjectBudget(
-  items?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value: Dynamic = 0,
-): Dynamic {
-  if (options.left <= 0) return false;
-  switch (typeof items) {
+
+/** 剩余体积预算；每检查一个值就扣减。 */
+export interface PropBudget {
+  left: number;
+}
+
+/**
+ * 检查一个属性值是否在预算与深度内，只允许纯对象和数组，拒绝循环引用。
+ * 通过时返回 true；预算沿途被扣减。
+ */
+export function chargePropObjectBudget(
+  value: unknown,
+  budget: PropBudget,
+  seen: { has(value: object): boolean; add(value: object): unknown },
+  depth = 0,
+): boolean {
+  if (budget.left <= 0) return false;
+  switch (typeof value) {
     case "string":
-      options.left -= items.length + 2;
+      budget.left -= value.length + 2;
       break;
     case "number":
-      options.left -= 8;
+      budget.left -= 8;
       break;
     case "boolean":
     case "undefined":
-      options.left -= 4;
+      budget.left -= 4;
       break;
     case "object":
-      if (items === null) {
-        options.left -= 4;
+      if (value === null) {
+        budget.left -= 4;
         break;
       }
-      if (value >= ComponentsPropValidationLimit_4 || context.has(items))
-        return false;
-      if (((options.left -= 2), Array.isArray(items))) {
-        context.add(items);
-        for (let value2 of items as Dynamic)
+      if (depth >= maxPropValueDepth || seen.has(value)) return false;
+      budget.left -= 2;
+      if (Array.isArray(value)) {
+        seen.add(value);
+        for (const item of value) {
+          budget.left -= 1;
+          if (!chargePropObjectBudget(item, budget, seen, depth + 1)) return false;
+        }
+        // 数组上除下标外的自有属性一律不接受
+        for (const key in value)
+          if (Object.hasOwn(value, key) && !isBoundedArrayIndex(key, value.length)) return false;
+      } else if (isPlainPropRecord(value)) {
+        seen.add(value);
+        for (const key in value)
           if (
-            ((options.left -= 1),
-            !chargePropObjectBudget(value2, options, context, value + 1))
-          )
-            return false;
-        for (let value2 in items)
-          if (
-            Object.hasOwn(items, value2) &&
-            !isBoundedArrayIndex(value2, items.length)
-          )
-            return false;
-      } else if (isPlainPropRecord(items)) {
-        context.add(items);
-        for (let value2 in items)
-          if (
-            Object.hasOwn(items, value2) &&
-            ((options.left -= value2.length + 3),
-            !chargePropObjectBudget(
-              items[value2],
-              options,
-              context,
-              value + 1,
-            ))
+            Object.hasOwn(value, key) &&
+            ((budget.left -= key.length + 3),
+            !chargePropObjectBudget(value[key], budget, seen, depth + 1))
           )
             return false;
       } else return false;
@@ -133,227 +136,160 @@ function chargePropObjectBudget(
     default:
       return false;
   }
-  return options.left > 0;
+  return budget.left > 0;
 }
-function isPlainPropRecord(input?: Dynamic): Dynamic {
-  if (input === null || typeof input != "object" || Array.isArray(input))
-    return false;
-  let value: Dynamic = Object.getPrototypeOf(input);
-  return value === Object.prototype || value === null;
+
+export function isPlainPropRecord(value: unknown): value is PlainRecord {
+  if (value === null || typeof value != "object" || Array.isArray(value)) return false;
+  const prototype = Object.getPrototypeOf(value);
+  return prototype === Object.prototype || prototype === null;
 }
-function isBoundedArrayIndex(items?: Dynamic, options?: Dynamic): Dynamic {
-  return items.length === 0 ||
-    items.length > 10 ||
-    !(items === "0" || /^[1-9][0-9]*$/.test(items))
+
+/** key 是否是小于 length 的规范数组下标（最多 10 位，无前导零）。 */
+export function isBoundedArrayIndex(key: string, length: number): boolean {
+  return key.length === 0 || key.length > 10 || !(key === "0" || /^[1-9][0-9]*$/.test(key))
     ? false
-    : Number(items) < options;
+    : Number(key) < length;
 }
-function isPrimitiveProp(input?: Dynamic): Dynamic {
-  let value: Dynamic = typeof input;
-  return (
-    input === null ||
-    value === "string" ||
-    value === "number" ||
-    value === "boolean"
-  );
+
+export function isPrimitiveProp(value: unknown): value is string | number | boolean | null {
+  const type = typeof value;
+  return value === null || type === "string" || type === "number" || type === "boolean";
 }
-function isUnsafePropKey(items?: Dynamic): Dynamic {
-  return (
-    items.length > ComponentsPropValidationLimit_2 ||
-    items in ComponentsPropValidationPrototypeValue
-  );
+
+/** 过长或会撞上 Object.prototype 成员的键不接受。 */
+export function isUnsafePropKey(key: string): boolean {
+  return key.length > maxPropKeyLength || key in Object.prototype;
 }
-function normalizePropMetadata(input?: Dynamic, options?: Dynamic): Dynamic {
-  let state: Dynamic = {},
-    index: Dynamic = 0;
-  for (let value in input) {
-    if (!Object.hasOwn(input, value)) continue;
-    if (index++ >= ComponentsPropValidationLimit_3) break;
-    if (isUnsafePropKey(value)) continue;
-    let value2: Dynamic = input[value];
-    if (value === "default" || value === "options") state[value] = value2;
-    else if (ComponentsPropValidationMinMaxStepSet.has(value)) {
-      let value3: Dynamic = finitePropNumber(value2);
-      value3 !== undefined &&
-        (value !== "step" || value3 > 0) &&
-        (state[value] = value3);
-    } else
-      typeof value2 == "string"
-        ? (state[value] = truncatePropText(
-            value2,
-            ComponentsPropValidationConstant_4,
-          ))
-        : isPrimitiveProp(value2) && (state[value] = value2);
+
+/** 整理单个属性的元数据：丢弃不安全的键与过大的值，截断字符串，数字字段转数字。 */
+export function normalizePropMetadata(
+  metadata: PlainRecord,
+  seen: { has(value: object): boolean; add(value: object): unknown },
+): PlainRecord {
+  const result: PlainRecord = {};
+  let count = 0;
+  for (const key in metadata) {
+    if (!Object.hasOwn(metadata, key)) continue;
+    if (count++ >= maxMetadataFields) break;
+    if (isUnsafePropKey(key)) continue;
+    const value = metadata[key];
+    if (key === "default" || key === "options") result[key] = value;
+    else if (numericMetadataKeys.has(key)) {
+      const number = finitePropNumber(value);
+      if (number !== undefined && (key !== "step" || number > 0)) result[key] = number;
+    } else if (typeof value == "string")
+      result[key] = truncatePropText(value, maxMetadataStringLength);
+    else if (isPrimitiveProp(value)) result[key] = value;
   }
-  "options" in state &&
-    (state.options = Array.isArray(state.options)
-      ? mapBoundedArray(
-          state.options,
-          ComponentsPropValidationConstant,
-          normalizePropOption,
-        )
-      : []);
-  "default" in state &&
-    (typeof state.default == "string"
-      ? (state.default = truncatePropText(
-          state.default,
-          ComponentsPropsResolvedValue,
-        ))
-      : chargePropObjectBudget(
-          state.default,
-          {
-            left: ComponentsPropValidationResolvedValue,
-          },
-          options,
-        ) || delete state.default);
-  return state;
+  if ("options" in result)
+    result.options = Array.isArray(result.options)
+      ? mapBoundedArray(result.options, maxEnumOptions, normalizePropOption)
+      : [];
+  if ("default" in result) {
+    if (typeof result.default == "string")
+      result.default = truncatePropText(result.default, maxTextPropLength);
+    else if (!chargePropObjectBudget(result.default, { left: maxPropValueBudget }, seen))
+      delete result.default;
+  }
+  return result;
 }
-function normalizePropValues(input?: Dynamic): Dynamic {
-  let state: Dynamic = {},
-    value: Dynamic = new WeakSet([input]);
-  for (let [value2, value3] of Object.entries(input) as Dynamic)
-    isUnsafePropKey(value2) ||
-      (typeof value3 == "string"
-        ? (state[value2] = truncatePropText(
-            value3,
-            ComponentsPropsResolvedValue,
-          ))
-        : chargePropObjectBudget(
-            value3,
-            {
-              left: ComponentsPropValidationResolvedValue,
-            },
-            value,
-          ) && (state[value2] = value3));
-  return state;
+
+/** 整理一组属性值：字符串截断，复杂值超预算则丢弃。 */
+export function normalizePropValues(values: PlainRecord): PlainRecord {
+  const result: PlainRecord = {};
+  const seen = new WeakSet([values]);
+  for (const [key, value] of Object.entries(values)) {
+    if (isUnsafePropKey(key)) continue;
+    if (typeof value == "string") result[key] = truncatePropText(value, maxTextPropLength);
+    else if (chargePropObjectBudget(value, { left: maxPropValueBudget }, seen))
+      result[key] = value;
+  }
+  return result;
 }
-function parsePropsMetadata(input?: Dynamic): Dynamic {
+
+/** 整理 data-props 解析出的整份元数据；格式不对返回空对象。 */
+export function parsePropsMetadata(input: unknown): Record<string, PlainRecord> {
   if (!isPlainPropRecord(input)) return {};
-  let state: Dynamic = {},
-    value: Dynamic = new WeakSet([input]),
-    index: Dynamic = 0;
-  for (let value2 in input) {
-    if (!Object.hasOwn(input, value2)) continue;
-    if (index++ >= ComponentsPropValidationLimit) break;
-    if (isUnsafePropKey(value2)) continue;
-    let value3: Dynamic = input[value2];
-    !isPlainPropRecord(value3) ||
-      value.has(value3) ||
-      (value.add(value3),
-      (state[value2] = normalizePropMetadata(value3, value)));
+  const result: Record<string, PlainRecord> = {};
+  const seen = new WeakSet([input]);
+  let count = 0;
+  for (const key in input) {
+    if (!Object.hasOwn(input, key)) continue;
+    if (count++ >= maxPropEntries) break;
+    if (isUnsafePropKey(key)) continue;
+    const entry = input[key];
+    if (!isPlainPropRecord(entry) || seen.has(entry)) continue;
+    seen.add(entry);
+    result[key] = normalizePropMetadata(entry, seen);
   }
-  return state;
+  return result;
 }
-function equalPropValues(input?: Dynamic, options?: Dynamic): Dynamic {
+
+export function equalPropValues(a: unknown, b: unknown): boolean {
   return (
-    input === options ||
-    (typeof input == "object" &&
-      typeof options == "object" &&
-      JSON.stringify(input) === JSON.stringify(options))
+    a === b ||
+    (typeof a == "object" && typeof b == "object" && JSON.stringify(a) === JSON.stringify(b))
   );
 }
-function getPropCurrentValue(input?: Dynamic, options?: Dynamic): Dynamic {
-  return Object.hasOwn(input.values, options)
-    ? input.values[options]
-    : input.propsMeta[options]?.default;
+
+/** 一个属性当前的值：已设置的值优先，否则取元数据默认值。 */
+export function getPropCurrentValue(
+  state: { values: PlainRecord; propsMeta: Record<string, { default?: unknown } | undefined> },
+  name: string,
+): unknown {
+  return Object.hasOwn(state.values, name) ? state.values[name] : state.propsMeta[name]?.default;
 }
-function overridePropDefault(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-): Dynamic {
-  return !input.isSaving() &&
-    equalPropValues(context, input.currentDefault(options))
-    ? undefined
-    : context;
+
+/** 保存前的默认值判断：与当前默认值相同（且不在保存中）时返回 undefined 表示不覆盖。 */
+export function overridePropDefault(
+  state: { isSaving(): boolean; currentDefault(name: string): unknown },
+  name: string,
+  value: unknown,
+): unknown {
+  return !state.isSaving() && equalPropValues(value, state.currentDefault(name)) ? undefined : value;
 }
-function omitUnchangedProps(input?: Dynamic, options?: Dynamic): Dynamic {
-  let value: Dynamic = null;
-  for (let [value2, value3] of Object.entries(options) as Dynamic)
-    Object.hasOwn(input, value2) &&
-      equalPropValues(input[value2], value3) &&
-      ((value ??= {
-        ...input,
-      }),
-      delete value[value2]);
-  return value ?? input;
+
+/** 去掉与默认值相同的属性；没有需要去掉的就返回原对象。 */
+export function omitUnchangedProps(props: PlainRecord, defaults: PlainRecord): PlainRecord {
+  let copy: PlainRecord | null = null;
+  for (const [name, defaultValue] of Object.entries(defaults))
+    if (Object.hasOwn(props, name) && equalPropValues(props[name], defaultValue)) {
+      copy ??= { ...props };
+      delete copy[name];
+    }
+  return copy ?? props;
 }
-function isEditablePropMetadata(input?: Dynamic): Dynamic {
+
+export function isEditablePropMetadata(metadata: unknown): boolean {
+  if (!metadata) return false;
+  const editor = (metadata as { editor?: unknown }).editor;
   return (
-    !!input &&
-    (input.editor === "text" ||
-      input.editor === "color" ||
-      input.editor === "int" ||
-      input.editor === "float" ||
-      input.editor === "range" ||
-      input.editor === "boolean" ||
-      input.editor === "enum")
+    editor === "text" ||
+    editor === "color" ||
+    editor === "int" ||
+    editor === "float" ||
+    editor === "range" ||
+    editor === "boolean" ||
+    editor === "enum"
   );
 }
-export {
-  chargePropObjectBudget,
-  ComponentsPropValidationBootedHasPropsLifecycleCallbacksConfig,
-  ComponentsPropValidationConstant,
-  ComponentsPropValidationConstant_2,
-  ComponentsPropValidationConstant_3,
-  ComponentsPropValidationConstant_4,
-  ComponentsPropValidationLimit,
-  ComponentsPropValidationLimit_2,
-  ComponentsPropValidationLimit_3,
-  ComponentsPropValidationLimit_4,
-  ComponentsPropValidationLimitAlias,
-  ComponentsPropValidationMinMaxStepSet,
-  ComponentsPropValidationPrototypeValue,
-  ComponentsPropValidationResolvedValue,
-  equalPropValues,
-  finitePropNumber,
-  getPropCurrentValue,
-  isBoundedArrayIndex,
-  isEditablePropMetadata,
-  isPlainPropRecord,
-  isPrimitiveProp,
-  isUnsafePropKey,
-  mapBoundedArray,
-  normalizePropMetadata,
-  normalizePropOption,
-  normalizePropOptionValue,
-  normalizePropString,
-  normalizePropValues,
-  omitUnchangedProps,
-  overridePropDefault,
-  parsePropsMetadata,
-  truncatePropText,
+
+/** 没有可用组件实例时 useDcProps 返回的空状态。 */
+export const emptyDcPropsState = {
+  booted: false,
+  hasProps: false,
+  lifecycleCallbacks: {
+    onDcBooted: (): void => {},
+  },
+  propsMeta: {},
+  values: {},
+  setProp: (): void => {},
+  reset: (): void => {},
+  dirty: false,
+  saveAsDefaults: async (): Promise<void> => {},
+  adoptSavedDefaults: (): void => {},
+  saving: false,
+  isSaving: (): boolean => false,
+  currentDefault: (): undefined => {},
 };
-export function installEditorComponentsPropValidation(): () => void {
-  return () => {
-    ComponentsPropValidationLimit = 128;
-    ComponentsPropValidationLimit_2 = 256;
-    ComponentsPropValidationLimitAlias = ComponentsPropValidationLimit_2;
-    ComponentsPropValidationLimit_3 = 32;
-    ComponentsPropValidationConstant = 64;
-    ComponentsPropValidationConstant_2 = 5;
-    ComponentsPropValidationConstant_3 = 256;
-    ComponentsPropValidationConstant_4 = 4096;
-    ComponentsPropValidationResolvedValue = 16 * 1024;
-    ComponentsPropValidationLimit_4 = 64;
-    ComponentsPropValidationMinMaxStepSet = new Set(["min", "max", "step"]);
-    ComponentsPropValidationPrototypeValue = Object.prototype;
-    ComponentsPropValidationBootedHasPropsLifecycleCallbacksConfig = {
-      booted: false,
-      hasProps: false,
-      lifecycleCallbacks: {
-        onDcBooted: (): Dynamic => {},
-      },
-      propsMeta: {},
-      values: {},
-      setProp: (): Dynamic => {},
-      reset: (): Dynamic => {},
-      dirty: false,
-      saveAsDefaults: async (): Promise<Dynamic> => {},
-      adoptSavedDefaults: (): Dynamic => {},
-      saving: false,
-      isSaving: (): Dynamic => false,
-      currentDefault: (): Dynamic => {},
-    };
-  };
-}

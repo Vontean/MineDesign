@@ -6,7 +6,7 @@ import {
 } from "../../runtime-types";
 import { Button } from "../../cds/button/button";
 import { Icon } from "../../cds/components/icon";
-import { ComponentsImportsComponentFromGlobalScopePattern } from "./imports";
+import { reservedImportAttributePattern } from "./imports";
 import { ComponentPropInput } from "./prop-editors";
 import { isEditablePropMetadata } from "./prop-validation";
 import { ViewOnlyYouCanInspectThisMessage } from "../outline/annotations";
@@ -20,7 +20,7 @@ import { PropertySection } from "../properties/section";
 function inferComponentAttributeMetadata(input?: Dynamic): Dynamic {
   let state: Dynamic = {};
   for (let [value, value2] of Object.entries(input) as Dynamic) {
-    if (ComponentsImportsComponentFromGlobalScopePattern.test(value))
+    if (reservedImportAttributePattern.test(value))
       continue;
     let value3: Dynamic = value2
         .match(PropertiesInspectorFieldPattern)?.[1]
@@ -198,10 +198,10 @@ function ComponentImportPropsPanel({
   let value: Dynamic = Object.entries(declared ?? {}).filter(
       ([input, input2]: Dynamic): Dynamic =>
         (0, isEditablePropMetadata)(input2) &&
-        !ComponentsImportsComponentFromGlobalScopePattern.test(
+        !reservedImportAttributePattern.test(
           input,
         ) &&
-        !ComponentsImportsComponentFromGlobalScopePattern.test(
+        !reservedImportAttributePattern.test(
           resolveComponentAttributeName(input, attrs),
         ),
     ),

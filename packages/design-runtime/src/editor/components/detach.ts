@@ -1,305 +1,256 @@
 import { uiMessage } from '@minedesign/contracts/ui-messages';
-/** Restored application module; prepare first, initialize in original order. */
-import {
-  type Dynamic,
-} from "../../runtime-types";
 import { ClipboardTemplateFlatteningTrueFalseNullSet, flattenTemplateValues, getLoopTemplateVariables } from "../clipboard/template-flattening";
 import { parseComponentImport } from "./imports";
 import { getStyleProperty, parseStyleDeclarations, serializeStyleDeclarations } from "../css/declarations";
 import { canContainHtmlTag } from "../html/authoring";
 
-var ComponentsDetachLabel: Dynamic;
-var ComponentsDetachLabel_2: Dynamic;
-var ComponentsDetachLabel_3: Dynamic;
-var ThisComponentManagesItselfSoItMessage_3: Dynamic;
-var ComponentsDetachLabel_4: Dynamic;
-var ThisInstanceTakesValuesFromTheMessage: Dynamic;
-var ComponentsDetachLabel_5: Dynamic;
-var ComponentsDetachLabel_6: Dynamic;
-var ThisInstanceCanTBeDetachedWhereMessage: Dynamic;
-var CouldnTFindThisComponentSArtboardOnMessage: Dynamic;
-var ThisInstanceIsnTShownOnTheMessage: Dynamic;
-var CouldnTDetachThisInstanceRightNowMessage: Dynamic;
-var PartsOfThisComponentCanTBeMessage: Dynamic;
-var ComponentsDetachNameComponentPattern: Dynamic;
-var ComponentsDetachPositionLeftRightSet: Dynamic;
-var ComponentsDetachHelmetScriptPattern: Dynamic;
-var ComponentsDetachPattern: Dynamic;
-var ComponentsDetachPattern_2: Dynamic;
-var ComponentsDetachPattern_3: Dynamic;
-var ComponentsDetachPattern_4: Dynamic;
-var ComponentsDetachReplace: Dynamic;
-function parseDetachablePropValue(input?: Dynamic): Dynamic {
-  let value: Dynamic = input.match(ComponentsDetachPattern)?.[1]?.trim();
-  if (value == null || value.includes("{{"))
-    return input.includes("{{") ? undefined : input;
-  if (/[=!]=/.test(value)) return;
-  if (value === "true" || value === "false") return value === "true";
-  if (value === "null") return null;
-  if (ComponentsDetachPattern_3.test(value)) return Number(value);
-  let value2: Dynamic = value.match(ComponentsDetachPattern_4);
-  return value2 ? (value2[1] ?? value2[2]) : undefined;
+/** 编辑器模型里的元素编号。 */
+type Tid = unknown;
+
+/** 解除组件实例关联（detach）要读取的编辑器模型。 */
+export interface DetachModel {
+  isUneditable(tid: Tid): boolean;
+  isLoopDriven(tid: Tid): boolean;
+  inlineStyleAttr(tid: Tid): string;
+  attributes(tid: Tid): Record<string, string>;
+  childTids(tid: Tid | null): Tid[];
+  element(tid: Tid): Element | null | undefined;
+  parentTid(tid: Tid): Tid | null | undefined;
+  tagName(tid: Tid): string | null | undefined;
 }
-function detachComponentRefusal(input?: Dynamic, options?: Dynamic): Dynamic {
-  if (input.isUneditable(options))
-    return ThisComponentManagesItselfSoItMessage_3;
-  if (input.isLoopDriven(options)) return ComponentsDetachLabel_4;
+
+/** 解除关联时额外要读取的文档内容。 */
+export interface DetachContentModel extends DetachModel {
+  helmetAssets(): { other?: unknown; assets?: unknown; atomics?: unknown };
+  rootText(): string;
+  subtreeHtml(tid: Tid): string | null | undefined;
+}
+
+export interface DetachContext {
+  model: DetachContentModel;
+  /** 组件当前的属性值。 */
+  vals: Record<string, unknown>;
+  /** 组件自己持有、不能内联的名字。 */
+  held: string[];
+}
+
+export type DetachResult =
+  | { blocked: string }
+  | { html: string; assets: unknown; atomics: unknown };
+
+// 以下提示语在初始化时按当前语言取得
+var selectInstanceMessage: string;
+var systemComponentMessage: string;
+var codeComponentMessage: string;
+var selfManagedMessage: string;
+var repeatedInstanceMessage: string;
+var takesValuesMessage: string;
+var hasContentMessage: string;
+var insideTextMessage: string;
+var ThisInstanceCanTBeDetachedWhereMessage: string;
+var CouldnTFindThisComponentSArtboardOnMessage: string;
+var ThisInstanceIsnTShownOnTheMessage: string;
+var CouldnTDetachThisInstanceRightNowMessage: string;
+var PartsOfThisComponentCanTBeMessage: string;
+/** 不作为 prop 内联的属性名。 */
+var reservedAttributePattern: RegExp;
+/** 实例上允许保留的定位类样式属性。 */
+var positionStyleProps: Set<string>;
+var helmetTagPattern: RegExp;
+/** 整段就是一个 {{ 表达式 }}。 */
+var wholeExpressionPattern: RegExp;
+var expressionPattern: RegExp;
+var numberLiteralPattern: RegExp;
+var stringLiteralPattern: RegExp;
+var kebabToCamel: (name: string) => string;
+
+/** 属性值若是字面量表达式则取出字面量；含其他表达式时返回 undefined（不能内联）。 */
+export function parseDetachablePropValue(raw: string): string | number | boolean | null | undefined {
+  const expression = raw.match(wholeExpressionPattern)?.[1]?.trim();
+  if (expression == null || expression.includes("{{"))
+    return raw.includes("{{") ? undefined : raw;
+  if (/[=!]=/.test(expression)) return;
+  if (expression === "true" || expression === "false") return expression === "true";
+  if (expression === "null") return null;
+  if (numberLiteralPattern.test(expression)) return Number(expression);
+  const quoted = expression.match(stringLiteralPattern);
+  return quoted ? (quoted[1] ?? quoted[2]) : undefined;
+}
+
+/** 这个实例不能解除关联的原因（给人看的提示）；可以解除时返回 undefined。 */
+export function detachComponentRefusal(model: DetachModel, tid: Tid): string | undefined {
+  if (model.isUneditable(tid)) return selfManagedMessage;
+  if (model.isLoopDriven(tid)) return repeatedInstanceMessage;
   if (
-    (0, parseStyleDeclarations)(input.inlineStyleAttr(options)).some(
-      (input2?: Dynamic): Dynamic =>
-        !ComponentsDetachPositionLeftRightSet.has(input2.prop) &&
-        (input2.prop + input2.value).includes("{{"),
+    parseStyleDeclarations(model.inlineStyleAttr(tid)).some(
+      (declaration: { prop: string; value: string }) =>
+        !positionStyleProps.has(declaration.prop) && (declaration.prop + declaration.value).includes("{{"),
     ) ||
-    /(^|;)\s*\{\{[^:;]*\}\}\s*(;|$)/.test(input.inlineStyleAttr(options)) ||
-    Object.values(input.attributes(options)).some(
-      (input2?: Dynamic): Dynamic =>
-        parseDetachablePropValue(input2) === undefined,
-    )
+    /(^|;)\s*\{\{[^:;]*\}\}\s*(;|$)/.test(model.inlineStyleAttr(tid)) ||
+    Object.values(model.attributes(tid)).some((value) => parseDetachablePropValue(value) === undefined)
   )
-    return ThisInstanceTakesValuesFromTheMessage;
+    return takesValuesMessage;
+  if (model.childTids(tid).length > 0 || (model.element(tid)?.textContent ?? "").trim() !== "")
+    return hasContentMessage;
+  let parent = model.parentTid(tid);
+  // 条件与循环标签不占位置，跳到真正的父元素
+  while (parent != null && /^sc-(if|for)$/.test(model.tagName(parent) ?? "")) parent = model.parentTid(parent);
   if (
-    input.childTids(options).length > 0 ||
-    (input.element(options)?.textContent ?? "").trim() !== ""
+    (parent != null && !canContainHtmlTag(model.tagName(parent) ?? "", "div")) ||
+    model.element(tid)?.closest("p")
   )
-    return ComponentsDetachLabel_5;
-  let value: Dynamic = input.parentTid(options);
-  for (; value != null && /^sc-(if|for)$/.test(input.tagName(value) ?? ""); )
-    value = input.parentTid(value);
-  if (
-    (value != null &&
-      !(0, canContainHtmlTag)(input.tagName(value) ?? "", "div")) ||
-    input.element(options)?.closest("p")
-  )
-    return ComponentsDetachLabel_6;
+    return insideTextMessage;
+  return undefined;
 }
-function isDetachableDcImport(input?: Dynamic, options?: Dynamic): Dynamic {
-  return (
-    input.tagName(options) === "dc-import" &&
-    detachComponentRefusal(input, options) === undefined
-  );
+
+export function isDetachableDcImport(model: DetachModel, tid: Tid): boolean {
+  return model.tagName(tid) === "dc-import" && detachComponentRefusal(model, tid) === undefined;
 }
-function selectionDetachRefusal(input?: Dynamic, options?: Dynamic): Dynamic {
-  if (
-    options.some(
-      (input2?: Dynamic): Dynamic => isDetachableDcImport(input, input2),
-    )
-  )
-    return;
-  for (let value2 of options as Dynamic)
-    if (input.tagName(value2) === "dc-import")
-      return detachComponentRefusal(input, value2);
-  let value: Dynamic = options.map(
-    (input2?: Dynamic): Dynamic =>
-      (0, parseComponentImport)(
-        input.tagName(input2),
-        input.attributes(input2),
-      )?.kind,
-  );
-  return value.includes("system")
-    ? ComponentsDetachLabel_2
-    : value.includes("module")
-      ? ComponentsDetachLabel_3
-      : ComponentsDetachLabel;
+
+/** 选中的元素里没有一个能解除关联时，说明原因；有能解除的则返回 undefined。 */
+export function selectionDetachRefusal(model: DetachModel, tids: Tid[]): string | undefined {
+  if (tids.some((tid) => isDetachableDcImport(model, tid))) return;
+  for (const tid of tids) if (model.tagName(tid) === "dc-import") return detachComponentRefusal(model, tid);
+  const kinds = tids.map((tid) => parseComponentImport(model.tagName(tid) as string, model.attributes(tid))?.kind);
+  return kinds.includes("system")
+    ? systemComponentMessage
+    : kinds.includes("module")
+      ? codeComponentMessage
+      : selectInstanceMessage;
 }
-function importedComponentName(input?: Dynamic): Dynamic {
-  return input.name || input.component || "";
+
+export function importedComponentName(attributes: { name?: string; component?: string }): string {
+  return attributes.name || attributes.component || "";
 }
-function detachableComponentProps(input?: Dynamic): Dynamic {
-  let state: Dynamic = {};
-  for (let [value, value2] of Object.entries(input) as Dynamic) {
-    if (ComponentsDetachNameComponentPattern.test(value)) continue;
-    let value3: Dynamic = parseDetachablePropValue(value2);
-    value3 !== undefined && (state[ComponentsDetachReplace(value)] = value3);
+
+/** 把实例上的属性转成 prop 值（属性名从 kebab 转 camel），跳过保留属性与不能内联的值。 */
+export function detachableComponentProps(attributes: Record<string, string>): Record<string, unknown> {
+  const props: Record<string, unknown> = {};
+  for (const [name, raw] of Object.entries(attributes)) {
+    if (reservedAttributePattern.test(name)) continue;
+    const value = parseDetachablePropValue(raw);
+    if (value !== undefined) props[kebabToCamel(name)] = value;
   }
-  return state;
+  return props;
 }
-function selectionUsesFlexGrid(input?: Dynamic, options?: Dynamic): Dynamic {
-  return options.some((input2?: Dynamic): Dynamic => {
-    let value: Dynamic = input.element(input2),
-      value2: Dynamic = /^(inline-)?(flex|grid)$/.test(
-        (0, getStyleProperty)(value?.getAttribute("style"), "display")
-          .replace(/!important/i, "")
-          .trim()
-          .toLowerCase(),
-      ),
-      value3: Dynamic = [...(value?.childNodes ?? [])].some(
-        (input3?: Dynamic): Dynamic => {
-          let value4: Dynamic =
-            input3.nodeType === 3 ? (input3.nodeValue ?? "") : "";
-          return (
-            /\{\{/.test(value4) &&
-            (value4.replace(ComponentsDetachPattern_2, "").trim() !== "" ||
-              (value4.match(ComponentsDetachPattern_2)?.length ?? 0) > 1)
-          );
-        },
-      );
-    return (
-      (value2 && value3) ||
-      selectionUsesFlexGrid(input, input.childTids(input2))
+
+/** 选中的元素（含后代）里是否有 flex/grid 容器直接带着拼接了文字的模板文本。 */
+export function selectionUsesFlexGrid(model: DetachModel, tids: Tid[]): boolean {
+  return tids.some((tid) => {
+    const element = model.element(tid);
+    const isFlexOrGrid = /^(inline-)?(flex|grid)$/.test(
+      getStyleProperty(element?.getAttribute("style"), "display")
+        .replace(/!important/i, "")
+        .trim()
+        .toLowerCase(),
     );
+    const hasMixedTemplateText = [...(element?.childNodes ?? [])].some((node) => {
+      const text = node.nodeType === 3 ? (node.nodeValue ?? "") : "";
+      return (
+        /\{\{/.test(text) &&
+        (text.replace(expressionPattern, "").trim() !== "" || (text.match(expressionPattern)?.length ?? 0) > 1)
+      );
+    });
+    return (isFlexOrGrid && hasMixedTemplateText) || selectionUsesFlexGrid(model, model.childTids(tid));
   });
 }
-function hasUnresolvedTemplateExpression(input?: Dynamic): Dynamic {
-  for (let value of input
-    .replace(/<\!--[\s\S]*?-->/g, "")
-    .matchAll(ComponentsDetachPattern_2) as Dynamic) {
-    let value2: Dynamic = (value[1] ?? "").trim();
+
+/** 模板里是否还有无法求值的 {{ 表达式 }}（字面量与布尔、null 不算）。 */
+export function hasUnresolvedTemplateExpression(html: string): boolean {
+  for (const match of html.replace(/<\!--[\s\S]*?-->/g, "").matchAll(expressionPattern)) {
+    const expression = (match[1] ?? "").trim();
     if (
-      !ClipboardTemplateFlatteningTrueFalseNullSet.has(value2) &&
-      !ComponentsDetachPattern_3.test(value2) &&
-      !ComponentsDetachPattern_4.test(value2)
+      !ClipboardTemplateFlatteningTrueFalseNullSet.has(expression) &&
+      !numberLiteralPattern.test(expression) &&
+      !stringLiteralPattern.test(expression)
     )
       return true;
   }
   return false;
 }
-function detachImportedComponent(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-): Dynamic {
-  if (!isDetachableDcImport(input, options))
-    return {
-      blocked:
-        selectionDetachRefusal(input, [options]) ?? ComponentsDetachLabel,
-    };
-  let value: Dynamic = input.attributes(options),
-    value2: Dynamic = context.model.helmetAssets(),
-    value3: Dynamic = context.model
-      .childTids(null)
-      .filter(
-        (input2?: Dynamic): Dynamic =>
-          !ComponentsDetachHelmetScriptPattern.test(
-            context.model.tagName(input2) ?? "",
-          ),
-      ),
-    value4: Dynamic = value3
-      .map((input2?: Dynamic): Dynamic => context.model.subtreeHtml(input2))
-      .filter((input2?: Dynamic): Dynamic => input2 != null).join(`
+
+/**
+ * 把一个 dc-import 实例展开成它的组件内容（解除关联）。
+ * 返回新的 HTML 与随带的素材，或不能解除的原因。
+ */
+export function detachImportedComponent(model: DetachModel, tid: Tid, context: DetachContext): DetachResult {
+  if (!isDetachableDcImport(model, tid))
+    return { blocked: selectionDetachRefusal(model, [tid]) ?? selectInstanceMessage };
+  const attributes = model.attributes(tid);
+  const helmet = context.model.helmetAssets();
+  const rootTids = context.model
+    .childTids(null)
+    .filter((child) => !helmetTagPattern.test(context.model.tagName(child) ?? ""));
+  const componentHtml = rootTids
+    .map((child) => context.model.subtreeHtml(child))
+    .filter((html) => html != null)
+    .join(`
 `);
   if (
-    value2.other ||
-    value4 === "" ||
+    helmet.other ||
+    componentHtml === "" ||
     context.model.rootText().trim() !== "" ||
-    selectionUsesFlexGrid(context.model, value3)
+    selectionUsesFlexGrid(context.model, rootTids)
   )
-    return {
-      blocked: PartsOfThisComponentCanTBeMessage,
-    };
-  let value5: Dynamic = detachableComponentProps(value),
-    { vals: value6, held: value7 }: Dynamic = context,
-    value8: Dynamic = (0, getLoopTemplateVariables)(value4),
-    value9: Dynamic = (0, flattenTemplateValues)(
-      value4,
-      (input2?: Dynamic): Dynamic => {
-        if (
-          !(
-            input2.startsWith("$") ||
-            ClipboardTemplateFlatteningTrueFalseNullSet.has(input2) ||
-            value8.has(input2) ||
-            value7.includes(input2)
-          )
-        )
-          return Object.hasOwn(value6, input2)
-            ? value6[input2]
-            : Object.hasOwn(value5, input2)
-              ? value5[input2]
-              : undefined;
-      },
-    );
-  if (hasUnresolvedTemplateExpression(value9))
-    return {
-      blocked: PartsOfThisComponentCanTBeMessage,
-    };
-  let value10: Dynamic = (document as Dynamic).createElement("div"),
-    value11: Dynamic = (0, serializeStyleDeclarations)(
-      (0, parseStyleDeclarations)(
-        input.inlineStyleAttr(options),
-      ).filter(
-        (input2?: Dynamic): Dynamic =>
-          ComponentsDetachPositionLeftRightSet.has(input2.prop),
-      ),
-    );
-  value11 && value10.setAttribute("style", value11);
-  value10.setAttribute(
-    "data-om-label",
-    value["data-om-label"] || importedComponentName(value) || "Component",
+    return { blocked: PartsOfThisComponentCanTBeMessage };
+  const props = detachableComponentProps(attributes);
+  const { vals, held } = context;
+  const loopVariables = getLoopTemplateVariables(componentHtml);
+  const flattened = flattenTemplateValues(componentHtml, (name: string): unknown => {
+    if (!(name.startsWith("$") || ClipboardTemplateFlatteningTrueFalseNullSet.has(name) || loopVariables.has(name) || held.includes(name)))
+      return Object.hasOwn(vals, name) ? vals[name] : Object.hasOwn(props, name) ? props[name] : undefined;
+  });
+  if (hasUnresolvedTemplateExpression(flattened)) return { blocked: PartsOfThisComponentCanTBeMessage };
+  const wrapper = document.createElement("div");
+  const style = serializeStyleDeclarations(
+    parseStyleDeclarations(model.inlineStyleAttr(tid)).filter((declaration: { prop: string }) =>
+      positionStyleProps.has(declaration.prop),
+    ),
   );
-  let value12: Dynamic = (document as Dynamic).createElement("template");
-  value12.content.appendChild(value10);
-  let innerHTML: Dynamic = value12.innerHTML;
+  if (style) wrapper.setAttribute("style", style);
+  wrapper.setAttribute("data-om-label", attributes["data-om-label"] || importedComponentName(attributes) || "Component");
+  const template = document.createElement("template");
+  template.content.appendChild(wrapper);
+  const wrapperHtml = template.innerHTML;
   return {
     html:
-      innerHTML.slice(0, innerHTML.length - 6) +
+      wrapperHtml.slice(0, wrapperHtml.length - 6) +
       `
 ` +
-      value9 +
+      flattened +
       `
 </div>`,
-    assets: value2.assets,
-    atomics: value2.atomics,
+    assets: helmet.assets,
+    atomics: helmet.atomics,
   };
 }
+
 export {
-  ComponentsDetachHelmetScriptPattern,
-  ComponentsDetachLabel,
-  ComponentsDetachLabel_2,
-  ComponentsDetachLabel_3,
-  ComponentsDetachLabel_4,
-  ComponentsDetachLabel_5,
-  ComponentsDetachLabel_6,
-  ComponentsDetachNameComponentPattern,
-  ComponentsDetachPattern,
-  ComponentsDetachPattern_2,
-  ComponentsDetachPattern_3,
-  ComponentsDetachPattern_4,
-  ComponentsDetachPositionLeftRightSet,
-  ComponentsDetachReplace,
+  selectInstanceMessage,
   CouldnTDetachThisInstanceRightNowMessage,
   CouldnTFindThisComponentSArtboardOnMessage,
-  detachableComponentProps,
-  detachComponentRefusal,
-  detachImportedComponent,
-  hasUnresolvedTemplateExpression,
-  importedComponentName,
-  isDetachableDcImport,
-  parseDetachablePropValue,
   PartsOfThisComponentCanTBeMessage,
-  selectionDetachRefusal,
-  selectionUsesFlexGrid,
-  ThisComponentManagesItselfSoItMessage_3,
   ThisInstanceCanTBeDetachedWhereMessage,
   ThisInstanceIsnTShownOnTheMessage,
-  ThisInstanceTakesValuesFromTheMessage,
 };
 export function installEditorComponentsDetach(): () => void {
   return () => {
-    ComponentsDetachLabel = uiMessage("inspector.detach.selectAComponentInstanceTo");
-    ComponentsDetachLabel_2 = uiMessage("inspector.detach.designSystemComponentsCanT");
-    ComponentsDetachLabel_3 = uiMessage("inspector.detach.codeComponentsCanTBe");
-    ThisComponentManagesItselfSoItMessage_3 =
-      uiMessage("inspector.detach.thisComponentManagesItselfSo");
-    ComponentsDetachLabel_4 =
-      uiMessage("inspector.detach.aRepeatedInstanceCanT");
-    ThisInstanceTakesValuesFromTheMessage =
-      uiMessage("inspector.detach.thisInstanceTakesValuesFrom");
-    ComponentsDetachLabel_5 =
-      uiMessage("inspector.detach.anInstanceWithContentOf");
-    ComponentsDetachLabel_6 =
-      uiMessage("inspector.detach.anInstanceInsideTextOr");
-    ThisInstanceCanTBeDetachedWhereMessage =
-      uiMessage("inspector.detach.thisInstanceCanTBe");
-    CouldnTFindThisComponentSArtboardOnMessage =
-      uiMessage("inspector.detach.couldnTFindThisComponent");
-    ThisInstanceIsnTShownOnTheMessage =
-      uiMessage("inspector.detach.thisInstanceIsnTShown");
-    CouldnTDetachThisInstanceRightNowMessage =
-      uiMessage("inspector.detach.couldnTDetachThisInstance");
-    PartsOfThisComponentCanTBeMessage =
-      uiMessage("inspector.detach.partsOfThisComponentCan");
-    ComponentsDetachNameComponentPattern =
+    selectInstanceMessage = uiMessage("inspector.detach.selectAComponentInstanceTo");
+    systemComponentMessage = uiMessage("inspector.detach.designSystemComponentsCanT");
+    codeComponentMessage = uiMessage("inspector.detach.codeComponentsCanTBe");
+    selfManagedMessage = uiMessage("inspector.detach.thisComponentManagesItselfSo");
+    repeatedInstanceMessage = uiMessage("inspector.detach.aRepeatedInstanceCanT");
+    takesValuesMessage = uiMessage("inspector.detach.thisInstanceTakesValuesFrom");
+    hasContentMessage = uiMessage("inspector.detach.anInstanceWithContentOf");
+    insideTextMessage = uiMessage("inspector.detach.anInstanceInsideTextOr");
+    ThisInstanceCanTBeDetachedWhereMessage = uiMessage("inspector.detach.thisInstanceCanTBe");
+    CouldnTFindThisComponentSArtboardOnMessage = uiMessage("inspector.detach.couldnTFindThisComponent");
+    ThisInstanceIsnTShownOnTheMessage = uiMessage("inspector.detach.thisInstanceIsnTShown");
+    CouldnTDetachThisInstanceRightNowMessage = uiMessage("inspector.detach.couldnTDetachThisInstance");
+    PartsOfThisComponentCanTBeMessage = uiMessage("inspector.detach.partsOfThisComponentCan");
+    reservedAttributePattern =
       /^(name|component|style|sc-name|hint-size|dc-props|dcProps|key|ref|children|style-.*)$/;
-    ComponentsDetachPositionLeftRightSet = new Set([
+    positionStyleProps = new Set([
       "position",
       "left",
       "right",
@@ -311,16 +262,11 @@ export function installEditorComponentsDetach(): () => void {
       "z-index",
       "transform",
     ]);
-    ComponentsDetachHelmetScriptPattern =
-      /^(helmet|script|style|template|link|meta|title)$/;
-    ComponentsDetachPattern = /^\s*\{\{([\s\S]+?)\}\}\s*$/;
-    ComponentsDetachPattern_2 = /\{\{([\s\S]*?)\}\}/g;
-    ComponentsDetachPattern_3 = /^-?\d+(\.\d+)?$/;
-    ComponentsDetachPattern_4 = /^(?:'([^']*)'|"([^"]*)")$/;
-    ComponentsDetachReplace = (input?: Dynamic): Dynamic =>
-      input.replace(
-        /-([a-z])/g,
-        (input2?: Dynamic, options?: Dynamic): Dynamic => options.toUpperCase(),
-      );
+    helmetTagPattern = /^(helmet|script|style|template|link|meta|title)$/;
+    wholeExpressionPattern = /^\s*\{\{([\s\S]+?)\}\}\s*$/;
+    expressionPattern = /\{\{([\s\S]*?)\}\}/g;
+    numberLiteralPattern = /^-?\d+(\.\d+)?$/;
+    stringLiteralPattern = /^(?:'([^']*)'|"([^"]*)")$/;
+    kebabToCamel = (name: string): string => name.replace(/-([a-z])/g, (_match: string, letter: string) => letter.toUpperCase());
   };
 }

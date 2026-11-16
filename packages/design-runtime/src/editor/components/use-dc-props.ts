@@ -3,7 +3,7 @@ import {
   type Dynamic,
 } from "../../runtime-types";
 import { adoptComponentPropDefaults, cacheUnsavedComponentProp, clearUnsavedComponentProps, reactComponentsPropCache } from "./prop-cache";
-import { ComponentsPropValidationBootedHasPropsLifecycleCallbacksConfig, equalPropValues, isEditablePropMetadata, normalizePropString, normalizePropValues, omitUnchangedProps, parsePropsMetadata } from "./prop-validation";
+import { emptyDcPropsState, equalPropValues, isEditablePropMetadata, normalizePropString, normalizePropValues, omitUnchangedProps, parsePropsMetadata } from "./prop-validation";
 import { applyComponentPropDefaults } from "./props";
 import { getDcPropsJson, setDcPropsJson } from "../html/dc-props";
 import { markLocalFileChange } from "../model/file-echoes";
@@ -355,7 +355,7 @@ function useDcProps(input?: Dynamic): Dynamic {
         isSaving: value23,
         currentDefault: value24,
       }
-    : ComponentsPropValidationBootedHasPropsLifecycleCallbacksConfig;
+    : emptyDcPropsState;
 }
 export {
   useDcProps,

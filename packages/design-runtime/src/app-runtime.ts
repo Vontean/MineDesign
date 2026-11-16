@@ -202,8 +202,6 @@ import { installEditorCssGrid } from "./editor/css/grid";
 import { installEditorInspectorPropertySchema } from "./editor/inspector/property-schema";
 import { installEditorSvgArrows } from "./editor/svg/arrows";
 import { installEditorComponentsImports } from "./editor/components/imports";
-import { installEditorComponentsProps } from "./editor/components/props";
-import { installEditorComponentsTextEdits } from "./editor/components/text-edits";
 import { installEditorHtmlAuthoring } from "./editor/html/authoring";
 import { installEditorModelDomText } from "./editor/model/dom-text";
 import { installEditorModelLabels } from "./editor/model/labels";
@@ -298,7 +296,6 @@ import { installEditorModelHistoryRebase } from "./editor/model/history-rebase";
 import { installEditorModelModelState } from "./editor/model/model-state";
 import { installEditorModelUseDcModel } from "./editor/model/use-dc-model";
 import { installEditorComponentsPropCache } from "./editor/components/prop-cache";
-import { installEditorComponentsPropValidation } from "./editor/components/prop-validation";
 import { installEditorComponentsUseDcProps } from "./editor/components/use-dc-props";
 import { installEditorTextDeferredInput } from "./editor/text/deferred-input";
 import { installEditorTextTypingTarget } from "./editor/text/typing-target";
@@ -411,7 +408,6 @@ import { installEditorComponentsAttributePropsPanel } from "./editor/components/
 import { installEditorComponentsTypeInference } from "./editor/components/type-inference";
 import { installEditorComponentsDeclarationResolver } from "./editor/components/declaration-resolver";
 import { installEditorComponentsTypeInferenceWorker } from "./editor/components/type-inference-worker";
-import { installEditorComponentsInferredMetadata } from "./editor/components/inferred-metadata";
 import { installEditorMediaObjectCrop } from "./editor/media/object-crop";
 import { installEditorSessionElementState } from "./editor/session/element-state";
 import { installEditorSessionArtboardState } from "./editor/session/artboard-state";
@@ -804,8 +800,6 @@ export function createDesignRuntime(
     installEditorInspectorPropertySchema(),
     installEditorSvgArrows(),
     installEditorComponentsImports(),
-    installEditorComponentsProps(),
-    installEditorComponentsTextEdits(),
     installEditorHtmlAuthoring(),
     installEditorModelDomText(),
     installEditorModelLabels(),
@@ -900,7 +894,6 @@ export function createDesignRuntime(
     installEditorModelModelState(),
     installEditorModelUseDcModel(),
     installEditorComponentsPropCache(),
-    installEditorComponentsPropValidation(),
     installEditorComponentsUseDcProps(),
     installEditorTextDeferredInput(),
     installEditorTextTypingTarget(),
@@ -1013,7 +1006,6 @@ export function createDesignRuntime(
     installEditorComponentsTypeInference(),
     installEditorComponentsDeclarationResolver(),
     installEditorComponentsTypeInferenceWorker(),
-    installEditorComponentsInferredMetadata(),
     installEditorMediaObjectCrop(),
     installEditorSessionElementState(),
     installEditorSessionArtboardState(),

@@ -1,93 +1,82 @@
-/** Restored application module; prepare first, initialize in original order. */
-import {
-  type Dynamic,
-} from "../../runtime-types";
-import { convertInferredEnumValue } from "./type-inference";
+/** 把类型推断结果转成属性元数据，并识别模板里的属性引用。 */
+import type { PropMetadata } from './props';
+import { convertInferredEnumValue } from './type-inference';
 
-var ComponentsInferredMetadataAZaZPattern: Dynamic;
-var ComponentsInferredMetadataPattern: Dynamic;
-function inferredTypeToPropMetadata(source?: Dynamic): Dynamic {
-  let value: Dynamic =
-    source.kind === "enum"
+/** 类型推断得到的一个属性。 */
+export interface InferredProp {
+  name?: string;
+  kind?: string;
+  options?: unknown[];
+  numeric?: boolean;
+  withBool?: boolean;
+  typeName?: string;
+  default?: unknown;
+  [key: string]: unknown;
+}
+
+/** 匹配只含一个标识符的 {{ name }}。 */
+export const templatePropReferencePattern = /\{\{\s*([A-Za-z_$][\w$]*)\s*\}\}/g;
+/** 匹配任意 {{ ... }} 表达式。 */
+export const templateExpressionPattern = /\{\{[\s\S]*?\}\}/g;
+
+export function inferredTypeToPropMetadata(source: InferredProp): PropMetadata {
+  const metadata: PropMetadata =
+    source.kind === 'enum'
       ? {
-          editor: "enum",
-          options: (source.options ?? []).map(
-            (input?: Dynamic): Dynamic =>
-              (0, convertInferredEnumValue)(source, input),
-          ),
+          editor: 'enum',
+          options: (source.options ?? []).map((option) => convertInferredEnumValue(source, option)),
         }
-      : source.kind === "boolean"
-        ? {
-            editor: "boolean",
-          }
-        : source.kind === "number"
-          ? {
-              editor: "float",
-            }
+      : source.kind === 'boolean'
+        ? { editor: 'boolean' }
+        : source.kind === 'number'
+          ? { editor: 'float' }
           : {
-              editor: "text",
-              ...(source.typeName !== undefined
-                ? {
-                    tsType: source.typeName,
-                  }
-                : {}),
+              editor: 'text',
+              ...(source.typeName !== undefined ? { tsType: source.typeName } : {}),
             };
-  source.default !== undefined && (value.default = source.default);
-  return value;
+  if (source.default !== undefined) metadata.default = source.default;
+  return metadata;
 }
-function inferredPropsMetadata(input?: Dynamic): Dynamic {
+
+export function inferredPropsMetadata(props: InferredProp[]): Record<string, PropMetadata> {
   return Object.fromEntries(
-    input.map(
-      (input2?: Dynamic): Dynamic => [
-        input2.name,
-        inferredTypeToPropMetadata(input2),
-      ],
-    ),
+    props.map((prop): [string | undefined, PropMetadata] => [prop.name, inferredTypeToPropMetadata(prop)]),
   );
 }
-function templatePropReferences(
-  input?: Dynamic,
-  options: Dynamic = false,
-): Dynamic {
-  let value: Dynamic = [
-    ...input.matchAll(ComponentsInferredMetadataAZaZPattern),
-  ].map((input2?: Dynamic): Dynamic => input2[1]);
-  return value.length !==
-    (input.match(ComponentsInferredMetadataPattern)?.length ?? 0)
-    ? []
-    : options &&
-        (value.length !== 1 ||
-          input.replace(ComponentsInferredMetadataAZaZPattern, "").trim() !==
-            "")
-      ? []
-      : value;
+
+/**
+ * 取出模板文本里引用的属性名。
+ * 文本里夹有其他表达式时返回空；wholeOnly 时要求整段文本就是一个引用。
+ */
+export function templatePropReferences(template: string, wholeOnly = false): string[] {
+  const names = [...template.matchAll(templatePropReferencePattern)].map((match) => match[1]);
+  if (names.length !== (template.match(templateExpressionPattern)?.length ?? 0)) return [];
+  if (
+    wholeOnly &&
+    (names.length !== 1 || template.replace(templatePropReferencePattern, '').trim() !== '')
+  )
+    return [];
+  return names;
 }
-function canEditBoundComponentProps(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  items?: Dynamic,
-  extra?: Dynamic,
-): Dynamic {
-  if (items.length === 0 || input.tagName(options) !== "dc-import")
-    return false;
-  let value: Dynamic = input.attributes(options);
+
+/** 能读取标签名与属性的文档视图。 */
+export interface ComponentDocumentView<Node> {
+  tagName(node: Node): string;
+  attributes(node: Node): Record<string, string | undefined>;
+}
+
+/** 绑定到某个 dc-import 的属性是否都能在面板里直接编辑。 */
+export function canEditBoundComponentProps<Node>(
+  document: ComponentDocumentView<Node>,
+  node: Node,
+  componentName: unknown,
+  propNames: string[],
+  editableProps: { has(name: string): boolean },
+): boolean {
+  if (propNames.length === 0 || document.tagName(node) !== 'dc-import') return false;
+  const attributes = document.attributes(node);
   return (
-    (value.name ?? value.component) === context &&
-    items.every((input2?: Dynamic): Dynamic => extra.has(input2))
+    (attributes.name ?? attributes.component) === componentName &&
+    propNames.every((name) => editableProps.has(name))
   );
-}
-export {
-  canEditBoundComponentProps,
-  ComponentsInferredMetadataAZaZPattern,
-  ComponentsInferredMetadataPattern,
-  inferredPropsMetadata,
-  inferredTypeToPropMetadata,
-  templatePropReferences,
-};
-export function installEditorComponentsInferredMetadata(): () => void {
-  return () => {
-    ComponentsInferredMetadataAZaZPattern = /\{\{\s*([A-Za-z_$][\w$]*)\s*\}\}/g;
-    ComponentsInferredMetadataPattern = /\{\{[\s\S]*?\}\}/g;
-  };
 }

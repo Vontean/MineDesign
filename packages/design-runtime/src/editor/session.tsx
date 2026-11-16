@@ -42,7 +42,7 @@ import { focusPropertyCodeLine } from "./code/property-code";
 import { quoteScriptString, tokenizeScriptLiterals } from "./code/script-literals";
 import { formatUnifiedDiff, utf16SafeSlice } from "./code/unified-diff";
 import { ComponentImportPropsPanel, mergeComponentAttributeValues, mixedComponentAttributeKeys, useInferredComponentMetadata } from "./components/attribute-props-panel";
-import { ComponentsDetachLabel, CouldnTDetachThisInstanceRightNowMessage, CouldnTFindThisComponentSArtboardOnMessage, detachableComponentProps, detachComponentRefusal, detachImportedComponent, importedComponentName, isDetachableDcImport, PartsOfThisComponentCanTBeMessage, selectionDetachRefusal, ThisInstanceCanTBeDetachedWhereMessage, ThisInstanceIsnTShownOnTheMessage } from "./components/detach";
+import { selectInstanceMessage, CouldnTDetachThisInstanceRightNowMessage, CouldnTFindThisComponentSArtboardOnMessage, detachableComponentProps, detachComponentRefusal, detachImportedComponent, importedComponentName, isDetachableDcImport, PartsOfThisComponentCanTBeMessage, selectionDetachRefusal, ThisInstanceCanTBeDetachedWhereMessage, ThisInstanceIsnTShownOnTheMessage } from "./components/detach";
 import { parseComponentImport, sharedComponentImport } from "./components/imports";
 import { canEditBoundComponentProps, inferredPropsMetadata, templatePropReferences } from "./components/inferred-metadata";
 import { parsePropsMetadata } from "./components/prop-validation";
@@ -8264,7 +8264,7 @@ function DesignEditorSession({
       if (value309.length === 0)
         return void showToast(
           (0, selectionDetachRefusal)(model, value308) ??
-            ComponentsDetachLabel,
+            selectInstanceMessage,
         );
       let value310: Dynamic = value309.map(
           (input?: Dynamic): Dynamic => model.element(input),
