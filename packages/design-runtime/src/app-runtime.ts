@@ -245,20 +245,12 @@ import { installCollaborationSelectionPaths } from "./collaboration/selection-pa
 import { installEditorSessionErrors } from "./editor/session/errors";
 import { installCanvasDesktopRefresh } from "./canvas/desktop-refresh";
 import { installEditorTypographyGoogleFonts } from "./editor/typography/google-fonts";
-import { installCanvasPreviewNavigation } from "./canvas/preview-navigation";
 import { installPreviewRuntimeLoading } from "./preview/runtime-loading";
-import { installPreviewAssetRewriting } from "./preview/asset-rewriting";
-import { installPreviewHtmlScanner } from "./preview/html-scanner";
-import { installPreviewCssRewriting } from "./preview/css-rewriting";
 import { installPreviewDependencyInjection } from "./preview/dependency-injection";
-import { installPreviewBlobPaths } from "./preview/blob-paths";
 import { installPreviewComponentImports } from "./preview/component-imports";
-import { installPreviewDependencyGraph } from "./preview/dependency-graph";
 import { installPreviewBuildDocument } from "./preview/build-document";
-import { installPreviewModuleCache } from "./preview/module-cache";
 import { installPlatformFeatureFlags } from "./platform/feature-flags";
 import { installPreviewAddressedArtboards } from "./preview/addressed-artboards";
-import { installPreviewProjectRoot } from "./preview/project-root";
 import { installEditorClipboardNative } from "./editor/clipboard/native";
 import { installEditorClipboardState } from "./editor/clipboard/state";
 import { installEditorKeyboardShortcuts } from "./editor/keyboard/shortcuts";
@@ -325,7 +317,6 @@ import { installEditorClipboardPngCopy } from "./editor/clipboard/png-copy";
 import { installEditorClipboardSvgCopy } from "./editor/clipboard/svg-copy";
 import { installEditorVectorToolState } from "./editor/vector/tool-state";
 import { installCanvasPanZoom } from "./canvas/pan-zoom";
-import { installCanvasFocus } from "./canvas/focus";
 import { installCanvasArtboardResize } from "./canvas/artboard-resize";
 import { installEditorNotesAutoformat } from "./editor/notes/autoformat";
 import { installEditorNotesLinkEditing } from "./editor/notes/link-editing";
@@ -856,20 +847,12 @@ export function createDesignRuntime(
     installEditorSessionErrors(),
     installCanvasDesktopRefresh(),
     installEditorTypographyGoogleFonts(),
-    installCanvasPreviewNavigation(),
     installPreviewRuntimeLoading(),
-    installPreviewAssetRewriting(),
-    installPreviewHtmlScanner(),
-    installPreviewCssRewriting(),
     installPreviewDependencyInjection(),
-    installPreviewBlobPaths(),
     installPreviewComponentImports(),
-    installPreviewDependencyGraph(),
     installPreviewBuildDocument(),
-    installPreviewModuleCache(),
     installPlatformFeatureFlags(),
     installPreviewAddressedArtboards(),
-    installPreviewProjectRoot(),
     installEditorClipboardNative(),
     installEditorClipboardState(),
     installEditorKeyboardShortcuts(),
@@ -936,7 +919,6 @@ export function createDesignRuntime(
     installEditorClipboardSvgCopy(),
     installEditorVectorToolState(),
     installCanvasPanZoom(),
-    installCanvasFocus(),
     installCanvasArtboardResize(),
     installEditorNotesAutoformat(),
     installEditorNotesLinkEditing(),

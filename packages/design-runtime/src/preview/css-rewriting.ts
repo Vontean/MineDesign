@@ -1,171 +1,169 @@
-/** Restored application module; prepare first, initialize in original order. */
+/** 预览用的样式表改写：去注释、内联 @import、判断样式表能否独立使用。 */
 import {
-  type Dynamic,
-} from "../runtime-types";
-import { PreviewAssetRewritingSlice, resolveProjectAssetPath, rewriteProjectAssets } from "./asset-rewriting";
-import { PreviewHtmlScannerImportPattern } from "./html-scanner";
+  imagePathPattern,
+  projectDirectoryOf,
+  resolveProjectAssetPath,
+  rewriteProjectAssets,
+  type ProjectFiles,
+} from "./asset-rewriting";
+import { cssImportPattern } from "./html-scanner";
 
-var PreviewCssRewritingTest: Dynamic;
-var PreviewCssRewritingImportCharsetPattern: Dynamic;
-var PreviewCssRewritingReplace: Dynamic;
-function stripStylesheetComments(items?: Dynamic): Dynamic {
-  let text: Dynamic = "",
-    text2: Dynamic = "";
-  for (let index: Dynamic = 0; index < items.length; index++) {
-    let value: Dynamic = items[index];
-    if (text2) {
-      if (value === "\\") {
-        text += value + (items[index + 1] ?? "");
-        index++;
+/** 样式表开头允许的 @import、@charset、@layer 语句（粘性匹配，从 lastIndex 起）。 */
+const leadingAtRulePattern =
+  /(?:@import\s*(?:url\(\s*(?:"[^"]*"|'[^']*'|[^\s)]*)\s*\)|"[^"]*"|'[^']*')[^;{]*|@charset\s*"[^"]*"|@layer\b[^;{]*)(?:;|$)/iy;
+
+/** 样式表是否引用了站点根路径（`url(/x)` 或 `@import "/x"`，不含 `//`）。 */
+export const hasRootRelativeCssReference = (css: string): boolean =>
+  /(?:url\(\s*|@import\s*)["']?\/(?!\/)/i.test(stripStylesheetComments(css));
+
+/** 把 `<noscript` 前的 `<` 转义，避免样式表被内联进 HTML 后提前闭合。 */
+export const escapeNoscriptInCss = (css: string): string =>
+  css.replace(/<(?=\s*(?:\/\s*)?noscript)/gi, "\\3c ");
+
+/** 去掉注释（换成一个空格）；字符串和不带引号的 url() 里的内容原样保留。 */
+export function stripStylesheetComments(css: string): string {
+  let out = "";
+  let quote = "";
+  for (let i = 0; i < css.length; i++) {
+    const char = css[i];
+    if (quote) {
+      if (char === "\\") {
+        out += char + (css[i + 1] ?? "");
+        i++;
         continue;
       }
-      value === text2 && (text2 = "");
-      text += value;
-    } else if (value === "'" || value === '"') {
-      text2 = value;
-      text += value;
-    } else if (value === "/" && items[index + 1] === "*") {
-      let value2: Dynamic = items.indexOf("*/", index + 2);
-      index = value2 === -1 ? items.length : value2 + 1;
-      text += " ";
+      char === quote && (quote = "");
+      out += char;
+    } else if (char === "'" || char === '"') {
+      quote = char;
+      out += char;
+    } else if (char === "/" && css[i + 1] === "*") {
+      const commentEnd = css.indexOf("*/", i + 2);
+      i = commentEnd === -1 ? css.length : commentEnd + 1;
+      out += " ";
     } else {
-      let value2: Dynamic = findCssUrlEnd(items, index);
-      value2 === -1
-        ? (text += value)
-        : ((text += items.slice(index, value2)), (index = value2 - 1));
+      const urlEnd = findCssUrlEnd(css, i);
+      urlEnd === -1
+        ? (out += char)
+        : ((out += css.slice(i, urlEnd)), (i = urlEnd - 1));
     }
   }
-  return text;
+  return out;
 }
-function findCssUrlEnd(items?: Dynamic, options?: Dynamic): Dynamic {
+
+/** pos 处是不带引号的 `url(...)` 时返回它的结尾下标（右括号之后），否则 -1。 */
+export function findCssUrlEnd(css: string, pos: number): number {
   if (
-    (items[options] !== "u" && items[options] !== "U") ||
-    items.slice(options, options + 4).toLowerCase() !== "url(" ||
-    /[a-z0-9_-]/i.test(items[options - 1] ?? "")
+    (css[pos] !== "u" && css[pos] !== "U") ||
+    css.slice(pos, pos + 4).toLowerCase() !== "url(" ||
+    /[a-z0-9_-]/i.test(css[pos - 1] ?? "")
   )
     return -1;
-  let value: Dynamic = options + 4;
-  for (; value < items.length && /\s/.test(items[value]); ) value++;
-  if (items[value] === '"' || items[value] === "'") return -1;
-  for (; value < items.length && items[value] !== ")"; ) {
-    items[value] === "\\" && value++;
-    value++;
+  let i = pos + 4;
+  while (i < css.length && /\s/.test(css[i])) i++;
+  if (css[i] === '"' || css[i] === "'") return -1;
+  while (i < css.length && css[i] !== ")") {
+    css[i] === "\\" && i++;
+    i++;
   }
-  return value < items.length ? value + 1 : items.length;
+  return i < css.length ? i + 1 : css.length;
 }
-function inlineStylesheetImports(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-): Dynamic {
-  if (context.has(input)) return "";
-  context.add(input);
-  let value: Dynamic = (0, PreviewAssetRewritingSlice)(input),
-    value2: Dynamic = (0, rewriteProjectAssets)(
-      stripStylesheetComments(options[input] ?? ""),
-      options,
-      value,
-    ),
-    value3: Dynamic = leadingStylesheetAtRuleEnd(value2);
-  return value2.replace(
-    PreviewHtmlScannerImportPattern,
-    (input2?: Dynamic, ...options2: Dynamic[]): Dynamic => {
-      if (options2[6] >= value3) return "";
-      if (options2[5]) return input2;
-      let value4: Dynamic = (0, resolveProjectAssetPath)(
-        value,
+
+/**
+ * 读取项目里的样式表，把它开头的本地 @import 递归内联。
+ * visited 记录已内联的文件，重复引用时返回空串。
+ */
+export function inlineStylesheetImports(
+  path: string,
+  files: ProjectFiles,
+  visited: Set<string>,
+): string {
+  if (visited.has(path)) return "";
+  visited.add(path);
+  const directory = projectDirectoryOf(path);
+  const css = rewriteProjectAssets(
+    stripStylesheetComments(files[path] ?? ""),
+    files,
+    directory,
+  );
+  const leadingEnd = leadingStylesheetAtRuleEnd(css);
+  return css.replace(
+    cssImportPattern,
+    (
+      match: string,
+      urlDouble: string | undefined,
+      urlSingle: string | undefined,
+      urlBare: string | undefined,
+      stringDouble: string | undefined,
+      stringSingle: string | undefined,
+      mediaQuery: string | undefined,
+      offset: number,
+    ): string => {
+      // 出现在开头 at-rule 之后的 @import 本身无效，直接丢掉
+      if (offset >= leadingEnd) return "";
+      // 带媒体条件的无法内联
+      if (mediaQuery) return match;
+      const target = resolveProjectAssetPath(
+        directory,
         String(
-          options2[0] ??
-            options2[1] ??
-            options2[2] ??
-            options2[3] ??
-            options2[4] ??
-            "",
+          urlDouble ?? urlSingle ?? urlBare ?? stringDouble ?? stringSingle ?? "",
         ),
       );
-      return value4 !== null &&
-        /\.css$/i.test(value4) &&
-        options[value4] != null
-        ? inlineStylesheetImports(value4, options, context) +
-            `
-`
-        : input2;
+      return target !== null &&
+        /\.css$/i.test(target) &&
+        files[target] != null
+        ? inlineStylesheetImports(target, files, visited) + "\n"
+        : match;
     },
   );
 }
-function isStandaloneStylesheet(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-): Dynamic {
-  let value: Dynamic = stripStylesheetComments(options[input] ?? "");
-  if (/@import\b/i.test(value) || /_blob\//.test(value)) return false;
-  let value2: Dynamic = (0, PreviewAssetRewritingSlice)(input);
-  if ((0, rewriteProjectAssets)(value, options, value2) !== value)
-    return false;
-  for (let value3 of value.matchAll(
+
+/**
+ * 样式表是否不依赖其他文件：没有 @import、_blob 引用，素材改写后不变，
+ * 且引用的项目文件与 baseFiles 里的相同。
+ */
+export function isStandaloneStylesheet(
+  path: string,
+  files: ProjectFiles,
+  baseFiles: ProjectFiles,
+): boolean {
+  const css = stripStylesheetComments(files[path] ?? "");
+  if (/@import\b/i.test(css) || /_blob\//.test(css)) return false;
+  const directory = projectDirectoryOf(path);
+  if (rewriteProjectAssets(css, files, directory) !== css) return false;
+  for (const match of css.matchAll(
     /url\(\s*(?:"([^"]*)"|'([^']*)'|([^\s"'()]+))\s*\)/gi,
-  ) as Dynamic) {
-    let value4: Dynamic = value3[1] ?? value3[2] ?? value3[3] ?? "";
-    if (value4 === "" || /^(?:[a-z][a-z0-9+.-]*:|\/\/|#)/i.test(value4))
-      continue;
-    let value5: Dynamic = (0, resolveProjectAssetPath)(
-      value2,
-      value4.split(/[?#]/)[0],
-    );
+  )) {
+    const url = match[1] ?? match[2] ?? match[3] ?? "";
+    if (url === "" || /^(?:[a-z][a-z0-9+.-]*:|\/\/|#)/i.test(url)) continue;
+    const target = resolveProjectAssetPath(directory, url.split(/[?#]/)[0]);
     if (
-      value5 !== null &&
-      options[value5] != null &&
-      options[value5] !== context[value5]
+      target !== null &&
+      files[target] != null &&
+      files[target] !== baseFiles[target]
     )
       return false;
   }
   return true;
 }
-function leadingStylesheetAtRuleEnd(items?: Dynamic): Dynamic {
-  let index: Dynamic = 0;
+
+/** 样式表开头连续的 @import / @charset / @layer 语句之后的下标。 */
+export function leadingStylesheetAtRuleEnd(css: string): number {
+  let pos = 0;
   for (;;) {
-    for (; index < items.length && /\s/.test(items[index]); ) index++;
-    PreviewCssRewritingImportCharsetPattern.lastIndex = index;
-    let value: Dynamic = PreviewCssRewritingImportCharsetPattern.exec(items);
-    if (value === null) return index;
-    index += value[0].length;
+    while (pos < css.length && /\s/.test(css[pos])) pos++;
+    leadingAtRulePattern.lastIndex = pos;
+    const match = leadingAtRulePattern.exec(css);
+    if (match === null) return pos;
+    pos += match[0].length;
   }
 }
-function moveCssImportsFirst(input?: Dynamic): Dynamic {
-  let items: Dynamic = [],
-    value: Dynamic = input.replace(
-      PreviewHtmlScannerImportPattern,
-      (input2?: Dynamic): Dynamic => (items.push(input2), ""),
-    );
-  return items.length === 0
-    ? input
-    : items.join(`
-`) +
-        `
-` +
-        value;
-}
-export {
-  findCssUrlEnd,
-  inlineStylesheetImports,
-  isStandaloneStylesheet,
-  leadingStylesheetAtRuleEnd,
-  moveCssImportsFirst,
-  PreviewCssRewritingImportCharsetPattern,
-  PreviewCssRewritingReplace,
-  PreviewCssRewritingTest,
-  stripStylesheetComments,
-};
-export function installPreviewCssRewriting(): () => void {
-  return () => {
-    PreviewCssRewritingTest = (input?: Dynamic): Dynamic =>
-      /(?:url\(\s*|@import\s*)["']?\/(?!\/)/i.test(
-        stripStylesheetComments(input),
-      );
-    PreviewCssRewritingImportCharsetPattern =
-      /(?:@import\s*(?:url\(\s*(?:"[^"]*"|'[^']*'|[^\s)]*)\s*\)|"[^"]*"|'[^']*')[^;{]*|@charset\s*"[^"]*"|@layer\b[^;{]*)(?:;|$)/iy;
-    PreviewCssRewritingReplace = (input?: Dynamic): Dynamic =>
-      input.replace(/<(?=\s*(?:\/\s*)?noscript)/gi, "\\3c ");
-  };
+
+/** 把所有 @import 语句挪到样式表最前面（CSS 要求 @import 在最前）。 */
+export function moveCssImportsFirst(css: string): string {
+  const imports: string[] = [];
+  const rest = css.replace(cssImportPattern, (match: string): string => (
+    imports.push(match), ""
+  ));
+  return imports.length === 0 ? css : imports.join("\n") + "\n" + rest;
 }

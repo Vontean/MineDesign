@@ -4,7 +4,7 @@ import {
 } from "../runtime-types";
 import { injected_wZt } from "../dependencies";
 import { exportBabelStandaloneUrl } from "../export/standalone-html";
-import { PreviewAssetRewritingPattern, PreviewAssetRewritingWebpAvifPattern } from "./asset-rewriting";
+import { scriptPathPattern, imagePathPattern } from "./asset-rewriting";
 import { getProjectFileDependencies } from "./component-imports";
 import { collectProjectDependencyFiles, resolveComponentFile } from "./dependency-graph";
 import { PreviewDependencyInjectionResolvedValue_2, rewritePreviewAssets } from "./dependency-injection";
@@ -31,7 +31,7 @@ function componentRuntimeDependencies(
   let value2: Dynamic = Object.keys(input).filter(
     (input2?: Dynamic): Dynamic =>
       !context.has(input2) &&
-      !PreviewAssetRewritingWebpAvifPattern.test(input2),
+      !imagePathPattern.test(input2),
   );
   if (
     value2.length === 0 ||
@@ -55,7 +55,7 @@ function componentRuntimeDependencies(
     (0, collectProjectDependencyFiles)(value4, options),
   ) as Dynamic)
     context.has(value5) ||
-      PreviewAssetRewritingWebpAvifPattern.test(value5) ||
+      imagePathPattern.test(value5) ||
       (state[value5] = value5.endsWith(".dc.html")
         ? (0, rewritePreviewAssets)(
             value6,
@@ -186,13 +186,13 @@ function buildPreviewDocument(
   if (
     !Object.entries(value3).some(
       ([input2, input3]: Dynamic): Dynamic =>
-        PreviewAssetRewritingPattern.test(input2) ||
+        scriptPathPattern.test(input2) ||
         (input2.endsWith(".dc.html") &&
           /\bfetch\s*\(|\bXMLHttpRequest\b/.test(input3)),
     )
   )
     for (let value13 of Object.keys(value3) as Dynamic)
-      PreviewAssetRewritingWebpAvifPattern.test(value13) &&
+      imagePathPattern.test(value13) &&
         delete value3[value13];
   let state4: Dynamic = {},
     state5: Dynamic = {};

@@ -25,7 +25,7 @@ import { AnnotationPenEditor } from "../editor/vector/annotation-pen-editor";
 import { toModuleNamespace } from "../module-helpers";
 import { initializePlatformCdsIsland } from "../platform/cds-island";
 import { annotationArrowHeads, annotationBounds, annotationRotation, PlatformFileContentConstant_19, PlatformFileContentConstant_20, PlatformFileContentLimit_6 } from "../platform/file-content";
-import { PreviewBlobPathsResolvedValue } from "../preview/blob-paths";
+import { blobPlaceholderImage } from "../preview/blob-paths";
 
 var CanvasShapeX: Dynamic;
 var reactCanvasShape: Dynamic;
@@ -425,7 +425,7 @@ function CanvasShape({
         !value21 && (<img
             data-testid={"mega-shape-body-" + spec.id}
             data-mega-picture={value11 === null ? "placeholder" : ""}
-            src={value11 ?? PreviewBlobPathsResolvedValue}
+            src={value11 ?? blobPlaceholderImage}
             alt={value7.alt ?? ""}
             draggable={false}
             onLoad={onPictureLoad}

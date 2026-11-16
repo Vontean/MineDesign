@@ -5,7 +5,7 @@ import {
 import { describesPublishedRoot, getCurrentPublishedProjectRoot, isFilePublishedAtAddress, isFilePublishedWithMimeType, publishedProjectCacheKey } from "../design-system/published-files";
 import { isLoadingArtboardHtml } from "../platform/design-document-adapter";
 import { PlatformFileContentWebpAvifPattern } from "../platform/file-content";
-import { PreviewAssetRewritingSlice, resolveProjectAssetPath } from "./asset-rewriting";
+import { projectDirectoryOf, resolveProjectAssetPath } from "./asset-rewriting";
 import { normalizeBlobAssetPaths } from "./blob-paths";
 import { decodeHtmlAttributeEntities, isProjectSourcePath } from "./component-imports";
 import { collectProjectDependencyFiles } from "./dependency-graph";
@@ -221,7 +221,7 @@ function buildAddressedArtboard(
       copied:
         "the artboard's file is not in the published version the editor shows",
     };
-  let value2: Dynamic = (0, PreviewAssetRewritingSlice)(options),
+  let value2: Dynamic = (0, projectDirectoryOf)(options),
     value3: Dynamic = Object.keys(input),
     value4: Dynamic = value3.join(`
 `),
@@ -233,7 +233,7 @@ function buildAddressedArtboard(
         copied: "the canvas holds a runtime file of its own: " + value6,
       };
     if (PreviewAddressedArtboardsTest(value6)) {
-      if ((0, PreviewAssetRewritingSlice)(value6) !== value2)
+      if ((0, projectDirectoryOf)(value6) !== value2)
         return {
           copied: "the artboard uses a page from another folder: " + value6,
         };
@@ -271,7 +271,7 @@ function buildAddressedArtboard(
       value7,
       value6,
       PreviewAddressedArtboardsPattern.test(value6)
-        ? (0, PreviewAssetRewritingSlice)(value6)
+        ? (0, projectDirectoryOf)(value6)
         : value2,
       value3,
       value4,

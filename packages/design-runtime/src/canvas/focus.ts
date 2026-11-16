@@ -1,58 +1,49 @@
-/** Restored application module; prepare first, initialize in original order. */
-import {
-  type Dynamic,
-} from "../runtime-types";
+/** 画布文档的焦点管理：窗口失焦时用临时节点抢回焦点，并清掉遗留的活动元素。 */
 
-var CanvasFocusDelayMs: Dynamic;
-var CanvasFocusDelayMs_2: Dynamic;
-function focusCanvasDocument(): Dynamic {
-  if (!(document as Dynamic).hasFocus()) {
+/** 窗口重新获得焦点后，临时节点的保留时间。 */
+export const focusSinkRefocusDelayMs = 100;
+/** 临时节点在窗口一直没获得焦点时的最长保留时间。 */
+export const focusSinkMaxLifetimeMs = 1e3;
+
+export function focusCanvasDocument(): void {
+  if (!document.hasFocus()) {
     blurCanvasActiveElement(true);
     temporaryFocusSink();
-    (window as Dynamic).focus();
+    window.focus();
     return;
   }
   blurCanvasActiveElement(false);
 }
-function temporaryFocusSink(): Dynamic {
-  let value: Dynamic = (document as Dynamic).createElement("div");
-  value.tabIndex = -1;
-  value.style.cssText =
+
+/** 放一个不可见的可聚焦节点接住焦点，窗口拿到焦点或超时后移除。 */
+export function temporaryFocusSink(): void {
+  const sink = document.createElement("div");
+  sink.tabIndex = -1;
+  sink.style.cssText =
     "position:fixed;left:0;top:0;width:1px;height:1px;opacity:0;pointer-events:none;outline:none";
-  let value2: Dynamic,
-    callback: Dynamic = (): Dynamic => {
-      clearTimeout(value2);
-      (window as Dynamic).removeEventListener("focus", callback2);
-      value.remove();
-    },
-    callback2: Dynamic = (): Dynamic => {
-      clearTimeout(value2);
-      value2 = setTimeout(callback, CanvasFocusDelayMs);
-    };
-  (window as Dynamic).addEventListener("focus", callback2);
-  value2 = setTimeout(callback, CanvasFocusDelayMs_2);
-  (document as Dynamic).body.appendChild(value);
-  value.focus({
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const removeSink = (): void => {
+    clearTimeout(timer);
+    window.removeEventListener("focus", onWindowFocus);
+    sink.remove();
+  };
+  const onWindowFocus = (): void => {
+    clearTimeout(timer);
+    timer = setTimeout(removeSink, focusSinkRefocusDelayMs);
+  };
+  window.addEventListener("focus", onWindowFocus);
+  timer = setTimeout(removeSink, focusSinkMaxLifetimeMs);
+  document.body.appendChild(sink);
+  sink.focus({
     preventScroll: true,
   });
 }
-function blurCanvasActiveElement(input?: Dynamic): Dynamic {
-  let activeElement: Dynamic = (document as Dynamic).activeElement;
+
+/** 让当前活动元素失焦；includeIframe 为假时保留 iframe 的焦点。 */
+export function blurCanvasActiveElement(includeIframe?: boolean): void {
+  const activeElement = document.activeElement;
   activeElement instanceof HTMLElement &&
-    activeElement !== (document as Dynamic).body &&
-    (input || activeElement.tagName !== "IFRAME") &&
+    activeElement !== document.body &&
+    (includeIframe || activeElement.tagName !== "IFRAME") &&
     activeElement.blur();
-}
-export {
-  blurCanvasActiveElement,
-  CanvasFocusDelayMs,
-  CanvasFocusDelayMs_2,
-  focusCanvasDocument,
-  temporaryFocusSink,
-};
-export function installCanvasFocus(): () => void {
-  return () => {
-    CanvasFocusDelayMs = 100;
-    CanvasFocusDelayMs_2 = 1e3;
-  };
 }

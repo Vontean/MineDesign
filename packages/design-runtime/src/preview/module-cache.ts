@@ -1,103 +1,124 @@
-/** Restored application module; prepare first, initialize in original order. */
-import {
-  type Dynamic,
-} from "../runtime-types";
+/** 预览用的模块 Blob 与对象 URL 缓存：同一份文件内容只生成一次 Blob / URL。 */
 import { supportsBlobScripts } from "./runtime-loading";
 
-var PreviewModuleCacheResolvedValue: Dynamic;
-var PreviewModuleCacheDelayMs: Dynamic;
-var PreviewModuleCacheFilePattern: Dynamic;
-var PreviewModuleCacheCache: Dynamic;
-var PreviewModuleCacheLengthValue: Dynamic;
-var PreviewModuleCacheResolvedValue_2: Dynamic;
-var PreviewModuleCacheResolvedValue_3: Dynamic;
-var PreviewModuleCacheCache_2: Dynamic;
-var PreviewModuleCacheLengthValue_2: Dynamic;
-function revokeRuntimeModuleUrl(input?: Dynamic): Dynamic {
-  let url: Dynamic = input.url;
-  url !== undefined &&
-    setTimeout(
-      (): Dynamic => URL.revokeObjectURL(url),
-      PreviewModuleCacheDelayMs,
-    );
+/** 项目文件表：路径 → 文本内容。 */
+export type ModuleSources = Record<string, string>;
+
+interface ModuleCacheEntry {
+  text: string;
+  blob: Blob;
+  /** 脚本模块的对象 URL，第一次需要时才生成。 */
+  url?: string;
 }
-function populateRuntimeModuleCache(input?: Dynamic): Dynamic {
-  for (let [value, value2] of Object.entries(input) as Dynamic) {
-    let entry: Dynamic = PreviewModuleCacheCache.get(value);
-    (entry === undefined || entry.text !== value2) &&
+
+/** 模块缓存最多保留的字符数；超过后淘汰不在当前文件表里的旧条目。 */
+const moduleCacheLimitChars = 96 * 1024 * 1024;
+/** 条目被替换后，旧对象 URL 延迟多久再释放（预览可能还在使用）。 */
+const objectUrlRevokeDelayMs = 6e4;
+/** 脚本模块的文件键，第 1 组是路径。 */
+const moduleFilePattern = /^file:(.*\.m?js)$/i;
+/** 链接脚本缓存最多保留的字符数。 */
+const linkedScriptLimitChars = 32 * 1024 * 1024;
+/** 短于这个长度的文件直接内联，不生成链接脚本。 */
+const linkedScriptMinChars = 4 * 1024;
+
+/** 模块缓存，按最近使用排序（最旧的在前）。 */
+const moduleCache = new Map<string, ModuleCacheEntry>();
+let moduleCacheChars = 0;
+/** 链接脚本缓存：路径 + 内容 → 对象 URL，按最近使用排序。 */
+const linkedScriptCache = new Map<string, string>();
+let linkedScriptChars = 0;
+
+/** 延迟释放条目的对象 URL。 */
+export function revokeRuntimeModuleUrl(entry: { url?: string }): void {
+  const url = entry.url;
+  url !== undefined &&
+    setTimeout((): void => URL.revokeObjectURL(url), objectUrlRevokeDelayMs);
+}
+
+/** 把文件表同步进缓存：内容变化的重新生成 Blob，超出预算时淘汰表外的旧条目。 */
+export function populateRuntimeModuleCache(sources: ModuleSources): void {
+  for (const [key, text] of Object.entries(sources)) {
+    let entry = moduleCache.get(key);
+    (entry === undefined || entry.text !== text) &&
       (entry !== undefined &&
-        ((PreviewModuleCacheLengthValue -= entry.text.length),
+        ((moduleCacheChars -= entry.text.length),
         revokeRuntimeModuleUrl(entry)),
       (entry = {
-        text: value2,
-        blob: new Blob([value2], {
-          type: PreviewModuleCacheFilePattern.test(value)
-            ? "text/javascript"
-            : "text/plain",
+        text,
+        blob: new Blob([text], {
+          type: moduleFilePattern.test(key) ? "text/javascript" : "text/plain",
         }),
       }),
-      (PreviewModuleCacheLengthValue += value2.length));
-    PreviewModuleCacheCache.delete(value);
-    PreviewModuleCacheCache.set(value, entry);
+      (moduleCacheChars += text.length));
+    moduleCache.delete(key);
+    moduleCache.set(key, entry);
   }
-  for (let [value, value2] of PreviewModuleCacheCache as Dynamic) {
-    if (PreviewModuleCacheLengthValue <= PreviewModuleCacheResolvedValue)
-      break;
-    value in input ||
-      (PreviewModuleCacheCache.delete(value),
-      (PreviewModuleCacheLengthValue -= value2.text.length));
+  for (const [key, entry] of moduleCache) {
+    if (moduleCacheChars <= moduleCacheLimitChars) break;
+    key in sources ||
+      (moduleCache.delete(key), (moduleCacheChars -= entry.text.length));
   }
 }
-function runtimeModuleBlobs(input?: Dynamic): Dynamic {
-  populateRuntimeModuleCache(input);
-  let state: Dynamic = {};
-  for (let value of Object.keys(input) as Dynamic)
-    state[value] = PreviewModuleCacheCache.get(value).blob;
-  return state;
+
+/** 文件表里每个文件的 Blob。 */
+export function runtimeModuleBlobs(sources: ModuleSources): Record<string, Blob> {
+  populateRuntimeModuleCache(sources);
+  const blobs: Record<string, Blob> = {};
+  for (const key of Object.keys(sources))
+    blobs[key] = moduleCache.get(key)!.blob;
+  return blobs;
 }
-function runtimeModuleUrls(
-  input?: Dynamic,
-  options: Dynamic = (0, supportsBlobScripts)(),
-): Dynamic {
-  let state: Dynamic = {};
-  if (!options) return state;
-  populateRuntimeModuleCache(input);
-  for (let value of Object.keys(input) as Dynamic) {
-    let value2: Dynamic = PreviewModuleCacheFilePattern.exec(value);
-    if (value2 === null) continue;
-    let entry: Dynamic = PreviewModuleCacheCache.get(value);
+
+/** 脚本模块（js / mjs）的对象 URL，以路径为键；浏览器不支持 Blob 脚本时为空对象。 */
+export function runtimeModuleUrls(
+  sources: ModuleSources,
+  blobScriptsSupported: boolean = supportsBlobScripts(),
+): Record<string, string> {
+  const urls: Record<string, string> = {};
+  if (!blobScriptsSupported) return urls;
+  populateRuntimeModuleCache(sources);
+  for (const key of Object.keys(sources)) {
+    const match = moduleFilePattern.exec(key);
+    if (match === null) continue;
+    const entry = moduleCache.get(key)!;
     entry.url ??= URL.createObjectURL(
       new Blob(
         [
           entry.blob,
           `
-//# sourceURL=/appifact/` + encodeURI(value2[1]),
+//# sourceURL=/appifact/` + encodeURI(match[1]),
         ],
         {
           type: "text/javascript",
         },
       ),
     );
-    state[value2[1]] = entry.url;
+    urls[match[1]] = entry.url;
   }
-  return state;
+  return urls;
 }
-function createLinkedFileScript(
-  input?: Dynamic,
-  items?: Dynamic,
-  context: Dynamic = (0, supportsBlobScripts)(),
-): Dynamic {
-  if (!context || items.length < PreviewModuleCacheResolvedValue_3) return;
-  let value: Dynamic = input + "\0" + items,
-    entry: Dynamic = PreviewModuleCacheCache_2.get(value);
-  entry === undefined
-    ? ((entry = URL.createObjectURL(
+
+/**
+ * 为较大的文件生成「写入 window.__dcFiles」的脚本 URL，
+ * 避免把大文本内联进 HTML；文件太小或不支持 Blob 脚本时返回 undefined。
+ */
+export function createLinkedFileScript(
+  path: string,
+  content: string,
+  blobScriptsSupported: boolean = supportsBlobScripts(),
+): string | undefined {
+  if (!blobScriptsSupported || content.length < linkedScriptMinChars) return;
+  const key = path + "\0" + content;
+  let url = linkedScriptCache.get(key);
+  url === undefined
+    ? ((url = URL.createObjectURL(
         new Blob(
           [
             "(window.__dcFiles=window.__dcFiles||{})[",
-            JSON.stringify(input),
+            JSON.stringify(path),
             "]=",
-            JSON.stringify(items),
+            JSON.stringify(content),
             ";",
           ],
           {
@@ -105,46 +126,13 @@ function createLinkedFileScript(
           },
         ),
       )),
-      (PreviewModuleCacheLengthValue_2 += value.length))
-    : PreviewModuleCacheCache_2.delete(value);
-  PreviewModuleCacheCache_2.set(value, entry);
-  for (let value2 of PreviewModuleCacheCache_2.keys() as Dynamic) {
-    if (
-      PreviewModuleCacheLengthValue_2 <= PreviewModuleCacheResolvedValue_2 ||
-      value2 === value
-    )
-      break;
-    PreviewModuleCacheCache_2.delete(value2);
-    PreviewModuleCacheLengthValue_2 -= value2.length;
+      (linkedScriptChars += key.length))
+    : linkedScriptCache.delete(key);
+  linkedScriptCache.set(key, url);
+  for (const oldestKey of linkedScriptCache.keys()) {
+    if (linkedScriptChars <= linkedScriptLimitChars || oldestKey === key) break;
+    linkedScriptCache.delete(oldestKey);
+    linkedScriptChars -= oldestKey.length;
   }
-  return entry;
-}
-export {
-  createLinkedFileScript,
-  populateRuntimeModuleCache,
-  PreviewModuleCacheCache,
-  PreviewModuleCacheCache_2,
-  PreviewModuleCacheDelayMs,
-  PreviewModuleCacheFilePattern,
-  PreviewModuleCacheLengthValue,
-  PreviewModuleCacheLengthValue_2,
-  PreviewModuleCacheResolvedValue,
-  PreviewModuleCacheResolvedValue_2,
-  PreviewModuleCacheResolvedValue_3,
-  revokeRuntimeModuleUrl,
-  runtimeModuleBlobs,
-  runtimeModuleUrls,
-};
-export function installPreviewModuleCache(): () => void {
-  return () => {
-    PreviewModuleCacheResolvedValue = 96 * 1024 * 1024;
-    PreviewModuleCacheDelayMs = 6e4;
-    PreviewModuleCacheFilePattern = /^file:(.*\.m?js)$/i;
-    PreviewModuleCacheCache = new Map();
-    PreviewModuleCacheLengthValue = 0;
-    PreviewModuleCacheResolvedValue_2 = 32 * 1024 * 1024;
-    PreviewModuleCacheResolvedValue_3 = 4 * 1024;
-    PreviewModuleCacheCache_2 = new Map();
-    PreviewModuleCacheLengthValue_2 = 0;
-  };
+  return url;
 }

@@ -2,9 +2,9 @@
 import {
   type Dynamic,
 } from "../runtime-types";
-import { PreviewAssetRewritingSlice, resolveProjectAssetPath, rewriteProjectAssets } from "./asset-rewriting";
-import { inlineStylesheetImports, leadingStylesheetAtRuleEnd, moveCssImportsFirst, PreviewCssRewritingReplace, PreviewCssRewritingTest, stripStylesheetComments } from "./css-rewriting";
-import { findHtmlTags, getHtmlAttribute, maskHtmlRawContent, parseHtmlAttributes, PreviewHtmlScannerImportPattern } from "./html-scanner";
+import { projectDirectoryOf, resolveProjectAssetPath, rewriteProjectAssets } from "./asset-rewriting";
+import { inlineStylesheetImports, leadingStylesheetAtRuleEnd, moveCssImportsFirst, escapeNoscriptInCss, hasRootRelativeCssReference, stripStylesheetComments } from "./css-rewriting";
+import { findHtmlTags, getHtmlAttribute, maskHtmlRawContent, parseHtmlAttributes, cssImportPattern } from "./html-scanner";
 
 var linkedStylesheetHydrationScript: Dynamic;
 var DcAddressRefusedValue: Dynamic;
@@ -172,7 +172,7 @@ function rewriteHtmlDependencies(
           value9 &&
           [...values].every(
             (input2?: Dynamic): Dynamic =>
-              !(0, PreviewCssRewritingTest)(options[input2] ?? "") &&
+              !(0, hasRootRelativeCssReference)(options[input2] ?? "") &&
               value.installedUrlFor?.(input2, options[input2] ?? "") !==
                 undefined,
           )
@@ -210,7 +210,7 @@ function rewriteHtmlDependencies(
             options2,
           ];
         }
-        let value13: Dynamic = (0, PreviewCssRewritingReplace)(
+        let value13: Dynamic = (0, escapeNoscriptInCss)(
           value11.replace(/<\/style/gi, "<\\/style"),
         );
         return [value8 + value13 + "</style>", options2];
@@ -236,7 +236,7 @@ function rewriteHtmlDependencies(
         value6: Dynamic = (0, stripStylesheetComments)(value5),
         value7: Dynamic = (0, leadingStylesheetAtRuleEnd)(value6),
         value8: Dynamic = value6.replace(
-          PreviewHtmlScannerImportPattern,
+          cssImportPattern,
           (input3?: Dynamic, ...options3: Dynamic[]): Dynamic => {
             if (options3[6] >= value7) {
               flag = true;
@@ -272,7 +272,7 @@ function rewriteHtmlDependencies(
         for (let value9 of values as Dynamic) value.inlined?.add(value9);
         return [
           input2 +
-            (0, PreviewCssRewritingReplace)(
+            (0, escapeNoscriptInCss)(
               (0, moveCssImportsFirst)(value8).replace(
                 /<\/style/gi,
                 "<\\/style",
@@ -389,7 +389,7 @@ function rewritePreviewAssets(
   context?: Dynamic,
   value?: Dynamic,
 ): Dynamic {
-  let value2: Dynamic = (0, PreviewAssetRewritingSlice)(context);
+  let value2: Dynamic = (0, projectDirectoryOf)(context);
   return rewriteHtmlDependencies(
     (0, rewriteProjectAssets)(input, options, value2),
     options,

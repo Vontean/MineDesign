@@ -1,46 +1,39 @@
-/** Restored application module; prepare first, initialize in original order. */
-import {
-  type Dynamic,
-} from "../runtime-types";
+/** 项目文件里的素材引用：把 `_blob/<32 位十六进制>` 路径统一成 `<前缀>/_blob/<id>`。 */
 import { isProjectSourcePath } from "./component-imports";
 
-var PreviewBlobPathsResolvedValue: Dynamic;
-var PreviewBlobPathsBlobPattern: Dynamic;
-function normalizeBlobAssetPaths(input?: Dynamic): Dynamic {
-  return input.includes("_blob/")
-    ? input.replace(
-        PreviewBlobPathsBlobPattern,
-        (input2?: Dynamic, options?: Dynamic, context?: Dynamic): Dynamic =>
-          options + "/_blob/" + context,
+/** 找不到素材时显示的占位图（SVG data URI）。 */
+export const blobPlaceholderImage =
+  "data:image/svg+xml," +
+  encodeURIComponent(
+    '<svg xmlns="http://www.w3.org/2000/svg" width="160" height="120" viewBox="0 0 160 120"><rect width="160" height="120" fill="#e8e6e1"/><path d="M56 78l16-20 12 14 8-9 12 15H56z" fill="#c9c6bf"/><circle cx="98" cy="48" r="6" fill="#c9c6bf"/></svg>',
+  );
+
+/** 第 1 组是 `_blob` 前面的一个分隔字符（或行首），第 2 组是素材 id。 */
+const blobPathPattern = /(^|[^\w/.:-])(?:\.?\/)?_blob\/([0-9a-f]{32})(?![0-9a-f])/g;
+
+/** 文件文本里的 `_blob/<id>` 引用，统一写成 `<前缀>/_blob/<id>`。 */
+export function normalizeBlobAssetPaths(source: string): string {
+  return source.includes("_blob/")
+    ? source.replace(
+        blobPathPattern,
+        (_match: string, prefix: string, blobId: string): string =>
+          prefix + "/_blob/" + blobId,
       )
-    : input;
+    : source;
 }
-function normalizeProjectBlobPaths(input?: Dynamic): Dynamic {
-  let value: Dynamic = null;
-  for (let [value2, value3] of Object.entries(input) as Dynamic) {
-    if (!(0, isProjectSourcePath)(value2)) continue;
-    let value4: Dynamic = normalizeBlobAssetPaths(value3);
-    value4 !== value3 &&
-      ((value ??= {
-        ...input,
-      })[value2] = value4);
+
+/** 只处理项目源文件；没有任何改动时返回原对象，有改动时返回浅拷贝。 */
+export function normalizeProjectBlobPaths(
+  files: Record<string, string>,
+): Record<string, string> {
+  let normalized: Record<string, string> | null = null;
+  for (const [path, content] of Object.entries(files)) {
+    if (!isProjectSourcePath(path)) continue;
+    const next = normalizeBlobAssetPaths(content);
+    next !== content &&
+      ((normalized ??= {
+        ...files,
+      })[path] = next);
   }
-  return value ?? input;
-}
-export {
-  normalizeBlobAssetPaths,
-  normalizeProjectBlobPaths,
-  PreviewBlobPathsBlobPattern,
-  PreviewBlobPathsResolvedValue,
-};
-export function installPreviewBlobPaths(): () => void {
-  return () => {
-    PreviewBlobPathsResolvedValue =
-      "data:image/svg+xml," +
-      encodeURIComponent(
-        '<svg xmlns="http://www.w3.org/2000/svg" width="160" height="120" viewBox="0 0 160 120"><rect width="160" height="120" fill="#e8e6e1"/><path d="M56 78l16-20 12 14 8-9 12 15H56z" fill="#c9c6bf"/><circle cx="98" cy="48" r="6" fill="#c9c6bf"/></svg>',
-      );
-    PreviewBlobPathsBlobPattern =
-      /(^|[^\w/.:-])(?:\.?\/)?_blob\/([0-9a-f]{32})(?![0-9a-f])/g;
-  };
+  return normalized ?? files;
 }

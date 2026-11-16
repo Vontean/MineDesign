@@ -1,32 +1,26 @@
-/** Restored application module; prepare first, initialize in original order. */
-import {
-  type Dynamic,
-} from "../runtime-types";
+/** 预览 iframe 记录自己所在的项目根路径，用来把绝对路径还原成项目内的相对路径。 */
 
-var PreviewProjectRootElementCache: Dynamic;
-function setPreviewProjectRoot(input?: Dynamic, options?: Dynamic): Dynamic {
-  input != null &&
-    (options === undefined
-      ? PreviewProjectRootElementCache.delete(input)
-      : PreviewProjectRootElementCache.set(input, options));
+/** 预览元素 → 项目根路径（可带前导斜杠）。 */
+const projectRootByPreview = new WeakMap<object, string>();
+
+/** 记录预览元素的项目根；root 为 undefined 时清除记录。 */
+export function setPreviewProjectRoot(
+  preview: object | null | undefined,
+  root: string | undefined,
+): void {
+  preview != null &&
+    (root === undefined
+      ? projectRootByPreview.delete(preview)
+      : projectRootByPreview.set(preview, root));
 }
-function stripPreviewProjectRoot(
-  input?: Dynamic,
-  options?: Dynamic,
-): Dynamic {
-  let value: Dynamic =
-    options == null ? undefined : PreviewProjectRootElementCache.get(options);
-  if (value === undefined) return input;
-  let value2: Dynamic = value.replace(/^\//, "");
-  return input.startsWith(value2) ? input.slice(value2.length) : input;
-}
-export {
-  PreviewProjectRootElementCache,
-  setPreviewProjectRoot,
-  stripPreviewProjectRoot,
-};
-export function installPreviewProjectRoot(): () => void {
-  return () => {
-    PreviewProjectRootElementCache = new WeakMap();
-  };
+
+/** 路径以预览的项目根开头时去掉这一段；没有记录时原样返回。 */
+export function stripPreviewProjectRoot(
+  path: string,
+  preview: object | null | undefined,
+): string {
+  const root = preview == null ? undefined : projectRootByPreview.get(preview);
+  if (root === undefined) return path;
+  const rootWithoutSlash = root.replace(/^\//, "");
+  return path.startsWith(rootWithoutSlash) ? path.slice(rootWithoutSlash.length) : path;
 }

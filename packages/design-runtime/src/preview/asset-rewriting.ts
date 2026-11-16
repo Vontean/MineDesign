@@ -1,204 +1,189 @@
-/** Restored application module; prepare first, initialize in original order. */
-import {
-  type Dynamic,
-} from "../runtime-types";
+/** 项目文件里的相对路径：解析成项目内路径，并把图片引用内联成 data URI。 */
 
-var PreviewAssetRewritingWebpAvifPattern: Dynamic;
-var PreviewAssetRewritingPattern: Dynamic;
-var PreviewAssetRewritingPngJpgJpegConfig: Dynamic;
-var PreviewAssetRewritingSlice: Dynamic;
-var PreviewAssetRewritingSourceFilesFromDirConfig: Dynamic;
-function resolveProjectAssetPath(
-  input?: Dynamic,
-  options?: Dynamic,
-): Dynamic {
-  let value: Dynamic = options.split("#")[0].split("?")[0].trim();
+/** 项目文件表：路径 → 文本内容；图片素材的内容是 base64。 */
+export type ProjectFiles = Record<string, string>;
+
+/** 图片素材的路径（含 svg）。 */
+export const imagePathPattern = /\.(png|jpe?g|gif|webp|avif|bmp|svg)$/i;
+/** 脚本源文件的路径。 */
+export const scriptPathPattern = /\.(m?js|jsx|tsx)$/i;
+
+const imageMimeTypes: Record<string, string> = {
+  png: "image/png",
+  jpg: "image/jpeg",
+  jpeg: "image/jpeg",
+  gif: "image/gif",
+  webp: "image/webp",
+  avif: "image/avif",
+  bmp: "image/bmp",
+  svg: "image/svg+xml",
+};
+
+/** 最近一次改写的输入与结果；输入的三项都与上次是同一个值时直接复用。 */
+let lastRewrite: {
+  source: string;
+  files: ProjectFiles;
+  fromDir: string;
+  out: string;
+} | null = null;
+
+/** 文件所在目录，保留末尾的斜杠；根目录下的文件为空串。 */
+export function projectDirectoryOf(path: string): string {
+  return path.slice(0, path.lastIndexOf("/") + 1);
+}
+
+/**
+ * 把 reference 按 baseDir 解析成项目内的文件路径。
+ * 外部地址、空路径和以 `.`、`..` 结尾的路径返回 null。
+ */
+export function resolveProjectAssetPath(
+  baseDir: string,
+  reference: string,
+): string | null {
+  let path = reference.split("#")[0].split("?")[0].trim();
   if (
-    /(^|\/)\.{0,2}$/.test(value) ||
-    /^[a-z][a-z0-9+.-]*:/i.test(value) ||
-    value.startsWith("//")
+    /(^|\/)\.{0,2}$/.test(path) ||
+    /^[a-z][a-z0-9+.-]*:/i.test(path) ||
+    path.startsWith("//")
   )
     return null;
-  value.startsWith("/appifact/")
-    ? ((value = value.slice(10)), (input = ""))
-    : value.startsWith("/") && (input = "");
+  path.startsWith("/appifact/")
+    ? ((path = path.slice(10)), (baseDir = ""))
+    : path.startsWith("/") && (baseDir = "");
   try {
-    value = decodeURIComponent(value);
+    path = decodeURIComponent(path);
   } catch {}
-  let items: Dynamic = [];
-  for (let value2 of (input + value).split("/") as Dynamic)
-    value2 === "" ||
-      value2 === "." ||
-      (value2 === ".." ? items.pop() : items.push(value2));
-  return items.length > 0 ? items.join("/") : null;
+  const segments: string[] = [];
+  for (const segment of (baseDir + path).split("/"))
+    segment === "" ||
+      segment === "." ||
+      (segment === ".." ? segments.pop() : segments.push(segment));
+  return segments.length > 0 ? segments.join("/") : null;
 }
-function relativeProjectPath(input?: Dynamic, options?: Dynamic): Dynamic {
-  let value: Dynamic = input.split("/").filter(Boolean),
-    value2: Dynamic = options.split("/"),
-    index: Dynamic = 0;
-  for (
-    ;
-    index < value.length &&
-    index < value2.length - 1 &&
-    value[index] === value2[index];
 
+/** 从 fromDir 指向 target 的相对路径（fromDir 是目录路径）。 */
+export function relativeProjectPath(fromDir: string, target: string): string {
+  const fromSegments = fromDir.split("/").filter(Boolean);
+  const targetSegments = target.split("/");
+  let common = 0;
+  while (
+    common < fromSegments.length &&
+    common < targetSegments.length - 1 &&
+    fromSegments[common] === targetSegments[common]
   )
-    index++;
-  return "../".repeat(value.length - index) + value2.slice(index).join("/");
+    common++;
+  return (
+    "../".repeat(fromSegments.length - common) +
+    targetSegments.slice(common).join("/")
+  );
 }
-function rewriteProjectAssets(
-  input?: Dynamic,
-  options?: Dynamic,
-  context: Dynamic = "",
-): Dynamic {
+
+/**
+ * 把 source 里引用到的图片素材换成 data URI（src、poster、href、url() 与 srcset）。
+ * fromDir 是 source 所在目录，用来识别相对写法。
+ */
+export function rewriteProjectAssets(
+  source: string,
+  files: ProjectFiles,
+  fromDir: string = "",
+): string {
   if (
-    PreviewAssetRewritingSourceFilesFromDirConfig?.files === options &&
-    PreviewAssetRewritingSourceFilesFromDirConfig.source === input &&
-    PreviewAssetRewritingSourceFilesFromDirConfig.fromDir === context
+    lastRewrite?.files === files &&
+    lastRewrite.source === source &&
+    lastRewrite.fromDir === fromDir
   )
-    return PreviewAssetRewritingSourceFilesFromDirConfig.out;
-  let value: Dynamic = input,
-    value2: Dynamic = Object.entries(options);
-  context !== "" &&
-    value2.sort(
-      ([input2]: Dynamic, [options2]: Dynamic): Dynamic =>
-        Number(options2.startsWith(context)) -
-        Number(input2.startsWith(context)),
+    return lastRewrite.out;
+  let out = source;
+  const entries = Object.entries(files);
+  // 与 source 同目录的文件优先
+  fromDir !== "" &&
+    entries.sort(
+      ([pathA], [pathB]): number =>
+        Number(pathB.startsWith(fromDir)) - Number(pathA.startsWith(fromDir)),
     );
-  for (let [value3, value4] of value2 as Dynamic) {
-    if (!PreviewAssetRewritingWebpAvifPattern.test(value3)) continue;
-    let value5: Dynamic =
-        context === "" ? value3 : relativeProjectPath(context, value3),
-      value6: Dynamic = encodeURI(value3);
+  for (const [path, base64] of entries) {
+    if (!imagePathPattern.test(path)) continue;
+    const relativePath =
+      fromDir === "" ? path : relativeProjectPath(fromDir, path);
+    const encodedPath = encodeURI(path);
     if (
-      !value.includes(value3) &&
-      !value.includes(value5) &&
-      (value6 === value3 ||
-        (!value.includes(value6) && !value.includes(encodeURI(value5))))
+      !out.includes(path) &&
+      !out.includes(relativePath) &&
+      (encodedPath === path ||
+        (!out.includes(encodedPath) && !out.includes(encodeURI(relativePath))))
     )
       continue;
-    let value7: Dynamic = value3
-        .slice(value3.lastIndexOf(".") + 1)
-        .toLowerCase(),
-      value8: Dynamic =
-        "data:" +
-        (PreviewAssetRewritingPngJpgJpegConfig[value7] ??
-          "application/octet-stream") +
-        ";base64," +
-        value4,
-      values: Dynamic = new Set([
-        value3,
-        "./" + value3,
-        "/" + value3,
-        value5,
-      ]);
-    value5.startsWith("../") || values.add("./" + value5);
-    if (value6 !== value3)
-      for (let value9 of [...values] as Dynamic)
-        values.add(encodeURI(value9));
-    for (let value9 of values as Dynamic) {
-      for (let value10 of ["src=", "poster=", "href="] as Dynamic) {
-        for (let value11 of ['"', "'"] as Dynamic)
-          value = value
-            .split(value10 + value11 + value9 + value11)
-            .join(value10 + value11 + value8 + value11);
-        for (let value11 of [
-          " ",
-          ">",
-          `
-`,
-          "	",
-          "\r",
-          "\f",
-        ] as Dynamic)
-          value = value
-            .split(value10 + value9 + value11)
-            .join(value10 + value8 + value11);
+    const extension = path.slice(path.lastIndexOf(".") + 1).toLowerCase();
+    const dataUri =
+      "data:" +
+      (imageMimeTypes[extension] ?? "application/octet-stream") +
+      ";base64," +
+      base64;
+    const spellings = new Set([path, "./" + path, "/" + path, relativePath]);
+    relativePath.startsWith("../") || spellings.add("./" + relativePath);
+    if (encodedPath !== path)
+      for (const spelling of [...spellings]) spellings.add(encodeURI(spelling));
+    for (const spelling of spellings) {
+      for (const attribute of ["src=", "poster=", "href="]) {
+        for (const quote of ['"', "'"])
+          out = out
+            .split(attribute + quote + spelling + quote)
+            .join(attribute + quote + dataUri + quote);
+        for (const terminator of [" ", ">", "\n", "\t", "\r", "\f"])
+          out = out
+            .split(attribute + spelling + terminator)
+            .join(attribute + dataUri + terminator);
       }
-      for (let value10 of ['"', "'", ""] as Dynamic)
-        value = value
-          .split("url(" + value10 + value9 + value10 + ")")
-          .join("url(" + value10 + value8 + value10 + ")");
+      for (const quote of ['"', "'", ""])
+        out = out
+          .split("url(" + quote + spelling + quote + ")")
+          .join("url(" + quote + dataUri + quote + ")");
     }
   }
-  /srcset\s*=/i.test(value) &&
-    (value = value.replace(
+  /srcset\s*=/i.test(out) &&
+    (out = out.replace(
       /(\b(?:data-)?srcset\s*=\s*)("([^"]*)"|'([^']*)')/gi,
       (
-        input2?: Dynamic,
-        options2?: Dynamic,
-        context2?: Dynamic,
-        value3?: Dynamic,
-        extra?: Dynamic,
-      ): Dynamic => {
-        let value4: Dynamic = value3 ?? extra ?? "",
-          value5: Dynamic = context2[0],
-          value6: Dynamic = value4
-            .split(",")
-            .map((input3?: Dynamic): Dynamic => {
-              let value7: Dynamic = input3.trim();
-              if (value7 === "") return input3;
-              let value8: Dynamic = value7.search(/\s/),
-                value9: Dynamic =
-                  value8 < 0 ? value7 : value7.slice(0, value8),
-                value10: Dynamic = value8 < 0 ? "" : value7.slice(value8),
-                value11: Dynamic = resolveProjectAssetPath(context, value9);
-              if (
-                value11 === null ||
-                options[value11] == null ||
-                !PreviewAssetRewritingWebpAvifPattern.test(value11)
-              )
-                return input3;
-              let value12: Dynamic = value11
-                .slice(value11.lastIndexOf(".") + 1)
-                .toLowerCase();
-              return (
-                " data:" +
-                (PreviewAssetRewritingPngJpgJpegConfig[value12] ??
-                  "application/octet-stream") +
-                ";base64," +
-                options[value11] +
-                value10
-              );
-            });
-        return options2 + value5 + value6.join(",").trim() + value5;
+        _match: string,
+        prefix: string,
+        quoted: string,
+        doubleQuoted?: string,
+        singleQuoted?: string,
+      ): string => {
+        const list = doubleQuoted ?? singleQuoted ?? "";
+        const quote = quoted[0];
+        const candidates = list.split(",").map((candidate): string => {
+          const trimmed = candidate.trim();
+          if (trimmed === "") return candidate;
+          const urlEnd = trimmed.search(/\s/);
+          const url = urlEnd < 0 ? trimmed : trimmed.slice(0, urlEnd);
+          const descriptor = urlEnd < 0 ? "" : trimmed.slice(urlEnd);
+          const resolved = resolveProjectAssetPath(fromDir, url);
+          if (
+            resolved === null ||
+            files[resolved] == null ||
+            !imagePathPattern.test(resolved)
+          )
+            return candidate;
+          const extension = resolved
+            .slice(resolved.lastIndexOf(".") + 1)
+            .toLowerCase();
+          return (
+            " data:" +
+            (imageMimeTypes[extension] ?? "application/octet-stream") +
+            ";base64," +
+            files[resolved] +
+            descriptor
+          );
+        });
+        return prefix + quote + candidates.join(",").trim() + quote;
       },
     ));
-  PreviewAssetRewritingSourceFilesFromDirConfig = {
-    source: input,
-    files: options,
-    fromDir: context,
-    out: value,
+  lastRewrite = {
+    source,
+    files,
+    fromDir,
+    out,
   };
-  return value;
-}
-export {
-  PreviewAssetRewritingPattern,
-  PreviewAssetRewritingPngJpgJpegConfig,
-  PreviewAssetRewritingSlice,
-  PreviewAssetRewritingSourceFilesFromDirConfig,
-  PreviewAssetRewritingWebpAvifPattern,
-  relativeProjectPath,
-  resolveProjectAssetPath,
-  rewriteProjectAssets,
-};
-export function installPreviewAssetRewriting(): () => void {
-  return () => {
-    PreviewAssetRewritingWebpAvifPattern =
-      /\.(png|jpe?g|gif|webp|avif|bmp|svg)$/i;
-    PreviewAssetRewritingPattern = /\.(m?js|jsx|tsx)$/i;
-    PreviewAssetRewritingPngJpgJpegConfig = {
-      png: "image/png",
-      jpg: "image/jpeg",
-      jpeg: "image/jpeg",
-      gif: "image/gif",
-      webp: "image/webp",
-      avif: "image/avif",
-      bmp: "image/bmp",
-      svg: "image/svg+xml",
-    };
-    PreviewAssetRewritingSlice = (input?: Dynamic): Dynamic =>
-      input.slice(0, input.lastIndexOf("/") + 1);
-    PreviewAssetRewritingSourceFilesFromDirConfig = null;
-  };
+  return out;
 }

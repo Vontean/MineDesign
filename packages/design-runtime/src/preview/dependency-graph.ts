@@ -1,184 +1,179 @@
-/** Restored application module; prepare first, initialize in original order. */
+/** 项目文件之间的依赖：设计稿互相导入、样式与素材引用，以及画板的运行时更新脚本。 */
 import {
-  type Dynamic,
-} from "../runtime-types";
-import { PreviewAssetRewritingSlice, PreviewAssetRewritingWebpAvifPattern, relativeProjectPath } from "./asset-rewriting";
+  imagePathPattern,
+  projectDirectoryOf,
+  relativeProjectPath,
+  type ProjectFiles,
+} from "./asset-rewriting";
 import { PreviewBuildDocumentResolvedValue } from "./build-document";
-import { getProjectFileDependencies, PreviewComponentImportsReplace } from "./component-imports";
-import { scanHtmlTags } from "./html-scanner";
+import {
+  getProjectFileDependencies,
+  PreviewComponentImportsReplace,
+} from "./component-imports";
+import { scanHtmlTags, type TextRange } from "./html-scanner";
 
-var PreviewDependencyGraphShrefPattern: Dynamic;
-var PreviewDependencyGraphResolvedValue: Dynamic;
-var PreviewDependencyGraphCache: Dynamic;
-var PreviewDependencyGraphResolvedValue_2: Dynamic;
-var PreviewDependencyGraphCache_2: Dynamic;
-var PreviewDependencyGraphLimit: Dynamic;
-function maskNavigationLinks(items?: Dynamic): Dynamic {
-  let entry: Dynamic = PreviewDependencyGraphCache.get(items);
-  if (entry !== undefined) {
-    PreviewDependencyGraphCache.delete(items);
-    PreviewDependencyGraphCache.set(items, entry);
-    return entry;
+/** 画板运行时要更新的组件来源。 */
+export interface ComponentSource {
+  kind: string;
+  /** 项目内的文件路径；没有时按 name 找。 */
+  path?: string;
+  name?: string;
+  streaming?: boolean;
+  viewportKey?: string;
+}
+
+/** `<a>` / `<area>` 的 href 属性（连同前面的空白）。 */
+const hrefAttributePattern = /(\shref\s*=\s*)(?:"[^"]*"|'[^']*'|[^\s>]+)/i;
+
+/** 遮罩结果缓存的字符预算（每个字符按 2 字节算）。 */
+const maskCacheLimitBytes = 8 * 1024 * 1024;
+/** 依赖结果缓存最多保留的文本数。 */
+const dependencyCacheLimit = 32;
+/** 每段文本最多保留的不同文件清单数。 */
+const dependencyCacheEntriesPerText = 8;
+
+/** 导航链接遮罩的 LRU 缓存：html 文本 → 遮罩后的文本。 */
+const maskCache = new Map<string, string>();
+let maskCacheBytes = 0;
+/** 依赖结果缓存：文本 → （文件清单 → 依赖）。只缓存长文本。 */
+const dependencyCache = new Map<string, Map<string, string[]>>();
+
+/**
+ * 把 `<a>`、`<area>` 的 href 清空，并把注释换成空格，
+ * 这样导航链接不会被当成对其他设计稿的依赖。结果会缓存。
+ */
+export function maskNavigationLinks(html: string): string {
+  let masked = maskCache.get(html);
+  if (masked !== undefined) {
+    maskCache.delete(html);
+    maskCache.set(html, masked);
+    return masked;
   }
-  let items2: Dynamic = [];
-  for (let value of (0, scanHtmlTags)(
-    items,
-    undefined,
-    items2,
-  ) as Dynamic)
-    (value.name === "a" || value.name === "area") &&
-      items2.push([
-        value.start,
-        value.end,
-        items
-          .slice(value.start, value.end)
-          .replace(PreviewDependencyGraphShrefPattern, '$1""'),
+  // 注释的区间没有替换文本，会被换成空格；链接标签的区间带有替换文本
+  const ranges: [number, number, string?][] = [];
+  for (const tag of scanHtmlTags(html, undefined, ranges as TextRange[]))
+    (tag.name === "a" || tag.name === "area") &&
+      ranges.push([
+        tag.start,
+        tag.end,
+        html.slice(tag.start, tag.end).replace(hrefAttributePattern, '$1""'),
       ]);
-  items2.sort(
-    (input?: Dynamic, options?: Dynamic): Dynamic => input[0] - options[0],
-  );
-  entry = "";
-  let index: Dynamic = 0;
-  for (let [value, value2, value3] of items2 as Dynamic)
-    value < index ||
-      ((entry +=
-        items.slice(index, value) + (value3 ?? " ".repeat(value2 - value))),
-      (index = value2));
-  entry += items.slice(index);
-  if (2 * items.length > PreviewDependencyGraphResolvedValue) return entry;
-  for (let [value] of PreviewDependencyGraphCache as Dynamic) {
-    if (
-      PreviewDependencyGraphResolvedValue_2 + 2 * items.length <=
-      PreviewDependencyGraphResolvedValue
-    )
-      break;
-    PreviewDependencyGraphCache.delete(value);
-    PreviewDependencyGraphResolvedValue_2 -= 2 * value.length;
+  ranges.sort((a, b) => a[0] - b[0]);
+  masked = "";
+  let pos = 0;
+  for (const [start, end, replacement] of ranges)
+    start < pos ||
+      ((masked +=
+        html.slice(pos, start) + (replacement ?? " ".repeat(end - start))),
+      (pos = end));
+  masked += html.slice(pos);
+  if (2 * html.length > maskCacheLimitBytes) return masked;
+  for (const [cachedHtml] of maskCache) {
+    if (maskCacheBytes + 2 * html.length <= maskCacheLimitBytes) break;
+    maskCache.delete(cachedHtml);
+    maskCacheBytes -= 2 * cachedHtml.length;
   }
-  PreviewDependencyGraphCache.set(items, entry);
-  PreviewDependencyGraphResolvedValue_2 += 2 * items.length;
-  return entry;
+  maskCache.set(html, masked);
+  maskCacheBytes += 2 * html.length;
+  return masked;
 }
-function getLinkedArtboards(input?: Dynamic): Dynamic {
-  let value: Dynamic = Object.keys(input).filter(
-      (input2?: Dynamic): Dynamic => input2.endsWith(".dc.html"),
-    ),
-    values: Dynamic = new Set();
-  for (let value2 of value as Dynamic) {
-    let value3: Dynamic = maskNavigationLinks(input[value2]);
-    for (let value4 of (0, getProjectFileDependencies)(
-      value3,
-      value,
+
+/** 被其他设计稿导入的设计稿（不含自己导入自己）。 */
+export function getLinkedArtboards(files: ProjectFiles): Set<string> {
+  const artboards = Object.keys(files).filter((path) => path.endsWith(".dc.html"));
+  const linked = new Set<string>();
+  for (const artboard of artboards) {
+    const html = maskNavigationLinks(files[artboard]);
+    for (const dependency of getProjectFileDependencies(
+      html,
+      artboards,
       true,
-      (0, PreviewAssetRewritingSlice)(value2),
-    ) as Dynamic)
-      value4 !== value2 && values.add(value4);
+      projectDirectoryOf(artboard),
+    ) as string[])
+      dependency !== artboard && linked.add(dependency);
   }
-  return values;
+  return linked;
 }
-function cachedProjectDependencies(
-  items?: Dynamic,
-  options?: Dynamic,
-): Dynamic {
-  if (items.length < PreviewBuildDocumentResolvedValue)
-    return (0, getProjectFileDependencies)(items, options);
-  let value: Dynamic = options.join(`
-`),
-    entry: Dynamic = PreviewDependencyGraphCache_2.get(items);
-  entry === undefined
-    ? ((entry = new Map()),
-      PreviewDependencyGraphCache_2.set(items, entry),
-      PreviewDependencyGraphCache_2.size > PreviewDependencyGraphLimit &&
-        PreviewDependencyGraphCache_2.delete(
-          PreviewDependencyGraphCache_2.keys().next().value,
-        ))
-    : (PreviewDependencyGraphCache_2.delete(items),
-      PreviewDependencyGraphCache_2.set(items, entry));
-  let entry2: Dynamic = entry.get(value);
-  entry2 === undefined &&
-    ((entry2 = (0, getProjectFileDependencies)(items, options)),
-    entry.size >= 8 && entry.delete(entry.keys().next().value),
-    entry.set(value, entry2));
-  return entry2;
+
+/** 在 getProjectFileDependencies 外加缓存；短文本直接计算。 */
+export function cachedProjectDependencies(
+  text: string,
+  paths: string[],
+): string[] {
+  if (text.length < PreviewBuildDocumentResolvedValue)
+    return getProjectFileDependencies(text, paths) as string[];
+  const pathsKey = paths.join("\n");
+  let perText = dependencyCache.get(text);
+  perText === undefined
+    ? ((perText = new Map()),
+      dependencyCache.set(text, perText),
+      dependencyCache.size > dependencyCacheLimit &&
+        dependencyCache.delete(dependencyCache.keys().next().value!))
+    : (dependencyCache.delete(text), dependencyCache.set(text, perText));
+  let dependencies = perText.get(pathsKey);
+  dependencies === undefined &&
+    ((dependencies = getProjectFileDependencies(text, paths) as string[]),
+    perText.size >= dependencyCacheEntriesPerText &&
+      perText.delete(perText.keys().next().value!),
+    perText.set(pathsKey, dependencies));
+  return dependencies;
 }
-function collectProjectDependencyFiles(
-  input?: Dynamic,
-  options?: Dynamic,
-): Dynamic {
-  let value: Dynamic = Object.keys(input),
-    values: Dynamic = new Set(),
-    state: Dynamic = {},
-    items: Dynamic = [options];
-  for (; items.length > 0; ) {
-    let value2: Dynamic = items.shift();
+
+/** 从入口文件出发，收集它依赖的全部项目文件（含入口，素材不再往下找）。 */
+export function collectProjectDependencyFiles(
+  files: ProjectFiles,
+  entry: string,
+): ProjectFiles {
+  const paths = Object.keys(files);
+  const seen = new Set<string>();
+  const collected: ProjectFiles = {};
+  const queue = [entry];
+  while (queue.length > 0) {
+    const path = queue.shift()!;
     if (
-      values.has(value2) ||
-      input[value2] == null ||
-      (values.add(value2),
-      (state[value2] = input[value2]),
-      PreviewAssetRewritingWebpAvifPattern.test(value2))
+      seen.has(path) ||
+      files[path] == null ||
+      (seen.add(path), (collected[path] = files[path]), imagePathPattern.test(path))
     )
       continue;
-    let value3: Dynamic = value2.endsWith(".html")
-      ? maskNavigationLinks(input[value2])
-      : input[value2];
-    for (let value4 of cachedProjectDependencies(value3, value) as Dynamic)
-      values.has(value4) || items.push(value4);
+    const text = path.endsWith(".html")
+      ? maskNavigationLinks(files[path])
+      : files[path];
+    for (const dependency of cachedProjectDependencies(text, paths))
+      seen.has(dependency) || queue.push(dependency);
   }
-  return state;
+  return collected;
 }
-function resolveComponentFile(input?: Dynamic, source?: Dynamic): Dynamic {
+
+/** 找到 source 对应的设计稿文件路径；找不到、或 source 不是 html 时为 undefined。 */
+export function resolveComponentFile(
+  files: ProjectFiles,
+  source: ComponentSource,
+): string | undefined {
   if (source.kind === "html")
     return source.path != null
-      ? input[source.path] != null
+      ? files[source.path] != null
         ? source.path
         : undefined
-      : Object.keys(input).find(
-          (input2?: Dynamic): Dynamic =>
-            input2.endsWith(".dc.html") &&
-            (0, PreviewComponentImportsReplace)(input2) ===
-              source.name,
+      : Object.keys(files).find(
+          (path) =>
+            path.endsWith(".dc.html") &&
+            PreviewComponentImportsReplace(path) === source.name,
         );
 }
-function updateComponentRuntimeScript(
-  input?: Dynamic,
-  source?: Dynamic,
-  context?: Dynamic,
-): Dynamic {
-  let path: Dynamic = source.path,
-    value: Dynamic =
-      path === undefined || !path.endsWith(".dc.html")
-        ? source.name
-        : path === input
-          ? (0, PreviewComponentImportsReplace)(input)
-          : (0, relativeProjectPath)(
-              (0, PreviewAssetRewritingSlice)(input),
-              path,
-            ).slice(0, -8);
-  return `window.__dcUpdate&&window.__dcUpdate(${JSON.stringify(value)},${JSON.stringify(source.kind)},${JSON.stringify(context)},${source.streaming ? "true" : "false"},${JSON.stringify(source.viewportKey ?? "")});`;
-}
-export {
-  cachedProjectDependencies,
-  collectProjectDependencyFiles,
-  getLinkedArtboards,
-  maskNavigationLinks,
-  PreviewDependencyGraphCache,
-  PreviewDependencyGraphCache_2,
-  PreviewDependencyGraphLimit,
-  PreviewDependencyGraphResolvedValue,
-  PreviewDependencyGraphResolvedValue_2,
-  PreviewDependencyGraphShrefPattern,
-  resolveComponentFile,
-  updateComponentRuntimeScript,
-};
-export function installPreviewDependencyGraph(): () => void {
-  return () => {
-    PreviewDependencyGraphShrefPattern =
-      /(\shref\s*=\s*)(?:"[^"]*"|'[^']*'|[^\s>]+)/i;
-    PreviewDependencyGraphResolvedValue = 8 * 1024 * 1024;
-    PreviewDependencyGraphCache = new Map();
-    PreviewDependencyGraphResolvedValue_2 = 0;
-    PreviewDependencyGraphCache_2 = new Map();
-    PreviewDependencyGraphLimit = 32;
-  };
+
+/** 生成通知画板运行时更新某个组件的脚本。currentFile 是当前画板的文件路径。 */
+export function updateComponentRuntimeScript(
+  currentFile: string,
+  source: ComponentSource,
+  context: unknown,
+): string {
+  const path = source.path;
+  const componentName =
+    path === undefined || !path.endsWith(".dc.html")
+      ? source.name
+      : path === currentFile
+        ? PreviewComponentImportsReplace(currentFile)
+        : relativeProjectPath(projectDirectoryOf(currentFile), path).slice(0, -8);
+  return `window.__dcUpdate&&window.__dcUpdate(${JSON.stringify(componentName)},${JSON.stringify(source.kind)},${JSON.stringify(context)},${source.streaming ? "true" : "false"},${JSON.stringify(source.viewportKey ?? "")});`;
 }

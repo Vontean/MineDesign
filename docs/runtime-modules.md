@@ -99,3 +99,4 @@
 | --- | --- | --- |
 | 画板选择框数据（`canvas/frame-payloads.ts`） | `SelectionChrome`、`ChromeRing`、`ChromeMeasure`、`ChromeGuide`、`ChromePen`、`parseSelectionChromePayload` | 画布扩展 seam。画板内的选择脚本计算元素位置，以画板像素坐标发给画布；选择框、测距、参考线、钢笔路径的叠层只依赖这些类型。新增叠层功能（例如评论卡片）沿用同一通道：选择脚本提供位置，叠层在画板坐标里渲染 |
 | 评论的几何与锚点（`comments/area-geometry.ts`、`object-geometry.ts`、`anchor-codec.tsx`、`labels.ts`） | `CommentRect`、`CommentArea`、`DesignCommentAnchor` 及各锚点类型、`CommentLabelAnchor` | 区域与对象的归一化坐标、锚点字符串的编码与解析、给人看的位置描述。评论的界面控制（`canvas-controller.tsx`）尚未改写，归入画布主函数收尾 |
+| 预览文档的构建材料（`preview/html-scanner.ts`、`css-rewriting.ts`、`asset-rewriting.ts`、`dependency-graph.ts`、`module-cache.ts`、`blob-paths.ts`、`project-root.ts`）与画板聚焦、预览导航（`canvas/focus.ts`、`canvas/preview-navigation.ts`） | 各文件导出的扫描结果、路径与依赖图类型 | HTML 标签扫描、CSS 与资源路径改写、组件依赖图、模块缓存。预览文档的组装与执行（`build-document.ts`、`evaluation.ts`、`dependency-injection.ts`、`runtime-loading.ts`）和画布导航（`canvas/navigation.ts`）尚未改写 |

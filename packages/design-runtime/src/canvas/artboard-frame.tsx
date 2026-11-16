@@ -78,7 +78,7 @@ import { artboardsAtAddressEnabled, subscribeArtboardsAtAddressFlag } from "../p
 import { currentHttpOrigin, fileCapFailureMessage, FileValue, getKvClient, isPreviewMessage, PreviewGenerationGate, probePreviewRuntime, registerImageFileUrls, setPreviewGenerationGate } from "../platform/file-content";
 import { openPreviewExternalLink } from "../platform/link-navigation";
 import { addressedArtboardCacheKey, addressedArtboardFailure, filterAddressedFiles, isRequiredProjectFile, resolveAddressedArtboard } from "../preview/addressed-artboards";
-import { PreviewAssetRewritingSlice, rewriteProjectAssets } from "../preview/asset-rewriting";
+import { projectDirectoryOf, rewriteProjectAssets } from "../preview/asset-rewriting";
 import { normalizeBlobAssetPaths, normalizeProjectBlobPaths } from "../preview/blob-paths";
 import { buildPreviewDocument, componentRuntimeDependencies, PreviewBuildDocumentResolvedValue_3, PreviewBuildDocumentStringify, TheArtboardRuntimeDidNotLoadMessage } from "../preview/build-document";
 import { collectProjectDependencyFiles, resolveComponentFile, updateComponentRuntimeScript } from "../preview/dependency-graph";
@@ -1513,7 +1513,7 @@ export function installCanvasArtboardFrame(): () => void {
                 : (0, rewriteProjectAssets)(
                     detail.content,
                     value290,
-                    (0, PreviewAssetRewritingSlice)(value288),
+                    (0, projectDirectoryOf)(value288),
                   );
           value291 && (value120.current = value291);
           let current: Dynamic = value115.current,
