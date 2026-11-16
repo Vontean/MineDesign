@@ -104,3 +104,23 @@
 | 撤销历史（`editor/undo/history.ts`、`editor/undo/elements.ts`、`canvas/manifest-history.ts`） | `UndoEntry`、`UndoHistoryState`、`CanvasManifest`、`CanvasHistoryStep`（25 种步骤） | 元素与属性编辑的撤销栈、画板与页面等清单级操作的撤销与重做。改写时用随机操作序列同时驱动新旧实现，逐步比较返回值与状态 |
 | 导出的纯计算（`export/paper-and-scale.ts`、`stored-zip.ts`、`warnings.ts`、`outcomes.ts`，`export/pdf/` 下的 `winansi.ts`、`text-encoding.ts`、`jpeg.ts`、`outline.ts`、`link-annotations.ts`、`figure-operators.ts`） | `PrintableArtboard`、`ExportReport`、`JpegInfo`、`PdfOutline`、`PdfLinkAnnotations` 等 | 纸张与缩放、zip 打包、导出结果与警告、PDF 的文字编码、书签、链接与图形操作符。页面捕获、PDF 文档组装与独立 HTML 的生成尚未改写 |
 | 设计系统的 token、文档与合并（`design-system-runtime` 的 `model/tokens.ts`、`model/record-codec.ts`、`editor/markdown-parser.ts`、`editor/markdown-autoformat.ts`、`editor/color-contrast-pairs.ts`、`editor/css-length-input.ts`、`editor/files-merge.ts`、`files/token-merge.ts`、`files/data-uri.ts`） | 沿用 `contracts/` 中已有的类型 | token 的解析、序列化与 CSS 生成、说明文档的 Markdown 解析与自动格式、对比度配对推断、文件与 token 的三方合并。这个包原本已有类型，改写的是机器变量名与初始化方式，并补上测试 |
+
+## 巨型组件的处理
+
+界面组件不能像纯计算那样用随机输入对比，所以用机械变换加基线场景。
+
+- `scripts/hoist-closures.mjs` 把巨型函数里 60 行以上的内部函数提到模块作用域。原位置留下转发函数，传入按需取值的依赖对象；提出去的函数每次用到外层变量时才读取，时机与原闭包相同。
+- `scripts/split-functions.mjs` 把提出来的函数按领域移到子目录的独立文件，并补齐两边的 import。
+- 函数名、说明与领域由阅读源码后给出，记录在各函数的注释里。
+
+| 组件 | 变换前 | 变换后 | 提出的函数 |
+| --- | --- | --- | --- |
+| 画布主组件 `DesignCanvas`（`canvas/design-canvas.tsx`） | 一个约 22300 行的函数 | 主组件约 8400 行；`canvas/design-canvas/` 下 17 个领域文件 | 75 个：拖动 9、画板 10、选择 9、画布图形 8、剪贴板 8、导出 7、撤销重做 4 等 |
+
+提出去的函数第一个参数列出它依赖的外层变量。这些变量和函数内部仍是机器名；主组件里剩下的是状态声明、连线与界面。
+
+已知的后续整理点（阅读时发现，尚未处理）：
+
+- `pasteExternalClipboardPayload` 有 1100 多行，包含解析、代码信任确认、字体与图片迁移、设计系统文件覆盖、建画板、建图形和结果提示，应当再拆。
+- 图片放置与视频放置两个函数高度相似，可以合并。
+- 两个键盘入口（命令分发与按键处理）职责有重叠。

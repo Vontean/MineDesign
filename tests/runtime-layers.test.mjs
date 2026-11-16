@@ -5,7 +5,8 @@ import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 
 // runtime 内部的分层：只允许上层 import 下层（docs/runtime-modules.md）。
-// allowed 记录迁移完成时尚存的反向依赖数量，只能减少，不能增加。
+// allowed 记录尚存的反向依赖：每对目录之间被反向 import 的不同目标文件数，只能减少，不能增加。
+// 按目标文件计数，所以把一个文件拆成几个不会被算作新增依赖。
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const packages = {
   'design-runtime': {
@@ -24,15 +25,15 @@ const packages = {
       'assets → editor': 1,
       'canvas → application': 1,
       'collaboration → canvas': 1,
-      'comments → canvas': 6,
+      'comments → canvas': 5,
       '(root) → scripts': 1,
-      'editor → canvas': 22,
-      'editor → comments': 2,
-      'editor → export': 6,
+      'editor → canvas': 6,
+      'editor → comments': 1,
+      'editor → export': 4,
       'editor → collaboration': 1,
       'export → canvas': 2,
       'fast-edit → canvas': 1,
-      'find → canvas': 3,
+      'find → canvas': 2,
       'geometry → editor': 4,
       'platform → export': 1,
       'platform → editor': 5,
@@ -58,9 +59,9 @@ const packages = {
       '(root) → model': 2,
       '(root) → platform': 1,
       '(root) → ui': 1,
-      'ui → host': 2,
+      'ui → host': 1,
       'ui → files': 4,
-      'ui → platform': 6,
+      'ui → platform': 1,
     },
   },
 };
@@ -87,16 +88,16 @@ export function upwardImports(pkg) {
     for (const m of text.matchAll(/^import (?!type )[^;]*? from "(\.[^"]+)";/gms)) {
       const target = path.posix.normalize(path.posix.join(path.posix.dirname(file), m[1]));
       const [to, toDir] = level(target);
-      if (to > from) { const key = `${fromDir} → ${toDir}`; counts[key] = (counts[key] ?? 0) + 1; }
+      if (to > from) { const key = `${fromDir} → ${toDir}`; (counts[key] ??= new Set()).add(target); }
     }
   }
-  return counts;
+  return Object.fromEntries(Object.entries(counts).map(([key, targets]) => [key, targets.size]));
 }
 
 for (const pkg of Object.keys(packages)) {
   test(`${pkg}：反向依赖不超过记录的数量`, () => {
     const counts = upwardImports(pkg);
     const { allowed } = packages[pkg];
-    for (const [key, n] of Object.entries(counts)) assert.ok(n <= (allowed[key] ?? 0), `${key} 的反向 import 有 ${n} 处，允许 ${allowed[key] ?? 0} 处`);
+    for (const [key, n] of Object.entries(counts)) assert.ok(n <= (allowed[key] ?? 0), `${key} 反向 import 了 ${n} 个文件，允许 ${allowed[key] ?? 0} 个`);
   });
 }
