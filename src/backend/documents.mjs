@@ -1,4 +1,5 @@
 import { serviceError } from '@minedesign/contracts/service-errors';
+import { normalizeAnnotations, draftAnnotations, markAnnotationsResolved } from '@minedesign/contracts/annotations';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { createHash, randomBytes } from 'node:crypto';
@@ -53,17 +54,22 @@ export function createDocumentService({workspace, editors, origin, annotationRoo
     if (value!==undefined) {
       if(!Array.isArray(value) || value.length>100 || JSON.stringify(value).length>200000) throw serviceError('invalid_annotations','批注格式或大小错误');
       const sourceVersion=(await editors.storeOf(doc.path,doc.kind).listing()).ver;
-      value=value.map(note=>({...note,sourceVersion:note.sourceVersion||sourceVersion}));
+      value=normalizeAnnotations(value).map(note=>({...note,sourceVersion:note.sourceVersion||sourceVersion}));
       const temp=`${file}.${randomBytes(6).toString('hex')}.tmp`;
       await fs.writeFile(temp,JSON.stringify(value)); await fs.rename(temp,file);
     }
-    return JSON.parse(await fs.readFile(file,'utf8').catch(error=>{if(error.code==='ENOENT')return '[]';throw error;}));
+    return normalizeAnnotations(JSON.parse(await fs.readFile(file,'utf8').catch(error=>{if(error.code==='ENOENT')return '[]';throw error;})));
+  }
+  // 把指定评论标为已解决（入口见后续的 Agent 报告）；未知 id 忽略
+  async function resolveAnnotations(id,ids){
+    return annotations(id,markAnnotationsResolved(await annotations(id),ids,new Date().toISOString()));
   }
   async function prepareFeedback(id){
     const doc=opened.get(id);if(!doc)throw serviceError('unknown_document','未知作品');
     const version=(await editors.storeOf(doc.path,doc.kind).listing()).ver;
-    const notes=await annotations(id);
+    // 已发送的评论不再随反馈发送，作品变化后也不算过期
+    const notes=draftAnnotations(await annotations(id));
     return {version,annotations:notes,stale:notes.some(note=>!note.sourceVersion||note.sourceVersion!==version)};
   }
-  return {open, check, importAsset, annotations, prepareFeedback, documents:()=>[...opened.values()]};
+  return {open, check, importAsset, annotations, resolveAnnotations, prepareFeedback, documents:()=>[...opened.values()]};
 }

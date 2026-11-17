@@ -2,7 +2,7 @@
  * MineDesign 的 `feedback` 能力：设计稿编辑器把属性面板与评论合成一个右侧面板，评论列表在 iframe 里显示，
  * 草稿的保存、版本核对与发送仍由父窗口负责（src/frontend/app.mjs）。
  *
- * 父窗口经 `editor:feedback` 推送草稿与发送状态，运行时用 `read`/`subscribe` 显示；面板里的定位、删除、复制、发送
+ * 父窗口经 `editor:feedback` 推送评论列表（草稿与已发送）和发送状态，运行时用 `read`/`subscribe` 显示；面板里的定位、删除、编辑、复制、发送
  * 转成 `editor:feedback-action` 交回父窗口。面板显示与否经 `editor:panel` 告诉父窗口，父窗口顶栏的开关经 `editor:set-panel` 请求开关。
  * 缩放与播放也在父窗口顶栏：运行时经 `viewChanged` 报告视图状态（`editor:view`），顶栏的操作经 `editor:view-action` 交给 `onViewAction`。
  * 界面语言独立于评论，在 shared/ui-locale.ts 中接收。
@@ -22,6 +22,8 @@ export interface HostFeedbackCapability {
   subscribe(listener: () => void): () => void;
   reveal(id: string): void;
   remove(id: string): void;
+  /** 改一条评论的文字；空文字由面板拦下，外壳经批注模块再核对一次。 */
+  edit(id: string, text: string): void;
   copy(message: string): void;
   send(message: string): void;
   /** 运行时报告右侧面板是否显示；相同的值不重复发送。 */
@@ -66,6 +68,7 @@ export function createFeedbackBridge(link: ParentLink): FeedbackBridge {
       subscribe: listener => subscribe(listeners, listener),
       reveal: id => link.post({ type: 'editor:feedback-action', action: 'reveal', id }),
       remove: id => link.post({ type: 'editor:feedback-action', action: 'remove', id }),
+      edit: (id, text) => link.post({ type: 'editor:feedback-action', action: 'edit', id, text }),
       copy: message => link.post({ type: 'editor:feedback-action', action: 'copy', message }),
       send: message => link.post({ type: 'editor:feedback-action', action: 'send', message }),
       panelChanged(open) {

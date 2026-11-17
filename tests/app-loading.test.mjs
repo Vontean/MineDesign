@@ -12,7 +12,7 @@ import { startService, ROOT } from '../src/backend/service.mjs';
 const bundled=await build({entryPoints:[path.join(ROOT,'src/frontend/app.mjs')],bundle:true,write:false,format:'iife',platform:'browser',define:{__MDN_VERSION__:'"test"'},plugins:[{name:'test-host',setup(b){
   b.onResolve({filter:/^@modelcontextprotocol\/ext-apps$/},()=>({path:'host',namespace:'test'}));
   b.onResolve({filter:/^\.\/virtual\.mjs$/},()=>({path:'bridge',namespace:'test'}));
-  b.onLoad({filter:/.*/,namespace:'test'},({path})=>({contents:path==='host'?`export class App { async connect(){} async close(){window.testClosed=true} addEventListener(){} getHostContext(){return {}} async callServerTool(input){return window.testTransport(input)} }`:`export function createBridge(){return window.testBridge}`,loader:'js'}));
+  b.onLoad({filter:/.*/,namespace:'test'},({path})=>({contents:path==='host'?`export class App { async connect(){} async close(){window.testClosed=true} addEventListener(){} getHostContext(){return {}} async callServerTool(input){return window.testTransport(input)} async sendMessage(message){(window.testMessages||=[]).push(message);return {}} }`:`export function createBridge(){return window.testBridge}`,loader:'js'}));
 }}]});
 const html=(await fs.readFile(path.join(ROOT,'src/frontend/app.html'),'utf8')).replace(/<script[\s\S]*?<\/script>/g,'');
 async function until(check){const deadline=Date.now()+3000;while(!check()){if(Date.now()>deadline)assert.fail('App did not reach expected state');await new Promise(r=>setTimeout(r,10));}}
@@ -27,6 +27,7 @@ async function harness(record,service,{build,shell,broken=false}={}){
     calls.push({name,args});
     if(name==='minedesign_open_document')return {structuredContent:{document:await service.open(args.path,args.kind)}};
     if(name==='minedesign_annotations')return {structuredContent:{annotations:await service.annotations(args.id,args.annotations)}};
+    if(name==='minedesign_prepare_feedback')return {structuredContent:await service.prepareFeedback(args.id)};
     if(name==='minedesign_shell')return {structuredContent:shell(args.build)};
     throw new Error('Unexpected tool '+name);
   };
@@ -132,19 +133,42 @@ test('design feedback lives in the editor panel: drafts are pushed in, editor ac
   const noteFile=path.join(DATA,'annotations',`${doc.id}.json`);
   let ui;
   try{
-    await service.annotations(doc.id,[{id:'keep',label:'标题',text:'保留'},{id:'drop',label:'按钮',text:'删除这条'}]);
+    await service.annotations(doc.id,[{id:'keep',label:'标题',text:'保留'},{id:'done',label:'卡片',text:'已经发过',status:'sent'},{id:'gone',label:'图标',text:'已解决',status:'resolved'},{id:'drop',label:'按钮',text:'删除这条'}]);
     ui=await harness(doc,service);
     const d=ui.win.document,frame=d.getElementById('editor');
     await until(()=>!frame.hidden);
-    const sent=[];frame.contentWindow.postMessage=data=>sent.push(data);
+    const sent=[];
+    const action=data=>ui.win.dispatchEvent(new ui.win.MessageEvent('message',{source:frame.contentWindow,data:{type:'editor:feedback-action',...data}}));
+    // 发送前外壳要求编辑器写回；这里直接回报已保存
+    frame.contentWindow.postMessage=data=>{sent.push(data);if(data.type==='editor:flush')setTimeout(()=>ui.win.dispatchEvent(new ui.win.MessageEvent('message',{source:frame.contentWindow,data:{type:'editor:flushed',requestId:data.requestId,saved:true}})));};
     await ui.ready();
     await until(()=>sent.some(m=>m.type==='editor:feedback'));
     assert.equal(d.body.dataset.feedback,'editor');
-    assert.deepEqual(sent.findLast(m=>m.type==='editor:feedback').items.map(i=>[i.n,i.label,i.text]),[[1,'标题','保留'],[2,'按钮','删除这条']]);
+    // 列表与画布编号含草稿与已发送，不含已解决，编号一致
+    const feedbackItems=()=>sent.findLast(m=>m.type==='editor:feedback').items;
+    assert.deepEqual(feedbackItems().map(i=>[i.n,i.label,i.text,i.status]),[[1,'标题','保留','draft'],[2,'卡片','已经发过','sent'],[3,'按钮','删除这条','draft']]);
+    assert.deepEqual(sent.findLast(m=>m.type==='editor:threads').threads.map(t=>[t.id,t.n]),[['keep',1],['done',2],['drop',3]]);
+    // 编辑已发送的评论：文字更新并回到草稿，目标不变
+    action({action:'edit',id:'done',text:'再发一次'});
+    await until(()=>feedbackItems()[1].status==='draft');
+    const edited=(await service.annotations(doc.id)).find(n=>n.id==='done');
+    assert.deepEqual([edited.label,edited.text,edited.status,edited.sentAt],['卡片','再发一次','draft',undefined]);
+    // 发送成功后，本次发送的草稿标为已发送；发送内容只含草稿
+    action({action:'send',message:''});
+    await until(()=>feedbackItems().every(i=>i.status==='sent'));
+    const payload=JSON.parse(ui.win.testMessages.at(-1).content[0].text.slice(ui.win.testMessages.at(-1).content[0].text.indexOf('{')));
+    assert.deepEqual(payload.annotations.map(n=>n.id),['keep','done','drop']);
+    const saved=await service.annotations(doc.id);
+    assert.deepEqual(saved.map(n=>[n.id,n.status]),[['keep','sent'],['done','sent'],['gone','resolved'],['drop','sent']]);
+    assert.ok(saved[0].sentAt);
+    // 没有草稿、也没有补充说明时不再发送
+    action({action:'send',message:'  '});
+    await new Promise(r=>setTimeout(r,50));
+    assert.equal(ui.win.testMessages.length,1);
     // 编辑器面板里的删除由外壳保存，再推送新的草稿
     ui.win.dispatchEvent(new ui.win.MessageEvent('message',{source:frame.contentWindow,data:{type:'editor:feedback-action',action:'remove',id:'drop'}}));
-    await until(()=>sent.findLast(m=>m.type==='editor:feedback').items.length===1);
-    assert.deepEqual((await service.annotations(doc.id)).map(n=>n.id),['keep']);
+    await until(()=>sent.findLast(m=>m.type==='editor:feedback').items.length===2);
+    assert.deepEqual((await service.annotations(doc.id)).map(n=>n.id),['keep','done','gone']);
     // 顶栏开关请求编辑器开关右侧面板，按钮状态跟随编辑器回报
     ui.win.dispatchEvent(new ui.win.MessageEvent('message',{source:frame.contentWindow,data:{type:'editor:panel',open:true}}));
     assert.equal(d.getElementById('panel').getAttribute('aria-pressed'),'true');

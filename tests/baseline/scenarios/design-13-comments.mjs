@@ -1,4 +1,4 @@
-// 评论：评论工具点元素与框选区域各留一条，在右侧「评论」标签里定位，再删除一条。
+// 评论：评论工具点元素与框选区域各留一条，在右侧「评论」标签里定位，删除一条，再编辑剩下的一条并保存。
 export default {
   fixture: 'design',
   async run(session) {
@@ -32,5 +32,13 @@ export default {
     await page.mouse.click(1414, 171);
     await session.settle();
     await session.shot('deleted');
+
+    // 悬停剩下的一条，点铅笔进入编辑，键盘补充文字后 Enter 保存
+    await editor.getByTestId('mdn-feedback-edit').click();
+    await page.keyboard.type('，字重也加粗');
+    await session.shot('editing');
+    await page.keyboard.press('Enter');
+    await session.settle();
+    await session.shot('edited');
   },
 };

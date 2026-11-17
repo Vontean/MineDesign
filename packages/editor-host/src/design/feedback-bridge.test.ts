@@ -24,7 +24,7 @@ describe('createFeedbackBridge', () => {
     expect(capability.read().items).toEqual([]);
     let notified = 0;
     capability.subscribe(() => notified++);
-    const items = [{ id: 'a', n: 1, label: '工作台', text: '更醒目' }];
+    const items = [{ id: 'a', n: 1, label: '工作台', text: '更醒目', status: 'sent' as const }];
     parent.deliver({ type: 'editor:feedback', items, status: '', canSend: true, busy: false });
     expect(notified).toBe(1);
     expect(capability.read()).toEqual({ items, status: '', canSend: true, busy: false });
@@ -34,12 +34,14 @@ describe('createFeedbackBridge', () => {
     const parent = fakeLink();
     const { capability } = createFeedbackBridge(parent.link);
     capability.remove('a');
+    capability.edit('b', '标题再大一点');
     capability.send('整体更紧凑');
     capability.panelChanged(true);
     capability.panelChanged(true);
     capability.panelChanged(false);
     expect(parent.sent).toEqual([
       { type: 'editor:feedback-action', action: 'remove', id: 'a' },
+      { type: 'editor:feedback-action', action: 'edit', id: 'b', text: '标题再大一点' },
       { type: 'editor:feedback-action', action: 'send', message: '整体更紧凑' },
       { type: 'editor:panel', open: true },
       { type: 'editor:panel', open: false },

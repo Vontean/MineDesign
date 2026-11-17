@@ -10,6 +10,7 @@
     "./ui-text": "./src/ui-text.ts",
     "./document-info": "./src/document-info.ts",
     "./service": "./src/service.mjs",
+    "./annotations": "./src/annotations.mjs",
     "./ui-locale": "./src/ui-locale.ts",
     "./ui-messages": "./src/ui-messages.ts",
     "./service-errors": "./src/service-errors.mjs",

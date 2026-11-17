@@ -35,16 +35,23 @@ export interface EditorThread {
   section?: string;
 }
 
-/** 编辑器右侧面板里显示的一条评论（MineDesign 的反馈草稿）：`n` 是序号，`label` 是定位目标，`text` 是意见。 */
+/** 列表里显示的评论状态；已解决的不推送给面板。 */
+export type FeedbackItemStatus = 'draft' | 'sent';
+
+/** 编辑器右侧面板里显示的一条评论（MineDesign 的反馈批注）：`n` 是序号，`label` 是定位目标，`text` 是意见，`status` 是草稿或已发送。 */
 export interface FeedbackItem {
   id: string;
   n: number;
   label: string;
   text: string;
+  status: FeedbackItemStatus;
 }
 
-/** 编辑器右侧面板对反馈的操作：定位、删除一条，或连同补充说明复制、发送整轮反馈。 */
-export type FeedbackAction = { action: 'reveal' | 'remove'; id: string } | { action: 'send' | 'copy'; message: string };
+/** 编辑器右侧面板对反馈的操作：定位、删除一条，改一条的文字，或连同补充说明复制、发送整轮反馈。 */
+export type FeedbackAction =
+  | { action: 'reveal' | 'remove'; id: string }
+  | { action: 'edit'; id: string; text: string }
+  | { action: 'send' | 'copy'; message: string };
 
 /** MineDesign：外壳顶栏的缩放与播放控件需要的编辑器视图状态。比例是倍数（1 为 100%）。 */
 export interface EditorView {
@@ -153,6 +160,7 @@ export const SUGGESTED_PROMPT_MAX = 20_000;
 
 /** 评论意见与补充说明的长度上限，与父窗口批注框的 maxlength 一致或更宽。 */
 export const FEEDBACK_TEXT_MAX = 4000;
+const FEEDBACK_ITEM_STATUSES = new Set<FeedbackItemStatus>(['draft', 'sent']);
 export const FEEDBACK_MESSAGE_MAX = 20_000;
 
 /** `editor:save-file` 的文件最大多少字节（整份设计稿的 HTML 内嵌画板运行时与素材，远小于这个数）。 */
@@ -249,6 +257,7 @@ export function readEditorMessage(data: unknown): EditorToHostMessage | null {
         : null;
     case 'editor:feedback-action':
       if ((data.action === 'reveal' || data.action === 'remove') && isString(data.id, 100)) return { type: data.type, action: data.action, id: data.id };
+      if (data.action === 'edit' && isString(data.id, 100) && isString(data.text, FEEDBACK_TEXT_MAX) && data.text.trim() !== '') return { type: data.type, action: data.action, id: data.id, text: data.text };
       if ((data.action === 'send' || data.action === 'copy') && isString(data.message, FEEDBACK_MESSAGE_MAX)) return { type: data.type, action: data.action, message: data.message };
       return null;
     case 'editor:panel':
@@ -315,13 +324,13 @@ export function readHostMessage(data: unknown): HostToEditorMessage | null {
     case 'editor:feedback':
       return Array.isArray(data.items) &&
         data.items.length <= 1000 &&
-        data.items.every(i => isRecord(i) && isString(i.id, 100) && isFiniteNumber(i.n) && isString(i.label, 1000) && isString(i.text, FEEDBACK_TEXT_MAX)) &&
+        data.items.every(i => isRecord(i) && isString(i.id, 100) && isFiniteNumber(i.n) && isString(i.label, 1000) && isString(i.text, FEEDBACK_TEXT_MAX) && FEEDBACK_ITEM_STATUSES.has(i.status as FeedbackItemStatus)) &&
         isString(data.status, 1000) &&
         typeof data.canSend === 'boolean' &&
         typeof data.busy === 'boolean'
         ? {
             type: data.type,
-            items: (data.items as FeedbackItem[]).map(i => ({ id: i.id, n: i.n, label: i.label, text: i.text })),
+            items: (data.items as FeedbackItem[]).map(i => ({ id: i.id, n: i.n, label: i.label, text: i.text, status: i.status })),
             status: data.status,
             canSend: data.canSend,
             busy: data.busy,

@@ -1,9 +1,10 @@
 import { uiMessage } from '@minedesign/contracts/ui-messages';
 import { useUiLocale } from '../ui-locale.ts';
 import { getUiLocale, subscribeUiLocale } from '@minedesign/contracts/ui-locale';
+import { canSendFeedback } from '@minedesign/contracts/annotations';
 /**
  * MineDesign：设计稿右侧面板的「评论」标签，与 Properties / Code / Tweaks 并列；切到这个标签即进入评论模式。
- * 草稿由父窗口经宿主的 `feedback` 能力推送（packages/editor-host/src/design/feedback-bridge.ts），保存、版本核对与发送也在父窗口。
+ * 评论列表（草稿与已发送）由父窗口经宿主的 `feedback` 能力推送（packages/editor-host/src/design/feedback-bridge.ts），保存、编辑、版本核对与发送也在父窗口。
  */
 import { uiText } from "@minedesign/contracts/ui-text";
 import {
@@ -49,8 +50,41 @@ function FeedbackPanel({ host }: Dynamic): Dynamic {
     host.read,
   );
   const [message, setMessage]: Dynamic = react.useState(draft);
+  // 正在编辑的一条：{ id, text }；同一时间只编辑一条
+  const [editing, setEditing]: Dynamic = react.useState(null);
+  const listRef: Dynamic = react.useRef(null);
+  const editFieldRef: Dynamic = react.useRef(null);
+  // 保存或取消后把焦点交回该条的编辑按钮
+  const focusAfterEdit: Dynamic = react.useRef(null);
   const t: Dynamic = useUiText();
   const items: Dynamic[] = state.items;
+  const editingId: Dynamic = editing?.id ?? null;
+  const editingGone: boolean = editingId !== null && !items.some((item: Dynamic): boolean => item.id === editingId);
+  react.useEffect((): void => {
+    if (editingGone) setEditing(null);
+  }, [editingGone]);
+  react.useEffect((): void => {
+    const field: Dynamic = editFieldRef.current;
+    if (!field) return;
+    field.focus();
+    field.setSelectionRange(field.value.length, field.value.length);
+  }, [editingId]);
+  react.useEffect((): void => {
+    const id: Dynamic = focusAfterEdit.current;
+    if (id === null || editingId !== null) return;
+    focusAfterEdit.current = null;
+    const row: Dynamic = [...(listRef.current?.children ?? [])].find((li: Dynamic): boolean => li.dataset.id === id);
+    row?.querySelector('[data-testid="mdn-feedback-edit"]')?.focus();
+  });
+  const finishEdit = (save: boolean): void => {
+    if (!editing) return;
+    if (save) {
+      if (!editing.text.trim()) return;
+      host.edit(editing.id, editing.text);
+    }
+    focusAfterEdit.current = editing.id;
+    setEditing(null);
+  };
   return (
     <CdsIsland density={"compact"} className={"contents"}>
       <section
@@ -59,30 +93,88 @@ function FeedbackPanel({ host }: Dynamic): Dynamic {
         data-mega-chrome={"comments"}
         data-testid={"mdn-feedback"}
       >
-        {items.length > 0 ? (<ol className={"mdn-feedback-list"}>
+        {items.length > 0 ? (<ol className={"mdn-feedback-list"} ref={listRef}>
             {items.map(
               (item: Dynamic): Dynamic => (
-                <li key={item.id}>
+                <li key={item.id} data-id={item.id} data-status={item.status}>
                   <span className={"mdn-feedback-index"}>{item.n}</span>
-                  <button
-                    type={"button"}
-                    className={"mdn-feedback-target"}
-                    title={t.locate(item.label)}
-                    onClick={(): Dynamic => host.reveal(item.id)}
-                  >
-                    {item.label}
-                  </button>
-                  <p className={"mdn-feedback-text"}>{item.text}</p>
-                  <Button
-                    variant={"ghost"}
-                    size={"xxs"}
-                    iconOnly={true}
-                    icon={<Icon name={"Trash"} size={"sm"} />}
-                    aria-label={t.removeCommentN(item.n)}
-                    title={t.removeComment}
-                    className={"mdn-feedback-remove"}
-                    onClick={(): Dynamic => host.remove(item.id)}
-                  />
+                  <div className={"mdn-feedback-meta"}>
+                    <button
+                      type={"button"}
+                      className={"mdn-feedback-target"}
+                      title={t.locate(item.label)}
+                      onClick={(): Dynamic => host.reveal(item.id)}
+                    >
+                      {item.label}
+                    </button>
+                    {item.status === "sent" ? (<span className={"mdn-feedback-state"} data-testid={"mdn-feedback-sent"}>
+                        {uiMessage("feedback.comments.sent")}
+                      </span>) : null}
+                  </div>
+                  {editingId === item.id ? (<div className={"mdn-feedback-edit"}>
+                      <textarea
+                        ref={editFieldRef}
+                        rows={2}
+                        maxLength={4000}
+                        value={editing.text}
+                        aria-label={uiMessage("feedback.comments.editField", { n: item.n })}
+                        data-testid={"mdn-feedback-edit-field"}
+                        onChange={(event: Dynamic): void => setEditing({ id: item.id, text: event.target.value })}
+                        onKeyDown={(event: Dynamic): void => {
+                          // Enter 保存，Shift+Enter 换行，Esc 取消；Esc 不再交给画布（不退出评论模式）
+                          if (event.key === "Escape") {
+                            event.preventDefault();
+                            event.stopPropagation();
+                            finishEdit(false);
+                          } else if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) {
+                            event.preventDefault();
+                            finishEdit(true);
+                          }
+                        }}
+                      />
+                      <div className={"mdn-feedback-edit-actions"}>
+                        <Button
+                          variant={"ghost"}
+                          size={"sm"}
+                          data-testid={"mdn-feedback-edit-cancel"}
+                          onClick={(): void => finishEdit(false)}
+                        >
+                          {uiMessage("feedback.comments.cancel")}
+                        </Button>
+                        <Button
+                          variant={"primary"}
+                          size={"sm"}
+                          disabled={!editing.text.trim()}
+                          data-testid={"mdn-feedback-edit-save"}
+                          onClick={(): void => finishEdit(true)}
+                        >
+                          {uiMessage("feedback.comments.save")}
+                        </Button>
+                      </div>
+                    </div>) : (<p className={"mdn-feedback-text"}>{item.text}</p>)}
+                  <div className={"mdn-feedback-row-actions"}>
+                    {editingId === item.id ? null : (<Button
+                        variant={"ghost"}
+                        size={"xxs"}
+                        iconOnly={true}
+                        icon={<Icon name={"Edit"} size={"sm"} />}
+                        aria-label={uiMessage("feedback.comments.editN", { n: item.n })}
+                        title={uiMessage("feedback.comments.edit")}
+                        className={"mdn-feedback-row-action"}
+                        data-testid={"mdn-feedback-edit"}
+                        onClick={(): void => setEditing({ id: item.id, text: item.text })}
+                      />)}
+                    <Button
+                      variant={"ghost"}
+                      size={"xxs"}
+                      iconOnly={true}
+                      icon={<Icon name={"Trash"} size={"sm"} />}
+                      aria-label={t.removeCommentN(item.n)}
+                      title={t.removeComment}
+                      className={"mdn-feedback-row-action mdn-feedback-remove"}
+                      onClick={(): Dynamic => host.remove(item.id)}
+                    />
+                  </div>
                 </li>
               ),
             )}
@@ -114,7 +206,9 @@ function FeedbackPanel({ host }: Dynamic): Dynamic {
             <Button
               variant={"primary"}
               size={"sm"}
-              disabled={!state.canSend || state.busy}
+              // 没有草稿也没有补充说明时不能发送
+              disabled={!state.canSend || state.busy || !canSendFeedback(items, message)}
+              title={state.canSend && !canSendFeedback(items, message) ? uiMessage("feedback.send.empty") : undefined}
               data-testid={"mdn-feedback-send"}
               onClick={(): Dynamic => host.send(message)}
             >

@@ -13384,10 +13384,17 @@ html[data-theme-switching] *::after {
   line-height: 20px;
   text-align: center;
 }
-.mdn-feedback-target {
+/* 目标与状态标签一行；右侧给悬停出现的编辑、删除两个按钮留位 */
+.mdn-feedback-meta {
   grid-column: 2;
+  display: flex;
+  align-items: center;
+  gap: 8px;
   min-width: 0;
-  margin: 0 28px 2px 0;
+  margin: 0 52px 2px 0;
+}
+.mdn-feedback-target {
+  min-width: 0;
   overflow: hidden;
   color: var(--cds-text-muted);
   font-size: var(--cds-font-size-caption);
@@ -13405,15 +13412,66 @@ html[data-theme-switching] *::after {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
-.mdn-feedback-remove {
+/* 已发送：与计数同样的小胶囊，次级文字，不抢正文 */
+.mdn-feedback-state {
+  flex-shrink: 0;
+  height: 16px;
+  padding: 0 6px;
+  border-radius: var(--mdn-radius-full);
+  background: var(--mdn-ghost-active);
+  color: var(--cds-text-secondary);
+  font-size: var(--cds-font-size-caption);
+  line-height: 16px;
+}
+.mdn-feedback-row-actions {
   position: absolute;
   top: 4px;
   right: 4px;
+  display: flex;
+}
+.mdn-feedback-row-action {
   opacity: 0;
 }
-.mdn-feedback-list li:hover .mdn-feedback-remove,
-.mdn-feedback-remove:focus-visible {
+.mdn-feedback-list li:hover .mdn-feedback-row-action,
+.mdn-feedback-row-action:focus-visible {
   opacity: 1;
+}
+/* 编辑一条评论：输入框沿用补充说明输入区的外形，操作在右下 */
+.mdn-feedback-edit {
+  grid-column: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 2px;
+}
+.mdn-feedback-edit textarea {
+  min-height: 52px;
+  max-height: 240px;
+  padding: 6px 8px;
+  border: 0;
+  border-radius: var(--mdn-radius-md);
+  background: var(--cds-surface-2);
+  box-shadow: 0 0 0 1px var(--cds-border);
+  color: inherit;
+  font: inherit;
+  resize: vertical;
+  outline: none;
+}
+.mdn-feedback-edit textarea:focus {
+  box-shadow: 0 0 0 1px var(--cds-border-strong);
+}
+.mdn-feedback-edit-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.mdn-feedback-edit-actions [data-cds="Button"] {
+  height: var(--mdn-control-sm);
+  padding-inline: 12px;
+  font-size: var(--mdn-text-sm);
+}
+.mdn-feedback-edit-actions [data-testid="mdn-feedback-edit-save"] {
+  border-radius: var(--mdn-radius-full);
 }
 .mdn-feedback-empty {
   display: flex;

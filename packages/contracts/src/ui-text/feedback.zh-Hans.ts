@@ -5,5 +5,12 @@ export const zh = {
   "feedback.labels.oval": "椭圆",
   "feedback.labels.line": "直线",
   "feedback.labels.arrow": "箭头",
-  "feedback.labels.drawing": "手绘"
+  "feedback.labels.drawing": "手绘",
+  "feedback.comments.sent": "已发送",
+  "feedback.comments.edit": "编辑评论",
+  "feedback.comments.editN": "编辑评论 {n}",
+  "feedback.comments.editField": "评论 {n}",
+  "feedback.comments.save": "保存",
+  "feedback.comments.cancel": "取消",
+  "feedback.send.empty": "添加评论或补充说明后再发送"
 } satisfies Record<keyof typeof en, string>;

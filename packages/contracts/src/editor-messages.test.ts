@@ -54,21 +54,31 @@ describe('saveFileName', () => {
 });
 
 describe('MineDesign 右侧面板的反馈消息', () => {
-  it('编辑器认反馈草稿与发送状态，只保留约定字段', () => {
-    const items = [{ id: 'a', n: 1, label: '工作台 › 按钮', text: '更醒目', extra: true }];
+  it('编辑器认评论列表（草稿或已发送）与发送状态，只保留约定字段', () => {
+    const items = [
+      { id: 'a', n: 1, label: '工作台 › 按钮', text: '更醒目', status: 'draft', extra: true },
+      { id: 'b', n: 2, label: '工作台', text: '留白', status: 'sent' },
+    ];
     expect(readHostMessage({ type: 'editor:feedback', items, status: '已复制反馈', canSend: true, busy: false })).toEqual({
       type: 'editor:feedback',
-      items: [{ id: 'a', n: 1, label: '工作台 › 按钮', text: '更醒目' }],
+      items: [
+        { id: 'a', n: 1, label: '工作台 › 按钮', text: '更醒目', status: 'draft' },
+        { id: 'b', n: 2, label: '工作台', text: '留白', status: 'sent' },
+      ],
       status: '已复制反馈',
       canSend: true,
       busy: false,
     });
-    expect(readHostMessage({ type: 'editor:feedback', items: [{ id: 'a', n: 1, label: 'x', text: 'y'.repeat(4001) }], status: '', canSend: true, busy: false })).toBeNull();
+    expect(readHostMessage({ type: 'editor:feedback', items: [{ id: 'a', n: 1, label: 'x', text: 'y'.repeat(4001), status: 'draft' }], status: '', canSend: true, busy: false })).toBeNull();
+    // 已解决的评论不进列表；缺少状态或状态未知的条目不认
+    for (const status of [undefined, 'resolved', 'done']) {
+      expect(readHostMessage({ type: 'editor:feedback', items: [{ id: 'a', n: 1, label: 'x', text: 'y', status }], status: '', canSend: true, busy: false })).toBeNull();
+    }
     expect(readHostMessage({ type: 'editor:feedback', items: [], status: '', canSend: 'yes', busy: false })).toBeNull();
     expect(readHostMessage({ type: 'editor:set-panel', open: false })).toEqual({ type: 'editor:set-panel', open: false });
   });
 
-  it('父窗口按动作核对字段：定位与删除要 id，复制与发送要补充说明', () => {
+  it('父窗口按动作核对字段：定位与删除要 id，编辑要 id 与非空文字，复制与发送要补充说明', () => {
     expect(readEditorMessage({ type: 'editor:feedback-action', action: 'remove', id: 'a' })).toEqual({ type: 'editor:feedback-action', action: 'remove', id: 'a' });
     expect(readEditorMessage({ type: 'editor:feedback-action', action: 'send', message: '整体更紧凑' })).toEqual({
       type: 'editor:feedback-action',
@@ -76,6 +86,15 @@ describe('MineDesign 右侧面板的反馈消息', () => {
       message: '整体更紧凑',
     });
     expect(readEditorMessage({ type: 'editor:feedback-action', action: 'send', id: 'a' })).toBeNull();
+    expect(readEditorMessage({ type: 'editor:feedback-action', action: 'edit', id: 'a', text: '再大一点', extra: 1 })).toEqual({
+      type: 'editor:feedback-action',
+      action: 'edit',
+      id: 'a',
+      text: '再大一点',
+    });
+    expect(readEditorMessage({ type: 'editor:feedback-action', action: 'edit', id: 'a', text: '  ' })).toBeNull();
+    expect(readEditorMessage({ type: 'editor:feedback-action', action: 'edit', id: 'a', text: 'y'.repeat(4001) })).toBeNull();
+    expect(readEditorMessage({ type: 'editor:feedback-action', action: 'edit', text: '再大一点' })).toBeNull();
     expect(readEditorMessage({ type: 'editor:feedback-action', action: 'delete', id: 'a' })).toBeNull();
     expect(readEditorMessage({ type: 'editor:panel', open: true })).toEqual({ type: 'editor:panel', open: true });
     expect(readEditorMessage({ type: 'editor:panel', open: 1 })).toBeNull();

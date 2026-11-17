@@ -29,6 +29,13 @@ test('design editor serves real files, preserves ifMatch and rejects workspace e
     const result=await publish({[file]:{base64:Buffer.from(source.replace('一起迭代','一起设计')).toString('base64'),contentType:'text/html',ifMatch:listing.files[file].sha256}});
     assert.equal(result.status,200);
     assert.equal((await service.prepareFeedback(doc.id)).stale,true);
+    // 已发送的评论不随反馈发送，作品变化后也不算过期；旧数据补上草稿状态
+    assert.equal(savedNotes[0].status,'draft');
+    await service.annotations(doc.id,[{...savedNotes[0],status:'sent',sentAt:'2026-11-17T08:00:00.000Z'}]);
+    const prepared=await service.prepareFeedback(doc.id);
+    assert.equal(prepared.stale,false);assert.deepEqual(prepared.annotations,[]);
+    const resolved=await service.resolveAnnotations(doc.id,['test-note','missing']);
+    assert.equal(resolved[0].status,'resolved');assert.ok(resolved[0].resolvedAt);
     await fs.rm(noteFile,{force:true});
     const conflict=await publish({[file]:{base64:Buffer.from(source).toString('base64'),contentType:'text/html',ifMatch:listing.files[file].sha256}});
     assert.equal(conflict.status,409);assert.equal((await conflict.json()).code,'conflict');

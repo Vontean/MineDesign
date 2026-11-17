@@ -1,4 +1,6 @@
 import { setUiLocale } from '@minedesign/contracts/ui-locale';
+import { uiMessage } from '@minedesign/contracts/ui-messages';
+import { normalizeAnnotations, visibleAnnotations, draftAnnotations, editAnnotation, markAnnotationsSent, canSendFeedback, feedbackContent } from '@minedesign/contracts/annotations';
 import { uiError } from '@minedesign/contracts/ui-error';
 import { serviceError } from '@minedesign/contracts/service-errors';
 import { App } from '@modelcontextprotocol/ext-apps';
@@ -8,7 +10,7 @@ import { createBridge } from './virtual.mjs';
 import { createIllustration } from '../../assets/illustrations/index.mjs';
 import { uiText, resolveUiLocale } from '../../packages/contracts/src/ui-text.ts';
 import { createAbout } from './about.mjs';
-import { createElement, PanelsTopLeft, Component, MessageCircle, Undo2, Redo2 } from 'lucide';
+import { createElement, PanelsTopLeft, Component, MessageCircle, Undo2, Redo2, Pencil } from 'lucide';
 import { installTooltips } from './tooltip.mjs';
 const config=window.MINEDESIGN_CONFIG;
 const $=id=>document.getElementById(id);
@@ -21,6 +23,8 @@ $('state-illustration').append(createIllustration('document-loading'));
 // 评论图标与画布工具栏的评论按钮同一个（CDS Chat → Lucide MessageCircle），保持语义一致
 for(const slot of document.querySelectorAll('[data-comment-icon]'))slot.replaceWith(createElement(MessageCircle,{class:'icon','aria-hidden':'true'}));
 let app,client,bridge,documentRecord,notes=[],pending,mode=false,busy=false,loading=0,editorPanel=false,view=null;
+// 反馈侧栏里正在编辑的评论与输入中的文字；同一时间只编辑一条
+let editing=null,editText='';
 const mac=/Mac|iPhone|iPad/.test(navigator.platform),tooltips=installTooltips();
 // 失焦（按下鼠标）到 iframe 发来 compose（松开鼠标后）之间的上限；长按拖动框选超过它时照常开始新评论
 const COMPOSE_DISMISS_MS=600;
@@ -43,7 +47,6 @@ function applyLocale(){
   for(const el of document.querySelectorAll('[data-i18n-tip]')){el.setAttribute('aria-label',t[el.dataset.i18nTip]);el.dataset.tip=t[el.dataset.i18nTip];}
   for(const el of document.querySelectorAll('[data-i18n-aria]'))el.setAttribute('aria-label',t[el.dataset.i18nAria]);
   for(const el of document.querySelectorAll('[data-i18n-placeholder]'))el.placeholder=t[el.dataset.i18nPlaceholder];
-  if(!app)$('send').title=t.sendUnavailable;
   post({type:'editor:locale',locale});
   renderProjects();renderNotes();renderView();syncPanelButton();renderState();renderStatus();about.render();tooltips.refresh();
 }
@@ -62,7 +65,9 @@ function applyContext(ctx){
 }
 system.addEventListener('change',e=>{if(!hostTheme)setTheme(e.matches?'dark':'light');});
 setTheme(theme);
-function editorAvailable(available){$('annotate').disabled=!available;$('send').disabled=!available||!app;}
+function editorAvailable(available){$('annotate').disabled=!available;syncSend();}
+// 发送需要编辑器就绪、在 Codex 中，并且有草稿或补充说明
+function syncSend(){const content=canSendFeedback(notes,$('message').value);$('send').disabled=shownState[0]!=='ready'||!app||busy||!content;$('send').title=!app?t.sendUnavailable:content?'':uiMessage('feedback.send.empty');}
 // 连接、加载和失败共用视窗状态，重试不能把提示送回顶栏。标题与说明可传函数，切换语言时重新取值。
 let shownState=['loading',{title:()=>t.connecting,description:()=>t.pleaseWait}];
 function viewState(state,options={}){shownState=[state,options];renderState();}
@@ -86,33 +91,66 @@ function renderState(){
   editorAvailable(state==='ready');
 }
 function fail(error){viewState('error',{title:()=>t.openFailedTitle,description:()=>t.openFailedBody,error});}
-async function drafts(value){return client.annotations(documentRecord.id,value);}
-function threads(){post({type:'editor:threads',threads:notes.map((n,i)=>({id:n.id,anchor:n.anchor,n:i+1,...(n.section?{section:n.section}:{})}))});syncFeedback();}
+async function drafts(value){return normalizeAnnotations(await client.annotations(documentRecord.id,value));}
+// 列表与画布编号只含草稿和已发送，编号按这份列表
+const shown=()=>visibleAnnotations(notes);
+function threads(){post({type:'editor:threads',threads:shown().map((n,i)=>({id:n.id,anchor:n.anchor,n:i+1,...(n.section?{section:n.section}:{})}))});syncFeedback();}
 // 设计稿的评论列表显示在编辑器右侧面板里；这里只推送草稿与发送状态，保存和发送仍在本页
 const editorFeedback=()=>document.body.dataset.feedback==='editor';
 function syncFeedback(){
   if(!editorFeedback())return;
-  post({type:'editor:feedback',items:notes.map((n,i)=>({id:n.id,n:i+1,label:String(n.label??'').slice(0,1000),text:String(n.text??'').slice(0,4000)})),status:$('delivery').textContent,canSend:!!app,busy});
+  post({type:'editor:feedback',items:shown().map((n,i)=>({id:n.id,n:i+1,label:String(n.label??'').slice(0,1000),text:String(n.text??'').slice(0,4000),status:n.status})),status:$('delivery').textContent,canSend:!!app,busy});
 }
 let shownStatus = '';
 function renderStatus(){ $('delivery').textContent = typeof shownStatus==='function' ? shownStatus() : shownStatus instanceof Error ? uiError(shownStatus,locale) : shownStatus;syncFeedback(); }
 function status(value){shownStatus=value;renderStatus();}
 const svg=paths=>`<svg class="icon" viewBox="0 0 24 24" aria-hidden="true">${paths}</svg>`;
 function renderNotes(){
-  const items=notes.map((note,i)=>{
-    const li=document.createElement('li');
+  const visible=shown(),list=$('annotation-list');
+  if(editing&&!visible.some(n=>n.id===editing))editing=null;
+  const refocus=list.contains(document.activeElement)&&document.activeElement.tagName==='TEXTAREA';
+  const items=visible.map((note,i)=>{
+    const li=document.createElement('li');li.dataset.id=note.id;li.dataset.status=note.status;
     const index=document.createElement('span');index.className='index';index.textContent=String(i+1);
     const target=document.createElement('button');target.type='button';target.className='target-link';target.textContent=note.label;target.title=t.locate(note.label);target.onclick=()=>post({type:'editor:reveal',id:note.id});
-    const text=document.createElement('p');text.className='comment';text.textContent=note.text;
-    const remove=document.createElement('button');remove.type='button';remove.className='btn btn-icon remove';remove.setAttribute('aria-label',t.removeCommentN(i+1));remove.title=t.removeComment;
+    const meta=document.createElement('div');meta.className='comment-meta';meta.append(target);
+    if(note.status==='sent'){const tag=document.createElement('span');tag.className='comment-state';tag.textContent=uiMessage('feedback.comments.sent');meta.append(tag);}
+    const body=editing===note.id?editForm(note,i+1):Object.assign(document.createElement('p'),{className:'comment',textContent:note.text});
+    const edit=document.createElement('button');edit.type='button';edit.className='btn btn-icon row-action edit';edit.setAttribute('aria-label',uiMessage('feedback.comments.editN',{n:i+1}));edit.title=uiMessage('feedback.comments.edit');edit.dataset.testid='feedback-edit';
+    edit.append(createElement(Pencil,{class:'icon','aria-hidden':'true'}));edit.hidden=editing===note.id;
+    edit.onclick=()=>{editing=note.id;editText=note.text;renderNotes();const field=list.querySelector('textarea');field?.focus();field?.setSelectionRange(editText.length,editText.length);};
+    const remove=document.createElement('button');remove.type='button';remove.className='btn btn-icon row-action remove';remove.setAttribute('aria-label',t.removeCommentN(i+1));remove.title=t.removeComment;
     remove.innerHTML=svg('<path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/>');
     remove.onclick=async()=>{notes=notes.filter(n=>n.id!==note.id);await save();};
-    li.append(index,target,text,remove);return li;
+    li.append(index,meta,body,edit,remove);return li;
   });
-  $('annotation-list').replaceChildren(...items);
-  $('empty').hidden=notes.length>0;
-  $('count').hidden=!notes.length;$('count').textContent=String(notes.length);
-  threads();
+  list.replaceChildren(...items);
+  if(refocus)list.querySelector('textarea')?.focus();
+  $('empty').hidden=visible.length>0;
+  $('count').hidden=!visible.length;$('count').textContent=String(visible.length);
+  threads();syncSend();
+}
+// 编辑一条评论：Enter 保存，Shift+Enter 换行，Esc 取消；空文字不能保存
+function editForm(note,n){
+  const form=document.createElement('form');form.className='comment-edit';
+  const field=document.createElement('textarea');field.rows=2;field.maxLength=4000;field.value=editText;field.setAttribute('aria-label',uiMessage('feedback.comments.editField',{n}));field.dataset.testid='feedback-edit-field';
+  const cancel=document.createElement('button');cancel.type='button';cancel.className='btn btn-ghost';cancel.textContent=uiMessage('feedback.comments.cancel');cancel.dataset.testid='feedback-edit-cancel';
+  const submit=document.createElement('button');submit.type='submit';submit.className='btn btn-solid';submit.textContent=uiMessage('feedback.comments.save');submit.dataset.testid='feedback-edit-save';submit.disabled=!editText.trim();
+  field.oninput=()=>{editText=field.value;submit.disabled=!editText.trim();};
+  field.onkeydown=e=>{
+    if(e.key==='Escape'){e.preventDefault();e.stopPropagation();finishEdit(note.id,false);}
+    else if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing){e.preventDefault();finishEdit(note.id,true);}
+  };
+  cancel.onclick=()=>finishEdit(note.id,false);
+  form.onsubmit=e=>{e.preventDefault();finishEdit(note.id,true);};
+  const actions=document.createElement('div');actions.className='comment-edit-actions';actions.append(cancel,submit);
+  form.append(field,actions);return form;
+}
+async function finishEdit(id,keep){
+  if(keep&&!editText.trim())return;
+  editing=null;if(keep)notes=editAnnotation(notes,id,editText);renderNotes();
+  [...$('annotation-list').children].find(li=>li.dataset.id===id)?.querySelector('.edit')?.focus();
+  if(keep)await save().catch(e=>status(e));
 }
 async function save(){notes=await drafts(notes);renderNotes();}
 // 目标可以是已打开作品的 id，也可以是项目里尚未打开的文件 {kind,path,title}
@@ -178,7 +216,8 @@ $('files').addEventListener('keydown',e=>{
   const tabs=[...$('files').querySelectorAll('[role=tab]')],at=tabs.indexOf(document.activeElement);if(at<0)return;
   e.preventDefault();tabs[(at+step+tabs.length)%tabs.length].focus();
 });
-function feedback(message){return JSON.stringify({kind:'minedesign-feedback',document:documentRecord.path,editor:documentRecord.kind,annotations:notes,message},null,2);}
+// 发送与复制的内容只含草稿
+function feedback(message){return feedbackContent({document:documentRecord.path,editor:documentRecord.kind,annotations:notes,message});}
 async function flush(){
   const requestId=crypto.randomUUID();
   return new Promise((resolve,reject)=>{const timer=setTimeout(()=>{flushes.delete(requestId);reject(serviceError('save_timeout',t.saveTimeout));},10000);flushes.set(requestId,saved=>{clearTimeout(timer);saved?resolve():reject(serviceError('not_saved',t.notSaved));});post({type:'editor:flush',requestId});});
@@ -293,11 +332,12 @@ window.addEventListener('message',e=>{
   if(m.type==='editor:feedback-action'){
     if(m.action==='reveal')post({type:'editor:reveal',id:m.id});
     else if(m.action==='remove'){notes=notes.filter(n=>n.id!==m.id);save().catch(e=>status(e));}
+    else if(m.action==='edit'){notes=editAnnotation(notes,m.id,m.text);save().catch(e=>status(e));}
     else if(m.action==='copy')copyFeedback(m.message);
     else sendFeedback(m.message);
   }
   if(m.type==='editor:flushed'){flushes.get(m.requestId)?.(m.saved);flushes.delete(m.requestId);}
-  if(m.type==='editor:suggest-prompt'){$('message').value=m.prompt;$('message').focus();post({type:'editor:suggest-prompt-result',requestId:m.requestId,ok:true});}
+  if(m.type==='editor:suggest-prompt'){$('message').value=m.prompt;syncSend();$('message').focus();post({type:'editor:suggest-prompt-result',requestId:m.requestId,ok:true});}
   if(m.type==='editor:save-file'){
     const name=saveFileName(m.filename);if(!name){post({type:'editor:save-file-result',requestId:m.requestId,outcome:'failed'});return;}
     const url=URL.createObjectURL(new Blob([m.data]));const a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),10000);post({type:'editor:save-file-result',requestId:m.requestId,outcome:'saved'});
@@ -305,14 +345,16 @@ window.addEventListener('message',e=>{
 });
 async function copyFeedback(message){try{await navigator.clipboard.writeText(feedback(message));status(()=>t.copied);}catch(e){status(e);}}
 async function sendFeedback(message){
-  if(!app||busy)return;
-  busy=true;$('send').disabled=true;renderProjects();syncFeedback();
-  try{await flush();const prepared=await client.prepareFeedback(documentRecord.id);if(prepared.stale)throw serviceError('feedback_stale',t.stale);const text=feedback(message);if(text===sessionStorage.getItem(`sent:${documentRecord.id}`))throw serviceError('feedback_duplicate',t.duplicate);const result=await app.sendMessage({role:'user',content:[{type:'text',text:t.agentPrompt(text)} ]});if(result?.isError)throw serviceError('feedback_rejected',t.rejected);sessionStorage.setItem(`sent:${documentRecord.id}`,text);status(()=>t.sent);}catch(e){status(e);}finally{busy=false;$('send').disabled=false;renderProjects();syncFeedback();}
+  if(!app||busy||!canSendFeedback(notes,message))return;
+  busy=true;syncSend();renderProjects();syncFeedback();
+  // 发送成功后，本次发送的草稿标为已发送；失败时保持草稿
+  try{await flush();const prepared=await client.prepareFeedback(documentRecord.id);if(prepared.stale)throw serviceError('feedback_stale',t.stale);const batch=draftAnnotations(notes).map(n=>n.id),text=feedback(message);if(text===sessionStorage.getItem(`sent:${documentRecord.id}`))throw serviceError('feedback_duplicate',t.duplicate);const result=await app.sendMessage({role:'user',content:[{type:'text',text:t.agentPrompt(text)} ]});if(result?.isError)throw serviceError('feedback_rejected',t.rejected);sessionStorage.setItem(`sent:${documentRecord.id}`,text);status(()=>t.sent);if(batch.length){notes=markAnnotationsSent(notes,batch,new Date().toISOString());await save();}}catch(e){status(e);}finally{busy=false;syncSend();renderProjects();syncFeedback();}
 }
 $('copy').onclick=()=>copyFeedback($('message').value);
 $('send').onclick=()=>sendFeedback($('message').value);
+$('message').addEventListener('input',syncSend);
 // 构建后原地换成新外壳；批注已持久化，这里只携带视图状态。编辑或发送进行中时推迟。
-const idle=()=>!busy&&!pending&&!flushes.size;
+const idle=()=>!busy&&!pending&&!editing&&!flushes.size;
 async function swapShell(html){
   try{sessionStorage.setItem(CARRY,JSON.stringify({id:documentRecord?.id,panel:document.body.dataset.panel,message:$('message').value,...(about.isOpen()?{about:true}:{})}));}catch{}
   await app?.close();
@@ -349,7 +391,7 @@ async function initialize(){
   client.about().then(info=>{preference=info.settings?.language??'system';applyLocale();},()=>{});
   bridge=window.__mdnBridge=createBridge(client);
   renderProjects();
-  if(carried){setPanel(carried.panel!=='closed');$('message').value=carried.message||'';}
+  if(carried){setPanel(carried.panel!=='closed');$('message').value=carried.message||'';syncSend();}
   if(config.build)watchShell();
   if(carried?.about)about.open();
   await select(carried?.id||docs[0]?.id);
