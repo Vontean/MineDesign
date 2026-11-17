@@ -1,4 +1,4 @@
-// 评论：评论工具点元素与框选区域各留一条，在右侧「评论」标签里定位，删除一条，再编辑剩下的一条并保存。
+// 评论：评论工具点元素与框选区域各留一条，在右侧「评论」标签里定位，删除一条，再编辑剩下的一条并保存，最后把它标为已解决。
 export default {
   fixture: 'design',
   async run(session) {
@@ -40,5 +40,10 @@ export default {
     await page.keyboard.press('Enter');
     await session.settle();
     await session.shot('edited');
+
+    // 悬停后点对勾标为已解决：列表与画布编号里都不再有它
+    await editor.getByTestId('mdn-feedback-resolve').click();
+    await session.settle();
+    await session.shot('resolved');
   },
 };

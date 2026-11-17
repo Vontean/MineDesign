@@ -47,9 +47,9 @@ export interface FeedbackItem {
   status: FeedbackItemStatus;
 }
 
-/** 编辑器右侧面板对反馈的操作：定位、删除一条，改一条的文字，或连同补充说明复制、发送整轮反馈。 */
+/** 编辑器右侧面板对反馈的操作：定位、删除、标为已解决一条，改一条的文字，或连同补充说明复制、发送整轮反馈。 */
 export type FeedbackAction =
-  | { action: 'reveal' | 'remove'; id: string }
+  | { action: 'reveal' | 'remove' | 'resolve'; id: string }
   | { action: 'edit'; id: string; text: string }
   | { action: 'send' | 'copy'; message: string };
 
@@ -256,7 +256,7 @@ export function readEditorMessage(data: unknown): EditorToHostMessage | null {
         ? { type: data.type, requestId: data.requestId, filename: data.filename, data: data.data }
         : null;
     case 'editor:feedback-action':
-      if ((data.action === 'reveal' || data.action === 'remove') && isString(data.id, 100)) return { type: data.type, action: data.action, id: data.id };
+      if ((data.action === 'reveal' || data.action === 'remove' || data.action === 'resolve') && isString(data.id, 100)) return { type: data.type, action: data.action, id: data.id };
       if (data.action === 'edit' && isString(data.id, 100) && isString(data.text, FEEDBACK_TEXT_MAX) && data.text.trim() !== '') return { type: data.type, action: data.action, id: data.id, text: data.text };
       if ((data.action === 'send' || data.action === 'copy') && isString(data.message, FEEDBACK_MESSAGE_MAX)) return { type: data.type, action: data.action, message: data.message };
       return null;

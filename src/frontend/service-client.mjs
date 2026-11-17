@@ -20,6 +20,7 @@ export function createServiceClient({app,apiBase,fetchImpl=(...args)=>fetch(...a
     open:args=>call('open',args),
     annotations:(id,annotations)=>call('annotations',{id,...(annotations?{annotations}:{})}),
     prepareFeedback:id=>call('prepareFeedback',{id}),
+    resolveFeedback:({path,kind,ids})=>call('resolveFeedback',{path,kind,ids}),
     http:args=>call('http',args),
     events:args=>call('events',args),
     shell:build=>call('shell',{build}),

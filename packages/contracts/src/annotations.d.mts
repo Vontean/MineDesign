@@ -26,6 +26,7 @@ export function normalizeAnnotations(notes: readonly StoredAnnotation[] | null |
 export function editAnnotation(notes: readonly StoredAnnotation[], id: string, text: string): Annotation[];
 export function markAnnotationsSent(notes: readonly StoredAnnotation[], ids: Iterable<string>, at: string): Annotation[];
 export function markAnnotationsResolved(notes: readonly StoredAnnotation[], ids: Iterable<string>, at: string): Annotation[];
+export function mergeSavedAnnotations(stored: readonly StoredAnnotation[] | null | undefined, incoming: readonly StoredAnnotation[]): Annotation[];
 export function draftAnnotations(notes: readonly StoredAnnotation[] | null | undefined): Annotation[];
 export function visibleAnnotations(notes: readonly StoredAnnotation[] | null | undefined): Annotation[];
 export function canSendFeedback(notes: readonly StoredAnnotation[] | null | undefined, message: unknown): boolean;

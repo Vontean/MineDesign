@@ -13384,14 +13384,14 @@ html[data-theme-switching] *::after {
   line-height: 20px;
   text-align: center;
 }
-/* 目标与状态标签一行；右侧给悬停出现的编辑、删除两个按钮留位 */
+/* 目标与状态标签一行；右侧给悬停出现的编辑、标为已解决、删除三个按钮留位 */
 .mdn-feedback-meta {
   grid-column: 2;
   display: flex;
   align-items: center;
   gap: 8px;
   min-width: 0;
-  margin: 0 52px 2px 0;
+  margin: 0 76px 2px 0;
 }
 .mdn-feedback-target {
   min-width: 0;

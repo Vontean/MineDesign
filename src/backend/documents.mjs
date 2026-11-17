@@ -1,5 +1,5 @@
 import { serviceError } from '@minedesign/contracts/service-errors';
-import { normalizeAnnotations, draftAnnotations, markAnnotationsResolved } from '@minedesign/contracts/annotations';
+import { normalizeAnnotations, draftAnnotations, visibleAnnotations, markAnnotationsResolved, mergeSavedAnnotations } from '@minedesign/contracts/annotations';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { createHash, randomBytes } from 'node:crypto';
@@ -47,22 +47,41 @@ export function createDocumentService({workspace, editors, origin, annotationRoo
     const key=encode(name),groupKey=group!==undefined?encode(group):undefined;
     return {...uploaded,src:uploaded.url,record:{name,blob:uploaded.id,size:uploaded.sizeBytes,type},key,...(groupKey?{groupKey}:{}),indexPath:groupKey?['assetGroups',groupKey,'files',key]:['blobs',key],restoredAs:group!==undefined?`assets/${group}/${name}`:name};
   }
+  const annotationFile=docId=>path.join(annotationRoot,`${docId}.json`);
+  async function readAnnotations(docId){
+    return normalizeAnnotations(JSON.parse(await fs.readFile(annotationFile(docId),'utf8').catch(error=>{if(error.code==='ENOENT')return '[]';throw error;})));
+  }
+  async function writeAnnotations(docId,notes){
+    await fs.mkdir(annotationRoot,{recursive:true});
+    const file=annotationFile(docId),temp=`${file}.${randomBytes(6).toString('hex')}.tmp`;
+    await fs.writeFile(temp,JSON.stringify(notes)); await fs.rename(temp,file);
+  }
   async function annotations(docId, value) {
     const doc=opened.get(docId); if(!doc) throw serviceError('unknown_document','未知作品');
-    const dir=annotationRoot; await fs.mkdir(dir,{recursive:true});
-    const file=path.join(dir,`${docId}.json`);
     if (value!==undefined) {
-      if(!Array.isArray(value) || value.length>100 || JSON.stringify(value).length>200000) throw serviceError('invalid_annotations','批注格式或大小错误');
+      // 条数上限只算未解决的评论：外壳会连同已解决的一起传回
+      if(!Array.isArray(value) || visibleAnnotations(value).length>100 || JSON.stringify(value).length>200000) throw serviceError('invalid_annotations','批注格式或大小错误');
       const sourceVersion=(await editors.storeOf(doc.path,doc.kind).listing()).ver;
-      value=normalizeAnnotations(value).map(note=>({...note,sourceVersion:note.sourceVersion||sourceVersion}));
-      const temp=`${file}.${randomBytes(6).toString('hex')}.tmp`;
-      await fs.writeFile(temp,JSON.stringify(value)); await fs.rename(temp,file);
+      // 已解决是粘性的：外壳的旧副本不能把它改回去，也不能因为没传而丢掉
+      value=mergeSavedAnnotations(await readAnnotations(docId),value).map(note=>({...note,sourceVersion:note.sourceVersion||sourceVersion}));
+      await writeAnnotations(docId,value);
     }
-    return normalizeAnnotations(JSON.parse(await fs.readFile(file,'utf8').catch(error=>{if(error.code==='ENOENT')return '[]';throw error;})));
+    return readAnnotations(docId);
   }
-  // 把指定评论标为已解决（入口见后续的 Agent 报告）；未知 id 忽略
+  // 把指定评论标为已解决，时间取当前时间；未知 id 与已解决的忽略
   async function resolveAnnotations(id,ids){
-    return annotations(id,markAnnotationsResolved(await annotations(id),ids,new Date().toISOString()));
+    if(!opened.has(id))throw serviceError('unknown_document','未知作品');
+    const notes=markAnnotationsResolved(await readAnnotations(id),ids,new Date().toISOString());
+    await writeAnnotations(id,notes);
+    return notes;
+  }
+  // Agent 报告已处理的评论：按打开作品的同一流程取得记录，再标为已解决
+  async function resolveFeedback(given,kind='design',ids){
+    if(!Array.isArray(ids) || !ids.length || ids.length>100 || !ids.every(id=>typeof id==='string' && id && id.length<=100)) throw serviceError('invalid_feedback_ids','评论 id 必须是 1 到 100 个非空字符串');
+    const doc=await open(given,kind);
+    const before=new Set(visibleAnnotations(await readAnnotations(doc.id)).map(note=>note.id));
+    const notes=await resolveAnnotations(doc.id,ids);
+    return {resolved:notes.filter(note=>before.has(note.id) && note.status==='resolved').length,remaining:visibleAnnotations(notes).length};
   }
   async function prepareFeedback(id){
     const doc=opened.get(id);if(!doc)throw serviceError('unknown_document','未知作品');
@@ -71,5 +90,5 @@ export function createDocumentService({workspace, editors, origin, annotationRoo
     const notes=draftAnnotations(await annotations(id));
     return {version,annotations:notes,stale:notes.some(note=>!note.sourceVersion||note.sourceVersion!==version)};
   }
-  return {open, check, importAsset, annotations, resolveAnnotations, prepareFeedback, documents:()=>[...opened.values()]};
+  return {open, check, importAsset, annotations, resolveAnnotations, resolveFeedback, prepareFeedback, documents:()=>[...opened.values()]};
 }

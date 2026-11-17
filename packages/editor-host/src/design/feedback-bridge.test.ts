@@ -34,6 +34,7 @@ describe('createFeedbackBridge', () => {
     const parent = fakeLink();
     const { capability } = createFeedbackBridge(parent.link);
     capability.remove('a');
+    capability.resolve('c');
     capability.edit('b', '标题再大一点');
     capability.send('整体更紧凑');
     capability.panelChanged(true);
@@ -41,6 +42,7 @@ describe('createFeedbackBridge', () => {
     capability.panelChanged(false);
     expect(parent.sent).toEqual([
       { type: 'editor:feedback-action', action: 'remove', id: 'a' },
+      { type: 'editor:feedback-action', action: 'resolve', id: 'c' },
       { type: 'editor:feedback-action', action: 'edit', id: 'b', text: '标题再大一点' },
       { type: 'editor:feedback-action', action: 'send', message: '整体更紧凑' },
       { type: 'editor:panel', open: true },

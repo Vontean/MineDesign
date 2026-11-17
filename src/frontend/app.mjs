@@ -1,6 +1,6 @@
 import { setUiLocale } from '@minedesign/contracts/ui-locale';
 import { uiMessage } from '@minedesign/contracts/ui-messages';
-import { normalizeAnnotations, visibleAnnotations, draftAnnotations, editAnnotation, markAnnotationsSent, canSendFeedback, feedbackContent } from '@minedesign/contracts/annotations';
+import { normalizeAnnotations, visibleAnnotations, draftAnnotations, editAnnotation, markAnnotationsSent, markAnnotationsResolved, canSendFeedback, feedbackContent } from '@minedesign/contracts/annotations';
 import { uiError } from '@minedesign/contracts/ui-error';
 import { serviceError } from '@minedesign/contracts/service-errors';
 import { App } from '@modelcontextprotocol/ext-apps';
@@ -10,7 +10,7 @@ import { createBridge } from './virtual.mjs';
 import { createIllustration } from '../../assets/illustrations/index.mjs';
 import { uiText, resolveUiLocale } from '../../packages/contracts/src/ui-text.ts';
 import { createAbout } from './about.mjs';
-import { createElement, PanelsTopLeft, Component, MessageCircle, Undo2, Redo2, Pencil } from 'lucide';
+import { createElement, PanelsTopLeft, Component, MessageCircle, Undo2, Redo2, Pencil, Check } from 'lucide';
 import { installTooltips } from './tooltip.mjs';
 const config=window.MINEDESIGN_CONFIG;
 const $=id=>document.getElementById(id);
@@ -119,10 +119,12 @@ function renderNotes(){
     const edit=document.createElement('button');edit.type='button';edit.className='btn btn-icon row-action edit';edit.setAttribute('aria-label',uiMessage('feedback.comments.editN',{n:i+1}));edit.title=uiMessage('feedback.comments.edit');edit.dataset.testid='feedback-edit';
     edit.append(createElement(Pencil,{class:'icon','aria-hidden':'true'}));edit.hidden=editing===note.id;
     edit.onclick=()=>{editing=note.id;editText=note.text;renderNotes();const field=list.querySelector('textarea');field?.focus();field?.setSelectionRange(editText.length,editText.length);};
+    const done=document.createElement('button');done.type='button';done.className='btn btn-icon row-action resolve';done.setAttribute('aria-label',uiMessage('feedback.comments.resolveN',{n:i+1}));done.title=uiMessage('feedback.comments.resolve');done.dataset.testid='feedback-resolve';
+    done.append(createElement(Check,{class:'icon','aria-hidden':'true'}));done.onclick=()=>resolveNote(note.id);
     const remove=document.createElement('button');remove.type='button';remove.className='btn btn-icon row-action remove';remove.setAttribute('aria-label',t.removeCommentN(i+1));remove.title=t.removeComment;
     remove.innerHTML=svg('<path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/>');
     remove.onclick=async()=>{notes=notes.filter(n=>n.id!==note.id);await save();};
-    li.append(index,meta,body,edit,remove);return li;
+    li.append(index,meta,body,edit,done,remove);return li;
   });
   list.replaceChildren(...items);
   if(refocus)list.querySelector('textarea')?.focus();
@@ -152,7 +154,19 @@ async function finishEdit(id,keep){
   [...$('annotation-list').children].find(li=>li.dataset.id===id)?.querySelector('.edit')?.focus();
   if(keep)await save().catch(e=>status(e));
 }
-async function save(){notes=await drafts(notes);renderNotes();}
+// saves 记录本地保存次数、saving 是进行中的保存：轮询读到的旧结果不能盖过本地修改
+let saves=0,saving=0;
+async function save(){saves++;saving++;try{notes=await drafts(notes);}finally{saving--;}renderNotes();}
+// 手动标为已解决：数据保留，从列表与画布编号中消失
+function resolveNote(id){notes=markAnnotationsResolved(notes,[id],new Date().toISOString());save().catch(e=>status(e));}
+// Agent 解决评论后，已打开的列表在轮询节拍里更新：只在有已发送评论、且没有编辑、发送或评论输入进行中时读取
+const quiet=()=>!busy&&!pending&&!editing;
+async function refreshNotes(){
+  if(!documentRecord||!quiet()||saving||!notes.some(n=>n.status==='sent'))return;
+  const id=documentRecord.id,rev=saves,next=await drafts();
+  if(documentRecord?.id!==id||rev!==saves||!quiet()||JSON.stringify(next)===JSON.stringify(notes))return;
+  notes=next;renderNotes();
+}
 // 目标可以是已打开作品的 id，也可以是项目里尚未打开的文件 {kind,path,title}
 const sameFile=(a,b)=>a.path===b.path&&a.kind===b.kind;
 async function select(target){
@@ -333,6 +347,7 @@ window.addEventListener('message',e=>{
     if(m.action==='reveal')post({type:'editor:reveal',id:m.id});
     else if(m.action==='remove'){notes=notes.filter(n=>n.id!==m.id);save().catch(e=>status(e));}
     else if(m.action==='edit'){notes=editAnnotation(notes,m.id,m.text);save().catch(e=>status(e));}
+    else if(m.action==='resolve')resolveNote(m.id);
     else if(m.action==='copy')copyFeedback(m.message);
     else sendFeedback(m.message);
   }
@@ -354,18 +369,19 @@ $('copy').onclick=()=>copyFeedback($('message').value);
 $('send').onclick=()=>sendFeedback($('message').value);
 $('message').addEventListener('input',syncSend);
 // 构建后原地换成新外壳；批注已持久化，这里只携带视图状态。编辑或发送进行中时推迟。
-const idle=()=>!busy&&!pending&&!editing&&!flushes.size;
+const idle=()=>quiet()&&!flushes.size;
 async function swapShell(html){
   try{sessionStorage.setItem(CARRY,JSON.stringify({id:documentRecord?.id,panel:document.body.dataset.panel,message:$('message').value,...(about.isOpen()?{about:true}:{})}));}catch{}
   await app?.close();
   document.open();document.write(html);document.close();
 }
+// 每 2 秒一拍：先按需刷新评论，再比较构建标识
 function watchShell(){
   setTimeout(async()=>{
     try{
-      if(document.visibilityState==='visible'&&idle()){
-        const next=await client.shell(config.build);
-        if(next.html&&idle())return await swapShell(next.html);
+      if(document.visibilityState==='visible'){
+        await refreshNotes().catch(()=>{});
+        if(idle()){const next=await client.shell(config.build);if(next.html&&idle())return await swapShell(next.html);}
       }
     }catch{}
     watchShell();

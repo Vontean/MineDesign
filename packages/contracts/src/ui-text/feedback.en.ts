@@ -9,6 +9,8 @@ export const en = {
   "feedback.comments.edit": "Edit comment",
   "feedback.comments.editN": "Edit comment {n}",
   "feedback.comments.editField": "Comment {n}",
+  "feedback.comments.resolve": "Mark as resolved",
+  "feedback.comments.resolveN": "Mark comment {n} as resolved",
   "feedback.comments.save": "Save",
   "feedback.comments.cancel": "Cancel",
   "feedback.send.empty": "Add a comment or a note to send"

@@ -39,6 +39,18 @@ export function markAnnotationsResolved(notes, ids, at) {
   return normalizeAnnotations(notes).map(note => wanted.has(note.id) && note.status !== 'resolved' ? { ...note, status: 'resolved', resolvedAt: at } : note);
 }
 
+/**
+ * 外壳整组保存时与已存储内容合并：已解决是粘性的。
+ * 存储里已解决的评论，传入的同 id 评论不能把它改回草稿或已发送；传入里没有的已解决评论保留（外壳可能还没读到）。
+ * 存储里未解决、传入里没有的评论按删除处理。顺序按传入，保留下来的已解决评论排在后面。
+ */
+export function mergeSavedAnnotations(stored, incoming) {
+  const resolved = new Map(normalizeAnnotations(stored).filter(note => note.status === 'resolved').map(note => [note.id, note]));
+  const merged = normalizeAnnotations(incoming).map(note => resolved.get(note.id) ?? note);
+  const kept = new Set(merged.map(note => note.id));
+  return merged.concat([...resolved.values()].filter(note => !kept.has(note.id)));
+}
+
 /** 还没发送的评论：发送内容与过期判定只看它们。 */
 export function draftAnnotations(notes) {
   return normalizeAnnotations(notes).filter(note => note.status === 'draft');

@@ -10,6 +10,8 @@ export const zh = {
   "feedback.comments.edit": "编辑评论",
   "feedback.comments.editN": "编辑评论 {n}",
   "feedback.comments.editField": "评论 {n}",
+  "feedback.comments.resolve": "标为已解决",
+  "feedback.comments.resolveN": "将评论 {n} 标为已解决",
   "feedback.comments.save": "保存",
   "feedback.comments.cancel": "取消",
   "feedback.send.empty": "添加评论或补充说明后再发送"

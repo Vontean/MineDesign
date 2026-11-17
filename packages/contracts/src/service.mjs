@@ -3,6 +3,8 @@ export const OPERATIONS = Object.freeze({
   open: {http:'open',tool:'minedesign_open_document',field:'document'},
   annotations: {http:'annotations',tool:'minedesign_annotations',field:'annotations'},
   prepareFeedback: {http:'prepare-feedback',tool:'minedesign_prepare_feedback'},
+  // Agent 报告已处理的评论；结果为 {resolved 本次解决条数, remaining 仍未解决的可见条数}
+  resolveFeedback: {http:'resolve-feedback',tool:'minedesign_resolve_feedback'},
   http: {http:'http',tool:'minedesign_http'},
   events: {http:'events',tool:'minedesign_events'},
   shell: {http:'shell',tool:'minedesign_shell'},

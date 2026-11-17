@@ -36,6 +36,22 @@ test('design editor serves real files, preserves ifMatch and rejects workspace e
     assert.equal(prepared.stale,false);assert.deepEqual(prepared.annotations,[]);
     const resolved=await service.resolveAnnotations(doc.id,['test-note','missing']);
     assert.equal(resolved[0].status,'resolved');assert.ok(resolved[0].resolvedAt);
+    // Agent 报告已处理的评论：只解决列出的，未知 id 忽略；之后外壳整组保存不能让它复活
+    const sent=(id,text)=>({id,anchor:'Main.dc.html',label:'工作台',text,status:'sent',sentAt:'2026-11-17T08:00:00.000Z'});
+    await service.annotations(doc.id,[sent('a','标题再大一点'),sent('b','留白太多'),{id:'c',anchor:'Main.dc.html',label:'工作台',text:'草稿'}]);
+    assert.deepEqual(await service.resolveFeedback('studio','design',['a','missing']),{resolved:1,remaining:2});
+    assert.deepEqual(await service.resolveFeedback('studio','design',['a']),{resolved:0,remaining:2});
+    const viaHttp=await fetch(new URL('resolve-feedback',service.api),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({path:'studio',kind:'design',ids:['c']})});
+    assert.deepEqual(await viaHttp.json(),{resolved:1,remaining:1});
+    assert.deepEqual((await service.prepareFeedback(doc.id)).annotations,[]);
+    const revived=await service.annotations(doc.id,[sent('a','标题再大一点'),sent('b','留白太多')]);
+    assert.deepEqual(revived.map(n=>[n.id,n.status]),[['a','resolved'],['b','sent'],['c','resolved'],['test-note','resolved']]);
+    // 外壳只传可见评论时，已解决的保留，未解决且没传的按删除处理
+    assert.deepEqual((await service.annotations(doc.id,[])).map(n=>n.id),['a','c','test-note']);
+    await assert.rejects(service.resolveFeedback('studio','design',[]),{code:'invalid_feedback_ids'});
+    const badIds=await fetch(new URL('resolve-feedback',service.api),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({path:'studio',ids:'a'})});
+    assert.equal(badIds.status,400);assert.equal((await badIds.json()).code,'invalid_feedback_ids');
+    await assert.rejects(service.resolveFeedback('../outside','design',['a']));
     await fs.rm(noteFile,{force:true});
     const conflict=await publish({[file]:{base64:Buffer.from(source).toString('base64'),contentType:'text/html',ifMatch:listing.files[file].sha256}});
     assert.equal(conflict.status,409);assert.equal((await conflict.json()).code,'conflict');

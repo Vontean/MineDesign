@@ -6,6 +6,7 @@ import {
   feedbackContent,
   markAnnotationsResolved,
   markAnnotationsSent,
+  mergeSavedAnnotations,
   normalizeAnnotations,
   visibleAnnotations,
 } from './annotations.mjs';
@@ -72,6 +73,26 @@ describe('批注状态', () => {
     expect(canSendFeedback(input, '')).toBe(true);
     expect(canSendFeedback([note('a', { status: 'sent' })], '  ')).toBe(false);
     expect(canSendFeedback([note('a', { status: 'sent' })], '整体更紧凑')).toBe(true);
+  });
+
+  it('整组保存不能把已解决的评论改回草稿或已发送', () => {
+    const stored = [note('a', { status: 'resolved', resolvedAt: AT }), note('b', { status: 'sent', sentAt: AT })];
+    const incoming = [note('a', { status: 'sent', sentAt: AT, text: '旧副本' }), note('b', { status: 'sent', sentAt: AT })];
+    const result = mergeSavedAnnotations(stored, incoming);
+    expect(result.map(n => [n.id, n.status])).toEqual([['a', 'resolved'], ['b', 'sent']]);
+    expect(result[0]).toEqual(stored[0]);
+  });
+
+  it('外壳没有传入的已解决评论保留，未解决的按删除处理，新评论加入', () => {
+    const stored = [note('a', { status: 'resolved', resolvedAt: AT }), note('b', { status: 'sent', sentAt: AT }), note('c')];
+    const result = mergeSavedAnnotations(stored, [note('c'), note('d')]);
+    expect(result.map(n => [n.id, n.status])).toEqual([['c', 'draft'], ['d', 'draft'], ['a', 'resolved']]);
+    expect(mergeSavedAnnotations(undefined, [note('d')]).map(n => n.id)).toEqual(['d']);
+  });
+
+  it('传入里标为已解决的评论按传入保存（手动解决）', () => {
+    const result = mergeSavedAnnotations([note('a', { status: 'sent', sentAt: AT })], [note('a', { status: 'resolved', sentAt: AT, resolvedAt: AT })]);
+    expect(result[0]).toMatchObject({ status: 'resolved', resolvedAt: AT });
   });
 
   it('未知 id 不报错，内容不变', () => {

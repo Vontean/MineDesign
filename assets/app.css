@@ -131,20 +131,21 @@ body[data-feedback="editor"] aside { display: none; }
 .notes-head h2 { font-size: var(--mdn-text-sm); font-weight: var(--mdn-weight-strong); }
 .count { min-width: 20px; height: 20px; padding: 0 6px; border-radius: var(--mdn-radius-full); background: var(--mdn-ghost-active); color: var(--mdn-text-secondary); font-size: var(--mdn-text-xs); line-height: 20px; text-align: center; }
 
-/* 批注行：沿用 Codex 侧栏行的悬停与圆角；编辑与删除按钮在悬停或聚焦时出现 */
+/* 批注行：沿用 Codex 侧栏行的悬停与圆角；编辑、标为已解决与删除按钮在悬停或聚焦时出现 */
 #annotation-list { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 2px; }
 #annotation-list li { position: relative; display: grid; grid-template-columns: 20px 1fr; column-gap: calc(var(--mdn-space) * 2); padding: calc(var(--mdn-space) * 2); border-radius: var(--mdn-radius-lg); }
 #annotation-list li:hover, #annotation-list li:focus-within { background: var(--mdn-ghost-hover); }
 .index { width: 20px; height: 20px; border-radius: var(--mdn-radius-full); background: var(--mdn-accent); color: #fff; font-size: var(--mdn-text-xs); font-weight: var(--mdn-weight-medium); line-height: 20px; text-align: center; }
-/* 目标与状态标签一行；右侧给编辑、删除两个按钮留位 */
-.comment-meta { grid-column: 2; display: flex; align-items: center; gap: calc(var(--mdn-space) * 2); min-width: 0; margin: 0 52px 2px 0; }
+/* 目标与状态标签一行；右侧给编辑、标为已解决、删除三个按钮留位 */
+.comment-meta { grid-column: 2; display: flex; align-items: center; gap: calc(var(--mdn-space) * 2); min-width: 0; margin: 0 76px 2px 0; }
 /* 已发送：与计数同样的小胶囊，次级文字，不抢正文 */
 .comment-state { flex-shrink: 0; height: 16px; padding: 0 6px; border-radius: var(--mdn-radius-full); background: var(--mdn-ghost-active); color: var(--mdn-text-secondary); font-size: var(--mdn-text-xs); line-height: 16px; }
 .target-link { min-width: 0; padding: 0; margin: 0; border: 0; background: none; border-radius: var(--mdn-radius-sm); text-align: left; color: var(--mdn-text-tertiary); font-size: var(--mdn-text-xs); line-height: 20px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
 .target-link:hover { color: var(--mdn-text-secondary); }
 .comment { grid-column: 2; color: var(--mdn-text); white-space: pre-wrap; overflow-wrap: anywhere; }
 .row-action { position: absolute; top: 4px; right: 4px; width: 24px; height: 24px; border-radius: var(--mdn-radius-sm); opacity: 0; }
-.row-action.edit { right: 28px; }
+.row-action.edit { right: 52px; }
+.row-action.resolve { right: 28px; }
 .row-action .icon { width: 14px; height: 14px; }
 #annotation-list li:hover .row-action, .row-action:focus-visible { opacity: 1; }
 /* 编辑一条评论：输入框沿用输入区的外形，保存与取消在右下 */

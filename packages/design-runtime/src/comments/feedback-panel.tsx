@@ -4,7 +4,7 @@ import { getUiLocale, subscribeUiLocale } from '@minedesign/contracts/ui-locale'
 import { canSendFeedback } from '@minedesign/contracts/annotations';
 /**
  * MineDesign：设计稿右侧面板的「评论」标签，与 Properties / Code / Tweaks 并列；切到这个标签即进入评论模式。
- * 评论列表（草稿与已发送）由父窗口经宿主的 `feedback` 能力推送（packages/editor-host/src/design/feedback-bridge.ts），保存、编辑、版本核对与发送也在父窗口。
+ * 评论列表（草稿与已发送）由父窗口经宿主的 `feedback` 能力推送（packages/editor-host/src/design/feedback-bridge.ts），保存、编辑、解决、版本核对与发送也在父窗口。
  */
 import { uiText } from "@minedesign/contracts/ui-text";
 import {
@@ -164,6 +164,17 @@ function FeedbackPanel({ host }: Dynamic): Dynamic {
                         data-testid={"mdn-feedback-edit"}
                         onClick={(): void => setEditing({ id: item.id, text: item.text })}
                       />)}
+                    <Button
+                      variant={"ghost"}
+                      size={"xxs"}
+                      iconOnly={true}
+                      icon={<Icon name={"Check"} size={"sm"} />}
+                      aria-label={uiMessage("feedback.comments.resolveN", { n: item.n })}
+                      title={uiMessage("feedback.comments.resolve")}
+                      className={"mdn-feedback-row-action"}
+                      data-testid={"mdn-feedback-resolve"}
+                      onClick={(): Dynamic => host.resolve(item.id)}
+                    />
                     <Button
                       variant={"ghost"}
                       size={"xxs"}

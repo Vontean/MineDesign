@@ -60,6 +60,20 @@ test('backend reload preserves the same stdio connection, documents and persiste
     assert.equal((await client.callTool({name:'minedesign_http',arguments:{path:current.editorPath}})).structuredContent.status,200);
     assert.match((await client.readResource({uri:APP_URI})).contents[0].text,/MineDesign/);
     assert.ok((await client.listTools()).tools.some(t=>t.name==='minedesign_reload'));
+    // Agent 报告已处理的评论：工具对模型可见，参数校验，调用后批注状态改变
+    const resolveTool=(await client.listTools()).tools.find(t=>t.name==='minedesign_resolve_feedback');
+    assert.ok(resolveTool);assert.equal(resolveTool._meta?.ui,undefined);assert.match(resolveTool.description,/minedesign-feedback/);
+    assert.ok(['path','ids'].every(key=>resolveTool.inputSchema.required.includes(key)));assert.equal(resolveTool.inputSchema.properties.ids.maxItems,100);
+    const sent={status:'sent',sentAt:'2026-11-17T08:00:00.000Z'};
+    await client.callTool({name:'minedesign_annotations',arguments:{id:doc.id,annotations:[{...saved[0],...sent},{id:'kept-note',anchor:'Main.dc.html',label:'工作台',text:'未处理',...sent}]}});
+    for(const ids of [[],[''],Array.from({length:101},(_,i)=>`n${i}`)]){
+      const invalid=await client.callTool({name:'minedesign_resolve_feedback',arguments:{path:'studio',ids}}).catch(error=>({isError:true,error}));
+      assert.equal(invalid.isError,true);
+    }
+    const resolved=await client.callTool({name:'minedesign_resolve_feedback',arguments:{path:'studio',kind:'design',ids:['reload-note']}});
+    assert.equal(resolved.isError,undefined);assert.deepEqual(resolved.structuredContent,{resolved:1,remaining:1});
+    const after=(await client.callTool({name:'minedesign_annotations',arguments:{id:doc.id}})).structuredContent.annotations;
+    assert.deepEqual(after.map(n=>[n.id,n.status]),[['reload-note','resolved'],['kept-note','sent']]);
   }finally{
     await client.close();
     if(doc)await fs.rm(path.join(DATA,'annotations',doc.id+'.json'),{force:true});

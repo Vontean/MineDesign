@@ -78,13 +78,16 @@ describe('MineDesign 右侧面板的反馈消息', () => {
     expect(readHostMessage({ type: 'editor:set-panel', open: false })).toEqual({ type: 'editor:set-panel', open: false });
   });
 
-  it('父窗口按动作核对字段：定位与删除要 id，编辑要 id 与非空文字，复制与发送要补充说明', () => {
+  it('父窗口按动作核对字段：定位、删除与标为已解决要 id，编辑要 id 与非空文字，复制与发送要补充说明', () => {
     expect(readEditorMessage({ type: 'editor:feedback-action', action: 'remove', id: 'a' })).toEqual({ type: 'editor:feedback-action', action: 'remove', id: 'a' });
     expect(readEditorMessage({ type: 'editor:feedback-action', action: 'send', message: '整体更紧凑' })).toEqual({
       type: 'editor:feedback-action',
       action: 'send',
       message: '整体更紧凑',
     });
+    expect(readEditorMessage({ type: 'editor:feedback-action', action: 'resolve', id: 'a' })).toEqual({ type: 'editor:feedback-action', action: 'resolve', id: 'a' });
+    expect(readEditorMessage({ type: 'editor:feedback-action', action: 'resolve' })).toBeNull();
+    expect(readEditorMessage({ type: 'editor:feedback-action', action: 'resolve', id: 'x'.repeat(101) })).toBeNull();
     expect(readEditorMessage({ type: 'editor:feedback-action', action: 'send', id: 'a' })).toBeNull();
     expect(readEditorMessage({ type: 'editor:feedback-action', action: 'edit', id: 'a', text: '再大一点', extra: 1 })).toEqual({
       type: 'editor:feedback-action',

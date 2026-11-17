@@ -20,6 +20,7 @@ export function createHttpHandler({service,editors,token,getOrigin}) {
         if(action===OPERATIONS.open.http && req.method==='POST')return json(res,200,await service.open(body.path,body.kind));
         if(action===OPERATIONS.annotations.http)return json(res,200,await service.annotations(body.id||url.searchParams.get('id'),req.method==='POST'?body.annotations:undefined));
         if(action===OPERATIONS.prepareFeedback.http && req.method==='POST')return json(res,200,await service.prepareFeedback(body.id));
+        if(action===OPERATIONS.resolveFeedback.http && req.method==='POST')return json(res,200,await service.resolveFeedback(body.path,body.kind,body.ids));
         if(action===OPERATIONS.http.http && req.method==='POST')return json(res,200,await service.proxy(body));
         if(action===OPERATIONS.events.http && req.method==='POST')return json(res,200,await service.events(body));
         if(action===OPERATIONS.about.http && req.method==='POST')return json(res,200,await service.about(body));
