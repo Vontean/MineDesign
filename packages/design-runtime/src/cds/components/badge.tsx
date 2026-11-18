@@ -19,9 +19,9 @@ import { initializeOnce, toModuleNamespace } from "../../module-helpers";
 var reactComponentsBadge: typeof React;
 var jsxComponentsBadge: typeof import("react/jsx-runtime");
 var ComponentsBadgeNeutralAccentSuccessConfig: Record<BadgeVariant, string>;
-var ComponentsBadgeNeutralAccentSuccessConfig_2: Record<BadgeVariant, string>;
+var ComponentsBadgeSolidVariantClassNames: Record<BadgeVariant, string>;
 var ComponentsBadgeRedOrangeYellowConfig: Record<AccentColor, string>;
-var ComponentsBadgeRedOrangeYellowConfig_2: Record<AccentColor, string>;
+var ComponentsBadgeTintAccentClassNames: Record<AccentColor, string>;
 var ComponentsBadgeXsSmMdConfig: Record<"xs" | "sm" | "md", string>;
 var ComponentsBadgeClassNames: string;
 var ComponentsBadgeComfortableCompactConfig: Record<
@@ -31,18 +31,18 @@ var ComponentsBadgeComfortableCompactConfig: Record<
 var Badge: ForwardComponent<HTMLSpanElement, BadgeProps>;
 var initializeComponentsBadge: () => void;
 function isBadgeVariant(
-  input: BadgeVariant | AccentColor,
+  variant: BadgeVariant | AccentColor,
 ): input is BadgeVariant {
-  return Object.hasOwn(ComponentsBadgeNeutralAccentSuccessConfig, input);
+  return Object.hasOwn(ComponentsBadgeNeutralAccentSuccessConfig, variant);
 }
 export {
   Badge,
   ComponentsBadgeClassNames,
   ComponentsBadgeComfortableCompactConfig,
   ComponentsBadgeNeutralAccentSuccessConfig,
-  ComponentsBadgeNeutralAccentSuccessConfig_2,
+  ComponentsBadgeSolidVariantClassNames as ComponentsBadgeNeutralAccentSuccessConfig_2,
   ComponentsBadgeRedOrangeYellowConfig,
-  ComponentsBadgeRedOrangeYellowConfig_2,
+  ComponentsBadgeTintAccentClassNames as ComponentsBadgeRedOrangeYellowConfig_2,
   ComponentsBadgeXsSmMdConfig,
   initializeComponentsBadge,
   isBadgeVariant,
@@ -74,7 +74,7 @@ export function installCdsComponentsBadge(): () => void {
         danger: "bg-tint-red text-danger",
         pro: "bg-tint-violet text-pro",
       };
-      ComponentsBadgeNeutralAccentSuccessConfig_2 = {
+      ComponentsBadgeSolidVariantClassNames = {
         neutral: "bg-gray-700 dark:bg-gray-550 text-gray-0",
         accent: "bg-blue-500 text-gray-0",
         success: "bg-green-500 text-gray-0",
@@ -92,7 +92,7 @@ export function installCdsComponentsBadge(): () => void {
         violet: "bg-violet-450 text-gray-0",
         magenta: "bg-magenta-450 text-gray-0",
       };
-      ComponentsBadgeRedOrangeYellowConfig_2 = {
+      ComponentsBadgeTintAccentClassNames = {
         red: "bg-tint-red text-tint-red",
         orange: "bg-tint-orange text-tint-orange",
         yellow: "bg-tint-yellow text-tint-yellow",
@@ -141,31 +141,31 @@ export function installCdsComponentsBadge(): () => void {
             children: children,
             ...props
           }: BadgeProps,
-          options: React.ForwardedRef<HTMLSpanElement>,
+          forwardedRef: React.ForwardedRef<HTMLSpanElement>,
         ): React.ReactElement => {
-          let value = variant ?? "accent",
-            value2 = useLabel("removeItem", "Remove {item}", {
+          let resolvedVariant = variant ?? "accent",
+            defaultRemoveLabel = useLabel("removeItem", "Remove {item}", {
               item: typeof children == "string" ? children : "item",
             }),
-            value3 = useDensity(),
-            value4 =
-              ComponentsBadgeComfortableCompactConfig[value3][size ?? "base"],
+            density = useDensity(),
+            iconSize =
+              ComponentsBadgeComfortableCompactConfig[density][size ?? "base"],
             length = reactComponentsBadge.Children.toArray(children).length,
-            value5 =
+            iconClassName =
               !iconOnly &&
               (length > 0 ||
                 onRemove !== undefined ||
                 removeRender !== undefined)
-                ? ComponentsBadgeXsSmMdConfig[value4]
+                ? ComponentsBadgeXsSmMdConfig[iconSize]
                 : "shrink-0",
-            value6 =
+            labelClassName =
               (size === "xxs"
                 ? 1
-                : getControlSizeRank(value3, size)) === 1
+                : getControlSizeRank(density, size)) === 1
                 ? ComponentsBadgeClassNames
                 : "pb-[0.05em]",
-            value7 = removeLabel || value2,
-            value8 = npm_clsx_Ea(
+            resolvedRemoveLabel = removeLabel || defaultRemoveLabel,
+            removeButtonClassName = npm_clsx_Ea(
               "cds-reset relative inline-flex shrink-0 items-center justify-center",
               "before:absolute before:left-[-2px] before:top-1/2 before:-translate-y-1/2 before:content-['']",
               "before:h-[max(24px,100%)] before:w-[max(24px,calc(100%+2px))]",
@@ -181,14 +181,14 @@ export function installCdsComponentsBadge(): () => void {
               "focus-visible:shadow-focus",
             ),
             {
-              className: value9,
-              ...value10
+              className: removeRenderClassName,
+              ...removeRenderProps
             }: React.ComponentPropsWithoutRef<"button"> = Object.fromEntries(
               Object.entries(removeRender?.props ?? {}).filter(
-                ([, input]) => input !== undefined,
+                ([, propValue]) => propValue !== undefined,
               ),
             ),
-            value11 = (
+            removeIcon = (
               <Icon
                 name={"X"}
                 size={"xs"}
@@ -198,58 +198,58 @@ export function installCdsComponentsBadge(): () => void {
                 }}
               />
             ),
-            value12 =
+            removeControl =
               removeRender !== undefined
                 ? (0, reactComponentsBadge.cloneElement)(
                     removeRender,
                     npm_mergeProps_Ac(
                       {
-                        className: cn(value8, value9),
-                        "aria-label": value7,
-                        children: value11,
+                        className: cn(removeButtonClassName, removeRenderClassName),
+                        "aria-label": resolvedRemoveLabel,
+                        children: removeIcon,
                       },
-                      value10,
+                      removeRenderProps,
                     ),
                   )
                 : onRemove !== undefined && (
                     <button
                       type={"button"}
-                      aria-label={value7}
-                      onClick={(input: React.MouseEvent<HTMLElement>) => {
-                        input.stopPropagation();
+                      aria-label={resolvedRemoveLabel}
+                      onClick={(event: React.MouseEvent<HTMLElement>) => {
+                        event.stopPropagation();
                         onRemove();
                       }}
-                      onKeyDown={(input: React.KeyboardEvent<HTMLElement>) => {
-                        (input.key === "Enter" || input.key === " ") &&
-                          input.stopPropagation();
+                      onKeyDown={(event: React.KeyboardEvent<HTMLElement>) => {
+                        (event.key === "Enter" || event.key === " ") &&
+                          event.stopPropagation();
                       }}
-                      onKeyUp={(input: React.KeyboardEvent<HTMLElement>) => {
-                        (input.key === "Enter" || input.key === " ") &&
-                          input.stopPropagation();
+                      onKeyUp={(event: React.KeyboardEvent<HTMLElement>) => {
+                        (event.key === "Enter" || event.key === " ") &&
+                          event.stopPropagation();
                       }}
-                      className={value8}
+                      className={removeButtonClassName}
                     >
-                      {value11}
+                      {removeIcon}
                     </button>
                   ),
-            value13 = isBadgeVariant(value),
-            value14 =
+            isNamedVariant = isBadgeVariant(resolvedVariant),
+            colorClassName =
               bold === true
-                ? value13
-                  ? ComponentsBadgeNeutralAccentSuccessConfig_2[
-                      value as BadgeVariant
+                ? isNamedVariant
+                  ? ComponentsBadgeSolidVariantClassNames[
+                      resolvedVariant as BadgeVariant
                     ]
-                  : ComponentsBadgeRedOrangeYellowConfig[value as AccentColor]
-                : value13
+                  : ComponentsBadgeRedOrangeYellowConfig[resolvedVariant as AccentColor]
+                : isNamedVariant
                   ? ComponentsBadgeNeutralAccentSuccessConfig[
-                      value as BadgeVariant
+                      resolvedVariant as BadgeVariant
                     ]
-                  : ComponentsBadgeRedOrangeYellowConfig_2[
-                      value as AccentColor
+                  : ComponentsBadgeTintAccentClassNames[
+                      resolvedVariant as AccentColor
                     ];
           return (
             <span
-              ref={options}
+              ref={forwardedRef}
               data-cds={"Badge"}
               role={iconOnly ? "img" : undefined}
               {...(size === "xxs"
@@ -265,26 +265,26 @@ export function installCdsComponentsBadge(): () => void {
                   : "px-sm",
                 "font-sans text-caption font-medium leading-[round(1.25em,1px)]",
                 truncate ? "min-w-0" : "shrink-0",
-                value14,
+                colorClassName,
                 className,
               )}
             >
               {typeof icon != "number" &&
-                icon && (isIconName(icon) ? (<Icon name={icon} size={value4} className={value5} />) : (<span
+                icon && (isIconName(icon) ? (<Icon name={icon} size={iconSize} className={iconClassName} />) : (<span
                     aria-hidden={true}
-                    className={cn("inline-flex", value5)}
+                    className={cn("inline-flex", iconClassName)}
                   >
                     {icon}
                   </span>))}
               {truncate ? (<span
                   className={cn(
-                    value6,
+                    labelClassName,
                     "min-w-0 overflow-x-clip text-ellipsis whitespace-nowrap",
                   )}
                 >
                   {children}
-                </span>) : (length === 1 ? (<span className={value6}>{children}</span>) : (children))}
-              {value12}
+                </span>) : (length === 1 ? (<span className={labelClassName}>{children}</span>) : (children))}
+              {removeControl}
             </span>
           );
         },

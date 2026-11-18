@@ -17,54 +17,54 @@ import { initializeOnce, toModuleNamespace } from "../../module-helpers";
 
 var reactComponentsCounter: Dynamic;
 var ComponentsCounterForValue: Dynamic;
-var ComponentsCounterForValue_2: Dynamic;
+var ComponentsCounterForwardRefSymbol: Dynamic;
 var initializeComponentsCounter: Dynamic;
 var ComponentsCounterClassNames: Dynamic;
 var initializeComponentsCounter_2: Dynamic;
 var reactComponentsCounter_2: Dynamic;
 var jsxComponentsCounter: Dynamic;
 var ComponentsCounterNeutralAccentSuccessConfig: Dynamic;
-var ComponentsCounterNeutralAccentSuccessConfig_2: Dynamic;
+var ComponentsCounterDotVariantClassNames: Dynamic;
 var Counter: Dynamic;
 var initializeComponentsCounter_3: Dynamic;
 var ComponentsCounterGlyphTextConfig: Dynamic;
-var ComponentsCounterGlyphTextConfig_2: Dynamic;
+var ComponentsCounterActionStartMarginClassNames: Dynamic;
 var ComponentsCounterGlyphValue: Dynamic;
-var ComponentsCounterGlyphTextConfig_3: Dynamic;
-var ComponentsCounterGlyphValue_2: Dynamic;
-var ComponentsCounterGlyphTextConfig_4: Dynamic;
-var ComponentsCounterGlyphValue_3: Dynamic;
+var ComponentsCounterDismissMarginClassNames: Dynamic;
+var ComponentsCounterDismissGlyphMarginClassName: Dynamic;
+var ComponentsCounterActionEndMarginClassNames: Dynamic;
+var ComponentsCounterActionEndGlyphMarginClassName: Dynamic;
 var initializeComponentsCounter_4: Dynamic;
 var reactComponentsCounter_3: Dynamic;
 var jsxComponentsCounter_2: Dynamic;
 var ComponentsCounterComfortableCompactConfig: Dynamic;
 var ComponentsCounterConstant: Dynamic;
 var ComponentsCounterNeutralWarningDangerConfig: Dynamic;
-var ComponentsCounterNeutralWarningDangerConfig_2: Dynamic;
-var ComponentsCounterNeutralWarningDangerConfig_3: Dynamic;
+var ComponentsCounterIconClassNames: Dynamic;
+var ComponentsCounterIconNames: Dynamic;
 var initializeComponentsCounter_5: Dynamic;
 var reactComponentsCounter_4: Dynamic;
 var jsxComponentsCounter_3: Dynamic;
 var ComponentsCounterHrefRouterOptionsTargetValues: Dynamic;
 var initializeComponentsCounter_6: Dynamic;
-function isPictogramElement(input?: Dynamic): Dynamic {
-  return !(0, reactComponentsCounter.isValidElement)(input) ||
-    typeof input.type == "string"
+function isPictogramElement(element?: Dynamic): Dynamic {
+  return !(0, reactComponentsCounter.isValidElement)(element) ||
+    typeof element.type == "string"
     ? false
-    : isCdsPictogram(input.type);
+    : isCdsPictogram(element.type);
 }
-function isCdsPictogram(input?: Dynamic): Dynamic {
-  let value: Dynamic = input;
+function isCdsPictogram(component?: Dynamic): Dynamic {
+  let current: Dynamic = component;
   for (
     let index: Dynamic = 0;
-    index < 4 && value !== null && value !== undefined;
+    index < 4 && current !== null && current !== undefined;
     index++
   ) {
-    if (value.isCdsPictogram === true) return true;
-    let value2: Dynamic = value;
-    if (value2.$$typeof === ComponentsCounterForValue) value = value2.type;
-    else if (value2.$$typeof === ComponentsCounterForValue_2)
-      value = value2.render;
+    if (current.isCdsPictogram === true) return true;
+    let wrapper: Dynamic = current;
+    if (wrapper.$$typeof === ComponentsCounterForValue) current = wrapper.type;
+    else if (wrapper.$$typeof === ComponentsCounterForwardRefSymbol)
+      current = wrapper.render;
     else return false;
   }
   return false;
@@ -87,94 +87,94 @@ function Alert({
   children: children,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic = useLabel("dismiss", "Dismiss"),
-    value2: Dynamic = dismissLabel ?? value,
-    value3: Dynamic = useDensity(),
+  let defaultDismissLabel: Dynamic = useLabel("dismiss", "Dismiss"),
+    resolvedDismissLabel: Dynamic = dismissLabel ?? defaultDismissLabel,
+    density: Dynamic = useDensity(),
     state: Dynamic = {
       "data-step": getControlSizeRank(
-        value3,
-        ComponentsCounterComfortableCompactConfig[value3],
+        density,
+        ComponentsCounterComfortableCompactConfig[density],
       ),
     },
-    value4: Dynamic = variant ?? "neutral",
-    value5: Dynamic =
+    resolvedVariant: Dynamic = variant ?? "neutral",
+    composerKeyline: Dynamic =
       composerCalibration === true
         ? "glyph"
         : composerCalibration === false
           ? undefined
           : composerCalibration,
-    value6: Dynamic = value5 !== undefined,
-    value7: Dynamic = icon != null && typeof icon != "boolean",
-    value8: Dynamic = isPictogramElement(icon),
-    value9: Dynamic = details != null && typeof details != "boolean",
-    value10: Dynamic = role ?? (value9 ? "none" : "status"),
-    [value11, value12]: Dynamic = (0, reactComponentsCounter_3.useState)(
+    hasComposerKeyline: Dynamic = composerKeyline !== undefined,
+    hasCustomIcon: Dynamic = icon != null && typeof icon != "boolean",
+    isPictogramIcon: Dynamic = isPictogramElement(icon),
+    hasDetails: Dynamic = details != null && typeof details != "boolean",
+    resolvedRole: Dynamic = role ?? (hasDetails ? "none" : "status"),
+    [uncontrolledDetailsOpen, setUncontrolledDetailsOpen]: Dynamic = (0, reactComponentsCounter_3.useState)(
       defaultDetailsOpen,
     ),
-    [value13, value14]: Dynamic = (0, reactComponentsCounter_3.useState)(
+    [isActionWrapped, setIsActionWrapped]: Dynamic = (0, reactComponentsCounter_3.useState)(
       false,
     ),
-    value15: Dynamic = (0, reactComponentsCounter_3.useRef)(null),
-    value16: Dynamic = (0, reactComponentsCounter_3.useRef)(null),
-    value17: Dynamic = (0, reactComponentsCounter_3.useRef)(null),
-    value18: Dynamic = (0, reactComponentsCounter_3.useRef)(0),
-    value19: Dynamic = action != null && typeof action != "boolean",
-    value20: Dynamic =
-      !value9 && (value8 || (actionAlign === "center" && !value6)),
-    value21: Dynamic = !value9 && !value20 && value19,
-    value22: Dynamic = value21 && value13,
-    value23: Dynamic = value6 && value22;
+    bannerRef: Dynamic = (0, reactComponentsCounter_3.useRef)(null),
+    contentRef: Dynamic = (0, reactComponentsCounter_3.useRef)(null),
+    actionRef: Dynamic = (0, reactComponentsCounter_3.useRef)(null),
+    stackedWidthRef: Dynamic = (0, reactComponentsCounter_3.useRef)(0),
+    hasAction: Dynamic = action != null && typeof action != "boolean",
+    isActionCentered: Dynamic =
+      !hasDetails && (isPictogramIcon || (actionAlign === "center" && !hasComposerKeyline)),
+    canWrapAction: Dynamic = !hasDetails && !isActionCentered && hasAction,
+    isWrappedLayout: Dynamic = canWrapAction && isActionWrapped,
+    isStackedLayout: Dynamic = hasComposerKeyline && isWrappedLayout;
   (0, reactComponentsCounter_3.useLayoutEffect)((): Dynamic => {
-    (!value6 || !value21) && (value18.current = 0);
-    if (!value21) return;
-    let current: Dynamic = value15.current,
-      value27: Dynamic = getResizeObserver(current);
-    if (current === null || value27 === undefined) return;
-    let callback2: Dynamic = (): Dynamic => {
-      if (value23) {
-        current.offsetWidth > value18.current + ComponentsCounterConstant &&
-          value14(false);
+    (!hasComposerKeyline || !canWrapAction) && (stackedWidthRef.current = 0);
+    if (!canWrapAction) return;
+    let bannerNode: Dynamic = bannerRef.current,
+      ResizeObserverClass: Dynamic = getResizeObserver(bannerNode);
+    if (bannerNode === null || ResizeObserverClass === undefined) return;
+    let measureLayout: Dynamic = (): Dynamic => {
+      if (isStackedLayout) {
+        bannerNode.offsetWidth > stackedWidthRef.current + ComponentsCounterConstant &&
+          setIsActionWrapped(false);
         return;
       }
-      let current2: Dynamic = value16.current,
-        current3: Dynamic = value17.current;
-      if (current2 === null || current3 === null) return;
-      let value29: Dynamic = Number.parseFloat(
-        getComputedStyle(current2).lineHeight,
+      let contentNode: Dynamic = contentRef.current,
+        actionNode: Dynamic = actionRef.current;
+      if (contentNode === null || actionNode === null) return;
+      let lineHeight: Dynamic = Number.parseFloat(
+        getComputedStyle(contentNode).lineHeight,
       );
-      if (!Number.isFinite(value29) || value29 <= 0) return;
-      let value30: Dynamic =
-        current3.getBoundingClientRect().top -
-          current2.getBoundingClientRect().top >
-        value29 / 2;
-      value30 && value6 && (value18.current = current.offsetWidth);
-      value14(value30);
+      if (!Number.isFinite(lineHeight) || lineHeight <= 0) return;
+      let isActionBelowFirstLine: Dynamic =
+        actionNode.getBoundingClientRect().top -
+          contentNode.getBoundingClientRect().top >
+        lineHeight / 2;
+      isActionBelowFirstLine && hasComposerKeyline && (stackedWidthRef.current = bannerNode.offsetWidth);
+      setIsActionWrapped(isActionBelowFirstLine);
     };
-    callback2();
-    let value28: Dynamic = new value27(callback2);
-    value28.observe(current);
-    return (): Dynamic => value28.disconnect();
-  }, [value21, value6, value23]);
-  let value24: Dynamic = detailsOpen ?? value11,
-    callback: Dynamic = (input?: Dynamic): Dynamic => {
-      value12(input);
-      onDetailsOpenChange?.(input);
+    measureLayout();
+    let observer: Dynamic = new ResizeObserverClass(measureLayout);
+    observer.observe(bannerNode);
+    return (): Dynamic => observer.disconnect();
+  }, [canWrapAction, hasComposerKeyline, isStackedLayout]);
+  let isDetailsOpen: Dynamic = detailsOpen ?? uncontrolledDetailsOpen,
+    handleDetailsOpenChange: Dynamic = (nextOpen?: Dynamic): Dynamic => {
+      setUncontrolledDetailsOpen(nextOpen);
+      onDetailsOpenChange?.(nextOpen);
     },
-    value25: Dynamic = value9 || !value8,
-    value26: Dynamic = action ? (
+    isIconOnFirstLine: Dynamic = hasDetails || !isPictogramIcon,
+    actionSlot: Dynamic = action ? (
       <span
-        ref={value17}
+        ref={actionRef}
         {...state}
         className={cn(
           "flex shrink-0 items-center gap-xs",
-          !value22 && "h-[1lh]",
-          value23 && "basis-full",
-          !value22 && "-ms-[2px]",
-          value23 && value5 && ComponentsCounterGlyphTextConfig_2[value5],
-          value5 !== undefined &&
+          !isWrappedLayout && "h-[1lh]",
+          isStackedLayout && "basis-full",
+          !isWrappedLayout && "-ms-[2px]",
+          isStackedLayout && composerKeyline && ComponentsCounterActionStartMarginClassNames[composerKeyline],
+          composerKeyline !== undefined &&
             !onDismiss &&
-            ComponentsCounterGlyphTextConfig_4[value5],
-          !value6 && !onDismiss && "-me-[calc(var(--cds-pad-md)-2px)]",
+            ComponentsCounterActionEndMarginClassNames[composerKeyline],
+          !hasComposerKeyline && !onDismiss && "-me-[calc(var(--cds-pad-md)-2px)]",
         )}
       >
         {action}
@@ -183,46 +183,46 @@ function Alert({
   return (
     <div
       data-cds={"Banner"}
-      data-icon-layout={value25 ? "first-line" : "centered"}
-      data-cta-layout={value23 ? "stacked" : value22 ? "wrapped" : "inline"}
-      data-action-align={value20 ? "center" : "first-line"}
-      data-composer-keyline={value5}
+      data-icon-layout={isIconOnFirstLine ? "first-line" : "centered"}
+      data-cta-layout={isStackedLayout ? "stacked" : isWrappedLayout ? "wrapped" : "inline"}
+      data-action-align={isActionCentered ? "center" : "first-line"}
+      data-composer-keyline={composerKeyline}
       data-testid={dataTestid}
-      role={value10 === "none" ? undefined : value10}
-      ref={value15}
+      role={resolvedRole === "none" ? undefined : resolvedRole}
+      ref={bannerRef}
       className={cn(
         "flex",
-        value25 ? "items-start" : "items-center",
+        isIconOnFirstLine ? "items-start" : "items-center",
         "gap-xs py-md font-sans text-body font-normal",
-        value6 ? "px-md" : "px-lg",
-        value22 && !value23 && "pb-lg",
-        value6 ? ComponentsCounterClassNames : "rounded-card",
-        ComponentsCounterNeutralWarningDangerConfig[value4],
+        hasComposerKeyline ? "px-md" : "px-lg",
+        isWrappedLayout && !isStackedLayout && "pb-lg",
+        hasComposerKeyline ? ComponentsCounterClassNames : "rounded-card",
+        ComponentsCounterNeutralWarningDangerConfig[resolvedVariant],
         className,
       )}
     >
-      {icon !== null && !value23 && (<span
+      {icon !== null && !isStackedLayout && (<span
           className={cn(
-            value25 ? "flex min-h-[1lh] shrink-0 items-center" : "shrink-0",
-            ComponentsCounterNeutralWarningDangerConfig_2[value4],
-            value6 && "ms-[4px] -me-[4px]",
+            isIconOnFirstLine ? "flex min-h-[1lh] shrink-0 items-center" : "shrink-0",
+            ComponentsCounterIconClassNames[resolvedVariant],
+            hasComposerKeyline && "ms-[4px] -me-[4px]",
           )}
         >
-          {value7 ? (icon) : (<Icon
-              name={ComponentsCounterNeutralWarningDangerConfig_3[value4]}
+          {hasCustomIcon ? (icon) : (<Icon
+              name={ComponentsCounterIconNames[resolvedVariant]}
               size={"auto"}
             />)}
         </span>)}
-      {value9 ? (<div
+      {hasDetails ? (<div
           className={cn(
             "flex min-w-0 flex-1 flex-col",
-            value5 && ComponentsCounterGlyphTextConfig[value5],
+            composerKeyline && ComponentsCounterGlyphTextConfig[composerKeyline],
           )}
         >
           <ComponentsCollapsibleRootTriggerPanelConfig.Root
             className={"contents"}
-            open={value24}
-            onOpenChange={callback}
+            open={isDetailsOpen}
+            onOpenChange={handleDetailsOpenChange}
           >
             <div
               className={
@@ -241,12 +241,12 @@ function Alert({
                     <Icon
                       name={"CaretDown"}
                       size={"sm"}
-                      className={`shrink-0 text-secondary transition-transform ${value24 ? "rotate-0" : "-rotate-90"}`}
+                      className={`shrink-0 text-secondary transition-transform ${isDetailsOpen ? "rotate-0" : "-rotate-90"}`}
                     />
                   </button>
                 }
               />
-              {value26}
+              {actionSlot}
             </div>
             <ComponentsCollapsibleRootTriggerPanelConfig.Panel
               className={"w-full text-secondary"}
@@ -257,33 +257,33 @@ function Alert({
         </div>) : (<div
           className={cn(
             "flex min-w-0 flex-wrap",
-            value20 ? "items-center" : "items-start",
+            isActionCentered ? "items-center" : "items-start",
             "gap-y-sm gap-x-md flex-1",
-            value23 && "gap-y-xs",
-            value5 && ComponentsCounterGlyphTextConfig[value5],
+            isStackedLayout && "gap-y-xs",
+            composerKeyline && ComponentsCounterGlyphTextConfig[composerKeyline],
           )}
         >
           <div
-            ref={value16}
+            ref={contentRef}
             className={
-              value20
+              isActionCentered
                 ? "min-w-[min(20ch,100%)] flex-1"
                 : "max-w-full min-w-0 flex-auto"
             }
           >
             {children}
           </div>
-          {value26}
+          {actionSlot}
         </div>)}
       {onDismiss && (<span
           {...state}
-          className={`${value5 !== undefined ? ComponentsCounterGlyphTextConfig_3[value5] : "-me-[calc(var(--cds-pad-md)-2px)]"} flex h-[1lh] shrink-0 items-center`}
+          className={`${composerKeyline !== undefined ? ComponentsCounterDismissMarginClassNames[composerKeyline] : "-me-[calc(var(--cds-pad-md)-2px)]"} flex h-[1lh] shrink-0 items-center`}
         >
           <Button
             variant={"ghost"}
             iconOnly={true}
             icon={"X"}
-            aria-label={value2}
+            aria-label={resolvedDismissLabel}
             tooltip={false}
             onClick={onDismiss}
           />
@@ -291,11 +291,11 @@ function Alert({
     </div>
   );
 }
-function omitProperties(input?: Dynamic, options?: Dynamic): Dynamic {
-  let value: Dynamic = input,
+function omitProperties(source?: Dynamic, omittedKeys?: Dynamic): Dynamic {
+  let sourceProps: Dynamic = source,
     state: Dynamic = {};
-  for (let value2 of Object.keys(value) as Dynamic)
-    options.includes(value2) || (state[value2] = value[value2]);
+  for (let key of Object.keys(sourceProps) as Dynamic)
+    omittedKeys.includes(key) || (state[key] = sourceProps[key]);
   return state;
 }
 function LinkElement({
@@ -310,30 +310,30 @@ function LinkElement({
   rest: rest,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic = (0, reactComponentsCounter_4.isValidElement)(render),
-    value2: Dynamic = useLinkProps({
+  let isRenderElement: Dynamic = (0, reactComponentsCounter_4.isValidElement)(render),
+    routerLinkProps: Dynamic = useLinkProps({
       ...linkInput,
       ...pickRouterOptions(rest),
-      href: value ? undefined : linkInput.href,
+      href: isRenderElement ? undefined : linkInput.href,
     }),
-    value3: Dynamic = omitProperties(rest, [
+    elementProps: Dynamic = omitProperties(rest, [
       ...ComponentsCounterHrefRouterOptionsTargetValues,
       "disabled",
     ]),
-    value4: Dynamic = npm_useRender_LL({
-      enabled: value,
+    renderedElement: Dynamic = npm_useRender_LL({
+      enabled: isRenderElement,
       render: render,
       ref: forwardedRef,
       props: {
-        ...value3,
+        ...elementProps,
         ...stamp,
         className: className,
         children: body,
       },
     });
-  if (value) return value4;
+  if (isRenderElement) return renderedElement;
   if (linkInput.href !== undefined) {
-    let value6: Dynamic = omitProperties(rest, [
+    let anchorProps: Dynamic = omitProperties(rest, [
       ...ComponentsCounterHrefRouterOptionsTargetValues,
       ...routerOptionKeys,
     ]);
@@ -341,15 +341,15 @@ function LinkElement({
       <a
         ref={forwardedRef}
         {...stamp}
-        {...value6}
-        {...value2}
+        {...anchorProps}
+        {...routerLinkProps}
         className={className}
       >
         {body}
       </a>
     );
   }
-  let value5: Dynamic = omitProperties(rest, ["href", "disabled"]);
+  let buttonProps: Dynamic = omitProperties(rest, ["href", "disabled"]);
   return (
     <R_npm_Button_Dye
       render={<span {...stamp} />}
@@ -360,18 +360,18 @@ function LinkElement({
           }
         : {})}
       ref={forwardedRef}
-      {...value5}
+      {...buttonProps}
       className={actionClassName}
     >
       {body}
     </R_npm_Button_Dye>
   );
 }
-function TextLinkIcon(input?: Dynamic): Dynamic {
+function TextLinkIcon(icon?: Dynamic): Dynamic {
   useUiLocale();
-  return isIconName(input) ? (
+  return isIconName(icon) ? (
     <Icon
-      name={input}
+      name={icon}
       size={"sm"}
       className={"self-center"}
       style={{
@@ -379,7 +379,7 @@ function TextLinkIcon(input?: Dynamic): Dynamic {
       }}
     />
   ) : (
-    <span className={"self-center"}>{input}</span>
+    <span className={"self-center"}>{icon}</span>
   );
 }
 export {
@@ -388,20 +388,20 @@ export {
   ComponentsCounterComfortableCompactConfig,
   ComponentsCounterConstant,
   ComponentsCounterForValue,
-  ComponentsCounterForValue_2,
+  ComponentsCounterForwardRefSymbol as ComponentsCounterForValue_2,
   ComponentsCounterGlyphTextConfig,
-  ComponentsCounterGlyphTextConfig_2,
-  ComponentsCounterGlyphTextConfig_3,
-  ComponentsCounterGlyphTextConfig_4,
+  ComponentsCounterActionStartMarginClassNames as ComponentsCounterGlyphTextConfig_2,
+  ComponentsCounterDismissMarginClassNames as ComponentsCounterGlyphTextConfig_3,
+  ComponentsCounterActionEndMarginClassNames as ComponentsCounterGlyphTextConfig_4,
   ComponentsCounterGlyphValue,
-  ComponentsCounterGlyphValue_2,
-  ComponentsCounterGlyphValue_3,
+  ComponentsCounterDismissGlyphMarginClassName as ComponentsCounterGlyphValue_2,
+  ComponentsCounterActionEndGlyphMarginClassName as ComponentsCounterGlyphValue_3,
   ComponentsCounterHrefRouterOptionsTargetValues,
   ComponentsCounterNeutralAccentSuccessConfig,
-  ComponentsCounterNeutralAccentSuccessConfig_2,
+  ComponentsCounterDotVariantClassNames as ComponentsCounterNeutralAccentSuccessConfig_2,
   ComponentsCounterNeutralWarningDangerConfig,
-  ComponentsCounterNeutralWarningDangerConfig_2,
-  ComponentsCounterNeutralWarningDangerConfig_3,
+  ComponentsCounterIconClassNames as ComponentsCounterNeutralWarningDangerConfig_2,
+  ComponentsCounterIconNames as ComponentsCounterNeutralWarningDangerConfig_3,
   Counter,
   initializeComponentsCounter,
   initializeComponentsCounter_2,
@@ -429,7 +429,7 @@ export function installCdsComponentsCounter(): () => void {
         load_react(),
       );
       ComponentsCounterForValue = Symbol.for("react.memo");
-      ComponentsCounterForValue_2 = Symbol.for("react.forward_ref");
+      ComponentsCounterForwardRefSymbol = Symbol.for("react.forward_ref");
     });
     initializeComponentsCounter_2 = initializeOnce((): Dynamic => {
       ComponentsCounterClassNames = "rounded-composer";
@@ -452,7 +452,7 @@ export function installCdsComponentsCounter(): () => void {
         warning: "bg-fill-warning text-yellow-750",
         danger: "bg-fill-danger text-on-danger",
       };
-      ComponentsCounterNeutralAccentSuccessConfig_2 = {
+      ComponentsCounterDotVariantClassNames = {
         neutral: "bg-fill-control",
         accent: "bg-fill-accent",
         success: "bg-green-500",
@@ -462,45 +462,45 @@ export function installCdsComponentsCounter(): () => void {
       Counter = (0, reactComponentsCounter_2.forwardRef)(
         (
           {
-            value: value,
+            value: count,
             max = 99,
             showZero = false,
-            dot: dot2 = false,
+            dot: isDot = false,
             variant = "danger",
             size: size,
             className: className,
             ...props
           }: Dynamic,
-          options?: Dynamic,
+          forwardedRef?: Dynamic,
         ): Dynamic => {
-          if (dot2)
+          if (isDot)
             return (
               <span
-                ref={options}
+                ref={forwardedRef}
                 data-cds={"Counter"}
                 aria-hidden={"true"}
                 {...props}
                 className={cn(
                   "inline-block size-2 shrink-0 rounded-full align-middle",
-                  ComponentsCounterNeutralAccentSuccessConfig_2[variant],
+                  ComponentsCounterDotVariantClassNames[variant],
                   className,
                 )}
               />
             );
-          if (!Number.isFinite(value)) return null;
-          let value2: Dynamic = Math.max(0, Math.floor(value));
-          if (value2 === 0 && !showZero) return null;
-          let value3: Dynamic = value2 > max ? `${max}+` : `${value2}`;
+          if (!Number.isFinite(count)) return null;
+          let clampedCount: Dynamic = Math.max(0, Math.floor(count));
+          if (clampedCount === 0 && !showZero) return null;
+          let label: Dynamic = clampedCount > max ? `${max}+` : `${clampedCount}`;
           return (
             <span
-              ref={options}
+              ref={forwardedRef}
               data-cds={"Counter"}
               {...getSizeAttribute(size)}
               {...props}
               className={cn(
                 "inline-flex shrink-0 items-center justify-center align-middle",
                 "h-control-nested min-w-[var(--cds-h-control-nested)] rounded-full",
-                value3.length === 1
+                label.length === 1
                   ? "px-0"
                   : "px-[calc(var(--cds-h-control-nested)*0.3)]",
                 "font-sans text-caption font-medium proportional-nums",
@@ -508,7 +508,7 @@ export function installCdsComponentsCounter(): () => void {
                 className,
               )}
             >
-              {value3}
+              {label}
             </span>
           );
         },
@@ -520,22 +520,22 @@ export function installCdsComponentsCounter(): () => void {
         glyph: "ml-[6px] compact:ml-[6px] comfortable:ml-[4px]",
         text: "ml-[4px] compact:ml-[4px] comfortable:ml-[2px]",
       };
-      ComponentsCounterGlyphTextConfig_2 = {
+      ComponentsCounterActionStartMarginClassNames = {
         glyph: "-ml-[6px] compact:-ml-[6px] comfortable:-ml-[4px]",
         text: "-ml-[4px] compact:-ml-[4px] comfortable:-ml-[2px]",
       };
       ComponentsCounterGlyphValue = ComponentsCounterGlyphTextConfig.glyph;
-      ComponentsCounterGlyphTextConfig_3 = {
+      ComponentsCounterDismissMarginClassNames = {
         glyph: "-mr-[4px]",
         text: "-mr-[2px] compact:-mr-[2px] comfortable:-mr-[4px]",
       };
-      ComponentsCounterGlyphValue_2 = ComponentsCounterGlyphTextConfig_3.glyph;
-      ComponentsCounterGlyphTextConfig_4 = {
+      ComponentsCounterDismissGlyphMarginClassName = ComponentsCounterDismissMarginClassNames.glyph;
+      ComponentsCounterActionEndMarginClassNames = {
         glyph:
           "me-[calc(8px-var(--cds-pad-md))] compact:me-[calc(8px-var(--cds-pad-md))] comfortable:me-[calc(4px-var(--cds-pad-md))]",
         text: "me-[calc(6px-var(--cds-pad-md))] compact:me-[calc(6px-var(--cds-pad-md))] comfortable:me-[calc(5px-var(--cds-pad-md))]",
       };
-      ComponentsCounterGlyphValue_3 = ComponentsCounterGlyphTextConfig_4.glyph;
+      ComponentsCounterActionEndGlyphMarginClassName = ComponentsCounterActionEndMarginClassNames.glyph;
     });
     initializeComponentsCounter_5 = initializeOnce((): Dynamic => {
       "use client";
@@ -569,12 +569,12 @@ export function installCdsComponentsCounter(): () => void {
         danger:
           "bg-danger text-danger shadow-ring-danger [--cds-prose-code-color:currentColor] [--cds-prose-marker-color:currentColor]",
       };
-      ComponentsCounterNeutralWarningDangerConfig_2 = {
+      ComponentsCounterIconClassNames = {
         neutral: "text-secondary",
         warning: "",
         danger: "",
       };
-      ComponentsCounterNeutralWarningDangerConfig_3 = {
+      ComponentsCounterIconNames = {
         neutral: "Info",
         get warning() { return uiMessage("canvas.counter.warning"); },
         get danger() { return uiMessage("canvas.counter.warning"); },

@@ -22,10 +22,10 @@ var MdValue: Dynamic;
 var ComponentsIconIconsValue: Dynamic;
 var ComponentsIconResolvedValue: Dynamic;
 var ComponentsIconSubscribers: Dynamic;
-var ComponentsIconSubscribers_2: Dynamic;
-var ComponentsIconResolvedValue_2: Dynamic;
-var ComponentsIconResolvedValue_3: Dynamic;
-var ComponentsIconResolvedValue_4: Dynamic;
+var ComponentsIconLoopSubscribers: Dynamic;
+var ComponentsIconAnimationDurations: Dynamic;
+var ComponentsIconAnimationDurationsOut: Dynamic;
+var ComponentsIconAnimationEasings: Dynamic;
 var ComponentsIconWghtValue: Dynamic;
 var minIconFontWeight: Dynamic;
 var maxIconFontWeight: Dynamic;
@@ -40,44 +40,44 @@ var ComponentsIconHandler: Dynamic;
 var ComponentsIconHandler_2: Dynamic;
 var ComponentsIconContext: Dynamic;
 var initializeComponentsIcon_3: Dynamic;
-function resolveIconSize(input?: Dynamic, options?: Dynamic): Dynamic {
-  return input === "auto"
-    ? options
-    : input === "auto-sm" || input === "auto-lg"
+function resolveIconSize(size?: Dynamic, defaultSize?: Dynamic): Dynamic {
+  return size === "auto"
+    ? defaultSize
+    : size === "auto-sm" || size === "auto-lg"
       ? (iconSizes[
-          iconSizes.indexOf(options) + (input === "auto-lg" ? 1 : -1)
-        ] ?? options)
-      : input;
+          iconSizes.indexOf(defaultSize) + (size === "auto-lg" ? 1 : -1)
+        ] ?? defaultSize)
+      : size;
 }
 function useDefaultIconSize(): Dynamic {
   return useDensity() === "comfortable" ? "md" : "sm";
 }
-function useIconSize(input: Dynamic = MdValue): Dynamic {
-  return resolveIconSize(input, useDefaultIconSize());
+function useIconSize(size: Dynamic = MdValue): Dynamic {
+  return resolveIconSize(size, useDefaultIconSize());
 }
-function nearestIconSize(input?: Dynamic): Dynamic {
-  let value: Dynamic = iconSizes[0],
-    value2: Dynamic = 1 / 0;
-  for (let value3 of iconSizes as Dynamic) {
-    let value4: Dynamic = Math.abs(iconSizeMetrics[value3].px - input);
-    value4 <= value2 && ((value2 = value4), (value = value3));
+function nearestIconSize(targetPx?: Dynamic): Dynamic {
+  let nearestSize: Dynamic = iconSizes[0],
+    smallestDistance: Dynamic = 1 / 0;
+  for (let size of iconSizes as Dynamic) {
+    let distance: Dynamic = Math.abs(iconSizeMetrics[size].px - targetPx);
+    distance <= smallestDistance && ((smallestDistance = distance), (nearestSize = size));
   }
-  return value;
+  return nearestSize;
 }
 function calculateIconWeight(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  strokeWidth?: Dynamic,
+  opticalSize?: Dynamic,
+  pixelSize?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = (input * options) / context,
-    { lo: value2, hi: value3 }: Dynamic =
-      ComponentsIconWghtValue[`${options}`],
-    value4: Dynamic = (value - value2) / (value3 - value2),
-    value5: Dynamic =
-      minIconFontWeight + (maxIconFontWeight - minIconFontWeight) * value4;
+  let scaledStroke: Dynamic = (strokeWidth * opticalSize) / pixelSize,
+    { lo: weightLow, hi: weightHigh }: Dynamic =
+      ComponentsIconWghtValue[`${opticalSize}`],
+    ratio: Dynamic = (scaledStroke - weightLow) / (weightHigh - weightLow),
+    weight: Dynamic =
+      minIconFontWeight + (maxIconFontWeight - minIconFontWeight) * ratio;
   return (
     Math.round(
-      Math.max(minIconFontWeight, Math.min(maxIconFontWeight, value5)) * 10,
+      Math.max(minIconFontWeight, Math.min(maxIconFontWeight, weight)) * 10,
     ) / 10
   );
 }
@@ -103,25 +103,25 @@ function Icon(props?: Dynamic): Dynamic {
   let defaultSize: Dynamic = useDefaultIconSize();
   if (props.customIcon) {
     let {
-      customIcon: value26,
-      size: value34 = MdValue,
-      alt: value27,
-      className: value28,
-      style: value29,
-      name: value30,
-      icon: value31,
-      animated: value32,
-      ...value33
+      customIcon: customIconData,
+      size: customIconSize = MdValue,
+      alt: customAlt,
+      className: customClassName,
+      style: customStyle,
+      name: unusedName,
+      icon: unusedIcon,
+      animated: unusedAnimated,
+      ...svgProps
     }: Dynamic = props;
     let px2: Dynamic =
-        iconSizeMetrics[resolveIconSize(value34, defaultSize)].px,
-      value35: Dynamic = scaleCssPixels(px2);
+        iconSizeMetrics[resolveIconSize(customIconSize, defaultSize)].px,
+      customFontSize: Dynamic = scaleCssPixels(px2);
     return (
       <svg
         data-cds={"Icon"}
         width={"1em"}
         height={"1em"}
-        viewBox={`0 0 ${value26.viewBox} ${value26.viewBox}`}
+        viewBox={`0 0 ${customIconData.viewBox} ${customIconData.viewBox}`}
         fill={"currentColor"}
         fillRule={"evenodd"}
         stroke={"none"}
@@ -130,26 +130,26 @@ function Icon(props?: Dynamic): Dynamic {
         xmlns={"http://www.w3.org/2000/svg"}
         style={{
           ...ComponentsIconFlexShrinkConfig,
-          fontSize: value35,
-          ...value29,
+          fontSize: customFontSize,
+          ...customStyle,
         }}
-        className={value28}
-        {...value33}
-        role={value33.role ?? (value27 ? "img" : undefined)}
-        aria-hidden={value33["aria-hidden"] ?? (value27 ? undefined : true)}
-        aria-label={value33["aria-label"] ?? (value27 || (undefined))}
+        className={customClassName}
+        {...svgProps}
+        role={svgProps.role ?? (customAlt ? "img" : undefined)}
+        aria-hidden={svgProps["aria-hidden"] ?? (customAlt ? undefined : true)}
+        aria-label={svgProps["aria-label"] ?? (customAlt || (undefined))}
       >
-        {value26.paths.map(
-          (input?: Dynamic, options?: Dynamic): Dynamic =>
-            typeof input == "string" ? (
-              <path key={options} d={input} />
+        {customIconData.paths.map(
+          (path?: Dynamic, pathIndex?: Dynamic): Dynamic =>
+            typeof path == "string" ? (
+              <path key={pathIndex} d={path} />
             ) : (
               <path
-                key={options}
-                d={input.d}
+                key={pathIndex}
+                d={path.d}
                 fill={"none"}
                 stroke={"currentColor"}
-                strokeWidth={input.strokeWidth}
+                strokeWidth={path.strokeWidth}
                 vectorEffect={"non-scaling-stroke"}
               />
             ),
@@ -158,79 +158,79 @@ function Icon(props?: Dynamic): Dynamic {
     );
   }
   let {
-    bold: value10 = false,
-    animated: value11 = false,
-    alt: value,
-    className: value2,
-    style: value3,
-    name: value4,
-    icon: value5,
-    size: value6,
-    customSize: value7,
-    customIcon: value8,
-    ...value9
+    bold: isBold = false,
+    animated: isAnimated = false,
+    alt: altText,
+    className: className,
+    style: style,
+    name: nameProp,
+    icon: iconProp,
+    size: sizeProp,
+    customSize: customSizePx,
+    customIcon: unusedCustomIcon,
+    ...restProps
   }: Dynamic = props;
-  let value12: Dynamic = props.name ?? props.icon.name,
-    value13: Dynamic,
-    value14: Dynamic;
-  value7 !== undefined
-    ? ((value13 = value7), (value14 = nearestIconSize(value13)))
-    : ((value14 = resolveIconSize(value6 ?? MdValue, defaultSize)),
-      (value13 = iconSizeMetrics[value14].px));
-  let stroke: Dynamic = iconSizeMetrics[value14].stroke,
-    value15: Dynamic =
-      value6 === "auto" || value6 === "auto-sm" || value6 === "auto-lg",
-    value16: Dynamic = value10 && !("strong" in stroke) && !value15,
-    value17: Dynamic = ComponentsIconIconsValue[value12],
-    value18: Dynamic =
-      value17 === undefined
+  let iconName: Dynamic = props.name ?? props.icon.name,
+    pixelSize: Dynamic,
+    sizeToken: Dynamic;
+  customSizePx !== undefined
+    ? ((pixelSize = customSizePx), (sizeToken = nearestIconSize(pixelSize)))
+    : ((sizeToken = resolveIconSize(sizeProp ?? MdValue, defaultSize)),
+      (pixelSize = iconSizeMetrics[sizeToken].px));
+  let stroke: Dynamic = iconSizeMetrics[sizeToken].stroke,
+    isAutoSize: Dynamic =
+      sizeProp === "auto" || sizeProp === "auto-sm" || sizeProp === "auto-lg",
+    needsSyntheticBold: Dynamic = isBold && !("strong" in stroke) && !isAutoSize,
+    glyphCodePoint: Dynamic = ComponentsIconIconsValue[iconName],
+    secondaryCodePoint: Dynamic =
+      glyphCodePoint === undefined
         ? undefined
-        : ComponentsIconResolvedValue[value12],
-    value19: Dynamic = ComponentsIconFreezeValue[value14],
-    value20: Dynamic =
-      value7 === undefined
-        ? value10 && value19.strong !== undefined
-          ? value19.strong
-          : value19.regular
+        : ComponentsIconResolvedValue[iconName],
+    sizeStyles: Dynamic = ComponentsIconFreezeValue[sizeToken],
+    fontStyle: Dynamic =
+      customSizePx === undefined
+        ? isBold && sizeStyles.strong !== undefined
+          ? sizeStyles.strong
+          : sizeStyles.regular
         : iconFontStyle(
-            value13,
-            value10 && "strong" in stroke ? stroke.strong : stroke.regular,
+            pixelSize,
+            isBold && "strong" in stroke ? stroke.strong : stroke.regular,
           ),
-    value21: Dynamic = value11 && ComponentsIconSubscribers.has(value12),
-    value22: Dynamic = value21
-      ? ComponentsIconResolvedValue_2[value12]
+    isAnimating: Dynamic = isAnimated && ComponentsIconSubscribers.has(iconName),
+    animationDuration: Dynamic = isAnimating
+      ? ComponentsIconAnimationDurations[iconName]
       : undefined,
-    value23: Dynamic = value21
-      ? ComponentsIconResolvedValue_3[value12]
+    animationDurationOut: Dynamic = isAnimating
+      ? ComponentsIconAnimationDurationsOut[iconName]
       : undefined,
-    value24: Dynamic = value21
-      ? ComponentsIconResolvedValue_4[value12]
+    animationEasing: Dynamic = isAnimating
+      ? ComponentsIconAnimationEasings[iconName]
       : undefined,
-    value25: Dynamic = value21
+    iconStyle: Dynamic = isAnimating
       ? {
-          ...value20,
-          "--cds-opsz": value13,
-          "--cds-wght": value20.fontWeight,
-          ...(value22 !== undefined && {
-            "--cds-anim-dur": `${value22}ms`,
+          ...fontStyle,
+          "--cds-opsz": pixelSize,
+          "--cds-wght": fontStyle.fontWeight,
+          ...(animationDuration !== undefined && {
+            "--cds-anim-dur": `${animationDuration}ms`,
           }),
-          ...(value23 !== undefined && {
-            "--cds-anim-dur-out": `${value23}ms`,
+          ...(animationDurationOut !== undefined && {
+            "--cds-anim-dur-out": `${animationDurationOut}ms`,
           }),
-          ...(value24 !== undefined && {
-            "--cds-anim-ease": value24,
+          ...(animationEasing !== undefined && {
+            "--cds-anim-ease": animationEasing,
           }),
         }
-      : value20;
+      : fontStyle;
   // MineDesign：有 Lucide 对照的字形改画 SVG；动画图标保留字体的分层动画
-  let lucideNode: Dynamic = value21 ? undefined : lucideIcons[value12];
+  let lucideNode: Dynamic = isAnimating ? undefined : lucideIcons[iconName];
   if (lucideNode) {
-    let rotation: Dynamic = lucideRotations[value12];
+    let rotation: Dynamic = lucideRotations[iconName];
     return (
       <svg
         data-cds={"Icon"}
         data-mdn-icon={""}
-        data-mdn-bold={value10 ? "" : undefined}
+        data-mdn-bold={isBold ? "" : undefined}
         width={"1em"}
         height={"1em"}
         viewBox={"0 0 24 24"}
@@ -241,15 +241,15 @@ function Icon(props?: Dynamic): Dynamic {
         xmlns={"http://www.w3.org/2000/svg"}
         style={{
           ...ComponentsIconFlexShrinkConfig,
-          fontSize: value20.fontSize,
+          fontSize: fontStyle.fontSize,
           ...(rotation ? { transform: `rotate(${rotation}deg)` } : null),
-          ...value3,
+          ...style,
         }}
-        className={value2}
-        {...value9}
-        role={value9.role ?? (value ? "img" : undefined)}
-        aria-hidden={value9["aria-hidden"] ?? (value ? undefined : true)}
-        aria-label={value9["aria-label"] ?? (value || (undefined))}
+        className={className}
+        {...restProps}
+        role={restProps.role ?? (altText ? "img" : undefined)}
+        aria-hidden={restProps["aria-hidden"] ?? (altText ? undefined : true)}
+        aria-label={restProps["aria-label"] ?? (altText || (undefined))}
       >
         {lucideNode.map(([Tag, attrs]: Dynamic, index: number): Dynamic => (
           <Tag key={index} {...attrs} />
@@ -260,33 +260,33 @@ function Icon(props?: Dynamic): Dynamic {
   return (
     <span
       data-cds={"Icon"}
-      data-cds-anim={value21 ? "" : undefined}
+      data-cds-anim={isAnimating ? "" : undefined}
       data-cds-anim-loop={
-        value21 && ComponentsIconSubscribers_2.has(value12) ? "" : undefined
+        isAnimating && ComponentsIconLoopSubscribers.has(iconName) ? "" : undefined
       }
       style={
-        value3
+        style
           ? {
-              ...value25,
-              ...value3,
+              ...iconStyle,
+              ...style,
             }
-          : value25
+          : iconStyle
       }
-      className={value2}
-      {...value9}
-      role={value9.role ?? (value ? "img" : undefined)}
-      aria-hidden={value9["aria-hidden"] ?? (value ? undefined : true)}
-      aria-label={value9["aria-label"] ?? (value || (undefined))}
+      className={className}
+      {...restProps}
+      role={restProps.role ?? (altText ? "img" : undefined)}
+      aria-hidden={restProps["aria-hidden"] ?? (altText ? undefined : true)}
+      aria-label={restProps["aria-label"] ?? (altText || (undefined))}
     >
-      {value18 !== undefined && (<span data-cds-icon-layer={"secondary"} aria-hidden={"true"}>
-          {String.fromCodePoint(value18)}
+      {secondaryCodePoint !== undefined && (<span data-cds-icon-layer={"secondary"} aria-hidden={"true"}>
+          {String.fromCodePoint(secondaryCodePoint)}
         </span>)}
-      {value17 !== undefined ? (String.fromCodePoint(value17)) : (null)}
+      {glyphCodePoint !== undefined ? (String.fromCodePoint(glyphCodePoint)) : (null)}
     </span>
   );
 }
-function isIconName(input?: Dynamic): Dynamic {
-  return typeof input == "string";
+function isIconName(icon?: Dynamic): Dynamic {
+  return typeof icon == "string";
 }
 function IconRenderer({ icon: icon }: Dynamic): Dynamic {
   useUiLocale();
@@ -298,107 +298,107 @@ function IconRenderer({ icon: icon }: Dynamic): Dynamic {
 }
 function readDesktopTitlebarInset(doc?: Dynamic): Dynamic {
   let documentElement: Dynamic = doc.documentElement,
-    value: Dynamic =
+    rawInset: Dynamic =
       doc.defaultView
         ?.getComputedStyle(documentElement)
         .getPropertyValue("--desktop-titlebar-inset") ||
       documentElement.style.getPropertyValue("--desktop-titlebar-inset"),
-    value2: Dynamic = Number.parseFloat(value);
-  return Number.isFinite(value2) && value2 > 0 ? value2 : 0;
+    inset: Dynamic = Number.parseFloat(rawInset);
+  return Number.isFinite(inset) && inset > 0 ? inset : 0;
 }
 function desktopInsetStore(doc?: Dynamic): Dynamic {
   let entry: Dynamic = ComponentsIconElementCache.get(doc);
   if (entry === undefined) {
-    let values: Dynamic = new Set(),
-      value: Dynamic = null,
-      value2: Dynamic,
-      flag: Dynamic = false,
-      callback: Dynamic = (): Dynamic => (
-        (flag = false),
-        (value2 = readDesktopTitlebarInset(doc)),
-        value2
+    let listeners: Dynamic = new Set(),
+      observer: Dynamic = null,
+      cachedInset: Dynamic,
+      isStale: Dynamic = false,
+      refreshInset: Dynamic = (): Dynamic => (
+        (isStale = false),
+        (cachedInset = readDesktopTitlebarInset(doc)),
+        cachedInset
       );
     entry = {
-      subscribe(input: Dynamic): Dynamic {
-        values.add(input);
-        value === null &&
-          (callback(),
-          (value = new MutationObserver((): Dynamic => {
-            if (values.size === 0) {
-              flag = true;
+      subscribe(listener: Dynamic): Dynamic {
+        listeners.add(listener);
+        observer === null &&
+          (refreshInset(),
+          (observer = new MutationObserver((): Dynamic => {
+            if (listeners.size === 0) {
+              isStale = true;
               return;
             }
-            let value3: Dynamic = value2;
-            if (callback() !== value3)
-              for (let value4 of values as Dynamic) value4();
+            let previousInset: Dynamic = cachedInset;
+            if (refreshInset() !== previousInset)
+              for (let notify of listeners as Dynamic) notify();
           })),
-          value.observe(doc.documentElement, {
+          observer.observe(doc.documentElement, {
             attributes: true,
             attributeFilter: ["style"],
           }));
         return (): Dynamic => {
-          values.delete(input);
+          listeners.delete(listener);
         };
       },
       getSnapshot: (): Dynamic => {
-        if (value === null) return readDesktopTitlebarInset(doc);
-        let value3: Dynamic =
-          values.size === 0 && value.takeRecords().length > 0;
-        (flag || value3) && callback();
-        return value2;
+        if (observer === null) return readDesktopTitlebarInset(doc);
+        let hasPendingMutations: Dynamic =
+          listeners.size === 0 && observer.takeRecords().length > 0;
+        (isStale || hasPendingMutations) && refreshInset();
+        return cachedInset;
       },
     };
     ComponentsIconElementCache.set(doc, entry);
   }
   return entry;
 }
-function resolvePortalContainer(input?: Dynamic): Dynamic {
-  let callback: Dynamic = (input2?: Dynamic): Dynamic =>
-    typeof input2 == "object" &&
-    input2 !== null &&
-    (input2.nodeType === 1 || input2.nodeType === 11) &&
-    "ownerDocument" in input2;
-  if (callback(input)) return input;
-  if (typeof input == "object" && input !== null && "current" in input) {
-    let current: Dynamic = input.current;
-    return callback(current) ? current : null;
+function resolvePortalContainer(container?: Dynamic): Dynamic {
+  let isDomNodeLike: Dynamic = (candidate?: Dynamic): Dynamic =>
+    typeof candidate == "object" &&
+    candidate !== null &&
+    (candidate.nodeType === 1 || candidate.nodeType === 11) &&
+    "ownerDocument" in candidate;
+  if (isDomNodeLike(container)) return container;
+  if (typeof container == "object" && container !== null && "current" in container) {
+    let current: Dynamic = container.current;
+    return isDomNodeLike(current) ? current : null;
   }
   return null;
 }
-function useDesktopTitlebarInset(input?: Dynamic): Dynamic {
-  let value: Dynamic = useCdsRootElement(),
-    value2: Dynamic = (0, reactComponentsIcon.useCallback)(
+function useDesktopTitlebarInset(portalContainer?: Dynamic): Dynamic {
+  let rootElement: Dynamic = useCdsRootElement(),
+    resolveDocument: Dynamic = (0, reactComponentsIcon.useCallback)(
       (): Dynamic =>
-        (resolvePortalContainer(input) ?? value)?.ownerDocument ??
+        (resolvePortalContainer(portalContainer) ?? rootElement)?.ownerDocument ??
         (typeof document === "undefined" ? null : document),
-      [input, value],
+      [portalContainer, rootElement],
     ),
-    [value3, value4]: Dynamic = (0, reactComponentsIcon.useState)(value2);
+    [ownerDocument, setOwnerDocument]: Dynamic = (0, reactComponentsIcon.useState)(resolveDocument);
   useIsomorphicLayoutEffect((): Dynamic => {
-    value4(value2());
+    setOwnerDocument(resolveDocument());
   });
-  let value5: Dynamic = (0, reactComponentsIcon.useMemo)(
-    (): Dynamic => (value3 === null ? null : desktopInsetStore(value3)),
-    [value3],
+  let insetStore: Dynamic = (0, reactComponentsIcon.useMemo)(
+    (): Dynamic => (ownerDocument === null ? null : desktopInsetStore(ownerDocument)),
+    [ownerDocument],
   );
   return (0, reactComponentsIcon.useSyncExternalStore)(
-    value5 === null ? ComponentsIconHandler_2 : value5.subscribe,
-    value5 === null ? ComponentsIconHandler : value5.getSnapshot,
+    insetStore === null ? ComponentsIconHandler_2 : insetStore.subscribe,
+    insetStore === null ? ComponentsIconHandler : insetStore.getSnapshot,
     ComponentsIconHandler,
   );
 }
-function useCollisionPadding(input?: Dynamic, options?: Dynamic): Dynamic {
-  let value: Dynamic = useDesktopTitlebarInset(options);
+function useCollisionPadding(override?: Dynamic, container?: Dynamic): Dynamic {
+  let titlebarInset: Dynamic = useDesktopTitlebarInset(container);
   return (0, reactComponentsIcon.useMemo)((): Dynamic => {
-    if (input !== undefined) return input;
-    if (!(value <= 0))
+    if (override !== undefined) return override;
+    if (!(titlebarInset <= 0))
       return {
-        top: ComponentsIconConstant + value,
+        top: ComponentsIconConstant + titlebarInset,
         right: ComponentsIconConstant,
         bottom: ComponentsIconConstant,
         left: ComponentsIconConstant,
       };
-  }, [input, value]);
+  }, [override, titlebarInset]);
 }
 function CollisionPaddingProvider({
   override: override,
@@ -407,24 +407,24 @@ function CollisionPaddingProvider({
   children: children,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic = useCollisionPadding(override, container),
-    value2: Dynamic = (0, reactComponentsIcon.useMemo)(
+  let collisionPadding: Dynamic = useCollisionPadding(override, container),
+    contextValue: Dynamic = (0, reactComponentsIcon.useMemo)(
       (): Dynamic => ({
-        collisionPadding: value,
+        collisionPadding: collisionPadding,
       }),
-      [value],
+      [collisionPadding],
     ),
-    value3: Dynamic = children(value);
+    content: Dynamic = children(collisionPadding);
   return provideInherit ? (
-    <ComponentsIconContext.Provider value={value2}>
-      {value3}
+    <ComponentsIconContext.Provider value={contextValue}>
+      {content}
     </ComponentsIconContext.Provider>
   ) : (
-    value3
+    content
   );
 }
-function popupSurfaceClassName(input: Elevation): string {
-  return `rounded-card ${ThemeSurfacesSurface2Surface3Config[surfaceBackgroundTokens[input]]} ${ThemeSurfacesPanelPopoverConfig[input]}`;
+function popupSurfaceClassName(elevation: Elevation): string {
+  return `rounded-card ${ThemeSurfacesSurface2Surface3Config[surfaceBackgroundTokens[elevation]]} ${ThemeSurfacesPanelPopoverConfig[elevation]}`;
 }
 export {
   calculateIconWeight,
@@ -438,11 +438,11 @@ export {
   ComponentsIconHandler_2,
   ComponentsIconIconsValue,
   ComponentsIconResolvedValue,
-  ComponentsIconResolvedValue_2,
-  ComponentsIconResolvedValue_3,
-  ComponentsIconResolvedValue_4,
+  ComponentsIconAnimationDurations as ComponentsIconResolvedValue_2,
+  ComponentsIconAnimationDurationsOut as ComponentsIconResolvedValue_3,
+  ComponentsIconAnimationEasings as ComponentsIconResolvedValue_4,
   ComponentsIconSubscribers,
-  ComponentsIconSubscribers_2,
+  ComponentsIconLoopSubscribers as ComponentsIconSubscribers_2,
   ComponentsIconWghtValue,
   createIconSizeStyles,
   desktopInsetStore,
@@ -535,12 +535,12 @@ export function installCdsComponentsIcon(): () => void {
       ComponentsIconIconsValue = iconFontMetadata.icons;
       ComponentsIconResolvedValue = iconFontMetadata.secondary ?? {};
       ComponentsIconSubscribers = new Set(iconFontMetadata.anim ?? []);
-      ComponentsIconSubscribers_2 = new Set(
+      ComponentsIconLoopSubscribers = new Set(
         iconFontMetadata.animLoop ?? [],
       );
-      ComponentsIconResolvedValue_2 = iconFontMetadata.animDur ?? {};
-      ComponentsIconResolvedValue_3 = iconFontMetadata.animDurOut ?? {};
-      ComponentsIconResolvedValue_4 = iconFontMetadata.animEase ?? {};
+      ComponentsIconAnimationDurations = iconFontMetadata.animDur ?? {};
+      ComponentsIconAnimationDurationsOut = iconFontMetadata.animDurOut ?? {};
+      ComponentsIconAnimationEasings = iconFontMetadata.animEase ?? {};
       ComponentsIconWghtValue = iconFontMetadata.wght;
       [minIconFontWeight, maxIconFontWeight] = [400, 700];
       ComponentsIconFlexShrinkConfig = {

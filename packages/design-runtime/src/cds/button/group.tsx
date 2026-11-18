@@ -29,19 +29,19 @@ var jsxButtonGroup_2: Dynamic;
 var ButtonGroupAspectRatioPaddingInlineMinWidthConfig: Dynamic;
 var ButtonGroupWidthConfig: Dynamic;
 var ButtonGroupPaddingInlineEndConfig: Dynamic;
-var ButtonGroupLabel_2: Dynamic;
-var ButtonGroupPaddingInlineEndConfig_2: Dynamic;
+var splitLabelShrinkClassName: Dynamic;
+var splitStatusPaddingStyle: Dynamic;
 var ButtonGroupPrimarySecondaryGhostConfig: Dynamic;
-var ButtonGroupLabel_3: Dynamic;
+var splitStatusTransitionClassName: Dynamic;
 var PeerDisabledNotAriaBusySlotOpacityDisabledValue: Dynamic;
 var ButtonGroupPaddingInlineStartConfig: Dynamic;
 var ButtonGroupClassNames_2: Dynamic;
-var ButtonGroupLabel_4: Dynamic;
+var splitCaretGhostHitAreaClassName: Dynamic;
 var GroupDataPopupOpenSplitPointerEventsNoneValue: Dynamic;
 var ButtonGroupClassNames_3: Dynamic;
 var ButtonGroupClassNames_4: Dynamic;
 var ButtonGroupJoinValue: Dynamic;
-var ButtonGroupLabel_5: Dynamic;
+var splitJoinedSegmentPaddingClassName: Dynamic;
 var initializeButtonGroup_2: Dynamic;
 var ButtonGroupObservedElements: Dynamic;
 var initializeButtonGroup_3: Dynamic;
@@ -50,20 +50,20 @@ var jsxButtonGroup_3: Dynamic;
 var initializeButtonGroup_4: Dynamic;
 function ButtonGroupDivider({ variant: variant }: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic = ButtonGroupSecondaryPrimaryDangerConfig[variant];
-  if (!value)
+  let seamStyle: Dynamic = ButtonGroupSecondaryPrimaryDangerConfig[variant];
+  if (!seamStyle)
     return (
       <span aria-hidden={true} className={"w-px shrink-0 self-stretch"} />
     );
-  let value2: Dynamic = variant === "secondary" ? "" : ButtonGroupLabel;
+  let seamOpacityClassName: Dynamic = variant === "secondary" ? "" : ButtonGroupLabel;
   return (
     <span
       aria-hidden={true}
-      className={`relative w-px shrink-0 self-stretch ${value.seam} ${buttonGroupJoinClasses} ${value2}`}
+      className={`relative w-px shrink-0 self-stretch ${seamStyle.seam} ${buttonGroupJoinClasses} ${seamOpacityClassName}`}
     >
       <span
         data-cds-seam-line={""}
-        className={`absolute inset-x-0 inset-y-[4px] ${value.line}`}
+        className={`absolute inset-x-0 inset-y-[4px] ${seamStyle.line}`}
       />
     </span>
   );
@@ -79,31 +79,31 @@ function ButtonGroupLayout({
   ...props
 }: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic = variant === "joined",
-    value2: Dynamic = reactButtonGroup.Children.toArray(children),
-    value3: Dynamic = value2.length - 1,
-    value4: Dynamic = value && value3 > 0,
-    value5: Dynamic = (0, reactButtonGroup.useMemo)((): Dynamic => {
+  let isJoined: Dynamic = variant === "joined",
+    childArray: Dynamic = reactButtonGroup.Children.toArray(children),
+    lastChildIndex: Dynamic = childArray.length - 1,
+    hasJoinedSeams: Dynamic = isJoined && lastChildIndex > 0,
+    optionsByPosition: Dynamic = (0, reactButtonGroup.useMemo)((): Dynamic => {
       let state: Dynamic = {
         size: size,
         buttonVariant: buttonVariant,
-        enforceVariant: value,
+        enforceVariant: isJoined,
       };
       return {
         start: {
           ...state,
-          joined: value4 ? "start" : undefined,
+          joined: hasJoinedSeams ? "start" : undefined,
         },
         middle: {
           ...state,
-          joined: value4 ? "middle" : undefined,
+          joined: hasJoinedSeams ? "middle" : undefined,
         },
         end: {
           ...state,
-          joined: value4 ? "end" : undefined,
+          joined: hasJoinedSeams ? "end" : undefined,
         },
       };
-    }, [size, buttonVariant, value, value4]);
+    }, [size, buttonVariant, isJoined, hasJoinedSeams]);
   return (
     <div
       data-cds={"ButtonGroup"}
@@ -116,37 +116,37 @@ function ButtonGroupLayout({
         orientation === "vertical"
           ? "flex-col items-stretch"
           : "items-stretch",
-        value4
+        hasJoinedSeams
           ? `rounded ${buttonVariant === "secondary" ? `shadow-field-drop ${ButtonGroupClassNames}` : ""}`
-          : value
+          : isJoined
             ? ""
             : "gap-xs",
         className,
       )}
     >
       <TooltipGroup>
-        {value2.map((input?: Dynamic, options?: Dynamic): Dynamic => {
-          let value6: Dynamic =
-            options === 0 ? "start" : options === value3 ? "end" : "middle";
+        {childArray.map((childElement?: Dynamic, childIndex?: Dynamic): Dynamic => {
+          let segmentPosition: Dynamic =
+            childIndex === 0 ? "start" : childIndex === lastChildIndex ? "end" : "middle";
           return (() => {
             const _Component = reactButtonGroup.Fragment;
             const _props = {
               children: [
-                value4 && options > 0 && (
+                hasJoinedSeams && childIndex > 0 && (
                   <ButtonGroupDivider variant={buttonVariant} />
                 ),
                 <ButtonGroupOptionsContext.Provider
-                  value={value5[value6]}
+                  value={optionsByPosition[segmentPosition]}
                 >
                   <div data-cds-segment={""} className={"contents"}>
-                    {input}
+                    {childElement}
                   </div>
                 </ButtonGroupOptionsContext.Provider>,
               ],
             } as const;
-            const _key = (0, reactButtonGroup.isValidElement)(input)
-              ? input.key
-              : options;
+            const _key = (0, reactButtonGroup.isValidElement)(childElement)
+              ? childElement.key
+              : childIndex;
             return <_Component key={_key} {..._props} />;
           })();
         })}
@@ -173,7 +173,7 @@ function SplitButton({
   pressed: pressed,
   menuLabel: menuLabel,
   items: items,
-  disabled: disabled2,
+  disabled: isDisabled,
   busy: busy,
   status: status,
   caretSize: caretSize,
@@ -185,43 +185,43 @@ function SplitButton({
   className: className,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic = useLabel("moreOptions", "More options"),
-    value2: Dynamic = menuLabel ?? value,
-    value3: Dynamic = useDensity(),
-    value4: Dynamic = caretSize ?? menuCaretSize(value3, size),
-    value5: Dynamic =
-      !disabled2 && (variant === "secondary" || variant === "ghost"),
-    [value6, value7]: Dynamic = (0, reactButtonGroup_2.useState)(false),
-    value8: Dynamic = open ?? value6,
-    callback: Dynamic = (input?: Dynamic): Dynamic => {
-      value7(input);
-      onOpenChange?.(input);
+  let defaultMenuLabel: Dynamic = useLabel("moreOptions", "More options"),
+    resolvedMenuLabel: Dynamic = menuLabel ?? defaultMenuLabel,
+    density: Dynamic = useDensity(),
+    resolvedCaretSize: Dynamic = caretSize ?? menuCaretSize(density, size),
+    isCaretMuted: Dynamic =
+      !isDisabled && (variant === "secondary" || variant === "ghost"),
+    [internalOpen, setInternalOpen]: Dynamic = (0, reactButtonGroup_2.useState)(false),
+    isOpen: Dynamic = open ?? internalOpen,
+    handleOpenChange: Dynamic = (nextOpen?: Dynamic): Dynamic => {
+      setInternalOpen(nextOpen);
+      onOpenChange?.(nextOpen);
     },
-    value9: Dynamic = status != null && status !== false,
-    value10: Dynamic = variant === "ghost" && label !== undefined && !value9,
-    value11: Dynamic = variant === "ghost" && label === undefined && !value9,
-    value12: Dynamic = variant === "ghost" && value9,
-    value13: Dynamic = value10 || value11,
-    value14: Dynamic = buttonIconPadding(
+    hasStatus: Dynamic = status != null && status !== false,
+    isGhostWithLabel: Dynamic = variant === "ghost" && label !== undefined && !hasStatus,
+    isGhostIconOnly: Dynamic = variant === "ghost" && label === undefined && !hasStatus,
+    isGhostWithStatus: Dynamic = variant === "ghost" && hasStatus,
+    isGhostCompact: Dynamic = isGhostWithLabel || isGhostIconOnly,
+    iconPadding: Dynamic = buttonIconPadding(
       useButtonIconSize(size),
     ),
-    value15: Dynamic =
+    caretButtonStyle: Dynamic =
       variant !== "ghost"
         ? ButtonGroupAspectRatioPaddingInlineMinWidthConfig
-        : value10
+        : isGhostWithLabel
           ? ButtonGroupPaddingInlineStartConfig
-          : value11
+          : isGhostIconOnly
             ? {
                 ...ButtonGroupWidthConfig,
-                "--cds-split-caret-tuck": value14,
-                marginInlineStart: `calc(-1 * ${value14})`,
+                "--cds-split-caret-tuck": iconPadding,
+                marginInlineStart: `calc(-1 * ${iconPadding})`,
               }
             : ButtonGroupWidthConfig,
-    value16: Dynamic = (
+    primarySegment: Dynamic = (
       <div className={"contents"}>
         {label === undefined ? (<Button
             busy={busy}
-            disabled={disabled2}
+            disabled={isDisabled}
             pressed={pressed}
             onClick={onPrimaryClick}
             onPointerDown={onPrimaryPointerDown}
@@ -240,13 +240,13 @@ function SplitButton({
             tooltip={tooltip}
             tooltipSide={tooltipSide}
             className={npm_clsx_Ea(
-              value9 && "peer/slot",
-              value12 && ButtonGroupClassNames_3,
-              value11 && GroupDataPopupOpenSplitPointerEventsNoneValue,
+              hasStatus && "peer/slot",
+              isGhostWithStatus && ButtonGroupClassNames_3,
+              isGhostIconOnly && GroupDataPopupOpenSplitPointerEventsNoneValue,
             )}
           />) : (<Button
             busy={busy}
-            disabled={disabled2}
+            disabled={isDisabled}
             pressed={pressed}
             onClick={onPrimaryClick}
             onPointerDown={onPrimaryPointerDown}
@@ -262,27 +262,27 @@ function SplitButton({
             icon={icon}
             shortcut={shortcut}
             className={npm_clsx_Ea(
-              ButtonGroupLabel_2,
-              value9 && "peer/slot",
-              value12 && ButtonGroupClassNames_3,
+              splitLabelShrinkClassName,
+              hasStatus && "peer/slot",
+              isGhostWithStatus && ButtonGroupClassNames_3,
             )}
             style={
-              value10
+              isGhostWithLabel
                 ? ButtonGroupPaddingInlineEndConfig
-                : value9
-                  ? ButtonGroupPaddingInlineEndConfig_2
+                : hasStatus
+                  ? splitStatusPaddingStyle
                   : undefined
             }
           >
             {label}
           </Button>)}
-        {value9 && (<span
+        {hasStatus && (<span
             className={cn(
               "flex shrink-0 items-center self-stretch pe-md",
-              value12 && ButtonGroupClassNames_4,
+              isGhostWithStatus && ButtonGroupClassNames_4,
               ButtonGroupSecondaryPrimaryDangerConfig[variant]?.seam,
               ButtonGroupPrimarySecondaryGhostConfig[variant],
-              ButtonGroupLabel_3,
+              splitStatusTransitionClassName,
               PeerDisabledNotAriaBusySlotOpacityDisabledValue,
             )}
           >
@@ -293,44 +293,44 @@ function SplitButton({
   return (
     <ButtonGroupLayout
       data-cds={"SplitDropdownButton"}
-      aria-label={typeof label == "string" ? (label) : (ariaLabel ?? (value2))}
+      aria-label={typeof label == "string" ? (label) : (ariaLabel ?? (resolvedMenuLabel))}
       variant={"joined"}
       buttonVariant={variant}
       size={size}
       className={cn(
         "group/split",
-        value13 && ButtonGroupJoinValue,
-        value10 && ButtonGroupLabel_5,
+        isGhostCompact && ButtonGroupJoinValue,
+        isGhostWithLabel && splitJoinedSegmentPaddingClassName,
         className,
       )}
-      data-popup-open={value8 ? "" : undefined}
-      data-disabled={disabled2 || undefined}
+      data-popup-open={isOpen ? "" : undefined}
+      data-disabled={isDisabled || undefined}
       style={
-        value13
+        isGhostCompact
           ? {
-              "--cds-split-inset": `min(calc(${value14} / 2), calc(0.1875rem * var(--cds-rem-scale, 1)))`,
+              "--cds-split-inset": `min(calc(${iconPadding} / 2), calc(0.1875rem * var(--cds-rem-scale, 1)))`,
             }
           : undefined
       }
     >
-      {value16}
+      {primarySegment}
       <MenuMenuAssignValue
         iconOnly={true}
         icon={
           <Icon
             name={"CaretDown"}
-            size={value4}
-            className={value5 ? "text-muted" : undefined}
+            size={resolvedCaretSize}
+            className={isCaretMuted ? "text-muted" : undefined}
           />
         }
-        aria-label={value2}
+        aria-label={resolvedMenuLabel}
         tooltip={false}
-        disabled={disabled2}
+        disabled={isDisabled}
         className={
           variant === "ghost"
             ? cn(
                 ButtonGroupClassNames_2,
-                value11 && ButtonGroupLabel_4,
+                isGhostIconOnly && splitCaretGhostHitAreaClassName,
               )
             : undefined
         }
@@ -339,246 +339,246 @@ function SplitButton({
         align={align}
         collisionPadding={collisionPadding}
         open={open}
-        onOpenChange={callback}
-        style={value15}
+        onOpenChange={handleOpenChange}
+        style={caretButtonStyle}
       />
     </ButtonGroupLayout>
   );
 }
-function isSingleRowFlex(input?: Dynamic): Dynamic {
-  let value: Dynamic = getComputedStyle(input);
+function isSingleRowFlex(element?: Dynamic): Dynamic {
+  let computedStyle: Dynamic = getComputedStyle(element);
   return (
-    value.display.endsWith("flex") &&
-    !value.flexDirection.startsWith("column") &&
-    !value.flexWrap.startsWith("wrap")
+    computedStyle.display.endsWith("flex") &&
+    !computedStyle.flexDirection.startsWith("column") &&
+    !computedStyle.flexWrap.startsWith("wrap")
   );
 }
-function elementInnerWidth(input?: Dynamic): Dynamic {
-  let value: Dynamic = getComputedStyle(input);
+function elementInnerWidth(element?: Dynamic): Dynamic {
+  let computedStyle: Dynamic = getComputedStyle(element);
   return (
-    input.getBoundingClientRect().width -
-    (Number.parseFloat(value.paddingLeft) || 0) -
-    (Number.parseFloat(value.paddingRight) || 0) -
-    (Number.parseFloat(value.borderLeftWidth) || 0) -
-    (Number.parseFloat(value.borderRightWidth) || 0)
+    element.getBoundingClientRect().width -
+    (Number.parseFloat(computedStyle.paddingLeft) || 0) -
+    (Number.parseFloat(computedStyle.paddingRight) || 0) -
+    (Number.parseFloat(computedStyle.borderLeftWidth) || 0) -
+    (Number.parseFloat(computedStyle.borderRightWidth) || 0)
   );
 }
 function flexRowWidth(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  container?: Dynamic,
+  excludedElement?: Dynamic,
+  firstChildWidth?: Dynamic,
 ): Dynamic {
   return (
-    context +
+    firstChildWidth +
     flexSiblingWidth(
-      input,
-      options,
-      Number.parseFloat(getComputedStyle(input).columnGap) || 0,
+      container,
+      excludedElement,
+      Number.parseFloat(getComputedStyle(container).columnGap) || 0,
     )
   );
 }
 function flexSiblingWidth(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  container?: Dynamic,
+  excludedElement?: Dynamic,
+  gap?: Dynamic,
 ): Dynamic {
   let index: Dynamic = 0;
-  for (let value of Array.from(input.children) as Dynamic) {
-    if (value === options || !isHtmlElement(value)) continue;
-    let value2: Dynamic = getComputedStyle(value);
+  for (let child of Array.from(container.children) as Dynamic) {
+    if (child === excludedElement || !isHtmlElement(child)) continue;
+    let childStyle: Dynamic = getComputedStyle(child);
     if (
-      value2.position === "absolute" ||
-      value2.position === "fixed" ||
-      value2.display === "none"
+      childStyle.position === "absolute" ||
+      childStyle.position === "fixed" ||
+      childStyle.display === "none"
     )
       continue;
-    if (value2.display === "contents") {
-      index += flexSiblingWidth(value, options, context);
+    if (childStyle.display === "contents") {
+      index += flexSiblingWidth(child, excludedElement, gap);
       continue;
     }
-    if (value2.flexShrink === "0" && value2.flexGrow === "0") {
-      index += value.getBoundingClientRect().width + context;
+    if (childStyle.flexShrink === "0" && childStyle.flexGrow === "0") {
+      index += child.getBoundingClientRect().width + gap;
       continue;
     }
-    let value3: Dynamic = parsePixelLength(value2.flexBasis),
-      attribute: Dynamic = value.getAttribute("style"),
-      cssText: Dynamic = value.style.cssText;
-    value.style.flex = "0 0 auto";
-    value.style.width = "min-content";
-    let width: Dynamic = value.getBoundingClientRect().width;
-    restoreFlexInlineStyle(value, attribute, cssText);
-    index += Math.max(width, value3) + context;
+    let flexBasisWidth: Dynamic = parsePixelLength(childStyle.flexBasis),
+      attribute: Dynamic = child.getAttribute("style"),
+      cssText: Dynamic = child.style.cssText;
+    child.style.flex = "0 0 auto";
+    child.style.width = "min-content";
+    let width: Dynamic = child.getBoundingClientRect().width;
+    restoreFlexInlineStyle(child, attribute, cssText);
+    index += Math.max(width, flexBasisWidth) + gap;
   }
   return index;
 }
 function restoreFlexInlineStyle(
   element?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  originalStyleAttribute?: Dynamic,
+  originalCssText?: Dynamic,
 ): Dynamic {
-  if (options === null) {
+  if (originalStyleAttribute === null) {
     element.removeAttribute("style");
     return;
   }
   let cssText: Dynamic = element.style.cssText;
   if (!ButtonGroupObservedElements.has(element.ownerDocument)) {
-    element.setAttribute("style", options);
-    if (!(cssText !== context && element.style.cssText === cssText)) return;
+    element.setAttribute("style", originalStyleAttribute);
+    if (!(cssText !== originalCssText && element.style.cssText === cssText)) return;
     ButtonGroupObservedElements.add(element.ownerDocument);
   }
-  element.style.cssText = context;
+  element.style.cssText = originalCssText;
 }
-function parsePixelLength(input?: Dynamic): Dynamic {
-  return /^\d*\.?\d+px$/.test(input) ? Number.parseFloat(input) : 0;
+function parsePixelLength(cssLength?: Dynamic): Dynamic {
+  return /^\d*\.?\d+px$/.test(cssLength) ? Number.parseFloat(cssLength) : 0;
 }
-function flexContentBounds(input?: Dynamic): Dynamic {
-  let POSITIVE_INFINITY: Dynamic = Number.POSITIVE_INFINITY,
-    NEGATIVE_INFINITY: Dynamic = Number.NEGATIVE_INFINITY;
-  for (let value2 of Array.from(input.children) as Dynamic) {
+function flexContentBounds(container?: Dynamic): Dynamic {
+  let minLeft: Dynamic = Number.POSITIVE_INFINITY,
+    maxRight: Dynamic = Number.NEGATIVE_INFINITY;
+  for (let child of Array.from(container.children) as Dynamic) {
     if (
-      !isHtmlElement(value2) &&
-      !isSvgElement(value2)
+      !isHtmlElement(child) &&
+      !isSvgElement(child)
     )
       continue;
-    let position: Dynamic = getComputedStyle(value2).position;
+    let position: Dynamic = getComputedStyle(child).position;
     if (position === "absolute" || position === "fixed") continue;
-    let bounds: Dynamic = value2.getBoundingClientRect();
+    let bounds: Dynamic = child.getBoundingClientRect();
     (bounds.width <= 0 && bounds.height <= 0) ||
-      ((POSITIVE_INFINITY = Math.min(POSITIVE_INFINITY, bounds.left)),
-      (NEGATIVE_INFINITY = Math.max(NEGATIVE_INFINITY, bounds.right)));
+      ((minLeft = Math.min(minLeft, bounds.left)),
+      (maxRight = Math.max(maxRight, bounds.right)));
   }
-  if (NEGATIVE_INFINITY < POSITIVE_INFINITY) return 0;
-  let value: Dynamic = getComputedStyle(input);
+  if (maxRight < minLeft) return 0;
+  let containerStyle: Dynamic = getComputedStyle(container);
   return (
-    NEGATIVE_INFINITY -
-    POSITIVE_INFINITY +
-    (Number.parseFloat(value.paddingLeft) || 0) +
-    (Number.parseFloat(value.paddingRight) || 0)
+    maxRight -
+    minLeft +
+    (Number.parseFloat(containerStyle.paddingLeft) || 0) +
+    (Number.parseFloat(containerStyle.paddingRight) || 0)
   );
 }
-function ButtonGroup(input?: Dynamic): Dynamic {
+function ButtonGroup(groupProps?: Dynamic): Dynamic {
   useUiLocale();
   let {
-      variant: value3 = "spaced",
-      orientation: value4 = "horizontal",
-      children: value,
-      size: value2,
-      buttonVariant: value5 = "secondary",
-    }: Dynamic = input,
-    value6: Dynamic = value3 === "spaced" && value4 === "horizontal",
-    value7: Dynamic = (0, reactButtonGroup_3.useMemo)(
-      (): Dynamic => (value6 ? parseButtonGroupChildren(value) : null),
-      [value6, value],
+      variant: variant = "spaced",
+      orientation: orientation = "horizontal",
+      children: children,
+      size: size,
+      buttonVariant: buttonVariant = "secondary",
+    }: Dynamic = groupProps,
+    isSpacedHorizontal: Dynamic = variant === "spaced" && orientation === "horizontal",
+    parsedChildren: Dynamic = (0, reactButtonGroup_3.useMemo)(
+      (): Dynamic => (isSpacedHorizontal ? parseButtonGroupChildren(children) : null),
+      [isSpacedHorizontal, children],
     ),
-    value8: Dynamic = value7 !== null && value7 !== "unrecognised";
-  value7 === "unrecognised" && undefined;
-  let value9: Dynamic = (0, reactButtonGroup_3.useRef)(null),
-    [value10, value11]: Dynamic = (0, reactButtonGroup_3.useState)(false),
-    value12: Dynamic = (0, reactButtonGroup_3.useRef)(0);
+    isCollapsible: Dynamic = parsedChildren !== null && parsedChildren !== "unrecognised";
+  parsedChildren === "unrecognised" && undefined;
+  let containerRef: Dynamic = (0, reactButtonGroup_3.useRef)(null),
+    [isCollapsed, setIsCollapsed]: Dynamic = (0, reactButtonGroup_3.useState)(false),
+    expandedWidthRef: Dynamic = (0, reactButtonGroup_3.useRef)(0);
   useIsomorphicLayoutEffect((): Dynamic => {
-    if (!value8) return;
-    let current: Dynamic = value9.current,
-      value14: Dynamic = current?.parentElement ?? null;
-    if (current === null || value14 === null) return;
-    let value15: Dynamic = getResizeObserver(value14);
-    if (value15 === undefined) return;
-    let callback: Dynamic = (): Dynamic => {
-      let value17: Dynamic = elementInnerWidth(value14);
-      if (value17 <= 0) return;
-      if (!isSingleRowFlex(value14)) {
-        value10 && value11(false);
+    if (!isCollapsible) return;
+    let current: Dynamic = containerRef.current,
+      parentElement: Dynamic = current?.parentElement ?? null;
+    if (current === null || parentElement === null) return;
+    let ResizeObserverClass: Dynamic = getResizeObserver(parentElement);
+    if (ResizeObserverClass === undefined) return;
+    let checkOverflow: Dynamic = (): Dynamic => {
+      let availableWidth: Dynamic = elementInnerWidth(parentElement);
+      if (availableWidth <= 0) return;
+      if (!isSingleRowFlex(parentElement)) {
+        isCollapsed && setIsCollapsed(false);
         return;
       }
-      if (value10) {
-        value17 >= value12.current + 64 && value11(false);
+      if (isCollapsed) {
+        availableWidth >= expandedWidthRef.current + 64 && setIsCollapsed(false);
         return;
       }
-      let firstElementChild2: Dynamic = current.firstElementChild;
-      if (!isHtmlElement(firstElementChild2)) return;
-      let value18: Dynamic = flexRowWidth(
-        value14,
+      let firstSegment: Dynamic = current.firstElementChild;
+      if (!isHtmlElement(firstSegment)) return;
+      let requiredWidth: Dynamic = flexRowWidth(
+        parentElement,
         current,
-        firstElementChild2.getBoundingClientRect().width,
+        firstSegment.getBoundingClientRect().width,
       );
-      value12.current = value18;
-      value17 < value18 && value11(true);
+      expandedWidthRef.current = requiredWidth;
+      availableWidth < requiredWidth && setIsCollapsed(true);
     };
-    callback();
-    let value16: Dynamic = new value15(callback);
-    value16.observe(value14);
+    checkOverflow();
+    let observer: Dynamic = new ResizeObserverClass(checkOverflow);
+    observer.observe(parentElement);
     let firstElementChild: Dynamic = current.firstElementChild;
     isHtmlElement(firstElementChild) &&
-      value16.observe(firstElementChild);
-    return (): Dynamic => value16.disconnect();
-  }, [value8, value10]);
-  if (!value6) return <ButtonGroupLayout {...input} />;
-  let value13: Dynamic = value8 && value10;
+      observer.observe(firstElementChild);
+    return (): Dynamic => observer.disconnect();
+  }, [isCollapsible, isCollapsed]);
+  if (!isSpacedHorizontal) return <ButtonGroupLayout {...groupProps} />;
+  let showsCollapsed: Dynamic = isCollapsible && isCollapsed;
   return (
     <span
-      ref={value9}
+      ref={containerRef}
       className={"contents"}
-      data-cds-collapsing={value8 ? "" : undefined}
-      data-collapsed={value13 ? "" : undefined}
+      data-cds-collapsing={isCollapsible ? "" : undefined}
+      data-collapsed={showsCollapsed ? "" : undefined}
     >
-      {value13 ? (<SplitButton
-          {...(value7.primary.iconOnly && value7.primary.icon !== undefined
+      {showsCollapsed ? (<SplitButton
+          {...(parsedChildren.primary.iconOnly && parsedChildren.primary.icon !== undefined
             ? {
-                icon: value7.primary.icon,
-                "aria-label": value7.primary.label,
+                icon: parsedChildren.primary.icon,
+                "aria-label": parsedChildren.primary.label,
               }
             : {
-                label: value7.primary.label,
+                label: parsedChildren.primary.label,
               })}
-          variant={value7.primary.variant ?? value5}
-          size={value2}
-          pressed={value7.primary.pressed}
-          disabled={value7.primary.disabled}
-          onPrimaryClick={value7.primary.onClick}
-          items={value7.overflow}
-          className={input.className}
-        />) : (<ButtonGroupLayout {...input} />)}
+          variant={parsedChildren.primary.variant ?? buttonVariant}
+          size={size}
+          pressed={parsedChildren.primary.pressed}
+          disabled={parsedChildren.primary.disabled}
+          onPrimaryClick={parsedChildren.primary.onClick}
+          items={parsedChildren.overflow}
+          className={groupProps.className}
+        />) : (<ButtonGroupLayout {...groupProps} />)}
     </span>
   );
 }
 function componentHasDisplayName(
-  input?: Dynamic,
-  options?: Dynamic,
+  element?: Dynamic,
+  displayName?: Dynamic,
 ): Dynamic {
-  return input.type?.displayName === options;
+  return element.type?.displayName === displayName;
 }
-function sameComponentType(input?: Dynamic, options?: Dynamic): Dynamic {
-  let value: Dynamic = input.type?.displayName;
-  return input.type === options || (!!value && value === options.displayName);
+function sameComponentType(element?: Dynamic, componentType?: Dynamic): Dynamic {
+  let displayName: Dynamic = element.type?.displayName;
+  return element.type === componentType || (!!displayName && displayName === componentType.displayName);
 }
-function flattenReactFragments(input?: Dynamic): Dynamic {
-  return reactButtonGroup_3.Children.toArray(input).flatMap(
-    (input2?: Dynamic): Dynamic =>
-      (0, reactButtonGroup_3.isValidElement)(input2) &&
-      input2.type === reactButtonGroup_3.Fragment
-        ? reactButtonGroup_3.Children.toArray(input2.props.children)
-        : [input2],
+function flattenReactFragments(children?: Dynamic): Dynamic {
+  return reactButtonGroup_3.Children.toArray(children).flatMap(
+    (child?: Dynamic): Dynamic =>
+      (0, reactButtonGroup_3.isValidElement)(child) &&
+      child.type === reactButtonGroup_3.Fragment
+        ? reactButtonGroup_3.Children.toArray(child.props.children)
+        : [child],
   );
 }
-function parseButtonGroupChildren(input?: Dynamic): Dynamic {
-  let value: Dynamic = flattenReactFragments(input);
-  if (value.length < 2) return null;
+function parseButtonGroupChildren(children?: Dynamic): Dynamic {
+  let flatChildren: Dynamic = flattenReactFragments(children);
+  if (flatChildren.length < 2) return null;
   let items: Dynamic = [],
-    value2: Dynamic = null;
-  for (let value3 of value as Dynamic) {
-    if (!(0, reactButtonGroup_3.isValidElement)(value3))
+    primaryButton: Dynamic = null;
+  for (let child of flatChildren as Dynamic) {
+    if (!(0, reactButtonGroup_3.isValidElement)(child))
       return "unrecognised";
-    if (sameComponentType(value3, Button_r)) {
-      let props: Dynamic = value3.props;
+    if (sameComponentType(child, Button_r)) {
+      let props: Dynamic = child.props;
       if ("href" in props && props.href !== undefined) return "unrecognised";
-      let value4: Dynamic =
+      let iconName: Dynamic =
           typeof props.icon == "string" ? props.icon : undefined,
-        value5: Dynamic =
+        buttonLabel: Dynamic =
           props.iconOnly === true
             ? props["aria-label"]
             : typeof props.children == "string"
               ? props.children
               : null;
-      if (value5 === null) return "unrecognised";
+      if (buttonLabel === null) return "unrecognised";
       let onClick: Dynamic = props.onClick;
       if (
         onClick === undefined ||
@@ -587,10 +587,10 @@ function parseButtonGroupChildren(input?: Dynamic): Dynamic {
         "render" in props
       )
         return null;
-      value2 === null
-        ? (value2 = {
-            label: value5,
-            icon: value4,
+      primaryButton === null
+        ? (primaryButton = {
+            label: buttonLabel,
+            icon: iconName,
             iconOnly: props.iconOnly === true,
             onClick: onClick,
             pressed: props.pressed,
@@ -598,8 +598,8 @@ function parseButtonGroupChildren(input?: Dynamic): Dynamic {
             variant: props.variant,
           })
         : items.push({
-            icon: value4,
-            label: value5,
+            icon: iconName,
+            label: buttonLabel,
             disabled: props.disabled,
             onSelect: onClick,
             shortcut: "shortcut" in props ? props.shortcut : undefined,
@@ -609,30 +609,30 @@ function parseButtonGroupChildren(input?: Dynamic): Dynamic {
               keepOpen: true,
             }),
           });
-    } else if (componentHasDisplayName(value3, "DropdownButton")) {
-      let props: Dynamic = value3.props;
+    } else if (componentHasDisplayName(child, "DropdownButton")) {
+      let props: Dynamic = child.props;
       if (!Array.isArray(props.items)) return "unrecognised";
-      let value4: Dynamic =
+      let dropdownLabel: Dynamic =
         props.trigger === "label" || props.trigger === undefined
           ? typeof props.label == "string"
             ? props.label
             : null
           : props["aria-label"];
-      if (value4 === null) return "unrecognised";
+      if (dropdownLabel === null) return "unrecognised";
       items.push({
         icon: "icon" in props ? props.icon : undefined,
-        label: value4,
+        label: dropdownLabel,
         disabled: props.disabled,
         items: props.items,
       });
     } else return "unrecognised";
   }
-  return value2 === null ||
-    (value2.disabled === true &&
-      items.some((input2?: Dynamic): Dynamic => input2.disabled !== true))
+  return primaryButton === null ||
+    (primaryButton.disabled === true &&
+      items.some((item?: Dynamic): Dynamic => item.disabled !== true))
     ? null
     : {
-        primary: value2,
+        primary: primaryButton,
         overflow: items,
       };
 }
@@ -647,14 +647,14 @@ export {
   buttonGroupJoinClasses,
   ButtonGroupJoinValue,
   ButtonGroupLabel,
-  ButtonGroupLabel_2,
-  ButtonGroupLabel_3,
-  ButtonGroupLabel_4,
-  ButtonGroupLabel_5,
+  splitLabelShrinkClassName as ButtonGroupLabel_2,
+  splitStatusTransitionClassName as ButtonGroupLabel_3,
+  splitCaretGhostHitAreaClassName as ButtonGroupLabel_4,
+  splitJoinedSegmentPaddingClassName as ButtonGroupLabel_5,
   ButtonGroupLayout,
   ButtonGroupObservedElements,
   ButtonGroupPaddingInlineEndConfig,
-  ButtonGroupPaddingInlineEndConfig_2,
+  splitStatusPaddingStyle as ButtonGroupPaddingInlineEndConfig_2,
   ButtonGroupPaddingInlineStartConfig,
   ButtonGroupPrimarySecondaryGhostConfig,
   ButtonGroupSecondaryPrimaryDangerConfig,
@@ -753,8 +753,8 @@ export function installCdsButtonGroup(): () => void {
       ButtonGroupPaddingInlineEndConfig = {
         paddingInlineEnd: 5,
       };
-      ButtonGroupLabel_2 = "min-w-0 shrink";
-      ButtonGroupPaddingInlineEndConfig_2 = {
+      splitLabelShrinkClassName = "min-w-0 shrink";
+      splitStatusPaddingStyle = {
         paddingInlineEnd: 4,
       };
       ButtonGroupPrimarySecondaryGhostConfig = {
@@ -764,7 +764,7 @@ export function installCdsButtonGroup(): () => void {
         danger: "peer-hover/slot:bg-fill-danger-hover",
         brand: "peer-hover/slot:bg-fill-brand-hover",
       };
-      ButtonGroupLabel_3 = "transition-colors duration-fast ease-out";
+      splitStatusTransitionClassName = "transition-colors duration-fast ease-out";
       PeerDisabledNotAriaBusySlotOpacityDisabledValue =
         "peer-[:disabled:not([aria-busy])]/slot:opacity-disabled";
       ButtonGroupPaddingInlineStartConfig = {
@@ -773,7 +773,7 @@ export function installCdsButtonGroup(): () => void {
       };
       ButtonGroupClassNames_2 =
         "after:absolute after:inset-y-0 after:start-0 after:-end-2 after:content-['']";
-      ButtonGroupLabel_4 =
+      splitCaretGhostHitAreaClassName =
         "pointer-events-none after:pointer-events-auto after:start-[calc(var(--cds-split-caret-tuck)-1px)] after:-end-[calc(3px+var(--cds-split-caret-tuck))]";
       GroupDataPopupOpenSplitPointerEventsNoneValue =
         "group-data-[popup-open]/split:pointer-events-none";
@@ -786,7 +786,7 @@ export function installCdsButtonGroup(): () => void {
         "[&:not([data-disabled])]:has-[[aria-pressed=true]]:[--cds-split-ring:var(--cds-border)]",
         "[&_[data-cds-part=paint]]:p-(--cds-split-inset) [&_[data-cds-part=paint]]:bg-clip-content",
       ].join(" ");
-      ButtonGroupLabel_5 =
+      splitJoinedSegmentPaddingClassName =
         "[&>[data-cds-segment]:first-child_[data-cds-part=paint]]:pe-0 [&>[data-cds-segment]:last-child_[data-cds-part=paint]]:ps-0";
     });
     initializeButtonGroup_3 = initializeOnce((): Dynamic => {

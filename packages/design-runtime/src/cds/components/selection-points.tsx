@@ -6,7 +6,7 @@ import {
 } from "../../runtime-types";
 import { useButtonAnimation } from "../button/context";
 import { Icon } from "./icon";
-import { AspectSquareValue, ComponentsSelectionRingClassNames, ComponentsSelectionRingClassNames_2, ComponentsSelectionRingClassNames_3, ComponentsSelectionRingClassNames_4, ComponentsSelectionRingClassNames_5, ComponentsSelectionRingClassNames_6, ComponentsSelectionRingConstant, ComponentsSelectionRingConstant_2, ComponentsSelectionRingLabel, ComponentsSelectionRingLabel_2, ComponentsSelectionRingLimit, HFullValue, reactComponentsSelectionRing, selectionRingClasses } from "./selection-ring";
+import { AspectSquareValue, ComponentsSelectionRingClassNames, ComponentsSelectionRingClassNames_2, ComponentsSelectionRingClassNames_3, ComponentsSelectionRingClassNames_4, ComponentsSelectionRingClassNames_5, ComponentsSelectionRingClassNames_6, ComponentsSelectionRingConstant, ComponentsSelectionRingConstant_2 as ComponentsSelectionRingUnscaledStillFrames, ComponentsSelectionRingLabel, ComponentsSelectionRingLabel_2 as thumbShadowClasses, ComponentsSelectionRingLimit, HFullValue, reactComponentsSelectionRing, selectionRingClasses } from "./selection-ring";
 import { getConnectedOwnerWindow, getOwnerWindow } from "../dom/owner-window";
 import { withSelectionPrevention } from "../dom/selection-prevention";
 import { isInsideField } from "../field/context";
@@ -23,18 +23,18 @@ var reactComponentsSelectionPoints: Dynamic;
 var jsxComponentsSelectionPoints: Dynamic;
 var ComponentsSelectionPointsLimit: Dynamic;
 var ComponentsSelectionPointsConstant: Dynamic;
-var ComponentsSelectionPointsConstant_2: Dynamic;
+var ComponentsSelectionPointsShiftStep: Dynamic;
 var ComponentsSelectionPointsInlineStartInlineEndTopConfig: Dynamic;
 var ComponentsSelectionPointsComponent: Dynamic;
 var initializeComponentsSelectionPoints: Dynamic;
 function SegmentedControl({
   segments: segments,
-  value: value,
+  value: selectedValue,
   onChange: onChange,
   variant = "contained",
   size: size,
   fullWidth = false,
-  disabled: disabled2,
+  disabled: isDisabled,
   tooltipSide: tooltipSide,
   tooltipClassName: tooltipClassName,
   "aria-label": ariaLabel,
@@ -45,153 +45,153 @@ function SegmentedControl({
   className: className,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let value2: Dynamic = (0, reactComponentsSelectionRing.useRef)(
+  let rootRef: Dynamic = (0, reactComponentsSelectionRing.useRef)(
     null,
   );
-  useButtonAnimation(value2, "SegmentedControl");
-  let value3: Dynamic = (0, reactComponentsSelectionRing.useRef)(
+  useButtonAnimation(rootRef, "SegmentedControl");
+  let indicatorRef: Dynamic = (0, reactComponentsSelectionRing.useRef)(
       null,
     ),
-    value4: Dynamic = isInsideField(),
-    value5: Dynamic = (0, reactComponentsSelectionRing.useRef)({
+    isInField: Dynamic = isInsideField(),
+    flipStateRef: Dynamic = (0, reactComponentsSelectionRing.useRef)({
       live: false,
       poll: null,
     }),
-    value6: Dynamic = (0, reactComponentsSelectionRing.useCallback)(
-      function value12(input: Dynamic = false): Dynamic {
-        let current: Dynamic = value2.current,
-          current2: Dynamic = value3.current;
-        if (!current || !current2) return;
-        let element: Dynamic = current.querySelector("[data-checked]"),
-          value13: Dynamic = element ? scaledContainerWidth(current) : null;
+    syncIndicator: Dynamic = (0, reactComponentsSelectionRing.useCallback)(
+      function syncIndicatorFrame(isCorrection: Dynamic = false): Dynamic {
+        let rootNode: Dynamic = rootRef.current,
+          indicatorNode: Dynamic = indicatorRef.current;
+        if (!rootNode || !indicatorNode) return;
+        let element: Dynamic = rootNode.querySelector("[data-checked]"),
+          rootMeasure: Dynamic = element ? scaledContainerWidth(rootNode) : null;
         if (
-          !input ||
-          !(value13?.scaled || isFlipIndicatorEntering(current2))
+          !isCorrection ||
+          !(rootMeasure?.scaled || isFlipIndicatorEntering(indicatorNode))
         ) {
-          let value18: Dynamic = element
-            ? relativeIndicatorBounds(element, current)
+          let checkedBounds: Dynamic = element
+            ? relativeIndicatorBounds(element, rootNode)
             : null;
-          animateFlipIndicator(current2, current, value18, {
-            correction: input,
+          animateFlipIndicator(indicatorNode, rootNode, checkedBounds, {
+            correction: isCorrection,
           });
         }
-        if (!value5.current.live) return;
-        let poll: Dynamic = value5.current.poll;
+        if (!flipStateRef.current.live) return;
+        let poll: Dynamic = flipStateRef.current.poll;
         poll?.cancel();
-        value5.current.poll = null;
-        if (!value13 || (!input && !poll && !value13.scaled)) return;
+        flipStateRef.current.poll = null;
+        if (!rootMeasure || (!isCorrection && !poll && !rootMeasure.scaled)) return;
         let {
-          width: value14,
-          still: value15,
-          frames: value16,
+          width: lastWidth,
+          still: stillFrames,
+          frames: frameCount,
         }: Dynamic = poll ?? {
-          width: value13.width,
+          width: rootMeasure.width,
           still: 0,
           frames: 0,
         };
         if (
-          input &&
-          ((value15 = value14 === value13.width ? value15 + 1 : 0),
-          (value14 = value13.width),
-          (value16 += 1),
-          value15 >=
-            (value13.scaled
+          isCorrection &&
+          ((stillFrames = lastWidth === rootMeasure.width ? stillFrames + 1 : 0),
+          (lastWidth = rootMeasure.width),
+          (frameCount += 1),
+          stillFrames >=
+            (rootMeasure.scaled
               ? ComponentsSelectionRingConstant
-              : ComponentsSelectionRingConstant_2) ||
-            value16 >= ComponentsSelectionRingLimit)
+              : ComponentsSelectionRingUnscaledStillFrames) ||
+            frameCount >= ComponentsSelectionRingLimit)
         )
           return;
-        let value17: Dynamic = requestElementAnimationFrame(
-          current,
-          (): Dynamic => value12(true),
+        let cancelFrame: Dynamic = requestElementAnimationFrame(
+          rootNode,
+          (): Dynamic => syncIndicatorFrame(true),
         );
-        value17 &&
-          (value5.current.poll = {
-            cancel: value17,
-            width: value14,
-            still: value15,
-            frames: value16,
+        cancelFrame &&
+          (flipStateRef.current.poll = {
+            cancel: cancelFrame,
+            width: lastWidth,
+            still: stillFrames,
+            frames: frameCount,
           });
       },
       [],
     ),
-    value7: Dynamic = segments
-      .map((input?: Dynamic): Dynamic => input.value)
+    segmentValuesKey: Dynamic = segments
+      .map((segment?: Dynamic): Dynamic => segment.value)
       .join("\0");
   (0, reactComponentsSelectionRing.useLayoutEffect)((): Dynamic => {
-    let current: Dynamic = value2.current,
-      current2: Dynamic = value3.current,
-      value12: Dynamic = getResizeObserver(current),
-      value13: Dynamic = current !== null && value12 !== undefined,
-      current3: Dynamic = value5.current;
-    current3.live = true;
-    (!value13 ||
-      (current2 !== null && hasFlipAnimation(current2))) &&
-      value6();
-    let value14: Dynamic = null;
-    value13 &&
-      ((value14 = new value12((): Dynamic => value6())),
-      value14.observe(current));
+    let rootNode: Dynamic = rootRef.current,
+      indicatorNode: Dynamic = indicatorRef.current,
+      ResizeObserverClass: Dynamic = getResizeObserver(rootNode),
+      canObserve: Dynamic = rootNode !== null && ResizeObserverClass !== undefined,
+      flipState: Dynamic = flipStateRef.current;
+    flipState.live = true;
+    (!canObserve ||
+      (indicatorNode !== null && hasFlipAnimation(indicatorNode))) &&
+      syncIndicator();
+    let resizeObserver: Dynamic = null;
+    canObserve &&
+      ((resizeObserver = new ResizeObserverClass((): Dynamic => syncIndicator())),
+      resizeObserver.observe(rootNode));
     return (): Dynamic => {
-      value14?.disconnect();
-      current3.live = false;
-      current3.poll?.cancel();
+      resizeObserver?.disconnect();
+      flipState.live = false;
+      flipState.poll?.cancel();
     };
-  }, [value, variant, fullWidth, value7, value6]);
+  }, [selectedValue, variant, fullWidth, segmentValuesKey, syncIndicator]);
   (0, reactComponentsSelectionRing.useLayoutEffect)((): Dynamic => {
     if (!thumbPosition) return;
-    let callback: Dynamic = (input?: Dynamic): Dynamic => {
-      let current: Dynamic = value2.current,
-        current2: Dynamic = value3.current;
-      if (!(!current || !current2)) {
-        if (input === null) {
-          isFlipIndicatorEntering(current2) && value6();
+    let handleThumbChange: Dynamic = (thumbProgress?: Dynamic): Dynamic => {
+      let rootNode: Dynamic = rootRef.current,
+        indicatorNode: Dynamic = indicatorRef.current;
+      if (!(!rootNode || !indicatorNode)) {
+        if (thumbProgress === null) {
+          isFlipIndicatorEntering(indicatorNode) && syncIndicator();
           return;
         }
         seekFlipAnimation(
-          current2,
-          input,
+          indicatorNode,
+          thumbProgress,
           (): Dynamic =>
             Array.from(
-              current.querySelectorAll('[role="radio"]'),
-              (input2?: Dynamic): Dynamic =>
-                relativeIndicatorBounds(input2, current),
+              rootNode.querySelectorAll('[role="radio"]'),
+              (radioElement?: Dynamic): Dynamic =>
+                relativeIndicatorBounds(radioElement, rootNode),
             ),
         );
       }
     };
-    callback(thumbPosition.get());
-    let value12: Dynamic = thumbPosition.on("change", callback);
+    handleThumbChange(thumbPosition.get());
+    let unsubscribe: Dynamic = thumbPosition.on("change", handleThumbChange);
     return (): Dynamic => {
-      value12();
-      callback(null);
+      unsubscribe();
+      handleThumbChange(null);
     };
-  }, [thumbPosition, value6]);
-  let value8: Dynamic = (0, reactComponentsSelectionRing.useCallback)(
-      (input?: Dynamic): Dynamic => {
-        onChange(input);
+  }, [thumbPosition, syncIndicator]);
+  let handleValueChange: Dynamic = (0, reactComponentsSelectionRing.useCallback)(
+      (nextValue?: Dynamic): Dynamic => {
+        onChange(nextValue);
       },
       [onChange],
     ),
-    value9: Dynamic = variant === "contained",
-    value10: Dynamic = useTooltipGroup(),
-    value11: Dynamic = (
+    isContained: Dynamic = variant === "contained",
+    hasTooltipGroup: Dynamic = useTooltipGroup(),
+    radioGroup: Dynamic = (
       <R_npm_RadioGroup_uF
-        ref={value2}
+        ref={rootRef}
         data-cds={"SegmentedControl"}
         aria-label={ariaLabel}
         aria-required={ariaRequired}
         aria-invalid={ariaInvalid}
         aria-describedby={ariaDescribedby}
-        value={value}
-        onValueChange={value8}
-        disabled={disabled2}
+        value={selectedValue}
+        onValueChange={handleValueChange}
+        disabled={isDisabled}
         {...getSizeAttribute(size)}
         className={cn(
           "relative inline-flex",
           fullWidth ? "w-full" : "w-fit",
           "shrink-0 items-stretch h-control font-sans",
-          value9
+          isContained
             ? "rounded bg-[var(--cds-segmented-control-track)] p-px"
             : "gap-[1px]",
           className,
@@ -199,40 +199,40 @@ function SegmentedControl({
       >
         <div
           aria-hidden={true}
-          className={`pointer-events-none absolute inset-0 overflow-clip ${value9 ? "rounded" : ""}`}
+          className={`pointer-events-none absolute inset-0 overflow-clip ${isContained ? "rounded" : ""}`}
         >
           <div
-            ref={value3}
-            className={`${ComponentsSelectionRingClassNames_5} ${value9 ? ComponentsSelectionRingLabel_2 : ComponentsSelectionRingClassNames_6}`}
+            ref={indicatorRef}
+            className={`${ComponentsSelectionRingClassNames_5} ${isContained ? thumbShadowClasses : ComponentsSelectionRingClassNames_6}`}
           />
         </div>
-        {segments.map((input?: Dynamic): Dynamic => {
-          let value12: Dynamic = input.icon && input.label === undefined,
-            value13: Dynamic = value12
-              ? (input.tooltip ?? String(input.value))
-              : input.tooltip,
-            value14: Dynamic =
-              typeof input.tooltip == "string"
-                ? input.tooltip
-                : String(input.value),
-            value15: Dynamic = input.icon ? (
-              <Icon name={input.icon} size={"auto"} />
+        {segments.map((segment?: Dynamic): Dynamic => {
+          let isIconOnly: Dynamic = segment.icon && segment.label === undefined,
+            tooltipContent: Dynamic = isIconOnly
+              ? (segment.tooltip ?? String(segment.value))
+              : segment.tooltip,
+            ariaLabelText: Dynamic =
+              typeof segment.tooltip == "string"
+                ? segment.tooltip
+                : String(segment.value),
+            iconNode: Dynamic = segment.icon ? (
+              <Icon name={segment.icon} size={"auto"} />
             ) : null,
-            value16: Dynamic = (
+            radioItem: Dynamic = (
               <npm_Radio_iP.Root
-                value={input.value}
-                disabled={input.disabled}
-                aria-label={value12 ? (value14) : (undefined)}
+                value={segment.value}
+                disabled={segment.disabled}
+                aria-label={isIconOnly ? (ariaLabelText) : (undefined)}
                 onMouseDown={withSelectionPrevention(undefined)}
-                className={`${selectionRingClasses} ${value9 ? ComponentsSelectionRingClassNames_3 : ComponentsSelectionRingClassNames_4} ${value12 ? AspectSquareValue : ComponentsSelectionRingClassNames}${fullWidth ? " flex-1" : ""}`}
+                className={`${selectionRingClasses} ${isContained ? ComponentsSelectionRingClassNames_3 : ComponentsSelectionRingClassNames_4} ${isIconOnly ? AspectSquareValue : ComponentsSelectionRingClassNames}${fullWidth ? " flex-1" : ""}`}
               >
-                {value15 && input.indicator ? (<span className={"grid"}>
+                {iconNode && segment.indicator ? (<span className={"grid"}>
                     <span
                       className={
                         "col-start-1 row-start-1 [--seg-dot-r:calc(0.1875rem*var(--cds-rem-scale,1))] [--seg-dot-x:calc(100%_-_var(--seg-dot-r)_+_1px)] [&:dir(rtl)]:[--seg-dot-x:calc(var(--seg-dot-r)_-_1px)] not-forced-colors:has-[~[data-cds-part=indicator]>*]:[mask-image:radial-gradient(circle_at_var(--seg-dot-x)_calc(var(--seg-dot-r)_-_1px),transparent_calc(var(--seg-dot-r)_+_2px),black_calc(var(--seg-dot-r)_+_2.5px))]"
                       }
                     >
-                      {value15}
+                      {iconNode}
                     </span>
                     <span
                       aria-hidden={true}
@@ -241,120 +241,120 @@ function SegmentedControl({
                         "relative col-start-1 row-start-1 -me-px -mt-px self-start justify-self-end has-[>[data-cds=Pulse]]:[--cds-page-bg:transparent]"
                       }
                     >
-                      {input.indicator}
+                      {segment.indicator}
                     </span>
-                  </span>) : (value15)}
-                {input.label}
+                  </span>) : (iconNode)}
+                {segment.label}
               </npm_Radio_iP.Root>
             ),
-            value17: Dynamic =
-              input.disabled && input.disabledReason ? (
+            segmentNode: Dynamic =
+              segment.disabled && segment.disabledReason ? (
                 <DisabledReasonTooltip
-                  reason={input.disabledReason}
+                  reason={segment.disabledReason}
                   side={tooltipSide}
                   hoverable={false}
                   wrapperClassName={
                     fullWidth
-                      ? `${HFullValue} ${value12 ? ComponentsSelectionRingClassNames_2 : ComponentsSelectionRingLabel}`
+                      ? `${HFullValue} ${isIconOnly ? ComponentsSelectionRingClassNames_2 : ComponentsSelectionRingLabel}`
                       : HFullValue
                   }
                 >
-                  {value16}
+                  {radioItem}
                 </DisabledReasonTooltip>
-              ) : value13 !== undefined ? (
+              ) : tooltipContent !== undefined ? (
                 <Tooltip
-                  content={value13}
-                  detail={input.tooltipDetail}
-                  shortcut={input.shortcut}
+                  content={tooltipContent}
+                  detail={segment.tooltipDetail}
+                  shortcut={segment.shortcut}
                   side={tooltipSide}
-                  hoverable={input.tooltipHoverable ?? false}
+                  hoverable={segment.tooltipHoverable ?? false}
                   className={tooltipClassName}
                 >
-                  {value16}
+                  {radioItem}
                 </Tooltip>
               ) : (
-                value16
+                radioItem
               );
-          return value4
+          return isInField
             ? (() => {
                 const _Component = npm_LabelableProvider_NR;
                 const _props = {
-                  children: value17,
+                  children: segmentNode,
                 } as const;
-                const _key = input.value;
+                const _key = segment.value;
                 return <_Component key={_key} {..._props} />;
               })()
             : (() => {
-                const _Component2 =
+                const _FragmentComponent =
                   reactComponentsSelectionRing.Fragment;
-                const _props2 = {
-                  children: value17,
+                const _fragmentProps = {
+                  children: segmentNode,
                 } as const;
-                const _key2 = input.value;
-                return <_Component2 key={_key2} {..._props2} />;
+                const _fragmentKey = segment.value;
+                return <_FragmentComponent key={_fragmentKey} {..._fragmentProps} />;
               })();
         })}
       </R_npm_RadioGroup_uF>
     );
-  return value10 ? (
-    value11
+  return hasTooltipGroup ? (
+    radioGroup
   ) : (
-    <TooltipGroup>{value11}</TooltipGroup>
+    <TooltipGroup>{radioGroup}</TooltipGroup>
   );
 }
 function relativeIndicatorBounds(
-  input?: Dynamic,
-  options?: Dynamic,
+  indicator?: Dynamic,
+  container?: Dynamic,
 ): Dynamic {
-  let bounds: Dynamic = options.getBoundingClientRect(),
-    value: Dynamic = elementBorderBoxWidth(options),
-    value2: Dynamic =
-      Math.abs(bounds.width - value) < 0.01 ? 1 : bounds.width / value;
-  if (!(value2 > 0) || !Number.isFinite(value2))
+  let containerBounds: Dynamic = container.getBoundingClientRect(),
+    borderBoxWidth: Dynamic = elementBorderBoxWidth(container),
+    scale: Dynamic =
+      Math.abs(containerBounds.width - borderBoxWidth) < 0.01 ? 1 : containerBounds.width / borderBoxWidth;
+  if (!(scale > 0) || !Number.isFinite(scale))
     return {
-      left: input.offsetLeft,
-      width: input.offsetWidth,
+      left: indicator.offsetLeft,
+      width: indicator.offsetWidth,
     };
-  let bounds2: Dynamic = input.getBoundingClientRect(),
-    value3: Dynamic =
-      getOwnerWindow(options)?.devicePixelRatio || 1,
-    callback: Dynamic = (input2?: Dynamic): Dynamic =>
-      Math.round(input2 * value3) / value3;
+  let indicatorBounds: Dynamic = indicator.getBoundingClientRect(),
+    pixelRatio: Dynamic =
+      getOwnerWindow(container)?.devicePixelRatio || 1,
+    snapToPixel: Dynamic = (coordinate?: Dynamic): Dynamic =>
+      Math.round(coordinate * pixelRatio) / pixelRatio;
   return {
-    left: (callback(bounds2.left) - callback(bounds.left)) / value2,
-    width: (callback(bounds2.right) - callback(bounds2.left)) / value2,
+    left: (snapToPixel(indicatorBounds.left) - snapToPixel(containerBounds.left)) / scale,
+    width: (snapToPixel(indicatorBounds.right) - snapToPixel(indicatorBounds.left)) / scale,
   };
 }
-function scaledContainerWidth(input?: Dynamic): Dynamic {
-  let width: Dynamic = input.getBoundingClientRect().width;
+function scaledContainerWidth(container?: Dynamic): Dynamic {
+  let width: Dynamic = container.getBoundingClientRect().width;
   return {
     width: width,
     scaled:
-      input.offsetWidth > 0 &&
-      Math.abs(width - elementBorderBoxWidth(input)) >= 0.01,
+      container.offsetWidth > 0 &&
+      Math.abs(width - elementBorderBoxWidth(container)) >= 0.01,
   };
 }
 function requestElementAnimationFrame(
-  input?: Dynamic,
-  options?: Dynamic,
+  element?: Dynamic,
+  frameCallback?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = getConnectedOwnerWindow(input);
-  if (!value || typeof value.requestAnimationFrame != "function") return null;
-  let value2: Dynamic = value.requestAnimationFrame(options);
+  let ownerWindow: Dynamic = getConnectedOwnerWindow(element);
+  if (!ownerWindow || typeof ownerWindow.requestAnimationFrame != "function") return null;
+  let frameId: Dynamic = ownerWindow.requestAnimationFrame(frameCallback);
   return (): Dynamic => {
     try {
-      value.cancelAnimationFrame(value2);
+      ownerWindow.cancelAnimationFrame(frameId);
     } catch {}
   };
 }
-function elementBorderBoxWidth(input?: Dynamic): Dynamic {
+function elementBorderBoxWidth(element?: Dynamic): Dynamic {
   let style: Dynamic = (
-      getOwnerWindow(input) ?? window
-    ).getComputedStyle(input),
-    value: Dynamic = parseFloat(style.width);
+      getOwnerWindow(element) ?? window
+    ).getComputedStyle(element),
+    contentWidth: Dynamic = parseFloat(style.width);
   return style.boxSizing === "border-box"
-    ? value
-    : value +
+    ? contentWidth
+    : contentWidth +
         parseFloat(style.paddingLeft) +
         parseFloat(style.paddingRight) +
         parseFloat(style.borderLeftWidth) +
@@ -363,7 +363,7 @@ function elementBorderBoxWidth(input?: Dynamic): Dynamic {
 export {
   ComponentsSelectionPointsComponent,
   ComponentsSelectionPointsConstant,
-  ComponentsSelectionPointsConstant_2,
+  ComponentsSelectionPointsShiftStep as ComponentsSelectionPointsConstant_2,
   ComponentsSelectionPointsInlineStartInlineEndTopConfig,
   ComponentsSelectionPointsLimit,
   elementBorderBoxWidth,
@@ -392,7 +392,7 @@ export function installCdsComponentsSelectionPoints(): () => void {
         );
         ComponentsSelectionPointsLimit = 3;
         ComponentsSelectionPointsConstant = 8;
-        ComponentsSelectionPointsConstant_2 = 32;
+        ComponentsSelectionPointsShiftStep = 32;
         ComponentsSelectionPointsInlineStartInlineEndTopConfig = {
           "inline-start":
             "inset-y-0 start-[calc(-6px_-_(var(--cds-ring-outer,0px)_-_var(--cds-ring-inner,0px))_/_2)]",
@@ -415,79 +415,79 @@ export function installCdsComponentsSelectionPoints(): () => void {
             className: className,
             ...props
           }: Dynamic,
-          options?: Dynamic,
+          forwardedRef?: Dynamic,
         ): Dynamic {
-          let value: Dynamic =
+          let isHorizontalDrag: Dynamic =
               side === undefined
                 ? orientation === "vertical"
                 : side === "inline-start" || side === "inline-end",
-            [value2, value3]: Dynamic = (0,
+            [isDragging, setIsDragging]: Dynamic = (0,
             reactComponentsSelectionPoints.useState)(false),
-            value4: Dynamic = (0, reactComponentsSelectionPoints.useRef)(
+            onResizeRef: Dynamic = (0, reactComponentsSelectionPoints.useRef)(
               onResize,
             ),
-            value5: Dynamic = (0, reactComponentsSelectionPoints.useRef)(
+            onResizeStartRef: Dynamic = (0, reactComponentsSelectionPoints.useRef)(
               onResizeStart,
             ),
-            value6: Dynamic = (0, reactComponentsSelectionPoints.useRef)(
+            onResizeEndRef: Dynamic = (0, reactComponentsSelectionPoints.useRef)(
               onResizeEnd,
             );
           useIsomorphicLayoutEffect((): Dynamic => {
-            value4.current = onResize;
-            value5.current = onResizeStart;
-            value6.current = onResizeEnd;
+            onResizeRef.current = onResize;
+            onResizeStartRef.current = onResizeStart;
+            onResizeEndRef.current = onResizeEnd;
           }, [onResize, onResizeStart, onResizeEnd]);
-          let value7: Dynamic = (0, reactComponentsSelectionPoints.useRef)(0),
-            value8: Dynamic = (0, reactComponentsSelectionPoints.useRef)(false),
-            value9: Dynamic = (0, reactComponentsSelectionPoints.useRef)(true),
-            value10: Dynamic = (0,
+          let dragStartRef: Dynamic = (0, reactComponentsSelectionPoints.useRef)(0),
+            hasMovedRef: Dynamic = (0, reactComponentsSelectionPoints.useRef)(false),
+            isReleasedRef: Dynamic = (0, reactComponentsSelectionPoints.useRef)(true),
+            endDrag: Dynamic = (0,
             reactComponentsSelectionPoints.useCallback)((): Dynamic => {
-              value9.current ||
-                ((value9.current = true),
-                value3(false),
-                value6.current?.(value8.current));
+              isReleasedRef.current ||
+                ((isReleasedRef.current = true),
+                setIsDragging(false),
+                onResizeEndRef.current?.(hasMovedRef.current));
             }, []);
           (0, reactComponentsSelectionPoints.useEffect)((): Dynamic => {
-            if (!value2) return;
-            let callback3: Dynamic = (input?: Dynamic): Dynamic => {
-                let value11: Dynamic =
-                  (value ? input.clientX : input.clientY) - value7.current;
-                Math.abs(value11) > ComponentsSelectionPointsLimit &&
-                  (value8.current = true);
-                value4.current(value11);
+            if (!isDragging) return;
+            let handleMouseMove: Dynamic = (moveEvent?: Dynamic): Dynamic => {
+                let dragDelta: Dynamic =
+                  (isHorizontalDrag ? moveEvent.clientX : moveEvent.clientY) - dragStartRef.current;
+                Math.abs(dragDelta) > ComponentsSelectionPointsLimit &&
+                  (hasMovedRef.current = true);
+                onResizeRef.current(dragDelta);
               },
               style: Dynamic = (document as Dynamic).body.style;
-            style.cursor = value ? "col-resize" : "row-resize";
+            style.cursor = isHorizontalDrag ? "col-resize" : "row-resize";
             style.userSelect = "none";
-            (document as Dynamic).addEventListener("mousemove", callback3);
-            (document as Dynamic).addEventListener("mouseup", value10);
+            (document as Dynamic).addEventListener("mousemove", handleMouseMove);
+            (document as Dynamic).addEventListener("mouseup", endDrag);
             return (): Dynamic => {
-              (document as Dynamic).removeEventListener("mousemove", callback3);
-              (document as Dynamic).removeEventListener("mouseup", value10);
+              (document as Dynamic).removeEventListener("mousemove", handleMouseMove);
+              (document as Dynamic).removeEventListener("mouseup", endDrag);
               style.cursor = "";
               style.userSelect = "";
             };
-          }, [value2, value, value10]);
+          }, [isDragging, isHorizontalDrag, endDrag]);
           (0, reactComponentsSelectionPoints.useEffect)(
-            (): Dynamic => value10,
-            [value10],
+            (): Dynamic => endDrag,
+            [endDrag],
           );
-          let callback: Dynamic = (event?: Dynamic): Dynamic => {
+          let handleMouseDown: Dynamic = (event?: Dynamic): Dynamic => {
               event.button === 0 &&
                 (event.preventDefault(),
-                (value7.current = value ? event.clientX : event.clientY),
-                (value8.current = false),
-                (value9.current = false),
-                value3(true),
-                value5.current?.());
+                (dragStartRef.current = isHorizontalDrag ? event.clientX : event.clientY),
+                (hasMovedRef.current = false),
+                (isReleasedRef.current = false),
+                setIsDragging(true),
+                onResizeStartRef.current?.());
               onMouseDown?.(event);
             },
-            callback2: Dynamic = (event?: Dynamic): Dynamic => {
+            handleKeyDown: Dynamic = (event?: Dynamic): Dynamic => {
               if (
                 event.metaKey ||
                 event.ctrlKey ||
                 event.altKey ||
-                !value9.current
+                !isReleasedRef.current
               )
                 return;
               if (
@@ -496,47 +496,47 @@ export function installCdsComponentsSelectionPoints(): () => void {
               ) {
                 event.preventDefault();
                 if (event.repeat) return;
-                value5.current?.();
-                value6.current?.(false);
+                onResizeStartRef.current?.();
+                onResizeEndRef.current?.(false);
                 return;
               }
-              let value11: Dynamic = event.shiftKey
-                  ? ComponentsSelectionPointsConstant_2
+              let keyStep: Dynamic = event.shiftKey
+                  ? ComponentsSelectionPointsShiftStep
                   : ComponentsSelectionPointsConstant,
-                [value12, value13]: Dynamic = value
+                [decreaseKey, increaseKey]: Dynamic = isHorizontalDrag
                   ? ["ArrowLeft", "ArrowRight"]
                   : ["ArrowUp", "ArrowDown"],
-                value14: Dynamic =
-                  event.key === value12
-                    ? -value11
-                    : event.key === value13
-                      ? value11
+                keyDelta: Dynamic =
+                  event.key === decreaseKey
+                    ? -keyStep
+                    : event.key === increaseKey
+                      ? keyStep
                       : 0;
-              value14 !== 0 &&
+              keyDelta !== 0 &&
                 (event.preventDefault(),
-                value5.current?.(),
-                value4.current(value14),
-                value6.current?.(true));
+                onResizeStartRef.current?.(),
+                onResizeRef.current(keyDelta),
+                onResizeEndRef.current?.(true));
             };
           return (
             <div
               {...props}
-              ref={options}
+              ref={forwardedRef}
               data-cds={"ResizeHandle"}
               role={"separator"}
-              aria-orientation={value ? "vertical" : "horizontal"}
+              aria-orientation={isHorizontalDrag ? "vertical" : "horizontal"}
               tabIndex={0}
-              data-dragging={value2 ? "" : undefined}
-              onMouseDown={callback}
-              onKeyDown={(input?: Dynamic): Dynamic => {
-                callback2(input);
-                onKeyDown?.(input);
+              data-dragging={isDragging ? "" : undefined}
+              onMouseDown={handleMouseDown}
+              onKeyDown={(keyEvent?: Dynamic): Dynamic => {
+                handleKeyDown(keyEvent);
+                onKeyDown?.(keyEvent);
               }}
               className={cn(
                 "cds-reset group/resize outline-none focus-visible:outline-hidden",
-                value ? "w-3 cursor-col-resize" : "h-3 cursor-row-resize",
+                isHorizontalDrag ? "w-3 cursor-col-resize" : "h-3 cursor-row-resize",
                 side === undefined
-                  ? ["relative", value ? "h-full" : "w-full"]
+                  ? ["relative", isHorizontalDrag ? "h-full" : "w-full"]
                   : [
                       "absolute",
                       ComponentsSelectionPointsInlineStartInlineEndTopConfig[
@@ -550,7 +550,7 @@ export function installCdsComponentsSelectionPoints(): () => void {
                 aria-hidden={true}
                 className={npm_clsx_Ea(
                   "absolute rounded-full transition-shadow duration-fast group-focus-visible/resize:shadow-focus",
-                  value
+                  isHorizontalDrag
                     ? "inset-y-0 left-1/2 w-3 -translate-x-1/2 cursor-col-resize"
                     : "inset-x-0 top-1/2 h-3 -translate-y-1/2 cursor-row-resize",
                 )}
@@ -560,10 +560,10 @@ export function installCdsComponentsSelectionPoints(): () => void {
                 data-cds-part={"resize-pill"}
                 className={npm_clsx_Ea(
                   "absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-current transition-[opacity,color,background-color]",
-                  value
+                  isHorizontalDrag
                     ? "h-full max-h-12 w-[3px] group-focus-visible/resize:max-h-none"
                     : "h-[3px] w-full max-w-12 group-focus-visible/resize:max-w-none",
-                  value2
+                  isDragging
                     ? "text-secondary opacity-100 duration-snap"
                     : "text-muted opacity-[var(--cds-resize-pill-force,0)] delay-200 duration-base group-hover/resize:opacity-100",
                   "group-focus-visible/resize:bg-fill-accent group-focus-visible/resize:opacity-100 group-focus-visible/resize:delay-0",

@@ -53,40 +53,40 @@ function RadioGlyph({
   );
 }
 var RadioGroup: React.FC<RadioGroupProps> = function (
-  input: RadioGroupProps,
+  groupProps: RadioGroupProps,
 ): React.ReactElement {
   useUiLocale();
   let {
-    value: value,
-    defaultValue: value2,
-    onChange: value3,
-    options: value4,
-    disabled: value5,
-    size: value6,
-    name: value7,
-    className: value8,
-  } = input;
+    value: selectedValue,
+    defaultValue: defaultValue,
+    onChange: onChange,
+    options: options,
+    disabled: isDisabled,
+    size: size,
+    name: name,
+    className: className,
+  } = groupProps;
   return (
     <R_npm_RadioGroup_uF
       data-cds={"RadioGroup"}
-      value={value}
-      defaultValue={value2}
-      onValueChange={value3 ? (input2: string) => value3(input2) : undefined}
-      disabled={value5}
-      name={value7}
-      {...getSizeAttribute(value6)}
-      className={cn("flex flex-col gap-2 font-sans", value8)}
+      value={selectedValue}
+      defaultValue={defaultValue}
+      onValueChange={onChange ? (nextValue: string) => onChange(nextValue) : undefined}
+      disabled={isDisabled}
+      name={name}
+      {...getSizeAttribute(size)}
+      className={cn("flex flex-col gap-2 font-sans", className)}
     >
-      {value4.map((input2) =>
+      {options.map((option) =>
         (() => {
           const _Component = RadioGroupItem;
           const _props = {
-            value: input2.value,
-            label: input2.label,
-            description: input2.description,
-            disabled: input2.disabled,
+            value: option.value,
+            label: option.label,
+            description: option.description,
+            disabled: option.disabled,
           } as const;
-          const _key = input2.value;
+          const _key = option.value;
           return <_Component key={_key} {..._props} />;
         })(),
       )}
@@ -133,24 +133,24 @@ export function installCdsComponentsRadioGroup(): () => void {
       >(
         (
           {
-            value: value,
+            value: radioValue,
             label: label,
             description: description,
-            disabled: disabled2,
+            disabled: isDisabled,
             className: className,
           }: RadioItemProps,
-          options: React.ForwardedRef<HTMLButtonElement>,
+          forwardedRef: React.ForwardedRef<HTMLButtonElement>,
         ): React.ReactElement => {
-          let value2 = isInsideField(),
-            value3 = (0, reactComponentsRadioGroup.useId)(),
-            value4 = (0, reactComponentsRadioGroup.useId)(),
-            value5 = (
+          let isInField = isInsideField(),
+            labelId = (0, reactComponentsRadioGroup.useId)(),
+            descriptionId = (0, reactComponentsRadioGroup.useId)(),
+            radioControl = (
               <npm_Radio_iP.Root
-                ref={options}
-                value={value}
-                disabled={disabled2}
-                aria-labelledby={value3}
-                aria-describedby={description ? value4 : undefined}
+                ref={forwardedRef}
+                value={radioValue}
+                disabled={isDisabled}
+                aria-labelledby={labelId}
+                aria-describedby={description ? descriptionId : undefined}
                 onMouseDown={withSelectionPrevention(undefined)}
                 className={cn(
                   "cds-reset group/rd inline-flex",
@@ -161,9 +161,9 @@ export function installCdsComponentsRadioGroup(): () => void {
               >
                 <RadioGlyph focusRing={true} topAlign={!!description} />
                 <span className={"flex min-w-0 flex-col"}>
-                  <span id={value3}>{label}</span>
+                  <span id={labelId}>{label}</span>
                   {description && (<span
-                      id={value4}
+                      id={descriptionId}
                       className={"text-footnote leading-snug text-muted"}
                     >
                       {description}
@@ -171,12 +171,12 @@ export function installCdsComponentsRadioGroup(): () => void {
                 </span>
               </npm_Radio_iP.Root>
             );
-          return value2 ? (
+          return isInField ? (
             <R_npm_LabelableProvider_NR>
-              {value5}
+              {radioControl}
             </R_npm_LabelableProvider_NR>
           ) : (
-            value5
+            radioControl
           );
         },
       );
@@ -189,27 +189,27 @@ export function installCdsComponentsRadioGroup(): () => void {
       >(
         (
           {
-            value: value,
+            value: radioValue,
             label: label,
             description: description,
             leading: leading,
             trailing: trailing,
             children: children,
-            disabled: disabled2,
+            disabled: isDisabled,
             className: className,
           }: RadioCardProps,
-          options: React.ForwardedRef<HTMLButtonElement>,
+          forwardedRef: React.ForwardedRef<HTMLButtonElement>,
         ): React.ReactElement => {
-          let value2 = isInsideField(),
-            value3 = (0, reactComponentsRadioGroup.useId)(),
-            value4 = (0, reactComponentsRadioGroup.useId)(),
-            value5 = (
+          let isInField = isInsideField(),
+            labelId = (0, reactComponentsRadioGroup.useId)(),
+            descriptionId = (0, reactComponentsRadioGroup.useId)(),
+            radioControl = (
               <npm_Radio_iP.Root
-                ref={options}
-                value={value}
-                disabled={disabled2}
-                aria-labelledby={value3}
-                aria-describedby={description ? value4 : undefined}
+                ref={forwardedRef}
+                value={radioValue}
+                disabled={isDisabled}
+                aria-labelledby={labelId}
+                aria-describedby={description ? descriptionId : undefined}
                 onMouseDown={withSelectionPrevention(undefined)}
                 className={cn(radioItemClasses, className)}
               >
@@ -218,13 +218,13 @@ export function installCdsComponentsRadioGroup(): () => void {
                 <span className={"flex min-w-0 flex-1 flex-col gap-xs"}>
                   <span className={"flex min-w-0 flex-col"}>
                     <span className={"flex items-start justify-between gap-sm"}>
-                      <span id={value3} className={"min-w-0 font-medium"}>
+                      <span id={labelId} className={"min-w-0 font-medium"}>
                         {label}
                       </span>
                       {trailing ? (<span className={"shrink-0"}>{trailing}</span>) : (null)}
                     </span>
                     {description && (<span
-                        id={value4}
+                        id={descriptionId}
                         className={"text-footnote leading-snug text-muted"}
                       >
                         {description}
@@ -234,12 +234,12 @@ export function installCdsComponentsRadioGroup(): () => void {
                 </span>
               </npm_Radio_iP.Root>
             );
-          return value2 ? (
+          return isInField ? (
             <R_npm_LabelableProvider_NR>
-              {value5}
+              {radioControl}
             </R_npm_LabelableProvider_NR>
           ) : (
-            value5
+            radioControl
           );
         },
       );
@@ -251,11 +251,11 @@ export function installCdsComponentsRadioGroup(): () => void {
       >(
         (
           { className: className, size: size, ...props }: RadioRootProps,
-          options: React.ForwardedRef<HTMLDivElement>,
+          forwardedRef: React.ForwardedRef<HTMLDivElement>,
         ): React.ReactElement => (
           <R_npm_RadioGroup_uF
             data-cds={"RadioGroup"}
-            ref={options}
+            ref={forwardedRef}
             {...props}
             {...getSizeAttribute(size)}
             className={cn(

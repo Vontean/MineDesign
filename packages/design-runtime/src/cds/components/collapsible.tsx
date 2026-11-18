@@ -63,13 +63,13 @@ export function installCdsComponentsCollapsible(): () => void {
         CollapsibleRootProps
       >(
         (
-          input: CollapsibleRootProps,
-          options: React.ForwardedRef<HTMLDivElement>,
+          rootProps: CollapsibleRootProps,
+          forwardedRef: React.ForwardedRef<HTMLDivElement>,
         ): React.ReactElement => (
           <npm_Collapsible_a1.Root
-            ref={options}
+            ref={forwardedRef}
             data-cds={"Collapsible"}
-            {...input}
+            {...rootProps}
           />
         ),
       );
@@ -91,10 +91,10 @@ export function installCdsComponentsCollapsible(): () => void {
             render: render,
             ...props
           }: CollapsibleTriggerProps,
-          options: React.ForwardedRef<HTMLButtonElement>,
+          forwardedRef: React.ForwardedRef<HTMLButtonElement>,
         ): React.ReactElement => {
-          let value = withSelectionPrevention(props.onMouseDown),
-            value2 = hideCaret ? null : (
+          let onMouseDownWithPrevention = withSelectionPrevention(props.onMouseDown),
+            caretIcon = hideCaret ? null : (
               <Icon
                 name={"CaretRight"}
                 size={"sm"}
@@ -106,22 +106,22 @@ export function installCdsComponentsCollapsible(): () => void {
             );
           return render ? (
             <npm_Collapsible_a1.Trigger
-              ref={options}
+              ref={forwardedRef}
               render={render}
               className={className}
               {...props}
-              onMouseDown={value}
+              onMouseDown={onMouseDownWithPrevention}
             />
           ) : (
             <npm_Collapsible_a1.Trigger
-              ref={options}
+              ref={forwardedRef}
               {...props}
               className={cn(collapsibleTriggerClasses, className)}
-              onMouseDown={value}
+              onMouseDown={onMouseDownWithPrevention}
             >
-              {caretPosition !== "end" && (value2)}
+              {caretPosition !== "end" && (caretIcon)}
               {children}
-              {caretPosition === "end" && (value2)}
+              {caretPosition === "end" && (caretIcon)}
             </npm_Collapsible_a1.Trigger>
           );
         },
@@ -135,10 +135,10 @@ export function installCdsComponentsCollapsible(): () => void {
       >(
         (
           { className: className, ...props }: CollapsiblePanelProps,
-          options: React.ForwardedRef<HTMLDivElement>,
+          forwardedRef: React.ForwardedRef<HTMLDivElement>,
         ): React.ReactElement => (
           <npm_Collapsible_a1.Panel
-            ref={options}
+            ref={forwardedRef}
             {...props}
             className={cn(collapsiblePanelClasses, className)}
           />

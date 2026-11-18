@@ -14,96 +14,96 @@ var jsxTabsListMenu: typeof import("react/jsx-runtime");
 var RoleTabValue: string;
 var TabsListMenuLabel: string;
 var initializeTabsListMenu: () => void;
-function collectAccessibleTabText(input: Element, options: string): string {
+function collectAccessibleTabText(root: Element, excludeSelector: string): string {
   let text = "",
-    callback = (input2: Node): void => {
-      if (input2.nodeType === Node.TEXT_NODE) text += input2.nodeValue ?? "";
-      else if (input2.nodeType === Node.ELEMENT_NODE) {
+    collect = (node: Node): void => {
+      if (node.nodeType === Node.TEXT_NODE) text += node.nodeValue ?? "";
+      else if (node.nodeType === Node.ELEMENT_NODE) {
         if (
-          input2 !== input &&
-          ((input2 as Element).matches(options) ||
-            getComputedStyle(input2 as Element).display === "none")
+          node !== root &&
+          ((node as Element).matches(excludeSelector) ||
+            getComputedStyle(node as Element).display === "none")
         )
           return;
         text += " ";
-        input2.childNodes.forEach(callback);
+        node.childNodes.forEach(collect);
         text += " ";
       }
     };
-  callback(input);
+  collect(root);
   return text.replace(/\s+/g, " ").trim();
 }
 function accessibleTabText(element: Element): string {
-  let value = collectAccessibleTabText(element, TabsListMenuLabel);
-  return value !== ""
-    ? value
+  let labelText = collectAccessibleTabText(element, TabsListMenuLabel);
+  return labelText !== ""
+    ? labelText
     : (element.getAttribute("aria-label") ?? "").trim();
 }
-function screenReaderTabText(input: Element): string {
+function screenReaderTabText(element: Element): string {
   let text = "";
-  input.querySelectorAll<HTMLElement>(".sr-only").forEach((input2) => {
-    input2.closest("[data-cds-disabled-reason]") === null &&
-      (text += ` ${collectAccessibleTabText(input2, '[aria-hidden="true"], [hidden]')}`);
+  element.querySelectorAll<HTMLElement>(".sr-only").forEach((srElement) => {
+    srElement.closest("[data-cds-disabled-reason]") === null &&
+      (text += ` ${collectAccessibleTabText(srElement, '[aria-hidden="true"], [hidden]')}`);
   });
   return text.trim();
 }
 function registeredTabsInDomOrder<Value>(
-  input: ReadonlyMap<Value, HTMLElement>,
+  tabs: ReadonlyMap<Value, HTMLElement>,
 ): TabMenuItem<Value>[] {
-  return [...input.entries()]
-    .filter(([, input2]) => input2.isConnected)
-    .sort(([, input2], [, options]) =>
-      input2.compareDocumentPosition(options) &
+  return [...tabs.entries()]
+    .filter(([, tab]) => tab.isConnected)
+    .sort(([, firstTab], [, secondTab]) =>
+      firstTab.compareDocumentPosition(secondTab) &
       Node.DOCUMENT_POSITION_FOLLOWING
         ? -1
         : 1,
     )
-    .map(([input2, input3]) => tabMenuItem(input2, input3));
+    .map(([tabValue, tabElement]) => tabMenuItem(tabValue, tabElement));
 }
 function readTabMenuItems<Value>(
-  input: Element | null,
-  options: ReadonlyMap<Value, HTMLElement>,
+  listElement: Element | null,
+  tabs: ReadonlyMap<Value, HTMLElement>,
 ): TabMenuItem<Value>[] {
-  if (input === null) return [];
+  if (listElement === null) return [];
   let entries: Map<HTMLElement, Value> = new Map();
-  options.forEach((input2, options2) => entries.set(input2, options2));
+  tabs.forEach((tabElement, tabValue) => entries.set(tabElement, tabValue));
   let items: TabMenuItem<Value>[] = [];
-  input.querySelectorAll<HTMLElement>(RoleTabValue).forEach((input2) => {
-    entries.has(input2) &&
-      items.push(tabMenuItem(entries.get(input2)!, input2));
+  listElement.querySelectorAll<HTMLElement>(RoleTabValue).forEach((tabElement) => {
+    entries.has(tabElement) &&
+      items.push(tabMenuItem(entries.get(tabElement)!, tabElement));
   });
   return items;
 }
 function tabMenuItem<Value>(
-  input: Value,
+  itemValue: Value,
   element: Element,
 ): TabMenuItem<Value> {
-  let value = element
+  let reasonText = element
     .querySelector("[data-cds-disabled-reason]")
     ?.textContent?.trim();
   return {
-    value: input,
+    value: itemValue,
     text: accessibleTabText(element),
     srText: screenReaderTabText(element),
     disabled:
       element.getAttribute("aria-disabled") === "true" ||
       element.hasAttribute("data-disabled"),
-    reason: value === undefined || value === "" ? undefined : value,
+    reason: reasonText === undefined || reasonText === "" ? undefined : reasonText,
   };
 }
 function sameTabMenuItems<Value>(
   items: readonly TabMenuItem<Value>[],
-  items2: readonly TabMenuItem<Value>[],
+  otherItems: readonly TabMenuItem<Value>[],
 ): boolean {
   return (
-    items.length === items2.length &&
+    items.length === otherItems.length &&
     items.every(
-      (input, options) =>
-        Object.is(input.value, items2[options]!.value) &&
-        input.text === items2[options]!.text &&
-        input.srText === items2[options]!.srText &&
-        input.disabled === items2[options]!.disabled &&
-        input.reason === items2[options]!.reason,
+      (item, index) =>
+        Object.is(item.value, otherItems[index]!.value) &&
+        item.text === otherItems[index]!.text &&
+        item.srText === otherItems[index]!.srText &&
+        item.disabled === otherItems[index]!.disabled &&
+        item.reason === otherItems[index]!.reason,
     )
   );
 }
@@ -115,26 +115,26 @@ function TabsListMenu({
   triggerHadFocusRef: triggerHadFocusRef,
 }: TabsListMenuProps): React.ReactElement {
   useUiLocale();
-  let value = useFlipIndicatorContext(),
-    value2 = (0, reactTabsListMenu.useRef)<HTMLButtonElement | null>(null),
-    value3 = (0, reactTabsListMenu.useId)(),
-    value4 = (0, reactTabsListMenu.useId)(),
-    [value5, value6] = (0, reactTabsListMenu.useState)(() =>
-      registeredTabsInDomOrder(value?.tabs() ?? new Map()),
+  let flipContext = useFlipIndicatorContext(),
+    triggerRef = (0, reactTabsListMenu.useRef)<HTMLButtonElement | null>(null),
+    labelId = (0, reactTabsListMenu.useId)(),
+    selectedLabelId = (0, reactTabsListMenu.useId)(),
+    [menuItems, setMenuItems] = (0, reactTabsListMenu.useState)(() =>
+      registeredTabsInDomOrder(flipContext?.tabs() ?? new Map()),
     ),
-    value7 = (0, reactTabsListMenu.useCallback)(() => {
-      let value10 = readTabMenuItems(
+    refreshItems = (0, reactTabsListMenu.useCallback)(() => {
+      let latestItems = readTabMenuItems(
         listRef.current,
-        value?.tabs() ?? new Map(),
+        flipContext?.tabs() ?? new Map(),
       );
-      value6((input) => (sameTabMenuItems(input, value10) ? input : value10));
-    }, [listRef, value]);
+      setMenuItems((previousItems) => (sameTabMenuItems(previousItems, latestItems) ? previousItems : latestItems));
+    }, [listRef, flipContext]);
   useIsomorphicLayoutEffect(() => {
-    value7();
-    let current = listRef.current;
-    if (current === null || typeof MutationObserver === "undefined") return;
-    let observer = new MutationObserver(value7);
-    observer.observe(current, {
+    refreshItems();
+    let listNode = listRef.current;
+    if (listNode === null || typeof MutationObserver === "undefined") return;
+    let observer = new MutationObserver(refreshItems);
+    observer.observe(listNode, {
       subtree: true,
       childList: true,
       characterData: true,
@@ -142,60 +142,60 @@ function TabsListMenu({
       attributeFilter: ["aria-disabled", "data-disabled", "aria-label"],
     });
     return () => observer.disconnect();
-  }, [value7, listRef]);
-  (0, reactTabsListMenu.useEffect)(value7, [value7]);
+  }, [refreshItems, listRef]);
+  (0, reactTabsListMenu.useEffect)(refreshItems, [refreshItems]);
   useIsomorphicLayoutEffect(() => {
-    let current = listRef.current,
-      value10 = current?.ownerDocument.activeElement ?? null;
-    current !== null &&
-      value10 !== null &&
-      current.contains(value10) &&
-      value2.current?.focus();
+    let listNode = listRef.current,
+      activeElement = listNode?.ownerDocument.activeElement ?? null;
+    listNode !== null &&
+      activeElement !== null &&
+      listNode.contains(activeElement) &&
+      triggerRef.current?.focus();
     return () => {
-      let current2 = value2.current,
-        value11 = current2?.ownerDocument.activeElement ?? null,
-        value12 = current2?.getAttribute("aria-controls") ?? null,
-        value13 =
-          value12 === null
+      let triggerNode = triggerRef.current,
+        activeElementAtCleanup = triggerNode?.ownerDocument.activeElement ?? null,
+        controlsId = triggerNode?.getAttribute("aria-controls") ?? null,
+        controlledElement =
+          controlsId === null
             ? null
-            : (current2 as HTMLButtonElement).ownerDocument.getElementById(
-                value12,
+            : (triggerNode as HTMLButtonElement).ownerDocument.getElementById(
+                controlsId,
               );
       triggerHadFocusRef.current =
-        current2 !== null &&
-        value11 !== null &&
-        (value11 === current2 ||
-          (value13 !== null && value13.contains(value11)));
+        triggerNode !== null &&
+        activeElementAtCleanup !== null &&
+        (activeElementAtCleanup === triggerNode ||
+          (controlledElement !== null && controlledElement.contains(activeElementAtCleanup)));
     };
   }, [listRef, triggerHadFocusRef]);
-  let value8 = value5.find(
-      (input) => value !== null && Object.is(input.value, value.value),
+  let selectedItem = menuItems.find(
+      (item) => flipContext !== null && Object.is(item.value, flipContext.value),
     ),
-    value9 = [
-      ariaLabelledby ?? (ariaLabel !== undefined ? value3 : undefined),
-      value8 !== undefined ? value4 : undefined,
+    labelledBy = [
+      ariaLabelledby ?? (ariaLabel !== undefined ? labelId : undefined),
+      selectedItem !== undefined ? selectedLabelId : undefined,
     ]
       .filter(Boolean)
       .join(" ");
   return (
     <MenuMenuAssignValue.Root sheetTitle={ariaLabel}>
       <MenuMenuAssignValue.TriggerButton
-        ref={value2}
+        ref={triggerRef}
         variant={"secondary"}
         size={size}
-        aria-labelledby={value9 === "" ? undefined : value9}
+        aria-labelledby={labelledBy === "" ? undefined : labelledBy}
         data-cds-part={TabsMenuTriggerValue}
         className={"max-w-full min-w-0"}
       >
-        {ariaLabel !== undefined && ariaLabelledby === undefined ? (<span id={value3} className={"sr-only"}>
+        {ariaLabel !== undefined && ariaLabelledby === undefined ? (<span id={labelId} className={"sr-only"}>
             {ariaLabel}
           </span>) : (null)}
-        {value8 !== undefined ? (<span
-            id={value4}
+        {selectedItem !== undefined ? (<span
+            id={selectedLabelId}
             data-cds-part={TabsMenuLabelValue}
             className={"max-w-40 min-w-0 truncate"}
           >
-            {value8.text}
+            {selectedItem.text}
           </span>) : (ariaLabel !== undefined ? (<span
             aria-hidden={true}
             data-cds-part={TabsMenuLabelValue}
@@ -209,23 +209,23 @@ function TabsListMenu({
           aria-label={ariaLabelledby === undefined ? (ariaLabel) : (undefined)}
           aria-labelledby={ariaLabelledby}
         >
-          {value5.map((input, options) =>
+          {menuItems.map((item, index) =>
             (() => {
               const _Component = MenuMenuAssignValue.Item;
               const _props = {
                 checkedRole: "radio",
-                checked: input === value8,
-                disabled: input.disabled,
-                disabledReason: input.reason,
-                onClick: () => value?.activate(input.value),
+                checked: item === selectedItem,
+                disabled: item.disabled,
+                disabledReason: item.reason,
+                onClick: () => flipContext?.activate(item.value),
                 children: [
-                  input.text,
-                  input.srText !== "" ? (
-                    <span className={"sr-only"}> {input.srText}</span>
+                  item.text,
+                  item.srText !== "" ? (
+                    <span className={"sr-only"}> {item.srText}</span>
                   ) : null,
                 ],
               } as const;
-              const _key = `${String(input.value)}:${options}`;
+              const _key = `${String(item.value)}:${index}`;
               return <_Component key={_key} {..._props} />;
             })(),
           )}
