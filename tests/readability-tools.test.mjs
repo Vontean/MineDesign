@@ -33,6 +33,19 @@ test('改名覆盖声明、引用、赋值与简写属性，并保留导出名',
   assert.equal(canonical(code, 'a.ts'), canonical(source, 'a.ts'));
 });
 
+test('改名保留参数的类型标注与可选标记', () => {
+  const { code } = applyRenames('export function f(value2?: number, input3: string = "") { return [value2, input3]; }\n', { 'value2@1': 'width', 'input3@1': 'label' });
+  assert.match(code, /function f\(width\?: number, label: string = ""\)/);
+});
+
+test('属性名与 JSX 属性名不算冲突；同一张表里可以交换名字', () => {
+  const src = 'export function f(value2: any) { const value3 = value2.files; return <A files={value3} />; }\n';
+  assert.deepEqual(applyRenames(src, { 'value3@1': 'files' }).problems, []);
+  const swap = applyRenames('function g() { const a1 = 1; { const b1 = 2; return a1 + b1; } }\n', { 'a1@1': 'b1', 'b1@1': 'a1' });
+  assert.deepEqual(swap.problems, []);
+  assert.equal(canonical(swap.code, 'a.ts'), canonical('function g() { const a1 = 1; { const b1 = 2; return a1 + b1; } }\n', 'a.ts'));
+});
+
 test('新名字与作用域内已有的名字冲突时拒绝', () => {
   const { problems } = applyRenames(source, { 'value2@3': 'width' });
   assert.equal(problems.length, 1);
@@ -50,4 +63,9 @@ test('等价校验：类型与 (0, f)() 写法不影响结果，逻辑或属性�
 test('可读性指标', () => {
   assert.equal(measure('const value12 = 1;\n'.repeat(10)).readable, false);
   assert.equal(measure('const width = 1;\n'.repeat(10)).readable, true);
+});
+
+test('JSX 标签使用的绑定不能改成小写开头的名字', () => {
+  const { problems } = applyRenames('export function f(value2: any) { const Comp1 = value2; return <Comp1 />; }\n', { 'Comp1@1': 'panel' });
+  assert.equal(problems.length, 1);
 });
