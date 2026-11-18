@@ -73,52 +73,52 @@ export function installCdsComponentsTextInput(): () => void {
             onChange: onChange,
             ...props
           }: TextInputProps,
-          options: React.ForwardedRef<HTMLInputElement>,
+          forwardedRef: React.ForwardedRef<HTMLInputElement>,
         ): React.ReactElement => {
           let {
-              id: value,
-              "aria-describedby": value2,
-              "aria-invalid": value3,
-              disabled: value4,
-              ...value5
+              id: inputId,
+              "aria-describedby": ariaDescribedBy,
+              "aria-invalid": ariaInvalidProp,
+              disabled: disabledProp,
+              ...inputProps
             } = props,
-            state = {
-              id: value,
-              "aria-describedby": value2,
-              disabled: value4,
+            fieldControlProps = {
+              id: inputId,
+              "aria-describedby": ariaDescribedBy,
+              disabled: disabledProp,
             },
-            value6 = useLabel("clear", "Clear"),
-            value7 = clearLabel ?? value6,
-            value8 = useFieldInvalid(),
-            value9 = value8 || value3,
-            value10 = useFieldDisabled(),
-            value11 = value4 || value10,
-            value12 = fullWidth ? "w-full" : "",
-            value13 = (0,
+            defaultClearLabel = useLabel("clear", "Clear"),
+            clearAriaLabel = clearLabel ?? defaultClearLabel,
+            isFieldInvalid = useFieldInvalid(),
+            isInvalid = isFieldInvalid || ariaInvalidProp,
+            isFieldDisabled = useFieldDisabled(),
+            isDisabled = disabledProp || isFieldDisabled,
+            widthClass = fullWidth ? "w-full" : "",
+            inputRef = (0,
             reactComponentsTextInput.useRef)<HTMLInputElement | null>(null),
-            { clickToFocusProps: value14 } = useClickToFocus(
-              () => value13.current?.focus(),
+            { clickToFocusProps: clickToFocusHandlers } = useClickToFocus(
+              () => inputRef.current?.focus(),
               {
-                disabled: value11,
-                readOnly: value5.readOnly,
+                disabled: isDisabled,
+                readOnly: inputProps.readOnly,
               },
             ),
-            value15 = useMergedRefs(value13, options),
-            value16 = value5.value !== undefined,
-            [value17, value18] = (0, reactComponentsTextInput.useState)(
+            mergedInputRef = useMergedRefs(inputRef, forwardedRef),
+            isControlled = inputProps.value !== undefined,
+            [hasUncontrolledText, setHasUncontrolledText] = (0, reactComponentsTextInput.useState)(
               () =>
-                value5.defaultValue !== undefined &&
-                String(value5.defaultValue).length > 0,
+                inputProps.defaultValue !== undefined &&
+                String(inputProps.defaultValue).length > 0,
             ),
-            value19 = value16
-              ? value5.value !== undefined && String(value5.value).length > 0
-              : value17,
-            callback = (event: React.ChangeEvent<HTMLInputElement>): void => {
-              clearable && !value16 && value18(event.target.value.length > 0);
+            hasText = isControlled
+              ? inputProps.value !== undefined && String(inputProps.value).length > 0
+              : hasUncontrolledText,
+            handleChange = (event: React.ChangeEvent<HTMLInputElement>): void => {
+              clearable && !isControlled && setHasUncontrolledText(event.target.value.length > 0);
               onChange?.(event);
             },
-            value20 =
-              (clearable === "always" || (clearable && value19)) && !value11 ? (
+            clearButton =
+              (clearable === "always" || (clearable && hasText)) && !isDisabled ? (
                 <Button
                   iconOnly={true}
                   variant={"ghost"}
@@ -127,14 +127,14 @@ export function installCdsComponentsTextInput(): () => void {
                     "!size-[var(--fhn)] !rounded-[calc(var(--fr)-(var(--fh)-var(--fhn))/2)]"
                   }
                   icon={"X"}
-                  aria-label={value7}
+                  aria-label={clearAriaLabel}
                   tooltip={false}
                   onMouseDown={(event: React.MouseEvent<HTMLElement>) =>
                     event.preventDefault()
                   }
                   onClick={() => {
-                    let current = value13.current;
-                    !value16 &&
+                    let current = inputRef.current;
+                    !isControlled &&
                       current &&
                       (Object.getOwnPropertyDescriptor(
                         window.HTMLInputElement.prototype,
@@ -145,36 +145,36 @@ export function installCdsComponentsTextInput(): () => void {
                           bubbles: true,
                         }),
                       ),
-                      value18(false));
+                      setHasUncontrolledText(false));
                     onClear?.();
                     current?.focus();
                   }}
                 />
               ) : null;
           if (slotStart || slotEnd || clearable) {
-            let value21 = value20 && !slotEnd,
-              value22 = value21 ? "pr-0" : "pr-md",
-              text =
+            let isClearOnly = clearButton && !slotEnd,
+              paddingRightClass = isClearOnly ? "pr-0" : "pr-md",
+              cssVarsClass =
                 "[--fh:var(--cds-h-control)] [--fr:var(--cds-radius)] [--fhn:var(--cds-h-control-nested)]",
-              value23 = value21
-                ? `flex aspect-square h-control shrink-0 items-center justify-center ${text}`
-                : `flex shrink-0 items-center gap-[var(--cds-pad-sm,6px)] text-muted ${text} ${ComponentsTextInputClassNames}`;
+              endSlotClass = isClearOnly
+                ? `flex aspect-square h-control shrink-0 items-center justify-center ${cssVarsClass}`
+                : `flex shrink-0 items-center gap-[var(--cds-pad-sm,6px)] text-muted ${cssVarsClass} ${ComponentsTextInputClassNames}`;
             return (
               <div
                 data-cds={"TextInput"}
                 {...getSizeAttribute(size)}
-                data-invalid={value8 || undefined}
-                onMouseDown={value14.onMouseDown}
+                data-invalid={isFieldInvalid || undefined}
+                onMouseDown={clickToFocusHandlers.onMouseDown}
                 className={cn(
                   ButtonButtonCssAlias,
-                  value22,
+                  paddingRightClass,
                   ComponentsTextInputClassNames_2,
                   "inline-flex",
-                  value12,
-                  value11 ? "cursor-default" : "cursor-text",
+                  widthClass,
+                  isDisabled ? "cursor-default" : "cursor-text",
                   "items-center gap-[var(--cds-pad-sm,6px)] has-[:focus-visible]:shadow-focus",
                   "has-[input:disabled]:opacity-disabled",
-                  value11 ? undefined : ButtonButtonClassNames_3,
+                  isDisabled ? undefined : ButtonButtonClassNames_3,
                   className,
                 )}
               >
@@ -182,13 +182,13 @@ export function installCdsComponentsTextInput(): () => void {
                     {slotStart}
                   </span>) : (null)}
                 <npm_Field_qg.Control
-                  {...state}
+                  {...fieldControlProps}
                   render={
                     <input
-                      ref={value15}
-                      aria-invalid={value9}
-                      {...value5}
-                      onChange={callback}
+                      ref={mergedInputRef}
+                      aria-invalid={isInvalid}
+                      {...inputProps}
+                      onChange={handleChange}
                       className={cn(
                         ButtonButtonClassNamesAlias,
                         "disabled:opacity-100",
@@ -196,8 +196,8 @@ export function installCdsComponentsTextInput(): () => void {
                     />
                   }
                 />
-                {value20 || slotEnd ? (<span data-cds-end-slot={""} className={value23}>
-                    {value20}
+                {clearButton || slotEnd ? (<span data-cds-end-slot={""} className={endSlotClass}>
+                    {clearButton}
                     {slotEnd}
                   </span>) : (null)}
               </div>
@@ -205,21 +205,21 @@ export function installCdsComponentsTextInput(): () => void {
           }
           return (
             <npm_Field_qg.Control
-              ref={options}
-              {...state}
+              ref={forwardedRef}
+              {...fieldControlProps}
               render={
                 <input
                   data-cds={"TextInput"}
                   {...getSizeAttribute(size)}
-                  data-invalid={value8 || undefined}
-                  aria-invalid={value9}
-                  {...value5}
-                  onChange={callback}
+                  data-invalid={isFieldInvalid || undefined}
+                  aria-invalid={isInvalid}
+                  {...inputProps}
+                  onChange={handleChange}
                   className={cn(
                     "cds-input cds-reset",
                     ButtonButtonCssAlias,
                     "pr-md",
-                    value12,
+                    widthClass,
                     "placeholder:text-muted outline-none focus-visible:outline-hidden enabled:[&:hover:not(:focus):not([data-invalid])]:shadow-field-hover focus-visible:shadow-focus disabled:opacity-disabled",
                     className,
                   )}

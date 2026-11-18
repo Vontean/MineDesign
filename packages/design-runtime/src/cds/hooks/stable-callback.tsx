@@ -6,50 +6,50 @@ import { initializeOnce, toModuleNamespace } from "../../module-helpers";
 var initializeHooksStableCallback: () => void;
 var reactHooksStableCallback: typeof React;
 var initializeHooksStableCallback_2: () => void;
-function asElement(value: EventTarget | null | undefined): Element | null {
+function asElement(target: EventTarget | null | undefined): Element | null {
   return (
-    (value as Node | null | undefined)?.nodeType === 1 ? value : null
+    (target as Node | null | undefined)?.nodeType === 1 ? target : null
   ) as Element | null;
 }
 function createStableCallback<Args extends unknown[], Result>(
-  input: React.RefObject<(...args: Args) => Result>,
+  callbackRef: React.RefObject<(...args: Args) => Result>,
 ): (...args: Args) => Result {
-  return (...input2) => input.current(...input2);
+  return (...args) => callbackRef.current(...args);
 }
 function createOptionalStableCallback<Args extends unknown[], Result>(
-  input: React.RefObject<((...args: Args) => Result) | undefined>,
+  callbackRef: React.RefObject<((...args: Args) => Result) | undefined>,
 ): (...args: Args) => Result | undefined {
-  return (...input2) => input.current?.(...input2);
+  return (...args) => callbackRef.current?.(...args);
 }
 function useOptionalStableCallback<Args extends unknown[], Result>(
-  input: (...args: Args) => Result,
+  latestCallback: (...args: Args) => Result,
 ): (...args: Args) => Result | undefined;
 function useOptionalStableCallback<Args extends unknown[], Result>(
-  input: ((...args: Args) => Result) | undefined,
+  latestCallback: ((...args: Args) => Result) | undefined,
 ): ((...args: Args) => Result | undefined) | undefined;
 function useOptionalStableCallback<Args extends unknown[], Result>(
-  input: ((...args: Args) => Result) | undefined,
+  latestCallback: ((...args: Args) => Result) | undefined,
 ): ((...args: Args) => Result | undefined) | undefined {
-  let value = (0, reactHooksStableCallback.useRef)(input);
+  let callbackRef = (0, reactHooksStableCallback.useRef)(latestCallback);
   (0, reactHooksStableCallback.useInsertionEffect)(() => {
-    value.current = input;
-  }, [input]);
-  let [value2] = (0, reactHooksStableCallback.useState)(() =>
-    createOptionalStableCallback(value),
+    callbackRef.current = latestCallback;
+  }, [latestCallback]);
+  let [stableCallback] = (0, reactHooksStableCallback.useState)(() =>
+    createOptionalStableCallback(callbackRef),
   );
-  return input === undefined ? undefined : value2;
+  return latestCallback === undefined ? undefined : stableCallback;
 }
 function useStableCallback<Args extends unknown[], Result>(
-  input: (...args: Args) => Result,
+  latestCallback: (...args: Args) => Result,
 ): (...args: Args) => Result {
-  let value = (0, reactHooksStableCallback.useRef)(input);
+  let callbackRef = (0, reactHooksStableCallback.useRef)(latestCallback);
   (0, reactHooksStableCallback.useInsertionEffect)(() => {
-    value.current = input;
-  }, [input]);
-  let [value2] = (0, reactHooksStableCallback.useState)(() =>
-    createStableCallback(value),
+    callbackRef.current = latestCallback;
+  }, [latestCallback]);
+  let [stableCallback] = (0, reactHooksStableCallback.useState)(() =>
+    createStableCallback(callbackRef),
   );
-  return value2;
+  return stableCallback;
 }
 export {
   asElement,

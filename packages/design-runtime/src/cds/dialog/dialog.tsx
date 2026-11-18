@@ -84,7 +84,7 @@ var ConfirmationDialogPopupInner: ForwardComponent<
 >;
 var DialogPopup: ForwardComponent<HTMLDivElement, DialogPopupProps>;
 var DialogTitle: ForwardComponent<HTMLHeadingElement, DialogTitleProps>;
-var DialogDialogLabel_2: string;
+var closeButtonFlushClasses: string;
 var DialogDescription: ForwardComponent<
   HTMLParagraphElement,
   DialogDescriptionProps
@@ -107,7 +107,7 @@ var DialogDialogRootTriggerPopupConfig: {
   Close: typeof import("@base-ui/react/dialog").Dialog.Close;
   CloseButton: typeof DialogCloseButton;
 };
-var DialogDialogRootTriggerPopupConfig_2: {
+var alertDialogParts: {
   Root: typeof AlertDialogRoot;
   Trigger: typeof import("@base-ui/react/alert-dialog").AlertDialog.Trigger;
   Popup: typeof DialogPopup;
@@ -132,80 +132,80 @@ function WindowDragStrip(): React.ReactElement {
     />
   );
 }
-function useDialogPresence(input?: string): void {
-  (0, reactDialogDialog.useEffect)(() => {}, [input]);
+function useDialogPresence(portalClassName?: string): void {
+  (0, reactDialogDialog.useEffect)(() => {}, [portalClassName]);
 }
 function useDialogOpenAutofocus(
-  input: React.RefObject<HTMLElement | null>,
-  options: boolean,
-  context: React.RefObject<HTMLElement | null>,
-  value: React.RefObject<boolean>,
-  extra: React.RefObject<boolean>,
-  detail: () => HTMLElement | null,
+  targetRef: React.RefObject<HTMLElement | null>,
+  shouldShowFocusRing: boolean,
+  popupRef: React.RefObject<HTMLElement | null>,
+  isOpenRef: React.RefObject<boolean>,
+  hasUserInteractedRef: React.RefObject<boolean>,
+  getFallbackTarget: () => HTMLElement | null,
 ): () => HTMLElement | null {
   return (0, reactDialogDialog.useCallback)(() => {
-    let current = input.current,
-      value2 = current?.ownerDocument,
-      value3: BrowserWindow | null | undefined = value2?.defaultView as
+    let targetElement = targetRef.current,
+      ownerDocument = targetElement?.ownerDocument,
+      view: BrowserWindow | null | undefined = ownerDocument?.defaultView as
         | BrowserWindow
         | null
         | undefined;
-    if (current && value2 && value3) {
-      value3.requestAnimationFrame(() => {
-        if (!value.current || !current.isConnected) return;
-        let current2 = context.current,
-          activeElement = value2.activeElement;
-        (current2 &&
+    if (targetElement && ownerDocument && view) {
+      view.requestAnimationFrame(() => {
+        if (!isOpenRef.current || !targetElement.isConnected) return;
+        let popupElement = popupRef.current,
+          activeElement = ownerDocument.activeElement;
+        (popupElement &&
           activeElement &&
-          activeElement !== current &&
-          current2.contains(activeElement)) ||
-          current.focus({
+          activeElement !== targetElement &&
+          popupElement.contains(activeElement)) ||
+          targetElement.focus({
             preventScroll: true,
-            focusVisible: options,
+            focusVisible: shouldShowFocusRing,
           } as FocusOptionsWithVisibility);
       });
-      let index = 0,
-        flag = false,
-        callback = (event: FocusEvent): void => {
-          let current2 = context.current,
+      let retryCount = 0,
+        isHandled = false,
+        handleFocusIn = (event: FocusEvent): void => {
+          let popupElement = popupRef.current,
             target = event.target;
           if (
             !(
-              flag ||
-              !value.current ||
-              extra.current ||
-              index >= 3 ||
-              !current2 ||
-              !(target instanceof value3.Element) ||
-              current2.contains(target)
+              isHandled ||
+              !isOpenRef.current ||
+              hasUserInteractedRef.current ||
+              retryCount >= 3 ||
+              !popupElement ||
+              !(target instanceof view.Element) ||
+              popupElement.contains(target)
             )
           ) {
             if (!(target as Element).closest(DialogDialogLabel)) {
-              flag = true;
+              isHandled = true;
               return;
             }
-            index += 1;
-            value3.requestAnimationFrame(() => {
-              let value4 = detail();
-              !value.current ||
-                extra.current ||
-                !value4?.isConnected ||
-                (value4 instanceof value3.HTMLButtonElement &&
-                  value4.disabled) ||
-                value4.focus({
+            retryCount += 1;
+            view.requestAnimationFrame(() => {
+              let fallbackTarget = getFallbackTarget();
+              !isOpenRef.current ||
+                hasUserInteractedRef.current ||
+                !fallbackTarget?.isConnected ||
+                (fallbackTarget instanceof view.HTMLButtonElement &&
+                  fallbackTarget.disabled) ||
+                fallbackTarget.focus({
                   preventScroll: true,
-                  focusVisible: value4 !== context.current,
+                  focusVisible: fallbackTarget !== popupRef.current,
                 } as FocusOptionsWithVisibility);
             });
           }
         };
-      value2.addEventListener("focusin", callback, true);
-      value3.setTimeout(() => {
-        value2.removeEventListener("focusin", callback, true);
+      ownerDocument.addEventListener("focusin", handleFocusIn, true);
+      view.setTimeout(() => {
+        ownerDocument.removeEventListener("focusin", handleFocusIn, true);
       }, 1e3);
     }
-    return current;
-  }, [input, options, context, value, extra, detail]);
+    return targetElement;
+  }, [targetRef, shouldShowFocusRing, popupRef, isOpenRef, hasUserInteractedRef, getFallbackTarget]);
 }
 function DialogCloseButton({
   "aria-label": ariaLabel,
@@ -217,7 +217,7 @@ function DialogCloseButton({
   flush?: boolean;
 }): React.ReactElement {
   useUiLocale();
-  let value = useLabel("close", "Close");
+  let defaultCloseLabel = useLabel("close", "Close");
   return (
     <npm_Dialog_Xg.Close
       render={
@@ -225,9 +225,9 @@ function DialogCloseButton({
           variant={"ghost"}
           iconOnly={true}
           icon={"X"}
-          aria-label={ariaLabel ?? (value)}
+          aria-label={ariaLabel ?? (defaultCloseLabel)}
           tooltip={false}
-          className={cn(flush && DialogDialogLabel_2, className)}
+          className={cn(flush && closeButtonFlushClasses, className)}
         />
       }
     />
@@ -242,7 +242,7 @@ function DialogHeader({
   children: children,
 }: DialogHeaderProps): React.ReactElement {
   useUiLocale();
-  let value = (0, reactDialogDialog.useContext)(DialogDialogContext_2);
+  let isAlertDialog = (0, reactDialogDialog.useContext)(DialogDialogContext_2);
   return (
     <div
       className={cn(
@@ -252,7 +252,7 @@ function DialogHeader({
     >
       <div
         className={npm_clsx_Ea(
-          value ? Mt05Value : Mt1Value,
+          isAlertDialog ? Mt05Value : Mt1Value,
           "flex min-w-0 flex-1 flex-col gap-1",
         )}
       >
@@ -293,20 +293,20 @@ function DialogRoot<Payload = void>({
   ...props
 }: DialogRootProps<Payload>): React.ReactElement {
   useUiLocale();
-  let value = (0, reactDialogDialog.useRef)<HTMLButtonElement | null>(null),
-    value2 = (0, reactDialogDialog.useRef)<OverlayActions | null>(null);
-  useOverlayImperativeHandle(value2, actionsRef);
-  let value3 =
+  let triggerRef = (0, reactDialogDialog.useRef)<HTMLButtonElement | null>(null),
+    actionsHandleRef = (0, reactDialogDialog.useRef)<OverlayActions | null>(null);
+  useOverlayImperativeHandle(actionsHandleRef, actionsRef);
+  let resolvedDisablePointerDismissal =
     disablePointerDismissal ?? (dismissible === false ? true : undefined);
   return (
     <DialogDialogContext_2.Provider value={false}>
       <DialogDialogContext.Provider value={props.modal}>
-        <DialogDialogContext_3.Provider value={value}>
-          <DialogDialogContext_4.Provider value={!value3}>
-            <ActivityBoundary actionsRef={value2}>
+        <DialogDialogContext_3.Provider value={triggerRef}>
+          <DialogDialogContext_4.Provider value={!resolvedDisablePointerDismissal}>
+            <ActivityBoundary actionsRef={actionsHandleRef}>
               <npm_Dialog_Xg.Root
-                disablePointerDismissal={value3}
-                actionsRef={value2}
+                disablePointerDismissal={resolvedDisablePointerDismissal}
+                actionsRef={actionsHandleRef}
                 {...props}
               />
             </ActivityBoundary>
@@ -321,14 +321,14 @@ function AlertDialogRoot<Payload = void>({
   ...props
 }: AlertDialogRootProps<Payload>): React.ReactElement {
   useUiLocale();
-  let value = (0, reactDialogDialog.useRef)<OverlayActions | null>(null);
-  useOverlayImperativeHandle(value, actionsRef);
+  let actionsHandleRef = (0, reactDialogDialog.useRef)<OverlayActions | null>(null);
+  useOverlayImperativeHandle(actionsHandleRef, actionsRef);
   return (
     <DialogDialogContext_2.Provider value={true}>
       <DialogDialogContext.Provider value={true}>
         <DialogDialogContext_4.Provider value={false}>
-          <ActivityBoundary actionsRef={value}>
-            <npm_AlertDialog_Dh.Root {...props} actionsRef={value} />
+          <ActivityBoundary actionsRef={actionsHandleRef}>
+            <npm_AlertDialog_Dh.Root {...props} actionsRef={actionsHandleRef} />
           </ActivityBoundary>
         </DialogDialogContext_4.Provider>
       </DialogDialogContext.Provider>
@@ -344,7 +344,7 @@ function ConfirmationDialog({
   cancelLabel: cancelLabel,
   confirmVariant = "primary",
   initialFocus = "confirm",
-  disabled: disabled2 = false,
+  disabled: disabledProp = false,
   confirmDisabledReason: confirmDisabledReason,
   size = "sm",
   className: className,
@@ -354,97 +354,97 @@ function ConfirmationDialog({
   children: children,
 }: ConfirmationDialogProps): React.ReactElement {
   useUiLocale();
-  let value = useLabel("confirm", "Confirm"),
-    value2 = useLabel("cancel", "Cancel"),
-    value3 = confirmLabel ?? value,
-    value4 = cancelLabel ?? value2,
-    [value5, value6] = (0, reactDialogDialog.useState)(false),
-    value7 = (0, reactDialogDialog.useRef)<HTMLButtonElement | null>(null),
-    value8 = (0, reactDialogDialog.useRef)<HTMLButtonElement | null>(null),
-    { finalFocus: value9, popupRef: value10 } = useFinalFocus(
+  let defaultConfirmLabel = useLabel("confirm", "Confirm"),
+    defaultCancelLabel = useLabel("cancel", "Cancel"),
+    confirmText = confirmLabel ?? defaultConfirmLabel,
+    cancelText = cancelLabel ?? defaultCancelLabel,
+    [isPending, setIsPending] = (0, reactDialogDialog.useState)(false),
+    cancelButtonRef = (0, reactDialogDialog.useRef)<HTMLButtonElement | null>(null),
+    confirmButtonRef = (0, reactDialogDialog.useRef)<HTMLButtonElement | null>(null),
+    { finalFocus: finalFocusTarget, popupRef: popupRef } = useFinalFocus(
       open,
     ),
-    callback = (): ConfirmationFocus =>
+    getDefaultFocus = (): ConfirmationFocus =>
       initialFocus === "cancel"
         ? "cancel"
-        : disabled2
+        : disabledProp
           ? "pending"
           : "confirm",
-    [value11, value12] = (0, reactDialogDialog.useState)(callback),
-    value13 = (0, reactDialogDialog.useRef)(value11);
+    [focusTarget, setFocusTarget] = (0, reactDialogDialog.useState)(getDefaultFocus),
+    focusTargetRef = (0, reactDialogDialog.useRef)(focusTarget);
   useIsomorphicLayoutEffect(() => {
-    value13.current = value11;
-  }, [value11]);
-  let value14 = (0, reactDialogDialog.useCallback)(() => {
-      switch (value13.current) {
+    focusTargetRef.current = focusTarget;
+  }, [focusTarget]);
+  let getFocusTargetElement = (0, reactDialogDialog.useCallback)(() => {
+      switch (focusTargetRef.current) {
         case "confirm":
-          return value8.current;
+          return confirmButtonRef.current;
         case "cancel":
-          return value7.current;
+          return cancelButtonRef.current;
         default:
-          return value10.current;
+          return popupRef.current;
       }
-    }, [value10]),
-    value15 = (0, reactDialogDialog.useRef)(false),
-    value16 = (0, reactDialogDialog.useCallback)(() => {
-      value15.current = true;
+    }, [popupRef]),
+    hasUserInteractedRef = (0, reactDialogDialog.useRef)(false),
+    markUserInteracted = (0, reactDialogDialog.useCallback)(() => {
+      hasUserInteractedRef.current = true;
     }, []);
   useIsomorphicLayoutEffect(() => {
-    open && ((value15.current = false), value12(callback()));
+    open && ((hasUserInteractedRef.current = false), setFocusTarget(getDefaultFocus()));
   }, [open]);
-  let value17 = (0, reactDialogDialog.useCallback)(
-    (input: ConfirmationFocus): void => {
-      value12(input);
-      let value28 = input === "confirm" ? value8.current : value7.current,
-        current = value10.current;
-      if (!value28 || !current) return;
-      let activeElement = value28.ownerDocument.activeElement,
-        value29 =
+  let moveFocusTo = (0, reactDialogDialog.useCallback)(
+    (target: ConfirmationFocus): void => {
+      setFocusTarget(target);
+      let targetButton = target === "confirm" ? confirmButtonRef.current : cancelButtonRef.current,
+        popupElement = popupRef.current;
+      if (!targetButton || !popupElement) return;
+      let activeElement = targetButton.ownerDocument.activeElement,
+        isFocusLost =
           !activeElement ||
-          activeElement === current ||
-          activeElement === value28.ownerDocument.body ||
-          (!current.contains(activeElement) &&
+          activeElement === popupElement ||
+          activeElement === targetButton.ownerDocument.body ||
+          (!popupElement.contains(activeElement) &&
             activeElement.closest(DialogDialogLabel) !== null),
-        value30 =
-          activeElement === value7.current ||
-          activeElement === value8.current;
-      (value29 || (value30 && !value15.current)) &&
-        value28.focus({
+        isFocusOnFooterButton =
+          activeElement === cancelButtonRef.current ||
+          activeElement === confirmButtonRef.current;
+      (isFocusLost || (isFocusOnFooterButton && !hasUserInteractedRef.current)) &&
+        targetButton.focus({
           preventScroll: true,
           focusVisible: true,
         } as FocusOptionsWithVisibility);
     },
-    [value10],
+    [popupRef],
   );
   (0, reactDialogDialog.useEffect)(() => {
-    if (!open || value11 !== "pending") return;
-    if (!disabled2) {
-      let value29 = requestAnimationFrame(() => value17("confirm"));
-      return () => cancelAnimationFrame(value29);
+    if (!open || focusTarget !== "pending") return;
+    if (!disabledProp) {
+      let frameId = requestAnimationFrame(() => moveFocusTo("confirm"));
+      return () => cancelAnimationFrame(frameId);
     }
-    let value28: ReturnType<typeof setTimeout> = setTimeout(
-      () => value17("cancel"),
+    let timerId: ReturnType<typeof setTimeout> = setTimeout(
+      () => moveFocusTo("cancel"),
       DialogDialogDelayMs,
     );
-    return () => clearTimeout(value28);
-  }, [disabled2, value11, value17, open]);
-  let value18 = (0, reactDialogDialog.useRef)(open);
+    return () => clearTimeout(timerId);
+  }, [disabledProp, focusTarget, moveFocusTo, open]);
+  let isOpenRef = (0, reactDialogDialog.useRef)(open);
   useIsomorphicLayoutEffect(() => {
-    value18.current = open;
+    isOpenRef.current = open;
   }, [open]);
-  let value19 = useDialogOpenAutofocus(
-      value11 === "confirm"
-        ? value8
-        : value11 === "cancel"
-          ? value7
-          : value10,
-      value11 !== "pending",
-      value10,
-      value18,
-      value15,
-      value14,
+  let openAutofocus = useDialogOpenAutofocus(
+      focusTarget === "confirm"
+        ? confirmButtonRef
+        : focusTarget === "cancel"
+          ? cancelButtonRef
+          : popupRef,
+      focusTarget !== "pending",
+      popupRef,
+      isOpenRef,
+      hasUserInteractedRef,
+      getFocusTargetElement,
     ),
-    value20 = (0, reactDialogDialog.useCallback)(
+    blockRepeatedKey = (0, reactDialogDialog.useCallback)(
       (event: React.KeyboardEvent<HTMLButtonElement>): void => {
         event.repeat &&
           (event.key === "Enter" || event.key === " ") &&
@@ -452,69 +452,69 @@ function ConfirmationDialog({
       },
       [],
     ),
-    value21 = (0, reactDialogDialog.useRef)(false);
+    hasConfirmedRef = (0, reactDialogDialog.useRef)(false);
   (0, reactDialogDialog.useEffect)(() => {
-    open && (value21.current = false);
+    open && (hasConfirmedRef.current = false);
   }, [open]);
-  let value22 = useOverlayRoot(),
-    value23 = (0, reactDialogDialog.useCallback)(() => {
-      if (value5 || disabled2 || !open || value21.current) return;
-      closeOnConfirm ? (value21.current = true) : value6(true);
-      let value28: Promise<void>;
+  let overlayRoot = useOverlayRoot(),
+    handleConfirm = (0, reactDialogDialog.useCallback)(() => {
+      if (isPending || disabledProp || !open || hasConfirmedRef.current) return;
+      closeOnConfirm ? (hasConfirmedRef.current = true) : setIsPending(true);
+      let confirmPromise: Promise<void>;
       try {
-        value28 = Promise.resolve(onConfirm());
-      } catch (value29) {
-        value28 = Promise.reject(value29);
+        confirmPromise = Promise.resolve(onConfirm());
+      } catch (error) {
+        confirmPromise = Promise.reject(error);
       }
       closeOnConfirm &&
         onOpenChange(false, {
           reason: "confirm",
         });
-      value28.finally(() => {
-        closeOnConfirm || value6(false);
+      confirmPromise.finally(() => {
+        closeOnConfirm || setIsPending(false);
       });
-    }, [value5, closeOnConfirm, disabled2, onConfirm, onOpenChange, open]),
-    value24 = (0, reactDialogDialog.useCallback)(
-      (input: boolean): void => {
-        value5 ||
+    }, [isPending, closeOnConfirm, disabledProp, onConfirm, onOpenChange, open]),
+    handleOpenChange = (0, reactDialogDialog.useCallback)(
+      (nextOpen: boolean): void => {
+        isPending ||
           !open ||
-          onOpenChange(input, {
+          onOpenChange(nextOpen, {
             reason: "dismiss",
           });
       },
-      [value5, onOpenChange, open],
+      [isPending, onOpenChange, open],
     ),
-    value25 = useDefaultLayer("modal");
+    layer = useDefaultLayer("modal");
   useDialogPresence(portalClassName);
-  let value26 = (0, reactDialogDialog.useRef)<OverlayActions | null>(null),
-    value27 = (
+  let confirmActionsRef = (0, reactDialogDialog.useRef)<OverlayActions | null>(null),
+    confirmButton = (
       <Button
-        ref={value8}
+        ref={confirmButtonRef}
         variant={confirmVariant}
-        busy={value5}
-        disabled={disabled2}
-        data-initial-focus={value11 === "confirm" ? "" : undefined}
-        onClick={value23}
-        onKeyDown={value20}
+        busy={isPending}
+        disabled={disabledProp}
+        data-initial-focus={focusTarget === "confirm" ? "" : undefined}
+        onClick={handleConfirm}
+        onKeyDown={blockRepeatedKey}
       >
-        {value3}
+        {confirmText}
       </Button>
     );
   return (
-    <ActivityBoundary actionsRef={value26}>
+    <ActivityBoundary actionsRef={confirmActionsRef}>
       <npm_AlertDialog_Dh.Root
         open={open}
-        onOpenChange={value24}
-        actionsRef={value26}
+        onOpenChange={handleOpenChange}
+        actionsRef={confirmActionsRef}
       >
-        <npm_AlertDialog_Dh.Portal container={value22}>
+        <npm_AlertDialog_Dh.Portal container={overlayRoot}>
           <PopupSurface
             className={cn("relative", portalClassName)}
-            style={value25.style}
+            style={layer.style}
             surface={surfaceBackgroundTokens.popover}
             closeOnActivityHide={true}
           >
-            <LayerBaseContext.Provider value={value25.base}>
+            <LayerBaseContext.Provider value={layer.base}>
               <npm_AlertDialog_Dh.Backdrop
                 forceRender={true}
                 onMouseDown={preventDialogMouseSelection}
@@ -526,11 +526,11 @@ function ConfirmationDialog({
               <WindowDragStrip />
               <ConfirmationDialogPopupInner
                 data-cds={"ConfirmationDialog"}
-                ref={value10}
-                onKeyDownCapture={value16}
-                onPointerDownCapture={value16}
-                initialFocus={value19}
-                finalFocus={value9}
+                ref={popupRef}
+                onKeyDownCapture={markUserInteracted}
+                onPointerDownCapture={markUserInteracted}
+                initialFocus={openAutofocus}
+                finalFocus={finalFocusTarget}
                 className={cn(
                   "draggable-none",
                   DialogDialogClassNames_4,
@@ -561,22 +561,22 @@ function ConfirmationDialog({
                     <npm_AlertDialog_Dh.Close
                       render={
                         <Button
-                          ref={value7}
+                          ref={cancelButtonRef}
                           variant={"secondary"}
-                          disabled={value5}
+                          disabled={isPending}
                           data-initial-focus={
-                            value11 === "cancel" ? "" : undefined
+                            focusTarget === "cancel" ? "" : undefined
                           }
                         >
-                          {value4}
+                          {cancelText}
                         </Button>
                       }
                     />
-                    {confirmDisabledReason === undefined ? (value27) : (<DeferredDisabledReasonTooltip
-                        reason={disabled2 ? confirmDisabledReason : undefined}
+                    {confirmDisabledReason === undefined ? (confirmButton) : (<DeferredDisabledReasonTooltip
+                        reason={disabledProp ? confirmDisabledReason : undefined}
                         wrapperClassName={"flex-col"}
                       >
-                        {value27}
+                        {confirmButton}
                       </DeferredDisabledReasonTooltip>)}
                   </DialogFooter>
                 </div>
@@ -613,10 +613,10 @@ export {
   DialogDialogDelayMs,
   DialogDialogHeightWebkitAppRegionConfig,
   DialogDialogLabel,
-  DialogDialogLabel_2,
+  closeButtonFlushClasses as DialogDialogLabel_2,
   DialogDialogPattern,
   DialogDialogRootTriggerPopupConfig,
-  DialogDialogRootTriggerPopupConfig_2,
+  alertDialogParts as DialogDialogRootTriggerPopupConfig_2,
   DialogDialogSmMdLgConfig,
   DialogDialogStartCenterEndConfig,
   DialogFooter,
@@ -636,9 +636,9 @@ export {
   useDialogPresence,
   WindowDragStrip,
 };
-export function set_DialogDialogCurrentState(value: any): any {
-  DialogDialogCurrentState = value;
-  return value;
+export function set_DialogDialogCurrentState(nextState: any): any {
+  DialogDialogCurrentState = nextState;
+  return nextState;
 }
 export function installCdsDialogDialog(): () => void {
   return () => {
@@ -716,13 +716,13 @@ export function installCdsDialogDialog(): () => void {
         import("@base-ui/react/dialog").Dialog.Trigger.Props<void>
       >(
         (
-          input: import("@base-ui/react/dialog").Dialog.Trigger.Props<void>,
-          options: React.ForwardedRef<HTMLButtonElement>,
+          props: import("@base-ui/react/dialog").Dialog.Trigger.Props<void>,
+          forwardedRef: React.ForwardedRef<HTMLButtonElement>,
         ): React.ReactElement => {
-          let value = (0, reactDialogDialog.useContext)(DialogDialogContext_3),
-            value2 = input.handle ? null : (value ?? null),
-            value3 = useMergedRefs(options, value2);
-          return <npm_Dialog_Xg.Trigger ref={value3} {...input} />;
+          let defaultTriggerRef = (0, reactDialogDialog.useContext)(DialogDialogContext_3),
+            triggerRef = props.handle ? null : (defaultTriggerRef ?? null),
+            mergedRef = useMergedRefs(forwardedRef, triggerRef);
+          return <npm_Dialog_Xg.Trigger ref={mergedRef} {...props} />;
         },
       );
       DialogTrigger.displayName = "Dialog.Trigger";
@@ -739,21 +739,21 @@ export function installCdsDialogDialog(): () => void {
             children: children,
             ...props
           }: DialogPopupInnerProps,
-          options: React.ForwardedRef<HTMLDivElement>,
+          forwardedRef: React.ForwardedRef<HTMLDivElement>,
         ): React.ReactElement => {
-          let value = (0, reactDialogDialog.useContext)(DialogDialogContext),
-            value2 = (0, reactDialogDialog.useContext)(DialogDialogContext_3),
-            { finalFocus: value3, popupRef: value4 } = useFinalFocus(true, value !== false, value2),
-            value5 = useDialogKeyboardViewport(fitVisualViewport),
-            value6 = useMergedRefs(options, value4, value5);
+          let modalMode = (0, reactDialogDialog.useContext)(DialogDialogContext),
+            triggerRef = (0, reactDialogDialog.useContext)(DialogDialogContext_3),
+            { finalFocus: defaultFinalFocus, popupRef: popupRef } = useFinalFocus(true, modalMode !== false, triggerRef),
+            keyboardViewportRef = useDialogKeyboardViewport(fitVisualViewport),
+            mergedRef = useMergedRefs(forwardedRef, popupRef, keyboardViewportRef);
           return (
             <npm_Dialog_Xg.Popup
               {...{
                 [overlayAttribute]: "",
               }}
-              ref={value6}
-              finalFocus={finalFocus ?? value3}
-              aria-modal={value === false ? "false" : undefined}
+              ref={mergedRef}
+              finalFocus={finalFocus ?? defaultFinalFocus}
+              aria-modal={modalMode === false ? "false" : undefined}
               {...props}
             >
               {children}
@@ -771,16 +771,16 @@ export function installCdsDialogDialog(): () => void {
             children: children,
             ...props
           }: import("@base-ui/react/alert-dialog").AlertDialog.Popup.Props,
-          options: React.ForwardedRef<HTMLDivElement>,
+          forwardedRef: React.ForwardedRef<HTMLDivElement>,
         ): React.ReactElement => {
-          let value = useDialogKeyboardViewport(true),
-            value2 = useMergedRefs(options, value);
+          let keyboardViewportRef = useDialogKeyboardViewport(true),
+            mergedRef = useMergedRefs(forwardedRef, keyboardViewportRef);
           return (
             <npm_AlertDialog_Dh.Popup
               {...{
                 [overlayAttribute]: "",
               }}
-              ref={value2}
+              ref={mergedRef}
               {...props}
             >
               {children}
@@ -807,23 +807,23 @@ export function installCdsDialogDialog(): () => void {
             children: children,
             ...props
           }: DialogPopupProps,
-          options: React.ForwardedRef<HTMLDivElement>,
+          forwardedRef: React.ForwardedRef<HTMLDivElement>,
         ): React.ReactElement => {
-          let value = unstyled
+          let popupClassName = unstyled
               ? ""
               : `${DialogDialogCss_2} ${dialogBackdropClasses} ${DataNestedDialogOpenBlur2pxValue} ${DialogDialogSmMdLgConfig[size]} ${fullHeight ? "h-dvh" : ""}`,
-            value2 = useDefaultLayer("modal");
+            layer = useDefaultLayer("modal");
           useDialogPresence(portalClassName);
-          let value3 = (0, reactDialogDialog.useContext)(DialogDialogContext),
-            value4 = (0, reactDialogDialog.useContext)(DialogDialogContext_4),
-            value5 = value3 === undefined || value3 === true;
+          let modalMode = (0, reactDialogDialog.useContext)(DialogDialogContext),
+            isDismissible = (0, reactDialogDialog.useContext)(DialogDialogContext_4),
+            shouldForceRenderBackdrop = modalMode === undefined || modalMode === true;
           return (
             <npm_Dialog_Xg.Portal
               container={useOverlayRoot()}
             >
               <PopupSurface
                 className={cn("relative", portalClassName)}
-                style={value2.style}
+                style={layer.style}
                 surface={
                   surface ??
                   (unstyled
@@ -832,18 +832,18 @@ export function installCdsDialogDialog(): () => void {
                 }
                 closeOnActivityHide={true}
               >
-                <LayerBaseContext.Provider value={value2.base}>
+                <LayerBaseContext.Provider value={layer.base}>
                   <npm_Dialog_Xg.Backdrop
-                    forceRender={value5}
+                    forceRender={shouldForceRenderBackdrop}
                     onMouseDown={
-                      value4
+                      isDismissible
                         ? preserveDialogFocus
                         : preventDialogMouseSelection
                     }
                     className={cn(
                       DialogDialogClassNames_3,
                       !unstyled && StartingOpacity0Value,
-                      value3 === false && "pointer-events-none opacity-0",
+                      modalMode === false && "pointer-events-none opacity-0",
                       backdropClassName,
                     )}
                     style={backdropStyle}
@@ -851,13 +851,13 @@ export function installCdsDialogDialog(): () => void {
                   <WindowDragStrip />
                   <DialogPopupInner
                     data-cds={"Dialog"}
-                    ref={options}
+                    ref={forwardedRef}
                     {...props}
                     fitVisualViewport={!unstyled}
                     className={cn(
                       "draggable-none",
                       DialogDialogClassNames_4,
-                      value,
+                      popupClassName,
                       className,
                     )}
                   >
@@ -876,16 +876,16 @@ export function installCdsDialogDialog(): () => void {
       >(
         (
           { className: className, ...props }: DialogTitleProps,
-          options: React.ForwardedRef<HTMLHeadingElement>,
+          forwardedRef: React.ForwardedRef<HTMLHeadingElement>,
         ): React.ReactElement => {
-          let value = (0, reactDialogDialog.useContext)(DialogDialogContext_2);
+          let isAlertDialog = (0, reactDialogDialog.useContext)(DialogDialogContext_2);
           return (
             <npm_Dialog_Xg.Title
-              ref={options}
+              ref={forwardedRef}
               {...props}
               className={cn(
                 "text-primary",
-                value ? DialogDialogClassNames_5 : DialogDialogClassNames_6,
+                isAlertDialog ? DialogDialogClassNames_5 : DialogDialogClassNames_6,
                 className,
               )}
             />
@@ -893,7 +893,7 @@ export function installCdsDialogDialog(): () => void {
         },
       );
       DialogTitle.displayName = "Dialog.Title";
-      DialogDialogLabel_2 = "-me-pad-sm -mt-pad-sm";
+      closeButtonFlushClasses = "-me-pad-sm -mt-pad-sm";
       (
         DialogCloseButton as React.FC<{
           "aria-label"?: string;
@@ -909,10 +909,10 @@ export function installCdsDialogDialog(): () => void {
       >(
         (
           { className: className, ...props }: DialogDescriptionProps,
-          options: React.ForwardedRef<HTMLParagraphElement>,
+          forwardedRef: React.ForwardedRef<HTMLParagraphElement>,
         ): React.ReactElement => (
           <npm_Dialog_Xg.Description
-            ref={options}
+            ref={forwardedRef}
             {...props}
             className={cn(DialogDialogClassNames_7, className)}
           />
@@ -942,7 +942,7 @@ export function installCdsDialogDialog(): () => void {
       };
       (AlertDialogRoot as React.FC<AlertDialogRootProps>).displayName =
         "AlertDialog.Root";
-      DialogDialogRootTriggerPopupConfig_2 = {
+      alertDialogParts = {
         Root: AlertDialogRoot,
         Trigger: npm_AlertDialog_Dh.Trigger,
         Popup: DialogPopup,

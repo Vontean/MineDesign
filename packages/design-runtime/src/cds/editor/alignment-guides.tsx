@@ -39,15 +39,15 @@ export function installCdsEditorAlignmentGuides(): () => void {
             style: style,
             ...props
           }: Dynamic,
-          options?: Dynamic,
+          forwardedRef?: Dynamic,
         ): Dynamic {
-          let value: Dynamic = normalizeSelectionScale(scale),
+          let safeScale: Dynamic = normalizeSelectionScale(scale),
             guide: Dynamic = selectionMetrics.guide,
-            value2: Dynamic = 1 / value;
+            inverseScale: Dynamic = 1 / safeScale;
           return (
             <div
               {...props}
-              ref={options}
+              ref={forwardedRef}
               data-cds={"AlignmentGuides"}
               aria-hidden={"true"}
               className={cn("absolute inset-0", className)}
@@ -57,24 +57,24 @@ export function installCdsEditorAlignmentGuides(): () => void {
               }}
             >
               {guides.map(
-                (input?: Dynamic, options2?: Dynamic): Dynamic =>
+                (alignmentGuide?: Dynamic, guideIndex?: Dynamic): Dynamic =>
                   (() => {
                     const _Component = "span";
                     const _props = {
-                      "data-axis": input.axis,
+                      "data-axis": alignmentGuide.axis,
                       children: [
                         <span
                           data-guide-line={""}
                           className={"absolute block bg-fill-accent"}
                           style={
-                            input.axis === "x"
+                            alignmentGuide.axis === "x"
                               ? {
                                   left: 0,
                                   top: 0,
                                   bottom: 0,
                                   width: guide,
                                   transformOrigin: "0 0",
-                                  transform: `translateX(${input.pos}px) scaleX(${value2})`,
+                                  transform: `translateX(${alignmentGuide.pos}px) scaleX(${inverseScale})`,
                                   pointerEvents: "none",
                                 }
                               : {
@@ -83,34 +83,34 @@ export function installCdsEditorAlignmentGuides(): () => void {
                                   right: 0,
                                   height: guide,
                                   transformOrigin: "0 0",
-                                  transform: `translateY(${input.pos}px) scaleY(${value2})`,
+                                  transform: `translateY(${alignmentGuide.pos}px) scaleY(${inverseScale})`,
                                   pointerEvents: "none",
                                 }
                           }
                         />,
-                        input.label !== undefined ? (
+                        alignmentGuide.label !== undefined ? (
                           <SelectionPoint
                             data-guide-label={""}
-                            scale={value}
+                            scale={safeScale}
                             anchor={"start"}
                             at={
-                              input.axis === "x"
+                              alignmentGuide.axis === "x"
                                 ? {
-                                    left: input.pos + 6 / value,
-                                    top: 8 / value,
+                                    left: alignmentGuide.pos + 6 / safeScale,
+                                    top: 8 / safeScale,
                                   }
                                 : {
-                                    left: 8 / value,
-                                    top: input.pos + 6 / value,
+                                    left: 8 / safeScale,
+                                    top: alignmentGuide.pos + 6 / safeScale,
                                   }
                             }
                           >
-                            {input.label}
+                            {alignmentGuide.label}
                           </SelectionPoint>
                         ) : null,
                       ],
                     } as const;
-                    const _key = `${input.axis}-${input.pos}-${options2}`;
+                    const _key = `${alignmentGuide.axis}-${alignmentGuide.pos}-${guideIndex}`;
                     return <_Component key={_key} {..._props} />;
                   })(),
               )}

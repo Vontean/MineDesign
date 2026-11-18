@@ -36,49 +36,49 @@ var jsxMenuItemStyles: typeof import("react/jsx-runtime");
 var MenuPopupElement: ForwardComponent<HTMLDivElement, MenuPopupElementProps>;
 var initializeMenuItemStyles_3: () => void;
 function wasTriggerOpenCanceled(
-  input: import("@base-ui/react/menu").Menu.Root.ChangeEventDetails,
+  details: import("@base-ui/react/menu").Menu.Root.ChangeEventDetails,
 ): boolean {
-  if (input.reason !== "cancel-open") return false;
-  let value = input.trigger ?? null,
-    value2 = input.event?.target ?? null;
-  if (value === null || value2 === null || !("nodeType" in value2))
+  if (details.reason !== "cancel-open") return false;
+  let trigger = details.trigger ?? null,
+    eventTarget = details.event?.target ?? null;
+  if (trigger === null || eventTarget === null || !("nodeType" in eventTarget))
     return false;
-  let value3 = value2 as Node;
-  if (value.contains(value3)) return true;
-  let attribute = value.getAttribute("aria-controls");
+  let targetNode = eventTarget as Node;
+  if (trigger.contains(targetNode)) return true;
+  let attribute = trigger.getAttribute("aria-controls");
   return (
     (attribute
-      ? value.ownerDocument.getElementById(attribute)
+      ? trigger.ownerDocument.getElementById(attribute)
       : null
-    )?.contains(value3) ?? false
+    )?.contains(targetNode) ?? false
   );
 }
 function useMenuTriggerRef(
-  input: MenuChange | undefined,
-  options: boolean = false,
+  onOpenChangeProp: MenuChange | undefined,
+  suppressTriggerCancel: boolean = false,
 ): {
   triggerRef: React.RefObject<HTMLElement | null>;
   onOpenChange: MenuChange;
 } {
-  let value = (0, reactMenuItemStyles.useRef)<HTMLElement | null>(null);
+  let triggerRef = (0, reactMenuItemStyles.useRef)<HTMLElement | null>(null);
   return {
-    triggerRef: value,
+    triggerRef: triggerRef,
     onOpenChange: useStableCallback(
       (
-        input2: boolean,
-        options2: import("@base-ui/react/menu").Menu.Root.ChangeEventDetails,
+        isOpen: boolean,
+        details: import("@base-ui/react/menu").Menu.Root.ChangeEventDetails,
       ) => {
-        if (!input2 && options && wasTriggerOpenCanceled(options2)) {
-          options2.cancel?.();
+        if (!isOpen && suppressTriggerCancel && wasTriggerOpenCanceled(details)) {
+          details.cancel?.();
           return;
         }
-        value.current =
+        triggerRef.current =
           (
-            options2 as {
+            details as {
               trigger?: HTMLElement;
             }
           ).trigger ?? null;
-        input?.(input2, options2);
+        onOpenChangeProp?.(isOpen, details);
       },
     ),
   };
@@ -87,29 +87,29 @@ function useParentMenu(): React.RefObject<HTMLElement | null> | undefined {
   return (0, reactMenuItemStyles.useContext)(ParentMenuContext);
 }
 function useMenuPopupFocus(
-  input: React.RefObject<HTMLElement | null> | undefined,
-  options: PopupFocus | null | undefined,
+  triggerRef: React.RefObject<HTMLElement | null> | undefined,
+  popupFocus: PopupFocus | null | undefined,
 ): React.RefCallback<HTMLElement> {
-  let value = (0, reactMenuItemStyles.useContext)(ParentMenuContext),
-    value2 = (0, reactMenuItemStyles.useRef)(options);
+  let parentMenuRef = (0, reactMenuItemStyles.useContext)(ParentMenuContext),
+    popupFocusRef = (0, reactMenuItemStyles.useRef)(popupFocus);
   useIsomorphicLayoutEffect(() => {
-    value2.current = options;
-  }, [options]);
-  let value3 = (0, reactMenuItemStyles.useCallback)(() => {
-    let value4 =
-        input !== undefined ? input.current : (value?.current ?? null),
-      current = value2.current;
+    popupFocusRef.current = popupFocus;
+  }, [popupFocus]);
+  let getFocusTarget = (0, reactMenuItemStyles.useCallback)(() => {
+    let defaultTarget =
+        triggerRef !== undefined ? triggerRef.current : (parentMenuRef?.current ?? null),
+      current = popupFocusRef.current;
     return current === false || typeof current == "function"
       ? null
       : current === undefined || current === true || current === null
-        ? value4
-        : (current.current ?? value4);
-  }, [input, value]);
+        ? defaultTarget
+        : (current.current ?? defaultTarget);
+  }, [triggerRef, parentMenuRef]);
   return (0, reactMenuItemStyles.useCallback)(
-    (input2: HTMLElement | null) => {
-      input2 !== null && registerOpenerReturn(input2, value3);
+    (popup: HTMLElement | null) => {
+      popup !== null && registerOpenerReturn(popup, getFocusTarget);
     },
-    [value3],
+    [getFocusTarget],
   );
 }
 function popupPlacementAttributes(element: Element): PopupPlacement {
@@ -119,21 +119,21 @@ function popupPlacementAttributes(element: Element): PopupPlacement {
   };
 }
 function samePopupPlacement(
-  input: PopupPlacement | null,
-  options: PopupPlacement,
+  previous: PopupPlacement | null,
+  next: PopupPlacement,
 ): boolean {
   return (
-    input !== null &&
-    input.side === options.side &&
-    input.align === options.align
+    previous !== null &&
+    previous.side === next.side &&
+    previous.align === next.align
   );
 }
-function popupUsesReverseEntry(input: PopupPlacement | null): boolean {
+function popupUsesReverseEntry(placement: PopupPlacement | null): boolean {
   return (
-    input?.side === "top" ||
-    (input?.side !== undefined &&
-      input.side !== "bottom" &&
-      input.align === "end")
+    placement?.side === "top" ||
+    (placement?.side !== undefined &&
+      placement.side !== "bottom" &&
+      placement.align === "end")
   );
 }
 function usePopupEntryAnimation({
@@ -141,112 +141,112 @@ function usePopupEntryAnimation({
   side: side,
   align: align,
 }: PopupAnimationInput): PopupAnimationState {
-  let [value, value2] = (0,
+  let [settledPlacement, setSettledPlacement] = (0,
     reactSheetsMenuPopup.useState)<PopupPlacement | null>(null),
-    [value3, value4] = (0,
+    [currentPlacement, setCurrentPlacement] = (0,
     reactSheetsMenuPopup.useState)<PopupPlacement | null>(null),
-    [value5, value6] = (0, reactSheetsMenuPopup.useState)<
+    [naturalHeight, setNaturalHeight] = (0, reactSheetsMenuPopup.useState)<
       number | undefined
     >(),
-    value7 = (0, reactSheetsMenuPopup.useRef)<HTMLElement | null>(
+    popupElementRef = (0, reactSheetsMenuPopup.useRef)<HTMLElement | null>(
       null,
     ),
-    value8 = (0, reactSheetsMenuPopup.useRef)(false),
-    value9 = (0, reactSheetsMenuPopup.useRef)<(() => void) | null>(
+    isReverseEntryRef = (0, reactSheetsMenuPopup.useRef)(false),
+    disconnectPlacementRef = (0, reactSheetsMenuPopup.useRef)<(() => void) | null>(
       null,
     ),
-    value10 = (0, reactSheetsMenuPopup.useCallback)(
+    setPositioner = (0, reactSheetsMenuPopup.useCallback)(
       (element: HTMLElement | null): void => {
-        value9.current?.();
-        value9.current = null;
+        disconnectPlacementRef.current?.();
+        disconnectPlacementRef.current = null;
         if (!element) {
-          value2(null);
-          value4(null);
-          value8.current = false;
+          setSettledPlacement(null);
+          setCurrentPlacement(null);
+          isReverseEntryRef.current = false;
           return;
         }
-        let value14 = element.ownerDocument.defaultView ?? window,
-          value15 = typeof value14.requestAnimationFrame == "function",
-          index = 0,
-          index2 = 0,
-          callback = () => {
-            index2 += 1;
-            if (index2 < SheetsMenuPopupLimit) {
-              index = value14.requestAnimationFrame(callback);
+        let view = element.ownerDocument.defaultView ?? window,
+          hasAnimationFrame = typeof view.requestAnimationFrame == "function",
+          frameId = 0,
+          frameCount = 0,
+          settlePlacement = () => {
+            frameCount += 1;
+            if (frameCount < SheetsMenuPopupLimit) {
+              frameId = view.requestAnimationFrame(settlePlacement);
               return;
             }
-            index = 0;
-            let value16 = popupPlacementAttributes(element);
-            value2((input) =>
-              samePopupPlacement(input, value16) ? input : value16,
+            frameId = 0;
+            let placement = popupPlacementAttributes(element);
+            setSettledPlacement((previous) =>
+              samePopupPlacement(previous, placement) ? previous : placement,
             );
           },
-          callback2 = () => {
-            let value16 = popupPlacementAttributes(element);
-            value4((input) =>
-              samePopupPlacement(input, value16) ? input : value16,
+          syncPlacement = () => {
+            let placement = popupPlacementAttributes(element);
+            setCurrentPlacement((previous) =>
+              samePopupPlacement(previous, placement) ? previous : placement,
             );
-            value8.current = popupUsesReverseEntry(value16);
-            if (!value8.current) {
-              let value17 = value7.current?.getBoundingClientRect().height;
-              value6(
-                value17 !== undefined && value17 > 0 ? value17 : undefined,
+            isReverseEntryRef.current = popupUsesReverseEntry(placement);
+            if (!isReverseEntryRef.current) {
+              let measuredHeight = popupElementRef.current?.getBoundingClientRect().height;
+              setNaturalHeight(
+                measuredHeight !== undefined && measuredHeight > 0 ? measuredHeight : undefined,
               );
             }
-            index2 = 0;
-            value15 &&
-              index === 0 &&
-              (index = value14.requestAnimationFrame(callback));
+            frameCount = 0;
+            hasAnimationFrame &&
+              frameId === 0 &&
+              (frameId = view.requestAnimationFrame(settlePlacement));
           };
-        callback2();
-        let observer = new MutationObserver(callback2);
+        syncPlacement();
+        let observer = new MutationObserver(syncPlacement);
         observer.observe(element, {
           attributes: true,
           attributeFilter: ["data-side", "data-align"],
         });
-        value9.current = () => {
+        disconnectPlacementRef.current = () => {
           observer.disconnect();
-          index !== 0 && value14.cancelAnimationFrame(index);
+          frameId !== 0 && view.cancelAnimationFrame(frameId);
         };
       },
       [],
     ),
-    value11 = (0, reactSheetsMenuPopup.useRef)<ResizeObserver | null>(
+    resizeObserverRef = (0, reactSheetsMenuPopup.useRef)<ResizeObserver | null>(
       null,
     ),
-    value12 = (0, reactSheetsMenuPopup.useCallback)(
-      (input: HTMLElement | null): void => {
-        value11.current?.disconnect();
-        value11.current = null;
-        value7.current = input;
-        if (!input) {
-          value6(undefined);
+    setPopup = (0, reactSheetsMenuPopup.useCallback)(
+      (popup: HTMLElement | null): void => {
+        resizeObserverRef.current?.disconnect();
+        resizeObserverRef.current = null;
+        popupElementRef.current = popup;
+        if (!popup) {
+          setNaturalHeight(undefined);
           return;
         }
         if (!enabled) return;
-        let callback = () => {
-          let height = input.getBoundingClientRect().height;
+        let measureHeight = () => {
+          let height = popup.getBoundingClientRect().height;
           height > 0 &&
-            value6((input2) =>
-              value8.current && input2 !== undefined && height <= input2
-                ? input2
+            setNaturalHeight((previousHeight) =>
+              isReverseEntryRef.current && previousHeight !== undefined && height <= previousHeight
+                ? previousHeight
                 : height,
             );
         };
-        callback();
+        measureHeight();
         if (typeof ResizeObserver !== "undefined") {
-          let observer = new ResizeObserver(callback);
-          observer.observe(input);
-          value11.current = observer;
+          let observer = new ResizeObserver(measureHeight);
+          observer.observe(popup);
+          resizeObserverRef.current = observer;
         }
       },
       [enabled],
     ),
-    value13: PopupAnimationState["held"] =
-      enabled && popupUsesReverseEntry(value3) && value5 !== undefined
+    heldStyle: PopupAnimationState["held"] =
+      enabled && popupUsesReverseEntry(currentPlacement) && naturalHeight !== undefined
         ? {
             positionerStyle: {
-              minHeight: `min(${Math.floor(value5)}px, var(--available-height))`,
+              minHeight: `min(${Math.floor(naturalHeight)}px, var(--available-height))`,
               display: "flex",
               flexDirection: "column",
               justifyContent: "flex-end",
@@ -255,11 +255,11 @@ function usePopupEntryAnimation({
           }
         : null;
   return {
-    positionerRef: enabled ? value10 : undefined,
-    popupRef: value12,
-    side: enabled ? (value?.side ?? side) : side,
-    align: enabled ? (value?.align ?? align) : align,
-    held: value13,
+    positionerRef: enabled ? setPositioner : undefined,
+    popupRef: setPopup,
+    side: enabled ? (settledPlacement?.side ?? side) : side,
+    align: enabled ? (settledPlacement?.align ?? align) : align,
+    held: heldStyle,
   };
 }
 export {
@@ -345,32 +345,32 @@ export function installCdsMenuItemStyles(): () => void {
             finalFocus: finalFocus,
             ...props
           }: MenuPopupElementProps,
-          options: React.ForwardedRef<HTMLDivElement>,
+          forwardedRef: React.ForwardedRef<HTMLDivElement>,
         ): React.ReactElement => {
-          let value =
+          let isOpen =
               (0, reactMenuItemStyles_2.useContext)(SheetPopupContext)
                 ?.open ?? true,
-            { elementRef: value2, overlayAttrs: value3 } = useMenuInnerOverlay(),
-            value4 = useOpenerReturn({
-              open: value,
+            { elementRef: overlayElementRef, overlayAttrs: overlayAttrs } = useMenuInnerOverlay(),
+            openerReturn = useOpenerReturn({
+              open: isOpen,
               skipRestoreOnOutsideFocus: !cursorAnchored,
               registerOpenerReturn: anchoredWithoutFinalFocus,
               triggerRef: useParentMenu(),
             }),
-            value5 = useMergedRefs(
-              options,
-              value2,
-              anchoredWithoutFinalFocus ? value4.popupRef : undefined,
+            mergedRef = useMergedRefs(
+              forwardedRef,
+              overlayElementRef,
+              anchoredWithoutFinalFocus ? openerReturn.popupRef : undefined,
             );
           return (
             <npm_Menu_La.Popup
-              {...value3}
-              ref={value5}
+              {...overlayAttrs}
+              ref={mergedRef}
               finalFocus={
                 (finalFocus === undefined ||
                   (cursorAnchored && finalFocus === null)) &&
                 anchoredWithoutFinalFocus
-                  ? value4.finalFocus
+                  ? openerReturn.finalFocus
                   : finalFocus
               }
               {...props}

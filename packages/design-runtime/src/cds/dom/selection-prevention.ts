@@ -16,12 +16,12 @@ function preventMultipleClickSelection(event: SelectionMouseEvent): void {
     event.preventDefault();
 }
 function withSelectionPrevention<Event extends SelectionMouseEvent>(
-  input?: (event: Event) => void,
+  handler?: (event: Event) => void,
 ): (event: Event) => void {
-  return input
-    ? (input2) => {
-        input(input2);
-        preventMultipleClickSelection(input2);
+  return handler
+    ? (event) => {
+        handler(event);
+        preventMultipleClickSelection(event);
       }
     : preventMultipleClickSelection;
 }

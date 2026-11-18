@@ -36,95 +36,95 @@ var ComponentsTextLinkTopMaxHeightMinHeightValues: Dynamic;
 var ComponentsTextLinkBottomInsetTranslateValues: Dynamic;
 var ComponentsTextLinkTopValues: Dynamic;
 var initializeComponentsTextLink_2: Dynamic;
-function readStyleProperty(input?: Dynamic, options?: Dynamic): Dynamic {
+function readStyleProperty(style?: Dynamic, property?: Dynamic): Dynamic {
   return {
-    value: input.getPropertyValue(options),
-    priority: input.getPropertyPriority(options),
+    value: style.getPropertyValue(property),
+    priority: style.getPropertyPriority(property),
   };
 }
 function isOwnedImportantStyle(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  style?: Dynamic,
+  property?: Dynamic,
+  writtenValue?: Dynamic,
 ): Dynamic {
   return (
-    context !== undefined &&
-    input.getPropertyPriority(options) === "important" &&
-    input.getPropertyValue(options) === context
+    writtenValue !== undefined &&
+    style.getPropertyPriority(property) === "important" &&
+    style.getPropertyValue(property) === writtenValue
   );
 }
-function restoreOwnedDialogStyles(input?: Dynamic): Dynamic {
-  let style: Dynamic = input.node.style;
-  for (let value of ComponentsTextLinkTopMaxHeightMinHeightValues as Dynamic)
-    if (isOwnedImportantStyle(style, value, input.written[value])) {
-      let { value: value2, priority: value3 }: Dynamic =
-        input.baseline[value];
-      style.setProperty(value, value2, value3);
+function restoreOwnedDialogStyles(owned?: Dynamic): Dynamic {
+  let style: Dynamic = owned.node.style;
+  for (let property of ComponentsTextLinkTopMaxHeightMinHeightValues as Dynamic)
+    if (isOwnedImportantStyle(style, property, owned.written[property])) {
+      let { value: baselineValue, priority: baselinePriority }: Dynamic =
+        owned.baseline[property];
+      style.setProperty(property, baselineValue, baselinePriority);
     }
 }
-function useDialogKeyboardViewport(input?: Dynamic): Dynamic {
-  let [value, value2]: Dynamic = (0, reactComponentsTextLink_2.useState)(
+function useDialogKeyboardViewport(isEnabled?: Dynamic): Dynamic {
+  let [dialogNode, setDialogNode]: Dynamic = (0, reactComponentsTextLink_2.useState)(
       null,
     ),
-    [value3, value4]: Dynamic = (0, reactComponentsTextLink_2.useState)(null),
-    value5: Dynamic = (0, reactComponentsTextLink_2.useCallback)(
-      (input2?: Dynamic): Dynamic =>
-        !input || value === null
+    [viewport, setViewport]: Dynamic = (0, reactComponentsTextLink_2.useState)(null),
+    subscribeToFocus: Dynamic = (0, reactComponentsTextLink_2.useCallback)(
+      (onChange?: Dynamic): Dynamic =>
+        !isEnabled || dialogNode === null
           ? (): Dynamic => {}
-          : (value.addEventListener("focusin", input2),
-            value.addEventListener("focusout", input2),
+          : (dialogNode.addEventListener("focusin", onChange),
+            dialogNode.addEventListener("focusout", onChange),
             (): Dynamic => {
-              value.removeEventListener("focusin", input2);
-              value.removeEventListener("focusout", input2);
+              dialogNode.removeEventListener("focusin", onChange);
+              dialogNode.removeEventListener("focusout", onChange);
             }),
-      [input, value],
+      [isEnabled, dialogNode],
     ),
-    value6: Dynamic = (0,
+    getIsInputFocused: Dynamic = (0,
     reactComponentsTextLink_2.useCallback)((): Dynamic => {
-      if (!input || value === null) return false;
-      let activeElement: Dynamic = value.ownerDocument.activeElement;
+      if (!isEnabled || dialogNode === null) return false;
+      let activeElement: Dynamic = dialogNode.ownerDocument.activeElement;
       return (
-        value.contains(activeElement) &&
+        dialogNode.contains(activeElement) &&
         isTextInputElement(activeElement)
       );
-    }, [input, value]),
-    value7: Dynamic = (0, reactComponentsTextLink_2.useSyncExternalStore)(
-      value5,
-      value6,
+    }, [isEnabled, dialogNode]),
+    isInputFocused: Dynamic = (0, reactComponentsTextLink_2.useSyncExternalStore)(
+      subscribeToFocus,
+      getIsInputFocused,
       (): Dynamic => false,
     );
   useKeyboardViewport(
-    input && (value7 || value3 !== null),
-    value4,
+    isEnabled && (isInputFocused || viewport !== null),
+    setViewport,
   );
-  let value8: Dynamic = (0, reactComponentsTextLink_2.useMemo)(
-      (): Dynamic => dialogKeyboardFrame(value3),
-      [value3],
+  let keyboardFrame: Dynamic = (0, reactComponentsTextLink_2.useMemo)(
+      (): Dynamic => dialogKeyboardFrame(viewport),
+      [viewport],
     ),
-    value9: Dynamic = (0, reactComponentsTextLink_2.useRef)(null);
+    ownedStylesRef: Dynamic = (0, reactComponentsTextLink_2.useRef)(null);
   useIsomorphicLayoutEffect((): Dynamic => {
-    let current: Dynamic = value9.current;
-    current !== null &&
-      (current.node !== value || value8 === undefined) &&
-      (restoreOwnedDialogStyles(current), (value9.current = null));
-    if (value === null || value8 === undefined) return;
-    let style: Dynamic = value.style,
-      state: Dynamic = {
-        top: value8.top,
-        "max-height": value8.maxHeight,
+    let staleOwned: Dynamic = ownedStylesRef.current;
+    staleOwned !== null &&
+      (staleOwned.node !== dialogNode || keyboardFrame === undefined) &&
+      (restoreOwnedDialogStyles(staleOwned), (ownedStylesRef.current = null));
+    if (dialogNode === null || keyboardFrame === undefined) return;
+    let style: Dynamic = dialogNode.style,
+      targetStyles: Dynamic = {
+        top: keyboardFrame.top,
+        "max-height": keyboardFrame.maxHeight,
         "min-height": "0px",
       },
-      current2: Dynamic = value9.current;
-    if (current2 === null) {
+      owned: Dynamic = ownedStylesRef.current;
+    if (owned === null) {
       if (
         ComponentsTextLinkTopValues.some(
-          (input2?: Dynamic): Dynamic =>
-            style.getPropertyValue(input2) !== "",
+          (property?: Dynamic): Dynamic =>
+            style.getPropertyValue(property) !== "",
         )
       )
         return;
-      current2 = {
-        node: value,
+      owned = {
+        node: dialogNode,
         baseline: {
           top: readStyleProperty(style, "top"),
           "max-height": readStyleProperty(style, "max-height"),
@@ -134,68 +134,68 @@ function useDialogKeyboardViewport(input?: Dynamic): Dynamic {
         written: {},
         cap: "",
       };
-      value9.current = current2;
+      ownedStylesRef.current = owned;
     } else {
-      let value10: Dynamic =
+      let hasForeignPositioning: Dynamic =
         ComponentsTextLinkBottomInsetTranslateValues.some(
-          (input2?: Dynamic): Dynamic =>
-            style.getPropertyValue(input2) !== "",
+          (property?: Dynamic): Dynamic =>
+            style.getPropertyValue(property) !== "",
         );
-      for (let value11 of ComponentsTextLinkTopMaxHeightMinHeightValues as Dynamic)
+      for (let property of ComponentsTextLinkTopMaxHeightMinHeightValues as Dynamic)
         if (
-          !isOwnedImportantStyle(style, value11, current2.written[value11])
+          !isOwnedImportantStyle(style, property, owned.written[property])
         ) {
-          let value12: Dynamic = readStyleProperty(style, value11);
-          current2.baseline[value11] = value12;
-          value11 === "top" && value12.value !== "" && (value10 = true);
+          let currentValue: Dynamic = readStyleProperty(style, property);
+          owned.baseline[property] = currentValue;
+          property === "top" && currentValue.value !== "" && (hasForeignPositioning = true);
         }
-      if (value10) {
-        restoreOwnedDialogStyles(current2);
-        value9.current = null;
+      if (hasForeignPositioning) {
+        restoreOwnedDialogStyles(owned);
+        ownedStylesRef.current = null;
         return;
       }
     }
-    for (let value10 of ComponentsTextLinkTopMaxHeightMinHeightValues as Dynamic)
-      (current2.intended[value10] !== state[value10] ||
-        !isOwnedImportantStyle(style, value10, current2.written[value10])) &&
-        (style.setProperty(value10, state[value10], "important"),
-        (current2.intended[value10] = state[value10]),
-        (current2.written[value10] = style.getPropertyValue(value10)));
-    if (current2.cap !== value8.maxHeight) {
-      current2.cap = value8.maxHeight;
-      let activeElement: Dynamic = value.ownerDocument.activeElement,
-        defaultView: Dynamic = value.ownerDocument.defaultView;
+    for (let property of ComponentsTextLinkTopMaxHeightMinHeightValues as Dynamic)
+      (owned.intended[property] !== targetStyles[property] ||
+        !isOwnedImportantStyle(style, property, owned.written[property])) &&
+        (style.setProperty(property, targetStyles[property], "important"),
+        (owned.intended[property] = targetStyles[property]),
+        (owned.written[property] = style.getPropertyValue(property)));
+    if (owned.cap !== keyboardFrame.maxHeight) {
+      owned.cap = keyboardFrame.maxHeight;
+      let activeElement: Dynamic = dialogNode.ownerDocument.activeElement,
+        defaultView: Dynamic = dialogNode.ownerDocument.defaultView;
       defaultView !== null &&
         activeElement instanceof defaultView.HTMLElement &&
-        activeElement !== value &&
-        value.contains(activeElement) &&
-        scrollDialogInputIntoView(value, activeElement);
+        activeElement !== dialogNode &&
+        dialogNode.contains(activeElement) &&
+        scrollDialogInputIntoView(dialogNode, activeElement);
     }
   });
   useIsomorphicLayoutEffect(
     (): Dynamic => (): Dynamic => {
-      value9.current !== null &&
-        (restoreOwnedDialogStyles(value9.current), (value9.current = null));
+      ownedStylesRef.current !== null &&
+        (restoreOwnedDialogStyles(ownedStylesRef.current), (ownedStylesRef.current = null));
     },
     [],
   );
-  return value2;
+  return setDialogNode;
 }
-function dialogKeyboardFrame(input?: Dynamic): Dynamic {
-  if (!(input === null || input.visible < ComponentsTextLinkLimit))
+function dialogKeyboardFrame(viewport?: Dynamic): Dynamic {
+  if (!(viewport === null || viewport.visible < ComponentsTextLinkLimit))
     return {
-      top: `calc(${input.offset + (input.visible + ComponentsTextLinkConstant) / 2}px - ${ComponentsTextLinkCss_3} / 2)`,
-      maxHeight: `calc(${input.visible - ComponentsTextLinkConstant}px - ${ComponentsTextLinkCss_3})`,
+      top: `calc(${viewport.offset + (viewport.visible + ComponentsTextLinkConstant) / 2}px - ${ComponentsTextLinkCss_3} / 2)`,
+      maxHeight: `calc(${viewport.visible - ComponentsTextLinkConstant}px - ${ComponentsTextLinkCss_3})`,
     };
 }
 function scrollDialogInputIntoView(
   element?: Dynamic,
-  options?: Dynamic,
+  focusedElement?: Dynamic,
 ): Dynamic {
   let defaultView: Dynamic = element.ownerDocument.defaultView;
   if (defaultView !== null)
     for (
-      let parentElement: Dynamic = options.parentElement;
+      let parentElement: Dynamic = focusedElement.parentElement;
       parentElement !== null;
       parentElement =
         parentElement === element ? null : parentElement.parentElement
@@ -204,14 +204,14 @@ function scrollDialogInputIntoView(
       let { overflowY: style }: Dynamic =
         defaultView.getComputedStyle(parentElement);
       if (style !== "auto" && style !== "scroll") continue;
-      let bounds: Dynamic = parentElement.getBoundingClientRect(),
-        bounds2: Dynamic = options.getBoundingClientRect();
-      bounds2.bottom > bounds.bottom
+      let containerBounds: Dynamic = parentElement.getBoundingClientRect(),
+        inputBounds: Dynamic = focusedElement.getBoundingClientRect();
+      inputBounds.bottom > containerBounds.bottom
         ? (parentElement.scrollTop +=
-            bounds2.bottom - bounds.bottom + ComponentsTextLinkConstant)
-        : bounds2.top < bounds.top &&
+            inputBounds.bottom - containerBounds.bottom + ComponentsTextLinkConstant)
+        : inputBounds.top < containerBounds.top &&
           (parentElement.scrollTop -=
-            bounds.top - bounds2.top + ComponentsTextLinkConstant);
+            containerBounds.top - inputBounds.top + ComponentsTextLinkConstant);
     }
 }
 function preventDialogMouseSelection(event?: Dynamic): Dynamic {
@@ -225,48 +225,48 @@ function preserveDialogFocus(event?: Dynamic): Dynamic {
   let currentTarget: Dynamic = event.currentTarget,
     parentElement: Dynamic = currentTarget.parentElement,
     ownerDocument: Dynamic = currentTarget.ownerDocument,
-    value: Dynamic = asElement(ownerDocument.activeElement);
+    focusedElement: Dynamic = asElement(ownerDocument.activeElement);
   if (
     parentElement === null ||
-    value === null ||
-    !parentElement.contains(value)
+    focusedElement === null ||
+    !parentElement.contains(focusedElement)
   )
     return;
   DialogDialogCurrentState?.abort();
-  let value2: Dynamic = new (ownerDocument.defaultView?.AbortController ??
+  let abortController: Dynamic = new (ownerDocument.defaultView?.AbortController ??
     AbortController)();
-  set_DialogDialogCurrentState(value2);
-  let { signal: value3 }: Dynamic = value2;
-  value3.addEventListener(
+  set_DialogDialogCurrentState(abortController);
+  let { signal: signal }: Dynamic = abortController;
+  signal.addEventListener(
     "abort",
     (): Dynamic => {
-      DialogDialogCurrentState === value2 &&
+      DialogDialogCurrentState === abortController &&
         (set_DialogDialogCurrentState(null));
     },
     {
       once: true,
     },
   );
-  ownerDocument.addEventListener("mousedown", (): Dynamic => value2.abort(), {
+  ownerDocument.addEventListener("mousedown", (): Dynamic => abortController.abort(), {
     capture: true,
     once: true,
-    signal: value3,
+    signal: signal,
   });
   ownerDocument.addEventListener(
     "mouseup",
-    (event2?: Dynamic): Dynamic => {
-      value2.abort();
-      event2.target !== currentTarget &&
+    (mouseUpEvent?: Dynamic): Dynamic => {
+      abortController.abort();
+      mouseUpEvent.target !== currentTarget &&
         ownerDocument.activeElement === ownerDocument.body &&
-        value.isConnected &&
-        value.focus({
+        focusedElement.isConnected &&
+        focusedElement.focus({
           preventScroll: true,
         });
     },
     {
       capture: true,
       once: true,
-      signal: value3,
+      signal: signal,
     },
   );
 }
@@ -341,17 +341,17 @@ export function installCdsComponentsTextLink(): () => void {
             "aria-describedby": ariaDescribedby,
             ...props
           }: Dynamic,
-          options?: Dynamic,
+          forwardedRef?: Dynamic,
         ): Dynamic => {
-          let value: Dynamic = "href" in props && props.href !== undefined,
-            value2: Dynamic = (0, reactComponentsTextLink.useContext)(
+          let hasHref: Dynamic = "href" in props && props.href !== undefined,
+            isDisabledContext: Dynamic = (0, reactComponentsTextLink.useContext)(
               DisabledContext,
             ),
-            value3: Dynamic = inheritColor ?? value2,
-            value4: Dynamic =
+            shouldInheritColor: Dynamic = inheritColor ?? isDisabledContext,
+            externalMode: Dynamic =
               external &&
               !(
-                value &&
+                hasHref &&
                 !(0, reactComponentsTextLink.isValidElement)(render) &&
                 isBlockedHref(
                   props.href,
@@ -360,84 +360,84 @@ export function installCdsComponentsTextLink(): () => void {
               )
                 ? external
                 : false,
-            value5: Dynamic = value
-              ? (props.target ?? (value4 ? "_blank" : undefined))
+            target: Dynamic = hasHref
+              ? (props.target ?? (externalMode ? "_blank" : undefined))
               : undefined,
-            value6: Dynamic = value
+            rel: Dynamic = hasHref
               ? (props.rel ??
-                (value4 &&
-                value5 !== undefined &&
-                !isNewBrowsingContext(value5)
-                  ? getLinkRel(props.href, value5)
+                (externalMode &&
+                target !== undefined &&
+                !isNewBrowsingContext(target)
+                  ? getLinkRel(props.href, target)
                   : undefined))
               : undefined,
-            value7: Dynamic = (0, reactComponentsTextLink.useId)(),
-            value8: Dynamic = (
-              <span id={value7} hidden={true} className={"sr-only"}>
+            hintId: Dynamic = (0, reactComponentsTextLink.useId)(),
+            newTabHint: Dynamic = (
+              <span id={hintId} hidden={true} className={"sr-only"}>
                 {useLabel("opensInNewTab", "(opens in new tab)")}
               </span>
             ),
-            value9: Dynamic =
-              icon || (value4 === "with-icon" ? "ArrowUpRight" : undefined),
-            value10: Dynamic = !!value9,
-            value11: Dynamic = `${cn(value10 ? npm_clsx_Ea(ComponentsTextLinkCss_2, icon ? "gap-[0.25em]" : "gap-0") : ComponentsTextLinkCss, value3 && ComponentsTextLinkClassNames_3)}`,
-            value12: Dynamic = value10 ? (
+            iconName: Dynamic =
+              icon || (externalMode === "with-icon" ? "ArrowUpRight" : undefined),
+            hasIcon: Dynamic = !!iconName,
+            linkClassName: Dynamic = `${cn(hasIcon ? npm_clsx_Ea(ComponentsTextLinkCss_2, icon ? "gap-[0.25em]" : "gap-0") : ComponentsTextLinkCss, shouldInheritColor && ComponentsTextLinkClassNames_3)}`,
+            linkBody: Dynamic = hasIcon ? (
               <jsxComponentsTextLink.Fragment>
-                {iconPosition === "start" && (TextLinkIcon(value9))}
+                {iconPosition === "start" && (TextLinkIcon(iconName))}
                 <span
                   className={npm_clsx_Ea(
                     ComponentsTextLinkClassNamesAlias,
-                    value3 && ComponentsTextLinkClassNames_4,
+                    shouldInheritColor && ComponentsTextLinkClassNames_4,
                   )}
                 >
                   {children}
                 </span>
-                {iconPosition === "end" && (TextLinkIcon(value9))}
-                {value4 && (value8)}
+                {iconPosition === "end" && (TextLinkIcon(iconName))}
+                {externalMode && (newTabHint)}
               </jsxComponentsTextLink.Fragment>
-            ) : value4 ? (
+            ) : externalMode ? (
               <jsxComponentsTextLink.Fragment>
                 {children}
-                {value8}
+                {newTabHint}
               </jsxComponentsTextLink.Fragment>
             ) : (
               children
             ),
-            value13: Dynamic = cn(
-              value11,
+            bodyClassName: Dynamic = cn(
+              linkClassName,
               "cursor-pointer",
               className,
             ),
-            value14: Dynamic = props.disabled ?? false;
+            isDisabled: Dynamic = props.disabled ?? false;
           return (
             <LinkElement
               stamp={{
                 "data-cds": "TextLink",
               }}
-              forwardedRef={options}
+              forwardedRef={forwardedRef}
               linkInput={{
-                href: value ? props.href : undefined,
-                routerOptions: value ? props.routerOptions : undefined,
-                target: value5,
-                rel: value6,
-                download: value ? props.download : undefined,
+                href: hasHref ? props.href : undefined,
+                routerOptions: hasHref ? props.routerOptions : undefined,
+                target: target,
+                rel: rel,
+                download: hasHref ? props.download : undefined,
               }}
               render={render}
-              body={value12}
-              className={value13}
+              body={linkBody}
+              className={bodyClassName}
               actionClassName={cn(
-                value11,
-                value14 ? "cursor-default opacity-disabled" : "cursor-pointer",
+                linkClassName,
+                isDisabled ? "cursor-default opacity-disabled" : "cursor-pointer",
                 className,
               )}
-              actionDisabled={value14}
+              actionDisabled={isDisabled}
               rest={{
                 ...props,
-                ...(value3 && {
+                ...(shouldInheritColor && {
                   "data-inherit-color": "",
                 }),
                 "aria-describedby":
-                  [ariaDescribedby, value4 ? value7 : undefined]
+                  [ariaDescribedby, externalMode ? hintId : undefined]
                     .filter(Boolean)
                     .join(" ") || undefined,
               }}

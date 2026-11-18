@@ -6,48 +6,48 @@ import { initializeOnce } from "../../module-helpers";
 var documentInputStates: WeakMap<Document, DocumentInputState>;
 var dismissalKeys: Set<string>;
 var initializeDomInputObservation: () => void;
-function observeDocumentInput(input?: Document): void {
-  if (input === undefined || documentInputStates.has(input)) return;
+function observeDocumentInput(doc?: Document): void {
+  if (doc === undefined || documentInputStates.has(doc)) return;
   let state = {
     observedInput: false,
     lastInputDismissing: false,
   };
-  documentInputStates.set(input, state);
-  let value: Pick<Document, "addEventListener"> = input.defaultView ?? input;
-  value.addEventListener(
+  documentInputStates.set(doc, state);
+  let eventTarget: Pick<Document, "addEventListener"> = doc.defaultView ?? doc;
+  eventTarget.addEventListener(
     "keydown",
-    (input2) => {
-      input2.isTrusted &&
+    (event) => {
+      event.isTrusted &&
         ((state.observedInput = true),
         (state.lastInputDismissing =
-          !input2.isComposing && dismissalKeys.has(input2.key)));
+          !event.isComposing && dismissalKeys.has(event.key)));
     },
     true,
   );
-  value.addEventListener(
+  eventTarget.addEventListener(
     "pointerdown",
-    (input2) => {
-      input2.isTrusted &&
+    (event) => {
+      event.isTrusted &&
         ((state.observedInput = true), (state.lastInputDismissing = true));
     },
     true,
   );
-  input.defaultView?.addEventListener("blur", () => {
+  doc.defaultView?.addEventListener("blur", () => {
     state.observedInput = false;
     state.lastInputDismissing = false;
   });
 }
-function ensureDocumentInputObserver(input?: Element | null): void {
-  observeDocumentInput(input?.ownerDocument);
+function ensureDocumentInputObserver(element?: Element | null): void {
+  observeDocumentInput(element?.ownerDocument);
 }
 function isRestoredFocus(event: InputFocusEvent): boolean {
   if (event.relatedTarget !== null && event.relatedTarget !== undefined)
     return false;
-  let value = (event.target as Element | null)?.ownerDocument ?? undefined,
-    value2 = value == null ? undefined : documentInputStates.get(value);
-  return value2 === undefined || !value2.observedInput
+  let ownerDocument = (event.target as Element | null)?.ownerDocument ?? undefined,
+    inputState = ownerDocument == null ? undefined : documentInputStates.get(ownerDocument);
+  return inputState === undefined || !inputState.observedInput
     ? false
-    : value2.lastInputDismissing;
+    : inputState.lastInputDismissing;
 }
 export {
   dismissalKeys,

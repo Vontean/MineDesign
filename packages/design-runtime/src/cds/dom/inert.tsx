@@ -9,41 +9,41 @@ var reactDomInert: typeof React;
 var DomInertParseIntValue: number;
 var DomInertResolvedValue: boolean;
 var initializeDomInert: () => void;
-function getInertProps(input: boolean | undefined): {
+function getInertProps(isInert: boolean | undefined): {
   inert?: true | "";
 } {
-  return input
+  return isInert
     ? {
         inert: DomInertResolvedValue ? true : "",
       }
     : {};
 }
 function createSheetMutableCell<Value = SheetFrame>(): MutableCell<Value> {
-  let value: Value | null = null;
+  let currentValue: Value | null = null;
   return {
-    get: () => value,
-    set: (input) => {
-      value = input;
+    get: () => currentValue,
+    set: (nextValue) => {
+      currentValue = nextValue;
     },
   };
 }
 function sheetFrameHeight(
-  input: SheetFrame | null,
-  options?: Pick<Window, "innerHeight">,
+  frame: SheetFrame | null,
+  view?: Pick<Window, "innerHeight">,
 ): number | undefined {
-  if (input !== null)
-    return input.detent === "tall" && options !== undefined
-      ? Math.round(options.innerHeight * SheetsLayoutConstant)
-      : input.height;
+  if (frame !== null)
+    return frame.detent === "tall" && view !== undefined
+      ? Math.round(view.innerHeight * SheetsLayoutConstant)
+      : frame.height;
 }
 function sheetStackMaxHeight(
-  input: readonly SheetFrame[],
+  frames: readonly SheetFrame[],
 ): number | undefined {
-  let value = input[0],
-    value2 = input.at(-1);
-  return value === undefined || value2 === undefined
+  let firstFrame = frames[0],
+    lastFrame = frames.at(-1);
+  return firstFrame === undefined || lastFrame === undefined
     ? undefined
-    : Math.max(value2.height, value.height);
+    : Math.max(lastFrame.height, firstFrame.height);
 }
 export {
   createSheetMutableCell,

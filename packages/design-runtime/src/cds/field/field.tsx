@@ -142,10 +142,10 @@ export function installCdsFieldField(): () => void {
             validationMode = "onBlur",
             ...props
           }: Dynamic,
-          options?: Dynamic,
+          forwardedRef?: Dynamic,
         ): Dynamic => (
           <npm_Field_qg.Root
-            ref={options}
+            ref={forwardedRef}
             data-cds={"Field"}
             validationMode={validationMode}
             {...props}
@@ -153,15 +153,15 @@ export function installCdsFieldField(): () => void {
               "flex flex-col gap-xs font-sans",
               className,
             )}
-            render={(input?: Dynamic, options2?: Dynamic): Dynamic => (
+            render={(domProps?: Dynamic, fieldState?: Dynamic): Dynamic => (
               <FieldStateContext.Provider
                 value={
-                  FieldFieldFalseTrueConfig[`${options2.disabled}`][
-                    `${options2.valid === false}`
+                  FieldFieldFalseTrueConfig[`${fieldState.disabled}`][
+                    `${fieldState.valid === false}`
                   ]
                 }
               >
-                <div {...input} />
+                <div {...domProps} />
               </FieldStateContext.Provider>
             )}
           />
@@ -171,10 +171,10 @@ export function installCdsFieldField(): () => void {
       FieldLabel = (0, reactFieldField.forwardRef)(
         (
           { className: className, ...props }: Dynamic,
-          options?: Dynamic,
+          forwardedRef?: Dynamic,
         ): Dynamic => (
           <npm_Field_qg.Label
-            ref={options}
+            ref={forwardedRef}
             {...props}
             className={cn(
               "text-body font-medium leading-none text-primary",
@@ -187,10 +187,10 @@ export function installCdsFieldField(): () => void {
       FieldDescription = (0, reactFieldField.forwardRef)(
         (
           { className: className, ...props }: Dynamic,
-          options?: Dynamic,
+          forwardedRef?: Dynamic,
         ): Dynamic => (
           <npm_Field_qg.Description
-            ref={options}
+            ref={forwardedRef}
             {...props}
             className={cn(
               "text-footnote font-normal leading-snug text-muted",
@@ -203,23 +203,23 @@ export function installCdsFieldField(): () => void {
       FieldError = (0, reactFieldField.forwardRef)(
         (
           { className: className, children: children, ...props }: Dynamic,
-          options?: Dynamic,
+          forwardedRef?: Dynamic,
         ): Dynamic => (
           <npm_Field_qg.Error
-            ref={options}
+            ref={forwardedRef}
             {...props}
             className={cn(
               "flex items-start gap-1 text-footnote font-normal leading-snug text-danger",
               className,
             )}
-            render={(input?: Dynamic): Dynamic => (
-              <div {...input}>
+            render={(domProps?: Dynamic): Dynamic => (
+              <div {...domProps}>
                 <Icon
                   name={"WarningCircle"}
                   size={"sm"}
                   className={"mt-px shrink-0"}
                 />
-                <span>{children ?? (input.children)}</span>
+                <span>{children ?? (domProps.children)}</span>
               </div>
             )}
           />
@@ -264,7 +264,7 @@ export function installCdsFieldField(): () => void {
             fieldClassName: fieldClassName,
             ...props
           }: Dynamic,
-          options?: Dynamic,
+          forwardedRef?: Dynamic,
         ): Dynamic => (
           <Field
             label={label}
@@ -272,7 +272,7 @@ export function installCdsFieldField(): () => void {
             error={error}
             fieldClassName={fieldClassName}
           >
-            <TextInput ref={options} required={required} {...props} />
+            <TextInput ref={forwardedRef} required={required} {...props} />
           </Field>
         ),
       );
@@ -299,7 +299,7 @@ export function installCdsFieldField(): () => void {
             fieldClassName: fieldClassName,
             ...props
           }: Dynamic,
-          options?: Dynamic,
+          forwardedRef?: Dynamic,
         ): Dynamic => (
           <Field
             label={label}
@@ -307,7 +307,7 @@ export function installCdsFieldField(): () => void {
             error={error}
             fieldClassName={fieldClassName}
           >
-            <TextArea ref={options} required={required} {...props} />
+            <TextArea ref={forwardedRef} required={required} {...props} />
           </Field>
         ),
       );
@@ -334,7 +334,7 @@ export function installCdsFieldField(): () => void {
             fieldClassName: fieldClassName,
             ...props
           }: Dynamic,
-          options?: Dynamic,
+          forwardedRef?: Dynamic,
         ): Dynamic => (
           <Field
             label={label}
@@ -342,7 +342,7 @@ export function installCdsFieldField(): () => void {
             error={error}
             fieldClassName={fieldClassName}
           >
-            <NumberInput ref={options} required={required} {...props} />
+            <NumberInput ref={forwardedRef} required={required} {...props} />
           </Field>
         ),
       );

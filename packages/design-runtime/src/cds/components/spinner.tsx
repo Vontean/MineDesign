@@ -28,28 +28,28 @@ function Spinner({
   className: className,
 }: SpinnerProps): React.ReactElement | null {
   useUiLocale();
-  let [value, value2] = (0, reactComponentsSpinner.useState)(delay <= 0),
-    [value3, value4] = (0, reactComponentsSpinner.useState)(delay);
-  delay !== value3 && (value4(delay), delay > 0 && value && value2(false));
-  let value5 = delay <= 0 || value;
+  let [isDelayElapsed, setIsDelayElapsed] = (0, reactComponentsSpinner.useState)(delay <= 0),
+    [previousDelay, setPreviousDelay] = (0, reactComponentsSpinner.useState)(delay);
+  delay !== previousDelay && (setPreviousDelay(delay), delay > 0 && isDelayElapsed && setIsDelayElapsed(false));
+  let isVisible = delay <= 0 || isDelayElapsed;
   (0, reactComponentsSpinner.useEffect)(() => {
     if (delay <= 0) return;
-    let value14 = window.setTimeout(() => value2(true), delay);
-    return () => window.clearTimeout(value14);
+    let timerId = window.setTimeout(() => setIsDelayElapsed(true), delay);
+    return () => window.clearTimeout(timerId);
   }, [delay]);
-  let value6 =
+  let sizeSpec =
       ComponentsSpinnerSmMdLgConfig[
         (ComponentsSpinnerSMLConfig[size] ?? size) as "sm" | "md" | "lg"
       ],
-    value7 = inheritColor ? "currentColor" : "var(--cds-text-muted)",
-    value8 = inheritColor
+    arcColor = inheritColor ? "currentColor" : "var(--cds-text-muted)",
+    trackColor = inheritColor
       ? "color-mix(in srgb, currentColor 25%, transparent)"
       : "var(--cds-border)",
-    value9 = scaleCssPixels(value6.box),
-    value10 = scaleCssPixels(value6.stroke),
-    value11 = `calc(100% - ${value10})`,
-    value12 = `radial-gradient(farthest-side, transparent ${value11}, #000 calc(${value11} + 0.5px))`,
-    value13 = value5 ? (
+    boxSize = scaleCssPixels(sizeSpec.box),
+    strokeWidth = scaleCssPixels(sizeSpec.stroke),
+    innerRadius = `calc(100% - ${strokeWidth})`,
+    maskGradient = `radial-gradient(farthest-side, transparent ${innerRadius}, #000 calc(${innerRadius} + 0.5px))`,
+    spinnerElement = isVisible ? (
       <span
         data-cds={"Spinner"}
         className={cn(
@@ -57,15 +57,15 @@ function Spinner({
           className,
         )}
         style={{
-          width: value9,
-          height: value9,
+          width: boxSize,
+          height: boxSize,
         }}
         aria-hidden={true}
       >
         <span
           className={"absolute inset-0 rounded-full"}
           style={{
-            border: `${value10} solid ${value8}`,
+            border: `${strokeWidth} solid ${trackColor}`,
           }}
         />
         <span
@@ -73,20 +73,20 @@ function Spinner({
             "absolute inset-0 rounded-full animate-[spin_1s_linear_infinite] motion-reduce:animate-none"
           }
           style={{
-            background: `conic-gradient(transparent 40%, ${value7})`,
-            WebkitMask: value12,
-            mask: value12,
+            background: `conic-gradient(transparent 40%, ${arcColor})`,
+            WebkitMask: maskGradient,
+            mask: maskGradient,
           }}
         />
       </span>
     ) : null;
   return label ? (
     <span role={"status"} className={"leading-[0]"}>
-      {value13}
-      <DelayedSpinner show={value5}>{label}</DelayedSpinner>
+      {spinnerElement}
+      <DelayedSpinner show={isVisible}>{label}</DelayedSpinner>
     </span>
   ) : (
-    value13
+    spinnerElement
   );
 }
 function DelayedSpinner({
@@ -94,12 +94,12 @@ function DelayedSpinner({
   children: children,
 }: DelayedSpinnerProps): React.ReactElement | null {
   useUiLocale();
-  let [value, value2] = (0, reactComponentsSpinner.useState)(false);
+  let [isDelayElapsed, setIsDelayElapsed] = (0, reactComponentsSpinner.useState)(false);
   (0, reactComponentsSpinner.useEffect)(() => {
-    let value3 = window.setTimeout(() => value2(true), 100);
-    return () => window.clearTimeout(value3);
+    let timerId = window.setTimeout(() => setIsDelayElapsed(true), 100);
+    return () => window.clearTimeout(timerId);
   }, []);
-  return show && value ? <span className={"sr-only"}>{children}</span> : null;
+  return show && isDelayElapsed ? <span className={"sr-only"}>{children}</span> : null;
 }
 export {
   ComponentsSpinnerSMLConfig,

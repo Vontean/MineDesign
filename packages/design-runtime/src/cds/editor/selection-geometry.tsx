@@ -16,68 +16,68 @@ var EditorSelectionGeometryFilterValue: Dynamic;
 var OutlineFillAccentValue: Dynamic;
 var EditorSelectionGeometryLeftTopConfig: Dynamic;
 var initializeEditorSelectionGeometry: Dynamic;
-function sameSelectionPoint(input?: Dynamic, options?: Dynamic): Dynamic {
-  return input.x === options.x && input.y === options.y;
+function sameSelectionPoint(pointA?: Dynamic, pointB?: Dynamic): Dynamic {
+  return pointA.x === pointB.x && pointA.y === pointB.y;
 }
 function resolveSelectionPoints(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  grips?: Dynamic,
+  state?: Dynamic,
+  collaboratorIndex?: Dynamic,
 ): Dynamic {
-  return context !== undefined
+  return collaboratorIndex !== undefined
     ? []
-    : input === undefined
-      ? options === "selected"
+    : grips === undefined
+      ? state === "selected"
         ? cornerSelectionPoints
         : []
-      : input === "corners"
+      : grips === "corners"
         ? cornerSelectionPoints
-        : input === "all"
+        : grips === "all"
           ? allSelectionPoints
-          : input === "none"
+          : grips === "none"
             ? []
             : allSelectionPoints.filter(
-                (input2?: Dynamic): Dynamic =>
-                  input.some(
-                    (input3?: Dynamic): Dynamic =>
-                      sameSelectionPoint(input3, input2),
+                (point?: Dynamic): Dynamic =>
+                  grips.some(
+                    (grip?: Dynamic): Dynamic =>
+                      sameSelectionPoint(grip, point),
                   ),
               );
 }
-function normalizeSelectionScale(input?: Dynamic): Dynamic {
-  return Number.isFinite(input) && input > 0 ? input : 1;
+function normalizeSelectionScale(scale?: Dynamic): Dynamic {
+  return Number.isFinite(scale) && scale > 0 ? scale : 1;
 }
-function selectionPointPosition(input?: Dynamic): Dynamic {
+function selectionPointPosition(point?: Dynamic): Dynamic {
   return {
-    left: input.x === "left" ? "0%" : input.x === "right" ? "100%" : "50%",
-    top: input.y === "top" ? "0%" : input.y === "bottom" ? "100%" : "50%",
+    left: point.x === "left" ? "0%" : point.x === "right" ? "100%" : "50%",
+    top: point.y === "top" ? "0%" : point.y === "bottom" ? "100%" : "50%",
   };
 }
-function normalizeSelectionRotation(input?: Dynamic): Dynamic {
-  return input !== undefined && Number.isFinite(input) ? input : 0;
+function normalizeSelectionRotation(rotation?: Dynamic): Dynamic {
+  return rotation !== undefined && Number.isFinite(rotation) ? rotation : 0;
 }
-function selectionRingStroke(input?: Dynamic, options?: Dynamic): Dynamic {
-  return options !== undefined
+function selectionRingStroke(state?: Dynamic, collaboratorIndex?: Dynamic): Dynamic {
+  return collaboratorIndex !== undefined
     ? selectionMetrics.ringCollaborator
-    : input === "hover"
+    : state === "hover"
       ? selectionMetrics.ringHover
-      : input === "member"
+      : state === "member"
         ? selectionMetrics.ringMember
         : selectionMetrics.ring;
 }
-function normalizeCollaboratorIndex(input?: Dynamic): Dynamic {
-  return input !== undefined &&
-    Number.isInteger(input) &&
-    input >= 1 &&
-    input <= 6
-    ? input
+function normalizeCollaboratorIndex(collaborator?: Dynamic): Dynamic {
+  return collaborator !== undefined &&
+    Number.isInteger(collaborator) &&
+    collaborator >= 1 &&
+    collaborator <= 6
+    ? collaborator
     : undefined;
 }
-function collaboratorColor(input?: Dynamic): Dynamic {
-  let value: Dynamic = normalizeCollaboratorIndex(input);
-  return value === undefined
+function collaboratorColor(collaborator?: Dynamic): Dynamic {
+  let collaboratorIndex: Dynamic = normalizeCollaboratorIndex(collaborator);
+  return collaboratorIndex === undefined
     ? undefined
-    : tokens.editor.collaborator[value].cssVar;
+    : tokens.editor.collaborator[collaboratorIndex].cssVar;
 }
 function SelectionRingSvg({
   frame: frame,
@@ -87,49 +87,49 @@ function SelectionRingSvg({
   collaborator: collaborator,
   variant: variant,
 }: Dynamic): Dynamic {
-  let value: Dynamic = normalizeSelectionRotation(rotation),
-    value2: Dynamic =
-      value === 0
+  let rotationRad: Dynamic = normalizeSelectionRotation(rotation),
+    rotationTransform: Dynamic =
+      rotationRad === 0
         ? ""
-        : `translate(${frame.w / 2}px, ${frame.h / 2}px) rotate(${value}rad) translate(${-frame.w / 2}px, ${-frame.h / 2}px) `,
-    state: Dynamic = {
+        : `translate(${frame.w / 2}px, ${frame.h / 2}px) rotate(${rotationRad}rad) translate(${-frame.w / 2}px, ${-frame.h / 2}px) `,
+    ringStyle: Dynamic = {
       position: "absolute",
       left: 0,
       top: 0,
       width: frame.w * scale,
       height: frame.h * scale,
       transformOrigin: "0 0",
-      transform: `translate(${frame.x}px, ${frame.y}px) ${value2}scale(${1 / scale})`,
+      transform: `translate(${frame.x}px, ${frame.y}px) ${rotationTransform}scale(${1 / scale})`,
       outlineWidth: stroke,
       outlineStyle: "solid",
       outlineOffset: 0,
       pointerEvents: "none",
     },
-    value3: Dynamic = collaboratorColor(collaborator);
-  value3 !== undefined
-    ? (state.outlineColor = value3)
+    collaboratorOutline: Dynamic = collaboratorColor(collaborator);
+  collaboratorOutline !== undefined
+    ? (ringStyle.outlineColor = collaboratorOutline)
     : variant === "component" &&
-      (state.outlineColor = tokens.fill.pro.cssVar);
-  return state;
+      (ringStyle.outlineColor = tokens.fill.pro.cssVar);
+  return ringStyle;
 }
 function SelectionGrip({
   stroke = selectionMetrics.ring,
-  disabled: disabled2,
+  disabled: disabledProp,
   variant: variant,
 }: Dynamic): Dynamic {
   useUiLocale();
   let grip: Dynamic = selectionMetrics.grip,
-    value: Dynamic = variant === "component",
-    value2: Dynamic = value
+    isComponent: Dynamic = variant === "component",
+    gripBackground: Dynamic = isComponent
       ? tokens.on.pro.cssVar
       : tokens.on.accent.cssVar,
-    value3: Dynamic = value
+    gripOutline: Dynamic = isComponent
       ? tokens.fill.pro.cssVar
       : tokens.fill.accent.cssVar;
   return (
     <span
       data-selection-grip={""}
-      data-disabled={disabled2 ? "" : undefined}
+      data-disabled={disabledProp ? "" : undefined}
       className={cn(
         "absolute left-1/2 top-1/2 box-border block -translate-x-1/2 -translate-y-1/2",
         OutlineFillAccentValue,
@@ -138,14 +138,14 @@ function SelectionGrip({
         width: grip,
         height: grip,
         borderRadius: selectionMetrics.gripRadius,
-        backgroundColor: value2,
+        backgroundColor: gripBackground,
         outlineStyle: "solid",
         outlineWidth: stroke,
         outlineOffset: -stroke,
-        outlineColor: disabled2
-          ? `color-mix(in srgb, ${value3} calc(${tokens.opacity.disabled.cssVar} * 100%), ${value2})`
-          : value
-            ? value3
+        outlineColor: disabledProp
+          ? `color-mix(in srgb, ${gripOutline} calc(${tokens.opacity.disabled.cssVar} * 100%), ${gripBackground})`
+          : isComponent
+            ? gripOutline
             : undefined,
         pointerEvents: "none",
       }}
@@ -162,10 +162,10 @@ function SelectionPoint({
   ...props
 }: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic = 1 / scale,
-    value2: Dynamic = normalizeSelectionRotation(rotation),
-    value3: Dynamic = typeof at.left == "number" && typeof at.top == "number",
-    value4: Dynamic = value3 ? `translate(${at.left}px, ${at.top}px) ` : "";
+  let inverseScale: Dynamic = 1 / scale,
+    rotationRad: Dynamic = normalizeSelectionRotation(rotation),
+    isPixelPosition: Dynamic = typeof at.left == "number" && typeof at.top == "number",
+    translateTransform: Dynamic = isPixelPosition ? `translate(${at.left}px, ${at.top}px) ` : "";
   return (
     <span
       {...props}
@@ -177,15 +177,15 @@ function SelectionPoint({
           : "bg-fill-accent text-on-accent",
       )}
       style={{
-        left: value3 ? 0 : at.left,
-        top: value3 ? 0 : at.top,
+        left: isPixelPosition ? 0 : at.left,
+        top: isPixelPosition ? 0 : at.top,
         padding: "0 6px",
         pointerEvents: "none",
         transformOrigin: anchor === "center" ? "50% 50%" : "0 0",
         transform:
           anchor === "center"
-            ? `${value4}translate(-50%, -50%) rotate(${-value2}rad) scale(${value})`
-            : `${value4}scale(${value})`,
+            ? `${translateTransform}translate(-50%, -50%) rotate(${-rotationRad}rad) scale(${inverseScale})`
+            : `${translateTransform}scale(${inverseScale})`,
       }}
     >
       {children}
@@ -266,11 +266,11 @@ export function installCdsEditorSelectionGeometry(): () => void {
           },
         ];
         cornerSelectionPoints = allSelectionPoints.filter(
-          (input?: Dynamic): Dynamic => input.x !== null && input.y !== null,
+          (point?: Dynamic): Dynamic => point.x !== null && point.y !== null,
         );
         EditorSelectionGeometryFilterValue = allSelectionPoints.filter(
-          (input?: Dynamic): Dynamic =>
-            (input.x === null) != (input.y === null),
+          (point?: Dynamic): Dynamic =>
+            (point.x === null) != (point.y === null),
         );
         OutlineFillAccentValue = "outline-fill-accent";
         EditorSelectionGeometryLeftTopConfig = {

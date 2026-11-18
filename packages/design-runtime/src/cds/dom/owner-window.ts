@@ -14,8 +14,8 @@ function isDetachedElement(element?: Element): boolean {
     (!element.isConnected || element.ownerDocument.defaultView === null)
   );
 }
-function getConnectedOwnerWindow(input?: Element): Window | undefined {
-  if (!isDetachedElement(input)) return getOwnerWindow(input);
+function getConnectedOwnerWindow(element?: Element): Window | undefined {
+  if (!isDetachedElement(element)) return getOwnerWindow(element);
 }
 export {
   accentColorNames,

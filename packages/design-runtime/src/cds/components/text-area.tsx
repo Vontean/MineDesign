@@ -50,53 +50,53 @@ export function installCdsComponentsTextArea(): () => void {
             id: id,
             "aria-describedby": ariaDescribedby,
             "aria-invalid": ariaInvalid,
-            disabled: disabled2,
+            disabled: disabledProp,
             style: style,
             ...props
           }: TextAreaProps,
-          options: React.ForwardedRef<HTMLTextAreaElement>,
+          forwardedRef: React.ForwardedRef<HTMLTextAreaElement>,
         ): React.ReactElement => {
-          let value = useFieldInvalid(),
-            value2 = rows ?? 3,
-            value3 = autosize && rows !== undefined,
-            value4 = resize === "y" ? "resize-y" : "resize-none",
-            value5 = autosize ? "[field-sizing:content]" : "",
-            value6 = value3
+          let isFieldInvalid = useFieldInvalid(),
+            rowCount = rows ?? 3,
+            hasMinRows = autosize && rows !== undefined,
+            resizeClass = resize === "y" ? "resize-y" : "resize-none",
+            autosizeClass = autosize ? "[field-sizing:content]" : "",
+            minHeightClass = hasMinRows
               ? bare
                 ? "min-h-[calc(var(--cds-textarea-rows)*1lh)]"
                 : "min-h-[calc(var(--cds-textarea-rows)*1lh+2*var(--cds-pad-sm))]"
               : "",
-            value7 = value3
+            textareaStyle = hasMinRows
               ? {
                   ...style,
-                  "--cds-textarea-rows": value2,
+                  "--cds-textarea-rows": rowCount,
                 }
               : style,
-            value8 = fullWidth ? "w-full" : "";
+            widthClass = fullWidth ? "w-full" : "";
           return (
             <npm_Field_qg.Control
               id={id}
               aria-describedby={ariaDescribedby}
-              disabled={disabled2}
+              disabled={disabledProp}
               render={
                 <textarea
-                  ref={options}
+                  ref={forwardedRef}
                   data-cds={"TextArea"}
-                  rows={value2}
-                  style={value7}
+                  rows={rowCount}
+                  style={textareaStyle}
                   {...getSizeAttribute(size)}
-                  data-invalid={value || undefined}
-                  aria-invalid={value || ariaInvalid}
+                  data-invalid={isFieldInvalid || undefined}
+                  aria-invalid={isFieldInvalid || ariaInvalid}
                   {...props}
                   className={cn(
                     "cds-reset",
-                    value8,
+                    widthClass,
                     bare
                       ? "block resize-none border-0 bg-transparent p-0 shadow-none"
-                      : `cds-input font-normal ${ButtonButtonCss_2} enabled:[&:hover:not(:focus):not([data-invalid])]:shadow-field-hover focus-visible:shadow-focus ${value4}`,
+                      : `cds-input font-normal ${ButtonButtonCss_2} enabled:[&:hover:not(:focus):not([data-invalid])]:shadow-field-hover focus-visible:shadow-focus ${resizeClass}`,
                     "font-sans text-body text-primary placeholder:text-muted outline-none focus-visible:outline-hidden disabled:opacity-disabled",
-                    value5,
-                    value6,
+                    autosizeClass,
+                    minHeightClass,
                     className,
                   )}
                 />

@@ -16,12 +16,12 @@ var reactComponentsSurface: typeof React;
 var jsxComponentsSurface: typeof import("react/jsx-runtime");
 var Surface: ForwardComponent<HTMLDivElement, SurfaceProps>;
 var initializeComponentsSurface: () => void;
-function surfaceFocusStyle(input?: string): DesignStyle {
-  let value = useResolvedColorMode();
+function surfaceFocusStyle(background?: string): DesignStyle {
+  let colorMode = useResolvedColorMode();
   return {
-    ...pageBackgroundStyle(input),
-    "--cds-focus-shadow": focusShadowTokens[value],
-    "--cds-focus-shadow-danger": dangerFocusShadowTokens[value],
+    ...pageBackgroundStyle(background),
+    "--cds-focus-shadow": focusShadowTokens[colorMode],
+    "--cds-focus-shadow-danger": dangerFocusShadowTokens[colorMode],
   };
 }
 export {
@@ -57,14 +57,14 @@ export function installCdsComponentsSurface(): () => void {
             children: children,
             ...props
           }: SurfaceProps,
-          options: React.ForwardedRef<HTMLDivElement>,
+          forwardedRef: React.ForwardedRef<HTMLDivElement>,
         ): React.ReactElement => {
-          let value = surfaceFocusStyle(
+          let focusStyle = surfaceFocusStyle(
             surfaceBackgroundTokens[elevation],
           );
           return (
             <div
-              ref={options}
+              ref={forwardedRef}
               data-cds={"Surface"}
               data-surface={elevation}
               {...props}
@@ -73,7 +73,7 @@ export function installCdsComponentsSurface(): () => void {
                 className,
               )}
               style={{
-                ...value,
+                ...focusStyle,
                 ...style,
               }}
             >

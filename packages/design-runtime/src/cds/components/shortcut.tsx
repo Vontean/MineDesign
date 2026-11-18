@@ -23,14 +23,14 @@ var ComponentsShortcutCmdCommandMetaValues: Dynamic;
 var ComponentsShortcutIncludes: Dynamic;
 var ComponentsShortcutCtrlControlAltValues: Dynamic;
 var ComponentsShortcutCtrlControlAltConfig: Dynamic;
-var ComponentsShortcutCtrlControlAltConfig_2: Dynamic;
+var pcModifierLabels: Dynamic;
 var ComponentsShortcutSpaceEnterReturnConfig: Dynamic;
-var ComponentsShortcutSpaceEnterReturnConfig_2: Dynamic;
+var pcKeyLabels: Dynamic;
 var ComponentsShortcutCmdCommandMetaConfig: Dynamic;
-var ComponentsShortcutCtrlControlAltConfig_3: Dynamic;
+var eventKeyNames: Dynamic;
 var initializeComponentsShortcut: Dynamic;
-function shortcutKeycapClassName(input?: Dynamic): Dynamic {
-  return `${ComponentsShortcutClassNames} ${Array.from(input ?? "").length === 1 ? ComponentsShortcutClassNames_2 : ComponentsShortcutClassNames_3}`;
+function shortcutKeycapClassName(label?: Dynamic): Dynamic {
+  return `${ComponentsShortcutClassNames} ${Array.from(label ?? "").length === 1 ? ComponentsShortcutClassNames_2 : ComponentsShortcutClassNames_3}`;
 }
 function Shortcut({
   keys: keys,
@@ -40,11 +40,11 @@ function Shortcut({
   ...props
 }: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic = useAppleKeyboard(),
-    value2: Dynamic = splitShortcutChords(keys).map(
-      (input?: Dynamic): Dynamic => formatShortcutChord(input, value),
+  let isAppleKeyboard: Dynamic = useAppleKeyboard(),
+    chords: Dynamic = splitShortcutChords(keys).map(
+      (chord?: Dynamic): Dynamic => formatShortcutChord(chord, isAppleKeyboard),
     ),
-    value3: Dynamic = variant === "text" && !value;
+    isPlainText: Dynamic = variant === "text" && !isAppleKeyboard;
   return (
     <span
       {...props}
@@ -56,21 +56,21 @@ function Shortcut({
         className,
       )}
     >
-      {value2.map(
-        (input?: Dynamic, options?: Dynamic): Dynamic => (
-          <reactComponentsShortcut.Fragment key={options}>
-            {options > 0 && (<span
+      {chords.map(
+        (chord?: Dynamic, chordIndex?: Dynamic): Dynamic => (
+          <reactComponentsShortcut.Fragment key={chordIndex}>
+            {chordIndex > 0 && (<span
                 className={"px-[2px] [color:var(--cds-shortcut-cap-ink)]"}
               >
                 {ThenValue}
               </span>)}
-            {input.map(
+            {chord.map(
               (
                 { label: label, spoken: spoken }: Dynamic,
-                options2?: Dynamic,
+                keyIndex?: Dynamic,
               ): Dynamic => (
-                <reactComponentsShortcut.Fragment key={options2}>
-                  {value3 && options2 > 0 && (<span
+                <reactComponentsShortcut.Fragment key={keyIndex}>
+                  {isPlainText && keyIndex > 0 && (<span
                       className={
                         "mx-[-0.3em] [color:var(--cds-shortcut-cap-ink)]"
                       }
@@ -84,7 +84,7 @@ function Shortcut({
                         : shortcutKeycapClassName(label)
                     }
                   >
-                    {spoken === undefined ? (label) : (value3 ? (spoken) : (<jsxComponentsShortcut.Fragment>
+                    {spoken === undefined ? (label) : (isPlainText ? (spoken) : (<jsxComponentsShortcut.Fragment>
                         <span aria-hidden={"true"}>{label}</span>
                         <span className={"sr-only select-none"}>
                           {spoken}
@@ -108,112 +108,112 @@ function useAppleKeyboard(): Dynamic {
     (): Dynamic => false,
   );
 }
-function getOwnPropertyValue(input?: Dynamic, options?: Dynamic): Dynamic {
-  return Object.hasOwn(input, options) ? input[options] : undefined;
+function getOwnPropertyValue(table?: Dynamic, key?: Dynamic): Dynamic {
+  return Object.hasOwn(table, key) ? table[key] : undefined;
 }
-function getShortcutKeyLabel(items?: Dynamic, options?: Dynamic): Dynamic {
-  let value: Dynamic = getOwnPropertyValue(
-    options
+function getShortcutKeyLabel(key?: Dynamic, isApple?: Dynamic): Dynamic {
+  let mappedLabel: Dynamic = getOwnPropertyValue(
+    isApple
       ? ComponentsShortcutSpaceEnterReturnConfig
-      : ComponentsShortcutSpaceEnterReturnConfig_2,
-    items,
+      : pcKeyLabels,
+    key,
   );
-  return value !== undefined
-    ? value
-    : /^f\d+$/.test(items) || items.length === 1
-      ? items.toUpperCase()
-      : items.charAt(0).toUpperCase() + items.slice(1);
+  return mappedLabel !== undefined
+    ? mappedLabel
+    : /^f\d+$/.test(key) || key.length === 1
+      ? key.toUpperCase()
+      : key.charAt(0).toUpperCase() + key.slice(1);
 }
-function splitShortcutChords(input?: Dynamic): Dynamic {
-  let value: Dynamic = input.trim().replace(/\s*\+\s*/g, "+");
-  return value ? value.split(/\s+/) : [];
+function splitShortcutChords(shortcut?: Dynamic): Dynamic {
+  let normalized: Dynamic = shortcut.trim().replace(/\s*\+\s*/g, "+");
+  return normalized ? normalized.split(/\s+/) : [];
 }
-function parseShortcutChord(input?: Dynamic, options?: Dynamic): Dynamic {
-  let value: Dynamic = input
+function parseShortcutChord(chord?: Dynamic, isApple?: Dynamic): Dynamic {
+  let tokens: Dynamic = chord
       .toLowerCase()
       .split("+")
-      .map((input2?: Dynamic): Dynamic => input2.trim())
-      .filter((input2?: Dynamic): Dynamic => input2 !== ""),
-    items: Dynamic = [],
-    items2: Dynamic = [];
-  for (let value2 of value as Dynamic)
-    ComponentsShortcutIncludes(value2)
-      ? items.push(value2)
-      : items2.push(value2);
-  let callback: Dynamic = (input2?: Dynamic): Dynamic =>
+      .map((token?: Dynamic): Dynamic => token.trim())
+      .filter((token?: Dynamic): Dynamic => token !== ""),
+    modifierTokens: Dynamic = [],
+    keyTokens: Dynamic = [];
+  for (let token of tokens as Dynamic)
+    ComponentsShortcutIncludes(token)
+      ? modifierTokens.push(token)
+      : keyTokens.push(token);
+  let modifierOrder: Dynamic = (token?: Dynamic): Dynamic =>
     ComponentsShortcutCtrlControlAltValues.indexOf(
-      !options &&
-        (input2 === "cmd" || input2 === "command" || input2 === "meta")
+      !isApple &&
+        (token === "cmd" || token === "command" || token === "meta")
         ? "ctrl"
-        : input2,
+        : token,
     );
-  items.sort(
-    (input2?: Dynamic, options2?: Dynamic): Dynamic =>
-      callback(input2) - callback(options2),
+  modifierTokens.sort(
+    (first?: Dynamic, second?: Dynamic): Dynamic =>
+      modifierOrder(first) - modifierOrder(second),
   );
   return {
-    modifiers: items,
-    keys: items2,
+    modifiers: modifierTokens,
+    keys: keyTokens,
   };
 }
-function formatShortcutChord(input?: Dynamic, options?: Dynamic): Dynamic {
-  let { modifiers: value, keys: value2 }: Dynamic = parseShortcutChord(
-      input,
-      options,
+function formatShortcutChord(chord?: Dynamic, isApple?: Dynamic): Dynamic {
+  let { modifiers: modifiers, keys: keys }: Dynamic = parseShortcutChord(
+      chord,
+      isApple,
     ),
-    value3: Dynamic = options
+    modifierLabels: Dynamic = isApple
       ? ComponentsShortcutCtrlControlAltConfig
-      : ComponentsShortcutCtrlControlAltConfig_2,
-    callback: Dynamic = (input2?: Dynamic, options2?: Dynamic): Dynamic => {
-      if (/^[A-Za-z0-9 ]+$/.test(options2))
+      : pcModifierLabels,
+    toKeycap: Dynamic = (token?: Dynamic, label?: Dynamic): Dynamic => {
+      if (/^[A-Za-z0-9 ]+$/.test(label))
         return {
-          label: options2,
+          label: label,
         };
-      let value4: Dynamic = getOwnPropertyValue(
+      let spoken: Dynamic = getOwnPropertyValue(
         ComponentsShortcutCmdCommandMetaConfig,
-        input2,
+        token,
       );
-      return value4 === undefined
+      return spoken === undefined
         ? {
-            label: options2,
+            label: label,
           }
         : {
-            label: options2,
-            spoken: value4,
+            label: label,
+            spoken: spoken,
           };
     };
   return [
-    ...value.map(
-      (input2?: Dynamic): Dynamic => callback(input2, value3[input2]),
+    ...modifiers.map(
+      (token?: Dynamic): Dynamic => toKeycap(token, modifierLabels[token]),
     ),
-    ...value2.map(
-      (input2?: Dynamic): Dynamic =>
-        callback(input2, getShortcutKeyLabel(input2, options)),
+    ...keys.map(
+      (token?: Dynamic): Dynamic =>
+        toKeycap(token, getShortcutKeyLabel(token, isApple)),
     ),
   ];
 }
-function parseSingleShortcut(input?: Dynamic, options?: Dynamic): Dynamic {
-  let [value, ...value2]: Dynamic = splitShortcutChords(input);
-  if (value === undefined || value2.length > 0) return;
-  let { modifiers: value3, keys: value4 }: Dynamic = parseShortcutChord(
-    value,
-    options,
+function parseSingleShortcut(shortcut?: Dynamic, isApple?: Dynamic): Dynamic {
+  let [firstChord, ...extraChords]: Dynamic = splitShortcutChords(shortcut);
+  if (firstChord === undefined || extraChords.length > 0) return;
+  let { modifiers: modifiers, keys: keys }: Dynamic = parseShortcutChord(
+    firstChord,
+    isApple,
   );
-  if (value4.length !== 1) return;
-  let value5: Dynamic = options ? "Meta" : "Control",
-    callback: Dynamic = (items?: Dynamic): Dynamic =>
-      items === "cmd" || items === "command" || items === "meta"
-        ? value5
+  if (keys.length !== 1) return;
+  let commandKey: Dynamic = isApple ? "Meta" : "Control",
+    toEventKey: Dynamic = (token?: Dynamic): Dynamic =>
+      token === "cmd" || token === "command" || token === "meta"
+        ? commandKey
         : (getOwnPropertyValue(
-            ComponentsShortcutCtrlControlAltConfig_3,
-            items,
+            eventKeyNames,
+            token,
           ) ??
-          (/^f\d+$/.test(items)
-            ? items.toUpperCase()
-            : items.length === 1
-              ? items
-              : items.charAt(0).toUpperCase() + items.slice(1)));
-  return [...value3, ...value4].map(callback).join("+");
+          (/^f\d+$/.test(token)
+            ? token.toUpperCase()
+            : token.length === 1
+              ? token
+              : token.charAt(0).toUpperCase() + token.slice(1)));
+  return [...modifiers, ...keys].map(toEventKey).join("+");
 }
 export {
   ComponentsShortcutClassNames,
@@ -222,8 +222,8 @@ export {
   ComponentsShortcutCmdCommandMetaConfig,
   ComponentsShortcutCmdCommandMetaValues,
   ComponentsShortcutCtrlControlAltConfig,
-  ComponentsShortcutCtrlControlAltConfig_2,
-  ComponentsShortcutCtrlControlAltConfig_3,
+  pcModifierLabels as ComponentsShortcutCtrlControlAltConfig_2,
+  eventKeyNames as ComponentsShortcutCtrlControlAltConfig_3,
   ComponentsShortcutCtrlControlAltValues,
   ComponentsShortcutHandler,
   ComponentsShortcutIncludes,
@@ -231,7 +231,7 @@ export {
   ComponentsShortcutKeycapTextConfig,
   ComponentsShortcutLabel,
   ComponentsShortcutSpaceEnterReturnConfig,
-  ComponentsShortcutSpaceEnterReturnConfig_2,
+  pcKeyLabels as ComponentsShortcutSpaceEnterReturnConfig_2,
   formatShortcutChord,
   getOwnPropertyValue,
   getShortcutKeyLabel,
@@ -283,8 +283,8 @@ export function installCdsComponentsShortcut(): () => void {
         "option",
         "shift",
       ];
-      ComponentsShortcutIncludes = (input?: Dynamic): Dynamic =>
-        ComponentsShortcutCmdCommandMetaValues.includes(input);
+      ComponentsShortcutIncludes = (token?: Dynamic): Dynamic =>
+        ComponentsShortcutCmdCommandMetaValues.includes(token);
       ComponentsShortcutCtrlControlAltValues = [
         "ctrl",
         "control",
@@ -305,7 +305,7 @@ export function installCdsComponentsShortcut(): () => void {
         command: "\u2318",
         meta: "\u2318",
       };
-      ComponentsShortcutCtrlControlAltConfig_2 = {
+      pcModifierLabels = {
         ctrl: "Ctrl",
         control: "Ctrl",
         alt: "Alt",
@@ -334,7 +334,7 @@ export function installCdsComponentsShortcut(): () => void {
         end: "End",
         insert: "Insert",
       };
-      ComponentsShortcutSpaceEnterReturnConfig_2 = {
+      pcKeyLabels = {
         space: "Space",
         enter: "\u23CE",
         return: "\u23CE",
@@ -373,7 +373,7 @@ export function installCdsComponentsShortcut(): () => void {
         left: "Left",
         right: "Right",
       };
-      ComponentsShortcutCtrlControlAltConfig_3 = {
+      eventKeyNames = {
         get ctrl() { return uiMessage("canvas.shortcut.control"); },
         get control() { return uiMessage("canvas.shortcut.control"); },
         alt: "Alt",

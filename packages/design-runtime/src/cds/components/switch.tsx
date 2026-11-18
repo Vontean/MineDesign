@@ -14,13 +14,13 @@ var jsxComponentsSwitch: typeof import("react/jsx-runtime");
 var switchRootClasses: string;
 var ComponentsSwitchClassNames: string;
 var ComponentsSwitchLabel: string;
-var ComponentsSwitchLabel_2: string;
+var thumbSizeClasses: string;
 var Switch: ForwardComponent<HTMLInputElement, SwitchProps>;
 var initializeComponentsSwitch: () => void;
 export {
   ComponentsSwitchClassNames,
   ComponentsSwitchLabel,
-  ComponentsSwitchLabel_2,
+  thumbSizeClasses as ComponentsSwitchLabel_2,
   initializeComponentsSwitch,
   jsxComponentsSwitch,
   reactComponentsSwitch,
@@ -49,7 +49,7 @@ export function installCdsComponentsSwitch(): () => void {
         "block rounded-full bg-[var(--cds-switch-knob)] shadow-sm transition-transform duration-snap ease-overshoot motion-reduce:transition-none";
       ComponentsSwitchLabel =
         "h-[var(--cds-switch-h)] w-[calc(var(--cds-switch-h,1.25rem)*1.8)] p-[2px]";
-      ComponentsSwitchLabel_2 =
+      thumbSizeClasses =
         "size-[calc(var(--cds-switch-h,1.25rem)-4px)] data-[checked]:translate-x-[calc(var(--cds-switch-h,1.25rem)*0.8)]";
       Switch = (0, reactComponentsSwitch.forwardRef)<
         HTMLInputElement,
@@ -63,11 +63,11 @@ export function installCdsComponentsSwitch(): () => void {
             disabledReasonSide: disabledReasonSide,
             ...props
           }: SwitchProps,
-          options: React.ForwardedRef<HTMLInputElement>,
+          forwardedRef: React.ForwardedRef<HTMLInputElement>,
         ): React.ReactElement => {
-          let value = (
+          let switchElement = (
             <npm_Switch_sU.Root
-              ref={options}
+              ref={forwardedRef}
               data-cds={"Switch"}
               {...props}
               {...getSizeAttribute(size)}
@@ -80,18 +80,18 @@ export function installCdsComponentsSwitch(): () => void {
               )}
             >
               <npm_Switch_sU.Thumb
-                className={`${ComponentsSwitchClassNames} ${ComponentsSwitchLabel_2}`}
+                className={`${ComponentsSwitchClassNames} ${thumbSizeClasses}`}
               />
             </npm_Switch_sU.Root>
           );
           return disabledReason === undefined ? (
-            value
+            switchElement
           ) : (
             <DisabledReasonTooltip
               side={disabledReasonSide}
               reason={props.disabled ? disabledReason : undefined}
             >
-              {value}
+              {switchElement}
             </DisabledReasonTooltip>
           );
         },

@@ -12,35 +12,35 @@ var HooksMediaQueryHandler_2: () => boolean;
 var coarsePointerMediaQuery: string;
 var initializeHooksMediaQuery: () => void;
 function getMediaQueryStore(
-  input: Window,
-  options: string,
+  view: Window,
+  query: string,
 ): MediaQueryStore | null {
-  if (typeof input.matchMedia != "function") return null;
-  let entry = mediaQueryStores.get(input);
-  entry === undefined &&
-    ((entry = new Map()), mediaQueryStores.set(input, entry));
-  let entry2 = entry.get(options);
-  if (entry2 === undefined) {
-    let value = input.matchMedia(options);
-    entry2 = {
-      subscribe: (input2) => (
-        value.addEventListener("change", input2),
-        () => value.removeEventListener("change", input2)
+  if (typeof view.matchMedia != "function") return null;
+  let storesByQuery = mediaQueryStores.get(view);
+  storesByQuery === undefined &&
+    ((storesByQuery = new Map()), mediaQueryStores.set(view, storesByQuery));
+  let store = storesByQuery.get(query);
+  if (store === undefined) {
+    let mediaQueryList = view.matchMedia(query);
+    store = {
+      subscribe: (listener) => (
+        mediaQueryList.addEventListener("change", listener),
+        () => mediaQueryList.removeEventListener("change", listener)
       ),
-      getSnapshot: () => value.matches,
+      getSnapshot: () => mediaQueryList.matches,
     };
-    entry.set(options, entry2);
+    storesByQuery.set(query, store);
   }
-  return entry2;
+  return store;
 }
 function useWindowMediaQuery(
-  input: Window | null | undefined,
-  options: string,
+  view: Window | null | undefined,
+  query: string,
 ): boolean {
-  let value = input == null ? null : getMediaQueryStore(input, options);
+  let store = view == null ? null : getMediaQueryStore(view, query);
   return (0, reactHooksMediaQuery.useSyncExternalStore)(
-    value === null ? HooksMediaQueryHandler : value.subscribe,
-    value === null ? HooksMediaQueryHandler_2 : value.getSnapshot,
+    store === null ? HooksMediaQueryHandler : store.subscribe,
+    store === null ? HooksMediaQueryHandler_2 : store.getSnapshot,
     HooksMediaQueryHandler_2,
   );
 }

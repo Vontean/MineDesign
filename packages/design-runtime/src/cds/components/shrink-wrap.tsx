@@ -11,7 +11,7 @@ var ComponentsShrinkWrapElementCache: Dynamic;
 var ComponentsShrinkWrapElementCache_2: Dynamic;
 var ComponentsShrinkWrapLimit: Dynamic;
 var ShrinkwrapAttribute: Dynamic;
-var ComponentsShrinkWrapLimit_2: Dynamic;
+var ancestorDepthLimit: Dynamic;
 var ComponentsShrinkWrapSubscribers: Dynamic;
 var ComponentsShrinkWrapElementCache_3: Dynamic;
 var ComponentsShrinkWrapElementCache_4: Dynamic;
@@ -20,85 +20,85 @@ var reactComponentsShrinkWrap: Dynamic;
 var jsxComponentsShrinkWrap: Dynamic;
 var ShrinkWrap: Dynamic;
 var initializeComponentsShrinkWrap_2: Dynamic;
-function applyShrinkWrapWidth(input?: Dynamic, options?: Dynamic): Dynamic {
-  input.style[MaxWidthValue] = options;
-  ComponentsShrinkWrapElementCache_2.set(input, options);
+function applyShrinkWrapWidth(element?: Dynamic, width?: Dynamic): Dynamic {
+  element.style[MaxWidthValue] = width;
+  ComponentsShrinkWrapElementCache_2.set(element, width);
 }
-function rememberOriginalWidth(input?: Dynamic): Dynamic {
-  let value: Dynamic = input.style[MaxWidthValue];
-  (!ComponentsShrinkWrapElementCache.has(input) ||
-    value !== ComponentsShrinkWrapElementCache_2.get(input)) &&
-    ComponentsShrinkWrapElementCache.set(input, value);
+function rememberOriginalWidth(element?: Dynamic): Dynamic {
+  let inlineMaxWidth: Dynamic = element.style[MaxWidthValue];
+  (!ComponentsShrinkWrapElementCache.has(element) ||
+    inlineMaxWidth !== ComponentsShrinkWrapElementCache_2.get(element)) &&
+    ComponentsShrinkWrapElementCache.set(element, inlineMaxWidth);
 }
 function measureInlineContent(element?: Dynamic): Dynamic {
   let ownerDocument: Dynamic = element.ownerDocument,
     defaultView: Dynamic = ownerDocument.defaultView,
-    items: Dynamic = [],
-    index: Dynamic = 0,
-    POSITIVE_INFINITY: Dynamic = Number.POSITIVE_INFINITY,
-    NEGATIVE_INFINITY: Dynamic = Number.NEGATIVE_INFINITY,
-    callback: Dynamic = (input?: Dynamic): Dynamic => {
-      input.left < POSITIVE_INFINITY && (POSITIVE_INFINITY = input.left);
-      input.right > NEGATIVE_INFINITY && (NEGATIVE_INFINITY = input.right);
+    rects: Dynamic = [],
+    clippedOverflow: Dynamic = 0,
+    minLeft: Dynamic = Number.POSITIVE_INFINITY,
+    maxRight: Dynamic = Number.NEGATIVE_INFINITY,
+    expandBounds: Dynamic = (rect?: Dynamic): Dynamic => {
+      rect.left < minLeft && (minLeft = rect.left);
+      rect.right > maxRight && (maxRight = rect.right);
     },
-    callback2: Dynamic = (input?: Dynamic): Dynamic => {
+    isInsideFillElement: Dynamic = (node?: Dynamic): Dynamic => {
       for (
-        let value4: Dynamic =
-          input.nodeType === 1 ? input : input.parentElement;
-        value4 && value4 !== element;
-        value4 = value4.parentElement
+        let ancestor: Dynamic =
+          node.nodeType === 1 ? node : node.parentElement;
+        ancestor && ancestor !== element;
+        ancestor = ancestor.parentElement
       )
-        if (value4.getAttribute("data-shrinkwrap") === "fill") return true;
+        if (ancestor.getAttribute("data-shrinkwrap") === "fill") return true;
       return false;
     },
-    value: Dynamic = ownerDocument.createRange(),
-    value2: Dynamic = ownerDocument.createTreeWalker(element, 5, {
-      acceptNode: (input?: Dynamic): Dynamic => {
-        if (input.nodeType === 1) {
-          let value4: Dynamic = defaultView?.getComputedStyle(input);
-          return value4 &&
-            (value4.display === "none" ||
-              value4.position === "absolute" ||
-              value4.position === "fixed")
+    textRange: Dynamic = ownerDocument.createRange(),
+    treeWalker: Dynamic = ownerDocument.createTreeWalker(element, 5, {
+      acceptNode: (node?: Dynamic): Dynamic => {
+        if (node.nodeType === 1) {
+          let nodeStyle: Dynamic = defaultView?.getComputedStyle(node);
+          return nodeStyle &&
+            (nodeStyle.display === "none" ||
+              nodeStyle.position === "absolute" ||
+              nodeStyle.position === "fixed")
             ? 2
             : 1;
         }
-        return callback2(input) ? 2 : 1;
+        return isInsideFillElement(node) ? 2 : 1;
       },
     }),
-    value3: Dynamic = value2.nextNode();
-  for (; value3; ) {
-    if (value3.nodeType === 3) {
-      value.selectNodeContents(value3);
-      for (let value4 of (value.getClientRects?.() ?? []) as Dynamic)
-        value4.width > 0 && (items.push(value4), callback(value4));
+    currentNode: Dynamic = treeWalker.nextNode();
+  for (; currentNode; ) {
+    if (currentNode.nodeType === 3) {
+      textRange.selectNodeContents(currentNode);
+      for (let textRect of (textRange.getClientRects?.() ?? []) as Dynamic)
+        textRect.width > 0 && (rects.push(textRect), expandBounds(textRect));
     } else {
-      let value4: Dynamic = value3,
-        value5: Dynamic = defaultView?.getComputedStyle(value4),
-        bounds: Dynamic = value4.getBoundingClientRect();
-      bounds.width > 0 && callback(bounds);
-      if (value5 && !callback2(value4) && isInlineBox(value4, value5))
-        for (let value6 of value4.getClientRects() as Dynamic)
-          value6.width > 0 && items.push(value6);
-      value5 &&
-        (value5.overflowX !== "visible" || value5.overflowY !== "visible") &&
-        (index +=
-          Math.max(0, value4.scrollWidth - value4.clientWidth) +
-          Math.max(0, value4.scrollHeight - value4.clientHeight));
+      let currentElement: Dynamic = currentNode,
+        elementStyle: Dynamic = defaultView?.getComputedStyle(currentElement),
+        bounds: Dynamic = currentElement.getBoundingClientRect();
+      bounds.width > 0 && expandBounds(bounds);
+      if (elementStyle && !isInsideFillElement(currentElement) && isInlineBox(currentElement, elementStyle))
+        for (let boxRect of currentElement.getClientRects() as Dynamic)
+          boxRect.width > 0 && rects.push(boxRect);
+      elementStyle &&
+        (elementStyle.overflowX !== "visible" || elementStyle.overflowY !== "visible") &&
+        (clippedOverflow +=
+          Math.max(0, currentElement.scrollWidth - currentElement.clientWidth) +
+          Math.max(0, currentElement.scrollHeight - currentElement.clientHeight));
     }
-    value3 = value2.nextNode();
+    currentNode = treeWalker.nextNode();
   }
   return {
-    rects: items,
-    clipped: index,
-    boundLeft: POSITIVE_INFINITY,
-    boundRight: NEGATIVE_INFINITY,
+    rects: rects,
+    clipped: clippedOverflow,
+    boundLeft: minLeft,
+    boundRight: maxRight,
   };
 }
-function isInlineBox(input?: Dynamic, options?: Dynamic): Dynamic {
-  return ComponentsShrinkWrapSubscribers.has(input.tagName.toUpperCase())
+function isInlineBox(element?: Dynamic, computedStyle?: Dynamic): Dynamic {
+  return ComponentsShrinkWrapSubscribers.has(element.tagName.toUpperCase())
     ? true
-    : options.display.startsWith("inline");
+    : computedStyle.display.startsWith("inline");
 }
 function measureShrinkWrapCandidate(
   element: Dynamic,
@@ -109,66 +109,66 @@ function measureShrinkWrapCandidate(
     boundRight: boundRight,
   }: Dynamic,
 ): Dynamic {
-  let value: Dynamic =
+  let computedStyle: Dynamic =
       element.ownerDocument.defaultView?.getComputedStyle(element),
     bounds: Dynamic = element.getBoundingClientRect(),
-    index: Dynamic = 0;
-  if (value && Number.isFinite(boundLeft)) {
-    let value2: Dynamic = parseFloat(value.width),
-      value3: Dynamic =
-        value.boxSizing === "border-box"
-          ? value2
-          : value2 +
-            parseFloat(value.paddingLeft) +
-            parseFloat(value.paddingRight) +
-            parseFloat(value.borderLeftWidth) +
-            parseFloat(value.borderRightWidth),
-      value4: Dynamic = (value3 > 0 && bounds.width / value3) || 1,
-      value5: Dynamic =
+    spill: Dynamic = 0;
+  if (computedStyle && Number.isFinite(boundLeft)) {
+    let contentWidth: Dynamic = parseFloat(computedStyle.width),
+      borderBoxWidth: Dynamic =
+        computedStyle.boxSizing === "border-box"
+          ? contentWidth
+          : contentWidth +
+            parseFloat(computedStyle.paddingLeft) +
+            parseFloat(computedStyle.paddingRight) +
+            parseFloat(computedStyle.borderLeftWidth) +
+            parseFloat(computedStyle.borderRightWidth),
+      layoutScale: Dynamic = (borderBoxWidth > 0 && bounds.width / borderBoxWidth) || 1,
+      contentLeft: Dynamic =
         bounds.left +
-        (parseFloat(value.borderLeftWidth) + parseFloat(value.paddingLeft)) *
-          value4,
-      value6: Dynamic =
+        (parseFloat(computedStyle.borderLeftWidth) + parseFloat(computedStyle.paddingLeft)) *
+          layoutScale,
+      contentRight: Dynamic =
         bounds.right -
-        (parseFloat(value.borderRightWidth) +
-          parseFloat(value.paddingRight)) *
-          value4;
-    index =
-      Math.max(0, boundRight - value6) + Math.max(0, value5 - boundLeft);
+        (parseFloat(computedStyle.borderRightWidth) +
+          parseFloat(computedStyle.paddingRight)) *
+          layoutScale;
+    spill =
+      Math.max(0, boundRight - contentRight) + Math.max(0, contentLeft - boundLeft);
   }
   return {
     height: element.scrollHeight,
     overflow: element.scrollWidth,
     client: element.clientWidth,
-    spill: index,
+    spill: spill,
     clipped: clipped,
-    widths: rects.map((input?: Dynamic): Dynamic => input.width),
+    widths: rects.map((rect?: Dynamic): Dynamic => rect.width),
   };
 }
-function preservesContentLayout(input?: Dynamic, options?: Dynamic): Dynamic {
-  return options.height > input.height ||
-    options.overflow > options.client + 0.5 ||
-    options.spill > input.spill + 0.5 ||
-    options.clipped > input.clipped + 0.5
+function preservesContentLayout(natural?: Dynamic, candidate?: Dynamic): Dynamic {
+  return candidate.height > natural.height ||
+    candidate.overflow > candidate.client + 0.5 ||
+    candidate.spill > natural.spill + 0.5 ||
+    candidate.clipped > natural.clipped + 0.5
     ? false
-    : input.widths.length === options.widths.length &&
-        input.widths.every(
-          (input2?: Dynamic, options2?: Dynamic): Dynamic =>
-            Math.abs(input2 - (options.widths[options2] ?? NaN)) <= 0.5,
+    : natural.widths.length === candidate.widths.length &&
+        natural.widths.every(
+          (naturalWidth?: Dynamic, widthIndex?: Dynamic): Dynamic =>
+            Math.abs(naturalWidth - (candidate.widths[widthIndex] ?? NaN)) <= 0.5,
         );
 }
-function restoreShrinkWrapWidth(input?: Dynamic): Dynamic {
-  ComponentsShrinkWrapElementCache.has(input) &&
-    (rememberOriginalWidth(input),
+function restoreShrinkWrapWidth(element?: Dynamic): Dynamic {
+  ComponentsShrinkWrapElementCache.has(element) &&
+    (rememberOriginalWidth(element),
     applyShrinkWrapWidth(
-      input,
-      ComponentsShrinkWrapElementCache.get(input) ?? "",
+      element,
+      ComponentsShrinkWrapElementCache.get(element) ?? "",
     ));
 }
-function createShrinkWrapJob(input?: Dynamic, options?: Dynamic): Dynamic {
+function createShrinkWrapJob(element?: Dynamic, onDone?: Dynamic): Dynamic {
   return {
-    el: input,
-    done: options,
+    el: element,
+    done: onDone,
     boxWidth: 0,
     borderBoxSizing: true,
     natural: null,
@@ -180,217 +180,217 @@ function createShrinkWrapJob(input?: Dynamic, options?: Dynamic): Dynamic {
     resizeDue: false,
   };
 }
-function settleShrinkWrapJob(input?: Dynamic, options?: Dynamic): Dynamic {
-  options === null
-    ? restoreShrinkWrapWidth(input.el)
-    : applyShrinkWrapWidth(input.el, `${options}px`);
-  input.stage = "settled";
-  input.done(options);
+function settleShrinkWrapJob(job?: Dynamic, width?: Dynamic): Dynamic {
+  width === null
+    ? restoreShrinkWrapWidth(job.el)
+    : applyShrinkWrapWidth(job.el, `${width}px`);
+  job.stage = "settled";
+  job.done(width);
 }
-function measureShrinkWrapJob(input?: Dynamic): Dynamic {
-  let { el: value }: Dynamic = input,
-    defaultView: Dynamic = value.ownerDocument.defaultView;
-  if (!defaultView || typeof value.getBoundingClientRect != "function") {
-    settleShrinkWrapJob(input, null);
+function measureShrinkWrapJob(job?: Dynamic): Dynamic {
+  let { el: element }: Dynamic = job,
+    defaultView: Dynamic = element.ownerDocument.defaultView;
+  if (!defaultView || typeof element.getBoundingClientRect != "function") {
+    settleShrinkWrapJob(job, null);
     return;
   }
-  let style: Dynamic = defaultView.getComputedStyle(value),
-    value2: Dynamic = parseFloat(style.width);
-  if (!Number.isFinite(value2) || value2 <= 0) {
-    settleShrinkWrapJob(input, null);
+  let style: Dynamic = defaultView.getComputedStyle(element),
+    computedWidth: Dynamic = parseFloat(style.width);
+  if (!Number.isFinite(computedWidth) || computedWidth <= 0) {
+    settleShrinkWrapJob(job, null);
     return;
   }
-  let value3: Dynamic = style.boxSizing === "border-box",
-    value4: Dynamic =
+  let isBorderBox: Dynamic = style.boxSizing === "border-box",
+    paddingAndBorder: Dynamic =
       parseFloat(style.paddingLeft) +
       parseFloat(style.paddingRight) +
       parseFloat(style.borderLeftWidth) +
       parseFloat(style.borderRightWidth),
-    value5: Dynamic = measureInlineContent(value),
-    { rects: value6 }: Dynamic = value5;
-  if (value6.length === 0) {
-    settleShrinkWrapJob(input, null);
+    measurement: Dynamic = measureInlineContent(element),
+    { rects: rects }: Dynamic = measurement;
+  if (rects.length === 0) {
+    settleShrinkWrapJob(job, null);
     return;
   }
-  input.natural = measureShrinkWrapCandidate(value, value5);
-  input.boxWidth = value2;
-  input.borderBoxSizing = value3;
-  let POSITIVE_INFINITY: Dynamic = Number.POSITIVE_INFINITY,
-    NEGATIVE_INFINITY: Dynamic = Number.NEGATIVE_INFINITY;
-  for (let value12 of value6 as Dynamic) {
-    value12.left < POSITIVE_INFINITY && (POSITIVE_INFINITY = value12.left);
-    value12.right > NEGATIVE_INFINITY && (NEGATIVE_INFINITY = value12.right);
+  job.natural = measureShrinkWrapCandidate(element, measurement);
+  job.boxWidth = computedWidth;
+  job.borderBoxSizing = isBorderBox;
+  let minLeft: Dynamic = Number.POSITIVE_INFINITY,
+    maxRight: Dynamic = Number.NEGATIVE_INFINITY;
+  for (let rect of rects as Dynamic) {
+    rect.left < minLeft && (minLeft = rect.left);
+    rect.right > maxRight && (maxRight = rect.right);
   }
-  let value7: Dynamic = value3 ? value2 : value2 + value4,
-    value8: Dynamic = value.getBoundingClientRect().width / value7 || 1,
-    value9: Dynamic = (NEGATIVE_INFINITY - POSITIVE_INFINITY) / value8,
-    value10: Dynamic = value3 ? value9 + value4 : value9,
-    value11: Dynamic = Math.ceil(value10 - 0.001);
-  if (value11 >= value2 - 0.5) {
-    settleShrinkWrapJob(input, null);
+  let borderBoxWidth: Dynamic = isBorderBox ? computedWidth : computedWidth + paddingAndBorder,
+    layoutScale: Dynamic = element.getBoundingClientRect().width / borderBoxWidth || 1,
+    contentWidth: Dynamic = (maxRight - minLeft) / layoutScale,
+    candidateWidth: Dynamic = isBorderBox ? contentWidth + paddingAndBorder : contentWidth,
+    roundedWidth: Dynamic = Math.ceil(candidateWidth - 0.001);
+  if (roundedWidth >= computedWidth - 0.5) {
+    settleShrinkWrapJob(job, null);
     return;
   }
-  input.candidate = value11;
-  input.stage = "verify";
+  job.candidate = roundedWidth;
+  job.stage = "verify";
 }
-function verifyShrinkWrapJob(input?: Dynamic): Dynamic {
+function verifyShrinkWrapJob(job?: Dynamic): Dynamic {
   return (
-    input.natural !== null &&
+    job.natural !== null &&
     preservesContentLayout(
-      input.natural,
-      measureShrinkWrapCandidate(input.el, measureInlineContent(input.el)),
+      job.natural,
+      measureShrinkWrapCandidate(job.el, measureInlineContent(job.el)),
     )
   );
 }
 function nextShrinkWrapCandidate(
-  input?: Dynamic,
-  options?: Dynamic,
+  job?: Dynamic,
+  preserved?: Dynamic,
 ): Dynamic {
-  let { boxWidth: value }: Dynamic = input;
-  if (input.stage === "verify") {
-    if (options) {
-      settleShrinkWrapJob(input, input.candidate);
+  let { boxWidth: boxWidth }: Dynamic = job;
+  if (job.stage === "verify") {
+    if (preserved) {
+      settleShrinkWrapJob(job, job.candidate);
       return null;
     }
-    input.stage = "nudge1";
-    if (input.candidate + 1 < value) return input.candidate + 1;
-    input.stage = "bisect";
-  } else if (input.stage === "nudge1") {
-    if (options) {
-      settleShrinkWrapJob(input, input.candidate + 1);
+    job.stage = "nudge1";
+    if (job.candidate + 1 < boxWidth) return job.candidate + 1;
+    job.stage = "bisect";
+  } else if (job.stage === "nudge1") {
+    if (preserved) {
+      settleShrinkWrapJob(job, job.candidate + 1);
       return null;
     }
-    input.stage = "nudge2";
-    if (input.candidate + 2 < value) return input.candidate + 2;
-    input.stage = "bisect";
-  } else if (input.stage === "nudge2") {
-    if (options) {
-      settleShrinkWrapJob(input, input.candidate + 2);
+    job.stage = "nudge2";
+    if (job.candidate + 2 < boxWidth) return job.candidate + 2;
+    job.stage = "bisect";
+  } else if (job.stage === "nudge2") {
+    if (preserved) {
+      settleShrinkWrapJob(job, job.candidate + 2);
       return null;
     }
-    input.stage = "bisect";
-  } else if (input.stage === "bisect") {
-    input.probes += 1;
-    let value2: Dynamic =
-      input.lo > 0 ? Math.floor((input.lo + input.hi) / 2) : NaN;
-    options ? (input.hi = value2) : (input.lo = value2);
+    job.stage = "bisect";
+  } else if (job.stage === "bisect") {
+    job.probes += 1;
+    let midpoint: Dynamic =
+      job.lo > 0 ? Math.floor((job.lo + job.hi) / 2) : NaN;
+    preserved ? (job.hi = midpoint) : (job.lo = midpoint);
   }
-  return input.stage === "bisect"
-    ? (input.lo === 0 &&
-        ((input.lo = input.candidate + 2), (input.hi = Math.ceil(value))),
-      input.probes >= ComponentsShrinkWrapLimit || input.hi - input.lo <= 1
-        ? (input.hi < value - 0.5
-            ? settleShrinkWrapJob(input, input.hi)
-            : settleShrinkWrapJob(input, null),
+  return job.stage === "bisect"
+    ? (job.lo === 0 &&
+        ((job.lo = job.candidate + 2), (job.hi = Math.ceil(boxWidth))),
+      job.probes >= ComponentsShrinkWrapLimit || job.hi - job.lo <= 1
+        ? (job.hi < boxWidth - 0.5
+            ? settleShrinkWrapJob(job, job.hi)
+            : settleShrinkWrapJob(job, null),
           null)
-        : Math.floor((input.lo + input.hi) / 2))
+        : Math.floor((job.lo + job.hi) / 2))
     : null;
 }
-function runShrinkWrapBatch(input?: Dynamic): Dynamic {
-  for (let value2 of input as Dynamic) {
-    rememberOriginalWidth(value2.el);
-    restoreShrinkWrapWidth(value2.el);
+function runShrinkWrapBatch(jobs?: Dynamic): Dynamic {
+  for (let job of jobs as Dynamic) {
+    rememberOriginalWidth(job.el);
+    restoreShrinkWrapWidth(job.el);
   }
-  for (let value2 of input as Dynamic) measureShrinkWrapJob(value2);
-  let value: Dynamic = input.filter(
-    (input2?: Dynamic): Dynamic => input2.stage === "verify",
+  for (let job of jobs as Dynamic) measureShrinkWrapJob(job);
+  let verifying: Dynamic = jobs.filter(
+    (job?: Dynamic): Dynamic => job.stage === "verify",
   );
-  for (let value2 of value as Dynamic)
-    applyShrinkWrapWidth(value2.el, `${value2.candidate}px`);
-  for (let index: Dynamic = 0; value.length > 0 && index < 16; index++) {
-    let value2: Dynamic = value.map(
-        (input2?: Dynamic): Dynamic => [input2, verifyShrinkWrapJob(input2)],
+  for (let job of verifying as Dynamic)
+    applyShrinkWrapWidth(job.el, `${job.candidate}px`);
+  for (let index: Dynamic = 0; verifying.length > 0 && index < 16; index++) {
+    let verifications: Dynamic = verifying.map(
+        (job?: Dynamic): Dynamic => [job, verifyShrinkWrapJob(job)],
       ),
-      items: Dynamic = [];
-    for (let [value3, value4] of value2 as Dynamic) {
-      let value5: Dynamic = nextShrinkWrapCandidate(value3, value4);
-      value5 !== null && items.push([value3, value5]);
+      nextWidths: Dynamic = [];
+    for (let [job, preserved] of verifications as Dynamic) {
+      let nextWidth: Dynamic = nextShrinkWrapCandidate(job, preserved);
+      nextWidth !== null && nextWidths.push([job, nextWidth]);
     }
-    for (let [value3, value4] of items as Dynamic)
-      applyShrinkWrapWidth(value3.el, `${value4}px`);
-    value = items.map(([input2]: Dynamic): Dynamic => input2);
+    for (let [job, width] of nextWidths as Dynamic)
+      applyShrinkWrapWidth(job.el, `${width}px`);
+    verifying = nextWidths.map(([job]: Dynamic): Dynamic => job);
   }
-  for (let value2 of value as Dynamic)
-    value2.stage !== "settled" && settleShrinkWrapJob(value2, null);
+  for (let job of verifying as Dynamic)
+    job.stage !== "settled" && settleShrinkWrapJob(job, null);
 }
-function shrinkWrapElement(input?: Dynamic): Dynamic {
-  let value: Dynamic = null;
+function shrinkWrapElement(element?: Dynamic): Dynamic {
+  let measuredWidth: Dynamic = null;
   runShrinkWrapBatch([
-    createShrinkWrapJob(input, (input2?: Dynamic): Dynamic => {
-      value = input2;
+    createShrinkWrapJob(element, (width?: Dynamic): Dynamic => {
+      measuredWidth = width;
     }),
   ]);
-  return value;
+  return measuredWidth;
 }
-function getShrinkWrapQueue(input?: Dynamic): Dynamic {
-  let entry: Dynamic = ComponentsShrinkWrapElementCache_3.get(input);
+function getShrinkWrapQueue(view?: Dynamic): Dynamic {
+  let entry: Dynamic = ComponentsShrinkWrapElementCache_3.get(view);
   entry ||
     ((entry = {
       queue: new Map(),
       microtaskQueued: false,
       frameQueued: 0,
     }),
-    ComponentsShrinkWrapElementCache_3.set(input, entry));
+    ComponentsShrinkWrapElementCache_3.set(view, entry));
   return entry;
 }
 function flushShrinkWrapJobs(
-  input?: Dynamic,
-  options?: Dynamic,
-  items?: Dynamic,
+  view?: Dynamic,
+  queueEntry?: Dynamic,
+  jobs?: Dynamic,
 ): Dynamic {
-  items.length > 0 && runShrinkWrapBatch(items);
-  !(options.queue.size > 0) &&
-    (options.frameQueued &&
-      (input.cancelAnimationFrame(options.frameQueued),
-      (options.frameQueued = 0)),
-    options.microtaskQueued ||
-      ComponentsShrinkWrapElementCache_3.delete(input));
+  jobs.length > 0 && runShrinkWrapBatch(jobs);
+  !(queueEntry.queue.size > 0) &&
+    (queueEntry.frameQueued &&
+      (view.cancelAnimationFrame(queueEntry.frameQueued),
+      (queueEntry.frameQueued = 0)),
+    queueEntry.microtaskQueued ||
+      ComponentsShrinkWrapElementCache_3.delete(view));
 }
-function flushShrinkWrapMicrotask(input?: Dynamic): Dynamic {
-  let entry: Dynamic = ComponentsShrinkWrapElementCache_3.get(input);
+function flushShrinkWrapMicrotask(view?: Dynamic): Dynamic {
+  let entry: Dynamic = ComponentsShrinkWrapElementCache_3.get(view);
   if (!entry) return;
   entry.microtaskQueued = false;
   entry.frameQueued &&
-    (input.cancelAnimationFrame(entry.frameQueued), (entry.frameQueued = 0));
-  let items: Dynamic = [...entry.queue.values()];
+    (view.cancelAnimationFrame(entry.frameQueued), (entry.frameQueued = 0));
+  let jobs: Dynamic = [...entry.queue.values()];
   entry.queue.clear();
-  flushShrinkWrapJobs(input, entry, items);
+  flushShrinkWrapJobs(view, entry, jobs);
 }
-function flushShrinkWrapResizeJobs(input?: Dynamic): Dynamic {
-  let entry: Dynamic = ComponentsShrinkWrapElementCache_3.get(input);
+function flushShrinkWrapResizeJobs(view?: Dynamic): Dynamic {
+  let entry: Dynamic = ComponentsShrinkWrapElementCache_3.get(view);
   if (!entry) return;
-  let items: Dynamic = [];
-  for (let [value, value2] of entry.queue as Dynamic)
-    value2.resizeDue && (entry.queue.delete(value), items.push(value2));
-  flushShrinkWrapJobs(input, entry, items);
+  let jobs: Dynamic = [];
+  for (let [element, job] of entry.queue as Dynamic)
+    job.resizeDue && (entry.queue.delete(element), jobs.push(job));
+  flushShrinkWrapJobs(view, entry, jobs);
 }
 function scheduleShrinkWrapJob(
   element?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  onDone?: Dynamic,
+  reason?: Dynamic,
 ): Dynamic {
   let defaultView: Dynamic = element.ownerDocument.defaultView;
   if (!defaultView) {
-    options(shrinkWrapElement(element));
+    onDone(shrinkWrapElement(element));
     return;
   }
-  let value: Dynamic = getShrinkWrapQueue(defaultView),
-    entry: Dynamic = value.queue.get(element);
+  let viewQueue: Dynamic = getShrinkWrapQueue(defaultView),
+    entry: Dynamic = viewQueue.queue.get(element);
   entry
-    ? (entry.done = options)
-    : ((entry = createShrinkWrapJob(element, options)),
-      value.queue.set(element, entry));
-  context === "microtask"
-    ? value.microtaskQueued ||
-      ((value.microtaskQueued = true),
+    ? (entry.done = onDone)
+    : ((entry = createShrinkWrapJob(element, onDone)),
+      viewQueue.queue.set(element, entry));
+  reason === "microtask"
+    ? viewQueue.microtaskQueued ||
+      ((viewQueue.microtaskQueued = true),
       queueMicrotask((): Dynamic => {
         flushShrinkWrapMicrotask(defaultView);
       }))
-    : context === "resize"
+    : reason === "resize"
       ? (entry.resizeDue = true)
-      : !value.frameQueued &&
-        !value.microtaskQueued &&
-        (value.frameQueued = defaultView.requestAnimationFrame(
+      : !viewQueue.frameQueued &&
+        !viewQueue.microtaskQueued &&
+        (viewQueue.frameQueued = defaultView.requestAnimationFrame(
           (): Dynamic => {
             flushShrinkWrapMicrotask(defaultView);
           },
@@ -404,157 +404,157 @@ function cancelShrinkWrapJob(element?: Dynamic): Dynamic {
     (entry.queue.delete(element),
     flushShrinkWrapJobs(defaultView, entry, []));
 }
-function shrinkWrapNeedsResize(input?: Dynamic): Dynamic {
-  if (input.self) {
-    let value: Dynamic =
-      input.applied !== null && Math.abs(input.inline - input.applied) <= 1;
+function shrinkWrapNeedsResize(change?: Dynamic): Dynamic {
+  if (change.self) {
+    let isAtAppliedWidth: Dynamic =
+      change.applied !== null && Math.abs(change.inline - change.applied) <= 1;
     return (
-      Math.abs(input.block - input.prevBlock) > 1 ||
-      (!value && Math.abs(input.inline - input.prevInline) > 1)
+      Math.abs(change.block - change.prevBlock) > 1 ||
+      (!isAtAppliedWidth && Math.abs(change.inline - change.prevInline) > 1)
     );
   }
-  return Math.abs(input.inline - input.prevInline) > 1;
+  return Math.abs(change.inline - change.prevInline) > 1;
 }
 function observeShrinkWrapResize(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  view?: Dynamic,
+  element?: Dynamic,
+  handler?: Dynamic,
 ): Dynamic {
-  let entry: Dynamic = ComponentsShrinkWrapElementCache_4.get(input);
+  let entry: Dynamic = ComponentsShrinkWrapElementCache_4.get(view);
   if (!entry) {
     let entries: Dynamic = new Map();
     entry = {
-      observer: new input.ResizeObserver((input2?: Dynamic): Dynamic => {
-        for (let value of input2 as Dynamic)
-          for (let value2 of (entries.get(value.target) ?? []) as Dynamic)
-            value2(value);
-        flushShrinkWrapResizeJobs(input);
+      observer: new view.ResizeObserver((resizeEntries?: Dynamic): Dynamic => {
+        for (let resizeEntry of resizeEntries as Dynamic)
+          for (let listener of (entries.get(resizeEntry.target) ?? []) as Dynamic)
+            listener(resizeEntry);
+        flushShrinkWrapResizeJobs(view);
       }),
       handlers: entries,
       paused: new Set(),
       resumeQueued: 0,
     };
-    ComponentsShrinkWrapElementCache_4.set(input, entry);
+    ComponentsShrinkWrapElementCache_4.set(view, entry);
   }
-  let entry2: Dynamic = entry.handlers.get(options);
-  entry2 ||
-    ((entry2 = new Set()),
-    entry.handlers.set(options, entry2),
-    entry.observer.observe(options));
-  entry2.add(context);
+  let elementHandlers: Dynamic = entry.handlers.get(element);
+  elementHandlers ||
+    ((elementHandlers = new Set()),
+    entry.handlers.set(element, elementHandlers),
+    entry.observer.observe(element));
+  elementHandlers.add(handler);
 }
 function unobserveShrinkWrapResize(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  view?: Dynamic,
+  element?: Dynamic,
+  handler?: Dynamic,
 ): Dynamic {
-  let entry: Dynamic = ComponentsShrinkWrapElementCache_4.get(input),
-    value: Dynamic = entry?.handlers.get(options);
+  let entry: Dynamic = ComponentsShrinkWrapElementCache_4.get(view),
+    elementHandlers: Dynamic = entry?.handlers.get(element);
   !entry ||
-    !value ||
-    (value.delete(context),
-    value.size === 0 &&
-      (entry.handlers.delete(options),
-      entry.paused.delete(options),
-      entry.observer.unobserve(options)),
+    !elementHandlers ||
+    (elementHandlers.delete(handler),
+    elementHandlers.size === 0 &&
+      (entry.handlers.delete(element),
+      entry.paused.delete(element),
+      entry.observer.unobserve(element)),
     entry.handlers.size === 0 &&
       (entry.observer.disconnect(),
-      entry.resumeQueued && input.cancelAnimationFrame(entry.resumeQueued),
-      ComponentsShrinkWrapElementCache_4.delete(input)));
+      entry.resumeQueued && view.cancelAnimationFrame(entry.resumeQueued),
+      ComponentsShrinkWrapElementCache_4.delete(view)));
 }
-function pauseShrinkWrapResize(input?: Dynamic, options?: Dynamic): Dynamic {
-  let entry: Dynamic = ComponentsShrinkWrapElementCache_4.get(input);
+function pauseShrinkWrapResize(view?: Dynamic, element?: Dynamic): Dynamic {
+  let entry: Dynamic = ComponentsShrinkWrapElementCache_4.get(view);
   !entry ||
-    !entry.handlers.has(options) ||
-    entry.paused.has(options) ||
-    (entry.observer.unobserve(options),
-    entry.paused.add(options),
+    !entry.handlers.has(element) ||
+    entry.paused.has(element) ||
+    (entry.observer.unobserve(element),
+    entry.paused.add(element),
     entry.resumeQueued ||
-      (entry.resumeQueued = input.requestAnimationFrame((): Dynamic => {
+      (entry.resumeQueued = view.requestAnimationFrame((): Dynamic => {
         entry.resumeQueued = 0;
-        for (let value of entry.paused as Dynamic)
-          entry.handlers.has(value) && entry.observer.observe(value);
+        for (let pausedElement of entry.paused as Dynamic)
+          entry.handlers.has(pausedElement) && entry.observer.observe(pausedElement);
         entry.paused.clear();
       })));
 }
 function observeShrinkWrap(
   element?: Dynamic,
-  { immediate: options = false }: Dynamic = {},
+  { immediate: isImmediate = false }: Dynamic = {},
 ): Dynamic {
-  let flag: Dynamic = false,
-    value: Dynamic = null,
+  let isDisposed: Dynamic = false,
+    appliedWidth: Dynamic = null,
     defaultView: Dynamic = element.ownerDocument.defaultView,
-    entries: Dynamic = new Map(),
-    items: Dynamic = [],
-    callback: Dynamic = (input?: Dynamic): Dynamic => {
-      let value4: Dynamic = input;
-      entries.set(input, {
-        inline: value4.offsetWidth ?? 0,
-        block: value4.offsetHeight ?? 0,
+    sizeByElement: Dynamic = new Map(),
+    observedElements: Dynamic = [],
+    recordSize: Dynamic = (target?: Dynamic): Dynamic => {
+      let targetElement: Dynamic = target;
+      sizeByElement.set(target, {
+        inline: targetElement.offsetWidth ?? 0,
+        block: targetElement.offsetHeight ?? 0,
       });
     },
-    value2: Dynamic = defaultView?.ResizeObserver ? defaultView : null,
-    index: Dynamic = 0,
-    callback2: Dynamic = (input?: Dynamic): Dynamic => {
-      if (!flag) {
-        value = input;
-        for (let value4 of items as Dynamic) callback(value4);
-        if (value2 && index > 0)
-          for (let value4 of items.slice(index) as Dynamic)
-            pauseShrinkWrapResize(value2, value4);
-        index = 0;
+    resizeHost: Dynamic = defaultView?.ResizeObserver ? defaultView : null,
+    resizedAncestorIndex: Dynamic = 0,
+    applyWidth: Dynamic = (width?: Dynamic): Dynamic => {
+      if (!isDisposed) {
+        appliedWidth = width;
+        for (let observed of observedElements as Dynamic) recordSize(observed);
+        if (resizeHost && resizedAncestorIndex > 0)
+          for (let pausedElement of observedElements.slice(resizedAncestorIndex) as Dynamic)
+            pauseShrinkWrapResize(resizeHost, pausedElement);
+        resizedAncestorIndex = 0;
       }
     },
-    callback3: Dynamic = (input?: Dynamic): Dynamic => {
-      flag || scheduleShrinkWrapJob(element, callback2, input);
+    schedule: Dynamic = (reason?: Dynamic): Dynamic => {
+      isDisposed || scheduleShrinkWrapJob(element, applyWidth, reason);
     };
-  options ? (value = shrinkWrapElement(element)) : callback3("microtask");
-  let callback4: Dynamic = (event?: Dynamic): Dynamic => {
-      let value4: Dynamic = event.borderBoxSize?.[0],
-        value5: Dynamic = value4
-          ? value4.inlineSize
+  isImmediate ? (appliedWidth = shrinkWrapElement(element)) : schedule("microtask");
+  let handleResize: Dynamic = (event?: Dynamic): Dynamic => {
+      let borderBox: Dynamic = event.borderBoxSize?.[0],
+        inlineSize: Dynamic = borderBox
+          ? borderBox.inlineSize
           : event.contentRect.width,
-        value6: Dynamic = value4
-          ? value4.blockSize
+        blockSize: Dynamic = borderBox
+          ? borderBox.blockSize
           : event.contentRect.height,
-        value7: Dynamic = entries.get(event.target) ?? {
-          inline: value5,
-          block: value6,
+        previousSize: Dynamic = sizeByElement.get(event.target) ?? {
+          inline: inlineSize,
+          block: blockSize,
         };
-      entries.set(event.target, {
-        inline: value5,
-        block: value6,
+      sizeByElement.set(event.target, {
+        inline: inlineSize,
+        block: blockSize,
       });
-      let value8: Dynamic = event.target === element;
+      let isSelf: Dynamic = event.target === element;
       shrinkWrapNeedsResize({
-        self: value8,
-        inline: value5,
-        block: value6,
-        prevInline: value7.inline,
-        prevBlock: value7.block,
-        applied: value,
+        self: isSelf,
+        inline: inlineSize,
+        block: blockSize,
+        prevInline: previousSize.inline,
+        prevBlock: previousSize.block,
+        applied: appliedWidth,
       }) &&
-        (value8 || (index = Math.max(index, items.indexOf(event.target))),
-        callback3(value8 ? "frame" : "resize"));
+        (isSelf || (resizedAncestorIndex = Math.max(resizedAncestorIndex, observedElements.indexOf(event.target))),
+        schedule(isSelf ? "frame" : "resize"));
     },
-    callback5: Dynamic = (input?: Dynamic): Dynamic => {
-      value2 && observeShrinkWrapResize(value2, input, callback4);
-      items.push(input);
-      options && callback(input);
+    observeElement: Dynamic = (target?: Dynamic): Dynamic => {
+      resizeHost && observeShrinkWrapResize(resizeHost, target, handleResize);
+      observedElements.push(target);
+      isImmediate && recordSize(target);
     };
-  callback5(element);
+  observeElement(element);
   for (
-    let parentElement: Dynamic = element.parentElement, index2: Dynamic = 0;
-    parentElement && index2 < ComponentsShrinkWrapLimit_2;
-    parentElement = parentElement.parentElement, index2++
+    let parentElement: Dynamic = element.parentElement, depth: Dynamic = 0;
+    parentElement && depth < ancestorDepthLimit;
+    parentElement = parentElement.parentElement, depth++
   )
-    callback5(parentElement);
-  let value3: Dynamic = defaultView?.MutationObserver
+    observeElement(parentElement);
+  let mutationObserver: Dynamic = defaultView?.MutationObserver
     ? new defaultView.MutationObserver((): Dynamic => {
-        callback3("microtask");
+        schedule("microtask");
       })
     : null;
-  value3?.observe(element, {
+  mutationObserver?.observe(element, {
     subtree: true,
     childList: true,
     characterData: true,
@@ -562,40 +562,40 @@ function observeShrinkWrap(
     attributeFilter: [ShrinkwrapAttribute],
   });
   let fonts: Dynamic = element.ownerDocument.fonts,
-    callback6: Dynamic = (): Dynamic => callback3("microtask");
-  fonts?.addEventListener?.("loadingdone", callback6);
-  fonts && fonts.status !== "loaded" && fonts.ready.then(callback6);
+    scheduleAfterFonts: Dynamic = (): Dynamic => schedule("microtask");
+  fonts?.addEventListener?.("loadingdone", scheduleAfterFonts);
+  fonts && fonts.status !== "loaded" && fonts.ready.then(scheduleAfterFonts);
   return (): Dynamic => {
-    flag = true;
+    isDisposed = true;
     cancelShrinkWrapJob(element);
-    if (value2)
-      for (let value4 of items as Dynamic)
-        unobserveShrinkWrapResize(value2, value4, callback4);
-    value3?.disconnect();
-    fonts?.removeEventListener?.("loadingdone", callback6);
+    if (resizeHost)
+      for (let observed of observedElements as Dynamic)
+        unobserveShrinkWrapResize(resizeHost, observed, handleResize);
+    mutationObserver?.disconnect();
+    fonts?.removeEventListener?.("loadingdone", scheduleAfterFonts);
     restoreShrinkWrapWidth(element);
   };
 }
 function useShrinkWrap({
-  enabled: input = true,
-  immediate: input2 = false,
+  enabled: enabled = true,
+  immediate: immediate = false,
 }: Dynamic = {}): Dynamic {
-  let value: Dynamic = (0, reactComponentsShrinkWrap.useRef)(null);
+  let disposeRef: Dynamic = (0, reactComponentsShrinkWrap.useRef)(null);
   return (0, reactComponentsShrinkWrap.useCallback)(
-    (input3?: Dynamic): Dynamic => {
-      value.current?.();
-      value.current = null;
-      if (!!input3) {
-        if (!input) {
-          restoreShrinkWrapWidth(input3);
+    (element?: Dynamic): Dynamic => {
+      disposeRef.current?.();
+      disposeRef.current = null;
+      if (!!element) {
+        if (!enabled) {
+          restoreShrinkWrapWidth(element);
           return;
         }
-        value.current = observeShrinkWrap(input3, {
-          immediate: input2,
+        disposeRef.current = observeShrinkWrap(element, {
+          immediate: immediate,
         });
       }
     },
-    [input, input2],
+    [enabled, immediate],
   );
 }
 export {
@@ -606,7 +606,7 @@ export {
   ComponentsShrinkWrapElementCache_3,
   ComponentsShrinkWrapElementCache_4,
   ComponentsShrinkWrapLimit,
-  ComponentsShrinkWrapLimit_2,
+  ancestorDepthLimit as ComponentsShrinkWrapLimit_2,
   ComponentsShrinkWrapSubscribers,
   createShrinkWrapJob,
   flushShrinkWrapJobs,
@@ -649,7 +649,7 @@ export function installCdsComponentsShrinkWrap(): () => void {
         ComponentsShrinkWrapElementCache_2 = new WeakMap();
         ComponentsShrinkWrapLimit = 12;
         ShrinkwrapAttribute = "data-shrinkwrap";
-        ComponentsShrinkWrapLimit_2 = 16;
+        ancestorDepthLimit = 16;
         ComponentsShrinkWrapSubscribers = new Set([
           "IMG",
           "SVG",
@@ -690,15 +690,15 @@ export function installCdsComponentsShrinkWrap(): () => void {
               children: children,
               ...props
             }: Dynamic,
-            options?: Dynamic,
+            forwardedRef?: Dynamic,
           ): Dynamic => {
-            let value: Dynamic = useShrinkWrap({
+            let shrinkWrapRef: Dynamic = useShrinkWrap({
                 enabled: enabled,
                 immediate: immediate,
               }),
-              value2: Dynamic = useMergedRefs(options, value);
+              mergedRef: Dynamic = useMergedRefs(forwardedRef, shrinkWrapRef);
             return (
-              <div ref={value2} data-cds={"ShrinkWrap"} {...props}>
+              <div ref={mergedRef} data-cds={"ShrinkWrap"} {...props}>
                 {children}
               </div>
             );

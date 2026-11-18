@@ -27,73 +27,73 @@ var DisabledContext: React.Context<boolean>;
 var initializeDomRefComposition_5: () => void;
 function assignRef<Element>(
   ref: React.Ref<Element> | undefined,
-  value: Element | null,
+  node: Element | null,
 ): void | (() => void) {
-  if (typeof ref == "function") return ref(value);
-  ref && (ref.current = value);
+  if (typeof ref == "function") return ref(node);
+  ref && (ref.current = node);
 }
 function mergeRefs<Element>(
   ...refs: (React.Ref<Element> | undefined)[]
 ): React.RefCallback<Element> {
-  return (input) => {
-    let value = refs.map((input2) => assignRef(input2, input));
-    if (value.some((input2) => typeof input2 == "function"))
+  return (node) => {
+    let cleanups = refs.map((ref) => assignRef(ref, node));
+    if (cleanups.some((cleanup) => typeof cleanup == "function"))
       return () => {
-        refs.forEach((input2, options) => {
-          let value2 = value[options];
-          typeof value2 == "function" ? value2() : assignRef(input2, null);
+        refs.forEach((ref, refIndex) => {
+          let cleanup = cleanups[refIndex];
+          typeof cleanup == "function" ? cleanup() : assignRef(ref, null);
         });
       };
   };
 }
 function useMergedRefs<Element>(
-  input?: React.Ref<Element>,
-  options?: React.Ref<Element>,
-  context?: React.Ref<Element>,
+  firstRef?: React.Ref<Element>,
+  secondRef?: React.Ref<Element>,
+  thirdRef?: React.Ref<Element>,
 ): React.RefCallback<Element> {
   return (0, reactDomRefComposition.useMemo)(
-    () => mergeRefs(input, options, context),
-    [input, options, context],
+    () => mergeRefs(firstRef, secondRef, thirdRef),
+    [firstRef, secondRef, thirdRef],
   );
 }
 function useEventRef<Element>(
-  input: React.RefCallback<Element>,
-  options?: React.Ref<Element>,
+  refCallback: React.RefCallback<Element>,
+  extraRef?: React.Ref<Element>,
 ): React.RefCallback<Element> {
-  let value = useStableCallback(input);
-  return useStableCallback((input2) =>
-    mergeRefs(value, options)(input2),
+  let stableCallback = useStableCallback(refCallback);
+  return useStableCallback((node) =>
+    mergeRefs(stableCallback, extraRef)(node),
   );
 }
 function elementNamespace(
-  input: Node | null | undefined,
+  domNode: Node | null | undefined,
 ): string | null | undefined {
-  let value = input;
-  return value?.nodeType === 1 ? (value as Element).namespaceURI : undefined;
+  let node = domNode;
+  return node?.nodeType === 1 ? (node as Element).namespaceURI : undefined;
 }
-function isHtmlElement(input: Node | null | undefined): input is HTMLElement {
-  return elementNamespace(input) === HttpWwwW3Org1999XhtmlValue;
+function isHtmlElement(node: Node | null | undefined): node is HTMLElement {
+  return elementNamespace(node) === HttpWwwW3Org1999XhtmlValue;
 }
-function isSvgElement(input: Node | null | undefined): input is SVGElement {
-  return elementNamespace(input) === HttpWwwW3Org2000SvgValue;
+function isSvgElement(node: Node | null | undefined): node is SVGElement {
+  return elementNamespace(node) === HttpWwwW3Org2000SvgValue;
 }
-function hasDisplayNoneAncestor(input: Element): boolean {
-  if (!input.isConnected) return false;
+function hasDisplayNoneAncestor(element: Element): boolean {
+  if (!element.isConnected) return false;
   for (
-    let value: Element | null = input;
-    value !== null;
-    value = value.parentElement
+    let ancestor: Element | null = element;
+    ancestor !== null;
+    ancestor = ancestor.parentElement
   )
     if (
-      isHtmlElement(value) &&
-      (value as HTMLElement).style.display === "none"
+      isHtmlElement(ancestor) &&
+      (ancestor as HTMLElement).style.display === "none"
     )
       return true;
   return false;
 }
-function hasOpenChildOverlay(input: Element): boolean {
-  for (let value of input.children)
-    if (value.hasAttribute("data-open")) return true;
+function hasOpenChildOverlay(element: Element): boolean {
+  for (let child of element.children)
+    if (child.hasAttribute("data-open")) return true;
   return false;
 }
 function ActivityBoundary({
@@ -101,71 +101,71 @@ function ActivityBoundary({
   children: children,
 }: ActivityBoundaryProps): React.ReactElement {
   useUiLocale();
-  let [value] = (0, reactDomRefComposition_2.useState)(
+  let [hiddenElements] = (0, reactDomRefComposition_2.useState)(
       () => new Set<Element>(),
     ),
-    value2 = (0, reactDomRefComposition_2.useRef)(false);
+    hadHiddenOverlayRef = (0, reactDomRefComposition_2.useRef)(false);
   (0, reactDomRefComposition_2.useEffect)(
     () => (
-      value2.current &&
-        ((value2.current = false), actionsRef.current?.close?.()),
+      hadHiddenOverlayRef.current &&
+        ((hadHiddenOverlayRef.current = false), actionsRef.current?.close?.()),
       () => {
-        value2.current = false;
-        for (let value3 of value)
-          hasDisplayNoneAncestor(value3) &&
-            hasOpenChildOverlay(value3) &&
-            (value2.current = true);
+        hadHiddenOverlayRef.current = false;
+        for (let element of hiddenElements)
+          hasDisplayNoneAncestor(element) &&
+            hasOpenChildOverlay(element) &&
+            (hadHiddenOverlayRef.current = true);
       }
     ),
-    [actionsRef, value],
+    [actionsRef, hiddenElements],
   );
   return (
-    <ActivityVisibilityContext.Provider value={value}>
+    <ActivityVisibilityContext.Provider value={hiddenElements}>
       {children}
     </ActivityVisibilityContext.Provider>
   );
 }
 function useCloseOnHiddenActivity(
-  input: boolean | undefined,
+  enabled: boolean | undefined,
 ): React.RefObject<HTMLElement | null> {
-  let value = (0, reactDomRefComposition_2.useContext)(
+  let hiddenElements = (0, reactDomRefComposition_2.useContext)(
       ActivityVisibilityContext,
     ),
-    value2 = (0, reactDomRefComposition_2.useRef)<HTMLElement | null>(null);
+    elementRef = (0, reactDomRefComposition_2.useRef)<HTMLElement | null>(null);
   (0, reactDomRefComposition_2.useEffect)(() => {
-    let current = value2.current;
-    if (!(!input || value === null || current === null)) {
-      value.add(current);
+    let current = elementRef.current;
+    if (!(!enabled || hiddenElements === null || current === null)) {
+      hiddenElements.add(current);
       return () => {
-        value.delete(current);
+        hiddenElements.delete(current);
       };
     }
-  }, [value, input]);
-  return value2;
+  }, [hiddenElements, enabled]);
+  return elementRef;
 }
 function companionModalCatcher(
-  input: Element,
-  options: EventTarget | null,
+  container: Element,
+  target: EventTarget | null,
 ): HTMLElement | null {
-  let value = asElement(options);
+  let candidate = asElement(target);
   return (
-    value === null || value.parentElement !== input
+    candidate === null || candidate.parentElement !== container
       ? null
-      : value.childElementCount === 0 &&
-          (value as HTMLElement).style.position === "fixed"
-        ? value
+      : candidate.childElementCount === 0 &&
+          (candidate as HTMLElement).style.position === "fixed"
+        ? candidate
         : null
   ) as HTMLElement | null;
 }
 function shouldPreventModalCatcherFocus(
-  input: Element,
-  options: EventTarget | null,
+  container: Element,
+  target: EventTarget | null,
 ): boolean {
-  let value = companionModalCatcher(input, options);
-  if (value === null) return false;
-  let value2 = asElement(value.ownerDocument.activeElement),
-    value3 = input.parentElement ?? input;
-  return value2 === null || !value3.contains(value2);
+  let catcher = companionModalCatcher(container, target);
+  if (catcher === null) return false;
+  let activeElement = asElement(catcher.ownerDocument.activeElement),
+    scope = container.parentElement ?? container;
+  return activeElement === null || !scope.contains(activeElement);
 }
 function preventModalCatcherPointerFocus(
   event: React.PointerEvent<HTMLElement>,
@@ -184,43 +184,43 @@ function handleModalCatcherDismissal(
   event: React.SyntheticEvent<HTMLElement>,
 ): void {
   let currentTarget = event.currentTarget,
-    value: HTMLElement | null = null;
-  for (let value3 of currentTarget.children)
+    catcher: HTMLElement | null = null;
+  for (let child of currentTarget.children)
     if (
-      ((value = companionModalCatcher(currentTarget, value3)), value !== null)
+      ((catcher = companionModalCatcher(currentTarget, child)), catcher !== null)
     )
       break;
-  if (value === null) return;
-  let value2 = value;
+  if (catcher === null) return;
+  let catcherElement = catcher;
   if (
     DomRefCompositionEventRestoreAllState !== null &&
     DomRefCompositionEventRestoreAllState.event === event.nativeEvent
   ) {
-    value2.style.pointerEvents = "none";
+    catcherElement.style.pointerEvents = "none";
     let restoreAll = DomRefCompositionEventRestoreAllState.restoreAll;
     DomRefCompositionEventRestoreAllState.restoreAll = () => {
-      value2.style.pointerEvents = "";
+      catcherElement.style.pointerEvents = "";
       restoreAll();
     };
     return;
   }
   DomRefCompositionEventRestoreAllState?.restoreAll();
-  value2.style.pointerEvents = "none";
-  let ownerDocument = value2.ownerDocument,
+  catcherElement.style.pointerEvents = "none";
+  let ownerDocument = catcherElement.ownerDocument,
     state = {
       event: event.nativeEvent,
       restoreAll: () => {
-        value2.style.pointerEvents = "";
-        for (let value3 of DomRefCompositionDragendDropPointerdownValues)
-          ownerDocument.removeEventListener(value3, callback, true);
+        catcherElement.style.pointerEvents = "";
+        for (let eventName of DomRefCompositionDragendDropPointerdownValues)
+          ownerDocument.removeEventListener(eventName, handleOutsideEvent, true);
         DomRefCompositionEventRestoreAllState === state &&
           (DomRefCompositionEventRestoreAllState = null);
       },
     },
-    callback = () => state.restoreAll();
+    handleOutsideEvent = () => state.restoreAll();
   DomRefCompositionEventRestoreAllState = state;
-  for (let value3 of DomRefCompositionDragendDropPointerdownValues)
-    ownerDocument.addEventListener(value3, callback, true);
+  for (let eventName of DomRefCompositionDragendDropPointerdownValues)
+    ownerDocument.addEventListener(eventName, handleOutsideEvent, true);
 }
 export {
   ActivityBoundary,

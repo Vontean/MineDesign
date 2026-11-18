@@ -16,49 +16,49 @@ var ComponentsSkeletonDivSpanConfig: Dynamic;
 var ComponentsSkeletonSubscribers: Dynamic;
 var ComponentsSkeletonElementCache: Dynamic;
 var ComponentsSkeletonFreezeValue: Dynamic;
-var ComponentsSkeletonFreezeValue_2: Dynamic;
+var shownSnapshot: Dynamic;
 var CdsSkeletonBreatheValue: Dynamic;
 var CdsSkeletonSweepValue: Dynamic;
 var ComponentsSkeletonConstant: Dynamic;
 var WaveValue: Dynamic;
-var ComponentsSkeletonConstant_2: Dynamic;
-var ComponentsSkeletonConstant_3: Dynamic;
+var waveStepMs: Dynamic;
+var settledDurationMs: Dynamic;
 var ComponentsSkeletonLimit: Dynamic;
 var ComponentsSkeletonElementCache_2: Dynamic;
 var ComponentsSkeletonItems: Dynamic;
-var ComponentsSkeletonItems_2: Dynamic;
-var ComponentsSkeletonItems_3: Dynamic;
+var rowWidthsWithoutIcon: Dynamic;
+var lineWidths: Dynamic;
 var ComponentsSkeletonAssignValue: Dynamic;
 var initializeComponentsSkeleton: Dynamic;
-function isShimmerAnimation(input?: Dynamic): Dynamic {
-  return input.animationName === "cds-shimmer";
+function isShimmerAnimation(animation?: Dynamic): Dynamic {
+  return animation.animationName === "cds-shimmer";
 }
-function synchronizeDocumentShimmers(input?: Dynamic): Dynamic {
-  let value: Dynamic,
-    items: Dynamic = [];
-  for (let value3 of input.getAnimations() as Dynamic) {
-    if (!isShimmerAnimation(value3)) continue;
-    let { startTime: value4 }: Dynamic = value3;
-    typeof value4 == "number" &&
-      (value === undefined || value4 < value) &&
-      (value = value4);
-    let value5: Dynamic = value3.effect?.target;
-    value5 != null &&
-      ComponentsSkeletonSubscribers.has(value5) &&
-      value3.playState === "running" &&
-      items.push(value3);
+function synchronizeDocumentShimmers(doc?: Dynamic): Dynamic {
+  let earliestStart: Dynamic,
+    runningShimmers: Dynamic = [];
+  for (let animation of doc.getAnimations() as Dynamic) {
+    if (!isShimmerAnimation(animation)) continue;
+    let { startTime: startTime }: Dynamic = animation;
+    typeof startTime == "number" &&
+      (earliestStart === undefined || startTime < earliestStart) &&
+      (earliestStart = startTime);
+    let target: Dynamic = animation.effect?.target;
+    target != null &&
+      ComponentsSkeletonSubscribers.has(target) &&
+      animation.playState === "running" &&
+      runningShimmers.push(animation);
   }
-  let value2: Dynamic =
-    value ?? ComponentsSkeletonElementCache.get(input) ?? 0;
-  for (let value3 of items as Dynamic) value3.startTime = value2;
-  ComponentsSkeletonElementCache.set(input, value2);
+  let syncStart: Dynamic =
+    earliestStart ?? ComponentsSkeletonElementCache.get(doc) ?? 0;
+  for (let animation of runningShimmers as Dynamic) animation.startTime = syncStart;
+  ComponentsSkeletonElementCache.set(doc, syncStart);
 }
 function flushShimmerSynchronization(): Dynamic {
   try {
-    let values: Dynamic = new Set();
-    for (let value of ComponentsSkeletonSubscribers as Dynamic)
-      values.add(value.ownerDocument);
-    for (let value of values as Dynamic) synchronizeDocumentShimmers(value);
+    let documents: Dynamic = new Set();
+    for (let element of ComponentsSkeletonSubscribers as Dynamic)
+      documents.add(element.ownerDocument);
+    for (let doc of documents as Dynamic) synchronizeDocumentShimmers(doc);
   } finally {
     ComponentsSkeletonSubscribers.clear();
   }
@@ -70,102 +70,102 @@ function scheduleShimmerSynchronization(element?: Dynamic): Dynamic {
       queueMicrotask(flushShimmerSynchronization),
     ComponentsSkeletonSubscribers.add(element));
 }
-function reportSkeletonError(input?: Dynamic): Dynamic {
+function reportSkeletonError(error?: Dynamic): Dynamic {
   if (typeof reportError == "function") {
-    reportError(input);
+    reportError(error);
     return;
   }
   queueMicrotask((): Dynamic => {
-    throw input instanceof Error ? input : new Error(String(input));
+    throw error instanceof Error ? error : new Error(String(error));
   });
 }
 function createSkeletonStore(): Dynamic {
-  let value: Dynamic = ComponentsSkeletonFreezeValue,
-    values: Dynamic = new Set(),
-    callback: Dynamic = (input?: Dynamic): Dynamic => {
-      if (value !== input) {
-        value = input;
-        for (let value2 of values as Dynamic)
+  let snapshot: Dynamic = ComponentsSkeletonFreezeValue,
+    listeners: Dynamic = new Set(),
+    setSnapshot: Dynamic = (next?: Dynamic): Dynamic => {
+      if (snapshot !== next) {
+        snapshot = next;
+        for (let listener of listeners as Dynamic)
           try {
-            value2();
-          } catch (value3: Dynamic) {
-            reportSkeletonError(value3);
+            listener();
+          } catch (error: Dynamic) {
+            reportSkeletonError(error);
           }
       }
     };
   return {
-    getSnapshot: (): Dynamic => value,
-    subscribe: (input?: Dynamic): Dynamic => (
-      values.add(input),
+    getSnapshot: (): Dynamic => snapshot,
+    subscribe: (listener?: Dynamic): Dynamic => (
+      listeners.add(listener),
       (): Dynamic => {
-        values.delete(input);
+        listeners.delete(listener);
       }
     ),
-    markShown: (): Dynamic => callback(ComponentsSkeletonFreezeValue_2),
-    reset: (): Dynamic => callback(ComponentsSkeletonFreezeValue),
+    markShown: (): Dynamic => setSnapshot(shownSnapshot),
+    reset: (): Dynamic => setSnapshot(ComponentsSkeletonFreezeValue),
   };
 }
-function notifySkeletonShown(input?: Dynamic, options?: Dynamic): Dynamic {
+function notifySkeletonShown(onShown?: Dynamic, store?: Dynamic): Dynamic {
   try {
-    input?.();
+    onShown?.();
   } finally {
-    options.markShown();
+    store.markShown();
   }
 }
-function clearSkeletonElapsed(input?: Dynamic): Dynamic {
-  input.style.removeProperty("--cds-skel-elapsed");
+function clearSkeletonElapsed(element?: Dynamic): Dynamic {
+  element.style.removeProperty("--cds-skel-elapsed");
 }
-function setSkeletonMotion(input?: Dynamic, options?: Dynamic): Dynamic {
-  input.dataset.motion = options;
+function setSkeletonMotion(element?: Dynamic, motion?: Dynamic): Dynamic {
+  element.dataset.motion = motion;
 }
-function ensurePositionedElement(input?: Dynamic): Dynamic {
-  let position: Dynamic = getComputedStyle(input).position;
+function ensurePositionedElement(element?: Dynamic): Dynamic {
+  let position: Dynamic = getComputedStyle(element).position;
   return position === "static" || position === ""
-    ? ((input.style.position = "relative"), true)
+    ? ((element.style.position = "relative"), true)
     : false;
 }
 function synchronizeSkeletonAnimation(
   element?: Dynamic,
-  options: Dynamic = CdsSkeletonBreatheValue,
-  context: Dynamic = 0,
+  animationName: Dynamic = CdsSkeletonBreatheValue,
+  phaseOffset: Dynamic = 0,
 ): Dynamic {
   if (typeof element.getAnimations != "function") return;
-  let value: Dynamic = element
+  let animation: Dynamic = element
     .getAnimations()
-    .find((input?: Dynamic): Dynamic => input.animationName === options);
-  if (value === undefined || typeof value.startTime != "number") return;
-  let value2: Dynamic = value.effect?.getComputedTiming();
+    .find((candidate?: Dynamic): Dynamic => candidate.animationName === animationName);
+  if (animation === undefined || typeof animation.startTime != "number") return;
+  let timing: Dynamic = animation.effect?.getComputedTiming();
   if (
-    value2?.duration !== ComponentsSkeletonConstant ||
-    value2.iterations !== 1 / 0
+    timing?.duration !== ComponentsSkeletonConstant ||
+    timing.iterations !== 1 / 0
   )
     return;
-  let value3: Dynamic = value.startTime + (value2.delay ?? 0),
-    value4: Dynamic = value3 - context,
+  let startWithDelay: Dynamic = animation.startTime + (timing.delay ?? 0),
+    alignedStart: Dynamic = startWithDelay - phaseOffset,
     ownerDocument: Dynamic = element.ownerDocument,
     entry: Dynamic = ComponentsSkeletonElementCache_2.get(ownerDocument);
   if (entry === undefined) {
-    ComponentsSkeletonElementCache_2.set(ownerDocument, value4);
+    ComponentsSkeletonElementCache_2.set(ownerDocument, alignedStart);
     return;
   }
-  let value5: Dynamic =
-    (((value4 - entry) % ComponentsSkeletonConstant) +
+  let drift: Dynamic =
+    (((alignedStart - entry) % ComponentsSkeletonConstant) +
       ComponentsSkeletonConstant) %
     ComponentsSkeletonConstant;
-  if (value5 < ComponentsSkeletonLimit || value5 > 1999) return;
-  let value6: Dynamic =
-      typeof value.currentTime == "number"
-        ? value.startTime + value.currentTime
-        : value3,
-    value7: Dynamic = Math.ceil(
-      (Math.max(value6, value3) - (entry + context)) /
+  if (drift < ComponentsSkeletonLimit || drift > 1999) return;
+  let currentStart: Dynamic =
+      typeof animation.currentTime == "number"
+        ? animation.startTime + animation.currentTime
+        : startWithDelay,
+    cycleCount: Dynamic = Math.ceil(
+      (Math.max(currentStart, startWithDelay) - (entry + phaseOffset)) /
         ComponentsSkeletonConstant,
     );
-  value.startTime =
+  animation.startTime =
     entry +
-    context +
-    value7 * ComponentsSkeletonConstant -
-    (value2.delay ?? 0);
+    phaseOffset +
+    cycleCount * ComponentsSkeletonConstant -
+    (timing.delay ?? 0);
 }
 function SkeletonGroup({
   children: children,
@@ -179,211 +179,211 @@ function SkeletonGroup({
   motion = WaveValue,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic = (0, reactComponentsSkeleton.useContext)(
+  let isInsideDecorativeGroup: Dynamic = (0, reactComponentsSkeleton.useContext)(
       SkeletonDecorativeContext,
     ),
-    value2: Dynamic = (0, reactComponentsSkeleton.useContext)(
+    inheritedElement: Dynamic = (0, reactComponentsSkeleton.useContext)(
       SkeletonElementContext,
     ),
-    [value3]: Dynamic = (0, reactComponentsSkeleton.useState)(as ?? value2),
-    value4: Dynamic = ComponentsSkeletonDivSpanConfig[value3],
-    value5: Dynamic = value3 === "span",
-    value6: Dynamic = (0, reactComponentsSkeleton.useContext)(
+    [elementName]: Dynamic = (0, reactComponentsSkeleton.useState)(as ?? inheritedElement),
+    tagName: Dynamic = ComponentsSkeletonDivSpanConfig[elementName],
+    isSpan: Dynamic = elementName === "span",
+    rootStartTime: Dynamic = (0, reactComponentsSkeleton.useContext)(
       PlatformRootFontSizeContext,
     ),
-    value7: Dynamic = (0, reactComponentsSkeleton.useContext)(
+    parentStore: Dynamic = (0, reactComponentsSkeleton.useContext)(
       SkeletonMotionContext,
     ),
-    [value8]: Dynamic = (0, reactComponentsSkeleton.useState)((): Dynamic => {
-      let value26: Dynamic = createSkeletonStore();
-      (value ? value7?.getSnapshot().shown === true : hold !== "delayed") &&
-        value26.markShown();
-      return value26;
+    [store]: Dynamic = (0, reactComponentsSkeleton.useState)((): Dynamic => {
+      let newStore: Dynamic = createSkeletonStore();
+      (isInsideDecorativeGroup ? parentStore?.getSnapshot().shown === true : hold !== "delayed") &&
+        newStore.markShown();
+      return newStore;
     }),
-    [value9]: Dynamic = (0, reactComponentsSkeleton.useState)(value6),
-    [value10, value11]: Dynamic = (0, reactComponentsSkeleton.useState)(
+    [startTime]: Dynamic = (0, reactComponentsSkeleton.useState)(rootStartTime),
+    [isDetached, setIsDetached]: Dynamic = (0, reactComponentsSkeleton.useState)(
       false,
     ),
-    value12: Dynamic = (0, reactComponentsSkeleton.useRef)(false),
-    value13: Dynamic = value && !value10,
-    value14: Dynamic = (0, reactComponentsSkeleton.useCallback)(
-      (input?: Dynamic): Dynamic => {
-        input !== null &&
-          input.parentElement !== null &&
-          input.parentElement.closest('[data-cds="SkeletonGroup"]') ===
+    detachedRef: Dynamic = (0, reactComponentsSkeleton.useRef)(false),
+    isNestedPlaceholder: Dynamic = isInsideDecorativeGroup && !isDetached,
+    nestedGroupRef: Dynamic = (0, reactComponentsSkeleton.useCallback)(
+      (element?: Dynamic): Dynamic => {
+        element !== null &&
+          element.parentElement !== null &&
+          element.parentElement.closest('[data-cds="SkeletonGroup"]') ===
             null &&
-          ((value12.current = true), value8.reset(), value11(true));
+          ((detachedRef.current = true), store.reset(), setIsDetached(true));
       },
-      [value8],
+      [store],
     ),
-    value15: Dynamic = useLabel("loading", "Loading"),
-    [value16]: Dynamic = (0, reactComponentsSkeleton.useState)(hold),
-    value17: Dynamic = value16 === "delayed",
-    value18: Dynamic = label ?? value15,
-    value19: Dynamic = (0, reactComponentsSkeleton.useRef)(null),
-    value20: Dynamic = (0, reactComponentsSkeleton.useCallback)(
-      (input?: Dynamic): Dynamic => {
-        value19.current = input;
+    defaultLoadingLabel: Dynamic = useLabel("loading", "Loading"),
+    [initialHold]: Dynamic = (0, reactComponentsSkeleton.useState)(hold),
+    isDelayedHold: Dynamic = initialHold === "delayed",
+    labelText: Dynamic = label ?? defaultLoadingLabel,
+    groupElementRef: Dynamic = (0, reactComponentsSkeleton.useRef)(null),
+    setGroupElement: Dynamic = (0, reactComponentsSkeleton.useCallback)(
+      (element?: Dynamic): Dynamic => {
+        groupElementRef.current = element;
       },
       [],
     ),
-    value21: Dynamic = (0, reactComponentsSkeleton.useRef)(false),
-    value22: Dynamic = (0, reactComponentsSkeleton.useRef)({
+    hasShownRef: Dynamic = (0, reactComponentsSkeleton.useRef)(false),
+    latestCallbacksRef: Dynamic = (0, reactComponentsSkeleton.useRef)({
       onShown: onShown,
       onHidden: onHidden,
-      labelText: value18,
+      labelText: labelText,
     });
   (0, reactComponentsSkeleton.useEffect)((): Dynamic => {
-    value22.current = {
+    latestCallbacksRef.current = {
       onShown: onShown,
       onHidden: onHidden,
-      labelText: value18,
+      labelText: labelText,
     };
-    if (value21.current && value19.current !== null) {
-      let element: Dynamic = value19.current.querySelector(
+    if (hasShownRef.current && groupElementRef.current !== null) {
+      let element: Dynamic = groupElementRef.current.querySelector(
         "[data-skeleton-label]",
       );
       element !== null &&
-        element.textContent !== value18 &&
-        (element.textContent = value18);
+        element.textContent !== labelText &&
+        (element.textContent = labelText);
     }
-  }, [onShown, onHidden, value18, decorative]);
+  }, [onShown, onHidden, labelText, decorative]);
   (0, reactComponentsSkeleton.useLayoutEffect)((): Dynamic => {
-    !value13 &&
-      !value17 &&
-      !value21.current &&
-      ((value21.current = true),
-      notifySkeletonShown(value22.current.onShown, value8));
-  }, [value13, value17, value8]);
+    !isNestedPlaceholder &&
+      !isDelayedHold &&
+      !hasShownRef.current &&
+      ((hasShownRef.current = true),
+      notifySkeletonShown(latestCallbacksRef.current.onShown, store));
+  }, [isNestedPlaceholder, isDelayedHold, store]);
   (0, reactComponentsSkeleton.useLayoutEffect)((): Dynamic => {
-    if (!value13 || value12.current || value7 === null) return;
-    let callback: Dynamic = (): Dynamic => {
-      value7.getSnapshot().shown
-        ? value21.current
-          ? value8.markShown()
-          : ((value21.current = true),
-            notifySkeletonShown(value22.current.onShown, value8))
-        : value8.reset();
+    if (!isNestedPlaceholder || detachedRef.current || parentStore === null) return;
+    let syncWithParent: Dynamic = (): Dynamic => {
+      parentStore.getSnapshot().shown
+        ? hasShownRef.current
+          ? store.markShown()
+          : ((hasShownRef.current = true),
+            notifySkeletonShown(latestCallbacksRef.current.onShown, store))
+        : store.reset();
     };
-    callback();
-    return value7.subscribe(callback);
-  }, [value13, value7, value8]);
+    syncWithParent();
+    return parentStore.subscribe(syncWithParent);
+  }, [isNestedPlaceholder, parentStore, store]);
   (0, reactComponentsSkeleton.useEffect)(
     (): Dynamic => (): Dynamic => {
-      value21.current &&
-        (value22.current.onHidden?.(), (value21.current = false));
-      value8.reset();
+      hasShownRef.current &&
+        (latestCallbacksRef.current.onHidden?.(), (hasShownRef.current = false));
+      store.reset();
     },
-    [value8],
+    [store],
   );
   (0, reactComponentsSkeleton.useLayoutEffect)((): Dynamic => {
-    let current: Dynamic = value19.current;
-    if (current === null || value13 || !value17 || value9 === null) return;
-    let value26: Dynamic = performance.now() - value9;
-    if (!(!Number.isFinite(value26) || value26 <= 0)) {
-      current.style.setProperty("--cds-skel-elapsed", `${value26}ms`);
-      return (): Dynamic => clearSkeletonElapsed(current);
+    let groupElement: Dynamic = groupElementRef.current;
+    if (groupElement === null || isNestedPlaceholder || !isDelayedHold || startTime === null) return;
+    let elapsedMs: Dynamic = performance.now() - startTime;
+    if (!(!Number.isFinite(elapsedMs) || elapsedMs <= 0)) {
+      groupElement.style.setProperty("--cds-skel-elapsed", `${elapsedMs}ms`);
+      return (): Dynamic => clearSkeletonElapsed(groupElement);
     }
-  }, [value13, value17, value9]);
-  let value23: Dynamic = (0, reactComponentsSkeleton.useRef)(null),
-    value24: Dynamic = (0, reactComponentsSkeleton.useCallback)(
-      (input?: Dynamic): Dynamic => {
-        value23.current = input;
+  }, [isNestedPlaceholder, isDelayedHold, startTime]);
+  let sweepClipRef: Dynamic = (0, reactComponentsSkeleton.useRef)(null),
+    setSweepClip: Dynamic = (0, reactComponentsSkeleton.useCallback)(
+      (element?: Dynamic): Dynamic => {
+        sweepClipRef.current = element;
       },
       [],
     );
   (0, reactComponentsSkeleton.useEffect)((): Dynamic => {
-    let current: Dynamic = value23.current,
-      current2: Dynamic = value19.current;
+    let clipElement: Dynamic = sweepClipRef.current,
+      groupElement: Dynamic = groupElementRef.current;
     if (
       motion !== "sweep" ||
-      value13 ||
-      current === null ||
-      current2 === null
+      isNestedPlaceholder ||
+      clipElement === null ||
+      groupElement === null
     )
       return;
-    let value26: Dynamic = ensurePositionedElement(current2),
-      callback: Dynamic = (): Dynamic => {
-        let items: Dynamic = [],
-          value27: Dynamic = current2.querySelectorAll(
+    let didSetPosition: Dynamic = ensurePositionedElement(groupElement),
+      updateClipPath: Dynamic = (): Dynamic => {
+        let clipPaths: Dynamic = [],
+          skeletonNodes: Dynamic = groupElement.querySelectorAll(
             '[data-cds="Skeleton"]',
           );
         setSkeletonMotion(
-          current2,
-          value27.length === 0 ? "lockstep" : "sweep",
+          groupElement,
+          skeletonNodes.length === 0 ? "lockstep" : "sweep",
         );
-        for (let value28 of value27 as Dynamic) {
-          let index: Dynamic = 0,
-            index2: Dynamic = 0,
-            value29: Dynamic = value28;
-          for (; value29 !== null && value29 !== current2; ) {
-            index += value29.offsetLeft;
-            index2 += value29.offsetTop;
-            value29 = value29.offsetParent;
-            value29 !== null &&
-              value29 !== current2 &&
-              ((index += value29.clientLeft - value29.scrollLeft),
-              (index2 += value29.clientTop - value29.scrollTop));
+        for (let skeleton of skeletonNodes as Dynamic) {
+          let offsetX: Dynamic = 0,
+            offsetY: Dynamic = 0,
+            node: Dynamic = skeleton;
+          for (; node !== null && node !== groupElement; ) {
+            offsetX += node.offsetLeft;
+            offsetY += node.offsetTop;
+            node = node.offsetParent;
+            node !== null &&
+              node !== groupElement &&
+              ((offsetX += node.clientLeft - node.scrollLeft),
+              (offsetY += node.clientTop - node.scrollTop));
           }
-          value29 === current2 &&
-            items.push(
-              `M${index},${index2}h${value28.offsetWidth}v${value28.offsetHeight}h${-value28.offsetWidth}Z`,
+          node === groupElement &&
+            clipPaths.push(
+              `M${offsetX},${offsetY}h${skeleton.offsetWidth}v${skeleton.offsetHeight}h${-skeleton.offsetWidth}Z`,
             );
         }
-        current.style.clipPath = items.length
-          ? `path("${items.join(" ")}")`
+        clipElement.style.clipPath = clipPaths.length
+          ? `path("${clipPaths.join(" ")}")`
           : "";
-        current.style.visibility = items.length ? "visible" : "hidden";
+        clipElement.style.visibility = clipPaths.length ? "visible" : "hidden";
       };
-    callback();
-    let observer: Dynamic = new ResizeObserver(callback);
-    observer.observe(current2);
+    updateClipPath();
+    let observer: Dynamic = new ResizeObserver(updateClipPath);
+    observer.observe(groupElement);
     return (): Dynamic => {
       observer.disconnect();
-      value26 && current2.style.removeProperty("position");
+      didSetPosition && groupElement.style.removeProperty("position");
     };
-  }, [motion, value13]);
+  }, [motion, isNestedPlaceholder]);
   (0, reactComponentsSkeleton.useEffect)((): Dynamic => {
-    let current: Dynamic = value19.current;
-    if (motion !== "wave" || value13 || current === null) return;
-    let callback: Dynamic = (): Dynamic => {
-      let value26: Dynamic = current.querySelectorAll(
+    let groupElement: Dynamic = groupElementRef.current;
+    if (motion !== "wave" || isNestedPlaceholder || groupElement === null) return;
+    let updateWaveIndexes: Dynamic = (): Dynamic => {
+      let skeletonNodes: Dynamic = groupElement.querySelectorAll(
           '[data-cds="Skeleton"]',
         ),
-        value27: Dynamic = Math.floor(
-          ComponentsSkeletonConstant / ComponentsSkeletonConstant_2,
+        waveSlots: Dynamic = Math.floor(
+          ComponentsSkeletonConstant / waveStepMs,
         ),
-        index: Dynamic = 0;
-      for (let value28 of value26 as Dynamic)
-        value28.style.getPropertyValue("--cds-skel-i") !== "" && (index += 1);
-      for (let value28 of value26 as Dynamic)
-        value28.style.getPropertyValue("--cds-skel-i") === "" &&
-          (value28.style.setProperty("--cds-skel-i", String(index % value27)),
-          (index += 1));
-      setSkeletonMotion(current, value26.length === 0 ? "lockstep" : "wave");
+        nextIndex: Dynamic = 0;
+      for (let skeleton of skeletonNodes as Dynamic)
+        skeleton.style.getPropertyValue("--cds-skel-i") !== "" && (nextIndex += 1);
+      for (let skeleton of skeletonNodes as Dynamic)
+        skeleton.style.getPropertyValue("--cds-skel-i") === "" &&
+          (skeleton.style.setProperty("--cds-skel-i", String(nextIndex % waveSlots)),
+          (nextIndex += 1));
+      setSkeletonMotion(groupElement, skeletonNodes.length === 0 ? "lockstep" : "wave");
     };
-    callback();
-    let observer: Dynamic = new MutationObserver(callback);
-    observer.observe(current, {
+    updateWaveIndexes();
+    let observer: Dynamic = new MutationObserver(updateWaveIndexes);
+    observer.observe(groupElement, {
       childList: true,
       subtree: true,
     });
     return (): Dynamic => observer.disconnect();
-  }, [motion, value13]);
-  let value25: Dynamic = value5
+  }, [motion, isNestedPlaceholder]);
+  let groupClassName: Dynamic = isSpan
     ? cn("block", className)
     : className;
-  return value13
+  return isNestedPlaceholder
     ? (() => {
-        const _Component = value4;
+        const _Component = tagName;
         return (
           <_Component
-            ref={value14}
+            ref={nestedGroupRef}
             data-cds={"SkeletonGroup"}
-            className={value25}
+            className={groupClassName}
           >
-            <SkeletonElementContext.Provider value={value3}>
-              <SkeletonMotionContext.Provider value={value8}>
+            <SkeletonElementContext.Provider value={elementName}>
+              <SkeletonMotionContext.Provider value={store}>
                 {children}
               </SkeletonMotionContext.Provider>
             </SkeletonElementContext.Provider>
@@ -391,24 +391,24 @@ function SkeletonGroup({
         );
       })()
     : (() => {
-        const _Component5 = value4;
+        const StatusGroupTag = tagName;
         return (
-          <_Component5
-            ref={value20}
+          <StatusGroupTag
+            ref={setGroupElement}
             data-cds={"SkeletonGroup"}
             data-motion={motion}
-            data-hold={value17 ? "delayed" : "none"}
-            data-hold-reason={value17 ? undefined : value16.none}
-            data-shown={value17 ? undefined : ""}
+            data-hold={isDelayedHold ? "delayed" : "none"}
+            data-hold-reason={isDelayedHold ? undefined : initialHold.none}
+            data-shown={isDelayedHold ? undefined : ""}
             role={decorative ? undefined : "status"}
             aria-hidden={decorative ? true : undefined}
-            className={value25}
+            className={groupClassName}
             onAnimationEnd={(event?: Dynamic): Dynamic => {
               event.animationName === "cds-placeholder-reveal" &&
                 event.target === event.currentTarget &&
                 (event.currentTarget.style.setProperty(
                   "--cds-skel-settled",
-                  `${ComponentsSkeletonConstant_3}ms`,
+                  `${settledDurationMs}ms`,
                 ),
                 event.currentTarget.setAttribute("data-settled", ""));
             }}
@@ -423,10 +423,10 @@ function SkeletonGroup({
                 );
                 element !== null &&
                   element.textContent === "" &&
-                  (element.textContent = value22.current.labelText);
-                value21.current ||
-                  ((value21.current = true),
-                  notifySkeletonShown(value22.current.onShown, value8));
+                  (element.textContent = latestCallbacksRef.current.labelText);
+                hasShownRef.current ||
+                  ((hasShownRef.current = true),
+                  notifySkeletonShown(latestCallbacksRef.current.onShown, store));
               } else if (
                 (event.animationName === CdsSkeletonBreatheValue &&
                   event.target === event.currentTarget) ||
@@ -449,49 +449,49 @@ function SkeletonGroup({
                   (Number.parseInt(
                     target.style.getPropertyValue("--cds-skel-i"),
                     10,
-                  ) || 0) * ComponentsSkeletonConstant_2,
+                  ) || 0) * waveStepMs,
                 );
               }
             }}
           >
             {decorative ? (null) : (<span className={"sr-only"} data-skeleton-label={true}>
-                {value17 ? ("") : (value18)}
+                {isDelayedHold ? ("") : (labelText)}
               </span>)}
             {motion === "sweep" ? ((() => {
-                  const _Component3 = value4;
+                  const SweepClipTag = tagName;
                   return (
-                    <_Component3
+                    <SweepClipTag
                       aria-hidden={true}
-                      ref={value24}
+                      ref={setSweepClip}
                       className={"cds-skel-sweep-clip"}
                       style={{
                         visibility: "hidden",
                       }}
                     >
                       {(() => {
-                        const _Component2 = value4;
+                        const SweepBandTag = tagName;
                         return (
-                          <_Component2 className={"cds-skel-sweep-band"} />
+                          <SweepBandTag className={"cds-skel-sweep-band"} />
                         );
                       })()}
-                    </_Component3>
+                    </SweepClipTag>
                   );
                 })()) : (null)}
             <SkeletonDecorativeContext.Provider value={true}>
-              <SkeletonElementContext.Provider value={value3}>
-                <SkeletonMotionContext.Provider value={value8}>
+              <SkeletonElementContext.Provider value={elementName}>
+                <SkeletonMotionContext.Provider value={store}>
                   {(() => {
-                    const _Component4 = value4;
+                    const ContentsTag = tagName;
                     return (
-                      <_Component4 aria-hidden={true} className={"contents"}>
+                      <ContentsTag aria-hidden={true} className={"contents"}>
                         {children}
-                      </_Component4>
+                      </ContentsTag>
                     );
                   })()}
                 </SkeletonMotionContext.Provider>
               </SkeletonElementContext.Provider>
             </SkeletonDecorativeContext.Provider>
-          </_Component5>
+          </StatusGroupTag>
         );
       })();
 }
@@ -503,23 +503,23 @@ function Skeleton({
   as: as,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic = (0, reactComponentsSkeleton.useContext)(
+  let isInsideDecorativeGroup: Dynamic = (0, reactComponentsSkeleton.useContext)(
       SkeletonDecorativeContext,
     ),
-    value2: Dynamic = (0, reactComponentsSkeleton.useContext)(
+    inheritedElement: Dynamic = (0, reactComponentsSkeleton.useContext)(
       SkeletonElementContext,
     ),
-    value3: Dynamic = ComponentsSkeletonDivSpanConfig[as ?? value2],
-    value4: Dynamic = value3 === "span" ? "block" : undefined,
-    value5: Dynamic = useLabel("loading", "Loading");
-  return value
+    tagName: Dynamic = ComponentsSkeletonDivSpanConfig[as ?? inheritedElement],
+    displayClass: Dynamic = tagName === "span" ? "block" : undefined,
+    loadingLabel: Dynamic = useLabel("loading", "Loading");
+  return isInsideDecorativeGroup
     ? (() => {
-        const _Component6 = value3;
+        const DecorativeSkeletonTag = tagName;
         return (
-          <_Component6
+          <DecorativeSkeletonTag
             data-cds={"Skeleton"}
             className={cn(
-              value4,
+              displayClass,
               "h-[1em] max-w-full rounded bg-[var(--cds-skeleton-base)]",
               className,
             )}
@@ -531,15 +531,15 @@ function Skeleton({
         );
       })()
     : (() => {
-        const _Component7 = value3;
+        const SkeletonTag = tagName;
         return (
-          <_Component7
+          <SkeletonTag
             ref={scheduleShimmerSynchronization}
             data-cds={"Skeleton"}
             role={decorative ? undefined : "status"}
             aria-hidden={decorative ? true : undefined}
             className={cn(
-              value4,
+              displayClass,
               "relative h-[1em] max-w-full overflow-hidden rounded bg-[var(--cds-skeleton-base)] after:absolute after:inset-0 after:animate-[cds-shimmer_2s_linear_infinite] after:bg-[linear-gradient(90deg,transparent,var(--cds-skeleton-sheen),transparent)] motion-reduce:after:hidden",
               className,
             )}
@@ -548,52 +548,52 @@ function Skeleton({
               height: height,
             }}
           >
-            {decorative ? (null) : (<span className={"sr-only"}>{value5}</span>)}
-          </_Component7>
+            {decorative ? (null) : (<span className={"sr-only"}>{loadingLabel}</span>)}
+          </SkeletonTag>
         );
       })();
 }
 function SkeletonRows({ rows = 3, icon = true }: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic =
+  let tagName: Dynamic =
       ComponentsSkeletonDivSpanConfig[
         (0, reactComponentsSkeleton.useContext)(
           SkeletonElementContext,
         )
       ],
-    value2: Dynamic = value === "span" ? "block" : undefined,
-    value3: Dynamic = icon
+    displayClass: Dynamic = tagName === "span" ? "block" : undefined,
+    widths: Dynamic = icon
       ? ComponentsSkeletonItems
-      : ComponentsSkeletonItems_2,
-    value4: Dynamic = (typeof rows == "number" ? [rows] : rows).filter(
-      (input?: Dynamic): Dynamic => input > 0,
+      : rowWidthsWithoutIcon,
+    validRows: Dynamic = (typeof rows == "number" ? [rows] : rows).filter(
+      (count?: Dynamic): Dynamic => count > 0,
     ),
-    value5: Dynamic = value4.length > 0 ? value4 : [3],
-    items: Dynamic = [],
-    index: Dynamic = 0;
-  for (let [value6, value7] of value5.entries() as Dynamic) {
-    value6 > 0 &&
-      items.push(
+    rowGroups: Dynamic = validRows.length > 0 ? validRows : [3],
+    rowElements: Dynamic = [],
+    rowIndex: Dynamic = 0;
+  for (let [groupIndex, rowCount] of rowGroups.entries() as Dynamic) {
+    groupIndex > 0 &&
+      rowElements.push(
         (() => {
-          const _Component8 = value;
+          const _Component8 = tagName;
           const _props = {
             "aria-hidden": true,
             "data-slot": "menu-skeleton-separator",
             className: cn(
-              value2,
+              displayClass,
               "compact:mx-2 comfortable:mx-2.5 my-1 h-px bg-border",
             ),
           } as const;
-          const _key = `separator-${value6}`;
+          const _key = `separator-${groupIndex}`;
           return <_Component8 key={_key} {..._props} />;
         })(),
       );
-    for (let value8: Dynamic = index + value7; index < value8; index++)
-      items.push(
+    for (let endIndex: Dynamic = rowIndex + rowCount; rowIndex < endIndex; rowIndex++)
+      rowElements.push(
         (() => {
-          const _Component9 = value;
-          const _props2 = {
-            "aria-hidden": index > 0 ? true : undefined,
+          const RowTag = tagName;
+          const rowProps = {
+            "aria-hidden": rowIndex > 0 ? true : undefined,
             className:
               "flex h-control items-center gap-xs compact:px-2 comfortable:px-2.5",
             children: [
@@ -605,20 +605,20 @@ function SkeletonRows({ rows = 3, icon = true }: Dynamic): Dynamic {
                 className={"contents"}
               >
                 <ComponentsSkeletonAssignValue
-                  width={value3[index % value3.length]}
+                  width={widths[rowIndex % widths.length]}
                   height={16}
                 />
               </span>,
             ],
           } as const;
-          const _key2 = index;
-          return <_Component9 key={_key2} {..._props2} />;
+          const rowKey = rowIndex;
+          return <RowTag key={rowKey} {...rowProps} />;
         })(),
       );
   }
   return (() => {
-    const _Component0 = value;
-    return <_Component0 className={value2}>{items}</_Component0>;
+    const ListTag = tagName;
+    return <ListTag className={displayClass}>{rowElements}</ListTag>;
   })();
 }
 function SkeletonChip({ width = 120, shape = "pill" }: Dynamic): Dynamic {
@@ -639,30 +639,30 @@ function SkeletonLines({
   className: className,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic =
+  let tagName: Dynamic =
     ComponentsSkeletonDivSpanConfig[
       (0, reactComponentsSkeleton.useContext)(SkeletonElementContext)
     ];
   return (() => {
-    const _Component1 = value;
+    const LinesTag = tagName;
     return (
-      <_Component1
+      <LinesTag
         className={cn("flex flex-col gap-sm", className)}
       >
         {Array.from(
           {
             length: lines,
           },
-          (input?: Dynamic, options?: Dynamic): Dynamic => (
+          (_item?: Dynamic, lineIndex?: Dynamic): Dynamic => (
             <span
-              key={options}
-              aria-hidden={options > 0 ? true : undefined}
+              key={lineIndex}
+              aria-hidden={lineIndex > 0 ? true : undefined}
               className={"contents"}
             >
               <ComponentsSkeletonAssignValue
                 width={
-                  ComponentsSkeletonItems_3[
-                    options % ComponentsSkeletonItems_3.length
+                  lineWidths[
+                    lineIndex % lineWidths.length
                   ]
                 }
                 height={14}
@@ -670,7 +670,7 @@ function SkeletonLines({
             </span>
           ),
         )}
-      </_Component1>
+      </LinesTag>
     );
   })();
 }
@@ -693,16 +693,16 @@ export {
   clearSkeletonElapsed,
   ComponentsSkeletonAssignValue,
   ComponentsSkeletonConstant,
-  ComponentsSkeletonConstant_2,
-  ComponentsSkeletonConstant_3,
+  waveStepMs as ComponentsSkeletonConstant_2,
+  settledDurationMs as ComponentsSkeletonConstant_3,
   ComponentsSkeletonDivSpanConfig,
   ComponentsSkeletonElementCache,
   ComponentsSkeletonElementCache_2,
   ComponentsSkeletonFreezeValue,
-  ComponentsSkeletonFreezeValue_2,
+  shownSnapshot as ComponentsSkeletonFreezeValue_2,
   ComponentsSkeletonItems,
-  ComponentsSkeletonItems_2,
-  ComponentsSkeletonItems_3,
+  rowWidthsWithoutIcon as ComponentsSkeletonItems_2,
+  lineWidths as ComponentsSkeletonItems_3,
   ComponentsSkeletonLimit,
   ComponentsSkeletonSubscribers,
   createSkeletonStore,
@@ -749,22 +749,22 @@ export function installCdsComponentsSkeleton(): () => void {
       ComponentsSkeletonFreezeValue = Object.freeze({
         shown: false,
       });
-      ComponentsSkeletonFreezeValue_2 = Object.freeze({
+      shownSnapshot = Object.freeze({
         shown: true,
       });
       CdsSkeletonBreatheValue = "cds-skeleton-breathe";
       CdsSkeletonSweepValue = "cds-skeleton-sweep";
       ComponentsSkeletonConstant = 2e3;
       WaveValue = "wave";
-      ComponentsSkeletonConstant_2 = 90;
-      ComponentsSkeletonConstant_3 = 1e5;
+      waveStepMs = 90;
+      settledDurationMs = 1e5;
       ComponentsSkeletonLimit = 1;
       ComponentsSkeletonElementCache_2 = new WeakMap();
       ComponentsSkeletonItems = [160, 128, 144];
-      ComponentsSkeletonItems_2 = [120, 88, 104];
+      rowWidthsWithoutIcon = [120, 88, 104];
       (SkeletonRows as Dynamic).displayName = "Skeleton.Rows";
       (SkeletonChip as Dynamic).displayName = "Skeleton.Chip";
-      ComponentsSkeletonItems_3 = ["92%", "100%", "96%", "58%"];
+      lineWidths = ["92%", "100%", "96%", "58%"];
       (SkeletonLines as Dynamic).displayName = "Skeleton.Lines";
       (SkeletonBlock as Dynamic).displayName = "Skeleton.Block";
       (Skeleton as Dynamic).displayName = "Skeleton";

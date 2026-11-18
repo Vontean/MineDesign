@@ -12,22 +12,22 @@ var CdsLinksOpenerReferrerPattern: Dynamic;
 var initializeCdsLinks_2: Dynamic;
 var reactCdsLinks: Dynamic;
 var LinkRouterContext: Dynamic;
-var CdsLinksPattern_2: Dynamic;
-var CdsLinksPattern_3: Dynamic;
-var CdsLinksPattern_4: Dynamic;
-var CdsLinksPattern_5: Dynamic;
-var CdsLinksPattern_6: Dynamic;
-var CdsLinksPattern_7: Dynamic;
-var CdsLinksPattern_8: Dynamic;
-var CdsLinksPattern_9: Dynamic;
+var controlCharPattern: Dynamic;
+var leadingWhitespacePattern: Dynamic;
+var protocolRelativePattern: Dynamic;
+var singleLeadingSlashPattern: Dynamic;
+var relativePathPattern: Dynamic;
+var dotSegmentPattern: Dynamic;
+var dotSegmentOnlyPattern: Dynamic;
+var backslashOrEncodedDotPattern: Dynamic;
 var CdsLinksHttpsMailtoPattern: Dynamic;
 var CdsLinksIntentPattern: Dynamic;
 var CdsLinksVscodeCursorPattern: Dynamic;
-var CdsLinksVscodeCursorPattern_2: Dynamic;
-var CdsLinksSubscribers_2: Dynamic;
-var CdsLinksPattern_10: Dynamic;
+var vscodeSettingsUrlPattern: Dynamic;
+var intentExtraKeys: Dynamic;
+var absoluteUrlPattern: Dynamic;
 var CdsLinksItems: Dynamic;
-var CdsLinksSubscribers_3: Dynamic;
+var trustedAndroidPackages: Dynamic;
 var trustedClaudeOrigin: Dynamic;
 var trustedClaudeAlternateOrigin: Dynamic;
 var routerOptionKeys: Dynamic;
@@ -61,16 +61,16 @@ function normalizeLinkRel(
 ): Dynamic {
   if (!isNewBrowsingContext(target)) return rel ?? undefined;
   if (rel == null) return defaultRel();
-  let tokens2: Dynamic = rel
+  let relTokens: Dynamic = rel
     .split(/\s+/)
     .filter(
-      (input?: Dynamic): Dynamic =>
-        input !== "" && input.toLowerCase() !== "opener",
+      (token?: Dynamic): Dynamic =>
+        token !== "" && token.toLowerCase() !== "opener",
     );
-  tokens2.some(
-    (input?: Dynamic): Dynamic => CdsLinksOpenerReferrerPattern.test(input),
-  ) || tokens2.push("noopener");
-  return tokens2.join(" ");
+  relTokens.some(
+    (token?: Dynamic): Dynamic => CdsLinksOpenerReferrerPattern.test(token),
+  ) || relTokens.push("noopener");
+  return relTokens.join(" ");
 }
 function useLinkRouter(): Dynamic {
   return (0, reactCdsLinks.useContext)(LinkRouterContext);
@@ -78,14 +78,14 @@ function useLinkRouter(): Dynamic {
 function sanitizeHref(href?: Dynamic): Dynamic {
   if (!href) return href;
   let normalizedHref: Dynamic = trimHrefControls(href);
-  return CdsLinksPattern_2.test(normalizedHref)
+  return controlCharPattern.test(normalizedHref)
     ? blockUnsafeHref(normalizedHref, "it contains a control character")
-    : CdsLinksPattern_3.test(normalizedHref)
+    : leadingWhitespacePattern.test(normalizedHref)
       ? blockUnsafeHref(
           normalizedHref,
           "it starts with whitespace the browser keeps",
         )
-      : CdsLinksPattern_10.test(normalizedHref)
+      : absoluteUrlPattern.test(normalizedHref)
         ? normalizedHref.startsWith("//")
           ? normalizedHref
           : CdsLinksIntentPattern.test(normalizedHref)
@@ -110,150 +110,150 @@ function sanitizeHref(href?: Dynamic): Dynamic {
                   )
         : normalizeHttpHref(normalizedHref);
 }
-function blockUnsafeHref(input?: Dynamic, options?: Dynamic): Dynamic {
+function blockUnsafeHref(href?: Dynamic, reason?: Dynamic): Dynamic {
   return "#";
 }
-function normalizeHttpHref(input?: Dynamic): Dynamic {
-  let value: Dynamic = CdsLinksPattern_4.test(input);
+function normalizeHttpHref(href?: Dynamic): Dynamic {
+  let isProtocolRelative: Dynamic = protocolRelativePattern.test(href);
   try {
-    let value2: Dynamic = new URL(input, trustedClaudeOrigin),
-      value3: Dynamic =
-        value2.pathname.replace(/^\/{2,}/, "/") + value2.search + value2.hash;
+    let parsedUrl: Dynamic = new URL(href, trustedClaudeOrigin),
+      normalizedPath: Dynamic =
+        parsedUrl.pathname.replace(/^\/{2,}/, "/") + parsedUrl.search + parsedUrl.hash;
     if (
-      value ||
-      value2.origin !== trustedClaudeOrigin ||
-      value2.pathname.startsWith("//")
+      isProtocolRelative ||
+      parsedUrl.origin !== trustedClaudeOrigin ||
+      parsedUrl.pathname.startsWith("//")
     ) {
-      value || value2.origin;
-      return value3;
+      isProtocolRelative || parsedUrl.origin;
+      return normalizedPath;
     }
-    if (hasUnsafeNetworkPath(input)) return value3;
-    let value4: Dynamic = stripHrefQueryAndHash(input);
+    if (hasUnsafeNetworkPath(href)) return normalizedPath;
+    let hrefWithoutQuery: Dynamic = stripHrefQueryAndHash(href);
     if (
-      CdsLinksPattern_6.test(input) &&
-      CdsLinksPattern_9.test(value4) &&
-      !value2.pathname.startsWith("//")
+      relativePathPattern.test(href) &&
+      backslashOrEncodedDotPattern.test(hrefWithoutQuery) &&
+      !parsedUrl.pathname.startsWith("//")
     ) {
-      let value5: Dynamic = value4
+      let cleanedPath: Dynamic = hrefWithoutQuery
         .replaceAll("\\", "/")
         .split("/")
         .map(
-          (input2?: Dynamic): Dynamic =>
-            CdsLinksPattern_8.test(input2)
-              ? input2.replace(/%2e/gi, ".")
-              : input2,
+          (segment?: Dynamic): Dynamic =>
+            dotSegmentOnlyPattern.test(segment)
+              ? segment.replace(/%2e/gi, ".")
+              : segment,
         )
         .join("/");
-      if (value5 !== value4) {
-        let value6: Dynamic = value5 + input.slice(value4.length);
-        return value6;
+      if (cleanedPath !== hrefWithoutQuery) {
+        let result: Dynamic = cleanedPath + href.slice(hrefWithoutQuery.length);
+        return result;
       }
     }
   } catch {
-    if (value)
+    if (isProtocolRelative)
       return blockUnsafeHref(
-        input,
+        href,
         "it names a host this URL parser cannot parse",
       );
   }
-  return input;
+  return href;
 }
-function hasUnsafeNetworkPath(input?: Dynamic): Dynamic {
-  if (!CdsLinksPattern_5.test(input)) return false;
-  let value: Dynamic = stripHrefQueryAndHash(input);
-  return value.includes("\\") || CdsLinksPattern_7.test(value);
+function hasUnsafeNetworkPath(href?: Dynamic): Dynamic {
+  if (!singleLeadingSlashPattern.test(href)) return false;
+  let pathOnly: Dynamic = stripHrefQueryAndHash(href);
+  return pathOnly.includes("\\") || dotSegmentPattern.test(pathOnly);
 }
-function stripHrefQueryAndHash(input?: Dynamic): Dynamic {
-  let value: Dynamic = input.search(/[?#]/);
-  return value < 0 ? input : input.slice(0, value);
+function stripHrefQueryAndHash(href?: Dynamic): Dynamic {
+  let queryIndex: Dynamic = href.search(/[?#]/);
+  return queryIndex < 0 ? href : href.slice(0, queryIndex);
 }
-function isSafeDataUrl(input?: Dynamic): Dynamic {
-  return CdsLinksVscodeCursorPattern_2.test(
-    input.replace(
+function isSafeDataUrl(href?: Dynamic): Dynamic {
+  return vscodeSettingsUrlPattern.test(
+    href.replace(
       CdsLinksVscodeCursorPattern,
-      (input2?: Dynamic): Dynamic => input2.toLowerCase(),
+      (scheme?: Dynamic): Dynamic => scheme.toLowerCase(),
     ),
   );
 }
-function isValidAndroidIntentUrl(input?: Dynamic): Dynamic {
-  if (!CdsLinksIntentPattern.test(input)) return false;
-  let value: Dynamic = input.indexOf("#");
-  if (value < 0 || input.indexOf("#", value + 1) >= 0) return false;
-  let value2: Dynamic = input.slice(value + 1);
-  if (!value2.startsWith("Intent;") || !value2.endsWith(";end")) return false;
-  let value3: Dynamic = value2.slice(7, -4),
-    entries: Dynamic = new Map();
-  for (let value4 of value3.split(";") as Dynamic) {
-    let value5: Dynamic = value4.indexOf("=");
-    if (value5 <= 0) return false;
-    let value6: Dynamic = value4.slice(0, value5);
-    if (entries.has(value6) || !CdsLinksSubscribers_2.has(value6))
+function isValidAndroidIntentUrl(href?: Dynamic): Dynamic {
+  if (!CdsLinksIntentPattern.test(href)) return false;
+  let hashIndex: Dynamic = href.indexOf("#");
+  if (hashIndex < 0 || href.indexOf("#", hashIndex + 1) >= 0) return false;
+  let intentBody: Dynamic = href.slice(hashIndex + 1);
+  if (!intentBody.startsWith("Intent;") || !intentBody.endsWith(";end")) return false;
+  let params: Dynamic = intentBody.slice(7, -4),
+    paramsByKey: Dynamic = new Map();
+  for (let param of params.split(";") as Dynamic) {
+    let separatorIndex: Dynamic = param.indexOf("=");
+    if (separatorIndex <= 0) return false;
+    let key: Dynamic = param.slice(0, separatorIndex);
+    if (paramsByKey.has(key) || !intentExtraKeys.has(key))
       return false;
-    entries.set(value6, value4.slice(value5 + 1));
+    paramsByKey.set(key, param.slice(separatorIndex + 1));
   }
-  let entry: Dynamic = entries.get("package");
+  let packageName: Dynamic = paramsByKey.get("package");
   if (
-    entry === undefined ||
-    !CdsLinksSubscribers_3.has(entry) ||
-    entries.get("scheme") !== "https"
+    packageName === undefined ||
+    !trustedAndroidPackages.has(packageName) ||
+    paramsByKey.get("scheme") !== "https"
   )
     return false;
-  let entry2: Dynamic = entries.get("S.browser_fallback_url");
-  if (entry2 === undefined) return true;
+  let fallbackUrl: Dynamic = paramsByKey.get("S.browser_fallback_url");
+  if (fallbackUrl === undefined) return true;
   try {
-    return new URL(decodeURIComponent(entry2)).protocol === "https:";
+    return new URL(decodeURIComponent(fallbackUrl)).protocol === "https:";
   } catch {
     return false;
   }
 }
 function classifyLinkDestination(
-  input?: Dynamic,
-  options?: Dynamic,
+  href?: Dynamic,
+  baseOrigin?: Dynamic,
 ): Dynamic {
-  let value: Dynamic;
+  let url: Dynamic;
   try {
-    value = new URL(input, options);
+    url = new URL(href, baseOrigin);
   } catch {
     return "other";
   }
-  if (value.origin === options) return "relative";
-  if (value.protocol !== "https:" && value.protocol !== "http:")
+  if (url.origin === baseOrigin) return "relative";
+  if (url.protocol !== "https:" && url.protocol !== "http:")
     return "other";
-  let hostname: Dynamic = value.hostname;
+  let hostname: Dynamic = url.hostname;
   return CdsLinksItems.some(
-    (input2?: Dynamic): Dynamic =>
-      hostname === input2 || hostname.endsWith("." + input2),
+    (domain?: Dynamic): Dynamic =>
+      hostname === domain || hostname.endsWith("." + domain),
   )
     ? "first-party"
     : "other";
 }
-function isTrustedLink(input?: Dynamic): Dynamic {
-  if (!input) return false;
-  let value: Dynamic = classifyLinkDestination(input, trustedClaudeOrigin);
+function isTrustedLink(href?: Dynamic): Dynamic {
+  if (!href) return false;
+  let destination: Dynamic = classifyLinkDestination(href, trustedClaudeOrigin);
   return (
-    value !== "other" &&
-    value === classifyLinkDestination(input, trustedClaudeAlternateOrigin)
+    destination !== "other" &&
+    destination === classifyLinkDestination(href, trustedClaudeAlternateOrigin)
   );
 }
-function getExternalLinkRel(input?: Dynamic): Dynamic {
-  return isTrustedLink(input) ? "noopener" : "noopener noreferrer";
+function getExternalLinkRel(href?: Dynamic): Dynamic {
+  return isTrustedLink(href) ? "noopener" : "noopener noreferrer";
 }
-function getLinkRel(input?: Dynamic, options?: Dynamic): Dynamic {
-  let value: Dynamic = sanitizeHref(input);
-  return isNewBrowsingContext(options)
-    ? getExternalLinkRel(value)
-    : isTrustedLink(value)
+function getLinkRel(href?: Dynamic, target?: Dynamic): Dynamic {
+  let safeHref: Dynamic = sanitizeHref(href);
+  return isNewBrowsingContext(target)
+    ? getExternalLinkRel(safeHref)
+    : isTrustedLink(safeHref)
       ? undefined
       : "noreferrer";
 }
-function isSameOriginHref(input?: Dynamic): Dynamic {
+function isSameOriginHref(href?: Dynamic): Dynamic {
   if (typeof window === "undefined") return false;
   try {
-    let value: Dynamic = new URL(input, (window as Dynamic).location.href);
+    let url: Dynamic = new URL(href, (window as Dynamic).location.href);
     return (
-      value.origin !== "null" &&
-      value.protocol === (window as Dynamic).location.protocol &&
-      value.origin === (window as Dynamic).location.origin
+      url.origin !== "null" &&
+      url.protocol === (window as Dynamic).location.protocol &&
+      url.origin === (window as Dynamic).location.origin
     );
   } catch {
     return false;
@@ -270,46 +270,46 @@ function shouldHandleLinkWithRouter(event?: Dynamic): Dynamic {
     ? false
     : isSameOriginHref(event.href);
 }
-function toRouterPath(input?: Dynamic): Dynamic {
-  if (!CdsLinksPattern_10.test(input)) return input;
-  let value: Dynamic = new URL(input, (window as Dynamic).location.href);
-  return value.pathname.replace(/^\/{2,}/, "/") + value.search + value.hash;
+function toRouterPath(href?: Dynamic): Dynamic {
+  if (!absoluteUrlPattern.test(href)) return href;
+  let url: Dynamic = new URL(href, (window as Dynamic).location.href);
+  return url.pathname.replace(/^\/{2,}/, "/") + url.search + url.hash;
 }
-function isModifiedClick(input?: Dynamic): Dynamic {
+function isModifiedClick(event?: Dynamic): Dynamic {
   return (
-    input.defaultPrevented ||
-    input.button !== 0 ||
-    input.metaKey ||
-    input.ctrlKey ||
-    input.shiftKey ||
-    input.altKey
+    event.defaultPrevented ||
+    event.button !== 0 ||
+    event.metaKey ||
+    event.ctrlKey ||
+    event.shiftKey ||
+    event.altKey
   );
 }
-function pickRouterOptions(input?: Dynamic): Dynamic {
-  let value: Dynamic = input,
-    state: Dynamic = {};
-  for (let value2 of routerOptionKeys as Dynamic)
-    value[value2] !== undefined && (state[value2] = value[value2]);
-  return state;
+function pickRouterOptions(props?: Dynamic): Dynamic {
+  let source: Dynamic = props,
+    picked: Dynamic = {};
+  for (let key of routerOptionKeys as Dynamic)
+    source[key] !== undefined && (picked[key] = source[key]);
+  return picked;
 }
-function omitRouterOptions(input?: Dynamic): Dynamic {
-  let state: Dynamic = {
-    ...input,
+function omitRouterOptions(props?: Dynamic): Dynamic {
+  let rest: Dynamic = {
+    ...props,
   };
-  for (let value of routerOptionKeys as Dynamic) delete state[value];
-  return state;
+  for (let key of routerOptionKeys as Dynamic) delete rest[key];
+  return rest;
 }
 function composeEventHandlers(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  ownHandler?: Dynamic,
+  routerHandler?: Dynamic,
+  skipWhenPrevented?: Dynamic,
 ): Dynamic {
-  return options
-    ? (input2?: Dynamic): Dynamic => {
-        input?.(input2);
-        (!context || !input2.defaultPrevented) && options(input2);
+  return routerHandler
+    ? (event?: Dynamic): Dynamic => {
+        ownHandler?.(event);
+        (!skipWhenPrevented || !event.defaultPrevented) && routerHandler(event);
       }
-    : input;
+    : ownHandler;
 }
 function useLinkProps({
   href: href,
@@ -326,64 +326,64 @@ function useLinkProps({
 }: Dynamic): Dynamic {
   "use no memo";
 
-  let value: Dynamic = useLinkRouter(),
-    value2: Dynamic = sanitizeHref(href),
-    value3: Dynamic = isBlockedHref(href, value2),
-    value4: Dynamic = value3 ? undefined : target,
-    value5: Dynamic = value3 ? undefined : download,
-    value6: Dynamic =
-      value?.resolveHref &&
-      value2 &&
-      !value2.startsWith("#") &&
-      !CdsLinksPattern_10.test(value2)
-        ? value.resolveHref(value2)
-        : value2,
-    value7: Dynamic = value !== undefined,
-    value8: Dynamic = (0, reactCdsLinks.useMemo)((): Dynamic => {
-      let state: Dynamic = {
-        href: value2,
-        target: value4,
-        download: value5,
-        router: value7,
+  let router: Dynamic = useLinkRouter(),
+    safeHref: Dynamic = sanitizeHref(href),
+    isBlocked: Dynamic = isBlockedHref(href, safeHref),
+    safeTarget: Dynamic = isBlocked ? undefined : target,
+    safeDownload: Dynamic = isBlocked ? undefined : download,
+    resolvedHref: Dynamic =
+      router?.resolveHref &&
+      safeHref &&
+      !safeHref.startsWith("#") &&
+      !absoluteUrlPattern.test(safeHref)
+        ? router.resolveHref(safeHref)
+        : safeHref,
+    hasRouter: Dynamic = router !== undefined,
+    routerPath: Dynamic = (0, reactCdsLinks.useMemo)((): Dynamic => {
+      let navigationState: Dynamic = {
+        href: safeHref,
+        target: safeTarget,
+        download: safeDownload,
+        router: hasRouter,
       };
-      return shouldHandleLinkWithRouter(state)
-        ? toRouterPath(state.href)
+      return shouldHandleLinkWithRouter(navigationState)
+        ? toRouterPath(navigationState.href)
         : undefined;
-    }, [value2, value4, value5, value7]),
-    value9: Dynamic = (0, reactCdsLinks.useCallback)(
+    }, [safeHref, safeTarget, safeDownload, hasRouter]),
+    handleClick: Dynamic = (0, reactCdsLinks.useCallback)(
       (event?: Dynamic): Dynamic => {
         onClick?.(event);
-        !(isModifiedClick(event) || value8 === undefined || !value) &&
-          (event.preventDefault(), value.navigate(value8, routerOptions));
+        !(isModifiedClick(event) || routerPath === undefined || !router) &&
+          (event.preventDefault(), router.navigate(routerPath, routerOptions));
       },
-      [onClick, value8, value, routerOptions],
+      [onClick, routerPath, router, routerOptions],
     ),
-    value10: Dynamic = value?.intentHandlers,
-    value11: Dynamic = (0, reactCdsLinks.useMemo)(
+    intentHandlersFor: Dynamic = router?.intentHandlers,
+    intentHandlers: Dynamic = (0, reactCdsLinks.useMemo)(
       (): Dynamic =>
-        value10 && value8 !== undefined ? value10(value8) : undefined,
-      [value10, value8],
+        intentHandlersFor && routerPath !== undefined ? intentHandlersFor(routerPath) : undefined,
+      [intentHandlersFor, routerPath],
     ),
-    value12: Dynamic = (0, reactCdsLinks.useMemo)((): Dynamic => {
-      let state: Dynamic = {
+    pointerHandlers: Dynamic = (0, reactCdsLinks.useMemo)((): Dynamic => {
+      let ownHandlers: Dynamic = {
           onPointerEnter: onPointerEnter,
           onPointerLeave: onPointerLeave,
           onPointerDown: onPointerDown,
           onFocus: onFocus,
           onBlur: onBlur,
         },
-        state2: Dynamic = {};
-      for (let value13 of CdsLinksKeysValue as Dynamic) {
-        let value14: Dynamic = composeEventHandlers(
-          state[value13],
-          value11?.[value13],
-          CdsLinksOnPointerEnterOnPointerLeaveOnPointerDownConfig[value13],
+        composedHandlers: Dynamic = {};
+      for (let eventName of CdsLinksKeysValue as Dynamic) {
+        let handler: Dynamic = composeEventHandlers(
+          ownHandlers[eventName],
+          intentHandlers?.[eventName],
+          CdsLinksOnPointerEnterOnPointerLeaveOnPointerDownConfig[eventName],
         );
-        value14 && (state2[value13] = value14);
+        handler && (composedHandlers[eventName] = handler);
       }
-      return state2;
+      return composedHandlers;
     }, [
-      value11,
+      intentHandlers,
       onPointerEnter,
       onPointerLeave,
       onPointerDown,
@@ -391,16 +391,16 @@ function useLinkProps({
       onBlur,
     ]);
   return {
-    href: value6,
-    target: value4,
+    href: resolvedHref,
+    target: safeTarget,
     rel: normalizeLinkRel(
-      value4,
+      safeTarget,
       rel,
-      (): Dynamic => getExternalLinkRel(value6),
+      (): Dynamic => getExternalLinkRel(resolvedHref),
     ),
-    download: value5,
-    onClick: value9,
-    ...value12,
+    download: safeDownload,
+    onClick: handleClick,
+    ...pointerHandlers,
   };
 }
 export {
@@ -412,20 +412,20 @@ export {
   CdsLinksOnPointerEnterOnPointerLeaveOnPointerDownConfig,
   CdsLinksOpenerReferrerPattern,
   CdsLinksPattern,
-  CdsLinksPattern_10,
-  CdsLinksPattern_2,
-  CdsLinksPattern_3,
-  CdsLinksPattern_4,
-  CdsLinksPattern_5,
-  CdsLinksPattern_6,
-  CdsLinksPattern_7,
-  CdsLinksPattern_8,
-  CdsLinksPattern_9,
+  absoluteUrlPattern as CdsLinksPattern_10,
+  controlCharPattern as CdsLinksPattern_2,
+  leadingWhitespacePattern as CdsLinksPattern_3,
+  protocolRelativePattern as CdsLinksPattern_4,
+  singleLeadingSlashPattern as CdsLinksPattern_5,
+  relativePathPattern as CdsLinksPattern_6,
+  dotSegmentPattern as CdsLinksPattern_7,
+  dotSegmentOnlyPattern as CdsLinksPattern_8,
+  backslashOrEncodedDotPattern as CdsLinksPattern_9,
   CdsLinksSubscribers,
-  CdsLinksSubscribers_2,
-  CdsLinksSubscribers_3,
+  intentExtraKeys as CdsLinksSubscribers_2,
+  trustedAndroidPackages as CdsLinksSubscribers_3,
   CdsLinksVscodeCursorPattern,
-  CdsLinksVscodeCursorPattern_2,
+  vscodeSettingsUrlPattern as CdsLinksVscodeCursorPattern_2,
   classifyLinkDestination,
   composeEventHandlers,
   getExternalLinkRel,
@@ -474,30 +474,30 @@ export function installCdsLinks(): () => void {
       initializeCdsLinks_2();
       reactCdsLinks = toModuleNamespace(load_react());
       LinkRouterContext = (0, reactCdsLinks.createContext)(undefined);
-      CdsLinksPattern_2 = /[\x00-\x1f\x7f-\x9f]/;
-      CdsLinksPattern_3 = /^\s/;
-      CdsLinksPattern_4 = /^[/\\]{2}/;
-      CdsLinksPattern_5 = /^[/\\](?![/\\])/;
-      CdsLinksPattern_6 = /^[^/\\]/;
-      CdsLinksPattern_7 = /\/(?:\.|%2e){1,2}(?:\/|$)/i;
-      CdsLinksPattern_8 = /^(?:\.|%2e){1,2}$/i;
-      CdsLinksPattern_9 = /\\|%2e/i;
+      controlCharPattern = /[\x00-\x1f\x7f-\x9f]/;
+      leadingWhitespacePattern = /^\s/;
+      protocolRelativePattern = /^[/\\]{2}/;
+      singleLeadingSlashPattern = /^[/\\](?![/\\])/;
+      relativePathPattern = /^[^/\\]/;
+      dotSegmentPattern = /\/(?:\.|%2e){1,2}(?:\/|$)/i;
+      dotSegmentOnlyPattern = /^(?:\.|%2e){1,2}$/i;
+      backslashOrEncodedDotPattern = /\\|%2e/i;
       // MineDesign: the Claude app schemes (claude, claude-cli, claude-nest) are not link targets here.
       CdsLinksHttpsMailtoPattern = /^(?:https?|mailto|tel|slack|blob):/i;
       CdsLinksIntentPattern = /^intent:/i;
       CdsLinksVscodeCursorPattern = /^(?:vscode|cursor):/i;
       // MineDesign: no first-party editor extensions; only VS Code settings links are followed.
-      CdsLinksVscodeCursorPattern_2 =
+      vscodeSettingsUrlPattern =
         /^vscode:\/\/settings\/[A-Za-z0-9][A-Za-z0-9_.-]*$/;
-      CdsLinksSubscribers_2 = new Set([
+      intentExtraKeys = new Set([
         "scheme",
         "package",
         "S.browser_fallback_url",
       ]);
-      CdsLinksPattern_10 = /^(?:[a-z][a-z\d+.-]*:|\/\/)/i;
+      absoluteUrlPattern = /^(?:[a-z][a-z\d+.-]*:|\/\/)/i;
       // MineDesign: no first-party web domains or Android apps; every external link is treated as "other".
       CdsLinksItems = [];
-      CdsLinksSubscribers_3 = new Set();
+      trustedAndroidPackages = new Set();
       trustedClaudeOrigin = "https://cds-relative-href.invalid";
       trustedClaudeAlternateOrigin = "http://cds-relative-href.invalid";
       routerOptionKeys = [

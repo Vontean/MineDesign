@@ -35,7 +35,7 @@ var ComponentsSelectionRingClassNames_2: Dynamic;
 var ComponentsSelectionRingClassNames_3: Dynamic;
 var ComponentsSelectionRingClassNames_4: Dynamic;
 var ComponentsSelectionRingClassNames_5: Dynamic;
-var ComponentsSelectionRingLabel_2: Dynamic;
+var thumbShadowClasses: Dynamic;
 var ComponentsSelectionRingClassNames_6: Dynamic;
 var ComponentsSelectionRingConstant: Dynamic;
 var ComponentsSelectionRingConstant_2: Dynamic;
@@ -51,7 +51,7 @@ var ComponentsSelectionRingNwNeSeValues: Dynamic;
 var ComponentsSelectionRingEwResizeNwseResizeNsResizeValues: Dynamic;
 var ComponentsSelectionRingNeSeSwConfig: Dynamic;
 var ImageSvgXmlValue: Dynamic;
-var ComponentsSelectionRingLabel_3: Dynamic;
+var rotationCursorSvgHead: Dynamic;
 var rotationCursorBodySvg: Dynamic;
 var ComponentsSelectionRingResolvedValue: Dynamic;
 var initializeComponentsSelectionRing_4: Dynamic;
@@ -69,18 +69,18 @@ var ComponentsSelectionRingHandler_2: Dynamic;
 var NumberInput: Dynamic;
 var initializeComponentsSelectionRing_7: Dynamic;
 function selectionGripHitSize(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  frame?: Dynamic,
+  scale?: Dynamic,
+  isCoarsePointer?: Dynamic,
 ): Dynamic {
-  if (context)
+  if (isCoarsePointer)
     return ComponentsSelectionRingPointPointStrokeGripHitConfig.gripHitTouch;
-  let value: Dynamic = Math.min(input.w, input.h) * options;
+  let scaledMinSide: Dynamic = Math.min(frame.w, frame.h) * scale;
   return Math.max(
     ComponentsSelectionRingPointPointStrokeGripHitConfig.grip,
     Math.min(
       ComponentsSelectionRingPointPointStrokeGripHitConfig.gripHit,
-      value / 2,
+      scaledMinSide / 2,
     ),
   );
 }
@@ -110,14 +110,14 @@ function SelectionPointGlyph(): Dynamic {
   );
 }
 function selectionResizeCursor(
-  input?: Dynamic,
-  options: Dynamic = 0,
+  point?: Dynamic,
+  rotation: Dynamic = 0,
 ): Dynamic {
-  let value: Dynamic = input.x === "left" ? -1 : input.x === "right" ? 1 : 0,
-    value2: Dynamic = input.y === "top" ? -1 : input.y === "bottom" ? 1 : 0;
+  let directionX: Dynamic = point.x === "left" ? -1 : point.x === "right" ? 1 : 0,
+    directionY: Dynamic = point.y === "top" ? -1 : point.y === "bottom" ? 1 : 0;
   return (
     ComponentsSelectionRingEwResizeNwseResizeNsResizeValues[
-      ((Math.round((Math.atan2(value2, value) + options) / (Math.PI / 4)) %
+      ((Math.round((Math.atan2(directionY, directionX) + rotation) / (Math.PI / 4)) %
         4) +
         4) %
         4
@@ -125,93 +125,93 @@ function selectionResizeCursor(
   );
 }
 function selectionRotationCursor(
-  input?: Dynamic,
-  options: Dynamic = 0,
+  corner?: Dynamic,
+  rotation: Dynamic = 0,
 ): Dynamic {
-  let value: Dynamic = Math.round(
-    ComponentsSelectionRingNeSeSwConfig[input] + (options * 180) / Math.PI,
+  let angleDegrees: Dynamic = Math.round(
+    ComponentsSelectionRingNeSeSwConfig[corner] + (rotation * 180) / Math.PI,
   );
-  return `url("data:${ImageSvgXmlValue},${ComponentsSelectionRingLabel_3}${String(value)}${ComponentsSelectionRingResolvedValue}") 12 12, grab`;
+  return `url("data:${ImageSvgXmlValue},${rotationCursorSvgHead}${String(angleDegrees)}${ComponentsSelectionRingResolvedValue}") 12 12, grab`;
 }
 function preventSelectionHandleEvent(event?: Dynamic): Dynamic {
   event.preventDefault();
   event.stopPropagation();
 }
 function selectionHandleTooltip(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  tooltipKey?: Dynamic,
+  tooltip?: Dynamic,
+  trigger?: Dynamic,
 ): Dynamic {
-  return hasDisabledReason(options.content) ? (
+  return hasDisabledReason(tooltip.content) ? (
     <Tooltip
-      key={input}
+      key={tooltipKey}
       lazy={true}
-      content={options.content}
-      multiline={options.reason}
+      content={tooltip.content}
+      multiline={tooltip.reason}
       hoverable={false}
-      closeOnClick={options.reason ? false : undefined}
-      trackCursorAxis={options.followPointer ? "both" : undefined}
+      closeOnClick={tooltip.reason ? false : undefined}
+      trackCursorAxis={tooltip.followPointer ? "both" : undefined}
     >
-      {context}
+      {trigger}
     </Tooltip>
   ) : (
-    (0, reactComponentsSelectionRing_3.cloneElement)(context, {
-      key: input,
+    (0, reactComponentsSelectionRing_3.cloneElement)(trigger, {
+      key: tooltipKey,
     })
   );
 }
 function isOutsideSelectionGrip(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
+  event?: Dynamic,
+  halfWidth?: Dynamic,
+  halfHeight?: Dynamic,
+  rotation?: Dynamic,
 ): Dynamic {
-  let value2: Dynamic =
-    input.currentTarget.parentElement?.getBoundingClientRect();
-  if (value2 === undefined) return false;
-  let value3: Dynamic = input.clientX - (value2.left + value2.width / 2),
-    value4: Dynamic = input.clientY - (value2.top + value2.height / 2),
-    value5: Dynamic = value3 * Math.cos(value) + value4 * Math.sin(value),
-    value6: Dynamic = value4 * Math.cos(value) - value3 * Math.sin(value);
-  return Math.abs(value5) <= options && Math.abs(value6) <= context;
+  let gripRect: Dynamic =
+    event.currentTarget.parentElement?.getBoundingClientRect();
+  if (gripRect === undefined) return false;
+  let offsetX: Dynamic = event.clientX - (gripRect.left + gripRect.width / 2),
+    offsetY: Dynamic = event.clientY - (gripRect.top + gripRect.height / 2),
+    localX: Dynamic = offsetX * Math.cos(rotation) + offsetY * Math.sin(rotation),
+    localY: Dynamic = offsetY * Math.cos(rotation) - offsetX * Math.sin(rotation);
+  return Math.abs(localX) <= halfWidth && Math.abs(localY) <= halfHeight;
 }
-function selectionPointKey(input?: Dynamic): Dynamic {
-  return `${input.x ?? "mid"}-${input.y ?? "mid"}`;
+function selectionPointKey(point?: Dynamic): Dynamic {
+  return `${point.x ?? "mid"}-${point.y ?? "mid"}`;
 }
-function currencySymbol(input?: Dynamic, options?: Dynamic): Dynamic {
-  let value: Dynamic = input.toUpperCase();
+function currencySymbol(currencyCode?: Dynamic, locale?: Dynamic): Dynamic {
+  let upperCode: Dynamic = currencyCode.toUpperCase();
   try {
-    let value2: Dynamic = new Intl.NumberFormat(options, {
+    let parts: Dynamic = new Intl.NumberFormat(locale, {
         style: "currency",
-        currency: value,
-        currencyDisplay: ComponentsSelectionRingSGDAUDNZDSet.has(value)
+        currency: upperCode,
+        currencyDisplay: ComponentsSelectionRingSGDAUDNZDSet.has(upperCode)
           ? "code"
           : "symbol",
       }).formatToParts(1),
-      value3: Dynamic = value2.findIndex(
-        (input2?: Dynamic): Dynamic => input2.type === "currency",
+      currencyIndex: Dynamic = parts.findIndex(
+        (part?: Dynamic): Dynamic => part.type === "currency",
       ),
-      value4: Dynamic = value2[value3];
-    if (value4 === undefined)
+      currencyPart: Dynamic = parts[currencyIndex];
+    if (currencyPart === undefined)
       return {
-        symbol: value,
+        symbol: upperCode,
         side: "start",
       };
-    let value5: Dynamic = value2
-      .slice(0, value3)
+    let side: Dynamic = parts
+      .slice(0, currencyIndex)
       .some(
-        (input2?: Dynamic): Dynamic =>
-          ComponentsSelectionRingIntegerGroupDecimalSet.has(input2.type),
+        (part?: Dynamic): Dynamic =>
+          ComponentsSelectionRingIntegerGroupDecimalSet.has(part.type),
       )
       ? "end"
       : "start";
     return {
-      symbol: value4.value,
-      side: value5,
+      symbol: currencyPart.value,
+      side: side,
     };
   } catch {
     return {
-      symbol: value,
+      symbol: upperCode,
       side: "start",
     };
   }
@@ -238,8 +238,8 @@ export {
   ComponentsSelectionRingHandler_2,
   ComponentsSelectionRingIntegerGroupDecimalSet,
   ComponentsSelectionRingLabel,
-  ComponentsSelectionRingLabel_2,
-  ComponentsSelectionRingLabel_3,
+  thumbShadowClasses as ComponentsSelectionRingLabel_2,
+  rotationCursorSvgHead as ComponentsSelectionRingLabel_3,
   ComponentsSelectionRingLimit,
   ComponentsSelectionRingNeSeSwConfig,
   ComponentsSelectionRingNwNeSeValues,
@@ -316,7 +316,7 @@ export function installCdsComponentsSelectionRing(): () => void {
           "text-secondary [&:not([data-checked]):not([data-disabled])]:hover:bg-fill-ghost-hover";
         ComponentsSelectionRingClassNames_5 =
           "invisible absolute left-0 origin-left rounded-[calc(var(--cds-radius)-1px)] bg-[var(--cds-segmented-control-thumb)]";
-        ComponentsSelectionRingLabel_2 =
+        thumbShadowClasses =
           "top-px bottom-px [box-shadow:inset_0_0_0_1px_var(--cds-border),0_1px_2px_0_rgb(0_0_0/0.05)]";
         ComponentsSelectionRingClassNames_6 =
           "inset-y-0 [box-shadow:inset_0_0_0_1px_var(--cds-border)]";
@@ -366,37 +366,37 @@ export function installCdsComponentsSelectionRing(): () => void {
               className: className,
               ...props
             }: Dynamic,
-            options?: Dynamic,
+            forwardedRef?: Dynamic,
           ): Dynamic {
-            let value: Dynamic = (0,
+            let isCoarsePointer: Dynamic = (0,
               reactComponentsSelectionRing_2.useSyncExternalStore)(
                 subscribeSheetMedia,
                 usesCoarsePointer,
                 (): Dynamic => false,
               ),
-              value2: Dynamic = normalizeSelectionScale(scale),
-              index: Dynamic = 0;
-            for (let value5 of points as Dynamic)
-              for (let value6 of points as Dynamic)
-                index = Math.max(
-                  index,
-                  Math.abs(value5.x - value6.x),
-                  Math.abs(value5.y - value6.y),
+              pointScale: Dynamic = normalizeSelectionScale(scale),
+              maxPointSpan: Dynamic = 0;
+            for (let pointA of points as Dynamic)
+              for (let pointB of points as Dynamic)
+                maxPointSpan = Math.max(
+                  maxPointSpan,
+                  Math.abs(pointA.x - pointB.x),
+                  Math.abs(pointA.y - pointB.y),
                 );
-            let value3: Dynamic = value
+            let handleSize: Dynamic = isCoarsePointer
                 ? ComponentsSelectionRingPointPointStrokeGripHitConfig.gripHitTouch
                 : Math.max(
                     ComponentsSelectionRingPointPointStrokeGripHitConfig.grip,
                     Math.min(
                       ComponentsSelectionRingPointPointStrokeGripHitConfig.gripHit,
-                      (index * value2) / 2,
+                      (maxPointSpan * pointScale) / 2,
                     ),
                   ),
-              value4: Dynamic = onPointDragStart !== undefined;
+              isDraggable: Dynamic = onPointDragStart !== undefined;
             return (
               <div
                 {...props}
-                ref={options}
+                ref={forwardedRef}
                 data-cds={"SelectionPoints"}
                 aria-hidden={"true"}
                 className={cn(
@@ -415,39 +415,39 @@ export function installCdsComponentsSelectionRing(): () => void {
                     <polyline
                       points={shaft
                         .map(
-                          (input?: Dynamic): Dynamic => `${input.x},${input.y}`,
+                          (point?: Dynamic): Dynamic => `${point.x},${point.y}`,
                         )
                         .join(" ")}
                       fill={"none"}
                       stroke={tokens.fill.accent.cssVar}
-                      strokeWidth={1 / value2}
+                      strokeWidth={1 / pointScale}
                     />
                   </svg>) : (null)}
                 {points.map(
-                  (input?: Dynamic, options2?: Dynamic): Dynamic => (
+                  (point?: Dynamic, pointIndex?: Dynamic): Dynamic => (
                     <div
-                      key={options2}
+                      key={pointIndex}
                       className={"absolute top-0 left-0 size-0"}
                       style={{
-                        transform: `translate(${input.x}px, ${input.y}px) scale(${1 / value2})`,
+                        transform: `translate(${point.x}px, ${point.y}px) scale(${1 / pointScale})`,
                       }}
                     >
                       <div
-                        data-resize-handle={value4 ? "" : undefined}
-                        data-point-handle={options2}
+                        data-resize-handle={isDraggable ? "" : undefined}
+                        data-point-handle={pointIndex}
                         className={"absolute touch-none"}
                         style={{
-                          left: -value3 / 2,
-                          top: -value3 / 2,
-                          width: value3,
-                          height: value3,
-                          cursor: value4 ? cursor : undefined,
-                          pointerEvents: value4 ? "auto" : "none",
+                          left: -handleSize / 2,
+                          top: -handleSize / 2,
+                          width: handleSize,
+                          height: handleSize,
+                          cursor: isDraggable ? cursor : undefined,
+                          pointerEvents: isDraggable ? "auto" : "none",
                         }}
                         onPointerDown={
-                          value4
-                            ? (input2?: Dynamic): Dynamic =>
-                                onPointDragStart(options2, input2)
+                          isDraggable
+                            ? (event?: Dynamic): Dynamic =>
+                                onPointDragStart(pointIndex, event)
                             : undefined
                         }
                       >
@@ -479,7 +479,7 @@ export function installCdsComponentsSelectionRing(): () => void {
           nw: 270,
         };
         ImageSvgXmlValue = "image/svg+xml";
-        ComponentsSelectionRingLabel_3 =
+        rotationCursorSvgHead =
           "%3Csvg%20xmlns=%27http://www.w3.org/2000/svg%27%20width=%2724%27%20height=%2724%27%20viewBox=%270%200%2024%2024%27%3E%3Cg%20transform=%27rotate%28";
         rotationCursorBodySvg =
           "%20d=%27M%204.5%2010.7%20L%205.4%2010.4%20A%206.5%206.5%200%200%201%2013.6%2018.6%20L%2013.3%2019.5%20M%206.3%207.8%20L%204.5%2010.7%20L%207.7%2012.0%20M%2012.0%2016.3%20L%2013.3%2019.5%20L%2016.2%2017.7%27";
@@ -533,83 +533,83 @@ export function installCdsComponentsSelectionRing(): () => void {
               style: style,
               ...props
             }: Dynamic,
-            options?: Dynamic,
+            forwardedRef?: Dynamic,
           ): Dynamic {
-            let value: Dynamic = (0,
+            let isCoarsePointer: Dynamic = (0,
               reactComponentsSelectionRing_3.useSyncExternalStore)(
                 subscribeSheetMedia,
                 usesCoarsePointer,
                 (): Dynamic => false,
               ),
-              value2: Dynamic = normalizeSelectionScale(scale),
-              value3: Dynamic = normalizeCollaboratorIndex(
+              frameScale: Dynamic = normalizeSelectionScale(scale),
+              collaboratorIndex: Dynamic = normalizeCollaboratorIndex(
                 collaborator,
               );
-            if (collaborator !== undefined && value3 === undefined) return null;
-            let value4: Dynamic = selectionRingStroke(
+            if (collaborator !== undefined && collaboratorIndex === undefined) return null;
+            let ringStroke: Dynamic = selectionRingStroke(
                 state,
-                value3,
+                collaboratorIndex,
               ),
-              value5: Dynamic = resolveSelectionPoints(
+              gripPoints: Dynamic = resolveSelectionPoints(
                 grips,
                 state,
-                value3,
+                collaboratorIndex,
               ),
-              value6: Dynamic = normalizeSelectionRotation(
+              rotationRad: Dynamic = normalizeSelectionRotation(
                 rotation,
               ),
-              value7: Dynamic = hasDisabledReason(
+              isResizeDisabled: Dynamic = hasDisabledReason(
                 resizeDisabledReason,
               ),
-              value8: Dynamic = hasDisabledReason(
+              isRotateDisabled: Dynamic = hasDisabledReason(
                 rotateDisabledReason,
               ),
-              value9: Dynamic = value3 === undefined && state === "selected",
-              value10: Dynamic =
-                value9 && (value7 ? !value : onResizeStart !== undefined),
-              value11: Dynamic = frame.w * value2,
-              value12: Dynamic = frame.h * value2,
-              value13: Dynamic = selectionGripHitSize(frame, value2, value),
+              isOwnSelection: Dynamic = collaboratorIndex === undefined && state === "selected",
+              canResize: Dynamic =
+                isOwnSelection && (isResizeDisabled ? !isCoarsePointer : onResizeStart !== undefined),
+              scaledWidth: Dynamic = frame.w * frameScale,
+              scaledHeight: Dynamic = frame.h * frameScale,
+              gripHitSize: Dynamic = selectionGripHitSize(frame, frameScale, isCoarsePointer),
               edgeHit: Dynamic =
                 ComponentsSelectionRingPointPointStrokeGripHitConfig.edgeHit,
-              value14: Dynamic =
+              requestedStripPoints: Dynamic =
                 typeof grips == "object"
                   ? EditorSelectionGeometryFilterValue.filter(
-                      (input?: Dynamic): Dynamic =>
+                      (candidate?: Dynamic): Dynamic =>
                         grips.some(
-                          (input2?: Dynamic): Dynamic =>
-                            sameSelectionPoint(input2, input),
+                          (grip?: Dynamic): Dynamic =>
+                            sameSelectionPoint(grip, candidate),
                         ),
                     )
                   : [],
-              value15: Dynamic =
-                !value10 ||
-                value ||
-                value7 ||
+              stripCandidates: Dynamic =
+                !canResize ||
+                isCoarsePointer ||
+                isResizeDisabled ||
                 !edgeStrips ||
-                value5.length === 0
+                gripPoints.length === 0
                   ? []
-                  : value14.length > 0
-                    ? value14
+                  : requestedStripPoints.length > 0
+                    ? requestedStripPoints
                     : EditorSelectionGeometryFilterValue,
-              callback: Dynamic = (input?: Dynamic): Dynamic =>
-                input >=
+              isLongEnoughForStrip: Dynamic = (length?: Dynamic): Dynamic =>
+                length >=
                 3 *
                   ComponentsSelectionRingPointPointStrokeGripHitConfig.edgeHit,
-              value16: Dynamic = value15.filter(
-                (input?: Dynamic): Dynamic =>
-                  input.x === null
-                    ? input.y !== null && callback(value12)
-                    : input.y === null && callback(value11),
+              edgeStripPoints: Dynamic = stripCandidates.filter(
+                (stripPoint?: Dynamic): Dynamic =>
+                  stripPoint.x === null
+                    ? stripPoint.y !== null && isLongEnoughForStrip(scaledHeight)
+                    : stripPoint.y === null && isLongEnoughForStrip(scaledWidth),
               ),
-              value17: Dynamic =
-                !value9 || value || (onRotateStart === undefined && !value8)
+              rotateCorners: Dynamic =
+                !isOwnSelection || isCoarsePointer || (onRotateStart === undefined && !isRotateDisabled)
                   ? []
                   : ComponentsSelectionRingNwNeSeValues,
-              value18: Dynamic =
-                value13 / 2 +
+              rotateHandleSize: Dynamic =
+                gripHitSize / 2 +
                 ComponentsSelectionRingPointPointStrokeGripHitConfig.rotateReach,
-              value19: Dynamic = value7
+              resizeTooltip: Dynamic = isResizeDisabled
                 ? {
                     content: resizeDisabledReason,
                     reason: true,
@@ -621,11 +621,11 @@ export function installCdsComponentsSelectionRing(): () => void {
             return (
               <div
                 {...props}
-                ref={options}
+                ref={forwardedRef}
                 data-cds={"SelectionRing"}
-                data-state={value3 === undefined ? state : undefined}
-                data-variant={value3 === undefined ? variant : undefined}
-                data-collaborator={value3}
+                data-state={collaboratorIndex === undefined ? state : undefined}
+                data-variant={collaboratorIndex === undefined ? variant : undefined}
+                data-collaborator={collaboratorIndex}
                 aria-hidden={"true"}
                 className={cn(
                   OutlineFillAccentValue,
@@ -635,91 +635,91 @@ export function installCdsComponentsSelectionRing(): () => void {
                   ...style,
                   ...SelectionRingSvg({
                     frame: frame,
-                    scale: value2,
+                    scale: frameScale,
                     rotation: rotation,
-                    stroke: value4,
-                    collaborator: value3,
+                    stroke: ringStroke,
+                    collaborator: collaboratorIndex,
                     variant: variant,
                   }),
                 }}
               >
                 <TooltipGroup>
-                  {value17.map((input?: Dynamic): Dynamic => {
-                    let state2: Dynamic = {
+                  {rotateCorners.map((corner?: Dynamic): Dynamic => {
+                    let rotateHandleStyle: Dynamic = {
                       position: "absolute",
                       left:
-                        input === "nw" || input === "sw" ? -value18 : value11,
+                        corner === "nw" || corner === "sw" ? -rotateHandleSize : scaledWidth,
                       top:
-                        input === "nw" || input === "ne" ? -value18 : value12,
-                      width: value18,
-                      height: value18,
+                        corner === "nw" || corner === "ne" ? -rotateHandleSize : scaledHeight,
+                      width: rotateHandleSize,
+                      height: rotateHandleSize,
                       pointerEvents: "auto",
-                      cursor: value8
+                      cursor: isRotateDisabled
                         ? "default"
-                        : selectionRotationCursor(input, value6),
+                        : selectionRotationCursor(corner, rotationRad),
                     };
                     return selectionHandleTooltip(
-                      `rotate-${input}`,
+                      `rotate-${corner}`,
                       {
                         content: rotateDisabledReason,
                         reason: true,
                       },
                       <div
                         data-resize-handle={""}
-                        data-rotate-handle={input}
+                        data-rotate-handle={corner}
                         className={"touch-none"}
-                        data-disabled={value8 ? "" : undefined}
-                        style={state2}
+                        data-disabled={isRotateDisabled ? "" : undefined}
+                        style={rotateHandleStyle}
                         onPointerDown={
-                          value8
+                          isRotateDisabled
                             ? preventSelectionHandleEvent
-                            : (input2?: Dynamic): Dynamic =>
-                                onRotateStart?.(input, input2)
+                            : (event?: Dynamic): Dynamic =>
+                                onRotateStart?.(corner, event)
                         }
                       />,
                     );
                   })}
-                  {value16.map((input?: Dynamic): Dynamic => {
-                    let value20: Dynamic = input.x === null,
-                      callback2: Dynamic = (
-                        input2?: Dynamic,
-                        options2?: Dynamic,
+                  {edgeStripPoints.map((stripPoint?: Dynamic): Dynamic => {
+                    let isHorizontalStrip: Dynamic = stripPoint.x === null,
+                      gripInsetAt: Dynamic = (
+                        gripX?: Dynamic,
+                        gripY?: Dynamic,
                       ): Dynamic =>
-                        value5.some(
-                          (input3?: Dynamic): Dynamic =>
-                            input3.x === input2 && input3.y === options2,
+                        gripPoints.some(
+                          (grip?: Dynamic): Dynamic =>
+                            grip.x === gripX && grip.y === gripY,
                         )
-                          ? value13 / 2
+                          ? gripHitSize / 2
                           : 0,
-                      value21: Dynamic = value20
-                        ? callback2("left", input.y)
-                        : callback2(input.x, "top"),
-                      value22: Dynamic = value20
-                        ? callback2("right", input.y)
-                        : callback2(input.x, "bottom"),
-                      state2: Dynamic = {
+                      startInset: Dynamic = isHorizontalStrip
+                        ? gripInsetAt("left", stripPoint.y)
+                        : gripInsetAt(stripPoint.x, "top"),
+                      endInset: Dynamic = isHorizontalStrip
+                        ? gripInsetAt("right", stripPoint.y)
+                        : gripInsetAt(stripPoint.x, "bottom"),
+                      stripStyle: Dynamic = {
                         position: "absolute",
                         pointerEvents: "auto",
-                        cursor: selectionResizeCursor(input, value6),
-                        ...(value20
+                        cursor: selectionResizeCursor(stripPoint, rotationRad),
+                        ...(isHorizontalStrip
                           ? {
-                              left: value21,
-                              width: Math.max(0, value11 - value21 - value22),
+                              left: startInset,
+                              width: Math.max(0, scaledWidth - startInset - endInset),
                               top:
-                                (input.y === "top" ? 0 : value12) - edgeHit / 2,
+                                (stripPoint.y === "top" ? 0 : scaledHeight) - edgeHit / 2,
                               height: edgeHit,
                             }
                           : {
-                              top: value21,
-                              height: Math.max(0, value12 - value21 - value22),
+                              top: startInset,
+                              height: Math.max(0, scaledHeight - startInset - endInset),
                               left:
-                                (input.x === "left" ? 0 : value11) -
+                                (stripPoint.x === "left" ? 0 : scaledWidth) -
                                 edgeHit / 2,
                               width: edgeHit,
                             }),
                       };
                     return selectionHandleTooltip(
-                      `strip-${selectionPointKey(input)}`,
+                      `strip-${selectionPointKey(stripPoint)}`,
                       {
                         content: gripLabel,
                         reason: false,
@@ -729,93 +729,93 @@ export function installCdsComponentsSelectionRing(): () => void {
                         data-resize-handle={""}
                         data-resize-strip={""}
                         className={"touch-none"}
-                        style={state2}
-                        onPointerDown={(input2?: Dynamic): Dynamic =>
-                          onResizeStart?.(input, input2)
+                        style={stripStyle}
+                        onPointerDown={(event?: Dynamic): Dynamic =>
+                          onResizeStart?.(stripPoint, event)
                         }
                         onDoubleClick={
                           onGripDoubleClick === undefined
                             ? undefined
-                            : (input2?: Dynamic): Dynamic => {
-                                input2.stopPropagation();
-                                onGripDoubleClick(input);
+                            : (event?: Dynamic): Dynamic => {
+                                event.stopPropagation();
+                                onGripDoubleClick(stripPoint);
                               }
                         }
                       />,
                     );
                   })}
-                  {value5.map((input?: Dynamic): Dynamic => {
-                    let value20: Dynamic = selectionPointPosition(
-                      input,
+                  {gripPoints.map((point?: Dynamic): Dynamic => {
+                    let gripPosition: Dynamic = selectionPointPosition(
+                      point,
                     );
-                    if (!value10)
+                    if (!canResize)
                       return (() => {
                         const _Component = "span";
                         const _props = {
                           className: "absolute block size-0",
-                          style: value20,
+                          style: gripPosition,
                           children: (
                             <SelectionGrip
-                              stroke={value4}
-                              disabled={value9 && value7}
+                              stroke={ringStroke}
+                              disabled={isOwnSelection && isResizeDisabled}
                               variant={variant}
                             />
                           ),
                         } as const;
-                        const _key = selectionPointKey(input);
+                        const _key = selectionPointKey(point);
                         return <_Component key={_key} {..._props} />;
                       })();
-                    let state2: Dynamic = {
+                    let handleStyle: Dynamic = {
                       position: "absolute",
-                      left: `calc(${value20.left} - ${value13 / 2}px)`,
-                      top: `calc(${value20.top} - ${value13 / 2}px)`,
-                      width: value13,
-                      height: value13,
+                      left: `calc(${gripPosition.left} - ${gripHitSize / 2}px)`,
+                      top: `calc(${gripPosition.top} - ${gripHitSize / 2}px)`,
+                      width: gripHitSize,
+                      height: gripHitSize,
                       pointerEvents: "auto",
-                      cursor: value7
+                      cursor: isResizeDisabled
                         ? "default"
-                        : selectionResizeCursor(input, value6),
+                        : selectionResizeCursor(point, rotationRad),
                     };
                     return selectionHandleTooltip(
-                      selectionPointKey(input),
-                      value19,
+                      selectionPointKey(point),
+                      resizeTooltip,
                       <div
                         data-resize-handle={""}
-                        data-disabled={value7 ? "" : undefined}
+                        data-disabled={isResizeDisabled ? "" : undefined}
                         className={"touch-none"}
-                        style={state2}
+                        style={handleStyle}
                         onPointerDown={
-                          value7
+                          isResizeDisabled
                             ? preventSelectionHandleEvent
-                            : (input2?: Dynamic): Dynamic =>
-                                onResizeStart?.(input, input2)
+                            : (event?: Dynamic): Dynamic =>
+                                onResizeStart?.(point, event)
                         }
                         onDoubleClick={
-                          onGripDoubleClick === undefined || value7
+                          onGripDoubleClick === undefined || isResizeDisabled
                             ? undefined
-                            : (input2?: Dynamic): Dynamic => {
-                                (value &&
+                            : (event?: Dynamic): Dynamic => {
+                                (isCoarsePointer &&
                                   isOutsideSelectionGrip(
-                                    input2,
-                                    value11 / 2,
-                                    value12 / 2,
-                                    value6,
+                                    event,
+                                    scaledWidth / 2,
+                                    scaledHeight / 2,
+                                    rotationRad,
                                   )) ||
-                                  (input2.stopPropagation(),
-                                  onGripDoubleClick(input));
+                                  (event.stopPropagation(),
+                                  onGripDoubleClick(point));
                               }
                         }
                       >
                         <SelectionGrip
-                          stroke={value4}
-                          disabled={value7}
+                          stroke={ringStroke}
+                          disabled={isResizeDisabled}
                           variant={variant}
                         />
                       </div>,
                     );
                   })}
                 </TooltipGroup>
-                {angleLabel !== undefined && value3 === undefined ? (<SelectionPoint
+                {angleLabel !== undefined && collaboratorIndex === undefined ? (<SelectionPoint
                     data-selection-angle={""}
                     scale={1}
                     rotation={rotation}
@@ -883,7 +883,7 @@ export function installCdsComponentsSelectionRing(): () => void {
               onValueCommitted: onValueCommitted,
               format: format,
               locale: locale,
-              min: min2,
+              min: minValue,
               max: max,
               step: step,
               smallStep: smallStep,
@@ -891,71 +891,71 @@ export function installCdsComponentsSelectionRing(): () => void {
               snapOnStep: snapOnStep,
               allowOutOfRange: allowOutOfRange,
               required: required,
-              disabled: disabled2,
+              disabled: disabledProp,
               readOnly: readOnly,
               name: name,
               form: form,
               ...props
             }: Dynamic,
-            options?: Dynamic,
+            forwardedRef?: Dynamic,
           ): Dynamic => {
             "use no memo";
 
-            let { id: value2, ...value3 }: Dynamic = props,
-              value4: Dynamic = useExperimentalSettings(),
-              value5: Dynamic = locale ?? value4,
-              value6: Dynamic = useHydratedNumberInput(),
-              value7: Dynamic = value5 ?? (value6 ? undefined : "en-US"),
-              value8: Dynamic = (0, reactComponentsSelectionRing_4.useMemo)(
+            let { id: inputId, ...inputProps }: Dynamic = props,
+              contextLocale: Dynamic = useExperimentalSettings(),
+              preferredLocale: Dynamic = locale ?? contextLocale,
+              isHydrated: Dynamic = useHydratedNumberInput(),
+              formatLocale: Dynamic = preferredLocale ?? (isHydrated ? undefined : "en-US"),
+              currencyAffix: Dynamic = (0, reactComponentsSelectionRing_4.useMemo)(
                 (): Dynamic =>
                   currency !== undefined &&
                   slotStart === undefined &&
                   slotEnd === undefined
-                    ? currencySymbol(currency, value7)
+                    ? currencySymbol(currency, formatLocale)
                     : null,
-                [currency, value7, slotStart, slotEnd],
+                [currency, formatLocale, slotStart, slotEnd],
               ),
-              value9: Dynamic =
-                slotStart ?? (value8?.side === "start" ? value8.symbol : null),
-              value10: Dynamic =
-                slotEnd ?? (value8?.side === "end" ? value8.symbol : null),
-              value11: Dynamic = value8 !== null || undefined,
-              value12: Dynamic = useFieldInvalid(),
-              value13: Dynamic = useFieldDisabled(),
-              value14: Dynamic = fullWidth ? "w-full" : "",
-              value15: Dynamic = (0, reactComponentsSelectionRing_4.useRef)(
+              startContent: Dynamic =
+                slotStart ?? (currencyAffix?.side === "start" ? currencyAffix.symbol : null),
+              endContent: Dynamic =
+                slotEnd ?? (currencyAffix?.side === "end" ? currencyAffix.symbol : null),
+              affixAriaHidden: Dynamic = currencyAffix !== null || undefined,
+              isFieldInvalid: Dynamic = useFieldInvalid(),
+              isFieldDisabled: Dynamic = useFieldDisabled(),
+              widthClass: Dynamic = fullWidth ? "w-full" : "",
+              inputRef: Dynamic = (0, reactComponentsSelectionRing_4.useRef)(
                 null,
               ),
-              { clickToFocusProps: value16 }: Dynamic = useClickToFocus(
-                (): Dynamic => value15.current?.focus(),
+              { clickToFocusProps: clickToFocusHandlers }: Dynamic = useClickToFocus(
+                (): Dynamic => inputRef.current?.focus(),
                 {
-                  disabled: disabled2 || value13,
+                  disabled: disabledProp || isFieldDisabled,
                   readOnly: readOnly,
                 },
               ),
-              [, value17]: Dynamic = (0,
+              [, forceRerender]: Dynamic = (0,
               reactComponentsSelectionRing_4.useReducer)(
-                (input?: Dynamic): Dynamic => input + 1,
+                (renderCount?: Dynamic): Dynamic => renderCount + 1,
                 0,
               ),
-              callback: Dynamic = (input?: Dynamic): Dynamic => {
-                value3.onBlur?.(input);
-                value17();
+              handleBlur: Dynamic = (event?: Dynamic): Dynamic => {
+                inputProps.onBlur?.(event);
+                forceRerender();
               },
-              value18: Dynamic = useMergedRefs(value15, options);
+              mergedInputRef: Dynamic = useMergedRefs(inputRef, forwardedRef);
             return (
               <npm_NumberField_mU.Root
                 data-cds={"NumberInput"}
                 {...getSizeAttribute(size)}
-                data-invalid={value12 || undefined}
-                id={value2}
+                data-invalid={isFieldInvalid || undefined}
+                id={inputId}
                 value={value}
                 defaultValue={defaultValue}
                 onValueChange={onValueChange}
                 onValueCommitted={onValueCommitted}
                 format={format}
-                locale={value5}
-                min={min2}
+                locale={preferredLocale}
+                min={minValue}
                 max={max}
                 step={step}
                 smallStep={smallStep}
@@ -963,46 +963,46 @@ export function installCdsComponentsSelectionRing(): () => void {
                 snapOnStep={snapOnStep}
                 allowOutOfRange={allowOutOfRange}
                 required={required}
-                disabled={disabled2}
+                disabled={disabledProp}
                 readOnly={readOnly}
                 name={name}
                 form={form}
-                onMouseDown={value16.onMouseDown}
+                onMouseDown={clickToFocusHandlers.onMouseDown}
                 className={cn(
                   ButtonButtonCss,
                   "pr-md",
                   "inline-flex",
-                  value14,
+                  widthClass,
                   "cursor-text items-center gap-[var(--cds-pad-sm,6px)] has-[:focus-visible]:shadow-focus",
                   "data-[disabled]:opacity-disabled",
-                  !disabled2 &&
+                  !disabledProp &&
                     "[&:hover:not(:focus-visible):not(:has(:focus-visible)):not([data-invalid]):not([data-disabled])]:shadow-field-hover",
                   className,
                 )}
               >
-                {value9 ? (<span
-                    aria-hidden={value11}
+                {startContent ? (<span
+                    aria-hidden={affixAriaHidden}
                     className={"flex shrink-0 items-center text-muted"}
                   >
-                    {value9}
+                    {startContent}
                   </span>) : (null)}
                 <npm_NumberField_mU.Input
-                  ref={value18}
+                  ref={mergedInputRef}
                   aria-invalid={
-                    value3["aria-invalid"] ?? (value12 || undefined)
+                    inputProps["aria-invalid"] ?? (isFieldInvalid || undefined)
                   }
-                  {...value3}
-                  onBlur={callback}
+                  {...inputProps}
+                  onBlur={handleBlur}
                   className={cn(
                     ButtonButtonClassNames_4,
                     "disabled:opacity-100",
                   )}
                 />
-                {value10 ? (<span
-                    aria-hidden={value11}
+                {endContent ? (<span
+                    aria-hidden={affixAriaHidden}
                     className={"flex shrink-0 items-center text-muted"}
                   >
-                    {value10}
+                    {endContent}
                   </span>) : (null)}
               </npm_NumberField_mU.Root>
             );
