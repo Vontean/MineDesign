@@ -62,141 +62,141 @@ import { uiMessage } from "@minedesign/contracts/ui-messages";
 import { withClosedPreview } from "../preview-navigation";
 
 /** 导出或捕获画板前使用：临时关闭全屏播放，等预览布局稳定后执行任务，结束后在条件允许时恢复播放并还原焦点。 */
-export function runWithPlayPreviewClosed(deps: { readonly value106: Dynamic; readonly value177: Dynamic; readonly value270: Dynamic; readonly value271: Dynamic; readonly value275: Dynamic; readonly value297: Dynamic; readonly value346: Dynamic; readonly value348: Dynamic; readonly value387: Dynamic; readonly value392: Dynamic; readonly value488: Dynamic; readonly value87: Dynamic; readonly value92: Dynamic }, input?: Dynamic, options?: Dynamic): Dynamic {
-        let value653: Dynamic = null,
-          flag2: Dynamic = false,
-          callback15: Dynamic = (): Dynamic => {
-            flag2 = true;
+export function runWithPlayPreviewClosed(deps: { readonly value106: Dynamic; readonly value177: Dynamic; readonly value270: Dynamic; readonly value271: Dynamic; readonly value275: Dynamic; readonly value297: Dynamic; readonly value346: Dynamic; readonly value348: Dynamic; readonly value387: Dynamic; readonly value392: Dynamic; readonly value488: Dynamic; readonly value87: Dynamic; readonly value92: Dynamic }, exportArtboards?: Dynamic, closeOptions?: Dynamic): Dynamic {
+        let focusedElement: Dynamic = null,
+          hasUserInteracted: Dynamic = false,
+          markUserInteracted: Dynamic = (): Dynamic => {
+            hasUserInteracted = true;
           },
-          callback16: Dynamic = (input2?: Dynamic): Dynamic => {
-            for (let value654 of [
+          setInteractionListening: Dynamic = (shouldListen?: Dynamic): Dynamic => {
+            for (let eventType of [
               "pointerdown",
               "wheel",
               "keydown",
             ] as Dynamic)
-              input2
-                ? deps.value106.current?.addEventListener(value654, callback15, {
+              shouldListen
+                ? deps.value106.current?.addEventListener(eventType, markUserInteracted, {
                     capture: true,
                     passive: true,
                   })
                 : deps.value106.current?.removeEventListener(
-                    value654,
-                    callback15,
+                    eventType,
+                    markUserInteracted,
                     true,
                   );
           },
-          callback17: Dynamic = (input2?: Dynamic): Dynamic =>
-            !flag2 &&
+          canReopen: Dynamic = (previewState?: Dynamic): Dynamic =>
+            !hasUserInteracted &&
             deps.value346.current === null &&
             deps.value271.current === null &&
             !deps.value488() &&
             deps.value87.current.artboards.some(
-              (input3?: Dynamic): Dynamic => input3.file === input2.file,
+              (artboard?: Dynamic): Dynamic => artboard.file === previewState.file,
             ),
-          callback18: Dynamic = (input2?: Dynamic): Dynamic => {
+          restoreFocus: Dynamic = (attemptsLeft?: Dynamic): Dynamic => {
             if (
-              value653 === null ||
-              value653.isConnected ||
+              focusedElement === null ||
+              focusedElement.isConnected ||
               ((document as Dynamic).activeElement !==
                 (document as Dynamic).body &&
                 (document as Dynamic).activeElement !== null)
             )
               return;
-            let callback19: Dynamic = (input3?: Dynamic): Dynamic =>
-                (document as Dynamic).querySelector(input3),
-              value654: Dynamic =
-                callback19('button[data-testid="mega-export"]') ??
-                callback19('[data-testid="mega-export"] button') ??
-                callback19('[data-testid="mega-collapse"]');
-            value654
-              ? value654.focus({
+            let queryElement: Dynamic = (selector?: Dynamic): Dynamic =>
+                (document as Dynamic).querySelector(selector),
+              exportButton: Dynamic =
+                queryElement('button[data-testid="mega-export"]') ??
+                queryElement('[data-testid="mega-export"] button') ??
+                queryElement('[data-testid="mega-collapse"]');
+            exportButton
+              ? exportButton.focus({
                   preventScroll: true,
                 })
-              : input2 > 0 &&
-                requestAnimationFrame((): Dynamic => callback18(input2 - 1));
+              : attemptsLeft > 0 &&
+                requestAnimationFrame((): Dynamic => restoreFocus(attemptsLeft - 1));
           };
         return withClosedPreview(
           {
             current: (): Dynamic => {
-              let current4: Dynamic = deps.value387.current;
-              return !deps.value92 || current4 === null
+              let currentPreview: Dynamic = deps.value387.current;
+              return !deps.value92 || currentPreview === null
                 ? null
-                : input.some(
-                      (input2?: Dynamic): Dynamic =>
-                        input2.file !== current4.file,
+                : exportArtboards.some(
+                      (artboard?: Dynamic): Dynamic =>
+                        artboard.file !== currentPreview.file,
                     )
                   ? {
-                      ...current4,
-                      playing: deps.value271.current === current4.file,
+                      ...currentPreview,
+                      playing: deps.value271.current === currentPreview.file,
                     }
                   : null;
             },
             leave: (): Dynamic => {
-              value653 =
+              focusedElement =
                 (document as Dynamic).hasFocus() &&
                 (document as Dynamic).activeElement !==
                   (document as Dynamic).body
                   ? (document as Dynamic).activeElement
                   : null;
               deps.value297.current();
-              callback16(true);
+              setInteractionListening(true);
             },
             laidOut: async (): Promise<Dynamic> => {
               await new Promise(
-                (input2?: Dynamic): Dynamic =>
+                (resolveSettled?: Dynamic): Dynamic =>
                   setTimeout((): Dynamic => {
-                    let value654: Dynamic = setTimeout(input2, 250);
+                    let fallbackTimer: Dynamic = setTimeout(resolveSettled, 250);
                     requestAnimationFrame(
                       (): Dynamic =>
                         requestAnimationFrame(
-                          (): Dynamic => (clearTimeout(value654), input2()),
+                          (): Dynamic => (clearTimeout(fallbackTimer), resolveSettled()),
                         ),
                     );
                   }, 0),
               );
               await Promise.all(
-                input.map((input2?: Dynamic): Dynamic => {
-                  let value654: Dynamic = deps.value177.current.get(input2.file)
+                exportArtboards.map((artboard?: Dynamic): Dynamic => {
+                  let webview: Dynamic = deps.value177.current.get(artboard.file)
                     ?.webviewRef.current;
-                  return value654
-                    ? createPreviewHandle(value654)
+                  return webview
+                    ? createPreviewHandle(webview)
                         ?.awaitSettled(1500)
                         .catch((): Dynamic => {})
                     : undefined;
                 }),
               );
             },
-            mayReopen: callback17,
+            mayReopen: canReopen,
             reopen: ({ playing: playing, ...props }: Dynamic): Dynamic =>
               new Promise(
-                (input2?: Dynamic): Dynamic =>
+                (resolveReopened?: Dynamic): Dynamic =>
                   deps.value275((): Dynamic => {
-                    input2();
-                    callback16(false);
-                    if (!callback17(props)) return;
+                    resolveReopened();
+                    setInteractionListening(false);
+                    if (!canReopen(props)) return;
                     deps.value392.current = props.file;
                     deps.value348(props);
                     playing && deps.value270(props.file);
-                    requestAnimationFrame((): Dynamic => callback18(2));
-                    let value654: Dynamic =
-                      value653 !== null
+                    requestAnimationFrame((): Dynamic => restoreFocus(2));
+                    let openDialog: Dynamic =
+                      focusedElement !== null
                         ? (document as Dynamic).activeElement?.closest(
                             '[role="dialog"], [role="alertdialog"]',
                           )
                         : null;
-                    if (value654) {
+                    if (openDialog) {
                       let observer: Dynamic = new MutationObserver(
                           (): Dynamic => {
-                            value654.isConnected ||
-                              (callback19(),
-                              setTimeout((): Dynamic => callback18(2), 0));
+                            openDialog.isConnected ||
+                              (stopWatching(),
+                              setTimeout((): Dynamic => restoreFocus(2), 0));
                           },
                         ),
-                        callback19: Dynamic = (): Dynamic => (
+                        stopWatching: Dynamic = (): Dynamic => (
                           observer.disconnect(),
-                          clearTimeout(value655)
+                          clearTimeout(watchTimeout)
                         ),
-                        value655: Dynamic = setTimeout(callback19, 12e4);
+                        watchTimeout: Dynamic = setTimeout(stopWatching, 12e4);
                       observer.observe((document as Dynamic).body, {
                         childList: true,
                         subtree: true,
@@ -205,12 +205,12 @@ export function runWithPlayPreviewClosed(deps: { readonly value106: Dynamic; rea
                   }),
               ),
           },
-          options,
-        ).finally((): Dynamic => callback16(false));
+          closeOptions,
+        ).finally((): Dynamic => setInteractionListening(false));
       }
 
 /** 从画板菜单导出单个画板为图片时运行：截取画板、检查字体替换与裁切及空白尾部，再保存文件并上报结果。 */
-export async function exportArtboardAsPng(deps: { readonly hideToast: Dynamic; readonly showToast: Dynamic; readonly value177: Dynamic; readonly value479: Dynamic; readonly value480: Dynamic; readonly value483: Dynamic; readonly value485: Dynamic; readonly value493: Dynamic; readonly value502: Dynamic; readonly value503: Dynamic; readonly value67: Dynamic; readonly value93: Dynamic }, input?: Dynamic, options?: Dynamic): Promise<Dynamic> {
+export async function exportArtboardAsPng(deps: { readonly hideToast: Dynamic; readonly showToast: Dynamic; readonly value177: Dynamic; readonly value479: Dynamic; readonly value480: Dynamic; readonly value483: Dynamic; readonly value485: Dynamic; readonly value493: Dynamic; readonly value502: Dynamic; readonly value503: Dynamic; readonly value67: Dynamic; readonly value93: Dynamic }, file?: Dynamic, scale?: Dynamic): Promise<Dynamic> {
         if (!deps.value493) {
           if (deps.value480) {
             deps.showToast(DownloadsArenTAvailableToYouForMessage);
@@ -218,17 +218,17 @@ export async function exportArtboardAsPng(deps: { readonly hideToast: Dynamic; r
           }
           deps.value479(true);
           try {
-            let value653: Dynamic = await deps.value483(input),
-              value654: Dynamic = value653
-                ? createPreviewHandle(value653)
+            let frameElement: Dynamic = await deps.value483(file),
+              previewHandle: Dynamic = frameElement
+                ? createPreviewHandle(frameElement)
                 : null;
             if (
-              !value653 ||
-              !value654 ||
-              value653.getBoundingClientRect().width === 0
+              !frameElement ||
+              !previewHandle ||
+              frameElement.getBoundingClientRect().width === 0
             ) {
               deps.showToast(
-                deps.value177.current.get(input)?.isBlocked()
+                deps.value177.current.get(file)?.isBlocked()
                   ? uiMessage("canvas.designCanvas.thisArtboardSPreviewIs")
                   : uiMessage("canvas.designCanvas.thisArtboardIsnTVisible"),
               );
@@ -237,117 +237,117 @@ export async function exportArtboardAsPng(deps: { readonly hideToast: Dynamic; r
               );
               return;
             }
-            let value655: Dynamic = deps.value67.artboards.find(
-                (input2?: Dynamic): Dynamic => input2.file === input,
+            let artboard: Dynamic = deps.value67.artboards.find(
+                (item?: Dynamic): Dynamic => item.file === file,
               ),
-              value656: Dynamic = exportFileName(
-                input,
-                value655?.title,
+              baseName: Dynamic = exportFileName(
+                file,
+                artboard?.title,
               ),
-              value657: Dynamic = await exportArtboardImage(
-                value654,
-                input,
+              capture: Dynamic = await exportArtboardImage(
+                previewHandle,
+                file,
                 "png",
-                options ?? 2,
+                scale ?? 2,
                 {
-                  ...(value655
+                  ...(artboard
                     ? getArtboardCaptureOptions(
-                        value655,
+                        artboard,
                         deps.value93,
                       )
                     : {
                         selectionRoot: "body",
                       }),
                   filename:
-                    options == null
-                      ? value656 + ".png"
-                      : value656 + "@" + options + "x.png",
+                    scale == null
+                      ? baseName + ".png"
+                      : baseName + "@" + scale + "x.png",
                   scope: deps.value485(1, "one"),
                 },
               ),
-              [value658]: Dynamic = fontSubstitutionWarnings(
-                value657.fontWarningCount,
+              [fontWarning]: Dynamic = fontSubstitutionWarnings(
+                capture.fontWarningCount,
               ),
-              value659: Dynamic =
-                value658 !== undefined
+              toastDetails: Dynamic =
+                fontWarning !== undefined
                   ? {
-                      description: value658,
+                      description: fontWarning,
                     }
                   : undefined;
-            if (!value657.ok)
+            if (!capture.ok)
               deps.showToast(
                 uiMessage("canvas.designCanvas.couldnTCaptureThisArtboard"),
                 "error",
               );
-            else if (value657.saveOutcome === "withheld")
+            else if (capture.saveOutcome === "withheld")
               deps.showToast(DownloadsArenTAvailableToYouForMessage);
             else if (
-              value657.clipped &&
-              value657.saveOutcome !== "declined"
+              capture.clipped &&
+              capture.saveOutcome !== "declined"
             ) {
-              let value660: Dynamic = deps.value502(input),
-                value661: Dynamic = deps.showToast(
-                  clippedArtboardsMessage([value656], value660),
+              let canFixClipping: Dynamic = deps.value502(file),
+                clippedToastId: Dynamic = deps.showToast(
+                  clippedArtboardsMessage([baseName], canFixClipping),
                   "info",
-                  value660
+                  canFixClipping
                     ? {
-                        ...value659,
+                        ...toastDetails,
                         action: deps.value503(
-                          [input],
+                          [file],
                           false,
-                          (): Dynamic => deps.hideToast(value661),
-                          value657.saveOutcome === "unsupported",
+                          (): Dynamic => deps.hideToast(clippedToastId),
+                          capture.saveOutcome === "unsupported",
                         ),
                         pinned: true,
                       }
-                    : value659,
+                    : toastDetails,
                 );
-            } else if (value657.saveOutcome !== "declined") {
-              let flag2: Dynamic = false;
+            } else if (capture.saveOutcome !== "declined") {
+              let shownTailWarning: Dynamic = false;
               if (
-                value655 &&
-                getArtboardCaptureMode(value655, deps.value93) ===
+                artboard &&
+                getArtboardCaptureMode(artboard, deps.value93) ===
                   "full" &&
-                isFillPagedExport(value655)
+                isFillPagedExport(artboard)
               ) {
-                let value660: Dynamic = await measureEmptyExportTail(value654, {
-                  w: value655.w,
-                  h: value655.h,
+                let emptyTail: Dynamic = await measureEmptyExportTail(previewHandle, {
+                  w: artboard.w,
+                  h: artboard.h,
                 }).catch((): Dynamic => null);
                 if (
-                  value660 !== null &&
-                  value660 >= minEmptyExportTail
+                  emptyTail !== null &&
+                  emptyTail >= minEmptyExportTail
                 ) {
-                  let value661: Dynamic = deps.value502(input),
-                    value662: Dynamic = deps.showToast(
+                  let canFixTail: Dynamic = deps.value502(file),
+                    tailToastId: Dynamic = deps.showToast(
                       emptyExportTailMessage(
-                        [value656],
-                        value660,
+                        [baseName],
+                        emptyTail,
                       ),
                       "info",
-                      value661
+                      canFixTail
                         ? {
-                            ...value659,
+                            ...toastDetails,
                             action: deps.value503(
-                              [input],
+                              [file],
                               false,
-                              (): Dynamic => deps.hideToast(value662),
-                              value657.saveOutcome === "unsupported",
+                              (): Dynamic => deps.hideToast(tailToastId),
+                              capture.saveOutcome === "unsupported",
                             ),
                             pinned: true,
                           }
-                        : value659,
+                        : toastDetails,
                     );
-                  flag2 = true;
+                  shownTailWarning = true;
                 }
               }
-              !flag2 && value658 !== undefined && deps.showToast(value658, "info");
+              !shownTailWarning && fontWarning !== undefined && deps.showToast(fontWarning, "info");
             }
-          } catch (value653: Dynamic) {
-            console.error("[download-artboard]", value653);
+          } catch (error: Dynamic) {
+            console.error("[download-artboard]", error);
             deps.showToast(
               uiMessage("canvas.designCanvas.couldnTExportThisArtboard") +
-                errorMessage(value653) +
+                errorMessage(error) +
                 ".",
               "error",
             );
@@ -358,7 +358,7 @@ export async function exportArtboardAsPng(deps: { readonly hideToast: Dynamic; r
       }
 
 /** 从画板菜单导出 HTML 压缩包时运行：收集画板文件、依赖与上传素材，生成 README 并打包 zip，通过宿主或浏览器下载。 */
-export async function exportArtboardSourceZip(deps: { readonly assets: Dynamic; readonly doc: Dynamic; readonly showToast: Dynamic; readonly value177: Dynamic; readonly value479: Dynamic; readonly value480: Dynamic; readonly value493: Dynamic; readonly value73: Dynamic }, input?: Dynamic): Promise<Dynamic> {
+export async function exportArtboardSourceZip(deps: { readonly assets: Dynamic; readonly doc: Dynamic; readonly showToast: Dynamic; readonly value177: Dynamic; readonly value479: Dynamic; readonly value480: Dynamic; readonly value493: Dynamic; readonly value73: Dynamic }, file?: Dynamic): Promise<Dynamic> {
         if (!deps.value493) {
           if (deps.value480) {
             deps.showToast(DownloadsArenTAvailableToYouForMessage);
@@ -373,167 +373,167 @@ export async function exportArtboardSourceZip(deps: { readonly assets: Dynamic; 
               );
               return;
             }
-            await deps.value177.current.get(input)?.flushPending();
+            await deps.value177.current.get(file)?.flushPending();
             let files: Dynamic = deps.doc.content().files,
-              callback15: Dynamic = async (
-                input2?: Dynamic,
+              readFileContent: Dynamic = async (
+                path?: Dynamic,
               ): Promise<Dynamic> => {
-                let value660: Dynamic =
+                let content: Dynamic =
                   (await getKvClient().get(
-                    PlatformFileContentHandler_4(input2),
-                  )) ?? files[input2];
+                    PlatformFileContentHandler_4(path),
+                  )) ?? files[path];
                 if (
-                  typeof value660 == "string" &&
-                  input2.endsWith(".dc.html") &&
-                  isLoadingArtboardHtml(value660)
+                  typeof content == "string" &&
+                  path.endsWith(".dc.html") &&
+                  isLoadingArtboardHtml(content)
                 )
                   throw new Error(
                     "an artboard on this canvas has not loaded (its uploaded content is still arriving, or could not be read) \u2014 export again once it shows",
                   );
-                return typeof value660 == "string" ? value660 : undefined;
+                return typeof content == "string" ? content : undefined;
               },
-              value653: Dynamic = /\.(png|jpe?g|gif|webp|avif|bmp|svg)$/i,
+              imagePathPattern: Dynamic = /\.(png|jpe?g|gif|webp|avif|bmp|svg)$/i,
               entries: Dynamic = new Map(),
-              items: Dynamic = [input];
+              items: Dynamic = [file];
             for (; items.length > 0; ) {
-              let value660: Dynamic = items.shift();
-              if (entries.has(value660)) continue;
-              let value661: Dynamic = await callback15(value660);
+              let queuedPath: Dynamic = items.shift();
+              if (entries.has(queuedPath)) continue;
+              let queuedContent: Dynamic = await readFileContent(queuedPath);
               if (
-                value661 !== undefined &&
-                (entries.set(value660, value661), !value653.test(value660))
+                queuedContent !== undefined &&
+                (entries.set(queuedPath, queuedContent), !imagePathPattern.test(queuedPath))
               )
-                for (let value662 of Object.keys(files) as Dynamic) {
+                for (let candidatePath of Object.keys(files) as Dynamic) {
                   if (
-                    value662 === value660 ||
-                    entries.has(value662) ||
-                    value662 === canvasMetadataFile
+                    candidatePath === queuedPath ||
+                    entries.has(candidatePath) ||
+                    candidatePath === canvasMetadataFile
                   )
                     continue;
-                  let value663: Dynamic = (
-                    value662.split("/").pop() ?? value662
+                  let candidateName: Dynamic = (
+                    candidatePath.split("/").pop() ?? candidatePath
                   ).replace(/\.dc\.html$/, "");
-                  (value662.endsWith(".dc.html")
-                    ? value661.includes('name="' + value663 + '"')
-                    : value661.includes(value662) ||
-                      value661.includes(
-                        value662.split("/").pop() ?? value662,
-                      )) && items.push(value662);
+                  (candidatePath.endsWith(".dc.html")
+                    ? queuedContent.includes('name="' + candidateName + '"')
+                    : queuedContent.includes(candidatePath) ||
+                      queuedContent.includes(
+                        candidatePath.split("/").pop() ?? candidatePath,
+                      )) && items.push(candidatePath);
                 }
             }
-            let callback16: Dynamic = (input2?: Dynamic): Dynamic => {
-                let value660: Dynamic = atob(input2),
-                  value661: Dynamic = new Uint8Array(value660.length);
-                for (let index: Dynamic = 0; index < value660.length; index++)
-                  value661[index] = value660.charCodeAt(index);
-                return value661;
+            let base64ToBytes: Dynamic = (base64?: Dynamic): Dynamic => {
+                let binary: Dynamic = atob(base64),
+                  bytes: Dynamic = new Uint8Array(binary.length);
+                for (let index: Dynamic = 0; index < binary.length; index++)
+                  bytes[index] = binary.charCodeAt(index);
+                return bytes;
               },
-              value654: Dynamic = await collectExportUploadedAssets(
+              uploadedAssets: Dynamic = await collectExportUploadedAssets(
                 new Map(
                   [...entries].filter(
-                    ([input2]: Dynamic): Dynamic =>
-                      isProjectSourcePath(input2),
+                    ([sourcePath]: Dynamic): Dynamic =>
+                      isProjectSourcePath(sourcePath),
                   ),
                 ),
-                input,
+                file,
                 fetchExportAsset,
                 {
                   taken: Object.keys(files),
                   emulatorBlobUrls: isEmulator(),
                 },
               );
-            for (let [value660, value661] of value654.sources as Dynamic)
-              entries.set(value660, value661);
-            let items2: Dynamic = [...value654.entries];
-            for (let [value660, value661] of entries as Dynamic)
-              if (value653.test(value660)) {
-                let value662: Dynamic;
+            for (let [sourcePath, sourceContent] of uploadedAssets.sources as Dynamic)
+              entries.set(sourcePath, sourceContent);
+            let zipEntries: Dynamic = [...uploadedAssets.entries];
+            for (let [entryPath, entryContent] of entries as Dynamic)
+              if (imagePathPattern.test(entryPath)) {
+                let imageBytes: Dynamic;
                 try {
-                  value662 = callback16(value661.replace(/^data:[^,]*,/, ""));
+                  imageBytes = base64ToBytes(entryContent.replace(/^data:[^,]*,/, ""));
                 } catch {
                   continue;
                 }
-                items2.push({
-                  name: value660,
-                  data: value662,
+                zipEntries.push({
+                  name: entryPath,
+                  data: imageBytes,
                 });
               } else
-                value660.endsWith(".dc.html")
-                  ? items2.push({
-                      name: value660,
-                      data: prepareExportDcDocument(value661),
+                entryPath.endsWith(".dc.html")
+                  ? zipEntries.push({
+                      name: entryPath,
+                      data: prepareExportDcDocument(entryContent),
                     })
-                  : items2.push({
-                      name: value660,
-                      data: value661,
+                  : zipEntries.push({
+                      name: entryPath,
+                      data: entryContent,
                     });
-            items2.push({
+            zipEntries.push({
               name: "support.js",
               data: deps.assets.supportJs,
             });
-            items2.push({
+            zipEntries.push({
               name: "vendor/react.js",
               data: deps.assets.reactUmd,
             });
-            items2.push({
+            zipEntries.push({
               name: "vendor/react-dom.js",
               data: deps.assets.reactDomUmd,
             });
-            let value655: Dynamic = exportFileName(
-              input,
+            let baseName: Dynamic = exportFileName(
+              file,
               deps.value73.current.artboards.find(
-                (input2?: Dynamic): Dynamic => input2.file === input,
+                (artboard?: Dynamic): Dynamic => artboard.file === file,
               )?.title,
             );
-            items2.push({
+            zipEntries.push({
               name: "README.md",
               data: designExportReadme(
-                value655,
-                input,
+                baseName,
+                file,
                 [...entries.keys()].filter(
-                  (input2?: Dynamic): Dynamic => input2 !== input,
+                  (otherFile?: Dynamic): Dynamic => otherFile !== file,
                 ),
-                value654,
+                uploadedAssets,
               ),
             });
-            let value656: Dynamic = createStoredZip(items2),
-              value657: Dynamic = value655 + "-html.zip",
-              value658: Dynamic = await saveThroughHost(
-                value656,
-                value657,
+            let zipBlob: Dynamic = createStoredZip(zipEntries),
+              zipName: Dynamic = baseName + "-html.zip",
+              saveResult: Dynamic = await saveThroughHost(
+                zipBlob,
+                zipName,
               ),
-              value659: Dynamic = missingExportAssetSuffix(
-                value654.missing,
+              missingSuffix: Dynamic = missingExportAssetSuffix(
+                uploadedAssets.missing,
               );
-            value658.outcome === "saved" &&
-              value659 === undefined &&
-              deps.showToast(uiMessage("canvas.designCanvas.saved") + value657 + ".", "success");
-            value658.outcome !== "withheld" &&
-              value658.outcome !== "declined" &&
-              value659 !== undefined &&
+            saveResult.outcome === "saved" &&
+              missingSuffix === undefined &&
+              deps.showToast(uiMessage("canvas.designCanvas.saved") + zipName + ".", "success");
+            saveResult.outcome !== "withheld" &&
+              saveResult.outcome !== "declined" &&
+              missingSuffix !== undefined &&
               deps.showToast(
-                (value658.outcome === "saved" ? uiMessage("canvas.designCanvas.saved") : uiMessage("canvas.designCanvas.built")) +
-                  value657 +
+                (saveResult.outcome === "saved" ? uiMessage("canvas.designCanvas.saved") : uiMessage("canvas.designCanvas.built")) +
+                  zipName +
                   ", " +
-                  value659,
+                  missingSuffix,
                 "error",
               );
-            value658.outcome === "withheld" &&
+            saveResult.outcome === "withheld" &&
               deps.showToast(DownloadsArenTAvailableToYouForMessage);
-            if (value658.outcome === "unsupported") {
+            if (saveResult.outcome === "unsupported") {
               try {
-                let value660: Dynamic = (document as Dynamic).createElement(
+                let downloadLink: Dynamic = (document as Dynamic).createElement(
                   "a",
                 );
-                value660.href = URL.createObjectURL(value656);
-                value660.download = value657;
-                value660.rel = "noopener";
-                value660.style.display = "none";
-                (document as Dynamic).body.appendChild(value660);
-                value660.click();
-                value660.remove();
+                downloadLink.href = URL.createObjectURL(zipBlob);
+                downloadLink.download = zipName;
+                downloadLink.rel = "noopener";
+                downloadLink.style.display = "none";
+                (document as Dynamic).body.appendChild(downloadLink);
+                downloadLink.click();
+                downloadLink.remove();
                 setTimeout(
-                  (): Dynamic => URL.revokeObjectURL(value660.href),
+                  (): Dynamic => URL.revokeObjectURL(downloadLink.href),
                   6e4,
                 );
               } catch {}
@@ -541,27 +541,27 @@ export async function exportArtboardSourceZip(deps: { readonly assets: Dynamic; 
                 new CustomEvent(exportDeliveryEventName, {
                   detail: {
                     url: "",
-                    filename: value657,
+                    filename: zipName,
                     embedWarningCount: 0,
                     file: {
-                      blob: value656,
+                      blob: zipBlob,
                       mime: "application/zip",
                     },
-                    refusal: value658.code,
+                    refusal: saveResult.code,
                   },
                 }),
               );
             }
             reportExportOutcome(
-              classifyExportSaveOutcome("zip", value658.outcome),
+              classifyExportSaveOutcome("zip", saveResult.outcome),
               designAnalyticsEvents.exported.zip,
             );
-          } catch (value653: Dynamic) {
+          } catch (error: Dynamic) {
             healthReporter.report(
               ...classifyExportFailure("zip"),
             );
             deps.showToast(
-              uiMessage("canvas.designCanvas.couldnTBuildTheHTML") + String(value653),
+              uiMessage("canvas.designCanvas.couldnTBuildTheHTML") + String(error),
               "error",
             );
           } finally {
@@ -572,103 +572,103 @@ export async function exportArtboardSourceZip(deps: { readonly assets: Dynamic; 
 
 /** HTML 格式导出的生成函数：刷新待保存内容，挑选可导出的画板，生成独立 HTML 文档数据。 */
 export async function produceStandaloneHtml(deps: { readonly assets: Dynamic; readonly doc: Dynamic; readonly filePath: Dynamic; readonly value177: Dynamic; readonly value346: Dynamic; readonly value508: Dynamic; readonly value73: Dynamic; readonly value80: Dynamic; readonly value92: Dynamic }): Promise<Dynamic> {
-      let value653: Dynamic =
+      let documentTitle: Dynamic =
           (document as Dynamic).title ||
           exportBaseFileName(deps.filePath),
-        value654: Dynamic = AbortSignal.timeout(55e3),
+        timeoutSignal: Dynamic = AbortSignal.timeout(55e3),
         files: Dynamic = deps.doc.content().files,
-        callback15: Dynamic = async (input?: Dynamic): Promise<Dynamic> => {
-          let value658: Dynamic =
+        readFileContent: Dynamic = async (path?: Dynamic): Promise<Dynamic> => {
+          let content: Dynamic =
             (await getKvClient().get(
-              PlatformFileContentHandler_4(input),
-            )) ?? files[input];
+              PlatformFileContentHandler_4(path),
+            )) ?? files[path];
           if (
-            typeof value658 == "string" &&
-            input.endsWith(".dc.html") &&
-            isLoadingArtboardHtml(value658)
+            typeof content == "string" &&
+            path.endsWith(".dc.html") &&
+            isLoadingArtboardHtml(content)
           )
             throw new ExportHtmlError(
               "not_loaded",
               "an artboard on this canvas has not loaded yet",
             );
-          return typeof value658 == "string" ? value658 : undefined;
+          return typeof content == "string" ? content : undefined;
         };
-      for (let value658 of deps.value177.current.values() as Dynamic)
-        await value658.flushPending();
-      let value655: Dynamic = selectHtmlExportArtboards(
+      for (let loadedArtboard of deps.value177.current.values() as Dynamic)
+        await loadedArtboard.flushPending();
+      let exportSelection: Dynamic = selectHtmlExportArtboards(
           deps.value73.current,
           deps.value80.current,
           deps.value346.current,
         ),
-        value656: Dynamic = deps.value92
+        fontLoads: Dynamic = deps.value92
           ? await deps.value508(
-              value655.artboards.map(
-                (input?: Dynamic): Dynamic => input.file,
+              exportSelection.artboards.map(
+                (artboard?: Dynamic): Dynamic => artboard.file,
               ),
             )
           : undefined,
-        value657: Dynamic = await produceStandaloneHtmlExport(
+        htmlExport: Dynamic = await produceStandaloneHtmlExport(
           {
             kind: "canvas",
-            title: value653,
-            ...value655,
+            title: documentTitle,
+            ...exportSelection,
             paths: Object.keys(files).filter(
-              (input?: Dynamic): Dynamic =>
-                input !== canvasMetadataFile,
+              (path?: Dynamic): Dynamic =>
+                path !== canvasMetadataFile,
             ),
-            read: callback15,
-            fetchBlob: (input?: Dynamic): Dynamic =>
-              fetch(input, {
+            read: readFileContent,
+            fetchBlob: (url?: Dynamic): Dynamic =>
+              fetch(url, {
                 credentials: "same-origin",
-                signal: value654,
+                signal: timeoutSignal,
               }),
             assets: deps.assets,
             importerReady: deps.value92,
-            ...(value656 === undefined
+            ...(fontLoads === undefined
               ? {}
               : {
-                  fontLoads: value656,
+                  fontLoads: fontLoads,
                 }),
           },
           {
-            signal: value654,
+            signal: timeoutSignal,
           },
         );
-      for (let value658 of value657.warnings as Dynamic)
-        console.warn("[design/export] " + value658);
+      for (let warning of htmlExport.warnings as Dynamic)
+        console.warn("[design/export] " + warning);
       return {
-        filename: value657.filename,
-        data: value657.blob,
+        filename: htmlExport.filename,
+        data: htmlExport.blob,
       };
     }
 
 /** PDF 格式导出的生成函数：拒绝并发导出，收集各画板页面生成 PDF，汇总警告并上报导出事件。 */
-export async function producePdfExport(deps: { readonly focusedFileRef: Dynamic; readonly selectionRef: Dynamic; readonly showToast: Dynamic; readonly value346: Dynamic; readonly value478: Dynamic; readonly value479: Dynamic; readonly value483: Dynamic; readonly value484: Dynamic; readonly value485: Dynamic; readonly value487: Dynamic; readonly value489: Dynamic; readonly value494: Dynamic; readonly value495: Dynamic; readonly value497: Dynamic; readonly value498: Dynamic; readonly value499: Dynamic; readonly value502: Dynamic; readonly value514: Dynamic; readonly value516: Dynamic; readonly value92: Dynamic; readonly value93: Dynamic }, input?: Dynamic): Promise<Dynamic> {
+export async function producePdfExport(deps: { readonly focusedFileRef: Dynamic; readonly selectionRef: Dynamic; readonly showToast: Dynamic; readonly value346: Dynamic; readonly value478: Dynamic; readonly value479: Dynamic; readonly value483: Dynamic; readonly value484: Dynamic; readonly value485: Dynamic; readonly value487: Dynamic; readonly value489: Dynamic; readonly value494: Dynamic; readonly value495: Dynamic; readonly value497: Dynamic; readonly value498: Dynamic; readonly value499: Dynamic; readonly value502: Dynamic; readonly value514: Dynamic; readonly value516: Dynamic; readonly value92: Dynamic; readonly value93: Dynamic }, request?: Dynamic): Promise<Dynamic> {
         deps.value516.current = {
           notes: [],
           refused: false,
         };
-        let callback15: Dynamic = (
-            input2?: Dynamic,
-            options?: Dynamic,
-            context: Dynamic = "refused",
+        let refuseExport: Dynamic = (
+            message?: Dynamic,
+            toastKind?: Dynamic,
+            reason: Dynamic = "refused",
           ): Dynamic => {
             throw (
               (deps.value516.current.refused = true),
-              reportExportEvent(context),
-              deps.showToast(input2, options),
-              new Error(input2)
+              reportExportEvent(reason),
+              deps.showToast(message, toastKind),
+              new Error(message)
             );
           },
           text: Dynamic =
             uiMessage("canvas.designCanvas.anotherExportIsStillRunning");
-        if (deps.value494()) return callback15(text);
-        let value653: Dynamic = null;
+        if (deps.value494()) return refuseExport(text);
+        let pickedExport: Dynamic = null;
         if (
-          input.interactive &&
+          request.interactive &&
           deps.value92 &&
           deps.value497 &&
-          ((value653 = await deps.value487(
+          ((pickedExport = await deps.value487(
             "pdf",
             {
               picked: initialExportPickedFiles(
@@ -680,32 +680,32 @@ export async function producePdfExport(deps: { readonly focusedFileRef: Dynamic;
               ),
               scale: 1,
             },
-            input.signal,
+            request.signal,
           )),
           deps.value478.current)
         ) {
           deps.value489();
-          return callback15(text);
+          return refuseExport(text);
         }
-        let value654: Dynamic = value653
-          ? deps.value514(new Set(value653.files), 1)
+        let printableSelection: Dynamic = pickedExport
+          ? deps.value514(new Set(pickedExport.files), 1)
           : deps.value514();
-        if (!value654.ok) {
+        if (!printableSelection.ok) {
           deps.value489();
-          return callback15(value654.reason);
+          return refuseExport(printableSelection.reason);
         }
         let controller: Dynamic = new AbortController(),
-          value655: Dynamic = setTimeout(
+          deadlineTimer: Dynamic = setTimeout(
             (): Dynamic => controller.abort(),
             55e3,
           );
-        value653?.signal.addEventListener(
+        pickedExport?.signal.addEventListener(
           "abort",
           (): Dynamic => controller.abort(),
         );
-        let { signal: value656 }: Dynamic = controller,
-          value657: Dynamic = deps.value485(value654.printable.length, "whole"),
-          value658: Dynamic = !value657.partial
+        let { signal: abortSignal }: Dynamic = controller,
+          scopeInfo: Dynamic = deps.value485(printableSelection.printable.length, "whole"),
+          documentName: Dynamic = !scopeInfo.partial
             ? (document as Dynamic).title || "design"
             : (sanitizeExportFileName(
                 (document as Dynamic).title,
@@ -713,44 +713,44 @@ export async function producePdfExport(deps: { readonly focusedFileRef: Dynamic;
               ) || "design") + "-selection";
         deps.value479(true);
         try {
-          let { blob: value659, ...value660 }: Dynamic = await deps.value495(
-            value654.printable,
+          let { blob: pdfBlob, ...pdfReport }: Dynamic = await deps.value495(
+            printableSelection.printable,
             (): Dynamic =>
               collectPdfExportPages(
-                value654.printable,
+                printableSelection.printable,
                 deps.value483,
-                value658,
+                documentName,
                 {
-                  signal: value656,
+                  signal: abortSignal,
                   rules: deps.value93,
                   textEncoding: deps.value498,
                   tagged: deps.value499,
                 },
               ),
           );
-          if (value653?.signal.aborted) throw new ExportCancelled();
+          if (pickedExport?.signal.aborted) throw new ExportCancelled();
           reportExportBuilt({
-            ...pdfExportWarnings(value660),
-            ...value657,
-            picked: value653 !== null,
+            ...pdfExportWarnings(pdfReport),
+            ...scopeInfo,
+            picked: pickedExport !== null,
           });
           deps.value516.current.notes = pdfExportMessage(
-            value660,
-            value654.printable.length,
+            pdfReport,
+            printableSelection.printable.length,
             {
               embeds: true,
-              fitAdvice: value660.emptyTailFiles.some(deps.value502),
+              fitAdvice: pdfReport.emptyTailFiles.some(deps.value502),
             },
           );
           return {
-            filename: value660.filename,
-            data: value659,
+            filename: pdfReport.filename,
+            data: pdfBlob,
           };
-        } catch (value659: Dynamic) {
-          if (value653?.signal.aborted) throw new ExportCancelled();
-          console.error("[design/export]", value659);
-          if (value656.aborted && value659 === value656.reason)
-            return callback15(
+        } catch (error: Dynamic) {
+          if (pickedExport?.signal.aborted) throw new ExportCancelled();
+          console.error("[design/export]", error);
+          if (abortSignal.aborted && error === abortSignal.reason)
+            return refuseExport(
               uiMessage("canvas.designCanvas.preparingThisDesignSPDF"),
               "error",
               "timedOut",
@@ -759,150 +759,150 @@ export async function producePdfExport(deps: { readonly focusedFileRef: Dynamic;
             reportExportEvent("failed"),
             deps.showToast(
               "PDF export failed: " +
-                errorMessage(value659) +
+                errorMessage(error) +
                 ".",
               "error",
             ),
-            value659
+            error
           );
         } finally {
-          clearTimeout(value655);
+          clearTimeout(deadlineTimer);
           deps.value489();
           deps.value479(false);
         }
       }
 
 /** 整份设计导出 PNG 时运行：在截止时间内逐个截取画板图像，必要时降低缩放，汇总裁切与字体警告，可取消。 */
-export async function captureArtboardPngsForExport(deps: { readonly showToast: Dynamic; readonly value177: Dynamic; readonly value479: Dynamic; readonly value483: Dynamic; readonly value485: Dynamic; readonly value489: Dynamic; readonly value519: Dynamic; readonly value93: Dynamic }, items?: Dynamic,
-        options?: Dynamic,
-        context?: Dynamic): Promise<Dynamic> {
-        let value653: Dynamic = deps.value485(items.length, "whole"),
-          callback15: Dynamic = (
-            input?: Dynamic,
-            options2?: Dynamic,
-            context2: Dynamic = "refused",
+export async function captureArtboardPngsForExport(deps: { readonly showToast: Dynamic; readonly value177: Dynamic; readonly value479: Dynamic; readonly value483: Dynamic; readonly value485: Dynamic; readonly value489: Dynamic; readonly value519: Dynamic; readonly value93: Dynamic }, artboards?: Dynamic,
+        request?: Dynamic,
+        startedAt?: Dynamic): Promise<Dynamic> {
+        let scopeInfo: Dynamic = deps.value485(artboards.length, "whole"),
+          refuseExport: Dynamic = (
+            message?: Dynamic,
+            toastKind?: Dynamic,
+            reason: Dynamic = "refused",
           ): Dynamic => {
             throw (
               (deps.value519.current.refused = true),
-              reportExportEvent(context2),
-              deps.showToast(input, options2),
-              new Error(input)
+              reportExportEvent(reason),
+              deps.showToast(message, toastKind),
+              new Error(message)
             );
           };
-        if (options.signal.aborted)
+        if (request.signal.aborted)
           throw (deps.value489(), new ExportCancelled());
         let controller: Dynamic = new AbortController(),
-          value654: Dynamic = setTimeout(
+          deadlineTimer: Dynamic = setTimeout(
             (): Dynamic => controller.abort(),
-            interactiveExportDeadline(context) - Date.now(),
+            interactiveExportDeadline(startedAt) - Date.now(),
           );
-        options.signal.addEventListener(
+        request.signal.addEventListener(
           "abort",
           (): Dynamic => controller.abort(),
         );
-        let { signal: value655 }: Dynamic = controller,
-          value656: Dynamic = null,
-          items2: Dynamic = [],
+        let { signal: abortSignal }: Dynamic = controller,
+          failedArtboardLabel: Dynamic = null,
+          reducedSizeLabels: Dynamic = [],
           index: Dynamic = 0;
         deps.value479(true);
         try {
-          let value657: Dynamic = await captureExportArtboards(
-            items,
-            async (input?: Dynamic): Promise<Dynamic> => {
-              let value658: Dynamic =
+          let captureSummary: Dynamic = await captureExportArtboards(
+            artboards,
+            async (artboard?: Dynamic): Promise<Dynamic> => {
+              let artboardLabel: Dynamic =
                   '"' +
-                  (input.title ??
-                    exportBaseFileName(input.file)) +
+                  (artboard.title ??
+                    exportBaseFileName(artboard.file)) +
                   '"',
-                value659: Dynamic = await deps.value483(input.file);
-              value655.throwIfAborted();
-              let value660: Dynamic = value659
-                ? createPreviewHandle(value659)
+                frameElement: Dynamic = await deps.value483(artboard.file);
+              abortSignal.throwIfAborted();
+              let previewHandle: Dynamic = frameElement
+                ? createPreviewHandle(frameElement)
                 : null;
-              if (deps.value177.current.get(input.file)?.isBlocked())
-                return callback15(
-                  value658 +
+              if (deps.value177.current.get(artboard.file)?.isBlocked())
+                return refuseExport(
+                  artboardLabel +
                     "\u2019s preview is stopped \u2014 reload it before exporting.",
                 );
-              if (!value659 || !value660)
-                return callback15(
-                  value658 +
+              if (!frameElement || !previewHandle)
+                return refuseExport(
+                  artboardLabel +
                     " is still loading \u2014 try again in a moment.",
                 );
-              if (value659.getBoundingClientRect().width === 0)
-                return callback15(
-                  value658 +
+              if (frameElement.getBoundingClientRect().width === 0)
+                return refuseExport(
+                  artboardLabel +
                     " isn\u2019t on screen to capture \u2014 scroll to it, then try again.",
                 );
-              let value661: Dynamic;
+              let captured: Dynamic;
               try {
-                value661 = await captureArtboardImage(
-                  value660,
+                captured = await captureArtboardImage(
+                  previewHandle,
                   "png",
-                  options.scale,
-                  getArtboardCaptureOptions(input, {
+                  request.scale,
+                  getArtboardCaptureOptions(artboard, {
                     ...deps.value93,
                     settle:
                       deps.value93.settle &&
                       index < ExportCaptureViewportLimit,
                   }),
                 );
-              } catch (value662: Dynamic) {
-                throw ((value656 = value658), value662);
+              } catch (captureError: Dynamic) {
+                throw ((failedArtboardLabel = artboardLabel), captureError);
               }
-              if (options.signal.aborted) throw new ExportCancelled();
-              return value661.ok
-                ? ((index += value661.settleMs ?? 0),
-                  artboardNeedsScaledDownExport(input) &&
-                    items2.push(value658),
+              if (request.signal.aborted) throw new ExportCancelled();
+              return captured.ok
+                ? ((index += captured.settleMs ?? 0),
+                  artboardNeedsScaledDownExport(artboard) &&
+                    reducedSizeLabels.push(artboardLabel),
                   {
-                    bytes: dataUrlToBytes(value661.uri),
-                    blank: value661.embedWarningCount,
-                    clipped: value661.clipped,
-                    fontFallback: value661.fontWarningCount,
-                    hiddenContent: value661.hiddenContent,
+                    bytes: dataUrlToBytes(captured.uri),
+                    blank: captured.embedWarningCount,
+                    clipped: captured.clipped,
+                    fontFallback: captured.fontWarningCount,
+                    hiddenContent: captured.hiddenContent,
                   })
-                : callback15(
+                : refuseExport(
                     uiMessage("canvas.designCanvas.couldnTCapture") +
-                      value658 +
+                      artboardLabel +
                       " \u2014 it has nothing visible to export.",
                     "error",
                   );
             },
             {
-              signal: value655,
+              signal: abortSignal,
             },
           );
-          if (options.signal.aborted) throw new ExportCancelled();
+          if (request.signal.aborted) throw new ExportCancelled();
           reportExportBuilt({
             ...describeExportCaptureWarnings(
-              value657,
-              items2.length,
+              captureSummary,
+              reducedSizeLabels.length,
             ),
-            ...value653,
+            ...scopeInfo,
             picked: true,
           });
           deps.value519.current.notes = [
-            ...(items2.length > 0
+            ...(reducedSizeLabels.length > 0
               ? [
                   uiMessage("canvas.designCanvas.saved") +
-                    (items2.length > 3
-                      ? String(items2.length) + " artboards"
-                      : items2.join(", ")) +
+                    (reducedSizeLabels.length > 3
+                      ? String(reducedSizeLabels.length) + " artboards"
+                      : reducedSizeLabels.join(", ")) +
                     " at a reduced size: over the capture limit.",
                 ]
               : []),
-            ...(value657.clipped.length > 0
-              ? [clippedArtboardsMessage(value657.clipped)]
+            ...(captureSummary.clipped.length > 0
+              ? [clippedArtboardsMessage(captureSummary.clipped)]
               : []),
-            ...fontSubstitutionWarnings(value657.fontFallback),
-            ...(value657.blank === 1
+            ...fontSubstitutionWarnings(captureSummary.fontFallback),
+            ...(captureSummary.blank === 1
               ? [
                   "1 image could not be embedded and renders blank in the PNGs.",
                 ]
-              : value657.blank > 1
+              : captureSummary.blank > 1
                 ? [
-                    String(value657.blank) +
+                    String(captureSummary.blank) +
                       " images could not be embedded and render blank in the PNGs.",
                   ]
                 : []),
@@ -913,25 +913,25 @@ export async function captureArtboardPngsForExport(deps: { readonly showToast: D
                 (document as Dynamic).title,
                 100,
               ) || "design") + "-png.zip",
-            data: value657.blob,
+            data: captureSummary.blob,
           };
-        } catch (value657: Dynamic) {
-          if (options.signal.aborted) throw new ExportCancelled();
+        } catch (error: Dynamic) {
+          if (request.signal.aborted) throw new ExportCancelled();
           if (
             deps.value519.current.refused ||
-            value657 instanceof ExportCancelled
+            error instanceof ExportCancelled
           )
-            throw value657;
+            throw error;
           console.error(
             "[design/export] PNG archive failed" +
-              (value656 !== null ? " capturing " + value656 : "") +
+              (failedArtboardLabel !== null ? " capturing " + failedArtboardLabel : "") +
               ": " +
-              (value657 instanceof Error ? value657.name : typeof value657),
+              (error instanceof Error ? error.name : typeof error),
           );
-          if (value655.aborted && value657 === value655.reason)
-            return callback15(
+          if (abortSignal.aborted && error === abortSignal.reason)
+            return refuseExport(
               uiMessage("canvas.designCanvas.preparingTheseArtboardsPNGsTook") +
-                (options.scale === 2 ? "1\xD7, or " : "") +
+                (request.scale === 2 ? "1\xD7, or " : "") +
                 uiMessage("canvas.designCanvas.fewerArtboards"),
               "error",
               "timedOut",
@@ -939,319 +939,319 @@ export async function captureArtboardPngsForExport(deps: { readonly showToast: D
           throw (
             reportExportEvent("failed"),
             deps.showToast(
-              value656 !== null
+              failedArtboardLabel !== null
                 ? uiMessage("canvas.designCanvas.couldnTCapture") +
-                    value656 +
+                    failedArtboardLabel +
                     " as a PNG. " +
-                    (options.scale === 2
+                    (request.scale === 2
                       ? uiMessage("canvas.designCanvas.try1OrExportWithout")
                       : uiMessage("canvas.designCanvas.tryAgainWithoutIt"))
                 : uiMessage("canvas.designCanvas.couldnTExportTheseArtboards"),
               "error",
             ),
-            value657
+            error
           );
         } finally {
-          clearTimeout(value654);
+          clearTimeout(deadlineTimer);
           deps.value489();
           deps.value479(false);
         }
       }
 
 /** PNG 格式导出的生成函数：根据导出选择挑选画板与缩放，单张直接截取、多张交给 captureArtboardPngsForExport，并处理超大与超时。 */
-export async function producePngExport(deps: { readonly callback2: Dynamic; readonly focusedFileRef: Dynamic; readonly selectionRef: Dynamic; readonly showToast: Dynamic; readonly value177: Dynamic; readonly value346: Dynamic; readonly value478: Dynamic; readonly value479: Dynamic; readonly value483: Dynamic; readonly value484: Dynamic; readonly value485: Dynamic; readonly value487: Dynamic; readonly value489: Dynamic; readonly value494: Dynamic; readonly value497: Dynamic; readonly value502: Dynamic; readonly value519: Dynamic; readonly value520: Dynamic; readonly value521: Dynamic; readonly value87: Dynamic; readonly value93: Dynamic }, input?: Dynamic): Promise<Dynamic> {
-        let value653: Dynamic = Date.now();
+export async function producePngExport(deps: { readonly callback2: Dynamic; readonly focusedFileRef: Dynamic; readonly selectionRef: Dynamic; readonly showToast: Dynamic; readonly value177: Dynamic; readonly value346: Dynamic; readonly value478: Dynamic; readonly value479: Dynamic; readonly value483: Dynamic; readonly value484: Dynamic; readonly value485: Dynamic; readonly value487: Dynamic; readonly value489: Dynamic; readonly value494: Dynamic; readonly value497: Dynamic; readonly value502: Dynamic; readonly value519: Dynamic; readonly value520: Dynamic; readonly value521: Dynamic; readonly value87: Dynamic; readonly value93: Dynamic }, request?: Dynamic): Promise<Dynamic> {
+        let startedAt: Dynamic = Date.now();
         deps.value519.current = {
           notes: [],
           refused: false,
         };
-        let callback15: Dynamic = (
-            input2?: Dynamic,
-            options?: Dynamic,
-            context: Dynamic = "refused",
+        let refuseExport: Dynamic = (
+            message?: Dynamic,
+            toastKind?: Dynamic,
+            reason: Dynamic = "refused",
           ): Dynamic => {
             throw (
               (deps.value519.current.refused = true),
-              context !== null && reportExportEvent(context),
-              deps.showToast(input2, options),
-              new Error(input2)
+              reason !== null && reportExportEvent(reason),
+              deps.showToast(message, toastKind),
+              new Error(message)
             );
           },
           text: Dynamic =
             uiMessage("canvas.designCanvas.anotherExportIsStillRunning");
-        if (deps.value494()) return callback15(text);
-        let value654: Dynamic,
-          value655: Dynamic,
-          value656: Dynamic = null;
-        if (input.interactive && deps.value497) {
-          let value660: Dynamic = input.bundle ? "pngs" : "png",
-            value661: Dynamic = initialExportPickedFiles(
-              value660,
+        if (deps.value494()) return refuseExport(text);
+        let artboard: Dynamic,
+          isChosen: Dynamic,
+          pickedExport: Dynamic = null;
+        if (request.interactive && deps.value497) {
+          let pickedKind: Dynamic = request.bundle ? "pngs" : "png",
+            pickedFiles: Dynamic = initialExportPickedFiles(
+              pickedKind,
               deps.value484,
               deps.value346.current,
               deps.selectionRef.current.artboards,
               deps.focusedFileRef.current,
             ),
-            value662: Dynamic = deps.value484.filter(
-              (input2?: Dynamic): Dynamic => value661.has(input2.file),
+            pickedArtboards: Dynamic = deps.value484.filter(
+              (item?: Dynamic): Dynamic => pickedFiles.has(item.file),
             );
-          value656 = await deps.value487(
-            value660,
+          pickedExport = await deps.value487(
+            pickedKind,
             {
-              picked: value661,
+              picked: pickedFiles,
               scale: initialExportScale(
-                value662,
+                pickedArtboards,
                 deps.value520.current,
               ),
             },
-            input.signal,
+            request.signal,
           );
-          let value663: Dynamic = deps.value87.current.artboards.filter(
-              (input2?: Dynamic): Dynamic => !input2.frameless,
+          let pageArtboards: Dynamic = deps.value87.current.artboards.filter(
+              (item?: Dynamic): Dynamic => !item.frameless,
             ),
-            value664: Dynamic = value656.files.flatMap(
-              (input2?: Dynamic): Dynamic =>
-                value663.find(
-                  (input3?: Dynamic): Dynamic => input3.file === input2,
+            chosenArtboards: Dynamic = pickedExport.files.flatMap(
+              (file?: Dynamic): Dynamic =>
+                pageArtboards.find(
+                  (pageArtboard?: Dynamic): Dynamic => pageArtboard.file === file,
                 ) ?? [],
             );
-          if (value664.length < value656.files.length || deps.value478.current) {
+          if (chosenArtboards.length < pickedExport.files.length || deps.value478.current) {
             deps.value489();
-            return callback15(
+            return refuseExport(
               deps.value478.current
                 ? text
-                : (value656.files.length > 1 ? "An" : "The") +
+                : (pickedExport.files.length > 1 ? "An" : "The") +
                     " artboard you chose is no longer on this page.",
             );
           }
-          if (value664.length > 1)
-            return deps.value521(value664, value656, value653);
-          value654 = value664[0];
-          value655 = true;
+          if (chosenArtboards.length > 1)
+            return deps.value521(chosenArtboards, pickedExport, startedAt);
+          artboard = chosenArtboards[0];
+          isChosen = true;
         } else {
-          let value660: Dynamic = selectExportCaptureArtboard(
+          let selection: Dynamic = selectExportCaptureArtboard(
             deps.value484,
             deps.value346.current,
             deps.selectionRef.current.artboards,
             deps.focusedFileRef.current,
           );
-          if (value660.artboard === null)
-            return callback15(
-              value660.covered
+          if (selection.artboard === null)
+            return refuseExport(
+              selection.covered
                 ? '"' +
                     deps.callback2(deps.value346.current) +
                     '" isn\u2019t an artboard. Close its full-window view, then export a PNG.'
                 : noExportableArtboardsMessage,
             );
-          value654 = value660.artboard;
-          value655 = value660.chosen;
+          artboard = selection.artboard;
+          isChosen = selection.chosen;
         }
-        let value657: Dynamic = deps.value485(
+        let scopeInfo: Dynamic = deps.value485(
             1,
-            value656 !== null && input.bundle === true ? "whole" : "one",
+            pickedExport !== null && request.bundle === true ? "whole" : "one",
           ),
-          value658: Dynamic =
+          artboardLabel: Dynamic =
             '"' +
-            (value654.title ??
-              exportBaseFileName(value654.file)) +
+            (artboard.title ??
+              exportBaseFileName(artboard.file)) +
             '"',
-          value659: Dynamic = Date.now() + 55e3;
+          deadline: Dynamic = Date.now() + 55e3;
         deps.value479(true);
         try {
-          let value660: Dynamic = await deps.value483(value654.file);
-          if (value656?.signal.aborted) throw new ExportCancelled();
-          let value661: Dynamic = value660
-            ? createPreviewHandle(value660)
+          let frameElement: Dynamic = await deps.value483(artboard.file);
+          if (pickedExport?.signal.aborted) throw new ExportCancelled();
+          let previewHandle: Dynamic = frameElement
+            ? createPreviewHandle(frameElement)
             : null;
-          if (deps.value177.current.get(value654.file)?.isBlocked())
-            return callback15(
-              value658 +
+          if (deps.value177.current.get(artboard.file)?.isBlocked())
+            return refuseExport(
+              artboardLabel +
                 "\u2019s preview is stopped \u2014 reload it before exporting.",
             );
-          if (!value660 || !value661)
-            return callback15(
-              value658 + " is still loading \u2014 try again in a moment.",
+          if (!frameElement || !previewHandle)
+            return refuseExport(
+              artboardLabel + " is still loading \u2014 try again in a moment.",
             );
-          if (value660.getBoundingClientRect().width === 0)
-            return callback15(
-              value658 +
+          if (frameElement.getBoundingClientRect().width === 0)
+            return refuseExport(
+              artboardLabel +
                 " isn\u2019t on screen to capture \u2014 scroll to it, then try again.",
             );
-          let value662: Dynamic = imageCaptureScaleOptions(
-              value654.w,
-              value654.h,
+          let fittingScales: Dynamic = imageCaptureScaleOptions(
+              artboard.w,
+              artboard.h,
             )
               .filter(
-                (input2?: Dynamic): Dynamic =>
-                  input2.fits && input2.scale <= 2,
+                (scaleOption?: Dynamic): Dynamic =>
+                  scaleOption.fits && scaleOption.scale <= 2,
               )
-              .map((input2?: Dynamic): Dynamic => input2.scale),
-            value663: Dynamic = value656
-              ? value656.scale === 2 && value662.includes(2)
+              .map((scaleOption?: Dynamic): Dynamic => scaleOption.scale),
+            scaleAttempts: Dynamic = pickedExport
+              ? pickedExport.scale === 2 && fittingScales.includes(2)
                 ? [2, 1]
                 : [1]
-              : value662.includes(2) && deps.value520.current !== value654.file
+              : fittingScales.includes(2) && deps.value520.current !== artboard.file
                 ? [2, 1]
                 : [1],
-            value664: Dynamic = await drainArtboardExportCaptures(
-              async (input2?: Dynamic): Promise<Dynamic> => {
-                if (value656?.signal.aborted)
+            captureOutcome: Dynamic = await drainArtboardExportCaptures(
+              async (scale?: Dynamic): Promise<Dynamic> => {
+                if (pickedExport?.signal.aborted)
                   throw new ExportCancelled();
-                let value667: Dynamic = await captureArtboardImage(
-                  value661,
+                let captured: Dynamic = await captureArtboardImage(
+                  previewHandle,
                   "png",
-                  input2,
-                  getArtboardCaptureOptions(value654, deps.value93),
+                  scale,
+                  getArtboardCaptureOptions(artboard, deps.value93),
                 );
-                return value667.ok
+                return captured.ok
                   ? {
-                      bytes: dataUrlToBytes(value667.uri),
-                      blank: value667.embedWarningCount,
-                      clipped: value667.clipped,
-                      fontFallback: value667.fontWarningCount,
-                      hiddenContent: value667.hiddenContent,
+                      bytes: dataUrlToBytes(captured.uri),
+                      blank: captured.embedWarningCount,
+                      clipped: captured.clipped,
+                      fontFallback: captured.fontWarningCount,
+                      hiddenContent: captured.hiddenContent,
                     }
                   : null;
               },
-              value663,
-              value656 ? 1 / 0 : ExportDownloadsResolvedValue,
-              value659,
+              scaleAttempts,
+              pickedExport ? 1 / 0 : ExportDownloadsResolvedValue,
+              deadline,
             );
-          if (value656?.signal.aborted) throw new ExportCancelled();
-          if (!value664.ok) {
-            value664.reason === "no_time" &&
-              (deps.value520.current = value654.file);
-            (value664.reason === "too_large" ||
-              (value664.reason === "no_time" &&
-                value664.after === "too_large")) &&
+          if (pickedExport?.signal.aborted) throw new ExportCancelled();
+          if (!captureOutcome.ok) {
+            captureOutcome.reason === "no_time" &&
+              (deps.value520.current = artboard.file);
+            (captureOutcome.reason === "too_large" ||
+              (captureOutcome.reason === "no_time" &&
+                captureOutcome.after === "too_large")) &&
               reportExportEvent("tooLarge");
-            return callback15(
-              value664.reason === "nothing"
+            return refuseExport(
+              captureOutcome.reason === "nothing"
                 ? uiMessage("canvas.designCanvas.couldnTCapture") +
-                    value658 +
+                    artboardLabel +
                     " \u2014 it has nothing visible to export."
-                : value664.reason === "no_time"
-                  ? value658 +
-                    (value664.after === "too_large"
+                : captureOutcome.reason === "no_time"
+                  ? artboardLabel +
+                    (captureOutcome.after === "too_large"
                       ? ` is over the ${String(ExportDownloadsResolvedValue >> 20)} MB export limit at 2\xD7`
                       : " could not be captured at 2\xD7") +
                     ", and there wasn\u2019t time to try a smaller size. Try again to export it at 1\xD7."
-                  : value658 +
+                  : artboardLabel +
                     ` is over the ${String(ExportDownloadsResolvedValue >> 20)} MB export limit` +
-                    (value663.length > 1 ? " even at 1\xD7" : "") +
+                    (scaleAttempts.length > 1 ? " even at 1\xD7" : "") +
                     ". Export the PDF, or use the artboard\u2019s own Export menu.",
               "error",
-              value664.reason === "nothing"
+              captureOutcome.reason === "nothing"
                 ? "refused"
-                : value664.reason === "no_time" &&
-                    value664.after !== "too_large"
+                : captureOutcome.reason === "no_time" &&
+                    captureOutcome.after !== "too_large"
                   ? "timedOut"
                   : null,
             );
           }
-          let value665: Dynamic =
-              value664.steppedDown !== null
-                ? value664.steppedDown === "too_large"
+          let sizeNote: Dynamic =
+              captureOutcome.steppedDown !== null
+                ? captureOutcome.steppedDown === "too_large"
                   ? ` at 1\xD7 to fit the ${String(ExportDownloadsResolvedValue >> 20)} MB export limit`
                   : " at 1\xD7: the browser could not capture it at 2\xD7"
-                : value662.length === 0
+                : fittingScales.length === 0
                   ? " at a reduced size: it is larger than the capture limit"
-                  : value656
+                  : pickedExport
                     ? ""
-                    : value662.includes(2)
-                      ? value663[0] === 1
+                    : fittingScales.includes(2)
+                      ? scaleAttempts[0] === 1
                         ? " at 1\xD7: at 2\xD7 it ran out of time before"
                         : ""
                       : " at 1\xD7: it is too large to capture at 2\xD7",
-            value666: Dynamic =
-              !value664.clipped &&
-              getArtboardCaptureMode(value654, deps.value93) ===
+            emptyTail: Dynamic =
+              !captureOutcome.clipped &&
+              getArtboardCaptureMode(artboard, deps.value93) ===
                 "full" &&
-              isFillPagedExport(value654) &&
-              Date.now() < value659 - 6e3
-                ? await measureEmptyExportTail(value661, {
-                    w: value654.w,
-                    h: value654.h,
+              isFillPagedExport(artboard) &&
+              Date.now() < deadline - 6e3
+                ? await measureEmptyExportTail(previewHandle, {
+                    w: artboard.w,
+                    h: artboard.h,
                   }).catch((): Dynamic => null)
                 : null;
-          if (value656?.signal.aborted) throw new ExportCancelled();
+          if (pickedExport?.signal.aborted) throw new ExportCancelled();
           reportExportBuilt({
-            blankImages: value664.blank,
-            clipped: value664.clipped,
-            fontFallback: value664.fontFallback,
+            blankImages: captureOutcome.blank,
+            clipped: captureOutcome.clipped,
+            fontFallback: captureOutcome.fontFallback,
             scaledDown:
-              value664.steppedDown !== null || value662.length === 0,
-            ...value657,
-            ...value664.hiddenContent,
-            picked: value656 !== null,
+              captureOutcome.steppedDown !== null || fittingScales.length === 0,
+            ...scopeInfo,
+            ...captureOutcome.hiddenContent,
+            picked: pickedExport !== null,
           });
           deps.value519.current.notes = [
-            ...(value665 !== "" || !value655
+            ...(sizeNote !== "" || !isChosen
               ? [
                   uiMessage("canvas.designCanvas.saved") +
-                    value658 +
-                    value665 +
+                    artboardLabel +
+                    sizeNote +
                     "." +
-                    (value655
+                    (isChosen
                       ? ""
                       : " To pick a different artboard, select it or open it full-window first."),
                 ]
               : []),
-            ...(value664.clipped
+            ...(captureOutcome.clipped
               ? [
                   clippedArtboardsMessage([
-                    value654.title ??
-                      exportBaseFileName(value654.file),
+                    artboard.title ??
+                      exportBaseFileName(artboard.file),
                   ]),
                 ]
               : []),
-            ...(value666 !== null &&
-            value666 >= minEmptyExportTail
+            ...(emptyTail !== null &&
+            emptyTail >= minEmptyExportTail
               ? [
                   emptyExportTailMessage(
                     [
-                      value654.title ??
-                        exportBaseFileName(value654.file),
+                      artboard.title ??
+                        exportBaseFileName(artboard.file),
                     ],
-                    value666,
-                    deps.value502(value654.file),
+                    emptyTail,
+                    deps.value502(artboard.file),
                   ),
                 ]
               : []),
-            ...fontSubstitutionWarnings(value664.fontFallback),
-            ...(value664.blank === 1
+            ...fontSubstitutionWarnings(captureOutcome.fontFallback),
+            ...(captureOutcome.blank === 1
               ? [
                   "1 image could not be embedded and renders blank in the PNG.",
                 ]
-              : value664.blank > 1
+              : captureOutcome.blank > 1
                 ? [
-                    String(value664.blank) +
+                    String(captureOutcome.blank) +
                       " images could not be embedded and render blank in the PNG.",
                   ]
                 : []),
           ];
           return {
             filename:
-              exportFileName(value654.file, value654.title) +
+              exportFileName(artboard.file, artboard.title) +
               ".png",
-            data: value664.bytes,
+            data: captureOutcome.bytes,
           };
-        } catch (value660: Dynamic) {
-          throw value656?.signal.aborted
+        } catch (error: Dynamic) {
+          throw pickedExport?.signal.aborted
             ? new ExportCancelled()
             : (deps.value519.current.refused ||
-                value660 instanceof ExportCancelled ||
-                (console.error("[design/export]", value660),
+                error instanceof ExportCancelled ||
+                (console.error("[design/export]", error),
                 reportExportEvent("failed"),
                 deps.showToast(
                   uiMessage("canvas.designCanvas.couldnTExport") +
-                    value658 +
+                    artboardLabel +
                     " as a PNG: " +
-                    errorMessage(value660) +
+                    errorMessage(error) +
                     ". Reload this tab and try again.",
                   "error",
                 )),
-              value660);
+              error);
         } finally {
           deps.value489();
           deps.value479(false);

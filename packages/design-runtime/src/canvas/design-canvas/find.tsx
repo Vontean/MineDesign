@@ -16,40 +16,40 @@ export function buildFindCanvasAdapter(deps: { readonly doc: Dynamic; readonly v
         pageId: (): Dynamic => deps.value80.current,
         windowFile: (): Dynamic => deps.value346.current,
         showsTextMatchesOnCanvas: (): Dynamic => !deps.value99,
-        scrollsItself: (input?: Dynamic): Dynamic =>
-          input === deps.value346.current || input === deps.value271.current,
-        frame: (input?: Dynamic): Dynamic => {
-          let entry: Dynamic = deps.value177.current.get(input);
+        scrollsItself: (file?: Dynamic): Dynamic =>
+          file === deps.value346.current || file === deps.value271.current,
+        frame: (file?: Dynamic): Dynamic => {
+          let entry: Dynamic = deps.value177.current.get(file);
           return entry != null && entry.isReady() && !entry.isBlocked()
             ? entry.webviewRef.current
             : null;
         },
         canvasRoot: (): Dynamic => deps.value106.current,
-        storedText: (input?: Dynamic): Dynamic =>
-          designFileTextRuns(input, deps.doc.content().files[input]),
+        storedText: (file?: Dynamic): Dynamic =>
+          designFileTextRuns(file, deps.doc.content().files[file]),
         keepRunning: deps.value566,
         showPage: (
-          input?: Dynamic,
-          options?: Dynamic,
-          context?: Dynamic,
+          pageId?: Dynamic,
+          target?: Dynamic,
+          revealContext?: Dynamic,
         ): Dynamic => (
           initializeDesignKeyboardBindings(),
           runFindRevealAfterSettle(
             deps.value2.current?.() === true,
-            context,
+            revealContext,
             deps.value275,
             (): Dynamic => {
-              deps.value298(input, options);
+              deps.value298(pageId, target);
               deps.value291.current = false;
-              deps.value569.showedPage(input, deps.value105.get());
+              deps.value569.showedPage(pageId, deps.value105.get());
             },
           )
         ),
-        editorOn: (input?: Dynamic): Dynamic => {
+        editorOn: (file?: Dynamic): Dynamic => {
           try {
             return (
               deps.value177.current
-                .get(input)
+                .get(file)
                 ?.webviewRef.current?.contentDocument?.body?.hasAttribute(
                   "data-dc-editor-on",
                 ) === true
@@ -59,113 +59,113 @@ export function buildFindCanvasAdapter(deps: { readonly doc: Dynamic; readonly v
           }
         },
         showInWindow: (
-          input?: Dynamic,
-          options?: Dynamic,
-          context?: Dynamic,
+          pageId?: Dynamic,
+          target?: Dynamic,
+          revealContext?: Dynamic,
         ): Dynamic => {
-          let value653: Dynamic = canRevealFindMatch(
-            input !== deps.value80.current,
+          let canReveal: Dynamic = canRevealFindMatch(
+            pageId !== deps.value80.current,
             deps.value345.current,
-            options === deps.value346.current,
+            target === deps.value346.current,
           );
-          value653 && initializeDesignKeyboardBindings();
+          canReveal && initializeDesignKeyboardBindings();
           return runFindRevealAfterSettle(
-            value653 && deps.value2.current?.() === true,
-            context,
+            canReveal && deps.value2.current?.() === true,
+            revealContext,
             deps.value275,
             (): Dynamic => {
-              let value654: Dynamic = input !== deps.value80.current;
+              let isOtherPage: Dynamic = pageId !== deps.value80.current;
               if (
                 !(
-                  value654 &&
-                  (deps.value298(input, options),
+                  isOtherPage &&
+                  (deps.value298(pageId, target),
                   (deps.value291.current = false),
                   deps.value345.current)
                 )
               ) {
                 if (!deps.value345.current) {
-                  let value655: Dynamic = deps.value569.opensWindow(
-                    input,
-                    value654,
+                  let openPlan: Dynamic = deps.value569.opensWindow(
+                    pageId,
+                    isOtherPage,
                     deps.value105.get(),
                     deps.value568.current,
                   );
                   deps.value379.current(
-                    options,
-                    value655 === "page"
-                      ? (recallCanvasView(input) ??
+                    target,
+                    openPlan === "page"
+                      ? (recallCanvasView(pageId) ??
                           defaultCanvasCamera)
-                      : value655 === "fit"
+                      : openPlan === "fit"
                         ? defaultCanvasCamera
                         : undefined,
                   );
                   return;
                 }
-                deps.value382.current(options);
+                deps.value382.current(target);
               }
             },
           );
         },
-        panTo: (input?: Dynamic, options?: Dynamic): Dynamic =>
-          deps.value105.glide((input2?: Dynamic): Dynamic => {
-            deps.value569.pansFrom(input2, deps.value568.current);
-            let value653: Dynamic = isArtboardInViewport(
-                options === true
+        panTo: (targetRect?: Dynamic, isRestoring?: Dynamic): Dynamic =>
+          deps.value105.glide((currentCamera?: Dynamic): Dynamic => {
+            deps.value569.pansFrom(currentCamera, deps.value568.current);
+            let nextCamera: Dynamic = isArtboardInViewport(
+                isRestoring === true
                   ? {
-                      ...input2,
+                      ...currentCamera,
                       ...findRestoreCamera(
-                        input2,
+                        currentCamera,
                         deps.value568.current,
                       ),
                     }
-                  : input2,
-                input,
+                  : currentCamera,
+                targetRect,
                 deps.value120(),
               ),
-              callback15: Dynamic = (input3?: Dynamic): Dynamic => (
+              commitCamera: Dynamic = (camera?: Dynamic): Dynamic => (
                 (deps.value568.current =
-                  options === true
+                  isRestoring === true
                     ? null
                     : {
-                        from: input2,
-                        to: input3,
+                        from: currentCamera,
+                        to: camera,
                       }),
-                input3
+                camera
               ),
-              value654: Dynamic = (document as Dynamic)
+              findBarRect: Dynamic = (document as Dynamic)
                 .querySelector("[" + McFindAttribute + "]")
                 ?.getBoundingClientRect(),
-              value655: Dynamic = deps.value106.current?.getBoundingClientRect();
-            if (!value654 || !value655) return callback15(value653);
-            let value656: Dynamic =
-                value655.left + (input.x - value653.x) * value653.scale,
-              value657: Dynamic =
-                value655.top + (input.y - value653.y) * value653.scale,
-              value658: Dynamic =
-                value656 < value654.right &&
-                value656 + input.w * value653.scale > value654.left &&
-                value657 < value654.bottom + 8 &&
-                value657 + input.h * value653.scale > value654.top;
-            return callback15(
-              value658
+              canvasRect: Dynamic = deps.value106.current?.getBoundingClientRect();
+            if (!findBarRect || !canvasRect) return commitCamera(nextCamera);
+            let screenLeft: Dynamic =
+                canvasRect.left + (targetRect.x - nextCamera.x) * nextCamera.scale,
+              screenTop: Dynamic =
+                canvasRect.top + (targetRect.y - nextCamera.y) * nextCamera.scale,
+              isCoveredByFindBar: Dynamic =
+                screenLeft < findBarRect.right &&
+                screenLeft + targetRect.w * nextCamera.scale > findBarRect.left &&
+                screenTop < findBarRect.bottom + 8 &&
+                screenTop + targetRect.h * nextCamera.scale > findBarRect.top;
+            return commitCamera(
+              isCoveredByFindBar
                 ? {
-                    ...value653,
+                    ...nextCamera,
                     y:
-                      value653.y -
-                      (value654.bottom + 8 - value657) / value653.scale,
+                      nextCamera.y -
+                      (findBarRect.bottom + 8 - screenTop) / nextCamera.scale,
                   }
-                : value653,
+                : nextCamera,
             );
           }),
-        toCanvas: (input?: Dynamic): Dynamic => {
+        toCanvas: (screenRect?: Dynamic): Dynamic => {
           deps.value105.halt();
           let entry: Dynamic = deps.value105.get(),
-            value653: Dynamic = deps.value106.current?.getBoundingClientRect();
+            canvasBounds: Dynamic = deps.value106.current?.getBoundingClientRect();
           return {
-            x: entry.x + (input.x - (value653?.left ?? 0)) / entry.scale,
-            y: entry.y + (input.y - (value653?.top ?? 0)) / entry.scale,
-            w: input.w / entry.scale,
-            h: input.h / entry.scale,
+            x: entry.x + (screenRect.x - (canvasBounds?.left ?? 0)) / entry.scale,
+            y: entry.y + (screenRect.y - (canvasBounds?.top ?? 0)) / entry.scale,
+            w: screenRect.w / entry.scale,
+            h: screenRect.h / entry.scale,
           };
         },
       };

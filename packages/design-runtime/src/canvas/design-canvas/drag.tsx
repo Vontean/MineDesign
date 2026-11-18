@@ -1,10 +1,10 @@
-import { CanvasWorkingStateConstant_8 } from "../working-state";
-import { PlatformFileContentConstant_17 } from "../../platform/file-content";
-import { PlatformFileContentConstant_18 } from "../../platform/file-content";
+import { CanvasWorkingStateConstant_8 as dragDropLockKind } from "../working-state";
+import { PlatformFileContentConstant_17 as minArtboardSize } from "../../platform/file-content";
+import { PlatformFileContentConstant_18 as maxArtboardOffset } from "../../platform/file-content";
 import { PlatformFileContentFilesValue } from "../../platform/file-content";
 import { PlatformFileContentHandler_4 } from "../../platform/file-content";
-import { PlatformFileContentLimit_6 } from "../../platform/file-content";
-import { PreviewBuildDocumentResolvedValue_3 } from "../../preview/build-document";
+import { PlatformFileContentLimit_6 as maxArtboardSize } from "../../platform/file-content";
+import { PreviewBuildDocumentResolvedValue_3 as ghostSrcdoc } from "../../preview/build-document";
 import { buildDcDocument } from "../../editor/clipboard/html-placement";
 import { buildPreviewDocument } from "../../preview/build-document";
 import { canFreezeSinglePaste } from "../../editor/insert/drop-targets";
@@ -35,50 +35,50 @@ import { uniqueElementArtboardTitle } from "../../platform/file-content";
 import { dragGhostFilename, emptyCanvasSelectionFiles } from "../design-canvas";
 
 /** 跨画板拖动携带 pieces（元素被拖出到空白画布）时运行：把拖出的元素生成为新画板或画布图形，处理复制/移动、只读与中断，返回写入与被拒结果。 */
-export async function commitPieceDragOntoCanvas(deps: { readonly abandonSelectionGesture: Dynamic; readonly callback2: Dynamic; readonly callback3: Dynamic; readonly doc: Dynamic; readonly focusedFileRef: Dynamic; readonly selectionRef: Dynamic; readonly setSelection: Dynamic; readonly setShownFrameSelection: Dynamic; readonly supportsLoadState: Dynamic; readonly value127: Dynamic; readonly value141: Dynamic; readonly value142: Dynamic; readonly value143: Dynamic; readonly value144: Dynamic; readonly value153: Dynamic; readonly value177: Dynamic; readonly value189: Dynamic; readonly value19: Dynamic; readonly value224: Dynamic; readonly value396: Dynamic; readonly value432: Dynamic; readonly value448: Dynamic; readonly value62: Dynamic; readonly value73: Dynamic; readonly value98: Dynamic }, input?: Dynamic): Promise<Dynamic> {
-      let { token: value653, travel: value654 }: Dynamic = input,
-        current4: Dynamic = deps.selectionRef.current,
-        value655: Dynamic = value654?.pieces ?? [],
-        items: Dynamic = [...input.unanswered],
-        callback15: Dynamic = (): Dynamic => {
-          for (let value662 of input.plans.keys() as Dynamic) {
-            let entry: Dynamic = deps.value177.current.get(value662);
-            entry?.moveCancel(value653);
+export async function commitPieceDragOntoCanvas(deps: { readonly abandonSelectionGesture: Dynamic; readonly callback2: Dynamic; readonly callback3: Dynamic; readonly doc: Dynamic; readonly focusedFileRef: Dynamic; readonly selectionRef: Dynamic; readonly setSelection: Dynamic; readonly setShownFrameSelection: Dynamic; readonly supportsLoadState: Dynamic; readonly value127: Dynamic; readonly value141: Dynamic; readonly value142: Dynamic; readonly value143: Dynamic; readonly value144: Dynamic; readonly value153: Dynamic; readonly value177: Dynamic; readonly value189: Dynamic; readonly value19: Dynamic; readonly value224: Dynamic; readonly value396: Dynamic; readonly value432: Dynamic; readonly value448: Dynamic; readonly value62: Dynamic; readonly value73: Dynamic; readonly value98: Dynamic }, pieceDrag?: Dynamic): Promise<Dynamic> {
+      let { token: dragToken, travel: travel }: Dynamic = pieceDrag,
+        selectionAtStart: Dynamic = deps.selectionRef.current,
+        pieces: Dynamic = travel?.pieces ?? [],
+        items: Dynamic = [...pieceDrag.unanswered],
+        cancelHomeMoves: Dynamic = (): Dynamic => {
+          for (let file of pieceDrag.plans.keys() as Dynamic) {
+            let entry: Dynamic = deps.value177.current.get(file);
+            entry?.moveCancel(dragToken);
             entry?.moveSettle();
           }
         },
-        callback16: Dynamic = (): Dynamic => (
-          callback15(),
+        refuseAll: Dynamic = (): Dynamic => (
+          cancelHomeMoves(),
           {
             written: [],
             refused: items,
-            selection: current4,
+            selection: selectionAtStart,
           }
         ),
-        callback17: Dynamic = async (input2?: Dynamic): Promise<Dynamic> => {
-          let value662: Dynamic =
-              input.copy && input.canvasMoved
-                ? deps.value144(value653)
+        refuseWithMessage: Dynamic = async (message?: Dynamic): Promise<Dynamic> => {
+          let pendingFlush: Dynamic =
+              pieceDrag.copy && pieceDrag.canvasMoved
+                ? deps.value144(dragToken)
                 : Promise.resolve(),
-            value663: Dynamic = input.canvas();
-          for (let value664 of (value654?.travellers ?? []) as Dynamic)
-            value654?.endHome(value664.file, false);
-          await value662;
+            canvasResult: Dynamic = pieceDrag.canvas();
+          for (let traveller of (travel?.travellers ?? []) as Dynamic)
+            travel?.endHome(traveller.file, false);
+          await pendingFlush;
           deps.value448.current(
-            value663 === false
+            canvasResult === false
               ? uiMessage("canvas.designCanvas.nothing") +
-                  (input.copy ? "copied" : "moved") +
+                  (pieceDrag.copy ? "copied" : "moved") +
                   " \u2014 the drag was interrupted; try it again."
-              : input2,
+              : message,
           );
-          input.copy &&
-            input.canvasMoved &&
-            (deps.value142.current.has(value653)
+          pieceDrag.copy &&
+            pieceDrag.canvasMoved &&
+            (deps.value142.current.has(dragToken)
               ? Promise.resolve()
-              : deps.value144(value653)
+              : deps.value144(dragToken)
             ).then((): Dynamic => {
-              let entry: Dynamic = deps.value142.current.get(value653);
-              deps.value142.current.delete(value653);
+              let entry: Dynamic = deps.value142.current.get(dragToken);
+              deps.value142.current.delete(dragToken);
               entry &&
                 (entry.files.size > 0 || entry.notes.size > 0) &&
                 deps.setSelection(
@@ -88,21 +88,21 @@ export async function commitPieceDragOntoCanvas(deps: { readonly abandonSelectio
                   }),
                 );
             });
-          return callback16();
+          return refuseAll();
         };
-      if (!value654 || value655.length === 0)
-        return callback17(
-          uiMessage("canvas.designCanvas.nothing") + (input.copy ? "copied" : "moved") + ".",
+      if (!travel || pieces.length === 0)
+        return refuseWithMessage(
+          uiMessage("canvas.designCanvas.nothing") + (pieceDrag.copy ? "copied" : "moved") + ".",
         );
-      callback15();
+      cancelHomeMoves();
       let files: Dynamic = deps.doc.content().files;
       if (
-        Object.keys(files).length + value655.length >
+        Object.keys(files).length + pieces.length >
         PlatformFileContentFilesValue
       )
-        return callback17(
-          (input.canvasMoved
-            ? uiMessage("canvas.designCanvas.theRest") + (input.copy ? "copied" : "moved") + "; "
+        return refuseWithMessage(
+          (pieceDrag.canvasMoved
+            ? uiMessage("canvas.designCanvas.theRest") + (pieceDrag.copy ? "copied" : "moved") + "; "
             : "") +
             uiMessage("canvas.designCanvas.couldnTMakeNewArtboards") +
             String(PlatformFileContentFilesValue) +
@@ -112,62 +112,62 @@ export async function commitPieceDragOntoCanvas(deps: { readonly abandonSelectio
           moves: [],
           annMoves: [],
         },
-        items2: Dynamic = [],
-        callback18: Dynamic = (): Dynamic => {},
-        promise: Dynamic = new Promise((input2?: Dynamic): Dynamic => {
-          callback18 = input2;
+        addedBatches: Dynamic = [],
+        resolveAdded: Dynamic = (): Dynamic => {},
+        promise: Dynamic = new Promise((resolve?: Dynamic): Dynamic => {
+          resolveAdded = resolve;
         });
-      deps.value143.current.set(value653, (input2?: Dynamic): Dynamic => {
-        state = input2;
+      deps.value143.current.set(dragToken, (nextMoveRecord?: Dynamic): Dynamic => {
+        state = nextMoveRecord;
       });
-      deps.value141.current.set(value653, (source?: Dynamic): Dynamic => {
+      deps.value141.current.set(dragToken, (source?: Dynamic): Dynamic => {
         source.kind === "add"
-          ? items2.push({
+          ? addedBatches.push({
               entries: source.entries,
               anns: source.anns ?? [],
             })
           : source.kind === "ann-add" &&
-            items2.push({
+            addedBatches.push({
               entries: [],
               anns: [source.spec],
             });
-        callback18();
+        resolveAdded();
       });
-      let value656: Dynamic = input.canvasMoved
-          ? deps.value144(value653)
+      let canvasMoveFlush: Dynamic = pieceDrag.canvasMoved
+          ? deps.value144(dragToken)
           : Promise.resolve(),
-        value657: Dynamic;
+        canvasMoveResult: Dynamic;
       try {
-        value657 = input.canvas();
+        canvasMoveResult = pieceDrag.canvas();
       } finally {
-        deps.value143.current.delete(value653);
+        deps.value143.current.delete(dragToken);
       }
-      value654.copy &&
-        input.canvasMoved &&
+      travel.copy &&
+        pieceDrag.canvasMoved &&
         (await Promise.race([
           promise,
-          value656,
-          new Promise((input2?: Dynamic): Dynamic => setTimeout(input2, 2e3)),
+          canvasMoveFlush,
+          new Promise((resolve?: Dynamic): Dynamic => setTimeout(resolve, 2e3)),
         ]));
-      deps.value141.current.delete(value653);
-      deps.value142.current.delete(value653);
-      let state2: Dynamic = {
-        entries: items2.flatMap(
-          (input2?: Dynamic): Dynamic => input2.entries,
+      deps.value141.current.delete(dragToken);
+      deps.value142.current.delete(dragToken);
+      let addedRecords: Dynamic = {
+        entries: addedBatches.flatMap(
+          (batch?: Dynamic): Dynamic => batch.entries,
         ),
-        anns: items2.flatMap((input2?: Dynamic): Dynamic => input2.anns),
+        anns: addedBatches.flatMap((batch?: Dynamic): Dynamic => batch.anns),
       };
-      if (input.canvasMoved && value657 === false) {
-        for (let value662 of value654.travellers as Dynamic)
-          value654.endHome(value662.file, false);
+      if (pieceDrag.canvasMoved && canvasMoveResult === false) {
+        for (let traveller of travel.travellers as Dynamic)
+          travel.endHome(traveller.file, false);
         deps.value448.current(
           uiMessage("canvas.designCanvas.nothing") +
-            (value654.copy ? "copied" : "moved") +
+            (travel.copy ? "copied" : "moved") +
             " \u2014 the drag was interrupted; try it again.",
         );
-        return callback16();
+        return refuseAll();
       }
-      let callback19: Dynamic = (): Dynamic => {
+      let recordHistory: Dynamic = (): Dynamic => {
         (state.moves.length > 0 || state.annMoves.length > 0) &&
           deps.value396.current(
             {
@@ -181,207 +181,207 @@ export async function commitPieceDragOntoCanvas(deps: { readonly abandonSelectio
             },
             new Set(),
             undefined,
-            value653,
+            dragToken,
           );
-        (state2.entries.length > 0 || state2.anns.length > 0) &&
+        (addedRecords.entries.length > 0 || addedRecords.anns.length > 0) &&
           deps.value396.current(
             {
               kind: "add",
-              entries: state2.entries,
-              ...(state2.anns.length > 0
+              entries: addedRecords.entries,
+              ...(addedRecords.anns.length > 0
                 ? {
-                    anns: state2.anns,
+                    anns: addedRecords.anns,
                   }
                 : {}),
             },
             new Set(
-              state2.entries.map((input2?: Dynamic): Dynamic => input2.file),
+              addedRecords.entries.map((addedEntry?: Dynamic): Dynamic => addedEntry.file),
             ),
             undefined,
-            value653,
+            dragToken,
           );
       };
       if (
-        Object.keys(deps.doc.content().files).length + value655.length >
+        Object.keys(deps.doc.content().files).length + pieces.length >
         PlatformFileContentFilesValue
       ) {
-        callback19();
-        for (let value662 of value654.travellers as Dynamic)
-          value654.endHome(value662.file, false);
+        recordHistory();
+        for (let traveller of travel.travellers as Dynamic)
+          travel.endHome(traveller.file, false);
         deps.value448.current(
-          (input.canvasMoved
-            ? uiMessage("canvas.designCanvas.theRest") + (value654.copy ? "copied" : "moved") + "; "
+          (pieceDrag.canvasMoved
+            ? uiMessage("canvas.designCanvas.theRest") + (travel.copy ? "copied" : "moved") + "; "
             : "") +
             uiMessage("canvas.designCanvas.couldnTMakeNewArtboards") +
             String(PlatformFileContentFilesValue) +
             "-file limit; delete something first",
         );
-        return callback16();
+        return refuseAll();
       }
-      let items3: Dynamic = [],
+      let newPieces: Dynamic = [],
         entries: Dynamic = new Map(),
-        state3: Dynamic = {
+        draftDocument: Dynamic = {
           files: {
             ...deps.doc.content().files,
             ...Object.fromEntries(
-              state2.entries.map(
-                (input2?: Dynamic): Dynamic => [input2.file, input2.src],
+              addedRecords.entries.map(
+                (addedEntry?: Dynamic): Dynamic => [addedEntry.file, addedEntry.src],
               ),
             ),
           },
           artboards: [
             ...deps.value73.current.artboards,
-            ...state2.entries.map((input2?: Dynamic): Dynamic => input2.spec),
+            ...addedRecords.entries.map((addedEntry?: Dynamic): Dynamic => addedEntry.spec),
           ],
         };
       try {
-        for (let value662 of value655 as Dynamic) {
-          let entry: Dynamic = deps.value177.current.get(value662.file);
-          if (!entry || (await entry.travellerHtml(value662.tid)) === null)
+        for (let piece of pieces as Dynamic) {
+          let entry: Dynamic = deps.value177.current.get(piece.file);
+          if (!entry || (await entry.travellerHtml(piece.tid)) === null)
             continue;
-          let value663: Dynamic = entry.serializeSelection([value662.tid], {
+          let serialized: Dynamic = entry.serializeSelection([piece.tid], {
             lift: {
-              ew: value662.box.w,
+              ew: piece.box.w,
               ox: 0,
               oy: 0,
             },
           });
-          if (!value663) continue;
+          if (!serialized) continue;
           await entry.flushPending();
-          let value664: Dynamic =
+          let homeSource: Dynamic =
               (await getKvClient().get(
-                PlatformFileContentHandler_4(value662.file),
+                PlatformFileContentHandler_4(piece.file),
               )) ??
-              files[value662.file] ??
+              files[piece.file] ??
               "",
-            value665: Dynamic = uniqueArtboardFile(
-              state3.files,
+            newFile: Dynamic = uniqueArtboardFile(
+              draftDocument.files,
               "Piece",
               deps.supportsLoadState,
             ),
-            value666: Dynamic = buildDcDocument(
-              value663,
-              typeof value664 == "string" ? value664 : "",
+            newDocument: Dynamic = buildDcDocument(
+              serialized,
+              typeof homeSource == "string" ? homeSource : "",
             ),
-            value667: Dynamic = entry.describeTids([value662.tid])[0],
-            value668: Dynamic = value667
-              ? value667.tag.charAt(0).toUpperCase() + value667.tag.slice(1)
+            description: Dynamic = entry.describeTids([piece.tid])[0],
+            title: Dynamic = description
+              ? description.tag.charAt(0).toUpperCase() + description.tag.slice(1)
               : "Piece",
-            state4: Dynamic = {
-              file: value665,
+            newSpec: Dynamic = {
+              file: newFile,
               x: Math.max(
-                -PlatformFileContentConstant_18,
+                -maxArtboardOffset,
                 Math.min(
-                  PlatformFileContentConstant_18,
-                  Math.round(value662.box.x),
+                  maxArtboardOffset,
+                  Math.round(piece.box.x),
                 ),
               ),
               y: Math.max(
-                -PlatformFileContentConstant_18,
+                -maxArtboardOffset,
                 Math.min(
-                  PlatformFileContentConstant_18,
-                  Math.round(value662.box.y),
+                  maxArtboardOffset,
+                  Math.round(piece.box.y),
                 ),
               ),
               w: Math.min(
-                PlatformFileContentLimit_6,
+                maxArtboardSize,
                 Math.max(
-                  PlatformFileContentConstant_17,
-                  value662.box.w,
+                  minArtboardSize,
+                  piece.box.w,
                 ),
               ),
               h: Math.min(
-                PlatformFileContentLimit_6,
+                maxArtboardSize,
                 Math.max(
-                  PlatformFileContentConstant_17,
-                  value662.box.h,
+                  minArtboardSize,
+                  piece.box.h,
                 ),
               ),
               title: uniqueElementArtboardTitle(
-                value668,
-                state3.artboards,
+                title,
+                draftDocument.artboards,
               ),
               frameless: true,
               ...deps.callback3(),
             };
-          state3.files[value665] = value666;
-          state3.artboards.push(state4);
-          items3.push({
-            file: value665,
-            src: value666,
-            spec: state4,
-            home: value662.file,
-            tid: value662.tid,
+          draftDocument.files[newFile] = newDocument;
+          draftDocument.artboards.push(newSpec);
+          newPieces.push({
+            file: newFile,
+            src: newDocument,
+            spec: newSpec,
+            home: piece.file,
+            tid: piece.tid,
           });
-          entries.set(value662.file, [
-            ...(entries.get(value662.file) ?? []),
-            value662.tid,
+          entries.set(piece.file, [
+            ...(entries.get(piece.file) ?? []),
+            piece.tid,
           ]);
         }
-      } catch (value662: Dynamic) {
-        callback19();
-        for (let value663 of value654.travellers as Dynamic)
-          value654.endHome(value663.file, false);
-        console.error("set pieces:", value662);
+      } catch (error: Dynamic) {
+        recordHistory();
+        for (let traveller of travel.travellers as Dynamic)
+          travel.endHome(traveller.file, false);
+        console.error("set pieces:", error);
         deps.value448.current(
-          input.canvasMoved
+          pieceDrag.canvasMoved
             ? uiMessage("canvas.designCanvas.theRest") +
-                (value654.copy ? "copied" : "moved") +
+                (travel.copy ? "copied" : "moved") +
                 "; the elements could not be lifted and stayed."
             : uiMessage("canvas.designCanvas.nothing") +
-                (value654.copy ? "copied" : "moved") +
+                (travel.copy ? "copied" : "moved") +
                 " \u2014 the elements could not be lifted.",
         );
-        return callback16();
+        return refuseAll();
       }
-      if (items3.length === 0) {
-        callback19();
-        for (let value662 of value654.travellers as Dynamic)
-          value654.endHome(value662.file, false);
+      if (newPieces.length === 0) {
+        recordHistory();
+        for (let traveller of travel.travellers as Dynamic)
+          travel.endHome(traveller.file, false);
         deps.value448.current(
-          (input.canvasMoved
+          (pieceDrag.canvasMoved
             ? uiMessage("canvas.designCanvas.theRest") +
-              (value654.copy ? "copied" : "moved") +
+              (travel.copy ? "copied" : "moved") +
               "; the elements stayed \u2014 "
             : uiMessage("canvas.designCanvas.nothing") +
-              (value654.copy ? "copied" : "moved") +
+              (travel.copy ? "copied" : "moved") +
               " \u2014 ") +
             "repeated, nested or locked elements stay with their artboard.",
         );
-        return callback16();
+        return refuseAll();
       }
       if (!deps.value224.current) {
-        callback19();
-        for (let value662 of value654.travellers as Dynamic)
-          value654.endHome(value662.file, false);
+        recordHistory();
+        for (let traveller of travel.travellers as Dynamic)
+          travel.endHome(traveller.file, false);
         deps.value448.current(
-          (input.canvasMoved
+          (pieceDrag.canvasMoved
             ? uiMessage("canvas.designCanvas.theRest") +
-              (value654.copy ? "copied" : "moved") +
+              (travel.copy ? "copied" : "moved") +
               "; the elements stayed \u2014 "
             : uiMessage("canvas.designCanvas.nothing") +
-              (value654.copy ? "copied" : "moved") +
+              (travel.copy ? "copied" : "moved") +
               " \u2014 ") + uiMessage("canvas.designCanvas.theCanvasIsReadOnly"),
         );
-        return callback16();
+        return refuseAll();
       }
-      let items4: Dynamic = [
-        ...items3.map(
+      let addedEntries: Dynamic = [
+        ...newPieces.map(
           ({ file: file, src: src, spec: spec }: Dynamic): Dynamic => ({
             file: file,
             src: src,
             spec: spec,
           }),
         ),
-        ...state2.entries,
+        ...addedRecords.entries,
       ];
       deps.value396.current(
         {
           kind: "add",
-          entries: items4,
-          ...(state2.anns.length > 0
+          entries: addedEntries,
+          ...(addedRecords.anns.length > 0
             ? {
-                anns: state2.anns,
+                anns: addedRecords.anns,
               }
             : {}),
           ...(state.moves.length > 0
@@ -395,610 +395,610 @@ export async function commitPieceDragOntoCanvas(deps: { readonly abandonSelectio
               }
             : {}),
         },
-        new Set(items4.map((input2?: Dynamic): Dynamic => input2.file)),
+        new Set(addedEntries.map((addedEntry?: Dynamic): Dynamic => addedEntry.file)),
         undefined,
-        value653,
+        dragToken,
       );
       try {
-        for (let value662 of items3 as Dynamic) {
+        for (let createdPiece of newPieces as Dynamic) {
           await getKvClient().set(
-            PlatformFileContentHandler_4(value662.file),
-            value662.src,
+            PlatformFileContentHandler_4(createdPiece.file),
+            createdPiece.src,
           );
-          deps.value127.current.set(value662.file, Date.now());
+          deps.value127.current.set(createdPiece.file, Date.now());
         }
-      } catch (value662: Dynamic) {
-        for (let value663 of value654.travellers as Dynamic)
-          value654.endHome(value663.file, false);
-        console.error("set pieces:", value662);
+      } catch (error: Dynamic) {
+        for (let traveller of travel.travellers as Dynamic)
+          travel.endHome(traveller.file, false);
+        console.error("set pieces:", error);
         deps.value448.current(
           uiMessage("canvas.designCanvas.couldnTFinishTheDrop") +
             keyboardShortcutLabel("Z") +
             " takes back what was made.",
         );
-        return callback16();
+        return refuseAll();
       }
       deps.value98({
         artboards: [
           ...deps.value73.current.artboards.filter(
-            (input2?: Dynamic): Dynamic =>
-              !items3.some(
-                (input3?: Dynamic): Dynamic => input3.file === input2.file,
+            (artboard?: Dynamic): Dynamic =>
+              !newPieces.some(
+                (createdPiece?: Dynamic): Dynamic => createdPiece.file === artboard.file,
               ),
           ),
-          ...items3.map((input2?: Dynamic): Dynamic => input2.spec),
+          ...newPieces.map((createdPiece?: Dynamic): Dynamic => createdPiece.spec),
         ],
       });
-      let items5: Dynamic = [...entries.keys()];
-      callback15();
-      let value658: Dynamic = value654.copy
+      let sourceFiles: Dynamic = [...entries.keys()];
+      cancelHomeMoves();
+      let historyGroup: Dynamic = travel.copy
           ? undefined
-          : deps.value432.current?.group(items5, {
-              bound: value653,
+          : deps.value432.current?.group(sourceFiles, {
+              bound: dragToken,
               atomic: true,
             }),
-        items6: Dynamic = [...items],
-        items7: Dynamic = [],
-        entries2: Dynamic = new Map();
+        refusedFiles: Dynamic = [...items],
+        writtenFiles: Dynamic = [],
+        keptTidsByFile: Dynamic = new Map();
       await Promise.all(
-        items5.map(async (input2?: Dynamic): Promise<Dynamic> => {
-          if (value654.copy) {
-            value654.endHome(input2, false);
+        sourceFiles.map(async (file?: Dynamic): Promise<Dynamic> => {
+          if (travel.copy) {
+            travel.endHome(file, false);
             return;
           }
-          let entry: Dynamic = deps.value177.current.get(input2),
-            value662: Dynamic = entries.get(input2) ?? [],
-            value663: Dynamic = (
-              current4.elements.get(input2)?.tids ?? []
+          let entry: Dynamic = deps.value177.current.get(file),
+            movedTids: Dynamic = entries.get(file) ?? [],
+            remainingTids: Dynamic = (
+              selectionAtStart.elements.get(file)?.tids ?? []
             ).filter(
-              (input3?: Dynamic): Dynamic => !value662.includes(input3),
+              (tid?: Dynamic): Dynamic => !movedTids.includes(tid),
             ),
-            value664: Dynamic = entry
+            removeResult: Dynamic = entry
               ? await entry
-                  .removeTravelled(value662, value663)
+                  .removeTravelled(movedTids, remainingTids)
                   .catch((): Dynamic => "failed")
               : "failed";
-          value658?.settled(input2);
-          typeof value664 == "string"
-            ? items6.push(input2)
-            : (items7.push(input2), entries2.set(input2, value664.kept));
-          value654.endHome(input2, typeof value664 != "string");
+          historyGroup?.settled(file);
+          typeof removeResult == "string"
+            ? refusedFiles.push(file)
+            : (writtenFiles.push(file), keptTidsByFile.set(file, removeResult.kept));
+          travel.endHome(file, typeof removeResult != "string");
         }),
       );
-      value658?.end();
-      for (let value662 of value654.travellers as Dynamic)
-        items5.includes(value662.file) ||
-          value654.endHome(value662.file, false);
-      for (let value662 of items7 as Dynamic)
-        deps.value153.current.set(value662, Date.now());
-      let value659: Dynamic = items5.filter(
-          (input2?: Dynamic): Dynamic => items6.includes(input2),
+      historyGroup?.end();
+      for (let traveller of travel.travellers as Dynamic)
+        sourceFiles.includes(traveller.file) ||
+          travel.endHome(traveller.file, false);
+      for (let writtenFile of writtenFiles as Dynamic)
+        deps.value153.current.set(writtenFile, Date.now());
+      let bothPlacesFiles: Dynamic = sourceFiles.filter(
+          (file?: Dynamic): Dynamic => refusedFiles.includes(file),
         ),
-        entries3: Dynamic = new Map();
-      for (let value662 of value655 as Dynamic)
-        items3.some(
-          (input2?: Dynamic): Dynamic =>
-            input2.home === value662.file && input2.tid === value662.tid,
+        staysByFile: Dynamic = new Map();
+      for (let piece of pieces as Dynamic)
+        newPieces.some(
+          (createdPiece?: Dynamic): Dynamic =>
+            createdPiece.home === piece.file && createdPiece.tid === piece.tid,
         ) ||
-          entries3.set(value662.file, [
-            ...(entries3.get(value662.file) ?? []),
-            value662.tid,
+          staysByFile.set(piece.file, [
+            ...(staysByFile.get(piece.file) ?? []),
+            piece.tid,
           ]);
-      let callback20: Dynamic = (items8?: Dynamic): Dynamic =>
-        items8.length === 1
-          ? items8[0]
-          : items8.slice(0, -1).join(", ") +
+      let joinNames: Dynamic = (names?: Dynamic): Dynamic =>
+        names.length === 1
+          ? names[0]
+          : names.slice(0, -1).join(", ") +
             " and " +
-            items8[items8.length - 1];
-      if (value659.length > 0) {
-        let value662: Dynamic = value659.map(deps.callback2);
+            names[names.length - 1];
+      if (bothPlacesFiles.length > 0) {
+        let artboardNames: Dynamic = bothPlacesFiles.map(deps.callback2);
         deps.value448.current(
           uiMessage("canvas.designCanvas.movedOntoTheCanvasBut") +
-            callback20(value662) +
+            joinNames(artboardNames) +
             " kept what was dragged, so it is now in both places. Check " +
-            (value662.length === 1 ? uiMessage("canvas.designCanvas.thatArtboard") : uiMessage("canvas.designCanvas.thoseArtboards")) +
+            (artboardNames.length === 1 ? uiMessage("canvas.designCanvas.thatArtboard") : uiMessage("canvas.designCanvas.thoseArtboards")) +
             ".",
         );
       } else
-        entries3.size > 0
+        staysByFile.size > 0
           ? deps.value189(
-              (value654.copy ? "Copied" : "Moved") +
+              (travel.copy ? "Copied" : "Moved") +
                 " " +
-                String(items3.length) +
-                (items3.length === 1 ? " element" : " elements") +
+                String(newPieces.length) +
+                (newPieces.length === 1 ? " element" : " elements") +
                 " onto the canvas. The rest stayed in " +
-                callback20([...entries3.keys()].map(deps.callback2)) +
+                joinNames([...staysByFile.keys()].map(deps.callback2)) +
                 " \u2014 repeated, nested or locked elements stay with their artboard.",
             )
           : deps.value189(
-              (value654.copy ? "Copied" : "Moved") +
-                (items3.length === 1
+              (travel.copy ? "Copied" : "Moved") +
+                (newPieces.length === 1
                   ? ""
-                  : " " + String(items3.length) + " elements") +
+                  : " " + String(newPieces.length) + " elements") +
                 " onto the canvas",
             );
       deps.abandonSelectionGesture();
-      let entries4: Dynamic = new Map();
-      if (!value654.copy) {
-        for (let [value662, value663] of current4.elements as Dynamic)
-          items5.includes(value662) || entries4.set(value662, value663);
-        for (let value662 of items5 as Dynamic) {
-          let entry: Dynamic = current4.elements.get(value662);
+      let nextElements: Dynamic = new Map();
+      if (!travel.copy) {
+        for (let [file, elements] of selectionAtStart.elements as Dynamic)
+          sourceFiles.includes(file) || nextElements.set(file, elements);
+        for (let file of sourceFiles as Dynamic) {
+          let entry: Dynamic = selectionAtStart.elements.get(file);
           if (!entry) continue;
-          let value663: Dynamic = items7.includes(value662)
-            ? (entries2.get(value662) ?? [])
+          let keptTids: Dynamic = writtenFiles.includes(file)
+            ? (keptTidsByFile.get(file) ?? [])
             : null;
-          value663 === null
-            ? entries4.set(value662, entry)
-            : value663.length > 0 &&
-              entries4.set(value662, {
+          keptTids === null
+            ? nextElements.set(file, entry)
+            : keptTids.length > 0 &&
+              nextElements.set(file, {
                 ...entry,
-                tids: value663,
+                tids: keptTids,
                 rect: null,
-                count: value663.length,
+                count: keptTids.length,
               });
         }
       }
-      let current5: Dynamic = deps.focusedFileRef.current;
-      (current5 == null ||
-        entries4.get(current5) !== current4.elements.get(current5)) &&
+      let focusedFile: Dynamic = deps.focusedFileRef.current;
+      (focusedFile == null ||
+        nextElements.get(focusedFile) !== selectionAtStart.elements.get(focusedFile)) &&
         deps.value62();
-      let value660: Dynamic = replaceSelectedElements(
+      let nextSelection: Dynamic = replaceSelectedElements(
         selectionFromArtboards(
-          new Set(items3.map((input2?: Dynamic): Dynamic => input2.file)),
+          new Set(newPieces.map((createdPiece?: Dynamic): Dynamic => createdPiece.file)),
         ),
-        entries4,
+        nextElements,
         null,
       );
-      deps.setSelection(value660);
-      for (let value662 of [
+      deps.setSelection(nextSelection);
+      for (let file of [
         ...new Set([
-          ...items5,
+          ...sourceFiles,
           ...items,
-          ...value654.travellers.map(
-            (input2?: Dynamic): Dynamic => input2.file,
+          ...travel.travellers.map(
+            (traveller?: Dynamic): Dynamic => traveller.file,
           ),
         ]),
       ] as Dynamic)
-        deps.value177.current.get(value662)?.moveSettle();
+        deps.value177.current.get(file)?.moveSettle();
       (window as Dynamic).setTimeout((): Dynamic => {
-        for (let value662 of new Set([
-          ...items7,
-          ...entries4.keys(),
+        for (let file of new Set([
+          ...writtenFiles,
+          ...nextElements.keys(),
         ]) as Dynamic) {
-          let value663: Dynamic = entries4.get(value662)?.tids ?? null;
-          value662 === deps.focusedFileRef.current
-            ? deps.setShownFrameSelection(value662, value663)
+          let tids: Dynamic = nextElements.get(file)?.tids ?? null;
+          file === deps.focusedFileRef.current
+            ? deps.setShownFrameSelection(file, tids)
             : deps.value177.current
-                .get(value662)
+                .get(file)
                 ?.setShownSelection(
-                  value663,
-                  value663 ? deps.value19(value662) : null,
+                  tids,
+                  tids ? deps.value19(file) : null,
                 );
         }
       }, 80);
-      let value661: Dynamic = items.filter(
-        (input2?: Dynamic): Dynamic =>
-          !items5.includes(input2) && current4.elements.has(input2),
+      let unmovedFiles: Dynamic = items.filter(
+        (file?: Dynamic): Dynamic =>
+          !sourceFiles.includes(file) && selectionAtStart.elements.has(file),
       );
-      value661.length > 0 &&
-        value659.length === 0 &&
-        entries3.size === 0 &&
+      unmovedFiles.length > 0 &&
+        bothPlacesFiles.length === 0 &&
+        staysByFile.size === 0 &&
         deps.value448.current(
           uiMessage("canvas.designCanvas.nothingMovedInside") +
-            callback20(value661.map(deps.callback2)) +
+            joinNames(unmovedFiles.map(deps.callback2)) +
             "; the rest " +
-            (value654.copy ? "copied" : "moved") +
+            (travel.copy ? "copied" : "moved") +
             ".",
         );
       return {
-        written: items7,
-        refused: items6,
-        selection: value660,
+        written: writtenFiles,
+        refused: refusedFiles,
+        selection: nextSelection,
       };
     }
 
 /** 元素拖动松手后的提交：把元素移动或复制到目标画板（landTravellers/moveElements），失败时回滚并合并历史，返回写入与被拒结果；含 pieces 时转交 commitPieceDragOntoCanvas。 */
-export async function commitElementMoveAcrossArtboards(deps: { readonly applyCanvasSelection: Dynamic; readonly callback2: Dynamic; readonly callback4: Dynamic; readonly focusedFileRef: Dynamic; readonly selectionRef: Dynamic; readonly setShownFrameSelection: Dynamic; readonly value142: Dynamic; readonly value144: Dynamic; readonly value153: Dynamic; readonly value177: Dynamic; readonly value19: Dynamic; readonly value25: Dynamic; readonly value432: Dynamic; readonly value448: Dynamic }, input?: Dynamic): Promise<Dynamic> {
+export async function commitElementMoveAcrossArtboards(deps: { readonly applyCanvasSelection: Dynamic; readonly callback2: Dynamic; readonly callback4: Dynamic; readonly focusedFileRef: Dynamic; readonly selectionRef: Dynamic; readonly setShownFrameSelection: Dynamic; readonly value142: Dynamic; readonly value144: Dynamic; readonly value153: Dynamic; readonly value177: Dynamic; readonly value19: Dynamic; readonly value25: Dynamic; readonly value432: Dynamic; readonly value448: Dynamic }, elementDrag?: Dynamic): Promise<Dynamic> {
       let {
-        token: value653,
-        plans: value654,
-        unanswered: value655,
-        travel: value656,
-      }: Dynamic = input;
-      if (value656?.pieces) return deps.callback4(input);
-      input.canvas();
-      let items: Dynamic = [...value654.keys()],
-        current4: Dynamic = deps.selectionRef.current,
-        current5: Dynamic = deps.focusedFileRef.current,
-        items2: Dynamic = [...value655],
-        entries: Dynamic = new Map(current4.elements),
-        items3: Dynamic = [],
-        primary: Dynamic = current4.primary,
-        items4: Dynamic = [];
-      if (value656) {
-        let target: Dynamic = value656.target,
-          value660: Dynamic = value656.travellers
-            .filter((input2?: Dynamic): Dynamic => !input2.external)
-            .map((input2?: Dynamic): Dynamic => input2.file),
-          value661: Dynamic = items.filter(
-            (input2?: Dynamic): Dynamic =>
-              input2 !== target && !value660.includes(input2),
+        token: dragToken,
+        plans: plans,
+        unanswered: unansweredFiles,
+        travel: travel,
+      }: Dynamic = elementDrag;
+      if (travel?.pieces) return deps.callback4(elementDrag);
+      elementDrag.canvas();
+      let items: Dynamic = [...plans.keys()],
+        selectionAtStart: Dynamic = deps.selectionRef.current,
+        focusedFile: Dynamic = deps.focusedFileRef.current,
+        refusedFiles: Dynamic = [...unansweredFiles],
+        entries: Dynamic = new Map(selectionAtStart.elements),
+        writtenFiles: Dynamic = [],
+        primary: Dynamic = selectionAtStart.primary,
+        revertedFiles: Dynamic = [];
+      if (travel) {
+        let target: Dynamic = travel.target,
+          canvasSourceFiles: Dynamic = travel.travellers
+            .filter((traveller?: Dynamic): Dynamic => !traveller.external)
+            .map((traveller?: Dynamic): Dynamic => traveller.file),
+          otherFiles: Dynamic = items.filter(
+            (file?: Dynamic): Dynamic =>
+              file !== target && !canvasSourceFiles.includes(file),
           ),
-          items6: Dynamic = [],
-          entries2: Dynamic = new Map();
-        for (let value665 of value656.travellers as Dynamic) {
-          let entry: Dynamic = deps.value177.current.get(value665.file),
-            items7: Dynamic = [];
-          for (let value666 of value665.members as Dynamic) {
-            let value667: Dynamic = value656.plan.landing.find(
-                (input2?: Dynamic): Dynamic => input2.tid === value666.index,
+          landingItems: Dynamic = [],
+          leftoverTidsByFile: Dynamic = new Map();
+        for (let traveller of travel.travellers as Dynamic) {
+          let entry: Dynamic = deps.value177.current.get(traveller.file),
+            leftoverTids: Dynamic = [];
+          for (let member of traveller.members as Dynamic) {
+            let landing: Dynamic = travel.plan.landing.find(
+                (candidate?: Dynamic): Dynamic => candidate.tid === member.index,
               ),
-              value668: Dynamic = value667
-                ? (value666.html ??
+              memberHtml: Dynamic = landing
+                ? (member.html ??
                   (entry
                     ? await entry
-                        .travellerHtml(value666.tid)
+                        .travellerHtml(member.tid)
                         .catch((): Dynamic => null)
                     : null))
                 : null;
-            value667 && value668
-              ? items6.push({
-                  file: value665.file,
-                  tid: value666.tid,
-                  html: value668,
-                  landing: value667,
+            landing && memberHtml
+              ? landingItems.push({
+                  file: traveller.file,
+                  tid: member.tid,
+                  html: memberHtml,
+                  landing: landing,
                 })
-              : items7.push(value666.tid);
+              : leftoverTids.push(member.tid);
           }
-          entries2.set(value665.file, items7);
+          leftoverTidsByFile.set(traveller.file, leftoverTids);
         }
-        let value662: Dynamic = value656.copy === true,
-          value663: Dynamic = value662
-            ? [target, ...value661]
-            : [...new Set([target, ...value660, ...value661])],
-          value664: Dynamic = deps.value432.current?.group(
-            value663,
-            value662
+        let isCopy: Dynamic = travel.copy === true,
+          involvedFiles: Dynamic = isCopy
+            ? [target, ...otherFiles]
+            : [...new Set([target, ...canvasSourceFiles, ...otherFiles])],
+          historyGroup: Dynamic = deps.value432.current?.group(
+            involvedFiles,
+            isCopy
               ? {
-                  bound: value653,
+                  bound: dragToken,
                 }
               : {
-                  bound: value653,
+                  bound: dragToken,
                   atomic: true,
                   holder: target,
-                  waiting: value660.filter(
-                    (input2?: Dynamic): Dynamic => input2 !== target,
+                  waiting: canvasSourceFiles.filter(
+                    (file?: Dynamic): Dynamic => file !== target,
                   ),
                 },
           );
         try {
-          current5 != null &&
-            value663.includes(current5) &&
-            (deps.value25.current = current5);
+          focusedFile != null &&
+            involvedFiles.includes(focusedFile) &&
+            (deps.value25.current = focusedFile);
           let entry: Dynamic = deps.value177.current.get(target),
-            value665: Dynamic =
-              value662 && value660.includes(target)
+            targetOwnTids: Dynamic =
+              isCopy && canvasSourceFiles.includes(target)
                 ? []
-                : (current4.elements.get(target)?.tids ?? []),
-            value666: Dynamic = await (
+                : (selectionAtStart.elements.get(target)?.tids ?? []),
+            landResult: Dynamic = await (
               entry?.landTravellers(
-                items6.map(
+                landingItems.map(
                   ({ html: html, landing: landing }: Dynamic): Dynamic => ({
                     key: landing.tid,
                     html: html,
                     landing: landing,
                   }),
                 ),
-                value654.get(target) ?? [],
-                value665,
+                plans.get(target) ?? [],
+                targetOwnTids,
               ) ?? Promise.resolve("failed")
             ).catch((): Dynamic => "failed");
-          value664?.settled(target);
-          let entries3: Dynamic = new Map(),
-            items7: Dynamic = [],
-            items8: Dynamic = [],
-            callback15: Dynamic = async (): Promise<Dynamic> => {
-              for (let value672 of [...items8].reverse() as Dynamic) {
-                let entry2: Dynamic = deps.value177.current.get(value672),
-                  value673: Dynamic = entry2
-                    ? (value664?.discard(value672) ?? null)
+          historyGroup?.settled(target);
+          let landedTidsByFile: Dynamic = new Map(),
+            targetNewTids: Dynamic = [],
+            landedFiles: Dynamic = [],
+            revertLandings: Dynamic = async (): Promise<Dynamic> => {
+              for (let landedFile of [...landedFiles].reverse() as Dynamic) {
+                let frameEntry: Dynamic = deps.value177.current.get(landedFile),
+                  discardHistory: Dynamic = frameEntry
+                    ? (historyGroup?.discard(landedFile) ?? null)
                     : null;
-                if (!entry2 || !value673) return false;
+                if (!frameEntry || !discardHistory) return false;
                 if (
-                  !(await entry2
-                    .applyHistory(deps.value19(value672), "undo")
+                  !(await frameEntry
+                    .applyHistory(deps.value19(landedFile), "undo")
                     .catch((): Dynamic => false))
                 ) {
-                  value673();
+                  discardHistory();
                   return false;
                 }
-                entry2.dropRedo();
-                items8.pop();
-                items4.push(value672);
-                items3 = items3.filter(
-                  (input2?: Dynamic): Dynamic => input2 !== value672,
+                frameEntry.dropRedo();
+                landedFiles.pop();
+                revertedFiles.push(landedFile);
+                writtenFiles = writtenFiles.filter(
+                  (writtenFile?: Dynamic): Dynamic => writtenFile !== landedFile,
                 );
-                let entry3: Dynamic = current4.elements.get(value672);
-                entry3
-                  ? entries.set(value672, entry3)
-                  : entries.delete(value672);
+                let previousEntry: Dynamic = selectionAtStart.elements.get(landedFile);
+                previousEntry
+                  ? entries.set(landedFile, previousEntry)
+                  : entries.delete(landedFile);
               }
               return true;
             };
-          if (value666 === "failed") {
-            items2.push(target);
-            target === current5 &&
-              deps.value25.current === current5 &&
+          if (landResult === "failed") {
+            refusedFiles.push(target);
+            target === focusedFile &&
+              deps.value25.current === focusedFile &&
               (deps.value25.current = null);
-            for (let value672 of value656.travellers as Dynamic)
-              entries2.set(
-                value672.file,
-                value672.members.map(
-                  (input2?: Dynamic): Dynamic => input2.tid,
+            for (let traveller of travel.travellers as Dynamic)
+              leftoverTidsByFile.set(
+                traveller.file,
+                traveller.members.map(
+                  (member?: Dynamic): Dynamic => member.tid,
                 ),
               );
           } else {
-            for (let value672 of items6 as Dynamic) {
-              let entry2: Dynamic = value666.landed.get(value672.landing.tid);
-              if (!entry2 || entry2.length === 0) {
-                entries2.get(value672.file)?.push(value672.tid);
+            for (let landingItem of landingItems as Dynamic) {
+              let landedTids: Dynamic = landResult.landed.get(landingItem.landing.tid);
+              if (!landedTids || landedTids.length === 0) {
+                leftoverTidsByFile.get(landingItem.file)?.push(landingItem.tid);
                 continue;
               }
-              let value673: Dynamic = entries3.get(value672.file) ?? [];
-              value673.push(value672.tid);
-              entries3.set(value672.file, value673);
-              items7.push(...entry2);
+              let fileLandedTids: Dynamic = landedTidsByFile.get(landingItem.file) ?? [];
+              fileLandedTids.push(landingItem.tid);
+              landedTidsByFile.set(landingItem.file, fileLandedTids);
+              targetNewTids.push(...landedTids);
             }
-            let stayers: Dynamic = value666.stayers;
+            let stayers: Dynamic = landResult.stayers;
             stayers && typeof stayers == "object"
-              ? items7.push(...stayers.newTids)
-              : (stayers === "refused" && items2.push(target),
-                items7.push(...(value666.stayersOwn ?? value665)));
-            (items7.length > 0 || entries3.size > 0) && items3.push(target);
-            if (entries3.size > 0) {
-              let value672: Dynamic = items2.indexOf(target);
-              value672 >= 0 && items2.splice(value672, 1);
+              ? targetNewTids.push(...stayers.newTids)
+              : (stayers === "refused" && refusedFiles.push(target),
+                targetNewTids.push(...(landResult.stayersOwn ?? targetOwnTids)));
+            (targetNewTids.length > 0 || landedTidsByFile.size > 0) && writtenFiles.push(target);
+            if (landedTidsByFile.size > 0) {
+              let targetIndex: Dynamic = refusedFiles.indexOf(target);
+              targetIndex >= 0 && refusedFiles.splice(targetIndex, 1);
             }
-            entries3.size > 0 && items8.push(target);
+            landedTidsByFile.size > 0 && landedFiles.push(target);
           }
-          let value667: Dynamic = await Promise.all(
-            value661.map(
-              (input2?: Dynamic): Dynamic =>
+          let moveResults: Dynamic = await Promise.all(
+            otherFiles.map(
+              (file?: Dynamic): Dynamic =>
                 (
                   deps.value177.current
-                    .get(input2)
-                    ?.moveElements(value654.get(input2) ?? []) ??
+                    .get(file)
+                    ?.moveElements(plans.get(file) ?? []) ??
                   Promise.resolve("failed")
                 )
                   .catch((): Dynamic => "failed")
-                  .finally((): Dynamic => value664?.settled(input2)),
+                  .finally((): Dynamic => historyGroup?.settled(file)),
             ),
           );
-          value661.forEach((input2?: Dynamic, options?: Dynamic): Dynamic => {
-            let value672: Dynamic = value667[options],
-              entry2: Dynamic = current4.elements.get(input2);
-            if (typeof value672 == "string" || !entry2) {
-              (value672 === "refused" || value672 === "failed") &&
-                items2.push(input2);
-              input2 === current5 &&
-                deps.value25.current === current5 &&
+          otherFiles.forEach((file?: Dynamic, fileIndex?: Dynamic): Dynamic => {
+            let moveResult: Dynamic = moveResults[fileIndex],
+              previousEntry: Dynamic = selectionAtStart.elements.get(file);
+            if (typeof moveResult == "string" || !previousEntry) {
+              (moveResult === "refused" || moveResult === "failed") &&
+                refusedFiles.push(file);
+              file === focusedFile &&
+                deps.value25.current === focusedFile &&
                 (deps.value25.current = null);
               return;
             }
-            entries.set(input2, {
-              ...entry2,
-              tids: value672.newTids,
+            entries.set(file, {
+              ...previousEntry,
+              tids: moveResult.newTids,
               rect: null,
-              count: value672.newTids.length,
+              count: moveResult.newTids.length,
             });
-            items3.push(input2);
+            writtenFiles.push(file);
           });
-          let value668: Dynamic = deps.callback2,
-            callback16: Dynamic = (items11?: Dynamic): Dynamic =>
-              items11.length <= 1
-                ? (items11[0] ?? "")
-                : items11.slice(0, -1).join(", ") +
+          let fileLabel: Dynamic = deps.callback2,
+            joinNames: Dynamic = (names?: Dynamic): Dynamic =>
+              names.length <= 1
+                ? (names[0] ?? "")
+                : names.slice(0, -1).join(", ") +
                   " and " +
-                  items11[items11.length - 1],
-            items9: Dynamic = [],
-            items10: Dynamic = [],
-            value669: Dynamic = null;
-          for (let value672 of value656.travellers as Dynamic) {
-            if (value672.external) continue;
-            if (value662) {
-              value656.endHome(value672.file, false);
-              value672.file !== target &&
-                (entries3.get(value672.file)?.length ?? 0) > 0 &&
-                entries.delete(value672.file);
+                  names[names.length - 1],
+            partialFiles: Dynamic = [],
+            noLandingFiles: Dynamic = [],
+            revertState: Dynamic = null;
+          for (let traveller of travel.travellers as Dynamic) {
+            if (traveller.external) continue;
+            if (isCopy) {
+              travel.endHome(traveller.file, false);
+              traveller.file !== target &&
+                (landedTidsByFile.get(traveller.file)?.length ?? 0) > 0 &&
+                entries.delete(traveller.file);
               continue;
             }
-            let entry2: Dynamic = deps.value177.current.get(value672.file),
-              value673: Dynamic = entries3.get(value672.file) ?? [],
-              value674: Dynamic = (
-                current4.elements.get(value672.file)?.tids ?? []
+            let frameEntry: Dynamic = deps.value177.current.get(traveller.file),
+              landedTids: Dynamic = landedTidsByFile.get(traveller.file) ?? [],
+              remainingTids: Dynamic = (
+                selectionAtStart.elements.get(traveller.file)?.tids ?? []
               ).filter(
-                (input2?: Dynamic): Dynamic => !value673.includes(input2),
+                (tid?: Dynamic): Dynamic => !landedTids.includes(tid),
               ),
-              value675: Dynamic = value674,
-              flag2: Dynamic = false;
-            if (value669 != null) {
-              value675 = current4.elements.get(value672.file)?.tids ?? [];
-              value669.how === "partial" &&
-                value673.length > 0 &&
-                items9.push(value672.file);
-            } else if (value673.length > 0) {
-              value664?.admit(value672.file);
-              let value676: Dynamic = entry2
-                ? await entry2
-                    .removeTravelled(value673, value674)
+              keptTids: Dynamic = remainingTids,
+              didRemove: Dynamic = false;
+            if (revertState != null) {
+              keptTids = selectionAtStart.elements.get(traveller.file)?.tids ?? [];
+              revertState.how === "partial" &&
+                landedTids.length > 0 &&
+                partialFiles.push(traveller.file);
+            } else if (landedTids.length > 0) {
+              historyGroup?.admit(traveller.file);
+              let removeResult: Dynamic = frameEntry
+                ? await frameEntry
+                    .removeTravelled(landedTids, remainingTids)
                     .catch((): Dynamic => "failed")
                 : "failed";
-              typeof value676 == "string"
-                ? (value664?.settled(value672.file),
-                  (value675 =
-                    current4.elements.get(value672.file)?.tids ?? []),
-                  (value669 = {
-                    at: value672.file,
-                    how: (await callback15()) ? "reverted" : "partial",
+              typeof removeResult == "string"
+                ? (historyGroup?.settled(traveller.file),
+                  (keptTids =
+                    selectionAtStart.elements.get(traveller.file)?.tids ?? []),
+                  (revertState = {
+                    at: traveller.file,
+                    how: (await revertLandings()) ? "reverted" : "partial",
                   }),
-                  value669.how === "partial" &&
-                    items9.push(...items4, value672.file))
-                : ((value675 = value676.kept),
-                  (flag2 = true),
-                  items3.push(value672.file),
-                  items8.push(value672.file));
-            } else items10.push(value672.file);
-            value672.file === current5 &&
-              !flag2 &&
-              deps.value25.current === current5 &&
+                  revertState.how === "partial" &&
+                    partialFiles.push(...revertedFiles, traveller.file))
+                : ((keptTids = removeResult.kept),
+                  (didRemove = true),
+                  writtenFiles.push(traveller.file),
+                  landedFiles.push(traveller.file));
+            } else noLandingFiles.push(traveller.file);
+            traveller.file === focusedFile &&
+              !didRemove &&
+              deps.value25.current === focusedFile &&
               (deps.value25.current = null);
-            value664?.settled(value672.file);
-            value656.endHome(value672.file, flag2);
-            let entry3: Dynamic = current4.elements.get(value672.file);
-            value675.length === 0
-              ? entries.delete(value672.file)
-              : entry3 &&
-                entries.set(value672.file, {
-                  ...entry3,
-                  tids: value675,
+            historyGroup?.settled(traveller.file);
+            travel.endHome(traveller.file, didRemove);
+            let previousEntry: Dynamic = selectionAtStart.elements.get(traveller.file);
+            keptTids.length === 0
+              ? entries.delete(traveller.file)
+              : previousEntry &&
+                entries.set(traveller.file, {
+                  ...previousEntry,
+                  tids: keptTids,
                   rect: null,
-                  count: value675.length,
+                  count: keptTids.length,
                 });
           }
-          let value670: Dynamic = value660.filter(
-              (input2?: Dynamic): Dynamic =>
-                !items10.includes(input2) &&
-                (entries2.get(input2)?.length ?? 0) > 0,
+          let partlyStayedFiles: Dynamic = canvasSourceFiles.filter(
+              (file?: Dynamic): Dynamic =>
+                !noLandingFiles.includes(file) &&
+                (leftoverTidsByFile.get(file)?.length ?? 0) > 0,
             ),
-            value671: Dynamic = value662 ? "copy" : "move";
-          value669?.how === "reverted"
+            verb: Dynamic = isCopy ? "copy" : "move";
+          revertState?.how === "reverted"
             ? deps.value448.current(
                 uiMessage("canvas.designCanvas.couldnT") +
-                  value671 +
+                  verb +
                   " to " +
-                  value668(target) +
+                  fileLabel(target) +
                   ". " +
-                  value668(value669.at) +
+                  fileLabel(revertState.at) +
                   " kept what was dragged, so the copies in " +
-                  value668(target) +
+                  fileLabel(target) +
                   " were removed.",
               )
-            : items9.length > 0
+            : partialFiles.length > 0
               ? deps.value448.current(
                   uiMessage("canvas.designCanvas.theMoveLandedIn") +
-                    value668(target) +
+                    fileLabel(target) +
                     " but could not leave " +
-                    callback16(items9.map(value668)) +
-                    (items9.length > 1
+                    joinNames(partialFiles.map(fileLabel)) +
+                    (partialFiles.length > 1
                       ? ". Check those artboards."
                       : ". Check both artboards."),
                 )
-              : items10.length > 0 && value666 !== "failed"
+              : noLandingFiles.length > 0 && landResult !== "failed"
                 ? deps.value448.current(
                     uiMessage("canvas.designCanvas.nowhereToLandIn") +
-                      value668(target) +
+                      fileLabel(target) +
                       " for " +
-                      callback16(items10.map(value668)) +
+                      joinNames(noLandingFiles.map(fileLabel)) +
                       "'s selection; " +
-                      (value662 ? uiMessage("canvas.designCanvas.nothingOfItWasCopied") : uiMessage("canvas.designCanvas.itStayed")),
+                      (isCopy ? uiMessage("canvas.designCanvas.nothingOfItWasCopied") : uiMessage("canvas.designCanvas.itStayed")),
                   )
-                : value670.length > 0 &&
+                : partlyStayedFiles.length > 0 &&
                   deps.value448.current(
                     uiMessage("canvas.designCanvas.partOf") +
-                      callback16(value670.map(value668)) +
+                      joinNames(partlyStayedFiles.map(fileLabel)) +
                       "'s selection could not land in " +
-                      value668(target) +
-                      (value662
+                      fileLabel(target) +
+                      (isCopy
                         ? "; that part was not copied."
                         : "; that part stayed where it was."),
                   );
-          items9 = [];
-          if (items7.length > 0 && value669?.how !== "reverted") {
-            let entry2: Dynamic = current4.elements.get(target);
+          partialFiles = [];
+          if (targetNewTids.length > 0 && revertState?.how !== "reverted") {
+            let targetEntry: Dynamic = selectionAtStart.elements.get(target);
             entries.set(
               target,
-              entry2
+              targetEntry
                 ? {
-                    ...entry2,
-                    tids: items7,
+                    ...targetEntry,
+                    tids: targetNewTids,
                     rect: null,
-                    count: items7.length,
+                    count: targetNewTids.length,
                   }
                 : {
                     name: deps.value19(target),
-                    tids: items7,
+                    tids: targetNewTids,
                     rect: null,
-                    count: items7.length,
+                    count: targetNewTids.length,
                   },
             );
             primary = target;
           }
-          if (value669?.how !== "reverted")
-            for (let value672 of [target, ...value660] as Dynamic)
-              deps.value153.current.set(value672, Date.now());
+          if (revertState?.how !== "reverted")
+            for (let file of [target, ...canvasSourceFiles] as Dynamic)
+              deps.value153.current.set(file, Date.now());
         } finally {
-          value664?.end();
+          historyGroup?.end();
         }
       } else {
-        let value660: Dynamic =
+        let historyGroup: Dynamic =
           items.length > 0
             ? deps.value432.current?.group(items, {
-                bound: value653,
+                bound: dragToken,
               })
             : undefined;
-        current5 != null &&
-          items.includes(current5) &&
-          (deps.value25.current = current5);
-        let value661: Dynamic = await Promise.all(
+        focusedFile != null &&
+          items.includes(focusedFile) &&
+          (deps.value25.current = focusedFile);
+        let moveResults: Dynamic = await Promise.all(
           items.map(
-            (input2?: Dynamic): Dynamic =>
+            (file?: Dynamic): Dynamic =>
               (
                 deps.value177.current
-                  .get(input2)
-                  ?.moveElements(value654.get(input2) ?? []) ??
+                  .get(file)
+                  ?.moveElements(plans.get(file) ?? []) ??
                 Promise.resolve("failed")
               )
                 .catch((): Dynamic => "failed")
-                .finally((): Dynamic => value660?.settled(input2)),
+                .finally((): Dynamic => historyGroup?.settled(file)),
           ),
         );
-        value660?.end();
-        items.forEach((input2?: Dynamic, options?: Dynamic): Dynamic => {
-          let value662: Dynamic = value661[options],
-            entry: Dynamic = current4.elements.get(input2);
-          if (typeof value662 == "string" || !entry) {
-            (value662 === "refused" || value662 === "failed") &&
-              items2.push(input2);
-            input2 === current5 &&
-              deps.value25.current === current5 &&
+        historyGroup?.end();
+        items.forEach((file?: Dynamic, fileIndex?: Dynamic): Dynamic => {
+          let moveResult: Dynamic = moveResults[fileIndex],
+            entry: Dynamic = selectionAtStart.elements.get(file);
+          if (typeof moveResult == "string" || !entry) {
+            (moveResult === "refused" || moveResult === "failed") &&
+              refusedFiles.push(file);
+            file === focusedFile &&
+              deps.value25.current === focusedFile &&
               (deps.value25.current = null);
             return;
           }
-          entries.set(input2, {
+          entries.set(file, {
             ...entry,
-            tids: value662.newTids,
+            tids: moveResult.newTids,
             rect: null,
-            count: value662.newTids.length,
+            count: moveResult.newTids.length,
           });
         });
-        items3 = items.filter(
-          (input2?: Dynamic, options?: Dynamic): Dynamic =>
-            typeof value661[options] != "string",
+        writtenFiles = items.filter(
+          (file?: Dynamic, fileIndex?: Dynamic): Dynamic =>
+            typeof moveResults[fileIndex] != "string",
         );
       }
-      input.canvasDropped &&
+      elementDrag.canvasDropped &&
         deps.value448.current(
           uiMessage("canvas.designCanvas.theArtboardsAndNotesIn") +
-            (input.copy ? "copy" : "move") +
+            (elementDrag.copy ? "copy" : "move") +
             " \u2014 the drag was interrupted; try it again.",
         );
-      let value657: Dynamic = current4;
-      if (input.copy && input.canvasMoved && !input.canvasDropped) {
-        deps.value142.current.has(value653) || (await deps.value144(value653));
-        let entry: Dynamic = deps.value142.current.get(value653);
-        deps.value142.current.delete(value653);
-        value657 = entry
+      let baseSelection: Dynamic = selectionAtStart;
+      if (elementDrag.copy && elementDrag.canvasMoved && !elementDrag.canvasDropped) {
+        deps.value142.current.has(dragToken) || (await deps.value144(dragToken));
+        let entry: Dynamic = deps.value142.current.get(dragToken);
+        deps.value142.current.delete(dragToken);
+        baseSelection = entry
           ? selectionFromBoards({
               files: entry.files,
               notes: entry.notes,
@@ -1008,118 +1008,118 @@ export async function commitElementMoveAcrossArtboards(deps: { readonly applyCan
               notes: emptyCanvasSelectionFiles,
             });
       } else
-        input.copy &&
-          (value657 = selectionFromBoards({
+        elementDrag.copy &&
+          (baseSelection = selectionFromBoards({
             files: emptyCanvasSelectionFiles,
             notes: emptyCanvasSelectionFiles,
           }));
-      let value658: Dynamic = replaceSelectedElements(
-        value657,
+      let nextSelection: Dynamic = replaceSelectedElements(
+        baseSelection,
         entries,
         primary,
       );
-      deps.applyCanvasSelection(value658);
-      let value659: Dynamic = value658,
-        items5: Dynamic = [
+      deps.applyCanvasSelection(nextSelection);
+      let finalSelection: Dynamic = nextSelection,
+        touchedFiles: Dynamic = [
           ...new Set([
             ...items,
-            ...(value656
+            ...(travel
               ? [
-                  value656.target,
-                  ...value656.travellers.map(
-                    (input2?: Dynamic): Dynamic => input2.file,
+                  travel.target,
+                  ...travel.travellers.map(
+                    (traveller?: Dynamic): Dynamic => traveller.file,
                   ),
                 ]
               : []),
           ]),
         ];
-      for (let value660 of items5 as Dynamic)
-        !items3.includes(value660) &&
-          !items4.includes(value660) &&
-          deps.value177.current.get(value660)?.moveSettle();
-      for (let value660 of value655 as Dynamic)
-        deps.value177.current.get(value660)?.moveSettle();
+      for (let file of touchedFiles as Dynamic)
+        !writtenFiles.includes(file) &&
+          !revertedFiles.includes(file) &&
+          deps.value177.current.get(file)?.moveSettle();
+      for (let file of unansweredFiles as Dynamic)
+        deps.value177.current.get(file)?.moveSettle();
       (window as Dynamic).setTimeout((): Dynamic => {
-        for (let value660 of [
-          ...new Set([...items3, ...items4]),
+        for (let file of [
+          ...new Set([...writtenFiles, ...revertedFiles]),
         ] as Dynamic) {
-          let value661: Dynamic =
-            deps.selectionRef.current.elements.get(value660)?.tids ?? null;
-          value660 === deps.focusedFileRef.current
-            ? deps.setShownFrameSelection(value660, value661)
+          let tids: Dynamic =
+            deps.selectionRef.current.elements.get(file)?.tids ?? null;
+          file === deps.focusedFileRef.current
+            ? deps.setShownFrameSelection(file, tids)
             : deps.value177.current
-                .get(value660)
+                .get(file)
                 ?.setShownSelection(
-                  value661,
-                  value661 ? deps.value19(value660) : null,
+                  tids,
+                  tids ? deps.value19(file) : null,
                 );
-          deps.value177.current.get(value660)?.moveSettle();
+          deps.value177.current.get(file)?.moveSettle();
         }
       }, 80);
-      if (items2.length > 0) {
-        let value660: Dynamic = items2.map(deps.callback2),
-          value661: Dynamic =
-            value660.length === 1
-              ? value660[0]
-              : value660.slice(0, -1).join(", ") +
+      if (refusedFiles.length > 0) {
+        let refusedLabels: Dynamic = refusedFiles.map(deps.callback2),
+          refusedText: Dynamic =
+            refusedLabels.length === 1
+              ? refusedLabels[0]
+              : refusedLabels.slice(0, -1).join(", ") +
                 " and " +
-                value660[value660.length - 1],
-          value662: Dynamic = items3.length === 0;
+                refusedLabels[refusedLabels.length - 1],
+          nothingMoved: Dynamic = writtenFiles.length === 0;
         deps.value448.current(
-          value662 && !input.canvasMoved
+          nothingMoved && !elementDrag.canvasMoved
             ? uiMessage("canvas.designCanvas.nothingMoved")
-            : value662
-              ? uiMessage("canvas.designCanvas.theRestMovedNothingMoved") + value661 + "."
-              : uiMessage("canvas.designCanvas.nothingMovedInside") + value661 + "; the rest moved.",
+            : nothingMoved
+              ? uiMessage("canvas.designCanvas.theRestMovedNothingMoved") + refusedText + "."
+              : uiMessage("canvas.designCanvas.nothingMovedInside") + refusedText + "; the rest moved.",
         );
       }
       return {
-        written: items3,
-        refused: items2,
-        selection: value659,
+        written: writtenFiles,
+        refused: refusedFiles,
+        selection: finalSelection,
       };
     }
 
 /** 开始拖出元素时运行：把选中元素序列化成独立的 dc 文档并构建预览 srcdoc，作为拖动中跟随指针的幽灵预览。 */
-export function buildDragGhostPreview(deps: { readonly assets: Dynamic; readonly doc: Dynamic; readonly value177: Dynamic; readonly value195: Dynamic; readonly value196: Dynamic }, input?: Dynamic): Dynamic {
-        if (!input.box || deps.value196.current?.key === input.key) return;
+export function buildDragGhostPreview(deps: { readonly assets: Dynamic; readonly doc: Dynamic; readonly value177: Dynamic; readonly value195: Dynamic; readonly value196: Dynamic }, dragStart?: Dynamic): Dynamic {
+        if (!dragStart.box || deps.value196.current?.key === dragStart.key) return;
         deps.value196.current = {
-          key: input.key,
+          key: dragStart.key,
           ghost: null,
         };
-        let entry: Dynamic = deps.value177.current.get(input.file),
-          box: Dynamic = input.box;
+        let entry: Dynamic = deps.value177.current.get(dragStart.file),
+          box: Dynamic = dragStart.box;
         if (entry)
           try {
             entry
               .renderDefaults()
-              .then((input2?: Dynamic): Dynamic => {
-                if (deps.value196.current?.key !== input.key) return;
-                let value653: Dynamic = entry.serializeSelection(input.tids, {
+              .then((renderDefaults?: Dynamic): Dynamic => {
+                if (deps.value196.current?.key !== dragStart.key) return;
+                let ghostMarkup: Dynamic = entry.serializeSelection(dragStart.tids, {
                   bakeProps: true,
                   lift: box,
-                  vals: input2,
+                  vals: renderDefaults,
                 });
-                if (!value653 || value653.length > 2e5) return;
+                if (!ghostMarkup || ghostMarkup.length > 2e5) return;
                 let files: Dynamic = deps.doc.content().files,
                   state: Dynamic = {
                     ...mergeDesignSystemFileOverlay(files),
                     [dragGhostFilename]: buildDcDocument(
-                      value653,
-                      files[input.file] ?? "",
+                      ghostMarkup,
+                      files[dragStart.file] ?? "",
                       {
                         logic: false,
                       },
                     ),
                   },
-                  value654: Dynamic = normalizeProjectBlobPaths(
+                  projectFiles: Dynamic = normalizeProjectBlobPaths(
                     collectProjectDependencyFiles(
                       state,
                       dragGhostFilename,
                     ),
                   ),
-                  { doc: value655, parts: value656 }: Dynamic = buildPreviewDocument(
-                    value654,
+                  { doc: previewDoc, parts: previewParts }: Dynamic = buildPreviewDocument(
+                    projectFiles,
                     dragGhostFilename,
                     deps.assets,
                     new Set(),
@@ -1128,26 +1128,26 @@ export function buildDragGhostPreview(deps: { readonly assets: Dynamic; readonly
                       fileUrlFor: createLinkedFileScript,
                     },
                   ),
-                  value657: Dynamic =
-                    Object.keys(value656).length > 0
+                  ghost: Dynamic =
+                    Object.keys(previewParts).length > 0
                       ? {
-                          srcdoc: PreviewBuildDocumentResolvedValue_3,
+                          srcdoc: ghostSrcdoc,
                           boot: {
-                            doc: value655,
-                            parts: runtimeModuleBlobs(value656),
-                            urls: runtimeModuleUrls(value656),
+                            doc: previewDoc,
+                            parts: runtimeModuleBlobs(previewParts),
+                            urls: runtimeModuleUrls(previewParts),
                           },
                         }
                       : {
-                          srcdoc: value655,
+                          srcdoc: previewDoc,
                           boot: null,
                         };
-                deps.value196.current.ghost = value657;
+                deps.value196.current.ghost = ghost;
                 deps.value195(
-                  (input3?: Dynamic): Dynamic =>
-                    input3 && {
-                      ...input3,
-                      ghost: value657,
+                  (dragState?: Dynamic): Dynamic =>
+                    dragState && {
+                      ...dragState,
+                      ghost: ghost,
                     },
                 );
               })
@@ -1157,54 +1157,54 @@ export function buildDragGhostPreview(deps: { readonly assets: Dynamic; readonly
 
 /** 画布对象悬停在目标画板上时运行：在目标画板中计算落点计划（dropPlanAt）并显示插入预览，请求进行中时只保留最新坐标排队。 */
 export function requestDropPlanPreview(deps: { readonly value177: Dynamic; readonly value203: Dynamic; readonly value206: Dynamic; readonly value87: Dynamic }, event?: Dynamic,
-        options?: Dynamic,
-        context?: Dynamic,
-        value653?: Dynamic,
-        extra?: Dynamic): Dynamic {
+        target?: Dynamic,
+        pointX?: Dynamic,
+        pointY?: Dynamic,
+        placementMode?: Dynamic): Dynamic {
         if (event.inFlight) {
           event.pending = {
-            cx: context,
-            cy: value653,
-            mode: extra,
+            cx: pointX,
+            cy: pointY,
+            mode: placementMode,
           };
           return;
         }
         let html: Dynamic = event.html,
           member: Dynamic = event.member;
         if (!html || !member) return;
-        let entry: Dynamic = deps.value177.current.get(options.file),
-          value654: Dynamic = deps.value87.current.artboards.find(
-            (input?: Dynamic): Dynamic => input.file === options.file,
+        let entry: Dynamic = deps.value177.current.get(target.file),
+          artboard: Dynamic = deps.value87.current.artboards.find(
+            (candidate?: Dynamic): Dynamic => candidate.file === target.file,
           );
-        if (!entry || !value654) return;
-        let entry2: Dynamic = event.laidOut.get(options.file);
-        entry2 ||
-          ((entry2 = entry.isFreeCanvas(html).then(
-            (input?: Dynamic): Dynamic => !input,
+        if (!entry || !artboard) return;
+        let isLaidOutPromise: Dynamic = event.laidOut.get(target.file);
+        isLaidOutPromise ||
+          ((isLaidOutPromise = entry.isFreeCanvas(html).then(
+            (isFree?: Dynamic): Dynamic => !isFree,
             (): Dynamic => false,
           )),
-          event.laidOut.set(options.file, entry2));
-        event.inFlight = Promise.all([options.opened, entry2])
+          event.laidOut.set(target.file, isLaidOutPromise));
+        event.inFlight = Promise.all([target.opened, isLaidOutPromise])
           .then(
-            ([input, input2]: Dynamic): Dynamic =>
-              input && input2
+            ([isOpened, isLaidOut]: Dynamic): Dynamic =>
+              isOpened && isLaidOut
                 ? entry.dropPlanAt(
                     event.token,
                     {
-                      x: context - value654.x,
-                      y: value653 - value654.y,
+                      x: pointX - artboard.x,
+                      y: pointY - artboard.y,
                     },
                     [member],
-                    extra,
+                    placementMode,
                   )
                 : null,
           )
           .then(
-            (input?: Dynamic): Dynamic => {
-              event.target === options &&
-                (!input ||
-                  !input.landing.some(
-                    (input2?: Dynamic): Dynamic => input2.tid === 0,
+            (plan?: Dynamic): Dynamic => {
+              event.target === target &&
+                (!plan ||
+                  !plan.landing.some(
+                    (landingItem?: Dynamic): Dynamic => landingItem.tid === 0,
                   )) &&
                 entry.dropPlanClear(event.token);
             },
@@ -1229,13 +1229,13 @@ export function requestDropPlanPreview(deps: { readonly value177: Dynamic; reado
 
 /** 把画布对象（说明、图形或无框画板）拖过其他画板时运行：建立拖动会话、打开目标画板的移动宿主，并刷新落点预览。 */
 export function trackObjectHoverOverArtboard(deps: { readonly value177: Dynamic; readonly value202: Dynamic; readonly value203: Dynamic; readonly value204: Dynamic; readonly value206: Dynamic; readonly value211: Dynamic; readonly value271: Dynamic; readonly value345: Dynamic }, event?: Dynamic): Dynamic {
-        let current4: Dynamic = deps.value203.current;
-        current4 &&
-          current4.gestureKey !== event.key &&
-          (deps.value204(), (current4 = null));
-        let value653: Dynamic = deps.value202.current || deps.value345.current;
-        if (!current4) {
-          if (!event.target || value653) return;
+        let session: Dynamic = deps.value203.current;
+        session &&
+          session.gestureKey !== event.key &&
+          (deps.value204(), (session = null));
+        let isOtherGestureActive: Dynamic = deps.value202.current || deps.value345.current;
+        if (!session) {
+          if (!event.target || isOtherGestureActive) return;
           let state: Dynamic = {
               ew: event.at.w,
               eh: event.at.h,
@@ -1244,7 +1244,7 @@ export function trackObjectHoverOverArtboard(deps: { readonly value177: Dynamic;
               gx: event.point.x - event.at.x,
               gy: event.point.y - event.at.y,
             },
-            state2: Dynamic = {
+            newSession: Dynamic = {
               gestureKey: event.key,
               token: randomSessionToken(),
               html: null,
@@ -1255,43 +1255,43 @@ export function trackObjectHoverOverArtboard(deps: { readonly value177: Dynamic;
               inFlight: null,
               pending: null,
             };
-          deps.value203.current = state2;
-          current4 = state2;
+          deps.value203.current = newSession;
+          session = newSession;
           deps.value211(event.object)
-            .then((input?: Dynamic): Dynamic => {
-              deps.value203.current === state2 &&
-                ((state2.html = input),
-                (state2.member = input
-                  ? pastedElementGeometry(input, state)
+            .then((objectHtml?: Dynamic): Dynamic => {
+              deps.value203.current === newSession &&
+                ((newSession.html = objectHtml),
+                (newSession.member = objectHtml
+                  ? pastedElementGeometry(objectHtml, state)
                   : null));
             })
             .catch((): Dynamic => {});
         }
-        let value654: Dynamic =
+        let hoverTarget: Dynamic =
           event.target &&
-          !value653 &&
+          !isOtherGestureActive &&
           event.target !== deps.value271.current &&
           event.target !== ("file" in event.object ? event.object.file : null)
             ? event.target
             : null;
-        current4.target && current4.target.file !== value654 && deps.value204();
-        if (!!value654) {
-          if (!current4.target) {
-            let entry: Dynamic = deps.value177.current.get(value654),
-              value655: Dynamic = current4;
-            current4.target = {
-              file: value654,
-              opened: (current4.closing.get(value654) ?? Promise.resolve())
+        session.target && session.target.file !== hoverTarget && deps.value204();
+        if (!!hoverTarget) {
+          if (!session.target) {
+            let entry: Dynamic = deps.value177.current.get(hoverTarget),
+              sessionAtOpen: Dynamic = session;
+            session.target = {
+              file: hoverTarget,
+              opened: (session.closing.get(hoverTarget) ?? Promise.resolve())
                 .then(
                   (): Dynamic =>
-                    entry?.moveHost(value655.token, "open") ?? false,
+                    entry?.moveHost(sessionAtOpen.token, "open") ?? false,
                 )
                 .catch((): Dynamic => false),
             };
           }
           deps.value206(
-            current4,
-            current4.target,
+            session,
+            session.target,
             event.point.x,
             event.point.y,
             event.ctrl ? "keep" : "flow",
@@ -1300,195 +1300,195 @@ export function trackObjectHoverOverArtboard(deps: { readonly value177: Dynamic;
       }
 
 /** 画布对象在某画板上松手时运行（onDropObjectInto）：把说明、图片或无框画板内容作为元素插入目标画板，处理超时、只读与失败提示。 */
-export function dropCanvasObjectIntoArtboard(deps: { readonly callback2: Dynamic; readonly callback7: Dynamic; readonly focusedFileRef: Dynamic; readonly selectionRef: Dynamic; readonly setSelection: Dynamic; readonly setShownFrameSelection: Dynamic; readonly showToast: Dynamic; readonly value144: Dynamic; readonly value155: Dynamic; readonly value157: Dynamic; readonly value177: Dynamic; readonly value188: Dynamic; readonly value189: Dynamic; readonly value19: Dynamic; readonly value202: Dynamic; readonly value203: Dynamic; readonly value204: Dynamic; readonly value213: Dynamic; readonly value271: Dynamic; readonly value276: Dynamic; readonly value345: Dynamic; readonly value432: Dynamic; readonly value459: Dynamic; readonly value73: Dynamic; readonly value87: Dynamic }, input?: Dynamic): Dynamic {
+export function dropCanvasObjectIntoArtboard(deps: { readonly callback2: Dynamic; readonly callback7: Dynamic; readonly focusedFileRef: Dynamic; readonly selectionRef: Dynamic; readonly setSelection: Dynamic; readonly setShownFrameSelection: Dynamic; readonly showToast: Dynamic; readonly value144: Dynamic; readonly value155: Dynamic; readonly value157: Dynamic; readonly value177: Dynamic; readonly value188: Dynamic; readonly value189: Dynamic; readonly value19: Dynamic; readonly value202: Dynamic; readonly value203: Dynamic; readonly value204: Dynamic; readonly value213: Dynamic; readonly value271: Dynamic; readonly value276: Dynamic; readonly value345: Dynamic; readonly value432: Dynamic; readonly value459: Dynamic; readonly value73: Dynamic; readonly value87: Dynamic }, objectDrop?: Dynamic): Dynamic {
         let {
-          target: value653,
-          point: value654,
-          at: value655,
-          ctrl: value656,
-        }: Dynamic = input;
-        if (deps.value345.current || value653 === deps.value271.current) return false;
-        let value657: Dynamic = deps.value87.current.artboards.find(
-            (input2?: Dynamic): Dynamic => input2.file === value653,
+          target: targetFile,
+          point: dropPoint,
+          at: objectBox,
+          ctrl: isKeepMode,
+        }: Dynamic = objectDrop;
+        if (deps.value345.current || targetFile === deps.value271.current) return false;
+        let targetArtboard: Dynamic = deps.value87.current.artboards.find(
+            (candidate?: Dynamic): Dynamic => candidate.file === targetFile,
           ),
-          entry: Dynamic = deps.value177.current.get(value653);
+          entry: Dynamic = deps.value177.current.get(targetFile);
         if (
-          !value657 ||
-          value657.frameless ||
+          !targetArtboard ||
+          targetArtboard.frameless ||
           !entry ||
           deps.value202.current ||
           deps.value155.current > 0
         )
           return false;
-        let value658: Dynamic, value659: Dynamic, value660: Dynamic;
-        if ("note" in input.object) {
-          let value663: Dynamic = (deps.value73.current.annotations ?? []).find(
-            (input2?: Dynamic): Dynamic => input2.id === input.object.note,
+        let loadMarkup: Dynamic, movedSelection: Dynamic, objectKind: Dynamic;
+        if ("note" in objectDrop.object) {
+          let note: Dynamic = (deps.value73.current.annotations ?? []).find(
+            (annotation?: Dynamic): Dynamic => annotation.id === objectDrop.object.note,
           );
-          if (!value663) return false;
-          let value664: Dynamic = deps.callback7(value663);
-          if (!value664) return false;
-          value658 = async (): Promise<Dynamic> => value664;
-          value659 = {
+          if (!note) return false;
+          let noteMarkup: Dynamic = deps.callback7(note);
+          if (!noteMarkup) return false;
+          loadMarkup = async (): Promise<Dynamic> => noteMarkup;
+          movedSelection = {
             files: new Set(),
-            notes: new Set([value663.id]),
+            notes: new Set([note.id]),
           };
-          value660 = value663.kind === "image" ? "image" : "note";
+          objectKind = note.kind === "image" ? "image" : "note";
         } else {
-          let file: Dynamic = input.object.file,
-            entry2: Dynamic = deps.value177.current.get(file);
+          let file: Dynamic = objectDrop.object.file,
+            pieceEntry: Dynamic = deps.value177.current.get(file);
           if (
-            !entry2 ||
+            !pieceEntry ||
             !deps.value73.current.artboards.find(
-              (input2?: Dynamic): Dynamic => input2.file === file,
+              (candidate?: Dynamic): Dynamic => candidate.file === file,
             )?.frameless
           )
             return false;
-          value658 = (): Dynamic => entry2.pieceContent();
-          value659 = {
+          loadMarkup = (): Dynamic => pieceEntry.pieceContent();
+          movedSelection = {
             files: new Set([file]),
             notes: new Set(),
           };
-          value660 = "piece";
+          objectKind = "piece";
         }
-        let value661: Dynamic =
-            deps.value203.current?.gestureKey === input.key
+        let hoverSession: Dynamic =
+            deps.value203.current?.gestureKey === objectDrop.key
               ? deps.value203.current
               : null,
-          value662: Dynamic =
-            !!value661?.target && value661.target.file === value653;
-        value661 && !value662 && deps.value204();
+          isHoverTarget: Dynamic =
+            !!hoverSession?.target && hoverSession.target.file === targetFile;
+        hoverSession && !isHoverTarget && deps.value204();
         deps.value203.current = null;
         deps.value202.current = true;
         (async (): Promise<Dynamic> => {
           try {
-            let value663: Dynamic =
-                (value661?.html ?? null) || (await value658()),
-              value664: Dynamic = value663
-                ? pastedRootElementCount(value663)
+            let objectHtml: Dynamic =
+                (hoverSession?.html ?? null) || (await loadMarkup()),
+              rootCount: Dynamic = objectHtml
+                ? pastedRootElementCount(objectHtml)
                 : 0;
-            if (!value663 || value664 !== 1) {
-              value662 &&
-                value661?.target &&
-                value661.target.opened.then(
-                  (): Dynamic => entry.moveHost(value661.token, "close"),
+            if (!objectHtml || rootCount !== 1) {
+              isHoverTarget &&
+                hoverSession?.target &&
+                hoverSession.target.opened.then(
+                  (): Dynamic => entry.moveHost(hoverSession.token, "close"),
                 );
               deps.value188(
-                value663
+                objectHtml
                   ? uiMessage("canvas.designCanvas.nothingMovedThisPieceHolds") +
-                      String(value664) +
+                      String(rootCount) +
                       " elements; a piece with one element can join an artboard."
                   : uiMessage("canvas.designCanvas.nothingMovedThis") +
-                      value660 +
+                      objectKind +
                       " has nothing that can go into an artboard.",
               );
               return;
             }
-            let value665: Dynamic = value654.x - value657.x,
-              value666: Dynamic = value654.y - value657.y,
+            let localX: Dynamic = dropPoint.x - targetArtboard.x,
+              localY: Dynamic = dropPoint.y - targetArtboard.y,
               state: Dynamic = {
-                ew: value655.w,
-                eh: value655.h,
+                ew: objectBox.w,
+                eh: objectBox.h,
                 ox: 0,
                 oy: 0,
-                gx: value654.x - value655.x,
-                gy: value654.y - value655.y,
+                gx: dropPoint.x - objectBox.x,
+                gy: dropPoint.y - objectBox.y,
               },
-              value667: Dynamic =
-                value662 && value661
-                  ? value661.token
+              dragToken: Dynamic =
+                isHoverTarget && hoverSession
+                  ? hoverSession.token
                   : randomSessionToken(),
-              flag2: Dynamic = false,
-              flag3: Dynamic = false,
-              value668: Dynamic = null,
-              value669: Dynamic = pastedElementGeometry(
-                value663,
+              didLand: Dynamic = false,
+              didCommitViaPlan: Dynamic = false,
+              planSelection: Dynamic = null,
+              geometry: Dynamic = pastedElementGeometry(
+                objectHtml,
                 state,
               );
             if (
-              value669 &&
+              geometry &&
               canFreezeSinglePaste(
                 false,
                 [0],
-                value663,
+                objectHtml,
                 false,
               ) &&
               canFreezeSinglePaste(
                 false,
                 [0],
-                value663,
-                await entry.isFreeCanvas(value663),
+                objectHtml,
+                await entry.isFreeCanvas(objectHtml),
               )
             ) {
-              let value674: Dynamic = Date.now() + 1500,
-                value675: Dynamic = Symbol(uiMessage("canvas.designCanvas.timedOut")),
-                callback15: Dynamic = (input2?: Dynamic): Dynamic => {
+              let deadline: Dynamic = Date.now() + 1500,
+                timedOutMarker: Dynamic = Symbol(uiMessage("canvas.designCanvas.timedOut")),
+                withDeadline: Dynamic = (task?: Dynamic): Dynamic => {
                   let index: Dynamic = 0,
                     promise: Dynamic = new Promise(
-                      (input3?: Dynamic): Dynamic => {
+                      (resolve?: Dynamic): Dynamic => {
                         index = (window as Dynamic).setTimeout(
-                          (): Dynamic => input3(value675),
-                          Math.max(0, value674 - Date.now()),
+                          (): Dynamic => resolve(timedOutMarker),
+                          Math.max(0, deadline - Date.now()),
                         );
                       },
                     );
                   return Promise.race([
-                    input2.catch((): Dynamic => value675),
+                    task.catch((): Dynamic => timedOutMarker),
                     promise,
                   ]).finally(
                     (): Dynamic => (window as Dynamic).clearTimeout(index),
                   );
                 };
               try {
-                let value676: Dynamic = await callback15(
-                    value662 && value661?.target
-                      ? value661.target.opened
+                let openResult: Dynamic = await withDeadline(
+                    isHoverTarget && hoverSession?.target
+                      ? hoverSession.target.opened
                       : (
-                          value661?.closing.get(value653) ?? Promise.resolve()
+                          hoverSession?.closing.get(targetFile) ?? Promise.resolve()
                         ).then(
-                          (): Dynamic => entry.moveHost(value667, "open"),
+                          (): Dynamic => entry.moveHost(dragToken, "open"),
                         ),
                   ),
-                  value677: Dynamic =
-                    value676 === true
-                      ? await callback15(
+                  dropPlan: Dynamic =
+                    openResult === true
+                      ? await withDeadline(
                           entry.dropPlanAt(
-                            value667,
+                            dragToken,
                             {
-                              x: value665,
-                              y: value666,
+                              x: localX,
+                              y: localY,
                             },
-                            [value669],
-                            value656 ? "keep" : "flow",
+                            [geometry],
+                            isKeepMode ? "keep" : "flow",
                           ),
                         )
-                      : value676;
-                if (value677 === value675) {
+                      : openResult;
+                if (dropPlan === timedOutMarker) {
                   deps.value188(
                     uiMessage("canvas.designCanvas.nothingMoved2") +
-                      deps.callback2(value653) +
+                      deps.callback2(targetFile) +
                       " did not answer; try the drag again.",
                   );
                   return;
                 }
-                let value678: Dynamic = value677
-                  ? (value677.landing.find(
-                      (input2?: Dynamic): Dynamic => input2.tid === 0,
+                let landingItem: Dynamic = dropPlan
+                  ? (dropPlan.landing.find(
+                      (item?: Dynamic): Dynamic => item.tid === 0,
                     ) ?? null)
                   : null;
-                if (value677 && value678) {
-                  flag3 = true;
-                  let value679: Dynamic = await deps.value157({
-                    token: value667,
+                if (dropPlan && landingItem) {
+                  didCommitViaPlan = true;
+                  let commitResult: Dynamic = await deps.value157({
+                    token: dragToken,
                     plans: new Map(),
                     unanswered: [],
                     canvasMoved: false,
                     copy: false,
                     canvas: (): Dynamic => {},
                     travel: {
-                      target: value653,
+                      target: targetFile,
                       pureTarget: true,
-                      plan: value677,
+                      plan: dropPlan,
                       travellers: [
                         {
                           file: "<canvas>",
@@ -1497,7 +1497,7 @@ export function dropCanvasObjectIntoArtboard(deps: { readonly callback2: Dynamic
                             {
                               tid: 0,
                               index: 0,
-                              html: value663,
+                              html: objectHtml,
                             },
                           ],
                         },
@@ -1505,119 +1505,119 @@ export function dropCanvasObjectIntoArtboard(deps: { readonly callback2: Dynamic
                       endHome: (): Dynamic => {},
                     },
                   });
-                  flag2 = value679.written.includes(value653);
-                  flag2 &&
-                    ((value668 = value679.selection),
-                    entry.dropPlanClear(value667, true));
+                  didLand = commitResult.written.includes(targetFile);
+                  didLand &&
+                    ((planSelection = commitResult.selection),
+                    entry.dropPlanClear(dragToken, true));
                 }
               } finally {
-                let callback16: Dynamic = (): Dynamic => {
-                  entry.dropPlanClear(value667);
-                  entry.moveHost(value667, "close");
+                let closeMoveHost: Dynamic = (): Dynamic => {
+                  entry.dropPlanClear(dragToken);
+                  entry.moveHost(dragToken, "close");
                 };
-                flag2
-                  ? (window as Dynamic).setTimeout(callback16, 150)
-                  : callback16();
+                didLand
+                  ? (window as Dynamic).setTimeout(closeMoveHost, 150)
+                  : closeMoveHost();
               }
             }
-            if (!flag2 && flag3) return;
-            let value670: Dynamic = null;
-            if (!flag2) {
-              let value674: Dynamic = deps.value432.current?.group([value653], {
-                bound: value667,
+            if (!didLand && didCommitViaPlan) return;
+            let insertedTids: Dynamic = null;
+            if (!didLand) {
+              let historyGroup: Dynamic = deps.value432.current?.group([targetFile], {
+                bound: dragToken,
               });
               try {
-                let value675: Dynamic = await entry.insertHtml(
-                  positionPastedHtml(value663, {
+                let newTids: Dynamic = await entry.insertHtml(
+                  positionPastedHtml(objectHtml, {
                     ew: state.ew,
-                    ox: value665 - state.gx,
-                    oy: value666 - state.gy,
+                    ox: localX - state.gx,
+                    oy: localY - state.gy,
                   }),
                   "root-end",
                 );
-                flag2 = value675.length > 0;
-                flag2 &&
-                  ((value670 = value675),
-                  entry.setShownSelection(value675, deps.value19(value653)));
+                didLand = newTids.length > 0;
+                didLand &&
+                  ((insertedTids = newTids),
+                  entry.setShownSelection(newTids, deps.value19(targetFile)));
               } finally {
-                value674?.settled(value653);
-                value674?.end();
-                if (value662 && value661?.target) {
-                  let target: Dynamic = value661.target;
-                  entry.dropPlanClear(value661.token);
+                historyGroup?.settled(targetFile);
+                historyGroup?.end();
+                if (isHoverTarget && hoverSession?.target) {
+                  let target: Dynamic = hoverSession.target;
+                  entry.dropPlanClear(hoverSession.token);
                   target.opened
                     .then(
-                      (): Dynamic => entry.moveHost(value661.token, "close"),
+                      (): Dynamic => entry.moveHost(hoverSession.token, "close"),
                     )
                     .catch((): Dynamic => false);
                 }
               }
             }
-            if (!flag2) {
+            if (!didLand) {
               deps.value188(uiMessage("canvas.designCanvas.couldNotMoveNothingChanged"));
               return;
             }
             deps.value276.current = {
-              file: value653,
+              file: targetFile,
               at: Date.now(),
             };
-            let value671: Dynamic = value670
-                ? selectionFromElements(value653, {
-                    name: deps.value19(value653),
-                    tids: value670,
+            let selectionAfter: Dynamic = insertedTids
+                ? selectionFromElements(targetFile, {
+                    name: deps.value19(targetFile),
+                    tids: insertedTids,
                     rect: null,
-                    count: value670.length,
+                    count: insertedTids.length,
                   })
-                : (value668 ?? deps.selectionRef.current),
-              value672: Dynamic = filterSelectedAnnotations(
+                : (planSelection ?? deps.selectionRef.current),
+              filteredSelection: Dynamic = filterSelectedAnnotations(
                 filterSelectedArtboards(
-                  value671,
-                  (input2?: Dynamic): Dynamic => !value659.files.has(input2),
+                  selectionAfter,
+                  (file?: Dynamic): Dynamic => !movedSelection.files.has(file),
                 ),
-                (input2?: Dynamic): Dynamic => !value659.notes.has(input2),
+                (noteId?: Dynamic): Dynamic => !movedSelection.notes.has(noteId),
               ),
-              value673: Dynamic =
-                value659.files.size > 0 ? deps.value144(value667) : null;
-            if (!deps.value459.current(value659, value667)) {
-              await deps.value213(value653, value667, value660);
+              flushPromise: Dynamic =
+                movedSelection.files.size > 0 ? deps.value144(dragToken) : null;
+            if (!deps.value459.current(movedSelection, dragToken)) {
+              await deps.value213(targetFile, dragToken, objectKind);
               deps.value188(
                 uiMessage("canvas.designCanvas.nothingMovedThe") +
-                  value660 +
+                  objectKind +
                   " could not leave the canvas.",
               );
               return;
             }
-            deps.value189(uiMessage("canvas.designCanvas.movedInto") + deps.callback2(value653));
-            if (value673) {
+            deps.value189(uiMessage("canvas.designCanvas.movedInto") + deps.callback2(targetFile));
+            if (flushPromise) {
               deps.value155.current++;
               try {
-                await value673;
+                await flushPromise;
               } finally {
                 deps.value155.current--;
               }
             }
-            deps.setSelection(value672);
+            deps.setSelection(filteredSelection);
             (window as Dynamic).setTimeout((): Dynamic => {
-              deps.setSelection(value672);
-              let value674: Dynamic =
-                value672.elements.get(value653)?.tids ?? null;
-              value653 === deps.focusedFileRef.current
-                ? deps.setShownFrameSelection(value653, value674)
+              deps.setSelection(filteredSelection);
+              let shownTids: Dynamic =
+                filteredSelection.elements.get(targetFile)?.tids ?? null;
+              targetFile === deps.focusedFileRef.current
+                ? deps.setShownFrameSelection(targetFile, shownTids)
                 : entry.setShownSelection(
-                    value674,
-                    value674 ? deps.value19(value653) : null,
+                    shownTids,
+                    shownTids ? deps.value19(targetFile) : null,
                   );
             }, 160);
-          } catch (value663: Dynamic) {
+          } catch (error: Dynamic) {
             deps.showToast(
-              uiMessage("canvas.designCanvas.couldnTFinishTheDrop2") + String(value663),
+              uiMessage("canvas.designCanvas.couldnTFinishTheDrop2") + String(error),
               "error",
             );
-            if (value662 && value661?.target) {
-              let target: Dynamic = value661.target;
-              entry.dropPlanClear(value661.token);
+            if (isHoverTarget && hoverSession?.target) {
+              let target: Dynamic = hoverSession.target;
+              entry.dropPlanClear(hoverSession.token);
               target.opened
-                .then((): Dynamic => entry.moveHost(value661.token, "close"))
+                .then((): Dynamic => entry.moveHost(hoverSession.token, "close"))
                 .catch((): Dynamic => false);
             }
           } finally {
@@ -1628,61 +1628,61 @@ export function dropCanvasObjectIntoArtboard(deps: { readonly callback2: Dynamic
       }
 
 /** 从聚焦画板拖出的元素松手时运行：落在空白处则新建画板，落在另一画板则移动或复制进去，失败时回滚并提示。 */
-export function dropElementDragAtCanvasPoint(deps: { readonly abandonSelectionGesture: Dynamic; readonly callback2: Dynamic; readonly callback3: Dynamic; readonly doc: Dynamic; readonly setSelection: Dynamic; readonly showToast: Dynamic; readonly supportsLoadState: Dynamic; readonly value125: Dynamic; readonly value127: Dynamic; readonly value155: Dynamic; readonly value156: Dynamic; readonly value157: Dynamic; readonly value177: Dynamic; readonly value188: Dynamic; readonly value189: Dynamic; readonly value19: Dynamic; readonly value202: Dynamic; readonly value203: Dynamic; readonly value271: Dynamic; readonly value276: Dynamic; readonly value345: Dynamic; readonly value396: Dynamic; readonly value432: Dynamic; readonly value62: Dynamic; readonly value73: Dynamic; readonly value87: Dynamic; readonly value98: Dynamic }, input?: Dynamic,
-        options?: Dynamic,
-        context?: Dynamic,
-        value653?: Dynamic): Dynamic {
-        let value654: Dynamic =
-          deps.value203.current?.gestureKey === input.key
+export function dropElementDragAtCanvasPoint(deps: { readonly abandonSelectionGesture: Dynamic; readonly callback2: Dynamic; readonly callback3: Dynamic; readonly doc: Dynamic; readonly setSelection: Dynamic; readonly showToast: Dynamic; readonly supportsLoadState: Dynamic; readonly value125: Dynamic; readonly value127: Dynamic; readonly value155: Dynamic; readonly value156: Dynamic; readonly value157: Dynamic; readonly value177: Dynamic; readonly value188: Dynamic; readonly value189: Dynamic; readonly value19: Dynamic; readonly value202: Dynamic; readonly value203: Dynamic; readonly value271: Dynamic; readonly value276: Dynamic; readonly value345: Dynamic; readonly value396: Dynamic; readonly value432: Dynamic; readonly value62: Dynamic; readonly value73: Dynamic; readonly value87: Dynamic; readonly value98: Dynamic }, elementDrag?: Dynamic,
+        dropX?: Dynamic,
+        dropY?: Dynamic,
+        isCopy?: Dynamic): Dynamic {
+        let hoverSession: Dynamic =
+          deps.value203.current?.gestureKey === elementDrag.key
             ? deps.value203.current
             : null;
         deps.value203.current = null;
-        let callback15: Dynamic = (input2?: Dynamic): Dynamic => {
-          let value656: Dynamic = value654?.target;
-          if (!value654 || !value656 || value656.file === input2) return;
-          let entry3: Dynamic = deps.value177.current.get(value656.file);
-          entry3?.dropPlanClear(value654.token);
-          value654.closing.set(
-            value656.file,
-            value656.opened
-              .then((): Dynamic => entry3?.moveHost(value654.token, "close"))
+        let closeHoverTarget: Dynamic = (keepFile?: Dynamic): Dynamic => {
+          let hoverTarget: Dynamic = hoverSession?.target;
+          if (!hoverSession || !hoverTarget || hoverTarget.file === keepFile) return;
+          let targetEntry: Dynamic = deps.value177.current.get(hoverTarget.file);
+          targetEntry?.dropPlanClear(hoverSession.token);
+          hoverSession.closing.set(
+            hoverTarget.file,
+            hoverTarget.opened
+              .then((): Dynamic => targetEntry?.moveHost(hoverSession.token, "close"))
               .catch((): Dynamic => false),
           );
-          value654.target = null;
+          hoverSession.target = null;
         };
         if (deps.value345.current) {
-          callback15();
+          closeHoverTarget();
           deps.value188(
             uiMessage("canvas.designCanvas.nothingMovedOnlyThisArtboard"),
           );
           return;
         }
-        let value655: Dynamic = [...deps.value87.current.artboards]
+        let targetArtboard: Dynamic = [...deps.value87.current.artboards]
           .reverse()
           .find(
-            (input2?: Dynamic): Dynamic =>
-              !(input2.frameless && input2.file !== deps.value125.current) &&
-              options >= input2.x &&
-              options <= input2.x + input2.w &&
-              context >= input2.y &&
-              context <= input2.y + input2.h,
+            (candidate?: Dynamic): Dynamic =>
+              !(candidate.frameless && candidate.file !== deps.value125.current) &&
+              dropX >= candidate.x &&
+              dropX <= candidate.x + candidate.w &&
+              dropY >= candidate.y &&
+              dropY <= candidate.y + candidate.h,
           );
-        callback15(value655?.file);
-        if (value655 != null && value655.file === deps.value271.current) {
-          callback15();
+        closeHoverTarget(targetArtboard?.file);
+        if (targetArtboard != null && targetArtboard.file === deps.value271.current) {
+          closeHoverTarget();
           deps.value188(
             uiMessage("canvas.designCanvas.nothingMovedThatArtboardIs"),
           );
           return;
         }
-        if (!value655) {
-          let entry3: Dynamic = deps.value177.current.get(input.file);
-          if (!entry3 || deps.value202.current || deps.value155.current > 0) return;
+        if (!targetArtboard) {
+          let sourceEntry: Dynamic = deps.value177.current.get(elementDrag.file);
+          if (!sourceEntry || deps.value202.current || deps.value155.current > 0) return;
           deps.value202.current = true;
-          let value656: Dynamic;
+          let releaseLock: Dynamic;
           (async (): Promise<Dynamic> => {
             try {
-              let value657: Dynamic = input.box ?? {
+              let liftBox: Dynamic = elementDrag.box ?? {
                   w: 320,
                   h: 200,
                   ew: 320,
@@ -1692,10 +1692,10 @@ export function dropElementDragAtCanvasPoint(deps: { readonly abandonSelectionGe
                   gx: 160,
                   gy: 100,
                 },
-                value658: Dynamic = entry3.serializeSelection(input.tids, {
-                  lift: value657,
+                markup: Dynamic = sourceEntry.serializeSelection(elementDrag.tids, {
+                  lift: liftBox,
                 });
-              if (!value658) {
+              if (!markup) {
                 deps.value188(
                   uiMessage("canvas.designCanvas.nothingMovedRepeatedOrRoot"),
                 );
@@ -1714,247 +1714,247 @@ export function dropElementDragAtCanvasPoint(deps: { readonly abandonSelectionGe
                 );
                 return;
               }
-              await entry3.flushPending();
-              let value659: Dynamic =
+              await sourceEntry.flushPending();
+              let homeSource: Dynamic =
                   (await getKvClient().get(
-                    PlatformFileContentHandler_4(input.file),
+                    PlatformFileContentHandler_4(elementDrag.file),
                   )) ??
-                  files[input.file] ??
+                  files[elementDrag.file] ??
                   "",
-                value660: Dynamic = uniqueArtboardFile(
+                newFile: Dynamic = uniqueArtboardFile(
                   files,
                   "Piece",
                   deps.supportsLoadState,
                 ),
-                value661: Dynamic = buildDcDocument(
-                  value658,
-                  typeof value659 == "string" ? value659 : "",
+                newDocument: Dynamic = buildDcDocument(
+                  markup,
+                  typeof homeSource == "string" ? homeSource : "",
                 );
               await getKvClient().set(
-                PlatformFileContentHandler_4(value660),
-                value661,
+                PlatformFileContentHandler_4(newFile),
+                newDocument,
               );
-              deps.value127.current.set(value660, Date.now());
+              deps.value127.current.set(newFile, Date.now());
               let state: Dynamic = {
-                  file: value660,
-                  x: Math.round(options - value657.gx),
-                  y: Math.round(context - value657.gy),
+                  file: newFile,
+                  x: Math.round(dropX - liftBox.gx),
+                  y: Math.round(dropY - liftBox.gy),
                   w: Math.min(
-                    PlatformFileContentLimit_6,
+                    maxArtboardSize,
                     Math.max(
-                      PlatformFileContentConstant_17,
-                      value657.w,
+                      minArtboardSize,
+                      liftBox.w,
                     ),
                   ),
                   h: Math.min(
-                    PlatformFileContentLimit_6,
+                    maxArtboardSize,
                     Math.max(
-                      PlatformFileContentConstant_17,
-                      value657.h,
+                      minArtboardSize,
+                      liftBox.h,
                     ),
                   ),
                   title: uniqueElementArtboardTitle(
-                    input.label,
+                    elementDrag.label,
                     deps.value73.current.artboards,
                   ),
                   frameless: true,
                   ...deps.callback3(),
                 },
-                value662: Dynamic = value653
+                historyToken: Dynamic = isCopy
                   ? undefined
                   : randomSessionToken();
-              value653 ||
-                (value656 = deps.value156(CanvasWorkingStateConstant_8));
+              isCopy ||
+                (releaseLock = deps.value156(dragDropLockKind));
               deps.value396.current(
                 {
                   kind: "add",
                   entries: [
                     {
-                      file: value660,
-                      src: value661,
+                      file: newFile,
+                      src: newDocument,
                       spec: state,
                     },
                   ],
                 },
-                new Set([value660]),
+                new Set([newFile]),
                 undefined,
-                value662,
+                historyToken,
               );
               deps.value98({
                 artboards: [
                   ...deps.value73.current.artboards.filter(
-                    (input2?: Dynamic): Dynamic => input2.file !== value660,
+                    (candidate?: Dynamic): Dynamic => candidate.file !== newFile,
                   ),
                   state,
                 ],
               });
-              if (!value653) {
-                let value663: Dynamic = deps.value432.current?.group(
-                    [input.file],
+              if (!isCopy) {
+                let historyGroup: Dynamic = deps.value432.current?.group(
+                    [elementDrag.file],
                     {
-                      bound: value662,
+                      bound: historyToken,
                       atomic: true,
                     },
                   ),
-                  flag2: Dynamic = false;
+                  didRemove: Dynamic = false;
                 try {
-                  flag2 = await entry3.removeSelection(input.tids);
+                  didRemove = await sourceEntry.removeSelection(elementDrag.tids);
                 } finally {
-                  value663?.end();
+                  historyGroup?.end();
                 }
-                if (!flag2) {
+                if (!didRemove) {
                   deps.value188(
                     uiMessage("canvas.designCanvas.copiedOntoTheCanvasThe"),
                   );
                   return;
                 }
               }
-              deps.value189((value653 ? "Copied" : "Moved") + " onto the canvas");
+              deps.value189((isCopy ? "Copied" : "Moved") + " onto the canvas");
               deps.abandonSelectionGesture();
               deps.value62();
               deps.setSelection(
-                selectionFromArtboards(new Set([value660])),
+                selectionFromArtboards(new Set([newFile])),
               );
-            } catch (value657: Dynamic) {
+            } catch (error: Dynamic) {
               deps.showToast(
-                uiMessage("canvas.designCanvas.couldnTFinishTheDrop2") + String(value657),
+                uiMessage("canvas.designCanvas.couldnTFinishTheDrop2") + String(error),
                 "error",
               );
             } finally {
-              value656?.();
+              releaseLock?.();
               deps.value202.current = false;
             }
           })();
           return;
         }
-        if (value655.file === input.file) {
+        if (targetArtboard.file === elementDrag.file) {
           deps.value188(
             uiMessage("canvas.designCanvas.releasedOverTheSameArtboard"),
           );
           return;
         }
-        let entry: Dynamic = deps.value177.current.get(input.file),
-          entry2: Dynamic = deps.value177.current.get(value655.file);
-        if (!entry || !entry2 || deps.value202.current || deps.value155.current > 0) {
-          callback15();
+        let entry: Dynamic = deps.value177.current.get(elementDrag.file),
+          targetFrameEntry: Dynamic = deps.value177.current.get(targetArtboard.file);
+        if (!entry || !targetFrameEntry || deps.value202.current || deps.value155.current > 0) {
+          closeHoverTarget();
           return;
         }
         deps.value202.current = true;
         (async (): Promise<Dynamic> => {
-          let value656: Dynamic = value654?.target?.file === value655.file,
-            value657: Dynamic,
-            value658: Dynamic;
+          let isHoverTarget: Dynamic = hoverSession?.target?.file === targetArtboard.file,
+            historyGroup: Dynamic,
+            releaseLock: Dynamic;
           try {
-            let value659: Dynamic = entry.serializeSelection(input.tids, {
+            let markup: Dynamic = entry.serializeSelection(elementDrag.tids, {
               bakeProps: true,
               vals: await entry.renderDefaults(),
             });
-            if (!value659) {
+            if (!markup) {
               deps.value188(
                 uiMessage("canvas.designCanvas.nothingMovedRepeatedOrRoot"),
               );
               return;
             }
-            let box: Dynamic = input.box,
-              value660: Dynamic = options - value655.x,
-              value661: Dynamic = context - value655.y,
-              value662: Dynamic = box
-                ? pastedElementGeometry(value659, box)
+            let box: Dynamic = elementDrag.box,
+              localX: Dynamic = dropX - targetArtboard.x,
+              localY: Dynamic = dropY - targetArtboard.y,
+              geometry: Dynamic = box
+                ? pastedElementGeometry(markup, box)
                 : null,
-              flag2: Dynamic = false;
+              useAbsolutePosition: Dynamic = false;
             if (
-              value662 &&
+              geometry &&
               canFreezeSinglePaste(
-                value653,
-                input.tids,
-                value659,
+                isCopy,
+                elementDrag.tids,
+                markup,
                 false,
               ) &&
               canFreezeSinglePaste(
-                value653,
-                input.tids,
-                value659,
-                await entry2.isFreeCanvas(value659),
+                isCopy,
+                elementDrag.tids,
+                markup,
+                await targetFrameEntry.isFreeCanvas(markup),
               )
             ) {
-              let value665: Dynamic =
-                value656 && value654
-                  ? value654.token
+              let dragSessionToken: Dynamic =
+                isHoverTarget && hoverSession
+                  ? hoverSession.token
                   : randomSessionToken();
-              value656 = false;
-              let value666: Dynamic = Date.now() + 1500,
-                value667: Dynamic = Symbol(uiMessage("canvas.designCanvas.timedOut")),
-                callback16: Dynamic = (input2?: Dynamic): Dynamic => {
+              isHoverTarget = false;
+              let deadline: Dynamic = Date.now() + 1500,
+                timedOutMarker: Dynamic = Symbol(uiMessage("canvas.designCanvas.timedOut")),
+                withDeadline: Dynamic = (task?: Dynamic): Dynamic => {
                   let index: Dynamic = 0,
                     promise: Dynamic = new Promise(
-                      (input3?: Dynamic): Dynamic => {
+                      (resolve?: Dynamic): Dynamic => {
                         index = (window as Dynamic).setTimeout(
-                          (): Dynamic => input3(value667),
-                          Math.max(0, value666 - Date.now()),
+                          (): Dynamic => resolve(timedOutMarker),
+                          Math.max(0, deadline - Date.now()),
                         );
                       },
                     );
                   return Promise.race([
-                    input2.catch((): Dynamic => value667),
+                    task.catch((): Dynamic => timedOutMarker),
                     promise,
                   ]).finally(
                     (): Dynamic => (window as Dynamic).clearTimeout(index),
                   );
                 },
-                flag3: Dynamic = false;
+                didCommit: Dynamic = false;
               try {
-                let value668: Dynamic = await callback16(
+                let openResult: Dynamic = await withDeadline(
                     (
-                      value654?.closing.get(value655.file) ??
+                      hoverSession?.closing.get(targetArtboard.file) ??
                       Promise.resolve()
-                    ).then((): Dynamic => entry2.moveHost(value665, "open")),
+                    ).then((): Dynamic => targetFrameEntry.moveHost(dragSessionToken, "open")),
                   ),
-                  value669: Dynamic =
-                    value668 === true
-                      ? await callback16(
-                          entry2.dropPlanAt(
-                            value665,
+                  dropPlan: Dynamic =
+                    openResult === true
+                      ? await withDeadline(
+                          targetFrameEntry.dropPlanAt(
+                            dragSessionToken,
                             {
-                              x: value660,
-                              y: value661,
+                              x: localX,
+                              y: localY,
                             },
-                            [value662],
-                            input.ctrl ? "keep" : "flow",
+                            [geometry],
+                            elementDrag.ctrl ? "keep" : "flow",
                           ),
                         )
-                      : value668;
-                if (value669 === value667) {
+                      : openResult;
+                if (dropPlan === timedOutMarker) {
                   deps.value188(
                     uiMessage("canvas.designCanvas.nothingMoved2") +
-                      deps.callback2(value655.file) +
+                      deps.callback2(targetArtboard.file) +
                       " did not answer; try the drag again.",
                   );
                   return;
                 }
-                let value670: Dynamic = value669
-                  ? (value669.landing.find(
-                      (input2?: Dynamic): Dynamic => input2.tid === 0,
+                let landingItem: Dynamic = dropPlan
+                  ? (dropPlan.landing.find(
+                      (item?: Dynamic): Dynamic => item.tid === 0,
                     ) ?? null)
                   : null;
-                flag2 = !value670;
-                if (value669 && value670) {
-                  let value671: Dynamic = await deps.value157({
-                    token: value665,
+                useAbsolutePosition = !landingItem;
+                if (dropPlan && landingItem) {
+                  let commitResult: Dynamic = await deps.value157({
+                    token: dragSessionToken,
                     plans: new Map(),
                     unanswered: [],
                     canvasMoved: false,
                     copy: false,
                     canvas: (): Dynamic => {},
                     travel: {
-                      target: value655.file,
+                      target: targetArtboard.file,
                       pureTarget: true,
-                      plan: value669,
+                      plan: dropPlan,
                       travellers: [
                         {
-                          file: input.file,
+                          file: elementDrag.file,
                           members: [
                             {
-                              tid: input.tids[0],
+                              tid: elementDrag.tids[0],
                               index: 0,
                             },
                           ],
@@ -1964,112 +1964,112 @@ export function dropElementDragAtCanvasPoint(deps: { readonly abandonSelectionGe
                     },
                   });
                   deps.value276.current = {
-                    file: value655.file,
+                    file: targetArtboard.file,
                     at: Date.now(),
                   };
-                  flag3 = value671.written.includes(value655.file);
-                  flag3 && entry2.dropPlanClear(value665, true);
-                  flag3 &&
-                    value671.written.includes(input.file) &&
-                    deps.value189(uiMessage("canvas.designCanvas.movedTo") + deps.callback2(value655.file));
+                  didCommit = commitResult.written.includes(targetArtboard.file);
+                  didCommit && targetFrameEntry.dropPlanClear(dragSessionToken, true);
+                  didCommit &&
+                    commitResult.written.includes(elementDrag.file) &&
+                    deps.value189(uiMessage("canvas.designCanvas.movedTo") + deps.callback2(targetArtboard.file));
                   return;
                 }
               } finally {
-                let callback17: Dynamic = (): Dynamic => {
-                  entry2.dropPlanClear(value665);
-                  entry2.moveHost(value665, "close");
+                let closeMoveHost: Dynamic = (): Dynamic => {
+                  targetFrameEntry.dropPlanClear(dragSessionToken);
+                  targetFrameEntry.moveHost(dragSessionToken, "close");
                 };
-                flag3
-                  ? (window as Dynamic).setTimeout(callback17, 150)
-                  : callback17();
+                didCommit
+                  ? (window as Dynamic).setTimeout(closeMoveHost, 150)
+                  : closeMoveHost();
               }
             }
-            let value663: Dynamic = box
+            let pasteOffset: Dynamic = box
               ? {
                   ew: box.ew,
-                  ox: value660 - box.gx + box.ox,
-                  oy: value661 - box.gy + box.oy,
+                  ox: localX - box.gx + box.ox,
+                  oy: localY - box.gy + box.oy,
                 }
               : {
-                  ox: value660,
-                  oy: value661,
+                  ox: localX,
+                  oy: localY,
                 };
-            value653 ||
-              ((value657 = deps.value432.current?.group(
-                [value655.file, input.file],
+            isCopy ||
+              ((historyGroup = deps.value432.current?.group(
+                [targetArtboard.file, elementDrag.file],
                 {
                   atomic: true,
-                  holder: value655.file,
-                  waiting: [input.file],
+                  holder: targetArtboard.file,
+                  waiting: [elementDrag.file],
                 },
               )),
-              (value658 = deps.value156(CanvasWorkingStateConstant_8)));
-            let value664: Dynamic = flag2
-              ? await entry2.insertHtml(
-                  positionPastedHtml(value659, value663),
+              (releaseLock = deps.value156(dragDropLockKind)));
+            let insertedTids: Dynamic = useAbsolutePosition
+              ? await targetFrameEntry.insertHtml(
+                  positionPastedHtml(markup, pasteOffset),
                   "root-end",
                 )
-              : await entry2.insertHtml(value659, "root-end", value663);
+              : await targetFrameEntry.insertHtml(markup, "root-end", pasteOffset);
             deps.value276.current = {
-              file: value655.file,
+              file: targetArtboard.file,
               at: Date.now(),
             };
-            if (value664.length === 0) {
+            if (insertedTids.length === 0) {
               deps.value188(uiMessage("canvas.designCanvas.couldNotMoveNothingChanged"));
               return;
             }
-            if (value653)
+            if (isCopy)
               deps.value189(
-                uiMessage("canvas.designCanvas.copiedTo") + value655.file.replace(/\.dc\.html$/, ""),
+                uiMessage("canvas.designCanvas.copiedTo") + targetArtboard.file.replace(/\.dc\.html$/, ""),
               );
             else {
-              value657?.admit(input.file);
-              if (!(await entry.removeSelection(input.tids))) {
-                value657?.end();
-                let value665: Dynamic =
-                    value657?.discard(value655.file) ?? null,
-                  value666: Dynamic = value665
-                    ? await entry2
-                        .applyHistory(deps.value19(value655.file), "undo")
+              historyGroup?.admit(elementDrag.file);
+              if (!(await entry.removeSelection(elementDrag.tids))) {
+                historyGroup?.end();
+                let discardHistory: Dynamic =
+                    historyGroup?.discard(targetArtboard.file) ?? null,
+                  didUndo: Dynamic = discardHistory
+                    ? await targetFrameEntry
+                        .applyHistory(deps.value19(targetArtboard.file), "undo")
                         .catch((): Dynamic => false)
                     : false;
-                value665 && !value666 && value665();
-                value666 && entry2.dropRedo();
+                discardHistory && !didUndo && discardHistory();
+                didUndo && targetFrameEntry.dropRedo();
                 deps.value188(
-                  value666
+                  didUndo
                     ? uiMessage("canvas.designCanvas.couldNotMoveReverted")
                     : uiMessage("canvas.designCanvas.moveFailedHalfwayCheckBoth"),
                 );
                 return;
               }
-              deps.value189(uiMessage("canvas.designCanvas.movedTo") + deps.callback2(value655.file));
+              deps.value189(uiMessage("canvas.designCanvas.movedTo") + deps.callback2(targetArtboard.file));
             }
             deps.abandonSelectionGesture();
             deps.setSelection(
               setCanvasElementSelection(
                 emptyCanvasSelection,
-                value655.file,
+                targetArtboard.file,
                 {
-                  name: deps.value19(value655.file),
-                  tids: value664,
+                  name: deps.value19(targetArtboard.file),
+                  tids: insertedTids,
                   rect: null,
-                  count: value664.length,
+                  count: insertedTids.length,
                 },
                 false,
               ),
             );
-            entry2.setShownSelection(value664, deps.value19(value655.file));
+            targetFrameEntry.setShownSelection(insertedTids, deps.value19(targetArtboard.file));
           } finally {
-            value657?.end();
-            value658?.();
-            if (value656 && value654) {
-              entry2.dropPlanClear(value654.token);
-              let target: Dynamic = value654.target;
-              value654.closing.set(
-                value655.file,
+            historyGroup?.end();
+            releaseLock?.();
+            if (isHoverTarget && hoverSession) {
+              targetFrameEntry.dropPlanClear(hoverSession.token);
+              let target: Dynamic = hoverSession.target;
+              hoverSession.closing.set(
+                targetArtboard.file,
                 (target?.opened ?? Promise.resolve(true))
                   .then(
-                    (): Dynamic => entry2.moveHost(value654.token, "close"),
+                    (): Dynamic => targetFrameEntry.moveHost(hoverSession.token, "close"),
                   )
                   .catch((): Dynamic => false),
               );
@@ -2080,67 +2080,67 @@ export function dropElementDragAtCanvasPoint(deps: { readonly abandonSelectionGe
       }
 
 /** 画板 iframe 上报元素拖动事件（arm/move/exit/finish/cancel）时运行：维护拖出会话状态，松手时调用 dropElementDragAtCanvasPoint。 */
-export function handleFrameElementDragEvent(deps: { readonly focusedFileRef: Dynamic; readonly value177: Dynamic; readonly value188: Dynamic; readonly value193: Dynamic; readonly value195: Dynamic; readonly value197: Dynamic; readonly value198: Dynamic; readonly value200: Dynamic; readonly value201: Dynamic; readonly value205: Dynamic; readonly value207: Dynamic; readonly value208: Dynamic; readonly value209: Dynamic; readonly value210: Dynamic; readonly value215: Dynamic; readonly value216: Dynamic; readonly value217: Dynamic; readonly value218: Dynamic; readonly value67: Dynamic }, input?: Dynamic, options?: Dynamic): Dynamic {
-        let current4: Dynamic = deps.value193.current;
-        if (options.type === "arm") {
+export function handleFrameElementDragEvent(deps: { readonly focusedFileRef: Dynamic; readonly value177: Dynamic; readonly value188: Dynamic; readonly value193: Dynamic; readonly value195: Dynamic; readonly value197: Dynamic; readonly value198: Dynamic; readonly value200: Dynamic; readonly value201: Dynamic; readonly value205: Dynamic; readonly value207: Dynamic; readonly value208: Dynamic; readonly value209: Dynamic; readonly value210: Dynamic; readonly value215: Dynamic; readonly value216: Dynamic; readonly value217: Dynamic; readonly value218: Dynamic; readonly value67: Dynamic }, file?: Dynamic, dragEvent?: Dynamic): Dynamic {
+        let activeDrag: Dynamic = deps.value193.current;
+        if (dragEvent.type === "arm") {
           if (
-            input !== deps.focusedFileRef.current ||
+            file !== deps.focusedFileRef.current ||
             deps.value218.current ||
-            (current4 &&
-              current4.file === input &&
-              current4.key !== options.key &&
+            (activeDrag &&
+              activeDrag.file === file &&
+              activeDrag.key !== dragEvent.key &&
               deps.value208(),
             deps.value209(),
-            !options.tids)
+            !dragEvent.tids)
           )
             return;
-          let value657: Dynamic = deps.value217(input, options.tids);
-          if (!value657) return;
+          let pickedSelection: Dynamic = deps.value217(file, dragEvent.tids);
+          if (!pickedSelection) return;
           deps.value216.current = {
-            key: options.key,
-            file: input,
-            tids: value657.tids,
-            alt: options.alt,
-            box: options.box,
-            label: value657.label,
+            key: dragEvent.key,
+            file: file,
+            tids: pickedSelection.tids,
+            alt: dragEvent.alt,
+            box: dragEvent.box,
+            label: pickedSelection.label,
           };
           deps.value198(deps.value216.current);
           deps.value205(deps.value216.current);
-          deps.value200(input);
+          deps.value200(file);
           deps.value201.current && clearTimeout(deps.value201.current);
           deps.value201.current = setTimeout(deps.value209, 6e4);
           return;
         }
-        if (options.type === "disarm") {
-          let current5: Dynamic = deps.value216.current;
-          current5 &&
-            current5.file === input &&
-            current5.key === options.key &&
+        if (dragEvent.type === "disarm") {
+          let armedDrag: Dynamic = deps.value216.current;
+          armedDrag &&
+            armedDrag.file === file &&
+            armedDrag.key === dragEvent.key &&
             deps.value209();
-          current4 && current4.file === input && current4.key === options.key
-            ? (current4.pendingDrop &&
+          activeDrag && activeDrag.file === file && activeDrag.key === dragEvent.key
+            ? (activeDrag.pendingDrop &&
                 deps.value188(
                   uiMessage("canvas.designCanvas.nothingMovedTheArtboardEnded"),
                 ),
               deps.value208())
-            : !current4 && !deps.value216.current && deps.value200(null);
+            : !activeDrag && !deps.value216.current && deps.value200(null);
           return;
         }
-        if (options.type === "exit") {
-          if (input !== deps.focusedFileRef.current) return;
-          if (current4) {
-            if (current4.file === input) {
-              if (current4.key !== options.key) return;
-              current4.echoed = true;
-              let pendingDrop: Dynamic = current4.pendingDrop;
+        if (dragEvent.type === "exit") {
+          if (file !== deps.focusedFileRef.current) return;
+          if (activeDrag) {
+            if (activeDrag.file === file) {
+              if (activeDrag.key !== dragEvent.key) return;
+              activeDrag.echoed = true;
+              let pendingDrop: Dynamic = activeDrag.pendingDrop;
               if (!pendingDrop) {
-                deps.value198(current4);
+                deps.value198(activeDrag);
                 return;
               }
               deps.value208(true);
-              deps.value177.current.get(input)?.hostDrag("finish", current4.key);
+              deps.value177.current.get(file)?.hostDrag("finish", activeDrag.key);
               deps.value215(
-                current4,
+                activeDrag,
                 pendingDrop.cx,
                 pendingDrop.cy,
                 pendingDrop.alt,
@@ -2150,16 +2150,16 @@ export function handleFrameElementDragEvent(deps: { readonly focusedFileRef: Dyn
             deps.value208();
           }
           if (deps.value218.current) return;
-          let value657: Dynamic = deps.value217(input, options.tids);
-          if (!value657) return;
+          let pickedSelection: Dynamic = deps.value217(file, dragEvent.tids);
+          if (!pickedSelection) return;
           deps.value193.current = {
-            key: options.key,
-            file: input,
-            tids: value657.tids,
-            alt: options.alt,
+            key: dragEvent.key,
+            file: file,
+            tids: pickedSelection.tids,
+            alt: dragEvent.alt,
             ctrl: false,
-            box: options.box,
-            label: value657.label,
+            box: dragEvent.box,
+            label: pickedSelection.label,
             moves: [],
             latched: false,
             startedAt: Date.now(),
@@ -2167,113 +2167,113 @@ export function handleFrameElementDragEvent(deps: { readonly focusedFileRef: Dyn
             pendingDrop: null,
           };
           deps.value198(deps.value193.current);
-          deps.value200(input);
+          deps.value200(file);
           deps.value201.current && clearTimeout(deps.value201.current);
           deps.value201.current = setTimeout(deps.value210, 3e4);
           return;
         }
         if (
-          !current4 ||
-          current4.key !== options.key ||
-          current4.file !== input
+          !activeDrag ||
+          activeDrag.key !== dragEvent.key ||
+          activeDrag.file !== file
         )
           return;
-        if (options.type === "cancel") {
+        if (dragEvent.type === "cancel") {
           deps.value208();
           return;
         }
-        let value653: Dynamic = deps.value67.artboards.find(
-          (input2?: Dynamic): Dynamic => input2.file === input,
+        let artboard: Dynamic = deps.value67.artboards.find(
+          (candidate?: Dynamic): Dynamic => candidate.file === file,
         );
-        if (!value653) return;
-        let value654: Dynamic = value653.x + options.x,
-          value655: Dynamic = value653.y + options.y;
-        if (current4.pendingDrop) return;
-        if (options.type === "move") {
-          let value657: Dynamic = Date.now();
+        if (!artboard) return;
+        let canvasX: Dynamic = artboard.x + dragEvent.x,
+          canvasY: Dynamic = artboard.y + dragEvent.y;
+        if (activeDrag.pendingDrop) return;
+        if (dragEvent.type === "move") {
+          let now: Dynamic = Date.now();
           for (
-            current4.moves.push(value657);
-            current4.moves.length > 0 &&
-            (current4.moves[0] < value657 - 1e3 ||
-              current4.moves.length > 240);
+            activeDrag.moves.push(now);
+            activeDrag.moves.length > 0 &&
+            (activeDrag.moves[0] < now - 1e3 ||
+              activeDrag.moves.length > 240);
 
           )
-            current4.moves.shift();
-          current4.moves.length > 120 && (current4.latched = true);
+            activeDrag.moves.shift();
+          activeDrag.moves.length > 120 && (activeDrag.latched = true);
           deps.value201.current && clearTimeout(deps.value201.current);
           deps.value201.current = setTimeout(deps.value210, 3e4);
-          current4.latched ||
-            deps.value195(deps.value197(current4, value654, value655, options.alt));
-          current4.ctrl = options.ctrl;
-          deps.value207(current4, value654, value655, options.alt);
+          activeDrag.latched ||
+            deps.value195(deps.value197(activeDrag, canvasX, canvasY, dragEvent.alt));
+          activeDrag.ctrl = dragEvent.ctrl;
+          deps.value207(activeDrag, canvasX, canvasY, dragEvent.alt);
           return;
         }
-        let value656: Dynamic = current4.moves.length > 0;
-        deps.value208(value656);
-        value656 &&
-          ((current4.ctrl = options.ctrl),
-          deps.value215(current4, value654, value655, options.alt));
+        let hasMoved: Dynamic = activeDrag.moves.length > 0;
+        deps.value208(hasMoved);
+        hasMoved &&
+          ((activeDrag.ctrl = dragEvent.ctrl),
+          deps.value215(activeDrag, canvasX, canvasY, dragEvent.alt));
       }
 
 /** 外壳侧指针接管元素拖动后运行（onHostDrag：stale/move/exit/cancel/finish）：更新拖出会话与幽灵位置，松手时提交落点。 */
-export function handleHostElementDragEvent(deps: { readonly focusedFileRef: Dynamic; readonly value177: Dynamic; readonly value188: Dynamic; readonly value193: Dynamic; readonly value195: Dynamic; readonly value197: Dynamic; readonly value201: Dynamic; readonly value207: Dynamic; readonly value208: Dynamic; readonly value209: Dynamic; readonly value210: Dynamic; readonly value215: Dynamic; readonly value216: Dynamic }, input?: Dynamic,
-        options?: Dynamic,
-        context?: Dynamic,
-        value653?: Dynamic,
-        extra: Dynamic = false): Dynamic {
-        let current4: Dynamic = deps.value193.current,
-          current5: Dynamic = deps.value216.current,
-          value654: Dynamic = current4 ?? current5,
-          value655: Dynamic = value654
-            ? deps.value177.current.get(value654.file)
+export function handleHostElementDragEvent(deps: { readonly focusedFileRef: Dynamic; readonly value177: Dynamic; readonly value188: Dynamic; readonly value193: Dynamic; readonly value195: Dynamic; readonly value197: Dynamic; readonly value201: Dynamic; readonly value207: Dynamic; readonly value208: Dynamic; readonly value209: Dynamic; readonly value210: Dynamic; readonly value215: Dynamic; readonly value216: Dynamic }, eventType?: Dynamic,
+        pointX?: Dynamic,
+        pointY?: Dynamic,
+        isAlt?: Dynamic,
+        isCtrl: Dynamic = false): Dynamic {
+        let activeDrag: Dynamic = deps.value193.current,
+          armedDrag: Dynamic = deps.value216.current,
+          dragSession: Dynamic = activeDrag ?? armedDrag,
+          frameEntry: Dynamic = dragSession
+            ? deps.value177.current.get(dragSession.file)
             : undefined;
-        if (!current4?.pendingDrop) {
-          if (input === "stale") {
+        if (!activeDrag?.pendingDrop) {
+          if (eventType === "stale") {
             deps.value210();
             return;
           }
-          if (input === "move") {
-            if (!current4) {
-              if (!current5 || current5.file !== deps.focusedFileRef.current)
+          if (eventType === "move") {
+            if (!activeDrag) {
+              if (!armedDrag || armedDrag.file !== deps.focusedFileRef.current)
                 return;
-              current4 = {
-                ...current5,
-                alt: value653,
-                ctrl: extra,
+              activeDrag = {
+                ...armedDrag,
+                alt: isAlt,
+                ctrl: isCtrl,
                 moves: [],
                 latched: false,
                 startedAt: Date.now(),
                 echoed: false,
                 pendingDrop: null,
               };
-              deps.value193.current = current4;
-              value655?.hostDrag("exit", current5.key, value653);
+              deps.value193.current = activeDrag;
+              frameEntry?.hostDrag("exit", armedDrag.key, isAlt);
             }
-            current4.moves.push(Date.now());
-            current4.moves.length > 240 && current4.moves.shift();
+            activeDrag.moves.push(Date.now());
+            activeDrag.moves.length > 240 && activeDrag.moves.shift();
             deps.value201.current && clearTimeout(deps.value201.current);
             deps.value201.current = setTimeout(deps.value210, 3e4);
-            deps.value195(deps.value197(current4, options, context, value653));
-            current4.ctrl = extra;
-            deps.value207(current4, options, context, value653);
+            deps.value195(deps.value197(activeDrag, pointX, pointY, isAlt));
+            activeDrag.ctrl = isCtrl;
+            deps.value207(activeDrag, pointX, pointY, isAlt);
             return;
           }
           deps.value209();
-          if (!current4) {
-            current5 && value655?.hostDrag("cancel", current5.key);
+          if (!activeDrag) {
+            armedDrag && frameEntry?.hostDrag("cancel", armedDrag.key);
             return;
           }
-          current4.ctrl = extra;
-          if (input === "cancel" || current4.moves.length === 0) {
+          activeDrag.ctrl = isCtrl;
+          if (eventType === "cancel" || activeDrag.moves.length === 0) {
             deps.value208();
-            value655?.hostDrag("cancel", current4.key);
+            frameEntry?.hostDrag("cancel", activeDrag.key);
             return;
           }
-          if (!current4.echoed) {
-            current4.pendingDrop = {
-              cx: options,
-              cy: context,
-              alt: value653,
+          if (!activeDrag.echoed) {
+            activeDrag.pendingDrop = {
+              cx: pointX,
+              cy: pointY,
+              alt: isAlt,
             };
             deps.value195(null);
             deps.value201.current && clearTimeout(deps.value201.current);
@@ -2287,7 +2287,7 @@ export function handleHostElementDragEvent(deps: { readonly focusedFileRef: Dyna
             return;
           }
           deps.value208(true);
-          value655?.hostDrag("finish", current4.key);
-          deps.value215(current4, options, context, value653);
+          frameEntry?.hostDrag("finish", activeDrag.key);
+          deps.value215(activeDrag, pointX, pointY, isAlt);
         }
       }
