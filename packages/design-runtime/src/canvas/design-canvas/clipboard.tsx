@@ -1,15 +1,15 @@
-import { AccessibilityAnnouncementsLabel_2 } from "../../editor/accessibility/announcements";
-import { AccessibilityAnnouncementsLabel_3 } from "../../editor/accessibility/announcements";
-import { AccessibilityAnnouncementsLabel_4 } from "../../editor/accessibility/announcements";
-import { AccessibilityAnnouncementsLabel_5 } from "../../editor/accessibility/announcements";
-import { AccessibilityAnnouncementsLabel_7 } from "../../editor/accessibility/announcements";
-import { AccessibilityAnnouncementsLabel_8 } from "../../editor/accessibility/announcements";
-import { AccessibilityAnnouncementsLabel_9 } from "../../editor/accessibility/announcements";
+import { AccessibilityAnnouncementsLabel_2 as copiedAsPngMessage } from "../../editor/accessibility/announcements";
+import { AccessibilityAnnouncementsLabel_3 as copiedAsSvgMessage } from "../../editor/accessibility/announcements";
+import { AccessibilityAnnouncementsLabel_4 as conversionFailedMessage } from "../../editor/accessibility/announcements";
+import { AccessibilityAnnouncementsLabel_5 as anotherExportRunningMessage } from "../../editor/accessibility/announcements";
+import { AccessibilityAnnouncementsLabel_7 as noSizeMessage } from "../../editor/accessibility/announcements";
+import { AccessibilityAnnouncementsLabel_8 as previewStoppedMessage } from "../../editor/accessibility/announcements";
+import { AccessibilityAnnouncementsLabel_9 as notVisibleMessage } from "../../editor/accessibility/announcements";
 import { ClipboardAnnotationsLimit } from "../../editor/clipboard/annotations";
 import { ClipboardArtboardsLimit } from "../../editor/clipboard/artboards";
 import { ClipboardArtboardsResolvedValue } from "../../editor/clipboard/artboards";
 import { ClipboardArtboardsTest } from "../../editor/clipboard/artboards";
-import { ClipboardArtboardsTest_2 } from "../../editor/clipboard/artboards";
+import { ClipboardArtboardsTest_2 as isFontDataUrl } from "../../editor/clipboard/artboards";
 import { ClipboardAssetsHandler } from "../../editor/clipboard/assets";
 import { ClipboardFileTransferPasted } from "../../editor/clipboard/file-transfer";
 import { ClipboardFileTransferRegistry } from "../../editor/clipboard/file-transfer";
@@ -22,12 +22,12 @@ import { DesignArtboardsKey } from "../../editor/clipboard/state";
 import { DownloadsArenTAvailableToYouForMessage } from "../../export/downloads";
 import { ItsPageHasNothingToDrawMessage } from "../../editor/accessibility/announcements";
 import { ItsPictureCouldnTBeMadeTryMessage } from "../../editor/accessibility/announcements";
-import { PlatformFileContentConstant_5 } from "../../platform/file-content";
-import { PlatformFileContentConstant_6 } from "../../platform/file-content";
+import { PlatformFileContentConstant_5 as defaultArtboardWidth } from "../../platform/file-content";
+import { PlatformFileContentConstant_6 as defaultArtboardHeight } from "../../platform/file-content";
 import { PlatformFileContentFilesValue } from "../../platform/file-content";
 import { PlatformFileContentHandler_4 } from "../../platform/file-content";
-import { PlatformFileContentLimit_5 } from "../../platform/file-content";
-import { PlatformFileContentResolvedValue_11 } from "../../platform/file-content";
+import { PlatformFileContentLimit_5 as maxAnnotations } from "../../platform/file-content";
+import { PlatformFileContentResolvedValue_11 as maxEmbeddedFileBytes } from "../../platform/file-content";
 import { PlatformFileContentWebpAvifPattern } from "../../platform/file-content";
 import { ProjectValue } from "../../platform/file-content";
 import { afterClipboardSettled } from "../../editor/clipboard/state";
@@ -137,103 +137,103 @@ import { writeClipboardSvg } from "../../editor/clipboard/svg-copy";
 import { crossCanvasPasteConfirmFeatureFlag, nextArtboardPlacementPoint, readCanvasClipboardText } from "../design-canvas";
 
 /** 在画布上复制画板或说明时运行：读取画板文件与外观属性，写入应用内画板剪贴板并记录剪贴板标记。 */
-export function copyBoardsToClipboard(deps: { readonly doc: Dynamic; readonly value177: Dynamic; readonly value67: Dynamic }, input?: Dynamic, options?: Dynamic, context?: Dynamic): Dynamic {
+export function copyBoardsToClipboard(deps: { readonly doc: Dynamic; readonly value177: Dynamic; readonly value67: Dynamic }, artboardFiles?: Dynamic, noteIds?: Dynamic, getClipboardMarker?: Dynamic): Dynamic {
         (async (): Promise<Dynamic> => {
           try {
-            let value653: Dynamic = deps.value67.artboards.filter(
-                (input2?: Dynamic): Dynamic => input.has(input2.file),
+            let artboards: Dynamic = deps.value67.artboards.filter(
+                (artboard?: Dynamic): Dynamic => artboardFiles.has(artboard.file),
               ),
-              value654: Dynamic = (deps.value67.annotations ?? []).filter(
-                (input2?: Dynamic): Dynamic => options.has(input2.id),
+              notes: Dynamic = (deps.value67.annotations ?? []).filter(
+                (note?: Dynamic): Dynamic => noteIds.has(note.id),
               );
-            if (value653.length === 0 && value654.length === 0) {
+            if (artboards.length === 0 && notes.length === 0) {
               setTimeout(
                 (): Dynamic =>
-                  rememberClipboardStamp(context?.()?.stamp),
+                  rememberClipboardStamp(getClipboardMarker?.()?.stamp),
                 0,
               );
               return;
             }
             await Promise.all(
-              value653.map(
-                (input2?: Dynamic): Dynamic =>
-                  deps.value177.current.get(input2.file)?.flushPending(),
+              artboards.map(
+                (artboard?: Dynamic): Dynamic =>
+                  deps.value177.current.get(artboard.file)?.flushPending(),
               ),
             );
             let files: Dynamic = deps.doc.content().files,
-              value655: Dynamic = value654.map(
-                (input2?: Dynamic): Dynamic =>
-                  annotationVisibleBounds(input2),
+              noteBounds: Dynamic = notes.map(
+                (note?: Dynamic): Dynamic =>
+                  annotationVisibleBounds(note),
               ),
-              value656: Dynamic = Math.min(
-                ...value653.map((input2?: Dynamic): Dynamic => input2.x),
-                ...value655.map((input2?: Dynamic): Dynamic => input2.x),
+              originX: Dynamic = Math.min(
+                ...artboards.map((box?: Dynamic): Dynamic => box.x),
+                ...noteBounds.map((box?: Dynamic): Dynamic => box.x),
               ),
-              value657: Dynamic = Math.min(
-                ...value653.map((input2?: Dynamic): Dynamic => input2.y),
-                ...value655.map((input2?: Dynamic): Dynamic => input2.y),
+              originY: Dynamic = Math.min(
+                ...artboards.map((box?: Dynamic): Dynamic => box.y),
+                ...noteBounds.map((box?: Dynamic): Dynamic => box.y),
               ),
-              value658: Dynamic = value654.map(
-                (input2?: Dynamic, options2?: Dynamic): Dynamic => {
-                  let value659: Dynamic = value655[options2];
+              noteEntries: Dynamic = notes.map(
+                (note?: Dynamic, index?: Dynamic): Dynamic => {
+                  let bounds: Dynamic = noteBounds[index];
                   return {
-                    spec: input2,
-                    dx: value659.x - value656,
-                    dy: value659.y - value657,
-                    w: value659.w,
-                    h: value659.h,
+                    spec: note,
+                    dx: bounds.x - originX,
+                    dy: bounds.y - originY,
+                    w: bounds.w,
+                    h: bounds.h,
                   };
                 },
               ),
-              items: Dynamic = [];
-            for (let value659 of value653 as Dynamic) {
-              let value660: Dynamic =
+              artboardEntries: Dynamic = [];
+            for (let artboard of artboards as Dynamic) {
+              let artboardSource: Dynamic =
                 (await getKvClient().get(
-                  PlatformFileContentHandler_4(value659.file),
-                )) ?? files[value659.file];
-              typeof value660 != "string" ||
-                isLoadingArtboardHtml(value660) ||
-                items.push({
-                  src: value660,
-                  stem: value659.file.replace(/\.dc\.html$/, ""),
-                  dx: value659.x - value656,
-                  dy: value659.y - value657,
-                  w: value659.w,
-                  h: value659.h,
-                  ...(value659.title
+                  PlatformFileContentHandler_4(artboard.file),
+                )) ?? files[artboard.file];
+              typeof artboardSource != "string" ||
+                isLoadingArtboardHtml(artboardSource) ||
+                artboardEntries.push({
+                  src: artboardSource,
+                  stem: artboard.file.replace(/\.dc\.html$/, ""),
+                  dx: artboard.x - originX,
+                  dy: artboard.y - originY,
+                  w: artboard.w,
+                  h: artboard.h,
+                  ...(artboard.title
                     ? {
-                        title: value659.title,
+                        title: artboard.title,
                       }
                     : {}),
-                  ...artboardAppearanceProperties(value659),
+                  ...artboardAppearanceProperties(artboard),
                 });
             }
-            items.length > 0 || (value658.length > 0 && value653.length === 0)
+            artboardEntries.length > 0 || (noteEntries.length > 0 && artboards.length === 0)
               ? setArtboardClipboard(
-                  items,
-                  context?.(),
-                  value658,
+                  artboardEntries,
+                  getClipboardMarker?.(),
+                  noteEntries,
                 )
-              : rememberClipboardStamp(context?.()?.stamp);
+              : rememberClipboardStamp(getClipboardMarker?.()?.stamp);
           } catch {
-            rememberClipboardStamp(context?.()?.stamp);
+            rememberClipboardStamp(getClipboardMarker?.()?.stamp);
           }
         })();
       }
 
 /** 从应用内剪贴板粘贴画板与说明时运行：生成新文件与标题、避开已有对象层叠放置并选中，失败时提示。 */
-export function pasteBoardsFromClipboard(deps: { readonly callback3: Dynamic; readonly callback9: Dynamic; readonly doc: Dynamic; readonly setSelection: Dynamic; readonly showToast: Dynamic; readonly supportsLoadState: Dynamic; readonly value105: Dynamic; readonly value218: Dynamic; readonly value310: Dynamic; readonly value345: Dynamic; readonly value383: Dynamic; readonly value413: Dynamic; readonly value461: Dynamic; readonly value62: Dynamic; readonly value73: Dynamic; readonly value80: Dynamic; readonly value91: Dynamic; readonly value98: Dynamic }, items?: Dynamic, items2?: Dynamic, context?: Dynamic): Dynamic {
-        let value653: Dynamic = pasteCascadeStep(
+export function pasteBoardsFromClipboard(deps: { readonly callback3: Dynamic; readonly callback9: Dynamic; readonly doc: Dynamic; readonly setSelection: Dynamic; readonly showToast: Dynamic; readonly supportsLoadState: Dynamic; readonly value105: Dynamic; readonly value218: Dynamic; readonly value310: Dynamic; readonly value345: Dynamic; readonly value383: Dynamic; readonly value413: Dynamic; readonly value461: Dynamic; readonly value62: Dynamic; readonly value73: Dynamic; readonly value80: Dynamic; readonly value91: Dynamic; readonly value98: Dynamic }, artboardClips?: Dynamic, noteClips?: Dynamic, pasteAnchor?: Dynamic): Dynamic {
+        let cascadeStep: Dynamic = pasteCascadeStep(
           deps.value105.get().scale,
         );
         (async (): Promise<Dynamic> => {
-          let items3: Dynamic = [];
+          let newFiles: Dynamic = [];
           try {
             let state: Dynamic = {
               ...deps.doc.content().files,
             };
             if (
-              Object.keys(state).length + items.length >
+              Object.keys(state).length + artboardClips.length >
               PlatformFileContentFilesValue
             ) {
               deps.showToast(
@@ -242,1139 +242,1139 @@ export function pasteBoardsFromClipboard(deps: { readonly callback3: Dynamic; re
               );
               return;
             }
-            items.length > 0 && (deps.value310.current = true);
-            for (let value661 of items as Dynamic) {
-              let value662: Dynamic = uniqueArtboardFile(
+            artboardClips.length > 0 && (deps.value310.current = true);
+            for (let clip of artboardClips as Dynamic) {
+              let newFile: Dynamic = uniqueArtboardFile(
                 state,
-                value661.stem,
+                clip.stem,
                 deps.supportsLoadState,
               );
-              state[value662] = value661.src;
-              items3.push(value662);
-              deps.value461.current.add(value662);
+              state[newFile] = clip.src;
+              newFiles.push(newFile);
+              deps.value461.current.add(newFile);
               try {
                 await getKvClient().set(
-                  PlatformFileContentHandler_4(value662),
-                  value661.src,
+                  PlatformFileContentHandler_4(newFile),
+                  clip.src,
                 );
-              } catch (value663: Dynamic) {
-                for (let value664 of items3 as Dynamic)
+              } catch (error: Dynamic) {
+                for (let file of newFiles as Dynamic)
                   await getKvClient()
                     .delete(
-                      PlatformFileContentHandler_4(value664),
+                      PlatformFileContentHandler_4(file),
                     )
                     .catch((): Dynamic => false);
-                throw value663;
+                throw error;
               }
             }
-            let value654: Dynamic = designPageContents(
+            let pageContents: Dynamic = designPageContents(
                 deps.value73.current,
                 deps.value80.current,
               ),
-              value655: Dynamic = value654.artboards.filter(
-                (input?: Dynamic): Dynamic =>
-                  !deps.value461.current.has(input.file),
+              existingArtboards: Dynamic = pageContents.artboards.filter(
+                (artboard?: Dynamic): Dynamic =>
+                  !deps.value461.current.has(artboard.file),
               ),
-              value656: Dynamic = context
+              pasteOrigin: Dynamic = pasteAnchor
                 ? avoidPastedObjectCollisions(
                     pastedObjectsOrigin(
-                      [...items, ...items2],
-                      context,
+                      [...artboardClips, ...noteClips],
+                      pasteAnchor,
                     ),
-                    items,
-                    value655,
-                    value653,
+                    artboardClips,
+                    existingArtboards,
+                    cascadeStep,
                   )
                 : nextArtboardPlacementPoint([
-                    ...value655,
+                    ...existingArtboards,
                     ...deps.value91.current,
-                    ...(value654.annotations ?? []).map(
+                    ...(pageContents.annotations ?? []).map(
                       annotationVisibleBounds,
                     ),
                   ]),
-              items4: Dynamic = [];
-            items.forEach((input?: Dynamic, options?: Dynamic): Dynamic => {
-              items4.push({
-                file: items3[options],
-                x: Math.round(value656.x + input.dx),
-                y: Math.round(value656.y + input.dy),
-                w: input.w,
-                h: input.h,
+              newArtboards: Dynamic = [];
+            artboardClips.forEach((clip?: Dynamic, index?: Dynamic): Dynamic => {
+              newArtboards.push({
+                file: newFiles[index],
+                x: Math.round(pasteOrigin.x + clip.dx),
+                y: Math.round(pasteOrigin.y + clip.dy),
+                w: clip.w,
+                h: clip.h,
                 title: duplicateArtboardTitle(
-                  input.title ?? input.stem,
-                  [...value655, ...items4],
+                  clip.title ?? clip.stem,
+                  [...existingArtboards, ...newArtboards],
                 ),
-                ...artboardAppearanceProperties(input),
+                ...artboardAppearanceProperties(clip),
                 ...deps.callback3(),
               });
             });
-            let value657: Dynamic = items.map(
-                (input?: Dynamic): Dynamic => input.src,
+            let sources: Dynamic = artboardClips.map(
+                (clip?: Dynamic): Dynamic => clip.src,
               ),
-              value658: Dynamic = deps.value73.current.annotations ?? [],
-              value659: Dynamic =
-                value658.length + items2.length <=
-                PlatformFileContentLimit_5,
-              value660: Dynamic = value659
+              existingNotes: Dynamic = deps.value73.current.annotations ?? [],
+              canAddNotes: Dynamic =
+                existingNotes.length + noteClips.length <=
+                maxAnnotations,
+              newNotes: Dynamic = canAddNotes
                 ? deps.callback9(
-                    items2.map((input?: Dynamic): Dynamic => {
-                      let { page: spec, ...spec2 }: Dynamic = input.spec,
-                        value661: Dynamic = annotationVisibleBounds(input.spec);
+                    noteClips.map((noteClip?: Dynamic): Dynamic => {
+                      let { page: spec, ...noteSpec }: Dynamic = noteClip.spec,
+                        noteBounds: Dynamic = annotationVisibleBounds(noteClip.spec);
                       return {
                         src: {
-                          ...spec2,
+                          ...noteSpec,
                           ...deps.callback3(),
                         },
-                        x: value656.x + input.dx + (spec2.x - value661.x),
-                        y: value656.y + input.dy + (spec2.y - value661.y),
+                        x: pasteOrigin.x + noteClip.dx + (noteSpec.x - noteBounds.x),
+                        y: pasteOrigin.y + noteClip.dy + (noteSpec.y - noteBounds.y),
                       };
                     }),
                   )
                 : [];
-            !value659 &&
-              items2.length > 0 &&
+            !canAddNotes &&
+              noteClips.length > 0 &&
               deps.showToast(
-                (items4.length > 0
+                (newArtboards.length > 0
                   ? uiMessage("canvas.designCanvas.theArtboardsWerePastedThe")
                   : uiMessage("canvas.designCanvas.couldnTPaste")) +
                   " \u2014 this canvas is at its limit for notes and shapes (" +
-                  String(PlatformFileContentLimit_5) +
+                  String(maxAnnotations) +
                   ").",
                 "error",
               );
-            if (items4.length === 0 && value660.length === 0) return;
+            if (newArtboards.length === 0 && newNotes.length === 0) return;
             let values: Dynamic = new Set(
-              items4.map((input?: Dynamic): Dynamic => input.file),
+              newArtboards.map((artboard?: Dynamic): Dynamic => artboard.file),
             );
             deps.value98({
               artboards: [
                 ...deps.value73.current.artboards.filter(
-                  (input?: Dynamic): Dynamic => !values.has(input.file),
+                  (artboard?: Dynamic): Dynamic => !values.has(artboard.file),
                 ),
-                ...items4,
+                ...newArtboards,
               ],
-              ...(value660.length > 0
+              ...(newNotes.length > 0
                 ? {
-                    annotations: [...value658, ...value660],
+                    annotations: [...existingNotes, ...newNotes],
                   }
                 : {}),
             });
             deps.value413(
               {
                 kind: "add",
-                entries: items4.map(
-                  (input?: Dynamic, options?: Dynamic): Dynamic => ({
-                    file: input.file,
-                    src: value657[options] ?? "",
-                    spec: input,
+                entries: newArtboards.map(
+                  (artboard?: Dynamic, index?: Dynamic): Dynamic => ({
+                    file: artboard.file,
+                    src: sources[index] ?? "",
+                    spec: artboard,
                   }),
                 ),
-                ...(value660.length > 0
+                ...(newNotes.length > 0
                   ? {
-                      anns: value660,
+                      anns: newNotes,
                       get label() { return uiMessage("canvas.designCanvas.paste"); },
                     }
                   : {}),
               },
               values,
             );
-            items4.length === 0 && deps.value62();
+            newArtboards.length === 0 && deps.value62();
             deps.setSelection(
               selectionFromBoards({
                 files: values,
                 notes: new Set(
-                  value660.map((input?: Dynamic): Dynamic => input.id),
+                  newNotes.map((note?: Dynamic): Dynamic => note.id),
                 ),
               }),
             );
-            items4.length > 0 &&
+            newArtboards.length > 0 &&
               frameAnalyticsReporter(
                 designAnalyticsEvents.artboardInserted,
               );
-            !context &&
+            !pasteAnchor &&
               !deps.value345.current &&
               !deps.value218.current &&
               deps.value383.current(
                 pastedObjectsBounds([
-                  ...items4,
-                  ...value660.map(annotationVisibleBounds),
+                  ...newArtboards,
+                  ...newNotes.map(annotationVisibleBounds),
                 ]),
               );
-          } catch (value654: Dynamic) {
-            console.error("[design/paste]", value654);
+          } catch (error: Dynamic) {
+            console.error("[design/paste]", error);
             deps.showToast(uiMessage("canvas.designCanvas.couldnTPaste2"), "error");
           } finally {
-            for (let value654 of items3 as Dynamic)
-              deps.value461.current.delete(value654);
+            for (let file of newFiles as Dynamic)
+              deps.value461.current.delete(file);
           }
         })();
       }
 
 /** 复制到系统剪贴板前运行：把选中的画板与说明序列化为剪贴板数据，并检查体积、未上传文件与未保存修改。 */
-export function buildSystemClipboardPayload(deps: { readonly doc: Dynamic; readonly value177: Dynamic; readonly value188: Dynamic; readonly value73: Dynamic }, input?: Dynamic, options?: Dynamic): Dynamic {
+export function buildSystemClipboardPayload(deps: { readonly doc: Dynamic; readonly value177: Dynamic; readonly value188: Dynamic; readonly value73: Dynamic }, artboardFiles?: Dynamic, noteIds?: Dynamic): Dynamic {
         let artboards: Dynamic = deps.value73.current.artboards,
-          value653: Dynamic = buildArtboardClipboard(
+          artboardClipboard: Dynamic = buildArtboardClipboard(
             artboards.filter(
-              (input2?: Dynamic): Dynamic => input.has(input2.file),
+              (artboard?: Dynamic): Dynamic => artboardFiles.has(artboard.file),
             ),
             artboards,
             deps.doc.content().files,
             getCachedBlobObjectUrl,
             getExternalFileReferences(),
           );
-        if (!value653 && input.size > 0) return {};
-        if (value653?.tooLarge) {
+        if (!artboardClipboard && artboardFiles.size > 0) return {};
+        if (artboardClipboard?.tooLarge) {
           deps.value188(
             uiMessage("canvas.designCanvas.copiedThisSelectionIsToo", { value1: String(String(ClipboardArtboardsResolvedValue >> 20)) }),
           );
           return {};
         }
-        let value654: Dynamic = (deps.value73.current.annotations ?? []).filter(
-            (input2?: Dynamic): Dynamic => options.has(input2.id),
+        let notes: Dynamic = (deps.value73.current.annotations ?? []).filter(
+            (note?: Dynamic): Dynamic => noteIds.has(note.id),
           ),
-          callback15: Dynamic = (input2?: Dynamic): Dynamic =>
-            getCachedBlobObjectUrl(input2) ??
-            (fetchBlobAsset(input2).catch((): Dynamic => {}),
+          readAssetUrl: Dynamic = (asset?: Dynamic): Dynamic =>
+            getCachedBlobObjectUrl(asset) ??
+            (fetchBlobAsset(asset).catch((): Dynamic => {}),
             undefined),
-          value655: Dynamic = annotationClipboardEntries(
-            value654,
-            value653?.origin ?? null,
+          noteClipboard: Dynamic = annotationClipboardEntries(
+            notes,
+            artboardClipboard?.origin ?? null,
             ClipboardArtboardsResolvedValue -
-              (value653?.json.length ?? 0),
-            !value653,
+              (artboardClipboard?.json.length ?? 0),
+            !artboardClipboard,
             {
-              read: callback15,
-              assets: value653?.clip.assets ?? {},
+              read: readAssetUrl,
+              assets: artboardClipboard?.clip.assets ?? {},
             },
           ),
-          callback16: Dynamic = (input2?: Dynamic): Dynamic =>
-            input2 === 1
+          unreadFilesMessage: Dynamic = (fileCount?: Dynamic): Dynamic =>
+            fileCount === 1
               ? "Copied. One uploaded file wasn't read yet, so another canvas would go without it. Copy again in a moment."
-              : uiMessage("canvas.designCanvas.copiedValue1UploadedFilesWeren", { value1: String(String(input2)) }),
-          callback17: Dynamic = (input2?: Dynamic): Dynamic =>
-            input2 === 1
+              : uiMessage("canvas.designCanvas.copiedValue1UploadedFilesWeren", { value1: String(String(fileCount)) }),
+          unsupportedFilesMessage: Dynamic = (fileCount?: Dynamic): Dynamic =>
+            fileCount === 1
               ? "Copied. One uploaded file can't travel to another canvas (only images, stylesheets, scripts, fonts and JSON under 4 MB do); add it again there."
-              : uiMessage("canvas.designCanvas.copiedValue1UploadedFilesCan", { value1: String(String(input2)) }),
-          { left: value656 }: Dynamic = value655;
-        if (!value653) {
-          value655.tooLarge
+              : uiMessage("canvas.designCanvas.copiedValue1UploadedFilesCan", { value1: String(String(fileCount)) }),
+          { left: skipped }: Dynamic = noteClipboard;
+        if (!artboardClipboard) {
+          noteClipboard.tooLarge
             ? deps.value188(
-                value655.tooLarge === "bounds"
+                noteClipboard.tooLarge === "bounds"
                   ? ClipboardFileTransferRegistry.tooManyNotesToCopy
                   : ClipboardFileTransferRegistry.tooLargeToCopy,
               )
-            : value656.notRead > 0
+            : skipped.notRead > 0
               ? deps.value188(
                   ClipboardFileTransferRegistry.picturesNotReady(
-                    value656.notRead,
+                    skipped.notRead,
                   ),
                 )
-              : value656.cannot > 0
+              : skipped.cannot > 0
                 ? deps.value188(
                     ClipboardFileTransferRegistry.picturesCantGo(
-                      value656.cannot,
+                      skipped.cannot,
                     ),
                   )
-                : value656.noRoom > 0
+                : skipped.noRoom > 0
                   ? deps.value188(
                       ClipboardFileTransferRegistry.picturesWontFit(
-                        value656.noRoom,
+                        skipped.noRoom,
                       ),
                     )
-                  : value656.overCap > 0 &&
+                  : skipped.overCap > 0 &&
                     deps.value188(
                       ClipboardFileTransferRegistry.picturesOverCap(
-                        value656.overCap,
+                        skipped.overCap,
                       ),
                     );
           return {
-            ...value655.fields,
-            ...(Object.keys(value655.assets).length > 0
+            ...noteClipboard.fields,
+            ...(Object.keys(noteClipboard.assets).length > 0
               ? {
-                  assets: value655.assets,
+                  assets: noteClipboard.assets,
                 }
               : {}),
           };
         }
-        let callback18: Dynamic = (input2?: Dynamic): Dynamic =>
+        let notify: Dynamic = (message?: Dynamic): Dynamic =>
             deps.value188(
-              input2 +
-                (value655.tooLarge
+              message +
+                (noteClipboard.tooLarge
                   ? ClipboardFileTransferRegistry.notesStayedToo
                   : ""),
             ),
-          length: Dynamic = value653.clip.artboards.filter(
-            (input2?: Dynamic): Dynamic =>
+          length: Dynamic = artboardClipboard.clip.artboards.filter(
+            (artboard?: Dynamic): Dynamic =>
               deps.value177.current
-                .get(input2.stem + ".dc.html")
+                .get(artboard.stem + ".dc.html")
                 ?.hasPendingEdits(),
           ).length;
         length > 0
-          ? callback18(
+          ? notify(
               length === 1
                 ? "Copied. One artboard has unsaved edits, so another canvas would get its last saved version. Click outside it, then copy again."
                 : uiMessage("canvas.designCanvas.copiedValue1ArtboardsHaveUnsaved", { value1: String(String(length)) }),
             )
-          : value653.missingAssets > 0
-            ? callback18(
-                callback16(value653.missingAssets + value656.notRead),
+          : artboardClipboard.missingAssets > 0
+            ? notify(
+                unreadFilesMessage(artboardClipboard.missingAssets + skipped.notRead),
               )
-            : value656.notRead > 0
-              ? callback18(
+            : skipped.notRead > 0
+              ? notify(
                   ClipboardFileTransferRegistry.picturesNotReady(
-                    value656.notRead,
+                    skipped.notRead,
                   ),
                 )
-              : value653.unsupportedAssets > 0
-                ? callback18(
-                    callback17(value653.unsupportedAssets + value656.cannot),
+              : artboardClipboard.unsupportedAssets > 0
+                ? notify(
+                    unsupportedFilesMessage(artboardClipboard.unsupportedAssets + skipped.cannot),
                   )
-                : value656.cannot > 0
-                  ? callback18(
+                : skipped.cannot > 0
+                  ? notify(
                       ClipboardFileTransferRegistry.picturesCantGo(
-                        value656.cannot,
+                        skipped.cannot,
                       ),
                     )
-                  : value656.noRoom > 0
-                    ? callback18(
+                  : skipped.noRoom > 0
+                    ? notify(
                         ClipboardFileTransferRegistry.picturesWontFit(
-                          value656.noRoom,
+                          skipped.noRoom,
                         ),
                       )
-                    : value655.tooLarge &&
+                    : noteClipboard.tooLarge &&
                       deps.value188(
                         ClipboardFileTransferRegistry
                           .tooLargeBesideArtboards,
                       );
         return {
-          ...value653.clip,
+          ...artboardClipboard.clip,
           assets: {
-            ...value653.clip.assets,
-            ...value655.assets,
+            ...artboardClipboard.clip.assets,
+            ...noteClipboard.assets,
           },
-          ...value655.fields,
+          ...noteClipboard.fields,
         };
       }
 
 /** 粘贴来自系统剪贴板（可能来自其他画布）的画板、说明与图片时运行：解析数据、确认代码信任、迁移字体与图片等资源，再创建画板和图形并提示结果。 */
-export function pasteExternalClipboardPayload(deps: { readonly callback3: Dynamic; readonly callback9: Dynamic; readonly doc: Dynamic; readonly setSelection: Dynamic; readonly showToast: Dynamic; readonly supportsLoadState: Dynamic; readonly value105: Dynamic; readonly value109: Dynamic; readonly value188: Dynamic; readonly value189: Dynamic; readonly value218: Dynamic; readonly value224: Dynamic; readonly value310: Dynamic; readonly value345: Dynamic; readonly value369: Dynamic; readonly value383: Dynamic; readonly value413: Dynamic; readonly value464: Dynamic; readonly value62: Dynamic; readonly value73: Dynamic; readonly value80: Dynamic; readonly value98: Dynamic }, input?: Dynamic, options?: Dynamic): Dynamic {
+export function pasteExternalClipboardPayload(deps: { readonly callback3: Dynamic; readonly callback9: Dynamic; readonly doc: Dynamic; readonly setSelection: Dynamic; readonly showToast: Dynamic; readonly supportsLoadState: Dynamic; readonly value105: Dynamic; readonly value109: Dynamic; readonly value188: Dynamic; readonly value189: Dynamic; readonly value218: Dynamic; readonly value224: Dynamic; readonly value310: Dynamic; readonly value345: Dynamic; readonly value369: Dynamic; readonly value383: Dynamic; readonly value413: Dynamic; readonly value464: Dynamic; readonly value62: Dynamic; readonly value73: Dynamic; readonly value80: Dynamic; readonly value98: Dynamic }, clipboardText?: Dynamic, pasteAnchor?: Dynamic): Dynamic {
         if (!deps.value224.current) return;
         if (deps.value369.current) {
           deps.value188(ClipboardFileTransferRegistry.stillPasting);
           return;
         }
-        let callback15: Dynamic = (
-            input2?: Dynamic,
-            options2?: Dynamic,
+        let getPasteCancelMessage: Dynamic = (
+            signal?: Dynamic,
+            targetPageId?: Dynamic,
           ): Dynamic =>
-            input2.aborted
+            signal.aborted
               ? uiMessage("canvas.designCanvas.pasteCancelledThisCanvasWas")
               : deps.value224.current
-                ? options2 !== undefined &&
-                  options2 !== "" &&
+                ? targetPageId !== undefined &&
+                  targetPageId !== "" &&
                   !(deps.value73.current.pages ?? []).some(
-                    (input3?: Dynamic): Dynamic => input3.id === options2,
+                    (page?: Dynamic): Dynamic => page.id === targetPageId,
                   )
                   ? uiMessage("canvas.designCanvas.pasteCancelledThePageYou")
                   : null
                 : uiMessage("canvas.designCanvas.pasteCancelledThisCanvasStopped"),
-          callback16: Dynamic = (
-            input2?: Dynamic,
-            options2?: Dynamic,
+          makePictureOptions: Dynamic = (
+            onStored?: Dynamic,
+            sizeLimit?: Dynamic,
           ): Dynamic => ({
             gate: validateCanvasPlacedImage,
-            upload: (input3?: Dynamic): Dynamic =>
-              uploadDesignFile("appifact", null, input3),
-            stored: input2,
-            discard: (input3?: Dynamic): Dynamic => {
+            upload: (file?: Dynamic): Dynamic =>
+              uploadDesignFile("appifact", null, file),
+            stored: onStored,
+            discard: (path?: Dynamic): Dynamic => {
               getKvClient()
-                .delete(PlatformFileContentHandler_4(input3))
+                .delete(PlatformFileContentHandler_4(path))
                 .catch((): Dynamic => false);
             },
-            maxPixels: ClipboardAssetsHandler(options2),
+            maxPixels: ClipboardAssetsHandler(sizeLimit),
           }),
-          callback17: Dynamic = (
-            items?: Dynamic,
-            options2?: Dynamic,
-            context?: Dynamic,
+          pasteNotesWithPictures: Dynamic = (
+            notesToPaste?: Dynamic,
+            pictureInfo?: Dynamic,
+            notesPasteAnchor?: Dynamic,
           ): Dynamic => {
             if (
               (deps.value73.current.annotations ?? []).length +
-                items.length +
-                options2.carried.length >
-              PlatformFileContentLimit_5
+                notesToPaste.length +
+                pictureInfo.carried.length >
+              maxAnnotations
             )
               return void deps.showToast(
                 ClipboardFileTransferRegistry.atLimit,
                 "error",
               );
-            let current5: Dynamic = deps.value80.current,
-              value657: Dynamic = deps.value105.rest(),
-              controller2: Dynamic = new AbortController(),
-              callback20: Dynamic = (): Dynamic => {};
+            let targetPageId: Dynamic = deps.value80.current,
+              notesViewport: Dynamic = deps.value105.rest(),
+              notesAbortController: Dynamic = new AbortController(),
+              resolveNotesPasteDone: Dynamic = (): Dynamic => {};
             deps.value369.current = {
-              ctrl: controller2,
-              done: new Promise((input2?: Dynamic): Dynamic => {
-                callback20 = input2;
+              ctrl: notesAbortController,
+              done: new Promise((resolve?: Dynamic): Dynamic => {
+                resolveNotesPasteDone = resolve;
               }),
             };
             (async (): Promise<Dynamic> => {
-              let items2: Dynamic = [],
-                flag2: Dynamic = false,
-                callback21: Dynamic = async (
-                  input2?: Dynamic,
+              let uploadedFiles: Dynamic = [],
+                isCommitted: Dynamic = false,
+                deleteFiles: Dynamic = async (
+                  files?: Dynamic,
                 ): Promise<Dynamic> => {
-                  for (let value658 of input2 as Dynamic)
+                  for (let file of files as Dynamic)
                     await getKvClient()
                       .delete(
-                        PlatformFileContentHandler_4(value658),
+                        PlatformFileContentHandler_4(file),
                       )
                       .catch((): Dynamic => false);
                 };
               try {
                 deps.value188(
                   ClipboardFileTransferRegistry.bringing(
-                    options2.carried.length,
+                    pictureInfo.carried.length,
                   ),
                 );
-                let { landed: value658, failed: value659 }: Dynamic =
+                let { landed: landedPictures, failed: failedPictures }: Dynamic =
                     await resolveClipboardPictures(
-                      options2.carried,
-                      options2.assets,
-                      controller2.signal,
-                      callback16(
-                        (input2?: Dynamic): Dynamic => items2.push(input2),
+                      pictureInfo.carried,
+                      pictureInfo.assets,
+                      notesAbortController.signal,
+                      makePictureOptions(
+                        (file?: Dynamic): Dynamic => uploadedFiles.push(file),
                         ClipboardAnnotationsLimit,
                       ),
                     ),
-                  value660: Dynamic = callback15(
-                    controller2.signal,
-                    current5,
+                  cancelMessage: Dynamic = getPasteCancelMessage(
+                    notesAbortController.signal,
+                    targetPageId,
                   ),
-                  { group: value661 }: Dynamic = normalizeAnnotationPasteOrigin(
-                    [...items, ...value658].sort(
-                      (input2?: Dynamic, options3?: Dynamic): Dynamic =>
-                        input2.order - options3.order,
+                  { group: pastedNotes }: Dynamic = normalizeAnnotationPasteOrigin(
+                    [...notesToPaste, ...landedPictures].sort(
+                      (first?: Dynamic, second?: Dynamic): Dynamic =>
+                        first.order - second.order,
                     ),
                   );
-                if (value660 !== null || value661.length === 0) {
-                  deps.value188(value660 ?? options2.said([], [], value659));
-                  return void (await callback21(items2));
+                if (cancelMessage !== null || pastedNotes.length === 0) {
+                  deps.value188(cancelMessage ?? pictureInfo.said([], [], failedPictures));
+                  return void (await deleteFiles(uploadedFiles));
                 }
-                let value662: Dynamic =
-                    current5 === ""
+                let pageId: Dynamic =
+                    targetPageId === ""
                       ? (deps.value73.current.pages?.[0]?.id ?? "")
-                      : current5,
-                  value663: Dynamic = designPageContents(
+                      : targetPageId,
+                  targetPageContents: Dynamic = designPageContents(
                     deps.value73.current,
-                    value662,
+                    pageId,
                   ),
-                  value664: Dynamic = context
-                    ? pastedObjectsOrigin(value661, context)
+                  pasteOrigin: Dynamic = notesPasteAnchor
+                    ? pastedObjectsOrigin(pastedNotes, notesPasteAnchor)
                     : nextArtboardPlacementPoint([
-                        ...value663.artboards,
-                        ...(value663.annotations ?? []).map(
+                        ...targetPageContents.artboards,
+                        ...(targetPageContents.annotations ?? []).map(
                           annotationVisibleBounds,
                         ),
                       ]),
-                  value665: Dynamic = deps.value73.current.annotations ?? [],
-                  value666: Dynamic = value661.map(
-                    (input2?: Dynamic): Dynamic => {
-                      let value670: Dynamic = annotationVisibleBounds(input2.spec);
+                  existingNotes: Dynamic = deps.value73.current.annotations ?? [],
+                  noteInputs: Dynamic = pastedNotes.map(
+                    (noteClip?: Dynamic): Dynamic => {
+                      let noteBounds: Dynamic = annotationVisibleBounds(noteClip.spec);
                       return {
                         src: {
-                          ...input2.spec,
-                          ...deps.callback3(current5),
+                          ...noteClip.spec,
+                          ...deps.callback3(targetPageId),
                         },
                         x:
-                          value664.x +
-                          input2.dx +
-                          (input2.spec.x - value670.x),
+                          pasteOrigin.x +
+                          noteClip.dx +
+                          (noteClip.spec.x - noteBounds.x),
                         y:
-                          value664.y +
-                          input2.dy +
-                          (input2.spec.y - value670.y),
+                          pasteOrigin.y +
+                          noteClip.dy +
+                          (noteClip.spec.y - noteBounds.y),
                       };
                     },
                   ),
-                  value667: Dynamic =
-                    value665.length + value666.length <=
-                    PlatformFileContentLimit_5,
-                  value668: Dynamic = value667 ? deps.callback9(value666) : [];
+                  canAddNotes: Dynamic =
+                    existingNotes.length + noteInputs.length <=
+                    maxAnnotations,
+                  newNotes: Dynamic = canAddNotes ? deps.callback9(noteInputs) : [];
                 if (
-                  !value667 ||
+                  !canAddNotes ||
                   !ClipboardPastePlanningAnnotations(
                     deps.value73.current,
-                    value668,
+                    newNotes,
                   )
                 ) {
                   deps.showToast(
-                    value667
+                    canAddNotes
                       ? ClipboardFileTransferRegistry.wontFitPictures
                       : ClipboardFileTransferRegistry.atLimit,
                     "error",
                   );
-                  return void (await callback21(items2));
+                  return void (await deleteFiles(uploadedFiles));
                 }
-                flag2 = true;
+                isCommitted = true;
                 deps.value98({
                   artboards: deps.value73.current.artboards,
-                  annotations: [...value665, ...value668],
+                  annotations: [...existingNotes, ...newNotes],
                 });
                 let files: Dynamic = deps.doc.content().files;
                 deps.value413(
                   {
                     kind: "add",
                     entries: [],
-                    anns: value668,
+                    anns: newNotes,
                     get label() { return uiMessage("canvas.designCanvas.paste"); },
-                    files: items2
+                    files: uploadedFiles
                       .filter(
-                        (input2?: Dynamic): Dynamic =>
-                          typeof files[input2] == "string",
+                        (file?: Dynamic): Dynamic =>
+                          typeof files[file] == "string",
                       )
                       .map(
-                        (input2?: Dynamic): Dynamic => ({
-                          path: input2,
-                          src: files[input2],
+                        (file?: Dynamic): Dynamic => ({
+                          path: file,
+                          src: files[file],
                         }),
                       ),
                   },
                   new Set(),
                 );
-                deps.value80.current === value662 &&
+                deps.value80.current === pageId &&
                   (deps.value62(),
                   deps.setSelection(
                     selectionFromBoards({
                       files: new Set(),
                       notes: new Set(
-                        value668.map(
-                          (input2?: Dynamic): Dynamic => input2.id,
+                        newNotes.map(
+                          (note?: Dynamic): Dynamic => note.id,
                         ),
                       ),
                     }),
                   ),
-                  !context &&
+                  !notesPasteAnchor &&
                     !deps.value345.current &&
                     !deps.value218.current &&
-                    sameViewport(deps.value105.rest(), value657) &&
+                    sameViewport(deps.value105.rest(), notesViewport) &&
                     deps.value383.current(
                       pastedObjectsBounds(
-                        value668.map(annotationVisibleBounds),
+                        newNotes.map(annotationVisibleBounds),
                       ),
                     ));
-                let value669: Dynamic = options2.said(
-                  value668,
-                  value658,
-                  value659,
+                let doneMessage: Dynamic = pictureInfo.said(
+                  newNotes,
+                  landedPictures,
+                  failedPictures,
                 );
-                deps.value80.current === value662 &&
-                ClipboardFileTransferPasted(value669, value668)
-                  ? deps.value189(value669)
-                  : deps.value188(value669);
-              } catch (value658: Dynamic) {
-                console.error("[design/paste]", value658);
-                flag2 || (await callback21(items2));
+                deps.value80.current === pageId &&
+                ClipboardFileTransferPasted(doneMessage, newNotes)
+                  ? deps.value189(doneMessage)
+                  : deps.value188(doneMessage);
+              } catch (error: Dynamic) {
+                console.error("[design/paste]", error);
+                isCommitted || (await deleteFiles(uploadedFiles));
                 deps.showToast(uiMessage("canvas.designCanvas.couldnTPaste2"), "error");
               } finally {
                 deps.value369.current = null;
-                callback20();
+                resolveNotesPasteDone();
               }
             })();
           };
-        if (!ClipboardStateIsArray(input)) {
-          let value657: Dynamic = parseAnnotationPaste(
-            input,
-            (items?: Dynamic): Dynamic =>
+        if (!ClipboardStateIsArray(clipboardText)) {
+          let parsedNotes: Dynamic = parseAnnotationPaste(
+            clipboardText,
+            (notes?: Dynamic): Dynamic =>
               ClipboardPastePlanningAnnotations(
                 deps.value73.current,
-                items.map(
-                  (input2?: Dynamic): Dynamic => ({
-                    ...input2,
+                notes.map(
+                  (note?: Dynamic): Dynamic => ({
+                    ...note,
                     ...deps.callback3(),
                   }),
                 ),
-                128 * items.length,
+                128 * notes.length,
               ),
           );
-          if (value657.land === null)
-            value657.error
-              ? deps.showToast(value657.say, "error")
-              : deps.value188(value657.say);
-          else if (value657.pictures !== undefined)
-            callback17(value657.land, value657.pictures, deps.value109());
+          if (parsedNotes.land === null)
+            parsedNotes.error
+              ? deps.showToast(parsedNotes.say, "error")
+              : deps.value188(parsedNotes.say);
+          else if (parsedNotes.pictures !== undefined)
+            pasteNotesWithPictures(parsedNotes.land, parsedNotes.pictures, deps.value109());
           else {
-            let current5: Dynamic = deps.value73.current;
+            let manifestBefore: Dynamic = deps.value73.current;
             deps.value464.current(
               [],
-              normalizeAnnotationPasteOrigin(value657.land)
+              normalizeAnnotationPasteOrigin(parsedNotes.land)
                 .group,
               deps.value109(),
             );
-            if (deps.value73.current === current5) return;
+            if (deps.value73.current === manifestBefore) return;
             ClipboardFileTransferPasted(
-              value657.say,
-              value657.land.map((input2?: Dynamic): Dynamic => input2.spec),
+              parsedNotes.say,
+              parsedNotes.land.map((note?: Dynamic): Dynamic => note.spec),
             )
-              ? deps.value189(value657.say)
-              : deps.value188(value657.say);
+              ? deps.value189(parsedNotes.say)
+              : deps.value188(parsedNotes.say);
           }
           return;
         }
-        let value653: Dynamic = ClipboardPastePlanningIsArray(
-            input,
+        let notEitherHint: Dynamic = ClipboardPastePlanningIsArray(
+            clipboardText,
           )
             ? ClipboardFileTransferRegistry.notEither
             : "",
-          value654: Dynamic = parseArtboardClipboard(input);
-        if (!value654) {
+          parsedClipboard: Dynamic = parseArtboardClipboard(clipboardText);
+        if (!parsedClipboard) {
           deps.value188(
             uiMessage("canvas.designCanvas.nothingToPasteTheCopied") +
-              value653,
+              notEitherHint,
           );
           return;
         }
-        let callback18: Dynamic = (items?: Dynamic): Dynamic =>
-            items.length > 60 ? items.slice(0, 57) + "\u2026" : items,
-          current4: Dynamic = deps.value80.current,
-          value655: Dynamic = deps.value105.rest(),
-          value656: Dynamic = pasteCascadeStep(
+        let shortenText: Dynamic = (text?: Dynamic): Dynamic =>
+            text.length > 60 ? text.slice(0, 57) + "\u2026" : text,
+          startPageId: Dynamic = deps.value80.current,
+          artboardsViewport: Dynamic = deps.value105.rest(),
+          cascadeStep: Dynamic = pasteCascadeStep(
             deps.value105.get().scale,
           ),
           controller: Dynamic = new AbortController(),
-          callback19: Dynamic = (): Dynamic => {};
+          resolveArtboardPasteDone: Dynamic = (): Dynamic => {};
         deps.value369.current = {
           ctrl: controller,
-          done: new Promise((input2?: Dynamic): Dynamic => {
-            callback19 = input2;
+          done: new Promise((resolve?: Dynamic): Dynamic => {
+            resolveArtboardPasteDone = resolve;
           }),
         };
         (async (): Promise<Dynamic> => {
-          let items: Dynamic = [];
+          let uploadedFiles: Dynamic = [];
           try {
-            let value657: Dynamic = (await awaitFeatureFlag(
+            let trustChoice: Dynamic = (await awaitFeatureFlag(
               crossCanvasPasteConfirmFeatureFlag,
               true,
             ))
               ? await askTrustForCodePaste(
-                  value654.artboards.length,
+                  parsedClipboard.artboards.length,
                   controller.signal,
                 )
               : "with-code";
-            if (value657 === "cancel") return;
-            let value658: Dynamic = callback15(controller.signal);
-            if (value658 !== null) return deps.value188(value658);
-            let value659: Dynamic = value657 === "with-code",
-              value660: Dynamic = parseAnnotationClipboard(
-                input,
+            if (trustChoice === "cancel") return;
+            let earlyCancelMessage: Dynamic = getPasteCancelMessage(controller.signal);
+            if (earlyCancelMessage !== null) return deps.value188(earlyCancelMessage);
+            let includeCode: Dynamic = trustChoice === "with-code",
+              notesClipboard: Dynamic = parseAnnotationClipboard(
+                clipboardText,
               ),
-              value661: Dynamic = buildAnnotationPaste(
-                value660?.entries ?? [],
-                value659,
-                value660?.pictures ?? [],
+              notePaste: Dynamic = buildAnnotationPaste(
+                notesClipboard?.entries ?? [],
+                includeCode,
+                notesClipboard?.pictures ?? [],
               ),
-              value662: Dynamic = value659
-                ? value654
-                : blankArtboardBody(value654),
-              value663: Dynamic =
+              artboardClipboard: Dynamic = includeCode
+                ? parsedClipboard
+                : blankArtboardBody(parsedClipboard),
+              canAddNotes: Dynamic =
                 (deps.value73.current.annotations ?? []).length +
-                  value661.land.length +
-                  value661.pictures.length <=
-                PlatformFileContentLimit_5,
-              value664: Dynamic = value663
+                  notePaste.land.length +
+                  notePaste.pictures.length <=
+                maxAnnotations,
+              pictureAssets: Dynamic = canAddNotes
                 ? parseClipboardAssets(
-                    input,
-                    value661.pictures,
-                    clipboardPayloadUsage(value654),
+                    clipboardText,
+                    notePaste.pictures,
+                    clipboardPayloadUsage(parsedClipboard),
                   )
                 : new Map(),
-              items2: Dynamic = [],
-              value665: Dynamic = value659
+              storedPictureFiles: Dynamic = [],
+              droppedSvgCount: Dynamic = includeCode
                 ? 0
-                : Object.keys(value654.files).filter(
-                    (input2?: Dynamic): Dynamic => /\.svg$/i.test(input2),
+                : Object.keys(parsedClipboard.files).filter(
+                    (path?: Dynamic): Dynamic => /\.svg$/i.test(path),
                   ).length +
-                  Object.values(value654.assets).filter(
-                    (input2?: Dynamic): Dynamic =>
-                      /^data:image\/svg\+xml/i.test(input2),
+                  Object.values(parsedClipboard.assets).filter(
+                    (data?: Dynamic): Dynamic =>
+                      /^data:image\/svg\+xml/i.test(data),
                   ).length,
-              callback20: Dynamic = (): Dynamic =>
+              getKnownProjectFiles: Dynamic = (): Dynamic =>
                 hasPendingFileOverlay()
                   ? new Set(
                       [
                         ...Object.keys(getDesignSystemFiles()),
                         ...getAllFileReferencePaths(),
                       ].map(
-                        (input2?: Dynamic): Dynamic =>
-                          input2.startsWith(ProjectValue)
-                            ? input2.slice(ProjectValue.length)
-                            : input2,
+                        (path?: Dynamic): Dynamic =>
+                          path.startsWith(ProjectValue)
+                            ? path.slice(ProjectValue.length)
+                            : path,
                       ),
                     )
                   : "unknown",
-              callback21: Dynamic = (
-                input2?: Dynamic,
-                options2?: Dynamic,
+              exceedsFileLimit: Dynamic = (
+                prepared?: Dynamic,
+                existingFiles?: Dynamic,
               ): Dynamic =>
-                Object.keys(options2).length +
-                  input2.boards.length +
-                  Object.keys(input2.files).length >
+                Object.keys(existingFiles).length +
+                  prepared.boards.length +
+                  Object.keys(prepared.files).length >
                 PlatformFileContentFilesValue,
-              value666: Dynamic = getDocumentFileCap(deps.doc),
-              value667: Dynamic = preparePastedArtboardFiles(
-                value662,
+              fileCap: Dynamic = getDocumentFileCap(deps.doc),
+              preparedFiles: Dynamic = preparePastedArtboardFiles(
+                artboardClipboard,
                 deps.doc.content().files,
                 deps.supportsLoadState,
-                callback20(),
-                value666,
+                getKnownProjectFiles(),
+                fileCap,
               );
-            if (callback21(value667, deps.doc.content().files)) {
+            if (exceedsFileLimit(preparedFiles, deps.doc.content().files)) {
               deps.showToast(
                 uiMessage("canvas.designCanvas.couldnTPasteThisCanvas", { value1: String(String(PlatformFileContentFilesValue)) }) +
-                  value653,
+                  notEitherHint,
                 "error",
               );
               return;
             }
-            let items3: Dynamic = [
-                ...Object.entries(value662.assets).map(
-                  ([input2, input3]: Dynamic): Dynamic => [
-                    input2,
-                    input3,
+            let assetEntries: Dynamic = [
+                ...Object.entries(artboardClipboard.assets).map(
+                  ([path, data]: Dynamic): Dynamic => [
+                    path,
+                    data,
                     "asset",
                   ],
                 ),
-                ...Object.entries(value667.images).map(
-                  ([input2, input3]: Dynamic): Dynamic => [
-                    input2,
-                    input3,
+                ...Object.entries(preparedFiles.images).map(
+                  ([path, data]: Dynamic): Dynamic => [
+                    path,
+                    data,
                     "image",
                   ],
                 ),
               ],
-              value668: Dynamic = items3.map(
-                ([, input2, input3]: Dynamic): Dynamic =>
-                  input3 === "asset" &&
-                  ClipboardArtboardsTest_2(input2),
+              isFontAsset: Dynamic = assetEntries.map(
+                ([, data, kind]: Dynamic): Dynamic =>
+                  kind === "asset" &&
+                  isFontDataUrl(data),
               ),
-              items4: Dynamic = [
-                ...items3.filter(
-                  (input2?: Dynamic, options2?: Dynamic): Dynamic =>
-                    !value668[options2],
+              sortedEntries: Dynamic = [
+                ...assetEntries.filter(
+                  (assetItem?: Dynamic, index?: Dynamic): Dynamic =>
+                    !isFontAsset[index],
                 ),
-                ...items3.filter(
-                  (input2?: Dynamic, options2?: Dynamic): Dynamic =>
-                    value668[options2],
+                ...assetEntries.filter(
+                  (assetItem?: Dynamic, index?: Dynamic): Dynamic =>
+                    isFontAsset[index],
                 ),
               ],
-              entries: Dynamic = new Map(),
-              entries2: Dynamic = new Map(),
-              items5: Dynamic = [],
-              values: Dynamic = new Set(),
-              entries3: Dynamic = new Map(),
-              values2: Dynamic = new Set(),
-              value669: Dynamic = value662.fontsLeftOut ?? 0,
-              callback22: Dynamic = async (
-                input2?: Dynamic,
+              assetUrls: Dynamic = new Map(),
+              imageUrls: Dynamic = new Map(),
+              uploadedPaths: Dynamic = [],
+              skippedImages: Dynamic = new Set(),
+              assetMeta: Dynamic = new Map(),
+              skippedAssets: Dynamic = new Set(),
+              fontsLeftOutCount: Dynamic = artboardClipboard.fontsLeftOut ?? 0,
+              uploadBlob: Dynamic = async (
+                blob?: Dynamic,
               ): Promise<Dynamic> => {
-                let value695: Dynamic = await getAssetsCapability();
-                if (value695 === null || typeof value695.upload != "function")
+                let assetsCapability: Dynamic = await getAssetsCapability();
+                if (assetsCapability === null || typeof assetsCapability.upload != "function")
                   return;
-                let value696: Dynamic = input2.type.split(";")[0].trim(),
-                  value697: Dynamic = await value695.upload(
-                    new Blob([input2], {
-                      type: value696,
+                let mimeType: Dynamic = blob.type.split(";")[0].trim(),
+                  uploadResult: Dynamic = await assetsCapability.upload(
+                    new Blob([blob], {
+                      type: mimeType,
                     }),
                     {
-                      type: value696,
+                      type: mimeType,
                     },
                   ),
-                  value698: Dynamic =
-                    typeof value697?.url == "string" &&
-                    isBlobAssetUrl(value697.url)
-                      ? value697.url
-                      : typeof value697?.id == "string"
-                        ? "_blob/" + value697.id
+                  uploadedUrl: Dynamic =
+                    typeof uploadResult?.url == "string" &&
+                    isBlobAssetUrl(uploadResult.url)
+                      ? uploadResult.url
+                      : typeof uploadResult?.id == "string"
+                        ? "_blob/" + uploadResult.id
                         : undefined;
-                return value698 !== undefined &&
-                  isBlobAssetUrl(value698)
-                  ? value698
+                return uploadedUrl !== undefined &&
+                  isBlobAssetUrl(uploadedUrl)
+                  ? uploadedUrl
                   : undefined;
               },
-              value670: Dynamic = items4.length + value664.size;
-            if (value670 > 0) {
-              let length3: Dynamic = value667.boards.length;
+              totalFiles: Dynamic = sortedEntries.length + pictureAssets.size;
+            if (totalFiles > 0) {
+              let boardCount: Dynamic = preparedFiles.boards.length;
               deps.value188(
-                (length3 === 1
+                (boardCount === 1
                   ? uiMessage("canvas.designCanvas.pastingAnArtboard")
-                  : uiMessage("canvas.designCanvas.pastingValue1Artboards", { value1: String(String(length3)) })) +
-                  `, bringing over ${String(value670)} file${value670 === 1 ? "" : "s"}\u2026`,
+                  : uiMessage("canvas.designCanvas.pastingValue1Artboards", { value1: String(String(boardCount)) })) +
+                  `, bringing over ${String(totalFiles)} file${totalFiles === 1 ? "" : "s"}\u2026`,
               );
             }
-            if (items4.length > 0) {
-              let index: Dynamic = 0,
-                callback27: Dynamic = async (): Promise<Dynamic> => {
+            if (sortedEntries.length > 0) {
+              let nextIndex: Dynamic = 0,
+                uploadWorker: Dynamic = async (): Promise<Dynamic> => {
                   for (
-                    let value695: Dynamic = index++;
-                    value695 < items4.length && !controller.signal.aborted;
-                    value695 = index++
+                    let entryIndex: Dynamic = nextIndex++;
+                    entryIndex < sortedEntries.length && !controller.signal.aborted;
+                    entryIndex = nextIndex++
                   ) {
-                    let [value696, value697, value698]: Dynamic =
-                      items4[value695];
+                    let [path, data, kind]: Dynamic =
+                      sortedEntries[entryIndex];
                     if (
-                      value698 === "asset" &&
-                      ClipboardArtboardsTest_2(value697)
+                      kind === "asset" &&
+                      isFontDataUrl(data)
                     ) {
-                      let value701: Dynamic = await dataUrlToFontFile(
-                        value697,
-                        "pasted-font-" + String(value695 + 1),
+                      let fontFile: Dynamic = await dataUrlToFontFile(
+                        data,
+                        "pasted-font-" + String(entryIndex + 1),
                       );
                       if (controller.signal.aborted) break;
-                      let value702: Dynamic = value701
-                        ? await callback22(value701).catch((): Dynamic => {})
+                      let fontUrl: Dynamic = fontFile
+                        ? await uploadBlob(fontFile).catch((): Dynamic => {})
                         : undefined;
-                      value702 === undefined
-                        ? (value669 += 1)
-                        : entries.set(
-                            value696,
-                            value702.startsWith("blob:")
-                              ? value702
-                              : "/" + value702.replace(/^\//, ""),
+                      fontUrl === undefined
+                        ? (fontsLeftOutCount += 1)
+                        : assetUrls.set(
+                            path,
+                            fontUrl.startsWith("blob:")
+                              ? fontUrl
+                              : "/" + fontUrl.replace(/^\//, ""),
                           );
                       continue;
                     }
-                    let value699: Dynamic = dataUrlToBlob(
-                      value697,
-                      value698 === "asset"
-                        ? "pasted-image-" + String(value695 + 1)
-                        : (value696.split("/").pop() ?? value696).replace(
+                    let blob: Dynamic = dataUrlToBlob(
+                      data,
+                      kind === "asset"
+                        ? "pasted-image-" + String(entryIndex + 1)
+                        : (path.split("/").pop() ?? path).replace(
                             /\.[^.]+$/,
                             "",
                           ),
                     );
                     if (
-                      value698 === "asset" &&
-                      ClipboardArtboardsTest(value697)
+                      kind === "asset" &&
+                      ClipboardArtboardsTest(data)
                     ) {
-                      let value701: Dynamic = value699
-                        ? await callback22(value699).catch((): Dynamic => {})
+                      let blobUrl: Dynamic = blob
+                        ? await uploadBlob(blob).catch((): Dynamic => {})
                         : undefined;
-                      value701 === undefined || !value699
-                        ? values2.add(value696)
-                        : (entries.set(
-                            value696,
-                            value701.startsWith("blob:")
-                              ? value701
-                              : "/" + value701.replace(/^\//, ""),
+                      blobUrl === undefined || !blob
+                        ? skippedAssets.add(path)
+                        : (assetUrls.set(
+                            path,
+                            blobUrl.startsWith("blob:")
+                              ? blobUrl
+                              : "/" + blobUrl.replace(/^\//, ""),
                           ),
-                          entries3.set(value696, {
-                            bytes: value699.size,
-                            type: value699.type.split(";")[0].trim(),
+                          assetMeta.set(path, {
+                            bytes: blob.size,
+                            type: blob.type.split(";")[0].trim(),
                           }));
                       continue;
                     }
                     if (
-                      !value699 ||
-                      !(await isPlayableImage(value699))
+                      !blob ||
+                      !(await isPlayableImage(blob))
                     ) {
-                      values.add(value696);
+                      skippedImages.add(path);
                       continue;
                     }
                     if (controller.signal.aborted) break;
-                    let value700: Dynamic = value697;
+                    let storedSrc: Dynamic = data;
                     try {
-                      value700 = (
+                      storedSrc = (
                         await uploadDesignFile(
                           "appifact",
                           null,
-                          value699,
+                          blob,
                         )
                       ).src;
-                      value700.startsWith("./") &&
-                        (items5.push(value700.slice(2)),
-                        items.push(value700.slice(2)));
+                      storedSrc.startsWith("./") &&
+                        (uploadedPaths.push(storedSrc.slice(2)),
+                        uploadedFiles.push(storedSrc.slice(2)));
                     } catch {}
-                    (value698 === "asset" ? entries : entries2).set(
-                      value696,
-                      value700,
+                    (kind === "asset" ? assetUrls : imageUrls).set(
+                      path,
+                      storedSrc,
                     );
                   }
                 };
               await Promise.all(
                 Array.from(
                   {
-                    length: Math.min(4, items4.length),
+                    length: Math.min(4, sortedEntries.length),
                   },
-                  callback27,
+                  uploadWorker,
                 ),
               );
             }
-            let value671: Dynamic = value663
+            let pictureResult: Dynamic = canAddNotes
                 ? await resolveClipboardPictures(
-                    value661.pictures,
-                    value664,
+                    notePaste.pictures,
+                    pictureAssets,
                     controller.signal,
-                    callback16((input2?: Dynamic): Dynamic => {
-                      items2.push(input2);
-                      items5.push(input2);
-                      items.push(input2);
+                    makePictureOptions((file?: Dynamic): Dynamic => {
+                      storedPictureFiles.push(file);
+                      uploadedPaths.push(file);
+                      uploadedFiles.push(file);
                     }, ClipboardArtboardsLimit),
                   )
                 : {
                     landed: [],
                     failed: 0,
                   },
-              callback23: Dynamic = (
-                input2?: Dynamic,
-                options2?: Dynamic,
+              imageKey: Dynamic = (
+                path?: Dynamic,
+                content?: Dynamic,
               ): Dynamic =>
-                (/\.([^./]+)$/.exec(input2)?.[1] ?? "").toLowerCase() +
+                (/\.([^./]+)$/.exec(path)?.[1] ?? "").toLowerCase() +
                 ":" +
-                options2,
-              values3: Dynamic = new Set();
-            for (let [value695, value696] of Object.entries(
-              value662.files,
+                content,
+              undecodableImageKeys: Dynamic = new Set();
+            for (let [path, content] of Object.entries(
+              artboardClipboard.files,
             ) as Dynamic) {
               if (controller.signal.aborted) break;
               if (
-                !PlatformFileContentWebpAvifPattern.test(value695) ||
-                entries2.has(value695) ||
-                values.has(value695)
+                !PlatformFileContentWebpAvifPattern.test(path) ||
+                imageUrls.has(path) ||
+                skippedImages.has(path)
               )
                 continue;
-              let value697: Dynamic = dataUrlToBlob(
-                fileDataUrl(value695, value696),
+              let imageBlob: Dynamic = dataUrlToBlob(
+                fileDataUrl(path, content),
                 "carried",
               );
-              (!value697 ||
-                !(await isPlayableImage(value697))) &&
-                values3.add(callback23(value695, value696));
+              (!imageBlob ||
+                !(await isPlayableImage(imageBlob))) &&
+                undecodableImageKeys.add(imageKey(path, content));
             }
-            let callback24: Dynamic = async (): Promise<Dynamic> => {
-                for (let value695 of items.splice(0) as Dynamic)
+            let cleanupUploads: Dynamic = async (): Promise<Dynamic> => {
+                for (let file of uploadedFiles.splice(0) as Dynamic)
                   await getKvClient()
                     .delete(
-                      PlatformFileContentHandler_4(value695),
+                      PlatformFileContentHandler_4(file),
                     )
                     .catch((): Dynamic => false);
               },
-              value672: Dynamic = callback15(controller.signal, current4);
-            if (value672 !== null) {
-              deps.value188(value672);
-              return void (await callback24());
+              cancelMessage: Dynamic = getPasteCancelMessage(controller.signal, startPageId);
+            if (cancelMessage !== null) {
+              deps.value188(cancelMessage);
+              return void (await cleanupUploads());
             }
-            value667 = preparePastedArtboardFiles(
-              value662,
+            preparedFiles = preparePastedArtboardFiles(
+              artboardClipboard,
               deps.doc.content().files,
               deps.supportsLoadState,
-              callback20(),
-              value666,
+              getKnownProjectFiles(),
+              fileCap,
             );
-            if (callback21(value667, deps.doc.content().files)) {
+            if (exceedsFileLimit(preparedFiles, deps.doc.content().files)) {
               deps.showToast(
                 uiMessage("canvas.designCanvas.couldnTPasteThisCanvas", { value1: String(String(PlatformFileContentFilesValue)) }) +
-                  value653,
+                  notEitherHint,
                 "error",
               );
-              return void (await callback24());
+              return void (await cleanupUploads());
             }
-            for (let [value695, value696] of Object.entries(
-              value667.images,
+            for (let [path, url] of Object.entries(
+              preparedFiles.images,
             ) as Dynamic)
-              entries2.has(value695) ||
-                values.has(value695) ||
-                (values3.has(callback23(value695, value662.files[value695]))
-                  ? values.add(value695)
-                  : entries2.set(value695, value696));
-            let values4: Dynamic = new Set(
+              imageUrls.has(path) ||
+                skippedImages.has(path) ||
+                (undecodableImageKeys.has(imageKey(path, artboardClipboard.files[path]))
+                  ? skippedImages.add(path)
+                  : imageUrls.set(path, url));
+            let existingFileNamesLower: Dynamic = new Set(
               Object.keys(deps.doc.content().files).map(
-                (input2?: Dynamic): Dynamic => input2.toLowerCase(),
+                (path?: Dynamic): Dynamic => path.toLowerCase(),
               ),
             );
-            for (let value695 of values as Dynamic)
-              value695 in value667.images &&
-                values4.has(value695.toLowerCase()) &&
-                entries2.set(
-                  value695,
-                  value695.replace(/(\.[^./]*)?$/, "-missing$1"),
+            for (let path of skippedImages as Dynamic)
+              path in preparedFiles.images &&
+                existingFileNamesLower.has(path.toLowerCase()) &&
+                imageUrls.set(
+                  path,
+                  path.replace(/(\.[^./]*)?$/, "-missing$1"),
                 );
             remapPastedAssetFiles(
-              value667,
-              entries,
-              entries2,
-              value666,
+              preparedFiles,
+              assetUrls,
+              imageUrls,
+              fileCap,
             );
-            let value673: Dynamic = new TextEncoder(),
-              value674: Dynamic = value667.boards.filter(
-                (input2?: Dynamic): Dynamic =>
-                  value673.encode(input2.entry.src).length <=
-                  PlatformFileContentResolvedValue_11,
+            let textEncoder: Dynamic = new TextEncoder(),
+              pasteableBoards: Dynamic = preparedFiles.boards.filter(
+                (board?: Dynamic): Dynamic =>
+                  textEncoder.encode(board.entry.src).length <=
+                  maxEmbeddedFileBytes,
               ),
-              value675: Dynamic = value667.boards.length - value674.length;
-            if (value674.length === 0) {
+              oversizedBoardCount: Dynamic = preparedFiles.boards.length - pasteableBoards.length;
+            if (pasteableBoards.length === 0) {
               deps.showToast(
                 uiMessage("canvas.designCanvas.couldnTPasteEveryCopied") +
-                  value653,
+                  notEitherHint,
                 "error",
               );
-              return void (await callback24());
+              return void (await cleanupUploads());
             }
-            for (let [value695, value696] of Object.entries(
-              value667.files,
+            for (let [path, content] of Object.entries(
+              preparedFiles.files,
             ) as Dynamic) {
-              let value697: Dynamic =
-                value673.encode(value696).length > value666
+              let dropReason: Dynamic =
+                textEncoder.encode(content).length > fileCap
                   ? "too large once its images were inlined"
                   : PlatformFileContentWebpAvifPattern.test(
-                        value695,
-                      ) && values3.has(callback23(value695, value696))
+                        path,
+                      ) && undecodableImageKeys.has(imageKey(path, content))
                     ? "not an image the editor can decode"
                     : null;
-              value697 !== null &&
-                (delete value667.files[value695],
-                value667.dropped.push({
-                  path: value695,
-                  why: value697,
+              dropReason !== null &&
+                (delete preparedFiles.files[path],
+                preparedFiles.dropped.push({
+                  path: path,
+                  why: dropReason,
                 }));
             }
             deps.value310.current = true;
-            for (let [value695, value696] of Object.entries(
-              value667.files,
+            for (let [path, content] of Object.entries(
+              preparedFiles.files,
             ) as Dynamic) {
               await getKvClient().set(
-                PlatformFileContentHandler_4(value695),
-                value696,
+                PlatformFileContentHandler_4(path),
+                content,
               );
-              items.push(value695);
+              uploadedFiles.push(path);
             }
-            let value676: Dynamic =
-                current4 === ""
+            let pageId: Dynamic =
+                startPageId === ""
                   ? (deps.value73.current.pages?.[0]?.id ?? "")
-                  : current4,
+                  : startPageId,
               artboards: Dynamic = designPageContents(
                 deps.value73.current,
-                value676,
+                pageId,
               ).artboards,
-              value677: Dynamic = value674.map(
-                (input2?: Dynamic): Dynamic => input2.entry,
+              boardEntries: Dynamic = pasteableBoards.map(
+                (board?: Dynamic): Dynamic => board.entry,
               ),
-              value678: Dynamic = [...value661.land, ...value671.landed].sort(
-                (input2?: Dynamic, options2?: Dynamic): Dynamic =>
-                  input2.order - options2.order,
+              noteClips: Dynamic = [...notePaste.land, ...pictureResult.landed].sort(
+                (first?: Dynamic, second?: Dynamic): Dynamic =>
+                  first.order - second.order,
               ),
-              { group: value679, shift: value680 }: Dynamic = normalizeAnnotationPasteOrigin([
-                ...value677,
-                ...value678,
+              { group: pastedGroup, shift: groupShift }: Dynamic = normalizeAnnotationPasteOrigin([
+                ...boardEntries,
+                ...noteClips,
               ]),
-              value681: Dynamic = options
-                ? pastedObjectsOrigin(value679, options)
+              baseOrigin: Dynamic = pasteAnchor
+                ? pastedObjectsOrigin(pastedGroup, pasteAnchor)
                 : nextArtboardPlacementPoint(
-                    value678.length > 0
+                    noteClips.length > 0
                       ? [
                           ...artboards,
                           ...(
                             designPageContents(
                               deps.value73.current,
-                              value676,
+                              pageId,
                             ).annotations ?? []
                           ).map(annotationVisibleBounds),
                         ]
                       : artboards,
                   ),
               state: Dynamic = {
-                x: value681.x + value680.x,
-                y: value681.y + value680.y,
+                x: baseOrigin.x + groupShift.x,
+                y: baseOrigin.y + groupShift.y,
               },
-              value682: Dynamic = options
+              pasteOrigin: Dynamic = pasteAnchor
                 ? avoidPastedObjectCollisions(
                     state,
-                    value677,
+                    boardEntries,
                     artboards,
-                    value656,
+                    cascadeStep,
                   )
                 : state,
-              items6: Dynamic = [];
+              newArtboards: Dynamic = [];
             for (let {
-              path: value695,
-              entry: value696,
-            } of value674 as Dynamic) {
+              path: path,
+              entry: boardEntry,
+            } of pasteableBoards as Dynamic) {
               await getKvClient().set(
-                PlatformFileContentHandler_4(value695),
-                value696.src,
+                PlatformFileContentHandler_4(path),
+                boardEntry.src,
               );
-              items.push(value695);
-              let value697: Dynamic =
-                  value696.title ??
-                  value696.stem.split("/").pop() ??
-                  value696.stem,
-                value698: Dynamic = [...artboards, ...items6].some(
-                  (input2?: Dynamic): Dynamic =>
-                    (input2.title ??
-                      input2.file.replace(/\.dc\.html$/, "")) === value697,
+              uploadedFiles.push(path);
+              let boardTitle: Dynamic =
+                  boardEntry.title ??
+                  boardEntry.stem.split("/").pop() ??
+                  boardEntry.stem,
+                isTitleTaken: Dynamic = [...artboards, ...newArtboards].some(
+                  (artboard?: Dynamic): Dynamic =>
+                    (artboard.title ??
+                      artboard.file.replace(/\.dc\.html$/, "")) === boardTitle,
                 );
-              items6.push({
-                file: value695,
-                x: Math.round(value682.x + value696.dx),
-                y: Math.round(value682.y + value696.dy),
-                w: value696.w,
-                h: value696.h,
-                title: value698
-                  ? duplicateArtboardTitle(value697, [
+              newArtboards.push({
+                file: path,
+                x: Math.round(pasteOrigin.x + boardEntry.dx),
+                y: Math.round(pasteOrigin.y + boardEntry.dy),
+                w: boardEntry.w,
+                h: boardEntry.h,
+                title: isTitleTaken
+                  ? duplicateArtboardTitle(boardTitle, [
                       ...artboards,
-                      ...items6,
+                      ...newArtboards,
                     ])
-                  : value697,
-                ...artboardAppearanceProperties(value696),
-                ...deps.callback3(current4),
+                  : boardTitle,
+                ...artboardAppearanceProperties(boardEntry),
+                ...deps.callback3(startPageId),
               });
             }
-            let values5: Dynamic = new Set(
-                items6.map((input2?: Dynamic): Dynamic => input2.file),
+            let newFiles: Dynamic = new Set(
+                newArtboards.map((artboard?: Dynamic): Dynamic => artboard.file),
               ),
-              items7: Dynamic = [
+              allArtboards: Dynamic = [
                 ...deps.value73.current.artboards.filter(
-                  (input2?: Dynamic): Dynamic => !values5.has(input2.file),
+                  (artboard?: Dynamic): Dynamic => !newFiles.has(artboard.file),
                 ),
-                ...items6,
+                ...newArtboards,
               ],
-              value683: Dynamic = deps.value73.current.annotations ?? [],
-              value684: Dynamic = value678.map(
-                (input2?: Dynamic): Dynamic => {
-                  let value695: Dynamic = annotationVisibleBounds(input2.spec);
+              existingNotes: Dynamic = deps.value73.current.annotations ?? [],
+              noteInputs: Dynamic = noteClips.map(
+                (noteClip?: Dynamic): Dynamic => {
+                  let noteBounds: Dynamic = annotationVisibleBounds(noteClip.spec);
                   return {
                     src: {
-                      ...input2.spec,
-                      ...deps.callback3(current4),
+                      ...noteClip.spec,
+                      ...deps.callback3(startPageId),
                     },
-                    x: value682.x + input2.dx + (input2.spec.x - value695.x),
-                    y: value682.y + input2.dy + (input2.spec.y - value695.y),
+                    x: pasteOrigin.x + noteClip.dx + (noteClip.spec.x - noteBounds.x),
+                    y: pasteOrigin.y + noteClip.dy + (noteClip.spec.y - noteBounds.y),
                   };
                 },
               ),
-              value685: Dynamic =
-                value663 &&
-                value684.length > 0 &&
-                value683.length + value684.length <=
-                  PlatformFileContentLimit_5
-                  ? deps.callback9(value684)
+              newNotes: Dynamic =
+                canAddNotes &&
+                noteInputs.length > 0 &&
+                existingNotes.length + noteInputs.length <=
+                  maxAnnotations
+                  ? deps.callback9(noteInputs)
                   : [],
-              value686: Dynamic =
-                value685.length > 0 &&
+              acceptedNotes: Dynamic =
+                newNotes.length > 0 &&
                 ClipboardPastePlanningAnnotations(
                   {
                     ...deps.value73.current,
-                    artboards: items7,
+                    artboards: allArtboards,
                   },
-                  value685,
+                  newNotes,
                 )
-                  ? value685
+                  ? newNotes
                   : [];
-            items.length = 0;
+            uploadedFiles.length = 0;
             deps.value98({
-              artboards: items7,
-              ...(value686.length > 0
+              artboards: allArtboards,
+              ...(acceptedNotes.length > 0
                 ? {
-                    annotations: [...value683, ...value686],
+                    annotations: [...existingNotes, ...acceptedNotes],
                   }
                 : {}),
             });
@@ -1382,159 +1382,159 @@ export function pasteExternalClipboardPayload(deps: { readonly callback3: Dynami
             deps.value413(
               {
                 kind: "add",
-                entries: items6.map(
-                  (input2?: Dynamic, options2?: Dynamic): Dynamic => ({
-                    file: input2.file,
-                    src: value674[options2].entry.src,
-                    spec: input2,
+                entries: newArtboards.map(
+                  (artboard?: Dynamic, index?: Dynamic): Dynamic => ({
+                    file: artboard.file,
+                    src: pasteableBoards[index].entry.src,
+                    spec: artboard,
                   }),
                 ),
                 files: [
-                  ...Object.entries(value667.files).map(
-                    ([input2, input3]: Dynamic): Dynamic => ({
-                      path: input2,
-                      src: input3,
+                  ...Object.entries(preparedFiles.files).map(
+                    ([path, content]: Dynamic): Dynamic => ({
+                      path: path,
+                      src: content,
                     }),
                   ),
-                  ...items5
+                  ...uploadedPaths
                     .filter(
-                      (input2?: Dynamic): Dynamic =>
-                        typeof files[input2] == "string" &&
-                        (value686.length > 0 || !items2.includes(input2)),
+                      (file?: Dynamic): Dynamic =>
+                        typeof files[file] == "string" &&
+                        (acceptedNotes.length > 0 || !storedPictureFiles.includes(file)),
                     )
                     .map(
-                      (input2?: Dynamic): Dynamic => ({
-                        path: input2,
-                        src: files[input2],
+                      (file?: Dynamic): Dynamic => ({
+                        path: file,
+                        src: files[file],
                       }),
                     ),
                 ],
-                ...(value686.length > 0
+                ...(acceptedNotes.length > 0
                   ? {
-                      anns: value686,
+                      anns: acceptedNotes,
                       get label() { return uiMessage("canvas.designCanvas.paste"); },
                     }
                   : {}),
               },
-              values5,
+              newFiles,
             );
-            if (value686.length === 0)
-              for (let value695 of items2 as Dynamic)
+            if (acceptedNotes.length === 0)
+              for (let file of storedPictureFiles as Dynamic)
                 await getKvClient()
-                  .delete(PlatformFileContentHandler_4(value695))
+                  .delete(PlatformFileContentHandler_4(file))
                   .catch((): Dynamic => false);
-            deps.value80.current === value676 &&
+            deps.value80.current === pageId &&
               deps.setSelection(
-                value686.length > 0
+                acceptedNotes.length > 0
                   ? selectionFromBoards({
-                      files: values5,
+                      files: newFiles,
                       notes: new Set(
-                        value686.map(
-                          (input2?: Dynamic): Dynamic => input2.id,
+                        acceptedNotes.map(
+                          (note?: Dynamic): Dynamic => note.id,
                         ),
                       ),
                     })
-                  : selectionFromArtboards(values5),
+                  : selectionFromArtboards(newFiles),
               );
-            items6.length > 0 &&
+            newArtboards.length > 0 &&
               frameAnalyticsReporter(
                 designAnalyticsEvents.artboardInserted,
               );
-            !options &&
-              deps.value80.current === value676 &&
+            !pasteAnchor &&
+              deps.value80.current === pageId &&
               !deps.value345.current &&
               !deps.value218.current &&
-              sameViewport(deps.value105.rest(), value655) &&
-              deps.value383.current(pastedObjectsBounds(items6));
-            let value687: Dynamic = Object.entries(
-                value662.held ?? {},
+              sameViewport(deps.value105.rest(), artboardsViewport) &&
+              deps.value383.current(pastedObjectsBounds(newArtboards));
+            let heldAssets: Dynamic = Object.entries(
+                artboardClipboard.held ?? {},
               ).filter(
                 (
-                  [input2]: Dynamic,
-                  options2?: Dynamic,
-                  context?: Dynamic,
+                  [path]: Dynamic,
+                  index?: Dynamic,
+                  allHeld?: Dynamic,
                 ): Dynamic =>
-                  context.findIndex(
-                    ([input3]: Dynamic): Dynamic =>
-                      input3.toLowerCase() === input2.toLowerCase(),
-                  ) === options2,
+                  allHeld.findIndex(
+                    ([otherPath]: Dynamic): Dynamic =>
+                      otherPath.toLowerCase() === path.toLowerCase(),
+                  ) === index,
               ),
-              values6: Dynamic = new Set(
+              knownFilesLower: Dynamic = new Set(
                 [
                   ...Object.keys(deps.doc.content().files),
                   ...getAllFileReferencePaths(),
-                ].map((input2?: Dynamic): Dynamic => input2.toLowerCase()),
+                ].map((path?: Dynamic): Dynamic => path.toLowerCase()),
               ),
-              callback25: Dynamic = (input2?: Dynamic): Dynamic =>
+              isKnownFile: Dynamic = (path?: Dynamic): Dynamic =>
                 !hasPendingFileOverlay() ||
-                values6.has(input2.toLowerCase());
+                knownFilesLower.has(path.toLowerCase());
             deps.value224.current &&
               (await Promise.all(
-                value687.map(
-                  async ([input2, input3]: Dynamic): Promise<Dynamic> => {
-                    let entry: Dynamic = entries.get(input3),
-                      entry2: Dynamic = entries3.get(input3);
-                    if (entry === undefined || entry2 === undefined) return;
-                    let value695: Dynamic = saveExternalFileReference(
-                      input2,
-                      entry,
-                      entry2.bytes,
-                      entry2.type,
-                      callback25,
+                heldAssets.map(
+                  async ([path, assetKey]: Dynamic): Promise<Dynamic> => {
+                    let assetUrl: Dynamic = assetUrls.get(assetKey),
+                      assetInfo: Dynamic = assetMeta.get(assetKey);
+                    if (assetUrl === undefined || assetInfo === undefined) return;
+                    let savePromise: Dynamic = saveExternalFileReference(
+                      path,
+                      assetUrl,
+                      assetInfo.bytes,
+                      assetInfo.type,
+                      isKnownFile,
                     );
                     await Promise.race([
-                      value695,
+                      savePromise,
                       new Promise(
-                        (input4?: Dynamic, options2?: Dynamic): Dynamic =>
+                        (resolve?: Dynamic, reject?: Dynamic): Dynamic =>
                           setTimeout(
                             (): Dynamic =>
-                              options2(new Error("no answer from the store")),
+                              reject(new Error("no answer from the store")),
                             8e3,
                           ),
                       ),
-                    ]).catch((input4?: Dynamic): Dynamic => {
+                    ]).catch((error?: Dynamic): Dynamic => {
                       console.warn(
                         "design (paste): the pointer document for " +
-                          input2 +
+                          path +
                           " was not written \u2014 " +
-                          errorMessage(input4),
+                          errorMessage(error),
                       );
-                      value667.dropped.push({
-                        path: input2,
+                      preparedFiles.dropped.push({
+                        path: path,
                         why: "its upload came over, but could not be recorded here",
                       });
                     });
                   },
                 ),
               ));
-            let entries4: Dynamic = new Map();
-            for (let value695 of values2 as Dynamic) {
-              let value696: Dynamic = value687
-                .filter(([, input2]: Dynamic): Dynamic => input2 === value695)
-                .map(([input2]: Dynamic): Dynamic => input2);
-              for (let value699 of value696 as Dynamic)
-                value667.dropped.push({
-                  path: value699,
+            let droppedByKind: Dynamic = new Map();
+            for (let assetKey of skippedAssets as Dynamic) {
+              let heldPaths: Dynamic = heldAssets
+                .filter(([, key]: Dynamic): Dynamic => key === assetKey)
+                .map(([path]: Dynamic): Dynamic => path);
+              for (let path of heldPaths as Dynamic)
+                preparedFiles.dropped.push({
+                  path: path,
                   why: "this canvas would not take the upload",
                 });
-              let value697: Dynamic = value662.assets[value695] ?? "",
-                value698: Dynamic = /^data:text\/css/i.test(value697)
+              let assetData: Dynamic = artboardClipboard.assets[assetKey] ?? "",
+                kindLabel: Dynamic = /^data:text\/css/i.test(assetData)
                   ? "stylesheet"
-                  : /^data:text\/javascript/i.test(value697)
+                  : /^data:text\/javascript/i.test(assetData)
                     ? "script"
                     : "data file";
-              value696.length === 0 &&
-                entries4.set(value698, (entries4.get(value698) ?? 0) + 1);
+              heldPaths.length === 0 &&
+                droppedByKind.set(kindLabel, (droppedByKind.get(kindLabel) ?? 0) + 1);
             }
-            for (let [value695, value696] of entries4 as Dynamic)
-              value667.dropped.push({
+            for (let [kindLabel, count] of droppedByKind as Dynamic)
+              preparedFiles.dropped.push({
                 path:
-                  value696 === 1
-                    ? "a " + value695
-                    : String(value696) + " " + value695 + "s",
+                  count === 1
+                    ? "a " + kindLabel
+                    : String(count) + " " + kindLabel + "s",
                 why: "this canvas would not take the upload",
               });
-            let items8: Dynamic = [
+            let projectFiles: Dynamic = [
                 ...Object.keys(
                   mergeDesignSystemFileOverlay(
                     deps.doc.content().files,
@@ -1542,157 +1542,157 @@ export function pasteExternalClipboardPayload(deps: { readonly callback3: Dynami
                 ),
                 "support.js",
               ],
-              value688: Dynamic = [
+              missingLinkedFiles: Dynamic = [
                 ...new Set(
-                  value674.flatMap(
-                    (input2?: Dynamic): Dynamic =>
+                  pasteableBoards.flatMap(
+                    (board?: Dynamic): Dynamic =>
                       getLinkedProjectFiles(
-                        input2.entry.src,
-                        items8,
+                        board.entry.src,
+                        projectFiles,
                       ),
                   ),
                 ),
-              ].map(callback18),
-              length: Dynamic = items6.length,
-              callback26: Dynamic = (input2?: Dynamic): Dynamic =>
-                input2.path.split("/").pop() ?? input2.path,
-              value689: Dynamic =
-                value667.dropped.length === 0
+              ].map(shortenText),
+              length: Dynamic = newArtboards.length,
+              fileName: Dynamic = (dropped?: Dynamic): Dynamic =>
+                dropped.path.split("/").pop() ?? dropped.path,
+              droppedSummary: Dynamic =
+                preparedFiles.dropped.length === 0
                   ? ""
-                  : value667.dropped.every(
-                        (input2?: Dynamic): Dynamic =>
-                          input2.why === value667.dropped[0].why,
+                  : preparedFiles.dropped.every(
+                        (item?: Dynamic): Dynamic =>
+                          item.why === preparedFiles.dropped[0].why,
                       )
-                    ? `; ${callback18(value667.dropped.map(callback26).join(", "))} left out (${value667.dropped[0].why})`
-                    : `; left out: ${value667.dropped
+                    ? `; ${shortenText(preparedFiles.dropped.map(fileName).join(", "))} left out (${preparedFiles.dropped[0].why})`
+                    : `; left out: ${preparedFiles.dropped
                           .slice(0, 3)
                           .map(
-                            (input2?: Dynamic): Dynamic =>
-                              `${callback18(callback26(input2))} (${input2.why})`,
+                            (item?: Dynamic): Dynamic =>
+                              `${shortenText(fileName(item))} (${item.why})`,
                           )
                           .join(
                             ", ",
-                          )}${value667.dropped.length > 3 ? "\u2026" : ""}`,
-              value690: Dynamic =
+                          )}${preparedFiles.dropped.length > 3 ? "\u2026" : ""}`,
+              baseMessage: Dynamic =
                 (length === 1
                   ? uiMessage("canvas.designCanvas.pastedAnArtboard")
                   : uiMessage("canvas.designCanvas.pastedValue1Artboards", { value1: String(String(length)) })) +
-                (value686.length > 0
+                (acceptedNotes.length > 0
                   ? ClipboardFileTransferRegistry.withObjects(
-                      value686,
+                      acceptedNotes,
                     )
                   : "") +
                 " from another canvas" +
-                (value659
+                (includeCode
                   ? ""
                   : ClipboardTrustDialogTitleMessageKeepCodeConfig.dropped(
                       length,
                     )),
-              value691: Dynamic = value660?.leftOut ?? 0,
-              value692: Dynamic =
-                value671.failed + (value660?.unreadPictures ?? 0),
-              length2: Dynamic = value671.landed.filter(
-                (input2?: Dynamic): Dynamic =>
-                  value661.plainPictures.has(input2.spec.id),
+              leftOutCount: Dynamic = notesClipboard?.leftOut ?? 0,
+              notBroughtCount: Dynamic =
+                pictureResult.failed + (notesClipboard?.unreadPictures ?? 0),
+              plainPictureCount: Dynamic = pictureResult.landed.filter(
+                (note?: Dynamic): Dynamic =>
+                  notePaste.plainPictures.has(note.spec.id),
               ).length,
-              value693: Dynamic =
-                (value660?.pictures.length ?? 0) +
-                (value660?.unreadPictures ?? 0),
-              value694: Dynamic =
-                (value675 > 0
-                  ? `; ${String(value675)} left out (over 2 MiB with images inlined)`
+              pictureCount: Dynamic =
+                (notesClipboard?.pictures.length ?? 0) +
+                (notesClipboard?.unreadPictures ?? 0),
+              caveats: Dynamic =
+                (oversizedBoardCount > 0
+                  ? `; ${String(oversizedBoardCount)} left out (over 2 MiB with images inlined)`
                   : "") +
-                value689 +
-                (value665 > 0
-                  ? `; ${value665 === 1 ? "1 SVG image" : `${String(value665)} SVG images`} left out (Paste with code keeps ${value665 === 1 ? "it" : "them"})`
+                droppedSummary +
+                (droppedSvgCount > 0
+                  ? `; ${droppedSvgCount === 1 ? "1 SVG image" : `${String(droppedSvgCount)} SVG images`} left out (Paste with code keeps ${droppedSvgCount === 1 ? "it" : "them"})`
                   : "") +
-                (value669 > 0
-                  ? `; ${value669 === 1 ? "1 font" : `${String(value669)} fonts`} did not come across, so some text may show in a different font`
+                (fontsLeftOutCount > 0
+                  ? `; ${fontsLeftOutCount === 1 ? "1 font" : `${String(fontsLeftOutCount)} fonts`} did not come across, so some text may show in a different font`
                   : "") +
-                (!value663 || value684.length > value686.length
+                (!canAddNotes || noteInputs.length > acceptedNotes.length
                   ? ClipboardFileTransferRegistry.notLanded
-                  : value653 !== "" &&
-                      (value660?.entries.length ?? 0) + value693 === 0
+                  : notEitherHint !== "" &&
+                      (notesClipboard?.entries.length ?? 0) + pictureCount === 0
                     ? ClipboardFileTransferRegistry.notRead
-                    : (value660?.unread ?? 0) > 0
+                    : (notesClipboard?.unread ?? 0) > 0
                       ? ClipboardFileTransferRegistry.someUnread(
-                          value660?.unread ?? 0,
+                          notesClipboard?.unread ?? 0,
                         )
-                      : value653 === "" &&
-                          ClipboardPastePlanningHandler(input)
+                      : notEitherHint === "" &&
+                          ClipboardPastePlanningHandler(clipboardText)
                         ? ClipboardFileTransferRegistry.stayedBehind
                         : "") +
-                (value661.notesOut > 0
+                (notePaste.notesOut > 0
                   ? ClipboardFileTransferRegistry.notesTooMuch
                   : "") +
-                (value686.length > 0 && value661.plain > 0
+                (acceptedNotes.length > 0 && notePaste.plain > 0
                   ? ClipboardFileTransferRegistry.plainShapes(
-                      value661.plain,
+                      notePaste.plain,
                     )
                   : "") +
-                (value686.length > 0 && length2 > 0
+                (acceptedNotes.length > 0 && plainPictureCount > 0
                   ? ClipboardFileTransferRegistry.plainPictures(
-                      length2,
+                      plainPictureCount,
                       true,
                     )
                   : "") +
-                (value692 > 0
-                  ? ClipboardFileTransferRegistry.notBrought(value692)
+                (notBroughtCount > 0
+                  ? ClipboardFileTransferRegistry.notBrought(notBroughtCount)
                   : "") +
                 ClipboardFileTransferRegistry.leftOutCaveat(
-                  value691,
-                  value660?.videos ?? 0,
+                  leftOutCount,
+                  notesClipboard?.videos ?? 0,
                 ) +
-                (value688.length > 0
-                  ? `. It loads ${value688.slice(0, 3).join(", ")}${value688.length > 3 ? "\u2026" : ""}, which this canvas doesn't have. Publish that here for it to render as designed.`
+                (missingLinkedFiles.length > 0
+                  ? `. It loads ${missingLinkedFiles.slice(0, 3).join(", ")}${missingLinkedFiles.length > 3 ? "\u2026" : ""}, which this canvas doesn't have. Publish that here for it to render as designed.`
                   : "");
-            value694 ? deps.value188(value690 + value694) : deps.value189(value690);
-          } catch (value657: Dynamic) {
-            for (let value658 of items as Dynamic)
+            caveats ? deps.value188(baseMessage + caveats) : deps.value189(baseMessage);
+          } catch (error: Dynamic) {
+            for (let file of uploadedFiles as Dynamic)
               await getKvClient()
-                .delete(PlatformFileContentHandler_4(value658))
+                .delete(PlatformFileContentHandler_4(file))
                 .catch((): Dynamic => false);
             deps.showToast(
-              fileCapFailureMessage(value657) ??
+              fileCapFailureMessage(error) ??
                 uiMessage("canvas.designCanvas.couldnTPasteTheArtboards") +
-                  errorMessage(value657),
+                  errorMessage(error),
               "error",
             );
           } finally {
             deps.value369.current = null;
-            callback19();
+            resolveArtboardPasteDone();
           }
         })();
       }
 
 /** 粘贴文本或 HTML 时运行：清理内容后插入目标画板的指定位置；没有目标画板时新建画板承载。 */
-export function pasteHtmlIntoArtboard(deps: { readonly abandonSelectionGesture: Dynamic; readonly setSelection: Dynamic; readonly value177: Dynamic; readonly value188: Dynamic; readonly value189: Dynamic; readonly value19: Dynamic; readonly value224: Dynamic; readonly value313: Dynamic; readonly value62: Dynamic; readonly value87: Dynamic }, input?: Dynamic, options?: Dynamic): Dynamic {
+export function pasteHtmlIntoArtboard(deps: { readonly abandonSelectionGesture: Dynamic; readonly setSelection: Dynamic; readonly value177: Dynamic; readonly value188: Dynamic; readonly value189: Dynamic; readonly value19: Dynamic; readonly value224: Dynamic; readonly value313: Dynamic; readonly value62: Dynamic; readonly value87: Dynamic }, pastePoint?: Dynamic, pastedText?: Dynamic): Dynamic {
         if (!deps.value224.current) return;
-        let value653: Dynamic = options.trim(),
-          value654: Dynamic =
-            value653 || (getElementClipboard() ?? "").trim();
-        if (!value654) {
+        let trimmedText: Dynamic = pastedText.trim(),
+          content: Dynamic =
+            trimmedText || (getElementClipboard() ?? "").trim();
+        if (!content) {
           deps.value188(
             uiMessage("canvas.designCanvas.nothingToPasteHereCopy"),
           );
           return;
         }
-        let callback15: Dynamic = (input2?: Dynamic): Dynamic =>
-          value653.startsWith("<")
-            ? sanitizePastedHtml(input2)
-            : input2;
-        if (input.file == null) {
-          let value657: Dynamic = wrapInlinePastedHtml(
-            callback15(
-              value654.startsWith("<")
-                ? normalizeAuthoredHtml(value654)
+        let sanitizeIfHtml: Dynamic = (html?: Dynamic): Dynamic =>
+          trimmedText.startsWith("<")
+            ? sanitizePastedHtml(html)
+            : html;
+        if (pastePoint.file == null) {
+          let wrappedHtml: Dynamic = wrapInlinePastedHtml(
+            sanitizeIfHtml(
+              content.startsWith("<")
+                ? normalizeAuthoredHtml(content)
                 : textToParagraphHtml(
-                    value654,
+                    content,
                     "margin: 0; position: absolute; left: 32px; top: 32px",
                   ),
             ),
           );
-          if (!/<[a-z]/i.test(value657)) {
+          if (!/<[a-z]/i.test(wrappedHtml)) {
             deps.value188(
               uiMessage("canvas.designCanvas.nothingToPasteHereThe"),
             );
@@ -1701,65 +1701,65 @@ export function pasteHtmlIntoArtboard(deps: { readonly abandonSelectionGesture: 
           deps.value313(
             {
               x: Math.round(
-                input.x - PlatformFileContentConstant_5 / 2,
+                pastePoint.x - defaultArtboardWidth / 2,
               ),
               y: Math.round(
-                input.y - PlatformFileContentConstant_6 / 2,
+                pastePoint.y - defaultArtboardHeight / 2,
               ),
-              w: PlatformFileContentConstant_5,
-              h: PlatformFileContentConstant_6,
+              w: defaultArtboardWidth,
+              h: defaultArtboardHeight,
             },
-            value657,
+            wrappedHtml,
             {
               doneSay: "New artboard from the paste",
             },
           );
           return;
         }
-        let file: Dynamic = input.file,
-          value655: Dynamic = file.replace(/\.dc\.html$/, ""),
-          entry: Dynamic = deps.value177.current.get(file),
-          value656: Dynamic = deps.value87.current.artboards.find(
-            (input2?: Dynamic): Dynamic => input2.file === file,
+        let file: Dynamic = pastePoint.file,
+          artboardName: Dynamic = file.replace(/\.dc\.html$/, ""),
+          editor: Dynamic = deps.value177.current.get(file),
+          artboard: Dynamic = deps.value87.current.artboards.find(
+            (item?: Dynamic): Dynamic => item.file === file,
           );
-        if (!entry || !value656) {
+        if (!editor || !artboard) {
           deps.value188(
-            uiMessage("canvas.designCanvas.couldnTPasteIntoValue1", { value1: String(value655) }),
+            uiMessage("canvas.designCanvas.couldnTPasteIntoValue1", { value1: String(artboardName) }),
           );
           return;
         }
-        let [items, items2]: Dynamic = [
-          input.x - value656.x,
-          input.y - value656.y,
+        let [offsetX, offsetY]: Dynamic = [
+          pastePoint.x - artboard.x,
+          pastePoint.y - artboard.y,
         ];
-        (value654.startsWith("<")
-          ? entry.insertHtml(callback15(value654), "stage", {
-              ox: items,
-              oy: items2,
+        (content.startsWith("<")
+          ? editor.insertHtml(sanitizeIfHtml(content), "stage", {
+              ox: offsetX,
+              oy: offsetY,
             })
-          : entry.insertLayerAt(
+          : editor.insertLayerAt(
               {
-                x: items,
-                y: items2,
+                x: offsetX,
+                y: offsetY,
               },
-              (input2?: Dynamic, options2?: Dynamic): Dynamic =>
+              (left?: Dynamic, topOffset?: Dynamic): Dynamic =>
                 textToParagraphHtml(
-                  value654,
-                  `margin: 0; position: absolute; left: ${input2}px; top: ${options2}px`,
+                  content,
+                  `margin: 0; position: absolute; left: ${left}px; top: ${topOffset}px`,
                 ),
               (): Dynamic => deps.value224.current,
-              (input2?: Dynamic): Dynamic => {
-                let entry2: Dynamic = deps.value177.current.get(file);
-                return entry2 === entry
+              (html?: Dynamic): Dynamic => {
+                let currentEditor: Dynamic = deps.value177.current.get(file);
+                return currentEditor === editor
                   ? null
-                  : entry2
-                    ? entry2.insertHtml(input2, "stage")
+                  : currentEditor
+                    ? currentEditor.insertHtml(html, "stage")
                     : Promise.resolve(null);
               },
             )
-        ).then((items3?: Dynamic): Dynamic => {
-          if (items3 != null) {
-            if (items3.length === 0) {
+        ).then((insertedIds?: Dynamic): Dynamic => {
+          if (insertedIds != null) {
+            if (insertedIds.length === 0) {
               deps.value188(uiMessage("canvas.designCanvas.couldNotPasteNothingChanged"));
               return;
             }
@@ -1771,48 +1771,48 @@ export function pasteHtmlIntoArtboard(deps: { readonly abandonSelectionGesture: 
                 file,
                 {
                   name: deps.value19(file),
-                  tids: items3,
+                  tids: insertedIds,
                   rect: null,
-                  count: items3.length,
+                  count: insertedIds.length,
                 },
                 false,
               ),
             );
-            deps.value189(uiMessage("canvas.designCanvas.pastedInto") + value655);
+            deps.value189(uiMessage("canvas.designCanvas.pastedInto") + artboardName);
           }
         });
       }
 
 /** 注册 keydown、copy、paste 监听：决定复制或粘贴走画板、画布说明还是元素剪贴板，并处理粘贴文件与图片拒绝。 */
 export function subscribeClipboardEvents(deps: { readonly doc: Dynamic; readonly focusedFileRef: Dynamic; readonly selectionRef: Dynamic; readonly value105: Dynamic; readonly value109: Dynamic; readonly value111: Dynamic; readonly value112: Dynamic; readonly value113: Dynamic; readonly value120: Dynamic; readonly value159: Dynamic; readonly value160: Dynamic; readonly value224: Dynamic; readonly value448: Dynamic; readonly value463: Dynamic; readonly value464: Dynamic; readonly value466: Dynamic; readonly value468: Dynamic; readonly value470: Dynamic; readonly value471: Dynamic; readonly value472: Dynamic; readonly value473: Dynamic; readonly value474: Dynamic; readonly value475: Dynamic; readonly value48: Dynamic; readonly value52: Dynamic }): Dynamic {
-    let callback15: Dynamic = (event?: Dynamic): Dynamic => {
+    let handleKeyDown: Dynamic = (event?: Dynamic): Dynamic => {
         if (!(event.metaKey || event.ctrlKey) || event.altKey) return;
-        let value654: Dynamic = event.key.toLowerCase();
+        let key: Dynamic = event.key.toLowerCase();
         if (
-          (value654 !== "c" && value654 !== "v") ||
-          (!deps.value224.current && value654 !== "c") ||
+          (key !== "c" && key !== "v") ||
+          (!deps.value224.current && key !== "c") ||
           isEditingInputTarget(event.target)
         )
           return;
         if (event.shiftKey) {
-          value654 === "v" && (deps.value475.current = event.timeStamp);
+          key === "v" && (deps.value475.current = event.timeStamp);
           return;
         }
-        value654 === "v" && (deps.value475.current = -1 / 0);
-        if (value654 === "c") {
-          let current4: Dynamic = deps.selectionRef.current;
-          if (!canvasElementSelectionCount(current4)) {
-            let value661: Dynamic =
+        key === "v" && (deps.value475.current = -1 / 0);
+        if (key === "c") {
+          let selection: Dynamic = deps.selectionRef.current;
+          if (!canvasElementSelectionCount(selection)) {
+            let isFocusedFileSelected: Dynamic =
               deps.focusedFileRef.current != null &&
-              current4.elements.has(deps.focusedFileRef.current);
-            if (!deps.value159.current && value661) return;
+              selection.elements.has(deps.focusedFileRef.current);
+            if (!deps.value159.current && isFocusedFileSelected) return;
             if (deps.value48.current > 0) {
-              let value662: Dynamic = startClipboardMark({
+              let clipboardMark: Dynamic = startClipboardMark({
                 markable: false,
               });
               deps.value52.current((): Dynamic => {
-                deps.value160.current(value662);
-              }, value662.drop);
+                deps.value160.current(clipboardMark);
+              }, clipboardMark.drop);
               event.stopPropagation();
             } else deps.value160.current() && event.stopPropagation();
             return;
@@ -1821,20 +1821,20 @@ export function subscribeClipboardEvents(deps: { readonly doc: Dynamic; readonly
           if (event.repeat) return;
           let files: Dynamic = deps.doc.content().files;
           if (
-            !(current4.artboards.size === 0
-              ? current4.notes.size > 0
-              : [...current4.artboards].some((input?: Dynamic): Dynamic => {
-                  let value661: Dynamic = files[input];
+            !(selection.artboards.size === 0
+              ? selection.notes.size > 0
+              : [...selection.artboards].some((file?: Dynamic): Dynamic => {
+                  let source: Dynamic = files[file];
                   return (
-                    typeof value661 == "string" &&
-                    !isLoadingArtboardHtml(value661)
+                    typeof source == "string" &&
+                    !isLoadingArtboardHtml(source)
                   );
                 }))
           )
             return;
           let state: Dynamic = {
-            files: new Set(current4.artboards),
-            notes: new Set(current4.notes),
+            files: new Set(selection.artboards),
+            notes: new Set(selection.notes),
             mark: undefined,
           };
           deps.value472.current = state;
@@ -1843,372 +1843,372 @@ export function subscribeClipboardEvents(deps: { readonly doc: Dynamic; readonly
             state.notes,
             (): Dynamic => state.mark,
           );
-          callback17();
+          createFocusTrap();
           setTimeout((): Dynamic => {
             deps.value472.current === state && (deps.value472.current = null);
           }, 100);
           return;
         }
         if (hasBlockingEditorOverlay()) return;
-        let value655: Dynamic = getArtboardClipboard(),
-          value656: Dynamic = getAnnotationClipboard(),
-          value657: Dynamic = deps.value109(),
-          value658: Dynamic = value657?.overAnnotation ? null : value657,
-          value659: Dynamic = value655
-            ? deps.value112(value655, value656, value657, value658)
+        let artboardClip: Dynamic = getArtboardClipboard(),
+          noteClip: Dynamic = getAnnotationClipboard(),
+          pasteTarget: Dynamic = deps.value109(),
+          canvasPasteTarget: Dynamic = pasteTarget?.overAnnotation ? null : pasteTarget,
+          pasteAnchor: Dynamic = artboardClip
+            ? deps.value112(artboardClip, noteClip, pasteTarget, canvasPasteTarget)
             : null;
-        if (!value655 && !value658) return;
+        if (!artboardClip && !canvasPasteTarget) return;
         event.stopPropagation();
         clearTimeout(deps.value474.current);
-        let value660: Dynamic = isClipboardSettling();
+        let wasSettling: Dynamic = isClipboardSettling();
         deps.value474.current = setTimeout((): Dynamic => {
-          let value661: Dynamic =
-            value660 || isClipboardSettling();
+          let isSettling: Dynamic =
+            wasSettling || isClipboardSettling();
           afterClipboardSettled((): Dynamic => {
             if (!deps.value224.current) return;
-            let value662: Dynamic = value661
+            let latestArtboardClip: Dynamic = isSettling
                 ? getArtboardClipboard()
-                : value655,
-              value663: Dynamic = value661
+                : artboardClip,
+              latestNoteClip: Dynamic = isSettling
                 ? getAnnotationClipboard()
-                : value656,
-              value664: Dynamic = value661 ? deps.value109() : value657,
-              value665: Dynamic = value664?.overAnnotation ? null : value664;
-            value662
+                : noteClip,
+              latestPasteTarget: Dynamic = isSettling ? deps.value109() : pasteTarget,
+              latestCanvasTarget: Dynamic = latestPasteTarget?.overAnnotation ? null : latestPasteTarget;
+            latestArtboardClip
               ? deps.value464.current(
-                  value662,
-                  value663,
-                  value661
-                    ? deps.value112(value662, value663, value664, value665)
-                    : value659,
+                  latestArtboardClip,
+                  latestNoteClip,
+                  isSettling
+                    ? deps.value112(latestArtboardClip, latestNoteClip, latestPasteTarget, latestCanvasTarget)
+                    : pasteAnchor,
                 )
-              : value665 &&
+              : latestCanvasTarget &&
                 readCanvasClipboardText().then(
-                  (input?: Dynamic): Dynamic =>
+                  (text?: Dynamic): Dynamic =>
                     deps.value470.current(
-                      value665,
+                      latestCanvasTarget,
                       getActiveClipboardSource({
-                        text: input,
+                        text: text,
                         stamp: null,
                         hasImage: false,
                       }) === "text"
-                        ? input
+                        ? text
                         : "",
                     ),
                 );
           });
         }, 100);
       },
-      value653: Dynamic = null,
-      callback16: Dynamic = (): Dynamic => {
-        if (!value653) return;
-        let value654: Dynamic = value653.__prev ?? null;
-        value653.remove();
-        value653 = null;
-        value654 instanceof HTMLElement &&
-          value654 !== (document as Dynamic).body &&
-          value654.isConnected &&
-          value654.focus({
+      focusTrap: Dynamic = null,
+      removeFocusTrap: Dynamic = (): Dynamic => {
+        if (!focusTrap) return;
+        let previousFocus: Dynamic = focusTrap.__prev ?? null;
+        focusTrap.remove();
+        focusTrap = null;
+        previousFocus instanceof HTMLElement &&
+          previousFocus !== (document as Dynamic).body &&
+          previousFocus.isConnected &&
+          previousFocus.focus({
             preventScroll: true,
           });
       },
-      callback17: Dynamic = (): Dynamic => {
-        callback16();
-        let value654: Dynamic = (document as Dynamic).createElement(
+      createFocusTrap: Dynamic = (): Dynamic => {
+        removeFocusTrap();
+        let textarea: Dynamic = (document as Dynamic).createElement(
           "textarea",
         );
-        value654.__prev = (document as Dynamic).activeElement;
-        value654.setAttribute("aria-hidden", "true");
-        value654.value = " ";
-        value654.style.cssText =
+        textarea.__prev = (document as Dynamic).activeElement;
+        textarea.setAttribute("aria-hidden", "true");
+        textarea.value = " ";
+        textarea.style.cssText =
           "position:fixed;left:0;top:0;width:1px;height:1px;opacity:0;pointer-events:none;border:0;padding:0";
-        (document as Dynamic).body.appendChild(value654);
-        value654.focus({
+        (document as Dynamic).body.appendChild(textarea);
+        textarea.focus({
           preventScroll: true,
         });
-        value654.select();
-        value653 = value654;
-        setTimeout(callback16, 0);
+        textarea.select();
+        focusTrap = textarea;
+        setTimeout(removeFocusTrap, 0);
       },
-      callback18: Dynamic = (event?: Dynamic): Dynamic => {
-        let current4: Dynamic = deps.value472.current;
-        if (!event.isTrusted || current4 == null) return;
+      handleCopy: Dynamic = (event?: Dynamic): Dynamic => {
+        let pendingCopy: Dynamic = deps.value472.current;
+        if (!event.isTrusted || pendingCopy == null) return;
         deps.value472.current = null;
-        let { stamp: value654, rendition: value655 }: Dynamic = deps.value473(
-          current4.files,
-          current4.notes,
+        let { stamp: stamp, rendition: rendition }: Dynamic = deps.value473(
+          pendingCopy.files,
+          pendingCopy.notes,
         );
         event.preventDefault();
         event.stopImmediatePropagation();
         writeClipboardObject(event, DesignArtboardsKey, {
           data: {
-            stamp: value654,
-            ...deps.value466.current(current4.files, current4.notes),
+            stamp: stamp,
+            ...deps.value466.current(pendingCopy.files, pendingCopy.notes),
           },
-          text: value655,
+          text: rendition,
         }) &&
-          ((current4.mark = {
-            stamp: value654,
-            rendition: value655,
+          ((pendingCopy.mark = {
+            stamp: stamp,
+            rendition: rendition,
           }),
-          mirrorArtboardClipboardStamp(value654, value655));
+          mirrorArtboardClipboardStamp(stamp, rendition));
       },
-      callback19: Dynamic = (event?: Dynamic): Dynamic => {
+      handlePaste: Dynamic = (event?: Dynamic): Dynamic => {
         clearTimeout(deps.value474.current);
         if (!deps.value224.current || event.timeStamp - deps.value475.current < 1e3)
           return;
         let items: Dynamic = [...(event.clipboardData?.files ?? [])],
-          value654: Dynamic = items.filter(
-            (input?: Dynamic): Dynamic =>
-              isImageFile(input) ||
-              isVideoFile(input),
+          mediaFiles: Dynamic = items.filter(
+            (file?: Dynamic): Dynamic =>
+              isImageFile(file) ||
+              isVideoFile(file),
           ),
-          value655: Dynamic =
+          pastedText: Dynamic =
             event.clipboardData?.getData("text/plain") ?? "",
-          value656: Dynamic = readBoundedClipboardObject(event),
-          value657: Dynamic = readArtboardClipboard(value656),
+          clipboardObject: Dynamic = readBoundedClipboardObject(event),
+          foreignArtboards: Dynamic = readArtboardClipboard(clipboardObject),
           state: Dynamic = {
-            text: value655,
-            stamp: clipboardObjectStamp(value656),
+            text: pastedText,
+            stamp: clipboardObjectStamp(clipboardObject),
             hasImage:
-              value654.length > 0 &&
-              clipboardContainsFileNames(items, value655),
-            artboards: value657,
+              mediaFiles.length > 0 &&
+              clipboardContainsFileNames(items, pastedText),
+            artboards: foreignArtboards,
           },
-          value658: Dynamic = imagePasteRefusal(
+          refusal: Dynamic = imagePasteRefusal(
             event.target,
             getActiveClipboardSource(state) === "image",
-            value655,
-            value654.length > 0 && value654.every(isVideoFile)
+            pastedText,
+            mediaFiles.length > 0 && mediaFiles.every(isVideoFile)
               ? "video"
               : "image",
           );
-        value658.to === "nobody" &&
+        refusal.to === "nobody" &&
           (event.preventDefault(),
           event.stopImmediatePropagation(),
-          deps.value448.current(value658.say));
-        if (value658.to !== "canvas") return;
-        let value659: Dynamic = isClipboardSettling(),
-          callback20: Dynamic = (input?: Dynamic): Dynamic => {
-            value659
+          deps.value448.current(refusal.say));
+        if (refusal.to !== "canvas") return;
+        let isSettling: Dynamic = isClipboardSettling(),
+          consumeEvent: Dynamic = (shouldStop?: Dynamic): Dynamic => {
+            isSettling
               ? markConsumedClipboardStamp(event)
               : (event.preventDefault(),
-                input && event.stopImmediatePropagation());
+                shouldStop && event.stopImmediatePropagation());
           };
         afterClipboardSettled(
           (): Dynamic => {
             if (!deps.value224.current) return;
-            let value660: Dynamic = getActiveClipboardSource(
+            let clipboardSource: Dynamic = getActiveClipboardSource(
                 state,
               ),
-              value661: Dynamic = getArtboardClipboard(),
-              value662: Dynamic = getAnnotationClipboard(),
-              value663: Dynamic = deps.value109(),
-              value664: Dynamic = value663?.overAnnotation ? null : value663;
-            if (value660 === "foreign-artboards") {
-              callback20(false);
-              deps.value468.current(value657, deps.value111());
+              artboardClip: Dynamic = getArtboardClipboard(),
+              noteClip: Dynamic = getAnnotationClipboard(),
+              pasteTarget: Dynamic = deps.value109(),
+              canvasPasteTarget: Dynamic = pasteTarget?.overAnnotation ? null : pasteTarget;
+            if (clipboardSource === "foreign-artboards") {
+              consumeEvent(false);
+              deps.value468.current(foreignArtboards, deps.value111());
               return;
             }
-            let value665: Dynamic =
-                value660 === "image" &&
-                (value663 == null
+            let centeredArtboard: Dynamic =
+                clipboardSource === "image" &&
+                (pasteTarget == null
                   ? deps.focusedFileRef.current == null
-                  : value663.file == null)
+                  : pasteTarget.file == null)
                   ? deps.value113()
                   : null,
-              value666: Dynamic =
-                value660 === "image" && value665 == null ? value663 : null,
-              value667: Dynamic =
-                value660 === "image" &&
-                value665 == null &&
-                value666 == null &&
+              imageTarget: Dynamic =
+                clipboardSource === "image" && centeredArtboard == null ? pasteTarget : null,
+              isCanvasImagePaste: Dynamic =
+                clipboardSource === "image" &&
+                centeredArtboard == null &&
+                imageTarget == null &&
                 deps.focusedFileRef.current == null;
-            if (value661 && value660 === "artboards") {
-              callback20(true);
+            if (artboardClip && clipboardSource === "artboards") {
+              consumeEvent(true);
               deps.value464.current(
-                value661,
-                value662,
-                deps.value112(value661, value662, value663, value664),
+                artboardClip,
+                noteClip,
+                deps.value112(artboardClip, noteClip, pasteTarget, canvasPasteTarget),
               );
               return;
             }
             if (
-              value665 == null &&
-              value666 == null &&
-              !value667 &&
-              (value660 === "image" || value664 == null)
+              centeredArtboard == null &&
+              imageTarget == null &&
+              !isCanvasImagePaste &&
+              (clipboardSource === "image" || canvasPasteTarget == null)
             )
               return;
-            callback20(true);
+            consumeEvent(true);
             let {
-                w: value668,
-                h: value669,
-                top: value670,
+                w: viewportWidth,
+                h: viewportHeight,
+                top: viewportTop,
               }: Dynamic = deps.value120(),
-              entry: Dynamic = deps.value105.get();
-            if (value665 != null) {
-              let value671: Dynamic = visibleArtboardCenter(
-                value665,
+              camera: Dynamic = deps.value105.get();
+            if (centeredArtboard != null) {
+              let center: Dynamic = visibleArtboardCenter(
+                centeredArtboard,
                 {
-                  ...entry,
-                  y: entry.y + value670 / entry.scale,
-                  width: value668,
-                  height: value669 - value670,
+                  ...camera,
+                  y: camera.y + viewportTop / camera.scale,
+                  width: viewportWidth,
+                  height: viewportHeight - viewportTop,
                 },
               );
               deps.value471.current(
-                value654,
-                value671.x,
-                value671.y,
+                mediaFiles,
+                center.x,
+                center.y,
                 "pasted",
-                value665.file,
+                centeredArtboard.file,
               );
             } else
-              value666 != null
+              imageTarget != null
                 ? deps.value471.current(
-                    value654,
-                    value666.x,
-                    value666.y,
+                    mediaFiles,
+                    imageTarget.x,
+                    imageTarget.y,
                     "pasted",
-                    value666.file ?? undefined,
+                    imageTarget.file ?? undefined,
                   )
-                : value667
+                : isCanvasImagePaste
                   ? deps.value471.current(
-                      value654,
-                      entry.x + value668 / 2 / entry.scale,
-                      entry.y + (value670 + value669) / 2 / entry.scale,
+                      mediaFiles,
+                      camera.x + viewportWidth / 2 / camera.scale,
+                      camera.y + (viewportTop + viewportHeight) / 2 / camera.scale,
                       "pasted",
                     )
                   : deps.value470.current(
-                      value664,
-                      value660 === "text" ? value655 : "",
+                      canvasPasteTarget,
+                      clipboardSource === "text" ? pastedText : "",
                     );
           },
           (): Dynamic => markConsumedClipboardStamp(event),
         );
       };
-    (window as Dynamic).addEventListener("keydown", callback15, true);
-    (window as Dynamic).addEventListener("copy", callback18, true);
-    (window as Dynamic).addEventListener("paste", callback19, true);
+    (window as Dynamic).addEventListener("keydown", handleKeyDown, true);
+    (window as Dynamic).addEventListener("copy", handleCopy, true);
+    (window as Dynamic).addEventListener("paste", handlePaste, true);
     return (): Dynamic => {
       clearTimeout(deps.value474.current);
-      callback16();
-      (window as Dynamic).removeEventListener("keydown", callback15, true);
-      (window as Dynamic).removeEventListener("copy", callback18, true);
-      (window as Dynamic).removeEventListener("paste", callback19, true);
+      removeFocusTrap();
+      (window as Dynamic).removeEventListener("keydown", handleKeyDown, true);
+      (window as Dynamic).removeEventListener("copy", handleCopy, true);
+      (window as Dynamic).removeEventListener("paste", handlePaste, true);
     };
   }
 
 /** 画板菜单选择复制为 PNG 时运行：截取画板图像并写入系统剪贴板，处理不可见、无法绘制与缺图提示。 */
-export function copyArtboardAsPng(deps: { readonly hideToast: Dynamic; readonly showToast: Dynamic; readonly value177: Dynamic; readonly value479: Dynamic; readonly value480: Dynamic; readonly value483: Dynamic; readonly value494: Dynamic; readonly value502: Dynamic; readonly value503: Dynamic; readonly value87: Dynamic; readonly value93: Dynamic }, input?: Dynamic): Dynamic {
+export function copyArtboardAsPng(deps: { readonly hideToast: Dynamic; readonly showToast: Dynamic; readonly value177: Dynamic; readonly value479: Dynamic; readonly value480: Dynamic; readonly value483: Dynamic; readonly value494: Dynamic; readonly value502: Dynamic; readonly value503: Dynamic; readonly value87: Dynamic; readonly value93: Dynamic }, file?: Dynamic): Dynamic {
         if (deps.value480) return;
         if (deps.value494())
-          return void deps.showToast(AccessibilityAnnouncementsLabel_5);
-        let value653: Dynamic = deps.value87.current.artboards.find(
-            (input2?: Dynamic): Dynamic => input2.file === input,
+          return void deps.showToast(anotherExportRunningMessage);
+        let artboard: Dynamic = deps.value87.current.artboards.find(
+            (item?: Dynamic): Dynamic => item.file === file,
           ),
-          value654: Dynamic = clipboardGeneration(),
-          value655: Dynamic = createCurrentWorkingGeneration(),
-          value656: Dynamic = null,
-          flag2: Dynamic = false,
+          generationAtStart: Dynamic = clipboardGeneration(),
+          isStillCurrent: Dynamic = createCurrentWorkingGeneration(),
+          failureMessage: Dynamic = null,
+          isClipboardBlocked: Dynamic = false,
           state: Dynamic = {
             blank: 0,
           },
-          value657: Dynamic = (async (): Promise<Dynamic> => {
+          blobPromise: Dynamic = (async (): Promise<Dynamic> => {
             deps.value479(true);
             try {
               if (!(await allowsClipboardImages())) {
-                flag2 = true;
+                isClipboardBlocked = true;
                 return null;
               }
-              let value658: Dynamic = await deps.value483(input),
-                value659: Dynamic = value658
-                  ? createPreviewHandle(value658)
+              let frameElement: Dynamic = await deps.value483(file),
+                previewHandle: Dynamic = frameElement
+                  ? createPreviewHandle(frameElement)
                   : null;
               if (
-                !value658 ||
-                !value659 ||
-                value658.getBoundingClientRect().width === 0
+                !frameElement ||
+                !previewHandle ||
+                frameElement.getBoundingClientRect().width === 0
               ) {
-                value656 = deps.value177.current.get(input)?.isBlocked()
-                  ? AccessibilityAnnouncementsLabel_8
-                  : AccessibilityAnnouncementsLabel_9;
+                failureMessage = deps.value177.current.get(file)?.isBlocked()
+                  ? previewStoppedMessage
+                  : notVisibleMessage;
                 return null;
               }
-              let value660: Dynamic = await captureArtboardImage(
-                value659,
+              let captureResult: Dynamic = await captureArtboardImage(
+                previewHandle,
                 "png",
                 2,
-                value653
-                  ? getArtboardCaptureOptions(value653, deps.value93)
+                artboard
+                  ? getArtboardCaptureOptions(artboard, deps.value93)
                   : {
                       selectionRoot: "body",
                     },
               ).catch(
-                (input2?: Dynamic): Dynamic => (
-                  (value656 = errorMessage(input2)),
+                (error?: Dynamic): Dynamic => (
+                  (failureMessage = errorMessage(error)),
                   null
                 ),
               );
-              return value660
-                ? value660.ok
+              return captureResult
+                ? captureResult.ok
                   ? ((state = {
-                      blank: value660.embedWarningCount,
-                      ...(value660.clipped
+                      blank: captureResult.embedWarningCount,
+                      ...(captureResult.clipped
                         ? {
                             clipped: true,
                           }
                         : {}),
                     }),
-                    clipboardGeneration() === value654 &&
-                    value655()
-                      ? pngDataUrlToBlob(value660.uri)
+                    clipboardGeneration() === generationAtStart &&
+                    isStillCurrent()
+                      ? pngDataUrlToBlob(captureResult.uri)
                       : null)
-                  : ((value656 =
-                      value660.softError === "zero-size"
-                        ? AccessibilityAnnouncementsLabel_7
+                  : ((failureMessage =
+                      captureResult.softError === "zero-size"
+                        ? noSizeMessage
                         : ItsPageHasNothingToDrawMessage),
                     null)
                 : null;
-            } catch (value658: Dynamic) {
-              console.error("[copy-png] artboard", value658);
-              value656 = ItsPictureCouldnTBeMadeTryMessage;
+            } catch (error: Dynamic) {
+              console.error("[copy-png] artboard", error);
+              failureMessage = ItsPictureCouldnTBeMadeTryMessage;
               return null;
             } finally {
               deps.value479(false);
             }
           })();
-        writeClipboardPng(value657).then(
-          (input2?: Dynamic): Dynamic => {
+        writeClipboardPng(blobPromise).then(
+          (writeResult?: Dynamic): Dynamic => {
             if (
               !(
-                clipboardGeneration() !== value654 || !value655()
+                clipboardGeneration() !== generationAtStart || !isStillCurrent()
               )
             )
-              if (input2 === "copied") {
+              if (writeResult === "copied") {
                 clearClipboardBuffers();
                 announce(
-                  AccessibilityAnnouncementsLabel_2,
+                  copiedAsPngMessage,
                 );
                 if (state.clipped) {
-                  let value658: Dynamic = exportFileName(
-                      input,
-                      value653?.title,
+                  let fileName: Dynamic = exportFileName(
+                      file,
+                      artboard?.title,
                     ),
-                    value659: Dynamic = deps.value502(input),
-                    value660: Dynamic = deps.showToast(
+                    canExportFull: Dynamic = deps.value502(file),
+                    toastId: Dynamic = deps.showToast(
                       clippedArtboardsMessage(
-                        [value658],
-                        value659,
+                        [fileName],
+                        canExportFull,
                       ),
                       "info",
-                      value659
+                      canExportFull
                         ? {
                             action: deps.value503(
-                              [input],
+                              [file],
                               false,
-                              (): Dynamic => deps.hideToast(value660),
+                              (): Dynamic => deps.hideToast(toastId),
                               false,
                             ),
                             pinned: true,
@@ -2222,12 +2222,12 @@ export function copyArtboardAsPng(deps: { readonly hideToast: Dynamic; readonly 
                     "info",
                   );
               } else
-                flag2
+                isClipboardBlocked
                   ? deps.showToast(DownloadsArenTAvailableToYouForMessage)
                   : deps.showToast(
                       pngCopyFailureMessage(
                         "artboard",
-                        input2 === "refused" ? null : value656,
+                        writeResult === "refused" ? null : failureMessage,
                       ),
                       "error",
                     );
@@ -2236,122 +2236,122 @@ export function copyArtboardAsPng(deps: { readonly hideToast: Dynamic; readonly 
       }
 
 /** 画板菜单选择复制为 SVG 时运行：在捕获视口中生成 SVG 并写入剪贴板，处理裁切、缺图与失败提示。 */
-export function copyArtboardAsSvg(deps: { readonly hideToast: Dynamic; readonly showToast: Dynamic; readonly value177: Dynamic; readonly value479: Dynamic; readonly value480: Dynamic; readonly value483: Dynamic; readonly value494: Dynamic; readonly value502: Dynamic; readonly value503: Dynamic; readonly value87: Dynamic; readonly value93: Dynamic }, input?: Dynamic): Dynamic {
+export function copyArtboardAsSvg(deps: { readonly hideToast: Dynamic; readonly showToast: Dynamic; readonly value177: Dynamic; readonly value479: Dynamic; readonly value480: Dynamic; readonly value483: Dynamic; readonly value494: Dynamic; readonly value502: Dynamic; readonly value503: Dynamic; readonly value87: Dynamic; readonly value93: Dynamic }, file?: Dynamic): Dynamic {
         if (deps.value480) return;
         if (deps.value494())
-          return void deps.showToast(AccessibilityAnnouncementsLabel_5);
-        let value653: Dynamic = deps.value87.current.artboards.find(
-            (input2?: Dynamic): Dynamic => input2.file === input,
+          return void deps.showToast(anotherExportRunningMessage);
+        let artboard: Dynamic = deps.value87.current.artboards.find(
+            (item?: Dynamic): Dynamic => item.file === file,
           ),
-          value654: Dynamic = clipboardGeneration(),
-          value655: Dynamic = createCurrentWorkingGeneration(),
-          value656: Dynamic = null,
-          flag2: Dynamic = false,
-          index: Dynamic = 0,
-          flag3: Dynamic = false,
-          value657: Dynamic = (async (): Promise<Dynamic> => {
+          generationAtStart: Dynamic = clipboardGeneration(),
+          isStillCurrent: Dynamic = createCurrentWorkingGeneration(),
+          failureMessage: Dynamic = null,
+          isClipboardBlocked: Dynamic = false,
+          blankImageCount: Dynamic = 0,
+          wasClipped: Dynamic = false,
+          svgPromise: Dynamic = (async (): Promise<Dynamic> => {
             deps.value479(true);
             try {
               if (!(await allowsClipboardImages())) {
-                flag2 = true;
+                isClipboardBlocked = true;
                 return null;
               }
-              let value658: Dynamic = await deps.value483(input),
-                value659: Dynamic = value658
-                  ? createPreviewHandle(value658)
+              let frameElement: Dynamic = await deps.value483(file),
+                previewHandle: Dynamic = frameElement
+                  ? createPreviewHandle(frameElement)
                   : null;
               if (
-                !value658 ||
-                !value659 ||
-                value658.getBoundingClientRect().width === 0
+                !frameElement ||
+                !previewHandle ||
+                frameElement.getBoundingClientRect().width === 0
               ) {
-                value656 = deps.value177.current.get(input)?.isBlocked()
-                  ? AccessibilityAnnouncementsLabel_8
-                  : AccessibilityAnnouncementsLabel_9;
+                failureMessage = deps.value177.current.get(file)?.isBlocked()
+                  ? previewStoppedMessage
+                  : notVisibleMessage;
                 return null;
               }
-              let value660: Dynamic = value653
-                  ? getArtboardCaptureOptions(value653, deps.value93)
+              let captureOptions: Dynamic = artboard
+                  ? getArtboardCaptureOptions(artboard, deps.value93)
                   : null,
-                value661: Dynamic = value660?.frame,
-                value662: Dynamic =
-                  value661 &&
-                  Number.isFinite(value661.w) &&
-                  Number.isFinite(value661.h) &&
-                  value661.w > 0 &&
-                  value661.h > 0
-                    ? value661
+                frame: Dynamic = captureOptions?.frame,
+                validFrame: Dynamic =
+                  frame &&
+                  Number.isFinite(frame.w) &&
+                  Number.isFinite(frame.h) &&
+                  frame.w > 0 &&
+                  frame.h > 0
+                    ? frame
                     : null,
-                value663: Dynamic = await withCaptureViewport(
-                  value659,
-                  value662,
+                captureResult: Dynamic = await withCaptureViewport(
+                  previewHandle,
+                  validFrame,
                   (): Dynamic =>
                     captureClipboardSvg(
-                      value659,
+                      previewHandle,
                       "page",
-                      value662 && {
-                        w: value662.w,
-                        h: value660?.clipToFrame ? value662.h : null,
+                      validFrame && {
+                        w: validFrame.w,
+                        h: captureOptions?.clipToFrame ? validFrame.h : null,
                       },
                     ),
-                  value660?.settle === true,
+                  captureOptions?.settle === true,
                 ).catch(
-                  (input2?: Dynamic): Dynamic => (
-                    console.error("[copy-svg] artboard", input2),
-                    (value656 = svgCopyErrorMessage(input2)),
+                  (error?: Dynamic): Dynamic => (
+                    console.error("[copy-svg] artboard", error),
+                    (failureMessage = svgCopyErrorMessage(error)),
                     null
                   ),
                 );
-              return value663
-                ? value663.ok
-                  ? ((index = value663.blank),
-                    (flag3 = value663.clipped),
-                    clipboardGeneration() === value654 &&
-                    value655()
-                      ? value663.svg
+              return captureResult
+                ? captureResult.ok
+                  ? ((blankImageCount = captureResult.blank),
+                    (wasClipped = captureResult.clipped),
+                    clipboardGeneration() === generationAtStart &&
+                    isStillCurrent()
+                      ? captureResult.svg
                       : null)
-                  : ((value656 =
-                      value663.softError === "zero-size"
-                        ? AccessibilityAnnouncementsLabel_7
-                        : AccessibilityAnnouncementsLabel_4),
+                  : ((failureMessage =
+                      captureResult.softError === "zero-size"
+                        ? noSizeMessage
+                        : conversionFailedMessage),
                     null)
                 : null;
-            } catch (value658: Dynamic) {
-              console.error("[copy-svg] artboard", value658);
-              value656 = AccessibilityAnnouncementsLabel_4;
+            } catch (error: Dynamic) {
+              console.error("[copy-svg] artboard", error);
+              failureMessage = conversionFailedMessage;
               return null;
             } finally {
               deps.value479(false);
             }
           })();
-        writeClipboardSvg(value657).then(
-          (input2?: Dynamic): Dynamic => {
+        writeClipboardSvg(svgPromise).then(
+          (writeResult?: Dynamic): Dynamic => {
             if (
               !(
-                clipboardGeneration() !== value654 || !value655()
+                clipboardGeneration() !== generationAtStart || !isStillCurrent()
               )
             )
-              if (input2 === "copied") {
+              if (writeResult === "copied") {
                 clearClipboardBuffers();
                 announce(
-                  AccessibilityAnnouncementsLabel_3,
+                  copiedAsSvgMessage,
                 );
-                if (flag3) {
-                  let value658: Dynamic = deps.value502(input),
-                    value659: Dynamic = deps.showToast(
+                if (wasClipped) {
+                  let canExportFull: Dynamic = deps.value502(file),
+                    toastId: Dynamic = deps.showToast(
                       clippedSvgCopyMessage(
                         formatArtboardNames([
-                          exportFileName(input, value653?.title),
+                          exportFileName(file, artboard?.title),
                         ]),
-                        value658,
+                        canExportFull,
                       ),
                       "info",
-                      value658
+                      canExportFull
                         ? {
                             action: deps.value503(
-                              [input],
+                              [file],
                               false,
-                              (): Dynamic => deps.hideToast(value659),
+                              (): Dynamic => deps.hideToast(toastId),
                               false,
                             ),
                             pinned: true,
@@ -2359,18 +2359,18 @@ export function copyArtboardAsSvg(deps: { readonly hideToast: Dynamic; readonly 
                         : undefined,
                     );
                 }
-                index > 0 &&
+                blankImageCount > 0 &&
                   deps.showToast(
-                    missingSvgImagesMessage(index),
+                    missingSvgImagesMessage(blankImageCount),
                     "info",
                   );
               } else
-                flag2
+                isClipboardBlocked
                   ? deps.showToast(DownloadsArenTAvailableToYouForMessage)
                   : deps.showToast(
                       svgCopyFailureMessage(
                         "artboard",
-                        input2 === "refused" ? null : value656,
+                        writeResult === "refused" ? null : failureMessage,
                       ),
                       "error",
                     );
