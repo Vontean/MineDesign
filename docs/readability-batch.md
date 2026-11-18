@@ -29,6 +29,7 @@
 - 英文 camelCase，说明它是什么或做什么：`selectedArtboard`、`pointerStart`、`isDragging`、`handleKeyDown`、`setExportProgress`。布尔值用 `is/has/should/can` 开头；React 的 state 与 setter 成对命名（`[zoom, setZoom]`）；ref 以 `Ref` 结尾；回调以动词开头。
 - 同一个函数里的名字要互相一致：同一个概念用同一个词。
 - 不要用 `data`、`temp`、`obj`、`val`、`result2` 这类没有信息的名字；循环变量、极短的匿名回调参数可以用 `item`、`index`、`event` 这类惯用名。
+- 不要按取值命名常量（`eightLimitSecond`、`maxValueNines` 这类）：找到它的用途再命名；文件里没有任何使用的常量，保留原名并在报告里列为"未使用"，后续统一清理。
 - 名字要反映代码实际做的事，不要凭函数名猜测；看不懂的绑定宁可用保守的描述性名字（例如 `framePayload`），并在报告里列出。
 - 不改导出名、不改对象属性名、不改字符串、不改逻辑。`deps.value153` 这类依赖对象的属性名属于另一阶段，不在批次范围内。
 
