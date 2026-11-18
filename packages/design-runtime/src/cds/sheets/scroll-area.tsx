@@ -20,7 +20,7 @@ var initializeSheetsScrollArea: Dynamic;
 var reactSheetsScrollArea: Dynamic;
 var SheetsScrollAreaElementCache: Dynamic;
 var initializeSheetsScrollArea_2: Dynamic;
-var SheetsScrollAreaLabel_2: Dynamic;
+var editableElementSelector: Dynamic;
 var initializeSheetsScrollArea_3: Dynamic;
 var initializeSheetsScrollArea_4: Dynamic;
 var SheetsScrollAreaElementCache_2: Dynamic;
@@ -42,22 +42,22 @@ var SheetsScrollAreaRegistry: Dynamic;
 var SheetsScrollAreaRegistry_2: Dynamic;
 var SheetsScrollAreaRegistry_3: Dynamic;
 var SheetsScrollAreaRegistry_4: Dynamic;
-function isKeyboardContextMenu(input?: Dynamic): Dynamic {
-  if (input === undefined || input.type !== "contextmenu") return false;
-  let { button: value, pointerType: value2 }: Dynamic = input;
-  return value === -1 && value2 !== "touch" && value2 !== "pen";
+function isKeyboardContextMenu(event?: Dynamic): Dynamic {
+  if (event === undefined || event.type !== "contextmenu") return false;
+  let { button: value, pointerType: pointerType }: Dynamic = event;
+  return value === -1 && pointerType !== "touch" && pointerType !== "pen";
 }
 function recordKeyboardContextMenu(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  trigger?: Dynamic,
+  isOpen?: Dynamic,
+  eventDetails?: Dynamic,
 ): Dynamic {
-  context.isCanceled ||
-    (options && isKeyboardContextMenu(context.event)
-      ? SheetsScrollAreaElementCache.set(input, true)
-      : SheetsScrollAreaElementCache.delete(input));
+  eventDetails.isCanceled ||
+    (isOpen && isKeyboardContextMenu(eventDetails.event)
+      ? SheetsScrollAreaElementCache.set(trigger, true)
+      : SheetsScrollAreaElementCache.delete(trigger));
 }
-function useKeyboardContextMenuFocus(input?: Dynamic): Dynamic {
+function useKeyboardContextMenuFocus(popupRef?: Dynamic): Dynamic {
   let value: Dynamic = (0, reactSheetsScrollArea.useContext)(
     MenuTriggerContext,
   );
@@ -66,12 +66,12 @@ function useKeyboardContextMenuFocus(input?: Dynamic): Dynamic {
     let index: Dynamic = 0,
       count: Dynamic = 3,
       callback: Dynamic = (): Dynamic => {
-        let current: Dynamic = input.current,
-          value2: Dynamic = current?.ownerDocument.activeElement ?? null;
+        let current: Dynamic = popupRef.current,
+          activeElement: Dynamic = current?.ownerDocument.activeElement ?? null;
         if (
           current !== null &&
-          value2 !== null &&
-          !current.contains(value2) &&
+          activeElement !== null &&
+          !current.contains(activeElement) &&
           count > 0
         ) {
           count -= 1;
@@ -80,7 +80,7 @@ function useKeyboardContextMenuFocus(input?: Dynamic): Dynamic {
         }
         SheetsScrollAreaElementCache.delete(value);
         current !== null &&
-          value2 === current &&
+          activeElement === current &&
           current
             .querySelector('[role^="menuitem"]:not([data-disabled])')
             ?.focus({
@@ -91,211 +91,211 @@ function useKeyboardContextMenuFocus(input?: Dynamic): Dynamic {
     return (): Dynamic => {
       cancelAnimationFrame(index);
     };
-  }, [value, input]);
+  }, [value, popupRef]);
 }
-function normalizeFocusRelatedTarget(input?: Dynamic): Dynamic {
-  let callback: Dynamic = (input2?: Dynamic): Dynamic => {
-    let relatedTarget: Dynamic = input2.relatedTarget;
+function normalizeFocusRelatedTarget(element?: Dynamic): Dynamic {
+  let callback: Dynamic = (event?: Dynamic): Dynamic => {
+    let relatedTarget: Dynamic = event.relatedTarget;
     relatedTarget != null &&
       asElement(relatedTarget) === null &&
-      Object.defineProperty(input2, "relatedTarget", {
+      Object.defineProperty(event, "relatedTarget", {
         value: null,
         configurable: true,
       });
   };
-  input.addEventListener("focusout", callback, true);
+  element.addEventListener("focusout", callback, true);
   try {
-    input.blur();
+    element.blur();
   } finally {
-    input.removeEventListener("focusout", callback, true);
+    element.removeEventListener("focusout", callback, true);
   }
 }
-function registerOpenerReturn(input?: Dynamic, options?: Dynamic): Dynamic {
-  SheetsScrollAreaElementCache_2.set(input, options);
+function registerOpenerReturn(popupElement?: Dynamic, resolveOpener?: Dynamic): Dynamic {
+  SheetsScrollAreaElementCache_2.set(popupElement, resolveOpener);
 }
-function openerReturnChain(input?: Dynamic): Dynamic {
+function openerReturnChain(startElement?: Dynamic): Dynamic {
   let items: Dynamic = [],
-    value: Dynamic = input;
+    value: Dynamic = startElement;
   for (; value !== null && items.length < SheetsScrollAreaLimit; ) {
     let entry: Dynamic = SheetsScrollAreaElementCache_2.get(value);
     if (entry === undefined) {
       value = value.parentElement;
       continue;
     }
-    let value2: Dynamic = entry();
-    if (value2 === null || value2 === value || items.includes(value2)) break;
-    items.push(value2);
-    value = value2;
+    let opener: Dynamic = entry();
+    if (opener === null || opener === value || items.includes(opener)) break;
+    items.push(opener);
+    value = opener;
   }
   return items;
 }
 function useInitialFocusGuard(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
-  extra?: Dynamic,
+  isOpen?: Dynamic,
+  openerRef?: Dynamic,
+  rootRef?: Dynamic,
+  onCapture?: Dynamic,
+  openerChainRef?: Dynamic,
 ): Dynamic {
-  let value2: Dynamic = useCdsRootElement(),
-    value3: Dynamic = (0, reactSheetsScrollArea_2.useRef)(false);
+  let rootElement: Dynamic = useCdsRootElement(),
+    hasCapturedRef: Dynamic = (0, reactSheetsScrollArea_2.useRef)(false);
   (0, reactSheetsScrollArea_2.useInsertionEffect)((): Dynamic => {
-    if (!input) {
-      value3.current = false;
+    if (!isOpen) {
+      hasCapturedRef.current = false;
       return;
     }
-    if (value3.current) return;
-    value3.current = true;
-    options.current = null;
-    context.current = value2 ?? null;
-    let value4: Dynamic = value2?.ownerDocument ?? document,
-      activeElement: Dynamic = value4.activeElement,
-      value5: Dynamic =
-        activeElement && activeElement !== value4.body ? activeElement : null;
-    options.current = value5;
-    extra && (extra.current = openerReturnChain(value5));
-    value?.();
-  }, [input, value2, options, context, value, extra]);
+    if (hasCapturedRef.current) return;
+    hasCapturedRef.current = true;
+    openerRef.current = null;
+    rootRef.current = rootElement ?? null;
+    let doc: Dynamic = rootElement?.ownerDocument ?? document,
+      activeElement: Dynamic = doc.activeElement,
+      previousFocus: Dynamic =
+        activeElement && activeElement !== doc.body ? activeElement : null;
+    openerRef.current = previousFocus;
+    openerChainRef && (openerChainRef.current = openerReturnChain(previousFocus));
+    onCapture?.();
+  }, [isOpen, rootElement, openerRef, rootRef, onCapture, openerChainRef]);
 }
-function useOpenerReturn(input?: Dynamic): Dynamic {
-  let value: Dynamic = input?.skipRestoreOnOutsideFocus ?? false,
-    value2: Dynamic = input?.registerOpenerReturn ?? true,
-    value3: Dynamic = input?.triggerRef,
-    value4: Dynamic = (0, reactSheetsScrollArea_2.useRef)(null),
-    value5: Dynamic = (0, reactSheetsScrollArea_2.useRef)(null),
-    value6: Dynamic = (0, reactSheetsScrollArea_2.useRef)(null);
-  useInitialFocusGuard(input?.open ?? true, value4, value6);
-  let value7: Dynamic = (0, reactSheetsScrollArea_2.useRef)(value2);
+function useOpenerReturn(props?: Dynamic): Dynamic {
+  let value: Dynamic = props?.skipRestoreOnOutsideFocus ?? false,
+    registerOpenerEnabled: Dynamic = props?.registerOpenerReturn ?? true,
+    triggerRef: Dynamic = props?.triggerRef,
+    openerRef: Dynamic = (0, reactSheetsScrollArea_2.useRef)(null),
+    popupRef: Dynamic = (0, reactSheetsScrollArea_2.useRef)(null),
+    rootRef: Dynamic = (0, reactSheetsScrollArea_2.useRef)(null);
+  useInitialFocusGuard(props?.open ?? true, openerRef, rootRef);
+  let registerOpenerEnabledRef: Dynamic = (0, reactSheetsScrollArea_2.useRef)(registerOpenerEnabled);
   (0, reactSheetsScrollArea_2.useLayoutEffect)((): Dynamic => {
-    value7.current = value2;
-  }, [value2]);
+    registerOpenerEnabledRef.current = registerOpenerEnabled;
+  }, [registerOpenerEnabled]);
   (0, reactSheetsScrollArea_2.useLayoutEffect)((): Dynamic => {
-    value5.current &&
+    popupRef.current &&
       registerOpenerReturn(
-        value5.current,
+        popupRef.current,
         (): Dynamic =>
-          value7.current
-            ? (connectedRefElement(value3) ?? value4.current)
+          registerOpenerEnabledRef.current
+            ? (connectedRefElement(triggerRef) ?? openerRef.current)
             : null,
       );
-  }, [value3]);
-  let value8: Dynamic = (0,
+  }, [triggerRef]);
+  let finalFocus: Dynamic = (0,
   reactSheetsScrollArea_2.useCallback)((): Dynamic => {
     if (value) {
-      let current: Dynamic = value5.current,
-        value9: Dynamic = value6.current?.ownerDocument ?? document,
-        activeElement: Dynamic = value9.activeElement;
+      let current: Dynamic = popupRef.current,
+        doc: Dynamic = rootRef.current?.ownerDocument ?? document,
+        activeElement: Dynamic = doc.activeElement;
       if (
         activeElement &&
-        activeElement !== value9.body &&
+        activeElement !== doc.body &&
         !current?.contains(activeElement)
       )
         return false;
     }
-    return connectedRefElement(value3) !== null
+    return connectedRefElement(triggerRef) !== null
       ? null
-      : restoreElementFocus(value4.current, value5.current);
-  }, [value, value3]);
+      : restoreElementFocus(openerRef.current, popupRef.current);
+  }, [value, triggerRef]);
   return (0, reactSheetsScrollArea_2.useMemo)(
     (): Dynamic => ({
-      finalFocus: value8,
-      popupRef: value5,
+      finalFocus: finalFocus,
+      popupRef: popupRef,
     }),
-    [value8],
+    [finalFocus],
   );
 }
-function connectedRefElement(input?: Dynamic): Dynamic {
-  let value: Dynamic = input?.current ?? null;
+function connectedRefElement(ref?: Dynamic): Dynamic {
+  let value: Dynamic = ref?.current ?? null;
   return value?.isConnected ? value : null;
 }
 function useFinalFocus(
-  input?: Dynamic,
-  options: Dynamic = true,
-  context?: Dynamic,
+  isOpen?: Dynamic,
+  shouldRestoreFocus: Dynamic = true,
+  fallbackFocusRef?: Dynamic,
 ): Dynamic {
   let value: Dynamic = useCdsRootElement(),
-    value2: Dynamic = (0, reactSheetsScrollArea_2.useRef)(null),
-    value3: Dynamic = (0, reactSheetsScrollArea_2.useRef)(false),
-    value4: Dynamic = (0,
+    fallbackElementRef: Dynamic = (0, reactSheetsScrollArea_2.useRef)(null),
+    pendingRestoreRef: Dynamic = (0, reactSheetsScrollArea_2.useRef)(false),
+    markRestorePending: Dynamic = (0,
     reactSheetsScrollArea_2.useCallback)((): Dynamic => {
-      value2.current = null;
-      value3.current = true;
+      fallbackElementRef.current = null;
+      pendingRestoreRef.current = true;
     }, []),
-    value5: Dynamic = (0, reactSheetsScrollArea_2.useRef)(null),
-    value6: Dynamic = (0, reactSheetsScrollArea_2.useRef)([]),
-    value7: Dynamic = (0, reactSheetsScrollArea_2.useRef)(null),
-    value8: Dynamic = (0, reactSheetsScrollArea_2.useRef)(null);
-  useInitialFocusGuard(input, value5, value8, value4, value6);
+    openerRef: Dynamic = (0, reactSheetsScrollArea_2.useRef)(null),
+    openerChainRef: Dynamic = (0, reactSheetsScrollArea_2.useRef)([]),
+    popupRef: Dynamic = (0, reactSheetsScrollArea_2.useRef)(null),
+    rootRef: Dynamic = (0, reactSheetsScrollArea_2.useRef)(null);
+  useInitialFocusGuard(isOpen, openerRef, rootRef, markRestorePending, openerChainRef);
   (0, reactSheetsScrollArea_2.useLayoutEffect)((): Dynamic => {
-    if (!value3.current || ((value3.current = false), !options && !context))
+    if (!pendingRestoreRef.current || ((pendingRestoreRef.current = false), !shouldRestoreFocus && !fallbackFocusRef))
       return;
-    let value11: Dynamic = value?.ownerDocument ?? document;
-    if (!value5.current) {
-      let value14: Dynamic = context?.current ?? null;
-      value2.current =
-        value14 !== null &&
-        value14.isConnected &&
-        !value7.current?.contains(value14)
-          ? value14
+    let doc: Dynamic = value?.ownerDocument ?? document;
+    if (!openerRef.current) {
+      let fallbackElement: Dynamic = fallbackFocusRef?.current ?? null;
+      fallbackElementRef.current =
+        fallbackElement !== null &&
+        fallbackElement.isConnected &&
+        !popupRef.current?.contains(fallbackElement)
+          ? fallbackElement
           : null;
     }
-    if (!options) return;
-    let value12: Dynamic = asElement(value11.activeElement),
-      value13: Dynamic = value12 && value12 !== value11.body ? value12 : null;
-    !value13 ||
-      value7.current?.contains(value13) ||
-      normalizeFocusRelatedTarget(value13);
-  }, [input, options, context, value]);
-  let value9: Dynamic = !options,
-    value10: Dynamic = (0,
+    if (!shouldRestoreFocus) return;
+    let activeElement: Dynamic = asElement(doc.activeElement),
+      focusedElement: Dynamic = activeElement && activeElement !== doc.body ? activeElement : null;
+    !focusedElement ||
+      popupRef.current?.contains(focusedElement) ||
+      normalizeFocusRelatedTarget(focusedElement);
+  }, [isOpen, shouldRestoreFocus, fallbackFocusRef, value]);
+  let skipIfFocusElsewhere: Dynamic = !shouldRestoreFocus,
+    finalFocus: Dynamic = (0,
     reactSheetsScrollArea_2.useCallback)((): Dynamic => {
-      if (value9) {
-        let current: Dynamic = value7.current,
-          value11: Dynamic = value8.current?.ownerDocument ?? document,
-          activeElement: Dynamic = value11.activeElement;
+      if (skipIfFocusElsewhere) {
+        let current: Dynamic = popupRef.current,
+          doc: Dynamic = rootRef.current?.ownerDocument ?? document,
+          activeElement: Dynamic = doc.activeElement;
         if (
           activeElement &&
-          activeElement !== value11.body &&
+          activeElement !== doc.body &&
           !current?.contains(activeElement)
         )
           return false;
       }
-      if (value5.current) {
-        if (!value5.current.isConnected) {
-          let value11: Dynamic = value6.current.find(
-            (input2?: Dynamic): Dynamic => input2.isConnected,
+      if (openerRef.current) {
+        if (!openerRef.current.isConnected) {
+          let connectedOpener: Dynamic = openerChainRef.current.find(
+            (element?: Dynamic): Dynamic => element.isConnected,
           );
-          if (value11) return restoreElementFocus(value11, value7.current);
+          if (connectedOpener) return restoreElementFocus(connectedOpener, popupRef.current);
         }
-        return restoreElementFocus(value5.current, value7.current);
+        return restoreElementFocus(openerRef.current, popupRef.current);
       }
-      if (value2.current) {
-        let current: Dynamic = value7.current,
-          activeElement: Dynamic = (value8.current?.ownerDocument ?? document)
+      if (fallbackElementRef.current) {
+        let current: Dynamic = popupRef.current,
+          activeElement: Dynamic = (rootRef.current?.ownerDocument ?? document)
             .activeElement;
         return (activeElement &&
           isFocusableElement(activeElement) &&
           !current?.contains(activeElement)) ||
-          !value2.current.isConnected
+          !fallbackElementRef.current.isConnected
           ? false
           : null;
       }
       return false;
-    }, [value9]);
+    }, [skipIfFocusElsewhere]);
   return (0, reactSheetsScrollArea_2.useMemo)(
     (): Dynamic => ({
-      finalFocus: value10,
-      popupRef: value7,
+      finalFocus: finalFocus,
+      popupRef: popupRef,
     }),
-    [value10, value7],
+    [finalFocus, popupRef],
   );
 }
-function restoreElementFocus(element?: Dynamic, options?: Dynamic): Dynamic {
+function restoreElementFocus(element?: Dynamic, popupElement?: Dynamic): Dynamic {
   if (!element?.isConnected) return false;
   let activeElement: Dynamic = element.ownerDocument.activeElement;
   if (
     activeElement &&
     isFocusableElement(activeElement) &&
-    !options?.contains(activeElement)
+    !popupElement?.contains(activeElement)
   )
     return false;
   let value: Dynamic = element;
@@ -306,73 +306,73 @@ function restoreElementFocus(element?: Dynamic, options?: Dynamic): Dynamic {
       false)
     : value;
 }
-function isFocusableElement(input?: Dynamic): Dynamic {
-  return input.matches(SheetsScrollAreaLabel_2);
+function isFocusableElement(element?: Dynamic): Dynamic {
+  return element.matches(editableElementSelector);
 }
 function createInnerOverlayStack(): Dynamic {
   let items: Dynamic = [];
   return {
-    register: (input?: Dynamic): Dynamic => (
-      items.push(input),
+    register: (overlay?: Dynamic): Dynamic => (
+      items.push(overlay),
       (): Dynamic => {
-        let value: Dynamic = items.lastIndexOf(input);
+        let value: Dynamic = items.lastIndexOf(overlay);
         value !== -1 && items.splice(value, 1);
       }
     ),
     topmostOpen: (): Dynamic => {
       for (let value: Dynamic = items.length - 1; value >= 0; value -= 1) {
-        let value2: Dynamic = items[value];
-        if (value2?.isOpen()) return value2;
+        let candidate: Dynamic = items[value];
+        if (candidate?.isOpen()) return candidate;
       }
     },
   };
 }
-function useInnerOverlayRegistration(input?: Dynamic): Dynamic {
+function useInnerOverlayRegistration(overlay?: Dynamic): Dynamic {
   let value: Dynamic = (0, reactSheetsScrollArea_3.useContext)(
       InnerOverlaysContext,
     ),
-    value2: Dynamic = (0, reactSheetsScrollArea_3.useRef)(input);
+    overlayRef: Dynamic = (0, reactSheetsScrollArea_3.useRef)(overlay);
   (0, reactSheetsScrollArea_3.useEffect)((): Dynamic => {
-    value2.current = input;
-  }, [input]);
+    overlayRef.current = overlay;
+  }, [overlay]);
   (0, reactSheetsScrollArea_3.useEffect)((): Dynamic => {
     if (value !== null)
       return value.register({
-        isOpen: (): Dynamic => value2.current.isOpen(),
-        close: (): Dynamic => value2.current.close(),
+        isOpen: (): Dynamic => overlayRef.current.isOpen(),
+        close: (): Dynamic => overlayRef.current.close(),
       });
   }, [value]);
 }
 function closeInnerOverlayOnEscape(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  stack?: Dynamic,
+  shouldSkip?: Dynamic,
+  details?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = context;
-  if (options || value.reason !== "escape-key") return false;
-  let value2: Dynamic = input.topmostOpen();
-  if (value2 === undefined) return false;
+  let value: Dynamic = details;
+  if (shouldSkip || value.reason !== "escape-key") return false;
+  let topmost: Dynamic = stack.topmostOpen();
+  if (topmost === undefined) return false;
   value.cancel?.();
   let event: Dynamic = value.event;
   event?.currentTarget?.nodeType === SheetsScrollAreaConstant
     ? (event?.currentTarget?.defaultView ?? globalThis).setTimeout(
         (): Dynamic => {
-          value2.isOpen() && value2.close();
+          topmost.isOpen() && topmost.close();
         },
         0,
       )
-    : (event?.preventDefault(), value2.close());
+    : (event?.preventDefault(), topmost.close());
   return true;
 }
 function useMenuInnerOverlay(): Dynamic {
   let value: Dynamic = (0, reactSheetsScrollArea_4.useRef)(null),
-    value2: Dynamic = (0, reactSheetsScrollArea_4.useContext)(
+    menuTrigger: Dynamic = (0, reactSheetsScrollArea_4.useContext)(
       MenuTriggerContext,
     );
   useInnerOverlayRegistration({
     isOpen: (): Dynamic =>
-      value2 !== null && value.current?.hasAttribute("data-open") === true,
-    close: (): Dynamic => value2?.current?.close?.(),
+      menuTrigger !== null && value.current?.hasAttribute("data-open") === true,
+    close: (): Dynamic => menuTrigger?.current?.close?.(),
   });
   return {
     elementRef: value,
@@ -415,7 +415,7 @@ export {
   SheetsScrollAreaElementCache,
   SheetsScrollAreaElementCache_2,
   SheetsScrollAreaLabel,
-  SheetsScrollAreaLabel_2,
+  editableElementSelector as SheetsScrollAreaLabel_2,
   SheetsScrollAreaLimit,
   SheetsScrollAreaRegistry,
   SheetsScrollAreaRegistry_2,
@@ -457,7 +457,7 @@ export function installCdsSheetsScrollArea(): () => void {
       SheetsScrollAreaElementCache = new WeakMap();
     });
     initializeSheetsScrollArea_3 = initializeOnce((): Dynamic => {
-      SheetsScrollAreaLabel_2 =
+      editableElementSelector =
         "input:not([type='hidden']):not([disabled]),[contenteditable]:not([contenteditable='false']),textarea:not([disabled])";
     });
     initializeSheetsScrollArea_4 = initializeOnce((): Dynamic => {

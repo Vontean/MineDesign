@@ -11,23 +11,23 @@ var jsxTooltipDisabledReason: typeof import("react/jsx-runtime");
 var CdsDisabledReasonAttribute: string;
 var initializeTooltipDisabledReason: () => void;
 function disabledReasonWrapperProps(
-  input: React.ReactNode,
-  options?: string,
-  context?: string,
+  reason: React.ReactNode,
+  descriptionId?: string,
+  extraClassName?: string,
 ): {
   tabIndex: number;
   "aria-describedby": string | undefined;
   className: string;
 } {
-  let value = hasDisabledReason(input);
+  let value = hasDisabledReason(reason);
   return {
     tabIndex: value ? 0 : -1,
-    "aria-describedby": value ? options : undefined,
-    className: cn("inline-flex", context),
+    "aria-describedby": value ? descriptionId : undefined,
+    className: cn("inline-flex", extraClassName),
   };
 }
-function hasDisabledReason(input: React.ReactNode): boolean {
-  return !!input;
+function hasDisabledReason(reason: React.ReactNode): boolean {
+  return !!reason;
 }
 function DisabledReasonDescription({
   id: id,

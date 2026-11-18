@@ -111,14 +111,14 @@ export function installCdsThemeClassNames(): () => void {
         TYPE_SCALE: typographyScaleClassKeys,
         TYPE_WEIGHT_NAMES: typographyWeightClassKeys,
       } = themeClassKeys);
-      getThemeClassKeys = (input: ThemeClassGroup): string[] =>
-        themeClassKeysByGroup[input];
+      getThemeClassKeys = (group: ThemeClassGroup): string[] =>
+        themeClassKeysByGroup[group];
       getThemeClassKeysValue = getThemeClassKeys("padding");
       getThemeClassKeysValue_2 = getThemeClassKeys("margin");
       getThemeClassKeysValue_3 = getThemeClassKeys("gap");
       ThemeClassNamesFromEntries = (
-        input: string,
-        options: string[],
+        prefix: string,
+        classKeys: string[],
       ): Record<
         string,
         {
@@ -126,18 +126,18 @@ export function installCdsThemeClassNames(): () => void {
         }[]
       > =>
         Object.fromEntries(
-          ["", "x", "y", "s", "e", "t", "r", "b", "l"].map((input2) => [
-            `${input}${input2}`,
+          ["", "x", "y", "s", "e", "t", "r", "b", "l"].map((suffix) => [
+            `${prefix}${suffix}`,
             [
               {
-                [`${input}${input2}`]: options,
+                [`${prefix}${suffix}`]: classKeys,
               },
             ],
           ]),
         );
       ThemeClassNamesAlias = typographyScaleClassKeys;
-      ThemeClassNamesFlatMapValue = typographyScaleClassKeys.flatMap((input) =>
-        typographyWeightClassKeys.map((input2) => `${input}-${input2}`),
+      ThemeClassNamesFlatMapValue = typographyScaleClassKeys.flatMap((scaleKey) =>
+        typographyWeightClassKeys.map((weightKey) => `${scaleKey}-${weightKey}`),
       );
       mergeCdsClasses = npm_extendTailwindMerge_Wze({
         extend: {

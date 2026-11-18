@@ -33,15 +33,15 @@ function createThemeStore(settings?: Dynamic): Dynamic {
       for (let value of listeners as Dynamic) value();
     };
   return {
-    subscribe: (input?: Dynamic): Dynamic => (
-      listeners.add(input),
-      (): Dynamic => listeners.delete(input)
+    subscribe: (listener?: Dynamic): Dynamic => (
+      listeners.add(listener),
+      (): Dynamic => listeners.delete(listener)
     ),
     getSnapshot: (): Dynamic => snapshot,
     getServerSnapshot: (): Dynamic => serverSnapshot,
     getId: (): Dynamic => snapshot?.theme.id,
-    set: (input?: Dynamic): Dynamic => {
-      let value: Dynamic = resolveThemeSnapshot(input, snapshot);
+    set: (nextSettings?: Dynamic): Dynamic => {
+      let value: Dynamic = resolveThemeSnapshot(nextSettings, snapshot);
       value !== snapshot && ((snapshot = value), notify());
     },
   };
@@ -60,14 +60,14 @@ function warnCdsOnce(message?: Dynamic): Dynamic {
   reportedCdsWarnings.has(message) ||
     (reportedCdsWarnings.add(message), console.error("cds: " + message));
 }
-function warnThemeApplyFailure(input?: Dynamic, options?: Dynamic): Dynamic {
+function warnThemeApplyFailure(themeId?: Dynamic, error?: Dynamic): Dynamic {
   warnCdsOnce(
     '<CdsRoot experimental.theme> could not put the theme "' +
-      input +
+      themeId +
       '" on the page, so the page keeps what it had (no theme, or the previous one) while useTokenValue and useCdsTheme answer for "' +
-      input +
+      themeId +
       '". ' +
-      (options instanceof Error ? options.message : String(options)),
+      (error instanceof Error ? error.message : String(error)),
   );
 }
 function cleanupAppliedTheme(cleanupRef?: Dynamic): Dynamic {
@@ -77,65 +77,65 @@ function cleanupAppliedTheme(cleanupRef?: Dynamic): Dynamic {
     cleanup?.();
   } catch {}
 }
-function useExperimentalTheme(input?: Dynamic, options?: Dynamic): Dynamic {
+function useExperimentalTheme(settings?: Dynamic, rootRef?: Dynamic): Dynamic {
   let value: Dynamic = (0, reactThemeExperimentalTheme.useContext)(
       ExperimentalThemeContext,
     ),
-    [value2]: Dynamic = (0, reactThemeExperimentalTheme.useState)(
+    [themeStore]: Dynamic = (0, reactThemeExperimentalTheme.useState)(
       (): Dynamic =>
-        value === undefined ? createThemeStore(input) : defaultThemeStore,
+        value === undefined ? createThemeStore(settings) : defaultThemeStore,
     ),
-    value3: Dynamic = value === undefined,
-    value4: Dynamic = input?.theme ?? undefined,
-    value5: Dynamic = input?.resolve,
-    value6: Dynamic = input?.apply,
-    value7: Dynamic = (0, reactThemeExperimentalTheme.useRef)(value6);
+    ownsStore: Dynamic = value === undefined,
+    theme: Dynamic = settings?.theme ?? undefined,
+    resolve: Dynamic = settings?.resolve,
+    apply: Dynamic = settings?.apply,
+    applyRef: Dynamic = (0, reactThemeExperimentalTheme.useRef)(apply);
   useIsomorphicLayoutEffect((): Dynamic => {
-    value7.current = value6;
-  }, [value6]);
-  let value8: Dynamic = value6 !== undefined,
-    value9: Dynamic = (0, reactThemeExperimentalTheme.useRef)(undefined);
+    applyRef.current = apply;
+  }, [apply]);
+  let hasApply: Dynamic = apply !== undefined,
+    cleanupRef: Dynamic = (0, reactThemeExperimentalTheme.useRef)(undefined);
   useIsomorphicLayoutEffect((): Dynamic => {
-    value3 &&
-      value2.set(
-        value4 === undefined
+    ownsStore &&
+      themeStore.set(
+        theme === undefined
           ? undefined
           : {
-              theme: value4,
-              resolve: value5,
+              theme: theme,
+              resolve: resolve,
             },
       );
-  }, [value3, value2, value4, value5]);
+  }, [ownsStore, themeStore, theme, resolve]);
   useIsomorphicLayoutEffect((): Dynamic => {
-    let current: Dynamic = options.current,
-      current2: Dynamic = value7.current;
+    let current: Dynamic = rootRef.current,
+      applyTheme: Dynamic = applyRef.current;
     if (
-      value3 &&
-      value4 !== undefined &&
-      current2 !== undefined &&
+      ownsStore &&
+      theme !== undefined &&
+      applyTheme !== undefined &&
       current !== null
     )
       try {
-        value9.current = current2(value4, {
+        cleanupRef.current = applyTheme(theme, {
           target: current,
         });
-      } catch (value10: Dynamic) {
-        warnThemeApplyFailure(value4.id, value10);
+      } catch (error: Dynamic) {
+        warnThemeApplyFailure(theme.id, error);
       }
-    else cleanupAppliedTheme(value9);
-  }, [value3, value4, value8, options]);
+    else cleanupAppliedTheme(cleanupRef);
+  }, [ownsStore, theme, hasApply, rootRef]);
   useIsomorphicLayoutEffect(
-    (): Dynamic => (): Dynamic => cleanupAppliedTheme(value9),
+    (): Dynamic => (): Dynamic => cleanupAppliedTheme(cleanupRef),
     [],
   );
   (0, reactThemeExperimentalTheme.useEffect)((): Dynamic => {}, [
-    input === null,
-    value4,
-    value8,
+    settings === null,
+    theme,
+    hasApply,
     value,
-    options,
+    rootRef,
   ]);
-  return value ?? value2;
+  return value ?? themeStore;
 }
 export {
   cleanupAppliedTheme,
@@ -161,16 +161,16 @@ export function installCdsThemeExperimentalTheme(): () => void {
       reactThemeExperimentalTheme = toModuleNamespace(
         load_react(),
       );
-      resolveThemeSnapshot = (input?: Dynamic, options?: Dynamic): Dynamic => {
-        if (input == null || input.theme === undefined || input.theme === null)
+      resolveThemeSnapshot = (settings?: Dynamic, previousSnapshot?: Dynamic): Dynamic => {
+        if (settings == null || settings.theme === undefined || settings.theme === null)
           return;
-        let value: Dynamic = resolveExperimentalTheme(input);
-        return options !== undefined &&
-          options.theme === input.theme &&
-          options.resolved === value
-          ? options
+        let value: Dynamic = resolveExperimentalTheme(settings);
+        return previousSnapshot !== undefined &&
+          previousSnapshot.theme === settings.theme &&
+          previousSnapshot.resolved === value
+          ? previousSnapshot
           : {
-              theme: input.theme,
+              theme: settings.theme,
               resolved: value,
             };
       };

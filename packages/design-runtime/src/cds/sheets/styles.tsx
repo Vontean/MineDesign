@@ -18,19 +18,19 @@ var initializeSheetsStyles: Dynamic;
 var reactSheetsStyles_2: typeof React;
 var LabelsProviderContext: React.Context<LabelResolver | undefined>;
 var initializeSheetsStyles_2: Dynamic;
-function clearSheetTransition(input?: Dynamic): Dynamic {
-  input.style.transition = "";
-  input.style.translate = "";
+function clearSheetTransition(sheetElement?: Dynamic): Dynamic {
+  sheetElement.style.transition = "";
+  sheetElement.style.translate = "";
 }
 function useSheetState_2(): Dynamic {
   let value: Dynamic = (0, reactSheetsStyles.useContext)(
       SheetPopupContext,
     ),
-    [value2]: Dynamic = (0, reactSheetsStyles.useState)((): Dynamic => ({})),
-    [value3]: Dynamic = (0, reactSheetsStyles.useState)(
+    [ownerToken]: Dynamic = (0, reactSheetsStyles.useState)((): Dynamic => ({})),
+    [fallbackDragCell]: Dynamic = (0, reactSheetsStyles.useState)(
       createSheetMutableCell,
     ),
-    value4: Dynamic = value?.drag ?? value3,
+    dragCell: Dynamic = value?.drag ?? fallbackDragCell,
     callback: Dynamic = (element?: Dynamic): Dynamic =>
       value === null
         ? []
@@ -39,30 +39,30 @@ function useSheetState_2(): Dynamic {
               `[data-presentation="sheet"][data-sheet-tree="${CSS.escape(value.treeId)}"]:not([data-ending-style])`,
             ),
           ),
-    callback2: Dynamic = (input?: Dynamic, options?: Dynamic): Dynamic => {
+    applyDragFrame: Dynamic = (dragState?: Dynamic, dragDelta?: Dynamic): Dynamic => {
       let {
-        height: value7,
-        slide: value8,
-        shown: value9,
+        height: sheetHeight,
+        slide: slideOffset,
+        shown: shownRatio,
       }: Dynamic = calculateSheetPosition(
-        input,
-        input.raw - options,
+        dragState,
+        dragState.raw - dragDelta,
       );
-      for (let { el: value11 } of input.sheets as Dynamic) {
-        value11.style.height = `${value7}px`;
-        value11.style.translate = value8 > 0 ? `0 ${value8}px` : "";
+      for (let { el: sheetElement } of dragState.sheets as Dynamic) {
+        sheetElement.style.height = `${sheetHeight}px`;
+        sheetElement.style.translate = slideOffset > 0 ? `0 ${slideOffset}px` : "";
       }
-      let value10: Dynamic = value9 < 1 ? value9.toFixed(3) : "";
-      for (let value11 of input.scrims as Dynamic)
-        value11.style.opacity !== value10 &&
-          (value11.style.opacity = value10);
+      let scrimOpacity: Dynamic = shownRatio < 1 ? shownRatio.toFixed(3) : "";
+      for (let scrim of dragState.scrims as Dynamic)
+        scrim.style.opacity !== scrimOpacity &&
+          (scrim.style.opacity = scrimOpacity);
     },
-    callback3: Dynamic = (event?: Dynamic): Dynamic => {
+    handlePointerDown: Dynamic = (event?: Dynamic): Dynamic => {
       if (
         value === null ||
         !value.open ||
         event.button !== 0 ||
-        value4.get() !== null ||
+        dragCell.get() !== null ||
         value.keyboard !== null ||
         (event.target instanceof Element &&
           event.target.closest(
@@ -77,106 +77,106 @@ function useSheetState_2(): Dynamic {
       if (ancestor === null) return;
       let bounds: Dynamic = ancestor.getBoundingClientRect(),
         height: Dynamic = bounds.height,
-        value7: Dynamic =
+        parentBottom: Dynamic =
           ancestor.parentElement?.getBoundingClientRect().bottom,
-        value8: Dynamic = Math.max(
+        bottomInset: Dynamic = Math.max(
           0,
-          bounds.bottom - (value7 ?? bounds.bottom),
+          bounds.bottom - (parentBottom ?? bounds.bottom),
         ),
-        value9: Dynamic =
+        viewportHeight: Dynamic =
           ancestor.ownerDocument.defaultView?.innerHeight ?? height;
       event.currentTarget.setPointerCapture(event.pointerId);
-      let value10: Dynamic = callback(ancestor).map(
-          (input?: Dynamic): Dynamic => {
-            let height2: Dynamic = input.style.height;
-            input.style.transition = "none";
-            input.style.height = `${height}px`;
+      let sheetSnapshots: Dynamic = callback(ancestor).map(
+          (sheetElement?: Dynamic): Dynamic => {
+            let originalHeight: Dynamic = sheetElement.style.height;
+            sheetElement.style.transition = "none";
+            sheetElement.style.height = `${height}px`;
             return {
-              el: input,
-              height: height2,
+              el: sheetElement,
+              height: originalHeight,
             };
           },
         ),
-        value11: Dynamic = value.canGrow || value.detent === "tall",
-        value12: Dynamic = calculateSheetDetents(
+        canGrow: Dynamic = value.canGrow || value.detent === "tall",
+        detents: Dynamic = calculateSheetDetents(
           Math.min(value.height ?? height, height),
-          value9,
+          viewportHeight,
           SheetsLayoutConstant,
-          value11,
+          canGrow,
         ),
-        value13: Dynamic =
-          prefersReducedMotion() || !value11
+        effectiveDetents: Dynamic =
+          prefersReducedMotion() || !canGrow
             ? {
-                ...value12,
+                ...detents,
                 room: 0,
               }
-            : value12,
-        value14: Dynamic = Array.from(
+            : detents,
+        scrims: Dynamic = Array.from(
           ancestor.ownerDocument.querySelectorAll(
             `[data-presentation="sheet"][data-sheet-scrim="${CSS.escape(value.treeId)}"]`,
           ),
         );
-      for (let value15 of value14 as Dynamic)
-        value15.style.transition = "none";
+      for (let scrim of scrims as Dynamic)
+        scrim.style.transition = "none";
       let state: Dynamic = {
-        owner: value2,
+        owner: ownerToken,
         pointerId: event.pointerId,
         startY: event.clientY,
         lastY: event.clientY,
         lastT: event.timeStamp,
         velocity: 0,
         detent: value.detent,
-        raw: sheetPositionToRawHeight(value13, height, value8),
-        caughtSlide: value8,
-        ...value13,
-        sheets: value10,
+        raw: sheetPositionToRawHeight(effectiveDetents, height, bottomInset),
+        caughtSlide: bottomInset,
+        ...effectiveDetents,
+        sheets: sheetSnapshots,
         doc: ancestor.ownerDocument,
-        scrims: value14,
+        scrims: scrims,
       };
-      value4.set(state);
-      callback2(state, 0);
+      dragCell.set(state);
+      applyDragFrame(state, 0);
     },
-    callback4: Dynamic = (input?: Dynamic): Dynamic => {
-      let entry: Dynamic = value4.get();
+    handlePointerMove: Dynamic = (event?: Dynamic): Dynamic => {
+      let entry: Dynamic = dragCell.get();
       if (
         entry === null ||
-        entry.owner !== value2 ||
-        input.pointerId !== entry.pointerId
+        entry.owner !== ownerToken ||
+        event.pointerId !== entry.pointerId
       )
         return;
-      let value7: Dynamic = input.timeStamp - entry.lastT;
-      value7 > 0 && (entry.velocity = (input.clientY - entry.lastY) / value7);
-      entry.lastY = input.clientY;
-      entry.lastT = input.timeStamp;
-      callback2(entry, input.clientY - entry.startY);
+      let elapsed: Dynamic = event.timeStamp - entry.lastT;
+      elapsed > 0 && (entry.velocity = (event.clientY - entry.lastY) / elapsed);
+      entry.lastY = event.clientY;
+      entry.lastT = event.timeStamp;
+      applyDragFrame(entry, event.clientY - entry.startY);
     },
-    callback5: Dynamic = (input?: Dynamic, options?: Dynamic): Dynamic => {
-      for (let { el: value7, height: value8 } of input.sheets as Dynamic) {
-        value7.style.transition = "";
-        options
-          ? (value7.style.translate = `0 ${PlatformReducedMotionLabel}`)
-          : ((value7.style.height = value8), (value7.style.translate = ""));
+    restoreDragStyles: Dynamic = (dragState?: Dynamic, isDismissing?: Dynamic): Dynamic => {
+      for (let { el: sheetElement, height: originalHeight } of dragState.sheets as Dynamic) {
+        sheetElement.style.transition = "";
+        isDismissing
+          ? (sheetElement.style.translate = `0 ${PlatformReducedMotionLabel}`)
+          : ((sheetElement.style.height = originalHeight), (sheetElement.style.translate = ""));
       }
-      for (let value7 of input.scrims as Dynamic) {
-        value7.style.transition = "";
-        value7.style.opacity = "";
+      for (let scrim of dragState.scrims as Dynamic) {
+        scrim.style.transition = "";
+        scrim.style.opacity = "";
       }
     },
-    value5: Dynamic = value?.open ?? false;
+    isOpen: Dynamic = value?.open ?? false;
   useIsomorphicLayoutEffect((): Dynamic => {
-    let entry: Dynamic = value4.get();
-    !value5 &&
+    let entry: Dynamic = dragCell.get();
+    !isOpen &&
       entry !== null &&
-      entry.owner === value2 &&
-      (value4.set(null), callback5(entry, false));
-  }, [value5, value4, value2]);
-  let value6: Dynamic = (0, reactSheetsStyles.useRef)({
+      entry.owner === ownerToken &&
+      (dragCell.set(null), restoreDragStyles(entry, false));
+  }, [isOpen, dragCell, ownerToken]);
+  let latestStateRef: Dynamic = (0, reactSheetsStyles.useRef)({
     open: false,
     height: undefined,
     detent: "default",
   });
   useIsomorphicLayoutEffect((): Dynamic => {
-    value6.current = {
+    latestStateRef.current = {
       open: value?.open ?? false,
       height: value?.height,
       detent: value?.detent ?? "default",
@@ -184,92 +184,92 @@ function useSheetState_2(): Dynamic {
   }, [value]);
   (0, reactSheetsStyles.useEffect)(
     (): Dynamic => (): Dynamic => {
-      let entry: Dynamic = value4.get();
+      let entry: Dynamic = dragCell.get();
       entry !== null &&
-        entry.owner === value2 &&
-        (value4.set(null), callback5(entry, false));
+        entry.owner === ownerToken &&
+        (dragCell.set(null), restoreDragStyles(entry, false));
     },
-    [value4, value2],
+    [dragCell, ownerToken],
   );
-  let callback6: Dynamic = (input?: Dynamic, options?: Dynamic): Dynamic => {
-    let entry: Dynamic = value4.get();
+  let finishDrag: Dynamic = (event?: Dynamic, shouldCommit?: Dynamic): Dynamic => {
+    let entry: Dynamic = dragCell.get();
     if (
       entry === null ||
-      entry.owner !== value2 ||
+      entry.owner !== ownerToken ||
       value === null ||
-      input.pointerId !== entry.pointerId
+      event.pointerId !== entry.pointerId
     )
       return;
-    value4.set(null);
-    input.currentTarget.hasPointerCapture(input.pointerId) &&
-      input.currentTarget.releasePointerCapture(input.pointerId);
-    let value7: Dynamic = entry.lastY - entry.startY,
-      value8: Dynamic =
-        input.timeStamp - entry.lastT > 100 ? 0 : entry.velocity,
-      { dismiss: value9, detent: value10 }: Dynamic = settleSheetGesture(entry, {
+    dragCell.set(null);
+    event.currentTarget.hasPointerCapture(event.pointerId) &&
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    let totalDrag: Dynamic = entry.lastY - entry.startY,
+      releaseVelocity: Dynamic =
+        event.timeStamp - entry.lastT > 100 ? 0 : entry.velocity,
+      { dismiss: dismissed, detent: nextDetent }: Dynamic = settleSheetGesture(entry, {
         detent: entry.detent,
         rawAtGrab: entry.raw,
-        rawAtRelease: entry.raw - value7,
+        rawAtRelease: entry.raw - totalDrag,
         caughtSlide: entry.caughtSlide,
-        velocity: value8,
-        commit: options,
+        velocity: releaseVelocity,
+        commit: shouldCommit,
       });
-    callback5(entry, value9);
-    if (value9) {
+    restoreDragStyles(entry, dismissed);
+    if (dismissed) {
       value.dismiss();
-      let { doc: value11 }: Dynamic = entry;
-      value11.defaultView?.requestAnimationFrame((): Dynamic => {
-        let current: Dynamic = value6.current;
+      let { doc: doc }: Dynamic = entry;
+      doc.defaultView?.requestAnimationFrame((): Dynamic => {
+        let current: Dynamic = latestStateRef.current;
         if (!current.open) return;
-        let value12: Dynamic =
+        let restoredHeight: Dynamic =
           current.detent === "tall"
             ? SheetsLayoutCss
             : current.height !== undefined
               ? `${current.height}px`
               : "";
-        for (let value13 of value11.querySelectorAll(
+        for (let sheetElement of doc.querySelectorAll(
           `[data-sheet-tree="${CSS.escape(value.treeId)}"][data-presentation="sheet"]`,
         ) as Dynamic) {
-          clearSheetTransition(value13);
-          value13.style.height = value12;
+          clearSheetTransition(sheetElement);
+          sheetElement.style.height = restoredHeight;
         }
       });
-    } else value10 !== entry.detent && value.setDetent(value10);
+    } else nextDetent !== entry.detent && value.setDetent(nextDetent);
   };
   return {
-    onPointerDown: callback3,
-    onPointerMove: callback4,
-    onPointerUp: (input?: Dynamic): Dynamic => callback6(input, true),
-    onPointerCancel: (input?: Dynamic): Dynamic => callback6(input, false),
-    onLostPointerCapture: (input?: Dynamic): Dynamic =>
-      callback6(input, false),
+    onPointerDown: handlePointerDown,
+    onPointerMove: handlePointerMove,
+    onPointerUp: (event?: Dynamic): Dynamic => finishDrag(event, true),
+    onPointerCancel: (event?: Dynamic): Dynamic => finishDrag(event, false),
+    onLostPointerCapture: (event?: Dynamic): Dynamic =>
+      finishDrag(event, false),
   };
 }
-function interpolateLabel(input: string, options?: LabelValues): string {
-  return options
-    ? input.replace(/\{(\w+)\}/g, (input2, options2) =>
-        options2 in options ? String(options[options2]) : input2,
+function interpolateLabel(template: string, values?: LabelValues): string {
+  return values
+    ? template.replace(/\{(\w+)\}/g, (match, key) =>
+        key in values ? String(values[key]) : match,
       )
-    : input;
+    : template;
 }
 function resolveLabel(
-  input: LabelResolver | undefined,
-  options: string,
-  context: string,
-  value?: LabelValues,
+  resolver: LabelResolver | undefined,
+  key: string,
+  fallback: string,
+  values?: LabelValues,
 ): string {
-  return input?.(options, context, value) || interpolateLabel(context, value);
+  return resolver?.(key, fallback, values) || interpolateLabel(fallback, values);
 }
 function useLabel(
-  input: string,
-  options: string,
-  context?: LabelValues,
+  key: string,
+  fallback: string,
+  values?: LabelValues,
 ): string {
   return resolveLabel(
     (0, reactSheetsStyles_2.useContext)(LabelsProviderContext),
-    input,
-    options,
-    context,
+    key,
+    fallback,
+    values,
   );
 }
 export {

@@ -11,7 +11,7 @@ import { toModuleNamespace } from "../module-helpers";
 var reactCollaborationPeerBadge: Dynamic;
 var jsxCollaborationPeerBadge: Dynamic;
 var CollaborationPeerBadgeConstant: Dynamic;
-var CollaborationPeerBadgeConstant_2: Dynamic;
+var defaultCrossfadeInMs: Dynamic;
 var jsxCollaborationPeerBadge_2: Dynamic;
 var reactCollaborationPeerBadge_2: Dynamic;
 var jsxCollaborationPeerBadge_3: Dynamic;
@@ -25,29 +25,29 @@ function CrossfadeLabel({
   shimmer: shimmer,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let [value, value2]: Dynamic = (0, reactCollaborationPeerBadge.useState)({
+  let [value, setLines]: Dynamic = (0, reactCollaborationPeerBadge.useState)({
       a: text,
       b: "",
       front: "a",
     }),
-    value3: Dynamic = (0, reactCollaborationPeerBadge.useRef)(null),
-    [value4, value5]: Dynamic = (0, reactCollaborationPeerBadge.useState)(
+    sizerRef: Dynamic = (0, reactCollaborationPeerBadge.useRef)(null),
+    [measuredSize, setMeasuredSize]: Dynamic = (0, reactCollaborationPeerBadge.useState)(
       null,
     ),
-    [value6, value7]: Dynamic = (0, reactCollaborationPeerBadge.useState)(0);
+    [fontsReadyTick, setFontsReadyTick]: Dynamic = (0, reactCollaborationPeerBadge.useState)(0);
   (0, reactCollaborationPeerBadge.useEffect)((): Dynamic => {
-    value2(
-      (input?: Dynamic): Dynamic =>
-        (input.front === "a" ? input.a : input.b) === text
-          ? input
-          : input.front === "a"
+    setLines(
+      (current?: Dynamic): Dynamic =>
+        (current.front === "a" ? current.a : current.b) === text
+          ? current
+          : current.front === "a"
             ? {
-                ...input,
+                ...current,
                 b: text,
                 front: "b",
               }
             : {
-                ...input,
+                ...current,
                 a: text,
                 front: "a",
               },
@@ -59,27 +59,27 @@ function CrossfadeLabel({
       ? (document as Dynamic).fonts?.ready
       : undefined
     )?.then((): Dynamic => {
-      flag && value7((input?: Dynamic): Dynamic => input + 1);
+      flag && setFontsReadyTick((count?: Dynamic): Dynamic => count + 1);
     });
     return (): Dynamic => {
       flag = false;
     };
   }, []);
   (0, reactCollaborationPeerBadge.useLayoutEffect)((): Dynamic => {
-    if (!value3.current) return;
-    let value10: Dynamic = value3.current.offsetWidth + 1;
-    value5(
-      (input?: Dynamic): Dynamic =>
-        input !== null && input.width === value10
-          ? input
+    if (!sizerRef.current) return;
+    let measuredWidth: Dynamic = sizerRef.current.offsetWidth + 1;
+    setMeasuredSize(
+      (previous?: Dynamic): Dynamic =>
+        previous !== null && previous.width === measuredWidth
+          ? previous
           : {
-              width: value10,
-              narrows: input !== null && value10 < input.width,
+              width: measuredWidth,
+              narrows: previous !== null && measuredWidth < previous.width,
             },
     );
-  }, [value, value6]);
-  let value8: Dynamic =
-      value4?.narrows === true
+  }, [value, fontsReadyTick]);
+  let containerTransitionStyle: Dynamic =
+      measuredSize?.narrows === true
         ? {
             transitionDuration: inMs + "ms",
             transitionDelay: outMs + "ms",
@@ -88,8 +88,8 @@ function CrossfadeLabel({
             transitionDuration: outMs + "ms",
             transitionDelay: "0ms",
           },
-    callback: Dynamic = (input?: Dynamic): Dynamic =>
-      input
+    callback: Dynamic = (isFront?: Dynamic): Dynamic =>
+      isFront
         ? {
             transitionDuration: inMs + "ms",
             transitionDelay: outMs + "ms",
@@ -98,27 +98,27 @@ function CrossfadeLabel({
             transitionDuration: outMs + "ms",
             transitionDelay: "0ms",
           },
-    value9: Dynamic = value.front === "a" ? value.a : value.b;
+    frontText: Dynamic = value.front === "a" ? value.a : value.b;
   return (
     <span
       className={"mc-tip-fade"}
       style={{
-        width: value4 === null ? undefined : value4.width,
-        ...value8,
+        width: measuredSize === null ? undefined : measuredSize.width,
+        ...containerTransitionStyle,
       }}
     >
-      <span ref={value3} className={"mc-tip-sizer"} aria-hidden={"true"}>
-        {value9}
+      <span ref={sizerRef} className={"mc-tip-sizer"} aria-hidden={"true"}>
+        {frontText}
       </span>
       {["a", "b"].map(
-        (input?: Dynamic): Dynamic => (
+        (lineKey?: Dynamic): Dynamic => (
           <span
-            key={input}
+            key={lineKey}
             className={shimmer ? "mc-tip-line mc-tip-shimmer" : "mc-tip-line"}
-            data-front={value.front === input ? "true" : undefined}
-            style={callback(value.front === input)}
+            data-front={value.front === lineKey ? "true" : undefined}
+            style={callback(value.front === lineKey)}
           >
-            {value[input]}
+            {value[lineKey]}
           </span>
         ),
       )}
@@ -149,7 +149,7 @@ function PeerBadgeLabel({ tint: tint, label: label }: Dynamic): Dynamic {
       <CrossfadeLabel
         text={label.text}
         outMs={label.outMs ?? CollaborationPeerBadgeConstant}
-        inMs={label.inMs ?? CollaborationPeerBadgeConstant_2}
+        inMs={label.inMs ?? defaultCrossfadeInMs}
         shimmer={label.shimmer === true}
       />
     </span>
@@ -172,9 +172,9 @@ function PeerBadge({
       glyphScale > 0
         ? glyphScale
         : 1,
-    value2: Dynamic = at !== undefined && glideMs > 0,
-    value3: Dynamic = value === 1 ? "" : " scale(" + String(value) + ")",
-    value4: Dynamic =
+    isGliding: Dynamic = at !== undefined && glideMs > 0,
+    scaleSuffix: Dynamic = value === 1 ? "" : " scale(" + String(value) + ")",
+    cursorStyle: Dynamic =
       at !== undefined
         ? {
             transform:
@@ -183,9 +183,9 @@ function PeerBadge({
               "px," +
               String(at.top) +
               "px)" +
-              value3,
+              scaleSuffix,
             transformOrigin: "0 0",
-            ...(value2
+            ...(isGliding
               ? {
                   "--mc-claude-glide": String(glideMs) + "ms",
                 }
@@ -194,7 +194,7 @@ function PeerBadge({
         : value === 1
           ? undefined
           : {
-              transform: value3.trim(),
+              transform: scaleSuffix.trim(),
               transformOrigin: "0 0",
             };
   return (
@@ -205,9 +205,9 @@ function PeerBadge({
       data-align={
         at !== undefined && align === "centre" ? "centre" : undefined
       }
-      data-glide={value2 ? "" : undefined}
+      data-glide={isGliding ? "" : undefined}
       data-hidden={hidden ? "" : undefined}
-      style={value4}
+      style={cursorStyle}
     >
       <div className={"mc-claude-cursor-unit"}>
         <div ref={arrowRef} className={"mc-claude-cursor-arrow"}>
@@ -220,7 +220,7 @@ function PeerBadge({
 }
 export {
   CollaborationPeerBadgeConstant,
-  CollaborationPeerBadgeConstant_2,
+  defaultCrossfadeInMs as CollaborationPeerBadgeConstant_2,
   CrossfadeLabel,
   jsxCollaborationPeerBadge,
   jsxCollaborationPeerBadge_2,
@@ -244,7 +244,7 @@ export function installCollaborationPeerBadge(): () => void {
       1,
     );
     CollaborationPeerBadgeConstant = 80;
-    CollaborationPeerBadgeConstant_2 = 120;
+    defaultCrossfadeInMs = 120;
     jsxCollaborationPeerBadge_2 = toModuleNamespace(
       load_react_jsx_runtime(),
       1,

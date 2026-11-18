@@ -11,7 +11,7 @@ var TooltipStylesCss: string;
 var tooltipPopupClasses: string;
 var TooltipStylesLabel: string;
 var TooltipStylesCss_2: string;
-var TooltipStylesLabel_2: string;
+var tooltipTextWrapClasses: string;
 var initializeTooltipStyles: () => void;
 var tooltipImplementationExports: Partial<TooltipImplementation>;
 function DarkScope({
@@ -34,7 +34,7 @@ export {
   TooltipStylesCss,
   TooltipStylesCss_2,
   TooltipStylesLabel,
-  TooltipStylesLabel_2,
+  tooltipTextWrapClasses as TooltipStylesLabel_2,
 };
 export function installCdsTooltipStyles(): () => void {
   return () => {
@@ -51,7 +51,7 @@ export function installCdsTooltipStyles(): () => void {
         "origin-[var(--transform-origin)] transition-[opacity,scale] duration-snap ease-snap motion-reduce:transition-none data-[starting-style]:opacity-0 data-[starting-style]:scale-[0.98] data-[ending-style]:opacity-0 data-[ending-style]:scale-[0.98] data-[instant]:duration-0";
       TooltipStylesLabel = "max-w-[240px] whitespace-normal";
       TooltipStylesCss_2 = `${TooltipStylesLabel} py-1.5`;
-      TooltipStylesLabel_2 = "min-w-0 break-words";
+      tooltipTextWrapClasses = "min-w-0 break-words";
     });
     tooltipImplementationExports = {};
   };

@@ -61,86 +61,86 @@ function inspectCdsStylesheets(): Dynamic {
     try {
       let items: Dynamic = [],
         values: Dynamic = new Set(),
-        callback: Dynamic = (input?: Dynamic): Dynamic => {
-          if (!input) return;
-          let value3: Dynamic = input.split(".")[0] ?? input;
-          values.has(value3) || (values.add(value3), items.push(value3));
+        callback: Dynamic = (layerName?: Dynamic): Dynamic => {
+          if (!layerName) return;
+          let rootLayerName: Dynamic = layerName.split(".")[0] ?? layerName;
+          values.has(rootLayerName) || (values.add(rootLayerName), items.push(rootLayerName));
         },
-        callback2: Dynamic = (input?: Dynamic): Dynamic => {
-          let value3: Dynamic;
+        collectLayers: Dynamic = (styleSheet?: Dynamic): Dynamic => {
+          let cssRules: Dynamic;
           try {
-            value3 = input.cssRules;
+            cssRules = styleSheet.cssRules;
           } catch {
             return;
           }
-          for (let value4 of value3 as Dynamic) {
-            let name: Dynamic = value4.constructor.name;
+          for (let rule of cssRules as Dynamic) {
+            let name: Dynamic = rule.constructor.name;
             if (name === "CSSLayerStatementRule")
-              for (let value5 of value4.nameList as Dynamic) callback(value5);
-            else if (name === "CSSLayerBlockRule") callback(value4.name);
+              for (let nestedLayerName of rule.nameList as Dynamic) callback(nestedLayerName);
+            else if (name === "CSSLayerBlockRule") callback(rule.name);
             else if (name === "CSSImportRule") {
-              let value5: Dynamic = value4;
-              callback(value5.layerName);
-              value5.styleSheet && callback2(value5.styleSheet);
+              let importRule: Dynamic = rule;
+              callback(importRule.layerName);
+              importRule.styleSheet && collectLayers(importRule.styleSheet);
             }
           }
         };
-      for (let value3 of (document as Dynamic).styleSheets as Dynamic)
-        callback2(value3);
+      for (let styleSheet of (document as Dynamic).styleSheets as Dynamic)
+        collectLayers(styleSheet);
       let value: Dynamic = items.indexOf("utilities");
       if (value === -1) return;
-      let value2: Dynamic = items.indexOf("cds-card");
-      (value2 === -1 || value2 > value) &&
+      let cardIndex: Dynamic = items.indexOf("cds-card");
+      (cardIndex === -1 || cardIndex > value) &&
         console.error(
           "cds: the `cds-card` cascade layer is " +
-            (value2 === -1 ? "not declared" : "declared after `utilities`") +
+            (cardIndex === -1 ? "not declared" : "declared after `utilities`") +
             " in this document, so Card's stretched-link lift rules outrank consumer positioning utilities \u2014 `absolute`/`z-*` on interactive children inside <Card> will silently lose, and a `backgroundClassName` surface override stops applying, since the fill layer's resting color and hover step sit in the same layer and must rank below consumer utilities to be overridable. Fix: add `@layer cds-card;` before the `@import \"tailwindcss\"` line in this app's Tailwind entry CSS (see packages/cds/src/component-base.css \xA7 cds-card).",
         );
     } catch {}
   }
 }
-function getSizeAttribute(input?: ControlSize): {
+function getSizeAttribute(size?: ControlSize): {
   "data-size"?: Exclude<ControlSize, "base">;
 } {
-  return input && input !== "base"
+  return size && size !== "base"
     ? {
-        "data-size": input,
+        "data-size": size,
       }
     : {};
 }
-function getControlSizeRank(input: Density, options?: ControlSize): number {
+function getControlSizeRank(density: Density, size?: ControlSize): number {
   let value =
-    ThemeRootCompactComfortableConfig[input] +
-    ThemeRootXsSmBaseConfig[options ?? "base"];
+    ThemeRootCompactComfortableConfig[density] +
+    ThemeRootXsSmBaseConfig[size ?? "base"];
   return value < 1 ? 1 : value > 5 ? 5 : value;
 }
-function createColorModeStore(input?: Dynamic): Dynamic {
+function createColorModeStore(modeSetting?: Dynamic): Dynamic {
   let value: Dynamic = null,
-    value2: Dynamic =
-      input === undefined && typeof document !== "undefined"
+    inheritedMode: Dynamic =
+      modeSetting === undefined && typeof document !== "undefined"
         ? (document as Dynamic).documentElement.getAttribute("data-mode")
         : null,
-    callback: Dynamic = (): Dynamic => input ?? ThemeRootHandler_2(value2),
-    callback2: Dynamic = (input2?: Dynamic): Dynamic =>
-      input2 ? "dark" : "light",
-    value3: Dynamic,
-    value4: Dynamic,
+    callback: Dynamic = (): Dynamic => modeSetting ?? ThemeRootHandler_2(inheritedMode),
+    toMode: Dynamic = (isDark?: Dynamic): Dynamic =>
+      isDark ? "dark" : "light",
+    mediaQuery: Dynamic,
+    systemMode: Dynamic,
     flag: Dynamic = false,
-    callback3: Dynamic = (): Dynamic => {
+    initMediaQuery: Dynamic = (): Dynamic => {
       flag ||
         ((flag = true),
-        (value3 =
-          input !== "light" &&
-          input !== "dark" &&
+        (mediaQuery =
+          modeSetting !== "light" &&
+          modeSetting !== "dark" &&
           typeof window !== "undefined" &&
           typeof (window as Dynamic).matchMedia == "function"
             ? (window as Dynamic).matchMedia(ThemeRootMediaQuery)
             : undefined),
-        (value4 = value3 ? callback2(value3.matches) : undefined));
+        (systemMode = mediaQuery ? toMode(mediaQuery.matches) : undefined));
     },
-    callback4: Dynamic = (): Dynamic => {
+    readInheritedMode: Dynamic = (): Dynamic => {
       value &&
-        (value2 =
+        (inheritedMode =
           value.closest("[data-mode]")?.getAttribute("data-mode") ??
           (value.isConnected
             ? null
@@ -148,36 +148,36 @@ function createColorModeStore(input?: Dynamic): Dynamic {
                 "data-mode",
               )));
     },
-    callback5: Dynamic = (input2?: Dynamic): Dynamic =>
-      input2 === "light" || input2 === "dark" ? input2 : undefined,
+    toExplicitMode: Dynamic = (mode?: Dynamic): Dynamic =>
+      mode === "light" || mode === "dark" ? mode : undefined,
     values: Dynamic = new Set(),
-    callback6: Dynamic = (): Dynamic =>
-      values.forEach((input2?: Dynamic): Dynamic => input2()),
-    flag2: Dynamic = false,
-    callback7: Dynamic = (): Dynamic => {
+    notifyListeners: Dynamic = (): Dynamic =>
+      values.forEach((listener?: Dynamic): Dynamic => listener()),
+    hasPendingNotify: Dynamic = false,
+    startListening: Dynamic = (): Dynamic => {
       let items: Dynamic = [];
-      callback3();
-      let value6: Dynamic = value3;
-      if (value6) {
-        let callback8: Dynamic = (): Dynamic => {
-          value4 = callback2(value6.matches);
-          callback6();
+      initMediaQuery();
+      let mediaQueryList: Dynamic = mediaQuery;
+      if (mediaQueryList) {
+        let handleMediaChange: Dynamic = (): Dynamic => {
+          systemMode = toMode(mediaQueryList.matches);
+          notifyListeners();
         };
-        value6.addEventListener("change", callback8);
+        mediaQueryList.addEventListener("change", handleMediaChange);
         items.push(
-          (): Dynamic => value6.removeEventListener("change", callback8),
+          (): Dynamic => mediaQueryList.removeEventListener("change", handleMediaChange),
         );
-        let value7: Dynamic = callback2(value6.matches);
-        value7 !== value4 && ((value4 = value7), (flag2 = true));
+        let nextSystemMode: Dynamic = toMode(mediaQueryList.matches);
+        nextSystemMode !== systemMode && ((systemMode = nextSystemMode), (hasPendingNotify = true));
       }
-      if (input === undefined && typeof MutationObserver !== "undefined") {
-        let value7: Dynamic = value2;
-        callback4();
-        value2 !== value7 && (flag2 = true);
+      if (modeSetting === undefined && typeof MutationObserver !== "undefined") {
+        let previousInherited: Dynamic = inheritedMode;
+        readInheritedMode();
+        inheritedMode !== previousInherited && (hasPendingNotify = true);
         let observer: Dynamic = new MutationObserver((): Dynamic => {
-          let value8: Dynamic = value2;
-          callback4();
-          value2 !== value8 && callback6();
+          let observedPrevious: Dynamic = inheritedMode;
+          readInheritedMode();
+          inheritedMode !== observedPrevious && notifyListeners();
         });
         observer.observe((document as Dynamic).documentElement, {
           attributes: true,
@@ -186,41 +186,41 @@ function createColorModeStore(input?: Dynamic): Dynamic {
         });
         items.push((): Dynamic => observer.disconnect());
       }
-      flag2 && ((flag2 = false), queueMicrotask(callback6));
+      hasPendingNotify && ((hasPendingNotify = false), queueMicrotask(notifyListeners));
       return (): Dynamic =>
-        items.forEach((input2?: Dynamic): Dynamic => input2());
+        items.forEach((cleanup?: Dynamic): Dynamic => cleanup());
     },
-    value5: Dynamic;
+    stopListening: Dynamic;
   return {
-    setElement: (input2?: Dynamic): Dynamic => {
-      value = input2;
-      if (input === undefined && input2 !== null) {
-        let value6: Dynamic = value2;
-        callback4();
-        value2 !== value6 && values.size === 0 && (flag2 = true);
-        callback6();
+    setElement: (element?: Dynamic): Dynamic => {
+      value = element;
+      if (modeSetting === undefined && element !== null) {
+        let previousInherited: Dynamic = inheritedMode;
+        readInheritedMode();
+        inheritedMode !== previousInherited && values.size === 0 && (hasPendingNotify = true);
+        notifyListeners();
       }
     },
-    subscribe: (input2?: Dynamic): Dynamic => (
-      values.size === 0 && (value5 = callback7()),
-      values.add(input2),
+    subscribe: (listener?: Dynamic): Dynamic => (
+      values.size === 0 && (stopListening = startListening()),
+      values.add(listener),
       (): Dynamic => {
-        values.delete(input2);
-        values.size === 0 && (value5?.(), (value5 = undefined));
+        values.delete(listener);
+        values.size === 0 && (stopListening?.(), (stopListening = undefined));
       }
     ),
     getSnapshot: (): Dynamic => (
-      callback3(),
-      callback5(callback()) ?? value4
+      initMediaQuery(),
+      toExplicitMode(callback()) ?? systemMode
     ),
-    getServerSnapshot: (): Dynamic => callback5(input),
+    getServerSnapshot: (): Dynamic => toExplicitMode(modeSetting),
     getAttrSnapshot: (): Dynamic => (
-      callback3(),
-      input !== undefined ? (callback5(input) ?? value4 ?? input) : undefined
+      initMediaQuery(),
+      modeSetting !== undefined ? (toExplicitMode(modeSetting) ?? systemMode ?? modeSetting) : undefined
     ),
-    getServerAttrSnapshot: (): Dynamic => input,
+    getServerAttrSnapshot: (): Dynamic => modeSetting,
     getSettingSnapshot: (): Dynamic => callback(),
-    getServerSettingSnapshot: (): Dynamic => input,
+    getServerSettingSnapshot: (): Dynamic => modeSetting,
   };
 }
 function useCdsLabels(): Dynamic {
@@ -250,12 +250,12 @@ function useLocale(): Dynamic {
 function useCdsFont(): Dynamic {
   return (0, reactThemeRoot.useContext)(FontContext);
 }
-function monoFontOverrideStyle(input?: string | null): DesignStyle {
-  if (input === null)
+function monoFontOverrideStyle(fontMono?: string | null): DesignStyle {
+  if (fontMono === null)
     return {
       "--cds-font-mono-override": "initial",
     };
-  let value = input?.trim();
+  let value = fontMono?.trim();
   return value
     ? {
         "--cds-font-mono-override": `"${value
@@ -268,24 +268,24 @@ function monoFontOverrideStyle(input?: string | null): DesignStyle {
 function usePageBackground(): Dynamic {
   return (0, reactThemeRoot.useContext)(PageBackgroundContext);
 }
-function pageBackgroundStyle(input?: string): DesignStyle {
-  return input
+function pageBackgroundStyle(pageBackground?: string): DesignStyle {
+  return pageBackground
     ? {
-        "--cds-page-bg": isBackgroundToken(input)
-          ? `var(--cds-${input})`
-          : sanitizeBackgroundValue(input),
-        ...(isFillBackgroundToken(input) ? ThemeRootFromEntriesValue : {}),
+        "--cds-page-bg": isBackgroundToken(pageBackground)
+          ? `var(--cds-${pageBackground})`
+          : sanitizeBackgroundValue(pageBackground),
+        ...(isFillBackgroundToken(pageBackground) ? ThemeRootFromEntriesValue : {}),
       }
     : {};
 }
-function isFillBackgroundToken(input: string): boolean {
-  return isBackgroundToken(input) && input.startsWith("fill-");
+function isFillBackgroundToken(token: string): boolean {
+  return isBackgroundToken(token) && token.startsWith("fill-");
 }
-function sanitizeBackgroundValue(input: string): string {
-  return input.replaceAll(/[\u0000-\u001f\u007f;{}*]/g, "");
+function sanitizeBackgroundValue(cssValue: string): string {
+  return cssValue.replaceAll(/[\u0000-\u001f\u007f;{}*]/g, "");
 }
-function isBackgroundToken(input: string): boolean {
-  return ThemeRootSurface0Surface1Surface2Set.has(input);
+function isBackgroundToken(token: string): boolean {
+  return ThemeRootSurface0Surface1Surface2Set.has(token);
 }
 function useExperimentalSettings(): Dynamic {
   return (0, reactThemeRoot.useContext)(ExperimentalSettingsContext);
@@ -295,9 +295,9 @@ function useCdsRootElement(): Dynamic {
 }
 function useOverlayRoot(): Dynamic {
   let value: Dynamic = (0, reactThemeRoot.useContext)(RootElementContext),
-    value2: Dynamic = (0, reactThemeRoot.useContext)(OverlayRootContext),
-    value3: Dynamic = (0, reactThemeRoot.useContext)(RootPresenceContext);
-  return value ?? (value3 ? undefined : value2);
+    overlayRoot: Dynamic = (0, reactThemeRoot.useContext)(OverlayRootContext),
+    hasRootPresence: Dynamic = (0, reactThemeRoot.useContext)(RootPresenceContext);
+  return value ?? (hasRootPresence ? undefined : overlayRoot);
 }
 function useCdsWindow(): Dynamic {
   return getOwnerWindow(
@@ -321,143 +321,143 @@ function CdsRoot({
 }: Dynamic): Dynamic {
   useUiLocale();
   let value: Dynamic = (0, reactThemeRoot.useContext)(DensityContext),
-    value2: Dynamic = (0, reactThemeRoot.useContext)(PlatformContext),
-    value3: Dynamic = (0, reactThemeRoot.useContext)(LocaleContext),
-    value4: Dynamic = (0, reactThemeRoot.useContext)(LabelsContext),
-    value5: Dynamic = useLinkRouter(),
-    value6: Dynamic = (0, reactThemeRoot.useContext)(
+    inheritedPlatform: Dynamic = (0, reactThemeRoot.useContext)(PlatformContext),
+    inheritedLocale: Dynamic = (0, reactThemeRoot.useContext)(LocaleContext),
+    inheritedPageBackground: Dynamic = (0, reactThemeRoot.useContext)(LabelsContext),
+    inheritedRouter: Dynamic = useLinkRouter(),
+    inheritedLabelResolver: Dynamic = (0, reactThemeRoot.useContext)(
       LabelsProviderContext,
     ),
-    value7: Dynamic = (0, reactThemeRoot.useContext)(ThemeRootContext_2),
-    value8: Dynamic = experimental?.densityOverride ?? value7,
-    value9: Dynamic = value8 ?? density ?? value,
-    value10: Dynamic = router ?? value5,
-    value11: Dynamic = (0, reactThemeRoot.useMemo)(
+    inheritedDensityOverride: Dynamic = (0, reactThemeRoot.useContext)(ThemeRootContext_2),
+    densityOverride: Dynamic = experimental?.densityOverride ?? inheritedDensityOverride,
+    resolvedDensity: Dynamic = densityOverride ?? density ?? value,
+    resolvedRouter: Dynamic = router ?? inheritedRouter,
+    mergedLabels: Dynamic = (0, reactThemeRoot.useMemo)(
       (): Dynamic =>
-        labels && value6
+        labels && inheritedLabelResolver
           ? (
-              input?: Dynamic,
-              options?: Dynamic,
-              context?: Dynamic,
+              key?: Dynamic,
+              fallback?: Dynamic,
+              values?: Dynamic,
             ): Dynamic =>
-              labels(input, options, context) ||
-              value6(input, options, context)
-          : (labels ?? value6),
-      [labels, value6],
+              labels(key, fallback, values) ||
+              inheritedLabelResolver(key, fallback, values)
+          : (labels ?? inheritedLabelResolver),
+      [labels, inheritedLabelResolver],
     ),
-    value12: Dynamic = (0, reactThemeRoot.useContext)(ThemeRootContext),
-    value13: Dynamic = experimental?.naturalImageTiles ?? value12;
-  useMobileSheetPreload(value3 === undefined, useCdsWindow());
-  let value14: Dynamic = font ?? value3 ?? "anthropic",
-    value15: Dynamic = (0, reactThemeRoot.useContext)(FontContext),
-    value16: Dynamic =
+    inheritedNaturalImageTiles: Dynamic = (0, reactThemeRoot.useContext)(ThemeRootContext),
+    naturalImageTiles: Dynamic = experimental?.naturalImageTiles ?? inheritedNaturalImageTiles;
+  useMobileSheetPreload(inheritedLocale === undefined, useCdsWindow());
+  let resolvedFont: Dynamic = font ?? inheritedLocale ?? "anthropic",
+    inheritedFontMono: Dynamic = (0, reactThemeRoot.useContext)(FontContext),
+    resolvedFontMono: Dynamic =
       fontMono === null
         ? null
-        : ((fontMono?.trim() ? fontMono.trim() : undefined) ?? value15),
-    value17: Dynamic = pageBackground ?? value4,
-    value18: Dynamic = (0, reactThemeRoot.useContext)(PageBackgroundContext),
-    value19: Dynamic = pageBackground ?? value18,
-    value20: Dynamic = (0, reactThemeRoot.useContext)(
+        : ((fontMono?.trim() ? fontMono.trim() : undefined) ?? inheritedFontMono),
+    pageBackgroundAttribute: Dynamic = pageBackground ?? inheritedPageBackground,
+    inheritedPageBackgroundContext: Dynamic = (0, reactThemeRoot.useContext)(PageBackgroundContext),
+    styledPageBackground: Dynamic = pageBackground ?? inheritedPageBackgroundContext,
+    inheritedExperimentalSettings: Dynamic = (0, reactThemeRoot.useContext)(
       ExperimentalSettingsContext,
     ),
-    value21: Dynamic = locale?.trim() ? locale.trim() : undefined,
-    value22: Dynamic = value21 ?? value20,
-    value23: Dynamic = (0, reactThemeRoot.useSyncExternalStore)(
+    trimmedLocale: Dynamic = locale?.trim() ? locale.trim() : undefined,
+    resolvedExperimentalSettings: Dynamic = trimmedLocale ?? inheritedExperimentalSettings,
+    detectedPlatform: Dynamic = (0, reactThemeRoot.useSyncExternalStore)(
       ThemeRootHandler,
       detectRuntimePlatform,
       ThemeRootDefaultText,
     ),
-    value24: Dynamic = platform ?? value2 ?? value23,
-    value25: Dynamic = (0, reactThemeRoot.useRef)(null),
-    value26: Dynamic = (0, reactThemeRoot.useContext)(ColorModeContext),
-    value27: Dynamic = mode !== undefined || value26 === undefined,
-    [value28, value29]: Dynamic = (0, reactThemeRoot.useState)(
+    resolvedPlatform: Dynamic = platform ?? inheritedPlatform ?? detectedPlatform,
+    rootRef: Dynamic = (0, reactThemeRoot.useRef)(null),
+    inheritedColorModeStore: Dynamic = (0, reactThemeRoot.useContext)(ColorModeContext),
+    ownsColorMode: Dynamic = mode !== undefined || inheritedColorModeStore === undefined,
+    [colorModeState, setColorModeState]: Dynamic = (0, reactThemeRoot.useState)(
       (): Dynamic =>
-        value27
+        ownsColorMode
           ? {
               mode: mode,
               scope: createColorModeStore(mode),
             }
           : null,
     ),
-    value30: Dynamic = value27 ? undefined : value26,
-    value31: Dynamic;
-  value30 !== undefined
-    ? (value31 = value30)
-    : value28 !== null && value28.mode === mode
-      ? (value31 = value28.scope)
-      : ((value31 = createColorModeStore(mode)),
-        value29({
+    reusedColorModeStore: Dynamic = ownsColorMode ? undefined : inheritedColorModeStore,
+    colorModeStore: Dynamic;
+  reusedColorModeStore !== undefined
+    ? (colorModeStore = reusedColorModeStore)
+    : colorModeState !== null && colorModeState.mode === mode
+      ? (colorModeStore = colorModeState.scope)
+      : ((colorModeStore = createColorModeStore(mode)),
+        setColorModeState({
           mode: mode,
-          scope: value31,
+          scope: colorModeStore,
         }));
   useIsomorphicLayoutEffect((): Dynamic => {
-    observeDocumentInput(value25.current?.ownerDocument);
+    observeDocumentInput(rootRef.current?.ownerDocument);
   }, []);
   useIsomorphicLayoutEffect((): Dynamic => {
-    if (value27) {
-      value31.setElement(value25.current);
-      return (): Dynamic => value31.setElement(null);
+    if (ownsColorMode) {
+      colorModeStore.setElement(rootRef.current);
+      return (): Dynamic => colorModeStore.setElement(null);
     }
-  }, [value27, value31]);
-  let value32: Dynamic = useExperimentalTheme(
+  }, [ownsColorMode, colorModeStore]);
+  let experimentalTheme: Dynamic = useExperimentalTheme(
       experimental?.theme,
-      value25,
+      rootRef,
     ),
-    value33: Dynamic = (0, reactThemeRoot.useSyncExternalStore)(
-      value31.subscribe,
-      value27 ? value31.getAttrSnapshot : value31.getSnapshot,
-      value27 ? value31.getServerAttrSnapshot : value31.getServerSnapshot,
+    colorModeAttribute: Dynamic = (0, reactThemeRoot.useSyncExternalStore)(
+      colorModeStore.subscribe,
+      ownsColorMode ? colorModeStore.getAttrSnapshot : colorModeStore.getSnapshot,
+      ownsColorMode ? colorModeStore.getServerAttrSnapshot : colorModeStore.getServerSnapshot,
     );
-  (0, reactThemeRoot.useEffect)((): Dynamic => {}, [value21]);
+  (0, reactThemeRoot.useEffect)((): Dynamic => {}, [trimmedLocale]);
   let flag: Dynamic = false;
   (0, reactThemeRoot.useEffect)((): Dynamic => {}, [flag]);
   (0, reactThemeRoot.useEffect)((): Dynamic => {}, []);
-  let value34: Dynamic = render;
-  typeof value34 == "object" &&
-    value34 !== null &&
-    value34.$$typeof === Symbol.for("react.lazy") &&
-    (value34 = reactThemeRoot.Children.toArray(value34)[0]);
-  let value35: Dynamic =
-      (0, reactThemeRoot.isValidElement)(value34) && value34.type === "html",
-    value36: Dynamic = npm_useRender_LL({
-      render: value34,
+  let renderProp: Dynamic = render;
+  typeof renderProp == "object" &&
+    renderProp !== null &&
+    renderProp.$$typeof === Symbol.for("react.lazy") &&
+    (renderProp = reactThemeRoot.Children.toArray(renderProp)[0]);
+  let isHtmlRender: Dynamic =
+      (0, reactThemeRoot.isValidElement)(renderProp) && renderProp.type === "html",
+    renderedRoot: Dynamic = npm_useRender_LL({
+      render: renderProp,
       defaultTagName: "div",
-      ref: value25,
+      ref: rootRef,
       props: {
         className: cn("cds-root text-primary", className),
-        "data-density": value9,
-        "data-mode": value33,
-        "data-platform": value24,
-        "data-font": value14,
-        "data-page-bg": value17,
+        "data-density": resolvedDensity,
+        "data-mode": colorModeAttribute,
+        "data-platform": resolvedPlatform,
+        "data-font": resolvedFont,
+        "data-page-bg": pageBackgroundAttribute,
         style: {
-          ...(!value35 && {
+          ...(!isHtmlRender && {
             fontSize: "var(--cds-font-size-body)",
           }),
-          ...pageBackgroundStyle(value19),
-          ...monoFontOverrideStyle(value16),
+          ...pageBackgroundStyle(styledPageBackground),
+          ...monoFontOverrideStyle(resolvedFontMono),
         },
         children: children,
       },
     });
   return (
-    <DensityContext.Provider value={value9}>
-      <ColorModeContext.Provider value={value31}>
-        <PlatformContext.Provider value={value24}>
-          <LocaleContext.Provider value={value14}>
-            <FontContext.Provider value={value16}>
-              <LabelsContext.Provider value={value17}>
-                <PageBackgroundContext.Provider value={value19}>
-                  <ExperimentalSettingsContext.Provider value={value22}>
-                    <LinkRouterContext.Provider value={value10}>
-                      <LabelsProviderContext.Provider value={value11}>
-                        <ThemeRootContext.Provider value={value13}>
-                          <ThemeRootContext_2.Provider value={value8}>
+    <DensityContext.Provider value={resolvedDensity}>
+      <ColorModeContext.Provider value={colorModeStore}>
+        <PlatformContext.Provider value={resolvedPlatform}>
+          <LocaleContext.Provider value={resolvedFont}>
+            <FontContext.Provider value={resolvedFontMono}>
+              <LabelsContext.Provider value={pageBackgroundAttribute}>
+                <PageBackgroundContext.Provider value={styledPageBackground}>
+                  <ExperimentalSettingsContext.Provider value={resolvedExperimentalSettings}>
+                    <LinkRouterContext.Provider value={resolvedRouter}>
+                      <LabelsProviderContext.Provider value={mergedLabels}>
+                        <ThemeRootContext.Provider value={naturalImageTiles}>
+                          <ThemeRootContext_2.Provider value={densityOverride}>
                             <ExperimentalThemeContext.Provider
-                              value={value32}
+                              value={experimentalTheme}
                             >
-                              {value36}
+                              {renderedRoot}
                             </ExperimentalThemeContext.Provider>
                           </ThemeRootContext_2.Provider>
                         </ThemeRootContext.Provider>
@@ -574,10 +574,10 @@ export function installCdsThemeRoot(): () => void {
         getServerSettingSnapshot: (): Dynamic => {},
       };
       ThemeRootMediaQuery = "(prefers-color-scheme: dark)";
-      ThemeRootHandler_2 = (input?: Dynamic): Dynamic =>
-        input === "dark" || input === "light"
-          ? input
-          : input === "auto" || input === "system"
+      ThemeRootHandler_2 = (setting?: Dynamic): Dynamic =>
+        setting === "dark" || setting === "light"
+          ? setting
+          : setting === "auto" || setting === "system"
             ? "system"
             : undefined;
       PlatformContext = (0, reactThemeRoot.createContext)(undefined);
@@ -595,9 +595,9 @@ export function installCdsThemeRoot(): () => void {
       RootPresenceContext = (0, reactThemeRoot.createContext)(false);
       ThemeRootFromEntriesValue = Object.fromEntries(
         accentColorNames.map(
-          (input?: Dynamic): Dynamic => [
-            `--cds-bg-tint-${input}`,
-            `var(--cds-bg-tint-${input}-opaque)`,
+          (colorName?: Dynamic): Dynamic => [
+            `--cds-bg-tint-${colorName}`,
+            `var(--cds-bg-tint-${colorName}-opaque)`,
           ],
         ),
       );

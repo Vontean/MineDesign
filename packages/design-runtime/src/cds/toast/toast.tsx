@@ -20,9 +20,9 @@ var ToastToastConstant: Dynamic;
 var ToastToastLimit: Dynamic;
 var popupSurfaceClassNameValue: Dynamic;
 var ToastToastNeutralWarningDangerConfig: Dynamic;
-var ToastToastNeutralWarningDangerConfig_2: Dynamic;
-var ToastToastNeutralWarningDangerConfig_3: Dynamic;
-var ToastToastNeutralWarningDangerConfig_4: Dynamic;
+var toastVariantTextClasses: Dynamic;
+var toastVariantIconNames: Dynamic;
+var toastVariantIconClasses: Dynamic;
 var toastViewportClasses: Dynamic;
 var ToastToastClassNames: Dynamic;
 var ToastToastClassNames_2: Dynamic;
@@ -31,13 +31,13 @@ var ToastToastItems: Dynamic;
 var ToastContext: Dynamic;
 var ToastToastHandler: Dynamic;
 var initializeToastToast: Dynamic;
-function normalizeToastTimeout(input?: Dynamic): Dynamic {
-  return input === undefined || input <= 0
-    ? input
-    : Number.isFinite(input)
-      ? input < 6e3
+function normalizeToastTimeout(timeoutMs?: Dynamic): Dynamic {
+  return timeoutMs === undefined || timeoutMs <= 0
+    ? timeoutMs
+    : Number.isFinite(timeoutMs)
+      ? timeoutMs < 6e3
         ? ToastToastConstant
-        : input
+        : timeoutMs
       : 0;
 }
 function ToastCard({
@@ -48,58 +48,58 @@ function ToastCard({
 }: Dynamic): Dynamic {
   useUiLocale();
   let value: Dynamic = toast.data?.variant ?? toast.type ?? "neutral",
-    value2: Dynamic = toast.data?.icon,
-    value3: Dynamic = value2 != null && typeof value2 != "boolean",
-    value4: Dynamic = !front,
-    value5: Dynamic = value4 && frontHeight ? frontHeight : undefined,
-    value6: Dynamic = useLabel("dismiss", "Dismiss"),
-    { update: value7 }: Dynamic = npm_Toast_Ty.useToastManager(),
-    value8: Dynamic = (0, reactToastToast.useContext)(ToastContext),
-    value9: Dynamic = (0, reactToastToast.useRef)(null),
-    value10: Dynamic = (0, reactToastToast.useRef)(""),
-    value11: Dynamic = toast.data?.titleNode,
-    value12: Dynamic = toast.data?.count ?? 1,
+    icon: Dynamic = toast.data?.icon,
+    hasCustomIcon: Dynamic = icon != null && typeof icon != "boolean",
+    isBehind: Dynamic = !front,
+    lockedHeightFromFront: Dynamic = isBehind && frontHeight ? frontHeight : undefined,
+    dismissLabel: Dynamic = useLabel("dismiss", "Dismiss"),
+    { update: updateToast }: Dynamic = npm_Toast_Ty.useToastManager(),
+    toastContext: Dynamic = (0, reactToastToast.useContext)(ToastContext),
+    titleRef: Dynamic = (0, reactToastToast.useRef)(null),
+    lastTitleRef: Dynamic = (0, reactToastToast.useRef)(""),
+    titleNode: Dynamic = toast.data?.titleNode,
+    count: Dynamic = toast.data?.count ?? 1,
     id: Dynamic = toast.id,
     callback: Dynamic = (): Dynamic => {
-      let value18: Dynamic = value8?.userDismissAt,
-        value19: Dynamic = Date.now();
-      for (let [value20, value21] of (value18 ?? []) as Dynamic)
-        value19 - value21 > ToastToastLimit && value18?.delete(value20);
-      value18?.set(id, value19);
+      let userDismissAt: Dynamic = toastContext?.userDismissAt,
+        now: Dynamic = Date.now();
+      for (let [dismissedId, dismissedAt] of (userDismissAt ?? []) as Dynamic)
+        now - dismissedAt > ToastToastLimit && userDismissAt?.delete(dismissedId);
+      userDismissAt?.set(id, now);
     };
   (0, reactToastToast.useLayoutEffect)((): Dynamic => {
-    let current: Dynamic = value9.current;
-    if (value11 === undefined || !current) return;
-    let callback2: Dynamic = (): Dynamic => {
-      let value18: Dynamic = current.textContent ?? "";
-      value18 !== value10.current &&
-        ((value10.current = value18),
-        value7(id, {
-          title: value18,
+    let current: Dynamic = titleRef.current;
+    if (titleNode === undefined || !current) return;
+    let syncTitle: Dynamic = (): Dynamic => {
+      let titleText: Dynamic = current.textContent ?? "";
+      titleText !== lastTitleRef.current &&
+        ((lastTitleRef.current = titleText),
+        updateToast(id, {
+          title: titleText,
         }));
     };
-    callback2();
-    let observer: Dynamic = new MutationObserver(callback2);
+    syncTitle();
+    let observer: Dynamic = new MutationObserver(syncTitle);
     observer.observe(current, {
       characterData: true,
       childList: true,
       subtree: true,
     });
     return (): Dynamic => observer.disconnect();
-  }, [value11, id, value7]);
-  let value13: Dynamic = toast.transitionStatus === "ending",
-    [value14, value15]: Dynamic = (0, reactToastToast.useState)({
-      behind: value4,
-      lockedHeight: value5,
+  }, [titleNode, id, updateToast]);
+  let isEnding: Dynamic = toast.transitionStatus === "ending",
+    [frozenState, setFrozenState]: Dynamic = (0, reactToastToast.useState)({
+      behind: isBehind,
+      lockedHeight: lockedHeightFromFront,
     });
-  !value13 &&
-    (value14.behind !== value4 || value14.lockedHeight !== value5) &&
-    value15({
-      behind: value4,
-      lockedHeight: value5,
+  !isEnding &&
+    (frozenState.behind !== isBehind || frozenState.lockedHeight !== lockedHeightFromFront) &&
+    setFrozenState({
+      behind: isBehind,
+      lockedHeight: lockedHeightFromFront,
     });
-  let value16: Dynamic = value13 ? value14.behind : value4,
-    value17: Dynamic = value13 ? value14.lockedHeight : value5;
+  let effectiveBehind: Dynamic = isEnding ? frozenState.behind : isBehind,
+    effectiveHeight: Dynamic = isEnding ? frozenState.lockedHeight : lockedHeightFromFront;
   return (
     <npm_Toast_Ty.Root
       toast={toast}
@@ -108,33 +108,33 @@ function ToastCard({
       style={{
         zIndex: zIndex,
       }}
-      onKeyDown={(input?: Dynamic): Dynamic => {
-        input.key === "Escape" &&
-          input.currentTarget.contains(
-            input.currentTarget.ownerDocument.activeElement,
+      onKeyDown={(event?: Dynamic): Dynamic => {
+        event.key === "Escape" &&
+          event.currentTarget.contains(
+            event.currentTarget.ownerDocument.activeElement,
           ) &&
           callback();
       }}
     >
       <div
-        className={`${popupSurfaceClassNameValue} ${ToastToastNeutralWarningDangerConfig[value]} ${ToastToastNeutralWarningDangerConfig_2[value]}`}
+        className={`${popupSurfaceClassNameValue} ${ToastToastNeutralWarningDangerConfig[value]} ${toastVariantTextClasses[value]}`}
       >
         <div
           className={ToastToastClassNames}
-          data-behind={value16 ? "" : undefined}
+          data-behind={effectiveBehind ? "" : undefined}
           style={
-            value17 !== undefined
+            effectiveHeight !== undefined
               ? {
-                  height: value17,
+                  height: effectiveHeight,
                 }
               : undefined
           }
         >
-          {value2 !== null && (<span
-              className={`shrink-0 ${ToastToastNeutralWarningDangerConfig_4[value]}`}
+          {icon !== null && (<span
+              className={`shrink-0 ${toastVariantIconClasses[value]}`}
             >
-              {value3 ? (value2) : (<Icon
-                  name={ToastToastNeutralWarningDangerConfig_3[value]}
+              {hasCustomIcon ? (icon) : (<Icon
+                  name={toastVariantIconNames[value]}
                   size={"md"}
                 />)}
             </span>)}
@@ -143,17 +143,17 @@ function ToastCard({
               className={"font-medium"}
               aria-atomic={"true"}
             >
-              <span ref={value9}>{value11 ?? (toast.data?.baseTitle)}</span>
-              {value12 > 1 && (<span
-                  aria-live={value12 > 2 ? "off" : undefined}
+              <span ref={titleRef}>{titleNode ?? (toast.data?.baseTitle)}</span>
+              {count > 1 && (<span
+                  aria-live={count > 2 ? "off" : undefined}
                   data-cds-toast-count={""}
-                >{` (\xD7${value12})`}</span>)}
+                >{` (\xD7${count})`}</span>)}
             </npm_Toast_Ty.Title>
             <npm_Toast_Ty.Description />
             {toast.data?.action && (<div className={"mt-pad-md"}>{toast.data.action}</div>)}
           </div>
           <npm_Toast_Ty.Close
-            aria-label={value6}
+            aria-label={dismissLabel}
             className={ToastToastClassNames_3}
             onClick={callback}
           >
@@ -170,18 +170,18 @@ function PinnedToastCard({
 }: Dynamic): Dynamic {
   useUiLocale();
   let value: Dynamic = pinned.variant ?? "neutral",
-    value2: Dynamic = useLabel("dismiss", "Dismiss");
+    dismissLabel: Dynamic = useLabel("dismiss", "Dismiss");
   return (
     <div
       data-pinned={""}
-      className={`pointer-events-auto relative w-full ${popupSurfaceClassNameValue} ${ToastToastNeutralWarningDangerConfig[value]} ${ToastToastNeutralWarningDangerConfig_2[value]}`}
+      className={`pointer-events-auto relative w-full ${popupSurfaceClassNameValue} ${ToastToastNeutralWarningDangerConfig[value]} ${toastVariantTextClasses[value]}`}
     >
       <div className={ToastToastClassNames}>
         <span
-          className={`shrink-0 ${ToastToastNeutralWarningDangerConfig_4[value]}`}
+          className={`shrink-0 ${toastVariantIconClasses[value]}`}
         >
           <Icon
-            name={ToastToastNeutralWarningDangerConfig_3[value]}
+            name={toastVariantIconNames[value]}
             size={"md"}
           />
         </span>
@@ -192,7 +192,7 @@ function PinnedToastCard({
         </div>
         {pinned.dismissible && (<button
             type={"button"}
-            aria-label={pinned.dismissLabel ?? (value2)}
+            aria-label={pinned.dismissLabel ?? (dismissLabel)}
             onClick={onDismiss}
             className={ToastToastClassNames_3}
           >
@@ -202,9 +202,9 @@ function PinnedToastCard({
     </div>
   );
 }
-function isToastKeyboardFocused(input?: Dynamic): Dynamic {
-  let value: Dynamic = input?.ownerDocument.activeElement;
-  if (!input || !value || !input.contains(value)) return false;
+function isToastKeyboardFocused(slotElement?: Dynamic): Dynamic {
+  let value: Dynamic = slotElement?.ownerDocument.activeElement;
+  if (!slotElement || !value || !slotElement.contains(value)) return false;
   try {
     return value.matches(":focus-visible");
   } catch {
@@ -215,13 +215,13 @@ function PinnedToastFocusManager({ ctx: ctx }: Dynamic): Dynamic {
   useUiLocale();
   let {
       pinned: value,
-      setPinned: value2,
-      slotRef: value3,
-      focusWasInsideRef: value4,
+      setPinned: setPinned,
+      slotRef: slotRef,
+      focusWasInsideRef: focusWasInsideRef,
     }: Dynamic = ctx,
-    value5: Dynamic = (0, reactToastToast.useRef)(null);
+    lastExternalFocusRef: Dynamic = (0, reactToastToast.useRef)(null);
   (0, reactToastToast.useEffect)((): Dynamic => {
-    let current: Dynamic = value3.current;
+    let current: Dynamic = slotRef.current;
     if (!current) return;
     let ownerDocument: Dynamic = current.ownerDocument,
       callback: Dynamic = (event?: Dynamic): Dynamic => {
@@ -229,31 +229,31 @@ function PinnedToastFocusManager({ ctx: ctx }: Dynamic): Dynamic {
         target &&
           typeof target.focus == "function" &&
           !current.contains(target) &&
-          (value5.current = target);
+          (lastExternalFocusRef.current = target);
       };
     ownerDocument.addEventListener("focusin", callback);
     return (): Dynamic =>
       ownerDocument.removeEventListener("focusin", callback);
-  }, [value3]);
+  }, [slotRef]);
   (0, reactToastToast.useLayoutEffect)((): Dynamic => {
-    let current: Dynamic = value3.current;
+    let current: Dynamic = slotRef.current;
     if (
       !current ||
-      !value4.current ||
-      ((value4.current = false),
+      !focusWasInsideRef.current ||
+      ((focusWasInsideRef.current = false),
       current.contains(current.ownerDocument.activeElement))
     )
       return;
-    let current2: Dynamic = value5.current;
-    current2?.isConnected &&
-      current2.focus({
+    let previousFocus: Dynamic = lastExternalFocusRef.current;
+    previousFocus?.isConnected &&
+      previousFocus.focus({
         preventScroll: true,
       });
-  }, [value, value3, value4]);
+  }, [value, slotRef, focusWasInsideRef]);
   return (
     <div
-      ref={(input?: Dynamic): Dynamic => {
-        value3.current = input;
+      ref={(element?: Dynamic): Dynamic => {
+        slotRef.current = element;
       }}
       role={"status"}
       className={value ? "w-full" : "sr-only"}
@@ -265,12 +265,12 @@ function PinnedToastFocusManager({ ctx: ctx }: Dynamic): Dynamic {
           event.currentTarget.contains(
             event.currentTarget.ownerDocument.activeElement,
           ) &&
-          value2(null);
+          setPinned(null);
       }}
     >
       {value && (<PinnedToastCard
           pinned={value}
-          onDismiss={(): Dynamic => value2(null)}
+          onDismiss={(): Dynamic => setPinned(null)}
         />)}
     </div>
   );
@@ -278,12 +278,12 @@ function PinnedToastFocusManager({ ctx: ctx }: Dynamic): Dynamic {
 function ToastViewport({ className: className }: Dynamic): Dynamic {
   useUiLocale();
   let { toasts: value }: Dynamic = npm_Toast_Ty.useToastManager(),
-    value2: Dynamic = (0, reactToastToast.useContext)(ToastContext);
+    toastContext: Dynamic = (0, reactToastToast.useContext)(ToastContext);
   useIsomorphicLayoutEffect((): Dynamic => {
-    value2?.syncLiveToasts(value);
-  }, [value, value2]);
-  let value3: Dynamic = value.find(
-    (input?: Dynamic): Dynamic => input.transitionStatus !== "ending",
+    toastContext?.syncLiveToasts(value);
+  }, [value, toastContext]);
+  let frontToast: Dynamic = value.find(
+    (toast?: Dynamic): Dynamic => toast.transitionStatus !== "ending",
   );
   return (
     <npm_Toast_Ty.Portal>
@@ -300,26 +300,26 @@ function ToastViewport({ className: className }: Dynamic): Dynamic {
             />
           }
         >
-          {value2 && (<PinnedToastFocusManager ctx={value2} />)}
+          {toastContext && (<PinnedToastFocusManager ctx={toastContext} />)}
           <npm_Toast_Ty.Viewport
             className={
               "pointer-events-auto relative outline-none focus-visible:outline-hidden"
             }
             style={{
-              height: value3?.height,
+              height: frontToast?.height,
             }}
           >
             {value.map(
-              (input?: Dynamic, options?: Dynamic): Dynamic =>
+              (toast?: Dynamic, index?: Dynamic): Dynamic =>
                 (() => {
                   const _Component = ToastCard;
                   const _props = {
-                    toast: input,
-                    front: input === value3,
-                    frontHeight: value3?.height,
-                    zIndex: value.length - options,
+                    toast: toast,
+                    front: toast === frontToast,
+                    frontHeight: frontToast?.height,
+                    zIndex: value.length - index,
                   } as const;
-                  const _key = input.id;
+                  const _key = toast.id;
                   return <_Component key={_key} {..._props} />;
                 })(),
             )}
@@ -344,50 +344,50 @@ function ToastProvider({
   viewportClassName: viewportClassName,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let [value, value2]: Dynamic = (0, reactToastToast.useState)(null),
-    value3: Dynamic = (0, reactToastToast.useRef)(value),
-    value4: Dynamic = (0, reactToastToast.useRef)(null),
-    value5: Dynamic = (0, reactToastToast.useRef)(false),
-    value6: Dynamic = (0, reactToastToast.useCallback)(
-      (input?: Dynamic): Dynamic => {
-        let current: Dynamic = value3.current;
-        value3.current = input;
-        current !== input &&
-          !value5.current &&
-          (value5.current = isToastKeyboardFocused(value4.current));
-        value2(input);
-        current && current !== input && current.onClose?.();
+  let [value, setPinnedState]: Dynamic = (0, reactToastToast.useState)(null),
+    pinnedRef: Dynamic = (0, reactToastToast.useRef)(value),
+    slotRef: Dynamic = (0, reactToastToast.useRef)(null),
+    focusWasInsideRef: Dynamic = (0, reactToastToast.useRef)(false),
+    setPinned: Dynamic = (0, reactToastToast.useCallback)(
+      (nextPinned?: Dynamic): Dynamic => {
+        let current: Dynamic = pinnedRef.current;
+        pinnedRef.current = nextPinned;
+        current !== nextPinned &&
+          !focusWasInsideRef.current &&
+          (focusWasInsideRef.current = isToastKeyboardFocused(slotRef.current));
+        setPinnedState(nextPinned);
+        current && current !== nextPinned && current.onClose?.();
       },
       [],
     ),
-    value7: Dynamic = (0, reactToastToast.useRef)([]),
-    value8: Dynamic = (0, reactToastToast.useCallback)(
-      (input?: Dynamic): Dynamic => {
-        value7.current = input;
+    liveToastsRef: Dynamic = (0, reactToastToast.useRef)([]),
+    syncLiveToasts: Dynamic = (0, reactToastToast.useCallback)(
+      (toasts?: Dynamic): Dynamic => {
+        liveToastsRef.current = toasts;
       },
       [],
     ),
-    [value9]: Dynamic = (0, reactToastToast.useState)(createToastMoveState),
-    value10: Dynamic = (0, reactToastToast.useMemo)(
+    [moveState]: Dynamic = (0, reactToastToast.useState)(createToastMoveState),
+    defaultTimeout: Dynamic = (0, reactToastToast.useMemo)(
       (): Dynamic => normalizeToastTimeout(timeout),
       [timeout],
     ),
-    value11: Dynamic = (0, reactToastToast.useMemo)(
+    contextValue: Dynamic = (0, reactToastToast.useMemo)(
       (): Dynamic => ({
         pinned: value,
-        setPinned: value6,
-        slotRef: value4,
-        focusWasInsideRef: value5,
-        liveToasts: value7,
-        syncLiveToasts: value8,
-        defaultTimeout: value10,
-        ...value9,
+        setPinned: setPinned,
+        slotRef: slotRef,
+        focusWasInsideRef: focusWasInsideRef,
+        liveToasts: liveToastsRef,
+        syncLiveToasts: syncLiveToasts,
+        defaultTimeout: defaultTimeout,
+        ...moveState,
       }),
-      [value, value6, value8, value10, value9],
+      [value, setPinned, syncLiveToasts, defaultTimeout, moveState],
     );
   return (
-    <npm_Toast_Ty.Provider timeout={value10} limit={limit}>
-      <ToastContext.Provider value={value11}>
+    <npm_Toast_Ty.Provider timeout={defaultTimeout} limit={limit}>
+      <ToastContext.Provider value={contextValue}>
         {children}
         <ToastViewport className={viewportClassName} />
       </ToastContext.Provider>
@@ -396,7 +396,7 @@ function ToastProvider({
 }
 function useToastManager(): Dynamic {
   let value: Dynamic = npm_Toast_Ty.useToastManager(),
-    value2: Dynamic = (0, reactToastToast.useContext)(ToastContext);
+    toastContext: Dynamic = (0, reactToastToast.useContext)(ToastContext);
   return {
     add: (0, reactToastToast.useCallback)(
       ({
@@ -410,196 +410,196 @@ function useToastManager(): Dynamic {
         dedupe = false,
         dedupeKey: dedupeKey,
       }: Dynamic): Dynamic => {
-        let value3: Dynamic = variant ?? "neutral",
-          value4: Dynamic = typeof title == "string",
-          value5: Dynamic = dedupeKey ?? (value4 ? title : undefined),
+        let toastVariant: Dynamic = variant ?? "neutral",
+          hasStringTitle: Dynamic = typeof title == "string",
+          dedupeId: Dynamic = dedupeKey ?? (hasStringTitle ? title : undefined),
           state: Dynamic = {
-            titleNode: value4 ? undefined : title,
-            baseTitle: value4 ? title : undefined,
+            titleNode: hasStringTitle ? undefined : title,
+            baseTitle: hasStringTitle ? title : undefined,
           },
-          value6: Dynamic = Date.now(),
-          callback: Dynamic = (input?: Dynamic): Dynamic => {
-            let value11: Dynamic = input ?? value2?.defaultTimeout;
-            return value11 !== undefined && value11 > 0
-              ? value6 + value11
+          createdAt: Dynamic = Date.now(),
+          callback: Dynamic = (timeoutMs?: Dynamic): Dynamic => {
+            let effectiveTimeout: Dynamic = timeoutMs ?? toastContext?.defaultTimeout;
+            return effectiveTimeout !== undefined && effectiveTimeout > 0
+              ? createdAt + effectiveTimeout
               : undefined;
           };
-        if (dedupe && value5 !== undefined) {
-          let value11: Dynamic = value2?.liveToasts.current ?? value.toasts,
-            value12: Dynamic = value11.find(
-              (input?: Dynamic): Dynamic =>
-                input.data?.dedupeKey === value5 &&
-                input.transitionStatus !== "ending",
+        if (dedupe && dedupeId !== undefined) {
+          let liveToasts: Dynamic = toastContext?.liveToasts.current ?? value.toasts,
+            existingToast: Dynamic = liveToasts.find(
+              (toast?: Dynamic): Dynamic =>
+                toast.data?.dedupeKey === dedupeId &&
+                toast.transitionStatus !== "ending",
             );
-          if (value12) {
-            let value13: Dynamic = (value12.data?.count ?? 1) + 1,
-              value14: Dynamic = action ?? value12.data?.action,
-              value15: Dynamic =
-                !!value12.data?.action ||
-                (value12.timeout ?? value2?.defaultTimeout) === 0,
-              value16: Dynamic =
+          if (existingToast) {
+            let nextCount: Dynamic = (existingToast.data?.count ?? 1) + 1,
+              nextAction: Dynamic = action ?? existingToast.data?.action,
+              isPersistent: Dynamic =
+                !!existingToast.data?.action ||
+                (existingToast.timeout ?? toastContext?.defaultTimeout) === 0,
+              normalizedTimeout: Dynamic =
                 timeout === undefined
                   ? undefined
                   : normalizeToastTimeout(timeout),
-              value17: Dynamic = value14 ? 0 : value15 ? undefined : value16,
-              state4: Dynamic = {
-                ...value12.data,
+              nextTimeout: Dynamic = nextAction ? 0 : isPersistent ? undefined : normalizedTimeout,
+              updatedData: Dynamic = {
+                ...existingToast.data,
                 ...state,
-                variant: variant ?? value12.data?.variant,
+                variant: variant ?? existingToast.data?.variant,
                 ...(icon !== undefined && {
                   icon: icon,
                 }),
-                action: value14,
-                count: value13,
-                ...(value17 !== undefined && {
-                  expiresAt: callback(value17),
+                action: nextAction,
+                count: nextCount,
+                ...(nextTimeout !== undefined && {
+                  expiresAt: callback(nextTimeout),
                 }),
               },
-              value18: Dynamic = value4 ? title : value12.title,
-              value19: Dynamic =
-                value13 === 2 && typeof value18 == "string"
-                  ? `${value18} (\xD72)`
-                  : value4 && title !== value12.data?.baseTitle
+              baseTitle: Dynamic = hasStringTitle ? title : existingToast.title,
+              nextTitle: Dynamic =
+                nextCount === 2 && typeof baseTitle == "string"
+                  ? `${baseTitle} (\xD72)`
+                  : hasStringTitle && title !== existingToast.data?.baseTitle
                     ? title
                     : undefined,
-              value20: Dynamic = value11.find(
-                (input?: Dynamic): Dynamic =>
-                  input.transitionStatus !== "ending",
+              frontToast: Dynamic = liveToasts.find(
+                (toast?: Dynamic): Dynamic =>
+                  toast.transitionStatus !== "ending",
               ),
-              value21: Dynamic =
+              isFocusInsideToast: Dynamic =
                 typeof document !== "undefined" &&
                 !!(document as Dynamic).activeElement?.closest(
                   '[data-cds="Toast"]',
                 );
             if (
-              !value2 ||
-              value21 ||
-              (value20?.id === value12.id && !value12.limited)
+              !toastContext ||
+              isFocusInsideToast ||
+              (frontToast?.id === existingToast.id && !existingToast.limited)
             ) {
-              value.update(value12.id, {
-                ...(value19 !== undefined && {
-                  title: value19,
+              value.update(existingToast.id, {
+                ...(nextTitle !== undefined && {
+                  title: nextTitle,
                 }),
                 description: description,
-                ...(value17 !== undefined && {
-                  timeout: value17,
+                ...(nextTimeout !== undefined && {
+                  timeout: nextTimeout,
                 }),
-                data: state4,
+                data: updatedData,
               });
-              value2?.syncLiveToasts(
-                value11.map(
-                  (input?: Dynamic): Dynamic =>
-                    input.id === value12.id
+              toastContext?.syncLiveToasts(
+                liveToasts.map(
+                  (toast?: Dynamic): Dynamic =>
+                    toast.id === existingToast.id
                       ? {
-                          ...input,
-                          data: state4,
-                          timeout: value17 ?? input.timeout,
+                          ...toast,
+                          data: updatedData,
+                          timeout: nextTimeout ?? toast.timeout,
                         }
-                      : input,
+                      : toast,
                 ),
               );
-              return value12.id;
+              return existingToast.id;
             }
-            let value22: Dynamic =
-                state4.expiresAt === undefined
+            let remainingMs: Dynamic =
+                updatedData.expiresAt === undefined
                   ? 0
-                  : Math.max(state4.expiresAt - value6, 1),
-              value23: Dynamic =
-                value17 ?? (value15 ? 0 : Math.max(value22, 6e3)),
-              state5: Dynamic = {
-                ...value12,
-                title: value19 ?? value12.title,
+                  : Math.max(updatedData.expiresAt - createdAt, 1),
+              restartTimeout: Dynamic =
+                nextTimeout ?? (isPersistent ? 0 : Math.max(remainingMs, 6e3)),
+              restartedToast: Dynamic = {
+                ...existingToast,
+                title: nextTitle ?? existingToast.title,
                 description: description,
-                timeout: value23,
+                timeout: restartTimeout,
                 limited: false,
                 data: {
-                  ...state4,
-                  expiresAt: callback(value23),
+                  ...updatedData,
+                  expiresAt: callback(restartTimeout),
                 },
               };
-            value2.movingIds.add(value12.id);
-            value.close(value12.id);
-            value2.movingIds.delete(value12.id);
+            toastContext.movingIds.add(existingToast.id);
+            value.close(existingToast.id);
+            toastContext.movingIds.delete(existingToast.id);
             value.add({
-              id: state5.id,
-              title: state5.title,
+              id: restartedToast.id,
+              title: restartedToast.title,
               description: description,
-              type: state5.type,
-              priority: state5.priority,
-              timeout: value23,
-              onClose: state5.onClose,
-              data: state5.data,
+              type: restartedToast.type,
+              priority: restartedToast.priority,
+              timeout: restartTimeout,
+              onClose: restartedToast.onClose,
+              data: restartedToast.data,
             });
-            value2.syncLiveToasts([
-              state5,
-              ...value2.liveToasts.current.filter(
-                (input?: Dynamic): Dynamic => input.id !== value12.id,
+            toastContext.syncLiveToasts([
+              restartedToast,
+              ...toastContext.liveToasts.current.filter(
+                (toast?: Dynamic): Dynamic => toast.id !== existingToast.id,
               ),
             ]);
-            return value12.id;
+            return existingToast.id;
           }
         }
-        let value7: Dynamic = !!action,
-          value8: Dynamic = value2?.allocId(),
-          value9: Dynamic = value7 ? 0 : normalizeToastTimeout(timeout),
-          state2: Dynamic = {
-            variant: value3,
+        let hasAction: Dynamic = !!action,
+          toastId: Dynamic = toastContext?.allocId(),
+          toastTimeout: Dynamic = hasAction ? 0 : normalizeToastTimeout(timeout),
+          toastData: Dynamic = {
+            variant: toastVariant,
             icon: icon,
             action: action,
             ...state,
-            dedupeKey: value5,
+            dedupeKey: dedupeId,
             count: 1,
-            expiresAt: callback(value9),
+            expiresAt: callback(toastTimeout),
           },
-          state3: Dynamic = {
-            id: value8,
-            title: value4 ? title : undefined,
+          toastOptions: Dynamic = {
+            id: toastId,
+            title: hasStringTitle ? title : undefined,
             description: description,
-            type: value3,
-            timeout: value9,
+            type: toastVariant,
+            timeout: toastTimeout,
             onClose: (): Dynamic => {
-              if (value8 === undefined || !value2) {
+              if (toastId === undefined || !toastContext) {
                 onClose?.({
                   byUser: false,
                 });
                 return;
               }
-              if (value2.movingIds.has(value8)) return;
-              value2.syncLiveToasts(
-                value2.liveToasts.current.map(
-                  (input?: Dynamic): Dynamic =>
-                    input.id === value8
+              if (toastContext.movingIds.has(toastId)) return;
+              toastContext.syncLiveToasts(
+                toastContext.liveToasts.current.map(
+                  (toast?: Dynamic): Dynamic =>
+                    toast.id === toastId
                       ? {
-                          ...input,
+                          ...toast,
                           transitionStatus: "ending",
                         }
-                      : input,
+                      : toast,
                 ),
               );
-              let entry: Dynamic = value2.userDismissAt.get(value8);
-              value2.userDismissAt.delete(value8);
+              let entry: Dynamic = toastContext.userDismissAt.get(toastId);
+              toastContext.userDismissAt.delete(toastId);
               onClose?.({
                 byUser:
                   entry !== undefined && Date.now() - entry < ToastToastLimit,
               });
             },
-            priority: value3 === "danger" ? "high" : "low",
-            data: state2,
+            priority: toastVariant === "danger" ? "high" : "low",
+            data: toastData,
           },
-          value10: Dynamic = value.add(state3);
-        value2?.syncLiveToasts([
+          addedId: Dynamic = value.add(toastOptions);
+        toastContext?.syncLiveToasts([
           {
-            ...state3,
-            id: value10,
+            ...toastOptions,
+            id: addedId,
           },
-          ...value2.liveToasts.current,
+          ...toastContext.liveToasts.current,
         ]);
-        return value10;
+        return addedId;
       },
-      [value, value2],
+      [value, toastContext],
     ),
     close: value.close,
-    setPinned: value2?.setPinned ?? ToastToastHandler,
+    setPinned: toastContext?.setPinned ?? ToastToastHandler,
   };
 }
 export {
@@ -623,9 +623,9 @@ export {
   ToastToastItems,
   ToastToastLimit,
   ToastToastNeutralWarningDangerConfig,
-  ToastToastNeutralWarningDangerConfig_2,
-  ToastToastNeutralWarningDangerConfig_3,
-  ToastToastNeutralWarningDangerConfig_4,
+  toastVariantTextClasses as ToastToastNeutralWarningDangerConfig_2,
+  toastVariantIconNames as ToastToastNeutralWarningDangerConfig_3,
+  toastVariantIconClasses as ToastToastNeutralWarningDangerConfig_4,
   ToastViewport,
   toastViewportClasses,
   useToastManager,
@@ -661,17 +661,17 @@ export function installCdsToastToast(): () => void {
         danger:
           "shadow-ring-danger [background-image:linear-gradient(0deg,var(--cds-bg-danger),var(--cds-bg-danger))]",
       };
-      ToastToastNeutralWarningDangerConfig_2 = {
+      toastVariantTextClasses = {
         neutral: "text-primary",
         warning: "text-warning",
         danger: "text-danger",
       };
-      ToastToastNeutralWarningDangerConfig_3 = {
+      toastVariantIconNames = {
         neutral: "Info",
         get warning() { return uiMessage("canvas.toast.warning"); },
         danger: "WarningCircle",
       };
-      ToastToastNeutralWarningDangerConfig_4 = {
+      toastVariantIconClasses = {
         neutral: "text-secondary",
         warning: "",
         danger: "",

@@ -22,10 +22,10 @@ function useTooltipTrigger(): boolean {
   return (0, reactTooltipTrigger.useContext)(TooltipTriggerContext);
 }
 function getResizeObserver(
-  input?: Element | null,
+  element?: Element | null,
 ): typeof ResizeObserver | undefined {
   return (
-    input?.ownerDocument.defaultView as BrowserWindow | null | undefined
+    element?.ownerDocument.defaultView as BrowserWindow | null | undefined
   )?.ResizeObserver;
 }
 function measureContentRect(element: Element): boolean {
@@ -45,24 +45,24 @@ function measureContentRect(element: Element): boolean {
 function useTooltipDelay(): TooltipDelay {
   let value: React.RefObject<number | undefined> = (0,
     reactTooltipTrigger_3.useRef)(undefined),
-    value2 = (0, reactTooltipTrigger_3.useCallback)(() => {
+    cancelDelay = (0, reactTooltipTrigger_3.useCallback)(() => {
       window.clearTimeout(value.current);
       value.current = undefined;
     }, []),
-    value3 = (0, reactTooltipTrigger_3.useCallback)(
-      (input: number, options: () => void): void => {
-        value2();
-        value.current = window.setTimeout(options, input);
+    startDelay = (0, reactTooltipTrigger_3.useCallback)(
+      (delayMs: number, onElapsed: () => void): void => {
+        cancelDelay();
+        value.current = window.setTimeout(onElapsed, delayMs);
       },
-      [value2],
+      [cancelDelay],
     );
-  (0, reactTooltipTrigger_3.useEffect)(() => value2, [value2]);
+  (0, reactTooltipTrigger_3.useEffect)(() => cancelDelay, [cancelDelay]);
   return (0, reactTooltipTrigger_3.useMemo)(
     () => ({
-      start: value3,
-      cancel: value2,
+      start: startDelay,
+      cancel: cancelDelay,
     }),
-    [value3, value2],
+    [startDelay, cancelDelay],
   );
 }
 export {

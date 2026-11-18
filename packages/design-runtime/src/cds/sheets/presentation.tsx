@@ -32,24 +32,24 @@ function useTouchOverlay(): boolean {
   "use no memo";
 
   let value = useOverlayPresentation(),
-    value2 = useCdsWindow(),
-    value3 = (0, reactSheetsPresentation.useSyncExternalStore)(
+    cdsWindow = useCdsWindow(),
+    isCoarsePointer = (0, reactSheetsPresentation.useSyncExternalStore)(
       HooksMediaQueryHandler,
       () =>
-        value2 !== undefined &&
+        cdsWindow !== undefined &&
         (getMediaQueryStore(
-          value2,
+          cdsWindow,
           "(pointer: coarse)",
         )?.getSnapshot() ??
           false),
       HooksMediaQueryHandler_2,
     );
-  return value === "sheet" || value3;
+  return value === "sheet" || isCoarsePointer;
 }
-function sheetNeedsScrolling(input: Element): boolean {
-  if (sheetContainsTextInput(input)) return true;
+function sheetNeedsScrolling(sheetElement: Element): boolean {
+  if (sheetContainsTextInput(sheetElement)) return true;
   for (let value of Array.from(
-    input.querySelectorAll<HTMLElement>(`[${sheetScrollAttribute}]`),
+    sheetElement.querySelectorAll<HTMLElement>(`[${sheetScrollAttribute}]`),
   ))
     if (value.scrollHeight > value.clientHeight + 1) return true;
   return false;
@@ -58,83 +58,83 @@ function sheetContainsTextInput(element: Element): boolean {
   return element.querySelector(textInputSelector) !== null;
 }
 function shouldUseSheet(
-  input: OverlayPresentation,
-  options: boolean,
-  context: boolean,
+  presentation: OverlayPresentation,
+  isSheetDisabled: boolean,
+  prefersMobileSheet: boolean,
 ): boolean {
-  return options ? false : input !== "auto" ? input === "sheet" : context;
+  return isSheetDisabled ? false : presentation !== "auto" ? presentation === "sheet" : prefersMobileSheet;
 }
 function useFrozenSheetMode(
-  input: boolean,
-  options: boolean,
-  context: boolean,
+  wantsSheet: boolean,
+  isOpen: boolean,
+  isShowing: boolean,
 ): boolean {
-  let [value, value2] = (0, reactSheetsPresentation.useState)(input),
-    [value3, value4] = (0, reactSheetsPresentation.useState)(options);
-  return options !== value3 && (value4(options), options)
-    ? (value2(input), input)
-    : context
+  let [value, setFrozenSheetMode] = (0, reactSheetsPresentation.useState)(wantsSheet),
+    [previousOpen, setPreviousOpen] = (0, reactSheetsPresentation.useState)(isOpen);
+  return isOpen !== previousOpen && (setPreviousOpen(isOpen), isOpen)
+    ? (setFrozenSheetMode(wantsSheet), wantsSheet)
+    : isShowing
       ? value
-      : input;
+      : wantsSheet;
 }
-function useSheetPendingUnmount(input: boolean): {
+function useSheetPendingUnmount(isOpen: boolean): {
   showing: boolean;
   onOpenChangeComplete: (open: boolean) => void;
 } {
-  let [value, value2] = (0, reactSheetsPresentation.useState)(input);
-  input && !value && value2(true);
-  let value3 = (0, reactSheetsPresentation.useCallback)(
-    (input2: boolean): void => {
-      input2 || value2(false);
+  let [value, setIsLingering] = (0, reactSheetsPresentation.useState)(isOpen);
+  isOpen && !value && setIsLingering(true);
+  let handleOpenChangeComplete = (0, reactSheetsPresentation.useCallback)(
+    (nextOpen: boolean): void => {
+      nextOpen || setIsLingering(false);
     },
     [],
   );
   (0, reactSheetsPresentation.useEffect)(() => {
-    if (input || !value) return;
-    let value4 = setTimeout(() => {
-      value2(false);
+    if (isOpen || !value) return;
+    let unmountTimerId = setTimeout(() => {
+      setIsLingering(false);
     }, SheetsPresentationDelayMs);
     return () => {
-      clearTimeout(value4);
+      clearTimeout(unmountTimerId);
     };
-  }, [input, value]);
+  }, [isOpen, value]);
   return {
-    showing: input || value,
-    onOpenChangeComplete: value3,
+    showing: isOpen || value,
+    onOpenChangeComplete: handleOpenChangeComplete,
   };
 }
 function useOpenSnapshot<Value>(
-  input: boolean,
-  options: () => Value,
-  context: Value,
+  isOpen: boolean,
+  readValue: () => Value,
+  initialValue: Value,
 ): Value {
-  let [value, value2] = (0, reactSheetsPresentation.useState)(() => ({
-      wasOpen: input,
-      value: input ? options() : context,
+  let [value, setSnapshot] = (0, reactSheetsPresentation.useState)(() => ({
+      wasOpen: isOpen,
+      value: isOpen ? readValue() : initialValue,
     })),
-    value3 = (0, reactSheetsPresentation.useRef)(options);
+    readValueRef = (0, reactSheetsPresentation.useRef)(readValue);
   useIsomorphicLayoutEffect(() => {
-    value3.current = options;
+    readValueRef.current = readValue;
   });
   useIsomorphicLayoutEffect(() => {
-    if (!input) return;
-    let value4 = value3.current();
-    value2((input2) =>
-      input2.wasOpen && Object.is(input2.value, value4)
-        ? input2
+    if (!isOpen) return;
+    let latestValue = readValueRef.current();
+    setSnapshot((previousSnapshot) =>
+      previousSnapshot.wasOpen && Object.is(previousSnapshot.value, latestValue)
+        ? previousSnapshot
         : {
             wasOpen: true,
-            value: value4,
+            value: latestValue,
           },
     );
-  }, [input]);
-  if (input !== value.wasOpen) {
-    let value4 = input ? options() : value.value;
-    value2({
-      wasOpen: input,
-      value: value4,
+  }, [isOpen]);
+  if (isOpen !== value.wasOpen) {
+    let nextValue = isOpen ? readValue() : value.value;
+    setSnapshot({
+      wasOpen: isOpen,
+      value: nextValue,
     });
-    return value4;
+    return nextValue;
   }
   return value.value;
 }

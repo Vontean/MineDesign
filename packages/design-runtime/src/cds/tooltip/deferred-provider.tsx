@@ -24,12 +24,12 @@ import { initializeOnce, toModuleNamespace } from "../../module-helpers";
 var reactTooltipDeferredProvider: typeof React;
 var jsxTooltipDeferredProvider: typeof import("react/jsx-runtime");
 var TooltipDeferredProviderCurrentState: TooltipImplementation | null;
-var TooltipDeferredProviderCurrentState_2: Promise<TooltipImplementation> | null;
+var tooltipImplementationPromise: Promise<TooltipImplementation> | null;
 var TooltipDeferredProviderSubscribers: Set<() => void>;
-var TooltipDeferredProviderCurrentState_3: ReturnType<
+var tooltipHandoffTimer: ReturnType<
   typeof setTimeout
 > | null;
-var TooltipDeferredProviderSubscribers_2: Set<() => void>;
+var tooltipHandoffCallbacks: Set<() => void>;
 var TooltipDeferredProviderPointermoveKeydownTouchstartValues: string[];
 var tooltipPreloadArmed: boolean;
 var TooltipDeferredProviderDataCdsTooltipPendingConfig: {
@@ -38,20 +38,20 @@ var TooltipDeferredProviderDataCdsTooltipPendingConfig: {
 var TooltipDeferredProviderDelayMs: number;
 var TooltipDeferredProviderContext: React.Context<DeferredTooltipScope | null>;
 var initializeTooltipDeferredProvider: () => void;
-function scheduleTooltipHandoff(input: () => void): void {
-  TooltipDeferredProviderSubscribers_2.add(input);
-  TooltipDeferredProviderCurrentState_3 ??= setTimeout(() => {
-    TooltipDeferredProviderCurrentState_3 = null;
-    let items = [...TooltipDeferredProviderSubscribers_2];
-    TooltipDeferredProviderSubscribers_2.clear();
+function scheduleTooltipHandoff(handoffCallback: () => void): void {
+  tooltipHandoffCallbacks.add(handoffCallback);
+  tooltipHandoffTimer ??= setTimeout(() => {
+    tooltipHandoffTimer = null;
+    let items = [...tooltipHandoffCallbacks];
+    tooltipHandoffCallbacks.clear();
     for (let value of items) value();
   }, 0);
 }
-function cancelTooltipHandoff(input: () => void): void {
-  TooltipDeferredProviderSubscribers_2.delete(input);
+function cancelTooltipHandoff(handoffCallback: () => void): void {
+  tooltipHandoffCallbacks.delete(handoffCallback);
 }
 function loadTooltipImplementation(): Promise<TooltipImplementation> {
-  TooltipDeferredProviderCurrentState_2 ??= Promise.resolve()
+  tooltipImplementationPromise ??= Promise.resolve()
     .then(
       () => (
         initializeTooltipTooltip(),
@@ -59,16 +59,16 @@ function loadTooltipImplementation(): Promise<TooltipImplementation> {
       ),
     )
     .then(
-      (input) => {
-        TooltipDeferredProviderCurrentState = input;
+      (implementation) => {
+        TooltipDeferredProviderCurrentState = implementation;
         for (let value of TooltipDeferredProviderSubscribers) value();
-        return input;
+        return implementation;
       },
-      (input: unknown) => {
-        throw ((TooltipDeferredProviderCurrentState_2 = null), input);
+      (error: unknown) => {
+        throw ((tooltipImplementationPromise = null), error);
       },
     );
-  return TooltipDeferredProviderCurrentState_2;
+  return tooltipImplementationPromise;
 }
 function preloadTooltipsAfterInteraction(): void {
   if (
@@ -88,60 +88,60 @@ function preloadTooltips(): void {
   loadTooltipImplementation().catch(() => {});
 }
 function trackDeferredTooltipNode(
-  input: DeferredTooltipNode,
-  options: HTMLElement | null,
+  tooltipNode: DeferredTooltipNode,
+  element: HTMLElement | null,
 ): void {
-  input.node = options;
-  options !== null &&
-    ((input.adopted = true),
-    input.handBack &&
-      ((input.handBack = false),
-      queueMicrotask(() => restoreTooltipFocus(input, options))));
+  tooltipNode.node = element;
+  element !== null &&
+    ((tooltipNode.adopted = true),
+    tooltipNode.handBack &&
+      ((tooltipNode.handBack = false),
+      queueMicrotask(() => restoreTooltipFocus(tooltipNode, element))));
 }
 function restoreTooltipFocus(
-  input: DeferredTooltipNode,
+  tooltipNode: DeferredTooltipNode,
   element: HTMLElement,
 ): void {
-  if (!element.isConnected || !input.focus) return;
+  if (!element.isConnected || !tooltipNode.focus) return;
   let activeElement = element.ownerDocument.activeElement;
   (activeElement !== null && activeElement !== element.ownerDocument.body) ||
     element.focus({
       preventScroll: true,
     });
 }
-function cancelTooltipTapHold(input: DeferredTooltipNode): void {
-  input.tapHold !== null &&
-    (clearTimeout(input.tapHold), (input.tapHold = null));
+function cancelTooltipTapHold(tooltipNode: DeferredTooltipNode): void {
+  tooltipNode.tapHold !== null &&
+    (clearTimeout(tooltipNode.tapHold), (tooltipNode.tapHold = null));
 }
 function interceptTooltipPointer(
-  input: DeferredTooltipNode,
-  options: TooltipPointerEvent,
-  context: () => void,
+  tooltipNode: DeferredTooltipNode,
+  pointerEvent: TooltipPointerEvent,
+  release: () => void,
 ): void {
-  cancelTooltipTapHold(input);
+  cancelTooltipTapHold(tooltipNode);
   if (
-    input.down &&
-    options.type === "pointerup" &&
-    (options.pointerType === "touch" || options.pointerType === "pen")
+    tooltipNode.down &&
+    pointerEvent.type === "pointerup" &&
+    (pointerEvent.pointerType === "touch" || pointerEvent.pointerType === "pen")
   ) {
-    input.tapHold = setTimeout(() => {
-      input.tapHold = null;
-      input.down = false;
-      context();
+    tooltipNode.tapHold = setTimeout(() => {
+      tooltipNode.tapHold = null;
+      tooltipNode.down = false;
+      release();
     }, TooltipDeferredProviderDelayMs);
     return;
   }
-  input.down = false;
-  context();
+  tooltipNode.down = false;
+  release();
 }
 function getTooltipImplementation(
-  input: DeferredTooltipScope | null,
+  scope: DeferredTooltipScope | null,
 ): TooltipImplementation | null {
   return TooltipDeferredProviderCurrentState !== null
     ? TooltipDeferredProviderCurrentState
-    : input === null
+    : scope === null
       ? null
-      : input.ambientImpl();
+      : scope.ambientImpl();
 }
 function DeferredTooltipProvider({
   children: children,
@@ -150,29 +150,29 @@ function DeferredTooltipProvider({
   let value = (0, reactTooltipDeferredProvider.useContext)(
       TooltipImplementationContext,
     ),
-    value2 = (0, reactTooltipDeferredProvider.useRef)(value);
+    ambientImplRef = (0, reactTooltipDeferredProvider.useRef)(value);
   (0, reactTooltipDeferredProvider.useEffect)(() => {
-    value2.current = value;
+    ambientImplRef.current = value;
   }, [value]);
-  let [value3] = (0,
+  let [scope] = (0,
   reactTooltipDeferredProvider.useState)<DeferredTooltipScope>(() => {
     let flag = true,
       values: Set<() => void> | null = new Set();
     return {
-      ambientImpl: () => value2.current,
+      ambientImpl: () => ambientImplRef.current,
       isDeferred: () => flag,
-      subscribe: (input) => {
-        let value5 = values;
-        return value5 === null
+      subscribe: (listener) => {
+        let currentListeners = values;
+        return currentListeners === null
           ? () => {}
-          : (value5.add(input), () => value5.delete(input));
+          : (currentListeners.add(listener), () => currentListeners.delete(listener));
       },
       engage: () => {
         if (!flag) return;
         flag = false;
-        let value5 = values;
+        let pendingListeners = values;
         values = null;
-        if (value5 !== null) for (let value6 of value5) value6();
+        if (pendingListeners !== null) for (let pendingListener of pendingListeners) pendingListener();
       },
     };
   });
@@ -182,28 +182,28 @@ function DeferredTooltipProvider({
         {children}
       </jsxTooltipDeferredProvider.Fragment>
     );
-  let value4: React.ReactElement<TooltipTriggerProps> =
+  let triggerElement: React.ReactElement<TooltipTriggerProps> =
       children as React.ReactElement<TooltipTriggerProps>,
     callback =
       <Event extends React.SyntheticEvent>(
-        input: () => void,
-        options: ((event: Event) => void) | undefined,
+        engage: () => void,
+        originalHandler: ((event: Event) => void) | undefined,
       ): ((event: Event) => void) =>
-      (input2) => {
-        input();
-        options?.(input2);
+      (event) => {
+        engage();
+        originalHandler?.(event);
       };
   return (
-    <TooltipDeferredProviderContext.Provider value={value3}>
+    <TooltipDeferredProviderContext.Provider value={scope}>
       <TooltipImplementationContext.Provider value={null}>
         {(0, reactTooltipDeferredProvider.cloneElement)(
-          value4 as React.ReactElement<TooltipTriggerProps>,
+          triggerElement as React.ReactElement<TooltipTriggerProps>,
           {
             onPointerEnter: callback(
-              value3.engage,
-              value4.props.onPointerEnter,
+              scope.engage,
+              triggerElement.props.onPointerEnter,
             ),
-            onFocus: callback(value3.engage, value4.props.onFocus),
+            onFocus: callback(scope.engage, triggerElement.props.onFocus),
           },
         )}
       </TooltipImplementationContext.Provider>
@@ -219,31 +219,31 @@ function isPointerFocused(element: Element): boolean {
   }
 }
 function useDeferredTooltipImplementation(
-  input: boolean,
+  shouldTrackNode: boolean,
 ): DeferredTooltipState {
   let value = (0, reactTooltipDeferredProvider.useContext)(
       TooltipImplementationContext,
     ),
-    value2 = (0, reactTooltipDeferredProvider.useContext)(
+    scope = (0, reactTooltipDeferredProvider.useContext)(
       TooltipDeferredProviderContext,
     ),
-    [value3, value4] = (0,
+    [loadState, setLoadState] = (0,
     reactTooltipDeferredProvider.useState)<DeferredTooltipLoad | null>(() => {
-      let value16 =
+      let initialImpl =
         value ??
-        (value2 !== null && value2.isDeferred()
+        (scope !== null && scope.isDeferred()
           ? null
-          : getTooltipImplementation(value2));
-      return value16 === null
+          : getTooltipImplementation(scope));
+      return initialImpl === null
         ? null
         : {
-            impl: value16,
+            impl: initialImpl,
             track: undefined,
           };
     }),
-    value5 = value3 === null ? null : value3.impl,
-    [value6] = (0, reactTooltipDeferredProvider.useState)(value5 === null),
-    value7: React.RefObject<DeferredTooltipNode> = (0,
+    impl = loadState === null ? null : loadState.impl,
+    [wasCold] = (0, reactTooltipDeferredProvider.useState)(impl === null),
+    nodeStateRef: React.RefObject<DeferredTooltipNode> = (0,
     reactTooltipDeferredProvider.useRef)({
       hover: false,
       focus: false,
@@ -253,67 +253,67 @@ function useDeferredTooltipImplementation(
       handBack: false,
       tapHold: null,
     }),
-    value8 = (0, reactTooltipDeferredProvider.useRef)(false),
-    value9 = (0, reactTooltipDeferredProvider.useCallback)(() => {
-      if (value7.current.adopted || (value2 !== null && value2.isDeferred()))
+    hadAmbientImplRef = (0, reactTooltipDeferredProvider.useRef)(false),
+    adoptImplementation = (0, reactTooltipDeferredProvider.useCallback)(() => {
+      if (nodeStateRef.current.adopted || (scope !== null && scope.isDeferred()))
         return;
       let {
         hover: current,
-        focus: current2,
-        down: current3,
-        node: current4,
-      } = value7.current;
-      if (current3) return;
-      let current5 = value8.current;
-      value8.current = false;
-      let value16 =
-        current2 && input && current4 !== null && isPointerFocused(current4);
-      if (current2 && !value16) return;
-      let value17 = getTooltipImplementation(value2);
-      if (value17 !== null && (!current || current5)) {
-        let current6 = value7.current;
-        current6.handBack = value16;
-        value4(
-          (input2) =>
-            input2 ?? {
-              impl: value17,
-              track: input
-                ? (input3) => trackDeferredTooltipNode(current6, input3)
+        focus: isFocused,
+        down: isPointerDown,
+        node: trackedNode,
+      } = nodeStateRef.current;
+      if (isPointerDown) return;
+      let hadAmbientImpl = hadAmbientImplRef.current;
+      hadAmbientImplRef.current = false;
+      let needsHandBack =
+        isFocused && shouldTrackNode && trackedNode !== null && isPointerFocused(trackedNode);
+      if (isFocused && !needsHandBack) return;
+      let ambientImpl = getTooltipImplementation(scope);
+      if (ambientImpl !== null && (!current || hadAmbientImpl)) {
+        let nodeState = nodeStateRef.current;
+        nodeState.handBack = needsHandBack;
+        setLoadState(
+          (previousLoad) =>
+            previousLoad ?? {
+              impl: ambientImpl,
+              track: shouldTrackNode
+                ? (element) => trackDeferredTooltipNode(nodeState, element)
                 : undefined,
             },
         );
       }
-    }, [value2, input]),
-    value10 = (0, reactTooltipDeferredProvider.useCallback)(() => {
-      getTooltipImplementation(value2) !== null &&
-        scheduleTooltipHandoff(value9);
-    }, [value2, value9]),
-    value11 = (0, reactTooltipDeferredProvider.useCallback)(() => {
-      value8.current = getTooltipImplementation(value2) !== null;
-      value10();
-    }, [value10, value2]),
-    value12: React.RefObject<((event: PointerEvent) => void) | null> = (0,
+    }, [scope, shouldTrackNode]),
+    scheduleAdoption = (0, reactTooltipDeferredProvider.useCallback)(() => {
+      getTooltipImplementation(scope) !== null &&
+        scheduleTooltipHandoff(adoptImplementation);
+    }, [scope, adoptImplementation]),
+    onScopeEngaged = (0, reactTooltipDeferredProvider.useCallback)(() => {
+      hadAmbientImplRef.current = getTooltipImplementation(scope) !== null;
+      scheduleAdoption();
+    }, [scheduleAdoption, scope]),
+    pointerListenerRef: React.RefObject<((event: PointerEvent) => void) | null> = (0,
     reactTooltipDeferredProvider.useRef)(null),
-    value13 = (0, reactTooltipDeferredProvider.useCallback)(() => {
-      let current = value12.current;
+    removePointerListener = (0, reactTooltipDeferredProvider.useCallback)(() => {
+      let current = pointerListenerRef.current;
       current !== null &&
-        ((value12.current = null),
+        ((pointerListenerRef.current = null),
         document.removeEventListener("pointerup", current, true),
         document.removeEventListener("pointercancel", current, true));
     }, []),
-    value14 = (0, reactTooltipDeferredProvider.useCallback)(
-      (input2?: number): void => {
-        if (value12.current !== null || typeof document === "undefined")
+    addPointerListener = (0, reactTooltipDeferredProvider.useCallback)(
+      (expectedPointerId?: number): void => {
+        if (pointerListenerRef.current !== null || typeof document === "undefined")
           return;
-        let callback = (input3: PointerEvent): void => {
-          let pointerId = input3.pointerId;
-          (input2 !== undefined &&
+        let callback = (pointerEvent: PointerEvent): void => {
+          let pointerId = pointerEvent.pointerId;
+          (expectedPointerId !== undefined &&
             pointerId !== undefined &&
-            pointerId !== input2) ||
-            (value13(),
-            interceptTooltipPointer(value7.current, input3, value10));
+            pointerId !== expectedPointerId) ||
+            (removePointerListener(),
+            interceptTooltipPointer(nodeStateRef.current, pointerEvent, scheduleAdoption));
         };
-        value12.current = callback;
+        pointerListenerRef.current = callback;
         document.addEventListener("pointerup", callback, {
           capture: true,
         });
@@ -321,168 +321,168 @@ function useDeferredTooltipImplementation(
           capture: true,
         });
       },
-      [value10, value13],
+      [scheduleAdoption, removePointerListener],
     );
   (0, reactTooltipDeferredProvider.useEffect)(() => {
-    if (!value6) return;
+    if (!wasCold) return;
     preloadTooltipsAfterInteraction();
-    let current = value7.current,
+    let current = nodeStateRef.current,
       callback = (): void => {
-        cancelTooltipHandoff(value9);
+        cancelTooltipHandoff(adoptImplementation);
         current.tapHold !== null &&
           (cancelTooltipTapHold(current), (current.down = false));
-        value13();
+        removePointerListener();
       },
       items: (() => void)[] = [],
-      value16 = value2 !== null && value2.isDeferred();
-    value16 &&
-      items.push((value2 as DeferredTooltipScope).subscribe(value11));
+      isScopeDeferred = scope !== null && scope.isDeferred();
+    isScopeDeferred &&
+      items.push((scope as DeferredTooltipScope).subscribe(onScopeEngaged));
     TooltipDeferredProviderCurrentState === null &&
-      (TooltipDeferredProviderSubscribers.add(value10),
-      items.push(() => TooltipDeferredProviderSubscribers.delete(value10)));
-    !value16 &&
-      getTooltipImplementation(value2) !== null &&
-      (value2 !== null && (value8.current = true), value10());
+      (TooltipDeferredProviderSubscribers.add(scheduleAdoption),
+      items.push(() => TooltipDeferredProviderSubscribers.delete(scheduleAdoption)));
+    !isScopeDeferred &&
+      getTooltipImplementation(scope) !== null &&
+      (scope !== null && (hadAmbientImplRef.current = true), scheduleAdoption());
     return () => {
-      for (let value17 of items) value17();
+      for (let unsubscribe of items) unsubscribe();
       callback();
     };
-  }, [value10, value11, value2, value13, value9, value6]);
-  let value15 = (0, reactTooltipDeferredProvider.useCallback)(() => {
+  }, [scheduleAdoption, onScopeEngaged, scope, removePointerListener, adoptImplementation, wasCold]);
+  let startLoading = (0, reactTooltipDeferredProvider.useCallback)(() => {
     loadTooltipImplementation().catch(() => {});
   }, []);
   return {
-    impl: value5,
-    wasCold: value6,
+    impl: impl,
+    wasCold: wasCold,
     interceptors: (0, reactTooltipDeferredProvider.useCallback)(
-      (input2) => {
+      (triggerProps) => {
         let callback =
           <Event extends React.SyntheticEvent>(
-            input3: (event: Event) => void,
-            options: ((event: Event) => void) | undefined,
+            handler: (event: Event) => void,
+            originalHandler: ((event: Event) => void) | undefined,
           ): ((event: Event) => void) =>
-          (input4) => {
-            input3(input4);
-            options?.(input4);
+          (event) => {
+            handler(event);
+            originalHandler?.(event);
           };
         return {
           onPointerEnter: callback(() => {
-            value7.current.hover = true;
-            value15();
-          }, input2.onPointerEnter),
+            nodeStateRef.current.hover = true;
+            startLoading();
+          }, triggerProps.onPointerEnter),
           onPointerLeave: callback(() => {
-            value7.current.hover = false;
-            value10();
-          }, input2.onPointerLeave),
-          onPointerDown: callback((input3) => {
-            input3.isPrimary !== false &&
-              input3.button === 0 &&
-              (cancelTooltipTapHold(value7.current),
-              (value7.current.down = true),
-              value14(input3.pointerId));
-          }, input2.onPointerDown),
-          onPointerUp: callback((input3) => {
-            input3.isPrimary !== false &&
-              interceptTooltipPointer(value7.current, input3, value10);
-          }, input2.onPointerUp),
-          onPointerCancel: callback((input3) => {
-            input3.isPrimary !== false &&
-              interceptTooltipPointer(value7.current, input3, value10);
-          }, input2.onPointerCancel),
-          onClick: callback((input3) => {
-            value7.current.tapHold !== null &&
-              interceptTooltipPointer(value7.current, input3, value10);
-          }, input2.onClick),
-          onFocus: callback((input3) => {
-            value7.current.focus = true;
-            value7.current.node = asElement(
-              input3.currentTarget,
+            nodeStateRef.current.hover = false;
+            scheduleAdoption();
+          }, triggerProps.onPointerLeave),
+          onPointerDown: callback((event) => {
+            event.isPrimary !== false &&
+              event.button === 0 &&
+              (cancelTooltipTapHold(nodeStateRef.current),
+              (nodeStateRef.current.down = true),
+              addPointerListener(event.pointerId));
+          }, triggerProps.onPointerDown),
+          onPointerUp: callback((event) => {
+            event.isPrimary !== false &&
+              interceptTooltipPointer(nodeStateRef.current, event, scheduleAdoption);
+          }, triggerProps.onPointerUp),
+          onPointerCancel: callback((event) => {
+            event.isPrimary !== false &&
+              interceptTooltipPointer(nodeStateRef.current, event, scheduleAdoption);
+          }, triggerProps.onPointerCancel),
+          onClick: callback((event) => {
+            nodeStateRef.current.tapHold !== null &&
+              interceptTooltipPointer(nodeStateRef.current, event, scheduleAdoption);
+          }, triggerProps.onClick),
+          onFocus: callback((event) => {
+            nodeStateRef.current.focus = true;
+            nodeStateRef.current.node = asElement(
+              event.currentTarget,
             ) as HTMLElement | null;
-            value15();
-          }, input2.onFocus),
+            startLoading();
+          }, triggerProps.onFocus),
           onBlur: callback(() => {
-            value7.current.focus = false;
-            value10();
-          }, input2.onBlur),
+            nodeStateRef.current.focus = false;
+            scheduleAdoption();
+          }, triggerProps.onBlur),
         };
       },
-      [value10, value14, value15],
+      [scheduleAdoption, addPointerListener, startLoading],
     ),
-    trackTrigger: value3?.track,
+    trackTrigger: loadState?.track,
   };
 }
-function disableAutoFocus(input: React.ReactNode): React.ReactNode {
-  return (0, reactTooltipDeferredProvider.isValidElement)(input)
+function disableAutoFocus(node: React.ReactNode): React.ReactNode {
+  return (0, reactTooltipDeferredProvider.isValidElement)(node)
     ? (0, reactTooltipDeferredProvider.cloneElement)(
-        input as React.ReactElement<TooltipTriggerProps>,
+        node as React.ReactElement<TooltipTriggerProps>,
         {
           autoFocus: false,
         },
       )
-    : input;
+    : node;
 }
-function DeferredTooltip(input: TooltipProps): React.ReactElement {
+function DeferredTooltip(props: TooltipProps): React.ReactElement {
   useUiLocale();
   let {
       impl: value,
-      wasCold: value2,
-      interceptors: value3,
-      trackTrigger: value4,
+      wasCold: wasCold,
+      interceptors: interceptors,
+      trackTrigger: trackTrigger,
     } = useDeferredTooltipImplementation(true),
-    value5 = input.autoFocus === false;
+    hasAutoFocusDisabled = props.autoFocus === false;
   if (value !== null)
-    return value2 || value5 ? (
-      <value.Tooltip {...input} triggerRef={value4}>
-        {disableAutoFocus(input.children)}
+    return wasCold || hasAutoFocusDisabled ? (
+      <value.Tooltip {...props} triggerRef={trackTrigger}>
+        {disableAutoFocus(props.children)}
       </value.Tooltip>
     ) : (
-      <value.Tooltip {...input} />
+      <value.Tooltip {...props} />
     );
-  let { children: value6 } = input;
-  if (!(0, reactTooltipDeferredProvider.isValidElement)(value6))
+  let { children: children } = props;
+  if (!(0, reactTooltipDeferredProvider.isValidElement)(children))
     return (
       <jsxTooltipDeferredProvider.Fragment>
-        {value6}
+        {children}
       </jsxTooltipDeferredProvider.Fragment>
     );
-  let value7: React.ReactElement<TooltipTriggerProps> =
-    value6 as React.ReactElement<TooltipTriggerProps>;
+  let triggerElement: React.ReactElement<TooltipTriggerProps> =
+    children as React.ReactElement<TooltipTriggerProps>;
   return (0, reactTooltipDeferredProvider.cloneElement)(
-    value7 as React.ReactElement<TooltipTriggerProps>,
+    triggerElement as React.ReactElement<TooltipTriggerProps>,
     {
-      ...value3(value7.props),
+      ...interceptors(triggerElement.props),
       ...TooltipDeferredProviderDataCdsTooltipPendingConfig,
     },
   );
 }
 function DeferredDisabledReasonTooltip(
-  input: DisabledTooltipProps,
+  props: DisabledTooltipProps,
 ): React.ReactElement {
   useUiLocale();
   let {
       impl: value,
-      wasCold: value2,
-      interceptors: value3,
+      wasCold: wasCold,
+      interceptors: interceptors,
     } = useDeferredTooltipImplementation(false),
-    value4 = (0, reactTooltipDeferredProvider.useId)();
+    descriptionId = (0, reactTooltipDeferredProvider.useId)();
   if (value !== null)
-    return value2 ? (
-      <value.DisabledReasonTooltip {...input}>
-        {disableAutoFocus(input.children)}
+    return wasCold ? (
+      <value.DisabledReasonTooltip {...props}>
+        {disableAutoFocus(props.children)}
       </value.DisabledReasonTooltip>
     ) : (
-      <value.DisabledReasonTooltip {...input} />
+      <value.DisabledReasonTooltip {...props} />
     );
-  let { reason: value5, wrapperClassName: value6, children: value7 } = input;
+  let { reason: reason, wrapperClassName: wrapperClassName, children: children } = props;
   return (
     <span
-      {...disabledReasonWrapperProps(value5, value4, value6)}
-      title={typeof value5 == "string" ? (value5) : (undefined)}
-      {...value3({})}
+      {...disabledReasonWrapperProps(reason, descriptionId, wrapperClassName)}
+      title={typeof reason == "string" ? (reason) : (undefined)}
+      {...interceptors({})}
       {...TooltipDeferredProviderDataCdsTooltipPendingConfig}
     >
-      {value7}
-      <DisabledReasonDescription id={value4} reason={value5} />
+      {children}
+      <DisabledReasonDescription id={descriptionId} reason={reason} />
     </span>
   );
 }
@@ -506,13 +506,13 @@ export {
   scheduleTooltipHandoff,
   TooltipDeferredProviderContext,
   TooltipDeferredProviderCurrentState,
-  TooltipDeferredProviderCurrentState_2,
-  TooltipDeferredProviderCurrentState_3,
+  tooltipImplementationPromise as TooltipDeferredProviderCurrentState_2,
+  tooltipHandoffTimer as TooltipDeferredProviderCurrentState_3,
   TooltipDeferredProviderDataCdsTooltipPendingConfig,
   TooltipDeferredProviderDelayMs,
   TooltipDeferredProviderPointermoveKeydownTouchstartValues,
   TooltipDeferredProviderSubscribers,
-  TooltipDeferredProviderSubscribers_2,
+  tooltipHandoffCallbacks as TooltipDeferredProviderSubscribers_2,
   tooltipPreloadArmed,
   trackDeferredTooltipNode,
   useDeferredTooltipImplementation,
@@ -532,10 +532,10 @@ export function installCdsTooltipDeferredProvider(): () => void {
         load_react_jsx_runtime(),
       );
       TooltipDeferredProviderCurrentState = null;
-      TooltipDeferredProviderCurrentState_2 = null;
+      tooltipImplementationPromise = null;
       TooltipDeferredProviderSubscribers = new Set();
-      TooltipDeferredProviderCurrentState_3 = null;
-      TooltipDeferredProviderSubscribers_2 = new Set();
+      tooltipHandoffTimer = null;
+      tooltipHandoffCallbacks = new Set();
       TooltipDeferredProviderPointermoveKeydownTouchstartValues = [
         "pointermove",
         "keydown",

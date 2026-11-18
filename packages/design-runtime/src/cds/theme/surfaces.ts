@@ -15,31 +15,31 @@ var ThemeSurfacesSurface2Surface3Config: Record<SurfaceBackground, string>;
 var focusShadowTokens: Record<ColorMode, string>;
 var dangerFocusShadowTokens: Record<ColorMode, string>;
 var initializeThemeSurfaces: () => void;
-function virtualTriggerAnchor(input: {
+function virtualTriggerAnchor(anchorOptions: {
   triggerRef: React.RefObject<Element | null>;
 }): VirtualTriggerAnchor {
   return {
     get contextElement() {
-      return input.triggerRef.current ?? undefined;
+      return anchorOptions.triggerRef.current ?? undefined;
     },
     getBoundingClientRect: () => {
-      let value = input.triggerRef.current?.getBoundingClientRect(),
-        value2 = input.triggerRef.current
+      let value = anchorOptions.triggerRef.current?.getBoundingClientRect(),
+        menuRect = anchorOptions.triggerRef.current
           ?.closest(MenuConfigurationLabel)
           ?.getBoundingClientRect(),
-        value3 = value2?.x ?? value?.x ?? 0,
-        value4 = value?.y ?? 0,
-        value5 = value2?.width ?? value?.width ?? 0,
-        value6 = value?.height ?? 0;
+        x = menuRect?.x ?? value?.x ?? 0,
+        y = value?.y ?? 0,
+        width = menuRect?.width ?? value?.width ?? 0,
+        height = value?.height ?? 0;
       return {
-        x: value3,
-        y: value4,
-        width: value5,
-        height: value6,
-        top: value4,
-        left: value3,
-        right: value3 + value5,
-        bottom: value4 + value6,
+        x: x,
+        y: y,
+        width: width,
+        height: height,
+        top: y,
+        left: x,
+        right: x + width,
+        bottom: y + height,
       };
     },
   };

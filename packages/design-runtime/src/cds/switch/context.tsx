@@ -17,115 +17,115 @@ var TabsMenuTriggerValue: string;
 var TabsMenuLabelValue: string;
 var initializeSwitchContext_2: () => void;
 function animateFlipIndicator(
-  input: HTMLElement,
-  options: Element,
-  context: FlipGeometry | null,
+  indicator: HTMLElement,
+  container: Element,
+  targetGeometry: FlipGeometry | null,
   {
-    correction: value = false,
+    correction: isCorrection = false,
   }: {
     correction?: boolean;
   } = {},
 ): void {
-  if (context === null || context.width <= 0) {
-    cancelElementAnimations(input);
-    input.style.visibility = "";
-    input.style.willChange = "";
-    delete input.dataset.flipAt;
+  if (targetGeometry === null || targetGeometry.width <= 0) {
+    cancelElementAnimations(indicator);
+    indicator.style.visibility = "";
+    indicator.style.willChange = "";
+    delete indicator.dataset.flipAt;
     return;
   }
-  let value2 = `${context.left},${context.width}`,
-    flipAt = input.dataset.flipAt;
-  if (flipAt === value2) return;
-  let bounds = input.getBoundingClientRect(),
-    left = options.getBoundingClientRect().left,
-    value3 = getComputedStyle(input),
-    value4 = cssTimeMilliseconds(value3, "--cds-dur-base"),
-    value5 = value3.getPropertyValue("--cds-ease-snap").trim() || "linear",
-    value6 = backgroundHasAlpha(value3),
-    value7 = value && !hasRunningAnimations(input);
-  cancelElementAnimations(input);
-  input.dataset.flipAt = value2;
-  input.style.width = `${context.width}px`;
-  input.style.transform = `translateX(${context.left}px)`;
-  input.style.visibility = "inherit";
-  value6 || (input.style.willChange = "");
+  let flipKey = `${targetGeometry.left},${targetGeometry.width}`,
+    flipAt = indicator.dataset.flipAt;
+  if (flipAt === flipKey) return;
+  let bounds = indicator.getBoundingClientRect(),
+    left = container.getBoundingClientRect().left,
+    computedStyle = getComputedStyle(indicator),
+    durationMs = cssTimeMilliseconds(computedStyle, "--cds-dur-base"),
+    easing = computedStyle.getPropertyValue("--cds-ease-snap").trim() || "linear",
+    hasAlpha = backgroundHasAlpha(computedStyle),
+    isCorrectionOnly = isCorrection && !hasRunningAnimations(indicator);
+  cancelElementAnimations(indicator);
+  indicator.dataset.flipAt = flipKey;
+  indicator.style.width = `${targetGeometry.width}px`;
+  indicator.style.transform = `translateX(${targetGeometry.left}px)`;
+  indicator.style.visibility = "inherit";
+  hasAlpha || (indicator.style.willChange = "");
   if (
     !(
       flipAt === undefined ||
-      !supportsElementAnimations(input) ||
+      !supportsElementAnimations(indicator) ||
       prefersReducedMotion()
     ) &&
-    !value7
+    !isCorrectionOnly
   )
     try {
-      input.animate(
+      indicator.animate(
         {
           transform: [
-            `translateX(${bounds.left - left}px) scaleX(${bounds.width / context.width})`,
-            `translateX(${context.left}px) scaleX(1)`,
+            `translateX(${bounds.left - left}px) scaleX(${bounds.width / targetGeometry.width})`,
+            `translateX(${targetGeometry.left}px) scaleX(1)`,
           ],
         },
         {
-          duration: value4,
-          easing: value5,
+          duration: durationMs,
+          easing: easing,
         },
       );
-      value4 > 0 && setTransformWillChange(input, value6);
+      durationMs > 0 && setTransformWillChange(indicator, hasAlpha);
     } catch {}
 }
 function cssTimeMilliseconds(
-  input: CSSStyleDeclaration,
-  options: string,
+  style: CSSStyleDeclaration,
+  propertyName: string,
 ): number {
-  let value = input.getPropertyValue(options).trim(),
-    value2 = value.endsWith("ms") ? 1 : value.endsWith("s") ? 1e3 : 0;
-  return Math.max(0, parseFloat(value) * value2) || 0;
+  let value = style.getPropertyValue(propertyName).trim(),
+    unitMultiplier = value.endsWith("ms") ? 1 : value.endsWith("s") ? 1e3 : 0;
+  return Math.max(0, parseFloat(value) * unitMultiplier) || 0;
 }
-function supportsElementAnimations(input: Element): boolean {
+function supportsElementAnimations(element: Element): boolean {
   return (
-    typeof input.animate == "function" &&
-    typeof input.getAnimations == "function"
+    typeof element.animate == "function" &&
+    typeof element.getAnimations == "function"
   );
 }
-function backgroundHasAlpha(input: CSSStyleDeclaration): boolean {
-  return /^rgba\(|\//.test(input.backgroundColor);
+function backgroundHasAlpha(style: CSSStyleDeclaration): boolean {
+  return /^rgba\(|\//.test(style.backgroundColor);
 }
-function setTransformWillChange(input: HTMLElement, options: boolean): void {
-  input.style.willChange = options ? "transform" : "";
+function setTransformWillChange(element: HTMLElement, hasAlpha: boolean): void {
+  element.style.willChange = hasAlpha ? "transform" : "";
 }
-function hasRunningAnimations(input: Element): boolean {
+function hasRunningAnimations(element: Element): boolean {
   return (
-    supportsElementAnimations(input) &&
-    input.getAnimations().some((input2) => input2.playState === "running")
+    supportsElementAnimations(element) &&
+    element.getAnimations().some((animation) => animation.playState === "running")
   );
 }
-function cancelElementAnimations(input: Element): void {
-  if (supportsElementAnimations(input))
-    for (let value of input.getAnimations()) value.cancel();
+function cancelElementAnimations(element: Element): void {
+  if (supportsElementAnimations(element))
+    for (let value of element.getAnimations()) value.cancel();
 }
-function hasFlipAnimation(input: HTMLElement): boolean {
-  return input.dataset.flipAt !== undefined;
+function hasFlipAnimation(indicator: HTMLElement): boolean {
+  return indicator.dataset.flipAt !== undefined;
 }
 function seekFlipAnimation(
-  input: HTMLElement,
-  options: number,
-  context: () => readonly FlipGeometry[],
+  indicator: HTMLElement,
+  progress: number,
+  readGeometries: () => readonly FlipGeometry[],
 ): void {
   if (
-    !Number.isFinite(options) ||
-    !hasFlipAnimation(input) ||
-    !supportsElementAnimations(input)
+    !Number.isFinite(progress) ||
+    !hasFlipAnimation(indicator) ||
+    !supportsElementAnimations(indicator)
   )
     return;
-  let entry = SwitchContextElementCache.get(input);
+  let entry = SwitchContextElementCache.get(indicator);
   if (entry?.playState !== "paused") {
-    let value = context();
-    if (value.length < 2 || value.some((input2) => input2.width <= 0)) return;
-    let value2 = parseFloat(input.style.width),
-      value3 = backgroundHasAlpha(getComputedStyle(input));
-    entry = input.animate(
-      value.map((input2) => ({
-        transform: `translateX(${input2.left}px) scaleX(${input2.width / value2})`,
+    let value = readGeometries();
+    if (value.length < 2 || value.some((geometry) => geometry.width <= 0)) return;
+    let targetWidth = parseFloat(indicator.style.width),
+      hasAlpha = backgroundHasAlpha(getComputedStyle(indicator));
+    entry = indicator.animate(
+      value.map((geometry) => ({
+        transform: `translateX(${geometry.left}px) scaleX(${geometry.width / targetWidth})`,
       })),
       {
         duration: (value.length - 1) * SwitchContextConstant,
@@ -133,14 +133,14 @@ function seekFlipAnimation(
       },
     );
     entry.pause();
-    setTransformWillChange(input, value3);
-    SwitchContextElementCache.set(input, entry);
-    input.dataset.flipAt = HeldValue;
+    setTransformWillChange(indicator, hasAlpha);
+    SwitchContextElementCache.set(indicator, entry);
+    indicator.dataset.flipAt = HeldValue;
   }
-  entry.currentTime = options * SwitchContextConstant;
+  entry.currentTime = progress * SwitchContextConstant;
 }
-function isFlipIndicatorEntering(input: HTMLElement): boolean {
-  return input.dataset.flipAt === HeldValue;
+function isFlipIndicatorEntering(indicator: HTMLElement): boolean {
+  return indicator.dataset.flipAt === HeldValue;
 }
 function useFlipIndicatorContext(): FlipIndicatorState | null {
   return (0, reactSwitchContext.useContext)(FlipIndicatorContext);

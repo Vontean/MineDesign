@@ -27,7 +27,7 @@ import { initializePlatformRootFontSize_2, PopupSurface } from "../platform/root
 import { cn, initializeClassNames } from "../theme/class-names";
 import { initializeCdsRoot, useOverlayRoot } from "../theme/root";
 import { DisabledReasonDescription, disabledReasonWrapperProps, hasDisabledReason, initializeTooltipDisabledReason } from "./disabled-reason";
-import { DarkScope, initializeTooltipStyles, tooltipImplementationExports, tooltipPopupClasses, TooltipStylesCss, TooltipStylesCss_2, TooltipStylesLabel_2 } from "./styles";
+import { DarkScope, initializeTooltipStyles, tooltipImplementationExports, tooltipPopupClasses, TooltipStylesCss, TooltipStylesCss_2, TooltipStylesLabel_2 as tooltipTextWrapClasses } from "./styles";
 import { initializeTooltipTrigger, initializeTooltipTrigger_3, initializeTooltipTrigger_4, measureContentRect, TooltipImplementationContext, TooltipTriggerContext, useTooltipDelay, useTooltipTrigger } from "./trigger";
 import { initializeNpm__base_ui_react_V8e, load_react, load_react_jsx_runtime, npm_Tooltip_Ax } from "../../dependencies";
 import { defineLiveExports, initializeOnce, toModuleNamespace } from "../../module-helpers";
@@ -57,35 +57,35 @@ var TooltipTooltipTooltipDisabledReasonTooltipConfig: Pick<
 var TooltipTooltipContext: React.Context<boolean>;
 var initializeTooltipTooltip: () => void;
 function cancelRestoredTooltipFocus(
-  input: boolean,
-  options: import("@base-ui/react/tooltip").Tooltip.Root.ChangeEventDetails,
+  isOpening: boolean,
+  eventDetails: import("@base-ui/react/tooltip").Tooltip.Root.ChangeEventDetails,
 ): boolean {
-  return input &&
-    options.reason === "trigger-focus" &&
-    isRestoredFocus(options.event)
-    ? (options.cancel(), true)
+  return isOpening &&
+    eventDetails.reason === "trigger-focus" &&
+    isRestoredFocus(eventDetails.event)
+    ? (eventDetails.cancel(), true)
     : false;
 }
 function activateTooltip(
-  input: React.RefObject<TooltipInstantActions>,
+  actions: React.RefObject<TooltipInstantActions>,
 ): void {
   TooltipTooltipCurrentState !== null &&
-    TooltipTooltipCurrentState !== input &&
+    TooltipTooltipCurrentState !== actions &&
     TooltipTooltipCurrentState.current?.closeInstant();
-  TooltipTooltipCurrentState = input;
+  TooltipTooltipCurrentState = actions;
 }
-function isEmptyTooltipContent(input: React.ReactNode): boolean {
+function isEmptyTooltipContent(content: React.ReactNode): boolean {
   return (
-    input == null ||
-    input === "" ||
-    typeof input == "boolean" ||
-    (Array.isArray(input) && input.every(isEmptyTooltipContent))
+    content == null ||
+    content === "" ||
+    typeof content == "boolean" ||
+    (Array.isArray(content) && content.every(isEmptyTooltipContent))
   );
 }
 function resolveTooltipContent(
-  input: () => React.ReactNode,
+  readContent: () => React.ReactNode,
 ): React.ReactNode | EmptyTooltipContent {
-  let value = input();
+  let value = readContent();
   return isEmptyTooltipContent(value as React.ReactNode)
     ? emptyTooltipContent
     : value;
@@ -111,7 +111,7 @@ function TooltipShortcut({
 }
 function Tooltip({
   content: content,
-  detail: detail,
+  detail: detailText,
   secondaryHint: secondaryHint,
   multiline: multiline,
   shortcut: shortcut,
@@ -135,109 +135,109 @@ function Tooltip({
 }: TooltipProps): React.ReactElement {
   useUiLocale();
   let value = useOverlayRoot(),
-    value2 = useShrinkWrap({
+    shrinkWrapRef = useShrinkWrap({
       immediate: true,
     }),
-    value3 = (0, reactTooltipTooltip.useId)(),
-    value4 = (0, reactTooltipTooltip.useRef)<
+    triggerId = (0, reactTooltipTooltip.useId)(),
+    actionsRef = (0, reactTooltipTooltip.useRef)<
       import("@base-ui/react/tooltip").Tooltip.Root.Actions | null
     >(null),
-    [value5, value6] = (0, reactTooltipTooltip.useState)(false),
-    value7: React.RefObject<TooltipInstantActions> = (0,
+    [skipTransition, setSkipTransition] = (0, reactTooltipTooltip.useState)(false),
+    instantActionsRef: React.RefObject<TooltipInstantActions> = (0,
     reactTooltipTooltip.useRef)({
       closeInstant: () => {
-        value6(true);
-        value4.current?.close();
+        setSkipTransition(true);
+        actionsRef.current?.close();
       },
     }),
-    [value8, value9] = (0, reactTooltipTooltip.useState)<Element | null>(
+    [hoverTrigger, setHoverTrigger] = (0, reactTooltipTooltip.useState)<Element | null>(
       null,
     ),
-    [value10, value11] = (0, reactTooltipTooltip.useState)(
+    [bodyState, setBodyState] = (0, reactTooltipTooltip.useState)(
       TooltipTooltipOpenBodyConfig,
     );
-  open === false && value10.open && value11(TooltipTooltipOpen_2);
-  let value12 = typeof content == "function",
-    value13 = value12 || !isEmptyTooltipContent(content as React.ReactNode),
-    value14: React.ReactNode = (
-      !value12 && value13 ? content : value10.body
+  open === false && bodyState.open && setBodyState(TooltipTooltipOpen_2);
+  let isContentFunction = typeof content == "function",
+    hasContent = isContentFunction || !isEmptyTooltipContent(content as React.ReactNode),
+    displayedBody: React.ReactNode = (
+      !isContentFunction && hasContent ? content : bodyState.body
     ) as React.ReactNode,
-    value15 = !isEmptyTooltipContent(value14 as React.ReactNode),
-    value16 = (open ?? value10.open) && (!value12 || value15);
-  !value12 &&
-    value13 &&
-    value16 &&
-    !Object.is(value10.body, content) &&
-    value11(TooltipTooltipIs(content as React.ReactNode));
-  let value17 = (0, reactTooltipTooltip.useCallback)(
+    hasDisplayedBody = !isEmptyTooltipContent(displayedBody as React.ReactNode),
+    isOpen = (open ?? bodyState.open) && (!isContentFunction || hasDisplayedBody);
+  !isContentFunction &&
+    hasContent &&
+    isOpen &&
+    !Object.is(bodyState.body, content) &&
+    setBodyState(TooltipTooltipIs(content as React.ReactNode));
+  let handleOpenChange = (0, reactTooltipTooltip.useCallback)(
       (
-        input: boolean,
-        options: import("@base-ui/react/tooltip").Tooltip.Root.ChangeEventDetails,
+        nextOpen: boolean,
+        eventDetails: import("@base-ui/react/tooltip").Tooltip.Root.ChangeEventDetails,
       ): boolean => {
         if (
           !openOnHandedBackFocus &&
-          cancelRestoredTooltipFocus(input, options)
+          cancelRestoredTooltipFocus(nextOpen, eventDetails)
         )
           return false;
-        if (input) {
+        if (nextOpen) {
           if (typeof content != "function")
-            value11(TooltipTooltipOpen_3(content));
-          else if (value16) value11(TooltipTooltipOpen);
+            setBodyState(TooltipTooltipOpen_3(content));
+          else if (isOpen) setBodyState(TooltipTooltipOpen);
           else {
-            let value38 = resolveTooltipContent(content);
-            if (value38 === emptyTooltipContent) {
-              options.cancel();
+            let resolvedContent = resolveTooltipContent(content);
+            if (resolvedContent === emptyTooltipContent) {
+              eventDetails.cancel();
               return false;
             }
-            value11(TooltipTooltipOpen_3(value38));
+            setBodyState(TooltipTooltipOpen_3(resolvedContent));
           }
-          value6(false);
-          activateTooltip(value7);
+          setSkipTransition(false);
+          activateTooltip(instantActionsRef);
         } else {
-          value11(value16 ? TooltipTooltipOpen_2 : TooltipTooltipOpen_4);
-          TooltipTooltipCurrentState === value7 &&
+          setBodyState(isOpen ? TooltipTooltipOpen_2 : TooltipTooltipOpen_4);
+          TooltipTooltipCurrentState === instantActionsRef &&
             (TooltipTooltipCurrentState = null);
         }
-        value9(
-          input && options.reason === "trigger-hover"
-            ? (options.trigger ?? null)
+        setHoverTrigger(
+          nextOpen && eventDetails.reason === "trigger-hover"
+            ? (eventDetails.trigger ?? null)
             : null,
         );
-        onOpenChange?.(input);
+        onOpenChange?.(nextOpen);
         return true;
       },
-      [onOpenChange, openOnHandedBackFocus, content, value16],
+      [onOpenChange, openOnHandedBackFocus, content, isOpen],
     ),
-    value18 = open !== undefined,
-    open2 = value10.open;
+    isControlled = open !== undefined,
+    bodyOpen = bodyState.open;
   (0, reactTooltipTooltip.useEffect)(() => {
-    if (!(!value18 || !value13 || !value15)) {
+    if (!(!isControlled || !hasContent || !hasDisplayedBody)) {
       open
-        ? activateTooltip(value7)
-        : TooltipTooltipCurrentState === value7 &&
+        ? activateTooltip(instantActionsRef)
+        : TooltipTooltipCurrentState === instantActionsRef &&
           (TooltipTooltipCurrentState = null);
       return () => {
-        !open2 &&
-          TooltipTooltipCurrentState === value7 &&
+        !bodyOpen &&
+          TooltipTooltipCurrentState === instantActionsRef &&
           (TooltipTooltipCurrentState = null);
       };
     }
-  }, [value18, open, value13, value15, open2, value12]);
-  let value19 = (0, reactTooltipTooltip.useCallback)(
-    (input: boolean): void => {
-      input || (value6(false), value9(null), value11(TooltipTooltipBody));
+  }, [isControlled, open, hasContent, hasDisplayedBody, bodyOpen, isContentFunction]);
+  let handleOpenChangeComplete = (0, reactTooltipTooltip.useCallback)(
+    (nextOpen: boolean): void => {
+      nextOpen || (setSkipTransition(false), setHoverTrigger(null), setBodyState(TooltipTooltipBody));
     },
     [],
   );
   (0, reactTooltipTooltip.useEffect)(() => {
-    if (!value8) return;
-    let ownerDocument = value8.ownerDocument,
+    if (!hoverTrigger) return;
+    let ownerDocument = hoverTrigger.ownerDocument,
       callback = (event: Event): void => {
         let target = event.target;
         target &&
-          target !== value8 &&
-          (target as Node).contains(value8) &&
-          value7.current.closeInstant();
+          target !== hoverTrigger &&
+          (target as Node).contains(hoverTrigger) &&
+          instantActionsRef.current.closeInstant();
       };
     ownerDocument.addEventListener("scroll", callback, {
       capture: true,
@@ -248,141 +248,141 @@ function Tooltip({
         capture: true,
       });
     };
-  }, [value8]);
+  }, [hoverTrigger]);
   (0, reactTooltipTooltip.useEffect)(
     () => () => {
-      TooltipTooltipCurrentState === value7 &&
+      TooltipTooltipCurrentState === instantActionsRef &&
         (TooltipTooltipCurrentState = null);
     },
     [],
   );
-  let value20 = useDefaultLayer("tooltip"),
-    [value21] = (0, reactTooltipTooltip.useState)(() =>
+  let layer = useDefaultLayer("tooltip"),
+    [lazyHandle] = (0, reactTooltipTooltip.useState)(() =>
       lazy && open === undefined
         ? npm_Tooltip_Ax.createHandle()
         : null,
     ),
-    [value22, value23] = (0, reactTooltipTooltip.useState)(false),
-    value24 = value22 || value21 === null,
-    value25 = (0, reactTooltipTooltip.useRef)(false),
-    value26 = (0, reactTooltipTooltip.useCallback)(() => {
-      value25.current = true;
-      value23(true);
+    [lazyMounted, setLazyMounted] = (0, reactTooltipTooltip.useState)(false),
+    isRootMounted = lazyMounted || lazyHandle === null,
+    mountRequestedRef = (0, reactTooltipTooltip.useRef)(false),
+    mountRoot = (0, reactTooltipTooltip.useCallback)(() => {
+      mountRequestedRef.current = true;
+      setLazyMounted(true);
     }, []),
-    value27 = useTooltipDelay(),
-    value28 = (0, reactTooltipTooltip.useRef)<HTMLElement | null>(null),
-    value29 = (0, reactTooltipTooltip.useRef)(false);
+    delayTimer = useTooltipDelay(),
+    pendingTriggerRef = (0, reactTooltipTooltip.useRef)<HTMLElement | null>(null),
+    openedByDelayRef = (0, reactTooltipTooltip.useRef)(false);
   (0, reactTooltipTooltip.useEffect)(() => {
-    open === false && (value29.current = false);
+    open === false && (openedByDelayRef.current = false);
   }, [open]);
-  let value30 = useOptionalStableCallback(() => {
-      if (value25.current || value24 || !value13 || open !== undefined)
+  let openAfterDelay = useOptionalStableCallback(() => {
+      if (mountRequestedRef.current || isRootMounted || !hasContent || open !== undefined)
         return;
-      let value38: React.ReactNode;
+      let delayedContent: React.ReactNode;
       if (typeof content == "function") {
-        let value39 = resolveTooltipContent(content);
-        if (value39 === emptyTooltipContent) return;
-        value38 = value39;
-      } else value38 = content;
-      value26();
-      value6(false);
-      activateTooltip(value7);
-      value9(value28.current);
-      value11(TooltipTooltipOpen_3(value38));
-      value29.current = true;
+        let resolvedDelayedContent = resolveTooltipContent(content);
+        if (resolvedDelayedContent === emptyTooltipContent) return;
+        delayedContent = resolvedDelayedContent;
+      } else delayedContent = content;
+      mountRoot();
+      setSkipTransition(false);
+      activateTooltip(instantActionsRef);
+      setHoverTrigger(pendingTriggerRef.current);
+      setBodyState(TooltipTooltipOpen_3(delayedContent));
+      openedByDelayRef.current = true;
       onOpenChange?.(true);
     }),
-    value31: (event: React.PointerEvent<HTMLElement>) => void = useOptionalStableCallback((input) => {
-      value24 ||
-        input.pointerType === "touch" ||
-        (value13 &&
-          ((value28.current = input.currentTarget),
-          value27.start(delay, value30)));
+    handlePointerEnter: (event: React.PointerEvent<HTMLElement>) => void = useOptionalStableCallback((event) => {
+      isRootMounted ||
+        event.pointerType === "touch" ||
+        (hasContent &&
+          ((pendingTriggerRef.current = event.currentTarget),
+          delayTimer.start(delay, openAfterDelay)));
     }),
-    value32 = useOptionalStableCallback(() => {
-      closeOnClick !== false && value27.cancel();
+    handlePointerDown = useOptionalStableCallback(() => {
+      closeOnClick !== false && delayTimer.cancel();
     }),
-    value33: (event: React.FocusEvent<HTMLElement>) => void = useOptionalStableCallback((event) => {
-      value24 ||
+    handleFocus: (event: React.FocusEvent<HTMLElement>) => void = useOptionalStableCallback((event) => {
+      isRootMounted ||
         ((event.target as Element).matches(":focus-visible") &&
           ((!openOnHandedBackFocus &&
             isRestoredFocus(event.nativeEvent)) ||
-            ((value28.current = null), value27.cancel(), value30())));
+            ((pendingTriggerRef.current = null), delayTimer.cancel(), openAfterDelay())));
     });
-  value21 !== null && open === true && !value22 && value23(true);
-  let value34 = (0, reactTooltipTooltip.useCallback)(
+  lazyHandle !== null && open === true && !lazyMounted && setLazyMounted(true);
+  let handleLazyOpenChange = (0, reactTooltipTooltip.useCallback)(
       (
-        input: boolean,
-        options: import("@base-ui/react/tooltip").Tooltip.Root.ChangeEventDetails,
+        nextOpen: boolean,
+        eventDetails: import("@base-ui/react/tooltip").Tooltip.Root.ChangeEventDetails,
       ): void => {
         if (
           !(
             !openOnHandedBackFocus &&
-            cancelRestoredTooltipFocus(input, options)
+            cancelRestoredTooltipFocus(nextOpen, eventDetails)
           )
         ) {
-          if (input && value29.current && value16) {
-            value11(TooltipTooltipOpen);
+          if (nextOpen && openedByDelayRef.current && isOpen) {
+            setBodyState(TooltipTooltipOpen);
             return;
           }
-          value17(input, options) && (value29.current = input);
+          handleOpenChange(nextOpen, eventDetails) && (openedByDelayRef.current = nextOpen);
         }
       },
-      [value17, openOnHandedBackFocus, value16],
+      [handleOpenChange, openOnHandedBackFocus, isOpen],
     ),
-    value35: import("@base-ui/react/tooltip").Tooltip.Trigger.Props<void>["render"] =
+    triggerRender: import("@base-ui/react/tooltip").Tooltip.Trigger.Props<void>["render"] =
       (0, reactTooltipTooltip.isValidElement)(children) &&
       children.type !== reactTooltipTooltip.Fragment
         ? children
-        : (input: TooltipTriggerProps): React.ReactElement => (
-            <span {...input} className={"inline-flex"}>
+        : (triggerProps: TooltipTriggerProps): React.ReactElement => (
+            <span {...triggerProps} className={"inline-flex"}>
               {children}
             </span>
           ),
-    value36 = (() => {
+    trigger = (() => {
       const _Component = npm_Tooltip_Ax
         .Trigger as PolymorphicTooltipTrigger;
       return (
         <_Component
           ref={triggerRef}
-          id={value3}
+          id={triggerId}
           delay={delay}
           closeDelay={closeDelay}
           closeOnClick={closeOnClick}
-          handle={value21 ?? undefined}
-          disabled={value21 !== null && !value24 ? !value13 : undefined}
-          onPointerEnter={value21 ? value31 : undefined}
-          onPointerLeave={value21 ? value27.cancel : undefined}
-          onPointerDown={value21 ? value32 : undefined}
-          onFocus={value21 ? value33 : undefined}
-          render={value35}
+          handle={lazyHandle ?? undefined}
+          disabled={lazyHandle !== null && !isRootMounted ? !hasContent : undefined}
+          onPointerEnter={lazyHandle ? handlePointerEnter : undefined}
+          onPointerLeave={lazyHandle ? delayTimer.cancel : undefined}
+          onPointerDown={lazyHandle ? handlePointerDown : undefined}
+          onFocus={lazyHandle ? handleFocus : undefined}
+          render={triggerRender}
         />
       );
     })(),
-    value37 =
-      value24 && value15 ? (
+    portal =
+      isRootMounted && hasDisplayedBody ? (
         <npm_Tooltip_Ax.Portal container={container ?? value}>
           <PopupSurface>
             <CollisionPaddingProvider
               override={collisionPadding}
               container={container ?? value}
             >
-              {(input: CollisionPadding) => (
-                <LayerBaseContext.Provider value={value20.base}>
+              {(padding: CollisionPadding) => (
+                <LayerBaseContext.Provider value={layer.base}>
                   <npm_Tooltip_Ax.Positioner
                     data-cds={"Tooltip"}
                     className={"data-[anchor-hidden]:invisible"}
-                    style={value20.style}
+                    style={layer.style}
                     side={side}
                     align={align}
                     sideOffset={sideOffset}
-                    collisionPadding={input}
+                    collisionPadding={padding}
                   >
                     <npm_Tooltip_Ax.Popup
-                      ref={value2}
+                      ref={shrinkWrapRef}
                       role={"tooltip"}
                       style={
-                        value5
+                        skipTransition
                           ? {
                               transitionDuration: "0s",
                             }
@@ -391,7 +391,7 @@ function Tooltip({
                       className={cn(
                         TooltipStylesCssAlias,
                         TooltipTooltipAlias,
-                        multiline || detail || secondaryHint
+                        multiline || detailText || secondaryHint
                           ? TooltipTooltipCss
                           : TooltipTooltipClassNames_2,
                         !shortcut && TooltipTooltipClassNames,
@@ -399,14 +399,14 @@ function Tooltip({
                       )}
                     >
                       <DarkScope>
-                        {multiline || detail || secondaryHint ? (<jsxTooltipTooltip.Fragment>
+                        {multiline || detailText || secondaryHint ? (<jsxTooltipTooltip.Fragment>
                             <span
                               className={
                                 "inline-flex min-w-0 items-center gap-2"
                               }
                             >
-                              <span className={TooltipStylesLabel_2}>
-                                {value14}
+                              <span className={tooltipTextWrapClasses}>
+                                {displayedBody}
                               </span>
                               {shortcut && (<TooltipShortcut keys={shortcut} />)}
                             </span>
@@ -422,16 +422,16 @@ function Tooltip({
                                   keys={secondaryHint.shortcut}
                                 />
                               </span>)}
-                            {detail && (<span
+                            {detailText && (<span
                                 className={
                                   "break-words text-[calc(0.6875rem*var(--cds-rem-scale,1))]/[calc(0.875rem*var(--cds-rem-scale,1))] text-secondary"
                                 }
                               >
-                                {detail}
+                                {detailText}
                               </span>)}
                           </jsxTooltipTooltip.Fragment>) : (<jsxTooltipTooltip.Fragment>
-                            <span className={TooltipStylesLabel_2}>
-                              {value14}
+                            <span className={tooltipTextWrapClasses}>
+                              {displayedBody}
                             </span>
                             {shortcut && (<TooltipShortcut
                                 keys={shortcut}
@@ -447,48 +447,48 @@ function Tooltip({
           </PopupSurface>
         </npm_Tooltip_Ax.Portal>
       ) : null;
-  return value21 ? (
+  return lazyHandle ? (
     <jsxTooltipTooltip.Fragment>
       <TooltipImplementationContext.Provider
         value={TooltipTooltipTooltipDisabledReasonTooltipConfig}
       >
-        <TooltipTriggerContext.Provider value={value13}>
-          {value36}
+        <TooltipTriggerContext.Provider value={hasContent}>
+          {trigger}
         </TooltipTriggerContext.Provider>
       </TooltipImplementationContext.Provider>
-      {value24 && (<npm_Tooltip_Ax.Root
-          handle={value21}
-          open={value16}
+      {isRootMounted && (<npm_Tooltip_Ax.Root
+          handle={lazyHandle}
+          open={isOpen}
           disableHoverablePopup={!hoverable}
           trackCursorAxis={trackCursorAxis}
-          disabled={!value13}
-          actionsRef={value4}
-          onOpenChange={value34}
-          onOpenChangeComplete={value19}
-          triggerId={value3}
+          disabled={!hasContent}
+          actionsRef={actionsRef}
+          onOpenChange={handleLazyOpenChange}
+          onOpenChangeComplete={handleOpenChangeComplete}
+          triggerId={triggerId}
         >
-          {value37}
+          {portal}
         </npm_Tooltip_Ax.Root>)}
     </jsxTooltipTooltip.Fragment>
   ) : (
     <npm_Tooltip_Ax.Root
-      open={value16}
+      open={isOpen}
       disableHoverablePopup={!hoverable}
       trackCursorAxis={trackCursorAxis}
-      disabled={!value13}
-      actionsRef={value4}
-      onOpenChange={value17}
-      onOpenChangeComplete={value19}
-      triggerId={value3}
+      disabled={!hasContent}
+      actionsRef={actionsRef}
+      onOpenChange={handleOpenChange}
+      onOpenChangeComplete={handleOpenChangeComplete}
+      triggerId={triggerId}
     >
       <TooltipImplementationContext.Provider
         value={TooltipTooltipTooltipDisabledReasonTooltipConfig}
       >
-        <TooltipTriggerContext.Provider value={value13}>
-          {value36}
+        <TooltipTriggerContext.Provider value={hasContent}>
+          {trigger}
         </TooltipTriggerContext.Provider>
       </TooltipImplementationContext.Provider>
-      {value37}
+      {portal}
     </npm_Tooltip_Ax.Root>
   );
 }
@@ -641,49 +641,49 @@ export function installCdsTooltipTooltip(): () => void {
         open: false,
         body: undefined,
       };
-      TooltipTooltipOpen = (input: TooltipBodyState): TooltipBodyState =>
-        input.open
-          ? input
+      TooltipTooltipOpen = (state: TooltipBodyState): TooltipBodyState =>
+        state.open
+          ? state
           : {
-              ...input,
+              ...state,
               open: true,
             };
-      TooltipTooltipOpen_2 = (input: TooltipBodyState): TooltipBodyState =>
-        input.open
+      TooltipTooltipOpen_2 = (state: TooltipBodyState): TooltipBodyState =>
+        state.open
           ? {
-              ...input,
+              ...state,
               open: false,
             }
-          : input;
-      TooltipTooltipBody = (input: TooltipBodyState): TooltipBodyState =>
-        input.body === undefined
-          ? input
+          : state;
+      TooltipTooltipBody = (state: TooltipBodyState): TooltipBodyState =>
+        state.body === undefined
+          ? state
           : {
-              ...input,
+              ...state,
               body: undefined,
             };
       TooltipTooltipOpen_3 =
-        (input: React.ReactNode): TooltipBodyUpdate =>
-        (input2) =>
-          input2.open && Object.is(input2.body, input)
-            ? input2
+        (body: React.ReactNode): TooltipBodyUpdate =>
+        (state) =>
+          state.open && Object.is(state.body, body)
+            ? state
             : {
                 open: true,
-                body: input,
+                body: body,
               };
       TooltipTooltipIs =
-        (input: React.ReactNode): TooltipBodyUpdate =>
-        (input2) =>
-          Object.is(input2.body, input)
-            ? input2
+        (body: React.ReactNode): TooltipBodyUpdate =>
+        (state) =>
+          Object.is(state.body, body)
+            ? state
             : {
-                ...input2,
-                body: input,
+                ...state,
+                body: body,
               };
-      TooltipTooltipOpen_4 = (input: TooltipBodyState): TooltipBodyState =>
-        input.open || input.body !== undefined
+      TooltipTooltipOpen_4 = (state: TooltipBodyState): TooltipBodyState =>
+        state.open || state.body !== undefined
           ? TooltipTooltipOpenBodyConfig
-          : input;
+          : state;
       TooltipStylesCssAlias = TooltipStylesCss;
       TooltipTooltipClassNames = "text-balance";
       TooltipTooltipAlias = tooltipPopupClasses;
@@ -707,17 +707,17 @@ export function installCdsTooltipTooltip(): () => void {
           children: children,
           ...props
         }: OverflowTooltipProps,
-        options: React.ForwardedRef<HTMLSpanElement>,
+        forwardedRef: React.ForwardedRef<HTMLSpanElement>,
       ): React.ReactElement {
         let value = (0, reactTooltipTooltip.useRef)<HTMLSpanElement | null>(
             null,
           ),
-          value2 = useMergedRefs(value, options),
-          value3 = useTooltipTrigger();
+          mergedRef = useMergedRefs(value, forwardedRef),
+          isInsideTooltipTrigger = useTooltipTrigger();
         return (
           <Tooltip
             content={
-              value3
+              isInsideTooltipTrigger
                 ? undefined
                 : () => {
                     let current = value.current;
@@ -738,7 +738,7 @@ export function installCdsTooltipTooltip(): () => void {
           >
             <span
               {...props}
-              ref={value2}
+              ref={mergedRef}
               data-cds={"OverflowTooltip"}
               className={cn(
                 "block min-w-0 overflow-x-clip text-ellipsis whitespace-nowrap",
