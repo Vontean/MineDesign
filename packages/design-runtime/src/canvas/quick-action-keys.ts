@@ -15,9 +15,9 @@ function handleQuickActionsArrowKeys(event?: Dynamic): Dynamic {
     hasBlockingEditorOverlay()
   )
     return;
-  let value: Dynamic = event.key === "ArrowLeft" || event.key === "ArrowUp",
-    value2: Dynamic = event.key === "ArrowRight" || event.key === "ArrowDown";
-  if (!value && !value2 && event.key !== "Home" && event.key !== "End")
+  let isBackwardKey: Dynamic = event.key === "ArrowLeft" || event.key === "ArrowUp",
+    isForwardKey: Dynamic = event.key === "ArrowRight" || event.key === "ArrowDown";
+  if (!isBackwardKey && !isForwardKey && event.key !== "Home" && event.key !== "End")
     return;
   let target: Dynamic = event.target;
   if (
@@ -28,32 +28,32 @@ function handleQuickActionsArrowKeys(event?: Dynamic): Dynamic {
       null
   )
     return;
-  let value3: Dynamic = Array.from(
+  let focusableItems: Dynamic = Array.from(
     event.currentTarget.querySelectorAll(quickActionsFocusableSelector),
   ).filter(
-    (input?: Dynamic): Dynamic =>
-      input.closest('[role="dialog"], [role="menu"], [role="listbox"]') ===
-        null && input.getClientRects().length > 0,
+    (candidate?: Dynamic): Dynamic =>
+      candidate.closest('[role="dialog"], [role="menu"], [role="listbox"]') ===
+        null && candidate.getClientRects().length > 0,
   );
-  if (value3.length === 0) return;
-  let value4: Dynamic = value3.findIndex(
-      (input?: Dynamic): Dynamic =>
-        input === target || input.contains(target),
+  if (focusableItems.length === 0) return;
+  let currentIndex: Dynamic = focusableItems.findIndex(
+      (candidate?: Dynamic): Dynamic =>
+        candidate === target || candidate.contains(target),
     ),
-    value5: Dynamic =
+    nextIndex: Dynamic =
       event.key === "Home"
         ? 0
         : event.key === "End"
-          ? value3.length - 1
-          : value4 === -1
+          ? focusableItems.length - 1
+          : currentIndex === -1
             ? 0
-            : (value4 + (value2 ? 1 : -1) + value3.length) % value3.length;
+            : (currentIndex + (isForwardKey ? 1 : -1) + focusableItems.length) % focusableItems.length;
   event.preventDefault();
-  let value6: Dynamic = value3[value5];
-  value6.focus({
+  let nextItem: Dynamic = focusableItems[nextIndex];
+  nextItem.focus({
     preventScroll: true,
   });
-  revealSessionStripControl(event.currentTarget, value6);
+  revealSessionStripControl(event.currentTarget, nextItem);
 }
 export {
   handleQuickActionsArrowKeys,

@@ -25,8 +25,8 @@ function buttonKeyboardActivation(onActivate?: Dynamic): Dynamic {
         event.defaultPrevented ||
         (event.preventDefault(), onActivate(event));
     },
-    onBlur(input: Dynamic): Dynamic {
-      spaceActivatedElements.delete(input.currentTarget);
+    onBlur(blurEvent: Dynamic): Dynamic {
+      spaceActivatedElements.delete(blurEvent.currentTarget);
     },
   };
 }

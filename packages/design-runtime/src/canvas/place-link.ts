@@ -24,11 +24,11 @@ function isValidPlaceFragment(fragment?: Dynamic): Dynamic {
   );
 }
 function placeLinkStorageKey(scope: Dynamic = ""): Dynamic {
-  let value: Dynamic =
+  let pathname: Dynamic =
     typeof location === "undefined" ? "/" : location.pathname;
   return (
     "place-link/" +
-    getDocumentStashKey(value).slice(
+    getDocumentStashKey(pathname).slice(
       getDocumentStashKey("").length,
     ) +
     (scope ? "/" + scope : "")
@@ -47,19 +47,19 @@ function rememberPlaceLink(
   scope?: Dynamic,
   storage: Dynamic = getPlaceLinkStorage(),
 ): Dynamic {
-  let value: Dynamic = readPlaceLinkHistory(scope, storage),
-    value2: Dynamic = field === "link" && value[0] !== fragment;
+  let storedFields: Dynamic = readPlaceLinkHistory(scope, storage),
+    isNewLink: Dynamic = field === "link" && storedFields[0] !== fragment;
   try {
     storage?.setItem(
       placeLinkStorageKey(scope),
       placeLinkStorageFields
         .map(
-          (input?: Dynamic, options?: Dynamic): Dynamic =>
-            input === field
+          (fieldName?: Dynamic, fieldIndex?: Dynamic): Dynamic =>
+            fieldName === field
               ? fragment
-              : value2 && input === "goto"
+              : isNewLink && fieldName === "goto"
                 ? ""
-                : (value[options] ?? ""),
+                : (storedFields[fieldIndex] ?? ""),
         )
         .join("|"),
     );
@@ -70,77 +70,77 @@ function classifyPlaceLink(
   hash: Dynamic = typeof location === "undefined" ? "" : location.hash,
   storage: Dynamic = getPlaceLinkStorage(),
 ): Dynamic {
-  let value: Dynamic = hash.startsWith("#") ? hash.slice(1) : hash;
-  if (!isValidPlaceFragment(value)) return null;
-  let [value2, value3, value4, value5]: Dynamic = readPlaceLinkHistory(
+  let fragment: Dynamic = hash.startsWith("#") ? hash.slice(1) : hash;
+  if (!isValidPlaceFragment(fragment)) return null;
+  let [linkFragment, gotoFragment, sentFragment, atFragment]: Dynamic = readPlaceLinkHistory(
     scope,
     storage,
   );
   return {
-    place: value,
+    place: fragment,
     why:
-      value === value5
+      fragment === atFragment
         ? "here"
-        : [value2, value3, value4].includes(value)
+        : [linkFragment, gotoFragment, sentFragment].includes(fragment)
           ? "known"
           : "new",
   };
 }
-function createPlaceLinkReporter(options: Dynamic = {}): Dynamic {
-  let value: Dynamic = options.post ?? postToFrameHost,
-    value2: Dynamic = options.enabled ?? placeLinkReportingEnabled,
-    callback: Dynamic = (): Dynamic =>
-      options.store === undefined ? getPlaceLinkStorage() : options.store,
-    value3: Dynamic = null,
-    value4: Dynamic = null,
-    items: Dynamic = [],
-    callback2: Dynamic = (): Dynamic => {
-      value4 !== null && cancelPlaceLinkReport(value4);
-      value4 = null;
+function createPlaceLinkReporter(reporterOptions: Dynamic = {}): Dynamic {
+  let postMessage: Dynamic = reporterOptions.post ?? postToFrameHost,
+    isEnabled: Dynamic = reporterOptions.enabled ?? placeLinkReportingEnabled,
+    getStorage: Dynamic = (): Dynamic =>
+      reporterOptions.store === undefined ? getPlaceLinkStorage() : reporterOptions.store,
+    lastSentFragment: Dynamic = null,
+    debounceTimer: Dynamic = null,
+    retryTimers: Dynamic = [],
+    cancelDebounce: Dynamic = (): Dynamic => {
+      debounceTimer !== null && cancelPlaceLinkReport(debounceTimer);
+      debounceTimer = null;
     },
-    callback3: Dynamic = (input?: Dynamic): Dynamic => {
-      let value5: Dynamic = value3 === null;
-      value3 = input;
-      rememberPlaceLink("sent", input, options.scope, callback());
-      value({
+    sendFragment: Dynamic = (fragment?: Dynamic): Dynamic => {
+      let isFirstSend: Dynamic = lastSentFragment === null;
+      lastSentFragment = fragment;
+      rememberPlaceLink("sent", fragment, reporterOptions.scope, getStorage());
+      postMessage({
         type: "current_anchor",
-        fragment: input,
+        fragment: fragment,
       });
-      value5 &&
-        (items = placeLinkReportRetryDelays.map(
-          (input2?: Dynamic): Dynamic =>
+      isFirstSend &&
+        (retryTimers = placeLinkReportRetryDelays.map(
+          (retryDelay?: Dynamic): Dynamic =>
             schedulePlaceLinkReport(
               (): Dynamic =>
-                value3 !== null &&
-                value({
+                lastSentFragment !== null &&
+                postMessage({
                   type: "current_anchor",
-                  fragment: value3,
+                  fragment: lastSentFragment,
                 }),
-              input2,
+              retryDelay,
             ),
         ));
     };
   return {
-    report(input: Dynamic): Dynamic {
-      !value2 ||
-        !isValidPlaceFragment(input) ||
-        (rememberPlaceLink("at", input, options.scope, callback()),
-        callback2(),
-        (value4 = schedulePlaceLinkReport((): Dynamic => {
-          value4 = null;
-          input !== value3 && callback3(input);
+    report(fragment: Dynamic): Dynamic {
+      !isEnabled ||
+        !isValidPlaceFragment(fragment) ||
+        (rememberPlaceLink("at", fragment, reporterOptions.scope, getStorage()),
+        cancelDebounce(),
+        (debounceTimer = schedulePlaceLinkReport((): Dynamic => {
+          debounceTimer = null;
+          fragment !== lastSentFragment && sendFragment(fragment);
         }, placeLinkReportDebounceMs)));
     },
-    answer(input: Dynamic): Dynamic {
-      !value2 ||
-        !isValidPlaceFragment(input) ||
-        (rememberPlaceLink("at", input, options.scope, callback()),
-        callback2(),
-        callback3(input));
+    answer(fragment: Dynamic): Dynamic {
+      !isEnabled ||
+        !isValidPlaceFragment(fragment) ||
+        (rememberPlaceLink("at", fragment, reporterOptions.scope, getStorage()),
+        cancelDebounce(),
+        sendFragment(fragment));
     },
     stop(): Dynamic {
-      callback2();
-      items.forEach(cancelPlaceLinkReport);
+      cancelDebounce();
+      retryTimers.forEach(cancelPlaceLinkReport);
     },
   };
 }
@@ -168,21 +168,21 @@ function observeGotoAnchorMessages(
   targetWindow: Dynamic = window,
 ): Dynamic {
   if (targetWindow.parent === targetWindow) return (): Dynamic => {};
-  let callback: Dynamic = (dataset?: Dynamic): Dynamic => {
+  let handleMessage: Dynamic = (messageEvent?: Dynamic): Dynamic => {
     if (
-      dataset.source !== targetWindow.parent ||
-      !isTrustedHostOrigin(dataset.origin)
+      messageEvent.source !== targetWindow.parent ||
+      !isTrustedHostOrigin(messageEvent.origin)
     )
       return;
-    let value: Dynamic = parseGotoAnchorMessage(
-      dataset,
+    let gotoFragment: Dynamic = parseGotoAnchorMessage(
+      messageEvent,
       targetWindow.parent,
       isTrustedHostOrigin,
     );
-    value !== null && onGoto(value);
+    gotoFragment !== null && onGoto(gotoFragment);
   };
-  targetWindow.addEventListener("message", callback);
-  return (): Dynamic => targetWindow.removeEventListener("message", callback);
+  targetWindow.addEventListener("message", handleMessage);
+  return (): Dynamic => targetWindow.removeEventListener("message", handleMessage);
 }
 export {
   cancelPlaceLinkReport,
@@ -225,9 +225,9 @@ export function installCanvasPlaceLink(): () => void {
       }
     };
     placeLinkStorageFields = ["link", "goto", "sent", "at"];
-    schedulePlaceLinkReport = (input?: Dynamic, options?: Dynamic): Dynamic =>
-      setTimeout(input, options);
-    cancelPlaceLinkReport = (input?: Dynamic): Dynamic => clearTimeout(input);
+    schedulePlaceLinkReport = (task?: Dynamic, delayMs?: Dynamic): Dynamic =>
+      setTimeout(task, delayMs);
+    cancelPlaceLinkReport = (timerId?: Dynamic): Dynamic => clearTimeout(timerId);
     placeLinkReportingEnabled = defaultPlaceLinkReportingEnabled;
   };
 }

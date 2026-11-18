@@ -14,11 +14,11 @@ import { showEditorToast } from "../editor/chrome/pending-toasts";
 import { angleBetweenPoints, resizeRotatedRect, snapRotation } from "../editor/geometry/rotation";
 import { activeResizeGuides, snapResize } from "../editor/geometry/snapping";
 import { handleNoteAutoformat, handleNoteFormattingShortcut, installNoteInputRules, moveNoteCaretToEnd, NotesAutoformatOnPasteOnDropOnDragStartConfig } from "../editor/notes/autoformat";
-import { NotesBlocksReplace_2, renderNoteMarkdown } from "../editor/notes/blocks";
+import { NotesBlocksReplace_2 as normalizeNoteBlocks, renderNoteMarkdown } from "../editor/notes/blocks";
 import { applyNoteMarkdownDom, normalizeNoteLineBreaks, NotesDomHandler_2, NotesDomJoin, serializeNoteDom } from "../editor/notes/dom";
 import { createNoteLinkEditor, NotesLinkEditingClosest, NotesLinkEditingHandler, NotesLinkEditingMin, NotesLinkEditingSize } from "../editor/notes/link-editing";
 import { toModuleNamespace } from "../module-helpers";
-import { annotationTextFit, annotationTextStyle, PlatformFileContentConstant_10, PlatformFileContentConstant_13, PlatformFileContentConstant_9, PlatformFileContentKind, PlatformFileContentLimit_4, PlatformFileContentMaxW, PlatformFileContentMin, PlatformFileContentSlice_2 } from "../platform/file-content";
+import { annotationTextFit, annotationTextStyle, PlatformFileContentConstant_10 as noteMaxWidth, PlatformFileContentConstant_13 as noteMaxHeight, PlatformFileContentConstant_9 as noteMinWidth, PlatformFileContentKind, PlatformFileContentLimit_4 as noteTextLimit, PlatformFileContentMaxW, PlatformFileContentMin, PlatformFileContentSlice_2 as truncateNoteText } from "../platform/file-content";
 
 var jsxCanvasNote: Dynamic;
 function CanvasNote({
@@ -38,370 +38,370 @@ function CanvasNote({
   onSnapGuides: onSnapGuides,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let [value, value2]: Dynamic = (0, reactCanvasPanZoom.useState)(
+  let [isEditingText, setIsEditingText]: Dynamic = (0, reactCanvasPanZoom.useState)(
     autoEdit === true,
   );
   (0, reactCanvasPanZoom.useEffect)(
     (): Dynamic => (
-      onTextEditing?.(value),
+      onTextEditing?.(isEditingText),
       (): Dynamic => {
-        value && onTextEditing?.(false);
+        isEditingText && onTextEditing?.(false);
       }
     ),
-    [value],
+    [isEditingText],
   );
-  let value3: Dynamic = (0, reactCanvasPanZoom.useRef)(null),
-    value4: Dynamic = (0, reactCanvasPanZoom.useRef)(null),
-    value5: Dynamic = (0, reactCanvasPanZoom.useRef)(null),
-    callback: Dynamic = (): Dynamic => {
-      value5.current &&
+  let editorRef: Dynamic = (0, reactCanvasPanZoom.useRef)(null),
+    linkEditorRef: Dynamic = (0, reactCanvasPanZoom.useRef)(null),
+    focusOutHandlerRef: Dynamic = (0, reactCanvasPanZoom.useRef)(null),
+    clearFocusOutHandler: Dynamic = (): Dynamic => {
+      focusOutHandlerRef.current &&
         (document as Dynamic).removeEventListener(
           "focusout",
-          value5.current,
+          focusOutHandlerRef.current,
           true,
         );
-      value5.current = null;
+      focusOutHandlerRef.current = null;
     };
-  (0, reactCanvasPanZoom.useEffect)((): Dynamic => callback, []);
-  let value6: Dynamic = (0, reactCanvasPanZoom.useRef)(null),
-    value7: Dynamic = spec.kind === "title1",
-    value8: Dynamic = useViewportStore(),
-    value9: Dynamic = spec.rotate ?? 0,
-    value10: Dynamic = (0, reactCanvasPanZoom.useRef)(editing);
-  value10.current = editing;
-  let [value11, value12]: Dynamic = (0, reactCanvasPanZoom.useState)(
+  (0, reactCanvasPanZoom.useEffect)((): Dynamic => clearFocusOutHandler, []);
+  let noteRef: Dynamic = (0, reactCanvasPanZoom.useRef)(null),
+    isTitle: Dynamic = spec.kind === "title1",
+    viewportStore: Dynamic = useViewportStore(),
+    rotation: Dynamic = spec.rotate ?? 0,
+    editingRef: Dynamic = (0, reactCanvasPanZoom.useRef)(editing);
+  editingRef.current = editing;
+  let [rotationPreview, setRotationPreview]: Dynamic = (0, reactCanvasPanZoom.useState)(
       null,
     ),
-    callback2: Dynamic = (input?: Dynamic, options?: Dynamic): Dynamic => {
-      if (!value6.current) return;
-      let bounds: Dynamic = value6.current.getBoundingClientRect(),
-        [items2, items3]: Dynamic = [
+    startRotate: Dynamic = (grip?: Dynamic, pointerEvent?: Dynamic): Dynamic => {
+      if (!noteRef.current) return;
+      let bounds: Dynamic = noteRef.current.getBoundingClientRect(),
+        [centerX, centerY]: Dynamic = [
           bounds.left + bounds.width / 2,
           bounds.top + bounds.height / 2,
         ],
-        [items4, items5]: Dynamic = [
-          value9,
+        [startRotation, startAngle]: Dynamic = [
+          rotation,
           angleBetweenPoints(
-            items2,
-            items3,
-            options.clientX,
-            options.clientY,
+            centerX,
+            centerY,
+            pointerEvent.clientX,
+            pointerEvent.clientY,
           ),
         ];
-      beginArtboardResize(options, {
+      beginArtboardResize(pointerEvent, {
         src: "ann-resize",
-        scale: value8.get().scale,
-        sound: (): Dynamic => value10.current,
+        scale: viewportStore.get().scale,
+        sound: (): Dynamic => editingRef.current,
         onGesture: onGesture,
         armWindowGestureEnd: armWindowGestureEnd,
         patchAt: (
-          input2?: Dynamic,
-          options2?: Dynamic,
-          context?: Dynamic,
+          deltaX?: Dynamic,
+          deltaY?: Dynamic,
+          moveEvent?: Dynamic,
         ): Dynamic => {
-          let value47: Dynamic = snapRotation(
-            items4 +
+          let nextRotation: Dynamic = snapRotation(
+            startRotation +
               angleBetweenPoints(
-                items2,
-                items3,
-                context.clientX,
-                context.clientY,
+                centerX,
+                centerY,
+                moveEvent.clientX,
+                moveEvent.clientY,
               ) -
-              items5,
-            context.shiftKey,
+              startAngle,
+            moveEvent.shiftKey,
           );
-          value12(value47);
+          setRotationPreview(nextRotation);
           return {
-            rotate: value47,
+            rotate: nextRotation,
           };
         },
         onChange: onChange,
         restore: {
-          rotate: items4,
+          rotate: startRotation,
         },
-        onEnd: (): Dynamic => value12(null),
+        onEnd: (): Dynamic => setRotationPreview(null),
       });
     },
-    value13: Dynamic = (0, reactCanvasPanZoom.useCallback)(
-      (input?: Dynamic): Dynamic => (
-        (value6.current = input),
-        value7 ? value8.stamp(input) : undefined
+    setNoteElement: Dynamic = (0, reactCanvasPanZoom.useCallback)(
+      (element?: Dynamic): Dynamic => (
+        (noteRef.current = element),
+        isTitle ? viewportStore.stamp(element) : undefined
       ),
-      [value8, value7],
+      [viewportStore, isTitle],
     ),
-    value14: Dynamic = (0, reactCanvasPanZoom.useRef)(null),
-    value15: Dynamic = (0, reactCanvasPanZoom.useRef)(null),
-    callback3: Dynamic = (input?: Dynamic): Dynamic => {
-      if (input.pointerType !== "touch") return;
-      let [items2, items3]: Dynamic = [input.pointerId, value8.get()],
-        callback7: Dynamic = (input2?: Dynamic): Dynamic => {
-          if (input2.pointerId === items2) {
-            for (let value47 of ["pointercancel", "pointerup"] as Dynamic)
+    scrollRef: Dynamic = (0, reactCanvasPanZoom.useRef)(null),
+    contentRef: Dynamic = (0, reactCanvasPanZoom.useRef)(null),
+    handleTouchPointerDown: Dynamic = (event?: Dynamic): Dynamic => {
+      if (event.pointerType !== "touch") return;
+      let [touchPointerId, savedView]: Dynamic = [event.pointerId, viewportStore.get()],
+        handlePointerEnd: Dynamic = (endEvent?: Dynamic): Dynamic => {
+          if (endEvent.pointerId === touchPointerId) {
+            for (let eventName of ["pointercancel", "pointerup"] as Dynamic)
               (window as Dynamic).removeEventListener(
-                value47,
-                callback7,
+                eventName,
+                handlePointerEnd,
                 true,
               );
-            input2.type === "pointercancel" &&
+            endEvent.type === "pointercancel" &&
               (window as Dynamic).setTimeout(
-                (): Dynamic => value8.set(items3),
+                (): Dynamic => viewportStore.set(savedView),
                 0,
               );
           }
         };
-      for (let value47 of ["pointercancel", "pointerup"] as Dynamic)
-        (window as Dynamic).addEventListener(value47, callback7, true);
+      for (let eventName of ["pointercancel", "pointerup"] as Dynamic)
+        (window as Dynamic).addEventListener(eventName, handlePointerEnd, true);
     },
-    [value16, value17]: Dynamic = (0, reactCanvasPanZoom.useState)({
+    [scrollEdges, setScrollEdges]: Dynamic = (0, reactCanvasPanZoom.useState)({
       above: false,
       below: false,
     }),
-    value18: Dynamic = (0,
+    updateScrollEdges: Dynamic = (0,
     reactCanvasPanZoom.useCallback)((): Dynamic => {
-      let current: Dynamic = value14.current;
+      let current: Dynamic = scrollRef.current;
       if (!current) return;
-      let value47: Dynamic = CanvasPanZoomScrollTop(current);
-      value17(
-        (input?: Dynamic): Dynamic =>
-          input.above === value47.above && input.below === value47.below
-            ? input
-            : value47,
+      let nextEdges: Dynamic = CanvasPanZoomScrollTop(current);
+      setScrollEdges(
+        (previousEdges?: Dynamic): Dynamic =>
+          previousEdges.above === nextEdges.above && previousEdges.below === nextEdges.below
+            ? previousEdges
+            : nextEdges,
       );
     }, []),
-    value19: Dynamic = (0, reactCanvasPanZoom.useRef)(null),
-    [value20, value21]: Dynamic = (0, reactCanvasPanZoom.useState)({
+    measureRef: Dynamic = (0, reactCanvasPanZoom.useRef)(null),
+    [measuredSize, setMeasuredSize]: Dynamic = (0, reactCanvasPanZoom.useState)({
       w: 0,
       h: 0,
     }),
-    [value22, value23]: Dynamic = (0, reactCanvasPanZoom.useState)(
+    [liveText, setLiveText]: Dynamic = (0, reactCanvasPanZoom.useState)(
       null,
     ),
-    [value24, value25]: Dynamic = (0, reactCanvasPanZoom.useState)(0),
-    [value26, value27]: Dynamic = (0, reactCanvasPanZoom.useState)(
+    [contentHeight, setContentHeight]: Dynamic = (0, reactCanvasPanZoom.useState)(0),
+    [draftMaxH, setDraftMaxH]: Dynamic = (0, reactCanvasPanZoom.useState)(
       null,
     ),
-    [value28, value29]: Dynamic = (0, reactCanvasPanZoom.useState)({
+    [noteSize, setNoteSize]: Dynamic = (0, reactCanvasPanZoom.useState)({
       w: 0,
       h: 0,
     }),
-    value30: Dynamic = (0, reactCanvasPanZoom.useRef)(onMeasure);
-  value30.current = onMeasure;
-  let value31: Dynamic = (0, reactCanvasPanZoom.useRef)(value);
-  value31.current = value;
+    onMeasureRef: Dynamic = (0, reactCanvasPanZoom.useRef)(onMeasure);
+  onMeasureRef.current = onMeasure;
+  let isEditingRef: Dynamic = (0, reactCanvasPanZoom.useRef)(isEditingText);
+  isEditingRef.current = isEditingText;
   (0, reactCanvasPanZoom.useLayoutEffect)((): Dynamic => {
-    let current: Dynamic = value6.current;
+    let current: Dynamic = noteRef.current;
     if (!current) return;
-    let callback7: Dynamic = (): Dynamic => {
-        let state2: Dynamic = {
+    let measureNote: Dynamic = (): Dynamic => {
+        let size: Dynamic = {
           w: current.offsetWidth,
           h: current.offsetHeight,
         };
-        value29(state2);
-        value31.current || value30.current?.(state2);
+        setNoteSize(size);
+        isEditingRef.current || onMeasureRef.current?.(size);
       },
-      observer: Dynamic = new ResizeObserver(callback7);
-    observer.observe(current);
-    callback7();
-    let callback8: Dynamic = (): Dynamic => {
-        value18();
-        let [items2, items3]: Dynamic = [value19.current, value15.current];
-        items2 &&
-          value21(
-            (input?: Dynamic): Dynamic =>
-              input.w === items2.offsetWidth &&
-              input.h === items2.offsetHeight
-                ? input
+      noteObserver: Dynamic = new ResizeObserver(measureNote);
+    noteObserver.observe(current);
+    measureNote();
+    let measureContent: Dynamic = (): Dynamic => {
+        updateScrollEdges();
+        let [scrollElement, contentElement]: Dynamic = [measureRef.current, contentRef.current];
+        scrollElement &&
+          setMeasuredSize(
+            (previousSize?: Dynamic): Dynamic =>
+              previousSize.w === scrollElement.offsetWidth &&
+              previousSize.h === scrollElement.offsetHeight
+                ? previousSize
                 : {
-                    w: items2.offsetWidth,
-                    h: items2.offsetHeight,
+                    w: scrollElement.offsetWidth,
+                    h: scrollElement.offsetHeight,
                   },
           );
-        items3 && value25(items3.offsetHeight);
+        contentElement && setContentHeight(contentElement.offsetHeight);
       },
-      observer2: Dynamic = new ResizeObserver(callback8);
-    for (let value47 of [
-      value14.current,
-      value15.current,
-      value19.current,
+      contentObserver: Dynamic = new ResizeObserver(measureContent);
+    for (let observedElement of [
+      scrollRef.current,
+      contentRef.current,
+      measureRef.current,
     ] as Dynamic)
-      value47 && observer2.observe(value47);
-    callback8();
+      observedElement && contentObserver.observe(observedElement);
+    measureContent();
     return (): Dynamic => {
-      observer.disconnect();
-      observer2.disconnect();
+      noteObserver.disconnect();
+      contentObserver.disconnect();
     };
-  }, [value18, value7]);
+  }, [updateScrollEdges, isTitle]);
   (0, reactCanvasPanZoom.useLayoutEffect)((): Dynamic => {
-    let current: Dynamic = value6.current;
-    !value &&
+    let current: Dynamic = noteRef.current;
+    !isEditingText &&
       current &&
-      value30.current?.({
+      onMeasureRef.current?.({
         w: current.offsetWidth,
         h: current.offsetHeight,
       });
-  }, [value]);
+  }, [isEditingText]);
   (0, reactCanvasPanZoom.useEffect)((): Dynamic => {
-    (!editing || !selected) && value && callback4();
+    (!editing || !selected) && isEditingText && finishEditing();
   }, [editing, selected]);
   (0, reactCanvasPanZoom.useEffect)((): Dynamic => {
-    if (!value) return;
-    let current: Dynamic = value3.current;
+    if (!isEditingText) return;
+    let current: Dynamic = editorRef.current;
     if (!current) return;
-    value7
+    isTitle
       ? ((current.textContent = NotesDomHandler_2(spec.text)),
-        (value32.current = current.textContent))
+        (lastSavedTextRef.current = current.textContent))
       : (applyNoteMarkdownDom(current, spec.text),
-        (value32.current = serializeNoteDom(current)));
-    value33.current = false;
-    let value47: Dynamic = installNoteInputRules(
+        (lastSavedTextRef.current = serializeNoteDom(current)));
+    hasToastedRef.current = false;
+    let removeInputRules: Dynamic = installNoteInputRules(
         current,
         (): Dynamic =>
-          value7 ? null : annotationTextStyle(spec),
+          isTitle ? null : annotationTextStyle(spec),
       ),
-      value48: Dynamic = (value4.current = createNoteLinkEditor(
+      linkEditor: Dynamic = (linkEditorRef.current = createNoteLinkEditor(
         current,
       ));
     current.focus();
     moveNoteCaretToEnd(current) &&
-      value14.current &&
-      (value14.current.scrollTop = value14.current.scrollHeight);
+      scrollRef.current &&
+      (scrollRef.current.scrollTop = scrollRef.current.scrollHeight);
     return (): Dynamic => {
-      value47();
-      value48.stop();
+      removeInputRules();
+      linkEditor.stop();
     };
-  }, [value]);
-  let value32: Dynamic = (0, reactCanvasPanZoom.useRef)(""),
-    value33: Dynamic = (0, reactCanvasPanZoom.useRef)(false),
-    callback4: Dynamic = (input: Dynamic = "leave"): Dynamic => {
-      let current: Dynamic = value3.current;
+  }, [isEditingText]);
+  let lastSavedTextRef: Dynamic = (0, reactCanvasPanZoom.useRef)(""),
+    hasToastedRef: Dynamic = (0, reactCanvasPanZoom.useRef)(false),
+    finishEditing: Dynamic = (reason: Dynamic = "leave"): Dynamic => {
+      let current: Dynamic = editorRef.current;
       if (!current) {
-        value23(null);
-        return value2(false);
+        setLiveText(null);
+        return setIsEditingText(false);
       }
-      let value47: Dynamic = null,
-        value48: Dynamic = value7
+      let nextText: Dynamic = null,
+        currentText: Dynamic = isTitle
           ? current.innerText.replace(/\n$/, "")
           : serializeNoteDom(current);
-      if (value48 !== value32.current) {
-        let value49: Dynamic = value7
+      if (currentText !== lastSavedTextRef.current) {
+        let normalizedText: Dynamic = isTitle
           ? NotesDomJoin(
-              PlatformFileContentSlice_2(value48),
+              truncateNoteText(currentText),
             )
-          : NotesBlocksReplace_2(value48);
-        if (value49.length <= PlatformFileContentLimit_4)
-          value47 = value7
-            ? value49
-            : PlatformFileContentSlice_2(value49);
-        else if (input === "escape" && !value33.current) {
-          value33.current = true;
+          : normalizeNoteBlocks(currentText);
+        if (normalizedText.length <= noteTextLimit)
+          nextText = isTitle
+            ? normalizedText
+            : truncateNoteText(normalizedText);
+        else if (reason === "escape" && !hasToastedRef.current) {
+          hasToastedRef.current = true;
           showEditorToast(
             uiMessage("canvas.note.thisNoteIsOverIts") +
-              String(PlatformFileContentLimit_4) +
+              String(noteTextLimit) +
               "-character limit. Shorten it to save; leaving discards the edit.",
           );
           return;
         } else
           showEditorToast(
             uiMessage("canvas.note.editDiscardedTheNoteWas") +
-              String(PlatformFileContentLimit_4) +
+              String(noteTextLimit) +
               "-character limit.",
           );
       }
-      value2(false);
-      value23(null);
-      value47 !== null &&
-        value47 !== spec.text &&
+      setIsEditingText(false);
+      setLiveText(null);
+      nextText !== null &&
+        nextText !== spec.text &&
         onChange(
           {
-            text: value47,
+            text: nextText,
           },
           true,
         );
     },
-    value34: Dynamic = annotationTextStyle(spec),
-    value35: Dynamic = (0, reactCanvasPanZoom.useMemo)(
+    textStyle: Dynamic = annotationTextStyle(spec),
+    renderedText: Dynamic = (0, reactCanvasPanZoom.useMemo)(
       (): Dynamic =>
-        value7
+        isTitle
           ? NotesDomHandler_2(spec.text)
           : renderNoteMarkdown(spec.text),
-      [spec.text, value7],
+      [spec.text, isTitle],
     ),
-    value36: Dynamic = PlatformFileContentMin(value34.size),
+    fontMetrics: Dynamic = PlatformFileContentMin(textStyle.size),
     // MineDesign：便签不再有高度上限，文字按宽度换行、便签随之长高，不截断也不滚动；maxH 是拖出来的最小高度
-    value37: Dynamic = value7 ? PlatformFileContentKind(spec) : 1 / 0,
-    value38: Dynamic = !value7 && value24 > value37,
-    value39: Dynamic = !value7 && (value || (editing ? selected : value38));
+    maxHeight: Dynamic = isTitle ? PlatformFileContentKind(spec) : 1 / 0,
+    isOverflowing: Dynamic = !isTitle && contentHeight > maxHeight,
+    isScrollable: Dynamic = !isTitle && (isEditingText || (editing ? selected : isOverflowing));
   (0, reactCanvasPanZoom.useLayoutEffect)((): Dynamic => {
-    !value39 && value14.current && (value14.current.scrollTop = 0);
-    value18();
-  }, [value39, value18]);
-  let value40: Dynamic = value7
+    !isScrollable && scrollRef.current && (scrollRef.current.scrollTop = 0);
+    updateScrollEdges();
+  }, [isScrollable, updateScrollEdges]);
+  let textFit: Dynamic = isTitle
       ? annotationTextFit(
-          value20,
-          value34.size,
+          measuredSize,
+          textStyle.size,
           PlatformFileContentMaxW(spec),
-          value37,
+          maxHeight,
         )
       : null,
-    value41: Dynamic = value40 !== null && (value40.k < 1 || value40.wrap),
-    value42: Dynamic =
-      !value40 || !value41
+    isScaled: Dynamic = textFit !== null && (textFit.k < 1 || textFit.wrap),
+    scaledSize: Dynamic =
+      !textFit || !isScaled
         ? null
-        : value40.wrap
+        : textFit.wrap
           ? {
               w: PlatformFileContentMaxW(spec),
               h: Math.min(
-                Math.ceil(value24 * value40.k),
-                value ? 1 / 0 : value37,
+                Math.ceil(contentHeight * textFit.k),
+                isEditingText ? 1 / 0 : maxHeight,
               ),
             }
           : {
-              w: Math.ceil(value20.w * value40.k),
-              h: Math.ceil(value20.h * value40.k),
+              w: Math.ceil(measuredSize.w * textFit.k),
+              h: Math.ceil(measuredSize.h * textFit.k),
             },
-    value43: Dynamic =
-      value40?.wrap && !value && Number.isFinite(value37)
+    lineClamp: Dynamic =
+      textFit?.wrap && !isEditingText && Number.isFinite(maxHeight)
         ? Math.max(
             1,
             Math.floor(
-              (value37 / value40.k - 2 * value36.py) /
-                (value34.size * value36.lh),
+              (maxHeight / textFit.k - 2 * fontMetrics.py) /
+                (textStyle.size * fontMetrics.lh),
             ),
           )
         : null,
-    value44: Dynamic =
-      value7 && !value40?.wrap
+    textBoxStyle: Dynamic =
+      isTitle && !textFit?.wrap
         ? {
             ...NotesLinkEditingSize(spec),
             whiteSpace: "pre",
           }
         : NotesLinkEditingSize(spec),
-    value45: Dynamic = CanvasPanZoomRound(value34.size),
-    items: Dynamic = [
-      value16.above ? "transparent" : "#000",
-      "#000 " + String(value16.above ? value45 : 0) + "px",
-      "#000 calc(100% - " + String(value16.below ? value45 : 0) + "px)",
-      value16.below ? "transparent" : "#000",
+    fadeSize: Dynamic = CanvasPanZoomRound(textStyle.size),
+    maskStops: Dynamic = [
+      scrollEdges.above ? "transparent" : "#000",
+      "#000 " + String(scrollEdges.above ? fadeSize : 0) + "px",
+      "#000 calc(100% - " + String(scrollEdges.below ? fadeSize : 0) + "px)",
+      scrollEdges.below ? "transparent" : "#000",
     ],
-    value46: Dynamic =
-      value16.above || value16.below
-        ? "linear-gradient(to bottom, " + items.join(", ") + ")"
+    maskImage: Dynamic =
+      scrollEdges.above || scrollEdges.below
+        ? "linear-gradient(to bottom, " + maskStops.join(", ") + ")"
         : undefined,
-    callback5: Dynamic = (): Dynamic =>
-      value15.current?.offsetHeight ?? value28.h,
+    getContentHeight: Dynamic = (): Dynamic =>
+      contentRef.current?.offsetHeight ?? noteSize.h,
     // 拖到贴合文字时记为自动高度，不写 maxH
-    callback6: Dynamic = (input?: Dynamic): Dynamic =>
-      input <= callback5() + 1
+    toMaxH: Dynamic = (height?: Dynamic): Dynamic =>
+      height <= getContentHeight() + 1
         ? undefined
-        : Math.min(PlatformFileContentConstant_13, Math.round(input)),
-    state: Dynamic = {
+        : Math.min(noteMaxHeight, Math.round(height)),
+    pressHandlers: Dynamic = {
       ...objectPress,
-      onPointerDown: (input?: Dynamic): Dynamic =>
-        editing && !value ? objectPress.onPointerDown?.(input) : undefined,
+      onPointerDown: (pressEvent?: Dynamic): Dynamic =>
+        editing && !isEditingText ? objectPress.onPointerDown?.(pressEvent) : undefined,
     };
   return (
     <div
-      ref={value13}
+      ref={setNoteElement}
       data-mega-chrome={"annotation"}
       data-mega-annotation={spec.id}
       data-testid={"mega-annotation-" + spec.id}
@@ -410,11 +410,11 @@ function CanvasNote({
       className={joinClassNames(
         "absolute rounded-[2px]",
         !editing && "pointer-events-none",
-        editing && !value && "cursor-grab",
-        value7
+        editing && !isEditingText && "cursor-grab",
+        isTitle
           ? joinClassNames(
               "shadow-[0_0_0_var(--ring-w,0px)_var(--cds-border-strong)]",
-              value && "[--ring-w:var(--hair)]",
+              isEditingText && "[--ring-w:var(--hair)]",
               editing && !selected && "hover:[--ring-w:var(--hair)]",
             )
           : undefined,
@@ -422,11 +422,11 @@ function CanvasNote({
       style={{
         left: spec.x,
         top: spec.y,
-        width: value7 ? (value42?.w ?? "max-content") : spec.w,
-        height: value42?.h,
-        minHeight: value7 ? undefined : spec.maxH,
+        width: isTitle ? (scaledSize?.w ?? "max-content") : spec.w,
+        height: scaledSize?.h,
+        minHeight: isTitle ? undefined : spec.maxH,
         // 编辑器样式表是预编译的，便签的圆角和描边写成行内样式
-        ...(value7
+        ...(isTitle
           ? {}
           : {
               background: "var(--note-fill)",
@@ -434,20 +434,20 @@ function CanvasNote({
               boxShadow:
                 "inset 0 0 0 1px color-mix(in oklab, var(--note-fill), #000 14%)",
             }),
-        ...(value7
+        ...(isTitle
           ? {}
           : {
               "--note-fill": NotesLinkEditingHandler(
-                value34.fill,
+                textStyle.fill,
               ),
             }),
         isolation: "isolate",
-        ...(value9
+        ...(rotation
           ? {
-              transform: "rotate(" + String(value9) + "deg)",
+              transform: "rotate(" + String(rotation) + "deg)",
             }
           : {}),
-        ...(value7
+        ...(isTitle
           ? {
               "--hair": "calc(1px * var(--mega-inv-scale))",
             }
@@ -458,26 +458,26 @@ function CanvasNote({
             }
           : {}),
       }}
-      {...state}
-      onDoubleClick={(input?: Dynamic): Dynamic => {
-        !editing || value || (input.stopPropagation(), value2(true));
+      {...pressHandlers}
+      onDoubleClick={(clickEvent?: Dynamic): Dynamic => {
+        !editing || isEditingText || (clickEvent.stopPropagation(), setIsEditingText(true));
       }}
     >
       <div
-        ref={value7 ? undefined : value14}
-        data-note-scroll={value7 ? undefined : ""}
-        onScroll={value7 ? undefined : value18}
-        tabIndex={!editing && value38 ? 0 : undefined}
-        role={!editing && value38 ? "region" : undefined}
-        aria-label={!editing && value38 ? (uiMessage("canvas.note.stickyNoteScrolls")) : (undefined)}
-        onPointerDown={!value7 && !editing ? callback3 : undefined}
+        ref={isTitle ? undefined : scrollRef}
+        data-note-scroll={isTitle ? undefined : ""}
+        onScroll={isTitle ? undefined : updateScrollEdges}
+        tabIndex={!editing && isOverflowing ? 0 : undefined}
+        role={!editing && isOverflowing ? "region" : undefined}
+        aria-label={!editing && isOverflowing ? (uiMessage("canvas.note.stickyNoteScrolls")) : (undefined)}
+        onPointerDown={!isTitle && !editing ? handleTouchPointerDown : undefined}
         style={
-          value7
-            ? value42
+          isTitle
+            ? scaledSize
               ? {
-                  width: value42.w,
-                  height: value42.h,
-                  ...(value43 !== null
+                  width: scaledSize.w,
+                  height: scaledSize.h,
+                  ...(lineClamp !== null
                     ? {
                         overflow: "hidden",
                         touchAction: "none",
@@ -487,61 +487,61 @@ function CanvasNote({
               : undefined
             : {
                 overflowX: "hidden",
-                overflowY: value39 ? "auto" : "hidden",
+                overflowY: isScrollable ? "auto" : "hidden",
                 touchAction:
-                  value38 && (value || !editing) ? "pan-y" : "none",
+                  isOverflowing && (isEditingText || !editing) ? "pan-y" : "none",
                 overscrollBehavior: "contain",
-                pointerEvents: !editing && value38 ? "auto" : undefined,
-                maskImage: value46,
-                WebkitMaskImage: value46,
+                pointerEvents: !editing && isOverflowing ? "auto" : undefined,
+                maskImage: maskImage,
+                WebkitMaskImage: maskImage,
               }
         }
       >
         <div
-          ref={value15}
+          ref={contentRef}
           style={
-            value40 && value41
+            textFit && isScaled
               ? {
-                  width: value40.wrap
-                    ? PlatformFileContentMaxW(spec) / value40.k
-                    : value20.w,
-                  transform: "scale(" + String(value40.k) + ")",
+                  width: textFit.wrap
+                    ? PlatformFileContentMaxW(spec) / textFit.k
+                    : measuredSize.w,
+                  transform: "scale(" + String(textFit.k) + ")",
                   transformOrigin: "0 0",
-                  paddingBottom: value43 !== null ? value36.py : undefined,
+                  paddingBottom: lineClamp !== null ? fontMetrics.py : undefined,
                 }
               : undefined
           }
         >
-          {value ? (<div
+          {isEditingText ? (<div
               key={"edit"}
-              ref={value3}
+              ref={editorRef}
               contentEditable={true}
               {...NotesAutoformatOnPasteOnDropOnDragStartConfig}
-              onFocus={callback}
-              onBlur={(input?: Dynamic): Dynamic => {
+              onFocus={clearFocusOutHandler}
+              onBlur={(blurEvent?: Dynamic): Dynamic => {
                 if (
-                  !NotesLinkEditingClosest(input.relatedTarget)
+                  !NotesLinkEditingClosest(blurEvent.relatedTarget)
                 )
-                  return callback4();
-                callback();
-                let callback7: Dynamic = (input2?: Dynamic): Dynamic => {
+                  return finishEditing();
+                clearFocusOutHandler();
+                let handleLaterFocusOut: Dynamic = (focusEvent?: Dynamic): Dynamic => {
                   NotesLinkEditingClosest(
-                    input2.relatedTarget,
+                    focusEvent.relatedTarget,
                   ) ||
-                    (callback(),
-                    input2.relatedTarget !== value3.current && callback4());
+                    (clearFocusOutHandler(),
+                    focusEvent.relatedTarget !== editorRef.current && finishEditing());
                 };
-                value5.current = callback7;
+                focusOutHandlerRef.current = handleLaterFocusOut;
                 (document as Dynamic).addEventListener(
                   "focusout",
-                  callback7,
+                  handleLaterFocusOut,
                   true,
                 );
               }}
               onInput={(event?: Dynamic): Dynamic => {
-                value33.current = false;
-                if (value7)
-                  return value23(
+                hasToastedRef.current = false;
+                if (isTitle)
+                  return setLiveText(
                     event.currentTarget.innerText.replace(/\n$/, ""),
                   );
                 handleNoteAutoformat(
@@ -557,46 +557,46 @@ function CanvasNote({
                 event.key === "Escape"
                   ? (event.preventDefault(),
                     event.stopPropagation(),
-                    callback4("escape"))
-                  : !value7 && event.key === "Enter" && event.shiftKey
+                    finishEditing("escape"))
+                  : !isTitle && event.key === "Enter" && event.shiftKey
                     ? (event.preventDefault(),
                       (document as Dynamic).execCommand("insertParagraph"))
                     : handleNoteFormattingShortcut(
                         event,
-                        value7 ? null : value34,
+                        isTitle ? null : textStyle,
                       );
               }}
-              onPointerDown={(input?: Dynamic): Dynamic =>
-                input.stopPropagation()
+              onPointerDown={(pointerEvent?: Dynamic): Dynamic =>
+                pointerEvent.stopPropagation()
               }
-              onMouseDown={(input?: Dynamic): Dynamic =>
-                value4.current?.onMouseDown(input)
+              onMouseDown={(mouseEvent?: Dynamic): Dynamic =>
+                linkEditorRef.current?.onMouseDown(mouseEvent)
               }
               data-note-text={""}
               className={
                 "select-text whitespace-pre-wrap break-words outline-none"
               }
-              style={value44}
+              style={textBoxStyle}
             />) : (<div
               key={"view"}
               data-note-text={""}
               className={"whitespace-pre-wrap break-words"}
               style={
-                value43 !== null
+                lineClamp !== null
                   ? {
-                      ...value44,
+                      ...textBoxStyle,
                       paddingBottom: 0,
                       minHeight: undefined,
                       display: "-webkit-box",
                       WebkitBoxOrient: "vertical",
-                      WebkitLineClamp: value43,
+                      WebkitLineClamp: lineClamp,
                       overflow: "hidden",
                       touchAction: "none",
                     }
-                  : value44
+                  : textBoxStyle
               }
             >
-              {spec.text.length > 0 ? (value35) : (<span
+              {spec.text.length > 0 ? (renderedText) : (<span
                   className={"opacity-40 whitespace-nowrap"}
                   style={{
                     fontSize: "min(1em, 24px)",
@@ -607,45 +607,45 @@ function CanvasNote({
             </div>)}
         </div>
       </div>
-      {value7 && (<div
-          ref={value19}
+      {isTitle && (<div
+          ref={measureRef}
           aria-hidden={"true"}
           className={
             "pointer-events-none invisible absolute left-0 top-0 w-max whitespace-pre"
           }
           style={NotesLinkEditingSize(spec)}
         >
-          {(value ? value22 : null) ?? value35}
+          {(isEditingText ? liveText : null) ?? renderedText}
         </div>)}
-      {editing && selected && !value && (<div
+      {editing && selected && !isEditingText && (<div
           data-mega-chrome={"annotation-resize"}
           data-testid={"mega-annotation-resize-" + spec.id}
           data-grouped={grouped ? "" : undefined}
           className={"pointer-events-none absolute inset-0"}
           style={
-            value9
+            rotation
               ? {
-                  transform: "rotate(" + String(-value9) + "deg)",
+                  transform: "rotate(" + String(-rotation) + "deg)",
                 }
               : undefined
           }
         >
           <ViewportScale>
-            {(input?: Dynamic): Dynamic => (
+            {(viewportScale?: Dynamic): Dynamic => (
               <SelectionRing
                 frame={{
                   x: 0,
                   y: 0,
-                  w: value7 ? value28.w : spec.w,
-                  h: value26 ?? value28.h,
+                  w: isTitle ? noteSize.w : spec.w,
+                  h: draftMaxH ?? noteSize.h,
                 }}
-                scale={input}
-                rotation={value9 ? (value9 * Math.PI) / 180 : undefined}
+                scale={viewportScale}
+                rotation={rotation ? (rotation * Math.PI) / 180 : undefined}
                 state={grouped ? "member" : "selected"}
-                grips={value7 || grouped ? "none" : "corners"}
-                onRotateStart={grouped ? undefined : callback2}
+                grips={isTitle || grouped ? "none" : "corners"}
+                onRotateStart={grouped ? undefined : startRotate}
                 angleLabel={
-                  value11 !== null ? String(value11) + "\xB0" : undefined
+                  rotationPreview !== null ? String(rotationPreview) + "\xB0" : undefined
                 }
                 onGripDoubleClick={(): Dynamic => {
                   // 双击拖柄：高度回到刚好放下文字
@@ -653,152 +653,152 @@ function CanvasNote({
                     onChange({ maxH: undefined }, true);
                 }}
                 onResizeStart={(
-                  input2?: Dynamic,
-                  options?: Dynamic,
+                  grip?: Dynamic,
+                  pointerEvent?: Dynamic,
                 ): Dynamic => {
-                  let value47: Dynamic = !value9 && input2.y === "bottom",
-                    state2: Dynamic = {
+                  let isBottomOnly: Dynamic = !rotation && grip.y === "bottom",
+                    startRect: Dynamic = {
                       x: spec.x,
                       y: spec.y,
                       w: spec.w,
-                      h: value47
-                        ? Math.max(value28.h, spec.maxH ?? 0)
-                        : value28.h,
+                      h: isBottomOnly
+                        ? Math.max(noteSize.h, spec.maxH ?? 0)
+                        : noteSize.h,
                     },
-                    value48: Dynamic =
-                      !!value9 || input2.x === "left" || input2.y === "top",
-                    value49: Dynamic = value9
+                    movesOrigin: Dynamic =
+                      !!rotation || grip.x === "left" || grip.y === "top",
+                    snapState: Dynamic = rotation
                       ? null
                       : (snapLines?.() ?? null);
-                  beginArtboardResize(options, {
+                  beginArtboardResize(pointerEvent, {
                     src: "ann-resize",
-                    scale: value8.get().scale,
-                    sound: (): Dynamic => value10.current,
+                    scale: viewportStore.get().scale,
+                    sound: (): Dynamic => editingRef.current,
                     onGesture: onGesture,
                     armWindowGestureEnd: armWindowGestureEnd,
                     patchAt: (
-                      input3?: Dynamic,
-                      options2?: Dynamic,
-                      context?: Dynamic,
+                      deltaX?: Dynamic,
+                      deltaY?: Dynamic,
+                      moveEvent?: Dynamic,
                     ): Dynamic => {
-                      let value50: Dynamic = PlatformFileContentConstant_13,
-                        value51: Dynamic =
-                          input2.x !== null &&
-                          input2.y !== null &&
-                          !value9 &&
-                          Math.abs(options2) * value8.get().scale < 6,
-                        value52: Dynamic =
-                          !value51 && !(value47 && input2.x !== null),
-                        value53: Dynamic =
-                          value49 && !(context.metaKey || context.ctrlKey)
+                      let maxHeightLimit: Dynamic = noteMaxHeight,
+                        isShallowDrag: Dynamic =
+                          grip.x !== null &&
+                          grip.y !== null &&
+                          !rotation &&
+                          Math.abs(deltaY) * viewportStore.get().scale < 6,
+                        shouldSnapY: Dynamic =
+                          !isShallowDrag && !(isBottomOnly && grip.x !== null),
+                        snapped: Dynamic =
+                          snapState && !(moveEvent.metaKey || moveEvent.ctrlKey)
                             ? snapResize(
-                                state2,
+                                startRect,
                                 {
-                                  x: input2.x,
-                                  y: value52 ? input2.y : null,
+                                  x: grip.x,
+                                  y: shouldSnapY ? grip.y : null,
                                 },
-                                input3,
-                                value51 ? 0 : options2,
-                                value49.lines,
-                                value49.threshold,
+                                deltaX,
+                                isShallowDrag ? 0 : deltaY,
+                                snapState.lines,
+                                snapState.threshold,
                               )
                             : {
-                                dx: input3,
-                                dy: value51 ? 0 : options2,
+                                dx: deltaX,
+                                dy: isShallowDrag ? 0 : deltaY,
                                 guides: [],
                               };
-                      value47 &&
-                        state2.h + value53.dy > callback5() &&
-                        (value53 = {
-                          dx: value53.dx,
-                          dy: value51 ? 0 : options2,
-                          guides: value53.guides.filter(
-                            (input4?: Dynamic): Dynamic =>
-                              input4.axis === "x",
+                      isBottomOnly &&
+                        startRect.h + snapped.dy > getContentHeight() &&
+                        (snapped = {
+                          dx: snapped.dx,
+                          dy: isShallowDrag ? 0 : deltaY,
+                          guides: snapped.guides.filter(
+                            (guide?: Dynamic): Dynamic =>
+                              guide.axis === "x",
                           ),
                         });
-                      let value54: Dynamic = resizeRotatedRect(
-                          state2,
-                          value9,
-                          input2,
-                          value53.dx,
-                          value53.dy,
+                      let resizedRect: Dynamic = resizeRotatedRect(
+                          startRect,
+                          rotation,
+                          grip,
+                          snapped.dx,
+                          snapped.dy,
                           {
-                            w: PlatformFileContentConstant_9,
-                            h: callback5(),
+                            w: noteMinWidth,
+                            h: getContentHeight(),
                           },
                           {
-                            w: PlatformFileContentConstant_10,
-                            h: value50,
+                            w: noteMaxWidth,
+                            h: maxHeightLimit,
                           },
                         ),
-                        value55: Dynamic =
-                          input2.x !== null
-                            ? NotesLinkEditingMin(value54.w)
+                        nextWidth: Dynamic =
+                          grip.x !== null
+                            ? NotesLinkEditingMin(resizedRect.w)
                             : spec.w,
-                        value56: Dynamic =
-                          input2.y === null
+                        nextMaxH: Dynamic =
+                          grip.y === null
                             ? undefined
-                            : Math.round(value54.h) === Math.round(state2.h)
+                            : Math.round(resizedRect.h) === Math.round(startRect.h)
                               ? spec.maxH
-                              : callback6(value54.h);
-                      input2.y !== null &&
-                        value27(
-                          value56 !== undefined && value56 !== spec.maxH
-                            ? value56
+                              : toMaxH(resizedRect.h);
+                      grip.y !== null &&
+                        setDraftMaxH(
+                          nextMaxH !== undefined && nextMaxH !== spec.maxH
+                            ? nextMaxH
                             : null,
                         );
-                      let value57: Dynamic = activeResizeGuides(
+                      let activeGuides: Dynamic = activeResizeGuides(
                         {
-                          x: value48 ? Math.round(value54.x) : spec.x,
-                          y: value48 ? Math.round(value54.y) : spec.y,
-                          w: value55,
-                          h: Math.round(value54.h),
+                          x: movesOrigin ? Math.round(resizedRect.x) : spec.x,
+                          y: movesOrigin ? Math.round(resizedRect.y) : spec.y,
+                          w: nextWidth,
+                          h: Math.round(resizedRect.h),
                         },
-                        input2,
-                        value53.guides,
+                        grip,
+                        snapped.guides,
                       );
-                      onSnapGuides?.(value57.length > 0 ? value57 : null);
+                      onSnapGuides?.(activeGuides.length > 0 ? activeGuides : null);
                       return {
-                        ...(value48
+                        ...(movesOrigin
                           ? {
-                              x: Math.round(value54.x),
-                              y: Math.round(value54.y),
+                              x: Math.round(resizedRect.x),
+                              y: Math.round(resizedRect.y),
                             }
                           : {}),
-                        ...(input2.x !== null
+                        ...(grip.x !== null
                           ? {
-                              w: value55,
+                              w: nextWidth,
                             }
                           : {}),
-                        ...(input2.y !== null
+                        ...(grip.y !== null
                           ? {
-                              maxH: value56,
+                              maxH: nextMaxH,
                             }
                           : {}),
                       };
                     },
                     onChange: onChange,
                     restore: {
-                      ...(value48
+                      ...(movesOrigin
                         ? {
                             x: spec.x,
                             y: spec.y,
                           }
                         : {}),
-                      ...(input2.x !== null
+                      ...(grip.x !== null
                         ? {
                             w: spec.w,
                           }
                         : {}),
-                      ...(input2.y !== null
+                      ...(grip.y !== null
                         ? {
                             maxH: spec.maxH,
                           }
                         : {}),
                     },
                     onEnd: (): Dynamic => {
-                      value27(null);
+                      setDraftMaxH(null);
                       onSnapGuides?.(null);
                     },
                   });

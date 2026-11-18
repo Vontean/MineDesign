@@ -19,10 +19,10 @@ function PendingArtboardTitle({
   className: className,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic = useViewportStore();
+  let viewportStore: Dynamic = useViewportStore();
   return (
     <div
-      ref={value.stamp}
+      ref={viewportStore.stamp}
       aria-hidden={"true"}
       data-mega-pending-title={""}
       data-testid={"mega-pending-title-" + spec.file}
@@ -71,81 +71,81 @@ function PendingArtboards({
 }: Dynamic): Dynamic {
   useUiLocale();
   return boards.map(
-    (input?: Dynamic): Dynamic =>
+    (pending?: Dynamic): Dynamic =>
       (() => {
         const _Component = "div";
         const _props = {
-          "data-mega-pending": input.spec.file,
-          "data-active": input.active ? "" : undefined,
+          "data-mega-pending": pending.spec.file,
+          "data-active": pending.active ? "" : undefined,
           className: "pointer-events-none absolute",
           style: {
-            left: input.spec.x,
-            top: input.spec.y,
-            width: input.spec.w,
-            height: input.spec.h,
+            left: pending.spec.x,
+            top: pending.spec.y,
+            width: pending.spec.w,
+            height: pending.spec.h,
           },
           children: [
             <PendingArtboardTitle
-              spec={input.spec}
-              tone={input.active ? "active" : "waiting"}
+              spec={pending.spec}
+              tone={pending.active ? "active" : "waiting"}
             />,
             <PendingArtboardFace
-              spec={input.spec}
-              sheen={sheen && input.active}
+              spec={pending.spec}
+              sheen={sheen && pending.active}
             />,
           ],
         } as const;
-        const _key = input.spec.file;
+        const _key = pending.spec.file;
         return <_Component key={_key} {..._props} />;
       })(),
   );
 }
-function artboardAboveDistances(input?: Dynamic): Dynamic {
-  let entry: Dynamic = CanvasPendingArtboardsElementCache.get(input);
-  if (entry) return entry;
-  let entries: Dynamic = new Map();
-  for (let value of input as Dynamic) {
-    if (value.frameless) continue;
-    let value2: Dynamic = 1 / 0;
-    for (let value3 of input as Dynamic) {
+function artboardAboveDistances(artboards?: Dynamic): Dynamic {
+  let cachedDistances: Dynamic = CanvasPendingArtboardsElementCache.get(artboards);
+  if (cachedDistances) return cachedDistances;
+  let distances: Dynamic = new Map();
+  for (let artboard of artboards as Dynamic) {
+    if (artboard.frameless) continue;
+    let minDistance: Dynamic = 1 / 0;
+    for (let otherArtboard of artboards as Dynamic) {
       if (
-        value3 === value ||
-        value3.x >= value.x + value.w ||
-        value3.x + value3.w <= value.x
+        otherArtboard === artboard ||
+        otherArtboard.x >= artboard.x + artboard.w ||
+        otherArtboard.x + otherArtboard.w <= artboard.x
       )
         continue;
-      let value4: Dynamic = value.y - (value3.y + value3.h);
-      value4 >= 0 && value4 < value2 && (value2 = value4);
+      let gap: Dynamic = artboard.y - (otherArtboard.y + otherArtboard.h);
+      gap >= 0 && gap < minDistance && (minDistance = gap);
     }
-    value2 !== 1 / 0 && entries.set(value.file, value2);
+    minDistance !== 1 / 0 && distances.set(artboard.file, minDistance);
   }
-  CanvasPendingArtboardsElementCache.set(input, entries);
-  return entries;
+  CanvasPendingArtboardsElementCache.set(artboards, distances);
+  return distances;
 }
-function artboardTitleHeight(input?: Dynamic): Dynamic {
-  return 28 / input;
+function artboardTitleHeight(zoomScale?: Dynamic): Dynamic {
+  return 28 / zoomScale;
 }
-function shouldHideArtboardTitle(input?: Dynamic): Dynamic {
+function shouldHideArtboardTitle(titleState?: Dynamic): Dynamic {
   return !(
-    input.phoneCanvas ||
-    input.selected ||
-    input.renaming ||
-    input.playing ||
-    input.tweaksOpen ||
-    input.armedByTouch ||
-    input.hovered
+    titleState.phoneCanvas ||
+    titleState.selected ||
+    titleState.renaming ||
+    titleState.playing ||
+    titleState.tweaksOpen ||
+    titleState.armedByTouch ||
+    titleState.hovered
   );
 }
 function isAboveTitleRect(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  pointerX?: Dynamic,
+  pointerY?: Dynamic,
+  titleRect?: Dynamic,
 ): Dynamic {
   return (
-    input >= context.left &&
-    input <= context.right &&
-    options <= context.top &&
-    options >= context.top - 4
+    pointerX >= titleRect.left &&
+    pointerX <= titleRect.right &&
+    pointerY <= titleRect.top &&
+    pointerY >= titleRect.top - 4
   );
 }
 export {

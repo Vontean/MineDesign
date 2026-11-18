@@ -12,41 +12,41 @@ var pasteCascadePixels: Dynamic;
 var maxPlacedImageWidth: Dynamic;
 var hasMalformedUnicode: Dynamic;
 function pastedObjectsOrigin(objects?: Dynamic, point?: Dynamic): Dynamic {
-  let value: Dynamic = Math.max(
+  let groupWidth: Dynamic = Math.max(
       0,
-      ...objects.map((input?: Dynamic): Dynamic => input.dx + input.w),
+      ...objects.map((pastedObject?: Dynamic): Dynamic => pastedObject.dx + pastedObject.w),
     ),
-    value2: Dynamic = Math.max(
+    groupHeight: Dynamic = Math.max(
       0,
-      ...objects.map((input?: Dynamic): Dynamic => input.dy + input.h),
+      ...objects.map((pastedObject?: Dynamic): Dynamic => pastedObject.dy + pastedObject.h),
     );
   return {
-    x: point.x - value / 2,
-    y: point.y - value2 / 2,
+    x: point.x - groupWidth / 2,
+    y: point.y - groupHeight / 2,
   };
 }
-function pointerCoordinates(pointer2?: Dynamic): Dynamic {
-  return pointer2
+function pointerCoordinates(pointer?: Dynamic): Dynamic {
+  return pointer
     ? {
-        x: pointer2.x,
-        y: pointer2.y,
+        x: pointer.x,
+        y: pointer.y,
       }
     : null;
 }
 function resolveInsertionPointer(
-  pointer2?: Dynamic,
+  pointer?: Dynamic,
   cachedPointer?: Dynamic,
   file?: Dynamic,
   allowCanvas?: Dynamic,
 ): Dynamic {
-  return !pointer2 ||
-    pointer2.stale ||
+  return !pointer ||
+    pointer.stale ||
     file == null ||
-    !(pointer2.inFrame ? pointer2.frameFile === file : allowCanvas)
+    !(pointer.inFrame ? pointer.frameFile === file : allowCanvas)
     ? null
     : cachedPointer?.file === file
       ? cachedPointer
-      : pointer2;
+      : pointer;
 }
 function insertionPointerMatchesContent(
   kind?: Dynamic,
@@ -73,39 +73,39 @@ function avoidPastedObjectCollisions(
   existingPositions?: Dynamic,
   step: Dynamic = pasteCascadePixels,
 ): Dynamic {
-  let value: Dynamic = step / 2,
-    callback: Dynamic = (input?: Dynamic): Dynamic =>
+  let minGap: Dynamic = step / 2,
+    collidesAt: Dynamic = (candidate?: Dynamic): Dynamic =>
       objects.some(
-        (input2?: Dynamic): Dynamic =>
+        (pastedObject?: Dynamic): Dynamic =>
           existingPositions.some(
-            (input3?: Dynamic): Dynamic =>
-              Math.abs(input3.x - (input.x + input2.dx)) < value &&
-              Math.abs(input3.y - (input.y + input2.dy)) < value,
+            (existingPosition?: Dynamic): Dynamic =>
+              Math.abs(existingPosition.x - (candidate.x + pastedObject.dx)) < minGap &&
+              Math.abs(existingPosition.y - (candidate.y + pastedObject.dy)) < minGap,
           ),
       ),
-    value2: Dynamic = origin;
-  for (let index: Dynamic = 0; index < 40 && callback(value2); index++)
-    value2 = {
-      x: value2.x + step,
-      y: value2.y + step,
+    position: Dynamic = origin;
+  for (let index: Dynamic = 0; index < 40 && collidesAt(position); index++)
+    position = {
+      x: position.x + step,
+      y: position.y + step,
     };
-  return value2;
+  return position;
 }
 function pastedObjectsBounds(objects?: Dynamic): Dynamic {
   let [minX, minY]: Dynamic = [
-    Math.min(...objects.map((input?: Dynamic): Dynamic => input.x)),
-    Math.min(...objects.map((input?: Dynamic): Dynamic => input.y)),
+    Math.min(...objects.map((pastedObject?: Dynamic): Dynamic => pastedObject.x)),
+    Math.min(...objects.map((pastedObject?: Dynamic): Dynamic => pastedObject.y)),
   ];
   return {
     x: minX,
     y: minY,
     w:
       Math.max(
-        ...objects.map((input?: Dynamic): Dynamic => input.x + input.w),
+        ...objects.map((pastedObject?: Dynamic): Dynamic => pastedObject.x + pastedObject.w),
       ) - minX,
     h:
       Math.max(
-        ...objects.map((input?: Dynamic): Dynamic => input.y + input.h),
+        ...objects.map((pastedObject?: Dynamic): Dynamic => pastedObject.y + pastedObject.h),
       ) - minY,
   };
 }
@@ -113,16 +113,16 @@ function insertBlankArtboardMarkup(
   source?: Dynamic,
   markup?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = source.indexOf("></section>");
-  if (value < 0) throw new Error("blank artboard source has no empty stage");
+  let stageIndex: Dynamic = source.indexOf("></section>");
+  if (stageIndex < 0) throw new Error("blank artboard source has no empty stage");
   return (
-    source.slice(0, value + 1) +
+    source.slice(0, stageIndex + 1) +
     `
 ` +
     markup +
     `
 ` +
-    source.slice(value + 1)
+    source.slice(stageIndex + 1)
   );
 }
 function visibleArtboardCenter(
@@ -130,20 +130,20 @@ function visibleArtboardCenter(
   camera?: Dynamic,
 ): Dynamic {
   if (camera) {
-    let value: Dynamic = Math.max(artboard.x, camera.x),
-      value2: Dynamic = Math.min(
+    let overlapLeft: Dynamic = Math.max(artboard.x, camera.x),
+      overlapRight: Dynamic = Math.min(
         artboard.x + artboard.w,
         camera.x + camera.width / camera.scale,
       ),
-      value3: Dynamic = Math.max(artboard.y, camera.y),
-      value4: Dynamic = Math.min(
+      overlapTop: Dynamic = Math.max(artboard.y, camera.y),
+      overlapBottom: Dynamic = Math.min(
         artboard.y + artboard.h,
         camera.y + camera.height / camera.scale,
       );
-    if (value2 > value && value4 > value3)
+    if (overlapRight > overlapLeft && overlapBottom > overlapTop)
       return {
-        x: (value + value2) / 2,
-        y: (value3 + value4) / 2,
+        x: (overlapLeft + overlapRight) / 2,
+        y: (overlapTop + overlapBottom) / 2,
       };
   }
   return {
@@ -155,24 +155,24 @@ function defaultPlacedImageSize(
   naturalSize?: Dynamic,
   pixelDensity?: Dynamic,
 ): Dynamic {
-  let value: Dynamic =
+  let imageSize: Dynamic =
       naturalSize && naturalSize.width > 0 && naturalSize.height > 0
         ? naturalSize
         : {
             width: 320,
             height: 240,
           },
-    value2: Dynamic =
+    densityScale: Dynamic =
       pixelDensity != null && pixelDensity >= 5600
         ? Math.min(3, Math.round(pixelDensity / 2835))
         : 1,
-    value3: Dynamic = Math.max(
+    placedWidth: Dynamic = Math.max(
       48,
-      Math.min(maxPlacedImageWidth, Math.round(value.width / value2)),
+      Math.min(maxPlacedImageWidth, Math.round(imageSize.width / densityScale)),
     );
   return {
-    w: value3,
-    h: Math.max(48, Math.ceil((value3 * value.height) / value.width)),
+    w: placedWidth,
+    h: Math.max(48, Math.ceil((placedWidth * imageSize.height) / imageSize.width)),
   };
 }
 function droppedImagePlacement(
@@ -181,19 +181,19 @@ function droppedImagePlacement(
   naturalSize?: Dynamic,
   index?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = Math.round(
+  let placedWidth: Dynamic = Math.round(
       Math.min(naturalSize.width, Math.max(48, artboard.w * 0.6)),
     ),
-    value2: Dynamic = Math.round(
-      (value * naturalSize.height) / naturalSize.width,
+    placedHeight: Dynamic = Math.round(
+      (placedWidth * naturalSize.height) / naturalSize.width,
     );
   return {
     x:
       Math.max(
         0,
         Math.min(
-          Math.round(point.x - artboard.x - value / 2),
-          artboard.w - value,
+          Math.round(point.x - artboard.x - placedWidth / 2),
+          artboard.w - placedWidth,
         ),
       ) +
       index * 24,
@@ -201,35 +201,35 @@ function droppedImagePlacement(
       Math.max(
         0,
         Math.min(
-          Math.round(point.y - artboard.y - value2 / 2),
-          artboard.h - value2,
+          Math.round(point.y - artboard.y - placedHeight / 2),
+          artboard.h - placedHeight,
         ),
       ) +
       index * 24,
-    w: value,
-    h: value2,
+    w: placedWidth,
+    h: placedHeight,
   };
 }
 function safeDroppedImageAltText(
   name?: Dynamic,
   fallback?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = PlatformFileContentSlice(name);
-  return value === undefined ||
-    /[{}<]/.test(value) ||
-    hasMalformedUnicode(value) ||
-    ClipboardHtmlSanitizationScriptDataDcScriptPattern.test(value)
+  let altText: Dynamic = PlatformFileContentSlice(name);
+  return altText === undefined ||
+    /[{}<]/.test(altText) ||
+    hasMalformedUnicode(altText) ||
+    ClipboardHtmlSanitizationScriptDataDcScriptPattern.test(altText)
     ? fallback
-    : value;
+    : altText;
 }
 function droppedImageMarkup(image?: Dynamic): Dynamic {
-  let value: Dynamic = `position: absolute; left: ${String(image.left)}px; top: ${String(image.top)}px; width: ${String(image.w)}px; height: auto`;
-  return `<img src="${escapeHtmlAttributeValue(image.src)}" alt="${escapeHtmlAttributeValue(image.alt)}" data-dc-drop="${image.mark}" width="${String(image.natural.width)}" height="${String(image.natural.height)}" style="${value}">`;
+  let styleText: Dynamic = `position: absolute; left: ${String(image.left)}px; top: ${String(image.top)}px; width: ${String(image.w)}px; height: auto`;
+  return `<img src="${escapeHtmlAttributeValue(image.src)}" alt="${escapeHtmlAttributeValue(image.alt)}" data-dc-drop="${image.mark}" width="${String(image.natural.width)}" height="${String(image.natural.height)}" style="${styleText}">`;
 }
 function droppedImageLabel(file?: Dynamic, origin?: Dynamic): Dynamic {
-  let value: Dynamic = file.name.replace(/\.[^.]*$/, "").trim();
-  return value && value.toLowerCase() !== "image"
-    ? truncateUtf16Safely(value, 60)
+  let baseName: Dynamic = file.name.replace(/\.[^.]*$/, "").trim();
+  return baseName && baseName.toLowerCase() !== "image"
+    ? truncateUtf16Safely(baseName, 60)
     : origin === "pasted"
       ? uiMessage("canvas.pastePlacement.pastedImage")
       : uiMessage("canvas.pastePlacement.droppedImage");
@@ -258,10 +258,10 @@ export function installCanvasPastePlacement(): () => void {
   return () => {
     pasteCascadePixels = 24;
     maxPlacedImageWidth = 1200;
-    hasMalformedUnicode = (input?: Dynamic): Dynamic =>
-      /\p{Cs}/u.test(input) ||
-      [...input].some(
-        (input2?: Dynamic): Dynamic => input2.codePointAt(0) === 65533,
+    hasMalformedUnicode = (text?: Dynamic): Dynamic =>
+      /\p{Cs}/u.test(text) ||
+      [...text].some(
+        (character?: Dynamic): Dynamic => character.codePointAt(0) === 65533,
       );
   };
 }

@@ -19,72 +19,72 @@ function isConnectedArtboardWindow(targetWindow?: Dynamic): Dynamic {
 }
 function createFrameKeyListenerRegistry(): Dynamic {
   let entries: Dynamic = new Map(),
-    callback: Dynamic = (input?: Dynamic): Dynamic => {
-      let entry: Dynamic = entries.get(input);
-      entries.delete(input);
+    removeEntry: Dynamic = (frameKey?: Dynamic): Dynamic => {
+      let entry: Dynamic = entries.get(frameKey);
+      entries.delete(frameKey);
       try {
         entry?.off();
       } catch {}
     },
-    callback2: Dynamic = (): Dynamic => {
-      for (let [value, value2] of [...entries] as Dynamic)
-        isConnectedArtboardWindow(value2.target) || callback(value);
+    pruneDisconnected: Dynamic = (): Dynamic => {
+      for (let [staleKey, staleEntry] of [...entries] as Dynamic)
+        isConnectedArtboardWindow(staleEntry.target) || removeEntry(staleKey);
     };
   return {
-    seen(input: Dynamic, options: Dynamic, context: Dynamic): Dynamic {
-      callback2();
-      if (options === null || entries.get(input)?.target === options) return;
-      callback(input);
-      let value: Dynamic = context(options),
-        callback3: Dynamic = (input2?: Dynamic): Dynamic => {
-          !input2.persisted &&
-            entries.get(input)?.target === options &&
-            callback(input);
+    seen(frameKey: Dynamic, frameWindow: Dynamic, attachKeyListeners: Dynamic): Dynamic {
+      pruneDisconnected();
+      if (frameWindow === null || entries.get(frameKey)?.target === frameWindow) return;
+      removeEntry(frameKey);
+      let detachKeyListeners: Dynamic = attachKeyListeners(frameWindow),
+        handlePageHide: Dynamic = (pageHideEvent?: Dynamic): Dynamic => {
+          !pageHideEvent.persisted &&
+            entries.get(frameKey)?.target === frameWindow &&
+            removeEntry(frameKey);
         },
-        callback4: Dynamic = (): Dynamic => {};
+        removePageHideListener: Dynamic = (): Dynamic => {};
       try {
-        callback4 = addNativeEventListener(
-          options,
+        removePageHideListener = addNativeEventListener(
+          frameWindow,
           "pagehide",
-          callback3,
+          handlePageHide,
           false,
         );
       } catch {}
-      entries.set(input, {
-        target: options,
+      entries.set(frameKey, {
+        target: frameWindow,
         off: (): Dynamic => {
           try {
-            callback4();
+            removePageHideListener();
           } finally {
-            value();
+            detachKeyListeners();
           }
         },
       });
     },
-    drop: callback,
-    gone(input: Dynamic): Dynamic {
-      let entry: Dynamic = entries.get(input);
+    drop: removeEntry,
+    gone(frameKey: Dynamic): Dynamic {
+      let entry: Dynamic = entries.get(frameKey);
       entry !== undefined &&
         !isConnectedArtboardWindow(entry.target) &&
-        callback(input);
+        removeEntry(frameKey);
     },
     dropAll(): Dynamic {
-      for (let value of [...entries.keys()] as Dynamic) callback(value);
+      for (let frameKey of [...entries.keys()] as Dynamic) removeEntry(frameKey);
     },
   };
 }
 function frameStepChordOwner(
   frame?: Dynamic,
-  navigation2?: Dynamic,
+  stepState?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = navigation2.editing ?? navigation2.began;
-  if (value === null || navigation2.frame(value) !== frame) return null;
-  let value2: Dynamic = navigation2.began === value,
-    value3: Dynamic = navigation2.editing === null ? frame : null;
+  let activeStop: Dynamic = stepState.editing ?? stepState.began;
+  if (activeStop === null || stepState.frame(activeStop) !== frame) return null;
+  let wasBegunFromStop: Dynamic = stepState.began === activeStop,
+    fallbackOwner: Dynamic = stepState.editing === null ? frame : null;
   return (): Dynamic =>
-    value2 && navigation2.inside() === value
-      ? (navigation2.stopOf(value) ?? value3)
-      : value3;
+    wasBegunFromStop && stepState.inside() === activeStop
+      ? (stepState.stopOf(activeStop) ?? fallbackOwner)
+      : fallbackOwner;
 }
 function useArtboardKeyRouting({
   host: host,
@@ -100,16 +100,16 @@ function useArtboardKeyRouting({
   walkInside: walkInside,
   stopOf: stopOf,
 }: Dynamic): Dynamic {
-  let [value]: Dynamic = (0, react_Eu.useState)(
+  let [findAdapter]: Dynamic = (0, react_Eu.useState)(
       (): Dynamic => createCanvasFindAdapter(host),
     ),
-    value2: Dynamic = useFindInPage({
-      adapter: value,
+    findController: Dynamic = useFindInPage({
+      adapter: findAdapter,
       enabled: enabled,
       ownsStepChord: ownsStepChord,
       restoreFocus: focusCanvasDocument,
-      returnTo: (input?: Dynamic): Dynamic =>
-        frameStepChordOwner(input, {
+      returnTo: (frame?: Dynamic): Dynamic =>
+        frameStepChordOwner(frame, {
           editing: textEditIn(),
           began: editBeganFromStop(),
           frame: host.frame,
@@ -117,125 +117,125 @@ function useArtboardKeyRouting({
           stopOf: stopOf,
         }),
     }),
-    value3: Dynamic = (0, react_Eu.useRef)(onEnter);
-  value3.current = onEnter;
+    onEnterRef: Dynamic = (0, react_Eu.useRef)(onEnter);
+  onEnterRef.current = onEnter;
   (0, react_Eu.useEffect)((): Dynamic => {
-    if (!value2.isOpen) return;
-    let callback: Dynamic = (event?: Dynamic): Dynamic => {
-      let callback2: Dynamic = (input?: Dynamic): Dynamic =>
-        input instanceof Element &&
-        input.closest("[" + McFindAttribute + "]") !== null;
-      callback2(event.target) &&
-        !callback2(event.relatedTarget) &&
-        value3.current();
+    if (!findController.isOpen) return;
+    let handleFocusIn: Dynamic = (event?: Dynamic): Dynamic => {
+      let isInsideFindBar: Dynamic = (element?: Dynamic): Dynamic =>
+        element instanceof Element &&
+        element.closest("[" + McFindAttribute + "]") !== null;
+      isInsideFindBar(event.target) &&
+        !isInsideFindBar(event.relatedTarget) &&
+        onEnterRef.current();
     };
-    value3.current();
-    (document as Dynamic).addEventListener("focusin", callback);
+    onEnterRef.current();
+    (document as Dynamic).addEventListener("focusin", handleFocusIn);
     return (): Dynamic =>
-      (document as Dynamic).removeEventListener("focusin", callback);
-  }, [value2.isOpen]);
+      (document as Dynamic).removeEventListener("focusin", handleFocusIn);
+  }, [findController.isOpen]);
   (0, react_Eu.useEffect)(
-    (): Dynamic => subscribe(value.changed),
-    [subscribe, value],
+    (): Dynamic => subscribe(findAdapter.changed),
+    [subscribe, findAdapter],
   );
-  let [value4]: Dynamic = (0, react_Eu.useState)(
+  let [frameKeyRegistry]: Dynamic = (0, react_Eu.useState)(
       createFrameKeyListenerRegistry,
     ),
-    value5: Dynamic = (0, react_Eu.useRef)(pageOwnsKeys);
-  value5.current = pageOwnsKeys;
-  let value6: Dynamic = (0, react_Eu.useRef)(settle);
-  value6.current = settle;
-  let value7: Dynamic = (0, react_Eu.useRef)(value2.isOpen);
-  value7.current = value2.isOpen;
-  let value8: Dynamic = (0, react_Eu.useCallback)(
-      (input?: Dynamic): Dynamic => {
-        let current: Dynamic = value7.current;
-        value6.current((): Dynamic => {
-          (!current || value7.current) && input();
+    pageOwnsKeysRef: Dynamic = (0, react_Eu.useRef)(pageOwnsKeys);
+  pageOwnsKeysRef.current = pageOwnsKeys;
+  let settleRef: Dynamic = (0, react_Eu.useRef)(settle);
+  settleRef.current = settle;
+  let findOpenRef: Dynamic = (0, react_Eu.useRef)(findController.isOpen);
+  findOpenRef.current = findController.isOpen;
+  let runAfterSettle: Dynamic = (0, react_Eu.useCallback)(
+      (action?: Dynamic): Dynamic => {
+        let current: Dynamic = findOpenRef.current;
+        settleRef.current((): Dynamic => {
+          (!current || findOpenRef.current) && action();
         });
       },
       [],
     ),
-    value9: Dynamic = (0, react_Eu.useRef)(value2.open);
-  value9.current = value2.open;
-  let { attach: value10 }: Dynamic = value2,
-    value11: Dynamic = (0, react_Eu.useCallback)(
-      (input?: Dynamic): Dynamic => {
+    openFindRef: Dynamic = (0, react_Eu.useRef)(findController.open);
+  openFindRef.current = findController.open;
+  let { attach: attachFind }: Dynamic = findController,
+    getFrameWindow: Dynamic = (0, react_Eu.useCallback)(
+      (frameKey?: Dynamic): Dynamic => {
         try {
-          return host.frame(input)?.contentWindow ?? null;
+          return host.frame(frameKey)?.contentWindow ?? null;
         } catch {
           return null;
         }
       },
       [host],
     ),
-    value12: Dynamic = (0, react_Eu.useCallback)(
-      (input?: Dynamic): Dynamic => {
-        let callback: Dynamic = (
-          input2?: Dynamic,
-          options?: Dynamic,
+    handleFrameSeen: Dynamic = (0, react_Eu.useCallback)(
+      (frameKey?: Dynamic): Dynamic => {
+        let revealAfterTextEdit: Dynamic = (
+          editedTarget?: Dynamic,
+          matchOptions?: Dynamic,
         ): Dynamic =>
           revealFindMatchAfterTextEdit(
-            options,
-            value5.current(input),
-            input2,
-            value8,
-            (): Dynamic => value9.current(),
+            matchOptions,
+            pageOwnsKeysRef.current(frameKey),
+            editedTarget,
+            runAfterSettle,
+            (): Dynamic => openFindRef.current(),
           );
-        value4.seen(
-          input,
-          value11(input),
-          (input2?: Dynamic): Dynamic =>
-            value10(input2, (): Dynamic => value5.current(input), callback),
+        frameKeyRegistry.seen(
+          frameKey,
+          getFrameWindow(frameKey),
+          (findTarget?: Dynamic): Dynamic =>
+            attachFind(findTarget, (): Dynamic => pageOwnsKeysRef.current(frameKey), revealAfterTextEdit),
         );
       },
-      [value10, value4, value11, value8],
+      [attachFind, frameKeyRegistry, getFrameWindow, runAfterSettle],
     ),
-    value13: Dynamic = (0, react_Eu.useCallback)(
-      (input?: Dynamic): Dynamic => {
-        value4.drop(input);
-        value12(input);
-        value.frameBooted(input);
+    handleFrameBooted: Dynamic = (0, react_Eu.useCallback)(
+      (frameKey?: Dynamic): Dynamic => {
+        frameKeyRegistry.drop(frameKey);
+        handleFrameSeen(frameKey);
+        findAdapter.frameBooted(frameKey);
       },
-      [value, value4, value12],
+      [findAdapter, frameKeyRegistry, handleFrameSeen],
     ),
-    value14: Dynamic = (0, react_Eu.useCallback)(
-      (input?: Dynamic): Dynamic => value4.gone(input),
-      [value4],
+    handleFrameGone: Dynamic = (0, react_Eu.useCallback)(
+      (frameKey?: Dynamic): Dynamic => frameKeyRegistry.gone(frameKey),
+      [frameKeyRegistry],
     );
   (0, react_Eu.useEffect)(
-    (): Dynamic => (): Dynamic => value4.dropAll(),
-    [value4],
+    (): Dynamic => (): Dynamic => frameKeyRegistry.dropAll(),
+    [frameKeyRegistry],
   );
-  let value15: Dynamic = (0, react_Eu.useRef)(textEditOpen);
-  value15.current = textEditOpen;
-  let { step: value16 }: Dynamic = value2,
-    value17: Dynamic = (0, react_Eu.useCallback)(
-      (input?: Dynamic): Dynamic =>
+  let textEditOpenRef: Dynamic = (0, react_Eu.useRef)(textEditOpen);
+  textEditOpenRef.current = textEditOpen;
+  let { step: stepFind }: Dynamic = findController,
+    handleFindStep: Dynamic = (0, react_Eu.useCallback)(
+      (stepRequest?: Dynamic): Dynamic =>
         revealFindMatchAfterSettle(
           (document as Dynamic).activeElement instanceof HTMLIFrameElement &&
-            value15.current(),
-          (): Dynamic => value16(input),
-          value8,
-          (): Dynamic => value9.current(),
+            textEditOpenRef.current(),
+          (): Dynamic => stepFind(stepRequest),
+          runAfterSettle,
+          (): Dynamic => openFindRef.current(),
         ),
-      [value16, value8],
+      [stepFind, runAfterSettle],
     );
   return {
     find: (0, react_Eu.useMemo)(
       (): Dynamic => ({
-        ...value2,
+        ...findController,
         bar: {
-          ...value2.bar,
-          onStep: value17,
+          ...findController.bar,
+          onStep: handleFindStep,
         },
       }),
-      [value2, value17],
+      [findController, handleFindStep],
     ),
-    changed: value.changed,
-    frameBooted: value13,
-    frameSeen: value12,
-    frameGone: value14,
+    changed: findAdapter.changed,
+    frameBooted: handleFrameBooted,
+    frameSeen: handleFrameSeen,
+    frameGone: handleFrameGone,
   };
 }
 export {

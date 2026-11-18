@@ -23,158 +23,158 @@ function isRenderedFocusableTarget(
     return false;
   if (scope == null) return true;
   let bounds: Dynamic = element.getBoundingClientRect(),
-    value: Dynamic = Math.max(bounds.left, scope.left),
-    value2: Dynamic = Math.min(bounds.right, scope.right),
-    value3: Dynamic = Math.max(bounds.top, scope.top),
-    value4: Dynamic = Math.min(bounds.bottom, scope.bottom);
-  if (value >= value2 || value3 >= value4) return false;
-  let value5: Dynamic = topmostAt(
-    (value + value2) / 2,
-    (value3 + value4) / 2,
+    overlapLeft: Dynamic = Math.max(bounds.left, scope.left),
+    overlapRight: Dynamic = Math.min(bounds.right, scope.right),
+    overlapTop: Dynamic = Math.max(bounds.top, scope.top),
+    overlapBottom: Dynamic = Math.min(bounds.bottom, scope.bottom);
+  if (overlapLeft >= overlapRight || overlapTop >= overlapBottom) return false;
+  let topmostElement: Dynamic = topmostAt(
+    (overlapLeft + overlapRight) / 2,
+    (overlapTop + overlapBottom) / 2,
   );
-  return value5 == null || element.contains(value5);
+  return topmostElement == null || element.contains(topmostElement);
 }
 function createCanvasKeyboardFocusController(
   getRoot?: Dynamic,
   {
-    blocked: options = hasBlockingEditorOverlay,
-    rendered: options2 = (input?: Dynamic): Dynamic =>
-      input.getClientRects().length > 0,
-    topmostAt: options3 = (input?: Dynamic, options4?: Dynamic): Dynamic =>
-      (document as Dynamic).elementFromPoint(input, options4),
+    blocked: isBlocked = hasBlockingEditorOverlay,
+    rendered: isRendered = (element?: Dynamic): Dynamic =>
+      element.getClientRects().length > 0,
+    topmostAt: findTopmostAt = (clientX?: Dynamic, clientY?: Dynamic): Dynamic =>
+      (document as Dynamic).elementFromPoint(clientX, clientY),
   }: Dynamic = {},
 ): Dynamic {
   let state: Dynamic = {
-      rendered: options2,
-      topmostAt: options3,
+      rendered: isRendered,
+      topmostAt: findTopmostAt,
     },
     cache: Dynamic = new WeakMap(),
-    callback: Dynamic = (): Dynamic =>
-      getRoot().flatMap((input?: Dynamic): Dynamic => {
-        let value: Dynamic = input.el();
-        return value && value.isConnected
+    getRegionEntries: Dynamic = (): Dynamic =>
+      getRoot().flatMap((region?: Dynamic): Dynamic => {
+        let regionElement: Dynamic = region.el();
+        return regionElement && regionElement.isConnected
           ? [
               {
-                region: input,
-                el: value,
+                region: region,
+                el: regionElement,
               },
             ]
           : [];
       }),
-    callback2: Dynamic = (input?: Dynamic, options4?: Dynamic): Dynamic => {
-      if (!(options4 instanceof HTMLElement)) return -1;
-      let value: Dynamic = -1;
-      input.forEach((input2?: Dynamic, options5?: Dynamic): Dynamic => {
-        input2.el.contains(options4) &&
-          (value === -1 || input[value].el.contains(input2.el)) &&
-          (value = options5);
+    findRegionIndex: Dynamic = (entries?: Dynamic, target?: Dynamic): Dynamic => {
+      if (!(target instanceof HTMLElement)) return -1;
+      let bestIndex: Dynamic = -1;
+      entries.forEach((entry?: Dynamic, entryIndex?: Dynamic): Dynamic => {
+        entry.el.contains(target) &&
+          (bestIndex === -1 || entries[bestIndex].el.contains(entry.el)) &&
+          (bestIndex = entryIndex);
       });
-      return value;
+      return bestIndex;
     },
-    callback3: Dynamic = (input?: Dynamic): Dynamic =>
-      callback2(input, (document as Dynamic).activeElement),
-    callback4: Dynamic = (input?: Dynamic, options4?: Dynamic): Dynamic => {
-      let value: Dynamic = input.filter(
-          (input2?: Dynamic): Dynamic =>
-            input2 !== options4 && options4.el.contains(input2.el),
+    findActiveRegionIndex: Dynamic = (entries?: Dynamic): Dynamic =>
+      findRegionIndex(entries, (document as Dynamic).activeElement),
+    focusRegion: Dynamic = (entries?: Dynamic, targetEntry?: Dynamic): Dynamic => {
+      let nestedEntries: Dynamic = entries.filter(
+          (nestedEntry?: Dynamic): Dynamic =>
+            nestedEntry !== targetEntry && targetEntry.el.contains(nestedEntry.el),
         ),
-        value2: Dynamic = options4.region.anchor?.() ?? null;
+        anchorElement: Dynamic = targetEntry.region.anchor?.() ?? null;
       if (
-        value2 &&
-        value2.isConnected &&
-        options4.el.contains(value2) &&
-        !value.some(
-          (input2?: Dynamic): Dynamic => input2.el.contains(value2),
+        anchorElement &&
+        anchorElement.isConnected &&
+        targetEntry.el.contains(anchorElement) &&
+        !nestedEntries.some(
+          (nestedEntry?: Dynamic): Dynamic => nestedEntry.el.contains(anchorElement),
         ) &&
-        (value2.focus({
+        (anchorElement.focus({
           preventScroll: true,
         }),
-        (document as Dynamic).activeElement === value2)
+        (document as Dynamic).activeElement === anchorElement)
       )
         return true;
-      let entry: Dynamic = cache.get(options4.el),
-        items: Dynamic = [
-          entry && entry.isConnected && options4.el.contains(entry)
-            ? entry
+      let cachedElement: Dynamic = cache.get(targetEntry.el),
+        candidates: Dynamic = [
+          cachedElement && cachedElement.isConnected && targetEntry.el.contains(cachedElement)
+            ? cachedElement
             : null,
-          options4.region.fallback?.() ?? null,
-          ...options4.el.querySelectorAll(canvasFocusableSelector),
+          targetEntry.region.fallback?.() ?? null,
+          ...targetEntry.el.querySelectorAll(canvasFocusableSelector),
         ],
-        value3: Dynamic = options4.region.clipTo?.() ?? null,
-        value4: Dynamic = value3 ? value3.getBoundingClientRect() : null;
-      for (let value5 of items as Dynamic)
+        clipElement: Dynamic = targetEntry.region.clipTo?.() ?? null,
+        clipBounds: Dynamic = clipElement ? clipElement.getBoundingClientRect() : null;
+      for (let candidate of candidates as Dynamic)
         if (
           !(
-            !value5 ||
-            value.some(
-              (input2?: Dynamic): Dynamic => input2.el.contains(value5),
+            !candidate ||
+            nestedEntries.some(
+              (nestedEntry?: Dynamic): Dynamic => nestedEntry.el.contains(candidate),
             ) ||
-            !isRenderedFocusableTarget(value5, state, value4)
+            !isRenderedFocusableTarget(candidate, state, clipBounds)
           ) &&
-          (value5.focus({
-            preventScroll: value3 !== null,
+          (candidate.focus({
+            preventScroll: clipElement !== null,
           }),
-          (document as Dynamic).activeElement === value5)
+          (document as Dynamic).activeElement === candidate)
         )
           return true;
       return false;
     },
-    callback5: Dynamic = (input?: Dynamic): Dynamic => {
-      if (options()) return;
-      let value: Dynamic = callback(),
-        length: Dynamic = value.length;
+    moveFocusRegion: Dynamic = (direction?: Dynamic): Dynamic => {
+      if (isBlocked()) return;
+      let entries: Dynamic = getRegionEntries(),
+        length: Dynamic = entries.length;
       if (length === 0) return;
-      let value2: Dynamic = callback3(value),
-        value3: Dynamic =
-          value2 !== -1
-            ? value2
-            : value.findIndex(
-                (input2?: Dynamic): Dynamic => input2.region.home,
+      let activeIndex: Dynamic = findActiveRegionIndex(entries),
+        startIndex: Dynamic =
+          activeIndex !== -1
+            ? activeIndex
+            : entries.findIndex(
+                (entry?: Dynamic): Dynamic => entry.region.home,
               );
       for (let count: Dynamic = 1; count <= length; count++) {
-        let value4: Dynamic =
-          (((value3 + input * count) % length) + length) % length;
-        if (value4 !== value2 && callback4(value, value[value4])) return;
+        let nextIndex: Dynamic =
+          (((startIndex + direction * count) % length) + length) % length;
+        if (nextIndex !== activeIndex && focusRegion(entries, entries[nextIndex])) return;
       }
     },
-    callback6: Dynamic = (event?: Dynamic): Dynamic => {
-      let value: Dynamic = callback(),
-        value2: Dynamic = callback2(
-          value,
+    handleFocusIn: Dynamic = (event?: Dynamic): Dynamic => {
+      let entries: Dynamic = getRegionEntries(),
+        regionIndex: Dynamic = findRegionIndex(
+          entries,
           event.target instanceof Element ? event.target : null,
         );
-      value2 !== -1 && cache.set(value[value2].el, event.target);
+      regionIndex !== -1 && cache.set(entries[regionIndex].el, event.target);
     },
-    flag: Dynamic = false,
-    callback7: Dynamic = (
-      input: Dynamic = (document as Dynamic).activeElement,
+    isEscapeHeld: Dynamic = false,
+    goHome: Dynamic = (
+      currentElement: Dynamic = (document as Dynamic).activeElement,
     ): Dynamic => {
-      flag = true;
-      let value: Dynamic = callback(),
-        value2: Dynamic = value.find(
-          (input2?: Dynamic): Dynamic => input2.region.home,
+      isEscapeHeld = true;
+      let entries: Dynamic = getRegionEntries(),
+        homeEntry: Dynamic = entries.find(
+          (entry?: Dynamic): Dynamic => entry.region.home,
         );
-      (!value2 || !callback4(value, value2)) &&
-        input instanceof HTMLElement &&
-        input.blur();
+      (!homeEntry || !focusRegion(entries, homeEntry)) &&
+        currentElement instanceof HTMLElement &&
+        currentElement.blur();
     },
-    callback8: Dynamic = (input?: Dynamic): Dynamic => {
-      input.key === "Escape" && (flag = false);
+    handleKeyUp: Dynamic = (keyEvent?: Dynamic): Dynamic => {
+      keyEvent.key === "Escape" && (isEscapeHeld = false);
     },
-    callback9: Dynamic = (event?: Dynamic): Dynamic => {
+    handleEscapeKeyDown: Dynamic = (event?: Dynamic): Dynamic => {
       if (event.key !== "Escape") return;
-      if (event.repeat && flag) {
+      if (event.repeat && isEscapeHeld) {
         event.preventDefault();
         return;
       }
-      flag = false;
+      isEscapeHeld = false;
       if (
         event.defaultPrevented ||
         event.altKey ||
         event.metaKey ||
         event.ctrlKey ||
         event.shiftKey ||
-        options()
+        isBlocked()
       )
         return;
       let target: Dynamic = event.target;
@@ -184,61 +184,61 @@ function createCanvasKeyboardFocusController(
         target.getAttribute("aria-expanded") === "true"
       )
         return;
-      let value: Dynamic = callback(),
-        value2: Dynamic = callback3(value);
-      value2 === -1 ||
-        !value[value2].region.escapeHome ||
-        (event.preventDefault(), callback7(target));
+      let entries: Dynamic = getRegionEntries(),
+        activeIndex: Dynamic = findActiveRegionIndex(entries);
+      activeIndex === -1 ||
+        !entries[activeIndex].region.escapeHome ||
+        (event.preventDefault(), goHome(target));
     },
-    callback10: Dynamic = (event?: Dynamic): Dynamic => {
+    handleF6KeyDown: Dynamic = (event?: Dynamic): Dynamic => {
       event.key !== "F6" ||
         event.defaultPrevented ||
         event.isComposing ||
         event.altKey ||
-        options() ||
+        isBlocked() ||
         (event.preventDefault(),
-        event.repeat || callback5(event.shiftKey ? -1 : 1));
+        event.repeat || moveFocusRegion(event.shiftKey ? -1 : 1));
     },
-    callback11: Dynamic = (input?: Dynamic): Dynamic =>
-      callback5(input.detail.reverse ? -1 : 1);
-  (document as Dynamic).addEventListener("focusin", callback6);
-  (window as Dynamic).addEventListener("keydown", callback10, true);
-  (window as Dynamic).addEventListener("keydown", callback9, true);
-  (window as Dynamic).addEventListener("keyup", callback8, true);
-  (window as Dynamic).addEventListener("focus-region-key", callback11);
+    handleRegionKeyEvent: Dynamic = (regionEvent?: Dynamic): Dynamic =>
+      moveFocusRegion(regionEvent.detail.reverse ? -1 : 1);
+  (document as Dynamic).addEventListener("focusin", handleFocusIn);
+  (window as Dynamic).addEventListener("keydown", handleF6KeyDown, true);
+  (window as Dynamic).addEventListener("keydown", handleEscapeKeyDown, true);
+  (window as Dynamic).addEventListener("keyup", handleKeyUp, true);
+  (window as Dynamic).addEventListener("focus-region-key", handleRegionKeyEvent);
   return {
-    move: callback5,
-    goHome: callback7,
+    move: moveFocusRegion,
+    goHome: goHome,
     dispose(): Dynamic {
-      (document as Dynamic).removeEventListener("focusin", callback6);
-      (window as Dynamic).removeEventListener("keydown", callback10, true);
-      (window as Dynamic).removeEventListener("keydown", callback9, true);
-      (window as Dynamic).removeEventListener("keyup", callback8, true);
-      (window as Dynamic).removeEventListener("focus-region-key", callback11);
+      (document as Dynamic).removeEventListener("focusin", handleFocusIn);
+      (window as Dynamic).removeEventListener("keydown", handleF6KeyDown, true);
+      (window as Dynamic).removeEventListener("keydown", handleEscapeKeyDown, true);
+      (window as Dynamic).removeEventListener("keyup", handleKeyUp, true);
+      (window as Dynamic).removeEventListener("focus-region-key", handleRegionKeyEvent);
     },
   };
 }
 function useCanvasKeyboardFocus(root?: Dynamic, blocked?: Dynamic): Dynamic {
-  let value: Dynamic = (0, react_LB.useRef)(root);
-  value.current = root;
-  let value2: Dynamic = (0, react_LB.useRef)(blocked);
-  value2.current = blocked;
-  let value3: Dynamic = (0, react_LB.useRef)({
+  let rootRef: Dynamic = (0, react_LB.useRef)(root);
+  rootRef.current = root;
+  let blockedRef: Dynamic = (0, react_LB.useRef)(blocked);
+  blockedRef.current = blocked;
+  let controllerRef: Dynamic = (0, react_LB.useRef)({
     goHome: (): Dynamic => {},
   });
   (0, react_LB.useEffect)((): Dynamic => {
-    let value4: Dynamic = createCanvasKeyboardFocusController(
-      (): Dynamic => value.current,
+    let controller: Dynamic = createCanvasKeyboardFocusController(
+      (): Dynamic => rootRef.current,
       {
         blocked: (): Dynamic =>
           hasBlockingEditorOverlay() ||
-          (value2.current?.() ?? false),
+          (blockedRef.current?.() ?? false),
       },
     );
-    value3.current.goHome = (): Dynamic => value4.goHome();
-    return value4.dispose;
+    controllerRef.current.goHome = (): Dynamic => controller.goHome();
+    return controller.dispose;
   }, []);
-  return value3.current;
+  return controllerRef.current;
 }
 export {
   canvasFocusableSelector,

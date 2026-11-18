@@ -11,25 +11,25 @@ function canvasPageDeleteSnapshot(
   manifest?: Dynamic,
   pageId?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = manifest.pages ?? [],
-    value2: Dynamic = value.findIndex(
-      (input?: Dynamic): Dynamic => input.id === pageId,
+  let pages: Dynamic = manifest.pages ?? [],
+    pageIndex: Dynamic = pages.findIndex(
+      (page?: Dynamic): Dynamic => page.id === pageId,
     );
-  if (value2 < 0 || value.length < 2) return null;
-  let callback: Dynamic = (input?: Dynamic): Dynamic =>
-    designPageId(input, value) === pageId;
+  if (pageIndex < 0 || pages.length < 2) return null;
+  let belongsToPage: Dynamic = (canvasObject?: Dynamic): Dynamic =>
+    designPageId(canvasObject, pages) === pageId;
   return {
-    spec: value[value2],
-    index: value2,
+    spec: pages[pageIndex],
+    index: pageIndex,
     files: new Set(
       manifest.artboards
-        .filter(callback)
-        .map((input?: Dynamic): Dynamic => input.file),
+        .filter(belongsToPage)
+        .map((artboard?: Dynamic): Dynamic => artboard.file),
     ),
     notes: new Set(
       (manifest.annotations ?? [])
-        .filter(callback)
-        .map((input?: Dynamic): Dynamic => input.id),
+        .filter(belongsToPage)
+        .map((note?: Dynamic): Dynamic => note.id),
     ),
   };
 }
@@ -39,15 +39,15 @@ function remainingCanvasPageObjects(
   deletedFiles?: Dynamic,
   deletedNotes?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = canvasPageDeleteSnapshot(manifest, pageId);
-  return value
+  let snapshot: Dynamic = canvasPageDeleteSnapshot(manifest, pageId);
+  return snapshot
     ? {
         artboards: manifest.artboards.filter(
-          (input?: Dynamic): Dynamic =>
-            value.files.has(input.file) && !deletedFiles.has(input.file),
+          (artboard?: Dynamic): Dynamic =>
+            snapshot.files.has(artboard.file) && !deletedFiles.has(artboard.file),
         ),
-        notes: [...value.notes].filter(
-          (input?: Dynamic): Dynamic => !deletedNotes.has(input),
+        notes: [...snapshot.notes].filter(
+          (noteId?: Dynamic): Dynamic => !deletedNotes.has(noteId),
         ),
       }
     : {
@@ -56,14 +56,14 @@ function remainingCanvasPageObjects(
       };
 }
 function neighboringCanvasPageId(pages?: Dynamic, pageId?: Dynamic): Dynamic {
-  let value: Dynamic = pages.findIndex(
-    (input?: Dynamic): Dynamic => input.id === pageId,
+  let pageIndex: Dynamic = pages.findIndex(
+    (page?: Dynamic): Dynamic => page.id === pageId,
   );
-  return value < 0 ? undefined : (pages[value - 1] ?? pages[value + 1])?.id;
+  return pageIndex < 0 ? undefined : (pages[pageIndex - 1] ?? pages[pageIndex + 1])?.id;
 }
 function restoreCanvasPageSpec(pages?: Dynamic, snapshot?: Dynamic): Dynamic {
   let items: Dynamic = [...(pages ?? [])];
-  items.some((input?: Dynamic): Dynamic => input.id === snapshot.spec.id) ||
+  items.some((page?: Dynamic): Dynamic => page.id === snapshot.spec.id) ||
     items.splice(Math.min(snapshot.index, items.length), 0, snapshot.spec);
   return items;
 }
@@ -85,14 +85,14 @@ function retargetCanvasPageHistory(
         id: pageId,
       },
     };
-    for (let value of step.entries as Dynamic)
-      value.spec = {
-        ...value.spec,
+    for (let entry of step.entries as Dynamic)
+      entry.spec = {
+        ...entry.spec,
         page: pageId,
       };
-    for (let value of (step.anns ?? []) as Dynamic)
-      value.spec = {
-        ...value.spec,
+    for (let annotation of (step.anns ?? []) as Dynamic)
+      annotation.spec = {
+        ...annotation.spec,
         page: pageId,
       };
   }
@@ -101,17 +101,17 @@ function assignImplicitFirstCanvasPage(
   objects?: Dynamic,
   pages?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = pages?.[0]?.id;
+  let firstPageId: Dynamic = pages?.[0]?.id;
   return objects.map(
-    (input?: Dynamic): Dynamic =>
-      value !== undefined &&
-      input.page !== value &&
-      designPageId(input, pages) === value
+    (canvasObject?: Dynamic): Dynamic =>
+      firstPageId !== undefined &&
+      canvasObject.page !== firstPageId &&
+      designPageId(canvasObject, pages) === firstPageId
         ? {
-            ...input,
-            page: value,
+            ...canvasObject,
+            page: firstPageId,
           }
-        : input,
+        : canvasObject,
   );
 }
 function isCanvasPageMatch(
@@ -125,16 +125,16 @@ function isCanvasPageMatch(
   );
 }
 function nextCanvasPageName(pages?: Dynamic): Dynamic {
-  let value: Dynamic = pages.length + 1;
+  let pageNumber: Dynamic = pages.length + 1;
   for (
     ;
     pages.some(
-      (input?: Dynamic): Dynamic => input.name === uiMessage("canvas.pageOperations.page") + String(value),
+      (page?: Dynamic): Dynamic => page.name === uiMessage("canvas.pageOperations.page") + String(pageNumber),
     );
 
   )
-    value += 1;
-  return uiMessage("canvas.pageOperations.page") + String(value);
+    pageNumber += 1;
+  return uiMessage("canvas.pageOperations.page") + String(pageNumber);
 }
 function canvasPageDeleteConfirmation(
   pageName?: Dynamic,
@@ -142,7 +142,7 @@ function canvasPageDeleteConfirmation(
   noteCount?: Dynamic,
   hasOtherObjects?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = [
+  let objectPhrases: Dynamic = [
     artboardCount > 0
       ? pluralCanvasObjectCount(artboardCount, "artboard", "artboards")
       : "",
@@ -153,12 +153,12 @@ function canvasPageDeleteConfirmation(
           otherCanvasObjectWord(artboardCount > 0) + "objects",
         )
       : "",
-  ].filter((input?: Dynamic): Dynamic => input !== "");
+  ].filter((phrase?: Dynamic): Dynamic => phrase !== "");
   return {
     get title() { return uiMessage("canvas.pageOperations.deletePage2", { value1: String(pageName) }); },
     message:
       uiMessage("canvas.pageOperations.its") +
-      value.join(" and ") +
+      objectPhrases.join(" and ") +
       " will be deleted too. Undo (" +
       hasOtherObjects +
       ") brings " +
@@ -184,11 +184,11 @@ export {
 export function installCanvasPageOperations(): () => void {
   return () => {
     pluralCanvasObjectCount = (
-      input?: Dynamic,
-      options?: Dynamic,
-      context?: Dynamic,
-    ): Dynamic => (input === 1 ? options : String(input) + " " + context);
-    otherCanvasObjectWord = (input?: Dynamic): Dynamic =>
-      input ? uiMessage("canvas.pageOperations.other") : "";
+      count?: Dynamic,
+      singular?: Dynamic,
+      plural?: Dynamic,
+    ): Dynamic => (count === 1 ? singular : String(count) + " " + plural);
+    otherCanvasObjectWord = (hasPrecedingObjects?: Dynamic): Dynamic =>
+      hasPrecedingObjects ? uiMessage("canvas.pageOperations.other") : "";
   };
 }

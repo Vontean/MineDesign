@@ -15,97 +15,97 @@ var phoneCanvasDocumentId: Dynamic;
 var getPhoneCanvasStorage: Dynamic;
 var phoneCanvasStorageKey: Dynamic;
 function isPhoneCanvasDocumentAlive(
-  input?: Dynamic,
-  options?: Dynamic,
+  documentId?: Dynamic,
+  rootWindow?: Dynamic,
 ): Dynamic {
-  let count: Dynamic = 2e3,
-    callback: Dynamic = (items?: Dynamic, options2?: Dynamic): Dynamic => {
-      if (count-- <= 0) return false;
+  let remainingBudget: Dynamic = 2e3,
+    containsDocument: Dynamic = (frameWindow?: Dynamic, depth?: Dynamic): Dynamic => {
+      if (remainingBudget-- <= 0) return false;
       try {
-        if (items[phoneCanvasDocumentMarker] === input) return true;
+        if (frameWindow[phoneCanvasDocumentMarker] === documentId) return true;
       } catch {}
-      if (options2 === 5) return false;
+      if (depth === 5) return false;
       try {
         for (
           let index: Dynamic = 0,
-            value: Dynamic = Math.min(items.length, 100);
-          index < value;
+            childCount: Dynamic = Math.min(frameWindow.length, 100);
+          index < childCount;
           index++
         )
-          if (callback(items[index], options2 + 1)) return true;
+          if (containsDocument(frameWindow[index], depth + 1)) return true;
       } catch {}
       return false;
     };
   try {
-    return callback(options ?? (window as Dynamic).top ?? window, 0);
+    return containsDocument(rootWindow ?? (window as Dynamic).top ?? window, 0);
   } catch {
     return false;
   }
 }
 function wasPhoneCanvasKilled(
-  input?: Dynamic,
-  options?: Dynamic,
-  context: Dynamic = isPhoneCanvasDocumentAlive,
+  storage?: Dynamic,
+  storageKey?: Dynamic,
+  isDocumentAlive: Dynamic = isPhoneCanvasDocumentAlive,
 ): Dynamic {
   try {
-    let value: Dynamic = input?.getItem(options) ?? null;
-    if (value === phoneCanvasKilledMarker) return true;
-    if (value === null || !value.startsWith(phoneCanvasShowingPrefix))
+    let storedValue: Dynamic = storage?.getItem(storageKey) ?? null;
+    if (storedValue === phoneCanvasKilledMarker) return true;
+    if (storedValue === null || !storedValue.startsWith(phoneCanvasShowingPrefix))
       return false;
-    let value2: Dynamic = value.slice(phoneCanvasShowingPrefix.length);
-    return value2 === phoneCanvasDocumentId || context(value2)
+    let storedDocumentId: Dynamic = storedValue.slice(phoneCanvasShowingPrefix.length);
+    return storedDocumentId === phoneCanvasDocumentId || isDocumentAlive(storedDocumentId)
       ? false
-      : (input?.setItem(options, phoneCanvasKilledMarker), true);
+      : (storage?.setItem(storageKey, phoneCanvasKilledMarker), true);
   } catch {
     return false;
   }
 }
 function markPhoneCanvasVisibility(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  storage?: Dynamic,
+  storageKey?: Dynamic,
+  isVisible?: Dynamic,
 ): Dynamic {
   try {
-    let value: Dynamic = input?.getItem(options) ?? null;
-    if (input == null || value === phoneCanvasKilledMarker) return;
-    context
-      ? input.setItem(
-          options,
+    let storedValue: Dynamic = storage?.getItem(storageKey) ?? null;
+    if (storage == null || storedValue === phoneCanvasKilledMarker) return;
+    isVisible
+      ? storage.setItem(
+          storageKey,
           phoneCanvasShowingPrefix + phoneCanvasDocumentId,
         )
-      : value === phoneCanvasShowingPrefix + phoneCanvasDocumentId &&
-        input.removeItem(options);
+      : storedValue === phoneCanvasShowingPrefix + phoneCanvasDocumentId &&
+        storage.removeItem(storageKey);
   } catch {}
 }
-function usePhoneCanvasVisibility(input?: Dynamic): Dynamic {
+function usePhoneCanvasVisibility(isEnabled?: Dynamic): Dynamic {
   (0, react_uPt.useLayoutEffect)((): Dynamic => {
-    if (!input) return;
-    let value: Dynamic = getPhoneCanvasStorage(),
-      value2: Dynamic = phoneCanvasStorageKey(),
-      callback: Dynamic = (): Dynamic =>
+    if (!isEnabled) return;
+    let storage: Dynamic = getPhoneCanvasStorage(),
+      storageKey: Dynamic = phoneCanvasStorageKey(),
+      markVisibilityFromDocument: Dynamic = (): Dynamic =>
         markPhoneCanvasVisibility(
-          value,
-          value2,
+          storage,
+          storageKey,
           (document as Dynamic).visibilityState !== "hidden",
         ),
-      callback2: Dynamic = (): Dynamic =>
-        markPhoneCanvasVisibility(value, value2, false),
-      callback3: Dynamic = (input2?: Dynamic): Dynamic => {
-        input2.key === value2 && input2.newValue === null && callback();
+      markHidden: Dynamic = (): Dynamic =>
+        markPhoneCanvasVisibility(storage, storageKey, false),
+      handleStorageEvent: Dynamic = (storageEvent?: Dynamic): Dynamic => {
+        storageEvent.key === storageKey && storageEvent.newValue === null && markVisibilityFromDocument();
       };
-    callback();
-    (document as Dynamic).addEventListener("visibilitychange", callback);
-    (window as Dynamic).addEventListener("pageshow", callback);
-    (window as Dynamic).addEventListener("pagehide", callback2);
-    (window as Dynamic).addEventListener("storage", callback3);
+    markVisibilityFromDocument();
+    (document as Dynamic).addEventListener("visibilitychange", markVisibilityFromDocument);
+    (window as Dynamic).addEventListener("pageshow", markVisibilityFromDocument);
+    (window as Dynamic).addEventListener("pagehide", markHidden);
+    (window as Dynamic).addEventListener("storage", handleStorageEvent);
     return (): Dynamic => {
-      (document as Dynamic).removeEventListener("visibilitychange", callback);
-      (window as Dynamic).removeEventListener("pageshow", callback);
-      (window as Dynamic).removeEventListener("pagehide", callback2);
-      (window as Dynamic).removeEventListener("storage", callback3);
-      callback2();
+      (document as Dynamic).removeEventListener("visibilitychange", markVisibilityFromDocument);
+      (window as Dynamic).removeEventListener("pageshow", markVisibilityFromDocument);
+      (window as Dynamic).removeEventListener("pagehide", markHidden);
+      (window as Dynamic).removeEventListener("storage", handleStorageEvent);
+      markHidden();
     };
-  }, [input]);
+  }, [isEnabled]);
 }
 export {
   getPhoneCanvasStorage,

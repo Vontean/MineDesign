@@ -45,12 +45,12 @@ function SelectionChromeOverlay({
 }): Dynamic {
   useUiLocale();
   let stroke: Dynamic = chrome.stroke,
-    value: Dynamic = [...chrome.rings].sort(
-      (input?: Dynamic, options?: Dynamic): Dynamic =>
-        +(input.k === "grip") - +(options.k === "grip"),
+    sortedRings: Dynamic = [...chrome.rings].sort(
+      (firstRing?: Dynamic, secondRing?: Dynamic): Dynamic =>
+        +(firstRing.k === "grip") - +(secondRing.k === "grip"),
     ),
-    value2: Dynamic = value.some(
-      (input?: Dynamic): Dynamic => input.k === "grip" && input.group,
+    hasGroupGrip: Dynamic = sortedRings.some(
+      (ring?: Dynamic): Dynamic => ring.k === "grip" && ring.group,
     ),
     index: Dynamic = 0;
   return (
@@ -75,21 +75,21 @@ function SelectionChromeOverlay({
           state={"hover"}
           variant={board.component ? "component" : "object"}
         />)}
-      {value.map(
-        (input?: Dynamic, options?: Dynamic): Dynamic =>
-          input.k === "busy"
+      {sortedRings.map(
+        (ring?: Dynamic, ringIndex?: Dynamic): Dynamic =>
+          ring.k === "busy"
             ? (() => {
                 const _Component = "div";
                 const _props = {
                   "data-testid": "mega-element-busy",
                   style: {
                     position: "absolute",
-                    left: input.x,
-                    top: input.y,
-                    width: input.w,
-                    height: input.h,
-                    transform: input.rot
-                      ? "rotate(" + String(input.rot) + "rad)"
+                    left: ring.x,
+                    top: ring.y,
+                    width: ring.w,
+                    height: ring.h,
+                    transform: ring.rot
+                      ? "rotate(" + String(ring.rot) + "rad)"
                       : undefined,
                     pointerEvents: "none",
                   },
@@ -98,37 +98,37 @@ function SelectionChromeOverlay({
                 const _key = "busy" + String(index++);
                 return <_Component key={_key} {..._props} />;
               })()
-            : input.k === "hov"
+            : ring.k === "hov"
               ? (() => {
-                  const _Component2 = SelectionRing_r;
-                  const _props2 = {
+                  const HoverRingElement = SelectionRing_r;
+                  const hoverRingProps = {
                     "data-testid": "mega-element-hover",
-                    "data-component": input.component ? "" : undefined,
+                    "data-component": ring.component ? "" : undefined,
                     frame: {
-                      x: input.x,
-                      y: input.y,
-                      w: input.w,
-                      h: input.h,
+                      x: ring.x,
+                      y: ring.y,
+                      w: ring.w,
+                      h: ring.h,
                     },
                     scale: scale,
-                    rotation: input.rot,
+                    rotation: ring.rot,
                     state: "hover",
-                    variant: input.component ? "component" : "object",
+                    variant: ring.component ? "component" : "object",
                   } as const;
-                  const _key2 = "hov" + String(options);
-                  return <_Component2 key={_key2} {..._props2} />;
+                  const hoverRingKey = "hov" + String(ringIndex);
+                  return <HoverRingElement key={hoverRingKey} {...hoverRingProps} />;
                 })()
-              : input.k === "grip" && crop && input.media?.tid === crop.tid
+              : ring.k === "grip" && crop && ring.media?.tid === crop.tid
                 ? ((): Dynamic => {
-                    let [inset, inset2, inset3, inset4]: Dynamic =
-                        input.media.inset,
-                      state: Dynamic = {
-                        w: input.w * (1 - inset - inset3),
-                        h: input.h * (1 - inset2 - inset4),
+                    let [insetLeft, insetTop, insetRight, insetBottom]: Dynamic =
+                        ring.media.inset,
+                      cropFrame: Dynamic = {
+                        w: ring.w * (1 - insetLeft - insetRight),
+                        h: ring.h * (1 - insetTop - insetBottom),
                       },
-                      state2: Dynamic = {
-                        w: input.media.w,
-                        h: input.media.h,
+                      cropNatural: Dynamic = {
+                        w: ring.media.w,
+                        h: ring.media.h,
                       };
                     return (
                       <div
@@ -136,49 +136,49 @@ function SelectionChromeOverlay({
                         data-testid={"mega-element-crop"}
                         style={{
                           position: "absolute",
-                          left: input.x + input.w * inset,
-                          top: input.y + input.h * inset2,
-                          width: state.w,
-                          height: state.h,
-                          transform: input.rot
-                            ? "rotate(" + String(input.rot) + "rad)"
+                          left: ring.x + ring.w * insetLeft,
+                          top: ring.y + ring.h * insetTop,
+                          width: cropFrame.w,
+                          height: cropFrame.h,
+                          transform: ring.rot
+                            ? "rotate(" + String(ring.rot) + "rad)"
                             : undefined,
                           transformOrigin:
-                            String(input.w * (0.5 - inset)) +
+                            String(ring.w * (0.5 - insetLeft)) +
                             "px " +
-                            String(input.h * (0.5 - inset2)) +
+                            String(ring.h * (0.5 - insetTop)) +
                             "px",
                         }}
                       >
                         <MediaCropEditor
-                          frame={state}
-                          natural={state2}
+                          frame={cropFrame}
+                          natural={cropNatural}
                           crop={crop.live}
                           scale={scale}
-                          rotation={input.rot}
+                          rotation={ring.rot}
                           src={crop.src}
-                          video={input.media.video}
+                          video={ring.media.video}
                           zoomDisabledReason={crop.zoomDisabledReason}
-                          onLive={(input2?: Dynamic): Dynamic =>
-                            crop.onLive(input2, state, state2)
+                          onLive={(liveCrop?: Dynamic): Dynamic =>
+                            crop.onLive(liveCrop, cropFrame, cropNatural)
                           }
                           onDone={crop.onDone}
                           onGesture={crop.onGesture}
                           onFrame={noopResizeGrip}
                           frameHandleOff={
-                            input.media.abs
+                            ring.media.abs
                               ? undefined
                               : resizeGripCursorOverrides
                           }
                           onSideStart={(
-                            input2?: Dynamic,
-                            options2?: Dynamic,
+                            side?: Dynamic,
+                            pointerEvent?: Dynamic,
                           ): Dynamic =>
-                            crop.onSideStart(input2, options2, {
-                              frame: state,
-                              natural: state2,
-                              rot: input.rot ?? 0,
-                              abs: input.media?.abs === true,
+                            crop.onSideStart(side, pointerEvent, {
+                              frame: cropFrame,
+                              natural: cropNatural,
+                              rot: ring.rot ?? 0,
+                              abs: ring.media?.abs === true,
                             })
                           }
                         />
@@ -186,97 +186,97 @@ function SelectionChromeOverlay({
                     );
                   })()
                 : (() => {
-                    const _Component3 = "div";
-                    const _props3 = {
+                    const RingElement = "div";
+                    const ringProps = {
                       "data-testid":
-                        input.k !== "grip"
+                        ring.k !== "grip"
                           ? "mega-element-ring"
-                          : input.group
+                          : ring.group
                             ? "mega-element-group-grips"
                             : "mega-element-grips",
-                      "data-component": input.component ? "" : undefined,
+                      "data-component": ring.component ? "" : undefined,
                       children: (
                         <SelectionRing
                           frame={{
-                            x: input.x,
-                            y: input.y,
-                            w: input.w,
-                            h: input.h,
+                            x: ring.x,
+                            y: ring.y,
+                            w: ring.w,
+                            h: ring.h,
                           }}
                           scale={scale}
-                          rotation={input.rot}
+                          rotation={ring.rot}
                           state={
-                            input.k === "sel" && value2
+                            ring.k === "sel" && hasGroupGrip
                               ? "member"
                               : "selected"
                           }
-                          variant={input.component ? "component" : "object"}
+                          variant={ring.component ? "component" : "object"}
                           grips={
-                            input.k === "grip" && interactive
+                            ring.k === "grip" && interactive
                               ? "corners"
                               : "none"
                           }
-                          edgeStrips={!input.aspectLock}
+                          edgeStrips={!ring.aspectLock}
                           resizeDisabledReason={
-                            input.k === "grip" &&
+                            ring.k === "grip" &&
                             interactive &&
-                            input.noResize
+                            ring.noResize
                               ? selectionResizeDisabledMessage
                               : undefined
                           }
                           onResizeStart={
-                            input.k === "grip"
+                            ring.k === "grip"
                               ? (
-                                  input2?: Dynamic,
-                                  options2?: Dynamic,
+                                  grip?: Dynamic,
+                                  pointerEvent?: Dynamic,
                                 ): Dynamic =>
                                   onGripDown(
                                     {
                                       kind: "resize",
-                                      dir: resizeGripCompassDirection(input2),
+                                      dir: resizeGripCompassDirection(grip),
                                     },
-                                    options2,
+                                    pointerEvent,
                                   )
                               : undefined
                           }
                           onRotateStart={
-                            input.k === "grip" &&
+                            ring.k === "grip" &&
                             interactive &&
-                            input.rotatable
+                            ring.rotatable
                               ? (
-                                  input2?: Dynamic,
-                                  options2?: Dynamic,
+                                  corner?: Dynamic,
+                                  pointerEvent?: Dynamic,
                                 ): Dynamic =>
                                   onGripDown(
                                     {
                                       kind: "rotate",
-                                      corner: input2,
+                                      corner: corner,
                                     },
-                                    options2,
+                                    pointerEvent,
                                   )
                               : undefined
                           }
                           rotateDisabledReason={
-                            input.k === "grip" &&
+                            ring.k === "grip" &&
                             interactive &&
-                            input.group &&
-                            !input.rotatable
+                            ring.group &&
+                            !ring.rotatable
                               ? selectionRotateDisabledMessages[
-                                  input.noRotate ?? "none"
+                                  ring.noRotate ?? "none"
                                 ]
                               : undefined
                           }
                           angleLabel={
-                            input.deg != null
-                              ? String(input.deg) + "\xB0"
+                            ring.deg != null
+                              ? String(ring.deg) + "\xB0"
                               : undefined
                           }
                         />
                       ),
                     } as const;
-                    const _key3 =
-                      input.k === "grip" ? "grip" : "sel" + String(options);
-                    return <_Component3 key={_key3} {..._props3} />;
+                    const ringKey =
+                      ring.k === "grip" ? "grip" : "sel" + String(ringIndex);
+                    return <RingElement key={ringKey} {...ringProps} />;
                   })(),
       )}
       {chrome.measure ? (<MeasurementOverlay m={chrome.measure} scale={scale} />) : (null)}
@@ -307,13 +307,13 @@ function SelectionChromeOverlay({
           shape={"square"}
           onPointDragStart={
             interactive
-              ? (input?: Dynamic, options?: Dynamic): Dynamic =>
+              ? (pointIndex?: Dynamic, pointerEvent?: Dynamic): Dynamic =>
                   onGripDown(
                     {
                       kind: "endpoint",
-                      which: input === 0 ? 0 : 1,
+                      which: pointIndex === 0 ? 0 : 1,
                     },
-                    options,
+                    pointerEvent,
                   )
               : undefined
           }

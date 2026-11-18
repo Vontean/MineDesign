@@ -3,7 +3,7 @@ import {
   type Dynamic,
 } from "../runtime-types";
 import { load_react } from "../dependencies";
-import { AccessibilityAnnouncementsLabel_16, adjacentOutlineNode, artboardLoadFailureAnnouncement, artboardLoadingAnnouncement, deepestSingleOutlineNode, emptyArtboardSelectionAnnouncement, exitOutlineAnnouncement, findOutlineLocation, firstNestedOutlineNode, NoLayersInsideThisOneMessage, NothingSelectedMessage, outlineLayerAnnouncement, outlineLayerNavigationAnnouncement, outlineNodeDescription, selectingAnnouncement, selectionAnnouncement } from "../editor/accessibility/announcements";
+import { AccessibilityAnnouncementsLabel_16 as textEditStartedAnnouncement, adjacentOutlineNode, artboardLoadFailureAnnouncement, artboardLoadingAnnouncement, deepestSingleOutlineNode, emptyArtboardSelectionAnnouncement, exitOutlineAnnouncement, findOutlineLocation, firstNestedOutlineNode, NoLayersInsideThisOneMessage, NothingSelectedMessage, outlineLayerAnnouncement, outlineLayerNavigationAnnouncement, outlineNodeDescription, selectingAnnouncement, selectionAnnouncement } from "../editor/accessibility/announcements";
 import { announce } from "../editor/accessibility/announcer";
 import { canvasElementSelectionCount, selectionFromArtboards } from "../editor/selection/canvas-selection";
 import { toModuleNamespace } from "../module-helpers";
@@ -14,499 +14,499 @@ var canvasFocusAnnouncementRepeatCount: Dynamic;
 var keyboardNavigationMode: Dynamic;
 var canvasKeyboardRepeatIntervalMs: Dynamic;
 function useCanvasKeyboardNavigation(
-  options?: Dynamic,
-  options2?: Dynamic,
+  host?: Dynamic,
+  outlineTrees?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = (0, react_ta.useRef)(options);
-  value.current = options;
-  let value2: Dynamic = (0, react_ta.useRef)(options2);
-  value2.current = options2;
-  let [value3, value4]: Dynamic = (0, react_ta.useState)(null),
-    value5: Dynamic = (0, react_ta.useRef)(null),
-    callback: Dynamic = (input?: Dynamic): Dynamic => {
-      value5.current = input;
-      value4(input);
+  let hostRef: Dynamic = (0, react_ta.useRef)(host);
+  hostRef.current = host;
+  let outlineTreesRef: Dynamic = (0, react_ta.useRef)(outlineTrees);
+  outlineTreesRef.current = outlineTrees;
+  let [insideFile, setInsideFile]: Dynamic = (0, react_ta.useState)(null),
+    insideFileRef: Dynamic = (0, react_ta.useRef)(null),
+    setInsideFileNow: Dynamic = (file?: Dynamic): Dynamic => {
+      insideFileRef.current = file;
+      setInsideFile(file);
     },
-    value6: Dynamic = (0, react_ta.useRef)(null),
-    value7: Dynamic = (0, react_ta.useRef)(undefined),
-    value8: Dynamic = (0, react_ta.useRef)(0),
-    value9: Dynamic = (0, react_ta.useRef)(null),
-    value10: Dynamic = (0, react_ta.useRef)(null),
-    value11: Dynamic = (0, react_ta.useRef)(null),
-    value12: Dynamic = (0, react_ta.useRef)(0),
-    value13: Dynamic = (0, react_ta.useRef)(null),
-    value14: Dynamic = (0, react_ta.useRef)(null),
-    value15: Dynamic = (0, react_ta.useRef)(null),
-    value16: Dynamic = (0, react_ta.useRef)(null),
-    value17: Dynamic = (0, react_ta.useRef)(null),
-    callback2: Dynamic = (input?: Dynamic, options3?: Dynamic): Dynamic => {
-      let current: Dynamic = value6.current;
+    cursorRef: Dynamic = (0, react_ta.useRef)(null),
+    cursorTreeRef: Dynamic = (0, react_ta.useRef)(undefined),
+    tokenCounterRef: Dynamic = (0, react_ta.useRef)(0),
+    activeStepRef: Dynamic = (0, react_ta.useRef)(null),
+    queuedStepRef: Dynamic = (0, react_ta.useRef)(null),
+    pendingSelectRef: Dynamic = (0, react_ta.useRef)(null),
+    selectSerialRef: Dynamic = (0, react_ta.useRef)(0),
+    holdTimeRef: Dynamic = (0, react_ta.useRef)(null),
+    holdTimerRef: Dynamic = (0, react_ta.useRef)(null),
+    expectedSelectionRef: Dynamic = (0, react_ta.useRef)(null),
+    pendingEnterFileRef: Dynamic = (0, react_ta.useRef)(null),
+    textEditFileRef: Dynamic = (0, react_ta.useRef)(null),
+    findCursorTid: Dynamic = (file?: Dynamic, tree?: Dynamic): Dynamic => {
+      let current: Dynamic = cursorRef.current;
       if (
         current != null &&
-        current.file === input &&
-        findOutlineLocation(options3, current.tid)
+        current.file === file &&
+        findOutlineLocation(tree, current.tid)
       )
         return current.tid;
-      let value31: Dynamic =
-        value.current.megaSelRef.current.elements.get(input)?.tids;
-      if (!value31 || value31.length === 0) return null;
-      let values: Dynamic = new Set(value31),
-        callback14: Dynamic = (input2?: Dynamic): Dynamic => {
-          for (let value32 of input2 as Dynamic) {
-            if (values.has(value32.tid)) return value32.tid;
-            let value33: Dynamic = callback14(value32.children);
-            if (value33 != null) return value33;
+      let selectedTids: Dynamic =
+        hostRef.current.megaSelRef.current.elements.get(file)?.tids;
+      if (!selectedTids || selectedTids.length === 0) return null;
+      let selectedTidSet: Dynamic = new Set(selectedTids),
+        findSelectedTid: Dynamic = (nodes?: Dynamic): Dynamic => {
+          for (let node of nodes as Dynamic) {
+            if (selectedTidSet.has(node.tid)) return node.tid;
+            let foundTid: Dynamic = findSelectedTid(node.children);
+            if (foundTid != null) return foundTid;
           }
           return null;
         };
-      return callback14(options3);
+      return findSelectedTid(tree);
     },
-    callback3: Dynamic = (input?: Dynamic, options3?: Dynamic): Dynamic => {
-      let current: Dynamic = value9.current;
-      current?.token !== input.token &&
-        ((!options3 && value11.current?.token !== input.token) ||
+    recordActiveStep: Dynamic = (step?: Dynamic, shouldRepeat?: Dynamic): Dynamic => {
+      let current: Dynamic = activeStepRef.current;
+      current?.token !== step.token &&
+        ((!shouldRepeat && pendingSelectRef.current?.token !== step.token) ||
           (current?.timer && clearTimeout(current.timer),
-          (value9.current = {
-            ...input,
-            timer: options3
-              ? callback4(input, canvasFocusAnnouncementRepeatCount)
+          (activeStepRef.current = {
+            ...step,
+            timer: shouldRepeat
+              ? scheduleSelectStep(step, canvasFocusAnnouncementRepeatCount)
               : null,
           })));
     },
-    callback4: Dynamic = (input?: Dynamic, options3?: Dynamic): Dynamic => {
-      let value31: Dynamic = setTimeout((): Dynamic => {
-        let current: Dynamic = value9.current;
-        if (current?.timer !== value31) return;
+    scheduleSelectStep: Dynamic = (step?: Dynamic, retriesLeft?: Dynamic): Dynamic => {
+      let timer: Dynamic = setTimeout((): Dynamic => {
+        let current: Dynamic = activeStepRef.current;
+        if (current?.timer !== timer) return;
         current.timer = null;
-        let current2: Dynamic = value.current;
+        let hostSnapshot: Dynamic = hostRef.current;
         if (
           !(
-            value5.current !== input.file ||
-            value6.current?.file !== input.file ||
-            current2.focusedFileRef.current !== input.file
+            insideFileRef.current !== step.file ||
+            cursorRef.current?.file !== step.file ||
+            hostSnapshot.focusedFileRef.current !== step.file
           )
         ) {
-          if (value10.current) {
-            callback9();
+          if (queuedStepRef.current) {
+            replayQueuedStep();
             return;
           }
-          options3 <= 0 ||
-            (current2.selectLayerNow(
-              input.file,
-              input.tid,
-              input.token,
+          retriesLeft <= 0 ||
+            (hostSnapshot.selectLayerNow(
+              step.file,
+              step.tid,
+              step.token,
               false,
             )
-              ? (current.timer = callback4(input, options3 - 1))
-              : current2.handlesRef.current.get(input.file)?.isReady() ===
-                  false && callback5(input));
+              ? (current.timer = scheduleSelectStep(step, retriesLeft - 1))
+              : hostSnapshot.handlesRef.current.get(step.file)?.isReady() ===
+                  false && selectWhenReady(step));
         }
-      }, value.current.echoWaitMs ?? canvasFocusAnnouncementDelayMs);
-      return value31;
+      }, hostRef.current.echoWaitMs ?? canvasFocusAnnouncementDelayMs);
+      return timer;
     },
-    callback5: Dynamic = (input?: Dynamic): Dynamic => {
-      value11.current?.cancel();
-      let value31: Dynamic = ++value12.current,
-        callback14: Dynamic = (input2?: Dynamic): Dynamic => {
+    selectWhenReady: Dynamic = (step?: Dynamic): Dynamic => {
+      pendingSelectRef.current?.cancel();
+      let serial: Dynamic = ++selectSerialRef.current,
+        handleSettled: Dynamic = (outcome?: Dynamic): Dynamic => {
           if (
-            value11.current?.serial !== value31 ||
-            ((value11.current = null),
-            input2 !== "gave-up" || value5.current !== input.file)
+            pendingSelectRef.current?.serial !== serial ||
+            ((pendingSelectRef.current = null),
+            outcome !== "gave-up" || insideFileRef.current !== step.file)
           )
             return;
-          if (value9.current?.token === input.token) {
-            let current2: Dynamic = value10.current;
-            current2 && (callback8(), callback7(current2, false));
+          if (activeStepRef.current?.token === step.token) {
+            let queuedStep: Dynamic = queuedStepRef.current;
+            queuedStep && (cancelAllSteps(), runStep(queuedStep, false));
             return;
           }
-          let current: Dynamic = value6.current;
+          let current: Dynamic = cursorRef.current;
           !current ||
-            current.file !== input.file ||
-            current.tid !== input.tid ||
+            current.file !== step.file ||
+            current.tid !== step.tid ||
             (announce(
               artboardLoadFailureAnnouncement(
-                value.current.titleOf(input.file),
+                hostRef.current.titleOf(step.file),
               ),
             ),
-            (value6.current = null));
+            (cursorRef.current = null));
         },
-        value32: Dynamic = value.current.selectElementIn(
-          input.file,
-          input.tid,
-          (): Dynamic => callback3(input, false),
-          input.token,
-          callback14,
+        cancelSelect: Dynamic = hostRef.current.selectElementIn(
+          step.file,
+          step.tid,
+          (): Dynamic => recordActiveStep(step, false),
+          step.token,
+          handleSettled,
         );
-      value11.current = {
-        ...input,
-        cancel: value32,
-        serial: value31,
+      pendingSelectRef.current = {
+        ...step,
+        cancel: cancelSelect,
+        serial: serial,
       };
     },
-    callback6: Dynamic = (): Dynamic => {
-      let current: Dynamic = value9.current;
+    isStepPending: Dynamic = (): Dynamic => {
+      let current: Dynamic = activeStepRef.current;
       return (
         current != null &&
-        (current.timer != null || value11.current?.token === current.token)
+        (current.timer != null || pendingSelectRef.current?.token === current.token)
       );
     },
-    callback7: Dynamic = (input?: Dynamic, options3?: Dynamic): Dynamic => {
-      value.current.selectLayerNow(
-        input.file,
-        input.tid,
-        input.token,
-        options3,
+    runStep: Dynamic = (step?: Dynamic, selectOption?: Dynamic): Dynamic => {
+      hostRef.current.selectLayerNow(
+        step.file,
+        step.tid,
+        step.token,
+        selectOption,
       )
-        ? callback3(input, true)
-        : callback5(input);
+        ? recordActiveStep(step, true)
+        : selectWhenReady(step);
     },
-    callback8: Dynamic = (): Dynamic => {
-      let current: Dynamic = value9.current;
+    cancelAllSteps: Dynamic = (): Dynamic => {
+      let current: Dynamic = activeStepRef.current;
       current?.timer && clearTimeout(current.timer);
-      value9.current = null;
-      value10.current = null;
-      value11.current?.cancel();
-      value11.current = null;
+      activeStepRef.current = null;
+      queuedStepRef.current = null;
+      pendingSelectRef.current?.cancel();
+      pendingSelectRef.current = null;
     },
-    callback9: Dynamic = (): Dynamic => {
-      let current: Dynamic = value10.current;
-      callback8();
-      current && callback7(current, false);
+    replayQueuedStep: Dynamic = (): Dynamic => {
+      let current: Dynamic = queuedStepRef.current;
+      cancelAllSteps();
+      current && runStep(current, false);
     },
-    callback10: Dynamic = (): Dynamic => callback8(),
-    callback11: Dynamic = (input?: Dynamic): Dynamic => {
-      let current: Dynamic = value.current,
-        value31: Dynamic = value9.current ?? value11.current;
-      value31 &&
-        value31.file === input &&
-        (current.megaSelRef.current.elements.has(input) ||
-          current.clearFrameSelection(input, value31.token));
-      callback10();
-      current.selectArtboard(input);
+    cancelPendingSteps: Dynamic = (): Dynamic => cancelAllSteps(),
+    settleArtboardSelection: Dynamic = (file?: Dynamic): Dynamic => {
+      let current: Dynamic = hostRef.current,
+        pendingStep: Dynamic = activeStepRef.current ?? pendingSelectRef.current;
+      pendingStep &&
+        pendingStep.file === file &&
+        (current.megaSelRef.current.elements.has(file) ||
+          current.clearFrameSelection(file, pendingStep.token));
+      cancelPendingSteps();
+      current.selectArtboard(file);
     },
-    callback12: Dynamic = (input?: Dynamic): Dynamic => {
-      let current: Dynamic = value.current;
-      value16.current = null;
-      value6.current?.file === input && (value6.current = null);
-      callback(null);
-      callback11(input);
-      current.focusArtboard(input);
+    selectWholeArtboard: Dynamic = (file?: Dynamic): Dynamic => {
+      let current: Dynamic = hostRef.current;
+      pendingEnterFileRef.current = null;
+      cursorRef.current?.file === file && (cursorRef.current = null);
+      setInsideFileNow(null);
+      settleArtboardSelection(file);
+      current.focusArtboard(file);
       announce(
         selectionAnnouncement(
-          selectionFromArtboards(new Set([input])),
-          value2.current,
+          selectionFromArtboards(new Set([file])),
+          outlineTreesRef.current,
           current.titleOf,
         ),
       );
-      current.sayUnreadable?.(input);
+      current.sayUnreadable?.(file);
     };
   (0, react_ta.useEffect)(
     (): Dynamic => (): Dynamic => {
-      callback10();
-      value14.current && clearTimeout(value14.current);
+      cancelPendingSteps();
+      holdTimerRef.current && clearTimeout(holdTimerRef.current);
     },
     [],
   );
-  let callback13: Dynamic = (
-      input?: Dynamic,
-      options3?: Dynamic,
-      context?: Dynamic,
+  let moveToNode: Dynamic = (
+      file?: Dynamic,
+      tid?: Dynamic,
+      announcement?: Dynamic,
     ): Dynamic => {
-      value6.current = {
-        file: input,
-        tid: options3,
+      cursorRef.current = {
+        file: file,
+        tid: tid,
       };
-      value7.current = value2.current[input];
-      announce(context);
-      let state: Dynamic = {
-          file: input,
-          tid: options3,
-          token: keyboardNavigationMode + String(++value8.current),
+      cursorTreeRef.current = outlineTreesRef.current[file];
+      announce(announcement);
+      let step: Dynamic = {
+          file: file,
+          tid: tid,
+          token: keyboardNavigationMode + String(++tokenCounterRef.current),
           at: Date.now(),
-          tree: value2.current[input],
+          tree: outlineTreesRef.current[file],
         },
-        current: Dynamic = value9.current;
-      current && current.file === input && callback6()
-        ? (value10.current = state)
-        : (callback10(), callback7(state, true));
+        current: Dynamic = activeStepRef.current;
+      current && current.file === file && isStepPending()
+        ? (queuedStepRef.current = step)
+        : (cancelPendingSteps(), runStep(step, true));
     },
-    value18: Dynamic = (0, react_ta.useCallback)(
-      (input?: Dynamic): Dynamic => {
-        let current: Dynamic = value.current,
-          value31: Dynamic = value2.current[input],
-          entry: Dynamic = current.handlesRef.current.get(input),
-          value32: Dynamic = current.titleOf(input);
-        current.bringArtboardIntoView(input);
-        value17.current = null;
-        (value9.current ?? value11.current) != null &&
-          (value9.current ?? value11.current).file !== input &&
-          callback10();
-        value6.current?.file !== input && (value6.current = null);
-        if (entry?.isBlocked()) {
-          value16.current = null;
-          callback(null);
-          callback11(input);
-          current.focusArtboard(input);
+    enterOutline: Dynamic = (0, react_ta.useCallback)(
+      (file?: Dynamic): Dynamic => {
+        let current: Dynamic = hostRef.current,
+          tree: Dynamic = outlineTreesRef.current[file],
+          handle: Dynamic = current.handlesRef.current.get(file),
+          title: Dynamic = current.titleOf(file);
+        current.bringArtboardIntoView(file);
+        textEditFileRef.current = null;
+        (activeStepRef.current ?? pendingSelectRef.current) != null &&
+          (activeStepRef.current ?? pendingSelectRef.current).file !== file &&
+          cancelPendingSteps();
+        cursorRef.current?.file !== file && (cursorRef.current = null);
+        if (handle?.isBlocked()) {
+          pendingEnterFileRef.current = null;
+          setInsideFileNow(null);
+          settleArtboardSelection(file);
+          current.focusArtboard(file);
           announce(
-            artboardLoadFailureAnnouncement(value32),
+            artboardLoadFailureAnnouncement(title),
           );
           return;
         }
-        if (value31 === undefined || entry == null) {
-          callback(input);
-          value16.current = input;
+        if (tree === undefined || handle == null) {
+          setInsideFileNow(file);
+          pendingEnterFileRef.current = file;
           current.clearSelectionQuietly();
-          current.focusArtboard(input);
+          current.focusArtboard(file);
           announce(
-            artboardLoadingAnnouncement(value32),
+            artboardLoadingAnnouncement(title),
           );
           return;
         }
-        value16.current = null;
-        if (value31 === null) return callback12(input);
-        if (value31.length === 0) {
-          callback(null);
-          callback11(input);
-          current.focusArtboard(input);
+        pendingEnterFileRef.current = null;
+        if (tree === null) return selectWholeArtboard(file);
+        if (tree.length === 0) {
+          setInsideFileNow(null);
+          settleArtboardSelection(file);
+          current.focusArtboard(file);
           announce(
-            emptyArtboardSelectionAnnouncement(value32),
+            emptyArtboardSelectionAnnouncement(title),
           );
           return;
         }
-        callback(input);
+        setInsideFileNow(file);
         canvasElementSelectionCount(
           current.megaSelRef.current,
         ) && current.clearSelectionQuietly();
-        let value33: Dynamic =
-            current.focusedFileRef.current === input
-              ? callback2(input, value31)
+        let cursorTid: Dynamic =
+            current.focusedFileRef.current === file
+              ? findCursorTid(file, tree)
               : null,
-          value34: Dynamic =
-            value33 != null
-              ? findOutlineLocation(value31, value33).node
-              : deepestSingleOutlineNode(value31);
-        callback13(
-          input,
-          value34.tid,
+          targetNode: Dynamic =
+            cursorTid != null
+              ? findOutlineLocation(tree, cursorTid).node
+              : deepestSingleOutlineNode(tree);
+        moveToNode(
+          file,
+          targetNode.tid,
           outlineLayerNavigationAnnouncement(
-            findOutlineLocation(value31, value34.tid),
+            findOutlineLocation(tree, targetNode.tid),
           ),
         );
       },
       [],
     );
   (0, react_ta.useEffect)((): Dynamic => {
-    let current: Dynamic = value16.current;
-    if (current == null || value5.current !== current) return;
-    let value31: Dynamic = options2[current],
-      current2: Dynamic = value.current,
-      entry: Dynamic = current2.handlesRef.current.get(current);
-    if (entry?.isBlocked()) {
-      value16.current = null;
-      callback(null);
-      callback11(current);
+    let current: Dynamic = pendingEnterFileRef.current;
+    if (current == null || insideFileRef.current !== current) return;
+    let tree: Dynamic = outlineTrees[current],
+      hostNow: Dynamic = hostRef.current,
+      handle: Dynamic = hostNow.handlesRef.current.get(current);
+    if (handle?.isBlocked()) {
+      pendingEnterFileRef.current = null;
+      setInsideFileNow(null);
+      settleArtboardSelection(current);
       announce(
         artboardLoadFailureAnnouncement(
-          current2.titleOf(current),
+          hostNow.titleOf(current),
         ),
       );
       return;
     }
-    if (value31 === undefined || entry == null) return;
-    value16.current = null;
-    if (value31 === null) return callback12(current);
-    if (value31.length === 0) {
-      callback(null);
-      callback11(current);
+    if (tree === undefined || handle == null) return;
+    pendingEnterFileRef.current = null;
+    if (tree === null) return selectWholeArtboard(current);
+    if (tree.length === 0) {
+      setInsideFileNow(null);
+      settleArtboardSelection(current);
       announce(
         emptyArtboardSelectionAnnouncement(
-          current2.titleOf(current),
+          hostNow.titleOf(current),
         ),
       );
       return;
     }
-    let value32: Dynamic = deepestSingleOutlineNode(value31);
-    callback13(
+    let targetNode: Dynamic = deepestSingleOutlineNode(tree);
+    moveToNode(
       current,
-      value32.tid,
+      targetNode.tid,
       outlineLayerNavigationAnnouncement(
-        findOutlineLocation(value31, value32.tid),
+        findOutlineLocation(tree, targetNode.tid),
       ),
     );
-  }, [options2, value3]);
-  let value19: Dynamic = (0, react_ta.useCallback)(
-      (input?: Dynamic, options3?: Dynamic): Dynamic => {
-        if (value5.current !== input) return;
-        let value31: Dynamic = value2.current[input];
-        if (value31 === undefined) {
+  }, [outlineTrees, insideFile]);
+  let stepOutline: Dynamic = (0, react_ta.useCallback)(
+      (file?: Dynamic, direction?: Dynamic): Dynamic => {
+        if (insideFileRef.current !== file) return;
+        let tree: Dynamic = outlineTreesRef.current[file];
+        if (tree === undefined) {
           announce(
             artboardLoadingAnnouncement(
-              value.current.titleOf(input),
+              hostRef.current.titleOf(file),
             ),
           );
           return;
         }
-        if (value31 === null) return callback12(input);
-        let value32: Dynamic = adjacentOutlineNode(
-          value31,
-          callback2(input, value31),
-          options3,
+        if (tree === null) return selectWholeArtboard(file);
+        let nextNode: Dynamic = adjacentOutlineNode(
+          tree,
+          findCursorTid(file, tree),
+          direction,
         );
-        if (!value32) {
-          let current: Dynamic = value.current;
-          value16.current = null;
-          value6.current = null;
-          callback(null);
-          callback11(input);
+        if (!nextNode) {
+          let current: Dynamic = hostRef.current;
+          pendingEnterFileRef.current = null;
+          cursorRef.current = null;
+          setInsideFileNow(null);
+          settleArtboardSelection(file);
           announce(
             emptyArtboardSelectionAnnouncement(
-              current.titleOf(input),
+              current.titleOf(file),
             ),
           );
           return;
         }
-        callback13(
-          input,
-          value32.tid,
+        moveToNode(
+          file,
+          nextNode.tid,
           outlineLayerAnnouncement(
-            findOutlineLocation(value31, value32.tid),
+            findOutlineLocation(tree, nextNode.tid),
           ),
         );
       },
       [],
     ),
-    value20: Dynamic = (0, react_ta.useCallback)(
-      (input?: Dynamic): Dynamic => {
-        if (value5.current !== input) return;
-        let current: Dynamic = value.current,
-          value31: Dynamic = value2.current[input];
-        if (value31 === undefined) {
+    descendOutline: Dynamic = (0, react_ta.useCallback)(
+      (file?: Dynamic): Dynamic => {
+        if (insideFileRef.current !== file) return;
+        let current: Dynamic = hostRef.current,
+          tree: Dynamic = outlineTreesRef.current[file];
+        if (tree === undefined) {
           announce(
-            artboardLoadingAnnouncement(current.titleOf(input)),
+            artboardLoadingAnnouncement(current.titleOf(file)),
           );
           return;
         }
-        if (value31 === null) return callback12(input);
-        let value32: Dynamic = callback2(input, value31);
-        if (value32 == null) {
-          value19(input, "first");
+        if (tree === null) return selectWholeArtboard(file);
+        let cursorTid: Dynamic = findCursorTid(file, tree);
+        if (cursorTid == null) {
+          stepOutline(file, "first");
           return;
         }
-        let value33: Dynamic = findOutlineLocation(
-            value31,
-            value32,
+        let location: Dynamic = findOutlineLocation(
+            tree,
+            cursorTid,
           ),
-          entry: Dynamic = current.handlesRef.current.get(input);
+          entry: Dynamic = current.handlesRef.current.get(file);
         if (
           current.canEditRef.current &&
           entry &&
-          current.focusedFileRef.current === input &&
-          entry.describeTids([value32])[0]?.editable === true
+          current.focusedFileRef.current === file &&
+          entry.describeTids([cursorTid])[0]?.editable === true
         ) {
           if (!entry.isReady()) {
             announce(
               artboardLoadingAnnouncement(
-                current.titleOf(input),
+                current.titleOf(file),
               ),
             );
             return;
           }
-          value17.current = input;
-          entry.startTextEdit(current.rootNameOf(input), value32, "end");
-          announce(AccessibilityAnnouncementsLabel_16);
+          textEditFileRef.current = file;
+          entry.startTextEdit(current.rootNameOf(file), cursorTid, "end");
+          announce(textEditStartedAnnouncement);
           return;
         }
-        let value34: Dynamic = firstNestedOutlineNode(
-          value33.node,
+        let childNode: Dynamic = firstNestedOutlineNode(
+          location.node,
         );
-        if (!value34) {
+        if (!childNode) {
           announce(NoLayersInsideThisOneMessage);
           return;
         }
-        callback13(
-          input,
-          value34.tid,
+        moveToNode(
+          file,
+          childNode.tid,
           outlineLayerAnnouncement(
-            findOutlineLocation(value31, value34.tid),
+            findOutlineLocation(tree, childNode.tid),
           ),
         );
       },
-      [value19],
+      [stepOutline],
     ),
-    value21: Dynamic = (0, react_ta.useCallback)(
-      (input?: Dynamic): Dynamic => {
-        let current: Dynamic = value.current;
-        value16.current = null;
-        value17.current = null;
-        value6.current = null;
-        value15.current = null;
-        callback(null);
-        callback11(input);
+    leaveOutline: Dynamic = (0, react_ta.useCallback)(
+      (file?: Dynamic): Dynamic => {
+        let current: Dynamic = hostRef.current;
+        pendingEnterFileRef.current = null;
+        textEditFileRef.current = null;
+        cursorRef.current = null;
+        expectedSelectionRef.current = null;
+        setInsideFileNow(null);
+        settleArtboardSelection(file);
         announce(
-          exitOutlineAnnouncement(current.titleOf(input)),
+          exitOutlineAnnouncement(current.titleOf(file)),
         );
       },
       [],
     ),
-    value22: Dynamic = (0, react_ta.useCallback)(
-      (input?: Dynamic): Dynamic => {
-        if (value5.current !== input) return;
-        let value31: Dynamic = value2.current[input];
-        if (value31 === undefined) {
+    ascendOutline: Dynamic = (0, react_ta.useCallback)(
+      (file?: Dynamic): Dynamic => {
+        if (insideFileRef.current !== file) return;
+        let tree: Dynamic = outlineTreesRef.current[file];
+        if (tree === undefined) {
           announce(
             artboardLoadingAnnouncement(
-              value.current.titleOf(input),
+              hostRef.current.titleOf(file),
             ),
           );
           return;
         }
-        if (value31 === null) return callback12(input);
-        let value32: Dynamic = callback2(input, value31);
-        if (value32 == null) {
-          value19(input, "first");
+        if (tree === null) return selectWholeArtboard(file);
+        let cursorTid: Dynamic = findCursorTid(file, tree);
+        if (cursorTid == null) {
+          stepOutline(file, "first");
           return;
         }
-        let value33: Dynamic = findOutlineLocation(
-          value31,
-          value32,
+        let location: Dynamic = findOutlineLocation(
+          tree,
+          cursorTid,
         );
-        if (!value33.parent) {
-          value21(input);
+        if (!location.parent) {
+          leaveOutline(file);
           return;
         }
-        callback13(
-          input,
-          value33.parent.tid,
+        moveToNode(
+          file,
+          location.parent.tid,
           outlineLayerAnnouncement(
-            findOutlineLocation(value31, value33.parent.tid),
+            findOutlineLocation(tree, location.parent.tid),
           ),
         );
       },
-      [value19, value21],
+      [stepOutline, leaveOutline],
     ),
-    value23: Dynamic = (0, react_ta.useCallback)((): Dynamic => {
-      if (value5.current == null && value16.current == null) return;
-      value16.current = null;
-      value17.current = null;
-      value6.current = null;
-      let current: Dynamic = value.current,
-        value31: Dynamic = value9.current ?? value11.current;
-      value31 &&
-        current.focusedFileRef.current === value31.file &&
-        (current.megaSelRef.current.elements.has(value31.file) &&
-          current.forgetHostSelection(value31.file),
-        current.clearFrameSelection(value31.file, value31.token));
-      value15.current = null;
-      callback10();
-      callback(null);
+    abandonOutline: Dynamic = (0, react_ta.useCallback)((): Dynamic => {
+      if (insideFileRef.current == null && pendingEnterFileRef.current == null) return;
+      pendingEnterFileRef.current = null;
+      textEditFileRef.current = null;
+      cursorRef.current = null;
+      let current: Dynamic = hostRef.current,
+        pendingStep: Dynamic = activeStepRef.current ?? pendingSelectRef.current;
+      pendingStep &&
+        current.focusedFileRef.current === pendingStep.file &&
+        (current.megaSelRef.current.elements.has(pendingStep.file) &&
+          current.forgetHostSelection(pendingStep.file),
+        current.clearFrameSelection(pendingStep.file, pendingStep.token));
+      expectedSelectionRef.current = null;
+      cancelPendingSteps();
+      setInsideFileNow(null);
     }, []),
-    value24: Dynamic = (0, react_ta.useCallback)(
-      (input?: Dynamic): Dynamic => {
-        let value31: Dynamic = value17.current === input;
-        value17.current = null;
+    handleTextEditEnded: Dynamic = (0, react_ta.useCallback)(
+      (file?: Dynamic): Dynamic => {
+        let wasTextEdit: Dynamic = textEditFileRef.current === file;
+        textEditFileRef.current = null;
         if (
-          !value31 ||
-          value5.current !== input ||
+          !wasTextEdit ||
+          insideFileRef.current !== file ||
           !(document as Dynamic).hasFocus()
         )
           return;
@@ -514,140 +514,140 @@ function useCanvasKeyboardNavigation(
         (activeElement != null &&
           activeElement !== (document as Dynamic).body &&
           activeElement.tagName !== "IFRAME") ||
-          value.current.stopOf(input)?.focus({
+          hostRef.current.stopOf(file)?.focus({
             preventScroll: true,
           });
       },
       [],
     ),
-    value25: Dynamic = (0, react_ta.useCallback)(
-      (): Dynamic => value17.current,
+    getTextEditFile: Dynamic = (0, react_ta.useCallback)(
+      (): Dynamic => textEditFileRef.current,
       [],
     ),
-    value26: Dynamic = (0, react_ta.useCallback)(
-      (input?: Dynamic): Dynamic => {
-        value15.current?.file === input && (value15.current = null);
-        let value31: Dynamic = value9.current ?? value11.current,
-          value32: Dynamic =
-            value10.current?.file === input
-              ? value10.current
-              : value31?.file === input
-                ? value31
+    handleFrameRebooted: Dynamic = (0, react_ta.useCallback)(
+      (file?: Dynamic): Dynamic => {
+        expectedSelectionRef.current?.file === file && (expectedSelectionRef.current = null);
+        let trackedStep: Dynamic = activeStepRef.current ?? pendingSelectRef.current,
+          restartableStep: Dynamic =
+            queuedStepRef.current?.file === file
+              ? queuedStepRef.current
+              : trackedStep?.file === file
+                ? trackedStep
                 : null,
-          value33: Dynamic =
-            value6.current?.file === input && value5.current === input
-              ? value6.current
+          cursor: Dynamic =
+            cursorRef.current?.file === file && insideFileRef.current === file
+              ? cursorRef.current
               : null,
-          current: Dynamic = value.current.megaSelRef.current,
-          entry: Dynamic = current.elements.get(input),
-          value34: Dynamic =
-            !value32 &&
-            value33 &&
+          current: Dynamic = hostRef.current.megaSelRef.current,
+          entry: Dynamic = current.elements.get(file),
+          derivedStep: Dynamic =
+            !restartableStep &&
+            cursor &&
             entry &&
             entry.tids.length === 1 &&
-            entry.tids[0] === value33.tid &&
+            entry.tids[0] === cursor.tid &&
             entry.part === undefined
               ? {
-                  file: input,
-                  tid: value33.tid,
-                  token: keyboardNavigationMode + String(++value8.current),
+                  file: file,
+                  tid: cursor.tid,
+                  token: keyboardNavigationMode + String(++tokenCounterRef.current),
                   at: Date.now(),
-                  tree: value7.current,
+                  tree: cursorTreeRef.current,
                 }
               : null,
-          value35: Dynamic = value32 ?? value34,
-          value36: Dynamic = value2.current[input];
-        return value35 && value36 != null && value35.tree === value36
-          ? (callback8(), callback7(value35, false), "redriven")
-          : (value31?.file === input && callback10(),
-            value6.current?.file === input && (value6.current = null),
-            !value35 || value5.current !== input
+          stepToReplay: Dynamic = restartableStep ?? derivedStep,
+          currentTree: Dynamic = outlineTreesRef.current[file];
+        return stepToReplay && currentTree != null && stepToReplay.tree === currentTree
+          ? (cancelAllSteps(), runStep(stepToReplay, false), "redriven")
+          : (trackedStep?.file === file && cancelPendingSteps(),
+            cursorRef.current?.file === file && (cursorRef.current = null),
+            !stepToReplay || insideFileRef.current !== file
               ? false
               : ([...current.elements.keys()].some(
-                  (input2?: Dynamic): Dynamic => input2 !== input,
+                  (otherFile?: Dynamic): Dynamic => otherFile !== file,
                 ) || announce(NothingSelectedMessage),
                 "lost"));
       },
       [],
     ),
-    value27: Dynamic = (0, react_ta.useCallback)(
-      (input?: Dynamic, items?: Dynamic, context?: Dynamic): Dynamic => {
-        let value31: Dynamic = items == null || items.length === 0,
-          current: Dynamic = value9.current;
-        if (context != null && context.startsWith(keyboardNavigationMode)) {
-          if (value31) return false;
+    noteSelection: Dynamic = (0, react_ta.useCallback)(
+      (file?: Dynamic, tids?: Dynamic, selectionToken?: Dynamic): Dynamic => {
+        let isEmpty: Dynamic = tids == null || tids.length === 0,
+          current: Dynamic = activeStepRef.current;
+        if (selectionToken != null && selectionToken.startsWith(keyboardNavigationMode)) {
+          if (isEmpty) return false;
           if (
             current &&
-            current.token === context &&
-            current.file === input &&
-            items.length === 1 &&
-            items[0] === current.tid
+            current.token === selectionToken &&
+            current.file === file &&
+            tids.length === 1 &&
+            tids[0] === current.tid
           ) {
-            value15.current = {
-              file: input,
+            expectedSelectionRef.current = {
+              file: file,
               tid: current.tid,
             };
-            value10.current == null &&
-              ((value6.current = {
-                file: input,
+            queuedStepRef.current == null &&
+              ((cursorRef.current = {
+                file: file,
                 tid: current.tid,
               }),
-              (value7.current = current.tree));
-            callback9();
+              (cursorTreeRef.current = current.tree));
+            replayQueuedStep();
             return true;
           }
           if (
             !(
-              value5.current === input &&
+              insideFileRef.current === file &&
               current == null &&
-              value11.current == null
+              pendingSelectRef.current == null
             )
           )
             return false;
         }
-        let value32: Dynamic =
-          current?.file === input || value11.current?.file === input;
-        if (value31 && value32) return false;
-        value15.current = null;
-        !value31 && value32 && callback10();
-        if (value5.current !== input) return true;
-        if (value31) {
-          value6.current = null;
+        let isSameFile: Dynamic =
+          current?.file === file || pendingSelectRef.current?.file === file;
+        if (isEmpty && isSameFile) return false;
+        expectedSelectionRef.current = null;
+        !isEmpty && isSameFile && cancelPendingSteps();
+        if (insideFileRef.current !== file) return true;
+        if (isEmpty) {
+          cursorRef.current = null;
           return true;
         }
-        let current2: Dynamic = value6.current;
-        return current2 != null &&
-          current2.file === input &&
-          items.length === 1 &&
-          items[0] === current2.tid
-          ? ((value15.current = {
-              file: input,
-              tid: current2.tid,
+        let cursor: Dynamic = cursorRef.current;
+        return cursor != null &&
+          cursor.file === file &&
+          tids.length === 1 &&
+          tids[0] === cursor.tid
+          ? ((expectedSelectionRef.current = {
+              file: file,
+              tid: cursor.tid,
             }),
             true)
-          : ((current2 == null ||
-              current2.file !== input ||
-              !items.includes(current2.tid)) &&
-              ((value6.current = {
-                file: input,
-                tid: items[0],
+          : ((cursor == null ||
+              cursor.file !== file ||
+              !tids.includes(cursor.tid)) &&
+              ((cursorRef.current = {
+                file: file,
+                tid: tids[0],
               }),
-              (value7.current = value2.current[input])),
+              (cursorTreeRef.current = outlineTreesRef.current[file])),
             true);
       },
       [],
     ),
-    value28: Dynamic = (0, react_ta.useCallback)(
-      (input?: Dynamic): Dynamic => {
-        let current: Dynamic = value15.current;
-        value15.current = null;
+    consumeSaidSelection: Dynamic = (0, react_ta.useCallback)(
+      (selection?: Dynamic): Dynamic => {
+        let current: Dynamic = expectedSelectionRef.current;
+        expectedSelectionRef.current = null;
         if (
           !current ||
-          input.elements.size !== 1 ||
-          input.artboards.size + input.notes.size > 0
+          selection.elements.size !== 1 ||
+          selection.artboards.size + selection.notes.size > 0
         )
           return false;
-        let entry: Dynamic = input.elements.get(current.file);
+        let entry: Dynamic = selection.elements.get(current.file);
         return (
           entry != null &&
           entry.tids.length === 1 &&
@@ -657,87 +657,87 @@ function useCanvasKeyboardNavigation(
       },
       [],
     ),
-    value29: Dynamic = (0, react_ta.useCallback)(
-      (input?: Dynamic): Dynamic =>
-        value9.current?.file === input ||
-        value10.current?.file === input ||
-        value11.current?.file === input,
+    isSettling: Dynamic = (0, react_ta.useCallback)(
+      (file?: Dynamic): Dynamic =>
+        activeStepRef.current?.file === file ||
+        queuedStepRef.current?.file === file ||
+        pendingSelectRef.current?.file === file,
       [],
     ),
-    value30: Dynamic = (0, react_ta.useCallback)(
-      (input?: Dynamic): Dynamic => {
-        if (!value29(input)) return false;
-        let value31: Dynamic =
-          (value10.current ?? value9.current ?? value11.current)?.at ??
+    holdKey: Dynamic = (0, react_ta.useCallback)(
+      (file?: Dynamic): Dynamic => {
+        if (!isSettling(file)) return false;
+        let startedAt: Dynamic =
+          (queuedStepRef.current ?? activeStepRef.current ?? pendingSelectRef.current)?.at ??
           Date.now();
-        if (value13.current === value31) return true;
-        value13.current = value31;
-        let callback14: Dynamic = (): Dynamic => {
-            value14.current = null;
-            let current: Dynamic = value6.current;
+        if (holdTimeRef.current === startedAt) return true;
+        holdTimeRef.current = startedAt;
+        let announceHeldNode: Dynamic = (): Dynamic => {
+            holdTimerRef.current = null;
+            let current: Dynamic = cursorRef.current;
             if (
-              value13.current !== value31 ||
-              !value29(input) ||
+              holdTimeRef.current !== startedAt ||
+              !isSettling(file) ||
               !current ||
-              current.file !== input
+              current.file !== file
             )
               return;
-            let value33: Dynamic = value2.current[input],
-              value34: Dynamic = value33
-                ? findOutlineLocation(value33, current.tid)
+            let tree: Dynamic = outlineTreesRef.current[file],
+              location: Dynamic = tree
+                ? findOutlineLocation(tree, current.tid)
                 : null;
-            value34 &&
+            location &&
               announce(
                 selectingAnnouncement(
-                  outlineNodeDescription(value34.node),
+                  outlineNodeDescription(location.node),
                 ),
               );
           },
-          value32: Dynamic = Date.now() - value31;
-        value32 >= canvasKeyboardRepeatIntervalMs
-          ? callback14()
-          : (value14.current && clearTimeout(value14.current),
-            (value14.current = setTimeout(
-              callback14,
-              canvasKeyboardRepeatIntervalMs - value32,
+          elapsedMs: Dynamic = Date.now() - startedAt;
+        elapsedMs >= canvasKeyboardRepeatIntervalMs
+          ? announceHeldNode()
+          : (holdTimerRef.current && clearTimeout(holdTimerRef.current),
+            (holdTimerRef.current = setTimeout(
+              announceHeldNode,
+              canvasKeyboardRepeatIntervalMs - elapsedMs,
             )));
         return true;
       },
-      [value29],
+      [isSettling],
     );
   return (0, react_ta.useMemo)(
     (): Dynamic => ({
-      inside: value3,
-      insideRef: value5,
-      enter: value18,
-      step: value19,
-      descend: value20,
-      ascend: value22,
-      leave: value21,
-      abandon: value23,
-      settling: value29,
-      holdKey: value30,
-      onTextEditEnded: value24,
-      editBeganFromStop: value25,
-      frameRebooted: value26,
-      noteSelection: value27,
-      saidSelection: value28,
+      inside: insideFile,
+      insideRef: insideFileRef,
+      enter: enterOutline,
+      step: stepOutline,
+      descend: descendOutline,
+      ascend: ascendOutline,
+      leave: leaveOutline,
+      abandon: abandonOutline,
+      settling: isSettling,
+      holdKey: holdKey,
+      onTextEditEnded: handleTextEditEnded,
+      editBeganFromStop: getTextEditFile,
+      frameRebooted: handleFrameRebooted,
+      noteSelection: noteSelection,
+      saidSelection: consumeSaidSelection,
     }),
     [
-      value3,
-      value18,
-      value19,
-      value20,
-      value22,
-      value21,
-      value23,
-      value29,
-      value30,
-      value24,
-      value25,
-      value26,
-      value27,
-      value28,
+      insideFile,
+      enterOutline,
+      stepOutline,
+      descendOutline,
+      ascendOutline,
+      leaveOutline,
+      abandonOutline,
+      isSettling,
+      holdKey,
+      handleTextEditEnded,
+      getTextEditFile,
+      handleFrameRebooted,
+      noteSelection,
+      consumeSaidSelection,
     ],
   );
 }

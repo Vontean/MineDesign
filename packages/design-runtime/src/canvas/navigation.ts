@@ -15,16 +15,16 @@ var canvasPagePlaceFragment: Dynamic;
 var artboardPlaybackPlaceFragment: Dynamic;
 var artboardNavigationGroupLabels: Dynamic;
 function defaultPageArtboard(manifest?: Dynamic, pageId?: Dynamic): Dynamic {
-  let value: Dynamic = manifest.artboards.filter(
-      (input?: Dynamic): Dynamic =>
-        designPageId(input, manifest.pages) === pageId,
+  let pageArtboards: Dynamic = manifest.artboards.filter(
+      (artboard?: Dynamic): Dynamic =>
+        designPageId(artboard, manifest.pages) === pageId,
     ),
-    value2: Dynamic =
+    launchFile: Dynamic =
       manifest.launch?.view === "focused" ? manifest.launch.file : undefined;
   return (
-    value.find((input?: Dynamic): Dynamic => input.file === value2) ??
-    value.find((input?: Dynamic): Dynamic => !input.frameless) ??
-    value[0]
+    pageArtboards.find((artboard?: Dynamic): Dynamic => artboard.file === launchFile) ??
+    pageArtboards.find((artboard?: Dynamic): Dynamic => !artboard.frameless) ??
+    pageArtboards[0]
   );
 }
 function phoneCanvasFallbackArtboard(
@@ -33,22 +33,22 @@ function phoneCanvasFallbackArtboard(
   entryFile?: Dynamic,
   laidOut?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = manifest.artboards.find(
-      (input?: Dynamic): Dynamic =>
-        input.file === entryFile &&
-        !input.frameless &&
-        designPageId(input, manifest.pages) === pageId,
+  let entryArtboard: Dynamic = manifest.artboards.find(
+      (artboard?: Dynamic): Dynamic =>
+        artboard.file === entryFile &&
+        !artboard.frameless &&
+        designPageId(artboard, manifest.pages) === pageId,
     ),
-    value2: Dynamic =
-      (laidOut ? undefined : value) ?? defaultPageArtboard(manifest, pageId);
-  return value2?.frameless
-    ? (value ??
+    preferredArtboard: Dynamic =
+      (laidOut ? undefined : entryArtboard) ?? defaultPageArtboard(manifest, pageId);
+  return preferredArtboard?.frameless
+    ? (entryArtboard ??
         manifest.artboards.find(
-          (input?: Dynamic): Dynamic =>
-            !input.frameless &&
-            designPageId(input, manifest.pages) === pageId,
+          (artboard?: Dynamic): Dynamic =>
+            !artboard.frameless &&
+            designPageId(artboard, manifest.pages) === pageId,
         ))
-    : value2;
+    : preferredArtboard;
 }
 function oversizedPhoneCanvasFallbackArtboard(
   manifest?: Dynamic,
@@ -56,91 +56,91 @@ function oversizedPhoneCanvasFallbackArtboard(
   entryFile?: Dynamic,
   areaBudget?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = manifest.artboards.filter(
-    (input?: Dynamic): Dynamic =>
-      !input.frameless &&
-      designPageId(input, manifest.pages) === pageId,
+  let pageArtboards: Dynamic = manifest.artboards.filter(
+    (artboard?: Dynamic): Dynamic =>
+      !artboard.frameless &&
+      designPageId(artboard, manifest.pages) === pageId,
   );
   if (
-    !value.some((input?: Dynamic): Dynamic => input.w * input.h <= areaBudget)
+    !pageArtboards.some((artboard?: Dynamic): Dynamic => artboard.w * artboard.h <= areaBudget)
   )
     return (
-      value.find((input?: Dynamic): Dynamic => input.file === entryFile) ??
-      value[0]
+      pageArtboards.find((artboard?: Dynamic): Dynamic => artboard.file === entryFile) ??
+      pageArtboards[0]
     );
 }
-function initialFocusedArtboard(options?: Dynamic): Dynamic {
+function initialFocusedArtboard(launchState?: Dynamic): Dynamic {
   let {
-      manifest: value,
-      pageId: value2,
-      entryFile: value3,
-    }: Dynamic = options,
-    value4: Dynamic = options.laidOut && value.launch?.view === "focused";
-  if (options.phoneCanvas && options.killedBefore)
+      manifest: manifest,
+      pageId: pageId,
+      entryFile: entryFile,
+    }: Dynamic = launchState,
+    isLaidOutFocused: Dynamic = launchState.laidOut && manifest.launch?.view === "focused";
+  if (launchState.phoneCanvas && launchState.killedBefore)
     return (
-      phoneCanvasFallbackArtboard(value, value2, value3, value4)?.file ?? null
+      phoneCanvasFallbackArtboard(manifest, pageId, entryFile, isLaidOutFocused)?.file ?? null
     );
-  let value5: Dynamic = options.phoneCanvas
+  let phoneFallbackFile: Dynamic = launchState.phoneCanvas
     ? (oversizedPhoneCanvasFallbackArtboard(
-        value,
-        value2,
-        value3,
-        options.budget,
+        manifest,
+        pageId,
+        entryFile,
+        launchState.budget,
       )?.file ?? null)
     : null;
-  if (options.embedded) return value5;
-  let value6: Dynamic =
+  if (launchState.embedded) return phoneFallbackFile;
+  let firstArtboardFile: Dynamic =
     (
-      value.artboards.find(
-        (input?: Dynamic): Dynamic => input.file === value3,
-      ) ?? value.artboards[0]
+      manifest.artboards.find(
+        (artboard?: Dynamic): Dynamic => artboard.file === entryFile,
+      ) ?? manifest.artboards[0]
     )?.file ?? null;
-  return options.laidOut
-    ? value.launch?.view === "focused"
-      ? value.launch.file
-      : options.phoneCanvas
-        ? value5
-        : options.migrated
-          ? value6
+  return launchState.laidOut
+    ? manifest.launch?.view === "focused"
+      ? manifest.launch.file
+      : launchState.phoneCanvas
+        ? phoneFallbackFile
+        : launchState.migrated
+          ? firstArtboardFile
           : null
-    : value6;
+    : firstArtboardFile;
 }
 function parseCanvasPlaceFragment(
   fragment?: Dynamic,
   manifest?: Dynamic,
 ): Dynamic {
-  let [value = ""]: Dynamic = fragment.split(".", 1),
-    value2: Dynamic = [artboardFragmentPrefix, prototypeFragmentPrefix].find(
-      (input?: Dynamic): Dynamic => value.startsWith(input),
+  let [fragmentHead = ""]: Dynamic = fragment.split(".", 1),
+    matchedPrefix: Dynamic = [artboardFragmentPrefix, prototypeFragmentPrefix].find(
+      (prefix?: Dynamic): Dynamic => fragmentHead.startsWith(prefix),
     );
-  if (value2 !== undefined) {
-    let value3: Dynamic = value.slice(value2.length),
-      value4: Dynamic = manifest.artboards.find(
-        (input?: Dynamic): Dynamic =>
-          stableAnchorHash(input.file) === value3,
+  if (matchedPrefix !== undefined) {
+    let artboardHash: Dynamic = fragmentHead.slice(matchedPrefix.length),
+      matchedArtboard: Dynamic = manifest.artboards.find(
+        (artboard?: Dynamic): Dynamic =>
+          stableAnchorHash(artboard.file) === artboardHash,
       );
-    return value4
+    return matchedArtboard
       ? {
           kind: "artboard",
-          file: value4.file,
-          play: value2 === prototypeFragmentPrefix,
+          file: matchedArtboard.file,
+          play: matchedPrefix === prototypeFragmentPrefix,
         }
       : undefined;
   }
-  if (value.startsWith(canvasPageFragmentPrefix)) {
-    let value3: Dynamic = value.slice(canvasPageFragmentPrefix.length),
-      value4: Dynamic = [
+  if (fragmentHead.startsWith(canvasPageFragmentPrefix)) {
+    let pageHash: Dynamic = fragmentHead.slice(canvasPageFragmentPrefix.length),
+      matchedPageId: Dynamic = [
         "",
-        ...(manifest.pages ?? []).map((input?: Dynamic): Dynamic => input.id),
+        ...(manifest.pages ?? []).map((page?: Dynamic): Dynamic => page.id),
       ].find(
-        (input?: Dynamic): Dynamic =>
-          stableAnchorHash(input) === value3,
+        (pageId?: Dynamic): Dynamic =>
+          stableAnchorHash(pageId) === pageHash,
       );
-    return value4 === undefined
+    return matchedPageId === undefined
       ? undefined
       : {
           kind: "page",
-          id: value4,
+          id: matchedPageId,
         };
   }
 }
@@ -152,16 +152,16 @@ function currentCanvasPlaceFragment(
 ): Dynamic {
   if (focusedFile !== null)
     return artboardPlaybackPlaceFragment(focusedFile, playing);
-  let values: Dynamic = new Set([
+  let selectedFiles: Dynamic = new Set([
       ...selection.artboards,
       ...selection.elements.keys(),
     ]),
-    value: Dynamic =
-      values.size === 1 && selection.notes.size === 0
-        ? [...values][0]
+    singleFile: Dynamic =
+      selectedFiles.size === 1 && selection.notes.size === 0
+        ? [...selectedFiles][0]
         : undefined;
-  return value !== undefined
-    ? artboardPlaceFragment(value)
+  return singleFile !== undefined
+    ? artboardPlaceFragment(singleFile)
     : canvasPagePlaceFragment(pageId);
 }
 function resolveCanvasPlaceAction(
@@ -169,132 +169,132 @@ function resolveCanvasPlaceAction(
   manifest?: Dynamic,
   state?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = parseCanvasPlaceFragment(fragment, manifest);
-  if (value === undefined) return null;
-  let value2: Dynamic =
-      value.kind === "artboard"
+  let parsed: Dynamic = parseCanvasPlaceFragment(fragment, manifest);
+  if (parsed === undefined) return null;
+  let artboard: Dynamic =
+      parsed.kind === "artboard"
         ? manifest.artboards.find(
-            (input?: Dynamic): Dynamic => input.file === value.file,
+            (candidate?: Dynamic): Dynamic => candidate.file === parsed.file,
           )
         : undefined,
-    value3: Dynamic = state.restoring !== true;
+    shouldMoveCamera: Dynamic = state.restoring !== true;
   if (
-    value2 &&
+    artboard &&
     state.filling === null &&
     state.plays &&
-    value.kind === "artboard" &&
-    value.play &&
-    value2.frameless !== true
+    parsed.kind === "artboard" &&
+    parsed.play &&
+    artboard.frameless !== true
   )
     return {
       do: "play",
-      file: value2.file,
-      page: designPageId(value2, manifest.pages),
-      lands: prototypePlaceFragment(value2.file),
+      file: artboard.file,
+      page: designPageId(artboard, manifest.pages),
+      lands: prototypePlaceFragment(artboard.file),
     };
-  if (value2 && state.filling === null)
+  if (artboard && state.filling === null)
     return {
       do: "artboard",
-      file: value2.file,
-      page: designPageId(value2, manifest.pages),
-      focus: state.mayFocus && value2.frameless !== true,
-      camera: value3,
-      lands: artboardPlaceFragment(value2.file),
+      file: artboard.file,
+      page: designPageId(artboard, manifest.pages),
+      focus: state.mayFocus && artboard.frameless !== true,
+      camera: shouldMoveCamera,
+      lands: artboardPlaceFragment(artboard.file),
     };
-  if (value2 && value2.frameless !== true) {
-    let value6: Dynamic = artboardPlaybackPlaceFragment(
-      value2.file,
+  if (artboard && artboard.frameless !== true) {
+    let playbackFragment: Dynamic = artboardPlaybackPlaceFragment(
+      artboard.file,
       state.plays,
     );
-    return value2.file === state.filling
+    return artboard.file === state.filling
       ? {
           do: "nothing",
-          lands: value6,
+          lands: playbackFragment,
         }
       : {
           do: "window",
-          file: value2.file,
-          page: designPageId(value2, manifest.pages),
-          lands: value6,
+          file: artboard.file,
+          page: designPageId(artboard, manifest.pages),
+          lands: playbackFragment,
         };
   }
-  let value4: Dynamic = value2
-    ? designPageId(value2, manifest.pages)
-    : value.kind === "page" && value.id !== ""
-      ? value.id
+  let targetPageId: Dynamic = artboard
+    ? designPageId(artboard, manifest.pages)
+    : parsed.kind === "page" && parsed.id !== ""
+      ? parsed.id
       : (manifest.pages?.[0]?.id ?? "");
   if (state.filling === null)
     return {
       do: "page",
-      id: value4,
-      camera: value3,
-      lands: canvasPagePlaceFragment(value4),
+      id: targetPageId,
+      camera: shouldMoveCamera,
+      lands: canvasPagePlaceFragment(targetPageId),
     };
-  if (value4 === state.pageId)
+  if (targetPageId === state.pageId)
     return {
       do: "nothing",
       lands: artboardPlaybackPlaceFragment(state.filling, state.plays),
     };
-  let value5: Dynamic = defaultPageArtboard(manifest, value4);
+  let defaultArtboard: Dynamic = defaultPageArtboard(manifest, targetPageId);
   return {
     do: "page",
-    id: value4,
-    camera: value3,
-    lands: value5
-      ? artboardPlaybackPlaceFragment(value5.file, state.plays)
-      : canvasPagePlaceFragment(value4),
+    id: targetPageId,
+    camera: shouldMoveCamera,
+    lands: defaultArtboard
+      ? artboardPlaybackPlaceFragment(defaultArtboard.file, state.plays)
+      : canvasPagePlaceFragment(targetPageId),
   };
 }
 function prototypeFileFromPlaceFragment(
   fragment?: Dynamic,
   manifest?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = parseCanvasPlaceFragment(fragment, manifest);
-  return value?.kind !== "artboard" ||
-    !value.play ||
+  let parsed: Dynamic = parseCanvasPlaceFragment(fragment, manifest);
+  return parsed?.kind !== "artboard" ||
+    !parsed.play ||
     manifest.artboards.find(
-      (input?: Dynamic): Dynamic => input.file === value.file,
+      (artboard?: Dynamic): Dynamic => artboard.file === parsed.file,
     )?.frameless === true
     ? null
-    : value.file;
+    : parsed.file;
 }
 function sortArtboardsInReadingOrder(artboards?: Dynamic): Dynamic {
-  let value: Dynamic = [...artboards].sort(
-      (input?: Dynamic, options?: Dynamic): Dynamic =>
-        input.y - options.y || input.x - options.x,
+  let sortedArtboards: Dynamic = [...artboards].sort(
+      (first?: Dynamic, second?: Dynamic): Dynamic =>
+        first.y - second.y || first.x - second.x,
     ),
-    items: Dynamic = [],
-    items2: Dynamic = [];
-  for (let value2 of value as Dynamic) {
-    let value3: Dynamic = items2[0];
-    value3 !== undefined &&
-      value2.y >= value3.y + value3.h / 2 &&
-      (items.push(
-        ...items2.sort(
-          (input?: Dynamic, options?: Dynamic): Dynamic =>
-            input.x - options.x,
+    orderedArtboards: Dynamic = [],
+    currentRow: Dynamic = [];
+  for (let artboard of sortedArtboards as Dynamic) {
+    let rowAnchor: Dynamic = currentRow[0];
+    rowAnchor !== undefined &&
+      artboard.y >= rowAnchor.y + rowAnchor.h / 2 &&
+      (orderedArtboards.push(
+        ...currentRow.sort(
+          (first?: Dynamic, second?: Dynamic): Dynamic =>
+            first.x - second.x,
         ),
       ),
-      (items2 = []));
-    items2.push(value2);
+      (currentRow = []));
+    currentRow.push(artboard);
   }
-  items.push(
-    ...items2.sort(
-      (input?: Dynamic, options?: Dynamic): Dynamic => input.x - options.x,
+  orderedArtboards.push(
+    ...currentRow.sort(
+      (first?: Dynamic, second?: Dynamic): Dynamic => first.x - second.x,
     ),
   );
-  return items;
+  return orderedArtboards;
 }
 function groupNavigableArtboards(artboards?: Dynamic): Dynamic {
-  let value: Dynamic = sortArtboardsInReadingOrder(
-    artboards.filter((input?: Dynamic): Dynamic => input.frameless !== true),
+  let navigableArtboards: Dynamic = sortArtboardsInReadingOrder(
+    artboards.filter((artboard?: Dynamic): Dynamic => artboard.frameless !== true),
   );
   return {
-    prototypes: value.filter(
-      (input?: Dynamic): Dynamic => input.is_interactive === true,
+    prototypes: navigableArtboards.filter(
+      (artboard?: Dynamic): Dynamic => artboard.is_interactive === true,
     ),
-    others: value.filter(
-      (input?: Dynamic): Dynamic => input.is_interactive !== true,
+    others: navigableArtboards.filter(
+      (artboard?: Dynamic): Dynamic => artboard.is_interactive !== true,
     ),
   };
 }
@@ -323,17 +323,17 @@ export function installCanvasNavigation(): () => void {
     artboardFragmentPrefix = "artboard-";
     prototypeFragmentPrefix = "play-";
     canvasPageFragmentPrefix = "page-";
-    artboardPlaceFragment = (input?: Dynamic): Dynamic =>
-      artboardFragmentPrefix + stableAnchorHash(input);
-    prototypePlaceFragment = (input?: Dynamic): Dynamic =>
-      prototypeFragmentPrefix + stableAnchorHash(input);
-    canvasPagePlaceFragment = (input?: Dynamic): Dynamic =>
-      canvasPageFragmentPrefix + stableAnchorHash(input);
+    artboardPlaceFragment = (file?: Dynamic): Dynamic =>
+      artboardFragmentPrefix + stableAnchorHash(file);
+    prototypePlaceFragment = (file?: Dynamic): Dynamic =>
+      prototypeFragmentPrefix + stableAnchorHash(file);
+    canvasPagePlaceFragment = (pageId?: Dynamic): Dynamic =>
+      canvasPageFragmentPrefix + stableAnchorHash(pageId);
     artboardPlaybackPlaceFragment = (
-      input?: Dynamic,
-      options?: Dynamic,
+      file?: Dynamic,
+      isPlaying?: Dynamic,
     ): Dynamic =>
-      options ? prototypePlaceFragment(input) : artboardPlaceFragment(input);
+      isPlaying ? prototypePlaceFragment(file) : artboardPlaceFragment(file);
     artboardNavigationGroupLabels = {
       prototypes: "Prototypes",
       get others() { return uiMessage("canvas.navigation.staticArtboards"); },

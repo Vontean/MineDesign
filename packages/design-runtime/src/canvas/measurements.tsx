@@ -16,13 +16,13 @@ var OpenFindValue: Dynamic;
 var CanvasMeasurementsPattern: Dynamic;
 var CanvasMeasurementsIsSafeInteger: Dynamic;
 var CanvasMeasurementsConstant: Dynamic;
-var CanvasMeasurementsPattern_2: Dynamic;
-var CanvasMeasurementsConstant_2: Dynamic;
+var shortSlugPattern: Dynamic;
+var eightLimitSecond: Dynamic;
 var CanvasMeasurementsAZaZPattern: Dynamic;
-var CanvasMeasurementsPattern_3: Dynamic;
-var CanvasMeasurementsConstant_3: Dynamic;
-var CanvasMeasurementsConstant_4: Dynamic;
-var CanvasMeasurementsPattern_4: Dynamic;
+var shortSlugPatternCopy: Dynamic;
+var eightLimitThird: Dynamic;
+var maxValueNines: Dynamic;
+var hexColorPattern: Dynamic;
 /** 测距叠层：在画板坐标里画线段与数值标注，线宽和字号按画布缩放反向补偿。 */
 function MeasurementOverlay({ m: m, scale: scale }: { m: ChromeMeasure; scale: number }): Dynamic {
   useUiLocale();
@@ -42,41 +42,41 @@ function MeasurementOverlay({ m: m, scale: scale }: { m: ChromeMeasure; scale: n
         height={1}
       >
         {m.lines.map(
-          (input?: Dynamic, options?: Dynamic): Dynamic =>
+          (line?: Dynamic, lineIndex?: Dynamic): Dynamic =>
             (() => {
               const _Component = "line";
               const _props = {
-                x1: input.x1,
-                y1: input.y1,
-                x2: input.x2,
-                y2: input.y2,
+                x1: line.x1,
+                y1: line.y1,
+                x2: line.x2,
+                y2: line.y2,
                 style: {
                   stroke: "var(--t-measure)",
                   strokeWidth: 1 / scale,
-                  strokeDasharray: input.ext
+                  strokeDasharray: line.ext
                     ? String(3 / scale) + " " + String(3 / scale)
                     : undefined,
-                  opacity: input.ext ? 0.6 : 1,
+                  opacity: line.ext ? 0.6 : 1,
                 },
               } as const;
-              const _key = "ml" + String(options);
+              const _key = "ml" + String(lineIndex);
               return <_Component key={_key} {..._props} />;
             })(),
         )}
       </svg>
       {m.labels.map(
-        (input?: Dynamic, options?: Dynamic): Dynamic =>
+        (label?: Dynamic, labelIndex?: Dynamic): Dynamic =>
           (() => {
-            const _Component2 = "div";
-            const _props2 = {
+            const LabelElement = "div";
+            const labelProps = {
               "data-testid": "measure-label",
               "aria-hidden": "true",
               style: {
                 position: "absolute",
-                left: input.x,
-                top: input.y,
+                left: label.x,
+                top: label.y,
                 transform:
-                  input.axis === "x"
+                  label.axis === "x"
                     ? "translate(-50%, " + String(5 / scale) + "px)"
                     : "translate(" + String(5 / scale) + "px, -50%)",
                 background: "var(--t-measure)",
@@ -90,10 +90,10 @@ function MeasurementOverlay({ m: m, scale: scale }: { m: ChromeMeasure; scale: n
                 whiteSpace: "nowrap",
                 pointerEvents: "none",
               },
-              children: input.text,
+              children: label.text,
             } as const;
-            const _key2 = "mt" + String(options);
-            return <_Component2 key={_key2} {..._props2} />;
+            const labelKey = "mt" + String(labelIndex);
+            return <LabelElement key={labelKey} {...labelProps} />;
           })(),
       )}
     </jsxCanvasNote.Fragment>
@@ -102,14 +102,14 @@ function MeasurementOverlay({ m: m, scale: scale }: { m: ChromeMeasure; scale: n
 export {
   CanvasMeasurementsAZaZPattern,
   CanvasMeasurementsConstant,
-  CanvasMeasurementsConstant_2,
-  CanvasMeasurementsConstant_3,
-  CanvasMeasurementsConstant_4,
+  eightLimitSecond as CanvasMeasurementsConstant_2,
+  eightLimitThird as CanvasMeasurementsConstant_3,
+  maxValueNines as CanvasMeasurementsConstant_4,
   CanvasMeasurementsIsSafeInteger,
   CanvasMeasurementsPattern,
-  CanvasMeasurementsPattern_2,
-  CanvasMeasurementsPattern_3,
-  CanvasMeasurementsPattern_4,
+  shortSlugPattern as CanvasMeasurementsPattern_2,
+  shortSlugPatternCopy as CanvasMeasurementsPattern_3,
+  hexColorPattern as CanvasMeasurementsPattern_4,
   MeasurementOverlay,
   OpenFindValue,
   reactCanvasMeasurements,
@@ -130,20 +130,20 @@ export function installCanvasMeasurements(): () => void {
     SaveNowValue = "save_now";
     OpenFindValue = "open_find";
     CanvasMeasurementsPattern = /^[a-z0-9]{1,8}$/;
-    CanvasMeasurementsIsSafeInteger = (input?: Dynamic): Dynamic =>
-      typeof input == "number" &&
-      Number.isSafeInteger(input) &&
-      input > 5e3 &&
-      input <= 15 * 6e4
-        ? input
+    CanvasMeasurementsIsSafeInteger = (durationMs?: Dynamic): Dynamic =>
+      typeof durationMs == "number" &&
+      Number.isSafeInteger(durationMs) &&
+      durationMs > 5e3 &&
+      durationMs <= 15 * 6e4
+        ? durationMs
         : undefined;
     CanvasMeasurementsConstant = 8;
-    CanvasMeasurementsPattern_2 = /^[a-z][a-z0-9_-]{0,31}$/;
-    CanvasMeasurementsConstant_2 = 8;
+    shortSlugPattern = /^[a-z][a-z0-9_-]{0,31}$/;
+    eightLimitSecond = 8;
     CanvasMeasurementsAZaZPattern = /^[A-Za-z0-9_-]{16,64}$/;
-    CanvasMeasurementsPattern_3 = /^[a-z][a-z0-9_-]{0,31}$/;
-    CanvasMeasurementsConstant_3 = 8;
-    CanvasMeasurementsConstant_4 = 9999;
-    CanvasMeasurementsPattern_4 = /^#[0-9a-f]{6}$/;
+    shortSlugPatternCopy = /^[a-z][a-z0-9_-]{0,31}$/;
+    eightLimitThird = 8;
+    maxValueNines = 9999;
+    hexColorPattern = /^#[0-9a-f]{6}$/;
   };
 }

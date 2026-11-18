@@ -13,24 +13,24 @@ function PlacementGhostFrame({
   style: style,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic = (0, reactVectorToolState_2.useRef)(null),
-    value2: Dynamic = (0, reactVectorToolState_2.useRef)(false),
-    [value3, value4]: Dynamic = (0, reactVectorToolState_2.useState)(
+  let iframeRef: Dynamic = (0, reactVectorToolState_2.useRef)(null),
+    hasBootedRef: Dynamic = (0, reactVectorToolState_2.useRef)(false),
+    [isBooted, setIsBooted]: Dynamic = (0, reactVectorToolState_2.useState)(
       false,
     );
   (0, reactVectorToolState_2.useEffect)((): Dynamic => {
-    let callback: Dynamic = (dataset?: Dynamic): Dynamic => {
-      let data: Dynamic = dataset.data;
-      dataset.source !== null &&
-        dataset.source === value.current?.contentWindow &&
-        data &&
-        typeof data == "object" &&
-        data.type === "__dc_booted" &&
-        value4(true);
+    let handleMessage: Dynamic = (messageEvent?: Dynamic): Dynamic => {
+      let messageData: Dynamic = messageEvent.data;
+      messageEvent.source !== null &&
+        messageEvent.source === iframeRef.current?.contentWindow &&
+        messageData &&
+        typeof messageData == "object" &&
+        messageData.type === "__dc_booted" &&
+        setIsBooted(true);
     };
-    (window as Dynamic).addEventListener("message", callback);
+    (window as Dynamic).addEventListener("message", handleMessage);
     return (): Dynamic =>
-      (window as Dynamic).removeEventListener("message", callback);
+      (window as Dynamic).removeEventListener("message", handleMessage);
   }, []);
   (0, reactVectorToolState_2.useLayoutEffect)(
     (): Dynamic => recordDesignEditActivity,
@@ -38,7 +38,7 @@ function PlacementGhostFrame({
   );
   return (
     <iframe
-      ref={value}
+      ref={iframeRef}
       title={uiMessage("canvas.placementGhost.dragPreview")}
       aria-hidden={true}
       tabIndex={-1}
@@ -46,9 +46,9 @@ function PlacementGhostFrame({
       srcDoc={ghost.srcdoc}
       onLoad={(): Dynamic => {
         ghost.boot &&
-          !value2.current &&
-          ((value2.current = true),
-          value.current?.contentWindow?.postMessage(
+          !hasBootedRef.current &&
+          ((hasBootedRef.current = true),
+          iframeRef.current?.contentWindow?.postMessage(
             {
               __dc_doc: 1,
               doc: ghost.boot.doc,
@@ -60,7 +60,7 @@ function PlacementGhostFrame({
       }}
       className={joinClassNames(
         "pointer-events-none absolute left-0 top-0 border-0 transition-opacity duration-100",
-        value3 ? "opacity-80" : "opacity-0",
+        isBooted ? "opacity-80" : "opacity-0",
       )}
       style={style}
     />

@@ -1,6 +1,6 @@
 import { uploadedVideoAnnotation } from "./working-state";
 import { structurallyEqual } from "../platform/document-values";
-import { annotationArrowHeads, annotationTextStyle, designPageId, isShapeAnnotation, maxDesignPages, moveAnnotation, normalizeDesignLaunch, PlatformFileContentBackgroundBackgroundColorOpacityValues, PlatformFileContentLimit_5, updateAnnotationArrowHeads, updateAnnotationColor, updateAnnotationCrop, updateAnnotationCss, updateAnnotationTextStyle, updateArtboardRadius, validCoverArtboard } from "../platform/file-content";
+import { annotationArrowHeads, annotationTextStyle, designPageId, isShapeAnnotation, maxDesignPages, moveAnnotation, normalizeDesignLaunch, PlatformFileContentBackgroundBackgroundColorOpacityValues, PlatformFileContentLimit_5 as maxAnnotations, updateAnnotationArrowHeads, updateAnnotationColor, updateAnnotationCrop, updateAnnotationCss, updateAnnotationTextStyle, updateArtboardRadius, validCoverArtboard } from "../platform/file-content";
 
 export type HistoryDirection = "undo" | "redo";
 
@@ -305,7 +305,7 @@ export function applyCanvasManifestHistory(
       const annotations = manifest.annotations ?? [];
       if ((step.kind === "ann-add") == (direction === "redo")) {
         if (annotations.some((annotation) => annotation.id === step.spec.id)) return "nothing";
-        if (annotations.length >= PlatformFileContentLimit_5) return "full";
+        if (annotations.length >= maxAnnotations) return "full";
         const index = step.kind === "ann-delete" ? Math.min(step.index, annotations.length) : annotations.length;
         const next: Anns = [...annotations];
         next.splice(index, 0, step.spec);
@@ -524,7 +524,7 @@ export function reconcileCanvasManifestHistory(
     return [...kept, ...added];
   };
   const artboards = mergeList(manifest.artboards, before.artboards, after.artboards, (item) => item.file);
-  const annotations = mergeList(manifest.annotations, before.annotations, after.annotations, (item) => item.id, PlatformFileContentLimit_5);
+  const annotations = mergeList(manifest.annotations, before.annotations, after.annotations, (item) => item.id, maxAnnotations);
   const pages = mergeList(manifest.pages, before.pages, after.pages, (item) => item.id, maxDesignPages());
   const mergeField = (key: string): unknown =>
     structurallyEqual(manifest[key] ?? null, before[key] ?? null) ? after[key] : manifest[key];
@@ -536,5 +536,5 @@ export function reconcileCanvasManifestHistory(
     cover: validCoverArtboard(mergeField("cover"), artboards) ?? validCoverArtboard(after.cover, artboards),
     migrated: manifest.migrated === true || after.migrated === true ? true : undefined,
   };
-  return Object.fromEntries(Object.entries(merged).filter(([, value]) => value !== undefined)) as CanvasManifest;
+  return Object.fromEntries(Object.entries(merged).filter(([, entryValue]) => entryValue !== undefined)) as CanvasManifest;
 }

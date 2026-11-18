@@ -18,25 +18,25 @@ import { useFrameSaveState } from "../platform/frame-host-bridge";
 
 var canvasNotLoadedMessage: Dynamic;
 var unavailableCanvasHistory: Dynamic;
-function useCanvasLoadState(document2?: Dynamic): Dynamic {
-  let callback: Dynamic = (): Dynamic => {
-      let value3: Dynamic =
-        "loadState" in document2 ? document2.loadState() : "live";
-      return value3 === "cached" ? "live" : value3;
+function useCanvasLoadState(canvasDocument?: Dynamic): Dynamic {
+  let readLoadState: Dynamic = (): Dynamic => {
+      let currentLoadState: Dynamic =
+        "loadState" in canvasDocument ? canvasDocument.loadState() : "live";
+      return currentLoadState === "cached" ? "live" : currentLoadState;
     },
-    [value, value2]: Dynamic = (0, reactChromeTheme.useState)(
-      callback,
+    [loadState, setLoadState]: Dynamic = (0, reactChromeTheme.useState)(
+      readLoadState,
     );
   (0, reactChromeTheme.useEffect)(
     (): Dynamic => (
-      value2(callback()),
-      "subscribeLoad" in document2
-        ? document2.subscribeLoad((): Dynamic => value2(callback()))
+      setLoadState(readLoadState()),
+      "subscribeLoad" in canvasDocument
+        ? canvasDocument.subscribeLoad((): Dynamic => setLoadState(readLoadState()))
         : undefined
     ),
-    [document2],
+    [canvasDocument],
   );
-  return value;
+  return loadState;
 }
 function CanvasLoadingPlaceholder(): Dynamic {
   useUiLocale();
@@ -62,17 +62,17 @@ function CanvasLoadFailure({
   filePath: filePath,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let [value, value2]: Dynamic = (0, reactChromeTheme.useState)(
+  let [saveState, setSaveState]: Dynamic = (0, reactChromeTheme.useState)(
     doc.saveState(),
   );
   (0, reactChromeTheme.useEffect)(
-    (): Dynamic => doc.subscribeSave(value2),
+    (): Dynamic => doc.subscribeSave(setSaveState),
     [doc],
   );
-  let callback: Dynamic = (): Dynamic => {
+  let saveDocument: Dynamic = (): Dynamic => {
     doc.save();
   };
-  useFrameSaveState(value.status, callback);
+  useFrameSaveState(saveState.status, saveDocument);
   return (
     <div
       className={
@@ -81,10 +81,10 @@ function CanvasLoadFailure({
     >
       <EditorToolbar
         title={(document as Dynamic).title || (filePath)}
-        saveState={value}
+        saveState={saveState}
         saveMode={doc.saveMode()}
         syncDot={true}
-        onSave={callback}
+        onSave={saveDocument}
         undo={unavailableCanvasHistory}
         publishControls={false}
         undoButtons={false}
@@ -131,10 +131,10 @@ function CanvasLoadFailure({
               />
             </span>
             <ToolbarPublishControls
-              saveState={value}
+              saveState={saveState}
               saveMode={doc.saveMode()}
               syncDot={true}
-              onSave={callback}
+              onSave={saveDocument}
             />
           </span>
         }

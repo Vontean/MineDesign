@@ -8,7 +8,7 @@ import { toModuleNamespace } from "../module-helpers";
 import { PlatformFileContentMin } from "../platform/file-content";
 
 var CanvasPanZoomLimit: Dynamic;
-var CanvasPanZoomLimit_2: Dynamic;
+var wheelAfterGestureMs: Dynamic;
 var CanvasPanZoomGesturestartGesturechangeGestureendValues: Dynamic;
 var CanvasPanZoomTouchstartTouchendTouchcancelValues: Dynamic;
 var CanvasPanZoomCache: Dynamic;
@@ -55,232 +55,232 @@ function panViewport(
         scale: viewport.scale,
       };
 }
-function wheelZoomFactor(input?: Dynamic): Dynamic {
-  return Math.min(1.25, Math.max(0.8, Math.exp(-input * 0.01)));
+function wheelZoomFactor(deltaY?: Dynamic): Dynamic {
+  return Math.min(1.25, Math.max(0.8, Math.exp(-deltaY * 0.01)));
 }
-function createWheelGestureDecider(input: Dynamic = 200): Dynamic {
-  let value: Dynamic,
-    value2: Dynamic = -1 / 0;
+function createWheelGestureDecider(idleGapMs: Dynamic = 200): Dynamic {
+  let currentMode: Dynamic,
+    lastEventTime: Dynamic = -1 / 0;
   return {
     decide(
-      input2: Dynamic,
-      options: Dynamic,
-      context: Dynamic,
-      value3: Dynamic,
+      timeStamp: Dynamic,
+      isZoomModifier: Dynamic,
+      hasDelta: Dynamic,
+      allowNative: Dynamic,
     ): Dynamic {
-      if (options) {
-        value = undefined;
-        value2 = input2;
+      if (isZoomModifier) {
+        currentMode = undefined;
+        lastEventTime = timeStamp;
         return "zoom";
       }
-      input2 - value2 > input && (value = undefined);
-      value2 = input2;
-      if (value === undefined) {
-        if (!context) return "consume";
-        value = value3() ? "native" : "pan";
+      timeStamp - lastEventTime > idleGapMs && (currentMode = undefined);
+      lastEventTime = timeStamp;
+      if (currentMode === undefined) {
+        if (!hasDelta) return "consume";
+        currentMode = allowNative() ? "native" : "pan";
       }
-      return value;
+      return currentMode;
     },
   };
 }
-function installCanvasPanZoom_local(input?: Dynamic): Dynamic {
-  let element: Dynamic = input.element,
+function installCanvasPanZoom_local(config?: Dynamic): Dynamic {
+  let element: Dynamic = config.element,
     touchAction: Dynamic = element.style.touchAction;
   element.style.touchAction = "none";
-  let callback: Dynamic = (): Dynamic => {
+  let resetScroll: Dynamic = (): Dynamic => {
     element.scrollLeft !== 0 && (element.scrollLeft = 0);
     element.scrollTop !== 0 && (element.scrollTop = 0);
   };
-  callback();
-  element.addEventListener("scroll", callback, {
+  resetScroll();
+  element.addEventListener("scroll", resetScroll, {
     passive: true,
   });
-  let entries: Dynamic = new Map(),
-    callback2: Dynamic = (input2?: Dynamic): Dynamic => {
-      let value7: Dynamic = input2 ?? null,
-        value8: Dynamic = element;
-      for (; value7 && value7 !== value8; ) {
-        let tagName: Dynamic = value7.tagName;
+  let touchPanAllowed: Dynamic = new Map(),
+    isScrollableTarget: Dynamic = (target?: Dynamic): Dynamic => {
+      let node: Dynamic = target ?? null,
+        boundary: Dynamic = element;
+      for (; node && node !== boundary; ) {
+        let tagName: Dynamic = node.tagName;
         if (
           tagName === "INPUT" ||
           tagName === "SELECT" ||
           tagName === "TEXTAREA" ||
-          value7.isContentEditable === true
+          node.isContentEditable === true
         )
           return true;
         if (tagName !== undefined) {
-          let value9: Dynamic;
+          let computedStyle: Dynamic;
           try {
-            value9 = (window as Dynamic).getComputedStyle(value7);
+            computedStyle = (window as Dynamic).getComputedStyle(node);
           } catch {
-            value9 = undefined;
+            computedStyle = undefined;
           }
-          if (value9) {
-            let value10: Dynamic =
-                (value9.overflowY === "auto" ||
-                  value9.overflowY === "scroll") &&
-                (value7.scrollHeight ?? 0) > (value7.clientHeight ?? 0),
-              value11: Dynamic =
-                (value9.overflowX === "auto" ||
-                  value9.overflowX === "scroll") &&
-                (value7.scrollWidth ?? 0) > (value7.clientWidth ?? 0);
-            if (value10 || value11) return true;
+          if (computedStyle) {
+            let canScrollY: Dynamic =
+                (computedStyle.overflowY === "auto" ||
+                  computedStyle.overflowY === "scroll") &&
+                (node.scrollHeight ?? 0) > (node.clientHeight ?? 0),
+              canScrollX: Dynamic =
+                (computedStyle.overflowX === "auto" ||
+                  computedStyle.overflowX === "scroll") &&
+                (node.scrollWidth ?? 0) > (node.clientWidth ?? 0);
+            if (canScrollY || canScrollX) return true;
           }
         }
-        value7 = value7.parentElement ?? null;
+        node = node.parentElement ?? null;
       }
       return false;
     },
-    callback3: Dynamic = (input2?: Dynamic): Dynamic => {
-      let changedTouches: Dynamic = input2.changedTouches;
+    handleTouchStart: Dynamic = (event?: Dynamic): Dynamic => {
+      let changedTouches: Dynamic = event.changedTouches;
       for (
-        let index2: Dynamic = 0;
-        index2 < (changedTouches?.length ?? 0);
-        index2++
+        let touchIndex: Dynamic = 0;
+        touchIndex < (changedTouches?.length ?? 0);
+        touchIndex++
       ) {
-        let value7: Dynamic = changedTouches[index2];
-        value7 && entries.set(value7.identifier, !callback2(value7.target));
+        let touch: Dynamic = changedTouches[touchIndex];
+        touch && touchPanAllowed.set(touch.identifier, !isScrollableTarget(touch.target));
       }
     },
-    callback4: Dynamic = (event?: Dynamic): Dynamic => {
+    handleTouchMove: Dynamic = (event?: Dynamic): Dynamic => {
       if (!event.cancelable) return;
       let changedTouches: Dynamic = event.changedTouches,
-        value7: Dynamic = changedTouches?.length ?? 0;
-      if (value7 !== 0) {
-        for (let index2: Dynamic = 0; index2 < value7; index2++) {
-          let value8: Dynamic = changedTouches[index2];
-          if (!value8 || entries.get(value8.identifier) !== true) return;
+        touchCount: Dynamic = changedTouches?.length ?? 0;
+      if (touchCount !== 0) {
+        for (let touchIndex: Dynamic = 0; touchIndex < touchCount; touchIndex++) {
+          let touch: Dynamic = changedTouches[touchIndex];
+          if (!touch || touchPanAllowed.get(touch.identifier) !== true) return;
         }
         event.preventDefault();
       }
     },
-    callback5: Dynamic = (input2?: Dynamic): Dynamic => {
-      let changedTouches: Dynamic = input2.changedTouches;
+    handleTouchEnd: Dynamic = (event?: Dynamic): Dynamic => {
+      let changedTouches: Dynamic = event.changedTouches;
       for (
-        let index2: Dynamic = 0;
-        index2 < (changedTouches?.length ?? 0);
-        index2++
+        let touchIndex: Dynamic = 0;
+        touchIndex < (changedTouches?.length ?? 0);
+        touchIndex++
       ) {
-        let value7: Dynamic = changedTouches[index2];
-        value7 && entries.delete(value7.identifier);
+        let touch: Dynamic = changedTouches[touchIndex];
+        touch && touchPanAllowed.delete(touch.identifier);
       }
     },
-    value: Dynamic = createWheelGestureDecider(),
-    entries2: Dynamic = new Map(),
-    value2: Dynamic,
-    entries3: Dynamic = new Map(),
-    value3: Dynamic,
-    value4: Dynamic,
-    callback6: Dynamic = (): Dynamic => {
-      if (value3 !== undefined) return;
+    wheelDecider: Dynamic = createWheelGestureDecider(),
+    activePointers: Dynamic = new Map(),
+    pinchStart: Dynamic,
+    queuedPointers: Dynamic = new Map(),
+    savedUserSelect: Dynamic,
+    savedWebkitUserSelect: Dynamic,
+    lockTextSelection: Dynamic = (): Dynamic => {
+      if (savedUserSelect !== undefined) return;
       let style: Dynamic = element.style;
       style &&
-        ((value3 = style.userSelect ?? ""),
-        (value4 = style.webkitUserSelect ?? ""),
+        ((savedUserSelect = style.userSelect ?? ""),
+        (savedWebkitUserSelect = style.webkitUserSelect ?? ""),
         (style.webkitUserSelect = "none"),
         (style.userSelect = "none"));
     },
-    callback7: Dynamic = (): Dynamic => {
-      if (value3 === undefined) return;
+    unlockTextSelection: Dynamic = (): Dynamic => {
+      if (savedUserSelect === undefined) return;
       let style: Dynamic = element.style;
       style &&
-        ((style.userSelect = value3),
-        (style.webkitUserSelect = value4 ?? ""));
-      value3 = undefined;
-      value4 = undefined;
+        ((style.userSelect = savedUserSelect),
+        (style.webkitUserSelect = savedWebkitUserSelect ?? ""));
+      savedUserSelect = undefined;
+      savedWebkitUserSelect = undefined;
     },
-    flag: Dynamic = false,
-    index: Dynamic = 0,
-    count: Dynamic = 1,
-    entries4: Dynamic = new Map(),
-    callback8: Dynamic = (input2?: Dynamic): Dynamic => {
-      for (let [value7, value8] of entries4 as Dynamic)
-        input2 - value8 > CanvasPanZoomLimit && entries4.delete(value7);
+    isGestureActive: Dynamic = false,
+    lastGestureTime: Dynamic = 0,
+    gestureBaseScale: Dynamic = 1,
+    rejectedTouches: Dynamic = new Map(),
+    pruneRejectedTouches: Dynamic = (now?: Dynamic): Dynamic => {
+      for (let [pointerId, rejectedTime] of rejectedTouches as Dynamic)
+        now - rejectedTime > CanvasPanZoomLimit && rejectedTouches.delete(pointerId);
     },
-    callback9: Dynamic = (): Dynamic => {
-      let index2: Dynamic = 0;
-      for (let value7 of entries2.values() as Dynamic)
-        value7.type === "touch" && (index2 += 1);
-      return index2 >= 2;
+    hasTwoTouches: Dynamic = (): Dynamic => {
+      let touchCount: Dynamic = 0;
+      for (let pointer of activePointers.values() as Dynamic)
+        pointer.type === "touch" && (touchCount += 1);
+      return touchCount >= 2;
     },
-    callback10: Dynamic = (input2?: Dynamic): Dynamic => {
-      let index2: Dynamic = 0,
-        index3: Dynamic = 0;
-      for (let value7 of entries2.values() as Dynamic)
-        value7.type === "touch" &&
-          ((index2 += 1),
-          input2 - value7.lastSeen <= CanvasPanZoomLimit && (index3 += 1));
-      return index2 >= 2 && index3 >= 1;
+    hasTwoRecentTouches: Dynamic = (now?: Dynamic): Dynamic => {
+      let touchCount: Dynamic = 0,
+        recentCount: Dynamic = 0;
+      for (let pointer of activePointers.values() as Dynamic)
+        pointer.type === "touch" &&
+          ((touchCount += 1),
+          now - pointer.lastSeen <= CanvasPanZoomLimit && (recentCount += 1));
+      return touchCount >= 2 && recentCount >= 1;
     },
-    value5: Dynamic,
-    count2: Dynamic = 1,
-    flag2: Dynamic = false,
-    callback11: Dynamic = (input2?: Dynamic, options?: Dynamic): Dynamic => {
+    primaryPointerId: Dynamic,
+    panButtonMask: Dynamic = 1,
+    hasPointerGesture: Dynamic = false,
+    toElementCoordinates: Dynamic = (clientX?: Dynamic, clientY?: Dynamic): Dynamic => {
       let bounds: Dynamic = element.getBoundingClientRect();
       return {
-        sx: input2 - bounds.left,
-        sy: options - bounds.top,
+        sx: clientX - bounds.left,
+        sy: clientY - bounds.top,
       };
     },
-    callback12: Dynamic = (event?: Dynamic): Dynamic => {
-      let value7: Dynamic = event.ctrlKey || event.metaKey;
-      if (flag && event.timeStamp - index <= CanvasPanZoomLimit_2) {
+    handleWheel: Dynamic = (event?: Dynamic): Dynamic => {
+      let isZoomKey: Dynamic = event.ctrlKey || event.metaKey;
+      if (isGestureActive && event.timeStamp - lastGestureTime <= wheelAfterGestureMs) {
         event.preventDefault();
         return;
       }
-      let value8: Dynamic = value.decide(
+      let wheelMode: Dynamic = wheelDecider.decide(
         event.timeStamp,
-        value7,
+        isZoomKey,
         event.deltaX !== 0 || event.deltaY !== 0,
-        (): Dynamic => input.allowNativeScroll?.(event) ?? false,
+        (): Dynamic => config.allowNativeScroll?.(event) ?? false,
       );
       if (
-        value8 === "native" ||
-        (event.preventDefault(), value8 === "consume")
+        wheelMode === "native" ||
+        (event.preventDefault(), wheelMode === "consume")
       )
         return;
-      let value9: Dynamic =
+      let deltaScaleY: Dynamic =
           event.deltaMode === 1
             ? 16
             : event.deltaMode === 2
               ? (window as Dynamic).innerHeight
               : 1,
-        value10: Dynamic =
+        deltaScaleX: Dynamic =
           event.deltaMode === 1
             ? 16
             : event.deltaMode === 2
               ? (window as Dynamic).innerWidth
               : 1;
-      if (value8 === "zoom") {
-        let { sx: value11, sy: value12 }: Dynamic = callback11(
+      if (wheelMode === "zoom") {
+        let { sx: anchorX, sy: anchorY }: Dynamic = toElementCoordinates(
           event.clientX,
           event.clientY,
         );
-        input.setView(
+        config.setView(
           zoomViewportAtPoint(
-            input.getView(),
-            value11,
-            value12,
-            wheelZoomFactor(event.deltaY * value9),
-            input.limits,
+            config.getView(),
+            anchorX,
+            anchorY,
+            wheelZoomFactor(event.deltaY * deltaScaleY),
+            config.limits,
           ),
         );
       } else
-        input.setView(
+        config.setView(
           panViewport(
-            input.getView(),
-            -event.deltaX * value10,
-            -event.deltaY * value9,
+            config.getView(),
+            -event.deltaX * deltaScaleX,
+            -event.deltaY * deltaScaleY,
           ),
         );
     },
-    callback13: Dynamic = (): Dynamic => {
-      flag2 &&
-        entries2.size === 0 &&
-        ((flag2 = false), callback7(), input.onGestureEnd?.());
+    endGestureIfIdle: Dynamic = (): Dynamic => {
+      hasPointerGesture &&
+        activePointers.size === 0 &&
+        ((hasPointerGesture = false), unlockTextSelection(), config.onGestureEnd?.());
     },
-    callback14: Dynamic = (event?: Dynamic): Dynamic => {
-      if (input.shouldPan) return input.shouldPan(event);
+    canStartPan: Dynamic = (event?: Dynamic): Dynamic => {
+      if (config.shouldPan) return config.shouldPan(event);
       let target: Dynamic = event.target;
       for (; target; ) {
         let tagName: Dynamic = target.tagName;
@@ -298,124 +298,124 @@ function installCanvasPanZoom_local(input?: Dynamic): Dynamic {
       }
       return true;
     },
-    callback15: Dynamic = (input2?: Dynamic): Dynamic => {
-      value2 = undefined;
-      if (entries2.size === 1) {
-        let value7: Dynamic = entries2.values().next().value?.type,
-          flag3: Dynamic = false;
-        for (let [value8, value9] of entries3 as Dynamic)
+    reassignPointers: Dynamic = (now?: Dynamic): Dynamic => {
+      pinchStart = undefined;
+      if (activePointers.size === 1) {
+        let pointerType: Dynamic = activePointers.values().next().value?.type,
+          hasRestored: Dynamic = false;
+        for (let [queuedId, queuedPointer] of queuedPointers as Dynamic)
           if (
-            value9.type === value7 &&
-            (entries3.delete(value8),
-            !(input2 - value9.lastSeen > CanvasPanZoomLimit))
+            queuedPointer.type === pointerType &&
+            (queuedPointers.delete(queuedId),
+            !(now - queuedPointer.lastSeen > CanvasPanZoomLimit))
           ) {
-            entries2.set(value8, value9);
-            value5 = undefined;
-            flag3 = true;
+            activePointers.set(queuedId, queuedPointer);
+            primaryPointerId = undefined;
+            hasRestored = true;
             break;
           }
-        flag3 || (value5 = [...entries2.keys()][0]);
+        hasRestored || (primaryPointerId = [...activePointers.keys()][0]);
       }
-      callback13();
+      endGestureIfIdle();
     },
-    callback16: Dynamic = (input2?: Dynamic): Dynamic => {
-      entries3.delete(input2.pointerId);
-      entries4.delete(input2.pointerId);
-      let value7: Dynamic = entries2.delete(input2.pointerId);
-      value7 && value5 === input2.pointerId && (value5 = undefined);
-      let flag3: Dynamic = false;
-      if (input2.isPrimary && input2.button === 0) {
-        for (let [value8, value9] of entries2 as Dynamic)
-          value9.type === input2.pointerType &&
-            (entries2.delete(value8), (flag3 = true));
-        for (let [value8, value9] of entries3 as Dynamic)
-          value9.type === input2.pointerType && entries3.delete(value8);
-        input2.pointerType === "touch" && entries4.clear();
-        value5 !== undefined && !entries2.has(value5) && (value5 = undefined);
+    prunePointersOnPointerDown: Dynamic = (event?: Dynamic): Dynamic => {
+      queuedPointers.delete(event.pointerId);
+      rejectedTouches.delete(event.pointerId);
+      let wasRemoved: Dynamic = activePointers.delete(event.pointerId);
+      wasRemoved && primaryPointerId === event.pointerId && (primaryPointerId = undefined);
+      let hasRemovedSameType: Dynamic = false;
+      if (event.isPrimary && event.button === 0) {
+        for (let [pointerId, pointer] of activePointers as Dynamic)
+          pointer.type === event.pointerType &&
+            (activePointers.delete(pointerId), (hasRemovedSameType = true));
+        for (let [queuedId, queuedPointer] of queuedPointers as Dynamic)
+          queuedPointer.type === event.pointerType && queuedPointers.delete(queuedId);
+        event.pointerType === "touch" && rejectedTouches.clear();
+        primaryPointerId !== undefined && !activePointers.has(primaryPointerId) && (primaryPointerId = undefined);
       }
-      (value7 || flag3) && callback15(input2.timeStamp);
+      (wasRemoved || hasRemovedSameType) && reassignPointers(event.timeStamp);
     },
-    callback17: Dynamic = (input2?: Dynamic): Dynamic => {
+    isEditableTarget: Dynamic = (target?: Dynamic): Dynamic => {
       for (
-        let value7: Dynamic = input2;
-        value7 && value7 !== element;
-        value7 = value7.parentElement ?? null
+        let node: Dynamic = target;
+        node && node !== element;
+        node = node.parentElement ?? null
       )
         if (
-          value7.tagName === "INPUT" ||
-          value7.tagName === "TEXTAREA" ||
-          value7.tagName === "SELECT" ||
-          value7.isContentEditable === true
+          node.tagName === "INPUT" ||
+          node.tagName === "TEXTAREA" ||
+          node.tagName === "SELECT" ||
+          node.isContentEditable === true
         )
           return true;
       return false;
     },
-    callback18: Dynamic = (event?: Dynamic): Dynamic => {
+    handlePointerDown: Dynamic = (event?: Dynamic): Dynamic => {
       if (
         !(
           event.button !== 0 &&
           event.button !== 1 &&
-          !(event.button === 2 && input.panSecondaryButton)
+          !(event.button === 2 && config.panSecondaryButton)
         ) &&
-        !(event.button === 1 && callback17(event.target))
+        !(event.button === 1 && isEditableTarget(event.target))
       ) {
-        if (entries2.size > 0) {
+        if (activePointers.size > 0) {
           let values: Dynamic = new Set();
-          for (let value8 of entries2.values() as Dynamic)
-            values.add(value8.type);
-          for (let value8 of values as Dynamic) {
-            let flag3: Dynamic = true;
-            for (let value9 of entries2.values() as Dynamic)
+          for (let pointer of activePointers.values() as Dynamic)
+            values.add(pointer.type);
+          for (let pointerType of values as Dynamic) {
+            let isStale: Dynamic = true;
+            for (let pointer of activePointers.values() as Dynamic)
               if (
-                value9.type === value8 &&
-                event.timeStamp - value9.lastSeen <= CanvasPanZoomLimit
+                pointer.type === pointerType &&
+                event.timeStamp - pointer.lastSeen <= CanvasPanZoomLimit
               ) {
-                flag3 = false;
+                isStale = false;
                 break;
               }
-            if (flag3) {
-              for (let value9 of entries3.values() as Dynamic)
+            if (isStale) {
+              for (let queuedPointer of queuedPointers.values() as Dynamic)
                 if (
-                  value9.type === value8 &&
-                  event.timeStamp - value9.lastSeen <= CanvasPanZoomLimit
+                  queuedPointer.type === pointerType &&
+                  event.timeStamp - queuedPointer.lastSeen <= CanvasPanZoomLimit
                 ) {
-                  flag3 = false;
+                  isStale = false;
                   break;
                 }
             }
-            if (flag3 && value8 !== event.pointerType) {
-              for (let [value9, value10] of entries2 as Dynamic)
-                value10.type === value8 &&
-                  (entries2.delete(value9),
-                  value5 === value9 && (value5 = undefined));
-              for (let [value9, value10] of entries3 as Dynamic)
-                value10.type === value8 && entries3.delete(value9);
+            if (isStale && pointerType !== event.pointerType) {
+              for (let [pointerId, pointer] of activePointers as Dynamic)
+                pointer.type === pointerType &&
+                  (activePointers.delete(pointerId),
+                  primaryPointerId === pointerId && (primaryPointerId = undefined));
+              for (let [queuedId, queuedPointer] of queuedPointers as Dynamic)
+                queuedPointer.type === pointerType && queuedPointers.delete(queuedId);
             }
           }
-          callback9() || (value2 = undefined);
-          callback13();
-          let value7: Dynamic = entries2.values().next().value?.type;
-          if (value7 !== undefined && value7 !== event.pointerType) return;
+          hasTwoTouches() || (pinchStart = undefined);
+          endGestureIfIdle();
+          let firstType: Dynamic = activePointers.values().next().value?.type;
+          if (firstType !== undefined && firstType !== event.pointerType) return;
         }
-        if (entries2.size === 0) {
-          if (!callback14(event)) {
+        if (activePointers.size === 0) {
+          if (!canStartPan(event)) {
             event.pointerType === "touch" &&
-              input.shouldPan &&
-              entries4.set(event.pointerId, event.timeStamp);
+              config.shouldPan &&
+              rejectedTouches.set(event.pointerId, event.timeStamp);
             return;
           }
-          value5 = event.pointerId;
-          count2 = event.button === 1 ? 4 : event.button === 2 ? 2 : 1;
+          primaryPointerId = event.pointerId;
+          panButtonMask = event.button === 1 ? 4 : event.button === 2 ? 2 : 1;
           event.button === 1 && event.preventDefault();
-          callback6();
+          lockTextSelection();
         } else {
           if (event.pointerType !== "touch") return;
-          if (!callback14(event)) {
-            input.shouldPan && entries4.set(event.pointerId, event.timeStamp);
+          if (!canStartPan(event)) {
+            config.shouldPan && rejectedTouches.set(event.pointerId, event.timeStamp);
             return;
           }
-          if (entries2.size >= 2) {
-            entries3.set(event.pointerId, {
+          if (activePointers.size >= 2) {
+            queuedPointers.set(event.pointerId, {
               x: event.clientX,
               y: event.clientY,
               type: event.pointerType,
@@ -423,239 +423,239 @@ function installCanvasPanZoom_local(input?: Dynamic): Dynamic {
             });
             return;
           }
-          value5 = undefined;
+          primaryPointerId = undefined;
         }
-        entries2.set(event.pointerId, {
+        activePointers.set(event.pointerId, {
           x: event.clientX,
           y: event.clientY,
           type: event.pointerType,
           lastSeen: event.timeStamp,
         });
-        flag2 = true;
+        hasPointerGesture = true;
         try {
           element.setPointerCapture(event.pointerId);
         } catch {}
       }
     },
-    callback19: Dynamic = (input2?: Dynamic): Dynamic => {
-      entries4.has(input2.pointerId) &&
-        entries4.set(input2.pointerId, input2.timeStamp);
-      let entry: Dynamic = entries3.get(input2.pointerId);
+    handlePointerMove: Dynamic = (event?: Dynamic): Dynamic => {
+      rejectedTouches.has(event.pointerId) &&
+        rejectedTouches.set(event.pointerId, event.timeStamp);
+      let entry: Dynamic = queuedPointers.get(event.pointerId);
       if (entry) {
-        entries3.set(input2.pointerId, {
-          x: input2.clientX,
-          y: input2.clientY,
+        queuedPointers.set(event.pointerId, {
+          x: event.clientX,
+          y: event.clientY,
           type: entry.type,
-          lastSeen: input2.timeStamp,
+          lastSeen: event.timeStamp,
         });
         return;
       }
-      let entry2: Dynamic = entries2.get(input2.pointerId);
-      if (entry2) {
+      let activePointer: Dynamic = activePointers.get(event.pointerId);
+      if (activePointer) {
         if (
-          input2.pointerType !== "touch" &&
-          (input2.buttons & count2) === 0
+          event.pointerType !== "touch" &&
+          (event.buttons & panButtonMask) === 0
         ) {
-          callback20(input2);
+          handlePointerUp(event);
           return;
         }
-        if (entries2.size === 2) {
-          let value7: Dynamic = [...entries2.entries()].find(
-            ([input3]: Dynamic): Dynamic => input3 !== input2.pointerId,
+        if (activePointers.size === 2) {
+          let otherEntry: Dynamic = [...activePointers.entries()].find(
+            ([pointerId]: Dynamic): Dynamic => pointerId !== event.pointerId,
           );
-          if (value7) {
-            let [, value8]: Dynamic = value7,
-              value9: Dynamic = Math.hypot(
-                input2.clientX - value8.x,
-                input2.clientY - value8.y,
+          if (otherEntry) {
+            let [, otherPointer]: Dynamic = otherEntry,
+              newDistance: Dynamic = Math.hypot(
+                event.clientX - otherPointer.x,
+                event.clientY - otherPointer.y,
               ),
-              state: Dynamic = {
-                x: (entry2.x + value8.x) / 2,
-                y: (entry2.y + value8.y) / 2,
+              previousCenter: Dynamic = {
+                x: (activePointer.x + otherPointer.x) / 2,
+                y: (activePointer.y + otherPointer.y) / 2,
               },
-              state2: Dynamic = {
-                x: (input2.clientX + value8.x) / 2,
-                y: (input2.clientY + value8.y) / 2,
+              currentCenter: Dynamic = {
+                x: (event.clientX + otherPointer.x) / 2,
+                y: (event.clientY + otherPointer.y) / 2,
               };
-            (!value2 || value2.dist <= 0) &&
-              (value2 = {
-                dist: Math.hypot(entry2.x - value8.x, entry2.y - value8.y),
-                scale: input.getView().scale,
+            (!pinchStart || pinchStart.dist <= 0) &&
+              (pinchStart = {
+                dist: Math.hypot(activePointer.x - otherPointer.x, activePointer.y - otherPointer.y),
+                scale: config.getView().scale,
               });
-            let value10: Dynamic = panViewport(
-              input.getView(),
-              state2.x - state.x,
-              state2.y - state.y,
+            let nextView: Dynamic = panViewport(
+              config.getView(),
+              currentCenter.x - previousCenter.x,
+              currentCenter.y - previousCenter.y,
             );
-            if (value2.dist > 0 && value9 > 0) {
-              let value11: Dynamic = value2.scale * (value9 / value2.dist);
-              if (value11 !== value10.scale) {
-                let { sx: value12, sy: value13 }: Dynamic = callback11(
-                  state2.x,
-                  state2.y,
+            if (pinchStart.dist > 0 && newDistance > 0) {
+              let targetScale: Dynamic = pinchStart.scale * (newDistance / pinchStart.dist);
+              if (targetScale !== nextView.scale) {
+                let { sx: anchorX, sy: anchorY }: Dynamic = toElementCoordinates(
+                  currentCenter.x,
+                  currentCenter.y,
                 );
-                value10 = zoomViewportAtPoint(
-                  value10,
-                  value12,
-                  value13,
-                  value11 / value10.scale,
-                  input.limits,
+                nextView = zoomViewportAtPoint(
+                  nextView,
+                  anchorX,
+                  anchorY,
+                  targetScale / nextView.scale,
+                  config.limits,
                 );
               }
             }
-            input.setView(value10);
+            config.setView(nextView);
           }
         } else
-          input2.pointerId === value5 &&
-            input.setView(
+          event.pointerId === primaryPointerId &&
+            config.setView(
               panViewport(
-                input.getView(),
-                input2.clientX - entry2.x,
-                input2.clientY - entry2.y,
+                config.getView(),
+                event.clientX - activePointer.x,
+                event.clientY - activePointer.y,
               ),
             );
-        entries2.set(input2.pointerId, {
-          x: input2.clientX,
-          y: input2.clientY,
-          type: entry2.type,
-          lastSeen: input2.timeStamp,
+        activePointers.set(event.pointerId, {
+          x: event.clientX,
+          y: event.clientY,
+          type: activePointer.type,
+          lastSeen: event.timeStamp,
         });
       }
     },
-    callback20: Dynamic = (input2?: Dynamic): Dynamic => {
-      entries4.delete(input2.pointerId);
-      entries3.delete(input2.pointerId);
-      entries2.has(input2.pointerId) &&
-        (entries2.delete(input2.pointerId),
-        input2.pointerId === value5 && (value5 = undefined),
-        callback15(input2.timeStamp));
+    handlePointerUp: Dynamic = (event?: Dynamic): Dynamic => {
+      rejectedTouches.delete(event.pointerId);
+      queuedPointers.delete(event.pointerId);
+      activePointers.has(event.pointerId) &&
+        (activePointers.delete(event.pointerId),
+        event.pointerId === primaryPointerId && (primaryPointerId = undefined),
+        reassignPointers(event.timeStamp));
     },
-    callback21: Dynamic = (event?: Dynamic): Dynamic => {
+    handleGestureStart: Dynamic = (event?: Dynamic): Dynamic => {
       event.preventDefault();
-      flag = true;
-      index = typeof event.timeStamp == "number" ? event.timeStamp : 0;
-      count = input.getView().scale;
-      value.decide(
+      isGestureActive = true;
+      lastGestureTime = typeof event.timeStamp == "number" ? event.timeStamp : 0;
+      gestureBaseScale = config.getView().scale;
+      wheelDecider.decide(
         typeof event.timeStamp == "number" ? event.timeStamp : 0,
         true,
         true,
         (): Dynamic => false,
       );
     },
-    callback22: Dynamic = (event?: Dynamic): Dynamic => {
+    handleGestureChange: Dynamic = (event?: Dynamic): Dynamic => {
       event.preventDefault();
-      if (!flag || !event.scale) return;
-      index = typeof event.timeStamp == "number" ? event.timeStamp : 0;
-      callback8(index);
-      if (callback10(index) || entries4.size > 0) {
-        count = input.getView().scale / event.scale;
+      if (!isGestureActive || !event.scale) return;
+      lastGestureTime = typeof event.timeStamp == "number" ? event.timeStamp : 0;
+      pruneRejectedTouches(lastGestureTime);
+      if (hasTwoRecentTouches(lastGestureTime) || rejectedTouches.size > 0) {
+        gestureBaseScale = config.getView().scale / event.scale;
         return;
       }
-      let value7: Dynamic = input.getView(),
-        value8: Dynamic = count * event.scale;
-      if (value8 === value7.scale) return;
-      let { sx: value9, sy: value10 }: Dynamic = callback11(
+      let currentView: Dynamic = config.getView(),
+        targetScale: Dynamic = gestureBaseScale * event.scale;
+      if (targetScale === currentView.scale) return;
+      let { sx: anchorX, sy: anchorY }: Dynamic = toElementCoordinates(
         event.clientX ?? 0,
         event.clientY ?? 0,
       );
-      input.setView(
+      config.setView(
         zoomViewportAtPoint(
-          value7,
-          value9,
-          value10,
-          value8 / value7.scale,
-          input.limits,
+          currentView,
+          anchorX,
+          anchorY,
+          targetScale / currentView.scale,
+          config.limits,
         ),
       );
     },
-    callback23: Dynamic = (event?: Dynamic): Dynamic => {
+    handleGestureEnd: Dynamic = (event?: Dynamic): Dynamic => {
       event.preventDefault();
-      flag = false;
+      isGestureActive = false;
     },
-    callback24: Dynamic = (event?: Dynamic): Dynamic => {
-      (value5 !== undefined || entries2.size > 0) && event.preventDefault();
+    handleDragStart: Dynamic = (event?: Dynamic): Dynamic => {
+      (primaryPointerId !== undefined || activePointers.size > 0) && event.preventDefault();
     },
-    callback25: Dynamic = (event?: Dynamic): Dynamic => {
+    handleMouseDown: Dynamic = (event?: Dynamic): Dynamic => {
       event.button === 1 &&
-        value5 !== undefined &&
-        count2 === 4 &&
+        primaryPointerId !== undefined &&
+        panButtonMask === 4 &&
         event.preventDefault();
     };
-  element.addEventListener("dragstart", callback24);
-  element.addEventListener("mousedown", callback25);
-  element.addEventListener("touchstart", callback3, {
+  element.addEventListener("dragstart", handleDragStart);
+  element.addEventListener("mousedown", handleMouseDown);
+  element.addEventListener("touchstart", handleTouchStart, {
     passive: true,
   });
-  element.addEventListener("touchmove", callback4, {
+  element.addEventListener("touchmove", handleTouchMove, {
     passive: false,
   });
-  element.addEventListener("touchend", callback5, {
+  element.addEventListener("touchend", handleTouchEnd, {
     passive: true,
   });
-  element.addEventListener("touchcancel", callback5, {
+  element.addEventListener("touchcancel", handleTouchEnd, {
     passive: true,
   });
-  element.addEventListener("wheel", callback12, {
+  element.addEventListener("wheel", handleWheel, {
     passive: false,
   });
-  (window as Dynamic).addEventListener("pointerdown", callback16, true);
-  element.addEventListener("pointerdown", callback18);
-  element.addEventListener("gesturestart", callback21, {
+  (window as Dynamic).addEventListener("pointerdown", prunePointersOnPointerDown, true);
+  element.addEventListener("pointerdown", handlePointerDown);
+  element.addEventListener("gesturestart", handleGestureStart, {
     passive: false,
   });
-  element.addEventListener("gesturechange", callback22, {
+  element.addEventListener("gesturechange", handleGestureChange, {
     passive: false,
   });
-  element.addEventListener("gestureend", callback23, {
+  element.addEventListener("gestureend", handleGestureEnd, {
     passive: false,
   });
-  (window as Dynamic).addEventListener("pointermove", callback19);
-  (window as Dynamic).addEventListener("pointerup", callback20);
-  (window as Dynamic).addEventListener("pointercancel", callback20);
-  let value6: Dynamic = CanvasPanZoomSet(element, {
-    gesturestart: callback21,
-    gesturechange: callback22,
-    gestureend: callback23,
+  (window as Dynamic).addEventListener("pointermove", handlePointerMove);
+  (window as Dynamic).addEventListener("pointerup", handlePointerUp);
+  (window as Dynamic).addEventListener("pointercancel", handlePointerUp);
+  let unregisterGestures: Dynamic = CanvasPanZoomSet(element, {
+    gesturestart: handleGestureStart,
+    gesturechange: handleGestureChange,
+    gestureend: handleGestureEnd,
   });
   return {
-    release(input2: Dynamic): Dynamic {
-      let entry: Dynamic = entries2.get(input2);
-      if (entry === undefined || entries2.size !== 1 || entries3.size > 0)
+    release(pointerId: Dynamic): Dynamic {
+      let entry: Dynamic = activePointers.get(pointerId);
+      if (entry === undefined || activePointers.size !== 1 || queuedPointers.size > 0)
         return false;
-      entries2.delete(input2);
-      input2 === value5 && (value5 = undefined);
+      activePointers.delete(pointerId);
+      pointerId === primaryPointerId && (primaryPointerId = undefined);
       try {
-        element.releasePointerCapture(input2);
+        element.releasePointerCapture(pointerId);
       } catch {}
-      callback15(entry.lastSeen);
+      reassignPointers(entry.lastSeen);
       return true;
     },
     destroy(): Dynamic {
-      value6();
-      element.removeEventListener("scroll", callback);
-      element.removeEventListener("dragstart", callback24);
-      element.removeEventListener("mousedown", callback25);
-      element.removeEventListener("touchstart", callback3);
-      element.removeEventListener("touchmove", callback4);
-      element.removeEventListener("touchend", callback5);
-      element.removeEventListener("touchcancel", callback5);
-      element.removeEventListener("wheel", callback12);
+      unregisterGestures();
+      element.removeEventListener("scroll", resetScroll);
+      element.removeEventListener("dragstart", handleDragStart);
+      element.removeEventListener("mousedown", handleMouseDown);
+      element.removeEventListener("touchstart", handleTouchStart);
+      element.removeEventListener("touchmove", handleTouchMove);
+      element.removeEventListener("touchend", handleTouchEnd);
+      element.removeEventListener("touchcancel", handleTouchEnd);
+      element.removeEventListener("wheel", handleWheel);
       (window as Dynamic).removeEventListener(
         "pointerdown",
-        callback16,
+        prunePointersOnPointerDown,
         true,
       );
-      element.removeEventListener("pointerdown", callback18);
-      element.removeEventListener("gesturestart", callback21);
-      element.removeEventListener("gesturechange", callback22);
-      element.removeEventListener("gestureend", callback23);
-      (window as Dynamic).removeEventListener("pointermove", callback19);
-      (window as Dynamic).removeEventListener("pointerup", callback20);
-      (window as Dynamic).removeEventListener("pointercancel", callback20);
-      entries4.clear();
-      entries3.clear();
-      entries.clear();
-      callback7();
+      element.removeEventListener("pointerdown", handlePointerDown);
+      element.removeEventListener("gesturestart", handleGestureStart);
+      element.removeEventListener("gesturechange", handleGestureChange);
+      element.removeEventListener("gestureend", handleGestureEnd);
+      (window as Dynamic).removeEventListener("pointermove", handlePointerMove);
+      (window as Dynamic).removeEventListener("pointerup", handlePointerUp);
+      (window as Dynamic).removeEventListener("pointercancel", handlePointerUp);
+      rejectedTouches.clear();
+      queuedPointers.clear();
+      touchPanAllowed.clear();
+      unlockTextSelection();
       element.style.touchAction = touchAction;
     },
   };
@@ -668,7 +668,7 @@ export {
   CanvasPanZoomGesturestartGesturechangeGestureendValues,
   CanvasPanZoomKeys,
   CanvasPanZoomLimit,
-  CanvasPanZoomLimit_2,
+  wheelAfterGestureMs as CanvasPanZoomLimit_2,
   CanvasPanZoomResolvedValue,
   CanvasPanZoomRound,
   CanvasPanZoomScrollTop,
@@ -685,7 +685,7 @@ export {
 export function installCanvasPanZoom(): () => void {
   return () => {
     CanvasPanZoomLimit = 1e4;
-    CanvasPanZoomLimit_2 = 1e3;
+    wheelAfterGestureMs = 1e3;
     CanvasPanZoomGesturestartGesturechangeGestureendValues = [
       "gesturestart",
       "gesturechange",
@@ -699,23 +699,23 @@ export function installCanvasPanZoom(): () => void {
     CanvasPanZoomCache = new Map();
     CanvasPanZoomResolvedValue = 0;
     canvasGestureActive = false;
-    CanvasPanZoomTouches = (input?: Dynamic): Dynamic => {
-      CanvasPanZoomResolvedValue = input.touches?.length ?? 0;
+    CanvasPanZoomTouches = (touchEvent?: Dynamic): Dynamic => {
+      CanvasPanZoomResolvedValue = touchEvent.touches?.length ?? 0;
     };
-    CanvasPanZoomKeys = (input?: Dynamic, options?: Dynamic): Dynamic => {
-      let value: Dynamic;
-      if (input === undefined || options === undefined) return value;
-      for (let value2 of CanvasPanZoomCache.keys() as Dynamic) {
-        if (value2.closest("[inert]") || value2.checkVisibility?.() === false)
+    CanvasPanZoomKeys = (clientX?: Dynamic, clientY?: Dynamic): Dynamic => {
+      let hitElement: Dynamic;
+      if (clientX === undefined || clientY === undefined) return hitElement;
+      for (let candidate of CanvasPanZoomCache.keys() as Dynamic) {
+        if (candidate.closest("[inert]") || candidate.checkVisibility?.() === false)
           continue;
-        let bounds: Dynamic = value2.getBoundingClientRect();
-        input >= bounds.left &&
-          input < bounds.right &&
-          options >= bounds.top &&
-          options < bounds.bottom &&
-          (value = value2);
+        let bounds: Dynamic = candidate.getBoundingClientRect();
+        clientX >= bounds.left &&
+          clientX < bounds.right &&
+          clientY >= bounds.top &&
+          clientY < bounds.bottom &&
+          (hitElement = candidate);
       }
-      return value;
+      return hitElement;
     };
     CanvasPanZoomCtrlKey = (event?: Dynamic): Dynamic => {
       if (
@@ -725,10 +725,10 @@ export function installCanvasPanZoom(): () => void {
         canvasGestureActive
       )
         return;
-      let value: Dynamic = CanvasPanZoomKeys(event.clientX, event.clientY);
-      if (!value) return;
+      let hitElement: Dynamic = CanvasPanZoomKeys(event.clientX, event.clientY);
+      if (!hitElement) return;
       event.preventDefault();
-      let value2: Dynamic = new WheelEvent("wheel", {
+      let forwardedWheelEvent: Dynamic = new WheelEvent("wheel", {
         bubbles: true,
         cancelable: true,
         clientX: event.clientX,
@@ -743,53 +743,53 @@ export function installCanvasPanZoom(): () => void {
       });
       canvasGestureActive = true;
       try {
-        value.dispatchEvent(value2);
+        hitElement.dispatchEvent(forwardedWheelEvent);
       } finally {
         canvasGestureActive = false;
       }
     };
     CanvasPanZoomDefaultPrevented = (event?: Dynamic): Dynamic => {
       if (event.defaultPrevented || CanvasPanZoomResolvedValue > 0) return;
-      let value: Dynamic = event,
-        value2: Dynamic = CanvasPanZoomKeys(value.clientX, value.clientY);
-      value2 &&
+      let gestureEvent: Dynamic = event,
+        hitElement: Dynamic = CanvasPanZoomKeys(gestureEvent.clientX, gestureEvent.clientY);
+      hitElement &&
         (event.preventDefault(),
-        CanvasPanZoomCache.get(value2)?.[event.type](value));
+        CanvasPanZoomCache.get(hitElement)?.[event.type](gestureEvent));
     };
-    CanvasPanZoomSet = (input?: Dynamic, options?: Dynamic): Dynamic => {
-      CanvasPanZoomCache.set(input, options);
+    CanvasPanZoomSet = (element?: Dynamic, handlers?: Dynamic): Dynamic => {
+      CanvasPanZoomCache.set(element, handlers);
       (window as Dynamic).addEventListener("wheel", CanvasPanZoomCtrlKey, {
         passive: false,
       });
-      for (let value of CanvasPanZoomGesturestartGesturechangeGestureendValues as Dynamic)
+      for (let eventName of CanvasPanZoomGesturestartGesturechangeGestureendValues as Dynamic)
         (window as Dynamic).addEventListener(
-          value,
+          eventName,
           CanvasPanZoomDefaultPrevented,
           {
             passive: false,
           },
         );
-      for (let value of CanvasPanZoomTouchstartTouchendTouchcancelValues as Dynamic)
-        (window as Dynamic).addEventListener(value, CanvasPanZoomTouches, {
+      for (let eventName of CanvasPanZoomTouchstartTouchendTouchcancelValues as Dynamic)
+        (window as Dynamic).addEventListener(eventName, CanvasPanZoomTouches, {
           capture: true,
           passive: true,
         });
       return (): Dynamic => {
-        CanvasPanZoomCache.get(input) === options &&
-          CanvasPanZoomCache.delete(input);
+        CanvasPanZoomCache.get(element) === handlers &&
+          CanvasPanZoomCache.delete(element);
         if (!(CanvasPanZoomCache.size > 0)) {
           (window as Dynamic).removeEventListener(
             "wheel",
             CanvasPanZoomCtrlKey,
           );
-          for (let value of CanvasPanZoomGesturestartGesturechangeGestureendValues as Dynamic)
+          for (let eventName of CanvasPanZoomGesturestartGesturechangeGestureendValues as Dynamic)
             (window as Dynamic).removeEventListener(
-              value,
+              eventName,
               CanvasPanZoomDefaultPrevented,
             );
-          for (let value of CanvasPanZoomTouchstartTouchendTouchcancelValues as Dynamic)
+          for (let eventName of CanvasPanZoomTouchstartTouchendTouchcancelValues as Dynamic)
             (window as Dynamic).removeEventListener(
-              value,
+              eventName,
               CanvasPanZoomTouches,
               true,
             );
@@ -800,11 +800,11 @@ export function installCanvasPanZoom(): () => void {
       load_react(),
       1,
     );
-    CanvasPanZoomRound = (input?: Dynamic): Dynamic =>
-      Math.round(input * PlatformFileContentMin(input).lh * 1.25);
-    CanvasPanZoomScrollTop = (input?: Dynamic): Dynamic => ({
-      above: input.scrollTop > 1,
-      below: input.scrollTop + input.clientHeight < input.scrollHeight - 1,
+    CanvasPanZoomRound = (fontSize?: Dynamic): Dynamic =>
+      Math.round(fontSize * PlatformFileContentMin(fontSize).lh * 1.25);
+    CanvasPanZoomScrollTop = (scroller?: Dynamic): Dynamic => ({
+      above: scroller.scrollTop > 1,
+      below: scroller.scrollTop + scroller.clientHeight < scroller.scrollHeight - 1,
     });
     initializeCdsIndex();
   };

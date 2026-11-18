@@ -6,8 +6,8 @@ import { load_react } from "../dependencies";
 import { toModuleNamespace } from "../module-helpers";
 
 var reactCanvasPreviewMounting: Dynamic;
-var CanvasPreviewMountingConstant: Dynamic;
-var CanvasPreviewMountingConstant_2: Dynamic;
+var currentPreviewDistanceWeight: Dynamic;
+var viewportSlackRatio: Dynamic;
 function getDevicePreviewCapabilities(): Dynamic {
   if (typeof window === "undefined")
     return {
@@ -15,237 +15,237 @@ function getDevicePreviewCapabilities(): Dynamic {
       shortSide: 1 / 0,
       ios: false,
     };
-  let value: Dynamic =
+  let hasCoarsePointer: Dynamic =
       (window as Dynamic).matchMedia?.("(pointer: coarse)")?.matches === true,
     screen: Dynamic = (window as Dynamic).screen,
-    value2: Dynamic =
+    shortSide: Dynamic =
       screen && screen.width > 0 && screen.height > 0
         ? Math.min(screen.width, screen.height)
         : 1 / 0,
-    value3: Dynamic = typeof navigator !== "undefined" ? navigator : null,
-    value4: Dynamic =
-      value3 != null &&
-      (/iPad|iPhone|iPod/.test(value3.userAgent) ||
-        (value3.platform === "MacIntel" && (value3.maxTouchPoints ?? 0) > 1));
+    navigatorInfo: Dynamic = typeof navigator !== "undefined" ? navigator : null,
+    isIos: Dynamic =
+      navigatorInfo != null &&
+      (/iPad|iPhone|iPod/.test(navigatorInfo.userAgent) ||
+        (navigatorInfo.platform === "MacIntel" && (navigatorInfo.maxTouchPoints ?? 0) > 1));
   return {
-    coarsePointer: value,
-    shortSide: value2,
-    ios: value4,
+    coarsePointer: hasCoarsePointer,
+    shortSide: shortSide,
+    ios: isIos,
   };
 }
 function isSmallTouchDevice(
-  input: Dynamic = getDevicePreviewCapabilities(),
+  capabilities: Dynamic = getDevicePreviewCapabilities(),
 ): Dynamic {
-  return input.coarsePointer && input.shortSide < 768;
+  return capabilities.coarsePointer && capabilities.shortSide < 768;
 }
 function maxInteractivePreviews(
-  input: Dynamic = getDevicePreviewCapabilities(),
+  capabilities: Dynamic = getDevicePreviewCapabilities(),
 ): Dynamic {
-  return input.coarsePointer ? (isSmallTouchDevice(input) ? 3 : 6) : 10;
+  return capabilities.coarsePointer ? (isSmallTouchDevice(capabilities) ? 3 : 6) : 10;
 }
 function maxMountedPreviews(
-  input: Dynamic = getDevicePreviewCapabilities(),
+  capabilities: Dynamic = getDevicePreviewCapabilities(),
 ): Dynamic {
-  return input.coarsePointer || input.ios === true
-    ? maxInteractivePreviews(input)
+  return capabilities.coarsePointer || capabilities.ios === true
+    ? maxInteractivePreviews(capabilities)
     : 40;
 }
-function distanceBetweenRects(input?: Dynamic, options?: Dynamic): Dynamic {
-  let value: Dynamic = Math.max(
+function distanceBetweenRects(rectA?: Dynamic, rectB?: Dynamic): Dynamic {
+  let gapX: Dynamic = Math.max(
       0,
-      input.x - (options.x + options.w),
-      options.x - (input.x + input.w),
+      rectA.x - (rectB.x + rectB.w),
+      rectB.x - (rectA.x + rectA.w),
     ),
-    value2: Dynamic = Math.max(
+    gapY: Dynamic = Math.max(
       0,
-      input.y - (options.y + options.h),
-      options.y - (input.y + input.h),
+      rectA.y - (rectB.y + rectB.h),
+      rectB.y - (rectA.y + rectA.h),
     );
-  return Math.hypot(value, value2);
+  return Math.hypot(gapX, gapY);
 }
 function distanceBetweenRectCenters(
-  input?: Dynamic,
-  options?: Dynamic,
+  rectA?: Dynamic,
+  rectB?: Dynamic,
 ): Dynamic {
   return Math.hypot(
-    input.x + input.w / 2 - (options.x + options.w / 2),
-    input.y + input.h / 2 - (options.y + options.h / 2),
+    rectA.x + rectA.w / 2 - (rectB.x + rectB.w / 2),
+    rectA.y + rectA.h / 2 - (rectB.y + rectB.h / 2),
   );
 }
-function chooseMountedPreviews(input?: Dynamic): Dynamic {
-  let value: Dynamic = Math.max(0, Math.floor(input.cap ?? 10)),
-    value2: Dynamic = Math.max(
-      value,
-      Math.floor(input.ceiling ?? value) || 0,
+function chooseMountedPreviews(params?: Dynamic): Dynamic {
+  let baseCap: Dynamic = Math.max(0, Math.floor(params.cap ?? 10)),
+    hardCeiling: Dynamic = Math.max(
+      baseCap,
+      Math.floor(params.ceiling ?? baseCap) || 0,
     ),
-    value3: Dynamic = value2 > value,
-    viewport: Dynamic = input.viewport,
-    entries: Dynamic = new Map();
-  for (let value8 of input.artboards as Dynamic)
-    entries.set(value8.file, value8);
-  let values: Dynamic = new Set(),
-    areaBudget: Dynamic = input.areaBudget;
-  if (entries.size <= value && areaBudget == null) {
-    for (let value8 of entries.keys() as Dynamic) values.add(value8);
-    return values;
+    canExceedCap: Dynamic = hardCeiling > baseCap,
+    viewport: Dynamic = params.viewport,
+    artboardsByFile: Dynamic = new Map();
+  for (let artboard of params.artboards as Dynamic)
+    artboardsByFile.set(artboard.file, artboard);
+  let chosenFiles: Dynamic = new Set(),
+    areaBudget: Dynamic = params.areaBudget;
+  if (artboardsByFile.size <= baseCap && areaBudget == null) {
+    for (let file of artboardsByFile.keys() as Dynamic) chosenFiles.add(file);
+    return chosenFiles;
   }
-  let values2: Dynamic = new Set();
-  for (let value8 of (input.required ?? []) as Dynamic)
-    value8 != null && entries.has(value8) && values2.add(value8);
-  for (let value8 of input.artboards as Dynamic)
-    distanceBetweenRects(value8, viewport) === 0 && values2.add(value8.file);
-  let value4: Dynamic = Math.min(value2, Math.max(value, values2.size)),
-    value5: Dynamic = input.now ?? 0,
-    callback: Dynamic = (input2?: Dynamic): Dynamic =>
-      input.current?.has(input2) === true &&
-      (input.lastOnScreen == null ||
-        value5 - (input.lastOnScreen.get(input2) ?? -1 / 0) < 18e4),
-    index: Dynamic = 0,
-    callback2: Dynamic = (
-      input2?: Dynamic,
-      options: Dynamic = false,
+  let requiredFiles: Dynamic = new Set();
+  for (let file of (params.required ?? []) as Dynamic)
+    file != null && artboardsByFile.has(file) && requiredFiles.add(file);
+  for (let artboard of params.artboards as Dynamic)
+    distanceBetweenRects(artboard, viewport) === 0 && requiredFiles.add(artboard.file);
+  let targetCount: Dynamic = Math.min(hardCeiling, Math.max(baseCap, requiredFiles.size)),
+    now: Dynamic = params.now ?? 0,
+    isRecentlyOnScreen: Dynamic = (file?: Dynamic): Dynamic =>
+      params.current?.has(file) === true &&
+      (params.lastOnScreen == null ||
+        now - (params.lastOnScreen.get(file) ?? -1 / 0) < 18e4),
+    usedArea: Dynamic = 0,
+    addIfFits: Dynamic = (
+      file?: Dynamic,
+      isRequired: Dynamic = false,
     ): Dynamic => {
-      let value8: Dynamic = input2 == null ? undefined : entries.get(input2);
-      input2 == null ||
-        value8 === undefined ||
-        values.has(input2) ||
-        (!options &&
+      let artboard: Dynamic = file == null ? undefined : artboardsByFile.get(file);
+      file == null ||
+        artboard === undefined ||
+        chosenFiles.has(file) ||
+        (!isRequired &&
           areaBudget != null &&
-          index + value8.w * value8.h > areaBudget) ||
-        ((values.size < value4 ||
-          (values.size < value2 && callback(input2))) &&
-          (values.add(input2), (index += value8.w * value8.h)));
+          usedArea + artboard.w * artboard.h > areaBudget) ||
+        ((chosenFiles.size < targetCount ||
+          (chosenFiles.size < hardCeiling && isRecentlyOnScreen(file))) &&
+          (chosenFiles.add(file), (usedArea += artboard.w * artboard.h)));
     };
-  for (let value8 of (input.required ?? []) as Dynamic)
-    callback2(value8, true);
-  for (let value8 of (input.recent ?? []) as Dynamic) {
-    let entry: Dynamic = entries.get(value8);
-    entry && distanceBetweenRects(entry, viewport) === 0 && callback2(value8);
+  for (let file of (params.required ?? []) as Dynamic)
+    addIfFits(file, true);
+  for (let file of (params.recent ?? []) as Dynamic) {
+    let entry: Dynamic = artboardsByFile.get(file);
+    entry && distanceBetweenRects(entry, viewport) === 0 && addIfFits(file);
   }
-  let value6: Dynamic =
-      CanvasPreviewMountingConstant_2 * Math.min(viewport.w, viewport.h),
-    callback3: Dynamic = (input2?: Dynamic): Dynamic =>
-      value3
-        ? input.zoomed === true
-          ? input2
-          : Math.max(0, input2 - value6)
-        : input2 * CanvasPreviewMountingConstant,
-    value7: Dynamic = input.artboards
-      .filter((input2?: Dynamic): Dynamic => !values.has(input2.file))
-      .map((input2?: Dynamic): Dynamic => {
-        let value8: Dynamic = distanceBetweenRects(input2, viewport),
-          value9: Dynamic =
-            value8 === 0 && input.current?.has(input2.file) === true;
+  let nearThreshold: Dynamic =
+      viewportSlackRatio * Math.min(viewport.w, viewport.h),
+    discountDistance: Dynamic = (distance?: Dynamic): Dynamic =>
+      canExceedCap
+        ? params.zoomed === true
+          ? distance
+          : Math.max(0, distance - nearThreshold)
+        : distance * currentPreviewDistanceWeight,
+    candidates: Dynamic = params.artboards
+      .filter((artboard?: Dynamic): Dynamic => !chosenFiles.has(artboard.file))
+      .map((artboard?: Dynamic): Dynamic => {
+        let gap: Dynamic = distanceBetweenRects(artboard, viewport),
+          isCurrentAndVisible: Dynamic =
+            gap === 0 && params.current?.has(artboard.file) === true;
         return {
-          file: input2.file,
-          gap: value8,
-          centre: value9
-            ? callback3(distanceBetweenRectCenters(input2, viewport))
-            : distanceBetweenRectCenters(input2, viewport),
+          file: artboard.file,
+          gap: gap,
+          centre: isCurrentAndVisible
+            ? discountDistance(distanceBetweenRectCenters(artboard, viewport))
+            : distanceBetweenRectCenters(artboard, viewport),
         };
       })
       .sort(
-        (input2?: Dynamic, options?: Dynamic): Dynamic =>
-          input2.gap - options.gap || input2.centre - options.centre,
+        (first?: Dynamic, second?: Dynamic): Dynamic =>
+          first.gap - second.gap || first.centre - second.centre,
       );
-  for (let value8 of value7 as Dynamic)
+  for (let candidate of candidates as Dynamic)
     (areaBudget == null ||
-      value8.gap === 0 ||
-      (value8.gap <= value6 && input.current?.has(value8.file) === true)) &&
-      callback2(value8.file);
-  return values;
+      candidate.gap === 0 ||
+      (candidate.gap <= nearThreshold && params.current?.has(candidate.file) === true)) &&
+      addIfFits(candidate.file);
+  return chosenFiles;
 }
 function shouldDelayPreviewMount(
-  input?: Dynamic,
-  options?: Dynamic,
+  artboard?: Dynamic,
+  state?: Dynamic,
 ): Dynamic {
-  return !options.editing || options.runsNothing || input.w * input.h > 15e5;
+  return !state.editing || state.runsNothing || artboard.w * artboard.h > 15e5;
 }
 function limitMountedPreviewPixels(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
+  currentFiles?: Dynamic,
+  candidateFiles?: Dynamic,
+  artboards?: Dynamic,
+  pixelBudget?: Dynamic,
 ): Dynamic {
-  let callback: Dynamic = (input2?: Dynamic): Dynamic => {
-      let value4: Dynamic = context.find(
-        (input3?: Dynamic): Dynamic => input3.file === input2,
+  let pixelsOf: Dynamic = (file?: Dynamic): Dynamic => {
+      let artboard: Dynamic = artboards.find(
+        (candidate?: Dynamic): Dynamic => candidate.file === file,
       );
-      return value4 && value4.w * value4.h;
+      return artboard && artboard.w * artboard.h;
     },
-    value2: Dynamic = input.filter(
-      (input2?: Dynamic): Dynamic => callback(input2) !== undefined,
+    keptFiles: Dynamic = currentFiles.filter(
+      (file?: Dynamic): Dynamic => pixelsOf(file) !== undefined,
     ),
-    value3: Dynamic = value2.reduce(
-      (input2?: Dynamic, options2?: Dynamic): Dynamic =>
-        input2 + callback(options2),
+    usedPixels: Dynamic = keptFiles.reduce(
+      (total?: Dynamic, file?: Dynamic): Dynamic =>
+        total + pixelsOf(file),
       0,
     );
-  for (let value4 of options as Dynamic) {
-    let value5: Dynamic =
-      value4 == null || value2.includes(value4)
+  for (let candidateFile of candidateFiles as Dynamic) {
+    let candidatePixels: Dynamic =
+      candidateFile == null || keptFiles.includes(candidateFile)
         ? undefined
-        : callback(value4);
-    value5 === undefined ||
-      value3 + value5 > value ||
-      (value2.push(value4), (value3 += value5));
+        : pixelsOf(candidateFile);
+    candidatePixels === undefined ||
+      usedPixels + candidatePixels > pixelBudget ||
+      (keptFiles.push(candidateFile), (usedPixels += candidatePixels));
   }
-  return value2;
+  return keptFiles;
 }
 function isPreviewHighlighted(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  file?: Dynamic,
+  hoveredFile?: Dynamic,
+  highlightedFiles?: Dynamic,
 ): Dynamic {
-  return input === options || (context?.has(input) ?? false);
+  return file === hoveredFile || (highlightedFiles?.has(file) ?? false);
 }
-function previewScaleChanged(input?: Dynamic, options?: Dynamic): Dynamic {
-  return input != null && Math.abs(options / input - 1) > 0.05;
+function previewScaleChanged(previousScale?: Dynamic, nextScale?: Dynamic): Dynamic {
+  return previousScale != null && Math.abs(nextScale / previousScale - 1) > 0.05;
 }
 function recordVisiblePreviewTimes(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
-  extra?: Dynamic,
+  timesByFile?: Dynamic,
+  artboards?: Dynamic,
+  viewport?: Dynamic,
+  extraViewport?: Dynamic,
+  now?: Dynamic,
 ): Dynamic {
-  for (let value2 of options as Dynamic)
-    (distanceBetweenRects(value2, context) === 0 ||
-      (value != null && distanceBetweenRects(value2, value) === 0)) &&
-      input.set(value2.file, extra);
+  for (let artboard of artboards as Dynamic)
+    (distanceBetweenRects(artboard, viewport) === 0 ||
+      (extraViewport != null && distanceBetweenRects(artboard, extraViewport) === 0)) &&
+      timesByFile.set(artboard.file, now);
 }
 function nextPreviewExpiry(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
-  extra?: Dynamic,
+  mountedFiles?: Dynamic,
+  artboards?: Dynamic,
+  viewport?: Dynamic,
+  lastOnScreen?: Dynamic,
+  now?: Dynamic,
 ): Dynamic {
-  let value2: Dynamic = null;
-  for (let value3 of options as Dynamic) {
-    let entry: Dynamic = value.get(value3.file);
-    !input.has(value3.file) ||
+  let earliestExpiry: Dynamic = null;
+  for (let artboard of artboards as Dynamic) {
+    let entry: Dynamic = lastOnScreen.get(artboard.file);
+    !mountedFiles.has(artboard.file) ||
       entry == null ||
-      entry + 18e4 <= extra ||
-      distanceBetweenRects(value3, context) === 0 ||
-      ((value2 == null || entry + 18e4 < value2) && (value2 = entry + 18e4));
+      entry + 18e4 <= now ||
+      distanceBetweenRects(artboard, viewport) === 0 ||
+      ((earliestExpiry == null || entry + 18e4 < earliestExpiry) && (earliestExpiry = entry + 18e4));
   }
-  return value2;
+  return earliestExpiry;
 }
-function previewMountPriority(input?: Dynamic, options?: Dynamic): Dynamic {
-  let value: Dynamic = distanceBetweenRects(input, options);
-  return value === 0
-    ? distanceBetweenRectCenters(input, options)
-    : 1e9 + value;
+function previewMountPriority(artboard?: Dynamic, viewport?: Dynamic): Dynamic {
+  let gap: Dynamic = distanceBetweenRects(artboard, viewport);
+  return gap === 0
+    ? distanceBetweenRectCenters(artboard, viewport)
+    : 1e9 + gap;
 }
-function samePreviewFiles(input?: Dynamic, options?: Dynamic): Dynamic {
-  if (input.size !== options.size) return false;
-  for (let value of input as Dynamic) if (!options.has(value)) return false;
+function samePreviewFiles(filesA?: Dynamic, filesB?: Dynamic): Dynamic {
+  if (filesA.size !== filesB.size) return false;
+  for (let file of filesA as Dynamic) if (!filesB.has(file)) return false;
   return true;
 }
 export {
-  CanvasPreviewMountingConstant,
-  CanvasPreviewMountingConstant_2,
+  currentPreviewDistanceWeight as CanvasPreviewMountingConstant,
+  viewportSlackRatio as CanvasPreviewMountingConstant_2,
   chooseMountedPreviews,
   distanceBetweenRectCenters,
   distanceBetweenRects,
@@ -269,7 +269,7 @@ export function installCanvasPreviewMounting(): () => void {
       load_react(),
       1,
     );
-    CanvasPreviewMountingConstant = 0.7;
-    CanvasPreviewMountingConstant_2 = 0.15;
+    currentPreviewDistanceWeight = 0.7;
+    viewportSlackRatio = 0.15;
   };
 }
