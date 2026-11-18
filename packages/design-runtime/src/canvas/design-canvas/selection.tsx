@@ -1,7 +1,7 @@
 import { CouldnTFlipRightNowTryAgainMessage } from "../../editor/geometry/flip-elements";
 import { FlippingThisWayWouldnTChangeItMessage } from "../../editor/geometry/flip-elements";
-import { GeometryFlipAnnotationsLabel_2 } from "../../editor/geometry/flip-annotations";
-import { GeometryFlipAnnotationsLabel_3 } from "../../editor/geometry/flip-annotations";
+import { GeometryFlipAnnotationsLabel_2 as flipNeedsObjectsMessage } from "../../editor/geometry/flip-annotations";
+import { GeometryFlipAnnotationsLabel_3 as flipInProgressMessage } from "../../editor/geometry/flip-annotations";
 import { GeometryFlipAnnotationsWytKytYtConfig } from "../../editor/geometry/flip-annotations";
 import { HostValue } from "../../editor/selection/canvas-selection";
 import { ModelModelStateLimit } from "../../editor/model/model-state";
@@ -34,266 +34,266 @@ import { uiMessage } from "@minedesign/contracts/ui-messages";
 import { artboardRevealSettleTimeoutMs, emptyCanvasSelectionFiles } from "../design-canvas";
 
 /** 画板预览 iframe 上报选择变化时运行（handleFrameSelection 的实现）：过滤过期令牌与取消消息，画板级点击转为画板选择，否则把元素选择合并进画布选择。 */
-export function routeFrameSelectionEvent(deps: { readonly focusedFileRef: Dynamic; readonly frameSelectionTokensRef: Dynamic; readonly pendingFrameSelectionRef: Dynamic; readonly selectionEpochRef: Dynamic; readonly selectionRef: Dynamic; readonly setSelection: Dynamic; readonly setShownFrameSelectionRef: Dynamic; readonly value24: Dynamic; readonly value25: Dynamic; readonly value27: Dynamic; readonly value29: Dynamic; readonly value30: Dynamic; readonly value31: Dynamic }, input?: Dynamic, options?: Dynamic): Dynamic {
-        if (input !== deps.focusedFileRef.current) return;
-        input === deps.pendingFrameSelectionRef.current?.file &&
-          options.tids &&
-          options.tids.length > 0 &&
+export function routeFrameSelectionEvent(deps: { readonly focusedFileRef: Dynamic; readonly frameSelectionTokensRef: Dynamic; readonly pendingFrameSelectionRef: Dynamic; readonly selectionEpochRef: Dynamic; readonly selectionRef: Dynamic; readonly setSelection: Dynamic; readonly setShownFrameSelectionRef: Dynamic; readonly value24: Dynamic; readonly value25: Dynamic; readonly value27: Dynamic; readonly value29: Dynamic; readonly value30: Dynamic; readonly value31: Dynamic }, file?: Dynamic, selectionEvent?: Dynamic): Dynamic {
+        if (file !== deps.focusedFileRef.current) return;
+        file === deps.pendingFrameSelectionRef.current?.file &&
+          selectionEvent.tids &&
+          selectionEvent.tids.length > 0 &&
           (deps.pendingFrameSelectionRef.current = null);
-        let value653: Dynamic =
-          options.re != null && options.re.startsWith(HostValue);
-        value653 && options.re != null && deps.value30.current.get(options.re)?.();
-        value653 &&
-          options.re === deps.value31.current?.token &&
+        let isHostResponse: Dynamic =
+          selectionEvent.re != null && selectionEvent.re.startsWith(HostValue);
+        isHostResponse && selectionEvent.re != null && deps.value30.current.get(selectionEvent.re)?.();
+        isHostResponse &&
+          selectionEvent.re === deps.value31.current?.token &&
           (deps.value31.current = null);
         if (
-          value653 &&
-          options.re !== deps.frameSelectionTokensRef.current.get(input)
+          isHostResponse &&
+          selectionEvent.re !== deps.frameSelectionTokensRef.current.get(file)
         )
           return;
         if (
-          isSessionCancelMessage(options.re, deps.value27.current)
+          isSessionCancelMessage(selectionEvent.re, deps.value27.current)
         ) {
           deps.value27.current = null;
           return;
         }
-        if (options.artboard) {
-          deps.value29.current(input, options.additive === true);
+        if (selectionEvent.artboard) {
+          deps.value29.current(file, selectionEvent.additive === true);
           return;
         }
-        let value654: Dynamic =
-            options.tids && options.tids.length > 0
+        let selectedEntry: Dynamic =
+            selectionEvent.tids && selectionEvent.tids.length > 0
               ? {
-                  name: options.name ?? null,
-                  tids: options.tids,
-                  rect: options.rect ?? null,
-                  count: options.tids.length,
-                  part: options.part,
+                  name: selectionEvent.name ?? null,
+                  tids: selectionEvent.tids,
+                  rect: selectionEvent.rect ?? null,
+                  count: selectionEvent.tids.length,
+                  part: selectionEvent.part,
                 }
               : null,
-          value655: Dynamic =
-            options.re != null &&
-            options.re.startsWith(keyboardNavigationMode);
+          isKeyboardNav: Dynamic =
+            selectionEvent.re != null &&
+            selectionEvent.re.startsWith(keyboardNavigationMode);
         if (
-          !value655 &&
-          !value653 &&
-          !options.additive &&
-          value654 == null &&
-          deps.value25.current === input
+          !isKeyboardNav &&
+          !isHostResponse &&
+          !selectionEvent.additive &&
+          selectedEntry == null &&
+          deps.value25.current === file
         ) {
           deps.value25.current = null;
           return;
         }
         if (
           deps.value24.current?.noteSelection(
-            input,
-            value654?.tids ?? null,
-            options.re,
+            file,
+            selectedEntry?.tids ?? null,
+            selectionEvent.re,
           ) === false
         )
           return;
-        value654 == null &&
-          !value655 &&
-          !value653 &&
-          !options.artboard &&
+        selectedEntry == null &&
+          !isKeyboardNav &&
+          !isHostResponse &&
+          !selectionEvent.artboard &&
           deps.selectionEpochRef.current++;
-        value654 != null &&
-          !value655 &&
-          !value653 &&
+        selectedEntry != null &&
+          !isKeyboardNav &&
+          !isHostResponse &&
           ((deps.value25.current = null), deps.selectionEpochRef.current++);
-        let value656: Dynamic = applyHostSelectionResponse(
+        let response: Dynamic = applyHostSelectionResponse(
           deps.selectionRef.current,
-          input,
+          file,
           {
-            entry: value654,
-            additive: options.additive === true,
-            re: options.re,
+            entry: selectedEntry,
+            additive: selectionEvent.additive === true,
+            re: selectionEvent.re,
           },
         );
-        value656.kind !== "confirm" &&
-          ((deps.selectionRef.current = value656.next),
-          deps.setSelection(value656.next),
-          value656.pushback === "clear" &&
-            deps.setShownFrameSelectionRef.current(input, null));
+        response.kind !== "confirm" &&
+          ((deps.selectionRef.current = response.next),
+          deps.setSelection(response.next),
+          response.pushback === "clear" &&
+            deps.setShownFrameSelectionRef.current(file, null));
       }
 
 /** applyCanvasSelection 的实现：写入 selectionRef 与选择状态，并按 0/150/600ms 多次把元素选择重新推送到未聚焦的画板预览中显示。 */
-export function commitCanvasSelection(deps: { readonly focusedFileRef: Dynamic; readonly frameSelectionTokensRef: Dynamic; readonly selectionRef: Dynamic; readonly setSelection: Dynamic; readonly setShownFrameSelection: Dynamic; readonly value177: Dynamic; readonly value19: Dynamic }, input?: Dynamic, options?: Dynamic): Dynamic {
-        let current4: Dynamic = deps.selectionRef.current;
-        deps.selectionRef.current = input;
-        deps.setSelection(input);
-        let current5: Dynamic = deps.focusedFileRef.current;
-        for (let value657 of (options?.repush ?? []) as Dynamic) {
-          if (value657 === current5) continue;
-          let value658: Dynamic = input.elements.get(value657)?.tids;
-          if (value658 == null) continue;
-          let callback15: Dynamic = (): Dynamic => {
-            let value659: Dynamic =
-              deps.selectionRef.current.elements.get(value657)?.tids;
+export function commitCanvasSelection(deps: { readonly focusedFileRef: Dynamic; readonly frameSelectionTokensRef: Dynamic; readonly selectionRef: Dynamic; readonly setSelection: Dynamic; readonly setShownFrameSelection: Dynamic; readonly value177: Dynamic; readonly value19: Dynamic }, nextSelection?: Dynamic, commitOptions?: Dynamic): Dynamic {
+        let previousSelection: Dynamic = deps.selectionRef.current;
+        deps.selectionRef.current = nextSelection;
+        deps.setSelection(nextSelection);
+        let focusedFile: Dynamic = deps.focusedFileRef.current;
+        for (let repushFile of (commitOptions?.repush ?? []) as Dynamic) {
+          if (repushFile === focusedFile) continue;
+          let repushTids: Dynamic = nextSelection.elements.get(repushFile)?.tids;
+          if (repushTids == null) continue;
+          let isStillPending: Dynamic = (): Dynamic => {
+            let currentTids: Dynamic =
+              deps.selectionRef.current.elements.get(repushFile)?.tids;
             return (
-              deps.focusedFileRef.current !== value657 && value659 === value658
+              deps.focusedFileRef.current !== repushFile && currentTids === repushTids
             );
           };
-          for (let value659 of [0, 150, 600] as Dynamic)
+          for (let delayMs of [0, 150, 600] as Dynamic)
             (window as Dynamic).setTimeout((): Dynamic => {
-              callback15() &&
+              isStillPending() &&
                 deps.value177.current
-                  .get(value657)
-                  ?.setShownSelection(value658, deps.value19(value657));
-            }, value659);
+                  .get(repushFile)
+                  ?.setShownSelection(repushTids, deps.value19(repushFile));
+            }, delayMs);
         }
-        if (current5 == null) return;
-        let value653: Dynamic = current4.elements.get(current5)?.tids,
-          value654: Dynamic = input.elements.get(current5)?.tids,
-          value655: Dynamic =
-            value653 === value654 ||
-            (value653 != null &&
-              value654 != null &&
-              value653.length === value654.length &&
-              value653.every(
-                (input2?: Dynamic, options2?: Dynamic): Dynamic =>
-                  input2 === value654[options2],
+        if (focusedFile == null) return;
+        let previousTids: Dynamic = previousSelection.elements.get(focusedFile)?.tids,
+          nextTids: Dynamic = nextSelection.elements.get(focusedFile)?.tids,
+          isSameTids: Dynamic =
+            previousTids === nextTids ||
+            (previousTids != null &&
+              nextTids != null &&
+              previousTids.length === nextTids.length &&
+              previousTids.every(
+                (tid?: Dynamic, index?: Dynamic): Dynamic =>
+                  tid === nextTids[index],
               )),
-          value656: Dynamic =
-            options?.repush != null && [...options.repush].includes(current5);
-        if (!value655 || (value656 && value654 != null)) {
-          let value657: Dynamic = deps.setShownFrameSelection(
-            current5,
-            value654 ?? null,
+          isRepush: Dynamic =
+            commitOptions?.repush != null && [...commitOptions.repush].includes(focusedFile);
+        if (!isSameTids || (isRepush && nextTids != null)) {
+          let frameToken: Dynamic = deps.setShownFrameSelection(
+            focusedFile,
+            nextTids ?? null,
           );
-          if (value656 && value654 != null && value657 != null) {
-            let callback15: Dynamic = (): Dynamic => {
-              let value658: Dynamic =
-                deps.selectionRef.current.elements.get(current5)?.tids;
+          if (isRepush && nextTids != null && frameToken != null) {
+            let isStillPending: Dynamic = (): Dynamic => {
+              let currentTids: Dynamic =
+                deps.selectionRef.current.elements.get(focusedFile)?.tids;
               return (
-                deps.focusedFileRef.current === current5 &&
-                deps.frameSelectionTokensRef.current.get(current5) === value657 &&
-                value658 != null &&
-                value658.length === value654.length &&
-                value658.every(
-                  (input2?: Dynamic, options2?: Dynamic): Dynamic =>
-                    input2 === value654[options2],
+                deps.focusedFileRef.current === focusedFile &&
+                deps.frameSelectionTokensRef.current.get(focusedFile) === frameToken &&
+                currentTids != null &&
+                currentTids.length === nextTids.length &&
+                currentTids.every(
+                  (tid?: Dynamic, index?: Dynamic): Dynamic =>
+                    tid === nextTids[index],
                 )
               );
             };
-            for (let value658 of [150, 600] as Dynamic)
+            for (let delayMs of [150, 600] as Dynamic)
               (window as Dynamic).setTimeout((): Dynamic => {
-                callback15() &&
-                  deps.setShownFrameSelection(current5, value654, value657);
-              }, value658);
+                isStillPending() &&
+                  deps.setShownFrameSelection(focusedFile, nextTids, frameToken);
+              }, delayMs);
           }
         }
       }
 
 /** 聚焦某个画板后运行：等待预览就绪，再以 60ms 轮询把已保存的元素选择反复推送到该画板 iframe，直到对方确认显示或超时。 */
-export function focusArtboardAndReplaySelection(deps: { readonly abandonSelectionGesture: Dynamic; readonly focusedFileRef: Dynamic; readonly frameSelectionSequencesRef: Dynamic; readonly pendingFrameSelectionRef: Dynamic; readonly selectionEpochRef: Dynamic; readonly selectionRef: Dynamic; readonly setShownFrameSelection: Dynamic; readonly value177: Dynamic; readonly value274: Dynamic; readonly value30: Dynamic }, input?: Dynamic): Dynamic {
-        let value653: Dynamic = deps.abandonSelectionGesture(),
-          value654: Dynamic =
-            deps.focusedFileRef.current !== input
+export function focusArtboardAndReplaySelection(deps: { readonly abandonSelectionGesture: Dynamic; readonly focusedFileRef: Dynamic; readonly frameSelectionSequencesRef: Dynamic; readonly pendingFrameSelectionRef: Dynamic; readonly selectionEpochRef: Dynamic; readonly selectionRef: Dynamic; readonly setShownFrameSelection: Dynamic; readonly value177: Dynamic; readonly value274: Dynamic; readonly value30: Dynamic }, file?: Dynamic): Dynamic {
+        let selectionEpoch: Dynamic = deps.abandonSelectionGesture(),
+          pendingSelection: Dynamic =
+            deps.focusedFileRef.current !== file
               ? {
-                  file: input,
+                  file: file,
                 }
               : null;
-        value654 && (deps.pendingFrameSelectionRef.current = value654);
-        let callback15: Dynamic = (): Dynamic => {
-          value654 &&
-            deps.pendingFrameSelectionRef.current === value654 &&
+        pendingSelection && (deps.pendingFrameSelectionRef.current = pendingSelection);
+        let clearPending: Dynamic = (): Dynamic => {
+          pendingSelection &&
+            deps.pendingFrameSelectionRef.current === pendingSelection &&
             (deps.pendingFrameSelectionRef.current = null);
         };
         return deps.value274
-          .current(input)
+          .current(file)
           .then(
             (): Dynamic =>
-              new Promise((input2?: Dynamic): Dynamic => {
+              new Promise((resolve?: Dynamic): Dynamic => {
                 let entry: Dynamic =
-                    deps.frameSelectionSequencesRef.current.get(input),
-                  items: Dynamic = [],
-                  index: Dynamic = 0,
-                  index2: Dynamic = 0,
-                  index3: Dynamic = 0,
-                  flag2: Dynamic = false,
-                  callback16: Dynamic = (): Dynamic => {
-                    for (let value655 of items as Dynamic)
-                      deps.value30.current.delete(value655);
-                    callback15();
-                    input2(
-                      flag2 ||
-                        (deps.focusedFileRef.current === input &&
-                          deps.selectionRef.current.elements.has(input)),
+                    deps.frameSelectionSequencesRef.current.get(file),
+                  tokens: Dynamic = [],
+                  pushCount: Dynamic = 0,
+                  pollCount: Dynamic = 0,
+                  lastPushAt: Dynamic = 0,
+                  isConfirmed: Dynamic = false,
+                  finish: Dynamic = (): Dynamic => {
+                    for (let token of tokens as Dynamic)
+                      deps.value30.current.delete(token);
+                    clearPending();
+                    resolve(
+                      isConfirmed ||
+                        (deps.focusedFileRef.current === file &&
+                          deps.selectionRef.current.elements.has(file)),
                     );
                   },
-                  callback17: Dynamic = (): Dynamic => {
+                  poll: Dynamic = (): Dynamic => {
                     if (
-                      flag2 ||
-                      deps.selectionEpochRef.current !== value653 ||
-                      deps.frameSelectionSequencesRef.current.get(input) !== entry
+                      isConfirmed ||
+                      deps.selectionEpochRef.current !== selectionEpoch ||
+                      deps.frameSelectionSequencesRef.current.get(file) !== entry
                     )
-                      return callback16();
-                    let entry2: Dynamic =
-                        deps.selectionRef.current.elements.get(input),
-                      value655: Dynamic =
+                      return finish();
+                    let selectedEntry: Dynamic =
+                        deps.selectionRef.current.elements.get(file),
+                      isOtherFocused: Dynamic =
                         deps.focusedFileRef.current != null &&
-                        deps.focusedFileRef.current !== input;
-                    if (!entry2 || value655 || index >= 25 || index2++ >= 400)
-                      return callback16();
-                    let entry3: Dynamic = deps.value177.current.get(input);
+                        deps.focusedFileRef.current !== file;
+                    if (!selectedEntry || isOtherFocused || pushCount >= 25 || pollCount++ >= 400)
+                      return finish();
+                    let frameEntry: Dynamic = deps.value177.current.get(file);
                     if (
-                      Date.now() - index3 >= 300 &&
-                      deps.focusedFileRef.current === input &&
-                      entry3?.isReady()
+                      Date.now() - lastPushAt >= 300 &&
+                      deps.focusedFileRef.current === file &&
+                      frameEntry?.isReady()
                     ) {
-                      deps.setShownFrameSelection(input, null);
-                      let value656: Dynamic = deps.setShownFrameSelection(
-                        input,
-                        entry2.tids,
+                      deps.setShownFrameSelection(file, null);
+                      let token: Dynamic = deps.setShownFrameSelection(
+                        file,
+                        selectedEntry.tids,
                       );
-                      value656 &&
-                        (index++,
-                        (index3 = Date.now()),
-                        items.push(value656),
-                        deps.value30.current.set(value656, (): Dynamic => {
-                          flag2 = true;
-                          callback16();
+                      token &&
+                        (pushCount++,
+                        (lastPushAt = Date.now()),
+                        tokens.push(token),
+                        deps.value30.current.set(token, (): Dynamic => {
+                          isConfirmed = true;
+                          finish();
                         }));
                     }
-                    (window as Dynamic).setTimeout(callback17, 60);
+                    (window as Dynamic).setTimeout(poll, 60);
                   };
-                (window as Dynamic).setTimeout(callback17, 60);
+                (window as Dynamic).setTimeout(poll, 60);
               }),
           )
-          .catch((): Dynamic => (callback15(), false));
+          .catch((): Dynamic => (clearPending(), false));
       }
 
 /** 键盘选择导航入口：按 kind 处理全选、方向键微移（含长按节流）、重排层级、进入子级/返回父级/切换兄弟元素，并播报结果。 */
 export function navigateSelectionByKind(deps: { readonly abandonSelectionGesture: Dynamic; readonly applyCanvasSelection: Dynamic; readonly callback: Dynamic; readonly count3: Dynamic; readonly focusedFileRef: Dynamic; readonly frameSelectionTokensRef: Dynamic; readonly selectionEpochRef: Dynamic; readonly selectionRef: Dynamic; readonly value155: Dynamic; readonly value177: Dynamic; readonly value19: Dynamic; readonly value218: Dynamic; readonly value31: Dynamic; readonly value34: Dynamic; readonly value432: Dynamic; readonly value44: Dynamic; readonly value440: Dynamic; readonly value48: Dynamic; readonly value49: Dynamic; readonly value50: Dynamic; readonly value53: Dynamic; readonly value54: Dynamic; readonly value73: Dynamic; readonly value87: Dynamic }, source?: Dynamic): Dynamic {
-        let callback15: Dynamic = (): Dynamic =>
+        let canNavigate: Dynamic = (): Dynamic =>
           canNavigateSelection({
             gesturing: deps.value218.current,
             setMoveCommits: deps.value155.current,
           });
-        if (!callback15()) return;
-        let current4: Dynamic = deps.selectionRef.current,
-          callback16: Dynamic = (input?: Dynamic): Dynamic =>
-            sameSelectionStructure(current4, input);
+        if (!canNavigate()) return;
+        let currentSelection: Dynamic = deps.selectionRef.current,
+          isSameStructure: Dynamic = (selection?: Dynamic): Dynamic =>
+            sameSelectionStructure(currentSelection, selection);
         if (source.kind === "all") {
-          let value654: Dynamic = selectionNavigationScope(
-            current4,
+          let navScope: Dynamic = selectionNavigationScope(
+            currentSelection,
             false,
           );
-          if (value654 === "panel") return;
-          if (value654 === "canvas") {
+          if (navScope === "panel") return;
+          if (navScope === "canvas") {
             deps.abandonSelectionGesture();
-            let current5: Dynamic = deps.value87.current;
+            let manifest: Dynamic = deps.value87.current;
             deps.applyCanvasSelection(
               selectionFromBoards({
                 files: new Set(
-                  current5.artboards.map(
-                    (input?: Dynamic): Dynamic => input.file,
+                  manifest.artboards.map(
+                    (artboard?: Dynamic): Dynamic => artboard.file,
                   ),
                 ),
                 notes: new Set(
-                  (current5.annotations ?? []).map(
-                    (input?: Dynamic): Dynamic => input.id,
+                  (manifest.annotations ?? []).map(
+                    (annotation?: Dynamic): Dynamic => annotation.id,
                   ),
                 ),
               }),
@@ -302,20 +302,20 @@ export function navigateSelectionByKind(deps: { readonly abandonSelectionGesture
           }
         }
         if (source.kind === "nudge") {
-          let { dx: value654, dy: value655 }: Dynamic = source,
-            value656: Dynamic = Date.now(),
-            callback17: Dynamic = async (): Promise<Dynamic> => {
+          let { dx: dx, dy: dy }: Dynamic = source,
+            startedAt: Dynamic = Date.now(),
+            runNudge: Dynamic = async (): Promise<Dynamic> => {
               if (
-                !callback15() ||
+                !canNavigate() ||
                 (source.repeat &&
-                  Date.now() - value656 > deps.count3 &&
+                  Date.now() - startedAt > deps.count3 &&
                   deps.value48.current > 1)
               )
                 return;
-              let current5: Dynamic = deps.selectionRef.current;
-              if (!callback16(current5)) return;
+              let latestSelection: Dynamic = deps.selectionRef.current;
+              if (!isSameStructure(latestSelection)) return;
               deps.value50.current++;
-              let value657: Dynamic = deps.abandonSelectionGesture();
+              let selectionEpoch: Dynamic = deps.abandonSelectionGesture();
               Date.now() - deps.value53.current.at >
                 ModelModelStateLimit &&
                 (deps.value53.current = {
@@ -323,135 +323,135 @@ export function navigateSelectionByKind(deps: { readonly abandonSelectionGesture
                   seq: new Map(),
                   dead: new Set(),
                 });
-              let current6: Dynamic = deps.value53.current;
-              current6.at = Date.now();
-              let value658: Dynamic = deps.callback(current5).filter(
-                  ([input]: Dynamic): Dynamic => !current6.dead.has(input),
+              let nudgeState: Dynamic = deps.value53.current;
+              nudgeState.at = Date.now();
+              let nudgeTargets: Dynamic = deps.callback(latestSelection).filter(
+                  ([file]: Dynamic): Dynamic => !nudgeState.dead.has(file),
                 ),
-                values: Dynamic = new Set(
-                  value658.map(([input]: Dynamic): Dynamic => input),
+                targetFiles: Dynamic = new Set(
+                  nudgeTargets.map(([file]: Dynamic): Dynamic => file),
                 ),
-                value659: Dynamic = canvasBoardSelection(
-                  current5,
+                boardSelection: Dynamic = canvasBoardSelection(
+                  latestSelection,
                 ),
-                value660: Dynamic =
-                  boardSelectionCount(value659) > 0 &&
+                didNudgeBoards: Dynamic =
+                  boardSelectionCount(boardSelection) > 0 &&
                   true &&
-                  deps.value44.current(value659, value654, value655, current6.seq);
-              if (value658.length === 0) {
-                value660 &&
+                  deps.value44.current(boardSelection, dx, dy, nudgeState.seq);
+              if (nudgeTargets.length === 0) {
+                didNudgeBoards &&
                   announce(
                     moveDirectionAnnouncement(
-                      value654,
-                      value655,
+                      dx,
+                      dy,
                     ),
                   );
                 return;
               }
-              let value661: Dynamic = deps.value432.current?.group(values),
-                current7: Dynamic = deps.focusedFileRef.current,
-                values2: Dynamic = new Set(),
-                value662: Dynamic = await Promise.all(
-                  value658.map(
-                    ([input, input2]: Dynamic): Dynamic =>
+              let historyGroup: Dynamic = deps.value432.current?.group(targetFiles),
+                focusedFile: Dynamic = deps.focusedFileRef.current,
+                settledFiles: Dynamic = new Set(),
+                nudgeResults: Dynamic = await Promise.all(
+                  nudgeTargets.map(
+                    ([file, tids]: Dynamic): Dynamic =>
                       (
-                        deps.value177.current.get(input)?.nudgeSelection(
-                          input2,
-                          value654,
-                          value655,
-                          input === current7
+                        deps.value177.current.get(file)?.nudgeSelection(
+                          tids,
+                          dx,
+                          dy,
+                          file === focusedFile
                             ? (): Dynamic => {
-                                values2.add(input);
-                                deps.value54(input);
+                                settledFiles.add(file);
+                                deps.value54(file);
                               }
                             : undefined,
                         ) ?? Promise.resolve(null)
                       )
                         .then(
-                          (input3?: Dynamic): Dynamic => (
-                            input3?.did === "timeout" &&
-                              current6.dead.add(input),
-                            input3
+                          (result?: Dynamic): Dynamic => (
+                            result?.did === "timeout" &&
+                              nudgeState.dead.add(file),
+                            result
                           ),
                         )
                         .catch((): Dynamic => null)
-                        .finally((): Dynamic => value661?.settled(input)),
+                        .finally((): Dynamic => historyGroup?.settled(file)),
                   ),
-                ).finally((): Dynamic => value661?.end());
-              for (let value664 of values as Dynamic)
-                current6.seq.set(
-                  value664,
-                  deps.value440.current.get(value664) ?? 0,
+                ).finally((): Dynamic => historyGroup?.end());
+              for (let targetFile of targetFiles as Dynamic)
+                nudgeState.seq.set(
+                  targetFile,
+                  deps.value440.current.get(targetFile) ?? 0,
                 );
-              current6.at = Date.now();
-              let entries: Dynamic = new Map(),
-                values3: Dynamic = new Set(values2),
-                index: Dynamic = 0,
-                index2: Dynamic = 0;
-              value662.forEach(
-                (input?: Dynamic, options?: Dynamic): Dynamic => {
-                  let value664: Dynamic = value658[options][0];
-                  input?.did === "reordered"
-                    ? (entries.set(value664, input.tids),
-                      values3.add(value664),
-                      index2++)
-                    : input?.did === "nudged" &&
-                      (values3.add(value664), index++);
+              nudgeState.at = Date.now();
+              let reorderedTids: Dynamic = new Map(),
+                changedFiles: Dynamic = new Set(settledFiles),
+                nudgedCount: Dynamic = 0,
+                reorderedCount: Dynamic = 0;
+              nudgeResults.forEach(
+                (result?: Dynamic, index?: Dynamic): Dynamic => {
+                  let changedFile: Dynamic = nudgeTargets[index][0];
+                  result?.did === "reordered"
+                    ? (reorderedTids.set(changedFile, result.tids),
+                      changedFiles.add(changedFile),
+                      reorderedCount++)
+                    : result?.did === "nudged" &&
+                      (changedFiles.add(changedFile), nudgedCount++);
                 },
               );
-              index > 0 || value660
+              nudgedCount > 0 || didNudgeBoards
                 ? announce(
                     moveDirectionAnnouncement(
-                      value654,
-                      value655,
+                      dx,
+                      dy,
                     ),
                   )
-                : index2 > 0 &&
+                : reorderedCount > 0 &&
                   announce(
                     reorderAnnouncement(
-                      value654 < 0 || value655 < 0 ? -1 : 1,
+                      dx < 0 || dy < 0 ? -1 : 1,
                       false,
                     ),
                   );
               if (
-                values3.size === 0 ||
-                deps.selectionEpochRef.current !== value657
+                changedFiles.size === 0 ||
+                deps.selectionEpochRef.current !== selectionEpoch
               )
                 return;
-              let current8: Dynamic = deps.selectionRef.current;
+              let updatedSelection: Dynamic = deps.selectionRef.current;
               deps.applyCanvasSelection(
-                entries.size > 0
+                reorderedTids.size > 0
                   ? selectionAfterElementEdits(
-                      current8,
+                      updatedSelection,
                       "next",
                       new Map(),
-                      entries,
+                      reorderedTids,
                       deps.value19,
                     )
-                  : current8,
+                  : updatedSelection,
                 {
-                  repush: values3,
+                  repush: changedFiles,
                 },
               );
-              let value663: Dynamic =
-                current7 != null &&
-                current7 === deps.focusedFileRef.current &&
-                values2.has(current7)
-                  ? deps.frameSelectionTokensRef.current.get(current7)
+              let frameToken: Dynamic =
+                focusedFile != null &&
+                focusedFile === deps.focusedFileRef.current &&
+                settledFiles.has(focusedFile)
+                  ? deps.frameSelectionTokensRef.current.get(focusedFile)
                   : undefined;
-              value663 != null &&
+              frameToken != null &&
                 (deps.value31.current = {
-                  token: value663,
+                  token: frameToken,
                   at: Date.now(),
                 });
             };
           deps.value48.current++;
-          deps.value49(callback17, (): Dynamic => {
+          deps.value49(runNudge, (): Dynamic => {
             deps.value48.current--;
           });
           return;
         }
-        let value653: Dynamic =
+        let walkKind: Dynamic =
           source.kind === "enter"
             ? "children"
             : source.kind === "parent"
@@ -460,88 +460,88 @@ export function navigateSelectionByKind(deps: { readonly abandonSelectionGesture
                 ? "siblings"
                 : source.kind;
         deps.value49(async (): Promise<Dynamic> => {
-          if (!callback15()) return;
-          let current5: Dynamic = deps.selectionRef.current;
-          if (!callback16(current5)) return;
+          if (!canNavigate()) return;
+          let latestSelection: Dynamic = deps.selectionRef.current;
+          if (!isSameStructure(latestSelection)) return;
           deps.value50.current++;
-          let value654: Dynamic = deps.abandonSelectionGesture(),
-            value655: Dynamic = deps.callback(current5),
-            value656: Dynamic = (
-              value653 === "children" ? [...current5.artboards] : []
-            ).map(async (input?: Dynamic): Promise<Dynamic> => {
+          let selectionEpoch: Dynamic = deps.abandonSelectionGesture(),
+            elementEntries: Dynamic = deps.callback(latestSelection),
+            childOutlines: Dynamic = (
+              walkKind === "children" ? [...latestSelection.artboards] : []
+            ).map(async (file?: Dynamic): Promise<Dynamic> => {
               if (
                 deps.value73.current.artboards.find(
-                  (input2?: Dynamic): Dynamic => input2.file === input,
+                  (artboard?: Dynamic): Dynamic => artboard.file === file,
                 )?.frameless
               )
                 return null;
-              let value661: Dynamic = await deps.value177.current
-                .get(input)
+              let outline: Dynamic = await deps.value177.current
+                .get(file)
                 ?.ensureOutline();
-              return value661
+              return outline
                 ? [
-                    input,
-                    value661
+                    file,
+                    outline
                       .filter(
-                        (input2?: Dynamic): Dynamic =>
+                        (node?: Dynamic): Dynamic =>
                           !SelectionActionsHelmetScHelmetPattern.test(
-                            input2.tag,
+                            node.tag,
                           ),
                       )
-                      .map((input2?: Dynamic): Dynamic => input2.tid),
+                      .map((node?: Dynamic): Dynamic => node.tid),
                   ]
                 : null;
             }),
-            value657: Dynamic = value655.map(
-              async ([input, input2]: Dynamic): Promise<Dynamic> => {
-                let value661: Dynamic = await deps.value177.current
-                  .get(input)
-                  ?.walkTids(input2, value653);
-                return value661 == null
+            walked: Dynamic = elementEntries.map(
+              async ([file, tids]: Dynamic): Promise<Dynamic> => {
+                let walkedTids: Dynamic = await deps.value177.current
+                  .get(file)
+                  ?.walkTids(tids, walkKind);
+                return walkedTids == null
                   ? null
                   : [
-                      input,
-                      value653 === "parents" && value661.length === 0
+                      file,
+                      walkKind === "parents" && walkedTids.length === 0
                         ? "artboard"
-                        : value661,
+                        : walkedTids,
                     ];
               },
             ),
-            [value658, value659]: Dynamic = await Promise.all([
-              Promise.all(value656),
-              Promise.all(value657),
+            [outlineEntries, walkEntries]: Dynamic = await Promise.all([
+              Promise.all(childOutlines),
+              Promise.all(walked),
             ]);
-          if (deps.selectionEpochRef.current !== value654) return;
-          let value660: Dynamic = selectionAfterElementEdits(
-            current5,
-            value653,
+          if (deps.selectionEpochRef.current !== selectionEpoch) return;
+          let nextSelection: Dynamic = selectionAfterElementEdits(
+            latestSelection,
+            walkKind,
             new Map(
-              value658.filter((input?: Dynamic): Dynamic => input != null),
+              outlineEntries.filter((entry?: Dynamic): Dynamic => entry != null),
             ),
             new Map(
-              value659.filter((input?: Dynamic): Dynamic => input != null),
+              walkEntries.filter((entry?: Dynamic): Dynamic => entry != null),
             ),
             deps.value19,
           );
-          if (value660 === current5) return;
-          deps.applyCanvasSelection(value660);
-          let current6: Dynamic = deps.focusedFileRef.current;
+          if (nextSelection === latestSelection) return;
+          deps.applyCanvasSelection(nextSelection);
+          let focusedFile: Dynamic = deps.focusedFileRef.current;
           if (
-            value653 === "children" &&
-            !(current6 != null && value660.elements.has(current6))
+            walkKind === "children" &&
+            !(focusedFile != null && nextSelection.elements.has(focusedFile))
           ) {
-            let value661: Dynamic = deps.value73.current.artboards.find(
-              (input?: Dynamic): Dynamic =>
-                value660.elements.has(input.file) &&
-                current5.artboards.has(input.file),
+            let expandedArtboard: Dynamic = deps.value73.current.artboards.find(
+              (artboard?: Dynamic): Dynamic =>
+                nextSelection.elements.has(artboard.file) &&
+                latestSelection.artboards.has(artboard.file),
             );
-            value661 && (deps.value50.current++, deps.value34(value661.file));
+            expandedArtboard && (deps.value50.current++, deps.value34(expandedArtboard.file));
           }
         });
       }
 
 /** 删除命令触发时运行：在各画板中移除选中的元素并记录历史；只读、失败或重复行无法删除时提示原因。 */
-export function deleteSelectedElements(deps: { readonly abandonSelectionGesture: Dynamic; readonly applyCanvasSelection: Dynamic; readonly selectionRef: Dynamic; readonly value144: Dynamic; readonly value155: Dynamic; readonly value177: Dynamic; readonly value218: Dynamic; readonly value22: Dynamic; readonly value432: Dynamic; readonly value448: Dynamic; readonly value459: Dynamic }, input?: Dynamic, options: Dynamic = {}): Dynamic {
+export function deleteSelectedElements(deps: { readonly abandonSelectionGesture: Dynamic; readonly applyCanvasSelection: Dynamic; readonly selectionRef: Dynamic; readonly value144: Dynamic; readonly value155: Dynamic; readonly value177: Dynamic; readonly value218: Dynamic; readonly value22: Dynamic; readonly value432: Dynamic; readonly value448: Dynamic; readonly value459: Dynamic }, successMessage?: Dynamic, deleteOptions: Dynamic = {}): Dynamic {
         if (
           !sessionAllowsMutation({
             gesturing: deps.value218.current,
@@ -549,98 +549,98 @@ export function deleteSelectedElements(deps: { readonly abandonSelectionGesture:
           })
         )
           return false;
-        let current4: Dynamic = deps.selectionRef.current,
-          value653: Dynamic = [...current4.elements].map(
-            ([input2, input3]: Dynamic): Dynamic => [
-              input2,
+        let selection: Dynamic = deps.selectionRef.current,
+          elementEdits: Dynamic = [...selection.elements].map(
+            ([file, entry]: Dynamic): Dynamic => [
+              file,
               {
-                tids: [...input3.tids],
+                tids: [...entry.tids],
               },
             ],
           );
         deps.abandonSelectionGesture();
-        let value654: Dynamic = options.elementsOnly
+        let boardSelection: Dynamic = deleteOptions.elementsOnly
             ? emptyBoardSelection
-            : canvasBoardSelection(current4),
-          value655: Dynamic =
-            boardSelectionCount(value654) > 0 &&
-            value653.length > 0
+            : canvasBoardSelection(selection),
+          historyToken: Dynamic =
+            boardSelectionCount(boardSelection) > 0 &&
+            elementEdits.length > 0
               ? randomSessionToken()
               : undefined,
-          value656: Dynamic =
-            value655 !== undefined ? deps.value144(value655) : null,
-          value657: Dynamic =
-            boardSelectionCount(value654) > 0
-              ? deps.value459.current(value654, value655)
+          boardsPending: Dynamic =
+            historyToken !== undefined ? deps.value144(historyToken) : null,
+          didDeleteBoards: Dynamic =
+            boardSelectionCount(boardSelection) > 0
+              ? deps.value459.current(boardSelection, historyToken)
               : false,
-          value658: Dynamic = deps.value432.current?.group(
-            value653.map(([input2]: Dynamic): Dynamic => input2),
+          historyGroup: Dynamic = deps.value432.current?.group(
+            elementEdits.map(([file]: Dynamic): Dynamic => file),
             {
-              bound: value655,
+              bound: historyToken,
             },
           ),
           entries: Dynamic = new Map(deps.value22.current);
-        (value657 && value656 ? value656 : Promise.resolve())
+        (didDeleteBoards && boardsPending ? boardsPending : Promise.resolve())
           .then(
             (): Dynamic =>
               Promise.all(
-                value653.map(
-                  ([input2, input3]: Dynamic): Dynamic =>
-                    (deps.value22.current.get(input2) === entries.get(input2)
+                elementEdits.map(
+                  ([file, entry]: Dynamic): Dynamic =>
+                    (deps.value22.current.get(file) === entries.get(file)
                       ? deps.value177.current
-                          .get(input2)
-                          ?.removeSelection(input3.tids)
+                          .get(file)
+                          ?.removeSelection(entry.tids)
                       : Promise.resolve("skipped")
                     )
                       ?.catch((): Dynamic => "failed")
-                      .finally((): Dynamic => value658?.settled(input2)),
+                      .finally((): Dynamic => historyGroup?.settled(file)),
                 ),
               ),
           )
-          .finally((): Dynamic => value658?.end())
-          .then((items?: Dynamic): Dynamic => {
-            if (items.length === 0) return;
-            let value659: Dynamic = items.some(
-              (input2?: Dynamic): Dynamic =>
-                input2 !== "failed" && input2 !== "skipped" && !!input2,
+          .finally((): Dynamic => historyGroup?.end())
+          .then((results?: Dynamic): Dynamic => {
+            if (results.length === 0) return;
+            let hasSuccess: Dynamic = results.some(
+              (result?: Dynamic): Dynamic =>
+                result !== "failed" && result !== "skipped" && !!result,
             );
             if (
-              items.some((input2?: Dynamic): Dynamic => input2 === "failed")
+              results.some((result?: Dynamic): Dynamic => result === "failed")
             ) {
               deps.value448.current(
-                value659
-                  ? input + " \u2014 one artboard's delete failed"
+                hasSuccess
+                  ? successMessage + " \u2014 one artboard's delete failed"
                   : uiMessage("canvas.designCanvas.nothingDeletedAnArtboardCould"),
               );
               return;
             }
-            let length: Dynamic = items.filter(
-              (input2?: Dynamic): Dynamic => input2 === "skipped",
+            let skippedCount: Dynamic = results.filter(
+              (result?: Dynamic): Dynamic => result === "skipped",
             ).length;
-            if (length > 0) {
+            if (skippedCount > 0) {
               deps.value448.current(
                 selectionActionFailureMessage(
                   "delete",
-                  length,
-                  value659,
+                  skippedCount,
+                  hasSuccess,
                 ),
               );
               return;
             }
-            items.every((input2?: Dynamic): Dynamic => !input2)
+            results.every((result?: Dynamic): Dynamic => !result)
               ? deps.value448.current(
                   uiMessage("canvas.designCanvas.nothingDeletedRepeatedRowsAre"),
                 )
               : announce(
-                  items.every(Boolean)
-                    ? input
-                    : input + " \u2014 repeated rows stayed",
+                  results.every(Boolean)
+                    ? successMessage
+                    : successMessage + " \u2014 repeated rows stayed",
                 );
           });
         deps.applyCanvasSelection(
-          options.elementsOnly
+          deleteOptions.elementsOnly
             ? selectionFromBoards(
-                canvasBoardSelection(current4),
+                canvasBoardSelection(selection),
               )
             : emptyCanvasSelection,
         );
@@ -648,7 +648,7 @@ export function deleteSelectedElements(deps: { readonly abandonSelectionGesture:
       }
 
 /** 复制（Duplicate）命令触发时运行：在各画板内就地复制选中的元素并更新选择，失败或不可复制时提示原因。 */
-export function duplicateSelectedElements(deps: { readonly abandonSelectionGesture: Dynamic; readonly selectionRef: Dynamic; readonly value138: Dynamic; readonly value144: Dynamic; readonly value155: Dynamic; readonly value177: Dynamic; readonly value218: Dynamic; readonly value22: Dynamic; readonly value31: Dynamic; readonly value323: Dynamic; readonly value432: Dynamic; readonly value448: Dynamic; readonly value48: Dynamic }, input: Dynamic = {}): Dynamic {
+export function duplicateSelectedElements(deps: { readonly abandonSelectionGesture: Dynamic; readonly selectionRef: Dynamic; readonly value138: Dynamic; readonly value144: Dynamic; readonly value155: Dynamic; readonly value177: Dynamic; readonly value218: Dynamic; readonly value22: Dynamic; readonly value31: Dynamic; readonly value323: Dynamic; readonly value432: Dynamic; readonly value448: Dynamic; readonly value48: Dynamic }, duplicateOptions: Dynamic = {}): Dynamic {
         if (
           !sessionAllowsMutation({
             gesturing: deps.value218.current,
@@ -659,76 +659,76 @@ export function duplicateSelectedElements(deps: { readonly abandonSelectionGestu
           return false;
         deps.value31.current = null;
         deps.abandonSelectionGesture();
-        let value653: Dynamic = deps.value138(),
-          value654: Dynamic = input.elementsOnly
+        let elementEdits: Dynamic = deps.value138(),
+          boardSelection: Dynamic = duplicateOptions.elementsOnly
             ? emptyBoardSelection
             : canvasBoardSelection(deps.selectionRef.current),
-          value655: Dynamic =
-            boardSelectionCount(value654) > 0 &&
-            value653.length > 0
+          historyToken: Dynamic =
+            boardSelectionCount(boardSelection) > 0 &&
+            elementEdits.length > 0
               ? randomSessionToken()
               : undefined,
-          value656: Dynamic =
-            value655 !== undefined ? deps.value144(value655) : null,
-          value657: Dynamic =
-            boardSelectionCount(value654) > 0
-              ? deps.value323.current(value654, value655)
+          boardsPending: Dynamic =
+            historyToken !== undefined ? deps.value144(historyToken) : null,
+          didDuplicateBoards: Dynamic =
+            boardSelectionCount(boardSelection) > 0
+              ? deps.value323.current(boardSelection, historyToken)
               : false,
-          value658: Dynamic = deps.value432.current?.group(
-            value653.map(([input2]: Dynamic): Dynamic => input2),
+          historyGroup: Dynamic = deps.value432.current?.group(
+            elementEdits.map(([file]: Dynamic): Dynamic => file),
             {
-              bound: value655,
+              bound: historyToken,
             },
           ),
           entries: Dynamic = new Map(deps.value22.current);
-        (value657 && value656 ? value656 : Promise.resolve())
+        (didDuplicateBoards && boardsPending ? boardsPending : Promise.resolve())
           .then(
             (): Dynamic =>
               Promise.all(
-                value653.map(
-                  ([input2, input3]: Dynamic): Dynamic =>
-                    (deps.value22.current.get(input2) === entries.get(input2)
+                elementEdits.map(
+                  ([file, entry]: Dynamic): Dynamic =>
+                    (deps.value22.current.get(file) === entries.get(file)
                       ? deps.value177.current
-                          .get(input2)
-                          ?.duplicateSelection(input3.tids)
+                          .get(file)
+                          ?.duplicateSelection(entry.tids)
                       : Promise.resolve("skipped")
                     )
                       ?.catch((): Dynamic => "failed")
-                      .finally((): Dynamic => value658?.settled(input2)),
+                      .finally((): Dynamic => historyGroup?.settled(file)),
                 ),
               ),
           )
-          .finally((): Dynamic => value658?.end())
-          .then((items?: Dynamic): Dynamic => {
-            let value659: Dynamic = items.some(
-              (input2?: Dynamic): Dynamic =>
-                input2 !== "failed" && input2 !== "skipped" && !!input2,
+          .finally((): Dynamic => historyGroup?.end())
+          .then((results?: Dynamic): Dynamic => {
+            let hasSuccess: Dynamic = results.some(
+              (result?: Dynamic): Dynamic =>
+                result !== "failed" && result !== "skipped" && !!result,
             );
             if (
-              items.some((input2?: Dynamic): Dynamic => input2 === "failed")
+              results.some((result?: Dynamic): Dynamic => result === "failed")
             ) {
               deps.value448.current(
-                value659
+                hasSuccess
                   ? uiMessage("canvas.designCanvas.duplicatedOneArtboardSDuplicate")
                   : uiMessage("canvas.designCanvas.nothingDuplicatedAnArtboardCould"),
               );
               return;
             }
-            let length: Dynamic = items.filter(
-              (input2?: Dynamic): Dynamic => input2 === "skipped",
+            let skippedCount: Dynamic = results.filter(
+              (result?: Dynamic): Dynamic => result === "skipped",
             ).length;
-            if (length > 0) {
+            if (skippedCount > 0) {
               deps.value448.current(
                 selectionActionFailureMessage(
                   "duplicate",
-                  length,
-                  value659,
+                  skippedCount,
+                  hasSuccess,
                 ),
               );
               return;
             }
-            items.length > 0 &&
-              items.every((input2?: Dynamic): Dynamic => !input2) &&
+            results.length > 0 &&
+              results.every((result?: Dynamic): Dynamic => !result) &&
               deps.value448.current(
                 uiMessage("canvas.designCanvas.nothingDuplicatedRepeatedRowsAre"),
               );
@@ -737,9 +737,9 @@ export function duplicateSelectedElements(deps: { readonly abandonSelectionGestu
       }
 
 /** 水平或垂直翻转命令触发时运行：翻转画板内选中的元素，并把选中的画布图形交给标注翻转逻辑；部分失败时提示与播报。 */
-export function flipSelectedObjects(deps: { readonly applyCanvasSelection: Dynamic; readonly selectionRef: Dynamic; readonly value144: Dynamic; readonly value149: Dynamic; readonly value150: Dynamic; readonly value155: Dynamic; readonly value177: Dynamic; readonly value19: Dynamic; readonly value218: Dynamic; readonly value224: Dynamic; readonly value432: Dynamic; readonly value448: Dynamic; readonly value45: Dynamic; readonly value46: Dynamic }, input?: Dynamic, options: Dynamic = {}): Dynamic {
+export function flipSelectedObjects(deps: { readonly applyCanvasSelection: Dynamic; readonly selectionRef: Dynamic; readonly value144: Dynamic; readonly value149: Dynamic; readonly value150: Dynamic; readonly value155: Dynamic; readonly value177: Dynamic; readonly value19: Dynamic; readonly value218: Dynamic; readonly value224: Dynamic; readonly value432: Dynamic; readonly value448: Dynamic; readonly value45: Dynamic; readonly value46: Dynamic }, axis?: Dynamic, flipOptions: Dynamic = {}): Dynamic {
         if (deps.value149.current) {
-          deps.value448.current(GeometryFlipAnnotationsLabel_3 + ".");
+          deps.value448.current(flipInProgressMessage + ".");
           return true;
         }
         if (
@@ -751,230 +751,230 @@ export function flipSelectedObjects(deps: { readonly applyCanvasSelection: Dynam
           deps.value150() !== undefined
         )
           return false;
-        let current4: Dynamic = deps.selectionRef.current,
-          value653: Dynamic = [...current4.elements]
+        let selection: Dynamic = deps.selectionRef.current,
+          elementEdits: Dynamic = [...selection.elements]
             .filter(
-              ([input2, input3]: Dynamic): Dynamic =>
-                input3.name === deps.value19(input2),
+              ([file, entry]: Dynamic): Dynamic =>
+                entry.name === deps.value19(file),
             )
             .map(
-              ([input2, input3]: Dynamic): Dynamic => [
-                input2,
+              ([file, entry]: Dynamic): Dynamic => [
+                file,
                 {
-                  tids: [...input3.tids],
+                  tids: [...entry.tids],
                 },
               ],
             ),
-          value654: Dynamic = options.elementsOnly
+          noteIds: Dynamic = flipOptions.elementsOnly
             ? emptyCanvasSelectionFiles
-            : current4.notes;
-        if (value653.length === 0 && value654.size === 0) {
-          current4.artboards.size > 0 &&
-            deps.value448.current(GeometryFlipAnnotationsLabel_2);
+            : selection.notes;
+        if (elementEdits.length === 0 && noteIds.size === 0) {
+          selection.artboards.size > 0 &&
+            deps.value448.current(flipNeedsObjectsMessage);
           return false;
         }
-        if (value653.length === 0) return deps.value46.current(value654, input);
+        if (elementEdits.length === 0) return deps.value46.current(noteIds, axis);
         deps.value155.current++;
         deps.value149.current = true;
-        let flag2: Dynamic = true,
-          callback15: Dynamic = (): Dynamic => {
-            flag2 &&
-              ((flag2 = false),
+        let isPending: Dynamic = true,
+          finishPending: Dynamic = (): Dynamic => {
+            isPending &&
+              ((isPending = false),
               (deps.value149.current = false),
               deps.value155.current--);
           },
-          value655: Dynamic = (window as Dynamic).setTimeout(
-            callback15,
+          timeoutId: Dynamic = (window as Dynamic).setTimeout(
+            finishPending,
             artboardRevealSettleTimeoutMs,
           );
         (async (): Promise<Dynamic> => {
-          let value656: Dynamic = await Promise.all(
-              value653.map(
-                ([input2, input3]: Dynamic): Dynamic =>
+          let flipReads: Dynamic = await Promise.all(
+              elementEdits.map(
+                ([file, entry]: Dynamic): Dynamic =>
                   (
-                    deps.value177.current.get(input2)?.flipRead(input3.tids) ??
+                    deps.value177.current.get(file)?.flipRead(entry.tids) ??
                     Promise.resolve(null)
                   ).catch((): Dynamic => null),
               ),
             ),
-            current5: Dynamic = deps.selectionRef.current;
+            latestSelection: Dynamic = deps.selectionRef.current;
           if (
             !deps.value224.current ||
             deps.value150() !== undefined ||
-            value653.some(
-              ([input2, input3]: Dynamic): Dynamic =>
-                current5.elements.get(input2)?.tids.join() !==
-                input3.tids.join(),
+            elementEdits.some(
+              ([file, entry]: Dynamic): Dynamic =>
+                latestSelection.elements.get(file)?.tids.join() !==
+                entry.tids.join(),
             ) ||
-            [...value654].some(
-              (input2?: Dynamic): Dynamic => !current5.notes.has(input2),
+            [...noteIds].some(
+              (note?: Dynamic): Dynamic => !latestSelection.notes.has(note),
             )
           )
             return;
           if (
-            !flag2 ||
-            value656.some((input2?: Dynamic): Dynamic => input2 === null)
+            !isPending ||
+            flipReads.some((read?: Dynamic): Dynamic => read === null)
           )
             return void deps.value448.current(
               CouldnTFlipRightNowTryAgainMessage,
             );
-          let value657: Dynamic =
-              value654.size > 0
+          let historyToken: Dynamic =
+              noteIds.size > 0
                 ? randomSessionToken()
                 : undefined,
-            value658: Dynamic =
-              value657 !== undefined ? deps.value144(value657) : null,
-            value659: Dynamic =
-              value654.size > 0
-                ? deps.value45.current(value654, input, value657)
+            notesPending: Dynamic =
+              historyToken !== undefined ? deps.value144(historyToken) : null,
+            noteFlip: Dynamic =
+              noteIds.size > 0
+                ? deps.value45.current(noteIds, axis, historyToken)
                 : null,
-            value660: Dynamic = deps.value432.current?.group(
-              value653.map(([input2]: Dynamic): Dynamic => input2),
+            historyGroup: Dynamic = deps.value432.current?.group(
+              elementEdits.map(([file]: Dynamic): Dynamic => file),
               {
-                bound: value657,
+                bound: historyToken,
               },
             );
-          value659?.flipped && value658 && (await value658);
-          let value661: Dynamic = await Promise.all(
-              value653.map(
-                ([input2]: Dynamic, options2?: Dynamic): Dynamic =>
+          noteFlip?.flipped && notesPending && (await notesPending);
+          let flipResults: Dynamic = await Promise.all(
+              elementEdits.map(
+                ([file]: Dynamic, index?: Dynamic): Dynamic =>
                   (
                     deps.value177.current
-                      .get(input2)
-                      ?.flipSelection(value656[options2], input) ??
+                      .get(file)
+                      ?.flipSelection(flipReads[index], axis) ??
                     Promise.resolve(null)
                   )
                     .catch((): Dynamic => null)
-                    .finally((): Dynamic => value660?.settled(input2)),
+                    .finally((): Dynamic => historyGroup?.settled(file)),
               ),
-            ).finally((): Dynamic => value660?.end()),
-            value662: Dynamic = value661.some(
-              (input2?: Dynamic): Dynamic => (input2?.flipped ?? 0) > 0,
+            ).finally((): Dynamic => historyGroup?.end()),
+            didFlipElements: Dynamic = flipResults.some(
+              (result?: Dynamic): Dynamic => (result?.flipped ?? 0) > 0,
             ),
-            value663: Dynamic = value662 || value659?.flipped === true,
-            value664: Dynamic = value661.some(
-              (input2?: Dynamic): Dynamic =>
-                input2 === null ||
-                (input2.flipped === 0 &&
-                  (input2.refused === undefined ||
-                    input2.refused ===
+            didFlip: Dynamic = didFlipElements || noteFlip?.flipped === true,
+            hasFailure: Dynamic = flipResults.some(
+              (result?: Dynamic): Dynamic =>
+                result === null ||
+                (result.flipped === 0 &&
+                  (result.refused === undefined ||
+                    result.refused ===
                       CouldnTFlipRightNowTryAgainMessage)),
             ),
-            value665: Dynamic = [
-              ...value661.map((input2?: Dynamic): Dynamic => input2?.refused),
-              value659?.refused,
-            ].filter((input2?: Dynamic): Dynamic => input2 !== undefined),
-            value666: Dynamic =
-              value665.find(
-                (input2?: Dynamic): Dynamic =>
-                  input2 !== FlippingThisWayWouldnTChangeItMessage,
-              ) ?? (value663 ? undefined : value665[0]),
-            value667: Dynamic = value664
-              ? value663
+            refusals: Dynamic = [
+              ...flipResults.map((result?: Dynamic): Dynamic => result?.refused),
+              noteFlip?.refused,
+            ].filter((refusal?: Dynamic): Dynamic => refusal !== undefined),
+            mainRefusal: Dynamic =
+              refusals.find(
+                (refusal?: Dynamic): Dynamic =>
+                  refusal !== FlippingThisWayWouldnTChangeItMessage,
+              ) ?? (didFlip ? undefined : refusals[0]),
+            message: Dynamic = hasFailure
+              ? didFlip
                 ? PartOfTheSelectionCouldnTBeMessage
                 : CouldnTFlipRightNowTryAgainMessage
-              : value666 !== undefined
+              : mainRefusal !== undefined
                 ? partialFlipMessage(
-                    value666,
-                    value663,
+                    mainRefusal,
+                    didFlip,
                     GeometryFlipAnnotationsWytKytYtConfig,
                   )
                 : undefined;
-          value662 &&
+          didFlipElements &&
             deps.applyCanvasSelection(deps.selectionRef.current, {
               repush: new Set(
-                value653.map(([input2]: Dynamic): Dynamic => input2),
+                elementEdits.map(([file]: Dynamic): Dynamic => file),
               ),
             });
-          !(!value664 && options.then?.(value667, value663) === true) &&
-            (value667 !== undefined && deps.value448.current(value667),
-            value663 &&
+          !(!hasFailure && flipOptions.then?.(message, didFlip) === true) &&
+            (message !== undefined && deps.value448.current(message),
+            didFlip &&
               announce(
-                flipDirectionAnnouncement(input),
+                flipDirectionAnnouncement(axis),
               ));
         })().finally((): Dynamic => {
-          (window as Dynamic).clearTimeout(value655);
-          callback15();
+          (window as Dynamic).clearTimeout(timeoutId);
+          finishPending();
         });
         return true;
       }
 
 /** 从大纲或外部请求选中某画板内的元素时运行：先聚焦画板，再推送元素选择，并报告已落定、被替代或放弃。 */
-export function selectElementInArtboard(deps: { readonly abandonSelectionGesture: Dynamic; readonly focusedFileRef: Dynamic; readonly selectionEpochRef: Dynamic; readonly selectionRef: Dynamic; readonly setSelection: Dynamic; readonly value124: Dynamic; readonly value177: Dynamic; readonly value19: Dynamic; readonly value23: Dynamic; readonly value25: Dynamic; readonly value273: Dynamic; readonly value62: Dynamic; readonly value73: Dynamic }, input?: Dynamic,
-        options?: Dynamic,
-        context?: Dynamic,
-        value653?: Dynamic,
-        extra?: Dynamic): Dynamic {
-        let value654: Dynamic = deps.value19(input),
-          value655: Dynamic =
-            value653 != null
+export function selectElementInArtboard(deps: { readonly abandonSelectionGesture: Dynamic; readonly focusedFileRef: Dynamic; readonly selectionEpochRef: Dynamic; readonly selectionRef: Dynamic; readonly setSelection: Dynamic; readonly value124: Dynamic; readonly value177: Dynamic; readonly value19: Dynamic; readonly value23: Dynamic; readonly value25: Dynamic; readonly value273: Dynamic; readonly value62: Dynamic; readonly value73: Dynamic }, file?: Dynamic,
+        tid?: Dynamic,
+        onPushed?: Dynamic,
+        gestureToken?: Dynamic,
+        onSettled?: Dynamic): Dynamic {
+        let documentId: Dynamic = deps.value19(file),
+          selectionEpoch: Dynamic =
+            gestureToken != null
               ? ++deps.selectionEpochRef.current
               : deps.abandonSelectionGesture(),
-          callback15: Dynamic = (): Dynamic => {
-            deps.selectionEpochRef.current === value655 &&
+          release: Dynamic = (): Dynamic => {
+            deps.selectionEpochRef.current === selectionEpoch &&
               deps.selectionEpochRef.current++;
           };
         deps.value124(
           deps.value73.current.artboards.some(
-            (input2?: Dynamic): Dynamic =>
-              input2.file === input && input2.frameless,
+            (artboard?: Dynamic): Dynamic =>
+              artboard.file === file && artboard.frameless,
           )
-            ? input
+            ? file
             : null,
         );
         deps.value62();
         deps.value23.current = true;
         deps.setSelection(emptyCanvasSelection);
-        deps.value273(input).then((): Dynamic => {
-          let index: Dynamic = 0,
-            index2: Dynamic = 0,
-            index3: Dynamic = 0,
-            callback16: Dynamic = (): Dynamic => {
-              if (deps.selectionEpochRef.current !== value655)
-                return extra?.("superseded");
+        deps.value273(file).then((): Dynamic => {
+          let pushCount: Dynamic = 0,
+            pollCount: Dynamic = 0,
+            lastPushAt: Dynamic = 0,
+            poll: Dynamic = (): Dynamic => {
+              if (deps.selectionEpochRef.current !== selectionEpoch)
+                return onSettled?.("superseded");
               if (
                 deps.selectionRef.current.elements
-                  .get(input)
-                  ?.tids.includes(options)
+                  .get(file)
+                  ?.tids.includes(tid)
               )
-                return extra?.("landed");
-              if (index >= 25 || index2++ >= 400) return extra?.("gave-up");
-              let entry: Dynamic = deps.value177.current.get(input);
-              if (context && Date.now() - index3 < 300) {
-                (window as Dynamic).setTimeout(callback16, 60);
+                return onSettled?.("landed");
+              if (pushCount >= 25 || pollCount++ >= 400) return onSettled?.("gave-up");
+              let entry: Dynamic = deps.value177.current.get(file);
+              if (onPushed && Date.now() - lastPushAt < 300) {
+                (window as Dynamic).setTimeout(poll, 60);
                 return;
               }
-              deps.focusedFileRef.current === input &&
+              deps.focusedFileRef.current === file &&
                 entry?.isReady() &&
-                (value653 == null && (deps.value25.current = input),
-                !entry.setShownSelection(null, null, value653) &&
-                  value653 == null &&
+                (gestureToken == null && (deps.value25.current = file),
+                !entry.setShownSelection(null, null, gestureToken) &&
+                  gestureToken == null &&
                   (deps.value25.current = null),
-                entry.setShownSelection([options], value654, value653) &&
-                  (index++, (index3 = Date.now()), context?.()));
-              (window as Dynamic).setTimeout(callback16, 60);
+                entry.setShownSelection([tid], documentId, gestureToken) &&
+                  (pushCount++, (lastPushAt = Date.now()), onPushed?.()));
+              (window as Dynamic).setTimeout(poll, 60);
             };
-          (window as Dynamic).setTimeout(callback16, 60);
+          (window as Dynamic).setTimeout(poll, 60);
         });
-        return callback15;
+        return release;
       }
 
 /** 画板列表或选择变化时计算（useMemo）：生成大纲面板的画板行、选中状态、封面、右键操作与重命名回调。 */
 export function buildOutlineArtboardRows(deps: { readonly abandonSelectionGesture: Dynamic; readonly setSelection: Dynamic; readonly value168: Dynamic; readonly value169: Dynamic; readonly value170: Dynamic; readonly value224: Dynamic; readonly value273: Dynamic; readonly value314: Dynamic; readonly value397: Dynamic; readonly value40: Dynamic; readonly value543: Dynamic; readonly value544: Dynamic; readonly value545: Dynamic; readonly value546: Dynamic; readonly value547: Dynamic; readonly value549: Dynamic; readonly value551: Dynamic; readonly value552: Dynamic; readonly value559: Dynamic; readonly value578: Dynamic; readonly value581: Dynamic; readonly value587: Dynamic; readonly value588: Dynamic; readonly value592: Dynamic; readonly value593: Dynamic; readonly value596: Dynamic; readonly value600: Dynamic; readonly value601: Dynamic; readonly value62: Dynamic; readonly value86: Dynamic }): Dynamic {
   return {
         rows: deps.value86.artboards.map(
-          (input?: Dynamic): Dynamic => ({
-            file: input.file,
-            label: input.title ?? input.file.replace(/\.dc\.html$/, ""),
+          (artboard?: Dynamic): Dynamic => ({
+            file: artboard.file,
+            label: artboard.title ?? artboard.file.replace(/\.dc\.html$/, ""),
           }),
         ),
         selected: deps.value168,
         cover: deps.value601,
         contextActions: deps.value592,
         renaming: deps.value587,
-        onRename: (input?: Dynamic, options?: Dynamic): Dynamic => {
+        onRename: (file?: Dynamic, newName?: Dynamic): Dynamic => {
           deps.value588(null);
-          options != null && deps.value224.current && deps.value397(input, options);
+          newName != null && deps.value224.current && deps.value397(file, newName);
         },
         selectedIn: deps.value170,
         open: deps.value543,
@@ -985,46 +985,46 @@ export function buildOutlineArtboardRows(deps: { readonly abandonSelectionGestur
         revealed: deps.value600,
         objects: deps.value596,
         selectedObjects: deps.value169,
-        onSelectObject: (input?: Dynamic, options?: Dynamic): Dynamic => {
+        onSelectObject: (noteId?: Dynamic, isToggle?: Dynamic): Dynamic => {
           deps.value224.current &&
             deps.value314(
               boardSelectionItems({
-                note: input,
+                note: noteId,
               }),
-              options ? "toggle" : "replace",
+              isToggle ? "toggle" : "replace",
             );
         },
         objectContextActions: deps.value593,
-        onToggleOpen: (input?: Dynamic, options?: Dynamic): Dynamic =>
-          deps.value544((input2?: Dynamic): Dynamic => {
-            if (input2.has(input) === options) return input2;
-            let values: Dynamic = new Set(input2);
-            options ? values.add(input) : values.delete(input);
-            return values;
+        onToggleOpen: (file?: Dynamic, isOpen?: Dynamic): Dynamic =>
+          deps.value544((openSet?: Dynamic): Dynamic => {
+            if (openSet.has(file) === isOpen) return openSet;
+            let nextOpen: Dynamic = new Set(openSet);
+            isOpen ? nextOpen.add(file) : nextOpen.delete(file);
+            return nextOpen;
           }),
-        onExpandedChange: (input?: Dynamic, options?: Dynamic): Dynamic =>
+        onExpandedChange: (file?: Dynamic, isExpanded?: Dynamic): Dynamic =>
           deps.value546(
-            (input2?: Dynamic): Dynamic => ({
-              ...input2,
-              [input]: options,
+            (expandedMap?: Dynamic): Dynamic => ({
+              ...expandedMap,
+              [file]: isExpanded,
             }),
           ),
-        onSelectIn: (input?: Dynamic, options?: Dynamic): Dynamic => {
-          deps.value559(input);
-          deps.value581(input, options);
+        onSelectIn: (file?: Dynamic, extend?: Dynamic): Dynamic => {
+          deps.value559(file);
+          deps.value581(file, extend);
         },
-        onFocus: (input?: Dynamic): Dynamic => {
+        onFocus: (file?: Dynamic): Dynamic => {
           deps.abandonSelectionGesture();
           deps.value544(
-            (input2?: Dynamic): Dynamic =>
-              input2.has(input) ? input2 : new Set([...input2, input]),
+            (openSet?: Dynamic): Dynamic =>
+              openSet.has(file) ? openSet : new Set([...openSet, file]),
           );
           deps.value62();
-          deps.setSelection(selectionFromArtboards(new Set([input])));
-          deps.value273(input);
-          deps.value559(input);
-          deps.value549.current[input] === null && deps.value40(input);
+          deps.setSelection(selectionFromArtboards(new Set([file])));
+          deps.value273(file);
+          deps.value559(file);
+          deps.value549.current[file] === null && deps.value40(file);
         },
-        onToggleSelected: (input?: Dynamic): Dynamic => deps.value578(input, true),
+        onToggleSelected: (file?: Dynamic): Dynamic => deps.value578(file, true),
       };
 }

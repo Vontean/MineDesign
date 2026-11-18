@@ -16,19 +16,19 @@ import { canvasSelectionChromeInsetPixels } from "../design-canvas";
 /** 选择变化时计算（useMemo）：汇总选中元素的标签、文字、样式、字体与颜色普查，生成属性面板使用的 probe 与 seed。 */
 export function deriveSelectionInspectorProbe(deps: { readonly selection: Dynamic; readonly value177: Dynamic; readonly value19: Dynamic; readonly value232: Dynamic; readonly value242: Dynamic }): Dynamic {
       if (deps.selection.elements.size === 0) return null;
-      let index: Dynamic = 0,
-        index2: Dynamic = 0,
-        index3: Dynamic = 0,
-        index4: Dynamic = 0,
-        index5: Dynamic = 0,
-        index6: Dynamic = 0,
-        state: Dynamic = {},
-        text: Dynamic = "",
-        value653: Dynamic = null,
-        value654: Dynamic = null,
-        items: Dynamic = [],
-        text2: Dynamic = "none",
-        items2: Dynamic = [
+      let textCount: Dynamic = 0,
+        shapeCount: Dynamic = 0,
+        boxCount: Dynamic = 0,
+        imageCount: Dynamic = 0,
+        otherCount: Dynamic = 0,
+        lineCount: Dynamic = 0,
+        moreStyles: Dynamic = {},
+        primaryTag: Dynamic = "",
+        imageSrc: Dynamic = null,
+        linkHref: Dynamic = null,
+        fontSizes: Dynamic = [],
+        listKind: Dynamic = "none",
+        styleProperties: Dynamic = [
           "font-weight",
           "font-style",
           "text-decoration-line",
@@ -62,235 +62,235 @@ export function deriveSelectionInspectorProbe(deps: { readonly selection: Dynami
           "background",
           ...InspectorPropertySchemaItems,
         ],
-        value655: Dynamic = null,
-        flag2: Dynamic = false,
-        value656: Dynamic = null,
-        value657: Dynamic = null,
-        value658: Dynamic = null,
-        value659: Dynamic = null,
-        value660: Dynamic = null,
-        value661: Dynamic = null,
-        items3: Dynamic = [];
-      for (let [value664, value665] of deps.selection.elements as Dynamic) {
-        let entry: Dynamic = deps.value177.current.get(value664),
-          value666: Dynamic = entry?.describeTids(value665.tids) ?? [],
-          value667: Dynamic = value664 === deps.selection.primary,
-          value668: Dynamic = deps.value19(value664);
-        for (let value669 of value666 as Dynamic) {
+        primaryTextRef: Dynamic = null,
+        isPrimaryEditable: Dynamic = false,
+        primaryElement: Dynamic = null,
+        textColor: Dynamic = null,
+        fontSize: Dynamic = null,
+        fontFamily: Dynamic = null,
+        background: Dynamic = null,
+        stroke: Dynamic = null,
+        pageFonts: Dynamic = [];
+      for (let [file, selectedEntry] of deps.selection.elements as Dynamic) {
+        let entry: Dynamic = deps.value177.current.get(file),
+          describedNodes: Dynamic = entry?.describeTids(selectedEntry.tids) ?? [],
+          isPrimaryFile: Dynamic = file === deps.selection.primary,
+          fileSource: Dynamic = deps.value19(file);
+        for (let node of describedNodes as Dynamic) {
           if (
-            value667 &&
-            value656 == null &&
-            ((value656 = {
-              file: value664,
-              tid: value669.tid,
-              kind: value669.kind,
+            isPrimaryFile &&
+            primaryElement == null &&
+            ((primaryElement = {
+              file: file,
+              tid: node.tid,
+              kind: node.kind,
             }),
-            (text = value669.tag),
+            (primaryTag = node.tag),
             entry)
           ) {
-            for (let value670 of items2 as Dynamic) {
-              let value671: Dynamic = entry.readInlineStyle(
-                value668,
-                value669.tid,
-                value670,
+            for (let styleProperty of styleProperties as Dynamic) {
+              let styleValue: Dynamic = entry.readInlineStyle(
+                fileSource,
+                node.tid,
+                styleProperty,
               );
-              value671 && (state[value670] = value671);
+              styleValue && (moreStyles[styleProperty] = styleValue);
             }
-            value669.kind === "image" &&
-              (value653 =
-                entry.readAttrs(value668, value669.tid)?.src ?? null);
-            value669.tag === "a" &&
-              (value654 =
-                entry.readAttrs(value668, value669.tid)?.href ?? null);
-            text2 = entry.listKindOf(value669.tid);
+            node.kind === "image" &&
+              (imageSrc =
+                entry.readAttrs(fileSource, node.tid)?.src ?? null);
+            node.tag === "a" &&
+              (linkHref =
+                entry.readAttrs(fileSource, node.tid)?.href ?? null);
+            listKind = entry.listKindOf(node.tid);
           }
-          value669.kind === "box"
-            ? index3++
-            : value669.kind === "image"
-              ? index4++
-              : value669.kind === "other" && index5++;
-          value669.kind === "text" &&
-            (index++,
+          node.kind === "box"
+            ? boxCount++
+            : node.kind === "image"
+              ? imageCount++
+              : node.kind === "other" && otherCount++;
+          node.kind === "text" &&
+            (textCount++,
             entry &&
-              items.length < 64 &&
-              items.push(
-                entry.readInlineStyle(value668, value669.tid, "font-size") ||
+              fontSizes.length < 64 &&
+              fontSizes.push(
+                entry.readInlineStyle(fileSource, node.tid, "font-size") ||
                   null,
               ),
-            value667 &&
-              value655 == null &&
-              ((value655 = {
-                file: value664,
-                tid: value669.tid,
+            isPrimaryFile &&
+              primaryTextRef == null &&
+              ((primaryTextRef = {
+                file: file,
+                tid: node.tid,
               }),
-              (flag2 = value669.editable)),
-            value667 &&
+              (isPrimaryEditable = node.editable)),
+            isPrimaryFile &&
               entry &&
-              value657 == null &&
-              value658 == null &&
-              ((value657 =
-                entry.readInlineStyle(value668, value669.tid, "color") ||
+              textColor == null &&
+              fontSize == null &&
+              ((textColor =
+                entry.readInlineStyle(fileSource, node.tid, "color") ||
                 null),
-              (value658 =
-                entry.readInlineStyle(value668, value669.tid, "font-size") ||
+              (fontSize =
+                entry.readInlineStyle(fileSource, node.tid, "font-size") ||
                 null),
-              (value659 =
+              (fontFamily =
                 entry.readInlineStyle(
-                  value668,
-                  value669.tid,
+                  fileSource,
+                  node.tid,
                   "font-family",
                 ) || null)),
-            value667 &&
+            isPrimaryFile &&
               entry &&
-              value660 == null &&
-              (value660 =
+              background == null &&
+              (background =
                 entry.readInlineStyle(
-                  value668,
-                  value669.tid,
+                  fileSource,
+                  node.tid,
                   "background-color",
                 ) || null));
-          if (value669.kind === "shape" || value669.kind === "box") {
-            value669.kind === "shape" && index2++;
-            let callback17: Dynamic = (input?: Dynamic): Dynamic =>
-                input && input !== "none" ? input : null,
-              value670: Dynamic =
-                value667 && entry
-                  ? entry.readAttrs(value668, value669.tid)
+          if (node.kind === "shape" || node.kind === "box") {
+            node.kind === "shape" && shapeCount++;
+            let nonNoneOrNull: Dynamic = (paintValue?: Dynamic): Dynamic =>
+                paintValue && paintValue !== "none" ? paintValue : null,
+              nodeAttrs: Dynamic =
+                isPrimaryFile && entry
+                  ? entry.readAttrs(fileSource, node.tid)
                   : null;
-            value667 &&
+            isPrimaryFile &&
               entry &&
-              value660 == null &&
-              (value660 =
-                callback17(
+              background == null &&
+              (background =
+                nonNoneOrNull(
                   entry.readInlineStyle(
-                    value668,
-                    value669.tid,
+                    fileSource,
+                    node.tid,
                     "background-color",
                   ),
                 ) ||
-                callback17(
-                  entry.readInlineStyle(value668, value669.tid, "fill"),
+                nonNoneOrNull(
+                  entry.readInlineStyle(fileSource, node.tid, "fill"),
                 ) ||
-                callback17(value670?.fill) ||
+                nonNoneOrNull(nodeAttrs?.fill) ||
                 null);
-            value667 &&
+            isPrimaryFile &&
               entry &&
-              value661 == null &&
-              (value661 =
-                callback17(
-                  entry.readInlineStyle(value668, value669.tid, "stroke"),
+              stroke == null &&
+              (stroke =
+                nonNoneOrNull(
+                  entry.readInlineStyle(fileSource, node.tid, "stroke"),
                 ) ||
-                callback17(
+                nonNoneOrNull(
                   entry.readInlineStyle(
-                    value668,
-                    value669.tid,
+                    fileSource,
+                    node.tid,
                     "border-color",
                   ),
                 ) ||
-                callback17(value670?.stroke) ||
+                nonNoneOrNull(nodeAttrs?.stroke) ||
                 null);
           } else
-            value669.kind === "line" &&
-              (index6++,
-              value667 &&
+            node.kind === "line" &&
+              (lineCount++,
+              isPrimaryFile &&
                 entry &&
-                value661 == null &&
-                (value661 =
-                  entry.readInlineStyle(value668, value669.tid, "stroke") ||
+                stroke == null &&
+                (stroke =
+                  entry.readInlineStyle(fileSource, node.tid, "stroke") ||
                   entry.readInlineStyle(
-                    value668,
-                    value669.tid,
+                    fileSource,
+                    node.tid,
                     "border-color",
                   ) ||
                   null));
         }
-        value667 && entry && (items3 = entry.pageFonts());
+        isPrimaryFile && entry && (pageFonts = entry.pageFonts());
       }
-      let entries: Dynamic = new Map(),
-        callback15: Dynamic = (input?: Dynamic): Dynamic => {
-          let value664: Dynamic = input.toLowerCase();
-          entries.has(value664) || entries.set(value664, input);
+      let fontsByLowercase: Dynamic = new Map(),
+        addFontName: Dynamic = (fontName?: Dynamic): Dynamic => {
+          let lowerName: Dynamic = fontName.toLowerCase();
+          fontsByLowercase.has(lowerName) || fontsByLowercase.set(lowerName, fontName);
         };
-      for (let value664 of items3 as Dynamic) callback15(value664);
-      let values: Dynamic = new Set(),
-        values2: Dynamic = new Set(),
-        entries2: Dynamic = new Map(),
-        entries3: Dynamic = new Map(),
-        state2: Dynamic = {},
-        state3: Dynamic = {};
-      for (let [value664, value665] of deps.value177.current as Dynamic) {
-        let value666: Dynamic = value665.pageCensus();
-        for (let value667 of value666.fonts as Dynamic) callback15(value667);
-        for (let value667 of value666.webfonts as Dynamic)
-          values2.add(value667);
-        for (let value667 of value666.sizes as Dynamic) values.add(value667);
-        for (let [value667, value668] of value666.colors as Dynamic)
-          entries2.set(value667, (entries2.get(value667) ?? 0) + value668);
-        if (deps.selection.elements.has(value664))
-          for (let [value667, value668] of value666.colors as Dynamic)
-            entries3.set(value667, (entries3.get(value667) ?? 0) + value668);
-        for (let [value667, value668] of value666.roles as Dynamic)
-          for (let [value669, value670] of value668 as Dynamic)
-            (state2[value667] ??= {})[value669] =
-              (state2[value667]?.[value669] ?? 0) + value670;
-        for (let [value667, value668] of value666.families as Dynamic)
-          state3[value667] ??= value668;
+      for (let pageFont of pageFonts as Dynamic) addFontName(pageFont);
+      let sizes: Dynamic = new Set(),
+        webfonts: Dynamic = new Set(),
+        colorCounts: Dynamic = new Map(),
+        selectionColorCounts: Dynamic = new Map(),
+        sizeRoles: Dynamic = {},
+        sizeFamilies: Dynamic = {};
+      for (let [censusFile, censusEntry] of deps.value177.current as Dynamic) {
+        let census: Dynamic = censusEntry.pageCensus();
+        for (let font of census.fonts as Dynamic) addFontName(font);
+        for (let webfont of census.webfonts as Dynamic)
+          webfonts.add(webfont);
+        for (let size of census.sizes as Dynamic) sizes.add(size);
+        for (let [color, colorCount] of census.colors as Dynamic)
+          colorCounts.set(color, (colorCounts.get(color) ?? 0) + colorCount);
+        if (deps.selection.elements.has(censusFile))
+          for (let [color, colorCount] of census.colors as Dynamic)
+            selectionColorCounts.set(color, (selectionColorCounts.get(color) ?? 0) + colorCount);
+        for (let [role, roleSizes] of census.roles as Dynamic)
+          for (let [sizeKey, sizeCount] of roleSizes as Dynamic)
+            (sizeRoles[role] ??= {})[sizeKey] =
+              (sizeRoles[role]?.[sizeKey] ?? 0) + sizeCount;
+        for (let [family, familyValue] of census.families as Dynamic)
+          sizeFamilies[family] ??= familyValue;
       }
-      let callback16: Dynamic = (
-          input?: Dynamic,
-          options?: Dynamic,
+      let topKeys: Dynamic = (
+          counts?: Dynamic,
+          limit?: Dynamic,
         ): Dynamic =>
-          [...input]
+          [...counts]
             .sort(
-              (input2?: Dynamic, options2?: Dynamic): Dynamic =>
-                options2[1] - input2[1],
+              (entryA?: Dynamic, entryB?: Dynamic): Dynamic =>
+                entryB[1] - entryA[1],
             )
-            .slice(0, options)
-            .map(([input2]: Dynamic): Dynamic => input2),
-        value662: Dynamic = callback16(entries2, 12),
-        value663: Dynamic = callback16(
-          entries3,
+            .slice(0, limit)
+            .map(([key]: Dynamic): Dynamic => key),
+        topColors: Dynamic = topKeys(colorCounts, 12),
+        topSelectionColors: Dynamic = topKeys(
+          selectionColorCounts,
           canvasSelectionChromeInsetPixels,
         );
-      value663.join(`
+      topSelectionColors.join(`
 `) !==
         deps.value242.current.join(`
-`) && (deps.value242.current = value663);
-      let values3: Dynamic = new Set(entries.values());
+`) && (deps.value242.current = topSelectionColors);
+      let fontNames: Dynamic = new Set(fontsByLowercase.values());
       return {
-        text: index,
-        shape: index2,
-        box: index3,
-        image: index4,
-        other: index5,
-        line: index6,
-        primaryTag: text,
-        primaryText: value655,
-        primaryEditable: flag2,
-        probeEl: value655
+        text: textCount,
+        shape: shapeCount,
+        box: boxCount,
+        image: imageCount,
+        other: otherCount,
+        line: lineCount,
+        primaryTag: primaryTag,
+        primaryText: primaryTextRef,
+        primaryEditable: isPrimaryEditable,
+        probeEl: primaryTextRef
           ? {
-              ...value655,
+              ...primaryTextRef,
               kind: "text",
             }
-          : value656,
+          : primaryElement,
         seed: {
           epoch: deps.value232,
-          color: value657,
-          fontSize: value658,
-          fontFamily: value659,
-          background: value660,
-          stroke: value661,
-          more: state,
-          imageSrc: value653,
-          href: value654,
-          list: text2,
-          fontSizes: items,
-          fonts: [...values3],
-          webfonts: [...values2],
-          sizes: [...values],
-          sizeRoles: state2,
-          sizeFamilies: state3,
-          colors: value662,
+          color: textColor,
+          fontSize: fontSize,
+          fontFamily: fontFamily,
+          background: background,
+          stroke: stroke,
+          more: moreStyles,
+          imageSrc: imageSrc,
+          href: linkHref,
+          list: listKind,
+          fontSizes: fontSizes,
+          fonts: [...fontNames],
+          webfonts: [...webfonts],
+          sizes: [...sizes],
+          sizeRoles: sizeRoles,
+          sizeFamilies: sizeFamilies,
+          colors: topColors,
           artboardColors: deps.value242.current,
         },
       };
@@ -308,37 +308,37 @@ export function pickReplacementImage(deps: { readonly value177: Dynamic; readonl
                                       return deps.value188(
                                         "This image comes from the design's script \u2014 change it in Properties.",
                                       );
-                                    let value653: Dynamic = deps.value63?.identity,
-                                      value654: Dynamic = (
+                                    let documentIdentity: Dynamic = deps.value63?.identity,
+                                      fileInput: Dynamic = (
                                         document as Dynamic
                                       ).createElement("input");
-                                    value654.type = "file";
-                                    value654.accept = "image/*";
-                                    value654.hidden = true;
+                                    fileInput.type = "file";
+                                    fileInput.accept = "image/*";
+                                    fileInput.hidden = true;
                                     (document as Dynamic).body.appendChild(
-                                      value654,
+                                      fileInput,
                                     );
-                                    value654.addEventListener(
+                                    fileInput.addEventListener(
                                       "cancel",
-                                      (): Dynamic => value654.remove(),
+                                      (): Dynamic => fileInput.remove(),
                                     );
-                                    value654.onchange = (): Dynamic => {
-                                      let value655: Dynamic =
-                                        value654.files?.[0];
-                                      value654.remove();
-                                      value655 &&
+                                    fileInput.onchange = (): Dynamic => {
+                                      let pickedFile: Dynamic =
+                                        fileInput.files?.[0];
+                                      fileInput.remove();
+                                      pickedFile &&
                                         trackEmbeddedWrite(
                                           uploadDesignFile(
                                             "appifact",
                                             null,
-                                            value655,
+                                            pickedFile,
                                           ).then(
                                             ({
                                               src: src,
                                             }: Dynamic): Dynamic =>
                                               isEmbedFrozen() ||
                                               deps.value64.current?.identity !==
-                                                value653
+                                                documentIdentity
                                                 ? null
                                                 : (deps.value177.current
                                                     .get(probeEl.file)
@@ -353,8 +353,8 @@ export function pickReplacementImage(deps: { readonly value177: Dynamic; readonl
                                           ),
                                         )
                                           .then(
-                                            (input?: Dynamic): Dynamic => {
-                                              input === false &&
+                                            (placed?: Dynamic): Dynamic => {
+                                              placed === false &&
                                                 deps.value188(
                                                   "That image could not be placed here.",
                                                 );
@@ -367,54 +367,54 @@ export function pickReplacementImage(deps: { readonly value177: Dynamic; readonl
                                               ),
                                           );
                                     };
-                                    value654.click();
+                                    fileInput.click();
                                   }
 
 /** 属性面板点击替换视频时运行：打开文件选择框，校验与探测视频、上传后替换选中视频元素，并播报结果。 */
 export function pickReplacementVideo(deps: { readonly value177: Dynamic; readonly value188: Dynamic; readonly value244: Dynamic; readonly value271: Dynamic }): Dynamic {
                                     let probeEl: Dynamic = deps.value244.probeEl;
                                     if (!probeEl) return;
-                                    let value653: Dynamic =
+                                    let videoKey: Dynamic =
                                       deps.value177.current
                                         .get(probeEl.file)
                                         ?.videoKey(probeEl.tid) ?? null;
-                                    if (value653 === null)
+                                    if (videoKey === null)
                                       return deps.value188(
                                         "This video can't be replaced: it has no file of its own.",
                                       );
-                                    if (value653.src.includes("{{"))
+                                    if (videoKey.src.includes("{{"))
                                       return deps.value188(
                                         "This video's file comes from the design's data, so it can't be replaced here.",
                                       );
-                                    let value654: Dynamic = (
+                                    let fileInput: Dynamic = (
                                       document as Dynamic
                                     ).createElement("input");
-                                    value654.type = "file";
-                                    value654.accept =
+                                    fileInput.type = "file";
+                                    fileInput.accept =
                                       VideoMp4VideoWebmVideoQuicktimeMovValue;
-                                    value654.hidden = true;
+                                    fileInput.hidden = true;
                                     (document as Dynamic).body.appendChild(
-                                      value654,
+                                      fileInput,
                                     );
-                                    value654.addEventListener(
+                                    fileInput.addEventListener(
                                       "cancel",
-                                      (): Dynamic => value654.remove(),
+                                      (): Dynamic => fileInput.remove(),
                                     );
-                                    value654.onchange = (): Dynamic => {
-                                      let value655: Dynamic =
-                                        value654.files?.[0];
-                                      value654.remove();
-                                      if (!value655) return;
-                                      if (!isVideoFile(value655))
+                                    fileInput.onchange = (): Dynamic => {
+                                      let pickedFile: Dynamic =
+                                        fileInput.files?.[0];
+                                      fileInput.remove();
+                                      if (!pickedFile) return;
+                                      if (!isVideoFile(pickedFile))
                                         return deps.value188(
                                           "Pick a video file to replace a video.",
                                         );
-                                      let value656: Dynamic = videoUploadRefusal(value655);
-                                      if (value656 !== null)
+                                      let refusal: Dynamic = videoUploadRefusal(pickedFile);
+                                      if (refusal !== null)
                                         return deps.value188(
                                           CanvasWorkingStateReplace(
                                             videoUploadFailureMessage(
-                                              value656,
+                                              refusal,
                                             ),
                                           ),
                                         );
@@ -423,36 +423,36 @@ export function pickReplacementVideo(deps: { readonly value177: Dynamic; readonl
                                       );
                                       trackEmbeddedWrite(
                                         (async (): Promise<Dynamic> => {
-                                          let value657: Dynamic = await probeVideoFile(
-                                            value655,
+                                          let probe: Dynamic = await probeVideoFile(
+                                            pickedFile,
                                           ).catch(
                                             (): Dynamic => "probe_timeout",
                                           );
-                                          if (typeof value657 == "string") {
+                                          if (typeof probe == "string") {
                                             deps.value188(
                                               CanvasWorkingStateReplace(
                                                 videoUploadFailureMessage(
-                                                  value657,
+                                                  probe,
                                                 ),
                                               ),
                                             );
                                             return false;
                                           }
-                                          let value658: Dynamic = await uploadDesignVideo(
-                                            value655,
-                                            value657,
+                                          let upload: Dynamic = await uploadDesignVideo(
+                                            pickedFile,
+                                            probe,
                                           );
                                           if (isEmbedFrozen())
                                             return false;
-                                          if ("refused" in value658) {
+                                          if ("refused" in upload) {
                                             deps.value188(
                                               CanvasWorkingStateReplace(
-                                                value658.refused,
+                                                upload.refused,
                                               ),
                                             );
                                             return false;
                                           }
-                                          let callback15: Dynamic =
+                                          let getFrameEntry: Dynamic =
                                               (): Dynamic =>
                                                 probeEl.file ===
                                                 deps.value271.current
@@ -460,51 +460,51 @@ export function pickReplacementVideo(deps: { readonly value177: Dynamic; readonl
                                                   : deps.value177.current.get(
                                                       probeEl.file,
                                                     ),
-                                            value659: Dynamic = callback15();
+                                            frameEntry: Dynamic = getFrameEntry();
                                           for (
                                             let index: Dynamic = 0;
-                                            !value659 &&
+                                            !frameEntry &&
                                             index < 240 &&
                                             !isEmbedFrozen();
                                             index++
                                           ) {
                                             await new Promise(
-                                              (input?: Dynamic): Dynamic =>
-                                                setTimeout(input, 250),
+                                              (resolve?: Dynamic): Dynamic =>
+                                                setTimeout(resolve, 250),
                                             );
-                                            value659 = callback15();
+                                            frameEntry = getFrameEntry();
                                           }
                                           if (isEmbedFrozen())
                                             return false;
-                                          if (!value659) {
+                                          if (!frameEntry) {
                                             deps.value188(
                                               "The video wasn't replaced: its artboard isn't open for editing. Open it and replace the video again.",
                                             );
                                             return false;
                                           }
-                                          let value660: Dynamic =
-                                            await value659.replaceVideoFor(
-                                              value653,
+                                          let replaceResult: Dynamic =
+                                            await frameEntry.replaceVideoFor(
+                                              videoKey,
                                               {
-                                                src: value658.src,
-                                                width: value657.width,
-                                                height: value657.height,
+                                                src: upload.src,
+                                                width: probe.width,
+                                                height: probe.height,
                                               },
                                             );
-                                          value660 === "ok"
+                                          replaceResult === "ok"
                                             ? announce(
                                                 "Video replaced",
                                               )
                                             : deps.value188(
-                                                value660 === "unsure"
+                                                replaceResult === "unsure"
                                                   ? "The video wasn't replaced: a copy of it was added or removed meanwhile, so which one you meant can't be told. Select it and replace it again."
-                                                  : value660 === "gone"
+                                                  : replaceResult === "gone"
                                                     ? "The video wasn't replaced: it was changed or removed meanwhile. Select the video and replace it again."
                                                     : "The video wasn't replaced: the new file couldn't be used. Pick another .mp4, .mov or .webm.",
                                               );
-                                          return value660 === "ok";
+                                          return replaceResult === "ok";
                                         })(),
                                       );
                                     };
-                                    value654.click();
+                                    fileInput.click();
                                   }

@@ -35,7 +35,7 @@
 ## 禁止的事
 
 - 不手工改代码逻辑、不调整结构、不删除代码；改名只用 `apply`。补类型、加注释可以手工编辑，但每个文件最后都要通过 `check-equivalence`。
-- 不运行 `npm run build`、基线或全量测试（由负责人统一运行），不 commit、不 push、不切换分支。
+- 不运行 `npm run build`、基线或全量测试（由负责人统一运行），不 commit、不 push、不切换分支。不要用 `git stash`、`git checkout`、`git restore` 等会改动整个工作区的命令：其他执行者正在同一个工作区里改他们的文件。
 - 只改分配给你的文件。
 
 ## 完成后报告
