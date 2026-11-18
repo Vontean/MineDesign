@@ -13,6 +13,7 @@ export const en = {
   undo: 'Undo',
   redo: 'Redo',
   layoutGuides: 'Layout guides',
+  commentCards: 'Comment cards',
   play: 'Play artboard',
   noPlayable: 'No artboards to play on this page',
   prototypes: 'Prototypes',

@@ -48,6 +48,7 @@ import { createPresenceReporter, PeerCursors } from "../collaboration/peer-curso
 import { usePresenceComposer as R_usePresenceComposer } from "../collaboration/presence-composer";
 import { ArtboardPeerSelectionRings, CanvasPeerSelectionRings, createPeerSelectionStore, encodeArtboardSelectionPath, encodedElementPathPattern, normalizeSelectedArtboardPaths, useCanvasPeerSelections as R_useCanvasPeerSelections } from "../collaboration/selection-paths";
 import { mdnCommentMode, mdnToggleCommentMode, useUiText } from "../comments/feedback-panel";
+import { useCommentCardsViewToggle } from "../comments/comment-cards";
 import { createPageScrollStore, PageCommentSurface, pageCommentSurfaceKey } from "../comments/page-surfaces";
 import { npm_useLocalStorage_QP } from "../dependencies";
 import { mergeDesignSystemFileOverlay } from "../design-system/file-overlay";
@@ -7961,6 +7962,8 @@ function DesignCanvas({
       (): Dynamic => (editing && current3 ? value616(current3) : undefined),
       [editing, current3, value616, value647, value407, value232],
     ),
+    // MineDesign：缩放菜单的「评论卡片」开关（有评论时才出现），排在布局参考线之后
+    mdnCommentCardsToggle: Dynamic = useCommentCardsViewToggle(),
     value650: Dynamic = (0, reactChromeTheme.useMemo)(
       (): Dynamic => [
         {
@@ -7970,8 +7973,9 @@ function DesignCanvas({
           onToggle: (): Dynamic =>
             value13((input?: Dynamic): Dynamic => !input),
         },
+        ...mdnCommentCardsToggle,
       ],
-      [value12, value13],
+      [value12, value13, mdnCommentCardsToggle],
     ),
     value651: Dynamic = (0, useLatestCallback)((): Dynamic => {
       saveCanvas();

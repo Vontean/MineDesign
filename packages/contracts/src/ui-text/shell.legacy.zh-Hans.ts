@@ -13,6 +13,7 @@ export const zh: typeof en = {
   undo: '撤销',
   redo: '重做',
   layoutGuides: '布局参考线',
+  commentCards: '评论卡片',
   play: '播放画板',
   noPlayable: '当前页面没有可播放的画板',
   prototypes: '原型',

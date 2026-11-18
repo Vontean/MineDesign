@@ -27,6 +27,7 @@ export const zh = {
   "canvas.designCanvas.export": "导出",
   "canvas.designCanvas.artboardSize": "画板尺寸",
   "canvas.designCanvas.layoutGuides": "布局参考线",
+  "canvas.designCanvas.commentCards": "评论卡片",
   "canvas.designCanvas.canvas": "画布",
   "canvas.designCanvas.propertiesPanel": "属性面板",
   "canvas.errorNotices.artboardsWithErrors": "存在错误的画板",

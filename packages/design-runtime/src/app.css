@@ -13537,3 +13537,140 @@ html[data-theme-switching] *::after {
   color: var(--cds-text-secondary);
   font-size: var(--cds-font-size-caption);
 }
+/* 画布评论卡片（comments/comment-cards.tsx）：固定屏幕尺寸，浮层底 + 浮动投影，虚线引线连到编号圆点 */
+.mdn-comment-cards {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.mdn-comment-card-leaders {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.mdn-comment-card-leaders line {
+  stroke: var(--mdn-accent, #3a83f7);
+  stroke-width: 1;
+  stroke-dasharray: 4 3;
+}
+.mdn-comment-card {
+  position: absolute;
+  box-sizing: border-box;
+  padding: 4px 8px 8px;
+  border-radius: var(--mdn-radius-md);
+  background: var(--mdn-elevated);
+  box-shadow: var(--mdn-shadow-float);
+  color: var(--mdn-text);
+  font-size: var(--mdn-text-xs);
+  line-height: 16px;
+  cursor: default;
+  pointer-events: auto;
+}
+.mdn-comment-card[data-expanded],
+.mdn-comment-card[data-editing] {
+  z-index: 1;
+}
+.mdn-comment-card-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 24px;
+}
+.mdn-comment-card-index {
+  flex-shrink: 0;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  box-sizing: border-box;
+  border-radius: var(--mdn-radius-full);
+  background: var(--mdn-accent);
+  color: var(--mdn-on-accent);
+  font-weight: var(--mdn-weight-medium);
+  line-height: 16px;
+  text-align: center;
+}
+.mdn-comment-card-state {
+  flex-shrink: 0;
+  height: 16px;
+  padding: 0 6px;
+  border-radius: var(--mdn-radius-full);
+  background: var(--mdn-ghost-active);
+  color: var(--mdn-text-secondary);
+  line-height: 16px;
+}
+.mdn-comment-card-actions {
+  display: flex;
+  margin: 0 -4px 0 auto;
+}
+.mdn-comment-card-action {
+  opacity: 0;
+}
+.mdn-comment-card:hover .mdn-comment-card-action,
+.mdn-comment-card:focus-within .mdn-comment-card-action {
+  opacity: 1;
+}
+/* 最多三行，悬停或聚焦时展开全文（展开不触发重新排布，卡片浮在相邻卡片之上） */
+.mdn-comment-card-text {
+  display: -webkit-box;
+  margin: 0;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.mdn-comment-card[data-expanded] .mdn-comment-card-text {
+  display: block;
+  max-height: 240px;
+  overflow-y: auto;
+}
+.mdn-comment-card-edit {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.mdn-comment-card-edit textarea {
+  min-height: 48px;
+  max-height: 160px;
+  padding: 4px 8px;
+  border: 0;
+  border-radius: var(--mdn-radius-sm);
+  background: var(--mdn-surface);
+  box-shadow: 0 0 0 1px var(--mdn-border);
+  color: inherit;
+  font: inherit;
+  resize: none;
+  outline: none;
+}
+.mdn-comment-card-edit textarea:focus {
+  box-shadow: 0 0 0 1px var(--mdn-border-strong);
+}
+.mdn-comment-card-edit-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 4px;
+}
+.mdn-comment-card-edit-actions [data-cds="Button"] {
+  height: 24px;
+  padding-inline: 8px;
+  font-size: var(--mdn-text-xs);
+}
+.mdn-comment-card-edit-actions [data-testid="mdn-comment-card-edit-save"] {
+  border-radius: var(--mdn-radius-full);
+}
+/* 出现时只做很短的透明度过渡；减少动效时不做 */
+@media (prefers-reduced-motion: no-preference) {
+  .mdn-comment-card {
+    animation: mdn-comment-card-in var(--mdn-duration) var(--mdn-ease);
+  }
+  .mdn-comment-card-action {
+    transition: opacity var(--mdn-duration) var(--mdn-ease);
+  }
+}
+@keyframes mdn-comment-card-in {
+  from {
+    opacity: 0;
+  }
+}

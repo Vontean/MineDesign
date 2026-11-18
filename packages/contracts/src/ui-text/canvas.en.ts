@@ -26,6 +26,7 @@ export const en = {
   "canvas.designCanvas.export": "Export",
   "canvas.designCanvas.artboardSize": "Artboard size",
   "canvas.designCanvas.layoutGuides": "Layout guides",
+  "canvas.designCanvas.commentCards": "Comment cards",
   "canvas.designCanvas.canvas": "Canvas",
   "canvas.designCanvas.propertiesPanel": "Properties panel",
   "canvas.errorNotices.artboardsWithErrors": "Artboards with errors",

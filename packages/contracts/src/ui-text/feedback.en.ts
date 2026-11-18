@@ -13,5 +13,8 @@ export const en = {
   "feedback.comments.resolveN": "Mark comment {n} as resolved",
   "feedback.comments.save": "Save",
   "feedback.comments.cancel": "Cancel",
+  "feedback.comments.card": "Comment {n}",
+  "feedback.comments.delete": "Delete comment",
+  "feedback.comments.deleteN": "Delete comment {n}",
   "feedback.send.empty": "Add a comment or a note to send"
 } as const;

@@ -77,7 +77,7 @@ flowchart TB
 | --- | --- |
 | `apps/design-editor/` | 设计稿编辑器浏览器入口；先安装 host，再启动 runtime。含 Vite 配置、构建和第三方许可收集 |
 | `apps/design-system-editor/` | 设计系统编辑器浏览器入口；同时提供组件预览 runner 与 React 18 静态资源 |
-| `packages/design-runtime/` | 设计稿浏览器实现：画布、属性、预览、DCLogic、导出、worker；`src/generated/` 由构建生成。文件之间用 import 表达依赖，分层与反向依赖的现状见 [runtime 模块划分](docs/runtime-modules.md) |
+| `packages/design-runtime/` | 设计稿浏览器实现：画布、属性、预览、DCLogic、导出、worker；`src/generated/` 由构建生成。文件之间用 import 表达依赖，分层与反向依赖的现状见 [runtime 模块划分](docs/runtime-modules.md)。画布评论卡片：`src/comments/card-layout.ts`（纯函数排布）与 `comment-cards.tsx`（渲染、就地编辑、显示开关），由 `comments/canvas-controller.tsx` 的评论图层挂载 |
 | `packages/design-system-runtime/` | 设计系统浏览器实现：章节、token、排版、组件、素材、预览与文档 |
 | `packages/editor-host/src/shared/` | 浏览器 HTTP 文件客户端、发布/上传/flush、SSE、批注、chat 桥、语言标签与宿主能力类型 |
 | `packages/editor-host/src/design/` | 设计稿宿主安装、下载桥与 MineDesign 反馈桥（feedback-bridge：评论草稿、面板开关、视图状态与操作）；不包含 Node 文件服务 |
@@ -155,6 +155,8 @@ flowchart TB
 Codex 中通过接口工具把编辑器装为 srcdoc，图片、字体、脚本和 CSS 改为 blob 资源；浏览器模式仅更换 transport。路径授权检查 realpath；写入检查 grant、origin、ifMatch。Codex 消息保留精确 scheme/origin、source 和 MessagePort 检查。
 
 设计稿的评论列表显示在编辑器右侧面板的「评论」标签里，外壳经 `editor:feedback` 推送评论列表（每项带 `draft` 或 `sent` 状态）与发送状态，面板里的定位、删除、编辑、标为已解决、复制、发送以 `editor:feedback-action` 交回外壳执行；面板开关用 `editor:set-panel`/`editor:panel`，顶栏缩放与播放用 `editor:view`/`editor:view-action`。界面语言由外壳解析（About 偏好 → 宿主 locale → 浏览器 → 英文）并经 `editor:locale` 推送；`editor-host/shared/ui-locale.ts` 将结果交给 contracts 的页面级语言状态。两套 runtime 的 React 组件独立订阅，语言不再依附反馈能力。静态标签在渲染或 getter 取值时解析；切换不重建作品，不更改用户内容。目录、术语和完成标准统一见 [i18n 维护](docs/i18n.md)。设计系统仍用外壳反馈侧栏。
+
+设计稿画布上的评论卡片（`comments/comment-cards.tsx`）是 `feedback` 能力的第二个使用方：文字、编号与状态读自同一份 `editor:feedback` 列表，编辑、标为已解决、删除走同样的 `edit`/`resolve`/`remove`，不另存状态。目标点取自评论图层算编号圆点位置的同一函数，换成图层的屏幕坐标后交给 `card-layout.ts` 排布，所以卡片大小不随缩放变化，只在评论模式下与编号圆点一起出现。缩放低于 30%、画布上播放原型（`interaction-layer` 传入 `mdnHideCommentCards`）或全屏查看时不渲染；卡片在编辑器文档里，不在画板 iframe 内，导出不会带上。显示开关存本机 localStorage（`mdn-comment-cards-visible`），经缩放视图开关列表随 `editor:view` 报告给外壳，画布上有评论时才出现。
 
 批注按稳定作品 id 保存在本机数据目录的 `annotations/`。状态与转换集中在 `packages/contracts/src/annotations.mjs`（纯函数，不改入参，时间由调用方传入）：后端保存与读取时补默认状态；外壳整组保存经 `mergeSavedAnnotations` 与已存储内容合并：已解决是粘性的，传入的旧副本不能把它改回去，没传入的已解决评论保留，没传入的未解决评论按删除处理；条数上限只算未解决的评论。`prepareFeedback` 只返回草稿并只按草稿判定过期。`resolveFeedback`（HTTP `resolve-feedback`，模型可见的 MCP 工具 `minedesign_resolve_feedback`）按目录与类型走打开流程取得记录，把列出的评论标为已解决，时间由后端取，返回 `{resolved, remaining}`；外壳用它决定列表与编号（草稿与已发送）、发送内容（只含草稿）和能否发送，编辑器面板用它判断发送按钮。编辑已发送的评论回到草稿并清掉来源版本，保存时按当前版本重新记录。发送先 flush 编辑器，再检查来源版本，经宿主显式提交；成功后把本次草稿标为已发送并保存，失败保留草稿。手动标为已解决在外壳本地转换后整组保存。外壳在构建标识轮询的同一节拍里，有已发送评论且没有编辑、发送或评论输入进行中时重新读取批注，内容变化才重绘；读取期间有本地保存时丢弃这次结果。补充说明文本框尚无持久化保证。发送成功与 Agent 修改完成分别判断。
 

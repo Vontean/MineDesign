@@ -4625,6 +4625,7 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
           handlesRef={value2}
           fullscreenFile={fullscreenFile ?? null}
           fullscreenFrame={value20}
+          mdnHideCommentCards={playingFile != null}
           onReveal={onRevealComment}
           onController={(input?: Dynamic): Dynamic => {
             value5(input);

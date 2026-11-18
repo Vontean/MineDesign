@@ -244,7 +244,7 @@ function syncPanelButton(){
 }
 // 顶栏的缩放与播放：设计稿编辑器经 editor:view 报告状态，这里显示菜单并把操作发回编辑器
 // 编辑器报告的视图开关与分组名是英文原名，这里映射到当前语言
-const viewLabel=label=>({'Layout guides':t.layoutGuides,Prototypes:t.prototypes,'Static artboards':t.staticArtboards})[label]??label;
+const viewLabel=label=>({'Layout guides':t.layoutGuides,'Comment cards':t.commentCards,Prototypes:t.prototypes,'Static artboards':t.staticArtboards})[label]??label;
 const percent=scale=>Math.round(scale*100);
 const viewAction=action=>post({type:'editor:view-action',...action});
 function menuItem(label,{onClick,role='menuitem',checked,disabled,trailing}={}){

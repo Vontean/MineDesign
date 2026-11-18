@@ -14,5 +14,8 @@ export const zh = {
   "feedback.comments.resolveN": "将评论 {n} 标为已解决",
   "feedback.comments.save": "保存",
   "feedback.comments.cancel": "取消",
+  "feedback.comments.card": "评论 {n}",
+  "feedback.comments.delete": "删除评论",
+  "feedback.comments.deleteN": "删除评论 {n}",
   "feedback.send.empty": "添加评论或补充说明后再发送"
 } satisfies Record<keyof typeof en, string>;

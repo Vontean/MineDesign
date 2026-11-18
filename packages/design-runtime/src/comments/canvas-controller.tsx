@@ -14,6 +14,7 @@ import { bindCustomAnchors } from "./host-controller";
 import { clampCommentAreaToViewport, commentAnchorShortLabel, commentArtboardAreaDetail, commentArtboardAreaShortLabel, commentArtboardElementDetail, commentCanvasPointDetail, commentObjectAreaDetail, commentObjectAreaShortLabel, commentObjectPointDetail, commentSurfaceAriaLabel, commentTargetKeyboardHint, defaultArtboardCommentPoint, describeCommentElement, isCommentTargetEvent } from "./labels";
 import { moveObjectCommentArea, normalizeObjectCommentArea, normalizeObjectCommentPoint, objectCommentAreaHandlePoint, objectCommentAreaRect, objectCommentPoint, objectsCoveredByCommentArea, pointWithinCommentObject } from "./object-geometry";
 import { CommentPointer, commentPointerCursor } from "./pointer";
+import { CommentCardLayer, isCommentCardEvent } from "./comment-cards";
 import { load_react_jsx_runtime } from "../dependencies";
 import { AccessibilityAnnouncementsLabel_24 } from "../editor/accessibility/announcements";
 import { announce } from "../editor/accessibility/announcer";
@@ -2080,6 +2081,19 @@ function useCanvasComments(options?: Dynamic): Dynamic {
     })();
   let mdnTargetRect: Dynamic =
     value19 ?? (value10 && !value32 ? mdnHeldRect : null);
+  // MineDesign：评论卡片的目标点与编号圆点同一位置，换成本图层的屏幕坐标；只给可视区域内的
+  let mdnCardTop: Dynamic = surfaceRef.current
+      ? toolbarOverlayHeight(surfaceRef.current)
+      : 0,
+    mdnCardTargets: Dynamic = value12.flatMap((thread?: Dynamic): Dynamic => {
+      let anchor: Dynamic = parseDesignCommentAnchor(thread.anchor),
+        world: Dynamic = anchor ? callback12(anchor) : null;
+      if (!world) return [];
+      let point: Dynamic = callback13(world);
+      return point.x < 0 || point.x > value60 || point.y < mdnCardTop || point.y > value61
+        ? []
+        : [{ id: thread.id, x: point.x, y: point.y }];
+    });
   return (
     <div
       ref={value33}
@@ -2098,7 +2112,12 @@ function useCanvasComments(options?: Dynamic): Dynamic {
             (input?: Dynamic): Dynamic => value37.current(input),
           );
       }}
-      onPointerMove={callback18}
+      onPointerMove={(event?: Dynamic): Dynamic => {
+        // MineDesign：指针在评论卡片上时不高亮卡片下面的对象
+        if (!isCommentCardEvent(event.nativeEvent)) return callback18(event);
+        value22.current = null;
+        callback3(null);
+      }}
       onPointerLeave={(): Dynamic => {
         value21.current += 1;
         value27.current.next = null;
@@ -2264,6 +2283,18 @@ function useCanvasComments(options?: Dynamic): Dynamic {
               }}
             />)}
         </jsx_mg.Fragment>)}
+      <CommentCardLayer
+        targets={mdnCardTargets}
+        bounds={{
+          left: 8,
+          top: mdnCardTop + 8,
+          right: value60 - 8,
+          // 底部留出画布工具栏（距底 16px、高 44px）
+          bottom: value61 - 68,
+        }}
+        scale={value8.scale}
+        suppressed={fullscreenFile != null || !!options.mdnHideCommentCards}
+      />
     </div>
   );
 }
