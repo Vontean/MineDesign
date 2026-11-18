@@ -20,26 +20,26 @@ export function openCanvasContextMenu(deps: { readonly callback12: Dynamic; read
           )
             return;
           if (deps.value108.contextmenu()) return void event.preventDefault();
-          let value250: Dynamic =
+          let menuTarget: Dynamic =
               deps.callback20(event) && deps.value130.current.size === 0
                 ? canvasContextMenuTargetFromElement(
                     event.target,
                   )
                 : null,
-            current: Dynamic = deps.value109.current;
+            lastPress: Dynamic = deps.value109.current;
           deps.value109.current = null;
-          if (value250 === null) return;
-          let value251: Dynamic =
-            current !== null &&
+          if (menuTarget === null) return;
+          let isStillPress: Dynamic =
+            lastPress !== null &&
             Math.hypot(
-              event.clientX - current.x,
-              event.clientY - current.y,
+              event.clientX - lastPress.x,
+              event.clientY - lastPress.y,
             ) <= 3;
-          if (current !== null && !value251)
+          if (lastPress !== null && !isStillPress)
             return void event.preventDefault();
           if (
             (event.button >= 0 &&
-              !value251 &&
+              !isStillPress &&
               deps.callback12({
                 pointerType: "mouse",
                 button: 2,
@@ -49,21 +49,21 @@ export function openCanvasContextMenu(deps: { readonly callback12: Dynamic; read
           )
             return;
           event.preventDefault();
-          let value252: Dynamic =
+          let isTouchOrPen: Dynamic =
               "pointerType" in event.nativeEvent &&
               ["touch", "pen"].includes(
                 String(event.nativeEvent.pointerType),
               ),
-            value253: Dynamic =
-              event.button < 0 && !value252 && event.target instanceof Element
+            keyboardAnchorRect: Dynamic =
+              event.button < 0 && !isTouchOrPen && event.target instanceof Element
                 ? event.target.getBoundingClientRect()
                 : null;
           deps.value107(
-            value250,
-            value253
+            menuTarget,
+            keyboardAnchorRect
               ? {
-                  x: value253.left,
-                  y: value253.bottom,
+                  x: keyboardAnchorRect.left,
+                  y: keyboardAnchorRect.bottom,
                   keyboard: true,
                 }
               : {
@@ -88,13 +88,13 @@ export function pressCanvasBackground(deps: { readonly callback10: Dynamic; read
               event.preventDefault();
               event.stopPropagation();
               focusCanvasDocument();
-              let bounds: Dynamic =
+              let canvasRect: Dynamic =
                 event.currentTarget.getBoundingClientRect();
               deps.onAddAnnotation?.(
                 deps.camera.get().x +
-                  (event.clientX - bounds.left) / deps.camera.get().scale,
+                  (event.clientX - canvasRect.left) / deps.camera.get().scale,
                 deps.camera.get().y +
-                  (event.clientY - bounds.top) / deps.camera.get().scale,
+                  (event.clientY - canvasRect.top) / deps.camera.get().scale,
               );
               return;
             }
@@ -109,61 +109,61 @@ export function pressCanvasBackground(deps: { readonly callback10: Dynamic; read
               event.preventDefault();
               event.stopPropagation();
               focusCanvasDocument();
-              let bounds: Dynamic =
+              let canvasRect: Dynamic =
                   event.currentTarget.getBoundingClientRect(),
-                value250: Dynamic = deps.callback16(
+                startPoint: Dynamic = deps.callback16(
                   event.clientX,
                   event.clientY,
-                  bounds,
+                  canvasRect,
                 );
               deps.value134("frame-tool", true);
               deps.callback30("frame-tool");
-              let callback61: Dynamic = (input?: Dynamic): Dynamic => {
-                  let value251: Dynamic = deps.callback16(
-                    input.clientX,
-                    input.clientY,
-                    bounds,
+              let getDragRect: Dynamic = (moveEvent?: Dynamic): Dynamic => {
+                  let endPoint: Dynamic = deps.callback16(
+                    moveEvent.clientX,
+                    moveEvent.clientY,
+                    canvasRect,
                   );
                   return {
-                    x: Math.min(value250.x, value251.x),
-                    y: Math.min(value250.y, value251.y),
-                    w: Math.abs(value251.x - value250.x),
-                    h: Math.abs(value251.y - value250.y),
+                    x: Math.min(startPoint.x, endPoint.x),
+                    y: Math.min(startPoint.y, endPoint.y),
+                    w: Math.abs(endPoint.x - startPoint.x),
+                    h: Math.abs(endPoint.y - startPoint.y),
                   };
                 },
-                callback62: Dynamic = (input?: Dynamic): Dynamic =>
-                  deps.value78(callback61(input)),
-                callback63: Dynamic = (input?: Dynamic): Dynamic => {
+                previewDragRect: Dynamic = (moveEvent?: Dynamic): Dynamic =>
+                  deps.value78(getDragRect(moveEvent)),
+                finishDrag: Dynamic = (upEvent?: Dynamic): Dynamic => {
                   (window as Dynamic).removeEventListener(
                     "pointermove",
-                    callback62,
+                    previewDragRect,
                   );
                   (window as Dynamic).removeEventListener(
                     "pointerup",
-                    callback63,
+                    finishDrag,
                   );
                   (window as Dynamic).removeEventListener(
                     "pointercancel",
-                    callback64,
+                    cancelDrag,
                   );
                   deps.value78(null);
                   deps.value134("frame-tool", false);
-                  let value251: Dynamic = callback61(input);
-                  value251.w < 8 && value251.h < 8
+                  let dragRect: Dynamic = getDragRect(upEvent);
+                  dragRect.w < 8 && dragRect.h < 8
                     ? deps.onDrawArtboard?.({
-                        x: value251.x,
-                        y: value251.y,
+                        x: dragRect.x,
+                        y: dragRect.y,
                         w: 0,
                         h: 0,
                       })
                     : deps.onDrawArtboard?.({
-                        x: Math.round(value251.x),
-                        y: Math.round(value251.y),
+                        x: Math.round(dragRect.x),
+                        y: Math.round(dragRect.y),
                         w: Math.round(
                           Math.min(
                             maximumArtboardSize.w,
                             Math.max(
-                              value251.w,
+                              dragRect.w,
                               minimumArtboardSize.w,
                             ),
                           ),
@@ -172,34 +172,34 @@ export function pressCanvasBackground(deps: { readonly callback10: Dynamic; read
                           Math.min(
                             maximumArtboardSize.h,
                             Math.max(
-                              value251.h,
+                              dragRect.h,
                               minimumArtboardSize.h,
                             ),
                           ),
                         ),
                       });
                 },
-                callback64: Dynamic = (): Dynamic => {
+                cancelDrag: Dynamic = (): Dynamic => {
                   (window as Dynamic).removeEventListener(
                     "pointermove",
-                    callback62,
+                    previewDragRect,
                   );
                   (window as Dynamic).removeEventListener(
                     "pointerup",
-                    callback63,
+                    finishDrag,
                   );
                   (window as Dynamic).removeEventListener(
                     "pointercancel",
-                    callback64,
+                    cancelDrag,
                   );
                   deps.value78(null);
                   deps.value134("frame-tool", false);
                 };
-              (window as Dynamic).addEventListener("pointermove", callback62);
-              (window as Dynamic).addEventListener("pointerup", callback63);
+              (window as Dynamic).addEventListener("pointermove", previewDragRect);
+              (window as Dynamic).addEventListener("pointerup", finishDrag);
               (window as Dynamic).addEventListener(
                 "pointercancel",
-                callback64,
+                cancelDrag,
               );
               return;
             }
@@ -217,178 +217,178 @@ export function pressCanvasBackground(deps: { readonly callback10: Dynamic; read
               event.preventDefault();
               event.stopPropagation();
               focusCanvasDocument();
-              let current: Dynamic = deps.value85.current,
-                value250: Dynamic =
+              let activeTool: Dynamic = deps.value85.current,
+                artboardFile: Dynamic =
                   (event.target instanceof Element
                     ? event.target.closest("[data-mega-artboard]")
                     : null
                   )?.getAttribute("data-mega-artboard") ?? null,
-                value251: Dynamic =
-                  value250 != null
+                hitBoard: Dynamic =
+                  artboardFile != null
                     ? deps.manifest.artboards.find(
-                        (input?: Dynamic): Dynamic => input.file === value250,
+                        (board?: Dynamic): Dynamic => board.file === artboardFile,
                       )
                     : null,
-                value252: Dynamic =
-                  value251?.frameless === true &&
-                  deps.value183.current !== value250,
-                value253: Dynamic = value252 ? null : value250,
-                value254: Dynamic = value252 ? null : value251;
+                isFramelessOther: Dynamic =
+                  hitBoard?.frameless === true &&
+                  deps.value183.current !== artboardFile,
+                outsideFile: Dynamic = isFramelessOther ? null : artboardFile,
+                targetBoard: Dynamic = isFramelessOther ? null : hitBoard;
               if (
-                value254
-                  ? deps.value213.has(value254.file)
-                  : value253 != null || !deps.onAddShape
+                targetBoard
+                  ? deps.value213.has(targetBoard.file)
+                  : outsideFile != null || !deps.onAddShape
               ) {
-                deps.onPlaceBlocked?.(current, value254 ? "blocked" : "outside");
+                deps.onPlaceBlocked?.(activeTool, targetBoard ? "blocked" : "outside");
                 return;
               }
-              let bounds: Dynamic =
+              let canvasRect: Dynamic =
                   event.currentTarget.getBoundingClientRect(),
-                value255: Dynamic = deps.callback16(
+                startPoint: Dynamic = deps.callback16(
                   event.clientX,
                   event.clientY,
-                  bounds,
+                  canvasRect,
                 ),
                 pointerId: Dynamic = event.pointerId,
-                callback61: Dynamic = (): Dynamic => deps.camera.get().scale,
-                value256: Dynamic = current === "arrow" || current === "line",
-                callback62: Dynamic = (input?: Dynamic): Dynamic => {
-                  let value258: Dynamic = deps.callback16(
-                      input.clientX,
-                      input.clientY,
-                      bounds,
+                getScale: Dynamic = (): Dynamic => deps.camera.get().scale,
+                isLineTool: Dynamic = activeTool === "arrow" || activeTool === "line",
+                computePlacementRect: Dynamic = (pointerEvent?: Dynamic): Dynamic => {
+                  let endPoint: Dynamic = deps.callback16(
+                      pointerEvent.clientX,
+                      pointerEvent.clientY,
+                      canvasRect,
                     ),
-                    value259: Dynamic =
-                      input.shiftKey && value256
-                        ? constrainLineAngle(value255, value258)
-                        : value258,
-                    value260: Dynamic = Math.abs(value259.x - value255.x),
-                    value261: Dynamic = Math.abs(value259.y - value255.y);
-                  input.shiftKey &&
-                    !value256 &&
-                    (value260 = value261 = Math.max(value260, value261));
+                    constrainedPoint: Dynamic =
+                      pointerEvent.shiftKey && isLineTool
+                        ? constrainLineAngle(startPoint, endPoint)
+                        : endPoint,
+                    width: Dynamic = Math.abs(constrainedPoint.x - startPoint.x),
+                    height: Dynamic = Math.abs(constrainedPoint.y - startPoint.y);
+                  pointerEvent.shiftKey &&
+                    !isLineTool &&
+                    (width = height = Math.max(width, height));
                   return {
                     x:
-                      value259.x < value255.x
-                        ? value255.x - value260
-                        : value255.x,
+                      constrainedPoint.x < startPoint.x
+                        ? startPoint.x - width
+                        : startPoint.x,
                     y:
-                      value259.y < value255.y
-                        ? value255.y - value261
-                        : value255.y,
-                    w: value260,
-                    h: value261,
-                    dirX: value259.x >= value255.x ? 1 : -1,
-                    dirY: value259.y >= value255.y ? 1 : -1,
+                      constrainedPoint.y < startPoint.y
+                        ? startPoint.y - height
+                        : startPoint.y,
+                    w: width,
+                    h: height,
+                    dirX: constrainedPoint.x >= startPoint.x ? 1 : -1,
+                    dirY: constrainedPoint.y >= startPoint.y ? 1 : -1,
                   };
                 };
               deps.value79.current = true;
               deps.value134("place-tool", true);
-              let callback63: Dynamic = (input?: Dynamic): Dynamic => {
-                  let [items, items2]: Dynamic = [
-                    input.w * callback61(),
-                    input.h * callback61(),
+              let snapTinyToPoint: Dynamic = (rect?: Dynamic): Dynamic => {
+                  let [widthPx, heightPx]: Dynamic = [
+                    rect.w * getScale(),
+                    rect.h * getScale(),
                   ];
                   return (
-                    value256
-                      ? items > 4 || items2 > 4
-                      : items > 4 && items2 > 4
+                    isLineTool
+                      ? widthPx > 4 || heightPx > 4
+                      : widthPx > 4 && heightPx > 4
                   )
-                    ? input
+                    ? rect
                     : {
-                        ...input,
-                        x: value255.x,
-                        y: value255.y,
+                        ...rect,
+                        x: startPoint.x,
+                        y: startPoint.y,
                         w: 0,
                         h: 0,
                       };
                 },
-                value257: Dynamic = null,
-                callback64: Dynamic = (input?: Dynamic): Dynamic => {
-                  if (input.pointerId !== pointerId) return;
-                  let value258: Dynamic = callback62(input),
-                    value259: Dynamic =
-                      (value258.w * value258.w + value258.h * value258.h) *
-                      callback61() *
-                      callback61();
-                  (!value257 && value259 <= 16) ||
-                    ((value257 = value258),
+                lastRect: Dynamic = null,
+                handlePointerMove: Dynamic = (moveEvent?: Dynamic): Dynamic => {
+                  if (moveEvent.pointerId !== pointerId) return;
+                  let rect: Dynamic = computePlacementRect(moveEvent),
+                    screenDistanceSq: Dynamic =
+                      (rect.w * rect.w + rect.h * rect.h) *
+                      getScale() *
+                      getScale();
+                  (!lastRect && screenDistanceSq <= 16) ||
+                    ((lastRect = rect),
                     deps.value81({
-                      tool: current,
-                      ...value258,
-                      onCanvas: !value254,
+                      tool: activeTool,
+                      ...rect,
+                      onCanvas: !targetBoard,
                     }));
                 },
-                callback65: Dynamic = (): Dynamic => {
+                endPlacement: Dynamic = (): Dynamic => {
                   (window as Dynamic).removeEventListener(
                     "pointermove",
-                    callback64,
+                    handlePointerMove,
                   );
                   (window as Dynamic).removeEventListener(
                     "pointerup",
-                    callback66,
+                    handlePointerUp,
                   );
                   (window as Dynamic).removeEventListener(
                     "pointercancel",
-                    callback67,
+                    handlePointerCancel,
                   );
                   (window as Dynamic).removeEventListener(
                     "keydown",
-                    callback68,
+                    handleKeyDown,
                     true,
                   );
                   deps.value79.current = false;
                   deps.value81(null);
                   deps.value134("place-tool", false);
                 },
-                callback66: Dynamic = (input?: Dynamic): Dynamic => {
+                handlePointerUp: Dynamic = (upEvent?: Dynamic): Dynamic => {
                   if (
-                    input.pointerId !== pointerId ||
-                    (callback65(), !deps.value19.current)
+                    upEvent.pointerId !== pointerId ||
+                    (endPlacement(), !deps.value19.current)
                   )
                     return;
-                  let value258: Dynamic = value257 ?? callback62(input),
-                    value259: Dynamic = value257
-                      ? callback63(value258)
+                  let finalRect: Dynamic = lastRect ?? computePlacementRect(upEvent),
+                    placedRect: Dynamic = lastRect
+                      ? snapTinyToPoint(finalRect)
                       : {
-                          ...value258,
-                          x: value255.x,
-                          y: value255.y,
+                          ...finalRect,
+                          x: startPoint.x,
+                          y: startPoint.y,
                           w: 0,
                           h: 0,
                         },
-                    state: Dynamic = {
-                      x: value258.dirX,
-                      y: value258.dirY,
+                    direction: Dynamic = {
+                      x: finalRect.dirX,
+                      y: finalRect.dirY,
                     },
-                    state2: Dynamic = {
-                      x: Math.round(value259.x - (value254?.x ?? 0)),
-                      y: Math.round(value259.y - (value254?.y ?? 0)),
-                      w: Math.round(value259.w),
-                      h: Math.round(value259.h),
+                    relativeRect: Dynamic = {
+                      x: Math.round(placedRect.x - (targetBoard?.x ?? 0)),
+                      y: Math.round(placedRect.y - (targetBoard?.y ?? 0)),
+                      w: Math.round(placedRect.w),
+                      h: Math.round(placedRect.h),
                     };
-                  value254
-                    ? deps.onPlaceTool?.(current, value254.file, state2, state)
-                    : deps.onAddShape?.(current, state2, state);
+                  targetBoard
+                    ? deps.onPlaceTool?.(activeTool, targetBoard.file, relativeRect, direction)
+                    : deps.onAddShape?.(activeTool, relativeRect, direction);
                 },
-                callback67: Dynamic = (input?: Dynamic): Dynamic => {
-                  input.pointerId === pointerId && callback65();
+                handlePointerCancel: Dynamic = (cancelEvent?: Dynamic): Dynamic => {
+                  cancelEvent.pointerId === pointerId && endPlacement();
                 },
-                callback68: Dynamic = (event2?: Dynamic): Dynamic => {
-                  event2.key === "Escape" &&
-                    (event2.preventDefault(),
-                    event2.stopPropagation(),
-                    callback65());
+                handleKeyDown: Dynamic = (keyEvent?: Dynamic): Dynamic => {
+                  keyEvent.key === "Escape" &&
+                    (keyEvent.preventDefault(),
+                    keyEvent.stopPropagation(),
+                    endPlacement());
                 };
-              (window as Dynamic).addEventListener("pointermove", callback64);
-              (window as Dynamic).addEventListener("pointerup", callback66);
+              (window as Dynamic).addEventListener("pointermove", handlePointerMove);
+              (window as Dynamic).addEventListener("pointerup", handlePointerUp);
               (window as Dynamic).addEventListener(
                 "pointercancel",
-                callback67,
+                handlePointerCancel,
               );
               (window as Dynamic).addEventListener(
                 "keydown",
-                callback68,
+                handleKeyDown,
                 true,
               );
               return;
@@ -409,97 +409,97 @@ export function pressCanvasBackground(deps: { readonly callback10: Dynamic; read
               event.preventDefault();
               event.stopPropagation();
               focusCanvasDocument();
-              let bounds: Dynamic =
+              let canvasRect: Dynamic =
                   event.currentTarget.getBoundingClientRect(),
                 pointerId: Dynamic = event.pointerId,
-                items: Dynamic = [[event.clientX, event.clientY]],
-                count: Dynamic = 4,
-                callback61: Dynamic = (): Dynamic =>
+                points: Dynamic = [[event.clientX, event.clientY]],
+                distanceThresholdSq: Dynamic = 4,
+                getTolerance: Dynamic = (): Dynamic =>
                   freehandSimplifyTolerance / deps.camera.get().scale;
               deps.value79.current = true;
               deps.value134("place-tool", true);
-              let callback62: Dynamic = (): Dynamic => {
-                  let value250: Dynamic = items.map(
-                    ([input, input2]: Dynamic): Dynamic =>
-                      deps.callback16(input, input2, bounds),
+              let updatePreview: Dynamic = (): Dynamic => {
+                  let canvasPoints: Dynamic = points.map(
+                    ([clientX, clientY]: Dynamic): Dynamic =>
+                      deps.callback16(clientX, clientY, canvasRect),
                   );
                   deps.value83(
                     freehandDrawingAnnotation(
-                      value250,
-                      callback61(),
+                      canvasPoints,
+                      getTolerance(),
                       false,
                     ),
                   );
                 },
-                callback63: Dynamic = (input?: Dynamic): Dynamic => {
-                  if (input.pointerId !== pointerId) return;
-                  let [value250, value251]: Dynamic = items[items.length - 1];
-                  (input.clientX - value250) ** 2 +
-                    (input.clientY - value251) ** 2 <
-                    count ||
-                    (items.push([input.clientX, input.clientY]),
-                    items.length > 3e3 &&
-                      ((items = items.filter(
-                        (input2?: Dynamic, options2?: Dynamic): Dynamic =>
-                          options2 % 2 === 0,
+                handlePointerMove: Dynamic = (moveEvent?: Dynamic): Dynamic => {
+                  if (moveEvent.pointerId !== pointerId) return;
+                  let [lastX, lastY]: Dynamic = points[points.length - 1];
+                  (moveEvent.clientX - lastX) ** 2 +
+                    (moveEvent.clientY - lastY) ** 2 <
+                    distanceThresholdSq ||
+                    (points.push([moveEvent.clientX, moveEvent.clientY]),
+                    points.length > 3e3 &&
+                      ((points = points.filter(
+                        (point?: Dynamic, index?: Dynamic): Dynamic =>
+                          index % 2 === 0,
                       )),
-                      (count *= 4)),
-                    callback62());
+                      (distanceThresholdSq *= 4)),
+                    updatePreview());
                 },
-                callback64: Dynamic = (): Dynamic => {
+                endDrawing: Dynamic = (): Dynamic => {
                   (window as Dynamic).removeEventListener(
                     "pointermove",
-                    callback63,
+                    handlePointerMove,
                   );
                   (window as Dynamic).removeEventListener(
                     "pointerup",
-                    callback65,
+                    handlePointerUp,
                   );
                   (window as Dynamic).removeEventListener(
                     "pointercancel",
-                    callback66,
+                    handlePointerCancel,
                   );
                   (window as Dynamic).removeEventListener(
                     "keydown",
-                    callback67,
+                    handleKeyDown,
                     true,
                   );
                   deps.value79.current = false;
                   deps.value83(null);
                   deps.value134("place-tool", false);
                 },
-                callback65: Dynamic = (input?: Dynamic): Dynamic => {
-                  input.pointerId === pointerId &&
-                    (callback64(),
-                    !(!deps.value19.current || items.length < 2) &&
+                handlePointerUp: Dynamic = (upEvent?: Dynamic): Dynamic => {
+                  upEvent.pointerId === pointerId &&
+                    (endDrawing(),
+                    !(!deps.value19.current || points.length < 2) &&
                       deps.onAddPen(
                         freehandDrawingAnnotation(
-                          items.map(
-                            ([input2, input3]: Dynamic): Dynamic =>
-                              deps.callback16(input2, input3, bounds),
+                          points.map(
+                            ([clientX, clientY]: Dynamic): Dynamic =>
+                              deps.callback16(clientX, clientY, canvasRect),
                           ),
-                          callback61(),
+                          getTolerance(),
                         ),
                       ));
                 },
-                callback66: Dynamic = (input?: Dynamic): Dynamic => {
-                  input.pointerId === pointerId && callback64();
+                handlePointerCancel: Dynamic = (cancelEvent?: Dynamic): Dynamic => {
+                  cancelEvent.pointerId === pointerId && endDrawing();
                 },
-                callback67: Dynamic = (event2?: Dynamic): Dynamic => {
-                  event2.key === "Escape" &&
-                    (event2.preventDefault(),
-                    event2.stopPropagation(),
-                    callback64());
+                handleKeyDown: Dynamic = (keyEvent?: Dynamic): Dynamic => {
+                  keyEvent.key === "Escape" &&
+                    (keyEvent.preventDefault(),
+                    keyEvent.stopPropagation(),
+                    endDrawing());
                 };
-              (window as Dynamic).addEventListener("pointermove", callback63);
-              (window as Dynamic).addEventListener("pointerup", callback65);
+              (window as Dynamic).addEventListener("pointermove", handlePointerMove);
+              (window as Dynamic).addEventListener("pointerup", handlePointerUp);
               (window as Dynamic).addEventListener(
                 "pointercancel",
-                callback66,
+                handlePointerCancel,
               );
               (window as Dynamic).addEventListener(
                 "keydown",
-                callback67,
+                handleKeyDown,
                 true,
               );
               return;
@@ -537,13 +537,13 @@ export function pressCanvasBackground(deps: { readonly callback10: Dynamic; read
               deps.value134("pan", true);
               event.pointerType === "mouse" &&
                 event.currentTarget.setAttribute("data-mega-grabbing", "");
-              let value250: Dynamic =
+              let menuTarget: Dynamic =
                 event.button === 2 && !deps.value128.current
                   ? canvasContextMenuTargetFromElement(
                       event.target,
                     )
                   : null;
-              value250 !== null && deps.value108.down(event, value250);
+              menuTarget !== null && deps.value108.down(event, menuTarget);
               deps.callback30(
                 "pan",
                 event.button === 1 ? 4 : event.button === 2 ? 2 : 1,

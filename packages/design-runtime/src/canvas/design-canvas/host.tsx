@@ -1,8 +1,8 @@
-import { CanvasWorkingStateConstant_8 } from "../working-state";
-import { PlatformFileContentConstant_16 } from "../../platform/file-content";
+import { CanvasWorkingStateConstant_8 as holdWorkingValue } from "../working-state";
+import { PlatformFileContentConstant_16 as minArtboardEdge } from "../../platform/file-content";
 import { PlatformFileContentFilesValue } from "../../platform/file-content";
 import { PlatformFileContentHandler_4 } from "../../platform/file-content";
-import { PlatformFileContentLimit_6 } from "../../platform/file-content";
+import { PlatformFileContentLimit_6 as maxArtboardEdge } from "../../platform/file-content";
 import { PlatformFileContentSlice } from "../../platform/file-content";
 import { artboardTextSnapshotLimit } from "../content-snapshots";
 import { blankDcDocument } from "../../platform/file-content";
@@ -24,68 +24,68 @@ import { nextArtboardPlacementPoint } from "../design-canvas";
 
 /** 视口、页面、选择或错误变化时运行：汇总可见画板、选中元素的文字摘要与画板错误，通过上下文发布器上报给外壳。 */
 export function reportDesignContextSnapshot(deps: { readonly flag: Dynamic; readonly selection: Dynamic; readonly value103: Dynamic; readonly value120: Dynamic; readonly value168: Dynamic; readonly value172: Dynamic; readonly value177: Dynamic; readonly value266: Dynamic; readonly value347: Dynamic; readonly value356: Dynamic; readonly value365: Dynamic; readonly value375: Dynamic; readonly value79: Dynamic; readonly value81: Dynamic; readonly value86: Dynamic }): Dynamic {
-    let { w: value653, h: value654, top: value655 }: Dynamic = deps.value120(),
+    let { w: viewportWidth, h: viewportHeight, top: topInset }: Dynamic = deps.value120(),
       state: Dynamic = {
         x: deps.value103.x,
-        y: deps.value103.y + value655 / deps.value103.scale,
-        w: value653 / deps.value103.scale,
-        h: (value654 - value655) / deps.value103.scale,
+        y: deps.value103.y + topInset / deps.value103.scale,
+        w: viewportWidth / deps.value103.scale,
+        h: (viewportHeight - topInset) / deps.value103.scale,
       },
-      value656: Dynamic = deps.value347
+      visibleFiles: Dynamic = deps.value347
         ? [deps.value347.file]
         : deps.value86.artboards
             .filter(
-              (input?: Dynamic): Dynamic =>
-                distanceBetweenRects(input, state) === 0,
+              (artboard?: Dynamic): Dynamic =>
+                distanceBetweenRects(artboard, state) === 0,
             )
-            .map((input?: Dynamic): Dynamic => input.file),
-      items: Dynamic = [],
-      items2: Dynamic = [],
-      value657: Dynamic = !deps.value347 || (deps.flag && deps.value356);
-    if (deps.selection.primary != null && value657) {
-      let value662: Dynamic = [...deps.selection.elements.keys()].filter(
-        (input?: Dynamic): Dynamic => input !== deps.selection.primary,
+            .map((artboard?: Dynamic): Dynamic => artboard.file),
+      selectedPaths: Dynamic = [],
+      selectedElements: Dynamic = [],
+      showSelection: Dynamic = !deps.value347 || (deps.flag && deps.value356);
+    if (deps.selection.primary != null && showSelection) {
+      let orderedKeys: Dynamic = [...deps.selection.elements.keys()].filter(
+        (key?: Dynamic): Dynamic => key !== deps.selection.primary,
       );
-      value662.push(deps.selection.primary);
-      for (let value663 of value662 as Dynamic) {
-        let value664: Dynamic = deps.selection.elements.get(value663)?.tids ?? [],
-          value665: Dynamic = encodeArtboardSelectionPath(
-            value663,
+      orderedKeys.push(deps.selection.primary);
+      for (let selectedFile of orderedKeys as Dynamic) {
+        let tids: Dynamic = deps.selection.elements.get(selectedFile)?.tids ?? [],
+          encodedFile: Dynamic = encodeArtboardSelectionPath(
+            selectedFile,
           );
-        if (value665 !== null)
-          for (let value666 of (deps.value177.current
-            .get(value663)
-            ?.viewEntries(value664) ?? []) as Dynamic) {
-            let value667: Dynamic = value665 + "#" + value666.path;
-            encodedElementPathPattern.test(value667) &&
-              (items.push(value667),
-              items2.push({
-                id: value667,
-                kind: value666.kind,
-                words: value666.words,
+        if (encodedFile !== null)
+          for (let viewEntry of (deps.value177.current
+            .get(selectedFile)
+            ?.viewEntries(tids) ?? []) as Dynamic) {
+            let elementPath: Dynamic = encodedFile + "#" + viewEntry.path;
+            encodedElementPathPattern.test(elementPath) &&
+              (selectedPaths.push(elementPath),
+              selectedElements.push({
+                id: elementPath,
+                kind: viewEntry.kind,
+                words: viewEntry.words,
               }));
           }
       }
     }
-    let value658: Dynamic = value657 ? [...deps.value168, ...deps.value172] : [],
-      current4: Dynamic = deps.value365.current;
-    if (current4 === null) return;
-    let state2: Dynamic = {
+    let selectedBoardFiles: Dynamic = showSelection ? [...deps.value168, ...deps.value172] : [],
+      publisher: Dynamic = deps.value365.current;
+    if (publisher === null) return;
+    let snapshot: Dynamic = {
         mode: deps.value347 ? "focused" : "canvas",
         page: deps.value79 === "" ? null : deps.value79,
         pageName: {
           text: deps.value79 === "" ? "" : deps.value81,
         },
         visibleArtboards: normalizeSelectedArtboardPaths(
-          value656,
+          visibleFiles,
         ),
         selectedArtboards: normalizeSelectedArtboardPaths(
-          value658,
+          selectedBoardFiles,
         ),
         ...getEmbeddedPresence(),
         dirty: deps.value375,
-        selected: items.slice(-20),
-        selection: items2.slice(-5).map(
+        selected: selectedPaths.slice(-20),
+        selection: selectedElements.slice(-5).map(
           (source?: Dynamic): Dynamic => ({
             id: source.id,
             kind: source.kind,
@@ -93,33 +93,33 @@ export function reportDesignContextSnapshot(deps: { readonly flag: Dynamic; read
           }),
         ),
       },
-      value659: Dynamic = deps.value266.flatMap((input?: Dynamic): Dynamic => {
-        let value662: Dynamic = encodeArtboardSelectionPath(
-          input.file,
+      errorEntries: Dynamic = deps.value266.flatMap((problem?: Dynamic): Dynamic => {
+        let encodedName: Dynamic = encodeArtboardSelectionPath(
+          problem.file,
         );
-        return value662 === null
+        return encodedName === null
           ? []
           : [
               {
-                name: value662,
-                first: input.messages[0] ?? "",
+                name: encodedName,
+                first: problem.messages[0] ?? "",
               },
             ];
       }),
-      value660: Dynamic = value659[0]?.first ?? "",
-      value661: Dynamic = serializeArtboardErrorContext(
-        value659.map((input?: Dynamic): Dynamic => input.name),
-        value660,
-        state2,
+      firstError: Dynamic = errorEntries[0]?.first ?? "",
+      erroredArtboards: Dynamic = serializeArtboardErrorContext(
+        errorEntries.map((entry?: Dynamic): Dynamic => entry.name),
+        firstError,
+        snapshot,
       );
-    current4.report(
-      value661.length === 0
-        ? state2
+    publisher.report(
+      erroredArtboards.length === 0
+        ? snapshot
         : {
-            ...state2,
-            erroredArtboards: value661,
+            ...snapshot,
+            erroredArtboards: erroredArtboards,
             firstError: {
-              text: value660,
+              text: firstError,
             },
           },
     );
@@ -127,87 +127,87 @@ export function reportDesignContextSnapshot(deps: { readonly flag: Dynamic; read
 
 /** 文档或页面变化时计算（useMemo）：为 HostedEditor 提供画布接口，包括画板列表、分组、撤销重做、显示/聚焦、放置、重命名、新增、复制与删除。 */
 export function buildHostedEditorCanvasApi(deps: { readonly doc: Dynamic; readonly supportsLoadState: Dynamic; readonly value155: Dynamic; readonly value156: Dynamic; readonly value202: Dynamic; readonly value274: Dynamic; readonly value383: Dynamic; readonly value396: Dynamic; readonly value405: Dynamic; readonly value406: Dynamic; readonly value409: Dynamic; readonly value410: Dynamic; readonly value432: Dynamic; readonly value440: Dynamic; readonly value447: Dynamic; readonly value450: Dynamic; readonly value451: Dynamic; readonly value452: Dynamic; readonly value453: Dynamic; readonly value73: Dynamic; readonly value80: Dynamic; readonly value98: Dynamic }): Dynamic {
-      let callback15: Dynamic = async (
-          input?: Dynamic,
-          options: Dynamic = 5e3,
+      let waitUntil: Dynamic = async (
+          condition?: Dynamic,
+          timeoutMs: Dynamic = 5e3,
         ): Promise<Dynamic> => {
-          let value653: Dynamic = Date.now();
-          for (; !input(); ) {
-            if (Date.now() - value653 > options) return false;
+          let startedAt: Dynamic = Date.now();
+          for (; !condition(); ) {
+            if (Date.now() - startedAt > timeoutMs) return false;
             await new Promise(
-              (input2?: Dynamic): Dynamic => setTimeout(input2, 40),
+              (resolve?: Dynamic): Dynamic => setTimeout(resolve, 40),
             );
           }
           return true;
         },
-        callback16: Dynamic = (): Dynamic =>
+        currentPageBoards: Dynamic = (): Dynamic =>
           designPageContents(deps.value73.current, deps.value80.current)
             .artboards,
-        callback17: Dynamic = (input?: Dynamic): Dynamic =>
+        clampBoardSize: Dynamic = (size?: Dynamic): Dynamic =>
           Math.min(
-            PlatformFileContentLimit_6,
+            maxArtboardEdge,
             Math.max(
-              PlatformFileContentConstant_16,
-              Math.round(input),
+              minArtboardEdge,
+              Math.round(size),
             ),
           );
       return {
         boards: (): Dynamic =>
-          callback16().map(
-            (input?: Dynamic): Dynamic => ({
-              file: input.file,
-              x: input.x,
-              y: input.y,
-              w: input.w,
-              h: input.h,
-              title: input.title ?? input.file.replace(/\.dc\.html$/, ""),
+          currentPageBoards().map(
+            (board?: Dynamic): Dynamic => ({
+              file: board.file,
+              x: board.x,
+              y: board.y,
+              w: board.w,
+              h: board.h,
+              title: board.title ?? board.file.replace(/\.dc\.html$/, ""),
             }),
           ),
-        pageIs: (input?: Dynamic): Dynamic =>
+        pageIs: (pageId?: Dynamic): Dynamic =>
           isCanvasPageMatch(
-            input,
+            pageId,
             deps.value80.current,
             deps.value73.current.pages?.[0]?.id ?? "",
           ),
         token: (): Dynamic => randomSessionToken(),
-        group: (input?: Dynamic, options?: Dynamic): Dynamic =>
+        group: (files?: Dynamic, bound?: Dynamic): Dynamic =>
           deps.value432.current?.group(
-            input,
-            options !== undefined
+            files,
+            bound !== undefined
               ? {
-                  bound: options,
+                  bound: bound,
                 }
               : undefined,
           ) ?? null,
         hold: async (): Promise<Dynamic> => (
-          await callback15(
+          await waitUntil(
             (): Dynamic =>
               deps.value155.current <= 0 &&
               !deps.value202.current &&
               !(deps.value432.current?.busy() ?? false),
           ),
-          deps.value156(CanvasWorkingStateConstant_8)
+          deps.value156(holdWorkingValue)
         ),
         undo: (): Dynamic => deps.value447.current?.undo(),
         redo: (): Dynamic => deps.value447.current?.redo(),
         mark: (): Dynamic => {
-          let current4: Dynamic = deps.value405.current,
-            value653: Dynamic = current4[current4.length - 1];
-          value653 !== undefined &&
-            !deps.value453.has(value653) &&
-            deps.value453.set(value653, deps.value453.next++);
+          let undoStack: Dynamic = deps.value405.current,
+            lastEntry: Dynamic = undoStack[undoStack.length - 1];
+          lastEntry !== undefined &&
+            !deps.value453.has(lastEntry) &&
+            deps.value453.set(lastEntry, deps.value453.next++);
           return (
-            String(current4.length) +
+            String(undoStack.length) +
             ":" +
-            (value653 === undefined ? "" : String(deps.value453.get(value653))) +
+            (lastEntry === undefined ? "" : String(deps.value453.get(lastEntry))) +
             "/" +
             String(deps.value406.current.length) +
             "|" +
             [...deps.value440.current]
-              .filter(([, input]: Dynamic): Dynamic => input !== 0)
+              .filter(([, count]: Dynamic): Dynamic => count !== 0)
               .map(
-                ([input, input2]: Dynamic): Dynamic =>
-                  input + "=" + String(input2),
+                ([name, count]: Dynamic): Dynamic =>
+                  name + "=" + String(count),
               )
               .sort()
               .join(",") +
@@ -219,323 +219,323 @@ export function buildHostedEditorCanvasApi(deps: { readonly doc: Dynamic; readon
           deps.value410.current +
           deps.value405.current.length +
           [...deps.value440.current.values()].reduce(
-            (input?: Dynamic, options?: Dynamic): Dynamic => input + options,
+            (sum?: Dynamic, count?: Dynamic): Dynamic => sum + count,
             0,
           ),
-        revealRect: (input?: Dynamic): Dynamic => {
+        revealRect: (rect?: Dynamic): Dynamic => {
           deps.value383.current?.({
-            x: input.x,
-            y: input.y,
-            w: input.w,
-            h: input.h,
+            x: rect.x,
+            y: rect.y,
+            w: rect.w,
+            h: rect.h,
           });
         },
-        reveal: (input?: Dynamic): Dynamic => {
-          let value653: Dynamic = deps.value73.current.artboards.find(
-            (input2?: Dynamic): Dynamic => input2.file === input,
+        reveal: (file?: Dynamic): Dynamic => {
+          let artboard: Dynamic = deps.value73.current.artboards.find(
+            (item?: Dynamic): Dynamic => item.file === file,
           );
-          value653 !== undefined &&
+          artboard !== undefined &&
             deps.value383.current?.({
-              x: value653.x,
-              y: value653.y,
-              w: value653.w,
-              h: value653.h,
+              x: artboard.x,
+              y: artboard.y,
+              w: artboard.w,
+              h: artboard.h,
             });
         },
-        focus: (input?: Dynamic): Dynamic => {
-          deps.value274.current(input);
+        focus: (file?: Dynamic): Dynamic => {
+          deps.value274.current(file);
         },
-        place: (input?: Dynamic, options?: Dynamic): Dynamic => {
-          let items: Dynamic = [],
-            value653: Dynamic = deps.value73.current.artboards.map(
-              (input2?: Dynamic): Dynamic => {
-                let value654: Dynamic = input.find(
-                  (input3?: Dynamic): Dynamic => input3.file === input2.file,
+        place: (placements?: Dynamic, historyContext?: Dynamic): Dynamic => {
+          let changes: Dynamic = [],
+            updatedBoards: Dynamic = deps.value73.current.artboards.map(
+              (board?: Dynamic): Dynamic => {
+                let placement: Dynamic = placements.find(
+                  (candidate?: Dynamic): Dynamic => candidate.file === board.file,
                 );
-                if (value654 === undefined) return input2;
+                if (placement === undefined) return board;
                 let state: Dynamic = {};
-                value654.x !== undefined &&
-                  Math.round(value654.x) !== Math.round(input2.x) &&
-                  (state.x = Math.round(value654.x));
-                value654.y !== undefined &&
-                  Math.round(value654.y) !== Math.round(input2.y) &&
-                  (state.y = Math.round(value654.y));
-                value654.w !== undefined &&
-                  input2.frameless !== true &&
-                  callback17(value654.w) !== Math.round(input2.w) &&
-                  (state.w = callback17(value654.w));
-                value654.h !== undefined &&
-                  input2.frameless !== true &&
-                  callback17(value654.h) !== Math.round(input2.h) &&
-                  (state.h = callback17(value654.h));
-                let value655: Dynamic = Object.keys(state);
-                return value655.length === 0
-                  ? input2
-                  : (items.push({
-                      file: input2.file,
+                placement.x !== undefined &&
+                  Math.round(placement.x) !== Math.round(board.x) &&
+                  (state.x = Math.round(placement.x));
+                placement.y !== undefined &&
+                  Math.round(placement.y) !== Math.round(board.y) &&
+                  (state.y = Math.round(placement.y));
+                placement.w !== undefined &&
+                  board.frameless !== true &&
+                  clampBoardSize(placement.w) !== Math.round(board.w) &&
+                  (state.w = clampBoardSize(placement.w));
+                placement.h !== undefined &&
+                  board.frameless !== true &&
+                  clampBoardSize(placement.h) !== Math.round(board.h) &&
+                  (state.h = clampBoardSize(placement.h));
+                let changedKeys: Dynamic = Object.keys(state);
+                return changedKeys.length === 0
+                  ? board
+                  : (changes.push({
+                      file: board.file,
                       from: Object.fromEntries(
-                        value655.map(
-                          (input3?: Dynamic): Dynamic => [
-                            input3,
-                            input2[input3],
+                        changedKeys.map(
+                          (key?: Dynamic): Dynamic => [
+                            key,
+                            board[key],
                           ],
                         ),
                       ),
                       to: state,
                     }),
                     {
-                      ...input2,
+                      ...board,
                       ...state,
                     });
               },
             );
-          return items.length === 0
+          return changes.length === 0
             ? []
             : (deps.value396.current(
                 {
                   kind: "transform",
                   get label() { return uiMessage("canvas.designCanvas.resize"); },
-                  boards: items,
+                  boards: changes,
                   anns: [],
                 },
                 new Set(),
                 undefined,
-                options,
+                historyContext,
               ),
               deps.value98({
-                artboards: value653,
+                artboards: updatedBoards,
               }),
-              items.map((input2?: Dynamic): Dynamic => input2.file));
+              changes.map((change?: Dynamic): Dynamic => change.file));
         },
         rename: (
-          input?: Dynamic,
-          options?: Dynamic,
-          context?: Dynamic,
+          file?: Dynamic,
+          newTitle?: Dynamic,
+          historyContext?: Dynamic,
         ): Dynamic => {
-          let value653: Dynamic = PlatformFileContentSlice(
-              options,
+          let cleanTitle: Dynamic = PlatformFileContentSlice(
+              newTitle,
             ),
-            value654: Dynamic = deps.value73.current.artboards.find(
-              (input2?: Dynamic): Dynamic => input2.file === input,
+            board: Dynamic = deps.value73.current.artboards.find(
+              (item?: Dynamic): Dynamic => item.file === file,
             );
-          if (value653 === undefined || value654 === undefined) return false;
-          let value655: Dynamic =
-            value653 !== input.replace(/\.dc\.html$/, "")
-              ? value653
+          if (cleanTitle === undefined || board === undefined) return false;
+          let storedTitle: Dynamic =
+            cleanTitle !== file.replace(/\.dc\.html$/, "")
+              ? cleanTitle
               : undefined;
-          return (value654.title ?? undefined) === value655
+          return (board.title ?? undefined) === storedTitle
             ? false
             : (deps.value396.current(
                 {
                   kind: "rename",
-                  file: input,
-                  from: value654.title,
-                  to: value655,
+                  file: file,
+                  from: board.title,
+                  to: storedTitle,
                 },
                 new Set(),
                 undefined,
-                context,
+                historyContext,
               ),
               deps.value98({
                 artboards: deps.value73.current.artboards.map(
-                  (input2?: Dynamic): Dynamic => {
-                    if (input2.file !== input) return input2;
-                    let { title: value656, ...value657 }: Dynamic = input2;
-                    return value655 !== undefined
+                  (item?: Dynamic): Dynamic => {
+                    if (item.file !== file) return item;
+                    let { title: oldTitle, ...boardWithoutTitle }: Dynamic = item;
+                    return storedTitle !== undefined
                       ? {
-                          ...value657,
-                          title: value655,
+                          ...boardWithoutTitle,
+                          title: storedTitle,
                         }
-                      : value657;
+                      : boardWithoutTitle;
                   },
                 ),
               }),
               true);
         },
-        add: async (input?: Dynamic, options?: Dynamic): Promise<Dynamic> => {
-          let value653: Dynamic =
+        add: async (newBoards?: Dynamic, historyContext?: Dynamic): Promise<Dynamic> => {
+          let pageRulePattern: Dynamic =
               /^\/\*ask:page\*\/body\{(?:(?:background|color):(?:#[0-9a-fA-F]{3,8}|[a-z]{3,24}|(?:rgb|rgba|hsl|hsla)\([0-9.,%\s-]{1,60}(?:deg)?[0-9.,%\s-]{0,60}\))|font-family:(?:"[A-Za-z0-9 \-]{1,40}"|[a-z-]{1,12})(?:,(?:"[A-Za-z0-9 \-]{1,40}"|[a-z-]{1,12})){0,2})(?:;(?:(?:background|color):(?:#[0-9a-fA-F]{3,8}|[a-z]{3,24}|(?:rgb|rgba|hsl|hsla)\([0-9.,%\s-]{1,60}(?:deg)?[0-9.,%\s-]{0,60}\))|font-family:(?:"[A-Za-z0-9 \-]{1,40}"|[a-z-]{1,12})(?:,(?:"[A-Za-z0-9 \-]{1,40}"|[a-z-]{1,12})){0,2})){0,2}\}\/\*ask:page-end\*\/$/i,
             state: Dynamic = {
               ...deps.doc.content().files,
             },
-            items: Dynamic = [...callback16()],
-            items2: Dynamic = [];
-          for (let value654 of input as Dynamic) {
-            let value655: Dynamic = uniqueArtboardFile(
+            allBoards: Dynamic = [...currentPageBoards()],
+            createdEntries: Dynamic = [];
+          for (let newBoard of newBoards as Dynamic) {
+            let newFile: Dynamic = uniqueArtboardFile(
                 state,
                 "Artboard",
                 deps.supportsLoadState,
               ),
-              value656: Dynamic = value653.test(value654.pageRule ?? "")
+              baseDocument: Dynamic = pageRulePattern.test(newBoard.pageRule ?? "")
                 ? blankDcDocument().replace(
                     /[ \t]*<\/style>/,
-                    (input2?: Dynamic): Dynamic =>
-                      value654.pageRule +
+                    (closingStyle?: Dynamic): Dynamic =>
+                      newBoard.pageRule +
                       `
 ` +
-                      input2,
+                      closingStyle,
                   )
                 : blankDcDocument(),
-              value657: Dynamic =
-                value654.body.trim() === ""
-                  ? value656
-                  : value656.replace(
+              source: Dynamic =
+                newBoard.body.trim() === ""
+                  ? baseDocument
+                  : baseDocument.replace(
                       /[ \t]*<section class="stage"[^>]*><\/section>/,
-                      (): Dynamic => value654.body,
+                      (): Dynamic => newBoard.body,
                     );
-            state[value655] = value657;
-            let value658: Dynamic =
-                typeof value654.x == "number" &&
-                typeof value654.y == "number" &&
-                Number.isFinite(value654.x) &&
-                Number.isFinite(value654.y)
+            state[newFile] = source;
+            let position: Dynamic =
+                typeof newBoard.x == "number" &&
+                typeof newBoard.y == "number" &&
+                Number.isFinite(newBoard.x) &&
+                Number.isFinite(newBoard.y)
                   ? {
-                      x: value654.x,
-                      y: value654.y,
+                      x: newBoard.x,
+                      y: newBoard.y,
                     }
-                  : nextArtboardPlacementPoint(items),
-              state2: Dynamic = {
-                file: value655,
-                x: Math.round(value658.x),
-                y: Math.round(value658.y),
-                w: callback17(value654.w),
-                h: callback17(value654.h),
+                  : nextArtboardPlacementPoint(allBoards),
+              boardSpec: Dynamic = {
+                file: newFile,
+                x: Math.round(position.x),
+                y: Math.round(position.y),
+                w: clampBoardSize(newBoard.w),
+                h: clampBoardSize(newBoard.h),
                 title:
-                  PlatformFileContentSlice(value654.title) ??
-                  nextArtboardTitle(items),
+                  PlatformFileContentSlice(newBoard.title) ??
+                  nextArtboardTitle(allBoards),
                 ...deps.value452.current(),
               };
-            items.push(state2);
-            items2.push({
-              file: value655,
-              src: value657,
-              spec: state2,
+            allBoards.push(boardSpec);
+            createdEntries.push({
+              file: newFile,
+              src: source,
+              spec: boardSpec,
             });
           }
           if (
-            items2.length === 0 ||
-            Object.keys(deps.doc.content().files).length + items2.length >
+            createdEntries.length === 0 ||
+            Object.keys(deps.doc.content().files).length + createdEntries.length >
               PlatformFileContentFilesValue
           )
             return [];
-          let values: Dynamic = new Set();
+          let savedFiles: Dynamic = new Set();
           try {
-            for (let value654 of items2 as Dynamic) {
+            for (let entry of createdEntries as Dynamic) {
               await getKvClient().set(
-                PlatformFileContentHandler_4(value654.file),
-                value654.src,
+                PlatformFileContentHandler_4(entry.file),
+                entry.src,
               );
-              values.add(value654.file);
+              savedFiles.add(entry.file);
             }
           } catch {
-            for (let value654 of values as Dynamic)
+            for (let savedFile of savedFiles as Dynamic)
               await getKvClient()
-                .delete(PlatformFileContentHandler_4(value654))
+                .delete(PlatformFileContentHandler_4(savedFile))
                 .catch((): Dynamic => false);
             return [];
           }
           deps.value98({
             artboards: [
               ...deps.value73.current.artboards.filter(
-                (input2?: Dynamic): Dynamic => !values.has(input2.file),
+                (item?: Dynamic): Dynamic => !savedFiles.has(item.file),
               ),
-              ...items2.map((input2?: Dynamic): Dynamic => input2.spec),
+              ...createdEntries.map((item?: Dynamic): Dynamic => item.spec),
             ],
           });
           deps.value396.current(
             {
               kind: "add",
-              entries: items2,
+              entries: createdEntries,
             },
-            values,
+            savedFiles,
             undefined,
-            options,
+            historyContext,
           );
-          return items2.map((input2?: Dynamic): Dynamic => input2.file);
+          return createdEntries.map((item?: Dynamic): Dynamic => item.file);
         },
         duplicate: async (
-          input?: Dynamic,
-          options?: Dynamic,
-          context?: Dynamic,
+          sources?: Dynamic,
+          historyContext?: Dynamic,
+          positions?: Dynamic,
         ): Promise<Dynamic> => {
-          let values: Dynamic = new Set(
+          let existingFiles: Dynamic = new Set(
               deps.value73.current.artboards.map(
-                (input2?: Dynamic): Dynamic => input2.file,
+                (item?: Dynamic): Dynamic => item.file,
               ),
             ),
-            items: Dynamic = [...callback16()],
-            value653: Dynamic = input.flatMap(
+            boards: Dynamic = [...currentPageBoards()],
+            copies: Dynamic = sources.flatMap(
               (
                 { file: file, title: title }: Dynamic,
-                options2?: Dynamic,
+                index?: Dynamic,
               ): Dynamic => {
-                let value654: Dynamic = items.find(
-                  (input2?: Dynamic): Dynamic => input2.file === file,
+                let sourceBoard: Dynamic = boards.find(
+                  (board?: Dynamic): Dynamic => board.file === file,
                 );
-                if (value654 === undefined) return [];
-                let value655: Dynamic = context?.[options2],
-                  value656: Dynamic =
-                    value655 !== undefined &&
-                    Number.isFinite(value655.x) &&
-                    Number.isFinite(value655.y)
+                if (sourceBoard === undefined) return [];
+                let requestedPosition: Dynamic = positions?.[index],
+                  position: Dynamic =
+                    requestedPosition !== undefined &&
+                    Number.isFinite(requestedPosition.x) &&
+                    Number.isFinite(requestedPosition.y)
                       ? {
-                          x: Math.round(value655.x),
-                          y: Math.round(value655.y),
+                          x: Math.round(requestedPosition.x),
+                          y: Math.round(requestedPosition.y),
                         }
-                      : nextArtboardPlacementPoint(items);
-                items.push({
-                  ...value654,
+                      : nextArtboardPlacementPoint(boards);
+                boards.push({
+                  ...sourceBoard,
                   file: file + "#copy",
-                  x: value656.x,
-                  y: value656.y,
+                  x: position.x,
+                  y: position.y,
                 });
                 return [
                   {
                     file: file,
-                    x: value656.x,
-                    y: value656.y,
+                    x: position.x,
+                    y: position.y,
                     title: title,
                   },
                 ];
               },
             );
-          return value653.length === 0
+          return copies.length === 0
             ? []
-            : (deps.value451.current(value653, [], options),
-              await callback15(
+            : (deps.value451.current(copies, [], historyContext),
+              await waitUntil(
                 (): Dynamic =>
                   deps.value73.current.artboards.length >=
-                  values.size + value653.length,
+                  existingFiles.size + copies.length,
               ),
               deps.value73.current.artboards
-                .map((input2?: Dynamic): Dynamic => input2.file)
-                .filter((input2?: Dynamic): Dynamic => !values.has(input2)));
+                .map((item?: Dynamic): Dynamic => item.file)
+                .filter((file?: Dynamic): Dynamic => !existingFiles.has(file)));
         },
         remove: async (
-          input?: Dynamic,
-          options?: Dynamic,
+          files?: Dynamic,
+          historyContext?: Dynamic,
         ): Promise<Dynamic> => {
-          let values: Dynamic = new Set(
-            input.filter(
-              (input2?: Dynamic): Dynamic =>
+          let targets: Dynamic = new Set(
+            files.filter(
+              (file?: Dynamic): Dynamic =>
                 deps.value73.current.artboards.some(
-                  (input3?: Dynamic): Dynamic => input3.file === input2,
+                  (board?: Dynamic): Dynamic => board.file === file,
                 ),
             ),
           );
-          return values.size === 0 ||
-            !deps.value450.current(values, undefined, options)
+          return targets.size === 0 ||
+            !deps.value450.current(targets, undefined, historyContext)
             ? 0
-            : (await callback15(
+            : (await waitUntil(
                 (): Dynamic =>
                   !deps.value73.current.artboards.some(
-                    (input2?: Dynamic): Dynamic => values.has(input2.file),
+                    (board?: Dynamic): Dynamic => targets.has(board.file),
                   ),
               ),
-              [...values].filter(
-                (input2?: Dynamic): Dynamic =>
+              [...targets].filter(
+                (file?: Dynamic): Dynamic =>
                   !deps.value73.current.artboards.some(
-                    (input3?: Dynamic): Dynamic => input3.file === input2,
+                    (board?: Dynamic): Dynamic => board.file === file,
                   ),
               ).length);
         },

@@ -39,90 +39,90 @@ function ArtboardErrorsPopover({
   onOpenChange: onOpenChange,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic = canEdit && !hosted,
-    value2: Dynamic = (0, react_sm.useId)(),
-    value3: Dynamic = (0, react_sm.useRef)(null),
-    value4: Dynamic = (0, react_sm.useRef)(0),
-    value5: Dynamic = (0, react_sm.useCallback)((): Dynamic => {
-      let value13: Dynamic = ++value4.current;
+  let canAskAgent: Dynamic = canEdit && !hosted,
+    listId: Dynamic = (0, react_sm.useId)(),
+    sendSessionRef: Dynamic = (0, react_sm.useRef)(null),
+    refreshTokenRef: Dynamic = (0, react_sm.useRef)(0),
+    refreshSendSession: Dynamic = (0, react_sm.useCallback)((): Dynamic => {
+      let refreshToken: Dynamic = ++refreshTokenRef.current;
       getAvailableClaudeSendSession().then(
-        (input?: Dynamic): Dynamic => {
-          value13 === value4.current && (value3.current = input);
+        (session?: Dynamic): Dynamic => {
+          refreshToken === refreshTokenRef.current && (sendSessionRef.current = session);
         },
       );
     }, []);
   (0, react_sm.useEffect)((): Dynamic => {
-    value && value5();
-  }, [value, value5]);
+    canAskAgent && refreshSendSession();
+  }, [canAskAgent, refreshSendSession]);
   (0, react_sm.useEffect)((): Dynamic => {
-    if (!value || !open) return;
-    value5();
-    let value13: Dynamic = setInterval(
-      value5,
+    if (!canAskAgent || !open) return;
+    refreshSendSession();
+    let refreshTimer: Dynamic = setInterval(
+      refreshSendSession,
       claudeSendSessionRefreshIntervalMs,
     );
-    return (): Dynamic => clearInterval(value13);
-  }, [value, open, value5]);
-  let value6: Dynamic = (0, react_sm.useRef)(true);
+    return (): Dynamic => clearInterval(refreshTimer);
+  }, [canAskAgent, open, refreshSendSession]);
+  let isMountedRef: Dynamic = (0, react_sm.useRef)(true);
   (0, react_sm.useEffect)(
     (): Dynamic => (
-      (value6.current = true),
+      (isMountedRef.current = true),
       (): Dynamic => {
-        value6.current = false;
-        value4.current++;
+        isMountedRef.current = false;
+        refreshTokenRef.current++;
       }
     ),
     [],
   );
-  let value7: Dynamic = (0, react_sm.useMemo)(
+  let problemEntries: Dynamic = (0, react_sm.useMemo)(
       (): Dynamic =>
         problems.map(
-          (input?: Dynamic): Dynamic => ({
-            file: input.path,
-            messages: input.messages,
+          (problem?: Dynamic): Dynamic => ({
+            file: problem.path,
+            messages: problem.messages,
           }),
         ),
       [problems],
     ),
-    value8: Dynamic = (0, react_sm.useMemo)(
-      (): Dynamic => JSON.stringify(value7),
-      [value7],
+    problemsKey: Dynamic = (0, react_sm.useMemo)(
+      (): Dynamic => JSON.stringify(problemEntries),
+      [problemEntries],
     ),
-    [value9, value10]: Dynamic = (0, react_sm.useState)(null),
-    value11: Dynamic = value9?.key === value8 ? value9.prompt : null,
-    callback: Dynamic = (): Dynamic => {
+    [fallbackState, setFallbackState]: Dynamic = (0, react_sm.useState)(null),
+    fallbackPrompt: Dynamic = fallbackState?.key === problemsKey ? fallbackState.prompt : null,
+    askAgent: Dynamic = (): Dynamic => {
       sendArtboardErrorsToClaude(
-        value7,
-        value3.current,
+        problemEntries,
+        sendSessionRef.current,
         canvasTitle,
-      ).then((input?: Dynamic): Dynamic => {
+      ).then((sendStatus?: Dynamic): Dynamic => {
         showEditorToast(
-          claudeSendStatusMessage(input),
+          claudeSendStatusMessage(sendStatus),
         );
-        value6.current &&
-          (value10(
-            input === "failed"
+        isMountedRef.current &&
+          (setFallbackState(
+            sendStatus === "failed"
               ? {
-                  key: value8,
+                  key: problemsKey,
                   prompt: artboardErrorsFallbackPrompt(
-                    value7,
+                    problemEntries,
                     canvasTitle,
                   ),
                 }
               : null,
           ),
-          input === "failed" && onOpenChange(true));
+          sendStatus === "failed" && onOpenChange(true));
       });
     },
-    value12: Dynamic = problems.reduce(
-      (input?: Dynamic, options?: Dynamic): Dynamic =>
-        input + options.messages.length,
+    errorCount: Dynamic = problems.reduce(
+      (total?: Dynamic, problem?: Dynamic): Dynamic =>
+        total + problem.messages.length,
       0,
     );
   return (
     <SessionStripPopover
       icon={"Warning"}
-      label={artboardErrorsUiLabels.pill(value12)}
+      label={artboardErrorsUiLabels.pill(errorCount)}
       tip={artboardErrorsUiLabels.pillTip(problems.length)}
       align={"end"}
       open={open}
@@ -139,44 +139,44 @@ function ArtboardErrorsPopover({
           {artboardErrorsUiLabels.title}
         </div>
         <ul
-          id={value2}
+          id={listId}
           className={
             "m-0 mt-1 flex max-h-64 list-none flex-col gap-1.5 overflow-y-auto p-0 whitespace-normal"
           }
           data-testid={"design-problems-list"}
         >
           {problems.map(
-            (input?: Dynamic): Dynamic =>
+            (problem?: Dynamic): Dynamic =>
               (() => {
-                const _Component = "li";
-                const _props = {
+                const ItemTag = "li";
+                const itemProps = {
                   children: [
                     <div className={"break-words text-body text-primary"}>
-                      {input.title}
+                      {problem.title}
                     </div>,
-                    input.messages.map(
-                      (input2?: Dynamic, options?: Dynamic): Dynamic => (
+                    problem.messages.map(
+                      (message?: Dynamic, index?: Dynamic): Dynamic => (
                         <div
-                          key={options}
+                          key={index}
                           className={
                             "select-text break-words font-mono text-[11px] leading-snug text-secondary"
                           }
                         >
-                          {input2}
+                          {message}
                         </div>
                       ),
                     ),
                   ],
                 } as const;
-                const _key = input.file;
-                return <_Component key={_key} {..._props} />;
+                const itemKey = problem.file;
+                return <ItemTag key={itemKey} {...itemProps} />;
               })(),
           )}
         </ul>
         {canEdit || hosted ? (null) : (<p className={"mt-2 whitespace-normal text-body text-secondary"}>
             {artboardErrorsUiLabels.viewOnly}
           </p>)}
-        {value11 !== null ? (<div
+        {fallbackPrompt !== null ? (<div
             className={"mt-2 flex flex-col gap-1"}
             data-testid={"design-problems-prompt"}
           >
@@ -188,17 +188,17 @@ function ArtboardErrorsPopover({
                 "max-h-32 select-text overflow-auto whitespace-pre-wrap break-words rounded-md bg-wash-1 p-2 text-[11px] leading-snug text-secondary"
               }
             >
-              {value11}
+              {fallbackPrompt}
             </pre>
           </div>) : (null)}
       </MenuMenuAssignValue.Header>
-      {value ? (<jsx_sp.Fragment>
+      {canAskAgent ? (<jsx_sp.Fragment>
           <MenuMenuAssignValue.Separator />
           <MenuMenuAssignValue.Item
             icon={"Chat"}
-            aria-describedby={value2}
+            aria-describedby={listId}
             data-testid={"design-problems-ask"}
-            onClick={callback}
+            onClick={askAgent}
           >
             {artboardErrorsUiLabels.ask}
           </MenuMenuAssignValue.Item>
@@ -208,101 +208,101 @@ function ArtboardErrorsPopover({
 }
 function useArtboardErrorNotices(
   problems?: Dynamic,
-  onShowProblems?: Dynamic,
-  options?: Dynamic,
+  problemEntries?: Dynamic,
+  noticeOptions?: Dynamic,
 ): Dynamic {
-  let [value, value2]: Dynamic = (0, react_Xd.useState)(
+  let [dismissedErrors, setDismissedErrors]: Dynamic = (0, react_Xd.useState)(
       (): Dynamic => new Map(),
     ),
-    value3: Dynamic = (0, react_Xd.useRef)(null),
-    value4: Dynamic = (0, react_Xd.useCallback)(
-      (input?: Dynamic, options2?: Dynamic): Dynamic => {
-        value3.current = elementContainsKeyboardFocus(
-          artboardErrorNoticeElement(input),
+    pendingFocusRef: Dynamic = (0, react_Xd.useRef)(null),
+    dismissNotice: Dynamic = (0, react_Xd.useCallback)(
+      (file?: Dynamic, messages?: Dynamic): Dynamic => {
+        pendingFocusRef.current = elementContainsKeyboardFocus(
+          artboardErrorNoticeElement(file),
         )
           ? {
-              file: input,
+              file: file,
               to: "chip",
             }
           : null;
-        value2(
-          (input2?: Dynamic): Dynamic =>
-            setDismissedArtboardErrors(input2, input, options2),
+        setDismissedErrors(
+          (dismissed?: Dynamic): Dynamic =>
+            setDismissedArtboardErrors(dismissed, file, messages),
         );
       },
       [],
     ),
-    value5: Dynamic = (0, react_Xd.useCallback)(
-      (input?: Dynamic): Dynamic => {
-        value3.current = elementContainsKeyboardFocus(
-          artboardErrorChipElement(input),
+    restoreNotice: Dynamic = (0, react_Xd.useCallback)(
+      (file?: Dynamic): Dynamic => {
+        pendingFocusRef.current = elementContainsKeyboardFocus(
+          artboardErrorChipElement(file),
         )
           ? {
-              file: input,
+              file: file,
               to: "notice",
             }
           : null;
-        value2(
-          (input2?: Dynamic): Dynamic =>
-            clearDismissedArtboardErrors(input2, input),
+        setDismissedErrors(
+          (dismissed?: Dynamic): Dynamic =>
+            clearDismissedArtboardErrors(dismissed, file),
         );
       },
       [],
     );
   (0, react_Xd.useLayoutEffect)((): Dynamic => {
-    let current: Dynamic = value3.current;
-    value3.current = null;
+    let pendingFocus: Dynamic = pendingFocusRef.current;
+    pendingFocusRef.current = null;
     if (
-      !current ||
+      !pendingFocus ||
       (document as Dynamic).activeElement !== (document as Dynamic).body
     )
       return;
-    let value11: Dynamic =
-      current.to === "chip"
-        ? artboardErrorChipElement(current.file)
-        : artboardErrorNoticeElement(current.file)?.querySelector("button");
-    value11 instanceof HTMLElement &&
-      value11.focus({
+    let focusTarget: Dynamic =
+      pendingFocus.to === "chip"
+        ? artboardErrorChipElement(pendingFocus.file)
+        : artboardErrorNoticeElement(pendingFocus.file)?.querySelector("button");
+    focusTarget instanceof HTMLElement &&
+      focusTarget.focus({
         preventScroll: true,
       });
-  }, [value]);
-  let value6: Dynamic = (0, react_Xd.useMemo)(
+  }, [dismissedErrors]);
+  let visibleChipProblems: Dynamic = (0, react_Xd.useMemo)(
       (): Dynamic =>
-        retainMatchingDismissedErrors(problems, value),
-      [problems, value],
+        retainMatchingDismissedErrors(problems, dismissedErrors),
+      [problems, dismissedErrors],
     ),
     {
-      canvasTitle: value7,
-      canAsk: value8,
-      large: value9,
-      onShowAll: value10,
-    }: Dynamic = options;
+      canvasTitle: canvasTitle,
+      canAsk: canAsk,
+      large: large,
+      onShowAll: onShowAll,
+    }: Dynamic = noticeOptions;
   return {
-    chipProblems: value6,
-    notice: (input?: Dynamic): Dynamic => {
-      let value11: Dynamic = onShowProblems.find(
-        (input2?: Dynamic): Dynamic => input2.file === input,
+    chipProblems: visibleChipProblems,
+    notice: (file?: Dynamic): Dynamic => {
+      let problem: Dynamic = problemEntries.find(
+        (item?: Dynamic): Dynamic => item.file === file,
       );
-      return value11 === undefined ||
+      return problem === undefined ||
         errorMessagesMatch(
-          value,
-          input,
-          value11.messages,
+          dismissedErrors,
+          file,
+          problem.messages,
         ) ? null : (
         <ArtboardErrorNotice
-          file={value11.file}
-          path={value11.path}
-          title={value11.title}
-          messages={value11.messages}
-          canvasTitle={value7}
-          canAsk={value8}
-          large={value9}
-          onDismiss={value4}
-          onShowAll={value10}
+          file={problem.file}
+          path={problem.path}
+          title={problem.title}
+          messages={problem.messages}
+          canvasTitle={canvasTitle}
+          canAsk={canAsk}
+          large={large}
+          onDismiss={dismissNotice}
+          onShowAll={onShowAll}
         />
       );
     },
-    restore: value5,
+    restore: restoreNotice,
   };
 }
 export {
@@ -327,12 +327,12 @@ export function installCanvasErrorNotices(): () => void {
       1,
     );
     artboardErrorsUiLabels = {
-      pill: (input?: Dynamic): Dynamic =>
-        input === 1 ? "1 error" : String(input) + " errors",
-      pillTip: (input?: Dynamic): Dynamic =>
-        input === 1
+      pill: (count?: Dynamic): Dynamic =>
+        count === 1 ? "1 error" : String(count) + " errors",
+      pillTip: (count?: Dynamic): Dynamic =>
+        count === 1
           ? uiMessage("canvas.errorNotices.showErrorsOn1Artboard")
-          : uiMessage("canvas.errorNotices.showErrorsOn") + String(input) + " artboards",
+          : uiMessage("canvas.errorNotices.showErrorsOn") + String(count) + " artboards",
       get title() { return uiMessage("canvas.errorNotices.artboardsWithErrors"); },
       // MineDesign: user-facing copy calls the agent "the agent", not Claude.
       ask: "Ask the agent to fix",
@@ -348,15 +348,15 @@ export function installCanvasErrorNotices(): () => void {
       1,
     );
     artboardErrorNoticeLabels = {
-      group: (input?: Dynamic): Dynamic => uiMessage("canvas.errorNotices.errorsOnArtboard") + input,
+      group: (artboardName?: Dynamic): Dynamic => uiMessage("canvas.errorNotices.errorsOnArtboard") + artboardName,
       list: "Show all artboards with errors",
-      dismiss: (input?: Dynamic): Dynamic =>
-        uiMessage("canvas.errorNotices.dismissErrorNoticeOnArtboard") + input,
+      dismiss: (artboardName?: Dynamic): Dynamic =>
+        uiMessage("canvas.errorNotices.dismissErrorNoticeOnArtboard") + artboardName,
       dismissTip: "Dismiss",
       refused: uiMessage("canvas.errorNotices.couldnTCopyThePrompt", { value1: String(artboardErrorsUiLabels.ask), value2: String(artboardErrorsUiLabels.title) }),
     };
-    stopErrorNoticePropagation = (input?: Dynamic): Dynamic =>
-      input.stopPropagation();
+    stopErrorNoticePropagation = (event?: Dynamic): Dynamic =>
+      event.stopPropagation();
     ArtboardErrorNotice = (0, react_Xd.memo)(function ({
       file: file,
       path: path,
@@ -368,56 +368,56 @@ export function installCanvasErrorNotices(): () => void {
       onDismiss: onDismiss,
       onShowAll: onShowAll,
     }: Dynamic): Dynamic {
-      let value: Dynamic = (0, react_Xd.useRef)(null),
-        value2: Dynamic = (0, react_Xd.useRef)(0),
-        value3: Dynamic = (0, react_Xd.useRef)(true),
-        value4: Dynamic = (0, react_Xd.useRef)(false),
-        value5: Dynamic = (0, react_Xd.useCallback)((): Dynamic => {
-          let value6: Dynamic = ++value2.current;
+      let sendSessionRef: Dynamic = (0, react_Xd.useRef)(null),
+        refreshTokenRef: Dynamic = (0, react_Xd.useRef)(0),
+        isMountedRef: Dynamic = (0, react_Xd.useRef)(true),
+        isSendingRef: Dynamic = (0, react_Xd.useRef)(false),
+        refreshSendSession: Dynamic = (0, react_Xd.useCallback)((): Dynamic => {
+          let refreshToken: Dynamic = ++refreshTokenRef.current;
           getAvailableClaudeSendSession().then(
-            (input?: Dynamic): Dynamic => {
-              value6 === value2.current && (value.current = input);
+            (session?: Dynamic): Dynamic => {
+              refreshToken === refreshTokenRef.current && (sendSessionRef.current = session);
             },
           );
         }, []);
       (0, react_Xd.useEffect)(
         (): Dynamic => (
-          (value3.current = true),
-          canAsk && value5(),
+          (isMountedRef.current = true),
+          canAsk && refreshSendSession(),
           (): Dynamic => {
-            value3.current = false;
-            value2.current++;
+            isMountedRef.current = false;
+            refreshTokenRef.current++;
           }
         ),
-        [canAsk, value5],
+        [canAsk, refreshSendSession],
       );
-      let callback: Dynamic = (): Dynamic => {
-        if (value4.current) return;
-        let value6: Dynamic = sendArtboardErrorsToClaude(
+      let askAgent: Dynamic = (): Dynamic => {
+        if (isSendingRef.current) return;
+        let sendPromise: Dynamic = sendArtboardErrorsToClaude(
           [
             {
               file: path,
               messages: messages,
             },
           ],
-          value.current,
+          sendSessionRef.current,
           canvasTitle,
         );
-        value4.current = true;
-        value6
-          .then((input?: Dynamic): Dynamic => {
+        isSendingRef.current = true;
+        sendPromise
+          .then((sendStatus?: Dynamic): Dynamic => {
             showEditorToast(
-              input === "failed"
+              sendStatus === "failed"
                 ? artboardErrorNoticeLabels.refused
-                : claudeSendStatusMessage(input),
+                : claudeSendStatusMessage(sendStatus),
             );
-            value3.current &&
-              (input === "failed"
+            isMountedRef.current &&
+              (sendStatus === "failed"
                 ? onShowAll()
-                : input !== "staged" && value5());
+                : sendStatus !== "staged" && refreshSendSession());
           })
           .finally((): Dynamic => {
-            value4.current = false;
+            isSendingRef.current = false;
           });
       };
       return (
@@ -468,9 +468,9 @@ export function installCanvasErrorNotices(): () => void {
                       ? "px-3 @max-[15rem]/foot:hidden"
                       : "@max-[10.5rem]/foot:hidden",
                   )}
-                  onPointerEnter={value5}
-                  onFocus={value5}
-                  onClick={callback}
+                  onPointerEnter={refreshSendSession}
+                  onFocus={refreshSendSession}
+                  onClick={askAgent}
                 >
                   {artboardErrorsUiLabels.ask}
                 </Button>)}
@@ -495,19 +495,19 @@ export function installCanvasErrorNotices(): () => void {
         </div>
       );
     });
-    artboardErrorChipElement = (input?: Dynamic): Dynamic =>
+    artboardErrorChipElement = (file?: Dynamic): Dynamic =>
       [...(document as Dynamic).querySelectorAll("[data-mega-artboard]")]
         .find(
           (element?: Dynamic): Dynamic =>
-            element.getAttribute("data-mega-artboard") === input,
+            element.getAttribute("data-mega-artboard") === file,
         )
         ?.querySelector('[data-mega-chrome="problem"]');
-    artboardErrorNoticeElement = (input?: Dynamic): Dynamic =>
+    artboardErrorNoticeElement = (file?: Dynamic): Dynamic =>
       [...(document as Dynamic).querySelectorAll("[data-mega-notice]")].find(
         (element?: Dynamic): Dynamic =>
-          element.getAttribute("data-mega-notice") === input,
+          element.getAttribute("data-mega-notice") === file,
       );
-    elementContainsKeyboardFocus = (input?: Dynamic): Dynamic =>
-      input?.contains((document as Dynamic).activeElement) === true;
+    elementContainsKeyboardFocus = (element?: Dynamic): Dynamic =>
+      element?.contains((document as Dynamic).activeElement) === true;
   };
 }

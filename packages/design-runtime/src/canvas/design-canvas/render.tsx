@@ -12,41 +12,41 @@ import { uiMessage } from "@minedesign/contracts/ui-messages";
 import { emptyCanvasSelectionFiles, existingThumbnailMessage, loosePiecePlaybackMessage, loosePieceRenameHint, oversizedThumbnailMessage, singleArtboardPngCopyMessage, singleArtboardSvgCopyMessage, staticArtboardPlaybackMessage } from "../design-canvas";
 
 /** 打开画板右键菜单时运行：生成复制（含 PNG/SVG）、重命名、设为缩略图、编辑、画布或全屏播放、新窗口打开、层级与删除等菜单项。 */
-export function buildArtboardContextMenu(deps: { readonly doc: Dynamic; readonly selectionRef: Dynamic; readonly value105: Dynamic; readonly value224: Dynamic; readonly value225: Dynamic; readonly value271: Dynamic; readonly value274: Dynamic; readonly value293: Dynamic; readonly value323: Dynamic; readonly value379: Dynamic; readonly value383: Dynamic; readonly value384: Dynamic; readonly value403: Dynamic; readonly value449: Dynamic; readonly value480: Dynamic; readonly value505: Dynamic; readonly value506: Dynamic; readonly value578: Dynamic; readonly value588: Dynamic; readonly value589: Dynamic; readonly value590: Dynamic; readonly value591: Dynamic; readonly value73: Dynamic; readonly value92: Dynamic }, input?: Dynamic, options: Dynamic = false): Dynamic {
-        let current4: Dynamic = deps.selectionRef.current,
-          value653: Dynamic = current4.artboards.has(input),
-          value654: Dynamic = value653
-            ? current4.artboards
-            : new Set([input]);
-        value653 || deps.value578(input, false);
-        let size: Dynamic = value654.size,
-          value655: Dynamic =
-            size > 1 ? " " + String(size) + " artboards" : "",
-          value656: Dynamic = deps.value224.current
+export function buildArtboardContextMenu(deps: { readonly doc: Dynamic; readonly selectionRef: Dynamic; readonly value105: Dynamic; readonly value224: Dynamic; readonly value225: Dynamic; readonly value271: Dynamic; readonly value274: Dynamic; readonly value293: Dynamic; readonly value323: Dynamic; readonly value379: Dynamic; readonly value383: Dynamic; readonly value384: Dynamic; readonly value403: Dynamic; readonly value449: Dynamic; readonly value480: Dynamic; readonly value505: Dynamic; readonly value506: Dynamic; readonly value578: Dynamic; readonly value588: Dynamic; readonly value589: Dynamic; readonly value590: Dynamic; readonly value591: Dynamic; readonly value73: Dynamic; readonly value92: Dynamic }, artboardFile?: Dynamic, renameOnCanvas: Dynamic = false): Dynamic {
+        let selection: Dynamic = deps.selectionRef.current,
+          isInSelection: Dynamic = selection.artboards.has(artboardFile),
+          targetFiles: Dynamic = isInSelection
+            ? selection.artboards
+            : new Set([artboardFile]);
+        isInSelection || deps.value578(artboardFile, false);
+        let targetCount: Dynamic = targetFiles.size,
+          countSuffix: Dynamic =
+            targetCount > 1 ? " " + String(targetCount) + " artboards" : "",
+          readOnlyReason: Dynamic = deps.value224.current
             ? undefined
             : ViewOnlyYouCanInspectThisMessage,
-          callback15: Dynamic = (): Dynamic => deps.value224.current && true,
-          current5: Dynamic = deps.value73.current,
-          value657: Dynamic = current5.artboards.find(
-            (input2?: Dynamic): Dynamic => input2.file === input,
+          canEdit: Dynamic = (): Dynamic => deps.value224.current && true,
+          manifest: Dynamic = deps.value73.current,
+          artboard: Dynamic = manifest.artboards.find(
+            (item?: Dynamic): Dynamic => item.file === artboardFile,
           ),
-          value658: Dynamic = deps.value271.current === input,
-          value659: Dynamic = value658
+          isPlaying: Dynamic = deps.value271.current === artboardFile,
+          playDisabledReason: Dynamic = isPlaying
             ? undefined
-            : value657?.frameless
+            : artboard?.frameless
               ? loosePiecePlaybackMessage
-              : value657?.is_interactive !== true
+              : artboard?.is_interactive !== true
                 ? staticArtboardPlaybackMessage
                 : undefined;
         return [
           {
-            get label() { return uiMessage("canvas.designCanvas.copy", { value1: String(value655) }); },
+            get label() { return uiMessage("canvas.designCanvas.copy", { value1: String(countSuffix) }); },
             hotkey: "cmd+c",
             disabledReason: undefined,
             onClick: (): Dynamic => {
               deps.value589(
-                value654,
-                value653 ? current4.notes : emptyCanvasSelectionFiles,
+                targetFiles,
+                isInSelection ? selection.notes : emptyCanvasSelectionFiles,
               );
             },
           },
@@ -56,19 +56,19 @@ export function buildArtboardContextMenu(deps: { readonly doc: Dynamic; readonly
                   get label() { return uiMessage("canvas.designCanvas.copyAsPNG"); },
                   disabledReason: deps.value480
                     ? DownloadsArenTAvailableToYouForMessage
-                    : size > 1
+                    : targetCount > 1
                       ? singleArtboardPngCopyMessage
                       : undefined,
-                  onClick: (): Dynamic => deps.value505(input),
+                  onClick: (): Dynamic => deps.value505(artboardFile),
                 },
                 {
                   get label() { return uiMessage("canvas.designCanvas.copyAsSVG"); },
                   disabledReason: deps.value480
                     ? DownloadsArenTAvailableToYouForMessage
-                    : size > 1
+                    : targetCount > 1
                       ? singleArtboardSvgCopyMessage
                       : undefined,
-                  onClick: (): Dynamic => deps.value506(input),
+                  onClick: (): Dynamic => deps.value506(artboardFile),
                 },
               ]
             : []),
@@ -76,41 +76,41 @@ export function buildArtboardContextMenu(deps: { readonly doc: Dynamic; readonly
           {
             label:
               KeyboardEditActionsCutCopyPasteConfig.duplicate.label +
-              value655,
+              countSuffix,
             hotkey:
               KeyboardEditActionsCutCopyPasteConfig.duplicate
                 .shortcut,
-            disabledReason: value656,
+            disabledReason: readOnlyReason,
             onClick: (): Dynamic => {
-              callback15() &&
+              canEdit() &&
                 deps.value323.current({
-                  files: value654,
-                  notes: value653
-                    ? current4.notes
+                  files: targetFiles,
+                  notes: isInSelection
+                    ? selection.notes
                     : emptyCanvasSelectionFiles,
                 });
             },
           },
           ...["front", "back"].map(
-            (input2?: Dynamic, options2?: Dynamic): Dynamic => ({
+            (order?: Dynamic, index?: Dynamic): Dynamic => ({
               label:
-                KeyboardEditActionsCutCopyPasteConfig[input2].label,
+                KeyboardEditActionsCutCopyPasteConfig[order].label,
               hotkey:
-                KeyboardEditActionsCutCopyPasteConfig[input2]
+                KeyboardEditActionsCutCopyPasteConfig[order]
                   .shortcut,
-              separatorBefore: options2 === 0,
+              separatorBefore: index === 0,
               disabledReason:
-                value656 ??
+                readOnlyReason ??
                 (reorderArtboardsOnPages(
-                  current5.artboards,
-                  value654,
-                  input2,
-                  current5.pages,
+                  manifest.artboards,
+                  targetFiles,
+                  order,
+                  manifest.pages,
                 ) === null
-                  ? stackingAnnouncement(input2, false)
+                  ? stackingAnnouncement(order, false)
                   : undefined),
               onClick: (): Dynamic => {
-                callback15() && deps.value403(value654, input2);
+                canEdit() && deps.value403(targetFiles, order);
               },
             }),
           ),
@@ -118,116 +118,116 @@ export function buildArtboardContextMenu(deps: { readonly doc: Dynamic; readonly
             get label() { return uiMessage("canvas.designCanvas.rename"); },
             separatorBefore: true,
             disabledReason:
-              value656 ??
-              (options && value657?.frameless
+              readOnlyReason ??
+              (renameOnCanvas && artboard?.frameless
                 ? loosePieceRenameHint
                 : undefined),
             onClick: (): Dynamic => {
-              if (!callback15()) return;
-              if (!options) return void deps.value588(input);
+              if (!canEdit()) return;
+              if (!renameOnCanvas) return void deps.value588(artboardFile);
               let scale: Dynamic = deps.value105.get().scale;
-              value657 &&
+              artboard &&
                 deps.value383.current({
-                  x: value657.x,
-                  y: value657.y - 32 / scale,
-                  w: Math.min(value657.w, 240 / scale),
+                  x: artboard.x,
+                  y: artboard.y - 32 / scale,
+                  w: Math.min(artboard.w, 240 / scale),
                   h: 40 / scale,
                 });
-              deps.value293.current?.(input);
+              deps.value293.current?.(artboardFile);
             },
           },
           {
             get label() { return uiMessage("canvas.designCanvas.setAsThumbnail"); },
             disabledReason: deps.value224.current
-              ? current5.cover === input
+              ? manifest.cover === artboardFile
                 ? existingThumbnailMessage
-                : value657 !== undefined &&
+                : artboard !== undefined &&
                     shouldStoreArtboardByReference(
-                      value657,
-                      deps.doc.content().files[input] ?? "",
+                      artboard,
+                      deps.doc.content().files[artboardFile] ?? "",
                     )
                   ? oversizedThumbnailMessage
                   : undefined
               : ViewOnlyYouCanInspectThisMessage,
             onClick: (): Dynamic => {
-              callback15() && deps.value590(input);
+              canEdit() && deps.value590(artboardFile);
             },
           },
           {
-            get label() { return value658 ? (deps.value224.current ? (uiMessage("canvas.designCanvas.edit")) : ("Stop")) : (uiMessage("canvas.designCanvas.playOnCanvas")); },
-            disabledReason: value659,
+            get label() { return isPlaying ? (deps.value224.current ? (uiMessage("canvas.designCanvas.edit")) : ("Stop")) : (uiMessage("canvas.designCanvas.playOnCanvas")); },
+            disabledReason: playDisabledReason,
             onClick: (): Dynamic => {
-              value658
+              isPlaying
                 ? deps.value224.current || deps.value225.current
-                  ? deps.value274.current(input)
+                  ? deps.value274.current(artboardFile)
                   : deps.value384(null)
-                : deps.value384(input);
+                : deps.value384(artboardFile);
             },
           },
           {
-            get label() { return value657?.is_interactive === true && !value657.frameless ? (uiMessage("canvas.designCanvas.playFullScreen")) : (uiMessage("canvas.designCanvas.openFullWindow")); },
+            get label() { return artboard?.is_interactive === true && !artboard.frameless ? (uiMessage("canvas.designCanvas.playFullScreen")) : (uiMessage("canvas.designCanvas.openFullWindow")); },
             disabledReason: undefined,
             onClick: (): Dynamic => {
-              deps.value379.current(input);
+              deps.value379.current(artboardFile);
             },
           },
           {
-            get label() { return uiMessage("canvas.designCanvas.delete2", { value1: String(value655) }); },
+            get label() { return uiMessage("canvas.designCanvas.delete2", { value1: String(countSuffix) }); },
             separatorBefore: true,
             danger: true,
-            ...(value653 &&
-            (current4.notes.size > 0 || current4.elements.size > 0)
+            ...(isInSelection &&
+            (selection.notes.size > 0 || selection.elements.size > 0)
               ? null
               : {
                   hotkey: "backspace",
                 }),
-            disabledReason: value656,
+            disabledReason: readOnlyReason,
             onClick: (): Dynamic => {
-              callback15() && deps.value449(value654);
+              canEdit() && deps.value449(targetFiles);
             },
           },
         ];
       }
 
 /** 打开画布说明或图形右键菜单时运行：生成复制、水平/垂直翻转与删除等菜单项，只读时禁用。 */
-export function buildAnnotationContextMenu(deps: { readonly selectionRef: Dynamic; readonly value150: Dynamic; readonly value152: Dynamic; readonly value224: Dynamic; readonly value314: Dynamic; readonly value323: Dynamic; readonly value459: Dynamic; readonly value46: Dynamic; readonly value589: Dynamic; readonly value591: Dynamic; readonly value73: Dynamic }, input?: Dynamic): Dynamic {
-        let current4: Dynamic = deps.selectionRef.current,
-          value653: Dynamic = current4.notes.has(input),
-          state: Dynamic = {
+export function buildAnnotationContextMenu(deps: { readonly selectionRef: Dynamic; readonly value150: Dynamic; readonly value152: Dynamic; readonly value224: Dynamic; readonly value314: Dynamic; readonly value323: Dynamic; readonly value459: Dynamic; readonly value46: Dynamic; readonly value589: Dynamic; readonly value591: Dynamic; readonly value73: Dynamic }, annotationId?: Dynamic): Dynamic {
+        let selection: Dynamic = deps.selectionRef.current,
+          isInSelection: Dynamic = selection.notes.has(annotationId),
+          targetSelection: Dynamic = {
             files: emptyBoardSelection.files,
-            notes: value653 ? current4.notes : new Set([input]),
+            notes: isInSelection ? selection.notes : new Set([annotationId]),
           };
-        !value653 && deps.value224.current && deps.value314(state, "replace");
-        let size: Dynamic = state.notes.size,
-          value654: Dynamic = value653
-            ? current4.artboards
+        !isInSelection && deps.value224.current && deps.value314(targetSelection, "replace");
+        let noteCount: Dynamic = targetSelection.notes.size,
+          targetFiles: Dynamic = isInSelection
+            ? selection.artboards
             : emptyCanvasSelectionFiles,
-          value655: Dynamic = size + value654.size,
-          value656: Dynamic = (deps.value73.current.annotations ?? []).filter(
-            (input2?: Dynamic): Dynamic => state.notes.has(input2.id),
+          objectCount: Dynamic = noteCount + targetFiles.size,
+          targetAnnotations: Dynamic = (deps.value73.current.annotations ?? []).filter(
+            (annotation?: Dynamic): Dynamic => targetSelection.notes.has(annotation.id),
           ),
-          callback15: Dynamic = (input2?: Dynamic): Dynamic => {
-            if (value653 && current4.elements.size > 0) return;
-            let value657: Dynamic = flipAnnotations(
-              value656,
-              input2,
+          flipRefusal: Dynamic = (axis?: Dynamic): Dynamic => {
+            if (isInSelection && selection.elements.size > 0) return;
+            let flipResult: Dynamic = flipAnnotations(
+              targetAnnotations,
+              axis,
             );
-            return value657.flips.length > 0 ? undefined : value657.refused;
+            return flipResult.flips.length > 0 ? undefined : flipResult.refused;
           };
         return [
           {
-            get label() { return uiMessage("canvas.designCanvas.copy", { value1: String(value655 > 1 ? " " + String(value655) + " objects" : "") }); },
+            get label() { return uiMessage("canvas.designCanvas.copy", { value1: String(objectCount > 1 ? " " + String(objectCount) + " objects" : "") }); },
             hotkey: "cmd+c",
             disabledReason: deps.value224.current
               ? undefined
               : ViewOnlyYouCanInspectThisMessage,
             onClick: (): Dynamic => {
-              deps.value224.current && deps.value589(value654, state.notes);
+              deps.value224.current && deps.value589(targetFiles, targetSelection.notes);
             },
           },
           deps.value591(),
           {
-            get label() { return KeyboardEditActionsCutCopyPasteConfig.duplicate.label + value655 > 1 ? " " + String(value655) + " objects" : ""; },
+            get label() { return KeyboardEditActionsCutCopyPasteConfig.duplicate.label + objectCount > 1 ? " " + String(objectCount) + " objects" : ""; },
             hotkey:
               KeyboardEditActionsCutCopyPasteConfig.duplicate
                 .shortcut,
@@ -237,38 +237,38 @@ export function buildAnnotationContextMenu(deps: { readonly selectionRef: Dynami
             onClick: (): Dynamic => {
               deps.value224.current &&
                 deps.value323.current({
-                  files: value654,
-                  notes: state.notes,
+                  files: targetFiles,
+                  notes: targetSelection.notes,
                 });
             },
           },
-          ...(!(value653 && current4.elements.size > 0) &&
-          value656.every(
-            (source?: Dynamic): Dynamic => source.kind === undefined,
+          ...(!(isInSelection && selection.elements.size > 0) &&
+          targetAnnotations.every(
+            (annotation?: Dynamic): Dynamic => annotation.kind === undefined,
           )
             ? []
             : ["horizontal", "vertical"]
           ).map(
-            (input2?: Dynamic, options?: Dynamic): Dynamic => ({
-              get label() { return uiMessage("canvas.designCanvas.flip2", { value1: String(input2) }); },
-              separatorBefore: options === 0,
-              hotkey: input2 === "horizontal" ? "shift+h" : "shift+v",
+            (axis?: Dynamic, index?: Dynamic): Dynamic => ({
+              get label() { return uiMessage("canvas.designCanvas.flip2", { value1: String(axis) }); },
+              separatorBefore: index === 0,
+              hotkey: axis === "horizontal" ? "shift+h" : "shift+v",
               disabledReason: deps.value224.current
-                ? ((value653 ? deps.value150() : undefined) ?? callback15(input2))
+                ? ((isInSelection ? deps.value150() : undefined) ?? flipRefusal(axis))
                 : ViewOnlyYouCanInspectThisMessage,
               onClick: (): Dynamic => {
-                value653
-                  ? deps.value152.current(input2)
-                  : deps.value46.current(state.notes, input2);
+                isInSelection
+                  ? deps.value152.current(axis)
+                  : deps.value46.current(targetSelection.notes, axis);
               },
             }),
           ),
           {
-            get label() { return uiMessage("canvas.designCanvas.delete2", { value1: String(size > 1 ? " " + String(size) + " objects" : "") }); },
+            get label() { return uiMessage("canvas.designCanvas.delete2", { value1: String(noteCount > 1 ? " " + String(noteCount) + " objects" : "") }); },
             separatorBefore: true,
             danger: true,
-            ...(value653 &&
-            (current4.artboards.size > 0 || current4.elements.size > 0)
+            ...(isInSelection &&
+            (selection.artboards.size > 0 || selection.elements.size > 0)
               ? null
               : {
                   hotkey: "backspace",
@@ -277,7 +277,7 @@ export function buildAnnotationContextMenu(deps: { readonly selectionRef: Dynami
               ? undefined
               : ViewOnlyYouCanInspectThisMessage,
             onClick: (): Dynamic => {
-              deps.value224.current && deps.value459.current(state);
+              deps.value224.current && deps.value459.current(targetSelection);
             },
           },
         ];

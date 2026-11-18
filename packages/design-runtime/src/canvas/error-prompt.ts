@@ -12,16 +12,16 @@ var maxArtboardErrorPromptLength: Dynamic;
 var maxArtboardErrorFileLabelLength: Dynamic;
 function artboardErrorsPromptText(problems?: Dynamic): Dynamic {
   return problems.flatMap(
-    (input?: Dynamic): Dynamic =>
-      input.messages.map(
-        (input2?: Dynamic): Dynamic =>
-          (encodeArtboardSelectionPath(input.file) ??
+    (problem?: Dynamic): Dynamic =>
+      problem.messages.map(
+        (message?: Dynamic): Dynamic =>
+          (encodeArtboardSelectionPath(problem.file) ??
             sanitizeDesignContextText(
-              input.file,
+              problem.file,
               maxArtboardErrorFileLabelLength,
             )) +
           ": " +
-          input2,
+          message,
       ),
   ).join(`
 `);
@@ -38,8 +38,8 @@ function artboardErrorsFallbackPrompt(
   problems?: Dynamic,
   canvasTitle: Dynamic = "",
 ): Dynamic {
-  let value: Dynamic = artboardErrorsPromptText(problems),
-    value2: Dynamic =
+  let promptText: Dynamic = artboardErrorsPromptText(problems),
+    titleSection: Dynamic =
       canvasTitle.trim() !== ""
         ? `
 
@@ -50,8 +50,8 @@ The canvas\u2019s title, from its saved document:
             sanitizeDesignDataLabel(canvasTitle),
           )
         : "",
-    value3: Dynamic =
-      value.length > maxArtboardErrorPromptLength
+    truncationNote: Dynamic =
+      promptText.length > maxArtboardErrorPromptLength
         ? `
 
 Only the first ` +
@@ -60,15 +60,15 @@ Only the first ` +
         : "";
   return (
     artboardErrorsFixRequest("I") +
-    value2 +
+    titleSection +
     `
 
 ` +
     wrapUntrustedDesignData(
       "error text (it can quote the artboards\u2019 own content)",
-      truncateUtf16Safely(value, maxArtboardErrorPromptLength),
+      truncateUtf16Safely(promptText, maxArtboardErrorPromptLength),
     ) +
-    value3
+    truncationNote
   );
 }
 function sendArtboardErrorsToClaude(
@@ -76,9 +76,9 @@ function sendArtboardErrorsToClaude(
   session?: Dynamic,
   canvasTitle: Dynamic = "",
 ): Dynamic {
-  let value: Dynamic = artboardErrorsFallbackPrompt(problems, canvasTitle);
+  let fallbackPrompt: Dynamic = artboardErrorsFallbackPrompt(problems, canvasTitle);
   return session === null
-    ? sendOrCopyClaudePrompt(value)
+    ? sendOrCopyClaudePrompt(fallbackPrompt)
     : sendDesignSelectionToClaude(
         {
           selection: {
@@ -86,7 +86,7 @@ function sendArtboardErrorsToClaude(
             text: artboardErrorsPromptText(problems),
           },
           request: artboardErrorsFixRequest(uiMessage("canvas.errorPrompt.theViewer")),
-          fallbackPrompt: value,
+          fallbackPrompt: fallbackPrompt,
         },
         session,
       );

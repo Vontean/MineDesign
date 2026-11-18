@@ -26,16 +26,16 @@ export function installCanvasFocusOverlay(): () => void {
       keys: keys,
       yieldsEscape: yieldsEscape,
     }: Dynamic): Dynamic {
-      let callback: Dynamic = (): Dynamic =>
+      let activateDefault: Dynamic = (): Dynamic =>
           keys
             ? inside
               ? keys.onDescend(file)
               : keys.onEnter(file)
             : onActivate(file, false),
-        value: Dynamic = buttonKeyboardActivation(
-          (input?: Dynamic): Dynamic => {
+        keyboardActivation: Dynamic = buttonKeyboardActivation(
+          (keyEvent?: Dynamic): Dynamic => {
             (inside && keys) ||
-              onActivate(file, input.shiftKey || input.metaKey);
+              onActivate(file, keyEvent.shiftKey || keyEvent.metaKey);
           },
         );
       return (
@@ -58,7 +58,7 @@ export function installCanvasFocusOverlay(): () => void {
             if (event.key === " ") {
               inside && keys
                 ? !event.altKey && !event.ctrlKey && event.preventDefault()
-                : value.onKeyDown(event);
+                : keyboardActivation.onKeyDown(event);
               return;
             }
             if (event.ctrlKey && !(inside && keys)) return;
@@ -73,7 +73,7 @@ export function installCanvasFocusOverlay(): () => void {
                     : keys.onDescend(file)
                 : event.shiftKey || event.metaKey
                   ? onActivate(file, true)
-                  : callback();
+                  : activateDefault();
               return;
             }
             if (!inside || !keys) return;
@@ -82,10 +82,10 @@ export function installCanvasFocusOverlay(): () => void {
               keys.onStep(file, event.shiftKey ? "prev" : "next");
               return;
             }
-            let value2: Dynamic =
+            let hasModifierKey: Dynamic =
               event.altKey || event.metaKey || event.ctrlKey;
             if (
-              !value2 &&
+              !hasModifierKey &&
               (event.key === "Home" || event.key === "End") &&
               !event.shiftKey
             ) {
@@ -94,7 +94,7 @@ export function installCanvasFocusOverlay(): () => void {
               return;
             }
             if (
-              !value2 &&
+              !hasModifierKey &&
               (event.key === "ArrowDown" ||
                 event.key === "ArrowRight" ||
                 event.key === "ArrowUp" ||
@@ -109,7 +109,7 @@ export function installCanvasFocusOverlay(): () => void {
               );
               return;
             }
-            if (!value2 && event.key === "Escape" && !event.shiftKey) {
+            if (!hasModifierKey && event.key === "Escape" && !event.shiftKey) {
               if (yieldsEscape?.()) return;
               event.preventDefault();
               event.repeat || keys.onLeave(file);
@@ -119,13 +119,13 @@ export function installCanvasFocusOverlay(): () => void {
               keys.holdKey(file) &&
               (event.preventDefault(), event.stopPropagation());
           }}
-          onKeyUp={value.onKeyUp}
-          onBlur={value.onBlur}
-          onClick={(input?: Dynamic): Dynamic => {
-            input.detail === 0 &&
-              (input.shiftKey || input.metaKey
+          onKeyUp={keyboardActivation.onKeyUp}
+          onBlur={keyboardActivation.onBlur}
+          onClick={(clickEvent?: Dynamic): Dynamic => {
+            clickEvent.detail === 0 &&
+              (clickEvent.shiftKey || clickEvent.metaKey
                 ? onActivate(file, true)
-                : callback());
+                : activateDefault());
           }}
         >
           {title}

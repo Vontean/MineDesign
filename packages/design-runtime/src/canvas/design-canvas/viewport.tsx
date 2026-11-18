@@ -11,180 +11,180 @@ import { zoomViewportAtPoint } from "../pan-zoom";
 import { canvasPanUsageWindowMs, canvasZoomUsageWindow, minimumCanvasZoomUsage } from "../design-canvas";
 
 /** 画布平移或缩放手势时运行（onPanZoom）：按缩放上下限计算以指针为中心的缩放或平移后的视口，并写入视口存储。 */
-export function applyPanZoomGesture(deps: { readonly focusedFileRef: Dynamic; readonly value105: Dynamic; readonly value106: Dynamic; readonly value224: Dynamic; readonly value226: Dynamic; readonly value271: Dynamic; readonly value345: Dynamic; readonly value67: Dynamic }, input?: Dynamic, options?: Dynamic): Dynamic {
+export function applyPanZoomGesture(deps: { readonly focusedFileRef: Dynamic; readonly value105: Dynamic; readonly value106: Dynamic; readonly value224: Dynamic; readonly value226: Dynamic; readonly value271: Dynamic; readonly value345: Dynamic; readonly value67: Dynamic }, artboardFile?: Dynamic, gesture?: Dynamic): Dynamic {
         if (deps.value345.current) return false;
-        let value653: Dynamic =
+        let canGesture: Dynamic =
             !deps.value224.current ||
-            input === deps.focusedFileRef.current ||
-            input === deps.value271.current,
-          value654: Dynamic = deps.value67.artboards.find(
-            (input2?: Dynamic): Dynamic => input2.file === input,
+            artboardFile === deps.focusedFileRef.current ||
+            artboardFile === deps.value271.current,
+          artboard: Dynamic = deps.value67.artboards.find(
+            (item?: Dynamic): Dynamic => item.file === artboardFile,
           );
-        if (!value653 || !value654) return false;
-        let current4: Dynamic = deps.value226.current;
-        current4.dx += options.dx;
-        current4.dy += options.dy;
-        options.pinch &&
-          ((current4.pinch = true),
-          (current4.dz += options.dz),
-          options.dz !== 0 && (current4.zoomMsgs += 1),
-          (current4.px =
-            value654.x + Math.max(0, Math.min(value654.w, options.x))),
-          (current4.py =
-            value654.y + Math.max(0, Math.min(value654.h, options.y))));
-        current4.raf ||
-          (current4.raf = requestAnimationFrame((): Dynamic => {
-            current4.raf = 0;
-            let value655: Dynamic = performance.now();
-            value655 - current4.winStart > 1e3 &&
-              ((current4.winStart = value655),
-              (current4.winPan = 0),
-              (current4.winZoom = 0));
-            let value656: Dynamic =
-                Math.abs(current4.dx) + Math.abs(current4.dy),
-              value657: Dynamic =
-                value656 > 0
+        if (!canGesture || !artboard) return false;
+        let gestureState: Dynamic = deps.value226.current;
+        gestureState.dx += gesture.dx;
+        gestureState.dy += gesture.dy;
+        gesture.pinch &&
+          ((gestureState.pinch = true),
+          (gestureState.dz += gesture.dz),
+          gesture.dz !== 0 && (gestureState.zoomMsgs += 1),
+          (gestureState.px =
+            artboard.x + Math.max(0, Math.min(artboard.w, gesture.x))),
+          (gestureState.py =
+            artboard.y + Math.max(0, Math.min(artboard.h, gesture.y))));
+        gestureState.raf ||
+          (gestureState.raf = requestAnimationFrame((): Dynamic => {
+            gestureState.raf = 0;
+            let now: Dynamic = performance.now();
+            now - gestureState.winStart > 1e3 &&
+              ((gestureState.winStart = now),
+              (gestureState.winPan = 0),
+              (gestureState.winZoom = 0));
+            let panMagnitude: Dynamic =
+                Math.abs(gestureState.dx) + Math.abs(gestureState.dy),
+              panFactor: Dynamic =
+                panMagnitude > 0
                   ? Math.min(
                       1,
-                      Math.max(0, canvasPanUsageWindowMs - current4.winPan) /
-                        value656,
+                      Math.max(0, canvasPanUsageWindowMs - gestureState.winPan) /
+                        panMagnitude,
                     )
                   : 0,
-              value658: Dynamic = current4.dx * value657,
-              value659: Dynamic = current4.dy * value657;
-            current4.winPan += Math.abs(value658) + Math.abs(value659);
+              panDx: Dynamic = gestureState.dx * panFactor,
+              panDy: Dynamic = gestureState.dy * panFactor;
+            gestureState.winPan += Math.abs(panDx) + Math.abs(panDy);
             let scale: Dynamic = deps.value105.get().scale,
-              value660: Dynamic = current4.pinch
+              desiredZoomLog: Dynamic = gestureState.pinch
                 ? Math.log(
                     Math.max(
                       viewportScaleLimits.minScale,
                       Math.min(
                         viewportScaleLimits.maxScale,
-                        scale * Math.exp(current4.dz),
+                        scale * Math.exp(gestureState.dz),
                       ),
                     ) / scale,
                   )
                 : 0,
-              value661: Dynamic = Math.max(
+              zoomBudget: Dynamic = Math.max(
                 0,
-                canvasZoomUsageWindow - current4.winZoom,
+                canvasZoomUsageWindow - gestureState.winZoom,
               ),
-              value662: Dynamic = Math.max(
-                -value661,
-                Math.min(value661, value660),
+              appliedZoomLog: Dynamic = Math.max(
+                -zoomBudget,
+                Math.min(zoomBudget, desiredZoomLog),
               );
-            current4.winZoom += Math.max(
-              Math.abs(value662),
-              current4.zoomMsgs * minimumCanvasZoomUsage,
+            gestureState.winZoom += Math.max(
+              Math.abs(appliedZoomLog),
+              gestureState.zoomMsgs * minimumCanvasZoomUsage,
             );
-            let pinch: Dynamic = current4.pinch,
-              px2: Dynamic = current4.px,
-              py2: Dynamic = current4.py,
-              value663: Dynamic = deps.value106.current?.clientWidth ?? 0,
-              value664: Dynamic = deps.value106.current?.clientHeight ?? 0;
-            current4.dx = 0;
-            current4.dy = 0;
-            current4.dz = 0;
-            current4.zoomMsgs = 0;
-            current4.pinch = false;
-            deps.value105.set((input2?: Dynamic): Dynamic => {
-              let value665: Dynamic = input2;
-              if (pinch && value662 !== 0) {
-                let value666: Dynamic = Math.max(
+            let isPinch: Dynamic = gestureState.pinch,
+              pinchX: Dynamic = gestureState.px,
+              pinchY: Dynamic = gestureState.py,
+              viewWidth: Dynamic = deps.value106.current?.clientWidth ?? 0,
+              viewHeight: Dynamic = deps.value106.current?.clientHeight ?? 0;
+            gestureState.dx = 0;
+            gestureState.dy = 0;
+            gestureState.dz = 0;
+            gestureState.zoomMsgs = 0;
+            gestureState.pinch = false;
+            deps.value105.set((currentView?: Dynamic): Dynamic => {
+              let nextView: Dynamic = currentView;
+              if (isPinch && appliedZoomLog !== 0) {
+                let anchorX: Dynamic = Math.max(
                     0,
-                    Math.min(value663, (px2 - value665.x) * value665.scale),
+                    Math.min(viewWidth, (pinchX - nextView.x) * nextView.scale),
                   ),
-                  value667: Dynamic = Math.max(
+                  anchorY: Dynamic = Math.max(
                     0,
-                    Math.min(value664, (py2 - value665.y) * value665.scale),
+                    Math.min(viewHeight, (pinchY - nextView.y) * nextView.scale),
                   );
-                value665 = zoomViewportAtPoint(
-                  value665,
-                  value666,
-                  value667,
-                  Math.exp(value662),
+                nextView = zoomViewportAtPoint(
+                  nextView,
+                  anchorX,
+                  anchorY,
+                  Math.exp(appliedZoomLog),
                   viewportScaleLimits,
                 );
               }
-              (value658 !== 0 || value659 !== 0) &&
-                (value665 = panViewport(
-                  value665,
-                  -value658,
-                  -value659,
+              (panDx !== 0 || panDy !== 0) &&
+                (nextView = panViewport(
+                  nextView,
+                  -panDx,
+                  -panDy,
                 ));
-              return value665;
+              return nextView;
             });
           }));
         return true;
       }
 
 /** 打开画布位置链接（页面、画板、播放或窗口）时运行：解析目标动作，切换页面、聚焦或播放画板，并恢复对应视口。 */
-export function navigateToCanvasPlace(deps: { readonly abandonSelectionGesture: Dynamic; readonly setSelection: Dynamic; readonly value105: Dynamic; readonly value2: Dynamic; readonly value224: Dynamic; readonly value225: Dynamic; readonly value273: Dynamic; readonly value275: Dynamic; readonly value284: Dynamic; readonly value291: Dynamic; readonly value298: Dynamic; readonly value310: Dynamic; readonly value346: Dynamic; readonly value380: Dynamic; readonly value559: Dynamic; readonly value563: Dynamic; readonly value62: Dynamic; readonly value73: Dynamic; readonly value80: Dynamic }, input?: Dynamic, options: Dynamic = false): Dynamic {
-    let value653: Dynamic = resolveCanvasPlaceAction(
-      input,
+export function navigateToCanvasPlace(deps: { readonly abandonSelectionGesture: Dynamic; readonly setSelection: Dynamic; readonly value105: Dynamic; readonly value2: Dynamic; readonly value224: Dynamic; readonly value225: Dynamic; readonly value273: Dynamic; readonly value275: Dynamic; readonly value284: Dynamic; readonly value291: Dynamic; readonly value298: Dynamic; readonly value310: Dynamic; readonly value346: Dynamic; readonly value380: Dynamic; readonly value559: Dynamic; readonly value563: Dynamic; readonly value62: Dynamic; readonly value73: Dynamic; readonly value80: Dynamic }, placeLink?: Dynamic, isRestoring: Dynamic = false): Dynamic {
+    let placeAction: Dynamic = resolveCanvasPlaceAction(
+      placeLink,
       deps.value73.current,
       {
         filling: deps.value346.current,
         plays: true,
         pageId: deps.value80.current,
         mayFocus: deps.value224.current || deps.value225.current || false,
-        restoring: options,
+        restoring: isRestoring,
       },
     );
-    if (value653 === null) return null;
+    if (placeAction === null) return null;
     deps.value563.current?.abort();
-    if (value653.do === "nothing") return value653.lands;
-    let callback15: Dynamic = (): Dynamic => {
+    if (placeAction.do === "nothing") return placeAction.lands;
+    let applyPlaceAction: Dynamic = (): Dynamic => {
         deps.value284(false);
         deps.abandonSelectionGesture();
         deps.value62();
-        let callback16: Dynamic = (input2?: Dynamic): Dynamic => {
-          let value655: Dynamic = recallCanvasView(input2);
-          value655 !== undefined &&
+        let restoreView: Dynamic = (pageId?: Dynamic): Dynamic => {
+          let savedView: Dynamic = recallCanvasView(pageId);
+          savedView !== undefined &&
             ((deps.value291.current = false),
             (deps.value310.current = true),
-            deps.value105.set(value655, true));
+            deps.value105.set(savedView, true));
         };
-        value653.do === "play"
-          ? deps.value380(value653.file)
-          : value653.do === "page"
-            ? value653.id === deps.value80.current
+        placeAction.do === "play"
+          ? deps.value380(placeAction.file)
+          : placeAction.do === "page"
+            ? placeAction.id === deps.value80.current
               ? deps.setSelection(emptyCanvasSelection)
-              : (deps.value298(value653.id),
-                value653.camera || callback16(value653.id))
-            : value653.do === "window"
-              ? value653.page !== deps.value80.current
-                ? deps.value298(value653.page, value653.file)
+              : (deps.value298(placeAction.id),
+                placeAction.camera || restoreView(placeAction.id))
+            : placeAction.do === "window"
+              ? placeAction.page !== deps.value80.current
+                ? deps.value298(placeAction.page, placeAction.file)
                 : (deps.setSelection(emptyCanvasSelection),
-                  deps.value559(value653.file),
-                  deps.value273(value653.file))
-              : (value653.page !== deps.value80.current
+                  deps.value559(placeAction.file),
+                  deps.value273(placeAction.file))
+              : (placeAction.page !== deps.value80.current
                   ? (deps.value298(
-                      value653.page,
-                      value653.focus ? value653.file : undefined,
+                      placeAction.page,
+                      placeAction.focus ? placeAction.file : undefined,
                     ),
-                    value653.camera || callback16(value653.page))
-                  : (value653.focus && deps.value273(value653.file),
-                    value653.camera && deps.value559(value653.file)),
+                    placeAction.camera || restoreView(placeAction.page))
+                  : (placeAction.focus && deps.value273(placeAction.file),
+                    placeAction.camera && deps.value559(placeAction.file)),
                 deps.setSelection(
                   selectionFromArtboards(
-                    new Set([value653.file]),
+                    new Set([placeAction.file]),
                   ),
                 ));
       },
-      value654: Dynamic =
-        value653.do === "window" ||
-        value653.do === "play" ||
-        (value653.do === "page" ? value653.id : value653.page) !==
+      needsPageChange: Dynamic =
+        placeAction.do === "window" ||
+        placeAction.do === "play" ||
+        (placeAction.do === "page" ? placeAction.id : placeAction.page) !==
           deps.value80.current;
-    value654 && initializeDesignKeyboardBindings();
+    needsPageChange && initializeDesignKeyboardBindings();
     let controller: Dynamic = new AbortController();
     deps.value563.current = controller;
     runFindRevealAfterSettle(
-      value654 && deps.value2.current?.() === true,
+      needsPageChange && deps.value2.current?.() === true,
       controller.signal,
       deps.value275,
-      callback15,
+      applyPlaceAction,
     );
-    return value653.lands;
+    return placeAction.lands;
   }

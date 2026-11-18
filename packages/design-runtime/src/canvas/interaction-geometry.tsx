@@ -4,9 +4,9 @@ import {
 } from "../runtime-types";
 import { load_react_jsx_runtime } from "../dependencies";
 import { fitPenCurve, flattenCubicPath, penPathBounds } from "../editor/geometry/pen";
-import { InspectorColorPickResolvedValue_2 } from "../editor/inspector/color-pick";
+import { InspectorColorPickResolvedValue_2 as isMetaPrimaryKey } from "../editor/inspector/color-pick";
 import { toModuleNamespace } from "../module-helpers";
-import { PlatformFileContentConstant_16, PlatformFileContentConstant_19, PlatformFileContentLimit_6, PlatformFileContentLimit_7, PlatformFileContentTrim_2 } from "../platform/file-content";
+import { PlatformFileContentConstant_16 as minArtboardEdge, PlatformFileContentConstant_19 as minPenPathExtent, PlatformFileContentLimit_6 as maxArtboardEdge, PlatformFileContentLimit_7 as maxPenPathCoordinates, PlatformFileContentTrim_2 } from "../platform/file-content";
 
 var jsx_Nn: Dynamic;
 var freehandSimplifyTolerance: Dynamic;
@@ -21,95 +21,95 @@ var canvasDragThresholdPixels: Dynamic;
 var canvasTouchDragThresholdPixels: Dynamic;
 function freehandDrawingAnnotation(
   points?: Dynamic,
-  color?: Dynamic,
+  initialTolerance?: Dynamic,
   closed: Dynamic = true,
 ): Dynamic {
-  let [items, items2]: Dynamic = [1 / 0, 1 / 0];
-  for (let value5 of points as Dynamic)
-    [items, items2] = [
-      Math.min(items, Math.floor(value5.x)),
-      Math.min(items2, Math.floor(value5.y)),
+  let [originX, originY]: Dynamic = [1 / 0, 1 / 0];
+  for (let point of points as Dynamic)
+    [originX, originY] = [
+      Math.min(originX, Math.floor(point.x)),
+      Math.min(originY, Math.floor(point.y)),
     ];
-  let value: Dynamic = points.map(
-      (input?: Dynamic): Dynamic => [input.x - items, input.y - items2],
+  let localPoints: Dynamic = points.map(
+      (point?: Dynamic): Dynamic => [point.x - originX, point.y - originY],
     ),
-    count: Dynamic = 1;
-  for (let [value5, value6] of value as Dynamic)
-    count = Math.max(count, value5, value6);
-  let value2: Dynamic = Math.min(
+    maxCoordinate: Dynamic = 1;
+  for (let [localX, localY] of localPoints as Dynamic)
+    maxCoordinate = Math.max(maxCoordinate, localX, localY);
+  let scale: Dynamic = Math.min(
       1,
-      PlatformFileContentLimit_6 / count,
+      maxArtboardEdge / maxCoordinate,
     ),
-    callback: Dynamic = (input?: Dynamic): Dynamic => ({
-      x: Math.round((items + input.x) * 10) / 10,
-      y: Math.round((items2 + input.y) * 10) / 10,
-      w: Math.max(PlatformFileContentConstant_19, input.w),
-      h: Math.max(PlatformFileContentConstant_19, input.h),
-      d: input.d,
+    toAnnotation: Dynamic = (bounds?: Dynamic): Dynamic => ({
+      x: Math.round((originX + bounds.x) * 10) / 10,
+      y: Math.round((originY + bounds.y) * 10) / 10,
+      w: Math.max(minPenPathExtent, bounds.w),
+      h: Math.max(minPenPathExtent, bounds.h),
+      d: bounds.d,
     });
   for (
-    let value5: Dynamic = color;
-    value5 > 0 && Number.isFinite(value5) && value5 <= 16 * color;
-    value5 *= 2
+    let tolerance: Dynamic = initialTolerance;
+    tolerance > 0 && Number.isFinite(tolerance) && tolerance <= 16 * initialTolerance;
+    tolerance *= 2
   ) {
-    let value6: Dynamic = fitPenCurve(
-      value.map(
-        ([input, input2]: Dynamic): Dynamic => [
-          input * value2,
-          input2 * value2,
+    let curve: Dynamic = fitPenCurve(
+      localPoints.map(
+        ([scaledX, scaledY]: Dynamic): Dynamic => [
+          scaledX * scale,
+          scaledY * scale,
         ],
       ),
-      value5 * value2,
+      tolerance * scale,
     );
     if (
-      !value6 ||
-      value6.length <= 4 ||
-      (!closed && value6.length * 2 > PlatformFileContentLimit_7)
+      !curve ||
+      curve.length <= 4 ||
+      (!closed && curve.length * 2 > maxPenPathCoordinates)
     )
       break;
-    let value7: Dynamic = flattenCubicPath(value6);
-    if (value7.length * 2 > PlatformFileContentLimit_7) continue;
-    let value8: Dynamic = penPathBounds(value7, 1);
+    let flattenedPath: Dynamic = flattenCubicPath(curve);
+    if (flattenedPath.length * 2 > maxPenPathCoordinates) continue;
+    let pathBounds: Dynamic = penPathBounds(flattenedPath, 1);
     if (!closed) {
-      if (value8.d.length > PlatformFileContentLimit_7) break;
-      return callback(value8);
+      if (pathBounds.d.length > maxPenPathCoordinates) break;
+      return toAnnotation(pathBounds);
     }
-    let value9: Dynamic =
-      Math.max(value8.w, value8.h) /
-      (PlatformFileContentLimit_6 - 0.5);
-    value9 > 1 &&
-      (value8 = penPathBounds(
-        value7.map((input?: Dynamic): Dynamic => input / value9),
+    let overscale: Dynamic =
+      Math.max(pathBounds.w, pathBounds.h) /
+      (maxArtboardEdge - 0.5);
+    overscale > 1 &&
+      (pathBounds = penPathBounds(
+        flattenedPath.map((coordinate?: Dynamic): Dynamic => coordinate / overscale),
         1,
       ));
-    if (PlatformFileContentTrim_2(value8.d) !== null)
-      return callback(value8);
+    if (PlatformFileContentTrim_2(pathBounds.d) !== null)
+      return toAnnotation(pathBounds);
   }
-  let value3: Dynamic = Math.max(1, Math.ceil(points.length / 1500)),
-    value4: Dynamic = value.filter(
-      (input?: Dynamic, options?: Dynamic): Dynamic =>
-        options % value3 === 0 || options === value.length - 1,
+  let sampleStep: Dynamic = Math.max(1, Math.ceil(points.length / 1500)),
+    sampledPoints: Dynamic = localPoints.filter(
+      (point?: Dynamic, index?: Dynamic): Dynamic =>
+        index % sampleStep === 0 || index === localPoints.length - 1,
     ),
-    [items3, items4, items5]: Dynamic = [
-      PlatformFileContentConstant_19,
-      PlatformFileContentConstant_19,
+    [width, height, pathData]: Dynamic = [
+      minPenPathExtent,
+      minPenPathExtent,
       "",
     ];
-  value4.forEach(([input, input2]: Dynamic, options?: Dynamic): Dynamic => {
-    let [items6, items7]: Dynamic = [
-      Math.round(input * value2),
-      Math.round(input2 * value2),
+  sampledPoints.forEach(([pointX, pointY]: Dynamic, index?: Dynamic): Dynamic => {
+    let [roundedX, roundedY]: Dynamic = [
+      Math.round(pointX * scale),
+      Math.round(pointY * scale),
     ];
-    [items3, items4] = [Math.max(items3, items6), Math.max(items4, items7)];
-    items5 +=
-      (options === 0 ? "M" : " L") + String(items6) + " " + String(items7);
+    [width, height] = [Math.max(width, roundedX), Math.max(height, roundedY)];
+    pathData +=
+      (index === 0 ? "M" : " L") + String(roundedX) + " " + String(roundedY);
   });
   return {
-    x: items,
-    y: items2,
-    w: items3,
-    h: items4,
-    d: items5,
+    x: originX,
+    y: originY,
+    w: width,
+    h: height,
+    d: pathData,
   };
 }
 function placementGhostAnnotation(placement?: Dynamic): Dynamic {
@@ -173,15 +173,15 @@ export function installCanvasInteractionGeometry(): () => void {
       x: true,
       y: true,
     };
-    isPrimaryModifierEvent = (input?: Dynamic): Dynamic =>
-      InspectorColorPickResolvedValue_2 ? input.metaKey : input.ctrlKey;
+    isPrimaryModifierEvent = (event?: Dynamic): Dynamic =>
+      isMetaPrimaryKey ? event.metaKey : event.ctrlKey;
     minimumArtboardSize = {
-      w: PlatformFileContentConstant_16,
-      h: PlatformFileContentConstant_16,
+      w: minArtboardEdge,
+      h: minArtboardEdge,
     };
     maximumArtboardSize = {
-      w: PlatformFileContentLimit_6,
-      h: PlatformFileContentLimit_6,
+      w: maxArtboardEdge,
+      h: maxArtboardEdge,
     };
     canvasDragActivationDelayMs = 200;
     canvasTouchDragActivationDelayMs = 600;

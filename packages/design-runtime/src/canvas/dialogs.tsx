@@ -19,16 +19,16 @@ var activeCanvasDialog: Dynamic;
 var nextCanvasDialogId: Dynamic;
 var canvasDialogSubscribers: Dynamic;
 function publishCanvasDialog(): Dynamic {
-  for (let value of canvasDialogSubscribers as Dynamic)
-    value(activeCanvasDialog);
+  for (let subscriber of canvasDialogSubscribers as Dynamic)
+    subscriber(activeCanvasDialog);
 }
 function rejectCanvasDialog(dialog?: Dynamic): Dynamic {
   dialog.kind === "confirm" ? dialog.resolve(false) : dialog.resolve(null);
 }
 function openCanvasDialog(dialog?: Dynamic): Dynamic {
-  let value: Dynamic = activeCanvasDialog;
+  let previousDialog: Dynamic = activeCanvasDialog;
   activeCanvasDialog = dialog;
-  value && rejectCanvasDialog(value);
+  previousDialog && rejectCanvasDialog(previousDialog);
   if (canvasDialogSubscribers.size === 0) {
     activeCanvasDialog = null;
     rejectCanvasDialog(dialog);
@@ -36,39 +36,39 @@ function openCanvasDialog(dialog?: Dynamic): Dynamic {
   }
   publishCanvasDialog();
 }
-function confirmCanvasAction(options?: Dynamic): Dynamic {
-  return new Promise((input?: Dynamic): Dynamic => {
+function confirmCanvasAction(confirmOptions?: Dynamic): Dynamic {
+  return new Promise((resolvePromise?: Dynamic): Dynamic => {
     openCanvasDialog({
       id: nextCanvasDialogId++,
       kind: "confirm",
-      opts: options,
-      resolve: input,
+      opts: confirmOptions,
+      resolve: resolvePromise,
     });
   });
 }
-function promptCanvasValue(options?: Dynamic): Dynamic {
-  return new Promise((input?: Dynamic): Dynamic => {
+function promptCanvasValue(promptOptions?: Dynamic): Dynamic {
+  return new Promise((resolvePromise?: Dynamic): Dynamic => {
     openCanvasDialog({
       id: nextCanvasDialogId++,
       kind: "prompt",
-      opts: options,
-      resolve: input,
+      opts: promptOptions,
+      resolve: resolvePromise,
     });
   });
 }
 function dismissCanvasDialog(): Dynamic {
-  let value: Dynamic = activeCanvasDialog;
-  value &&
+  let dialog: Dynamic = activeCanvasDialog;
+  dialog &&
     ((activeCanvasDialog = null),
-    rejectCanvasDialog(value),
+    rejectCanvasDialog(dialog),
     publishCanvasDialog());
 }
-function resolveCanvasDialog(dialog?: Dynamic, value?: Dynamic): Dynamic {
+function resolveCanvasDialog(dialog?: Dynamic, result?: Dynamic): Dynamic {
   activeCanvasDialog === dialog &&
     ((activeCanvasDialog = null),
     dialog.kind === "confirm"
-      ? dialog.resolve(value === true)
-      : dialog.resolve(typeof value == "string" ? value : null),
+      ? dialog.resolve(result === true)
+      : dialog.resolve(typeof result == "string" ? result : null),
     publishCanvasDialog());
 }
 function dismissMatchingCanvasDialog(dialog?: Dynamic): Dynamic {
@@ -84,8 +84,8 @@ function CanvasPromptDialogShell({
   return (
     <DialogDialogRootTriggerPopupConfig.Root
       open={true}
-      onOpenChange={(input?: Dynamic): Dynamic => {
-        input || onDismiss();
+      onOpenChange={(isOpen?: Dynamic): Dynamic => {
+        isOpen || onDismiss();
       }}
     >
       <DialogDialogRootTriggerPopupConfig.Popup size={"sm"}>
@@ -100,82 +100,82 @@ function CanvasPromptDialogShell({
     </DialogDialogRootTriggerPopupConfig.Root>
   );
 }
-function CanvasConfirmationDialog({ p: p }: Dynamic): Dynamic {
+function CanvasConfirmationDialog({ p: dialog }: Dynamic): Dynamic {
   useUiLocale();
-  let { opts: value }: Dynamic = p,
-    callback: Dynamic = (): Dynamic => dismissMatchingCanvasDialog(p);
+  let { opts: dialogOptions }: Dynamic = dialog,
+    dismiss: Dynamic = (): Dynamic => dismissMatchingCanvasDialog(dialog);
   return (
     <ConfirmationDialog
       open={true}
       initialFocus={"cancel"}
-      onOpenChange={(input?: Dynamic): Dynamic => {
-        input || callback();
+      onOpenChange={(isOpen?: Dynamic): Dynamic => {
+        isOpen || dismiss();
       }}
-      title={value.title}
-      description={value.message}
-      confirmLabel={value.confirmLabel ?? (value.danger ? (uiMessage("canvas.dialogs.delete")) : (uiMessage("canvas.dialogs.oK")))}
-      cancelLabel={value.cancelLabel ?? "Cancel"}
-      confirmVariant={value.danger ? "danger" : "primary"}
+      title={dialogOptions.title}
+      description={dialogOptions.message}
+      confirmLabel={dialogOptions.confirmLabel ?? (dialogOptions.danger ? (uiMessage("canvas.dialogs.delete")) : (uiMessage("canvas.dialogs.oK")))}
+      cancelLabel={dialogOptions.cancelLabel ?? "Cancel"}
+      confirmVariant={dialogOptions.danger ? "danger" : "primary"}
       size={"sm"}
-      onConfirm={(): Dynamic => resolveCanvasDialog(p, true)}
+      onConfirm={(): Dynamic => resolveCanvasDialog(dialog, true)}
     />
   );
 }
-function CanvasValuePromptDialog({ p: p }: Dynamic): Dynamic {
+function CanvasValuePromptDialog({ p: dialog }: Dynamic): Dynamic {
   useUiLocale();
-  let { opts: value }: Dynamic = p,
-    [value2, value3]: Dynamic = (0, react_M6.useState)(
-      value.initialValue ?? "",
+  let { opts: dialogOptions }: Dynamic = dialog,
+    [text, setText]: Dynamic = (0, react_M6.useState)(
+      dialogOptions.initialValue ?? "",
     ),
-    value4: Dynamic = value2.trim(),
-    value5: Dynamic = value4.length === 0,
-    callback: Dynamic = (): Dynamic => {
-      value5 || resolveCanvasDialog(p, value4);
+    trimmedText: Dynamic = text.trim(),
+    isEmpty: Dynamic = trimmedText.length === 0,
+    confirm: Dynamic = (): Dynamic => {
+      isEmpty || resolveCanvasDialog(dialog, trimmedText);
     },
-    callback2: Dynamic = (): Dynamic => dismissMatchingCanvasDialog(p);
+    dismiss: Dynamic = (): Dynamic => dismissMatchingCanvasDialog(dialog);
   return (
     <CanvasPromptDialogShell
-      title={value.title}
-      onDismiss={callback2}
+      title={dialogOptions.title}
+      onDismiss={dismiss}
       footer={
         <jsx_Af.Fragment>
-          <Button onClick={callback2}>
-            {value.cancelLabel ?? (uiMessage("canvas.dialogs.cancel"))}
+          <Button onClick={dismiss}>
+            {dialogOptions.cancelLabel ?? (uiMessage("canvas.dialogs.cancel"))}
           </Button>
           <DisabledReasonTooltip
             wrapperClassName={"grid"}
-            reason={value5 ? "Type something first" : undefined}
+            reason={isEmpty ? "Type something first" : undefined}
           >
             <Button
               variant={"primary"}
-              disabled={value5}
+              disabled={isEmpty}
               data-testid={"mc-alert-confirm"}
-              onClick={callback}
+              onClick={confirm}
             >
-              {value.confirmLabel ?? (uiMessage("canvas.dialogs.oK"))}
+              {dialogOptions.confirmLabel ?? (uiMessage("canvas.dialogs.oK"))}
             </Button>
           </DisabledReasonTooltip>
         </jsx_Af.Fragment>
       }
     >
-      {value.message ? (<p className={"text-fg-secondary"}>{value.message}</p>) : (null)}
+      {dialogOptions.message ? (<p className={"text-fg-secondary"}>{dialogOptions.message}</p>) : (null)}
       <TextInput
-        className={value.message ? "mt-2" : undefined}
+        className={dialogOptions.message ? "mt-2" : undefined}
         data-testid={"mc-alert-input"}
-        aria-label={value.inputLabel ?? (value.title)}
+        aria-label={dialogOptions.inputLabel ?? (dialogOptions.title)}
         autoFocus={true}
-        value={value2}
-        placeholder={value.placeholder}
-        maxLength={value.maxLength}
-        onChange={(input?: Dynamic): Dynamic =>
-          value3(input.currentTarget.value)
+        value={text}
+        placeholder={dialogOptions.placeholder}
+        maxLength={dialogOptions.maxLength}
+        onChange={(changeEvent?: Dynamic): Dynamic =>
+          setText(changeEvent.currentTarget.value)
         }
-        onFocus={(input?: Dynamic): Dynamic => input.currentTarget.select()}
+        onFocus={(focusEvent?: Dynamic): Dynamic => focusEvent.currentTarget.select()}
         onKeyDown={(event?: Dynamic): Dynamic => {
           event.key === "Enter" &&
             (event.nativeEvent.isComposing ||
               event.keyCode === 229 ||
-              (event.preventDefault(), !event.repeat && callback()));
+              (event.preventDefault(), !event.repeat && confirm()));
         }}
       />
     </CanvasPromptDialogShell>
@@ -183,38 +183,38 @@ function CanvasValuePromptDialog({ p: p }: Dynamic): Dynamic {
 }
 function CanvasDialogHost(): Dynamic {
   useUiLocale();
-  let [value, value2]: Dynamic = (0, react_M6.useState)(activeCanvasDialog);
+  let [currentDialog, setCurrentDialog]: Dynamic = (0, react_M6.useState)(activeCanvasDialog);
   usePanelClose(
-    value,
+    currentDialog,
     (): Dynamic => activeCanvasDialog !== null,
   );
   (0, react_M6.useEffect)(
     (): Dynamic => (
-      canvasDialogSubscribers.add(value2),
+      canvasDialogSubscribers.add(setCurrentDialog),
       (): Dynamic => {
-        canvasDialogSubscribers.delete(value2);
+        canvasDialogSubscribers.delete(setCurrentDialog);
         canvasDialogSubscribers.size === 0 && dismissCanvasDialog();
       }
     ),
     [],
   );
-  return value
-    ? value.kind === "confirm"
+  return currentDialog
+    ? currentDialog.kind === "confirm"
       ? (() => {
-          const _Component = CanvasConfirmationDialog;
-          const _props = {
-            p: value,
+          const ConfirmComponent = CanvasConfirmationDialog;
+          const confirmProps = {
+            p: currentDialog,
           } as const;
-          const _key = value.id;
-          return <_Component key={_key} {..._props} />;
+          const confirmKey = currentDialog.id;
+          return <ConfirmComponent key={confirmKey} {...confirmProps} />;
         })()
       : (() => {
-          const _Component2 = CanvasValuePromptDialog;
-          const _props2 = {
-            p: value,
+          const PromptComponent = CanvasValuePromptDialog;
+          const promptProps = {
+            p: currentDialog,
           } as const;
-          const _key2 = value.id;
-          return <_Component2 key={_key2} {..._props2} />;
+          const promptKey = currentDialog.id;
+          return <PromptComponent key={promptKey} {...promptProps} />;
         })()
     : null;
 }

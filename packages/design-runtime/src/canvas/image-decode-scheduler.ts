@@ -6,70 +6,70 @@ import {
 var CanvasImageDecodeSchedulerSubscribers: Dynamic;
 var CanvasImageDecodeSchedulerCache: Dynamic;
 var isImageDecodeQueued: Dynamic;
-function scheduleImageDecode(input?: Dynamic, options?: Dynamic): Dynamic {
-  CanvasImageDecodeSchedulerSubscribers.has(input) ||
+function scheduleImageDecode(requester?: Dynamic, startDecode?: Dynamic): Dynamic {
+  CanvasImageDecodeSchedulerSubscribers.has(requester) ||
   CanvasImageDecodeSchedulerSubscribers.size < 4
-    ? (CanvasImageDecodeSchedulerSubscribers.add(input), options())
-    : CanvasImageDecodeSchedulerCache.set(input, options);
+    ? (CanvasImageDecodeSchedulerSubscribers.add(requester), startDecode())
+    : CanvasImageDecodeSchedulerCache.set(requester, startDecode);
   return (): Dynamic => {
-    CanvasImageDecodeSchedulerCache.delete(input);
-    if (!CanvasImageDecodeSchedulerSubscribers.delete(input)) return;
-    let value: Dynamic = CanvasImageDecodeSchedulerCache.entries().next();
-    if (value.done) return;
-    let [value2, value3]: Dynamic = value.value;
-    CanvasImageDecodeSchedulerCache.delete(value2);
-    CanvasImageDecodeSchedulerSubscribers.add(value2);
-    value3();
+    CanvasImageDecodeSchedulerCache.delete(requester);
+    if (!CanvasImageDecodeSchedulerSubscribers.delete(requester)) return;
+    let nextQueued: Dynamic = CanvasImageDecodeSchedulerCache.entries().next();
+    if (nextQueued.done) return;
+    let [nextRequester, startNextDecode]: Dynamic = nextQueued.value;
+    CanvasImageDecodeSchedulerCache.delete(nextRequester);
+    CanvasImageDecodeSchedulerSubscribers.add(nextRequester);
+    startNextDecode();
   };
 }
-function isTouchSelectionStart(input?: Dynamic, options?: Dynamic): Dynamic {
-  return input === "touch" && !options;
+function isTouchSelectionStart(pointerType?: Dynamic, hasSelectionFlag?: Dynamic): Dynamic {
+  return pointerType === "touch" && !hasSelectionFlag;
 }
 function watchPointerRelease(
-  input?: Dynamic,
-  options?: Dynamic,
-  context: Dynamic = window,
+  downEvent?: Dynamic,
+  onRelease?: Dynamic,
+  eventTarget: Dynamic = window,
 ): Dynamic {
-  if (input.isPrimary === false) return (): Dynamic => {};
-  let { pointerId: value, clientX: value2, clientY: value3 }: Dynamic = input,
-    callback: Dynamic = (): Dynamic => {
-      context.removeEventListener("pointerup", callback2);
-      context.removeEventListener("pointercancel", callback3);
-      context.removeEventListener("pointerdown", callback4);
+  if (downEvent.isPrimary === false) return (): Dynamic => {};
+  let { pointerId: pointerId, clientX: startX, clientY: startY }: Dynamic = downEvent,
+    stopWatching: Dynamic = (): Dynamic => {
+      eventTarget.removeEventListener("pointerup", handlePointerUp);
+      eventTarget.removeEventListener("pointercancel", handlePointerCancel);
+      eventTarget.removeEventListener("pointerdown", handleOtherPointerDown);
     },
-    callback2: Dynamic = (input2?: Dynamic): Dynamic => {
-      input2.pointerId === value &&
-        (callback(),
-        !(input2.button != null && input2.button !== 0) &&
-          Math.hypot(input2.clientX - value2, input2.clientY - value3) <=
+    handlePointerUp: Dynamic = (upEvent?: Dynamic): Dynamic => {
+      upEvent.pointerId === pointerId &&
+        (stopWatching(),
+        !(upEvent.button != null && upEvent.button !== 0) &&
+          Math.hypot(upEvent.clientX - startX, upEvent.clientY - startY) <=
             10 &&
-          options(input2));
+          onRelease(upEvent));
     },
-    callback3: Dynamic = (input2?: Dynamic): Dynamic => {
-      input2.pointerId === value && callback();
+    handlePointerCancel: Dynamic = (cancelEvent?: Dynamic): Dynamic => {
+      cancelEvent.pointerId === pointerId && stopWatching();
     },
-    callback4: Dynamic = (input2?: Dynamic): Dynamic => {
-      input2 !== input &&
-        (input2.pointerType === "touch" || input2.pointerId === value) &&
-        callback();
+    handleOtherPointerDown: Dynamic = (otherEvent?: Dynamic): Dynamic => {
+      otherEvent !== downEvent &&
+        (otherEvent.pointerType === "touch" || otherEvent.pointerId === pointerId) &&
+        stopWatching();
     };
-  context.addEventListener("pointerup", callback2);
-  context.addEventListener("pointercancel", callback3);
-  context.addEventListener("pointerdown", callback4);
-  return callback;
+  eventTarget.addEventListener("pointerup", handlePointerUp);
+  eventTarget.addEventListener("pointercancel", handlePointerCancel);
+  eventTarget.addEventListener("pointerdown", handleOtherPointerDown);
+  return stopWatching;
 }
-function preventTouchScroll(input?: Dynamic): Dynamic {
-  if (!input) return (): Dynamic => {};
-  let callback: Dynamic = (event?: Dynamic): Dynamic => {
-    event.cancelable && event.preventDefault();
+function preventTouchScroll(scrollTarget?: Dynamic): Dynamic {
+  if (!scrollTarget) return (): Dynamic => {};
+  let handleTouchStart: Dynamic = (touchEvent?: Dynamic): Dynamic => {
+    touchEvent.cancelable && touchEvent.preventDefault();
   };
-  input.addEventListener("touchstart", callback, {
+  scrollTarget.addEventListener("touchstart", handleTouchStart, {
     passive: false,
   });
-  return (): Dynamic => input.removeEventListener("touchstart", callback);
+  return (): Dynamic => scrollTarget.removeEventListener("touchstart", handleTouchStart);
 }
-function prefersDragGesture(input?: Dynamic, options?: Dynamic): Dynamic {
-  return input.pointerType !== "mouse" || input.shiftKey || !options;
+function prefersDragGesture(pointerEvent?: Dynamic, hasSelectionFlag?: Dynamic): Dynamic {
+  return pointerEvent.pointerType !== "mouse" || pointerEvent.shiftKey || !hasSelectionFlag;
 }
 export {
   CanvasImageDecodeSchedulerCache,
@@ -85,7 +85,7 @@ export function installCanvasImageDecodeScheduler(): () => void {
   return () => {
     CanvasImageDecodeSchedulerSubscribers = new Set();
     CanvasImageDecodeSchedulerCache = new Map();
-    isImageDecodeQueued = (input?: Dynamic): Dynamic =>
-      CanvasImageDecodeSchedulerCache.has(input);
+    isImageDecodeQueued = (requester?: Dynamic): Dynamic =>
+      CanvasImageDecodeSchedulerCache.has(requester);
   };
 }

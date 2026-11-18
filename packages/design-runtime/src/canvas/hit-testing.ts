@@ -33,69 +33,69 @@ function selectionPointerDownDecision(
         click: null,
       };
 }
-function canvasFacePointerAction(hit2?: Dynamic): Dynamic {
-  return hit2.faceOverlay && hit2.pointerType === "touch"
+function canvasFacePointerAction(pointerHit?: Dynamic): Dynamic {
+  return pointerHit.faceOverlay && pointerHit.pointerType === "touch"
     ? "leave"
-    : hit2.editing &&
-        (hit2.tool == null ||
-          hit2.tool === "select" ||
-          hit2.tool === "vector") &&
-        !hit2.fullscreen
+    : pointerHit.editing &&
+        (pointerHit.tool == null ||
+          pointerHit.tool === "select" ||
+          pointerHit.tool === "vector") &&
+        !pointerHit.fullscreen
       ? "pick"
       : "artboard";
 }
-function shouldBeginCanvasMarquee(hit2?: Dynamic): Dynamic {
+function shouldBeginCanvasMarquee(pointerHit?: Dynamic): Dynamic {
   return (
-    hit2.bare &&
-    hit2.pointerType === "mouse" &&
-    hit2.button === 0 &&
-    ((hit2.tool ?? "select") === "select" || hit2.tool === "vector")
+    pointerHit.bare &&
+    pointerHit.pointerType === "mouse" &&
+    pointerHit.button === 0 &&
+    ((pointerHit.tool ?? "select") === "select" || pointerHit.tool === "vector")
   );
 }
-function isCanvasContextMenuPointer(hit2?: Dynamic): Dynamic {
-  return hit2.button !== 2 || hit2.pointerType === "touch"
+function isCanvasContextMenuPointer(pointerHit?: Dynamic): Dynamic {
+  return pointerHit.button !== 2 || pointerHit.pointerType === "touch"
     ? false
-    : hit2.chrome == null ||
-        hit2.chrome === "set-box-pad" ||
-        hit2.chrome === "focus-overlay" ||
-        hit2.chrome === "face-overlay" ||
-        hit2.chrome === "set-overlay" ||
-        hit2.chrome === "comments";
+    : pointerHit.chrome == null ||
+        pointerHit.chrome === "set-box-pad" ||
+        pointerHit.chrome === "focus-overlay" ||
+        pointerHit.chrome === "face-overlay" ||
+        pointerHit.chrome === "set-overlay" ||
+        pointerHit.chrome === "comments";
 }
-function canvasContextMenuTarget(hit2?: Dynamic): Dynamic {
-  return hit2.blanket === true
+function canvasContextMenuTarget(hitTarget?: Dynamic): Dynamic {
+  return hitTarget.blanket === true
     ? null
-    : hit2.object != null
+    : hitTarget.object != null
       ? {
           kind: "object",
-          id: hit2.object,
+          id: hitTarget.object,
         }
-      : hit2.chrome == null || hit2.chrome === "set-box-pad"
-        ? hit2.file != null
+      : hitTarget.chrome == null || hitTarget.chrome === "set-box-pad"
+        ? hitTarget.file != null
           ? {
               kind: "artboard",
-              file: hit2.file,
+              file: hitTarget.file,
             }
           : {
               kind: "canvas",
             }
-        : hit2.file != null &&
+        : hitTarget.file != null &&
             [
               "title",
               "focus-overlay",
               "face-overlay",
               "set-overlay",
-            ].includes(hit2.chrome)
+            ].includes(hitTarget.chrome)
           ? {
               kind: "artboard",
-              file: hit2.file,
+              file: hitTarget.file,
             }
           : null;
 }
-function shouldPassFileDropThroughOverlay(hit2?: Dynamic): Dynamic {
+function shouldPassFileDropThroughOverlay(pointerHit?: Dynamic): Dynamic {
   return (
-    hit2.filesDrag &&
-    (hit2.chrome === "face-overlay" || hit2.chrome === "set-overlay")
+    pointerHit.filesDrag &&
+    (pointerHit.chrome === "face-overlay" || pointerHit.chrome === "set-overlay")
   );
 }
 function applyElementRectStyle(element?: Dynamic, rect?: Dynamic): Dynamic {
@@ -111,108 +111,108 @@ function objectsWithinCanvasMarquee(
   rect?: Dynamic,
   selection?: Dynamic,
 ): Dynamic {
-  let values: Dynamic = new Set(selection.files);
-  for (let value of manifest.artboards as Dynamic)
-    inclusiveRectIntersects(rect, value) && values.add(value.file);
-  let values2: Dynamic = new Set(selection.notes);
-  for (let value of manifest.annotations as Dynamic) {
-    let value2: Dynamic,
-      value3: Dynamic = annotationRotation(value);
+  let hitFiles: Dynamic = new Set(selection.files);
+  for (let artboard of manifest.artboards as Dynamic)
+    inclusiveRectIntersects(rect, artboard) && hitFiles.add(artboard.file);
+  let hitNotes: Dynamic = new Set(selection.notes);
+  for (let annotation of manifest.annotations as Dynamic) {
+    let isHit: Dynamic,
+      rotation: Dynamic = annotationRotation(annotation);
     if (
-      value.kind === "line" ||
-      value.kind === "arrow" ||
-      value.kind === "pen"
+      annotation.kind === "line" ||
+      annotation.kind === "arrow" ||
+      annotation.kind === "pen"
     ) {
-      let value4: Dynamic = expandHitTestRect(
+      let expandedRect: Dynamic = expandHitTestRect(
         rect,
-        getAnnotationStrokeWidth(value) / 2,
+        getAnnotationStrokeWidth(annotation) / 2,
       );
-      value2 =
-        value.kind === "pen"
+      isHit =
+        annotation.kind === "pen"
           ? inclusiveRectIntersects(
-              value4,
+              expandedRect,
               rotatedAnnotationBounds(
-                value,
-                manifest.annBox(value),
+                annotation,
+                manifest.annBox(annotation),
               ),
-            ) && penIntersectsMarquee(value, value4)
-          : lineIntersectsMarquee(value, value4);
+            ) && penIntersectsMarquee(annotation, expandedRect)
+          : lineIntersectsMarquee(annotation, expandedRect);
     } else
-      value2 = value3
-        ? rotatedRectCorner(manifest.annBox(value), value3, rect)
-        : inclusiveRectIntersects(rect, manifest.annBox(value));
-    value2 && values2.add(value.id);
+      isHit = rotation
+        ? rotatedRectCorner(manifest.annBox(annotation), rotation, rect)
+        : inclusiveRectIntersects(rect, manifest.annBox(annotation));
+    isHit && hitNotes.add(annotation.id);
   }
   return {
-    files: values,
-    notes: values2,
+    files: hitFiles,
+    notes: hitNotes,
   };
 }
 function penIntersectsMarquee(annotation?: Dynamic, rect?: Dynamic): Dynamic {
   let entry: Dynamic = penHitTestPointsCache.get(annotation);
   if (!entry) {
-    let [items, items2]: Dynamic = [
+    let [pathViewBox, rotationAngle]: Dynamic = [
         annotationPathViewBox(annotation.d),
         annotationRotation(annotation),
       ],
-      state: Dynamic = {
+      rotationCenter: Dynamic = {
         x: annotation.x + annotation.w / 2,
         y: annotation.y + annotation.h / 2,
       };
     entry = parsePenPath(annotation.d).map(
-      (input?: Dynamic): Dynamic => {
-        let state2: Dynamic = {
-          x: annotation.x + (input.x * annotation.w) / items.w,
-          y: annotation.y + (input.y * annotation.h) / items.h,
+      (penPoint?: Dynamic): Dynamic => {
+        let scaledPoint: Dynamic = {
+          x: annotation.x + (penPoint.x * annotation.w) / pathViewBox.w,
+          y: annotation.y + (penPoint.y * annotation.h) / pathViewBox.h,
         };
         return {
-          move: input.move,
-          ...(items2
-            ? rotatePoint(state2, state, items2)
-            : state2),
+          move: penPoint.move,
+          ...(rotationAngle
+            ? rotatePoint(scaledPoint, rotationCenter, rotationAngle)
+            : scaledPoint),
         };
       },
     );
     penHitTestPointsCache.set(annotation, entry);
   }
-  let value: Dynamic = null;
-  for (let value2 of entry as Dynamic) {
-    let value3: Dynamic = value2.move || !value ? value2 : value;
+  let previousPoint: Dynamic = null;
+  for (let point of entry as Dynamic) {
+    let segmentStart: Dynamic = point.move || !previousPoint ? point : previousPoint;
     if (
       lineIntersectsMarquee(
         {
-          x: value3.x,
-          y: value3.y,
-          x2: value2.x,
-          y2: value2.y,
+          x: segmentStart.x,
+          y: segmentStart.y,
+          x2: point.x,
+          y2: point.y,
         },
         rect,
       )
     )
       return true;
-    value = value2;
+    previousPoint = point;
   }
   return false;
 }
 function lineIntersectsMarquee(line?: Dynamic, rect?: Dynamic): Dynamic {
-  let value: Dynamic = line.x2 - line.x,
-    value2: Dynamic = line.y2 - line.y,
-    index: Dynamic = 0,
-    count: Dynamic = 1;
-  for (let [value3, value4] of [
-    [-value, line.x - rect.x],
-    [value, rect.x + rect.w - line.x],
-    [-value2, line.y - rect.y],
-    [value2, rect.y + rect.h - line.y],
+  let deltaX: Dynamic = line.x2 - line.x,
+    deltaY: Dynamic = line.y2 - line.y,
+    tEnter: Dynamic = 0,
+    tExit: Dynamic = 1;
+  for (let [edgeDirection, edgeDistance] of [
+    [-deltaX, line.x - rect.x],
+    [deltaX, rect.x + rect.w - line.x],
+    [-deltaY, line.y - rect.y],
+    [deltaY, rect.y + rect.h - line.y],
   ] as Dynamic) {
-    if (value3 === 0) {
-      if (value4 < 0) return false;
+    if (edgeDirection === 0) {
+      if (edgeDistance < 0) return false;
       continue;
     }
-    value3 < 0
-      ? (index = Math.max(index, value4 / value3))
-      : (count = Math.min(count, value4 / value3));
-    if (index > count) return false;
+    edgeDirection < 0
+      ? (tEnter = Math.max(tEnter, edgeDistance / edgeDirection))
+      : (tExit = Math.min(tExit, edgeDistance / edgeDirection));
+    if (tEnter > tExit) return false;
   }
   return true;
 }
@@ -235,16 +235,16 @@ export {
 };
 export function installCanvasHitTesting(): () => void {
   return () => {
-    canvasContextMenuTargetFromElement = (input?: Dynamic): Dynamic => {
-      let callback: Dynamic = (input2?: Dynamic): Dynamic =>
-        input instanceof Element
-          ? input.closest("[" + input2 + "]")?.getAttribute(input2)
+    canvasContextMenuTargetFromElement = (element?: Dynamic): Dynamic => {
+      let readAttribute: Dynamic = (attributeName?: Dynamic): Dynamic =>
+        element instanceof Element
+          ? element.closest("[" + attributeName + "]")?.getAttribute(attributeName)
           : null;
       return canvasContextMenuTarget({
-        object: callback("data-mega-annotation"),
-        chrome: callback("data-mega-chrome"),
-        file: callback("data-mega-artboard"),
-        blanket: callback("data-mega-pan-blanket") != null,
+        object: readAttribute("data-mega-annotation"),
+        chrome: readAttribute("data-mega-chrome"),
+        file: readAttribute("data-mega-artboard"),
+        blanket: readAttribute("data-mega-pan-blanket") != null,
       });
     };
     artboardOverlayIdPrefixes = {
@@ -252,16 +252,16 @@ export function installCanvasHitTesting(): () => void {
       "set-overlay": "mega-artboard-set-",
       "focus-overlay": "mega-artboard-overlay-",
     };
-    inclusiveRectIntersects = (input?: Dynamic, options?: Dynamic): Dynamic =>
-      input.x <= options.x + options.w &&
-      options.x <= input.x + input.w &&
-      input.y <= options.y + options.h &&
-      options.y <= input.y + input.h;
-    expandHitTestRect = (input?: Dynamic, options?: Dynamic): Dynamic => ({
-      x: input.x - options,
-      y: input.y - options,
-      w: input.w + 2 * options,
-      h: input.h + 2 * options,
+    inclusiveRectIntersects = (rectA?: Dynamic, rectB?: Dynamic): Dynamic =>
+      rectA.x <= rectB.x + rectB.w &&
+      rectB.x <= rectA.x + rectA.w &&
+      rectA.y <= rectB.y + rectB.h &&
+      rectB.y <= rectA.y + rectA.h;
+    expandHitTestRect = (rect?: Dynamic, margin?: Dynamic): Dynamic => ({
+      x: rect.x - margin,
+      y: rect.y - margin,
+      w: rect.w + 2 * margin,
+      h: rect.h + 2 * margin,
     });
     penHitTestPointsCache = new WeakMap();
   };

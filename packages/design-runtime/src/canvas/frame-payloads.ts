@@ -5,7 +5,7 @@
  */
 import { parseObjectClipPath, parseObjectPosition } from "../editor/media/object-crop";
 import { getHiddenPickerTags } from "../editor/picker/hidden-tags";
-import { PlatformFileContentConstant_17, PlatformFileContentLimit_6 } from "../platform/file-content";
+import { PlatformFileContentConstant_17 as minArtboardMeasuredSize, PlatformFileContentLimit_6 as maxArtboardMeasuredSize } from "../platform/file-content";
 
 /** 画板内容区的尺寸（画板像素）。 */
 export interface ArtboardBox {
@@ -117,22 +117,22 @@ export const selectionChromeMinimumScale = 0.25;
 
 type Loose = Record<string, unknown> | null | undefined;
 
-const finite = (value: unknown): number | null => (typeof value == "number" && Number.isFinite(value) ? value : null);
+const finite = (candidate: unknown): number | null => (typeof candidate == "number" && Number.isFinite(candidate) ? candidate : null);
 
 /** 画板上报的内容尺寸，取整并限制在允许的范围内。 */
 export function normalizeArtboardMeasuredSize(box?: { w?: unknown; h?: unknown } | null): ArtboardBox | null {
   const { w, h } = box ?? {};
   if (typeof w != "number" || typeof h != "number" || !Number.isFinite(w) || !Number.isFinite(h)) return null;
-  const clamp = (value: number): number =>
-    Math.min(PlatformFileContentLimit_6, Math.max(PlatformFileContentConstant_17, Math.ceil(value)));
+  const clamp = (rawSize: number): number =>
+    Math.min(maxArtboardMeasuredSize, Math.max(minArtboardMeasuredSize, Math.ceil(rawSize)));
   return { w: clamp(w), h: clamp(h) };
 }
 
-export function parseImageCropDescriptor(value?: unknown): ImageCropDescriptor | null {
-  const media = value as Loose;
+export function parseImageCropDescriptor(rawDescriptor?: unknown): ImageCropDescriptor | null {
+  const media = rawDescriptor as Loose;
   if (!media || typeof media != "object") return null;
   if (media.off === "unloaded" || media.off === "turned" || media.off === "auto") return { off: media.off };
-  const isSize = (input: unknown): input is number => typeof input == "number" && input >= 1 && input <= 1e5;
+  const isSize = (candidate: unknown): input is number => typeof candidate == "number" && candidate >= 1 && candidate <= 1e5;
   if (
     !Number.isSafeInteger(media.tid) ||
     !isSize(media.w) ||
@@ -143,10 +143,10 @@ export function parseImageCropDescriptor(value?: unknown): ImageCropDescriptor |
     media.inset.length !== 4
   )
     return null;
-  const inset = media.inset.map((input: unknown) => (typeof input == "number" && input >= 0 && input < 0.5 ? input : null));
-  if (inset.some(input => input === null)) return null;
+  const inset = media.inset.map((insetValue: unknown) => (typeof insetValue == "number" && insetValue >= 0 && insetValue < 0.5 ? insetValue : null));
+  if (inset.some(insetValue => insetValue === null)) return null;
   // 非字符串当作空串；过长的值无法解析
-  const text = (input: unknown): string | null => (typeof input != "string" ? "" : input.length <= 120 ? input : null);
+  const text = (rawText: unknown): string | null => (typeof rawText != "string" ? "" : rawText.length <= 120 ? rawText : null);
   const [boxText, posText] = [text(media.box), text(media.pos)];
   if (boxText === null || posText === null) return { off: "custom" };
   const [box, pos] = [parseObjectClipPath(boxText), parseObjectPosition(posText)];
@@ -181,11 +181,11 @@ export function artboardContentSizeDescriptor<Component>(
 export function parseSelectionChromePayload(
   payload: Record<string, any>,
   viewport: ArtboardBox,
-  options: SelectionChromeOptions = {},
+  chromeOptions: SelectionChromeOptions = {},
 ): SelectionChrome {
   let overscan = selectionChromeCoordinateOverscan;
-  const clampX = (value: number): number => Math.max(-overscan, Math.min(viewport.w + overscan, value));
-  const clampY = (value: number): number => Math.max(-overscan, Math.min(viewport.h + overscan, value));
+  const clampX = (x: number): number => Math.max(-overscan, Math.min(viewport.w + overscan, x));
+  const clampY = (y: number): number => Math.max(-overscan, Math.min(viewport.h + overscan, y));
 
   const rings: ChromeRing[] = [];
   let hasGrip = false;
@@ -198,11 +198,11 @@ export function parseSelectionChromePayload(
         h = finite(source?.h);
       if (x == null || y == null || w == null || h == null || w <= 0 || h <= 0) continue;
       const kind: "hov" | "grip" | "sel" =
-        source.k === "hov" ? "hov" : source.k === "grip" && !hasGrip && options.gripless !== true ? "grip" : "sel";
+        source.k === "hov" ? "hov" : source.k === "grip" && !hasGrip && chromeOptions.gripless !== true ? "grip" : "sel";
       if (kind === "grip") hasGrip = true;
-      const cropping = kind === "grip" && options.cropTid !== undefined ? parseImageCropDescriptor(source.media) : null;
+      const cropping = kind === "grip" && chromeOptions.cropTid !== undefined ? parseImageCropDescriptor(source.media) : null;
       overscan =
-        cropping !== null && "tid" in cropping && cropping.tid === options.cropTid
+        cropping !== null && "tid" in cropping && cropping.tid === chromeOptions.cropTid
           ? maxSelectionChromeItems
           : selectionChromeCoordinateOverscan;
       const rawRot = finite(source.rot);
@@ -307,7 +307,7 @@ export function parseSelectionChromePayload(
   const penSource = payload.pen;
   if (
     penSource &&
-    options.gripless !== true &&
+    chromeOptions.gripless !== true &&
     typeof penSource.d == "string" &&
     penSource.d.length <= maxSelectionChromePathLength &&
     selectionChromePathPattern.test(penSource.d)
@@ -351,8 +351,8 @@ export function parseSelectionChromePayload(
       const [scaleX, scaleY] = [w / vbW, h / vbH];
       const inside = (penSource.d.match(/-?\d+(?:\.\d+)?/g) ?? [])
         .map(Number)
-        .every((value: number, index: number) =>
-          index % 2 === 0 ? clampX(x + value * scaleX) === x + value * scaleX : clampY(y + value * scaleY) === y + value * scaleY,
+        .every((coordinate: number, index: number) =>
+          index % 2 === 0 ? clampX(x + coordinate * scaleX) === x + coordinate * scaleX : clampY(y + coordinate * scaleY) === y + coordinate * scaleY,
         );
       if (inside) pen = { tid: Math.trunc(tid), x, y, w, h, vbW, vbH, kx, ky, d: penSource.d };
     }

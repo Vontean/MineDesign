@@ -8,127 +8,127 @@ import { serializeDesignCommentAnchor } from "../../comments/anchor-codec";
 import { type Dynamic } from "../../runtime-types";
 
 /** 在选中元素的快捷操作中点击评论时运行：向画板查询该元素的评论锚点与描述，换算到屏幕位置后打开评论输入框。 */
-export function composeSelectedElementComment(deps: { readonly callback16: Dynamic; readonly camera: Dynamic; readonly elementSelection: Dynamic; readonly manifest: Dynamic; readonly value2: Dynamic; readonly value20: Dynamic; readonly value4: Dynamic; readonly value9: Dynamic }, input?: Dynamic): Dynamic {
-            let value250: Dynamic = deps.elementSelection,
-              file: Dynamic = value250.file,
-              entry2: Dynamic = deps.value2.current.get(file),
-              value251: Dynamic = entry2
-                ? createPreviewHandle(entry2.webviewRef.current)
+export function composeSelectedElementComment(deps: { readonly callback16: Dynamic; readonly camera: Dynamic; readonly elementSelection: Dynamic; readonly manifest: Dynamic; readonly value2: Dynamic; readonly value20: Dynamic; readonly value4: Dynamic; readonly value9: Dynamic }, triggerElement?: Dynamic): Dynamic {
+            let selection: Dynamic = deps.elementSelection,
+              file: Dynamic = selection.file,
+              artboardEntry: Dynamic = deps.value2.current.get(file),
+              previewHandle: Dynamic = artboardEntry
+                ? createPreviewHandle(artboardEntry.webviewRef.current)
                 : null,
               current: Dynamic = deps.value9.current;
-            if (!value251 || !current) return;
-            input.focus({
+            if (!previewHandle || !current) return;
+            triggerElement.focus({
               preventScroll: true,
             });
-            let bounds: Dynamic = input.getBoundingClientRect(),
-              value252: Dynamic = deps.callback16(
+            let bounds: Dynamic = triggerElement.getBoundingClientRect(),
+              anchorPoint: Dynamic = deps.callback16(
                 bounds.left + bounds.width / 2,
                 bounds.bottom,
                 current.getBoundingClientRect(),
               );
             pickerCommentFor(
-              value251,
-              value250.tids[0],
-              value250.name ?? null,
-            ).then((input2?: Dynamic): Dynamic => {
-              let value253: Dynamic = deps.manifest.artboards.find(
-                (input3?: Dynamic): Dynamic => input3.file === file,
+              previewHandle,
+              selection.tids[0],
+              selection.name ?? null,
+            ).then((pickedElement?: Dynamic): Dynamic => {
+              let artboard: Dynamic = deps.manifest.artboards.find(
+                (board?: Dynamic): Dynamic => board.file === file,
               );
-              if (!input2 || !value253) return;
-              let value254: Dynamic =
-                  deps.value20?.file === file ? deps.value20 : value253,
-                value255: Dynamic =
-                  input2.path == null
+              if (!pickedElement || !artboard) return;
+              let targetBoard: Dynamic =
+                  deps.value20?.file === file ? deps.value20 : artboard,
+                elementRect: Dynamic =
+                  pickedElement.path == null
                     ? {
                         x: 0,
                         y: 0,
-                        w: value254.w,
-                        h: value254.h,
+                        w: targetBoard.w,
+                        h: targetBoard.h,
                       }
-                    : input2.rect,
-                { px: value256, py: value257 }: Dynamic = commentPointWithinVisibleContent(
-                  value252,
-                  value254,
-                  value255,
+                    : pickedElement.rect,
+                { px: pointX, py: pointY }: Dynamic = commentPointWithinVisibleContent(
+                  anchorPoint,
+                  targetBoard,
+                  elementRect,
                 ),
-                value258: Dynamic =
-                  (value256 - value255.x) / (value255.w || 1),
-                value259: Dynamic =
-                  (value257 - value255.y) / (value255.h || 1),
-                value260: Dynamic = serializeDesignCommentAnchor(
-                  input2.path != null
+                fractionX: Dynamic =
+                  (pointX - elementRect.x) / (elementRect.w || 1),
+                fractionY: Dynamic =
+                  (pointY - elementRect.y) / (elementRect.h || 1),
+                serializedAnchor: Dynamic = serializeDesignCommentAnchor(
+                  pickedElement.path != null
                     ? {
                         kind: "el",
                         file: file,
-                        path: input2.path,
-                        tid: input2.tid,
-                        fp: input2.fp,
-                        fx: value258,
-                        fy: value259,
+                        path: pickedElement.path,
+                        tid: pickedElement.tid,
+                        fp: pickedElement.fp,
+                        fx: fractionX,
+                        fy: fractionY,
                       }
-                    : input2.page
+                    : pickedElement.page
                       ? {
                           kind: "artboard",
                           file: file,
-                          px: value256 - input2.page.x,
-                          py: value257 - input2.page.y,
+                          px: pointX - pickedElement.page.x,
+                          py: pointY - pickedElement.page.y,
                         }
                       : {
                           kind: "artboard",
                           file: file,
-                          fx: value258,
-                          fy: value259,
+                          fx: fractionX,
+                          fy: fractionY,
                         },
                 );
-              if (!value260) return;
-              let value261: Dynamic =
-                  input2.path == null
+              if (!serializedAnchor) return;
+              let elementDescription: Dynamic =
+                  pickedElement.path == null
                     ? null
-                    : describeCommentElement(entry2, input2),
-                value262: Dynamic = commentAnchorShortLabel(
-                  value261 == null
+                    : describeCommentElement(artboardEntry, pickedElement),
+                anchorLabel: Dynamic = commentAnchorShortLabel(
+                  elementDescription == null
                     ? {
                         kind: "artboard",
-                        board: value253,
+                        board: artboard,
                       }
                     : {
                         kind: "el",
-                        board: value253,
-                        el: value261,
+                        board: artboard,
+                        el: elementDescription,
                       },
                 ),
-                value263: Dynamic =
-                  input2.path != null && input2.tid != null
-                    ? entry2?.viewEntries([input2.tid])[0]
+                viewEntry: Dynamic =
+                  pickedElement.path != null && pickedElement.tid != null
+                    ? artboardEntry?.viewEntries([pickedElement.tid])[0]
                     : undefined,
-                value264: Dynamic = commentArtboardElementDetail(
-                  value253,
-                  value263 && value261
+                elementDetail: Dynamic = commentArtboardElementDetail(
+                  artboard,
+                  viewEntry && elementDescription
                     ? {
-                        path: value263.path,
-                        kind: value261.kind ?? value263.kind,
-                        text: value261.text ?? value263.words(),
+                        path: viewEntry.path,
+                        kind: elementDescription.kind ?? viewEntry.kind,
+                        text: elementDescription.text ?? viewEntry.words(),
                       }
                     : null,
                 ),
-                bounds2: Dynamic = current.getBoundingClientRect(),
-                entry3: Dynamic = deps.camera.get();
+                canvasBounds: Dynamic = current.getBoundingClientRect(),
+                cameraState: Dynamic = deps.camera.get();
               deps.value4
                 .compose(
-                  value260,
+                  serializedAnchor,
                   {
                     x:
-                      bounds2.left +
-                      (value254.x + value256 - entry3.x) * entry3.scale +
+                      canvasBounds.left +
+                      (targetBoard.x + pointX - cameraState.x) * cameraState.scale +
                       (window as Dynamic).scrollX,
                     y:
-                      bounds2.top +
-                      (value254.y + value257 - entry3.y) * entry3.scale +
+                      canvasBounds.top +
+                      (targetBoard.y + pointY - cameraState.y) * cameraState.scale +
                       (window as Dynamic).scrollY,
                   },
                   {
-                    label: value262,
-                    detail: value264,
+                    label: anchorLabel,
+                    detail: elementDetail,
                   },
                 )
                 .catch((): Dynamic => {});

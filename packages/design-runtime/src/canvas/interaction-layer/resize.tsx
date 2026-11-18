@@ -18,8 +18,8 @@ import { type Dynamic } from "../../runtime-types";
 
 /** 按下缩放或编组变换手柄时运行：捕获指针，移动超过 4px 后持续调用 live，松开时 commit，按 Esc、丢失捕获或手柄消失时 revert，最后清理监听。 */
 export function trackHandleDragGesture(deps: { readonly callback30: Dynamic; readonly value130: Dynamic; readonly value134: Dynamic; readonly value18: Dynamic; readonly value19: Dynamic }, event?: Dynamic,
-      options2?: Dynamic,
-      context?: Dynamic): Dynamic {
+      handleName?: Dynamic,
+      gestureCallbacks?: Dynamic): Dynamic {
       if (event.button !== 0 || !deps.value18 || deps.value130.current.has("resize"))
         return;
       event.preventDefault();
@@ -27,190 +27,190 @@ export function trackHandleDragGesture(deps: { readonly callback30: Dynamic; rea
       focusCanvasDocument();
       let pointerId: Dynamic = event.pointerId,
         ancestor: Dynamic = event.currentTarget.closest(
-          '[data-mega-chrome="' + options2 + '"]',
+          '[data-mega-chrome="' + handleName + '"]',
         ),
-        callback61: Dynamic = (input?: Dynamic): Dynamic => {
+        capturePointer: Dynamic = (captureTarget?: Dynamic): Dynamic => {
           try {
-            input?.setPointerCapture(pointerId);
+            captureTarget?.setPointerCapture(pointerId);
           } catch {}
         };
-      callback61(event.currentTarget);
+      capturePointer(event.currentTarget);
       deps.value134("resize", true);
       deps.callback30("resize");
-      let [items, items2]: Dynamic = [event.clientX, event.clientY],
-        callback62: Dynamic = (): Dynamic =>
+      let [startX, startY]: Dynamic = [event.clientX, event.clientY],
+        isHandleAlive: Dynamic = (): Dynamic =>
           !!ancestor?.isConnected && deps.value19.current,
-        flag2: Dynamic = false,
-        callback63: Dynamic = (input?: Dynamic): Dynamic => {
-          if (input.pointerId === pointerId) {
-            if (!callback62()) return callback67();
-            (!flag2 &&
-              Math.hypot(input.clientX - items, input.clientY - items2) <
+        hasMoved: Dynamic = false,
+        handlePointerMove: Dynamic = (moveEvent?: Dynamic): Dynamic => {
+          if (moveEvent.pointerId === pointerId) {
+            if (!isHandleAlive()) return handlePointerCancel();
+            (!hasMoved &&
+              Math.hypot(moveEvent.clientX - startX, moveEvent.clientY - startY) <
                 4) ||
-              ((flag2 = true), context.live(input));
+              ((hasMoved = true), gestureCallbacks.live(moveEvent));
           }
         },
-        callback64: Dynamic = (input?: Dynamic): Dynamic => {
-          input.pointerId === pointerId && callback61(ancestor);
+        handleLostCapture: Dynamic = (lostCaptureEvent?: Dynamic): Dynamic => {
+          lostCaptureEvent.pointerId === pointerId && capturePointer(ancestor);
         },
-        callback65: Dynamic = (): Dynamic => {
-          (window as Dynamic).removeEventListener("pointermove", callback63);
-          (window as Dynamic).removeEventListener("pointerup", callback66);
+        cleanup: Dynamic = (): Dynamic => {
+          (window as Dynamic).removeEventListener("pointermove", handlePointerMove);
+          (window as Dynamic).removeEventListener("pointerup", handlePointerUp);
           (window as Dynamic).removeEventListener(
             "pointercancel",
-            callback67,
+            handlePointerCancel,
           );
           (window as Dynamic).removeEventListener(
             "keydown",
-            callback68,
+            handleKeyDown,
             true,
           );
           (document as Dynamic).removeEventListener(
             "lostpointercapture",
-            callback64,
+            handleLostCapture,
             true,
           );
           deps.value134("resize", false);
-          context.end?.();
+          gestureCallbacks.end?.();
         },
-        callback66: Dynamic = (input?: Dynamic): Dynamic => {
-          input.pointerId === pointerId &&
-            (callback65(),
-            flag2 &&
-              (callback62() ? context.commit(input) : context.revert()));
+        handlePointerUp: Dynamic = (upEvent?: Dynamic): Dynamic => {
+          upEvent.pointerId === pointerId &&
+            (cleanup(),
+            hasMoved &&
+              (isHandleAlive() ? gestureCallbacks.commit(upEvent) : gestureCallbacks.revert()));
         },
-        callback67: Dynamic = (input?: Dynamic): Dynamic => {
-          (input && input.pointerId !== pointerId) ||
-            (callback65(), flag2 && context.revert());
+        handlePointerCancel: Dynamic = (cancelEvent?: Dynamic): Dynamic => {
+          (cancelEvent && cancelEvent.pointerId !== pointerId) ||
+            (cleanup(), hasMoved && gestureCallbacks.revert());
         },
-        callback68: Dynamic = (event2?: Dynamic): Dynamic => {
-          event2.key === "Escape" &&
-            (event2.preventDefault(),
-            event2.stopImmediatePropagation(),
-            callback67());
+        handleKeyDown: Dynamic = (keyEvent?: Dynamic): Dynamic => {
+          keyEvent.key === "Escape" &&
+            (keyEvent.preventDefault(),
+            keyEvent.stopImmediatePropagation(),
+            handlePointerCancel());
         };
-      (window as Dynamic).addEventListener("pointermove", callback63);
-      (window as Dynamic).addEventListener("pointerup", callback66);
-      (window as Dynamic).addEventListener("pointercancel", callback67);
-      (window as Dynamic).addEventListener("keydown", callback68, true);
+      (window as Dynamic).addEventListener("pointermove", handlePointerMove);
+      (window as Dynamic).addEventListener("pointerup", handlePointerUp);
+      (window as Dynamic).addEventListener("pointercancel", handlePointerCancel);
+      (window as Dynamic).addEventListener("keydown", handleKeyDown, true);
       (document as Dynamic).addEventListener(
         "lostpointercapture",
-        callback64,
+        handleLostCapture,
         true,
       );
     }
 
 /** 选中多个画板或便签并整体缩放或旋转时运行：记录变换前的快照，手势中把计算出的新几何写入画布清单并显示变换框，结束时提交或还原。 */
-export function runSelectionTransformGesture(deps: { readonly callback57: Dynamic; readonly onManifestChange: Dynamic; readonly value146: Dynamic; readonly value230: Dynamic; readonly value231: Dynamic; readonly value234: Dynamic; readonly value236: Dynamic; readonly value241: Dynamic; readonly value242: Dynamic; readonly value70: Dynamic }, input?: Dynamic,
-      options2?: Dynamic,
-      context?: Dynamic,
-      value250?: Dynamic,
-      extra: Dynamic = false): Dynamic {
-      let entries2: Dynamic = new Map(
-          deps.value230.map((input2?: Dynamic): Dynamic => [input2.file, input2]),
+export function runSelectionTransformGesture(deps: { readonly callback57: Dynamic; readonly onManifestChange: Dynamic; readonly value146: Dynamic; readonly value230: Dynamic; readonly value231: Dynamic; readonly value234: Dynamic; readonly value236: Dynamic; readonly value241: Dynamic; readonly value242: Dynamic; readonly value70: Dynamic }, pointerEvent?: Dynamic,
+      gestureLabel?: Dynamic,
+      touchedKeys?: Dynamic,
+      computeTransform?: Dynamic,
+      isRotated: Dynamic = false): Dynamic {
+      let boardEntries: Dynamic = new Map(
+          deps.value230.map((boardEntry?: Dynamic): Dynamic => [boardEntry.file, boardEntry]),
         ),
-        entries3: Dynamic = new Map(
+        noteEntries: Dynamic = new Map(
           deps.value231.map(
-            (input2?: Dynamic): Dynamic => [input2.spec.id, input2],
+            (noteEntry?: Dynamic): Dynamic => [noteEntry.spec.id, noteEntry],
           ),
         ),
-        callback61: Dynamic = (input2?: Dynamic): Dynamic =>
+        pickTouchedProps: Dynamic = (snapshot?: Dynamic): Dynamic =>
           Object.fromEntries(
-            Object.entries(input2).filter(
-              ([input3]: Dynamic): Dynamic => context.has(input3),
+            Object.entries(snapshot).filter(
+              ([key]: Dynamic): Dynamic => touchedKeys.has(key),
             ),
           ),
-        value251: Dynamic = deps.value241,
-        callback62: Dynamic = (
-          input2?: Dynamic,
-          options3?: Dynamic,
+        startBox: Dynamic = deps.value241,
+        applyTransform: Dynamic = (
+          transform?: Dynamic,
+          shouldCommit?: Dynamic,
         ): Dynamic => {
           deps.value234(
-            input2 && !options3
+            transform && !shouldCommit
               ? {
-                  box: input2.box,
-                  deg: input2.deg,
-                  turning: options2 === "Rotate",
+                  box: transform.box,
+                  deg: transform.deg,
+                  turning: gestureLabel === "Rotate",
                 }
               : null,
           );
-          let current: Dynamic = deps.value146.current,
-            state: Dynamic = {
-              ...current,
-              artboards: current.artboards.map(
-                (input3?: Dynamic): Dynamic => {
-                  let entry2: Dynamic = entries2.get(input3.file);
-                  return entry2
+          let manifest: Dynamic = deps.value146.current,
+            nextManifest: Dynamic = {
+              ...manifest,
+              artboards: manifest.artboards.map(
+                (board?: Dynamic): Dynamic => {
+                  let transformEntry: Dynamic = boardEntries.get(board.file);
+                  return transformEntry
                     ? {
-                        ...input3,
-                        ...(input2
-                          ? input2.board(entry2)
-                          : callback61(
-                              artboardTransformSnapshot(entry2),
+                        ...board,
+                        ...(transform
+                          ? transform.board(transformEntry)
+                          : pickTouchedProps(
+                              artboardTransformSnapshot(transformEntry),
                             )),
                       }
-                    : input3;
+                    : board;
                 },
               ),
-              ...(entries3.size > 0
+              ...(noteEntries.size > 0
                 ? {
-                    annotations: (current.annotations ?? []).map(
-                      (input3?: Dynamic): Dynamic => {
-                        let entry2: Dynamic = entries3.get(input3.id);
-                        return entry2
+                    annotations: (manifest.annotations ?? []).map(
+                      (annotation?: Dynamic): Dynamic => {
+                        let transformEntry: Dynamic = noteEntries.get(annotation.id);
+                        return transformEntry
                           ? {
-                              ...input3,
-                              ...(input2
-                                ? input2.ann(entry2)
-                                : callback61(
+                              ...annotation,
+                              ...(transform
+                                ? transform.ann(transformEntry)
+                                : pickTouchedProps(
                                     annotationTransformSnapshot(
-                                      entry2.spec,
+                                      transformEntry.spec,
                                     ),
                                   )),
                             }
-                          : input3;
+                          : annotation;
                       },
                     ),
                   }
                 : {}),
             };
-          options3 &&
-            input2 &&
-            (input2.deg !== 0 || extra) &&
+          shouldCommit &&
+            transform &&
+            (transform.deg !== 0 || isRotated) &&
             deps.value236(
-              (input3?: Dynamic): Dynamic =>
+              (previousTransforms?: Dynamic): Dynamic =>
                 [
                   {
-                    box: input2.box,
-                    deg: input2.deg,
+                    box: transform.box,
+                    deg: transform.deg,
                     members: selectionTransformMembers(
-                      state.artboards.filter(
-                        (input4?: Dynamic): Dynamic =>
-                          entries2.has(input4.file),
+                      nextManifest.artboards.filter(
+                        (board?: Dynamic): Dynamic =>
+                          boardEntries.has(board.file),
                       ),
-                      (state.annotations ?? []).filter(
-                        (input4?: Dynamic): Dynamic =>
-                          entries3.has(input4.id),
+                      (nextManifest.annotations ?? []).filter(
+                        (annotation?: Dynamic): Dynamic =>
+                          noteEntries.has(annotation.id),
                       ),
                     ),
                   },
-                  ...input3,
+                  ...previousTransforms,
                 ].slice(0, 8),
             );
           deps.onManifestChange(
-            state,
-            options3,
-            options3
+            nextManifest,
+            shouldCommit,
+            shouldCommit
               ? {
                   transformed: {
-                    label: options2,
-                    keys: context,
-                    boards: entries2,
+                    label: gestureLabel,
+                    keys: touchedKeys,
+                    boards: boardEntries,
                     notes: new Map(
                       deps.value231.map(
-                        (input3?: Dynamic): Dynamic => [
-                          input3.spec.id,
-                          input3.spec,
+                        (noteEntry?: Dynamic): Dynamic => [
+                          noteEntry.spec.id,
+                          noteEntry.spec,
                         ],
                       ),
                     ),
@@ -219,22 +219,22 @@ export function runSelectionTransformGesture(deps: { readonly callback57: Dynami
               : undefined,
           );
         },
-        value252: Dynamic = null;
-      deps.callback57(input, "group-resize", {
-        live: (input2?: Dynamic): Dynamic => {
-          value252 = value250(input2);
-          callback62(value252, false);
-          value252 ||
+        currentTransform: Dynamic = null;
+      deps.callback57(pointerEvent, "group-resize", {
+        live: (moveEvent?: Dynamic): Dynamic => {
+          currentTransform = computeTransform(moveEvent);
+          applyTransform(currentTransform, false);
+          currentTransform ||
             deps.value234({
-              box: value251,
+              box: startBox,
               deg: deps.value242,
-              turning: options2 === "Rotate",
+              turning: gestureLabel === "Rotate",
             });
         },
         commit: (): Dynamic => {
-          value252 ? callback62(value252, true) : callback62(null, false);
+          currentTransform ? applyTransform(currentTransform, true) : applyTransform(null, false);
         },
-        revert: (): Dynamic => callback62(null, false),
+        revert: (): Dynamic => applyTransform(null, false),
         end: (): Dynamic => {
           deps.value234(null);
           deps.value70(null);
@@ -243,147 +243,147 @@ export function runSelectionTransformGesture(deps: { readonly callback57: Dynami
     }
 
 /** 拖动选中范围的缩放手柄时运行：根据指针位移和缩放上下限计算新的选区框（支持吸附、Shift 等比、旋转后的矩形），再交给整体变换手势应用到画板与便签。 */
-export function beginSelectionGroupResize(deps: { readonly callback45: Dynamic; readonly callback58: Dynamic; readonly camera: Dynamic; readonly selectedArtboards: Dynamic; readonly selectedNotes: Dynamic; readonly value230: Dynamic; readonly value231: Dynamic; readonly value241: Dynamic; readonly value242: Dynamic; readonly value243: Dynamic; readonly value70: Dynamic }, input?: Dynamic, options2?: Dynamic): Dynamic {
+export function beginSelectionGroupResize(deps: { readonly callback45: Dynamic; readonly callback58: Dynamic; readonly camera: Dynamic; readonly selectedArtboards: Dynamic; readonly selectedNotes: Dynamic; readonly value230: Dynamic; readonly value231: Dynamic; readonly value241: Dynamic; readonly value242: Dynamic; readonly value243: Dynamic; readonly value70: Dynamic }, handleAxes?: Dynamic, pointerEvent?: Dynamic): Dynamic {
       if (!deps.value241) return;
-      let [items, items2]: Dynamic = [deps.value241, deps.value242],
-        { min: value250, max: value251 }: Dynamic = selectionScaleLimits(items, deps.value230, deps.value231),
-        state: Dynamic = {
-          x: input.x !== null,
-          y: input.y !== null,
+      let [startBox, rotationDeg]: Dynamic = [deps.value241, deps.value242],
+        { min: sizeMin, max: sizeMax }: Dynamic = selectionScaleLimits(startBox, deps.value230, deps.value231),
+        activeAxes: Dynamic = {
+          x: handleAxes.x !== null,
+          y: handleAxes.y !== null,
         },
-        value252: Dynamic = state.x && state.y && items.w > 0 && items.h > 0,
-        [items3, items4]: Dynamic = [options2.clientX, options2.clientY],
-        value253: Dynamic = transformTouchedProperties(
-          items2
+        canKeepAspect: Dynamic = activeAxes.x && activeAxes.y && startBox.w > 0 && startBox.h > 0,
+        [startClientX, startClientY]: Dynamic = [pointerEvent.clientX, pointerEvent.clientY],
+        touchedKeys: Dynamic = transformTouchedProperties(
+          rotationDeg
             ? {
                 x: true,
                 y: true,
               }
-            : state,
+            : activeAxes,
         ),
-        value254: Dynamic = items2
+        snapTargets: Dynamic = rotationDeg
           ? []
           : deps.callback45({
               files: deps.selectedArtboards,
               notes: deps.selectedNotes,
             });
       deps.callback58(
-        options2,
+        pointerEvent,
         "Resize",
-        value253,
-        (input2?: Dynamic): Dynamic => {
+        touchedKeys,
+        (moveEvent?: Dynamic): Dynamic => {
           let scale: Dynamic = deps.camera.get().scale,
-            state2: Dynamic = {
-              dx: (input2.clientX - items3) / scale,
-              dy: (input2.clientY - items4) / scale,
+            pointerDelta: Dynamic = {
+              dx: (moveEvent.clientX - startClientX) / scale,
+              dy: (moveEvent.clientY - startClientY) / scale,
             },
-            value255: Dynamic =
-              items2 || input2.metaKey || input2.ctrlKey
+            snapped: Dynamic =
+              rotationDeg || moveEvent.metaKey || moveEvent.ctrlKey
                 ? {
-                    ...state2,
+                    ...pointerDelta,
                     guides: [],
                   }
                 : snapResize(
-                    items,
-                    input,
-                    state2.dx,
-                    state2.dy,
-                    value254,
+                    startBox,
+                    handleAxes,
+                    pointerDelta.dx,
+                    pointerDelta.dy,
+                    snapTargets,
                     canvasTouchDragThresholdPixels / scale,
                   ),
-            [items5, items6]: Dynamic = [value255.dx, value255.dy];
-          if (items2) {
-            let value258: Dynamic = resizeRotatedRect(
-              items,
-              items2,
-              input,
-              items5,
-              items6,
-              value250,
-              value251,
+            [deltaX, deltaY]: Dynamic = [snapped.dx, snapped.dy];
+          if (rotationDeg) {
+            let rotatedBox: Dynamic = resizeRotatedRect(
+              startBox,
+              rotationDeg,
+              handleAxes,
+              deltaX,
+              deltaY,
+              sizeMin,
+              sizeMax,
               true,
             );
-            if (value258.w === items.w && value258.h === items.h) return null;
-            let value259: Dynamic = selectionUniformScaleTransform(
+            if (rotatedBox.w === startBox.w && rotatedBox.h === startBox.h) return null;
+            let uniformScale: Dynamic = selectionUniformScaleTransform(
               {
-                x: items.x + items.w / 2,
-                y: items.y + items.h / 2,
+                x: startBox.x + startBox.w / 2,
+                y: startBox.y + startBox.h / 2,
               },
               {
-                x: value258.x + value258.w / 2,
-                y: value258.y + value258.h / 2,
+                x: rotatedBox.x + rotatedBox.w / 2,
+                y: rotatedBox.y + rotatedBox.h / 2,
               },
-              value258.w / items.w,
+              rotatedBox.w / startBox.w,
             );
             return {
-              box: value258,
-              deg: items2,
-              keys: value253,
-              board: (input3?: Dynamic): Dynamic =>
+              box: rotatedBox,
+              deg: rotationDeg,
+              keys: touchedKeys,
+              board: (board?: Dynamic): Dynamic =>
                 transformArtboardBounds(
-                  input3,
-                  value259.from,
-                  value259.to,
+                  board,
+                  uniformScale.from,
+                  uniformScale.to,
                   bothTransformAxes,
                 ),
-              ann: (input3?: Dynamic): Dynamic =>
+              ann: (annotation?: Dynamic): Dynamic =>
                 transformAnnotationBounds(
-                  input3.spec,
-                  value259.from,
-                  value259.to,
+                  annotation.spec,
+                  uniformScale.from,
+                  uniformScale.to,
                   bothTransformAxes,
                 ),
             };
           }
-          let value256: Dynamic =
-              value252 && (deps.value243 || input2.shiftKey)
+          let resizedBox: Dynamic =
+              canKeepAspect && (deps.value243 || moveEvent.shiftKey)
                 ? resizeRectKeepingAspect(
-                    items,
-                    input,
-                    items5,
-                    items6,
-                    value250,
-                    value251,
+                    startBox,
+                    handleAxes,
+                    deltaX,
+                    deltaY,
+                    sizeMin,
+                    sizeMax,
                   )
                 : resizeRect(
-                    items,
-                    input,
-                    items5,
-                    items6,
-                    value250,
-                    value251,
+                    startBox,
+                    handleAxes,
+                    deltaX,
+                    deltaY,
+                    sizeMin,
+                    sizeMax,
                   ),
-            value257: Dynamic = activeResizeGuides(
-              value256,
-              input,
-              value255.guides,
+            activeGuides: Dynamic = activeResizeGuides(
+              resizedBox,
+              handleAxes,
+              snapped.guides,
             );
-          deps.value70(value257.length > 0 ? value257 : null);
-          return value256.x === items.x &&
-            value256.y === items.y &&
-            value256.w === items.w &&
-            value256.h === items.h
+          deps.value70(activeGuides.length > 0 ? activeGuides : null);
+          return resizedBox.x === startBox.x &&
+            resizedBox.y === startBox.y &&
+            resizedBox.w === startBox.w &&
+            resizedBox.h === startBox.h
             ? null
             : {
-                box: value256,
+                box: resizedBox,
                 deg: 0,
-                keys: value253,
-                board: (input3?: Dynamic): Dynamic =>
+                keys: touchedKeys,
+                board: (board?: Dynamic): Dynamic =>
                   transformArtboardBounds(
-                    input3,
-                    items,
-                    value256,
-                    state,
+                    board,
+                    startBox,
+                    resizedBox,
+                    activeAxes,
                   ),
-                ann: (input3?: Dynamic): Dynamic =>
+                ann: (annotation?: Dynamic): Dynamic =>
                   transformAnnotationBounds(
-                    input3.spec,
-                    items,
-                    value256,
-                    state,
+                    annotation.spec,
+                    startBox,
+                    resizedBox,
+                    activeAxes,
                   ),
               };
         },
-        items2 !== 0,
+        rotationDeg !== 0,
       );
     }

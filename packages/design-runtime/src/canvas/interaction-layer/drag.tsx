@@ -9,357 +9,357 @@ import { unionRects } from "../../editor/geometry/resize";
 /** 宿主正在拖入文件时（streamDragFile 存在）运行的 effect：监听全局指针事件，把鼠标在画布上的坐标以 move、up、cancel、stale 回报给宿主拖放。 */
 export function subscribeHostDragPointer(deps: { readonly callback16: Dynamic; readonly streamDragFile: Dynamic; readonly value9: Dynamic; readonly value94: Dynamic }): Dynamic {
     if (deps.streamDragFile == null) return;
-    let callback61: Dynamic = (input?: Dynamic): Dynamic => {
-        let value250: Dynamic = deps.value9.current?.getBoundingClientRect();
-        return value250
-          ? deps.callback16(input.clientX, input.clientY, value250)
+    let toCanvasPoint: Dynamic = (event?: Dynamic): Dynamic => {
+        let canvasRect: Dynamic = deps.value9.current?.getBoundingClientRect();
+        return canvasRect
+          ? deps.callback16(event.clientX, event.clientY, canvasRect)
           : null;
       },
-      callback62: Dynamic = (): Dynamic =>
+      reportCancel: Dynamic = (): Dynamic =>
         deps.value94.current?.("cancel", 0, 0, false),
-      callback63: Dynamic = (input?: Dynamic): Dynamic => {
-        input.pointerType === "mouse" &&
+      handlePointerDown: Dynamic = (downEvent?: Dynamic): Dynamic => {
+        downEvent.pointerType === "mouse" &&
           deps.value94.current?.("stale", 0, 0, false);
       },
-      callback64: Dynamic = (input?: Dynamic): Dynamic => {
-        if (input.pointerType !== "mouse") return;
-        if (!(input.buttons & 1)) {
-          callback62();
+      handlePointerMove: Dynamic = (moveEvent?: Dynamic): Dynamic => {
+        if (moveEvent.pointerType !== "mouse") return;
+        if (!(moveEvent.buttons & 1)) {
+          reportCancel();
           return;
         }
-        let value250: Dynamic = callback61(input);
-        value250 &&
+        let canvasPoint: Dynamic = toCanvasPoint(moveEvent);
+        canvasPoint &&
           deps.value94.current?.(
             "move",
-            value250.x,
-            value250.y,
-            input.altKey,
-            input.ctrlKey,
+            canvasPoint.x,
+            canvasPoint.y,
+            moveEvent.altKey,
+            moveEvent.ctrlKey,
           );
       },
-      callback65: Dynamic = (event?: Dynamic): Dynamic => {
-        if (event.pointerType !== "mouse" || event.button !== 0) return;
-        let value250: Dynamic = callback61(event),
-          value251: Dynamic =
+      handlePointerUp: Dynamic = (upEvent?: Dynamic): Dynamic => {
+        if (upEvent.pointerType !== "mouse" || upEvent.button !== 0) return;
+        let point: Dynamic = toCanvasPoint(upEvent),
+          isInsideCanvas: Dynamic =
             !!deps.value9.current &&
-            event.target instanceof Node &&
-            deps.value9.current.contains(event.target);
-        value250 && value251
+            upEvent.target instanceof Node &&
+            deps.value9.current.contains(upEvent.target);
+        point && isInsideCanvas
           ? deps.value94.current?.(
               "up",
-              value250.x,
-              value250.y,
-              event.altKey,
-              event.ctrlKey,
+              point.x,
+              point.y,
+              upEvent.altKey,
+              upEvent.ctrlKey,
             )
-          : callback62();
+          : reportCancel();
       };
-    (window as Dynamic).addEventListener("pointerdown", callback63, true);
-    (window as Dynamic).addEventListener("pointermove", callback64, true);
-    (window as Dynamic).addEventListener("pointerup", callback65, true);
-    (window as Dynamic).addEventListener("pointercancel", callback62, true);
-    (window as Dynamic).addEventListener("blur", callback62);
+    (window as Dynamic).addEventListener("pointerdown", handlePointerDown, true);
+    (window as Dynamic).addEventListener("pointermove", handlePointerMove, true);
+    (window as Dynamic).addEventListener("pointerup", handlePointerUp, true);
+    (window as Dynamic).addEventListener("pointercancel", reportCancel, true);
+    (window as Dynamic).addEventListener("blur", reportCancel);
     return (): Dynamic => {
       (window as Dynamic).removeEventListener(
         "pointerdown",
-        callback63,
+        handlePointerDown,
         true,
       );
       (window as Dynamic).removeEventListener(
         "pointermove",
-        callback64,
+        handlePointerMove,
         true,
       );
-      (window as Dynamic).removeEventListener("pointerup", callback65, true);
+      (window as Dynamic).removeEventListener("pointerup", handlePointerUp, true);
       (window as Dynamic).removeEventListener(
         "pointercancel",
-        callback62,
+        reportCancel,
         true,
       );
-      (window as Dynamic).removeEventListener("blur", callback62);
+      (window as Dynamic).removeEventListener("blur", reportCancel);
     };
   }
 
 /** 按住画板标题栏或便签开始拖动时运行：捕获指针，收集要一起移动的画板与便签（按 Alt 时准备复制），计算吸附参照，并在 Ctrl/Esc 等按键下切换或取消拖动。 */
-export function beginBoardDrag(deps: { readonly callback30: Dynamic; readonly callback47: Dynamic; readonly manifest: Dynamic; readonly onDuplicateObjects: Dynamic; readonly value134: Dynamic; readonly value216: Dynamic; readonly value218: Dynamic; readonly value219: Dynamic; readonly value67: Dynamic }, input?: Dynamic,
-      options2?: Dynamic,
-      context?: Dynamic,
-      value250?: Dynamic,
-      extra?: Dynamic,
-      detail: Dynamic = false): Dynamic {
-      if (input.button !== 0) return;
-      let current: Dynamic = deps.value67.current;
-      current && deps.callback47(current.pointerId);
-      let value251: Dynamic = current && current.live && !current.alt,
-        entries2: Dynamic = new Map(
-          value251
-            ? current.set.map(
-                (input2?: Dynamic): Dynamic => [input2.file, input2],
+export function beginBoardDrag(deps: { readonly callback30: Dynamic; readonly callback47: Dynamic; readonly manifest: Dynamic; readonly onDuplicateObjects: Dynamic; readonly value134: Dynamic; readonly value216: Dynamic; readonly value218: Dynamic; readonly value219: Dynamic; readonly value67: Dynamic }, pointerEvent?: Dynamic,
+      dragTarget?: Dynamic,
+      fallbackBox?: Dynamic,
+      selection?: Dynamic,
+      onClick?: Dynamic,
+      shouldFocus: Dynamic = false): Dynamic {
+      if (pointerEvent.button !== 0) return;
+      let previousDrag: Dynamic = deps.value67.current;
+      previousDrag && deps.callback47(previousDrag.pointerId);
+      let isReusingPrevious: Dynamic = previousDrag && previousDrag.live && !previousDrag.alt,
+        previousBoardByFile: Dynamic = new Map(
+          isReusingPrevious
+            ? previousDrag.set.map(
+                (board?: Dynamic): Dynamic => [board.file, board],
               )
             : [],
         ),
-        entries3: Dynamic = new Map(
-          value251
-            ? current.notes.map(
-                (input2?: Dynamic): Dynamic => [input2.id, input2],
+        previousNoteById: Dynamic = new Map(
+          isReusingPrevious
+            ? previousDrag.notes.map(
+                (note?: Dynamic): Dynamic => [note.id, note],
               )
             : [],
         );
-      input.currentTarget.setPointerCapture(input.pointerId);
+      pointerEvent.currentTarget.setPointerCapture(pointerEvent.pointerId);
       deps.value134("frame-drag", true);
       deps.callback30("frame-drag");
-      let value252: Dynamic = deps.manifest.artboards
+      let dragBoards: Dynamic = deps.manifest.artboards
           .filter(
-            (input2?: Dynamic): Dynamic =>
-              hasBoardSelection(value250, {
-                file: input2.file,
+            (board?: Dynamic): Dynamic =>
+              hasBoardSelection(selection, {
+                file: board.file,
               }) ||
-              ("file" in options2 && options2.file === input2.file),
+              ("file" in dragTarget && dragTarget.file === board.file),
           )
           .map(
-            (input2?: Dynamic): Dynamic =>
-              entries2.get(input2.file) ?? {
-                file: input2.file,
-                x: input2.x,
-                y: input2.y,
-                w: input2.w,
-                h: input2.h,
+            (board?: Dynamic): Dynamic =>
+              previousBoardByFile.get(board.file) ?? {
+                file: board.file,
+                x: board.x,
+                y: board.y,
+                w: board.w,
+                h: board.h,
               },
           ),
-        value253: Dynamic = (deps.manifest.annotations ?? [])
+        dragNotes: Dynamic = (deps.manifest.annotations ?? [])
           .filter(
-            (input2?: Dynamic): Dynamic =>
-              hasBoardSelection(value250, {
-                note: input2.id,
+            (note?: Dynamic): Dynamic =>
+              hasBoardSelection(selection, {
+                note: note.id,
               }) ||
-              ("note" in options2 && options2.note === input2.id),
+              ("note" in dragTarget && dragTarget.note === note.id),
           )
           .map(
-            (input2?: Dynamic): Dynamic => entries3.get(input2.id) ?? input2,
+            (note?: Dynamic): Dynamic => previousNoteById.get(note.id) ?? note,
           ),
-        value254: Dynamic =
-          ("file" in options2
-            ? entries2.get(options2.file)
-            : entries3.get(options2.note)) ?? context,
-        value255: Dynamic = input.altKey && deps.onDuplicateObjects != null,
-        value256: Dynamic = unionRects([
-          ...value252,
-          ...value253.map(
-            (input2?: Dynamic): Dynamic =>
+        originBox: Dynamic =
+          ("file" in dragTarget
+            ? previousBoardByFile.get(dragTarget.file)
+            : previousNoteById.get(dragTarget.note)) ?? fallbackBox,
+        isDuplicating: Dynamic = pointerEvent.altKey && deps.onDuplicateObjects != null,
+        dragBounds: Dynamic = unionRects([
+          ...dragBoards,
+          ...dragNotes.map(
+            (note?: Dynamic): Dynamic =>
               rotatedAnnotationBounds(
-                input2,
-                deps.value216.current(input2),
+                note,
+                deps.value216.current(note),
               ),
           ),
         ]),
-        value257: Dynamic = deps.manifest.artboards.map(
-          (input2?: Dynamic): Dynamic => entries2.get(input2.file) ?? input2,
+        allBoards: Dynamic = deps.manifest.artboards.map(
+          (board?: Dynamic): Dynamic => previousBoardByFile.get(board.file) ?? board,
         ),
-        value258: Dynamic = (deps.manifest.annotations ?? []).map(
-          (input2?: Dynamic): Dynamic => {
-            let value261: Dynamic = entries3.get(input2.id) ?? input2;
+        allNoteBounds: Dynamic = (deps.manifest.annotations ?? []).map(
+          (note?: Dynamic): Dynamic => {
+            let displayedNote: Dynamic = previousNoteById.get(note.id) ?? note;
             return {
-              id: value261.id,
+              id: displayedNote.id,
               ...rotatedAnnotationBounds(
-                value261,
-                deps.value216.current(value261),
+                displayedNote,
+                deps.value216.current(displayedNote),
               ),
             };
           },
         ),
-        state: Dynamic = {
+        movingSet: Dynamic = {
           files: new Set(
-            value252.map((input2?: Dynamic): Dynamic => input2.file),
+            dragBoards.map((board?: Dynamic): Dynamic => board.file),
           ),
           notes: new Set(
-            value253.map((input2?: Dynamic): Dynamic => input2.id),
+            dragNotes.map((note?: Dynamic): Dynamic => note.id),
           ),
         },
-        value259: Dynamic = canvasSnapReferenceObjects(
-          value257,
-          value258,
-          state,
+        moveSnapObjects: Dynamic = canvasSnapReferenceObjects(
+          allBoards,
+          allNoteBounds,
+          movingSet,
           false,
         ),
-        value260: Dynamic = canvasSnapReferenceObjects(
-          value257,
-          value258,
-          state,
+        copySnapObjects: Dynamic = canvasSnapReferenceObjects(
+          allBoards,
+          allNoteBounds,
+          movingSet,
           true,
         ),
-        pointerId: Dynamic = input.pointerId;
+        pointerId: Dynamic = pointerEvent.pointerId;
       focusCanvasDocument();
-      let flag2: Dynamic = false,
-        callback61: Dynamic = (event?: Dynamic): Dynamic => {
-          let current2: Dynamic = deps.value67.current;
-          event.key === "Escape" && event.type === "keyup" && (flag2 = false);
-          if (event.key === "Escape" && event.type === "keydown" && flag2) {
-            event.preventDefault();
-            event.stopImmediatePropagation();
+      let isEscapeHeld: Dynamic = false,
+        handleKey: Dynamic = (keyEvent?: Dynamic): Dynamic => {
+          let activeDrag: Dynamic = deps.value67.current;
+          keyEvent.key === "Escape" && keyEvent.type === "keyup" && (isEscapeHeld = false);
+          if (keyEvent.key === "Escape" && keyEvent.type === "keydown" && isEscapeHeld) {
+            keyEvent.preventDefault();
+            keyEvent.stopImmediatePropagation();
             return;
           }
           if (
-            !(!current2 || current2.pointerId !== pointerId || !current2.live)
+            !(!activeDrag || activeDrag.pointerId !== pointerId || !activeDrag.live)
           ) {
-            if (event.key === "Escape" && event.type === "keydown") {
-              event.preventDefault();
-              event.stopImmediatePropagation();
-              flag2 = true;
+            if (keyEvent.key === "Escape" && keyEvent.type === "keydown") {
+              keyEvent.preventDefault();
+              keyEvent.stopImmediatePropagation();
+              isEscapeHeld = true;
               deps.value218.current(pointerId);
               return;
             }
-            event.key === "Alt" &&
-              !event.repeat &&
-              current2.last &&
+            keyEvent.key === "Alt" &&
+              !keyEvent.repeat &&
+              activeDrag.last &&
               deps.value219.current(
                 {
-                  ...current2.last,
+                  ...activeDrag.last,
                   pointerId: pointerId,
-                  altKey: event.type === "keydown",
+                  altKey: keyEvent.type === "keydown",
                 },
                 false,
               );
-            event.key === "Control" &&
-              !event.repeat &&
-              current2.last &&
-              current2.hoverKey &&
+            keyEvent.key === "Control" &&
+              !keyEvent.repeat &&
+              activeDrag.last &&
+              activeDrag.hoverKey &&
               deps.value219.current(
                 {
-                  ...current2.last,
+                  ...activeDrag.last,
                   pointerId: pointerId,
-                  altKey: current2.alt,
-                  ctrlKey: event.type === "keydown",
+                  altKey: activeDrag.alt,
+                  ctrlKey: keyEvent.type === "keydown",
                 },
                 false,
               );
           }
         },
-        callback62: Dynamic = (): Dynamic => deps.value218.current(pointerId);
-      (window as Dynamic).addEventListener("keydown", callback61, true);
-      (window as Dynamic).addEventListener("keyup", callback61, true);
-      (window as Dynamic).addEventListener("blur", callback62);
+        cancelDrag: Dynamic = (): Dynamic => deps.value218.current(pointerId);
+      (window as Dynamic).addEventListener("keydown", handleKey, true);
+      (window as Dynamic).addEventListener("keyup", handleKey, true);
+      (window as Dynamic).addEventListener("blur", cancelDrag);
       deps.value67.current = {
-        ref: options2,
-        set: value252,
-        notes: value253,
+        ref: dragTarget,
+        set: dragBoards,
+        notes: dragNotes,
         pointerId: pointerId,
-        startX: input.clientX,
-        startY: input.clientY,
-        origX: value254.x,
-        origY: value254.y,
-        alt: value255,
+        startX: pointerEvent.clientX,
+        startY: pointerEvent.clientY,
+        origX: originBox.x,
+        origY: originBox.y,
+        alt: isDuplicating,
         last: null,
         unlisten: (): Dynamic => {
-          (window as Dynamic).removeEventListener("blur", callback62);
-          if (!flag2) {
+          (window as Dynamic).removeEventListener("blur", cancelDrag);
+          if (!isEscapeHeld) {
             (window as Dynamic).removeEventListener(
               "keydown",
-              callback61,
+              handleKey,
               true,
             );
             (window as Dynamic).removeEventListener(
               "keyup",
-              callback61,
+              handleKey,
               true,
             );
             return;
           }
-          let callback63: Dynamic = (input2?: Dynamic): Dynamic => {
-            input2.key !== "Escape" ||
-              input2.type !== "keyup" ||
+          let releaseKeyListeners: Dynamic = (keyupEvent?: Dynamic): Dynamic => {
+            keyupEvent.key !== "Escape" ||
+              keyupEvent.type !== "keyup" ||
               ((window as Dynamic).removeEventListener(
                 "keydown",
-                callback61,
+                handleKey,
                 true,
               ),
               (window as Dynamic).removeEventListener(
                 "keyup",
-                callback61,
+                handleKey,
                 true,
               ),
               (window as Dynamic).removeEventListener(
                 "keyup",
-                callback63,
+                releaseKeyListeners,
                 true,
               ));
           };
-          (window as Dynamic).addEventListener("keyup", callback63, true);
+          (window as Dynamic).addEventListener("keyup", releaseKeyListeners, true);
         },
-        click: extra,
-        focus: detail && !input.altKey,
+        click: onClick,
+        focus: shouldFocus && !pointerEvent.altKey,
         live: false,
-        snap: value256
+        snap: dragBounds
           ? {
-              box: value256,
-              moveLines: rectangleSnapGuides(value259),
-              copyLines: rectangleSnapGuides(value260),
-              moveStill: value259,
-              copyStill: value260,
+              box: dragBounds,
+              moveLines: rectangleSnapGuides(moveSnapObjects),
+              copyLines: rectangleSnapGuides(copySnapObjects),
+              moveStill: moveSnapObjects,
+              copyStill: copySnapObjects,
             }
           : null,
       };
     }
 
 /** 其他手势通过 canvas.start 接管为画板拖动时运行：结束旧的拖动，按当前选择收集画板与便签，记录起点与原位置，建立拖动状态。 */
-export function beginHandedOffBoardDrag(deps: { readonly value146: Dynamic; readonly value218: Dynamic; readonly value67: Dynamic }, input?: Dynamic,
-      options2?: Dynamic,
-      context?: Dynamic,
-      value250?: Dynamic,
-      extra?: Dynamic,
-      detail?: Dynamic): Dynamic {
-      let current: Dynamic = deps.value67.current;
-      current && deps.value218.current(current.pointerId);
-      let current2: Dynamic = deps.value146.current,
-        value251: Dynamic = current2.artboards
+export function beginHandedOffBoardDrag(deps: { readonly value146: Dynamic; readonly value218: Dynamic; readonly value67: Dynamic }, moveCallback?: Dynamic,
+      pointerId?: Dynamic,
+      dragTarget?: Dynamic,
+      selection?: Dynamic,
+      startX?: Dynamic,
+      startY?: Dynamic): Dynamic {
+      let previousDrag: Dynamic = deps.value67.current;
+      previousDrag && deps.value218.current(previousDrag.pointerId);
+      let manifest: Dynamic = deps.value146.current,
+        boards: Dynamic = manifest.artboards
           .filter(
-            (input2?: Dynamic): Dynamic =>
-              hasBoardSelection(value250, {
-                file: input2.file,
+            (board?: Dynamic): Dynamic =>
+              hasBoardSelection(selection, {
+                file: board.file,
               }),
           )
           .map(
-            (input2?: Dynamic): Dynamic => ({
-              file: input2.file,
-              x: input2.x,
-              y: input2.y,
-              w: input2.w,
-              h: input2.h,
+            (board?: Dynamic): Dynamic => ({
+              file: board.file,
+              x: board.x,
+              y: board.y,
+              w: board.w,
+              h: board.h,
             }),
           ),
-        value252: Dynamic = (current2.annotations ?? []).filter(
-          (input2?: Dynamic): Dynamic =>
-            hasBoardSelection(value250, {
-              note: input2.id,
+        notes: Dynamic = (manifest.annotations ?? []).filter(
+          (note?: Dynamic): Dynamic =>
+            hasBoardSelection(selection, {
+              note: note.id,
             }),
         ),
-        value253: Dynamic = ("file" in context
-          ? value251.find(
-              (input2?: Dynamic): Dynamic => input2.file === context.file,
+        originBox: Dynamic = ("file" in dragTarget
+          ? boards.find(
+              (board?: Dynamic): Dynamic => board.file === dragTarget.file,
             )
-          : value252.find(
-              (input2?: Dynamic): Dynamic => input2.id === context.note,
+          : notes.find(
+              (note?: Dynamic): Dynamic => note.id === dragTarget.note,
             )) ??
-          value251[0] ??
-          value252[0] ?? {
+          boards[0] ??
+          notes[0] ?? {
             x: 0,
             y: 0,
           };
       deps.value67.current = {
-        ref: context,
-        set: value251,
-        notes: value252,
-        pointerId: options2,
-        startX: extra,
-        startY: detail,
-        origX: value253.x,
-        origY: value253.y,
+        ref: dragTarget,
+        set: boards,
+        notes: notes,
+        pointerId: pointerId,
+        startX: startX,
+        startY: startY,
+        origX: originBox.x,
+        origY: originBox.y,
         alt: false,
         last: null,
         unlisten: (): Dynamic => {},
         click: null,
         focus: false,
         live: true,
-        setMove: input,
+        setMove: moveCallback,
         snap: null,
       };
     }

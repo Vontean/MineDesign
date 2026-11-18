@@ -13,49 +13,49 @@ var headerColorCanvasContext: Dynamic;
 function parseHeaderCssColor(color?: Dynamic): Dynamic {
   if (color.length > 64 || /currentcolor/i.test(color)) return;
   if (headerColorCanvasContext === undefined) {
-    let value3: Dynamic =
+    let canvasElement: Dynamic =
       typeof document === "undefined"
         ? null
         : (document as Dynamic).createElement("canvas");
-    value3 && (value3.width = value3.height = 1);
-    headerColorCanvasContext = value3?.getContext("2d") ?? null;
+    canvasElement && (canvasElement.width = canvasElement.height = 1);
+    headerColorCanvasContext = canvasElement?.getContext("2d") ?? null;
   }
-  let value: Dynamic = headerColorCanvasContext;
-  if (!value) return normalizeCssColor(color);
-  let callback: Dynamic = (input?: Dynamic): Dynamic => (
-      (value.fillStyle = input),
-      (value.fillStyle = color),
-      String(value.fillStyle)
+  let canvasContext: Dynamic = headerColorCanvasContext;
+  if (!canvasContext) return normalizeCssColor(color);
+  let probeParse: Dynamic = (seedColor?: Dynamic): Dynamic => (
+      (canvasContext.fillStyle = seedColor),
+      (canvasContext.fillStyle = color),
+      String(canvasContext.fillStyle)
     ),
-    value2: Dynamic = callback("#010203");
-  return value2 === callback("#030201") ? value2 : undefined;
+    probeColor: Dynamic = probeParse("#010203");
+  return probeColor === probeParse("#030201") ? probeColor : undefined;
 }
 function artboardHeaderTheme(
   theme?: Dynamic,
   parseColor: Dynamic = parseHeaderCssColor,
 ): Dynamic {
-  let value: Dynamic = theme ? theme.background || theme.backgroundColor : "";
-  if (!theme || !value) return null;
-  let value2: Dynamic = Object.hasOwn(theme.vars, value)
-      ? theme.vars[value]
-      : value,
-    value3: Dynamic = typeof value2 == "string" ? value2.trim() : "",
-    value4: Dynamic = value3 === "" ? undefined : parseColor(value3),
-    value5: Dynamic =
-      value4 === undefined || opaqueHeaderColorPattern.test(value4)
-        ? value4
-        : normalizeCssColor(value3),
-    value6: Dynamic =
-      value5 !== undefined && opaqueHeaderColorPattern.test(value5)
-        ? parseRgbaColor(value5)
+  let themeBackground: Dynamic = theme ? theme.background || theme.backgroundColor : "";
+  if (!theme || !themeBackground) return null;
+  let rawColor: Dynamic = Object.hasOwn(theme.vars, themeBackground)
+      ? theme.vars[themeBackground]
+      : themeBackground,
+    trimmedColor: Dynamic = typeof rawColor == "string" ? rawColor.trim() : "",
+    parsedColor: Dynamic = trimmedColor === "" ? undefined : parseColor(trimmedColor),
+    opaqueColor: Dynamic =
+      parsedColor === undefined || opaqueHeaderColorPattern.test(parsedColor)
+        ? parsedColor
+        : normalizeCssColor(trimmedColor),
+    rgbaColor: Dynamic =
+      opaqueColor !== undefined && opaqueHeaderColorPattern.test(opaqueColor)
+        ? parseRgbaColor(opaqueColor)
         : undefined;
-  return value5 === undefined || value6 === undefined
+  return opaqueColor === undefined || rgbaColor === undefined
     ? null
     : {
-        bg: value5,
+        bg: opaqueColor,
         lightInk:
-          contrastRatio(defaultLightHeaderColor, value6) >
-          contrastRatio(defaultDarkHeaderColor, value6),
+          contrastRatio(defaultLightHeaderColor, rgbaColor) >
+          contrastRatio(defaultDarkHeaderColor, rgbaColor),
       };
 }
 export {

@@ -46,12 +46,12 @@ export {
 export function installCanvasFrameReadiness(): () => void {
   return () => {
     resolveDesignFramesReady = (): Dynamic => {};
-    designFramesReadyPromise = new Promise((input?: Dynamic): Dynamic => {
-      resolveDesignFramesReady = input;
+    designFramesReadyPromise = new Promise((resolve?: Dynamic): Dynamic => {
+      resolveDesignFramesReady = resolve;
     });
     resolveCaptureFramesReady = (): Dynamic => {};
-    captureFramesReadyPromise = new Promise((input?: Dynamic): Dynamic => {
-      resolveCaptureFramesReady = input;
+    captureFramesReadyPromise = new Promise((resolve?: Dynamic): Dynamic => {
+      resolveCaptureFramesReady = resolve;
     });
   };
 }
