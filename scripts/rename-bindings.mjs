@@ -21,9 +21,9 @@ const traverse = traversePkg.default ?? traversePkg;
 const RESERVED = new Set(('break case catch class const continue debugger default delete do else enum export extends false finally for function if import in instanceof new null return super switch this throw true try typeof var void while with yield let static implements interface package private protected public await async of get set arguments eval undefined NaN Infinity any unknown never object string number boolean symbol bigint type namespace declare readonly abstract').split(' '));
 const IDENT = /^[A-Za-z_$][\w$]*$/;
 const parse = source => parser.parse(source, { sourceType: 'module', plugins: ['typescript', 'jsx'], errorRecovery: false });
-const GENERIC = /^(?:input|options|context|value|extra|argument|detail|entry|flag|count|current|items|callback|state|list|fillStyle|innerHTML|position|shaft|tag|rot|ref|top)$/;
+const GENERIC = /^(?:input|options|context|value|extra|argument|detail|callback|fillStyle|innerHTML|shaft)$/;
 // 机器名：带编号的通用名、模块名拼出的编号名，以及以数字结尾的名字（x1、y2 这类坐标除外）
-const isMachine = name => new RegExp(`^(?:${NUMBERED.source})$`).test(name) || new RegExp(`^(?:${DERIVED.source})$`).test(name) || /^_extraArguments\d+$/.test(name) || (/[A-Za-z]{3,}\d+$/.test(name) && !/^(?:h[1-6]|utf8|base64|int\d+|uint\d+|float\d+)$/i.test(name));
+const isMachine = name => new RegExp(`^(?:${NUMBERED.source})$`).test(name) || new RegExp(`^(?:${DERIVED.source})$`).test(name) || /^_extraArguments\d+$/.test(name) || (/[A-Za-z]{3,}\d+$/.test(name) && !/(?:8|16|32|64|128|256|512)$/.test(name));
 // 还原时套上的通用参数名：多数与实际用途不符，--generic 时一起列出
 const isGeneric = (name, binding) => GENERIC.test(name) && binding.kind === 'param';
 
