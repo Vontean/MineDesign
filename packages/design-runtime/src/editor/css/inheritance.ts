@@ -16,7 +16,7 @@ function resolveCssVariable(
   );
   if (!value) return "";
   for (let value2 of [options, "html", ":root"] as Dynamic) {
-    let value3: Dynamic = (0, getCssRuleProperty)(
+    let value3: Dynamic = getCssRuleProperty(
       input,
       value2,
       value[1],
@@ -38,7 +38,7 @@ function mergeAuthoredStyle(
   context?: Dynamic,
   value?: Dynamic,
 ): Dynamic {
-  let value2: Dynamic = (0, parseStyleDeclarations)(context);
+  let value2: Dynamic = parseStyleDeclarations(context);
   if (items2.length === 0 || items.length === 0) return value2;
   let values: Dynamic = new Set(items2),
     entries: Dynamic = new Map(),
@@ -85,7 +85,7 @@ function getCssPropertySources(input?: Dynamic): Dynamic {
       entries.set(input2, options);
     };
   for (let value2 of input as Dynamic) {
-    let value3: Dynamic = (0, expandCssShorthand)(value2);
+    let value3: Dynamic = expandCssShorthand(value2);
     if (value3) {
       callback(value2.prop, value2.selector);
       for (let value4 of value3 as Dynamic)

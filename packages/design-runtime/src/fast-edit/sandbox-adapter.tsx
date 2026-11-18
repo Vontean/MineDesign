@@ -51,7 +51,7 @@ export function installFastEditSandboxAdapter(): () => void {
   return () => {
     fastEditSandboxAdapter = {
       create(input: Dynamic): Dynamic {
-        let value: Dynamic = (0, createFastEditSandbox)({
+        let value: Dynamic = createFastEditSandbox({
             sdk: 3,
             files: input.files.map(
               (input2?: Dynamic): Dynamic => ({
@@ -165,7 +165,7 @@ export function installFastEditSandboxAdapter(): () => void {
               input2(input3);
             };
           try {
-            value = (0, createFastEditSandbox)({
+            value = createFastEditSandbox({
               html: input,
               onHtml: (input3?: Dynamic): Dynamic => {
                 input3.final === true && callback(input3.html);
@@ -189,8 +189,8 @@ export function installFastEditSandboxAdapter(): () => void {
         });
       },
     };
-    ReactFastEdit = (0, toModuleNamespace)(
-      (0, load_react)(),
+    ReactFastEdit = toModuleNamespace(
+      load_react(),
       1,
     );
   };

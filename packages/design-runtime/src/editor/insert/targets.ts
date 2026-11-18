@@ -23,7 +23,7 @@ function sameArrowHtml(input?: Dynamic, options?: Dynamic): Dynamic {
       .replace(
         SvgArrowsDcArrowHeadFilledPattern,
         (input3?: Dynamic, options2?: Dynamic): Dynamic =>
-          (0, SvgArrowsHandler)(options2),
+          SvgArrowsHandler(options2),
       );
   return callback(input) === callback(options ?? "");
 }
@@ -43,7 +43,7 @@ function insertionPointForSelection(
       ...new Set(
         items.map(
           (input2?: Dynamic): Dynamic =>
-            (0, promoteSvgShapeToRoot)(input, input2),
+            promoteSvgShapeToRoot(input, input2),
         ),
       ),
     ],
@@ -63,7 +63,7 @@ function insertionPointForSelection(
   return value4.length === 0 ||
     !value4.every(
       (input2?: Dynamic): Dynamic =>
-        (0, canContainHtmlTag)(value3, input2),
+        canContainHtmlTag(value3, input2),
     ) ||
     sameArrowHtml(context, input.subtreeHtml(value))
     ? state
@@ -86,7 +86,7 @@ function defaultInsertionPoint(input?: Dynamic, options?: Dynamic): Dynamic {
     value2: Dynamic = value.filter((input2?: Dynamic): Dynamic => {
       let value6: Dynamic = input.element(input2);
       return !(
-        value6 && (0, isUnconstrainedAbsoluteElement)(value6, true)
+        value6 && isUnconstrainedAbsoluteElement(value6, true)
       );
     }),
     value3: Dynamic = value2.length > 0 ? value2 : value,
@@ -145,7 +145,7 @@ function textToParagraphHtml(
 ): Dynamic {
   return input.startsWith("<")
     ? input
-    : `<p style="${options}">${(0, escapeHtml)(input)}</p>`;
+    : `<p style="${options}">${escapeHtml(input)}</p>`;
 }
 function insertHtmlIntoModel(
   input?: Dynamic,
@@ -181,7 +181,7 @@ function deleteModelElements(input?: Dynamic, options?: Dynamic): Dynamic {
     (input2?: Dynamic): Dynamic => !input.model.isUneditable(input2),
   );
   if (value2.length === 0) return 0;
-  let value3: Dynamic = (0, selectedSvgElements)(input.model, [
+  let value3: Dynamic = selectedSvgElements(input.model, [
     ...value2,
   ]);
   for (let value4 of value3 as Dynamic) input.model.removeElement(value4);

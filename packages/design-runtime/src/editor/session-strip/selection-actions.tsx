@@ -18,7 +18,7 @@ function SelectionSessionActions({
   testids: testids,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic = (0, useTouchToolbar)() ? onDelete : undefined,
+  let value: Dynamic = useTouchToolbar() ? onDelete : undefined,
     value2: Dynamic =
       typeof disabledReason == "string"
         ? {

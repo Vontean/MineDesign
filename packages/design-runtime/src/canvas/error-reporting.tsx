@@ -63,7 +63,7 @@ function createArtboardErrorReporter(options?: Dynamic): Dynamic {
 function useArtboardErrorReporting(shown?: Dynamic): Dynamic {
   (0, react_MCt.useEffect)((): Dynamic => {
     artboardErrorReporter ??= createArtboardErrorReporter({
-      hosted: (0, embedMemoryPrefix)() !== "",
+      hosted: embedMemoryPrefix() !== "",
       activity: claudeActivityStore,
       after: scheduleArtboardErrorReport,
       report: (...input: Dynamic[]): Dynamic =>
@@ -84,7 +84,7 @@ export {
 };
 export function installCanvasErrorReporting(): () => void {
   return () => {
-    react_MCt = (0, toModuleNamespace)((0, load_react)(), 1);
+    react_MCt = toModuleNamespace(load_react(), 1);
     artboardErrorReportDelayMs = 5e3;
     scheduleArtboardErrorReport = (
       input?: Dynamic,

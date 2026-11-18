@@ -201,8 +201,8 @@ export {
 export function installEditorPropertiesNumericScrubber(): () => void {
   return () => {
     PropertiesNumericScrubberAlias = null;
-    jsxPropertiesNumericScrubber = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    jsxPropertiesNumericScrubber = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
     PropertiesNumericScrubberUseGroupingConfig = {

@@ -34,7 +34,7 @@ async function resolveSamplingCapability(
   timeoutMs: Dynamic = capabilityTimeoutMs,
 ): Promise<Dynamic> {
   if (originalClaudeUse === null)
-    return (0, awaitHostCapability)("sample", isValid, timeoutMs);
+    return awaitHostCapability("sample", isValid, timeoutMs);
   let timeout: Dynamic;
   try {
     let promise: Dynamic = new Promise(

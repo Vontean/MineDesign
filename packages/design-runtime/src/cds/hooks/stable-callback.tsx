@@ -63,10 +63,10 @@ export {
 };
 export function installCdsHooksStableCallback(): () => void {
   return () => {
-    initializeHooksStableCallback = (0, initializeOnce)(() => {});
-    initializeHooksStableCallback_2 = (0, initializeOnce)(() => {
-      reactHooksStableCallback = (0, toModuleNamespace)(
-        (0, load_react)(),
+    initializeHooksStableCallback = initializeOnce(() => {});
+    initializeHooksStableCallback_2 = initializeOnce(() => {
+      reactHooksStableCallback = toModuleNamespace(
+        load_react(),
       );
     });
   };

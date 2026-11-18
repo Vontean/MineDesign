@@ -34,18 +34,18 @@ function parseRemoteFileRecord(
   path: string,
   input: Storage.DatabaseRecord,
 ): Storage.RemoteFileRecord | null {
-  let id = (0, blobIdFromReference)(
+  let id = blobIdFromReference(
     stringOrUndefined(input.dataRef) ?? "",
   );
-  if (id === null || (0, isPendingBlobId)(id)) {
+  if (id === null || isPendingBlobId(id)) {
     return null;
   }
   let contentType = stringOrUndefined(input.contentType),
     sha2562 = stringOrUndefined(input.sha256),
     storedSha256 = stringOrUndefined(input.storedSha256);
-  return (0, makeRemoteFileRecord)(
+  return makeRemoteFileRecord(
     path,
-    (0, blobAbsoluteUrl)(id),
+    blobAbsoluteUrl(id),
     {
       bytes:
         typeof input.dataBytes === "number" && input.dataBytes >= 0
@@ -76,11 +76,11 @@ function storageRecordFromRemoteFile(
 ): Model.StorageRecord {
   let storageRecord: Model.StorageRecord = {
     store: "blob",
-    id: (0, blobIdFromReference)(remoteRecord.dataRef)!,
+    id: blobIdFromReference(remoteRecord.dataRef)!,
     bytes: remoteRecord.dataBytes,
     type:
       remoteRecord.contentType ??
-      (0, mimeTypeForPath)(remoteRecord.path),
+      mimeTypeForPath(remoteRecord.path),
   };
   if (remoteRecord.sha256 !== undefined) {
     storageRecord.sha256 = remoteRecord.sha256;
@@ -202,7 +202,7 @@ function composeStoredSystemFiles(
       value === SYSTEM_SOURCE_DOCUMENT_PATH ||
       value === SYSTEM_UPGRADED_DOCUMENT_PATH ||
       !DESIGN_SYSTEM_COLLECTIONS.includes(
-        (0, documentCollectionPath)(value),
+        documentCollectionPath(value),
       )
     ) {
       continue;
@@ -211,14 +211,14 @@ function composeStoredSystemFiles(
       hidden++;
       continue;
     }
-    let value3 = (0, validatedFilePathForDocument)(value, value2);
+    let value3 = validatedFilePathForDocument(value, value2);
     if (value3 === null) {
       hidden++;
       continue;
     }
     if (
       value3 === GENERATED_TOKENS_CSS_PATH ||
-      (0, isGeneratedApiPath)(value3)
+      isGeneratedApiPath(value3)
     ) {
       continue;
     }
@@ -236,9 +236,9 @@ function composeStoredSystemFiles(
       Object.hasOwn(files, value3)
     ) {
       continue;
-    } else if (value4 !== null && (0, canUseStoragePointer)(value3)) {
-      files[value3] = (0, blobPointer)(
-        (0, blobIdFromReference)(value4.dataRef)!,
+    } else if (value4 !== null && canUseStoragePointer(value3)) {
+      files[value3] = blobPointer(
+        blobIdFromReference(value4.dataRef)!,
       );
       storageFiles[value3] = storageRecordFromRemoteFile(value4);
     } else if (value4 !== null) {
@@ -246,17 +246,16 @@ function composeStoredSystemFiles(
     } else if (typeof value2.data === "string") {
       files[value3] =
         value3 === DESIGN_SYSTEM_PATHS.readme
-          ? (0, stripGeneratedReadmeTail)(value2.data)
+          ? stripGeneratedReadmeTail(value2.data)
           : value2.data;
     } else {
       hidden++;
     }
   }
-  let serializedStorage = (0, serializeStorageCatalog)({
+  let serializedStorage = serializeStorageCatalog({
     files: storageFiles,
   });
-  files[DESIGN_SYSTEM_PATHS.manifest] = (0,
-  stringifyManifestWithinBudget)({
+  files[DESIGN_SYSTEM_PATHS.manifest] = stringifyManifestWithinBudget({
     manifestVersion: 3,
     name: title,
     namespace: meta?.namespace ?? null,
@@ -282,10 +281,9 @@ function composeStoredSystemFiles(
         }
       : {}),
   });
-  files[DESIGN_SYSTEM_PATHS.manifest] = (0,
-  stringifyManifestWithinBudget)(
-    (0, buildDesignSystemManifest)(
-      (0, parsedDesignSystem)({
+  files[DESIGN_SYSTEM_PATHS.manifest] = stringifyManifestWithinBudget(
+    buildDesignSystemManifest(
+      parsedDesignSystem({
         v: 2,
         files: {
           ...files,
@@ -322,14 +320,13 @@ function hydrateStoredSystemText(
     if (system.remoteText.has(value)) {
       files[value] =
         value === DESIGN_SYSTEM_PATHS.readme
-          ? (0, stripGeneratedReadmeTail)(value2)
+          ? stripGeneratedReadmeTail(value2)
           : value2;
     }
   }
-  files[DESIGN_SYSTEM_PATHS.manifest] = (0,
-  stringifyManifestWithinBudget)(
-    (0, buildDesignSystemManifest)(
-      (0, parsedDesignSystem)({
+  files[DESIGN_SYSTEM_PATHS.manifest] = stringifyManifestWithinBudget(
+    buildDesignSystemManifest(
+      parsedDesignSystem({
         v: 2,
         files: {
           ...files,
@@ -381,9 +378,9 @@ function resolveLocalFileReference(
     return null;
   }
   let segments =
-    localPath.startsWith("/") || (0, pathDirname)(sourcePath) === ""
+    localPath.startsWith("/") || pathDirname(sourcePath) === ""
       ? []
-      : (0, pathDirname)(sourcePath).split("/");
+      : pathDirname(sourcePath).split("/");
   for (let value of localPath.split("/")) {
     if (value === "" || value === ".") {
       continue;
@@ -398,15 +395,15 @@ function resolveLocalFileReference(
     }
   }
   let path = segments.join("/");
-  if ((0, isValidDesignSystemPath)(path)) {
-    return (0, normalizeDesignSystemPath)(path);
+  if (isValidDesignSystemPath(path)) {
+    return normalizeDesignSystemPath(path);
   } else {
     return null;
   }
 }
 function componentFileReferences(path: string, content: string): string[] {
   let references: string[] = [],
-    kind = (0, classifyDesignSystemFile)(path);
+    kind = classifyDesignSystemFile(path);
   if (kind !== "preview" && kind !== "componentReadme") {
     return references;
   }
@@ -436,7 +433,7 @@ function remoteFileRecordAtPath(
   documents: ReadonlyMap<string, Storage.DatabaseRecord>,
   path: string,
 ): Storage.RemoteFileRecord | null {
-  let record = documents.get((0, documentPathForFile)(path));
+  let record = documents.get(documentPathForFile(path));
   if (record === undefined) {
     return null;
   } else {
@@ -450,19 +447,19 @@ function generateStoredFilesGuidance(
       [...documents.keys()]
         .filter(
           (input: string): boolean =>
-            (0, documentCollectionPath)(input) === items,
+            documentCollectionPath(input) === items,
         )
         .map((input: string) => input.slice(items.length + 1))
         .sort(),
     blobIdForPath = (input: string) =>
-      (0, blobIdFromReference)(
+      blobIdFromReference(
         remoteFileRecordAtPath(documents, input)?.dataRef ?? "",
       ),
     rawTokensRecord = documents.get(RAW_TOKENS_DOCUMENT_PATH),
     rawTokensId =
       rawTokensRecord === undefined
         ? null
-        : (0, blobIdFromReference)(
+        : blobIdFromReference(
             parseRemoteFileRecord(
               DESIGN_SYSTEM_PATHS.tokens,
               rawTokensRecord,
@@ -529,7 +526,7 @@ function generateStoredFilesGuidance(
     fonts =
       tokensRecord === undefined
         ? []
-        : (0, parseTokens)(tokensRecord).type.fonts;
+        : parseTokens(tokensRecord).type.fonts;
   for (let value of idsInCollection(FONTS_COLLECTION)) {
     let value2 =
       stringOrUndefined(
@@ -580,7 +577,7 @@ function generateStoredFilesGuidance(
             storedReadmeCodeSpan(FILES_COLLECTION) +
             " / " +
             storedReadmeCodeSpan(
-              (0, encodeDocumentId)(
+              encodeDocumentId(
                 DESIGN_SYSTEM_PATHS.tokens,
               ),
             )
@@ -637,7 +634,7 @@ function generateStoredFilesGuidance(
         storedReadmeCodeSpan(FILES_COLLECTION) +
         " / " +
         storedReadmeCodeSpan(
-          (0, encodeDocumentId)(DESIGN_SYSTEM_PATHS.readme),
+          encodeDocumentId(DESIGN_SYSTEM_PATHS.readme),
         ) +
         (tokensLocation !== null ? "; " + tokensLocation : "") +
         ". Not found? " +
@@ -664,14 +661,14 @@ function generateStoredFilesGuidance(
 function appendStoredFilesGuidance(
   plan: Storage.ConversionPlan,
 ): Storage.ConversionPlan {
-  let readmePath = (0, documentPathForFile)(
+  let readmePath = documentPathForFile(
       DESIGN_SYSTEM_PATHS.readme,
     ),
     record = plan.docs.get(readmePath);
   if (record === undefined || typeof record.data !== "string") {
     return plan;
   }
-  let generatedOffset = (0, generatedReadmeTailOffset)(record.data);
+  let generatedOffset = generatedReadmeTailOffset(record.data);
   if (generatedOffset < 0) {
     return plan;
   }
@@ -699,21 +696,21 @@ function appendStoredFilesGuidance(
         .flatMap((input) => input.paths)
         .filter(
           (input: string): boolean =>
-            (0, documentCollectionPath)(
-              (0, rawDocumentPathForFile)(input),
+            documentCollectionPath(
+              rawDocumentPathForFile(input),
             ) === FILES_COLLECTION,
         ).length;
   for (let [value, value2] of plan.docs) {
     if (
-      (0, documentCollectionPath)(value) === FILES_COLLECTION
+      documentCollectionPath(value) === FILES_COLLECTION
     ) {
-      collectionBytes += (0, estimateEmbeddedJsonBytes)(
+      collectionBytes += estimateEmbeddedJsonBytes(
         value === readmePath ? updatedRecord : value2,
       );
     }
   }
   if (
-    (0, estimateEmbeddedJsonBytes)(updatedRecord) >
+    estimateEmbeddedJsonBytes(updatedRecord) >
       MAX_SYNC_DOCUMENT_BYTES ||
     collectionBytes > MAX_SYNC_COLLECTION_BYTES
   ) {

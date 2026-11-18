@@ -94,10 +94,10 @@ function MarkdownFormattingToolbar({
   className: className,
 }: M.MarkdownFormattingToolbarProps) {
   useUiLocale();
-  let value = (0, useSelectionToolbar)(root, {
+  let value = useSelectionToolbar(root, {
       holdWhileFocusIn: hold,
     }),
-    value2 = (0, useCdsLayerAwareZIndex)(45),
+    value2 = useCdsLayerAwareZIndex(45),
     [value3, value4] = reactMarkdownToolbar.useState(
       EMPTY_MARKDOWN_FORMAT_STATE,
     ),
@@ -117,7 +117,7 @@ function MarkdownFormattingToolbar({
         value17 =
           current === null
             ? null
-            : (0, readMarkdownSelectionFormat)(current);
+            : readMarkdownSelectionFormat(current);
       if (value17 !== null) {
         value4(value17);
       }
@@ -125,7 +125,7 @@ function MarkdownFormattingToolbar({
       value12(
         current === null
           ? []
-          : (0, selectedMarkdownBlockKinds)(current),
+          : selectedMarkdownBlockKinds(current),
       );
     };
     callback4();
@@ -146,7 +146,7 @@ function MarkdownFormattingToolbar({
       ) {
         callback2();
       }
-      (0, applyMarkdownFormat)(
+      applyMarkdownFormat(
         input,
         document,
         value11.includes("quote") ? "quote" : value3.block,
@@ -154,7 +154,7 @@ function MarkdownFormattingToolbar({
       let current = root.current;
       if (current !== null) {
         value4(
-          (0, readMarkdownSelectionFormat)(current) ??
+          readMarkdownSelectionFormat(current) ??
             EMPTY_MARKDOWN_FORMAT_STATE,
         );
       }
@@ -172,11 +172,11 @@ function MarkdownFormattingToolbar({
       value18.addRange(value17);
     },
     callback3 = () => {
-      if ((0, normalizeExternalLinkInput)(value5 ?? "") === null) {
+      if (normalizeExternalLinkInput(value5 ?? "") === null) {
         return value8(true);
       }
       callback2();
-      (0, applyMarkdownLink)(
+      applyMarkdownLink(
         value5 ?? "",
         document,
         root.current ?? undefined,
@@ -228,7 +228,7 @@ function MarkdownFormattingToolbar({
         onKeyDown={(event: React.KeyboardEvent<HTMLDivElement>): void => {
           if (
             event.defaultPrevented ||
-            (0, isComposingEvent)(event)
+            isComposingEvent(event)
           ) {
             return;
           }
@@ -253,7 +253,7 @@ function MarkdownFormattingToolbar({
                 items.length
             ]?.focus();
           } else if (event.key === "Escape") {
-            if ((0, anyMenuOrPopoverOpen)(document)) {
+            if (anyMenuOrPopoverOpen(document)) {
               return;
             }
             event.preventDefault();
@@ -276,7 +276,7 @@ function MarkdownFormattingToolbar({
                   aria-label={uiMessage("design-system.markdownFormatting.linkURL")}
                   aria-invalid={value7}
                   spellCheck={false}
-                  className={(0, joinClassNames)(
+                  className={joinClassNames(
                     "h-7 w-56 min-w-0 bg-transparent px-2 text-xs text-fg outline-none placeholder:text-fg-muted",
                     "pointer-coarse:h-10 pointer-coarse:text-sm",
                     value7 && "text-bad",
@@ -302,7 +302,7 @@ function MarkdownFormattingToolbar({
                   onKeyDown={(
                     event: React.KeyboardEvent<HTMLInputElement>,
                   ): void => {
-                    if ((0, isComposingEvent)(event)) {
+                    if (isComposingEvent(event)) {
                       return;
                     }
                     if (event.key === "Enter") {
@@ -414,7 +414,7 @@ function MarkdownLinkPopover({
   className: className,
 }: M.MarkdownLinkPopoverProps) {
   useUiLocale();
-  let value = (0, useCdsLayerAwareZIndex)(45),
+  let value = useCdsLayerAwareZIndex(45),
     ref = reactMarkdownToolbar.useRef<HTMLDivElement>(null),
     [value2, value3] =
       reactMarkdownToolbar.useState<M.MarkdownLinkState | null>(null),
@@ -448,7 +448,7 @@ function MarkdownLinkPopover({
           value10: string =
             value9 === null || !current.contains(value9)
               ? ""
-              : (0, safeLinkUrlFromElement)(value9);
+              : safeLinkUrlFromElement(value9);
         if (value9 === null || value10 === "") {
           return value3(null);
         }
@@ -523,7 +523,7 @@ function MarkdownLinkPopover({
         }
       >
         <a
-          {...(0, externalLinkProps)(value2.href)}
+          {...externalLinkProps(value2.href)}
           title={value2.href}
           className={
             "inline-flex max-w-64 items-center gap-1 px-1 text-xs text-blue-text hover:underline pointer-coarse:min-h-10 pointer-coarse:text-sm"
@@ -568,8 +568,8 @@ export {
 };
 export function installEditorMarkdownFormatting(): () => void {
   return () => {
-    jsxMarkdownToolbar = (0, toModuleNamespace)(
-      (0, loadJsxNamespace)(),
+    jsxMarkdownToolbar = toModuleNamespace(
+      loadJsxNamespace(),
       1,
     );
     MARKDOWN_BLOCK_LABELS = {

@@ -277,7 +277,7 @@ function renderInlineMarkdown(
         let value3 = options?.links ?? "live";
         if (
           value3 === "live" &&
-          (0, classifyExternalLink)(source.href) === null
+          classifyExternalLink(source.href) === null
         ) {
           return source.text;
         }
@@ -285,7 +285,7 @@ function renderInlineMarkdown(
         return (() => {
           const _Element3 = "a";
           const _elementProps3 = {
-            ...(0, externalLinkProps)(source.href, value3),
+            ...externalLinkProps(source.href, value3),
             ...(value4 === undefined
               ? {}
               : {
@@ -319,8 +319,8 @@ export {
 };
 export function installEditorInlineMarkdown(): () => void {
   return () => {
-    jsxInlineMarkdown = (0, toModuleNamespace)(
-      (0, loadJsxNamespace)(),
+    jsxInlineMarkdown = toModuleNamespace(
+      loadJsxNamespace(),
       1,
     );
     INLINE_MARKDOWN_PATTERN =

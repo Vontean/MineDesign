@@ -219,8 +219,8 @@ export {
 };
 export function installEditorClipboardNative(): () => void {
   return () => {
-    reactClipboardNative = (0, toModuleNamespace)(
-      (0, load_react)(),
+    reactClipboardNative = toModuleNamespace(
+      load_react(),
       1,
     );
     ClipboardNativeObservedElements = new WeakSet();

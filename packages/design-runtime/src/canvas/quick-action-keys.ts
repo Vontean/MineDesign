@@ -12,7 +12,7 @@ function handleQuickActionsArrowKeys(event?: Dynamic): Dynamic {
     event.altKey ||
     event.metaKey ||
     event.ctrlKey ||
-    (0, hasBlockingEditorOverlay)()
+    hasBlockingEditorOverlay()
   )
     return;
   let value: Dynamic = event.key === "ArrowLeft" || event.key === "ArrowUp",
@@ -53,7 +53,7 @@ function handleQuickActionsArrowKeys(event?: Dynamic): Dynamic {
   value6.focus({
     preventScroll: true,
   });
-  (0, revealSessionStripControl)(event.currentTarget, value6);
+  revealSessionStripControl(event.currentTarget, value6);
 }
 export {
   handleQuickActionsArrowKeys,

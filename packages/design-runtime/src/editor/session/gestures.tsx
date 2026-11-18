@@ -47,7 +47,7 @@ export function previewElementMoveGesture(deps: { readonly baselineTemplateId: D
             epoch: 0,
             maps: [],
             lastRefused: null,
-            block: (0, sameParentDropGroup)(
+            block: sameParentDropGroup(
               value307.model,
               input.tid,
               input.group,
@@ -88,11 +88,11 @@ export function previewElementMoveGesture(deps: { readonly baselineTemplateId: D
         current.followerCurrent = undefined;
         value307.model = value307.model.rebuild(current.baseline);
         if (
-          (0, containsUneditableSelection)(value307.model, [
+          containsUneditableSelection(value307.model, [
             movingTid,
           ]) ||
           (value308 != null &&
-            (0, containsUneditableSelection)(value307.model, [
+            containsUneditableSelection(value307.model, [
               value308,
             ]))
         ) {
@@ -168,7 +168,7 @@ export function previewElementMoveGesture(deps: { readonly baselineTemplateId: D
               "data-dc-drag-parent",
               String(current.epoch),
             );
-          (0, markBlockedDragElements)(
+          markBlockedDragElements(
             value307.model,
             current.block,
             movingTid,
@@ -226,7 +226,7 @@ export function previewElementMoveGesture(deps: { readonly baselineTemplateId: D
             ),
             (current.positioned ??= new Set()).add(value308));
           items2 = input.followers?.length
-            ? (0, displacedDropFollowers)(
+            ? displacedDropFollowers(
                 value307.model,
                 input.followers,
                 movingTid,
@@ -252,7 +252,7 @@ export function previewElementMoveGesture(deps: { readonly baselineTemplateId: D
               value307.model.element(input2) != null &&
               !value307.model.inlineStyleValue(input2, "position"),
           );
-          (0, restoreGroupPosition)(
+          restoreGroupPosition(
             value307.model,
             input.flatten,
             movingTid,
@@ -263,7 +263,7 @@ export function previewElementMoveGesture(deps: { readonly baselineTemplateId: D
               (current.positioned ??= new Set()).add(value316);
         }
         if (value307.model.parentTid(movingTid) !== value309) {
-          (0, freezeInheritedTextStyle)(
+          freezeInheritedTextStyle(
             value307.model,
             movingTid,
             input.freezeStyle,
@@ -271,7 +271,7 @@ export function previewElementMoveGesture(deps: { readonly baselineTemplateId: D
           for (let value315 of (input.group ?? []) as Dynamic)
             value315.tid !== movingTid &&
               value311?.includes(value315.tid) &&
-              (0, freezeInheritedTextStyle)(
+              freezeInheritedTextStyle(
                 value307.model,
                 value315.tid,
                 value315.freezeStyle,
@@ -292,7 +292,7 @@ export function previewElementMoveGesture(deps: { readonly baselineTemplateId: D
         for (let value315 of (input.markFollowers ?? []) as Dynamic)
           value315 !== movingTid &&
             value307.model.element(value315) &&
-            !(0, containsUneditableSelection)(value307.model, [
+            !containsUneditableSelection(value307.model, [
               value315,
             ]) &&
             value307.model.setAttribute(
@@ -300,7 +300,7 @@ export function previewElementMoveGesture(deps: { readonly baselineTemplateId: D
               "data-dc-drag-follower",
               String(value315),
             );
-        (0, markBlockedDragElements)(
+        markBlockedDragElements(
           value307.model,
           current.block,
           movingTid,
@@ -417,7 +417,7 @@ export function commitElementMoveGesture(deps: { readonly clearScheduledTextWork
             deps.value26.current = null;
           }
         value308 === undefined &&
-          (value308 = (0, sameParentDropGroup)(
+          (value308 = sameParentDropGroup(
             value307.model,
             input.tid,
             input.group,
@@ -450,7 +450,7 @@ export function commitElementMoveGesture(deps: { readonly clearScheduledTextWork
             clearPositioning: input.clearPositioning,
             freezeStyle: input.freezeStyle,
           },
-          value310: Dynamic = (0, elementMoveRefusal)(
+          value310: Dynamic = elementMoveRefusal(
             value307.model,
             state,
           );
@@ -473,7 +473,7 @@ export function commitElementMoveGesture(deps: { readonly clearScheduledTextWork
             input.gestureKey ?? `move-${input.tid}-${Date.now()}`,
             value307,
           ),
-          value312: Dynamic = (0, moveModelElement)(value307, state);
+          value312: Dynamic = moveModelElement(value307, state);
         if (!value312) {
           deps.value102(value307, value311, redo);
           deps.pushLiveModel(deps.rootName, value307);
@@ -498,7 +498,7 @@ export function commitElementMoveGesture(deps: { readonly clearScheduledTextWork
           value315 &&
             setTimeout(
               (): Dynamic =>
-                (0, setPickerSelection)(value315, items2, deps.rootName),
+                setPickerSelection(value315, items2, deps.rootName),
               60,
             );
           deps.value105(deps.rootName, items2);
@@ -518,7 +518,7 @@ export function commitElementMoveGesture(deps: { readonly clearScheduledTextWork
             value317.model.element(input2) !== options
           )
             return;
-          let value318: Dynamic = await (0, inspectPickerSelection)(
+          let value318: Dynamic = await inspectPickerSelection(
             value316,
             input2,
             deps.rootName,
@@ -540,7 +540,7 @@ export function commitElementMoveGesture(deps: { readonly clearScheduledTextWork
               }, 300);
             return;
           }
-          let value319: Dynamic = (0, frozenInheritedStyleEdits)(
+          let value319: Dynamic = frozenInheritedStyleEdits(
             context,
             value318.computed,
             value315,
@@ -574,7 +574,7 @@ export function commitElementResizeGesture(deps: { readonly incrementSessionEpoc
         if (!value307) return void deps.value117();
         let value308: Dynamic =
             input.crop === true
-              ? (0, dispatchElementSessionGesture)(
+              ? dispatchElementSessionGesture(
                   deps.rootName,
                   input,
                   value307.model,
@@ -584,7 +584,7 @@ export function commitElementResizeGesture(deps: { readonly incrementSessionEpoc
           value309: Dynamic =
             value308 === null ? null : value307.model.element(value308);
         if (!value309 && input.crop !== true) return;
-        let value310: Dynamic = (0, claimLateGesture)(
+        let value310: Dynamic = claimLateGesture(
           deps.rootName,
           input.tid,
           value309,
@@ -661,7 +661,7 @@ export function moveStrokeEndpointInModel(deps: { readonly incrementSessionEpoch
           return;
         let value308: Dynamic = value307.model.element(input.tid),
           value309: Dynamic = value308
-            ? (0, inspectSvgArrow)(value308)
+            ? inspectSvgArrow(value308)
             : null,
           value310: Dynamic = value307.model.childTids(input.tid),
           value311: Dynamic =
@@ -687,7 +687,7 @@ export function moveStrokeEndpointInModel(deps: { readonly incrementSessionEpoch
           value313: Dynamic = callback7(input.top),
           value314: Dynamic = Math.max(1, callback7(input.width)),
           value315: Dynamic = Math.max(1, callback7(input.height)),
-          value316: Dynamic = (0, normalizePasteScale)(
+          value316: Dynamic = normalizePasteScale(
             input.unitScale,
           );
         if (value316 == null) {
@@ -699,7 +699,7 @@ export function moveStrokeEndpointInModel(deps: { readonly incrementSessionEpoch
           input.gestureKey ?? `endpoint-${input.tid}`,
           value307,
         );
-        (0, setModelElementRect)(value307.model, input.tid, {
+        setModelElementRect(value307.model, input.tid, {
           left: value312,
           top: value313,
           width: value314,
@@ -718,13 +718,13 @@ export function moveStrokeEndpointInModel(deps: { readonly incrementSessionEpoch
         if (value311 != null)
           value307.model.setAttribute(value311, "d", input.d);
         else if (
-          (0, resizeSvgArrow)(
+          resizeSvgArrow(
             value307.model,
             input.tid,
             input.d,
             value316,
-            (0, normalizeSvgStrokeProperties)(input.paint),
-            (0, normalizeSvgStrokeProperties)(input.svgPaint),
+            normalizeSvgStrokeProperties(input.paint),
+            normalizeSvgStrokeProperties(input.svgPaint),
           )?.restamped
         ) {
           let value319: Dynamic = null;
@@ -775,7 +775,7 @@ export function moveStrokeEndpointInModel(deps: { readonly incrementSessionEpoch
             value320 &&
               setTimeout(
                 (): Dynamic =>
-                  (0, setPickerSelection)(
+                  setPickerSelection(
                     value320,
                     value319,
                     deps.rootName,
@@ -793,7 +793,7 @@ export function applyLiveStylePreview(deps: { readonly delegatedFileRef: Dynamic
         if (
           !value307 ||
           (input.crop === true &&
-            (0, dispatchElementSessionGesture)(
+            dispatchElementSessionGesture(
               deps.rootName,
               input,
               value307.model,
@@ -824,7 +824,7 @@ export function applyLiveStylePreview(deps: { readonly delegatedFileRef: Dynamic
               : (value309 ?? value308.movingCurrentTid);
         if (
           !value307.model.element(value311) ||
-          (0, containsUneditableSelection)(value307.model, [value311])
+          containsUneditableSelection(value307.model, [value311])
         )
           return;
         if (!value310) {
@@ -870,7 +870,7 @@ export function commitElementGroupTransform(deps: { readonly incrementSessionEpo
           value310: Dynamic = value307.filter(
             (input2?: Dynamic): Dynamic =>
               value308.model.element(input2.tid) &&
-              !(0, containsUneditableSelection)(value308.model, [
+              !containsUneditableSelection(value308.model, [
                 input2.tid,
               ]),
           ),
@@ -908,7 +908,7 @@ export function commitElementGroupTransform(deps: { readonly incrementSessionEpo
                   ? value308.model.element(value312.tid)
                   : null,
               value315: Dynamic = value314
-                ? (0, inspectSvgArrow)(value314)
+                ? inspectSvgArrow(value314)
                 : null,
               value316: Dynamic =
                 value315 && !value315.legacy
@@ -933,16 +933,16 @@ export function commitElementGroupTransform(deps: { readonly incrementSessionEpo
               )
             )
               continue;
-            (0, setModelElementRect)(
+            setModelElementRect(
               value308.model,
               value312.tid,
               value312.stroke,
             );
-            (0, normalizeSvgElementSizing)(
+            normalizeSvgElementSizing(
               value308.model,
               value312.tid,
             );
-            (0, copySvgStrokeProperties)(
+            copySvgStrokeProperties(
               value308.model,
               value316,
               value312.tid,
@@ -950,7 +950,7 @@ export function commitElementGroupTransform(deps: { readonly incrementSessionEpo
               value312.stroke.paint,
               value312.stroke.svgPaint,
             );
-            (0, setSvgLineEndpoints)(
+            setSvgLineEndpoints(
               value308.model,
               value316,
               value317[0],
@@ -996,14 +996,14 @@ export function commitElementGroupTransform(deps: { readonly incrementSessionEpo
               );
           }
           if (value312.angle !== undefined) {
-            let value314: Dynamic = (0, parseCssTransform)(
+            let value314: Dynamic = parseCssTransform(
               value308.model.effectiveStyleValue(value312.tid, "transform"),
             );
             if (value314)
               value308.model.setStyleProperty(
                 value312.tid,
                 "transform",
-                (0, serializeCssTransform)({
+                serializeCssTransform({
                   ...value314,
                   rotate: {
                     value: Math.round(value312.angle),

@@ -52,8 +52,8 @@ export {
 };
 export function installEditorTypographyCensusStore(): () => void {
   return () => {
-    reactTypographyCensusStore = (0, toModuleNamespace)(
-      (0, load_react)(),
+    reactTypographyCensusStore = toModuleNamespace(
+      load_react(),
       1,
     );
     TypographyCensusStoreSizesSizeRolesSizeFamiliesConfig = {

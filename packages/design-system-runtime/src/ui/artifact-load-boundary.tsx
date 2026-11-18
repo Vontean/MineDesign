@@ -25,7 +25,7 @@ function ArtifactSkeleton({ className: className }: { className?: string }) {
   return (
     <span aria-hidden={"true"} className={"contents"}>
       <SkeletonPrimitive
-        className={(0, joinClassNames)("block", className)}
+        className={joinClassNames("block", className)}
       />
     </span>
   );
@@ -37,7 +37,7 @@ function ArtifactLoadingSpinner({
 }) {
   useUiLocale();
   return (
-    <span className={(0, joinClassNames)("inline-flex", className)}>
+    <span className={joinClassNames("inline-flex", className)}>
       <Spinner label={uiMessage("design-system.artifactLoadBoundary.loading")} />
     </span>
   );
@@ -120,7 +120,7 @@ function ArtifactLoadBoundary({
   }
   return (
     <div
-      className={(0, joinClassNames)(
+      className={joinClassNames(
         "mc-loadgate relative h-full min-h-40 w-full",
         !(skeletonFlush && skeleton != null) &&
           "pt-[var(--tb-overlay-h,0px)]",
@@ -173,12 +173,12 @@ export {
 };
 export function installUiArtifactLoadBoundary(): () => void {
   return () => {
-    reactGQ = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    reactGQ = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
-    jsxForUiArtifactLoadBoundary = (0, toModuleNamespace)(
-      (0, loadJsxNamespace)(),
+    jsxForUiArtifactLoadBoundary = toModuleNamespace(
+      loadJsxNamespace(),
       1,
     );
     ARTIFACT_LOAD_FAILURE_MESSAGE = "The latest content failed to load";

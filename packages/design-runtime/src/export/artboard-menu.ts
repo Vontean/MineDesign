@@ -31,14 +31,14 @@ function artboardExportMenuItems(
   );
   if (!value || !callbacks.onExportArtboard) return [];
   let onExportArtboard: Dynamic = callbacks.onExportArtboard,
-    value2: Dynamic = (0, imageCaptureScaleOptions)(value.w, value.h),
+    value2: Dynamic = imageCaptureScaleOptions(value.w, value.h),
     callback: Dynamic = (input?: Dynamic): Dynamic => {
       let value4: Dynamic = value2.find(
         (input2?: Dynamic): Dynamic => input2.scale === input,
       );
       return {
         get label() { return (("PNG ") + (String(input))) + ("\xD7"); },
-        get description() { return value4 ? (String(value4.outW) + (0, getArtboardCaptureMode)(value, extra) === "full"
+        get description() { return value4 ? (String(value4.outW) + getArtboardCaptureMode(value, extra) === "full"
               ? " px wide, full length"
               : " \xD7 " + String(value4.outH) + " px" + value4.fits ? "" : " \u2014 too large") : (undefined); },
         disabled: value4 ? !value4.fits : false,
@@ -50,18 +50,18 @@ function artboardExportMenuItems(
     ),
     length: Dynamic = value3.length,
     callback2: Dynamic = (input?: Dynamic): Dynamic =>
-      (0, isFlowExport)(input, extra)
+      isFlowExport(input, extra)
         ? input.print === "flow" ||
           input.h >
-            (0, paperHeightForWidth)(
+            paperHeightForWidth(
               input.w,
-              (0, getArtboardPaperSize)(input),
+              getArtboardPaperSize(input),
             )
           ? "pages"
           : "scrolls"
         : "page",
     callback3: Dynamic = (input?: Dynamic): Dynamic =>
-      paperSizes[(0, getArtboardPaperSize)(input)].label +
+      paperSizes[getArtboardPaperSize(input)].label +
       " pages",
     items: Dynamic = [callback(1), callback(2)];
   if (callbacks.onExportArtboardPdf) {
@@ -130,8 +130,8 @@ export {
 };
 export function installExportArtboardMenu(): () => void {
   return () => {
-    (0, initializeCdsIndex)();
-    (0, initializePlatformCdsIsland)();
+    initializeCdsIndex();
+    initializePlatformCdsIsland();
     exportSelectionHint = "Select two or more artboards to export only those.";
     noExportableArtboardsMessage =
       "Nothing to export on this page \u2014 loose pieces aren\u2019t pages.";

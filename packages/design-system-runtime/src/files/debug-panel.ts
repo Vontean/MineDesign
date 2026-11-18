@@ -344,7 +344,7 @@ function createFilesDebugPanel(
   let room: Debug.DebugRoom | null = null,
     usePresenceFallback: boolean = false;
   if (options.room !== false) {
-    (0, cachedClaudeRoom)().then(
+    cachedClaudeRoom().then(
       (input): void => {
         room = input as Debug.DebugRoom | null;
         fields.set("room", room === null ? "off" : "connected");
@@ -1968,7 +1968,7 @@ function instrumentFilesPort<Port extends Model.BrowserFilesPort>(
         Object.keys(input),
         Object.values(input).reduce(
           (input2, options2) =>
-            input2 + (0, filePublishEncodedBytes)(options2),
+            input2 + filePublishEncodedBytes(options2),
           0,
         ),
       );

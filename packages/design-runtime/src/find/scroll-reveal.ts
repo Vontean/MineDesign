@@ -47,7 +47,7 @@ function scrollDeltaToRevealInterval(
       : start - items;
 }
 function rangeCanvasRect(range?: Dynamic): Dynamic {
-  let value: Dynamic = (0, safeRangeClientRect)(range);
+  let value: Dynamic = safeRangeClientRect(range);
   if (value === null) return null;
   let state: Dynamic = {
     x: value.left,
@@ -254,7 +254,7 @@ function revealTextRange(range?: Dynamic, options?: Dynamic): Dynamic {
     if (value11 === null) continue;
     let value12: Dynamic =
         options.fade !== undefined && options.fade > 0 ? options.fade : 0,
-      value13: Dynamic = (0, CanvasPanZoomScrollTop)(value10);
+      value13: Dynamic = CanvasPanZoomScrollTop(value10);
     if (value5.spun) {
       probeScrollableRangePosition(
         value10,

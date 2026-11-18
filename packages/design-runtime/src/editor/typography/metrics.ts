@@ -97,7 +97,7 @@ function matchedDesignSystemTextStyle(
         TypographyMetricsHandler(value2) ||
       style.italic !== value3 ||
       (style.family !== undefined &&
-        (0, displayFontFamily)(
+        displayFontFamily(
           normalizeTypographyFamily(style.family) ?? "",
         ).toLowerCase() !== value6)
     )
@@ -151,7 +151,7 @@ function readTypographyMetrics(input?: Dynamic, options?: Dynamic): Dynamic {
     leading: callback2(input("line-height")) ?? callback2(options.lineHeight),
     tracking:
       callback(input("letter-spacing")) ?? callback(options.letterSpacing),
-    face: (0, displayFontFamily)(
+    face: displayFontFamily(
       input("font-family") ?? options.fontFamily ?? "",
     ).toLowerCase(),
   };
@@ -162,11 +162,11 @@ function authoredTypographyMetrics(
   context?: Dynamic,
 ): Dynamic {
   let entries: Dynamic = new Map(
-      (0, parseStyleDeclarations)(options).map(
+      parseStyleDeclarations(options).map(
         (input2?: Dynamic): Dynamic => [input2.prop, input2.value],
       ),
     ),
-    value: Dynamic = (0, normalizeInspectorComputedData)("text", {
+    value: Dynamic = normalizeInspectorComputedData("text", {
       tag: input,
       computed: context,
     });

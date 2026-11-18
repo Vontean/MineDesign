@@ -50,22 +50,22 @@ function getDesignFileContentType(path?: Dynamic): Dynamic {
     .slice(path.lastIndexOf(".") + 1)
     .toLowerCase();
   return (
-    (0, getMimeTypeForPath)(path) ??
+    getMimeTypeForPath(path) ??
     (Object.hasOwn(DESIGN_FILE_MIME_TYPES, extension)
       ? DESIGN_FILE_MIME_TYPES[extension]
       : null)
   );
 }
 function validateListedDesignFile(file?: Dynamic): Dynamic {
-  let relativePath: Dynamic = (0, fromProjectContentPath)(
+  let relativePath: Dynamic = fromProjectContentPath(
     file.path,
     "design",
   );
   return relativePath === undefined ||
     relativePath === canvasMetadataFile ||
-    !(0, isSafeProjectPath)(relativePath) ||
-    (!(0, isArtboardFile)(relativePath) &&
-      !(0, isSupportedProjectAsset)(relativePath)) ||
+    !isSafeProjectPath(relativePath) ||
+    (!isArtboardFile(relativePath) &&
+      !isSupportedProjectAsset(relativePath)) ||
     file.size > PlatformFileContentResolvedValue_11
     ? null
     : relativePath;
@@ -160,7 +160,7 @@ function createFilesDesignDocument(options?: Dynamic): Dynamic {
     hasLocalChanges: Dynamic = false,
     notice: Dynamic = (input?: Dynamic): Dynamic => options.onNotice?.(input),
     defaultTitle: Dynamic =
-      (0, normalizeDocumentTitle)(options.defaultTitle) ?? "Design",
+      normalizeDocumentTitle(options.defaultTitle) ?? "Design",
     state: Dynamic = {
       title: defaultTitle,
       content: {
@@ -194,7 +194,7 @@ function createFilesDesignDocument(options?: Dynamic): Dynamic {
     knownArtboardFiles: Dynamic = new Set(),
     rememberArtboards: Dynamic = (input?: Dynamic): Dynamic => {
       for (let value14 of Object.keys(input) as Dynamic)
-        (0, isArtboardFile)(value14) &&
+        isArtboardFile(value14) &&
           knownArtboardFiles.add(value14);
     },
     removedNoteIds: Dynamic = new Set(),
@@ -274,13 +274,13 @@ function createFilesDesignDocument(options?: Dynamic): Dynamic {
           if (value15.ok) {
             let value17: Dynamic =
               value15.shas === undefined
-                ? await (0, hashFileMap)(input)
+                ? await hashFileMap(input)
                 : {};
             for (let [value18, value19] of Object.entries(input) as Dynamic) {
               if (value19 === null) {
                 liveHashes.delete(value18);
                 publishedHashes.set(value18, null);
-                let value23: Dynamic = (0, fromProjectContentPath)(
+                let value23: Dynamic = fromProjectContentPath(
                   value18,
                   "design",
                 );
@@ -298,13 +298,13 @@ function createFilesDesignDocument(options?: Dynamic): Dynamic {
                   !(value19 instanceof Blob)
                     ? value19.content
                     : value19,
-                value22: Dynamic = (0, fromProjectContentPath)(
+                value22: Dynamic = fromProjectContentPath(
                   value18,
                   "design",
                 );
               typeof value21 == "string" &&
                 value22 !== undefined &&
-                ((0, isArtboardFile)(value22) &&
+                (isArtboardFile(value22) &&
                   savedFiles[value22] !== undefined &&
                   savedFiles[value22] !== value21 &&
                   options.sameBoardRule !== "last" &&
@@ -328,18 +328,17 @@ function createFilesDesignDocument(options?: Dynamic): Dynamic {
         },
       },
     }),
-    indexState: Dynamic = (0, createIndexFileState)({
+    indexState: Dynamic = createIndexFileState({
       path: DESIGN_INDEX_FILE_PATH,
       port: trackedPort,
       schema: FILES_INDEX_MERGE_POLICY,
-      empty: (): Dynamic => (0, createEmptyDesignIndex)(),
+      empty: (): Dynamic => createEmptyDesignIndex(),
     }),
     serializeIndex: Dynamic = indexState.serialize.bind(indexState);
   indexState.serialize = (): Dynamic => (
     indexState.baseSha() === null &&
-      (0, getStorageMigrationMarker)(indexState.get()) === null &&
-      (indexState.get()[CreatedOnFilesValue] = (0,
-      migrationTimestampMarker)({
+      getStorageMigrationMarker(indexState.get()) === null &&
+      (indexState.get()[CreatedOnFilesValue] = migrationTimestampMarker({
         at: new Date().toISOString(),
       })),
     serializeIndex()
@@ -350,7 +349,7 @@ function createFilesDesignDocument(options?: Dynamic): Dynamic {
     let value14: Dynamic = indexState.base(),
       entry: Dynamic = indexState.get();
     trackMergedDeletions(value14, entry, input);
-    let value15: Dynamic = (0, mergeDesignPages)(
+    let value15: Dynamic = mergeDesignPages(
       callback(value14.pages),
       callback(entry.pages),
       callback(input.pages),
@@ -395,7 +394,7 @@ function createFilesDesignDocument(options?: Dynamic): Dynamic {
         !fileDirtyVersions.has(value14) &&
         fileDirtyVersions.set(
           value14,
-          (0, cloneIndexValue)(
+          cloneIndexValue(
             options2.boards?.[value14] ?? input.boards[value14],
           ),
         );
@@ -426,7 +425,7 @@ function createFilesDesignDocument(options?: Dynamic): Dynamic {
             " at the same moment; their change was kept.",
         );
     },
-    value: Dynamic = (0, createFilesPublisher)({
+    value: Dynamic = createFilesPublisher({
       port: trackedPort,
       index: indexState,
       timers: timers,
@@ -472,12 +471,12 @@ function createFilesDesignDocument(options?: Dynamic): Dynamic {
         (input2?: Dynamic): Dynamic => !values.has(input2.path),
       ),
     callback5: Dynamic = (input?: Dynamic): Dynamic =>
-      (0, describeUnsendableEdits)(syncState.unsendable ?? [], {
+      describeUnsendableEdits(syncState.unsendable ?? [], {
         restSaved: input,
         stashed: syncState.unsendableStashed === true,
       }),
     callback6: Dynamic = (input?: Dynamic): Dynamic =>
-      (0, describeStuckSave)(input, timers.now()) +
+      describeStuckSave(input, timers.now()) +
       (syncState.unsendable !== undefined ? " " + callback5(false) : ""),
     value2: Dynamic;
   function scheduleSaveStatusUpdate(): Dynamic {
@@ -557,7 +556,7 @@ function createFilesDesignDocument(options?: Dynamic): Dynamic {
           };
   }
   function readWithRetry(input?: Dynamic): Dynamic {
-    return (0, retryAccessFailure)(
+    return retryAccessFailure(
       input,
       timers,
       undefined,
@@ -565,7 +564,7 @@ function createFilesDesignDocument(options?: Dynamic): Dynamic {
     );
   }
   async function readFile(input?: Dynamic): Promise<Dynamic> {
-    let value14: Dynamic = (0, toProjectContentPath)(input);
+    let value14: Dynamic = toProjectContentPath(input);
     if (PlatformFileContentWebpAvifPattern.test(input)) {
       let value15: Dynamic = await readWithRetry(
         (): Dynamic => trackedPort.readBytes(value14),
@@ -586,7 +585,7 @@ function createFilesDesignDocument(options?: Dynamic): Dynamic {
           } catch (value15: Dynamic) {
             console.warn(
               "design (files): could not read " +
-                (0, toProjectContentPath)(value14) +
+                toProjectContentPath(value14) +
                 " \u2014 " +
                 (value15 instanceof Error
                   ? value15.message
@@ -606,17 +605,17 @@ function createFilesDesignDocument(options?: Dynamic): Dynamic {
     return state2;
   }
   function composeFromFiles(input?: Dynamic): Dynamic {
-    let value14: Dynamic = (0, normalizeDesignIndex)(
+    let value14: Dynamic = normalizeDesignIndex(
       indexState.get(),
     );
-    (0, setDesignSystems)(
-      (0, refreshDesignSystemFileOverlay)(
+    setDesignSystems(
+      refreshDesignSystemFileOverlay(
         value14,
         input,
         value14[INDEX_DESIGN_SYSTEM_TOKENS_KEY],
       ),
     );
-    (0, updateDesignSourceFile)(value14[INDEX_SOURCE_KEY]);
+    updateDesignSourceFile(value14[INDEX_SOURCE_KEY]);
     missingBoards.clear();
     for (let value18 of Object.keys(value14.boards) as Dynamic)
       input[value18] === undefined && missingBoards.add(value18);
@@ -638,7 +637,7 @@ function createFilesDesignDocument(options?: Dynamic): Dynamic {
           }),
         (value17.boards[value18] = value19),
         value17.order.push(value18));
-    value3 = (0, buildDesignDocumentFromIndex)(value17, value16);
+    value3 = buildDesignDocumentFromIndex(value17, value16);
     return {
       files: {
         ...value16,
@@ -675,7 +674,7 @@ function createFilesDesignDocument(options?: Dynamic): Dynamic {
   async function loadFiles(input: Dynamic = false): Promise<Dynamic> {
     let value14: Dynamic = timers.now();
     try {
-      let value15: Dynamic = await (0, readBootFiles)({
+      let value15: Dynamic = await readBootFiles({
         port: trackedPort,
         indexPath: DESIGN_INDEX_FILE_PATH,
         timers: timers,
@@ -690,12 +689,12 @@ function createFilesDesignDocument(options?: Dynamic): Dynamic {
         onEvent: (input2?: Dynamic): Dynamic =>
           options.debug?.event(input2.type, input2),
       }).catch(async (input2?: Dynamic): Promise<Dynamic> => {
-        if ((0, classifyBootstrapFailure)(input2) !== "no_index")
+        if (classifyBootstrapFailure(input2) !== "no_index")
           throw input2;
         let value22: Dynamic = await trackedPort.list(),
           value23: Dynamic =
             input2.narrowed ??
-            (0, isNarrowedFileContext)(value22, trackedPort);
+            isNarrowedFileContext(value22, trackedPort);
         if (value23 && (options.canWrite ?? true))
           throw Object.assign(
             new Error(
@@ -731,8 +730,8 @@ function createFilesDesignDocument(options?: Dynamic): Dynamic {
         for (let value24 of value22 as Dynamic) {
           let value25: Dynamic = validateListedDesignFile(value24);
           value25 === null ||
-            !(0, isArtboardFile)(value25) ||
-            (0, isDesignSystemFile)(value25) ||
+            !isArtboardFile(value25) ||
+            isDesignSystemFile(value25) ||
             entries.has(value24.path) ||
             value25 in indexState.get().boards ||
             ((indexState.get().boards[value25] = {
@@ -792,7 +791,7 @@ function createFilesDesignDocument(options?: Dynamic): Dynamic {
       if (disposed) return;
       let value19: Dynamic = composeFromFiles(state2);
       rememberManifestDeletions(
-        (0, parseCanvasMetadata)(
+        parseCanvasMetadata(
           value19.files[canvasMetadataFile],
           value19.files,
         ),
@@ -801,7 +800,7 @@ function createFilesDesignDocument(options?: Dynamic): Dynamic {
         callback19: Dynamic = (input2?: Dynamic): Dynamic =>
           Object.entries(value19.files).some(
             ([input3, input4]: Dynamic): Dynamic =>
-              (0, isArtboardFile)(input3) &&
+              isArtboardFile(input3) &&
               input4.includes(input2.slice(input2.lastIndexOf("/") + 1)),
           );
       if (canWrite && Array.isArray(value20))
@@ -818,7 +817,7 @@ function createFilesDesignDocument(options?: Dynamic): Dynamic {
         ...state2,
       };
       let value21: Dynamic =
-        (0, normalizeDocumentTitle)(indexState.get().title.trim()) ??
+        normalizeDocumentTitle(indexState.get().title.trim()) ??
         state.title;
       state = {
         ...state,
@@ -833,7 +832,7 @@ function createFilesDesignDocument(options?: Dynamic): Dynamic {
         let values5: Dynamic = new Set(
           value15.listing.map((input2?: Dynamic): Dynamic => input2.path),
         );
-        value7 = await (0, applyCrashStashEdits)(
+        value7 = await applyCrashStashEdits(
           options.saveStash,
           (input2?: Dynamic): Dynamic =>
             input2 === DESIGN_INDEX_FILE_PATH
@@ -868,10 +867,10 @@ function createFilesDesignDocument(options?: Dynamic): Dynamic {
         }
       }
     } catch (value15: Dynamic) {
-      (0, classifyBootstrapFailure)(value15) === "access_revoked" &&
+      classifyBootstrapFailure(value15) === "access_revoked" &&
         options.saveStash?.clearArtifact();
       value6 ??= timers.now();
-      let value16: Dynamic = (0, getBootstrapRetryDelay)(
+      let value16: Dynamic = getBootstrapRetryDelay(
         value15,
         index,
       );
@@ -919,8 +918,8 @@ function createFilesDesignDocument(options?: Dynamic): Dynamic {
     options2: Dynamic = false,
   ): Dynamic {
     let value14: Dynamic = input[canvasMetadataFile],
-      value15: Dynamic = (0, parseCanvasMetadata)(value14, input),
-      value16: Dynamic = (0, parseIndexDeletionSets)(value14),
+      value15: Dynamic = parseCanvasMetadata(value14, input),
+      value16: Dynamic = parseIndexDeletionSets(value14),
       entry: Dynamic = indexState.get();
     if (value14 !== value3 && !options2) {
       for (let value24 of value16.notes as Dynamic)
@@ -937,7 +936,7 @@ function createFilesDesignDocument(options?: Dynamic): Dynamic {
         !values2.has(value24) &&
         (values5.add(value24),
         !missingBoards.has(value24) &&
-          !(0, isDesignSystemFile)(value24) &&
+          !isDesignSystemFile(value24) &&
           (flag2 = true));
     for (let value24 of Object.keys(entry.notes) as Dynamic)
       !value16.notes.has(value24) &&
@@ -951,7 +950,7 @@ function createFilesDesignDocument(options?: Dynamic): Dynamic {
       .filter(
         (input2?: Dynamic): Dynamic =>
           !missingBoards.has(input2) &&
-          !(0, isDesignSystemFile)(input2),
+          !isDesignSystemFile(input2),
       )
       .concat([...values6], [...values7])
       .sort().join(`
@@ -1022,8 +1021,8 @@ function createFilesDesignDocument(options?: Dynamic): Dynamic {
     input?: Dynamic,
     options2?: Dynamic,
   ): Dynamic {
-    let value14: Dynamic = (0, cloneIndexValue)(indexState.get());
-    (0, updateDesignIndexFromDocument)(
+    let value14: Dynamic = cloneIndexValue(indexState.get());
+    updateDesignIndexFromDocument(
       value14,
       input.manifest,
       options2,
@@ -1031,7 +1030,7 @@ function createFilesDesignDocument(options?: Dynamic): Dynamic {
       input.keepNotes,
       input.keepPages,
     );
-    return (0, stringifyCanonicalIndex)(value14);
+    return stringifyCanonicalIndex(value14);
   }
   let values2: Dynamic = new Set();
   function rememberManifestDeletions(input?: Dynamic): Dynamic {
@@ -1076,7 +1075,7 @@ function createFilesDesignDocument(options?: Dynamic): Dynamic {
           options.onNotice?.(describeReservedDesignFilename(value20)));
         continue;
       }
-      let value22: Dynamic = (0, toProjectContentPath)(value20);
+      let value22: Dynamic = toProjectContentPath(value20);
       if (!resolvingClashes.has(value20)) {
         if (fileDirtyVersions.has(value20) && !boardClashes.has(value20)) {
           if (callback8(value20)) {
@@ -1132,7 +1131,7 @@ function createFilesDesignDocument(options?: Dynamic): Dynamic {
       if (value20 === canvasMetadataFile || value20 in files)
         continue;
       delete loadedFiles[value20];
-      let value21: Dynamic = (0, toProjectContentPath)(value20);
+      let value21: Dynamic = toProjectContentPath(value20);
       !canSaveDesignFile(value20) ||
         isMissingRequiredDesignFile(value20) ||
         (value.markDirty(
@@ -1140,7 +1139,7 @@ function createFilesDesignDocument(options?: Dynamic): Dynamic {
           (): Dynamic => null,
           liveHashes.get(value21) ?? null,
         ),
-        (0, isArtboardFile)(value20) && values2.add(value20),
+        isArtboardFile(value20) && values2.add(value20),
         (flag2 = true));
     }
     for (let value20 of [...values2] as Dynamic)
@@ -1163,7 +1162,7 @@ function createFilesDesignDocument(options?: Dynamic): Dynamic {
       callback19(state.title) &&
       (indexState.update(
         (input?: Dynamic): Dynamic =>
-          (0, updateDesignIndexFromDocument)(
+          updateDesignIndexFromDocument(
             input,
             value15,
             state.title,
@@ -1201,7 +1200,7 @@ function createFilesDesignDocument(options?: Dynamic): Dynamic {
       state.content.files[input] !== loadedFiles[input];
   function adoptRemoteFiles(input?: Dynamic): Dynamic {
     for (let value16 of [...value.unsendable().keys()] as Dynamic) {
-      let value17: Dynamic = (0, fromProjectContentPath)(
+      let value17: Dynamic = fromProjectContentPath(
         value16,
         "design",
       );
@@ -1216,7 +1215,7 @@ function createFilesDesignDocument(options?: Dynamic): Dynamic {
       [canvasMetadataFile]: value14.files[canvasMetadataFile],
     };
     let value15: Dynamic =
-      (0, normalizeDocumentTitle)(indexState.get().title.trim()) ??
+      normalizeDocumentTitle(indexState.get().title.trim()) ??
       state.title;
     state = {
       ...state,
@@ -1230,7 +1229,7 @@ function createFilesDesignDocument(options?: Dynamic): Dynamic {
       let value22: Dynamic =
         value5 === undefined
           ? 0
-          : (0, getRestartDelay)(
+          : getRestartDelay(
               value5.error,
               input,
               DESIGN_INDEX_FILE_PATH,
@@ -1331,13 +1330,13 @@ function createFilesDesignDocument(options?: Dynamic): Dynamic {
           (input2?: Dynamic): Dynamic => !value24.includes(input2),
         );
         for (let value25 of value24 as Dynamic) {
-          let value26: Dynamic = (0, fromProjectContentPath)(
+          let value26: Dynamic = fromProjectContentPath(
             value25.path,
             "design",
           );
           value25.sha256 === null &&
             value26 !== undefined &&
-            (0, isArtboardFile)(value26) &&
+            isArtboardFile(value26) &&
             values5.add(value26);
         }
       }
@@ -1349,17 +1348,17 @@ function createFilesDesignDocument(options?: Dynamic): Dynamic {
       items3: Dynamic = [];
     for (let value22 of value15 as Dynamic) {
       if (value22.path === DESIGN_INDEX_FILE_PATH) continue;
-      let value23: Dynamic = (0, fromProjectContentPath)(
+      let value23: Dynamic = fromProjectContentPath(
         value22.path,
         "design",
       );
       if (value23 !== undefined) {
         if (value22.sha256 === null) {
-          (0, isArtboardFile)(value23) &&
+          isArtboardFile(value23) &&
             !fileDirtyVersions.has(value23) &&
             fileDirtyVersions.set(
               value23,
-              (0, cloneIndexValue)(indexState.get().boards[value23]),
+              cloneIndexValue(indexState.get().boards[value23]),
             );
           if (value23 in state.content.files) {
             if (boardClashes.has(value23)) {
@@ -1374,7 +1373,7 @@ function createFilesDesignDocument(options?: Dynamic): Dynamic {
               scheduleHeldRemoteCheck();
               continue;
             }
-            if ((0, isArtboardFile)(value23) && callback10(value23)) {
+            if (isArtboardFile(value23) && callback10(value23)) {
               items3.push(value23);
               continue;
             }
@@ -1441,10 +1440,10 @@ function createFilesDesignDocument(options?: Dynamic): Dynamic {
                 !items2.includes(input2) &&
                 !values6.has(input2) &&
                 (publishedHashes.get(
-                  (0, toProjectContentPath)(input2),
+                  toProjectContentPath(input2),
                 ) ?? null) !== null &&
                 validateListedDesignFile({
-                  path: (0, toProjectContentPath)(input2),
+                  path: toProjectContentPath(input2),
                   size: 0,
                 }) !== null,
             )
@@ -1472,8 +1471,8 @@ function createFilesDesignDocument(options?: Dynamic): Dynamic {
         (loadedFiles[value22] = value20[value22]),
         (savedFiles[value22] = value20[value22]),
         liveHashes.set(
-          (0, toProjectContentPath)(value22),
-          publishedHashes.get((0, toProjectContentPath)(value22)),
+          toProjectContentPath(value22),
+          publishedHashes.get(toProjectContentPath(value22)),
         ));
     let items4: Dynamic = [];
     for (let value22 of values6 as Dynamic)
@@ -1504,9 +1503,9 @@ function createFilesDesignDocument(options?: Dynamic): Dynamic {
       loadedFiles[value22] = value17[value22];
       savedFiles[value22] = value17[value22];
       liveHashes.set(
-        (0, toProjectContentPath)(value22),
-        publishedHashes.get((0, toProjectContentPath)(value22)) ??
-          liveHashes.get((0, toProjectContentPath)(value22)),
+        toProjectContentPath(value22),
+        publishedHashes.get(toProjectContentPath(value22)) ??
+          liveHashes.get(toProjectContentPath(value22)),
       );
       value21 = true;
     }
@@ -1519,8 +1518,8 @@ function createFilesDesignDocument(options?: Dynamic): Dynamic {
       offerOverwrittenEditNotice(value22);
     for (let value22 of items3 as Dynamic)
       await handleBoardClash(
-        (0, toProjectContentPath)(value22),
-        publishedHashes.get((0, toProjectContentPath)(value22)) ??
+        toProjectContentPath(value22),
+        publishedHashes.get(toProjectContentPath(value22)) ??
           null,
         "remote-while-editing",
       );
@@ -1544,7 +1543,7 @@ function createFilesDesignDocument(options?: Dynamic): Dynamic {
     options2: Dynamic = false,
     context?: Dynamic,
   ): Promise<Dynamic> {
-    let value14: Dynamic = (0, fromProjectContentPath)(
+    let value14: Dynamic = fromProjectContentPath(
       input.path,
       "design",
     );
@@ -1600,12 +1599,12 @@ function createFilesDesignDocument(options?: Dynamic): Dynamic {
     callback11: Dynamic = (input?: Dynamic): Dynamic =>
       state.content.files[input] !== undefined &&
       savedFiles[input] === undefined &&
-      !liveHashes.has((0, toProjectContentPath)(input)),
+      !liveHashes.has(toProjectContentPath(input)),
     callback12: Dynamic = (input?: Dynamic): Dynamic =>
       input in state.content.files ||
       fileDirtyVersions.has(input) ||
-      liveHashes.has((0, toProjectContentPath)(input)) ||
-      (publishedHashes.get((0, toProjectContentPath)(input)) ??
+      liveHashes.has(toProjectContentPath(input)) ||
+      (publishedHashes.get(toProjectContentPath(input)) ??
         null) !== null;
   function nextDuplicateFilename(input?: Dynamic): Dynamic {
     let value14: Dynamic = input.replace(/\.dc\.html$/, ""),
@@ -1633,7 +1632,7 @@ function createFilesDesignDocument(options?: Dynamic): Dynamic {
   }
   function releaseHeldFile(input?: Dynamic): Dynamic {
     heldRemoteFiles.delete(input);
-    let value14: Dynamic = (0, toProjectContentPath)(input);
+    let value14: Dynamic = toProjectContentPath(input);
     callback10(input)
       ? handleBoardClash(
           value14,
@@ -1656,7 +1655,7 @@ function createFilesDesignDocument(options?: Dynamic): Dynamic {
     options2?: Dynamic,
     context?: Dynamic,
   ): Promise<Dynamic> {
-    let value14: Dynamic = (0, fromProjectContentPath)(
+    let value14: Dynamic = fromProjectContentPath(
       input,
       "design",
     );
@@ -1672,7 +1671,7 @@ function createFilesDesignDocument(options?: Dynamic): Dynamic {
     let value15: Dynamic = state.content.files[value14];
     if (
       value15 === undefined ||
-      (!(0, isArtboardFile)(value14) &&
+      (!isArtboardFile(value14) &&
         options.sameBoardRule !== "last")
     )
       return void (await applyClashResolution({
@@ -1683,7 +1682,7 @@ function createFilesDesignDocument(options?: Dynamic): Dynamic {
       }));
     if (
       options2 !== null &&
-      (0, isArtboardFile)(value14) &&
+      isArtboardFile(value14) &&
       callback11(value14)
     )
       return adoptIdenticalBoard(value14, value15, options2);
@@ -1745,7 +1744,7 @@ function createFilesDesignDocument(options?: Dynamic): Dynamic {
               flag2
                 ? false
                 : (value.withdraw(input),
-                  (0, ModelHistoryRebaseSet)(value14),
+                  ModelHistoryRebaseSet(value14),
                   true)
             ),
           )) ||
@@ -1800,7 +1799,7 @@ function createFilesDesignDocument(options?: Dynamic): Dynamic {
           ? (value21 = "their version could not be read")
           : value17 === undefined
             ? (value21 = "this tab does not know what its edits started from")
-            : ((value20 = (0, mergeDcDocuments)(
+            : ((value20 = mergeDcDocuments(
                 value17,
                 value19,
                 value18,
@@ -1878,22 +1877,22 @@ function createFilesDesignDocument(options?: Dynamic): Dynamic {
     resolvingClashes.add(input);
     try {
       if (
-        (0, sha256Fallback)(
-          (0, PlatformSha256Encode)(options2),
+        sha256Fallback(
+          PlatformSha256Encode(options2),
         ) === context
       ) {
         loadedFiles[input] = options2;
         savedFiles[input] = options2;
-        liveHashes.set((0, toProjectContentPath)(input), context);
+        liveHashes.set(toProjectContentPath(input), context);
         value.resolveConflict(
-          (0, toProjectContentPath)(input),
+          toProjectContentPath(input),
           "theirs",
         );
         return;
       }
       let value14: Dynamic = nextDuplicateFilename(input);
       knownArtboardFiles.add(value14);
-      let value15: Dynamic = (0, cloneIndexValue)(
+      let value15: Dynamic = cloneIndexValue(
         indexState.get().boards[input],
       );
       indexState.update((input2?: Dynamic): Dynamic => {
@@ -1922,9 +1921,9 @@ function createFilesDesignDocument(options?: Dynamic): Dynamic {
         : ((state2[input] = value16),
           (loadedFiles[input] = value16),
           (savedFiles[input] = value16),
-          liveHashes.set((0, toProjectContentPath)(input), context));
+          liveHashes.set(toProjectContentPath(input), context));
       value.resolveConflict(
-        (0, toProjectContentPath)(input),
+        toProjectContentPath(input),
         "theirs",
       );
       options.debug?.event("moved-aside", {
@@ -1947,7 +1946,7 @@ function createFilesDesignDocument(options?: Dynamic): Dynamic {
       (overwrittenEdits.delete(input), options2 === entry.mine)
     )
       return;
-    let value14: Dynamic = (0, mergeDcDocuments)(
+    let value14: Dynamic = mergeDcDocuments(
       entry.base,
       entry.mine,
       options2,
@@ -1985,7 +1984,7 @@ function createFilesDesignDocument(options?: Dynamic): Dynamic {
         flag2 = true;
         let value14: Dynamic = state.content.files[input.file];
         if (value14 === undefined) return;
-        let value15: Dynamic = (0, mergeDcDocuments)(
+        let value15: Dynamic = mergeDcDocuments(
           input.base,
           input.mine,
           value14,
@@ -2038,7 +2037,7 @@ function createFilesDesignDocument(options?: Dynamic): Dynamic {
         : callback12(value15)
           ? nextDuplicateFilename(value15)
           : value15,
-      value17: Dynamic = (0, parseCanvasMetadata)(
+      value17: Dynamic = parseCanvasMetadata(
         files[canvasMetadataFile],
         files,
       ),
@@ -2075,9 +2074,9 @@ function createFilesDesignDocument(options?: Dynamic): Dynamic {
       content: {
         files: {
           ...state3,
-          [canvasMetadataFile]: (0, serializeCanvasMetadata)(
-            (0, parseCanvasMetadata)(
-              (0, serializeCanvasMetadata)(state2),
+          [canvasMetadataFile]: serializeCanvasMetadata(
+            parseCanvasMetadata(
+              serializeCanvasMetadata(state2),
               state3,
             ),
           ),
@@ -2253,7 +2252,7 @@ function createFilesDesignDocument(options?: Dynamic): Dynamic {
       let value16: Dynamic =
         value15.path === DESIGN_INDEX_FILE_PATH
           ? undefined
-          : (0, fromProjectContentPath)(value15.path, "design");
+          : fromProjectContentPath(value15.path, "design");
       if (value16 === undefined) continue;
       let value17: Dynamic = callback13(value15.path);
       if (value15.text === null) {
@@ -2267,7 +2266,7 @@ function createFilesDesignDocument(options?: Dynamic): Dynamic {
         continue;
       }
       if (
-        (0, isArtboardFile)(value16) &&
+        isArtboardFile(value16) &&
         value17 !== null &&
         options.sameBoardRule === "first"
       ) {
@@ -2279,7 +2278,7 @@ function createFilesDesignDocument(options?: Dynamic): Dynamic {
       }
       if (
         options.sameBoardRule === "last" &&
-        (0, isArtboardFile)(value16) &&
+        isArtboardFile(value16) &&
         value15.base === null &&
         value17 !== null
       ) {
@@ -2298,7 +2297,7 @@ function createFilesDesignDocument(options?: Dynamic): Dynamic {
         delete loadedFiles[value16];
         continue;
       }
-      if ((0, isArtboardFile)(value16) && value17 !== null) {
+      if (isArtboardFile(value16) && value17 !== null) {
         items2.push({
           p: value16,
           treePath: value15.path,
@@ -2316,7 +2315,7 @@ function createFilesDesignDocument(options?: Dynamic): Dynamic {
     if (value14 !== undefined && value14.text !== null) {
       let value15: Dynamic;
       try {
-        value15 = (0, normalizeDesignIndex)(JSON.parse(value14.text));
+        value15 = normalizeDesignIndex(JSON.parse(value14.text));
       } catch {
         value15 = undefined;
       }
@@ -2328,9 +2327,9 @@ function createFilesDesignDocument(options?: Dynamic): Dynamic {
         let value16: Dynamic = value15;
         indexState.update(
           (input2?: Dynamic): Dynamic =>
-            (0, replaceIndexObjectProperties)(
+            replaceIndexObjectProperties(
               input2,
-              (0, cloneIndexValue)(value16) as DataRecord,
+              cloneIndexValue(value16) as DataRecord,
             ),
         );
         value.commit();
@@ -2384,7 +2383,7 @@ function createFilesDesignDocument(options?: Dynamic): Dynamic {
   }
   function releaseHeldFocusedFiles(input?: Dynamic): Dynamic {
     for (let value14 of [...heldRemoteFiles] as Dynamic)
-      ((0, artboardStorePath)(value14) !== input &&
+      (artboardStorePath(value14) !== input &&
         value14 !== input) ||
         callback8(value14) ||
         releaseHeldFile(value14);
@@ -2454,7 +2453,7 @@ function createFilesDesignDocument(options?: Dynamic): Dynamic {
           ...state,
           content: input,
         }),
-        (0, recordEdit)());
+        recordEdit());
     },
     updateContent(input: Dynamic, options2: Dynamic): Dynamic {
       let value14: Dynamic = input(state.content);
@@ -2463,17 +2462,17 @@ function createFilesDesignDocument(options?: Dynamic): Dynamic {
           ...state,
           content: value14,
         }),
-        options2?.auto !== true && (0, recordEdit)());
+        options2?.auto !== true && recordEdit());
     },
     setTitle(input: Dynamic): Dynamic {
-      let value14: Dynamic = (0, normalizeNewDocumentTitle)(input);
+      let value14: Dynamic = normalizeNewDocumentTitle(input);
       value14.length === 0 ||
         value14 === state.title ||
         (replaceDocument({
           ...state,
           title: value14,
         }),
-        (0, recordEdit)());
+        recordEdit());
     },
     addComment: (): Dynamic => {},
     removeComment(): Dynamic {},
@@ -2561,7 +2560,7 @@ function createFilesDesignDocument(options?: Dynamic): Dynamic {
           )
           .map(
             (input?: Dynamic): Dynamic =>
-              (0, toProjectContentPath)(input),
+              toProjectContentPath(input),
           );
       return {
         files: value15,
@@ -2667,7 +2666,7 @@ function createFilesDesignDocument(options?: Dynamic): Dynamic {
     releaseHold: releaseHeldFocusedFiles,
     theirsOnItsWay: (input?: Dynamic): Dynamic =>
       heldRemoteFiles.has(input) ||
-      callback7((0, toProjectContentPath)(input)),
+      callback7(toProjectContentPath(input)),
     syncDetail: (): Dynamic => ({
       pending: syncState.dirty + (value8 !== undefined ? 1 : 0),
       inflight: syncState.inFlight ? DESIGN_INDEX_FILE_PATH : null,
@@ -2713,15 +2712,15 @@ function createFilesDesignDocument(options?: Dynamic): Dynamic {
     index: (): Dynamic => indexState.get(),
     indexSaved: (): Dynamic => indexState.baseSha() !== null,
     listedBoards(): Dynamic {
-      let value14: Dynamic = (0, normalizeDesignIndex)(
+      let value14: Dynamic = normalizeDesignIndex(
           indexState.get(),
         ),
         files: Dynamic = state.content.files,
         value15: Dynamic = Object.fromEntries(
           Object.entries(value14.boards).filter(
             ([input]: Dynamic): Dynamic =>
-              (0, isArtboardFile)(input) &&
-              !(0, isDesignSystemFile)(input),
+              isArtboardFile(input) &&
+              !isDesignSystemFile(input),
           ),
         ),
         values5: Dynamic = new Set(Object.keys(value15));
@@ -2735,25 +2734,25 @@ function createFilesDesignDocument(options?: Dynamic): Dynamic {
           1 -
           Object.keys(files).length,
         items2: Dynamic = [];
-      for (let value17 of (0, orderedDesignMapKeys)(
+      for (let value17 of orderedDesignMapKeys(
         value14.order,
         value15,
       ) as Dynamic) {
         if (items2.length >= value16) break;
         !(value17 in files) &&
-          (publishedHashes.get((0, toProjectContentPath)(value17)) ??
+          (publishedHashes.get(toProjectContentPath(value17)) ??
             null) === null &&
           !knownArtboardFiles.has(value17) &&
           !fileDirtyVersions.has(value17) &&
           validateListedDesignFile({
-            path: (0, toProjectContentPath)(value17),
+            path: toProjectContentPath(value17),
             size: 0,
           }) !== null &&
           items2.push(value17);
       }
       return {
         listed: values5,
-        awaited: (0, buildSelectedBoardsDocument)(value14, items2),
+        awaited: buildSelectedBoardsDocument(value14, items2),
       };
     },
   };
@@ -2809,7 +2808,7 @@ export function installPlatformFilesDesignDocument(): () => void {
       input +
       "\u201D can\u2019t be saved with this canvas. Add it as a PNG, JPEG, WebP or SVG instead.";
     isMissingRequiredDesignFile = (input?: Dynamic): Dynamic =>
-      (0, isReservedProjectPath)(
+      isReservedProjectPath(
         "design",
         projectPathPrefix + input,
       );

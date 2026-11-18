@@ -18,7 +18,7 @@ async function listWritableFiles(input?: Dynamic): Promise<Dynamic> {
   let value: Dynamic = await input.list();
   if (
     input.mayWrite === true &&
-    (0, isNarrowedFileContext)(value, input)
+    isNarrowedFileContext(value, input)
   )
     throw {
       code: "http",

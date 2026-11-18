@@ -35,12 +35,12 @@ function parseFontFileReferences(input?: Dynamic): Dynamic {
       value4: Dynamic = value2?.size;
     if (
       !(
-        !(0, isFullProjectPath)(value) ||
+        !isFullProjectPath(value) ||
         PlatformExternalFilesSubscribers.has(value.toLowerCase()) ||
         PlatformExternalFilesProjectWoffPattern.test(value)
       )
     ) {
-      if ((0, isTypeDeclarationPath)(value3)) {
+      if (isTypeDeclarationPath(value3)) {
         items2.length < PlatformFileReferencesLimit_2 &&
         !(
           typeof value4 == "number" &&
@@ -59,7 +59,7 @@ function parseFontFileReferences(input?: Dynamic): Dynamic {
         continue;
       }
       if (
-        !(0, isProjectTextFilePath)(value3) ||
+        !isProjectTextFilePath(value3) ||
         items.length >= PlatformFileReferencesLimit ||
         (typeof value4 == "number" &&
           value4 > PlatformFileReferencesResolvedValue)
@@ -97,7 +97,7 @@ function setExternalFileReferences(
   options?: Dynamic,
   context?: Dynamic,
 ): Dynamic {
-  options ??= (0, sameOriginFileFetcher)();
+  options ??= sameOriginFileFetcher();
   PlatformExternalFilesSubscribers_2 = new Set(context);
   PlatformExternalFilesMapValue = [...input]
     .sort(
@@ -117,7 +117,7 @@ function setExternalFileReferences(
           : {}),
       }),
     );
-  (0, setDeclarationReferences)(
+  setDeclarationReferences(
     getTypeDeclarationReferences(),
     options,
   );
@@ -141,7 +141,7 @@ async function saveExternalFileReference(
   extra?: Dynamic,
 ): Promise<Dynamic> {
   if (PlatformExternalFilesAlias === undefined) return "no-store";
-  let value2: Dynamic = (0, encodeStorePathSegment)(
+  let value2: Dynamic = encodeStorePathSegment(
     input,
   ).toLowerCase();
   return extra(input) ||
@@ -154,10 +154,10 @@ async function saveExternalFileReference(
     )
     ? "taken"
     : (PlatformExternalFilesSubscribers_2.add(
-        (0, encodeStorePathSegment)(input),
+        encodeStorePathSegment(input),
       ),
       await PlatformExternalFilesAlias.set(
-        FilesValue + "/" + (0, encodeStorePathSegment)(input),
+        FilesValue + "/" + encodeStorePathSegment(input),
         {
           path: input,
           kind: "text",
@@ -171,7 +171,7 @@ async function saveExternalFileReference(
 function getTypeDeclarationReferences(): Dynamic {
   let value: Dynamic = PlatformExternalFilesMapValue.filter(
     (input?: Dynamic): Dynamic =>
-      (0, isTypeDeclarationPath)(input.path) &&
+      isTypeDeclarationPath(input.path) &&
       !((input.bytes ?? 0) > PlatformFileContentResolvedValue_10),
   );
   return [

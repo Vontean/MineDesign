@@ -300,7 +300,7 @@ function useOverlayRoot(): Dynamic {
   return value ?? (value3 ? undefined : value2);
 }
 function useCdsWindow(): Dynamic {
-  return (0, getOwnerWindow)(
+  return getOwnerWindow(
     (0, reactThemeRoot.useContext)(RootElementContext),
   );
 }
@@ -324,7 +324,7 @@ function CdsRoot({
     value2: Dynamic = (0, reactThemeRoot.useContext)(PlatformContext),
     value3: Dynamic = (0, reactThemeRoot.useContext)(LocaleContext),
     value4: Dynamic = (0, reactThemeRoot.useContext)(LabelsContext),
-    value5: Dynamic = (0, useLinkRouter)(),
+    value5: Dynamic = useLinkRouter(),
     value6: Dynamic = (0, reactThemeRoot.useContext)(
       LabelsProviderContext,
     ),
@@ -347,7 +347,7 @@ function CdsRoot({
     ),
     value12: Dynamic = (0, reactThemeRoot.useContext)(ThemeRootContext),
     value13: Dynamic = experimental?.naturalImageTiles ?? value12;
-  (0, useMobileSheetPreload)(value3 === undefined, useCdsWindow());
+  useMobileSheetPreload(value3 === undefined, useCdsWindow());
   let value14: Dynamic = font ?? value3 ?? "anthropic",
     value15: Dynamic = (0, reactThemeRoot.useContext)(FontContext),
     value16: Dynamic =
@@ -391,16 +391,16 @@ function CdsRoot({
           mode: mode,
           scope: value31,
         }));
-  (0, useIsomorphicLayoutEffect)((): Dynamic => {
-    (0, observeDocumentInput)(value25.current?.ownerDocument);
+  useIsomorphicLayoutEffect((): Dynamic => {
+    observeDocumentInput(value25.current?.ownerDocument);
   }, []);
-  (0, useIsomorphicLayoutEffect)((): Dynamic => {
+  useIsomorphicLayoutEffect((): Dynamic => {
     if (value27) {
       value31.setElement(value25.current);
       return (): Dynamic => value31.setElement(null);
     }
   }, [value27, value31]);
-  let value32: Dynamic = (0, useExperimentalTheme)(
+  let value32: Dynamic = useExperimentalTheme(
       experimental?.theme,
       value25,
     ),
@@ -420,12 +420,12 @@ function CdsRoot({
     (value34 = reactThemeRoot.Children.toArray(value34)[0]);
   let value35: Dynamic =
       (0, reactThemeRoot.isValidElement)(value34) && value34.type === "html",
-    value36: Dynamic = (0, npm_useRender_LL)({
+    value36: Dynamic = npm_useRender_LL({
       render: value34,
       defaultTagName: "div",
       ref: value25,
       props: {
-        className: (0, cn)("cds-root text-primary", className),
+        className: cn("cds-root text-primary", className),
         "data-density": value9,
         "data-mode": value33,
         "data-platform": value24,
@@ -527,25 +527,25 @@ export {
 };
 export function installCdsThemeRoot(): () => void {
   return () => {
-    initializeCdsRoot = (0, initializeOnce)((): Dynamic => {
+    initializeCdsRoot = initializeOnce((): Dynamic => {
       "use client";
 
-      (0, initializeDomOwnerWindow_2)();
-      (0, initializeDomInputObservation)();
-      (0, initializeSheetsLazyLoader_2)();
-      (0, initializeHooksLayoutEffect)();
-      (0, initializeExperimentalTheme)();
-      (0, initializeClassNames)();
-      (0, initializeSheetsStyles_2)();
-      (0, initializePlatformRuntime)();
-      (0, initializeLinkRouter)();
-      (0, initializeDomOwnerWindow)();
-      (0, initializeNpm__base_ui_react_SY)();
-      reactThemeRoot = (0, toModuleNamespace)(
-        (0, load_react)(),
+      initializeDomOwnerWindow_2();
+      initializeDomInputObservation();
+      initializeSheetsLazyLoader_2();
+      initializeHooksLayoutEffect();
+      initializeExperimentalTheme();
+      initializeClassNames();
+      initializeSheetsStyles_2();
+      initializePlatformRuntime();
+      initializeLinkRouter();
+      initializeDomOwnerWindow();
+      initializeNpm__base_ui_react_SY();
+      reactThemeRoot = toModuleNamespace(
+        load_react(),
       );
-      jsxThemeRoot = (0, toModuleNamespace)(
-        (0, load_react_jsx_runtime)(),
+      jsxThemeRoot = toModuleNamespace(
+        load_react_jsx_runtime(),
       );
       ThemeRootHandler = (): Dynamic => (): Dynamic => {};
       ThemeRootDefaultText = (): Dynamic => "web";

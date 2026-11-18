@@ -13,15 +13,15 @@ function updateTokens(
   mutate: (tokens: Model.NormalizedTokens) => boolean,
 ) {
   let tokens = structuredClone(
-    (0, parsedDesignSystem)(content).tokens,
+    parsedDesignSystem(content).tokens,
   );
   if (!mutate(tokens)) {
     return content;
   }
-  return (0, setDesignSystemFile)(
+  return setDesignSystemFile(
     content,
     DESIGN_SYSTEM_PATHS.tokens,
-    (0, serializeTokens)(tokens),
+    serializeTokens(tokens),
   );
 }
 function setColorTokenValue(
@@ -30,7 +30,7 @@ function setColorTokenValue(
   themeId: string,
   value: unknown,
 ) {
-  let normalized = (0, normalizeColorOrAlias)(value);
+  let normalized = normalizeColorOrAlias(value);
   if (normalized === undefined) {
     return content;
   }
@@ -40,14 +40,14 @@ function setColorTokenValue(
     ) {
       return false;
     }
-    let value2 = (0, colorAliasTarget)(normalized);
+    let value2 = colorAliasTarget(normalized);
     if (
       value2 !== undefined &&
       (value2 === name ||
         !input.color.tokens.some(
           (input2): boolean => input2.name === value2,
         ) ||
-        (0, detectColorAliasCycle)(
+        detectColorAliasCycle(
           input,
           name,
           themeId,
@@ -89,7 +89,7 @@ function clearColorThemeOverride(
       if (value.name === name) {
         if (
           !Object.hasOwn(value.value, themeId) ||
-          (0, detectColorAliasCycle)(input, name, themeId, "") !==
+          detectColorAliasCycle(input, name, themeId, "") !==
             undefined
         ) {
           return false;
@@ -127,7 +127,7 @@ function editableTokensForFamily(
   family: Core.ValueTokenKind,
 ) {
   if (family === "extra") {
-    return (0, allExtraTokens)(tokens);
+    return allExtraTokens(tokens);
   } else {
     return tokens[family].tokens;
   }
@@ -137,7 +137,7 @@ function scalarTokensForFamily(
   family: Core.ScalarKind,
 ) {
   if (family === "extra") {
-    return (0, allExtraTokens)(tokens);
+    return allExtraTokens(tokens);
   } else {
     return tokens[family].tokens;
   }
@@ -168,7 +168,7 @@ function setShadowTokenValue(
   themeId: string,
   value: unknown,
 ) {
-  let normalized = (0, normalizeBoxShadow)(value);
+  let normalized = normalizeBoxShadow(value);
   if (normalized === undefined) {
     return content;
   }
@@ -238,7 +238,7 @@ function setScalarTokenValue(
   name: string,
   value: unknown,
 ) {
-  let normalized = (0, normalizeScalarTokenValue)(family, value);
+  let normalized = normalizeScalarTokenValue(family, value);
   if (normalized === undefined) {
     return content;
   }
@@ -400,7 +400,7 @@ function setTypographyProperty<K extends Core.TypographyProperty>(
   value: unknown,
 ) {
   return updateTokens(content, (input): boolean => {
-    let value2 = (0, normalizeTypographyProperty)(
+    let value2 = normalizeTypographyProperty(
       property,
       value,
       input.type.families,
@@ -459,10 +459,10 @@ function renameToken(
   ) {
     return content;
   }
-  let tokens = (0, parsedDesignSystem)(content).tokens;
+  let tokens = parsedDesignSystem(content).tokens;
   if (
-    !(0, tokenNamesForFamily)(tokens, family).includes(oldName) ||
-    (0, conflictingTokenNames)(tokens, family).includes(
+    !tokenNamesForFamily(tokens, family).includes(oldName) ||
+    conflictingTokenNames(tokens, family).includes(
       normalizedName,
     )
   ) {
@@ -476,7 +476,7 @@ function renameToken(
   if (readme === undefined) {
     return renamed;
   } else {
-    return (0, setDesignSystemReadme)(
+    return setDesignSystemReadme(
       renamed,
       renameReadmeTokenCodeSpans(readme, oldName, normalizedName),
     );
@@ -506,7 +506,7 @@ function renameTokenInTokens(
   newName: string,
 ) {
   return updateTokens(content, (input): boolean => {
-    if ((0, conflictingTokenNames)(input, family).includes(newName)) {
+    if (conflictingTokenNames(input, family).includes(newName)) {
       return false;
     }
     if (family === "color") {
@@ -550,12 +550,12 @@ function resolveAliasesBeforeTokenDeletion(
     let state: Record<string, string | undefined> = {},
       flag: boolean = false;
     for (let value2 of tokens.color.themes) {
-      let value3 = (0, colorAliasTarget)(
-        (0, colorValueForThemeModelTokens)(value, value2.id, tokens),
+      let value3 = colorAliasTarget(
+        colorValueForThemeModelTokens(value, value2.id, tokens),
       );
       if (value3 !== undefined && deletedNames.has(value3)) {
         flag = true;
-        state[value2.id] = (0, resolveColorTokenValue)(
+        state[value2.id] = resolveColorTokenValue(
           value,
           value2.id,
           tokens,
@@ -580,8 +580,8 @@ function deleteColorTokens(
 ) {
   let deletedNames = new Set(
     names.filter((input) =>
-      (0, tokenNamesForFamily)(
-        (0, parsedDesignSystem)(content).tokens,
+      tokenNamesForFamily(
+        parsedDesignSystem(content).tokens,
         "color",
       ).includes(input),
     ),
@@ -602,8 +602,8 @@ function deleteToken(
   family: Core.TokenKind,
   name: string,
 ) {
-  let tokens = (0, parsedDesignSystem)(content).tokens;
-  if (!(0, tokenNamesForFamily)(tokens, family).includes(name)) {
+  let tokens = parsedDesignSystem(content).tokens;
+  if (!tokenNamesForFamily(tokens, family).includes(name)) {
     return content;
   }
   return updateTokens(content, (input): boolean => {

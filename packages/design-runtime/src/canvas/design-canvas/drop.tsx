@@ -49,7 +49,7 @@ export function placeDroppedImages(deps: { readonly focusedFileRef: Dynamic; rea
         value653?: Dynamic,
         extra?: Dynamic): Dynamic {
         let callback15: Dynamic = (): Dynamic => {};
-        (0, trackEmbeddedWrite)(
+        trackEmbeddedWrite(
           (async (): Promise<Dynamic> => {
             let value654: Dynamic = deps.value332(options, context, extra);
             if (value654 != null && value654.file === deps.value271.current) {
@@ -67,7 +67,7 @@ export function placeDroppedImages(deps: { readonly focusedFileRef: Dynamic; rea
                 options2?: Dynamic,
                 context2?: Dynamic,
               ): Dynamic =>
-                (0, droppedImagePlacement)(
+                droppedImagePlacement(
                   {
                     x: options,
                     y: context,
@@ -80,8 +80,7 @@ export function placeDroppedImages(deps: { readonly focusedFileRef: Dynamic; rea
                 input?: Dynamic,
                 options2?: Dynamic,
               ): Dynamic => {
-                let { w: value662, h: value663 }: Dynamic = (0,
-                defaultPlacedImageSize)(input, options2);
+                let { w: value662, h: value663 }: Dynamic = defaultPlacedImageSize(input, options2);
                 return value663 > PlatformFileContentLimit_6
                   ? {
                       w: Math.max(
@@ -98,7 +97,7 @@ export function placeDroppedImages(deps: { readonly focusedFileRef: Dynamic; rea
                       h: value663,
                     };
               };
-            (0, markDropPerformance)("received");
+            markDropPerformance("received");
             let value655: Dynamic = items.map(
                 (): Dynamic => ({
                   d: null,
@@ -141,7 +140,7 @@ export function placeDroppedImages(deps: { readonly focusedFileRef: Dynamic; rea
               },
               value656: Dynamic = callback18((): Dynamic => false).map(
                 (input?: Dynamic): Dynamic =>
-                  (0, createDropGhost)({
+                  createDropGhost({
                     file: value654?.file ?? null,
                     page: current4,
                     ...input,
@@ -166,14 +165,14 @@ export function placeDroppedImages(deps: { readonly focusedFileRef: Dynamic; rea
                   .then((input2?: Dynamic): Dynamic => new DataView(input2))
                   .catch((): Dynamic => null);
                 return {
-                  d: (0, isSvgFile)(input)
-                    ? await (0, imageHeaderDimensions)(input).catch(
+                  d: isSvgFile(input)
+                    ? await imageHeaderDimensions(input).catch(
                         (): Dynamic => null,
                       )
                     : value662 &&
-                      (0, rasterImageDimensions)(value662),
+                      rasterImageDimensions(value662),
                   density:
-                    value662 && (0, pngPhysicalDimensions)(value662),
+                    value662 && pngPhysicalDimensions(value662),
                 };
               }),
             );
@@ -182,14 +181,14 @@ export function placeDroppedImages(deps: { readonly focusedFileRef: Dynamic; rea
                 input && value656[options2].place(input);
               },
             );
-            (0, markDropPerformance)("header");
-            await (0, afterNextPaint)();
+            markDropPerformance("header");
+            await afterNextPaint();
             let value657: Dynamic = await Promise.all(
                 items.map(
                   (input?: Dynamic): Dynamic =>
-                    (0, imagePlacementRejectionReason)(input) ==
-                      null && !(0, isSvgFile)(input)
-                      ? (0, canDecodeRasterImage)(input)
+                    imagePlacementRejectionReason(input) ==
+                      null && !isSvgFile(input)
+                      ? canDecodeRasterImage(input)
                       : Promise.resolve(false),
                 ),
               ),
@@ -197,7 +196,7 @@ export function placeDroppedImages(deps: { readonly focusedFileRef: Dynamic; rea
                 items.map(
                   (input?: Dynamic, options2?: Dynamic): Dynamic =>
                     value657[options2]
-                      ? (0, previewImageFile)(input, {
+                      ? previewImageFile(input, {
                           sized: true,
                           head: value655[options2].d,
                         }).catch((): Dynamic => null)
@@ -209,9 +208,9 @@ export function placeDroppedImages(deps: { readonly focusedFileRef: Dynamic; rea
                   (input?: Dynamic, options2?: Dynamic): Dynamic =>
                     value658[options2]
                       ? Promise.resolve(null)
-                      : (0, validateCanvasPlacedImage)(
+                      : validateCanvasPlacedImage(
                           input,
-                          (0, isSvgFile)(input)
+                          isSvgFile(input)
                             ? undefined
                             : value657[options2],
                         ),
@@ -225,14 +224,14 @@ export function placeDroppedImages(deps: { readonly focusedFileRef: Dynamic; rea
                 ): Promise<Dynamic> => {
                   value659[options2] == null &&
                     !value658[options2] &&
-                    (0, isSvgFile)(input) &&
-                    (value658[options2] = await (0, previewImageFile)(
+                    isSvgFile(input) &&
+                    (value658[options2] = await previewImageFile(
                       input,
                     ).catch((): Dynamic => null));
                 },
               ),
             );
-            (0, markDropPerformance)("gate");
+            markDropPerformance("gate");
             let value660: Dynamic = value655.map(
                 (input?: Dynamic): Dynamic => input.d,
               ),
@@ -297,25 +296,25 @@ export function placeDroppedImages(deps: { readonly focusedFileRef: Dynamic; rea
               context2?: Dynamic,
               value662?: Dynamic,
             ): Dynamic => {
-              let value663: Dynamic = (0, registerHiddenPickerTag)(
+              let value663: Dynamic = registerHiddenPickerTag(
                   value662,
                 ),
                 callback22: Dynamic = async (): Promise<Dynamic> => {
-                  (0, isEmbedFrozen)() ||
+                  isEmbedFrozen() ||
                     (await input
                       .swapImageAttrs(context2, {
                         "data-dc-drop": null,
                       })
                       .catch((): Dynamic => false));
                 };
-              (0, trackEmbeddedWrite)(
-                (0, uploadDesignFile)(
+              trackEmbeddedWrite(
+                uploadDesignFile(
                   "appifact",
                   null,
                   items[options2],
                 )
                   .then(async ({ src: src }: Dynamic): Promise<Dynamic> => {
-                    if ((0, isEmbedFrozen)()) return;
+                    if (isEmbedFrozen()) return;
                     (await input.swapImageAttrs(context2, {
                       src: src,
                       "data-dc-drop": null,
@@ -335,7 +334,7 @@ export function placeDroppedImages(deps: { readonly focusedFileRef: Dynamic; rea
                     ),
                   )
                   .finally((): Dynamic => {
-                    (0, markDropPerformance)("upload");
+                    markDropPerformance("upload");
                     value663();
                   }),
               );
@@ -375,7 +374,7 @@ export function placeDroppedImages(deps: { readonly focusedFileRef: Dynamic; rea
                         : `${items2.length} pictures from the ${value653} images`,
                     value666: Dynamic = `${value664} of the ${value653} images ${value664 === 1 ? "was" : "were"} not placed.`;
                   value664 > 0 && deps.value188(value666);
-                  (0, announce)(
+                  announce(
                     value665 +
                       (value664 > 0 ? "; " + value666.slice(0, -1) : "") +
                       (length > 0
@@ -412,9 +411,9 @@ export function placeDroppedImages(deps: { readonly focusedFileRef: Dynamic; rea
                 };
                 deps.value328((input?: Dynamic): Dynamic => [...input, state2]);
                 callback19(index6, "replaced");
-                (0, markDropPerformance)("insert");
+                markDropPerformance("insert");
                 let callback23: Dynamic = (): Dynamic => {
-                  (0, markDropPerformance)("upload");
+                  markDropPerformance("upload");
                   deps.value328(
                     (input?: Dynamic): Dynamic =>
                       input.filter(
@@ -423,16 +422,15 @@ export function placeDroppedImages(deps: { readonly focusedFileRef: Dynamic; rea
                   );
                 };
                 index5++;
-                (0, trackEmbeddedWrite)(
-                  (0, uploadDesignFile)(
+                trackEmbeddedWrite(
+                  uploadDesignFile(
                     "appifact",
                     null,
                     items[index6],
                   ).then(({ src: src }: Dynamic): Dynamic => {
-                    if ((0, isEmbedFrozen)()) return;
+                    if (isEmbedFrozen()) return;
                     callback23();
-                    let value668: Dynamic = (0,
-                    PlatformFileContentTest_2)(src);
+                    let value668: Dynamic = PlatformFileContentTest_2(src);
                     if (value668 === null) {
                       deps.value188(
                         uiMessage("canvas.designCanvas.couldNotPlaceTheValue12", { value1: uiOperation(value653) }),
@@ -447,8 +445,8 @@ export function placeDroppedImages(deps: { readonly focusedFileRef: Dynamic; rea
                         w: value666,
                         h: value667,
                         src: value668,
-                        alt: (0, PlatformFileContentSlice)(
-                          (0, droppedImageLabel)(
+                        alt: PlatformFileContentSlice(
+                          droppedImageLabel(
                             items[index6],
                             value653,
                           ),
@@ -474,7 +472,7 @@ export function placeDroppedImages(deps: { readonly focusedFileRef: Dynamic; rea
                       deps.value339.current === state.tool &&
                       deps.focusedFileRef.current === state.focus &&
                       deps.value80.current === current5 &&
-                      ((value663 = (0, selectionFromBoards)({
+                      ((value663 = selectionFromBoards({
                         files: emptyBoardSelection.files,
                         notes: new Set(items2),
                       })),
@@ -524,13 +522,13 @@ export function placeDroppedImages(deps: { readonly focusedFileRef: Dynamic; rea
                   y: value665,
                   w: value666,
                 }: Dynamic = callback16(value663, index, value654),
-                value667: Dynamic = (0, createElementEditId)(index2),
-                value668: Dynamic = (0, droppedImageMarkup)({
+                value667: Dynamic = createElementEditId(index2),
+                value668: Dynamic = droppedImageMarkup({
                   src: value662.url,
                   mark: value667,
-                  alt: (0, safeDroppedImageAltText)(
-                    (0, droppedImageLabel)(items[index2], value653),
-                    (0, droppedImageLabel)(
+                  alt: safeDroppedImageAltText(
+                    droppedImageLabel(items[index2], value653),
+                    droppedImageLabel(
                       {
                         name: "",
                       },
@@ -547,13 +545,13 @@ export function placeDroppedImages(deps: { readonly focusedFileRef: Dynamic; rea
                 continue;
               }
               callback19(index2, "landed");
-              (0, markDropPerformance)("insert");
+              markDropPerformance("insert");
               index++;
               callback21(entry, index2, value662.url, value667);
             }
             callback15();
             index > 0
-              ? (0, announce)(
+              ? announce(
                   index +
                     (index > 1 ? " images " : " image ") +
                     value653 +
@@ -575,7 +573,7 @@ export function placeDroppedVideos(deps: { readonly focusedFileRef: Dynamic; rea
       detail?: Dynamic,
       argument?: Dynamic): Dynamic {
       let callback15: Dynamic = (): Dynamic => {};
-      (0, trackEmbeddedWrite)(
+      trackEmbeddedWrite(
         (async (): Promise<Dynamic> => {
           let value654: Dynamic = deps.value332(options, context, extra);
           if (value654 != null && value654.file === deps.value271.current) {
@@ -600,7 +598,7 @@ export function placeDroppedVideos(deps: { readonly focusedFileRef: Dynamic; rea
             return;
           }
           if (value654 && deps.value177.current.get(value654.file)?.holdsDeck()) {
-            deps.value188((0, CanvasWorkingStateHandler)("artboard"));
+            deps.value188(CanvasWorkingStateHandler("artboard"));
             return;
           }
           let values: Dynamic = new Set(),
@@ -609,9 +607,9 @@ export function placeDroppedVideos(deps: { readonly focusedFileRef: Dynamic; rea
               deps.value188([...values].join(" "));
             },
             value655: Dynamic = input.filter((input2?: Dynamic): Dynamic => {
-              let value662: Dynamic = (0, videoUploadRefusal)(input2);
+              let value662: Dynamic = videoUploadRefusal(input2);
               value662 != null &&
-                callback16((0, videoUploadFailureMessage)(value662));
+                callback16(videoUploadFailureMessage(value662));
               return value662 == null;
             }),
             value656: Dynamic = value655.slice(
@@ -637,7 +635,7 @@ export function placeDroppedVideos(deps: { readonly focusedFileRef: Dynamic; rea
             );
             return;
           }
-          (0, markDropPerformance)("received");
+          markDropPerformance("received");
           let current4: Dynamic = deps.value80.current,
             state: Dynamic = {
               sel: deps.selectionRef.current,
@@ -657,8 +655,7 @@ export function placeDroppedVideos(deps: { readonly focusedFileRef: Dynamic; rea
                     1,
                     Math.round((value666 * input2.height) / input2.width),
                   ),
-                  { left: value668, top: value669 }: Dynamic = (0,
-                  fileDropPosition)(
+                  { left: value668, top: value669 }: Dynamic = fileDropPosition(
                     argument,
                     detail + options2,
                     value666,
@@ -672,7 +669,7 @@ export function placeDroppedVideos(deps: { readonly focusedFileRef: Dynamic; rea
                 };
               }
               if (value654)
-                return (0, droppedImagePlacement)(
+                return droppedImagePlacement(
                   {
                     x: options,
                     y: context,
@@ -681,7 +678,7 @@ export function placeDroppedVideos(deps: { readonly focusedFileRef: Dynamic; rea
                   input2,
                   detail + options2,
                 );
-              let value662: Dynamic = (0, defaultPlacedImageSize)(
+              let value662: Dynamic = defaultPlacedImageSize(
                   input2,
                   null,
                 ),
@@ -722,7 +719,7 @@ export function placeDroppedVideos(deps: { readonly focusedFileRef: Dynamic; rea
                 : input2,
             value658: Dynamic = value656.map(
               (input2?: Dynamic, options2?: Dynamic): Dynamic =>
-                (0, createDropGhost)({
+                createDropGhost({
                   file: value654?.file ?? null,
                   page: current4,
                   washless: true,
@@ -753,8 +750,8 @@ export function placeDroppedVideos(deps: { readonly focusedFileRef: Dynamic; rea
               value656.map(
                 (input2?: Dynamic): Dynamic =>
                   (value654
-                    ? (0, probeVideoFile)(input2)
-                    : (0, captureVideoPoster)(input2)
+                    ? probeVideoFile(input2)
+                    : captureVideoPoster(input2)
                   ).catch((): Dynamic => "probe_timeout"),
               ),
             ),
@@ -763,7 +760,7 @@ export function placeDroppedVideos(deps: { readonly focusedFileRef: Dynamic; rea
               (input2?: Dynamic, options2?: Dynamic): Dynamic => {
                 if (typeof input2 == "string") {
                   callback19(options2, "cancel");
-                  callback16((0, videoUploadFailureMessage)(input2));
+                  callback16(videoUploadFailureMessage(input2));
                   return null;
                 }
                 let value662: Dynamic = callback17(input2, index++);
@@ -772,7 +769,7 @@ export function placeDroppedVideos(deps: { readonly focusedFileRef: Dynamic; rea
               },
             );
           value660.some(Boolean) &&
-            (0, announce)(
+            announce(
               value660.filter(Boolean).length > 1
                 ? uiMessage("canvas.designCanvas.uploadingVideos")
                 : uiMessage("canvas.designCanvas.uploadingVideo"),
@@ -795,12 +792,12 @@ export function placeDroppedVideos(deps: { readonly focusedFileRef: Dynamic; rea
               value664 =
                 blob === undefined
                   ? null
-                  : await (0, uploadDesignFile)(
+                  : await uploadDesignFile(
                       "appifact",
                       null,
                       new File(
                         [blob],
-                        (0, videoFileTitle)(value656[index3]) +
+                        videoFileTitle(value656[index3]) +
                           ".jpg",
                         {
                           type: "image/jpeg",
@@ -808,10 +805,10 @@ export function placeDroppedVideos(deps: { readonly focusedFileRef: Dynamic; rea
                       ),
                     ).then(
                       (input2?: Dynamic): Dynamic =>
-                        (0, PlatformFileContentTest_2)(input2.src),
+                        PlatformFileContentTest_2(input2.src),
                       (): Dynamic => null,
                     );
-              if ((0, isEmbedFrozen)()) return;
+              if (isEmbedFrozen()) return;
               if (value664 === null) {
                 callback19(index3, "cancel");
                 callback16(
@@ -820,12 +817,12 @@ export function placeDroppedVideos(deps: { readonly focusedFileRef: Dynamic; rea
                 continue;
               }
             }
-            let value665: Dynamic = await (0, uploadDesignVideo)(
+            let value665: Dynamic = await uploadDesignVideo(
               value656[index3],
               value662,
             );
-            (0, markDropPerformance)("upload");
-            if ((0, isEmbedFrozen)()) return;
+            markDropPerformance("upload");
+            if (isEmbedFrozen()) return;
             if ("refused" in value665) {
               callback19(index3, "cancel");
               callback16(value665.refused);
@@ -833,7 +830,7 @@ export function placeDroppedVideos(deps: { readonly focusedFileRef: Dynamic; rea
               continue;
             }
             if (!value654) {
-              let value667: Dynamic = (0, PlatformFileContentTest_3)(
+              let value667: Dynamic = PlatformFileContentTest_3(
                   value665.src,
                 ),
                 value668: Dynamic =
@@ -848,8 +845,8 @@ export function placeDroppedVideos(deps: { readonly focusedFileRef: Dynamic; rea
                           h: value663.h,
                           src: value664,
                           video: value667,
-                          alt: (0, PlatformFileContentSlice)(
-                            (0, videoFileTitle)(value656[index3]),
+                          alt: PlatformFileContentSlice(
+                            videoFileTitle(value656[index3]),
                           ),
                           ...(current4 === "" ||
                           current4 === (deps.value73.current.pages?.[0]?.id ?? "")
@@ -877,7 +874,7 @@ export function placeDroppedVideos(deps: { readonly focusedFileRef: Dynamic; rea
                 deps.value339.current === state.tool &&
                 deps.focusedFileRef.current === state.focus &&
                 deps.value80.current === current4 &&
-                ((value661 = (0, selectionFromBoards)({
+                ((value661 = selectionFromBoards({
                   files: emptyBoardSelection.files,
                   notes: new Set(items),
                 })),
@@ -892,7 +889,7 @@ export function placeDroppedVideos(deps: { readonly focusedFileRef: Dynamic; rea
             for (
               let index4: Dynamic = 0;
               index4 < 120 &&
-              !(0, isEmbedFrozen)() &&
+              !isEmbedFrozen() &&
               ((value666 =
                 value654.file === deps.value271.current
                   ? undefined
@@ -906,7 +903,7 @@ export function placeDroppedVideos(deps: { readonly focusedFileRef: Dynamic; rea
             if (
               (value666
                 ? await value666.insertHtml(
-                    (0, positionedVideoHtml)(
+                    positionedVideoHtml(
                       value665.src,
                       value662,
                       {
@@ -914,9 +911,9 @@ export function placeDroppedVideos(deps: { readonly focusedFileRef: Dynamic; rea
                         top: value663.y,
                         w: value663.w,
                       },
-                      (0, safeDroppedImageAltText)(
-                        (0, videoFileTitle)(value656[index3]),
-                        (0, videoFileTitle)({
+                      safeDroppedImageAltText(
+                        videoFileTitle(value656[index3]),
+                        videoFileTitle({
                           name: "",
                         }),
                       ),
@@ -935,11 +932,11 @@ export function placeDroppedVideos(deps: { readonly focusedFileRef: Dynamic; rea
               continue;
             }
             callback19(index3, "landed");
-            (0, markDropPerformance)("insert");
+            markDropPerformance("insert");
             index2++;
           }
           index2 > 0 &&
-            (0, announce)(
+            announce(
               index2 + (index2 > 1 ? " videos " : " video ") + value653,
             );
         })().finally((): Dynamic => callback15()),

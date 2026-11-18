@@ -28,7 +28,7 @@ async function readDatabaseArtboardHtml(
 ): Promise<Dynamic> {
   let htmlRef: Dynamic = optionalString(record.htmlRef);
   if (htmlRef === undefined) return optionalString(record.html);
-  if (!(0, isBlobAssetUrl)(htmlRef)) return;
+  if (!isBlobAssetUrl(htmlRef)) return;
   let value: Dynamic = JSON.parse(await store.readBlob(htmlRef));
   if (typeof value?.html != "string")
     throw new Error("the upload an artboard points at is not an artboard");
@@ -36,10 +36,10 @@ async function readDatabaseArtboardHtml(
 }
 function databaseArtboardFilePath(record?: Dynamic): Dynamic {
   let filePath: Dynamic = record.data.path;
-  return (0, isSafeProjectPath)(filePath) &&
-    (0, isArtboardFile)(filePath) &&
+  return isSafeProjectPath(filePath) &&
+    isArtboardFile(filePath) &&
     documentPathBasename(record.path) ===
-      (0, encodeStorePathSegment)(filePath)
+      encodeStorePathSegment(filePath)
     ? filePath
     : undefined;
 }
@@ -55,12 +55,12 @@ async function readDatabaseFileEntry(
     inlineData === undefined &&
     data.kind === "text" &&
     dataRef !== undefined &&
-    (0, isBlobAssetUrl)(dataRef) &&
-    (((0, isProjectTextFilePath)(path) &&
+    isBlobAssetUrl(dataRef) &&
+    ((isProjectTextFilePath(path) &&
       /\.(css|m?js)$/i.test(path)) ||
-      (0, isTypeDeclarationPath)(path)) &&
+      isTypeDeclarationPath(path)) &&
     documentPathBasename(record.path) ===
-      (0, encodeStorePathSegment)(path)
+      encodeStorePathSegment(path)
   )
     return {
       path: path,
@@ -68,13 +68,13 @@ async function readDatabaseFileEntry(
     };
   if (
     !(
-      !(0, isSafeProjectPath)(path) ||
-      (0, isArtboardFile)(path) ||
+      !isSafeProjectPath(path) ||
+      isArtboardFile(path) ||
       path === canvasMetadataFile ||
       isReservedConversionFile(path) ||
-      !(0, isSupportedProjectAsset)(path) ||
+      !isSupportedProjectAsset(path) ||
       documentPathBasename(record.path) !==
-        (0, encodeStorePathSegment)(path) ||
+        encodeStorePathSegment(path) ||
       inlineData === undefined
     )
   )
@@ -88,7 +88,7 @@ function readDatabaseAnnotation(record?: Dynamic): Dynamic {
   if (
     typeof data.x != "number" ||
     typeof data.y != "number" ||
-    (0, isPrototypeProperty)(documentPathBasename(record.path))
+    isPrototypeProperty(documentPathBasename(record.path))
   )
     return;
   let callback: Dynamic = (input?: Dynamic, options?: Dynamic): Dynamic =>
@@ -144,25 +144,24 @@ function buildConvertedDesignIndex(
         }
       : {}),
   });
-  return (0, serializeCanvasMetadata)(
-    (0, parseCanvasMetadata)(manifestText, title),
+  return serializeCanvasMetadata(
+    parseCanvasMetadata(manifestText, title),
   );
 }
 function copyDesignSourceMetadata(
   index?: Dynamic,
   records?: Dynamic,
 ): Dynamic {
-  let sourceMetadata: Dynamic = (0, parseDesignSource)(
+  let sourceMetadata: Dynamic = parseDesignSource(
     records.get(PlatformFileContentResolvedValue_5)?.data,
   );
   sourceMetadata !== undefined &&
-    (index[INDEX_SOURCE_KEY] = (0, cloneIndexValue)(
+    (index[INDEX_SOURCE_KEY] = cloneIndexValue(
       sourceMetadata,
     ));
   let tokens2: Dynamic = records.get(DESIGN_SYSTEM_DOCUMENT_PATH)?.data;
   tokens2 !== undefined &&
-    (index[INDEX_DESIGN_SYSTEM_TOKENS_KEY] = (0,
-    cloneIndexValue)(tokens2));
+    (index[INDEX_DESIGN_SYSTEM_TOKENS_KEY] = cloneIndexValue(tokens2));
 }
 function annotationMatchesDatabase(
   annotation?: Dynamic,
@@ -174,7 +173,7 @@ function annotationMatchesDatabase(
     : Object.entries(encodeDatabaseAnnotation(decoded)).every(
         ([input, input2]: Dynamic): Dynamic =>
           Object.hasOwn(annotation, input) &&
-          (0, equalIndexValue)(annotation[input], input2),
+          equalIndexValue(annotation[input], input2),
       );
 }
 function sourceMetadataMatchesDatabase(
@@ -189,7 +188,7 @@ function sourceMetadataMatchesDatabase(
     ];
   return (
     metadata !== undefined &&
-    (0, equalIndexValue)(metadata, record.data)
+    equalIndexValue(metadata, record.data)
   );
 }
 function createDesignDatabaseCodec(options?: Dynamic): Dynamic {
@@ -224,10 +223,10 @@ function createDesignDatabaseCodec(options?: Dynamic): Dynamic {
       );
       value9 !== undefined &&
         ((state[value8] = value9),
-        entries2.set((0, toProjectContentPath)(value8), [
+        entries2.set(toProjectContentPath(value8), [
           BoardsValue +
             "/" +
-            (0, encodeStorePathSegment)(value8),
+            encodeStorePathSegment(value8),
         ]));
     }
     let value4: Dynamic = value3.filter(
@@ -240,12 +239,12 @@ function createDesignDatabaseCodec(options?: Dynamic): Dynamic {
       value9 === undefined ||
         state[value9.path] !== undefined ||
         ((state[value9.path] = value9.data),
-        entries2.set((0, toProjectContentPath)(value9.path), [
+        entries2.set(toProjectContentPath(value9.path), [
           value8.path,
         ]));
     }
     let value5: Dynamic = optionalString(value2?.title) ?? "",
-      value6: Dynamic = (0, createDesignIndexFromFiles)(
+      value6: Dynamic = createDesignIndexFromFiles(
         value5,
         buildConvertedDesignIndex(value2, entries, value4, items, state),
         state,
@@ -257,7 +256,7 @@ function createDesignDatabaseCodec(options?: Dynamic): Dynamic {
         (input2?: Dynamic): Dynamic =>
           BoardsValue +
           "/" +
-          (0, encodeStorePathSegment)(input2),
+          encodeStorePathSegment(input2),
       ),
       ...items2,
       ...(input.has(PlatformFileContentResolvedValue_5)
@@ -271,7 +270,7 @@ function createDesignDatabaseCodec(options?: Dynamic): Dynamic {
       value7: Dynamic = [
         ...Object.keys(state).filter(
           (input2?: Dynamic): Dynamic =>
-            !(0, canSaveDesignFile)(input2),
+            !canSaveDesignFile(input2),
         ),
         ...[...input.values()]
           .filter(
@@ -283,10 +282,10 @@ function createDesignDatabaseCodec(options?: Dynamic): Dynamic {
       ].sort();
     value7.length > 0 && (value6[INDEX_LEFT_OUT_KEY] = value7);
     for (let [value8, value9] of Object.entries(state) as Dynamic)
-      (0, canSaveDesignFile)(value8) &&
+      canSaveDesignFile(value8) &&
         entries3.set(
-          (0, toProjectContentPath)(value8),
-          (0, encodeDesignPortFile)(value8, value9),
+          toProjectContentPath(value8),
+          encodeDesignPortFile(value8, value9),
         );
     let items3: Dynamic = [
       ...items2.filter(
@@ -314,8 +313,8 @@ function createDesignDatabaseCodec(options?: Dynamic): Dynamic {
     };
   }
   async function value(input?: Dynamic): Promise<Dynamic> {
-    let value2: Dynamic = (0, normalizeDesignIndex)(
-        (0, cloneIndexValue)(input.index),
+    let value2: Dynamic = normalizeDesignIndex(
+        cloneIndexValue(input.index),
       ),
       entries: Dynamic = new Map(),
       entries2: Dynamic = new Map(),
@@ -358,15 +357,15 @@ function createDesignDatabaseCodec(options?: Dynamic): Dynamic {
     let value5: Dynamic =
         value4 === null
           ? null
-          : (0, parsePublishedIndexMetadata)(value4),
+          : parsePublishedIndexMetadata(value4),
       callback2: Dynamic = (input2?: Dynamic, options2?: Dynamic): Dynamic =>
         options2 === null ||
         value5?.files[input2]?.sha256 ===
-          (0, sha256Fallback)(
-            (0, PlatformSha256Encode)(options2),
+          sha256Fallback(
+            PlatformSha256Encode(options2),
           ),
       callback3: Dynamic = (input2?: Dynamic): Dynamic =>
-        value5?.files[(0, toProjectContentPath)(input2)] !==
+        value5?.files[toProjectContentPath(input2)] !==
         undefined,
       callback4: Dynamic = (input2?: Dynamic, items3?: Dynamic): Dynamic =>
         items3 == null ||
@@ -382,13 +381,13 @@ function createDesignDatabaseCodec(options?: Dynamic): Dynamic {
         let entry: Dynamic = input.recorded.get(input2.path);
         if (entry === undefined) return true;
         let value6: Dynamic = entry[options2];
-        return (await (0, hashCanonicalIndex)(
+        return (await hashCanonicalIndex(
           input2.data[options2],
         )) === value6
           ? false
           : value6 === undefined
             ? callback4(options2, context)
-            : (await (0, hashCanonicalIndex)(context)) === value6;
+            : (await hashCanonicalIndex(context)) === value6;
       },
       callback6: Dynamic = async (input2?: Dynamic): Promise<Dynamic> => {
         let entry: Dynamic = entries3.get(input2);
@@ -403,19 +402,19 @@ function createDesignDatabaseCodec(options?: Dynamic): Dynamic {
           return;
         let value7: Dynamic = value6
           ? null
-          : await callback((0, toProjectContentPath)(input2));
+          : await callback(toProjectContentPath(input2));
         if (value7 === "unreadable") return void items2.push(entry.path);
         let entry2: Dynamic = input.recorded.get(entry.path),
           value8: Dynamic =
             entry2 === undefined ||
-            (await (0, hashCanonicalIndex)(entry.data.html)) !==
+            (await hashCanonicalIndex(entry.data.html)) !==
               entry2.html ||
-            (await (0, hashCanonicalIndex)(entry.data.htmlRef)) !==
+            (await hashCanonicalIndex(entry.data.htmlRef)) !==
               entry2.htmlRef;
         if (
           value6 ||
           (value8 &&
-            callback2((0, toProjectContentPath)(input2), value7))
+            callback2(toProjectContentPath(input2), value7))
         ) {
           let value10: Dynamic = await readDatabaseArtboardHtml(
             entry.data,
@@ -424,10 +423,10 @@ function createDesignDatabaseCodec(options?: Dynamic): Dynamic {
           value10 !== undefined &&
             value10 !== value7 &&
             (entries.set(
-              (0, toProjectContentPath)(input2),
-              (0, encodeDesignPortFile)(input2, value10),
+              toProjectContentPath(input2),
+              encodeDesignPortFile(input2, value10),
             ),
-            entries2.set((0, toProjectContentPath)(input2), [
+            entries2.set(toProjectContentPath(input2), [
               entry.path,
             ]));
         }
@@ -438,7 +437,7 @@ function createDesignDatabaseCodec(options?: Dynamic): Dynamic {
           let value11: Dynamic = entry.data[value10];
           value11 == null
             ? delete value9[value10]
-            : (value9[value10] = (0, cloneIndexValue)(value11));
+            : (value9[value10] = cloneIndexValue(value11));
         }
         value2.order.includes(input2) || value2.order.push(input2);
       },
@@ -455,11 +454,11 @@ function createDesignDatabaseCodec(options?: Dynamic): Dynamic {
           (value2.title = value6.data.title);
         Array.isArray(value6.data.pages) &&
           (await callback5(value6, "pages", value2.pages)) &&
-          (value2.pages = (0, cloneIndexValue)(value6.data.pages));
+          (value2.pages = cloneIndexValue(value6.data.pages));
         typeof value6.data.launch == "object" &&
           value6.data.launch !== null &&
           (await callback5(value6, "launch", value2.launch)) &&
-          (value2.launch = (0, cloneIndexValue)(value6.data.launch));
+          (value2.launch = cloneIndexValue(value6.data.launch));
         (await callback5(value6, "cover", value2.cover)) &&
           (typeof value6.data.cover == "string"
             ? (value2.cover = value6.data.cover)
@@ -487,7 +486,7 @@ function createDesignDatabaseCodec(options?: Dynamic): Dynamic {
             value10,
           );
         }
-        value2.order = (0, orderedDesignMapKeys)(
+        value2.order = orderedDesignMapKeys(
           value9,
           value2.boards,
         );
@@ -504,20 +503,20 @@ function createDesignDatabaseCodec(options?: Dynamic): Dynamic {
         let value7: Dynamic = await readDatabaseFileEntry(value6, options);
         if (value7 === undefined) continue;
         let value8: Dynamic = await callback(
-          (0, toProjectContentPath)(value7.path),
+          toProjectContentPath(value7.path),
         );
         if (value8 === "unreadable") {
           items2.push(value6.path);
           continue;
         }
-        (0, canSaveDesignFile)(value7.path) &&
-          callback2((0, toProjectContentPath)(value7.path), value8) &&
+        canSaveDesignFile(value7.path) &&
+          callback2(toProjectContentPath(value7.path), value8) &&
           value7.data !== value8 &&
           (entries.set(
-            (0, toProjectContentPath)(value7.path),
-            (0, encodeDesignPortFile)(value7.path, value7.data),
+            toProjectContentPath(value7.path),
+            encodeDesignPortFile(value7.path, value7.data),
           ),
-          entries2.set((0, toProjectContentPath)(value7.path), [
+          entries2.set(toProjectContentPath(value7.path), [
             value6.path,
           ]));
       } else if (
@@ -571,24 +570,24 @@ function createDesignDatabaseCodec(options?: Dynamic): Dynamic {
       else if (isDirectCollectionDocument(value6, BoardsValue)) {
         let value7: Dynamic = Object.keys(value2.boards).find(
           (input2?: Dynamic): Dynamic =>
-            (0, encodeStorePathSegment)(input2) ===
+            encodeStorePathSegment(input2) ===
             documentPathBasename(value6),
         );
         if (value7 === undefined) continue;
         let value8: Dynamic = await callback(
-          (0, toProjectContentPath)(value7),
+          toProjectContentPath(value7),
         );
         if (value8 === "unreadable") {
           items2.push(value6);
           continue;
         }
-        if (!callback2((0, toProjectContentPath)(value7), value8))
+        if (!callback2(toProjectContentPath(value7), value8))
           continue;
         delete value2.boards[value7];
         value2.order = value2.order.filter(
           (input2?: Dynamic): Dynamic => input2 !== value7,
         );
-        entries.set((0, toProjectContentPath)(value7), null);
+        entries.set(toProjectContentPath(value7), null);
       }
     return {
       files: entries,
@@ -609,16 +608,16 @@ function createDesignDatabaseCodec(options?: Dynamic): Dynamic {
   return {
     toTree: composeDatabaseSnapshot,
     serializeIndex: (input?: Dynamic): Dynamic =>
-      (0, stringifyCanonicalIndex)(input),
+      stringifyCanonicalIndex(input),
     fold: value,
   };
 }
 function encodeDatabaseAnnotation(annotation?: Dynamic): Dynamic {
   let { id: id, d: path, ...properties }: Dynamic = annotation;
   return typeof path != "string"
-    ? (0, cloneIndexValue)(properties)
+    ? cloneIndexValue(properties)
     : {
-        ...((0, cloneIndexValue)(properties) as DataRecord),
+        ...(cloneIndexValue(properties) as DataRecord),
         d: path.slice(0, MAX_NOTE_INLINE_PATH_CHARS),
         ...(path.length > MAX_NOTE_INLINE_PATH_CHARS
           ? {
@@ -661,7 +660,7 @@ export function installPlatformDatabaseCodec(): () => void {
     isReservedConversionFile = (input?: Dynamic): Dynamic =>
       typeof input == "string" &&
       input !== canvasMetadataFile &&
-      (0, isReservedProjectPath)(
+      isReservedProjectPath(
         "design",
         projectPathPrefix + input,
       );

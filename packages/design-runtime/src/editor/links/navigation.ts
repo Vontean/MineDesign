@@ -73,7 +73,7 @@ export function installEditorLinksNavigation(): () => void {
   return () => {
     LinksNavigationHttpsPattern = /^https?:\/\/[^\s)\[]*$/;
     LinksNavigationHttpsPattern_2 = /^https?:\/\/\S*$/;
-    LinksNavigationResolvedValue = (0, isApplePlatform)()
+    LinksNavigationResolvedValue = isApplePlatform()
       ? "\u2318"
       : "Ctrl";
     LinksNavigationResolvedValue_2 =

@@ -27,8 +27,8 @@ export {
 };
 export function installCdsDomOwnerWindow(): () => void {
   return () => {
-    initializeDomOwnerWindow = (0, initializeOnce)(() => {});
-    initializeDomOwnerWindow_2 = (0, initializeOnce)(() => {
+    initializeDomOwnerWindow = initializeOnce(() => {});
+    initializeDomOwnerWindow_2 = initializeOnce(() => {
       accentColorNames = [
         "red",
         "orange",

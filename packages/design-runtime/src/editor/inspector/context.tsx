@@ -25,7 +25,7 @@ function getTweakSelection(
   return input && options && context === "tweaks" ? value : null;
 }
 function useInspectorOpen(): Dynamic {
-  let value: Dynamic = (0, npm_useLocalStorage_QP)(
+  let value: Dynamic = npm_useLocalStorage_QP(
     inspectorOpenStorageKey,
     defaultInspectorOpen,
   );
@@ -57,14 +57,14 @@ export {
 };
 export function installEditorInspectorContext(): () => void {
   return () => {
-    initializeInspectorContext = (0, initializeOnce)((): Dynamic => {
+    initializeInspectorContext = initializeOnce((): Dynamic => {
       "use strict";
 
-      reactInspectorContext = (0, toModuleNamespace)(
-        (0, load_react)(),
+      reactInspectorContext = toModuleNamespace(
+        load_react(),
         1,
       );
-      (0, initializeNpm_usehooks_ts_p0)();
+      initializeNpm_usehooks_ts_p0();
       inspectorPanelId = "dc-panel-aside";
       editorToolbarId = "dc-toolbar-tools";
       inspectorToggleId = "dc-props-toggle";

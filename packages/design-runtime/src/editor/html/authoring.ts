@@ -39,7 +39,7 @@ function fromParserHtml(input?: Dynamic): Dynamic {
       options?: Dynamic,
       context?: Dynamic,
       value?: Dynamic,
-    ): Dynamic => options + (0, kebabToCamelCase)(context) + value,
+    ): Dynamic => options + kebabToCamelCase(context) + value,
   );
   input = input.replace(/<sc-helmet(\s|>)/gi, "<helmet$1");
   input = input.replace(/<\/sc-helmet\s*>/gi, "</helmet>");
@@ -54,7 +54,7 @@ function fromParserHtml(input?: Dynamic): Dynamic {
 }
 function normalizeAuthoredHtml(input?: Dynamic): Dynamic {
   let value: Dynamic = (document as Dynamic).createElement("template");
-  value.innerHTML = (0, toParserHtml)(input);
+  value.innerHTML = toParserHtml(input);
   return fromParserHtml(value.innerHTML);
 }
 function isInlineTextContainer(input?: Dynamic): Dynamic {
@@ -137,7 +137,7 @@ export {
 };
 export function installEditorHtmlAuthoring(): () => void {
   return () => {
-    parseUtilityClassesValue = (0, parseUtilityClasses)(
+    parseUtilityClassesValue = parseUtilityClasses(
       builtInUtilityCss,
     );
     HtmlAuthoringSubscribers = new Set(

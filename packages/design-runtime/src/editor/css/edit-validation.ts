@@ -23,7 +23,7 @@ function isSafeBackgroundImage(input?: Dynamic, options?: Dynamic): Dynamic {
   return value === null ||
     (input === "background-image" && value[2] !== undefined)
     ? false
-    : (0, UndoElementsTest)(value[1]) ||
+    : UndoElementsTest(value[1]) ||
         CssEditValidationAZaZAZaZPattern.test(value[1]) ||
         CssEditValidationHttpsPattern.test(value[1]);
 }

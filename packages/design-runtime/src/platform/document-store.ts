@@ -27,15 +27,15 @@ function normalizeDocumentSnapshot(
   }
   return {
     title:
-      (0, normalizeDocumentTitle)(value.title) ??
+      normalizeDocumentTitle(value.title) ??
       options.defaultTitle ??
       "Appifact",
     content: value2,
-    comments: (0, parseDocumentComments)(value.comments),
+    comments: parseDocumentComments(value.comments),
   };
 }
 function createDocumentStore(options?: Dynamic): Dynamic {
-  let value: Dynamic = (0, getDatabaseRuntimeSnapshot)();
+  let value: Dynamic = getDatabaseRuntimeSnapshot();
   if (
     value !== undefined &&
     options.publish === undefined &&
@@ -43,7 +43,7 @@ function createDocumentStore(options?: Dynamic): Dynamic {
     options.embeddedState === undefined &&
     options.pageParts === undefined
   )
-    return (0, createDatabaseDocumentStore)({
+    return createDatabaseDocumentStore({
       runtime: value.runtime,
       snapshot: value.snapshot,
       parseContent: options.parseContent,
@@ -66,18 +66,18 @@ function createDocumentStore(options?: Dynamic): Dynamic {
     });
   let value2: Dynamic =
       options.pageParts ??
-      (0, readCompiledPageParts)((globalThis as Dynamic).document),
+      readCompiledPageParts((globalThis as Dynamic).document),
     value3: Dynamic =
       options.embeddedState !== undefined
         ? options.embeddedState
-        : (0, readEmbeddedDocument)((globalThis as Dynamic).document),
-    value4: Dynamic = options.stash ?? (0, createDocumentStash)(),
-    value5: Dynamic = options.roFlag ?? (0, createReadOnlyStash)(),
+        : readEmbeddedDocument((globalThis as Dynamic).document),
+    value4: Dynamic = options.stash ?? createDocumentStash(),
+    value5: Dynamic = options.roFlag ?? createReadOnlyStash(),
     value6: Dynamic =
-      options.canPublish ?? (0, canRequestPublishCapability)(),
+      options.canPublish ?? canRequestPublishCapability(),
     value7: Dynamic = normalizeDocumentSnapshot(value3, options),
-    value8: Dynamic = (0, hashDocumentState)(
-      (0, safeInlineJson)(value27(value7)),
+    value8: Dynamic = hashDocumentState(
+      safeInlineJson(value27(value7)),
     ),
     value9: Dynamic = value7,
     items: Dynamic = [],
@@ -145,7 +145,7 @@ function createDocumentStore(options?: Dynamic): Dynamic {
       : value36;
   }
   function value17(): Dynamic {
-    let length: Dynamic = (0, filterEffectiveCommentOperations)(
+    let length: Dynamic = filterEffectiveCommentOperations(
       value7.comments,
       items,
     ).length;
@@ -211,7 +211,7 @@ function createDocumentStore(options?: Dynamic): Dynamic {
     return flag9;
   }
   {
-    let value36: Dynamic = (0, parseDocumentStash)(value4.read());
+    let value36: Dynamic = parseDocumentStash(value4.read());
     if (value36) {
       let value37: Dynamic = normalizeDocumentSnapshot(
           value36.state,
@@ -221,9 +221,9 @@ function createDocumentStore(options?: Dynamic): Dynamic {
           options.serializeContent !== undefined
             ? options.serializeContent(input.content, input.title)
             : input.content,
-        value38: Dynamic = (0, filterEffectiveCommentOperations)(
+        value38: Dynamic = filterEffectiveCommentOperations(
           value7.comments,
-          (0, parseCommentOperations)(value36.ops),
+          parseCommentOperations(value36.ops),
         );
       if (value38.length === 0 && value36.ops === undefined) {
         let values3: Dynamic = new Set(
@@ -251,7 +251,7 @@ function createDocumentStore(options?: Dynamic): Dynamic {
       items.length > 0 &&
         (value9 = {
           ...value9,
-          comments: (0, applyCommentOperations)(
+          comments: applyCommentOperations(
             value7.comments,
             items,
           ),
@@ -264,7 +264,7 @@ function createDocumentStore(options?: Dynamic): Dynamic {
           ? ((value9 = {
               title: value37.title,
               content: value37.content,
-              comments: (0, applyCommentOperations)(
+              comments: applyCommentOperations(
                 value7.comments,
                 items,
               ),
@@ -301,14 +301,14 @@ function createDocumentStore(options?: Dynamic): Dynamic {
     flag3 = false;
     value10 = undefined;
     value11 = undefined;
-    options2 || ((value21 = undefined), (0, recordEdit)());
+    options2 || ((value21 = undefined), recordEdit());
     value23();
     value19();
   }
   function value26(): Dynamic {
     value9 = {
       ...value9,
-      comments: (0, applyCommentOperations)(value7.comments, items),
+      comments: applyCommentOperations(value7.comments, items),
     };
     value23();
     value19();
@@ -322,19 +322,19 @@ function createDocumentStore(options?: Dynamic): Dynamic {
       : input;
   }
   function value28(input?: Dynamic): Dynamic {
-    return (0, compileArtifactDocument)(
+    return compileArtifactDocument(
       {
         ...value2,
         title: input.title,
       },
-      (0, safeInlineJson)(value27(input)),
+      safeInlineJson(value27(input)),
     );
   }
   async function value29(
     input?: Dynamic,
     options2?: Dynamic,
   ): Promise<Dynamic> {
-    return (options.publish ?? (0, requirePublishCapability)())(
+    return (options.publish ?? requirePublishCapability())(
       input,
       options2,
     );
@@ -352,7 +352,7 @@ function createDocumentStore(options?: Dynamic): Dynamic {
     if (
       value13 ||
       flag6 ||
-      (0, filterEffectiveCommentOperations)(value7.comments, items)
+      filterEffectiveCommentOperations(value7.comments, items)
         .length === 0
     )
       return;
@@ -362,7 +362,7 @@ function createDocumentStore(options?: Dynamic): Dynamic {
     let flag10: Dynamic = false;
     value31(async (): Promise<Dynamic> => {
       try {
-        let value36: Dynamic = (0, filterEffectiveCommentOperations)(
+        let value36: Dynamic = filterEffectiveCommentOperations(
           value7.comments,
           items,
         );
@@ -370,7 +370,7 @@ function createDocumentStore(options?: Dynamic): Dynamic {
         let state: Dynamic = {
           title: value7.title,
           content: value7.content,
-          comments: (0, applyCommentOperations)(
+          comments: applyCommentOperations(
             value7.comments,
             value36,
           ),
@@ -384,7 +384,7 @@ function createDocumentStore(options?: Dynamic): Dynamic {
           );
           value9 = {
             ...value9,
-            comments: (0, applyCommentOperations)(
+            comments: applyCommentOperations(
               value7.comments,
               items,
             ),
@@ -401,8 +401,8 @@ function createDocumentStore(options?: Dynamic): Dynamic {
             "The document is over the 16 MiB limit \u2014 the comment is kept locally but cannot publish until content shrinks.";
           return;
         }
-        value22 = (0, hashDocumentState)(
-          (0, safeInlineJson)(
+        value22 = hashDocumentState(
+          safeInlineJson(
             value27(
               normalizeDocumentSnapshot(
                 JSON.parse(JSON.stringify(state)),
@@ -422,7 +422,7 @@ function createDocumentStore(options?: Dynamic): Dynamic {
           await value29(value37);
         } catch (value38: Dynamic) {
           if (
-            (0, normalizePublishError)(value38).code !==
+            normalizePublishError(value38).code !==
             "upstream_error"
           )
             throw value38;
@@ -433,13 +433,13 @@ function createDocumentStore(options?: Dynamic): Dynamic {
           await value29(value37);
         }
         value7 = state;
-        items = (0, filterEffectiveCommentOperations)(
+        items = filterEffectiveCommentOperations(
           value7.comments,
           items,
         );
         value9 = {
           ...value9,
-          comments: (0, applyCommentOperations)(
+          comments: applyCommentOperations(
             value7.comments,
             items,
           ),
@@ -447,7 +447,7 @@ function createDocumentStore(options?: Dynamic): Dynamic {
         value23();
       } catch (value36: Dynamic) {
         value22 = undefined;
-        let value37: Dynamic = (0, normalizePublishError)(value36);
+        let value37: Dynamic = normalizePublishError(value36);
         value37.code === "conflict"
           ? (flag10 = true)
           : publishAuthorizationErrorCodes.includes(value37.code)
@@ -485,14 +485,14 @@ function createDocumentStore(options?: Dynamic): Dynamic {
     await value31(async (): Promise<Dynamic> => {
       try {
         value23();
-        let value36: Dynamic = (0, filterEffectiveCommentOperations)(
+        let value36: Dynamic = filterEffectiveCommentOperations(
             value7.comments,
             items,
           ),
           state: Dynamic = {
             title: title,
             content: content,
-            comments: (0, applyCommentOperations)(
+            comments: applyCommentOperations(
               value7.comments,
               value36,
             ),
@@ -521,7 +521,7 @@ function createDocumentStore(options?: Dynamic): Dynamic {
           value39 = await value29(value37, value38);
         } catch (value40: Dynamic) {
           if (
-            (0, normalizePublishError)(value40).code !==
+            normalizePublishError(value40).code !==
             "upstream_error"
           )
             throw value40;
@@ -532,13 +532,13 @@ function createDocumentStore(options?: Dynamic): Dynamic {
           value39 = await value29(value37, value38);
         }
         value7 = state;
-        items = (0, filterEffectiveCommentOperations)(
+        items = filterEffectiveCommentOperations(
           value7.comments,
           items,
         );
         value9 = {
           ...value9,
-          comments: (0, applyCommentOperations)(
+          comments: applyCommentOperations(
             value7.comments,
             items,
           ),
@@ -555,7 +555,7 @@ function createDocumentStore(options?: Dynamic): Dynamic {
             (value10 =
               "Saved \u2014 but you kept typing during the save, and those newer changes could NOT be kept locally (this document is too large to stash). Copy anything important now: the page is about to reload to the version without them.");
       } catch (value36: Dynamic) {
-        let value37: Dynamic = (0, normalizePublishError)(value36);
+        let value37: Dynamic = normalizePublishError(value36);
         value11 = value37.code;
         value37.code === "conflict"
           ? (value10 = flag9
@@ -595,8 +595,8 @@ function createDocumentStore(options?: Dynamic): Dynamic {
       options.canPublish === undefined &&
       (options.publish === undefined || options.publishWrapsFrame === true),
     value35: Dynamic =
-      !value13 && value34 && !(0, hasCachedPublishCapability)()
-        ? (0, getPublishCapability)().then(
+      !value13 && value34 && !hasCachedPublishCapability()
+        ? getPublishCapability().then(
             (input?: Dynamic): Dynamic => {
               input !== null ||
                 value13 ||
@@ -616,8 +616,8 @@ function createDocumentStore(options?: Dynamic): Dynamic {
           value13
             ? null
             : Promise.all([
-                (0, awaitCurrentUserCanEdit)(),
-                (0, getAssetsCapability)(),
+                awaitCurrentUserCanEdit(),
+                getAssetsCapability(),
               ]),
       )
       .then((input?: Dynamic): Dynamic => {
@@ -681,7 +681,7 @@ function createDocumentStore(options?: Dynamic): Dynamic {
         }));
     },
     setTitle(input: Dynamic): Dynamic {
-      let value36: Dynamic = (0, normalizeNewDocumentTitle)(input);
+      let value36: Dynamic = normalizeNewDocumentTitle(input);
       value36.length === 0 ||
         value36 === value9.title ||
         value25({
@@ -691,7 +691,7 @@ function createDocumentStore(options?: Dynamic): Dynamic {
     },
     addComment(input: Dynamic): Dynamic {
       if (value9.comments.length >= maxDocumentComments) return;
-      let value36: Dynamic = (0, parseDocumentComments)([
+      let value36: Dynamic = parseDocumentComments([
         {
           ...input,
           id: crypto.randomUUID().slice(0, 8),
@@ -734,7 +734,7 @@ function createDocumentStore(options?: Dynamic): Dynamic {
     },
     pendingCommentIds(): Dynamic {
       let values3: Dynamic = new Set();
-      for (let value36 of (0, filterEffectiveCommentOperations)(
+      for (let value36 of filterEffectiveCommentOperations(
         value7.comments,
         items,
       ) as Dynamic)
@@ -766,7 +766,7 @@ function createDocumentStore(options?: Dynamic): Dynamic {
       value25({
         title: value36.state.title,
         content: value36.state.content,
-        comments: (0, applyCommentOperations)(value7.comments, items),
+        comments: applyCommentOperations(value7.comments, items),
       });
       return {
         get label() { return uiMessage("canvas.documentStore.restoreUnsavedChanges"); },
@@ -775,7 +775,7 @@ function createDocumentStore(options?: Dynamic): Dynamic {
           value25({
             title: value36.state.title,
             content: value36.state.content,
-            comments: (0, applyCommentOperations)(
+            comments: applyCommentOperations(
               value7.comments,
               items,
             ),
@@ -787,14 +787,14 @@ function createDocumentStore(options?: Dynamic): Dynamic {
             {
               title: state.title,
               content: state.content,
-              comments: (0, applyCommentOperations)(
+              comments: applyCommentOperations(
                 value7.comments,
                 items,
               ),
             },
             true,
           );
-          (0, recordEdit)();
+          recordEdit();
         },
       };
     },

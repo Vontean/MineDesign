@@ -143,7 +143,7 @@ function ArtifactShell<Seed>({
     window.addEventListener("keydown", callback2);
     return () => window.removeEventListener("keydown", callback2);
   }, [doc]);
-  (0, useUndoKeys)(undo, undoShortcuts);
+  useUndoKeys(undo, undoShortcuts);
   let value4 = doc.readOnly(),
     value5 = doc.title(),
     value6 = "loadState" in doc || doc.saveMode() === "auto",
@@ -152,7 +152,7 @@ function ArtifactShell<Seed>({
       status === "readonly" &&
       toolbarQuietReadOnlyReason !== undefined &&
       doc.saveState().message === toolbarQuietReadOnlyReason;
-  (0, useHostSaveState)(
+  useHostSaveState(
     !value7 && (value6 || status === "readonly") ? status : null,
     () => void doc.save(),
   );
@@ -278,8 +278,8 @@ export {
 };
 export function installUiArtifactShell(): () => void {
   return () => {
-    jsxForUiArtifactShell = (0, toModuleNamespace)(
-      (0, loadJsxNamespace)(),
+    jsxForUiArtifactShell = toModuleNamespace(
+      loadJsxNamespace(),
       1,
     );
     ArtifactErrorBoundary = class ArtifactErrorBoundary extends (

@@ -36,7 +36,7 @@ function recordModelUndo(
   return input.model.serialize() === options
     ? false
     : (input.undo.push(options),
-      (0, trimUndoHistory)(input, input.undo.length - context),
+      trimUndoHistory(input, input.undo.length - context),
       (input.redo = []),
       true);
 }
@@ -52,7 +52,7 @@ function resetModelBaselines(input?: Dynamic): Dynamic {
           options.undo.filter(
             (input3?: Dynamic): Dynamic => typeof input3 == "string",
           ).length);
-    (0, resetUndoHistory)(options);
+    resetUndoHistory(options);
   });
 }
 function stripDragAttributes(input?: Dynamic): Dynamic {

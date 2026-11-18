@@ -26,8 +26,8 @@ export function installEditorChromeToolSelector(): () => void {
       onPick: onPick,
       canvasTools = true,
     }: Dynamic): Dynamic {
-      let t: Dynamic = (0, useUiText)(),
-        value: Dynamic = (0, usePhoneCanvas)(),
+      let t: Dynamic = useUiText(),
+        value: Dynamic = usePhoneCanvas(),
         value2: Dynamic = value
           ? insertDesignTools
           : shapeDesignTools,
@@ -43,12 +43,12 @@ export function installEditorChromeToolSelector(): () => void {
         callback2: Dynamic = (input?: Dynamic): Dynamic =>
           input === "hand"
             ? value6
-            : (0, isHostOnlyDesignTool)(input)
+            : isHostOnlyDesignTool(input)
               ? value5
               : undefined,
         callback3: Dynamic = (event?: Dynamic): Dynamic => {
           if (!value3 || event.metaKey || event.ctrlKey || event.altKey) return;
-          let value7: Dynamic = (0, designToolForShortcut)(
+          let value7: Dynamic = designToolForShortcut(
             event.key,
             event.shiftKey,
           );
@@ -196,7 +196,7 @@ export function installEditorChromeToolSelector(): () => void {
                   tool: "rect",
                   get label() { return t.shapeRect; },
                   shortcut: "r",
-                  icon: (0, ShapeToolGlyph)(
+                  icon: ShapeToolGlyph(
                     ChromeToolIconsRectOvalConfig.rect,
                   ),
                 })}
@@ -204,7 +204,7 @@ export function installEditorChromeToolSelector(): () => void {
                   tool: "oval",
                   get label() { return t.shapeOval; },
                   shortcut: "o",
-                  icon: (0, ShapeToolGlyph)(
+                  icon: ShapeToolGlyph(
                     ChromeToolIconsRectOvalConfig.oval,
                   ),
                 })}

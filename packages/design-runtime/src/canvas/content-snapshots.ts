@@ -67,7 +67,7 @@ function isValidVideoDimensions(video?: Dynamic): Dynamic {
   let callback: Dynamic = (input?: Dynamic): Dynamic =>
     Number.isInteger(input) && input > 0 && input <= 16384;
   return (
-    (0, PlatformFileContentTest_3)(video.src) !== null &&
+    PlatformFileContentTest_3(video.src) !== null &&
     callback(video.width) &&
     callback(video.height)
   );

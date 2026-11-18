@@ -16,7 +16,7 @@ function svgStrokeHtml(
 ): Dynamic {
   return (
     `<svg width="${input}" height="${options}" viewBox="0 0 ${input} ${options}" preserveAspectRatio="none" style="${value}width: ${input}px; height: ${options}px; overflow: visible; fill: none; stroke: ${extra}; stroke-width: ${SvgDrawingConstant}; stroke-linecap: round; stroke-linejoin: round">` +
-    (detail ? (0, defaultArrowHeadDefs)(detail, extra) : "") +
+    (detail ? defaultArrowHeadDefs(detail, extra) : "") +
     `<path d="${context}"${detail ? ` marker-end="url(#${detail})"` : ""}></path></svg>`
   );
 }
@@ -63,7 +63,7 @@ function arrowDrawingHtml(
       ex: value6,
       ey: value7,
     }: Dynamic = lineDrawingBox(input, options, context, value),
-    value8: Dynamic = (0, shortenLineEnd)(
+    value8: Dynamic = shortenLineEnd(
       value4,
       value5,
       value6,
@@ -76,7 +76,7 @@ function arrowDrawingHtml(
     `M ${value4} ${value5} L ${value8.x} ${value8.y}`,
     extra,
     detail,
-    (0, createArrowHeadId)(),
+    createArrowHeadId(),
   );
 }
 function lineDrawingHtml(

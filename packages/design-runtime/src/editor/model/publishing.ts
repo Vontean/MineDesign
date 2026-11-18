@@ -36,18 +36,18 @@ async function publishModelChanges(
         ? extra.pendingPropsBaseAtCall
         : input.pendingPropsBase,
     callback: Dynamic = (input2?: Dynamic, options2?: Dynamic): Dynamic => {
-      let value17: Dynamic = (0, replaceDcTemplate)(
+      let value17: Dynamic = replaceDcTemplate(
         input2,
         options2,
         value2,
       );
       if (value3 !== undefined) {
-        let value18: Dynamic = (0, parseDcHtmlDocument)(value17);
+        let value18: Dynamic = parseDcHtmlDocument(value17);
         value18 &&
-          (value17 = (0, setDcScript)(value17, value18, value3));
+          (value17 = setDcScript(value17, value18, value3));
       }
       if (value5 !== undefined) {
-        let value18: Dynamic = (0, getPendingPropKeys)(
+        let value18: Dynamic = getPendingPropKeys(
           value17,
           value5,
         );
@@ -64,7 +64,7 @@ async function publishModelChanges(
     input.pendingScript === value3 &&
     input.pendingProps === value5 &&
     (input.dirty = false);
-  let value7: Dynamic = (0, parseDcHtmlDocument)(src);
+  let value7: Dynamic = parseDcHtmlDocument(src);
   if (!value7) {
     input.dirty = true;
     return {
@@ -74,7 +74,7 @@ async function publishModelChanges(
   }
   if (
     value5 !== undefined &&
-    (0, getPendingPropKeys)(src, value5) == null
+    getPendingPropKeys(src, value5) == null
   ) {
     input.dirty = true;
     return {
@@ -99,7 +99,7 @@ async function publishModelChanges(
           : input.pendingProps === undefined
             ? (input.pendingPropsBase = undefined)
             : (input.pendingPropsBase =
-                (0, getDcPropsJson)(input2) ??
+                getDcPropsJson(input2) ??
                 input.pendingPropsBase));
     },
     value8: Dynamic = callback(src, value7),
@@ -110,7 +110,7 @@ async function publishModelChanges(
   if (value8 === src && !value9) {
     callback2();
     callback3(src);
-    let value17: Dynamic = (0, getSavedPendingProps)(src, value5);
+    let value17: Dynamic = getSavedPendingProps(src, value5);
     input.originalTemplate = value2;
     return value17 !== undefined
       ? {
@@ -148,7 +148,7 @@ async function publishModelChanges(
         value17.content &&
         value17.content !== extra.mirrored
       ) {
-        let value18: Dynamic = (0, parseDcHtmlDocument)(
+        let value18: Dynamic = parseDcHtmlDocument(
           value17.content,
         );
         if (
@@ -156,7 +156,7 @@ async function publishModelChanges(
           value18.template === originalTemplate &&
           (value3 === undefined || value18.js === value4) &&
           (value5 === undefined ||
-            (0, getDcPropsJson)(value17.content) === value6) &&
+            getDcPropsJson(value17.content) === value6) &&
           (value17.version !== undefined &&
             ((value12 = {
               occToken: value17.version,
@@ -174,7 +174,7 @@ async function publishModelChanges(
         ) {
           callback2();
           callback3(value17.content);
-          let value19: Dynamic = (0, getSavedPendingProps)(
+          let value19: Dynamic = getSavedPendingProps(
             value17.content,
             value5,
           );
@@ -223,7 +223,7 @@ async function publishModelChanges(
   input.src = value8;
   callback2();
   callback3(value8);
-  let value15: Dynamic = (0, getSavedPendingProps)(value8, value5);
+  let value15: Dynamic = getSavedPendingProps(value8, value5);
   input.originalTemplate = value2;
   input.carriedEditCount = 0;
   {
@@ -237,7 +237,7 @@ async function publishModelChanges(
     let value17: Dynamic = await context.read(value10);
     if (value17 !== value8) {
       input.src = value17;
-      let value18: Dynamic = (0, getSavedPendingProps)(
+      let value18: Dynamic = getSavedPendingProps(
         value17,
         value5,
       );

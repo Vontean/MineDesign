@@ -129,14 +129,14 @@ function isNestedMenuEvent(
   input: EventTarget | null | undefined,
   options?: string,
 ): boolean {
-  let value = (0, asElement)(input)?.closest("[data-nested]") ?? null;
+  let value = asElement(input)?.closest("[data-nested]") ?? null;
   if (value === null) {
     return false;
   }
   if (options === undefined) {
     return true;
   }
-  let value2 = (0, asElement)(value.closest("[data-sheet-tree]"));
+  let value2 = asElement(value.closest("[data-sheet-tree]"));
   return (
     value2 !== null && value2.getAttribute("data-sheet-tree") === options
   );
@@ -161,7 +161,7 @@ function shouldRefuseNestedMenuClose(
     return isNestedMenuEvent(value2?.target, context);
   }
   if (value === "focus-out" && isFocusOutEvent(value2)) {
-    let value3 = (0, asElement)(value2.relatedTarget),
+    let value3 = asElement(value2.relatedTarget),
       value4 =
         value2.relatedTarget === null ||
         (value3 !== null &&
@@ -222,7 +222,7 @@ function useMenuItemLabel(
         ? normalizeLabelText(extractReactText(input) ?? "") || undefined
         : undefined,
     value4 = options === undefined && value3 === undefined;
-  (0, useIsomorphicLayoutEffect)(() => {
+  useIsomorphicLayoutEffect(() => {
     if (!value4) {
       return;
     }
@@ -254,7 +254,7 @@ function MenuShortcut({ keys: keys }: { keys: string }): React.ReactElement {
       keys={keys}
       variant={"text"}
       aria-hidden={true}
-      className={(0, cn)(
+      className={cn(
         "pointer-coarse:hidden text-footnote",
         getShortcutNumeralClasses(keys),
       )}
@@ -286,7 +286,7 @@ function useMenuPopupElement(
       initialFocus: value14,
       ...value15
     } = input,
-    value19 = (0, usePortalContainer)(),
+    value19 = usePortalContainer(),
     value20 = reactForUiMenu.useContext<MenuRootState | null>(
       menuTriggerContext,
     ),
@@ -301,18 +301,18 @@ function useMenuPopupElement(
       () =>
         value6 !== undefined || !value20
           ? value6
-          : (0, createMenuVirtualAnchor)(value20),
+          : createMenuVirtualAnchor(value20),
       [value6, value20],
     ),
     value24 =
       value3 ??
       (value21 ? undefined : value20 && value6 === undefined ? 2 : 6),
-    value25 = (0, useStablePopupPlacement)({
+    value25 = useStablePopupPlacement({
       enabled: value17 && !value21,
       side: value2,
       align: value16,
     }),
-    value26 = (0, useMenuOwnerRef)(
+    value26 = useMenuOwnerRef(
       value20?.triggerRef,
       value15.finalFocus,
     ),
@@ -322,13 +322,13 @@ function useMenuPopupElement(
         value6 !== null &&
         value20 === null &&
         value15.finalFocus === undefined,
-    value28 = (0, usePassiveOpenContext)(value20 === null);
+    value28 = usePassiveOpenContext(value20 === null);
   value28.root?.declareFocusProps(value14, value15.finalFocus);
   if (context && value20 !== null && value14 !== undefined) {
-    (0, warnNestedMenuInitialFocus)();
+    warnNestedMenuInitialFocus();
   }
-  let value29 = (0, useRefocusAfterPendingSheet)(value),
-    value30 = (0, useStableMergedRef)(
+  let value29 = useRefocusAfterPendingSheet(value),
+    value30 = useStableMergedRef(
       (input2: HTMLElement | null) => {
         value25.popupRef(input2);
         value26(input2);
@@ -338,9 +338,9 @@ function useMenuPopupElement(
       options,
     );
   if (context && value20 !== null && value13 !== undefined) {
-    (0, warnNestedMenuLayerOffset)();
+    warnNestedMenuLayerOffset();
   }
-  let value31 = (0, useOverlayLayer)(
+  let value31 = useOverlayLayer(
     value21 ? "contextmenu" : "menu",
     value20 === null ? value13 : undefined,
   );
@@ -396,7 +396,7 @@ function useMenuPopupElement(
                       data-cds={value18}
                       ref={value30}
                       {...input3(value15)}
-                      className={(0, cn)(
+                      className={cn(
                         contextMenuPopupClasses,
                         value25.held?.popupClassName,
                         value8,
@@ -429,8 +429,8 @@ function MenuSubmenu({
       props.open ?? props.defaultOpen ?? false,
     ),
     ref = reactForUiMenu.useRef(value),
-    value3 = (0, useOptionalEventCallback)(props.onOpenChange),
-    { sheet: value4 } = (0, useSheetState)(),
+    value3 = useOptionalEventCallback(props.onOpenChange),
+    { sheet: value4 } = useSheetState(),
     value5 = reactForUiMenu.useContext<SheetFrameContext | null>(
       sheetFrameContext,
     ),
@@ -475,7 +475,7 @@ function MenuSubmenu({
       [],
     ),
     ref4 = reactForUiMenu.useRef<PublicOverlayActions | null>(null);
-  (0, useForwardedOverlayActions)(ref4, actionsRef);
+  useForwardedOverlayActions(ref4, actionsRef);
   let callback4 = reactForUiMenu.useCallback(() => {
       ref4.current?.close();
     }, []),
@@ -499,7 +499,7 @@ function MenuSubmenu({
       [callback3, callback4, callback],
     ),
     value12 = props.open ?? value;
-  (0, useIsomorphicLayoutEffect)(() => {
+  useIsomorphicLayoutEffect(() => {
     ref.current = value12;
     if (value12) {
       let current = ref2.current;
@@ -546,7 +546,7 @@ function MenuHeader({
   className?: string;
 }>): React.ReactElement {
   useUiLocale();
-  let value = (0, useIsSheet)(),
+  let value = useIsSheet(),
     value2 =
       reactForUiMenu.useContext<MenuRootState | null>(
         menuTriggerContext,
@@ -563,7 +563,7 @@ function MenuHeader({
   return (
     <div
       role={"presentation"}
-      className={(0, cn)(
+      className={cn(
         menuGroupLabelClasses,
         value4 && "first:hidden",
         className,
@@ -582,7 +582,7 @@ function MenuGroupLabel({
   useUiLocale();
   return (
     <baseMenu.GroupLabel
-      className={(0, cn)(menuGroupLabelClasses, className)}
+      className={cn(menuGroupLabelClasses, className)}
     >
       {children}
     </baseMenu.GroupLabel>
@@ -667,7 +667,7 @@ function getMenuCaretSize(
   input: Density,
   options?: ControlSize,
 ): "sm" | "xs" {
-  if ((0, getDensitySizeIndex)(input, options) >= 4) {
+  if (getDensitySizeIndex(input, options) >= 4) {
     return "sm";
   } else {
     return "xs";
@@ -679,8 +679,8 @@ function MenuCaret({
   size?: ControlSize;
 }): React.ReactElement {
   useUiLocale();
-  let value = (0, useDensity)(),
-    value2 = (0, useButtonGroup)();
+  let value = useDensity(),
+    value2 = useButtonGroup();
   return (
     <Icon
       name={"CaretDown"}
@@ -721,23 +721,21 @@ function MenuPopupContent({
 }
 function SimpleMenu(input: MenuProps): React.ReactElement {
   useUiLocale();
-  let value = (0, useSheetCapablePresentation)(),
+  let value = useSheetCapablePresentation(),
     value2 = reactForUiMenu.useContext<boolean>(menuBarContext),
-    value3: React.RefObject<OverlayActions | null> = (0,
-    useStableObjectRef)(),
+    value3: React.RefObject<OverlayActions | null> = useStableObjectRef(),
     onOpenChange = input.onOpenChange,
-    { onOpenChange: value4, triggerRef: value5 } = (0,
-    useTrackedMenuTrigger)(
+    { onOpenChange: value4, triggerRef: value5 } = useTrackedMenuTrigger(
       (
         input2: boolean,
         options: import("@base-ui/react/menu").Menu.Root.ChangeEventDetails,
       ) => {
         onOpenChange?.(input2, options);
-        (0, recordKeyboardContextMenuOpen)(value3, input2, options);
+        recordKeyboardContextMenuOpen(value3, input2, options);
       },
       value2,
     ),
-    value6 = (0, usePortalContainer)();
+    value6 = usePortalContainer();
   if (value) {
     return <MenuRootProviders {...input} />;
   }
@@ -765,16 +763,15 @@ function MenuRootProviders(input: MenuProps): React.ReactElement {
       }),
       [value2, value3, value4],
     ),
-    value5 = (0, usePortalContainer)(),
+    value5 = usePortalContainer(),
     value6 = reactForUiMenu.useContext<boolean>(menuBarContext),
-    { onOpenChange: value7, triggerRef: value8 } = (0,
-    useTrackedMenuTrigger)(input.onOpenChange, value6),
-    value9 = (0, useControllableOpen)({
+    { onOpenChange: value7, triggerRef: value8 } = useTrackedMenuTrigger(input.onOpenChange, value6),
+    value9 = useControllableOpen({
       open: value,
       onOpenChange: value7,
     }),
     open = value9.open,
-    value10 = (0, useAdaptiveSheet)({
+    value10 = useAdaptiveSheet({
       open: open,
       onOpenChange: value9.onOpenChange,
       closable: !(value !== undefined && input.onOpenChange === undefined),
@@ -999,14 +996,12 @@ function MenuRoot(input: MenuRootProps): React.ReactElement {
       closeLabel: value4,
       ...value5
     } = input,
-    value6 = (0, useSheetCapablePresentation)(),
+    value6 = useSheetCapablePresentation(),
     value7 = reactForUiMenu.useContext<boolean>(menuBarContext),
-    { onOpenChange: value8, triggerRef: value9 } = (0,
-    useTrackedMenuTrigger)(value5.onOpenChange, value7),
-    value10 = (0, usePassiveOpenState)(value8, value5.open, !value7),
-    value11: React.RefObject<OverlayActions | null> = (0,
-    useStableObjectRef)();
-  (0, useForwardedOverlayActions)(value11, value5.actionsRef);
+    { onOpenChange: value8, triggerRef: value9 } = useTrackedMenuTrigger(value5.onOpenChange, value7),
+    value10 = usePassiveOpenState(value8, value5.open, !value7),
+    value11: React.RefObject<OverlayActions | null> = useStableObjectRef();
+  useForwardedOverlayActions(value11, value5.actionsRef);
   if (value6) {
     return (
       <CloseOnActivityHideProvider actionsRef={value11}>
@@ -1048,19 +1043,18 @@ function ControlledMenuRoot(input: MenuRootProps): React.ReactElement {
       [value2, value3, value4],
     ),
     value6 = reactForUiMenu.useContext<boolean>(menuBarContext),
-    { onOpenChange: value7, triggerRef: value8 } = (0,
-    useTrackedMenuTrigger)(input.onOpenChange, value6),
-    value9 = (0, usePassiveOpenState)(value7, input.open, !value6),
-    value10 = (0, useControllableOpen)({
+    { onOpenChange: value7, triggerRef: value8 } = useTrackedMenuTrigger(input.onOpenChange, value6),
+    value9 = usePassiveOpenState(value7, input.open, !value6),
+    value10 = useControllableOpen({
       ...input,
       onOpenChange: value9.onOpenChange,
     }),
-    value11 = (0, useValueCapturedOnOpen)(
+    value11 = useValueCapturedOnOpen(
       value10.open,
       () => value9.cell.getLevel() === "declared",
       false,
     ),
-    value12 = (0, useAdaptiveSheet)({
+    value12 = useAdaptiveSheet({
       open: value10.open,
       actionsRef: input.actionsRef,
       onOpenChange: value10.onOpenChange,
@@ -1157,7 +1151,7 @@ function MenuSearchTriggerFocusBridge({
     let { openRef: value3 } = value,
       callback = (input: FocusEvent): void => {
         let current = inputRef.current,
-          value4 = (0, asElement)(input.relatedTarget);
+          value4 = asElement(input.relatedTarget);
         if (
           current &&
           value4 &&
@@ -1218,13 +1212,13 @@ function MenuSearchablePopup({
   useUiLocale();
   let [value, value2] = reactForUiMenu.useState(""),
     value3 = query ?? value,
-    value4: (input: string) => void = (0, useEventCallback)(
+    value4: (input: string) => void = useEventCallback(
       (input: string) => {
         value2(input);
         onQueryChange?.(input);
       },
     ),
-    value5 = (0, useEventCallback)(() => {
+    value5 = useEventCallback(() => {
       if (value3 !== "") {
         value4("");
       }
@@ -1233,9 +1227,9 @@ function MenuSearchablePopup({
   reactForUiMenu.useEffect(() => {
     return;
   }, [query, onQueryChange]);
-  let value6 = (0, useIsSheet)(),
-    value7 = (0, useMediaQuery__U)(
-      (0, useRootWindow)(),
+  let value6 = useIsSheet(),
+    value7 = useMediaQuery__U(
+      useRootWindow(),
       COARSE_POINTER_QUERY_rG,
     ),
     value8 = !value6 && !value7,
@@ -1337,7 +1331,7 @@ function MenuSearchablePopup({
         ) {
           return;
         }
-        let value12 = (0, asElement)(event.relatedTarget);
+        let value12 = asElement(event.relatedTarget);
         if (
           !(
             value12?.hasAttribute("data-popup-open") &&
@@ -1351,7 +1345,7 @@ function MenuSearchablePopup({
         }
         ref4.current?.();
         let callback3 = (event2: MouseEvent) => {
-          let value13 = (0, asElement)(event2.target),
+          let value13 = asElement(event2.target),
             value14 = value13?.closest('[role="menu"]'),
             bounds = currentTarget.getBoundingClientRect(),
             value15 =
@@ -1385,7 +1379,7 @@ function MenuSearchablePopup({
       onMouseDown={(event: React.MouseEvent<HTMLElement>) => {
         let target = event.target as HTMLElement;
         if (
-          ((0, isHtmlElement)(target) &&
+          (isHtmlElement(target) &&
             target.localName === "input") ||
           target === event.currentTarget
         ) {
@@ -1393,7 +1387,7 @@ function MenuSearchablePopup({
         }
         if (
           target.classList.contains("overflow-y-auto") &&
-          (0, isScrollbarPointerPosition)(
+          isScrollbarPointerPosition(
             event.nativeEvent.offsetX,
             event.nativeEvent.offsetY,
             target,
@@ -1432,10 +1426,10 @@ function MenuSearchablePopup({
               onCompositionEnd={(
                 event: React.CompositionEvent<HTMLInputElement>,
               ) =>
-                (0, recordCompositionEnd)(event.nativeEvent.timeStamp)
+                recordCompositionEnd(event.nativeEvent.timeStamp)
               }
               onKeyDown={(event: React.KeyboardEvent<HTMLInputElement>) => {
-                (0, resetCompositionSuppression)(event);
+                resetCompositionSuppression(event);
                 if (event.nativeEvent.isComposing || event.keyCode === 229) {
                   event.stopPropagation();
                   return;
@@ -1454,11 +1448,11 @@ function MenuSearchablePopup({
                       value11?.current?.close?.();
                     };
                     if (
-                      (0, shouldSuppressCompositionEnter)(
+                      shouldSuppressCompositionEnter(
                         event.nativeEvent,
                       )
                     ) {
-                      (0, suppressFollowupCompositionLineBreak)(
+                      suppressFollowupCompositionLineBreak(
                         event.nativeEvent,
                         event.currentTarget,
                         callback3,
@@ -1525,7 +1519,7 @@ function useFocusMenuAfterPending(
   options: boolean,
 ): void {
   let ref = reactForUiMenu.useRef(options);
-  (0, useIsomorphicLayoutEffect)(() => {
+  useIsomorphicLayoutEffect(() => {
     let value = input.current?.closest<HTMLElement>('[role="menu"]');
     if (!options || ref.current || !value?.hasAttribute("data-open")) {
       return;
@@ -1591,7 +1585,7 @@ function MenuPendingList({
   }, []);
   let value = pending || loading,
     [value2, value3] = reactForUiMenu.useState(emptyMenuSize);
-  (0, useIsomorphicLayoutEffect)(() => {
+  useIsomorphicLayoutEffect(() => {
     let current = ref.current;
     if (!value || !current) {
       value3(emptyMenuSize);
@@ -1688,32 +1682,32 @@ export {
 };
 export function installUiMenu(): () => void {
   return () => {
-    (0, initializeMenuContexts)();
-    (0, initializeKeyboardContextMenuFocus)();
-    (0, initializeMenuScrollContent)();
-    (0, initializeContextMenuPopup)();
-    (0, initializePassiveOpen)();
-    (0, initializeMenuItemVariants)();
-    (0, initializeMenuOpener)();
-    (0, initializeTooltip)();
-    (0, initializeMenuContexts)();
-    (0, initializePassiveOpen)();
-    (0, initializeMenuOpener)();
-    jsxo_ = (0, toModuleNamespace)((0, loadJsxNamespace)(), 1);
-    (0, initializeMenuPopupElement)();
-    (0, initializeElementAccess)();
-    (0, initializeStablePopupPlacement)();
-    (0, initializeIsomorphicLayoutEffect)();
-    reacttM = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    initializeMenuContexts();
+    initializeKeyboardContextMenuFocus();
+    initializeMenuScrollContent();
+    initializeContextMenuPopup();
+    initializePassiveOpen();
+    initializeMenuItemVariants();
+    initializeMenuOpener();
+    initializeTooltip();
+    initializeMenuContexts();
+    initializePassiveOpen();
+    initializeMenuOpener();
+    jsxo_ = toModuleNamespace(loadJsxNamespace(), 1);
+    initializeMenuPopupElement();
+    initializeElementAccess();
+    initializeStablePopupPlacement();
+    initializeIsomorphicLayoutEffect();
+    reacttM = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
-    reactForUiMenu = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    reactForUiMenu = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
-    jsxForUiMenu = (0, toModuleNamespace)(
-      (0, loadJsxNamespace)(),
+    jsxForUiMenu = toModuleNamespace(
+      loadJsxNamespace(),
       1,
     );
     numericShortcutPattern = /^\d+$/;
@@ -1733,7 +1727,7 @@ export function installUiMenu(): () => void {
             "data-cds": dataCds,
             ...props,
           },
-          value = (0, useHasSheetFrame)(),
+          value = useHasSheetFrame(),
           value2 = useMenuPopupElement(state, options, !value, false);
         if (value) {
           return <MenuSheetCapablePopup {...state} ref={options} />;
@@ -1747,8 +1741,8 @@ export function installUiMenu(): () => void {
         input: MenuPopupProps,
         options: React.ForwardedRef<HTMLDivElement>,
       ): React.ReactElement => {
-        let value = (0, useSheetImplementation)(),
-          { pending: value2 } = (0, useSheetState)(),
+        let value = useSheetImplementation(),
+          { pending: value2 } = useSheetState(),
           value3 = reactForUiMenu.useContext<MenuRootState | null>(
             menuTriggerContext,
           ),
@@ -1813,20 +1807,20 @@ export function installUiMenu(): () => void {
             : checked,
           value3 = value ? "checkbox" : (checkedRole ?? "checkbox"),
           value4 = checkPosition ?? (value ? "leading" : "trailing"),
-          value5 = (0, useAppleKeyboard)(),
+          value5 = useAppleKeyboard(),
           value6 = reactForUiMenu.useId(),
           {
             label: value7,
             labelSpanRef: value8,
             rowRef: value9,
           } = useMenuItemLabel(children, props.label),
-          value10 = (0, useMergedRefs)(options, value9),
+          value10 = useMergedRefs(options, value9),
           value11 =
             props.disabled === true &&
-            (0, hasDisabledReason)(disabledReason),
+            hasDisabledReason(disabledReason),
           state = {
             "aria-keyshortcuts": shortcut
-              ? (0, shortcutToAriaKeyShortcuts)(shortcut, value5)
+              ? shortcutToAriaKeyShortcuts(shortcut, value5)
               : undefined,
             "data-cds-icon-row":
               icon !== undefined &&
@@ -1843,7 +1837,7 @@ export function installUiMenu(): () => void {
                 .filter(Boolean)
                 .join(" ") || undefined,
           },
-          value12 = (0, useMenuPassiveFocusProps)(),
+          value12 = useMenuPassiveFocusProps(),
           callback = (input: React.ReactElement): React.ReactElement =>
             disabledReason === undefined ? (
               input
@@ -1862,16 +1856,16 @@ export function installUiMenu(): () => void {
                 </div>
               </Tooltip>
             ),
-          value13 = (0, useCdsLink)({
+          value13 = useCdsLink({
             href: href,
             routerOptions: routerOptions,
             target: target,
             rel: rel,
             download: download,
-            ...(0, pickLinkEventProps)(props),
+            ...pickLinkEventProps(props),
           }),
-          value14 = (0, cn)(
-            (0, menuItemVariants)({
+          value14 = cn(
+            menuItemVariants({
               variant: variant,
             }),
             description ? `${menuItemDescriptionPaddingClass} ` : "",
@@ -1879,7 +1873,7 @@ export function installUiMenu(): () => void {
           ),
           value15 = value2 !== undefined && (
             <span
-              className={(0, clsx)(
+              className={clsx(
                 "flex size-icon shrink-0 items-center justify-center",
                 value4 === "trailing" && !hint && !shortcut && "-mr-1",
                 Boolean(value4 === "trailing" && shortcut && !hint) &&
@@ -1929,7 +1923,7 @@ export function installUiMenu(): () => void {
                     shortcut,
                 ) && (
                   <span
-                    className={(0, clsx)(
+                    className={clsx(
                       "ml-md flex shrink-0 items-center gap-xs",
                       Boolean(
                         shortcut &&
@@ -1951,7 +1945,7 @@ export function installUiMenu(): () => void {
             </jsxForUiMenu.Fragment>
           );
         if (href !== undefined) {
-          let value17 = (0, omitLinkEventProps)(state);
+          let value17 = omitLinkEventProps(state);
           return callback(
             <baseMenu.Item
               ref={value10}
@@ -2030,20 +2024,20 @@ export function installUiMenu(): () => void {
         let value = reactForUiMenu.useContext<MenuRootState | null>(
             menuTriggerContext,
           ),
-          value2 = (0, useIsSheet)(),
-          value3 = (0, useMenuPassiveFocusProps)(),
+          value2 = useIsSheet(),
+          value3 = useMenuPassiveFocusProps(),
           {
             label: value4,
             labelSpanRef: value5,
             rowRef: value6,
           } = useMenuItemLabel(children, props.label),
-          value7 = (0, useMergedRefs)(
+          value7 = useMergedRefs(
             value?.setTriggerNode,
             options,
             value6,
           ),
           value8 = value?.stashLabel;
-        (0, useIsomorphicLayoutEffect)(() => {
+        useIsomorphicLayoutEffect(() => {
           if (value2) {
             value8?.(children);
           }
@@ -2056,8 +2050,8 @@ export function installUiMenu(): () => void {
             label={value4}
             {...value3}
             openOnHover={value2 ? false : openOnHover}
-            className={(0, cn)(
-              (0, menuItemVariants)({
+            className={cn(
+              menuItemVariants({
                 variant: "default",
               }),
               "justify-between data-[popup-open]:bg-fill-ghost-hover",
@@ -2178,7 +2172,7 @@ export function installUiMenu(): () => void {
             ref={options}
             data-cds={"MenuBar"}
             {...props}
-            className={(0, cn)("flex items-center gap-xs", className)}
+            className={cn("flex items-center gap-xs", className)}
           />
         </menuBarContext.Provider>
       );
@@ -2200,17 +2194,17 @@ export function installUiMenu(): () => void {
       SearchablePopup: MenuSearchablePopup,
       PendingList: MenuPendingList,
     });
-    (0, initializeIsomorphicLayoutEffect)();
-    (0, initializeClassNames)();
-    (0, initializeCdsRoot)();
-    (0, initializeElementAccess)();
-    (0, initializeLayers)();
-    (0, initializeOverlaySelector)();
-    (0, initializeCloseOnActivityHide)();
-    (0, initializeMergedRefs)();
-    (0, initializePortalRoot)();
-    (0, initializeSurfaces)();
-    (0, initializeOverlayActions)();
-    (0, initializeVisualKeyboard)();
+    initializeIsomorphicLayoutEffect();
+    initializeClassNames();
+    initializeCdsRoot();
+    initializeElementAccess();
+    initializeLayers();
+    initializeOverlaySelector();
+    initializeCloseOnActivityHide();
+    initializeMergedRefs();
+    initializePortalRoot();
+    initializeSurfaces();
+    initializeOverlayActions();
+    initializeVisualKeyboard();
   };
 }

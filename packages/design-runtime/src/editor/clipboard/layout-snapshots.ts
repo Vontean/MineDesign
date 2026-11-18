@@ -383,7 +383,7 @@ function normalizeComputedStyleCarry(input?: Dynamic): Dynamic {
   for (let [value, value2] of Object.entries(input) as Dynamic) {
     if (
       !/^(?:--[A-Za-z0-9_-]+|-?[A-Za-z][A-Za-z0-9-]*)$/.test(value) ||
-      (0, isUnsafeCssProperty)(value) ||
+      isUnsafeCssProperty(value) ||
       ClipboardHtmlSanitizationScriptDataDcScriptPattern.test(
         value,
       ) ||
@@ -396,14 +396,14 @@ function normalizeComputedStyleCarry(input?: Dynamic): Dynamic {
       /;|[\r\n]/.test(value3) ||
       /\\$/.test(value3) ||
       ClipboardHtmlSanitizationExpressionMozBindingPattern.test(
-        (0, decodeCssEscapes)(value3).replace(
+        decodeCssEscapes(value3).replace(
           /[\u0000\t\n\r\f]/g,
           "",
         ),
       ) ||
       ClipboardHtmlSanitizationAZPattern.test(
-        (0, decodeCssEscapes)(
-          (0, removeCssStrings)(value3),
+        decodeCssEscapes(
+          removeCssStrings(value3),
         ).replace(/[\u0000\t\n\r\f]/g, ""),
       ) ||
       ClipboardHtmlSanitizationScriptDataDcScriptPattern.test(

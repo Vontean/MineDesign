@@ -98,7 +98,7 @@ function useToastBridge() {
       add: add,
       close: close,
       setPinned: setPinned,
-    }: ToastNotificationBridge = (0, useToastNotifications)(),
+    }: ToastNotificationBridge = useToastNotifications(),
     ref = reactk_.useRef(new Map<number, string>());
   reactk_.useEffect(() => {
     let callback = (input: PinnedToast | null) => setPinned(input);
@@ -161,12 +161,12 @@ export {
 };
 export function installUiToasts(): () => void {
   return () => {
-    jsxToasts = (0, toModuleNamespace)(
-      (0, loadJsxNamespace)(),
+    jsxToasts = toModuleNamespace(
+      loadJsxNamespace(),
       1,
     );
-    reactk_ = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    reactk_ = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
     toastQueue = [];

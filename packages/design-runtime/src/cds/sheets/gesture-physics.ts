@@ -157,7 +157,7 @@ export {
 };
 export function installCdsSheetsGesturePhysics(): () => void {
   return () => {
-    initializeSheetsGesturePhysics = (0, initializeOnce)(() => {
+    initializeSheetsGesturePhysics = initializeOnce(() => {
       sheetGestureConstants = {
         detentThreshold: 40,
         dismissFraction: 0.25,

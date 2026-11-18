@@ -18,7 +18,7 @@ export {
 };
 export function installCdsPlatformRuntime(): () => void {
   return () => {
-    initializePlatformRuntime = (0, initializeOnce)(() => {
+    initializePlatformRuntime = initializeOnce(() => {
       // MineDesign: the desktop app is told apart by Electron alone.
       PlatformRuntimeClaudeNestPattern = /\bElectron\//i;
     });

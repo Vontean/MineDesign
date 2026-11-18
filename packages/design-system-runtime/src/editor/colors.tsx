@@ -63,10 +63,10 @@ function ColorSwatch({
   small: small,
 }: Token.ColorSwatchProps): React.ReactElement {
   useUiLocale();
-  let value = (0, isColorLiteral)(css as string) ? css! : null;
+  let value = isColorLiteral(css as string) ? css! : null;
   return (
     <span
-      className={(0, joinClassNames)(
+      className={joinClassNames(
         "ds-chip inline-flex",
         inherited && "ds-cchip-inh",
       )}
@@ -74,7 +74,7 @@ function ColorSwatch({
     >
       <ColorChip
         hex={value}
-        className={(0, joinClassNames)(
+        className={joinClassNames(
           small ? "size-4!" : "size-5! rounded-[4px]!",
           inherited &&
             "outline-1 outline-offset-1 outline-dashed outline-border-strong",
@@ -84,7 +84,7 @@ function ColorSwatch({
   );
 }
 function colorCssForPicker(css: string | undefined): string | undefined {
-  if (!(0, isColorLiteral)(css as string)) {
+  if (!isColorLiteral(css as string)) {
     return;
   }
   if (/^#[0-9a-f]{3,8}$/i.test(css!) || /^rgba?\(/i.test(css!)) {
@@ -146,7 +146,7 @@ function useColorContrastReport(
           against: string[];
         }
       >
-    >(() => (0, inferColorContrastPairs)(memo), [value]);
+    >(() => inferColorContrastPairs(memo), [value]);
   return (reactColorEditors as typeof React).useMemo(() => {
     let entries = new Map<string, Token.EditorColorToken>(
         memo.map((input) => [input.name, input]),
@@ -170,7 +170,7 @@ function useColorContrastReport(
                   );
           if (
             value5 === undefined ||
-            ((0, parseContrastColor)(value5)?.a ?? 0) < 1
+            (parseContrastColor(value5)?.a ?? 0) < 1
           ) {
             return [];
           }
@@ -232,8 +232,8 @@ function ColorValueCell({
     callback = (): void => {
       let value12 = value.css ?? "";
       if (value12 !== "") {
-        (0, copyTextToClipboard)(value12).then((input: boolean) =>
-          (0, showEditorNotification)(
+        copyTextToClipboard(value12).then((input: boolean) =>
+          showEditorNotification(
             input ? value12 + " copied" : value12,
           ),
         );
@@ -249,7 +249,7 @@ function ColorValueCell({
         size={"sm"}
         iconOnly={true}
         icon={<ColorSwatch css={value.css} inherited={value.inherited} />}
-        className={(0, joinClassNames)(
+        className={joinClassNames(
           "ds-cchip",
           value.inherited && "ds-cchip-inh",
         )}
@@ -267,7 +267,7 @@ function ColorValueCell({
     ),
     memo2 = (reactColorEditors as typeof React).useMemo(
       () =>
-        value.css !== undefined && (0, isColorLiteral)(value.css)
+        value.css !== undefined && isColorLiteral(value.css)
           ? /^#|^rgba?\(/i.test(value.css)
             ? value.css
             : (colorCssForPicker(value.css) ?? value.css)
@@ -279,13 +279,13 @@ function ColorValueCell({
       () =>
         memo2 === undefined || memo === undefined
           ? undefined
-          : (0, colorContrastResults)(memo2, memo),
+          : colorContrastResults(memo2, memo),
       [memo2, memo],
     ),
     value10 =
       memo3 === undefined
         ? undefined
-        : (0, worstContrastResult)(memo3),
+        : worstContrastResult(memo3),
     value11 = (
       <jsxColorEditors.Fragment>
         {[edit !== undefined ? (
@@ -299,7 +299,7 @@ function ColorValueCell({
                 label={((token.name) + (" · ")) + (theme.name)}
                 value={value9}
                 editsAreUndoSteps={true}
-                popupAttrs={(0, commentTargetProps)(
+                popupAttrs={commentTargetProps(
                   "picker",
                   token.name + ":" + theme.id,
                 )}
@@ -348,7 +348,7 @@ function ColorValueCell({
             </span>
           ), edit !== undefined ? null : value.to !== undefined ? (
             <TextLink
-              className={(0, joinClassNames)(
+              className={joinClassNames(
                 "ds-calias min-w-0 truncate font-mono text-footnote",
                 value.inherited && "text-muted",
               )}
@@ -361,7 +361,7 @@ function ColorValueCell({
             </TextLink>
           ) : value.css !== undefined ? (
             <span
-              className={(0, joinClassNames)(
+              className={joinClassNames(
                 "ds-chex min-w-0 truncate font-mono text-footnote",
                 value.inherited ? "text-muted" : "text-secondary",
               )}
@@ -381,7 +381,7 @@ function ColorValueCell({
       role={"cell"}
       data-theme={themes.length > 1 ? theme.name : undefined}
       data-testid={"ds-cell-" + token.name + "-" + theme.id}
-      data-id={(0, commentTargetId)(
+      data-id={commentTargetId(
         "cell",
         token.name + ":" + theme.id,
       )}
@@ -472,21 +472,21 @@ function colorContrastSummary(
           theme,
           themes,
         ),
-        ratio: (0, contrastRatioReadout)(input.ratio),
+        ratio: contrastRatioReadout(input.ratio),
       })),
     state = {
       token: token,
       theme: themes.length > 1 ? theme.id : undefined,
       failing: value,
-      min: (0, contrastRatioReadout)(
-        (0, worstContrastResult)(checks).min,
+      min: contrastRatioReadout(
+        worstContrastResult(checks).min,
       ),
     },
-    value2 = (0, artifactPageAddress)();
+    value2 = artifactPageAddress();
   return {
     label: get_FIX_WITH_CLAUDE_LABEL(),
-    request: (0, viewerColorContrastFixPrompt)(state, value2),
-    prompt: (0, ownerColorContrastFixPrompt)(state, value2),
+    request: viewerColorContrastFixPrompt(state, value2),
+    prompt: ownerColorContrastFixPrompt(state, value2),
   };
 }
 function ColorTokenRow({
@@ -505,7 +505,7 @@ function ColorTokenRow({
 }: Token.ColorTokenRowProps): React.ReactElement {
   useUiLocale();
   let value = colorValueForTheme(token, firstId ?? "", firstId),
-    value2 = (0, useRowContextMenu)(
+    value2 = useRowContextMenu(
       edit !== undefined || (value.css ?? "") !== "",
     ),
     callback = () =>
@@ -518,13 +518,13 @@ function ColorTokenRow({
     <div
       ref={rowRef}
       role={"row"}
-      className={(0, joinClassNames)(
+      className={joinClassNames(
         "ds-crow ds-tokrow group/row",
         flash && "ds-flash",
       )}
       style={gridStyle}
       data-testid={"ds-color-" + token.name}
-      {...(0, commentTargetProps)("token", token.name)}
+      {...commentTargetProps("token", token.name)}
       {...value2.rowProps}
     >
       {[<span className={"ds-cname min-w-0 font-mono"} role={"rowheader"}>
@@ -720,7 +720,7 @@ function ColorsSection({
           input2.tokens.some((input3): boolean => input3.name === input),
         )
       ) {
-        (0, showEditorNotification)(input + " is not in this file");
+        showEditorNotification(input + " is not in this file");
         return;
       }
       value7(input);
@@ -841,7 +841,7 @@ function ColorsSection({
       return (input2: string) => {
         let value11 = normalizeThemeId(input2);
         if (value11 === "") {
-          (0, showEditorNotification)(uiMessage("design-system.colors.aGroupNeedsAName"));
+          showEditorNotification(uiMessage("design-system.colors.aGroupNeedsAName"));
           return true;
         }
         if (
@@ -852,13 +852,13 @@ function ColorsSection({
           return true;
         }
         if (values.has(value11)) {
-          (0, showEditorNotification)(
+          showEditorNotification(
             uiMessage("design-system.colors.thereIsAlreadyA") + value11 + " group",
           );
           return true;
         }
         if (!value10(input, value11)) {
-          (0, showEditorNotification)(
+          showEditorNotification(
             uiMessage("design-system.colors.couldNotRename") +
               callback3(input) +
               " — a token name is already taken.",
@@ -879,13 +879,13 @@ function ColorsSection({
         return (() => {
           const _Element4 = "section";
           const _elementProps4 = {
-            className: (0, joinClassNames)(
+            className: joinClassNames(
               "ds-cgroup flex min-w-0 flex-col",
               input.name === "" && "ds-cgroup-loose",
             ),
             "aria-label": value11,
             "data-testid": "ds-color-group-" + value10,
-            "data-id": (0, commentTargetId)("cgroup", input.name),
+            "data-id": commentTargetId("cgroup", input.name),
             children: [
               <div
                 className={
@@ -958,8 +958,8 @@ export {
 };
 export function installEditorColors(): () => void {
   return () => {
-    jsxColorEditors = (0, toModuleNamespace)(
-      (0, loadJsxNamespace)(),
+    jsxColorEditors = toModuleNamespace(
+      loadJsxNamespace(),
       1,
     );
     COLORS_SECTION_LABEL = "Colors";

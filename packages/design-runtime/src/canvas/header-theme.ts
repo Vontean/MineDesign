@@ -21,7 +21,7 @@ function parseHeaderCssColor(color?: Dynamic): Dynamic {
     headerColorCanvasContext = value3?.getContext("2d") ?? null;
   }
   let value: Dynamic = headerColorCanvasContext;
-  if (!value) return (0, normalizeCssColor)(color);
+  if (!value) return normalizeCssColor(color);
   let callback: Dynamic = (input?: Dynamic): Dynamic => (
       (value.fillStyle = input),
       (value.fillStyle = color),
@@ -44,18 +44,18 @@ function artboardHeaderTheme(
     value5: Dynamic =
       value4 === undefined || opaqueHeaderColorPattern.test(value4)
         ? value4
-        : (0, normalizeCssColor)(value3),
+        : normalizeCssColor(value3),
     value6: Dynamic =
       value5 !== undefined && opaqueHeaderColorPattern.test(value5)
-        ? (0, parseRgbaColor)(value5)
+        ? parseRgbaColor(value5)
         : undefined;
   return value5 === undefined || value6 === undefined
     ? null
     : {
         bg: value5,
         lightInk:
-          (0, contrastRatio)(defaultLightHeaderColor, value6) >
-          (0, contrastRatio)(defaultDarkHeaderColor, value6),
+          contrastRatio(defaultLightHeaderColor, value6) >
+          contrastRatio(defaultDarkHeaderColor, value6),
       };
 }
 export {

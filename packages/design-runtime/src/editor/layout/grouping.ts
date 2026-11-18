@@ -195,7 +195,7 @@ function freezeTextStyleForLayout(
   context?: Dynamic,
 ): Dynamic {
   if (!(!context.freeze || context.changed.length === 0))
-    for (let [value, value2] of (0, normalizeTextStyleSnapshot)(
+    for (let [value, value2] of normalizeTextStyleSnapshot(
       context.freeze,
     ) as Dynamic)
       context.changed.includes(value) &&
@@ -217,7 +217,7 @@ function resetPositioningProperty(
 }
 function layoutCarryStyle(input?: Dynamic): Dynamic {
   let entries: Dynamic = new Map(
-    (0, normalizeStyleEdits)(Object.entries(input.carry)).flatMap(
+    normalizeStyleEdits(Object.entries(input.carry)).flatMap(
       ([input2, input3]: Dynamic): Dynamic =>
         input3 === null ? [] : [[input2, input3]],
     ),

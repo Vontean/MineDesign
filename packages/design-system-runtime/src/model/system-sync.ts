@@ -52,7 +52,7 @@ function reuseStoredDocumentIdentity(
       return record;
     }
   }
-  if ((0, documentRecordsEqual)(existing, record)) {
+  if (documentRecordsEqual(existing, record)) {
     return existing;
   } else {
     return record;
@@ -67,7 +67,7 @@ function decomposeDesignSystemDocuments(
     knownUploads = knownRemoteUploadsForFiles(files),
     regenerate: boolean = regenerateStoredDerivedFiles;
   regenerateStoredDerivedFiles = false;
-  let plan = (0, planSystemStoreConversion)(document2.title, files, {
+  let plan = planSystemStoreConversion(document2.title, files, {
       known: knownUploads,
       derived: regenerate,
       ...(carry?.meta !== undefined
@@ -107,7 +107,7 @@ function decomposeDesignSystemDocuments(
       ),
       readmeTail:
         typeof entry?.data === "string"
-          ? (0, generatedReadmeTail)(entry.data)
+          ? generatedReadmeTail(entry.data)
           : readmeUpload
             ? retainedDerivedSystemDocuments.readmeTail
             : "",
@@ -121,7 +121,7 @@ function decomposeDesignSystemDocuments(
       );
     }
   }
-  let readmeWithTail = (0, mergeReadmeWithGeneratedTail)(
+  let readmeWithTail = mergeReadmeWithGeneratedTail(
     files[DESIGN_SYSTEM_PATHS.readme] ?? "",
     retainedDerivedSystemDocuments.readmeTail,
   );
@@ -145,18 +145,18 @@ function decomposeDesignSystemDocuments(
         previous.get(README_DOCUMENT_PATH)!,
       );
     }
-    let value = (0, remoteTextEntry)(
+    let value = remoteTextEntry(
       DESIGN_SYSTEM_PATHS.readme,
     );
     if (
       value === undefined ||
       value.text === undefined ||
-      (0, stripGeneratedReadmeTail)(value.text) !==
-        (0, stripGeneratedReadmeTail)(
+      stripGeneratedReadmeTail(value.text) !==
+        stripGeneratedReadmeTail(
           files[DESIGN_SYSTEM_PATHS.readme] ?? "",
         )
     ) {
-      (0, setRemoteTextUploadProblem)(
+      setRemoteTextUploadProblem(
         DESIGN_SYSTEM_PATHS.readme,
         "is larger than the store keeps a README (" +
           ceilKilobytesString(MAX_SYNC_DOCUMENT_BYTES) +
@@ -168,23 +168,23 @@ function decomposeDesignSystemDocuments(
     if (
       !Object.hasOwn(files, value) ||
       !knownUploads.has(value) ||
-      (0, remoteTextEntry)(value)?.text === files[value]
+      remoteTextEntry(value)?.text === files[value]
     ) {
       documents.set(
-        (0, documentPathForFile)(value),
+        documentPathForFile(value),
         reuseStoredDocumentIdentity(
           previous,
-          (0, documentPathForFile)(value),
+          documentPathForFile(value),
           value2,
         ),
       );
     }
   }
-  for (let [value, value2] of (0, getLocalRemoteTextEdits)()) {
+  for (let [value, value2] of getLocalRemoteTextEdits()) {
     if (!Object.hasOwn(files, value) || files[value] !== value2) {
-      (0, discardRemoteTextEdit)(value);
-    } else if ((0, remoteTextEntry)(value)?.text === value2) {
-      (0, acceptRemoteTextEdit)(value);
+      discardRemoteTextEdit(value);
+    } else if (remoteTextEntry(value)?.text === value2) {
+      acceptRemoteTextEdit(value);
     }
   }
   for (let value of plan.uploads) {
@@ -194,15 +194,15 @@ function decomposeDesignSystemDocuments(
       }
       if (
         !remoteTextDocumentRecords.has(value2) &&
-        previous?.has((0, documentPathForFile)(value2)) === true
+        previous?.has(documentPathForFile(value2)) === true
       ) {
         documents.set(
-          (0, documentPathForFile)(value2),
-          previous.get((0, documentPathForFile)(value2))!,
+          documentPathForFile(value2),
+          previous.get(documentPathForFile(value2))!,
         );
       }
-      (0, getAssetsCapability)().then((input) =>
-        (0, uploadEditedRemoteText)(
+      getAssetsCapability().then((input) =>
+        uploadEditedRemoteText(
           value2,
           files[value2],
           value.contentType,
@@ -214,7 +214,7 @@ function decomposeDesignSystemDocuments(
       );
     }
   }
-  (0, decomposeCommentDocuments)(
+  decomposeCommentDocuments(
     document2.comments,
     previous,
     documents,
@@ -228,12 +228,12 @@ function knownRemoteUploadsForFiles(
   let known = new Map<string, Storage.KnownUpload>(),
     byText = knownRemoteUploadsByText();
   for (let value of Object.keys(files)) {
-    let value2 = (0, remoteTextEntry)(value);
+    let value2 = remoteTextEntry(value);
     if (value2 !== undefined && value2.text === files[value]) {
       known.set(value, knownUploadFromRemoteRecord(value2.ptr));
     } else {
       let value3 =
-        (0, knownUploadForRemoteText)(value, files[value]) ??
+        knownUploadForRemoteText(value, files[value]) ??
         byText.get(files[value]);
       if (value3 !== undefined) {
         known.set(value, value3);
@@ -262,12 +262,12 @@ function knownUploadFromRemoteRecord(
 }
 function knownRemoteUploadsByText(): Map<string, Storage.KnownUpload> {
   let known = new Map<string, Storage.KnownUpload>();
-  for (let [, value] of (0, getRemoteTextEntries)()) {
+  for (let [, value] of getRemoteTextEntries()) {
     if (value.text !== undefined && !known.has(value.text)) {
       known.set(value.text, knownUploadFromRemoteRecord(value.ptr));
     }
   }
-  for (let [, value] of (0, getUploadedRemoteTextEntries)()) {
+  for (let [, value] of getUploadedRemoteTextEntries()) {
     if (!known.has(value.text)) {
       known.set(value.text, value.known);
     }
@@ -371,14 +371,14 @@ function composeDesignSystemDocuments(
   previous?: unknown,
 ): Storage.ComposedDocument {
   currentSystemDocumentRecords = documents;
-  (0, setRetainedBlobIdsProvider)(retainedSystemBlobIds);
+  setRetainedBlobIdsProvider(retainedSystemBlobIds);
   hasWindowedSystemCollection ||= hasFullCollectionWindow(documents);
-  let composed = (0, composeStoredSystemFiles)(documents);
+  let composed = composeStoredSystemFiles(documents);
   remoteTextDocumentRecords = new Map(
     [...composed.remoteText.keys()].map(
       (input: string): [string, Storage.DatabaseRecord] => [
         input,
-        documents.get((0, documentPathForFile)(input))!,
+        documents.get(documentPathForFile(input))!,
       ],
     ),
   );
@@ -392,7 +392,7 @@ function composeDesignSystemDocuments(
     ),
     readmeTail:
       typeof readmeRecord?.data === "string"
-        ? (0, generatedReadmeTail)(readmeRecord.data)
+        ? generatedReadmeTail(readmeRecord.data)
         : "",
     meta: {
       ...(composed.meta?.namespace !== undefined
@@ -407,11 +407,11 @@ function composeDesignSystemDocuments(
         : {}),
     },
   };
-  (0, synchronizeRemoteTextEntries)(composed.remoteText);
+  synchronizeRemoteTextEntries(composed.remoteText);
   let meta = composed.meta;
   currentStoredSystemMetadata = meta;
   systemMovedToFiles =
-    (0, readMovedToMarker)(
+    readMovedToMarker(
       documents.get(SYSTEM_META_DOCUMENT_PATH),
     ) !== null;
   storedSystemMigrationFlags = {
@@ -444,14 +444,14 @@ function composeDesignSystemDocuments(
     };
   }
   let files = {
-    ...(0, hydrateStoredSystemText)(
+    ...hydrateStoredSystemText(
       composed,
-      (0, hydratedRemoteTexts)(),
+      hydratedRemoteTexts(),
     ),
   };
-  for (let [value, value2] of (0, getLocalRemoteTextEdits)()) {
+  for (let [value, value2] of getLocalRemoteTextEdits()) {
     let value3 = composed.remoteText.has(value)
-        ? (0, remoteTextEntry)(value)?.text
+        ? remoteTextEntry(value)?.text
         : undefined,
       value4 =
         typeof composed.files[value] === "string" &&
@@ -461,12 +461,12 @@ function composeDesignSystemDocuments(
         (value4 ? composed.files[value] : undefined);
     if (
       value3 === value2 ||
-      ((0, getRemoteTextProblems)().has(value)
+      (getRemoteTextProblems().has(value)
         ? value5 !== undefined &&
-          value5 !== (0, failedRemoteTextReference)(value)
+          value5 !== failedRemoteTextReference(value)
         : value4)
     ) {
-      (0, acceptRemoteTextEdit)(value);
+      acceptRemoteTextEdit(value);
     } else {
       files[value] = value2;
     }
@@ -477,7 +477,7 @@ function composeDesignSystemDocuments(
       v: 2,
       files: files,
     },
-    comments: (0, composeCommentDocuments)(documents),
+    comments: composeCommentDocuments(documents),
     carry: carry,
     dangling: [],
   };
@@ -488,7 +488,7 @@ function blobIdsInDocumentRecords(
   let ids = new Set<string>(),
     walk = (items: unknown, options: number): void => {
       if (typeof items === "string") {
-        let value = (0, blobIdFromReference)(items);
+        let value = blobIdFromReference(items);
         if (value !== null) {
           ids.add(value);
         }
@@ -540,8 +540,8 @@ function hasFullCollectionWindow(
   let counts = new Map<string, number>();
   for (let value of documents.keys()) {
     counts.set(
-      (0, documentCollectionPath)(value),
-      (counts.get((0, documentCollectionPath)(value)) ?? 0) + 1,
+      documentCollectionPath(value),
+      (counts.get(documentCollectionPath(value)) ?? 0) + 1,
     );
   }
   return [...counts.values()].some(
@@ -553,7 +553,7 @@ function refuseOversizedSystemDocument(
   record: Storage.DatabaseRecord,
   collectionBytes: number,
 ): string | undefined {
-  let bytes = (0, estimateEmbeddedJsonBytes)(record),
+  let bytes = estimateEmbeddedJsonBytes(record),
     displayPath = typeof record.path === "string" ? record.path : path;
   if (bytes > MAX_SYNC_DOCUMENT_BYTES) {
     return (
@@ -564,16 +564,16 @@ function refuseOversizedSystemDocument(
       " KB > 240 KB)."
     );
   }
-  if ((0, jsonValueDepth)(record) > MAX_SYNC_DOCUMENT_DEPTH) {
+  if (jsonValueDepth(record) > MAX_SYNC_DOCUMENT_DEPTH) {
     return "“" + displayPath + "” is nested too deeply to sync.";
   }
   if (collectionBytes > MAX_SYNC_COLLECTION_BYTES) {
     return (
       "This design system’s " +
-      ((0, documentCollectionPath)(path) ===
+      (documentCollectionPath(path) ===
       COMMENT_DOCUMENT_PREFIX
         ? "comments"
-        : (0, documentCollectionPath)(path) + " files") +
+        : documentCollectionPath(path) + " files") +
       " are over the 2 MB live-sync budget."
     );
   }
@@ -636,13 +636,13 @@ export function installModelSystemSync(): () => void {
       readmeTail: "",
       meta: {},
     };
-    README_DOCUMENT_PATH = (0, documentPathForFile)(
+    README_DOCUMENT_PATH = documentPathForFile(
       DESIGN_SYSTEM_PATHS.readme,
     );
     isDerivedSystemDocument = (input: string) =>
-      (0, documentCollectionPath)(input) === API_COLLECTION ||
+      documentCollectionPath(input) === API_COLLECTION ||
       input ===
-        (0, documentPathForFile)(GENERATED_TOKENS_CSS_PATH);
+        documentPathForFile(GENERATED_TOKENS_CSS_PATH);
     currentSystemDocumentRecords = new Map();
     pendingSystemDocumentRecords = new Map();
     hasWindowedSystemCollection = false;

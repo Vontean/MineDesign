@@ -34,11 +34,11 @@ function AssetContextMenu({
   let value = items.length === 1 ? items[0] : undefined,
     value2: string | undefined =
       value === undefined ? uiMessage("design-system.assetContextMenu.worksOnOneFileAt") : undefined,
-    value3 = (0, useDownloadsWithheld)(),
+    value3 = useDownloadsWithheld(),
     value4 =
       value2 ??
       (value !== undefined
-        ? (0, assetDownloadBlockedReason)(value, value3)
+        ? assetDownloadBlockedReason(value, value3)
         : undefined),
     length = items.length,
     value5 = assetGroupDisplayName,
@@ -136,8 +136,8 @@ export {
 };
 export function installEditorAssetContextMenu(): () => void {
   return () => {
-    jsxAssetActions = (0, toModuleNamespace)(
-      (0, loadJsxNamespace)(),
+    jsxAssetActions = toModuleNamespace(
+      loadJsxNamespace(),
       1,
     );
     NEW_ASSET_GROUP_SENTINEL = Symbol(uiMessage("design-system.assetContextMenu.newGroup"));

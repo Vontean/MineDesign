@@ -48,7 +48,7 @@ function PropertyAlignmentRow({
 }: Dynamic): Dynamic {
   useUiLocale();
   if (
-    (0, classifyStyleValue)(state.value).kind !== "literal" &&
+    classifyStyleValue(state.value).kind !== "literal" &&
     (state.value ?? "").trim()
   )
     return (
@@ -61,7 +61,7 @@ function PropertyAlignmentRow({
   let value: Dynamic = state.companionMixed ?? false,
     value2: Dynamic = (state.companionValue ?? "").trim(),
     value3: Dynamic =
-      value2 && (0, classifyStyleValue)(value2).kind === "literal"
+      value2 && classifyStyleValue(value2).kind === "literal"
         ? value2
         : "",
     value4: Dynamic = value
@@ -100,7 +100,7 @@ function PropertyAlignmentRow({
         disabled={state.disabled}
         data-testid={`dc-typestyle-${context.toLowerCase()}`}
         data-inherited={input && !options && !detail ? "" : undefined}
-        className={(0, cn)(options && "opacity-45")}
+        className={cn(options && "opacity-45")}
         onClick={extra}
       />
     );
@@ -146,8 +146,7 @@ function PropertyCssSegmentsRow({
   shell: shell,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let { text: value, isLiteral: value2 }: Dynamic = (0,
-  inspectorFieldDisplay)(state);
+  let { text: value, isLiteral: value2 }: Dynamic = inspectorFieldDisplay(state);
   if (!value2 && value)
     return (
       <PropertyCssTextRow
@@ -239,8 +238,8 @@ function PropertyCssSegmentsRow({
         options={value8.map(
           (input?: Dynamic): Dynamic => ({
             value: input,
-            label: (0, propertyOptionLabel)(state.spec, input),
-            tooltip: `${state.label}: ${(0, propertyOptionLabel)(state.spec, input)}`,
+            label: propertyOptionLabel(state.spec, input),
+            tooltip: `${state.label}: ${propertyOptionLabel(state.spec, input)}`,
             icon: PropertiesTransformRowRowColumnRowReverseConfig[
               input
             ],

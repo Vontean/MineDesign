@@ -45,7 +45,7 @@ async function resolveDatabaseCapability(): Promise<Dynamic> {
   let claude: Dynamic = (globalThis as Dynamic).designHost;
   try {
     if (typeof claude?.use == "function") {
-      let value: Dynamic = await (0, requestHostCapability)("db");
+      let value: Dynamic = await requestHostCapability("db");
       return isDatabaseCapability(value) ? value : null;
     }
   } catch {

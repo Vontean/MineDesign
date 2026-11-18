@@ -145,12 +145,12 @@ export {
 };
 export function installFastEditDraftPreviews(): () => void {
   return () => {
-    ReactDraftPreviews = (0, toModuleNamespace)(
-      (0, load_react)(),
+    ReactDraftPreviews = toModuleNamespace(
+      load_react(),
       1,
     );
-    draftPreviewPortal = (0, toModuleNamespace)(
-      (0, load_react_dom)(),
+    draftPreviewPortal = toModuleNamespace(
+      load_react_dom(),
       1,
     );
     draftDocumentPreviews = new Map();
@@ -239,8 +239,8 @@ export function installFastEditDraftPreviews(): () => void {
         };
       },
     };
-    draftJsxRuntime = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    draftJsxRuntime = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
     DRAFT_PREVIEW_EXPIRY_MS = 9e5;

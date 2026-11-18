@@ -19,7 +19,7 @@ function getBrowserZoomMetrics(): Dynamic {
     Date.now() < ExportCaptureScriptZoomDprUntilConfig.until
   )
     return ExportCaptureScriptZoomDprUntilConfig;
-  let value2: Dynamic = (0, adjustCaptureTextMetrics)(
+  let value2: Dynamic = adjustCaptureTextMetrics(
     document,
     value,
   );

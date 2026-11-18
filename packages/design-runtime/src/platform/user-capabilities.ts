@@ -6,9 +6,9 @@ import { awaitHostCapability, hasCapabilityMethod, resolveHostCapability } from 
 
 var PlatformUserCapabilitiesHandler: Dynamic;
 async function getUserCapabilityMethod(input?: Dynamic): Promise<Dynamic> {
-  let value: Dynamic = await (0, resolveHostCapability)(
+  let value: Dynamic = await resolveHostCapability(
     "user",
-    (0, hasCapabilityMethod)(input),
+    hasCapabilityMethod(input),
   );
   return value === null ? undefined : value[input].bind(value);
 }
@@ -86,9 +86,9 @@ async function getUserNames(input?: Dynamic): Promise<Dynamic> {
   return entries;
 }
 async function awaitCurrentUserCanEdit(): Promise<Dynamic> {
-  let value: Dynamic = await (0, awaitHostCapability)(
+  let value: Dynamic = await awaitHostCapability(
     "user",
-    (0, hasCapabilityMethod)("canEdit"),
+    hasCapabilityMethod("canEdit"),
   );
   if (value === null) return null;
   try {
@@ -99,9 +99,9 @@ async function awaitCurrentUserCanEdit(): Promise<Dynamic> {
   }
 }
 async function getCurrentUserProfile(): Promise<Dynamic> {
-  let value: Dynamic = await (0, resolveHostCapability)(
+  let value: Dynamic = await resolveHostCapability(
     "user",
-    (0, hasCapabilityMethod)("me"),
+    hasCapabilityMethod("me"),
   );
   if (value === null) return null;
   try {

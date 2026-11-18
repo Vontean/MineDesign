@@ -215,11 +215,11 @@ function stripEditingOffFromStashedIndex(
         ...value2
       }: import("../contracts/files-core").JsonRecord = JSON.parse(input);
       if (
-        (0, isSystemEditingDisabled)({
+        isSystemEditingDisabled({
           editing: value,
         })
       ) {
-        return (0, serializeIndexDocument)(value2);
+        return serializeIndexDocument(value2);
       } else {
         return input;
       }
@@ -284,7 +284,7 @@ async function readOwedArtifactBlob(
 ): Promise<FileData | null> {
   try {
     let value = await fetch(
-      (0, blobRelativeUrlModelFilePolicy)(blobId),
+      blobRelativeUrlModelFilePolicy(blobId),
       {
         credentials: "same-origin",
       },
@@ -337,10 +337,10 @@ export function installFilesCarry(): () => void {
       schema: FILES_INDEX_MERGE_SCHEMA,
       emptyIndex: createEmptyFilesIndex,
       wants: (input2: Files.FileListingRow) =>
-        (0, isProjectContentPath)(input2.path) &&
+        isProjectContentPath(input2.path) &&
         !(
           options !== undefined &&
-          (0, lazyFileReadMode)(options, input2.path) === "skipped"
+          lazyFileReadMode(options, input2.path) === "skipped"
         ),
       indexOf: (
         input2: import("../contracts/files-core").FileDocumentState<{
@@ -348,7 +348,7 @@ export function installFilesCarry(): () => void {
         }>,
         options2?: Files.FilesIndex,
       ) =>
-        (0, buildFilesIndex)(
+        buildFilesIndex(
           input2.title,
           input2.content.files,
           options2,
@@ -357,9 +357,9 @@ export function installFilesCarry(): () => void {
         input2: import("../contracts/files-core").FileDocumentState<{
           files: Files.FileTable;
         }>,
-      ) => (0, projectFilesForSave)(input2.content.files),
+      ) => projectFilesForSave(input2.content.files),
       compose: (input2: Files.FilesIndex, options2: Map<string, string>) =>
-        (0, restoreFilesFromIndex)(input2, options2),
+        restoreFilesFromIndex(input2, options2),
     });
     DEFAULT_DESIGN_SYSTEM_FILES_CODEC = designSystemFilesCodec(
       FILES_INDEX_PROJECT_PATH,

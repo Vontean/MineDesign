@@ -29,7 +29,7 @@ function EditorContextMenu({
 }: Dynamic): Dynamic {
   useUiLocale();
   let value: Dynamic = at !== null;
-  (0, useEscapeReleaseSuppression)(value && focusFirstItem);
+  useEscapeReleaseSuppression(value && focusFirstItem);
   let value2: Dynamic = (0, reactChromeTheme_2.useRef)(null),
     value3: Dynamic = (0, reactChromeTheme_2.useRef)(onClose);
   value3.current = onClose;
@@ -201,7 +201,7 @@ function EditorContextMenu({
   );
 }
 function normalizeEditorMenuItems(input?: Dynamic): Dynamic {
-  return (0, renderMenuItems)(
+  return renderMenuItems(
     input.map(
       (input2?: Dynamic): Dynamic =>
         input2 === "separator" || !input2.disabledReason
@@ -254,13 +254,13 @@ export {
 };
 export function installEditorChromeContextMenu(): () => void {
   return () => {
-    jsxChromeContextMenu = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    jsxChromeContextMenu = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
     ChromeContextMenuConstant = 14;
-    jsxChromeContextMenu_2 = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    jsxChromeContextMenu_2 = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
     ChromeContextMenuIsConnected = (input?: Dynamic): Dynamic => (

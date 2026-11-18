@@ -45,7 +45,7 @@ function ArtboardErrorsPopover({
     value4: Dynamic = (0, react_sm.useRef)(0),
     value5: Dynamic = (0, react_sm.useCallback)((): Dynamic => {
       let value13: Dynamic = ++value4.current;
-      (0, getAvailableClaudeSendSession)().then(
+      getAvailableClaudeSendSession().then(
         (input?: Dynamic): Dynamic => {
           value13 === value4.current && (value3.current = input);
         },
@@ -91,20 +91,20 @@ function ArtboardErrorsPopover({
     [value9, value10]: Dynamic = (0, react_sm.useState)(null),
     value11: Dynamic = value9?.key === value8 ? value9.prompt : null,
     callback: Dynamic = (): Dynamic => {
-      (0, sendArtboardErrorsToClaude)(
+      sendArtboardErrorsToClaude(
         value7,
         value3.current,
         canvasTitle,
       ).then((input?: Dynamic): Dynamic => {
-        (0, showEditorToast)(
-          (0, claudeSendStatusMessage)(input),
+        showEditorToast(
+          claudeSendStatusMessage(input),
         );
         value6.current &&
           (value10(
             input === "failed"
               ? {
                   key: value8,
-                  prompt: (0, artboardErrorsFallbackPrompt)(
+                  prompt: artboardErrorsFallbackPrompt(
                     value7,
                     canvasTitle,
                   ),
@@ -227,7 +227,7 @@ function useArtboardErrorNotices(
           : null;
         value2(
           (input2?: Dynamic): Dynamic =>
-            (0, setDismissedArtboardErrors)(input2, input, options2),
+            setDismissedArtboardErrors(input2, input, options2),
         );
       },
       [],
@@ -244,7 +244,7 @@ function useArtboardErrorNotices(
           : null;
         value2(
           (input2?: Dynamic): Dynamic =>
-            (0, clearDismissedArtboardErrors)(input2, input),
+            clearDismissedArtboardErrors(input2, input),
         );
       },
       [],
@@ -268,7 +268,7 @@ function useArtboardErrorNotices(
   }, [value]);
   let value6: Dynamic = (0, react_Xd.useMemo)(
       (): Dynamic =>
-        (0, retainMatchingDismissedErrors)(problems, value),
+        retainMatchingDismissedErrors(problems, value),
       [problems, value],
     ),
     {
@@ -284,7 +284,7 @@ function useArtboardErrorNotices(
         (input2?: Dynamic): Dynamic => input2.file === input,
       );
       return value11 === undefined ||
-        (0, errorMessagesMatch)(
+        errorMessagesMatch(
           value,
           input,
           value11.messages,
@@ -322,8 +322,8 @@ export {
 };
 export function installCanvasErrorNotices(): () => void {
   return () => {
-    jsx_sp = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    jsx_sp = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
     artboardErrorsUiLabels = {
@@ -340,11 +340,11 @@ export function installCanvasErrorNotices(): () => void {
       paste: "Copy this and paste it to the agent:",
     };
     claudeSendSessionRefreshIntervalMs = 1e4;
-    react_Xd = (0, toModuleNamespace)((0, load_react)(), 1);
-    (0, initializeCdsIndex)();
-    (0, initializePlatformCdsIsland)();
-    jsx_Ww = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    react_Xd = toModuleNamespace(load_react(), 1);
+    initializeCdsIndex();
+    initializePlatformCdsIsland();
+    jsx_Ww = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
     artboardErrorNoticeLabels = {
@@ -374,7 +374,7 @@ export function installCanvasErrorNotices(): () => void {
         value4: Dynamic = (0, react_Xd.useRef)(false),
         value5: Dynamic = (0, react_Xd.useCallback)((): Dynamic => {
           let value6: Dynamic = ++value2.current;
-          (0, getAvailableClaudeSendSession)().then(
+          getAvailableClaudeSendSession().then(
             (input?: Dynamic): Dynamic => {
               value6 === value2.current && (value.current = input);
             },
@@ -393,7 +393,7 @@ export function installCanvasErrorNotices(): () => void {
       );
       let callback: Dynamic = (): Dynamic => {
         if (value4.current) return;
-        let value6: Dynamic = (0, sendArtboardErrorsToClaude)(
+        let value6: Dynamic = sendArtboardErrorsToClaude(
           [
             {
               file: path,
@@ -406,10 +406,10 @@ export function installCanvasErrorNotices(): () => void {
         value4.current = true;
         value6
           .then((input?: Dynamic): Dynamic => {
-            (0, showEditorToast)(
+            showEditorToast(
               input === "failed"
                 ? artboardErrorNoticeLabels.refused
-                : (0, claudeSendStatusMessage)(input),
+                : claudeSendStatusMessage(input),
             );
             value3.current &&
               (input === "failed"
@@ -427,7 +427,7 @@ export function installCanvasErrorNotices(): () => void {
           data-testid={"mega-artboard-notice-" + file}
           role={"group"}
           aria-label={artboardErrorNoticeLabels.group(title)}
-          className={(0, joinClassNames)(
+          className={joinClassNames(
             "pointer-events-auto inline-flex max-w-full items-center rounded-card bg-surface-2 text-body text-primary shadow-panel-sm select-none",
             large ? "h-12 gap-0.5 px-1" : "h-[34px] gap-1 px-[5px]",
           )}
@@ -449,7 +449,7 @@ export function installCanvasErrorNotices(): () => void {
                 onClick={onShowAll}
               />
               <span
-                className={(0, joinClassNames)(
+                className={joinClassNames(
                   "whitespace-nowrap pr-1",
                   large
                     ? "@max-[19rem]/foot:hidden"
@@ -462,7 +462,7 @@ export function installCanvasErrorNotices(): () => void {
                   variant={"secondary"}
                   size={"xs"}
                   data-testid={"mega-artboard-notice-ask-" + file}
-                  className={(0, joinClassNames)(
+                  className={joinClassNames(
                     "shrink-0",
                     large
                       ? "px-3 @max-[15rem]/foot:hidden"
@@ -482,7 +482,7 @@ export function installCanvasErrorNotices(): () => void {
                 aria-label={artboardErrorNoticeLabels.dismiss(title)}
                 tooltip={artboardErrorNoticeLabels.dismissTip}
                 icon={<Icon name={"X"} size={"sm"} />}
-                className={(0, joinClassNames)(
+                className={joinClassNames(
                   "shrink-0 text-secondary",
                   large
                     ? "@max-[5.75rem]/foot:hidden"

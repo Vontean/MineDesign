@@ -68,13 +68,13 @@ function classifyFileStorage(
       to: "derived",
     };
   }
-  let record = (0, storagePointerForFile)(path, contents),
+  let record = storagePointerForFile(path, contents),
     desiredStorage =
-      (0, isTextFilePath)(path) &&
-      (0, classifyDesignSystemFile)(path) === "asset" &&
+      isTextFilePath(path) &&
+      classifyDesignSystemFile(path) === "asset" &&
       record === null
         ? "file"
-        : policy[(0, classifyDesignSystemFile)(path)];
+        : policy[classifyDesignSystemFile(path)];
   if (record !== null && record.store === "blob") {
     return {
       to: "record",
@@ -348,7 +348,7 @@ function publishableFileMimeType(
   path: string,
   contents?: string,
 ): string | null {
-  let extension = (0, fileExtension)(path);
+  let extension = fileExtension(path);
   if (extension === "lottie") {
     if (contents === undefined) {
       return null;
@@ -371,10 +371,10 @@ function publishableFileMimeType(
       ? "image/svg+xml"
       : extension === "js" || extension === "mjs"
         ? "text/javascript"
-        : ((0, mirrorMimeTypeForPath)(path) ??
-          ((0, isTextFilePath)(path)
+        : (mirrorMimeTypeForPath(path) ??
+          (isTextFilePath(path)
             ? "text/plain"
-            : (0, mimeTypeForPath)(path)));
+            : mimeTypeForPath(path)));
   if (
     (mimeType === "text/css" || mimeType === "text/javascript") &&
     contents !== undefined &&
@@ -392,7 +392,7 @@ function publishableFileMimeType(
   }
 }
 function decodeFileDataUrl(dataUrl: string): Uint8Array<ArrayBuffer> | null {
-  let metadata = (0, parseDataUriHeader)(dataUrl);
+  let metadata = parseDataUriHeader(dataUrl);
   if (metadata === null) {
     return null;
   }
@@ -460,7 +460,7 @@ function archiveFileMimeType(path: string, dataUrl: string) {
   if (
     !bytesMatchAt(signature.head, 0, [80, 75, 3, 4]) &&
     !(
-      (0, fileExtension)(path) === "fig" &&
+      fileExtension(path) === "fig" &&
       bytesMatchAt(signature.head, 0, asciiCharacterCodes("fig-"))
     )
   ) {
@@ -493,10 +493,10 @@ function archiveFileMimeType(path: string, dataUrl: string) {
   ) {
     return null;
   }
-  return HELD_BINARY_MIME_TYPES[(0, fileExtension)(path)];
+  return HELD_BINARY_MIME_TYPES[fileExtension(path)];
 }
 function readDataUrlSignature(dataUrl: string): DataUrlSignature | null {
-  let metadata = (0, parseDataUriHeader)(dataUrl),
+  let metadata = parseDataUriHeader(dataUrl),
     payload = metadata === null ? "" : dataUrl.slice(metadata.payloadOffset),
     readFullSignature = () => {
       let value = decodeFileDataUrl(dataUrl);
@@ -553,7 +553,7 @@ function explainUnpublishableFile(
       contents === undefined ||
       !Object.hasOwn(
         HELD_BINARY_MIME_TYPES,
-        (0, fileExtension)(path),
+        fileExtension(path),
       )
     ) {
       return {
@@ -568,13 +568,13 @@ function explainUnpublishableFile(
       };
     }
     return {
-      get why() { return ((uiMessage("design-system.filesIndex.itDoesNotLookLike")) + ((0, fileExtension)(path))) + (" file inside (it may be damaged, password-protected or another format renamed). Replace it with a fresh copy, or remove it"); },
+      get why() { return ((uiMessage("design-system.filesIndex.itDoesNotLookLike")) + (fileExtension(path))) + (" file inside (it may be damaged, password-protected or another format renamed). Replace it with a fresh copy, or remove it"); },
       cause: "kind",
     };
   }
   if (
     contents !== undefined &&
-    (0, isTextFilePath)(path) &&
+    isTextFilePath(path) &&
     hasDamagedUnicode(contents)
   ) {
     return {
@@ -583,7 +583,7 @@ function explainUnpublishableFile(
     };
   }
   if (
-    !(0, isPublishableFilePathModelFileTable)(projectFilePath(path))
+    !isPublishableFilePathModelFileTable(projectFilePath(path))
   ) {
     return {
       why: "this name cannot be published: it contains one of % ; : ? # or a backslash, ends in .cmekshadow, or is too long; rename the file",
@@ -596,31 +596,31 @@ function isProjectContentPath(path: string) {
   let relativePath = relativeProjectFilePath(path);
   if (
     relativePath === undefined ||
-    !(0, isValidDesignSystemPath)(relativePath) ||
-    (0, normalizeDesignSystemPath)(relativePath) !== relativePath
+    !isValidDesignSystemPath(relativePath) ||
+    normalizeDesignSystemPath(relativePath) !== relativePath
   ) {
     return false;
   }
   if (
     relativePath === DESIGN_SYSTEM_PATHS.manifest ||
-    (0, isGeneratedSystemPath)(relativePath) ||
+    isGeneratedSystemPath(relativePath) ||
     RESERVED_MIGRATION_FILE_NAMES.includes(relativePath)
   ) {
     return false;
   }
   return (
-    (0, explainReservedSystemPath)(relativePath) === null &&
-    (0, explainGeneratedOrRetiredPath)(relativePath) === null
+    explainReservedSystemPath(relativePath) === null &&
+    explainGeneratedOrRetiredPath(relativePath) === null
   );
 }
 function isDerivedProjectPath(path: string) {
   let relativePath = relativeProjectFilePath(path);
   return (
     relativePath !== undefined &&
-    (0, isValidDesignSystemPath)(relativePath) &&
-    (0, normalizeDesignSystemPath)(relativePath) === relativePath &&
+    isValidDesignSystemPath(relativePath) &&
+    normalizeDesignSystemPath(relativePath) === relativePath &&
     (relativePath === DESIGN_SYSTEM_PATHS.manifest ||
-      (0, isGeneratedSystemPath)(relativePath))
+      isGeneratedSystemPath(relativePath))
   );
 }
 function validDerivedProjectFiles(files: Files.FileTable) {
@@ -638,7 +638,7 @@ function damagedDerivedProjectPaths(files: Files.FileTable) {
     .map(([input]: [string, string]) => input);
   if (
     Object.hasOwn(files, DESIGN_SYSTEM_PATHS.tokens) &&
-    (0, generatedTokensCssForFiles)(files) === null
+    generatedTokensCssForFiles(files) === null
   ) {
     damagedPaths.push(projectFilePath(GENERATED_TOKENS_CSS_PATH));
   }
@@ -656,10 +656,10 @@ function projectFilesForSave(files: Files.FileTable) {
     ) {
       projectFiles.set(projectFilePath(value), value2);
     } else if (
-      (0, isHeldFilePointer)(value, value2) &&
+      isHeldFilePointer(value, value2) &&
       isProjectContentPath(projectFilePath(value)) &&
       !hasDamagedUnicode(value) &&
-      (0, isPublishableFilePathModelFileTable)(projectFilePath(value))
+      isPublishableFilePathModelFileTable(projectFilePath(value))
     ) {
       projectFiles.set(projectFilePath(value), value2);
     }
@@ -668,16 +668,16 @@ function projectFilesForSave(files: Files.FileTable) {
 }
 function isUnsupportedBinaryFile(path: string, contents: string) {
   return (
-    !(0, isTextFilePath)(path) &&
+    !isTextFilePath(path) &&
     !hasDamagedUnicode(path) &&
-    (0, isPublishableFilePathModelFileTable)(projectFilePath(path)) &&
+    isPublishableFilePathModelFileTable(projectFilePath(path)) &&
     publishableFileMimeType(path, contents) === null &&
     decodeFileDataUrl(contents) !== null
   );
 }
 function isRepairableDamagedText(path: string, contents: string) {
   return (
-    (0, isTextFilePath)(path) &&
+    isTextFilePath(path) &&
     hasDamagedUnicode(contents) &&
     unpublishableFileReason(
       path,
@@ -694,9 +694,9 @@ function isRepairableDamagedText(path: string, contents: string) {
 function derivedProjectFiles(files: Files.FileTable) {
   let projectFiles: Map<string, string> = new Map(),
     tokensCss =
-      (0, generatedTokensCssForFiles)(files)?.replaceAll(
-        'url("' + (0, blobRelativeUrlModelFilePolicy)(""),
-        'url("../' + (0, blobRelativeUrlModelFilePolicy)(""),
+      generatedTokensCssForFiles(files)?.replaceAll(
+        'url("' + blobRelativeUrlModelFilePolicy(""),
+        'url("../' + blobRelativeUrlModelFilePolicy(""),
       ) ?? null;
   if (tokensCss !== null) {
     projectFiles.set(
@@ -704,7 +704,7 @@ function derivedProjectFiles(files: Files.FileTable) {
       tokensCss,
     );
   }
-  for (let [value, value2] of (0, consumptionDocumentationForFiles)(
+  for (let [value, value2] of consumptionDocumentationForFiles(
     files,
     PROJECT_FILE_PREFIXEditorFilesIndex,
   ).files) {
@@ -752,7 +752,7 @@ function assetPathGroup(path: string) {
     return null;
   }
   let group = relativePath.slice(0, separator);
-  if ((0, isAssetGroupName)(group)) {
+  if (isAssetGroupName(group)) {
     return {
       group: group,
       rel: relativePath.slice(separator + 1),
@@ -788,13 +788,13 @@ function buildFilesIndex(
   files: Files.FileTable,
   previousIndex: Files.FilesIndex = createEmptyFilesIndex(),
 ) {
-  let manifest: StoredIndexMetadata = (0, makeStoredSystemMetadata)(
+  let manifest: StoredIndexMetadata = makeStoredSystemMetadata(
       title,
       files,
     ) as unknown as StoredIndexMetadata,
-    storage = (0, reconcileStorageCatalog)(
+    storage = reconcileStorageCatalog(
       files,
-      (0, storageCatalogFromManifest)(
+      storageCatalogFromManifest(
         files[DESIGN_SYSTEM_PATHS.manifest] ?? "",
       ),
     ),
@@ -824,7 +824,7 @@ function buildFilesIndex(
     }
     if (
       value.tile !== undefined &&
-      (0, isAssetTileSize)(value.tile)
+      isAssetTileSize(value.tile)
     ) {
       value2.tile = value.tile as Files.AssetTileSize;
     }
@@ -865,7 +865,7 @@ function buildFilesIndex(
   let docs = Object.keys(files)
       .filter(
         (input) =>
-          (0, isAdditionalMarkdownPath)(input) &&
+          isAdditionalMarkdownPath(input) &&
           classifyFileStorage(input, files[input]).to === "file" &&
           isProjectContentPath(projectFilePath(input)) &&
           unpublishableFileReason(input, files[input]) === null,
@@ -913,7 +913,7 @@ function publishableProjectFiles(files: Files.FileTable) {
       continue;
     }
     if (
-      !(0, isTextFilePath)(value) &&
+      !isTextFilePath(value) &&
       decodeFileDataUrl(value2) === null
     ) {
       continue;
@@ -957,7 +957,7 @@ function filesLeftOutOfMigration(files: Files.FileTable) {
     }
     let value4 =
       unpublishableFileReason(value, value2) ??
-      (!(0, isTextFilePath)(value) &&
+      (!isTextFilePath(value) &&
       decodeFileDataUrl(value2) === null
         ? uiMessage("design-system.filesIndex.itsContentsCouldNotBe")
         : null);
@@ -1016,16 +1016,16 @@ function restoreFilesFromIndex(
   let storageRecords: Record<string, Files.StorageRecord> = {},
     appendBlobFile = (input: string, options: Files.StorageRecord): void => {
       if (
-        !(0, isValidDesignSystemPath)(input) ||
+        !isValidDesignSystemPath(input) ||
         Object.hasOwn(files, input)
       ) {
         return;
       }
       if (options.type === "") {
-        options.type = (0, mimeTypeForPath)(input);
+        options.type = mimeTypeForPath(input);
       }
-      let value = (0, blobPointer)(options.id!);
-      if ((0, storagePointerForFile)(input, value) === null) {
+      let value = blobPointer(options.id!);
+      if (storagePointerForFile(input, value) === null) {
         return;
       }
       files[input] = value;
@@ -1055,7 +1055,7 @@ function restoreFilesFromIndex(
       typeof value2.name === "string"
         ? value2.name
         : decodeFileIndexKey(value);
-    if (!(0, isAssetGroupName)(value3)) {
+    if (!isAssetGroupName(value3)) {
       continue;
     }
     let value4 = Array.isArray(value2.order)
@@ -1063,7 +1063,7 @@ function restoreFilesFromIndex(
       : [];
     assetGroups.push({
       name: value3,
-      ...((0, isAssetTileSize)(value2.tile)
+      ...(isAssetTileSize(value2.tile)
         ? {
             tile: value2.tile,
           }
@@ -1103,11 +1103,10 @@ function restoreFilesFromIndex(
     }
   }
   let title = typeof index.title === "string" ? index.title : "",
-    storage = (0, serializeStorageCatalog)({
+    storage = serializeStorageCatalog({
       files: storageRecords,
     });
-  files[DESIGN_SYSTEM_PATHS.manifest] = (0,
-  stringifyManifestWithinBudget)({
+  files[DESIGN_SYSTEM_PATHS.manifest] = stringifyManifestWithinBudget({
     manifestVersion: 3,
     name: title,
     namespace: typeof index.namespace === "string" ? index.namespace : null,
@@ -1128,10 +1127,9 @@ function restoreFilesFromIndex(
         }
       : {}),
   });
-  files[DESIGN_SYSTEM_PATHS.manifest] = (0,
-  stringifyManifestWithinBudget)(
-    (0, buildDesignSystemManifest)(
-      (0, parsedDesignSystem)({
+  files[DESIGN_SYSTEM_PATHS.manifest] = stringifyManifestWithinBudget(
+    buildDesignSystemManifest(
+      parsedDesignSystem({
         v: 2,
         files: {
           ...files,
@@ -1224,8 +1222,8 @@ export {
 };
 export function installEditorFilesIndex(): () => void {
   return () => {
-    reactFontFaces = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    reactFontFaces = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
     FILES_INDEX_PROJECT_PATH = "project/design-system.json";

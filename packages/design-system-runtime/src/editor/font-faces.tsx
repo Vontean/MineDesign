@@ -63,10 +63,10 @@ function resolvedFontDataUrl(font: Model.ParsedFont): string {
   if (font.src === "") {
     return "";
   }
-  if ((0, isDataUriUrl)(font.src)) {
+  if (isDataUriUrl(font.src)) {
     return font.src;
   } else {
-    return (0, cachedBlobDataUrl)(font.src) ?? "";
+    return cachedBlobDataUrl(font.src) ?? "";
   }
 }
 function useInlineFontFaces(
@@ -135,12 +135,12 @@ function useAddressedFontFaces(fonts: Model.ParsedFont[]): void {
             input.store === "file" &&
             input.src !== "" &&
             !["image", "video", "audio"].includes(
-              (0, assetKindForPath)(input.path),
+              assetKindForPath(input.path),
             ) &&
-            (0, mimeTypeForPath)(input.path) !== "application/pdf" &&
+            mimeTypeForPath(input.path) !== "application/pdf" &&
             !Object.hasOwn(
               HELD_BINARY_MIME_TYPES,
-              (0, fileExtension)(input.path),
+              fileExtension(input.path),
             ),
         )
         .map((input) => [
@@ -153,7 +153,7 @@ function useAddressedFontFaces(fonts: Model.ParsedFont[]): void {
             input.style,
           {
             path: input.path,
-            of: (0, resolveFileVersion)(input.path) ?? "",
+            of: resolveFileVersion(input.path) ?? "",
             at: fontFileUrl(input),
             weight: input.weight,
             style: input.style,
@@ -164,7 +164,7 @@ function useAddressedFontFaces(fonts: Model.ParsedFont[]): void {
   ref2.current = entries;
   let value3: boolean = entries.size > 0;
   (reactFontFaces as typeof React).useEffect(
-    () => (value3 ? (0, subscribeAddressedFiles)(value2) : undefined),
+    () => (value3 ? subscribeAddressedFiles(value2) : undefined),
     [value3],
   );
   let value4 = [...entries]
@@ -272,7 +272,7 @@ export function installEditorFontFaces(): () => void {
     fontFileUrl = (font: Model.ParsedFont) => {
       try {
         return new URL(
-          (0, addressedProjectFileUrl)(font.path) ?? font.src,
+          addressedProjectFileUrl(font.path) ?? font.src,
           document.baseURI,
         ).href;
       } catch {

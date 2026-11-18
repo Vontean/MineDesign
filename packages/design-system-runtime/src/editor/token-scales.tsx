@@ -51,10 +51,10 @@ function PlainTokenValueEditor({
   testid: testid,
 }: Token.PlainTokenValueEditorProps): React.ReactElement {
   useUiLocale();
-  let value = (0, useTextCommit)({
+  let value = useTextCommit({
     value: t.value,
     validate: (input: string) =>
-      (0, normalizeScalarTokenValue)("extra", input) === undefined
+      normalizeScalarTokenValue("extra", input) === undefined
         ? TOKEN_SCALE_VALIDATION_MESSAGES.extra
         : null,
     commit: (input: string): void => {
@@ -90,7 +90,7 @@ function LengthTokenValueEditor({
   testid: testid,
 }: Token.LengthTokenValueEditorProps): React.ReactElement {
   useUiLocale();
-  let value = (0, parseEditableCssLength)(t.value) ?? {
+  let value = parseEditableCssLength(t.value) ?? {
       n: 0,
       unit: "px",
     },
@@ -102,7 +102,7 @@ function LengthTokenValueEditor({
       }
       let value2 = callback(input);
       if (
-        (0, normalizeScalarTokenValue)(kind, value2) !== undefined
+        normalizeScalarTokenValue(kind, value2) !== undefined
       ) {
         edit.value(t.name, value2);
         edit.done();
@@ -121,13 +121,13 @@ function LengthTokenValueEditor({
         value={value.n}
         min={0}
         max={MAX_EDITABLE_CSS_LENGTH}
-        step={(0, cssLengthInputStep)(value.unit)}
+        step={cssLengthInputStep(value.unit)}
         steppers={false}
         onValue={callback2}
         onScrub={(input: number): void => {
           let value2 = callback(input);
           if (
-            (0, normalizeScalarTokenValue)(kind, value2) !== undefined
+            normalizeScalarTokenValue(kind, value2) !== undefined
           ) {
             edit.value(t.name, value2);
           }
@@ -146,7 +146,7 @@ function TokenScaleRow({
 }: Token.TokenScaleRowProps): React.ReactElement {
   useUiLocale();
   let value = TOKEN_SCALE_SECTION_IDS[kind],
-    value2 = (0, useRowContextMenu)(
+    value2 = useRowContextMenu(
       edit !== undefined || t.value !== "",
     ),
     callback = () =>
@@ -161,7 +161,7 @@ function TokenScaleRow({
       className={"ds-brow ds-tokrow ds-crow group/row"}
       role={"row"}
       data-testid={"ds-" + value + "-" + t.name}
-      {...(0, commentTargetProps)("token", t.name)}
+      {...commentTargetProps("token", t.name)}
       {...value2.rowProps}
     >
       {[<span
@@ -286,7 +286,7 @@ function groupedTokenScale(
   if (!GROUPABLE_TOKEN_SCALE_KINDS.has(kind)) {
     return null;
   }
-  let groups = (0, groupTokensByName)(tokens);
+  let groups = groupTokensByName(tokens);
   if (groups.length > 1) {
     return groups;
   } else {
@@ -392,8 +392,8 @@ export {
 };
 export function installEditorTokenScales(): () => void {
   return () => {
-    jsxTokenScales = (0, toModuleNamespace)(
-      (0, loadJsxNamespace)(),
+    jsxTokenScales = toModuleNamespace(
+      loadJsxNamespace(),
       1,
     );
     TOKEN_SCALE_CSS_LENGTH_PATTERN = /^(\d{1,4}(?:\.\d{1,6})?)(px|rem|em|%)$/;

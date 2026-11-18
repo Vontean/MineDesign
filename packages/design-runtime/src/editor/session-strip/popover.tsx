@@ -98,7 +98,7 @@ function SessionStripPopover(input?: Dynamic): Dynamic {
       input.readout === undefined ? input.pressed : undefined,
     value30: Dynamic = input.readout === undefined && input.emphasis === true,
     value31: Dynamic = input.iconOnly === true || (value14 && !value30),
-    value32: Dynamic = (0, useDisabledToolbarItem)({
+    value32: Dynamic = useDisabledToolbarItem({
       disabled: value13,
       name: value28,
       reason: value7 ?? value2,
@@ -106,14 +106,14 @@ function SessionStripPopover(input?: Dynamic): Dynamic {
       expanded: false,
       hasPopup: "menu",
     });
-  (0, useToolbarPress)(value15, value13);
-  let content: Dynamic = (0, toolbarItemTooltip)({
+  useToolbarPress(value15, value13);
+  let content: Dynamic = toolbarItemTooltip({
       label: value,
       tip: value2,
       disabledTip: value7,
       disabled: value13,
     }).content,
-    value33: Dynamic = (0, useToolbarItemAccessibility)({
+    value33: Dynamic = useToolbarItemAccessibility({
       disabled: value13,
       name: value28,
       tip: content,
@@ -181,7 +181,7 @@ function SessionStripPopover(input?: Dynamic): Dynamic {
           }
         />
       ),
-    value35: Dynamic = (0, joinClassNames)(
+    value35: Dynamic = joinClassNames(
       "relative inline-flex shrink-0 rounded align-top outline-none focus-visible:outline-hidden focus-visible:shadow-focus",
       value9,
     );
@@ -278,17 +278,17 @@ export {
 };
 export function installEditorSessionStripPopover(): () => void {
   return () => {
-    jsxSessionStripPopover = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    jsxSessionStripPopover = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
-    reactSessionStripPopover = (0, toModuleNamespace)(
-      (0, load_react)(),
+    reactSessionStripPopover = toModuleNamespace(
+      load_react(),
       1,
     );
-    (0, initializeCdsIndex)();
-    jsxSessionStripPopover_2 = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    initializeCdsIndex();
+    jsxSessionStripPopover_2 = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
   };

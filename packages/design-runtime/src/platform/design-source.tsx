@@ -74,8 +74,8 @@ export {
 };
 export function installPlatformDesignSource(): () => void {
   return () => {
-    reactPlatformDesignSource = (0, toModuleNamespace)(
-      (0, load_react)(),
+    reactPlatformDesignSource = toModuleNamespace(
+      load_react(),
       1,
     );
     // MineDesign: no host frame is trusted by default; a page that needs one declares origins in __FRAME_PREAMBLE.

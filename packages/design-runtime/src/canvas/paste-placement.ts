@@ -214,7 +214,7 @@ function safeDroppedImageAltText(
   name?: Dynamic,
   fallback?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = (0, PlatformFileContentSlice)(name);
+  let value: Dynamic = PlatformFileContentSlice(name);
   return value === undefined ||
     /[{}<]/.test(value) ||
     hasMalformedUnicode(value) ||
@@ -224,12 +224,12 @@ function safeDroppedImageAltText(
 }
 function droppedImageMarkup(image?: Dynamic): Dynamic {
   let value: Dynamic = `position: absolute; left: ${String(image.left)}px; top: ${String(image.top)}px; width: ${String(image.w)}px; height: auto`;
-  return `<img src="${(0, escapeHtmlAttributeValue)(image.src)}" alt="${(0, escapeHtmlAttributeValue)(image.alt)}" data-dc-drop="${image.mark}" width="${String(image.natural.width)}" height="${String(image.natural.height)}" style="${value}">`;
+  return `<img src="${escapeHtmlAttributeValue(image.src)}" alt="${escapeHtmlAttributeValue(image.alt)}" data-dc-drop="${image.mark}" width="${String(image.natural.width)}" height="${String(image.natural.height)}" style="${value}">`;
 }
 function droppedImageLabel(file?: Dynamic, origin?: Dynamic): Dynamic {
   let value: Dynamic = file.name.replace(/\.[^.]*$/, "").trim();
   return value && value.toLowerCase() !== "image"
-    ? (0, truncateUtf16Safely)(value, 60)
+    ? truncateUtf16Safely(value, 60)
     : origin === "pasted"
       ? uiMessage("canvas.pastePlacement.pastedImage")
       : uiMessage("canvas.pastePlacement.droppedImage");

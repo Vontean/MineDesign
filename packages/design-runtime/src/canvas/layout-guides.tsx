@@ -15,8 +15,8 @@ var jsx_MN: Dynamic;
 var ArtboardLayoutGuides: Dynamic;
 function SquareGridGuide({ size: size, color: color }: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic = (0, useViewportStore)(),
-    value2: Dynamic = (0, sanitizeCssColor)(color),
+  let value: Dynamic = useViewportStore(),
+    value2: Dynamic = sanitizeCssColor(color),
     callback: Dynamic = (input?: Dynamic): Dynamic =>
       `linear-gradient(${input}, ${value2} calc(1px / var(--mega-scale, 1)), transparent calc(1px / var(--mega-scale, 1)))`;
   return (
@@ -34,7 +34,7 @@ function SquareGridGuide({ size: size, color: color }: Dynamic): Dynamic {
 function RowColumnLayoutGuide({ r: r8 }: Dynamic): Dynamic {
   useUiLocale();
   let value: Dynamic = r8.kind === "columns",
-    value2: Dynamic = (0, sanitizeCssColor)(r8.color),
+    value2: Dynamic = sanitizeCssColor(r8.color),
     value3: Dynamic = value ? uiMessage("canvas.layoutGuides.toRight") : uiMessage("canvas.layoutGuides.toBottom");
   if (r8.align === "stretch") {
     let value7: Dynamic = `calc((100% + ${r8.gutter}px) / ${r8.count})`;
@@ -105,9 +105,9 @@ export {
 };
 export function installCanvasLayoutGuides(): () => void {
   return () => {
-    react__kt = (0, toModuleNamespace)((0, load_react)(), 1);
-    jsx_MN = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    react__kt = toModuleNamespace(load_react(), 1);
+    jsx_MN = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
     ArtboardLayoutGuides = (0, react__kt.memo)(function ({
@@ -124,7 +124,7 @@ export function installCanvasLayoutGuides(): () => void {
         >
           {guides.map((input?: Dynamic, options?: Dynamic): Dynamic => {
             if (input.hidden === true) return null;
-            let value: Dynamic = (0, resolveArtboardGuide)(input, {
+            let value: Dynamic = resolveArtboardGuide(input, {
               w: w,
               h: h,
             });

@@ -15,7 +15,7 @@ function installPreviewMessageListener(): Dynamic {
     (window as Dynamic).addEventListener(
       "message",
       (input?: Dynamic): Dynamic => {
-        if (input.origin !== (0, currentHttpOrigin)()) return;
+        if (input.origin !== currentHttpOrigin()) return;
         let data: Dynamic = input.data;
         data == null ||
           typeof data != "object" ||
@@ -29,7 +29,7 @@ function createPreviewHandle(input?: Dynamic): Dynamic {
   if (!input) return null;
   let value: Dynamic = input;
   function value2(input2?: Dynamic, options: Dynamic = 1e4): Dynamic {
-    let value4: Dynamic = (0, getPreviewGenerationGate)(value);
+    let value4: Dynamic = getPreviewGenerationGate(value);
     return value4.blocked != null
       ? Promise.reject(new Error("preview is blocked: " + value4.blocked))
       : new Promise((input3?: Dynamic, options2?: Dynamic): Dynamic => {
@@ -44,7 +44,7 @@ function createPreviewHandle(input?: Dynamic): Dynamic {
               );
             }, options),
             callback: Dynamic = (input4?: Dynamic): Dynamic => {
-              if (!(0, isPreviewMessage)(input4, value)) return;
+              if (!isPreviewMessage(input4, value)) return;
               let data: Dynamic = input4.data;
               callback2();
               if (data.ok) {
@@ -55,7 +55,7 @@ function createPreviewHandle(input?: Dynamic): Dynamic {
                   } catch (value7: Dynamic) {
                     options2(
                       new Error(
-                        `eval returned unparseable JSON: ${(0, errorMessage)(value7)}`,
+                        `eval returned unparseable JSON: ${errorMessage(value7)}`,
                       ),
                     );
                   }
@@ -140,7 +140,7 @@ function createPreviewHandle(input?: Dynamic): Dynamic {
       try {
         await Promise.race([
           value3(
-            (0, buildSettlementScript)(value4),
+            buildSettlementScript(value4),
             value4.capMs + 1e3,
           ).then(
             (): Dynamic => {},
@@ -156,7 +156,7 @@ function createPreviewHandle(input?: Dynamic): Dynamic {
       if (input2 === "dom-ready") value.addEventListener("load", options);
       else if (input2 === "console-message") {
         let callback: Dynamic = (input3?: Dynamic): Dynamic => {
-          if (!(0, isPreviewMessage)(input3, value)) return;
+          if (!isPreviewMessage(input3, value)) return;
           let data: Dynamic = input3.data;
           data?.__omelette_log &&
             data.type === "log" &&

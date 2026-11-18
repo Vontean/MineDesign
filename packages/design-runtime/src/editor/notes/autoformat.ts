@@ -139,7 +139,7 @@ function installNoteInputRules(
 ): Dynamic {
   let callback: Dynamic = (event?: Dynamic): Dynamic => {
     if (
-      (0, NotesFormattingHandler)() ||
+      NotesFormattingHandler() ||
       typeof event.inputType != "string"
     )
       return;
@@ -154,7 +154,7 @@ function installNoteInputRules(
     value &&
       (event.inputType === "formatBold" ||
         event.inputType === "formatItalic") &&
-      (0, toggleNoteFormatting)(
+      toggleNoteFormatting(
         event.inputType === "formatBold" ? "bold" : "italic",
         value,
       );
@@ -177,7 +177,7 @@ function handleNoteFormattingShortcut(
   let value: Dynamic = event.key.toLowerCase();
   options &&
     value !== "u" &&
-    (0, toggleNoteFormatting)(
+    toggleNoteFormatting(
       value === "b" ? "bold" : "italic",
       options,
     );

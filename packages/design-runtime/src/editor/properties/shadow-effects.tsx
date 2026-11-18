@@ -14,7 +14,7 @@ import { toModuleNamespace } from "../../module-helpers";
 var PropertiesShadowEffectsFromEntriesValue: Dynamic;
 var reactPropertiesShadowEffects: Dynamic;
 function canonicalStyleColor(input?: Dynamic): Dynamic {
-  let value: Dynamic = (0, validateStyleColor)(input);
+  let value: Dynamic = validateStyleColor(input);
   return typeof value == "string"
     ? value
     : value === true
@@ -88,15 +88,15 @@ function useEffectPopover(
 }
 function shadowEditorValue(input?: Dynamic, options?: Dynamic): Dynamic {
   return {
-    x: (0, asFiniteStyleNumber)(input.x) ?? 0,
-    y: (0, asFiniteStyleNumber)(input.y) ?? 0,
-    blur: (0, asFiniteStyleNumber)(input.blur) ?? 0,
+    x: asFiniteStyleNumber(input.x) ?? 0,
+    y: asFiniteStyleNumber(input.y) ?? 0,
+    blur: asFiniteStyleNumber(input.blur) ?? 0,
     ...(options
       ? {
-          spread: (0, asFiniteStyleNumber)(input.spread) ?? 0,
+          spread: asFiniteStyleNumber(input.spread) ?? 0,
         }
       : {}),
-    color: (0, asStyleString)(input.color) ?? "#000000",
+    color: asStyleString(input.color) ?? "#000000",
   };
 }
 function normalizeShadowEditorValue(
@@ -107,13 +107,13 @@ function normalizeShadowEditorValue(
 ): Dynamic {
   let [value2, value3, value4]: Dynamic = PropertiesStyleBagItems,
     state: Dynamic = {
-      x: (0, clampStyleRangeField)(value2, input.x),
-      y: (0, clampStyleRangeField)(value3, input.y),
-      blur: (0, clampStyleRangeField)(value ?? value4, input.blur),
+      x: clampStyleRangeField(value2, input.x),
+      y: clampStyleRangeField(value3, input.y),
+      blur: clampStyleRangeField(value ?? value4, input.blur),
       color: canonicalStyleColor(input.color) ?? options?.color ?? "#000000",
     };
   context &&
-    (state.spread = (0, clampStyleRangeField)(
+    (state.spread = clampStyleRangeField(
       styleRangeFieldValue,
       input.spread ?? 0,
     ));
@@ -139,12 +139,12 @@ function ShadowEffectRow({
       anchor: value7,
     }: Dynamic = useEffectPopover(propKey, ed2, index),
     value8: Dynamic = propKey === "boxShadow",
-    value9: Dynamic = label ?? (0, shadowEffectLabel)(propKey, rec),
+    value9: Dynamic = label ?? shadowEffectLabel(propKey, rec),
     value10: Dynamic =
       rec !== undefined ? shadowEditorValue(rec, value8) : undefined,
-    value11: Dynamic = (0, styleRangeField)(
-      (0, shadowFieldBounds)(
-        (0, propertyValidatorForNode)(propKey, ed2.kind),
+    value11: Dynamic = styleRangeField(
+      shadowFieldBounds(
+        propertyValidatorForNode(propKey, ed2.kind),
       ),
       "blur",
       "Blur",
@@ -211,7 +211,7 @@ function ShadowEffectRow({
                 rec === undefined &&
                   ed2.commit(
                     propKey,
-                    (0, propertyDefaultEditorValue)(
+                    propertyDefaultEditorValue(
                       propKey,
                       ed2.kind,
                     ),
@@ -279,7 +279,7 @@ function BlurEffectRow({
   return (
     <PropertyNumberRow
       label={label}
-      value={(0, asFiniteStyleNumber)(rec[value.field])}
+      value={asFiniteStyleNumber(rec[value.field])}
       placeholder={"0"}
       min={value.min}
       max={value.max}
@@ -290,7 +290,7 @@ function BlurEffectRow({
         input !== undefined &&
         ed2.commit(
           propKey,
-          callback((0, clampStyleRangeField)(value, input)),
+          callback(clampStyleRangeField(value, input)),
         )
       }
       {...(live && ed2.liveEnd
@@ -298,7 +298,7 @@ function BlurEffectRow({
             onScrub: (input?: Dynamic): Dynamic =>
               live(
                 propKey,
-                callback((0, clampStyleRangeField)(value, input)),
+                callback(clampStyleRangeField(value, input)),
               ),
             onScrubEnd: ed2.liveEnd,
           }
@@ -338,8 +338,8 @@ export function installEditorPropertiesShadowEffects(): () => void {
         ],
       ),
     );
-    reactPropertiesShadowEffects = (0, toModuleNamespace)(
-      (0, load_react)(),
+    reactPropertiesShadowEffects = toModuleNamespace(
+      load_react(),
       1,
     );
   };

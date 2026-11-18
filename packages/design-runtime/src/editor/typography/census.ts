@@ -18,7 +18,7 @@ var TypographyCensusPattern_2: Dynamic;
 var TypographyCensusPattern_3: Dynamic;
 var TypographyCensusRgbaPattern: Dynamic;
 function hasAuthoredAppearance(input?: Dynamic): Dynamic {
-  return (0, parseStyleDeclarations)(input).some(
+  return parseStyleDeclarations(input).some(
     (input2?: Dynamic): Dynamic =>
       TypographyCensusSubscribers.has(input2.prop),
   );
@@ -61,7 +61,7 @@ function selectedSvgElements(input?: Dynamic, options?: Dynamic): Dynamic {
         if (!value || !svgShapeTags.has(value.tagName.toLowerCase()))
           return input2;
         let ancestor: Dynamic = value.closest("svg");
-        if (!ancestor || !(0, findSvgShaft)(ancestor, callback))
+        if (!ancestor || !findSvgShaft(ancestor, callback))
           return input2;
         let value2: Dynamic = parseInt(
           ancestor.getAttribute("data-dc-tpl") ?? "-1",

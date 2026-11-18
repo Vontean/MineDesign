@@ -31,7 +31,7 @@ export function commitFinishedTextEdit(deps: { readonly dcPropsRef: Dynamic; rea
           deps.onTextEditEndedRef.current?.());
         let callback7: Dynamic = (input2?: Dynamic): Dynamic =>
           input.restarted === true
-            ? (0, selectionReadyAnnouncement)(input2)
+            ? selectionReadyAnnouncement(input2)
             : input2;
         if (
           deps.readOnlyRef.current ||
@@ -43,10 +43,10 @@ export function commitFinishedTextEdit(deps: { readonly dcPropsRef: Dynamic; rea
         let value307: Dynamic = deps.modelRef.current.state(deps.rootName);
         if (!value307) return;
         let value308: Dynamic = input.importTarget
-            ? (0, collectTemplateTextValues)(
-                (0, tokenizeScriptLiterals)(
+            ? collectTemplateTextValues(
+                tokenizeScriptLiterals(
                   value307.pendingScript ??
-                    (0, parseDcHtmlDocument)(value307.src)?.js ??
+                    parseDcHtmlDocument(value307.src)?.js ??
                     "",
                 ),
                 deps.dcPropsRef.current,
@@ -55,14 +55,13 @@ export function commitFinishedTextEdit(deps: { readonly dcPropsRef: Dynamic; rea
           { importTarget: value309, text: value310 }: Dynamic = input,
           value311: Dynamic = deps.value38.owes(),
           value312: Dynamic = deps.value38.newBox() === input.tid,
-          { into: value313, tid: value314 }: Dynamic = (0,
-          relocateTextEditTarget)(
+          { into: value313, tid: value314 }: Dynamic = relocateTextEditTarget(
             deps.value38.shown(),
             value307.model,
             input.tid,
             value308
               ? (input2?: Dynamic, options?: Dynamic): Dynamic =>
-                  (0, normalizeComponentTextEdit)(
+                  normalizeComponentTextEdit(
                     value309,
                     value310,
                     input2.importTextTargets(options, value308),
@@ -97,7 +96,7 @@ export function commitFinishedTextEdit(deps: { readonly dcPropsRef: Dynamic; rea
               value324 &&
               setTimeout((): Dynamic => {
                 (!value311 || deps.value53(value323.name, value323.tids)) &&
-                  (0, setPickerSelection)(
+                  setPickerSelection(
                     value324,
                     value323.tids,
                     value323.name,
@@ -110,7 +109,7 @@ export function commitFinishedTextEdit(deps: { readonly dcPropsRef: Dynamic; rea
             value323 && deps.value105(deps.rootName, [...value323.tids]);
           };
         if (value308) {
-          let value323: Dynamic = (0, normalizeComponentTextEdit)(
+          let value323: Dynamic = normalizeComponentTextEdit(
             input.importTarget,
             input.text,
             value313.importTextTargets(input.tid, value308),
@@ -145,7 +144,7 @@ export function commitFinishedTextEdit(deps: { readonly dcPropsRef: Dynamic; rea
             now: true,
           });
           deps.incrementSessionEpoch();
-          (0, announce)(
+          announce(
             callback7(AccessibilityAnnouncementsLabel_17),
           );
           let value326: Dynamic = callback9(),
@@ -154,7 +153,7 @@ export function commitFinishedTextEdit(deps: { readonly dcPropsRef: Dynamic; rea
             value327 &&
             setTimeout((): Dynamic => {
               deps.value53(value326.name, value326.tids) &&
-                (0, setPickerSelection)(
+                setPickerSelection(
                   value327,
                   value326.tids,
                   value326.name,
@@ -172,7 +171,7 @@ export function commitFinishedTextEdit(deps: { readonly dcPropsRef: Dynamic; rea
           return;
         if (input.propTarget) {
           let current: Dynamic = deps.dcPropsRef.current,
-            value323: Dynamic = (0, normalizeComponentPropEdit)(
+            value323: Dynamic = normalizeComponentPropEdit(
               input.propTarget,
               input.text,
               current.propsMeta,
@@ -207,7 +206,7 @@ export function commitFinishedTextEdit(deps: { readonly dcPropsRef: Dynamic; rea
                 });
           current.setProp(value324, value325);
           value307.pendingPropsBase ??=
-            (0, getDcPropsJson)(value307.src) ?? "";
+            getDcPropsJson(value307.src) ?? "";
           deps.value103(deps.rootName, `textedit-prop-${input.tid}`, value307, {
             kind: "prop",
             prop: value324,
@@ -229,7 +228,7 @@ export function commitFinishedTextEdit(deps: { readonly dcPropsRef: Dynamic; rea
           deps.markModelDirty(deps.rootName, {
             now: true,
           });
-          (0, announce)(
+          announce(
             callback7(AccessibilityAnnouncementsLabel_17),
           );
           return;
@@ -243,9 +242,9 @@ export function commitFinishedTextEdit(deps: { readonly dcPropsRef: Dynamic; rea
             }: Dynamic = input.scriptTarget,
             value323: Dynamic =
               value307.pendingScript ??
-              (0, parseDcHtmlDocument)(value307.src)?.js ??
+              parseDcHtmlDocument(value307.src)?.js ??
               "",
-            value324: Dynamic = (0, tokenizeScriptLiterals)(
+            value324: Dynamic = tokenizeScriptLiterals(
               value323,
             ).find(
               (input2?: Dynamic): Dynamic =>
@@ -266,11 +265,11 @@ export function commitFinishedTextEdit(deps: { readonly dcPropsRef: Dynamic; rea
           if (value325 === value324.value) return;
           let value326: Dynamic =
             value323.slice(0, scriptTarget) +
-            (0, quoteScriptString)(value325, scriptTarget3) +
+            quoteScriptString(value325, scriptTarget3) +
             value323.slice(scriptTarget2);
           if (value326 === value323) return;
           value307.pendingScriptBase ??=
-            (0, parseDcHtmlDocument)(value307.src)?.js ?? "";
+            parseDcHtmlDocument(value307.src)?.js ?? "";
           deps.value103(deps.rootName, `textedit-script-${input.tid}`, value307, {
             kind: "script",
             before: value307.pendingScript,
@@ -279,7 +278,7 @@ export function commitFinishedTextEdit(deps: { readonly dcPropsRef: Dynamic; rea
           });
           value307.pendingScript = value326;
           deps.value66.current = deps.rootName;
-          (0, emitEditorEvent)("dc-update", {
+          emitEditorEvent("dc-update", {
             name: deps.rootName,
             path: value307.path,
             kind: "js",
@@ -291,7 +290,7 @@ export function commitFinishedTextEdit(deps: { readonly dcPropsRef: Dynamic; rea
             now: true,
           });
           deps.incrementSessionEpoch();
-          (0, announce)(
+          announce(
             callback7(AccessibilityAnnouncementsLabel_17),
           );
           return;
@@ -299,7 +298,7 @@ export function commitFinishedTextEdit(deps: { readonly dcPropsRef: Dynamic; rea
         let value315: Dynamic = value313.text(input.tid),
           value316: Dynamic = input.html ?? "",
           value317: Dynamic = value316.includes("<")
-            ? (0, sanitizePastedHtml)(value316)
+            ? sanitizePastedHtml(value316)
             : value316,
           value318: Dynamic = input.text ?? "",
           value319: Dynamic =
@@ -307,7 +306,7 @@ export function commitFinishedTextEdit(deps: { readonly dcPropsRef: Dynamic; rea
             !/<(img|svg|video|iframe)/i.test(value317);
         if (value319 && (value313 !== value307.model || value312)) return;
         let value320: Dynamic =
-          (0, placeholderTextElement)(
+          placeholderTextElement(
             value307.model,
             deps.value107.current,
           ) === input.tid;
@@ -323,11 +322,11 @@ export function commitFinishedTextEdit(deps: { readonly dcPropsRef: Dynamic; rea
             now: true,
           });
           let value323: Dynamic = deps.value67();
-          value323 && (0, setPickerSelection)(value323, null, null);
+          value323 && setPickerSelection(value323, null, null);
           deps.value50.current++;
           deps.value3(null);
           deps.incrementSessionEpoch();
-          (0, announce)(
+          announce(
             callback7(AccessibilityAnnouncementsLabel_23),
           );
           return;
@@ -357,7 +356,7 @@ export function commitFinishedTextEdit(deps: { readonly dcPropsRef: Dynamic; rea
               input.restarted !== true &&
               ((deps.value54.current = true),
               value322 == null &&
-                (0, isOtherSelection)(
+                isOtherSelection(
                   deps.value52(),
                   deps.rootName,
                   input.tid,
@@ -370,7 +369,7 @@ export function commitFinishedTextEdit(deps: { readonly dcPropsRef: Dynamic; rea
           now: true,
         });
         deps.incrementSessionEpoch();
-        (0, announce)(
+        announce(
           callback7(AccessibilityAnnouncementsLabel_17),
         );
         if (value322 != null) {
@@ -379,7 +378,7 @@ export function commitFinishedTextEdit(deps: { readonly dcPropsRef: Dynamic; rea
           value324 &&
             setTimeout((): Dynamic => {
               (!value311 || deps.value53(deps.rootName, [value323])) &&
-                (0, setPickerSelection)(
+                setPickerSelection(
                   value324,
                   [value323],
                   deps.rootName,
@@ -398,7 +397,7 @@ export async function commitLinkEditResult(deps: { readonly incrementSessionEpoc
         value307?: Dynamic): Promise<Dynamic> {
         if ((options || deps.rootName) !== deps.rootName) {
           let value313: Dynamic = deps.value67();
-          value313 && (0, cancelPickerLinkEdit)(value313);
+          value313 && cancelPickerLinkEdit(value313);
           return;
         }
         let value308: Dynamic = deps.value67(),
@@ -410,7 +409,7 @@ export async function commitLinkEditResult(deps: { readonly incrementSessionEpoc
             let value313: Dynamic = deps.modelRef.current.state(deps.rootName)?.model;
             value313 &&
               value307 === "frame" &&
-              (value309 = (0, relocateSelectedTextElement)(
+              (value309 = relocateSelectedTextElement(
                 deps.value38.shown() ?? value310,
                 value313,
                 input,
@@ -462,13 +461,13 @@ export async function commitLinkEditResult(deps: { readonly incrementSessionEpoc
           value315.length > 0
             ? deps.value105(deps.rootName, value315)
             : (value308 &&
-                (0, setPickerSelection)(value308, null, null),
+                setPickerSelection(value308, null, null),
               deps.value50.current++,
               deps.value3(null));
           deps.value8(`${value311.path}: removed link (kept content)`);
           return;
         }
-        let value312: Dynamic = (0, validateAttributeEdit)(
+        let value312: Dynamic = validateAttributeEdit(
           "@href",
           context,
           [value311.model.tagName(input)],
@@ -487,7 +486,7 @@ export async function commitLinkEditResult(deps: { readonly incrementSessionEpoc
         value308 &&
           setTimeout(
             (): Dynamic =>
-              (0, setPickerSelection)(value308, [input], deps.rootName),
+              setPickerSelection(value308, [input], deps.rootName),
             120,
           );
         deps.value8(`${value311.path}: set link destination ${value312.value}`);

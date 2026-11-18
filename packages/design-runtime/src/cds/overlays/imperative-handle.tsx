@@ -26,11 +26,11 @@ export {
 };
 export function installCdsOverlaysImperativeHandle(): () => void {
   return () => {
-    initializeOverlaysImperativeHandle = (0, initializeOnce)(() => {
+    initializeOverlaysImperativeHandle = initializeOnce(() => {
       "use client";
 
-      reactOverlaysImperativeHandle = (0, toModuleNamespace)(
-        (0, load_react)(),
+      reactOverlaysImperativeHandle = toModuleNamespace(
+        load_react(),
       );
     });
   };

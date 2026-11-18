@@ -27,7 +27,7 @@ function CommentPointer({
     <svg
       aria-hidden={true}
       data-testid={dataTestid}
-      className={(0, joinClassNames)(
+      className={joinClassNames(
         "pointer-events-none absolute",
         className,
       )}
@@ -79,8 +79,8 @@ export function installCommentsPointer(): () => void {
         "%" + input.charCodeAt(0).toString(16).toUpperCase(),
     );
     commentPointerCursor = `url("data:image/svg+xml,${commentPointerCursorUrl}") ${commentPointerTip.x} ${commentPointerTip.y}, crosshair`;
-    jsx_r1e = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    jsx_r1e = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
     subtractCssPixels = (input?: Dynamic, options?: Dynamic): Dynamic =>

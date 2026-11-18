@@ -35,11 +35,11 @@ function componentRuntimeDependencies(
   );
   if (
     value2.length === 0 ||
-    (0, getProjectFileDependencies)(value.content, value2).length ===
+    getProjectFileDependencies(value.content, value2).length ===
       0
   )
     return {};
-  let value3: Dynamic = (0, resolveComponentFile)(input, {
+  let value3: Dynamic = resolveComponentFile(input, {
       ...value,
       kind: "html",
     }),
@@ -52,12 +52,12 @@ function componentRuntimeDependencies(
         : input,
     state: Dynamic = {};
   for (let [value5, value6] of Object.entries(
-    (0, collectProjectDependencyFiles)(value4, options),
+    collectProjectDependencyFiles(value4, options),
   ) as Dynamic)
     context.has(value5) ||
       imagePathPattern.test(value5) ||
       (state[value5] = value5.endsWith(".dc.html")
-        ? (0, rewritePreviewAssets)(
+        ? rewritePreviewAssets(
             value6,
             input,
             value5,
@@ -83,9 +83,9 @@ function replaceRuntimeScriptTags(
   options?: Dynamic,
   context?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = (0, maskHtmlRawContent)(input),
+  let value: Dynamic = maskHtmlRawContent(input),
     callback: Dynamic = (input2?: Dynamic): Dynamic => {
-      for (let [value4, value5] of (0, findHtmlTags)(
+      for (let [value4, value5] of findHtmlTags(
         value,
         "script",
       ) as Dynamic) {
@@ -95,7 +95,7 @@ function replaceRuntimeScriptTags(
         if (
           value6 !== null &&
           input2(
-            (0, getHtmlAttribute)(input.slice(value4, value5), "src"),
+            getHtmlAttribute(input.slice(value4, value5), "src"),
             value4,
           )
         )
@@ -112,7 +112,7 @@ function replaceRuntimeScriptTags(
         : undefined),
     value3: Dynamic = value2
       ? undefined
-      : (0, findHtmlTags)(value, "head")[0];
+      : findHtmlTags(value, "head")[0];
   return value2
     ? input.slice(0, value2[0]) + options + input.slice(value2[1])
     : value3
@@ -146,12 +146,12 @@ function buildPreviewDocument(
         ? {
             ...input,
           }
-        : (0, collectProjectDependencyFiles)(input, options),
+        : collectProjectDependencyFiles(input, options),
     value4: Dynamic = value ?? new Set();
   value4.clear();
   let state2: Dynamic = {},
     state3: Dynamic = {};
-  value3[options] = (0, rewritePreviewAssets)(
+  value3[options] = rewritePreviewAssets(
     value3[options],
     value3,
     options,
@@ -174,7 +174,7 @@ function buildPreviewDocument(
   for (let [value13, value14] of Object.entries(value3) as Dynamic)
     !value13.endsWith(".dc.html") ||
       value13 === options ||
-      (value3[value13] = (0, rewritePreviewAssets)(
+      (value3[value13] = rewritePreviewAssets(
         value14,
         value3,
         value13,
@@ -210,12 +210,12 @@ function buildPreviewDocument(
         : (state4[value13] = value14);
   }
   // MineDesign: the artboard runtime loads Babel from this URL instead of the CDN the CSP blocks (getBabelFileUrl).
-  let babelFile: Dynamic = (0, getBabelFileUrl)(),
+  let babelFile: Dynamic = getBabelFileUrl(),
     babelResources: Dynamic = babelFile
       ? ` window.__resources = ${JSON.stringify({ [exportBabelStandaloneUrl]: babelFile }).replace(/</g, "\\u003c")};`
       : "";
   let value6: Dynamic = Object.keys(state).length > 0,
-    value7: Dynamic = (0, selectRuntimeUrl)(context),
+    value7: Dynamic = selectRuntimeUrl(context),
     atAddress: Dynamic = extra.atAddress,
     value8: Dynamic =
       atAddress === undefined
@@ -223,7 +223,7 @@ function buildPreviewDocument(
         : "<script>window.__dcProjectRoot = " +
           JSON.stringify(atAddress.projectRoot).replace(/</g, "\\u003c") +
           ";<\/script>" +
-          (0, inlineScriptHtml)(
+          inlineScriptHtml(
             PreviewDependencyInjectionResolvedValue_2,
           ),
     value9: Dynamic =
@@ -235,9 +235,9 @@ function buildPreviewDocument(
             .replace(/"/g, "&quot;")
             .replace(/</g, "&lt;") +
           '">') +
-      (0, inlineScriptHtml)(previewGuardRuntimeScript) +
-      (0, inlineScriptHtml)(previewResizeRuntimeScript) +
-      (0, inlineScriptHtml)(previewEvaluationRuntimeScript) +
+      inlineScriptHtml(previewGuardRuntimeScript) +
+      inlineScriptHtml(previewResizeRuntimeScript) +
+      inlineScriptHtml(previewEvaluationRuntimeScript) +
       value8,
     value10: Dynamic = [
       ...(atAddress === undefined
@@ -251,30 +251,30 @@ function buildPreviewDocument(
       ),
       ...(Object.keys(state5).length > 0
         ? [
-            (0, inlineScriptHtml)(
+            inlineScriptHtml(
               PreviewBuildDocumentStringify_2(Object.keys(state5)),
             ),
           ]
         : []),
-      (0, inlineScriptHtml)(
+      inlineScriptHtml(
         previewBlobBridgeRuntimeScript +
           previewAssetLoaderRuntimeScript +
           previewViewportRuntimeScript +
           previewDocumentRuntimeScript,
       ),
-      (0, inlineScriptHtml)(
+      inlineScriptHtml(
         PreviewRuntimeLoadingResolvedValue,
       ),
       ...(value7 !== undefined
         ? [
             `<script src="${value7}"><\/script>`,
-            (0, inlineScriptHtml)(
+            inlineScriptHtml(
               PreviewBuildDocumentResolvedValue_2,
             ),
           ]
         : ["reactUmd", "reactDomUmd", "supportJs"].map(
             (input2?: Dynamic): Dynamic =>
-              (0, inlineScriptHtml)(context[input2]),
+              inlineScriptHtml(context[input2]),
           )),
       ...(extra.frameless ? [framelessPreviewChromeHtml] : []),
     ].join(`
@@ -329,8 +329,8 @@ export function installPreviewBuildDocument(): () => void {
       JSON.stringify([
         input.partMin,
         input.frameless,
-        (0, supportsBlobScripts)(),
-        (0, selectRuntimeUrl)(input.assets) ?? null,
+        supportsBlobScripts(),
+        selectRuntimeUrl(input.assets) ?? null,
         input.installed,
         input.address ?? "",
       ]);
@@ -350,6 +350,6 @@ export function installPreviewBuildDocument(): () => void {
     previewEvaluationScript = injected_wZt;
     PreviewBuildDocumentResolvedValue_3 =
       '<!doctype html><meta charset="utf-8">' +
-      (0, inlineScriptHtml)(previewEvaluationScript);
+      inlineScriptHtml(previewEvaluationScript);
   };
 }

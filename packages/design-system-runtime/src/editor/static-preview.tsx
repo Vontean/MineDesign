@@ -26,7 +26,7 @@ function staticPreviewDocumentHtml(
       : "<style>" + input.replace(/<\/(?=style)/gi, "<\\/") + "</style>";
   return (
     "<!doctype html><html" +
-    (0, swatchHtmlAttributes)(head) +
+    swatchHtmlAttributes(head) +
     '><head><meta name="referrer" content="no-referrer">' +
     callback("html{overflow:hidden!important}") +
     callback(head.tokensCss) +
@@ -92,12 +92,12 @@ export {
 };
 export function installEditorStaticPreview(): () => void {
   return () => {
-    reactStaticPreview = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    reactStaticPreview = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
-    jsxStaticPreview = (0, toModuleNamespace)(
-      (0, loadJsxNamespace)(),
+    jsxStaticPreview = toModuleNamespace(
+      loadJsxNamespace(),
       1,
     );
     EMPTY_STATIC_PREVIEW_HTML = "";

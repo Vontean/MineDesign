@@ -13,9 +13,9 @@ export {
 };
 export function installCdsHooksLayoutEffect(): () => void {
   return () => {
-    initializeHooksLayoutEffect = (0, initializeOnce)(() => {
-      reactHooksLayoutEffect = (0, toModuleNamespace)(
-        (0, load_react)(),
+    initializeHooksLayoutEffect = initializeOnce(() => {
+      reactHooksLayoutEffect = toModuleNamespace(
+        load_react(),
       );
       useIsomorphicLayoutEffect =
         typeof window !== "undefined"

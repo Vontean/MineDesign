@@ -156,7 +156,7 @@ function BorderQuickPanel({
       />
       <fieldset
         disabled={value5}
-        className={(0, joinClassNames)(
+        className={joinClassNames(
           "m-0 flex min-w-0 flex-col gap-1.5 border-0 p-0",
           value5 && "opacity-60",
         )}
@@ -533,10 +533,10 @@ export {
 };
 export function installPropertiesQuickPanels(): () => void {
   return () => {
-    react_mB = (0, toModuleNamespace)((0, load_react)(), 1);
-    (0, initializeCdsIndex)();
-    jsx_os = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    react_mB = toModuleNamespace(load_react(), 1);
+    initializeCdsIndex();
+    jsx_os = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
     borderSideMenuOrder = ["top", "right", null, "bottom", "left", null];

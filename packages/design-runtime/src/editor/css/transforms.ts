@@ -24,7 +24,7 @@ function parseCssTransform(input?: Dynamic): Dynamic {
       scaleY: 1,
     };
   if (!value || value === "none") return state;
-  if ((0, classifyStyleValue)(value).kind !== "literal") return null;
+  if (classifyStyleValue(value).kind !== "literal") return null;
   let value2: Dynamic = /([a-zA-Z]+)\(([^)]*)\)/g;
   if (value.replace(value2, "").trim() !== "") return null;
   let values: Dynamic = new Set(),
@@ -34,8 +34,8 @@ function parseCssTransform(input?: Dynamic): Dynamic {
       value5: Dynamic = value3[2]
         .split(",")
         .map((input2?: Dynamic): Dynamic => input2.trim()),
-      value6: Dynamic = (0, parseCssNumber)(value5[0] ?? ""),
-      value7: Dynamic = (0, parseCssNumber)(value5[1] ?? "");
+      value6: Dynamic = parseCssNumber(value5[0] ?? ""),
+      value7: Dynamic = parseCssNumber(value5[1] ?? "");
     if (
       !value6 ||
       !Object.hasOwn(CssTransformsTranslateTranslatexTranslateyConfig, value4)
@@ -88,25 +88,25 @@ function serializeCssTransform(input?: Dynamic): Dynamic {
   let items: Dynamic = [];
   (input.x.value !== 0 || input.y.value !== 0) &&
     items.push(
-      `translate(${(0, formatCssNumber)(input.x.value, input.x.unit || "px")}, ${(0, formatCssNumber)(input.y.value, input.y.unit || "px")})`,
+      `translate(${formatCssNumber(input.x.value, input.x.unit || "px")}, ${formatCssNumber(input.y.value, input.y.unit || "px")})`,
     );
   input.rotate.value !== 0 &&
     items.push(
-      `rotate(${(0, formatCssNumber)(input.rotate.value, input.rotate.unit || "deg")})`,
+      `rotate(${formatCssNumber(input.rotate.value, input.rotate.unit || "deg")})`,
     );
   (input.scaleX !== 1 || input.scaleY !== 1) &&
     (input.scaleX === input.scaleY
-      ? items.push(`scale(${(0, formatCssNumber)(input.scaleX, "")})`)
+      ? items.push(`scale(${formatCssNumber(input.scaleX, "")})`)
       : input.scaleY === 1
         ? items.push(
-            `scaleX(${(0, formatCssNumber)(input.scaleX, "")})`,
+            `scaleX(${formatCssNumber(input.scaleX, "")})`,
           )
         : input.scaleX === 1
           ? items.push(
-              `scaleY(${(0, formatCssNumber)(input.scaleY, "")})`,
+              `scaleY(${formatCssNumber(input.scaleY, "")})`,
             )
           : items.push(
-              `scale(${(0, formatCssNumber)(input.scaleX, "")}, ${(0, formatCssNumber)(input.scaleY, "")})`,
+              `scale(${formatCssNumber(input.scaleX, "")}, ${formatCssNumber(input.scaleY, "")})`,
             ));
   return items.join(" ");
 }

@@ -178,7 +178,7 @@ function isNarrowedFileContext(input?: Dynamic, options?: Dynamic): Dynamic {
 function validateFileName(input?: Dynamic): Dynamic {
   if (
     input === "" ||
-    (0, PlatformSha256Encode)(input).length >
+    PlatformSha256Encode(input).length >
       PlatformFileContentLimit_2
   )
     return "its name is empty or too long. Rename it";
@@ -299,14 +299,14 @@ function getEncodedFileBytes(input?: Dynamic): Dynamic {
   if (input === null) return 0;
   let value: Dynamic = getFileContent(input);
   return typeof value == "string"
-    ? (0, PlatformSha256Encode)(value).length
+    ? PlatformSha256Encode(value).length
     : Math.ceil(value.size / 3) * 4;
 }
 function getRawFileBytes(input?: Dynamic): Dynamic {
   if (input === null) return 0;
   let value: Dynamic = getFileContent(input);
   return typeof value == "string"
-    ? (0, PlatformSha256Encode)(value).length
+    ? PlatformSha256Encode(value).length
     : value.size;
 }
 function describeOversizedFile(input?: Dynamic): Dynamic {
@@ -330,7 +330,7 @@ function describeOversizedFile(input?: Dynamic): Dynamic {
 }
 async function fileContentToBytes(input?: Dynamic): Promise<Dynamic> {
   return typeof input == "string"
-    ? (0, PlatformSha256Encode)(input)
+    ? PlatformSha256Encode(input)
     : new Uint8Array(await input.arrayBuffer());
 }
 async function hashFileMap(input?: Dynamic): Promise<Dynamic> {
@@ -339,7 +339,7 @@ async function hashFileMap(input?: Dynamic): Promise<Dynamic> {
     let value3: Dynamic = normalizeFileEntry(value, value2);
     value3 === null ||
       typeof value3 == "string" ||
-      (state[value] = await (0, sha256)(
+      (state[value] = await sha256(
         await fileContentToBytes(value3.content),
       ));
   }
@@ -2038,7 +2038,7 @@ function getDocumentFileCap(input?: Dynamic): Dynamic {
       : PlatformFileContentResolvedValue_11;
 }
 function createDesignDocumentStore(input: Dynamic = {}): Dynamic {
-  return (0, createDocumentStore)({
+  return createDocumentStore({
     parseContent: parseDesignContent,
     initialContent: {
       files: {},
@@ -2279,7 +2279,7 @@ async function requestRoomCapability(): Promise<Dynamic> {
   let claude: Dynamic = (globalThis as Dynamic).designHost;
   try {
     if (typeof claude?.use == "function") {
-      let value: Dynamic = await (0, requestHostCapability)("room");
+      let value: Dynamic = await requestHostCapability("room");
       return typeof value == "object" && value !== null ? value : null;
     }
   } catch {

@@ -34,10 +34,10 @@ function AssetDetailsPreview({
   useUiLocale();
   let value =
       asset.kind === "image" || asset.kind === "svg" || asset.kind === "video"
-        ? (0, filePreviewUrl)(files, asset.path, storage)
+        ? filePreviewUrl(files, asset.path, storage)
         : null,
     value2: string = "ds-thumb-media ds-thumb-" + size,
-    value3 = (0, useAssetThumbnailSource)(files, asset.path);
+    value3 = useAssetThumbnailSource(files, asset.path);
   if ((asset.kind === "image" || asset.kind === "svg") && value !== null) {
     return (() => {
       const _Element = "img";
@@ -45,7 +45,7 @@ function AssetDetailsPreview({
         className: value2,
         "data-kind":
           asset.kind === "svg" &&
-          (0, isHeldFilePointer)(asset.path, files[asset.path] ?? "")
+          isHeldFilePointer(asset.path, files[asset.path] ?? "")
             ? "svg"
             : undefined,
         src: value3.src ?? value,
@@ -103,7 +103,7 @@ function AssetDetailsPreview({
         style={{
           fontFamily:
             '"' +
-            (0, fontFileCssFamilyName)(asset.path) +
+            fontFileCssFamilyName(asset.path) +
             '", system-ui, sans-serif',
         }}
       >
@@ -111,9 +111,9 @@ function AssetDetailsPreview({
       </span>
     );
   }
-  let value4 = (0, assetKindLabel)(asset),
-    value5 = (0, assetFileSizeLabel)(
-      (0, resolvedAssetFileBytes)(files, asset.path, asset.bytes),
+  let value4 = assetKindLabel(asset),
+    value5 = assetFileSizeLabel(
+      resolvedAssetFileBytes(files, asset.path, asset.bytes),
     );
   return (
     <span
@@ -138,11 +138,11 @@ function assetDownloadBlockedReason(
   if (withheld === true) {
     return get_DOWNLOADS_UNAVAILABLE_MESSAGE();
   }
-  if (!(0, hasDownloadCapability)()) {
+  if (!hasDownloadCapability()) {
     return;
   }
-  if (!(0, normalizeDownloadName)(asset.name)) {
-    return (0, unsupportedDownloadMessage)(
+  if (!normalizeDownloadName(asset.name)) {
+    return unsupportedDownloadMessage(
       asset.name,
       "rejected_extension",
     );
@@ -160,13 +160,13 @@ function AssetDetailsDialog({
   focusName = false,
 }: Editor.AssetDetailsDialogProps): React.ReactElement {
   useUiLocale();
-  (0, useAssetThumbnailSources)();
+  useAssetThumbnailSources();
   let ref = (
       reactAssetUpload as typeof React
     ).useRef<HTMLInputElement | null>(null),
     value = assetDownloadBlockedReason(
       asset,
-      (0, useDownloadsWithheld)(),
+      useDownloadsWithheld(),
     ),
     [value2, value3] = (reactAssetUpload as typeof React).useState(
       asset.name,
@@ -212,18 +212,18 @@ function AssetDetailsDialog({
             size={"lg"}
             data-testid={"ds-asset-lightbox"}
             aria-label={asset.name}
-            {...(0, commentTargetProps)("lightbox", asset.path)}
+            {...commentTargetProps("lightbox", asset.path)}
             initialFocus={
               focusName && onRename !== undefined ? ref : undefined
             }
           >
             {[<Dialog.Header showClose={true}>
-                {value6 ? (asset.kind === "video" ? (uiMessage("design-system.assetDetails.video")) : (uiMessage("design-system.assetDetails.image"))) : ((0, assetKindLabel)(asset).label)}
+                {value6 ? (asset.kind === "video" ? (uiMessage("design-system.assetDetails.video")) : (uiMessage("design-system.assetDetails.image"))) : (assetKindLabel(asset).label)}
               </Dialog.Header>, <div className={"flex flex-col gap-md"}>
                 {[<div
                     className={"ds-lb-prev" + (value6 ? "" : " ds-lb-file")}
                     data-tone={
-                      value6 && (0, isReversedLogoAsset)(asset)
+                      value6 && isReversedLogoAsset(asset)
                         ? "dark"
                         : undefined
                     }
@@ -247,8 +247,8 @@ function AssetDetailsDialog({
                       error={value4 ?? undefined}
                       hint={
                         value4 === null
-                          ? (0, assetFileSizeLabel)(
-                              (0, resolvedAssetFileBytes)(
+                          ? assetFileSizeLabel(
+                              resolvedAssetFileBytes(
                                 files,
                                 asset.path,
                                 asset.bytes,
@@ -270,7 +270,7 @@ function AssetDetailsDialog({
                       onKeyDown={(
                         event: React.KeyboardEvent<HTMLInputElement>,
                       ): void => {
-                        if ((0, isComposingEvent)(event)) {
+                        if (isComposingEvent(event)) {
                           return;
                         }
                         if (event.key === "Enter") {
@@ -296,8 +296,8 @@ function AssetDetailsDialog({
                         </span>, <span
                           className={"font-mono text-footnote text-muted"}
                         >
-                          {(0, assetFileSizeLabel)(
-                            (0, resolvedAssetFileBytes)(
+                          {assetFileSizeLabel(
+                            resolvedAssetFileBytes(
                               files,
                               asset.path,
                               asset.bytes,
@@ -347,8 +347,8 @@ export {
 };
 export function installEditorAssetDetails(): () => void {
   return () => {
-    jsxAssetDetails = (0, toModuleNamespace)(
-      (0, loadJsxNamespace)(),
+    jsxAssetDetails = toModuleNamespace(
+      loadJsxNamespace(),
       1,
     );
   };

@@ -31,7 +31,7 @@ import { generatedReadmeTail, mergeReadmeWithGeneratedTail } from "../model/stor
 function createDesignSystemFilesDocument(
   options: M.DesignSystemFilesDocumentOptions,
 ): M.DesignSystemFilesDocument {
-  (0, setHeldFileBaseUrl)(
+  setHeldFileBaseUrl(
     PROJECT_FILE_PREFIXEditorFilesIndex,
   );
   let lazy: F.LazyReadState | undefined =
@@ -41,7 +41,7 @@ function createDesignSystemFilesDocument(
           rows: new Map(),
         }
       : undefined;
-  (0, setAllowAllBinaryFilePointers)(lazy !== undefined);
+  setAllowAllBinaryFilePointers(lazy !== undefined);
   let indexPath: string =
       options.indexPath ?? FILES_INDEX_PROJECT_PATH,
     flags: Map<string, M.DocumentFlag> = new Map(),
@@ -59,10 +59,10 @@ function createDesignSystemFilesDocument(
     storage =
       options.storage !== undefined
         ? options.storage
-        : (0, safeSessionStorage)(),
+        : safeSessionStorage(),
     carryStorageKey =
       HOT_CARRY_STORAGE_PREFIX +
-      (options.stashKey ?? (0, currentDesignSystemArtifactPath)()),
+      (options.stashKey ?? currentDesignSystemArtifactPath()),
     events: M.DocumentEvent[] = [],
     emit = (input: string, options2?: unknown): void => {
       events.push({
@@ -89,7 +89,7 @@ function createDesignSystemFilesDocument(
         return (
           preparing ||
           carrying ||
-          (options.isBusy ?? (() => (0, activeElementIsEditing)()))()
+          (options.isBusy ?? (() => activeElementIsEditing()))()
         );
       } catch {
         return preparing || carrying;
@@ -115,7 +115,7 @@ function createDesignSystemFilesDocument(
     },
     port = options.port,
     liveSha = (input: string): string | null | undefined =>
-      port.liveSha?.((0, projectFilePath)(input)),
+      port.liveSha?.(projectFilePath(input)),
     readTexts: Map<string, string> = new Map(),
     readShas: Map<string, string> = new Map(),
     locallyHeldTexts: Map<string, string | undefined> = new Map(),
@@ -143,7 +143,7 @@ function createDesignSystemFilesDocument(
       latestFrameVersion = frameVersionFromBaseUri();
       if (input !== latestVersion) {
         latestVersion = input;
-        (0, notifyAddressedFiles)();
+        notifyAddressedFiles();
       }
     },
     recentPublishes: Map<string, M.RecentPublish> = new Map(),
@@ -170,7 +170,7 @@ function createDesignSystemFilesDocument(
       }
     },
     takeRemoteFile = (input: string): void => {
-      let value: string = (0, projectFilePath)(input);
+      let value: string = projectFilePath(input);
       document2.held().add(value);
       let value2: boolean = liveSha(input) === null;
       document2.releaseHold(value);
@@ -184,7 +184,7 @@ function createDesignSystemFilesDocument(
       keepOutOfUndo(input);
       document2.updateContent(
         (input2) =>
-          (0, refreshManifest)(
+          refreshManifest(
             {
               ...input2,
               files: Object.freeze({
@@ -220,7 +220,7 @@ function createDesignSystemFilesDocument(
           typeof input === "number" &&
           value3 - input <= HOT_CARRY_MAX_AGE_MS;
       for (let [value6, value7] of Object.entries(value2.files ?? {})) {
-        let value8 = (0, parseCarriedFileEdit)(value7),
+        let value8 = parseCarriedFileEdit(value7),
           value9 = value7?.at;
         if (value8 !== undefined && callback(value9)) {
           state.files[value6] = {
@@ -229,7 +229,7 @@ function createDesignSystemFilesDocument(
           };
         }
       }
-      let value4 = (0, readCarriedIndexEdit)(value2.index),
+      let value4 = readCarriedIndexEdit(value2.index),
         value5 = value2.index?.at;
       if (value4 !== undefined && callback(value5)) {
         state.index = {
@@ -372,16 +372,16 @@ function createDesignSystemFilesDocument(
   ): void {
     if (options2 === "edit" && !detail && !flags.has(input)) {
       if (clashPolicy === "mine" && fileMatchesReadBase(input)) {
-        queue.withdraw((0, projectFilePath)(input));
+        queue.withdraw(projectFilePath(input));
         refreshUnchangedLocalFile(
           input,
-          (0, projectFilePath)(input),
+          projectFilePath(input),
           context !== undefined ? context : (liveSha(input) ?? null),
         );
         return;
       }
       if (fileMatchesCurrentPublish(input)) {
-        queue.withdraw((0, projectFilePath)(input));
+        queue.withdraw(projectFilePath(input));
         keepOutOfUndo(input);
         takeRemoteFile(input);
         return;
@@ -391,10 +391,10 @@ function createDesignSystemFilesDocument(
         return;
       }
       if (!restoredStashPaths.has(input) && !fileSaveIsStuck(input)) {
-        queue.withdraw((0, projectFilePath)(input));
+        queue.withdraw(projectFilePath(input));
         revertToTheirs(
           input,
-          (0, projectFilePath)(input),
+          projectFilePath(input),
           context ?? null,
         );
         return;
@@ -414,10 +414,10 @@ function createDesignSystemFilesDocument(
         : {}),
     });
     flaggedPaths.add(input);
-    queue.withdraw((0, projectFilePath)(input));
+    queue.withdraw(projectFilePath(input));
     if (entry === undefined) {
       emit("flag", {
-        path: (0, projectFilePath)(input),
+        path: projectFilePath(input),
         why: options2,
         theirs: context ?? null,
         ...(value2 !== undefined
@@ -433,11 +433,11 @@ function createDesignSystemFilesDocument(
         value ??
           (context === null
             ? uiMessage("design-system.designSystemDocument.someoneElseDeleted") +
-              (0, fileBaseName)(input) +
+              fileBaseName(input) +
               " while you were editing it. Your version is kept here and was not saved." +
               FILE_CONFLICT_CHOICE_SUFFIX
             : uiMessage("design-system.designSystemDocument.someoneElseChanged") +
-              (0, fileBaseName)(input) +
+              fileBaseName(input) +
               " while you were editing it. Your version is kept here and was not saved over theirs." +
               FILE_CONFLICT_CHOICE_SUFFIX),
       );
@@ -458,7 +458,7 @@ function createDesignSystemFilesDocument(
     input: string,
     options2: string | null | undefined,
   ): void {
-    let value: string = (0, projectFilePath)(input),
+    let value: string = projectFilePath(input),
       value2 = options2 !== undefined ? options2 : liveSha(input);
     if (currentFileText(input) === null && value2 !== null) {
       queue.withdraw(value);
@@ -490,22 +490,22 @@ function createDesignSystemFilesDocument(
       return (
         value !== null &&
         recentPublishes.get(input)?.text === value &&
-        readTexts.get((0, projectFilePath)(input)) === value
+        readTexts.get(projectFilePath(input)) === value
       );
     },
     fileMatchesReadBase = (input: string) => {
       let value = currentFileText(input);
       return (
         value !== null &&
-        readTexts.get((0, projectFilePath)(input)) === value
+        readTexts.get(projectFilePath(input)) === value
       );
     },
     restoredStashPaths: Set<string> = new Set(),
     fileSaveIsStuck = (input: string) =>
       queue
         .state()
-        .stuck?.paths?.includes((0, projectFilePath)(input)) ===
-        true || queue.unsendable().has((0, projectFilePath)(input)),
+        .stuck?.paths?.includes(projectFilePath(input)) ===
+        true || queue.unsendable().has(projectFilePath(input)),
     remoteRevertPending: Set<string> = new Set(),
     remoteRevertTokens: Map<string, object> = new Map();
   function revertToTheirs(
@@ -563,7 +563,7 @@ function createDesignSystemFilesDocument(
           }
           pruneUndoPaths(new Set([input]), uiMessage("design-system.designSystemDocument.tookTheirs"), true);
           notice(
-            (0, fileBaseName)(input) +
+            fileBaseName(input) +
               (currentFileText(input) === null
                 ? " deleted remotely"
                 : " changed remotely"),
@@ -626,7 +626,7 @@ function createDesignSystemFilesDocument(
             liveSha(input) === null
               ? await null
               : await Promise.race([
-                  (0, retryFileRead)(
+                  retryFileRead(
                     () => options.port.readBytes(options2),
                     timers,
                   ).catch((): void => {
@@ -698,7 +698,7 @@ function createDesignSystemFilesDocument(
     }
     let entry = flags.get(input);
     if (
-      !(0, isTokenFilePath)(input) ||
+      !isTokenFilePath(input) ||
       context === null ||
       (entry !== undefined &&
         (entry.why !== "edit" || entry.clash !== undefined))
@@ -706,7 +706,7 @@ function createDesignSystemFilesDocument(
       flagClashingFile(input, options2, context, value);
       return;
     }
-    queue.withdraw((0, projectFilePath)(input));
+    queue.withdraw(projectFilePath(input));
     if (mergingTokenPaths.has(input)) {
       return;
     }
@@ -725,10 +725,10 @@ function createDesignSystemFilesDocument(
     context: string | null | undefined,
     value?: string,
   ): Promise<void> {
-    let value2: string = (0, projectFilePath)(input),
+    let value2: string = projectFilePath(input),
       value3: Core.FileTextRead | undefined;
     try {
-      value3 = await (0, retryFileRead)(
+      value3 = await retryFileRead(
         () => options.port.readText(value2),
         timers,
       );
@@ -763,7 +763,7 @@ function createDesignSystemFilesDocument(
       notifyFlags();
       return;
     }
-    let value5 = (0, mergeSupportedFileThreeWays)(
+    let value5 = mergeSupportedFileThreeWays(
       input,
       entry,
       value4,
@@ -775,7 +775,7 @@ function createDesignSystemFilesDocument(
       !value5.ok &&
       value5.why === "conflict"
     ) {
-      let value6 = (0, mergeSupportedFileThreeWays)(
+      let value6 = mergeSupportedFileThreeWays(
         input,
         entry,
         value3.text,
@@ -793,7 +793,7 @@ function createDesignSystemFilesDocument(
     if (value5 === null || !value5.ok) {
       let value6 =
         value5 !== null && value5.why === "conflict"
-          ? (0, summarizeConflictNames)(value5.conflicts)
+          ? summarizeConflictNames(value5.conflicts)
           : undefined;
       flagClashingFile(
         input,
@@ -803,7 +803,7 @@ function createDesignSystemFilesDocument(
           ? uiMessage("design-system.designSystemDocument.youAndSomeoneElseBoth") +
               value6 +
               " in " +
-              (0, fileBaseName)(input) +
+              fileBaseName(input) +
               ". Theirs was saved first; yours is kept here and was not saved over theirs." +
               FILE_CONFLICT_CHOICE_SUFFIX
           : value,
@@ -818,7 +818,7 @@ function createDesignSystemFilesDocument(
     readTexts.set(value2, value3.text);
     readShas.set(value2, value3.sha256);
     if (
-      (0, fileContentsSemanticallyEqual)(
+      fileContentsSemanticallyEqual(
         input,
         value5.text,
         value3.text,
@@ -829,7 +829,7 @@ function createDesignSystemFilesDocument(
           bytes: encoder.encode(value3.text),
           sha256: value3.sha256,
           contentType:
-            (0, publishableFileMimeType)(input, value3.text) ??
+            publishableFileMimeType(input, value3.text) ??
             "text/plain",
         });
       } catch {}
@@ -877,8 +877,8 @@ function createDesignSystemFilesDocument(
       return;
     }
     recentPublishes.delete(input);
-    if ((0, isTokenFilePath)(input)) {
-      let value2 = (0, mergeSupportedFileThreeWays)(
+    if (isTokenFilePath(input)) {
+      let value2 = mergeSupportedFileThreeWays(
         input,
         entry.base,
         entry.text,
@@ -888,7 +888,7 @@ function createDesignSystemFilesDocument(
       if (value2 === null || !value2.ok) {
         return;
       }
-      let value3: boolean = !(0, fileContentsSemanticallyEqual)(
+      let value3: boolean = !fileContentsSemanticallyEqual(
         input,
         value2.text,
         value,
@@ -907,7 +907,7 @@ function createDesignSystemFilesDocument(
       }
       if (value3) {
         emit("healed", {
-          path: (0, projectFilePath)(input),
+          path: projectFilePath(input),
           theirs: options2,
           kept: value2.kept,
         });
@@ -923,9 +923,9 @@ function createDesignSystemFilesDocument(
       ) {
         notice(
           uiMessage("design-system.designSystemDocument.someoneElseSaved") +
-            (0, fileBaseName)(input) +
+            fileBaseName(input) +
             " at the same moment as you. For " +
-            (0, summarizeConflictNames)(value2.kept) +
+            summarizeConflictNames(value2.kept) +
             ", which you both changed, theirs is kept." +
             (value3 ? " Your other changes were put back." : ""),
         );
@@ -934,12 +934,12 @@ function createDesignSystemFilesDocument(
     }
     if (
       clashPolicy === "mine" ||
-      !(0, remoteTextLostLocalLines)(entry.base, entry.text, value)
+      !remoteTextLostLocalLines(entry.base, entry.text, value)
     ) {
       return;
     }
     emit("overwritten", {
-      path: (0, projectFilePath)(input),
+      path: projectFilePath(input),
       theirs: options2,
     });
     replaceFileText(input, entry.text);
@@ -948,7 +948,7 @@ function createDesignSystemFilesDocument(
       "overwritten",
       options2,
       uiMessage("design-system.designSystemDocument.someoneElseSaved") +
-        (0, fileBaseName)(input) +
+        fileBaseName(input) +
         " at the same moment as you, and their version replaced yours. Yours is back here and is not saved." +
         FILE_CONFLICT_CHOICE_SUFFIX,
     );
@@ -970,29 +970,29 @@ function createDesignSystemFilesDocument(
     let value = document2.index().base();
     if (
       publishingIndexBases.some((input2) =>
-        (0, mergeValuesEqual)(input2, value),
+        mergeValuesEqual(input2, value),
       )
     ) {
-      lastIndexBase = (0, cloneMergeValue)(value);
+      lastIndexBase = cloneMergeValue(value);
       return;
     }
     if (input !== undefined) {
       let state: Partial<Core.FilesIndex> = {},
         state2: Partial<Core.FilesIndex> = {};
       for (let value2 of UNDO_INDEX_FIELDS) {
-        if (!(0, mergeValuesEqual)(input[value2], value[value2])) {
+        if (!mergeValuesEqual(input[value2], value[value2])) {
           (
             state as Record<
               keyof Core.FilesIndex,
               Core.FilesIndex[keyof Core.FilesIndex]
             >
-          )[value2] = (0, cloneMergeValue)(input[value2]);
+          )[value2] = cloneMergeValue(input[value2]);
           (
             state2 as Record<
               keyof Core.FilesIndex,
               Core.FilesIndex[keyof Core.FilesIndex]
             >
-          )[value2] = (0, cloneMergeValue)(value[value2]);
+          )[value2] = cloneMergeValue(value[value2]);
         }
       }
       if (Object.keys(state2).length + Object.keys(state).length > 0) {
@@ -1002,7 +1002,7 @@ function createDesignSystemFilesDocument(
         });
       }
     }
-    lastIndexBase = (0, cloneMergeValue)(value);
+    lastIndexBase = cloneMergeValue(value);
   }
   function flushForeignIndexChanges(): void {
     for (let value2 of pendingForeignIndexChanges.splice(0)) {
@@ -1051,7 +1051,7 @@ function createDesignSystemFilesDocument(
     if (index2 > 0) {
       undoStack?.prune(
         (input2) =>
-          (0, supportsDroppedPaths)(input2 as M.UndoCommand) &&
+          supportsDroppedPaths(input2 as M.UndoCommand) &&
           (input2 as M.UndoCommand).dropped,
       );
     }
@@ -1072,7 +1072,7 @@ function createDesignSystemFilesDocument(
     if (!context) {
       notice(
         uiMessage("design-system.designSystemDocument.someoneElseChanged") +
-          (0, summarizeFileNames)([...input]) +
+          summarizeFileNames([...input]) +
           ", so your earlier edits to " +
           (input.size === 1 ? "it" : "them") +
           " can no longer be undone from here.",
@@ -1105,7 +1105,7 @@ function createDesignSystemFilesDocument(
             " there any more: " +
             [
               ...input.skipped.map(fileBaseName),
-              ...(0, describeIndexConflicts)(
+              ...describeIndexConflicts(
                 input.indexKept,
                 document2.index().get(),
               ),
@@ -1115,10 +1115,10 @@ function createDesignSystemFilesDocument(
       }
       return;
     }
-    let value = (0, refreshManifest)(
+    let value = refreshManifest(
       {
         v: 2,
-        files: (0, freezeSortedFileTable)(input.next),
+        files: freezeSortedFileTable(input.next),
       },
       document2.title(),
     );
@@ -1129,7 +1129,7 @@ function createDesignSystemFilesDocument(
         "undo",
         liveSha(value2),
         uiMessage("design-system.designSystemDocument.someoneElseSavedANewer") +
-          (0, fileBaseName)(value2) +
+          fileBaseName(value2) +
           " since that step. Your " +
           options2 +
           " shows here but was not saved over theirs." +
@@ -1141,7 +1141,7 @@ function createDesignSystemFilesDocument(
         uiMessage("design-system.designSystemDocument.partOfThat") +
           options2 +
           " was left as it is because someone else changed it since: " +
-          (0, describeIndexConflicts)(
+          describeIndexConflicts(
             input.indexKept,
             document2.index().get(),
           ).join(", ") +
@@ -1158,13 +1158,13 @@ function createDesignSystemFilesDocument(
     value: string,
   ) => {
     if (
-      !(0, isTokenFilePath)(input) ||
+      !isTokenFilePath(input) ||
       flags.has(input) ||
-      document2.held().has((0, projectFilePath)(input))
+      document2.held().has(projectFilePath(input))
     ) {
       return null;
     }
-    let value2 = (0, mergeSupportedFileThreeWays)(
+    let value2 = mergeSupportedFileThreeWays(
       input,
       options2,
       context,
@@ -1174,7 +1174,7 @@ function createDesignSystemFilesDocument(
       return null;
     }
     if (
-      (0, fileContentsSemanticallyEqual)(input, value2.text, value)
+      fileContentsSemanticallyEqual(input, value2.text, value)
     ) {
       return value;
     } else {
@@ -1196,7 +1196,7 @@ function createDesignSystemFilesDocument(
       value4: boolean = context.applied === true,
       callback = (input2: string) =>
         flags.has(input2) ||
-        document2.held().has((0, projectFilePath)(input2)) ||
+        document2.held().has(projectFilePath(input2)) ||
         (entries.get(input2) ?? 0) !== (pathRevisions.get(input2) ?? 0),
       callback2 = (input2: "undo" | "redo"): void => {
         let { before: value5, after: value6 } = options2(),
@@ -1211,18 +1211,18 @@ function createDesignSystemFilesDocument(
           callback3 = () =>
             value9.reduce(
               (input3: Core.FilesIndex, options3: F.FileIndexDelta) =>
-                (0, mergeFilesIndex)(
+                mergeFilesIndex(
                   options3.from,
                   options3.to,
                   input3,
                 ).index,
-              (0, buildFilesIndex)(document2.title(), value5.files),
+              buildFilesIndex(document2.title(), value5.files),
             ),
           items = [
             ...value9,
             ...(value10.length > 0
               ? [
-                  (0, indexUndoForeignChanges)(
+                  indexUndoForeignChanges(
                     value10,
                     values,
                     callback3(),
@@ -1231,7 +1231,7 @@ function createDesignSystemFilesDocument(
               : []),
           ];
         applyUndoDelta(
-          (0, mergeDesignSystemFiles)(
+          mergeDesignSystemFiles(
             document2.content().files,
             document2.title(),
             value7.files,
@@ -1272,24 +1272,24 @@ function createDesignSystemFilesDocument(
             return;
           }
           let { before: value5, after: value6 } = options2(),
-            value7: Core.FilesIndex = (0, buildFilesIndex)(
+            value7: Core.FilesIndex = buildFilesIndex(
               document2.title(),
               value6.files,
             ),
-            value8: Core.FilesIndex = (0, buildFilesIndex)(
+            value8: Core.FilesIndex = buildFilesIndex(
               document2.title(),
               value5.files,
             ),
             value9 = input2.filter((input3) => {
-              let value10 = (0, indexPresentationField)(
+              let value10 = indexPresentationField(
                 options3,
                 input3,
               );
               return (
                 value10 !== undefined &&
-                (0, indexPresentationField)(value7, input3) ===
+                indexPresentationField(value7, input3) ===
                   value10 &&
-                (0, indexPresentationField)(value8, input3) !==
+                indexPresentationField(value8, input3) !==
                   value10
               );
             });
@@ -1325,7 +1325,7 @@ function createDesignSystemFilesDocument(
             return "untouched";
           }
           let { before: value5, after: value6 } = options2(),
-            value7 = (0, changedProjectFilePaths)(
+            value7 = changedProjectFilePaths(
               value5.files,
               value6.files,
               document2.title(),
@@ -1401,7 +1401,7 @@ function createDesignSystemFilesDocument(
       `
 `;
   function ensureReactPreviewLibraries(): void {
-    if (!(0, previewStaticNoticeSnapshot)()) {
+    if (!previewStaticNoticeSnapshot()) {
       return;
     }
     let files = document2.content().files;
@@ -1409,7 +1409,7 @@ function createDesignSystemFilesDocument(
       return;
     }
     let value =
-      (0, parseManifestBundleMetadata)(
+      parseManifestBundleMetadata(
         files[DESIGN_SYSTEM_PATHS.manifest] ?? "",
       ).libraries ?? [];
     if (
@@ -1421,8 +1421,8 @@ function createDesignSystemFilesDocument(
     ) {
       return;
     }
-    let value2 = (0, stringifyManifestWithinBudget)({
-      ...(0, parseManifest)(
+    let value2 = stringifyManifestWithinBudget({
+      ...parseManifest(
         files[DESIGN_SYSTEM_PATHS.manifest] ?? "",
       ),
       manifestVersion: DESIGN_SYSTEM_MANIFEST_VERSION,
@@ -1436,7 +1436,7 @@ function createDesignSystemFilesDocument(
     });
     document2.updateContent(
       (input) =>
-        (0, refreshManifest)(
+        refreshManifest(
           {
             ...input,
             files: Object.freeze({
@@ -1465,9 +1465,9 @@ function createDesignSystemFilesDocument(
     ownershipRetryDelays: number[] = [2000, 5000, 15000, 30000, 60000, 60000],
     fileWasGeneratedByEditor = (input: string, options2: string) => {
       let value: string =
-        (0, relativeProjectFilePath)(input) ?? input;
+        relativeProjectFilePath(input) ?? input;
       if (value !== DESIGN_SYSTEM_PATHS.manifest) {
-        return (0, hasGeneratedSystemHeader)(value, options2);
+        return hasGeneratedSystemHeader(value, options2);
       }
       try {
         let value2: { manifestVersion?: unknown; files?: unknown } | null =
@@ -1518,12 +1518,12 @@ function createDesignSystemFilesDocument(
         if (value3.length === 0) {
           continue;
         }
-        (0, reportMigrationAnalytics)(
+        reportMigrationAnalytics(
           MIGRATION_ANALYTICS_EVENTS.foreignFilesNoticed,
         );
         let value4: boolean = value3.length === 1;
         notice(
-          (0, summarizeFileNames)(value3) +
+          summarizeFileNames(value3) +
             (value4
               ? " in this system was not made by this editor, so it is left as it is"
               : " in this system were not made by this editor, so they are left as they are") +
@@ -1581,7 +1581,7 @@ function createDesignSystemFilesDocument(
       if (!foreignFileNoticePaths.has(input)) {
         foreignFileNoticePaths.add(input);
         foreignFileNotices.push({
-          name: (0, relativeProjectFilePath)(input) ?? input,
+          name: relativeProjectFilePath(input) ?? input,
           wanted: options2,
         });
       }
@@ -1628,7 +1628,7 @@ function createDesignSystemFilesDocument(
     ownershipProbeChain = ownershipProbeChain
       .then(() =>
         withOwnershipDeadline(
-          (0, retryFileRead)(() => peekBytes(input), timers),
+          retryFileRead(() => peekBytes(input), timers),
         ),
       )
       .then(
@@ -1713,14 +1713,14 @@ function createDesignSystemFilesDocument(
     lastGeneratedFiles = files;
     lastGeneratedTitle = document2.title();
     let items: string[] = [],
-      value: Map<string, string> = (0, validDerivedProjectFiles)(
+      value: Map<string, string> = validDerivedProjectFiles(
         files,
       );
     for (let [value4, value5] of value) {
       if (generatedTexts.get(value4) === value5) {
         continue;
       }
-      if (port.liveSha?.(value4) === (0, sha256Sync)(value5)) {
+      if (port.liveSha?.(value4) === sha256Sync(value5)) {
         generatedTexts.set(value4, value5);
         continue;
       }
@@ -1732,7 +1732,7 @@ function createDesignSystemFilesDocument(
       items.push(value4);
     }
     let values = new Set<string>(
-        (0, damagedDerivedProjectPaths)(files),
+        damagedDerivedProjectPaths(files),
       ),
       value2 = [...values].filter(
         (input): boolean => !damagedGeneratedPaths.has(input),
@@ -1751,9 +1751,9 @@ function createDesignSystemFilesDocument(
           (input): boolean => typeof port.liveSha?.(input) === "string",
         );
       notice(
-        (0, summarizeFileNames)(
+        summarizeFileNames(
           value2.map(
-            (input) => (0, relativeProjectFilePath)(input) ?? input,
+            (input) => relativeProjectFilePath(input) ?? input,
           ),
         ) +
           (value4 ? " is" : " are") +
@@ -1792,14 +1792,14 @@ function createDesignSystemFilesDocument(
     }
     return items;
   }
-  let projectReadmePath: string = (0, projectFilePath)(
+  let projectReadmePath: string = projectFilePath(
       DESIGN_SYSTEM_PATHS.readme,
     ),
     CONSUMER_PROJECT_PATH_HINT: string =
       "Every path named below is under `project/` in this design system: read `project/api/tokens.md`, not `api/tokens.md`.",
     wireReadme = (input: string): string => {
-      let value = (0, generatedReadmeTail)(
-        (0, generatedConsumptionReadme)(
+      let value = generatedReadmeTail(
+        generatedConsumptionReadme(
           Object.freeze({
             ...document2.content().files,
             [DESIGN_SYSTEM_PATHS.readme]: input,
@@ -1807,7 +1807,7 @@ function createDesignSystemFilesDocument(
           PROJECT_FILE_PREFIXEditorFilesIndex,
         ),
       );
-      return (0, mergeReadmeWithGeneratedTail)(
+      return mergeReadmeWithGeneratedTail(
         input,
         value.replace(
           /^(## Consuming this system[^\n]*\n)/,
@@ -1847,7 +1847,7 @@ function createDesignSystemFilesDocument(
     if (
       value3 === undefined ||
       value3 === null ||
-      value3 === (0, sha256Sync)(value2)
+      value3 === sha256Sync(value2)
     ) {
       return;
     }
@@ -1919,8 +1919,8 @@ function createDesignSystemFilesDocument(
     if (
       value3 === undefined ||
       value3 === null ||
-      value3 === (0, sha256Sync)(value2) ||
-      (0, fileContentContainsRuntimeMarkers)(value2)
+      value3 === sha256Sync(value2) ||
+      fileContentContainsRuntimeMarkers(value2)
     ) {
       return false;
     }
@@ -1984,8 +1984,7 @@ function createDesignSystemFilesDocument(
     flaggedRestoreEdits: Map<string, F.CarriedFileEdit> = new Map(),
     restoreConsumed: boolean = false,
     lateRemovalNoticePaths: Set<string> = new Set(),
-    tablePort: M.DesignSystemTablePort = (0,
-    createDesignSystemFilesPort)(options.port, {
+    tablePort: M.DesignSystemTablePort = createDesignSystemFilesPort(options.port, {
       ...(lazy !== undefined
         ? {
             lazy: lazy,
@@ -1997,10 +1996,10 @@ function createDesignSystemFilesDocument(
           : options2,
       tableText: (input: string, options2: string) =>
         input === projectReadmePath
-          ? (0, stripGeneratedReadmeTail)(options2)
+          ? stripGeneratedReadmeTail(options2)
           : options2,
       onReadText(input: string, options2: string, context: string): void {
-        let value: string | undefined = (0, relativeProjectFilePath)(
+        let value: string | undefined = relativeProjectFilePath(
           input,
         );
         if (value === undefined) {
@@ -2019,7 +2018,7 @@ function createDesignSystemFilesDocument(
           });
         }
         readShas.set(input, context);
-        if ((0, isHeldFilePointer)(value, options2)) {
+        if (isHeldFilePointer(value, options2)) {
           readTexts.delete(input);
         } else {
           readTexts.set(input, options2);
@@ -2131,11 +2130,10 @@ function createDesignSystemFilesDocument(
         }
         if (input.ok && input.texts !== undefined) {
           for (let [value6, value7] of Object.entries(input.texts)) {
-            let value8: string | undefined = (0,
-            relativeProjectFilePath)(value6);
+            let value8: string | undefined = relativeProjectFilePath(value6);
             if (
               value8 === undefined ||
-              (0, isDerivedProjectPath)(value6)
+              isDerivedProjectPath(value6)
             ) {
               continue;
             }
@@ -2185,7 +2183,7 @@ function createDesignSystemFilesDocument(
         }
         if (input.ok) {
           for (let value6 of input.paths) {
-            if ((0, isDerivedProjectPath)(value6)) {
+            if (isDerivedProjectPath(value6)) {
               if (input.texts !== undefined && input.texts[value6] === null) {
                 generatedOwnership.delete(value6);
               } else {
@@ -2199,7 +2197,7 @@ function createDesignSystemFilesDocument(
           value5 = input.paths.filter(
             (input2) =>
               input2 !== indexPath &&
-              !(0, isDerivedProjectPath)(input2),
+              !isDerivedProjectPath(input2),
           );
         emit("save", {
           ok: input.ok,
@@ -2220,8 +2218,8 @@ function createDesignSystemFilesDocument(
         });
       },
     }),
-    document2: M.BaseFilesDocument = (0, createFilesDocument)({
-      codec: (0, designSystemFilesCodec)(indexPath, lazy),
+    document2: M.BaseFilesDocument = createFilesDocument({
+      codec: designSystemFilesCodec(indexPath, lazy),
       ...(options.startWhenNoIndex !== undefined
         ? {
             startWhenNoIndex: options.startWhenNoIndex,
@@ -2246,7 +2244,7 @@ function createDesignSystemFilesDocument(
           }
         : {}),
       onConflict(input: F.FileSaveConflict): void {
-        if ((0, isDerivedProjectPath)(input.path)) {
+        if (isDerivedProjectPath(input.path)) {
           generatedOwnership.delete(input.path);
           queue.withdraw(input.path);
           generatedTexts.delete(input.path);
@@ -2281,7 +2279,7 @@ function createDesignSystemFilesDocument(
           return;
         }
         let value: string =
-          (0, relativeProjectFilePath)(input.path) ?? input.path;
+          relativeProjectFilePath(input.path) ?? input.path;
         advancePathRevision(value);
         resolveOrFlagClash(value, "edit", input.theirsSha);
       },
@@ -2299,7 +2297,7 @@ function createDesignSystemFilesDocument(
           input.some(
             (input3) =>
               input3.decision === "removed" &&
-              (0, relativeProjectFilePath)(input3.path) === input2,
+              relativeProjectFilePath(input3.path) === input2,
           ),
         );
         lateRemovalNoticePaths.clear();
@@ -2309,7 +2307,7 @@ function createDesignSystemFilesDocument(
           });
           notice(
             uiMessage("design-system.designSystemDocument.thePageSaidAMoment") +
-              (0, summarizeFileNames)(value) +
+              summarizeFileNames(value) +
               " did not go through. It did: it had already been sent when the page reloaded, and it has been saved now. There is nothing to do again.",
           );
         }
@@ -2324,7 +2322,7 @@ function createDesignSystemFilesDocument(
             to: options2.to.version,
           });
           if (
-            (0, isDerivedProjectPath)(value2.path) &&
+            isDerivedProjectPath(value2.path) &&
             !(
               generatedOwnership.get(value2.path) === "ours" &&
               value2.sha256 !== null &&
@@ -2333,8 +2331,7 @@ function createDesignSystemFilesDocument(
           ) {
             generatedOwnership.delete(value2.path);
           }
-          let value3: string | undefined = (0,
-          relativeProjectFilePath)(value2.path);
+          let value3: string | undefined = relativeProjectFilePath(value2.path);
           if (
             value3 === undefined ||
             value2.decision === "ignored" ||
@@ -2351,7 +2348,7 @@ function createDesignSystemFilesDocument(
             resolveOrFlagClash(value3, "edit", value2.sha256);
             continue;
           }
-          if (!(0, isTokenFilePath)(value3)) {
+          if (!isTokenFilePath(value3)) {
             values.add(value3);
           }
           if (flags.has(value3)) {
@@ -2383,7 +2380,7 @@ function createDesignSystemFilesDocument(
         if (input.conflicts.length > 0) {
           flushForeignIndexChanges();
         }
-        let value = (0, authoredIndexMergeConflicts)(input);
+        let value = authoredIndexMergeConflicts(input);
         emit("index-merged", {
           conflicts: input.conflicts,
           lost: value,
@@ -2396,14 +2393,14 @@ function createDesignSystemFilesDocument(
         if (value3.length > 0) {
           notice(
             uiMessage("design-system.designSystemDocument.someoneElseChanged") +
-              (0, describeIndexConflicts)(value3, input.merged).join(
+              describeIndexConflicts(value3, input.merged).join(
                 ", ",
               ) +
               " at the same time as you. Theirs was saved first, so theirs was kept.",
           );
         }
         let value4 = document2.index(),
-          value5 = (0, invalidAssetGroupOrders)(
+          value5 = invalidAssetGroupOrders(
             value4.get(),
             (input2) => {
               let value6: string = "assets/" + input2 + "/",
@@ -2477,8 +2474,8 @@ function createDesignSystemFilesDocument(
         : {}),
       ...(options.saveStash !== undefined
         ? {
-            saveStash: (0, prioritizeStashedTextEdits)(
-              (0, stripEditingOffFromStashedIndex)(
+            saveStash: prioritizeStashedTextEdits(
+              stripEditingOffFromStashedIndex(
                 options.saveStash,
                 indexPath,
               ),
@@ -2507,7 +2504,7 @@ function createDesignSystemFilesDocument(
       ) {
         return;
       }
-      let value3: Core.FilesIndex = (0, buildFilesIndex)(
+      let value3: Core.FilesIndex = buildFilesIndex(
         value,
         files,
       );
@@ -2549,7 +2546,7 @@ function createDesignSystemFilesDocument(
       };
     };
   function keepMineIndexPresentation(input: F.IndexMergeNotice): string[] {
-    let value: Core.FilesIndex = (0, buildFilesIndex)(
+    let value: Core.FilesIndex = buildFilesIndex(
         document2.title(),
         document2.content().files,
         input.merged,
@@ -2634,7 +2631,7 @@ function createDesignSystemFilesDocument(
   document2.whenLive().then(
     (): void => {
       if (lastIndexBase === undefined) {
-        lastIndexBase = (0, cloneMergeValue)(
+        lastIndexBase = cloneMergeValue(
           document2.index().base(),
         );
       }
@@ -2676,20 +2673,20 @@ function createDesignSystemFilesDocument(
       flushForeignIndexChanges();
     }
     for (let [value, value2] of locallyHeldTexts) {
-      let value3: string = (0, relativeProjectFilePath)(value)!;
+      let value3: string = relativeProjectFilePath(value)!;
       if (value3 === undefined || heldText(value3, files) !== value2) {
         locallyHeldTexts.delete(value);
       }
     }
     for (let value of preReadBases.keys()) {
-      let value2: string | undefined = (0, relativeProjectFilePath)(
+      let value2: string | undefined = relativeProjectFilePath(
         value,
       );
       if (
         value2 === undefined ||
         !readShas.has(value) ||
         (Object.hasOwn(files, value2) &&
-          ((0, isHeldFilePointer)(value2, files[value2])
+          (isHeldFilePointer(value2, files[value2])
             ? !readTexts.has(value)
             : files[value2] === readTexts.get(value)))
       ) {
@@ -2734,7 +2731,7 @@ function createDesignSystemFilesDocument(
           (input2) => {
             let { [DESIGN_SYSTEM_PATHS.readme]: files2, ...files3 } =
               input2.files;
-            return (0, refreshManifest)(
+            return refreshManifest(
               {
                 ...input2,
                 files: Object.freeze(
@@ -2811,13 +2808,13 @@ function createDesignSystemFilesDocument(
       return [];
     }
     let items = [];
-    for (let [value, value2] of (0, projectFilesForSave)(
+    for (let [value, value2] of projectFilesForSave(
       document2.content().files,
     ) as Map<string, string>) {
-      let value3: string = (0, relativeProjectFilePath)(value)!;
+      let value3: string = relativeProjectFilePath(value)!;
       if (
         flags.has(value3) ||
-        !(0, isTextFilePath)(value3) ||
+        !isTextFilePath(value3) ||
         readTexts.get(value) === value2 ||
         textIsLocallyHeld(value, value3) ||
         preReadBases.get(value)?.text === value2
@@ -2835,7 +2832,7 @@ function createDesignSystemFilesDocument(
     }
     let files = document2.content().files;
     for (let value of new Set([...readTexts.keys(), ...readShas.keys()])) {
-      let value2: string | undefined = (0, relativeProjectFilePath)(
+      let value2: string | undefined = relativeProjectFilePath(
           value,
         ),
         entry = preReadBases.get(value);
@@ -2856,19 +2853,19 @@ function createDesignSystemFilesDocument(
     if (document2.loadState() !== "live" || document2.readOnly()) {
       return items;
     }
-    for (let [value, value2] of (0, projectFilesForSave)(
+    for (let [value, value2] of projectFilesForSave(
       document2.content().files,
     ) as Map<string, string>) {
-      let value3: string = (0, relativeProjectFilePath)(value)!;
+      let value3: string = relativeProjectFilePath(value)!;
       if (
-        (0, isTextFilePath)(value3) ||
+        isTextFilePath(value3) ||
         flags.has(value3) ||
         textIsLocallyHeld(value, value3)
       ) {
         continue;
       }
       if (
-        (0, isHeldFilePointer)(value3, value2)
+        isHeldFilePointer(value3, value2)
           ? !readShas.has(value)
           : readTexts.get(value) !== value2
       ) {
@@ -2882,17 +2879,17 @@ function createDesignSystemFilesDocument(
   }): M.HotCarrySnapshot {
     let value = (
         options.snapshotView ??
-        ((input2) => (0, snapshotDesignSystemView)(input2))
+        ((input2) => snapshotDesignSystemView(input2))
       )(flaggedPaths),
       value2 = unsavedTextPaths(),
       value3 = unsavedRemovedFiles(),
       value4 = document2.index(),
-      value5 = (0, indexWithoutTitleAndDocs)(value4.base()),
-      value6 = (0, indexWithoutTitleAndDocs)(value4.get()),
+      value5 = indexWithoutTitleAndDocs(value4.base()),
+      value6 = indexWithoutTitleAndDocs(value4.get()),
       value7 =
         document2.loadState() === "live" &&
         !document2.readOnly() &&
-        !(0, mergeValuesEqual)(value5, value6),
+        !mergeValuesEqual(value5, value6),
       value8 = unsavedBinaryPaths();
     if (
       flags.size === 0 &&
@@ -2911,12 +2908,12 @@ function createDesignSystemFilesDocument(
       files = document2.content().files,
       values = new Set(
         Object.keys(value3).map((input2) =>
-          readTexts.get((0, projectFilePath)(input2)),
+          readTexts.get(projectFilePath(input2)),
         ),
       ),
       values2 = new Set(
         Object.keys(value3).map((input2) =>
-          materializedFingerprints.get((0, projectFilePath)(input2)),
+          materializedFingerprints.get(projectFilePath(input2)),
         ),
       ),
       callback = (
@@ -2942,7 +2939,7 @@ function createDesignSystemFilesDocument(
       }
     }
     for (let value13 of value2) {
-      let value14: string = (0, projectFilePath)(value13);
+      let value14: string = projectFilePath(value13);
       items.push(value13);
       let entry = preReadBases.get(value14),
         value15 = entry !== undefined ? entry.text : readTexts.get(value14);
@@ -2950,7 +2947,7 @@ function createDesignSystemFilesDocument(
         text: files[value13],
         base:
           entry !== undefined ? entry.sha : (readShas.get(value14) ?? null),
-        ...((0, isTokenFilePath)(value13) && value15 !== undefined
+        ...(isTokenFilePath(value13) && value15 !== undefined
           ? {
               baseText: value15,
             }
@@ -3048,7 +3045,7 @@ function createDesignSystemFilesDocument(
                       typeof input2 === "string",
                   )
                 : [
-                    ...(0, readCarriedFileEdits)(
+                    ...readCarriedFileEdits(
                       input,
                       "unsaved",
                     ).keys(),
@@ -3081,7 +3078,7 @@ function createDesignSystemFilesDocument(
       notice(
         uiMessage("design-system.designSystemDocument.thePageReloadedAndYour") +
           (value3.length > 0
-            ? " to " + (0, summarizeFileNames)(value3)
+            ? " to " + summarizeFileNames(value3)
             : "") +
           " could not be carried across. What is saved is shown; those changes are gone.",
       );
@@ -3093,10 +3090,10 @@ function createDesignSystemFilesDocument(
     let value = input,
       value2 = (
         options.restoreView ??
-        ((input2) => (0, restoreDesignSystemView)(input2))
+        ((input2) => restoreDesignSystemView(input2))
       )(input),
-      value3 = (0, readCarriedFileEdits)(input),
-      value4 = (0, readCarriedFileEdits)(input, "unsaved"),
+      value3 = readCarriedFileEdits(input),
+      value4 = readCarriedFileEdits(input, "unsaved"),
       value5 = Array.isArray(value.unsavedNames)
         ? (value.unsavedNames as unknown[])
             .filter(
@@ -3105,7 +3102,7 @@ function createDesignSystemFilesDocument(
             )
             .slice(0, 200)
         : [...value4.keys()],
-      value6 = (0, readCarriedIndexEdit)(value.index),
+      value6 = readCarriedIndexEdit(value.index),
       value7 = value.indexUnsaved === true || value6 !== undefined,
       value8 = consumeCarryStorage(
         [
@@ -3140,12 +3137,12 @@ function createDesignSystemFilesDocument(
         paths: items.map((input2) =>
           input2 === indexPath
             ? input2
-            : (0, projectFilePath)(input2),
+            : projectFilePath(input2),
         ),
       });
       notice(
         uiMessage("design-system.designSystemDocument.thePageReloadedAndYour2") +
-          (0, summarizeFileNames)(items) +
+          summarizeFileNames(items) +
           " could not be carried across. What is saved is shown; those changes are gone.",
       );
     }
@@ -3172,19 +3169,19 @@ function createDesignSystemFilesDocument(
           Object.keys(value.removed).length > 200),
       value12 = items.some(
         (input2) =>
-          input2 !== indexPath && (0, isTextFilePath)(input2),
+          input2 !== indexPath && isTextFilePath(input2),
       ),
       value13 =
         value10 === undefined ||
         value10.length > 0 ||
         items.some(
           (input2) =>
-            input2 !== indexPath && !(0, isTextFilePath)(input2),
+            input2 !== indexPath && !isTextFilePath(input2),
         ),
       value14 = [...entries2.keys()].filter(
         (input2) =>
           value11 ||
-          ((0, isTextFilePath)(input2) ? value12 : value13),
+          (isTextFilePath(input2) ? value12 : value13),
       );
     for (let value16 of value14) {
       entries2.delete(value16);
@@ -3220,10 +3217,10 @@ function createDesignSystemFilesDocument(
           let value18: boolean = value16.length === 1;
           notice(
             uiMessage("design-system.designSystemDocument.thePageReloadedBeforeYour") +
-              (0, summarizeFileNames)(value16) +
+              summarizeFileNames(value16) +
               " was saved, so it did not go through: " +
               (value18
-                ? (0, summarizeFileNames)(value16) + " is"
+                ? summarizeFileNames(value16) + " is"
                 : uiMessage("design-system.designSystemDocument.theyAre")) +
               " still here. Do it again. If you had renamed " +
               (value18 ? "it" : "one") +
@@ -3236,7 +3233,7 @@ function createDesignSystemFilesDocument(
           let value20 = currentFileText(value18);
           if (
             value20 !== null &&
-            (0, fileContentsSemanticallyEqual)(
+            fileContentsSemanticallyEqual(
               value18,
               value20,
               value19.text,
@@ -3250,7 +3247,7 @@ function createDesignSystemFilesDocument(
               value19.base !== undefined &&
               value21 !== value19.base;
           if (value22 && value20 !== null && value19.baseText !== undefined) {
-            let value23 = (0, mergeSupportedFileThreeWays)(
+            let value23 = mergeSupportedFileThreeWays(
               value18,
               value19.baseText,
               value19.text,
@@ -3258,7 +3255,7 @@ function createDesignSystemFilesDocument(
             );
             if (value23 !== null && value23.ok) {
               if (
-                !(0, fileContentsSemanticallyEqual)(
+                !fileContentsSemanticallyEqual(
                   value18,
                   value23.text,
                   value20,
@@ -3278,7 +3275,7 @@ function createDesignSystemFilesDocument(
               "restored",
               value21,
               uiMessage("design-system.designSystemDocument.someoneElseChanged") +
-                (0, fileBaseName)(value18) +
+                fileBaseName(value18) +
                 " while the page reloaded. Your unsaved version is back on screen and was not saved over theirs." +
                 FILE_CONFLICT_CHOICE_SUFFIX,
             );
@@ -3304,7 +3301,7 @@ function createDesignSystemFilesDocument(
           document2.updateContent(
             (input2) => {
               let { [value18]: files, ...files2 } = input2.files;
-              return (0, refreshManifest)(
+              return refreshManifest(
                 {
                   ...input2,
                   files: Object.freeze(files2),
@@ -3321,7 +3318,7 @@ function createDesignSystemFilesDocument(
         if (items4.length > 0) {
           notice(
             uiMessage("design-system.designSystemDocument.youHadRemoved") +
-              (0, summarizeFileNames)(items4) +
+              summarizeFileNames(items4) +
               " just before the page reloaded, and someone else changed " +
               (items4.length === 1 ? "it" : "them") +
               " meanwhile, so " +
@@ -3355,7 +3352,7 @@ function createDesignSystemFilesDocument(
                       ),
                     },
                   },
-            { index: value20, kept: value21 } = (0, mergeFilesIndex)(
+            { index: value20, kept: value21 } = mergeFilesIndex(
               value9.base,
               value19,
               entry,
@@ -3364,16 +3361,16 @@ function createDesignSystemFilesDocument(
             (input2) =>
               !input2.startsWith("docs") &&
               input2 !== "title" &&
-              !(0, isGeneratedIndexField)(input2),
+              !isGeneratedIndexField(input2),
           );
-          if (!(0, mergeValuesEqual)(value20, entry)) {
-            let files: Core.FileTable = (0, restoreFilesFromIndex)(
+          if (!mergeValuesEqual(value20, entry)) {
+            let files: Core.FileTable = restoreFilesFromIndex(
               value20,
-              (0, projectFilesForSave)(document2.content().files),
+              projectFilesForSave(document2.content().files),
             ).content.files;
             document2.updateContent(
               () =>
-                (0, refreshManifest)(
+                refreshManifest(
                   {
                     v: 2,
                     files: Object.freeze({
@@ -3391,7 +3388,7 @@ function createDesignSystemFilesDocument(
           if (items5.length > 0) {
             notice(
               uiMessage("design-system.designSystemDocument.partOfYourUnsavedChange") +
-                (0, describeIndexConflicts)(
+                describeIndexConflicts(
                   items5,
                   document2.index().get(),
                 ).join(", ") +
@@ -3409,7 +3406,7 @@ function createDesignSystemFilesDocument(
           });
           notice(
             uiMessage("design-system.designSystemDocument.thePageReloadedBefore") +
-              (0, summarizeFileNames)(value17) +
+              summarizeFileNames(value17) +
               " " +
               (value17.length === 1 ? "was" : "were") +
               " saved, so " +
@@ -3441,7 +3438,7 @@ function createDesignSystemFilesDocument(
           });
           flaggedPaths.add(value18);
           noticedClashShas.set(value18, liveSha(value18));
-          queue.withdraw((0, projectFilePath)(value18));
+          queue.withdraw(projectFilePath(value18));
           items2.push(value18);
         }
         flaggedRestoreEdits.clear();
@@ -3460,7 +3457,7 @@ function createDesignSystemFilesDocument(
           ),
           value17 =
             value9 !== undefined &&
-            !(0, indexAuthoredFieldsEqual)(value9.base, value9.mine);
+            !indexAuthoredFieldsEqual(value9.base, value9.mine);
         if (entries3.size === 0 && !value17 && value16.length === 0) {
           return;
         }
@@ -3468,7 +3465,7 @@ function createDesignSystemFilesDocument(
         if (options.saveStash !== undefined && entries3.size > 0) {
           let value23 = await options.saveStash.put(
               [...entries3].map(([input2, input3]) => ({
-                path: (0, projectFilePath)(input2),
+                path: projectFilePath(input2),
                 text: input3.text,
                 base: input3.base ?? null,
               })),
@@ -3481,8 +3478,7 @@ function createDesignSystemFilesDocument(
             ? new Set(entries3.keys())
             : new Set(
                 value24.flatMap((input2) => {
-                  let value25: string | undefined = (0,
-                  relativeProjectFilePath)(input2.path);
+                  let value25: string | undefined = relativeProjectFilePath(input2.path);
                   if (
                     value25 !== undefined &&
                     entries3.get(value25)?.text === input2.text
@@ -3510,7 +3506,7 @@ function createDesignSystemFilesDocument(
             input2.map((input3) =>
               input3 === indexPath
                 ? input3
-                : (0, projectFilePath)(input3),
+                : projectFilePath(input3),
             );
         if (value18.length > 0) {
           emit("restore-kept", {
@@ -3526,7 +3522,7 @@ function createDesignSystemFilesDocument(
           value20: string =
             value18.length > 0
               ? uiMessage("design-system.designSystemDocument.yourVersionOf") +
-                (0, summarizeFileNames)(value18) +
+                summarizeFileNames(value18) +
                 " is kept on this device for " +
                 CRASH_STASH_RETENTION_LABEL +
                 ". Reload to try getting it back. "
@@ -3534,13 +3530,13 @@ function createDesignSystemFilesDocument(
           value21: string =
             items2.length > 0
               ? uiMessage("design-system.designSystemDocument.yourUnsavedChangesTo") +
-                (0, summarizeFileNames)(items2) +
+                summarizeFileNames(items2) +
                 " could not be kept here and are gone. "
               : "",
           value22: string =
             value19.length > 0
               ? uiMessage("design-system.designSystemDocument.youHadRemoved") +
-                (0, summarizeFileNames)(value19) +
+                summarizeFileNames(value19) +
                 "; that was not kept, and " +
                 (value19.length === 1 ? uiMessage("design-system.designSystemDocument.theFileIs") : uiMessage("design-system.designSystemDocument.theFilesAre")) +
                 " still here."
@@ -3586,10 +3582,10 @@ function createDesignSystemFilesDocument(
     ownershipRetryAttempt = 0;
     ownershipFailureNoticed = false;
     for (let value of flags.keys()) {
-      queue.withdraw((0, projectFilePath)(value));
+      queue.withdraw(projectFilePath(value));
     }
     for (let value of mergingTokenPaths) {
-      queue.withdraw((0, projectFilePath)(value));
+      queue.withdraw(projectFilePath(value));
     }
     if (options.generated === true) {
       if (regenerationTimer !== undefined) {
@@ -3633,7 +3629,7 @@ function createDesignSystemFilesDocument(
         value.status === "error" &&
         value2.unsendable !== undefined &&
         value.message ===
-          (0, formatUnsendableFilesMessage)(value2.unsendable, {
+          formatUnsendableFilesMessage(value2.unsendable, {
             stashed: value2.unsendableStashed === true,
           });
     if (value.status !== "ready" && value.status !== "dirty" && !value3) {
@@ -3644,7 +3640,7 @@ function createDesignSystemFilesDocument(
       code: "conflict",
       message:
         (flags.size === 1
-          ? (0, fileBaseName)([...flags.keys()][0]) + " has"
+          ? fileBaseName([...flags.keys()][0]) + " has"
           : String(flags.size) + " files have") +
         " a newer version from someone else and yours is not saved. Choose theirs, yours, or yours as a copy.",
     };
@@ -3693,7 +3689,7 @@ function createDesignSystemFilesDocument(
       value2: string =
         value.unsendable !== undefined
           ? " " +
-            (0, formatUnsendableFilesMessage)(value.unsendable, {
+            formatUnsendableFilesMessage(value.unsendable, {
               restSaved: false,
               stashed: value.unsendableStashed === true,
             })
@@ -3705,7 +3701,7 @@ function createDesignSystemFilesDocument(
         code: stuck.code,
         since: stuck.since,
         retryable: stuck.retryable,
-        message: (0, describeStuckSave)(stuck, timers.now()) + value2,
+        message: describeStuckSave(stuck, timers.now()) + value2,
       };
     }
   };
@@ -3723,21 +3719,21 @@ function createDesignSystemFilesDocument(
     if (options2 === "mine" && remoteRevertTokens.delete(input)) {
       remoteRevertPending.delete(input);
     }
-    let value: string = (0, projectFilePath)(input),
+    let value: string = projectFilePath(input),
       value2 = currentFileText(input);
     if (options2 === "copy") {
       let files = document2.content().files,
         value4 =
           value2 === null
             ? null
-            : (0, availableConflictCopyName)(input, (input2) => {
+            : availableConflictCopyName(input, (input2) => {
                 let value5 = port.liveSha?.(
-                  (0, projectFilePath)(input2),
+                  projectFilePath(input2),
                 );
                 return (
                   !Object.hasOwn(files, input2) &&
-                  (0, isProjectContentPath)(
-                    (0, projectFilePath)(input2),
+                  isProjectContentPath(
+                    projectFilePath(input2),
                   ) &&
                   (value5 === undefined || value5 === null)
                 );
@@ -3745,7 +3741,7 @@ function createDesignSystemFilesDocument(
       if (value4 === null || value2 === null) {
         notice(
           uiMessage("design-system.designSystemDocument.thereIsNoFreeName") +
-            (0, fileBaseName)(input) +
+            fileBaseName(input) +
             " for a copy. Choose theirs or yours instead.",
         );
         return;
@@ -3754,7 +3750,7 @@ function createDesignSystemFilesDocument(
       emit("flag-resolved", {
         path: value,
         choice: "copy",
-        copy: (0, projectFilePath)(value4),
+        copy: projectFilePath(value4),
       });
       replaceFileText(value4, value2);
       advancePathRevision(input);
@@ -3764,11 +3760,11 @@ function createDesignSystemFilesDocument(
       takeRemoteFile(input);
       notice(
         uiMessage("design-system.designSystemDocument.yourVersionOf") +
-          (0, fileBaseName)(input) +
+          fileBaseName(input) +
           " is kept as " +
-          (0, fileBaseName)(value4) +
+          fileBaseName(value4) +
           "; " +
-          (0, fileBaseName)(input) +
+          fileBaseName(input) +
           " now has theirs.",
       );
       enhancedDocument.flushNow();
@@ -3802,9 +3798,9 @@ function createDesignSystemFilesDocument(
     if (liveSha(input) !== null) {
       try {
         value2 = (
-          await (0, createDesignSystemFilesPort)(
+          await createDesignSystemFilesPort(
             options.port,
-          ).readText((0, projectFilePath)(input))
+          ).readText(projectFilePath(input))
         ).text;
       } catch {
         value2 = null;
@@ -3827,17 +3823,16 @@ function createDesignSystemFilesDocument(
     input: string,
     options2: string,
   ): M.EntryProblem | undefined => {
-    let value: { reason: string } | undefined = (0,
-    filesLeftOutOfMigration)({
+    let value: { reason: string } | undefined = filesLeftOutOfMigration({
       [input]: options2,
     })[0];
     if (value !== undefined) {
       return {
         why: value.reason,
         cause:
-          (0, explainUnpublishableFile)(input, options2)?.cause ??
-          (!(0, isTextFilePath)(input) &&
-          (0, storagePointerForFile)(input, options2) === null
+          explainUnpublishableFile(input, options2)?.cause ??
+          (!isTextFilePath(input) &&
+          storagePointerForFile(input, options2) === null
             ? "unreadable"
             : "other"),
       };
@@ -3845,19 +3840,19 @@ function createDesignSystemFilesDocument(
     let value2: M.EntryProblem | undefined;
     try {
       value2 = tablePort.entryProblemDetail(
-        (0, projectFilePath)(input),
+        projectFilePath(input),
         options2,
       );
     } catch {
-      value2 = (0, filePublishRejection)(
-        (0, projectFilePath)(input),
+      value2 = filePublishRejection(
+        projectFilePath(input),
         options2,
       );
     }
     if (value2 !== undefined) {
       return value2;
     }
-    let value3 = (0, filePublishSizeRejection)(options2);
+    let value3 = filePublishSizeRejection(options2);
     if (value3 === undefined) {
       return undefined;
     } else {
@@ -3894,21 +3889,21 @@ function createDesignSystemFilesDocument(
       let value6 = value2.splice(value5, 1)[0],
         callback = (input2: string) => entryProblem(input2, value4)?.why;
       if (
-        !(0, projectFilesForSave)({
+        !projectFilesForSave({
           [value3]: value4,
-        }).has((0, projectFilePath)(value3))
+        }).has(projectFilePath(value3))
       ) {
         continue;
       }
       if (
         !(
-          (0, isHeldFilePointer)(value3, value4) ||
-          (0, isHeldFilePointer)(
+          isHeldFilePointer(value3, value4) ||
+          isHeldFilePointer(
             value3,
             document2.content().files[value3] ?? "",
           )
         ) &&
-        !readShas.has((0, projectFilePath)(value3)) &&
+        !readShas.has(projectFilePath(value3)) &&
         callback(value3) !== undefined
       ) {
         continue;
@@ -3918,22 +3913,22 @@ function createDesignSystemFilesDocument(
         continue;
       }
       let value8: boolean =
-          value7 === (0, filePublishSizeRejection)(value4),
+          value7 === filePublishSizeRejection(value4),
         value9 =
-          (0, fileBaseName)(value6) ===
-          (0, fileBaseName)(value3)
+          fileBaseName(value6) ===
+          fileBaseName(value3)
             ? value6.replace(/^assets\//, "")
-            : (0, fileBaseName)(value6),
-        value10: string = !(0, isPublishableFilePathModelFileTable)(
-          (0, projectFilePath)(value6),
+            : fileBaseName(value6),
+        value10: string = !isPublishableFilePathModelFileTable(
+          projectFilePath(value6),
         )
           ? /[%;:?#\\]/.test(value6)
             ? uiMessage("design-system.designSystemDocument.chooseANameWithoutOr")
-            : new TextEncoder().encode((0, projectFilePath)(value6))
+            : new TextEncoder().encode(projectFilePath(value6))
                   .length > 512
               ? uiMessage("design-system.designSystemDocument.chooseAShorterName")
               : uiMessage("design-system.designSystemDocument.chooseAnotherName")
-          : value8 && !(0, isTextFilePath)(value6)
+          : value8 && !isTextFilePath(value6)
             ? uiMessage("design-system.designSystemDocument.itIsTooLargeFor") +
               String(
                 ((MAX_FILE_PUBLISH_ENCODED_BYTES / 4) * 3) / 1048576,
@@ -3946,7 +3941,7 @@ function createDesignSystemFilesDocument(
           uiMessage("design-system.designSystemDocument.nothingWasChanged") +
           value9 +
           '" cannot be saved, so "' +
-          (0, fileBaseName)(value3) +
+          fileBaseName(value3) +
           '" would have been lost. ' +
           value10;
       notice(value11);
@@ -3955,11 +3950,11 @@ function createDesignSystemFilesDocument(
     return;
   };
   enhancedDocument.heldGone = (input): boolean =>
-    port.liveSha?.((0, projectFilePath)(input)) === null;
+    port.liveSha?.(projectFilePath(input)) === null;
   enhancedDocument.heldShaOf = (input) =>
-    readShas.get((0, projectFilePath)(input));
-  (0, setFileVersionResolver)(enhancedDocument.heldShaOf);
-  (0, setAddressedVersionResolver)(() =>
+    readShas.get(projectFilePath(input));
+  setFileVersionResolver(enhancedDocument.heldShaOf);
+  setAddressedVersionResolver(() =>
     frameVersionFromBaseUri() === latestFrameVersion
       ? latestVersion
       : undefined,
@@ -3997,13 +3992,13 @@ function createDesignSystemFilesDocument(
     let value: string | undefined;
     try {
       value = tablePort.entryProblem?.(
-        (0, projectFilePath)(input),
+        projectFilePath(input),
         options2,
       );
     } catch {
       value = undefined;
     }
-    return value ?? (0, filePublishSizeRejection)(options2);
+    return value ?? filePublishSizeRejection(options2);
   };
   enhancedDocument.tell = (input) => notice(input);
   enhancedDocument.heldBytes = async (
@@ -4015,27 +4010,27 @@ function createDesignSystemFilesDocument(
     let value = document2.content().files[input];
     if (
       value === undefined ||
-      !(0, isHeldFilePointer)(input, value)
+      !isHeldFilePointer(input, value)
     ) {
       return null;
     }
-    let value2: string = (0, projectFilePath)(input),
+    let value2: string = projectFilePath(input),
       value3 = pathRevisions.get(input) ?? 0,
       value4 = port.liveSha?.(value2);
     if (value4 === null) {
       return null;
     }
-    let value5 = (0, addressedProjectFileUrl)(input),
+    let value5 = addressedProjectFileUrl(input),
       value6 = value5 === undefined ? null : await readFreshHeldBytes(value5),
       value7 =
-        value6 === null ? undefined : await (0, sha256)(value6);
+        value6 === null ? undefined : await sha256(value6);
     if (
       value6 === null ||
       (typeof value4 === "string" && value4 !== value7)
     ) {
       try {
         value6 = (
-          await (0, retryFileRead)(
+          await retryFileRead(
             () => options.port.readBytes(value2),
             timers,
           )
@@ -4043,7 +4038,7 @@ function createDesignSystemFilesDocument(
       } catch {
         return null;
       }
-      value7 = await (0, sha256)(value6);
+      value7 = await sha256(value6);
     }
     if (
       value7 === undefined ||
@@ -4057,9 +4052,9 @@ function createDesignSystemFilesDocument(
     ) {
       return null;
     }
-    let value8 = (0, bytesToFileDataUri)(
+    let value8 = bytesToFileDataUri(
       value6,
-      (0, publishableFileMimeType)(input) ??
+      publishableFileMimeType(input) ??
         "application/octet-stream",
     );
     materializedFingerprints.delete(value2);
@@ -4081,7 +4076,7 @@ function createDesignSystemFilesDocument(
     input,
     options2,
   ): "gone" | "changed" | "good" => {
-    let value = port.liveSha?.((0, projectFilePath)(input));
+    let value = port.liveSha?.(projectFilePath(input));
     if (value === null) {
       return "gone";
     }
@@ -4103,8 +4098,7 @@ function createDesignSystemFilesDocument(
       return [];
     }
     let items = [];
-    for (let { path: value, id: value2 } of (0,
-    blobFilesOwedToFileStorage)(
+    for (let { path: value, id: value2 } of blobFilesOwedToFileStorage(
       document2.content().files,
       options.home ?? DEFAULT_FILE_STORAGE_POLICY,
     ) as { path: string; id: string }[]) {
@@ -4112,11 +4106,11 @@ function createDesignSystemFilesDocument(
       if (value3 === null) {
         continue;
       }
-      let value4 = (0, isTextFilePath)(value)
+      let value4 = isTextFilePath(value)
         ? new TextDecoder().decode(value3.bytes)
-        : (0, bytesToFileDataUri)(
+        : bytesToFileDataUri(
             value3.bytes,
-            (0, publishableFileMimeType)(value) ??
+            publishableFileMimeType(value) ??
               "application/octet-stream",
           );
       if (entryProblem(value, value4) !== undefined) {

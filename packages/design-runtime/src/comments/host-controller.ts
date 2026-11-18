@@ -29,7 +29,7 @@ function connectCustomAnchors(host?: Dynamic, options?: Dynamic): Dynamic {
       if (!sendToClaudeHostMethod(host)) return value2;
       let value3: Dynamic = null,
         flag: Dynamic = false;
-      (0, awaitEditorReady)().then((input2?: Dynamic): Dynamic => {
+      awaitEditorReady().then((input2?: Dynamic): Dynamic => {
         if (!input2 || flag) return;
         let value4: Dynamic;
         try {
@@ -122,7 +122,7 @@ function createCustomAnchorsController(): Dynamic {
     },
     callback: Dynamic = (): Dynamic => {
       if (value !== null) return value;
-      let value4: Dynamic = (0, getCachedHostCapability)("comments");
+      let value4: Dynamic = getCachedHostCapability("comments");
       if (customAnchorsHostMethod(value4))
         return (value = connectCustomAnchors(value4, state2));
       // MineDesign: the host is globalThis.designHost (packages/design/src/editor/design-host.ts), not globalThis.claude.
@@ -211,8 +211,8 @@ export {
 };
 export function installCommentsHostController(): () => void {
   return () => {
-    customAnchorsHostMethod = (0, hasCapabilityMethod)("customAnchors");
-    sendToClaudeHostMethod = (0, hasCapabilityMethod)("onSendToClaude");
+    customAnchorsHostMethod = hasCapabilityMethod("customAnchors");
+    sendToClaudeHostMethod = hasCapabilityMethod("onSendToClaude");
     customAnchorsController = createCustomAnchorsController();
     claimCustomAnchors = (): Dynamic => {
       customAnchorsController.claim();

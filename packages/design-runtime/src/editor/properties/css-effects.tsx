@@ -27,8 +27,7 @@ var WebkitBackdropFilterValue: Dynamic;
 var PropertiesCssEffectsXYBlurConfig: Dynamic;
 var PropertiesCssEffectsXYBlurConfig_2: Dynamic;
 function useEditorColorSwatches(): Dynamic {
-  let { designColorTokens: value }: Dynamic = (0,
-  useInspectorContext)();
+  let { designColorTokens: value }: Dynamic = useInspectorContext();
   return (0, reactComponentsPropsPanel.useMemo)(
     (): Dynamic =>
       value.map(
@@ -72,7 +71,7 @@ function parseCssShadow(input?: Dynamic, options?: Dynamic): Dynamic {
     items2: Dynamic = [],
     items3: Dynamic = [];
   for (let value7 of splitEffectTokens(input, /\s/) as Dynamic) {
-    let value8: Dynamic = (0, parseCssNumber)(value7);
+    let value8: Dynamic = parseCssNumber(value7);
     if (
       !!value8 &&
       (value8.unit === "px" || (value8.unit === "" && value8.value === 0))
@@ -97,7 +96,7 @@ function parseCssShadow(input?: Dynamic, options?: Dynamic): Dynamic {
   )
     return null;
   let value: Dynamic = [...items2, ...items3].join(" "),
-    value2: Dynamic = (0, validateStyleColor)(
+    value2: Dynamic = validateStyleColor(
       value || "currentcolor",
     );
   if (value2 === undefined) return null;
@@ -146,7 +145,7 @@ function parseCssShadow(input?: Dynamic, options?: Dynamic): Dynamic {
 function parseCssShadows(input?: Dynamic, options?: Dynamic): Dynamic {
   let value: Dynamic = (input ?? "").trim();
   if (!value || value === "none") return [];
-  if ((0, classifyStyleValue)(value).kind !== "literal") return null;
+  if (classifyStyleValue(value).kind !== "literal") return null;
   let value2: Dynamic = splitEffectTokens(value, /,/, true);
   if (value2.length === 0 || value2.length > StyleSchemaValuesLimit)
     return null;
@@ -162,10 +161,10 @@ function parseCssShadows(input?: Dynamic, options?: Dynamic): Dynamic {
 function parseCssBlur(input?: Dynamic): Dynamic {
   let value: Dynamic = (input ?? "").trim();
   if (!value || value === "none") return {};
-  if ((0, classifyStyleValue)(value).kind !== "literal") return null;
+  if (classifyStyleValue(value).kind !== "literal") return null;
   let value2: Dynamic = /^blur\(\s*([^)]+)\)$/i.exec(value);
   if (!value2) return null;
-  let value3: Dynamic = (0, parseCssNumber)(value2[1].trim());
+  let value3: Dynamic = parseCssNumber(value2[1].trim());
   return !value3 ||
     !(value3.unit === "px" || (value3.unit === "" && value3.value === 0)) ||
     !PropertiesCssEffectsMin(value3.value, styleFieldBoundsValue.blur)
@@ -182,7 +181,7 @@ function parseCssFilters(input?: Dynamic): Dynamic {
       shadows: [],
       filter: {},
     };
-  if ((0, classifyStyleValue)(value).kind !== "literal") return null;
+  if (classifyStyleValue(value).kind !== "literal") return null;
   let items: Dynamic = [],
     value2: Dynamic = splitEffectTokens(value, /\s/);
   for (let [value3, value4] of value2.entries() as Dynamic) {
@@ -211,7 +210,7 @@ function parseCssFilters(input?: Dynamic): Dynamic {
 }
 function serializeEffectValue(input?: Dynamic, options?: Dynamic): Dynamic {
   if (options === undefined) return null;
-  let value: Dynamic = (0, styleObjectToCss)(
+  let value: Dynamic = styleObjectToCss(
     {
       [input]: options,
     },
@@ -291,7 +290,7 @@ function CssEffectsSection({
     value7: Dynamic = value6
       ? PropertiesCssEffectsBoxShadowTextShadowFilterValues
       : PropertiesCssEffectsBoxShadowFilterBackdropFilterValues,
-    value8: Dynamic = (0, useStyleCommitScrub)(
+    value8: Dynamic = useStyleCommitScrub(
       (input?: Dynamic): Dynamic => onCommitMany(input),
     ),
     value9: Dynamic = (0, reactComponentsPropsPanel.useRef)({}),
@@ -349,7 +348,7 @@ function CssEffectsSection({
         value16: Dynamic = state2,
         value17: Dynamic = input ?? {},
         callback7: Dynamic = (input2?: Dynamic): Dynamic =>
-          !(0, equalStyleBags)(
+          !equalStyleBags(
             value17[input2],
             input2 in value9.current
               ? value9.current[input2]

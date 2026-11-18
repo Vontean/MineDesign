@@ -65,14 +65,14 @@ function PropertyRow({
       onClick={
         onPress && !disabled2
           ? (event?: Dynamic): Dynamic => {
-              (0, isNestedPropertyControl)(
+              isNestedPropertyControl(
                 event.currentTarget,
                 event.target,
               ) || onPress(event.currentTarget);
             }
           : undefined
       }
-      className={(0, joinClassNames)(
+      className={joinClassNames(
         "group/row grid min-w-0 shrink-0 items-center gap-x-sm py-px",
         PropertiesPrimitivesClassNames_3,
         label !== undefined
@@ -84,7 +84,7 @@ function PropertyRow({
       )}
     >
       {label !== undefined && (<div
-          className={(0, joinClassNames)(
+          className={joinClassNames(
             "flex min-w-0 items-center",
             disabled2 && "opacity-50",
           )}
@@ -92,7 +92,7 @@ function PropertyRow({
           <span
             title={title === undefined ? (value) : (undefined)}
             {...labelProps}
-            className={(0, joinClassNames)(
+            className={joinClassNames(
               "min-w-0 truncate text-footnote text-muted select-none",
               labelProps?.className,
             )}
@@ -100,7 +100,7 @@ function PropertyRow({
             {label}
           </span>
           {onReset && !disabled2 && (<span
-              className={(0, joinClassNames)(
+              className={joinClassNames(
                 "flex w-0 shrink-0 overflow-hidden",
                 "focus-within:w-auto focus-within:overflow-visible",
                 "group-hover/row:w-auto group-hover/row:overflow-visible",
@@ -141,7 +141,7 @@ function PropertyRow({
         </div>)}
       <div
         ref={value2}
-        className={(0, joinClassNames)(
+        className={joinClassNames(
           "flex min-w-0 items-center gap-2",
           trailing === undefined &&
             "pr-[calc(var(--pp-iconcol,-4px)+4px)] pointer-coarse:pr-[calc(var(--pp-iconcol,-8px)+8px)]",
@@ -174,7 +174,7 @@ function PropertyRow({
           />) : (null)}
         {trailing !== undefined ? (<span
             data-kit={"row-trailing"}
-            className={(0, joinClassNames)(
+            className={joinClassNames(
               "-ml-1 pointer-coarse:ml-0 flex w-[var(--pp-iconcol,auto)] shrink-0 items-center justify-center",
               PropertiesPrimitivesClassNames_4,
             )}

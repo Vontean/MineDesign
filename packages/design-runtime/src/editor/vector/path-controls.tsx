@@ -69,9 +69,9 @@ function VectorPathControls({
             />,
           );
         },
-        value4: Dynamic = (0, previousContourAnchor)(input, options2),
+        value4: Dynamic = previousContourAnchor(input, options2),
         callback3: Dynamic = (input3?: Dynamic): Dynamic =>
-          (0, showVectorControls)(
+          showVectorControls(
             controls,
             input,
             options,

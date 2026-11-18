@@ -9,13 +9,13 @@ var publishAuthorizationErrorCodes: Dynamic;
 var hasPublishMethod: Dynamic;
 var publishErrorCodes: Dynamic;
 function hasCachedPublishCapability(): Dynamic {
-  return hasPublishMethod((0, getCachedHostCapability)("self"));
+  return hasPublishMethod(getCachedHostCapability("self"));
 }
 function canRequestPublishCapability(): Dynamic {
-  return hasCachedPublishCapability() || (0, hasCapabilityLoader)();
+  return hasCachedPublishCapability() || hasCapabilityLoader();
 }
 function getPublishCapability(): Dynamic {
-  return (0, resolveHostCapability)("self", hasPublishMethod);
+  return resolveHostCapability("self", hasPublishMethod);
 }
 function normalizePublishError(input?: Dynamic): Dynamic {
   if (typeof input == "object" && input !== null && "code" in input) {
@@ -85,7 +85,7 @@ export function installPlatformPublish(): () => void {
       "capability_disabled",
       "capability_removed",
     ];
-    hasPublishMethod = (0, hasCapabilityMethod)("publish");
+    hasPublishMethod = hasCapabilityMethod("publish");
     publishErrorCodes = new Set([
       "conflict",
       "not_writer",

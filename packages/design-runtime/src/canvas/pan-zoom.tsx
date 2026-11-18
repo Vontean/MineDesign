@@ -796,16 +796,16 @@ export function installCanvasPanZoom(): () => void {
         }
       };
     };
-    reactCanvasPanZoom = (0, toModuleNamespace)(
-      (0, load_react)(),
+    reactCanvasPanZoom = toModuleNamespace(
+      load_react(),
       1,
     );
     CanvasPanZoomRound = (input?: Dynamic): Dynamic =>
-      Math.round(input * (0, PlatformFileContentMin)(input).lh * 1.25);
+      Math.round(input * PlatformFileContentMin(input).lh * 1.25);
     CanvasPanZoomScrollTop = (input?: Dynamic): Dynamic => ({
       above: input.scrollTop > 1,
       below: input.scrollTop + input.clientHeight < input.scrollHeight - 1,
     });
-    (0, initializeCdsIndex)();
+    initializeCdsIndex();
   };
 }

@@ -33,7 +33,7 @@ function parseColorDesignSystem(
   let entries2: Dynamic = new Map();
   for (let value7 of value.tokens as Dynamic) {
     let value8: Dynamic = value7,
-      value9: Dynamic = (0, normalizeColorTokenName)(value8?.name);
+      value9: Dynamic = normalizeColorTokenName(value8?.name);
     if (value9 === undefined || entries2.has(value9)) continue;
     let value10: Dynamic = value8?.value,
       value11: Dynamic = typeof value10 == "string" ? value10 : undefined;
@@ -64,9 +64,9 @@ function parseColorDesignSystem(
   }
   let callback: Dynamic = (input2?: Dynamic, options2?: Dynamic): Dynamic => {
       let value7: Dynamic = /^\{(.+)\}$/.exec(input2)?.[1];
-      if (value7 === undefined) return (0, normalizeCssColor)(input2);
+      if (value7 === undefined) return normalizeCssColor(input2);
       let entry: Dynamic = entries2.get(
-        (0, normalizeColorTokenName)(value7) ?? "",
+        normalizeColorTokenName(value7) ?? "",
       );
       return entry !== undefined && options2 < 16
         ? callback(entry, options2 + 1)
@@ -94,7 +94,7 @@ function parseColorDesignSystem(
           DesignSystemTypeDeclarationsRgbaHslaPattern.test(input3),
       )
       .map(([input2]: Dynamic): Dynamic => input2),
-    value5: Dynamic = (0, groupColorTokens)(value4).flatMap(
+    value5: Dynamic = groupColorTokens(value4).flatMap(
       (input2?: Dynamic): Dynamic =>
         input2.names.flatMap(
           (input3?: Dynamic): Dynamic =>
@@ -112,9 +112,9 @@ function parseColorDesignSystem(
     value6: Dynamic = value2.find(
       (input2?: Dynamic): Dynamic => typeof input2?.id == "string",
     );
-  return (0, createDesignSystemModel)(
-    (0, boundedDesignSystemText)(options.title, 80) ??
-      (0, designSystemName)(input),
+  return createDesignSystemModel(
+    boundedDesignSystemText(options.title, 80) ??
+      designSystemName(input),
     options.url,
     typeof value6?.name == "string" ? value6.name : value6?.id,
     value5,
@@ -126,7 +126,7 @@ function parseCompleteDesignSystem(
   context?: Dynamic,
 ): Dynamic {
   let value: Dynamic = parseColorDesignSystem(input, options, context),
-    value2: Dynamic = (0, parseTypographyStyles)(input);
+    value2: Dynamic = parseTypographyStyles(input);
   return value2.length === 0
     ? value
     : value !== undefined
@@ -134,9 +134,9 @@ function parseCompleteDesignSystem(
           ...value,
           type: value2,
         }
-      : (0, createDesignSystemModel)(
-          (0, boundedDesignSystemText)(options.title, 80) ??
-            (0, designSystemName)(input),
+      : createDesignSystemModel(
+          boundedDesignSystemText(options.title, 80) ??
+            designSystemName(input),
           options.url,
           undefined,
           [],

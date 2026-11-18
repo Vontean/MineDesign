@@ -222,7 +222,7 @@ function resizeSvgArrow(
   argument: Dynamic = {},
 ): Dynamic {
   let value2: Dynamic = input.element(options),
-    value3: Dynamic = value2 ? (0, inspectSvgArrow)(value2) : null;
+    value3: Dynamic = value2 ? inspectSvgArrow(value2) : null;
   if (!value3) return null;
   let value4: Dynamic = parseInt(
       value3.shaft.getAttribute(DcTplAttribute) ?? "-1",
@@ -239,7 +239,7 @@ function resizeSvgArrow(
         extra.stroke,
       ].find(
         (input2?: Dynamic): Dynamic =>
-          (0, normalizeSvgPaint)(input2) != null,
+          normalizeSvgPaint(input2) != null,
       ) ?? "";
   normalizeSvgElementSizing(input, options);
   let value6: Dynamic = value3.tag === "path" && !value3.legacy;
@@ -301,13 +301,13 @@ function resizeSvgArrow(
         (input2?: Dynamic): Dynamic => ({
           end: input2,
           kind: value11[input2],
-          id: (0, createArrowHeadId)(value11[input2]),
+          id: createArrowHeadId(value11[input2]),
         }),
       );
   input.setInnerHtml(
     options,
     (value12.length > 0
-      ? `<defs>${value12.map((source?: Dynamic): Dynamic => (0, arrowHeadMarkerHtml)(source.id, source.kind, source.end, value5)).join("")}</defs>`
+      ? `<defs>${value12.map((source?: Dynamic): Dynamic => arrowHeadMarkerHtml(source.id, source.kind, source.end, value5)).join("")}</defs>`
       : "") +
       value10 +
       `<path d="${context}"${value12.map((input2?: Dynamic): Dynamic => ` marker-${input2.end}="url(#${input2.id})"`).join("")}${value7}${value8 ? ` style="${SvgLayoutReplace(value8)}"` : ""}>${value9}</path>`,

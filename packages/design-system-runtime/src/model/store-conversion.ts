@@ -27,21 +27,21 @@ function planSystemStoreConversion(
         ...input,
       })),
     ],
-    catalog = (0, storageCatalogFromManifest)(
+    catalog = storageCatalogFromManifest(
       files[DESIGN_SYSTEM_PATHS.manifest] ?? "",
     );
   documents.set(
     SYSTEM_META_DOCUMENT_PATH,
-    (0, makeStoredSystemMetadata)(title, files, options.meta),
+    makeStoredSystemMetadata(title, files, options.meta),
   );
   let setFileRecord = (input: string, options2: Storage.DatabaseRecord) =>
       void documents.set(
-        (0, rawDocumentPathForFile)(input),
+        rawDocumentPathForFile(input),
         options2,
       ),
     bytesForPath = (input: string, options2: string) =>
       options.binaries?.get(input)?.bytes ??
-      (0, fileContentBytesModelStoredFileCodec)(options2, input),
+      fileContentBytesModelStoredFileCodec(options2, input),
     digestForPath = (input: string, options2: () => Uint8Array) =>
       options.binaries?.get(input)?.sha256 ??
       (options.sha256 !== undefined ? options.sha256(options2()) : undefined),
@@ -74,7 +74,7 @@ function planSystemStoreConversion(
         value3 =
           value2 === undefined
             ? null
-            : (0, normalizeKnownUpload)(value2);
+            : normalizeKnownUpload(value2);
       if (value3 !== null) {
         let value4 = value3.sha256 ?? callback2(),
           state = {
@@ -82,7 +82,7 @@ function planSystemStoreConversion(
               value3.bytes ??
               value?.bytes.length ??
               binarySize(input) ??
-              (0, storedContentByteLength)(options2, input),
+              storedContentByteLength(options2, input),
             contentType: value3.contentType ?? context,
             sha256: value4,
             storedSha256: value3.storedSha256,
@@ -91,12 +91,12 @@ function planSystemStoreConversion(
           };
         setFileRecord(
           input,
-          (0, makeRemoteFileRecord)(
+          makeRemoteFileRecord(
             input,
-            (0, blobAbsoluteUrl)(value3.id),
+            blobAbsoluteUrl(value3.id),
             {
               ...state,
-              name: (0, storedPathBasename)(input),
+              name: storedPathBasename(input),
             },
           ),
         );
@@ -105,7 +105,7 @@ function planSystemStoreConversion(
         }
         return true;
       }
-      (0, addConversionUpload)(
+      addConversionUpload(
         uploads,
         input,
         context,
@@ -115,7 +115,7 @@ function planSystemStoreConversion(
       return true;
     },
     convertFile = (input: string, options2: string): void => {
-      let value = (0, chooseStoredConversionRoute)(
+      let value = chooseStoredConversionRoute(
         input,
         options2,
         binarySize(input),
@@ -123,13 +123,13 @@ function planSystemStoreConversion(
       if (value.to === "inline") {
         setFileRecord(input, {
           path: input,
-          kind: (0, storedFileKind)(input),
+          kind: storedFileKind(input),
           data: options2,
         });
       } else if (value.to === "data-uri") {
         setFileRecord(input, {
           path: input,
-          kind: (0, storedFileKind)(input),
+          kind: storedFileKind(input),
           data: options2,
         });
         carried.push({
@@ -158,17 +158,17 @@ function planSystemStoreConversion(
       continue;
     }
     let value2 = files[value],
-      value3 = (0, explainUnsafeMirrorPath)(value);
+      value3 = explainUnsafeMirrorPath(value);
     if (value3 !== null) {
       omitFile(value, "its name " + value3 + ", so it was left out");
       continue;
     }
     if (value === DESIGN_SYSTEM_PATHS.tokens) {
-      let value5 = (0, chooseStoredConversionRoute)(value, value2),
+      let value5 = chooseStoredConversionRoute(value, value2),
         value6 =
           value5.to === "inline"
-            ? (0, parseJsonObjectOrNull)(
-                (0, tokensJsonWithManifestName)(files),
+            ? parseJsonObjectOrNull(
+                tokensJsonWithManifestName(files),
               )
             : null;
       if (value6 !== null) {
@@ -201,10 +201,10 @@ function planSystemStoreConversion(
       }
       continue;
     }
-    let value4 = (0, storagePointerForFile)(value, value2);
+    let value4 = storagePointerForFile(value, value2);
     if (value4 === null || value4.store === "file") {
       convertFile(value, value2);
-    } else if ((0, isPendingBlobId)(value4.id)) {
+    } else if (isPendingBlobId(value4.id)) {
       if (
         options.known?.has(value) === true ||
         options.binaries?.get(value)?.bytes !== undefined
@@ -212,8 +212,8 @@ function planSystemStoreConversion(
         useOrQueueBlob(
           value,
           value2,
-          (0, storedContentType)(value) ??
-            (0, storageRecordForFile)(files, catalog, value)!.type,
+          storedContentType(value) ??
+            storageRecordForFile(files, catalog, value)!.type,
         );
       } else {
         omitFile(
@@ -222,12 +222,12 @@ function planSystemStoreConversion(
         );
       }
     } else {
-      let value5 = (0, storageRecordForFile)(files, catalog, value)!;
+      let value5 = storageRecordForFile(files, catalog, value)!;
       setFileRecord(
         value,
-        (0, makeRemoteFileRecord)(
+        makeRemoteFileRecord(
           value,
-          (0, blobAbsoluteUrl)(value4.id),
+          blobAbsoluteUrl(value4.id),
           {
             bytes: value5.bytes,
             contentType: value5.type,
@@ -246,7 +246,7 @@ function planSystemStoreConversion(
       input < options2 ? -1 : input > options2 ? 1 : 0,
   )) {
     if (
-      !(0, isValidDesignSystemPath)(value) ||
+      !isValidDesignSystemPath(value) ||
       Object.hasOwn(files, value) ||
       value === DESIGN_SYSTEM_PATHS.readme ||
       value === DESIGN_SYSTEM_PATHS.manifest ||
@@ -254,7 +254,7 @@ function planSystemStoreConversion(
     ) {
       continue;
     }
-    let value3 = (0, explainUnsafeMirrorPath)(value);
+    let value3 = explainUnsafeMirrorPath(value);
     if (value3 !== null) {
       omitFile(value, "its name " + value3 + ", so it was left out");
       continue;
@@ -262,15 +262,15 @@ function planSystemStoreConversion(
     useOrQueueBlob(
       value,
       "",
-      (0, storedContentType)(value) ?? "text/plain",
+      storedContentType(value) ?? "text/plain",
       value2,
     );
   }
   if (options.derived !== false) {
-    let value = (0, consumptionDocumentationForFiles)(files),
-      value2 = (0, mergeReadmeWithGeneratedTail)(
+    let value = consumptionDocumentationForFiles(files),
+      value2 = mergeReadmeWithGeneratedTail(
         files[DESIGN_SYSTEM_PATHS.readme] ?? "",
-        (0, generatedReadmeTail)(value.readme),
+        generatedReadmeTail(value.readme),
       );
     if (value2 !== "") {
       convertFile(DESIGN_SYSTEM_PATHS.readme, value2);
@@ -278,7 +278,7 @@ function planSystemStoreConversion(
     for (let [value4, value5] of value.files) {
       convertFile(value4, value5);
     }
-    let value3 = (0, generatedTokensCssForFiles)(files);
+    let value3 = generatedTokensCssForFiles(files);
     if (value3 !== null) {
       convertFile(GENERATED_TOKENS_CSS_PATH, value3);
     }
@@ -295,13 +295,13 @@ function planSystemStoreConversion(
     for (let value3 of value.paths) {
       setFileRecord(
         value3,
-        (0, makeRemoteFileRecord)(
+        makeRemoteFileRecord(
           value3,
-          (0, blobAbsoluteUrl)(value2.id),
+          blobAbsoluteUrl(value2.id),
           {
             ...value2,
             bytes: value.byteLength,
-            name: (0, storedPathBasename)(value3),
+            name: storedPathBasename(value3),
           },
         ),
       );
@@ -329,7 +329,7 @@ function planSystemStoreConversion(
       options.stamp ?? {},
     );
   } else {
-    return (0, appendStoredFilesGuidance)(plan);
+    return appendStoredFilesGuidance(plan);
   }
 }
 function applyKnownConversionUploads(
@@ -346,7 +346,7 @@ function applyKnownConversionUploads(
       value4 =
         value3 === undefined || value3 === null
           ? null
-          : (0, normalizeKnownUpload)(value3);
+          : normalizeKnownUpload(value3);
     if (value3 === undefined || (value3 !== null && value4 === null)) {
       uploads.push(value);
     } else {
@@ -359,16 +359,16 @@ function applyKnownConversionUploads(
           });
         } else {
           documents.set(
-            (0, rawDocumentPathForFile)(value5),
-            (0, makeRemoteFileRecord)(
+            rawDocumentPathForFile(value5),
+            makeRemoteFileRecord(
               value5,
-              (0, blobAbsoluteUrl)(value4.id),
+              blobAbsoluteUrl(value4.id),
               {
                 bytes: value4.bytes ?? value.byteLength,
                 contentType: value4.contentType ?? value.contentType,
                 sha256: value4.sha256 ?? value.sha256,
                 storedSha256: value4.storedSha256,
-                name: (0, storedPathBasename)(value5),
+                name: storedPathBasename(value5),
                 ...stamp,
               },
             ),
@@ -377,7 +377,7 @@ function applyKnownConversionUploads(
       }
     }
   }
-  return (0, appendStoredFilesGuidance)(
+  return appendStoredFilesGuidance(
     enforceConversionBudgets({
       title: plan.title,
       docs: documents,
@@ -398,47 +398,47 @@ function conversionFileReferrers(
     },
     readmes: [string, string][] = [];
   for (let [, value] of plan.docs) {
-    let value2 = (0, stringOrUndefined)(value.path),
-      value3 = (0, stringOrUndefined)(value.data);
+    let value2 = stringOrUndefined(value.path),
+      value3 = stringOrUndefined(value.data);
     if (value2 === undefined || value3 === undefined) {
       continue;
     }
     if (
-      (0, classifyDesignSystemFile)(value2) === "preview" ||
-      (0, classifyDesignSystemFile)(value2) === "componentReadme"
+      classifyDesignSystemFile(value2) === "preview" ||
+      classifyDesignSystemFile(value2) === "componentReadme"
     ) {
-      for (let value4 of (0, componentFileReferences)(
+      for (let value4 of componentFileReferences(
         value2,
         value3,
       )) {
         addReference(
-          (0, resolveLocalFileReference)(value2, value4),
+          resolveLocalFileReference(value2, value4),
           value2,
         );
       }
     }
     if (
       value2 === DESIGN_SYSTEM_PATHS.readme ||
-      ((0, classifyDesignSystemFile)(value2) === "doc" &&
-        !(0, isGeneratedApiPath)(value2)) ||
+      (classifyDesignSystemFile(value2) === "doc" &&
+        !isGeneratedApiPath(value2)) ||
       (value2.startsWith(DESIGN_SYSTEM_PATHS.assetsDir) &&
-        (0, fileExtension)(value2) === "md")
+        fileExtension(value2) === "md")
     ) {
       readmes.push([
         value2,
         value2 === DESIGN_SYSTEM_PATHS.readme
-          ? (0, stripGeneratedReadmeTail)(value3)
+          ? stripGeneratedReadmeTail(value3)
           : value3,
       ]);
     }
   }
   for (let value of plan.uploads) {
-    if ((0, fileExtension)(value.path) === "css") {
+    if (fileExtension(value.path) === "css") {
       for (let value2 of new TextDecoder()
         .decode(value.bytes)
         .matchAll(CSS_FILE_REFERENCE_PATTERN)) {
         addReference(
-          (0, resolveLocalFileReference)(
+          resolveLocalFileReference(
             value.path,
             value2[1] ?? value2[2] ?? value2[3] ?? "",
           ),
@@ -449,14 +449,14 @@ function conversionFileReferrers(
   }
   let tokensRecord = plan.docs.get(SYSTEM_TOKENS_DOCUMENT_PATH);
   if (tokensRecord !== undefined) {
-    for (let value of (0, parseTokens)(tokensRecord).type.fonts) {
+    for (let value of parseTokens(tokensRecord).type.fonts) {
       addReference(value.file, DESIGN_SYSTEM_PATHS.tokens);
     }
   }
   if (readmes.length > 0) {
     for (let value of new Set([
       ...[...plan.docs.values()].map(
-        (input) => (0, stringOrUndefined)(input.path) ?? "",
+        (input) => stringOrUndefined(input.path) ?? "",
       ),
       ...plan.uploads.flatMap((input) => input.paths),
     ])) {
@@ -466,7 +466,7 @@ function conversionFileReferrers(
       for (let [value2, value3] of readmes) {
         if (
           value3.includes(value) ||
-          value3.includes((0, storedPathBasename)(value))
+          value3.includes(storedPathBasename(value))
         ) {
           addReference(value, value2);
         }
@@ -483,7 +483,7 @@ function conversionFilePriority(
   plan: Storage.ConversionPlan,
   referrers: ReadonlyMap<string, string[]> = conversionFileReferrers(plan),
 ): Map<string, number> {
-  let metadata = (0, parseStoredSystemMetadata)(
+  let metadata = parseStoredSystemMetadata(
       plan.docs.get(SYSTEM_META_DOCUMENT_PATH),
     ),
     groupOrder = (metadata?.assetGroups ?? []).map(
@@ -492,7 +492,7 @@ function conversionFilePriority(
     paths = [
       ...new Set([
         ...[...plan.docs.values()].map(
-          (input) => (0, stringOrUndefined)(input.path) ?? "",
+          (input) => stringOrUndefined(input.path) ?? "",
         ),
         ...plan.uploads.flatMap((input) => input.paths),
       ]),
@@ -595,7 +595,7 @@ function enforceConversionBudgets(
             )
             .map(
               ([, input2]) =>
-                (0, stringOrUndefined)(input2.path) ??
+                stringOrUndefined(input2.path) ??
                 (input === SYSTEM_COLLECTION ? "" : ""),
             ),
           ...uploads
@@ -603,19 +603,19 @@ function enforceConversionBudgets(
             .filter(
               (input2): boolean =>
                 documentCollectionPath(
-                  (0, rawDocumentPathForFile)(input2),
+                  rawDocumentPathForFile(input2),
                 ) === input,
             ),
         ]),
       ].filter((input2): boolean => input2 !== ""),
     documentBytes = (input: string) =>
-      documents.has((0, rawDocumentPathForFile)(input))
-        ? (0, estimateEmbeddedJsonBytes)(
-            documents.get((0, rawDocumentPathForFile)(input)),
+      documents.has(rawDocumentPathForFile(input))
+        ? estimateEmbeddedJsonBytes(
+            documents.get(rawDocumentPathForFile(input)),
           )
         : 512,
     omitPath = (input: string, options: string): void => {
-      documents.delete((0, rawDocumentPathForFile)(input));
+      documents.delete(rawDocumentPathForFile(input));
       let value = uploadForPath(input);
       if (value !== undefined) {
         if (
@@ -627,7 +627,7 @@ function enforceConversionBudgets(
           uploads.splice(uploads.indexOf(value), 1);
         } else {
           value.path = value.paths[0];
-          value.docPath = (0, rawDocumentPathForFile)(value.path);
+          value.docPath = rawDocumentPathForFile(value.path);
         }
       }
       carry({
@@ -668,11 +668,11 @@ function enforceConversionBudgets(
       omitPath(
         value6,
         "the store takes no " +
-          (0, fileKindDescription)(value6) +
+          fileKindDescription(value6) +
           " and " +
           value +
           "/ already holds its " +
-          (0, formatStoredFileKilobytes)(
+          formatStoredFileKilobytes(
             MAX_INLINE_DATA_URI_BUDGET_FRACTION *
               MAX_SYNC_COLLECTION_BYTES,
           ) +
@@ -688,13 +688,13 @@ function enforceConversionBudgets(
       let value6 = value2
         .filter((input) => {
           let entry = documents.get(
-            (0, rawDocumentPathForFile)(input),
+            rawDocumentPathForFile(input),
           );
           return (
             entry !== undefined &&
             typeof entry.data === "string" &&
-            (0, isTextFilePath)(input) &&
-            (0, storedContentType)(input) !== null
+            isTextFilePath(input) &&
+            storedContentType(input) !== null
           );
         })
         .sort(
@@ -707,15 +707,15 @@ function enforceConversionBudgets(
           break;
         }
         let entry = documents.get(
-          (0, rawDocumentPathForFile)(value7),
+          rawDocumentPathForFile(value7),
         );
-        value5 -= (0, estimateEmbeddedJsonBytes)(entry) - 512;
-        documents.delete((0, rawDocumentPathForFile)(value7));
+        value5 -= estimateEmbeddedJsonBytes(entry) - 512;
+        documents.delete(rawDocumentPathForFile(value7));
         let value8 = storedFileEncoder.encode(entry!.data as string);
-        (0, addConversionUpload)(
+        addConversionUpload(
           uploads,
           value7,
-          (0, storedContentType)(value7)!,
+          storedContentType(value7)!,
           value8,
           sha2562?.(value8),
         );
@@ -735,11 +735,11 @@ function enforceConversionBudgets(
     }
   }
   let storageIdentity = (input: string): string | null => {
-      let entry = documents.get((0, rawDocumentPathForFile)(input)),
+      let entry = documents.get(rawDocumentPathForFile(input)),
         value =
           entry !== undefined
-            ? (0, blobIdFromReference)(
-                (0, stringOrUndefined)(entry.dataRef) ?? "",
+            ? blobIdFromReference(
+                stringOrUndefined(entry.dataRef) ?? "",
               )
             : null;
       if (value !== null) {
@@ -759,7 +759,7 @@ function enforceConversionBudgets(
     storageIdentityByPath = new Map<string, string>();
   for (let value of new Set([
     ...[...documents.values()].map(
-      (input) => (0, stringOrUndefined)(input.path) ?? "",
+      (input) => stringOrUndefined(input.path) ?? "",
     ),
     ...uploads.flatMap((input) => input.paths),
   ])) {
@@ -781,8 +781,8 @@ function enforceConversionBudgets(
     ) {
       let value2 = value.pop()!;
       if (
-        (0, classifyDesignSystemFile)(value2) !== "asset" &&
-        (0, classifyDesignSystemFile)(value2) !== "componentOther"
+        classifyDesignSystemFile(value2) !== "asset" &&
+        classifyDesignSystemFile(value2) !== "componentOther"
       ) {
         continue;
       }
@@ -865,7 +865,7 @@ function metadataWithCarriedFiles(
     compactBase = base,
     withCarried = build(compactBase, maxCount);
   if (
-    (0, estimateEmbeddedJsonBytes)(withCarried) >
+    estimateEmbeddedJsonBytes(withCarried) >
     MAX_SYNC_DOCUMENT_BYTES
   ) {
     let { sections: value, ...value2 } = base;
@@ -890,7 +890,7 @@ function metadataWithCarriedFiles(
   }
   for (
     let value: number = maxCount;
-    (0, estimateEmbeddedJsonBytes)(withCarried) >
+    estimateEmbeddedJsonBytes(withCarried) >
       MAX_SYNC_DOCUMENT_BYTES && value > 0;
 
   ) {
@@ -920,7 +920,7 @@ export function installModelStoreConversion(): () => void {
     collectionOverflowConversionMessage = (input): string =>
       input +
       "/ holds more than " +
-      (0, formatStoredFileKilobytes)(
+      formatStoredFileKilobytes(
         MAX_SYNC_COLLECTION_BYTES,
       ) +
       " of text, so it is stored as a file";

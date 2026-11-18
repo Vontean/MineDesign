@@ -114,14 +114,14 @@ async function convertDatabaseDesignToFiles(
         typeof value11 == "string"
           ? BoardsValue +
             "/" +
-            (0, encodeStorePathSegment)(value11)
+            encodeStorePathSegment(value11)
           : undefined;
       if (value12 !== undefined && !entries.has(value12)) {
         let value13: Dynamic = await value3.get(value12);
         value13 !== null && entries.set(value13.path, value13);
       }
     }
-    let value5: Dynamic = (0, createDesignDatabaseCodec)({
+    let value5: Dynamic = createDesignDatabaseCodec({
         readBlob: options.readBlob,
         ...(options.defaultTitle !== undefined
           ? {
@@ -137,7 +137,7 @@ async function convertDatabaseDesignToFiles(
       };
     let value7: Dynamic = value.find(
       (input?: Dynamic): Dynamic =>
-        (0, isArtboardFile)(input) && !value6.files.has(input),
+        isArtboardFile(input) && !value6.files.has(input),
     );
     if (value7 !== undefined)
       return {
@@ -162,7 +162,7 @@ async function convertDatabaseDesignToFiles(
         ),
       ),
       index: Dynamic = 0;
-    for (let value11 of (0, splitPublishBatches)(
+    for (let value11 of splitPublishBatches(
       value9,
       (): Dynamic => false,
     ) as Dynamic) {

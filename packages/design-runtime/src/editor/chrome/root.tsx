@@ -46,38 +46,38 @@ export {
 };
 export function installEditorChromeRoot(): () => void {
   return () => {
-    jsxChromeRoot = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    jsxChromeRoot = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
-    jsxChromeRoot_2 = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    jsxChromeRoot_2 = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
-    reactChromeRoot = (0, toModuleNamespace)(
-      (0, load_react)(),
+    reactChromeRoot = toModuleNamespace(
+      load_react(),
       1,
     );
-    (0, initializeCdsIndex)();
-    reactDomChromeRoot = (0, toModuleNamespace)(
-      (0, load_react_dom)(),
+    initializeCdsIndex();
+    reactDomChromeRoot = toModuleNamespace(
+      load_react_dom(),
       1,
     );
-    jsxChromeRoot_3 = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    jsxChromeRoot_3 = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
-    (0, initializeCdsIndex)();
-    jsxChromeRoot_4 = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    initializeCdsIndex();
+    jsxChromeRoot_4 = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
-    reactChromeRoot_2 = (0, toModuleNamespace)(
-      (0, load_react)(),
+    reactChromeRoot_2 = toModuleNamespace(
+      load_react(),
       1,
     );
-    jsxChromeRoot_5 = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    jsxChromeRoot_5 = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
   };

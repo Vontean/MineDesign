@@ -18,7 +18,7 @@ function ChromeSkeleton({ className: className }: Dynamic): Dynamic {
   return (
     <span aria-hidden={"true"} className={"contents"}>
       <ComponentsSkeletonAssignValue
-        className={(0, joinClassNames)("block", className)}
+        className={joinClassNames("block", className)}
       />
     </span>
   );
@@ -37,7 +37,7 @@ function ChromeTextSkeleton({ chars = 12 }: Dynamic): Dynamic {
 function ChromeLoadingSpinner({ className: className }: Dynamic): Dynamic {
   useUiLocale();
   return (
-    <span className={(0, joinClassNames)("inline-flex", className)}>
+    <span className={joinClassNames("inline-flex", className)}>
       <Spinner label={uiMessage("inspector.loading.loading")} />
     </span>
   );
@@ -114,7 +114,7 @@ function DocumentLoadGate({
     </jsxSessionStripReveal_2.Fragment>
   ) : (
     <div
-      className={(0, joinClassNames)(
+      className={joinClassNames(
         "mc-loadgate relative h-full min-h-40 w-full",
         !(skeletonFlush && skeleton != null) &&
           "pt-[var(--tb-overlay-h,0px)]",

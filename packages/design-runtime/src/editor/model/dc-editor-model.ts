@@ -43,7 +43,7 @@ export function installEditorModelDcEditorModel(): () => void {
         this.tpl = (document as Dynamic).createElement("template");
         this.tpl.innerHTML = this.raw
           ? input
-          : (0, toParserHtml)(input);
+          : toParserHtml(input);
         typeof MutationObserver !== "undefined" &&
           ((this.edits = new MutationObserver((): Dynamic => {
             this.serialized = null;
@@ -56,7 +56,7 @@ export function installEditorModelDcEditorModel(): () => void {
           }));
         this.restamp();
         for (let value2 of this.byTid.values() as Dynamic)
-          (0, isImportedIcon)(value2) &&
+          isImportedIcon(value2) &&
             !value2.hasAttribute("data-uneditable") &&
             value2.setAttribute("data-uneditable", "");
       }
@@ -157,7 +157,7 @@ export function installEditorModelDcEditorModel(): () => void {
           `[${DcTplAttribute}]`,
         ) as Dynamic)
           value4.removeAttribute(DcTplAttribute);
-        let value3: Dynamic = (0, fromParserHtml)(value2.innerHTML);
+        let value3: Dynamic = fromParserHtml(value2.innerHTML);
         this.edits !== null && (this.serialized = value3);
         return value3;
       }
@@ -168,7 +168,7 @@ export function installEditorModelDcEditorModel(): () => void {
             let value2: Dynamic = "  ".repeat(options),
               value3: Dynamic = this.raw
                 ? input.tagName.toLowerCase()
-                : (0, readableTagName)(input.tagName.toLowerCase()),
+                : readableTagName(input.tagName.toLowerCase()),
               value4: Dynamic = `${value2}<${value3}`;
             for (let value5 of input.attributes as Dynamic)
               value5.name !== DcTplAttribute &&
@@ -206,8 +206,8 @@ export function installEditorModelDcEditorModel(): () => void {
       ): Dynamic {
         let value2: Dynamic = this.element(input);
         if (!value2) return false;
-        let value3: Dynamic = (0, setStyleProperty)(
-          (0, expandShorthandForProperty)(
+        let value3: Dynamic = setStyleProperty(
+          expandShorthandForProperty(
             value2.getAttribute("style"),
             options,
             context === null,
@@ -233,7 +233,7 @@ export function installEditorModelDcEditorModel(): () => void {
         let value2: Dynamic = this.element(input);
         return !value2 ||
           (value2.tagName !== "TEXTAREA" &&
-            !(0, hasOnlyDirectText)(value2))
+            !hasOnlyDirectText(value2))
           ? false
           : ((value2.textContent = options),
             value2.tagName === "STYLE" && (this.classRuleCache = null),
@@ -273,7 +273,7 @@ export function installEditorModelDcEditorModel(): () => void {
         )
           return null;
         let callback: Dynamic = (input?: Dynamic): Dynamic =>
-          (0, getStyleProperty)(
+          getStyleProperty(
             value3.getAttribute("style"),
             input,
           ).replace(/\s/g, "");
@@ -300,7 +300,7 @@ export function installEditorModelDcEditorModel(): () => void {
           callback: Dynamic = (input?: Dynamic, options?: Dynamic): Dynamic =>
             value2 != null
               ? this.inlineStyleValue(value2, options)
-              : (0, getCssRuleProperty)(value3, input, options),
+              : getCssRuleProperty(value3, input, options),
           state: Dynamic = {
             background: callback("body", "background"),
             backgroundColor: callback("body", "background-color"),
@@ -318,7 +318,7 @@ export function installEditorModelDcEditorModel(): () => void {
           state.backgroundColor,
         ] as Dynamic) {
           let value5: Dynamic =
-            value4 && (0, resolveCssVariable)(value3, "body", value4);
+            value4 && resolveCssVariable(value3, "body", value4);
           value5 && (state.vars[value4] = value5);
         }
         return state;
@@ -339,20 +339,20 @@ export function installEditorModelDcEditorModel(): () => void {
         if (
           value3.some(
             (input2?: Dynamic): Dynamic =>
-              (0, stripCssNestedContent)(input2.textContent ?? ""),
+              stripCssNestedContent(input2.textContent ?? ""),
           )
         )
           return false;
         let value5: Dynamic =
           items.every(
             (input2?: Dynamic): Dynamic =>
-              !(0, getCssRuleProperty)(value4, "body", input2),
+              !getCssRuleProperty(value4, "body", input2),
           ) &&
           items.some(
             (input2?: Dynamic): Dynamic =>
-              (0, getCssRuleProperty)(value4, "html", input2),
+              getCssRuleProperty(value4, "html", input2),
           )
-            ? (0, updateCssRuleProperties)(
+            ? updateCssRuleProperties(
                 value4,
                 "html",
                 items.map(
@@ -365,7 +365,7 @@ export function installEditorModelDcEditorModel(): () => void {
                 false,
               )
             : value4;
-        value5 = (0, updateCssRuleProperties)(
+        value5 = updateCssRuleProperties(
           value5,
           "body",
           input,
@@ -399,7 +399,7 @@ export function installEditorModelDcEditorModel(): () => void {
           : null;
       }
       ensureWebfontLink(input: Dynamic): Dynamic {
-        let value2: Dynamic = (0, buildGoogleFontsUrl)(input),
+        let value2: Dynamic = buildGoogleFontsUrl(input),
           value3: Dynamic = input.trim().replace(/\s+/g, "+"),
           value4: Dynamic = new RegExp(
             "[?&]family=" + value3.replace(/\+/g, "\\+") + "(?:[:&]|$)",
@@ -455,7 +455,7 @@ export function installEditorModelDcEditorModel(): () => void {
             [...value4.attributes].some(
               (input?: Dynamic): Dynamic =>
                 input.name !== DcTplAttribute,
-            ) || !(0, stripLeadingCssAtRules)(value7)
+            ) || !stripLeadingCssAtRules(value7)
               ? (value3 = true)
               : value7.trim() !== "" &&
                 items.push({
@@ -664,7 +664,7 @@ export function installEditorModelDcEditorModel(): () => void {
           (element.textContent =
             `
 ` +
-            (0, safeJsonStringify)(value2, {
+            safeJsonStringify(value2, {
               space: 2,
             }) +
             `
@@ -684,7 +684,7 @@ export function installEditorModelDcEditorModel(): () => void {
         ] as Dynamic) {
           if (value3 === DcTplAttribute || value3 === "style") continue;
           let value5: Dynamic = value3.startsWith(ScCamelValue)
-            ? (0, kebabToCamelCase)(
+            ? kebabToCamelCase(
                 value3.slice(ScCamelValue.length),
               )
             : value3;
@@ -696,7 +696,7 @@ export function installEditorModelDcEditorModel(): () => void {
         let value2: Dynamic = this.element(input);
         return value2
           ? (value2.remove(),
-            (0, editorAssert)(
+            editorAssert(
               !value2.isConnected || !this.tpl.content.contains(value2),
               `removeElement(${input}) left the element in the template`,
             ),
@@ -797,7 +797,7 @@ export function installEditorModelDcEditorModel(): () => void {
         let value5: Dynamic = (document as Dynamic).createElement("template");
         value5.innerHTML = this.raw
           ? options
-          : (0, toParserHtml)(options);
+          : toParserHtml(options);
         let firstElementChild: Dynamic = value5.content.firstElementChild;
         if (!firstElementChild) return null;
         let value6: Dynamic = parentNode;
@@ -811,13 +811,13 @@ export function installEditorModelDcEditorModel(): () => void {
         if (value6 instanceof Element) {
           if (value6.namespaceURI !== "http://www.w3.org/1999/xhtml")
             return null;
-          let value7: Dynamic = (0, readableTagName)(
+          let value7: Dynamic = readableTagName(
             value6.tagName.toLowerCase(),
           );
           if (
-            !(0, canContainHtmlTag)(value7, firstElementChild.tagName)
+            !canContainHtmlTag(value7, firstElementChild.tagName)
           ) {
-            if (!(0, canContainHtmlTag)(value7, "span")) return null;
+            if (!canContainHtmlTag(value7, "span")) return null;
             let value8: Dynamic =
               firstElementChild.ownerDocument.createElement("span");
             for (let value9 of [...firstElementChild.attributes] as Dynamic)
@@ -836,7 +836,7 @@ export function installEditorModelDcEditorModel(): () => void {
         if (
           !value2 ||
           value2.namespaceURI !== "http://www.w3.org/1999/xhtml" ||
-          !(0, canContainHtmlChildren)(value3) ||
+          !canContainHtmlChildren(value3) ||
           value3 === "helmet" ||
           value3 === "x-import" ||
           value3 === "dc-import"
@@ -928,7 +928,7 @@ export function installEditorModelDcEditorModel(): () => void {
         if (!value2 || !value2.parentNode) return null;
         let value3: Dynamic = value2.cloneNode(true);
         value2.parentNode.insertBefore(value3, value2.nextSibling);
-        (0, regenerateArrowHeadIds)(this.tpl.content, [value3]);
+        regenerateArrowHeadIds(this.tpl.content, [value3]);
         return value3;
       }
       subtreeHtml(input: Dynamic): Dynamic {
@@ -942,7 +942,7 @@ export function installEditorModelDcEditorModel(): () => void {
           value5.removeAttribute(DcTplAttribute);
         let value4: Dynamic = (document as Dynamic).createElement("template");
         value4.content.appendChild(value3);
-        return (0, fromParserHtml)(value4.innerHTML);
+        return fromParserHtml(value4.innerHTML);
       }
       deckSlides(input: Dynamic): Dynamic {
         let value2: Dynamic = [
@@ -973,40 +973,40 @@ export function installEditorModelDcEditorModel(): () => void {
       }
       topLevelTags(input: Dynamic): Dynamic {
         let value2: Dynamic = (document as Dynamic).createElement("template");
-        value2.innerHTML = this.raw ? input : (0, toParserHtml)(input);
+        value2.innerHTML = this.raw ? input : toParserHtml(input);
         return [...value2.content.children].map(
           (input2?: Dynamic): Dynamic =>
-            (0, readableTagName)(input2.tagName.toLowerCase()),
+            readableTagName(input2.tagName.toLowerCase()),
         );
       }
       insertHtml(input: Dynamic, options: Dynamic, context: Dynamic): Dynamic {
         let value2: Dynamic = (document as Dynamic).createElement("template");
-        value2.innerHTML = this.raw ? input : (0, toParserHtml)(input);
+        value2.innerHTML = this.raw ? input : toParserHtml(input);
         let items: Dynamic = [...value2.content.children];
         if (items.length === 0) return null;
         let content: Dynamic = value2.content;
         if (context === "root-end" || options == null) {
           this.tpl.content.insertBefore(content, this.trailingHelmet());
-          (0, regenerateArrowHeadIds)(this.tpl.content, items);
+          regenerateArrowHeadIds(this.tpl.content, items);
           return items;
         }
         let value3: Dynamic = this.element(options);
         if (!value3) return null;
         if (context === "into") {
-          if (!(0, canContainHtmlChildren)(value3.tagName)) return null;
+          if (!canContainHtmlChildren(value3.tagName)) return null;
           value3.appendChild(content);
         } else if (value3.parentNode)
           context === "before"
             ? value3.parentNode.insertBefore(content, value3)
             : value3.parentNode.insertBefore(content, value3.nextSibling);
         else return null;
-        (0, editorAssert)(
+        editorAssert(
           items.every(
             (input2?: Dynamic): Dynamic => this.tpl.content.contains(input2),
           ),
           `insertHtml(${options}, ${context}) did not land in the template`,
         );
-        (0, regenerateArrowHeadIds)(this.tpl.content, items);
+        regenerateArrowHeadIds(this.tpl.content, items);
         return items;
       }
       isRenderedInPlace(
@@ -1019,12 +1019,12 @@ export function installEditorModelDcEditorModel(): () => void {
         return !value2 || !value3 || value2 === value3
           ? false
           : context === "before"
-            ? (0, directiveSiblingsAdjacent)(value2, value3)
+            ? directiveSiblingsAdjacent(value2, value3)
             : context === "after"
-              ? (0, directiveSiblingsAdjacent)(value3, value2)
+              ? directiveSiblingsAdjacent(value3, value2)
               : context === "into"
-                ? (0, directiveParent)(value2) === value3 &&
-                  (0, directiveSiblingsAdjacent)(value2, null)
+                ? directiveParent(value2) === value3 &&
+                  directiveSiblingsAdjacent(value2, null)
                 : false;
       }
       isInPlace(input: Dynamic, options: Dynamic, context: Dynamic): Dynamic {
@@ -1033,12 +1033,12 @@ export function installEditorModelDcEditorModel(): () => void {
         return !value2 || !value3 || value2 === value3
           ? false
           : context === "before"
-            ? (0, siblingsSeparatedOnlyByWhitespace)(value2, value3)
+            ? siblingsSeparatedOnlyByWhitespace(value2, value3)
             : context === "after"
-              ? (0, siblingsSeparatedOnlyByWhitespace)(value3, value2)
+              ? siblingsSeparatedOnlyByWhitespace(value3, value2)
               : context === "into"
                 ? value2.parentNode === value3 &&
-                  (0, siblingsSeparatedOnlyByWhitespace)(value2, null)
+                  siblingsSeparatedOnlyByWhitespace(value2, null)
                 : false;
       }
       blockEls(input: Dynamic): Dynamic {
@@ -1070,7 +1070,7 @@ export function installEditorModelDcEditorModel(): () => void {
         if (items.includes(options)) return false;
         for (let count: Dynamic = 1; count < items.length; count++)
           if (
-            !(0, directiveSiblingsAdjacent)(
+            !directiveSiblingsAdjacent(
               items[count - 1],
               items[count],
             )
@@ -1079,12 +1079,12 @@ export function installEditorModelDcEditorModel(): () => void {
         let value2: Dynamic = items[0],
           value3: Dynamic = items[items.length - 1];
         return context === "before"
-          ? (0, directiveSiblingsAdjacent)(value3, options)
+          ? directiveSiblingsAdjacent(value3, options)
           : context === "after"
-            ? (0, directiveSiblingsAdjacent)(options, value2)
+            ? directiveSiblingsAdjacent(options, value2)
             : context === "into"
-              ? (0, directiveParent)(value2) === options &&
-                (0, directiveSiblingsAdjacent)(value3, null)
+              ? directiveParent(value2) === options &&
+                directiveSiblingsAdjacent(value3, null)
               : false;
       }
       isBlockInPlace(
@@ -1121,7 +1121,7 @@ export function installEditorModelDcEditorModel(): () => void {
             value5 = value5.nextSibling;
         for (let value6 of value2 as Dynamic)
           value4.insertBefore(value6, value5);
-        (0, editorAssert)(
+        editorAssert(
           value2.every(
             (input2?: Dynamic): Dynamic => input2.parentNode === value4,
           ),
@@ -1146,7 +1146,7 @@ export function installEditorModelDcEditorModel(): () => void {
         if (context === "into")
           return value2.every(
             (input2?: Dynamic): Dynamic =>
-              (0, canContainHtmlTag)(value3.tagName, input2.tagName),
+              canContainHtmlTag(value3.tagName, input2.tagName),
           );
         if (!value3.parentNode) return false;
         let value4: Dynamic =
@@ -1157,7 +1157,7 @@ export function installEditorModelDcEditorModel(): () => void {
           value4 == null ||
           value2.every(
             (input2?: Dynamic): Dynamic =>
-              (0, canContainHtmlTag)(value4, input2.tagName),
+              canContainHtmlTag(value4, input2.tagName),
           )
         );
       }
@@ -1176,7 +1176,7 @@ export function installEditorModelDcEditorModel(): () => void {
           this.isInPlace(input, options, context)
           ? false
           : context === "into"
-            ? (0, canContainHtmlTag)(value3.tagName, value2.tagName)
+            ? canContainHtmlTag(value3.tagName, value2.tagName)
             : value3.parentNode != null;
       }
       moveRelative(
@@ -1193,7 +1193,7 @@ export function installEditorModelDcEditorModel(): () => void {
         let value3: Dynamic = this.element(options);
         context === "into"
           ? (value3.appendChild(value2),
-            (0, editorAssert)(
+            editorAssert(
               value2.parentElement === value3,
               `moveRelative(${input} into ${options}) did not land in the target`,
             ))
@@ -1201,7 +1201,7 @@ export function installEditorModelDcEditorModel(): () => void {
             ? value3.parentNode.insertBefore(value2, value3)
             : value3.parentNode.insertBefore(value2, value3.nextSibling);
         (context === "before" || context === "after") &&
-          (0, editorAssert)(
+          editorAssert(
             value2.parentNode === value3.parentNode,
             `moveRelative(${input} ${context} ${options}) did not land beside the target`,
           );
@@ -1217,7 +1217,7 @@ export function installEditorModelDcEditorModel(): () => void {
             (value4.textContent ?? "") +
             `
 `;
-        let value2: Dynamic = (0, parseUtilityClasses)(text),
+        let value2: Dynamic = parseUtilityClasses(text),
           value3: Dynamic = !!this.tpl.content.querySelector(
             "sc-helmet[data-dc-atomics]",
           );
@@ -1243,7 +1243,7 @@ export function installEditorModelDcEditorModel(): () => void {
           value3: Dynamic = (element.getAttribute("class") ?? "").trim();
         return value3 === ""
           ? value2
-          : (0, serializeStyleDeclarations)(
+          : serializeStyleDeclarations(
               this.effectiveDeclsFor(element, value3, value2),
             );
       }
@@ -1252,7 +1252,7 @@ export function installEditorModelDcEditorModel(): () => void {
         options: Dynamic,
         context: Dynamic,
       ): Dynamic {
-        return (0, mergeAuthoredStyle)(
+        return mergeAuthoredStyle(
           this.helmetClassRules(),
           options.split(/\s+/),
           context,
@@ -1262,32 +1262,32 @@ export function installEditorModelDcEditorModel(): () => void {
       inlineStyleValue(input: Dynamic, options: Dynamic): Dynamic {
         let value2: Dynamic = this.element(input);
         return value2
-          ? (0, getStyleProperty)(value2.getAttribute("style"), options)
+          ? getStyleProperty(value2.getAttribute("style"), options)
           : "";
       }
       inlineStyleAttr(input: Dynamic): Dynamic {
         return this.element(input)?.getAttribute("style") ?? "";
       }
       anyHasInlineDecl(input: Dynamic, options: Dynamic): Dynamic {
-        let value2: Dynamic = (0, normalizeCssProperty)(options);
+        let value2: Dynamic = normalizeCssProperty(options);
         return input.some((input2?: Dynamic): Dynamic => {
-          let value3: Dynamic = (0, parseStyleDeclarations)(
+          let value3: Dynamic = parseStyleDeclarations(
             this.inlineStyleAttr(input2),
           );
           return (
             value3.some(
               (input3?: Dynamic): Dynamic => input3.prop === value2,
             ) ||
-            (0, expandCssDeclarations)(value3).some(
+            expandCssDeclarations(value3).some(
               (input3?: Dynamic): Dynamic => input3.prop === value2,
             )
           );
         });
       }
       hasAuthoredStyle(input: Dynamic, options: Dynamic): Dynamic {
-        let value2: Dynamic = (0, normalizeCssProperty)(options);
-        return (0, expandCssDeclarations)(
-          (0, parseStyleDeclarations)(this.effectiveStyleAttr(input)),
+        let value2: Dynamic = normalizeCssProperty(options);
+        return expandCssDeclarations(
+          parseStyleDeclarations(this.effectiveStyleAttr(input)),
         ).some((input2?: Dynamic): Dynamic => input2.prop === value2);
       }
       effectiveStyleAttr(input: Dynamic): Dynamic {
@@ -1295,7 +1295,7 @@ export function installEditorModelDcEditorModel(): () => void {
         return value2 ? this.effectiveStyleFor(value2) : "";
       }
       effectiveStyleValue(input: Dynamic, options: Dynamic): Dynamic {
-        return (0, getStyleProperty)(
+        return getStyleProperty(
           this.effectiveStyleAttr(input),
           options,
         );
@@ -1306,7 +1306,7 @@ export function installEditorModelDcEditorModel(): () => void {
         let value3: Dynamic = (value2.getAttribute("class") ?? "").trim();
         return value3 === ""
           ? {}
-          : (0, getCssPropertySources)(
+          : getCssPropertySources(
               this.effectiveDeclsFor(
                 value2,
                 value3,
@@ -1320,7 +1320,7 @@ export function installEditorModelDcEditorModel(): () => void {
         let value3: Dynamic = (value2.getAttribute("class") ?? "").trim();
         return value3 === ""
           ? ""
-          : (0, serializeStyleDeclarations)(
+          : serializeStyleDeclarations(
               this.effectiveDeclsFor(value2, value3, ""),
             );
       }
@@ -1328,7 +1328,7 @@ export function installEditorModelDcEditorModel(): () => void {
         let value2: Dynamic = this.element(input);
         if (!value2) return null;
         let values: Dynamic = new Set(
-            (0, parseStyleDeclarations)(
+            parseStyleDeclarations(
               value2.getAttribute("style"),
             ).map((input2?: Dynamic): Dynamic => input2.prop),
           ),
@@ -1383,13 +1383,13 @@ export function installEditorModelDcEditorModel(): () => void {
         let value3: Dynamic = value2.tagName.toLowerCase();
         return value3 === "sc-helmet"
           ? "helmet"
-          : (0, readableTagName)(value3);
+          : readableTagName(value3);
       }
       text(input: Dynamic): Dynamic {
         let value2: Dynamic = this.element(input);
         return value2 &&
           (value2.tagName === "TEXTAREA" ||
-            (0, hasOnlyDirectText)(value2))
+            hasOnlyDirectText(value2))
           ? (value2.textContent ?? "")
           : null;
       }
@@ -1425,28 +1425,28 @@ export function installEditorModelDcEditorModel(): () => void {
           `[${DcTplAttribute}]`,
         ) as Dynamic)
           value4.removeAttribute(DcTplAttribute);
-        return (0, fromParserHtml)(value3.innerHTML);
+        return fromParserHtml(value3.innerHTML);
       }
       isTextEditable(input: Dynamic): Dynamic {
         let value2: Dynamic = this.element(input);
         if (!value2) return false;
         let value3: Dynamic = this.tagName(input) ?? "";
-        return !(0, canContainHtmlChildren)(value3) ||
+        return !canContainHtmlChildren(value3) ||
           value3 === "helmet" ||
           value3 === "x-import" ||
           value3 === "dc-import" ||
           (HtmlAuthoringTextTspanTextpathSet.has(value3) &&
             value2.children.length > 0)
           ? false
-          : (0, isInlineTextContainer)(value2) &&
-              !(0, isIconOnlyElement)(value2);
+          : isInlineTextContainer(value2) &&
+              !isIconOnlyElement(value2);
       }
       textEditables(): Dynamic {
         let items: Dynamic = [];
         for (let [value2, value3] of this.byTid as Dynamic)
           this.isTextEditable(value2) &&
             items.push(
-              (0, containsTemplateText)(value3)
+              containsTemplateText(value3)
                 ? {
                     tid: value2,
                     seed: this.innerTemplateHtml(value2),
@@ -1491,7 +1491,7 @@ export function installEditorModelDcEditorModel(): () => void {
         callback(value2, false);
         items.filter((input2?: Dynamic): Dynamic => input2.trim() !== "")
           .length > 1 && items2.push(...items);
-        return (0, componentTextOptions)(
+        return componentTextOptions(
           {
             tag: this.tagName(input),
             text: this.text(input),
@@ -1532,8 +1532,8 @@ export function installEditorModelDcEditorModel(): () => void {
             let attribute2: Dynamic = element.getAttribute("data-om-label"),
               value4: Dynamic = value3 === "x-import" || value3 === "dc-import",
               value5: Dynamic = this.effectiveStyleFor(element),
-              value6: Dynamic = (0, tagIcon)(value3),
-              value7: Dynamic = (0, detectContainerLayout)(
+              value6: Dynamic = tagIcon(value3),
+              value7: Dynamic = detectContainerLayout(
                 element,
                 value5,
               ),
@@ -1563,20 +1563,20 @@ export function installEditorModelDcEditorModel(): () => void {
                               value8) &&
                             (text = "Text");
             let value9: Dynamic = value4
-                ? (0, parseComponentImport)(
+                ? parseComponentImport(
                     value3,
                     this.attributes(value2),
                   )
                 : null,
               value10: Dynamic = attribute2 || value9?.name || text,
-              value11: Dynamic = (0, labelToElementKind)(text, value7),
+              value11: Dynamic = labelToElementKind(text, value7),
               value12: Dynamic =
                 element.getAttribute("data-label") ||
                 element.getAttribute("data-screen-label") ||
                 element.getAttribute("aria-label") ||
                 element.getAttribute("label") ||
                 "",
-              value13: Dynamic = (0, slideElementLabel)(element),
+              value13: Dynamic = slideElementLabel(element),
               value14: Dynamic;
             if (value9) value14 = attribute2 ? value9.ref : value9.scope;
             else if (value4)
@@ -1596,14 +1596,14 @@ export function installEditorModelDcEditorModel(): () => void {
                 value17: Dynamic =
                   value12 ||
                   (element2?.textContent ?? "") ||
-                  ((0, hasOnlyDirectText)(element)
+                  (hasOnlyDirectText(element)
                     ? (element.textContent ?? "")
                     : "");
               value14 = value17.trim()
                 ? `${value13} \xB7 ${callback(value17)}`
                 : value13;
             } else if (value12) value14 = callback(value12);
-            else if ((0, hasOnlyDirectText)(element) || value8) {
+            else if (hasOnlyDirectText(element) || value8) {
               let value17: Dynamic = (element.textContent ?? "").trim();
               value17 && (value14 = `\u201C${callback(value17)}\u201D`);
             } else if (
@@ -1613,14 +1613,14 @@ export function installEditorModelDcEditorModel(): () => void {
             ) {
               let value17: Dynamic = this.handleOf(element),
                 value18: Dynamic = value17.startsWith("<")
-                  ? (0, elementTextPreview)(element)
+                  ? elementTextPreview(element)
                   : "";
               value17.startsWith("<")
                 ? value18 && (value14 = `\u201C${callback(value18)}\u201D`)
                 : (value14 = value17);
             }
             let value15: Dynamic =
-                (0, getStyleProperty)(
+                getStyleProperty(
                   element.getAttribute("style"),
                   "display",
                 ).trim() === "none",
@@ -1708,7 +1708,7 @@ export function installEditorModelDcEditorModel(): () => void {
             ? "#" + value2
             : value3
               ? "." + value3
-              : `<${(0, readableTagName)(element.tagName.toLowerCase())}>`;
+              : `<${readableTagName(element.tagName.toLowerCase())}>`;
         return value4.length > 28 ? value4.slice(0, 27) + "\u2026" : value4;
       }
       typeTextRules(input: Dynamic, options: Dynamic): Dynamic {
@@ -1719,7 +1719,7 @@ export function installEditorModelDcEditorModel(): () => void {
           });
         let entry: Dynamic = this.pageTextCache.byTag.get(options);
         entry ||
-          ((entry = (0, getUnconditionalCssDeclarations)(
+          ((entry = getUnconditionalCssDeclarations(
             input,
             options,
             ModelDomTextSplitValue,
@@ -1791,7 +1791,7 @@ export function installEditorModelDcEditorModel(): () => void {
           value4;
           value4 = value4.parentElement
         ) {
-          let value5: Dynamic = (0, readableTagName)(
+          let value5: Dynamic = readableTagName(
             value4.tagName.toLowerCase(),
           );
           if (
@@ -1806,7 +1806,7 @@ export function installEditorModelDcEditorModel(): () => void {
           callback2(
             [
               ...this.typeTextRules(value3, value5),
-              ...(0, parseStyleDeclarations)(
+              ...parseStyleDeclarations(
                 this.effectiveStyleFor(value4),
               ),
             ],

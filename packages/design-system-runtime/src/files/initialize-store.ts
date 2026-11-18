@@ -21,7 +21,7 @@ async function initializeEmptyFilesStore(
         reason: "not_writer",
       };
     }
-    let value = await (0, readJsonFileState)(
+    let value = await readJsonFileState(
       options.files,
       options.indexPath,
       options.timers,
@@ -34,7 +34,7 @@ async function initializeEmptyFilesStore(
     }
     if (
       value.state === "read" &&
-      (0, readFileMigrationMarker)(value.value) !== null
+      readFileMigrationMarker(value.value) !== null
     ) {
       return {
         result: "skipped",
@@ -76,8 +76,7 @@ async function initializeEmptyFilesStore(
     }
     let state = {
         ...options.emptyIndex(),
-        [CREATED_ON_FILES_MARKER_KEY]: (0,
-        createdOnFilesMarker)({
+        [CREATED_ON_FILES_MARKER_KEY]: createdOnFilesMarker({
           at: options.at,
         }),
       },
@@ -95,17 +94,16 @@ async function initializeEmptyFilesStore(
             }
           : {}),
         documents: {
-          [options.mark.metaPath]: await (0, hashStoreDocument)({}),
+          [options.mark.metaPath]: await hashStoreDocument({}),
         },
         fields: {
-          [options.mark.metaPath]: await (0, hashStoreFields)({}),
+          [options.mark.metaPath]: await hashStoreFields({}),
         },
         files: {},
       };
-      state2[MIGRATION_SENTINEL_PATH] = (0,
-      serializeIndexDocument)(state3);
+      state2[MIGRATION_SENTINEL_PATH] = serializeIndexDocument(state3);
     }
-    let value3 = await (0, readJsonFileState)(
+    let value3 = await readJsonFileState(
       options.files,
       options.indexPath,
       options.timers,
@@ -118,7 +116,7 @@ async function initializeEmptyFilesStore(
     }
     if (
       value3.state === "read" &&
-      (0, readFileMigrationMarker)(value3.value) !== null
+      readFileMigrationMarker(value3.value) !== null
     ) {
       return {
         result: "skipped",
@@ -157,7 +155,7 @@ async function initializeEmptyFilesStore(
     if (options.mark !== undefined) {
       let { store: mark, metaPath: mark2 } = options.mark,
         state3 = {
-          [MOVED_TO_MARKER_KEY]: (0, movedToMarker)({
+          [MOVED_TO_MARKER_KEY]: movedToMarker({
             path: options.indexPath,
             ver: value5.version,
             at: options.at,

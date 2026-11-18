@@ -8,7 +8,7 @@ function beginArtboardResize(event?: Dynamic, options?: Dynamic): Dynamic {
   if (event.button !== 0) return;
   event.preventDefault();
   event.stopPropagation();
-  (0, focusCanvasDocument)();
+  focusCanvasDocument();
   options.onGesture(options.src, true);
   options.armWindowGestureEnd(options.src);
   let [items, items2, items3]: Dynamic = [

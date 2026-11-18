@@ -573,7 +573,7 @@ function useAndroidCloseWatcher(
   enabled: boolean | undefined,
   onClose: (() => void) | undefined,
 ): void {
-  let windowObject = (0, useRootWindow)() as
+  let windowObject = useRootWindow() as
     | BrowserWindow
     | undefined;
   reactAndroidCloseWatcher.useEffect(() => {
@@ -969,7 +969,7 @@ function useVisualKeyboard(
     unpan?: boolean;
   } = {},
 ): void {
-  let windowObject: Window | undefined = (0, useRootWindow)(),
+  let windowObject: Window | undefined = useRootWindow(),
     notifyKeyboardChange = useEventCallback(onKeyboardChange);
   reactVisualKeyboard.useEffect(() => {
     if (!enabled || windowObject === undefined) {
@@ -1035,7 +1035,7 @@ function useVisualKeyboard(
 }
 function useMobileSheetMediaQuery(): boolean {
   return useMediaQuery__U(
-    (0, useRootWindow)(),
+    useRootWindow(),
     MOBILE_COARSE_POINTER_QUERY,
   );
 }
@@ -1044,7 +1044,7 @@ function usePresentationMode(): OverlayPresentation {
 }
 function useCoarsePresentation(): boolean {
   let presentationMode = usePresentationMode(),
-    windowObject = (0, useRootWindow)(),
+    windowObject = useRootWindow(),
     coarsePointer = reactPresentationMode.useSyncExternalStore(
       subscribeNoop,
       () =>
@@ -1464,9 +1464,8 @@ function useAdaptiveSheet<Details extends Overlays.OverlayEventDetails>(
       onOpenChangeComplete,
       close,
     ),
-    sheetImplementationAvailable = (0,
-    useSheetImplementationLoaded)(),
-    sheetImplementationRejected = (0, useSheetImplementationFailed)(),
+    sheetImplementationAvailable = useSheetImplementationLoaded(),
+    sheetImplementationRejected = useSheetImplementationFailed(),
     coarsePresentation = useCoarsePresentation();
   reactAdaptiveSheets.useEffect(() => {
     if (
@@ -1474,7 +1473,7 @@ function useAdaptiveSheet<Details extends Overlays.OverlayEventDetails>(
       !sheetImplementationAvailable &&
       !sheetImplementationRejected
     ) {
-      (0, preloadSheetImplementation)();
+      preloadSheetImplementation();
     }
   }, [
     coarsePresentation,
@@ -1525,7 +1524,7 @@ function useAdaptiveSheet<Details extends Overlays.OverlayEventDetails>(
       return;
     }
     let callback = () => {
-      if (!(0, isSheetImplementationLoaded)()) {
+      if (!isSheetImplementationLoaded()) {
         sheetImplementationUnavailable = true;
         setUsesFallback(true);
       }
@@ -1564,7 +1563,7 @@ function useAdaptiveSheet<Details extends Overlays.OverlayEventDetails>(
     }
     return parentSheet.cover(coverToken);
   }, [sheet, open, parentSheet, coverToken]);
-  let windowObject: Window | undefined = (0, useRootWindow)(),
+  let windowObject: Window | undefined = useRootWindow(),
     treeId = sheetFrame.frame.treeId,
     [focusOutsideCoveredSheet, setFocusOutsideCoveredSheet] =
       reactAdaptiveSheets.useState(false);
@@ -1654,7 +1653,7 @@ function useAdaptiveSheet<Details extends Overlays.OverlayEventDetails>(
           });
         }
         if (input && coarsePresentation) {
-          (0, preloadSheetImplementation)();
+          preloadSheetImplementation();
         }
         notifyOpenChange?.(input, options);
       },
@@ -1802,7 +1801,7 @@ function useSheetCapablePresentation(): boolean {
   return value || value2;
 }
 function useSheetImplementation(): Overlays.MobileSheetParts | null {
-  let implementation = (0, useLoadedSheetImplementation)(),
+  let implementation = useLoadedSheetImplementation(),
     frame = reactAdaptiveSheets.useContext(sheetFrameContext),
     showing = frame?.showing ?? false,
     open = frame?.open ?? false,
@@ -2283,7 +2282,7 @@ export {
 };
 export function installUiFoundation(): () => void {
   return () => {
-    initializeAccentColors = (0, initializeOnce)(() => {
+    initializeAccentColors = initializeOnce(() => {
       set_accentColorNames([
         "red",
         "orange",
@@ -2301,19 +2300,19 @@ export function installUiFoundation(): () => void {
     };
     getFalseSnapshot = () => false;
     COARSE_POINTER_QUERY_rG = "(pointer: coarse)";
-    initializeMediaQueryStores = (0, initializeOnce)(() => {
-      reactMediaQuery = (0, toModuleNamespace)(
-        (0, loadReactNamespace)(),
+    initializeMediaQueryStores = initializeOnce(() => {
+      reactMediaQuery = toModuleNamespace(
+        loadReactNamespace(),
         1,
       );
       mediaQueryStores = new WeakMap();
     });
-    initializeCoarsePointerStores = (0, initializeOnce)(() => {
+    initializeCoarsePointerStores = initializeOnce(() => {
       initializeMediaQueryStores();
       coarsePointerStores = new WeakMap();
     });
     initializeErrorReporting = () => {};
-    initializeSafeObservers = (0, initializeOnce)(() => {
+    initializeSafeObservers = initializeOnce(() => {
       initializeErrorReporting();
     });
     isSupportedFont = (input: string): input is DocumentFont =>
@@ -2335,10 +2334,10 @@ export function installUiFoundation(): () => void {
     getUndefinedFontSnapshot = () => {
       return;
     };
-    initializeDocumentFont = (0, initializeOnce)(() => {
+    initializeDocumentFont = initializeOnce(() => {
       initializeSafeObservers();
-      reactDocumentFont = (0, toModuleNamespace)(
-        (0, loadReactNamespace)(),
+      reactDocumentFont = toModuleNamespace(
+        loadReactNamespace(),
         1,
       );
       supportedFonts = {
@@ -2346,23 +2345,23 @@ export function installUiFoundation(): () => void {
         system: true,
       };
     });
-    initializeFeatureFlags = (0, initializeOnce)(() => {
-      PlatformFileContentAlias_2 = (0, toModuleNamespace)(
-        (0, loadReactNamespace)(),
+    initializeFeatureFlags = initializeOnce(() => {
+      PlatformFileContentAlias_2 = toModuleNamespace(
+        loadReactNamespace(),
         1,
       );
       featureFlagContext = PlatformFileContentAlias_2.createContext<
         string | undefined
       >(undefined);
     });
-    initializeInputDismissalTracking = (0, initializeOnce)(() => {
+    initializeInputDismissalTracking = initializeOnce(() => {
       inputDismissalStates = new WeakMap();
       dismissalKeys = new Set(["Escape", "Enter", " "]);
     });
     initializeTransitionRunner = () => {};
-    initializeIsomorphicLayoutEffect = (0, initializeOnce)(() => {
-      reactIsomorphicLayoutEffect = (0, toModuleNamespace)(
-        (0, loadReactNamespace)(),
+    initializeIsomorphicLayoutEffect = initializeOnce(() => {
+      reactIsomorphicLayoutEffect = toModuleNamespace(
+        loadReactNamespace(),
         1,
       );
       useIsomorphicLayoutEffect =
@@ -2371,14 +2370,14 @@ export function installUiFoundation(): () => void {
           : reactIsomorphicLayoutEffect.useEffect;
     });
     initializeIconSupport = () => {};
-    initializeAndroidCloseWatcher = (0, initializeOnce)(() => {
-      (0, initializeCdsRoot)();
-      reactAndroidCloseWatcher = (0, toModuleNamespace)(
-        (0, loadReactNamespace)(),
+    initializeAndroidCloseWatcher = initializeOnce(() => {
+      initializeCdsRoot();
+      reactAndroidCloseWatcher = toModuleNamespace(
+        loadReactNamespace(),
         1,
       );
     });
-    initializeSheetDragSettings = (0, initializeOnce)(() => {
+    initializeSheetDragSettings = initializeOnce(() => {
       sheetDragSettings = {
         detentThreshold: 40,
         dismissFraction: 0.25,
@@ -2391,7 +2390,7 @@ export function installUiFoundation(): () => void {
     MAX_SHEET_HEIGHT_FRACTION = 0.9;
     SHEET_DENSITY = "comfortable";
     MIN_SHEET_HEIGHT_FRACTION = 0.5;
-    initializeSheetStyles = (0, initializeOnce)(() => {
+    initializeSheetStyles = initializeOnce(() => {
       initializeSheetDragSettings();
       VIEWPORT_HEIGHT_EXCLUDING_SAFE_AREA_CSS = `(100dvh - ${SAFE_AREA_TOP_CSS})`;
       baseSheetPositionerStyle = {
@@ -2418,9 +2417,9 @@ export function installUiFoundation(): () => void {
       MIN_SHEET_HEIGHT_CSS = `${MIN_SHEET_HEIGHT_FRACTION * 100}dvh`;
     });
     initializeElementAccess = () => {};
-    initializeEventCallbacks = (0, initializeOnce)(() => {
-      reactEventCallbacks = (0, toModuleNamespace)(
-        (0, loadReactNamespace)(),
+    initializeEventCallbacks = initializeOnce(() => {
+      reactEventCallbacks = toModuleNamespace(
+        loadReactNamespace(),
         1,
       );
     });
@@ -2428,12 +2427,12 @@ export function installUiFoundation(): () => void {
       'input:not([type=button],[type=checkbox],[type=radio],[type=range],[type=submit],[type=reset],[type=color],[type=file],[type=image],[type=hidden],[readonly]), textarea:not([readonly]), [contenteditable=""], [contenteditable="true"], [contenteditable="plaintext-only"]';
     KEYBOARD_MINIMUM_HEIGHT = 120;
     VIEWPORT_SCALE_TOLERANCE = 0.01;
-    initializeVisualKeyboard = (0, initializeOnce)(() => {
-      (0, initializeCdsRoot)();
+    initializeVisualKeyboard = initializeOnce(() => {
+      initializeCdsRoot();
       initializeElementAccess();
       initializeEventCallbacks();
-      reactVisualKeyboard = (0, toModuleNamespace)(
-        (0, loadReactNamespace)(),
+      reactVisualKeyboard = toModuleNamespace(
+        loadReactNamespace(),
         1,
       );
     });
@@ -2445,21 +2444,21 @@ export function installUiFoundation(): () => void {
     SHEET_PRESSED_ATTRIBUTE = "data-cds-sheet-pressed";
     SHEET_CONTROL_HELD_ATTRIBUTE = "data-cds-sheet-control-held";
     OVERLAY_CLOSE_FALLBACK_MS = 1000;
-    initializePresentationMode = (0, initializeOnce)(() => {
+    initializePresentationMode = initializeOnce(() => {
       initializeMediaQueryStores();
       initializeIsomorphicLayoutEffect();
-      (0, initializeCdsRoot)();
+      initializeCdsRoot();
       initializeVisualKeyboard();
-      reactPresentationMode = (0, toModuleNamespace)(
-        (0, loadReactNamespace)(),
+      reactPresentationMode = toModuleNamespace(
+        loadReactNamespace(),
         1,
       );
       presentationModeContext =
         reactPresentationMode.createContext<OverlayPresentation>("auto");
     });
-    initializeInertProps = (0, initializeOnce)(() => {
-      reactInertProps = (0, toModuleNamespace)(
-        (0, loadReactNamespace)(),
+    initializeInertProps = initializeOnce(() => {
+      reactInertProps = toModuleNamespace(
+        loadReactNamespace(),
         1,
       );
       reactMajorVersion = Number.parseInt(reactInertProps.version, 10);
@@ -2468,9 +2467,9 @@ export function installUiFoundation(): () => void {
         reactMajorVersion === 0 ||
         reactMajorVersion >= 19;
     });
-    initializeOverlayActions = (0, initializeOnce)(() => {
-      reactOverlayActions = (0, toModuleNamespace)(
-        (0, loadReactNamespace)(),
+    initializeOverlayActions = initializeOnce(() => {
+      reactOverlayActions = toModuleNamespace(
+        loadReactNamespace(),
         1,
       );
     });
@@ -2484,10 +2483,10 @@ export function installUiFoundation(): () => void {
     emptySheetRef = () => {
       return;
     };
-    initializeAdaptiveSheets = (0, initializeOnce)(() => {
-      (0, initializeSheetImplementation)();
+    initializeAdaptiveSheets = initializeOnce(() => {
+      initializeSheetImplementation();
       initializeIsomorphicLayoutEffect();
-      (0, initializeCdsRoot)();
+      initializeCdsRoot();
       initializeAndroidCloseWatcher();
       initializeEventCallbacks();
       initializeInertProps();
@@ -2495,12 +2494,12 @@ export function installUiFoundation(): () => void {
       initializeVisualKeyboard();
       initializeSheetStyles();
       initializePresentationMode();
-      reactAdaptiveSheets = (0, toModuleNamespace)(
-        (0, loadReactNamespace)(),
+      reactAdaptiveSheets = toModuleNamespace(
+        loadReactNamespace(),
         1,
       );
-      jsxAdaptiveSheets = (0, toModuleNamespace)(
-        (0, loadJsxNamespace)(),
+      jsxAdaptiveSheets = toModuleNamespace(
+        loadJsxNamespace(),
         1,
       );
       sheetFrameContext =
@@ -2552,9 +2551,9 @@ export function installUiFoundation(): () => void {
     });
     REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
     REDUCED_MOTION_ATTRIBUTE = "data-reduce-motion";
-    initializeReducedMotion = (0, initializeOnce)(() => {
-      reactReducedMotion = (0, toModuleNamespace)(
-        (0, loadReactNamespace)(),
+    initializeReducedMotion = initializeOnce(() => {
+      reactReducedMotion = toModuleNamespace(
+        loadReactNamespace(),
         1,
       );
     });
@@ -2568,27 +2567,27 @@ export function installUiFoundation(): () => void {
     sheetClipClasses = "[clip-path:inset(0_0_-200vh_0)]";
     sheetSeparatorClasses =
       "[&_[role=separator]]:-mx-1 [&_[role=separator]]:mt-0";
-    initializeSheetClassNames = (0, initializeOnce)(() => {
+    initializeSheetClassNames = initializeOnce(() => {
       sheetTransitionClasses = `${SHEET_DURATION_CLASS} ease-out motion-reduce:transition-none`;
       sheetPopupClasses = `group/sheet relative w-full min-w-0 max-w-none overflow-hidden ${sheetRadiusClasses} pb-[max(env(safe-area-inset-bottom),0.5rem)] transition-[translate,height,scale] ${sheetTransitionClasses} [&_[data-cds-sheet-scroll]]:overscroll-contain [&[data-cds-sheet-pressed]_[data-cds-sheet-scroll]]:[scroll-padding-block:0px]`;
       sheetDrillBodyClasses = `flex min-h-0 flex-1 flex-col transition-[translate] ${sheetTransitionClasses} group-data-[cds-sheet-drilled]/sheet:-translate-x-full rtl:group-data-[cds-sheet-drilled]/sheet:translate-x-full`;
       sheetBackdropClasses = `draggable-none fixed inset-0 bg-backdrop transition-opacity ${sheetTransitionClasses} data-[starting-style]:opacity-0 data-[ending-style]:opacity-0`;
     });
-    initializeSheetDrag = (0, initializeOnce)(() => {
+    initializeSheetDrag = initializeOnce(() => {
       initializeIsomorphicLayoutEffect();
       initializeReducedMotion();
       initializeSheetDragSettings();
       initializeSheetStyles();
       initializeAdaptiveSheets();
       initializeSheetClassNames();
-      reactSheetDrag = (0, toModuleNamespace)(
-        (0, loadReactNamespace)(),
+      reactSheetDrag = toModuleNamespace(
+        loadReactNamespace(),
         1,
       );
     });
     THEME_TOKEN_SCHEMA_DESCRIPTION =
       "GENERATED by `yarn gen:tokens` from tokens/theme.ts (key names of theme-extend.json sections, for src/utils/cn.ts)";
-    initializeThemeTokenManifest = (0, initializeOnce)(() => {
+    initializeThemeTokenManifest = initializeOnce(() => {
       typographyScaleNames = [
         "caption",
         "footnote",

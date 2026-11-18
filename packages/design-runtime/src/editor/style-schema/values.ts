@@ -303,7 +303,7 @@ export function installEditorStyleSchemaValues(): () => void {
         v: StyleSchemaValuesHandler_4(
           StyleSchemaNodeTypesLeftCenterRightValues,
         ),
-        on: (0, StyleSchemaNodeTypesFlat)(
+        on: StyleSchemaNodeTypesFlat(
           StyleSchemaNodeTypesBlockquoteBulletListOrderedListValues,
           StyleSchemaNodeTypesTableTableCellTableHeaderValues,
           StyleSchemaNodeTypesSlidesTableValues,
@@ -349,12 +349,12 @@ export function installEditorStyleSchemaValues(): () => void {
       },
       color: {
         v: StyleSchemaValuesKindConfig,
-        on: (0, StyleSchemaNodeTypesFlat)(
+        on: StyleSchemaNodeTypesFlat(
           StyleSchemaNodeTypesBlockquoteBulletListOrderedListValues,
           StyleSchemaNodeTypesTableTableCellTableHeaderValues,
           StyleSchemaNodeTypesSlidesTableValues,
         ),
-        routed: (0, StyleSchemaNodeTypesFlat)(
+        routed: StyleSchemaNodeTypesFlat(
           StyleSchemaNodeTypesSlidesTextValues,
           StyleSchemaNodeTypesSlidesIconValues,
         ),
@@ -371,7 +371,7 @@ export function installEditorStyleSchemaValues(): () => void {
           kind: "gradient",
           repeat: true,
         },
-        on: (0, StyleSchemaNodeTypesFlat)(
+        on: StyleSchemaNodeTypesFlat(
           StyleSchemaNodeTypesBlockquoteBulletListOrderedListValues,
           StyleSchemaNodeTypesSlidesTextValues,
           StyleSchemaNodeTypesSlidesImgValues,
@@ -397,7 +397,7 @@ export function installEditorStyleSchemaValues(): () => void {
       },
       paddingTop: {
         v: StyleSchemaValuesHandler(0, 256),
-        on: (0, StyleSchemaNodeTypesFlat)(
+        on: StyleSchemaNodeTypesFlat(
           StyleSchemaNodeTypesBlockquoteBulletListOrderedListValues,
           StyleSchemaNodeTypesTableTableCellTableHeaderValues,
           StyleSchemaNodeTypesSlidesTextValues,
@@ -407,7 +407,7 @@ export function installEditorStyleSchemaValues(): () => void {
       },
       paddingRight: {
         v: StyleSchemaValuesHandler(0, 256),
-        on: (0, StyleSchemaNodeTypesFlat)(
+        on: StyleSchemaNodeTypesFlat(
           StyleSchemaNodeTypesBlockquoteBulletListOrderedListValues,
           StyleSchemaNodeTypesTableTableCellTableHeaderValues,
           StyleSchemaNodeTypesSlidesTextValues,
@@ -417,7 +417,7 @@ export function installEditorStyleSchemaValues(): () => void {
       },
       paddingBottom: {
         v: StyleSchemaValuesHandler(0, 256),
-        on: (0, StyleSchemaNodeTypesFlat)(
+        on: StyleSchemaNodeTypesFlat(
           StyleSchemaNodeTypesBlockquoteBulletListOrderedListValues,
           StyleSchemaNodeTypesTableTableCellTableHeaderValues,
           StyleSchemaNodeTypesSlidesTextValues,
@@ -427,7 +427,7 @@ export function installEditorStyleSchemaValues(): () => void {
       },
       paddingLeft: {
         v: StyleSchemaValuesHandler(0, 256),
-        on: (0, StyleSchemaNodeTypesFlat)(
+        on: StyleSchemaNodeTypesFlat(
           StyleSchemaNodeTypesBlockquoteBulletListOrderedListValues,
           StyleSchemaNodeTypesTableTableCellTableHeaderValues,
           StyleSchemaNodeTypesSlidesTextValues,
@@ -472,7 +472,7 @@ export function installEditorStyleSchemaValues(): () => void {
       },
       borderRadius: {
         v: StyleSchemaValuesHandler(0, 256),
-        on: (0, StyleSchemaNodeTypesFlat)(
+        on: StyleSchemaNodeTypesFlat(
           StyleSchemaNodeTypesBlockquoteBulletListOrderedListValues,
           StyleSchemaNodeTypesTableTableCellTableHeaderValues,
           StyleSchemaNodeTypesSlidesTextValues,
@@ -484,7 +484,7 @@ export function installEditorStyleSchemaValues(): () => void {
       },
       borderTopLeftRadius: {
         v: StyleSchemaValuesHandler(0, 256),
-        on: (0, StyleSchemaNodeTypesFlat)(
+        on: StyleSchemaNodeTypesFlat(
           StyleSchemaNodeTypesBlockquoteBulletListOrderedListValues,
           StyleSchemaNodeTypesTableTableCellTableHeaderValues,
           StyleSchemaNodeTypesSlidesTextValues,
@@ -496,7 +496,7 @@ export function installEditorStyleSchemaValues(): () => void {
       },
       borderTopRightRadius: {
         v: StyleSchemaValuesHandler(0, 256),
-        on: (0, StyleSchemaNodeTypesFlat)(
+        on: StyleSchemaNodeTypesFlat(
           StyleSchemaNodeTypesBlockquoteBulletListOrderedListValues,
           StyleSchemaNodeTypesTableTableCellTableHeaderValues,
           StyleSchemaNodeTypesSlidesTextValues,
@@ -508,7 +508,7 @@ export function installEditorStyleSchemaValues(): () => void {
       },
       borderBottomRightRadius: {
         v: StyleSchemaValuesHandler(0, 256),
-        on: (0, StyleSchemaNodeTypesFlat)(
+        on: StyleSchemaNodeTypesFlat(
           StyleSchemaNodeTypesBlockquoteBulletListOrderedListValues,
           StyleSchemaNodeTypesTableTableCellTableHeaderValues,
           StyleSchemaNodeTypesSlidesTextValues,
@@ -520,7 +520,7 @@ export function installEditorStyleSchemaValues(): () => void {
       },
       borderBottomLeftRadius: {
         v: StyleSchemaValuesHandler(0, 256),
-        on: (0, StyleSchemaNodeTypesFlat)(
+        on: StyleSchemaNodeTypesFlat(
           StyleSchemaNodeTypesBlockquoteBulletListOrderedListValues,
           StyleSchemaNodeTypesTableTableCellTableHeaderValues,
           StyleSchemaNodeTypesSlidesTextValues,
@@ -551,7 +551,7 @@ export function installEditorStyleSchemaValues(): () => void {
           kind: "shadow",
           spread: false,
         },
-        on: (0, StyleSchemaNodeTypesFlat)(
+        on: StyleSchemaNodeTypesFlat(
           StyleSchemaNodeTypesParagraphHeadingCodeBlockValues,
           StyleSchemaNodeTypesSlidesTextValues,
           StyleSchemaNodeTypesSlidesTableValues,
@@ -559,7 +559,7 @@ export function installEditorStyleSchemaValues(): () => void {
       },
       textStrokeWidth: {
         v: StyleSchemaValuesHandler(0, 8),
-        on: (0, StyleSchemaNodeTypesFlat)(
+        on: StyleSchemaNodeTypesFlat(
           StyleSchemaNodeTypesParagraphHeadingCodeBlockValues,
           StyleSchemaNodeTypesSlidesTextValues,
           StyleSchemaNodeTypesSlidesTableValues,
@@ -567,7 +567,7 @@ export function installEditorStyleSchemaValues(): () => void {
       },
       textStrokeColor: {
         v: StyleSchemaValuesKindConfig,
-        on: (0, StyleSchemaNodeTypesFlat)(
+        on: StyleSchemaNodeTypesFlat(
           StyleSchemaNodeTypesParagraphHeadingCodeBlockValues,
           StyleSchemaNodeTypesSlidesTextValues,
           StyleSchemaNodeTypesSlidesTableValues,
@@ -646,7 +646,7 @@ export function installEditorStyleSchemaValues(): () => void {
         v: StyleSchemaValuesHandler_4(
           StyleSchemaNodeTypesVisibleHiddenClipValues,
         ),
-        on: (0, StyleSchemaNodeTypesFlat)(
+        on: StyleSchemaNodeTypesFlat(
           StyleSchemaNodeTypesBlockquoteBulletListOrderedListValues,
           StyleSchemaNodeTypesTableTableCellTableHeaderValues,
           StyleSchemaNodeTypesSlidesStackValues,

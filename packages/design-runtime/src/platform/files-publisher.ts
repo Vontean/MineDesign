@@ -48,7 +48,7 @@ function createFilesPublisher(options?: Dynamic): Dynamic {
     isIndexPath: Dynamic = (input?: Dynamic): Dynamic =>
       indexPath !== undefined
         ? input === indexPath
-        : (0, isProjectMetadataFile)(input),
+        : isProjectMetadataFile(input),
     dirtyEdits: Dynamic = new Map(),
     inFlightEdits: Dynamic = new Map(),
     conflictHistory: Dynamic = new Map(),
@@ -549,12 +549,12 @@ function createFilesPublisher(options?: Dynamic): Dynamic {
                   why: value19,
                   cause: "other",
                 };
-        } else value18 = (0, describeInvalidFile)(value15, value17);
+        } else value18 = describeInvalidFile(value15, value17);
       } catch {
-        value18 = (0, describeInvalidFile)(value15, value17);
+        value18 = describeInvalidFile(value15, value17);
       }
       if (value18 === undefined) {
-        let value19: Dynamic = (0, describeOversizedFile)(value17);
+        let value19: Dynamic = describeOversizedFile(value17);
         value19 !== undefined &&
           (value18 = {
             why: value19,
@@ -603,7 +603,7 @@ function createFilesPublisher(options?: Dynamic): Dynamic {
         : (beginRetryAttempt(), surfaceStuckState("invalid_content", false));
     }
     notifyState();
-    let value13: Dynamic = (0, splitPublishBatches)(
+    let value13: Dynamic = splitPublishBatches(
         state,
         isIndexPath,
       ),
@@ -668,11 +668,11 @@ function createFilesPublisher(options?: Dynamic): Dynamic {
       metrics.pathsSent += Object.keys(value15).length;
       metrics.lastPublishMs = timers.now() - value16;
       let value20: Dynamic =
-        value17.shas ?? (await (0, hashFileMap)(value15));
+        value17.shas ?? (await hashFileMap(value15));
       for (let [value21, value22] of Object.entries(value15) as Dynamic) {
         let value23: Dynamic =
           value22 === null ? null : (value20[value21] ?? null);
-        metrics.bytesSent += (0, getRawFileBytes)(value22);
+        metrics.bytesSent += getRawFileBytes(value22);
         ownPublishedHashes.set(value21, value23);
         remoteHashes.set(value21, value23);
         !(
@@ -680,7 +680,7 @@ function createFilesPublisher(options?: Dynamic): Dynamic {
           value17.computed?.includes(value21) !== true
         ) &&
         value23 !== null &&
-        (0, hasInjectedRuntime)(value22)
+        hasInjectedRuntime(value22)
           ? ownChangedPaths.add(value21)
           : ownChangedPaths.delete(value21);
         value23 !== null &&
@@ -694,7 +694,7 @@ function createFilesPublisher(options?: Dynamic): Dynamic {
           value21 === indexPath &&
           value23 !== null &&
           indexState.markSaved(
-            (0, extractPortFileText)(value22),
+            extractPortFileText(value22),
             value23,
           );
       }
@@ -1134,13 +1134,13 @@ function createFilesPublisher(options?: Dynamic): Dynamic {
   }
   async function refreshLiveHashes(): Promise<Dynamic> {
     try {
-      let value12: Dynamic = await (0, retryAccessFailure)(
-        (): Dynamic => (0, listWritableFiles)(originalPort),
+      let value12: Dynamic = await retryAccessFailure(
+        (): Dynamic => listWritableFiles(originalPort),
         timers,
         undefined,
         FILE_PUBLISH_SETTLE_RETRY_MS,
       );
-      if ((0, isNarrowedFileContext)(value12, originalPort))
+      if (isNarrowedFileContext(value12, originalPort))
         return false;
       let entries3: Dynamic = new Map(
         value12.map((input?: Dynamic): Dynamic => [input.path, input.sha256]),
@@ -1157,7 +1157,7 @@ function createFilesPublisher(options?: Dynamic): Dynamic {
   async function reloadAndMergeIndex(): Promise<Dynamic> {
     if (!indexState) return "merged";
     try {
-      let value12: Dynamic = await (0, retryAccessFailure)(
+      let value12: Dynamic = await retryAccessFailure(
         (): Dynamic => indexState.reloadAndMerge(),
         timers,
         undefined,

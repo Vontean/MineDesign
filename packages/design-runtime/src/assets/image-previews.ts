@@ -52,7 +52,7 @@ export function installAssetsImagePreviews(): () => void {
     ]);
     imagePreviewCache = new Map();
     inlineImagePreview = (input?: Dynamic): Dynamic =>
-      (0, isBlobAssetUrl)(input)
+      isBlobAssetUrl(input)
         ? input.startsWith("_blob/")
           ? "/" + input
           : input

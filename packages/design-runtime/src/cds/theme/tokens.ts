@@ -12,7 +12,7 @@ export {
 };
 export function installCdsThemeTokens(): () => void {
   return () => {
-    initializeTokens = (0, initializeOnce)((): Dynamic => {
+    initializeTokens = initializeOnce((): Dynamic => {
       tokens = {
         radius: {
           cssVar: "var(--cds-radius)",

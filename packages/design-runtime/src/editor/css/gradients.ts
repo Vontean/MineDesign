@@ -171,7 +171,7 @@ function parseCssBoxShadow(input?: Dynamic): Dynamic {
   if (
     !value ||
     value === "none" ||
-    (0, classifyStyleValue)(value).kind !== "literal"
+    classifyStyleValue(value).kind !== "literal"
   )
     return null;
   let value2: Dynamic = splitGradientArguments(value)[0] ?? value,
@@ -194,7 +194,7 @@ function parseCssBoxShadow(input?: Dynamic): Dynamic {
     items3: Dynamic = [];
   for (let value3 of items as Dynamic) {
     if (value3 === "inset") continue;
-    let value4: Dynamic = (0, parseCssNumber)(value3);
+    let value4: Dynamic = parseCssNumber(value3);
     value4 && items2.length < 4
       ? items2.push(value4.value)
       : items3.push(value3);
@@ -214,8 +214,8 @@ function serializeCssBoxShadow(input?: Dynamic): Dynamic {
 }
 function contrastingGradientSeed(input?: Dynamic): Dynamic {
   let text: Dynamic = "#c1672a",
-    value: Dynamic = (0, hsvaToRgbHex)(
-      (0, parseHsvaColor)(input),
+    value: Dynamic = hsvaToRgbHex(
+      parseHsvaColor(input),
     ).toLowerCase(),
     value2: Dynamic = value === text ? "#ffffff" : text,
     callback: Dynamic = (input2?: Dynamic, options?: Dynamic): Dynamic =>

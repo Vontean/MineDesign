@@ -98,7 +98,7 @@ export function applyPanZoomGesture(deps: { readonly focusedFileRef: Dynamic; re
                     0,
                     Math.min(value664, (py2 - value665.y) * value665.scale),
                   );
-                value665 = (0, zoomViewportAtPoint)(
+                value665 = zoomViewportAtPoint(
                   value665,
                   value666,
                   value667,
@@ -107,7 +107,7 @@ export function applyPanZoomGesture(deps: { readonly focusedFileRef: Dynamic; re
                 );
               }
               (value658 !== 0 || value659 !== 0) &&
-                (value665 = (0, panViewport)(
+                (value665 = panViewport(
                   value665,
                   -value658,
                   -value659,
@@ -120,7 +120,7 @@ export function applyPanZoomGesture(deps: { readonly focusedFileRef: Dynamic; re
 
 /** 打开画布位置链接（页面、画板、播放或窗口）时运行：解析目标动作，切换页面、聚焦或播放画板，并恢复对应视口。 */
 export function navigateToCanvasPlace(deps: { readonly abandonSelectionGesture: Dynamic; readonly setSelection: Dynamic; readonly value105: Dynamic; readonly value2: Dynamic; readonly value224: Dynamic; readonly value225: Dynamic; readonly value273: Dynamic; readonly value275: Dynamic; readonly value284: Dynamic; readonly value291: Dynamic; readonly value298: Dynamic; readonly value310: Dynamic; readonly value346: Dynamic; readonly value380: Dynamic; readonly value559: Dynamic; readonly value563: Dynamic; readonly value62: Dynamic; readonly value73: Dynamic; readonly value80: Dynamic }, input?: Dynamic, options: Dynamic = false): Dynamic {
-    let value653: Dynamic = (0, resolveCanvasPlaceAction)(
+    let value653: Dynamic = resolveCanvasPlaceAction(
       input,
       deps.value73.current,
       {
@@ -139,7 +139,7 @@ export function navigateToCanvasPlace(deps: { readonly abandonSelectionGesture: 
         deps.abandonSelectionGesture();
         deps.value62();
         let callback16: Dynamic = (input2?: Dynamic): Dynamic => {
-          let value655: Dynamic = (0, recallCanvasView)(input2);
+          let value655: Dynamic = recallCanvasView(input2);
           value655 !== undefined &&
             ((deps.value291.current = false),
             (deps.value310.current = true),
@@ -167,7 +167,7 @@ export function navigateToCanvasPlace(deps: { readonly abandonSelectionGesture: 
                   : (value653.focus && deps.value273(value653.file),
                     value653.camera && deps.value559(value653.file)),
                 deps.setSelection(
-                  (0, selectionFromArtboards)(
+                  selectionFromArtboards(
                     new Set([value653.file]),
                   ),
                 ));
@@ -177,10 +177,10 @@ export function navigateToCanvasPlace(deps: { readonly abandonSelectionGesture: 
         value653.do === "play" ||
         (value653.do === "page" ? value653.id : value653.page) !==
           deps.value80.current;
-    value654 && (0, initializeDesignKeyboardBindings)();
+    value654 && initializeDesignKeyboardBindings();
     let controller: Dynamic = new AbortController();
     deps.value563.current = controller;
-    (0, runFindRevealAfterSettle)(
+    runFindRevealAfterSettle(
       value654 && deps.value2.current?.() === true,
       controller.signal,
       deps.value275,

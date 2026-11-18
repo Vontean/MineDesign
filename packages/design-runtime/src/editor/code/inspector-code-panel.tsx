@@ -29,7 +29,7 @@ function InspectorCodePanel({
   useUiLocale();
   let [value, value2]: Dynamic = (0,
     reactInspectorAnnotation.useState)(
-      (): Dynamic => (0, selectionCodeText)(model, tids),
+      (): Dynamic => selectionCodeText(model, tids),
     ),
     [value3, value4]: Dynamic = (0,
     reactInspectorAnnotation.useState)([]),
@@ -50,7 +50,7 @@ function InspectorCodePanel({
     value11: Dynamic = (0, reactInspectorAnnotation.useRef)(false),
     value12: Dynamic = (0, reactInspectorAnnotation.useMemo)(
       (): Dynamic => (): Dynamic => {
-        let value30: Dynamic = (0, getSelectionCodeEntries)(
+        let value30: Dynamic = getSelectionCodeEntries(
           model,
           tids,
         );
@@ -60,9 +60,9 @@ function InspectorCodePanel({
           ),
         );
         value2(
-          (0, serializeSelectionCode)(value30.entries, value30.mixed),
+          serializeSelectionCode(value30.entries, value30.mixed),
         );
-        value4((0, sharedInheritedTextStyle)(model, tids));
+        value4(sharedInheritedTextStyle(model, tids));
         value6(null);
         value11.current = false;
       },
@@ -74,7 +74,7 @@ function InspectorCodePanel({
         (window as Dynamic).clearTimeout(value13.current.timer);
       let value30: Dynamic = (window as Dynamic).setTimeout((): Dynamic => {
         value13.current = null;
-        (0, announce)(input);
+        announce(input);
       }, options);
       value13.current = {
         sentence: input,
@@ -106,7 +106,7 @@ function InspectorCodePanel({
     [],
   );
   let callback2: Dynamic = (input?: Dynamic, options?: Dynamic): Dynamic => {
-      let value30: Dynamic = (0, parseInspectorCode)(input);
+      let value30: Dynamic = parseInspectorCode(input);
       if (!value30.ok) {
         value6({
           line: value30.line,
@@ -136,10 +136,10 @@ function InspectorCodePanel({
         }));
     },
     value16: Dynamic = value5
-      ? (0, sourceLineErrorAnnouncement)(value5.line, value5.message)
+      ? sourceLineErrorAnnouncement(value5.line, value5.message)
       : undefined,
     value17: Dynamic = (0, reactInspectorAnnotation.useId)();
-  (0, useCodeErrorAnnouncement)(value16, value);
+  useCodeErrorAnnouncement(value16, value);
   let callback3: Dynamic = (input?: Dynamic): Dynamic => {
       value2(input);
       !readOnly &&
@@ -159,15 +159,15 @@ function InspectorCodePanel({
           (value18 ? uiMessage("inspector.inspectorCodePanel.theseElementsAre") : uiMessage("inspector.inspectorCodePanel.thisElementIs")) +
           " read-only here."
         );
-      if ((0, isTextStyleProperty)(input, options))
+      if (isTextStyleProperty(input, options))
         return uiMessage("inspector.inspectorCodePanel.thisValueIsRelativeTo");
       if (/var\(|\{\{/i.test(options))
         return uiMessage("inspector.inspectorCodePanel.thisValueDependsOnWhere");
-      let value30: Dynamic = (0, parseInspectorCode)(value);
+      let value30: Dynamic = parseInspectorCode(value);
       if (!value30.ok) return uiMessage("inspector.inspectorCodePanel.fixTheMarkedLineIn");
       if (value30.map.has(input))
         return uiMessage("inspector.inspectorCodePanel.theFieldAlreadyHasA") + input + ".";
-      if (!(0, parseInspectorCode)(input + ": " + options + ";").ok)
+      if (!parseInspectorCode(input + ": " + options + ";").ok)
         return uiMessage("inspector.inspectorCodePanel.thisValueCanTBe");
     },
     value20: Dynamic = (0, reactInspectorAnnotation.useRef)(null),
@@ -251,7 +251,7 @@ function InspectorCodePanel({
   }, [value, value24, value26]);
   let value27: Dynamic =
       tids.length === 1
-        ? (0, findInspectorOutlineNode)(outline, tids[0])
+        ? findInspectorOutlineNode(outline, tids[0])
         : null,
     value28: Dynamic = tids.length === 1 ? model.tagName?.(tids[0]) : null,
     value29: Dynamic = uiMessage("inspector.inspectorCodePanel.nothingSetOn") + value19;
@@ -309,11 +309,11 @@ function InspectorCodePanel({
               ((window as Dynamic).clearTimeout(value15.current),
               (value15.current = null));
             callback2(value, false);
-            let value30: Dynamic = (0, parseInspectorCode)(value);
+            let value30: Dynamic = parseInspectorCode(value);
             !value30.ok &&
               value11.current &&
               callback(
-                (0, discardedCodeChangesAnnouncement)(value30.line),
+                discardedCodeChangesAnnouncement(value30.line),
                 CodePropertyCodeConstant_2,
               );
             value12();
@@ -357,9 +357,9 @@ export {
 };
 export function installEditorCodeInspectorCodePanel(): () => void {
   return () => {
-    (0, initializeNpm_usehooks_ts_p0)();
-    reactCodeInspectorCodePanel = (0, toModuleNamespace)(
-      (0, load_react)(),
+    initializeNpm_usehooks_ts_p0();
+    reactCodeInspectorCodePanel = toModuleNamespace(
+      load_react(),
       1,
     );
   };

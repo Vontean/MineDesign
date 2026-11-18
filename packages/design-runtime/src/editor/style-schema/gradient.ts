@@ -16,8 +16,8 @@ function validateStyleGradient(
   input?: Dynamic,
   options: Dynamic = false,
 ): Dynamic {
-  if (!(0, isStyleObject)(input)) return;
-  let value: Dynamic = (0, validateOptionalStyleNumber)(
+  if (!isStyleObject(input)) return;
+  let value: Dynamic = validateOptionalStyleNumber(
     StyleSchemaValuesHandlerValue_4,
     input.angle,
     180,
@@ -34,9 +34,9 @@ function validateStyleGradient(
     items: Dynamic = [];
   for (let index: Dynamic = 0; index < length; index += 1) {
     let value7: Dynamic = stops[index];
-    if (!(0, isStyleObject)(value7)) return;
-    let value8: Dynamic = (0, validateStyleColor)(value7.color),
-      value9: Dynamic = (0, validateOptionalStyleNumber)(
+    if (!isStyleObject(value7)) return;
+    let value8: Dynamic = validateStyleColor(value7.color),
+      value9: Dynamic = validateOptionalStyleNumber(
         StyleSchemaValuesHandlerValue_5,
         value7.pos,
         (index / (length - 1)) * 100,
@@ -53,7 +53,7 @@ function validateStyleGradient(
   );
   let value2: Dynamic = options && input.repeat !== undefined,
     value3: Dynamic = value2
-      ? (0, validateStyleNumber)(
+      ? validateStyleNumber(
           StyleSchemaValuesHandlerValue_7,
           input.repeat,
         )
@@ -73,12 +73,12 @@ function validateStyleGradient(
           pos: 100,
         }));
   let value5: Dynamic;
-  if ((0, isStyleObject)(input.at)) {
-    let value7: Dynamic = (0, validateStyleNumber)(
+  if (isStyleObject(input.at)) {
+    let value7: Dynamic = validateStyleNumber(
         StyleSchemaValuesHandlerValue_6,
         input.at.x,
       ),
-      value8: Dynamic = (0, validateStyleNumber)(
+      value8: Dynamic = validateStyleNumber(
         StyleSchemaValuesHandlerValue_6,
         input.at.y,
       );
@@ -133,7 +133,7 @@ function radialGradientPrefix(input?: Dynamic): Dynamic {
       ),
     at: Dynamic = input.at,
     value2: Dynamic =
-      (0, isStyleObject)(at) &&
+      isStyleObject(at) &&
       typeof at.x == "number" &&
       typeof at.y == "number" &&
       Number.isFinite(at.x) &&
@@ -163,19 +163,19 @@ export {
 };
 export function installEditorStyleSchemaGradient(): () => void {
   return () => {
-    StyleSchemaValuesHandlerValue_4 = (0, StyleSchemaValuesHandler_2)(
+    StyleSchemaValuesHandlerValue_4 = StyleSchemaValuesHandler_2(
       0,
       360,
     );
-    StyleSchemaValuesHandlerValue_5 = (0, StyleSchemaValuesHandler_2)(
+    StyleSchemaValuesHandlerValue_5 = StyleSchemaValuesHandler_2(
       0,
       100,
     );
-    StyleSchemaValuesHandlerValue_6 = (0, StyleSchemaValuesHandler_2)(
+    StyleSchemaValuesHandlerValue_6 = StyleSchemaValuesHandler_2(
       -100,
       200,
     );
-    StyleSchemaValuesHandlerValue_7 = (0, StyleSchemaValuesHandler)(
+    StyleSchemaValuesHandlerValue_7 = StyleSchemaValuesHandler(
       2,
       2048,
     );

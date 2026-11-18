@@ -14,7 +14,7 @@ var cdsIslandClassName: Dynamic;
 var initializePlatformCdsIsland: Dynamic;
 function CdsIsland({ className: className, ...props }: Dynamic): Dynamic {
   useUiLocale();
-  let { resolved: value }: Dynamic = (0, useDocumentTheme)();
+  let { resolved: value }: Dynamic = useDocumentTheme();
   return (
     <CdsRoot
       mode={value}
@@ -33,13 +33,13 @@ export {
 };
 export function installPlatformCdsIsland(): () => void {
   return () => {
-    initializePlatformCdsIsland = (0, initializeOnce)((): Dynamic => {
+    initializePlatformCdsIsland = initializeOnce((): Dynamic => {
       "use strict";
 
-      (0, initializeCdsIndex)();
-      (0, initializePlatformTheme)();
-      jsxPlatformCdsIsland = (0, toModuleNamespace)(
-        (0, load_react_jsx_runtime)(),
+      initializeCdsIndex();
+      initializePlatformTheme();
+      jsxPlatformCdsIsland = toModuleNamespace(
+        load_react_jsx_runtime(),
         1,
       );
       cdsIslandClassName = "cds-island";

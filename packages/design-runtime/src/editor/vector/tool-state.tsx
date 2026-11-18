@@ -31,18 +31,18 @@ export {
 };
 export function installEditorVectorToolState(): () => void {
   return () => {
-    reactVectorToolState = (0, toModuleNamespace)(
-      (0, load_react)(),
+    reactVectorToolState = toModuleNamespace(
+      load_react(),
       1,
     );
-    reactVectorToolState_2 = (0, toModuleNamespace)(
-      (0, load_react)(),
+    reactVectorToolState_2 = toModuleNamespace(
+      load_react(),
       1,
     );
-    reactDomVectorToolState = (0, toModuleNamespace)(
-      (0, load_react_dom)(),
+    reactDomVectorToolState = toModuleNamespace(
+      load_react_dom(),
       1,
     );
-    (0, initializeNpm_usehooks_ts_p0)();
+    initializeNpm_usehooks_ts_p0();
   };
 }

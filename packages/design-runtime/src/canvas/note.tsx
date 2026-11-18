@@ -65,7 +65,7 @@ function CanvasNote({
   (0, reactCanvasPanZoom.useEffect)((): Dynamic => callback, []);
   let value6: Dynamic = (0, reactCanvasPanZoom.useRef)(null),
     value7: Dynamic = spec.kind === "title1",
-    value8: Dynamic = (0, useViewportStore)(),
+    value8: Dynamic = useViewportStore(),
     value9: Dynamic = spec.rotate ?? 0,
     value10: Dynamic = (0, reactCanvasPanZoom.useRef)(editing);
   value10.current = editing;
@@ -81,14 +81,14 @@ function CanvasNote({
         ],
         [items4, items5]: Dynamic = [
           value9,
-          (0, angleBetweenPoints)(
+          angleBetweenPoints(
             items2,
             items3,
             options.clientX,
             options.clientY,
           ),
         ];
-      (0, beginArtboardResize)(options, {
+      beginArtboardResize(options, {
         src: "ann-resize",
         scale: value8.get().scale,
         sound: (): Dynamic => value10.current,
@@ -99,9 +99,9 @@ function CanvasNote({
           options2?: Dynamic,
           context?: Dynamic,
         ): Dynamic => {
-          let value47: Dynamic = (0, snapRotation)(
+          let value47: Dynamic = snapRotation(
             items4 +
-              (0, angleBetweenPoints)(
+              angleBetweenPoints(
                 items2,
                 items3,
                 context.clientX,
@@ -160,7 +160,7 @@ function CanvasNote({
     reactCanvasPanZoom.useCallback)((): Dynamic => {
       let current: Dynamic = value14.current;
       if (!current) return;
-      let value47: Dynamic = (0, CanvasPanZoomScrollTop)(current);
+      let value47: Dynamic = CanvasPanZoomScrollTop(current);
       value17(
         (input?: Dynamic): Dynamic =>
           input.above === value47.above && input.below === value47.below
@@ -248,21 +248,21 @@ function CanvasNote({
     let current: Dynamic = value3.current;
     if (!current) return;
     value7
-      ? ((current.textContent = (0, NotesDomHandler_2)(spec.text)),
+      ? ((current.textContent = NotesDomHandler_2(spec.text)),
         (value32.current = current.textContent))
-      : ((0, applyNoteMarkdownDom)(current, spec.text),
-        (value32.current = (0, serializeNoteDom)(current)));
+      : (applyNoteMarkdownDom(current, spec.text),
+        (value32.current = serializeNoteDom(current)));
     value33.current = false;
-    let value47: Dynamic = (0, installNoteInputRules)(
+    let value47: Dynamic = installNoteInputRules(
         current,
         (): Dynamic =>
-          value7 ? null : (0, annotationTextStyle)(spec),
+          value7 ? null : annotationTextStyle(spec),
       ),
-      value48: Dynamic = (value4.current = (0, createNoteLinkEditor)(
+      value48: Dynamic = (value4.current = createNoteLinkEditor(
         current,
       ));
     current.focus();
-    (0, moveNoteCaretToEnd)(current) &&
+    moveNoteCaretToEnd(current) &&
       value14.current &&
       (value14.current.scrollTop = value14.current.scrollHeight);
     return (): Dynamic => {
@@ -281,27 +281,27 @@ function CanvasNote({
       let value47: Dynamic = null,
         value48: Dynamic = value7
           ? current.innerText.replace(/\n$/, "")
-          : (0, serializeNoteDom)(current);
+          : serializeNoteDom(current);
       if (value48 !== value32.current) {
         let value49: Dynamic = value7
-          ? (0, NotesDomJoin)(
-              (0, PlatformFileContentSlice_2)(value48),
+          ? NotesDomJoin(
+              PlatformFileContentSlice_2(value48),
             )
-          : (0, NotesBlocksReplace_2)(value48);
+          : NotesBlocksReplace_2(value48);
         if (value49.length <= PlatformFileContentLimit_4)
           value47 = value7
             ? value49
-            : (0, PlatformFileContentSlice_2)(value49);
+            : PlatformFileContentSlice_2(value49);
         else if (input === "escape" && !value33.current) {
           value33.current = true;
-          (0, showEditorToast)(
+          showEditorToast(
             uiMessage("canvas.note.thisNoteIsOverIts") +
               String(PlatformFileContentLimit_4) +
               "-character limit. Shorten it to save; leaving discards the edit.",
           );
           return;
         } else
-          (0, showEditorToast)(
+          showEditorToast(
             uiMessage("canvas.note.editDiscardedTheNoteWas") +
               String(PlatformFileContentLimit_4) +
               "-character limit.",
@@ -318,17 +318,17 @@ function CanvasNote({
           true,
         );
     },
-    value34: Dynamic = (0, annotationTextStyle)(spec),
+    value34: Dynamic = annotationTextStyle(spec),
     value35: Dynamic = (0, reactCanvasPanZoom.useMemo)(
       (): Dynamic =>
         value7
-          ? (0, NotesDomHandler_2)(spec.text)
-          : (0, renderNoteMarkdown)(spec.text),
+          ? NotesDomHandler_2(spec.text)
+          : renderNoteMarkdown(spec.text),
       [spec.text, value7],
     ),
-    value36: Dynamic = (0, PlatformFileContentMin)(value34.size),
+    value36: Dynamic = PlatformFileContentMin(value34.size),
     // MineDesign：便签不再有高度上限，文字按宽度换行、便签随之长高，不截断也不滚动；maxH 是拖出来的最小高度
-    value37: Dynamic = value7 ? (0, PlatformFileContentKind)(spec) : 1 / 0,
+    value37: Dynamic = value7 ? PlatformFileContentKind(spec) : 1 / 0,
     value38: Dynamic = !value7 && value24 > value37,
     value39: Dynamic = !value7 && (value || (editing ? selected : value38));
   (0, reactCanvasPanZoom.useLayoutEffect)((): Dynamic => {
@@ -336,10 +336,10 @@ function CanvasNote({
     value18();
   }, [value39, value18]);
   let value40: Dynamic = value7
-      ? (0, annotationTextFit)(
+      ? annotationTextFit(
           value20,
           value34.size,
-          (0, PlatformFileContentMaxW)(spec),
+          PlatformFileContentMaxW(spec),
           value37,
         )
       : null,
@@ -349,7 +349,7 @@ function CanvasNote({
         ? null
         : value40.wrap
           ? {
-              w: (0, PlatformFileContentMaxW)(spec),
+              w: PlatformFileContentMaxW(spec),
               h: Math.min(
                 Math.ceil(value24 * value40.k),
                 value ? 1 / 0 : value37,
@@ -372,11 +372,11 @@ function CanvasNote({
     value44: Dynamic =
       value7 && !value40?.wrap
         ? {
-            ...(0, NotesLinkEditingSize)(spec),
+            ...NotesLinkEditingSize(spec),
             whiteSpace: "pre",
           }
-        : (0, NotesLinkEditingSize)(spec),
-    value45: Dynamic = (0, CanvasPanZoomRound)(value34.size),
+        : NotesLinkEditingSize(spec),
+    value45: Dynamic = CanvasPanZoomRound(value34.size),
     items: Dynamic = [
       value16.above ? "transparent" : "#000",
       "#000 " + String(value16.above ? value45 : 0) + "px",
@@ -406,13 +406,13 @@ function CanvasNote({
       data-mega-annotation={spec.id}
       data-testid={"mega-annotation-" + spec.id}
       data-note-kind={spec.kind ?? "note"}
-      data-note-size={(0, annotationTextStyle)(spec).size}
-      className={(0, joinClassNames)(
+      data-note-size={annotationTextStyle(spec).size}
+      className={joinClassNames(
         "absolute rounded-[2px]",
         !editing && "pointer-events-none",
         editing && !value && "cursor-grab",
         value7
-          ? (0, joinClassNames)(
+          ? joinClassNames(
               "shadow-[0_0_0_var(--ring-w,0px)_var(--cds-border-strong)]",
               value && "[--ring-w:var(--hair)]",
               editing && !selected && "hover:[--ring-w:var(--hair)]",
@@ -437,7 +437,7 @@ function CanvasNote({
         ...(value7
           ? {}
           : {
-              "--note-fill": (0, NotesLinkEditingHandler)(
+              "--note-fill": NotesLinkEditingHandler(
                 value34.fill,
               ),
             }),
@@ -503,7 +503,7 @@ function CanvasNote({
             value40 && value41
               ? {
                   width: value40.wrap
-                    ? (0, PlatformFileContentMaxW)(spec) / value40.k
+                    ? PlatformFileContentMaxW(spec) / value40.k
                     : value20.w,
                   transform: "scale(" + String(value40.k) + ")",
                   transformOrigin: "0 0",
@@ -520,12 +520,12 @@ function CanvasNote({
               onFocus={callback}
               onBlur={(input?: Dynamic): Dynamic => {
                 if (
-                  !(0, NotesLinkEditingClosest)(input.relatedTarget)
+                  !NotesLinkEditingClosest(input.relatedTarget)
                 )
                   return callback4();
                 callback();
                 let callback7: Dynamic = (input2?: Dynamic): Dynamic => {
-                  (0, NotesLinkEditingClosest)(
+                  NotesLinkEditingClosest(
                     input2.relatedTarget,
                   ) ||
                     (callback(),
@@ -544,14 +544,14 @@ function CanvasNote({
                   return value23(
                     event.currentTarget.innerText.replace(/\n$/, ""),
                   );
-                (0, handleNoteAutoformat)(
+                handleNoteAutoformat(
                   event.currentTarget,
                   event.nativeEvent,
                   serializeNoteDom,
                   ["ul", "ol"],
                   true,
                 );
-                (0, normalizeNoteLineBreaks)(event.currentTarget);
+                normalizeNoteLineBreaks(event.currentTarget);
               }}
               onKeyDown={(event?: Dynamic): Dynamic => {
                 event.key === "Escape"
@@ -561,7 +561,7 @@ function CanvasNote({
                   : !value7 && event.key === "Enter" && event.shiftKey
                     ? (event.preventDefault(),
                       (document as Dynamic).execCommand("insertParagraph"))
-                    : (0, handleNoteFormattingShortcut)(
+                    : handleNoteFormattingShortcut(
                         event,
                         value7 ? null : value34,
                       );
@@ -613,7 +613,7 @@ function CanvasNote({
           className={
             "pointer-events-none invisible absolute left-0 top-0 w-max whitespace-pre"
           }
-          style={(0, NotesLinkEditingSize)(spec)}
+          style={NotesLinkEditingSize(spec)}
         >
           {(value ? value22 : null) ?? value35}
         </div>)}
@@ -670,7 +670,7 @@ function CanvasNote({
                     value49: Dynamic = value9
                       ? null
                       : (snapLines?.() ?? null);
-                  (0, beginArtboardResize)(options, {
+                  beginArtboardResize(options, {
                     src: "ann-resize",
                     scale: value8.get().scale,
                     sound: (): Dynamic => value10.current,
@@ -691,7 +691,7 @@ function CanvasNote({
                           !value51 && !(value47 && input2.x !== null),
                         value53: Dynamic =
                           value49 && !(context.metaKey || context.ctrlKey)
-                            ? (0, snapResize)(
+                            ? snapResize(
                                 state2,
                                 {
                                   x: input2.x,
@@ -717,7 +717,7 @@ function CanvasNote({
                               input4.axis === "x",
                           ),
                         });
-                      let value54: Dynamic = (0, resizeRotatedRect)(
+                      let value54: Dynamic = resizeRotatedRect(
                           state2,
                           value9,
                           input2,
@@ -734,7 +734,7 @@ function CanvasNote({
                         ),
                         value55: Dynamic =
                           input2.x !== null
-                            ? (0, NotesLinkEditingMin)(value54.w)
+                            ? NotesLinkEditingMin(value54.w)
                             : spec.w,
                         value56: Dynamic =
                           input2.y === null
@@ -748,7 +748,7 @@ function CanvasNote({
                             ? value56
                             : null,
                         );
-                      let value57: Dynamic = (0, activeResizeGuides)(
+                      let value57: Dynamic = activeResizeGuides(
                         {
                           x: value48 ? Math.round(value54.x) : spec.x,
                           y: value48 ? Math.round(value54.y) : spec.y,
@@ -816,8 +816,8 @@ export {
 };
 export function installCanvasNote(): () => void {
   return () => {
-    jsxCanvasNote = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    jsxCanvasNote = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
   };

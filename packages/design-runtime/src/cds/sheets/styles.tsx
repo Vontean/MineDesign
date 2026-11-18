@@ -44,7 +44,7 @@ function useSheetState_2(): Dynamic {
         height: value7,
         slide: value8,
         shown: value9,
-      }: Dynamic = (0, calculateSheetPosition)(
+      }: Dynamic = calculateSheetPosition(
         input,
         input.raw - options,
       );
@@ -98,14 +98,14 @@ function useSheetState_2(): Dynamic {
           },
         ),
         value11: Dynamic = value.canGrow || value.detent === "tall",
-        value12: Dynamic = (0, calculateSheetDetents)(
+        value12: Dynamic = calculateSheetDetents(
           Math.min(value.height ?? height, height),
           value9,
           SheetsLayoutConstant,
           value11,
         ),
         value13: Dynamic =
-          (0, prefersReducedMotion)() || !value11
+          prefersReducedMotion() || !value11
             ? {
                 ...value12,
                 room: 0,
@@ -126,7 +126,7 @@ function useSheetState_2(): Dynamic {
         lastT: event.timeStamp,
         velocity: 0,
         detent: value.detent,
-        raw: (0, sheetPositionToRawHeight)(value13, height, value8),
+        raw: sheetPositionToRawHeight(value13, height, value8),
         caughtSlide: value8,
         ...value13,
         sheets: value10,
@@ -163,7 +163,7 @@ function useSheetState_2(): Dynamic {
       }
     },
     value5: Dynamic = value?.open ?? false;
-  (0, useIsomorphicLayoutEffect)((): Dynamic => {
+  useIsomorphicLayoutEffect((): Dynamic => {
     let entry: Dynamic = value4.get();
     !value5 &&
       entry !== null &&
@@ -175,7 +175,7 @@ function useSheetState_2(): Dynamic {
     height: undefined,
     detent: "default",
   });
-  (0, useIsomorphicLayoutEffect)((): Dynamic => {
+  useIsomorphicLayoutEffect((): Dynamic => {
     value6.current = {
       open: value?.open ?? false,
       height: value?.height,
@@ -206,8 +206,7 @@ function useSheetState_2(): Dynamic {
     let value7: Dynamic = entry.lastY - entry.startY,
       value8: Dynamic =
         input.timeStamp - entry.lastT > 100 ? 0 : entry.velocity,
-      { dismiss: value9, detent: value10 }: Dynamic = (0,
-      settleSheetGesture)(entry, {
+      { dismiss: value9, detent: value10 }: Dynamic = settleSheetGesture(entry, {
         detent: entry.detent,
         rawAtGrab: entry.raw,
         rawAtRelease: entry.raw - value7,
@@ -287,22 +286,22 @@ export {
 };
 export function installCdsSheetsStyles(): () => void {
   return () => {
-    initializeSheetsStyles = (0, initializeOnce)((): Dynamic => {
+    initializeSheetsStyles = initializeOnce((): Dynamic => {
       "use client";
 
-      (0, initializeHooksLayoutEffect)();
-      (0, initializePlatformReducedMotion)();
-      (0, initializeSheetsGesturePhysics)();
-      (0, initializeSheetsLayout)();
-      (0, initializeSheetsPopupStack)();
-      (0, initializePlatformReducedMotion_2)();
-      reactSheetsStyles = (0, toModuleNamespace)(
-        (0, load_react)(),
+      initializeHooksLayoutEffect();
+      initializePlatformReducedMotion();
+      initializeSheetsGesturePhysics();
+      initializeSheetsLayout();
+      initializeSheetsPopupStack();
+      initializePlatformReducedMotion_2();
+      reactSheetsStyles = toModuleNamespace(
+        load_react(),
       );
     });
-    initializeSheetsStyles_2 = (0, initializeOnce)((): Dynamic => {
-      reactSheetsStyles_2 = (0, toModuleNamespace)(
-        (0, load_react)(),
+    initializeSheetsStyles_2 = initializeOnce((): Dynamic => {
+      reactSheetsStyles_2 = toModuleNamespace(
+        load_react(),
       );
       LabelsProviderContext = (0, reactSheetsStyles_2.createContext)<
         LabelResolver | undefined

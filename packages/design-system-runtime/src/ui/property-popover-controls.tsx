@@ -218,7 +218,7 @@ function PropertyPopover({
       positionAnchor={anchor}
       focusOnOpen={focusOnOpen}
       padding={"none"}
-      className={(0, joinClassNames)(
+      className={joinClassNames(
         "w-[14.5rem] pointer-coarse:w-[17rem]",
         className,
       )}
@@ -264,23 +264,23 @@ export {
 };
 export function installUiPropertyPopoverControls(): () => void {
   return () => {
-    reactPropertyPopoverControls = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    reactPropertyPopoverControls = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
-    jsxPropertyPopoverControls = (0, toModuleNamespace)(
-      (0, loadJsxNamespace)(),
+    jsxPropertyPopoverControls = toModuleNamespace(
+      loadJsxNamespace(),
       1,
     );
-    jsxPropertyPopoverActions = (0, toModuleNamespace)(
-      (0, loadJsxNamespace)(),
+    jsxPropertyPopoverActions = toModuleNamespace(
+      loadJsxNamespace(),
       1,
     );
-    reactdC = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    reactdC = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
-    jsxcC = (0, toModuleNamespace)((0, loadJsxNamespace)(), 1);
+    jsxcC = toModuleNamespace(loadJsxNamespace(), 1);
     PropertyPopoverTrigger = reactdC.forwardRef(function (
       {
         label: label,
@@ -296,7 +296,7 @@ export function installUiPropertyPopoverControls(): () => void {
       let memo = reactdC.useMemo(
         () =>
           typeof color === "string"
-            ? (0, parseCssColorToHsva)(color)
+            ? parseCssColorToHsva(color)
             : undefined,
         [color],
       );
@@ -316,7 +316,7 @@ export function installUiPropertyPopoverControls(): () => void {
           chip={
             color !== undefined ? (
               <ColorChip
-                hex={memo ? (0, hsvaToHexColor)(memo) : null}
+                hex={memo ? hsvaToHexColor(memo) : null}
                 alpha={(memo?.a ?? 1) * 100}
               />
             ) : undefined

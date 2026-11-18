@@ -49,12 +49,12 @@ function OverlayBackdrop({
   let value = (0, reactOverlaysBackdrop.useContext)(
       SheetPopupContext,
     ),
-    value2 = (0, useOverlayRoot)(),
-    value3 = (0, useDefaultLayer)(kind);
-  (0, useAndroidCloseWatcher)(value?.open ?? false, value?.dismiss);
+    value2 = useOverlayRoot(),
+    value3 = useDefaultLayer(kind);
+  useAndroidCloseWatcher(value?.open ?? false, value?.dismiss);
   let [value4, value5] = (0, reactOverlaysBackdrop.useState)(false),
     value6 = (0, reactOverlaysBackdrop.useRef)(false),
-    value7 = (0, useCdsWindow)();
+    value7 = useCdsWindow();
   (0, reactOverlaysBackdrop.useEffect)(() => {
     if (value7 === undefined) return;
     let value9 = value7.requestAnimationFrame(() => {
@@ -75,7 +75,7 @@ function OverlayBackdrop({
             {...{
               [CdsSheetPendingAttribute]: "",
             }}
-            className={(0, npm_clsx_Ea)(
+            className={npm_clsx_Ea(
               PlatformReducedMotionCss_4,
               !value4 && "opacity-0",
             )}
@@ -109,24 +109,24 @@ export {
 };
 export function installCdsOverlaysBackdrop(): () => void {
   return () => {
-    initializeOverlaysBackdrop = (0, initializeOnce)(() => {
+    initializeOverlaysBackdrop = initializeOnce(() => {
       "use client";
 
-      (0, initializeCdsRoot)();
-      (0, initializeOverlaysLayers)();
-      (0, initializeOverlaysAndroidCloseWatcher)();
-      (0, initializePlatformRootFontSize_2)();
-      (0, initializeSheetsPopupStack)();
-      (0, initializePlatformReducedMotion_2)();
-      reactOverlaysBackdrop = (0, toModuleNamespace)(
-        (0, load_react)(),
+      initializeCdsRoot();
+      initializeOverlaysLayers();
+      initializeOverlaysAndroidCloseWatcher();
+      initializePlatformRootFontSize_2();
+      initializeSheetsPopupStack();
+      initializePlatformReducedMotion_2();
+      reactOverlaysBackdrop = toModuleNamespace(
+        load_react(),
       );
-      (0, initializeNpm_clsx_xh)();
-      jsxOverlaysBackdrop = (0, toModuleNamespace)(
-        (0, load_react_jsx_runtime)(),
+      initializeNpm_clsx_xh();
+      jsxOverlaysBackdrop = toModuleNamespace(
+        load_react_jsx_runtime(),
       );
-      reactDomOverlaysBackdrop = (0, toModuleNamespace)(
-        (0, load_react_dom)(),
+      reactDomOverlaysBackdrop = toModuleNamespace(
+        load_react_dom(),
       );
       CdsSheetPendingAttribute = "data-cds-sheet-pending";
       OverlaysBackdropVisibilityOpacityConfig = {

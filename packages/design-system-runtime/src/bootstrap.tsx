@@ -10,19 +10,19 @@ import { reactDOMClientForUiDisclosure } from "./ui/disclosure";
 
 export function installBootstrap(): () => void {
   return () => {
-    ((0, normalizeSaveHome)(
-      (0, detectCompiledPageStorageMode)(document),
+    (normalizeSaveHome(
+      detectCompiledPageStorageMode(document),
     ) === "files"
-      ? (0, bootDesignSystemFilesMode)()
+      ? bootDesignSystemFilesMode()
           .catch((input: unknown): void =>
-            (0, configureLegacyDesignSystemBoot)(
-              (0, failedLegacyStateOutcome)(input),
+            configureLegacyDesignSystemBoot(
+              failedLegacyStateOutcome(input),
             ),
           )
           .then((): void => {
-            if (!(0, hasConfiguredDocumentFactory)()) {
-              (0, configureLegacyDesignSystemBoot)(
-                (0, failedLegacyStateOutcome)(
+            if (!hasConfiguredDocumentFactory()) {
+              configureLegacyDesignSystemBoot(
+                failedLegacyStateOutcome(
                   Error("the page found nothing to open"),
                 ),
               );
@@ -32,7 +32,7 @@ export function installBootstrap(): () => void {
     )
       .then((): void => {
         if (!perFileDesignSystemBooted) {
-          (0, releaseEarlyHotUpdatesForLegacyMode)();
+          releaseEarlyHotUpdatesForLegacyMode();
         }
       })
       .then(detectAutoSavingArtifactRuntime)

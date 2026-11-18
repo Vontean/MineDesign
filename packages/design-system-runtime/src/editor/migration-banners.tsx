@@ -320,7 +320,7 @@ function MigrationCleanupBanner({
         busy={busy}
         onPress={(input: HTMLButtonElement) =>
           ask(
-            migrationCleanupRequest((0, artifactPageAddress)()),
+            migrationCleanupRequest(artifactPageAddress()),
             input,
           )
         }
@@ -418,7 +418,7 @@ function ClaudeRequestButton({
             busy={busy}
             onPress={(): void => {
               ask(
-                migrationCleanupRequest((0, artifactPageAddress)()),
+                migrationCleanupRequest(artifactPageAddress()),
                 null,
               );
               onAsked();
@@ -501,8 +501,8 @@ export {
 };
 export function installEditorMigrationBanners(): () => void {
   return () => {
-    reactMigrationBanners = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    reactMigrationBanners = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
     // MineDesign: no analytics. The page is never treated as framed for analytics, so no `__frame_cap` analytics
@@ -564,8 +564,8 @@ Agent: read the design-system skill’s SKILL.md and references/format.md (the s
     // MineDesign: the address is the system's directory path in backticks (artifactPageAddress in claude-prompts.ts);
     // its neutral fallback names no address.
     isArtifactAddress = (value: string) => /^`[^`]+`$/.test(value);
-    jsxMigrationBanners = (0, toModuleNamespace)(
-      (0, loadJsxNamespace)(),
+    jsxMigrationBanners = toModuleNamespace(
+      loadJsxNamespace(),
       1,
     );
     MIGRATED_BANNER_STORAGE_PREFIX = "ds-migrated-banner/";

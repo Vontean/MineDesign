@@ -26,7 +26,7 @@ function parseInstalledDesignSystems(input?: Dynamic): Dynamic {
         value4.artifact,
         DesignSystemPathsConstant_3,
       );
-    !(0, isDesignSystemNamespace)(value4.namespace) ||
+    !isDesignSystemNamespace(value4.namespace) ||
       value5 === undefined ||
       value6 === undefined ||
       entries.set(value4.namespace, {
@@ -49,7 +49,7 @@ function parseInstalledDesignSystems(input?: Dynamic): Dynamic {
   return [...entries.values()].slice(0, DesignSystemPathsConstant);
 }
 function designSystemTokensPath(input?: Dynamic): Dynamic {
-  return (0, designSystemProjectPrefix)(input) + "tokens.json";
+  return designSystemProjectPrefix(input) + "tokens.json";
 }
 function readInstalledDesignSystemTokens(
   input?: Dynamic,

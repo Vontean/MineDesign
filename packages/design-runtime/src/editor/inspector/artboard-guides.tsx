@@ -80,7 +80,7 @@ function ArtboardGuideRow({
     value4: Dynamic =
       InspectorArtboardGuidesColumnsRowsGridConfig[guide.kind],
     value5: Dynamic = guide.hidden === true,
-    value6: Dynamic = (0, resolveArtboardGuide)(guide, frame);
+    value6: Dynamic = resolveArtboardGuide(guide, frame);
   return (
     <PropertyRow
       label={value4}
@@ -88,7 +88,7 @@ function ArtboardGuideRow({
     >
       <span
         ref={value3}
-        className={(0, joinClassNames)(
+        className={joinClassNames(
           "relative flex min-w-0 flex-1",
           value5 && "opacity-60",
         )}
@@ -127,7 +127,7 @@ function ArtboardGuideRow({
         aria-label={uiMessage("inspector.artboardGuides.hideGuide", { value1: String(value4.toLowerCase()) })}
         aria-pressed={value5}
         tooltip={value5 ? (uiMessage("inspector.artboardGuides.showOnTheCanvas")) : (uiMessage("inspector.artboardGuides.hideOnTheCanvas"))}
-        className={(0, joinClassNames)(
+        className={joinClassNames(
           "shrink-0",
           value5 && "text-muted",
         )}
@@ -317,8 +317,8 @@ export {
 };
 export function installEditorInspectorArtboardGuides(): () => void {
   return () => {
-    jsxInspectorArtboardGuides = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    jsxInspectorArtboardGuides = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
     InspectorArtboardGuidesColumnsRowsGridConfig = {

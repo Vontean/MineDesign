@@ -32,7 +32,7 @@ function subscribeFileAvailability(input: () => void): () => boolean {
   return () => fileAvailabilitySubscribers.delete(input);
 }
 function fileAvailabilityUrlPath(path: string): string {
-  let normalized = (0, encodeRelativeUrlPath)(path),
+  let normalized = encodeRelativeUrlPath(path),
     baseUri = globalThis.document?.baseURI;
   if (typeof baseUri !== "string" || !/^https?:/i.test(baseUri)) {
     return normalized;
@@ -142,10 +142,10 @@ function componentPreviewSource(
   return {
     html:
       stage !== undefined
-        ? (0, generateComponentMountHtml)(component.name, stage)
+        ? generateComponentMountHtml(component.name, stage)
         : component.previewHtml,
-    file: (0, projectFilePath)(
-      (0, componentPreviewPath)(component.name),
+    file: projectFilePath(
+      componentPreviewPath(component.name),
     ),
     fromProps: stage !== undefined,
     staticReason:
@@ -311,8 +311,8 @@ export {
 };
 export function installFilesUiPreviewAvailability(): () => void {
   return () => {
-    reactFileAvailability = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    reactFileAvailability = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
     fileAvailabilityCache = new Map();
@@ -322,12 +322,12 @@ export function installFilesUiPreviewAvailability(): () => void {
     fileAvailabilityCacheKey = (input: string, options: number) =>
       input + "\x00" + String(options);
     fileAvailabilityNotifyPending = false;
-    reactComponentPreviews = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    reactComponentPreviews = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
-    jsxComponentPreviews = (0, toModuleNamespace)(
-      (0, loadJsxNamespace)(),
+    jsxComponentPreviews = toModuleNamespace(
+      loadJsxNamespace(),
       1,
     );
     MAX_RESPONSIVE_PREVIEW_HEIGHT = 4000;

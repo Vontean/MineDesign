@@ -88,7 +88,7 @@ function colorContrastFixDescription(
   pronouns: { me: string; my: string },
 ): string {
   let callback = (input: string): string =>
-      "`" + (0, safeArtifactLabel)(input).replaceAll("`", "'") + "`",
+      "`" + safeArtifactLabel(input).replaceAll("`", "'") + "`",
     value: string =
       request.theme === undefined
         ? ""
@@ -178,7 +178,7 @@ function truncateHandoffFileName(fileName: string): string {
   }
 }
 function safeHandoffFileLabel(fileName: string): string {
-  return (0, safeArtifactLabel)(truncateHandoffFileName(fileName));
+  return safeArtifactLabel(truncateHandoffFileName(fileName));
 }
 function handoffFileLabels(files: Editor.HandoffFile[]): string {
   let items = [];
@@ -192,7 +192,7 @@ function handoffFileLabels(files: Editor.HandoffFile[]): string {
           (value2.handOff === "figma"
             ? ""
             : " (" +
-              (0, formatInlineBudgetBytes)(value2.bytes).replace(
+              formatInlineBudgetBytes(value2.bytes).replace(
                 /\.0 MB$/,
                 " MB",
               ) +
@@ -213,7 +213,7 @@ function untrustedHandoffFileNames(files: Editor.HandoffFile[]): string {
     `
 
 ` +
-    (0, wrapUntrustedArtifactText)(
+    wrapUntrustedArtifactText(
       files.length === 1
         ? "text (the dropped file’s name, as given by whoever made it)"
         : "text (the dropped files’ names, as given by whoever made them)",

@@ -168,7 +168,7 @@ function updateToolbarWordLock(toolbar: Element) {
 function effectiveToolbarDensity(
   density: import("../contracts/controls").Density = "compact",
 ) {
-  if ((0, useCoarsePointer)()) {
+  if (useCoarsePointer()) {
     return "comfortable";
   } else {
     return density;
@@ -363,7 +363,7 @@ function ToolbarScrollPaddle({
       onClick={(input: React.MouseEvent<HTMLDivElement>) =>
         onPress(input.detail === 0)
       }
-      className={(0, joinClassNames)(
+      className={joinClassNames(
         TOOLBAR_PADDLE_CLASS,
         dir === -1 ? "left-0" : "right-0",
       )}
@@ -391,7 +391,7 @@ function ToolbarScrollArea({
     ref2 = reactForUiArtifactToolbar.useRef<HTMLDivElement | null>(null),
     [value, value2] = reactForUiArtifactToolbar.useState(false),
     [value3, value4] = reactForUiArtifactToolbar.useState(false),
-    value5 = (0, useCoarsePointer)(),
+    value5 = useCoarsePointer(),
     ref3 = reactForUiArtifactToolbar.useRef<string | undefined>(undefined),
     ref4 = reactForUiArtifactToolbar.useRef(false),
     ref5 = reactForUiArtifactToolbar.useRef(false);
@@ -427,7 +427,7 @@ function ToolbarScrollArea({
     ) {
       let value10 = value9 === current2.lastElementChild;
       if (!(value10 ? value8 : value7)) {
-        let value11 = (0, collectFocusableDescendants)(current);
+        let value11 = collectFocusableDescendants(current);
         ref5.current = true;
         try {
           for (let value12 of value10 ? value11.reverse() : value11) {
@@ -440,7 +440,7 @@ function ToolbarScrollArea({
             if (value9.contains(current.ownerDocument.activeElement)) {
               continue;
             }
-            (0, suppressEnterClicksUntilRelease)();
+            suppressEnterClicksUntilRelease();
             break;
           }
         } finally {
@@ -664,13 +664,13 @@ function ToolbarSaveControls({
       : value2
         ? uiMessage("design-system.artifactToolbar.publishYourChangesEveryOpen")
         : uiMessage("design-system.artifactToolbar.everythingIsPublished"),
-    value7 = (0, useDisabledButtonDescription)({
+    value7 = useDisabledButtonDescription({
       disabled: value3,
       name: value5,
       reason: value6,
     }),
     ref = reactForUiArtifactToolbar.useRef<HTMLSpanElement | null>(null);
-  (0, useDeferredTooltipFocus)(ref, value3);
+  useDeferredTooltipFocus(ref, value3);
   return (
     <jsxForUiArtifactToolbar.Fragment>
       {[!value && onToggleEdit ? (
@@ -770,7 +770,7 @@ function ArtifactToolbar({
     ref = reactForUiArtifactToolbar.useRef<HTMLDivElement | null>(null),
     [value6, value7] = reactForUiArtifactToolbar.useState(false),
     [value8, value9] = reactForUiArtifactToolbar.useState(false),
-    value10 = (0, useCoarsePointer)(),
+    value10 = useCoarsePointer(),
     value11 = variant === "floating";
   reactForUiArtifactToolbar.useLayoutEffect(() => {
     let current = ref.current;
@@ -863,7 +863,7 @@ function ArtifactToolbar({
           data-pin-fixed={value8 ? "" : undefined}
           data-touch-targets={touchTargets}
           data-tb-overlay={value11 ? "" : undefined}
-          className={(0, joinClassNames)(
+          className={joinClassNames(
             "tb-root flex shrink-0 items-center",
             value11
               ? "absolute inset-x-0 top-0 z-toolbar"
@@ -1018,12 +1018,12 @@ export {
 };
 export function installUiArtifactToolbar(): () => void {
   return () => {
-    reactForUiArtifactToolbar = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    reactForUiArtifactToolbar = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
-    jsxForUiArtifactToolbar = (0, toModuleNamespace)(
-      (0, loadJsxNamespace)(),
+    jsxForUiArtifactToolbar = toModuleNamespace(
+      loadJsxNamespace(),
       1,
     );
     TOOLBAR_WIDE_BREAKPOINT = 1000;

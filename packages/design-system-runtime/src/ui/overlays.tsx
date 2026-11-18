@@ -242,7 +242,7 @@ function useCaptureOverlayOpener(
           : null;
     openerRef.current = value2;
     if (ownerAncestorsRef) {
-      ownerAncestorsRef.current = (0, getOverlayOwnerAncestors)(
+      ownerAncestorsRef.current = getOverlayOwnerAncestors(
         value2,
       );
     }
@@ -265,7 +265,7 @@ function useOverlayFocusReturn(
   }, [registerOpenerReturn]);
   reactOverlayFocus.useLayoutEffect(() => {
     if (popupRef.current) {
-      (0, registerOverlayOwner)(popupRef.current, () => {
+      registerOverlayOwner(popupRef.current, () => {
         if (!shouldRegisterRef.current) {
           return null;
         }
@@ -353,12 +353,12 @@ function useOverlayFinalFocus(
     if (!takeFocus) {
       return;
     }
-    let value2 = (0, asElement)(value.activeElement),
+    let value2 = asElement(value.activeElement),
       value3 = value2 && value2 !== value.body ? value2 : null;
     if (!value3 || popupRef.current?.contains(value3)) {
       return;
     }
-    (0, blurWithSafeRelatedTarget)(value3 as FocusableElement);
+    blurWithSafeRelatedTarget(value3 as FocusableElement);
   }, [open, takeFocus, fallbackTriggerRef, rootElement]);
   let skipRestoreOnOutsideFocus = !takeFocus,
     finalFocus = reactOverlayFocus.useCallback(() => {
@@ -581,8 +581,8 @@ function useClickToFocus(
       readOnly = false,
       shouldIgnoreTarget: shouldIgnoreTarget,
     } = options,
-    focusCallback = (0, useOptionalEventCallback)(focus),
-    ignoreTargetCallback = (0, useOptionalEventCallback)(
+    focusCallback = useOptionalEventCallback(focus),
+    ignoreTargetCallback = useOptionalEventCallback(
       shouldIgnoreTarget,
     );
   return {
@@ -633,12 +633,12 @@ function shouldAllowPopupPointerFocus(
     draggable?: boolean;
   } = {},
 ): boolean {
-  let targetElement = (0, asElement)(event.target);
+  let targetElement = asElement(event.target);
   if (targetElement === null) {
     return false;
   }
   return (
-    (0, isEditableElement)(targetElement) ||
+    isEditableElement(targetElement) ||
     targetElement.matches(FORM_POINTER_FOCUS_SELECTOR) ||
     closestWithinElement(
       targetElement,
@@ -858,7 +858,7 @@ function createPassiveOpenState(): PassiveOpenGateState {
               : "off";
       if (!(value10 && value12)) {
         value6 = getFocusedElement(value11);
-        value7 = (0, asElement)(
+        value7 = asElement(
           options.trigger ?? null,
         ) as HTMLElement | null;
         value8 = value12
@@ -933,7 +933,7 @@ function resolvePassiveFinalFocus(
   return finalFocus.current ?? fallbackElement;
 }
 function getFocusedElement(input: Document | undefined): HTMLElement | null {
-  let value = (0, asElement)(
+  let value = asElement(
     input?.activeElement ?? null,
   ) as HTMLElement | null;
   if (value === null || value === input?.body) {
@@ -963,10 +963,10 @@ function restorePassiveOverlayFocus(
     ) {
       let value2 =
         blurBeforeRestore && value
-          ? (0, asElement)(activeElement)
+          ? asElement(activeElement)
           : null;
       if (value2 !== null) {
-        (0, blurWithSafeRelatedTarget)(value2 as FocusableElement);
+        blurWithSafeRelatedTarget(value2 as FocusableElement);
       }
       opener.focus({
         preventScroll: true,
@@ -1101,7 +1101,7 @@ function PassiveOpenKeyboardBridge({
               ),
         value4 =
           event.key === "ArrowDown" ? value3[0] : value3[value3.length - 1],
-        value5 = (0, asElement)(value4 ?? null) as HTMLElement | null;
+        value5 = asElement(value4 ?? null) as HTMLElement | null;
       if (value5 !== null && value5.hasAttribute("data-highlighted")) {
         event.preventDefault();
         event.stopImmediatePropagation();
@@ -1150,7 +1150,7 @@ function useTrackedMenuTrigger(
   let triggerRef = reactMenuOpener.useRef<HTMLElement | null>(null);
   return {
     triggerRef: triggerRef,
-    onOpenChange: (0, useEventCallback)(
+    onOpenChange: useEventCallback(
       (
         input: boolean,
         options: import("@base-ui/react/menu").Menu.Root.ChangeEventDetails,
@@ -1179,7 +1179,7 @@ function useMenuOwnerRef(
 ): React.RefCallback<HTMLElement> {
   let value = reactMenuOpener.useContext(menuOpenerRefContext),
     ref = reactMenuOpener.useRef(options);
-  (0, useIsomorphicLayoutEffect)(() => {
+  useIsomorphicLayoutEffect(() => {
     ref.current = options;
   }, [options]);
   let callback = reactMenuOpener.useCallback(() => {
@@ -1197,7 +1197,7 @@ function useMenuOwnerRef(
   return reactMenuOpener.useCallback(
     (input2: HTMLElement | null) => {
       if (input2 !== null) {
-        (0, registerOverlayOwner)(input2, callback);
+        registerOverlayOwner(input2, callback);
       }
     },
     [callback],
@@ -1434,10 +1434,10 @@ function useModalPortalInert({
   liftOnClose: liftOnClose,
 }: Layers.ModalPortalInertOptions): () => void {
   let value = useRootWindow(),
-    value2 = (0, useOptionalEventCallback)(liftOnClose),
+    value2 = useOptionalEventCallback(liftOnClose),
     ref = reactModalPortalInert.useRef<(() => void) | null>(null),
     ref2 = reactModalPortalInert.useRef<(() => void) | null>(null);
-  (0, useIsomorphicLayoutEffect)(() => {
+  useIsomorphicLayoutEffect(() => {
     if (!open || node === null || value === undefined) {
       return;
     }
@@ -1476,7 +1476,7 @@ function useModalPortalInert({
 function canDelayModalInertRelease(input: Window): boolean {
   return (
     !usesImmediateModalRelease(input) &&
-    !(0, isReducedMotion)() &&
+    !isReducedMotion() &&
     input.document.visibilityState !== "hidden"
   );
 }
@@ -1601,7 +1601,7 @@ function MenuSheetTitleBar({
     value3 = reactMenuSheetPopup.useContext<Overlays.MenuLabels>(
       menuSheetLabelsContext,
     ),
-    value4 = (0, useTranslation)("back", "Back"),
+    value4 = useTranslation("back", "Back"),
     value5 = value3.backLabel ?? value4;
   return (
     <SheetTitleBar
@@ -1613,7 +1613,7 @@ function MenuSheetTitleBar({
             onClick={() => value?.close()}
             aria-label={value5}
             label={value5}
-            className={(0, cn)(
+            className={cn(
               menuItemVariants({
                 variant: "default",
               }),
@@ -1641,7 +1641,7 @@ function MenuSheetCloseButton(): React.ReactElement {
       reactMenuSheetPopup.useContext<Overlays.SheetFrameContext | null>(
         sheetFrameContext,
       ),
-    value2 = (0, useTranslation)("close", "Close"),
+    value2 = useTranslation("close", "Close"),
     value3 =
       reactMenuSheetPopup.useContext(
         menuSheetLabelsContext as React.Context<{
@@ -1660,7 +1660,7 @@ function MenuSheetCloseButton(): React.ReactElement {
       }
     >
       <span
-        className={(0, cn)(
+        className={cn(
           menuItemVariants({
             variant: "default",
           }),
@@ -1703,7 +1703,7 @@ function PopoverSheetBody({
   return (
     <sheetParentContext.Provider value={sheetPopup.stack}>
       {[<value.Handle />, <value.Body
-          className={(0, cn)(
+          className={cn(
             className,
             "h-auto max-h-none min-h-0 w-full min-w-0 max-w-none flex-auto",
           )}
@@ -1752,7 +1752,7 @@ function subscribeSheetImplementation(input: () => void): () => void {
 }
 function loadSheetImplementation(): Promise<Overlays.MobileSheetParts | null> {
   let value = sheetImplementationGeneration;
-  sheetImplementationPromise ??= (0, runWithTransition)(
+  sheetImplementationPromise ??= runWithTransition(
     "cds_mobile_sheets",
     () =>
       Promise.resolve().then(() => {
@@ -1820,7 +1820,7 @@ function usePreloadSheetsForCoarsePointer(
   input: boolean,
   options: Window | undefined,
 ): void {
-  let value = (0, useMediaQuery__U)(
+  let value = useMediaQuery__U(
     input ? options : undefined,
     COARSE_POINTER_QUERY_rG,
   );
@@ -2520,7 +2520,7 @@ function createColorModeStore(
         if (inheritedModeAttribute !== value2) {
           changedBeforeSubscription = true;
         }
-        let value3 = (0, createSafeMutationObserver)(
+        let value3 = createSafeMutationObserver(
           MutationObserver,
           () => {
             let value4 = inheritedModeAttribute;
@@ -2724,7 +2724,7 @@ function CdsRoot({
     ),
     naturalImageTiles =
       experimental?.naturalImageTiles ?? parentNaturalImageTiles,
-    featureFlagNames = (0, mergeFeatureFlagNames)(
+    featureFlagNames = mergeFeatureFlagNames(
       reactCdsRoot.useContext(featureFlagContext),
       experimental?.fizzyLake?.parts,
     );
@@ -2776,19 +2776,19 @@ function CdsRoot({
       scope: colorModeStore,
     });
   }
-  (0, useIsomorphicLayoutEffect)(() => {
-    (0, registerInputDismissalTracking)(
+  useIsomorphicLayoutEffect(() => {
+    registerInputDismissalTracking(
       elementRef.current?.ownerDocument,
     );
   }, []);
-  (0, useIsomorphicLayoutEffect)(() => {
+  useIsomorphicLayoutEffect(() => {
     if (!ownsColorModeStore) {
       return;
     }
     colorModeStore.setElement(elementRef.current);
     return () => colorModeStore.setElement(null);
   }, [ownsColorModeStore, colorModeStore]);
-  let themeStore = (0, useExperimentalThemeStore)(
+  let themeStore = useExperimentalThemeStore(
       experimental?.theme,
       elementRef,
     ),
@@ -2828,16 +2828,16 @@ function CdsRoot({
   let isHtmlRoot =
       reactCdsRoot.isValidElement(renderElement) &&
       renderElement.type === "html",
-    documentFont = (0, useDocumentFont)(
+    documentFont = useDocumentFont(
       font === undefined && parentFont === undefined && !isHtmlRoot,
     ),
     resolvedFont = font ?? parentFont ?? documentFont ?? "anthropic",
-    rootElement = (0, baseUseRender)({
+    rootElement = baseUseRender({
       render: renderElement,
       defaultTagName: "div",
       ref: elementRef,
       props: {
-        className: (0, cn)("cds-root text-primary", className),
+        className: cn("cds-root text-primary", className),
         "data-density": resolvedDensity,
         "data-mode": colorModeAttribute,
         "data-platform": resolvedPlatform,
@@ -3176,67 +3176,67 @@ export {
 export function installUiOverlays(): () => void {
   return () => {
     MAX_OVERLAY_OWNER_DEPTH = 8;
-    initializeOverlayOwners = (0, initializeOnce)(() => {
+    initializeOverlayOwners = initializeOnce(() => {
       overlayOwnerResolvers = new WeakMap();
     });
-    initializeOverlayFocus = (0, initializeOnce)(() => {
+    initializeOverlayFocus = initializeOnce(() => {
       initializeCdsRoot();
-      (0, initializeElementAccess)();
-      (0, initializeTextEntrySelector)();
-      (0, initializeSafeBlur)();
+      initializeElementAccess();
+      initializeTextEntrySelector();
+      initializeSafeBlur();
       initializeOverlayOwners();
-      reactOverlayFocus = (0, toModuleNamespace)(
-        (0, loadReactNamespace)(),
+      reactOverlayFocus = toModuleNamespace(
+        loadReactNamespace(),
         1,
       );
     });
     OVERLAY_ATTRIBUTE = "data-cds-overlay";
-    initializeOverlaySelector = (0, initializeOnce)(() => {
+    initializeOverlaySelector = initializeOnce(() => {
       OPEN_OVERLAY_SELECTOR_VQ5 = `[${OVERLAY_ATTRIBUTE}][data-open]`;
     });
     DOCUMENT_NODE_TYPE = 9;
-    initializeOverlayStack = (0, initializeOnce)(() => {
-      reactOverlayStack = (0, toModuleNamespace)(
-        (0, loadReactNamespace)(),
+    initializeOverlayStack = initializeOnce(() => {
+      reactOverlayStack = toModuleNamespace(
+        loadReactNamespace(),
         1,
       );
       overlayStackContext =
         reactOverlayStack.createContext<OverlayStack | null>(null);
     });
-    initializeMenuOverlayRegistration = (0, initializeOnce)(() => {
+    initializeMenuOverlayRegistration = initializeOnce(() => {
       initializeOverlaySelector();
-      (0, initializeMenuContexts)();
+      initializeMenuContexts();
       initializeOverlayStack();
-      reactMenuOverlayRegistration = (0, toModuleNamespace)(
-        (0, loadReactNamespace)(),
+      reactMenuOverlayRegistration = toModuleNamespace(
+        loadReactNamespace(),
         1,
       );
       menuOverlayAttributes = {
         [OVERLAY_ATTRIBUTE]: "",
       };
     });
-    initializeContextMenuPopup = (0, initializeOnce)(() => {
-      (0, initializeClassNames)();
-      (0, initializeLayers)();
-      (0, initializeMergedRefs)();
-      (0, initializePortalRoot)();
-      (0, initializeCollisionPadding)();
-      (0, initializeSurfaces)();
-      (0, initializeAdaptiveSheets)();
-      (0, initializeKeyboardContextMenuFocus)();
+    initializeContextMenuPopup = initializeOnce(() => {
+      initializeClassNames();
+      initializeLayers();
+      initializeMergedRefs();
+      initializePortalRoot();
+      initializeCollisionPadding();
+      initializeSurfaces();
+      initializeAdaptiveSheets();
+      initializeKeyboardContextMenuFocus();
       initializeOverlayFocus();
       initializeMenuOverlayRegistration();
-      (0, initializeMenuScrollContent)();
-      (0, initializeNpmDependency)();
-      reactContextMenuPopup = (0, toModuleNamespace)(
-        (0, loadReactNamespace)(),
+      initializeMenuScrollContent();
+      initializeNpmDependency();
+      reactContextMenuPopup = toModuleNamespace(
+        loadReactNamespace(),
         1,
       );
-      jsxContextMenuPopup = (0, toModuleNamespace)(
-        (0, loadJsxNamespace)(),
+      jsxContextMenuPopup = toModuleNamespace(
+        loadJsxNamespace(),
         1,
       );
-      contextMenuPopupClasses = `cds-reset draggable-none group/menu-popup relative flex flex-col min-w-[128px] max-w-[320px] max-h-[var(--available-height)] ${(0, getSurfaceClasses)("popover")} text-body font-normal text-primary outline-none focus-visible:outline-hidden`;
+      contextMenuPopupClasses = `cds-reset draggable-none group/menu-popup relative flex flex-col min-w-[128px] max-w-[320px] max-h-[var(--available-height)] ${getSurfaceClasses("popover")} text-body font-normal text-primary outline-none focus-visible:outline-hidden`;
       ContextMenuPopupFrame = reactContextMenuPopup.forwardRef(
         (
           {
@@ -3257,11 +3257,11 @@ export function installUiOverlays(): () => void {
             registerOpenerReturn:
               finalFocus === undefined || finalFocus === null,
           });
-          (0, useKeyboardContextMenuInitialFocus)(value2);
-          let value3 = (0, useDefaultOverlayLayer)("contextmenu"),
+          useKeyboardContextMenuInitialFocus(value2);
+          let value3 = useDefaultOverlayLayer("contextmenu"),
             { elementRef: value4, overlayAttrs: value5 } =
               useMenuOverlayRegistration(),
-            value6 = (0, useMergedRefs)(options, value2, value4);
+            value6 = useMergedRefs(options, value2, value4);
           return (
             <ResetSheetContexts>
               <PortalRoot
@@ -3290,7 +3290,7 @@ export function installUiOverlays(): () => void {
                           ref={value6}
                           finalFocus={(finalFocus ?? value) as import("../contracts/overlays").BaseUIPopupFocus}
                           {...props}
-                          className={(0, cn)(
+                          className={cn(
                             contextMenuPopupClasses,
                             className,
                           )}
@@ -3310,11 +3310,11 @@ export function installUiOverlays(): () => void {
       );
       ContextMenuPopupFrame.displayName = "ContextMenuPopupFrame";
     });
-    initializeClickToFocus = (0, initializeOnce)(() => {
-      (0, initializeTextEntrySelector)();
-      (0, initializeEventCallbacks)();
-      reactClickToFocus = (0, toModuleNamespace)(
-        (0, loadReactNamespace)(),
+    initializeClickToFocus = initializeOnce(() => {
+      initializeTextEntrySelector();
+      initializeEventCallbacks();
+      reactClickToFocus = toModuleNamespace(
+        loadReactNamespace(),
         1,
       );
       INTERACTIVE_CLICK_TARGET_SELECTOR = `button,a[href],label,[role="button"],select,[tabindex]:not([tabindex="-1"]),${TEXT_ENTRY_SELECTOR}`;
@@ -3323,10 +3323,10 @@ export function installUiOverlays(): () => void {
       'input[type="range"], select, input[readonly], textarea[readonly]';
     SELECT_ELEMENT_SELECTOR = "select";
     DRAGGABLE_ELEMENT_SELECTOR = '[draggable="true"]';
-    initializePopupPointerFocus = (0, initializeOnce)(() => {
-      (0, initializeElementAccess)();
+    initializePopupPointerFocus = initializeOnce(() => {
+      initializeElementAccess();
       initializeClickToFocus();
-      (0, initializeVisualKeyboard)();
+      initializeVisualKeyboard();
     });
     PASSIVE_HOVER_OPEN_REASON = "trigger-hover";
     PASSIVE_FOCUS_OUT_REASON = "focus-out";
@@ -3335,20 +3335,20 @@ export function installUiOverlays(): () => void {
     };
     getPassiveOffSnapshot = () => "off";
     unchangedPopupProps = (input: PassivePopupProps) => input;
-    initializePassiveOpen = (0, initializeOnce)(() => {
-      (0, initializeElementAccess)();
-      (0, initializeSafeBlur)();
+    initializePassiveOpen = initializeOnce(() => {
+      initializeElementAccess();
+      initializeSafeBlur();
       initializePopupPointerFocus();
-      reactPassiveOpen = (0, toModuleNamespace)(
-        (0, loadReactNamespace)(),
+      reactPassiveOpen = toModuleNamespace(
+        loadReactNamespace(),
         1,
       );
-      jsxPassiveOpen = (0, toModuleNamespace)(
-        (0, loadJsxNamespace)(),
+      jsxPassiveOpen = toModuleNamespace(
+        loadJsxNamespace(),
         1,
       );
-      reactDomPassiveOpen = (0, toModuleNamespace)(
-        (0, loadReactDomNamespace)(),
+      reactDomPassiveOpen = toModuleNamespace(
+        loadReactDomNamespace(),
         1,
       );
       passiveOpenStateContext =
@@ -3386,9 +3386,9 @@ export function installUiOverlays(): () => void {
     });
     menuItemDescriptionPaddingClass =
       "pb-[calc((var(--cds-h-control)-var(--cds-font-size-body)-var(--cds-leading-footnote)+var(--cds-font-size-footnote))/2)]";
-    initializeMenuItemVariants = (0, initializeOnce)(() => {
-      (0, initializeNpmDependency)();
-      menuItemVariants = (0, cva)(
+    initializeMenuItemVariants = initializeOnce(() => {
+      initializeNpmDependency();
+      menuItemVariants = cva(
         "cds-reset flex w-full items-center gap-xs compact:px-2 comfortable:px-2.5 py-[calc((var(--cds-h-control)-var(--cds-leading-body))/2)] rounded text-body font-normal [--cds-shortcut-cap-ink:var(--cds-text-muted)] select-none outline-none focus-visible:outline-hidden data-[disabled]:opacity-disabled data-[disabled]:pointer-events-none",
         {
           variants: {
@@ -3404,12 +3404,12 @@ export function installUiOverlays(): () => void {
         },
       );
     });
-    initializeMenuOpener = (0, initializeOnce)(() => {
-      (0, initializeIsomorphicLayoutEffect)();
-      (0, initializeEventCallbacks)();
+    initializeMenuOpener = initializeOnce(() => {
+      initializeIsomorphicLayoutEffect();
+      initializeEventCallbacks();
       initializeOverlayOwners();
-      reactMenuOpener = (0, toModuleNamespace)(
-        (0, loadReactNamespace)(),
+      reactMenuOpener = toModuleNamespace(
+        loadReactNamespace(),
         1,
       );
       menuOpenerRefContext = reactMenuOpener.createContext<
@@ -3417,19 +3417,19 @@ export function installUiOverlays(): () => void {
       >(undefined);
       MenuOpenerProvider = menuOpenerRefContext.Provider;
     });
-    initializeMenuPopupElement = (0, initializeOnce)(() => {
-      (0, initializeMergedRefs)();
-      (0, initializeAdaptiveSheets)();
+    initializeMenuPopupElement = initializeOnce(() => {
+      initializeMergedRefs();
+      initializeAdaptiveSheets();
       initializeOverlayFocus();
       initializeMenuOverlayRegistration();
       initializeMenuOpener();
-      (0, initializeNpmDependency)();
-      reactMenuPopupElement = (0, toModuleNamespace)(
-        (0, loadReactNamespace)(),
+      initializeNpmDependency();
+      reactMenuPopupElement = toModuleNamespace(
+        loadReactNamespace(),
         1,
       );
-      jsxMenuPopupElement = (0, toModuleNamespace)(
-        (0, loadJsxNamespace)(),
+      jsxMenuPopupElement = toModuleNamespace(
+        loadJsxNamespace(),
         1,
       );
       MenuPopupElement = reactMenuPopupElement.forwardRef(
@@ -3459,7 +3459,7 @@ export function installUiOverlays(): () => void {
               registerOpenerReturn: anchoredWithoutFinalFocus,
               triggerRef: useMenuOpenerRef(),
             }),
-            value5 = (0, useMergedRefs)(
+            value5 = useMergedRefs(
               options,
               value2,
               anchoredWithoutFinalFocus ? value4.popupRef : undefined,
@@ -3485,9 +3485,9 @@ export function installUiOverlays(): () => void {
     heldPositionerClasses = "pointer-events-none";
     heldPopupClasses = "pointer-events-auto";
     POPUP_PLACEMENT_SETTLE_FRAMES = 2;
-    initializeStablePopupPlacement = (0, initializeOnce)(() => {
-      reactStablePopupPlacement = (0, toModuleNamespace)(
-        (0, loadReactNamespace)(),
+    initializeStablePopupPlacement = initializeOnce(() => {
+      reactStablePopupPlacement = toModuleNamespace(
+        loadReactNamespace(),
         1,
       );
     });
@@ -3496,14 +3496,14 @@ export function installUiOverlays(): () => void {
     initializeModalReleasePlatform = () => {};
     MODAL_INERT_LIVE_REGION_SELECTOR =
       '[aria-live]:not([aria-live="off"]), [role="status"], [role="alert"], [role="log"], [data-cds="Toast"]';
-    initializeModalPortalInert = (0, initializeOnce)(() => {
-      (0, initializeIsomorphicLayoutEffect)();
+    initializeModalPortalInert = initializeOnce(() => {
+      initializeIsomorphicLayoutEffect();
       initializeCdsRoot();
       initializeModalReleasePlatform();
-      (0, initializeEventCallbacks)();
-      (0, initializeReducedMotion)();
-      reactModalPortalInert = (0, toModuleNamespace)(
-        (0, loadReactNamespace)(),
+      initializeEventCallbacks();
+      initializeReducedMotion();
+      reactModalPortalInert = toModuleNamespace(
+        loadReactNamespace(),
         1,
       );
       inertExcludedTags = new Set([
@@ -3515,41 +3515,41 @@ export function installUiOverlays(): () => void {
       ]);
       modalInertRefCounts = new WeakMap();
     });
-    initializeMenuSheetPopup = (0, initializeOnce)(() => {
-      (0, initializeIsomorphicLayoutEffect)();
-      (0, initializeClassNames)();
-      (0, initializeTranslations)();
+    initializeMenuSheetPopup = initializeOnce(() => {
+      initializeIsomorphicLayoutEffect();
+      initializeClassNames();
+      initializeTranslations();
       initializeCdsRoot();
-      (0, initializeLayers)();
-      (0, initializeAndroidCloseWatcher)();
-      (0, initializeMergedRefs)();
-      (0, initializePortalRoot)();
-      (0, initializeIcons)();
-      (0, initializeCollisionPadding)();
-      (0, initializeSurfaces)();
-      (0, initializeSheetStyles)();
-      (0, initializePresentationMode)();
-      (0, initializeAdaptiveSheets)();
-      (0, initializeSheetClassNames)();
-      (0, initializeMenuContexts)();
-      (0, initializeMenuScrollContent)();
+      initializeLayers();
+      initializeAndroidCloseWatcher();
+      initializeMergedRefs();
+      initializePortalRoot();
+      initializeIcons();
+      initializeCollisionPadding();
+      initializeSurfaces();
+      initializeSheetStyles();
+      initializePresentationMode();
+      initializeAdaptiveSheets();
+      initializeSheetClassNames();
+      initializeMenuContexts();
+      initializeMenuScrollContent();
       initializeContextMenuPopup();
       initializePassiveOpen();
       initializeMenuItemVariants();
       initializeMenuOpener();
       initializeMenuPopupElement();
       initializeStablePopupPlacement();
-      (0, initializeSheetDrag)();
-      (0, initializeSheetChrome)();
-      (0, initializeSheetMeasurement)();
+      initializeSheetDrag();
+      initializeSheetChrome();
+      initializeSheetMeasurement();
       initializeModalPortalInert();
-      (0, initializeNpmDependency)();
-      reactMenuSheetPopup = (0, toModuleNamespace)(
-        (0, loadReactNamespace)(),
+      initializeNpmDependency();
+      reactMenuSheetPopup = toModuleNamespace(
+        loadReactNamespace(),
         1,
       );
-      jsxMenuSheetPopup = (0, toModuleNamespace)(
-        (0, loadJsxNamespace)(),
+      jsxMenuSheetPopup = toModuleNamespace(
+        loadJsxNamespace(),
         1,
       );
       coveredMenuSheetOwners = new WeakMap();
@@ -3586,7 +3586,7 @@ export function installUiOverlays(): () => void {
               reactMenuSheetPopup.useContext<boolean>(
                 contextMenuContext,
               ) && value2 === null,
-            value4 = (0, useIsSheet)(),
+            value4 = useIsSheet(),
             value5 = value4 && value2 !== null,
             value6 = reactMenuSheetPopup.useContext<{
               collisionPadding?: CollisionPadding;
@@ -3596,7 +3596,7 @@ export function installUiOverlays(): () => void {
               () =>
                 anchor !== undefined || !value2
                   ? anchor
-                  : (0, createMenuVirtualAnchor)(value2),
+                  : createMenuVirtualAnchor(value2),
               [anchor, value2],
             ),
             value8 =
@@ -3665,7 +3665,7 @@ export function installUiOverlays(): () => void {
               open: value4 && !value5 && (value10?.open ?? false),
               liftOnClose: callback4,
             }),
-            value18: Dom.SheetState = (0, useSheetState)(),
+            value18: Dom.SheetState = useSheetState(),
             value19 =
               reactMenuSheetPopup.useContext<Dom.SheetParentState | null>(
                 sheetParentContext,
@@ -3691,7 +3691,7 @@ export function installUiOverlays(): () => void {
                   return;
                 }
                 if (!value5) {
-                  let value43 = (0, hasEditableSheetContent)(element);
+                  let value43 = hasEditableSheetContent(element);
                   if (value43) {
                     element.style.minHeight = MIN_SHEET_HEIGHT_CSS;
                     element.style.maxHeight = MIN_SHEET_HEIGHT_CSS;
@@ -3699,7 +3699,7 @@ export function installUiOverlays(): () => void {
                   callback3(value43);
                   value10?.pinHeight(
                     element.getBoundingClientRect().height,
-                    (0, sheetContentCanGrow)(element),
+                    sheetContentCanGrow(element),
                   );
                   return;
                 }
@@ -3724,22 +3724,22 @@ export function installUiOverlays(): () => void {
                 value17,
               ],
             );
-          (0, useSheetTextEntryFocus)(value21, value10);
-          (0, useSheetPressedState)(value21);
-          (0, useDismissSheetOnForeignFocus)(
+          useSheetTextEntryFocus(value21, value10);
+          useSheetPressedState(value21);
+          useDismissSheetOnForeignFocus(
             value21,
             value10,
             value18.covered,
           );
           let value23 = value4 && value18.covered,
             value24 = value4 && value18.inert;
-          (0, useAndroidCloseWatcher)(
+          useAndroidCloseWatcher(
             value4 && (value5 ? value11.open : (value10?.open ?? false)),
             value5 ? value2?.close : value10?.dismiss,
           );
           let ref4 = reactMenuSheetPopup.useRef(false),
             value25 = value10?.open ?? false;
-          (0, useIsomorphicLayoutEffect)(() => {
+          useIsomorphicLayoutEffect(() => {
             let current = ref.current,
               value43 = value5 && value11.open && current !== null,
               current2 = ref4.current;
@@ -3752,7 +3752,7 @@ export function installUiOverlays(): () => void {
           }, [value5, value11.open, value25, callback2, callback]);
           let ref5 = reactMenuSheetPopup.useRef(false),
             [value26, value27] = reactMenuSheetPopup.useState(false);
-          (0, useIsomorphicLayoutEffect)(() => {
+          useIsomorphicLayoutEffect(() => {
             let value43 = value5 && value11.open,
               current = ref5.current;
             ref5.current = value43;
@@ -3760,10 +3760,10 @@ export function installUiOverlays(): () => void {
               value27(!value43 && value25);
             }
           }, [value5, value11.open, value25]);
-          (0, useIsomorphicLayoutEffect)(() => {
+          useIsomorphicLayoutEffect(() => {
             let current = ref.current;
             if (value5 && value11.open && current !== null) {
-              (0, resetSheetDragStyle)(current);
+              resetSheetDragStyle(current);
             }
           }, [value5, value11.open]);
           let value28 = value10?.pushLevelHeight,
@@ -3784,13 +3784,13 @@ export function installUiOverlays(): () => void {
                 let value47 = defaultView?.innerHeight ?? 1 / 0,
                   value48 =
                     (defaultView
-                      ? (0, getSheetAvailableHeight)(
+                      ? getSheetAvailableHeight(
                           defaultView,
                           value21,
                         )
                       : 1 / 0) * MAX_SHEET_HEIGHT_FRACTION,
-                  value49 = (0, hasEditableSheetContent)(value21),
-                  value50 = (0, measureNaturalSheetHeight)(value21);
+                  value49 = hasEditableSheetContent(value21),
+                  value50 = measureNaturalSheetHeight(value21);
                 flag = value50 > value48;
                 let value51 = value49
                     ? value47 * MIN_SHEET_HEIGHT_FRACTION
@@ -3813,7 +3813,7 @@ export function installUiOverlays(): () => void {
                 }
                 callback6();
               },
-              value44 = (0, createSheetUncoverGate)(value21, () => {
+              value44 = createSheetUncoverGate(value21, () => {
                 if (value45 === undefined) {
                   value45 = defaultView?.requestAnimationFrame(callback7);
                 }
@@ -3827,7 +3827,7 @@ export function installUiOverlays(): () => void {
                         if (
                           value45 !== undefined ||
                           value43 === undefined ||
-                          (0, isScrollContentReplacement)(input, flag)
+                          isScrollContentReplacement(input, flag)
                         ) {
                           return;
                         }
@@ -3878,7 +3878,7 @@ export function installUiOverlays(): () => void {
                 if (!value43.ready()) {
                   return;
                 }
-                if ((0, hasEditableSheetContent)(value21)) {
+                if (hasEditableSheetContent(value21)) {
                   if (!ref3.current) {
                     callback3(true);
                     value30(
@@ -3890,17 +3890,17 @@ export function installUiOverlays(): () => void {
                   return;
                 }
                 let value45 =
-                    (0, getSheetAvailableHeight)(defaultView, value21) *
+                    getSheetAvailableHeight(defaultView, value21) *
                     MAX_SHEET_HEIGHT_FRACTION,
-                  value46 = (0, measureNaturalSheetHeight)(value21);
+                  value46 = measureNaturalSheetHeight(value21);
                 flag = value46 > value45;
-                let value47 = (0, getSheetMinimumHeight)(
+                let value47 = getSheetMinimumHeight(
                   defaultView.innerHeight,
                   ref3.current,
                 );
                 value30(Math.max(Math.min(value46, value45), value47), flag);
               },
-              value43 = (0, createSheetUncoverGate)(value21, () => {
+              value43 = createSheetUncoverGate(value21, () => {
                 if (index === 0) {
                   index = defaultView.requestAnimationFrame(callback6);
                 }
@@ -3909,7 +3909,7 @@ export function installUiOverlays(): () => void {
                 (input: MutationRecord[]) => {
                   if (
                     index !== 0 ||
-                    (0, isScrollContentReplacement)(input, flag)
+                    isScrollContentReplacement(input, flag)
                   ) {
                     return;
                   }
@@ -3930,7 +3930,7 @@ export function installUiOverlays(): () => void {
           }, [value4, value5, value31, value21, value30, value29, callback3]);
           let value32 = value10?.height,
             value33 = value10?.pinHeight;
-          (0, useIsomorphicLayoutEffect)(() => {
+          useIsomorphicLayoutEffect(() => {
             let current = ref.current;
             if (
               !value4 ||
@@ -3940,10 +3940,10 @@ export function installUiOverlays(): () => void {
             ) {
               return;
             }
-            (0, resetSheetDragStyle)(current);
+            resetSheetDragStyle(current);
             value33?.(
               current.getBoundingClientRect().height,
-              (0, sheetContentCanGrow)(current),
+              sheetContentCanGrow(current),
             );
           }, [value4, value5, value32, value33]);
           let value34 = useMenuOwnerRef(value2?.triggerRef, props.finalFocus),
@@ -3956,7 +3956,7 @@ export function installUiOverlays(): () => void {
             value36 = usePassiveOpenContext(value2 === null);
           value36.root?.declareFocusProps(initialFocus, props.finalFocus);
           if (value2 !== null && initialFocus !== undefined) {
-            (0, warnNestedMenuInitialFocus)();
+            warnNestedMenuInitialFocus();
           }
           let state = {
               ...props,
@@ -3967,7 +3967,7 @@ export function installUiOverlays(): () => void {
                 preventModalTabNavigation(input);
               },
             },
-            value37 = (0, useStableMergedRef)(
+            value37 = useStableMergedRef(
               (input: HTMLElement | null) => {
                 value9.popupRef(input);
                 callback5(input);
@@ -3977,7 +3977,7 @@ export function installUiOverlays(): () => void {
               options,
             ),
             value38 = value4
-              ? (0, getSheetPopupStyle)(value10, {
+              ? getSheetPopupStyle(value10, {
                   floor: value12 ? "half" : "content",
                   parentFrameHeight: value5 ? undefined : value19?.frameHeight,
                 })
@@ -4001,14 +4001,14 @@ export function installUiOverlays(): () => void {
                       ...value38,
                     };
           if (value2 !== null && layerOffset !== undefined) {
-            (0, warnNestedMenuLayerOffset)();
+            warnNestedMenuLayerOffset();
           }
-          let value40 = (0, useOverlayLayer)(
+          let value40 = useOverlayLayer(
               value3 ? "contextmenu" : "menu",
               value2 === null ? layerOffset : undefined,
             ),
             value41 = useRootWindow(),
-            value42 = (0, getSheetFrameHeight)(
+            value42 = getSheetFrameHeight(
               value10,
               value41,
               value21,
@@ -4057,7 +4057,7 @@ export function installUiOverlays(): () => void {
                             value4
                               ? {
                                   ...value40.style,
-                                  ...(0, getSheetPositionerStyle)(
+                                  ...getSheetPositionerStyle(
                                     value10,
                                   ),
                                 }
@@ -4124,7 +4124,7 @@ export function installUiOverlays(): () => void {
                                 ref={value37}
                                 {...input2(value4 ? state : props)}
                                 style={value39}
-                                className={(0, cn)(
+                                className={cn(
                                   contextMenuPopupClasses,
                                   value9.held?.popupClassName,
                                   value4 && sheetPopupClasses,
@@ -4181,35 +4181,35 @@ export function installUiOverlays(): () => void {
       );
       MenuSheetPopup.displayName = "MenuSheetPopup";
     });
-    initializePopoverSheetContent = (0, initializeOnce)(() => {
-      (0, initializeClassNames)();
-      (0, initializePresentationMode)();
-      (0, initializeAdaptiveSheets)();
-      (0, initializeSheetClassNames)();
-      (0, initializeNpmDependency)();
-      jsxPopoverSheetBody = (0, toModuleNamespace)(
-        (0, loadJsxNamespace)(),
+    initializePopoverSheetContent = initializeOnce(() => {
+      initializeClassNames();
+      initializePresentationMode();
+      initializeAdaptiveSheets();
+      initializeSheetClassNames();
+      initializeNpmDependency();
+      jsxPopoverSheetBody = toModuleNamespace(
+        loadJsxNamespace(),
         1,
       );
     });
-    initializeComboboxSheetBackdrop = (0, initializeOnce)(() => {
-      (0, initializeSheetClassNames)();
-      (0, initializeNpmDependency)();
-      jsxComboboxSheetBackdrop = (0, toModuleNamespace)(
-        (0, loadJsxNamespace)(),
+    initializeComboboxSheetBackdrop = initializeOnce(() => {
+      initializeSheetClassNames();
+      initializeNpmDependency();
+      jsxComboboxSheetBackdrop = toModuleNamespace(
+        loadJsxNamespace(),
         1,
       );
     });
     mobileSheetExports = {} as Overlays.MobileSheetParts;
-    (0, defineLiveExports)(mobileSheetExports, {
+    defineLiveExports(mobileSheetExports, {
       SheetPopupHost: () => SheetPopupHost,
       PopoverSheetContent: () => PopoverSheetBody,
       PopoverSheetBackdrop: () => PopoverSheetBackdrop,
       MenuSheetPopup: () => MenuSheetPopup,
       ComboboxSheetBackdrop: () => ContextMenuSheetBackdrop,
     });
-    initializeMobileSheetExports = (0, initializeOnce)(() => {
-      (0, initializeSheetPopupHost)();
+    initializeMobileSheetExports = initializeOnce(() => {
+      initializeSheetPopupHost();
       initializeMenuSheetPopup();
       initializePopoverSheetContent();
       initializeComboboxSheetBackdrop();
@@ -4225,47 +4225,47 @@ export function installUiOverlays(): () => void {
     getSheetImplementationFailedSnapshot = () => sheetImplementationFailed;
     getNullSheetImplementationSnapshot = () => null;
     getFalseSheetImplementationSnapshot = () => false;
-    initializeSheetImplementation = (0, initializeOnce)(() => {
-      (0, initializeTransitionRunner)();
-      reactSheetImplementation = (0, toModuleNamespace)(
-        (0, loadReactNamespace)(),
+    initializeSheetImplementation = initializeOnce(() => {
+      initializeTransitionRunner();
+      reactSheetImplementation = toModuleNamespace(
+        loadReactNamespace(),
         1,
       );
       sheetImplementationSubscribers = new Set();
     });
-    initializePreloadSheets = (0, initializeOnce)(() => {
-      (0, initializeMediaQueryStores)();
+    initializePreloadSheets = initializeOnce(() => {
+      initializeMediaQueryStores();
       initializeSheetImplementation();
-      reactPreloadSheets = (0, toModuleNamespace)(
-        (0, loadReactNamespace)(),
+      reactPreloadSheets = toModuleNamespace(
+        loadReactNamespace(),
         1,
       );
     });
-    initializeCdsPlatform = (0, initializeOnce)(() => {
+    initializeCdsPlatform = initializeOnce(() => {
       // MineDesign: the desktop app is told apart by Electron alone.
       desktopPlatformUserAgentPattern = /\bElectron\//i;
     });
     MAX_LINK_DEBUG_WARNINGS = 50;
     MAX_LINK_DEBUG_LENGTH = 120;
     linkWarningLimitReached = false;
-    initializeLinkWarnings = (0, initializeOnce)(() => {
+    initializeLinkWarnings = initializeOnce(() => {
       reportedLinkWarnings = new Set();
     });
-    initializeHrefWhitespace = (0, initializeOnce)(() => {
+    initializeHrefWhitespace = initializeOnce(() => {
       linkWhitespacePattern = /[\t\n\r]/g;
     });
-    initializeLinkTargets = (0, initializeOnce)(() => {
+    initializeLinkTargets = initializeOnce(() => {
       existingBrowsingContextNames = new Set(["_self", "_parent", "_top"]);
       unsafeLinkRelTokenPattern = /^no(?:opener|referrer)$/i;
     });
     HTTPS_RELATIVE_HREF_BASE = "https://cds-relative-href.invalid";
     HTTP_RELATIVE_HREF_BASE = "http://cds-relative-href.invalid";
-    initializeCdsLink = (0, initializeOnce)(() => {
+    initializeCdsLink = initializeOnce(() => {
       initializeLinkWarnings();
       initializeHrefWhitespace();
       initializeLinkTargets();
-      reactCdsLink = (0, toModuleNamespace)(
-        (0, loadReactNamespace)(),
+      reactCdsLink = toModuleNamespace(
+        loadReactNamespace(),
         1,
       );
       cdsRouterContext = reactCdsLink.createContext<
@@ -4319,7 +4319,7 @@ export function installUiOverlays(): () => void {
     getWebPlatformSnapshot = () => "web";
     getCoarsePointerServerSnapshot = () => false;
     subscribeRootCoarsePointer = (input: () => void) => {
-      let value = (0, subscribeCoarsePointer)(input);
+      let value = subscribeCoarsePointer(input);
       queueMicrotask(input);
       return value;
     };
@@ -4331,28 +4331,28 @@ export function installUiOverlays(): () => void {
         : input === "auto" || input === "system"
           ? "system"
           : undefined;
-    initializeCdsRoot = (0, initializeOnce)(() => {
-      (0, initializeAccentColors)();
-      (0, initializeCoarsePointerStores)();
-      (0, initializeSafeObservers)();
-      (0, initializeDocumentFont)();
-      (0, initializeFeatureFlags)();
-      (0, initializeInputDismissalTracking)();
+    initializeCdsRoot = initializeOnce(() => {
+      initializeAccentColors();
+      initializeCoarsePointerStores();
+      initializeSafeObservers();
+      initializeDocumentFont();
+      initializeFeatureFlags();
+      initializeInputDismissalTracking();
       initializePreloadSheets();
-      (0, initializeIsomorphicLayoutEffect)();
-      (0, initializeExperimentalTheme)();
-      (0, initializeClassNames)();
-      (0, initializeTranslations)();
+      initializeIsomorphicLayoutEffect();
+      initializeExperimentalTheme();
+      initializeClassNames();
+      initializeTranslations();
       initializeCdsPlatform();
       initializeCdsLink();
       initializeElementWindow();
-      (0, initializeNpmDependency)();
-      reactCdsRoot = (0, toModuleNamespace)(
-        (0, loadReactNamespace)(),
+      initializeNpmDependency();
+      reactCdsRoot = toModuleNamespace(
+        loadReactNamespace(),
         1,
       );
-      jsxCdsRoot = (0, toModuleNamespace)(
-        (0, loadJsxNamespace)(),
+      jsxCdsRoot = toModuleNamespace(
+        loadJsxNamespace(),
         1,
       );
       densitySizeIndices = {

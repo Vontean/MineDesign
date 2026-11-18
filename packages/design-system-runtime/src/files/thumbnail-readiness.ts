@@ -12,7 +12,7 @@ var BLANK_THUMBNAIL_ATTRIBUTE: string;
 function stateEnvelopeTitle(envelope: Boot.RawEnvelope): string | undefined {
   let title = envelope.title;
   if (typeof title === "string" && title.length > 0) {
-    return (0, truncateUtf16Safely)(title, 200);
+    return truncateUtf16Safely(title, 200);
   } else {
     return undefined;
   }
@@ -56,7 +56,7 @@ function observeDocumentThumbnailReadiness(
 function prepareDesignSystemThumbnailCapture(
   document2: Document = document,
 ): void {
-  if ((0, detectCompiledPageStorageMode)(document2) !== "db") {
+  if (detectCompiledPageStorageMode(document2) !== "db") {
     return;
   }
   if (!isFrameCaptureMode(document2)) {

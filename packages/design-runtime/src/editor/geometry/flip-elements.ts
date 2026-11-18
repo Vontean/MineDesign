@@ -200,7 +200,7 @@ function flipElementTransform(
   options?: Dynamic,
   context?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = (0, parseCssTransform)(input);
+  let value: Dynamic = parseCssTransform(input);
   if (!value || !isOrderedSimpleTransform(input ?? "")) return null;
   let callback: Dynamic = (input2?: Dynamic): Dynamic =>
       typeof input2 == "number" &&
@@ -258,7 +258,7 @@ function flipSelectionTargets(input?: Dynamic, options?: Dynamic): Dynamic {
       : NaN;
     return Number.isFinite(value3) ? value3 : input2;
   };
-  return (0, selectedRootElementIds)(input, [
+  return selectedRootElementIds(input, [
     ...new Set(
       options
         .filter((input2?: Dynamic): Dynamic => input.element(input2) != null)
@@ -269,11 +269,11 @@ function flipSelectionTargets(input?: Dynamic, options?: Dynamic): Dynamic {
 function getSvgFlipEndpoints(input?: Dynamic, options?: Dynamic): Dynamic {
   let value: Dynamic =
       input.tagName(options) === "svg" ? input.element(options) : null,
-    value2: Dynamic = value ? (0, inspectSvgArrow)(value) : null,
-    value3: Dynamic = (0, parseCssTransform)(
+    value2: Dynamic = value ? inspectSvgArrow(value) : null,
+    value3: Dynamic = parseCssTransform(
       input.effectiveStyleValue(options, "transform"),
     );
-  if (!value2 || !value3 || (0, serializeCssTransform)(value3) !== "")
+  if (!value2 || !value3 || serializeCssTransform(value3) !== "")
     return null;
   let value4: Dynamic = parseInt(
       value2.shaft.getAttribute(DcTplAttribute) ?? "",
@@ -466,7 +466,7 @@ function flipModelSelection(
             callback4(4),
         );
       } else
-        (0, setSvgLineEndpoints)(
+        setSvgLineEndpoints(
           input,
           value5.shaftTid,
           callback2(value5, shaft2),
@@ -481,7 +481,7 @@ function flipModelSelection(
           value.get(input2)?.centre,
         ),
         value7: Dynamic =
-          (0, getStyleProperty)(
+          getStyleProperty(
             input.classOnlyStyleAttr(input2),
             "transform",
           ) !== "";

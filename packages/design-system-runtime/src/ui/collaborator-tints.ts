@@ -25,8 +25,8 @@ export function installUiCollaboratorTints(): () => void {
       "categorical-8",
     ];
     COLLABORATOR_TINTS_WITH_MUTED = [...COLLABORATOR_TINTS, "muted"];
-    jsxCollaboratorTints = (0, toModuleNamespace)(
-      (0, loadJsxNamespace)(),
+    jsxCollaboratorTints = toModuleNamespace(
+      loadJsxNamespace(),
       1,
     );
   };

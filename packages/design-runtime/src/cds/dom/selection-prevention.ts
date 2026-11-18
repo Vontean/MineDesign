@@ -33,7 +33,7 @@ export {
 };
 export function installCdsDomSelectionPrevention(): () => void {
   return () => {
-    initializeDomSelectionPrevention = (0, initializeOnce)(() => {
+    initializeDomSelectionPrevention = initializeOnce(() => {
       "use client";
 
       DomSelectionPreventionFreezeValue = Object.freeze({

@@ -15,7 +15,7 @@ export function subscribePlayModeKeys(deps: { readonly flag: Dynamic; readonly v
     let callback15: Dynamic = (event?: Dynamic): Dynamic => {
         if (event.defaultPrevented) return;
         if (event.key === "Escape") {
-          if ((0, hasBlockingEditorOverlay)() || deps.value220) return;
+          if (hasBlockingEditorOverlay() || deps.value220) return;
           event.preventDefault();
           deps.value389();
           return;
@@ -32,9 +32,9 @@ export function subscribePlayModeKeys(deps: { readonly flag: Dynamic; readonly v
           event.ctrlKey ||
           event.altKey ||
           event.shiftKey ||
-          (0, hasBlockingEditorOverlay)() ||
-          (0, isEditingInputTarget)(event.target) ||
-          (0, isInteractivePreviewTarget)(event.target) ||
+          hasBlockingEditorOverlay() ||
+          isEditingInputTarget(event.target) ||
+          isInteractivePreviewTarget(event.target) ||
           (event.preventDefault(), deps.value391(value653));
       },
       callback16: Dynamic = (dataset?: Dynamic): Dynamic => {
@@ -51,14 +51,14 @@ export function subscribePlayModeKeys(deps: { readonly flag: Dynamic; readonly v
           if (data.__om_step === 1 || data.__om_step === -1) {
             if (
               navigator.userActivation?.isActive !== true ||
-              (0, hasBlockingEditorOverlay)()
+              hasBlockingEditorOverlay()
             )
               return;
             let activeElement: Dynamic = (document as Dynamic).activeElement,
               value653: Dynamic = [...deps.value177.current.entries()].find(
                 ([, input]: Dynamic): Dynamic =>
                   input.webviewRef.current === activeElement &&
-                  (0, isPreviewMessage)(
+                  isPreviewMessage(
                     dataset,
                     input.webviewRef.current,
                   ),
@@ -95,7 +95,7 @@ export function subscribePreviewOpenMessages(deps: { readonly setSelection: Dyna
         data.__om_open.length > 1024
       )
         return;
-      let value653: Dynamic = (0, stripPreviewProjectRoot)(
+      let value653: Dynamic = stripPreviewProjectRoot(
         data.__om_open,
         dataset.source,
       );
@@ -103,7 +103,7 @@ export function subscribePreviewOpenMessages(deps: { readonly setSelection: Dyna
         return;
       let value654: Dynamic = [...deps.value177.current.entries()].find(
         ([, input]: Dynamic): Dynamic =>
-          (0, isPreviewMessage)(dataset, input.webviewRef.current),
+          isPreviewMessage(dataset, input.webviewRef.current),
       );
       if (!value654 || value654[0] === value653) return;
       let value655: Dynamic =
@@ -125,7 +125,7 @@ export function subscribePreviewOpenMessages(deps: { readonly setSelection: Dyna
         !singleCanvasCaptureSemaphore.take()
       )
         return;
-      let value658: Dynamic = (0, designPageId)(
+      let value658: Dynamic = designPageId(
           value657,
           current4.pages,
         ),
@@ -154,7 +154,7 @@ export function subscribePreviewOpenMessages(deps: { readonly setSelection: Dyna
           prev:
             input?.prev ??
             (value659
-              ? ((0, recallCanvasView)(value658) ??
+              ? (recallCanvasView(value658) ??
                 defaultCanvasCamera)
               : deps.value105.get()),
           fit: artboardIsNotExpandedFill(value657),

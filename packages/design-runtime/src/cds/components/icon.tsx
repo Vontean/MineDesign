@@ -50,7 +50,7 @@ function resolveIconSize(input?: Dynamic, options?: Dynamic): Dynamic {
       : input;
 }
 function useDefaultIconSize(): Dynamic {
-  return (0, useDensity)() === "comfortable" ? "md" : "sm";
+  return useDensity() === "comfortable" ? "md" : "sm";
 }
 function useIconSize(input: Dynamic = MdValue): Dynamic {
   return resolveIconSize(input, useDefaultIconSize());
@@ -84,7 +84,7 @@ function calculateIconWeight(
 function iconFontStyle(pixelSize?: Dynamic, strokeWidth?: Dynamic): Dynamic {
   let opticalSize: Dynamic = pixelSize <= 18 ? 16 : 20;
   return {
-    fontSize: (0, scaleCssPixels)(pixelSize),
+    fontSize: scaleCssPixels(pixelSize),
     fontWeight: calculateIconWeight(strokeWidth, opticalSize, pixelSize),
   };
 }
@@ -115,7 +115,7 @@ function Icon(props?: Dynamic): Dynamic {
     }: Dynamic = props;
     let px2: Dynamic =
         iconSizeMetrics[resolveIconSize(value34, defaultSize)].px,
-      value35: Dynamic = (0, scaleCssPixels)(px2);
+      value35: Dynamic = scaleCssPixels(px2);
     return (
       <svg
         data-cds={"Icon"}
@@ -366,7 +366,7 @@ function resolvePortalContainer(input?: Dynamic): Dynamic {
   return null;
 }
 function useDesktopTitlebarInset(input?: Dynamic): Dynamic {
-  let value: Dynamic = (0, useCdsRootElement)(),
+  let value: Dynamic = useCdsRootElement(),
     value2: Dynamic = (0, reactComponentsIcon.useCallback)(
       (): Dynamic =>
         (resolvePortalContainer(input) ?? value)?.ownerDocument ??
@@ -374,7 +374,7 @@ function useDesktopTitlebarInset(input?: Dynamic): Dynamic {
       [input, value],
     ),
     [value3, value4]: Dynamic = (0, reactComponentsIcon.useState)(value2);
-  (0, useIsomorphicLayoutEffect)((): Dynamic => {
+  useIsomorphicLayoutEffect((): Dynamic => {
     value4(value2());
   });
   let value5: Dynamic = (0, reactComponentsIcon.useMemo)(
@@ -473,16 +473,16 @@ export {
 };
 export function installCdsComponentsIcon(): () => void {
   return () => {
-    initializeComponentsIcon = (0, initializeOnce)((): Dynamic => {});
-    initializeComponentsIcon_2 = (0, initializeOnce)((): Dynamic => {
+    initializeComponentsIcon = initializeOnce((): Dynamic => {});
+    initializeComponentsIcon_2 = initializeOnce((): Dynamic => {
       "use client";
 
-      (0, initializeCdsRoot)();
-      (0, initializePlatformRootFontSize_3)();
-      jsxComponentsIcon = (0, toModuleNamespace)(
-        (0, load_react_jsx_runtime)(),
+      initializeCdsRoot();
+      initializePlatformRootFontSize_3();
+      jsxComponentsIcon = toModuleNamespace(
+        load_react_jsx_runtime(),
       );
-      (0, initializePlatformRootFontSize_4)();
+      initializePlatformRootFontSize_4();
       initializeComponentsIcon();
       iconSizeMetrics = {
         xs: {
@@ -555,16 +555,16 @@ export function installCdsComponentsIcon(): () => void {
         xxl: createIconSizeStyles("xxl"),
       });
     });
-    initializeComponentsIcon_3 = (0, initializeOnce)((): Dynamic => {
+    initializeComponentsIcon_3 = initializeOnce((): Dynamic => {
       "use client";
 
-      (0, initializeHooksLayoutEffect)();
-      (0, initializeCdsRoot)();
-      reactComponentsIcon = (0, toModuleNamespace)(
-        (0, load_react)(),
+      initializeHooksLayoutEffect();
+      initializeCdsRoot();
+      reactComponentsIcon = toModuleNamespace(
+        load_react(),
       );
-      jsxComponentsIcon_2 = (0, toModuleNamespace)(
-        (0, load_react_jsx_runtime)(),
+      jsxComponentsIcon_2 = toModuleNamespace(
+        load_react_jsx_runtime(),
       );
       ComponentsIconConstant = 5;
       ComponentsIconElementCache = new WeakMap();

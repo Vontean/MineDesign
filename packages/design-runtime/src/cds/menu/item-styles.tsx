@@ -63,7 +63,7 @@ function useMenuTriggerRef(
   let value = (0, reactMenuItemStyles.useRef)<HTMLElement | null>(null);
   return {
     triggerRef: value,
-    onOpenChange: (0, useStableCallback)(
+    onOpenChange: useStableCallback(
       (
         input2: boolean,
         options2: import("@base-ui/react/menu").Menu.Root.ChangeEventDetails,
@@ -92,7 +92,7 @@ function useMenuPopupFocus(
 ): React.RefCallback<HTMLElement> {
   let value = (0, reactMenuItemStyles.useContext)(ParentMenuContext),
     value2 = (0, reactMenuItemStyles.useRef)(options);
-  (0, useIsomorphicLayoutEffect)(() => {
+  useIsomorphicLayoutEffect(() => {
     value2.current = options;
   }, [options]);
   let value3 = (0, reactMenuItemStyles.useCallback)(() => {
@@ -107,7 +107,7 @@ function useMenuPopupFocus(
   }, [input, value]);
   return (0, reactMenuItemStyles.useCallback)(
     (input2: HTMLElement | null) => {
-      input2 !== null && (0, registerOpenerReturn)(input2, value3);
+      input2 !== null && registerOpenerReturn(input2, value3);
     },
     [value3],
   );
@@ -285,9 +285,9 @@ export {
 };
 export function installCdsMenuItemStyles(): () => void {
   return () => {
-    initializeMenuItemStyles = (0, initializeOnce)(() => {
-      (0, initializeNpm_class_variance_authority_Zhe)();
-      menuItemVariants = (0, npm_cva_Kj)(
+    initializeMenuItemStyles = initializeOnce(() => {
+      initializeNpm_class_variance_authority_Zhe();
+      menuItemVariants = npm_cva_Kj(
         "cds-reset flex w-full items-center gap-xs compact:px-2 comfortable:px-2.5 py-[calc((var(--cds-h-control)-var(--cds-leading-body))/2)] rounded text-body font-normal [--cds-shortcut-cap-ink:var(--cds-text-muted)] select-none outline-none focus-visible:outline-hidden data-[disabled]:opacity-disabled data-[disabled]:pointer-events-none",
         {
           variants: {
@@ -305,35 +305,35 @@ export function installCdsMenuItemStyles(): () => void {
       MenuItemStylesClassNames =
         "pb-[calc((var(--cds-h-control)-var(--cds-font-size-body)-var(--cds-leading-footnote)+var(--cds-font-size-footnote))/2)]";
     });
-    initializeMenuItemStyles_2 = (0, initializeOnce)(() => {
+    initializeMenuItemStyles_2 = initializeOnce(() => {
       "use client";
 
-      (0, initializeHooksLayoutEffect)();
-      (0, initializeHooksStableCallback_2)();
-      (0, initializeSheetsScrollArea_5)();
-      reactMenuItemStyles = (0, toModuleNamespace)(
-        (0, load_react)(),
+      initializeHooksLayoutEffect();
+      initializeHooksStableCallback_2();
+      initializeSheetsScrollArea_5();
+      reactMenuItemStyles = toModuleNamespace(
+        load_react(),
       );
       ParentMenuContext = (0, reactMenuItemStyles.createContext)<
         React.RefObject<HTMLElement | null> | undefined
       >(undefined);
       MenuItemStylesProviderValue = ParentMenuContext.Provider;
     });
-    initializeMenuItemStyles_3 = (0, initializeOnce)(() => {
+    initializeMenuItemStyles_3 = initializeOnce(() => {
       "use client";
 
-      (0, initializeDomRefComposition)();
-      (0, initializeSheetsPopupStack)();
-      (0, initializeSheetsScrollArea_6)();
-      (0, initializeSheetsScrollArea_8)();
+      initializeDomRefComposition();
+      initializeSheetsPopupStack();
+      initializeSheetsScrollArea_6();
+      initializeSheetsScrollArea_8();
       initializeMenuItemStyles_2();
-      reactMenuItemStyles_2 = (0, toModuleNamespace)(
-        (0, load_react)(),
+      reactMenuItemStyles_2 = toModuleNamespace(
+        load_react(),
       );
-      jsxMenuItemStyles = (0, toModuleNamespace)(
-        (0, load_react_jsx_runtime)(),
+      jsxMenuItemStyles = toModuleNamespace(
+        load_react_jsx_runtime(),
       );
-      (0, initializeNpm__base_ui_react_jj)();
+      initializeNpm__base_ui_react_jj();
       MenuPopupElement = (0, reactMenuItemStyles_2.forwardRef)<
         HTMLDivElement,
         MenuPopupElementProps
@@ -350,15 +350,14 @@ export function installCdsMenuItemStyles(): () => void {
           let value =
               (0, reactMenuItemStyles_2.useContext)(SheetPopupContext)
                 ?.open ?? true,
-            { elementRef: value2, overlayAttrs: value3 } = (0,
-            useMenuInnerOverlay)(),
-            value4 = (0, useOpenerReturn)({
+            { elementRef: value2, overlayAttrs: value3 } = useMenuInnerOverlay(),
+            value4 = useOpenerReturn({
               open: value,
               skipRestoreOnOutsideFocus: !cursorAnchored,
               registerOpenerReturn: anchoredWithoutFinalFocus,
               triggerRef: useParentMenu(),
             }),
-            value5 = (0, useMergedRefs)(
+            value5 = useMergedRefs(
               options,
               value2,
               anchoredWithoutFinalFocus ? value4.popupRef : undefined,

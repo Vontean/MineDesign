@@ -54,7 +54,7 @@ function loadTooltipImplementation(): Promise<TooltipImplementation> {
   TooltipDeferredProviderCurrentState_2 ??= Promise.resolve()
     .then(
       () => (
-        (0, initializeTooltipTooltip)(),
+        initializeTooltipTooltip(),
         tooltipImplementationExports as TooltipImplementation
       ),
     )
@@ -395,7 +395,7 @@ function useDeferredTooltipImplementation(
           }, input2.onClick),
           onFocus: callback((input3) => {
             value7.current.focus = true;
-            value7.current.node = (0, asElement)(
+            value7.current.node = asElement(
               input3.currentTarget,
             ) as HTMLElement | null;
             value15();
@@ -476,7 +476,7 @@ function DeferredDisabledReasonTooltip(
   let { reason: value5, wrapperClassName: value6, children: value7 } = input;
   return (
     <span
-      {...(0, disabledReasonWrapperProps)(value5, value4, value6)}
+      {...disabledReasonWrapperProps(value5, value4, value6)}
       title={typeof value5 == "string" ? (value5) : (undefined)}
       {...value3({})}
       {...TooltipDeferredProviderDataCdsTooltipPendingConfig}
@@ -519,17 +519,17 @@ export {
 };
 export function installCdsTooltipDeferredProvider(): () => void {
   return () => {
-    initializeTooltipDeferredProvider = (0, initializeOnce)(() => {
+    initializeTooltipDeferredProvider = initializeOnce(() => {
       "use client";
 
-      (0, initializeHooksStableCallback)();
-      (0, initializeTooltipDisabledReason)();
-      (0, initializeTooltipTrigger)();
-      reactTooltipDeferredProvider = (0, toModuleNamespace)(
-        (0, load_react)(),
+      initializeHooksStableCallback();
+      initializeTooltipDisabledReason();
+      initializeTooltipTrigger();
+      reactTooltipDeferredProvider = toModuleNamespace(
+        load_react(),
       );
-      jsxTooltipDeferredProvider = (0, toModuleNamespace)(
-        (0, load_react_jsx_runtime)(),
+      jsxTooltipDeferredProvider = toModuleNamespace(
+        load_react_jsx_runtime(),
       );
       TooltipDeferredProviderCurrentState = null;
       TooltipDeferredProviderCurrentState_2 = null;

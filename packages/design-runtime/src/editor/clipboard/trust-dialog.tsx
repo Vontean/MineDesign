@@ -139,13 +139,13 @@ export {
 };
 export function installEditorClipboardTrustDialog(): () => void {
   return () => {
-    reactClipboardTrustDialog = (0, toModuleNamespace)(
-      (0, load_react)(),
+    reactClipboardTrustDialog = toModuleNamespace(
+      load_react(),
       1,
     );
-    (0, initializeCdsIndex)();
-    jsxClipboardTrustDialog = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    initializeCdsIndex();
+    jsxClipboardTrustDialog = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
     ClipboardTrustDialogTitleMessageKeepCodeConfig = {

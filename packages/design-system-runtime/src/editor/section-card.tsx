@@ -164,7 +164,7 @@ function SectionCollapseButton({
       aria-label={(open ? uiMessage("design-system.sectionCard.collapse") : uiMessage("design-system.sectionCard.expand")) + label}
       aria-expanded={open}
       tooltip={false}
-      className={(0, joinClassNames)(
+      className={joinClassNames(
         "transition-transform duration-fast",
         open && "rotate-90",
       )}
@@ -297,7 +297,7 @@ function SectionCard({
   return (
     <Collapsible.Root
       open={!value}
-      className={(0, joinClassNames)(
+      className={joinClassNames(
         SECTION_CARD_CLASS_NAME,
         className,
       )}
@@ -310,7 +310,7 @@ function SectionCard({
     >
       {[<div
           ref={ref}
-          className={(0, joinClassNames)(
+          className={joinClassNames(
             "ds-sh sticky top-0 z-[2] bg-surface-1",
             !value && "border-b border-alpha-2",
           )}
@@ -356,12 +356,12 @@ export {
 };
 export function installEditorSectionCard(): () => void {
   return () => {
-    reactSectionCollapse = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    reactSectionCollapse = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
-    jsxSectionCard = (0, toModuleNamespace)(
-      (0, loadJsxNamespace)(),
+    jsxSectionCard = toModuleNamespace(
+      loadJsxNamespace(),
       1,
     );
     SECTION_CARD_CLASS_NAME =

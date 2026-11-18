@@ -82,7 +82,7 @@ export async function commitPieceDragOntoCanvas(deps: { readonly abandonSelectio
               entry &&
                 (entry.files.size > 0 || entry.notes.size > 0) &&
                 deps.setSelection(
-                  (0, selectionFromBoards)({
+                  selectionFromBoards({
                     files: entry.files,
                     notes: entry.notes,
                   }),
@@ -249,17 +249,17 @@ export async function commitPieceDragOntoCanvas(deps: { readonly abandonSelectio
           if (!value663) continue;
           await entry.flushPending();
           let value664: Dynamic =
-              (await (0, getKvClient)().get(
-                (0, PlatformFileContentHandler_4)(value662.file),
+              (await getKvClient().get(
+                PlatformFileContentHandler_4(value662.file),
               )) ??
               files[value662.file] ??
               "",
-            value665: Dynamic = (0, uniqueArtboardFile)(
+            value665: Dynamic = uniqueArtboardFile(
               state3.files,
               "Piece",
               deps.supportsLoadState,
             ),
-            value666: Dynamic = (0, buildDcDocument)(
+            value666: Dynamic = buildDcDocument(
               value663,
               typeof value664 == "string" ? value664 : "",
             ),
@@ -297,7 +297,7 @@ export async function commitPieceDragOntoCanvas(deps: { readonly abandonSelectio
                   value662.box.h,
                 ),
               ),
-              title: (0, uniqueElementArtboardTitle)(
+              title: uniqueElementArtboardTitle(
                 value668,
                 state3.artboards,
               ),
@@ -401,8 +401,8 @@ export async function commitPieceDragOntoCanvas(deps: { readonly abandonSelectio
       );
       try {
         for (let value662 of items3 as Dynamic) {
-          await (0, getKvClient)().set(
-            (0, PlatformFileContentHandler_4)(value662.file),
+          await getKvClient().set(
+            PlatformFileContentHandler_4(value662.file),
             value662.src,
           );
           deps.value127.current.set(value662.file, Date.now());
@@ -413,7 +413,7 @@ export async function commitPieceDragOntoCanvas(deps: { readonly abandonSelectio
         console.error("set pieces:", value662);
         deps.value448.current(
           uiMessage("canvas.designCanvas.couldnTFinishTheDrop") +
-            (0, keyboardShortcutLabel)("Z") +
+            keyboardShortcutLabel("Z") +
             " takes back what was made.",
         );
         return callback16();
@@ -543,8 +543,8 @@ export async function commitPieceDragOntoCanvas(deps: { readonly abandonSelectio
       (current5 == null ||
         entries4.get(current5) !== current4.elements.get(current5)) &&
         deps.value62();
-      let value660: Dynamic = (0, replaceSelectedElements)(
-        (0, selectionFromArtboards)(
+      let value660: Dynamic = replaceSelectedElements(
+        selectionFromArtboards(
           new Set(items3.map((input2?: Dynamic): Dynamic => input2.file)),
         ),
         entries4,
@@ -999,21 +999,21 @@ export async function commitElementMoveAcrossArtboards(deps: { readonly applyCan
         let entry: Dynamic = deps.value142.current.get(value653);
         deps.value142.current.delete(value653);
         value657 = entry
-          ? (0, selectionFromBoards)({
+          ? selectionFromBoards({
               files: entry.files,
               notes: entry.notes,
             })
-          : (0, selectionFromBoards)({
+          : selectionFromBoards({
               files: emptyCanvasSelectionFiles,
               notes: emptyCanvasSelectionFiles,
             });
       } else
         input.copy &&
-          (value657 = (0, selectionFromBoards)({
+          (value657 = selectionFromBoards({
             files: emptyCanvasSelectionFiles,
             notes: emptyCanvasSelectionFiles,
           }));
-      let value658: Dynamic = (0, replaceSelectedElements)(
+      let value658: Dynamic = replaceSelectedElements(
         value657,
         entries,
         primary,
@@ -1103,8 +1103,8 @@ export function buildDragGhostPreview(deps: { readonly assets: Dynamic; readonly
                 if (!value653 || value653.length > 2e5) return;
                 let files: Dynamic = deps.doc.content().files,
                   state: Dynamic = {
-                    ...(0, mergeDesignSystemFileOverlay)(files),
-                    [dragGhostFilename]: (0, buildDcDocument)(
+                    ...mergeDesignSystemFileOverlay(files),
+                    [dragGhostFilename]: buildDcDocument(
                       value653,
                       files[input.file] ?? "",
                       {
@@ -1112,14 +1112,13 @@ export function buildDragGhostPreview(deps: { readonly assets: Dynamic; readonly
                       },
                     ),
                   },
-                  value654: Dynamic = (0, normalizeProjectBlobPaths)(
-                    (0, collectProjectDependencyFiles)(
+                  value654: Dynamic = normalizeProjectBlobPaths(
+                    collectProjectDependencyFiles(
                       state,
                       dragGhostFilename,
                     ),
                   ),
-                  { doc: value655, parts: value656 }: Dynamic = (0,
-                  buildPreviewDocument)(
+                  { doc: value655, parts: value656 }: Dynamic = buildPreviewDocument(
                     value654,
                     dragGhostFilename,
                     deps.assets,
@@ -1135,8 +1134,8 @@ export function buildDragGhostPreview(deps: { readonly assets: Dynamic; readonly
                           srcdoc: PreviewBuildDocumentResolvedValue_3,
                           boot: {
                             doc: value655,
-                            parts: (0, runtimeModuleBlobs)(value656),
-                            urls: (0, runtimeModuleUrls)(value656),
+                            parts: runtimeModuleBlobs(value656),
+                            urls: runtimeModuleUrls(value656),
                           },
                         }
                       : {
@@ -1247,7 +1246,7 @@ export function trackObjectHoverOverArtboard(deps: { readonly value177: Dynamic;
             },
             state2: Dynamic = {
               gestureKey: event.key,
-              token: (0, randomSessionToken)(),
+              token: randomSessionToken(),
               html: null,
               member: null,
               laidOut: new Map(),
@@ -1263,7 +1262,7 @@ export function trackObjectHoverOverArtboard(deps: { readonly value177: Dynamic;
               deps.value203.current === state2 &&
                 ((state2.html = input),
                 (state2.member = input
-                  ? (0, pastedElementGeometry)(input, state)
+                  ? pastedElementGeometry(input, state)
                   : null));
             })
             .catch((): Dynamic => {});
@@ -1366,7 +1365,7 @@ export function dropCanvasObjectIntoArtboard(deps: { readonly callback2: Dynamic
             let value663: Dynamic =
                 (value661?.html ?? null) || (await value658()),
               value664: Dynamic = value663
-                ? (0, pastedRootElementCount)(value663)
+                ? pastedRootElementCount(value663)
                 : 0;
             if (!value663 || value664 !== 1) {
               value662 &&
@@ -1398,23 +1397,23 @@ export function dropCanvasObjectIntoArtboard(deps: { readonly callback2: Dynamic
               value667: Dynamic =
                 value662 && value661
                   ? value661.token
-                  : (0, randomSessionToken)(),
+                  : randomSessionToken(),
               flag2: Dynamic = false,
               flag3: Dynamic = false,
               value668: Dynamic = null,
-              value669: Dynamic = (0, pastedElementGeometry)(
+              value669: Dynamic = pastedElementGeometry(
                 value663,
                 state,
               );
             if (
               value669 &&
-              (0, canFreezeSinglePaste)(
+              canFreezeSinglePaste(
                 false,
                 [0],
                 value663,
                 false,
               ) &&
-              (0, canFreezeSinglePaste)(
+              canFreezeSinglePaste(
                 false,
                 [0],
                 value663,
@@ -1529,7 +1528,7 @@ export function dropCanvasObjectIntoArtboard(deps: { readonly callback2: Dynamic
               });
               try {
                 let value675: Dynamic = await entry.insertHtml(
-                  (0, positionPastedHtml)(value663, {
+                  positionPastedHtml(value663, {
                     ew: state.ew,
                     ox: value665 - state.gx,
                     oy: value666 - state.gy,
@@ -1563,15 +1562,15 @@ export function dropCanvasObjectIntoArtboard(deps: { readonly callback2: Dynamic
               at: Date.now(),
             };
             let value671: Dynamic = value670
-                ? (0, selectionFromElements)(value653, {
+                ? selectionFromElements(value653, {
                     name: deps.value19(value653),
                     tids: value670,
                     rect: null,
                     count: value670.length,
                   })
                 : (value668 ?? deps.selectionRef.current),
-              value672: Dynamic = (0, filterSelectedAnnotations)(
-                (0, filterSelectedArtboards)(
+              value672: Dynamic = filterSelectedAnnotations(
+                filterSelectedArtboards(
                   value671,
                   (input2?: Dynamic): Dynamic => !value659.files.has(input2),
                 ),
@@ -1717,22 +1716,22 @@ export function dropElementDragAtCanvasPoint(deps: { readonly abandonSelectionGe
               }
               await entry3.flushPending();
               let value659: Dynamic =
-                  (await (0, getKvClient)().get(
-                    (0, PlatformFileContentHandler_4)(input.file),
+                  (await getKvClient().get(
+                    PlatformFileContentHandler_4(input.file),
                   )) ??
                   files[input.file] ??
                   "",
-                value660: Dynamic = (0, uniqueArtboardFile)(
+                value660: Dynamic = uniqueArtboardFile(
                   files,
                   "Piece",
                   deps.supportsLoadState,
                 ),
-                value661: Dynamic = (0, buildDcDocument)(
+                value661: Dynamic = buildDcDocument(
                   value658,
                   typeof value659 == "string" ? value659 : "",
                 );
-              await (0, getKvClient)().set(
-                (0, PlatformFileContentHandler_4)(value660),
+              await getKvClient().set(
+                PlatformFileContentHandler_4(value660),
                 value661,
               );
               deps.value127.current.set(value660, Date.now());
@@ -1754,7 +1753,7 @@ export function dropElementDragAtCanvasPoint(deps: { readonly abandonSelectionGe
                       value657.h,
                     ),
                   ),
-                  title: (0, uniqueElementArtboardTitle)(
+                  title: uniqueElementArtboardTitle(
                     input.label,
                     deps.value73.current.artboards,
                   ),
@@ -1763,7 +1762,7 @@ export function dropElementDragAtCanvasPoint(deps: { readonly abandonSelectionGe
                 },
                 value662: Dynamic = value653
                   ? undefined
-                  : (0, randomSessionToken)();
+                  : randomSessionToken();
               value653 ||
                 (value656 = deps.value156(CanvasWorkingStateConstant_8));
               deps.value396.current(
@@ -1814,7 +1813,7 @@ export function dropElementDragAtCanvasPoint(deps: { readonly abandonSelectionGe
               deps.abandonSelectionGesture();
               deps.value62();
               deps.setSelection(
-                (0, selectionFromArtboards)(new Set([value660])),
+                selectionFromArtboards(new Set([value660])),
               );
             } catch (value657: Dynamic) {
               deps.showToast(
@@ -1860,18 +1859,18 @@ export function dropElementDragAtCanvasPoint(deps: { readonly abandonSelectionGe
               value660: Dynamic = options - value655.x,
               value661: Dynamic = context - value655.y,
               value662: Dynamic = box
-                ? (0, pastedElementGeometry)(value659, box)
+                ? pastedElementGeometry(value659, box)
                 : null,
               flag2: Dynamic = false;
             if (
               value662 &&
-              (0, canFreezeSinglePaste)(
+              canFreezeSinglePaste(
                 value653,
                 input.tids,
                 value659,
                 false,
               ) &&
-              (0, canFreezeSinglePaste)(
+              canFreezeSinglePaste(
                 value653,
                 input.tids,
                 value659,
@@ -1881,7 +1880,7 @@ export function dropElementDragAtCanvasPoint(deps: { readonly abandonSelectionGe
               let value665: Dynamic =
                 value656 && value654
                   ? value654.token
-                  : (0, randomSessionToken)();
+                  : randomSessionToken();
               value656 = false;
               let value666: Dynamic = Date.now() + 1500,
                 value667: Dynamic = Symbol(uiMessage("canvas.designCanvas.timedOut")),
@@ -2007,7 +2006,7 @@ export function dropElementDragAtCanvasPoint(deps: { readonly abandonSelectionGe
               (value658 = deps.value156(CanvasWorkingStateConstant_8)));
             let value664: Dynamic = flag2
               ? await entry2.insertHtml(
-                  (0, positionPastedHtml)(value659, value663),
+                  positionPastedHtml(value659, value663),
                   "root-end",
                 )
               : await entry2.insertHtml(value659, "root-end", value663);
@@ -2047,7 +2046,7 @@ export function dropElementDragAtCanvasPoint(deps: { readonly abandonSelectionGe
             }
             deps.abandonSelectionGesture();
             deps.setSelection(
-              (0, setCanvasElementSelection)(
+              setCanvasElementSelection(
                 emptyCanvasSelection,
                 value655.file,
                 {

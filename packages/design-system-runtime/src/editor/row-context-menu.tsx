@@ -62,7 +62,7 @@ function RemoveRowButton({
             ? (): void => {
                 return;
               }
-            : (0, restoreFocusAfterRemoval)(input.currentTarget);
+            : restoreFocusAfterRemoval(input.currentTarget);
         onRemove();
         value();
       }}
@@ -278,7 +278,7 @@ function RowContextMenu({
                 icon={"Copy"}
                 onClick={() =>
                   void copyTextToClipboard(value2).then((input: boolean) =>
-                    (0, showEditorNotification)(
+                    showEditorNotification(
                       input ? "Copied " + value2 : "Couldn’t copy",
                     ),
                   )
@@ -300,7 +300,7 @@ function RowContextMenu({
                     onClick={(): void => {
                       let value8 =
                         ref.current !== null
-                          ? (0, restoreFocusAfterRemoval)(
+                          ? restoreFocusAfterRemoval(
                               ref.current,
                               true,
                             )
@@ -334,12 +334,12 @@ export {
 };
 export function installEditorRowContextMenu(): () => void {
   return () => {
-    reactRowContextMenu = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    reactRowContextMenu = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
-    jsxRowContextMenu = (0, toModuleNamespace)(
-      (0, loadJsxNamespace)(),
+    jsxRowContextMenu = toModuleNamespace(
+      loadJsxNamespace(),
       1,
     );
     ROW_CONTEXT_LONG_PRESS_MS = 500;

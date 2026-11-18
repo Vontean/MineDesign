@@ -111,7 +111,7 @@ export function beginBoardDrag(deps: { readonly callback30: Dynamic; readonly ca
       let value252: Dynamic = deps.manifest.artboards
           .filter(
             (input2?: Dynamic): Dynamic =>
-              (0, hasBoardSelection)(value250, {
+              hasBoardSelection(value250, {
                 file: input2.file,
               }) ||
               ("file" in options2 && options2.file === input2.file),
@@ -129,7 +129,7 @@ export function beginBoardDrag(deps: { readonly callback30: Dynamic; readonly ca
         value253: Dynamic = (deps.manifest.annotations ?? [])
           .filter(
             (input2?: Dynamic): Dynamic =>
-              (0, hasBoardSelection)(value250, {
+              hasBoardSelection(value250, {
                 note: input2.id,
               }) ||
               ("note" in options2 && options2.note === input2.id),
@@ -142,11 +142,11 @@ export function beginBoardDrag(deps: { readonly callback30: Dynamic; readonly ca
             ? entries2.get(options2.file)
             : entries3.get(options2.note)) ?? context,
         value255: Dynamic = input.altKey && deps.onDuplicateObjects != null,
-        value256: Dynamic = (0, unionRects)([
+        value256: Dynamic = unionRects([
           ...value252,
           ...value253.map(
             (input2?: Dynamic): Dynamic =>
-              (0, rotatedAnnotationBounds)(
+              rotatedAnnotationBounds(
                 input2,
                 deps.value216.current(input2),
               ),
@@ -160,7 +160,7 @@ export function beginBoardDrag(deps: { readonly callback30: Dynamic; readonly ca
             let value261: Dynamic = entries3.get(input2.id) ?? input2;
             return {
               id: value261.id,
-              ...(0, rotatedAnnotationBounds)(
+              ...rotatedAnnotationBounds(
                 value261,
                 deps.value216.current(value261),
               ),
@@ -175,20 +175,20 @@ export function beginBoardDrag(deps: { readonly callback30: Dynamic; readonly ca
             value253.map((input2?: Dynamic): Dynamic => input2.id),
           ),
         },
-        value259: Dynamic = (0, canvasSnapReferenceObjects)(
+        value259: Dynamic = canvasSnapReferenceObjects(
           value257,
           value258,
           state,
           false,
         ),
-        value260: Dynamic = (0, canvasSnapReferenceObjects)(
+        value260: Dynamic = canvasSnapReferenceObjects(
           value257,
           value258,
           state,
           true,
         ),
         pointerId: Dynamic = input.pointerId;
-      (0, focusCanvasDocument)();
+      focusCanvasDocument();
       let flag2: Dynamic = false,
         callback61: Dynamic = (event?: Dynamic): Dynamic => {
           let current2: Dynamic = deps.value67.current;
@@ -291,8 +291,8 @@ export function beginBoardDrag(deps: { readonly callback30: Dynamic; readonly ca
         snap: value256
           ? {
               box: value256,
-              moveLines: (0, rectangleSnapGuides)(value259),
-              copyLines: (0, rectangleSnapGuides)(value260),
+              moveLines: rectangleSnapGuides(value259),
+              copyLines: rectangleSnapGuides(value260),
               moveStill: value259,
               copyStill: value260,
             }
@@ -313,7 +313,7 @@ export function beginHandedOffBoardDrag(deps: { readonly value146: Dynamic; read
         value251: Dynamic = current2.artboards
           .filter(
             (input2?: Dynamic): Dynamic =>
-              (0, hasBoardSelection)(value250, {
+              hasBoardSelection(value250, {
                 file: input2.file,
               }),
           )
@@ -328,7 +328,7 @@ export function beginHandedOffBoardDrag(deps: { readonly value146: Dynamic; read
           ),
         value252: Dynamic = (current2.annotations ?? []).filter(
           (input2?: Dynamic): Dynamic =>
-            (0, hasBoardSelection)(value250, {
+            hasBoardSelection(value250, {
               note: input2.id,
             }),
         ),

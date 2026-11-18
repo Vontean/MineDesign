@@ -25,14 +25,14 @@ async function resolveClipboardPictures(
       value4: Dynamic =
         entry === undefined
           ? null
-          : (0, dataUrlToBlob)(
+          : dataUrlToBlob(
               entry,
               "pasted-picture-" + String(entries.size + 1),
             ),
       value5: Dynamic =
         value4 === null
           ? undefined
-          : (0, readRasterImagePixels)(
+          : readRasterImagePixels(
               new Uint8Array(await value4.arrayBuffer()),
             );
     value4 === null ||
@@ -94,7 +94,7 @@ async function resolveClipboardPictures(
       value3: Dynamic =
         entry === undefined
           ? null
-          : (0, replaceClipboardPictureSource)(input, entry);
+          : replaceClipboardPictureSource(input, entry);
     return value3 === null ? [] : [value3];
   });
   return {
@@ -122,7 +122,7 @@ function parseClipboardAssets(
       !(
         typeof value5 != "string" ||
         value5.length > ClipboardArtboardsResolvedValue_2 ||
-        !(0, ClipboardAnnotationsTest_3)(value5)
+        !ClipboardAnnotationsTest_3(value5)
       )
     ) {
       if (!context.has(value4)) {

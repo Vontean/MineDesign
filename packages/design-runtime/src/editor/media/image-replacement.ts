@@ -83,7 +83,7 @@ async function replaceSelectedImage(input?: Dynamic): Promise<Dynamic> {
     flag2: Dynamic = false;
   return {
     failed:
-      (await (0, insertUploadedFiles)({
+      (await insertUploadedFiles({
         files: [value],
         targets: [value2],
         upload: async (input2?: Dynamic): Promise<Dynamic> => {
@@ -142,7 +142,7 @@ async function replaceSelectedImage(input?: Dynamic): Promise<Dynamic> {
                 value15.inlineStyleValue(value16, input2) || null,
               ],
             )),
-            (0, MediaObjectCropTest)(
+            MediaObjectCropTest(
               (input2?: Dynamic): Dynamic =>
                 value15.inlineStyleValue(value16, input2),
             ))

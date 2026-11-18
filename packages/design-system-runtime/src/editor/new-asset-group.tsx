@@ -41,7 +41,7 @@ function NewAssetGroupDialog({
     value6 =
       value5 === ""
         ? null
-        : (0, validateAssetGroupName)(value5, "", groups),
+        : validateAssetGroupName(value5, "", groups),
     value7 =
       value5 === ""
         ? uiMessage("design-system.newAssetGroup.nameTheSet")
@@ -83,7 +83,7 @@ function NewAssetGroupDialog({
             className={"max-w-[22.5rem]"}
             aria-label={uiMessage("design-system.newAssetGroup.newSet")}
             data-testid={dataTestid}
-            {...(0, commentTargetProps)("dialog", "new-set")}
+            {...commentTargetProps("dialog", "new-set")}
           >
             {[<Dialog.Header showClose={true}>
                 {uiMessage("design-system.newAssetGroup.newSet")}
@@ -166,8 +166,8 @@ export {
 };
 export function installEditorNewAssetGroup(): () => void {
   return () => {
-    jsxNewAssetGroupDialog = (0, toModuleNamespace)(
-      (0, loadJsxNamespace)(),
+    jsxNewAssetGroupDialog = toModuleNamespace(
+      loadJsxNamespace(),
       1,
     );
     NEW_ASSET_GROUP_INPUT_PROPS = {

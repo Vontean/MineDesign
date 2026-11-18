@@ -146,14 +146,14 @@ function useCanvasPeerSelections({
   store: store,
   fullFile = null,
 }: Dynamic): Dynamic {
-  let value: Dynamic = (0, usePeerSelectionGroups)(
+  let value: Dynamic = usePeerSelectionGroups(
       {
         page: pageId === "" ? null : pageId,
       },
       ["selectedArtboards"],
     ),
     value2: Dynamic =
-      (0, embedMemoryPrefix)() === ""
+      embedMemoryPrefix() === ""
         ? value
         : CollaborationSelectionPathsItems,
     value3: Dynamic = (0,
@@ -250,12 +250,12 @@ function useCanvasPeerSelections({
                 let entry: Dynamic = handlesRef.current.get(input),
                   value16: Dynamic =
                     entry?.isReady() && !entry.isBlocked()
-                      ? (0, createPreviewHandle)(
+                      ? createPreviewHandle(
                           entry.webviewRef.current,
                         )
                       : null;
                 if (!value16) return;
-                let value17: Dynamic = await (0, pickerPeerRects)(
+                let value17: Dynamic = await pickerPeerRects(
                   value16,
                   input2,
                   input === current2,
@@ -448,8 +448,8 @@ export function installCollaborationSelectionPaths(): () => void {
         "\\.dc\\.html#\\d{1,4}:\\d{1,2}(\\/\\d{1,2}){0,8}(@\\d{1,3})?$",
     );
     CollaborationSelectionPathsLimit = 220;
-    jsxCollaborationSelectionPaths = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    jsxCollaborationSelectionPaths = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
     CollaborationSelectionPathsConstant = 1e3;

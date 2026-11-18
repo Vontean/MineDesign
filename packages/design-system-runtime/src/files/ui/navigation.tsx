@@ -280,7 +280,7 @@ function hasOtherOpenOverlay(searchInput: HTMLInputElement | null): boolean {
     (input) =>
       !input.contains(searchInput) &&
       !input.hasAttribute("data-mc-scrim") &&
-      !(0, isOverlayClosed)(input),
+      !isOverlayClosed(input),
   );
 }
 function useSectionNavigationSearch(
@@ -294,7 +294,7 @@ function useSectionNavigationSearch(
       () =>
         index === undefined || query.trim() === ""
           ? null
-          : (0, searchSectionsAndFiles)(index, fileEntries, query),
+          : searchSectionsAndFiles(index, fileEntries, query),
       [index, fileEntries, query],
     ),
     box = reactSectionNavigation.useRef<HTMLSpanElement | null>(null),
@@ -308,9 +308,9 @@ function useSectionNavigationSearch(
     let flag = false,
       callback = (event: KeyboardEvent) => {
         if (
-          !(0, isFindShortcut)(event) ||
+          !isFindShortcut(event) ||
           event.defaultPrevented ||
-          (0, isComposingEvent)(event)
+          isComposingEvent(event)
         ) {
           return;
         }
@@ -349,7 +349,7 @@ function useSearchEscapeToRow() {
         event.ctrlKey ||
         event.altKey ||
         event.metaKey ||
-        (0, isComposingEvent)(event) ||
+        isComposingEvent(event) ||
         event.timeStamp - ref.current < NAV_ESCAPE_COMPOSITION_GRACE_MS
       ) {
         return;
@@ -453,7 +453,7 @@ function SidebarSectionNavigation({
   let value = useSectionNavigationSearch(
     search,
     (input) =>
-      !(0, hasOpenOverlay)() && focusAndSelectSearchInput(input),
+      !hasOpenOverlay() && focusAndSelectSearchInput(input),
   );
   return (
     <nav
@@ -513,7 +513,7 @@ function useNavigationPillActivity(
         null,
       );
   if (activity.current === null) {
-    activity.current = (0, createNavigationPillActivity)(
+    activity.current = createNavigationPillActivity(
       NAV_PILL_ACTIVITY_MS,
       setActive,
     );
@@ -588,7 +588,7 @@ function FloatingSectionNavigation({
         );
       }
       if (
-        (0, hasOpenOverlay)() ||
+        hasOpenOverlay() ||
         ref2.current === null ||
         ref2.current.closest("[inert]") !== null
       ) {
@@ -787,8 +787,8 @@ export {
 };
 export function installFilesUiNavigation(): () => void {
   return () => {
-    jsxSectionNavigation = (0, toModuleNamespace)(
-      (0, loadJsxNamespace)(),
+    jsxSectionNavigation = toModuleNamespace(
+      loadJsxNamespace(),
       1,
     );
     SIDEBAR_MEDIA_QUERY =
@@ -806,11 +806,11 @@ export function installFilesUiNavigation(): () => void {
     };
     NAV_SEARCH_BROWSER_FIND_HINT =
       uiMessage("design-system.navigation.press") +
-      ((0, isApplePlatform)() ? "Command+F" : "Ctrl+F") +
+      (isApplePlatform() ? "Command+F" : "Ctrl+F") +
       " in this field to find text on the page instead.";
     NAV_SECTION_LIST_CLASS =
       "-mx-2 -my-0.5 flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto px-2 py-0.5";
-    handleNavigationRowKey = (0, createOptionListKeyHandler)(
+    handleNavigationRowKey = createOptionListKeyHandler(
       ".ds-navrow",
     );
     NAV_ESCAPE_COMPOSITION_GRACE_MS = 500;

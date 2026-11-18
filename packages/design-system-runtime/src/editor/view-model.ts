@@ -46,7 +46,7 @@ function tokenGroupRenamePairs(
 function colorGroupsForEditor(
   tokens: Model.NormalizedTokens,
 ): Application.EditorColorGroup[] {
-  return (0, groupColorPaletteTokens)(tokens).map(
+  return groupColorPaletteTokens(tokens).map(
     (input: {
       name: string;
       tokens: Model.ColorToken[];
@@ -56,8 +56,8 @@ function colorGroupsForEditor(
       tokens: input.tokens.map((input2: Model.ColorToken) => {
         let value: Application.EditorColorToken["alias"];
         for (let value2 of tokens.color.themes) {
-          let value3 = (0, colorAliasTarget)(
-            (0, colorValueForThemeModelTokens)(
+          let value3 = colorAliasTarget(
+            colorValueForThemeModelTokens(
               input2,
               value2.id,
               tokens,
@@ -66,7 +66,7 @@ function colorGroupsForEditor(
           if (value3 !== undefined) {
             (value ??= {})[value2.id] = {
               to: value3,
-              css: (0, resolveColorTokenValue)(
+              css: resolveColorTokenValue(
                 input2,
                 value2.id,
                 tokens,
@@ -129,7 +129,7 @@ function fontFamiliesForEditor(
     state[value] =
       value3 === null
         ? value2
-        : (0, fontFamilyStack)(value3, value4) + ", " + value2;
+        : fontFamilyStack(value3, value4) + ", " + value2;
   }
   return state;
 }
@@ -229,7 +229,7 @@ function shadowScaleForEditor(
       value: Object.fromEntries(
         tokens.color.themes.map((input2) => [
           input2.id,
-          (0, shadowValueForTheme)(input, input2.id, tokens),
+          shadowValueForTheme(input, input2.id, tokens),
         ]),
       ),
       usage: optionalNonemptyText(input.usage),

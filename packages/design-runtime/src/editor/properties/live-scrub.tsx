@@ -16,8 +16,7 @@ function useLiveStyleScrub(input?: Dynamic): Dynamic {
   value.current = input;
   let [value2, value3]: Dynamic = (0,
     reactPropertiesShadowEffects.useState)(null),
-    { setOverlayHidden: value4, setScrubbing: value5 }: Dynamic = (0,
-    useInspectorContext)(),
+    { setOverlayHidden: value4, setScrubbing: value5 }: Dynamic = useInspectorContext(),
     value6: Dynamic = (0, reactPropertiesShadowEffects.useRef)(null);
   (0, reactPropertiesShadowEffects.useEffect)(
     (): Dynamic => (): Dynamic => value6.current?.(),
@@ -47,7 +46,7 @@ function useLiveStyleScrub(input?: Dynamic): Dynamic {
         callback: Dynamic = (input2?: Dynamic): Dynamic => {
           let current: Dynamic = value.current;
           if (input2 === current.min || input2 === current.max) return input2;
-          let value10: Dynamic = (0, snapNumericStep)(
+          let value10: Dynamic = snapNumericStep(
             input2,
             current.step ?? 1,
           );
@@ -129,8 +128,7 @@ function useLiveStyleScrub(input?: Dynamic): Dynamic {
   };
 }
 function useStyleCommitScrub(input?: Dynamic): Dynamic {
-  let { setOverlayHidden: value, setScrubbing: value2 }: Dynamic = (0,
-    useInspectorContext)(),
+  let { setOverlayHidden: value, setScrubbing: value2 }: Dynamic = useInspectorContext(),
     value3: Dynamic = (0, reactPropertiesShadowEffects.useRef)(false),
     value4: Dynamic = (0, reactPropertiesShadowEffects.useRef)(true),
     value5: Dynamic = (0, reactPropertiesShadowEffects.useRef)(input);
@@ -169,8 +167,8 @@ export {
 };
 export function installEditorPropertiesLiveScrub(): () => void {
   return () => {
-    jsxPropertiesLiveScrub = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    jsxPropertiesLiveScrub = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
   };

@@ -29,7 +29,7 @@ function ColorPickerWithSwatches({
   useUiLocale();
   let value2: Dynamic = (0, reactPropertiesTooltip.useMemo)(
       (): Dynamic =>
-        (0, normalizeColorSwatches)(
+        normalizeColorSwatches(
           swatches,
           none2 !== undefined,
           none2?.disabledReason,
@@ -37,8 +37,8 @@ function ColorPickerWithSwatches({
       [swatches, none2 !== undefined, none2?.disabledReason],
     ),
     callback: Dynamic = (input?: Dynamic): Dynamic =>
-      (0, hsvaToRgbaHex)({
-        ...(0, parseHsvaColor)(input),
+      hsvaToRgbaHex({
+        ...parseHsvaColor(input),
         ...(opaque
           ? {
               a: 1,
@@ -83,14 +83,14 @@ function ColorPickerWithSwatches({
         onChange(value7);
         onPickEnd?.(value7);
         contrast !== undefined &&
-          (0, announce)((): Dynamic => {
-            let value8: Dynamic = (0, evaluateColorContrast)(
+          announce((): Dynamic => {
+            let value8: Dynamic = evaluateColorContrast(
               value7,
               contrast,
             );
             return value8 === undefined
               ? null
-              : (0, summarizeContrastResults)(value8).spoken;
+              : summarizeContrastResults(value8).spoken;
           });
       }}
       color={{
@@ -110,8 +110,8 @@ export {
 };
 export function installEditorPropertiesColorPicker(): () => void {
   return () => {
-    jsxPropertiesColorPicker = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    jsxPropertiesColorPicker = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
   };

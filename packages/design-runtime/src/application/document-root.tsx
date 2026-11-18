@@ -18,7 +18,7 @@ import { NotesLinkEditingLabel } from "../editor/notes/link-editing";
 import { useExportDeliveries as R_useExportDeliveries } from "../export/delivery-ui";
 
 function initializeDesignKeyboardBindings(): Dynamic {
-  (0, blurTextOutsideFind)(
+  blurTextOutsideFind(
     document,
     undefined,
     (document as Dynamic).querySelector("[data-note-typing-strip]") !== null
@@ -28,7 +28,7 @@ function initializeDesignKeyboardBindings(): Dynamic {
 }
 function DesignDocumentRoot(props?: Dynamic): Dynamic {
   useUiLocale();
-  let loadState: Dynamic = (0, useCanvasLoadState)(props.doc),
+  let loadState: Dynamic = useCanvasLoadState(props.doc),
     [restoreCount, setRestoreCount]: Dynamic = (0,
     reactChromeTheme.useState)(
       (): Dynamic => props.doc.restoreCount(),

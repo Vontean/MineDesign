@@ -78,7 +78,7 @@ function NumberPropertyRow({
         ? emptyStepFrom
         : value2),
     value4 = !disabled && !mixed && value3 !== undefined,
-    value5 = (0, useNumberScrubGesture)({
+    value5 = useNumberScrubGesture({
       value: value3 ?? NaN,
       step: step,
       min: min,
@@ -153,7 +153,7 @@ function ColorChip({
   return (
     <span
       aria-hidden={"true"}
-      className={(0, joinClassNames)(
+      className={joinClassNames(
         COLOR_SWATCH_CLASS,
         className,
       )}
@@ -184,7 +184,7 @@ function useContrastResult(
     () =>
       contrast === undefined || value === undefined
         ? undefined
-        : (0, colorContrastResults)(value, contrast),
+        : colorContrastResults(value, contrast),
     [value2, value],
   );
 }
@@ -247,9 +247,9 @@ function ColorPropertyRow({
       if (value23 === undefined) {
         return;
       }
-      let value24 = (0, parseCssColorToHsva)(value23);
+      let value24 = parseCssColorToHsva(value23);
       return {
-        solid: (0, hsvaToHexColor)(value24),
+        solid: hsvaToHexColor(value24),
         alpha: value24.a,
       };
     }, [value, placeholder]),
@@ -296,11 +296,11 @@ function ColorPropertyRow({
         if (!COLOR_CHIP_PATTERN.test(value25)) {
           continue;
         }
-        let value26 = (0, parseCssColorToHsva)(value25);
+        let value26 = parseCssColorToHsva(value25);
         if (value26.a < 1) {
           continue;
         }
-        if ((0, hsvaToHexColor)(value26).toLowerCase() !== value23) {
+        if (hsvaToHexColor(value26).toLowerCase() !== value23) {
           continue;
         }
         if (
@@ -334,7 +334,7 @@ function ColorPropertyRow({
       () =>
         value13 === undefined
           ? undefined
-          : (0, contrastDisplayInfo)(value13).sentence,
+          : contrastDisplayInfo(value13).sentence,
       [value13],
     ),
     value14 =
@@ -571,7 +571,7 @@ function ColorTextPropertyRow({
       onPointerDown={(event: React.PointerEvent<HTMLDivElement>) => {
         if (
           value2 &&
-          !(0, propertyRowPressShouldIgnore)(
+          !propertyRowPressShouldIgnore(
             event.currentTarget,
             event.target as Element,
           )
@@ -611,11 +611,11 @@ export {
 };
 export function installUiPropertyRows(): () => void {
   return () => {
-    reactForUiPropertyRows = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    reactForUiPropertyRows = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
-    jsxmq = (0, toModuleNamespace)((0, loadJsxNamespace)(), 1);
+    jsxmq = toModuleNamespace(loadJsxNamespace(), 1);
     COLOR_CHIP_PATTERN =
       /^(?:#(?:[0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})|rgba?\(\s*[\d.]+[\s,]+[\d.]+[\s,]+[\d.]+(?:[\s,/]+[\d.]+)?\s*\))$/i;
     preventDefaultEvent = (event: React.SyntheticEvent) =>

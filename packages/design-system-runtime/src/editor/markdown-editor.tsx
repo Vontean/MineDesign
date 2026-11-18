@@ -106,7 +106,7 @@ function serializeMarkdownInlineNode(
       return value5 + value4 + value + value4 + value5;
     }
     case "A": {
-      let value = (0, linkUrlFromElement)(element),
+      let value = linkUrlFromElement(element),
         value2 = callback(tagName()).replace(/[\][]/g, " ");
       if (value !== "") {
         return "[" + value2 + "](" + value + ")";
@@ -478,7 +478,7 @@ function MarkdownEditor({
     }
   }, [markdown]);
   let memo = DesignSystemReactRuntime.useMemo(
-      () => (0, parseMarkdownBlocks)(ref5.current),
+      () => parseMarkdownBlocks(ref5.current),
       [value3],
     ),
     value5 = readOnly
@@ -564,7 +564,7 @@ function MarkdownEditor({
       import("../contracts").MarkdownCommitQueue<string> | null
     >(null);
   if (ref11.current === null) {
-    ref11.current = (0, createMarkdownCommitQueue)(
+    ref11.current = createMarkdownCommitQueue(
       MARKDOWN_COMMIT_DELAY_MS,
       MARKDOWN_COMMIT_MAX_DELAY_MS,
     );
@@ -656,8 +656,8 @@ function MarkdownEditor({
                 return;
               }
               event.preventDefault();
-              (0, openExternalLink)(
-                (0, linkUrlFromElement)(ancestor),
+              openExternalLink(
+                linkUrlFromElement(ancestor),
               );
             },
             onKeyDown: (event: React.KeyboardEvent<HTMLDivElement>): void => {
@@ -666,7 +666,7 @@ function MarkdownEditor({
               }
               if (
                 event.key === "Escape" &&
-                (0, anyMenuOrPopoverOpen)(
+                anyMenuOrPopoverOpen(
                   event.currentTarget.ownerDocument,
                 )
               ) {
@@ -691,8 +691,8 @@ function MarkdownEditor({
                   event.currentTarget.contains(value10)
                 ) {
                   event.preventDefault();
-                  (0, openExternalLink)(
-                    (0, linkUrlFromElement)(value10),
+                  openExternalLink(
+                    linkUrlFromElement(value10),
                   );
                   return;
                 }
@@ -754,9 +754,9 @@ function MarkdownEditor({
                 return;
               }
               if (/^history/.test(event.nativeEvent.inputType ?? "")) {
-                (0, prepareEditableLinks)(ref.current);
+                prepareEditableLinks(ref.current);
               }
-              (0, autoformatMarkdownBlock)(
+              autoformatMarkdownBlock(
                 ref.current,
                 event.nativeEvent,
                 serializeMarkdownEditor,
@@ -782,7 +782,7 @@ function MarkdownEditor({
               (
                 input: import("../contracts").MarkdownBlock,
                 options: number,
-              ) => (0, renderMarkdownBlock)(input, options, value5),
+              ) => renderMarkdownBlock(input, options, value5),
             ),
           };
           const _elementKey = value3;
@@ -832,8 +832,8 @@ export {
 };
 export function installEditorMarkdownEditor(): () => void {
   return () => {
-    jsxEditableMarkdown = (0, toModuleNamespace)(
-      (0, loadJsxNamespace)(),
+    jsxEditableMarkdown = toModuleNamespace(
+      loadJsxNamespace(),
       1,
     );
     MARKDOWN_COMMIT_DELAY_MS = 150;

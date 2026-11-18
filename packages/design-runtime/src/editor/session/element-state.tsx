@@ -173,8 +173,8 @@ export {
 };
 export function installEditorSessionElementState(): () => void {
   return () => {
-    reactSessionElementState = (0, toModuleNamespace)(
-      (0, load_react)(),
+    reactSessionElementState = toModuleNamespace(
+      load_react(),
       1,
     );
     SessionElementStateCroppingTargetSelectedConfig = {

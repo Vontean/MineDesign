@@ -71,8 +71,8 @@ export {
 };
 export function installEditorSelectionHost(): () => void {
   return () => {
-    reactSelectionHost = (0, toModuleNamespace)(
-      (0, load_react)(),
+    reactSelectionHost = toModuleNamespace(
+      load_react(),
       1,
     );
     selectedElementLocations = (

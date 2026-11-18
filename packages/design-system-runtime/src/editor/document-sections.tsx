@@ -68,7 +68,7 @@ function DocumentSections({
             className: "ds-readme-sec ds-guidance-sec",
             "data-testid": "ds-guidance-" + input.path,
             cardKey: "guidance:" + input.path,
-            anchorId: (0, commentTargetId)("doc", input.path),
+            anchorId: commentTargetId("doc", input.path),
             children: [
               <div
                 className={
@@ -113,8 +113,8 @@ export {
 export function installEditorDocumentSections(): () => void {
   return () => {
     EMPTY_DOC_LINKS = new Set();
-    jsxDocumentSections = (0, toModuleNamespace)(
-      (0, loadJsxNamespace)(),
+    jsxDocumentSections = toModuleNamespace(
+      loadJsxNamespace(),
       1,
     );
   };

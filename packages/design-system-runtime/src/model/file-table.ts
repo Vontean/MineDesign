@@ -34,7 +34,7 @@ var DESIGN_SYSTEM_MANIFEST_VERSION: number;
 var isFileTableObject: (input: unknown) => input is Record<string, unknown>;
 var unboundedFileParsing: boolean;
 function mirrorMimeTypeForPath(path: string) {
-  let extension = (0, fileExtension)(path);
+  let extension = fileExtension(path);
   if (Object.hasOwn(MIRROR_MIME_TYPES, extension)) {
     return MIRROR_MIME_TYPES[extension];
   } else {
@@ -43,7 +43,7 @@ function mirrorMimeTypeForPath(path: string) {
 }
 function isPublishableFilePathModelFileTable(path: string): boolean {
   if (
-    !(0, isValidDesignSystemPath)(path) ||
+    !isValidDesignSystemPath(path) ||
     fileBudgetEncoder.encode(path).length > 512
   ) {
     return false;
@@ -71,14 +71,14 @@ function isMirrorEligiblePath(path: string) {
     return false;
   }
   if (
-    !(0, isTextFilePath)(path) &&
+    !isTextFilePath(path) &&
     !path.startsWith(DESIGN_SYSTEM_PATHS.fontsDir)
   ) {
     return false;
   }
   if (
     path.startsWith(DESIGN_SYSTEM_PATHS.assetsDir) &&
-    (0, canUseStoragePointer)(path)
+    canUseStoragePointer(path)
   ) {
     return false;
   }
@@ -90,14 +90,14 @@ function isMirrorEligiblePath(path: string) {
 function isMirrorEligibleFile(path: string, content: string): boolean {
   if (
     !isMirrorEligiblePath(path) ||
-    (0, storagePointerForFile)(path, content) !== null
+    storagePointerForFile(path, content) !== null
   ) {
     return false;
   }
-  if ((0, isTextFilePath)(path)) {
+  if (isTextFilePath(path)) {
     return !content.includes(String.fromCharCode(65533));
   } else {
-    return (0, parseDataUriHeader)(content)?.base64 === true;
+    return parseDataUriHeader(content)?.base64 === true;
   }
 }
 function estimateEmbeddedStringBytes(value: string) {
@@ -170,7 +170,7 @@ function classifyDesignSystemFile(path: string): FileKind {
     if (path.startsWith(DESIGN_SYSTEM_PATHS.libDir)) {
       return "componentLib";
     }
-    if ((0, fileExtension)(path) === "d.ts") {
+    if (fileExtension(path) === "d.ts") {
       return "dts";
     }
     let value = path
@@ -199,7 +199,7 @@ function classifyDesignSystemFile(path: string): FileKind {
   if (path.startsWith(DESIGN_SYSTEM_PATHS.assetsDir)) {
     return "asset";
   }
-  if ((0, fileExtension)(path) === "d.ts") {
+  if (fileExtension(path) === "d.ts") {
     return "dts";
   }
   return "other";
@@ -242,7 +242,7 @@ function inlineLimitForPath(
   path: string,
   fileKind: FileKind = classifyDesignSystemFile(path),
 ) {
-  if ((0, isImageSlotStatePath)(path)) {
+  if (isImageSlotStatePath(path)) {
     return DESIGN_SYSTEM_INLINE_LIMITS.imageSlotState;
   } else {
     return inlineLimitForFileKind(fileKind);
@@ -252,7 +252,7 @@ function inlineLimitLabelForPath(
   path: string,
   fileKind: FileKind = classifyDesignSystemFile(path),
 ) {
-  if ((0, isImageSlotStatePath)(path)) {
+  if (isImageSlotStatePath(path)) {
     return "image-slot state";
   } else {
     return fileKind;
@@ -491,7 +491,7 @@ function parseFileTable(
     }
     let value2 =
       typeof value === "string"
-        ? (0, explainToolConfigurationPath)(value)
+        ? explainToolConfigurationPath(value)
         : null;
     if (value2 !== null) {
       report.dropped.push(
@@ -499,7 +499,7 @@ function parseFileTable(
       );
       continue;
     }
-    if (!(0, isValidDesignSystemPath)(value)) {
+    if (!isValidDesignSystemPath(value)) {
       report.dropped.push(
         "file " +
           JSON.stringify(String(value).slice(0, 80)) +
@@ -514,10 +514,10 @@ function parseFileTable(
     }
     let value4 = normalizeDesignSystemPath(value);
     if (
-      (0, isGeneratedSystemPath)(value4) &&
-      !(0, hasGeneratedSystemHeader)(value4, value3)
+      isGeneratedSystemPath(value4) &&
+      !hasGeneratedSystemHeader(value4, value3)
     ) {
-      let value10 = (0, carriedDocumentPath)(value4),
+      let value10 = carriedDocumentPath(value4),
         callback = (input2: string) =>
           acceptedFiles.has(input2) || Object.hasOwn(sourceFiles, input2),
         value11 =
@@ -551,13 +551,13 @@ function parseFileTable(
       );
       value4 = value12;
     }
-    if (value4 !== value && !(0, isValidDesignSystemPath)(value4)) {
+    if (value4 !== value && !isValidDesignSystemPath(value4)) {
       report.dropped.push("file " + value + ": invalid after normalization");
       continue;
     }
     let value5 =
-      (0, explainGeneratedOrRetiredPath)(value4) ??
-      (0, explainReservedSystemPath)(value4);
+      explainGeneratedOrRetiredPath(value4) ??
+      explainReservedSystemPath(value4);
     if (value5 !== null) {
       report.dropped.push("file " + value4 + ": " + value5);
       continue;
@@ -586,9 +586,9 @@ function parseFileTable(
     }
     let value6 = classifyDesignSystemFile(value4);
     if (
-      !(0, isTextFilePath)(value4) &&
-      (0, parseDataUriHeader)(value3) === null &&
-      (0, parseStoragePointer)(value3) === null
+      !isTextFilePath(value4) &&
+      parseDataUriHeader(value3) === null &&
+      parseStoragePointer(value3) === null
     ) {
       report.dropped.push(
         "file " +
@@ -713,7 +713,7 @@ function computeFileBudgetUsage(
     usage[value4].bytes += value3;
     usage.total.files++;
     usage.total.bytes += value3;
-    let value5 = (0, storageKindForFile)(value, value2);
+    let value5 = storageKindForFile(value, value2);
     if (value5 === "blob") {
       usage.blob.files++;
       usage.blob.bytes += storedBytesForPath(value);

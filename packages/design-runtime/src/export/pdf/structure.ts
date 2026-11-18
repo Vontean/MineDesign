@@ -208,21 +208,21 @@ function buildPdfStructureTree(
       let value9: Dynamic = extra[options][value7];
       if (value9 === "Figure") {
         let value11: Dynamic = input2.blocks[value7],
-          value12: Dynamic = (0, clipPdfBlockBox)(
+          value12: Dynamic = clipPdfBlockBox(
             value11,
             input2.widthPt,
             input2.heightPt,
           ),
           value13: Dynamic =
             typeof value11.alt == "string"
-              ? (0, truncatePdfText)(
+              ? truncatePdfText(
                   value11.alt,
                   maxFigureAltLength,
                 ).trim()
               : "",
           value14: Dynamic =
             value13 !== ""
-              ? " /Alt " + (0, pdfStringOperand)(value13)
+              ? " /Alt " + pdfStringOperand(value13)
               : "";
         entries.set(
           value8.obj,

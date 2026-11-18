@@ -50,7 +50,7 @@ function Shortcut({
       {...props}
       data-cds={"Shortcut"}
       data-variant={variant}
-      className={(0, cn)(
+      className={cn(
         ComponentsShortcutKeycapTextConfig[variant],
         onFill && "[--cds-shortcut-cap-ink:currentColor]",
         className,
@@ -249,15 +249,15 @@ export {
 };
 export function installCdsComponentsShortcut(): () => void {
   return () => {
-    initializeComponentsShortcut = (0, initializeOnce)((): Dynamic => {
+    initializeComponentsShortcut = initializeOnce((): Dynamic => {
       "use client";
 
-      (0, initializeClassNames)();
-      reactComponentsShortcut = (0, toModuleNamespace)(
-        (0, load_react)(),
+      initializeClassNames();
+      reactComponentsShortcut = toModuleNamespace(
+        load_react(),
       );
-      jsxComponentsShortcut = (0, toModuleNamespace)(
-        (0, load_react_jsx_runtime)(),
+      jsxComponentsShortcut = toModuleNamespace(
+        load_react_jsx_runtime(),
       );
       ComponentsShortcutClassNames =
         "inline-flex shrink-0 items-center justify-center h-[calc(1em+6px)] rounded-[var(--cds-keycap-radius,4px)] [color:var(--cds-shortcut-cap-ink)] bg-[color:var(--cds-shortcut-cap-fill)] border border-[color:var(--cds-shortcut-cap-line)] font-inherit [font-variation-settings:inherit] [line-height:1]";

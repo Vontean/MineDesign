@@ -25,13 +25,13 @@ function shouldStoreArtboardByReference(
   input?: Dynamic,
   options?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = (0, getArtboardHtmlReference)(input.file);
+  let value: Dynamic = getArtboardHtmlReference(input.file);
   return (
     isLoadingArtboardHtml(options) ||
     (value !== undefined &&
-      (0, htmlReferenceForText)(options) === value.ref) ||
-    (0, serializedDocumentBytes)(
-      (0, artboardDocument)(input, options),
+      htmlReferenceForText(options) === value.ref) ||
+    serializedDocumentBytes(
+      artboardDocument(input, options),
     ) > PlatformFileContentResolvedValue_9
   );
 }
@@ -42,7 +42,7 @@ function shallowDocumentEqual(input?: Dynamic, options?: Dynamic): Dynamic {
     if (
       !(value2 in options) ||
       (input[value2] !== options[value2] &&
-        !(0, structurallyEqual)(input[value2], options[value2]))
+        !structurallyEqual(input[value2], options[value2]))
     )
       return false;
   return true;
@@ -67,7 +67,7 @@ function decomposeDesignDocument(
   context?: Dynamic,
 ): Dynamic {
   let files: Dynamic = input.content.files,
-    value: Dynamic = (0, parseCanvasMetadata)(
+    value: Dynamic = parseCanvasMetadata(
       files[canvasMetadataFile],
       files,
     ),
@@ -85,15 +85,15 @@ function decomposeDesignDocument(
   }
   for (let value4 of value.artboards as Dynamic) {
     let value5: Dynamic = files[value4.file] ?? "",
-      value6: Dynamic = (0, getArtboardHtmlReference)(value4.file),
-      value7: Dynamic = (0, artboardDocument)(value4, value5);
+      value6: Dynamic = getArtboardHtmlReference(value4.file),
+      value7: Dynamic = artboardDocument(value4, value5);
     if (
       value6 !== undefined &&
       (isLoadingArtboardHtml(value5) ||
-        (0, htmlReferenceForText)(value5) === value6.ref)
+        htmlReferenceForText(value5) === value6.ref)
     )
       value7 = {
-        ...(0, artboardDocument)(value4, ""),
+        ...artboardDocument(value4, ""),
         htmlRef: value6.ref,
         htmlBytes: value6.bytes,
       };
@@ -105,38 +105,38 @@ function decomposeDesignDocument(
       let value8: Dynamic = options?.get(
         BoardsValue +
           "/" +
-          (0, encodeStorePathSegment)(value4.file),
+          encodeStorePathSegment(value4.file),
       );
       value8 !== undefined &&
         entries.set(
           BoardsValue +
             "/" +
-            (0, encodeStorePathSegment)(value4.file),
+            encodeStorePathSegment(value4.file),
           value8,
         );
       continue;
     } else if (
-      (0, serializedDocumentBytes)(value7) >
+      serializedDocumentBytes(value7) >
       PlatformFileContentResolvedValue_9
     ) {
-      let value8: Dynamic = (0, htmlReferenceForText)(value5);
+      let value8: Dynamic = htmlReferenceForText(value5);
       value8 !== undefined
         ? (value7 = {
-            ...(0, artboardDocument)(value4, ""),
+            ...artboardDocument(value4, ""),
             htmlRef: value8,
             htmlBytes:
               value6?.ref === value8
                 ? value6.bytes
-                : (0, DesignSystemTypeDeclarationsGetLength)(value5),
+                : DesignSystemTypeDeclarationsGetLength(value5),
           })
-        : (0, scheduleHtmlUpload)(value4.file, value5);
+        : scheduleHtmlUpload(value4.file, value5);
     }
     setUnchangedDocumentValue(
       entries,
       options,
       BoardsValue +
         "/" +
-        (0, encodeStorePathSegment)(value4.file),
+        encodeStorePathSegment(value4.file),
       value7,
     );
   }
@@ -145,20 +145,20 @@ function decomposeDesignDocument(
       entries,
       options,
       NotesValue + "/" + value4.id,
-      (0, annotationDocument)(value4),
+      annotationDocument(value4),
     );
   for (let value4 of Object.keys(files) as Dynamic)
     value4 === canvasMetadataFile ||
-      (0, isArtboardFile)(value4) ||
+      isArtboardFile(value4) ||
       setUnchangedDocumentValue(
         entries,
         options,
         FilesValue +
           "/" +
-          (0, encodeStorePathSegment)(value4),
-        (0, projectFileDocument)(value4, files[value4]),
+          encodeStorePathSegment(value4),
+        projectFileDocument(value4, files[value4]),
       );
-  (0, decomposeComments)(input.comments, options, entries);
+  decomposeComments(input.comments, options, entries);
   let value3: Dynamic =
     value.cover ??
     (context?.cover !== undefined && value2.includes(context.cover)
@@ -168,7 +168,7 @@ function decomposeDesignDocument(
     entries,
     options,
     PlatformFileContentResolvedValue_4,
-    (0, canvasMetaDocument)(
+    canvasMetaDocument(
       input.title,
       value3 === value.cover
         ? value
@@ -186,14 +186,14 @@ function asString(input?: Dynamic): Dynamic {
 }
 function composeDesignDocument(input?: Dynamic, options?: Dynamic): Dynamic {
   let entry: Dynamic = input.get(PlatformFileContentResolvedValue_4);
-  (0, updateMovedToFilesState)(entry);
-  (0, setInstanceFileReferences)(
+  updateMovedToFilesState(entry);
+  setInstanceFileReferences(
     input.get(DesignValue + "/" + InstanceValue),
   );
-  (0, setDesignSystems)(
+  setDesignSystems(
     input.get(DesignValue + "/" + DesignSystemsKey),
   );
-  (0, updateDesignSourceFile)(
+  updateDesignSourceFile(
     input.get(PlatformFileContentResolvedValue_5),
   );
   let entries: Dynamic = new Map(),
@@ -211,9 +211,9 @@ function composeDesignDocument(input?: Dynamic, options?: Dynamic): Dynamic {
           value10: Dynamic = asString(value7.html);
         if (
           !isSafeProjectPathAlias(path) ||
-          !(0, isArtboardFile)(path) ||
-          (0, basename)(value6) !==
-            (0, encodeStorePathSegment)(path)
+          !isArtboardFile(path) ||
+          basename(value6) !==
+            encodeStorePathSegment(path)
         ) {
           index++;
           continue;
@@ -226,7 +226,7 @@ function composeDesignDocument(input?: Dynamic, options?: Dynamic): Dynamic {
         for (let value12 of PlatformFileContentXYWValues as Dynamic)
           value7[value12] !== undefined &&
             (state2[value12] = value7[value12]);
-        if (value11 !== undefined && (0, isBlobAssetUrl)(value11)) {
+        if (value11 !== undefined && isBlobAssetUrl(value11)) {
           entries2.set(path, {
             ref: value11,
             bytes: typeof value7.htmlBytes == "number" ? value7.htmlBytes : 0,
@@ -234,7 +234,7 @@ function composeDesignDocument(input?: Dynamic, options?: Dynamic): Dynamic {
           entries.set(path, {
             spec: state2,
             html:
-              (0, getReferencedHtml)(value11) ??
+              getReferencedHtml(value11) ??
               DoctypeHtmlHtmlDataDcBoardLoadingBodyStyleMarginDisplayGridMessage,
           });
         } else if (value11 !== undefined) {
@@ -246,22 +246,22 @@ function composeDesignDocument(input?: Dynamic, options?: Dynamic): Dynamic {
             html: value10,
           });
       } else if (value9 === FilesValue) {
-        values.add((0, basename)(value6));
+        values.add(basename(value6));
         let path: Dynamic = value7.path,
           value10: Dynamic = asString(value7.data),
           value11: Dynamic = asString(value7.dataRef),
           value12: Dynamic =
-            ((0, isProjectTextFilePath)(path) &&
+            (isProjectTextFilePath(path) &&
               /\.(css|m?js)$/i.test(path)) ||
-            (0, isTypeDeclarationPath)(path);
+            isTypeDeclarationPath(path);
         if (
           value10 === undefined &&
           value7.kind === "text" &&
           value11 !== undefined &&
-          (0, isBlobAssetUrl)(value11) &&
+          isBlobAssetUrl(value11) &&
           value12 &&
-          (0, basename)(value6) ===
-            (0, encodeStorePathSegment)(path)
+          basename(value6) ===
+            encodeStorePathSegment(path)
         ) {
           entries4.set(path, {
             ref: value11,
@@ -271,16 +271,16 @@ function composeDesignDocument(input?: Dynamic, options?: Dynamic): Dynamic {
         }
         if (
           !isSafeProjectPathAlias(path) ||
-          (0, isArtboardFile)(path) ||
+          isArtboardFile(path) ||
           path === canvasMetadataFile ||
-          !(0, isSupportedProjectAsset)(path)
+          !isSupportedProjectAsset(path)
         ) {
           index++;
           continue;
         }
         if (
-          (0, basename)(value6) !==
-            (0, encodeStorePathSegment)(path) ||
+          basename(value6) !==
+            encodeStorePathSegment(path) ||
           value10 === undefined
         )
           continue;
@@ -315,15 +315,15 @@ function composeDesignDocument(input?: Dynamic, options?: Dynamic): Dynamic {
             after: value2,
           }),
           isSafeProjectPathAlias(value6) &&
-            (0, isArtboardFile)(value6) &&
+            isArtboardFile(value6) &&
             items2.push(
               BoardsValue +
                 "/" +
-                (0, encodeStorePathSegment)(value6),
+                encodeStorePathSegment(value6),
             )),
       (value2 = value6));
-  (0, setArtboardHtmlReferences)(entries2);
-  (0, setExternalFileReferences)(entries4, undefined, values);
+  setArtboardHtmlReferences(entries2);
+  setExternalFileReferences(entries4, undefined, values);
   let state: Dynamic = {};
   for (let value6 of items3 as Dynamic)
     state[value6] = entries.get(value6).html;
@@ -355,7 +355,7 @@ function composeDesignDocument(input?: Dynamic, options?: Dynamic): Dynamic {
             : typeof value7.text == "string") &&
       items4.push({
         ...value7,
-        id: (0, basename)(value6),
+        id: basename(value6),
       });
   }
   let value3: Dynamic = JSON.stringify({
@@ -385,8 +385,8 @@ function composeDesignDocument(input?: Dynamic, options?: Dynamic): Dynamic {
       : {}),
   });
   entry !== undefined &&
-    (state[canvasMetadataFile] = (0, serializeCanvasMetadata)(
-      (0, parseCanvasMetadata)(value3, state),
+    (state[canvasMetadataFile] = serializeCanvasMetadata(
+      parseCanvasMetadata(value3, state),
     ));
   let value4: Dynamic = asString(entry?.cover),
     value5: Dynamic =
@@ -399,7 +399,7 @@ function composeDesignDocument(input?: Dynamic, options?: Dynamic): Dynamic {
     content: {
       files: state,
     },
-    comments: (0, composeComments)(input),
+    comments: composeComments(input),
     carry: {
       dangling: items,
       ...(value5 !== undefined
@@ -417,29 +417,29 @@ function describeDesignPublishRefusal(
   context?: Dynamic,
 ): Dynamic {
   let value: Dynamic = input.slice(0, input.indexOf("/")),
-    value2: Dynamic = (0, serializedDocumentBytes)(options);
+    value2: Dynamic = serializedDocumentBytes(options);
   if (
     value === BoardsValue &&
     value2 > PlatformFileContentResolvedValue_6
   ) {
     let value3: Dynamic =
-        asString(options.path) ?? (0, basename)(input),
+        asString(options.path) ?? basename(input),
       value4: Dynamic =
         asString(options.title) ?? value3.replace(/\.dc\.html$/, ""),
       value5: Dynamic = asString(options.html) ?? "";
-    return value5 !== "" && (0, isKnownHtmlReference)(value5)
+    return value5 !== "" && isKnownHtmlReference(value5)
       ? "Artboard \u201C" +
           value4 +
           "\u201D is " +
           PlatformDesignDocumentAdapterHandler(value2) +
           " KB \u2014 too large even as an uploaded blob (2 MB). Split it or move images to assets."
-      : value5 !== "" && (0, getHtmlReferenceState)()
+      : value5 !== "" && getHtmlReferenceState()
         ? "Artboard \u201C" +
           value4 +
           "\u201D is " +
           PlatformDesignDocumentAdapterHandler(value2) +
           " KB \u2014 over the 240 KB that syncs, and this view cannot upload it; it stays on this screen. Split it or move images to assets."
-        : value5 !== "" && !(0, knownHtmlReferenceState)(value5)
+        : value5 !== "" && !knownHtmlReferenceState(value5)
           ? "Artboard \u201C" +
             value4 +
             "\u201D is " +
@@ -463,7 +463,7 @@ function describeDesignPublishRefusal(
   )
     return (
       "\u201C" +
-      (asString(options.path) ?? (0, basename)(input)) +
+      (asString(options.path) ?? basename(input)) +
       "\u201D is too large to sync (" +
       PlatformDesignDocumentAdapterHandler(value2) +
       " KB > 180 KB). Upload images as assets instead."
@@ -474,7 +474,7 @@ function describeDesignPublishRefusal(
       PlatformDesignDocumentAdapterHandler(value2) +
       " KB)."
     );
-  if ((0, recordDepth)(options) > PlatformDesignDocumentAdapterLimit)
+  if (recordDepth(options) > PlatformDesignDocumentAdapterLimit)
     return "This change is nested too deeply to sync.";
   if (context > PlatformFileContentResolvedValue_8)
     return (

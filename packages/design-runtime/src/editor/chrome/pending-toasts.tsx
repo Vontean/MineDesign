@@ -74,7 +74,7 @@ function PendingEditorToasts(): Dynamic {
       add: value,
       close: value2,
       setPinned: value3,
-    }: Dynamic = (0, useToastManager)(),
+    }: Dynamic = useToastManager(),
     value4: Dynamic = (0, reactChromePendingToasts.useRef)(new Map());
   (0, reactChromePendingToasts.useEffect)((): Dynamic => {
     let callback: Dynamic = (input?: Dynamic): Dynamic => value3(input);
@@ -128,11 +128,11 @@ export {
 };
 export function installEditorChromePendingToasts(): () => void {
   return () => {
-    reactChromePendingToasts = (0, toModuleNamespace)(
-      (0, load_react)(),
+    reactChromePendingToasts = toModuleNamespace(
+      load_react(),
       1,
     );
-    (0, initializeCdsIndex)();
+    initializeCdsIndex();
     ChromePendingToastsFilterValue = [];
     ChromePendingToastsCurrentState = null;
     ChromePendingToastsConstant = 1;

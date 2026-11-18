@@ -229,14 +229,14 @@ function Spinner({
     value8 = inheritColor
       ? "color-mix(in srgb, currentColor 25%, transparent)"
       : "var(--cds-border)",
-    value9 = (0, pixelsToScaledRem)(value6.box),
-    value10 = (0, pixelsToScaledRem)(value6.stroke),
+    value9 = pixelsToScaledRem(value6.box),
+    value10 = pixelsToScaledRem(value6.stroke),
     value11 = `calc(100% - ${value10})`,
     value12 = `radial-gradient(farthest-side, transparent ${value11}, #000 calc(${value11} + 0.5px))`,
     value13 = !value5 ? null : (
       <span
         data-cds={"Spinner"}
-        className={(0, cn)(
+        className={cn(
           "relative inline-block shrink-0 align-middle",
           className,
         )}
@@ -318,7 +318,7 @@ function cancelTooltipUpdate(input: () => void): void {
 function loadTooltipImplementation(): Promise<TooltipImplementation> {
   tooltipImplementationPromise ??= Promise.resolve()
     .then(() => {
-      (0, initializeTooltip)();
+      initializeTooltip();
       return tooltipExports;
     })
     .then(
@@ -666,7 +666,7 @@ function useDeferredTooltipImplementation(
           }, input2.onClick),
           onFocus: callback7((input3: React.FocusEvent<HTMLElement>) => {
             ref.current.focus = true;
-            ref.current.node = (0, asElement)(
+            ref.current.node = asElement(
               input3.currentTarget,
             ) as HTMLElement | null;
             callback6();
@@ -752,7 +752,7 @@ function DeferredDisabledReasonTooltip(
   let { reason: value5, wrapperClassName: value6, children: value7 } = input;
   return (
     <span
-      {...(0, getDisabledReasonWrapperProps)(value5, value4, value6)}
+      {...getDisabledReasonWrapperProps(value5, value4, value6)}
       title={typeof value5 === "string" ? (value5) : (undefined)}
       {...value3({})}
       {...pendingTooltipProps}
@@ -829,34 +829,34 @@ export {
 };
 export function installUiDisclosure(): () => void {
   return () => {
-    reactDOMClientForUiDisclosure = (0, toModuleNamespace)(
-      (0, loadReactDomClientNamespace)(),
+    reactDOMClientForUiDisclosure = toModuleNamespace(
+      loadReactDomClientNamespace(),
       1,
     );
-    reactArtifactRoot = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    reactArtifactRoot = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
-    reactForUiDisclosure = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    reactForUiDisclosure = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
-    (0, initializeCdsRoot)();
-    (0, initializeLayers)();
-    (0, initializeIcons)();
-    (0, initializeShortcuts)();
-    (0, initializeTooltip)();
-    (0, initializeClassNames)();
+    initializeCdsRoot();
+    initializeLayers();
+    initializeIcons();
+    initializeShortcuts();
+    initializeTooltip();
+    initializeClassNames();
     repeatedClickSelectionProps = Object.freeze({
       onMouseDown: preventRepeatedClickSelection,
     });
-    (0, initializeMergedRefs)();
-    react_k = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    initializeMergedRefs();
+    react_k = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
-    reactXk = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    reactXk = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
     disclosurePanelClasses =
@@ -906,18 +906,18 @@ export function installUiDisclosure(): () => void {
       }, []);
     };
     useDisclosurePanelRef = (input: React.Ref<HTMLElement> | undefined) =>
-      (0, useMergedRefs)(
+      useMergedRefs(
         input,
         useDisclosureAnimationRef(),
         useHiddenUntilFoundRef(),
       );
-    (0, initializeIcons)();
-    reactForUiDisclosure2 = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    initializeIcons();
+    reactForUiDisclosure2 = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
-    reactDOMForUiDisclosure = (0, toModuleNamespace)(
-      (0, loadJsxNamespace)(),
+    reactDOMForUiDisclosure = toModuleNamespace(
+      loadJsxNamespace(),
       1,
     );
     CollapsibleRoot = reactForUiDisclosure2.forwardRef(
@@ -954,7 +954,7 @@ export function installUiDisclosure(): () => void {
             <Icon
               name={"CaretRight"}
               size={"sm"}
-              className={(0, clsx)(
+              className={clsx(
                 collapsibleIconClasses,
                 caretPosition === "end" && "ms-auto",
               )}
@@ -975,7 +975,7 @@ export function installUiDisclosure(): () => void {
             <baseCollapsible.Trigger
               ref={options}
               {...props}
-              className={(0, cn)(collapsibleTriggerClasses, className)}
+              className={cn(collapsibleTriggerClasses, className)}
               onMouseDown={value}
             >
               {[caretPosition !== "end" && value2, children, caretPosition === "end" && value2]}
@@ -996,7 +996,7 @@ export function installUiDisclosure(): () => void {
           <baseCollapsible.Panel
             ref={value}
             {...props}
-            className={(0, cn)(collapsiblePanelClasses, className)}
+            className={cn(collapsiblePanelClasses, className)}
           />
         );
       },
@@ -1007,13 +1007,13 @@ export function installUiDisclosure(): () => void {
       Trigger: CollapsibleTrigger,
       Panel: CollapsiblePanel,
     };
-    (0, initializeClassNames)();
-    (0, initializeRemScale)();
-    reactcK = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    initializeClassNames();
+    initializeRemScale();
+    reactcK = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
-    jsxEq = (0, toModuleNamespace)((0, loadJsxNamespace)(), 1);
+    jsxEq = toModuleNamespace(loadJsxNamespace(), 1);
     spinnerSizeAliases = {
       s: "sm",
       m: "md",
@@ -1033,35 +1033,35 @@ export function installUiDisclosure(): () => void {
         stroke: 2,
       },
     };
-    (0, initializeClassNames)();
-    (0, initializeCdsLink)();
-    (0, initializeCdsRoot)();
-    (0, initializeRemScale)();
-    (0, initializeIcons)();
-    (0, initializeShortcuts)();
-    (0, initializeDisabledReasonDebug)();
-    (0, initializeTooltipContext)();
-    reactfk = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    initializeClassNames();
+    initializeCdsLink();
+    initializeCdsRoot();
+    initializeRemScale();
+    initializeIcons();
+    initializeShortcuts();
+    initializeDisabledReasonDebug();
+    initializeTooltipContext();
+    reactfk = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
     compactableControlContext = reactfk.createContext<CompactableControlState>({
       compact: false,
     });
     COMPACTABLE_ATTRIBUTE = "data-cds-compactable";
-    reactForUiDisclosure3 = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    reactForUiDisclosure3 = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
-    (0, initializeElementAccess)();
-    (0, initializeDisabledReason)();
-    (0, initializeTooltipContext)();
-    reactForUiDisclosure4 = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    initializeElementAccess();
+    initializeDisabledReason();
+    initializeTooltipContext();
+    reactForUiDisclosure4 = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
-    jsxForUiDisclosure = (0, toModuleNamespace)(
-      (0, loadJsxNamespace)(),
+    jsxForUiDisclosure = toModuleNamespace(
+      loadJsxNamespace(),
       1,
     );
     loadedTooltipImplementation = null;

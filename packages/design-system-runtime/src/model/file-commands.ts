@@ -29,7 +29,7 @@ function fileTableInlineBytes(files: Model.FileTable) {
   }
   let bytes = 0;
   for (let value in files) {
-    bytes += (0, estimateEmbeddedStringBytes)(files[value]);
+    bytes += estimateEmbeddedStringBytes(files[value]);
   }
   fileTableBytesCache.set(files, bytes);
   return bytes;
@@ -39,19 +39,19 @@ function fileFitsInlineBudgets(
   path: string,
   value: string,
 ): boolean {
-  if ((0, isUnboundedFileParsing)()) {
+  if (isUnboundedFileParsing()) {
     return true;
   }
-  let kind = (0, classifyDesignSystemFile)(path),
-    bytes = (0, estimateEmbeddedStringBytes)(value);
+  let kind = classifyDesignSystemFile(path),
+    bytes = estimateEmbeddedStringBytes(value);
   if (kind === "dts") {
     let value2 = bytes;
     for (let value3 in content.files) {
       if (
         value3 !== path &&
-        (0, classifyDesignSystemFile)(value3) === "dts"
+        classifyDesignSystemFile(value3) === "dts"
       ) {
-        value2 += (0, estimateEmbeddedStringBytes)(
+        value2 += estimateEmbeddedStringBytes(
           content.files[value3],
         );
       }
@@ -59,7 +59,7 @@ function fileFitsInlineBudgets(
     if (value2 > DESIGN_SYSTEM_INLINE_LIMITS.dtsTotal) {
       return false;
     }
-  } else if (bytes > (0, inlineLimitForPath)(path, kind)) {
+  } else if (bytes > inlineLimitForPath(path, kind)) {
     return false;
   }
   let previousValue = content.files[path];
@@ -72,7 +72,7 @@ function fileFitsInlineBudgets(
   return (
     fileTableInlineBytes(content.files) -
       (previousValue !== undefined
-        ? (0, estimateEmbeddedStringBytes)(previousValue)
+        ? estimateEmbeddedStringBytes(previousValue)
         : 0) +
       bytes <=
     DESIGN_SYSTEM_INLINE_LIMITS.total
@@ -83,21 +83,21 @@ function setDesignSystemFile(
   path: string,
   value: string,
 ) {
-  if (!(0, isValidDesignSystemPath)(path)) {
+  if (!isValidDesignSystemPath(path)) {
     return content;
   }
-  let canonicalPath = (0, normalizeDesignSystemPath)(path);
+  let canonicalPath = normalizeDesignSystemPath(path);
   if (
-    !(0, isValidDesignSystemPath)(canonicalPath) ||
-    (0, explainGeneratedOrRetiredPath)(canonicalPath) !== null ||
-    (0, explainReservedSystemPath)(canonicalPath) !== null
+    !isValidDesignSystemPath(canonicalPath) ||
+    explainGeneratedOrRetiredPath(canonicalPath) !== null ||
+    explainReservedSystemPath(canonicalPath) !== null
   ) {
     return content;
   }
   if (
-    !(0, isTextFilePath)(canonicalPath) &&
-    (0, parseDataUriHeader)(value) === null &&
-    (0, parseStoragePointer)(value) === null
+    !isTextFilePath(canonicalPath) &&
+    parseDataUriHeader(value) === null &&
+    parseStoragePointer(value) === null
   ) {
     return content;
   }
@@ -150,10 +150,10 @@ function renameDesignSystemFile(
     return content;
   }
   if (
-    !(0, isValidDesignSystemPath)(newPath) ||
-    (0, normalizeDesignSystemPath)(newPath) !== newPath ||
-    (0, explainGeneratedOrRetiredPath)(newPath) !== null ||
-    (0, explainReservedSystemPath)(newPath) !== null
+    !isValidDesignSystemPath(newPath) ||
+    normalizeDesignSystemPath(newPath) !== newPath ||
+    explainGeneratedOrRetiredPath(newPath) !== null ||
+    explainReservedSystemPath(newPath) !== null
   ) {
     return content;
   }
@@ -161,15 +161,15 @@ function renameDesignSystemFile(
     return content;
   }
   if (
-    (0, isTextFilePath)(oldPath) !==
-    (0, isTextFilePath)(newPath)
+    isTextFilePath(oldPath) !==
+    isTextFilePath(newPath)
   ) {
     return content;
   }
   if (
-    (0, storagePointerForFile)(oldPath, content.files[oldPath]) !==
+    storagePointerForFile(oldPath, content.files[oldPath]) !==
       null &&
-    !(0, canUseStoragePointer)(newPath)
+    !canUseStoragePointer(newPath)
   ) {
     return content;
   }
@@ -207,7 +207,7 @@ function sanitizeUploadFileName(filename: string) {
   );
   let safeName = filename.replace(/[/\\\u0000-\u001f\u007f]+/g, "-").trim();
   safeName = safeName.replace(/^[.\s~-]+/, "");
-  let extension = (0, fileExtension)(filename);
+  let extension = fileExtension(filename);
   if (safeName === "" || safeName.toLowerCase() === extension) {
     safeName = "file" + (extension !== "" ? "." + extension : "");
   }
@@ -238,7 +238,7 @@ function setAdditionalDocument(
   path: string,
   markdown: string,
 ) {
-  if ((0, classifyDesignSystemFile)(path) !== "doc") {
+  if (classifyDesignSystemFile(path) !== "doc") {
     return content;
   }
   if (

@@ -71,11 +71,11 @@ export {
 };
 export function installPlatformTheme(): () => void {
   return () => {
-    initializePlatformTheme = (0, initializeOnce)((): Dynamic => {
+    initializePlatformTheme = initializeOnce((): Dynamic => {
       "use strict";
 
-      reactPlatformTheme = (0, toModuleNamespace)(
-        (0, load_react)(),
+      reactPlatformTheme = toModuleNamespace(
+        load_react(),
         1,
       );
       darkColorSchemeMediaQuery = "(prefers-color-scheme: dark)";

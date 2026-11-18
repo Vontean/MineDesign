@@ -125,7 +125,7 @@ export function installEditorModelFileEchoes(): () => void {
     ModelFileEchoesResolvedValue = 10 * 6e4;
     ModelFileEchoesCache_3 = new Map();
     {
-      let value: Dynamic = (0, getEditorEventRuntime)().onOmEvent(
+      let value: Dynamic = getEditorEventRuntime().onOmEvent(
         "files-changed",
         (input?: Dynamic): Dynamic => {
           let value2: Dynamic = input,

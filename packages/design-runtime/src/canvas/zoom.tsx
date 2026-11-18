@@ -227,10 +227,10 @@ export {
 };
 export function installCanvasZoom(): () => void {
   return () => {
-    react_F_ = (0, toModuleNamespace)((0, load_react)(), 1);
-    (0, initializeCdsIndex)();
-    jsx_Wl = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    react_F_ = toModuleNamespace(load_react(), 1);
+    initializeCdsIndex();
+    jsx_Wl = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
     zoomScalePresets = [0.25, 0.5, 0.75, 1, 1.5, 2];

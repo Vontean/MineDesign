@@ -289,7 +289,7 @@ function remapCapturedTextBlocks(
   };
 }
 function normalizeCaptureLanguage(input?: Dynamic): Dynamic {
-  return (0, isLanguageTag)(input) ? input : undefined;
+  return isLanguageTag(input) ? input : undefined;
 }
 function parseCapturedLinks(
   items?: Dynamic,
@@ -314,7 +314,7 @@ function parseCapturedLinks(
         h: value7,
         a: value8,
       }: Dynamic = value2,
-      value9: Dynamic = (0, normalizePdfLink)(value3);
+      value9: Dynamic = normalizePdfLink(value3);
     if (
       value9 === undefined ||
       typeof value4 != "number" ||
@@ -377,7 +377,7 @@ async function captureArtboardPdfPages(
         ? ExportDeliveryCapMsFinishAnimationsConfig
         : ExportDeliveryCapMsFinishAnimationsEagerImagesConfig
       : null,
-    value3: Dynamic = await (0, lockCaptureViewport)(
+    value3: Dynamic = await lockCaptureViewport(
       input,
       options,
       value2,
@@ -415,7 +415,7 @@ async function captureArtboardPdfPages(
         options2?: Dynamic,
         context2?: Dynamic,
       ): Promise<Dynamic> => {
-        let value24: Dynamic = (0, buildCaptureScript)(
+        let value24: Dynamic = buildCaptureScript(
             "image/jpeg",
             PdfCaptureConstant,
             0,
@@ -577,7 +577,7 @@ async function captureArtboardPdfPages(
       value7: Dynamic = context?.maxScale ?? PdfCaptureLimit,
       flag3: Dynamic = false,
       { res: value8, uris: value9 }: Dynamic = await callback5(value7),
-      value10: Dynamic = (0, collectCaptureWarnings)(
+      value10: Dynamic = collectCaptureWarnings(
         [],
         value8,
         ExportCaptureWarningsItems_2,
@@ -594,7 +594,7 @@ async function captureArtboardPdfPages(
       value7 = value24;
       flag3 = true;
       ({ res: value8, uris: value9 } = await callback5(value24));
-      value10 = (0, collectCaptureWarnings)(
+      value10 = collectCaptureWarnings(
         value10,
         value8,
         ExportCaptureWarningsItems_2,
@@ -614,11 +614,11 @@ async function captureArtboardPdfPages(
         softError: value8.e,
       };
     }
-    let value11: Dynamic = (0, countMatchingExportWarnings)(
+    let value11: Dynamic = countMatchingExportWarnings(
         value8.w,
         ExportCaptureWarningsItems,
       ),
-      value12: Dynamic = (0, normalizeExportWarnings)(value8.hc),
+      value12: Dynamic = normalizeExportWarnings(value8.hc),
       length: Dynamic = value10.length,
       state: Dynamic = {
         ...(length

@@ -42,13 +42,13 @@ function parseDesignSystemContent(
     unbounded?: boolean;
   },
 ): DesignSystemContent {
-  let parseReport = report ?? (0, createParseReport)();
+  let parseReport = report ?? createParseReport();
   parseReport.dropped.length = 0;
   parseReport.warnings.length = 0;
-  let content = (0, isDesignSystemContentObject)(input) ? input : {};
+  let content = isDesignSystemContentObject(input) ? input : {};
   return {
     v: 2,
-    files: (0, parseFileTable)(content.files, parseReport, options),
+    files: parseFileTable(content.files, parseReport, options),
   };
 }
 function assetRelativeGroupKey(
@@ -90,7 +90,7 @@ function markdownDocumentTitle(markdown: string) {
   ).trim();
 }
 function humanizeDocumentFilename(path: string) {
-  let title = (0, pathBasename)(path)
+  let title = pathBasename(path)
     .replace(/\.[^.]+$/, "")
     .replace(/^\d+[-_]/, "")
     .replace(/[-_]+/g, " ")
@@ -140,14 +140,14 @@ function filePreviewUrl(
   if (content === undefined) {
     return null;
   }
-  let pointer = (0, storagePointerForFile)(path, content);
+  let pointer = storagePointerForFile(path, content);
   if (pointer !== null) {
     if (pointer.store === "file") {
       if (
         heldFileBaseUrl !== undefined &&
-        (0, isHeldFilePointer)(path, content)
+        isHeldFilePointer(path, content)
       ) {
-        return heldFileBaseUrl + (0, encodeRelativeUrlPath)(path);
+        return heldFileBaseUrl + encodeRelativeUrlPath(path);
       } else {
         return null;
       }
@@ -161,18 +161,18 @@ function filePreviewUrl(
     ) {
       return value.url;
     } else {
-      return (0, blobRelativeUrlModelFilePolicy)(pointer.id);
+      return blobRelativeUrlModelFilePolicy(pointer.id);
     }
   }
-  if ((0, isTextFilePath)(path)) {
+  if (isTextFilePath(path)) {
     return (
       "data:" +
-      (0, mimeTypeForPath)(path) +
+      mimeTypeForPath(path) +
       ";charset=utf-8," +
       encodeURIComponent(content)
     );
   }
-  if ((0, parseDataUriHeader)(content) !== null) {
+  if (parseDataUriHeader(content) !== null) {
     return content;
   } else {
     return null;
@@ -190,10 +190,10 @@ function binaryFileBytes(
   if (content === undefined) {
     return 0;
   }
-  if ((0, parseDataUriHeader)(content) !== null) {
-    return (0, estimateDataUriBytes)(content);
+  if (parseDataUriHeader(content) !== null) {
+    return estimateDataUriBytes(content);
   }
-  return (0, storageRecordForFile)(files, catalog, path)?.bytes ?? 0;
+  return storageRecordForFile(files, catalog, path)?.bytes ?? 0;
 }
 function inferFontFamilyFromFilename(name: string) {
   return (
@@ -246,7 +246,7 @@ function parseDesignSystemFiles(
       dropped: [],
       warnings: [],
     },
-    tokens = (0, parseTokens)(
+    tokens = parseTokens(
       files[DESIGN_SYSTEM_PATHS.tokens] ?? "",
       tokensReport,
     ),
@@ -254,34 +254,34 @@ function parseDesignSystemFiles(
       dropped: [],
       warnings: [],
     },
-    manifest = (0, parseManifest)(
+    manifest = parseManifest(
       files[DESIGN_SYSTEM_PATHS.manifest] ?? "",
       metaReport,
     ),
-    bundleMetadata = (0, parseManifestBundleMetadata)(
+    bundleMetadata = parseManifestBundleMetadata(
       manifest,
       metaReport,
     ),
-    assetsMeta = (0, parseAssetGroupMetadata)(manifest, metaReport),
-    lastChange = (0, lastChangeFromManifest)(manifest, metaReport),
-    storage = (0, storageCatalogFromManifest)(manifest, metaReport),
-    sectionTitles = (0, sectionTitlesFromManifest)(manifest),
+    assetsMeta = parseAssetGroupMetadata(manifest, metaReport),
+    lastChange = lastChangeFromManifest(manifest, metaReport),
+    storage = storageCatalogFromManifest(manifest, metaReport),
+    sectionTitles = sectionTitlesFromManifest(manifest),
     bundleJs = files[DESIGN_SYSTEM_PATHS.bundleJs] ?? null,
     bundleHeader =
-      bundleJs !== null ? (0, parseBundleHeader)(bundleJs) : null,
+      bundleJs !== null ? parseBundleHeader(bundleJs) : null,
     namespace = bundleHeader?.namespace ?? bundleMetadata.namespace ?? null,
     hasLibraryFile = (input: string) =>
-      (0, classifyDesignSystemFile)(input) === "componentLib" &&
+      classifyDesignSystemFile(input) === "componentLib" &&
       Object.hasOwn(files, input),
     declaredLibraries = bundleMetadata.libraries ?? [],
     inferredLibraries =
       bundleJs !== null
-        ? (0, inferDeclaredLibraries)(
+        ? inferDeclaredLibraries(
             declaredLibraries,
             hasLibraryFile,
           )
         : declaredLibraries,
-    libraries = (0, resolvePreviewLibraries)(
+    libraries = resolvePreviewLibraries(
       inferredLibraries,
       hasLibraryFile,
     ),
@@ -292,13 +292,13 @@ function parseDesignSystemFiles(
     docsLeftOut: string[] = [],
     otherFiles: string[] = [];
   for (let value of Object.keys(files).sort()) {
-    let value2 = (0, classifyDesignSystemFile)(value);
+    let value2 = classifyDesignSystemFile(value);
     if (value2 === "doc") {
       let value3 = files[value];
       if (
         docs.length < MAX_DISPLAYED_DOCUMENTS &&
         (budgetProvider?.pageBytes?.(value) ??
-          (0, estimateEmbeddedStringBytes)(value3)) <=
+          estimateEmbeddedStringBytes(value3)) <=
           DESIGN_SYSTEM_INLINE_LIMITS.readme
       ) {
         docs.push({
@@ -385,7 +385,7 @@ function parseDesignSystemFiles(
         ? {
             previewHtml: coverPreview,
             height:
-              (0, componentCardMetadata)(coverPreview)?.height ??
+              componentCardMetadata(coverPreview)?.height ??
               DEFAULT_COVER_PREVIEW_HEIGHT,
           }
         : null,
@@ -402,7 +402,7 @@ function parseDesignSystemFiles(
       let entry = componentFiles.get(input),
         value = entry?.preview ?? null,
         value2 =
-          value !== null ? (0, componentCardMetadata)(value) : null,
+          value !== null ? componentCardMetadata(value) : null,
         value3: string | null =
           entry?.readme != null
             ? DESIGN_SYSTEM_PATHS.componentsDir +
@@ -454,7 +454,7 @@ function parseDesignSystemFiles(
       options: string,
     ): Model.ParsedFont => {
       let value = files[options],
-        value2 = (0, pathBasename)(options);
+        value2 = pathBasename(options);
       return {
         path: options,
         fileName: value2,
@@ -467,16 +467,16 @@ function parseDesignSystemFiles(
             : /italic/i.test(value2)
               ? "italic"
               : "normal",
-        format: (0, fileExtension)(options),
+        format: fileExtension(options),
         src:
           value !== undefined &&
-          ((0, parseDataUriHeader)(value) !== null ||
-            (0, storagePointerForFile)(options, value) !== null)
+          (parseDataUriHeader(value) !== null ||
+            storagePointerForFile(options, value) !== null)
             ? (filePreviewUrl(files, options, storage) ?? "")
             : "",
         store:
           value !== undefined
-            ? (0, storageKindForFile)(options, value)
+            ? storageKindForFile(options, value)
             : "inline",
         bytes: binaryFileBytes(files, options, storage),
         referenced: input !== null,
@@ -509,18 +509,18 @@ function parseDesignSystemFiles(
       value5 = value2.join("/"),
       value6 = files[value],
       value7 =
-        (0, isTextFilePath)(value) &&
-        (0, storagePointerForFile)(value, value6) === null,
+        isTextFilePath(value) &&
+        storagePointerForFile(value, value6) === null,
       state: Model.ParsedAsset = {
         path: value,
         name: value3,
         group: value4,
         subpath: value5,
-        ext: (0, fileExtension)(value),
-        mime: (0, mimeTypeForPath)(value),
-        kind: (0, assetKindForPath)(value),
+        ext: fileExtension(value),
+        mime: mimeTypeForPath(value),
+        kind: assetKindForPath(value),
         isText: value7,
-        store: (0, storageKindForFile)(value, value6),
+        store: storageKindForFile(value, value6),
         bytes: value7
           ? value6.length
           : binaryFileBytes(files, value, storage),
@@ -543,7 +543,7 @@ function parseDesignSystemFiles(
           entry.map((input2) => assetRelativeGroupKey(input2)),
         ),
         value = (
-          (0, ownPropertyOrUndefined)(assetsMeta.orders, input) ?? []
+          ownPropertyOrUndefined(assetsMeta.orders, input) ?? []
         ).filter((input2) => values.has(input2)),
         value2 = orderAssetTiles(
           entry.map((source) => ({
@@ -557,7 +557,7 @@ function parseDesignSystemFiles(
         name: input,
         slug: assetGroupSlug(input, usedSlugs),
         tile:
-          (0, ownPropertyOrUndefined)(assetsMeta.tiles, input) ??
+          ownPropertyOrUndefined(assetsMeta.tiles, input) ??
           DEFAULT_ASSET_TILE_SIZE,
         order: value,
         assets: value2,
@@ -584,7 +584,7 @@ function parseDesignSystemFiles(
       libraries: libraries,
       jsBytes:
         bundleJs !== null
-          ? (0, estimateEmbeddedStringBytes)(bundleJs)
+          ? estimateEmbeddedStringBytes(bundleJs)
           : 0,
     },
     components: components,
@@ -599,11 +599,11 @@ function parseDesignSystemFiles(
     assetCount: assetCount,
     otherFiles: otherFiles.sort(),
     storage: storage,
-    blobBytesUsed: (0, uniqueStoredBlobBytes)(storage),
-    bytes: (0, computeFileBudgetUsage)(
+    blobBytesUsed: uniqueStoredBlobBytes(storage),
+    bytes: computeFileBudgetUsage(
       files,
       (input) =>
-        (0, storageRecordForFile)(files, storage, input)?.bytes ?? 0,
+        storageRecordForFile(files, storage, input)?.bytes ?? 0,
       (input) => budgetProvider?.pageBytes?.(input),
     ),
   };
@@ -733,17 +733,17 @@ function componentManifestEntry(component: Model.ParsedComponent) {
 }
 function manifestMirrorFilePaths(files: FileTable) {
   let paths =
-    (0, generatedTokensCssForFiles)(files) !== null
+    generatedTokensCssForFiles(files) !== null
       ? [GENERATED_TOKENS_CSS_PATH]
       : [];
   for (let value of Object.keys(files)) {
     if (
-      (0, isMirrorEligibleFile)(value, files[value]) &&
+      isMirrorEligibleFile(value, files[value]) &&
       value !== DESIGN_SYSTEM_PATHS.readme &&
       value !== DESIGN_SYSTEM_PATHS.manifest &&
       value !== DESIGN_SYSTEM_PATHS.tokens &&
       !value.startsWith(DESIGN_SYSTEM_PATHS.archivedDir) &&
-      (0, explainUnsafeMirrorPath)(value) === null
+      explainUnsafeMirrorPath(value) === null
     ) {
       paths.push(value);
     }
@@ -751,19 +751,19 @@ function manifestMirrorFilePaths(files: FileTable) {
   return paths.sort();
 }
 function buildDesignSystemManifest(system: ParsedDesignSystem, name: string): Core.DesignSystemManifestResult {
-  let lastChange = (0, serializeLastChange)(system.lastChange),
-    storage: Model.StorageCatalog = (0, reconcileStorageCatalog)(
+  let lastChange = serializeLastChange(system.lastChange),
+    storage: Model.StorageCatalog = reconcileStorageCatalog(
       system.files,
       system.storage,
     ),
-    serializedStorage = (0, serializeStorageCatalog)(storage),
-    sections = (0, serializeSectionTitles)(system.sectionTitles);
+    serializedStorage = serializeStorageCatalog(storage),
+    sections = serializeSectionTitles(system.sectionTitles);
   return {
     manifestVersion: DESIGN_SYSTEM_MANIFEST_VERSION,
     name: name,
     namespace: system.bundle.namespace,
     files: manifestMirrorFilePaths(system.files),
-    libraries: (0, serializeResolvedLibraries)(
+    libraries: serializeResolvedLibraries(
       system.bundle.declared,
       system.bundle.libraries,
     ),
@@ -827,7 +827,7 @@ function stringifyManifestWithinBudget(manifest: unknown): string {
     `
 `;
   if (
-    (0, estimateEmbeddedStringBytes)(pretty) <=
+    estimateEmbeddedStringBytes(pretty) <=
     MAX_PRETTY_MANIFEST_BYTES
   ) {
     return pretty;

@@ -48,8 +48,8 @@ export {
 };
 export function installEditorInspectorContextPart2(): () => void {
   return () => {
-    reactInspectorContext_2 = (0, toModuleNamespace)(
-      (0, load_react)(),
+    reactInspectorContext_2 = toModuleNamespace(
+      load_react(),
       1,
     );
     InspectorContextDsColorTokensArtboardColorsDesignColorTokensConfig = {
@@ -62,23 +62,23 @@ export function installEditorInspectorContextPart2(): () => void {
     InspectorContext = (0, reactInspectorContext_2.createContext)(
       InspectorContextDsColorTokensArtboardColorsDesignColorTokensConfig,
     );
-    reactInspectorContext_3 = (0, toModuleNamespace)(
-      (0, load_react)(),
+    reactInspectorContext_3 = toModuleNamespace(
+      load_react(),
       1,
     );
-    (0, initializeCdsIndex)();
-    (0, initializePlatformRootFontSize_4)();
+    initializeCdsIndex();
+    initializePlatformRootFontSize_4();
     InspectorContextIconsValue = iconFontMetadata.icons;
     InspectorContextLimit = 8;
     InspectorContextConstant = 0.9;
-    reactInspectorContext_4 = (0, toModuleNamespace)(
-      (0, load_react)(),
+    reactInspectorContext_4 = toModuleNamespace(
+      load_react(),
       1,
     );
-    (0, initializeCdsIndex)();
-    (0, initializeCdsIndex)();
-    jsxInspectorContext = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    initializeCdsIndex();
+    initializeCdsIndex();
+    jsxInspectorContext = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
   };

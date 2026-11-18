@@ -38,11 +38,11 @@ export {
 };
 export function installCdsTooltipStyles(): () => void {
   return () => {
-    initializeTooltipStyles = (0, initializeOnce)(() => {
+    initializeTooltipStyles = initializeOnce(() => {
       "use client";
 
-      jsxTooltipStyles = (0, toModuleNamespace)(
-        (0, load_react_jsx_runtime)(),
+      jsxTooltipStyles = toModuleNamespace(
+        load_react_jsx_runtime(),
       );
       TooltipStylesClassNames =
         "rounded-[calc(0.375rem*var(--cds-rem-scale,1))] bg-[var(--cds-tooltip-bg)] text-[var(--cds-tooltip-fg)] shadow-sm dark:shadow-panel-sm text-[calc(0.8125rem*var(--cds-rem-scale,1))]/[calc(1.125rem*var(--cds-rem-scale,1))] font-normal";

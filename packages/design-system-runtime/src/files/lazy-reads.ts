@@ -10,11 +10,11 @@ var listingRowIsSvg: (row: Files.FileListingRow | undefined) => boolean;
 function lazyReadLastDocumentPath(listing: Files.FileListingRow[]) {
   let documents = listing
       .flatMap((input: Files.FileListingRow) => {
-        let value = (0, relativeProjectFilePath)(input.path);
+        let value = relativeProjectFilePath(input.path);
         if (
           value !== undefined &&
-          (0, isProjectContentPath)(input.path) &&
-          (0, classifyDesignSystemFile)(value) === "doc"
+          isProjectContentPath(input.path) &&
+          classifyDesignSystemFile(value) === "doc"
         ) {
           return [
             {
@@ -61,13 +61,13 @@ function lazyFileReadMode(
   lazy: LazyReadState,
   path: string,
 ): "read" | "held" | "skipped" {
-  let relative = (0, relativeProjectFilePath)(path);
-  if (relative === undefined || !(0, isProjectContentPath)(path)) {
+  let relative = relativeProjectFilePath(path);
+  if (relative === undefined || !isProjectContentPath(path)) {
     return "read";
   }
   let row = lazy.rows.get(path);
-  if ((0, isTextFilePath)(relative)) {
-    let value = (0, classifyDesignSystemFile)(relative);
+  if (isTextFilePath(relative)) {
+    let value = classifyDesignSystemFile(relative);
     if (
       value === "doc"
         ? (lazy.lastDoc !== undefined && relative > lazy.lastDoc) ||
@@ -82,9 +82,9 @@ function lazyFileReadMode(
     }
   }
   if (
-    (0, assetKindForPath)(relative) === "video" ||
-    !(0, canUseStoragePointer)(relative) ||
-    !(0, isPublishableFilePathModelFileTable)(relative)
+    assetKindForPath(relative) === "video" ||
+    !canUseStoragePointer(relative) ||
+    !isPublishableFilePathModelFileTable(relative)
   ) {
     return "read";
   } else {

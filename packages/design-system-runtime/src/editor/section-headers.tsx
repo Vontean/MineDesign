@@ -26,7 +26,7 @@ function SectionHeader({
           {[<h1
               className={"ds-page-title min-w-0"}
               {...(pageId !== undefined
-                ? (0, commentTargetProps)("page", pageId)
+                ? commentTargetProps("page", pageId)
                 : {})}
             >
               {title}
@@ -142,8 +142,8 @@ export {
 };
 export function installEditorSectionHeaders(): () => void {
   return () => {
-    jsxSectionHeaders = (0, toModuleNamespace)(
-      (0, loadJsxNamespace)(),
+    jsxSectionHeaders = toModuleNamespace(
+      loadJsxNamespace(),
       1,
     );
   };

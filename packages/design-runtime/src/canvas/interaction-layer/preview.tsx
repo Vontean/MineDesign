@@ -30,8 +30,8 @@ export function pickMountedArtboardPreviews(deps: { readonly callback37: Dynamic
               )
               .sort(
                 (input2?: Dynamic, options2?: Dynamic): Dynamic =>
-                  (0, previewMountPriority)(input2, value250) -
-                  (0, previewMountPriority)(options2, value250),
+                  previewMountPriority(input2, value250) -
+                  previewMountPriority(options2, value250),
               )
               .map((input2?: Dynamic): Dynamic => input2.file)
           : [],
@@ -40,10 +40,10 @@ export function pickMountedArtboardPreviews(deps: { readonly callback37: Dynamic
         value254: Dynamic =
           !value251 &&
           value253 &&
-          (0, previewScaleChanged)(deps.value197.current, scale);
+          previewScaleChanged(deps.value197.current, scale);
       deps.value9.current?.clientWidth &&
         !value251 &&
-        ((0, recordVisiblePreviewTimes)(
+        (recordVisiblePreviewTimes(
           deps.value195.current,
           artboards,
           value250,
@@ -61,8 +61,8 @@ export function pickMountedArtboardPreviews(deps: { readonly callback37: Dynamic
             : undefined,
         value257: Dynamic =
           value256 != null &&
-          (0, distanceBetweenRects)(value256, value250) === 0;
-      return (0, chooseMountedPreviews)({
+          distanceBetweenRects(value256, value250) === 0;
+      return chooseMountedPreviews({
         artboards: artboards,
         viewport: value250,
         cap: deps.value187,
@@ -77,7 +77,7 @@ export function pickMountedArtboardPreviews(deps: { readonly callback37: Dynamic
           : undefined,
         required:
           deps.value35 && deps.value55.current == null
-            ? (0, limitMountedPreviewPixels)(
+            ? limitMountedPreviewPixels(
                 [...(deps.value184.current ?? [])],
                 [
                   deps.value19.current ? deps.value182.current : null,

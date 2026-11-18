@@ -400,12 +400,12 @@ export {
 };
 export function installCanvasWorkingLabelAnimation(): () => void {
   return () => {
-    reactCanvasWorkingLabelAnimation = (0, toModuleNamespace)(
-      (0, load_react)(),
+    reactCanvasWorkingLabelAnimation = toModuleNamespace(
+      load_react(),
       1,
     );
-    reactCanvasWorkingLabelAnimation_2 = (0, toModuleNamespace)(
-      (0, load_react)(),
+    reactCanvasWorkingLabelAnimation_2 = toModuleNamespace(
+      load_react(),
       1,
     );
     CanvasWorkingLabelAnimationHandler = (input?: Dynamic): Dynamic =>
@@ -429,8 +429,8 @@ export function installCanvasWorkingLabelAnimation(): () => void {
           Math.max(input2, options.t0 + options.T),
         0,
       );
-    jsxCanvasWorkingLabelAnimation = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    jsxCanvasWorkingLabelAnimation = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
     // MineDesign: user-facing copy calls the agent "the agent", not Claude.

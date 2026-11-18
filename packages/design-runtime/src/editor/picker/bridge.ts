@@ -23,7 +23,7 @@ function isPickerInstalled(input?: Dynamic): Dynamic {
   );
 }
 function installPicker(input?: Dynamic, options?: Dynamic): Dynamic {
-  input.executeJavaScriptUnchecked((0, buildPickerRuntimeScript)());
+  input.executeJavaScriptUnchecked(buildPickerRuntimeScript());
   options && setPickerTheme(input, options);
 }
 function setPickerTheme(input?: Dynamic, options?: Dynamic): Dynamic {

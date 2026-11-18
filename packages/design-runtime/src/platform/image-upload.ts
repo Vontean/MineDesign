@@ -18,16 +18,16 @@ async function getAssetsCapability(): Promise<Dynamic> {
   // MineDesign: the host is globalThis.designHost (packages/design/src/editor/design-host.ts), not globalThis.claude.
   let claude: Dynamic = (globalThis as Dynamic).designHost;
   return typeof claude?.use == "function"
-    ? (0, awaitHostCapability)(
+    ? awaitHostCapability(
         "assets",
-        (0, hasCapabilityMethod)("upload"),
+        hasCapabilityMethod("upload"),
       )
     : typeof claude?.assets?.upload == "function"
       ? claude.assets
       : null;
 }
 function isEmulatorBlobUrl(input?: Dynamic): Dynamic {
-  return input.startsWith("blob:") && (0, isEmulator)();
+  return input.startsWith("blob:") && isEmulator();
 }
 function isBlobAssetUrl(input?: Dynamic): Dynamic {
   return blobAssetPathPattern.test(input) || isEmulatorBlobUrl(input);
@@ -165,7 +165,7 @@ export function installPlatformImageUpload(): () => void {
     maxDownsampledImageBytes = 1.5 * 1024 * 1024;
     maxImageUploadEdge = 2560;
     downsampleUploadImage = (input?: Dynamic): Dynamic =>
-      (0, downsampleImageBlob)(input, {
+      downsampleImageBlob(input, {
         maxEdge: maxImageUploadEdge,
         maxBytes: maxDownsampledImageBytes,
       });

@@ -94,7 +94,7 @@ function artboardSupportsExportScale(
   return (
     scale === 1 ||
     artboard === undefined ||
-    (0, imageCaptureScaleOptions)(artboard.w, artboard.h).some(
+    imageCaptureScaleOptions(artboard.w, artboard.h).some(
       (input?: Dynamic): Dynamic => input.scale === scale && input.fits,
     )
   );
@@ -108,7 +108,7 @@ function initialExportScale(artboards?: Dynamic, file?: Dynamic): Dynamic {
     : 2;
 }
 function artboardNeedsScaledDownExport(artboard?: Dynamic): Dynamic {
-  return !(0, imageCaptureScaleOptions)(artboard.w, artboard.h).some(
+  return !imageCaptureScaleOptions(artboard.w, artboard.h).some(
     (input?: Dynamic): Dynamic => input.fits && input.scale <= 2,
   );
 }
@@ -144,14 +144,14 @@ function describeExportScaleOption(
           get title() { return "Export " + String(artboards.length) + " artboards at " + String(scale) + "\xD7"; },
         };
   }
-  let value2: Dynamic = (0, imageCaptureScaleOptions)(
+  let value2: Dynamic = imageCaptureScaleOptions(
     value.w,
     value.h,
   ).find((input?: Dynamic): Dynamic => input.scale === scale);
   return value2?.fits
     ? {
         offered: true,
-        get title() { return String(value2.outW) + (0, getArtboardCaptureMode)(value, options) === "full"
+        get title() { return String(value2.outW) + getArtboardCaptureMode(value, options) === "full"
             ? " px wide, full length"
             : " \xD7 " + String(value2.outH) + " px"; },
       }
@@ -384,7 +384,7 @@ function useExportPicker(options?: Dynamic): Dynamic {
                     artboards,
                     options2.picked,
                   );
-                (0, announce)(
+                announce(
                   value24.length > 0
                     ? value23 +
                         ". " +
@@ -417,7 +417,7 @@ function useExportPicker(options?: Dynamic): Dynamic {
           )
             return source;
           let artboards: Dynamic = value5.current.artboards;
-          (0, announce)(
+          announce(
             exportPickedArtboardsLabel(
               source.kind,
               pickedExportArtboards(artboards, value20),
@@ -637,7 +637,7 @@ function ExportArtboardPickTarget({
   picker: picker,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic = (0, useViewportStore)(),
+  let value: Dynamic = useViewportStore(),
     session: Dynamic = picker.session;
   if (!session) return null;
   let value2: Dynamic = session.picked.has(artboard.file);
@@ -743,8 +743,8 @@ export function installExportPicker(): () => void {
       input > 0 && input < options
         ? String(input) + " of " + String(options)
         : String(input);
-    jsx_gd = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    jsx_gd = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
     focusExportPickerToolbar = (input?: Dynamic): Dynamic =>

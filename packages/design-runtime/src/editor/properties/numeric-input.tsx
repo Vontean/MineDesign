@@ -89,8 +89,8 @@ function NumericInput({
     callback2: Dynamic = (input?: Dynamic): Dynamic => {
       if (!value7.current) {
         if (callback()) {
-          (0, announce)(
-            (0, invalidNumericValueMessage)(value14, ownUnit),
+          announce(
+            invalidNumericValueMessage(value14, ownUnit),
           );
           return;
         }
@@ -185,7 +185,7 @@ function NumericInput({
     value16: Dynamic = !disabled2 && !mixed && value15 !== undefined,
     [value17, value18]: Dynamic = (0,
     reactPropertiesToolOptions.useState)(null),
-    value19: Dynamic = (0, useNumericScrub)({
+    value19: Dynamic = useNumericScrub({
       value: value15 ?? NaN,
       step: step,
       min: min2,
@@ -264,10 +264,10 @@ function NumericInput({
         value27: Dynamic = Math.min(
           20,
           Math.max(
-            (0, numericInputDecimalPlaces)(value25),
-            (0, numericInputDecimalPlaces)(value12),
+            numericInputDecimalPlaces(value25),
+            numericInputDecimalPlaces(value12),
             options.altKey
-              ? (0, numericInputDecimalPlaces)(value13)
+              ? numericInputDecimalPlaces(value13)
               : 0,
           ),
         ),
@@ -310,7 +310,7 @@ function NumericInput({
       {...state}
       title={title}
       fullWidth={fullWidth}
-      className={(0, joinClassNames)(
+      className={joinClassNames(
         "group/field min-w-12",
         !mixed &&
           value5 === undefined &&
@@ -327,7 +327,7 @@ function NumericInput({
             onPointerDown={
               value16 ? captureNumericPointer : undefined
             }
-            className={(0, joinClassNames)(
+            className={joinClassNames(
               PropertiesNumericScrubberClassNames,
               "inline-flex items-center text-caption-medium",
               value16 && "cursor-ew-resize",
@@ -348,7 +348,7 @@ function NumericInput({
                     ? captureNumericPointer
                     : undefined
                 }
-                className={(0, joinClassNames)(
+                className={joinClassNames(
                   PropertiesNumericScrubberResolvedValue,
                   value16 && unitScrubs && "cursor-ew-resize",
                 )}
@@ -409,14 +409,14 @@ export {
 };
 export function installEditorPropertiesNumericInput(): () => void {
   return () => {
-    reactPropertiesNumericInput = (0, toModuleNamespace)(
-      (0, load_react)(),
+    reactPropertiesNumericInput = toModuleNamespace(
+      load_react(),
       1,
     );
-    (0, initializeCdsIndex)();
-    (0, initializeCdsIndex)();
-    jsxPropertiesNumericInput = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    initializeCdsIndex();
+    initializeCdsIndex();
+    jsxPropertiesNumericInput = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
     PropertiesNumericInputLimit = 12;

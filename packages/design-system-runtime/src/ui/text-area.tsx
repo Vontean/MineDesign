@@ -77,7 +77,7 @@ function useTextAreaAutosize({
     value3 = value !== undefined,
     ref = reactHu.useRef<HTMLTextAreaElement>(null),
     ref2 = reactHu.useRef("");
-  (0, useIsomorphicLayoutEffect)(() => {
+  useIsomorphicLayoutEffect(() => {
     let current = ref.current,
       value4 = current?.ownerDocument.defaultView;
     if (!value2 || !current || !value4) {
@@ -117,7 +117,7 @@ function useTextAreaAutosize({
       }
     };
   }, [value2, value3]);
-  (0, useIsomorphicLayoutEffect)(() => {
+  useIsomorphicLayoutEffect(() => {
     if (value2 && ref.current) {
       resizeTextAreaToContent(ref.current, ref2);
     }
@@ -136,23 +136,23 @@ export {
 };
 export function installUiTextArea(): () => void {
   return () => {
-    (0, initializeClassNames)();
-    (0, initializeCdsRoot)();
-    (0, initializeMergedRefs)();
-    (0, initializeIsomorphicLayoutEffect)();
-    reactHu = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    initializeClassNames();
+    initializeCdsRoot();
+    initializeMergedRefs();
+    initializeIsomorphicLayoutEffect();
+    reactHu = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
     supportsNativeFieldSizing =
       typeof CSS === "undefined" ||
       typeof CSS.supports !== "function" ||
       CSS.supports("field-sizing", "content");
-    reactForUiTextArea = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    reactForUiTextArea = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
-    jsxFu = (0, toModuleNamespace)((0, loadJsxNamespace)(), 1);
+    jsxFu = toModuleNamespace(loadJsxNamespace(), 1);
     TextArea = reactForUiTextArea.forwardRef(
       (
         {
@@ -172,7 +172,7 @@ export function installUiTextArea(): () => void {
         }: C.TextAreaProps,
         options: React.ForwardedRef<HTMLTextAreaElement>,
       ) => {
-        let value: boolean = (0, useFieldInvalid)(),
+        let value: boolean = useFieldInvalid(),
           value2 = rows ?? 3,
           value3 = autosize && rows !== undefined,
           value4 = resize === "y" ? "resize-y" : "resize-none",
@@ -182,7 +182,7 @@ export function installUiTextArea(): () => void {
             value: props.value,
             defaultValue: props.defaultValue,
           }),
-          value7: React.Ref<HTMLTextAreaElement> = (0, useMergedRefs)(
+          value7: React.Ref<HTMLTextAreaElement> = useMergedRefs(
             options,
             value6,
           ),
@@ -209,11 +209,11 @@ export function installUiTextArea(): () => void {
                 data-cds={"TextArea"}
                 rows={value2}
                 style={value9}
-                {...(0, getControlSizeAttributes)(size)}
+                {...getControlSizeAttributes(size)}
                 data-invalid={value || undefined}
                 aria-invalid={value || ariaInvalid}
                 {...props}
-                className={(0, cn)(
+                className={cn(
                   "cds-reset",
                   value10,
                   bare
@@ -231,7 +231,7 @@ export function installUiTextArea(): () => void {
       },
     );
     TextArea.displayName = "TextArea";
-    (0, initializeClassNames)();
-    (0, initializeTranslations)();
+    initializeClassNames();
+    initializeTranslations();
   };
 }

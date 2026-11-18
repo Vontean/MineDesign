@@ -30,24 +30,24 @@ export {
 };
 export function installEditorHooksLatestCallback(): () => void {
   return () => {
-    reactHooksLatestCallback = (0, toModuleNamespace)(
-      (0, load_react)(),
+    reactHooksLatestCallback = toModuleNamespace(
+      load_react(),
       1,
     );
-    reactHooksLatestCallback_2 = (0, toModuleNamespace)(
-      (0, load_react)(),
+    reactHooksLatestCallback_2 = toModuleNamespace(
+      load_react(),
       1,
     );
-    reactHooksLatestCallback_3 = (0, toModuleNamespace)(
-      (0, load_react)(),
+    reactHooksLatestCallback_3 = toModuleNamespace(
+      load_react(),
       1,
     );
-    reactHooksLatestCallback_4 = (0, toModuleNamespace)(
-      (0, load_react)(),
+    reactHooksLatestCallback_4 = toModuleNamespace(
+      load_react(),
       1,
     );
-    jsxHooksLatestCallback = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    jsxHooksLatestCallback = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
   };

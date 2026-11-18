@@ -33,13 +33,13 @@ function ToolbarPublishControls({
       : value2
         ? uiMessage("inspector.publishControls.publishYourChangesEveryOpen")
         : uiMessage("inspector.publishControls.everythingIsPublished"),
-    value7: Dynamic = (0, useDisabledToolbarItem)({
+    value7: Dynamic = useDisabledToolbarItem({
       disabled: value3,
       name: value5,
       reason: value6,
     }),
     value8: Dynamic = (0, reactCanvasMeasurements.useRef)(null);
-  (0, useToolbarPress)(value8, value3);
+  useToolbarPress(value8, value3);
   return (
     <jsxToolbarLayout.Fragment>
       {!value && onToggleEdit ? (<ToolbarPrimitivesComponent

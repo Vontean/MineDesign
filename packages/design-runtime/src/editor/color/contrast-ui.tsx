@@ -17,7 +17,7 @@ var jsxColorContrastUi: Dynamic;
 var withoutAlpha: Dynamic;
 var contrastVerdictClassName: Dynamic;
 function summarizeContrastResults(input?: Dynamic): Dynamic {
-  let value: Dynamic = (0, worstContrastResult)(input),
+  let value: Dynamic = worstContrastResult(input),
     value2: Dynamic = input.filter(
       (input2?: Dynamic): Dynamic => input2 !== value,
     ),
@@ -29,17 +29,17 @@ function summarizeContrastResults(input?: Dynamic): Dynamic {
       ),
     ],
     state: Dynamic = {
-      ratio: (0, formatSpokenContrastRatio)(value.ratio),
+      ratio: formatSpokenContrastRatio(value.ratio),
       ground: value.ground.label,
       passes: value.passes,
-      min: (0, formatSpokenContrastRatio)(value.min),
+      min: formatSpokenContrastRatio(value.min),
       alsoPassing: value2.filter((input2?: Dynamic): Dynamic => input2.passes)
         .length,
     },
     value3: Dynamic = value2.filter(
       (input2?: Dynamic): Dynamic => !input2.passes,
     ),
-    value4: Dynamic = (0, summarizedContrastSentence)({
+    value4: Dynamic = summarizedContrastSentence({
       ...state,
       alsoFailing: value3.length,
     }),
@@ -48,7 +48,7 @@ function summarizeContrastResults(input?: Dynamic): Dynamic {
     let value6: Dynamic = state.ground
       .slice(0, Math.max(1, state.ground.length - value5 - 1))
       .replace(/[\uD800-\uDBFF]$/, "");
-    value4 = (0, summarizedContrastSentence)({
+    value4 = summarizedContrastSentence({
       ...state,
       ground: value6 + "\u2026",
       alsoFailing: value3.length,
@@ -59,14 +59,14 @@ function summarizeContrastResults(input?: Dynamic): Dynamic {
     title: items
       .map(
         (input2?: Dynamic): Dynamic =>
-          (0, formatContrastRatio)(input2.ratio) +
+          formatContrastRatio(input2.ratio) +
           " " +
           OnValue +
           " " +
           input2.ground.label,
       )
       .join(" \xB7 "),
-    sentence: (0, detailedContrastSentence)({
+    sentence: detailedContrastSentence({
       ...state,
       alsoFailing: value3.map(
         (input2?: Dynamic): Dynamic => input2.ground.label,
@@ -105,7 +105,7 @@ function ContrastMark({
       data-verdict={worst.passes ? "pass" : "fail"}
       title={value.title}
       aria-hidden={sentence ? undefined : true}
-      className={(0, joinClassNames)(
+      className={joinClassNames(
         "inline-flex shrink-0 items-center gap-0.5 text-caption",
         contrastVerdictClassName(worst.passes),
         className,
@@ -114,7 +114,7 @@ function ContrastMark({
       <span aria-hidden={"true"} className={"flex items-center gap-0.5"}>
         <Icon name={worst.passes ? "Check" : "Warning"} size={"xs"} />
         <span className={"tabular-nums"}>
-          {(0, formatContrastRatio)(worst.ratio)}
+          {formatContrastRatio(worst.ratio)}
         </span>
       </span>
       {sentence ? (<span className={"sr-only"}>{value.sentence}</span>) : (null)}
@@ -135,7 +135,7 @@ function ContrastLockup({
       data-verdict={worst.passes ? "pass" : "fail"}
       aria-hidden={"true"}
       title={value.title}
-      className={(0, joinClassNames)(
+      className={joinClassNames(
         "inline-flex min-w-0 items-center gap-1.5 text-caption leading-4",
         className,
       )}
@@ -147,10 +147,10 @@ function ContrastLockup({
         }
         style={{
           backgroundColor: rgbaCssValue(
-            withoutAlpha((0, parseRgbaColor)(worst.ground.css)),
+            withoutAlpha(parseRgbaColor(worst.ground.css)),
           ),
           color: rgbaCssValue(
-            typeof fg2 == "string" ? (0, parseRgbaColor)(fg2) : fg2,
+            typeof fg2 == "string" ? parseRgbaColor(fg2) : fg2,
           ),
         }}
       >
@@ -241,7 +241,7 @@ function ReadableShadeButton({
       data-kit={"contrast-fix"}
       data-shade={fix.css}
       aria-hidden={held ? true : undefined}
-      className={(0, joinClassNames)(
+      className={joinClassNames(
         "inline-flex min-w-0 items-center",
         held && "invisible",
       )}
@@ -249,7 +249,7 @@ function ReadableShadeButton({
       <Button
         variant={"secondary"}
         title={
-          ((((((fix.css) + (" \xB7 ")) + ((0, formatContrastRatio)(fix.ratio))) + (" ")) + (OnValue)) + (" ")) + (fix.ground)
+          ((((((fix.css) + (" \xB7 ")) + (formatContrastRatio(fix.ratio))) + (" ")) + (OnValue)) + (" ")) + (fix.ground)
         }
         aria-describedby={value}
         disabled={held}
@@ -266,9 +266,9 @@ function ReadableShadeButton({
         {ColorContrastCopyLabel_11}
       </Button>
       <span id={value} className={"sr-only"}>
-        {(0, readableShadeDescription)({
+        {readableShadeDescription({
           hex: fix.css,
-          ratio: (0, formatSpokenContrastRatio)(fix.ratio),
+          ratio: formatSpokenContrastRatio(fix.ratio),
           ground: fix.ground,
         })}
       </span>
@@ -288,8 +288,8 @@ export {
 };
 export function installEditorColorContrastUi(): () => void {
   return () => {
-    jsxColorContrastUi = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    jsxColorContrastUi = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
     withoutAlpha = (input?: Dynamic): Dynamic =>

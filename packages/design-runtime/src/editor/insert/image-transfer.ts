@@ -14,13 +14,13 @@ function receiveFileDrops(
   options?: Dynamic,
   context?: Dynamic,
 ): Dynamic {
-  (0, markDropPerformance)("received");
+  markDropPerformance("received");
   let value: Dynamic =
       context == null
         ? []
         : input.map(
             (input2?: Dynamic, options2?: Dynamic): Dynamic =>
-              (0, createDropGhost)({
+              createDropGhost({
                 file: options,
                 page: null,
                 x: Math.round(context.x - 160) + options2 * 24,
@@ -31,18 +31,18 @@ function receiveFileDrops(
           ),
     flag: Dynamic = false,
     value2: Dynamic =
-      value.length > 0 ? (0, afterNextPaint)() : Promise.resolve();
+      value.length > 0 ? afterNextPaint() : Promise.resolve();
   return {
     marks: input.map(
       (input2?: Dynamic, options2?: Dynamic): Dynamic =>
-        (0, createElementEditId)(options2),
+        createElementEditId(options2),
     ),
     sized: input.map(
       (input2?: Dynamic): Dynamic =>
-        (0, isSvgFile)(input2)
+        isSvgFile(input2)
           ? Promise.resolve(false)
           : value2.then(
-              (): Dynamic => (0, canDecodeRasterImage)(input2),
+              (): Dynamic => canDecodeRasterImage(input2),
             ),
     ),
     place: (input2?: Dynamic, options2?: Dynamic): Dynamic =>

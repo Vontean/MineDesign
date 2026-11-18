@@ -155,7 +155,7 @@ function TextSessionStrip(input?: Dynamic): Dynamic {
       <SessionStripButton
         data-testid={value + "-" + input2.toLowerCase()}
         title={
-          (context.disabledReason) ?? ((context.title ?? ({ Bold: uiMessage("inspector.text.bold"), Italic: uiMessage("inspector.text.italic"), Underline: uiMessage("inspector.text.underline"), Link: uiMessage("inspector.text.link") }[input2])) + (value8 !== undefined && input.shortcuts !== false ? (((" (") + ((0, keyboardShortcutLabel)(value8))) + (")")) : ("")))
+          (context.disabledReason) ?? ((context.title ?? ({ Bold: uiMessage("inspector.text.bold"), Italic: uiMessage("inspector.text.italic"), Underline: uiMessage("inspector.text.underline"), Link: uiMessage("inspector.text.link") }[input2])) + (value8 !== undefined && input.shortcuts !== false ? (((" (") + (keyboardShortcutLabel(value8))) + (")")) : ("")))
         }
         aria-label={({ Bold: uiMessage("inspector.text.bold"), Italic: uiMessage("inspector.text.italic"), Underline: uiMessage("inspector.text.underline"), Link: uiMessage("inspector.text.link") }[input2])}
         aria-pressed={
@@ -301,8 +301,8 @@ export {
 };
 export function installEditorSessionStripText(): () => void {
   return () => {
-    jsxSessionStripText = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    jsxSessionStripText = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
     SessionStripTextNoneBulletNumberConfig = {

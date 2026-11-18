@@ -211,7 +211,7 @@ function accessibleNameFromElement(
   if (
     element === null ||
     element === undefined ||
-    (!fromTextEntry && (0, isEditableElement)(element))
+    (!fromTextEntry && isEditableElement(element))
   ) {
     return {};
   }
@@ -278,7 +278,7 @@ function useMirroredAccessibleName(
       [value3, getFallback, options, fromTextEntry],
     );
   return {
-    ref: (0, useMergedRefs)(ref, callback),
+    ref: useMergedRefs(ref, callback),
     nameProps: value3 ? nameProps : value,
   };
 }
@@ -327,22 +327,22 @@ export {
 };
 export function installUiComboboxPrimitives(): () => void {
   return () => {
-    (0, initializeIsomorphicLayoutEffect)();
-    (0, initializeClassNames)();
-    (0, initializeTranslations)();
-    (0, initializeCdsRoot)();
-    (0, initializeLayers)();
-    (0, initializeClickToFocus)();
-    (0, initializeCloseOnActivityHide)();
-    (0, initializeMergedRefs)();
-    (0, initializePortalRoot)();
-    (0, initializeRemScale)();
-    (0, initializeIcons)();
-    (0, initializeSurfaces)();
-    (0, initializeSheetStyles)();
-    (0, initializePresentationMode)();
-    (0, initializeAdaptiveSheets)();
-    (0, initializeSheetClassNames)();
+    initializeIsomorphicLayoutEffect();
+    initializeClassNames();
+    initializeTranslations();
+    initializeCdsRoot();
+    initializeLayers();
+    initializeClickToFocus();
+    initializeCloseOnActivityHide();
+    initializeMergedRefs();
+    initializePortalRoot();
+    initializeRemScale();
+    initializeIcons();
+    initializeSurfaces();
+    initializeSheetStyles();
+    initializePresentationMode();
+    initializeAdaptiveSheets();
+    initializeSheetClassNames();
     typographyThemeValues = {
       "font-size-body": {
         compact: 0.8125,
@@ -456,19 +456,19 @@ export function installUiComboboxPrimitives(): () => void {
         comfortable: 1.75,
       },
     };
-    (0, initializeMergedRefs)();
-    (0, initializeVisualKeyboard)();
-    reactForUiInputs222 = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    initializeMergedRefs();
+    initializeVisualKeyboard();
+    reactForUiInputs222 = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
-    (0, initializeTranslations)();
-    reactComboboxStatus = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    initializeTranslations();
+    reactComboboxStatus = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
-    jsxComboboxStatus = (0, toModuleNamespace)(
-      (0, loadJsxNamespace)(),
+    jsxComboboxStatus = toModuleNamespace(
+      loadJsxNamespace(),
       1,
     );
     COMBOBOX_STATUS_DELAY_MS = 500;
@@ -484,7 +484,7 @@ export function installUiComboboxPrimitives(): () => void {
         }: ComboboxStatusProps,
         options: React.ForwardedRef<HTMLDivElement>,
       ): React.ReactElement => {
-        let value = (0, useTranslation)(
+        let value = useTranslation(
           "loadingOptions",
           uiMessage("design-system.comboboxPrimitives.loadingOptions"),
         );
@@ -500,13 +500,13 @@ export function installUiComboboxPrimitives(): () => void {
       },
     );
     ComboboxStatus.displayName = "Combobox.Status";
-    (0, initializeIsomorphicLayoutEffect)();
-    reactForUiInputs24 = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    initializeIsomorphicLayoutEffect();
+    reactForUiInputs24 = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
-    jsxForUiInputs23 = (0, toModuleNamespace)(
-      (0, loadJsxNamespace)(),
+    jsxForUiInputs23 = toModuleNamespace(
+      loadJsxNamespace(),
       1,
     );
     COMBOBOX_VIRTUAL_OVERSCAN = 5;

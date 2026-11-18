@@ -65,7 +65,7 @@ function captureFindBarKey(event: KeyboardEvent): void {
     flag === false &&
     (target.tagName === "INPUT" ||
       (matchesLatinShortcut(event, "s") &&
-        isPrimaryShortcutModifier(event, (0, isApplePlatform)())))
+        isPrimaryShortcutModifier(event, isApplePlatform())))
   ) {
     return;
   }
@@ -128,7 +128,7 @@ function isPrimaryShortcutModifier(
 }
 function isFindShortcut(
   event: KeyboardEvent,
-  mac: boolean = (0, isApplePlatform)(),
+  mac: boolean = isApplePlatform(),
 ) {
   return (
     isPrimaryShortcutModifier(event, mac) &&
@@ -144,7 +144,7 @@ function tokenSearchEntries(
     section: section,
     label: input.name,
     words: searchEntryWords(input.value, input.usage),
-    target: (0, commentTargetId)("token", input.name),
+    target: commentTargetId("token", input.name),
   }));
 }
 function buildSectionSearchIndex(
@@ -157,7 +157,7 @@ function buildSectionSearchIndex(
       section: "readme",
       label: input.title,
       words: searchEntryWords(input.path),
-      target: (0, commentTargetId)("doc", input.path),
+      target: commentTargetId("doc", input.path),
     })),
     colors: snapshot.colorGroups.flatMap((input) =>
       input.tokens.map((input2) => ({
@@ -168,7 +168,7 @@ function buildSectionSearchIndex(
           ...Object.values(input2.alias ?? {}).map((input3) => input3.css),
           input2.usage,
         ),
-        target: (0, commentTargetId)("token", input2.name),
+        target: commentTargetId("token", input2.name),
       })),
     ),
     type: snapshot.typeGroups.flatMap((input) => [
@@ -179,7 +179,7 @@ function buildSectionSearchIndex(
           snapshot.familyNames[input.family],
           input.note,
         ),
-        target: (0, commentTargetId)("tset", input.name),
+        target: commentTargetId("tset", input.name),
       },
       ...input.styles.map((input2) => ({
         section: "type",
@@ -190,7 +190,7 @@ function buildSectionSearchIndex(
           snapshot.familyNames[input2.familyKey ?? input.family],
           input2.usage,
         ),
-        target: (0, commentTargetId)("style", input2.name),
+        target: commentTargetId("style", input2.name),
       })),
     ]),
     spacing: tokenSearchEntries("spacing", snapshot.spacing),
@@ -199,36 +199,36 @@ function buildSectionSearchIndex(
       section: "shadows",
       label: input.name,
       words: searchEntryWords(input.usage, ...Object.values(input.value)),
-      target: (0, commentTargetId)("token", input.name),
+      target: commentTargetId("token", input.name),
     })),
     components: snapshot.components.map((input) => ({
       section: "components",
       label: input.name,
       words: [],
-      target: (0, commentTargetId)("comp", input.name),
+      target: commentTargetId("comp", input.name),
     })),
     assets: snapshot.assetGroups.flatMap((input) => [
       {
         section: "assets",
         label:
           sectionTitles["assets:" + input.name] ??
-          (0, assetGroupDisplayName)(input.name),
+          assetGroupDisplayName(input.name),
         words: searchEntryWords(input.folder),
-        target: (0, commentTargetId)("agroup", input.name),
+        target: commentTargetId("agroup", input.name),
       },
       ...input.assets.map((input2) => ({
         section: "assets",
         label: input2.name,
         words: searchEntryWords(input2.path),
-        target: (0, commentTargetId)("asset", input2.path),
+        target: commentTargetId("asset", input2.path),
         asset: input2.path,
       })),
     ]),
   };
   for (let value of snapshot.extras) {
-    entriesBySection[(0, extraTokenFamilySectionId)(value.key)] =
+    entriesBySection[extraTokenFamilySectionId(value.key)] =
       tokenSearchEntries(
-        (0, extraTokenFamilySectionId)(value.key),
+        extraTokenFamilySectionId(value.key),
         value.scale,
       );
   }
@@ -255,7 +255,7 @@ function rankSectionSearchResults(
   for (let value of terms.length === 0 ? [] : index) {
     if (
       !terms.every((input) =>
-        (0, optionMatchesQuery)(input, value.label, ...value.words),
+        optionMatchesQuery(input, value.label, ...value.words),
       )
     ) {
       continue;
@@ -269,7 +269,7 @@ function rankSectionSearchResults(
           : value2.startsWith(phrase)
             ? 1
             : terms.every((input) =>
-                  (0, optionMatchesQuery)(input, value.label),
+                  optionMatchesQuery(input, value.label),
                 )
               ? 2
               : 3,
@@ -330,7 +330,7 @@ function rankSectionSearchResults(
               ? undefined
               : input2.entry.words.find((input3) =>
                   terms.some((input4) =>
-                    (0, optionMatchesQuery)(input4, input3),
+                    optionMatchesQuery(input4, input3),
                   ),
                 ),
         };
@@ -454,8 +454,8 @@ export {
 };
 export function installFilesUiNavigationSearch(): () => void {
   return () => {
-    reactSectionNavigation = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    reactSectionNavigation = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
     FIND_BAR_ATTRIBUTE = "data-mc-find";

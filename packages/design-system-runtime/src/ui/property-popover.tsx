@@ -251,7 +251,7 @@ function PropertyPopup({
     }
     value6(
       value4 && planHeight !== undefined
-        ? (0, choosePopoverSide)(
+        ? choosePopoverSide(
             positionAnchor?.() ?? ref2.current?.parentElement,
             planHeight,
             value3 as "top" | "bottom",
@@ -291,7 +291,7 @@ function PropertyPopup({
         ) {
           return;
         }
-        if ((0, anyMenuOrPopoverOpen)()) {
+        if (anyMenuOrPopoverOpen()) {
           return;
         }
         if (
@@ -320,7 +320,7 @@ function PropertyPopup({
         if (event.defaultPrevented || !callback()) {
           return;
         }
-        if ((0, anyMenuOrPopoverOpen)()) {
+        if (anyMenuOrPopoverOpen()) {
           return;
         }
         if (event.key === "Escape") {
@@ -337,7 +337,7 @@ function PropertyPopup({
         ) {
           return;
         }
-        if ((0, anyMenuOrPopoverOpen)()) {
+        if (anyMenuOrPopoverOpen()) {
           return;
         }
         let target = event.target as HTMLElement | null;
@@ -488,7 +488,7 @@ function PropertyPopup({
             >
               <div
                 {...popupAttrs}
-                className={(0, joinClassNames)(
+                className={joinClassNames(
                   "min-w-48",
                   padding === "none" ? undefined : "p-1",
                   className,
@@ -544,24 +544,24 @@ export {
 };
 export function installUiPropertyPopover(): () => void {
   return () => {
-    reactForUiPropertyPopover2 = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    reactForUiPropertyPopover2 = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
-    reactForUiPropertyPopover = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    reactForUiPropertyPopover = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
-    reactDOMForUiPropertyPopover = (0, toModuleNamespace)(
-      (0, loadReactDomNamespace)(),
+    reactDOMForUiPropertyPopover = toModuleNamespace(
+      loadReactDomNamespace(),
       1,
     );
-    jsxForUiPropertyPopover = (0, toModuleNamespace)(
-      (0, loadJsxNamespace)(),
+    jsxForUiPropertyPopover = toModuleNamespace(
+      loadJsxNamespace(),
       1,
     );
-    CanvasEditorJsx = (0, toModuleNamespace)(
-      (0, loadJsxNamespace)(),
+    CanvasEditorJsx = toModuleNamespace(
+      loadJsxNamespace(),
       1,
     );
     EMPTY_EDITOR_TOOL_OPTIONS = [];

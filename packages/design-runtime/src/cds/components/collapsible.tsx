@@ -44,20 +44,20 @@ export {
 };
 export function installCdsComponentsCollapsible(): () => void {
   return () => {
-    initializeComponentsCollapsible = (0, initializeOnce)(() => {
+    initializeComponentsCollapsible = initializeOnce(() => {
       "use client";
 
-      (0, initializeClassNames)();
-      (0, initializeDomSelectionPrevention)();
-      (0, initializeComponentsIcon_2)();
-      reactComponentsCollapsible = (0, toModuleNamespace)(
-        (0, load_react)(),
+      initializeClassNames();
+      initializeDomSelectionPrevention();
+      initializeComponentsIcon_2();
+      reactComponentsCollapsible = toModuleNamespace(
+        load_react(),
       );
-      (0, initializeNpm_clsx_xh)();
-      jsxComponentsCollapsible = (0, toModuleNamespace)(
-        (0, load_react_jsx_runtime)(),
+      initializeNpm_clsx_xh();
+      jsxComponentsCollapsible = toModuleNamespace(
+        load_react_jsx_runtime(),
       );
-      (0, initializeNpm__base_ui_react_iqe)();
+      initializeNpm__base_ui_react_iqe();
       CollapsibleRoot = (0, reactComponentsCollapsible.forwardRef)<
         HTMLDivElement,
         CollapsibleRootProps
@@ -93,12 +93,12 @@ export function installCdsComponentsCollapsible(): () => void {
           }: CollapsibleTriggerProps,
           options: React.ForwardedRef<HTMLButtonElement>,
         ): React.ReactElement => {
-          let value = (0, withSelectionPrevention)(props.onMouseDown),
+          let value = withSelectionPrevention(props.onMouseDown),
             value2 = hideCaret ? null : (
               <Icon
                 name={"CaretRight"}
                 size={"sm"}
-                className={(0, npm_clsx_Ea)(
+                className={npm_clsx_Ea(
                   ComponentsCollapsibleLabel,
                   caretPosition === "end" && "ms-auto",
                 )}
@@ -116,7 +116,7 @@ export function installCdsComponentsCollapsible(): () => void {
             <npm_Collapsible_a1.Trigger
               ref={options}
               {...props}
-              className={(0, cn)(collapsibleTriggerClasses, className)}
+              className={cn(collapsibleTriggerClasses, className)}
               onMouseDown={value}
             >
               {caretPosition !== "end" && (value2)}
@@ -140,7 +140,7 @@ export function installCdsComponentsCollapsible(): () => void {
           <npm_Collapsible_a1.Panel
             ref={options}
             {...props}
-            className={(0, cn)(collapsiblePanelClasses, className)}
+            className={cn(collapsiblePanelClasses, className)}
           />
         ),
       );

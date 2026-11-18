@@ -35,7 +35,7 @@ function describeIndexConflictPath(
       uiMessage("design-system.indexConflicts.theCardTitle") +
       (typeof index.sections?.[parts[1] ?? ""] === "string"
         ? index.sections[parts[1]]
-        : (0, decodeFileIndexKey)(parts[1] ?? "")) +
+        : decodeFileIndexKey(parts[1] ?? "")) +
       "”"
     );
   }
@@ -43,22 +43,22 @@ function describeIndexConflictPath(
     return (
       uiMessage("design-system.indexConflicts.theOrderOf") +
       (index.assetGroups?.[parts[1] ?? ""]?.name ??
-        (0, decodeFileIndexKey)(parts[1] ?? ""))
+        decodeFileIndexKey(parts[1] ?? ""))
     );
   }
   if (parts[0] === "assetGroups" && parts[2] === "tile") {
     return (
       uiMessage("design-system.indexConflicts.theTileSizeOf") +
       (index.assetGroups?.[parts[1] ?? ""]?.name ??
-        (0, decodeFileIndexKey)(parts[1] ?? ""))
+        decodeFileIndexKey(parts[1] ?? ""))
     );
   }
   if (parts[0] === "assetGroups" && parts[2] === "files") {
     return (
-      (0, decodeFileIndexKey)(parts[3] ?? "") +
+      decodeFileIndexKey(parts[3] ?? "") +
       " in " +
       (index.assetGroups?.[parts[1] ?? ""]?.name ??
-        (0, decodeFileIndexKey)(parts[1] ?? ""))
+        decodeFileIndexKey(parts[1] ?? ""))
     );
   }
   if (parts[0] === "groups") {
@@ -99,7 +99,7 @@ function invalidAssetGroupOrders(
           !values2.has(input) &&
           (values2.add(input), true),
       );
-    if (!(0, mergeValuesEqual)(value4, value3)) {
+    if (!mergeValuesEqual(value4, value3)) {
       fixedOrders[value] = value4;
     }
   }
@@ -118,7 +118,7 @@ function indexAuthoredFieldsEqual(
           !isGeneratedIndexField(input2),
       ),
     );
-  return (0, mergeValuesEqual)(
+  return mergeValuesEqual(
     authoredFields(left),
     authoredFields(right),
   );
@@ -131,8 +131,8 @@ function authoredIndexMergeConflicts(merge: IndexMergeNotice) {
     ),
   );
   if (
-    !(0, mergeValuesEqual)(merge.mine.groups, merge.base.groups) &&
-    !(0, isOrderSubsequence)(merge.mine.groups, merge.merged.groups)
+    !mergeValuesEqual(merge.mine.groups, merge.base.groups) &&
+    !isOrderSubsequence(merge.mine.groups, merge.merged.groups)
   ) {
     conflicts.add("groups");
   }
@@ -142,8 +142,8 @@ function authoredIndexMergeConflicts(merge: IndexMergeNotice) {
     if (
       value3 !== undefined &&
       value4 !== undefined &&
-      !(0, mergeValuesEqual)(value2.order, value3) &&
-      !(0, isOrderSubsequence)(value2.order, value4)
+      !mergeValuesEqual(value2.order, value3) &&
+      !isOrderSubsequence(value2.order, value4)
     ) {
       conflicts.add("assetGroups/" + value + "/order");
     }

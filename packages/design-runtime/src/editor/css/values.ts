@@ -11,11 +11,11 @@ function setStyleProperty(
   options?: Dynamic,
   context?: Dynamic,
 ): Dynamic {
-  if ((0, isUnsafeCssProperty)(options)) return input ?? "";
-  let value: Dynamic = (0, parseStyleDeclarations)(input),
-    value2: Dynamic = (0, normalizeCssProperty)(options);
+  if (isUnsafeCssProperty(options)) return input ?? "";
+  let value: Dynamic = parseStyleDeclarations(input),
+    value2: Dynamic = normalizeCssProperty(options);
   if (context == null || context === "")
-    return (0, serializeStyleDeclarations)(
+    return serializeStyleDeclarations(
       value.filter((input2?: Dynamic): Dynamic => input2.prop !== value2),
     );
   let flag: Dynamic = false,
@@ -34,7 +34,7 @@ function setStyleProperty(
       prop: value2,
       value: context,
     });
-  return (0, serializeStyleDeclarations)(items);
+  return serializeStyleDeclarations(items);
 }
 function classifyStyleValue(input?: Dynamic): Dynamic {
   let value: Dynamic = (input ?? "").trim();

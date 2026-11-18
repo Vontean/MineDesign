@@ -33,8 +33,8 @@ function EditorMenuItem({
       aria-pressed={checked}
       onMouseDown={ChromeMenuItemPreventDefault}
       onClick={onClick}
-      className={(0, joinClassNames)(
-        (0, menuItemVariants)({
+      className={joinClassNames(
+        menuItemVariants({
           variant: danger ? "danger" : "default",
         }),
         "cursor-default text-left disabled:cursor-not-allowed disabled:opacity-50",
@@ -53,7 +53,7 @@ function EditorMenuItem({
         </span>)}
       {checked !== undefined || hint ? (<span className={"ml-md flex shrink-0 items-center gap-xs"}>
           {hint ? (<span
-              className={(0, joinClassNames)(
+              className={joinClassNames(
                 "max-w-[160px] shrink-0 truncate py-[0.125em] -my-[0.125em] text-footnote tabular-nums text-muted",
                 danger &&
                   !disabled2 &&

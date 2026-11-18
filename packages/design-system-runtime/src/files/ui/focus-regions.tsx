@@ -17,7 +17,7 @@ var FOCUS_REGION_FOCUSABLE_SELECTOR: string;
 var FOCUS_REGION_HINT_INTERVAL_MS: number;
 function focusRegionHint(
   name: string,
-  shortcut: string = (0, formatCommandShortcut)("F6"),
+  shortcut: string = formatCommandShortcut("F6"),
 ) {
   return name + " page, press " + shortcut + " to focus it";
 }
@@ -81,7 +81,7 @@ function focusRegionSelf(element: HTMLElement): boolean {
 function createFocusRegionController(
   regions: () => FocusRegion[],
   {
-    blocked = () => (0, hasOpenOverlay)(),
+    blocked = () => hasOpenOverlay(),
     rendered = (input) => input.getClientRects().length > 0,
     say = announceLiveMessage,
     now = () => Date.now(),
@@ -282,8 +282,8 @@ export {
 };
 export function installFilesUiFocusRegions(): () => void {
   return () => {
-    reactFocusRegions = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    reactFocusRegions = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
     FOCUS_REGION_FOCUSABLE_SELECTOR =

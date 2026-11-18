@@ -40,7 +40,7 @@ function usePopoverDismissal({ onClose: onClose }: Dynamic): Dynamic {
         event.preventDefault();
         if (!current) return;
         current.style.pointerEvents = "none";
-        (0, blurPopoverTextInput)();
+        blurPopoverTextInput();
         value.current();
         let value7: Dynamic = (document as Dynamic).elementFromPoint?.(
           event.clientX,
@@ -53,7 +53,7 @@ function usePopoverDismissal({ onClose: onClose }: Dynamic): Dynamic {
       callback4: Dynamic = (event?: Dynamic): Dynamic => {
         event.preventDefault();
         current && (current.style.pointerEvents = "none");
-        (0, blurPopoverTextInput)();
+        blurPopoverTextInput();
         value.current();
       };
     current?.addEventListener("wheel", callback3, {
@@ -86,7 +86,7 @@ function usePopoverDismissal({ onClose: onClose }: Dynamic): Dynamic {
       onPointerDown={(event?: Dynamic): Dynamic => {
         event.preventDefault();
         event.stopPropagation();
-        (0, blurPopoverTextInput)();
+        blurPopoverTextInput();
         event.button === 0
           ? (value3.current = true)
           : ((event.currentTarget.style.pointerEvents = "none"), onClose());
@@ -101,11 +101,11 @@ function usePopoverDismissal({ onClose: onClose }: Dynamic): Dynamic {
       onContextMenu={(event?: Dynamic): Dynamic => {
         event.preventDefault();
         event.stopPropagation();
-        (0, blurPopoverTextInput)();
+        blurPopoverTextInput();
         onClose();
       }}
       onDragEnter={(): Dynamic => {
-        value6.current || ((0, blurPopoverTextInput)(), onClose());
+        value6.current || (blurPopoverTextInput(), onClose());
       }}
     />,
     (document as Dynamic).body,
@@ -191,7 +191,7 @@ function EditorPopover({
     open &&
       value8(
         value6 && planHeight !== undefined
-          ? (0, choosePopoverPlacement)(
+          ? choosePopoverPlacement(
               positionAnchor?.() ?? value2.current?.parentElement,
               planHeight,
               value5,
@@ -223,7 +223,7 @@ function EditorPopover({
         if (
           (target instanceof Element &&
             target.hasAttribute("data-mc-scrim")) ||
-          (0, hasOpenCdsOverlay)() ||
+          hasOpenCdsOverlay() ||
           (target instanceof Element &&
             target.closest(openCdsOverlaySelector) !== null)
         )
@@ -242,7 +242,7 @@ function EditorPopover({
       callback4: Dynamic = (event?: Dynamic): Dynamic => {
         event.defaultPrevented ||
           !callback() ||
-          (0, hasOpenCdsOverlay)() ||
+          hasOpenCdsOverlay() ||
           (event.key === "Escape" &&
             (event.preventDefault(), value11.current()));
       },
@@ -252,7 +252,7 @@ function EditorPopover({
           event.defaultPrevented ||
           event.isComposing ||
           !callback() ||
-          (0, hasOpenCdsOverlay)()
+          hasOpenCdsOverlay()
         )
           return;
         let target: Dynamic = event.target;
@@ -314,7 +314,7 @@ function EditorPopover({
             options.reason === "imperative-action" ||
             options.reason === "close-press" ||
             (options.reason === "focus-out" &&
-              (0, isBaseUiFocusGuard)(options))
+              isBaseUiFocusGuard(options))
           ) {
             value13.current || value11.current();
             value13.current = true;
@@ -357,7 +357,7 @@ function EditorPopover({
                     !current.contains((document as Dynamic).activeElement)
                   )
                     return;
-                  let value14: Dynamic = (0, getFocusableElements)(
+                  let value14: Dynamic = getFocusableElements(
                     current,
                   );
                   if (value14.length === 0) return;
@@ -377,7 +377,7 @@ function EditorPopover({
         >
           <div
             {...popupAttrs}
-            className={(0, joinClassNames)(
+            className={joinClassNames(
               "min-w-48",
               padding === "none" ? undefined : "p-1",
               className,
@@ -404,8 +404,8 @@ export {
 };
 export function installEditorChromePopover(): () => void {
   return () => {
-    jsxChromePopover = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    jsxChromePopover = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
     ChromePopoverItems = [];

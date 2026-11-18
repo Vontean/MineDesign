@@ -162,7 +162,7 @@ function sanitizeDesignContextFields(fields?: Dynamic): Dynamic {
   };
 }
 function createDesignContextPublisher(): Dynamic {
-  let value: Dynamic = !(0, hasRoomCapability)(),
+  let value: Dynamic = !hasRoomCapability(),
     value2: Dynamic = null,
     text: Dynamic = "",
     text2: Dynamic = "",
@@ -174,11 +174,11 @@ function createDesignContextPublisher(): Dynamic {
     flag4: Dynamic = false,
     callback: Dynamic = (): Dynamic => {};
   value ||
-    (callback = (0, subscribeEditCount)((): Dynamic => {
+    (callback = subscribeEditCount((): Dynamic => {
       value7();
     }));
   function value4(input?: Dynamic): Dynamic {
-    let value8: Dynamic = (0, getEditCount)();
+    let value8: Dynamic = getEditCount();
     return value8 > 0
       ? {
           ...input,
@@ -226,10 +226,10 @@ function createDesignContextPublisher(): Dynamic {
       ));
     let value10: Dynamic = JSON.stringify(value4(value2.full)),
       value11: Dynamic = text2,
-      value12: Dynamic = (0, getEditCount)();
+      value12: Dynamic = getEditCount();
     try {
       if (value9 === text3) return;
-      let value13: Dynamic = await (0, publishRoomPresence)({
+      let value13: Dynamic = await publishRoomPresence({
         context: value8,
       });
       value13 === "off" &&
@@ -237,7 +237,7 @@ function createDesignContextPublisher(): Dynamic {
         callback(),
         !flag3 &&
           text3 !== "" &&
-          (0, publishRoomPresence)({
+          publishRoomPresence({
             context: null,
           }));
       value13 === "ok" && (text3 = value9);
@@ -246,7 +246,7 @@ function createDesignContextPublisher(): Dynamic {
       flag = false;
       value2 !== null &&
         JSON.stringify(value4(value2.full)) !== value10 &&
-        (text2 === value11 && (0, getEditCount)() === value12
+        (text2 === value11 && getEditCount() === value12
           ? value3 === undefined && value6()
           : value7());
     }
@@ -272,7 +272,7 @@ function createDesignContextPublisher(): Dynamic {
       callback();
       !value &&
         (text3 !== "" || flag) &&
-        (0, publishRoomPresence)({
+        publishRoomPresence({
           context: null,
         });
       value2 = null;

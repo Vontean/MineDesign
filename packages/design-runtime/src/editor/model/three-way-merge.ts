@@ -13,13 +13,13 @@ var ModelThreeWayMergeSCRIPTSTYLETEXTAREASet: Dynamic;
 var classifyThreeWayChange: Dynamic;
 function describeMergeField(source?: Dynamic): Dynamic {
   return source.kind === "text"
-    ? "the text of " + (0, ModelPublishingHandler)(source.tag)
+    ? "the text of " + ModelPublishingHandler(source.tag)
     : source.kind === "props-key"
       ? "the \u201C" + source.name + "\u201D setting"
       : "the " +
         source.name.replace(/^style:/, "") +
         " of " +
-        (0, ModelPublishingHandler)(source.tag);
+        ModelPublishingHandler(source.tag);
 }
 function sameModelStructure(input?: Dynamic, options?: Dynamic): Dynamic {
   if (!input.sameSkeleton(options)) return false;
@@ -38,7 +38,7 @@ function elementAttributeMap(input?: Dynamic): Dynamic {
 }
 function elementStyleMap(element?: Dynamic): Dynamic {
   let entries: Dynamic = new Map();
-  for (let value of (0, parseStyleDeclarations)(
+  for (let value of parseStyleDeclarations(
     element.getAttribute("style"),
   ) as Dynamic)
     entries.set(value.prop, value.value);
@@ -265,14 +265,14 @@ function mergeDcTemplates(
   }
 }
 function splitDcDocumentRegions(input?: Dynamic): Dynamic {
-  let value: Dynamic = (0, parseDcHtmlDocument)(input);
+  let value: Dynamic = parseDcHtmlDocument(input);
   if (!value) return null;
-  let value2: Dynamic = (0, getDcPropsJson)(input),
-    value3: Dynamic = (0, replaceDcTemplate)(input, value, ""),
-    value4: Dynamic = (0, parseDcHtmlDocument)(value3);
-  value4?.jsMatch && (value3 = (0, setDcScript)(value3, value4, ""));
+  let value2: Dynamic = getDcPropsJson(input),
+    value3: Dynamic = replaceDcTemplate(input, value, ""),
+    value4: Dynamic = parseDcHtmlDocument(value3);
+  value4?.jsMatch && (value3 = setDcScript(value3, value4, ""));
   value2 !== null &&
-    (value3 = (0, setDcPropsJson)(value3, "{}") ?? value3);
+    (value3 = setDcPropsJson(value3, "{}") ?? value3);
   return {
     template: value.template,
     js: value.js,
@@ -472,18 +472,18 @@ function mergeDcDocuments(
       items2.push(...value14.overlaps);
     }
     let value9: Dynamic = value5 === "mine" ? options : context,
-      value10: Dynamic = (0, parseDcHtmlDocument)(value9);
+      value10: Dynamic = parseDcHtmlDocument(value9);
     if (!value10) return callback("the kept document did not parse");
-    value9 = (0, replaceDcTemplate)(value9, value10, template);
+    value9 = replaceDcTemplate(value9, value10, template);
     let value11: Dynamic = value4 === "mine" ? value2.js : value3.js,
-      value12: Dynamic = (0, parseDcHtmlDocument)(value9);
+      value12: Dynamic = parseDcHtmlDocument(value9);
     if (!value12) return callback("the composed document did not parse");
     value12.js !== value11 &&
-      (value9 = (0, setDcScript)(value9, value12, value11));
-    (0, getDcPropsJson)(value9) !== (value7 ?? null) &&
+      (value9 = setDcScript(value9, value12, value11));
+    getDcPropsJson(value9) !== (value7 ?? null) &&
       value7 !== null &&
       value7 !== undefined &&
-      (value9 = (0, setDcPropsJson)(value9, value7) ?? value9);
+      (value9 = setDcPropsJson(value9, value7) ?? value9);
     let value13: Dynamic = splitDcDocumentRegions(value9);
     return !value13 || value13.template !== template || value13.js !== value11
       ? callback("the composed document did not round-trip")

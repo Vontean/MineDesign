@@ -20,20 +20,20 @@ export {
 };
 export function installCdsComponentsTextArea(): () => void {
   return () => {
-    initializeComponentsTextArea = (0, initializeOnce)(() => {
+    initializeComponentsTextArea = initializeOnce(() => {
       "use client";
 
-      (0, initializeClassNames)();
-      (0, initializeCdsRoot)();
-      (0, initializeButtonButton_2)();
-      (0, initializeFieldContext)();
-      reactComponentsTextArea = (0, toModuleNamespace)(
-        (0, load_react)(),
+      initializeClassNames();
+      initializeCdsRoot();
+      initializeButtonButton_2();
+      initializeFieldContext();
+      reactComponentsTextArea = toModuleNamespace(
+        load_react(),
       );
-      jsxComponentsTextArea = (0, toModuleNamespace)(
-        (0, load_react_jsx_runtime)(),
+      jsxComponentsTextArea = toModuleNamespace(
+        load_react_jsx_runtime(),
       );
-      (0, initializeNpm__base_ui_react_x7)();
+      initializeNpm__base_ui_react_x7();
       TextArea = (0, reactComponentsTextArea.forwardRef)<
         HTMLTextAreaElement,
         TextAreaProps
@@ -56,7 +56,7 @@ export function installCdsComponentsTextArea(): () => void {
           }: TextAreaProps,
           options: React.ForwardedRef<HTMLTextAreaElement>,
         ): React.ReactElement => {
-          let value = (0, useFieldInvalid)(),
+          let value = useFieldInvalid(),
             value2 = rows ?? 3,
             value3 = autosize && rows !== undefined,
             value4 = resize === "y" ? "resize-y" : "resize-none",
@@ -84,11 +84,11 @@ export function installCdsComponentsTextArea(): () => void {
                   data-cds={"TextArea"}
                   rows={value2}
                   style={value7}
-                  {...(0, getSizeAttribute)(size)}
+                  {...getSizeAttribute(size)}
                   data-invalid={value || undefined}
                   aria-invalid={value || ariaInvalid}
                   {...props}
-                  className={(0, cn)(
+                  className={cn(
                     "cds-reset",
                     value8,
                     bare

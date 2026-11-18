@@ -36,8 +36,7 @@ function createNoteLinkEditor(input?: Dynamic): Dynamic {
       options?: Dynamic,
       context?: Dynamic,
     ): Dynamic => {
-      let value2: Dynamic = (0,
-      NotesAutoformatCaretPositionFromPoint)(input2, options);
+      let value2: Dynamic = NotesAutoformatCaretPositionFromPoint(input2, options);
       return (
         callback(value2 ? value2[0] : null) ??
         callback(context instanceof Node ? context : null)
@@ -92,7 +91,7 @@ function createNoteLinkEditor(input?: Dynamic): Dynamic {
           bounds.bottom - 1,
           (window as Dynamic).innerHeight - 1,
         ),
-        value6: Dynamic = (0, NotesAutoformatCaretPositionFromPoint)(
+        value6: Dynamic = NotesAutoformatCaretPositionFromPoint(
           value4,
           value5,
         ),
@@ -187,7 +186,7 @@ function createNoteLinkEditor(input?: Dynamic): Dynamic {
             (value3.isCollapsed ||
               !value2.chip.contains(value3.anchorNode) ||
               !value2.chip.contains(value3.focusNode)) &&
-            (0, NotesAutoformatParentNode)(value3, value2.chip)
+            NotesAutoformatParentNode(value3, value2.chip)
           : (value2.chip &&
               !value2.anchor &&
               value4 === value2.chip &&
@@ -202,7 +201,7 @@ function createNoteLinkEditor(input?: Dynamic): Dynamic {
           let value4: Dynamic = callback(value3.anchorNode),
             value5: Dynamic = callback(value3.focusNode);
           value3.isCollapsed
-            ? value5 && (0, NotesAutoformatParentNode)(value3, value5)
+            ? value5 && NotesAutoformatParentNode(value3, value5)
             : value5 && !value4 && input.contains(value3.anchorNode)
               ? callback4(
                   value3,
@@ -232,7 +231,7 @@ function createNoteLinkEditor(input?: Dynamic): Dynamic {
           !event.ctrlKey &&
           !event.altKey,
         value3: Dynamic = (window as Dynamic).getSelection(),
-        value4: Dynamic = (0, NotesAutoformatCaretPositionFromPoint)(
+        value4: Dynamic = NotesAutoformatCaretPositionFromPoint(
           event.clientX,
           event.clientY,
         ),
@@ -256,7 +255,7 @@ function createNoteLinkEditor(input?: Dynamic): Dynamic {
       if (value6) {
         event.preventDefault();
         value5
-          ? (0, NotesAutoformatParentNode)(value3, value5)
+          ? NotesAutoformatParentNode(value3, value5)
           : value3.collapse(...value4);
         input.focus();
         return;
@@ -300,8 +299,8 @@ export {
 };
 export function installEditorNotesLinkEditing(): () => void {
   return () => {
-    jsxNotesLinkEditing = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    jsxNotesLinkEditing = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
     NotesLinkEditingLabel = "[data-note-typing-strip], [data-mc-popover]";
@@ -351,13 +350,13 @@ export function installEditorNotesLinkEditing(): () => void {
             " var(--om-title-ink, 100%), var(--cds-text-primary))";
     };
     NotesLinkEditingLh = (input?: Dynamic): Dynamic => {
-      let { size: value }: Dynamic = (0, annotationTextStyle)(input),
-        value2: Dynamic = (0, PlatformFileContentMin)(value);
+      let { size: value }: Dynamic = annotationTextStyle(input),
+        value2: Dynamic = PlatformFileContentMin(value);
       return Math.round(value * value2.lh) + 2 * value2.py;
     };
     NotesLinkEditingKind = (source?: Dynamic): Dynamic => {
       if (source.kind !== "title1") return source.w;
-      let { size: value }: Dynamic = (0, annotationTextStyle)(source),
+      let { size: value }: Dynamic = annotationTextStyle(source),
         value2: Dynamic = source.text
           .split(
             `
@@ -367,18 +366,18 @@ export function installEditorNotesLinkEditing(): () => void {
             (input?: Dynamic, options?: Dynamic): Dynamic =>
               Math.max(
                 input,
-                (0, PlatformFileContentMatch)(options, value),
+                PlatformFileContentMatch(options, value),
               ),
             0,
           );
       return Math.min(
-        (0, PlatformFileContentMaxW)(source),
-        value2 + 2 * (0, PlatformFileContentMin)(value).px,
+        PlatformFileContentMaxW(source),
+        value2 + 2 * PlatformFileContentMin(value).px,
       );
     };
     NotesLinkEditingSize = (input?: Dynamic): Dynamic => {
-      let value: Dynamic = (0, annotationTextStyle)(input),
-        value2: Dynamic = (0, PlatformFileContentMin)(value.size);
+      let value: Dynamic = annotationTextStyle(input),
+        value2: Dynamic = PlatformFileContentMin(value.size);
       return {
         color: NotesLinkEditingHandler_2(value.kind, value.color),
         fontSize: value.size,

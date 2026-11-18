@@ -235,7 +235,7 @@ function useCanvasWorkingState(input?: Dynamic): Dynamic {
       return (): Dynamic => clearTimeout(value5);
     },
     say: (input2?: Dynamic, options?: Dynamic, context?: Dynamic): Dynamic =>
-      (0, announce)(
+      announce(
         context ? (): Dynamic => (context() ? input2 : null) : input2,
         options
           ? {
@@ -244,7 +244,7 @@ function useCanvasWorkingState(input?: Dynamic): Dynamic {
           : {},
       ),
     hush: (): Dynamic =>
-      (0, announce)("", {
+      announce("", {
         ifIdle: true,
       }),
     onBusy: (input2?: Dynamic): Dynamic => value.current.onBusy(input2),
@@ -788,7 +788,7 @@ async function previewImageFile(
       ? null
       : previewSvgFile(input);
   let [value, value2]: Dynamic = await Promise.all([
-    options.sized ?? (0, canDecodeRasterImage)(input),
+    options.sized ?? canDecodeRasterImage(input),
     options.head !== undefined
       ? options.head
       : imageHeaderDimensions(input).catch((): Dynamic => null),
@@ -986,8 +986,8 @@ async function uploadDesignFile(
         .replace(/[^a-z0-9_-]+/g, "-")
         .replace(/^-+/, "")
         .slice(0, 40) || "image",
-    value2: Dynamic = await (0, uploadImageWithFallback)(context, {}),
-    value3: Dynamic = (0, classifyUploadResult)(value2);
+    value2: Dynamic = await uploadImageWithFallback(context, {}),
+    value3: Dynamic = classifyUploadResult(value2);
   value3 && healthReporter.report(...value3);
   if (value2.kind === "blob")
     return {
@@ -1024,7 +1024,7 @@ async function uploadDesignFile(
     })) === "exists")
   )
     throw new Error(`upload target already exists: ${value9}`);
-  (0, markLocalFileChange)(input, value9);
+  markLocalFileChange(input, value9);
   return {
     relName: value8,
     relPath: value9,
@@ -1036,20 +1036,20 @@ async function uploadDesignVideo(
   input?: Dynamic,
   options?: Dynamic,
 ): Promise<Dynamic> {
-  let value: Dynamic = await (0, uploadVideo)(input, {
+  let value: Dynamic = await uploadVideo(input, {
       probed: options,
     }),
-    value2: Dynamic = (0, classifyUploadResult)(value);
+    value2: Dynamic = classifyUploadResult(value);
   value2 && healthReporter.report(...value2);
   return value.kind === "refused"
     ? {
-        refused: (0, videoUploadFailureMessage)(value.reason),
+        refused: videoUploadFailureMessage(value.reason),
         repeats:
           CanvasWorkingStateQuotaOrStateRateLimitedStoreUnavailableSet.has(
             value.reason,
           ),
       }
-    : (0, isBlobAssetUrl)(value.src)
+    : isBlobAssetUrl(value.src)
       ? {
           src:
             blobAssetPathPattern.test(value.src) &&
@@ -1058,7 +1058,7 @@ async function uploadDesignVideo(
               : value.src,
         }
       : {
-          refused: (0, videoUploadFailureMessage)("bad_result"),
+          refused: videoUploadFailureMessage("bad_result"),
           repeats: false,
         };
 }
@@ -1068,7 +1068,7 @@ function positionedVideoHtml(
   context?: Dynamic,
   value?: Dynamic,
 ): Dynamic {
-  return (0, uploadedVideoHtml)(input, {
+  return uploadedVideoHtml(input, {
     ...options,
     style: `position: absolute; left: ${String(context.left)}px; top: ${String(context.top)}px; width: ${String(context.w)}px; height: auto`,
     label: value,
@@ -1076,7 +1076,7 @@ function positionedVideoHtml(
 }
 function videoFileTitle(input?: Dynamic): Dynamic {
   return (
-    (0, truncateUtf16Safely)(
+    truncateUtf16Safely(
       input.name.replace(/\.[^.]*$/, "").trim(),
       60,
     ) || "Video"
@@ -1086,8 +1086,8 @@ function uploadedVideoAnnotation(
   input?: Dynamic,
   options?: Dynamic,
 ): Dynamic {
-  return (0, updateAnnotationAlt)(
-    (0, updateAnnotationVideo)(
+  return updateAnnotationAlt(
+    updateAnnotationVideo(
       {
         ...input,
         src: options.src,
@@ -1910,7 +1910,7 @@ function createSessionHistory(input?: Dynamic): Dynamic {
       }
     },
     callback5: Dynamic = (input2?: Dynamic, options?: Dynamic): Dynamic => {
-      let value2: Dynamic = (0, getDcPropsJson)(options),
+      let value2: Dynamic = getDcPropsJson(options),
         values2: Dynamic = new Set();
       for (let value3 of [...input2.redo].reverse() as Dynamic)
         if (!(typeof value3 == "string" || value3.kind !== "prop")) {
@@ -1947,17 +1947,17 @@ function createSessionHistory(input?: Dynamic): Dynamic {
         )
           return "stale";
         if (context === undefined) return "changed";
-        let value2: Dynamic = (0, parseDcHtmlDocument)(context);
+        let value2: Dynamic = parseDcHtmlDocument(context);
         if (
           !value2 ||
-          !(0, sameDcTemplate)(context, state.src) ||
+          !sameDcTemplate(context, state.src) ||
           (callback3(state) &&
-            (0, getDcPropsJson)(context) !==
-              (0, getDcPropsJson)(state.src))
+            getDcPropsJson(context) !==
+              getDcPropsJson(state.src))
         )
           return "changed";
         if (!callback5(state, context)) return "stale";
-        let value3: Dynamic = (0, serializeStableModel)(state);
+        let value3: Dynamic = serializeStableModel(state);
         return value2.template === value3 ||
           state.model.rebuild(value2.template).serialize() ===
             state.model.rebuild(value3).serialize()
@@ -3450,7 +3450,7 @@ function selectionAfterElementEdits(
     }
     notes = new Set();
   }
-  return (0, selectionFromParts)(
+  return selectionFromParts(
     values,
     notes,
     entries,
@@ -3513,7 +3513,7 @@ function nudgeCanvasObjects(
             },
             to: state,
           }),
-          (0, moveAnnotation)(input2, state.x, state.y));
+          moveAnnotation(input2, state.x, state.y));
     });
   return items.length === 0 && items2.length === 0
     ? null
@@ -3558,8 +3558,8 @@ function canNavigateSelection(input?: Dynamic): Dynamic {
   return !input.gesturing && input.setMoveCommits <= 0;
 }
 function sameSelectionStructure(input?: Dynamic, options?: Dynamic): Dynamic {
-  let value: Dynamic = (0, canvasBoardSelection)(input),
-    value2: Dynamic = (0, canvasBoardSelection)(options);
+  let value: Dynamic = canvasBoardSelection(input),
+    value2: Dynamic = canvasBoardSelection(options);
   return (
     options.elements.size === input.elements.size &&
     [...options.elements.keys()].every(
@@ -3888,8 +3888,8 @@ export function installCanvasWorkingState(): () => void {
       input.video === context.video;
     BoxcancelValue = "boxcancel:";
     CanvasWorkingStateLimit_3 = 1e4;
-    reactCanvasWorkingState = (0, toModuleNamespace)(
-      (0, load_react)(),
+    reactCanvasWorkingState = toModuleNamespace(
+      load_react(),
       1,
     );
     CanvasWorkingStateLimit_4 = 24;

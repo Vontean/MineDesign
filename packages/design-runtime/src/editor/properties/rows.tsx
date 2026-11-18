@@ -42,7 +42,7 @@ function PropertyPanelRoot({
       density={"compact"}
       render={
         <div
-          className={(0, joinClassNames)(
+          className={joinClassNames(
             "flex flex-col",
             "[--prop-row-h:32px] pointer-coarse:[--prop-row-h:40px]",
             className,
@@ -128,7 +128,7 @@ function PropertyNumberRow({
         ? emptyStepFrom
         : value3),
     value5: Dynamic = !disabled2 && !mixed && value4 !== undefined,
-    value6: Dynamic = (0, useNumericScrub)({
+    value6: Dynamic = useNumericScrub({
       value: value4 ?? NaN,
       step: step,
       min: min2,
@@ -298,13 +298,13 @@ function PropertyRangeRow({
       if (disabled2) return;
       let value6: Dynamic;
       if (event.key === "ArrowRight" || event.key === "ArrowUp")
-        value6 = (0, stepNumericValue)(value, 1, event, {
+        value6 = stepNumericValue(value, 1, event, {
           step: step,
           min: min2,
           max: max,
         });
       else if (event.key === "ArrowLeft" || event.key === "ArrowDown")
-        value6 = (0, stepNumericValue)(value, -1, event, {
+        value6 = stepNumericValue(value, -1, event, {
           step: step,
           min: min2,
           max: max,
@@ -375,7 +375,7 @@ function PropertyRangeRow({
         </div>
         {mixed ? (null) : (<div
             data-kit={"slider-thumb"}
-            className={(0, joinClassNames)(
+            className={joinClassNames(
               "pointer-events-none absolute h-3 w-3 -translate-x-1/2 rounded-full",
               "bg-surface-3 shadow-panel-sm group-focus-visible/track:shadow-focus",
             )}
@@ -544,7 +544,7 @@ function ColorWellFace({
   return (
     <span
       aria-hidden={"true"}
-      className={(0, joinClassNames)(
+      className={joinClassNames(
         PropertiesPrimitivesClassNames_2,
         className,
       )}
@@ -574,7 +574,7 @@ function useColorContrast(input?: Dynamic, options?: Dynamic): Dynamic {
     (): Dynamic =>
       input === undefined || options === undefined
         ? undefined
-        : (0, evaluateColorContrast)(options, input),
+        : evaluateColorContrast(options, input),
     [value, options],
   );
 }
@@ -640,9 +640,9 @@ function PropertyColorRow({
     reactPropertiesSection.useMemo)((): Dynamic => {
       let value28: Dynamic = value ?? placeholder;
       if (value28 === undefined) return;
-      let value29: Dynamic = (0, parseHsvaColor)(value28);
+      let value29: Dynamic = parseHsvaColor(value28);
       return {
-        solid: (0, hsvaToRgbHex)(value29),
+        solid: hsvaToRgbHex(value29),
         alpha: value29.a,
       };
     }, [value, placeholder]),
@@ -677,10 +677,10 @@ function PropertyColorRow({
               ? value29.value
               : value29.color;
         if (!PropertiesRowsRgbaPattern.test(value30)) continue;
-        let value31: Dynamic = (0, parseHsvaColor)(value30);
+        let value31: Dynamic = parseHsvaColor(value30);
         if (
           !(value31.a < 1) &&
-          (0, hsvaToRgbHex)(value31).toLowerCase() === value28
+          hsvaToRgbHex(value31).toLowerCase() === value28
         )
           return typeof value29 != "string" &&
             value29.label !== undefined &&
@@ -708,7 +708,7 @@ function PropertyColorRow({
       (): Dynamic =>
         value17 === undefined
           ? undefined
-          : (0, summarizeContrastResults)(value17).sentence,
+          : summarizeContrastResults(value17).sentence,
       [value17],
     ),
     value19: Dynamic =
@@ -936,7 +936,7 @@ function PropertyHexRow({
       }}
       onPointerDown={(event?: Dynamic): Dynamic => {
         value2 &&
-          !(0, isNestedPropertyControl)(
+          !isNestedPropertyControl(
             event.currentTarget,
             event.target,
           ) &&
@@ -988,8 +988,8 @@ export function installEditorPropertiesRows(): () => void {
       /^(?:#(?:[0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})|rgba?\(\s*[\d.]+[\s,]+[\d.]+[\s,]+[\d.]+(?:[\s,/]+[\d.]+)?\s*\))$/i;
     PropertiesRowsPreventDefault = (event?: Dynamic): Dynamic =>
       event.preventDefault();
-    jsxPropertiesRows = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    jsxPropertiesRows = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
   };

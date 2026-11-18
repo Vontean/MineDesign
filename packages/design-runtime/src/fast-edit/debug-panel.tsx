@@ -80,7 +80,7 @@ function FastEditDebugMessage({
   open0: openInitially,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let sections: Dynamic = (0, splitFastEditMessageSections)(text);
+  let sections: Dynamic = splitFastEditMessageSections(text);
   return (
     <FastEditDebugDisclosure
       strong={true}
@@ -166,10 +166,10 @@ function FastEditDebugCallRow({ c: call, onOpen: onOpen }: Dynamic): Dynamic {
           "border-0 border-b border-solid border-[var(--t-border)] px-3 py-1.5 font-mono text-[11px] leading-[17px] text-[var(--t-fg-muted)]"
         }
       >
-        {((((String(call.n)) + (" ")) + (formatFastEditDebugTime(call.at))) + (" ")) + ((0, describeFastEditDebugCompletion)(call))}
+        {((((String(call.n)) + (" ")) + (formatFastEditDebugTime(call.at))) + (" ")) + (describeFastEditDebugCompletion(call))}
       </div>
     );
-  let value: Dynamic = (0, classifyFastEditDebugCall)(call);
+  let value: Dynamic = classifyFastEditDebugCall(call);
   return (
     <button
       type={"button"}
@@ -418,18 +418,18 @@ export {
 };
 export function installFastEditDebugPanel(): () => void {
   return () => {
-    ReactFastEditDebug = (0, toModuleNamespace)(
-      (0, load_react)(),
+    ReactFastEditDebug = toModuleNamespace(
+      load_react(),
       1,
     );
-    fastEditDebugPortal = (0, toModuleNamespace)(
-      (0, load_react_dom)(),
+    fastEditDebugPortal = toModuleNamespace(
+      load_react_dom(),
       1,
     );
-    (0, initializeCdsIndex)();
-    (0, initializePlatformCdsIsland)();
-    fastEditDebugJsxRuntime = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    initializeCdsIndex();
+    initializePlatformCdsIsland();
+    fastEditDebugJsxRuntime = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
     padTwoDigits = (input?: Dynamic): Dynamic => String(input).padStart(2, "0");

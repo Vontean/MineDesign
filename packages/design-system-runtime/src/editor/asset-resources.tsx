@@ -331,8 +331,8 @@ export {
 };
 export function installEditorAssetResources(): () => void {
   return () => {
-    reactBlobResource = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    reactBlobResource = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
     MAX_INLINE_ASSET_BYTES =

@@ -13,7 +13,7 @@ import { initializePlatformCdsIsland } from "../../platform/cds-island";
 var reactCodeDesignColorTokens: Dynamic;
 var jsxCodeDesignColorTokens: Dynamic;
 function useDesignColorTokens(input?: Dynamic): Dynamic {
-  let value: Dynamic = (0, useDesignSystems)();
+  let value: Dynamic = useDesignSystems();
   return (0, reactCodeScriptLiterals.useMemo)((): Dynamic => {
     let values: Dynamic = new Set(),
       items: Dynamic = [];
@@ -24,7 +24,7 @@ function useDesignColorTokens(input?: Dynamic): Dynamic {
           items.push({
             name: "--" + value3.name,
             value: value3.value,
-            ...(0, colorTokenGroupLabels)(value2, value3),
+            ...colorTokenGroupLabels(value2, value3),
           }));
     return {
       tokens: items,
@@ -39,14 +39,14 @@ export {
 };
 export function installEditorCodeDesignColorTokens(): () => void {
   return () => {
-    (0, initializeCdsIndex)();
-    reactCodeDesignColorTokens = (0, toModuleNamespace)(
-      (0, load_react)(),
+    initializeCdsIndex();
+    reactCodeDesignColorTokens = toModuleNamespace(
+      load_react(),
       1,
     );
-    (0, initializePlatformCdsIsland)();
-    jsxCodeDesignColorTokens = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    initializePlatformCdsIsland();
+    jsxCodeDesignColorTokens = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
   };

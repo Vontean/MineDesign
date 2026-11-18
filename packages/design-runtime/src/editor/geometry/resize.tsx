@@ -189,8 +189,8 @@ export {
 };
 export function installEditorGeometryResize(): () => void {
   return () => {
-    reactGeometryResize = (0, toModuleNamespace)(
-      (0, load_react)(),
+    reactGeometryResize = toModuleNamespace(
+      load_react(),
       1,
     );
   };

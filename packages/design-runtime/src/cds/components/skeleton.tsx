@@ -216,7 +216,7 @@ function SkeletonGroup({
       },
       [value8],
     ),
-    value15: Dynamic = (0, useLabel)("loading", "Loading"),
+    value15: Dynamic = useLabel("loading", "Loading"),
     [value16]: Dynamic = (0, reactComponentsSkeleton.useState)(hold),
     value17: Dynamic = value16 === "delayed",
     value18: Dynamic = label ?? value15,
@@ -371,7 +371,7 @@ function SkeletonGroup({
     return (): Dynamic => observer.disconnect();
   }, [motion, value13]);
   let value25: Dynamic = value5
-    ? (0, cn)("block", className)
+    ? cn("block", className)
     : className;
   return value13
     ? (() => {
@@ -511,14 +511,14 @@ function Skeleton({
     ),
     value3: Dynamic = ComponentsSkeletonDivSpanConfig[as ?? value2],
     value4: Dynamic = value3 === "span" ? "block" : undefined,
-    value5: Dynamic = (0, useLabel)("loading", "Loading");
+    value5: Dynamic = useLabel("loading", "Loading");
   return value
     ? (() => {
         const _Component6 = value3;
         return (
           <_Component6
             data-cds={"Skeleton"}
-            className={(0, cn)(
+            className={cn(
               value4,
               "h-[1em] max-w-full rounded bg-[var(--cds-skeleton-base)]",
               className,
@@ -538,7 +538,7 @@ function Skeleton({
             data-cds={"Skeleton"}
             role={decorative ? undefined : "status"}
             aria-hidden={decorative ? true : undefined}
-            className={(0, cn)(
+            className={cn(
               value4,
               "relative h-[1em] max-w-full overflow-hidden rounded bg-[var(--cds-skeleton-base)] after:absolute after:inset-0 after:animate-[cds-shimmer_2s_linear_infinite] after:bg-[linear-gradient(90deg,transparent,var(--cds-skeleton-sheen),transparent)] motion-reduce:after:hidden",
               className,
@@ -579,7 +579,7 @@ function SkeletonRows({ rows = 3, icon = true }: Dynamic): Dynamic {
           const _props = {
             "aria-hidden": true,
             "data-slot": "menu-skeleton-separator",
-            className: (0, cn)(
+            className: cn(
               value2,
               "compact:mx-2 comfortable:mx-2.5 my-1 h-px bg-border",
             ),
@@ -647,7 +647,7 @@ function SkeletonLines({
     const _Component1 = value;
     return (
       <_Component1
-        className={(0, cn)("flex flex-col gap-sm", className)}
+        className={cn("flex flex-col gap-sm", className)}
       >
         {Array.from(
           {
@@ -728,17 +728,17 @@ export {
 };
 export function installCdsComponentsSkeleton(): () => void {
   return () => {
-    initializeComponentsSkeleton = (0, initializeOnce)((): Dynamic => {
+    initializeComponentsSkeleton = initializeOnce((): Dynamic => {
       "use client";
 
-      (0, initializeClassNames)();
-      (0, initializeSheetsStyles_2)();
-      (0, initializePlatformRootFontSize)();
-      reactComponentsSkeleton = (0, toModuleNamespace)(
-        (0, load_react)(),
+      initializeClassNames();
+      initializeSheetsStyles_2();
+      initializePlatformRootFontSize();
+      reactComponentsSkeleton = toModuleNamespace(
+        load_react(),
       );
-      jsxComponentsSkeleton = (0, toModuleNamespace)(
-        (0, load_react_jsx_runtime)(),
+      jsxComponentsSkeleton = toModuleNamespace(
+        load_react_jsx_runtime(),
       );
       ComponentsSkeletonDivSpanConfig = {
         div: "div",

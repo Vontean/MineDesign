@@ -39,16 +39,16 @@ export {
 };
 export function installCdsPlatformReducedMotion(): () => void {
   return () => {
-    initializePlatformReducedMotion = (0, initializeOnce)(() => {
+    initializePlatformReducedMotion = initializeOnce(() => {
       "use client";
 
-      reactPlatformReducedMotion = (0, toModuleNamespace)(
-        (0, load_react)(),
+      reactPlatformReducedMotion = toModuleNamespace(
+        load_react(),
       );
       reducedMotionMediaQuery = "(prefers-reduced-motion: reduce)";
       reducedMotionAttribute = "data-reduce-motion";
     });
-    initializePlatformReducedMotion_2 = (0, initializeOnce)(() => {
+    initializePlatformReducedMotion_2 = initializeOnce(() => {
       DurationSheetValue = "duration-sheet";
       PlatformReducedMotionCss = `${DurationSheetValue} ease-out motion-reduce:transition-none`;
       PlatformReducedMotionClassNames = "rounded-t-card rounded-b-none";

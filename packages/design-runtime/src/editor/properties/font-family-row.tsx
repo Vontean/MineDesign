@@ -54,7 +54,7 @@ function PropertyFontFamilyRow({
   shell: shell,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic = (0, inspectorFieldDisplay)(state);
+  let value: Dynamic = inspectorFieldDisplay(state);
   if (!value.isLiteral && value.text)
     return (
       <PropertyCssTextRow
@@ -63,10 +63,10 @@ function PropertyFontFamilyRow({
         shell={shell}
       />
     );
-  let value2: Dynamic = (0, normalizeFontFamilyList)(value.text),
-    value3: Dynamic = (0, displayFontFamily)(value.placeholder),
+  let value2: Dynamic = normalizeFontFamilyList(value.text),
+    value3: Dynamic = displayFontFamily(value.placeholder),
     value4: Dynamic = fontFamilyPickerOptions(pageFonts),
-    value5: Dynamic = (0, displayFontFamily)(value2),
+    value5: Dynamic = displayFontFamily(value2),
     value6: Dynamic =
       value2 === ""
         ? undefined
@@ -103,7 +103,7 @@ function PropertyFontFamilyRow({
         searchLabel={"Search fonts"}
         onOpenChange={(input?: Dynamic): Dynamic => {
           input &&
-            (0, ensureWebFonts)([
+            ensureWebFonts([
               ...TypographyFontCatalogMapValue,
               ...pageWebfonts,
             ]);

@@ -25,8 +25,8 @@ async function allowsClipboardImages(
   input: Dynamic = capabilityTimeoutMs,
 ): Promise<Dynamic> {
   if (
-    !(0, hasCapabilityLoader)() ||
-    !(0, downloadsCapabilityDeclared)()
+    !hasCapabilityLoader() ||
+    !downloadsCapabilityDeclared()
   )
     return true;
   let value: Dynamic;
@@ -36,7 +36,7 @@ async function allowsClipboardImages(
           (value = setTimeout(input2, input, "late")),
       ),
       value2: Dynamic = await Promise.race([
-        (0, requestHostCapability)("downloads"),
+        requestHostCapability("downloads"),
         promise,
       ]);
     return value2 != null && value2 !== "late";
@@ -47,7 +47,7 @@ async function allowsClipboardImages(
   }
 }
 function pngDataUrlToBlob(input?: Dynamic): Dynamic {
-  return new Blob([(0, dataUrlToBytes)(input)], {
+  return new Blob([dataUrlToBytes(input)], {
     type: "image/png",
   });
 }

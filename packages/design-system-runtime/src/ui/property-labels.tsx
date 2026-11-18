@@ -152,8 +152,8 @@ export {
 };
 export function installUiPropertyLabels(): () => void {
   return () => {
-    reactForUiContrastControls = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    reactForUiContrastControls = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
     RESET_LABEL = "Reset";

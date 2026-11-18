@@ -289,7 +289,7 @@ function createHotReloadDebugger(options?: Dynamic): Dynamic {
   let value22: Dynamic = null,
     flag4: Dynamic = false;
   options.room !== false &&
-    (0, cachedRoomCapability)().then(
+    cachedRoomCapability().then(
       (input?: Dynamic): Dynamic => {
         value22 = input;
         entries.set("room", value22 === null ? "off" : "connected");

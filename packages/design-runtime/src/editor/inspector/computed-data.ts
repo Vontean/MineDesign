@@ -65,7 +65,7 @@ function normalizeInspectorComputedData(
     callback: Dynamic = (input2?: Dynamic): Dynamic =>
       normalizeRgbValue(value2[input2]),
     callback2: Dynamic = (input2?: Dynamic): Dynamic =>
-      input2 != null && (0, parseHsvaColor)(input2).a > 0
+      input2 != null && parseHsvaColor(input2).a > 0
         ? input2
         : null,
     value4: Dynamic =

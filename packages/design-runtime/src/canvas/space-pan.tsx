@@ -16,7 +16,7 @@ function isPanKeyboardInput(target?: Dynamic): Dynamic {
     typeof value.tagName == "string" &&
     (/^(INPUT|TEXTAREA|SELECT)$/.test(value.tagName) ||
       value.isContentEditable === true ||
-      (0, isPropertyEditorTarget)(value))
+      isPropertyEditorTarget(value))
   );
 }
 function createSpacePanKeyboardController(
@@ -38,7 +38,7 @@ function createSpacePanKeyboardController(
         (!event.defaultPrevented &&
           (event.repeat ||
             flag3 ||
-            !(0, isControlTarget)(event.target)) &&
+            !isControlTarget(event.target)) &&
           event.preventDefault(),
         !event.repeat && (callback(true), flag3 && (flag2 = true)));
     },
@@ -111,6 +111,6 @@ export {
 };
 export function installCanvasSpacePan(): () => void {
   return () => {
-    react_GT = (0, toModuleNamespace)((0, load_react)(), 1);
+    react_GT = toModuleNamespace(load_react(), 1);
   };
 }

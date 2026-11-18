@@ -243,7 +243,7 @@ function useDesignCreationProgress(options?: Dynamic): Dynamic {
   let value6: Dynamic = (0, react_Gu.useRef)(false);
   (0, react_Gu.useEffect)((): Dynamic => {
     if (creating)
-      return (0, subscribeRemoteDocumentUpdates)(
+      return subscribeRemoteDocumentUpdates(
         value,
         (input?: Dynamic): Dynamic => {
           let value21: Dynamic = listedArtboardNames(value),
@@ -317,7 +317,7 @@ function useDesignCreationProgress(options?: Dynamic): Dynamic {
       boxed: [...value3.boxed.values()].map(
         (input?: Dynamic): Dynamic => ({
           spec: input,
-          page: (0, designPageId)(input, options.pages),
+          page: designPageId(input, options.pages),
           arriving: !value3.awaitedNow.has(input.file),
         }),
       ),
@@ -348,15 +348,15 @@ function useDesignCreationProgress(options?: Dynamic): Dynamic {
       value22: Dynamic,
       callback: Dynamic = (): Dynamic => {
         let value23: Dynamic = Date.now() - value21;
-        value12((0, designCreationTipIndex)(value23));
+        value12(designCreationTipIndex(value23));
         value22 = setTimeout(
           callback,
-          (0, timeUntilNextDesignCreationTip)(value23),
+          timeUntilNextDesignCreationTip(value23),
         );
       };
     value22 = setTimeout(
       callback,
-      (0, timeUntilNextDesignCreationTip)(0),
+      timeUntilNextDesignCreationTip(0),
     );
     return (): Dynamic => clearTimeout(value22);
   }, [value9, value10]);
@@ -379,12 +379,12 @@ function useDesignCreationProgress(options?: Dynamic): Dynamic {
       value22: Dynamic,
       callback: Dynamic = (): Dynamic => {
         value14.current ||
-          ((0, announce)(
+          (announce(
             (): Dynamic =>
               !flag || value14.current || value13.current === 0
                 ? null
                 : ((value14.current = true),
-                  (0, ClipboardWorkingFilesHandler)(value13.current)),
+                  ClipboardWorkingFilesHandler(value13.current)),
             {
               ifIdle: true,
             },
@@ -549,13 +549,13 @@ export {
 };
 export function installCanvasCreationProgress(): () => void {
   return () => {
-    jsx_U1e = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    jsx_U1e = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
     creationCursorContentInset = 18;
     creationCursorHeaderOffset = 72;
-    react_Gu = (0, toModuleNamespace)((0, load_react)(), 1);
+    react_Gu = toModuleNamespace(load_react(), 1);
     emptyCreationProgress = Object.freeze({
       boxes: Object.freeze([]),
       cursor: Object.freeze({
@@ -597,8 +597,8 @@ export function installCanvasCreationProgress(): () => void {
       new Set(
         Object.keys(input.content().files).filter(
           (input2?: Dynamic): Dynamic =>
-            (0, isArtboardFile)(input2) &&
-            !(0, isDesignSystemFile)(input2),
+            isArtboardFile(input2) &&
+            !isDesignSystemFile(input2),
         ),
       );
     emptyPendingArtboards = [];
@@ -633,7 +633,7 @@ export function installCanvasCreationProgress(): () => void {
       );
     creationSequenceFeatureFlagName = "appifact_creation_sequence";
     creationSequenceEnabled = (): Dynamic =>
-      (creationSequenceFeatureFlag ??= (0, getFeatureFlag)(
+      (creationSequenceFeatureFlag ??= getFeatureFlag(
         creationSequenceFeatureFlagName,
         false,
       ));

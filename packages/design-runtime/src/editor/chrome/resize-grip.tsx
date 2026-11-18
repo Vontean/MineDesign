@@ -46,7 +46,7 @@ function PanelWidthGrip({
       onHome={callback(min2)}
       onEnd={callback(max)}
       onReset={callback(defaultWidth)}
-      className={(0, joinClassNames)(
+      className={joinClassNames(
         "[&:not(:focus-visible)>[data-cds-part=resize-pill]]:opacity-0",
         className,
       )}
@@ -143,7 +143,7 @@ function PanelResizeGrip({
           event.preventDefault();
         return;
       }
-      let value19: Dynamic = (0, startPanelResizeGesture)(
+      let value19: Dynamic = startPanelResizeGesture(
         event,
         value ? "x" : "y",
         value14,
@@ -198,7 +198,7 @@ function PanelResizeGrip({
               : onEnd;
           value18 && (event.preventDefault(), callback2(value18));
         }}
-        className={(0, joinClassNames)(
+        className={joinClassNames(
           "z-10 touch-none [--cds-ring-outer:1px] [--cds-ring-inner:0px]",
           value4 && "[--cds-resize-pill-force:1]",
           disabled2
@@ -220,7 +220,7 @@ function PanelResizeGrip({
             callback(input, value ? "all" : "touch")
           }
           aria-hidden={"true"}
-          className={(0, joinClassNames)(
+          className={joinClassNames(
             "absolute z-10 hidden touch-none",
             value
               ? "inset-y-0 left-0 w-0 flex-col items-center"
@@ -229,7 +229,7 @@ function PanelResizeGrip({
           )}
         >
           <span
-            className={(0, joinClassNames)(
+            className={joinClassNames(
               value ? "h-full w-10 cursor-col-resize" : "h-10 w-24",
               grabTargetClassName,
             )}
@@ -273,12 +273,12 @@ export {
 };
 export function installEditorChromeResizeGrip(): () => void {
   return () => {
-    jsxChromeResizeGrip = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    jsxChromeResizeGrip = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
-    reactChromeResizeGrip = (0, toModuleNamespace)(
-      (0, load_react)(),
+    reactChromeResizeGrip = toModuleNamespace(
+      load_react(),
       1,
     );
     ChromeResizeGripCurrentState = null;

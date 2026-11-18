@@ -30,7 +30,7 @@ import { updateShapeColor } from "../../platform/file-content";
 export function renderCanvasObjects(deps: { readonly armedTool: Dynamic; readonly callback27: Dynamic; readonly callback28: Dynamic; readonly callback30: Dynamic; readonly callback34: Dynamic; readonly callback45: Dynamic; readonly callback5: Dynamic; readonly callback55: Dynamic; readonly callback56: Dynamic; readonly callback6: Dynamic; readonly camera: Dynamic; readonly entry: Dynamic; readonly manifest: Dynamic; readonly selectedNotes: Dynamic; readonly value11: Dynamic; readonly value113: Dynamic; readonly value114: Dynamic; readonly value119: Dynamic; readonly value126: Dynamic; readonly value134: Dynamic; readonly value18: Dynamic; readonly value181: Dynamic; readonly value232: Dynamic; readonly value35: Dynamic; readonly value46: Dynamic; readonly value50: Dynamic; readonly value59: Dynamic; readonly value70: Dynamic }): Dynamic {
               let value250: Dynamic = (deps.manifest.annotations ?? []).map(
                 (source?: Dynamic): Dynamic => {
-                  let value251: Dynamic = (0, isShapeAnnotation)(
+                  let value251: Dynamic = isShapeAnnotation(
                     source,
                   )
                     ? (() => {
@@ -39,7 +39,7 @@ export function renderCanvasObjects(deps: { readonly armedTool: Dynamic; readonl
                           spec:
                             deps.value114?.id === source.id &&
                             source.kind === "image"
-                              ? (0, updateAnnotationCrop)(
+                              ? updateAnnotationCrop(
                                   {
                                     ...source,
                                     ...deps.callback27(deps.value114),
@@ -53,7 +53,7 @@ export function renderCanvasObjects(deps: { readonly armedTool: Dynamic; readonl
                           scale: deps.entry.scale,
                           editing: deps.value18,
                           inert:
-                            (0, supportsClickPlacement)(deps.armedTool) ||
+                            supportsClickPlacement(deps.armedTool) ||
                             deps.armedTool === "draw",
                           commenting: deps.value126,
                           selected: deps.selectedNotes.has(source.id),
@@ -66,7 +66,7 @@ export function renderCanvasObjects(deps: { readonly armedTool: Dynamic; readonl
                             deps.callback34(
                               source.id,
                               (input2?: Dynamic): Dynamic =>
-                                (0, isShapeAnnotation)(input2)
+                                isShapeAnnotation(input2)
                                   ? {
                                       ...input2,
                                       ...input,
@@ -111,7 +111,7 @@ export function renderCanvasObjects(deps: { readonly armedTool: Dynamic; readonl
                             deps.callback34(
                               source.id,
                               (input2?: Dynamic): Dynamic =>
-                                (0, isShapeAnnotation)(input2)
+                                isShapeAnnotation(input2)
                                   ? input2
                                   : {
                                       ...input2,
@@ -296,7 +296,7 @@ export function renderAnnotationQuickActions(deps: { readonly callback25: Dynami
             if (!value250) return null;
             let value251: Dynamic = deps.value112 === value250.id;
             if (value251 && value250.kind === "title1") return null;
-            let value252: Dynamic = (0, rotatedAnnotationBounds)(
+            let value252: Dynamic = rotatedAnnotationBounds(
                 value250,
                 deps.callback44(value250),
               ),
@@ -304,9 +304,9 @@ export function renderAnnotationQuickActions(deps: { readonly callback25: Dynami
                 deps.callback34(
                   value250.id,
                   (input2?: Dynamic): Dynamic =>
-                    (0, isShapeAnnotation)(input2)
+                    isShapeAnnotation(input2)
                       ? input2
-                      : (0, updateAnnotationTextStyle)(input2, input),
+                      : updateAnnotationTextStyle(input2, input),
                   true,
                 );
             return (
@@ -320,13 +320,13 @@ export function renderAnnotationQuickActions(deps: { readonly callback25: Dynami
                     data-testid={"mega-note-strip"}
                     data-mega-selection-strip={""}
                     aria-label={
-                      (0, isShapeAnnotation)(value250) ? (uiMessage("canvas.interactionLayer.shapeActions")) : (uiMessage("canvas.interactionLayer.noteActions"))
+                      isShapeAnnotation(value250) ? (uiMessage("canvas.interactionLayer.shapeActions")) : (uiMessage("canvas.interactionLayer.noteActions"))
                     }
                     surface={"popover"}
                     wrap={deps.value17}
                     onKeyDown={handleQuickActionsArrowKeys}
                   >
-                    {(0, isShapeAnnotation)(value250) ? ((() => {
+                    {isShapeAnnotation(value250) ? ((() => {
                           const _Component8 =
                             CanvasObjectQuickActions;
                           const _props8 = {
@@ -335,8 +335,8 @@ export function renderAnnotationQuickActions(deps: { readonly callback25: Dynami
                               deps.callback34(
                                 value250.id,
                                 (input3?: Dynamic): Dynamic =>
-                                  (0, isShapeAnnotation)(input3)
-                                    ? (0, updateShapeColor)(
+                                  isShapeAnnotation(input3)
+                                    ? updateShapeColor(
                                         input3,
                                         input2,
                                       )
@@ -361,7 +361,7 @@ export function renderAnnotationQuickActions(deps: { readonly callback25: Dynami
                               value250.kind !== "image" || deps.value114
                                 ? undefined
                                 : deps.callback25(value250.id)
-                                  ? (0, imageFlipCss)(value250)
+                                  ? imageFlipCss(value250)
                                     ? CropDoesNotWorkWhileThisMessage
                                     : undefined
                                   : uiMessage("canvas.interactionLayer.thisPictureHasNotLoaded"),

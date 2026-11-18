@@ -54,6 +54,6 @@ export {
 };
 export function installUiToolbarTabs(): () => void {
   return () => {
-    jsxT_ = (0, toModuleNamespace)((0, loadJsxNamespace)(), 1);
+    jsxT_ = toModuleNamespace(loadJsxNamespace(), 1);
   };
 }

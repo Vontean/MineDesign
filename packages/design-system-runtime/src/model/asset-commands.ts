@@ -16,7 +16,7 @@ function mutableManifest(
   content: Model.DesignSystemContent,
 ): Core.ManifestObject & { manifestVersion: number } {
   return {
-    ...(0, parseManifest)(
+    ...parseManifest(
       content.files[DESIGN_SYSTEM_PATHS.manifest] ?? "",
     ),
     manifestVersion: DESIGN_SYSTEM_MANIFEST_VERSION,
@@ -28,7 +28,7 @@ function updateAssetGroupMetadata(
 ) {
   let manifest = mutableManifest(content),
     metadata = structuredClone(
-      (0, parseAssetGroupMetadata)(manifest),
+      parseAssetGroupMetadata(manifest),
     );
   if (!mutate(metadata)) {
     return content;
@@ -53,7 +53,7 @@ function updateAssetGroupMetadata(
   }
   for (let value of Object.keys(metadata.orders)) {
     let value2 = (
-      (0, ownPropertyOrUndefined)(metadata.orders, value) ?? []
+      ownPropertyOrUndefined(metadata.orders, value) ?? []
     ).filter(
       (input): boolean => assetKeysByGroup.get(value)?.has(input) === true,
     );
@@ -63,22 +63,22 @@ function updateAssetGroupMetadata(
       metadata.orders[value] = value2;
     }
   }
-  let serialized = (0, serializeAssetGroupMetadata)(metadata);
+  let serialized = serializeAssetGroupMetadata(metadata);
   if (
     serialized.length === 0 &&
     Object.keys(manifest).every(
       (input) => input === "assetGroups" || input === "manifestVersion",
     )
   ) {
-    return (0, deleteDesignSystemFiles)(content, [
+    return deleteDesignSystemFiles(content, [
       DESIGN_SYSTEM_PATHS.manifest,
     ]);
   }
   manifest.assetGroups = serialized;
-  return (0, setDesignSystemFile)(
+  return setDesignSystemFile(
     content,
     DESIGN_SYSTEM_PATHS.manifest,
-    (0, stringifyManifestWithinBudget)(manifest),
+    stringifyManifestWithinBudget(manifest),
   );
 }
 function assetGroupDirectory(group: string) {
@@ -122,7 +122,7 @@ function addAssetFile(
       : asset.group.trim();
   if (
     group !== UNGROUPED_ASSETS_NAME &&
-    !(0, isAssetGroupName)(group)
+    !isAssetGroupName(group)
   ) {
     return content;
   }
@@ -132,25 +132,25 @@ function addAssetFile(
       .filter((input) => input !== "" && input !== "." && input !== "..")
       .map(sanitizeUploadFileName),
     directory = [assetGroupDirectory(group), ...subpathSegments].join("/"),
-    filename = (0, unusedFileName)(
+    filename = unusedFileName(
       content.files,
       directory,
-      (0, sanitizeUploadFileName)(asset.fileName),
+      sanitizeUploadFileName(asset.fileName),
     ),
     path: string = directory + "/" + filename;
   if (
-    (0, normalizeDesignSystemPath)(path) !== path ||
-    !(0, isValidDesignSystemPath)(path)
+    normalizeDesignSystemPath(path) !== path ||
+    !isValidDesignSystemPath(path)
   ) {
     return content;
   }
-  let next = (0, setDesignSystemFile)(content, path, asset.value);
+  let next = setDesignSystemFile(content, path, asset.value);
   if (next === content) {
     return content;
   }
   if (
     asset.record !== undefined &&
-    (0, parseStoragePointer)(asset.value) !== null
+    parseStoragePointer(asset.value) !== null
   ) {
     next = setFileStorageRecord(next, path, asset.record);
   }
@@ -164,18 +164,18 @@ function renameAssetFilePath(
   if (!oldPath.startsWith(DESIGN_SYSTEM_PATHS.assetsDir)) {
     return content;
   }
-  return (0, renameDesignSystemFile)(content, oldPath, newPath);
+  return renameDesignSystemFile(content, oldPath, newPath);
 }
 function renameAssetFile(
   content: Model.DesignSystemContent,
   path: string,
   newName: string,
 ) {
-  let filename = (0, sanitizeUploadFileName)(newName),
+  let filename = sanitizeUploadFileName(newName),
     newPath: string =
-      ((0, pathDirname)(path) === ""
+      (pathDirname(path) === ""
         ? ""
-        : (0, pathDirname)(path) + "/") + filename,
+        : pathDirname(path) + "/") + filename,
     renamed = renameAssetFilePath(content, path, newPath);
   if (renamed === content) {
     return content;
@@ -186,7 +186,7 @@ function renameAssetFile(
     return renamed;
   }
   return updateAssetGroupMetadata(renamed, (input): boolean => {
-    let value = (0, ownPropertyOrUndefined)(
+    let value = ownPropertyOrUndefined(
         input.orders,
         oldGroup.group,
       ),
@@ -203,7 +203,7 @@ function normalizeAssetGroupName(name: string) {
     name.trim() === "" ? UNGROUPED_ASSETS_NAME : name.trim();
   if (
     normalized === UNGROUPED_ASSETS_NAME ||
-    (0, isAssetGroupName)(normalized)
+    isAssetGroupName(normalized)
   ) {
     return normalized;
   } else {
@@ -239,10 +239,10 @@ function moveAssetsToGroup(
     let value3: string =
         directory +
         "/" +
-        (0, unusedFileName)(
+        unusedFileName(
           working.files,
           directory,
-          (0, pathBasename)(value),
+          pathBasename(value),
         ),
       value4 = renameAssetFilePath(working, value, value3);
     if (value4 === working) {
@@ -268,12 +268,12 @@ function moveAssetsToGroup(
   return updateAssetGroupMetadata(working, (input): boolean => {
     let value = Object.keys(working.files).flatMap((input2) => {
         let value5 = parseAssetGroupPath(input2),
-          value6 = (0, assetKindForPath)(input2);
+          value6 = assetKindForPath(input2);
         if (value5 !== null && value5.group === group && value6 !== "font") {
           return [
             {
               key: value5.key,
-              wall: (0, isWallAssetKind)(value6),
+              wall: isWallAssetKind(value6),
             },
           ];
         } else {
@@ -281,10 +281,10 @@ function moveAssetsToGroup(
         }
       }),
       entries = new Map(value.map((input2) => [input2.key, input2.wall])),
-      value2 = (0, orderAssetTiles)(
+      value2 = orderAssetTiles(
         value,
         (
-          (0, ownPropertyOrUndefined)(input.orders, group) ?? []
+          ownPropertyOrUndefined(input.orders, group) ?? []
         ).filter((input2) => entries.has(input2)),
       ).map((input2) => input2.key),
       value3 = value2.filter(
@@ -319,7 +319,7 @@ function renameAssetGroup(
     newGroup = newName.replace(/\s+/g, " ").trim();
   if (
     oldGroup === null ||
-    !(0, isAssetGroupName)(newGroup) ||
+    !isAssetGroupName(newGroup) ||
     newGroup === UNGROUPED_ASSETS_NAME ||
     newGroup === oldGroup
   ) {
@@ -330,7 +330,7 @@ function renameAssetGroup(
     Object.keys(content.files).some(
       (input) =>
         input.startsWith(oldPrefix) &&
-        (0, protectedFilePathPredicate)(input),
+        protectedFilePathPredicate(input),
     )
   ) {
     return content;
@@ -345,7 +345,7 @@ function renameAssetGroup(
   }
   let working = content;
   for (let value of paths) {
-    let value2 = (0, renameDesignSystemFile)(
+    let value2 = renameDesignSystemFile(
       working,
       value,
       newPrefix +
@@ -364,8 +364,8 @@ function renameAssetGroup(
     input.groups = input.groups.map((input2) =>
       input2 === oldGroup ? newGroup : input2,
     );
-    let value = (0, ownPropertyOrUndefined)(input.tiles, oldGroup),
-      value2 = (0, ownPropertyOrUndefined)(input.orders, oldGroup);
+    let value = ownPropertyOrUndefined(input.tiles, oldGroup),
+      value2 = ownPropertyOrUndefined(input.orders, oldGroup);
     delete input.tiles[oldGroup];
     delete input.orders[oldGroup];
     if (value !== undefined) {
@@ -385,7 +385,7 @@ function deleteAssetFiles(
   content: Model.DesignSystemContent,
   paths: string[],
 ) {
-  return (0, deleteDesignSystemFiles)(
+  return deleteDesignSystemFiles(
     content,
     paths.filter((input): boolean => parseAssetGroupPath(input) !== null),
   );
@@ -399,7 +399,7 @@ function setFileStorageRecord(
   if (value === undefined) {
     return content;
   }
-  let pointer = (0, storagePointerForFile)(path, value);
+  let pointer = storagePointerForFile(path, value);
   if (
     pointer === null ||
     pointer.store !== record.store ||
@@ -408,13 +408,13 @@ function setFileStorageRecord(
     return content;
   }
   let manifest = mutableManifest(content),
-    catalog = (0, storageCatalogFromManifest)(manifest);
+    catalog = storageCatalogFromManifest(manifest);
   catalog.files[path] = record;
-  manifest.storage = (0, serializeStorageCatalog)(catalog);
-  return (0, setDesignSystemFile)(
+  manifest.storage = serializeStorageCatalog(catalog);
+  return setDesignSystemFile(
     content,
     DESIGN_SYSTEM_PATHS.manifest,
-    (0, stringifyManifestWithinBudget)(manifest),
+    stringifyManifestWithinBudget(manifest),
   );
 }
 function updateStorageCatalog(
@@ -422,20 +422,20 @@ function updateStorageCatalog(
   mutate: (catalog: Model.StorageCatalog) => Model.StorageCatalog | null,
 ) {
   let manifest = mutableManifest(content),
-    catalog = mutate((0, storageCatalogFromManifest)(manifest));
+    catalog = mutate(storageCatalogFromManifest(manifest));
   if (catalog === null) {
     return content;
   }
-  let serialized = (0, serializeStorageCatalog)(catalog);
+  let serialized = serializeStorageCatalog(catalog);
   if (serialized === undefined) {
     delete manifest.storage;
   } else {
     manifest.storage = serialized;
   }
-  return (0, setDesignSystemFile)(
+  return setDesignSystemFile(
     content,
     DESIGN_SYSTEM_PATHS.manifest,
-    (0, stringifyManifestWithinBudget)(manifest),
+    stringifyManifestWithinBudget(manifest),
   );
 }
 function replaceInlineFileWithPointer(
@@ -447,11 +447,11 @@ function replaceInlineFileWithPointer(
 ) {
   if (
     content.files[path] !== expectedValue ||
-    (0, parseStoragePointer)(pointer) === null
+    parseStoragePointer(pointer) === null
   ) {
     return content;
   }
-  let next = (0, setDesignSystemFile)(content, path, pointer);
+  let next = setDesignSystemFile(content, path, pointer);
   if (next === content) {
     return content;
   } else {
@@ -466,7 +466,7 @@ function removeMissingStorageDigests(
     return content;
   }
   return updateStorageCatalog(content, (input) => {
-    let value: Model.StorageCatalog = (0, dropMissingBlobDigests)(input, missingIds);
+    let value: Model.StorageCatalog = dropMissingBlobDigests(input, missingIds);
     if (value === input) {
       return null;
     } else {
@@ -478,7 +478,7 @@ function setLastChange(
   content: Model.DesignSystemContent,
   change: Core.LastChangeDraft,
 ) {
-  let normalized = (0, parseLastChange)({
+  let normalized = parseLastChange({
     ...(change.extra ?? {}),
     by: change.by,
     ...(change.via !== undefined
@@ -497,24 +497,24 @@ function setLastChange(
     return content;
   }
   let manifest = mutableManifest(content);
-  manifest.lastChange = (0, serializeLastChange)(normalized);
-  return (0, setDesignSystemFile)(
+  manifest.lastChange = serializeLastChange(normalized);
+  return setDesignSystemFile(
     content,
     DESIGN_SYSTEM_PATHS.manifest,
-    (0, stringifyManifestWithinBudget)(manifest),
+    stringifyManifestWithinBudget(manifest),
   );
 }
 function refreshManifest(content: Model.DesignSystemContent, title: string) {
-  let manifestText = (0, serializeDesignSystemManifest)(
-    (0, buildDesignSystemManifest)(
-      (0, parsedDesignSystem)(content),
+  let manifestText = serializeDesignSystemManifest(
+    buildDesignSystemManifest(
+      parsedDesignSystem(content),
       title,
     ),
   );
   if (content.files[DESIGN_SYSTEM_PATHS.manifest] === manifestText) {
     return content;
   }
-  return (0, setDesignSystemFile)(
+  return setDesignSystemFile(
     content,
     DESIGN_SYSTEM_PATHS.manifest,
     manifestText,
@@ -535,12 +535,12 @@ function setSectionTitle(
   key: string,
   title: string,
 ) {
-  let normalized = (0, normalizeSectionTitleModelManifestMetadata)(
+  let normalized = normalizeSectionTitleModelManifestMetadata(
       title,
     ),
     manifest = mutableManifest(content),
     sections = {
-      ...(0, sectionTitlesFromManifest)(manifest),
+      ...sectionTitlesFromManifest(manifest),
     };
   if ((sections[key] ?? "") === normalized) {
     return content;
@@ -550,16 +550,16 @@ function setSectionTitle(
   } else {
     sections[key] = normalized;
   }
-  let serialized = (0, serializeSectionTitles)(sections);
+  let serialized = serializeSectionTitles(sections);
   if (serialized === undefined) {
     delete manifest.sections;
   } else {
     manifest.sections = serialized;
   }
-  return (0, setDesignSystemFile)(
+  return setDesignSystemFile(
     content,
     DESIGN_SYSTEM_PATHS.manifest,
-    (0, stringifyManifestWithinBudget)(manifest),
+    stringifyManifestWithinBudget(manifest),
   );
 }
 function unusedTokenName(
@@ -567,8 +567,8 @@ function unusedTokenName(
   family: Core.TokenKind,
   preferredName: string,
 ) {
-  let taken = new Set((0, conflictingTokenNames)(tokens, family)),
-    base = (0, normalizeTokenName)(preferredName) || "token";
+  let taken = new Set(conflictingTokenNames(tokens, family)),
+    base = normalizeTokenName(preferredName) || "token";
   if (!taken.has(base)) {
     return base;
   }
@@ -599,13 +599,13 @@ function addColorToken(
   value: unknown,
   afterName?: string,
 ) {
-  let normalized = (0, normalizeColorOrAlias)(value);
+  let normalized = normalizeColorOrAlias(value);
   if (!TOKEN_NAME_PATTERN.test(name) || normalized === undefined) {
     return content;
   }
-  return (0, updateTokens)(content, (input): boolean => {
+  return updateTokens(content, (input): boolean => {
     if (
-      (0, conflictingTokenNames)(input, "color").includes(name) ||
+      conflictingTokenNames(input, "color").includes(name) ||
       input.color.tokens.length >= MAX_COLOR_TOKENS
     ) {
       return false;
@@ -645,11 +645,11 @@ function addScalarToken(
   afterName?: string,
   extraFamily?: string,
 ) {
-  let normalized = (0, normalizeScalarTokenValue)(family, value);
+  let normalized = normalizeScalarTokenValue(family, value);
   if (!TOKEN_NAME_PATTERN.test(name) || normalized === undefined) {
     return content;
   }
-  return (0, updateTokens)(content, (input): boolean => {
+  return updateTokens(content, (input): boolean => {
     let value2 =
       family === "extra"
         ? input.extra.find((input2): boolean => input2.key === extraFamily)
@@ -657,7 +657,7 @@ function addScalarToken(
         : input[family].tokens;
     if (
       value2 === undefined ||
-      (0, conflictingTokenNames)(input, family).includes(name) ||
+      conflictingTokenNames(input, family).includes(name) ||
       value2.length >= MAX_TOKENS_PER_FAMILY
     ) {
       return false;
@@ -684,13 +684,13 @@ function addShadowToken(
   name: string,
   value: unknown,
 ) {
-  let normalized = (0, normalizeBoxShadow)(value);
+  let normalized = normalizeBoxShadow(value);
   if (!TOKEN_NAME_PATTERN.test(name) || normalized === undefined) {
     return content;
   }
-  return (0, updateTokens)(content, (input): boolean => {
+  return updateTokens(content, (input): boolean => {
     if (
-      (0, conflictingTokenNames)(input, "shadow").includes(name) ||
+      conflictingTokenNames(input, "shadow").includes(name) ||
       input.shadow.tokens.length >= MAX_TOKENS_PER_FAMILY
     ) {
       return false;
@@ -721,7 +721,7 @@ function addTypographyStyle(
   if (!TOKEN_NAME_PATTERN.test(name)) {
     return content;
   }
-  return (0, updateTokens)(content, (input): boolean => {
+  return updateTokens(content, (input): boolean => {
     let value = input.type.groups.flatMap((input2) => input2.styles);
     if (
       value.some((input2): boolean => input2.name === name) ||
@@ -791,7 +791,7 @@ function addTypographyGroup(
   content: Model.DesignSystemContent,
   preferredName: string,
 ) {
-  return (0, updateTokens)(content, (input): boolean => {
+  return updateTokens(content, (input): boolean => {
     if (input.type.groups.length >= MAX_TYPOGRAPHY_GROUPS) {
       return false;
     }
@@ -821,7 +821,7 @@ function renameTypographyGroup(
   if (normalized === "" || normalized === oldName) {
     return content;
   }
-  return (0, updateTokens)(content, (input): boolean => {
+  return updateTokens(content, (input): boolean => {
     if (
       input.type.groups.some((input2): boolean => input2.name === normalized)
     ) {
@@ -841,7 +841,7 @@ function deleteTypographyGroup(
   content: Model.DesignSystemContent,
   name: string,
 ) {
-  return (0, updateTokens)(content, (input): boolean => {
+  return updateTokens(content, (input): boolean => {
     let length = input.type.groups.length;
     input.type.groups = input.type.groups.filter(
       (input2): boolean => input2.name !== name,
@@ -849,7 +849,7 @@ function deleteTypographyGroup(
     if (input.type.groups.length === length) {
       return false;
     }
-    (0, pruneUnusedFontFamilies)(input);
+    pruneUnusedFontFamilies(input);
     return true;
   });
 }

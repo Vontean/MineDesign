@@ -136,7 +136,7 @@ function renderMarkdownBlock(
       return (() => {
         const _Element = "h1";
         const _elementProps = {
-          children: (0, renderInlineMarkdown)(block.text, options),
+          children: renderInlineMarkdown(block.text, options),
         };
         const _elementKey = value;
         return <_Element key={_elementKey} {..._elementProps} />;
@@ -145,7 +145,7 @@ function renderMarkdownBlock(
       return (() => {
         const _Element2 = "h2";
         const _elementProps2 = {
-          children: (0, renderInlineMarkdown)(block.text, options),
+          children: renderInlineMarkdown(block.text, options),
         };
         const _elementKey2 = value;
         return <_Element2 key={_elementKey2} {..._elementProps2} />;
@@ -154,7 +154,7 @@ function renderMarkdownBlock(
       return (() => {
         const _Element3 = "h3";
         const _elementProps3 = {
-          children: (0, renderInlineMarkdown)(block.text, options),
+          children: renderInlineMarkdown(block.text, options),
         };
         const _elementKey3 = value;
         return <_Element3 key={_elementKey3} {..._elementProps3} />;
@@ -172,7 +172,7 @@ function renderMarkdownBlock(
       return (() => {
         const _Element5 = "blockquote";
         const _elementProps5 = {
-          children: (0, renderInlineMarkdown)(block.text, options),
+          children: renderInlineMarkdown(block.text, options),
         };
         const _elementKey5 = value;
         return <_Element5 key={_elementKey5} {..._elementProps5} />;
@@ -185,7 +185,7 @@ function renderMarkdownBlock(
             (() => {
               const _Element6 = "li";
               const _elementProps6 = {
-                children: (0, renderInlineMarkdown)(input, options),
+                children: renderInlineMarkdown(input, options),
               };
               const _elementKey6 = options2;
               return <_Element6 key={_elementKey6} {..._elementProps6} />;
@@ -203,7 +203,7 @@ function renderMarkdownBlock(
             (() => {
               const _Element8 = "li";
               const _elementProps8 = {
-                children: (0, renderInlineMarkdown)(input, options),
+                children: renderInlineMarkdown(input, options),
               };
               const _elementKey8 = options2;
               return <_Element8 key={_elementKey8} {..._elementProps8} />;
@@ -249,7 +249,7 @@ function renderMarkdownBlock(
                       (() => {
                         const _Element10 = "th";
                         const _elementProps10 = {
-                          children: (0, renderInlineMarkdown)(
+                          children: renderInlineMarkdown(
                             input,
                             options,
                           ),
@@ -278,7 +278,7 @@ function renderMarkdownBlock(
                           (() => {
                             const _Element11 = "td";
                             const _elementProps11 = {
-                              children: (0, renderInlineMarkdown)(
+                              children: renderInlineMarkdown(
                                 input2,
                                 options,
                               ),
@@ -309,7 +309,7 @@ function renderMarkdownBlock(
       return (() => {
         const _Element14 = "p";
         const _elementProps14 = {
-          children: (0, renderInlineMarkdown)(
+          children: renderInlineMarkdown(
             (
               block as {
                 text: string;
@@ -359,8 +359,8 @@ export {
 };
 export function installEditorMarkdownBlocks(): () => void {
   return () => {
-    jsxMarkdownBlocks = (0, toModuleNamespace)(
-      (0, loadJsxNamespace)(),
+    jsxMarkdownBlocks = toModuleNamespace(
+      loadJsxNamespace(),
       1,
     );
     MAX_MARKDOWN_LIST_ITEMS = 500;

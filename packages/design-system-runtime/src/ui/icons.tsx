@@ -81,11 +81,11 @@ function Callout({
   children: children,
 }: C.CalloutProps) {
   useUiLocale();
-  let value: string = (0, useTranslation)("dismiss", "Dismiss"),
+  let value: string = useTranslation("dismiss", "Dismiss"),
     value2 = dismissLabel ?? value,
-    value3: C.Density = (0, useDensity)(),
+    value3: C.Density = useDensity(),
     state = {
-      "data-step": (0, getDensitySizeIndex)(
+      "data-step": getDensitySizeIndex(
         value3,
         calloutSizeByDensity[value3],
       ),
@@ -126,8 +126,7 @@ function Callout({
       return;
     }
     let current = ref.current,
-      value24: typeof ResizeObserver | undefined = (0,
-      getResizeObserverConstructor)(current);
+      value24: typeof ResizeObserver | undefined = getResizeObserverConstructor(current);
     if (current === null || value24 === undefined) {
       return;
     }
@@ -179,7 +178,7 @@ function Callout({
       <span
         ref={ref3}
         {...state}
-        className={(0, cn)(
+        className={cn(
           "flex shrink-0 items-center gap-xs",
           !value19 && "h-[1lh]",
           value20 && "basis-full",
@@ -204,7 +203,7 @@ function Callout({
       data-testid={dataTestid}
       role={value10 === "none" ? undefined : value10}
       ref={ref}
-      className={(0, cn)(
+      className={cn(
         "flex",
         value22 ? "items-start" : "items-center",
         "gap-xs py-md font-sans text-body font-normal",
@@ -217,7 +216,7 @@ function Callout({
     >
       {[icon !== null && !value20 && (
           <span
-            className={(0, cn)(
+            className={cn(
               value22 ? "flex min-h-[1lh] shrink-0 items-center" : "shrink-0",
               calloutTextClasses[value4],
               value6 && "ms-[4px] -me-[4px]",
@@ -230,7 +229,7 @@ function Callout({
           </span>
         ), value9 ? (
           <div
-            className={(0, cn)(
+            className={cn(
               "flex min-w-0 flex-1 flex-col",
               value5 && leadingIconInsetClasses[value5],
             )}
@@ -270,7 +269,7 @@ function Callout({
           </div>
         ) : (
           <div
-            className={(0, cn)(
+            className={cn(
               "flex min-w-0 flex-wrap",
               value16 ? "items-center" : "items-start",
               "gap-y-sm gap-x-md flex-1",
@@ -336,13 +335,13 @@ export {
 };
 export function installUiIcons(): () => void {
   return () => {
-    (0, initializeClassNames)();
-    (0, initializeTranslations)();
-    (0, initializeCdsRoot)();
-    (0, initializeIconSupport)();
-    (0, initializeIcons)();
-    reactForUiIcons = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    initializeClassNames();
+    initializeTranslations();
+    initializeCdsRoot();
+    initializeIconSupport();
+    initializeIcons();
+    reactForUiIcons = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
     REACT_MEMO_SYMBOL = Symbol.for("react.memo");
@@ -368,12 +367,12 @@ export function installUiIcons(): () => void {
       text: "me-[calc(6px-var(--cds-pad-md))] compact:me-[calc(6px-var(--cds-pad-md))] comfortable:me-[calc(5px-var(--cds-pad-md))]",
     };
     leadingGlyphSpacingClass = leadingIconSpacingClasses.glyph;
-    reactZQ = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    reactZQ = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
-    jsxForUiIcons = (0, toModuleNamespace)(
-      (0, loadJsxNamespace)(),
+    jsxForUiIcons = toModuleNamespace(
+      loadJsxNamespace(),
       1,
     );
     calloutSizeByDensity = {
@@ -399,17 +398,17 @@ export function installUiIcons(): () => void {
       warning: "Warning",
       danger: "Warning",
     };
-    (0, initializeClassNames)();
-    (0, initializeHrefWhitespace)();
-    (0, initializeLinkTargets)();
-    (0, initializeCdsLink)();
-    (0, initializePointerDismissal)();
-    (0, initializeIcons)();
-    (0, initializeCdsLink)();
-    reactForUiIcons2 = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    initializeClassNames();
+    initializeHrefWhitespace();
+    initializeLinkTargets();
+    initializeCdsLink();
+    initializePointerDismissal();
+    initializeIcons();
+    initializeCdsLink();
+    reactForUiIcons2 = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
-    jsxGP = (0, toModuleNamespace)((0, loadJsxNamespace)(), 1);
+    jsxGP = toModuleNamespace(loadJsxNamespace(), 1);
   };
 }

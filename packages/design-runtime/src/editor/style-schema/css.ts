@@ -38,7 +38,7 @@ function serializeStyleGradient(input?: Dynamic): Dynamic {
     .map((input2?: Dynamic): Dynamic => `${input2.color} ${input2.pos}%`)
     .join(", ");
   return input.radial === true
-    ? `${(0, radialGradientFunction)(input)}${value})`
+    ? `${radialGradientFunction(input)}${value})`
     : `linear-gradient(${input.angle}deg, ${value})`;
 }
 function serializeStyleFilter(input?: Dynamic): Dynamic {
@@ -237,13 +237,13 @@ function styleObjectToCss(input?: Dynamic, options?: Dynamic): Dynamic {
   for (let value2 of StyleSchemaValuesItems_3 as Dynamic) {
     if (
       value2 === "animation" ||
-      !(0, StyleSchemaColorAndFontCall)(value, value2) ||
-      !(0, propertyAppliesToNode)(value2, options) ||
+      !StyleSchemaColorAndFontCall(value, value2) ||
+      !propertyAppliesToNode(value2, options) ||
       (StyleSchemaCssPositionTopRightValues.includes(value2) &&
         !supportsPaintContainment())
     )
       continue;
-    let value3: Dynamic = (0, validateStyleValue)(
+    let value3: Dynamic = validateStyleValue(
       value2,
       value[value2],
       options,

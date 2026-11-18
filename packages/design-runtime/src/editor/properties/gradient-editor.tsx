@@ -33,7 +33,7 @@ function normalizedGradientStops(input?: Dynamic): Dynamic {
     (input2?: Dynamic): Dynamic =>
       input2.pos === undefined
         ? undefined
-        : (0, PropertiesSelectMin)(input2.pos, 0, 100),
+        : PropertiesSelectMin(input2.pos, 0, 100),
   );
   if (value.length === 0) return [];
   value[0] === undefined && (value[0] = 0);
@@ -88,7 +88,7 @@ function GradientEditor({
             (input?: Dynamic, options?: Dynamic): Dynamic =>
               input.pos === undefined
                 ? value5[options]
-                : (0, PropertiesSelectMin)(input.pos, 0, 100),
+                : PropertiesSelectMin(input.pos, 0, 100),
           )
         : value5,
     callback: Dynamic = (input?: Dynamic): Dynamic =>
@@ -109,7 +109,7 @@ function GradientEditor({
       return (input?: Dynamic): Dynamic =>
         entries.get(input) ?? "transparent";
     }, [value7]),
-    value9: Dynamic = (0, PropertiesSelectMin)(
+    value9: Dynamic = PropertiesSelectMin(
       selected,
       0,
       Math.max(0, value3.length - 1),
@@ -206,7 +206,7 @@ function GradientEditor({
             ? {
                 ...input,
                 pos: Math.round(
-                  (0, PropertiesSelectMin)(context, value28, value29),
+                  PropertiesSelectMin(context, value28, value29),
                 ),
               }
             : input,
@@ -305,7 +305,7 @@ function GradientEditor({
         .slice(0, value9 + 1)
         .filter((input2?: Dynamic): Dynamic => !input2).length;
       onSelect(
-        (0, PropertiesSelectMin)(
+        PropertiesSelectMin(
           value28[value9]
             ? value9 - length2
             : value9 -
@@ -518,14 +518,14 @@ function GradientEditor({
                 onAngle(
                   input === undefined
                     ? undefined
-                    : (0, PropertiesSelectMin)(input, 0, 360),
+                    : PropertiesSelectMin(input, 0, 360),
                 )
               }
               {...(onAngleScrub
                 ? {
                     onScrub: (input?: Dynamic): Dynamic =>
                       onAngleScrub(
-                        (0, PropertiesSelectMin)(input, 0, 360),
+                        PropertiesSelectMin(input, 0, 360),
                       ),
                     onScrubEnd: onAngleScrubEnd,
                   }
@@ -535,7 +535,7 @@ function GradientEditor({
         </div>
       </PropertyRow>
       <div
-        className={(0, joinClassNames)(
+        className={joinClassNames(
           PropertiesPrimitivesClassNames_3,
           "pt-3 pb-4",
         )}
@@ -574,7 +574,7 @@ function GradientEditor({
                       input.locked === true
                         ? WrittenByHandInAFormMessage
                         : undefined,
-                    className: (0, joinClassNames)(
+                    className: joinClassNames(
                       "absolute top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 cursor-default touch-none rounded-full border-2 border-white p-0 shadow-card-ring",
                       "focus-visible:shadow-focus pointer-coarse:h-6 pointer-coarse:w-6",
                       options === value9
@@ -624,7 +624,7 @@ function GradientEditor({
       <div
         role={"list"}
         aria-label={uiMessage("inspector.gradientEditor.stops")}
-        className={(0, joinClassNames)(
+        className={joinClassNames(
           PropertiesPrimitivesClassNames_3,
           "mt-1 flex flex-col gap-2",
         )}
@@ -686,7 +686,7 @@ function GradientEditor({
                           onSelect(options);
                           value17(input2.detail === 0);
                         }}
-                        className={(0, joinClassNames)(
+                        className={joinClassNames(
                           "min-w-0 cursor-default",
                           options === value9 && "bg-fill-ghost-hover",
                         )}
@@ -754,7 +754,7 @@ export {
 export function installEditorPropertiesGradientEditor(): () => void {
   return () => {
     PropertiesGradientEditorHandler = (input?: Dynamic): Dynamic =>
-      (0, hsvaToRgbaCss)((0, parseHsvaColor)(input));
+      hsvaToRgbaCss(parseHsvaColor(input));
     PropertiesGradientEditorTest = (input?: Dynamic): Dynamic =>
       /^#[0-9a-f]{3,8}$/i.test(input.trim())
         ? input.trim().toUpperCase()
@@ -776,8 +776,8 @@ export function installEditorPropertiesGradientEditor(): () => void {
         get title() { return input ? (undefined) : (uiMessage("inspector.gradientEditor.linearGradientsOnlyHere")); },
       },
     ];
-    jsxPropertiesGradientEditor = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    jsxPropertiesGradientEditor = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
     PropertiesGradientEditorColorMixPattern = /^\s*(var|color-mix)\(/i;

@@ -122,8 +122,8 @@ export {
 };
 export function installCanvasPhoneVisibility(): () => void {
   return () => {
-    (0, initializeNpm_usehooks_ts_p0)();
-    react_uPt = (0, toModuleNamespace)((0, load_react)(), 1);
+    initializeNpm_usehooks_ts_p0();
+    react_uPt = toModuleNamespace(load_react(), 1);
     phoneCanvasShowingPrefix = uiMessage("canvas.phoneVisibility.showing");
     phoneCanvasKilledMarker = "killed";
     phoneCanvasDocumentMarker = "__designPhoneCanvasDocument";
@@ -145,6 +145,6 @@ export function installCanvasPhoneVisibility(): () => void {
       }
     };
     phoneCanvasStorageKey = (): Dynamic =>
-      "design-phone-canvas/" + (0, getViewportMemoryScope)();
+      "design-phone-canvas/" + getViewportMemoryScope();
   };
 }

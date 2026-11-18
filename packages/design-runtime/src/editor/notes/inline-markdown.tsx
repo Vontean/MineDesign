@@ -180,8 +180,8 @@ export {
 };
 export function installEditorNotesInlineMarkdown(): () => void {
   return () => {
-    jsxNotesInlineMarkdown = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    jsxNotesInlineMarkdown = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
     NotesInlineMarkdownPattern =

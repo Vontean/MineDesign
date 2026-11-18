@@ -39,7 +39,7 @@ function hasExactFileReference(input?: Dynamic, options?: Dynamic): Dynamic {
   return false;
 }
 function projectReferenceTokens(input?: Dynamic): Dynamic {
-  let value: Dynamic = (0, decodeHtmlAttributeEntities)(input);
+  let value: Dynamic = decodeHtmlAttributeEntities(input);
   return (value === input ? [input] : [input, value]).flatMap(
     (input2?: Dynamic): Dynamic => input2.match(/[\w.~%/\\:@!$&*+-]+/g) ?? [],
   );
@@ -106,7 +106,7 @@ function addressedArtboardRefusal(
         return options + " names " + value3 + " from the root";
     for (let value3 of projectReferenceTokens(input) as Dynamic) {
       if (!/^\/(?!\/)/.test(value3)) continue;
-      let value4: Dynamic = (0, resolveProjectAssetPath)(
+      let value4: Dynamic = resolveProjectAssetPath(
         context,
         value3,
       );
@@ -140,37 +140,37 @@ function addressedRuntimeRefusal(
   options?: Dynamic,
   context?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = (0, maskHtmlRawContent)(input);
-  for (let [value2, value3] of (0, findHtmlTags)(
+  let value: Dynamic = maskHtmlRawContent(input);
+  for (let [value2, value3] of findHtmlTags(
     value,
     "base",
   ) as Dynamic)
     if (
-      (0, getHtmlAttribute)(input.slice(value2, value3), "href") !==
+      getHtmlAttribute(input.slice(value2, value3), "href") !==
       null
     )
       return "a base element of its own";
-  for (let [value2, value3] of (0, findHtmlTags)(
+  for (let [value2, value3] of findHtmlTags(
     value,
     "script",
   ) as Dynamic) {
     let value4: Dynamic = input.slice(value2, value3),
-      value5: Dynamic = (0, getHtmlAttribute)(value4, "src"),
+      value5: Dynamic = getHtmlAttribute(value4, "src"),
       value6: Dynamic =
-        ((0, getHtmlAttribute)(value4, "type") ?? "")
+        (getHtmlAttribute(value4, "type") ?? "")
           .trim()
           .toLowerCase() === "module";
     if (value5 === null) {
       if (value6) return "an inline module script";
       continue;
     }
-    let value7: Dynamic = (0, resolveProjectAssetPath)(
+    let value7: Dynamic = resolveProjectAssetPath(
       options,
       value5,
     );
     if (!(value7 === null || context[value7] == null)) {
       if (value6) return "a module script names " + value7;
-      if ((0, getHtmlAttribute)(value4, "async") !== null)
+      if (getHtmlAttribute(value4, "async") !== null)
         return "an async script names " + value7;
     }
   }
@@ -212,7 +212,7 @@ function buildAddressedArtboard(
     return {
       copied: "the artboard's file is not among the editor's files",
     };
-  if ((0, isLoadingArtboardHtml)(value))
+  if (isLoadingArtboardHtml(value))
     return {
       copied: "the artboard's content has not arrived",
     };
@@ -221,7 +221,7 @@ function buildAddressedArtboard(
       copied:
         "the artboard's file is not in the published version the editor shows",
     };
-  let value2: Dynamic = (0, projectDirectoryOf)(options),
+  let value2: Dynamic = projectDirectoryOf(options),
     value3: Dynamic = Object.keys(input),
     value4: Dynamic = value3.join(`
 `),
@@ -233,13 +233,13 @@ function buildAddressedArtboard(
         copied: "the canvas holds a runtime file of its own: " + value6,
       };
     if (PreviewAddressedArtboardsTest(value6)) {
-      if ((0, projectDirectoryOf)(value6) !== value2)
+      if (projectDirectoryOf(value6) !== value2)
         return {
           copied: "the artboard uses a page from another folder: " + value6,
         };
       if (
         value6 !== options &&
-        (0, rewriteHtmlDependencies)(value7, input, value2) !== value7
+        rewriteHtmlDependencies(value7, input, value2) !== value7
       )
         return {
           copied:
@@ -257,8 +257,8 @@ function buildAddressedArtboard(
           copied: "not published with the bytes the editor holds: " + value6,
         };
       if (
-        (0, isProjectSourcePath)(value6) &&
-        (0, normalizeBlobAssetPaths)(value7) !== value7
+        isProjectSourcePath(value6) &&
+        normalizeBlobAssetPaths(value7) !== value7
       )
         return {
           copied:
@@ -271,7 +271,7 @@ function buildAddressedArtboard(
       value7,
       value6,
       PreviewAddressedArtboardsPattern.test(value6)
-        ? (0, projectDirectoryOf)(value6)
+        ? projectDirectoryOf(value6)
         : value2,
       value3,
       value4,
@@ -309,7 +309,7 @@ function validateAddressedArtboard(
 }
 function addressedProjectState(): Dynamic {
   return {
-    projectRoot: (0, getCurrentPublishedProjectRoot)(),
+    projectRoot: getCurrentPublishedProjectRoot(),
     publishedAsHeld: isFilePublishedWithMimeType,
     publishedAtAddress: isFilePublishedAtAddress,
     describes: describesPublishedRoot,
@@ -332,14 +332,14 @@ function addressedArtboardFailure(
   context?: Dynamic,
 ): Dynamic {
   return validateAddressedArtboard(
-    (0, collectProjectDependencyFiles)(input, options),
+    collectProjectDependencyFiles(input, options),
     options,
     context,
     addressedProjectState(),
   );
 }
 function addressedArtboardCacheKey(input?: Dynamic): Dynamic {
-  return input ? (0, publishedProjectCacheKey)() : "";
+  return input ? publishedProjectCacheKey() : "";
 }
 export {
   addressedArtboardCacheKey,

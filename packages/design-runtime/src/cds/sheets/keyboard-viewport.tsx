@@ -18,7 +18,7 @@ function isTextInputElement(input: Element | null | undefined): boolean {
           'input:not([type=button],[type=checkbox],[type=radio],[type=range],[type=submit],[type=reset],[type=color],[type=file],[type=image],[type=hidden],[readonly]), textarea:not([readonly]), [contenteditable=""], [contenteditable="true"], [contenteditable="plaintext-only"]',
         )
       ? true
-      : ((0, asElement)(input) as HTMLElement | null)
+      : (asElement(input) as HTMLElement | null)
           ?.isContentEditable === true;
 }
 function measureKeyboardInset(input: Window): KeyboardInset | null {
@@ -49,8 +49,8 @@ function useKeyboardViewport(
     unpan?: boolean;
   } = {},
 ): void {
-  let value = (0, useCdsWindow)(),
-    value2 = (0, useStableCallback)(options);
+  let value = useCdsWindow(),
+    value2 = useStableCallback(options);
   (0, reactSheetsKeyboardViewport.useEffect)(() => {
     if (!input || value === undefined) return;
     let visualViewport = value.visualViewport;
@@ -113,14 +113,14 @@ export {
 };
 export function installCdsSheetsKeyboardViewport(): () => void {
   return () => {
-    initializeSheetsKeyboardViewport = (0, initializeOnce)(() => {
+    initializeSheetsKeyboardViewport = initializeOnce(() => {
       "use client";
 
-      (0, initializeCdsRoot)();
-      (0, initializeHooksStableCallback)();
-      (0, initializeHooksStableCallback_2)();
-      reactSheetsKeyboardViewport = (0, toModuleNamespace)(
-        (0, load_react)(),
+      initializeCdsRoot();
+      initializeHooksStableCallback();
+      initializeHooksStableCallback_2();
+      reactSheetsKeyboardViewport = toModuleNamespace(
+        load_react(),
       );
       textInputSelector =
         'input:not([type=button],[type=checkbox],[type=radio],[type=range],[type=submit],[type=reset],[type=color],[type=file],[type=image],[type=hidden],[readonly]), textarea:not([readonly]), [contenteditable=""], [contenteditable="true"], [contenteditable="plaintext-only"]';

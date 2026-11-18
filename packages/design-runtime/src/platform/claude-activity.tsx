@@ -95,8 +95,8 @@ export {
 };
 export function installPlatformClaudeActivity(): () => void {
   return () => {
-    reactPlatformClaudeActivity = (0, toModuleNamespace)(
-      (0, load_react)(),
+    reactPlatformClaudeActivity = toModuleNamespace(
+      load_react(),
       1,
     );
     FrameClaudeActivityAskValue = "__frame_claude_activity_ask";

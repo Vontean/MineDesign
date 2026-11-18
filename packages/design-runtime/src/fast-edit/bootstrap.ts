@@ -71,7 +71,7 @@ async function readFastEditSamplingConfiguration(): Promise<Dynamic> {
       modelTier: value,
       model: value2,
       effort: value3,
-    }: Dynamic = await (0, awaitFeatureFlag)(
+    }: Dynamic = await awaitFeatureFlag(
       FAST_EDIT_SAMPLING_FLAG,
       {
         modelTier: "quick",
@@ -110,7 +110,7 @@ function initializeFastEdit(
         (input?: Dynamic): Dynamic =>
           input
             ? embeddedFastEditWorkerSource !== ""
-              ? (0, installFastEditWorker)(
+              ? installFastEditWorker(
                   new TextEncoder().encode(
                     embeddedFastEditWorkerSource,
                   ),
@@ -133,11 +133,11 @@ function initializeFastEdit(
             : false,
       )
       .catch((): Dynamic => false);
-  (0, setEditorReadyPromise)(
+  setEditorReadyPromise(
     enabledPromise.then(
       async (input?: Dynamic): Promise<Dynamic> =>
         input &&
-        (await (0, resolveSamplingCapability)(
+        (await resolveSamplingCapability(
           (input2?: Dynamic): Dynamic => typeof input2 == "function",
         )) !== null &&
         (await workerAvailablePromise),
@@ -151,7 +151,7 @@ function initializeFastEdit(
       commentRules: fastEditCanvasSystemPrompt,
       newArtboardRules: fastEditFilesSystemPrompt,
       createEngine: (input2?: Dynamic): Dynamic =>
-        (0, createSamplingClient)(input2, value2),
+        createSamplingClient(input2, value2),
       sandbox: {
         ...fastEditSandboxAdapter,
         available: workerAvailablePromise,

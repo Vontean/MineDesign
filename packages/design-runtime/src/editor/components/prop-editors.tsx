@@ -90,7 +90,7 @@ function PropPaletteCards({
     value3: Dynamic = size === "row";
   return (
     <div
-      className={(0, cn)(
+      className={cn(
         "flex min-w-0 flex-1 gap-1.5",
         value3 && "flex-wrap gap-1 py-0.5",
       )}
@@ -113,7 +113,7 @@ function PropPaletteCards({
             aria-label={value4.join(", ")}
             title={value4.join(" \xB7 ")}
             onClick={(): Dynamic => onChange(input)}
-            className={(0, cn)(
+            className={cn(
               "relative min-w-0 cursor-default overflow-hidden border-0 p-0",
               value3
                 ? "h-control basis-[calc((100%-0.5rem)/3)] rounded pointer-coarse:h-10"
@@ -121,13 +121,13 @@ function PropPaletteCards({
               "transition-[transform,box-shadow] duration-[120ms] ease-[cubic-bezier(.3,.7,.4,1)]",
               value8
                 ? "shadow-[0_0_0_1.5px_var(--cds-text-primary),0_2px_6px_rgba(0,0,0,0.15)]"
-                : (0, cn)(
+                : cn(
                     "shadow-card-ring hover:shadow-field-hover",
                     !value3 && "hover:-translate-y-px",
                   ),
             )}
             style={{
-              background: (0, sanitizeCssBackground)(value5),
+              background: sanitizeCssBackground(value5),
             }}
           >
             {value7.length > 0 && (<span
@@ -139,13 +139,13 @@ function PropPaletteCards({
                   (input2?: Dynamic, options3?: Dynamic): Dynamic => (
                     <i
                       key={options3}
-                      className={(0, cn)(
+                      className={cn(
                         "flex-1",
                         options3 > 0 &&
                           "shadow-[0_-1px_0_color-mix(in_srgb,var(--cds-text-primary)_18%,transparent)]",
                       )}
                       style={{
-                        background: (0, sanitizeCssBackground)(
+                        background: sanitizeCssBackground(
                           input2,
                         ),
                       }}
@@ -156,7 +156,7 @@ function PropPaletteCards({
             {value8 && (<svg
                 viewBox={"0 0 14 14"}
                 aria-hidden={"true"}
-                className={(0, cn)(
+                className={cn(
                   "absolute drop-shadow-[0_1px_1px_rgba(0,0,0,0.3)]",
                   value3
                     ? "left-1 top-1 h-[11px] w-[11px]"
@@ -187,7 +187,7 @@ function propColorEditorKind(items?: Dynamic): Dynamic {
     : "color-well";
 }
 function canonicalPropHexColor(input?: Dynamic): Dynamic {
-  return (0, hsvaToRgbaHex)((0, parseHsvaColor)(input));
+  return hsvaToRgbaHex(parseHsvaColor(input));
 }
 function propColorOptionKeys(input?: Dynamic): Dynamic {
   return input.map((input2?: Dynamic, options?: Dynamic): Dynamic => {
@@ -220,13 +220,13 @@ function designSystemPropColorOptions(
   options?: Dynamic,
   context?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = (0, designSystemColorOptions)(context),
+  let value: Dynamic = designSystemColorOptions(context),
     entries: Dynamic = new Map();
   for (let value2 of value as Dynamic) {
     if (
       typeof value2 == "string" ||
       !ComponentsPropEditorsPattern.test(value2.value) ||
-      (0, parseHsvaColor)(value2.value).a < 1
+      parseHsvaColor(value2.value).a < 1
     )
       continue;
     let value3: Dynamic = canonicalPropHexColor(value2.value);
@@ -290,7 +290,7 @@ function PropColorInput({
   useUiLocale();
   let value: Dynamic = typeof cur == "string" ? cur.trim() : "",
     value2: Dynamic =
-      value !== "" && (0, sanitizeCssColor)(value) === value
+      value !== "" && sanitizeCssColor(value) === value
         ? value
         : undefined,
     value3: Dynamic = (0, reactInspectorContext_3.useMemo)(
@@ -301,7 +301,7 @@ function PropColorInput({
       (): Dynamic => propColorOptionKeys(value3),
       [value3],
     ),
-    value5: Dynamic = (0, useDesignSystems)(),
+    value5: Dynamic = useDesignSystems(),
     value6: Dynamic = (0, reactInspectorContext_3.useMemo)(
       (): Dynamic => designSystemPropColorOptions(value3, value4, value5),
       [value3, value4, value5],
@@ -457,7 +457,7 @@ function ComponentPropInput({
             onReset={onReset}
           />
         );
-      let value7: Dynamic = (0, isToolNameList)(
+      let value7: Dynamic = isToolNameList(
           value3.map((input?: Dynamic): Dynamic => input.value),
         ),
         value8: Dynamic = value7
@@ -465,7 +465,7 @@ function ComponentPropInput({
               (input?: Dynamic, options?: Dynamic): Dynamic => ({
                 ...input,
                 icon:
-                  (0, getSupportedTool)(value3[options].value) ??
+                  getSupportedTool(value3[options].value) ??
                   null,
               }),
             )

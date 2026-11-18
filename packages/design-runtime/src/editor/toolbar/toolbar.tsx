@@ -52,7 +52,7 @@ function EditorToolbar({
       hostDrawsReadOnly,
       (): Dynamic => false,
     ),
-    value4: Dynamic = (0, toolbarDensity)(density),
+    value4: Dynamic = toolbarDensity(density),
     value5: Dynamic = touchTargets === "square" ? value4 : density,
     value6: Dynamic = (0, reactCanvasMeasurements.useRef)(null),
     [value7, value8]: Dynamic = (0, reactCanvasMeasurements.useState)(
@@ -60,7 +60,7 @@ function EditorToolbar({
     ),
     [value9, value10]: Dynamic = (0,
     reactCanvasMeasurements.useState)(false),
-    value11: Dynamic = (0, useTouchToolbar)(),
+    value11: Dynamic = useTouchToolbar(),
     value12: Dynamic = variant === "floating";
   (0, reactCanvasMeasurements.useLayoutEffect)((): Dynamic => {
     let current: Dynamic = value6.current;
@@ -106,8 +106,8 @@ function EditorToolbar({
   }, [value11, value12]);
   (0, reactCanvasMeasurements.useLayoutEffect)((): Dynamic => {
     value6.current &&
-      ((0, updateToolbarEmptySlots)(value6.current),
-      (0, updateToolbarPinnedWords)(value6.current));
+      (updateToolbarEmptySlots(value6.current),
+      updateToolbarPinnedWords(value6.current));
   });
   (0, reactCanvasMeasurements.useLayoutEffect)((): Dynamic => {
     let current: Dynamic = value6.current;
@@ -116,8 +116,8 @@ function EditorToolbar({
       observer: Dynamic = new MutationObserver((): Dynamic => {
         cancelAnimationFrame(index);
         index = requestAnimationFrame((): Dynamic => {
-          (0, updateToolbarEmptySlots)(current);
-          (0, updateToolbarPinnedWords)(current);
+          updateToolbarEmptySlots(current);
+          updateToolbarPinnedWords(current);
         });
       });
     observer.observe(current, {
@@ -147,7 +147,7 @@ function EditorToolbar({
           data-pin-fixed={value9 ? "" : undefined}
           data-touch-targets={touchTargets}
           data-tb-overlay={value12 ? "" : undefined}
-          className={(0, joinClassNames)(
+          className={joinClassNames(
             "tb-root flex shrink-0 items-center",
             value12
               ? "absolute inset-x-0 top-0 z-toolbar"

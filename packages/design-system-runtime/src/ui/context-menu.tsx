@@ -214,12 +214,12 @@ export {
 };
 export function installUiContextMenu(): () => void {
   return () => {
-    reactContextMenu = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    reactContextMenu = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
-    jsxChromeContextMenu = (0, toModuleNamespace)(
-      (0, loadJsxNamespace)(),
+    jsxChromeContextMenu = toModuleNamespace(
+      loadJsxNamespace(),
       1,
     );
     ChromeContextMenuConstant = 14;

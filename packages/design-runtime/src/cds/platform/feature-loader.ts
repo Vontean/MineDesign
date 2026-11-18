@@ -24,7 +24,7 @@ export {
 };
 export function installCdsPlatformFeatureLoader(): () => void {
   return () => {
-    initializePlatformFeatureLoader = (0, initializeOnce)(
+    initializePlatformFeatureLoader = initializeOnce(
       (): Dynamic => {},
     );
   };

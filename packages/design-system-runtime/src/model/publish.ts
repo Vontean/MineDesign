@@ -32,14 +32,14 @@ function mirrorFileContent(
   path: string,
   content: string,
 ): { content: string | Blob; contentType: string } | null {
-  let mime = (0, mirrorMimeTypeForPath)(path)!;
-  if ((0, isTextFilePath)(path)) {
+  let mime = mirrorMimeTypeForPath(path)!;
+  if (isTextFilePath(path)) {
     return {
       content: content,
       contentType: mime,
     };
   }
-  let header = (0, parseDataUriHeader)(content),
+  let header = parseDataUriHeader(content),
     binary: string;
   try {
     binary = atob(content.slice(header!.payloadOffset));
@@ -63,8 +63,8 @@ function computeMirrorChanges(
   force: boolean = false,
 ): Model.FilePublishEntries {
   let changes: Model.FilePublishEntries = {},
-    afterTokensCss = (0, generatedTokensCssForFiles)(afterFiles),
-    beforeTokensCss = (0, generatedTokensCssForFiles)(beforeFiles);
+    afterTokensCss = generatedTokensCssForFiles(afterFiles),
+    beforeTokensCss = generatedTokensCssForFiles(beforeFiles);
   if (afterTokensCss === null) {
     if (
       beforeTokensCss !== null ||
@@ -75,22 +75,22 @@ function computeMirrorChanges(
   } else if (force || afterTokensCss !== beforeTokensCss) {
     changes[GENERATED_TOKENS_CSS_PATH] = {
       content: afterTokensCss,
-      contentType: (0, mirrorMimeTypeForPath)(
+      contentType: mirrorMimeTypeForPath(
         GENERATED_TOKENS_CSS_PATH,
       )!,
     };
   }
-  let documentation = (0, consumptionDocumentationForFiles)(
+  let documentation = consumptionDocumentationForFiles(
       afterFiles,
     ),
-    beforeCards = (0, consumptionDocumentationForFiles)(
+    beforeCards = consumptionDocumentationForFiles(
       beforeFiles,
     ).files;
   for (let [value, value2] of documentation.files) {
     if (force || beforeCards.get(value) !== value2) {
       changes[value] = {
         content: value2,
-        contentType: (0, mirrorMimeTypeForPath)(value)!,
+        contentType: mirrorMimeTypeForPath(value)!,
       };
     }
   }
@@ -99,17 +99,17 @@ function computeMirrorChanges(
       changes[value] = null;
     }
   }
-  let renamedTokensText = (0, tokensJsonWithManifestName)(afterFiles);
+  let renamedTokensText = tokensJsonWithManifestName(afterFiles);
   for (let value of Object.keys(afterFiles)) {
     let value2 = afterFiles[value];
-    if (!(0, isMirrorEligibleFile)(value, value2)) {
+    if (!isMirrorEligibleFile(value, value2)) {
       continue;
     }
     if (
       !force &&
       (value === DESIGN_SYSTEM_PATHS.tokens
         ? renamedTokensText ===
-          (0, tokensJsonWithManifestName)(beforeFiles)
+          tokensJsonWithManifestName(beforeFiles)
         : beforeFiles[value] === value2) &&
       value !== DESIGN_SYSTEM_PATHS.manifest &&
       value !== DESIGN_SYSTEM_PATHS.readme
@@ -132,10 +132,10 @@ function computeMirrorChanges(
     if (
       value !== GENERATED_TOKENS_CSS_PATH &&
       !documentation.files.has(value) &&
-      (0, isMirrorEligibleFile)(value, beforeFiles[value]) &&
+      isMirrorEligibleFile(value, beforeFiles[value]) &&
       !(
         Object.hasOwn(afterFiles, value) &&
-        (0, isMirrorEligibleFile)(value, afterFiles[value])
+        isMirrorEligibleFile(value, afterFiles[value])
       )
     ) {
       changes[value] = null;
@@ -145,10 +145,10 @@ function computeMirrorChanges(
 }
 function countMirrorFiles(files: Model.FileTable): number {
   let count =
-    ((0, generatedTokensCssForFiles)(files) !== null ? 1 : 0) +
-    (0, consumptionDocumentationForFiles)(files).files.size;
+    (generatedTokensCssForFiles(files) !== null ? 1 : 0) +
+    consumptionDocumentationForFiles(files).files.size;
   for (let value of Object.keys(files)) {
-    if ((0, isMirrorEligibleFile)(value, files[value])) {
+    if (isMirrorEligibleFile(value, files[value])) {
       count++;
     }
   }
@@ -240,7 +240,7 @@ function createPageMirrorPublisher(
         reloads: false,
       };
     } catch (value5: unknown) {
-      let code = (0, normalizeSelfPublishError)(value5).code;
+      let code = normalizeSelfPublishError(value5).code;
       if (
         code === "capability_disabled" ||
         code === "capability_removed" ||
@@ -321,22 +321,22 @@ function createSystemFilesPublisher(
       index2 = 0;
     try {
       baseCardPaths ??= new Set(
-        (0, consumptionDocumentationForFiles)(value3).files.keys(),
+        consumptionDocumentationForFiles(value3).files.keys(),
       );
-      index = (0, consumptionDocumentationForFiles)(value2).files
+      index = consumptionDocumentationForFiles(value2).files
         .size;
       index2 = countMirrorFiles(value2) + 1;
       flag = index2 > value4 && index2 - index <= value4;
     } catch {
       index2 =
         Object.keys(value2).filter((input2) =>
-          (0, isMirrorEligibleFile)(input2, value2[input2]),
+          isMirrorEligibleFile(input2, value2[input2]),
         ).length + 2;
     }
     let callback = (input2: Model.FilePublishEntries) => {
         let value10: ReadonlyMap<string, string>;
         try {
-          value10 = (0, consumptionDocumentationForFiles)(
+          value10 = consumptionDocumentationForFiles(
             value2,
           ).files;
         } catch {
@@ -344,7 +344,7 @@ function createSystemFilesPublisher(
         }
         for (let value13 of Object.keys(input2)) {
           if (
-            (0, isGeneratedApiPath)(value13) &&
+            isGeneratedApiPath(value13) &&
             (input2[value13] === null || flag)
           ) {
             delete input2[value13];
@@ -416,7 +416,7 @@ function createSystemFilesPublisher(
         try {
           for (let value12 of Object.keys(input2)) {
             if (
-              (0, isGeneratedApiPath)(value12) &&
+              isGeneratedApiPath(value12) &&
               input2[value12] !== null
             ) {
               delete input2[value12];
@@ -424,8 +424,7 @@ function createSystemFilesPublisher(
           }
           let value10 = value8 + estimatePublishContentBytes(input2),
             value11 = Object.keys(input2).length + 1;
-          for (let [value12, value13] of (0,
-          consumptionDocumentationForFiles)(value2).files) {
+          for (let [value12, value13] of consumptionDocumentationForFiles(value2).files) {
             if (publishedCards.get(value12) === value13) {
               continue;
             }
@@ -439,7 +438,7 @@ function createSystemFilesPublisher(
             }
             input2[value12] = {
               content: value13,
-              contentType: (0, mirrorMimeTypeForPath)(value12)!,
+              contentType: mirrorMimeTypeForPath(value12)!,
             };
             value10 += length;
             value11++;
@@ -476,7 +475,7 @@ function createSystemFilesPublisher(
             let value10 = value2[DESIGN_SYSTEM_PATHS.manifest],
               value11 =
                 typeof value10 === "string" &&
-                (0, isMirrorEligibleFile)(
+                isMirrorEligibleFile(
                   DESIGN_SYSTEM_PATHS.manifest,
                   value10,
                 )
@@ -513,11 +512,11 @@ function createSystemFilesPublisher(
                 ) {
                   let state3 = {
                     content:
-                      (0, stripGeneratedReadmeTail)(
+                      stripGeneratedReadmeTail(
                         value2[DESIGN_SYSTEM_PATHS.readme],
                       ).replace(/\uFFFD/g, "") +
                       OMITTED_API_CARDS_NOTICE,
-                    contentType: (0, mirrorMimeTypeForPath)(
+                    contentType: mirrorMimeTypeForPath(
                       DESIGN_SYSTEM_PATHS.readme,
                     )!,
                   };
@@ -564,7 +563,7 @@ function createSystemFilesPublisher(
         continue;
       }
       for (let value15 of Object.keys(value12)) {
-        if ((0, explainUnsafeMirrorPath)(value15) !== null) {
+        if (explainUnsafeMirrorPath(value15) !== null) {
           delete value12[value15];
         }
       }
@@ -637,7 +636,7 @@ function createSystemFilesPublisher(
             ),
           );
         for (let [value17, value18] of Object.entries(value12)) {
-          if (!(0, isGeneratedApiPath)(value17)) {
+          if (!isGeneratedApiPath(value17)) {
             continue;
           }
           if (value18 === null) {
@@ -666,8 +665,8 @@ function createSystemFilesPublisher(
                 value18 !== null &&
                 value17 !== DESIGN_SYSTEM_PATHS.manifest &&
                 !values.has(value17) &&
-                (0, explainUnsafeMirrorPath)(value17) === null &&
-                !(0, isGeneratedApiPath)(value17)
+                explainUnsafeMirrorPath(value17) === null &&
+                !isGeneratedApiPath(value17)
               ) {
                 owedPaths.add(value17);
               }
@@ -696,8 +695,7 @@ function createSystemFilesPublisher(
         let value16 = cache.get(value12) ?? 0;
         if (value10 === "least" && !flag) {
           try {
-            for (let [value17, value18] of (0,
-            consumptionDocumentationForFiles)(value2).files) {
+            for (let [value17, value18] of consumptionDocumentationForFiles(value2).files) {
               if (publishedCards.get(value17) !== value18) {
                 value16++;
               }
@@ -728,7 +726,7 @@ function createSystemFilesPublisher(
           reloads: false,
         };
       } catch (value15: unknown) {
-        let value16 = (0, normalizeSelfPublishError)(value15),
+        let value16 = normalizeSelfPublishError(value15),
           code = value16.code;
         if (
           code !== "too_large" &&
@@ -953,7 +951,7 @@ function reportPublisherOutcome(
       return value;
     } catch (value: unknown) {
       if (options !== undefined) {
-        report((0, normalizeSelfPublishError)(value).code);
+        report(normalizeSelfPublishError(value).code);
       }
       throw value;
     }

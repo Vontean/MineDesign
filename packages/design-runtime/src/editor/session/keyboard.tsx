@@ -14,7 +14,7 @@ import { type Dynamic } from "../../runtime-types";
 export function routeFrameKeyMessage(deps: { readonly active: Dynamic; readonly readOnly: Dynamic; readonly routeForwardedKey: Dynamic; readonly value153: Dynamic; readonly value154: Dynamic; readonly value156: Dynamic; readonly value164: Dynamic; readonly value168: Dynamic; readonly value174: Dynamic; readonly value259: Dynamic; readonly value260: Dynamic; readonly value262: Dynamic; readonly value267: Dynamic; readonly value268: Dynamic; readonly value287: Dynamic; readonly value288: Dynamic; readonly value289: Dynamic; readonly value60: Dynamic; readonly value61: Dynamic; readonly value63: Dynamic; readonly webviewRef: Dynamic }, input?: Dynamic): Dynamic {
       if (
         !deps.active ||
-        !(0, isPreviewMessage)(input, deps.webviewRef.current)
+        !isPreviewMessage(input, deps.webviewRef.current)
       )
         return;
       let value307: Dynamic = input.data?.[DcEditorEvtValue],
@@ -39,19 +39,19 @@ export function routeFrameKeyMessage(deps: { readonly active: Dynamic; readonly 
         if (!value308 || (deps.value289 && !deps.value287)) return;
         value309 &&
           value307.typing !== true &&
-          (0, emitEditorEvent)("panel-toggle-key");
+          emitEditorEvent("panel-toggle-key");
         deps.value288(deps.value289 ? false : (input2?: Dynamic): Dynamic => !input2);
         return;
       }
       if (value307?.type === "clipboardKey" && value307.key === "F6") {
         if (!value309) return;
-        (0, emitEditorEvent)("focus-region-key", {
+        emitEditorEvent("focus-region-key", {
           reverse: value307.shift === true,
         });
         return;
       }
       if (value307?.type === "clipboardKey" && value307.key === "comment") {
-        value309 && (0, emitEditorEvent)("canvas-comment-key");
+        value309 && emitEditorEvent("canvas-comment-key");
         return;
       }
       if (value307?.type === "clipboardKey" && value307.key === "a") {
@@ -63,13 +63,13 @@ export function routeFrameKeyMessage(deps: { readonly active: Dynamic; readonly 
         value307?.type === "clipboardKey" &&
         (value307.key === "0" || value307.key === "+" || value307.key === "-")
       ) {
-        (0, emitEditorEvent)("canvas-zoom-chord", {
+        emitEditorEvent("canvas-zoom-chord", {
           key: value307.key,
         });
         return;
       }
       if (value307?.type === "clipboardKey" && value307.key === "guides") {
-        value308 && (0, emitEditorEvent)("canvas-guides-toggle");
+        value308 && emitEditorEvent("canvas-guides-toggle");
         return;
       }
       if (
@@ -77,7 +77,7 @@ export function routeFrameKeyMessage(deps: { readonly active: Dynamic; readonly 
         (value307.key === "flip-horizontal" ||
           value307.key === "flip-vertical")
       ) {
-        if (deps.readOnly || (0, hasBlockingEditorOverlay)()) return;
+        if (deps.readOnly || hasBlockingEditorOverlay()) return;
         deps.value259(
           value307.key === "flip-horizontal" ? "horizontal" : "vertical",
           true,
@@ -98,14 +98,14 @@ export function routeFrameKeyMessage(deps: { readonly active: Dynamic; readonly 
           (deps.readOnly && value307.key !== "c")
         )
           return;
-        let value310: Dynamic = (0, normalizePasteStamp)(value307),
-          value311: Dynamic = (0, boundedPasteText)(value307),
+        let value310: Dynamic = normalizePasteStamp(value307),
+          value311: Dynamic = boundedPasteText(value307),
           value312: Dynamic =
             (value307.key === "c" || value307.key === "x") &&
             value310 != null &&
             typeof value307.mark == "boolean";
         if (value312 && value307.mark === true) {
-          (0, claimClipboardMark)(value310, value311);
+          claimClipboardMark(value310, value311);
           return;
         }
         let state: Dynamic = {
@@ -114,11 +114,11 @@ export function routeFrameKeyMessage(deps: { readonly active: Dynamic; readonly 
           hasImage: false,
           artboards:
             value307.key === "v"
-              ? (0, foreignArtboardPasteContext)(value307)
+              ? foreignArtboardPasteContext(value307)
               : undefined,
         };
         if (value307.key === "v") {
-          (0, afterClipboardSettled)((): Dynamic => {
+          afterClipboardSettled((): Dynamic => {
             !deps.value61.current ||
               !deps.value60.current ||
               deps.routeForwardedKey?.(
@@ -154,6 +154,6 @@ export function routeFrameKeyMessage(deps: { readonly active: Dynamic; readonly 
                   inTabOnly: true,
                 }) != null && deps.value153(CutValue)
               : value307.key === "d" && deps.value174());
-        value312 && (0, claimClipboardMark)(value310, value311);
+        value312 && claimClipboardMark(value310, value311);
       }
     }

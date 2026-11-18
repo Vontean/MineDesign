@@ -24,19 +24,19 @@ function matchArtboardColorToken(
 ): Dynamic {
   let value: Dynamic = (input ?? "").trim();
   if (value === "" || value.length > 128) return;
-  let value2: Dynamic = (0, cssVariableName)(value);
+  let value2: Dynamic = cssVariableName(value);
   if (value2 !== null) return value2.replace(/^--/, "");
   if (context === undefined) return;
   let callback: Dynamic = (input2?: Dynamic): Dynamic => {
       let value4: Dynamic =
-        (0, normalizeCssColor)(input2) ??
+        normalizeCssColor(input2) ??
         (/^[a-z]+$/i.test(input2.trim()) &&
-        (0, PropertiesDropShadowEditorTest)(input2)
+        PropertiesDropShadowEditorTest(input2)
           ? input2
           : undefined);
       return value4 === undefined
         ? undefined
-        : (0, hsvaToRgbaCss)((0, parseHsvaColor)(value4));
+        : hsvaToRgbaCss(parseHsvaColor(value4));
     },
     value3: Dynamic = callback(value);
   return value3 === undefined
@@ -47,7 +47,7 @@ function matchArtboardColorToken(
             input2.name.startsWith("--") &&
             !context.has(input2.name) &&
             callback(
-              (0, resolveColorTokenValue)(input2.value, options) ??
+              resolveColorTokenValue(input2.value, options) ??
                 input2.value,
             ) === value3,
         )
@@ -59,7 +59,7 @@ function editorColorSwatches(input?: Dynamic): Dynamic {
     return {
       name: input2.name,
       color:
-        (0, resolveColorTokenValue)(input2.value, input) ??
+        resolveColorTokenValue(input2.value, input) ??
         input2.value,
       label: value.startsWith("#") ? value.toUpperCase() : value,
       ...(input2.group !== undefined
@@ -89,20 +89,20 @@ function matchAuthoredColorToken(
   context?: Dynamic,
 ): Dynamic {
   if (input === undefined) return null;
-  let value: Dynamic = (0, cssVariableName)(input);
+  let value: Dynamic = cssVariableName(input);
   if (value !== null)
     return options.some((input2?: Dynamic): Dynamic => input2.name === value)
       ? value
       : null;
-  if (!(0, PropertiesDropShadowEditorTest)(input)) return null;
-  let value2: Dynamic = (0, hsvaToRgbaCss)(
-      (0, parseHsvaColor)(input),
+  if (!PropertiesDropShadowEditorTest(input)) return null;
+  let value2: Dynamic = hsvaToRgbaCss(
+      parseHsvaColor(input),
     ),
     value3: Dynamic = options.find(
       (input2?: Dynamic): Dynamic =>
         context?.has(input2.picks ?? input2.name) !== true &&
-        (0, hsvaToRgbaCss)(
-          (0, parseHsvaColor)(input2.color),
+        hsvaToRgbaCss(
+          parseHsvaColor(input2.color),
         ) === value2,
     );
   return value3 === undefined ? null : (value3.picks ?? value3.name);
@@ -117,7 +117,7 @@ function resolveColorSwatchValue(
   );
   if (value)
     return context?.has(input) === true
-      ? (0, cssVariableValue)(input)
+      ? cssVariableValue(input)
       : value.color;
 }
 function TokenColorPicker({
@@ -137,12 +137,12 @@ function TokenColorPicker({
   let value2: Dynamic = (0,
     reactPropertiesDropShadowEditor_3.useMemo)(
       (): Dynamic =>
-        (0, resolveColorTokenValue)(value, tokens2) ?? value,
+        resolveColorTokenValue(value, tokens2) ?? value,
       [value, tokens2],
     ),
     value3: Dynamic = (0, reactPropertiesDropShadowEditor_3.useMemo)(
       (): Dynamic =>
-        (0, mergeDesignSystemSwatches)(
+        mergeDesignSystemSwatches(
           context,
           editorColorSwatches(tokens2),
         ),
@@ -195,13 +195,13 @@ export {
 };
 export function installEditorPropertiesTokenColorPicker(): () => void {
   return () => {
-    reactPropertiesTokenColorPicker = (0, toModuleNamespace)(
-      (0, load_react)(),
+    reactPropertiesTokenColorPicker = toModuleNamespace(
+      load_react(),
       1,
     );
-    (0, initializeCdsIndex)();
-    reactPropertiesTokenColorPicker_2 = (0, toModuleNamespace)(
-      (0, load_react)(),
+    initializeCdsIndex();
+    reactPropertiesTokenColorPicker_2 = toModuleNamespace(
+      load_react(),
       1,
     );
     AssetPickerContext = (0, reactPropertiesTokenColorPicker_2.createContext)({

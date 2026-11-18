@@ -44,7 +44,7 @@ function componentDeclarationFiles(
     value3: Dynamic = Object.entries(options)
       .filter(
         ([, input2]: Dynamic): Dynamic =>
-          !(0, typeExpressionTooDeep)(input2),
+          !typeExpressionTooDeep(input2),
       )
       .sort(
         ([input2]: Dynamic, [options2]: Dynamic): Dynamic =>
@@ -146,10 +146,10 @@ async function inferInstalledComponentProps(
   let value2: Dynamic = componentDeclarationFiles(input, options),
     items: Dynamic = [];
   if (value2.length > 0) {
-    let value3: Dynamic = (0, componentTypeCandidates)(input);
+    let value3: Dynamic = componentTypeCandidates(input);
     items = supportsTypeInferenceWorker()
       ? await inferPropsInWorker(value3, value2)
-      : (0, inferPropsFromDeclarations)(
+      : inferPropsFromDeclarations(
           value3,
           value2,
           ComponentsDeclarationResolverNameTypeValueValues,

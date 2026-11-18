@@ -72,7 +72,7 @@ function ColorPicker({
         : input,
     [value2, value3]: Dynamic = (0,
     reactAccessibilityAnnouncer.useState)(
-      (): Dynamic => callback((0, parseHsvaColor)(value)),
+      (): Dynamic => callback(parseHsvaColor(value)),
     ),
     value4: Dynamic = (0, reactAccessibilityAnnouncer.useRef)(value2);
   value4.current = value2;
@@ -81,7 +81,7 @@ function ColorPicker({
     ),
     [value6, value7]: Dynamic = (0,
     reactAccessibilityAnnouncer.useState)(
-      (): Dynamic => (0, hsvaToRgbHex)(value2),
+      (): Dynamic => hsvaToRgbHex(value2),
     ),
     [value8, value9]: Dynamic = (0,
     reactAccessibilityAnnouncer.useState)(
@@ -111,14 +111,14 @@ function ColorPicker({
         let current: Dynamic = value15.current;
         !options ||
           current === undefined ||
-          (0, announce)((): Dynamic => {
-            let value39: Dynamic = (0, evaluateColorContrast)(
+          announce((): Dynamic => {
+            let value39: Dynamic = evaluateColorContrast(
               input,
               current,
             );
             return value39 === undefined
               ? null
-              : (0, summarizeContrastResults)(value39).spoken;
+              : summarizeContrastResults(value39).spoken;
           });
       },
       [],
@@ -128,12 +128,12 @@ function ColorPicker({
     value19: Dynamic = (0, reactAccessibilityAnnouncer.useCallback)(
       (input?: Dynamic): Dynamic => {
         value18.current = input;
-        let value39: Dynamic = callback((0, parseHsvaColor)(input));
-        (0, hsvaToRgbaHex)(value39) !==
-          (0, hsvaToRgbaHex)(value4.current) &&
+        let value39: Dynamic = callback(parseHsvaColor(input));
+        hsvaToRgbaHex(value39) !==
+          hsvaToRgbaHex(value4.current) &&
           (value3(value39),
           (value4.current = value39),
-          value7((0, hsvaToRgbHex)(value39)),
+          value7(hsvaToRgbHex(value39)),
           value9(Math.round(value39.a * 100).toString()));
       },
       [],
@@ -161,12 +161,12 @@ function ColorPicker({
                 a: 1,
               }
             : input,
-          value40: Dynamic = (0, hsvaToRgbaHex)(value39),
+          value40: Dynamic = hsvaToRgbaHex(value39),
           value41: Dynamic =
-            value40 !== (0, hsvaToRgbaHex)(value4.current);
+            value40 !== hsvaToRgbaHex(value4.current);
         value3(value39);
         value4.current = value39;
-        value7((0, hsvaToRgbHex)(value39));
+        value7(hsvaToRgbHex(value39));
         value9(Math.round(value39.a * 100).toString());
         return !value41 && !value12.current
           ? false
@@ -183,13 +183,13 @@ function ColorPicker({
             }
           : input;
         return !value12.current &&
-          (0, hsvaToRgbaHex)(value39) ===
-            (0, hsvaToRgbaHex)(value4.current)
-          ? (value7((0, hsvaToRgbHex)(value4.current)),
+          hsvaToRgbaHex(value39) ===
+            hsvaToRgbaHex(value4.current)
+          ? (value7(hsvaToRgbHex(value4.current)),
             value9(Math.round(value4.current.a * 100).toString()),
             false)
           : (value20(value39),
-            value16((0, hsvaToRgbaHex)(value39), true),
+            value16(hsvaToRgbaHex(value39), true),
             true);
       },
       [value20, value16],
@@ -197,7 +197,7 @@ function ColorPicker({
     value22: Dynamic = (0, reactAccessibilityAnnouncer.useCallback)(
       (): Dynamic =>
         (input?: Dynamic): Dynamic => {
-          value16((0, hsvaToRgbaHex)(value4.current), input);
+          value16(hsvaToRgbaHex(value4.current), input);
         },
       [value16],
     ),
@@ -239,7 +239,7 @@ function ColorPicker({
           flag && ((flag = false), value39(input2));
         },
         callback15: Dynamic = (): Dynamic => callback14(false);
-      callback13 = (0, trackColorPickerDrag)(
+      callback13 = trackColorPickerDrag(
         input,
         (
           input2?: Dynamic,
@@ -258,7 +258,7 @@ function ColorPicker({
         (input2?: Dynamic, options?: Dynamic, context?: Dynamic): Dynamic =>
           value20({
             ...value4.current,
-            s: (0, colorSliderPosition)(input2, context),
+            s: colorSliderPosition(input2, context),
             v:
               1 -
               Math.max(
@@ -276,7 +276,7 @@ function ColorPicker({
         (input2?: Dynamic, options?: Dynamic, context?: Dynamic): Dynamic =>
           value20({
             ...value4.current,
-            h: (0, colorSliderPosition)(input2, context) * 360,
+            h: colorSliderPosition(input2, context) * 360,
           }),
       ),
     callback7: Dynamic = (input?: Dynamic): Dynamic =>
@@ -285,14 +285,14 @@ function ColorPicker({
         (input2?: Dynamic, options?: Dynamic, context?: Dynamic): Dynamic =>
           value20({
             ...value4.current,
-            a: (0, colorSliderPosition)(input2, context),
+            a: colorSliderPosition(input2, context),
           }),
       ),
     callback8: Dynamic = async (): Promise<Dynamic> => {
-      let value39: Dynamic = await (0, pickEyeDropperColor)();
+      let value39: Dynamic = await pickEyeDropperColor();
       value39 &&
         value21({
-          ...(0, parseHsvaColor)(value39),
+          ...parseHsvaColor(value39),
           a: value4.current.a,
         });
     },
@@ -308,7 +308,7 @@ function ColorPicker({
           value39,
         )
       ) {
-        let value40: Dynamic = (0, parseHsvaColor)(
+        let value40: Dynamic = parseHsvaColor(
             value39.startsWith("#") ? value39 : "#" + value39,
           ),
           length: Dynamic = value39.replace(/^#/, "").length;
@@ -321,7 +321,7 @@ function ColorPicker({
               },
         );
       }
-      value7((0, hsvaToRgbHex)(value2));
+      value7(hsvaToRgbHex(value2));
       return false;
     },
     callback10: Dynamic = (): Dynamic => {
@@ -338,11 +338,11 @@ function ColorPicker({
             a: Math.max(0, Math.min(1, value39 / 100)),
           });
     },
-    value29: Dynamic = (0, hsvaToRgbaCss)({
+    value29: Dynamic = hsvaToRgbaCss({
       ...value2,
       a: 1,
     }),
-    value30: Dynamic = (0, hsvaToRgbaHex)(value2),
+    value30: Dynamic = hsvaToRgbaHex(value2),
     value31: Dynamic =
       contrast === undefined ? undefined : JSON.stringify(contrast),
     value32: Dynamic = (0, reactAccessibilityAnnouncer.useMemo)(
@@ -353,14 +353,14 @@ function ColorPicker({
       (): Dynamic =>
         value32 === undefined
           ? undefined
-          : (0, evaluateColorContrast)(value30, value32),
+          : evaluateColorContrast(value30, value32),
       [value32, value30],
     ),
     value34: Dynamic = (0, reactAccessibilityAnnouncer.useMemo)(
       (): Dynamic =>
         value32 === undefined || value26
           ? undefined
-          : (0, findReadableShade)(value30, value32),
+          : findReadableShade(value30, value32),
       [value32, value30, value26],
     ),
     value35: Dynamic = value24 !== undefined ? value24.shade : value34,
@@ -371,7 +371,7 @@ function ColorPicker({
   }, [value36]);
   let callback11: Dynamic = (input?: Dynamic): Dynamic => {
       value34 !== undefined &&
-        (value21((0, parseHsvaColor)(value34.css)), callback3(input));
+        (value21(parseHsvaColor(value34.css)), callback3(input));
     },
     callback12: Dynamic = (): Dynamic => {
       value28.current = true;
@@ -434,13 +434,13 @@ function ColorPicker({
               }
               style={{
                 left: `calc(${value2.a} * (100% - 14px) + 7px)`,
-                background: (0, hsvaToRgbaCss)(value2),
+                background: hsvaToRgbaCss(value2),
               }}
             />
           </div>
         </div>)}
       <div className={"mt-1 flex items-center gap-2"}>
-        {(0, supportsEyeDropper)() && (<button
+        {supportsEyeDropper() && (<button
             type={"button"}
             title={uiMessage("inspector.picker.pickColorFromScreen")}
             aria-label={uiMessage("inspector.picker.pickColorFromScreen")}
@@ -479,7 +479,7 @@ function ColorPicker({
                 ? event.target.blur()
                 : event.key === "Escape" &&
                   ((value5.current = true),
-                  value7((0, hsvaToRgbHex)(value2)),
+                  value7(hsvaToRgbHex(value2)),
                   event.target.blur());
               event.stopPropagation();
             }}

@@ -65,7 +65,7 @@ function PropertyTextInput({
       disabled={disabled2}
       aria-label={ariaLabel}
       fullWidth={fullWidth}
-      className={(0, cn)(
+      className={cn(
         placeholder !== "Mixed" &&
           !value7 &&
           "placeholder:text-primary [&_input]:placeholder:text-primary",
@@ -128,13 +128,12 @@ function PropertyTextInput({
   );
 }
 function useFieldNumericArrowStep(input?: Dynamic): Dynamic {
-  let { text: value, isLiteral: value2 }: Dynamic = (0,
-    inspectorFieldDisplay)(input.state),
+  let { text: value, isLiteral: value2 }: Dynamic = inspectorFieldDisplay(input.state),
     value3: Dynamic =
       !value ||
-      (value2 && (0, parseCssNumber)(value) != null) ||
-      ((0, classifyStyleValue)(value).kind === "var" &&
-        (0, parseCssNumber)(input.state.fallback) != null),
+      (value2 && parseCssNumber(value) != null) ||
+      (classifyStyleValue(value).kind === "var" &&
+        parseCssNumber(input.state.fallback) != null),
     value4: Dynamic = (0, reactPropertiesDropShadowEditor_2.useRef)(
       null,
     ),
@@ -177,20 +176,19 @@ function PropertyCssNumberRow({
   shell: shell,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let { text: value, placeholder: value2 }: Dynamic = (0,
-    inspectorFieldDisplay)(state),
+  let { text: value, placeholder: value2 }: Dynamic = inspectorFieldDisplay(state),
     spec: Dynamic = state.spec,
     value3: Dynamic =
-      !!value && (0, classifyStyleValue)(value).kind === "var",
+      !!value && classifyStyleValue(value).kind === "var",
     value4: Dynamic =
-      value && !value3 ? (0, parseCssNumber)(value) : null,
-    value5: Dynamic = (0, parseCssNumber)(
+      value && !value3 ? parseCssNumber(value) : null,
+    value5: Dynamic = parseCssNumber(
       value3 ? (state.fallback ?? "") : value2,
     );
   if (!value5 && value2 && !state.mixed) {
     let value19: Dynamic =
       spec?.scrubFrom ??
-      (0, parseCssNumber)(spec?.defaultValue)?.value;
+      parseCssNumber(spec?.defaultValue)?.value;
     value19 != null &&
       (value5 = {
         value: value19,
@@ -209,7 +207,7 @@ function PropertyCssNumberRow({
     value8: Dynamic = value5 != null && value5.unit === value7,
     value9: Dynamic = value7 === (spec?.unit ?? ""),
     value10: Dynamic =
-      (0, getFineUnitStep)(value7, undefined) != null,
+      getFineUnitStep(value7, undefined) != null,
     value11: Dynamic = value9 ? (spec?.step ?? 1) : value10 ? 0.1 : 1,
     value12: Dynamic =
       value7 === "" && Number.isInteger(value11) && value11 >= 1
@@ -222,23 +220,22 @@ function PropertyCssNumberRow({
       state.mixed || value4 == null
         ? undefined
         : state.varSource
-          ? (0, roundCssNumber)(value4.value, value7)
+          ? roundCssNumber(value4.value, value7)
           : value4.value,
     callback: Dynamic = (input?: Dynamic): Dynamic =>
-      onCommit(state.prop, (0, formatCssNumber)(input, value7)),
+      onCommit(state.prop, formatCssNumber(input, value7)),
     callback2: Dynamic = (input?: Dynamic): Dynamic => {
-      let value19: Dynamic = (0, formatCssNumber)(input, value7);
+      let value19: Dynamic = formatCssNumber(input, value7);
       value19 !== (state.varSource ?? state.value ?? "") &&
         onCommit(state.prop, value19);
     },
     value15: Dynamic = value8
-      ? (0, roundCssNumber)(value5.value, value5.unit)
+      ? roundCssNumber(value5.value, value5.unit)
       : (spec?.scrubFrom ?? 0),
-    { start: value16, live: value17 }: Dynamic = (0,
-    useLiveStyleScrub)({
+    { start: value16, live: value17 }: Dynamic = useLiveStyleScrub({
       value: value14 ?? value15 ?? 0,
       step: value9
-        ? (0, getFineUnitStep)(value7, spec?.scrub)
+        ? getFineUnitStep(value7, spec?.scrub)
         : value10
           ? 0.01
           : 1,
@@ -267,7 +264,7 @@ function PropertyCssNumberRow({
         value={value17 ?? value14}
         mixed={state.mixed && value17 == null}
         placeholder={
-          value5 ? (String((0, roundCssNumber)(value5.value, value5.unit)) + value8 ? "" : value5.unit) : (value2 === Value_6 ? (undefined) : (value2))
+          value5 ? (String(roundCssNumber(value5.value, value5.unit)) + value8 ? "" : value5.unit) : (value2 === Value_6 ? (undefined) : (value2))
         }
         hint={Value_6}
         unit={

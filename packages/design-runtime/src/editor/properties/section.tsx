@@ -26,7 +26,7 @@ function PropertySectionHeader({
 }: Dynamic): Dynamic {
   useUiLocale();
   let value: Dynamic = onToggle !== undefined,
-    value2: Dynamic = (0, joinClassNames)(
+    value2: Dynamic = joinClassNames(
       "flex min-w-0 shrink-0 items-center gap-xs select-none",
       PropertiesPrimitivesClassNames_3,
       subsection
@@ -44,7 +44,7 @@ function PropertySectionHeader({
         <EditorIcon
           name={"CaretRight"}
           size={16}
-          className={(0, joinClassNames)(
+          className={joinClassNames(
             "text-secondary transition-transform duration-fast",
             !collapsed && "rotate-90",
           )}
@@ -57,7 +57,7 @@ function PropertySectionHeader({
         type={"button"}
         aria-expanded={!collapsed}
         onClick={onToggle}
-        className={(0, joinClassNames)(
+        className={joinClassNames(
           value2,
           "w-full cursor-default text-left outline-none focus-visible:outline-hidden focus-visible:shadow-focus",
         )}
@@ -71,14 +71,14 @@ function PropertySectionHeader({
       onClick={
         value
           ? (event?: Dynamic): Dynamic => {
-              (0, isNestedPropertyControl)(
+              isNestedPropertyControl(
                 event.currentTarget,
                 event.target,
               ) || onToggle();
             }
           : undefined
       }
-      className={(0, joinClassNames)(
+      className={joinClassNames(
         value2,
         value && "cursor-default",
       )}
@@ -99,7 +99,7 @@ function PropertySectionHeader({
           </button>) : (<span className={"min-w-0 flex-1 truncate"}>{title}</span>)}
       </h3>
       {actions ? (<span
-          className={(0, joinClassNames)(
+          className={joinClassNames(
             "-my-1 flex shrink-0 items-center gap-0.5",
             PropertiesPrimitivesClassNames_4,
           )}
@@ -183,7 +183,7 @@ function PropertySection({
           {value11 ? (value10) : (null)}
         </jsxPropertiesPrimitives_2.Fragment>
       ) : undefined,
-    value14: Dynamic = (0, joinClassNames)(
+    value14: Dynamic = joinClassNames(
       "flex min-w-0 shrink-0 flex-col",
       !subsection && "border-alpha-2 [&:not(:first-child)]:border-t",
       title === undefined && !subsection && "[&:not(:first-child)]:pt-2",
@@ -237,15 +237,15 @@ export function installEditorPropertiesSection(): () => void {
   return () => {
     sectionControlWarningShown = false;
     sectionTitleWarningShown = false;
-    reactPropertiesSection = (0, toModuleNamespace)(
-      (0, load_react)(),
+    reactPropertiesSection = toModuleNamespace(
+      load_react(),
       1,
     );
-    (0, initializeCdsIndex)();
-    (0, initializeCdsIndex)();
-    (0, initializeCdsIndex)();
-    jsxPropertiesSection = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    initializeCdsIndex();
+    initializeCdsIndex();
+    initializeCdsIndex();
+    jsxPropertiesSection = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
   };

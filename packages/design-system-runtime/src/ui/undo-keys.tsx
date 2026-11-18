@@ -54,7 +54,7 @@ function createUndoKeyHandler(history2: UndoActions) {
     if (isUndoEditingTarget(event.target)) {
       return;
     }
-    if (typeof document !== "undefined" && (0, overlaysBlockUndo)()) {
+    if (typeof document !== "undefined" && overlaysBlockUndo()) {
       return;
     }
     event.preventDefault();

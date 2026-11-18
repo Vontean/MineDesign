@@ -15,7 +15,7 @@ function isAndroidWindow(input: BrowserWindow): boolean {
   );
 }
 function useAndroidCloseWatcher(input: boolean, options?: () => void): void {
-  let value = (0, useCdsWindow)();
+  let value = useCdsWindow();
   (0, reactOverlaysAndroidCloseWatcher.useEffect)(() => {
     if (!input || value === undefined || options === undefined) return;
     let CloseWatcher = value.CloseWatcher;
@@ -71,12 +71,12 @@ export {
 };
 export function installCdsOverlaysAndroidCloseWatcher(): () => void {
   return () => {
-    initializeOverlaysAndroidCloseWatcher = (0, initializeOnce)(() => {
+    initializeOverlaysAndroidCloseWatcher = initializeOnce(() => {
       "use client";
 
-      (0, initializeCdsRoot)();
-      reactOverlaysAndroidCloseWatcher = (0, toModuleNamespace)(
-        (0, load_react)(),
+      initializeCdsRoot();
+      reactOverlaysAndroidCloseWatcher = toModuleNamespace(
+        load_react(),
       );
     });
   };

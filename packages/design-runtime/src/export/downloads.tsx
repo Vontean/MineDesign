@@ -31,8 +31,8 @@ function normalizeDownloadName(input?: Dynamic): Dynamic {
 function hasDownloadCapability(): Dynamic {
   return (
     hasCapabilityMethodValue(
-      (0, getCachedHostCapability)("downloads"),
-    ) || (0, hasCapabilityLoader)()
+      getCachedHostCapability("downloads"),
+    ) || hasCapabilityLoader()
   );
 }
 function downloadsCapabilityDeclared(): Dynamic {
@@ -57,7 +57,7 @@ async function downloadsWithheld(
 ): Promise<Dynamic> {
   let value: Dynamic;
   try {
-    if (!(0, hasCapabilityLoader)() || !downloadsCapabilityDeclared())
+    if (!hasCapabilityLoader() || !downloadsCapabilityDeclared())
       return false;
     let promise: Dynamic = new Promise(
       (input2?: Dynamic): Dynamic =>
@@ -65,7 +65,7 @@ async function downloadsWithheld(
     );
     return (
       (await Promise.race([
-        (0, requestHostCapability)("downloads"),
+        requestHostCapability("downloads"),
         promise,
       ])) === null
     );
@@ -108,7 +108,7 @@ async function saveThroughHost(
       outcome: "withheld",
       code: "withheld",
     };
-  let value: Dynamic = await (0, resolveHostCapability)(
+  let value: Dynamic = await resolveHostCapability(
     "downloads",
     hasCapabilityMethodValue,
   );
@@ -163,8 +163,8 @@ export {
 };
 export function installExportDownloads(): () => void {
   return () => {
-    reactExportDownloads = (0, toModuleNamespace)(
-      (0, load_react)(),
+    reactExportDownloads = toModuleNamespace(
+      load_react(),
       1,
     );
     DownloadsArenTAvailableToYouForMessage =
@@ -198,6 +198,6 @@ export function installExportDownloads(): () => void {
     ]);
     ExportDownloadsDefaultIgnorablePattern =
       /[\p{Cf}\p{Cs}\p{Zl}\p{Zp}\p{Default_Ignorable_Code_Point}\u2800\uFFFC\u{13441}\u{13442}\u{1D159}\u0000-\u001F\u007F-\u009F]/gu;
-    hasCapabilityMethodValue = (0, hasCapabilityMethod)("save");
+    hasCapabilityMethodValue = hasCapabilityMethod("save");
   };
 }

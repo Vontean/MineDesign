@@ -149,7 +149,7 @@ export function copyBoardsToClipboard(deps: { readonly doc: Dynamic; readonly va
             if (value653.length === 0 && value654.length === 0) {
               setTimeout(
                 (): Dynamic =>
-                  (0, rememberClipboardStamp)(context?.()?.stamp),
+                  rememberClipboardStamp(context?.()?.stamp),
                 0,
               );
               return;
@@ -163,7 +163,7 @@ export function copyBoardsToClipboard(deps: { readonly doc: Dynamic; readonly va
             let files: Dynamic = deps.doc.content().files,
               value655: Dynamic = value654.map(
                 (input2?: Dynamic): Dynamic =>
-                  (0, annotationVisibleBounds)(input2),
+                  annotationVisibleBounds(input2),
               ),
               value656: Dynamic = Math.min(
                 ...value653.map((input2?: Dynamic): Dynamic => input2.x),
@@ -188,11 +188,11 @@ export function copyBoardsToClipboard(deps: { readonly doc: Dynamic; readonly va
               items: Dynamic = [];
             for (let value659 of value653 as Dynamic) {
               let value660: Dynamic =
-                (await (0, getKvClient)().get(
-                  (0, PlatformFileContentHandler_4)(value659.file),
+                (await getKvClient().get(
+                  PlatformFileContentHandler_4(value659.file),
                 )) ?? files[value659.file];
               typeof value660 != "string" ||
-                (0, isLoadingArtboardHtml)(value660) ||
+                isLoadingArtboardHtml(value660) ||
                 items.push({
                   src: value660,
                   stem: value659.file.replace(/\.dc\.html$/, ""),
@@ -205,25 +205,25 @@ export function copyBoardsToClipboard(deps: { readonly doc: Dynamic; readonly va
                         title: value659.title,
                       }
                     : {}),
-                  ...(0, artboardAppearanceProperties)(value659),
+                  ...artboardAppearanceProperties(value659),
                 });
             }
             items.length > 0 || (value658.length > 0 && value653.length === 0)
-              ? (0, setArtboardClipboard)(
+              ? setArtboardClipboard(
                   items,
                   context?.(),
                   value658,
                 )
-              : (0, rememberClipboardStamp)(context?.()?.stamp);
+              : rememberClipboardStamp(context?.()?.stamp);
           } catch {
-            (0, rememberClipboardStamp)(context?.()?.stamp);
+            rememberClipboardStamp(context?.()?.stamp);
           }
         })();
       }
 
 /** 从应用内剪贴板粘贴画板与说明时运行：生成新文件与标题、避开已有对象层叠放置并选中，失败时提示。 */
 export function pasteBoardsFromClipboard(deps: { readonly callback3: Dynamic; readonly callback9: Dynamic; readonly doc: Dynamic; readonly setSelection: Dynamic; readonly showToast: Dynamic; readonly supportsLoadState: Dynamic; readonly value105: Dynamic; readonly value218: Dynamic; readonly value310: Dynamic; readonly value345: Dynamic; readonly value383: Dynamic; readonly value413: Dynamic; readonly value461: Dynamic; readonly value62: Dynamic; readonly value73: Dynamic; readonly value80: Dynamic; readonly value91: Dynamic; readonly value98: Dynamic }, items?: Dynamic, items2?: Dynamic, context?: Dynamic): Dynamic {
-        let value653: Dynamic = (0, pasteCascadeStep)(
+        let value653: Dynamic = pasteCascadeStep(
           deps.value105.get().scale,
         );
         (async (): Promise<Dynamic> => {
@@ -244,7 +244,7 @@ export function pasteBoardsFromClipboard(deps: { readonly callback3: Dynamic; re
             }
             items.length > 0 && (deps.value310.current = true);
             for (let value661 of items as Dynamic) {
-              let value662: Dynamic = (0, uniqueArtboardFile)(
+              let value662: Dynamic = uniqueArtboardFile(
                 state,
                 value661.stem,
                 deps.supportsLoadState,
@@ -253,21 +253,21 @@ export function pasteBoardsFromClipboard(deps: { readonly callback3: Dynamic; re
               items3.push(value662);
               deps.value461.current.add(value662);
               try {
-                await (0, getKvClient)().set(
-                  (0, PlatformFileContentHandler_4)(value662),
+                await getKvClient().set(
+                  PlatformFileContentHandler_4(value662),
                   value661.src,
                 );
               } catch (value663: Dynamic) {
                 for (let value664 of items3 as Dynamic)
-                  await (0, getKvClient)()
+                  await getKvClient()
                     .delete(
-                      (0, PlatformFileContentHandler_4)(value664),
+                      PlatformFileContentHandler_4(value664),
                     )
                     .catch((): Dynamic => false);
                 throw value663;
               }
             }
-            let value654: Dynamic = (0, designPageContents)(
+            let value654: Dynamic = designPageContents(
                 deps.value73.current,
                 deps.value80.current,
               ),
@@ -276,8 +276,8 @@ export function pasteBoardsFromClipboard(deps: { readonly callback3: Dynamic; re
                   !deps.value461.current.has(input.file),
               ),
               value656: Dynamic = context
-                ? (0, avoidPastedObjectCollisions)(
-                    (0, pastedObjectsOrigin)(
+                ? avoidPastedObjectCollisions(
+                    pastedObjectsOrigin(
                       [...items, ...items2],
                       context,
                     ),
@@ -300,11 +300,11 @@ export function pasteBoardsFromClipboard(deps: { readonly callback3: Dynamic; re
                 y: Math.round(value656.y + input.dy),
                 w: input.w,
                 h: input.h,
-                title: (0, duplicateArtboardTitle)(
+                title: duplicateArtboardTitle(
                   input.title ?? input.stem,
                   [...value655, ...items4],
                 ),
-                ...(0, artboardAppearanceProperties)(input),
+                ...artboardAppearanceProperties(input),
                 ...deps.callback3(),
               });
             });
@@ -319,8 +319,7 @@ export function pasteBoardsFromClipboard(deps: { readonly callback3: Dynamic; re
                 ? deps.callback9(
                     items2.map((input?: Dynamic): Dynamic => {
                       let { page: spec, ...spec2 }: Dynamic = input.spec,
-                        value661: Dynamic = (0,
-                        annotationVisibleBounds)(input.spec);
+                        value661: Dynamic = annotationVisibleBounds(input.spec);
                       return {
                         src: {
                           ...spec2,
@@ -381,7 +380,7 @@ export function pasteBoardsFromClipboard(deps: { readonly callback3: Dynamic; re
             );
             items4.length === 0 && deps.value62();
             deps.setSelection(
-              (0, selectionFromBoards)({
+              selectionFromBoards({
                 files: values,
                 notes: new Set(
                   value660.map((input?: Dynamic): Dynamic => input.id),
@@ -389,14 +388,14 @@ export function pasteBoardsFromClipboard(deps: { readonly callback3: Dynamic; re
               }),
             );
             items4.length > 0 &&
-              (0, frameAnalyticsReporter)(
+              frameAnalyticsReporter(
                 designAnalyticsEvents.artboardInserted,
               );
             !context &&
               !deps.value345.current &&
               !deps.value218.current &&
               deps.value383.current(
-                (0, pastedObjectsBounds)([
+                pastedObjectsBounds([
                   ...items4,
                   ...value660.map(annotationVisibleBounds),
                 ]),
@@ -414,14 +413,14 @@ export function pasteBoardsFromClipboard(deps: { readonly callback3: Dynamic; re
 /** 复制到系统剪贴板前运行：把选中的画板与说明序列化为剪贴板数据，并检查体积、未上传文件与未保存修改。 */
 export function buildSystemClipboardPayload(deps: { readonly doc: Dynamic; readonly value177: Dynamic; readonly value188: Dynamic; readonly value73: Dynamic }, input?: Dynamic, options?: Dynamic): Dynamic {
         let artboards: Dynamic = deps.value73.current.artboards,
-          value653: Dynamic = (0, buildArtboardClipboard)(
+          value653: Dynamic = buildArtboardClipboard(
             artboards.filter(
               (input2?: Dynamic): Dynamic => input.has(input2.file),
             ),
             artboards,
             deps.doc.content().files,
             getCachedBlobObjectUrl,
-            (0, getExternalFileReferences)(),
+            getExternalFileReferences(),
           );
         if (!value653 && input.size > 0) return {};
         if (value653?.tooLarge) {
@@ -434,10 +433,10 @@ export function buildSystemClipboardPayload(deps: { readonly doc: Dynamic; reado
             (input2?: Dynamic): Dynamic => options.has(input2.id),
           ),
           callback15: Dynamic = (input2?: Dynamic): Dynamic =>
-            (0, getCachedBlobObjectUrl)(input2) ??
-            ((0, fetchBlobAsset)(input2).catch((): Dynamic => {}),
+            getCachedBlobObjectUrl(input2) ??
+            (fetchBlobAsset(input2).catch((): Dynamic => {}),
             undefined),
-          value655: Dynamic = (0, annotationClipboardEntries)(
+          value655: Dynamic = annotationClipboardEntries(
             value654,
             value653?.origin ?? null,
             ClipboardArtboardsResolvedValue -
@@ -585,14 +584,14 @@ export function pasteExternalClipboardPayload(deps: { readonly callback3: Dynami
           ): Dynamic => ({
             gate: validateCanvasPlacedImage,
             upload: (input3?: Dynamic): Dynamic =>
-              (0, uploadDesignFile)("appifact", null, input3),
+              uploadDesignFile("appifact", null, input3),
             stored: input2,
             discard: (input3?: Dynamic): Dynamic => {
-              (0, getKvClient)()
-                .delete((0, PlatformFileContentHandler_4)(input3))
+              getKvClient()
+                .delete(PlatformFileContentHandler_4(input3))
                 .catch((): Dynamic => false);
             },
-            maxPixels: (0, ClipboardAssetsHandler)(options2),
+            maxPixels: ClipboardAssetsHandler(options2),
           }),
           callback17: Dynamic = (
             items?: Dynamic,
@@ -626,9 +625,9 @@ export function pasteExternalClipboardPayload(deps: { readonly callback3: Dynami
                   input2?: Dynamic,
                 ): Promise<Dynamic> => {
                   for (let value658 of input2 as Dynamic)
-                    await (0, getKvClient)()
+                    await getKvClient()
                       .delete(
-                        (0, PlatformFileContentHandler_4)(value658),
+                        PlatformFileContentHandler_4(value658),
                       )
                       .catch((): Dynamic => false);
                 };
@@ -639,7 +638,7 @@ export function pasteExternalClipboardPayload(deps: { readonly callback3: Dynami
                   ),
                 );
                 let { landed: value658, failed: value659 }: Dynamic =
-                    await (0, resolveClipboardPictures)(
+                    await resolveClipboardPictures(
                       options2.carried,
                       options2.assets,
                       controller2.signal,
@@ -652,8 +651,7 @@ export function pasteExternalClipboardPayload(deps: { readonly callback3: Dynami
                     controller2.signal,
                     current5,
                   ),
-                  { group: value661 }: Dynamic = (0,
-                  normalizeAnnotationPasteOrigin)(
+                  { group: value661 }: Dynamic = normalizeAnnotationPasteOrigin(
                     [...items, ...value658].sort(
                       (input2?: Dynamic, options3?: Dynamic): Dynamic =>
                         input2.order - options3.order,
@@ -667,12 +665,12 @@ export function pasteExternalClipboardPayload(deps: { readonly callback3: Dynami
                     current5 === ""
                       ? (deps.value73.current.pages?.[0]?.id ?? "")
                       : current5,
-                  value663: Dynamic = (0, designPageContents)(
+                  value663: Dynamic = designPageContents(
                     deps.value73.current,
                     value662,
                   ),
                   value664: Dynamic = context
-                    ? (0, pastedObjectsOrigin)(value661, context)
+                    ? pastedObjectsOrigin(value661, context)
                     : nextArtboardPlacementPoint([
                         ...value663.artboards,
                         ...(value663.annotations ?? []).map(
@@ -682,8 +680,7 @@ export function pasteExternalClipboardPayload(deps: { readonly callback3: Dynami
                   value665: Dynamic = deps.value73.current.annotations ?? [],
                   value666: Dynamic = value661.map(
                     (input2?: Dynamic): Dynamic => {
-                      let value670: Dynamic = (0,
-                      annotationVisibleBounds)(input2.spec);
+                      let value670: Dynamic = annotationVisibleBounds(input2.spec);
                       return {
                         src: {
                           ...input2.spec,
@@ -706,7 +703,7 @@ export function pasteExternalClipboardPayload(deps: { readonly callback3: Dynami
                   value668: Dynamic = value667 ? deps.callback9(value666) : [];
                 if (
                   !value667 ||
-                  !(0, ClipboardPastePlanningAnnotations)(
+                  !ClipboardPastePlanningAnnotations(
                     deps.value73.current,
                     value668,
                   )
@@ -748,7 +745,7 @@ export function pasteExternalClipboardPayload(deps: { readonly callback3: Dynami
                 deps.value80.current === value662 &&
                   (deps.value62(),
                   deps.setSelection(
-                    (0, selectionFromBoards)({
+                    selectionFromBoards({
                       files: new Set(),
                       notes: new Set(
                         value668.map(
@@ -760,9 +757,9 @@ export function pasteExternalClipboardPayload(deps: { readonly callback3: Dynami
                   !context &&
                     !deps.value345.current &&
                     !deps.value218.current &&
-                    (0, sameViewport)(deps.value105.rest(), value657) &&
+                    sameViewport(deps.value105.rest(), value657) &&
                     deps.value383.current(
-                      (0, pastedObjectsBounds)(
+                      pastedObjectsBounds(
                         value668.map(annotationVisibleBounds),
                       ),
                     ));
@@ -772,7 +769,7 @@ export function pasteExternalClipboardPayload(deps: { readonly callback3: Dynami
                   value659,
                 );
                 deps.value80.current === value662 &&
-                (0, ClipboardFileTransferPasted)(value669, value668)
+                ClipboardFileTransferPasted(value669, value668)
                   ? deps.value189(value669)
                   : deps.value188(value669);
               } catch (value658: Dynamic) {
@@ -785,11 +782,11 @@ export function pasteExternalClipboardPayload(deps: { readonly callback3: Dynami
               }
             })();
           };
-        if (!(0, ClipboardStateIsArray)(input)) {
-          let value657: Dynamic = (0, parseAnnotationPaste)(
+        if (!ClipboardStateIsArray(input)) {
+          let value657: Dynamic = parseAnnotationPaste(
             input,
             (items?: Dynamic): Dynamic =>
-              (0, ClipboardPastePlanningAnnotations)(
+              ClipboardPastePlanningAnnotations(
                 deps.value73.current,
                 items.map(
                   (input2?: Dynamic): Dynamic => ({
@@ -810,12 +807,12 @@ export function pasteExternalClipboardPayload(deps: { readonly callback3: Dynami
             let current5: Dynamic = deps.value73.current;
             deps.value464.current(
               [],
-              (0, normalizeAnnotationPasteOrigin)(value657.land)
+              normalizeAnnotationPasteOrigin(value657.land)
                 .group,
               deps.value109(),
             );
             if (deps.value73.current === current5) return;
-            (0, ClipboardFileTransferPasted)(
+            ClipboardFileTransferPasted(
               value657.say,
               value657.land.map((input2?: Dynamic): Dynamic => input2.spec),
             )
@@ -824,12 +821,12 @@ export function pasteExternalClipboardPayload(deps: { readonly callback3: Dynami
           }
           return;
         }
-        let value653: Dynamic = (0, ClipboardPastePlanningIsArray)(
+        let value653: Dynamic = ClipboardPastePlanningIsArray(
             input,
           )
             ? ClipboardFileTransferRegistry.notEither
             : "",
-          value654: Dynamic = (0, parseArtboardClipboard)(input);
+          value654: Dynamic = parseArtboardClipboard(input);
         if (!value654) {
           deps.value188(
             uiMessage("canvas.designCanvas.nothingToPasteTheCopied") +
@@ -841,7 +838,7 @@ export function pasteExternalClipboardPayload(deps: { readonly callback3: Dynami
             items.length > 60 ? items.slice(0, 57) + "\u2026" : items,
           current4: Dynamic = deps.value80.current,
           value655: Dynamic = deps.value105.rest(),
-          value656: Dynamic = (0, pasteCascadeStep)(
+          value656: Dynamic = pasteCascadeStep(
             deps.value105.get().scale,
           ),
           controller: Dynamic = new AbortController(),
@@ -855,11 +852,11 @@ export function pasteExternalClipboardPayload(deps: { readonly callback3: Dynami
         (async (): Promise<Dynamic> => {
           let items: Dynamic = [];
           try {
-            let value657: Dynamic = (await (0, awaitFeatureFlag)(
+            let value657: Dynamic = (await awaitFeatureFlag(
               crossCanvasPasteConfirmFeatureFlag,
               true,
             ))
-              ? await (0, askTrustForCodePaste)(
+              ? await askTrustForCodePaste(
                   value654.artboards.length,
                   controller.signal,
                 )
@@ -868,27 +865,27 @@ export function pasteExternalClipboardPayload(deps: { readonly callback3: Dynami
             let value658: Dynamic = callback15(controller.signal);
             if (value658 !== null) return deps.value188(value658);
             let value659: Dynamic = value657 === "with-code",
-              value660: Dynamic = (0, parseAnnotationClipboard)(
+              value660: Dynamic = parseAnnotationClipboard(
                 input,
               ),
-              value661: Dynamic = (0, buildAnnotationPaste)(
+              value661: Dynamic = buildAnnotationPaste(
                 value660?.entries ?? [],
                 value659,
                 value660?.pictures ?? [],
               ),
               value662: Dynamic = value659
                 ? value654
-                : (0, blankArtboardBody)(value654),
+                : blankArtboardBody(value654),
               value663: Dynamic =
                 (deps.value73.current.annotations ?? []).length +
                   value661.land.length +
                   value661.pictures.length <=
                 PlatformFileContentLimit_5,
               value664: Dynamic = value663
-                ? (0, parseClipboardAssets)(
+                ? parseClipboardAssets(
                     input,
                     value661.pictures,
-                    (0, clipboardPayloadUsage)(value654),
+                    clipboardPayloadUsage(value654),
                   )
                 : new Map(),
               items2: Dynamic = [],
@@ -902,11 +899,11 @@ export function pasteExternalClipboardPayload(deps: { readonly callback3: Dynami
                       /^data:image\/svg\+xml/i.test(input2),
                   ).length,
               callback20: Dynamic = (): Dynamic =>
-                (0, hasPendingFileOverlay)()
+                hasPendingFileOverlay()
                   ? new Set(
                       [
-                        ...Object.keys((0, getDesignSystemFiles)()),
-                        ...(0, getAllFileReferencePaths)(),
+                        ...Object.keys(getDesignSystemFiles()),
+                        ...getAllFileReferencePaths(),
                       ].map(
                         (input2?: Dynamic): Dynamic =>
                           input2.startsWith(ProjectValue)
@@ -923,8 +920,8 @@ export function pasteExternalClipboardPayload(deps: { readonly callback3: Dynami
                   input2.boards.length +
                   Object.keys(input2.files).length >
                 PlatformFileContentFilesValue,
-              value666: Dynamic = (0, getDocumentFileCap)(deps.doc),
-              value667: Dynamic = (0, preparePastedArtboardFiles)(
+              value666: Dynamic = getDocumentFileCap(deps.doc),
+              value667: Dynamic = preparePastedArtboardFiles(
                 value662,
                 deps.doc.content().files,
                 deps.supportsLoadState,
@@ -958,7 +955,7 @@ export function pasteExternalClipboardPayload(deps: { readonly callback3: Dynami
               value668: Dynamic = items3.map(
                 ([, input2, input3]: Dynamic): Dynamic =>
                   input3 === "asset" &&
-                  (0, ClipboardArtboardsTest_2)(input2),
+                  ClipboardArtboardsTest_2(input2),
               ),
               items4: Dynamic = [
                 ...items3.filter(
@@ -980,8 +977,7 @@ export function pasteExternalClipboardPayload(deps: { readonly callback3: Dynami
               callback22: Dynamic = async (
                 input2?: Dynamic,
               ): Promise<Dynamic> => {
-                let value695: Dynamic = await (0,
-                getAssetsCapability)();
+                let value695: Dynamic = await getAssetsCapability();
                 if (value695 === null || typeof value695.upload != "function")
                   return;
                 let value696: Dynamic = input2.type.split(";")[0].trim(),
@@ -995,13 +991,13 @@ export function pasteExternalClipboardPayload(deps: { readonly callback3: Dynami
                   ),
                   value698: Dynamic =
                     typeof value697?.url == "string" &&
-                    (0, isBlobAssetUrl)(value697.url)
+                    isBlobAssetUrl(value697.url)
                       ? value697.url
                       : typeof value697?.id == "string"
                         ? "_blob/" + value697.id
                         : undefined;
                 return value698 !== undefined &&
-                  (0, isBlobAssetUrl)(value698)
+                  isBlobAssetUrl(value698)
                   ? value698
                   : undefined;
               },
@@ -1027,10 +1023,9 @@ export function pasteExternalClipboardPayload(deps: { readonly callback3: Dynami
                       items4[value695];
                     if (
                       value698 === "asset" &&
-                      (0, ClipboardArtboardsTest_2)(value697)
+                      ClipboardArtboardsTest_2(value697)
                     ) {
-                      let value701: Dynamic = await (0,
-                      dataUrlToFontFile)(
+                      let value701: Dynamic = await dataUrlToFontFile(
                         value697,
                         "pasted-font-" + String(value695 + 1),
                       );
@@ -1048,7 +1043,7 @@ export function pasteExternalClipboardPayload(deps: { readonly callback3: Dynami
                           );
                       continue;
                     }
-                    let value699: Dynamic = (0, dataUrlToBlob)(
+                    let value699: Dynamic = dataUrlToBlob(
                       value697,
                       value698 === "asset"
                         ? "pasted-image-" + String(value695 + 1)
@@ -1059,7 +1054,7 @@ export function pasteExternalClipboardPayload(deps: { readonly callback3: Dynami
                     );
                     if (
                       value698 === "asset" &&
-                      (0, ClipboardArtboardsTest)(value697)
+                      ClipboardArtboardsTest(value697)
                     ) {
                       let value701: Dynamic = value699
                         ? await callback22(value699).catch((): Dynamic => {})
@@ -1080,7 +1075,7 @@ export function pasteExternalClipboardPayload(deps: { readonly callback3: Dynami
                     }
                     if (
                       !value699 ||
-                      !(await (0, isPlayableImage)(value699))
+                      !(await isPlayableImage(value699))
                     ) {
                       values.add(value696);
                       continue;
@@ -1089,7 +1084,7 @@ export function pasteExternalClipboardPayload(deps: { readonly callback3: Dynami
                     let value700: Dynamic = value697;
                     try {
                       value700 = (
-                        await (0, uploadDesignFile)(
+                        await uploadDesignFile(
                           "appifact",
                           null,
                           value699,
@@ -1115,7 +1110,7 @@ export function pasteExternalClipboardPayload(deps: { readonly callback3: Dynami
               );
             }
             let value671: Dynamic = value663
-                ? await (0, resolveClipboardPictures)(
+                ? await resolveClipboardPictures(
                     value661.pictures,
                     value664,
                     controller.signal,
@@ -1147,19 +1142,19 @@ export function pasteExternalClipboardPayload(deps: { readonly callback3: Dynami
                 values.has(value695)
               )
                 continue;
-              let value697: Dynamic = (0, dataUrlToBlob)(
-                (0, fileDataUrl)(value695, value696),
+              let value697: Dynamic = dataUrlToBlob(
+                fileDataUrl(value695, value696),
                 "carried",
               );
               (!value697 ||
-                !(await (0, isPlayableImage)(value697))) &&
+                !(await isPlayableImage(value697))) &&
                 values3.add(callback23(value695, value696));
             }
             let callback24: Dynamic = async (): Promise<Dynamic> => {
                 for (let value695 of items.splice(0) as Dynamic)
-                  await (0, getKvClient)()
+                  await getKvClient()
                     .delete(
-                      (0, PlatformFileContentHandler_4)(value695),
+                      PlatformFileContentHandler_4(value695),
                     )
                     .catch((): Dynamic => false);
               },
@@ -1168,7 +1163,7 @@ export function pasteExternalClipboardPayload(deps: { readonly callback3: Dynami
               deps.value188(value672);
               return void (await callback24());
             }
-            value667 = (0, preparePastedArtboardFiles)(
+            value667 = preparePastedArtboardFiles(
               value662,
               deps.doc.content().files,
               deps.supportsLoadState,
@@ -1203,7 +1198,7 @@ export function pasteExternalClipboardPayload(deps: { readonly callback3: Dynami
                   value695,
                   value695.replace(/(\.[^./]*)?$/, "-missing$1"),
                 );
-            (0, remapPastedAssetFiles)(
+            remapPastedAssetFiles(
               value667,
               entries,
               entries2,
@@ -1246,8 +1241,8 @@ export function pasteExternalClipboardPayload(deps: { readonly callback3: Dynami
             for (let [value695, value696] of Object.entries(
               value667.files,
             ) as Dynamic) {
-              await (0, getKvClient)().set(
-                (0, PlatformFileContentHandler_4)(value695),
+              await getKvClient().set(
+                PlatformFileContentHandler_4(value695),
                 value696,
               );
               items.push(value695);
@@ -1256,7 +1251,7 @@ export function pasteExternalClipboardPayload(deps: { readonly callback3: Dynami
                 current4 === ""
                   ? (deps.value73.current.pages?.[0]?.id ?? "")
                   : current4,
-              artboards: Dynamic = (0, designPageContents)(
+              artboards: Dynamic = designPageContents(
                 deps.value73.current,
                 value676,
               ).artboards,
@@ -1267,19 +1262,18 @@ export function pasteExternalClipboardPayload(deps: { readonly callback3: Dynami
                 (input2?: Dynamic, options2?: Dynamic): Dynamic =>
                   input2.order - options2.order,
               ),
-              { group: value679, shift: value680 }: Dynamic = (0,
-              normalizeAnnotationPasteOrigin)([
+              { group: value679, shift: value680 }: Dynamic = normalizeAnnotationPasteOrigin([
                 ...value677,
                 ...value678,
               ]),
               value681: Dynamic = options
-                ? (0, pastedObjectsOrigin)(value679, options)
+                ? pastedObjectsOrigin(value679, options)
                 : nextArtboardPlacementPoint(
                     value678.length > 0
                       ? [
                           ...artboards,
                           ...(
-                            (0, designPageContents)(
+                            designPageContents(
                               deps.value73.current,
                               value676,
                             ).annotations ?? []
@@ -1292,7 +1286,7 @@ export function pasteExternalClipboardPayload(deps: { readonly callback3: Dynami
                 y: value681.y + value680.y,
               },
               value682: Dynamic = options
-                ? (0, avoidPastedObjectCollisions)(
+                ? avoidPastedObjectCollisions(
                     state,
                     value677,
                     artboards,
@@ -1304,8 +1298,8 @@ export function pasteExternalClipboardPayload(deps: { readonly callback3: Dynami
               path: value695,
               entry: value696,
             } of value674 as Dynamic) {
-              await (0, getKvClient)().set(
-                (0, PlatformFileContentHandler_4)(value695),
+              await getKvClient().set(
+                PlatformFileContentHandler_4(value695),
                 value696.src,
               );
               items.push(value695);
@@ -1325,12 +1319,12 @@ export function pasteExternalClipboardPayload(deps: { readonly callback3: Dynami
                 w: value696.w,
                 h: value696.h,
                 title: value698
-                  ? (0, duplicateArtboardTitle)(value697, [
+                  ? duplicateArtboardTitle(value697, [
                       ...artboards,
                       ...items6,
                     ])
                   : value697,
-                ...(0, artboardAppearanceProperties)(value696),
+                ...artboardAppearanceProperties(value696),
                 ...deps.callback3(current4),
               });
             }
@@ -1346,8 +1340,7 @@ export function pasteExternalClipboardPayload(deps: { readonly callback3: Dynami
               value683: Dynamic = deps.value73.current.annotations ?? [],
               value684: Dynamic = value678.map(
                 (input2?: Dynamic): Dynamic => {
-                  let value695: Dynamic = (0,
-                  annotationVisibleBounds)(input2.spec);
+                  let value695: Dynamic = annotationVisibleBounds(input2.spec);
                   return {
                     src: {
                       ...input2.spec,
@@ -1367,7 +1360,7 @@ export function pasteExternalClipboardPayload(deps: { readonly callback3: Dynami
                   : [],
               value686: Dynamic =
                 value685.length > 0 &&
-                (0, ClipboardPastePlanningAnnotations)(
+                ClipboardPastePlanningAnnotations(
                   {
                     ...deps.value73.current,
                     artboards: items7,
@@ -1427,13 +1420,13 @@ export function pasteExternalClipboardPayload(deps: { readonly callback3: Dynami
             );
             if (value686.length === 0)
               for (let value695 of items2 as Dynamic)
-                await (0, getKvClient)()
-                  .delete((0, PlatformFileContentHandler_4)(value695))
+                await getKvClient()
+                  .delete(PlatformFileContentHandler_4(value695))
                   .catch((): Dynamic => false);
             deps.value80.current === value676 &&
               deps.setSelection(
                 value686.length > 0
-                  ? (0, selectionFromBoards)({
+                  ? selectionFromBoards({
                       files: values5,
                       notes: new Set(
                         value686.map(
@@ -1441,18 +1434,18 @@ export function pasteExternalClipboardPayload(deps: { readonly callback3: Dynami
                         ),
                       ),
                     })
-                  : (0, selectionFromArtboards)(values5),
+                  : selectionFromArtboards(values5),
               );
             items6.length > 0 &&
-              (0, frameAnalyticsReporter)(
+              frameAnalyticsReporter(
                 designAnalyticsEvents.artboardInserted,
               );
             !options &&
               deps.value80.current === value676 &&
               !deps.value345.current &&
               !deps.value218.current &&
-              (0, sameViewport)(deps.value105.rest(), value655) &&
-              deps.value383.current((0, pastedObjectsBounds)(items6));
+              sameViewport(deps.value105.rest(), value655) &&
+              deps.value383.current(pastedObjectsBounds(items6));
             let value687: Dynamic = Object.entries(
                 value662.held ?? {},
               ).filter(
@@ -1469,11 +1462,11 @@ export function pasteExternalClipboardPayload(deps: { readonly callback3: Dynami
               values6: Dynamic = new Set(
                 [
                   ...Object.keys(deps.doc.content().files),
-                  ...(0, getAllFileReferencePaths)(),
+                  ...getAllFileReferencePaths(),
                 ].map((input2?: Dynamic): Dynamic => input2.toLowerCase()),
               ),
               callback25: Dynamic = (input2?: Dynamic): Dynamic =>
-                !(0, hasPendingFileOverlay)() ||
+                !hasPendingFileOverlay() ||
                 values6.has(input2.toLowerCase());
             deps.value224.current &&
               (await Promise.all(
@@ -1482,8 +1475,7 @@ export function pasteExternalClipboardPayload(deps: { readonly callback3: Dynami
                     let entry: Dynamic = entries.get(input3),
                       entry2: Dynamic = entries3.get(input3);
                     if (entry === undefined || entry2 === undefined) return;
-                    let value695: Dynamic = (0,
-                    saveExternalFileReference)(
+                    let value695: Dynamic = saveExternalFileReference(
                       input2,
                       entry,
                       entry2.bytes,
@@ -1505,7 +1497,7 @@ export function pasteExternalClipboardPayload(deps: { readonly callback3: Dynami
                         "design (paste): the pointer document for " +
                           input2 +
                           " was not written \u2014 " +
-                          (0, errorMessage)(input4),
+                          errorMessage(input4),
                       );
                       value667.dropped.push({
                         path: input2,
@@ -1544,7 +1536,7 @@ export function pasteExternalClipboardPayload(deps: { readonly callback3: Dynami
               });
             let items8: Dynamic = [
                 ...Object.keys(
-                  (0, mergeDesignSystemFileOverlay)(
+                  mergeDesignSystemFileOverlay(
                     deps.doc.content().files,
                   ),
                 ),
@@ -1554,7 +1546,7 @@ export function pasteExternalClipboardPayload(deps: { readonly callback3: Dynami
                 ...new Set(
                   value674.flatMap(
                     (input2?: Dynamic): Dynamic =>
-                      (0, getLinkedProjectFiles)(
+                      getLinkedProjectFiles(
                         input2.entry.src,
                         items8,
                       ),
@@ -1627,7 +1619,7 @@ export function pasteExternalClipboardPayload(deps: { readonly callback3: Dynami
                           value660?.unread ?? 0,
                         )
                       : value653 === "" &&
-                          (0, ClipboardPastePlanningHandler)(input)
+                          ClipboardPastePlanningHandler(input)
                         ? ClipboardFileTransferRegistry.stayedBehind
                         : "") +
                 (value661.notesOut > 0
@@ -1657,13 +1649,13 @@ export function pasteExternalClipboardPayload(deps: { readonly callback3: Dynami
             value694 ? deps.value188(value690 + value694) : deps.value189(value690);
           } catch (value657: Dynamic) {
             for (let value658 of items as Dynamic)
-              await (0, getKvClient)()
-                .delete((0, PlatformFileContentHandler_4)(value658))
+              await getKvClient()
+                .delete(PlatformFileContentHandler_4(value658))
                 .catch((): Dynamic => false);
             deps.showToast(
-              (0, fileCapFailureMessage)(value657) ??
+              fileCapFailureMessage(value657) ??
                 uiMessage("canvas.designCanvas.couldnTPasteTheArtboards") +
-                  (0, errorMessage)(value657),
+                  errorMessage(value657),
               "error",
             );
           } finally {
@@ -1678,7 +1670,7 @@ export function pasteHtmlIntoArtboard(deps: { readonly abandonSelectionGesture: 
         if (!deps.value224.current) return;
         let value653: Dynamic = options.trim(),
           value654: Dynamic =
-            value653 || ((0, getElementClipboard)() ?? "").trim();
+            value653 || (getElementClipboard() ?? "").trim();
         if (!value654) {
           deps.value188(
             uiMessage("canvas.designCanvas.nothingToPasteHereCopy"),
@@ -1687,14 +1679,14 @@ export function pasteHtmlIntoArtboard(deps: { readonly abandonSelectionGesture: 
         }
         let callback15: Dynamic = (input2?: Dynamic): Dynamic =>
           value653.startsWith("<")
-            ? (0, sanitizePastedHtml)(input2)
+            ? sanitizePastedHtml(input2)
             : input2;
         if (input.file == null) {
-          let value657: Dynamic = (0, wrapInlinePastedHtml)(
+          let value657: Dynamic = wrapInlinePastedHtml(
             callback15(
               value654.startsWith("<")
-                ? (0, normalizeAuthoredHtml)(value654)
-                : (0, textToParagraphHtml)(
+                ? normalizeAuthoredHtml(value654)
+                : textToParagraphHtml(
                     value654,
                     "margin: 0; position: absolute; left: 32px; top: 32px",
                   ),
@@ -1751,7 +1743,7 @@ export function pasteHtmlIntoArtboard(deps: { readonly abandonSelectionGesture: 
                 y: items2,
               },
               (input2?: Dynamic, options2?: Dynamic): Dynamic =>
-                (0, textToParagraphHtml)(
+                textToParagraphHtml(
                   value654,
                   `margin: 0; position: absolute; left: ${input2}px; top: ${options2}px`,
                 ),
@@ -1774,7 +1766,7 @@ export function pasteHtmlIntoArtboard(deps: { readonly abandonSelectionGesture: 
             deps.abandonSelectionGesture();
             deps.value62();
             deps.setSelection(
-              (0, setCanvasElementSelection)(
+              setCanvasElementSelection(
                 emptyCanvasSelection,
                 file,
                 {
@@ -1799,7 +1791,7 @@ export function subscribeClipboardEvents(deps: { readonly doc: Dynamic; readonly
         if (
           (value654 !== "c" && value654 !== "v") ||
           (!deps.value224.current && value654 !== "c") ||
-          (0, isEditingInputTarget)(event.target)
+          isEditingInputTarget(event.target)
         )
           return;
         if (event.shiftKey) {
@@ -1809,13 +1801,13 @@ export function subscribeClipboardEvents(deps: { readonly doc: Dynamic; readonly
         value654 === "v" && (deps.value475.current = -1 / 0);
         if (value654 === "c") {
           let current4: Dynamic = deps.selectionRef.current;
-          if (!(0, canvasElementSelectionCount)(current4)) {
+          if (!canvasElementSelectionCount(current4)) {
             let value661: Dynamic =
               deps.focusedFileRef.current != null &&
               current4.elements.has(deps.focusedFileRef.current);
             if (!deps.value159.current && value661) return;
             if (deps.value48.current > 0) {
-              let value662: Dynamic = (0, startClipboardMark)({
+              let value662: Dynamic = startClipboardMark({
                 markable: false,
               });
               deps.value52.current((): Dynamic => {
@@ -1835,7 +1827,7 @@ export function subscribeClipboardEvents(deps: { readonly doc: Dynamic; readonly
                   let value661: Dynamic = files[input];
                   return (
                     typeof value661 == "string" &&
-                    !(0, isLoadingArtboardHtml)(value661)
+                    !isLoadingArtboardHtml(value661)
                   );
                 }))
           )
@@ -1857,9 +1849,9 @@ export function subscribeClipboardEvents(deps: { readonly doc: Dynamic; readonly
           }, 100);
           return;
         }
-        if ((0, hasBlockingEditorOverlay)()) return;
-        let value655: Dynamic = (0, getArtboardClipboard)(),
-          value656: Dynamic = (0, getAnnotationClipboard)(),
+        if (hasBlockingEditorOverlay()) return;
+        let value655: Dynamic = getArtboardClipboard(),
+          value656: Dynamic = getAnnotationClipboard(),
           value657: Dynamic = deps.value109(),
           value658: Dynamic = value657?.overAnnotation ? null : value657,
           value659: Dynamic = value655
@@ -1868,17 +1860,17 @@ export function subscribeClipboardEvents(deps: { readonly doc: Dynamic; readonly
         if (!value655 && !value658) return;
         event.stopPropagation();
         clearTimeout(deps.value474.current);
-        let value660: Dynamic = (0, isClipboardSettling)();
+        let value660: Dynamic = isClipboardSettling();
         deps.value474.current = setTimeout((): Dynamic => {
           let value661: Dynamic =
-            value660 || (0, isClipboardSettling)();
-          (0, afterClipboardSettled)((): Dynamic => {
+            value660 || isClipboardSettling();
+          afterClipboardSettled((): Dynamic => {
             if (!deps.value224.current) return;
             let value662: Dynamic = value661
-                ? (0, getArtboardClipboard)()
+                ? getArtboardClipboard()
                 : value655,
               value663: Dynamic = value661
-                ? (0, getAnnotationClipboard)()
+                ? getAnnotationClipboard()
                 : value656,
               value664: Dynamic = value661 ? deps.value109() : value657,
               value665: Dynamic = value664?.overAnnotation ? null : value664;
@@ -1895,7 +1887,7 @@ export function subscribeClipboardEvents(deps: { readonly doc: Dynamic; readonly
                   (input?: Dynamic): Dynamic =>
                     deps.value470.current(
                       value665,
-                      (0, getActiveClipboardSource)({
+                      getActiveClipboardSource({
                         text: input,
                         stamp: null,
                         hasImage: false,
@@ -1948,7 +1940,7 @@ export function subscribeClipboardEvents(deps: { readonly doc: Dynamic; readonly
         );
         event.preventDefault();
         event.stopImmediatePropagation();
-        (0, writeClipboardObject)(event, DesignArtboardsKey, {
+        writeClipboardObject(event, DesignArtboardsKey, {
           data: {
             stamp: value654,
             ...deps.value466.current(current4.files, current4.notes),
@@ -1959,7 +1951,7 @@ export function subscribeClipboardEvents(deps: { readonly doc: Dynamic; readonly
             stamp: value654,
             rendition: value655,
           }),
-          (0, mirrorArtboardClipboardStamp)(value654, value655));
+          mirrorArtboardClipboardStamp(value654, value655));
       },
       callback19: Dynamic = (event?: Dynamic): Dynamic => {
         clearTimeout(deps.value474.current);
@@ -1968,24 +1960,24 @@ export function subscribeClipboardEvents(deps: { readonly doc: Dynamic; readonly
         let items: Dynamic = [...(event.clipboardData?.files ?? [])],
           value654: Dynamic = items.filter(
             (input?: Dynamic): Dynamic =>
-              (0, isImageFile)(input) ||
-              (0, isVideoFile)(input),
+              isImageFile(input) ||
+              isVideoFile(input),
           ),
           value655: Dynamic =
             event.clipboardData?.getData("text/plain") ?? "",
-          value656: Dynamic = (0, readBoundedClipboardObject)(event),
-          value657: Dynamic = (0, readArtboardClipboard)(value656),
+          value656: Dynamic = readBoundedClipboardObject(event),
+          value657: Dynamic = readArtboardClipboard(value656),
           state: Dynamic = {
             text: value655,
-            stamp: (0, clipboardObjectStamp)(value656),
+            stamp: clipboardObjectStamp(value656),
             hasImage:
               value654.length > 0 &&
-              (0, clipboardContainsFileNames)(items, value655),
+              clipboardContainsFileNames(items, value655),
             artboards: value657,
           },
-          value658: Dynamic = (0, imagePasteRefusal)(
+          value658: Dynamic = imagePasteRefusal(
             event.target,
-            (0, getActiveClipboardSource)(state) === "image",
+            getActiveClipboardSource(state) === "image",
             value655,
             value654.length > 0 && value654.every(isVideoFile)
               ? "video"
@@ -1996,21 +1988,21 @@ export function subscribeClipboardEvents(deps: { readonly doc: Dynamic; readonly
           event.stopImmediatePropagation(),
           deps.value448.current(value658.say));
         if (value658.to !== "canvas") return;
-        let value659: Dynamic = (0, isClipboardSettling)(),
+        let value659: Dynamic = isClipboardSettling(),
           callback20: Dynamic = (input?: Dynamic): Dynamic => {
             value659
-              ? (0, markConsumedClipboardStamp)(event)
+              ? markConsumedClipboardStamp(event)
               : (event.preventDefault(),
                 input && event.stopImmediatePropagation());
           };
-        (0, afterClipboardSettled)(
+        afterClipboardSettled(
           (): Dynamic => {
             if (!deps.value224.current) return;
-            let value660: Dynamic = (0, getActiveClipboardSource)(
+            let value660: Dynamic = getActiveClipboardSource(
                 state,
               ),
-              value661: Dynamic = (0, getArtboardClipboard)(),
-              value662: Dynamic = (0, getAnnotationClipboard)(),
+              value661: Dynamic = getArtboardClipboard(),
+              value662: Dynamic = getAnnotationClipboard(),
               value663: Dynamic = deps.value109(),
               value664: Dynamic = value663?.overAnnotation ? null : value663;
             if (value660 === "foreign-artboards") {
@@ -2056,7 +2048,7 @@ export function subscribeClipboardEvents(deps: { readonly doc: Dynamic; readonly
               }: Dynamic = deps.value120(),
               entry: Dynamic = deps.value105.get();
             if (value665 != null) {
-              let value671: Dynamic = (0, visibleArtboardCenter)(
+              let value671: Dynamic = visibleArtboardCenter(
                 value665,
                 {
                   ...entry,
@@ -2093,7 +2085,7 @@ export function subscribeClipboardEvents(deps: { readonly doc: Dynamic; readonly
                       value660 === "text" ? value655 : "",
                     );
           },
-          (): Dynamic => (0, markConsumedClipboardStamp)(event),
+          (): Dynamic => markConsumedClipboardStamp(event),
         );
       };
     (window as Dynamic).addEventListener("keydown", callback15, true);
@@ -2116,8 +2108,8 @@ export function copyArtboardAsPng(deps: { readonly hideToast: Dynamic; readonly 
         let value653: Dynamic = deps.value87.current.artboards.find(
             (input2?: Dynamic): Dynamic => input2.file === input,
           ),
-          value654: Dynamic = (0, clipboardGeneration)(),
-          value655: Dynamic = (0, createCurrentWorkingGeneration)(),
+          value654: Dynamic = clipboardGeneration(),
+          value655: Dynamic = createCurrentWorkingGeneration(),
           value656: Dynamic = null,
           flag2: Dynamic = false,
           state: Dynamic = {
@@ -2126,13 +2118,13 @@ export function copyArtboardAsPng(deps: { readonly hideToast: Dynamic; readonly 
           value657: Dynamic = (async (): Promise<Dynamic> => {
             deps.value479(true);
             try {
-              if (!(await (0, allowsClipboardImages)())) {
+              if (!(await allowsClipboardImages())) {
                 flag2 = true;
                 return null;
               }
               let value658: Dynamic = await deps.value483(input),
                 value659: Dynamic = value658
-                  ? (0, createPreviewHandle)(value658)
+                  ? createPreviewHandle(value658)
                   : null;
               if (
                 !value658 ||
@@ -2144,18 +2136,18 @@ export function copyArtboardAsPng(deps: { readonly hideToast: Dynamic; readonly 
                   : AccessibilityAnnouncementsLabel_9;
                 return null;
               }
-              let value660: Dynamic = await (0, captureArtboardImage)(
+              let value660: Dynamic = await captureArtboardImage(
                 value659,
                 "png",
                 2,
                 value653
-                  ? (0, getArtboardCaptureOptions)(value653, deps.value93)
+                  ? getArtboardCaptureOptions(value653, deps.value93)
                   : {
                       selectionRoot: "body",
                     },
               ).catch(
                 (input2?: Dynamic): Dynamic => (
-                  (value656 = (0, errorMessage)(input2)),
+                  (value656 = errorMessage(input2)),
                   null
                 ),
               );
@@ -2169,9 +2161,9 @@ export function copyArtboardAsPng(deps: { readonly hideToast: Dynamic; readonly 
                           }
                         : {}),
                     }),
-                    (0, clipboardGeneration)() === value654 &&
+                    clipboardGeneration() === value654 &&
                     value655()
-                      ? (0, pngDataUrlToBlob)(value660.uri)
+                      ? pngDataUrlToBlob(value660.uri)
                       : null)
                   : ((value656 =
                       value660.softError === "zero-size"
@@ -2187,26 +2179,26 @@ export function copyArtboardAsPng(deps: { readonly hideToast: Dynamic; readonly 
               deps.value479(false);
             }
           })();
-        (0, writeClipboardPng)(value657).then(
+        writeClipboardPng(value657).then(
           (input2?: Dynamic): Dynamic => {
             if (
               !(
-                (0, clipboardGeneration)() !== value654 || !value655()
+                clipboardGeneration() !== value654 || !value655()
               )
             )
               if (input2 === "copied") {
-                (0, clearClipboardBuffers)();
-                (0, announce)(
+                clearClipboardBuffers();
+                announce(
                   AccessibilityAnnouncementsLabel_2,
                 );
                 if (state.clipped) {
-                  let value658: Dynamic = (0, exportFileName)(
+                  let value658: Dynamic = exportFileName(
                       input,
                       value653?.title,
                     ),
                     value659: Dynamic = deps.value502(input),
                     value660: Dynamic = deps.showToast(
-                      (0, clippedArtboardsMessage)(
+                      clippedArtboardsMessage(
                         [value658],
                         value659,
                       ),
@@ -2226,14 +2218,14 @@ export function copyArtboardAsPng(deps: { readonly hideToast: Dynamic; readonly 
                 }
                 state.blank > 0 &&
                   deps.showToast(
-                    (0, missingCopiedImagesMessage)(state.blank),
+                    missingCopiedImagesMessage(state.blank),
                     "info",
                   );
               } else
                 flag2
                   ? deps.showToast(DownloadsArenTAvailableToYouForMessage)
                   : deps.showToast(
-                      (0, pngCopyFailureMessage)(
+                      pngCopyFailureMessage(
                         "artboard",
                         input2 === "refused" ? null : value656,
                       ),
@@ -2251,8 +2243,8 @@ export function copyArtboardAsSvg(deps: { readonly hideToast: Dynamic; readonly 
         let value653: Dynamic = deps.value87.current.artboards.find(
             (input2?: Dynamic): Dynamic => input2.file === input,
           ),
-          value654: Dynamic = (0, clipboardGeneration)(),
-          value655: Dynamic = (0, createCurrentWorkingGeneration)(),
+          value654: Dynamic = clipboardGeneration(),
+          value655: Dynamic = createCurrentWorkingGeneration(),
           value656: Dynamic = null,
           flag2: Dynamic = false,
           index: Dynamic = 0,
@@ -2260,13 +2252,13 @@ export function copyArtboardAsSvg(deps: { readonly hideToast: Dynamic; readonly 
           value657: Dynamic = (async (): Promise<Dynamic> => {
             deps.value479(true);
             try {
-              if (!(await (0, allowsClipboardImages)())) {
+              if (!(await allowsClipboardImages())) {
                 flag2 = true;
                 return null;
               }
               let value658: Dynamic = await deps.value483(input),
                 value659: Dynamic = value658
-                  ? (0, createPreviewHandle)(value658)
+                  ? createPreviewHandle(value658)
                   : null;
               if (
                 !value658 ||
@@ -2279,7 +2271,7 @@ export function copyArtboardAsSvg(deps: { readonly hideToast: Dynamic; readonly 
                 return null;
               }
               let value660: Dynamic = value653
-                  ? (0, getArtboardCaptureOptions)(value653, deps.value93)
+                  ? getArtboardCaptureOptions(value653, deps.value93)
                   : null,
                 value661: Dynamic = value660?.frame,
                 value662: Dynamic =
@@ -2290,11 +2282,11 @@ export function copyArtboardAsSvg(deps: { readonly hideToast: Dynamic; readonly 
                   value661.h > 0
                     ? value661
                     : null,
-                value663: Dynamic = await (0, withCaptureViewport)(
+                value663: Dynamic = await withCaptureViewport(
                   value659,
                   value662,
                   (): Dynamic =>
-                    (0, captureClipboardSvg)(
+                    captureClipboardSvg(
                       value659,
                       "page",
                       value662 && {
@@ -2306,7 +2298,7 @@ export function copyArtboardAsSvg(deps: { readonly hideToast: Dynamic; readonly 
                 ).catch(
                   (input2?: Dynamic): Dynamic => (
                     console.error("[copy-svg] artboard", input2),
-                    (value656 = (0, svgCopyErrorMessage)(input2)),
+                    (value656 = svgCopyErrorMessage(input2)),
                     null
                   ),
                 );
@@ -2314,7 +2306,7 @@ export function copyArtboardAsSvg(deps: { readonly hideToast: Dynamic; readonly 
                 ? value663.ok
                   ? ((index = value663.blank),
                     (flag3 = value663.clipped),
-                    (0, clipboardGeneration)() === value654 &&
+                    clipboardGeneration() === value654 &&
                     value655()
                       ? value663.svg
                       : null)
@@ -2332,24 +2324,24 @@ export function copyArtboardAsSvg(deps: { readonly hideToast: Dynamic; readonly 
               deps.value479(false);
             }
           })();
-        (0, writeClipboardSvg)(value657).then(
+        writeClipboardSvg(value657).then(
           (input2?: Dynamic): Dynamic => {
             if (
               !(
-                (0, clipboardGeneration)() !== value654 || !value655()
+                clipboardGeneration() !== value654 || !value655()
               )
             )
               if (input2 === "copied") {
-                (0, clearClipboardBuffers)();
-                (0, announce)(
+                clearClipboardBuffers();
+                announce(
                   AccessibilityAnnouncementsLabel_3,
                 );
                 if (flag3) {
                   let value658: Dynamic = deps.value502(input),
                     value659: Dynamic = deps.showToast(
-                      (0, clippedSvgCopyMessage)(
-                        (0, formatArtboardNames)([
-                          (0, exportFileName)(input, value653?.title),
+                      clippedSvgCopyMessage(
+                        formatArtboardNames([
+                          exportFileName(input, value653?.title),
                         ]),
                         value658,
                       ),
@@ -2369,14 +2361,14 @@ export function copyArtboardAsSvg(deps: { readonly hideToast: Dynamic; readonly 
                 }
                 index > 0 &&
                   deps.showToast(
-                    (0, missingSvgImagesMessage)(index),
+                    missingSvgImagesMessage(index),
                     "info",
                   );
               } else
                 flag2
                   ? deps.showToast(DownloadsArenTAvailableToYouForMessage)
                   : deps.showToast(
-                      (0, svgCopyFailureMessage)(
+                      svgCopyFailureMessage(
                         "artboard",
                         input2 === "refused" ? null : value656,
                       ),

@@ -15,7 +15,7 @@ function adoptModelAndRelocateSelection(input?: Dynamic): Dynamic {
       value3: Dynamic = value2;
     prev &&
       (value = (input2?: Dynamic): Dynamic =>
-        (0, relocateModelElementIds)(prev, value3, input2));
+        relocateModelElementIds(prev, value3, input2));
   } catch (value3: Dynamic) {
     input.log("the selection could not be followed and is dropped", value3);
   }
@@ -29,7 +29,7 @@ function adoptModelAndRelocateSelection(input?: Dynamic): Dynamic {
         : (input2?: Dynamic, options?: Dynamic): Dynamic =>
             input.pending.arm(
               options,
-              (0, modelSelectionIdentityGuard)(value3, input2),
+              modelSelectionIdentityGuard(value3, input2),
             ),
     );
   } catch (value3: Dynamic) {

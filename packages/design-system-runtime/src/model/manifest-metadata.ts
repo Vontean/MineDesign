@@ -66,12 +66,12 @@ function parseManifestLibraries(
         }
       }
       if (typeof value.file === "string") {
-        let value4 = (0, isValidDesignSystemPath)(value.file.trim())
-          ? (0, normalizeDesignSystemPath)(value.file.trim())
+        let value4 = isValidDesignSystemPath(value.file.trim())
+          ? normalizeDesignSystemPath(value.file.trim())
           : "";
         if (
           PACKAGED_LIBRARY_PATH_PATTERN.test(value4) &&
-          (0, isValidDesignSystemPath)(value4)
+          isValidDesignSystemPath(value4)
         ) {
           value3 = value4;
         } else {
@@ -125,7 +125,7 @@ function parseManifestBundleMetadata(
   manifestInput: unknown,
   report: ParseReport = { dropped: [], warnings: [] },
 ) {
-  let manifest = (0, parseManifest)(manifestInput, report),
+  let manifest = parseManifest(manifestInput, report),
     namespace =
       typeof manifest.namespace === "string"
         ? manifest.namespace.trim()
@@ -158,8 +158,8 @@ function isAssetOrderKey(key: unknown): key is string {
   }
   let path: string = "assets/g/" + key;
   return (
-    (0, isValidDesignSystemPath)(path) &&
-    (0, normalizeDesignSystemPath)(path) === path
+    isValidDesignSystemPath(path) &&
+    normalizeDesignSystemPath(path) === path
   );
 }
 function ownPropertyOrUndefined<Value>(
@@ -191,7 +191,7 @@ function parseAssetGroupMetadata(
     warnings: [],
   },
 ): AssetGroupMetadata {
-  let manifest = (0, parseManifest)(manifestInput, report),
+  let manifest = parseManifest(manifestInput, report),
     groups: string[] = [],
     tiles: Record<string, Model.AssetTileSize> = {},
     orders: Record<string, string[]> = {};

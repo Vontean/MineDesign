@@ -59,7 +59,7 @@ function panelCanRestoreFocus(): Dynamic {
     )
   )
     return false;
-  let value: Dynamic = (0, ChromeResizeGripCurrentState)();
+  let value: Dynamic = ChromeResizeGripCurrentState();
   return value === null ||
     !value.isConnected ||
     value.closest('[inert], [aria-hidden="true"]') !== null
@@ -80,17 +80,17 @@ export {
 };
 export function installEditorChromePanelClose(): () => void {
   return () => {
-    reactChromePanelClose = (0, toModuleNamespace)(
-      (0, load_react)(),
+    reactChromePanelClose = toModuleNamespace(
+      load_react(),
       1,
     );
-    jsxChromePanelClose = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    jsxChromePanelClose = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
-    (0, initializeCdsIndex)();
-    jsxChromePanelClose_2 = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    initializeCdsIndex();
+    jsxChromePanelClose_2 = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
     ChromePanelCloseClassNames =

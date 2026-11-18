@@ -328,12 +328,12 @@ function assessAssetReclamation(
   if (assetsCatalogState.state !== "listed") {
     return null;
   }
-  let comparison = (0, compareReferencedAndStoredBlobs)(
+  let comparison = compareReferencedAndStoredBlobs(
       files,
       new Set(assetsCatalogState.byId.keys()),
     ),
     orphanIds = new Set(getRecentOrphanedAssets().map((input) => input.id)),
-    windowed = (0, isSystemCollectionWindowed)(),
+    windowed = isSystemCollectionWindowed(),
     now: number = Date.now(),
     isRecent = (input: string) => {
       let value = Date.parse(
@@ -356,7 +356,7 @@ function assessAssetReclamation(
     retainedIds =
       candidates.length > 0
         ? new Set([
-            ...(0, retainedRemoteTextBlobIds)(),
+            ...retainedRemoteTextBlobIds(),
             ...blobIdsInFileText(files),
           ])
         : new Set(),
@@ -370,7 +370,7 @@ function assessAssetReclamation(
             : 0,
       })),
     missing = comparison.missing.filter((input) => {
-      let value = (0, storagePointerForFile)(input, files[input]);
+      let value = storagePointerForFile(input, files[input]);
       return (
         value === null || value.store !== "blob" || !orphanIds.has(value.id)
       );
@@ -643,7 +643,7 @@ async function publishedPageBlobIds(
       }
     }
     return new Set([
-      ...(0, referencedBlobIds)(state),
+      ...referencedBlobIds(state),
       ...blobIdsInFileText(state),
     ]);
   } catch {
@@ -711,9 +711,9 @@ function assetUploadFailureMessage(
 ): string {
   switch (kind) {
     case "too-large":
-      return (0, explainUploadSize)(
+      return explainUploadSize(
         bytes,
-        (0, storedFileByteLimit)(mime),
+        storedFileByteLimit(mime),
         mime === SVG_MIME_TYPE ? "the limit for SVG" : "the limit",
       );
     case "quota":

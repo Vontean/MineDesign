@@ -256,7 +256,7 @@ function normalizeExportHtmlOutsideScripts(html?: Dynamic): Dynamic {
     .split(/(<script\b[^>]*>[\s\S]*?<\/script\s*>)/i)
     .map(
       (input?: Dynamic, options?: Dynamic): Dynamic =>
-        options % 2 ? input : (0, encodeCamelCaseAttributes)(input),
+        options % 2 ? input : encodeCamelCaseAttributes(input),
     )
     .join("");
 }
@@ -479,7 +479,7 @@ async function bundleStandaloneDesignHtml(
         ? html.slice(0, value.index + value[0].length) +
           normalizeExportDesignTags(
             normalizeExportHtmlOutsideScripts(
-              (0, expandSelfClosingImports)(
+              expandSelfClosingImports(
                 html.slice(value.index + value[0].length, value2),
               ),
             ),
@@ -775,7 +775,7 @@ async function bundleStandaloneDesignHtml(
             return value24;
           },
           callback5: Dynamic = async (input2?: Dynamic): Promise<Dynamic> => {
-            let value23: Dynamic = await (0, inlineExportCssImports)(
+            let value23: Dynamic = await inlineExportCssImports(
               input2,
               input,
               callback4,
@@ -1398,7 +1398,7 @@ async function bundleStandaloneDesignHtml(
         value26: Dynamic = await callback(value25);
       if (!value26) continue;
       let value27: Dynamic = new TextDecoder().decode(value26.data);
-      value27 = await (0, inlineExportCssAssetUrls)(
+      value27 = await inlineExportCssAssetUrls(
         value27,
         value25,
         callback,
@@ -1418,7 +1418,7 @@ async function bundleStandaloneDesignHtml(
       });
     }
   }
-  if ((0, isDcHtmlDocument)(html)) {
+  if (isDcHtmlDocument(html)) {
     let items3: Dynamic = [
       {
         url: exportReactUmdUrl,
@@ -1455,7 +1455,7 @@ async function bundleStandaloneDesignHtml(
             value20: Dynamic = entry ?? (await resolveAsset(value19));
           if (
             !value20 ||
-            !(await (0, verifyExportAssetIntegrity)(
+            !(await verifyExportAssetIntegrity(
               value20.data,
               sri,
             ))
@@ -1500,7 +1500,7 @@ async function bundleStandaloneDesignHtml(
       value22: Dynamic = await callback(value21);
     if (value22) {
       let value23: Dynamic = new TextDecoder().decode(value22.data);
-      value23 = await (0, inlineExportCssImports)(
+      value23 = await inlineExportCssImports(
         value23,
         value21,
         callback,
@@ -1516,7 +1516,7 @@ async function bundleStandaloneDesignHtml(
           value24.setAttribute("media", value19.getAttribute("media"));
       value19.hasAttribute("title") &&
         value24.setAttribute("title", value19.getAttribute("title"));
-      value24.textContent = (0, escapeExportStyleClosingTag)(value23);
+      value24.textContent = escapeExportStyleClosingTag(value23);
       value19.replaceWith(value24);
     }
   }
@@ -1527,7 +1527,7 @@ async function bundleStandaloneDesignHtml(
   ) as Dynamic)
     value19.remove();
   for (let value19 of value11 as Dynamic) {
-    let value20: Dynamic = await (0, inlineExportCssImports)(
+    let value20: Dynamic = await inlineExportCssImports(
       value19.textContent || "",
       path,
       callback,
@@ -1536,7 +1536,7 @@ async function bundleStandaloneDesignHtml(
       "uuid",
       items,
     );
-    value19.textContent = (0, escapeExportStyleClosingTag)(value20);
+    value19.textContent = escapeExportStyleClosingTag(value20);
   }
   for (let value19 of Array.from(
     value4.querySelectorAll("[style]"),
@@ -1544,7 +1544,7 @@ async function bundleStandaloneDesignHtml(
     let value20: Dynamic = value19.getAttribute("style") || "";
     value19.setAttribute(
       "style",
-      await (0, replaceCssAssetUrlsWithIds)(
+      await replaceCssAssetUrlsWithIds(
         value20,
         path,
         callback,
@@ -1640,7 +1640,7 @@ async function bundleStandaloneDesignHtml(
         : "application/octet-stream",
       value23: Dynamic = !alreadyCompressedExportMimeTypes.has(value22),
       value24: Dynamic = value23
-        ? await (0, gzipExportAsset)(value20.data)
+        ? await gzipExportAsset(value20.data)
         : value20.data;
     state2[value20.uuid] = {
       mime: value22,
@@ -1648,7 +1648,7 @@ async function bundleStandaloneDesignHtml(
       data: encodeBinaryBase64(value24),
     };
   }
-  let value16: Dynamic = (0, escapeExportScriptClosingTags)(
+  let value16: Dynamic = escapeExportScriptClosingTags(
     JSON.stringify(value14),
   );
   containsProjectServeAccessToken(
@@ -1658,7 +1658,7 @@ async function bundleStandaloneDesignHtml(
     items.push(
       "serve token not removed: an ext-resource id ships bytes matching a project serve access token \u2014 the published file may carry a live access token",
     );
-  let value17: Dynamic = (0, escapeExportScriptClosingTags)(
+  let value17: Dynamic = escapeExportScriptClosingTags(
       JSON.stringify(items2),
     ),
     value18: Dynamic = Object.values(state2).reduce(
@@ -1679,7 +1679,7 @@ async function bundleStandaloneDesignHtml(
 <html>
 <head>
   <meta charset="utf-8">
-  <title>${(0, escapeHtml)(value13)}</title>
+  <title>${escapeHtml(value13)}</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { background: ${text2}; display: flex; align-items: center; justify-content: center; min-height: 100vh; font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
@@ -1696,7 +1696,7 @@ async function bundleStandaloneDesignHtml(
   </noscript>
 </head>
 <body>
-  ${text ? '<div id="__bundler_thumbnail">' + text + "</div>" : '<div id="__bundler_placeholder">Loading ' + (0, escapeHtml)(value13) + "...</div>"}
+  ${text ? '<div id="__bundler_thumbnail">' + text + "</div>" : '<div id="__bundler_placeholder">Loading ' + escapeHtml(value13) + "...</div>"}
   <div id="__bundler_loading">Unpacking...</div>
 
   <script>
@@ -1704,7 +1704,7 @@ async function bundleStandaloneDesignHtml(
   <\/script>
 
   <script type="__bundler/manifest">
-${(0, escapeExportScriptClosingTags)(JSON.stringify(state2))}
+${escapeExportScriptClosingTags(JSON.stringify(state2))}
   <\/script>
 
   <script type="__bundler/ext_resources">
@@ -1712,7 +1712,7 @@ ${value17}
   <\/script>
 
   <script type="__bundler/page_order">
-${(0, escapeExportScriptClosingTags)(JSON.stringify(state.depth === 0 ? state.pageOrder : []))}
+${escapeExportScriptClosingTags(JSON.stringify(state.depth === 0 ? state.pageOrder : []))}
   <\/script>
 
   <script type="__bundler/template">

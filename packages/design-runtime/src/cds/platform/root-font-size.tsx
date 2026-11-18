@@ -59,35 +59,35 @@ function PopupSurface({
   closeOnActivityHide = false,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic = (0, useCloseOnHiddenActivity)(
+  let value: Dynamic = useCloseOnHiddenActivity(
       closeOnActivityHide,
     ),
-    value2: Dynamic = (0, useMergedRefs)(
+    value2: Dynamic = useMergedRefs(
       ensureDocumentInputObserver,
       value,
     ),
-    value3: Dynamic = (0, useDensity)(),
+    value3: Dynamic = useDensity(),
     value4: Dynamic = density ?? value3,
-    value5: Dynamic = (0, useColorMode)(),
-    value6: Dynamic = (0, useThemeId)(),
-    value7: Dynamic = (0, usePlatform)(),
-    value8: Dynamic = (0, useLocale)(),
-    value9: Dynamic = (0, useCdsFont)(),
-    value10: Dynamic = (0, useCdsLabels)(),
-    value11: Dynamic = (0, usePageBackground)(),
+    value5: Dynamic = useColorMode(),
+    value6: Dynamic = useThemeId(),
+    value7: Dynamic = usePlatform(),
+    value8: Dynamic = useLocale(),
+    value9: Dynamic = useCdsFont(),
+    value10: Dynamic = useCdsLabels(),
+    value11: Dynamic = usePageBackground(),
     value12: Dynamic = surface ?? value11,
     value13: Dynamic =
       value12 || value9 !== undefined || style
         ? {
-            ...(0, pageBackgroundStyle)(value12),
-            ...(0, monoFontOverrideStyle)(value9),
+            ...pageBackgroundStyle(value12),
+            ...monoFontOverrideStyle(value9),
             ...style,
           }
         : undefined;
   return (
     <div
       ref={value2}
-      className={(0, cn)("cds-root pointer-events-auto", className)}
+      className={cn("cds-root pointer-events-auto", className)}
       data-cds-portal={""}
       data-density={value4}
       data-mode={value5}
@@ -249,15 +249,15 @@ export {
 };
 export function installCdsPlatformRootFontSize(): () => void {
   return () => {
-    initializePlatformRootFontSize = (0, initializeOnce)(
+    initializePlatformRootFontSize = initializeOnce(
       (): Dynamic => {
         "use client";
 
-        reactPlatformRootFontSize = (0, toModuleNamespace)(
-          (0, load_react)(),
+        reactPlatformRootFontSize = toModuleNamespace(
+          load_react(),
         );
-        jsxPlatformRootFontSize = (0, toModuleNamespace)(
-          (0, load_react_jsx_runtime)(),
+        jsxPlatformRootFontSize = toModuleNamespace(
+          load_react_jsx_runtime(),
         );
         SkeletonDecorativeContext = (0,
         reactPlatformRootFontSize.createContext)(false);
@@ -271,30 +271,30 @@ export function installCdsPlatformRootFontSize(): () => void {
         );
       },
     );
-    initializePlatformRootFontSize_2 = (0, initializeOnce)(
+    initializePlatformRootFontSize_2 = initializeOnce(
       (): Dynamic => {
         "use client";
 
-        (0, initializeDomInputObservation)();
-        (0, initializeExperimentalTheme)();
-        (0, initializeClassNames)();
-        (0, initializeCdsRoot)();
-        (0, initializeDomRefComposition_3)();
-        (0, initializeDomRefComposition_4)();
-        (0, initializeDomRefComposition_5)();
-        (0, initializeDomRefComposition)();
+        initializeDomInputObservation();
+        initializeExperimentalTheme();
+        initializeClassNames();
+        initializeCdsRoot();
+        initializeDomRefComposition_3();
+        initializeDomRefComposition_4();
+        initializeDomRefComposition_5();
+        initializeDomRefComposition();
         initializePlatformRootFontSize();
-        jsxPlatformRootFontSize_2 = (0, toModuleNamespace)(
-          (0, load_react_jsx_runtime)(),
+        jsxPlatformRootFontSize_2 = toModuleNamespace(
+          load_react_jsx_runtime(),
         );
       },
     );
-    initializePlatformRootFontSize_3 = (0, initializeOnce)(
+    initializePlatformRootFontSize_3 = initializeOnce(
       (): Dynamic => {
         "use client";
 
-        reactPlatformRootFontSize_2 = (0, toModuleNamespace)(
-          (0, load_react)(),
+        reactPlatformRootFontSize_2 = toModuleNamespace(
+          load_react(),
         );
         rootRemScaleProperty = "--cds-rem-scale";
         PlatformRootFontSizeConstant = 16;
@@ -309,7 +309,7 @@ export function installCdsPlatformRootFontSize(): () => void {
         rootFontSizeSubscribers = new Set();
       },
     );
-    initializePlatformRootFontSize_4 = (0, initializeOnce)(
+    initializePlatformRootFontSize_4 = initializeOnce(
       (): Dynamic => {
         iconFontMetadata = JSON.parse(`{
  "icons": {

@@ -182,7 +182,7 @@ var TEXT_ENTRY_SELECTOR: string;
 var initializeTextEntrySelector: () => void;
 var initializeSafeBlur: () => void;
 function cn(...classValues: import("clsx").ClassValue[]) {
-  return mergeTailwindClasses((0, clsx)(classValues));
+  return mergeTailwindClasses(clsx(classValues));
 }
 function interpolateTranslation(
   template: string,
@@ -227,7 +227,7 @@ function SheetHandle({ drawPill = true }: I.SheetHandleProps) {
     | "onPointerUp"
     | "onPointerCancel"
     | "onLostPointerCapture"
-  > = (0, useSheetDrag)();
+  > = useSheetDrag();
   return (
     <div
       aria-hidden={true}
@@ -238,7 +238,7 @@ function SheetHandle({ drawPill = true }: I.SheetHandleProps) {
       }
     >
       <div
-        className={(0, clsx)(
+        className={clsx(
           "h-1 w-9 rounded-full bg-border",
           !drawPill && "opacity-0",
         )}
@@ -258,7 +258,7 @@ function SheetTitleBar({
       | "onPointerUp"
       | "onPointerCancel"
       | "onLostPointerCapture"
-    > = (0, useSheetDrag)(),
+    > = useSheetDrag(),
     hasLeading =
       leading !== undefined && leading !== null && leading !== false;
   if (
@@ -281,7 +281,7 @@ function SheetTitleBar({
     >
       {[hasLeading && <span className={"-me-2.5 shrink-0"}>{leading}</span>, <span
           aria-hidden={true}
-          className={(0, clsx)(
+          className={clsx(
             "min-w-0 flex-1 truncate text-start text-heading font-semibold text-primary",
             !hasLeading && "ps-2.5",
           )}
@@ -371,7 +371,7 @@ function useSheetTextEntryFocus(
         if (!(input instanceof Element)) {
           return false;
         }
-        if ((0, isEditableElement)(input)) {
+        if (isEditableElement(input)) {
           return true;
         }
         let ancestor = input.closest('[data-cds="TextInput"], label');
@@ -381,7 +381,7 @@ function useSheetTextEntryFocus(
         let value4 =
           ancestor instanceof HTMLLabelElement ? ancestor.control : null;
         return (
-          (0, isEditableElement)(value4) ||
+          isEditableElement(value4) ||
           ancestor.querySelector(
             'input:not([type=button],[type=checkbox],[type=radio],[type=range],[type=submit],[type=reset],[type=color],[type=file],[type=image],[type=hidden],[readonly]), textarea:not([readonly]), [contenteditable=""], [contenteditable="true"], [contenteditable="plaintext-only"]',
           ) !== null
@@ -393,7 +393,7 @@ function useSheetTextEntryFocus(
         }
       },
       callback5 = (event: Event) => {
-        if ((0, isEditableElement)(event.target as Element | null)) {
+        if (isEditableElement(event.target as Element | null)) {
           callback();
           if (index > 0 && (event.timeStamp || Date.now()) - index < 1000) {
             index = 0;
@@ -408,7 +408,7 @@ function useSheetTextEntryFocus(
         }
       },
       callback7 = (event: Event) => {
-        if ((0, isEditableElement)(event.target as Element | null)) {
+        if (isEditableElement(event.target as Element | null)) {
           callback2();
         }
       };
@@ -418,7 +418,7 @@ function useSheetTextEntryFocus(
     element.addEventListener("click", callback6);
     if (
       element.contains(element.ownerDocument.activeElement) &&
-      (0, isEditableElement)(element.ownerDocument.activeElement)
+      isEditableElement(element.ownerDocument.activeElement)
     ) {
       callback();
     }
@@ -750,7 +750,7 @@ function useSheetHeightUntilVisible(
   onMeasure: (element: HTMLElement, height: number) => void,
 ) {
   reactSheetPopupHost.useEffect(() => {
-    let value = (0, getResizeObserverConstructor)(element);
+    let value = getResizeObserverConstructor(element);
     if (element === null || value === undefined) {
       return;
     }
@@ -766,7 +766,7 @@ function useSheetHeightUntilVisible(
   }, [element, onMeasure]);
 }
 function useSheetPopupHost(): I.SheetPopupHostState {
-  let sheetState: D.SheetState = (0, useSheetState)(),
+  let sheetState: D.SheetState = useSheetState(),
     [halfHeightFloor, setHalfHeightFloor] =
       reactSheetPopupHost.useState(false),
     halfHeightFloorRef = reactSheetPopupHost.useRef(false),
@@ -794,7 +794,7 @@ function useSheetPopupHost(): I.SheetPopupHostState {
     pinHeight = frame?.pinHeight,
     measureAndPin = reactSheetPopupHost.useCallback(
       (input: HTMLElement, options: number) => {
-        let value: boolean = (0, sheetContentCanGrow)(input);
+        let value: boolean = sheetContentCanGrow(input);
         pinHeight?.(options, value);
         pinnedElementRef.current = input;
         measurementRef.current = createPinnedSheetMeasurement(
@@ -824,7 +824,7 @@ function useSheetPopupHost(): I.SheetPopupHostState {
             measurementRef.current = createPinnedSheetMeasurement(
               input,
               input.getBoundingClientRect().height,
-              (0, sheetContentCanGrow)(input),
+              sheetContentCanGrow(input),
             );
           }
           return;
@@ -833,7 +833,7 @@ function useSheetPopupHost(): I.SheetPopupHostState {
           updateHalfHeightFloor(false);
         }
         if (input !== null && sheet) {
-          let value: boolean = (0, hasEditableSheetContent)(input);
+          let value: boolean = hasEditableSheetContent(input);
           if (value) {
             let value2 = `min(${MIN_SHEET_HEIGHT_CSS}, ${MAX_SHEET_HEIGHT_CSS})`;
             input.style.minHeight = value2;
@@ -846,12 +846,12 @@ function useSheetPopupHost(): I.SheetPopupHostState {
       [sheet, measureAndPin, updateHalfHeightFloor],
     ),
     height = frame?.height;
-  (0, useIsomorphicLayoutEffect)(() => {
+  useIsomorphicLayoutEffect(() => {
     let current = elementRef.current;
     if (!sheet || height !== undefined || current === null) {
       return;
     }
-    (0, resetSheetDragStyle)(current);
+    resetSheetDragStyle(current);
     measureAndPin(current, current.getBoundingClientRect().height);
   }, [sheet, height, measureAndPin]);
   let open = frame?.open ?? false;
@@ -896,7 +896,7 @@ function useSheetPopupHost(): I.SheetPopupHostState {
         }
       },
       callback2 = (input: number, options: boolean) => {
-        let value5: number = (0, getSheetMinimumHeight)(
+        let value5: number = getSheetMinimumHeight(
           defaultView.innerHeight,
           halfHeightFloorRef.current,
         );
@@ -912,7 +912,7 @@ function useSheetPopupHost(): I.SheetPopupHostState {
           return;
         }
         callback();
-        if ((0, hasEditableSheetContent)(element)) {
+        if (hasEditableSheetContent(element)) {
           if (!halfHeightFloorRef.current) {
             updateHalfHeightFloor(true);
             repinHeight(
@@ -928,7 +928,7 @@ function useSheetPopupHost(): I.SheetPopupHostState {
           value7 =
             element.getBoundingClientRect().height + value5 - value6.visible,
           value8 =
-            (0, getSheetAvailableHeight)(defaultView, element) *
+            getSheetAvailableHeight(defaultView, element) *
             MAX_SHEET_HEIGHT_FRACTION;
         if (flag2) {
           flag2 = false;
@@ -1005,15 +1005,15 @@ function useSheetPopupHost(): I.SheetPopupHostState {
   useSheetTextEntryFocus(element, frame);
   useSheetPressedState(element);
   useDismissSheetOnForeignFocus(element, frame, sheetState.covered);
-  (0, useAndroidCloseWatcher)(
+  useAndroidCloseWatcher(
     sheet && (frame?.open ?? false),
     frame?.dismiss,
   );
   let coverParent = reactSheetPopupHost.useContext<
       ((token: object) => () => void) | null
     >(sheetCoverContext),
-    windowObject = (0, useRootWindow)(),
-    frameHeight: number | undefined = (0, getSheetFrameHeight)(
+    windowObject = useRootWindow(),
+    frameHeight: number | undefined = getSheetFrameHeight(
       frame,
       windowObject,
       element,
@@ -1032,7 +1032,7 @@ function useSheetPopupHost(): I.SheetPopupHostState {
     covered = sheet && sheetState.covered,
     inert = sheet && sheetState.inert,
     style: C.DesignStyle | undefined = sheet
-      ? (0, getSheetPopupStyle)(frame, {
+      ? getSheetPopupStyle(frame, {
           floor: halfHeightFloor ? "half" : "content",
           parentFrameHeight: parentSheet?.frameHeight,
         })
@@ -1044,10 +1044,10 @@ function useSheetPopupHost(): I.SheetPopupHostState {
     ref: attachElement,
     style: style,
     positionerStyle: sheet
-      ? (0, getSheetPositionerStyle)(frame)
+      ? getSheetPositionerStyle(frame)
       : undefined,
     attrs: {
-      ...(sheet ? (0, getControlSizeAttributes)("lg") : {}),
+      ...(sheet ? getControlSizeAttributes("lg") : {}),
       "data-presentation": sheet ? "sheet" : undefined,
       "data-sheet-tree": sheet ? frame?.treeId : undefined,
       [SHEET_COVERED_ATTRIBUTE]: covered ? "" : undefined,
@@ -1234,9 +1234,8 @@ function useStableMergedRef<Value>(
   firstRef: React.RefCallback<Value>,
   secondRef?: CallbackRef<Value>,
 ): React.RefCallback<Value> {
-  let stableFirstRef: React.RefCallback<Value> = (0,
-  useEventCallback)(firstRef);
-  return (0, useEventCallback)((input: Value | null) =>
+  let stableFirstRef: React.RefCallback<Value> = useEventCallback(firstRef);
+  return useEventCallback((input: Value | null) =>
     mergeRefs(stableFirstRef, secondRef)(input),
   );
 }
@@ -1333,14 +1332,14 @@ function useExperimentalThemeStore(
     resolve = configuration?.resolve,
     apply = configuration?.apply,
     applyRef = reactExperimentalTheme.useRef(apply);
-  (0, useIsomorphicLayoutEffect)(() => {
+  useIsomorphicLayoutEffect(() => {
     applyRef.current = apply;
   }, [apply]);
   let hasApply = apply !== undefined,
     cleanupRef = reactExperimentalTheme.useRef<(() => void) | void>(
       undefined,
     );
-  (0, useIsomorphicLayoutEffect)(() => {
+  useIsomorphicLayoutEffect(() => {
     if (isRoot) {
       ownStore.set(
         theme === undefined
@@ -1352,7 +1351,7 @@ function useExperimentalThemeStore(
       );
     }
   }, [isRoot, ownStore, theme, resolve]);
-  (0, useIsomorphicLayoutEffect)(() => {
+  useIsomorphicLayoutEffect(() => {
     let current = targetRef.current,
       current2 = applyRef.current;
     if (
@@ -1372,7 +1371,7 @@ function useExperimentalThemeStore(
       disposeThemeApplication(cleanupRef);
     }
   }, [isRoot, theme, hasApply, targetRef]);
-  (0, useIsomorphicLayoutEffect)(
+  useIsomorphicLayoutEffect(
     () => () => disposeThemeApplication(cleanupRef),
     [],
   );
@@ -1470,7 +1469,7 @@ function getCompanionModalCatcher(
   input: HTMLElement,
   options: EventTarget | null,
 ): HTMLElement | null {
-  let value = (0, asElement)(options) as HTMLElement | null;
+  let value = asElement(options) as HTMLElement | null;
   if (value === null || value.parentElement !== input) {
     return null;
   }
@@ -1488,7 +1487,7 @@ function shouldSuppressModalCatcherFocus(
   if (value === null) {
     return false;
   }
-  let value2 = (0, asElement)(value.ownerDocument.activeElement),
+  let value2 = asElement(value.ownerDocument.activeElement),
     value3 = input.parentElement ?? input;
   return value2 === null || !value3.contains(value2);
 }
@@ -1587,24 +1586,24 @@ function PortalRoot({
   useUiLocale();
   let value = useCloseOnActivityHideRef(closeOnActivityHide),
     value2 = useMergedRefs(trackInputForElement, value),
-    value3 = (0, useDensity)(),
+    value3 = useDensity(),
     value4 = density ?? value3,
-    value5: "light" | "dark" | undefined = (0, useColorMode)(),
+    value5: "light" | "dark" | undefined = useColorMode(),
     value6 = useCdsThemeId(),
-    value7: string | undefined = (0, usePlatform)(),
-    value8: string | undefined = (0, useFont)(),
+    value7: string | undefined = usePlatform(),
+    value8: string | undefined = useFont(),
     value9: string | undefined =
-      (0, useDocumentFont)(value8 === undefined) ?? value8,
-    value10: string | null | undefined = (0, useMonospaceFont)(),
-    value11: string | undefined = (0, useFeatureFlagAttribute)(),
-    value12: string | undefined = (0, usePageBackground)(),
-    value13: string | undefined = (0, useSurfaceBackground)(),
+      useDocumentFont(value8 === undefined) ?? value8,
+    value10: string | null | undefined = useMonospaceFont(),
+    value11: string | undefined = useFeatureFlagAttribute(),
+    value12: string | undefined = usePageBackground(),
+    value13: string | undefined = useSurfaceBackground(),
     value14 = surface ?? value13,
     value15: C.DesignStyle | undefined =
       value14 || value10 !== undefined || style
         ? {
-            ...(0, getSurfaceBackgroundStyle)(value14),
-            ...(0, getMonospaceOverrideStyle)(value10),
+            ...getSurfaceBackgroundStyle(value14),
+            ...getMonospaceOverrideStyle(value10),
             ...style,
           }
         : undefined;
@@ -1738,7 +1737,7 @@ function resolveIconSize(
   return size;
 }
 function useDensityIconSize(): C.ResolvedIconSize {
-  if ((0, useDensity)() === "comfortable") {
+  if (useDensity() === "comfortable") {
     return "md";
   } else {
     return "sm";
@@ -2037,7 +2036,7 @@ function getDesktopTitlebarStore(doc: Document): D.ExternalStore<number> {
       subscribe(input: () => void) {
         values.add(input);
         if (value === null && !flag) {
-          let value3 = (0, createSafeMutationObserver)(
+          let value3 = createSafeMutationObserver(
             MutationObserver,
             () => {
               if (values.size === 0) {
@@ -2105,7 +2104,7 @@ function resolveContainerElement(
   return null;
 }
 function useDesktopTitlebarInset(input?: I.ContainerInput): number {
-  let value: HTMLElement | undefined = (0, useRootElement)(),
+  let value: HTMLElement | undefined = useRootElement(),
     callback = reactCollisionPadding.useCallback(
       () =>
         (resolveContainerElement(input) ?? value)?.ownerDocument ??
@@ -2113,7 +2112,7 @@ function useDesktopTitlebarInset(input?: I.ContainerInput): number {
       [input, value],
     ),
     [value2, value3] = reactCollisionPadding.useState(callback);
-  (0, useIsomorphicLayoutEffect)(() => {
+  useIsomorphicLayoutEffect(() => {
     value3(callback());
   });
   let memo = reactCollisionPadding.useMemo(
@@ -2242,7 +2241,7 @@ function MenuScrollContent({
   if (header || footer) {
     return (
       <div
-        className={(0, clsx)(
+        className={clsx(
           "flex min-h-0 flex-col overflow-hidden rounded-[inherit]",
           fill && "flex-1",
         )}
@@ -2270,7 +2269,7 @@ function MenuScrollContent({
       style={{
         maxHeight: value,
       }}
-      className={(0, clsx)(menuScrollClasses, fill && "flex-1")}
+      className={clsx(menuScrollClasses, fill && "flex-1")}
       {...{
         [SHEET_SCROLL_ATTRIBUTE]: "",
       }}
@@ -2350,7 +2349,7 @@ function blurWithSafeRelatedTarget(input: O.FocusableElement): void {
     if (
       relatedTarget !== null &&
       relatedTarget !== undefined &&
-      (0, asElement)(relatedTarget) === null
+      asElement(relatedTarget) === null
     ) {
       Object.defineProperty(input2, "relatedTarget", {
         value: null,
@@ -2645,10 +2644,10 @@ export function installUiInteractions(): () => void {
           ],
         ]),
       );
-    initializeClassNames = (0, initializeOnce)(() => {
-      (0, initializeThemeTokenManifest)();
-      (0, initializeNpmDependency)();
-      (0, initializeNpmDependency)();
+    initializeClassNames = initializeOnce(() => {
+      initializeThemeTokenManifest();
+      initializeNpmDependency();
+      initializeNpmDependency();
       ({
         themeKeys: classMergeThemeKeys,
         TYPE_SCALE: classMergeTypographyScale,
@@ -2664,7 +2663,7 @@ export function installUiInteractions(): () => void {
             (input2: string) => `${input}-${input2}`,
           ),
       );
-      mergeTailwindClasses = (0, extendTailwindMerge)<
+      mergeTailwindClasses = extendTailwindMerge<
         "font-size-weight" | "grade"
       >({
         extend: {
@@ -2785,26 +2784,26 @@ export function installUiInteractions(): () => void {
         },
       });
     });
-    initializeTranslations = (0, initializeOnce)(() => {
-      reactTranslations = (0, toModuleNamespace)(
-        (0, loadReactNamespace)(),
+    initializeTranslations = initializeOnce(() => {
+      reactTranslations = toModuleNamespace(
+        loadReactNamespace(),
         1,
       );
       translationContext = reactTranslations.createContext<
         I.TranslationResolver | undefined
       >(undefined);
     });
-    initializeSheetChrome = (0, initializeOnce)(() => {
+    initializeSheetChrome = initializeOnce(() => {
       initializeClassNames();
       initializeTranslations();
-      (0, initializeSheetDrag)();
-      (0, initializeNpmDependency)();
-      reactSheetChrome = (0, toModuleNamespace)(
-        (0, loadReactNamespace)(),
+      initializeSheetDrag();
+      initializeNpmDependency();
+      reactSheetChrome = toModuleNamespace(
+        loadReactNamespace(),
         1,
       );
-      jsxSheetChrome = (0, toModuleNamespace)(
-        (0, loadJsxNamespace)(),
+      jsxSheetChrome = toModuleNamespace(
+        loadJsxNamespace(),
         1,
       );
       SheetDismissButton = reactSheetChrome.forwardRef(function (
@@ -2845,42 +2844,42 @@ export function installUiInteractions(): () => void {
       };
     });
     initializeSheetFocusSupport = () => {};
-    initializeSheetMeasurement = (0, initializeOnce)(() => {
-      (0, initializeVisualKeyboard)();
-      (0, initializePresentationMode)();
+    initializeSheetMeasurement = initializeOnce(() => {
+      initializeVisualKeyboard();
+      initializePresentationMode();
       initializeSheetFocusSupport();
-      reactSheetMeasurement = (0, toModuleNamespace)(
-        (0, loadReactNamespace)(),
+      reactSheetMeasurement = toModuleNamespace(
+        loadReactNamespace(),
         1,
       );
     });
-    initializeSheetPopupHost = (0, initializeOnce)(() => {
-      (0, initializeIsomorphicLayoutEffect)();
-      (0, initializeCdsRoot)();
-      (0, initializeIconSupport)();
-      (0, initializeAndroidCloseWatcher)();
-      (0, initializeSheetStyles)();
-      (0, initializePresentationMode)();
-      (0, initializeAdaptiveSheets)();
-      (0, initializeSheetDrag)();
+    initializeSheetPopupHost = initializeOnce(() => {
+      initializeIsomorphicLayoutEffect();
+      initializeCdsRoot();
+      initializeIconSupport();
+      initializeAndroidCloseWatcher();
+      initializeSheetStyles();
+      initializePresentationMode();
+      initializeAdaptiveSheets();
+      initializeSheetDrag();
       initializeSheetChrome();
       initializeSheetMeasurement();
-      reactSheetPopupHost = (0, toModuleNamespace)(
-        (0, loadReactNamespace)(),
+      reactSheetPopupHost = toModuleNamespace(
+        loadReactNamespace(),
         1,
       );
     });
     LAYER_BAND_SIZE = 100;
     TOAST_LAYER_BASE = 9000;
     portalLayerClasses = "[&>*]:z-[var(--cds-portal-z)]";
-    initializeLayers = (0, initializeOnce)(() => {
+    initializeLayers = initializeOnce(() => {
       initializeClassNames();
-      reactLayers = (0, toModuleNamespace)(
-        (0, loadReactNamespace)(),
+      reactLayers = toModuleNamespace(
+        loadReactNamespace(),
         1,
       );
-      jsxLayers = (0, toModuleNamespace)(
-        (0, loadJsxNamespace)(),
+      jsxLayers = toModuleNamespace(
+        loadJsxNamespace(),
         1,
       );
       layerBaseContext = reactLayers.createContext(0);
@@ -2903,10 +2902,10 @@ export function installUiInteractions(): () => void {
         >
       ).displayName = "CdsLayerVarBridge";
     });
-    initializeMergedRefs = (0, initializeOnce)(() => {
-      (0, initializeEventCallbacks)();
-      reactMergedRefs = (0, toModuleNamespace)(
-        (0, loadReactNamespace)(),
+    initializeMergedRefs = initializeOnce(() => {
+      initializeEventCallbacks();
+      reactMergedRefs = toModuleNamespace(
+        loadReactNamespace(),
         1,
       );
     });
@@ -2936,10 +2935,10 @@ export function installUiInteractions(): () => void {
         };
       }
     };
-    initializeExperimentalTheme = (0, initializeOnce)(() => {
-      (0, initializeIsomorphicLayoutEffect)();
-      reactExperimentalTheme = (0, toModuleNamespace)(
-        (0, loadReactNamespace)(),
+    initializeExperimentalTheme = initializeOnce(() => {
+      initializeIsomorphicLayoutEffect();
+      reactExperimentalTheme = toModuleNamespace(
+        loadReactNamespace(),
         1,
       );
       themeStoreContext = reactExperimentalTheme.createContext<
@@ -2951,42 +2950,42 @@ export function installUiInteractions(): () => void {
     HTML_NAMESPACE = "http://www.w3.org/1999/xhtml";
     SVG_NAMESPACE_GE0 = "http://www.w3.org/2000/svg";
     initializeElementNamespaces = () => {};
-    initializeCloseOnActivityHide = (0, initializeOnce)(() => {
+    initializeCloseOnActivityHide = initializeOnce(() => {
       initializeElementNamespaces();
-      reactActivityHide = (0, toModuleNamespace)(
-        (0, loadReactNamespace)(),
+      reactActivityHide = toModuleNamespace(
+        loadReactNamespace(),
         1,
       );
-      jsxActivityHide = (0, toModuleNamespace)(
-        (0, loadJsxNamespace)(),
+      jsxActivityHide = toModuleNamespace(
+        loadJsxNamespace(),
         1,
       );
       activityHideElementsContext =
         reactActivityHide.createContext<Set<Element> | null>(null);
     });
     modalCatcherDragSession = null;
-    initializeModalCatcher = (0, initializeOnce)(() => {
-      (0, initializeElementAccess)();
+    initializeModalCatcher = initializeOnce(() => {
+      initializeElementAccess();
       modalCatcherDragEndEvents = ["dragend", "drop", "pointerdown"];
     });
-    initializePointerDismissal = (0, initializeOnce)(() => {
-      reactPointerDismissal = (0, toModuleNamespace)(
-        (0, loadReactNamespace)(),
+    initializePointerDismissal = initializeOnce(() => {
+      reactPointerDismissal = toModuleNamespace(
+        loadReactNamespace(),
         1,
       );
-      jsxPointerDismissal = (0, toModuleNamespace)(
-        (0, loadJsxNamespace)(),
+      jsxPointerDismissal = toModuleNamespace(
+        loadJsxNamespace(),
         1,
       );
       pointerDismissalContext = reactPointerDismissal.createContext(false);
     });
-    initializeSkeletonContexts = (0, initializeOnce)(() => {
-      reactSkeletonContexts = (0, toModuleNamespace)(
-        (0, loadReactNamespace)(),
+    initializeSkeletonContexts = initializeOnce(() => {
+      reactSkeletonContexts = toModuleNamespace(
+        loadReactNamespace(),
         1,
       );
-      jsxSkeletonContexts = (0, toModuleNamespace)(
-        (0, loadJsxNamespace)(),
+      jsxSkeletonContexts = toModuleNamespace(
+        loadJsxNamespace(),
         1,
       );
       skeletonActiveContext = reactSkeletonContexts.createContext(false);
@@ -2998,20 +2997,20 @@ export function installUiInteractions(): () => void {
       skeletonShownStoreContext =
         reactSkeletonContexts.createContext<C.SkeletonShownStore | null>(null);
     });
-    initializePortalRoot = (0, initializeOnce)(() => {
-      (0, initializeDocumentFont)();
-      (0, initializeFeatureFlags)();
-      (0, initializeInputDismissalTracking)();
+    initializePortalRoot = initializeOnce(() => {
+      initializeDocumentFont();
+      initializeFeatureFlags();
+      initializeInputDismissalTracking();
       initializeExperimentalTheme();
       initializeClassNames();
-      (0, initializeCdsRoot)();
+      initializeCdsRoot();
       initializeCloseOnActivityHide();
       initializeModalCatcher();
       initializePointerDismissal();
       initializeMergedRefs();
       initializeSkeletonContexts();
-      jsxPortalRoot = (0, toModuleNamespace)(
-        (0, loadJsxNamespace)(),
+      jsxPortalRoot = toModuleNamespace(
+        loadJsxNamespace(),
         1,
       );
     });
@@ -3023,16 +3022,16 @@ export function installUiInteractions(): () => void {
     rootRemProbeElement = null;
     rootRemResizeObserver = null;
     cachedRootRemSize = null;
-    initializeRemScale = (0, initializeOnce)(() => {
-      reactForUiInteractions = (0, toModuleNamespace)(
-        (0, loadReactNamespace)(),
+    initializeRemScale = initializeOnce(() => {
+      reactForUiInteractions = toModuleNamespace(
+        loadReactNamespace(),
         1,
       );
       ROOT_REM_PROBE_LENGTH_CSS = `calc(${DEFAULT_ROOT_FONT_SIZE}rem * var(${REM_SCALE_VARIABLE}, 1))`;
       ROOT_REM_PROBE_STYLE = `position:fixed;top:0;left:0;width:${ROOT_REM_PROBE_LENGTH_CSS};min-width:0;max-width:none;height:0;font-size:${ROOT_REM_PROBE_LENGTH_CSS};-webkit-text-size-adjust:none;text-size-adjust:none;visibility:hidden;pointer-events:none;`;
       rootRemSubscribers = new Set();
     });
-    initializeIconManifest = (0, initializeOnce)(() => {
+    initializeIconManifest = initializeOnce(() => {
       iconFontManifest = JSON.parse(`{
  "icons": {
   "Activity": 57344,
@@ -3482,13 +3481,13 @@ export function installUiInteractions(): () => void {
     });
     initializeIconAccessibility = () => {};
     DEFAULT_ICON_SIZE = "md";
-    initializeIcons = (0, initializeOnce)(() => {
-      (0, initializeCdsRoot)();
+    initializeIcons = initializeOnce(() => {
+      initializeCdsRoot();
       initializeRemScale();
       initializeIconManifest();
       initializeIconAccessibility();
-      jsxIcons = (0, toModuleNamespace)(
-        (0, loadJsxNamespace)(),
+      jsxIcons = toModuleNamespace(
+        loadJsxNamespace(),
         1,
       );
       iconSizeMetrics = {
@@ -3564,16 +3563,16 @@ export function installUiInteractions(): () => void {
     subscribeInsetNoop = () => () => {
       return;
     };
-    initializeCollisionPadding = (0, initializeOnce)(() => {
-      (0, initializeSafeObservers)();
-      (0, initializeIsomorphicLayoutEffect)();
-      (0, initializeCdsRoot)();
-      reactCollisionPadding = (0, toModuleNamespace)(
-        (0, loadReactNamespace)(),
+    initializeCollisionPadding = initializeOnce(() => {
+      initializeSafeObservers();
+      initializeIsomorphicLayoutEffect();
+      initializeCdsRoot();
+      reactCollisionPadding = toModuleNamespace(
+        loadReactNamespace(),
         1,
       );
-      jsxCollisionPadding = (0, toModuleNamespace)(
-        (0, loadJsxNamespace)(),
+      jsxCollisionPadding = toModuleNamespace(
+        loadJsxNamespace(),
         1,
       );
       desktopTitlebarStores = new WeakMap();
@@ -3582,7 +3581,7 @@ export function installUiInteractions(): () => void {
           null,
         );
     });
-    initializeSurfaces = (0, initializeOnce)(() => {
+    initializeSurfaces = initializeOnce(() => {
       elevationSurfaceNames = {
         panel: "surface-2",
         popover: "surface-3",
@@ -3609,9 +3608,9 @@ export function installUiInteractions(): () => void {
     FOCUSES_NOTHING_ATTRIBUTE = "data-cds-focuses-nothing";
     MENU_ANCHOR_SELECTOR =
       '[data-cds="Menu"], [data-cds="ContextMenu"], [data-cds="DropdownButton"], [data-cds="SplitDropdownButton"], [data-cds="ModelSelector"]';
-    initializeMenuContexts = (0, initializeOnce)(() => {
-      reactMenuContexts = (0, toModuleNamespace)(
-        (0, loadReactNamespace)(),
+    initializeMenuContexts = initializeOnce(() => {
+      reactMenuContexts = toModuleNamespace(
+        loadReactNamespace(),
         1,
       );
       menuTriggerContext =
@@ -3645,19 +3644,19 @@ export function installUiInteractions(): () => void {
     menuHeaderClasses = "shrink-0 px-1 pt-1";
     menuFooterClasses = "-mt-1 shrink-0 px-1 pb-1";
     MENU_ITEM_HEIGHT_CSS = "max(var(--cds-h-control), var(--cds-leading-body))";
-    initializeMenuScrollContent = (0, initializeOnce)(() => {
+    initializeMenuScrollContent = initializeOnce(() => {
       initializeClassNames();
-      (0, initializePresentationMode)();
-      (0, initializeNpmDependency)();
-      jsxMenuScrollContent = (0, toModuleNamespace)(
-        (0, loadJsxNamespace)(),
+      initializePresentationMode();
+      initializeNpmDependency();
+      jsxMenuScrollContent = toModuleNamespace(
+        loadJsxNamespace(),
         1,
       );
     });
-    initializeKeyboardContextMenuFocus = (0, initializeOnce)(() => {
+    initializeKeyboardContextMenuFocus = initializeOnce(() => {
       initializeMenuContexts();
-      reactKeyboardContextMenuFocus = (0, toModuleNamespace)(
-        (0, loadReactNamespace)(),
+      reactKeyboardContextMenuFocus = toModuleNamespace(
+        loadReactNamespace(),
         1,
       );
       keyboardContextMenuRoots = new WeakMap();
@@ -3665,8 +3664,8 @@ export function installUiInteractions(): () => void {
     TEXT_ENTRY_SELECTOR =
       "input:not([type='hidden']):not([disabled]),[contenteditable]:not([contenteditable='false']),textarea:not([disabled])";
     initializeTextEntrySelector = () => {};
-    initializeSafeBlur = (0, initializeOnce)(() => {
-      (0, initializeElementAccess)();
+    initializeSafeBlur = initializeOnce(() => {
+      initializeElementAccess();
     });
   };
 }

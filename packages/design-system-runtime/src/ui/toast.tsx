@@ -67,7 +67,7 @@ function ToastView({
       value2 !== null && value2 !== undefined && typeof value2 !== "boolean",
     value4 = !front,
     value5 = value4 && frontHeight ? frontHeight : undefined,
-    value6 = (0, useTranslation)("dismiss", "Dismiss"),
+    value6 = useTranslation("dismiss", "Dismiss"),
     { update: value7 } = baseToast.useToastManager<ToastData>(),
     value8 = reactForUiToast.useContext(pinnedToastContext),
     ref = reactForUiToast.useRef<HTMLElement | null>(null),
@@ -203,7 +203,7 @@ function PinnedToastView({
 }): React.ReactElement {
   useUiLocale();
   let value = pinned.variant ?? "neutral",
-    value2 = (0, useTranslation)("dismiss", "Dismiss");
+    value2 = useTranslation("dismiss", "Dismiss");
   return (
     <div
       data-pinned={""}
@@ -326,7 +326,7 @@ function ToastViewport({
   useUiLocale();
   let { toasts: value } = baseToast.useToastManager<ToastData>(),
     value2 = reactForUiToast.useContext(pinnedToastContext);
-  (0, useIsomorphicLayoutEffect)(() => {
+  useIsomorphicLayoutEffect(() => {
     value2?.syncLiveToasts(value);
   }, [value, value2]);
   let value3 = value.find(
@@ -340,7 +340,7 @@ function ToastViewport({
           render={
             <div
               data-cds={"Toast"}
-              className={(0, cn)(
+              className={cn(
                 "cds-reset pointer-events-none fixed right-4 bottom-4 flex w-[360px] max-w-[calc(100vw-2rem)] flex-col-reverse gap-md",
                 className,
               )}
@@ -673,24 +673,24 @@ export {
 };
 export function installUiToast(): () => void {
   return () => {
-    (0, initializeIsomorphicLayoutEffect)();
-    (0, initializeClassNames)();
-    (0, initializeTranslations)();
-    (0, initializeLayers)();
-    (0, initializePortalRoot)();
-    (0, initializeIcons)();
-    (0, initializeSurfaces)();
-    reactForUiToast = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    initializeIsomorphicLayoutEffect();
+    initializeClassNames();
+    initializeTranslations();
+    initializeLayers();
+    initializePortalRoot();
+    initializeIcons();
+    initializeSurfaces();
+    reactForUiToast = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
-    jsxForUiToast = (0, toModuleNamespace)(
-      (0, loadJsxNamespace)(),
+    jsxForUiToast = toModuleNamespace(
+      loadJsxNamespace(),
       1,
     );
     DEFAULT_TOAST_TIMEOUT_MS = 6000;
     TOAST_TRANSITION_TIMEOUT_MS = 1000;
-    toastSurfaceClasses = (0, getSurfaceClasses)("popover");
+    toastSurfaceClasses = getSurfaceClasses("popover");
     toastVariantClasses = {
       neutral: "shadow-panel-md",
       warning:

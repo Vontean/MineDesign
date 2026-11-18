@@ -74,24 +74,24 @@ export {
 };
 export function installFilesUiHandoffRuntime(): () => void {
   return () => {
-    reactHandoff = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    reactHandoff = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
-    reactDomHandoff = (0, toModuleNamespace)(
-      (0, loadReactDomNamespace)(),
+    reactDomHandoff = toModuleNamespace(
+      loadReactDomNamespace(),
       1,
     );
-    jsxHandoff = (0, toModuleNamespace)(
-      (0, loadJsxNamespace)(),
+    jsxHandoff = toModuleNamespace(
+      loadJsxNamespace(),
       1,
     );
-    reactHandoffTargets = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    reactHandoffTargets = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
-    jsxHandoffTargets = (0, toModuleNamespace)(
-      (0, loadJsxNamespace)(),
+    jsxHandoffTargets = toModuleNamespace(
+      loadJsxNamespace(),
       1,
     );
     HANDOFF_TARGETS = ["cowork", "code", "coworker"];
@@ -104,8 +104,8 @@ export function installFilesUiHandoffRuntime(): () => void {
     } catch {
       preferredHandoffTarget = null;
     }
-    reactArtifactClipboard = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    reactArtifactClipboard = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
     ARTIFACT_CLIPBOARD_ATTRIBUTE = "data-appifact-object";

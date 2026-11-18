@@ -83,28 +83,28 @@ export {
 };
 export function installCdsTooltipTrigger(): () => void {
   return () => {
-    initializeTooltipTrigger = (0, initializeOnce)(() => {
+    initializeTooltipTrigger = initializeOnce(() => {
       "use client";
 
-      reactTooltipTrigger = (0, toModuleNamespace)(
-        (0, load_react)(),
+      reactTooltipTrigger = toModuleNamespace(
+        load_react(),
       );
       TooltipTriggerContext = (0, reactTooltipTrigger.createContext)(false);
       TooltipImplementationContext = (0,
       reactTooltipTrigger.createContext)<TooltipImplementation | null>(null);
     });
-    initializeTooltipTrigger_2 = (0, initializeOnce)(() => {});
-    initializeTooltipTrigger_3 = (0, initializeOnce)(() => {
+    initializeTooltipTrigger_2 = initializeOnce(() => {});
+    initializeTooltipTrigger_3 = initializeOnce(() => {
       "use client";
 
-      reactTooltipTrigger_2 = (0, toModuleNamespace)(
-        (0, load_react)(),
+      reactTooltipTrigger_2 = toModuleNamespace(
+        load_react(),
       );
       TooltipTriggerElementCache = new WeakMap();
     });
-    initializeTooltipTrigger_4 = (0, initializeOnce)(() => {
-      reactTooltipTrigger_3 = (0, toModuleNamespace)(
-        (0, load_react)(),
+    initializeTooltipTrigger_4 = initializeOnce(() => {
+      reactTooltipTrigger_3 = toModuleNamespace(
+        load_react(),
       );
     });
   };

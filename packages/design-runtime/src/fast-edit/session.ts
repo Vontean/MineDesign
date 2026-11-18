@@ -51,7 +51,7 @@ function readTemplateInputDefaults(html?: Dynamic): Dynamic {
   let defaults: Dynamic = {};
   try {
     let value: Dynamic = JSON.parse(
-      (0, getDcPropsJson)(html) ?? "{}",
+      getDcPropsJson(html) ?? "{}",
     );
     if (value !== null && typeof value == "object")
       for (let [value2, value3] of Object.entries(value) as Dynamic)
@@ -68,19 +68,19 @@ async function verifySandboxTemplateRoundTrip(
 ): Promise<Dynamic> {
   let roundTripped: Dynamic = await withFastEditTimeout(
     sandbox
-      .roundTrip((0, wrapFastEditTemplate)(html))
+      .roundTrip(wrapFastEditTemplate(html))
       .catch((): Dynamic => null),
     4e3,
   );
   if (roundTripped === FAST_EDIT_TIMEOUT_SENTINEL || roundTripped === null)
     return "late";
-  let innerHtml: Dynamic = (0, unwrapFastEditSection)(roundTripped);
+  let innerHtml: Dynamic = unwrapFastEditSection(roundTripped);
   if (innerHtml === null) return "reshaped";
-  let roundTripValidation: Dynamic = (0, validateFastEditTemplate)(
+  let roundTripValidation: Dynamic = validateFastEditTemplate(
       html,
       innerHtml,
     ),
-    originalValidation: Dynamic = (0, validateFastEditTemplate)(
+    originalValidation: Dynamic = validateFastEditTemplate(
       html,
       html,
     );
@@ -161,7 +161,7 @@ function resolveRenderedElementPath(
   }
   return element === null
     ? null
-    : (0, describeTemplateElementTarget)(element, prefix, -1);
+    : describeTemplateElementTarget(element, prefix, -1);
 }
 function resolveTemplateHandleIds(
   ids?: Dynamic,
@@ -173,7 +173,7 @@ function resolveTemplateHandleIds(
     return ids.map((): Dynamic => null);
   let parse: Dynamic = (input?: Dynamic): Dynamic => {
       let value6: Dynamic = (document as Dynamic).createElement("template");
-      value6.innerHTML = (0, toParserHtml)(input);
+      value6.innerHTML = toParserHtml(input);
       return Array.from(value6.content.querySelectorAll("*"));
     },
     callback: Dynamic = (input?: Dynamic): Dynamic =>
@@ -208,10 +208,10 @@ function resolveTemplateHandleIds(
     return value6 === undefined ||
       value7 === undefined ||
       value7.localName !== value6.localName ||
-      (0, directTargetText)(value7) !==
-        (0, directTargetText)(value6)
+      directTargetText(value7) !==
+        directTargetText(value6)
       ? null
-      : (0, describeTemplateElementTarget)(
+      : describeTemplateElementTarget(
           value7,
           prefix,
           value5.get(value6.parentElement?.closest("sc-for") ?? value6) ?? -1,
@@ -407,7 +407,7 @@ export function installFastEditSession(): () => void {
       lastTouched: "",
       othersChanged: new Set(),
       busy: null,
-      ...(0, createFastEditJournalState)(undefined, input),
+      ...createFastEditJournalState(undefined, input),
     });
     FAST_EDIT_ROUNDTRIP_TIMEOUT_MS = 4e3;
     FAST_EDIT_SANDBOX_START_TIMEOUT_MS = 1500;
@@ -460,10 +460,10 @@ export function installFastEditSession(): () => void {
       options?: Dynamic,
       context?: Dynamic,
     ): Dynamic => {
-      let value: Dynamic = (0, unwrapFastEditSection)(options);
+      let value: Dynamic = unwrapFastEditSection(options);
       return value === null
         ? null
-        : (0, resolveOwnedElementIdCollisions)(input, value, context);
+        : resolveOwnedElementIdCollisions(input, value, context);
     };
     resolveTemplateHandleId = (
       input?: Dynamic,

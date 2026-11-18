@@ -18,11 +18,11 @@ export {
 };
 export function installEditorChromeTheme(): () => void {
   return () => {
-    reactChromeTheme = (0, toModuleNamespace)(
-      (0, load_react)(),
+    reactChromeTheme = toModuleNamespace(
+      load_react(),
       1,
     );
-    (0, initializeCdsIndex)();
+    initializeCdsIndex();
     editorThemeTokens = {
       bg: {
         app: "var(--cds-page-bg)",
@@ -105,16 +105,16 @@ export function installEditorChromeTheme(): () => void {
         pinHover: "var(--cds-shadow-lg)",
       },
     };
-    (0, initializeCdsIndex)();
-    reactChromeTheme_2 = (0, toModuleNamespace)(
-      (0, load_react)(),
+    initializeCdsIndex();
+    reactChromeTheme_2 = toModuleNamespace(
+      load_react(),
       1,
     );
-    (0, initializeCdsIndex)();
-    reactChromeTheme_3 = (0, toModuleNamespace)(
-      (0, load_react)(),
+    initializeCdsIndex();
+    reactChromeTheme_3 = toModuleNamespace(
+      load_react(),
       1,
     );
-    (0, initializeCdsIndex)();
+    initializeCdsIndex();
   };
 }

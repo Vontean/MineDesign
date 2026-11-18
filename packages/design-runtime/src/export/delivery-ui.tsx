@@ -84,7 +84,7 @@ function exportDeliveryFailureMessage(
 function useExportDeliveries(): Dynamic {
   let [value, value2]: Dynamic = (0, reactExportDeliveryUi.useState)([]),
     [value3, value4]: Dynamic = (0, reactExportDeliveryUi.useState)(false);
-  (0, npm_useEventListener_bc)(
+  npm_useEventListener_bc(
     exportDeliveryEventName,
     (input?: Dynamic): Dynamic => {
       let detail: Dynamic = input.detail;
@@ -137,7 +137,7 @@ function useExportDeliveries(): Dynamic {
 }
 function ExportDeliveryNotice({ delivery: delivery }: Dynamic): Dynamic {
   useUiLocale();
-  let { showToast: value }: Dynamic = (0, useToast)(),
+  let { showToast: value }: Dynamic = useToast(),
     value2: Dynamic = delivery.file == null,
     value3: Dynamic = (0, reactExportDeliveryUi.useMemo)((): Dynamic => {
       if (delivery.file) return delivery.file.blob;
@@ -168,7 +168,7 @@ function ExportDeliveryNotice({ delivery: delivery }: Dynamic): Dynamic {
     [value9, value10]: Dynamic = (0, reactExportDeliveryUi.useState)(
       undefined,
     ),
-    value11: Dynamic = (0, hasDownloadCapability)(),
+    value11: Dynamic = hasDownloadCapability(),
     value12: Dynamic =
       delivery.filename
         .replace(/[\\/:*?"<>|\u0000-\u001f]/g, " ")
@@ -185,7 +185,7 @@ function ExportDeliveryNotice({ delivery: delivery }: Dynamic): Dynamic {
     value14: Dynamic =
       !value11 || value13 === "rate_limited"
         ? undefined
-        : (0, normalizeDownloadName)(value12)
+        : normalizeDownloadName(value12)
           ? value13 !== undefined &&
             ExportDeliveryUiRejectedExtensionExtensionNotEnabledTooLargeSet.has(
               value13,
@@ -201,8 +201,7 @@ function ExportDeliveryNotice({ delivery: delivery }: Dynamic): Dynamic {
       (async (): Promise<Dynamic> => {
         value8(true);
         try {
-          let { outcome: value15, code: value16 }: Dynamic = await (0,
-          saveThroughHost)(value3, value12);
+          let { outcome: value15, code: value16 }: Dynamic = await saveThroughHost(value3, value12);
           if (value15 === "saved") {
             value("Saved " + value12 + ".", "success");
             return;
@@ -315,15 +314,15 @@ export {
 };
 export function installExportDeliveryUi(): () => void {
   return () => {
-    reactExportDeliveryUi = (0, toModuleNamespace)(
-      (0, load_react)(),
+    reactExportDeliveryUi = toModuleNamespace(
+      load_react(),
       1,
     );
-    (0, initializeNpm_usehooks_ts_p0)();
-    (0, initializeCdsIndex)();
-    (0, initializePlatformCdsIsland)();
-    jsxExportDeliveryUi = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    initializeNpm_usehooks_ts_p0();
+    initializeCdsIndex();
+    initializePlatformCdsIsland();
+    jsxExportDeliveryUi = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
     ChromeOrEdgeMayNotWorkMessage =

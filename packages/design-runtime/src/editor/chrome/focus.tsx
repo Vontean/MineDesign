@@ -76,16 +76,16 @@ export function installEditorChromeFocus(): () => void {
       undefined,
     );
     ChromeFocusConstant = 320;
-    reactChromeFocus = (0, toModuleNamespace)(
-      (0, load_react)(),
+    reactChromeFocus = toModuleNamespace(
+      load_react(),
       1,
     );
-    reactDomChromeFocus = (0, toModuleNamespace)(
-      (0, load_react_dom)(),
+    reactDomChromeFocus = toModuleNamespace(
+      load_react_dom(),
       1,
     );
-    jsxChromeFocus = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    jsxChromeFocus = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
   };

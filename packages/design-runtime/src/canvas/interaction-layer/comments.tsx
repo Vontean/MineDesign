@@ -13,7 +13,7 @@ export function composeSelectedElementComment(deps: { readonly callback16: Dynam
               file: Dynamic = value250.file,
               entry2: Dynamic = deps.value2.current.get(file),
               value251: Dynamic = entry2
-                ? (0, createPreviewHandle)(entry2.webviewRef.current)
+                ? createPreviewHandle(entry2.webviewRef.current)
                 : null,
               current: Dynamic = deps.value9.current;
             if (!value251 || !current) return;
@@ -26,7 +26,7 @@ export function composeSelectedElementComment(deps: { readonly callback16: Dynam
                 bounds.bottom,
                 current.getBoundingClientRect(),
               );
-            (0, pickerCommentFor)(
+            pickerCommentFor(
               value251,
               value250.tids[0],
               value250.name ?? null,
@@ -46,8 +46,7 @@ export function composeSelectedElementComment(deps: { readonly callback16: Dynam
                         h: value254.h,
                       }
                     : input2.rect,
-                { px: value256, py: value257 }: Dynamic = (0,
-                commentPointWithinVisibleContent)(
+                { px: value256, py: value257 }: Dynamic = commentPointWithinVisibleContent(
                   value252,
                   value254,
                   value255,
@@ -56,7 +55,7 @@ export function composeSelectedElementComment(deps: { readonly callback16: Dynam
                   (value256 - value255.x) / (value255.w || 1),
                 value259: Dynamic =
                   (value257 - value255.y) / (value255.h || 1),
-                value260: Dynamic = (0, serializeDesignCommentAnchor)(
+                value260: Dynamic = serializeDesignCommentAnchor(
                   input2.path != null
                     ? {
                         kind: "el",
@@ -85,8 +84,8 @@ export function composeSelectedElementComment(deps: { readonly callback16: Dynam
               let value261: Dynamic =
                   input2.path == null
                     ? null
-                    : (0, describeCommentElement)(entry2, input2),
-                value262: Dynamic = (0, commentAnchorShortLabel)(
+                    : describeCommentElement(entry2, input2),
+                value262: Dynamic = commentAnchorShortLabel(
                   value261 == null
                     ? {
                         kind: "artboard",
@@ -102,7 +101,7 @@ export function composeSelectedElementComment(deps: { readonly callback16: Dynam
                   input2.path != null && input2.tid != null
                     ? entry2?.viewEntries([input2.tid])[0]
                     : undefined,
-                value264: Dynamic = (0, commentArtboardElementDetail)(
+                value264: Dynamic = commentArtboardElementDetail(
                   value253,
                   value263 && value261
                     ? {

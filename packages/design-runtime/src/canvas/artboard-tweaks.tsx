@@ -41,10 +41,10 @@ function ArtboardTweaksRow({
   useUiLocale();
   let value: Dynamic = (0, react_Uu.useMemo)(
       (): Dynamic =>
-        (0, groupComponentProps)(
+        groupComponentProps(
           Object.entries(dcProps.propsMeta).filter(
             ([, input]: Dynamic): Dynamic =>
-              (0, isEditablePropMetadata)(input),
+              isEditablePropMetadata(input),
           ),
         ).flatMap((input?: Dynamic): Dynamic => input.rows),
       [dcProps.propsMeta],
@@ -149,7 +149,7 @@ function ArtboardTweaksRow({
       data-mega-chrome={"tweaks"}
       data-testid={"mega-artboard-tweaks-" + file}
       inert={keyboardInert ? true : undefined}
-      className={(0, cn)(
+      className={cn(
         "pointer-events-none relative z-[25] w-full shrink-0 overflow-hidden border-b bg-page text-xs",
         !interactive && "[&_*]:!pointer-events-none",
       )}
@@ -207,7 +207,7 @@ function describeTweakValue(input?: Dynamic, options?: Dynamic): Dynamic {
         text: options ? "On" : "Off",
       };
     case "enum": {
-      let value: Dynamic = (0, propOptionItems)(input.options),
+      let value: Dynamic = propOptionItems(input.options),
         value2: Dynamic = options ?? value[0]?.value;
       return {
         text:
@@ -217,7 +217,7 @@ function describeTweakValue(input?: Dynamic, options?: Dynamic): Dynamic {
                 (input2?: Dynamic): Dynamic =>
                   String(input2.value) === String(value2),
               )
-          )?.label ?? (0, primitivePropText)(value2),
+          )?.label ?? primitivePropText(value2),
       };
     }
     case "int":
@@ -226,7 +226,7 @@ function describeTweakValue(input?: Dynamic, options?: Dynamic): Dynamic {
       let value: Dynamic =
           typeof options == "number"
             ? options
-            : parseFloat((0, primitivePropText)(options)),
+            : parseFloat(primitivePropText(options)),
         value2: Dynamic = typeof input.unit == "string" ? input.unit : "";
       return {
         text:
@@ -257,7 +257,7 @@ function TweakValuePopover({
     value2 &&
       value6(
         meta.editor === "color"
-          ? (0, choosePopoverPlacement)(
+          ? choosePopoverPlacement(
               value4.current?.firstElementChild,
               ColorPickerConstant,
             )
@@ -303,7 +303,7 @@ function TweakValuePopover({
               background:
                 value9.color == null
                   ? "#000000"
-                  : (0, sanitizeCssColor)(value9.color),
+                  : sanitizeCssColor(value9.color),
             }}
           />) : (null)}
         <span className={tweaksSecondaryTextClass}>{name}</span>
@@ -381,7 +381,7 @@ function TweakOptionsEditor({
       [meta.options],
     ),
     value2: Dynamic =
-      (0, propColorEditorKind)(value) === "palette-cards",
+      propColorEditorKind(value) === "palette-cards",
     value3: Dynamic = (0, react_Uu.useMemo)(
       (): Dynamic =>
         value2
@@ -392,17 +392,17 @@ function TweakOptionsEditor({
       [value.join("\0"), value.length, value2],
     ),
     value4: Dynamic = (0, react_Uu.useMemo)(
-      (): Dynamic => (0, propColorOptionKeys)(value3),
+      (): Dynamic => propColorOptionKeys(value3),
       [value3],
     ),
-    value5: Dynamic = (0, useDesignSystems)(),
+    value5: Dynamic = useDesignSystems(),
     value6: Dynamic = (0, react_Uu.useMemo)(
       (): Dynamic =>
-        (0, designSystemPropColorOptions)(value3, value4, value5),
+        designSystemPropColorOptions(value3, value4, value5),
       [value3, value4, value5],
     );
   if (meta.editor === "text" || !meta.editor) {
-    let value8: Dynamic = (0, primitivePropText)(cur);
+    let value8: Dynamic = primitivePropText(cur);
     return (
       <label className={"flex flex-col gap-1.5"}>
         <span className={"text-caption font-medium text-secondary"}>
@@ -452,7 +452,7 @@ function TweakOptionsEditor({
       unset={value7 === null}
       swatches={value6}
       onChange={(input?: Dynamic): Dynamic =>
-        onChange((0, restorePropColorOption)(value3, value4, input))
+        onChange(restorePropColorOption(value3, value4, input))
       }
       className={ColorPickerLabel}
     />
@@ -474,10 +474,10 @@ export {
 };
 export function installCanvasArtboardTweaks(): () => void {
   return () => {
-    react_Uu = (0, toModuleNamespace)((0, load_react)(), 1);
-    (0, initializeCdsIndex)();
-    jsx_wc = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    react_Uu = toModuleNamespace(load_react(), 1);
+    initializeCdsIndex();
+    jsx_wc = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
     artboardTweaksRowHeight = 36;

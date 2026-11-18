@@ -74,7 +74,7 @@ export async function loadSelectionInspectorState(deps: { readonly ensureModel: 
             ...new Set(
               value310.flatMap(
                 (input2?: Dynamic): Dynamic =>
-                  (0, getCssVariableNames)(
+                  getCssVariableNames(
                     value309.model.effectiveStyleAttr(input2),
                   ),
               ),
@@ -87,7 +87,7 @@ export async function loadSelectionInspectorState(deps: { readonly ensureModel: 
             ...items2,
           ],
           value313: Dynamic = value311
-            ? await (0, inspectPickerSelection)(
+            ? await inspectPickerSelection(
                 value311,
                 value310[0],
                 input,
@@ -103,7 +103,7 @@ export async function loadSelectionInspectorState(deps: { readonly ensureModel: 
           (value311 &&
             extra &&
             value313 === null &&
-            ((value313 = await (0, inspectPickerSelection)(
+            ((value313 = await inspectPickerSelection(
               value311,
               value310[0],
               input,
@@ -124,7 +124,7 @@ export async function loadSelectionInspectorState(deps: { readonly ensureModel: 
         deps.value16(value313?.rendered ?? false);
         deps.value21(value313?.parent?.display);
         let value315: Dynamic = value312
-          ? (0, normalizeContrastGround)(value313)
+          ? normalizeContrastGround(value313)
           : null;
         deps.value23(
           (input2?: Dynamic): Dynamic =>
@@ -144,7 +144,7 @@ export async function loadSelectionInspectorState(deps: { readonly ensureModel: 
         };
         deps.value49.current = state;
         deps.value3(state);
-        return (0, textContrastGround)(
+        return textContrastGround(
           value315,
           value313?.computed ?? {},
         );
@@ -202,11 +202,11 @@ export function applySelectionPropertyEdit(deps: { readonly callback3: Dynamic; 
           if (value319.length > 0) deps.value105(current.name, value319);
           else {
             let value320: Dynamic = deps.value67();
-            value320 && (0, setPickerSelection)(value320, null, null);
+            value320 && setPickerSelection(value320, null, null);
             deps.value50.current++;
             deps.value3(null);
           }
-          (0, announce)(AccessibilityAnnouncementsLabel_22);
+          announce(AccessibilityAnnouncementsLabel_22);
           deps.value8(
             `${value307.path}: removed link on destination clear (kept content)`,
           );
@@ -217,10 +217,10 @@ export function applySelectionPropertyEdit(deps: { readonly callback3: Dynamic; 
         );
         options != null &&
           options.trim() === "" &&
-          (0, isProtectedAttribute)(input, value310) &&
+          isProtectedAttribute(input, value310) &&
           (options = null);
         if (options != null) {
-          let value318: Dynamic = (0, validateAttributeEdit)(
+          let value318: Dynamic = validateAttributeEdit(
             input,
             options,
             value310,
@@ -243,7 +243,7 @@ export function applySelectionPropertyEdit(deps: { readonly callback3: Dynamic; 
             value319: Dynamic = current.tids.map(
               (input2?: Dynamic): Dynamic => value307.model.element(input2),
             ),
-            value320: Dynamic = (0, changeSelectedArrowHeads)(
+            value320: Dynamic = changeSelectedArrowHeads(
               value307.model,
               value308,
               input === "__headStart" ? "start" : "end",
@@ -282,15 +282,15 @@ export function applySelectionPropertyEdit(deps: { readonly callback3: Dynamic; 
             setTimeout((): Dynamic => {
               let current3: Dynamic = deps.value49.current;
               current3?.name === current.name &&
-                (0, InspectorEditorEvery)(current3.tids, value321) &&
-                (0, setPickerSelection)(
+                InspectorEditorEvery(current3.tids, value321) &&
+                setPickerSelection(
                   value322,
                   value321,
                   current.name,
                 );
             }, 60);
           let value323: Dynamic = `${SvgArrowPropertiesHeadStartHeadEndConfig[input]} arrowhead: ${SvgArrowPropertiesNoneOpenFilledConfig[options]}`;
-          (0, announce)(value323);
+          announce(value323);
           deps.value8(
             `${value307.path}: set ${SvgArrowPropertiesHeadStartHeadEndConfig[input]} arrowhead to ${SvgArrowPropertiesNoneOpenFilledConfig[options]} on ${value320.changed > 1 ? `${value320.changed} lines or arrows` : uiMessage("inspector.session.aLineOrArrow")}`,
             `${value307.path}:${input}:${value308.join(",")}`,
@@ -298,7 +298,7 @@ export function applySelectionPropertyEdit(deps: { readonly callback3: Dynamic; 
           return;
         }
         deps.value101(current.name, input, value307);
-        let value311: Dynamic = (0, arrowSnapshotsForPropertyChange)(
+        let value311: Dynamic = arrowSnapshotsForPropertyChange(
             value307.model,
             value308,
             [input],
@@ -309,7 +309,7 @@ export function applySelectionPropertyEdit(deps: { readonly callback3: Dynamic; 
             input === "@src"
               ? value308.filter(
                   (input2?: Dynamic): Dynamic =>
-                    (0, MediaObjectCropTest)(
+                    MediaObjectCropTest(
                       (input3?: Dynamic): Dynamic =>
                         value307.model.inlineStyleValue(input2, input3),
                     ),
@@ -343,14 +343,14 @@ export function applySelectionPropertyEdit(deps: { readonly callback3: Dynamic; 
             ] as Dynamic)
               value307.model.setStyleProperty(value318, value319, null);
         if (!flag) return;
-        let value313: Dynamic = (0, restoreArrowSnapshots)(
+        let value313: Dynamic = restoreArrowSnapshots(
             value307.model,
             value311,
           ),
           value314: Dynamic =
             input === "font-family" && options
-              ? (0, knownWebFontFamily)(
-                  (0, firstFontFamily)(options),
+              ? knownWebFontFamily(
+                  firstFontFamily(options),
                 )
               : undefined,
           value315: Dynamic =
@@ -380,9 +380,9 @@ export function applySelectionPropertyEdit(deps: { readonly callback3: Dynamic; 
           ],
           current2: Dynamic = deps.value24.current,
           callback7: Dynamic = (input2?: Dynamic): Dynamic =>
-            (0, announce)(
-              (0, addContrastToAnnouncement)(
-                (0, propertyEditAnnouncement)(items2),
+            announce(
+              addContrastToAnnouncement(
+                propertyEditAnnouncement(items2),
                 items2,
                 ...deps.callback3(input2, current2),
               ),
@@ -424,7 +424,7 @@ export function applySelectionPropertyEdits(deps: { readonly callback3: Dynamic;
           }
           if (
             value315.value.trim() === "" &&
-            (0, isProtectedAttribute)(value315.prop, value309)
+            isProtectedAttribute(value315.prop, value309)
           ) {
             items3.push({
               prop: value315.prop,
@@ -432,7 +432,7 @@ export function applySelectionPropertyEdits(deps: { readonly callback3: Dynamic;
             });
             continue;
           }
-          let value316: Dynamic = (0, validateAttributeEdit)(
+          let value316: Dynamic = validateAttributeEdit(
             value315.prop,
             value315.value,
             value309,
@@ -452,7 +452,7 @@ export function applySelectionPropertyEdits(deps: { readonly callback3: Dynamic;
           items2.map((input?: Dynamic): Dynamic => input.prop).join("+"),
           value307,
         );
-        let value310: Dynamic = (0, arrowSnapshotsForPropertyChange)(
+        let value310: Dynamic = arrowSnapshotsForPropertyChange(
             value307.model,
             value308,
             items2.map((input?: Dynamic): Dynamic => input.prop),
@@ -488,7 +488,7 @@ export function applySelectionPropertyEdits(deps: { readonly callback3: Dynamic;
             (state[value315.prop] = value315.value);
         }
         if (!flag) return;
-        let value311: Dynamic = (0, restoreArrowSnapshots)(
+        let value311: Dynamic = restoreArrowSnapshots(
             value307.model,
             value310,
           ),
@@ -496,8 +496,8 @@ export function applySelectionPropertyEdits(deps: { readonly callback3: Dynamic;
         if (!options.live)
           for (let value315 of items2 as Dynamic) {
             if (value315.prop !== "font-family" || !value315.value) continue;
-            let value316: Dynamic = (0, knownWebFontFamily)(
-              (0, firstFontFamily)(value315.value),
+            let value316: Dynamic = knownWebFontFamily(
+              firstFontFamily(value315.value),
             );
             value316 !== undefined &&
               value307.model.ensureWebfontLink(value316) &&
@@ -518,9 +518,9 @@ export function applySelectionPropertyEdits(deps: { readonly callback3: Dynamic;
         if (!options.live) {
           let current2: Dynamic = deps.value24.current,
             callback7: Dynamic = (input?: Dynamic): Dynamic =>
-              (0, announce)(
-                (0, addContrastToAnnouncement)(
-                  (0, propertyEditAnnouncement)(items2),
+              announce(
+                addContrastToAnnouncement(
+                  propertyEditAnnouncement(items2),
                   items2,
                   ...deps.callback3(input, current2),
                 ),
@@ -549,7 +549,7 @@ export function renderInspectorSection(deps: { readonly embed: Dynamic; readonly
                           children: [
                             input.id === deps.value280[0]?.id && (
                               <div
-                                className={(0, cn)(
+                                className={cn(
                                   "py-0.5",
                                   (deps.nonDcFile ||
                                     deps.value201 ||
@@ -584,7 +584,7 @@ export function renderInspectorSection(deps: { readonly embed: Dynamic; readonly
                                               .split(/\s+/)
                                               .every(
                                                 (input3?: Dynamic): Dynamic =>
-                                                  (0, parseCssNumber)(
+                                                  parseCssNumber(
                                                     input3,
                                                   )?.value === 0,
                                               ))),
@@ -672,8 +672,8 @@ export function renderInspectorSection(deps: { readonly embed: Dynamic; readonly
                           classHasBorder: deps.value199
                             ? deps.value200.some(
                                 (input2?: Dynamic): Dynamic =>
-                                  (0, expandCssDeclarations)(
-                                    (0, parseStyleDeclarations)(
+                                  expandCssDeclarations(
+                                    parseStyleDeclarations(
                                       deps.value199.model.classOnlyStyleAttr(
                                         input2,
                                       ),
@@ -709,12 +709,11 @@ export function renderInspectorSection(deps: { readonly embed: Dynamic; readonly
                         input.id === "text" && !deps.value275
                           ? ((): Dynamic => {
                               let value310: Dynamic = deps.value200[0],
-                                value311: Dynamic = (0,
-                                resolveTextListState)(
+                                value311: Dynamic = resolveTextListState(
                                   deps.value199
                                     ? deps.value200.map(
                                         (input2?: Dynamic): Dynamic =>
-                                          (0, getTextListKind)(
+                                          getTextListKind(
                                             deps.value199.model.element(input2),
                                           ),
                                       )
@@ -738,8 +737,7 @@ export function renderInspectorSection(deps: { readonly embed: Dynamic; readonly
                                 callback7: Dynamic = (
                                   input2?: Dynamic,
                                 ): Dynamic => {
-                                  let value317: Dynamic = (0,
-                                    listKindToTag)(
+                                  let value317: Dynamic = listKindToTag(
                                       input2,
                                       value311.value,
                                     ),
@@ -751,12 +749,12 @@ export function renderInspectorSection(deps: { readonly embed: Dynamic; readonly
                                     deps.readOnly ||
                                     value310 === undefined ||
                                     (value311.live ||
-                                      (0, startPickerTextEdit)(
+                                      startPickerTextEdit(
                                         value318,
                                         value310,
                                         deps.rootName,
                                       ),
-                                    (0, formatPickerText)(
+                                    formatPickerText(
                                       value318,
                                       value317,
                                       value310,
@@ -971,7 +969,7 @@ export function renderInspectorSection(deps: { readonly embed: Dynamic; readonly
                                       key={deps.selectionScopeKey + "|scrub"}
                                       gen={deps.installGen}
                                       find={(): Dynamic =>
-                                        (0, findPreviewMediaElement)(
+                                        findPreviewMediaElement(
                                           deps.webviewRef.current?.contentDocument,
                                           DcTplAttribute,
                                           deps.value2.tids[0],

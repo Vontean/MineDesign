@@ -11,7 +11,7 @@ function isEmulatorPage(): boolean {
   emulatorPageDetected ??=
     typeof document !== "undefined" &&
     (document.querySelector(
-      'meta[name="' + (0, emulatorBuildMetaName)() + '"]',
+      'meta[name="' + emulatorBuildMetaName() + '"]',
     ) !== null ||
       document.querySelector(
         'meta[name="' + emulatorHostMetaName() + '"]',

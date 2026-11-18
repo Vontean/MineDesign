@@ -7,9 +7,9 @@ var isNonemptyUserString: (value: unknown) => value is string;
 async function resolveUserMethod<Name extends keyof Host.UserCapability>(
   name: Name,
 ): Promise<Host.UserCapability[Name] | undefined> {
-  let value = (await (0, getOrLoadClaudeCapability)(
+  let value = (await getOrLoadClaudeCapability(
     "user",
-    (0, capabilityHasMethod)(name),
+    capabilityHasMethod(name),
   )) as Pick<Host.UserCapability, Name> | null;
   if (value === null) {
     return undefined;
@@ -92,9 +92,9 @@ async function currentUserCan(capability: string): Promise<boolean | null> {
 async function currentUserCanEditAsync(): Promise<
   null | boolean | undefined
 > {
-  let value = (await (0, loadClaudeCapabilityWithTimeout)(
+  let value = (await loadClaudeCapabilityWithTimeout(
     "user",
-    (0, capabilityHasMethod)("canEdit"),
+    capabilityHasMethod("canEdit"),
   )) as Pick<Host.UserCapability, "canEdit"> | null;
   if (value === null) {
     return null;

@@ -49,12 +49,12 @@ function CanvasRectVisibility({
   surfaceRef: surfaceRef,
   children: children,
 }: Dynamic): Dynamic {
-  let value: Dynamic = (0, useViewportStore)(),
+  let value: Dynamic = useViewportStore(),
     callback: Dynamic = (): Dynamic => {
       let entry: Dynamic = value.get(),
         current: Dynamic = surfaceRef.current;
       return (
-        (0, distanceBetweenRects)(rect, {
+        distanceBetweenRects(rect, {
           x: entry.x,
           y: entry.y,
           w: (current?.clientWidth || 1200) / entry.scale,
@@ -72,7 +72,7 @@ function CanvasRectVisibility({
 }
 function CanvasSnapGuides({ guides: guides }: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic = (0, useViewport)();
+  let value: Dynamic = useViewport();
   return (
     <div
       data-testid={"mega-snap-guides"}
@@ -95,7 +95,7 @@ function CanvasSnapGuides({ guides: guides }: Dynamic): Dynamic {
 }
 function CanvasGapGuides({ gaps: gaps }: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic = (0, useViewport)(),
+  let value: Dynamic = useViewport(),
     callback: Dynamic = (input?: Dynamic): Dynamic =>
       (input - value.x) * value.scale,
     callback2: Dynamic = (input?: Dynamic): Dynamic =>
@@ -148,7 +148,7 @@ function CanvasAnchoredPopover({
   children: children,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic = (0, useViewport)(),
+  let value: Dynamic = useViewport(),
     value2: Dynamic = (x - value.x) * value.scale,
     value3: Dynamic = Math.max(40, (y - value.y) * value.scale + dy2),
     value4: Dynamic = (0, reactVectorToolState_2.useRef)(null),
@@ -162,7 +162,7 @@ function CanvasAnchoredPopover({
       let bounds: Dynamic = current.getBoundingClientRect(),
         value7: Dynamic =
           current.offsetParent?.clientWidth ?? (window as Dynamic).innerWidth,
-        value8: Dynamic = (0, toolbarOverlayHeight)(current);
+        value8: Dynamic = toolbarOverlayHeight(current);
       value6(
         (input?: Dynamic): Dynamic =>
           input &&
@@ -190,7 +190,7 @@ function CanvasAnchoredPopover({
       ref={value4}
       data-mega-chrome={"selection-menu"}
       data-testid={"mega-selection-menu"}
-      className={(0, joinClassNames)(
+      className={joinClassNames(
         "absolute",
         belowSheet ? "z-[39]" : "z-[45]",
       )}
@@ -320,7 +320,7 @@ function ArtboardNoticePlane(input?: Dynamic): Dynamic {
     <div
       data-mega-notice-plane={""}
       inert={input.inert ? true : undefined}
-      className={(0, joinClassNames)(
+      className={joinClassNames(
         "@container/foot pointer-events-none absolute left-0 z-30 flex",
         input.full ? "bottom-0 p-3" : "top-full",
       )}
@@ -475,7 +475,7 @@ export function installCanvasChrome(): () => void {
                 aria-label={uiMessage("canvas.chrome.showErrorNoticeOnArtboard", { value1: String(value2) })}
                 tooltip={input.problem}
                 icon={<Icon name={"Warning"} size={"sm"} />}
-                className={(0, joinClassNames)(
+                className={joinClassNames(
                   "shrink-0 text-danger",
                   input.play != null && hideProblemAtNarrowHeaderClass,
                 )}
@@ -583,7 +583,7 @@ export function installCanvasChrome(): () => void {
                   align={"end"}
                   className={"min-w-[160px]"}
                 >
-                  {(0, renderMenuItems)([
+                  {renderMenuItems([
                     {
                       get label() { return uiMessage("canvas.chrome.playOnCanvas"); },
                       onSelect: (): Dynamic => input.onPlay(value),

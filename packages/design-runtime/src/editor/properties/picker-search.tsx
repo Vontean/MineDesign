@@ -170,11 +170,11 @@ export {
 };
 export function installEditorPropertiesPickerSearch(): () => void {
   return () => {
-    jsxPropertiesPickerSearch = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    jsxPropertiesPickerSearch = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
-    joinClassNamesValue_3 = (0, joinClassNames)(
+    joinClassNamesValue_3 = joinClassNames(
       "group/select flex h-control min-w-0 items-center gap-1.5 border-0 pl-md pr-sm text-left font-sans text-body enabled:cursor-default pointer-coarse:h-10",
       PropertiesPrimitivesClassNames,
     );

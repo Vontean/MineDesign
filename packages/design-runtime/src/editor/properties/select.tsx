@@ -40,8 +40,8 @@ function PropertyPickerRow({
     value3: Dynamic =
       typeof className == "function"
         ? (input?: Dynamic): Dynamic =>
-            (0, joinClassNames)(value, className(input))
-        : (0, joinClassNames)(value, className),
+            joinClassNames(value, className(input))
+        : joinClassNames(value, className),
     value4: Dynamic = disabledReason !== undefined && disabledReason !== "";
   return (
     <MenuMenuAssignValue.Item
@@ -91,7 +91,7 @@ function PropertySelect({
     [value7, value8]: Dynamic = (0,
     reactPropertiesNumericInput.useState)(""),
     value9: Dynamic = (0, reactPropertiesNumericInput.useRef)(null),
-    value10: Dynamic = (0, useTouchToolbar)(),
+    value10: Dynamic = useTouchToolbar(),
     value11: Dynamic = searchable ? value7.trim().toLowerCase() : "",
     value12: Dynamic =
       value11 === ""
@@ -158,7 +158,7 @@ function PropertySelect({
             data-testid={dataTestid}
             aria-label={value6 === "" ? (ariaLabel) : (((ariaLabel) + (": ")) + (value6))}
             title={title}
-            className={(0, joinClassNames)(
+            className={joinClassNames(
               joinClassNamesValue_3,
               compact ? "w-[4.5rem] shrink-0" : "w-full flex-1",
               className,
@@ -172,7 +172,7 @@ function PropertySelect({
                 }
               />) : (null)}
             <span
-              className={(0, joinClassNames)(
+              className={joinClassNames(
                 "min-w-0 flex-1 truncate",
                 value5 === undefined && "text-muted",
                 value2 === undefined && value6 === "Mixed" && "text-muted",
@@ -193,7 +193,7 @@ function PropertySelect({
       <MenuMenuAssignValue.Popup
         {...popupAttrs}
         align={align ?? (value4 ? "end" : "start")}
-        className={(0, joinClassNames)(
+        className={joinClassNames(
           value4
             ? "w-[calc(var(--anchor-width)+1.375rem)]"
             : "w-[var(--anchor-width)]",
@@ -241,7 +241,7 @@ function PropertySelect({
                           ? value14.focus()
                           : value11 !== "" &&
                             callback(event.currentTarget)[
-                              (0, pickerSearchInitialIndex)(
+                              pickerSearchInitialIndex(
                                 value11,
                                 value12
                                   .filter(
@@ -395,8 +395,8 @@ export {
 };
 export function installEditorPropertiesSelect(): () => void {
   return () => {
-    jsxPropertiesSelect = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    jsxPropertiesSelect = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
     PropertiesSelectOnKeyDownCaptureConfig = {

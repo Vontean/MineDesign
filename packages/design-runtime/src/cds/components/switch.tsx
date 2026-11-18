@@ -29,20 +29,20 @@ export {
 };
 export function installCdsComponentsSwitch(): () => void {
   return () => {
-    initializeComponentsSwitch = (0, initializeOnce)(() => {
+    initializeComponentsSwitch = initializeOnce(() => {
       "use client";
 
-      (0, initializeClassNames)();
-      (0, initializeCdsRoot)();
-      (0, initializeDomSelectionPrevention)();
-      (0, initializeTooltipTooltip)();
-      reactComponentsSwitch = (0, toModuleNamespace)(
-        (0, load_react)(),
+      initializeClassNames();
+      initializeCdsRoot();
+      initializeDomSelectionPrevention();
+      initializeTooltipTooltip();
+      reactComponentsSwitch = toModuleNamespace(
+        load_react(),
       );
-      jsxComponentsSwitch = (0, toModuleNamespace)(
-        (0, load_react_jsx_runtime)(),
+      jsxComponentsSwitch = toModuleNamespace(
+        load_react_jsx_runtime(),
       );
-      (0, initializeNpm__base_ui_react_CZe)();
+      initializeNpm__base_ui_react_CZe();
       switchRootClasses =
         "cds-reset relative inline-flex shrink-0 rounded-full border-0 outline-none focus-visible:outline-hidden bg-[var(--cds-switch-track)] hover:bg-[var(--cds-switch-track-hover)] data-[checked]:bg-fill-accent data-[checked]:hover:bg-fill-accent-hover data-[disabled]:opacity-disabled data-[disabled]:hover:bg-[var(--cds-switch-track)] data-[checked]:data-[disabled]:hover:bg-fill-accent focus-visible:shadow-focus";
       ComponentsSwitchClassNames =
@@ -70,10 +70,10 @@ export function installCdsComponentsSwitch(): () => void {
               ref={options}
               data-cds={"Switch"}
               {...props}
-              {...(0, getSizeAttribute)(size)}
-              onMouseDown={(0, withSelectionPrevention)(undefined)}
+              {...getSizeAttribute(size)}
+              onMouseDown={withSelectionPrevention(undefined)}
               onKeyDown={preventRepeatedEnter}
-              className={(0, cn)(
+              className={cn(
                 switchRootClasses,
                 ComponentsSwitchLabel,
                 className,

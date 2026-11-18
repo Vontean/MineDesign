@@ -319,7 +319,7 @@ function createBrowserCrashStash(options?: Dynamic): Dynamic {
 async function restoreBrowserCrashStash(
   suffix: Dynamic = "",
 ): Promise<Dynamic> {
-  let viewerId: Dynamic = (await (0, getCurrentUserId)()) ?? "",
+  let viewerId: Dynamic = (await getCurrentUserId()) ?? "",
     stash: Dynamic = createBrowserCrashStash({
       viewerId: viewerId,
       artifactId:

@@ -67,7 +67,7 @@ function createExportAssetResolver(
     // file; the CSP blocks the CDN (getBabelFileUrl, docs/design/canvas §8.3).
     let babelFile: Dynamic =
       input === exportBabelStandaloneUrl
-        ? (0, getBabelFileUrl)()
+        ? getBabelFileUrl()
         : undefined;
     if (babelFile)
       try {
@@ -86,7 +86,7 @@ function createExportAssetResolver(
       if (!/^https:/i.test(value5)) {
         console.warn(
           "[design/export] not fetching insecure URL: " +
-            (0, redactProjectServeAccessToken)(input),
+            redactProjectServeAccessToken(input),
         );
         return null;
       }
@@ -137,7 +137,7 @@ function createExportAssetResolver(
           !options2?.optional &&
           console.warn(
             "[design/export] unresolved: " +
-              (0, redactProjectServeAccessToken)(input),
+              redactProjectServeAccessToken(input),
           ),
         value4);
   };

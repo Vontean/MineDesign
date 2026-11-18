@@ -51,9 +51,9 @@ function flattenTemplateValues(
 ): Dynamic {
   if (!input.includes("{{")) return input;
   try {
-    let value: Dynamic = (0, createNativeDomAccessors)(doc.body),
+    let value: Dynamic = createNativeDomAccessors(doc.body),
       value2: Dynamic = doc.createElement("template");
-    value2.innerHTML = (0, toParserHtml)(input);
+    value2.innerHTML = toParserHtml(input);
     let index: Dynamic = 0,
       index2: Dynamic = 0,
       callback: Dynamic = (items?: Dynamic, items2?: Dynamic): Dynamic => {
@@ -127,15 +127,15 @@ function flattenTemplateValues(
                 );
               if (value12 !== value8.value) {
                 if (value11) {
-                  if (!(0, isPastedStylePreserved)(value12)) continue;
+                  if (!isPastedStylePreserved(value12)) continue;
                 } else if (
                   value10 === "srcset" ||
                   value10 === "imagesrcset"
                 ) {
-                  if (!(0, isSafePastedSrcset)(value12)) continue;
+                  if (!isSafePastedSrcset(value12)) continue;
                 } else if (
                   ClipboardTemplateFlatteningSubscribers.has(value10) &&
-                  !(0, isSafePastedUrl)(
+                  !isSafePastedUrl(
                     value12,
                     value10 === "src" ||
                       value10 === "poster" ||
@@ -159,7 +159,7 @@ function flattenTemplateValues(
     for (let value4 of Array.from(value2.content.childNodes) as Dynamic)
       callback2(value4, "");
     if (index === 0) return input;
-    let value3: Dynamic = (0, fromParserHtml)(value2.innerHTML);
+    let value3: Dynamic = fromParserHtml(value2.innerHTML);
     return ClipboardTemplateFlatteningMatch(value3) >
       ClipboardTemplateFlatteningMatch(input)
       ? input
@@ -184,11 +184,11 @@ function flattenSelectionTemplates(
   options?: Dynamic,
   context?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = (0, selectedRootElementIds)(input, [
+  let value: Dynamic = selectedRootElementIds(input, [
       ...new Set(
         options.map(
           (input2?: Dynamic): Dynamic =>
-            (0, promoteSvgShapeToRoot)(input, input2),
+            promoteSvgShapeToRoot(input, input2),
         ),
       ),
     ]).map((input2?: Dynamic): Dynamic => input.element(input2)),
@@ -224,7 +224,7 @@ function flattenSelectionTemplates(
     value4.removeAttribute("style");
     let value5: Dynamic = (document as Dynamic).createElement("template");
     value5.content.appendChild(value4);
-    let value6: Dynamic = (0, fromParserHtml)(value5.innerHTML),
+    let value6: Dynamic = fromParserHtml(value5.innerHTML),
       text: Dynamic = "</x-import>";
     value2 =
       value6.slice(0, value6.length - text.length) +

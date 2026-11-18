@@ -122,7 +122,7 @@ function truncateClaudeSelectionPayload(payload?: Dynamic): Dynamic {
             Math.max(1, value6),
         ),
       value8: Dynamic =
-        value7 > 0 ? (0, truncateUtf16Safely)(value5, value7) : "";
+        value7 > 0 ? truncateUtf16Safely(value5, value7) : "";
     value =
       value8.length > 0
         ? {
@@ -223,12 +223,12 @@ async function sendDesignSelectionThroughSession(
         value5: Dynamic =
           value4.length <= maxClaudeSelectionTextLength
             ? value4
-            : (0, truncateUtf16Safely)(
+            : truncateUtf16Safely(
                 value4,
                 maxClaudeSelectionTextLength,
               ) +
               claudeSelectionTruncationSuffix(
-                (0, truncateUtf16Safely)(
+                truncateUtf16Safely(
                   value4,
                   maxClaudeSelectionTextLength,
                 ).length,
@@ -355,28 +355,28 @@ export {
 };
 export function installCanvasClaudeHandoff(): () => void {
   return () => {
-    react_Xmn = (0, toModuleNamespace)((0, load_react)(), 1);
-    (0, initializeCdsIndex)();
-    jsx_nOe = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    react_Xmn = toModuleNamespace(load_react(), 1);
+    initializeCdsIndex();
+    jsx_nOe = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
-    react_yCt = (0, toModuleNamespace)((0, load_react)(), 1);
-    (0, initializeCdsIndex)();
-    jsx_Ymn = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    react_yCt = toModuleNamespace(load_react(), 1);
+    initializeCdsIndex();
+    jsx_Ymn = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
-    react_sm = (0, toModuleNamespace)((0, load_react)(), 1);
-    (0, initializeCdsIndex)();
-    react_dae = (0, toModuleNamespace)((0, load_react)(), 1);
-    reactDOM_mhn = (0, toModuleNamespace)(
-      (0, load_react_dom)(),
+    react_sm = toModuleNamespace(load_react(), 1);
+    initializeCdsIndex();
+    react_dae = toModuleNamespace(load_react(), 1);
+    reactDOM_mhn = toModuleNamespace(
+      load_react_dom(),
       1,
     );
-    (0, initializeCdsIndex)();
-    jsx_vCt = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    initializeCdsIndex();
+    jsx_vCt = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
     unsafeDesignDataLabelPattern = new RegExp(
@@ -399,7 +399,7 @@ export function installCanvasClaudeHandoff(): () => void {
       input?: Dynamic,
       options?: Dynamic,
     ): Dynamic =>
-      (0, truncateUtf16Safely)(
+      truncateUtf16Safely(
         input.replace(unsafeClaudeSelectionCharacters, ""),
         options,
       );
@@ -414,8 +414,8 @@ export function installCanvasClaudeHandoff(): () => void {
       claudeSelectionTruncationSuffix(99999).length;
     claudePayloadByteLength = (input?: Dynamic): Dynamic =>
       new TextEncoder().encode(JSON.stringify(input)).length;
-    jsx_aOe = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    jsx_aOe = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
   };

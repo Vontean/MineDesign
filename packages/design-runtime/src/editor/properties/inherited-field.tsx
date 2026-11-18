@@ -47,7 +47,7 @@ function inspectorFieldDisplay(input?: Dynamic): Dynamic {
       isLiteral: false,
     };
   let value: Dynamic = input.value ?? "",
-    value2: Dynamic = (0, classifyStyleValue)(value);
+    value2: Dynamic = classifyStyleValue(value);
   return value2.kind === "unset"
     ? {
         text: "",
@@ -68,7 +68,7 @@ function inheritedFieldForEdit(input?: Dynamic): Dynamic {
   let callback: Dynamic = (input2?: Dynamic): Dynamic =>
     input2 != null &&
     input2 !== "" &&
-    (0, classifyStyleValue)(input2).kind === "literal"
+    classifyStyleValue(input2).kind === "literal"
       ? input2
       : undefined;
   return {

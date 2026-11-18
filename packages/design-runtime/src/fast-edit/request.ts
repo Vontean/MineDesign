@@ -79,7 +79,7 @@ async function updateFastEditHistoryFromCanvas(
     files: Dynamic = boards
       .map((input?: Dynamic): Dynamic => input.file)
       .slice(0, MAX_FAST_EDIT_FILES),
-    idOf: Dynamic = (0, createFastEditFileIds)(files).idOf,
+    idOf: Dynamic = createFastEditFileIds(files).idOf,
     values: Dynamic = new Set(),
     values2: Dynamic = new Set(
       files.flatMap((input?: Dynamic): Dynamic => {
@@ -107,7 +107,7 @@ async function updateFastEditHistoryFromCanvas(
     let value3: Dynamic =
         value2 === undefined || entry === undefined
           ? null
-          : await (0, withFastEditTimeout)(
+          : await withFastEditTimeout(
               handles
                 .get(value.file)
                 ?.askTemplate()
@@ -141,7 +141,7 @@ async function captureFastEditCanvasState(
     handles: Dynamic = host.handlesRef.current ?? new Map(),
     boards: Dynamic = host.canvas.boards(),
     session: Dynamic = context.session,
-    ids: Dynamic = (0, createFastEditFileIds)(
+    ids: Dynamic = createFastEditFileIds(
       boards
         .map((input?: Dynamic): Dynamic => input.file)
         .slice(0, MAX_FAST_EDIT_FILES),
@@ -177,7 +177,7 @@ async function captureFastEditCanvasState(
       callback(value3, "late");
       continue;
     }
-    let value4: Dynamic = await (0, withFastEditTimeout)(
+    let value4: Dynamic = await withFastEditTimeout(
       entry.askTemplate().catch((): Dynamic => null),
       2500,
     );
@@ -353,7 +353,7 @@ async function applyFastEditRequest(
     if (context.sandbox.available !== undefined) {
       let value2: Dynamic = await Promise.race([
         context.sandbox.available,
-        (0, waitForFastEditAbort)(request.signal),
+        waitForFastEditAbort(request.signal),
       ]);
       if (value2 === "stopped") return finish("stopped", "cancelled");
       if (!value2)
@@ -374,7 +374,7 @@ async function applyFastEditRequest(
       );
       "done" in value2 &&
         context.comment === undefined &&
-        (0, finishFastEditJournalTurn)(
+        finishFastEditJournalTurn(
           context.session,
           result.applied
             ? value2.done.unsaved !== undefined
@@ -446,7 +446,7 @@ async function runFastEditSamplingRound(
     handles: Dynamic = host.handlesRef.current ?? new Map(),
     sandbox: Dynamic,
     timeout: Dynamic,
-    writeScheduler: Dynamic = (0, createFastEditWriteScheduler)({
+    writeScheduler: Dynamic = createFastEditWriteScheduler({
       now: (): Dynamic => performance.now(),
       schedule: (input?: Dynamic, options?: Dynamic): Dynamic => {
         let value5: Dynamic = setTimeout(input, options);
@@ -491,7 +491,7 @@ async function runFastEditSamplingRound(
     errors: Dynamic = [],
     allowedFiles: Dynamic = new Set([targetFile]),
     artboardsById: Dynamic = new Map(),
-    fileIds: Dynamic = (0, createFastEditFileIds)([]),
+    fileIds: Dynamic = createFastEditFileIds([]),
     text2: Dynamic = "",
     value3: Dynamic = null,
     items: Dynamic = [],
@@ -533,7 +533,7 @@ async function runFastEditSamplingRound(
           : value6.some(
                 (input?: Dynamic): Dynamic => input.file === targetFile,
               )
-            ? (0, resolveCommentPinPosition)(
+            ? resolveCommentPinPosition(
                 context.comment.pin,
                 value6,
                 targetFile,
@@ -560,12 +560,12 @@ async function runFastEditSamplingRound(
           value70: Dynamic =
             value8 === undefined || value69 === undefined
               ? null
-              : (0, findFreeSpotAfterRow)(
-                  (0, groupArtboardsIntoRows)(
+              : findFreeSpotAfterRow(
+                  groupArtboardsIntoRows(
                     value6.map(
                       (input2?: Dynamic): Dynamic => ({
                         id: input2.file,
-                        ...(0, artboardRectangle)(input2),
+                        ...artboardRectangle(input2),
                       }),
                     ),
                   ).find(
@@ -607,13 +607,13 @@ async function runFastEditSamplingRound(
               (input?: Dynamic, options?: Dynamic): Dynamic =>
                 value9.indexOf(input) - value9.indexOf(options),
             );
-    fileIds = (0, createFastEditFileIds)(value10);
+    fileIds = createFastEditFileIds(value10);
     artboardsById = new Map();
     let entries: Dynamic = new Map(
         value6.map((input?: Dynamic): Dynamic => [input.file, input]),
       ),
       callback4: Dynamic = (input?: Dynamic): Dynamic =>
-        (0, distanceBetweenArtboards)(
+        distanceBetweenArtboards(
           entries.get(input),
           entries.get(targetFile) ?? value7 ?? entries.get(input),
         ),
@@ -626,14 +626,14 @@ async function runFastEditSamplingRound(
       ) as Dynamic) {
       if (index3 > MAX_FAST_EDIT_BOX_CHARS) break;
       handles.get(value69).hasPendingEdits() &&
-        (await (0, withFastEditTimeout)(
+        (await withFastEditTimeout(
           handles
             .get(value69)
             .flushPending()
             .catch((): Dynamic => {}),
           FAST_EDIT_SANDBOX_START_TIMEOUT_MS,
         ));
-      let value70: Dynamic = await (0, withFastEditTimeout)(
+      let value70: Dynamic = await withFastEditTimeout(
         handles
           .get(value69)
           .askTemplate()
@@ -671,7 +671,7 @@ async function runFastEditSamplingRound(
         items2.map(
           (input?: Dynamic): Dynamic => [
             input,
-            (0, readPageStylesFromSheet)(
+            readPageStylesFromSheet(
               artboardsById.get(input),
               values,
             ),
@@ -679,17 +679,17 @@ async function runFastEditSamplingRound(
         ),
       ),
       callback5: Dynamic = (input?: Dynamic): Dynamic =>
-        (0, serializeFastEditArtboard)(
+        serializeFastEditArtboard(
           fileIds.idOf.get(input),
           entries.get(input),
-          (0, hasPageStylesheet)(artboardsById.get(input))
-            ? (0, serializePageStyleAttributes)(
+          hasPageStylesheet(artboardsById.get(input))
+            ? serializePageStyleAttributes(
                 entries2.get(input) ?? {},
               )
             : "",
         ) +
-        (0, encodeCamelCaseAttributes)(
-          (0, stripHelmetMarkup)(artboardsById.get(input)),
+        encodeCamelCaseAttributes(
+          stripHelmetMarkup(artboardsById.get(input)),
         ) +
         "</section>",
       entries3: Dynamic = new Map(
@@ -713,7 +713,7 @@ async function runFastEditSamplingRound(
         : artboardsById.delete(value69);
     }
     let items3: Dynamic = [...artboardsById.keys()],
-      value13: Dynamic = (0, collectOwnedElementIds)([
+      value13: Dynamic = collectOwnedElementIds([
         ...artboardsById.values(),
       ]),
       value14: Dynamic =
@@ -729,7 +729,7 @@ async function runFastEditSamplingRound(
               artboardsById.has(context.second)
             ? context.second
             : undefined;
-    (0, collectJournalChanges)(
+    collectJournalChanges(
       context.session,
       items3.map(
         (input?: Dynamic): Dynamic => ({
@@ -779,7 +779,7 @@ async function runFastEditSamplingRound(
       callback7: Dynamic = (input?: Dynamic): Dynamic => {
         let entry4: Dynamic = draftEmitters.get(input);
         entry4 === undefined &&
-          ((entry4 = (0, createDraftEmitter)(input)),
+          ((entry4 = createDraftEmitter(input)),
           draftEmitters.set(input, entry4));
         return entry4;
       };
@@ -789,18 +789,18 @@ async function runFastEditSamplingRound(
           return 0;
         let entry4: Dynamic = entries4.get(input);
         if (entry4 === undefined) return 0;
-        let value69: Dynamic = (0, rehydrateFastEditHtml)(
+        let value69: Dynamic = rehydrateFastEditHtml(
             "",
             entry4,
             value13,
           ),
-          value70: Dynamic = (0, parseFastEditArtboardSection)(
+          value70: Dynamic = parseFastEditArtboardSection(
             entry4,
           ),
           value71: Dynamic =
             value69 === null || value70 === null
               ? null
-              : (0, validateFastEditTemplate)("", value69);
+              : validateFastEditTemplate("", value69);
         if (value70 === null || value71 === null || !value71.ok) {
           draftDocumentPreviewStore.drop(input);
           return entry4.length;
@@ -820,14 +820,14 @@ async function runFastEditSamplingRound(
           if (value75 === undefined && !value5) return entry4.length;
           let value76: Dynamic =
               value75 !== undefined
-                ? (0, artboardRectangle)(value75)
+                ? artboardRectangle(value75)
                 : value7,
             items8: Dynamic = [
               ...value74.map(
                 (input2?: Dynamic): Dynamic =>
                   input2.file === targetFile
                     ? value76
-                    : (0, artboardRectangle)(input2),
+                    : artboardRectangle(input2),
               ),
               ...[...entries6]
                 .filter(([input2]: Dynamic): Dynamic => input2 !== input)
@@ -839,7 +839,7 @@ async function runFastEditSamplingRound(
               Math.min(
                 ...items8.map(
                   (input2?: Dynamic): Dynamic =>
-                    (0, distanceBetweenArtboards)(
+                    distanceBetweenArtboards(
                       {
                         x: value70.x,
                         y: value70.y,
@@ -850,7 +850,7 @@ async function runFastEditSamplingRound(
                     ),
                 ),
               ) > 480,
-            value78: Dynamic = (0, findAvailableArtboardPosition)(
+            value78: Dynamic = findAvailableArtboardPosition(
               {
                 ...(value8 !== undefined
                   ? callback3(value72, value73)
@@ -884,11 +884,11 @@ async function runFastEditSamplingRound(
         try {
           draftDocumentPreviewStore.set(input, {
             ...entry5,
-            doc: (0, buildStaticFastEditPreview)(
+            doc: buildStaticFastEditPreview(
               value71.template,
               {},
             ),
-            title: (0, sanitizeArtboardTitle)(
+            title: sanitizeArtboardTitle(
               value70.title ?? "",
               40,
             ),
@@ -917,7 +917,7 @@ async function runFastEditSamplingRound(
         let entry6: Dynamic = entries9.get(input);
         if (entry6 === undefined) {
           if (!entries8.has(input)) {
-            let value73: Dynamic = (0, readTemplateInputDefaults)(
+            let value73: Dynamic = readTemplateInputDefaults(
                 context.host().fileText(input) ?? "",
               ),
               value74: Dynamic = (
@@ -943,7 +943,7 @@ async function runFastEditSamplingRound(
           return 0;
         }
         let value69: Dynamic = entry4.length + entry5.length,
-          value70: Dynamic = (0, rehydrateFastEditHtml)(
+          value70: Dynamic = rehydrateFastEditHtml(
             entry5,
             entry4,
             value13,
@@ -951,9 +951,9 @@ async function runFastEditSamplingRound(
           value71: Dynamic =
             value70 === null
               ? null
-              : (0, validateFastEditTemplate)(
+              : validateFastEditTemplate(
                   entry5,
-                  (0, preserveHelmetMarkup)(entry5, value70),
+                  preserveHelmetMarkup(entry5, value70),
                 );
         if (value71 === null || !value71.ok) {
           draftHtmlPreviewStore.set(input, null);
@@ -961,7 +961,7 @@ async function runFastEditSamplingRound(
         }
         let entry7: Dynamic = entries7.get(input);
         if (entry7 === undefined) {
-          let value73: Dynamic = (0, validateFastEditTemplate)(
+          let value73: Dynamic = validateFastEditTemplate(
             entry5,
             entry5,
           );
@@ -972,13 +972,13 @@ async function runFastEditSamplingRound(
           draftHtmlPreviewStore.set(input, null);
           return value69;
         }
-        let value72: Dynamic = (0, stripHelmetMarkup)(
+        let value72: Dynamic = stripHelmetMarkup(
           value71.template,
         );
         if (
           value72.replace(/<[^>]*>/g, "").trim() === "" &&
           !/<(?:img|svg|hr|table|button|input)\b/i.test(value72) &&
-          (0, stripHelmetMarkup)(entry7)
+          stripHelmetMarkup(entry7)
             .replace(/<[^>]*>/g, "")
             .trim() !== ""
         )
@@ -986,7 +986,7 @@ async function runFastEditSamplingRound(
         try {
           draftHtmlPreviewStore.set(
             input,
-            (0, buildStaticFastEditPreview)(value71.template, entry6),
+            buildStaticFastEditPreview(value71.template, entry6),
           );
         } catch {
           return value69;
@@ -1015,17 +1015,17 @@ async function runFastEditSamplingRound(
           (input?: Dynamic): Dynamic => ({
             id: fileIds.idOf.get(input),
             path: input,
-            title: (0, safeArtboardTitle)(entries.get(input).title),
+            title: safeArtboardTitle(entries.get(input).title),
             html: artboardsById.has(input)
               ? callback5(input)
-              : (0, serializeFastEditArtboard)(
+              : serializeFastEditArtboard(
                   fileIds.idOf.get(input),
                   entries.get(input),
                   "",
                 ) + "</section>",
           }),
         ),
-        get title() { return (0, sanitizeArtboardTitle)(host.canvasTitle, 300) || (uiMessage("canvas.request.canvas")); },
+        get title() { return sanitizeArtboardTitle(host.canvasTitle, 300) || (uiMessage("canvas.request.canvas")); },
         ...(value5
           ? {}
           : {
@@ -1068,7 +1068,7 @@ async function runFastEditSamplingRound(
             value === null &&
               ((value =
                 typeof value69.prompt == "string"
-                  ? (0, sanitizeArtboardTitle)(value69.prompt, 1e3)
+                  ? sanitizeArtboardTitle(value69.prompt, 1e3)
                   : ""),
               context.onStatement?.(),
               draftHtmlPreviewStore.clear(),
@@ -1080,7 +1080,7 @@ async function runFastEditSamplingRound(
           }
           if (value !== null) return;
           index7 += 1;
-          let value70: Dynamic = (0, parseFastEditArtboardOperation)(
+          let value70: Dynamic = parseFastEditArtboardOperation(
               input,
               fileIds.pathOf,
             ),
@@ -1188,17 +1188,17 @@ async function runFastEditSamplingRound(
           writeScheduler.ask("f:" + entry4, (): Dynamic => {
             if (disposed || request.signal.aborted || flag4 || value !== null)
               return 0;
-            let value70: Dynamic = (0, validateFastEditTemplate)(
+            let value70: Dynamic = validateFastEditTemplate(
               value69,
-              (0, preserveHelmetMarkup)(value69, html),
+              preserveHelmetMarkup(value69, html),
             );
             if (value70.ok)
               try {
                 draftHtmlPreviewStore.set(
                   entry4,
-                  (0, buildStaticFastEditPreview)(
+                  buildStaticFastEditPreview(
                     value70.template,
-                    (0, readTemplateInputDefaults)(
+                    readTemplateInputDefaults(
                       context.host().fileText(entry4) ?? "",
                     ),
                   ),
@@ -1242,16 +1242,16 @@ async function runFastEditSamplingRound(
     }
     let value18: Dynamic = value5
         ? Promise.resolve("held")
-        : (0, verifySandboxTemplateRoundTrip)(
+        : verifySandboxTemplateRoundTrip(
             context.sandbox,
-            (0, stripHelmetMarkup)(value11),
+            stripHelmetMarkup(value11),
           ),
       value19: Dynamic =
         sandbox === undefined
           ? {
               ok: false,
             }
-          : await (0, withFastEditTimeout)(
+          : await withFastEditTimeout(
               Promise.resolve(sandbox.ready).catch(
                 (): Dynamic => ({
                   ok: false,
@@ -1284,7 +1284,7 @@ async function runFastEditSamplingRound(
     if (value20 === "late") return callback14();
     context.starts !== undefined && (context.starts.lateInARow = 0);
     (value20 === "reshaped" ||
-      !(0, validateFastEditTemplate)(value11, value11).ok) &&
+      !validateFastEditTemplate(value11, value11).ok) &&
       fail("box_cannot_hold");
     request.signal.aborted && fail("cancelled");
     let value21: Dynamic = fileIds.idOf.get(targetFile) ?? "",
@@ -1297,7 +1297,7 @@ async function runFastEditSamplingRound(
               html: "",
               prefix: "k",
             }
-          : await (0, withFastEditTimeout)(
+          : await withFastEditTimeout(
               sandbox.view(entry2).catch((): Dynamic => null),
               2e3,
             ),
@@ -1320,7 +1320,7 @@ async function runFastEditSamplingRound(
     let value24: Dynamic =
         value14 === undefined
           ? null
-          : await (0, withFastEditTimeout)(
+          : await withFastEditTimeout(
               sandbox
                 .view(fileIds.idOf.get(value14))
                 .catch((): Dynamic => null),
@@ -1332,8 +1332,8 @@ async function runFastEditSamplingRound(
         typeof value24.html == "string"
           ? {
               id: fileIds.idOf.get(value14),
-              html: (0, truncateLargeDataUris)(
-                (0, removeHelmetHandleIds)(
+              html: truncateLargeDataUris(
+                removeHelmetHandleIds(
                   value24.html,
                   value23.prefix,
                 ),
@@ -1348,7 +1348,7 @@ async function runFastEditSamplingRound(
           : undefined,
       entries10: Dynamic = new Map(
         items3.map((input?: Dynamic): Dynamic => {
-          let value69: Dynamic = (0, truncateLargeDataUris)(
+          let value69: Dynamic = truncateLargeDataUris(
             callback5(input),
           );
           return [
@@ -1392,7 +1392,7 @@ async function runFastEditSamplingRound(
         await Promise.all(
           value28.map(
             (input?: Dynamic): Dynamic =>
-              (0, withFastEditTimeout)(
+              withFastEditTimeout(
                 sandbox
                   .view(fileIds.idOf.get(input))
                   .catch((): Dynamic => null),
@@ -1408,7 +1408,7 @@ async function runFastEditSamplingRound(
             ? [
                 {
                   id: fileIds.idOf.get(value28[options]),
-                  html: (0, removeHelmetHandleIds)(
+                  html: removeHelmetHandleIds(
                     input.html,
                     value23.prefix,
                   ),
@@ -1433,7 +1433,7 @@ async function runFastEditSamplingRound(
       entries12: Dynamic = new Map(),
       callback16: Dynamic = (input?: Dynamic): Dynamic => {
         let value69: Dynamic = Array.from(
-          (0, parseTargetTemplate)(input).querySelectorAll("*"),
+          parseTargetTemplate(input).querySelectorAll("*"),
         );
         return {
           ids: value69.map(
@@ -1490,7 +1490,7 @@ async function runFastEditSamplingRound(
       value31: Dynamic =
         context.comment?.path === undefined || context.drawnAt === undefined
           ? null
-          : await (0, withFastEditTimeout)(
+          : await withFastEditTimeout(
               context
                 .drawnAt(
                   targetFile,
@@ -1512,7 +1512,7 @@ async function runFastEditSamplingRound(
       let value69: Dynamic =
         context.rectsOf === undefined
           ? null
-          : await (0, withFastEditTimeout)(
+          : await withFastEditTimeout(
               context
                 .rectsOf(targetFile, [
                   {
@@ -1531,7 +1531,7 @@ async function runFastEditSamplingRound(
     let value33: Dynamic =
       context.comment?.path === undefined
         ? null
-        : (0, resolveClickedElementTarget)(
+        : resolveClickedElementTarget(
             context.comment.path,
             value32,
             value11,
@@ -1551,7 +1551,7 @@ async function runFastEditSamplingRound(
         context.comment.click.y === undefined ||
         STRUCTURAL_LEAF_ELEMENT_TAGS.has(value33.tag)
           ? null
-          : (0, findNearestProbeRectangle)(
+          : findNearestProbeRectangle(
               value32.words,
               context.comment.click.x,
               context.comment.click.y,
@@ -1563,7 +1563,7 @@ async function runFastEditSamplingRound(
           : (host.selectedElements?.find(
               (input?: Dynamic): Dynamic => input.file === targetFile,
             )?.tids ?? []),
-      value37: Dynamic = (0, resolveTemplateHandleIds)(
+      value37: Dynamic = resolveTemplateHandleIds(
         [...new Set(value36)],
         value11,
         value23.html,
@@ -1576,7 +1576,7 @@ async function runFastEditSamplingRound(
         context.layoutOf === undefined ||
         value32?.atPath === false
           ? null
-          : await (0, withFastEditTimeout)(
+          : await withFastEditTimeout(
               context
                 .layoutOf(targetFile, context.comment.path)
                 .catch((): Dynamic => null),
@@ -1589,7 +1589,7 @@ async function runFastEditSamplingRound(
       });
     let callback18: Dynamic = (input?: Dynamic): Dynamic =>
         fileIds.idOf.get(input) ?? input.replace(/\.dc\.html$/, ""),
-      value40: Dynamic = (0, recordFastEditReadResult)(
+      value40: Dynamic = recordFastEditReadResult(
         context.session.journal,
         {
           file: targetFile,
@@ -1607,7 +1607,7 @@ async function runFastEditSamplingRound(
             ),
       value42: Dynamic =
         value41 !== undefined
-          ? (0, recordFastEditReadResult)(
+          ? recordFastEditReadResult(
               context.session.journal,
               {
                 file: context.session.lastTouched,
@@ -1632,14 +1632,14 @@ async function runFastEditSamplingRound(
           : {}),
       },
       history: Dynamic = context.session.history,
-      value43: Dynamic = (0, beginHistoryTurn)(history),
+      value43: Dynamic = beginHistoryTurn(history),
       callback19: Dynamic = (input?: Dynamic): Dynamic => {
         history.turns.push({
           role: "user",
           id: value43,
           content: "",
         });
-        let value69: Dynamic = (0, trimHistoryTurns)(
+        let value69: Dynamic = trimHistoryTurns(
           history.turns,
           input,
         );
@@ -1668,7 +1668,7 @@ async function runFastEditSamplingRound(
           : {}),
         shown: {
           id: value21,
-          html: (0, removeHelmetHandleIds)(
+          html: removeHelmetHandleIds(
             value23.html,
             value23.prefix,
           ),
@@ -1692,7 +1692,7 @@ async function runFastEditSamplingRound(
                       : {}),
                     ...((
                       value33.own === ""
-                        ? (0, containsOnlyTemplateInterpolation)(
+                        ? containsOnlyTemplateInterpolation(
                             value33.text,
                           )
                         : value33.own.includes("{{")
@@ -1716,7 +1716,7 @@ async function runFastEditSamplingRound(
                           look:
                             value32.words.length > 0
                               ? value32.look
-                              : (0, pickTargetAppearanceContext)(
+                              : pickTargetAppearanceContext(
                                   value32.look,
                                 ),
                         }
@@ -1732,8 +1732,8 @@ async function runFastEditSamplingRound(
                   ...(value34 !== null
                     ? {
                         blank: value34,
-                        ...(0, pickTargetSiblingContext)(
-                          await (0, resolveFastEditClickTarget)(
+                        ...pickTargetSiblingContext(
+                          await resolveFastEditClickTarget(
                             context,
                             targetFile,
                             context.comment.click,
@@ -1751,8 +1751,8 @@ async function runFastEditSamplingRound(
                     ground: true,
                     ...(value35
                       ? {
-                          ...(0, pickTargetSiblingContext)(
-                            await (0, resolveFastEditClickTarget)(
+                          ...pickTargetSiblingContext(
+                            await resolveFastEditClickTarget(
                               context,
                               targetFile,
                               context.comment.click,
@@ -1763,7 +1763,7 @@ async function runFastEditSamplingRound(
                           inside: value33.id,
                           insideList: true,
                         }
-                      : await (0, resolveFastEditClickTarget)(
+                      : await resolveFastEditClickTarget(
                           context,
                           targetFile,
                           context.comment.click,
@@ -1803,7 +1803,7 @@ async function runFastEditSamplingRound(
           value10.map((input2?: Dynamic): Dynamic => {
             let entry4: Dynamic = entries.get(input2),
               value69: Dynamic = artboardsById.has(input2)
-                ? (0, summarizeArtboardText)(callback5(input2))
+                ? summarizeArtboardText(callback5(input2))
                 : "";
             return {
               id: fileIds.idOf.get(input2),
@@ -1812,7 +1812,7 @@ async function runFastEditSamplingRound(
               words: value69,
               ...(artboardsById.has(input2)
                 ? value69 === "" &&
-                  (0, isEmptyStructuralTemplate)(callback5(input2))
+                  isEmptyStructuralTemplate(callback5(input2))
                   ? {
                       empty: true,
                     }
@@ -1822,7 +1822,7 @@ async function runFastEditSamplingRound(
                   }),
               x: entry4.x,
               y: entry4.y,
-              title: (0, safeArtboardTitle)(entry4.title),
+              title: safeArtboardTitle(entry4.title),
               far: input.get(input2),
             };
           }))(
@@ -1901,11 +1901,11 @@ async function runFastEditSamplingRound(
                   .slice(0, 6),
                 places:
                   target.by !== "selected"
-                    ? (0, describeFreeCanvasSpots)(
+                    ? describeFreeCanvasSpots(
                         value10.map(
                           (input?: Dynamic): Dynamic => ({
                             id: fileIds.idOf.get(input),
-                            ...(0, artboardRectangle)(
+                            ...artboardRectangle(
                               entries.get(input),
                             ),
                           }),
@@ -1919,25 +1919,25 @@ async function runFastEditSamplingRound(
                               fileIds.idOf.get(input),
                           ),
                       )
-                    : (0, findAdjacentArtboardSpaces)(
+                    : findAdjacentArtboardSpaces(
                         value6
                           .filter(
                             (input?: Dynamic): Dynamic =>
                               input.file !== targetFile,
                           )
                           .map(artboardRectangle),
-                        (0, artboardRectangle)(entry3),
+                        artboardRectangle(entry3),
                       ).line,
               },
             }),
       },
       callback20: Dynamic = (): Dynamic =>
-        (0, buildFastEditPrompt)({
+        buildFastEditPrompt({
           ...state2,
           told: [
             ...history.told,
             ...(value44.length > 0
-              ? [(0, describeAutomaticallyDroppedTurns)(value44)]
+              ? [describeAutomaticallyDroppedTurns(value44)]
               : []),
           ],
         }),
@@ -1945,12 +1945,12 @@ async function runFastEditSamplingRound(
     for (
       !value45.ok &&
       history.told.length > 0 &&
-      ((0, resetHistoryNotes)(history), (value45 = callback20()));
+      (resetHistoryNotes(history), (value45 = callback20()));
       !value45.ok;
 
     ) {
       let value69: Dynamic = callback19(
-        (0, countHistoryCharacters)(history.turns) - 1,
+        countHistoryCharacters(history.turns) - 1,
       );
       if (value69.length === 0) break;
       value44.push(...value69);
@@ -1958,12 +1958,12 @@ async function runFastEditSamplingRound(
     }
     value44.length > 0 &&
       (history.told.push(
-        (0, describeAutomaticallyDroppedTurns)(value44),
+        describeAutomaticallyDroppedTurns(value44),
       ),
       history.trace.blind.push(value44));
     value45.ok ||
-      ((0, resetHistoryNotes)(history), fail("prompt_too_large"));
-    (0, appendHistoryUserTurn)(history, value43, value45.kept);
+      (resetHistoryNotes(history), fail("prompt_too_large"));
+    appendHistoryUserTurn(history, value43, value45.kept);
     context.session.turn !== null && (context.session.turn.open = true);
     request.signal.aborted && fail("cancelled");
     if (
@@ -1999,7 +1999,7 @@ async function runFastEditSamplingRound(
     let value46: Dynamic = -1,
       index10: Dynamic = 0,
       index11: Dynamic = 0,
-      value47: Dynamic = (0, nextHandleSequence)(
+      value47: Dynamic = nextHandleSequence(
         value45.files,
         value23.prefix,
       ),
@@ -2010,9 +2010,9 @@ async function runFastEditSamplingRound(
       ): Dynamic =>
         context.feedAsWritten === true
           ? input
-          : (0, adoptHandleIds)(
-              (0, isIncompleteInsertionStatement)(
-                (0, rewriteContainerAppendStatements)(
+          : adoptHandleIds(
+              isIncompleteInsertionStatement(
+                rewriteContainerAppendStatements(
                   input,
                   options,
                   context2,
@@ -2025,7 +2025,7 @@ async function runFastEditSamplingRound(
               value13,
             );
     callback = (input?: Dynamic): Dynamic => {
-      let rest: Dynamic = (0, extractForgetStatements)(
+      let rest: Dynamic = extractForgetStatements(
           history.said,
           true,
         ).rest,
@@ -2035,7 +2035,7 @@ async function runFastEditSamplingRound(
         value70: Dynamic = callback26(
           context.feedAsWritten === true
             ? rest
-            : (0, rewriteContainerAppendStatements)(rest, true, "\0"),
+            : rewriteContainerAppendStatements(rest, true, "\0"),
         ),
         value71: Dynamic = -1,
         index12: Dynamic = 0;
@@ -2070,11 +2070,11 @@ async function runFastEditSamplingRound(
           input.slice(Math.max(0, value46)),
           options,
         ),
-        value70: Dynamic = (0, extractForgetStatements)(
+        value70: Dynamic = extractForgetStatements(
           value69,
           options,
         );
-      (0, applyForgetStatements)(history, value70.calls, index11);
+      applyForgetStatements(history, value70.calls, index11);
       index11 = value70.calls.length;
       Object.assign(history, {
         said: options
@@ -2174,8 +2174,8 @@ async function runFastEditSamplingRound(
     let value51: Dynamic = flag2
       ? false
       : (await Promise.race([
-          (0, withFastEditTimeout)(promise, 5e3),
-          (0, waitForFastEditAbort)(request.signal),
+          withFastEditTimeout(promise, 5e3),
+          waitForFastEditAbort(request.signal),
         ])) !== FAST_EDIT_TIMEOUT_SENTINEL;
     request.signal.aborted && fail("cancelled");
     value !== null && fail("ask_claude");
@@ -2274,13 +2274,13 @@ async function runFastEditSamplingRound(
         entry5: Dynamic = entries.get(value69);
       if (entry5 === undefined) continue;
       if (entry4 === undefined) {
-        let value86: Dynamic = (0, parseFastEditArtboardSection)(
+        let value86: Dynamic = parseFastEditArtboardSection(
           value70,
         );
         if (value86 === null) return refuseGate("shape");
-        ((0, unwrapFastEditSection)(value70) ?? "").trim() !== "" &&
+        (unwrapFastEditSection(value70) ?? "").trim() !== "" &&
           refuseGate("box_cannot_hold");
-        let value87: Dynamic = (0, diffArtboardProperties)(
+        let value87: Dynamic = diffArtboardProperties(
           entry5,
           value86,
         );
@@ -2290,12 +2290,12 @@ async function runFastEditSamplingRound(
           state3.renames.set(value69, value87.title);
         continue;
       }
-      let value71: Dynamic = (0, rehydrateFastEditHtml)(
+      let value71: Dynamic = rehydrateFastEditHtml(
           entry4,
           value70,
           value13,
         ),
-        value72: Dynamic = (0, parseFastEditArtboardSection)(
+        value72: Dynamic = parseFastEditArtboardSection(
           value70,
           new Set(["background", "color", "font"]),
         );
@@ -2315,7 +2315,7 @@ async function runFastEditSamplingRound(
                 font: input.font,
               }
             : {}),
-          ...(0, validatePageStyles)(input, values),
+          ...validatePageStyles(input, values),
         }),
         value73: Dynamic = items8.filter(
           (input?: Dynamic): Dynamic => state4[input] !== undefined,
@@ -2324,14 +2324,14 @@ async function runFastEditSamplingRound(
           context.target === undefined ||
           (value69 === context.target && context.contextOnly !== true) ||
           value69 === value26
-            ? callback26((0, readPageStylesFromSection)(value70))
+            ? callback26(readPageStylesFromSection(value70))
             : {};
       for (let value86 of items8 as Dynamic)
         state4[value86] === undefined &&
           value74[value86] !== undefined &&
           value74[value86] !== (entries2.get(value69)?.[value86] ?? "") &&
           (state4[value86] = value74[value86]);
-      let value75: Dynamic = (0, validatePageStyles)(state4, values),
+      let value75: Dynamic = validatePageStyles(state4, values),
         value76: Dynamic = items8.filter(
           (input?: Dynamic): Dynamic =>
             value75[input] === undefined &&
@@ -2351,8 +2351,8 @@ async function runFastEditSamplingRound(
                 ok: false,
                 why: "value",
               }
-            : (0, updatePageStyleSheet)(
-                (0, preserveHelmetMarkup)(entry4, value71 ?? ""),
+            : updatePageStyleSheet(
+                preserveHelmetMarkup(entry4, value71 ?? ""),
                 value77,
                 values,
               ),
@@ -2364,8 +2364,8 @@ async function runFastEditSamplingRound(
                 text: value71,
                 own: [],
               }
-            : (0, mapFastEditCssChanges)(
-                (0, stripHelmetMarkup)(entry4),
+            : mapFastEditCssChanges(
+                stripHelmetMarkup(entry4),
                 value71,
                 callback26(state4),
                 [...(value78.ok ? [] : items8), ...value76],
@@ -2380,19 +2380,19 @@ async function runFastEditSamplingRound(
                 ok: false,
                 code: "not_template",
               }
-            : (0, validateFastEditTemplate)(
+            : validateFastEditTemplate(
                 entry4,
-                (0, preserveHelmetMarkup)(entry4, value79.text),
+                preserveHelmetMarkup(entry4, value79.text),
               ),
         value81: Dynamic = value80.ok && value79.text !== value71,
         value82: Dynamic =
           value80.ok || value79.text === value71
             ? value80
-            : (0, validateFastEditTemplate)(
+            : validateFastEditTemplate(
                 entry4,
-                (0, preserveHelmetMarkup)(entry4, value71),
+                preserveHelmetMarkup(entry4, value71),
               ),
-        value83: Dynamic = (0, validateFastEditTemplate)(
+        value83: Dynamic = validateFastEditTemplate(
           entry4,
           entry4,
         );
@@ -2430,7 +2430,7 @@ async function runFastEditSamplingRound(
           ),
         };
       Object.keys(state5).length > 0 && state3.pages.set(value69, state5);
-      let value85: Dynamic = (0, diffArtboardProperties)(
+      let value85: Dynamic = diffArtboardProperties(
         entry5,
         value72,
       );
@@ -2455,7 +2455,7 @@ async function runFastEditSamplingRound(
           value71: Dynamic =
             value70 === undefined
               ? null
-              : (0, parseFastEditArtboardSection)(value70);
+              : parseFastEditArtboardSection(value70);
         state3.duplicates.push({
           file: entry4,
           ...(value69.newId !== undefined
@@ -2488,12 +2488,12 @@ async function runFastEditSamplingRound(
             value69.id !== undefined
               ? (entries4.get(value69.id) ?? value69.html)
               : value69.html,
-          value71: Dynamic = (0, rehydrateFastEditHtml)(
+          value71: Dynamic = rehydrateFastEditHtml(
             "",
             value70,
             value13,
           ),
-          value72: Dynamic = (0, parseFastEditArtboardSection)(
+          value72: Dynamic = parseFastEditArtboardSection(
             value70,
           );
         if (value72 === null) return refuseGate("shape");
@@ -2503,25 +2503,25 @@ async function runFastEditSamplingRound(
                 ok: false,
                 code: "not_template",
               }
-            : (0, validateFastEditTemplate)("", value71);
+            : validateFastEditTemplate("", value71);
         if (!value73.ok)
           items5.push({
             id: "",
             code: value73.code,
           });
         else {
-          let value74: Dynamic = (0, validatePageStyles)(
+          let value74: Dynamic = validatePageStyles(
               {
-                ...(0, readPageStylesFromSection)(value70),
+                ...readPageStylesFromSection(value70),
                 ...value72.page,
               },
               values,
             ),
-            value75: Dynamic = (0, serializePageStyleDeclarations)({
+            value75: Dynamic = serializePageStyleDeclarations({
               ...value74,
               ...(value74.font !== undefined
                 ? {
-                    families: (0, validatePageFontFamilies)(
+                    families: validatePageFontFamilies(
                       value74.font,
                       values,
                     ),
@@ -2564,7 +2564,7 @@ async function runFastEditSamplingRound(
     state3.deletes = state3.deletes.filter(
       (input?: Dynamic): Dynamic => !values4.has(input),
     );
-    let value53: Dynamic = (0, checkFastEditNewArtboardLimit)(state3);
+    let value53: Dynamic = checkFastEditNewArtboardLimit(state3);
     value53 !== null && refuseGate(value53);
     if (value8 !== undefined && state3.adds.length > 0) {
       let value69: Dynamic = state3.adds[0],
@@ -2581,7 +2581,7 @@ async function runFastEditSamplingRound(
               y: value73.y + value72,
             });
     }
-    let value54: Dynamic = (0, prepareFastEditArtboardChanges)(
+    let value54: Dynamic = prepareFastEditArtboardChanges(
       state3,
       canvas.boards(),
       targetFile,
@@ -2590,7 +2590,7 @@ async function runFastEditSamplingRound(
       value7,
     );
     for (let [value69, value70] of state3.pages as Dynamic) {
-      let value71: Dynamic = (0, updatePageStyleSheet)(
+      let value71: Dynamic = updatePageStyleSheet(
         state3.templates.get(value69) ?? entries14.get(value69) ?? "",
         value70,
         values,
@@ -2646,36 +2646,36 @@ async function runFastEditSamplingRound(
                 : "no_change",
       };
     for (let [value69, value70] of state3.templates as Dynamic) {
-      let value71: Dynamic = (0, validateArtboardTemplateReplacement)(
+      let value71: Dynamic = validateArtboardTemplateReplacement(
         context.host().fileText(value69) ?? "",
         value70,
       );
       if (!value71.ok) return refuseGate(value71.code);
       value69 !== targetFile &&
-        (await (0, verifySandboxTemplateRoundTrip)(
+        (await verifySandboxTemplateRoundTrip(
           context.sandbox,
-          (0, stripHelmetMarkup)(artboardsById.get(value69)),
+          stripHelmetMarkup(artboardsById.get(value69)),
         )) !== "held" &&
         refuseGate("box_cannot_hold");
-      (0, countEmptySvgDrawings)(value70) >
-        (0, countEmptySvgDrawings)(
+      countEmptySvgDrawings(value70) >
+        countEmptySvgDrawings(
           artboardsById.get(value69) ?? "",
         ) && refuseGate("empty_drawing");
     }
     state3.adds.some(
       (input?: Dynamic): Dynamic =>
-        (0, countEmptySvgDrawings)(input.body) > 0,
+        countEmptySvgDrawings(input.body) > 0,
     ) && refuseGate("empty_drawing");
     let value56: Dynamic = await Promise.all(
       [
         ...[...state3.templates.values()].map(stripHelmetMarkup),
         ...state3.adds.map(
           (input?: Dynamic): Dynamic =>
-            (0, stripHelmetMarkup)(input.body),
+            stripHelmetMarkup(input.body),
         ),
       ].map(
         (input?: Dynamic): Dynamic =>
-          (0, verifySandboxTemplateRoundTrip)(context.sandbox, input),
+          verifySandboxTemplateRoundTrip(context.sandbox, input),
       ),
     );
     value56.includes("reshaped") && refuseGate("reshaped");
@@ -2730,7 +2730,7 @@ async function runFastEditSamplingRound(
             ),
           );
         });
-    let value60: Dynamic = (0, withFastEditTimeout)(
+    let value60: Dynamic = withFastEditTimeout(
       Promise.all(items6),
       context.viewAfterMs ?? FAST_EDIT_INITIAL_DELAY_MS,
     );
@@ -2768,7 +2768,7 @@ async function runFastEditSamplingRound(
         callback24();
       }),
       value62: Dynamic = canvas.depth(),
-      value63: Dynamic = await (0, commitFastEditArtboardChanges)(
+      value63: Dynamic = await commitFastEditArtboardChanges(
         state3,
         canvas,
         handles,
@@ -2801,7 +2801,7 @@ async function runFastEditSamplingRound(
     }
     value63.nothingLanded && (value61?.(), fail("not_saved"));
     result.applied = true;
-    let value64: Dynamic = (0, withFastEditTimeout)(
+    let value64: Dynamic = withFastEditTimeout(
       Promise.all(
         value63.landed.map(
           (input?: Dynamic): Dynamic =>
@@ -2848,13 +2848,13 @@ async function runFastEditSamplingRound(
       let turn: Dynamic = context.session.turn,
         value69: Dynamic = (turn.also ??= []),
         value70: Dynamic = canvas.boards(),
-        idOf: Dynamic = (0, createFastEditFileIds)(
+        idOf: Dynamic = createFastEditFileIds(
           value70
             .map((input?: Dynamic): Dynamic => input.file)
             .slice(0, MAX_FAST_EDIT_FILES),
         ).idOf,
         callback26: Dynamic = async (input?: Dynamic): Promise<Dynamic> => {
-          let value71: Dynamic = await (0, withFastEditTimeout)(
+          let value71: Dynamic = await withFastEditTimeout(
               handles
                 .get(input)
                 ?.askTemplate()
@@ -3123,8 +3123,8 @@ async function runFastEditSamplingRound(
           ...value38.filter((input?: Dynamic): Dynamic => input.inList),
         ].some(
           (input?: Dynamic): Dynamic =>
-            (0, readTemplateLoopHtml)(value11, input.list) !==
-            (0, readTemplateLoopHtml)(
+            readTemplateLoopHtml(value11, input.list) !==
+            readTemplateLoopHtml(
               state3.templates.get(targetFile) ?? value11,
               input.list,
             ),
@@ -3202,7 +3202,7 @@ async function runFastEditSamplingRound(
     return value68;
   } catch (value5: Dynamic) {
     cleanup();
-    let value6: Dynamic = (0, normalizeFastEditThrownError)(value5),
+    let value6: Dynamic = normalizeFastEditThrownError(value5),
       aborted: Dynamic = request.signal.aborted;
     if (value !== null && !aborted)
       return {
@@ -3335,7 +3335,7 @@ async function runFastEditSamplingRound(
         let value12: Dynamic =
           value10 === "already_so"
             ? FAST_EDIT_REPAIR_MESSAGES.already_so
-            : (0, describeFastEditRefusal)(
+            : describeFastEditRefusal(
                 value10,
                 value7 ? gateReason : value10,
               );
@@ -3432,17 +3432,17 @@ export function installFastEditRequest(): () => void {
       context?: Dynamic,
       value?: Dynamic,
     ): Dynamic =>
-      (0, serializeFastEditArtboard)(
+      serializeFastEditArtboard(
         input,
         options,
-        (0, hasPageStylesheet)(context)
-          ? (0, serializePageStyleAttributes)(
-              (0, readPageStylesFromSheet)(context, value),
+        hasPageStylesheet(context)
+          ? serializePageStyleAttributes(
+              readPageStylesFromSheet(context, value),
             )
           : "",
       ) +
-      (0, encodeCamelCaseAttributes)(
-        (0, stripHelmetMarkup)(context),
+      encodeCamelCaseAttributes(
+        stripHelmetMarkup(context),
       ) +
       "</section>";
     stripReplyCodeFences = (input?: Dynamic): Dynamic =>

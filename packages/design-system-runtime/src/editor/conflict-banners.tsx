@@ -22,7 +22,7 @@ var EMPTY_CONFLICT_FLAGS: ReadonlyMap<string, Editor.ConflictFlag>;
 function sectionForFilePath(path: string): string {
   if (
     path === DESIGN_SYSTEM_PATHS.readme ||
-    (0, isAdditionalMarkdownPath)(path)
+    isAdditionalMarkdownPath(path)
   ) {
     return "readme";
   }
@@ -443,24 +443,24 @@ export {
 };
 export function installEditorConflictBanners(): () => void {
   return () => {
-    reactConflictBanners = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    reactConflictBanners = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
-    jsxConflictBanners = (0, toModuleNamespace)(
-      (0, loadJsxNamespace)(),
+    jsxConflictBanners = toModuleNamespace(
+      loadJsxNamespace(),
       1,
     );
     CONFLICT_COPIED_DURATION_MS = 1500;
     isConflictTextFile = (path: string, value: string | null) =>
       value === null ||
       !(
-        value.startsWith("data:") || (0, isHeldFilePointer)(path, value)
+        value.startsWith("data:") || isHeldFilePointer(path, value)
       );
     conflictFileSummary = (path: string, value: string | null): string =>
       value === null
         ? uiMessage("design-system.conflictBanners.theFileIsDeleted")
-        : (0, isHeldFilePointer)(path, value)
+        : isHeldFilePointer(path, value)
           ? uiMessage("design-system.conflictBanners.theFileIsKeptAs")
           : String(value.length) + " characters.";
     EMPTY_CONFLICT_FLAGS = new Map();

@@ -36,7 +36,7 @@ function addressedProjectFileUrl(
   let pathname: string;
   try {
     pathname = new URL(
-      (0, encodeRelativeUrlPath)((0, projectFilePath)(path)),
+      encodeRelativeUrlPath(projectFilePath(path)),
       baseURI,
     ).pathname;
   } catch {

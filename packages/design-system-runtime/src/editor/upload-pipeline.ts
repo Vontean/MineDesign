@@ -26,8 +26,8 @@ var MAX_UPLOAD_ERROR_DETAILS: number;
 function uploadedAssetFile(file: File): Model.UploadedAssetFile {
   return {
     file: file,
-    kind: (0, assetFileExtension)(file.name, file.type),
-    name: (0, sanitizeUploadFileName)(uploadFileBaseName(file.name)),
+    kind: assetFileExtension(file.name, file.type),
+    name: sanitizeUploadFileName(uploadFileBaseName(file.name)),
   };
 }
 function createUploadBatchState(): Model.AssetUploadBatchState {
@@ -40,15 +40,15 @@ function resolveAssetUploadRoute(
   file: Editor.AssetUploadApi | null,
 ): Editor.AssetUploadRoute {
   let value = options.catalogue?.() ?? EMPTY_STORAGE_CATALOG,
-    value2 = (0, getAssetsCatalogState)(),
+    value2 = getAssetsCatalogState(),
     value3 =
       value2.state === "listed"
         ? value2.usage.bytes
-        : (0, uniqueStoredBlobBytes)(value),
+        : uniqueStoredBlobBytes(value),
     value4 =
       value2.state === "listed"
         ? value2.usage.files
-        : (0, uniqueStoredBlobCount)(value),
+        : uniqueStoredBlobCount(value),
     value5 =
       value2.state === "listed"
         ? {
@@ -58,7 +58,7 @@ function resolveAssetUploadRoute(
         : {};
   return {
     room: options.room?.() ?? Number.POSITIVE_INFINITY,
-    tier: file === null ? "off" : (0, getAssetsTierState)().state,
+    tier: file === null ? "off" : getAssetsTierState().state,
     blobUsed: value3,
     blobCount: value4,
     ...value5,
@@ -69,8 +69,7 @@ function resolveAssetStorageApi(
   options: Editor.AssetFileUploadOptions,
 ): Promise<Editor.AssetUploadApi | null> {
   if (options.api === undefined) {
-    return (0,
-    resolveAssetsCapability)() as Promise<Editor.AssetUploadApi | null>;
+    return resolveAssetsCapability() as Promise<Editor.AssetUploadApi | null>;
   } else {
     return Promise.resolve(options.api);
   }
@@ -79,7 +78,7 @@ function readUploadedFileValue(
   file: Model.UploadedAssetFile,
   bytes: Uint8Array,
 ): Editor.UploadedFileValue {
-  if ((0, isTextFilePath)(file.name)) {
+  if (isTextFilePath(file.name)) {
     try {
       return {
         value: new TextDecoder("utf-8", {
@@ -99,7 +98,7 @@ function readUploadedFileValue(
         ? file.file.type
         : "application/octet-stream";
   return {
-    value: (0, bytesToFileDataUrl)(value, bytes),
+    value: bytesToFileDataUrl(value, bytes),
   };
 }
 function deduplicatedUploadedAsset(
@@ -107,8 +106,8 @@ function deduplicatedUploadedAsset(
   bytes: string,
   existingIds: ReadonlySet<string>,
 ): Editor.UploadedBlob | null {
-  let catalogue = (0, listedAssetIds)(),
-    existing = (0, findStoredBlobByDigest)(file, bytes, catalogue);
+  let catalogue = listedAssetIds(),
+    existing = findStoredBlobByDigest(file, bytes, catalogue);
   if (existing !== null && !existingIds.has(existing.id)) {
     return {
       ...existing,
@@ -118,7 +117,7 @@ function deduplicatedUploadedAsset(
   if (catalogue === null) {
     return null;
   }
-  let value = (0, getRecentOrphanedAssets)().find(
+  let value = getRecentOrphanedAssets().find(
     (input: Storage.OrphanedAsset & { sha256?: string }) =>
       input.sha256 === bytes &&
       catalogue.has(input.id) &&
@@ -160,7 +159,7 @@ function commitUploadedAsset(
   return {
     ok: true,
     fileName: uploaded.name,
-    value: (0, blobPointer)(result.id),
+    value: blobPointer(result.id),
     tier: "blob",
     record: record,
     deduped: true,
@@ -183,7 +182,7 @@ async function uploadAssetFile(
     };
   }
   let value = progress.batch ?? createUploadBatchState(),
-    value2 = (0, canUseStoragePointer)(uploaded.name)
+    value2 = canUseStoragePointer(uploaded.name)
       ? await resolveAssetStorageApi(options)
       : null,
     value3 = resolveAssetUploadRoute(options, value2),
@@ -194,7 +193,7 @@ async function uploadAssetFile(
       size: uploaded.file.size,
       font: fontUpload,
     },
-    value5 = (0, chooseFileStorageRoute)(
+    value5 = chooseFileStorageRoute(
       state,
       value.rateLimited
         ? {
@@ -204,8 +203,8 @@ async function uploadAssetFile(
         : value3,
     ),
     value6 =
-      value5.to !== "blob" && (0, canUseStoragePointer)(uploaded.name)
-        ? (0, chooseFileStorageRoute)(state, {
+      value5.to !== "blob" && canUseStoragePointer(uploaded.name)
+        ? chooseFileStorageRoute(state, {
             ...value3,
             blobUsed: 0,
             blobCount: 0,
@@ -214,7 +213,7 @@ async function uploadAssetFile(
   if (value6 !== null && value6.to === "blob") {
     let value15 = deduplicatedUploadedAsset(
       value3.cat,
-      await (0, sha256Hex)(
+      await sha256Hex(
         new Uint8Array(await uploaded.file.arrayBuffer()),
       ),
       value4,
@@ -226,7 +225,7 @@ async function uploadAssetFile(
   if (value5.to === "refuse") {
     if (
       value.rateLimited &&
-      (0, chooseFileStorageRoute)(state, value3).to === "blob"
+      chooseFileStorageRoute(state, value3).to === "blob"
     ) {
       return {
         ok: false,
@@ -238,7 +237,7 @@ async function uploadAssetFile(
   }
   let value7 = new Uint8Array(await uploaded.file.arrayBuffer()),
     value8 = (() => {
-      let value15 = (0, classifyAssetUpload)(
+      let value15 = classifyAssetUpload(
         "",
         uploaded.kind,
         uploaded.file.size,
@@ -258,14 +257,14 @@ async function uploadAssetFile(
         };
       }
       if (
-        (0, estimateEmbeddedStringBytes)(value15.value) >
+        estimateEmbeddedStringBytes(value15.value) >
         (options.room?.() ?? Number.POSITIVE_INFINITY)
       ) {
         return {
           ok: false,
           reason:
             uiMessage("design-system.uploadPipeline.noRoomADesignSystem") +
-            (0, formatInlineBudgetBytes)(
+            formatInlineBudgetBytes(
               DESIGN_SYSTEM_INLINE_LIMITS.total,
             ) +
             " in the page — remove something first",
@@ -286,17 +285,17 @@ async function uploadAssetFile(
     };
   if (
     value5.to === "inline" ||
-    !(0, canUseStoragePointer)(uploaded.name)
+    !canUseStoragePointer(uploaded.name)
   ) {
     return callback(
       value.rateLimited &&
-        (0, chooseFileStorageRoute)(state, value3).to === "blob"
+        chooseFileStorageRoute(state, value3).to === "blob"
         ? uiMessage("design-system.uploadPipeline.storedInThePageInstead")
         : undefined,
     );
   }
   let value9 = options.now ?? (() => new Date().toISOString()),
-    value10 = await (0, sha256Hex)(value7),
+    value10 = await sha256Hex(value7),
     value11 = deduplicatedUploadedAsset(value3.cat, value10, value4);
   if (value11 !== null) {
     return commitUploadedAsset(uploaded, value11, value5.type, options);
@@ -319,7 +318,7 @@ async function uploadAssetFile(
         : new Blob([value7], {
             type: value5.type,
           }),
-    value13 = await (0, uploadAssetWithRetry)(
+    value13 = await uploadAssetWithRetry(
       value2,
       value12,
       value5.type,
@@ -347,8 +346,8 @@ async function uploadAssetFile(
       },
     );
   if (value13.ok) {
-    (0, setAssetsTierState)("on");
-    (0, rememberOrphanedAsset)({
+    setAssetsTierState("on");
+    rememberOrphanedAsset({
       id: value13.id,
       bytes: value13.bytes,
       path: uploaded.name,
@@ -372,20 +371,20 @@ async function uploadAssetFile(
     return {
       ok: true,
       fileName: uploaded.name,
-      value: (0, blobPointer)(value13.id),
+      value: blobPointer(value13.id),
       tier: "blob",
       record: state2,
     };
   }
   let type = value5.type;
-  value5 = (0, chooseFileStorageRoute)(state, {
+  value5 = chooseFileStorageRoute(state, {
     ...resolveAssetUploadRoute(options, value2),
     tier: "off",
   });
   if (value13.kind === "tier-off" || value13.kind === "not-granted") {
     let value15: string =
       value13.kind === "not-granted" ? "not_granted" : "disabled";
-    if ((0, setAssetsTierState)("off", value15)) {
+    if (setAssetsTierState("off", value15)) {
       options.onTierOff?.(value15);
     }
     if (value5.to === "refuse") {
@@ -406,7 +405,7 @@ async function uploadAssetFile(
             ")",
     );
   }
-  let value14 = (0, assetUploadFailureMessage)(
+  let value14 = assetUploadFailureMessage(
     value13.kind,
     value13.code,
     uploaded.file.size,
@@ -468,7 +467,7 @@ function commitUploadedAssetChange(
           continue;
         }
         let value4 =
-          (0, storagePointerForFile)(value2, value3) === null
+          storagePointerForFile(value2, value3) === null
             ? validateFile(value2, value3)
             : undefined;
         if (value4 === undefined) {
@@ -492,7 +491,7 @@ function describeUploadProblem({
     return uiMessage("design-system.uploadPipeline.canTBeSavedRight");
   }
   if (problem.cause === "kind") {
-    let value4 = (0, fileExtension)(path);
+    let value4 = fileExtension(path);
     if (value4 === "lottie") {
       return ".lottie files can’t be saved here: add the Lottie JSON instead";
     }
@@ -524,13 +523,13 @@ function describeUploadProblem({
   if (value3) {
     return uiMessage("design-system.uploadPipeline.renameTheFileWithoutOr");
   }
-  if ((0, hasDamagedUnicode)(value)) {
+  if (hasDamagedUnicode(value)) {
     return uiMessage("design-system.uploadPipeline.renameTheFileTheName");
   }
   if (value.endsWith(".cmekshadow")) {
     return uiMessage("design-system.uploadPipeline.thisKindOfFileCan");
   }
-  if ((0, hasDamagedUnicode)(value2)) {
+  if (hasDamagedUnicode(value2)) {
     return uiMessage("design-system.uploadPipeline.chooseASetOrFolder3");
   } else {
     return uiMessage("design-system.uploadPipeline.chooseAShorterSetOr");
@@ -550,23 +549,23 @@ async function uploadAssetFiles(
     },
     state = createUploadBatchState(),
     resolvedFiles = files.filter(
-      (input): boolean => !(0, isIgnoredUploadFile)(input),
+      (input): boolean => !isIgnoredUploadFile(input),
     ),
     index: number = 0;
   for (let value of resolvedFiles) {
     index++;
     let value2:Editor.UploadDestination =
         options !== undefined &&
-        !(0, isFontFile)(value.name, value.type)
+        !isFontFile(value.name, value.type)
           ? {
               to: "assets",
               group: options,
               subpath: "",
             }
-          : (0, assetUploadDestination)(
+          : assetUploadDestination(
               value.name,
               value.type,
-              (0, uploadedFileRelativePath)(value),
+              uploadedFileRelativePath(value),
             ),
       value3 = uploadedAssetFile(value);
     group.onProgress?.(
@@ -602,7 +601,7 @@ async function uploadAssetFiles(
             {
               fileName: value4.fileName,
               value: value4.value,
-              ...(0, inferFontMetadata)(value.name),
+              ...inferFontMetadata(value.name),
               ...(value4.record !== undefined
                 ? {
                     record: value4.record,
@@ -675,31 +674,31 @@ async function existingFontUploadFiles(
   let value = Object.entries(files).filter(
     ([input, input2]) =>
       input.startsWith(DESIGN_SYSTEM_PATHS.fontsDir) &&
-      (0, isFontFile)(input, "") &&
+      isFontFile(input, "") &&
       input2.startsWith("data:"),
   );
   if (value.length === 0) {
     return 0;
   }
   let value2 = await resolveAssetStorageApi(storage);
-  if (value2 === null || (0, getAssetsTierState)().state === "off") {
+  if (value2 === null || getAssetsTierState().state === "off") {
     return 0;
   }
   let value3 = createUploadBatchState(),
     index: number = 0;
   for (let [value4, [value5, value6]] of value.entries()) {
-    let value7 = (0, downloadDataUrlBytes)(value6);
+    let value7 = downloadDataUrlBytes(value6);
     if (value7 === null) {
       continue;
     }
     let value8 = value5.slice(DESIGN_SYSTEM_PATHS.fontsDir.length),
       value9 = new File([new Uint8Array(value7)], value8, {
-        type: (0, parseDataUriHeader)(value6)?.mime ?? "",
+        type: parseDataUriHeader(value6)?.mime ?? "",
       }),
       value10 = await uploadAssetFile(
         {
           file: value9,
-          kind: (0, assetFileExtension)(value8, value9.type),
+          kind: assetFileExtension(value8, value9.type),
           name: value8,
         },
         true,
@@ -885,7 +884,7 @@ function failedUploadSummary(
   if (result === "figma") {
     return (
       summarizeUploadItems(files, (input) =>
-        (0, truncateHandoffFileName)(input.name),
+        truncateHandoffFileName(input.name),
       ) +
       value2 +
       " — add the " +
@@ -896,7 +895,7 @@ function failedUploadSummary(
   if (result === "too-large") {
     return (
       summarizeUploadItems(files, (input) =>
-        (0, truncateHandoffFileName)(input.name),
+        truncateHandoffFileName(input.name),
       ) +
       value2 +
       " — " +
@@ -913,7 +912,7 @@ function failedUploadSummary(
         summarizeUploadItems(
           items,
           (input): string =>
-            (0, truncateHandoffFileName)(input.name) +
+            truncateHandoffFileName(input.name) +
             " (" +
             input.reason +
             ")",
@@ -949,7 +948,7 @@ function failedUploadSummary(
       .map(([input, items]) =>
         callback(
           summarizeUploadItems(items, (input2) =>
-            (0, truncateHandoffFileName)(input2.name),
+            truncateHandoffFileName(input2.name),
           ) +
             " (" +
             input +
@@ -972,7 +971,7 @@ function uploadFileBaseName(fileName: string): string {
   if (baseName !== "") {
     return baseName;
   } else {
-    return (0, assetNameFromFileName)(fileName);
+    return assetNameFromFileName(fileName);
   }
 }
 function pickUploadFiles(
@@ -1000,7 +999,7 @@ function pickUploadFiles(
       () =>
         callback(
           Array.from(value.files ?? []).filter(
-            (input2): boolean => !(0, isIgnoredUploadFile)(input2),
+            (input2): boolean => !isIgnoredUploadFile(input2),
           ),
         ),
       {

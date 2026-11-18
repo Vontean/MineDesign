@@ -91,8 +91,8 @@ function SheetCapablePopup({
   ) => React.ReactNode;
 }): React.ReactElement {
   useUiLocale();
-  let value = (0, useAvailableSheetParts)(),
-    { pending: value2 } = (0, useSheetState)();
+  let value = useAvailableSheetParts(),
+    { pending: value2 } = useSheetState();
   return value !== null ? (
     <value.SheetPopupHost>
       {(input: SheetRenderState) => children(input, value)}
@@ -137,7 +137,7 @@ function usePopoverInnerOverlays(
     innerOverlays: value,
     onOpenChange: (0, reactPopoverPopover.useCallback)(
       (input2, options) => {
-        (0, closeInnerOverlayOnEscape)(value, input2, options) ||
+        closeInnerOverlayOnEscape(value, input2, options) ||
           input?.(input2, options);
       },
       [value, input],
@@ -163,7 +163,7 @@ function hasPopoverInputAnchor(input: PopoverAnchorState): boolean {
     ? true
     : value === null
       ? false
-      : (0, isTextInputElement)(value) ||
+      : isTextInputElement(value) ||
         value.querySelector(
           'input:not([type=button],[type=checkbox],[type=radio],[type=range],[type=submit],[type=reset],[type=color],[type=file],[type=image],[type=hidden],[readonly]), textarea:not([readonly]), [contenteditable=""], [contenteditable="true"], [contenteditable="plaintext-only"]',
         ) !== null ||
@@ -178,9 +178,9 @@ function PopoverRoot<Payload = void>({
 }: PopoverRootProps<Payload>): React.ReactElement {
   useUiLocale();
   let value = usePopoverInnerOverlays(onOpenChange),
-    value2 = (0, useSheetInteractionMode)(),
+    value2 = useSheetInteractionMode(),
     value3 = (0, reactPopoverPopover.useRef)<OverlayActions | null>(null);
-  (0, useOverlayImperativeHandle)(value3, actionsRef);
+  useOverlayImperativeHandle(value3, actionsRef);
   return (
     <PopoverPopoverContext_2.Provider value={value.innerOverlays}>
       <ActivityBoundary actionsRef={value3}>
@@ -209,7 +209,7 @@ function usePopoverRoot<Payload = void>({
 }: PopoverRootProps<Payload> & {
   consumerHandlesOpenChange: boolean;
 }): React.ReactElement {
-  let value = (0, useOverlayOpenState)(props),
+  let value = useOverlayOpenState(props),
     value2: React.RefObject<PopoverAnchorState> = (0,
     reactPopoverPopover.useRef)({
       popupMounted: false,
@@ -226,7 +226,7 @@ function usePopoverRoot<Payload = void>({
       }),
       [],
     ),
-    value4 = (0, useOpenSnapshot)(
+    value4 = useOpenSnapshot(
       value.open,
       () => {
         let value6 = value3.read();
@@ -234,7 +234,7 @@ function usePopoverRoot<Payload = void>({
       },
       false,
     ),
-    value5 = (0, useSheetPopup)({
+    value5 = useSheetPopup({
       open: value.open,
       actionsRef: props.actionsRef,
       onOpenChange: value.onOpenChange,
@@ -287,47 +287,47 @@ export {
 };
 export function installCdsPopoverPopover(): () => void {
   return () => {
-    initializePopoverPopover = (0, initializeOnce)(() => {
+    initializePopoverPopover = initializeOnce(() => {
       "use client";
 
-      (0, initializeSheetsPopupStack)();
-      (0, initializeOverlaysBackdrop)();
-      jsxPopoverPopover = (0, toModuleNamespace)(
-        (0, load_react_jsx_runtime)(),
+      initializeSheetsPopupStack();
+      initializeOverlaysBackdrop();
+      jsxPopoverPopover = toModuleNamespace(
+        load_react_jsx_runtime(),
       );
     });
-    initializePopoverPopover_2 = (0, initializeOnce)(() => {
+    initializePopoverPopover_2 = initializeOnce(() => {
       "use client";
 
-      (0, initializeHooksLayoutEffect)();
-      (0, initializeClassNames)();
-      (0, initializeCdsRoot)();
-      (0, initializeHooksStableCallback)();
-      (0, initializeOverlaysLayers)();
-      (0, initializeOverlayAttributes)();
-      (0, initializeDomRefComposition_3)();
-      (0, initializeDomRefComposition)();
-      (0, initializePlatformRootFontSize_2)();
-      (0, initializeThemeSurfaces)();
-      (0, initializeOverlaysImperativeHandle)();
-      (0, initializeSheetsKeyboardViewport)();
-      (0, initializeSheetsLayout)();
-      (0, initializeSheetsPresentation)();
-      (0, initializeSheetsPopupStack)();
-      (0, initializePlatformReducedMotion_2)();
-      (0, initializeOverlaysBackdrop)();
+      initializeHooksLayoutEffect();
+      initializeClassNames();
+      initializeCdsRoot();
+      initializeHooksStableCallback();
+      initializeOverlaysLayers();
+      initializeOverlayAttributes();
+      initializeDomRefComposition_3();
+      initializeDomRefComposition();
+      initializePlatformRootFontSize_2();
+      initializeThemeSurfaces();
+      initializeOverlaysImperativeHandle();
+      initializeSheetsKeyboardViewport();
+      initializeSheetsLayout();
+      initializeSheetsPresentation();
+      initializeSheetsPopupStack();
+      initializePlatformReducedMotion_2();
+      initializeOverlaysBackdrop();
       initializePopoverPopover();
-      (0, initializeSheetsScrollArea_6)();
-      (0, initializeSheetsScrollArea_7)();
-      (0, initializeMenuPopup_3)();
-      reactPopoverPopover = (0, toModuleNamespace)(
-        (0, load_react)(),
+      initializeSheetsScrollArea_6();
+      initializeSheetsScrollArea_7();
+      initializeMenuPopup_3();
+      reactPopoverPopover = toModuleNamespace(
+        load_react(),
       );
-      jsxPopoverPopover_2 = (0, toModuleNamespace)(
-        (0, load_react_jsx_runtime)(),
+      jsxPopoverPopover_2 = toModuleNamespace(
+        load_react_jsx_runtime(),
       );
-      (0, initializeNpm__base_ui_react_pge)();
-      PopoverPopoverCss = `draggable-none max-w-[320px] max-h-[var(--available-height)] ${(0, popupSurfaceClassName)("popover")} cds-reset text-body font-normal text-primary outline-none focus-visible:outline-hidden`;
+      initializeNpm__base_ui_react_pge();
+      PopoverPopoverCss = `draggable-none max-w-[320px] max-h-[var(--available-height)] ${popupSurfaceClassName("popover")} cds-reset text-body font-normal text-primary outline-none focus-visible:outline-hidden`;
       popoverPopupClassNames =
         "[display:inherit] [flex-direction:inherit] [flex-wrap:inherit] [align-items:inherit] [justify-content:inherit] [justify-items:inherit] [gap:inherit] [grid-template-columns:inherit] [grid-template-rows:inherit] [grid-auto-flow:inherit] [grid-auto-columns:inherit] [grid-auto-rows:inherit] col-span-full row-span-full self-stretch justify-self-stretch max-h-[inherit] min-h-0 min-w-0 flex-auto overflow-y-auto rounded-[inherit] outline-none focus-visible:outline-hidden";
       PopoverPopoverNoneXsSmConfig = {
@@ -358,12 +358,12 @@ export function installCdsPopoverPopover(): () => void {
               (0, reactPopoverPopover.useContext)(SheetPopupContext)
                 ?.open ?? true,
             value2 = anchored && finalFocus === undefined,
-            value3 = (0, useOpenerReturn)({
+            value3 = useOpenerReturn({
               skipRestoreOnOutsideFocus: true,
               open: value,
               registerOpenerReturn: value2,
             }),
-            value4 = (0, useMergedRefs)(options, value3.popupRef);
+            value4 = useMergedRefs(options, value3.popupRef);
           return (
             <npm_Popover_$f.Popup
               data-cds={"Popover"}
@@ -404,7 +404,7 @@ export function installCdsPopoverPopover(): () => void {
             scrollFade: scrollFade,
             ...props,
           };
-          return (0, isInsideSheetPopup)() ? (
+          return isInsideSheetPopup() ? (
             <PopoverSheetCapablePopup {...state} ref={options} />
           ) : (
             <PopoverPopupView
@@ -477,7 +477,7 @@ export function installCdsPopoverPopover(): () => void {
           ),
           value20 = (value19?.open ?? false) && value19?.height !== undefined,
           value21 = value19?.setDetent;
-        (0, useIsomorphicLayoutEffect)(() => {
+        useIsomorphicLayoutEffect(() => {
           let current = value18.current;
           sheet &&
             value20 &&
@@ -493,11 +493,11 @@ export function installCdsPopoverPopover(): () => void {
           value23 = (0, reactPopoverPopover.useContext)(PopoverPopoverContext),
           value24 = value11.initialFocus === false,
           callback: React.MouseEventHandler<HTMLDivElement> = (event) => {
-            let value32 = (0, asElement)(event.target);
+            let value32 = asElement(event.target);
             !value17 ||
               value32 === null ||
               !event.currentTarget.contains(value32) ||
-              (0, isInteractivePressTarget)(event, {
+              isInteractivePressTarget(event, {
                 draggable: true,
               }) ||
               event.preventDefault();
@@ -505,7 +505,7 @@ export function installCdsPopoverPopover(): () => void {
           value25 = (0, reactPopoverPopover.useContext)(
             PopoverPopoverContext_2,
           );
-        (0, useIsomorphicLayoutEffect)(() => {
+        useIsomorphicLayoutEffect(() => {
           if (value23 !== null) {
             value23.update({
               popupMounted: true,
@@ -519,15 +519,15 @@ export function installCdsPopoverPopover(): () => void {
             };
           }
         }, [value23, value24, value2]);
-        let value26 = (0, useRestoreFocusOnClose)(
+        let value26 = useRestoreFocusOnClose(
             sheetPopup.concealed && !value24,
           ),
-          value27 = (0, useMergedRefs)(
+          value27 = useMergedRefs(
             options,
             sheetPopup.ref,
             value26,
           ),
-          value28 = (0, useLayer)("popover", value4);
+          value28 = useLayer("popover", value4);
         usePopoverAnimation(
           value7,
           (
@@ -547,7 +547,7 @@ export function installCdsPopoverPopover(): () => void {
           );
         return (
           <npm_Popover_$f.Portal
-            container={(0, useOverlayRoot)()}
+            container={useOverlayRoot()}
           >
             <PopupSurface
               {...value28.portalProps}
@@ -674,7 +674,7 @@ export function installCdsPopoverPopover(): () => void {
                           preventScroll: true,
                         });
                     }}
-                    className={(0, cn)(
+                    className={cn(
                       PopoverPopoverCss,
                       sheet && PlatformReducedMotionCss_2,
                       sheet &&
@@ -689,7 +689,7 @@ export function installCdsPopoverPopover(): () => void {
                         sheetPopup={sheetPopup}
                         className={value7}
                         bodyRef={value18}
-                        bodyClassName={(0, cn)(
+                        bodyClassName={cn(
                           popoverPopupClassNames,
                           value16 && "scroll-fade-y",
                           PopoverPopoverNoneXsSmConfig[value15],
@@ -705,7 +705,7 @@ export function installCdsPopoverPopover(): () => void {
                           {...{
                             [sheetScrollAttribute]: "",
                           }}
-                          className={(0, cn)(
+                          className={cn(
                             popoverPopupClassNames,
                             value16 && "scroll-fade-y",
                             PopoverPopoverNoneXsSmConfig[value15],
@@ -744,7 +744,7 @@ export function installCdsPopoverPopover(): () => void {
             },
             [value],
           ),
-          value3 = (0, useMergedRefs)(options, value2);
+          value3 = useMergedRefs(options, value2);
         return <npm_Popover_$f.Trigger {...input} ref={value3} />;
       });
       PopoverTrigger.displayName = "Popover.Trigger";

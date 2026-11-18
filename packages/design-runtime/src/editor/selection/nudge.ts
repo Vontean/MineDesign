@@ -71,7 +71,7 @@ function ancestorTransformScale(input?: Dynamic, options?: Dynamic): Dynamic {
       items2 *= Math.sign(value3[3]);
       continue;
     }
-    let value4: Dynamic = (0, parseCssTransform)(value2),
+    let value4: Dynamic = parseCssTransform(value2),
       value5: Dynamic = value4
         ? value4.rotate.value *
           (SelectionNudgeDegRadTurnConfig[

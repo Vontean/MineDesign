@@ -55,7 +55,7 @@ export {
 };
 export function installCdsThemeSurfaces(): () => void {
   return () => {
-    initializeThemeSurfaces = (0, initializeOnce)(() => {
+    initializeThemeSurfaces = initializeOnce(() => {
       surfaceBackgroundTokens = {
         panel: "surface-2",
         popover: "surface-3",

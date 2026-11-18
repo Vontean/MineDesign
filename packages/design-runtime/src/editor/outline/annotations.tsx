@@ -21,17 +21,17 @@ var OutlineAnnotationsResolvedValue: Dynamic;
 function annotationFirstTextLine(source?: Dynamic): Dynamic {
   if (source.kind === "title1")
     return (
-      (0, NotesDomHandler_2)(source.text).trim().split(`
+      NotesDomHandler_2(source.text).trim().split(`
 `)[0] ?? ""
     );
-  let value: Dynamic = (0, parseNoteBlocks)(source.text.trim())[0],
+  let value: Dynamic = parseNoteBlocks(source.text.trim())[0],
     value2: Dynamic =
       value == null
         ? ""
         : value.kind === "p"
           ? value.text
           : (value.items[0] ?? "");
-  return (0, parseNoteInlineMarkdown)(value2, {
+  return parseNoteInlineMarkdown(value2, {
     escapes: true,
     literalUnsafeLinks: true,
   })
@@ -40,7 +40,7 @@ function annotationFirstTextLine(source?: Dynamic): Dynamic {
 }
 function annotationOutlineDetail(source?: Dynamic): Dynamic {
   if (source.kind === "image") {
-    let value2: Dynamic = (0, OutlineNativeMenuReplace)(
+    let value2: Dynamic = OutlineNativeMenuReplace(
       source.alt ?? "",
     );
     return value2
@@ -58,7 +58,7 @@ function annotationOutlineDetail(source?: Dynamic): Dynamic {
   let value: Dynamic = annotationFirstTextLine(source).trim();
   return value
     ? {
-        detail: `\u201C${(0, OutlineNativeMenuSlice)(value)}\u201D`,
+        detail: `\u201C${OutlineNativeMenuSlice(value)}\u201D`,
       }
     : {};
 }
@@ -130,11 +130,11 @@ export function installEditorOutlineAnnotations(): () => void {
     OutlineAnnotationsLabel = uiMessage("inspector.annotations.selectAnElementFirst");
     ADrawnLineOrPathCannotMessage =
       uiMessage("inspector.annotations.aDrawnLineOrPath");
-    reactOutlineAnnotations = (0, toModuleNamespace)(
-      (0, load_react)(),
+    reactOutlineAnnotations = toModuleNamespace(
+      load_react(),
       1,
     );
-    (0, initializeNpm_usehooks_ts_p0)();
+    initializeNpm_usehooks_ts_p0();
     OutlineAnnotationsIsWorkerConfig = {
       isWorker: false,
       emitOmEvent(input: Dynamic, options: Dynamic): Dynamic {

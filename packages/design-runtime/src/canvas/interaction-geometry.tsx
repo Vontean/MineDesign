@@ -52,7 +52,7 @@ function freehandDrawingAnnotation(
     value5 > 0 && Number.isFinite(value5) && value5 <= 16 * color;
     value5 *= 2
   ) {
-    let value6: Dynamic = (0, fitPenCurve)(
+    let value6: Dynamic = fitPenCurve(
       value.map(
         ([input, input2]: Dynamic): Dynamic => [
           input * value2,
@@ -67,9 +67,9 @@ function freehandDrawingAnnotation(
       (!closed && value6.length * 2 > PlatformFileContentLimit_7)
     )
       break;
-    let value7: Dynamic = (0, flattenCubicPath)(value6);
+    let value7: Dynamic = flattenCubicPath(value6);
     if (value7.length * 2 > PlatformFileContentLimit_7) continue;
-    let value8: Dynamic = (0, penPathBounds)(value7, 1);
+    let value8: Dynamic = penPathBounds(value7, 1);
     if (!closed) {
       if (value8.d.length > PlatformFileContentLimit_7) break;
       return callback(value8);
@@ -78,11 +78,11 @@ function freehandDrawingAnnotation(
       Math.max(value8.w, value8.h) /
       (PlatformFileContentLimit_6 - 0.5);
     value9 > 1 &&
-      (value8 = (0, penPathBounds)(
+      (value8 = penPathBounds(
         value7.map((input?: Dynamic): Dynamic => input / value9),
         1,
       ));
-    if ((0, PlatformFileContentTrim_2)(value8.d) !== null)
+    if (PlatformFileContentTrim_2(value8.d) !== null)
       return callback(value8);
   }
   let value3: Dynamic = Math.max(1, Math.ceil(points.length / 1500)),
@@ -164,8 +164,8 @@ export {
 };
 export function installCanvasInteractionGeometry(): () => void {
   return () => {
-    jsx_Nn = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    jsx_Nn = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
     freehandSimplifyTolerance = 1.25;

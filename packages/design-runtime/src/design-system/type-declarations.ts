@@ -88,7 +88,7 @@ function loadTypeDeclarationFiles(
   context?: Dynamic,
   value?: Dynamic,
 ): Dynamic {
-  (0, loadReferencedFiles)(options, context).then(
+  loadReferencedFiles(options, context).then(
     (input2?: Dynamic): Dynamic => {
       if (DesignSystemTypeDeclarationsAlias !== input) return;
       let value2: Dynamic = Object.entries(input2.files).filter(
@@ -146,7 +146,7 @@ function setPublishedFileReferences(
   options: Dynamic = sameOriginFileFetcher(),
 ): Dynamic {
   pendingFileOverlay = true;
-  let value: Dynamic = (0, parseFontFileReferences)(input);
+  let value: Dynamic = parseFontFileReferences(input);
   set_PlatformExternalFilesResolvedValue(typeof input == "object" && input !== null
       ? Object.keys(input)
           .filter(
@@ -160,7 +160,7 @@ function setPublishedFileReferences(
       : []);
   set_PlatformExternalFilesResolvedValue_2(value.types ?? []);
   setDeclarationReferences(
-    (0, getTypeDeclarationReferences)(),
+    getTypeDeclarationReferences(),
     options,
   );
   value.dropped !== undefined &&
@@ -180,7 +180,7 @@ function setInstanceFileReferences(
   input?: Dynamic,
   options: Dynamic = sameOriginFileFetcher(),
 ): Dynamic {
-  set_parseFileReferencesValue((0, parseFileReferences)(input));
+  set_parseFileReferencesValue(parseFileReferences(input));
   loadInstanceFileReferences(options);
   retryTypeDeclarationFiles();
 }
@@ -261,7 +261,7 @@ function loadDesignSystemFileOverlay(
   extra?: Dynamic,
   detail?: Dynamic,
 ): Dynamic {
-  (0, loadReferencedFiles)(context, detail, extra).then(
+  loadReferencedFiles(context, detail, extra).then(
     (input2?: Dynamic): Dynamic => {
       if (DesignSystemPublishedFilesAlias !== input) return;
       let values: Dynamic = new Set(
@@ -406,7 +406,7 @@ function setArtboardHtmlReferences(
 ): Dynamic {
   let entries: Dynamic = new Map();
   for (let [value, value2] of input as Dynamic)
-    (0, isBlobAssetUrl)(value2.ref) &&
+    isBlobAssetUrl(value2.ref) &&
       (DesignSystemTypeDeclarationsCache_4.set(value, {
         ref: DesignSystemTypeDeclarationsReplace(value2.ref),
         bytes: value2.bytes,
@@ -551,7 +551,7 @@ async function publishHtmlReference(input?: Dynamic): Promise<Dynamic> {
   }
   DesignSystemTypeDeclarationsSubscribers_5.add(input);
   try {
-    let value3: Dynamic = await (0, getAssetsCapability)();
+    let value3: Dynamic = await getAssetsCapability();
     DesignSystemTypeDeclarationsResolvedValue_5 =
       value3 === null || typeof value3.upload != "function";
     if (value3 === null || typeof value3.upload != "function")
@@ -569,12 +569,12 @@ async function publishHtmlReference(input?: Dynamic): Promise<Dynamic> {
       ),
       value5: Dynamic =
         typeof value4?.url == "string" &&
-        (0, isBlobAssetUrl)(value4.url)
+        isBlobAssetUrl(value4.url)
           ? value4.url
           : typeof value4?.id == "string"
             ? "_blob/" + value4.id
             : undefined;
-    if (value5 === undefined || !(0, isBlobAssetUrl)(value5))
+    if (value5 === undefined || !isBlobAssetUrl(value5))
       throw new Error("upload returned no usable reference");
     cacheReferencedHtml(value5, entry);
     DesignSystemTypeDeclarationsAlias_3?.resync();
@@ -1000,7 +1000,7 @@ function typographyGroupLabels(input?: Dynamic, options?: Dynamic): Dynamic {
 function parseDesignSystemEntry(input?: Dynamic): Dynamic {
   if (typeof input != "object" || input === null) return;
   let value: Dynamic = input;
-  return (0, parseCompleteDesignSystem)(value.tokens, {
+  return parseCompleteDesignSystem(value.tokens, {
     title: boundedDesignSystemText(value.title, 80),
     url: boundedDesignSystemText(value.url, 2e3),
   });

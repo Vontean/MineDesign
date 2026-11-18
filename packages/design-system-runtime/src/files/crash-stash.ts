@@ -364,7 +364,7 @@ function createIndexedDbCrashStashKit(options: IndexedCrashStashOptions) {
 async function createCurrentArtifactCrashStash(
   scope = "",
 ): Promise<Files.FilesCrashStash | null> {
-  let value = (await (0, currentUserId)()) ?? "",
+  let value = (await currentUserId()) ?? "",
     value2 = createIndexedDbCrashStashKit({
       viewerId: value,
       artifactId:

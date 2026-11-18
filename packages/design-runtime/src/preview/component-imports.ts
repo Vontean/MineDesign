@@ -133,7 +133,7 @@ function getProjectFileDependencies(
       decodeHtmlAttributeEntities(value3.value) + ".dc.html";
     values.add(
       context
-        ? ((0, resolveProjectAssetPath)(value, value4) ?? value4)
+        ? (resolveProjectAssetPath(value, value4) ?? value4)
         : (value4.split("/").pop() ?? value4),
     );
   }
@@ -154,7 +154,7 @@ function getProjectFileDependencies(
 function getImportedArtboardNames(input?: Dynamic): Dynamic {
   let values: Dynamic = new Set();
   for (let value of scanComponentImports(
-    (0, maskHtmlRawContent)(input, {
+    maskHtmlRawContent(input, {
       bodies: "keep",
     }),
   ) as Dynamic) {
@@ -247,7 +247,7 @@ function getLinkedProjectFiles(input?: Dynamic, options?: Dynamic): Dynamic {
   for (let value2 of options as Dynamic)
     values.add(value2.split("/").pop() ?? value2);
   let values2: Dynamic = new Set(),
-    value: Dynamic = (0, maskHtmlRawContent)(input, {
+    value: Dynamic = maskHtmlRawContent(input, {
       bodies: "keep",
     });
   for (let value2 of value.matchAll(

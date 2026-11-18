@@ -55,7 +55,7 @@ function tabListCanShrink(input?: Dynamic, options?: Dynamic): Dynamic {
     if (
       value === options ||
       value.contains(options) ||
-      !(0, isHtmlElement)(value) ||
+      !isHtmlElement(value) ||
       value.getAttribute("data-cds-part") === "tabs-menu-trigger"
     )
       continue;
@@ -81,12 +81,12 @@ function useResponsiveTabList(
     value6: Dynamic = (0, reactTabsTabs.useRef)(NaN),
     value7: Dynamic = (0, reactTabsTabs.useRef)(context),
     value8: Dynamic = (0, reactTabsTabs.useRef)(value);
-  (0, useIsomorphicLayoutEffect)((): Dynamic => {
+  useIsomorphicLayoutEffect((): Dynamic => {
     let current: Dynamic = input.current,
       value9: Dynamic = current?.closest('[data-cds="Tabs"]') ?? null,
       value10: Dynamic = value9?.parentElement ?? null;
     if (current === null || value9 === null || value10 === null) return;
-    let value11: Dynamic = (0, getResizeObserver)(value10);
+    let value11: Dynamic = getResizeObserver(value10);
     if (value11 === undefined) return;
     let value12: Dynamic =
       value7.current !== context || value8.current !== value;
@@ -119,15 +119,15 @@ function useResponsiveTabList(
         value9.getAttribute("data-orientation") === "vertical" ||
         tabListCanShrink(value9, current) ||
         hasHorizontalScrollAncestor(current, value9) ||
-        !(0, isSingleRowFlex)(value10),
+        !isSingleRowFlex(value10),
       callback3: Dynamic = (input2?: Dynamic): Dynamic => {
         if (callback2()) {
           value2 && value3(false);
           return;
         }
-        let value17: Dynamic = (0, elementInnerWidth)(value10);
+        let value17: Dynamic = elementInnerWidth(value10);
         if (value17 <= 0) return;
-        let value18: Dynamic = (0, flexContentBounds)(current);
+        let value18: Dynamic = flexContentBounds(current);
         if (value18 <= 0) return;
         let value19: Dynamic = getComputedStyle(current),
           value20: Dynamic = getComputedStyle(value9),
@@ -139,7 +139,7 @@ function useResponsiveTabList(
             (Number.parseFloat(value20.paddingRight) || 0) +
             (Number.parseFloat(value20.borderLeftWidth) || 0) +
             (Number.parseFloat(value20.borderRightWidth) || 0),
-          value22: Dynamic = (0, flexRowWidth)(
+          value22: Dynamic = flexRowWidth(
             value10,
             value9,
             value21,
@@ -208,28 +208,28 @@ export {
 };
 export function installCdsTabsTabs(): () => void {
   return () => {
-    initializeTabsTabs = (0, initializeOnce)((): Dynamic => {
+    initializeTabsTabs = initializeOnce((): Dynamic => {
       "use client";
 
-      (0, initializeHooksLayoutEffect)();
-      (0, initializeClassNames)();
-      (0, initializeCdsRoot)();
-      (0, initializeDomSelectionPrevention)();
-      (0, initializeDomRefComposition_2)();
-      (0, initializeDomRefComposition)();
-      (0, initializeTooltipTrigger_2)();
-      (0, initializeTooltipDisabledReason)();
-      (0, initializeTooltipTooltip)();
-      (0, initializeButtonContext)();
-      (0, initializeDomInert)();
-      (0, initializeButtonGroup_3)();
-      (0, initializeSwitchContext_2)();
-      (0, initializeTabsListMenu)();
-      reactTabsTabs = (0, toModuleNamespace)((0, load_react)());
-      jsxTabsTabs = (0, toModuleNamespace)(
-        (0, load_react_jsx_runtime)(),
+      initializeHooksLayoutEffect();
+      initializeClassNames();
+      initializeCdsRoot();
+      initializeDomSelectionPrevention();
+      initializeDomRefComposition_2();
+      initializeDomRefComposition();
+      initializeTooltipTrigger_2();
+      initializeTooltipDisabledReason();
+      initializeTooltipTooltip();
+      initializeButtonContext();
+      initializeDomInert();
+      initializeButtonGroup_3();
+      initializeSwitchContext_2();
+      initializeTabsListMenu();
+      reactTabsTabs = toModuleNamespace(load_react());
+      jsxTabsTabs = toModuleNamespace(
+        load_react_jsx_runtime(),
       );
-      (0, initializeNpm__base_ui_react_oQe)();
+      initializeNpm__base_ui_react_oQe();
       TabsTabsClassNames = "flex items-center font-sans";
       DataOrientationHorizontalRoleTabFirstChildBefValue =
         "data-[orientation=horizontal]:[&>[role=tab]:first-child]:before:start-0";
@@ -251,22 +251,22 @@ export function installCdsTabsTabs(): () => void {
           options?: Dynamic,
         ): Dynamic => {
           let value: Dynamic = (0, reactTabsTabs.useRef)(null),
-            value2: Dynamic = (0, useMergedRefs)(options, value),
-            value3: Dynamic = (0, useButtonGroup)(),
+            value2: Dynamic = useMergedRefs(options, value),
+            value3: Dynamic = useButtonGroup(),
             value4: Dynamic = useResponsiveTabList(
               value,
               props["aria-label"] ?? props["aria-labelledby"],
               value3.compact,
               value3.exactFit === true,
             ),
-            value5: Dynamic = (0, useFlipIndicatorContext)()
+            value5: Dynamic = useFlipIndicatorContext()
               ?.setCollapsed;
-          (0, useIsomorphicLayoutEffect)(
+          useIsomorphicLayoutEffect(
             (): Dynamic => (value5?.(value4), (): Dynamic => value5?.(false)),
             [value4, value5],
           );
           let value6: Dynamic = (0, reactTabsTabs.useRef)(false);
-          (0, useIsomorphicLayoutEffect)((): Dynamic => {
+          useIsomorphicLayoutEffect((): Dynamic => {
             !value4 &&
               value6.current &&
               ((value6.current = false),
@@ -280,14 +280,14 @@ export function installCdsTabsTabs(): () => void {
                 ref={value2}
                 activateOnFocus={activateOnFocus}
                 {...props}
-                {...(0, getSizeAttribute)(size)}
-                {...(0, getInertProps)(value4)}
+                {...getSizeAttribute(size)}
+                {...getInertProps(value4)}
                 {...(value4
                   ? {
                       [CdsStashedAttribute]: "",
                     }
                   : null)}
-                className={(0, cn)(
+                className={cn(
                   TabsTabsClassNames,
                   DataOrientationHorizontalRoleTabFirstChildBefValue,
                   DataOrientationHorizontalRoleTabLastChildBefoValue,
@@ -327,8 +327,8 @@ export function installCdsTabsTabs(): () => void {
           let value: Dynamic = (0, reactTabsTabs.useId)(),
             value2: Dynamic =
               !!props.disabled &&
-              (0, hasDisabledReason)(disabledReason),
-            value3: Dynamic = (0, useFlipIndicatorContext)()
+              hasDisabledReason(disabledReason),
+            value3: Dynamic = useFlipIndicatorContext()
               ?.registerTab,
             { value: value4 }: Dynamic = props,
             value5: Dynamic = (0, reactTabsTabs.useRef)(null),
@@ -339,7 +339,7 @@ export function installCdsTabsTabs(): () => void {
               },
               [value3, value4],
             ),
-            value7: Dynamic = (0, useMergedRefs)(options, value6),
+            value7: Dynamic = useMergedRefs(options, value6),
             value8: Dynamic = (
               <npm_Tabs_C1.Tab
                 ref={value7}
@@ -349,12 +349,12 @@ export function installCdsTabsTabs(): () => void {
                     ? [ariaDescribedby, value].filter(Boolean).join(" ")
                     : ariaDescribedby
                 }
-                className={(0, cn)(
+                className={cn(
                   tabsListClasses,
                   value2 ? DataDisabledPointerEventsAutoValue : undefined,
                   className,
                 )}
-                onMouseDown={(0, withSelectionPrevention)(
+                onMouseDown={withSelectionPrevention(
                   props.onMouseDown,
                 )}
               >
@@ -390,7 +390,7 @@ export function installCdsTabsTabs(): () => void {
           <npm_Tabs_C1.Panel
             ref={options}
             {...props}
-            className={(0, cn)(
+            className={cn(
               "cds-reset outline-none focus-visible:outline-hidden",
               className,
             )}
@@ -464,11 +464,11 @@ export function installCdsTabsTabs(): () => void {
                 className={
                   typeof className == "function"
                     ? (input2?: Dynamic): Dynamic =>
-                        (0, cn)(
+                        cn(
                           value12 && "min-w-0 max-w-full",
                           className(input2),
                         )
-                    : (0, cn)(
+                    : cn(
                         value12 && "min-w-0 max-w-full",
                         className,
                       )

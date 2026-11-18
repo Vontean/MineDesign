@@ -369,7 +369,7 @@ function createFrameHostBridge(input?: Dynamic): Dynamic {
                 value17 === true,
                 value18,
                 value17 === true && value19 === true,
-                (0, CanvasMeasurementsIsSafeInteger)(value20),
+                CanvasMeasurementsIsSafeInteger(value20),
                 value17 !== true &&
                   (value21 === "viewer" || value21 === "claude")
                   ? value21
@@ -657,10 +657,10 @@ export function installPlatformFrameHostBridge(): () => void {
     createFrameHostBridgeValue = null;
     PanelValue = "panel";
     PopoverValue = "popover";
-    reactPlatformFrameHostBridge = (0, toModuleNamespace)(
-      (0, load_react)(),
+    reactPlatformFrameHostBridge = toModuleNamespace(
+      load_react(),
       1,
     );
-    (0, initializeCdsIndex)();
+    initializeCdsIndex();
   };
 }

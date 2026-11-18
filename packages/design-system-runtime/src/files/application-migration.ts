@@ -42,15 +42,15 @@ async function runDesignSystemFilesMigration(
       }),
     );
   }
-  let files = (0, createBrowserFilesPort)({
+  let files = createBrowserFilesPort({
       canWrite: true,
     }),
-    store = (0, createLegacyDatabasePort)(storeHandle),
+    store = createLegacyDatabasePort(storeHandle),
     blobReadable: boolean = true,
     stop = (input: string | undefined, options: boolean = true): void => {
-      (0, skipMigrationForTab)();
+      skipMigrationForTab();
       if (options) {
-        (0, recordMigrationStoppedForChange)(
+        recordMigrationStoppedForChange(
           home === "file" &&
             singleFileMigrationBootHeld &&
             !blobReadable
@@ -70,7 +70,7 @@ async function runDesignSystemFilesMigration(
         return;
       }
       if (input !== undefined) {
-        (0, showEditorPromiseNotification)(input, null);
+        showEditorPromiseNotification(input, null);
       }
     },
     singleFile: Model.FileTextRead | undefined;
@@ -81,17 +81,17 @@ async function runDesignSystemFilesMigration(
       return;
     }
     changeKey = "file:" + singleFile.sha256;
-    if ((0, migrationStoppedForChange)(changeKey)) {
+    if (migrationStoppedForChange(changeKey)) {
       return;
     }
   }
   let preflight =
     singleFile !== undefined
-      ? await (0, preflightSingleFileMigration)({
+      ? await preflightSingleFileMigration({
           files: files,
           text: singleFile.text,
         })
-      : await (0, preflightLegacyStoreMigration)({
+      : await preflightLegacyStoreMigration({
           files: files,
           store: store,
         });
@@ -103,7 +103,7 @@ async function runDesignSystemFilesMigration(
   }
   if (preflight !== null) {
     if (preflight !== "too_large") {
-      (0, reportMigrationFailure)({
+      reportMigrationFailure({
         result: "aborted",
         stage: "preflight",
         code: "unpublishable_file",
@@ -113,7 +113,7 @@ async function runDesignSystemFilesMigration(
     return stop(
       preflight === "too_large"
         ? MIGRATION_TOO_LARGE_MESSAGE
-        : (0, unpublishableMigrationFilesMessage)(
+        : unpublishableMigrationFilesMessage(
             preflight.unpublishable.map(
               (input: { path: string }) => input.path,
             ),
@@ -121,8 +121,8 @@ async function runDesignSystemFilesMigration(
       true,
     );
   }
-  (0, takeUnpublishableMigrationPaths)();
-  let trackedFiles = (0, trackMigrationDownloadFailures)(files),
+  takeUnpublishableMigrationPaths();
+  let trackedFiles = trackMigrationDownloadFailures(files),
     outcome = await (
       home === "file"
         ? migrateSingleFileDesignSystem
@@ -132,17 +132,17 @@ async function runDesignSystemFilesMigration(
       store: store,
       holder:
         home === "file"
-          ? (0, singleFileMigrationHolder)()
-          : (0, migrationTabHolder)(),
-      by: (await (0, currentUserId)()) ?? "someone",
+          ? singleFileMigrationHolder()
+          : migrationTabHolder(),
+      by: (await currentUserId()) ?? "someone",
       timers: designSystemMigrationTimers,
       fetchBlob: readMigrationArtifactBlob,
       artifactId: location.host,
       onStage: (input: string) =>
         console.info("[design-system] move to files: " + input),
     });
-  (0, reportMigrationFailure)(outcome);
-  let nextAction = (0, designSystemMigrationNextAction)(outcome);
+  reportMigrationFailure(outcome);
+  let nextAction = designSystemMigrationNextAction(outcome);
   console.info("[design-system] move to files ended: " + nextAction.why);
   if (home === "file" && outcome.result === "busy") {
     set_singleFileMigrationBootExit({
@@ -152,18 +152,18 @@ async function runDesignSystemFilesMigration(
   if (nextAction.next === "wait") {
     return;
   }
-  let indexRead = await (0, readJsonFileState)(
+  let indexRead = await readJsonFileState(
       files,
       FILES_INDEX_PROJECT_PATH,
     ),
     marked =
       indexRead.state === "read" &&
-      (0, hasFilesMigrationMarker)(
-        (0, parseFilesIndex)(indexRead.text),
+      hasFilesMigrationMarker(
+        parseFilesIndex(indexRead.text),
       );
   if (home === "file") {
     set_singleFileMigrationBootExit({
-      end: (0, singleFileMigrationExit)(
+      end: singleFileMigrationExit(
         outcome,
         marked
           ? "marked"
@@ -173,16 +173,16 @@ async function runDesignSystemFilesMigration(
       ),
     });
     if (marked) {
-      (0, recordMarkedIndexSeen)();
-      return (0, reopenAfterFilesMigration)("moved_to_files");
+      recordMarkedIndexSeen();
+      return reopenAfterFilesMigration("moved_to_files");
     }
   }
   if (marked) {
-    if ((0, markedIndexSeenBefore)()) {
+    if (markedIndexSeenBefore()) {
       return stop(undefined, false);
     }
-    if ((0, recordMarkedIndexSeen)()) {
-      return (0, reopenAfterFilesMigration)("moved_to_files");
+    if (recordMarkedIndexSeen()) {
+      return reopenAfterFilesMigration("moved_to_files");
     }
   }
   if (nextAction.again === true) {
@@ -204,7 +204,7 @@ async function runDesignSystemFilesMigration(
     trackedFiles.downloadsRefused().length > 0
   ) {
     return stop(
-      (0, temporarilyUnsavableMigrationFilesMessage)(
+      temporarilyUnsavableMigrationFilesMessage(
         trackedFiles.downloadsRefused(),
       ),
       false,
@@ -215,8 +215,8 @@ async function runDesignSystemFilesMigration(
       (code === "blob_unreadable"
         ? get_MIGRATION_UNREADABLE_FILE_MESSAGE()
         : code === "unpublishable_file"
-          ? (0, unpublishableMigrationFilesMessage)(
-              (0, takeUnpublishableMigrationPaths)(),
+          ? unpublishableMigrationFilesMessage(
+              takeUnpublishableMigrationPaths(),
             )
           : undefined),
     TERMINAL_MIGRATION_ERROR_CODES.has(code) && !failedBeforePublish,

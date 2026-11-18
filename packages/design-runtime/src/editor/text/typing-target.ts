@@ -10,7 +10,7 @@ function hasBlockingEditorOverlay(): Dynamic {
   for (let value of (document as Dynamic).querySelectorAll(
     blockingOverlaySelectorAlias,
   ) as Dynamic)
-    if (!(0, isClosedOverlay)(value)) return true;
+    if (!isClosedOverlay(value)) return true;
   return false;
 }
 function hasHeldUndoOverlay(element: Dynamic = document): Dynamic {
@@ -33,7 +33,7 @@ function isCanvasTypingTarget(input?: Dynamic): Dynamic {
     )
       return true;
   }
-  if (!(0, isUndoBlockedByOverlay)()) return false;
+  if (!isUndoBlockedByOverlay()) return false;
   if (hasHeldUndoOverlay()) return true;
   for (let value of (document as Dynamic).querySelectorAll(
     blockingOverlaySelectorAlias,
@@ -43,7 +43,7 @@ function isCanvasTypingTarget(input?: Dynamic): Dynamic {
         value.matches("[data-tweak-popup]") ||
         value.querySelector("[data-tweak-popup]") != null
       ) &&
-      !(0, isClosedOverlay)(value)
+      !isClosedOverlay(value)
     )
       return true;
   return false;

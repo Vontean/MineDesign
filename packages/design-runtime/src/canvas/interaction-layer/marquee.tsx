@@ -101,7 +101,7 @@ export function beginCanvasMarquee(deps: { readonly callback16: Dynamic; readonl
                       input3.file === options2.origin.file,
                   );
           for (let value262 of value260 as Dynamic) {
-            if (!(0, inclusiveRectIntersects)(input2, value262)) {
+            if (!inclusiveRectIntersects(input2, value262)) {
               entries2.delete(value262.file);
               entries3.delete(value262.file);
               entries4.delete(value262.file);
@@ -138,7 +138,7 @@ export function beginCanvasMarquee(deps: { readonly callback16: Dynamic; readonl
             entry2 &&
               entry2.length > 0 &&
               entries5.set(value262.file, {
-                name: (0, SelectionActionsReplace)(value262.file),
+                name: SelectionActionsReplace(value262.file),
                 tids: entry2,
               });
           }
@@ -146,7 +146,7 @@ export function beginCanvasMarquee(deps: { readonly callback16: Dynamic; readonl
               deps.value19.current && options2.origin.kind === "canvas"
                 ? (current3.annotations ?? [])
                 : [],
-            notes: Dynamic = (0, objectsWithinCanvasMarquee)(
+            notes: Dynamic = objectsWithinCanvasMarquee(
               {
                 artboards: [],
                 annotations: value261,
@@ -220,7 +220,7 @@ export function beginCanvasMarquee(deps: { readonly callback16: Dynamic; readonl
             w: value259.w * entry2.scale,
             h: value259.h * entry2.scale,
           };
-          (0, applyElementRectStyle)(
+          applyElementRectStyle(
             deps.value89.current,
             deps.value88.current,
           );

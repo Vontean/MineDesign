@@ -14,10 +14,10 @@ function PropertyGridColumnsRow({
   shell: shell,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic = (0, parseEqualGridColumns)(
+  let value: Dynamic = parseEqualGridColumns(
       state.mixed ? null : state.value,
     ),
-    value2: Dynamic = (0, parseEqualGridColumns)(state.fallback),
+    value2: Dynamic = parseEqualGridColumns(state.fallback),
     value3: Dynamic = state.spec?.min ?? 1,
     value4: Dynamic = state.spec?.max ?? 12,
     callback: Dynamic = (input?: Dynamic): Dynamic => {
@@ -32,7 +32,7 @@ function PropertyGridColumnsRow({
       onCommit(
         state.prop,
         value6 != null && value6 >= 1
-          ? (0, serializeEqualGridColumns)(
+          ? serializeEqualGridColumns(
               Math.min(value4, Math.max(value3, value6)),
             )
           : value5,

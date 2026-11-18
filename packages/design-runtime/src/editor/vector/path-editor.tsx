@@ -128,7 +128,7 @@ function VectorPathEditor({
         callback4,
       );
   }, []);
-  let value15: Dynamic = (0, useVectorEditor)({
+  let value15: Dynamic = useVectorEditor({
       path: path,
       onLive: (input?: Dynamic): Dynamic => {
         value5.current = input;
@@ -177,12 +177,12 @@ function VectorPathEditor({
           (target.tagName === "INPUT" ||
             target.tagName === "TEXTAREA" ||
             target.isContentEditable)) ||
-        (0, hasBlockingEditorOverlay)()
+        hasBlockingEditorOverlay()
       )
         return;
       let value22: Dynamic =
         value21.part === "anchor"
-          ? (0, deleteVectorAnchorKeepingCurve)(
+          ? deleteVectorAnchorKeepingCurve(
               value4.current,
               value21,
             )
@@ -208,7 +208,7 @@ function VectorPathEditor({
       activeElement &&
         activeElement.tagName === "IFRAME" &&
         activeElement.blur();
-      (0, focusCanvasDocument)();
+      focusCanvasDocument();
       value16.onPointerDown(input);
       let pointerId: Dynamic = input.pointerId,
         callback4: Dynamic = (input2?: Dynamic): Dynamic => {
@@ -277,7 +277,7 @@ function VectorPathEditor({
           };
           options2 > 0 &&
             input2.seg.kind === "cubic" &&
-            ((0, showVectorControls)(
+            (showVectorControls(
               "selected",
               input,
               options,
@@ -290,7 +290,7 @@ function VectorPathEditor({
                 input2.seg.c1,
                 "crosshair",
               ),
-            (0, showVectorControls)(
+            showVectorControls(
               "selected",
               input,
               options,
@@ -382,8 +382,8 @@ export {
 };
 export function installEditorVectorPathEditor(): () => void {
   return () => {
-    jsxVectorPathEditor = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    jsxVectorPathEditor = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
     VectorPathEditorConstant = 10;

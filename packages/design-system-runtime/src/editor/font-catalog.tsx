@@ -78,8 +78,8 @@ export {
 };
 export function installEditorFontCatalog(): () => void {
   return () => {
-    reactGoogleFontCatalog = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    reactGoogleFontCatalog = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
     WEB_SAFE_FONT_CATALOG = [

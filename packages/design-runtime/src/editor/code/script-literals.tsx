@@ -295,8 +295,8 @@ export {
 export function installEditorCodeScriptLiterals(): () => void {
   return () => {
     CodeScriptLiteralsAFAFPattern = /[0-9a-fA-F]/;
-    reactCodeScriptLiterals = (0, toModuleNamespace)(
-      (0, load_react)(),
+    reactCodeScriptLiterals = toModuleNamespace(
+      load_react(),
       1,
     );
   };

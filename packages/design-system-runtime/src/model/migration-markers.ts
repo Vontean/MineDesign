@@ -45,7 +45,7 @@ function obsoleteMirrorDeletions(
     [DESIGN_SYSTEM_ENVELOPE_PATH]: null,
   };
   for (let value of Object.keys(
-    (0, computeMirrorChanges)({}, files, true),
+    computeMirrorChanges({}, files, true),
   )) {
     deletions[value] = null;
   }

@@ -18,8 +18,7 @@ function PropertyFontWeightRow({
   shell: shell,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let { text: value, isLiteral: value2 }: Dynamic = (0,
-    inspectorFieldDisplay)(state),
+  let { text: value, isLiteral: value2 }: Dynamic = inspectorFieldDisplay(state),
     callback: Dynamic = (input?: Dynamic): Dynamic =>
       input === "bold"
         ? 700
@@ -53,17 +52,17 @@ function PropertyFontWeightRow({
     <PropertyRow {...shell}>
       <PropertySelect
         aria-label={state.label}
-        items={(0, includeCurrentFontVariant)(
+        items={includeCurrentFontVariant(
           state.faces ?? TypographyFontVariantsFlatMapValue,
           state2,
         )}
         value={
           value6 || !value5
             ? null
-            : (0, fontVariantKey)(state2.weight, state2.italic)
+            : fontVariantKey(state2.weight, state2.italic)
         }
         placeholder={
-          value6 ? (uiMessage("inspector.fontWeightRow.mixed")) : ((0, fontVariantLabel)(state2.weight, state2.italic))
+          value6 ? (uiMessage("inspector.fontWeightRow.mixed")) : (fontVariantLabel(state2.weight, state2.italic))
         }
         hint={Value_6}
         title={
@@ -72,7 +71,7 @@ function PropertyFontWeightRow({
         disabled={state.disabled}
         onOpenChange={(input?: Dynamic): Dynamic => input && onFacesOpen?.()}
         onChange={(input?: Dynamic): Dynamic => {
-          let value7: Dynamic = (0, parseFontVariantKey)(input);
+          let value7: Dynamic = parseFontVariantKey(input);
           if (
             value7 === undefined ||
             (value5 &&

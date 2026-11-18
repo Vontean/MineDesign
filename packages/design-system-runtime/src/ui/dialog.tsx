@@ -116,7 +116,7 @@ function preserveDialogBackdropFocus(
   let currentTarget = event.currentTarget,
     parentElement = currentTarget.parentElement,
     ownerDocument = currentTarget.ownerDocument,
-    value = (0, asElement)(ownerDocument.activeElement) as
+    value = asElement(ownerDocument.activeElement) as
       | HTMLElement
       | SVGElement
       | null;
@@ -278,7 +278,7 @@ function DialogCloseButton({
   flush?: boolean;
 }): React.ReactElement {
   useUiLocale();
-  let value = (0, useTranslation)("close", "Close");
+  let value = useTranslation("close", "Close");
   return (
     <baseAlertDialog.Close
       render={
@@ -288,7 +288,7 @@ function DialogCloseButton({
           icon={"X"}
           aria-label={ariaLabel ?? (value)}
           tooltip={false}
-          className={(0, cn)(
+          className={cn(
             flush && dialogCloseButtonOutsetClasses,
             className,
           )}
@@ -311,13 +311,13 @@ function DialogHeader({
   );
   return (
     <div
-      className={(0, cn)(
+      className={cn(
         "mb-pad-md flex items-start gap-2",
         className,
       )}
     >
       {[<div
-          className={(0, clsx)(
+          className={clsx(
             value
               ? dialogDescriptionSmallSpacing
               : dialogDescriptionLargeSpacing,
@@ -345,7 +345,7 @@ function DialogFooter({
   useUiLocale();
   return (
     <div
-      className={(0, cn)(
+      className={cn(
         "mt-pad-lg flex flex-col-reverse gap-2 sm:flex-row",
         "max-sm:[&>[data-cds-disabled-reason-wrapper]]:flex-col",
         dialogFooterAlignmentClasses[align],
@@ -367,7 +367,7 @@ function DialogRoot<Payload = void>({
       null,
     ),
     ref2 = reactForUiTooltips2.useRef<OverlayActions | null>(null);
-  (0, useForwardedOverlayActions)(ref2, actionsRef);
+  useForwardedOverlayActions(ref2, actionsRef);
   let value =
     disablePointerDismissal ?? (dismissible === false ? true : undefined);
   return (
@@ -394,7 +394,7 @@ function AlertDialogRoot<Payload = void>({
 }: AlertDialogRootProps<Payload>): React.ReactElement {
   useUiLocale();
   let ref = reactForUiTooltips2.useRef<OverlayActions | null>(null);
-  (0, useForwardedOverlayActions)(ref, actionsRef);
+  useForwardedOverlayActions(ref, actionsRef);
   return (
     <confirmationDialogContext.Provider value={true}>
       <dialogStateContext.Provider value={true}>
@@ -426,20 +426,19 @@ function ConfirmationDialog({
   children: children,
 }: ConfirmationDialogProps): React.ReactElement {
   useUiLocale();
-  let value = (0, useTranslation)("confirm", "Confirm"),
-    value2 = (0, useTranslation)("cancel", "Cancel"),
+  let value = useTranslation("confirm", "Confirm"),
+    value2 = useTranslation("cancel", "Cancel"),
     value3 = confirmLabel ?? value,
     value4 = cancelLabel ?? value2,
     [value5, value6] = reactForUiTooltips2.useState(false),
     ref = reactForUiTooltips2.useRef<HTMLButtonElement | null>(null),
     ref2 = reactForUiTooltips2.useRef<HTMLButtonElement | null>(null),
-    { finalFocus: value7, popupRef: value8 } = (0,
-    useOverlayFinalFocus)(open),
+    { finalFocus: value7, popupRef: value8 } = useOverlayFinalFocus(open),
     callback = (): ConfirmationFocus =>
       initialFocus === "cancel" ? "cancel" : disabled ? "pending" : "confirm",
     [value9, value10] = reactForUiTooltips2.useState(callback),
     ref3 = reactForUiTooltips2.useRef(value9);
-  (0, useIsomorphicLayoutEffect)(() => {
+  useIsomorphicLayoutEffect(() => {
     ref3.current = value9;
   }, [value9]);
   let callback2 = reactForUiTooltips2.useCallback(() => {
@@ -456,7 +455,7 @@ function ConfirmationDialog({
     callback3 = reactForUiTooltips2.useCallback(() => {
       ref4.current = true;
     }, []);
-  (0, useIsomorphicLayoutEffect)(() => {
+  useIsomorphicLayoutEffect(() => {
     if (open) {
       ref4.current = false;
       value10(callback());
@@ -503,7 +502,7 @@ function ConfirmationDialog({
     return () => clearTimeout(value15);
   }, [disabled, value9, callback4, open]);
   let ref5 = reactForUiTooltips2.useRef(open);
-  (0, useIsomorphicLayoutEffect)(() => {
+  useIsomorphicLayoutEffect(() => {
     ref5.current = open;
   }, [open]);
   let value11 = useDialogInitialFocus(
@@ -528,7 +527,7 @@ function ConfirmationDialog({
       ref6.current = false;
     }
   }, [open]);
-  let value12 = (0, usePortalContainer)(),
+  let value12 = usePortalContainer(),
     callback6 = reactForUiTooltips2.useCallback(() => {
       if (value5 || disabled || !open || ref6.current) {
         return;
@@ -566,7 +565,7 @@ function ConfirmationDialog({
       },
       [value5, onOpenChange, open],
     ),
-    value13 = (0, useDefaultOverlayLayer)("modal");
+    value13 = useDefaultOverlayLayer("modal");
   useDialogStyleDebug(portalClassName);
   let ref7 = reactForUiTooltips2.useRef<OverlayActions | null>(null),
     value14 = (
@@ -592,7 +591,7 @@ function ConfirmationDialog({
       >
         <baseDialog.Portal container={(value12) as import("../contracts/overlays").BaseUIPortalContainer}>
           <PortalRoot
-            className={(0, cn)("relative", portalClassName)}
+            className={cn("relative", portalClassName)}
             style={value13.style}
             surface={elevationSurfaceNames.popover}
             closeOnActivityHide={true}
@@ -601,7 +600,7 @@ function ConfirmationDialog({
               {[<baseDialog.Backdrop
                   forceRender={true}
                   onMouseDown={preventDialogBackdropDefault}
-                  className={(0, clsx)(
+                  className={clsx(
                     dialogBackdropClasses,
                     dialogStartingOpacityClass,
                   )}
@@ -612,7 +611,7 @@ function ConfirmationDialog({
                   onPointerDownCapture={callback3}
                   initialFocus={value11}
                   finalFocus={value7 as import("../contracts/overlays").BaseUIPopupFocus}
-                  className={(0, cn)(
+                  className={cn(
                     "draggable-none",
                     nestedDialogOverlayClasses,
                     dialogFullHeightClasses,
@@ -624,7 +623,7 @@ function ConfirmationDialog({
                 >
                   <div className={dialogPopupPositionClasses}>
                     {[<baseDialog.Title
-                        className={(0, clsx)(
+                        className={clsx(
                           dialogDescriptionSmallSpacing,
                           dialogTitleClasses,
                           "text-primary",
@@ -711,7 +710,7 @@ export {
 };
 export function installUiDialog(): () => void {
   return () => {
-    dialogSurfaceClasses = `${(0, getSurfaceClasses)("popover")} shadow-panel-lg`;
+    dialogSurfaceClasses = `${getSurfaceClasses("popover")} shadow-panel-lg`;
     dialogMaximumHeightClasses =
       "max-h-[calc(100dvh_-_max(2rem,2*var(--desktop-titlebar-inset,0px))_-_2*max(env(safe-area-inset-top,0px),env(safe-area-inset-bottom,0px)))]";
     dialogFullHeightClasses = `fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col w-[calc(100vw-2rem)] ${dialogMaximumHeightClasses} ${dialogSurfaceClasses} cds-reset text-body font-normal text-primary outline-none focus-visible:outline-hidden`;
@@ -764,7 +763,7 @@ export function installUiDialog(): () => void {
             dialogTriggerRefContext,
           ),
           value2 = input.handle ? null : (value ?? null),
-          value3 = (0, useMergedRefs)(options, value2);
+          value3 = useMergedRefs(options, value2);
         return <baseAlertDialog.Trigger ref={value3} {...(input as import("@base-ui/react/alert-dialog").AlertDialog.Trigger.Props<void>)} />;
       },
     );
@@ -785,10 +784,9 @@ export function installUiDialog(): () => void {
           value2 = reactForUiTooltips2.useContext(
             dialogTriggerRefContext,
           ),
-          { finalFocus: value3, popupRef: value4 } = (0,
-          useOverlayFinalFocus)(true, value !== false, value2),
-          value5 = (0, useDialogVisualKeyboard)(fitVisualViewport),
-          value6 = (0, useMergedRefs)(options, value4, value5);
+          { finalFocus: value3, popupRef: value4 } = useOverlayFinalFocus(true, value !== false, value2),
+          value5 = useDialogVisualKeyboard(fitVisualViewport),
+          value6 = useMergedRefs(options, value4, value5);
         return (
           <baseAlertDialog.Popup
             {...{
@@ -813,8 +811,8 @@ export function installUiDialog(): () => void {
         }: import("@base-ui/react/alert-dialog").AlertDialog.Popup.Props,
         options: React.ForwardedRef<HTMLDivElement>,
       ): React.ReactElement => {
-        let value = (0, useDialogVisualKeyboard)(true),
-          value2 = (0, useMergedRefs)(options, value);
+        let value = useDialogVisualKeyboard(true),
+          value2 = useMergedRefs(options, value);
         return (
           <baseDialog.Popup
             {...{
@@ -848,7 +846,7 @@ export function installUiDialog(): () => void {
         let value = unstyled
             ? ""
             : `${dialogFullHeightClasses} ${dialogPopupTransitionClasses} ${nestedDialogBlurClasses} ${dialogSizeClasses[size]} ${fullHeight ? "h-dvh" : ""}`,
-          value2 = (0, useDefaultOverlayLayer)("modal");
+          value2 = useDefaultOverlayLayer("modal");
         useDialogStyleDebug(portalClassName);
         let value3 = reactForUiTooltips2.useContext(dialogStateContext),
           value4 = reactForUiTooltips2.useContext(
@@ -857,10 +855,10 @@ export function installUiDialog(): () => void {
           value5 = value3 === undefined || value3 === true;
         return (
           <baseAlertDialog.Portal
-            container={((0, usePortalContainer)()) as import("../contracts/overlays").BaseUIPortalContainer}
+            container={(usePortalContainer()) as import("../contracts/overlays").BaseUIPortalContainer}
           >
             <PortalRoot
-              className={(0, cn)("relative", portalClassName)}
+              className={cn("relative", portalClassName)}
               style={value2.style}
               surface={
                 surface ??
@@ -876,7 +874,7 @@ export function installUiDialog(): () => void {
                         ? preserveDialogBackdropFocus
                         : preventDialogBackdropDefault
                     }
-                    className={(0, cn)(
+                    className={cn(
                       dialogBackdropClasses,
                       !unstyled && dialogStartingOpacityClass,
                       value3 === false && "pointer-events-none opacity-0",
@@ -888,7 +886,7 @@ export function installUiDialog(): () => void {
                     ref={options}
                     {...props}
                     fitVisualViewport={!unstyled}
-                    className={(0, cn)(
+                    className={cn(
                       "draggable-none",
                       nestedDialogOverlayClasses,
                       value,
@@ -918,7 +916,7 @@ export function installUiDialog(): () => void {
           <baseAlertDialog.Title
             ref={options}
             {...props}
-            className={(0, cn)(
+            className={cn(
               "text-primary",
               value ? dialogTitleClasses : largeDialogTitleClasses,
               className,
@@ -947,7 +945,7 @@ export function installUiDialog(): () => void {
         <baseAlertDialog.Description
           ref={options}
           {...props}
-          className={(0, cn)(dialogDescriptionClasses, className)}
+          className={cn(dialogDescriptionClasses, className)}
         />
       ),
     );

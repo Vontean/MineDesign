@@ -27,7 +27,7 @@ function DropShadowEditor({
   onLiveEnd: onLiveEnd,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let value2: Dynamic = (0, useEditorColorSwatches)(),
+  let value2: Dynamic = useEditorColorSwatches(),
     [value3, value4]: Dynamic = (0,
     reactComponentsPropsPanel.useState)(false),
     value5: Dynamic = (0, reactComponentsPropsPanel.useRef)(null),
@@ -107,21 +107,21 @@ export {
 };
 export function installEditorPropertiesDropShadowEditor(): () => void {
   return () => {
-    reactPropertiesDropShadowEditor = (0, toModuleNamespace)(
-      (0, load_react)(),
+    reactPropertiesDropShadowEditor = toModuleNamespace(
+      load_react(),
       1,
     );
-    (0, initializeCdsIndex)();
-    reactPropertiesDropShadowEditor_2 = (0, toModuleNamespace)(
-      (0, load_react)(),
+    initializeCdsIndex();
+    reactPropertiesDropShadowEditor_2 = toModuleNamespace(
+      load_react(),
       1,
     );
-    reactPropertiesDropShadowEditor_3 = (0, toModuleNamespace)(
-      (0, load_react)(),
+    reactPropertiesDropShadowEditor_3 = toModuleNamespace(
+      load_react(),
       1,
     );
-    jsxPropertiesDropShadowEditor = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    jsxPropertiesDropShadowEditor = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
     PropertiesDropShadowEditorTest = (input?: Dynamic): Dynamic =>

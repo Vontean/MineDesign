@@ -9,14 +9,14 @@ import { recordEdit } from "./edit-count";
 var PlatformDatabaseDocumentStoreConstant: Dynamic;
 function normalizeDocumentTitle(items?: Dynamic): Dynamic {
   return typeof items == "string" && items.length > 0
-    ? (0, truncateUtf16Safely)(
+    ? truncateUtf16Safely(
         items,
         PlatformDatabaseDocumentStoreConstant,
       )
     : undefined;
 }
 function normalizeNewDocumentTitle(input?: Dynamic): Dynamic {
-  return (0, truncateUtf16Safely)(
+  return truncateUtf16Safely(
     input.trim(),
     PlatformDatabaseDocumentStoreConstant,
   );
@@ -34,7 +34,7 @@ function createDatabaseDocumentStore(options?: Dynamic): Dynamic {
     state: Dynamic = {
       title: normalizeDocumentTitle(options.snapshot.title) ?? value2,
       content: value(options.snapshot.content),
-      comments: (0, parseDocumentComments)(options.snapshot.comments),
+      comments: parseDocumentComments(options.snapshot.comments),
     },
     value3: Dynamic = runtime2.saving.status === "readonly",
     value4: Dynamic = options.contentHold?.(options.snapshot.content),
@@ -97,7 +97,7 @@ function createDatabaseDocumentStore(options?: Dynamic): Dynamic {
               (value4 = options.contentHold?.(value10.value)),
               (flag = true))
             : value10.key === "comments" &&
-              ((state.comments = (0, parseDocumentComments)(
+              ((state.comments = parseDocumentComments(
                 value10.value,
               )),
               (flag = true)));
@@ -125,7 +125,7 @@ function createDatabaseDocumentStore(options?: Dynamic): Dynamic {
         value9("title", value10),
         options.serializeContent !== undefined &&
           value9("content", callback(state.content)),
-        (0, recordEdit)(),
+        recordEdit(),
         value8());
     },
     content: (): Dynamic => state.content,
@@ -134,7 +134,7 @@ function createDatabaseDocumentStore(options?: Dynamic): Dynamic {
         input === state.content ||
         ((state.content = input),
         value9("content", callback(input)),
-        (0, recordEdit)(),
+        recordEdit(),
         value8());
     },
     updateContent: (input?: Dynamic, options2?: Dynamic): Dynamic => {
@@ -143,14 +143,14 @@ function createDatabaseDocumentStore(options?: Dynamic): Dynamic {
       value10 !== state.content &&
         ((state.content = value10),
         value9("content", callback(value10)),
-        options2?.auto !== true && (0, recordEdit)(),
+        options2?.auto !== true && recordEdit(),
         value8());
     },
     state: (): Dynamic => state,
     comments: (): Dynamic => state.comments,
     addComment: (input?: Dynamic): Dynamic => {
       if (state.comments.length >= maxDocumentComments) return;
-      let value10: Dynamic = (0, parseDocumentComments)([
+      let value10: Dynamic = parseDocumentComments([
         {
           ...input,
           id: crypto.randomUUID().slice(0, 8),

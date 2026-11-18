@@ -57,8 +57,8 @@ export {
 };
 export function installCdsDomInert(): () => void {
   return () => {
-    initializeDomInert = (0, initializeOnce)(() => {
-      reactDomInert = (0, toModuleNamespace)((0, load_react)());
+    initializeDomInert = initializeOnce(() => {
+      reactDomInert = toModuleNamespace(load_react());
       DomInertParseIntValue = Number.parseInt(reactDomInert.version, 10);
       DomInertResolvedValue =
         !Number.isFinite(DomInertParseIntValue) ||

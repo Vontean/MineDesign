@@ -57,7 +57,7 @@ function PropertyColorPreview({
     <span
       aria-hidden={"true"}
       {...remainingProps}
-      className={(0, joinClassNames)(COLOR_SWATCH_CLASS, className)}
+      className={joinClassNames(COLOR_SWATCH_CLASS, className)}
     >
       {[background !== undefined ? (
           <span
@@ -145,7 +145,7 @@ function PropertyRow({
             }
           : undefined
       }
-      className={(0, joinClassNames)(
+      className={joinClassNames(
         "group/row grid min-w-0 shrink-0 items-center gap-x-sm py-px",
         PROPERTY_SECTION_GUTTER_CLASS,
         label !== undefined
@@ -158,7 +158,7 @@ function PropertyRow({
     >
       {[label !== undefined && (
           <div
-            className={(0, joinClassNames)(
+            className={joinClassNames(
               "flex min-w-0 items-center",
               disabled && "opacity-50",
             )}
@@ -166,7 +166,7 @@ function PropertyRow({
             {[<span
                 title={title === undefined ? (value) : (undefined)}
                 {...labelProps}
-                className={(0, joinClassNames)(
+                className={joinClassNames(
                   "min-w-0 truncate text-footnote text-muted select-none",
                   labelProps?.className,
                 )}
@@ -174,7 +174,7 @@ function PropertyRow({
                 {label}
               </span>, onReset && !disabled && (
                 <span
-                  className={(0, joinClassNames)(
+                  className={joinClassNames(
                     "flex w-0 shrink-0 overflow-hidden",
                     "focus-within:w-auto focus-within:overflow-visible",
                     "group-hover/row:w-auto group-hover/row:overflow-visible",
@@ -221,7 +221,7 @@ function PropertyRow({
           </div>
         ), <div
           ref={ref}
-          className={(0, joinClassNames)(
+          className={joinClassNames(
             "flex min-w-0 items-center gap-2",
             trailing === undefined &&
               "pr-[calc(var(--pp-iconcol,-4px)+4px)] pointer-coarse:pr-[calc(var(--pp-iconcol,-8px)+8px)]",
@@ -254,7 +254,7 @@ function PropertyRow({
             ) : null, trailing !== undefined ? (
               <span
                 data-kit={"row-trailing"}
-                className={(0, joinClassNames)(
+                className={joinClassNames(
                   "-ml-1 pointer-coarse:ml-0 flex w-[var(--pp-iconcol,auto)] shrink-0 items-center justify-center",
                   PROPERTY_ACTIONS_CLASS,
                 )}
@@ -276,7 +276,7 @@ function PropertySectionHeader({
 }: PropertySectionHeaderProps) {
   useUiLocale();
   let value = onToggle !== undefined,
-    value2 = (0, joinClassNames)(
+    value2 = joinClassNames(
       "flex min-w-0 shrink-0 items-center gap-xs select-none",
       PROPERTY_SECTION_GUTTER_CLASS,
       subsection
@@ -294,7 +294,7 @@ function PropertySectionHeader({
         <KitIcon
           name={"CaretRight"}
           size={16}
-          className={(0, joinClassNames)(
+          className={joinClassNames(
             "text-secondary transition-transform duration-fast",
             !collapsed && "rotate-90",
           )}
@@ -308,7 +308,7 @@ function PropertySectionHeader({
           type={"button"}
           aria-expanded={!collapsed}
           onClick={onToggle}
-          className={(0, joinClassNames)(
+          className={joinClassNames(
             value2,
             "w-full cursor-default text-left outline-none focus-visible:outline-hidden focus-visible:shadow-focus",
           )}
@@ -335,7 +335,7 @@ function PropertySectionHeader({
             }
           : undefined
       }
-      className={(0, joinClassNames)(
+      className={joinClassNames(
         value2,
         value && "cursor-default",
       )}
@@ -356,7 +356,7 @@ function PropertySectionHeader({
             </button>) : (<span className={"min-w-0 flex-1 truncate"}>{title}</span>)}
         </h3>, actions ? (
           <span
-            className={(0, joinClassNames)(
+            className={joinClassNames(
               "-my-1 flex shrink-0 items-center gap-0.5",
               PROPERTY_ACTIONS_CLASS,
             )}
@@ -393,31 +393,31 @@ export {
 };
 export function installUiPropertyRow(): () => void {
   return () => {
-    reactForUiPropertyRow2 = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    reactForUiPropertyRow2 = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
     PROPERTY_ROW_INTERACTIVE_SELECTOR =
       'button,input,select,textarea,label,[role="slider"],[role="switch"],[role="radio"],[role="checkbox"],[role="menuitem"]';
-    reactPropertyRowHelpers = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    reactPropertyRowHelpers = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
-    jsxPropertyRowHelpers = (0, toModuleNamespace)(
-      (0, loadJsxNamespace)(),
+    jsxPropertyRowHelpers = toModuleNamespace(
+      loadJsxNamespace(),
       1,
     );
-    jsxForUiPropertyRow2 = (0, toModuleNamespace)(
-      (0, loadJsxNamespace)(),
+    jsxForUiPropertyRow2 = toModuleNamespace(
+      loadJsxNamespace(),
       1,
     );
     FIELD_SURFACE_CLASS =
       "rounded bg-fill-field text-primary shadow-field-ring outline-none transition duration-fast placeholder:text-muted enabled:hover:shadow-field-hover focus-visible:outline-hidden focus-visible:shadow-focus aria-expanded:shadow-field-hover disabled:opacity-50";
-    TEXT_FIELD_BUTTON_CLASS = (0, joinClassNames)(
+    TEXT_FIELD_BUTTON_CLASS = joinClassNames(
       "h-control min-w-0 px-md text-body pointer-coarse:h-10",
       FIELD_SURFACE_CLASS,
     );
-    CHIP_FIELD_BUTTON_CLASS = (0, joinClassNames)(
+    CHIP_FIELD_BUTTON_CLASS = joinClassNames(
       "flex h-control min-w-0 items-center gap-sm pr-md pl-1 text-left text-body pointer-coarse:h-10",
       FIELD_SURFACE_CLASS,
     );
@@ -441,10 +441,10 @@ export function installUiPropertyRow(): () => void {
           {...props}
           ref={options}
           type={type}
-          className={(0, joinClassNames)(
+          className={joinClassNames(
             chip != null
               ? CHIP_FIELD_BUTTON_CLASS
-              : (0, joinClassNames)(
+              : joinClassNames(
                   TEXT_FIELD_BUTTON_CLASS,
                   "flex items-center gap-sm text-left",
                 ),
@@ -453,7 +453,7 @@ export function installUiPropertyRow(): () => void {
           )}
         >
           {[chip, <span
-              className={(0, joinClassNames)(
+              className={joinClassNames(
                 "min-w-0 flex-1 truncate",
                 muted && "text-muted",
               )}

@@ -14,8 +14,8 @@ var readPortVersion: Dynamic;
 var SNAPSHOT_MAX_CACHE_RETRIES: Dynamic;
 var SNAPSHOT_CACHE_RETRY_DELAY_MS: Dynamic;
 function hashCanonicalIndex(index?: Dynamic): Dynamic {
-  return (0, sha256)(
-    (0, stringifyCanonicalIndex)(index === undefined ? null : index),
+  return sha256(
+    stringifyCanonicalIndex(index === undefined ? null : index),
   );
 }
 function parsePublishedIndexMetadata(text?: Dynamic): Dynamic {
@@ -147,7 +147,7 @@ function createSnapshotDatabaseAdapter(database?: Dynamic): Dynamic {
   };
 }
 async function getSnapshotDatabaseAdapter(): Promise<Dynamic> {
-  let value: Dynamic = await (0, resolveDatabaseCapability)();
+  let value: Dynamic = await resolveDatabaseCapability();
   return value === null ? null : createSnapshotDatabaseAdapter(value);
 }
 export {

@@ -474,12 +474,12 @@ function ColorPicker({
         if (!options || current === undefined) {
           return;
         }
-        (0, announceLiveMessage)(() => {
-          let value18 = (0, colorContrastResults)(input, current);
+        announceLiveMessage(() => {
+          let value18 = colorContrastResults(input, current);
           if (value18 === undefined) {
             return null;
           } else {
-            return (0, contrastDisplayInfo)(value18).spoken;
+            return contrastDisplayInfo(value18).spoken;
           }
         });
       },
@@ -751,14 +751,14 @@ function ColorPicker({
       () =>
         memo === undefined
           ? undefined
-          : (0, colorContrastResults)(value12, memo),
+          : colorContrastResults(value12, memo),
       [memo, value12],
     ),
     memo3 = (reactForUiColorPicker as typeof React).useMemo(
       () =>
         memo === undefined || value10
           ? undefined
-          : (0, contrastColorFix)(value12, memo),
+          : contrastColorFix(value12, memo),
       [memo, value12, value10],
     ),
     value14 = value8 !== undefined ? value8.shade : memo3,
@@ -983,8 +983,8 @@ export {
 };
 export function installUiColorPicker(): () => void {
   return () => {
-    jsxForUiColorPicker = (0, toModuleNamespace)(
-      (0, loadJsxNamespace)(),
+    jsxForUiColorPicker = toModuleNamespace(
+      loadJsxNamespace(),
       1,
     );
     COLOR_ALPHA_CHECKERBOARD =

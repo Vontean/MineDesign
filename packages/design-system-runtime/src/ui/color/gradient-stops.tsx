@@ -38,7 +38,7 @@ function TooltipWrapper({
     >
       <span
         data-tip={typeof tip === "string" ? (tip) : (undefined)}
-        className={(0, joinClassNames)(
+        className={joinClassNames(
           "relative inline-flex align-top",
           className,
         )}
@@ -56,8 +56,8 @@ export {
 };
 export function installUiColorGradientStops(): () => void {
   return () => {
-    jsxGradientStopKeyboardHandlers = (0, toModuleNamespace)(
-      (0, loadJsxNamespace)(),
+    jsxGradientStopKeyboardHandlers = toModuleNamespace(
+      loadJsxNamespace(),
       1,
     );
     gradientStopKeyboardHandlers = {
@@ -94,8 +94,8 @@ export function installUiColorGradientStops(): () => void {
         }
       },
     };
-    TooltipWrapperJsx = (0, toModuleNamespace)(
-      (0, loadJsxNamespace)(),
+    TooltipWrapperJsx = toModuleNamespace(
+      loadJsxNamespace(),
       1,
     );
   };

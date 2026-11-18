@@ -21,7 +21,7 @@ var supportsScreenDetails: Dynamic;
 var supportsIntlSegmentation: Dynamic;
 function inspectSelectedColor(input?: Dynamic): Dynamic {
   let value: Dynamic = input.tag.toLowerCase(),
-    value2: Dynamic = (0, parseStyleDeclarations)(
+    value2: Dynamic = parseStyleDeclarations(
       input.authoredStyle,
     ),
     callback: Dynamic = (input2?: Dynamic): Dynamic =>
@@ -40,16 +40,16 @@ function inspectSelectedColor(input?: Dynamic): Dynamic {
       value6 !== "" &&
       value6 !== "none"
       ? {
-          prop: (0, formatPropertyKey)("stroke", callback),
+          prop: formatPropertyKey("stroke", callback),
         }
       : {
           prop: svgShapeTags.has(value)
-            ? (0, formatPropertyKey)("fill", callback)
+            ? formatPropertyKey("fill", callback)
             : "fill",
         };
   }
   if (input.isTextEditable)
-    return (0, hasTextBackgroundClip)(callback)
+    return hasTextBackgroundClip(callback)
       ? {
           prop: "color",
           unset: ["background", ...InspectorPropertySchemaItems],
@@ -78,7 +78,7 @@ function inspectSelectedColor(input?: Dynamic): Dynamic {
   }
   let value4: Dynamic = input.computed.borderTopStyle ?? "",
     value5: Dynamic = input.computed.borderTopWidth ?? "";
-  return (0, hasAuthoredAppearance)(input.authoredStyle) ||
+  return hasAuthoredAppearance(input.authoredStyle) ||
     (value4 !== "" && value4 !== "none" && value5 !== "" && value5 !== "0px")
     ? {
         prop: "border-color",
@@ -166,6 +166,6 @@ export function installEditorInspectorColorPick(): () => void {
         }
       }
     })();
-    (0, initializeEditorAttributeValidation)();
+    initializeEditorAttributeValidation();
   };
 }

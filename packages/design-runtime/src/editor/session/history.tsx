@@ -14,7 +14,7 @@ export function stepSessionUndoRedo(deps: { readonly dcPropsRef: Dynamic; readon
         let model: Dynamic = value308.model,
           length: Dynamic = value308[input].length,
           length2: Dynamic = value308.redo.length,
-          value309: Dynamic = (0, applyElementUndo)(value308, input, {
+          value309: Dynamic = applyElementUndo(value308, input, {
             overrides: deps.dcPropsRef.current.values,
           });
         if (!value309) {
@@ -57,7 +57,7 @@ export function stepSessionUndoRedo(deps: { readonly dcPropsRef: Dynamic; readon
           return;
         }
         if (value309.kind === "script") {
-          (0, emitEditorEvent)("dc-update", {
+          emitEditorEvent("dc-update", {
             name: value307,
             path: value308.path,
             kind: "js",
@@ -86,11 +86,11 @@ export function stepSessionUndoRedo(deps: { readonly dcPropsRef: Dynamic; readon
               setTimeout((): Dynamic => {
                 let current2: Dynamic = deps.value49.current;
                 current2?.name === current.name &&
-                  (0, InspectorEditorEvery)(
+                  InspectorEditorEvery(
                     current2.tids,
                     value310,
                   ) &&
-                  (0, setPickerSelection)(
+                  setPickerSelection(
                     value311,
                     value310,
                     current.name,
@@ -100,7 +100,7 @@ export function stepSessionUndoRedo(deps: { readonly dcPropsRef: Dynamic; readon
             deps.value50.current++;
             deps.value3(null);
             let value311: Dynamic = deps.value67();
-            value311 && (0, setPickerSelection)(value311, null, null);
+            value311 && setPickerSelection(value311, null, null);
           }
         }
         deps.incrementSessionEpoch();

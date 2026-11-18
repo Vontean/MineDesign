@@ -50,23 +50,23 @@ function validateStyleShadow(
   options?: Dynamic,
   context: Dynamic = StyleSchemaValuesHandlerValue_2,
 ): Dynamic {
-  if (!(0, isStyleObject)(input)) return;
-  let value: Dynamic = (0, validateOptionalStyleNumber)(
+  if (!isStyleObject(input)) return;
+  let value: Dynamic = validateOptionalStyleNumber(
       StyleSchemaValuesHandlerValue,
       input.x,
       0,
     ),
-    value2: Dynamic = (0, validateOptionalStyleNumber)(
+    value2: Dynamic = validateOptionalStyleNumber(
       StyleSchemaValuesHandlerValue,
       input.y,
       0,
     ),
-    value3: Dynamic = (0, validateOptionalStyleNumber)(
+    value3: Dynamic = validateOptionalStyleNumber(
       context,
       input.blur,
       0,
     ),
-    value4: Dynamic = (0, validateStyleColor)(input.color);
+    value4: Dynamic = validateStyleColor(input.color);
   if (
     value === undefined ||
     value2 === undefined ||
@@ -81,7 +81,7 @@ function validateStyleShadow(
       blur: value3,
       color: value4,
     };
-  let value5: Dynamic = (0, validateOptionalStyleNumber)(
+  let value5: Dynamic = validateOptionalStyleNumber(
     StyleSchemaValuesHandlerValue_3,
     input.spread,
     0,

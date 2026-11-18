@@ -89,7 +89,7 @@ function animateSegmentedControlThumb(
     if (
       flipAt === undefined ||
       !supportsElementAnimations(input) ||
-      (0, isReducedMotion)()
+      isReducedMotion()
     ) {
       return;
     }
@@ -205,7 +205,7 @@ function observeSegmentedControlSize(
   options: typeof ResizeObserver,
   context: C.SegmentMeasure,
 ) {
-  let value: Window = (0, getElementWindow)(input) ?? window,
+  let value: Window = getElementWindow(input) ?? window,
     entry = segmentedControlResizeObservers.get(value);
   if (entry?.Observer !== options) {
     let entries = new Map<Element, C.SegmentMeasure>();
@@ -216,11 +216,11 @@ function observeSegmentedControlSize(
         for (let value4 of input2) {
           let entry2 = entries.get(value4.target);
           if (entry2) {
-            (0, invokeAndReportError)(() => entry2(false, items));
+            invokeAndReportError(() => entry2(false, items));
           }
         }
         for (let value4 of items) {
-          (0, invokeAndReportError)(value4);
+          invokeAndReportError(value4);
         }
       }),
       measures: entries,
@@ -254,10 +254,10 @@ function SegmentedControl({
 }: C.SegmentedControlProps) {
   useUiLocale();
   let ref = reactForUiSegmentedControl2.useRef<HTMLDivElement>(null);
-  (0, useCompactableControlDebug)(ref, "SegmentedControl");
+  useCompactableControlDebug(ref, "SegmentedControl");
   let ref2 = reactForUiSegmentedControl2.useRef<HTMLDivElement>(null),
-    value2: boolean = (0, useHasFieldContext)(),
-    value3: boolean = (0, useAppleKeyboard)(),
+    value2: boolean = useHasFieldContext(),
+    value3: boolean = useAppleKeyboard(),
     ref3 = reactForUiSegmentedControl2.useRef<C.SegmentLayoutState>({
       live: false,
       poll: null,
@@ -340,8 +340,7 @@ function SegmentedControl({
   reactForUiSegmentedControl2.useLayoutEffect(() => {
     let current = ref.current,
       current2 = ref2.current,
-      value8: typeof ResizeObserver | undefined = (0,
-      getResizeObserverConstructor)(current),
+      value8: typeof ResizeObserver | undefined = getResizeObserverConstructor(current),
       value9 = current !== null && value8 !== undefined,
       current3 = ref3.current;
     current3.live = true;
@@ -398,7 +397,7 @@ function SegmentedControl({
       [onChange],
     ),
     value5 = variant === "contained",
-    value6: boolean = (0, useHasTooltipProvider)(),
+    value6: boolean = useHasTooltipProvider(),
     value7 = (
       <R_baseRadioGroup
         ref={ref}
@@ -410,8 +409,8 @@ function SegmentedControl({
         value={value}
         onValueChange={callback2}
         disabled={disabled}
-        {...(0, getControlSizeAttributes)(size)}
-        className={(0, cn)(
+        {...getControlSizeAttributes(size)}
+        className={cn(
           "relative inline-flex",
           fullWidth ? "w-full" : "w-fit",
           "shrink-0 items-stretch h-control font-sans",
@@ -448,14 +447,13 @@ function SegmentedControl({
                   aria-label={value8 ? (value10) : (undefined)}
                   aria-keyshortcuts={
                     input.shortcut
-                      ? (0, shortcutToAriaKeyShortcuts)(
+                      ? shortcutToAriaKeyShortcuts(
                           input.shortcut,
                           value3,
                         )
                       : undefined
                   }
-                  onMouseDown={(0,
-                  withRepeatedClickSelectionPrevention)(undefined)}
+                  onMouseDown={withRepeatedClickSelectionPrevention(undefined)}
                   className={`${segmentedControlSegmentClasses} ${value5 ? segmentedControlTextClasses : ghostSegmentHoverClasses} ${value8 ? segmentedControlIconAspectClasses : segmentedControlTextPaddingClasses}${fullWidth ? " flex-1" : ""}`}
                 >
                   {[value11 && input.indicator ? (
@@ -549,7 +547,7 @@ function getRelativeSegmentBounds(input: HTMLElement, options: HTMLElement) {
   }
   let bounds2 = input.getBoundingClientRect(),
     value3: number =
-      (0, getElementWindow)(options)?.devicePixelRatio || 1,
+      getElementWindow(options)?.devicePixelRatio || 1,
     callback = (input2: number) => Math.round(input2 * value3) / value3;
   return {
     left: (callback(bounds2.left) - callback(bounds.left)) / value2,
@@ -569,7 +567,7 @@ function scheduleElementAnimationFrame(
   input: HTMLElement,
   options: FrameRequestCallback,
 ) {
-  let value: Window | undefined = (0, getConnectedElementWindow)(
+  let value: Window | undefined = getConnectedElementWindow(
     input,
   );
   if (!value || typeof value.requestAnimationFrame !== "function") {
@@ -584,7 +582,7 @@ function scheduleElementAnimationFrame(
 }
 function getUnscaledBorderBoxWidth(input: HTMLElement): number {
   let style: CSSStyleDeclaration = (
-      (0, getElementWindow)(input) ?? window
+      getElementWindow(input) ?? window
     ).getComputedStyle(input),
     value = parseFloat(style.width);
   if (style.boxSizing === "border-box") {
@@ -692,13 +690,13 @@ export {
 };
 export function installUiSegmentedControl(): () => void {
   return () => {
-    (0, initializeIsomorphicLayoutEffect)();
-    (0, initializeClassNames)();
-    reactForUiSegmentedControl = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    initializeIsomorphicLayoutEffect();
+    initializeClassNames();
+    reactForUiSegmentedControl = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
-    jsxX_ = (0, toModuleNamespace)((0, loadJsxNamespace)(), 1);
+    jsxX_ = toModuleNamespace(loadJsxNamespace(), 1);
     RESIZE_DRAG_THRESHOLD_PX = 3;
     RESIZE_KEYBOARD_STEP_PX = 8;
     RESIZE_KEYBOARD_LARGE_STEP_PX = 32;
@@ -734,7 +732,7 @@ export function installUiSegmentedControl(): () => void {
         ref2 = reactForUiSegmentedControl.useRef(onResize),
         ref3 = reactForUiSegmentedControl.useRef(onResizeStart),
         ref4 = reactForUiSegmentedControl.useRef(onResizeEnd);
-      (0, useIsomorphicLayoutEffect)(() => {
+      useIsomorphicLayoutEffect(() => {
         ref2.current = onResize;
         ref3.current = onResizeStart;
         ref4.current = onResizeEnd;
@@ -834,7 +832,7 @@ export function installUiSegmentedControl(): () => void {
             callback3(input);
             onKeyDown?.(input);
           }}
-          className={(0, cn)(
+          className={cn(
             "cds-reset group/resize outline-none focus-visible:outline-hidden",
             value ? "w-3 cursor-col-resize" : "h-3 cursor-row-resize",
             side === undefined
@@ -845,7 +843,7 @@ export function installUiSegmentedControl(): () => void {
         >
           {[<div
               aria-hidden={true}
-              className={(0, clsx)(
+              className={clsx(
                 "absolute rounded-full transition-shadow duration-fast group-focus-visible/resize:shadow-focus",
                 value
                   ? "inset-y-0 left-1/2 w-3 -translate-x-1/2 cursor-col-resize"
@@ -854,7 +852,7 @@ export function installUiSegmentedControl(): () => void {
             />, <div
               aria-hidden={true}
               data-cds-part={"resize-pill"}
-              className={(0, clsx)(
+              className={clsx(
                 "absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-current transition-[opacity,color,background-color]",
                 value
                   ? "h-full max-h-12 w-[3px] group-focus-visible/resize:max-h-none"
@@ -868,27 +866,27 @@ export function installUiSegmentedControl(): () => void {
         </div>
       );
     });
-    (0, initializeErrorReporting)();
-    (0, initializeClassNames)();
-    (0, initializeElementWindow)();
-    (0, initializeCdsRoot)();
-    (0, initializeIconSupport)();
-    (0, initializeIcons)();
-    (0, initializeShortcuts)();
-    (0, initializeTooltip)();
-    (0, initializeReducedMotion)();
+    initializeErrorReporting();
+    initializeClassNames();
+    initializeElementWindow();
+    initializeCdsRoot();
+    initializeIconSupport();
+    initializeIcons();
+    initializeShortcuts();
+    initializeTooltip();
+    initializeReducedMotion();
     noopFlipCleanup = () => {
       return;
     };
     FLIP_HELD_MARKER = "held";
     FLIP_PAUSE_DURATION_MS = 1000;
     pausedFlipAnimations = new WeakMap();
-    reactForUiSegmentedControl2 = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    reactForUiSegmentedControl2 = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
-    jsxForUiSegmentedControl = (0, toModuleNamespace)(
-      (0, loadJsxNamespace)(),
+    jsxForUiSegmentedControl = toModuleNamespace(
+      loadJsxNamespace(),
       1,
     );
     segmentedControlSegmentClasses =
@@ -913,10 +911,10 @@ export function installUiSegmentedControl(): () => void {
     SEGMENT_INDICATOR_SETTLE_FRAMES = 2;
     SEGMENT_TOOLTIP_DELAY_MS = 600;
     segmentedControlResizeObservers = new WeakMap();
-    (0, initializeClassNames)();
-    (0, initializeCdsRoot)();
-    (0, initializeClickToFocus)();
-    (0, initializeMergedRefs)();
+    initializeClassNames();
+    initializeCdsRoot();
+    initializeClickToFocus();
+    initializeMergedRefs();
     DISAMBIGUATED_CURRENCY_CODES = new Set(["SGD", "AUD", "NZD"]);
     CURRENCY_NUMBER_PART_TYPES = new Set([
       "integer",

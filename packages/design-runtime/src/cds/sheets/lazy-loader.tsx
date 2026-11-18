@@ -34,7 +34,7 @@ function subscribeMobileSheets(input?: Dynamic): Dynamic {
 }
 function loadMobileSheets(): Dynamic {
   let value: Dynamic = SheetsLazyLoaderConstant_2;
-  SheetsLazyLoaderCurrentState_2 ??= (0, loadApplicationFeature)(
+  SheetsLazyLoaderCurrentState_2 ??= loadApplicationFeature(
     "cds_mobile_sheets",
     (): Dynamic =>
       Promise.resolve().then(
@@ -90,7 +90,7 @@ function useMobileSheetComponents(): Dynamic {
   );
 }
 function useMobileSheetPreload(input?: Dynamic, options?: Dynamic): Dynamic {
-  let value: Dynamic = (0, useWindowMediaQuery)(
+  let value: Dynamic = useWindowMediaQuery(
     input ? options : undefined,
     coarsePointerMediaQuery,
   );
@@ -128,7 +128,7 @@ export {
 export function installCdsSheetsLazyLoader(): () => void {
   return () => {
     MobileSheetsExports = {};
-    (0, defineLiveExports)(MobileSheetsExports, {
+    defineLiveExports(MobileSheetsExports, {
       ComboboxSheetBackdrop: (): Dynamic =>
         MobileSheetsComboboxSheetBackdrop,
       MenuSheetPopup: (): Dynamic => MenuSheetPopup,
@@ -138,20 +138,20 @@ export function installCdsSheetsLazyLoader(): () => void {
         MobileSheetsPopoverSheetContent,
       SheetPopupHost: (): Dynamic => MobileSheetsSheetPopupHost,
     });
-    initializeSheetsLazyLoader = (0, initializeOnce)((): Dynamic => {
+    initializeSheetsLazyLoader = initializeOnce((): Dynamic => {
       "use client";
 
-      (0, initializeSheetsChrome_3)();
-      (0, initializeSheetsMenuPopup_4)();
-      (0, initializeSheetsMenuPopup_5)();
-      (0, initializeSheetsMenuPopup_6)();
+      initializeSheetsChrome_3();
+      initializeSheetsMenuPopup_4();
+      initializeSheetsMenuPopup_5();
+      initializeSheetsMenuPopup_6();
     });
-    initializeMobileSheetLoader = (0, initializeOnce)((): Dynamic => {
+    initializeMobileSheetLoader = initializeOnce((): Dynamic => {
       "use client";
 
-      (0, initializePlatformFeatureLoader)();
-      reactSheetsLazyLoader = (0, toModuleNamespace)(
-        (0, load_react)(),
+      initializePlatformFeatureLoader();
+      reactSheetsLazyLoader = toModuleNamespace(
+        load_react(),
       );
       SheetsLazyLoaderCurrentState = null;
       mobileSheetsFailed = false;
@@ -166,13 +166,13 @@ export function installCdsSheetsLazyLoader(): () => void {
       SheetsLazyLoaderHandler_4 = (): Dynamic => null;
       SheetsLazyLoaderHandler_5 = (): Dynamic => false;
     });
-    initializeSheetsLazyLoader_2 = (0, initializeOnce)((): Dynamic => {
+    initializeSheetsLazyLoader_2 = initializeOnce((): Dynamic => {
       "use client";
 
       initializeMobileSheetLoader();
-      (0, initializeHooksMediaQuery)();
-      reactSheetsLazyLoader_2 = (0, toModuleNamespace)(
-        (0, load_react)(),
+      initializeHooksMediaQuery();
+      reactSheetsLazyLoader_2 = toModuleNamespace(
+        load_react(),
       );
     });
   };

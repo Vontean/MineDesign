@@ -48,11 +48,11 @@ function SegmentedControl({
   let value2: Dynamic = (0, reactComponentsSelectionRing.useRef)(
     null,
   );
-  (0, useButtonAnimation)(value2, "SegmentedControl");
+  useButtonAnimation(value2, "SegmentedControl");
   let value3: Dynamic = (0, reactComponentsSelectionRing.useRef)(
       null,
     ),
-    value4: Dynamic = (0, isInsideField)(),
+    value4: Dynamic = isInsideField(),
     value5: Dynamic = (0, reactComponentsSelectionRing.useRef)({
       live: false,
       poll: null,
@@ -66,12 +66,12 @@ function SegmentedControl({
           value13: Dynamic = element ? scaledContainerWidth(current) : null;
         if (
           !input ||
-          !(value13?.scaled || (0, isFlipIndicatorEntering)(current2))
+          !(value13?.scaled || isFlipIndicatorEntering(current2))
         ) {
           let value18: Dynamic = element
             ? relativeIndicatorBounds(element, current)
             : null;
-          (0, animateFlipIndicator)(current2, current, value18, {
+          animateFlipIndicator(current2, current, value18, {
             correction: input,
           });
         }
@@ -121,12 +121,12 @@ function SegmentedControl({
   (0, reactComponentsSelectionRing.useLayoutEffect)((): Dynamic => {
     let current: Dynamic = value2.current,
       current2: Dynamic = value3.current,
-      value12: Dynamic = (0, getResizeObserver)(current),
+      value12: Dynamic = getResizeObserver(current),
       value13: Dynamic = current !== null && value12 !== undefined,
       current3: Dynamic = value5.current;
     current3.live = true;
     (!value13 ||
-      (current2 !== null && (0, hasFlipAnimation)(current2))) &&
+      (current2 !== null && hasFlipAnimation(current2))) &&
       value6();
     let value14: Dynamic = null;
     value13 &&
@@ -145,10 +145,10 @@ function SegmentedControl({
         current2: Dynamic = value3.current;
       if (!(!current || !current2)) {
         if (input === null) {
-          (0, isFlipIndicatorEntering)(current2) && value6();
+          isFlipIndicatorEntering(current2) && value6();
           return;
         }
-        (0, seekFlipAnimation)(
+        seekFlipAnimation(
           current2,
           input,
           (): Dynamic =>
@@ -174,7 +174,7 @@ function SegmentedControl({
       [onChange],
     ),
     value9: Dynamic = variant === "contained",
-    value10: Dynamic = (0, useTooltipGroup)(),
+    value10: Dynamic = useTooltipGroup(),
     value11: Dynamic = (
       <R_npm_RadioGroup_uF
         ref={value2}
@@ -186,8 +186,8 @@ function SegmentedControl({
         value={value}
         onValueChange={value8}
         disabled={disabled2}
-        {...(0, getSizeAttribute)(size)}
-        className={(0, cn)(
+        {...getSizeAttribute(size)}
+        className={cn(
           "relative inline-flex",
           fullWidth ? "w-full" : "w-fit",
           "shrink-0 items-stretch h-control font-sans",
@@ -223,7 +223,7 @@ function SegmentedControl({
                 value={input.value}
                 disabled={input.disabled}
                 aria-label={value12 ? (value14) : (undefined)}
-                onMouseDown={(0, withSelectionPrevention)(undefined)}
+                onMouseDown={withSelectionPrevention(undefined)}
                 className={`${selectionRingClasses} ${value9 ? ComponentsSelectionRingClassNames_3 : ComponentsSelectionRingClassNames_4} ${value12 ? AspectSquareValue : ComponentsSelectionRingClassNames}${fullWidth ? " flex-1" : ""}`}
               >
                 {value15 && input.indicator ? (<span className={"grid"}>
@@ -317,7 +317,7 @@ function relativeIndicatorBounds(
     };
   let bounds2: Dynamic = input.getBoundingClientRect(),
     value3: Dynamic =
-      (0, getOwnerWindow)(options)?.devicePixelRatio || 1,
+      getOwnerWindow(options)?.devicePixelRatio || 1,
     callback: Dynamic = (input2?: Dynamic): Dynamic =>
       Math.round(input2 * value3) / value3;
   return {
@@ -338,7 +338,7 @@ function requestElementAnimationFrame(
   input?: Dynamic,
   options?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = (0, getConnectedOwnerWindow)(input);
+  let value: Dynamic = getConnectedOwnerWindow(input);
   if (!value || typeof value.requestAnimationFrame != "function") return null;
   let value2: Dynamic = value.requestAnimationFrame(options);
   return (): Dynamic => {
@@ -349,7 +349,7 @@ function requestElementAnimationFrame(
 }
 function elementBorderBoxWidth(input?: Dynamic): Dynamic {
   let style: Dynamic = (
-      (0, getOwnerWindow)(input) ?? window
+      getOwnerWindow(input) ?? window
     ).getComputedStyle(input),
     value: Dynamic = parseFloat(style.width);
   return style.boxSizing === "border-box"
@@ -377,18 +377,18 @@ export {
 };
 export function installCdsComponentsSelectionPoints(): () => void {
   return () => {
-    initializeComponentsSelectionPoints = (0, initializeOnce)(
+    initializeComponentsSelectionPoints = initializeOnce(
       (): Dynamic => {
         "use client";
 
-        (0, initializeHooksLayoutEffect)();
-        (0, initializeClassNames)();
-        reactComponentsSelectionPoints = (0, toModuleNamespace)(
-          (0, load_react)(),
+        initializeHooksLayoutEffect();
+        initializeClassNames();
+        reactComponentsSelectionPoints = toModuleNamespace(
+          load_react(),
         );
-        (0, initializeNpm_clsx_xh)();
-        jsxComponentsSelectionPoints = (0, toModuleNamespace)(
-          (0, load_react_jsx_runtime)(),
+        initializeNpm_clsx_xh();
+        jsxComponentsSelectionPoints = toModuleNamespace(
+          load_react_jsx_runtime(),
         );
         ComponentsSelectionPointsLimit = 3;
         ComponentsSelectionPointsConstant = 8;
@@ -432,7 +432,7 @@ export function installCdsComponentsSelectionPoints(): () => void {
             value6: Dynamic = (0, reactComponentsSelectionPoints.useRef)(
               onResizeEnd,
             );
-          (0, useIsomorphicLayoutEffect)((): Dynamic => {
+          useIsomorphicLayoutEffect((): Dynamic => {
             value4.current = onResize;
             value5.current = onResizeStart;
             value6.current = onResizeEnd;
@@ -532,7 +532,7 @@ export function installCdsComponentsSelectionPoints(): () => void {
                 callback2(input);
                 onKeyDown?.(input);
               }}
-              className={(0, cn)(
+              className={cn(
                 "cds-reset group/resize outline-none focus-visible:outline-hidden",
                 value ? "w-3 cursor-col-resize" : "h-3 cursor-row-resize",
                 side === undefined
@@ -548,7 +548,7 @@ export function installCdsComponentsSelectionPoints(): () => void {
             >
               <div
                 aria-hidden={true}
-                className={(0, npm_clsx_Ea)(
+                className={npm_clsx_Ea(
                   "absolute rounded-full transition-shadow duration-fast group-focus-visible/resize:shadow-focus",
                   value
                     ? "inset-y-0 left-1/2 w-3 -translate-x-1/2 cursor-col-resize"
@@ -558,7 +558,7 @@ export function installCdsComponentsSelectionPoints(): () => void {
               <div
                 aria-hidden={true}
                 data-cds-part={"resize-pill"}
-                className={(0, npm_clsx_Ea)(
+                className={npm_clsx_Ea(
                   "absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-current transition-[opacity,color,background-color]",
                   value
                     ? "h-full max-h-12 w-[3px] group-focus-visible/resize:max-h-none"

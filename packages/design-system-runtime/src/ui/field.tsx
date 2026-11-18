@@ -71,7 +71,7 @@ export {
 export function installUiField(): () => void {
   return () => {
     FieldComponents = {} as C.FieldComponents;
-    (0, defineLiveExports)(FieldComponents, {
+    defineLiveExports(FieldComponents, {
       Validity: () => FieldRow,
       TextInput: () => FieldTextInput,
       TextArea: () => FieldTextArea,
@@ -84,14 +84,14 @@ export function installUiField(): () => void {
       Combobox: () => FieldCombobox,
       Checkbox: () => FieldCheckbox,
     });
-    (0, initializeClassNames)();
-    (0, initializeIcons)();
-    reactField = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    initializeClassNames();
+    initializeIcons();
+    reactField = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
-    jsxField = (0, toModuleNamespace)(
-      (0, loadJsxNamespace)(),
+    jsxField = toModuleNamespace(
+      loadJsxNamespace(),
       1,
     );
     FIELD_DISABLED_INVALID_STATES = {
@@ -130,7 +130,7 @@ export function installUiField(): () => void {
           data-cds={"Field"}
           validationMode={validationMode}
           {...props}
-          className={(0, cn)(
+          className={cn(
             "flex flex-col gap-xs font-sans",
             className,
           )}
@@ -157,13 +157,13 @@ export function installUiField(): () => void {
         { className: className, id: id, ...props }: C.FieldLabelProps,
         options: React.ForwardedRef<HTMLLabelElement>,
       ) => {
-        let value: string | undefined = (0, useFieldLabelId)();
+        let value: string | undefined = useFieldLabelId();
         return (
           <baseField.Label
             ref={options}
             id={id ?? value}
             {...props}
-            className={(0, cn)(
+            className={cn(
               "text-body font-medium leading-none text-primary",
               className,
             )}
@@ -180,7 +180,7 @@ export function installUiField(): () => void {
         <baseField.Description
           ref={options}
           {...props}
-          className={(0, cn)(
+          className={cn(
             "text-footnote font-normal leading-snug text-muted",
             className,
           )}
@@ -200,7 +200,7 @@ export function installUiField(): () => void {
         <baseField.Error
           ref={options}
           {...props}
-          className={(0, cn)(
+          className={cn(
             "flex items-start gap-1 text-footnote font-normal leading-snug text-danger",
             className,
           )}
@@ -237,12 +237,12 @@ export function installUiField(): () => void {
     );
     FieldRootWithLabel = baseField.Control;
     FieldRow = baseField.Validity;
-    reactFieldTextInput = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    reactFieldTextInput = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
-    jsxFieldTextInput = (0, toModuleNamespace)(
-      (0, loadJsxNamespace)(),
+    jsxFieldTextInput = toModuleNamespace(
+      loadJsxNamespace(),
       1,
     );
     FieldTextInput = reactFieldTextInput.forwardRef(
@@ -268,12 +268,12 @@ export function installUiField(): () => void {
       ),
     );
     FieldTextInput.displayName = "Field.TextInput";
-    reactFieldTextArea = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    reactFieldTextArea = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
-    jsxFieldTextArea = (0, toModuleNamespace)(
-      (0, loadJsxNamespace)(),
+    jsxFieldTextArea = toModuleNamespace(
+      loadJsxNamespace(),
       1,
     );
     FieldTextArea = reactFieldTextArea.forwardRef(
@@ -299,12 +299,12 @@ export function installUiField(): () => void {
       ),
     );
     FieldTextArea.displayName = "Field.TextArea";
-    reactFieldNumberInput = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    reactFieldNumberInput = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
-    jsxFieldNumberInput = (0, toModuleNamespace)(
-      (0, loadJsxNamespace)(),
+    jsxFieldNumberInput = toModuleNamespace(
+      loadJsxNamespace(),
       1,
     );
     FieldNumberInput = reactFieldNumberInput.forwardRef(

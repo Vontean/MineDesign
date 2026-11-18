@@ -337,7 +337,7 @@ export function installCanvasViewportStore(): () => void {
     CanvasViewportStoreMatches = (): Dynamic =>
       typeof matchMedia == "function" &&
       matchMedia("(prefers-reduced-motion: reduce)").matches;
-    animateViewportZoom = !(0, getDevicePreviewCapabilities)()
+    animateViewportZoom = !getDevicePreviewCapabilities()
       .coarsePointer;
     createViewportStoreValue = createViewportStore(
       {

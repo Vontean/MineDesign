@@ -38,7 +38,7 @@ function findPreviewMediaElement(
   if (!input) return null;
   let value2: Dynamic = [
     ...input.querySelectorAll(
-      (0, SessionArtboardStateHandler)(options, context),
+      SessionArtboardStateHandler(options, context),
     ),
   ].filter(
     (input2?: Dynamic): Dynamic =>
@@ -87,7 +87,7 @@ function useVideoPlayback(input?: Dynamic, options: Dynamic = 0): Dynamic {
         value7.current = value10;
         value4(value10 !== null);
         if (value10) {
-          let value11: Dynamic = (0, createVideoPlaybackStore)(
+          let value11: Dynamic = createVideoPlaybackStore(
             value10,
           );
           value6.current = value11;
@@ -196,7 +196,7 @@ function VideoSeekControl({
       unit={"s"}
       disabled={value5 !== undefined}
       title={
-        (value5) ?? (((((MediaVideoPlaybackPlayPauseSeekConfig.seek) + (": ")) + ((0, formatVideoTime)(value.currentTime))) + (" / ")) + ((0, formatVideoTime)(value.duration)))
+        (value5) ?? (((((MediaVideoPlaybackPlayPauseSeekConfig.seek) + (": ")) + (formatVideoTime(value.currentTime))) + (" / ")) + (formatVideoTime(value.duration)))
       }
       onLive={value4}
       onValue={value4}
@@ -253,7 +253,7 @@ export function installEditorMediaPlaybackControls(): () => void {
     ThisVideoCouldnTBeLoadedSoMessage =
       uiMessage("inspector.playbackControls.thisVideoCouldnTBe2");
     MediaPlaybackControlsQuerySelector = (input?: Dynamic): Dynamic =>
-      (0, isImageDecodeQueued)(input)
+      isImageDecodeQueued(input)
         ? uiMessage("inspector.playbackControls.only") +
           String(4) +
           " videos play at once on a page. This one starts when another is deleted or leaves view."
@@ -290,18 +290,18 @@ export function installEditorMediaPlaybackControls(): () => void {
             ? undefined
             : MediaPlaybackControlsLabel
         : (options ?? ThisVideoIsnTPlayingHereRightMessage);
-    (0, initializeCdsIndex)();
-    reactMediaPlaybackControls = (0, toModuleNamespace)(
-      (0, load_react)(),
+    initializeCdsIndex();
+    reactMediaPlaybackControls = toModuleNamespace(
+      load_react(),
       1,
     );
-    reactMediaPlaybackControls_2 = (0, toModuleNamespace)(
-      (0, load_react)(),
+    reactMediaPlaybackControls_2 = toModuleNamespace(
+      load_react(),
       1,
     );
-    (0, initializeCdsIndex)();
-    jsxMediaPlaybackControls = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    initializeCdsIndex();
+    jsxMediaPlaybackControls = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
     PropertiesInheritedFieldValueAlias = PropertiesInheritedFieldValue;

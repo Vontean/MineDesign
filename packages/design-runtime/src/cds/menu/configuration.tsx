@@ -60,13 +60,13 @@ function PopupScrollArea({
       : undefined;
   return header || footer ? (
     <div
-      className={(0, npm_clsx_Ea)(
+      className={npm_clsx_Ea(
         "flex min-h-0 flex-col overflow-hidden rounded-[inherit]",
         fill && "flex-1",
       )}
     >
       {header && (<div
-          className={(0, cn)(
+          className={cn(
             SheetsScrollAreaClassNames_3,
             headerClassName,
           )}
@@ -91,7 +91,7 @@ function PopupScrollArea({
       style={{
         maxHeight: value,
       }}
-      className={(0, npm_clsx_Ea)(
+      className={npm_clsx_Ea(
         SheetsScrollAreaClassNames,
         fill && "flex-1",
       )}
@@ -123,11 +123,11 @@ export {
 };
 export function installCdsMenuConfiguration(): () => void {
   return () => {
-    initializeMenuConfiguration = (0, initializeOnce)(() => {
+    initializeMenuConfiguration = initializeOnce(() => {
       "use client";
 
-      reactMenuConfiguration = (0, toModuleNamespace)(
-        (0, load_react)(),
+      reactMenuConfiguration = toModuleNamespace(
+        load_react(),
       );
       MenuRootContext = (0,
       reactMenuConfiguration.createContext)<MenuRootState | null>(null);

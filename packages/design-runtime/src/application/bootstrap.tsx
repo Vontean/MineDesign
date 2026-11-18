@@ -37,7 +37,7 @@ var bootstrapJsxRuntime: Dynamic;
 var EMPTY_BOOT_CONTENT: Dynamic;
 var fetchArtifactFile: Dynamic;
 function bootstrapArtifactApplication(options: Dynamic = {}): Dynamic {
-  (0, applyDocumentCdsTheme)(document);
+  applyDocumentCdsTheme(document);
   let startedAt: Dynamic = performance.now(),
     value: Dynamic,
     value2: Dynamic;
@@ -54,11 +54,11 @@ function bootstrapArtifactApplication(options: Dynamic = {}): Dynamic {
     },
   );
   let value3: Dynamic =
-      options.document !== undefined ? null : (0, getEmbedContext)(),
+      options.document !== undefined ? null : getEmbedContext(),
     flag: Dynamic = false,
     callback: Dynamic = (): Dynamic => flag,
     callback2: Dynamic = (): Dynamic =>
-      (0, fetchPublishedFileIndex)(fetchArtifactFile).catch(
+      fetchPublishedFileIndex(fetchArtifactFile).catch(
         (): Dynamic => ({
           files: undefined,
           narrowed: false,
@@ -93,9 +93,9 @@ function bootstrapArtifactApplication(options: Dynamic = {}): Dynamic {
       setTimeout((): Dynamic => {
         callback2().then((input2?: Dynamic): Dynamic => {
           input2.files !== undefined &&
-            (0, setPublishedFileReferences)(input2.files);
+            setPublishedFileReferences(input2.files);
           (input2.files === undefined || (input2.narrowed && input)) &&
-            ((0, clearPendingFileOverlay)(),
+            (clearPendingFileOverlay(),
             value7(input, options2 + 1));
         });
       }, value14);
@@ -105,8 +105,8 @@ function bootstrapArtifactApplication(options: Dynamic = {}): Dynamic {
       value6 !== null
         ? null
         : Promise.all([
-            (0, getRealtimeDatabaseAdapter)(),
-            (0, resolveDesignWriteAccess)(),
+            getRealtimeDatabaseAdapter(),
+            resolveDesignWriteAccess(),
           ]);
     value14?.catch((): Dynamic => {});
     let value15: Dynamic = value5 === null ? null : await value5;
@@ -115,7 +115,7 @@ function bootstrapArtifactApplication(options: Dynamic = {}): Dynamic {
         return value15(
           value14 !== null
             ? (await value14)[1]
-            : await (0, resolveDesignWriteAccess)(),
+            : await resolveDesignWriteAccess(),
         );
       } catch (value16: Dynamic) {
         console.error(
@@ -124,16 +124,16 @@ function bootstrapArtifactApplication(options: Dynamic = {}): Dynamic {
         );
         let value17: Dynamic =
           value16 instanceof Error ? value16.message : String(value16);
-        (0, completeThumbnailAfterPromise)();
+        completeThumbnailAfterPromise();
         healthReporter.report("render", "failure", "internal");
         return {
-          doc: (0, createDesignDocumentStore)({
-            ...(0, logFilesBootstrapError)({
+          doc: createDesignDocumentStore({
+            ...logFilesBootstrapError({
               state: {},
               origin: "failed",
               error: value17,
             }),
-            embeddedState: (0, createErrorDocumentState)(
+            embeddedState: createErrorDocumentState(
               CANVAS_LOAD_ERROR_TITLE,
               "Reload to try again.",
             ),
@@ -154,16 +154,16 @@ function bootstrapArtifactApplication(options: Dynamic = {}): Dynamic {
         );
         let value17: Dynamic =
           value16 instanceof Error ? value16.message : String(value16);
-        (0, completeThumbnailAfterPromise)();
+        completeThumbnailAfterPromise();
         healthReporter.report("render", "failure", "internal");
         return {
-          doc: (0, createDesignDocumentStore)({
-            ...(0, logFilesBootstrapError)({
+          doc: createDesignDocumentStore({
+            ...logFilesBootstrapError({
               state: {},
               origin: "failed",
               error: value17,
             }),
-            embeddedState: (0, createErrorDocumentState)(
+            embeddedState: createErrorDocumentState(
               CANVAS_LOAD_ERROR_TITLE,
               "Reload to try again.",
             ),
@@ -172,14 +172,14 @@ function bootstrapArtifactApplication(options: Dynamic = {}): Dynamic {
         };
       }
     let callback3: Dynamic = (input?: Dynamic): Dynamic => (
-      (0, setFileReferenceStore)(undefined),
-      (0, initializeDatabaseThumbnail)(),
-      (0, setCanvasLoadFailure)(
+      setFileReferenceStore(undefined),
+      initializeDatabaseThumbnail(),
+      setCanvasLoadFailure(
         input ?? SIGN_IN_REQUIRED_REASON,
       ),
       {
-        doc: (0, createDesignDocumentStore)(
-          (0, createEmbeddedReadonlyState)(EMPTY_BOOT_CONTENT, input),
+        doc: createDesignDocumentStore(
+          createEmbeddedReadonlyState(EMPTY_BOOT_CONTENT, input),
         ),
         census: null,
       }
@@ -187,25 +187,25 @@ function bootstrapArtifactApplication(options: Dynamic = {}): Dynamic {
     try {
       let [value16, value17]: Dynamic = await value14;
       if (value16 === null) return callback3();
-      if ((0, hasInvalidEmbedContext)())
+      if (hasInvalidEmbedContext())
         return callback3(
           "This canvas was embedded without valid options; it cannot reach its store here.",
         );
       let value18: Dynamic =
         value3 !== null
-          ? (0, prefixDocumentStore)(value16, value3.storePrefix)
+          ? prefixDocumentStore(value16, value3.storePrefix)
           : value16;
-      (0, setFileReferenceStore)(
+      setFileReferenceStore(
         value17.canWrite ? value18 : undefined,
       );
       let value19: Dynamic = await value4;
-      (0, setPublishedFileReferences)(value19 ?? null);
+      setPublishedFileReferences(value19 ?? null);
       (value19 === undefined || (flag && value17.canWrite)) &&
-        ((0, clearPendingFileOverlay)(), value7(value17.canWrite));
+        (clearPendingFileOverlay(), value7(value17.canWrite));
       let callback4: Dynamic = (input?: Dynamic): Dynamic => {
         let value20: Dynamic = value17.canWrite && input === undefined;
-        value20 || (0, setFileReferenceStore)(undefined);
-        let value21: Dynamic = (0, createLiveDocument)({
+        value20 || setFileReferenceStore(undefined);
+        let value21: Dynamic = createLiveDocument({
           codec: designDocumentStorageAdapter,
           parseContent: parseDesignContent,
           initialContent: EMPTY_BOOT_CONTENT,
@@ -214,7 +214,7 @@ function bootstrapArtifactApplication(options: Dynamic = {}): Dynamic {
           canWrite: value20,
           readOnlyReason: input ?? value17.reason,
           holdRemote: (input2?: Dynamic): Dynamic =>
-            input2 === (0, currentEditingArtboardPath)(),
+            input2 === currentEditingArtboardPath(),
           onStoreUnavailable: (input2?: Dynamic): Dynamic => {
             console.warn(
               "design: live sync unavailable in this view \u2014 " + input2,
@@ -224,25 +224,25 @@ function bootstrapArtifactApplication(options: Dynamic = {}): Dynamic {
               : (value10 = (): Dynamic => callback3());
           },
           onNotice: (input2?: Dynamic): Dynamic =>
-            (0, showEditorToast)(input2),
+            showEditorToast(input2),
         });
-        if (value3 === null && !(0, isFrameCaptureDocument)()) {
+        if (value3 === null && !isFrameCaptureDocument()) {
           value21.subscribe((): Dynamic => {
-            value21.dirty() && (0, PlatformMigrationStateNow)();
+            value21.dirty() && PlatformMigrationStateNow();
           });
-          (0, whenDocumentLive)(value21, (): Dynamic => {
-            (0, markMigrationLoaded)();
-            let value22: Dynamic = (0, getTombstoneAction)({
-              tombstone: (0, isMovedToFiles)(),
+          whenDocumentLive(value21, (): Dynamic => {
+            markMigrationLoaded();
+            let value22: Dynamic = getTombstoneAction({
+              tombstone: isMovedToFiles(),
               deadStore: input !== undefined,
               canWrite: value17.canWrite,
             });
             value22 !== "nothing" &&
-              (0, setCanvasLoadFailure)(
+              setCanvasLoadFailure(
                 CouldnTLoadThisCanvasReloadToMessage,
               );
             value22 !== "nothing" &&
-              (0, showEditorActionToast)(
+              showEditorActionToast(
                 CouldnTOpenTheCurrentVersionOfMessage,
                 null,
               );
@@ -253,7 +253,7 @@ function bootstrapArtifactApplication(options: Dynamic = {}): Dynamic {
               value21.dispose?.();
               value9 ? value9(value23) : (value10 = (): Dynamic => value23);
             }
-            (0, isMovedToFiles)() ||
+            isMovedToFiles() ||
               (value20 &&
                 options.afterStoreLive !== undefined &&
                 options
@@ -276,44 +276,44 @@ function bootstrapArtifactApplication(options: Dynamic = {}): Dynamic {
             value9 ? value9(value22) : (value10 = (): Dynamic => value22);
           };
           input === undefined &&
-            (0, subscribeMigrationRestart)(callback5);
-          (0, subscribeMovedToFiles)((): Dynamic => {
+            subscribeMigrationRestart(callback5);
+          subscribeMovedToFiles((): Dynamic => {
             input === undefined &&
               (value21.flushNow(),
-              (0, installMigrationRestartHandler)({
+              installMigrationRestartHandler({
                 isTyping: (): Dynamic =>
-                  (0, PlatformMigrationStateNow_2)(),
+                  PlatformMigrationStateNow_2(),
                 flush: (): Dynamic => value21.flushNow(),
                 drained: (): Dynamic => !value21.dirty(),
-                ...((0, currentEditingArtboard)() !== null
+                ...(currentEditingArtboard() !== null
                   ? {
-                      focus: (0, currentEditingArtboard)(),
+                      focus: currentEditingArtboard(),
                     }
                   : {}),
               }));
           });
         }
-        (0, monitorDocumentLoadHealth)(
+        monitorDocumentLoadHealth(
           value21,
           (input2?: Dynamic): Dynamic =>
             healthReporter.report(...input2),
         );
-        (0, monitorDocumentSaveHealth)(
+        monitorDocumentSaveHealth(
           value21,
           (input2?: Dynamic): Dynamic =>
             healthReporter.report(...input2),
         );
-        (0, watchThumbnailDocumentReady)(value21, {
+        watchThumbnailDocumentReady(value21, {
           whenPainted: (): Dynamic =>
-            (0, waitForDesignProjectFrames)(value21.content()).then(
-              (): Dynamic => (0, waitForThumbnailPaint)(),
+            waitForDesignProjectFrames(value21.content()).then(
+              (): Dynamic => waitForThumbnailPaint(),
             ),
         });
         return {
           doc: value21,
           census: {
             canWrite: value20,
-            capture: (0, isFrameCaptureDocument)(),
+            capture: isFrameCaptureDocument(),
             embedded: value3 !== null,
           },
         };
@@ -329,12 +329,12 @@ function bootstrapArtifactApplication(options: Dynamic = {}): Dynamic {
   }
   let value9: Dynamic, value10: Dynamic;
   function value11(input?: Dynamic): Dynamic {
-    (0, setHtmlReferenceStore)({
+    setHtmlReferenceStore({
       hydrate: (input2?: Dynamic, options2?: Dynamic): Dynamic =>
         input.updateContent(
           (input3?: Dynamic): Dynamic =>
             input3.files[input2] !== undefined &&
-            (0, isLoadingArtboardHtml)(input3.files[input2])
+            isLoadingArtboardHtml(input3.files[input2])
               ? {
                   files: {
                     ...input3.files,
@@ -361,12 +361,12 @@ function bootstrapArtifactApplication(options: Dynamic = {}): Dynamic {
   }
   function value12(input?: Dynamic): Dynamic {
     input.census !== null &&
-      (0, reportDesignOpened)(
+      reportDesignOpened(
         input.doc,
         input.census,
         (): Dynamic => ({
-          published: (0, getAllFileReferencePaths)(),
-          designSystems: (0, getDesignSystems)().length,
+          published: getAllFileReferencePaths(),
+          designSystems: getDesignSystems().length,
         }),
         frameAnalyticsReporter,
       );
@@ -376,16 +376,16 @@ function bootstrapArtifactApplication(options: Dynamic = {}): Dynamic {
     value10 = undefined;
     let doc: Dynamic = value14.doc,
       value15: Dynamic =
-        value14.entryFile ?? (0, primaryDesignFile)(doc.content());
+        value14.entryFile ?? primaryDesignFile(doc.content());
     value15 === null && (value15 = "Main.dc.html");
-    (0, setKvClient)(
+    setKvClient(
       value14.kvCap !== undefined
-        ? (0, createDocumentKvAdapter)(
+        ? createDocumentKvAdapter(
             doc,
             value14.kvCap.maxFileBytes,
             value14.kvCap.why,
           )
-        : (0, createDocumentKvAdapter)(doc),
+        : createDocumentKvAdapter(doc),
     );
     value11(doc);
     value12(value14);
@@ -394,9 +394,9 @@ function bootstrapArtifactApplication(options: Dynamic = {}): Dynamic {
     ) !== null && ((window as Dynamic).__appifactDoc = doc);
     let value16: Dynamic = (document as Dynamic).getElementById("root");
     if (!value16) throw new Error("no #root");
-    let value17: Dynamic = (0, isFrameCaptureDocument)()
+    let value17: Dynamic = isFrameCaptureDocument()
         ? runtimeEmbeddedReact
-        : (0, preparePreviewRuntime)(runtimeEmbeddedReact),
+        : preparePreviewRuntime(runtimeEmbeddedReact),
       flag2: Dynamic = false,
       value18: Dynamic = (0,
       reactDomClientPlatformReactRuntime.createRoot)(value16),
@@ -405,7 +405,7 @@ function bootstrapArtifactApplication(options: Dynamic = {}): Dynamic {
         options2?: Dynamic,
         context?: Dynamic,
       ): Dynamic =>
-        (0, isFrameCaptureDocument)() ? (
+        isFrameCaptureDocument() ? (
           <DesignCover
             key={context}
             assets={value17}
@@ -424,11 +424,11 @@ function bootstrapArtifactApplication(options: Dynamic = {}): Dynamic {
         flag2 ||
           ((flag2 = true),
           value18.render(callback3(doc, value15)),
-          value3 !== null && (0, dispatchDesignReady)());
+          value3 !== null && dispatchDesignReady());
       };
     value9 = (input2?: Dynamic): Dynamic => {
-      (0, setKvClient)(
-        (0, createDocumentKvAdapter)(input2.doc),
+      setKvClient(
+        createDocumentKvAdapter(input2.doc),
       );
       value11(input2.doc);
       value12(input2);
@@ -436,15 +436,15 @@ function bootstrapArtifactApplication(options: Dynamic = {}): Dynamic {
       value18.render(
         callback3(
           input2.doc,
-          (0, primaryDesignFile)(input2.doc.content()) ?? value15,
+          primaryDesignFile(input2.doc.content()) ?? value15,
           "no-store",
         ),
       );
-      value3 !== null && (0, dispatchDesignReady)();
+      value3 !== null && dispatchDesignReady();
     };
     let value19: Dynamic = performance.now();
     value3 !== null &&
-      ((0, installEmbeddedLifecycle)(doc), callback4());
+      (installEmbeddedLifecycle(doc), callback4());
     value2 = (): Dynamic => (window as Dynamic).setTimeout(callback4, 300);
     value !== undefined &&
       (window as Dynamic).setTimeout(
@@ -457,8 +457,8 @@ function bootstrapArtifactApplication(options: Dynamic = {}): Dynamic {
     );
   }
   Promise.all([
-    (0, initializeDatabaseRuntime)(),
-    (0, probeBlobScriptSupport)(),
+    initializeDatabaseRuntime(),
+    probeBlobScriptSupport(),
   ])
     .then((): Dynamic => value8())
     .then(value13)
@@ -474,8 +474,8 @@ export {
 };
 export function installApplicationBootstrap(): () => void {
   return () => {
-    bootstrapJsxRuntime = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    bootstrapJsxRuntime = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
     EMPTY_BOOT_CONTENT = {

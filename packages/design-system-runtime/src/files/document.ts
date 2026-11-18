@@ -36,7 +36,7 @@ function createFilesDocument<Index extends { v: number }, Content>(
       codec.wants ??
       ((input: Files.FileListingRow) =>
         input.path.startsWith(PROJECT_FILE_PREFIX) &&
-        (0, isTextFileListingRow)(input)),
+        isTextFileListingRow(input)),
     wantsFile = (input: Files.FileListingRow) =>
       !isInternalPath(input.path) && codecWants(input),
     parseContent = (input: unknown, options2: Content) => {
@@ -47,7 +47,7 @@ function createFilesDocument<Index extends { v: number }, Content>(
       }
     },
     parseTitle = (input: unknown, options2: string) =>
-      (0, normalizeArtifactTitle)(
+      normalizeArtifactTitle(
         typeof input === "string" ? input.trim() : input,
       ) ?? options2,
     state: FileDocumentState<Content> = {
@@ -73,7 +73,7 @@ function createFilesDocument<Index extends { v: number }, Content>(
       (state: import("../contracts/platform-host").SaveState) => void
     > = new Set(),
     loadSubscribers: Set<() => void> = new Set(),
-    indexStore = (0, createIndexFileStore)({
+    indexStore = createIndexFileStore({
       path: codec.indexPath,
       port: port,
       schema: codec.schema,
@@ -84,10 +84,10 @@ function createFilesDocument<Index extends { v: number }, Content>(
     reloadIndex = indexStore.reloadAndMerge.bind(indexStore),
     reloadAndMergeIndex = async (input: boolean): Promise<string[]> => {
       let value = indexStore.dirty(),
-        value2 = (0, cloneMergeValue)(indexStore.base()),
-        value3 = (0, cloneMergeValue)(indexStore.get()),
+        value2 = cloneMergeValue(indexStore.base()),
+        value3 = cloneMergeValue(indexStore.get()),
         value4 = await reloadIndex(),
-        value5: boolean = !(0, mergeValuesEqual)(
+        value5: boolean = !mergeValuesEqual(
           indexStore.base(),
           value2,
         );
@@ -107,7 +107,7 @@ function createFilesDocument<Index extends { v: number }, Content>(
       return value4;
     };
   indexStore.reloadAndMerge = () => reloadAndMergeIndex(true);
-  let queue = (0, createFilesSaveQueue)({
+  let queue = createFilesSaveQueue({
       port: port,
       index: indexStore,
       timers: timers,
@@ -232,10 +232,10 @@ function createFilesDocument<Index extends { v: number }, Content>(
       return {
         status: "error",
         message:
-          (0, describeStuckSave)(value.stuck, timers.now()) +
+          describeStuckSave(value.stuck, timers.now()) +
           (value.unsendable !== undefined
             ? " " +
-              (0, formatUnsendableFilesMessage)(value.unsendable, {
+              formatUnsendableFilesMessage(value.unsendable, {
                 restSaved: false,
                 stashed: value2,
               })
@@ -263,7 +263,7 @@ function createFilesDocument<Index extends { v: number }, Content>(
     if (value.unsendable !== undefined) {
       return {
         status: "error",
-        message: (0, formatUnsendableFilesMessage)(value.unsendable, {
+        message: formatUnsendableFilesMessage(value.unsendable, {
           stashed: value2,
         }),
         code: "invalid_content",
@@ -326,11 +326,11 @@ function createFilesDocument<Index extends { v: number }, Content>(
     let value2 = codec.indexOf(state, indexStore.get());
     if (
       indexNeedsInitialWrite ||
-      !(0, mergeValuesEqual)(value2, indexStore.get())
+      !mergeValuesEqual(value2, indexStore.get())
     ) {
       indexNeedsInitialWrite = false;
       indexStore.update((input) =>
-        (0, removeMissingMergeProperties)(input, value2),
+        removeMissingMergeProperties(input, value2),
       );
     }
   }
@@ -341,7 +341,7 @@ function createFilesDocument<Index extends { v: number }, Content>(
     isInternalPath = (input: string) =>
       input === codec.indexPath ||
       (codec.type !== undefined
-        ? (0, isReservedProjectFile)(codec.type, input)
+        ? isReservedProjectFile(codec.type, input)
         : input === MIGRATION_MANIFEST_PATH);
   function contentChanged(input?: boolean): void {
     if (readOnly() || disposed) {
@@ -349,7 +349,7 @@ function createFilesDocument<Index extends { v: number }, Content>(
     }
     personChanged = true;
     if (!input) {
-      (0, recordArtifactEdit)();
+      recordArtifactEdit();
     }
     queueContentChanges();
     notifyChange();
@@ -406,7 +406,7 @@ function createFilesDocument<Index extends { v: number }, Content>(
     try {
       bootNarrowed = false;
       bootFailureCode = undefined;
-      let value2 = await (0, readFilesBootState)({
+      let value2 = await readFilesBootState({
         port: port,
         indexPath: codec.indexPath,
         wants: wantsFile,
@@ -436,7 +436,7 @@ function createFilesDocument<Index extends { v: number }, Content>(
         let values = new Set(
           value2.listing.map((input2: Files.FileListingRow) => input2.path),
         );
-        stashOffer = await (0, applyCrashStashEdits)(
+        stashOffer = await applyCrashStashEdits(
           options.saveStash,
           (input2) =>
             input2 === codec.indexPath
@@ -464,7 +464,7 @@ function createFilesDocument<Index extends { v: number }, Content>(
         composeState(false);
         resolveWhenLive();
         if (options.saveStash !== undefined && !readOnly()) {
-          stashOffer = await (0, applyCrashStashEdits)(
+          stashOffer = await applyCrashStashEdits(
             options.saveStash,
             (input2) =>
               input2 === codec.indexPath ? indexStore.serialize() : null,
@@ -497,7 +497,7 @@ function createFilesDocument<Index extends { v: number }, Content>(
         error: value2,
         at: value,
       };
-      let value3 = (0, getBootstrapRetryDelay)(
+      let value3 = getBootstrapRetryDelay(
         value2,
         loadRetryAttempt,
       );
@@ -544,7 +544,7 @@ function createFilesDocument<Index extends { v: number }, Content>(
         value2 = undefined;
       }
       if (value2 !== undefined) {
-        let value3 = (0, mergeDocumentValues)(
+        let value3 = mergeDocumentValues(
           codec.emptyIndex(),
           value2,
           indexStore.get(),
@@ -554,9 +554,9 @@ function createFilesDocument<Index extends { v: number }, Content>(
               codec.externalMembers?.(input2, fileTexts),
           },
         );
-        if (!(0, mergeValuesEqual)(value3, indexStore.get())) {
+        if (!mergeValuesEqual(value3, indexStore.get())) {
           indexStore.update((input2) =>
-            (0, removeMissingMergeProperties)(input2, value3),
+            removeMissingMergeProperties(input2, value3),
           );
         }
       }
@@ -581,7 +581,7 @@ function createFilesDocument<Index extends { v: number }, Content>(
       let value2 =
         bootFailure === undefined
           ? 0
-          : (0, filesBootRetryDelayForHotUpdate)(
+          : filesBootRetryDelayForHotUpdate(
               bootFailure.error,
               input,
               codec.indexPath,
@@ -616,7 +616,7 @@ function createFilesDocument<Index extends { v: number }, Content>(
           decision: options3,
         });
       },
-      value = (0, filesPortExtensions)(port),
+      value = filesPortExtensions(port),
       callback2 = (input2: string) => {
         let value2 = value.heldSha?.(input2);
         return (
@@ -678,7 +678,7 @@ function createFilesDocument<Index extends { v: number }, Content>(
         callback(value2, "held");
         continue;
       }
-      let value3 = await (0, retryFileRead)(
+      let value3 = await retryFileRead(
         () => port.readText(value2.path),
         timers,
       );
@@ -689,7 +689,7 @@ function createFilesDocument<Index extends { v: number }, Content>(
       callback(value2, "theirs");
     }
     if (flag) {
-      await (0, retryFileRead)(
+      await retryFileRead(
         () => reloadAndMergeIndex(false),
         timers,
       );
@@ -703,7 +703,7 @@ function createFilesDocument<Index extends { v: number }, Content>(
   }
   loadPromise = loadFiles();
   let firstLoad = loadPromise,
-    hotController = (0, createFilesHotUpdateController)({
+    hotController = createFilesHotUpdateController({
       port: port,
       hot: options.hot,
       embedded: options.embedded,
@@ -749,7 +749,7 @@ function createFilesDocument<Index extends { v: number }, Content>(
       content: () => state.content,
       title: () => state.title,
       setTitle(input: string): void {
-        let value = (0, normalizeTitleInput)(input);
+        let value = normalizeTitleInput(input);
         if (value === state.title) {
           return;
         }
@@ -898,7 +898,7 @@ function createFilesDocument<Index extends { v: number }, Content>(
           queue.withdraw(input);
         }
         if (
-          (0, filesPortExtensions)(port).liveSha?.(input) === null
+          filesPortExtensions(port).liveSha?.(input) === null
         ) {
           if (queue.conflicted().has(input)) {
             return;
@@ -911,7 +911,7 @@ function createFilesDocument<Index extends { v: number }, Content>(
           }
           return;
         }
-        (0, retryFileRead)(() => port.readText(input), timers).then(
+        retryFileRead(() => port.readText(input), timers).then(
           (input2): void => {
             if (queue.conflicted().has(input)) {
               return;

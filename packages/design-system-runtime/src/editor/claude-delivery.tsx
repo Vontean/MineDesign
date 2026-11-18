@@ -42,7 +42,7 @@ async function resolveClaudeRoom(): Promise<Editor.RoomCapability | null> {
   let claude = (globalThis as Editor.ClaudeEnvironment).designSystemHost;
   try {
     if (typeof claude?.use === "function") {
-      let value = await (0, loadClaudeCapability)("room");
+      let value = await loadClaudeCapability("room");
       if (typeof value === "object" && value !== null) {
         return value as Editor.RoomCapability;
       } else {
@@ -193,7 +193,7 @@ function fitClaudePayload(
           (value2 + SELECTION_TRUNCATION_NOTE_RESERVE) / Math.max(1, value6),
         ),
       value8 =
-        value7 > 0 ? (0, truncateUtf16Safely)(value5, value7) : "";
+        value7 > 0 ? truncateUtf16Safely(value5, value7) : "";
     value =
       value8.length > 0
         ? {
@@ -341,12 +341,12 @@ async function trySendToClaudeSession(
         value5 =
           value4.length <= CLAUDE_SELECTION_TEXT_MAX
             ? value4
-            : (0, truncateUtf16Safely)(
+            : truncateUtf16Safely(
                 value4,
                 CLAUDE_SELECTION_TEXT_MAX,
               ) +
               selectionTruncationNote(
-                (0, truncateUtf16Safely)(
+                truncateUtf16Safely(
                   value4,
                   CLAUDE_SELECTION_TEXT_MAX,
                 ).length,
@@ -685,12 +685,12 @@ export {
 };
 export function installEditorClaudeDelivery(): () => void {
   return () => {
-    reactDesignSystemEditors = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    reactDesignSystemEditors = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
-    reactColorEditors = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    reactColorEditors = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
     EMPTY_ROOM_PEERS = Object.freeze([]);
@@ -719,7 +719,7 @@ export function installEditorClaudeDelivery(): () => void {
     UNSAFE_CLAUDE_REQUEST_CHARACTERS =
       /[\u0000-\u0008\u000B-\u001F\u007F-\u009F\u2028\u2029\u00AD\u034F\u061C\u115F\u1160\u17B4\u17B5\u180B-\u180F\u200B\u200E\u200F\u202A-\u202E\u2060-\u206F\u2800\u3164\uFEFF\uFFA0\uFFF0-\uFFF8\uFFFD\u{16FE4}\u{1BCA0}-\u{1BCA3}\u{1D173}-\u{1D17A}\u{E0000}-\u{E00FF}\u{E01F0}-\u{E0FFF}]|(?![\u200C\u200D])\p{Cf}|\p{Co}|\p{Noncharacter_Code_Point}|[\uD800-\uDFFF]/gu;
     sanitizeClaudeRequest = (text: string, limit: number) =>
-      (0, truncateUtf16Safely)(
+      truncateUtf16Safely(
         text.replace(UNSAFE_CLAUDE_REQUEST_CHARACTERS, ""),
         limit,
       );

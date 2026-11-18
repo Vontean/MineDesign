@@ -460,19 +460,19 @@ export {
 };
 export function installCdsLinks(): () => void {
   return () => {
-    initializeCdsLinks = (0, initializeOnce)((): Dynamic => {
+    initializeCdsLinks = initializeOnce((): Dynamic => {
       CdsLinksPattern = /[\t\n\r]/g;
     });
-    initializeCdsLinks_2 = (0, initializeOnce)((): Dynamic => {
+    initializeCdsLinks_2 = initializeOnce((): Dynamic => {
       CdsLinksSubscribers = new Set(["_self", "_parent", "_top"]);
       CdsLinksOpenerReferrerPattern = /^no(?:opener|referrer)$/i;
     });
-    initializeLinkRouter = (0, initializeOnce)((): Dynamic => {
+    initializeLinkRouter = initializeOnce((): Dynamic => {
       "use client";
 
       initializeCdsLinks();
       initializeCdsLinks_2();
-      reactCdsLinks = (0, toModuleNamespace)((0, load_react)());
+      reactCdsLinks = toModuleNamespace(load_react());
       LinkRouterContext = (0, reactCdsLinks.createContext)(undefined);
       CdsLinksPattern_2 = /[\x00-\x1f\x7f-\x9f]/;
       CdsLinksPattern_3 = /^\s/;

@@ -64,7 +64,7 @@ export function duplicateSelectedModelElements(deps: { readonly incrementSession
         return;
       let value307: Dynamic = deps.modelRef.current.state(deps.rootName);
       if (!value307) return;
-      let value308: Dynamic = (0, selectedRootElementIds)(
+      let value308: Dynamic = selectedRootElementIds(
         value307.model,
         [
           ...new Set(
@@ -75,7 +75,7 @@ export function duplicateSelectedModelElements(deps: { readonly incrementSession
               )
               .map(
                 (input?: Dynamic): Dynamic =>
-                  (0, promoteSvgShapeToRoot)(value307.model, input),
+                  promoteSvgShapeToRoot(value307.model, input),
               ),
           ),
         ],
@@ -117,8 +117,8 @@ export function duplicateSelectedModelElements(deps: { readonly incrementSession
           setTimeout((): Dynamic => {
             let current2: Dynamic = deps.value49.current;
             current2?.name === deps.rootName &&
-              (0, InspectorEditorEvery)(current2.tids, value311) &&
-              (0, setPickerSelection)(value312, value311, deps.rootName);
+              InspectorEditorEvery(current2.tids, value311) &&
+              setPickerSelection(value312, value311, deps.rootName);
           }, 60);
       }
     }
@@ -135,13 +135,13 @@ export async function groupSelectedModelElements(deps: { readonly modelRef: Dyna
         return;
       let value307: Dynamic = deps.modelRef.current.state(deps.rootName);
       if (!value307) return;
-      let value308: Dynamic = (0, selectedElementsInDocumentOrder)(
+      let value308: Dynamic = selectedElementsInDocumentOrder(
           value307.model,
-          (0, selectedRootElementIds)(value307.model, [
+          selectedRootElementIds(value307.model, [
             ...new Set(
               current.tids.map(
                 (input?: Dynamic): Dynamic =>
-                  (0, promoteSvgShapeToRoot)(value307.model, input),
+                  promoteSvgShapeToRoot(value307.model, input),
               ),
             ),
           ]),
@@ -164,7 +164,7 @@ export async function groupSelectedModelElements(deps: { readonly modelRef: Dyna
           ? await Promise.all(
               value308.map(
                 (input?: Dynamic): Dynamic =>
-                  (0, inspectPickerSelection)(
+                  inspectPickerSelection(
                     value311,
                     input,
                     deps.rootName,
@@ -175,7 +175,7 @@ export async function groupSelectedModelElements(deps: { readonly modelRef: Dyna
           : [],
         value314: Dynamic =
           value311 && value312 != null
-            ? await (0, inspectPickerSelection)(
+            ? await inspectPickerSelection(
                 value311,
                 value312,
                 deps.rootName,
@@ -190,7 +190,7 @@ export async function groupSelectedModelElements(deps: { readonly modelRef: Dyna
             : null,
         callback7: Dynamic = (input?: Dynamic): Dynamic =>
           (typeof input == "string" ? input : "").replace(/"/g, "'"),
-        value315: Dynamic = (0, normalizeComputedStyleCarry)({
+        value315: Dynamic = normalizeComputedStyleCarry({
           display: callback7(value314?.computed.display),
           "flex-direction": callback7(value314?.computed.flexDirection),
           gap: callback7(value314?.computed.gap),
@@ -211,11 +211,11 @@ export async function groupSelectedModelElements(deps: { readonly modelRef: Dyna
             input.computed.position === "fixed");
       if (!value309 && value313.some(callback9)) {
         let value322: Dynamic = value311
-            ? await (0, inspectGroupLayout)(
+            ? await inspectGroupLayout(
                 value311,
                 deps.rootName,
                 value308,
-                (0, commonSelectedAncestor)(value307.model, value308),
+                commonSelectedAncestor(value307.model, value308),
               )
             : null,
           current2: Dynamic = deps.value49.current;
@@ -266,7 +266,7 @@ export async function groupSelectedModelElements(deps: { readonly modelRef: Dyna
             `group-${Date.now()}`,
             value307,
           ),
-          value325: Dynamic = (0, groupModelElements)(
+          value325: Dynamic = groupModelElements(
             value307.model,
             value308,
             value323,
@@ -369,17 +369,17 @@ export async function detachSelectedComponentInstances(deps: { readonly modelRef
       let value307: Dynamic = deps.modelRef.current.state(deps.rootName);
       if (!value307) return;
       let model: Dynamic = value307.model,
-        value308: Dynamic = (0, selectedElementsInDocumentOrder)(
+        value308: Dynamic = selectedElementsInDocumentOrder(
           model,
-          (0, selectedRootElementIds)(model, current.tids),
+          selectedRootElementIds(model, current.tids),
         ),
         value309: Dynamic = value308.filter(
           (input?: Dynamic): Dynamic =>
-            (0, isDetachableDcImport)(model, input),
+            isDetachableDcImport(model, input),
         );
       if (value309.length === 0)
         return void deps.showToast(
-          (0, selectionDetachRefusal)(model, value308) ??
+          selectionDetachRefusal(model, value308) ??
             selectInstanceMessage,
         );
       let value310: Dynamic = value309.map(
@@ -388,11 +388,11 @@ export async function detachSelectedComponentInstances(deps: { readonly modelRef
         value311: Dynamic = deps.value67(),
         value312: Dynamic = await Promise.all(
           value309.map(async (input?: Dynamic): Promise<Dynamic> => {
-            let value317: Dynamic = (0, importedComponentName)(
+            let value317: Dynamic = importedComponentName(
               model.attributes(input),
             );
             if (
-              !(0, isEditableComponentName)(value317) ||
+              !isEditableComponentName(value317) ||
               value317 === deps.rootName
             )
               return {
@@ -424,16 +424,16 @@ export async function detachSelectedComponentInstances(deps: { readonly modelRef
               };
             let model2: Dynamic = value318.model,
               value319: Dynamic =
-                (0, parseDcHtmlDocument)(value318.src)?.js ?? "";
+                parseDcHtmlDocument(value318.src)?.js ?? "";
             if (/componentDidMount|this\.state\b/.test(value319))
               return {
                 blocked: PartsOfThisComponentCanTBeMessage,
               };
             let value320: Dynamic = value311
-              ? await (0, getPickerComponentScript)(
+              ? await getPickerComponentScript(
                   value311,
                   value317,
-                  (0, detachableComponentProps)(
+                  detachableComponentProps(
                     model.attributes(input),
                   ),
                 )
@@ -480,7 +480,7 @@ export async function detachSelectedComponentInstances(deps: { readonly modelRef
       ): Dynamic =>
         !("blocked" in input) &&
         deps.modelRef.current.state(
-          (0, importedComponentName)(model.attributes(options)),
+          importedComponentName(model.attributes(options)),
         )?.model !== input.model;
       if (
         value312.some(
@@ -502,18 +502,18 @@ export async function detachSelectedComponentInstances(deps: { readonly modelRef
         value315: Dynamic = value308.find(
           (input?: Dynamic): Dynamic =>
             model.tagName(input) === "dc-import" &&
-            !(0, isDetachableDcImport)(model, input),
+            !isDetachableDcImport(model, input),
         ),
         value316: Dynamic =
           value315 != null
-            ? (0, detachComponentRefusal)(model, value315)
+            ? detachComponentRefusal(model, value315)
             : undefined;
       value309.forEach((input?: Dynamic, options?: Dynamic): Dynamic => {
         let value317: Dynamic = value312[options],
           value318: Dynamic =
             "blocked" in value317
               ? value317
-              : (0, detachImportedComponent)(model, input, value317),
+              : detachImportedComponent(model, input, value317),
           value319: Dynamic =
             value318.blocked === undefined
               ? model.insertHtml(value318.html, input, "before")
@@ -568,7 +568,7 @@ export async function ungroupSelectedModelElements(deps: { readonly modelRef: Dy
       let value307: Dynamic = deps.modelRef.current.state(deps.rootName);
       if (!value307) return;
       let model: Dynamic = value307.model,
-        value308: Dynamic = (0, selectionUngroupRefusal)(
+        value308: Dynamic = selectionUngroupRefusal(
           model,
           current.tids,
         );
@@ -576,12 +576,12 @@ export async function ungroupSelectedModelElements(deps: { readonly modelRef: Dy
         return void deps.showToast(
           value308.endsWith(".") ? value308 : value308 + ".",
         );
-      let value309: Dynamic = (0, selectedRootElementIds)(
+      let value309: Dynamic = selectedRootElementIds(
           model,
           current.tids,
         ).filter(
           (input?: Dynamic): Dynamic =>
-            (0, ungroupElementRefusal)(model, input) === undefined,
+            ungroupElementRefusal(model, input) === undefined,
         ),
         value310: Dynamic = value309
           .flatMap(
@@ -594,11 +594,11 @@ export async function ungroupSelectedModelElements(deps: { readonly modelRef: Dy
             let value314: Dynamic = model.childTids(input),
               value315: Dynamic =
                 value311 && value314.length > 0
-                  ? await (0, inspectGroupLayout)(
+                  ? await inspectGroupLayout(
                       value311,
                       deps.rootName,
                       value314,
-                      (0, commonSelectedAncestor)(model, [input]),
+                      commonSelectedAncestor(model, [input]),
                       false,
                     )
                   : null;
@@ -640,7 +640,7 @@ export async function ungroupSelectedModelElements(deps: { readonly modelRef: Dy
         items2: Dynamic = [],
         flag: Dynamic = false;
       value309.forEach((input?: Dynamic, options?: Dynamic): Dynamic => {
-        let value314: Dynamic = (0, ungroupModelElement)(
+        let value314: Dynamic = ungroupModelElement(
           model,
           input,
           value312[options] ?? null,
@@ -667,7 +667,7 @@ export async function flipSelectedModelElements(deps: { readonly modelRef: Dynam
         let value307: Dynamic =
           deps.toolRef.current === "vector"
             ? FinishEditingThisDrawingSPointsToMessage
-            : (0, activeCropElement)() !== null
+            : activeCropElement() !== null
               ? GeometryFlipElementsLabel_6
               : undefined;
         if (value307 !== undefined) return void deps.showToast(value307 + ".");
@@ -678,7 +678,7 @@ export async function flipSelectedModelElements(deps: { readonly modelRef: Dynam
             (input2?: Dynamic): Dynamic => model.element(input2),
           ),
           value310: Dynamic = deps.value67(),
-          value311: Dynamic = await (0, inspectFlipSelection)(
+          value311: Dynamic = await inspectFlipSelection(
             model,
             current.tids,
             (
@@ -687,7 +687,7 @@ export async function flipSelectedModelElements(deps: { readonly modelRef: Dynam
               context?: Dynamic,
             ): Dynamic =>
               value310
-                ? (0, inspectPickerSelection)(
+                ? inspectPickerSelection(
                     value310,
                     input2,
                     deps.rootName,
@@ -703,7 +703,7 @@ export async function flipSelectedModelElements(deps: { readonly modelRef: Dynam
         if (
           deps.readOnlyRef.current ||
           deps.toolRef.current === "vector" ||
-          (0, activeCropElement)() !== null ||
+          activeCropElement() !== null ||
           current2?.name !== current.name ||
           current2.tids.join() !== current.tids.join() ||
           deps.modelRef.current.state(deps.rootName) !== value308 ||
@@ -720,17 +720,16 @@ export async function flipSelectedModelElements(deps: { readonly modelRef: Dynam
             `flip-${Date.now()}`,
             value308,
           ),
-          { flipped: value313, refused: value314 }: Dynamic = (0,
-          flipModelSelection)(model, current.tids, input, value311);
+          { flipped: value313, refused: value314 }: Dynamic = flipModelSelection(model, current.tids, input, value311);
         value314 !== undefined &&
           deps.showToast(
-            (0, partialFlipMessage)(value314, value313.length > 0),
+            partialFlipMessage(value314, value313.length > 0),
           );
         if (value313.length === 0)
           return void deps.value102(value308, value312, redo);
         deps.value149(current2, value308);
         deps.value105(deps.rootName, current2.tids);
-        (0, announce)((0, flipDirectionAnnouncement)(input));
+        announce(flipDirectionAnnouncement(input));
         deps.value8(
           `${value308.path}: flipped ${value313.length > 1 ? `${value313.length} elements` : (model.tagName(value313[0]) ?? "element")} ${input === "horizontal" ? "horizontally" : "vertically"}`,
         );
@@ -752,7 +751,7 @@ export async function wrapSelectionInAutoLayout(deps: { readonly modelRef: Dynam
             ...new Set(
               current.tids.map(
                 (input2?: Dynamic): Dynamic =>
-                  (0, promoteSvgShapeToRoot)(value307.model, input2),
+                  promoteSvgShapeToRoot(value307.model, input2),
               ),
             ),
           ],
@@ -762,9 +761,9 @@ export async function wrapSelectionInAutoLayout(deps: { readonly modelRef: Dynam
               (input2?: Dynamic, options?: Dynamic): Dynamic =>
                 input2 !== current.tids[options],
             ),
-          value309: Dynamic = (0, selectedElementsInDocumentOrder)(
+          value309: Dynamic = selectedElementsInDocumentOrder(
             value307.model,
-            (0, selectedRootElementIds)(value307.model, items2),
+            selectedRootElementIds(value307.model, items2),
           ),
           value310: Dynamic =
             new Set(
@@ -819,7 +818,7 @@ export async function wrapSelectionInAutoLayout(deps: { readonly modelRef: Dynam
               ? await Promise.all(
                   value309.map(
                     (input2?: Dynamic): Dynamic =>
-                      (0, inspectPickerSelection)(
+                      inspectPickerSelection(
                         value312,
                         input2,
                         deps.rootName,
@@ -954,11 +953,11 @@ export function buildElementContextActions(deps: { readonly canvasTools: Dynamic
             input != null && !value310.includes(input) ? [input] : value310,
           value312: Dynamic =
             value309 && value307
-              ? (0, selectionDetachRefusal)(
+              ? selectionDetachRefusal(
                   value309,
-                  (0, selectedElementsInDocumentOrder)(
+                  selectedElementsInDocumentOrder(
                     value309,
-                    (0, selectedRootElementIds)(value309, [
+                    selectedRootElementIds(value309, [
                       ...value311,
                     ]),
                   ),
@@ -969,7 +968,7 @@ export function buildElementContextActions(deps: { readonly canvasTools: Dynamic
               ? undefined
               : deps.toolRef.current === "vector"
                 ? FinishEditingThisDrawingSPointsToMessage
-                : (0, activeCropElement)() !== null
+                : activeCropElement() !== null
                   ? GeometryFlipElementsLabel_6
                   : undefined,
           value314: Dynamic = value307
@@ -981,10 +980,10 @@ export function buildElementContextActions(deps: { readonly canvasTools: Dynamic
           value315: Dynamic =
             !!value309 &&
             value307 &&
-            (0, canMovePositionedSelection)(value309, value311),
+            canMovePositionedSelection(value309, value311),
           value316: Dynamic =
             !!value309 &&
-            (0, promotedSvgSelection)(value309, value311).promoted &&
+            promotedSvgSelection(value309, value311).promoted &&
             value311.every(
               (input2?: Dynamic): Dynamic =>
                 value309
@@ -1003,11 +1002,11 @@ export function buildElementContextActions(deps: { readonly canvasTools: Dynamic
               KeyboardEditActionsCutCopyPasteConfig[
                 input2 > 0 ? "front" : "back"
               ].shortcut,
-            get disabledReason() { return !value309 || !value307 ? (undefined) : (value316 ? (ADrawnLineOrPathCannotMessage) : ((0, SelectionStackingEvery)(
+            get disabledReason() { return !value309 || !value307 ? (undefined) : (value316 ? (ADrawnLineOrPathCannotMessage) : (SelectionStackingEvery(
                         value309,
                         value311,
                         input2,
-                      ) ? (value315 ? ((0, stackingAnnouncement)(
+                      ) ? (value315 ? (stackingAnnouncement(
                           input2 > 0 ? "front" : "back",
                           false,
                         )) : (input2 > 0 ? (uiMessage("inspector.session.alreadyLast")) : (uiMessage("inspector.session.alreadyFirst")))) : (undefined))); },
@@ -1039,7 +1038,7 @@ export function buildElementContextActions(deps: { readonly canvasTools: Dynamic
             }),
             ...value314,
           },
-          ...(deps.value78 && (0, supportsClipboardImages)()
+          ...(deps.value78 && supportsClipboardImages()
             ? [
                 {
                   get label() { return uiMessage("inspector.session.copyAsPNG"); },
@@ -1076,7 +1075,7 @@ export function buildElementContextActions(deps: { readonly canvasTools: Dynamic
           deps.insertAtPoint &&
           deps.canvasTools &&
           value309 &&
-          (0, emptyArtboardDropTarget)(value309) != null
+          emptyArtboardDropTarget(value309) != null
             ? [
                 {
                   get label() { return uiMessage("inspector.session.pasteHere"); },
@@ -1110,7 +1109,7 @@ export function buildElementContextActions(deps: { readonly canvasTools: Dynamic
             get label() { return uiMessage("inspector.session.ungroup"); },
             hotkey: "shift+cmd+g",
             disabledReason: value309
-              ? (0, selectionUngroupRefusal)(value309, value311)
+              ? selectionUngroupRefusal(value309, value311)
               : undefined,
             onClick: (): Dynamic => {
               deps.value262();
@@ -1125,7 +1124,7 @@ export function buildElementContextActions(deps: { readonly canvasTools: Dynamic
               disabledReason:
                 value313 ??
                 (value309
-                  ? (0, canFlipSelection)(value309, value311, input2)
+                  ? canFlipSelection(value309, value311, input2)
                   : undefined),
               onClick: (): Dynamic => deps.value259(input2),
               ...value314,

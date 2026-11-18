@@ -76,7 +76,7 @@ function chooseFileStorageRoute(
     };
   }
   let mime = storedMimeTypeForPath(file.name, file.type);
-  if ((0, isTextFilePath)(file.name) && mime === null) {
+  if (isTextFilePath(file.name) && mime === null) {
     if (file.size > MAX_INLINE_ASSET_BYTESModelStorage) {
       return {
         to: "refuse",
@@ -98,7 +98,7 @@ function chooseFileStorageRoute(
       };
     }
   }
-  let inlineBytes = (0, isTextFilePath)(file.name)
+  let inlineBytes = isTextFilePath(file.name)
       ? file.size + 64
       : estimateBase64StringBytes(file.size),
     inlineLimit: number = file.font
@@ -203,11 +203,11 @@ function storedMimeTypeForPath(
   path: string,
   providedMime: string = "",
 ): string | null {
-  if (!(0, canUseStoragePointer)(path)) {
+  if (!canUseStoragePointer(path)) {
     return null;
   }
   let mime =
-    BLOB_STORAGE_MIME_TYPES[(0, fileExtension)(path)] ?? null;
+    BLOB_STORAGE_MIME_TYPES[fileExtension(path)] ?? null;
   if (mime !== null) {
     return mime;
   }
@@ -289,7 +289,7 @@ function parseStorageRecord(
       type:
         mime !== undefined && STORAGE_MIME_TYPE_PATTERN.test(mime)
           ? mime
-          : (0, mimeTypeForPath)(path),
+          : mimeTypeForPath(path),
     };
   if (store === "blob") {
     record.id = id;
@@ -326,7 +326,7 @@ function parseStorageRecord(
     record.via = via;
   }
   let thumb = boundedStorageText(input.thumb, 300);
-  if (thumb !== undefined && (0, isValidDesignSystemPath)(thumb)) {
+  if (thumb !== undefined && isValidDesignSystemPath(thumb)) {
     record.thumb = thumb;
   }
   let supersedes = boundedStorageText(input.supersedes, 64);
@@ -342,7 +342,7 @@ function storageCatalogFromManifest(
     warnings: [],
   },
 ): StorageCatalog {
-  let manifest = (0, parseManifest)(manifestInput, report);
+  let manifest = parseManifest(manifestInput, report);
   if (!Object.hasOwn(manifest, "storage")) {
     return {
       files: {},
@@ -376,8 +376,8 @@ function storageCatalogFromManifest(
         break;
       }
       if (
-        !(0, isValidDesignSystemPath)(value) ||
-        !(0, canUseStoragePointer)(value)
+        !isValidDesignSystemPath(value) ||
+        !canUseStoragePointer(value)
       ) {
         report.dropped.push(
           "manifest.json storage " +
@@ -405,10 +405,10 @@ function reconcileStorageCatalog(
   let reconciled: Record<string, Model.StorageRecord> = {},
     pointers: [string, Model.StoragePointer][] = [];
   for (let value of Object.keys(files).sort()) {
-    let value2 = (0, storagePointerForFile)(value, files[value]);
+    let value2 = storagePointerForFile(value, files[value]);
     if (
       value2 !== null &&
-      !(0, isHeldFilePointer)(value, files[value])
+      !isHeldFilePointer(value, files[value])
     ) {
       pointers.push([value, value2]);
     }
@@ -447,7 +447,7 @@ function reconcileStorageCatalog(
               bytes: 0,
               type:
                 storedMimeTypeForPath(value) ??
-                (0, mimeTypeForPath)(value),
+                mimeTypeForPath(value),
             };
     } else {
       reconciled[value] =
@@ -456,7 +456,7 @@ function reconcileStorageCatalog(
           : {
               store: "file",
               bytes: 0,
-              type: (0, mimeTypeForPath)(value),
+              type: mimeTypeForPath(value),
             };
     }
   }
@@ -467,7 +467,7 @@ function reconcileStorageCatalog(
 function referencedBlobIds(files: Model.FileTable): Set<string> {
   let ids = new Set<string>();
   for (let value of Object.keys(files)) {
-    let value2 = (0, storagePointerForFile)(value, files[value]);
+    let value2 = storagePointerForFile(value, files[value]);
     if (value2 !== null && value2.store === "blob") {
       ids.add(value2.id);
     }
@@ -545,7 +545,7 @@ function storageRecordForFile(
   if (content === undefined) {
     return null;
   }
-  let pointer = (0, storagePointerForFile)(path, content);
+  let pointer = storagePointerForFile(path, content);
   if (pointer === null) {
     return null;
   }
@@ -562,13 +562,13 @@ function storageRecordForFile(
       store: "blob",
       id: pointer.id,
       bytes: 0,
-      type: storedMimeTypeForPath(path) ?? (0, mimeTypeForPath)(path),
+      type: storedMimeTypeForPath(path) ?? mimeTypeForPath(path),
     };
   } else {
     return {
       store: "file",
       bytes: 0,
-      type: (0, mimeTypeForPath)(path),
+      type: mimeTypeForPath(path),
     };
   }
 }
@@ -579,7 +579,7 @@ function compareReferencedAndStoredBlobs(
   let referencedIds = referencedBlobIds(files),
     missingPaths: string[] = [];
   for (let value of Object.keys(files).sort()) {
-    let value2 = (0, storagePointerForFile)(value, files[value]);
+    let value2 = storagePointerForFile(value, files[value]);
     if (
       value2 !== null &&
       value2.store === "blob" &&

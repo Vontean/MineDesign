@@ -32,8 +32,8 @@ function normalizeDownloadName(name: string): boolean {
 }
 function hasDownloadCapability(): boolean {
   return (
-    supportsShellSave((0, getClaudeCapability)("downloads")) ||
-    (0, hasClaudeCapabilityLoader)()
+    supportsShellSave(getClaudeCapability("downloads")) ||
+    hasClaudeCapabilityLoader()
   );
 }
 function pageDeclaresDownloads(): boolean {
@@ -65,7 +65,7 @@ async function downloadsWithheld(
   let value: ReturnType<typeof setTimeout> | undefined;
   try {
     if (
-      !(0, hasClaudeCapabilityLoader)() ||
+      !hasClaudeCapabilityLoader() ||
       !pageDeclaresDownloads()
     ) {
       return false;
@@ -75,7 +75,7 @@ async function downloadsWithheld(
     );
     return (
       (await Promise.race([
-        (0, loadClaudeCapability)("downloads"),
+        loadClaudeCapability("downloads"),
         promise,
       ])) === null
     );
@@ -125,8 +125,7 @@ async function saveThroughShell(
       code: "withheld",
     };
   }
-  let value: Editor.DownloadCapability | null = await (0,
-  getOrLoadClaudeCapability)("downloads", supportsShellSave);
+  let value: Editor.DownloadCapability | null = await getOrLoadClaudeCapability("downloads", supportsShellSave);
   if (value === null) {
     return {
       outcome: "unsupported",
@@ -183,8 +182,8 @@ export {
 };
 export function installEditorDownloadPermission(): () => void {
   return () => {
-    ReactDownloadsPermission = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    ReactDownloadsPermission = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
     DOWNLOADS_UNAVAILABLE_MESSAGE =
@@ -215,7 +214,7 @@ export function installEditorDownloadPermission(): () => void {
     ]);
     DOWNLOAD_NAME_IGNORABLE_PATTERN =
       /[\p{Cf}\p{Cs}\p{Zl}\p{Zp}\p{Default_Ignorable_Code_Point}\u2800\uFFFC\u{13441}\u{13442}\u{1D159}\u0000-\u001F\u007F-\u009F]/gu;
-    supportsShellSave = (0, capabilityHasMethod)("save") as (
+    supportsShellSave = capabilityHasMethod("save") as (
       capability: unknown,
     ) => capability is Editor.DownloadCapability;
   };

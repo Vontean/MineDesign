@@ -20,15 +20,15 @@ export {
 };
 export function installEditorKeyboardEditActions(): () => void {
   return () => {
-    reactKeyboardEditActions = (0, toModuleNamespace)(
-      (0, load_react)(),
+    reactKeyboardEditActions = toModuleNamespace(
+      load_react(),
       1,
     );
-    (0, initializeCdsIndex)();
-    (0, initializePlatformCdsIsland)();
-    (0, initializeCdsIndex)();
-    jsxKeyboardEditActions = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    initializeCdsIndex();
+    initializePlatformCdsIsland();
+    initializeCdsIndex();
+    jsxKeyboardEditActions = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
     KeyboardEditActionsCutCopyPasteConfig = {
@@ -75,6 +75,6 @@ export function installEditorKeyboardEditActions(): () => void {
     };
     isContextMenuShortcut = (input?: Dynamic): Dynamic =>
       input.key === "ContextMenu" || (input.key === "F10" && input.shiftKey);
-    (0, initializeCdsIndex)();
+    initializeCdsIndex();
   };
 }

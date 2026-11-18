@@ -69,7 +69,7 @@ function useSessionPopupFocus(input?: Dynamic, options?: Dynamic): Dynamic {
             if (
               !(
                 value4.matches("[data-mc-scrim]") ||
-                (0, isClosedOverlay)(value4)
+                isClosedOverlay(value4)
               ) &&
               !(
                 currentTarget instanceof Node &&
@@ -88,7 +88,7 @@ function useSessionPopupFocus(input?: Dynamic, options?: Dynamic): Dynamic {
               value5: Dynamic =
                 callback() ??
                 (value4 !== null
-                  ? ((0, getFocusableElements)(value4)[0] ?? null)
+                  ? (getFocusableElements(value4)[0] ?? null)
                   : null);
             if (value5 === null) return;
             event.preventDefault();
@@ -172,7 +172,7 @@ function SessionPopup({
         initialFocus={value5}
         keepFocus={true}
         padding={"none"}
-        className={(0, joinClassNames)("p-2", popoverClassName)}
+        className={joinClassNames("p-2", popoverClassName)}
         editsAreUndoSteps={editsAreUndoSteps}
       >
         <div
@@ -210,7 +210,7 @@ function SessionChoicePopup({
           aria-label={title}
           data-icon-row={""}
           className={"flex items-center gap-1"}
-          onKeyDown={(0, pickerSearchKeyHandler)("button", {
+          onKeyDown={pickerSearchKeyHandler("button", {
             across: true,
           })}
         >
@@ -284,7 +284,7 @@ function SessionTypographyPopup({
   let value15: Dynamic = value12 ? value13.trim().toLowerCase() : "",
     value16: Dynamic = options.filter(
       (input?: Dynamic): Dynamic =>
-        (0, pickerSearchMatches)(
+        pickerSearchMatches(
           value15,
           input.text,
           input.hint,
@@ -324,7 +324,7 @@ function SessionTypographyPopup({
         data-mc-bordered={""}
         title={uiMessage("inspector.popups.textStyle")}
         chevron={true}
-        className={(0, joinClassNames)(
+        className={joinClassNames(
           "rounded-lg border border-border-line px-2",
           value2 && SessionStripPopupsClassNames,
         )}
@@ -367,7 +367,7 @@ function SessionTypographyPopup({
               {systemHeader}
               <div
                 data-search-scope={""}
-                onKeyDown={(0, pickerSearchKeyHandler)(
+                onKeyDown={pickerSearchKeyHandler(
                   '[data-kit="MenuItem"]',
                 )}
               >
@@ -377,7 +377,7 @@ function SessionTypographyPopup({
                     label={ColorContrastCopyLabel_5}
                     rowSelector={'[data-kit="MenuItem"]'}
                     onEnterIndex={(): Dynamic =>
-                      (0, pickerSearchInitialIndex)(
+                      pickerSearchInitialIndex(
                         value15,
                         value16.map((input?: Dynamic): Dynamic => input.text),
                       )
@@ -498,11 +498,11 @@ function CustomTypographyEditor({ c: c }: Dynamic): Dynamic {
       <div className={"grid grid-cols-2 gap-2"}>
         <PropertySelect
           aria-label={uiMessage("inspector.popups.weight")}
-          items={(0, includeCurrentFontVariant)(c.face.faces, c.face)}
-          value={(0, fontVariantKey)(c.face.weight, c.face.italic)}
+          items={includeCurrentFontVariant(c.face.faces, c.face)}
+          value={fontVariantKey(c.face.weight, c.face.italic)}
           onOpenChange={c.face.onOpenChange}
           onChange={(input?: Dynamic): Dynamic => {
-            let value: Dynamic = (0, parseFontVariantKey)(input);
+            let value: Dynamic = parseFontVariantKey(input);
             value !== undefined &&
               c.face.onChange(value.weight, value.italic);
           }}
@@ -615,14 +615,14 @@ function SessionActionsPopover(source?: Dynamic): Dynamic {
                 (input2?: Dynamic): Dynamic => input2.name === input,
               )?.color;
               value11 !== undefined &&
-                (0, announce)((): Dynamic => {
-                  let value12: Dynamic = (0, evaluateColorContrast)(
+                announce((): Dynamic => {
+                  let value12: Dynamic = evaluateColorContrast(
                     value11,
                     value10,
                   );
                   return value12 === undefined
                     ? null
-                    : (0, summarizeContrastResults)(value12).spoken;
+                    : summarizeContrastResults(value12).spoken;
                 });
             }}
             onPicked={(): Dynamic => value2(false)}
@@ -653,11 +653,11 @@ function SessionColorSwatch({ css: css }: Dynamic): Dynamic {
     <span
       aria-hidden={"true"}
       data-swatch-dot={""}
-      className={(0, joinClassNames)(
+      className={joinClassNames(
         "inline-block h-4 w-4 shrink-0 rounded-[4px] border border-border-strong pointer-coarse:h-5 pointer-coarse:w-5",
         css === undefined && "border-dashed",
       )}
-      style={(0, colorWellStyle)(css)}
+      style={colorWellStyle(css)}
     />
   );
 }
@@ -728,8 +728,8 @@ export {
 };
 export function installEditorSessionStripPopups(): () => void {
   return () => {
-    jsxSessionStripPopups = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    jsxSessionStripPopups = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
     SessionStripPopupsClassNames = "bg-fill-ghost-hover";

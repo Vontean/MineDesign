@@ -110,7 +110,7 @@ function AnnotationShapeBody({
   return (
     <div
       data-testid={on ? "mega-shape-body-" + id : undefined}
-      className={(0, joinClassNames)(
+      className={joinClassNames(
         "pointer-events-none absolute inset-0 box-border",
         on && "overflow-hidden",
       )}
@@ -162,8 +162,8 @@ export {
 };
 export function installCanvasAnnotationShapeStyle(): () => void {
   return () => {
-    jsxCanvasAnnotationShapeStyle = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    jsxCanvasAnnotationShapeStyle = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
     annotationStrokeWidth = (input?: Dynamic, options?: Dynamic): Dynamic => {

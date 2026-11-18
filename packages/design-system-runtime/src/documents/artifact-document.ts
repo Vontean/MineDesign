@@ -10,7 +10,7 @@ var RAIL_THUMB_RESIZE_SETTLE_MS: number;
 var activeArtifactDocument: Host.ActiveArtifactRuntime | undefined;
 function normalizeArtifactTitle(title: unknown): string | undefined {
   if (typeof title === "string" && title.length > 0) {
-    return (0, truncateUtf16Safely)(
+    return truncateUtf16Safely(
       title,
       RAIL_THUMB_RESIZE_SETTLE_MS,
     );
@@ -19,7 +19,7 @@ function normalizeArtifactTitle(title: unknown): string | undefined {
   }
 }
 function normalizeTitleInput(title: string): string {
-  return (0, truncateUtf16Safely)(
+  return truncateUtf16Safely(
     title.trim(),
     RAIL_THUMB_RESIZE_SETTLE_MS,
   );
@@ -39,7 +39,7 @@ function createRuntimeArtifactDocument<Content>(
     snapshot = {
       title: normalizeArtifactTitle(options.snapshot.title) ?? defaultTitle,
       content: parseContent(options.snapshot.content),
-      comments: (0, normalizeComments)(options.snapshot.comments),
+      comments: normalizeComments(options.snapshot.comments),
     },
     readOnly: boolean = runtime2.saving.status === "readonly",
     contentHoldReason = options.contentHold?.(options.snapshot.content),
@@ -118,7 +118,7 @@ function createRuntimeArtifactDocument<Content>(
         contentHoldReason = options.contentHold?.(value.value);
         flag = true;
       } else if (value.key === "comments") {
-        snapshot.comments = (0, normalizeComments)(value.value);
+        snapshot.comments = normalizeComments(value.value);
         flag = true;
       }
     }
@@ -152,7 +152,7 @@ function createRuntimeArtifactDocument<Content>(
       if (options.serializeContent !== undefined) {
         setRuntimeField("content", serializeContent(snapshot.content));
       }
-      (0, recordArtifactEdit)();
+      recordArtifactEdit();
       notifySubscribers2();
     },
     content: () => snapshot.content,
@@ -162,7 +162,7 @@ function createRuntimeArtifactDocument<Content>(
       }
       snapshot.content = input;
       setRuntimeField("content", serializeContent(input));
-      (0, recordArtifactEdit)();
+      recordArtifactEdit();
       notifySubscribers2();
     },
     updateContent: (input, options2): void => {
@@ -176,7 +176,7 @@ function createRuntimeArtifactDocument<Content>(
       snapshot.content = value;
       setRuntimeField("content", serializeContent(value));
       if (options2?.auto !== true) {
-        (0, recordArtifactEdit)();
+        recordArtifactEdit();
       }
       notifySubscribers2();
     },
@@ -186,7 +186,7 @@ function createRuntimeArtifactDocument<Content>(
       if (snapshot.comments.length >= MAX_ARTIFACT_COMMENTS) {
         return;
       }
-      let value = (0, normalizeComments)([
+      let value = normalizeComments([
         {
           ...input,
           id: crypto.randomUUID().slice(0, 8),

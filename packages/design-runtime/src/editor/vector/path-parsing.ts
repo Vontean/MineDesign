@@ -25,7 +25,7 @@ function parseVectorPath(
       if (items3.length < 2) return void (items3 = []);
       let value: Dynamic =
         items3.length >= 3
-          ? (0, fitPenCurve)(
+          ? fitPenCurve(
               items3.map((input2?: Dynamic): Dynamic => [input2.x, input2.y]),
               context,
             )
@@ -220,7 +220,7 @@ function serializeVectorPathBounds(
             );
             continue;
           }
-          let value6: Dynamic = (0, flattenCubicPath)([
+          let value6: Dynamic = flattenCubicPath([
             value5.x,
             value5.y,
             value4.seg.c1.x,

@@ -235,39 +235,39 @@ export {
 };
 export function installCollaborationPeerBadge(): () => void {
   return () => {
-    reactCollaborationPeerBadge = (0, toModuleNamespace)(
-      (0, load_react)(),
+    reactCollaborationPeerBadge = toModuleNamespace(
+      load_react(),
       1,
     );
-    jsxCollaborationPeerBadge = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    jsxCollaborationPeerBadge = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
     CollaborationPeerBadgeConstant = 80;
     CollaborationPeerBadgeConstant_2 = 120;
-    jsxCollaborationPeerBadge_2 = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    jsxCollaborationPeerBadge_2 = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
-    reactCollaborationPeerBadge_2 = (0, toModuleNamespace)(
-      (0, load_react)(),
+    reactCollaborationPeerBadge_2 = toModuleNamespace(
+      load_react(),
       1,
     );
-    jsxCollaborationPeerBadge_3 = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    jsxCollaborationPeerBadge_3 = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
-    jsxCollaborationPeerBadge_4 = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    jsxCollaborationPeerBadge_4 = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
-    reactCollaborationPeerBadge_3 = (0, toModuleNamespace)(
-      (0, load_react)(),
+    reactCollaborationPeerBadge_3 = toModuleNamespace(
+      load_react(),
       1,
     );
-    (0, initializeCdsIndex)();
-    jsxCollaborationPeerBadge_5 = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    initializeCdsIndex();
+    jsxCollaborationPeerBadge_5 = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
   };

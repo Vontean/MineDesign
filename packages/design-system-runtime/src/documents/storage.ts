@@ -15,7 +15,7 @@ var ARTIFACT_STASH_PREFIX: string;
 var ARTIFACT_READ_ONLY_PREFIX: string;
 function artifactStashKey(input: string): string {
   return (
-    ARTIFACT_STASH_PREFIX + (0, normalizeArtifactSessionPath)(input)
+    ARTIFACT_STASH_PREFIX + normalizeArtifactSessionPath(input)
   );
 }
 function createSessionStorageSlot(key: string): Host.StorageSlot {
@@ -59,7 +59,7 @@ function createArtifactLocalFlag(flagName: string): Host.StorageSlot {
     "appifact-" +
       flagName +
       "/" +
-      (0, normalizeArtifactSessionPath)(location.pathname),
+      normalizeArtifactSessionPath(location.pathname),
   );
 }
 function readCurrentArtifactReadOnlyReason(): string | null {
@@ -149,17 +149,17 @@ function parseEmbeddedArtifactState<Content>(
   }
   return {
     title:
-      (0, normalizeArtifactTitle)(record.title) ??
+      normalizeArtifactTitle(record.title) ??
       options.defaultTitle ??
       "Appifact",
     content: content,
-    comments: (0, normalizeComments)(record.comments),
+    comments: normalizeComments(record.comments),
   };
 }
 function createArtifactDocument<Content>(
   options: Host.DocumentOptions<Content>,
 ): Host.ArtifactDocument<Content> {
-  let autoSaveRuntime = (0, getAutoSavingArtifactRuntime)();
+  let autoSaveRuntime = getAutoSavingArtifactRuntime();
   if (
     autoSaveRuntime !== undefined &&
     options.publish === undefined &&
@@ -167,7 +167,7 @@ function createArtifactDocument<Content>(
     options.embeddedState === undefined &&
     options.pageParts === undefined
   ) {
-    return (0, createRuntimeArtifactDocument)({
+    return createRuntimeArtifactDocument({
       runtime: autoSaveRuntime.runtime,
       snapshot: autoSaveRuntime.snapshot,
       parseContent: options.parseContent,
@@ -191,22 +191,22 @@ function createArtifactDocument<Content>(
   }
   let pageParts =
       options.pageParts ??
-      (0, readCompiledPageAnatomy)(
+      readCompiledPageAnatomy(
         (globalThis as typeof globalThis & { document: Document }).document,
       ),
     embeddedState =
       options.embeddedState !== undefined
         ? options.embeddedState
-        : (0, readCompiledPageDocument)(
+        : readCompiledPageDocument(
             (globalThis as typeof globalThis & { document: Document })
               .document,
           ),
     stash = options.stash ?? currentArtifactStash(),
     readOnlyFlag = options.roFlag ?? currentArtifactReadOnlySlot(),
-    canPublish = options.canPublish ?? (0, selfPublishAvailable)(),
+    canPublish = options.canPublish ?? selfPublishAvailable(),
     publishedState = parseEmbeddedArtifactState(embeddedState, options),
     embeddedStateHash = hashArtifactState(
-      (0, stringifyInlineJson)(serializeEnvelope(publishedState)),
+      stringifyInlineJson(serializeEnvelope(publishedState)),
     ),
     localState = publishedState,
     pendingCommentOperations: Host.CommentOperation[] = [],
@@ -284,7 +284,7 @@ function createArtifactDocument<Content>(
     }
   }
   function getCommentSyncState(): Host.CommentSync {
-    let length = (0, applicableCommentOperations)(
+    let length = applicableCommentOperations(
       publishedState.comments,
       pendingCommentOperations,
     ).length;
@@ -374,9 +374,9 @@ function createArtifactDocument<Content>(
           options.serializeContent !== undefined
             ? options.serializeContent(input.content, input.title)
             : input.content,
-        value3 = (0, applicableCommentOperations)(
+        value3 = applicableCommentOperations(
           publishedState.comments,
-          (0, normalizeCommentOperations)(value.ops),
+          normalizeCommentOperations(value.ops),
         );
       if (value3.length === 0 && value.ops === undefined) {
         let values = new Set(
@@ -402,7 +402,7 @@ function createArtifactDocument<Content>(
       if (pendingCommentOperations.length > 0) {
         localState = {
           ...localState,
-          comments: (0, applyCommentOperations)(
+          comments: applyCommentOperations(
             publishedState.comments,
             pendingCommentOperations,
           ),
@@ -418,7 +418,7 @@ function createArtifactDocument<Content>(
         localState = {
           title: value2.title,
           content: value2.content,
-          comments: (0, applyCommentOperations)(
+          comments: applyCommentOperations(
             publishedState.comments,
             pendingCommentOperations,
           ),
@@ -465,7 +465,7 @@ function createArtifactDocument<Content>(
     saveErrorCode = undefined;
     if (!options2) {
       stashOffer = undefined;
-      (0, recordArtifactEdit)();
+      recordArtifactEdit();
     }
     writeStash();
     notifyDocumentSubscribers();
@@ -473,7 +473,7 @@ function createArtifactDocument<Content>(
   function recomposeComments(): void {
     localState = {
       ...localState,
-      comments: (0, applyCommentOperations)(
+      comments: applyCommentOperations(
         publishedState.comments,
         pendingCommentOperations,
       ),
@@ -494,12 +494,12 @@ function createArtifactDocument<Content>(
     }
   }
   function buildPublishedPage(input: Host.ArtifactEnvelope<Content>): string {
-    return (0, assembleCompiledPage)(
+    return assembleCompiledPage(
       {
         ...pageParts,
         title: input.title,
       },
-      (0, stringifyInlineJson)(serializeEnvelope(input)),
+      stringifyInlineJson(serializeEnvelope(input)),
     );
   }
   async function publishPage(
@@ -509,7 +509,7 @@ function createArtifactDocument<Content>(
       base: Host.ArtifactEnvelope<unknown>;
     },
   ): Promise<Host.PublishResult | undefined> {
-    return (options.publish ?? (0, createSelfPublisher)())(
+    return (options.publish ?? createSelfPublisher())(
       input,
       options2,
     );
@@ -534,7 +534,7 @@ function createArtifactDocument<Content>(
       return;
     }
     if (
-      (0, applicableCommentOperations)(
+      applicableCommentOperations(
         publishedState.comments,
         pendingCommentOperations,
       ).length === 0
@@ -547,7 +547,7 @@ function createArtifactDocument<Content>(
     let flag2: boolean = false;
     serializePublish(async (): Promise<void> => {
       try {
-        let value = (0, applicableCommentOperations)(
+        let value = applicableCommentOperations(
           publishedState.comments,
           pendingCommentOperations,
         );
@@ -557,7 +557,7 @@ function createArtifactDocument<Content>(
         let state = {
           title: publishedState.title,
           content: publishedState.content,
-          comments: (0, applyCommentOperations)(
+          comments: applyCommentOperations(
             publishedState.comments,
             value,
           ),
@@ -572,7 +572,7 @@ function createArtifactDocument<Content>(
           );
           localState = {
             ...localState,
-            comments: (0, applyCommentOperations)(
+            comments: applyCommentOperations(
               publishedState.comments,
               pendingCommentOperations,
             ),
@@ -591,7 +591,7 @@ function createArtifactDocument<Content>(
           return;
         }
         expectedEmbeddedStateHash = hashArtifactState(
-          (0, stringifyInlineJson)(
+          stringifyInlineJson(
             serializeEnvelope(
               parseEmbeddedArtifactState(
                 JSON.parse(JSON.stringify(state)),
@@ -611,7 +611,7 @@ function createArtifactDocument<Content>(
           await publishPage(value2);
         } catch (value3: unknown) {
           if (
-            (0, normalizeSelfPublishError)(value3).code !==
+            normalizeSelfPublishError(value3).code !==
             "upstream_error"
           ) {
             throw value3;
@@ -622,13 +622,13 @@ function createArtifactDocument<Content>(
           await publishPage(value2);
         }
         publishedState = state;
-        pendingCommentOperations = (0, applicableCommentOperations)(
+        pendingCommentOperations = applicableCommentOperations(
           publishedState.comments,
           pendingCommentOperations,
         );
         localState = {
           ...localState,
-          comments: (0, applyCommentOperations)(
+          comments: applyCommentOperations(
             publishedState.comments,
             pendingCommentOperations,
           ),
@@ -636,7 +636,7 @@ function createArtifactDocument<Content>(
         writeStash();
       } catch (value: unknown) {
         expectedEmbeddedStateHash = undefined;
-        let value2 = (0, normalizeSelfPublishError)(value);
+        let value2 = normalizeSelfPublishError(value);
         if (value2.code === "conflict") {
           flag2 = true;
         } else if (
@@ -681,14 +681,14 @@ function createArtifactDocument<Content>(
     await serializePublish(async (): Promise<void> => {
       try {
         writeStash();
-        let value3 = (0, applicableCommentOperations)(
+        let value3 = applicableCommentOperations(
             publishedState.comments,
             pendingCommentOperations,
           ),
           state = {
             title: value,
             content: value2,
-            comments: (0, applyCommentOperations)(
+            comments: applyCommentOperations(
               publishedState.comments,
               value3,
             ),
@@ -718,7 +718,7 @@ function createArtifactDocument<Content>(
           value6 = await publishPage(value4, value5);
         } catch (value7: unknown) {
           if (
-            (0, normalizeSelfPublishError)(value7).code !==
+            normalizeSelfPublishError(value7).code !==
             "upstream_error"
           ) {
             throw value7;
@@ -729,13 +729,13 @@ function createArtifactDocument<Content>(
           value6 = await publishPage(value4, value5);
         }
         publishedState = state;
-        pendingCommentOperations = (0, applicableCommentOperations)(
+        pendingCommentOperations = applicableCommentOperations(
           publishedState.comments,
           pendingCommentOperations,
         );
         localState = {
           ...localState,
-          comments: (0, applyCommentOperations)(
+          comments: applyCommentOperations(
             publishedState.comments,
             pendingCommentOperations,
           ),
@@ -763,7 +763,7 @@ function createArtifactDocument<Content>(
             "changes could NOT be kept locally (this document is too large to stash). Copy anything important now: the page is about to reload to the version without them.";
         }
       } catch (value3: unknown) {
-        let value4 = (0, normalizeSelfPublishError)(value3);
+        let value4 = normalizeSelfPublishError(value3);
         saveErrorCode = value4.code;
         if (value4.code === "conflict") {
           saveError = stashWriteSucceeded
@@ -813,8 +813,8 @@ function createArtifactDocument<Content>(
       options.canPublish === undefined &&
       (options.publish === undefined || options.publishWrapsFrame === true),
     selfCapabilityReady =
-      !readOnly && canCheckLiveState && !(0, selfPublishInstalled)()
-        ? (0, getSelfPublishCapability)().then(
+      !readOnly && canCheckLiveState && !selfPublishInstalled()
+        ? getSelfPublishCapability().then(
             (input: Host.SelfCapability | null): void => {
               if (input !== null || readOnly) {
                 return;
@@ -833,8 +833,8 @@ function createArtifactDocument<Content>(
         readOnly
           ? null
           : Promise.all([
-              (0, currentUserCanEditAsync)(),
-              (0, getAssetsCapability)(),
+              currentUserCanEditAsync(),
+              getAssetsCapability(),
             ]),
       )
       .then(
@@ -927,7 +927,7 @@ function createArtifactDocument<Content>(
       });
     },
     setTitle(input): void {
-      let value = (0, normalizeTitleInput)(input);
+      let value = normalizeTitleInput(input);
       if (value.length === 0 || value === localState.title) {
         return;
       }
@@ -940,7 +940,7 @@ function createArtifactDocument<Content>(
       if (localState.comments.length >= MAX_ARTIFACT_COMMENTS) {
         return;
       }
-      let value = (0, normalizeComments)([
+      let value = normalizeComments([
         {
           ...input,
           id: crypto.randomUUID().slice(0, 8),
@@ -987,7 +987,7 @@ function createArtifactDocument<Content>(
     },
     pendingCommentIds() {
       let values = new Set<string>();
-      for (let value of (0, applicableCommentOperations)(
+      for (let value of applicableCommentOperations(
         publishedState.comments,
         pendingCommentOperations,
       )) {
@@ -1028,7 +1028,7 @@ function createArtifactDocument<Content>(
       updateLocalState({
         title: value.state.title,
         content: value.state.content,
-        comments: (0, applyCommentOperations)(
+        comments: applyCommentOperations(
           publishedState.comments,
           pendingCommentOperations,
         ),
@@ -1040,7 +1040,7 @@ function createArtifactDocument<Content>(
           updateLocalState({
             title: value.state.title,
             content: value.state.content,
-            comments: (0, applyCommentOperations)(
+            comments: applyCommentOperations(
               publishedState.comments,
               pendingCommentOperations,
             ),
@@ -1052,14 +1052,14 @@ function createArtifactDocument<Content>(
             {
               title: state.title,
               content: state.content,
-              comments: (0, applyCommentOperations)(
+              comments: applyCommentOperations(
                 publishedState.comments,
                 pendingCommentOperations,
               ),
             },
             true,
           );
-          (0, recordArtifactEdit)();
+          recordArtifactEdit();
         },
       };
     },

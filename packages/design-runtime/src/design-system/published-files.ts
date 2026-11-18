@@ -152,7 +152,7 @@ function resolvePublishedDesignSystemFile(
       input,
       (entry = {
         text: options,
-        sha256: (0, sha256Fallback)(options),
+        sha256: sha256Fallback(options),
       }),
     );
   if (entry.sha256 === value.sha256)
@@ -274,7 +274,7 @@ function isFilePublishedWithMimeType(
       input,
       (entry = {
         text: options,
-        sha256: (0, sha256Fallback)(value3),
+        sha256: sha256Fallback(value3),
       }),
     );
   }

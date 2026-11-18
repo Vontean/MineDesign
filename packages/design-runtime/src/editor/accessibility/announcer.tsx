@@ -97,17 +97,17 @@ export {
 };
 export function installEditorAccessibilityAnnouncer(): () => void {
   return () => {
-    reactAccessibilityAnnouncer = (0, toModuleNamespace)(
-      (0, load_react)(),
+    reactAccessibilityAnnouncer = toModuleNamespace(
+      load_react(),
       1,
     );
-    (0, initializeCdsIndex)();
-    reactAccessibilityAnnouncer_2 = (0, toModuleNamespace)(
-      (0, load_react)(),
+    initializeCdsIndex();
+    reactAccessibilityAnnouncer_2 = toModuleNamespace(
+      load_react(),
       1,
     );
-    jsxAccessibilityAnnouncer = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    jsxAccessibilityAnnouncer = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
     AccessibilityAnnouncerSubscribers = new Set();

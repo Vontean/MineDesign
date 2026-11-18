@@ -67,7 +67,7 @@ function DcOutline({
     value6: Dynamic = artboards ? artboards.focused : null,
     value7: Dynamic = callback(value6),
     value8: Dynamic = (0, reactKeyboardEditActions.useMemo)(
-      (): Dynamic => (0, outlineAncestorMap)(nodes),
+      (): Dynamic => outlineAncestorMap(nodes),
       [nodes],
     ),
     [value9, value10]: Dynamic = (0,
@@ -154,7 +154,7 @@ function DcOutline({
       }));
   }, [value30, nodes, artboards?.trees, artboards?.open]);
   let callback5: Dynamic = (input?: Dynamic): Dynamic => {
-      (0, scrollOutlineRowIntoView)(value29.current, input, true) &&
+      scrollOutlineRowIntoView(value29.current, input, true) &&
         (value32.current = false);
     },
     value33: Dynamic =
@@ -256,7 +256,7 @@ function DcOutline({
           Math.max(OutlineGlyphsConstant, value40.current + input),
         ),
       ),
-    value41: Dynamic = (0, flattenOutlineRows)(
+    value41: Dynamic = flattenOutlineRows(
       nodes,
       artboards,
       callback,
@@ -268,18 +268,18 @@ function DcOutline({
       if (value22 != null && values.has(value22)) return value22;
       let value45: Dynamic =
         selectedTids.length > 0
-          ? (0, OutlineTreeHandler_3)(value6, selectedTids[0])
+          ? OutlineTreeHandler_3(value6, selectedTids[0])
           : null;
       if (value45 != null && values.has(value45)) return value45;
       let value46: Dynamic = artboards?.objects.find(
         (input?: Dynamic): Dynamic => artboards.selectedObjects.has(input.id),
       );
-      if (value46) return (0, OutlineTreeHandler_2)(value46.id);
+      if (value46) return OutlineTreeHandler_2(value46.id);
       let value47: Dynamic = artboards?.rows.find(
         (input?: Dynamic): Dynamic => artboards.selected.has(input.file),
       );
       return value47
-        ? (0, OutlineTreeHandler)(value47.file)
+        ? OutlineTreeHandler(value47.file)
         : (value41[0]?.key ?? null);
     })(),
     callback10: Dynamic = (input?: Dynamic): Dynamic => {
@@ -289,7 +289,7 @@ function DcOutline({
         (value45.focus({
           preventScroll: true,
         }),
-        (0, scrollOutlineRowIntoView)(value29.current, value45));
+        scrollOutlineRowIntoView(value29.current, value45));
     },
     callback11: Dynamic = (input?: Dynamic, options?: Dynamic): Dynamic => {
       if (input.tid == null) {
@@ -372,7 +372,7 @@ function DcOutline({
       let value46: Dynamic = value41[value45],
         value47: Dynamic = target === ancestor,
         value48: Dynamic = value41.length - 1;
-      if ((0, isContextMenuShortcut)(event)) {
+      if (isContextMenuShortcut(event)) {
         event.preventDefault();
         !event.repeat &&
           value13 === null &&
@@ -458,7 +458,7 @@ function DcOutline({
       value45.focus({
         preventScroll: true,
       }),
-      (0, scrollOutlineRowIntoView)(value29.current, value45));
+      scrollOutlineRowIntoView(value29.current, value45));
   });
   let value43: Dynamic = (0, reactKeyboardEditActions.useRef)(
     onHover,
@@ -516,7 +516,7 @@ function DcOutline({
       let value46: Dynamic = value45 ?? value6,
         value47: Dynamic = callback(value46).has(input.tid),
         value48: Dynamic = input.children.length > 0,
-        value49: Dynamic = (0, OutlineTreeHandler_3)(
+        value49: Dynamic = OutlineTreeHandler_3(
           value46,
           input.tid,
         ),
@@ -585,7 +585,7 @@ function DcOutline({
                 .join(", ")}
               tabIndex={value49 === value42 ? 0 : -1}
               data-row-key={value49}
-              className={(0, cn)(
+              className={cn(
                 OutlineGlyphsClassNames_2,
                 value52
                   ? OutlineGlyphsResolvedValue_2
@@ -629,7 +629,7 @@ function DcOutline({
                 let value59: Dynamic = contextActions(input.tid);
                 value59.length !== 0 &&
                   value14({
-                    ...(0, OutlineGlyphsNativeEvent)(event),
+                    ...OutlineGlyphsNativeEvent(event),
                     items: value59.map(OutlineGlyphsLabel),
                     get label() { return uiMessage("inspector.dcOutline.actions", { value1: String(uiNodeLabel(input)) }); },
                   });
@@ -709,7 +709,7 @@ function DcOutline({
                     <Icon
                       name={"CaretRight"}
                       size={"xs"}
-                      className={(0, cn)(
+                      className={cn(
                         "text-muted transition-transform duration-fast",
                         value47 ? "rotate-90" : "rotate-0",
                       )}
@@ -779,7 +779,7 @@ function DcOutline({
                     input2.stopPropagation();
                   }}
                 />) : (<span
-                  className={(0, cn)(
+                  className={cn(
                     "min-w-0 flex-initial truncate",
                     OutlineGlyphsClassNames_3,
                     OutlineGlyphsScForScIfDcImportSet.has(
@@ -799,7 +799,7 @@ function DcOutline({
               {value58 != null && (<Badge
                   variant={"neutral"}
                   size={"xxs"}
-                  className={(0, cn)(
+                  className={cn(
                     "ml-1.5 shrink-0",
                     value53 ? "opacity-50" : "opacity-100",
                   )}
@@ -807,7 +807,7 @@ function DcOutline({
                   {value58}
                 </Badge>)}
               {value9 !== input.tid && (<span
-                  className={(0, cn)(
+                  className={cn(
                     "mx-1.5 min-w-0 flex-auto shrink-[9999] truncate",
                     OutlineGlyphsClassNames_3,
                     !value54 && "text-muted",
@@ -840,7 +840,7 @@ function DcOutline({
                   aria-label={(input.hidden ? uiMessage("inspector.dcOutline.show2") : uiMessage("inspector.dcOutline.hide")) + value55}
                   tooltip={input.hidden ? (uiMessage("inspector.dcOutline.show")) : ("Hide")}
                   tabIndex={value49 === value42 ? 0 : -1}
-                  className={(0, cn)(
+                  className={cn(
                     "group/eye shrink-0",
                     input.hidden
                       ? "opacity-100"
@@ -888,7 +888,7 @@ function DcOutline({
     },
     callback15: Dynamic = (input?: Dynamic, options?: Dynamic): Dynamic => {
       if (!artboards) return null;
-      let value45: Dynamic = (0, OutlineTreeHandler_2)(input.id),
+      let value45: Dynamic = OutlineTreeHandler_2(input.id),
         value46: Dynamic = artboards.selectedObjects.has(input.id);
       return (() => {
         const _Component2 = "div";
@@ -903,7 +903,7 @@ function DcOutline({
             : uiNodeLabel(input),
           tabIndex: value45 === value42 ? 0 : -1,
           "data-row-key": value45,
-          className: (0, cn)(
+          className: cn(
             OutlineGlyphsClassNames_2,
             value46
               ? OutlineGlyphsResolvedValue_2
@@ -933,7 +933,7 @@ function DcOutline({
             let value47: Dynamic = artboards.objectContextActions(input.id);
             value47.length !== 0 &&
               value14({
-                ...(0, OutlineGlyphsNativeEvent)(event),
+                ...OutlineGlyphsNativeEvent(event),
                 items: value47.map(OutlineGlyphsLabel),
                 get label() { return uiMessage("inspector.dcOutline.actions", { value1: String(uiNodeLabel(input)) }); },
               });
@@ -953,7 +953,7 @@ function DcOutline({
               dimmed={false}
             />,
             <span
-              className={(0, cn)(
+              className={cn(
                 "min-w-0 flex-initial truncate",
                 OutlineGlyphsClassNames_3,
               )}
@@ -961,7 +961,7 @@ function DcOutline({
               {uiNodeLabel(input)}
             </span>,
             <span
-              className={(0, cn)(
+              className={cn(
                 "mx-1.5 min-w-0 flex-auto shrink-[9999] truncate text-muted",
                 OutlineGlyphsClassNames_3,
               )}
@@ -978,7 +978,7 @@ function DcOutline({
   return (
     <CdsIsland
       density={"compact"}
-      className={(0, cn)(
+      className={cn(
         "relative flex flex-col",
         fill ? "min-h-0 flex-1" : "shrink-0 border-b",
       )}
@@ -989,7 +989,7 @@ function DcOutline({
           role={"tree"}
           aria-label={uiMessage("inspector.dcOutline.layers")}
           aria-multiselectable={"true"}
-          className={(0, cn)(
+          className={cn(
             "overflow-y-auto px-1.5 pb-0.5 pt-1.5",
             ChromeScrollbarLabel,
             fill && "min-h-0 flex-1",
@@ -1039,7 +1039,7 @@ function DcOutline({
               relatedTarget: Dynamic = event.relatedTarget;
             value35.current =
               !ownerDocument.hasFocus() ||
-              (0, hasBlockingOverlay)(ownerDocument) ||
+              hasBlockingOverlay(ownerDocument) ||
               relatedTarget?.closest(OutlineGlyphsResolvedValue) !=
                 null
                 ? event.target
@@ -1059,7 +1059,7 @@ function DcOutline({
           {artboards ? (artboards.rows.map(
               (input?: Dynamic, options?: Dynamic): Dynamic => {
                 let value45: Dynamic = input.file === artboards.focused,
-                  value46: Dynamic = (0, OutlineTreeHandler)(
+                  value46: Dynamic = OutlineTreeHandler(
                     input.file,
                   ),
                   value47: Dynamic = value45
@@ -1095,7 +1095,7 @@ function DcOutline({
                         aria-describedby={value52}
                         tabIndex={value46 === value42 ? 0 : -1}
                         data-row-key={value46}
-                        className={(0, cn)(
+                        className={cn(
                           OutlineGlyphsClassNames_2,
                           artboards.selected.has(input.file)
                             ? OutlineGlyphsResolvedValue_3
@@ -1132,7 +1132,7 @@ function DcOutline({
                           );
                           value53.length !== 0 &&
                             value14({
-                              ...(0, OutlineGlyphsNativeEvent)(event),
+                              ...OutlineGlyphsNativeEvent(event),
                               items: value53.map(OutlineGlyphsLabel),
                               get label() { return uiMessage("inspector.dcOutline.actions", { value1: String(uiNodeLabel(input)) }); },
                             });
@@ -1154,7 +1154,7 @@ function DcOutline({
                               <Icon
                                 name={"CaretRight"}
                                 size={"xs"}
-                                className={(0, cn)(
+                                className={cn(
                                   "text-muted transition-transform duration-fast",
                                   value49 ? "rotate-90" : "rotate-0",
                                 )}
@@ -1201,7 +1201,7 @@ function DcOutline({
                                   });
                               }}
                             />) : (<span
-                              className={(0, cn)(
+                              className={cn(
                                 "min-w-0 flex-auto truncate",
                                 OutlineGlyphsClassNames_3,
                               )}
@@ -1217,7 +1217,7 @@ function DcOutline({
                               name={"Image"}
                               size={"xs"}
                               data-testid={"dc-outline-cover"}
-                              className={(0, cn)(
+                              className={cn(
                                 "mx-1.5 shrink-0 text-muted",
                                 OutlineGlyphsClassNames_3,
                               )}
@@ -1303,7 +1303,7 @@ export function set_nativeContextMenuTimeout(value: any): any {
 }
 export function installEditorOutlineDcOutline(): () => void {
   return () => {
-    (0, initializePlatformCdsIsland)();
+    initializePlatformCdsIsland();
     OutlineDcOutlineConstant = 500;
     OutlineDcOutlineConstant_2 = 3e4;
     OutlineDcOutlineHandler = (input?: Dynamic): Dynamic =>

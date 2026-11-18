@@ -93,7 +93,7 @@ function SelectionPointGlyph(): Dynamic {
   return (
     <span
       data-selection-grip={""}
-      className={(0, cn)(
+      className={cn(
         "absolute top-1/2 left-1/2 box-border block -translate-x-1/2 -translate-y-1/2 rounded-full",
         OutlineFillAccentValue,
       )}
@@ -142,7 +142,7 @@ function selectionHandleTooltip(
   options?: Dynamic,
   context?: Dynamic,
 ): Dynamic {
-  return (0, hasDisabledReason)(options.content) ? (
+  return hasDisabledReason(options.content) ? (
     <Tooltip
       key={input}
       lazy={true}
@@ -281,29 +281,29 @@ export {
 };
 export function installCdsComponentsSelectionRing(): () => void {
   return () => {
-    initializeComponentsSelectionRing = (0, initializeOnce)(
+    initializeComponentsSelectionRing = initializeOnce(
       (): Dynamic => {
         "use client";
 
-        (0, initializeClassNames)();
-        (0, initializeDomOwnerWindow)();
-        (0, initializeCdsRoot)();
-        (0, initializeDomSelectionPrevention)();
-        (0, initializeComponentsIcon_2)();
-        (0, initializeTooltipTrigger_2)();
-        (0, initializeTooltipTooltip)();
-        (0, initializeButtonContext_2)();
-        (0, initializeFieldContext)();
-        (0, initializeSwitchContext)();
-        reactComponentsSelectionRing = (0, toModuleNamespace)(
-          (0, load_react)(),
+        initializeClassNames();
+        initializeDomOwnerWindow();
+        initializeCdsRoot();
+        initializeDomSelectionPrevention();
+        initializeComponentsIcon_2();
+        initializeTooltipTrigger_2();
+        initializeTooltipTooltip();
+        initializeButtonContext_2();
+        initializeFieldContext();
+        initializeSwitchContext();
+        reactComponentsSelectionRing = toModuleNamespace(
+          load_react(),
         );
-        jsxComponentsSelectionRing = (0, toModuleNamespace)(
-          (0, load_react_jsx_runtime)(),
+        jsxComponentsSelectionRing = toModuleNamespace(
+          load_react_jsx_runtime(),
         );
-        (0, initializeNpm__base_ui_react_H5)();
-        (0, initializeNpm__base_ui_react_zve)();
-        (0, initializeNpm__base_ui_react_jve)();
+        initializeNpm__base_ui_react_H5();
+        initializeNpm__base_ui_react_zve();
+        initializeNpm__base_ui_react_jve();
         selectionRingClasses =
           "cds-reset relative z-[1] inline-flex h-full items-center justify-center gap-1.5 select-none border-0 bg-transparent outline-none focus-visible:outline-hidden rounded-[calc(var(--cds-radius)-2px)] text-body font-normal [&:not([data-disabled])]:hover:text-primary data-[checked]:text-primary data-[disabled]:opacity-disabled transition-shadow duration-fast focus-visible:shadow-focus";
         ComponentsSelectionRingClassNames = "px-md";
@@ -325,9 +325,9 @@ export function installCdsComponentsSelectionRing(): () => void {
         ComponentsSelectionRingLimit = 600;
       },
     );
-    initializeComponentsSelectionRing_2 = (0, initializeOnce)(
+    initializeComponentsSelectionRing_2 = initializeOnce(
       (): Dynamic => {
-        (0, initializeEditorSelectionGeometry)();
+        initializeEditorSelectionGeometry();
         ComponentsSelectionRingPointPointStrokeGripHitConfig = {
           ...selectionMetrics,
           point: 10,
@@ -339,20 +339,20 @@ export function installCdsComponentsSelectionRing(): () => void {
         };
       },
     );
-    initializeComponentsSelectionRing_3 = (0, initializeOnce)(
+    initializeComponentsSelectionRing_3 = initializeOnce(
       (): Dynamic => {
         "use client";
 
-        (0, initializeClassNames)();
-        (0, initializeTokens)();
-        (0, initializeSheetsMenuPopup_2)();
-        (0, initializeEditorSelectionGeometry)();
+        initializeClassNames();
+        initializeTokens();
+        initializeSheetsMenuPopup_2();
+        initializeEditorSelectionGeometry();
         initializeComponentsSelectionRing_2();
-        reactComponentsSelectionRing_2 = (0, toModuleNamespace)(
-          (0, load_react)(),
+        reactComponentsSelectionRing_2 = toModuleNamespace(
+          load_react(),
         );
-        jsxComponentsSelectionRing_2 = (0, toModuleNamespace)(
-          (0, load_react_jsx_runtime)(),
+        jsxComponentsSelectionRing_2 = toModuleNamespace(
+          load_react_jsx_runtime(),
         );
         SelectionPoints = (0, reactComponentsSelectionRing_2.forwardRef)(
           function (
@@ -374,7 +374,7 @@ export function installCdsComponentsSelectionRing(): () => void {
                 usesCoarsePointer,
                 (): Dynamic => false,
               ),
-              value2: Dynamic = (0, normalizeSelectionScale)(scale),
+              value2: Dynamic = normalizeSelectionScale(scale),
               index: Dynamic = 0;
             for (let value5 of points as Dynamic)
               for (let value6 of points as Dynamic)
@@ -399,7 +399,7 @@ export function installCdsComponentsSelectionRing(): () => void {
                 ref={options}
                 data-cds={"SelectionPoints"}
                 aria-hidden={"true"}
-                className={(0, cn)(
+                className={cn(
                   "pointer-events-none absolute top-0 left-0",
                   className,
                 )}
@@ -463,7 +463,7 @@ export function installCdsComponentsSelectionRing(): () => void {
         SelectionPoints.displayName = "SelectionPoints";
       },
     );
-    initializeComponentsSelectionRing_4 = (0, initializeOnce)(
+    initializeComponentsSelectionRing_4 = initializeOnce(
       (): Dynamic => {
         ComponentsSelectionRingNwNeSeValues = ["nw", "ne", "se", "sw"];
         ComponentsSelectionRingEwResizeNwseResizeNsResizeValues = [
@@ -494,22 +494,22 @@ export function installCdsComponentsSelectionRing(): () => void {
           "%3C/g%3E%3C/svg%3E";
       },
     );
-    initializeComponentsSelectionRing_5 = (0, initializeOnce)(
+    initializeComponentsSelectionRing_5 = initializeOnce(
       (): Dynamic => {
         "use client";
 
-        (0, initializeClassNames)();
-        (0, initializeSheetsMenuPopup_2)();
-        (0, initializeEditorSelectionGeometry)();
-        (0, initializeTooltipDisabledReason)();
-        (0, initializeTooltipTooltip)();
+        initializeClassNames();
+        initializeSheetsMenuPopup_2();
+        initializeEditorSelectionGeometry();
+        initializeTooltipDisabledReason();
+        initializeTooltipTooltip();
         initializeComponentsSelectionRing_2();
         initializeComponentsSelectionRing_4();
-        reactComponentsSelectionRing_3 = (0, toModuleNamespace)(
-          (0, load_react)(),
+        reactComponentsSelectionRing_3 = toModuleNamespace(
+          load_react(),
         );
-        jsxComponentsSelectionRing_3 = (0, toModuleNamespace)(
-          (0, load_react_jsx_runtime)(),
+        jsxComponentsSelectionRing_3 = toModuleNamespace(
+          load_react_jsx_runtime(),
         );
         SelectionRing = (0, reactComponentsSelectionRing_3.forwardRef)(
           function (
@@ -541,27 +541,27 @@ export function installCdsComponentsSelectionRing(): () => void {
                 usesCoarsePointer,
                 (): Dynamic => false,
               ),
-              value2: Dynamic = (0, normalizeSelectionScale)(scale),
-              value3: Dynamic = (0, normalizeCollaboratorIndex)(
+              value2: Dynamic = normalizeSelectionScale(scale),
+              value3: Dynamic = normalizeCollaboratorIndex(
                 collaborator,
               );
             if (collaborator !== undefined && value3 === undefined) return null;
-            let value4: Dynamic = (0, selectionRingStroke)(
+            let value4: Dynamic = selectionRingStroke(
                 state,
                 value3,
               ),
-              value5: Dynamic = (0, resolveSelectionPoints)(
+              value5: Dynamic = resolveSelectionPoints(
                 grips,
                 state,
                 value3,
               ),
-              value6: Dynamic = (0, normalizeSelectionRotation)(
+              value6: Dynamic = normalizeSelectionRotation(
                 rotation,
               ),
-              value7: Dynamic = (0, hasDisabledReason)(
+              value7: Dynamic = hasDisabledReason(
                 resizeDisabledReason,
               ),
-              value8: Dynamic = (0, hasDisabledReason)(
+              value8: Dynamic = hasDisabledReason(
                 rotateDisabledReason,
               ),
               value9: Dynamic = value3 === undefined && state === "selected",
@@ -578,7 +578,7 @@ export function installCdsComponentsSelectionRing(): () => void {
                       (input?: Dynamic): Dynamic =>
                         grips.some(
                           (input2?: Dynamic): Dynamic =>
-                            (0, sameSelectionPoint)(input2, input),
+                            sameSelectionPoint(input2, input),
                         ),
                     )
                   : [],
@@ -627,13 +627,13 @@ export function installCdsComponentsSelectionRing(): () => void {
                 data-variant={value3 === undefined ? variant : undefined}
                 data-collaborator={value3}
                 aria-hidden={"true"}
-                className={(0, cn)(
+                className={cn(
                   OutlineFillAccentValue,
                   className,
                 )}
                 style={{
                   ...style,
-                  ...(0, SelectionRingSvg)({
+                  ...SelectionRingSvg({
                     frame: frame,
                     scale: value2,
                     rotation: rotation,
@@ -745,7 +745,7 @@ export function installCdsComponentsSelectionRing(): () => void {
                     );
                   })}
                   {value5.map((input?: Dynamic): Dynamic => {
-                    let value20: Dynamic = (0, selectionPointPosition)(
+                    let value20: Dynamic = selectionPointPosition(
                       input,
                     );
                     if (!value10)
@@ -832,7 +832,7 @@ export function installCdsComponentsSelectionRing(): () => void {
         SelectionRing.displayName = "SelectionRing";
       },
     );
-    initializeComponentsSelectionRing_6 = (0, initializeOnce)(
+    initializeComponentsSelectionRing_6 = initializeOnce(
       (): Dynamic => {
         ComponentsSelectionRingSGDAUDNZDSet = new Set(["SGD", "AUD", "NZD"]);
         ComponentsSelectionRingIntegerGroupDecimalSet = new Set([
@@ -847,24 +847,24 @@ export function installCdsComponentsSelectionRing(): () => void {
         ]);
       },
     );
-    initializeComponentsSelectionRing_7 = (0, initializeOnce)(
+    initializeComponentsSelectionRing_7 = initializeOnce(
       (): Dynamic => {
         "use client";
 
-        (0, initializeClassNames)();
-        (0, initializeCdsRoot)();
-        (0, initializeMenuPopup_2)();
-        (0, initializeDomRefComposition)();
-        (0, initializeButtonButton_2)();
-        (0, initializeFieldContext)();
+        initializeClassNames();
+        initializeCdsRoot();
+        initializeMenuPopup_2();
+        initializeDomRefComposition();
+        initializeButtonButton_2();
+        initializeFieldContext();
         initializeComponentsSelectionRing_6();
-        reactComponentsSelectionRing_4 = (0, toModuleNamespace)(
-          (0, load_react)(),
+        reactComponentsSelectionRing_4 = toModuleNamespace(
+          load_react(),
         );
-        jsxComponentsSelectionRing_4 = (0, toModuleNamespace)(
-          (0, load_react_jsx_runtime)(),
+        jsxComponentsSelectionRing_4 = toModuleNamespace(
+          load_react_jsx_runtime(),
         );
-        (0, initializeNpm__base_ui_react_VJe)();
+        initializeNpm__base_ui_react_VJe();
         ComponentsSelectionRingHandler = (): Dynamic => {};
         ComponentsSelectionRingHandler_2 = (): Dynamic =>
           ComponentsSelectionRingHandler;
@@ -902,7 +902,7 @@ export function installCdsComponentsSelectionRing(): () => void {
             "use no memo";
 
             let { id: value2, ...value3 }: Dynamic = props,
-              value4: Dynamic = (0, useExperimentalSettings)(),
+              value4: Dynamic = useExperimentalSettings(),
               value5: Dynamic = locale ?? value4,
               value6: Dynamic = useHydratedNumberInput(),
               value7: Dynamic = value5 ?? (value6 ? undefined : "en-US"),
@@ -920,14 +920,13 @@ export function installCdsComponentsSelectionRing(): () => void {
               value10: Dynamic =
                 slotEnd ?? (value8?.side === "end" ? value8.symbol : null),
               value11: Dynamic = value8 !== null || undefined,
-              value12: Dynamic = (0, useFieldInvalid)(),
-              value13: Dynamic = (0, useFieldDisabled)(),
+              value12: Dynamic = useFieldInvalid(),
+              value13: Dynamic = useFieldDisabled(),
               value14: Dynamic = fullWidth ? "w-full" : "",
               value15: Dynamic = (0, reactComponentsSelectionRing_4.useRef)(
                 null,
               ),
-              { clickToFocusProps: value16 }: Dynamic = (0,
-              useClickToFocus)(
+              { clickToFocusProps: value16 }: Dynamic = useClickToFocus(
                 (): Dynamic => value15.current?.focus(),
                 {
                   disabled: disabled2 || value13,
@@ -943,11 +942,11 @@ export function installCdsComponentsSelectionRing(): () => void {
                 value3.onBlur?.(input);
                 value17();
               },
-              value18: Dynamic = (0, useMergedRefs)(value15, options);
+              value18: Dynamic = useMergedRefs(value15, options);
             return (
               <npm_NumberField_mU.Root
                 data-cds={"NumberInput"}
-                {...(0, getSizeAttribute)(size)}
+                {...getSizeAttribute(size)}
                 data-invalid={value12 || undefined}
                 id={value2}
                 value={value}
@@ -969,7 +968,7 @@ export function installCdsComponentsSelectionRing(): () => void {
                 name={name}
                 form={form}
                 onMouseDown={value16.onMouseDown}
-                className={(0, cn)(
+                className={cn(
                   ButtonButtonCss,
                   "pr-md",
                   "inline-flex",
@@ -994,7 +993,7 @@ export function installCdsComponentsSelectionRing(): () => void {
                   }
                   {...value3}
                   onBlur={callback}
-                  className={(0, cn)(
+                  className={cn(
                     ButtonButtonClassNames_4,
                     "disabled:opacity-100",
                   )}

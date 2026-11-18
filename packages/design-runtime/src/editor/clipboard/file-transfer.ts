@@ -26,10 +26,10 @@ function isCarryableProjectFile(input?: Dynamic): Dynamic {
   let value: Dynamic = input.toLowerCase();
   return (
     ClipboardFileTransferHandler_7(input) &&
-    (0, isSupportedProjectAsset)(input) &&
+    isSupportedProjectAsset(input) &&
     value !== canvasMetadataFile &&
-    !(0, isArtboardFile)(value) &&
-    !ClipboardFileTransferSubscribers.has((0, fileBaseName)(value)) &&
+    !isArtboardFile(value) &&
+    !ClipboardFileTransferSubscribers.has(fileBaseName(value)) &&
     !ClipboardFileTransferTest(value)
   );
 }
@@ -158,7 +158,7 @@ function preparePastedArtboardFiles(
     ),
     callback2: Dynamic = (input2?: Dynamic): Dynamic =>
       values2.has(callback(input2)) ||
-      values2.has(callback((0, fileBaseName)(input2))),
+      values2.has(callback(fileBaseName(input2))),
     callback3: Dynamic = (input2?: Dynamic): Dynamic =>
       !values.has(callback(input2)) && !callback2(input2),
     entries: Dynamic = new Map(
@@ -169,7 +169,7 @@ function preparePastedArtboardFiles(
     entries2: Dynamic = new Map(
       Object.keys(options).map(
         (input2?: Dynamic): Dynamic => [
-          (0, encodeStorePathSegment)(input2),
+          encodeStorePathSegment(input2),
           input2,
         ],
       ),
@@ -180,7 +180,7 @@ function preparePastedArtboardFiles(
         .filter(isArtboardFile)
         .map(
           (input2?: Dynamic): Dynamic =>
-            callback((0, artboardBaseName)(input2)),
+            callback(artboardBaseName(input2)),
         ),
     ),
     values4: Dynamic = new Set(),
@@ -193,29 +193,29 @@ function preparePastedArtboardFiles(
                 ...input2,
                 stem: "Artboard",
               },
-        value5: Dynamic = (0, uniqueArtboardFile)(
+        value5: Dynamic = uniqueArtboardFile(
           state,
           value4.stem,
           context,
         );
       for (
         let count: Dynamic = 2;
-        values3.has(callback((0, artboardBaseName)(value5))) ||
+        values3.has(callback(artboardBaseName(value5))) ||
         (entries.has(callback(value5)) && options[value5] === undefined);
         count += 1
       )
-        value5 = (0, uniqueArtboardFile)(
+        value5 = uniqueArtboardFile(
           state,
           value4.stem + String(count),
           context,
         );
-      values3.add(callback((0, artboardBaseName)(value5)));
+      values3.add(callback(artboardBaseName(value5)));
       values.add(callback(value5));
       state[value5] = value4.src;
-      let value6: Dynamic = (0, artboardBaseName)(value4.stem);
+      let value6: Dynamic = artboardBaseName(value4.stem);
       !values4.has(value6) &&
-        (0, artboardBaseName)(value5) !== value6 &&
-        entries3.set(value6, (0, artboardBaseName)(value5));
+        artboardBaseName(value5) !== value6 &&
+        entries3.set(value6, artboardBaseName(value5));
       values4.add(value6);
       return {
         path: value5,
@@ -227,38 +227,38 @@ function preparePastedArtboardFiles(
     values5: Dynamic = new Set(),
     value3: Dynamic = Object.keys(input.files);
   for (let value4 of [...value3, ...Object.keys(options)] as Dynamic) {
-    let value5: Dynamic = callback((0, fileBaseName)(value4)),
+    let value5: Dynamic = callback(fileBaseName(value4)),
       entry: Dynamic = entries5.get(value5);
     entry !== undefined &&
       entry !== value4 &&
       (callback(entry) !== callback(value4) ||
         (value3.includes(entry) && value3.includes(value4))) &&
       values5
-        .add((0, fileBaseName)(value4))
-        .add((0, fileBaseName)(entry))
+        .add(fileBaseName(value4))
+        .add(fileBaseName(entry))
         .add(value5);
     entries5.set(value5, value4);
   }
   for (let value4 of Object.keys(input.files) as Dynamic)
-    /\s/.test(value4) && values5.add((0, fileBaseName)(value4));
+    /\s/.test(value4) && values5.add(fileBaseName(value4));
   let callback4: Dynamic = (input2?: Dynamic): Dynamic =>
-      values5.has((0, fileBaseName)(input2))
+      values5.has(fileBaseName(input2))
         ? input2
-        : (0, fileBaseName)(input2),
+        : fileBaseName(input2),
     callback5: Dynamic = (items3?: Dynamic): Dynamic => {
-      let value4: Dynamic = (0, fileBaseName)(items3).search(
+      let value4: Dynamic = fileBaseName(items3).search(
           /(\.[^./]+)+$/,
         ),
         value5: Dynamic = items3.slice(
           0,
-          items3.length - (0, fileBaseName)(items3).length,
+          items3.length - fileBaseName(items3).length,
         ),
         [value6, value7]: Dynamic =
           value4 < 0
-            ? [(0, fileBaseName)(items3), ""]
+            ? [fileBaseName(items3), ""]
             : [
-                (0, fileBaseName)(items3).slice(0, value4),
-                (0, fileBaseName)(items3).slice(value4),
+                fileBaseName(items3).slice(0, value4),
+                fileBaseName(items3).slice(value4),
               ],
         callback7: Dynamic = (input2?: Dynamic): Dynamic =>
           value === "unknown"
@@ -278,8 +278,8 @@ function preparePastedArtboardFiles(
     if (!isCarryableProjectFile(value4)) continue;
     let value6: Dynamic =
       entries.get(callback(value4)) ??
-      (entries2.get((0, encodeStorePathSegment)(value4)) !== value4
-        ? entries2.get((0, encodeStorePathSegment)(value4))
+      (entries2.get(encodeStorePathSegment(value4)) !== value4
+        ? entries2.get(encodeStorePathSegment(value4))
         : undefined);
     if (value6 !== undefined && options[value6] === value5) {
       items.push(value6);
@@ -288,16 +288,16 @@ function preparePastedArtboardFiles(
           callback4(value4) === value4 ||
           value4.slice(
             0,
-            value4.length - (0, fileBaseName)(value4).length,
+            value4.length - fileBaseName(value4).length,
           ) !==
             value6.slice(
               0,
-              value6.length - (0, fileBaseName)(value6).length,
+              value6.length - fileBaseName(value6).length,
             );
-        value7 && values5.add((0, fileBaseName)(value4));
+        value7 && values5.add(fileBaseName(value4));
         entries4.set(
-          value7 ? value4 : (0, fileBaseName)(value4),
-          value7 ? value6 : (0, fileBaseName)(value6),
+          value7 ? value4 : fileBaseName(value4),
+          value7 ? value6 : fileBaseName(value6),
         );
       }
     } else if (
@@ -320,7 +320,7 @@ function preparePastedArtboardFiles(
           callback4(value4),
           callback4(value4) === value4
             ? value7
-            : (0, fileBaseName)(value7),
+            : fileBaseName(value7),
         );
       }
     } else if (
@@ -341,7 +341,7 @@ function preparePastedArtboardFiles(
         callback4(value4),
         callback4(value4) === value4
           ? value7
-          : (0, fileBaseName)(value7),
+          : fileBaseName(value7),
       );
       state2[value7] = value5;
       values.add(callback(value7));
@@ -352,12 +352,12 @@ function preparePastedArtboardFiles(
   let values7: Dynamic = new Set(
       [...entries4.keys()].filter(
         (input2?: Dynamic): Dynamic =>
-          values5.has((0, fileBaseName)(input2)),
+          values5.has(fileBaseName(input2)),
       ),
     ),
     callback6: Dynamic = (input2?: Dynamic): Dynamic =>
-      (0, rewriteProjectReferences)(
-        (0, renameComponentImports)(input2, entries3),
+      rewriteProjectReferences(
+        renameComponentImports(input2, entries3),
         entries4,
         values7,
       );
@@ -367,7 +367,7 @@ function preparePastedArtboardFiles(
       src: callback6(value4.entry.src),
     };
   for (let value4 of Object.keys(state2) as Dynamic)
-    (0, isProjectSourcePath)(value4) &&
+    isProjectSourcePath(value4) &&
       (state2[value4] = callback6(state2[value4]));
   return {
     boards: value2,
@@ -387,9 +387,9 @@ function remapPastedAssetFiles(
   let entries: Dynamic = new Map(
       [...context].map(
         ([input2, input3]: Dynamic): Dynamic => [
-          input.ambiguous.has((0, fileBaseName)(input2))
+          input.ambiguous.has(fileBaseName(input2))
             ? input2
-            : (0, fileBaseName)(input2),
+            : fileBaseName(input2),
           input3,
         ],
       ),
@@ -397,7 +397,7 @@ function remapPastedAssetFiles(
     values: Dynamic = new Set(
       [...entries.keys()].filter(
         (input2?: Dynamic): Dynamic =>
-          input.ambiguous.has((0, fileBaseName)(input2)),
+          input.ambiguous.has(fileBaseName(input2)),
       ),
     ),
     value2: Dynamic = ClipboardArtboardsResolvedValue,
@@ -432,14 +432,14 @@ function remapPastedAssetFiles(
           ),
         },
         left: Dynamic = state.left,
-        value5: Dynamic = (0, rewriteProjectReferences)(
+        value5: Dynamic = rewriteProjectReferences(
           input2,
           callback(entries, value3),
           values,
           state,
         ),
         entries2: Dynamic = new Map(
-          (0, getBlobAssetReferences)(value5)
+          getBlobAssetReferences(value5)
             .filter(
               (input3?: Dynamic): Dynamic =>
                 value4.has(input3) && value4.get(input3) !== input3,
@@ -460,7 +460,7 @@ function remapPastedAssetFiles(
       ),
     };
   for (let value3 of Object.keys(input.files) as Dynamic)
-    (0, isProjectSourcePath)(value3) &&
+    isProjectSourcePath(value3) &&
       (input.files[value3] = callback2(input.files[value3], value, value3));
 }
 export {
@@ -493,7 +493,7 @@ export function installEditorClipboardFileTransfer(): () => void {
       let callback: Dynamic = (source?: Dynamic): Dynamic =>
           source.kind === "image"
             ? "picture"
-            : (0, isShapeAnnotation)(source)
+            : isShapeAnnotation(source)
               ? "shape"
               : "note",
         value: Dynamic = ["note", "shape", "picture"].filter(
@@ -651,7 +651,7 @@ export function installEditorClipboardFileTransfer(): () => void {
     ClipboardFileTransferTest = (input?: Dynamic): Dynamic =>
       /^(?:artifact-type|project)\//i.test(input);
     ClipboardFileTransferHandler_7 = (items?: Dynamic): Dynamic =>
-      (0, isSafeProjectPath)(items) &&
+      isSafeProjectPath(items) &&
       items.length <= PlatformFileContentLimit_8 - 16;
   };
 }

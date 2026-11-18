@@ -16,7 +16,7 @@ var AppifactExtraExportFormatsValue: Dynamic;
 var ClipboardWorkingFilesConstant: Dynamic;
 function createWorkingFileMap(input?: Dynamic): Dynamic {
   let values: Dynamic = new Set(
-      (0, parseCanvasMetadata)(input[canvasMetadataFile], {
+      parseCanvasMetadata(input[canvasMetadataFile], {
         ...input,
       }).artboards.map((input2?: Dynamic): Dynamic => input2.file),
     ),
@@ -35,7 +35,7 @@ function useClipboardFeatureFlag(): Dynamic {
   );
   (0, reactClipboardWorkingFiles.useEffect)((): Dynamic => {
     let flag: Dynamic = true;
-    (0, awaitFeatureFlag)(
+    awaitFeatureFlag(
       AppifactExtraExportFormatsValue,
       false,
     ).then((input?: Dynamic): Dynamic => {
@@ -61,9 +61,9 @@ export function installEditorClipboardWorkingFiles(): () => void {
     ClipboardWorkingFilesHandler = (input?: Dynamic): Dynamic =>
       // MineDesign: user-facing copy calls the agent "the agent", not Claude.
       uiMessage("inspector.workingFiles.theAgentIsAdding") +
-      (0, AccessibilityAnnouncementsHandler)(input);
-    reactClipboardWorkingFiles = (0, toModuleNamespace)(
-      (0, load_react)(),
+      AccessibilityAnnouncementsHandler(input);
+    reactClipboardWorkingFiles = toModuleNamespace(
+      load_react(),
       1,
     );
     AppifactExtraExportFormatsValue = "appifact_extra_export_formats";

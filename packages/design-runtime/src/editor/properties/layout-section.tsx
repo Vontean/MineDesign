@@ -62,9 +62,9 @@ function LayoutSection({
       value3.includes("flex") ||
       value3.includes("grid"),
     callback2: Dynamic = (input?: Dynamic): Dynamic => {
-      if (!input || !(0, PropertiesInheritedFieldValueAlias)(input))
+      if (!input || !PropertiesInheritedFieldValueAlias(input))
         return false;
-      let value22: Dynamic = (0, parseCssNumber)(
+      let value22: Dynamic = parseCssNumber(
         (input.value ?? "").trim(),
       );
       return (
@@ -114,13 +114,13 @@ function LayoutSection({
       if (!value2 && !options) return [];
       let entry2: Dynamic = entries.get("transform");
       if (
-        !(0, PropertiesInheritedFieldValueAlias)(entry2) ||
+        !PropertiesInheritedFieldValueAlias(entry2) ||
         entry2.mixed
       )
         return [];
-      let value22: Dynamic = (0, parseCssTransform)(entry2.value);
+      let value22: Dynamic = parseCssTransform(entry2.value);
       if (!value22 || value22[input].value === 0) return [];
-      let value23: Dynamic = (0, serializeCssTransform)({
+      let value23: Dynamic = serializeCssTransform({
         ...value22,
         [input]: {
           value: 0,
@@ -142,7 +142,7 @@ function LayoutSection({
         ? []
         : value2 ||
             value20 ||
-            (0, PropertiesInheritedFieldValueAlias)(
+            PropertiesInheritedFieldValueAlias(
               entries.get(input),
             )
           ? [
@@ -278,8 +278,8 @@ function LayoutSection({
     },
     callback5: Dynamic = (input?: Dynamic, options?: Dynamic): Dynamic => {
       if (input === options) return true;
-      let value22: Dynamic = (0, parseCssNumber)(input),
-        value23: Dynamic = (0, parseCssNumber)(options);
+      let value22: Dynamic = parseCssNumber(input),
+        value23: Dynamic = parseCssNumber(options);
       return (
         !!value22 &&
         !!value23 &&
@@ -370,7 +370,7 @@ function LayoutSection({
       className={"[--prop-row-h:28px] pointer-coarse:[--prop-row-h:40px]"}
     >
       <div
-        className={(0, cn)(
+        className={cn(
           "flex min-w-0 flex-1 items-center justify-between",
           PropertiesPrimitivesClassNames_4,
         )}
@@ -406,7 +406,7 @@ function PropertyFlexWrap({
   onCommitMany: onCommitMany,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic = (0, inheritedFieldForEdit)(wrap),
+  let value: Dynamic = inheritedFieldForEdit(wrap),
     value2: Dynamic = (
       (value.mixed ? "" : (value.value ?? "")) ||
       value.fallback ||
@@ -415,7 +415,7 @@ function PropertyFlexWrap({
       .trim()
       .toLowerCase()
       .startsWith("wrap"),
-    value3: Dynamic = (0, PropertiesInheritedFieldValueAlias)(value);
+    value3: Dynamic = PropertiesInheritedFieldValueAlias(value);
   return (
     <Button_r
       variant={"ghost"}
@@ -451,17 +451,17 @@ function PropertyGridTracks({
   let callback: Dynamic = (input?: Dynamic): Dynamic =>
     !input.mixed &&
     (!(input.value ?? "").trim() ||
-      (0, parseEqualGridColumns)(input.value) != null);
+      parseEqualGridColumns(input.value) != null);
   if (!callback(cols) || !callback(rows))
     return (
       <jsxMediaPlaybackControls.Fragment>
         {renderRows([cols, rows])}
       </jsxMediaPlaybackControls.Fragment>
     );
-  let value: Dynamic = (0, inheritedFieldsDisabledReason)(cols, rows),
-    value2: Dynamic = (0, inheritedFieldsDescription)(cols, rows);
-  cols = (0, inheritedFieldForEdit)(cols);
-  rows = (0, inheritedFieldForEdit)(rows);
+  let value: Dynamic = inheritedFieldsDisabledReason(cols, rows),
+    value2: Dynamic = inheritedFieldsDescription(cols, rows);
+  cols = inheritedFieldForEdit(cols);
+  rows = inheritedFieldForEdit(rows);
   let callback2: Dynamic = (
       input?: Dynamic,
       options?: Dynamic,
@@ -471,10 +471,10 @@ function PropertyGridTracks({
       <NumericInput
         aria-label={context}
         prefix={<PropertyOptionIcon icon={options} />}
-        value={(0, parseEqualGridColumns)(input.value) ?? undefined}
+        value={parseEqualGridColumns(input.value) ?? undefined}
         placeholder={
-          input.mixed ? (undefined) : ((0, parseEqualGridColumns)(input.fallback ?? "") != null ? (String(
-                  (0, parseEqualGridColumns)(input.fallback ?? ""),
+          input.mixed ? (undefined) : (parseEqualGridColumns(input.fallback ?? "") != null ? (String(
+                  parseEqualGridColumns(input.fallback ?? ""),
                 )) : (value4))
         }
         mixed={input.mixed}
@@ -492,7 +492,7 @@ function PropertyGridTracks({
               value:
                 input2 === undefined
                   ? null
-                  : (0, serializeEqualGridColumns)(
+                  : serializeEqualGridColumns(
                       Math.round(input2),
                     ),
             },
@@ -501,8 +501,8 @@ function PropertyGridTracks({
       />
     ),
     value3: Dynamic =
-      (0, PropertiesInheritedFieldMixedAlias)(cols) ||
-      (0, PropertiesInheritedFieldMixedAlias)(rows);
+      PropertiesInheritedFieldMixedAlias(cols) ||
+      PropertiesInheritedFieldMixedAlias(rows);
   return (
     <PropertyRow
       label={uiMessage("inspector.layoutSection.grid")}
@@ -606,13 +606,13 @@ function InspectorLayoutSection({
     value11: Dynamic = sec.rows.some(
       (input?: Dynamic): Dynamic =>
         input.prop.startsWith("margin-") &&
-        (0, PropertiesInheritedFieldValueAlias)(input),
+        PropertiesInheritedFieldValueAlias(input),
     ),
     [value12, value13]: Dynamic =
       reactMediaPlaybackControls_2.default.useState(""),
     value14: Dynamic = value6 && (value11 || value12 === selKey),
     callback: Dynamic = (input?: Dynamic, options?: Dynamic): Dynamic =>
-      (0, PropertiesInheritedFieldValueAlias)(input) &&
+      PropertiesInheritedFieldValueAlias(input) &&
       !input.mixed &&
       !options.includes((input.value ?? "").trim().toLowerCase()),
     value15: Dynamic = (
@@ -637,7 +637,7 @@ function InspectorLayoutSection({
       if (options === "static") {
         let items2: Dynamic = [
           ...(value15 !== "static" ||
-          (0, PropertiesInheritedFieldValueAlias)(entry)
+          PropertiesInheritedFieldValueAlias(entry)
             ? [
                 {
                   prop: "position",
@@ -648,7 +648,7 @@ function InspectorLayoutSection({
           ...["top", "left", "bottom", "right"]
             .filter(
               (input2?: Dynamic): Dynamic =>
-                (0, PropertiesInheritedFieldValueAlias)(
+                PropertiesInheritedFieldValueAlias(
                   entries.get(input2),
                 ),
             )
@@ -711,8 +711,8 @@ function InspectorLayoutSection({
         entry2 &&
         entry3 &&
         (value16 ||
-          (0, PropertiesInheritedFieldValueAlias)(entry2) ||
-          (0, PropertiesInheritedFieldValueAlias)(entry3)) && (<PropertyPositionXY
+          PropertiesInheritedFieldValueAlias(entry2) ||
+          PropertiesInheritedFieldValueAlias(entry3)) && (<PropertyPositionXY
             key={`${selKey}|offset`}
             left={entry3}
             top={entry2}
@@ -723,7 +723,7 @@ function InspectorLayoutSection({
           [entry2, entry3].filter(
             (input?: Dynamic): Dynamic =>
               !!input &&
-              (0, PropertiesInheritedFieldValueAlias)(input),
+              PropertiesInheritedFieldValueAlias(input),
           ),
         ))}
       {renderRows(
@@ -850,8 +850,8 @@ export {
 };
 export function installEditorPropertiesLayoutSection(): () => void {
   return () => {
-    reactPropertiesLayoutSection = (0, toModuleNamespace)(
-      (0, load_react)(),
+    reactPropertiesLayoutSection = toModuleNamespace(
+      load_react(),
       1,
     );
   };

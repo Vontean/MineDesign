@@ -175,7 +175,7 @@ function FontFilesList({
               className:
                 "ds-frow ds-tokrow group/row flex items-center gap-x-md",
               "data-testid": "ds-font-" + input3.path + "#" + String(options),
-              ...(0, commentTargetProps)(
+              ...commentTargetProps(
                 "font",
                 value + (value2 > 1 ? "#" + String(value2) : ""),
               ),
@@ -205,7 +205,7 @@ function FontFilesList({
                     "ds-fontrow-preview min-w-0 flex-[2_10_6rem] truncate text-body text-muted"
                   }
                   style={{
-                    fontFamily: (0, fontFamilyStack)(input, [
+                    fontFamily: fontFamilyStack(input, [
                       input3.path,
                     ]),
                     fontWeight: input3.weight.split(" ")[0],
@@ -416,7 +416,7 @@ function FontFamilyPicker({
           searchLabel={"Search fonts…"}
           onOpenChange={(input: boolean): void => {
             if (input) {
-              (0, ensureGoogleFonts)(
+              ensureGoogleFonts(
                 GOOGLE_FONT_FAMILY_NAMES,
               );
             }
@@ -492,11 +492,11 @@ function TypeStyleFields({
       value: String(input),
       label: uiFontWeight(input),
     })),
-    value2 = (0, parseEditableCssLength)(v.fontSize) ?? {
+    value2 = parseEditableCssLength(v.fontSize) ?? {
       n: parseTypographyLength(v.fontSize, 16),
       unit: "px",
     },
-    value3 = (0, parseEditableCssLength)(v.lineHeight) ?? {
+    value3 = parseEditableCssLength(v.lineHeight) ?? {
       n: parseTypographyLength(v.lineHeight, 1.4),
       unit: "",
     },
@@ -512,7 +512,7 @@ function TypeStyleFields({
             n: 0,
             unit: "em",
           }
-        : ((0, parseEditableCssLength)(value4) ?? {
+        : (parseEditableCssLength(value4) ?? {
             n: 0,
             unit: "em",
           }),
@@ -528,7 +528,7 @@ function TypeStyleFields({
             ? (normalizeLetterSpacing(value13) ?? value13)
             : value13;
       if (
-        (0, normalizeTypographyProperty)(input, value14, {}) !==
+        normalizeTypographyProperty(input, value14, {}) !==
         undefined
       ) {
         return value14;
@@ -566,7 +566,7 @@ function TypeStyleFields({
         ? {
             role: "group",
             "aria-label": options,
-            ...(0, commentTargetProps)(
+            ...commentTargetProps(
               "knob",
               anchorKey + "/" + input,
             ),
@@ -622,10 +622,10 @@ function TypeStyleFields({
           unit={value2.unit || "px"}
           value={value2.n}
           min={
-            (0, cssLengthInputBounds)(value2.unit || "px", 1, 400)[0]
+            cssLengthInputBounds(value2.unit || "px", 1, 400)[0]
           }
           max={MAX_EDITABLE_CSS_LENGTH}
-          step={(0, cssLengthInputStep)(value2.unit || "px")}
+          step={cssLengthInputStep(value2.unit || "px")}
           steppers={false}
           refuseLetters={true}
           fullWidth={true}
@@ -650,13 +650,13 @@ function TypeStyleFields({
           min={
             value3.unit === ""
               ? 0.5
-              : (0, cssLengthInputBounds)(value3.unit, 0, 400)[0]
+              : cssLengthInputBounds(value3.unit, 0, 400)[0]
           }
           max={value3.unit === "" ? 10 : MAX_EDITABLE_CSS_LENGTH}
           step={
             value3.unit === ""
               ? 0.05
-              : (0, cssLengthInputStep)(value3.unit)
+              : cssLengthInputStep(value3.unit)
           }
           steppers={false}
           refuseLetters={true}
@@ -819,7 +819,7 @@ function TypeStyleSpecimen({
             <div
               role={"group"}
               aria-label={uiMessage("design-system.typography.textStyle", { value1: String(s.name) })}
-              {...(0, commentTargetProps)(
+              {...commentTargetProps(
                 "editor",
                 "style/" + s.name,
               )}
@@ -891,7 +891,7 @@ function TypeStyleRow({
           }
         : {}),
     },
-    value4 = (0, useRowContextMenu)(),
+    value4 = useRowContextMenu(),
     callback = () =>
       document
         .querySelector<HTMLElement>(
@@ -903,7 +903,7 @@ function TypeStyleRow({
       role={"row"}
       className={"ds-wrow ds-trow ds-tokrow ds-crow group/row"}
       data-testid={"ds-style-" + s.name}
-      {...(0, commentTargetProps)("style", s.name)}
+      {...commentTargetProps("style", s.name)}
       {...value4.rowProps}
     >
       {[<span
@@ -1103,7 +1103,7 @@ function TypographySection({
               "aria-label": state.title,
               "data-testid": "ds-type-" + input.name,
               "data-card-key": "type:" + input.name,
-              "data-id": (0, commentTargetId)("tset", input.name),
+              "data-id": commentTargetId("tset", input.name),
               children: [
                 <div
                   className={
@@ -1194,7 +1194,7 @@ function TypographySection({
             className={"ds-tgroup flex min-w-0 flex-col"}
             aria-label={uiMessage("design-system.typography.fontFiles")}
             data-testid={"ds-fonts"}
-            data-id={(0, commentTargetId)("ds", "font-files")}
+            data-id={commentTargetId("ds", "font-files")}
           >
             {[<div
                 className={
@@ -1258,8 +1258,8 @@ export {
 };
 export function installEditorTypography(): () => void {
   return () => {
-    jsxTypographyEditors = (0, toModuleNamespace)(
-      (0, loadJsxNamespace)(),
+    jsxTypographyEditors = toModuleNamespace(
+      loadJsxNamespace(),
       1,
     );
     FONT_WEIGHT_LABELS = [

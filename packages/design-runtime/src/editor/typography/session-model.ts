@@ -25,7 +25,7 @@ function typographySessionModel(input?: Dynamic): Dynamic {
     size: Dynamic = value.size,
     value11: Dynamic = value2
       ? undefined
-      : (0, matchedDesignSystemTextStyle)(value8, value),
+      : matchedDesignSystemTextStyle(value8, value),
     value12: Dynamic = value9 ? [] : value5,
     value13: Dynamic =
       size !== undefined && !value2 && value12.includes(size),
@@ -34,8 +34,8 @@ function typographySessionModel(input?: Dynamic): Dynamic {
       value13 &&
       (value3 === undefined ||
         (value14 !== undefined &&
-          (0, displayFontFamily)(value3).toLowerCase() ===
-            (0, displayFontFamily)(value14).toLowerCase()))
+          displayFontFamily(value3).toLowerCase() ===
+            displayFontFamily(value14).toLowerCase()))
         ? (value6.get(size) ?? null)
         : null,
     value16: Dynamic = value11?.id ?? (value13 ? String(size) : null),
@@ -44,7 +44,7 @@ function typographySessionModel(input?: Dynamic): Dynamic {
       value11?.style.name ??
       value15 ??
       [
-        (0, displayFontFamily)(value4),
+        displayFontFamily(value4),
         value2 ? "Mixed" : size === undefined ? "" : String(Math.round(size)),
       ]
         .filter(Boolean)
@@ -53,7 +53,7 @@ function typographySessionModel(input?: Dynamic): Dynamic {
       ...value12.map((input2?: Dynamic): Dynamic => {
         let value19: Dynamic =
           value6.get(input2) ??
-          ((0, displayFontFamily)(value7.get(input2) ?? value4) ||
+          (displayFontFamily(value7.get(input2) ?? value4) ||
             String(input2));
         return {
           value: String(input2),
@@ -75,10 +75,10 @@ function typographySessionModel(input?: Dynamic): Dynamic {
         }: Dynamic): Dynamic => ({
           value: id,
           text: style.name,
-          get hint() { return (String((0, TypographyMetricsFontSize)(style))) + ("px"); },
+          get hint() { return (String(TypographyMetricsFontSize(style))) + ("px"); },
           labelStyle: {
             fontFamily: style.family?.stack,
-            fontWeight: (0, TypographyMetricsHandler)(
+            fontWeight: TypographyMetricsHandler(
               style.fontWeight,
             ),
             fontStyle: style.italic ? "italic" : undefined,
@@ -109,7 +109,7 @@ function typographySessionModel(input?: Dynamic): Dynamic {
         (input3?: Dynamic): Dynamic => input3.id === input2,
       );
       if (value19 !== undefined)
-        return (0, typographyStyleEdits)(value19.style);
+        return typographyStyleEdits(value19.style);
       let value20: Dynamic =
         value11 !== undefined && value10
           ? [
@@ -157,7 +157,7 @@ function typographyCensusOptions(input?: Dynamic): Dynamic {
       value6.set(value7, (value6.get(value7) ?? 0) + value8);
     entries.set(value5, value6);
   }
-  let value2: Dynamic = (0, summarizeFontSizeUsage)(value, entries),
+  let value2: Dynamic = summarizeFontSizeUsage(value, entries),
     entries2: Dynamic = new Map();
   for (let [value3, value4] of Object.entries(
     input.sizeFamilies ?? {},
@@ -190,7 +190,7 @@ function typographySelectionModel(input?: Dynamic): Dynamic {
   if (value5.length === 0 && value3.length === 0) return null;
   let value8: Dynamic = value.map(
       (input2?: Dynamic): Dynamic =>
-        (0, authoredTypographyMetrics)(
+        authoredTypographyMetrics(
           input2.tag,
           input2.inlineStyle ?? "",
           input2.computed,
@@ -202,11 +202,11 @@ function typographySelectionModel(input?: Dynamic): Dynamic {
         value.map((input2?: Dynamic): Dynamic => input2.inlineSize ?? null),
       ).size > 1,
     entries: Dynamic = new Map(
-      (0, parseStyleDeclarations)(value[0].authoredStyle).map(
+      parseStyleDeclarations(value[0].authoredStyle).map(
         (input2?: Dynamic): Dynamic => [input2.prop, input2.value],
       ),
     ),
-    value10: Dynamic = (0, normalizeInspectorComputedData)("text", {
+    value10: Dynamic = normalizeInspectorComputedData("text", {
       tag: value[0].tag,
       computed: value[0].computed,
     }),

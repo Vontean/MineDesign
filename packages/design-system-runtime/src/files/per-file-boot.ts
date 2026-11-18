@@ -53,40 +53,40 @@ async function bootPerFileDesignSystem(
   storeHandle: Boot.NativeLegacyDatabase | null = null,
   emptyIndex?: Model.FilesIndex,
 ): Promise<void> {
-  if ((0, isFrameCaptureMode)()) {
-    return (0, captureDesignSystemAndHoldBoot)();
+  if (isFrameCaptureMode()) {
+    return captureDesignSystemAndHoldBoot();
   }
   set_perFileDesignSystemBooted(true);
-  (0, enablePreviewRunner)(
+  enablePreviewRunner(
     window,
-    (0, getHotCapability)()?.signal,
+    getHotCapability()?.signal,
     BOOT_FILE_READ_RETRY_DELAYS_MS,
   );
   let indexPath = FILES_INDEX_PROJECT_PATH;
-  (0, installDesignSystemTypingListener)();
-  (0, waitForBootLiveAnnouncer)(readOnlyReason);
-  let title = (0, stateEnvelopeTitle)(outcome.state);
+  installDesignSystemTypingListener();
+  waitForBootLiveAnnouncer(readOnlyReason);
+  let title = stateEnvelopeTitle(outcome.state);
   if (title !== undefined) {
     document.title = title;
   }
   if (!isDesignSystemTypeHost) {
-    (0, initializeDesignSystemFilesDebugger)();
+    initializeDesignSystemFilesDebugger();
   }
   let access =
       readOnlyReason === undefined && !isDesignSystemTypeHost
-        ? await (0, determineSlidesWriteAccess)()
+        ? await determineSlidesWriteAccess()
         : {
             canWrite: false,
             reason: readOnlyReason ?? designSystemTypeReadonlyReason(),
           },
     stash = access.canWrite
-      ? await (0, createCurrentArtifactCrashStash)("design-system")
+      ? await createCurrentArtifactCrashStash("design-system")
       : null,
-    viewerId = await (0, currentUserId)();
+    viewerId = await currentUserId();
   try {
-    (0, purgeOtherViewerCarryEntries)(sessionStorage, viewerId);
+    purgeOtherViewerCarryEntries(sessionStorage, viewerId);
   } catch {}
-  let files = (0, createBrowserFilesPort)({
+  let files = createBrowserFilesPort({
       canWrite: access.canWrite,
       fetch: (input) =>
         fetch(input, {
@@ -115,7 +115,7 @@ async function bootPerFileDesignSystem(
     }),
     instrumentedFiles =
       designSystemFilesDebugger !== undefined
-        ? (0, instrumentFilesPort)(
+        ? instrumentFilesPort(
             files,
             designSystemFilesDebugger,
           )
@@ -124,10 +124,9 @@ async function bootPerFileDesignSystem(
     uiMessage("design-system.perFileBoot.canWrite"),
     String(access.canWrite),
   );
-  (0, setFileSystemDocumentFactory)(
+  setFileSystemDocumentFactory(
     (options: Host.ArtifactParser<Model.DesignSystemContent>) => {
-      let value: Docs.DesignSystemFilesDocument = (0,
-      createDesignSystemFilesDocument)({
+      let value: Docs.DesignSystemFilesDocument = createDesignSystemFilesDocument({
         port: instrumentedFiles,
         indexPath: indexPath,
         ...(emptyIndex !== undefined
@@ -152,7 +151,7 @@ async function bootPerFileDesignSystem(
           designSystemFilesDebugger?.event("notice", {
             text: input,
           });
-          (0, showEditorPromiseNotification)(input, null);
+          showEditorPromiseNotification(input, null);
         },
         generated: true,
         onEvent: (input: string, options2: unknown) =>
@@ -163,7 +162,7 @@ async function bootPerFileDesignSystem(
               saveStash: stash,
             }
           : {}),
-        stashKey: (0, designSystemCarryKey)(viewerId),
+        stashKey: designSystemCarryKey(viewerId),
         paced: true,
         onHotEvent: (input: FilesCore.FilesHotEvent): void => {
           designSystemFilesDebugger?.hotEvent(input);
@@ -179,14 +178,14 @@ async function bootPerFileDesignSystem(
         onBeforeRestart: (input: string) =>
           designSystemFilesDebugger?.beforeRestart(input),
       });
-      (0, installFilesSaveLifecycle)(value.queue());
-      (0, monitorSyncLoadHealth)(value, (input: Boot.HealthReport) =>
+      installFilesSaveLifecycle(value.queue());
+      monitorSyncLoadHealth(value, (input: Boot.HealthReport) =>
         artifactHealth.report(...input),
       );
-      (0, monitorSyncSaveHealth)(value, (input: Boot.HealthReport) =>
+      monitorSyncSaveHealth(value, (input: Boot.HealthReport) =>
         artifactHealth.report(...input),
       );
-      (0, observeDocumentThumbnailReadiness)(value);
+      observeDocumentThumbnailReadiness(value);
       provideDesignSystemFilesDebugState(value, files, indexPath);
       let values = new Set<string>();
       value.subscribe((): void => {
@@ -194,18 +193,18 @@ async function bootPerFileDesignSystem(
           return;
         }
         let files2 = value.content().files,
-          value2 = (0, filesLeftOutOfMigration)(files2).filter(
+          value2 = filesLeftOutOfMigration(files2).filter(
             (input: { path: string }) =>
               !values.has(input.path) &&
-              !(0, isRepairableDamagedText)(
+              !isRepairableDamagedText(
                 input.path,
                 files2[input.path] ?? "",
               ) &&
-              !(0, isUnsupportedBinaryFile)(
+              !isUnsupportedBinaryFile(
                 input.path,
                 files2[input.path] ?? "",
               ) &&
-              !(0, isHeldFilePointer)(
+              !isHeldFilePointer(
                 input.path,
                 files2[input.path] ?? "",
               ),
@@ -214,7 +213,7 @@ async function bootPerFileDesignSystem(
           values.add(value3.path);
         }
         if (value2.length > 0) {
-          (0, showEditorPromiseNotification)(
+          showEditorPromiseNotification(
             (value2.length === 1
               ? '"' + value2[0].path + '"'
               : String(value2.length) + " files") +
@@ -232,19 +231,19 @@ async function bootPerFileDesignSystem(
           return;
         }
         let entry = value.index().get();
-        (0, updateStoredSystemMigrationFlags)(entry);
-        let value2 = (0, editingOffTransition)({
+        updateStoredSystemMigrationFlags(entry);
+        let value2 = editingOffTransition({
           offAtBoot: readOnlyReason === get_MIGRATED_READONLY_MESSAGE(),
           canWrite: access.canWrite,
-          offNow: (0, isSystemEditingDisabled)(entry),
+          offNow: isSystemEditingDisabled(entry),
         });
         if (value2 === "on") {
-          (0, reportMigrationAnalytics)(
+          reportMigrationAnalytics(
             MIGRATION_ANALYTICS_EVENTS.editingCameOn,
           );
         }
         if (value2 !== null) {
-          (0, reopenForEditingTransition)(value2);
+          reopenForEditingTransition(value2);
         }
       };
       value.subscribe(callback);
@@ -256,7 +255,7 @@ async function bootPerFileDesignSystem(
         );
         afterTwoAnimationFrames((): void => {
           designSystemFilesDebugger?.phase(uiMessage("design-system.perFileBoot.firstPaint"));
-          (0, resolveDesignSystemFirstPaint)();
+          resolveDesignSystemFirstPaint();
           if (
             designSystemFilesDebugger !== undefined &&
             designSystemFilesDebugger.reloadReason.startsWith(
@@ -285,7 +284,7 @@ async function bootPerFileDesignSystem(
         })
         .then((): void => {
           let value2: boolean =
-              (0, readTreeIndex)(outcome.state)?.convertedFrom
+              readTreeIndex(outcome.state)?.convertedFrom
                 ?.home === "file",
             value3 = access.canWrite && !value.readOnly();
           if (storeHandle !== null && value3 && !value2) {
@@ -293,22 +292,22 @@ async function bootPerFileDesignSystem(
               storeHandle,
               files,
               value,
-              (0, readTreeIndex)(outcome.state),
+              readTreeIndex(outcome.state),
               indexPath,
             );
           }
           if (storeHandle !== null && access.canWrite && value2) {
-            (0, createLegacyDatabasePort)(storeHandle)
+            createLegacyDatabasePort(storeHandle)
               .get(SYSTEM_META_DOCUMENT_PATH)
               .then(
                 (input: Model.FilesMigrationStoreDocument | null): void => {
                   if (
                     legacyStoreChangedAfterMigration(
                       input?.data,
-                      (0, readTreeIndex)(outcome.state),
+                      readTreeIndex(outcome.state),
                     )
                   ) {
-                    (0, showEditorPromiseNotification)(
+                    showEditorPromiseNotification(
                       get_UNREAD_LEGACY_STORE_CHANGES_MESSAGE(),
                       null,
                     );
@@ -332,8 +331,8 @@ function legacyStoreChangedAfterMigration(
   meta: unknown,
   index: Model.FilesIndex | undefined,
 ): boolean {
-  let marker = (0, readFileMigrationMarker)(index)?.marker,
-    storeChangedAt = (0, parseStoredSystemMetadata)(meta)?.lastChange
+  let marker = readFileMigrationMarker(index)?.marker,
+    storeChangedAt = parseStoredSystemMetadata(meta)?.lastChange
       ?.at,
     storeTime = Date.parse(
       typeof storeChangedAt === "string" ? storeChangedAt : "",
@@ -355,16 +354,16 @@ function watchLegacyStoreChanges(
   indexPath: string = FILES_INDEX_PROJECT_PATH,
 ): void {
   let warned: boolean = false,
-    store = (0, createLegacyDatabasePort)(storeHandle),
-    adapter = (0, createDesignSystemMigrationAdapter)(
+    store = createLegacyDatabasePort(storeHandle),
+    adapter = createDesignSystemMigrationAdapter(
       readMigrationArtifactBlob,
       indexPath,
     );
-  (0, createStoreToFilesFoldController)({
+  createStoreToFilesFoldController({
     adapter: adapter,
     files: files,
     store: store,
-    holder: (0, migrationTabHolder)(),
+    holder: migrationTabHolder(),
     timers: designSystemMigrationTimers,
     artifactId: location.host,
     onFolded: (input: Model.FileRemoteChange) =>
@@ -372,9 +371,9 @@ function watchLegacyStoreChanges(
         return;
       }),
     onOutcome: (input: Boot.MigrationOutcome): void => {
-      (0, reportMigrationFailure)(input);
+      reportMigrationFailure(input);
       if (input.result === "folded") {
-        let value = (0, takeStoreFoldSummary)(),
+        let value = takeStoreFoldSummary(),
           items = [
             ...(value.came ? [uiMessage("design-system.perFileBoot.changesMadeToThisDesign")] : []),
             ...(value.kept.length > 0
@@ -382,7 +381,7 @@ function watchLegacyStoreChanges(
               : []),
           ];
         if (items.length > 0) {
-          (0, showEditorPromiseNotification)(items.join(" "), null);
+          showEditorPromiseNotification(items.join(" "), null);
         }
         if (value.came) {
           setTimeout((): void => {
@@ -404,7 +403,7 @@ function watchLegacyStoreChanges(
               !warned
             ) {
               warned = true;
-              (0, showEditorPromiseNotification)(
+              showEditorPromiseNotification(
                 get_UNREAD_LEGACY_STORE_CHANGES_MESSAGE(),
                 null,
               );
@@ -470,7 +469,7 @@ function provideDesignSystemFilesDebugState(
   if (designSystemFilesDebugger === undefined) {
     return;
   }
-  let extensions = (0, filesPortExtensions)(files);
+  let extensions = filesPortExtensions(files);
   designSystemFilesDebugger.provide({
     files: () => {
       let items = [],
@@ -486,7 +485,7 @@ function provideDesignSystemFilesDebugState(
         state: document2.index().dirty() ? "changed here" : "",
       });
       for (let value4 of Object.keys(files2).sort()) {
-        let value5 = (0, projectFilePath)(value4);
+        let value5 = projectFilePath(value4);
         if (!value.has(value5) && !value2.has(value4)) {
           continue;
         }
@@ -506,7 +505,7 @@ function provideDesignSystemFilesDebugState(
         });
       }
       for (let [value4, value5] of value) {
-        if ((0, isDerivedProjectPath)(value4)) {
+        if (isDerivedProjectPath(value4)) {
           items.push({
             path: value4,
             sha: value5,
@@ -550,34 +549,34 @@ function releaseEarlyHotUpdatesForLegacyMode(): void {
   }
   activeHotReloadSession.queued.splice(0);
   try {
-    (0, getHotCapability)()?.restart?.({
+    getHotCapability()?.restart?.({
       note: "adopted during boot; not the per-file mode",
     });
   } catch {}
 }
 async function bootDesignSystemFilesMode(): Promise<void> {
-  let initialState = (0, readDesignSystemInitialState)();
+  let initialState = readDesignSystemInitialState();
   if (isDesignSystemTypeHost) {
-    return (0, bootLegacyDesignSystemMode)(
+    return bootLegacyDesignSystemMode(
       undefined,
       null,
       initialState,
     );
   }
   let outcome = await initialState,
-    tree = (0, readTreeIndex)(outcome.state),
-    decision = (0, chooseTreeBootOutcome)({
+    tree = readTreeIndex(outcome.state),
+    decision = chooseTreeBootOutcome({
       origin: outcome.origin,
       tree: tree !== undefined,
       project: designSystemFileHomes.project,
-      pipeline: (0, isMigrationExemptHost)(location.hostname),
+      pipeline: isMigrationExemptHost(location.hostname),
       editingOff:
-        tree !== undefined && (0, isSystemEditingDisabled)(tree),
+        tree !== undefined && isSystemEditingDisabled(tree),
     });
   artifactHealth.report(
     ...((decision.boot === "empty"
       ? (["render", "success"] as const)
-      : (0, bootHealthOutcome)(
+      : bootHealthOutcome(
           outcome,
           isDesignSystemTypeHost,
         )) as Boot.HealthReport),
@@ -585,17 +584,17 @@ async function bootDesignSystemFilesMode(): Promise<void> {
   if (decision.boot === "tree") {
     return bootPerFileDesignSystem(
       outcome,
-      (0, resolveMigratedReadonlyReason)(
+      resolveMigratedReadonlyReason(
         decision.readOnly,
         decision.readOnly === get_MIGRATED_READONLY_MESSAGE()
-          ? await (0, determineSlidesWriteAccess)()
+          ? await determineSlidesWriteAccess()
           : undefined,
       ),
     );
   }
   if (decision.boot === "empty") {
-    if (!(await (0, determineSlidesWriteAccess)()).canWrite) {
-      (0, configureLegacyDesignSystemBoot)(
+    if (!(await determineSlidesWriteAccess()).canWrite) {
+      configureLegacyDesignSystemBoot(
         {
           state: {},
           origin: "demo",
@@ -604,14 +603,14 @@ async function bootDesignSystemFilesMode(): Promise<void> {
         null,
         decision.readOnly ?? EMPTY_SYSTEM_READONLY_REASON,
       );
-      (0, prepareDesignSystemThumbnailCapture)();
+      prepareDesignSystemThumbnailCapture();
       return;
     }
     activeHotReloadSession?.armReady();
     let state = {
-      ...(0, createEmptyFilesIndex)(),
+      ...createEmptyFilesIndex(),
       createdOnFiles: {
-        ...(0, createdOnFilesMarker)({
+        ...createdOnFilesMarker({
           at: new Date().toISOString(),
         }),
       },
@@ -635,7 +634,7 @@ async function bootDesignSystemFilesMode(): Promise<void> {
     );
   }
   if (decision.boot === "readonly") {
-    (0, configureLegacyDesignSystemBoot)(
+    configureLegacyDesignSystemBoot(
       {
         state: {},
         origin: "demo",
@@ -644,17 +643,17 @@ async function bootDesignSystemFilesMode(): Promise<void> {
       null,
       decision.reason,
     );
-    (0, prepareDesignSystemThumbnailCapture)();
+    prepareDesignSystemThumbnailCapture();
     return;
   }
-  (0, configureLegacyDesignSystemBoot)(
+  configureLegacyDesignSystemBoot(
     outcome.origin === "failed"
       ? outcome
-      : (0, failedLegacyStateOutcome)(
+      : failedLegacyStateOutcome(
           Error(uiMessage("design-system.perFileBoot.thisDesignSystemSList")),
         ),
   );
-  (0, prepareDesignSystemThumbnailCapture)();
+  prepareDesignSystemThumbnailCapture();
 }
 function markedIndexSeenBefore(): boolean | undefined {
   try {

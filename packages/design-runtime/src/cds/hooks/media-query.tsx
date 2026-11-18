@@ -57,9 +57,9 @@ export {
 };
 export function installCdsHooksMediaQuery(): () => void {
   return () => {
-    initializeHooksMediaQuery = (0, initializeOnce)(() => {
-      reactHooksMediaQuery = (0, toModuleNamespace)(
-        (0, load_react)(),
+    initializeHooksMediaQuery = initializeOnce(() => {
+      reactHooksMediaQuery = toModuleNamespace(
+        load_react(),
       );
       mobileSheetMediaQuery = "(pointer: coarse) and (max-width: 639.98px)";
       mediaQueryStores = new WeakMap();

@@ -60,8 +60,8 @@ function useEventRef<Element>(
   input: React.RefCallback<Element>,
   options?: React.Ref<Element>,
 ): React.RefCallback<Element> {
-  let value = (0, useStableCallback)(input);
-  return (0, useStableCallback)((input2) =>
+  let value = useStableCallback(input);
+  return useStableCallback((input2) =>
     mergeRefs(value, options)(input2),
   );
 }
@@ -147,7 +147,7 @@ function companionModalCatcher(
   input: Element,
   options: EventTarget | null,
 ): HTMLElement | null {
-  let value = (0, asElement)(options);
+  let value = asElement(options);
   return (
     value === null || value.parentElement !== input
       ? null
@@ -163,7 +163,7 @@ function shouldPreventModalCatcherFocus(
 ): boolean {
   let value = companionModalCatcher(input, options);
   if (value === null) return false;
-  let value2 = (0, asElement)(value.ownerDocument.activeElement),
+  let value2 = asElement(value.ownerDocument.activeElement),
     value3 = input.parentElement ?? input;
   return value2 === null || !value3.contains(value2);
 }
@@ -258,31 +258,31 @@ export {
 };
 export function installCdsDomRefComposition(): () => void {
   return () => {
-    initializeDomRefComposition = (0, initializeOnce)(() => {
-      (0, initializeHooksStableCallback_2)();
-      reactDomRefComposition = (0, toModuleNamespace)(
-        (0, load_react)(),
+    initializeDomRefComposition = initializeOnce(() => {
+      initializeHooksStableCallback_2();
+      reactDomRefComposition = toModuleNamespace(
+        load_react(),
       );
     });
-    initializeDomRefComposition_2 = (0, initializeOnce)(() => {
+    initializeDomRefComposition_2 = initializeOnce(() => {
       HttpWwwW3Org1999XhtmlValue = "http://www.w3.org/1999/xhtml";
       HttpWwwW3Org2000SvgValue = "http://www.w3.org/2000/svg";
     });
-    initializeDomRefComposition_3 = (0, initializeOnce)(() => {
+    initializeDomRefComposition_3 = initializeOnce(() => {
       "use client";
 
       initializeDomRefComposition_2();
-      reactDomRefComposition_2 = (0, toModuleNamespace)(
-        (0, load_react)(),
+      reactDomRefComposition_2 = toModuleNamespace(
+        load_react(),
       );
-      jsxDomRefComposition = (0, toModuleNamespace)(
-        (0, load_react_jsx_runtime)(),
+      jsxDomRefComposition = toModuleNamespace(
+        load_react_jsx_runtime(),
       );
       ActivityVisibilityContext = (0,
       reactDomRefComposition_2.createContext)<Set<Element> | null>(null);
     });
-    initializeDomRefComposition_4 = (0, initializeOnce)(() => {
-      (0, initializeHooksStableCallback)();
+    initializeDomRefComposition_4 = initializeOnce(() => {
+      initializeHooksStableCallback();
       DomRefCompositionEventRestoreAllState = null;
       DomRefCompositionDragendDropPointerdownValues = [
         "dragend",
@@ -290,14 +290,14 @@ export function installCdsDomRefComposition(): () => void {
         "pointerdown",
       ];
     });
-    initializeDomRefComposition_5 = (0, initializeOnce)(() => {
+    initializeDomRefComposition_5 = initializeOnce(() => {
       "use client";
 
-      reactDomRefComposition_3 = (0, toModuleNamespace)(
-        (0, load_react)(),
+      reactDomRefComposition_3 = toModuleNamespace(
+        load_react(),
       );
-      jsxDomRefComposition_2 = (0, toModuleNamespace)(
-        (0, load_react_jsx_runtime)(),
+      jsxDomRefComposition_2 = toModuleNamespace(
+        load_react_jsx_runtime(),
       );
       DisabledContext = (0, reactDomRefComposition_3.createContext)(false);
     });

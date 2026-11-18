@@ -9,12 +9,12 @@ function findReturnToScope(state?: Dynamic): Dynamic {
     ? "page"
     : state.findShowed === null
       ? "canvas"
-      : (0, isCompatibleFindCameraGlide)(state.now, {
+      : isCompatibleFindCameraGlide(state.now, {
             from: state.findShowed,
             to: state.findShowed,
           }) ||
           (state.glide !== null &&
-            (0, isCompatibleFindCameraGlide)(state.now, state.glide))
+            isCompatibleFindCameraGlide(state.now, state.glide))
         ? "fit"
         : "canvas";
 }

@@ -31,17 +31,17 @@ function useArtboardRuntimeInstallation(
     react_nh.useState)(0),
     [designModePending, setDesignModePending]: Dynamic = (0,
     react_nh.useState)(false),
-    { resolved: resolvedTheme }: Dynamic = (0, useDocumentTheme)(),
+    { resolved: resolvedTheme }: Dynamic = useDocumentTheme(),
     resolvedThemeRef: Dynamic = (0, react_nh.useRef)(resolvedTheme);
   resolvedThemeRef.current = resolvedTheme;
   (0, react_nh.useEffect)((): Dynamic => {
     setCanvasMode(false);
     setDesignModePending(false);
   }, [readyGeneration]);
-  (0, npm_useEventListener_bc)(
+  npm_useEventListener_bc(
     "message",
     (input?: Dynamic): Dynamic => {
-      if (!(0, isPreviewMessage)(input, webviewRef.current)) return;
+      if (!isPreviewMessage(input, webviewRef.current)) return;
       let data: Dynamic = input.data;
       data?.type === "__dc_design_mode" &&
         (data.mode === "canvas"
@@ -51,8 +51,8 @@ function useArtboardRuntimeInstallation(
   );
   (0, react_nh.useEffect)((): Dynamic => {
     if (readyGeneration === 0) return;
-    let value: Dynamic = (0, createPreviewHandle)(webviewRef.current);
-    value && (0, setPickerTheme)(value, resolvedTheme);
+    let value: Dynamic = createPreviewHandle(webviewRef.current);
+    value && setPickerTheme(value, resolvedTheme);
   }, [resolvedTheme]);
   (0, react_nh.useEffect)((): Dynamic => {
     if (!designModePending || keepDesignMode) return;
@@ -65,34 +65,34 @@ function useArtboardRuntimeInstallation(
   let shouldInstall: Dynamic = enabled || canvasMode;
   (0, react_nh.useEffect)((): Dynamic => {
     if (readyGeneration === 0 || !shouldInstall) return;
-    let value: Dynamic = (0, createPreviewHandle)(webviewRef.current);
+    let value: Dynamic = createPreviewHandle(webviewRef.current);
     if (!value) return;
-    (0, installPicker)(value, resolvedThemeRef.current);
-    (0, setPickerReadOnly)(value, readOnlyRef.current);
+    installPicker(value, resolvedThemeRef.current);
+    setPickerReadOnly(value, readOnlyRef.current);
     installPanelHooksRef.current
-      ? (0, enablePicker)(value)
-      : (0, enablePickerPanZoom)(value);
+      ? enablePicker(value)
+      : enablePickerPanZoom(value);
     setInstallGeneration((input?: Dynamic): Dynamic => input + 1);
     let flag: Dynamic = false,
       value2: Dynamic = [700, 2e3].map(
         (input?: Dynamic): Dynamic =>
           setTimeout((): Dynamic => {
-            (0, isPickerInstalled)(value).then(
+            isPickerInstalled(value).then(
               (input2?: Dynamic): Dynamic => {
                 flag ||
                   input2 ||
-                  ((0, installPicker)(
+                  (installPicker(
                     value,
                     resolvedThemeRef.current,
                   ),
-                  (0, setPickerPanZoomArmed)(
+                  setPickerPanZoomArmed(
                     value,
                     forceCanvasMode || canvasModeRef.current,
                   ),
-                  (0, setPickerReadOnly)(value, readOnlyRef.current),
+                  setPickerReadOnly(value, readOnlyRef.current),
                   installPanelHooksRef.current
-                    ? (0, enablePicker)(value)
-                    : (0, enablePickerPanZoom)(value),
+                    ? enablePicker(value)
+                    : enablePickerPanZoom(value),
                   setInstallGeneration(
                     (input3?: Dynamic): Dynamic => input3 + 1,
                   ));
@@ -103,26 +103,26 @@ function useArtboardRuntimeInstallation(
     return (): Dynamic => {
       flag = true;
       for (let value3 of value2 as Dynamic) clearTimeout(value3);
-      (0, disablePicker)(value);
+      disablePicker(value);
     };
   }, [readyGeneration, shouldInstall]);
   (0, react_nh.useEffect)((): Dynamic => {
     if (readyGeneration === 0 || !shouldInstall) return;
-    let value: Dynamic = (0, createPreviewHandle)(webviewRef.current);
+    let value: Dynamic = createPreviewHandle(webviewRef.current);
     value &&
-      (0, setPickerPanZoomArmed)(
+      setPickerPanZoomArmed(
         value,
         forceCanvasMode || canvasMode,
       );
   }, [readyGeneration, shouldInstall, canvasMode, forceCanvasMode]);
   (0, react_nh.useEffect)((): Dynamic => {
     if (readyGeneration === 0 || !shouldInstall) return;
-    let value: Dynamic = (0, createPreviewHandle)(webviewRef.current);
+    let value: Dynamic = createPreviewHandle(webviewRef.current);
     value &&
-      ((0, setPickerReadOnly)(value, readOnly),
+      (setPickerReadOnly(value, readOnly),
       installPanelHooks
-        ? (0, enablePicker)(value)
-        : (0, enablePickerPanZoom)(value));
+        ? enablePicker(value)
+        : enablePickerPanZoom(value));
   }, [readyGeneration, shouldInstall, installPanelHooks, readOnly]);
   return {
     installGen: installGeneration,
@@ -135,8 +135,8 @@ export {
 };
 export function installCanvasArtboardFocus(): () => void {
   return () => {
-    react_nh = (0, toModuleNamespace)((0, load_react)(), 1);
-    (0, initializeNpm_usehooks_ts_p0)();
-    (0, initializePlatformTheme)();
+    react_nh = toModuleNamespace(load_react(), 1);
+    initializeNpm_usehooks_ts_p0();
+    initializePlatformTheme();
   };
 }

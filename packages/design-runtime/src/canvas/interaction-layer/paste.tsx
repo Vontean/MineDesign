@@ -42,7 +42,7 @@ export function resolvePointerInsertionPoint(deps: { readonly callback11: Dynami
             value250.closest("[data-mega-chrome]") != null &&
             value250.getAttribute("data-mega-chrome") !== "set-box-pad") ||
           (value251 != null &&
-            (0, insertionPointerMatchesContent)(
+            insertionPointerMatchesContent(
               input,
               value251,
               deps.value182.current,
@@ -73,7 +73,7 @@ export function resolvePointerInsertionPoint(deps: { readonly callback11: Dynami
         );
         return value254
           ? {
-              ...(0, clampPointToRect)(value253, value254),
+              ...clampPointToRect(value253, value254),
               file: value251,
             }
           : null;
@@ -98,7 +98,7 @@ export function placePastedImagesOnCanvas(deps: { readonly camera: Dynamic; read
                 : undefined;
           if (value254) {
             let value255: Dynamic = deps.value9.current?.getBoundingClientRect(),
-              value256: Dynamic = (0, visibleArtboardCenter)(
+              value256: Dynamic = visibleArtboardCenter(
                 value254,
                 deps.value55.current == null && value255
                   ? {
@@ -131,7 +131,7 @@ export function placePastedImagesOnCanvas(deps: { readonly camera: Dynamic; read
         );
         if (!value251) return false;
         let value252: Dynamic = deps.value9.current?.getBoundingClientRect(),
-          value253: Dynamic = (0, visibleArtboardCenter)(
+          value253: Dynamic = visibleArtboardCenter(
             value251,
             deps.value55.current == null && value252
               ? {

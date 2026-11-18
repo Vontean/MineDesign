@@ -114,7 +114,7 @@ function createStoredZip(entries: Application.ZipEntry[]): Uint8Array {
   return value3;
 }
 function downloadDataUrlBytes(dataUrl: string): Uint8Array | null {
-  let metadata = (0, parseDataUriHeader)(dataUrl);
+  let metadata = parseDataUriHeader(dataUrl);
   if (metadata === null) {
     return null;
   }
@@ -152,8 +152,8 @@ async function collectDownloadFiles(
     usedNames = new Set();
   for (let value of Object.keys(files).sort()) {
     let value2 = files[value],
-      value3 = (0, storagePointerForFile)(value, value2);
-    if (value3 === null && (0, isTextFilePath)(value)) {
+      value3 = storagePointerForFile(value, value2);
+    if (value3 === null && isTextFilePath(value)) {
       entries.push({
         name: value,
         data: value2,
@@ -177,7 +177,7 @@ async function collectDownloadFiles(
     let value4 = await preflightDownloadFiles(
       [
         addressedDownloadFileUrl(files, value),
-        (0, filePreviewUrl)(files, value, prefix),
+        filePreviewUrl(files, value, prefix),
       ],
       fetchBytes,
     );
@@ -199,10 +199,10 @@ async function collectDownloadFiles(
   }
   entries.push({
     name: GENERATED_TOKENS_CSS_PATH,
-    data: (0, generateNamedTokensCss)(paths, storage),
+    data: generateNamedTokensCss(paths, storage),
   });
   try {
-    for (let [value, value2] of (0, consumptionDocumentationForFiles)(
+    for (let [value, value2] of consumptionDocumentationForFiles(
       files,
     ).files) {
       if (!usedNames.has(value)) {
@@ -227,7 +227,7 @@ async function saveDownloadFile(
       typeof contents === "string"
         ? new TextEncoder().encode(contents)
         : contents,
-    permission = await (0, saveThroughShell)(bytes, name),
+    permission = await saveThroughShell(bytes, name),
     callback = (
       input: Application.ArtifactDownloadOutcome["outcome"],
     ): Application.ArtifactDownloadOutcome => ({
@@ -241,7 +241,7 @@ async function saveDownloadFile(
   ) {
     return callback(permission.outcome);
   }
-  if ((0, hasDownloadCapability)()) {
+  if (hasDownloadCapability()) {
     return callback("refused");
   }
   try {
@@ -274,7 +274,7 @@ function unsupportedDownloadMessage(
   path: string,
   shellError: string,
 ): string {
-  let extension = (0, fileExtension)(path),
+  let extension = fileExtension(path),
     fileKind: string =
       extension === ""
         ? uiMessage("design-system.assetUpload.filesWithNoExtension")
@@ -321,8 +321,8 @@ async function readDownloadFileBytes(
   if (value === undefined) {
     return null;
   }
-  let value2 = (0, storagePointerForFile)(path, value);
-  if (value2 === null && (0, isTextFilePath)(path)) {
+  let value2 = storagePointerForFile(path, value);
+  if (value2 === null && isTextFilePath(path)) {
     return new TextEncoder().encode(value);
   }
   if (value2 === null) {
@@ -331,7 +331,7 @@ async function readDownloadFileBytes(
   return preflightDownloadFiles(
     [
       addressedDownloadFileUrl(files, path),
-      (0, filePreviewUrl)(files, path, storage),
+      filePreviewUrl(files, path, storage),
     ],
     fetchBytes,
   );
@@ -520,8 +520,8 @@ export {
 };
 export function installEditorAssetUpload(): () => void {
   return () => {
-    reactAssetUpload = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    reactAssetUpload = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
     zipCrc32Table = (() => {
@@ -551,8 +551,8 @@ export function installEditorAssetUpload(): () => void {
       }
     };
     addressedDownloadFileUrl = (files: Model.FileTable, path: string) =>
-      (0, isHeldFilePointer)(path, files[path] ?? "")
-        ? (0, addressedProjectFileUrl)(path)
+      isHeldFilePointer(path, files[path] ?? "")
+        ? addressedProjectFileUrl(path)
         : undefined;
     FONT_FILE_WEIGHT_PATTERNS = [
       [/thin|hairline/i, "100"],

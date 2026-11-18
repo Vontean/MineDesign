@@ -97,7 +97,7 @@ function normalizeFocusRelatedTarget(input?: Dynamic): Dynamic {
   let callback: Dynamic = (input2?: Dynamic): Dynamic => {
     let relatedTarget: Dynamic = input2.relatedTarget;
     relatedTarget != null &&
-      (0, asElement)(relatedTarget) === null &&
+      asElement(relatedTarget) === null &&
       Object.defineProperty(input2, "relatedTarget", {
         value: null,
         configurable: true,
@@ -136,7 +136,7 @@ function useInitialFocusGuard(
   value?: Dynamic,
   extra?: Dynamic,
 ): Dynamic {
-  let value2: Dynamic = (0, useCdsRootElement)(),
+  let value2: Dynamic = useCdsRootElement(),
     value3: Dynamic = (0, reactSheetsScrollArea_2.useRef)(false);
   (0, reactSheetsScrollArea_2.useInsertionEffect)((): Dynamic => {
     if (!input) {
@@ -212,7 +212,7 @@ function useFinalFocus(
   options: Dynamic = true,
   context?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = (0, useCdsRootElement)(),
+  let value: Dynamic = useCdsRootElement(),
     value2: Dynamic = (0, reactSheetsScrollArea_2.useRef)(null),
     value3: Dynamic = (0, reactSheetsScrollArea_2.useRef)(false),
     value4: Dynamic = (0,
@@ -239,7 +239,7 @@ function useFinalFocus(
           : null;
     }
     if (!options) return;
-    let value12: Dynamic = (0, asElement)(value11.activeElement),
+    let value12: Dynamic = asElement(value11.activeElement),
       value13: Dynamic = value12 && value12 !== value11.body ? value12 : null;
     !value13 ||
       value7.current?.contains(value13) ||
@@ -431,12 +431,12 @@ export {
 };
 export function installCdsSheetsScrollArea(): () => void {
   return () => {
-    initializeSheetsScrollArea = (0, initializeOnce)((): Dynamic => {
-      (0, initializeClassNames)();
-      (0, initializeSheetsPresentation)();
-      (0, initializeNpm_clsx_xh)();
-      jsxSheetsScrollArea = (0, toModuleNamespace)(
-        (0, load_react_jsx_runtime)(),
+    initializeSheetsScrollArea = initializeOnce((): Dynamic => {
+      initializeClassNames();
+      initializeSheetsPresentation();
+      initializeNpm_clsx_xh();
+      jsxSheetsScrollArea = toModuleNamespace(
+        load_react_jsx_runtime(),
       );
       SheetsScrollAreaClassNames =
         "min-h-0 overflow-y-auto scroll-fade-y rounded-[inherit] border-b-[length:var(--cds-ring-inner)] border-transparent p-1";
@@ -447,57 +447,57 @@ export function installCdsSheetsScrollArea(): () => void {
       SheetsScrollAreaLabel =
         "max(var(--cds-h-control), var(--cds-leading-body))";
     });
-    initializeSheetsScrollArea_2 = (0, initializeOnce)((): Dynamic => {
+    initializeSheetsScrollArea_2 = initializeOnce((): Dynamic => {
       "use client";
 
-      (0, initializeMenuConfiguration)();
-      reactSheetsScrollArea = (0, toModuleNamespace)(
-        (0, load_react)(),
+      initializeMenuConfiguration();
+      reactSheetsScrollArea = toModuleNamespace(
+        load_react(),
       );
       SheetsScrollAreaElementCache = new WeakMap();
     });
-    initializeSheetsScrollArea_3 = (0, initializeOnce)((): Dynamic => {
+    initializeSheetsScrollArea_3 = initializeOnce((): Dynamic => {
       SheetsScrollAreaLabel_2 =
         "input:not([type='hidden']):not([disabled]),[contenteditable]:not([contenteditable='false']),textarea:not([disabled])";
     });
-    initializeSheetsScrollArea_4 = (0, initializeOnce)((): Dynamic => {
-      (0, initializeHooksStableCallback)();
+    initializeSheetsScrollArea_4 = initializeOnce((): Dynamic => {
+      initializeHooksStableCallback();
     });
-    initializeSheetsScrollArea_5 = (0, initializeOnce)((): Dynamic => {
+    initializeSheetsScrollArea_5 = initializeOnce((): Dynamic => {
       SheetsScrollAreaElementCache_2 = new WeakMap();
       SheetsScrollAreaLimit = 8;
     });
-    initializeSheetsScrollArea_6 = (0, initializeOnce)((): Dynamic => {
-      (0, initializeCdsRoot)();
-      (0, initializeHooksStableCallback)();
+    initializeSheetsScrollArea_6 = initializeOnce((): Dynamic => {
+      initializeCdsRoot();
+      initializeHooksStableCallback();
       initializeSheetsScrollArea_3();
       initializeSheetsScrollArea_4();
       initializeSheetsScrollArea_5();
-      reactSheetsScrollArea_2 = (0, toModuleNamespace)(
-        (0, load_react)(),
+      reactSheetsScrollArea_2 = toModuleNamespace(
+        load_react(),
       );
     });
-    initializeOverlayAttributes = (0, initializeOnce)((): Dynamic => {
+    initializeOverlayAttributes = initializeOnce((): Dynamic => {
       overlayAttribute = "data-cds-overlay";
       openOverlaySelector = `[${overlayAttribute}][data-open]`;
     });
-    initializeSheetsScrollArea_7 = (0, initializeOnce)((): Dynamic => {
+    initializeSheetsScrollArea_7 = initializeOnce((): Dynamic => {
       "use client";
 
-      reactSheetsScrollArea_3 = (0, toModuleNamespace)(
-        (0, load_react)(),
+      reactSheetsScrollArea_3 = toModuleNamespace(
+        load_react(),
       );
       InnerOverlaysContext = (0, reactSheetsScrollArea_3.createContext)(null);
       SheetsScrollAreaConstant = 9;
     });
-    initializeSheetsScrollArea_8 = (0, initializeOnce)((): Dynamic => {
+    initializeSheetsScrollArea_8 = initializeOnce((): Dynamic => {
       "use client";
 
       initializeOverlayAttributes();
-      (0, initializeMenuConfiguration)();
+      initializeMenuConfiguration();
       initializeSheetsScrollArea_7();
-      reactSheetsScrollArea_4 = (0, toModuleNamespace)(
-        (0, load_react)(),
+      reactSheetsScrollArea_4 = toModuleNamespace(
+        load_react(),
       );
       SheetsScrollAreaSAConfig = {
         [overlayAttribute]: "",

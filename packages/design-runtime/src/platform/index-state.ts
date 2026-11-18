@@ -17,7 +17,7 @@ var IndexFileError: IndexFileErrorConstructor;
 function canonicalizeIndexValue(value: unknown, topLevel?: boolean): unknown {
   if (Array.isArray(value))
     return value.map((input) => canonicalizeIndexValue(input, false));
-  if (!(0, isPlainMergeObject)(value)) return value;
+  if (!isPlainMergeObject(value)) return value;
   let keys = Object.keys(value)
     .filter((input) => value[input] !== undefined)
     .sort();
@@ -27,7 +27,7 @@ function canonicalizeIndexValue(value: unknown, topLevel?: boolean): unknown {
   }
   let state: DataRecord = {};
   for (let value2 of keys)
-    (0, setSafeObjectKey)(
+    setSafeObjectKey(
       state,
       value2,
       canonicalizeIndexValue(value[value2], false),
@@ -45,7 +45,7 @@ function createIndexFileState<Index extends VersionedIndex>(
   options: IndexStateOptions<Index>,
 ): IndexFileState<Index> {
   let value = options.empty(),
-    base: Index = (0, cloneIndexValue)(value) as Index,
+    base: Index = cloneIndexValue(value) as Index,
     baseSha: string | null = null,
     raw: IndexWriteListener | undefined,
     conflicts: string[] = [],
@@ -58,7 +58,7 @@ function createIndexFileState<Index extends VersionedIndex>(
       throw new IndexFileError("unreadable", options.path + " is not JSON");
     }
     if (
-      !(0, isPlainMergeObject)(value2) ||
+      !isPlainMergeObject(value2) ||
       typeof value2.v != "number"
     )
       throw new IndexFileError(
@@ -78,7 +78,7 @@ function createIndexFileState<Index extends VersionedIndex>(
       if (value4 === "v") continue;
       let value6 = Array.isArray(value5)
         ? "array"
-        : (0, isPlainMergeObject)(value5)
+        : isPlainMergeObject(value5)
           ? "object"
           : undefined;
       if (value6 === undefined) continue;
@@ -90,14 +90,14 @@ function createIndexFileState<Index extends VersionedIndex>(
       if (
         value8?.kind === "records" &&
         value6 === "array" &&
-        (0, isPlainMergeObject)(value7)
+        isPlainMergeObject(value7)
       ) {
-        let value9 = (0, normalizeMergeMap)(value7, value8.by);
+        let value9 = normalizeMergeMap(value7, value8.by);
         value2[value4] = Object.keys(value9).map((input2) => value9[input2]);
         continue;
       }
       ((value6 === "array" && !Array.isArray(value7)) ||
-        (value6 === "object" && !(0, isPlainMergeObject)(value7))) &&
+        (value6 === "object" && !isPlainMergeObject(value7))) &&
         (value2[value4] = value5);
     }
     if (options.validate && !options.validate(value2 as VersionedIndex)) {
@@ -139,14 +139,14 @@ function createIndexFileState<Index extends VersionedIndex>(
           );
         }
         value = parseIndex(value2.text);
-        base = (0, cloneIndexValue)(value) as Index;
+        base = cloneIndexValue(value) as Index;
         baseSha = value2.sha256;
         initialized = false;
         return value;
       },
       loadText(input, options2) {
         value = parseIndex(input);
-        base = (0, cloneIndexValue)(value) as Index;
+        base = cloneIndexValue(value) as Index;
         baseSha = options2;
         initialized = false;
         return value;
@@ -169,20 +169,20 @@ function createIndexFileState<Index extends VersionedIndex>(
       },
       mergeFrom(input) {
         conflicts = [];
-        value = (0, preserveIndexProvenance)(
-          (0, mergeIndexValues)(base, value, input, options.schema, {
+        value = preserveIndexProvenance(
+          mergeIndexValues(base, value, input, options.schema, {
             conflicts: conflicts,
             externalMembers: options.externalMembers,
           }),
           input,
           base,
         ) as Index;
-        base = (0, cloneIndexValue)(input) as Index;
+        base = cloneIndexValue(input) as Index;
         return value;
       },
       serialize: () =>
         stringifyCanonicalIndex(
-          (0, preserveIndexProvenance)(value, base),
+          preserveIndexProvenance(value, base),
         ),
       bind(input) {
         raw = input;
@@ -191,10 +191,10 @@ function createIndexFileState<Index extends VersionedIndex>(
         try {
           base = JSON.parse(input);
         } catch {
-          base = (0, cloneIndexValue)(value) as Index;
+          base = cloneIndexValue(value) as Index;
         }
         baseSha = options2;
-        initialized = !(0, equalIndexValue)(base, value);
+        initialized = !equalIndexValue(base, value);
       },
       async reloadAndMerge() {
         let value2 = await options.port.readText(options.path);
@@ -202,7 +202,7 @@ function createIndexFileState<Index extends VersionedIndex>(
           ? []
           : (state.mergeFrom(parseIndex(value2.text)),
             (baseSha = value2.sha256),
-            (initialized = !(0, equalIndexValue)(base, value)),
+            (initialized = !equalIndexValue(base, value)),
             initialized &&
               raw?.(options.path, () => state.serialize(), baseSha),
             [...conflicts]);

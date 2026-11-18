@@ -18,8 +18,8 @@ function selectionPointerDownDecision(
   target?: Dynamic,
   additive?: Dynamic,
 ): Dynamic {
-  return (0, hasBoardSelection)(selection, target) &&
-    (additive || (0, boardSelectionCount)(selection) > 1)
+  return hasBoardSelection(selection, target) &&
+    (additive || boardSelectionCount(selection) > 1)
     ? {
         selectNow: false,
         carry: selection,
@@ -28,8 +28,8 @@ function selectionPointerDownDecision(
     : {
         selectNow: true,
         carry: additive
-          ? (0, toggleBoardSelection)(selection, target)
-          : (0, boardSelectionItems)(target),
+          ? toggleBoardSelection(selection, target)
+          : boardSelectionItems(target),
         click: null,
       };
 }
@@ -117,7 +117,7 @@ function objectsWithinCanvasMarquee(
   let values2: Dynamic = new Set(selection.notes);
   for (let value of manifest.annotations as Dynamic) {
     let value2: Dynamic,
-      value3: Dynamic = (0, annotationRotation)(value);
+      value3: Dynamic = annotationRotation(value);
     if (
       value.kind === "line" ||
       value.kind === "arrow" ||
@@ -125,13 +125,13 @@ function objectsWithinCanvasMarquee(
     ) {
       let value4: Dynamic = expandHitTestRect(
         rect,
-        (0, getAnnotationStrokeWidth)(value) / 2,
+        getAnnotationStrokeWidth(value) / 2,
       );
       value2 =
         value.kind === "pen"
           ? inclusiveRectIntersects(
               value4,
-              (0, rotatedAnnotationBounds)(
+              rotatedAnnotationBounds(
                 value,
                 manifest.annBox(value),
               ),
@@ -139,7 +139,7 @@ function objectsWithinCanvasMarquee(
           : lineIntersectsMarquee(value, value4);
     } else
       value2 = value3
-        ? (0, rotatedRectCorner)(manifest.annBox(value), value3, rect)
+        ? rotatedRectCorner(manifest.annBox(value), value3, rect)
         : inclusiveRectIntersects(rect, manifest.annBox(value));
     value2 && values2.add(value.id);
   }
@@ -152,14 +152,14 @@ function penIntersectsMarquee(annotation?: Dynamic, rect?: Dynamic): Dynamic {
   let entry: Dynamic = penHitTestPointsCache.get(annotation);
   if (!entry) {
     let [items, items2]: Dynamic = [
-        (0, annotationPathViewBox)(annotation.d),
-        (0, annotationRotation)(annotation),
+        annotationPathViewBox(annotation.d),
+        annotationRotation(annotation),
       ],
       state: Dynamic = {
         x: annotation.x + annotation.w / 2,
         y: annotation.y + annotation.h / 2,
       };
-    entry = (0, parsePenPath)(annotation.d).map(
+    entry = parsePenPath(annotation.d).map(
       (input?: Dynamic): Dynamic => {
         let state2: Dynamic = {
           x: annotation.x + (input.x * annotation.w) / items.w,
@@ -168,7 +168,7 @@ function penIntersectsMarquee(annotation?: Dynamic, rect?: Dynamic): Dynamic {
         return {
           move: input.move,
           ...(items2
-            ? (0, rotatePoint)(state2, state, items2)
+            ? rotatePoint(state2, state, items2)
             : state2),
         };
       },

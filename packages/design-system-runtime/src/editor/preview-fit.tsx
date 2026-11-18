@@ -84,12 +84,12 @@ export {
 };
 export function installEditorPreviewFit(): () => void {
   return () => {
-    reactPreviewFit = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    reactPreviewFit = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
-    jsxPreviewFit = (0, toModuleNamespace)(
-      (0, loadJsxNamespace)(),
+    jsxPreviewFit = toModuleNamespace(
+      loadJsxNamespace(),
       1,
     );
     previewFitScale = (containerWidth: number, previewWidth: number) =>

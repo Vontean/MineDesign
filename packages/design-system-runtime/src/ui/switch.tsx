@@ -36,15 +36,15 @@ export {
 };
 export function installUiSwitch(): () => void {
   return () => {
-    (0, initializeClassNames)();
-    (0, initializeCdsRoot)();
-    (0, initializeTooltip)();
-    reactSwitch = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    initializeClassNames();
+    initializeCdsRoot();
+    initializeTooltip();
+    reactSwitch = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
-    jsxSwitch = (0, toModuleNamespace)(
-      (0, loadJsxNamespace)(),
+    jsxSwitch = toModuleNamespace(
+      loadJsxNamespace(),
       1,
     );
     SWITCH_TRACK_CLASS =
@@ -73,8 +73,8 @@ export function installUiSwitch(): () => void {
             ref={options}
             data-cds={"Switch"}
             {...props}
-            {...(0, getControlSizeAttributes)(size)}
-            onMouseDown={(0, withRepeatedClickSelectionPrevention)(
+            {...getControlSizeAttributes(size)}
+            onMouseDown={withRepeatedClickSelectionPrevention(
               onMouseDown,
             )}
             onKeyDown={(
@@ -85,7 +85,7 @@ export function installUiSwitch(): () => void {
               preventRepeatedSwitchEnter(input);
               onKeyDown?.(input);
             }}
-            className={(0, cn)(
+            className={cn(
               SWITCH_TRACK_CLASS,
               SWITCH_TRACK_SIZE_CLASS,
               className,

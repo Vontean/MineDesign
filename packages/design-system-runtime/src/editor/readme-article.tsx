@@ -58,8 +58,8 @@ export {
 };
 export function installEditorReadmeArticle(): () => void {
   return () => {
-    jsxReadmeArticle = (0, toModuleNamespace)(
-      (0, loadJsxNamespace)(),
+    jsxReadmeArticle = toModuleNamespace(
+      loadJsxNamespace(),
       1,
     );
     README_MEASURE_CLASS_NAME =

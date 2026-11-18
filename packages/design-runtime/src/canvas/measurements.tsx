@@ -118,13 +118,13 @@ export {
 };
 export function installCanvasMeasurements(): () => void {
   return () => {
-    reactCanvasMeasurements = (0, toModuleNamespace)(
-      (0, load_react)(),
+    reactCanvasMeasurements = toModuleNamespace(
+      load_react(),
       1,
     );
-    (0, initializeCdsIndex)();
-    reactCanvasMeasurements_2 = (0, toModuleNamespace)(
-      (0, load_react)(),
+    initializeCdsIndex();
+    reactCanvasMeasurements_2 = toModuleNamespace(
+      load_react(),
       1,
     );
     SaveNowValue = "save_now";

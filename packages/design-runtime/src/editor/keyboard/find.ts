@@ -53,7 +53,7 @@ function handleFindKeyboardEvent(event?: Dynamic): Dynamic {
     flag === false &&
     (target.tagName === "INPUT" ||
       (shortcutMatchesLetter(event, "s") &&
-        isPlatformModifier(event, (0, isApplePlatform)())))
+        isPlatformModifier(event, isApplePlatform())))
   )
     return;
   event.stopImmediatePropagation();
@@ -103,7 +103,7 @@ function isPlatformModifier(input?: Dynamic, options?: Dynamic): Dynamic {
 }
 function isFindShortcut(
   input?: Dynamic,
-  options: Dynamic = (0, isApplePlatform)(),
+  options: Dynamic = isApplePlatform(),
 ): Dynamic {
   return (
     isPlatformModifier(input, options) &&
@@ -184,7 +184,7 @@ function guardedNativeEventHandler(
 }
 function findDirectionShortcut(
   input?: Dynamic,
-  options: Dynamic = (0, isApplePlatform)(),
+  options: Dynamic = isApplePlatform(),
 ): Dynamic {
   if (
     input.key === "F3"

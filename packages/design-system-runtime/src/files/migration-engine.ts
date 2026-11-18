@@ -128,7 +128,7 @@ async function hashStoreDocument(
       filtered[value] = value2;
     }
   }
-  return (0, sha256)((0, serializeIndexDocument)(filtered));
+  return sha256(serializeIndexDocument(filtered));
 }
 async function readAllowlistedStoreDocuments(
   store: Model.FilesMigrationStore,
@@ -159,8 +159,8 @@ async function readAllowlistedStoreDocuments(
   return documents;
 }
 function hashCanonicalIndex(value: unknown) {
-  return (0, sha256)(
-    (0, serializeIndexDocument)(value === undefined ? null : value),
+  return sha256(
+    serializeIndexDocument(value === undefined ? null : value),
   );
 }
 async function hashStoreFields(
@@ -236,7 +236,7 @@ function splitMigrationPublishBatches(entries: Model.FilePublishEntries) {
     count = 0,
     bytes = 0;
   for (let [value, value2] of Object.entries(entries)) {
-    let value3 = (0, filePublishEncodedBytes)(value2);
+    let value3 = filePublishEncodedBytes(value2);
     if (
       count > 0 &&
       (count + 1 > MIGRATION_BATCH_MAX_FILES ||
@@ -347,7 +347,7 @@ function migrationVersionSize(
       MIGRATION_SENTINEL_PATH,
       indexPath,
     ]),
-    bytes = (0, filePublishRawBytes)(indexContent);
+    bytes = filePublishRawBytes(indexContent);
   for (let value of listing) {
     if (!treePaths.has(value.path) && Number.isFinite(value.size)) {
       bytes += value.size;
@@ -356,8 +356,8 @@ function migrationVersionSize(
   let oversized: string[] = [];
   for (let [value, value2] of tree.files) {
     if (
-      ((bytes += (0, filePublishRawBytes)(value2)),
-      (0, filePublishEncodedBytes)(value2) >
+      ((bytes += filePublishRawBytes(value2)),
+      filePublishEncodedBytes(value2) >
         MAX_FILE_PUBLISH_ENCODED_BYTES)
     ) {
       oversized.push(value);
@@ -377,7 +377,7 @@ function validateMigrationTreePaths(
 ): void {
   for (let value of paths) {
     if (
-      (0, canonicalFilePathWithinPrefix)(
+      canonicalFilePathWithinPrefix(
         PROJECT_FILE_PREFIX,
         value,
       ) !== value
@@ -386,7 +386,7 @@ function validateMigrationTreePaths(
         "not canonical: " + JSON.stringify(value),
       );
     }
-    if ((0, isPrivateProjectFile)(type, value)) {
+    if (isPrivateProjectFile(type, value)) {
       throw new MigrationConfigError(
         "the page's own file in a codec's tree: " + JSON.stringify(value),
       );
@@ -397,14 +397,14 @@ async function hashMigrationFileInput(
   path: string,
   input: Model.FilePublishInput,
 ): Promise<string> {
-  let normalized = (0, normalizeFilePublishInput)(path, input);
+  let normalized = normalizeFilePublishInput(path, input);
   if (normalized === null || typeof normalized === "string") {
     throw new MigrationConfigError(
       typeof normalized === "string" ? normalized : path + ": no content",
     );
   }
-  return (0, sha256)(
-    await (0, fileContentBytes)(normalized.content),
+  return sha256(
+    await fileContentBytes(normalized.content),
   );
 }
 async function finishMigrationTombstone(
@@ -417,14 +417,14 @@ async function finishMigrationTombstone(
     if (!options.files.canWrite) {
       return false;
     }
-    let value = await (0, readJsonFileState)(
+    let value = await readJsonFileState(
         options.files,
         options.indexPath,
         options.timers,
       ),
       value2 =
         value.state === "read"
-          ? (0, readFileMigrationMarker)(value.value)
+          ? readFileMigrationMarker(value.value)
           : null;
     if (value2 === null) {
       return false;
@@ -447,7 +447,7 @@ async function finishMigrationTombstone(
     let value4 = await options.store.get(options.metaPath);
     if (
       value4 === null ||
-      (0, readMovedToMarker)(value4.data) !== null
+      readMovedToMarker(value4.data) !== null
     ) {
       return false;
     }
@@ -465,7 +465,7 @@ async function finishMigrationTombstone(
     };
     await options.store.update(options.metaPath, {
       [MOVED_TO_MARKER_KEY]: {
-        ...(0, movedToMarker)({
+        ...movedToMarker({
           path: options.indexPath,
           ver: options.files.version().version,
           at: value2.marker.at,
@@ -528,18 +528,18 @@ async function migrateStoreToFiles<Index extends object = Model.FilesIndex>(
       let value = await store.get(adapter.metaPath);
       if (
         value !== null &&
-        (0, readMovedToMarker)(value.data) !== null
+        readMovedToMarker(value.data) !== null
       ) {
         return "already_moved";
       }
       let value2 =
         value === null
           ? null
-          : (0, activeConvertingMarker)(value.data, timers.now());
+          : activeConvertingMarker(value.data, timers.now());
       if (value2 !== null && value2.holder !== options.holder) {
         return "lease_lost";
       }
-      let value3 = await (0, readJsonFileState)(
+      let value3 = await readJsonFileState(
         files,
         adapter.indexPath,
         timers,
@@ -552,7 +552,7 @@ async function migrateStoreToFiles<Index extends object = Model.FilesIndex>(
       }
       let value4 =
         value3.state === "read"
-          ? (0, readFileMigrationMarker)(value3.value)
+          ? readFileMigrationMarker(value3.value)
           : null;
       remoteConversionMarker =
         value4?.kind === "converted" ? value4.marker : undefined;
@@ -589,7 +589,7 @@ async function migrateStoreToFiles<Index extends object = Model.FilesIndex>(
         reason: files.narrowed === true ? "narrowed_listing" : "not_writer",
       };
     }
-    let value = await (0, readJsonFileState)(
+    let value = await readJsonFileState(
       files,
       adapter.indexPath,
       timers,
@@ -608,7 +608,7 @@ async function migrateStoreToFiles<Index extends object = Model.FilesIndex>(
     }
     if (
       value.state === "read" &&
-      (0, readFileMigrationMarker)(value.value) !== null
+      readFileMigrationMarker(value.value) !== null
     ) {
       return {
         result: "skipped",
@@ -638,13 +638,13 @@ async function migrateStoreToFiles<Index extends object = Model.FilesIndex>(
         reason: "empty_store",
       };
     }
-    if ((0, readMovedToMarker)(value2.data) !== null) {
+    if (readMovedToMarker(value2.data) !== null) {
       return {
         result: "skipped",
         reason: "already_moved",
       };
     }
-    let value3 = (0, activeConvertingMarker)(
+    let value3 = activeConvertingMarker(
       value2.data,
       timers.now(),
     );
@@ -673,7 +673,7 @@ async function migrateStoreToFiles<Index extends object = Model.FilesIndex>(
           preflight: true,
         },
       ),
-      value5 = (0, damagedTextFiles)(value4);
+      value5 = damagedTextFiles(value4);
     if (value5.length > 0) {
       return {
         result: "skipped",
@@ -681,12 +681,12 @@ async function migrateStoreToFiles<Index extends object = Model.FilesIndex>(
         leftOut: value5,
       };
     }
-    let value6 = await (0, listWritableFiles)(files).catch(
+    let value6 = await listWritableFiles(files).catch(
       (): void => {
         return;
       },
     );
-    (0, removeUnpublishableMigrationFiles)(
+    removeUnpublishableMigrationFiles(
       value4.files,
       adapter.type,
     );
@@ -790,7 +790,7 @@ async function migrateStoreToFiles<Index extends object = Model.FilesIndex>(
       let value21 = await store.get(adapter.metaPath);
       if (
         value21 !== null &&
-        (0, readConvertingMarker)(value21.data)?.holder !==
+        readConvertingMarker(value21.data)?.holder !==
           options.holder
       ) {
         fenceWritten = false;
@@ -800,7 +800,7 @@ async function migrateStoreToFiles<Index extends object = Model.FilesIndex>(
       }
     }
     setStage("snapshot");
-    let value10 = await (0, listWritableFiles)(files),
+    let value10 = await listWritableFiles(files),
       entries = new Map(value10.map((input) => [input.path, input.sha256])),
       values = new Set(
         value10
@@ -810,14 +810,14 @@ async function migrateStoreToFiles<Index extends object = Model.FilesIndex>(
       value11 = await readAllowlistedStoreDocuments(store, adapter.allowlist),
       value12 = await hashStoreSnapshot(value11, adapter),
       value13 = await adapter.codec.toTree(value11);
-    if ((0, damagedTextFiles)(value13).length > 0) {
+    if (damagedTextFiles(value13).length > 0) {
       return {
         result: "skipped",
         reason: "unsendable_content",
-        leftOut: (0, damagedTextFiles)(value13),
+        leftOut: damagedTextFiles(value13),
       };
     }
-    let value14 = (0, removeUnpublishableMigrationFiles)(
+    let value14 = removeUnpublishableMigrationFiles(
       value13.files,
       adapter.type,
     );
@@ -917,7 +917,7 @@ async function migrateStoreToFiles<Index extends object = Model.FilesIndex>(
             );
             if (
               !value25 &&
-              (0, fileContentContainsRuntimeMarkers)(value24)
+              fileContentContainsRuntimeMarkers(value24)
             ) {
               values.add(value23);
             } else {
@@ -954,10 +954,10 @@ async function migrateStoreToFiles<Index extends object = Model.FilesIndex>(
       value11 = value21;
       value12 = value22;
       value13 = await adapter.codec.toTree(value11);
-      if ((0, damagedTextFiles)(value13).length > 0) {
+      if (damagedTextFiles(value13).length > 0) {
         return aborted("unsendable_content");
       }
-      value14 = (0, removeUnpublishableMigrationFiles)(
+      value14 = removeUnpublishableMigrationFiles(
         value13.files,
         adapter.type,
       );
@@ -1019,7 +1019,7 @@ async function migrateStoreToFiles<Index extends object = Model.FilesIndex>(
     }
     let state2 = {
         ...value13.index,
-        [CONVERTED_FROM_MARKER_KEY]: (0, convertedFromMarker)(
+        [CONVERTED_FROM_MARKER_KEY]: convertedFromMarker(
           {
             at: value18,
             by: options.by,
@@ -1033,7 +1033,7 @@ async function migrateStoreToFiles<Index extends object = Model.FilesIndex>(
       },
       value20 = await value16.publish(
         {
-          [MIGRATION_SENTINEL_PATH]: (0, serializeIndexDocument)(
+          [MIGRATION_SENTINEL_PATH]: serializeIndexDocument(
             state,
           ),
           [adapter.indexPath]: adapter.codec.serializeIndex(state2),
@@ -1055,14 +1055,14 @@ async function migrateStoreToFiles<Index extends object = Model.FilesIndex>(
       };
     }
     if (!value20.ok) {
-      let value21 = await (0, readJsonFileState)(
+      let value21 = await readJsonFileState(
           files,
           adapter.indexPath,
           timers,
         ),
         value22 =
           value21.state === "read"
-            ? (0, readFileMigrationMarker)(value21.value)
+            ? readFileMigrationMarker(value21.value)
             : null;
       if (value22?.kind === "converted" && callback6(value22.marker)) {
         value20 = {
@@ -1078,7 +1078,7 @@ async function migrateStoreToFiles<Index extends object = Model.FilesIndex>(
     finishing = true;
     await renewalInFlight;
     let state3 = {
-        [MOVED_TO_MARKER_KEY]: (0, movedToMarker)({
+        [MOVED_TO_MARKER_KEY]: movedToMarker({
           path: adapter.indexPath,
           ver: value20.version,
           at: value18,
@@ -1135,7 +1135,7 @@ async function migrateStoreToFiles<Index extends object = Model.FilesIndex>(
       let value = await store.get(adapter.metaPath).catch((): null => null);
       if (
         value !== null &&
-        (0, readConvertingMarker)(value.data)?.holder ===
+        readConvertingMarker(value.data)?.holder ===
           options.holder
       ) {
         await store
@@ -1202,7 +1202,7 @@ export {
 export function installFilesMigrationEngine(): () => void {
   return () => {
     isPublishableFilePath = (input): boolean =>
-      (0, validateFilePath)(input) === undefined;
+      validateFilePath(input) === undefined;
     MIGRATION_LEASE_TTL_MS = 120000;
     MIGRATION_LEASE_RENEWAL_MS = 45000;
     MIGRATION_BATCH_MAX_FILES = 200;

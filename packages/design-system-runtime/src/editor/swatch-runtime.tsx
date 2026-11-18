@@ -755,8 +755,8 @@ function createLiveSwatch(
     ),
     value7 =
       options.cardFile !== undefined &&
-      (0, isPreviewRunnerAvailable)(value2)
-        ? (0, previewRunnerAddresses)(options.cardFile, value.baseURI)
+      isPreviewRunnerAvailable(value2)
+        ? previewRunnerAddresses(options.cardFile, value.baseURI)
         : null,
     value8 =
       value7 !== null && !swatchRequiresPageAddress(value2, options)
@@ -765,7 +765,7 @@ function createLiveSwatch(
     value9: number | undefined,
     value10 =
       value8 !== null
-        ? (0, registerPreviewRunnerDocument)(
+        ? registerPreviewRunnerDocument(
             value2,
             value8.card,
             value6,
@@ -819,9 +819,9 @@ function createLiveSwatch(
     if (input === "suspended") {
       return void options.onUndelivered?.();
     }
-    (0, removePreviewRunnerDocument)(value2, value10);
+    removePreviewRunnerDocument(value2, value10);
     if (
-      (0, recordPreviewRunnerOutcome)(value2, input, value10).tell
+      recordPreviewRunnerOutcome(value2, input, value10).tell
     ) {
       console.warn(
         'design-system: "' +
@@ -831,11 +831,11 @@ function createLiveSwatch(
           " (" +
           options2 +
           ") and was loaded without an address of its own, so files its card names by relative path will not load" +
-          ((0, isPreviewRunnerCoolingDown)(value2)
+          (isPreviewRunnerCoolingDown(value2)
             ? "; previews that start in the next moment load the same way, and ones that start after that try " +
               PREVIEW_RUNNER_PATH +
               " again"
-            : (0, isPreviewRunnerAvailable)(value2)
+            : isPreviewRunnerAvailable(value2)
               ? ""
               : "; later previews on this page will load the same way until the page is reloaded"),
       );
@@ -848,7 +848,7 @@ function createLiveSwatch(
       if (isBlankPreviewFrame(value4)) {
         return;
       }
-      if ((0, hasPreviewRunnerDocument)(value2, value10)) {
+      if (hasPreviewRunnerDocument(value2, value10)) {
         return value14(
           "refused",
           "run.html was missing, was refused, or loaded without running the preview",
@@ -858,7 +858,7 @@ function createLiveSwatch(
         return value14("unclear", uiMessage("design-system.swatchRuntime.itDidNotReachIts"));
       }
       value13 = true;
-      (0, recordPreviewRunnerOutcome)(value2, "worked", value10);
+      recordPreviewRunnerOutcome(value2, "worked", value10);
     }
     index += 1;
     if (index > 1) {
@@ -885,7 +885,7 @@ function createLiveSwatch(
           flag3 = true;
           options.onReady?.(previewMessageHeight(dataset.data));
           if (options.onContentHeight !== undefined && !flag) {
-            callback = (0, observePreviewHeight)(
+            callback = observePreviewHeight(
               value4,
               options.onContentHeight,
               options.declaredHeight,
@@ -907,7 +907,7 @@ function createLiveSwatch(
       callback3 = (): void => {
         if (
           value13 ||
-          !(0, hasPreviewRunnerDocument)(value2, value10)
+          !hasPreviewRunnerDocument(value2, value10)
         ) {
           return;
         }
@@ -915,13 +915,13 @@ function createLiveSwatch(
           value.hidden ||
           (previewFramePathname(value4) === value8.runner &&
             (index2 += 1) <= 3) ||
-          ((0, wasPreviewRunnerRecentlyTaken)(value2, value16) &&
+          (wasPreviewRunnerRecentlyTaken(value2, value16) &&
             (index3 += 1) <= 8)
         ) {
           value12 = setTimeout(callback3, value16);
         } else {
           value12 = setTimeout((): void => {
-            if ((0, hasPreviewRunnerDocument)(value2, value10)) {
+            if (hasPreviewRunnerDocument(value2, value10)) {
               value14("unclear", "run.html did not start in time");
             }
           }, 0);
@@ -944,7 +944,7 @@ function createLiveSwatch(
       clearTimeout(value12);
       value2.removeEventListener("message", callback2);
       if (value10 !== undefined) {
-        (0, removePreviewRunnerDocument)(value2, value10);
+        removePreviewRunnerDocument(value2, value10);
       }
       value4.remove();
       releaseSwatchHead(value2, value3);
@@ -962,11 +962,11 @@ function swatchRequiresPageAddress(
     bundlePageAddressReferenceCache.set(
       options.head,
       (bundleHasPageReference =
-        (0, hasRawProjectReferences)(
+        hasRawProjectReferences(
           options.head.bundleCss,
           "bundle",
         ) ||
-        (0, hasRawProjectReferences)(
+        hasRawProjectReferences(
           options.head.bundleJs,
           "bundle",
         )),
@@ -974,11 +974,11 @@ function swatchRequiresPageAddress(
   }
   let hasPageReference =
       bundleHasPageReference ||
-      (0, hasRawProjectReferences)(options.html, "card"),
+      hasRawProjectReferences(options.html, "card"),
     blockedScript =
       !hasPageReference &&
       options.fromProps !== true &&
-      (0, blockedPreviewScriptReference)(
+      blockedPreviewScriptReference(
         options.html,
         options.cardFile ?? "",
       );
@@ -1106,7 +1106,7 @@ function previewMessageHeight(message: unknown): number | undefined {
   if (typeof height !== "number" || !Number.isFinite(height)) {
     return;
   }
-  return (0, clampPreviewHeight)(height);
+  return clampPreviewHeight(height);
 }
 export {
   ADMITTED_PREVIEW_CDN_PREFIXES,
@@ -1171,8 +1171,8 @@ export {
 };
 export function installEditorSwatchRuntime(): () => void {
   return () => {
-    reactSwatchPreview = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    reactSwatchPreview = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
     SWATCH_NAVIGATING_MESSAGE = "ds-swatch:navigating";

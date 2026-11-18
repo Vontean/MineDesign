@@ -61,7 +61,7 @@ function getPeerSelectionGroups(
       value5: Dynamic = typeof who == "object" && who !== null ? who : {};
     items.push({
       peer: value.peer,
-      collaborator: (0, peerCollaboratorIndex)(value5.c, value.peer),
+      collaborator: peerCollaboratorIndex(value5.c, value.peer),
       selected: value3,
       lists: state,
     });
@@ -127,8 +127,8 @@ export {
 };
 export function installCollaborationPeerSelections(): () => void {
   return () => {
-    jsxCollaborationPeerSelections = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    jsxCollaborationPeerSelections = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
     CollaborationPeerSelectionsConstant = 20;

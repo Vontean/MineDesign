@@ -29,11 +29,11 @@ var FILE_FETCH_TIMEOUT_MS: number;
 var fileTextDecoder: TextDecoder;
 async function getFilesPublishCapability(): Promise<FilesPublishCapability | null> {
   return (
-    (await (0, getOrLoadClaudeCapability)(
+    (await getOrLoadClaudeCapability(
       "artifact",
       supportsFilesPublish,
     )) ??
-    (await (0, getOrLoadClaudeCapability)(
+    (await getOrLoadClaudeCapability(
       "self",
       supportsFilesPublish,
     ))
@@ -188,7 +188,7 @@ function createBrowserFilesPort(options: BrowserFilesPortOptions = {}) {
             contentType:
               typeof options2.contentType === "string"
                 ? options2.contentType
-                : ((0, fileMimeTypeFromPath)(input) ??
+                : (fileMimeTypeFromPath(input) ??
                   "application/octet-stream"),
           }
         : undefined;
@@ -408,7 +408,7 @@ function createBrowserFilesPort(options: BrowserFilesPortOptions = {}) {
     }
     let value = currentFrameVersion(),
       [value2, value3] = await Promise.all([
-        fetchWithReadTelemetry((0, encodeFileUrlPath)(input)),
+        fetchWithReadTelemetry(encodeFileUrlPath(input)),
         listingCache !== undefined
           ? Promise.resolve(listingCache)
           : ensureListing(),
@@ -429,7 +429,7 @@ function createBrowserFilesPort(options: BrowserFilesPortOptions = {}) {
       value7 =
         value5?.contentType ??
         value2.headers?.get("content-type")?.split(";")[0]?.trim() ??
-        (0, fileMimeTypeFromPath)(input) ??
+        fileMimeTypeFromPath(input) ??
         "application/octet-stream";
     return {
       bytes: value4,
@@ -478,7 +478,7 @@ function createBrowserFilesPort(options: BrowserFilesPortOptions = {}) {
         code: "not_writer",
       };
     }
-    let value = (0, validateFilePublishBatch)(input);
+    let value = validateFilePublishBatch(input);
     if (value) {
       return value;
     }
@@ -540,7 +540,7 @@ function createBrowserFilesPort(options: BrowserFilesPortOptions = {}) {
     }
     let state: Record<string, NormalizedFilePublishInput | null> = {};
     for (let [value12, value13] of Object.entries(input)) {
-      state[value12] = (0, normalizeFilePublishInput)(
+      state[value12] = normalizeFilePublishInput(
         value12,
         value13,
       ) as NormalizedFilePublishInput | null;
@@ -606,10 +606,10 @@ function createBrowserFilesPort(options: BrowserFilesPortOptions = {}) {
     > = new Map();
     for (let [value12, value13] of Object.entries(state)) {
       if (value13 !== null) {
-        let value14 = await (0, fileContentBytes)(value13.content);
+        let value14 = await fileContentBytes(value13.content);
         entries.set(value12, {
           bytes: value14,
-          hash: await (0, sha256)(value14),
+          hash: await sha256(value14),
         });
       }
     }
@@ -664,7 +664,7 @@ function createBrowserFilesPort(options: BrowserFilesPortOptions = {}) {
       }
       if (
         value14 === undefined &&
-        (0, fileContentContainsRuntimeMarkers)(value13)
+        fileContentContainsRuntimeMarkers(value13)
       ) {
         provisionalFileShas.add(value12);
       } else {
@@ -765,11 +765,11 @@ function createBrowserFilesPort(options: BrowserFilesPortOptions = {}) {
   ): Promise<Files.FileTextRead> {
     let value = await readFileBytes(input, options2),
       value2 = fileTextDecoder.decode(value.bytes);
-    if (value.raw && (0, isHtmlFilePath)(input)) {
-      value2 = (0, stripFrameRuntimeBlock)(value2);
+    if (value.raw && isHtmlFilePath(input)) {
+      value2 = stripFrameRuntimeBlock(value2);
     }
     let value3 =
-      value.sha256 !== "" ? value.sha256 : await (0, sha256)(value2);
+      value.sha256 !== "" ? value.sha256 : await sha256(value2);
     heldFileShas.set(input, value3);
     return {
       text: value2,
@@ -824,7 +824,7 @@ function createBrowserFilesPort(options: BrowserFilesPortOptions = {}) {
         value2 =
           value.sha256 !== ""
             ? value.sha256
-            : await (0, sha256)(value.bytes);
+            : await sha256(value.bytes);
       heldFileShas.set(input, value2);
       return {
         bytes: value.bytes,
@@ -879,7 +879,7 @@ function createBrowserFilesPort(options: BrowserFilesPortOptions = {}) {
         value3 = listingCache?.get(input)?.sha256,
         value4 = currentFrameVersion(),
         value5 = await fetchWithReadTelemetry(
-          (0, encodeFileUrlPath)(input),
+          encodeFileUrlPath(input),
         );
       checkReadRedirect(value5, input, value4);
       if (!value5.ok) {
@@ -912,7 +912,7 @@ function createBrowserFilesPort(options: BrowserFilesPortOptions = {}) {
         contentType:
           value8?.contentType ??
           value5.headers?.get("content-type")?.split(";")[0]?.trim() ??
-          (0, fileMimeTypeFromPath)(input) ??
+          fileMimeTypeFromPath(input) ??
           "application/octet-stream",
       };
     },
@@ -986,7 +986,7 @@ function createBrowserFilesPort(options: BrowserFilesPortOptions = {}) {
               size: 0,
               contentType:
                 entry?.contentType ??
-                (0, fileMimeTypeFromPath)(value.path) ??
+                fileMimeTypeFromPath(value.path) ??
                 "application/octet-stream",
             });
           }
@@ -1020,7 +1020,7 @@ function createBrowserFilesPort(options: BrowserFilesPortOptions = {}) {
               size: listingCache.get(value)?.size ?? 0,
               contentType:
                 listingCache.get(value)?.contentType ??
-                (0, fileMimeTypeFromPath)(value) ??
+                fileMimeTypeFromPath(value) ??
                 "application/octet-stream",
             });
           }
@@ -1039,7 +1039,7 @@ function createBrowserFilesPort(options: BrowserFilesPortOptions = {}) {
                 size: listingCache.get(value)?.size ?? 0,
                 contentType:
                   listingCache.get(value)?.contentType ??
-                  (0, fileMimeTypeFromPath)(value) ??
+                  fileMimeTypeFromPath(value) ??
                   "application/octet-stream",
               });
             }
@@ -1076,7 +1076,7 @@ function createBrowserFilesPort(options: BrowserFilesPortOptions = {}) {
               size: entry?.sha256 === value3.sha256 ? entry.size : 0,
               contentType:
                 entry?.contentType ??
-                (0, fileMimeTypeFromPath)(value3.path) ??
+                fileMimeTypeFromPath(value3.path) ??
                 "application/octet-stream",
             });
           }
@@ -1116,7 +1116,7 @@ export {
 export function installFilesBrowserPort(): () => void {
   return () => {
     FILE_LISTING_PATH = "_files.json";
-    supportsFilesPublish = (0, capabilityHasMethod)("publish") as (
+    supportsFilesPublish = capabilityHasMethod("publish") as (
       value: unknown,
     ) => value is FilesPublishCapability;
     FILE_PUBLISH_WRITE_REVOKED_CODES = new Set([

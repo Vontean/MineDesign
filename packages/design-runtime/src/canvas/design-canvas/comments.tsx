@@ -17,7 +17,7 @@ export function revealCommentTarget(deps: { readonly editing: Dynamic; readonly 
                         );
                         value655 &&
                           ([value653, value654] = [
-                            (0, designPageId)(
+                            designPageId(
                               value655,
                               current4.pages,
                             ),
@@ -31,7 +31,7 @@ export function revealCommentTarget(deps: { readonly editing: Dynamic; readonly 
                             source.match(input.id),
                         );
                         value657 &&
-                          (value653 = (0, designPageId)(
+                          (value653 = designPageId(
                             value657,
                             current4.pages,
                           ));
@@ -45,7 +45,7 @@ export function revealCommentTarget(deps: { readonly editing: Dynamic; readonly 
                         value653 =
                           items.find(
                             (input?: Dynamic): Dynamic =>
-                              (0, isCanvasPageMatch)(
+                              isCanvasPageMatch(
                                 source.match,
                                 input,
                                 items[0],
@@ -64,7 +64,7 @@ export function revealCommentTarget(deps: { readonly editing: Dynamic; readonly 
                           (deps.value298(value653, value655.file),
                           (deps.value291.current = false));
                         let value658: Dynamic = value657
-                            ? ((0, recallCanvasView)(value653) ??
+                            ? (recallCanvasView(value653) ??
                               defaultCanvasCamera)
                             : deps.value105.get(),
                           state: Dynamic = {

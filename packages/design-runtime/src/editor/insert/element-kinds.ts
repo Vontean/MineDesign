@@ -45,7 +45,7 @@ function isTextCapableElement(element?: Dynamic, options?: Dynamic): Dynamic {
             ) &&
               element.querySelector("rect,circle,ellipse,polygon") ===
                 null) ||
-              (0, inspectSvgArrow)(element) !== null))
+              inspectSvgArrow(element) !== null))
         ? "line"
         : InsertElementKindsSvgRectCircleSet.has(value)
           ? "shape"

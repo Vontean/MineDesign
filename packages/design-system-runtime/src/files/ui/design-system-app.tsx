@@ -153,13 +153,13 @@ function useBootWarnings(context: unknown) {
     if (context === null || warnedRef.current) {
       return;
     }
-    let value = (0, migrationOpenedAnalyticsEvents)(context);
+    let value = migrationOpenedAnalyticsEvents(context);
     if (value.length === 0) {
       return;
     }
     warnedRef.current = true;
     for (let value2 of value) {
-      (0, reportMigrationAnalytics)(value2);
+      reportMigrationAnalytics(value2);
     }
   });
 }
@@ -176,14 +176,14 @@ function useGoogleFontStylesheets(
     urls = [
       ...new Set(
         Object.entries(familyNames).flatMap(([input, input2]) => {
-          let value = (0, knownWebFontFamily)(input2);
+          let value = knownWebFontFamily(input2);
           if (
             value === undefined ||
             localFamilies.has(input2.toLowerCase())
           ) {
             return [];
           }
-          let value2 = (0, googleFontStylesheetUrl)(value),
+          let value2 = googleFontStylesheetUrl(value),
             values = new Set(
               (/wght@([\d;]+)/.exec(value2)?.[1] ?? "400")
                 .split(";")
@@ -268,9 +268,9 @@ function previewThemeGroundColors(
           ),
           value3 =
             value2 !== undefined
-              ? (0, resolveColorTokenValue)(value2, options, tokens)
+              ? resolveColorTokenValue(value2, options, tokens)
               : undefined;
-        if (value3 !== undefined && (0, isColorLiteral)(value3)) {
+        if (value3 !== undefined && isColorLiteral(value3)) {
           return value3;
         }
       }
@@ -284,7 +284,7 @@ function previewThemeGroundColors(
       }
     > = {};
   for (let value of themes) {
-    let value2 = (0, isDarkThemeName)(value.name);
+    let value2 = isDarkThemeName(value.name);
     grounds[value.id] = {
       well:
         findColor(BACKGROUND_COLOR_TOKEN_PATTERNS, value.id) ??
@@ -308,18 +308,18 @@ function artifactDownloadResultMessage(
     return get_DOWNLOADS_UNAVAILABLE_MESSAGE();
   }
   if (result.outcome === "refused" || result.outcome === "failed") {
-    return (0, unsupportedDownloadMessage)(name, result.shell.code);
+    return unsupportedDownloadMessage(name, result.shell.code);
   }
   return uiMessage("design-system.designSystemApp.downloaded") + name + suffix;
 }
 function DesignSystemApp(): React.ReactElement {
   useUiLocale();
   let runtime2: FileEditHistory = reactArtifactRoot.useMemo(
-      () => (0, createFileMutationBatch)(),
+      () => createFileMutationBatch(),
       [],
     ),
     documentOptions: FileEditHistory = reactArtifactRoot.useMemo(
-      () => (0, createAnnouncedHistory)(runtime2),
+      () => createAnnouncedHistory(runtime2),
       [runtime2],
     ),
     system: ApplicationStore = reactArtifactRoot.useMemo(
@@ -329,14 +329,14 @@ function DesignSystemApp(): React.ReactElement {
     document2: ApplicationDocument = system.doc,
     editor: ApplicationCommands = reactArtifactRoot.useMemo(
       () =>
-        (0, createDesignSystemCommands)(
+        createDesignSystemCommands(
           document2,
           documentOptions,
           runtime2,
         ),
       [document2, documentOptions, runtime2],
     ),
-    flaggedSections: ReadonlySet<string> = (0, useConflictedSections)(
+    flaggedSections: ReadonlySet<string> = useConflictedSections(
       document2,
     ),
     [, forceRender] = reactArtifactRoot.useState(0),
@@ -356,7 +356,7 @@ function DesignSystemApp(): React.ReactElement {
     () => system.subscribe(() => forceRender((input) => input + 1)),
     [system],
   );
-  let hostMode = (0, useHostThemeMode)(),
+  let hostMode = useHostThemeMode(),
     scrollerRef = (
       reactArtifactRoot as typeof React
     ).useRef<HTMLElement | null>(null),
@@ -382,8 +382,8 @@ function DesignSystemApp(): React.ReactElement {
         return Math.max(...value);
       }
     },
-    wideLayout = (0, useMediaQuery)(SIDEBAR_MEDIA_QUERY),
-    assetReveal = (0, useEditorCardFlash)(scrollerRef),
+    wideLayout = useMediaQuery(SIDEBAR_MEDIA_QUERY),
+    assetReveal = useEditorCardFlash(scrollerRef),
     snapshot: ParsedDesignSystem = system.getSnapshot(),
     themes: ColorTheme[] = snapshot.tokens.color.themes,
     [selectedThemeId, setSelectedThemeId] = (
@@ -395,31 +395,31 @@ function DesignSystemApp(): React.ReactElement {
       previewThemeId: previewThemeId,
       stageMode: stageMode,
       needsGround: needsGround,
-    } = (0, resolvePreviewTheme)(themes, hostMode, selectedThemeId),
+    } = resolvePreviewTheme(themes, hostMode, selectedThemeId),
     allFonts = reactArtifactRoot.useMemo(
       () => [...snapshot.fonts, ...snapshot.assetFonts],
       [snapshot.fonts, snapshot.assetFonts],
     ),
-    blobFontAvailability = (0, useBlobDataUrls)(
+    blobFontAvailability = useBlobDataUrls(
       reactArtifactRoot.useMemo(
         () =>
           allFonts
             .filter((input) => input.store === "blob")
             .map((input) => ({
               src: input.src,
-              type: (0, mimeTypeForPath)(input.path),
+              type: mimeTypeForPath(input.path),
               bytes: input.bytes,
             })),
         [allFonts],
       ),
     );
-  (0, useInlineFontFaces)(allFonts, blobFontAvailability);
-  (0, usePublishedPreviewGeneration)(document2);
-  (0, useFileAvailability)(
+  useInlineFontFaces(allFonts, blobFontAvailability);
+  usePublishedPreviewGeneration(document2);
+  useFileAvailability(
     reactArtifactRoot.useMemo(
       () =>
         preferLivePreviewUrls &&
-        (0, supportsLivePreviewUrls)()
+        supportsLivePreviewUrls()
           ? []
           : snapshot.fonts
               .filter(
@@ -436,7 +436,7 @@ function DesignSystemApp(): React.ReactElement {
       [snapshot.fonts],
     ),
   );
-  (0, usePreviewStaticNotice)();
+  usePreviewStaticNotice();
   let readOnly = document2.readOnly();
   reactArtifactRoot.useEffect(() => {
     let value = system.bootReport.warnings.filter((input) =>
@@ -460,7 +460,7 @@ function DesignSystemApp(): React.ReactElement {
         dropped.join(`
 `),
     );
-    (0, showEditorNotification)(
+    showEditorNotification(
       String(dropped.length) +
         (dropped.length === 1
           ? " file in this system couldn’t be kept: "
@@ -473,7 +473,7 @@ function DesignSystemApp(): React.ReactElement {
   let [, refreshLibraryState] = reactArtifactRoot.useState(0);
   reactArtifactRoot.useEffect(
     () =>
-      (0, subscribeAssetsState)(() =>
+      subscribeAssetsState(() =>
         refreshLibraryState((input) => input + 1),
       ),
     [],
@@ -481,12 +481,12 @@ function DesignSystemApp(): React.ReactElement {
   reactArtifactRoot.useEffect(() => {
     if (
       readOnly ||
-      (0, getAssetsCatalogState)().state !== "unknown"
+      getAssetsCatalogState().state !== "unknown"
     ) {
       return;
     }
-    (0, resolveAssetsCapability)().then((input) =>
-      input === null ? undefined : (0, refreshAssetsCatalog)(input),
+    resolveAssetsCapability().then((input) =>
+      input === null ? undefined : refreshAssetsCatalog(input),
     );
   }, [readOnly]);
   let [intakeProgress, setIntakeProgress] = (
@@ -497,7 +497,7 @@ function DesignSystemApp(): React.ReactElement {
     intakeOptions: AssetIntakeOptions = reactArtifactRoot.useMemo(
       () => ({
         room: () =>
-          (0, isUnboundedFileParsing)()
+          isUnboundedFileParsing()
             ? Number.POSITIVE_INFINITY
             : DESIGN_SYSTEM_INLINE_LIMITS.total -
               system.getSnapshot().bytes.total.bytes,
@@ -505,8 +505,8 @@ function DesignSystemApp(): React.ReactElement {
         freeing: () => freeingBlobIdsRef.current,
         onProgress: setIntakeProgress,
         onTierOff: (input) =>
-          (0, showEditorNotification)(
-            (0, inlineStorageFallbackMessage)(input),
+          showEditorNotification(
+            inlineStorageFallbackMessage(input),
           ),
       }),
       [system],
@@ -526,7 +526,7 @@ function DesignSystemApp(): React.ReactElement {
         let value3 = system.content();
         system.update(
           (input2) =>
-            (0, replaceInlineFileWithPointer)(
+            replaceInlineFileWithPointer(
               input2,
               input,
               options,
@@ -545,7 +545,7 @@ function DesignSystemApp(): React.ReactElement {
     system.beforeSave = () =>
       document.visibilityState === "hidden"
         ? Promise.resolve()
-        : (value ??= (0, existingFontUploadFiles)(
+        : (value ??= existingFontUploadFiles(
             system.content().files,
             intakeOptions,
             callback,
@@ -555,15 +555,15 @@ function DesignSystemApp(): React.ReactElement {
     };
   }, [system, intakeOptions, readOnly]);
   let view: ApplicationView = reactArtifactRoot.useMemo(
-      () => (0, designSystemEditorView)(snapshot),
+      () => designSystemEditorView(snapshot),
       [snapshot],
     ),
     viewRef = reactArtifactRoot.useRef(view);
   viewRef.current = view;
-  let blobCatalogue = (0, getAssetsCatalogState)(),
+  let blobCatalogue = getAssetsCatalogState(),
     blobAnalysis = reactArtifactRoot.useMemo(
       () =>
-        (0, assessAssetReclamation)(
+        assessAssetReclamation(
           snapshot.files,
           freeingBlobIdsRef.current,
         ),
@@ -574,18 +574,18 @@ function DesignSystemApp(): React.ReactElement {
         ? blobCatalogue.usage.bytes
         : snapshot.blobBytesUsed,
     emptySystem =
-      (0, hasOnlyManifestFile)(snapshot.files) &&
+      hasOnlyManifestFile(snapshot.files) &&
       storedBlobBytes === 0,
     colorTokenNames = reactArtifactRoot.useMemo(
       () =>
-        new Set((0, tokenNamesForFamily)(snapshot.tokens, "color")),
+        new Set(tokenNamesForFamily(snapshot.tokens, "color")),
       [snapshot.tokens],
     ),
     emptySections = reactArtifactRoot.useMemo(
       () =>
         emptySystem
           ? new Set(STARTER_SECTION_IDS)
-          : (0, emptyDesignSystemSections)(view, {
+          : emptyDesignSystemSections(view, {
               storedBytes: storedBlobBytes,
             }),
       [emptySystem, view, storedBlobBytes],
@@ -605,7 +605,7 @@ function DesignSystemApp(): React.ReactElement {
           : designSystemSections(view.extras),
       [view.extras, editingOff],
     ),
-    handoffAvailable = (0, useMigrationCleanupEnabled)(),
+    handoffAvailable = useMigrationCleanupEnabled(),
     sectionsRef = reactArtifactRoot.useRef(sections);
   sectionsRef.current = sections;
   useGoogleFontStylesheets(
@@ -620,7 +620,7 @@ function DesignSystemApp(): React.ReactElement {
     [initialSection] = reactArtifactRoot.useState(
       initialDesignSystemSection,
     ),
-    sectionScroller: SectionScroller = (0, useSectionScroller)(
+    sectionScroller: SectionScroller = useSectionScroller(
       sectionIds,
       stickyHeaderBottom,
       sectionRefs,
@@ -644,7 +644,7 @@ function DesignSystemApp(): React.ReactElement {
   markSectionRef.current = sectionScroller.mark;
   let revealController = reactArtifactRoot.useMemo(
       () =>
-        (0, createEditorSectionNavigationActions)({
+        createEditorSectionNavigationActions({
           sectionLabel: (input) =>
             sectionsRef.current.find((input2) => input2.id === input)?.label,
           show: (input) => {
@@ -662,7 +662,7 @@ function DesignSystemApp(): React.ReactElement {
         }),
       [],
     ),
-    textReveal = (0, useEditorSectionNavigation)({
+    textReveal = useEditorSectionNavigation({
       sections: sectionRefs,
       port: sectionScroller.port,
       ...revealController,
@@ -682,7 +682,7 @@ function DesignSystemApp(): React.ReactElement {
     }
     window.clearTimeout(hashTimerRef.current);
     hashTimerRef.current = window.setTimeout(
-      () => (0, replaceSectionHash)(currentSection),
+      () => replaceSectionHash(currentSection),
       200,
     );
     return () => window.clearTimeout(hashTimerRef.current);
@@ -708,7 +708,7 @@ function DesignSystemApp(): React.ReactElement {
     },
     starter = reactArtifactRoot.useMemo(
       () =>
-        (0, starterSectionState)(
+        starterSectionState(
           emptySections,
           editable !== undefined,
           view.assetGroups.length === 0,
@@ -719,21 +719,21 @@ function DesignSystemApp(): React.ReactElement {
     [confirmation, setConfirmation] = (
       reactArtifactRoot as typeof React
     ).useState<ConfirmationState | null>(null),
-    undoAvailable = (0, useCoarsePointer)(),
+    undoAvailable = useCoarsePointer(),
     announceUndoableChange = (input: string) => {
       if (!undoAvailable) {
-        return (0, announceLiveMessage)(input);
+        return announceLiveMessage(input);
       }
       let callback = () => {
           return;
         },
-        value = (0, showEditorPromiseNotification)(
+        value = showEditorPromiseNotification(
           input,
           <Button
             size={"sm"}
             onClick={() => {
               callback();
-              (0, closeToast)(value);
+              closeToast(value);
               editor.undo.undo();
             }}
           >
@@ -742,7 +742,7 @@ function DesignSystemApp(): React.ReactElement {
         );
       callback = editor.undo.subscribe(() => {
         callback();
-        (0, closeToast)(value);
+        closeToast(value);
       });
     },
     focusTestId = (input: string) => {
@@ -764,7 +764,7 @@ function DesignSystemApp(): React.ReactElement {
     removeToken = (input: AddTokenKind) => (input2: string) => {
       if (
         editable?.exec(uiMessage("design-system.designSystemApp.remove") + input2, (input3) =>
-          (0, deleteToken)(input3, input, input2),
+          deleteToken(input3, input, input2),
         ) === true
       ) {
         announceUndoableChange(uiMessage("design-system.designSystemApp.removed") + input2);
@@ -773,7 +773,7 @@ function DesignSystemApp(): React.ReactElement {
     renameToken2 =
       (input: AddTokenKind) => (input2: string, options: string) =>
         editable?.exec(uiMessage("design-system.designSystemApp.rename") + input2, (input3) =>
-          (0, renameToken)(input3, input, input2, options),
+          renameToken(input3, input, input2, options),
         ) ?? false,
     sectionTitle = (input: string, options: string) =>
       snapshot.sectionTitles[input] ?? options,
@@ -791,13 +791,13 @@ function DesignSystemApp(): React.ReactElement {
           : {
               usage: (input, options) =>
                 void editable.set("usage:color:" + input, (input2) =>
-                  (0, setColorTokenUsage)(input2, input, options),
+                  setColorTokenUsage(input2, input, options),
                 ),
               value: (input, options, context) =>
                 void editable.set(
                   "color:" + input + ":" + options,
                   (input2) =>
-                    (0, setColorTokenValue)(
+                    setColorTokenValue(
                       input2,
                       input,
                       options,
@@ -808,7 +808,7 @@ function DesignSystemApp(): React.ReactElement {
                 void editable.exec(
                   uiMessage("design-system.designSystemApp.clear") + input + " " + options,
                   (input2) =>
-                    (0, clearColorThemeOverride)(
+                    clearColorThemeOverride(
                       input2,
                       input,
                       options,
@@ -842,12 +842,12 @@ function DesignSystemApp(): React.ReactElement {
                     if (
                       value2.length > 0 &&
                       editable.exec(uiMessage("design-system.designSystemApp.removeGroup") + value, (input2) =>
-                        (0, deleteColorTokens)(input2, value2),
+                        deleteColorTokens(input2, value2),
                       )
                     ) {
                       announceUndoableChange(uiMessage("design-system.designSystemApp.deleted") + value);
                     } else {
-                      (0, showEditorNotification)(
+                      showEditorNotification(
                         value + " changed meanwhile. Nothing was deleted.",
                       );
                     }
@@ -858,10 +858,10 @@ function DesignSystemApp(): React.ReactElement {
                 });
               },
               renameGroup: (input, options) => {
-                let value = (0, tokenGroupRenamePairs)(
+                let value = tokenGroupRenamePairs(
                   input.tokens.map((input2) => input2.name),
-                  (0, commonTokenNamePrefix)(
-                    (0, tokenNamesForFamily)(
+                  commonTokenNamePrefix(
+                    tokenNamesForFamily(
                       snapshot.tokens,
                       "color",
                     ),
@@ -876,7 +876,7 @@ function DesignSystemApp(): React.ReactElement {
                   uiMessage("design-system.designSystemApp.renameGroup") +
                     (input.name === "" ? "palette" : input.name),
                   (input2) =>
-                    (0, renameColorTokensAtomically)(input2, value),
+                    renameColorTokensAtomically(input2, value),
                 );
               },
             },
@@ -891,7 +891,7 @@ function DesignSystemApp(): React.ReactElement {
         : {
             value: (input2, options2) =>
               void editable.set(input + ":" + input2, (input3) =>
-                (0, setScalarTokenValue)(
+                setScalarTokenValue(
                   input3,
                   input,
                   input2,
@@ -901,13 +901,13 @@ function DesignSystemApp(): React.ReactElement {
             done: () => editable.seal(),
             usage: (input2, options2) =>
               void editable.set("usage:" + input + ":" + input2, (input3) =>
-                (0, setTokenUsage)(input3, input, input2, options2),
+                setTokenUsage(input3, input, input2, options2),
               ),
             note: (input2) =>
               void editable.exec(
                 uiMessage("design-system.designSystemApp.edit") + (options ?? input) + " note",
                 (input3) =>
-                  (0, setTokenFamilyNote)(
+                  setTokenFamilyNote(
                     input3,
                     input,
                     input2,
@@ -945,7 +945,7 @@ function DesignSystemApp(): React.ReactElement {
                 void editable.exec(
                   uiMessage("design-system.designSystemApp.edit") + input + " " + options,
                   (input2) =>
-                    (0, setShadowTokenValue)(
+                    setShadowTokenValue(
                       input2,
                       input,
                       options,
@@ -956,7 +956,7 @@ function DesignSystemApp(): React.ReactElement {
                 void editable.set(
                   "shadow:" + input + ":" + options,
                   (input2) =>
-                    (0, setShadowTokenValue)(
+                    setShadowTokenValue(
                       input2,
                       input,
                       options,
@@ -966,7 +966,7 @@ function DesignSystemApp(): React.ReactElement {
               done: () => editable.seal(),
               usage: (input, options) =>
                 void editable.set("usage:shadow:" + input, (input2) =>
-                  (0, setTokenUsage)(
+                  setTokenUsage(
                     input2,
                     "shadow",
                     input,
@@ -989,7 +989,7 @@ function DesignSystemApp(): React.ReactElement {
                 void editable.set(
                   "style:" + input + ":" + options,
                   (input2) =>
-                    (0, setTypographyProperty)(
+                    setTypographyProperty(
                       input2,
                       input,
                       options,
@@ -997,16 +997,16 @@ function DesignSystemApp(): React.ReactElement {
                     ),
                 ),
               setFont: (input, options) => {
-                let value = (0, validateNewFontFamily)(
+                let value = validateNewFontFamily(
                   options,
                   snapshot.tokens.type.families,
                 );
                 if (value !== null) {
-                  (0, showEditorNotification)(value);
+                  showEditorNotification(value);
                   return;
                 }
                 editable.exec(uiMessage("design-system.designSystemApp.font") + input, (input2) =>
-                  (0, setTypographyFontFamily)(
+                  setTypographyFontFamily(
                     input2,
                     input,
                     options,
@@ -1016,7 +1016,7 @@ function DesignSystemApp(): React.ReactElement {
               done: () => editable.seal(),
               setUsage: (input, options) =>
                 void editable.set("usage:style:" + input, (input2) =>
-                  (0, setTypographyStyleUsage)(
+                  setTypographyStyleUsage(
                     input2,
                     input,
                     options,
@@ -1027,10 +1027,10 @@ function DesignSystemApp(): React.ReactElement {
               dropMissingFonts: () => {
                 if (
                   editable.exec(uiMessage("design-system.designSystemApp.dropMissingFontReferences"), (input) =>
-                    (0, removeMissingFontReferences)(input),
+                    removeMissingFontReferences(input),
                   )
                 ) {
-                  (0, announceLiveMessage)(uiMessage("design-system.designSystemApp.referenceRemoved"));
+                  announceLiveMessage(uiMessage("design-system.designSystemApp.referenceRemoved"));
                 }
               },
             },
@@ -1045,7 +1045,7 @@ function DesignSystemApp(): React.ReactElement {
           : {
               setGuidelines: (input, options) =>
                 void editable.set("guide:" + input, (input2) =>
-                  (0, setComponentGuidelines)(input2, input, options),
+                  setComponentGuidelines(input2, input, options),
                 ),
               done: () => editable.seal(),
             },
@@ -1062,7 +1062,7 @@ function DesignSystemApp(): React.ReactElement {
         if (entry !== undefined) {
           return entry;
         }
-        let value2 = (0, inferComponentPropControls)(input.name, [
+        let value2 = inferComponentPropControls(input.name, [
           input.types,
           ...value,
         ]);
@@ -1086,7 +1086,7 @@ function DesignSystemApp(): React.ReactElement {
         : (input: Pick<EditorFont, "path">) => {
             if (
               editable.exec(uiMessage("design-system.designSystemApp.removeFont") + input.path, (input2) =>
-                (0, deleteFontFace)(input2, input.path),
+                deleteFontFace(input2, input.path),
               )
             ) {
               announceUndoableChange(
@@ -1106,9 +1106,9 @@ function DesignSystemApp(): React.ReactElement {
               .find((input) => input.path === openAssetPath) ?? null),
       [openAssetPath, view.assetGroups],
     ),
-    storageUsageText = (0, assetStorageUsageMessage)(blobCatalogue, {
+    storageUsageText = assetStorageUsageMessage(blobCatalogue, {
       bytes: snapshot.blobBytesUsed,
-      files: (0, uniqueStoredBlobCount)(snapshot.storage),
+      files: uniqueStoredBlobCount(snapshot.storage),
     }),
     missingBlobsNoticedRef = reactArtifactRoot.useRef(false);
   reactArtifactRoot.useEffect(() => {
@@ -1120,8 +1120,8 @@ function DesignSystemApp(): React.ReactElement {
       return;
     }
     missingBlobsNoticedRef.current = true;
-    (0, showEditorNotification)(
-      (0, missingAssetsMessage)(blobAnalysis.missing),
+    showEditorNotification(
+      missingAssetsMessage(blobAnalysis.missing),
     );
   }, [blobAnalysis]);
   let [freeingStorage, setFreeingStorage] =
@@ -1129,7 +1129,7 @@ function DesignSystemApp(): React.ReactElement {
     freeSpaceText =
       editable === undefined || freeingStorage || blobAnalysis === null
         ? ""
-        : (0, reclaimAssetsButtonLabel)(
+        : reclaimAssetsButtonLabel(
             blobAnalysis.reclaimableBytes,
             blobAnalysis.reclaimable.length,
             undefined,
@@ -1140,7 +1140,7 @@ function DesignSystemApp(): React.ReactElement {
     afterContentSaved = (input: () => void) => {
       let callback = () =>
         documentStillLoading()
-          ? (0, showEditorNotification)(
+          ? showEditorNotification(
               RECLAIM_RECONNECTING_MESSAGE,
             )
           : input();
@@ -1148,12 +1148,12 @@ function DesignSystemApp(): React.ReactElement {
         return callback();
       }
       if (document2.saveMode() !== "auto") {
-        return (0, showEditorNotification)(
+        return showEditorNotification(
           RECLAIM_SAVE_FIRST_MESSAGE,
         );
       }
       if (system.holdAutosave) {
-        return (0, showEditorNotification)(
+        return showEditorNotification(
           uiMessage("design-system.designSystemApp.addingYourFilesFirstTry"),
         );
       }
@@ -1162,7 +1162,7 @@ function DesignSystemApp(): React.ReactElement {
           return callback();
         }
         let value = document2.saveState();
-        (0, showEditorNotification)(
+        showEditorNotification(
           value.status === "error"
             ? uiMessage("design-system.designSystemApp.yourLatestChangesCouldNot") +
                 (value.message ?? "")
@@ -1172,11 +1172,11 @@ function DesignSystemApp(): React.ReactElement {
     },
     freeStorage = () =>
       afterContentSaved(() => {
-        let value = (0, assessAssetReclamation)(
+        let value = assessAssetReclamation(
           system.getSnapshot().files,
         );
         if (value?.windowed === true) {
-          return (0, showEditorNotification)(
+          return showEditorNotification(
             RECLAIM_WINDOWED_COLLECTION_MESSAGE,
           );
         }
@@ -1184,10 +1184,10 @@ function DesignSystemApp(): React.ReactElement {
           return;
         }
         setFreeingStorage(true);
-        (0, publishedPageBlobIds)()
+        publishedPageBlobIds()
           .then((input) => {
             if (document2.dirty() || documentStillLoading()) {
-              (0, showEditorNotification)(
+              showEditorNotification(
                 !document2.dirty()
                   ? RECLAIM_RECONNECTING_MESSAGE
                   : document2.saveMode() === "auto"
@@ -1196,11 +1196,11 @@ function DesignSystemApp(): React.ReactElement {
               );
               return;
             }
-            let value2 = (0, assessAssetReclamation)(
+            let value2 = assessAssetReclamation(
               system.getSnapshot().files,
             );
             if (value2 === null || value2.windowed) {
-              (0, showEditorNotification)(
+              showEditorNotification(
                 value2 === null
                   ? RECLAIM_LIST_FAILED_MESSAGE
                   : RECLAIM_WINDOWED_COLLECTION_MESSAGE,
@@ -1210,12 +1210,12 @@ function DesignSystemApp(): React.ReactElement {
             let values = new Set(
                 value2.reclaimable.map((input2) => input2.id),
               ),
-              value3 = (0, excludePublishedAssets)(
+              value3 = excludePublishedAssets(
                 value.reclaimable.filter((input2) => values.has(input2.id)),
                 input,
               );
             if (value3.length === 0) {
-              (0, showEditorNotification)(
+              showEditorNotification(
                 RECLAIM_NOTHING_UNUSED_MESSAGE,
               );
               return;
@@ -1223,12 +1223,12 @@ function DesignSystemApp(): React.ReactElement {
             freeingBlobIdsRef.current = new Set(
               value3.map((input2) => input2.id),
             );
-            return (0, deleteStoredAssets)(value3).then((input2) => {
+            return deleteStoredAssets(value3).then((input2) => {
               if (input2.freed.size > 0) {
                 editor.undo.clear();
               }
-              (0, showEditorNotification)(
-                (0, reclaimAssetsResultMessage)(input2),
+              showEditorNotification(
+                reclaimAssetsResultMessage(input2),
               );
             });
           })
@@ -1239,12 +1239,12 @@ function DesignSystemApp(): React.ReactElement {
       }),
     askFreeStorage = () =>
       afterContentSaved(() => {
-        (0, refreshAssetsCatalog)().then(() => {
-          let value = (0, assessAssetReclamation)(
+        refreshAssetsCatalog().then(() => {
+          let value = assessAssetReclamation(
             system.getSnapshot().files,
           );
           if (value === null || value.reclaimable.length === 0) {
-            (0, showEditorNotification)(
+            showEditorNotification(
               value === null
                 ? RECLAIM_LIST_FAILED_MESSAGE
                 : value.windowed
@@ -1255,7 +1255,7 @@ function DesignSystemApp(): React.ReactElement {
           }
           setConfirmation({
             get title() { return uiMessage("design-system.designSystemApp.freeSpace"); },
-            body: (0, reclaimAssetsConfirmation)(
+            body: reclaimAssetsConfirmation(
               value.reclaimable.length,
               value.reclaimableBytes,
             ),
@@ -1265,32 +1265,32 @@ function DesignSystemApp(): React.ReactElement {
         });
       }),
     downloadAsset = (input: EditorAsset) => {
-      (0, readDownloadFileBytes)(
+      readDownloadFileBytes(
         snapshot.files,
         input.path,
         snapshot.storage,
       ).then((input2) => {
         if (input2 === null) {
           artifactHealth.report(...DOWNLOAD_INTERNAL_FAILURE);
-          (0, showEditorNotification)(
+          showEditorNotification(
             uiMessage("design-system.designSystemApp.couldNotRead") + input.name + " here",
           );
           return;
         }
-        (0, saveDownloadFile)(
+        saveDownloadFile(
           input.name,
           input2,
           input.mime !== "" ? input.mime : "application/octet-stream",
         ).then((input3) => {
           artifactHealth.report(
-            ...(0, downloadHealthOutcome)(input3.shell)!,
+            ...downloadHealthOutcome(input3.shell)!,
           );
           if (
             input3.outcome === "withheld" ||
             input3.outcome === "refused" ||
             input3.outcome === "failed"
           ) {
-            (0, showEditorNotification)(
+            showEditorNotification(
               artifactDownloadResultMessage(input.name, input3),
             );
           }
@@ -1298,7 +1298,7 @@ function DesignSystemApp(): React.ReactElement {
       });
     },
     [handoffHost] = reactArtifactRoot.useState(() =>
-      (0, createClaudeDeliveryContextStore)(),
+      createClaudeDeliveryContextStore(),
     ),
     refreshHandoffHost = handoffHost.refresh;
   reactArtifactRoot.useEffect(() => {
@@ -1326,12 +1326,12 @@ function DesignSystemApp(): React.ReactElement {
       options: string,
       context: () => void,
     ) => {
-      let value = (0, showEditorPromiseNotification)(
+      let value = showEditorPromiseNotification(
         input,
         <Button
           size={"sm"}
           onClick={() => {
-            (0, closeToast)(value);
+            closeToast(value);
             context();
           }}
         >
@@ -1340,9 +1340,9 @@ function DesignSystemApp(): React.ReactElement {
       );
     },
     copyHandoffPrompt = (input: string) =>
-      void (0, copyTextToClipboard)(input).then((input2) =>
+      void copyTextToClipboard(input).then((input2) =>
         input2
-          ? (0, showEditorNotification)("Copied")
+          ? showEditorNotification("Copied")
           : noticeWithAction(uiMessage("design-system.designSystemApp.copyFailed"), uiMessage("design-system.designSystemApp.copyIt"), () =>
               copyHandoffPrompt(input),
             ),
@@ -1356,11 +1356,11 @@ function DesignSystemApp(): React.ReactElement {
       setHandoffBusy(true);
       let value = handoffHost.current(),
         value2 = document2.dirty(),
-        value3 = (0, chooseClaudeDeliveryRoad)(input, value, value2);
-      (0, reportMigrationCleanupPressed)(input, value3);
-      (0, deliverClaudeRequest)(input, options, value, value2)
+        value3 = chooseClaudeDeliveryRoad(input, value, value2);
+      reportMigrationCleanupPressed(input, value3);
+      deliverClaudeRequest(input, options, value, value2)
         .then((source) => {
-          (0, reportMigrationCleanupResult)(
+          reportMigrationCleanupResult(
             input,
             value3,
             source.kind,
@@ -1373,7 +1373,7 @@ function DesignSystemApp(): React.ReactElement {
           }
           if (source.kind === "unanswered" && context !== undefined) {
             noticeWithAction(
-              (0, claudeSendResultMessage)("unanswered"),
+              claudeSendResultMessage("unanswered"),
               // MineDesign: user-facing copy calls the agent "the agent", not Claude.
               uiMessage("design-system.designSystemApp.askTheAgent"),
               context,
@@ -1381,13 +1381,13 @@ function DesignSystemApp(): React.ReactElement {
             return;
           }
           if (source.kind === "staged" || source.kind === "unanswered") {
-            (0, showEditorNotification)(
-              (0, claudeSendResultMessage)(source.kind),
+            showEditorNotification(
+              claudeSendResultMessage(source.kind),
             );
             return;
           }
           if (source.kind === "sent") {
-            (0, showEditorNotification)(uiMessage("design-system.designSystemApp.sentToTheAgentIt"));
+            showEditorNotification(uiMessage("design-system.designSystemApp.sentToTheAgentIt"));
             return;
           }
           setHandoffNotice({
@@ -1405,11 +1405,11 @@ function DesignSystemApp(): React.ReactElement {
             askClaude(
               {
                 get label() { return uiMessage("design-system.designSystemApp.syncFromGitHub"); },
-                request: (0, viewerGitHubSyncPrompt)(
-                  (0, artifactPageAddress)(),
+                request: viewerGitHubSyncPrompt(
+                  artifactPageAddress(),
                 ),
-                prompt: (0, githubStarterPrompt)(
-                  (0, artifactPageAddress)(),
+                prompt: githubStarterPrompt(
+                  artifactPageAddress(),
                 ),
                 deliver: "send",
               },
@@ -1424,12 +1424,12 @@ function DesignSystemApp(): React.ReactElement {
             askClaude(
               {
                 label: connectorOptionLabel,
-                request: (0, viewerEmptySystemPrompt)(
-                  (0, artifactPageAddress)(),
+                request: viewerEmptySystemPrompt(
+                  artifactPageAddress(),
                   connectorOptionLabel,
                 ),
-                prompt: (0, ownerEmptySystemPrompt)(
-                  (0, artifactPageAddress)(),
+                prompt: ownerEmptySystemPrompt(
+                  artifactPageAddress(),
                   connectorOptionLabel,
                 ),
                 deliver: "send",
@@ -1460,8 +1460,8 @@ function DesignSystemApp(): React.ReactElement {
       let callback = (input2: File, options: File) =>
           input2.name === options.name &&
           input2.size === options.size &&
-          (0, uploadedFileRelativePath)(input2) ===
-            (0, uploadedFileRelativePath)(options),
+          uploadedFileRelativePath(input2) ===
+            uploadedFileRelativePath(options),
         value = input.filter(
           (input2, options) =>
             !intakeFilesRef.current.some((input3) =>
@@ -1557,7 +1557,7 @@ function DesignSystemApp(): React.ReactElement {
       input: AssetUploadSummary,
       options: Map<File, string>,
     ) => {
-      let value = (0, countSuccessfulUploads)(input);
+      let value = countSuccessfulUploads(input);
       setIntakeSummary((input2) => ({
         refused: [
           ...input2.refused,
@@ -1581,7 +1581,7 @@ function DesignSystemApp(): React.ReactElement {
         return;
       }
       let entry = intakeFilePaths.get(value),
-        name = (0, uploadedAssetFile)(value).name,
+        name = uploadedAssetFile(value).name,
         value2 = intakeFiles.length === 1,
         callback = () => {
           setIntakeFiles((input2) =>
@@ -1597,9 +1597,9 @@ function DesignSystemApp(): React.ReactElement {
           input2: import("../../contracts").DesignSystemContent,
         ) =>
           entry.startsWith(DESIGN_SYSTEM_PATHS.fontsDir)
-            ? (0, deleteFontFace)(input2, entry)
-            : (0, deleteAssetFile)(input2, entry);
-        (0, performDesignSystemEdit)(
+            ? deleteFontFace(input2, entry)
+            : deleteAssetFile(input2, entry);
+        performDesignSystemEdit(
           editable,
           callback2,
           (input2) => {
@@ -1651,13 +1651,13 @@ function DesignSystemApp(): React.ReactElement {
           path: entry ?? "",
           group: "",
           name: input.name,
-          mime: (0, mimeTypeForPath)(input.name),
-          ext: (0, fileExtension)(input.name),
+          mime: mimeTypeForPath(input.name),
+          ext: fileExtension(input.name),
           kind:
             entry !== undefined &&
             entry.startsWith(DESIGN_SYSTEM_PATHS.fontsDir)
               ? "font"
-              : (0, assetKindForPath)(input.name),
+              : assetKindForPath(input.name),
           bytes: input.size,
         };
       return (
@@ -1671,9 +1671,9 @@ function DesignSystemApp(): React.ReactElement {
       let value = input
           .filter(
             (input2) =>
-              !(0, isIgnoredUploadFile)(input2) &&
+              !isIgnoredUploadFile(input2) &&
               !intakeSummary.refused.includes(
-                (0, uploadedAssetFile)(input2).name,
+                uploadedAssetFile(input2).name,
               ),
           )
           .map((input2) => ({
@@ -1682,14 +1682,14 @@ function DesignSystemApp(): React.ReactElement {
           })),
         state: ClaudeRequest = {
           label: uploadOptionLabel,
-          request: (0, viewerBuildFromFilesPrompt)(
+          request: viewerBuildFromFilesPrompt(
             keptIntakeCount,
-            (0, artifactPageAddress)(),
+            artifactPageAddress(),
             uploadOptionLabel,
           ),
-          prompt: (0, ownerBuildFromFilesPrompt)(
+          prompt: ownerBuildFromFilesPrompt(
             value,
-            (0, artifactPageAddress)(),
+            artifactPageAddress(),
             uploadOptionLabel,
           ),
           deliver: "send",
@@ -1703,7 +1703,7 @@ function DesignSystemApp(): React.ReactElement {
         document2.save().then(() => {
           let value2 = document2.saveState();
           if (value2.status === "error") {
-            (0, showEditorNotification)(
+            showEditorNotification(
               uiMessage("design-system.designSystemApp.theFilesAreInBut") +
                 (value2.message ?? "") +
                 (document2.saveMode() === "auto"
@@ -1728,7 +1728,7 @@ function DesignSystemApp(): React.ReactElement {
         />
       ),
     sendFileHandoff = (input: ClaudeRequest, options: () => void) => {
-      (0, deliverClaudeRequest)(
+      deliverClaudeRequest(
         input,
         null,
         handoffHost.current(),
@@ -1738,21 +1738,21 @@ function DesignSystemApp(): React.ReactElement {
           refreshHandoffHost();
         }
         if (source.kind === "staged") {
-          (0, showEditorNotification)(
-            (0, claudeSendResultMessage)("staged"),
+          showEditorNotification(
+            claudeSendResultMessage("staged"),
           );
         } else if (source.kind === "unanswered") {
           noticeWithAction(
-            (0, claudeSendResultMessage)("unanswered"),
+            claudeSendResultMessage("unanswered"),
             // MineDesign: user-facing copy calls the agent "the agent", not Claude.
             uiMessage("design-system.designSystemApp.askTheAgent"),
             options,
           );
         } else if (source.kind === "sent") {
-          (0, showEditorNotification)(uiMessage("design-system.designSystemApp.sentToTheAgentIt"));
+          showEditorNotification(uiMessage("design-system.designSystemApp.sentToTheAgentIt"));
         } else if (source.kind === "failed") {
           noticeWithAction(
-            (0, claudeDeliveryStatusMessage)(
+            claudeDeliveryStatusMessage(
               "failed",
               source.held === true,
             ),
@@ -1760,8 +1760,8 @@ function DesignSystemApp(): React.ReactElement {
             () => copyHandoffPrompt(input.prompt),
           );
         } else {
-          (0, showEditorNotification)(
-            (0, claudeDeliveryStatusMessage)(
+          showEditorNotification(
+            claudeDeliveryStatusMessage(
               source.kind,
               source.held === true,
             ),
@@ -1779,13 +1779,13 @@ function DesignSystemApp(): React.ReactElement {
         sendFileHandoff(
           {
             label: value,
-            request: (0, ownerHandoffFilesPrompt)(
+            request: ownerHandoffFilesPrompt(
               items,
-              (0, artifactPageAddress)(),
+              artifactPageAddress(),
             ),
-            prompt: (0, viewerHandoffFilesPrompt)(
+            prompt: viewerHandoffFilesPrompt(
               items,
-              (0, artifactPageAddress)(),
+              artifactPageAddress(),
             ),
           },
           callback,
@@ -1807,7 +1807,7 @@ function DesignSystemApp(): React.ReactElement {
       ) {
         return;
       }
-      let value = (0, uploadResultSummary)(input, options, context);
+      let value = uploadResultSummary(input, options, context);
       if (value === null) {
         return;
       }
@@ -1819,10 +1819,10 @@ function DesignSystemApp(): React.ReactElement {
           fileHandoffAction(value.handOff),
         );
       } else {
-        (0, showEditorNotification)(value.text);
+        showEditorNotification(value.text);
       }
     },
-    assetManager = (0, useAssetGroupEditor)({
+    assetManager = useAssetGroupEditor({
       groups: view.assetGroups,
       edit: editable,
       files: () => system.getSnapshot().files,
@@ -1845,7 +1845,7 @@ function DesignSystemApp(): React.ReactElement {
               return false;
             }
             if (intakeSavingRef.current) {
-              (0, showEditorNotification)(
+              showEditorNotification(
                 uiMessage("design-system.designSystemApp.savingWhatYouJustAdded"),
               );
               return false;
@@ -1919,7 +1919,7 @@ function DesignSystemApp(): React.ReactElement {
                     return value4;
                   },
                   neverSaves = document2.neverSaves,
-                  value3 = await (0, uploadAssetFiles)(
+                  value3 = await uploadAssetFiles(
                     value2.files,
                     {
                       ...intakeOptions,
@@ -1940,24 +1940,24 @@ function DesignSystemApp(): React.ReactElement {
                       },
                       font: (input, options2) =>
                         callback2(options2, () =>
-                          (0, commitUploadedAssetChange)(
+                          commitUploadedAssetChange(
                             (input2) =>
                               editable.exec(
                                 "add font " + input.fileName,
                                 input2,
                               ),
                             (input2) =>
-                              (0, addFontFace)(input2, input),
+                              addFontFace(input2, input),
                             neverSaves,
                           ),
                         ),
                       asset: (input, options2) =>
                         callback2(options2, () =>
-                          (0, commitUploadedAssetChange)(
+                          commitUploadedAssetChange(
                             (input2) =>
                               editable.exec("add " + input.fileName, input2),
                             (input2) =>
-                              (0, addAssetFile)(input2, input),
+                              addAssetFile(input2, input),
                             neverSaves,
                           ),
                         ),
@@ -1968,20 +1968,20 @@ function DesignSystemApp(): React.ReactElement {
                   flag = true;
                   recordIntakeOutcome(value3, entries);
                 }
-                state = (0, mergeAssetUploadResults)(state, value3);
+                state = mergeAssetUploadResults(state, value3);
               }
               return state;
             })()
               .then(async (input): Promise<void> => {
                 setIntakeProgress(null);
-                if ((0, countSuccessfulUploads)(input) === 0) {
+                if (countSuccessfulUploads(input) === 0) {
                   announceIntakeOutcome(input, false, flag);
                   return;
                 }
                 system.setNote(
                   flag
-                    ? (0, uploadedFilesBuildSummary)(input)
-                    : (0, addedFilesSummary)(input),
+                    ? uploadedFilesBuildSummary(input)
+                    : addedFilesSummary(input),
                   Object.fromEntries(
                     Object.entries(document2.content().files).filter(
                       ([input2]) => callback(input2),
@@ -2021,7 +2021,7 @@ function DesignSystemApp(): React.ReactElement {
                 setIntakeProgress(null);
                 let value4 = document2.saveState();
                 if (value4.status === "error") {
-                  (0, showEditorNotification)(
+                  showEditorNotification(
                     uiMessage("design-system.designSystemApp.theFilesAreInBut") +
                       value4.message +
                       (document2.saveMode() === "auto"
@@ -2041,12 +2041,12 @@ function DesignSystemApp(): React.ReactElement {
     uploadAssets =
       addFiles === undefined
         ? undefined
-        : () => void (0, pickUploadFiles)().then(addFiles),
+        : () => void pickUploadFiles().then(addFiles),
     uploadFonts =
       addFiles === undefined
         ? undefined
         : () =>
-            void (0, pickUploadFiles)(
+            void pickUploadFiles(
               false,
               FONT_FILE_ACCEPT,
             ).then(addFiles),
@@ -2162,7 +2162,7 @@ function DesignSystemApp(): React.ReactElement {
         editable.exec(
           source.newGroup ? uiMessage("design-system.designSystemApp.addColorGroup") : uiMessage("design-system.designSystemApp.addColor"),
           (input) => {
-            let value2 = (0, addColorToken)(
+            let value2 = addColorToken(
               input,
               source.name,
               value,
@@ -2173,7 +2173,7 @@ function DesignSystemApp(): React.ReactElement {
             }
             for (let [value3, value4] of Object.entries(source.values)) {
               if (value3 !== defaultValueThemeId) {
-                value2 = (0, setColorTokenValue)(
+                value2 = setColorTokenValue(
                   value2,
                   source.name,
                   value3,
@@ -2182,7 +2182,7 @@ function DesignSystemApp(): React.ReactElement {
               }
             }
             if (source.usage !== "") {
-              value2 = (0, setColorTokenUsage)(
+              value2 = setColorTokenUsage(
                 value2,
                 source.name,
                 source.usage,
@@ -2198,7 +2198,7 @@ function DesignSystemApp(): React.ReactElement {
           source.group === "" ? undefined : source.group,
         );
       } else {
-        (0, showEditorNotification)(
+        showEditorNotification(
           uiMessage("design-system.designSystemApp.couldNotAdd") + source.name + ".",
         );
       }
@@ -2207,8 +2207,8 @@ function DesignSystemApp(): React.ReactElement {
       if (editable === undefined) {
         return;
       }
-      let value = (0, tokenNamesForFamily)(snapshot.tokens, "color"),
-        value2 = (0, commonTokenNamePrefix)(value),
+      let value = tokenNamesForFamily(snapshot.tokens, "color"),
+        value2 = commonTokenNamePrefix(value),
         value3 = view.colorGroups.map((input2) => ({
           key: input2.name,
           label:
@@ -2217,7 +2217,7 @@ function DesignSystemApp(): React.ReactElement {
             input2.name === ""
               ? value2
               : input2.numeric === true
-                ? (0, unusedTokenName)(
+                ? unusedTokenName(
                     snapshot.tokens,
                     "color",
                     nextNumericTokenName(
@@ -2251,7 +2251,7 @@ function DesignSystemApp(): React.ReactElement {
           kind: "color",
           themes: valueThemes,
           taken: new Set(
-            (0, conflictingTokenNames)(snapshot.tokens, "color"),
+            conflictingTokenNames(snapshot.tokens, "color"),
           ),
           names: new Set(value),
           name: value4.seed,
@@ -2261,8 +2261,8 @@ function DesignSystemApp(): React.ReactElement {
           namespace: value2,
           seedFor: (input2) => value2 + input2 + "-",
           groupOf: (input2) =>
-            (0, tokenHasGroupSuffix)(input2, value2)
-              ? (0, tokenGroupName)(input2, value2)
+            tokenHasGroupSuffix(input2, value2)
+              ? tokenGroupName(input2, value2)
               : "",
         },
         land: (source) => {
@@ -2317,7 +2317,7 @@ function DesignSystemApp(): React.ReactElement {
         items.length > 0 &&
         items.every((input2) => /-\d{1,4}$/.test(input2))
       ) {
-        return (0, unusedTokenName)(
+        return unusedTokenName(
           snapshot.tokens,
           input,
           nextNumericTokenName(value2, items, value2),
@@ -2340,12 +2340,12 @@ function DesignSystemApp(): React.ReactElement {
               ? view.corners
               : view.extras.find((input) => input.key === value)?.scale
           )?.tokens ?? [],
-        value4 = (0, commonTokenNamePrefix)(
+        value4 = commonTokenNamePrefix(
           value3.map((input) => input.name),
         ),
         value5 =
           kind === "spacing"
-            ? (0, groupedTokenScale)(kind, value3)
+            ? groupedTokenScale(kind, value3)
             : null,
         value6 =
           value5 === null
@@ -2366,7 +2366,7 @@ function DesignSystemApp(): React.ReactElement {
           input === ""
             ? value3.filter(
                 (input2) =>
-                  !(0, tokenHasGroupSuffix)(input2.name, value4),
+                  !tokenHasGroupSuffix(input2.name, value4),
               )
             : value3.filter((input2) => input2.name.startsWith(input + "-"));
       setTokenDialog({
@@ -2374,7 +2374,7 @@ function DesignSystemApp(): React.ReactElement {
           kind: kind,
           get label() { return value !== undefined ? ((value) + (" token")) : (value2.label); },
           taken: new Set(
-            (0, conflictingTokenNames)(snapshot.tokens, kind),
+            conflictingTokenNames(snapshot.tokens, kind),
           ),
           name:
             value7 !== undefined
@@ -2399,8 +2399,8 @@ function DesignSystemApp(): React.ReactElement {
                 groups: value6,
                 group: value7.key,
                 groupOf: (input: string) =>
-                  (0, tokenHasGroupSuffix)(input, value4)
-                    ? value4 + (0, tokenGroupName)(input, value4)
+                  tokenHasGroupSuffix(input, value4)
+                    ? value4 + tokenGroupName(input, value4)
                     : "",
               }
             : {}),
@@ -2418,7 +2418,7 @@ function DesignSystemApp(): React.ReactElement {
           )?.name;
           if (
             editable.exec("add " + (value ?? kind), (input) => {
-              let value9 = (0, addScalarToken)(
+              let value9 = addScalarToken(
                 input,
                 kind,
                 source2.name,
@@ -2429,7 +2429,7 @@ function DesignSystemApp(): React.ReactElement {
               if (value9 === input || source2.usage === "") {
                 return value9;
               } else {
-                return (0, setTokenUsage)(
+                return setTokenUsage(
                   value9,
                   kind,
                   source2.name,
@@ -2440,7 +2440,7 @@ function DesignSystemApp(): React.ReactElement {
           ) {
             flashToken(source2.name);
           } else {
-            (0, showEditorNotification)(
+            showEditorNotification(
               uiMessage("design-system.designSystemApp.couldNotAdd") + source2.name + ".",
             );
           }
@@ -2479,7 +2479,7 @@ function DesignSystemApp(): React.ReactElement {
         req: {
           kind: "type",
           taken: new Set(
-            (0, conflictingTokenNames)(snapshot.tokens, "type"),
+            conflictingTokenNames(snapshot.tokens, "type"),
           ),
           name: "",
           families: view.families,
@@ -2513,12 +2513,12 @@ function DesignSystemApp(): React.ReactElement {
               source.newSet ? "add type set" : "add type style",
               (input2) => {
                 let value9 = source.newSet
-                  ? (0, addTypographyGroup)(input2, source.set)
+                  ? addTypographyGroup(input2, source.set)
                   : input2;
                 if (source.newSet && value9 === input2) {
                   return input2;
                 }
-                let value10 = (0, addTypographyStyle)(
+                let value10 = addTypographyStyle(
                   value9,
                   source.name,
                   value7,
@@ -2529,49 +2529,49 @@ function DesignSystemApp(): React.ReactElement {
                 }
                 value10 =
                   source.font !== undefined
-                    ? (0, setTypographyFontFamily)(
+                    ? setTypographyFontFamily(
                         value10,
                         source.name,
                         source.font,
                       )
-                    : (0, setTypographyProperty)(
+                    : setTypographyProperty(
                         value10,
                         source.name,
                         "family",
                         source.style.family,
                       );
-                value10 = (0, setTypographyProperty)(
+                value10 = setTypographyProperty(
                   value10,
                   source.name,
                   "fontSize",
                   source.style.fontSize,
                 );
-                value10 = (0, setTypographyProperty)(
+                value10 = setTypographyProperty(
                   value10,
                   source.name,
                   "lineHeight",
                   source.style.lineHeight,
                 );
-                value10 = (0, setTypographyProperty)(
+                value10 = setTypographyProperty(
                   value10,
                   source.name,
                   "fontWeight",
                   source.style.fontWeight,
                 );
-                value10 = (0, setTypographyProperty)(
+                value10 = setTypographyProperty(
                   value10,
                   source.name,
                   "fontStyle",
                   source.style.fontStyle,
                 );
-                value10 = (0, setTypographyProperty)(
+                value10 = setTypographyProperty(
                   value10,
                   source.name,
                   "letterSpacing",
                   source.style.letterSpacing,
                 );
                 if (source.usage !== "") {
-                  value10 = (0, setTypographyStyleUsage)(
+                  value10 = setTypographyStyleUsage(
                     value10,
                     source.name,
                     source.usage,
@@ -2591,7 +2591,7 @@ function DesignSystemApp(): React.ReactElement {
           } else if (value8) {
             flashToken(source.name);
           } else {
-            (0, showEditorNotification)(
+            showEditorNotification(
               uiMessage("design-system.designSystemApp.couldNotAdd") + source.name + ".",
             );
           }
@@ -2608,7 +2608,7 @@ function DesignSystemApp(): React.ReactElement {
           kind: "shadow",
           themes: valueThemes,
           taken: new Set(
-            (0, conflictingTokenNames)(snapshot.tokens, "shadow"),
+            conflictingTokenNames(snapshot.tokens, "shadow"),
           ),
           name: newTokenNameSeed(
             "shadow",
@@ -2625,7 +2625,7 @@ function DesignSystemApp(): React.ReactElement {
           }
           if (
             editable.exec("add shadow", (input) => {
-              let value2 = (0, addShadowToken)(
+              let value2 = addShadowToken(
                 input,
                 source.name,
                 source.values[defaultValueThemeId] ?? "",
@@ -2635,7 +2635,7 @@ function DesignSystemApp(): React.ReactElement {
               }
               for (let [value3, value4] of Object.entries(source.values)) {
                 if (value3 !== defaultValueThemeId) {
-                  value2 = (0, setShadowTokenValue)(
+                  value2 = setShadowTokenValue(
                     value2,
                     source.name,
                     value3,
@@ -2644,7 +2644,7 @@ function DesignSystemApp(): React.ReactElement {
                 }
               }
               if (source.usage !== "") {
-                value2 = (0, setTokenUsage)(
+                value2 = setTokenUsage(
                   value2,
                   "shadow",
                   source.name,
@@ -2656,7 +2656,7 @@ function DesignSystemApp(): React.ReactElement {
           ) {
             flashToken(source.name);
           } else {
-            (0, showEditorNotification)(
+            showEditorNotification(
               uiMessage("design-system.designSystemApp.couldNotAdd") + source.name + ".",
             );
           }
@@ -2664,7 +2664,7 @@ function DesignSystemApp(): React.ReactElement {
       });
     },
     announceDropLimit = (input: number) =>
-      (0, showEditorNotification)(
+      showEditorNotification(
         String(input) +
           " files left out — one drop takes up to " +
           String(MAX_DROPPED_FILES) +
@@ -2674,7 +2674,7 @@ function DesignSystemApp(): React.ReactElement {
       input: DataTransfer,
       options: (files: File[]) => void,
     ) => {
-      (0, extractDroppedFiles)(input).then(
+      extractDroppedFiles(input).then(
         ({ files: files, leftOut: leftOut }) => {
           if (leftOut > 0) {
             announceDropLimit(leftOut);
@@ -2685,7 +2685,7 @@ function DesignSystemApp(): React.ReactElement {
         },
       );
     },
-    dropTarget = (0, useFileDrop)({
+    dropTarget = useFileDrop({
       disabled: addFiles === undefined,
       onFiles: (input, options) => {
         if (addFiles !== undefined) {
@@ -2700,46 +2700,46 @@ function DesignSystemApp(): React.ReactElement {
     exportSystem = (input: "tokens" | "css" | "readme" | "zip") => {
       let value = system.getSnapshot();
       if (input === "tokens") {
-        (0, saveDownloadFile)(
+        saveDownloadFile(
           "tokens.json",
           value.files[DESIGN_SYSTEM_PATHS.tokens] ??
             `{}
 `,
           "application/json",
         ).then((input2) =>
-          (0, showEditorNotification)(
+          showEditorNotification(
             artifactDownloadResultMessage("tokens.json", input2),
           ),
         );
         return;
       }
       if (input === "css") {
-        (0, saveDownloadFile)(
+        saveDownloadFile(
           "tokens.css",
-          (0, generateNamedTokensCss)(value.tokens, value.title),
+          generateNamedTokensCss(value.tokens, value.title),
           "text/css",
         ).then((input2) =>
-          (0, showEditorNotification)(
+          showEditorNotification(
             artifactDownloadResultMessage("tokens.css", input2),
           ),
         );
         return;
       }
       if (input === "readme") {
-        (0, saveDownloadFile)(
+        saveDownloadFile(
           "README.md",
           value.readme,
           "text/markdown",
         ).then((input2) =>
-          (0, showEditorNotification)(
+          showEditorNotification(
             artifactDownloadResultMessage("README.md", input2),
           ),
         );
         return;
       }
       setExportBusy(true);
-      let value2 = (0, downloadZipBaseName)(value.title) + ".zip";
-      (0, collectDownloadFiles)(
+      let value2 = downloadZipBaseName(value.title) + ".zip";
+      collectDownloadFiles(
         value.files,
         value.tokens,
         value.title,
@@ -2747,12 +2747,12 @@ function DesignSystemApp(): React.ReactElement {
       )
         .then(
           async ({ entries: entries, skipped: skipped }): Promise<void> => {
-            let value3 = await (0, saveDownloadFile)(
+            let value3 = await saveDownloadFile(
               value2,
-              (0, createStoredZip)(entries),
+              createStoredZip(entries),
               "application/zip",
             );
-            (0, showEditorNotification)(
+            showEditorNotification(
               artifactDownloadResultMessage(
                 value2,
                 value3,
@@ -2822,7 +2822,7 @@ function DesignSystemApp(): React.ReactElement {
             what={"Add " + TOKEN_DEFAULTS[value].label}
             onClick={() =>
               showAddScaleToken(
-                (0, tokenScaleGroups)(
+                tokenScaleGroups(
                   value,
                   value === "spacing" ? view.spacing : view.corners,
                 )[0] ?? {
@@ -2852,12 +2852,12 @@ function DesignSystemApp(): React.ReactElement {
       if (isExtraTokenSection(input)) {
         let value = view.extras.find(
             (input2) =>
-              (0, extraTokenFamilySectionId)(input2.key) === input,
+              extraTokenFamilySectionId(input2.key) === input,
           ),
           value2 =
             value === undefined
               ? undefined
-              : (0, extraTokenScaleGroups)([value])[0],
+              : extraTokenScaleGroups([value])[0],
           value3 =
             value === undefined ? undefined : extraScaleEdit(value.key)?.add;
         if (value2 === undefined || value3 === undefined) {
@@ -2876,8 +2876,8 @@ function DesignSystemApp(): React.ReactElement {
       return;
     },
     extraScaleHead = (input: ScalarScaleGroup) => {
-      let value = (0, tokenScaleGroupId)(input),
-        value2 = (0, tokenScaleGroupLabel)(input);
+      let value = tokenScaleGroupId(input),
+        value2 = tokenScaleGroupLabel(input);
       return {
         title: sectionTitle(value, value2),
         defaultTitle: value2,
@@ -2893,7 +2893,7 @@ function DesignSystemApp(): React.ReactElement {
           !readOnly,
         value2 = value
           ? README_STARTER_TEXT
-          : (0, removeTokenShortcutComments)(view.readme);
+          : removeTokenShortcutComments(view.readme);
       if (
         readmeStarterWasShownRef.current &&
         !value &&
@@ -2929,15 +2929,15 @@ function DesignSystemApp(): React.ReactElement {
                 input !==
                   (input2.files[DESIGN_SYSTEM_PATHS.readme] ?? "") &&
                 input !== "" &&
-                !(0, fileFitsInlineBudgets)(
+                !fileFitsInlineBudgets(
                   input2,
                   DESIGN_SYSTEM_PATHS.readme,
                   input,
                 );
-              return (0, setDesignSystemReadme)(input2, input);
+              return setDesignSystemReadme(input2, input);
             });
             if (flag2 && !readmeSizeNoticeRef.current) {
-              (0, showEditorNotification)(
+              showEditorNotification(
                 README_SIZE_EXCEEDED_MESSAGE,
               );
             }
@@ -2963,11 +2963,11 @@ function DesignSystemApp(): React.ReactElement {
       if (isExtraTokenSection(input)) {
         let value = view.extras.filter(
           (input2) =>
-            (0, extraTokenFamilySectionId)(input2.key) === input,
+            extraTokenFamilySectionId(input2.key) === input,
         );
         return (
           <TokenScaleSections
-            groups={(0, extraTokenScaleGroups)(value)}
+            groups={extraTokenScaleGroups(value)}
             editFor={(input2: ScalarScaleGroup) =>
               extraScaleEdit(input2.family?.key ?? "")
             }
@@ -2979,14 +2979,14 @@ function DesignSystemApp(): React.ReactElement {
         case "spacing":
           return (
             <TokenScaleSections
-              groups={(0, tokenScaleGroups)("spacing", view.spacing)}
+              groups={tokenScaleGroups("spacing", view.spacing)}
               editFor={() => spacingEdit}
             />
           );
         case "corners":
           return (
             <TokenScaleSections
-              groups={(0, tokenScaleGroups)("radius", view.corners)}
+              groups={tokenScaleGroups("radius", view.corners)}
               editFor={() => radiusEdit}
             />
           );
@@ -2997,7 +2997,7 @@ function DesignSystemApp(): React.ReactElement {
                   {[snapshot.cover !== null ? (
                       <CoverPreview
                         cover={snapshot.cover}
-                        head={(0, createPreviewHead)(
+                        head={createPreviewHead(
                           snapshot,
                           hostThemeMode,
                           hostThemeId,
@@ -3063,7 +3063,7 @@ function DesignSystemApp(): React.ReactElement {
                       : {
                           setText: (input2: string, options: string): void =>
                             void editable.set("doc:" + input2, (input3) =>
-                              (0, setAdditionalDocument)(
+                              setAdditionalDocument(
                                 input3,
                                 input2,
                                 options,
@@ -3086,17 +3086,17 @@ function DesignSystemApp(): React.ReactElement {
                               return;
                             }
                             if (
-                              (0, firstMarkdownTitle)(
+                              firstMarkdownTitle(
                                 input2.markdown,
                               ) !== null
                             ) {
                               editable.exec(
                                 "rename " + input2.path,
                                 (input4) =>
-                                  (0, setAdditionalDocument)(
+                                  setAdditionalDocument(
                                     input4,
                                     input2.path,
-                                    (0, replaceMarkdownTitle)(
+                                    replaceMarkdownTitle(
                                       input2.markdown,
                                       value,
                                     ),
@@ -3106,18 +3106,18 @@ function DesignSystemApp(): React.ReactElement {
                             }
                             let value2 =
                                 /\.[^.]+$/.exec(
-                                  (0, pathBasename)(input2.path),
+                                  pathBasename(input2.path),
                                 )?.[0] ?? ".md",
-                              value3 = (0, sanitizeUploadFileName)(
+                              value3 = sanitizeUploadFileName(
                                 value,
                               ).replace(/\.(md|mdx)$/i, "");
                             if (value3 === "") {
                               return;
                             }
                             let value4 =
-                              ((0, pathDirname)(input2.path) === ""
+                              (pathDirname(input2.path) === ""
                                 ? ""
-                                : (0, pathDirname)(input2.path) +
+                                : pathDirname(input2.path) +
                                   "/") +
                               value3 +
                               value2;
@@ -3125,7 +3125,7 @@ function DesignSystemApp(): React.ReactElement {
                               return;
                             }
                             if (Object.hasOwn(snapshot.files, value4)) {
-                              (0, showEditorNotification)(
+                              showEditorNotification(
                                 "There is already a " + value4,
                               );
                               return;
@@ -3134,21 +3134,21 @@ function DesignSystemApp(): React.ReactElement {
                               !editable.exec(
                                 "rename " + input2.path,
                                 (input4) =>
-                                  (0, renameDesignSystemFile)(
+                                  renameDesignSystemFile(
                                     input4,
                                     input2.path,
                                     value4,
                                   ),
                               )
                             ) {
-                              (0, showEditorNotification)(
+                              showEditorNotification(
                                 "Can’t rename it to " +
                                   value4 +
                                   " — that name isn’t one a file here can take",
                               );
                               return;
                             }
-                            return (0, humanizeDocumentFilename)(
+                            return humanizeDocumentFilename(
                               value4,
                             );
                           },
@@ -3160,7 +3160,7 @@ function DesignSystemApp(): React.ReactElement {
                               editable.exec(
                                 "remove " + input2.path,
                                 (input3) =>
-                                  (0, deleteDesignSystemFiles)(
+                                  deleteDesignSystemFiles(
                                     input3,
                                     [input2.path],
                                   ),
@@ -3206,14 +3206,14 @@ function DesignSystemApp(): React.ReactElement {
                         if (
                           input3 !== "" &&
                           !editable.exec("rename " + input2.name, (input4) =>
-                            (0, renameTypographyGroup)(
+                            renameTypographyGroup(
                               input4,
                               input2.name,
                               input3,
                             ),
                           )
                         ) {
-                          (0, showEditorNotification)(
+                          showEditorNotification(
                             "There is already a set called " + input3,
                           );
                         }
@@ -3234,7 +3234,7 @@ function DesignSystemApp(): React.ReactElement {
                                 (input3) => input3.name === input2.name,
                               )
                             ) {
-                              (0, showEditorNotification)(
+                              showEditorNotification(
                                 input2.name +
                                   " changed meanwhile. Nothing was deleted.",
                               );
@@ -3242,7 +3242,7 @@ function DesignSystemApp(): React.ReactElement {
                               editable.exec(
                                 "remove " + input2.name,
                                 (input3) =>
-                                  (0, deleteTypographyGroup)(
+                                  deleteTypographyGroup(
                                     input3,
                                     input2.name,
                                   ),
@@ -3279,7 +3279,7 @@ function DesignSystemApp(): React.ReactElement {
             />
           );
         case "components": {
-          let value = (0, createPreviewHead)(
+          let value = createPreviewHead(
             snapshot,
             stageMode,
             previewThemeId,
@@ -3298,10 +3298,10 @@ function DesignSystemApp(): React.ReactElement {
                 context: import("../../contracts/preview").PreviewMode,
                 value2?: import("../../contracts/editor-runtime").ComponentPropValues,
               ) =>
-                (0, renderComponentPreview)(
+                renderComponentPreview(
                   input2,
                   options,
-                  (0, createPreviewHead)(
+                  createPreviewHead(
                     snapshot,
                     context,
                     previewThemeId,
@@ -3336,7 +3336,7 @@ function DesignSystemApp(): React.ReactElement {
                 addFiles === undefined
                   ? undefined
                   : (input2: EditorAssetGroup) =>
-                      void (0, pickUploadFiles)().then((input3) =>
+                      void pickUploadFiles().then((input3) =>
                         addFiles(input3, input2.name),
                       )
               }
@@ -3364,12 +3364,12 @@ function DesignSystemApp(): React.ReactElement {
                         callback = (
                           input3: import("../../contracts").DesignSystemContent,
                         ) =>
-                          (0, renameAssetFile)(
+                          renameAssetFile(
                             input3,
                             input2.path,
                             value3,
                           );
-                      return (0, performDesignSystemEdit)(
+                      return performDesignSystemEdit(
                         editable,
                         callback,
                         () =>
@@ -3382,7 +3382,7 @@ function DesignSystemApp(): React.ReactElement {
               }
               headFor={(input2: EditorAssetGroup) => {
                 let value = "assets:" + input2.name,
-                  value2 = (0, assetGroupDisplayName)(input2.name);
+                  value2 = assetGroupDisplayName(input2.name);
                 return {
                   title: sectionTitle(value, value2),
                   defaultTitle: value2,
@@ -3416,7 +3416,7 @@ function DesignSystemApp(): React.ReactElement {
     navigationRef = (
       reactArtifactRoot as typeof React
     ).useRef<HTMLElement | null>(null),
-    focusRegions = (0, useFocusRegions)([
+    focusRegions = useFocusRegions([
       {
         el: () => navigationRef.current,
         fallback: () =>
@@ -3429,7 +3429,7 @@ function DesignSystemApp(): React.ReactElement {
         home: true,
         landOnSelf: true,
       },
-      (0, notificationsFocusRegion)(),
+      notificationsFocusRegion(),
     ]),
     navigateAndHint = (input: string) => {
       if (!isDesignSystemSection(input)) {
@@ -3447,14 +3447,14 @@ function DesignSystemApp(): React.ReactElement {
     },
     searchIndex: SearchEntry[] = reactArtifactRoot.useMemo(
       () =>
-        (0, buildSectionSearchIndex)(
+        buildSectionSearchIndex(
           view,
           sections,
           snapshot.sectionTitles,
         ),
       [view, sections, snapshot.sectionTitles],
     ),
-    filesBrowser = (0, useDesignSystemFilesBrowser)({
+    filesBrowser = useDesignSystemFilesBrowser({
       doc: document2,
       snap: snapshot,
       sections: sections,
@@ -3551,9 +3551,9 @@ function DesignSystemApp(): React.ReactElement {
       getStoredSystemStatus,
     ).loaded,
     canEdit = editable !== undefined,
-    liveUrls = (0, supportsLivePreviewUrls)(),
+    liveUrls = supportsLivePreviewUrls(),
     previewsRunnable =
-      (0, previewStaticStatus)(snapshot).staticReason === "";
+      previewStaticStatus(snapshot).staticReason === "";
   useBootWarnings(
     reactArtifactRoot.useMemo(
       () =>
@@ -3584,7 +3584,7 @@ function DesignSystemApp(): React.ReactElement {
       ],
     ),
   );
-  let themeDisabledReason = (0, previewThemeDisabledReason)(
+  let themeDisabledReason = previewThemeDisabledReason(
       themes.length,
       view.components,
       previewsRunnable,
@@ -3612,7 +3612,7 @@ function DesignSystemApp(): React.ReactElement {
             <SaveStatusControl
               state={saveState}
               onRetry={() => {
-                (0, flushMarkdownCommitQueues)();
+                flushMarkdownCommitQueues();
                 document2.save();
               }}
               tipSide={"top"}
@@ -3647,7 +3647,7 @@ function DesignSystemApp(): React.ReactElement {
                   saveState.status !== "dirty" && saveState.status !== "error"
                 }
                 onClick={() => {
-                  (0, flushMarkdownCommitQueues)();
+                  flushMarkdownCommitQueues();
                   document2.save();
                 }}
                 data-testid={"ds-save"}
@@ -3799,7 +3799,7 @@ function DesignSystemApp(): React.ReactElement {
                     }
                     busy={handoffBusy}
                   />, lastChange !== null &&
-                  (0, isCiLastChange)(lastChange) &&
+                  isCiLastChange(lastChange) &&
                   !readOnly
                     ? (() => {
                         const _Element2 = PipelineChangeBanner;
@@ -3972,12 +3972,12 @@ function DesignSystemApp(): React.ReactElement {
                                     callback = (
                                       input2: import("../../contracts").DesignSystemContent,
                                     ) =>
-                                      (0, renameAssetFile)(
+                                      renameAssetFile(
                                         input2,
                                         value.path,
                                         input,
                                       );
-                                  return (0, performDesignSystemEdit)(
+                                  return performDesignSystemEdit(
                                     editable,
                                     callback,
                                     () => {
@@ -3991,15 +3991,14 @@ function DesignSystemApp(): React.ReactElement {
                                       }
                                       setOpenAssetPath((input2) =>
                                         input2 === value.path
-                                          ? ((0, pathDirname)(
+                                          ? (pathDirname(
                                               value.path,
                                             ) === ""
                                               ? ""
-                                              : (0, pathDirname)(
+                                              : pathDirname(
                                                   value.path,
                                                 ) + "/") +
-                                            (0,
-                                            sanitizeUploadFileName)(
+                                            sanitizeUploadFileName(
                                               input,
                                             )
                                           : input2,
@@ -4078,12 +4077,12 @@ export {
 };
 export function installFilesUiDesignSystemApp(): () => void {
   return () => {
-    reactBootWarnings = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    reactBootWarnings = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
-    jsxDesignSystemApp = (0, toModuleNamespace)(
-      (0, loadJsxNamespace)(),
+    jsxDesignSystemApp = toModuleNamespace(
+      loadJsxNamespace(),
       1,
     );
     CORE_DESIGN_SYSTEM_SECTIONS = [
@@ -4132,7 +4131,7 @@ export function installFilesUiDesignSystemApp(): () => void {
       BUILTIN_DESIGN_SYSTEM_SECTION_IDS.includes(input) ||
       isExtraTokenSection(input);
     initialDesignSystemSection = () =>
-      (0, initialSectionFromHash)(isDesignSystemSection, "readme");
+      initialSectionFromHash(isDesignSystemSection, "readme");
     PENDING_DESIGN_SYSTEM_SECTIONS = [
       ...CORE_DESIGN_SYSTEM_SECTIONS,
       ...CONTENT_DESIGN_SYSTEM_SECTIONS,
@@ -4140,7 +4139,7 @@ export function installFilesUiDesignSystemApp(): () => void {
     designSystemSections = (input) => [
       ...CORE_DESIGN_SYSTEM_SECTIONS,
       ...input.map((input2) => ({
-        id: (0, extraTokenFamilySectionId)(input2.key),
+        id: extraTokenFamilySectionId(input2.key),
         label: input2.title,
       })),
       ...CONTENT_DESIGN_SYSTEM_SECTIONS,

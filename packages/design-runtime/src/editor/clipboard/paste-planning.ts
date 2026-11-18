@@ -25,7 +25,7 @@ function buildAnnotationPaste(
 ): Dynamic {
   let value: Dynamic = context.map(
       (input2?: Dynamic): Dynamic =>
-        (0, normalizeClipboardPictureCss)(input2, options),
+        normalizeClipboardPictureCss(input2, options),
     ),
     value2: Dynamic = value.map(
       (input2?: Dynamic): Dynamic => input2.picture,
@@ -45,7 +45,7 @@ function buildAnnotationPaste(
     };
   let value3: Dynamic = input.filter(
       (input2?: Dynamic): Dynamic =>
-        (0, ClipboardAnnotationsIncludes_2)(input2.spec),
+        ClipboardAnnotationsIncludes_2(input2.spec),
     ),
     value4: Dynamic = ClipboardPastePlanningKind(
       value3.map((input2?: Dynamic): Dynamic => input2.spec),
@@ -56,7 +56,7 @@ function buildAnnotationPaste(
       .filter(
         (input2?: Dynamic): Dynamic =>
           !(
-            value4 && (0, ClipboardAnnotationsIncludes_2)(input2.spec)
+            value4 && ClipboardAnnotationsIncludes_2(input2.spec)
           ),
       )
       .map((input2?: Dynamic): Dynamic => {
@@ -79,7 +79,7 @@ function parseAnnotationPaste(
   input?: Dynamic,
   options: Dynamic = (): Dynamic => true,
 ): Dynamic {
-  let value: Dynamic = (0, parseAnnotationClipboard)(input);
+  let value: Dynamic = parseAnnotationClipboard(input);
   if (value === null)
     return {
       land: null,
@@ -87,7 +87,7 @@ function parseAnnotationPaste(
         ? ClipboardFileTransferRegistry.tooMuchStayed
         : ClipboardFileTransferRegistry.unreadable,
     };
-  let value2: Dynamic = (0, clipboardPictureEntries)(value.entries),
+  let value2: Dynamic = clipboardPictureEntries(value.entries),
     value3: Dynamic = value2.entries.map(
       (input2?: Dynamic): Dynamic => input2.spec,
     ),
@@ -95,7 +95,7 @@ function parseAnnotationPaste(
       .slice(0, ClipboardAnnotationsLimit)
       .map(
         (input2?: Dynamic): Dynamic =>
-          (0, normalizeClipboardPictureCss)(input2, false),
+          normalizeClipboardPictureCss(input2, false),
       ),
     value5: Dynamic = value4.map(
       (input2?: Dynamic): Dynamic => input2.picture,
@@ -173,7 +173,7 @@ function parseAnnotationPaste(
           say: "",
           pictures: {
             carried: value5,
-            assets: (0, parseClipboardAssets)(input, value5),
+            assets: parseClipboardAssets(input, value5),
             said: callback,
           },
         };
@@ -227,10 +227,10 @@ export function installEditorClipboardPastePlanning(): () => void {
       for (let value of input as Dynamic)
         if (
           ((index +=
-            (0, ClipboardAnnotationsGetLength)(value) *
+            ClipboardAnnotationsGetLength(value) *
             (value.kind === "title1" ? ClipboardPastePlanningConstant : 1)),
           "text" in value &&
-            (index2 += (0, noteRichTextCost)(value.text)),
+            (index2 += noteRichTextCost(value.text)),
           index > ClipboardPastePlanningResolvedValue ||
             index2 > ClipboardPastePlanningLimit)
         )
@@ -238,7 +238,7 @@ export function installEditorClipboardPastePlanning(): () => void {
       return false;
     };
     ClipboardPastePlanningHandler = (input?: Dynamic): Dynamic =>
-      (0, ClipboardStateHandler)(input?.stayed) > 0;
+      ClipboardStateHandler(input?.stayed) > 0;
     ClipboardPastePlanningIsArray = (input?: Dynamic): Dynamic =>
       typeof input == "object" &&
       input !== null &&
@@ -249,12 +249,12 @@ export function installEditorClipboardPastePlanning(): () => void {
       options?: Dynamic,
       context: Dynamic = 0,
     ): Dynamic => {
-      let value: Dynamic = (0, serializeCanvasMetadata)({
+      let value: Dynamic = serializeCanvasMetadata({
         ...input,
         annotations: [...(input.annotations ?? []), ...options],
       });
       return (
-        (0, ClipboardArtboardsEncode)(value) &&
+        ClipboardArtboardsEncode(value) &&
         ClipboardArtboardsTextEncoder.encode(value).length + context <=
           PlatformFileContentResolvedValue_11
       );

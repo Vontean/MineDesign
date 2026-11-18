@@ -59,23 +59,23 @@ function normalizeComments(comments: unknown): Host.ArtifactComment[] {
         : [];
     items.push({
       id: value2,
-      text: (0, truncateUtf16Safely)(value3, MAX_COMMENT_TEXT_LENGTH),
+      text: truncateUtf16Safely(value3, MAX_COMMENT_TEXT_LENGTH),
       at: value4,
       author:
         typeof value5 === "string" && value5.length > 0
-          ? (0, truncateUtf16Safely)(value5, 80)
+          ? truncateUtf16Safely(value5, 80)
           : "viewer",
       userId:
         typeof value6 === "string" && value6.length > 0
-          ? (0, truncateUtf16Safely)(value6, 128)
+          ? truncateUtf16Safely(value6, 128)
           : undefined,
       elementKey:
         typeof value7 === "string" && value7.length > 0
-          ? (0, truncateUtf16Safely)(value7, 400)
+          ? truncateUtf16Safely(value7, 400)
           : undefined,
       elementLabel:
         typeof value8 === "string"
-          ? (0, truncateUtf16Safely)(value8, 160)
+          ? truncateUtf16Safely(value8, 160)
           : undefined,
       ...(value10.length > 0
         ? {

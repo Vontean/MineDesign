@@ -36,7 +36,7 @@ function isReversedLogoAsset(asset: Pick<Application.EditorAsset,"name">): boole
   );
 }
 function isFileIconAsset(asset: Pick<Application.EditorAsset,"kind">): boolean {
-  return (0, isWallAssetKind)(asset.kind);
+  return isWallAssetKind(asset.kind);
 }
 function assetKindLabel(asset: Pick<Application.EditorAsset,"kind"|"ext">): {
   label: string;
@@ -220,7 +220,7 @@ function AssetGroupsList({
               group: input,
               items: memo2.get(input.name) ?? [],
               head: headFor?.(input),
-              title: (0, assetGroupDisplayName)(input.name),
+              title: assetGroupDisplayName(input.name),
               renderThumb: renderThumb,
               tiles: tiles,
               tabStop: value2,
@@ -276,7 +276,7 @@ function NewAssetGroupDropZone({
   useUiLocale();
   return (
     <div
-      className={(0, joinClassNames)(
+      className={joinClassNames(
         "ds-newgroup flex min-h-24 items-center justify-center gap-sm rounded-card border-2 border-dashed border-app-accent/40 text-footnote text-secondary transition-colors",
         targeted && "border-app-accent bg-app-accent/5 text-accent",
       )}
@@ -510,7 +510,7 @@ function AssetGroupGrid({
   footer: footer,
 }: Editor.AssetGroupGridProps): React.ReactElement {
   useUiLocale();
-  (0, useAssetThumbnailSources)();
+  useAssetThumbnailSources();
   let [value, value2] = (reactAssetGroups as typeof React).useState(
       false,
     ),
@@ -528,7 +528,7 @@ function AssetGroupGrid({
       },
       [onDropFiles, group],
     ),
-    value3 = (0, useFileDrop)({
+    value3 = useFileDrop({
       disabled: onDropFiles === undefined,
       onFiles: callback,
     }),
@@ -603,7 +603,7 @@ function AssetGroupGrid({
       overlay={
         value4 ? (
           <div
-            className={(0, joinClassNames)(
+            className={joinClassNames(
               "pointer-events-none absolute inset-0 z-[3] rounded-card",
               value3.over
                 ? FILE_DROP_RING_CLASS
@@ -615,7 +615,7 @@ function AssetGroupGrid({
         ) : undefined
       }
       cardKey={"assets:" + group.name}
-      anchorId={(0, commentTargetId)("agroup", group.name)}
+      anchorId={commentTargetId("agroup", group.name)}
       flat={true}
       actions={
         onUpload !== undefined ? (
@@ -671,8 +671,8 @@ function AssetGroupGrid({
                   value10 = assetFileSizeLabel(
                     (source.a.bytes ?? 0) > 0 || source.a.store !== "file"
                       ? (source.a.bytes ?? 0)
-                      : ((0, addressedFileEntry)(
-                          (0, projectFilePath)(source.a.path),
+                      : (addressedFileEntry(
+                          projectFilePath(source.a.path),
                         )?.size ?? 0),
                   );
                 return (() => {
@@ -681,7 +681,7 @@ function AssetGroupGrid({
                     className:
                       "ds-arow ds-tokrow ds-crow group/row cursor-default select-none outline-none",
                     "data-testid": "ds-asset-" + source.a.path,
-                    ...(0, commentTargetProps)(
+                    ...commentTargetProps(
                       "asset",
                       source.a.path,
                     ),
@@ -798,14 +798,14 @@ export {
 };
 export function installEditorAssetGroups(): () => void {
   return () => {
-    jsxAssetGroups = (0, toModuleNamespace)(
-      (0, loadJsxNamespace)(),
+    jsxAssetGroups = toModuleNamespace(
+      loadJsxNamespace(),
       1,
     );
     ASSET_SELECTION_CLASS_NAME = "shadow-[inset_0_0_0_2px_var(--t-app-accent)]";
     assetFileSizeLabel = (bytes: number | undefined) =>
       bytes !== undefined && bytes > 0
-        ? (0, formatInlineBudgetBytes)(bytes)
+        ? formatInlineBudgetBytes(bytes)
         : "";
     MIN_ASSET_TILE_SIZE = 60;
     EMPTY_ASSET_SELECTION_SET = new Set();

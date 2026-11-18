@@ -75,7 +75,7 @@ function assembleCompiledPage(
     '<script id="' +
       compiledPageModeId +
       '">' +
-      (0, colorModeBootstrapScript)(page.colorMode) +
+      colorModeBootstrapScript(page.colorMode) +
       "<\/script>",
     ...(page.emulator && page.emulatorShim !== undefined
       ? [
@@ -178,7 +178,7 @@ function readCompiledPageAnatomy(document2: Document): Host.CompiledPage {
     value7 = document2.getElementById(compiledPageModeId)?.textContent ?? "",
     value8 = (["light", "dark"] as const).find(
       (input): boolean =>
-        value7 === (0, colorModeBootstrapScript)(input),
+        value7 === colorModeBootstrapScript(input),
     );
   return {
     title: document2.querySelector("title")?.textContent ?? "",

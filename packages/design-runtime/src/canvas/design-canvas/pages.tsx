@@ -19,21 +19,21 @@ export async function promptRenamePage(deps: { readonly value286: Dynamic; reado
                   (input2?: Dynamic): Dynamic => input2.id === input,
                 );
         if (!value653) return;
-        let value654: Dynamic = await (0, promptCanvasValue)({
+        let value654: Dynamic = await promptCanvasValue({
           get title() { return uiMessage("canvas.designCanvas.renamePage"); },
           initialValue: value653.name,
           inputLabel: "Page name",
           get confirmLabel() { return uiMessage("canvas.designCanvas.rename"); },
           maxLength: 120,
         });
-        (0, clearEscapeReleaseSuppression)();
+        clearEscapeReleaseSuppression();
         deps.value286.current?.focus({
           preventScroll: true,
         });
         let value655: Dynamic =
           value654 === null
             ? undefined
-            : (0, PlatformFileContentSlice)(value654);
+            : PlatformFileContentSlice(value654);
         if (value655 === undefined || value655 === value653.name) return;
         let current4: Dynamic = deps.value73.current,
           value656: Dynamic =
@@ -77,7 +77,7 @@ export function renderPageTabItem(deps: { readonly editing: Dynamic; readonly va
             let value653: Dynamic = input.id === deps.value79 && !deps.value283,
               length: Dynamic = deps.value67.artboards.filter(
                 (input2?: Dynamic): Dynamic =>
-                  (0, designPageId)(input2, deps.value67.pages) ===
+                  designPageId(input2, deps.value67.pages) ===
                   input.id,
               ).length;
             return (() => {

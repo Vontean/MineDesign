@@ -18,12 +18,12 @@ function sanitizeArtboardErrorContext(value?: Dynamic): Dynamic {
           typeof input.label == "string"
             ? {
                 ...input,
-                label: (0, sanitizeDesignContextText)(input.label),
+                label: sanitizeDesignContextText(input.label),
               }
             : input,
       )
     : typeof value == "object" && value !== null
-      ? (0, sanitizeDesignContextText)(value.text)
+      ? sanitizeDesignContextText(value.text)
       : value;
 }
 function serializeArtboardErrorContext(
@@ -42,7 +42,7 @@ function serializeArtboardErrorContext(
         ),
       ),
       erroredArtboards: [],
-      firstError: (0, sanitizeDesignContextText)(firstError),
+      firstError: sanitizeDesignContextText(firstError),
     },
     value: Dynamic =
       new TextEncoder().encode(JSON.stringify(state)).length +
@@ -72,7 +72,7 @@ function artboardLoadErrorMessages(
 ): Dynamic {
   let value: Dynamic = artboardLoadErrorMessage(loadError, previewError);
   if (value === null) return messages;
-  let value2: Dynamic = (0, sanitizeDesignContextText)(value, 300);
+  let value2: Dynamic = sanitizeDesignContextText(value, 300);
   return value2 === "" ? emptyArtboardErrors : [value2];
 }
 function normalizeArtboardErrorMessages(errors?: Dynamic): Dynamic {
@@ -82,7 +82,7 @@ function normalizeArtboardErrorMessages(errors?: Dynamic): Dynamic {
     let value2: Dynamic =
       typeof value == "object" && value !== null ? value.message : undefined;
     if (typeof value2 != "string") continue;
-    let value3: Dynamic = (0, sanitizeDesignContextText)(value2, 300);
+    let value3: Dynamic = sanitizeDesignContextText(value2, 300);
     value3 !== "" && !items.includes(value3) && items.push(value3);
   }
   return items;

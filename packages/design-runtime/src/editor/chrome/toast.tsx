@@ -14,7 +14,7 @@ var ChromeToastInfoSuccessWarningConfig: Dynamic;
 var EditorToastContext: Dynamic;
 function EditorToastProvider({ children: children }: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic = (0, useToastManager)(),
+  let value: Dynamic = useToastManager(),
     value2: Dynamic = (0, reactChromeToast.useRef)(value);
   (0, reactChromeToast.useLayoutEffect)((): Dynamic => {
     value2.current = value;
@@ -87,13 +87,13 @@ export {
 };
 export function installEditorChromeToast(): () => void {
   return () => {
-    reactChromeToast = (0, toModuleNamespace)(
-      (0, load_react)(),
+    reactChromeToast = toModuleNamespace(
+      load_react(),
       1,
     );
-    (0, initializeCdsIndex)();
-    jsxChromeToast = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    initializeCdsIndex();
+    jsxChromeToast = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
     ChromeToastInfoSuccessWarningConfig = {

@@ -81,7 +81,7 @@ function useDialogVisualKeyboard(
       let activeElement = value.ownerDocument.activeElement;
       return (
         value.contains(activeElement) &&
-        (0, isEditableElement)(activeElement)
+        isEditableElement(activeElement)
       );
     }, [input, value]),
     value5 = reactForUiTooltips.useSyncExternalStore(
@@ -89,7 +89,7 @@ function useDialogVisualKeyboard(
       callback2,
       () => false,
     );
-  (0, useVisualKeyboard)(
+  useVisualKeyboard(
     input && (value5 || value3 !== null),
     value4,
   );
@@ -98,7 +98,7 @@ function useDialogVisualKeyboard(
       [value3],
     ),
     ref = reactForUiTooltips.useRef<DialogStyleOverride | null>(null);
-  (0, useIsomorphicLayoutEffect)(() => {
+  useIsomorphicLayoutEffect(() => {
     let current = ref.current;
     if (current !== null && (current.node !== value || memo === undefined)) {
       restoreDialogStyleOverride(current);
@@ -177,7 +177,7 @@ function useDialogVisualKeyboard(
       }
     }
   });
-  (0, useIsomorphicLayoutEffect)(
+  useIsomorphicLayoutEffect(
     () => () => {
       if (ref.current !== null) {
         restoreDialogStyleOverride(ref.current);
@@ -256,23 +256,23 @@ export {
 };
 export function installUiTooltips(): () => void {
   return () => {
-    (0, initializeIsomorphicLayoutEffect)();
-    (0, initializeClassNames)();
-    (0, initializeTranslations)();
-    (0, initializeCdsRoot)();
-    (0, initializeElementAccess)();
-    (0, initializeLayers)();
-    (0, initializeOverlaySelector)();
-    (0, initializeCloseOnActivityHide)();
-    (0, initializeMergedRefs)();
-    (0, initializePortalRoot)();
-    (0, initializeSurfaces)();
-    (0, initializeOverlayActions)();
-    (0, initializeOverlayFocus)();
-    (0, initializeIsomorphicLayoutEffect)();
-    (0, initializeVisualKeyboard)();
-    reactForUiTooltips = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    initializeIsomorphicLayoutEffect();
+    initializeClassNames();
+    initializeTranslations();
+    initializeCdsRoot();
+    initializeElementAccess();
+    initializeLayers();
+    initializeOverlaySelector();
+    initializeCloseOnActivityHide();
+    initializeMergedRefs();
+    initializePortalRoot();
+    initializeSurfaces();
+    initializeOverlayActions();
+    initializeOverlayFocus();
+    initializeIsomorphicLayoutEffect();
+    initializeVisualKeyboard();
+    reactForUiTooltips = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
     DIALOG_KEYBOARD_MARGIN_PX = 8;
@@ -289,12 +289,12 @@ export function installUiTooltips(): () => void {
       "top",
       ...dialogKeyboardExcludedStyleProperties,
     ];
-    reactForUiTooltips2 = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    reactForUiTooltips2 = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
-    jsxForUiTooltips = (0, toModuleNamespace)(
-      (0, loadJsxNamespace)(),
+    jsxForUiTooltips = toModuleNamespace(
+      loadJsxNamespace(),
       1,
     );
   };

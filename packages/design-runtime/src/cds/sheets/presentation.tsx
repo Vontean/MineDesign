@@ -20,8 +20,8 @@ var CdsSheetControlHeldAttribute: string;
 var SheetsPresentationDelayMs: number;
 var initializeSheetsPresentation: () => void;
 function useMobileSheets(): boolean {
-  return (0, useWindowMediaQuery)(
-    (0, useCdsWindow)(),
+  return useWindowMediaQuery(
+    useCdsWindow(),
     mobileSheetMediaQuery,
   );
 }
@@ -32,12 +32,12 @@ function useTouchOverlay(): boolean {
   "use no memo";
 
   let value = useOverlayPresentation(),
-    value2 = (0, useCdsWindow)(),
+    value2 = useCdsWindow(),
     value3 = (0, reactSheetsPresentation.useSyncExternalStore)(
       HooksMediaQueryHandler,
       () =>
         value2 !== undefined &&
-        ((0, getMediaQueryStore)(
+        (getMediaQueryStore(
           value2,
           "(pointer: coarse)",
         )?.getSnapshot() ??
@@ -113,10 +113,10 @@ function useOpenSnapshot<Value>(
       value: input ? options() : context,
     })),
     value3 = (0, reactSheetsPresentation.useRef)(options);
-  (0, useIsomorphicLayoutEffect)(() => {
+  useIsomorphicLayoutEffect(() => {
     value3.current = options;
   });
-  (0, useIsomorphicLayoutEffect)(() => {
+  useIsomorphicLayoutEffect(() => {
     if (!input) return;
     let value4 = value3.current();
     value2((input2) =>
@@ -162,15 +162,15 @@ export {
 };
 export function installCdsSheetsPresentation(): () => void {
   return () => {
-    initializeSheetsPresentation = (0, initializeOnce)(() => {
+    initializeSheetsPresentation = initializeOnce(() => {
       "use client";
 
-      (0, initializeHooksMediaQuery)();
-      (0, initializeHooksLayoutEffect)();
-      (0, initializeCdsRoot)();
-      (0, initializeSheetsKeyboardViewport)();
-      reactSheetsPresentation = (0, toModuleNamespace)(
-        (0, load_react)(),
+      initializeHooksMediaQuery();
+      initializeHooksLayoutEffect();
+      initializeCdsRoot();
+      initializeSheetsKeyboardViewport();
+      reactSheetsPresentation = toModuleNamespace(
+        load_react(),
       );
       OverlayPresentationContext = (0,
       reactSheetsPresentation.createContext)<OverlayPresentation>("auto");

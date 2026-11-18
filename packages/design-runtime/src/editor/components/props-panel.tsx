@@ -48,7 +48,7 @@ function ComponentPropsPanel({ dcProps: dcProps }: Dynamic): Dynamic {
   useUiLocale();
   let value: Dynamic = Object.entries(dcProps.propsMeta).filter(
     ([, input]: Dynamic): Dynamic =>
-      (0, isEditablePropMetadata)(input),
+      isEditablePropMetadata(input),
   );
   if (value.length === 0)
     return (
@@ -89,7 +89,7 @@ function ComponentPropsPanel({ dcProps: dcProps }: Dynamic): Dynamic {
                       onReset={
                         !dcProps.saving &&
                         dcProps.values[input2] !== undefined &&
-                        !(0, equalPropValues)(
+                        !equalPropValues(
                           dcProps.values[input2],
                           input3.default,
                         )
@@ -142,8 +142,8 @@ export {
 };
 export function installEditorComponentsPropsPanel(): () => void {
   return () => {
-    reactComponentsPropsPanel = (0, toModuleNamespace)(
-      (0, load_react)(),
+    reactComponentsPropsPanel = toModuleNamespace(
+      load_react(),
       1,
     );
     ComponentsPropsPanelCategorical1Categorical2Categorical3Values = [

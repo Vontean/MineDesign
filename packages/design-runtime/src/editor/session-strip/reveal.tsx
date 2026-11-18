@@ -40,22 +40,22 @@ export {
 export function installEditorSessionStripReveal(): () => void {
   return () => {
     SessionStripRevealConstant = 48;
-    reactSessionStripReveal = (0, toModuleNamespace)(
-      (0, load_react)(),
+    reactSessionStripReveal = toModuleNamespace(
+      load_react(),
       1,
     );
-    (0, initializeCdsIndex)();
-    jsxSessionStripReveal = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    initializeCdsIndex();
+    jsxSessionStripReveal = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
-    reactSessionStripReveal_2 = (0, toModuleNamespace)(
-      (0, load_react)(),
+    reactSessionStripReveal_2 = toModuleNamespace(
+      load_react(),
       1,
     );
-    (0, initializeCdsIndex)();
-    jsxSessionStripReveal_2 = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    initializeCdsIndex();
+    jsxSessionStripReveal_2 = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
   };

@@ -32,7 +32,7 @@ function useDcModel(
   value5.current = value3;
   let value6: Dynamic = (0, reactOutlineAnnotations.useRef)(value2);
   value6.current = value2;
-  let value7: Dynamic = (0, artboardComponentName)(options),
+  let value7: Dynamic = artboardComponentName(options),
     value8: Dynamic = options.includes("/")
       ? options.slice(0, options.lastIndexOf("/"))
       : "",
@@ -136,9 +136,9 @@ function useDcModel(
           value54 && callback() && value54.drop(value53, "load");
           return null;
         }
-        let value57: Dynamic = (0, parseDcHtmlDocument)(value55);
+        let value57: Dynamic = parseDcHtmlDocument(value55);
         if (!value57) {
-          (0, warnUnreadableDcDocument)(
+          warnUnreadableDcDocument(
             input + "/" + value53,
             value55,
             "its elements cannot be listed, selected or edited",
@@ -185,14 +185,14 @@ function useDcModel(
         let entry: Dynamic = value10.current.get(input2);
         if (!(!entry || value4.current.holdPush?.(input2))) {
           if (value5.current) {
-            (0, emitEditorEvent)("nondc-push-body", {
+            emitEditorEvent("nondc-push-body", {
               name: input2,
               content: entry.model.serialize(),
             });
             value4.current.onPushLive?.(input2);
             return;
           }
-          (0, emitEditorEvent)("dc-update", {
+          emitEditorEvent("dc-update", {
             name: input2,
             path: entry.path,
             kind: "html",
@@ -214,17 +214,17 @@ function useDcModel(
           return;
         }
         try {
-          let value53: Dynamic = (0, parseDcHtmlDocument)(entry.src);
+          let value53: Dynamic = parseDcHtmlDocument(entry.src);
           if (!value53) return;
-          let value54: Dynamic = (0, replaceDcTemplate)(
+          let value54: Dynamic = replaceDcTemplate(
             entry.src,
             value53,
-            (0, serializeStableModel)(entry),
+            serializeStableModel(entry),
           );
           if (entry.pendingScript !== undefined) {
-            let value55: Dynamic = (0, parseDcHtmlDocument)(value54);
+            let value55: Dynamic = parseDcHtmlDocument(value54);
             value55 &&
-              (value54 = (0, setDcScript)(
+              (value54 = setDcScript(
                 value54,
                 value55,
                 entry.pendingScript,
@@ -233,7 +233,7 @@ function useDcModel(
           let entry2: Dynamic = value25.current.get(input2),
             flag: Dynamic = true;
           if (entry.pendingProps !== undefined) {
-            let value55: Dynamic = (0, getPendingPropKeys)(
+            let value55: Dynamic = getPendingPropKeys(
               value54,
               entry.pendingProps,
             );
@@ -241,7 +241,7 @@ function useDcModel(
           }
           let current: Dynamic = value14.current;
           current.set(entry.path, (current.get(entry.path) ?? 0) + 1);
-          (0, expectLocalFileEcho)(entry.path);
+          expectLocalFileEcho(entry.path);
           value26.current.set(input2, value54);
           projectFilesystem
             .writeFile(input + "/" + entry.path, value54)
@@ -261,7 +261,7 @@ function useDcModel(
                 value55 <= 1
                   ? current.delete(entry.path)
                   : current.set(entry.path, value55 - 1);
-                (0, consumeLocalFileEcho)(entry.path);
+                consumeLocalFileEcho(entry.path);
               }, 500);
             });
         } catch {}
@@ -293,7 +293,7 @@ function useDcModel(
         if (!entry) return;
         entry.dirty = true;
         entry.previewBaseline = undefined;
-        (0, ModelHistoryRebaseHandler_3)();
+        ModelHistoryRebaseHandler_3();
         value25.current.set(input2, (value25.current.get(input2) ?? 0) + 1);
         value4.current.onLocalEdit?.(input2);
         let current: Dynamic = value24.current,
@@ -302,7 +302,7 @@ function useDcModel(
         entry2 && clearTimeout(entry2);
         current2.get(input2)?.();
         let value53: Dynamic;
-        (0, trackEmbeddedWrite)(
+        trackEmbeddedWrite(
           new Promise((input3?: Dynamic): Dynamic => (value53 = input3)),
         );
         current2.set(input2, value53);
@@ -356,9 +356,9 @@ function useDcModel(
               value55 < entry.adoptedVersion
             )
               return;
-            let value56: Dynamic = (0, parseDcHtmlDocument)(value54);
+            let value56: Dynamic = parseDcHtmlDocument(value54);
             if (!value56) {
-              (0, warnUnreadableDcDocument)(
+              warnUnreadableDcDocument(
                 input + "/" + entry.path,
                 value54,
                 "the editor keeps showing the version it last read",
@@ -369,23 +369,23 @@ function useDcModel(
             entry.carriedEditCount = 0;
             entry.src = value54;
             value26.current.delete(input2);
-            let value57: Dynamic = (0, ModelHistoryRebaseDelete)(
+            let value57: Dynamic = ModelHistoryRebaseDelete(
               entry.path,
             );
-            (0, ModelHistoryRebaseHandler_2)() && !value57
-              ? (0, ModelHistoryRebaseUndo)(
+            ModelHistoryRebaseHandler_2() && !value57
+              ? ModelHistoryRebaseUndo(
                   input2,
-                  (0, rebaseModelHistory)(
+                  rebaseModelHistory(
                     entry,
                     entry.model.serialize(),
                     value56.template,
                   ),
                 )
-              : (0, resetUndoHistory)(entry);
+              : resetUndoHistory(entry);
             entry.pendingScript !== undefined &&
               ((entry.pendingScript = undefined),
               (entry.pendingScriptBase = undefined),
-              (0, emitEditorEvent)("dc-update", {
+              emitEditorEvent("dc-update", {
                 name: input2,
                 path: entry.path,
                 kind: "js",
@@ -410,7 +410,7 @@ function useDcModel(
             }
             entry.originalTemplate = entry.model.serialize();
             value55 !== undefined &&
-              ((0, adoptModelVersion)(entry, value55),
+              (adoptModelVersion(entry, value55),
               (entry.baseVersion === undefined ||
                 value55 > entry.baseVersion) &&
                 (entry.baseVersion = value55),
@@ -433,11 +433,11 @@ function useDcModel(
         }
         let current: Dynamic = value10.current,
           entry: Dynamic = current.get(input2);
-        if (entry && (0, getPreDragBaseline)(entry) === undefined)
+        if (entry && getPreDragBaseline(entry) === undefined)
           for (let value61 of ModelModelStateDataDcDraggingDataDcDragParentDataDcDragFollowerValues as Dynamic)
             entry.model.takeMarkerAttr(value61);
         let value53: Dynamic = entry
-            ? (0, serializeStableModel)(entry)
+            ? serializeStableModel(entry)
             : undefined,
           value54: Dynamic = entry?.pendingScript,
           value55: Dynamic = entry?.pendingScriptBase,
@@ -497,12 +497,12 @@ function useDcModel(
             if ((entry.custodyGen ?? 0) !== value59) return "noop";
             let current2: Dynamic = value14.current;
             current2.set(entry.path, (current2.get(entry.path) ?? 0) + 1);
-            (0, expectLocalFileEcho)(entry.path);
+            expectLocalFileEcho(entry.path);
             let flag: Dynamic = true,
               callback3: Dynamic = (): Dynamic => {
                 flag &&
                   ((flag = false),
-                  (0, consumeLocalFileEcho)(entry.path));
+                  consumeLocalFileEcho(entry.path));
               },
               flag2: Dynamic = false,
               text: Dynamic = "failed",
@@ -547,7 +547,7 @@ function useDcModel(
                   pendingPropsBaseAtCall: value57,
                   ...state2,
                 }),
-                value61: Dynamic = await (0, publishModelChanges)(
+                value61: Dynamic = await publishModelChanges(
                   entry,
                   input,
                   state3,
@@ -557,7 +557,7 @@ function useDcModel(
               switch (
                 (value61.kind === "failed" &&
                   !callback4(value61.error) &&
-                  (value61 = await (0, publishModelChanges)(
+                  (value61 = await publishModelChanges(
                     entry,
                     input,
                     state3,
@@ -565,7 +565,7 @@ function useDcModel(
                     callback5(),
                   )),
                 value61.version !== undefined &&
-                  (0, adoptModelVersion)(entry, value61.version),
+                  adoptModelVersion(entry, value61.version),
                 value61.kind)
               ) {
                 case "noop":
@@ -584,11 +584,11 @@ function useDcModel(
                     flag2 = true;
                     if (
                       (value54 !== undefined || value56 !== undefined) &&
-                      (0, rebuildModelTemplate)(
+                      rebuildModelTemplate(
                         entry.model,
                         value53,
                       ) ===
-                        (0, rebuildModelTemplate)(
+                        rebuildModelTemplate(
                           entry.model,
                           entry.originalTemplate,
                         )
@@ -715,7 +715,7 @@ function useDcModel(
                   }
               }
               text === "saved" &&
-                (0, markLocalFileChange)(input, entry.path);
+                markLocalFileChange(input, entry.path);
             } catch (value61: Dynamic) {
               text === "failed"
                 ? ((entry.dirty = true),
@@ -742,7 +742,7 @@ function useDcModel(
             }
             return text;
           },
-          value60: Dynamic = (0, serializeAsyncFileTask)(
+          value60: Dynamic = serializeAsyncFileTask(
             value32.current,
             input2,
             callback,
@@ -789,7 +789,7 @@ function useDcModel(
     value42: Dynamic = (0, reactOutlineAnnotations.useCallback)(
       (input2?: Dynamic, options2?: Dynamic): Dynamic => {
         let value53: Dynamic = value10.current.get(input2) ?? null;
-        return !value53 || !(0, recordModelUndo)(value53, options2)
+        return !value53 || !recordModelUndo(value53, options2)
           ? false
           : (value4.current.onBeforeMutate?.(
               input2,
@@ -820,7 +820,7 @@ function useDcModel(
             (value57.stampGen = (value57.stampGen ?? -1) + 1),
             value54 &&
               (value57.undo.push(value58),
-              (0, trimUndoHistory)(
+              trimUndoHistory(
                 value57,
                 value57.undo.length - ModelModelStateConstant,
               ),
@@ -852,9 +852,9 @@ function useDcModel(
         options2?: Dynamic,
         context2?: Dynamic,
       ): Promise<Dynamic> => {
-        if ((0, isRecentlyEditedFile)(options2.path)) {
+        if (isRecentlyEditedFile(options2.path)) {
           await value34(input2);
-          (0, ModelHistoryRebaseDelete)(options2.path);
+          ModelHistoryRebaseDelete(options2.path);
           if (
             !(
               options2.dirty ||
@@ -874,7 +874,7 @@ function useDcModel(
           options2.pendingScriptBase = undefined;
           options2.pendingProps = undefined;
           options2.pendingPropsBase = undefined;
-          (0, resetUndoHistory)(options2);
+          resetUndoHistory(options2);
           try {
             options2.src = (
               await value19(`${input}/${options2.path}`)
@@ -955,23 +955,23 @@ function useDcModel(
               return;
             }
             value54 !== options2.src && (options2.src = value54);
-            value59 && (0, clearSavedPendingProps)(options2);
+            value59 && clearSavedPendingProps(options2);
             value55 !== undefined &&
-              (0, adoptModelVersion)(options2, value55);
+              adoptModelVersion(options2, value55);
             return;
           }
           if (value54 === options2.src) {
             value28.current.get(input2)?.delete(value54);
             value55 !== undefined &&
-              ((0, adoptModelVersion)(options2, value55),
+              (adoptModelVersion(options2, value55),
               (options2.baseVersion === undefined ||
                 value55 > options2.baseVersion) &&
                 (options2.baseVersion = value55));
             return;
           }
-          let value56: Dynamic = (0, parseDcHtmlDocument)(value54);
+          let value56: Dynamic = parseDcHtmlDocument(value54);
           if (!value56) {
-            (0, warnUnreadableDcDocument)(
+            warnUnreadableDcDocument(
               input + "/" + options2.path,
               value54,
               "the editor keeps showing the version it last read",
@@ -979,25 +979,25 @@ function useDcModel(
             return;
           }
           value28.current.get(input2)?.delete(value54);
-          let value57: Dynamic = !(0, sameDcTemplate)(
+          let value57: Dynamic = !sameDcTemplate(
             value54,
             options2.src,
           );
           options2.src = value54;
           if (value57) {
-            let value59: Dynamic = (0, ModelHistoryRebaseDelete)(
+            let value59: Dynamic = ModelHistoryRebaseDelete(
               options2.path,
             );
-            (0, ModelHistoryRebaseHandler_2)() && !value59
-              ? (0, ModelHistoryRebaseUndo)(
+            ModelHistoryRebaseHandler_2() && !value59
+              ? ModelHistoryRebaseUndo(
                   input2,
-                  (0, rebaseModelHistory)(
+                  rebaseModelHistory(
                     options2,
                     options2.model.serialize(),
                     value56.template,
                   ),
                 )
-              : (0, resetUndoHistory)(options2);
+              : resetUndoHistory(options2);
           }
           let value58: Dynamic = options2.previewBaseline !== undefined;
           options2.previewBaseline = undefined;
@@ -1010,7 +1010,7 @@ function useDcModel(
             value4.current.onExternalReparse?.(input2, value59);
           }
           value55 !== undefined &&
-            ((0, adoptModelVersion)(options2, value55),
+            (adoptModelVersion(options2, value55),
             (options2.baseVersion === undefined ||
               value55 > options2.baseVersion) &&
               (options2.baseVersion = value55),
@@ -1023,7 +1023,7 @@ function useDcModel(
     ),
     value45: Dynamic = (0, reactOutlineAnnotations.useCallback)(
       async (input2?: Dynamic, options2?: Dynamic): Promise<Dynamic> => {
-        let value53: Dynamic = (0, normalizeProjectFilePath)(input2);
+        let value53: Dynamic = normalizeProjectFilePath(input2);
         for (let [value54, value55] of value10.current as Dynamic)
           value55.path === value53 &&
             (await value44(value54, value55, options2));
@@ -1097,7 +1097,7 @@ function useDcModel(
             value53.pendingProps !== undefined;
           if (value55 === value53.src) {
             value56 !== undefined &&
-              ((0, adoptModelVersion)(value53, value56),
+              (adoptModelVersion(value53, value56),
               !value57 &&
                 (value53.baseVersion === undefined ||
                   value56 > value53.baseVersion) &&
@@ -1110,20 +1110,20 @@ function useDcModel(
               return {
                 outcome: "fresh",
               };
-            let value59: Dynamic = (0, parseDcHtmlDocument)(value55);
+            let value59: Dynamic = parseDcHtmlDocument(value55);
             return value59
-              ? (0, rebuildModelTemplate)(
+              ? rebuildModelTemplate(
                   value53.model,
                   value59.template,
                 ) !==
-                  (0, rebuildModelTemplate)(
+                  rebuildModelTemplate(
                     value53.model,
                     value53.originalTemplate,
                   ) ||
                 (value53.pendingScript !== undefined &&
                   value59.js !== value53.pendingScriptBase) ||
                 (value53.pendingProps !== undefined &&
-                  (0, getDcPropsJson)(value55) !==
+                  getDcPropsJson(value55) !==
                     value53.pendingPropsBase)
                 ? {
                     outcome: value54 ? "conflict" : "race-conflict",
@@ -1143,7 +1143,7 @@ function useDcModel(
             return {
               outcome: "fresh",
             };
-          let value58: Dynamic = (0, parseDcHtmlDocument)(value55);
+          let value58: Dynamic = parseDcHtmlDocument(value55);
           if (!value58)
             return {
               outcome: "unparseable",
@@ -1155,39 +1155,39 @@ function useDcModel(
               (value56 !== undefined &&
                 value53.adoptedVersion !== undefined &&
                 value53.adoptedVersion >= value56);
-            value59 && (0, resetUndoHistory)(value53);
+            value59 && resetUndoHistory(value53);
             return {
               outcome: value59 ? "rebuilt" : "read-failed",
             };
           }
           return value55 === value26.current.get(input2)
             ? (value56 !== undefined &&
-                (0, adoptModelVersion)(value53, value56),
+                adoptModelVersion(value53, value56),
               {
                 outcome: "fresh",
               })
-            : (0, rebuildModelTemplate)(
+            : rebuildModelTemplate(
                   value53.model,
                   value58.template,
                 ) ===
-                  (0, rebuildModelTemplate)(
+                  rebuildModelTemplate(
                     value53.model,
                     value53.originalTemplate,
                   ) &&
                 (value53.pendingScript === undefined ||
                   value58.js === value53.pendingScriptBase) &&
                 (value53.pendingProps === undefined ||
-                  (0, getDcPropsJson)(value55) ===
+                  getDcPropsJson(value55) ===
                     value53.pendingPropsBase)
               ? ((value53.src = value55),
                 value56 !== undefined &&
-                  (0, adoptModelVersion)(value53, value56),
+                  adoptModelVersion(value53, value56),
                 {
                   outcome: "src-advanced",
                 })
               : (value55 !== value53.src && (value53.src = value55),
                 value56 !== undefined &&
-                  (0, adoptModelVersion)(value53, value56),
+                  adoptModelVersion(value53, value56),
                 {
                   outcome: value54 ? "conflict" : "race-conflict",
                 });
@@ -1204,7 +1204,7 @@ function useDcModel(
       (value11.current = true),
       (): Dynamic => {
         value11.current = false;
-        let value53: Dynamic = (0, artboardComponentName)(options),
+        let value53: Dynamic = artboardComponentName(options),
           value54: Dynamic = value5.current
             ? undefined
             : value10.current.get(value53);
@@ -1242,7 +1242,7 @@ function useDcModel(
       (): Dynamic => value49.current > 0,
       [],
     );
-  (0, npm_useEventListener_bc)(
+  npm_useEventListener_bc(
     "files-changed",
     (input2?: Dynamic): Dynamic => {
       if (!value || value3 || input2.detail.projectPath !== input) return;

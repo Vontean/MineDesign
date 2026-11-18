@@ -58,8 +58,8 @@ function configureLegacyDesignSystemBoot(
     boot: boot,
     opts: options,
     instance: instance,
-  } = (0, documentOptionsForBootMode)(
-    (0, chooseDesignSystemBootModeModelBoot)(
+  } = documentOptionsForBootMode(
+    chooseDesignSystemBootModeModelBoot(
       outcome,
       emptyWriteAccess,
       isDesignSystemTypeHost,
@@ -69,11 +69,11 @@ function configureLegacyDesignSystemBoot(
   if (outcome.error !== undefined && boot.mode !== "instance") {
     console.warn("design-system (files mode): " + outcome.error);
   }
-  let title = (0, stateEnvelopeTitle)(boot.state);
+  let title = stateEnvelopeTitle(boot.state);
   if (title !== undefined) {
     document.title = title;
   }
-  (0, setDocumentBootOptions)(options, {
+  setDocumentBootOptions(options, {
     instance: instance,
   });
 }
@@ -92,8 +92,8 @@ async function probeLegacyDesignSystemWriteAccess(): Promise<boolean | null> {
             input(writeDenied ? false : null);
           }
         };
-      (0, currentUserCanEdit)().then(callback);
-      (0, getAssetsCapability)().then((input2) =>
+      currentUserCanEdit().then(callback);
+      getAssetsCapability().then((input2) =>
         callback(input2 === null ? null : true),
       );
     }),
@@ -124,13 +124,13 @@ function initializeDesignSystemFilesDebugger(): void {
   if (
     designSystemFilesDebugger !== undefined ||
     typeof document === "undefined" ||
-    !(0, filesModeDebugEnabled)("files")
+    !filesModeDebugEnabled("files")
   ) {
     return;
   }
-  let value = (0, createFilesDebugger)({
+  let value = createFilesDebugger({
     product: "design-system",
-    hot: (0, getHotCapability)(),
+    hot: getHotCapability(),
     bootStartedAt: designSystemBootStartedAt,
   });
   designSystemFilesDebugger = value;
@@ -146,8 +146,8 @@ function readDesignSystemBootStateFile(
   let index =
       text.length > MAX_DESIGN_SYSTEM_INDEX_CHARS
         ? null
-        : (0, parseFilesIndex)(text),
-    marked = index !== null && (0, hasFilesMigrationMarker)(index);
+        : parseFilesIndex(text),
+    marked = index !== null && hasFilesMigrationMarker(index);
   if (path === FILES_INDEX_PROJECT_PATH) {
     homes.project = marked ? "marked" : "other";
     homes.projectText = text;
@@ -166,7 +166,7 @@ function readDesignSystemBootStateFile(
     };
   }
   if (index === null) {
-    let value = (0, parseDesignSystemEnvelope)(text);
+    let value = parseDesignSystemEnvelope(text);
     if (path === FILES_INDEX_NAME) {
       homes.root = typeof value === "string" ? "other" : "envelope";
     }
@@ -201,7 +201,7 @@ function recordDesignSystemFileHomeDecision(
       !designSystemFileHomeDecision.ignoredSingleFile);
   if (
     outcome.origin === "instance" &&
-    (0, readTreeIndex)(outcome.state) !== undefined
+    readTreeIndex(outcome.state) !== undefined
   ) {
     activeHotReloadSession?.armReady();
     if (!isDesignSystemTypeHost) {
@@ -259,7 +259,7 @@ async function readDesignSystemInitialState(
         input: Record<string, Boot.LegacyAnswerKind> | undefined,
       ) => {
         let value3 = applyFileHomeReadAnswers(value, input);
-        return (0, chooseDesignSystemFileHome)({
+        return chooseDesignSystemFileHome({
           ...value3,
           sameText:
             value3.projectText !== undefined &&
@@ -267,12 +267,12 @@ async function readDesignSystemInitialState(
         });
       },
       callback3 = () =>
-        (0, readLegacyDesignSystemState)({
+        readLegacyDesignSystemState({
           stateFiles: [FILES_INDEX_PROJECT_PATH],
           demoFile: DESIGN_SYSTEM_DEMO_PATH,
           fetch: callback,
           mayWrite: async () =>
-            (await (0, determineSlidesWriteAccess)()).canWrite,
+            (await determineSlidesWriteAccess()).canWrite,
           refusedWaits: BOOT_FILE_READ_RETRY_DELAYS_MS,
           read: (input: string, options: string) =>
             readDesignSystemBootStateFile(input, options, value),
@@ -320,13 +320,13 @@ async function bootLegacyDesignSystemMode(
   renderReport?: Boot.HealthReport,
   storeFault?: string,
 ): Promise<void> {
-  let recentMigration = (0, isRecentMigrationAttempt)({
-      runningAt: (0, consumeMigrationRunningNote)(),
+  let recentMigration = isRecentMigrationAttempt({
+      runningAt: consumeMigrationRunningNote(),
       now: Date.now(),
     }),
-    carriedNotice = (0, consumeMigrationNotice)(),
+    carriedNotice = consumeMigrationNotice(),
     outcome = await (initialStatePromise ?? readDesignSystemInitialState()),
-    report: Boot.HealthReport = (0, bootHealthOutcome)(
+    report: Boot.HealthReport = bootHealthOutcome(
       outcome,
       isDesignSystemTypeHost,
     );
@@ -335,21 +335,21 @@ async function bootLegacyDesignSystemMode(
       ? renderReport
       : report),
   );
-  let mode = await (0, chooseDesignSystemBootMode)({
+  let mode = await chooseDesignSystemBootMode({
     storeAbsent: storeHandle !== null && storeFault === undefined,
     forcedReadOnly: readOnlyReason !== undefined,
     typePage: isDesignSystemTypeHost,
-    emulator: (0, isEmulatorPage)(),
+    emulator: isEmulatorPage(),
     origin: outcome.origin,
     stateFileFound: outcome.stateFileFound,
     mayStartOnFiles: mayStartEmptyFilesSystem,
     ownLayout: designSystemStateLayout(outcome.state),
   });
   if (mode === "tree") {
-    return (0, bootPerFileDesignSystem)(
+    return bootPerFileDesignSystem(
       outcome,
       readOnlyReason ??
-        ((0, isMigrationExemptHost)(location.hostname)
+        (isMigrationExemptHost(location.hostname)
           ? get_PIPELINE_READONLY_MESSAGE()
           : designSystemFileHomeDecision.twoIndexes
             ? get_DUPLICATE_FILE_INDEX_MESSAGE()
@@ -361,16 +361,16 @@ async function bootLegacyDesignSystemMode(
     let callback = (input: string): void => {
       configureLegacyDesignSystemBoot(outcome, null, input);
       if (BOOT_LIVE_NOTICE_MESSAGES.has(input)) {
-        (0, waitForBootLiveAnnouncer)(input);
+        waitForBootLiveAnnouncer(input);
       }
-      (0, prepareDesignSystemThumbnailCapture)();
+      prepareDesignSystemThumbnailCapture();
     };
     if (
-      (0, mountInitializedFilesOutcome)({
-        started: await (0, startEmptyFilesDesignSystem)(storeHandle!),
+      mountInitializedFilesOutcome({
+        started: await startEmptyFilesDesignSystem(storeHandle!),
         mount: callback,
         reopen: () =>
-          (0, restartDesignSystemWithFallback)(
+          restartDesignSystemWithFallback(
             get_REOPEN_FAILED_MESSAGE(),
           ),
         reload: () => location.reload(),
@@ -385,7 +385,7 @@ async function bootLegacyDesignSystemMode(
       null,
       readOnlyReason ?? CONTENT_SIGN_IN_REQUIRED_MESSAGE,
     );
-    (0, prepareDesignSystemThumbnailCapture)();
+    prepareDesignSystemThumbnailCapture();
     return;
   }
   let singleFileInstance =
@@ -397,24 +397,23 @@ async function bootLegacyDesignSystemMode(
       designSystemStateLayout(outcome.state) === "envelope",
     moveInterrupted = singleFileInstance && recentMigration;
   if (moveInterrupted) {
-    (0, skipMigrationForTab)();
+    skipMigrationForTab();
   }
   let notice = singleFileInstance
     ? (carriedNotice ??
       (moveInterrupted ? get_MIGRATION_INTERRUPTED_MESSAGE() : null))
     : null;
   if (notice !== null) {
-    (0, afterTwoAnimationFrames)(() =>
-      (0, showEditorPromiseNotification)(notice, null),
+    afterTwoAnimationFrames(() =>
+      showEditorPromiseNotification(notice, null),
     );
   }
-  let holdSingleFile = (set_singleFileMigrationBootHeld((0,
-  isRecentSingleFileMoveNote)({
+  let holdSingleFile = (set_singleFileMigrationBootHeld(isRecentSingleFileMoveNote({
     noteAt: singleFileInstance
-      ? (0, consumeSingleFileMoveNote)()
+      ? consumeSingleFileMoveNote()
       : null,
     now: Date.now(),
-    canReopen: (0, canRestartArtifact)(),
+    canReopen: canRestartArtifact(),
     singleFileHere: singleFileInstance,
   })));
   configureLegacyDesignSystemBoot(
@@ -433,18 +432,18 @@ async function bootLegacyDesignSystemMode(
     liveMessage !== undefined &&
     BOOT_LIVE_NOTICE_MESSAGES.has(liveMessage)
   ) {
-    (0, installDesignSystemTypingListener)();
-    (0, waitForBootLiveAnnouncer)(liveMessage);
+    installDesignSystemTypingListener();
+    waitForBootLiveAnnouncer(liveMessage);
   }
   if (outcome.origin === "instance") {
-    (0, waitForThumbnailResources)();
+    waitForThumbnailResources();
   } else {
-    (0, prepareDesignSystemThumbnailCapture)();
+    prepareDesignSystemThumbnailCapture();
   }
   if (holdSingleFile) {
-    (0, afterTwoAnimationFrames)(
+    afterTwoAnimationFrames(
       () =>
-        void (0, runSingleFileMigrationBoot)(
+        void runSingleFileMigrationBoot(
           storeHandle!,
           outcome.state,
         ).catch((): void => {
@@ -452,10 +451,10 @@ async function bootLegacyDesignSystemMode(
         }),
     );
   } else if (singleFileInstance) {
-    (0, afterTwoAnimationFrames)(() =>
+    afterTwoAnimationFrames(() =>
       setTimeout(
         () =>
-          void (0, prepareSingleFileMigrationReopen)(
+          void prepareSingleFileMigrationReopen(
             outcome.state,
           ).catch((): void => {
             return;
@@ -502,12 +501,12 @@ export function set_perFileDesignSystemBooted(value: any): any {
 }
 export function installFilesApplicationBoot(): () => void {
   return () => {
-    jsxDesignSystemBootstrap = (0, toModuleNamespace)(
-      (0, loadJsxNamespace)(),
+    jsxDesignSystemBootstrap = toModuleNamespace(
+      loadJsxNamespace(),
       1,
     );
-    (0, initializeDocumentColorMode)(document);
-    isDesignSystemTypeHost = (0, isDesignSystemTypeHostModelBoot)(
+    initializeDocumentColorMode(document);
+    isDesignSystemTypeHost = isDesignSystemTypeHostModelBoot(
       location.hostname,
     );
     designSystemBootStartedAt =
@@ -529,7 +528,7 @@ export function installFilesApplicationBoot(): () => void {
       project: "unread",
       root: "unread",
     });
-    designSystemFileHomeDecision = (0, chooseDesignSystemFileHome)({
+    designSystemFileHomeDecision = chooseDesignSystemFileHome({
       project: "absent",
       root: "absent",
     });
@@ -538,6 +537,6 @@ export function installFilesApplicationBoot(): () => void {
       root: "unread",
     };
     designSystemStateLayout = (input: Boot.RawEnvelope): "tree" | "envelope" =>
-      (0, readTreeIndex)(input) !== undefined ? "tree" : "envelope";
+      readTreeIndex(input) !== undefined ? "tree" : "envelope";
   };
 }

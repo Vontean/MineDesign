@@ -74,7 +74,7 @@ function compileArtifactDocument(
     '<script id="' +
       documentModeElementId +
       '">' +
-      (0, buildColorModeScript)(input.colorMode) +
+      buildColorModeScript(input.colorMode) +
       "<\/script>",
     ...(input.emulator && input.emulatorShim !== undefined
       ? [
@@ -166,7 +166,7 @@ function readCompiledPageParts(element?: Dynamic): Dynamic {
       element.getElementById(documentModeElementId)?.textContent ?? "",
     value8: Dynamic = ["light", "dark"].find(
       (input?: Dynamic): Dynamic =>
-        value7 === (0, buildColorModeScript)(input),
+        value7 === buildColorModeScript(input),
     );
   return {
     title: element.querySelector("title")?.textContent ?? "",

@@ -40,7 +40,7 @@ function PictureDropGhost({
 }: Dynamic): Dynamic {
   useUiLocale();
   (0, reactCanvasPictureDropGhost.useLayoutEffect)(
-    (): Dynamic => (0, markDropPerformance)("ghost"),
+    (): Dynamic => markDropPerformance("ghost"),
     [],
   );
   return (
@@ -137,12 +137,12 @@ export {
 };
 export function installCanvasPictureDropGhost(): () => void {
   return () => {
-    reactCanvasPictureDropGhost = (0, toModuleNamespace)(
-      (0, load_react)(),
+    reactCanvasPictureDropGhost = toModuleNamespace(
+      load_react(),
       1,
     );
-    jsxCanvasPictureDropGhost = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    jsxCanvasPictureDropGhost = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
   };

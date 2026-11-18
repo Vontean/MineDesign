@@ -12,13 +12,13 @@ var LIVE_READ_ONLY_MESSAGE: string;
 var FILE_LIST_UNAVAILABLE_MESSAGE: string;
 var unavailableStorageSlot: Host.StorageSlot;
 async function determineSlidesWriteAccess(): Promise<Host.WriteAccess> {
-  if (!(0, selfPublishAvailable)()) {
+  if (!selfPublishAvailable()) {
     return {
       canWrite: false,
       reason: EDITING_UNAVAILABLE_MESSAGE,
     };
   }
-  let options = (0, readCurrentArtifactReadOnlyReason)();
+  let options = readCurrentArtifactReadOnlyReason();
   if (options !== null) {
     return {
       canWrite: false,
@@ -26,10 +26,10 @@ async function determineSlidesWriteAccess(): Promise<Host.WriteAccess> {
     };
   }
   let [value, value2, value3, value4] = await Promise.all([
-    (0, currentUserCan)("data.write"),
-    (0, currentUserCan)("files.write"),
-    (0, currentUserCanEdit)(),
-    (0, getAssetsCapability)(),
+    currentUserCan("data.write"),
+    currentUserCan("files.write"),
+    currentUserCanEdit(),
+    getAssetsCapability(),
   ]);
   if (value !== null || value2 !== null) {
     if ((value === true || value2 === true) && value3 !== false) {

@@ -90,12 +90,12 @@ function useExperimentalTheme(input?: Dynamic, options?: Dynamic): Dynamic {
     value5: Dynamic = input?.resolve,
     value6: Dynamic = input?.apply,
     value7: Dynamic = (0, reactThemeExperimentalTheme.useRef)(value6);
-  (0, useIsomorphicLayoutEffect)((): Dynamic => {
+  useIsomorphicLayoutEffect((): Dynamic => {
     value7.current = value6;
   }, [value6]);
   let value8: Dynamic = value6 !== undefined,
     value9: Dynamic = (0, reactThemeExperimentalTheme.useRef)(undefined);
-  (0, useIsomorphicLayoutEffect)((): Dynamic => {
+  useIsomorphicLayoutEffect((): Dynamic => {
     value3 &&
       value2.set(
         value4 === undefined
@@ -106,7 +106,7 @@ function useExperimentalTheme(input?: Dynamic, options?: Dynamic): Dynamic {
             },
       );
   }, [value3, value2, value4, value5]);
-  (0, useIsomorphicLayoutEffect)((): Dynamic => {
+  useIsomorphicLayoutEffect((): Dynamic => {
     let current: Dynamic = options.current,
       current2: Dynamic = value7.current;
     if (
@@ -124,7 +124,7 @@ function useExperimentalTheme(input?: Dynamic, options?: Dynamic): Dynamic {
       }
     else cleanupAppliedTheme(value9);
   }, [value3, value4, value8, options]);
-  (0, useIsomorphicLayoutEffect)(
+  useIsomorphicLayoutEffect(
     (): Dynamic => (): Dynamic => cleanupAppliedTheme(value9),
     [],
   );
@@ -154,12 +154,12 @@ export {
 };
 export function installCdsThemeExperimentalTheme(): () => void {
   return () => {
-    initializeExperimentalTheme = (0, initializeOnce)((): Dynamic => {
+    initializeExperimentalTheme = initializeOnce((): Dynamic => {
       "use client";
 
-      (0, initializeHooksLayoutEffect)();
-      reactThemeExperimentalTheme = (0, toModuleNamespace)(
-        (0, load_react)(),
+      initializeHooksLayoutEffect();
+      reactThemeExperimentalTheme = toModuleNamespace(
+        load_react(),
       );
       resolveThemeSnapshot = (input?: Dynamic, options?: Dynamic): Dynamic => {
         if (input == null || input.theme === undefined || input.theme === null)

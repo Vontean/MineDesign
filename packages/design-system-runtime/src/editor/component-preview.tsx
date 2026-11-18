@@ -104,7 +104,7 @@ function ComponentPreview({
   useUiLocale();
   let debouncedHead = useDebouncedPreviewValue(
       head,
-      (0, swatchHeadKey)(head),
+      swatchHeadKey(head),
       PREVIEW_UPDATE_DEBOUNCE_MS,
     ),
     ownerIdRef = (reactSwatchPreview as typeof React).useRef(""),
@@ -115,7 +115,7 @@ function ComponentPreview({
   }
   let previewPool: Editor.PreviewFramePool = (
       reactSwatchPreview as typeof React
-    ).useMemo(() => (0, getPreviewFramePool)(), []),
+    ).useMemo(() => getPreviewFramePool(), []),
     isLive: boolean =
       (reactSwatchPreview as typeof React).useSyncExternalStore(
         typeof window === "undefined"
@@ -207,7 +207,7 @@ function ComponentPreview({
     return () => clearTimeout(value);
   }, [isLive, previewPool]);
   let headKey = (reactSwatchPreview as typeof React).useMemo(
-      () => (0, swatchHeadKey)(debouncedHead),
+      () => swatchHeadKey(debouncedHead),
       [debouncedHead],
     ),
     headRef = (reactSwatchPreview as typeof React).useRef(
@@ -215,7 +215,7 @@ function ComponentPreview({
     );
   headRef.current = debouncedHead;
   let hasStaticReason = staticReason !== undefined && staticReason !== "",
-    runtimeKey = (0, swatchRuntimeKey)(debouncedHead);
+    runtimeKey = swatchRuntimeKey(debouncedHead);
   (reactSwatchPreview as typeof React).useEffect((): void => {
     setBootFailed(false);
     setNavigated(false);
@@ -258,7 +258,7 @@ function ComponentPreview({
       value3 = schedulePreviewIdleTask((): void => {
         let value4: number = Date.now(),
           callback = () => clearTimeout(value2);
-        value = (0, createLiveSwatch)({
+        value = createLiveSwatch({
           html: html,
           ...(cardFile !== undefined && !skipCardAddress
             ? {
@@ -273,7 +273,7 @@ function ComponentPreview({
           head: headRef.current,
           title: title,
           onUrlMissed: (input: Editor.SwatchUrlReference) =>
-            (0, notePublishedPreviewFailure)(input.url, input.file),
+            notePublishedPreviewFailure(input.url, input.file),
           urlOffered: isPublishedPreviewStillOffered,
           onNavigated: (): void => {
             callback();
@@ -371,7 +371,7 @@ function ComponentPreview({
               return;
             }
             failedUrlRef.current.add(value8.url);
-            (0, notePublishedPreviewFailure)(
+            notePublishedPreviewFailure(
               value8.url,
               value8.file,
               String(PREVIEW_HEAD_STALL_TIMEOUT_MS / 1000),
@@ -499,14 +499,14 @@ export {
 };
 export function installEditorComponentPreview(): () => void {
   return () => {
-    reactPreviewNotice = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    reactPreviewNotice = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
     previewStaticNoticeShown = false;
     previewStaticNoticeSubscribers = new Set();
-    jsxSwatchPreview = (0, toModuleNamespace)(
-      (0, loadJsxNamespace)(),
+    jsxSwatchPreview = toModuleNamespace(
+      loadJsxNamespace(),
       1,
     );
     previewOwnerSequence = 0;

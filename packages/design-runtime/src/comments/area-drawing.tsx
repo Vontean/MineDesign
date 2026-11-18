@@ -249,12 +249,12 @@ export {
 };
 export function installCommentsAreaDrawing(): () => void {
   return () => {
-    react_mi = (0, toModuleNamespace)((0, load_react)(), 1);
-    jsx_O_ = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    react_mi = toModuleNamespace(load_react(), 1);
+    jsx_O_ = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
-    react_jw = (0, toModuleNamespace)((0, load_react)(), 1);
+    react_jw = toModuleNamespace(load_react(), 1);
     commentAreaDragThreshold = 12;
   };
 }

@@ -91,7 +91,7 @@ function useAssetGridInteractions(
     } = options,
     ref = (reactAssetInteractions as typeof React).useRef(options);
   ref.current = options;
-  let value5 = (0, useAssetSelection)(value),
+  let value5 = useAssetSelection(value),
     memo = (reactAssetInteractions as typeof React).useMemo(
       () => new Set<string>(value5.selected),
       [value5.selected],
@@ -123,7 +123,7 @@ function useAssetGridInteractions(
         anchor: context,
       });
     },
-    value8 = (0, useAssetDrag)({
+    value8 = useAssetDrag({
       enabled: value2 && !value3,
       order: value,
       selected: value5.selected,
@@ -206,7 +206,7 @@ function useAssetGridInteractions(
         if (
           !ref.current.editable &&
           !input.shiftKey &&
-          !(0, hasSelectionModifier)(input)
+          !hasSelectionModifier(input)
         ) {
           value5.only(options2);
           ref.current.onOpen(options2);

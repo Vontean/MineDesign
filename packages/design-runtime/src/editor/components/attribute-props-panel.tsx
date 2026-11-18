@@ -197,7 +197,7 @@ function ComponentImportPropsPanel({
   useUiLocale();
   let value: Dynamic = Object.entries(declared ?? {}).filter(
       ([input, input2]: Dynamic): Dynamic =>
-        (0, isEditablePropMetadata)(input2) &&
+        isEditablePropMetadata(input2) &&
         !reservedImportAttributePattern.test(
           input,
         ) &&
@@ -216,14 +216,14 @@ function ComponentImportPropsPanel({
       ...value,
       ...Object.entries(propsMeta).filter(
         ([input, input2]: Dynamic): Dynamic =>
-          (0, isEditablePropMetadata)(input2) &&
+          isEditablePropMetadata(input2) &&
           !refKeys.has(input) &&
           !(
             declared &&
             (Object.hasOwn(declared, input) ||
               Object.hasOwn(
                 declared,
-                (0, PropertiesInspectorFieldReplace)(input),
+                PropertiesInspectorFieldReplace(input),
               ))
           ) &&
           !callback(input),
@@ -286,7 +286,7 @@ function ComponentImportPropsPanel({
                       : (input2.tsType ?? ""),
                   value8: Dynamic =
                     schemaless && !value2
-                      ? (0, PropertiesInspectorFieldTest)(input)
+                      ? PropertiesInspectorFieldTest(input)
                       : input;
                 if (value5 || value6) {
                   let value10: Dynamic = attrs[value3] ?? "",

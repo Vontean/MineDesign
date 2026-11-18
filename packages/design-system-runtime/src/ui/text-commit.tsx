@@ -263,12 +263,12 @@ export {
 };
 export function installUiTextCommit(): () => void {
   return () => {
-    reactTextCommitController = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    reactTextCommitController = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
-    reactTextCommit = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    reactTextCommit = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
     observedAutoResizeTextareas = new WeakSet();

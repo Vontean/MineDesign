@@ -12,7 +12,7 @@ var StyleSchemaValuesHandlerValue: Dynamic;
 var StyleSchemaValuesHandlerValue_2: Dynamic;
 var StyleSchemaValuesHandlerValue_3: Dynamic;
 function validateStyleColor(input?: Dynamic): Dynamic {
-  let value: Dynamic = (0, validateSimpleStyleString)(input);
+  let value: Dynamic = validateSimpleStyleString(input);
   if (value === undefined) return;
   let value2: Dynamic = value.toLowerCase();
   if (
@@ -37,14 +37,14 @@ function validateStyleColor(input?: Dynamic): Dynamic {
     return value2;
 }
 function validateFontFamily(input?: Dynamic): Dynamic {
-  let value: Dynamic = (0, validateStyleEnum)(
+  let value: Dynamic = validateStyleEnum(
     StyleSchemaNodeTypesSansSerifMonoValues,
     input,
   );
   if (value !== undefined) return value;
-  if (!(0, isStyleObject)(input)) return;
+  if (!isStyleObject(input)) return;
   let { family: value2, webSafe: value3 }: Dynamic = input,
-    value4: Dynamic = (0, validateStyleEnum)(
+    value4: Dynamic = validateStyleEnum(
       StyleSchemaNodeTypesSansSerifMonoValues,
       input.fallback,
     );
@@ -81,15 +81,15 @@ export function installEditorStyleSchemaColorAndFont(): () => void {
       input?: Dynamic,
       options?: Dynamic,
     ): Dynamic => Object.prototype.hasOwnProperty.call(input, options);
-    StyleSchemaValuesHandlerValue = (0, StyleSchemaValuesHandler)(
+    StyleSchemaValuesHandlerValue = StyleSchemaValuesHandler(
       -64,
       64,
     );
-    StyleSchemaValuesHandlerValue_2 = (0, StyleSchemaValuesHandler)(
+    StyleSchemaValuesHandlerValue_2 = StyleSchemaValuesHandler(
       0,
       64,
     );
-    StyleSchemaValuesHandlerValue_3 = (0, StyleSchemaValuesHandler)(
+    StyleSchemaValuesHandlerValue_3 = StyleSchemaValuesHandler(
       -32,
       32,
     );

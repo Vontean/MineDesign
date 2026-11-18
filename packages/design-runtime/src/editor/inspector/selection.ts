@@ -72,7 +72,7 @@ function resolveInspectorInheritedValues(
   options.forEach(callback3);
 }
 function inspectSingleElement(input?: Dynamic): Dynamic {
-  return (0, getElementInspector)(input);
+  return getElementInspector(input);
 }
 function filterLayoutInspectorRows(input?: Dynamic): Dynamic {
   let callback: Dynamic = (input2?: Dynamic): Dynamic =>
@@ -108,7 +108,7 @@ function inspectElementSelection(items?: Dynamic): Dynamic {
   if (items.length === 1) return inspectSingleElement(items[0]);
   let callback: Dynamic = (input?: Dynamic, options?: Dynamic): Dynamic =>
       svgShapeTags.has(input.tag) &&
-      (0, parseStyleDeclarations)(input.authoredStyle).some(
+      parseStyleDeclarations(input.authoredStyle).some(
         (input2?: Dynamic): Dynamic => input2.prop === options,
       ),
     values: Dynamic = new Set(
@@ -119,7 +119,7 @@ function inspectElementSelection(items?: Dynamic): Dynamic {
     ),
     value: Dynamic = items.map(
       (input?: Dynamic): Dynamic =>
-        (0, getElementInspector)(input, {
+        getElementInspector(input, {
           forMulti: true,
           cssPaint: values,
         }),
@@ -381,7 +381,7 @@ function inspectElementSelection(items?: Dynamic): Dynamic {
         value4.value === ""
       )
         continue;
-      let value5: Dynamic = (0, parseStyleDeclarations)(
+      let value5: Dynamic = parseStyleDeclarations(
           items[options].authoredStyle,
         ).some((input2?: Dynamic): Dynamic => input2.prop === value4.prop),
         value6: Dynamic = value5 ? value4.prop : `@${value4.prop}`;

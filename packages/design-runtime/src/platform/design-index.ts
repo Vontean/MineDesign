@@ -104,7 +104,7 @@ function buildDesignDocumentFromIndex(
   let manifestText: Dynamic = JSON.stringify({
     artboards: orderedDesignMapKeys(index.order, index.boards)
       .filter(
-        (input?: Dynamic): Dynamic => !(0, isDesignSystemFile)(input),
+        (input?: Dynamic): Dynamic => !isDesignSystemFile(input),
       )
       .map(
         (input?: Dynamic): Dynamic =>
@@ -140,8 +140,8 @@ function buildDesignDocumentFromIndex(
         }
       : {}),
   });
-  return (0, serializeCanvasMetadata)(
-    (0, parseCanvasMetadata)(manifestText, files),
+  return serializeCanvasMetadata(
+    parseCanvasMetadata(manifestText, files),
   );
 }
 function buildSelectedBoardsDocument(
@@ -160,7 +160,7 @@ function buildSelectedBoardsDocument(
         }
       : {}),
   });
-  return (0, parseCanvasMetadata)(
+  return parseCanvasMetadata(
     manifestText,
     Object.fromEntries(files.map((input?: Dynamic): Dynamic => [input, ""])),
   ).artboards.filter((input?: Dynamic): Dynamic => input.frameless !== true);
@@ -473,7 +473,7 @@ function createDesignIndexFromFiles(
   let index: Dynamic = createEmptyDesignIndex(title);
   updateDesignIndexFromDocument(
     index,
-    (0, parseCanvasMetadata)(manifestText, files),
+    parseCanvasMetadata(manifestText, files),
     title,
   );
   return index;
@@ -532,7 +532,7 @@ export function installPlatformDesignIndex(): () => void {
           PlatformFileContentRectOvalLineConfig,
           source.kind,
         ) ||
-          (0, PlatformFileContentTest)(source.kind) ||
+          PlatformFileContentTest(source.kind) ||
           source.kind === "note" ||
           source.kind === "text"));
     INDEX_ANNOTATION_PROPERTIES = [

@@ -66,7 +66,7 @@ function removeUnsafeCssDeclarations(css?: Dynamic): Dynamic {
           value4 = value5 < 0 ? length : value5 + 2;
         }
         if (css[value4] === ":") {
-          let value5: Dynamic = (0, camelToKebabCss)(value3[0]);
+          let value5: Dynamic = camelToKebabCss(value3[0]);
           text +=
             css.slice(index, value2) +
             (unsafeCssPropertyPattern.test(value5) ? value3[0] : value5);
@@ -791,7 +791,7 @@ function interpolateStaticExportTemplate(
       ) as Dynamic)
         flag = callback(value[1], options2) && flag;
       return {
-        v: (0, compileTemplateExpression)(input)(options2),
+        v: compileTemplateExpression(input)(options2),
         known: flag,
       };
     },
@@ -809,7 +809,7 @@ function interpolateStaticExportTemplate(
               if (!callback(input2, options2))
                 return [template.createTextNode("{{" + input2 + "}}")];
               let value: Dynamic = staticTemplateValueString(
-                (0, evaluateTemplateExpression)(options2, input2),
+                evaluateTemplateExpression(options2, input2),
               );
               if (value === null) return [];
               if (!context) return [template.createTextNode(value)];
@@ -882,7 +882,7 @@ function interpolateStaticExportTemplate(
         value.attributes,
       ) as Dynamic) {
         let value7: Dynamic = value5.startsWith(ScCamelValue)
-          ? (0, kebabToCamelCase)(
+          ? kebabToCamelCase(
               value5.slice(ScCamelValue.length),
             )
           : value5;
@@ -1155,7 +1155,7 @@ function prepareStaticArtboardExport(
     additionalCss.some(
       (input?: Dynamic): Dynamic =>
         /javascript/i.test(input.mime) &&
-        (0, isDesignRuntimeSource)(input.text),
+        isDesignRuntimeSource(input.text),
     )
   )
     try {

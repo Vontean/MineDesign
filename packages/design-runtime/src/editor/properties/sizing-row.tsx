@@ -57,20 +57,20 @@ function PropertySizingRow({
           value: input,
         },
       ]),
-    { start: value7, live: value8 }: Dynamic = (0, useLiveStyleScrub)(
+    { start: value7, live: value8 }: Dynamic = useLiveStyleScrub(
       {
         value:
-          (0, parseCssNumber)(value || fallback || "")?.value ?? 0,
+          parseCssNumber(value || fallback || "")?.value ?? 0,
         min: 0,
         disabled: disabled2,
         onScrub: (input?: Dynamic): Dynamic =>
           callback(`${Math.round(input)}px`),
       },
     ),
-    value9: Dynamic = (0, parseCssNumber)(fallback || ""),
+    value9: Dynamic = parseCssNumber(fallback || ""),
     value10: Dynamic = value9
-      ? (0, formatCssNumber)(
-          (0, roundCssNumber)(value9.value, value9.unit),
+      ? formatCssNumber(
+          roundCssNumber(value9.value, value9.unit),
           value9.unit,
         )
       : fallback || "auto",
@@ -84,11 +84,11 @@ function PropertySizingRow({
     value15: Dynamic = !mixed && value14 && !noHug,
     value16: Dynamic = !mixed && value === "100%",
     callback2: Dynamic = (): Dynamic => {
-      let value18: Dynamic = (0, parseCssNumber)(value || ""),
+      let value18: Dynamic = parseCssNumber(value || ""),
         value19: Dynamic =
           value18 && (value18.unit === "px" || value18.unit === "")
             ? value18
-            : (0, parseCssNumber)(fallback || "");
+            : parseCssNumber(fallback || "");
       return value19 ? `${Math.round(value19.value)}px` : null;
     },
     value17: Dynamic = mixed
@@ -119,7 +119,7 @@ function PropertySizingRow({
           !mixed && fallback && value10 !== fallback ? (uiMessage("inspector.sizingRow.renderedSizeValue1", { value1: String(fallback) })) : (undefined)
         }
         disabled={disabled2}
-        className={(0, cn)(
+        className={cn(
           !mixed && !value11 && "placeholder:text-primary",
         )}
         onFocus={(input?: Dynamic): Dynamic => {
@@ -146,7 +146,7 @@ function PropertySizingRow({
           !(value11 && value18 === value12)
             ? callback(
                 value18
-                  ? (0, normalizePropertyNumber)(prop, value18)
+                  ? normalizePropertyNumber(prop, value18)
                   : null,
               )
             : value3(value12);
@@ -168,9 +168,9 @@ function PropertySizingRow({
               return;
             let value18: Dynamic =
                 value11 && !value5.current ? "" : value2.trim(),
-              value19: Dynamic = (0, parseCssNumber)(value18);
+              value19: Dynamic = parseCssNumber(value18);
             if (value18 && !value19) return;
-            let value20: Dynamic = (0, parseCssNumber)(
+            let value20: Dynamic = parseCssNumber(
                 value || fallback || "",
               ),
               value21: Dynamic =
@@ -178,10 +178,10 @@ function PropertySizingRow({
               value22: Dynamic = value19?.unit || value20?.unit || "px";
             event.preventDefault();
             let value23: Dynamic =
-                (0, getFineUnitStep)(value22, undefined) != null
+                getFineUnitStep(value22, undefined) != null
                   ? 0.1
                   : 1,
-              value24: Dynamic = (0, stepCssNumber)(
+              value24: Dynamic = stepCssNumber(
                 value21,
                 event.key === "ArrowUp" ? 1 : -1,
                 event,
@@ -191,13 +191,13 @@ function PropertySizingRow({
                   min: 0,
                 },
               ),
-              value25: Dynamic = (0, formatCssNumber)(
+              value25: Dynamic = formatCssNumber(
                 value24,
                 value22,
               );
             value3(value25);
             value25 !== (value ?? "") &&
-              callback((0, normalizePropertyNumber)(prop, value25));
+              callback(normalizePropertyNumber(prop, value25));
             let target: Dynamic = event.target;
             requestAnimationFrame((): Dynamic => target.select());
           }
@@ -271,7 +271,7 @@ export {
 };
 export function installEditorPropertiesSizingRow(): () => void {
   return () => {
-    (0, initializeCdsIndex)();
+    initializeCdsIndex();
     PropertiesSizingRowHandler = (
       input?: Dynamic,
       options: Dynamic = 1,
@@ -382,8 +382,8 @@ export function installEditorPropertiesSizingRow(): () => void {
         "M3.42 12.07H12.6M5.01 3.83V9.41M8.01 6.52V9.41M11.01 3.83V9.41",
       ),
     };
-    jsxPropertiesSizingRow = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    jsxPropertiesSizingRow = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
   };

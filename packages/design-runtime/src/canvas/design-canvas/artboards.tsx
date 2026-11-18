@@ -55,7 +55,7 @@ import { emptyCanvasSelectionFiles, exportAlreadyRunningMessage, nextArtboardPla
 /** 绘制画板或点击新增画板时运行（onDrawArtboard/onAdd）：生成空白 dc 文件与唯一标题，放到指定或下一个位置并选中，失败时提示。 */
 export function addBlankArtboard(deps: { readonly callback3: Dynamic; readonly doc: Dynamic; readonly showToast: Dynamic; readonly supportsLoadState: Dynamic; readonly value189: Dynamic; readonly value273: Dynamic; readonly value310: Dynamic; readonly value338: Dynamic; readonly value341: Dynamic; readonly value396: Dynamic; readonly value73: Dynamic; readonly value90: Dynamic; readonly value98: Dynamic }, input?: Dynamic, options?: Dynamic, context?: Dynamic): Dynamic {
         let files: Dynamic = deps.doc.content().files,
-          value653: Dynamic = (0, uniqueArtboardFile)(
+          value653: Dynamic = uniqueArtboardFile(
             files,
             "Artboard",
             deps.supportsLoadState,
@@ -64,13 +64,13 @@ export function addBlankArtboard(deps: { readonly callback3: Dynamic; readonly d
         (async (): Promise<Dynamic> => {
           try {
             let value654: Dynamic = options
-              ? (0, insertBlankArtboardMarkup)(
-                  (0, blankDcDocument)(),
+              ? insertBlankArtboardMarkup(
+                  blankDcDocument(),
                   options,
                 )
-              : (0, blankDcDocument)();
-            await (0, getKvClient)().set(
-              (0, PlatformFileContentHandler_4)(value653),
+              : blankDcDocument();
+            await getKvClient().set(
+              PlatformFileContentHandler_4(value653),
               value654,
             );
             let value655: Dynamic = deps.value90.current.filter(
@@ -91,7 +91,7 @@ export function addBlankArtboard(deps: { readonly callback3: Dynamic; readonly d
                     ? input.h
                     : PlatformFileContentConstant_6,
                 title:
-                  context?.title ?? (0, nextArtboardTitle)(value655),
+                  context?.title ?? nextArtboardTitle(value655),
                 ...deps.callback3(),
               };
             deps.value396.current(
@@ -117,7 +117,7 @@ export function addBlankArtboard(deps: { readonly callback3: Dynamic; readonly d
               ],
             });
             context?.auto !== true &&
-              (0, frameAnalyticsReporter)(
+              frameAnalyticsReporter(
                 designAnalyticsEvents.artboardInserted,
               );
             deps.value273(value653);
@@ -253,12 +253,12 @@ export function duplicateArtboardFiles(deps: { readonly callback9: Dynamic; read
               title: value661,
             } of value655 as Dynamic) {
               let value662: Dynamic =
-                (await (0, getKvClient)().get(
-                  (0, PlatformFileContentHandler_4)(value658.file),
+                (await getKvClient().get(
+                  PlatformFileContentHandler_4(value658.file),
                 )) ?? state[value658.file];
               if (
                 typeof value662 != "string" ||
-                (0, isLoadingArtboardHtml)(value662)
+                isLoadingArtboardHtml(value662)
               ) {
                 let value665: Dynamic =
                   value655.length === 1 ? uiMessage("canvas.designCanvas.theArtboard") : uiMessage("canvas.designCanvas.anArtboard");
@@ -278,7 +278,7 @@ export function duplicateArtboardFiles(deps: { readonly callback9: Dynamic; read
                   /\.dc\.html$/,
                   "",
                 ),
-                value664: Dynamic = (0, uniqueArtboardFile)(
+                value664: Dynamic = uniqueArtboardFile(
                   state,
                   value663,
                   deps.supportsLoadState,
@@ -291,8 +291,8 @@ export function duplicateArtboardFiles(deps: { readonly callback9: Dynamic; read
                 w: value658.w,
                 h: value658.h,
                 title:
-                  (0, PlatformFileContentSlice)(value661) ??
-                  (0, duplicateArtboardTitle)(
+                  PlatformFileContentSlice(value661) ??
+                  duplicateArtboardTitle(
                     value658.title ?? value663,
                     [
                       ...deps.value87.current.artboards,
@@ -301,7 +301,7 @@ export function duplicateArtboardFiles(deps: { readonly callback9: Dynamic; read
                       ),
                     ],
                   ),
-                ...(0, artboardAppearanceProperties)(value658),
+                ...artboardAppearanceProperties(value658),
                 ...(value658.page
                   ? {
                       page: value658.page,
@@ -317,16 +317,16 @@ export function duplicateArtboardFiles(deps: { readonly callback9: Dynamic; read
             let values: Dynamic = new Set();
             try {
               for (let value658 of items2 as Dynamic) {
-                await (0, getKvClient)().set(
-                  (0, PlatformFileContentHandler_4)(value658.file),
+                await getKvClient().set(
+                  PlatformFileContentHandler_4(value658.file),
                   value658.src,
                 );
                 values.add(value658.file);
               }
             } catch (value658: Dynamic) {
               for (let value659 of values as Dynamic)
-                await (0, getKvClient)()
-                  .delete((0, PlatformFileContentHandler_4)(value659))
+                await getKvClient()
+                  .delete(PlatformFileContentHandler_4(value659))
                   .catch((): Dynamic => false);
               throw value658;
             }
@@ -380,7 +380,7 @@ export function duplicateArtboardFiles(deps: { readonly callback9: Dynamic; read
                   ),
                 })
               : deps.setSelection(
-                  (0, selectionFromBoards)({
+                  selectionFromBoards({
                     files: values,
                     notes: new Set(
                       value657.map((input2?: Dynamic): Dynamic => input2.id),
@@ -388,7 +388,7 @@ export function duplicateArtboardFiles(deps: { readonly callback9: Dynamic; read
                   }),
                 );
             values.size > 0 &&
-              (0, frameAnalyticsReporter)(
+              frameAnalyticsReporter(
                 designAnalyticsEvents.artboardInserted,
               );
           } catch (value655: Dynamic) {
@@ -494,7 +494,7 @@ export function duplicateBoardsAndNotes(deps: { readonly callback9: Dynamic; rea
                 })
               : (deps.value62(),
                 deps.setSelection(
-                  (0, selectionFromBoards)({
+                  selectionFromBoards({
                     files: emptyCanvasSelectionFiles,
                     notes: new Set(
                       value658.map((input?: Dynamic): Dynamic => input.id),
@@ -542,7 +542,7 @@ export function resizeArtboardFromInput(deps: { readonly value396: Dynamic; read
           );
         if (!context) {
           deps.value68(
-            (0, replaceDesignArtboards)(deps.value73.current, value656),
+            replaceDesignArtboards(deps.value73.current, value656),
           );
           return;
         }
@@ -556,7 +556,7 @@ export function resizeArtboardFromInput(deps: { readonly value396: Dynamic; read
         ) {
           (value653.w !== value654 || value653.h !== value655) &&
             deps.value68(
-              (0, replaceDesignArtboards)(deps.value73.current, value656),
+              replaceDesignArtboards(deps.value73.current, value656),
             );
           return;
         }
@@ -582,14 +582,14 @@ export function resizeArtboardFromInput(deps: { readonly value396: Dynamic; read
         deps.value98({
           artboards: value656,
         });
-        let value658: Dynamic = (0, artboardResizeAnnouncement)(
+        let value658: Dynamic = artboardResizeAnnouncement(
           value657,
           {
             w: value654,
             h: value655,
           },
         );
-        value658 != null && (0, announce)(value658);
+        value658 != null && announce(value658);
       }
 
 /** 方向键微移选中的画板或画布说明时运行：更新位置，并把连续微移合并为同一条移动历史。 */
@@ -597,14 +597,14 @@ export function nudgeBoardsWithHistory(deps: { readonly value405: Dynamic; reado
         options?: Dynamic,
         context?: Dynamic,
         value653?: Dynamic): Dynamic {
-        let value654: Dynamic = (0, nudgeCanvasObjects)(
+        let value654: Dynamic = nudgeCanvasObjects(
           deps.value73.current,
           input,
           options,
           context,
         );
         if (!value654) return false;
-        let value655: Dynamic = (0, boardSelectionKey)(input),
+        let value655: Dynamic = boardSelectionKey(input),
           value656: Dynamic = deps.value405.current[deps.value405.current.length - 1],
           callback15: Dynamic = (): Dynamic =>
             value656 != null &&
@@ -707,8 +707,8 @@ export function deleteBoardsAndNotes(deps: { readonly doc: Dynamic; readonly set
                   ): Promise<Dynamic> => {
                     await deps.value177.current.get(input2.file)?.flushPending();
                     let value663: Dynamic =
-                      (await (0, getKvClient)().get(
-                        (0, PlatformFileContentHandler_4)(
+                      (await getKvClient().get(
+                        PlatformFileContentHandler_4(
                           input2.file,
                         ),
                       )) ??
@@ -728,7 +728,7 @@ export function deleteBoardsAndNotes(deps: { readonly doc: Dynamic; readonly set
                   await callback15(value663, artboards);
                 let value655: Dynamic =
                   value653 !== undefined
-                    ? (0, remainingCanvasPageObjects)(
+                    ? remainingCanvasPageObjects(
                         deps.value73.current,
                         value653.spec.id,
                         new Set(
@@ -774,8 +774,7 @@ export function deleteBoardsAndNotes(deps: { readonly doc: Dynamic; readonly set
                     current4.cover !== undefined && values.has(current4.cover)
                       ? current4.cover
                       : undefined,
-                  value659: Dynamic = (0,
-                  repairCanvasLaunchAfterDeletion)(
+                  value659: Dynamic = repairCanvasLaunchAfterDeletion(
                     current4,
                     values,
                     value653?.spec.id,
@@ -812,8 +811,8 @@ export function deleteBoardsAndNotes(deps: { readonly doc: Dynamic; readonly set
                   context,
                 );
                 for (let value663 of items as Dynamic)
-                  await (0, getKvClient)().delete(
-                    (0, PlatformFileContentHandler_4)(value663.file),
+                  await getKvClient().delete(
+                    PlatformFileContentHandler_4(value663.file),
                   );
                 let value660: Dynamic = deps.value73.current.pages ?? [],
                   value661: Dynamic =
@@ -853,25 +852,25 @@ export function deleteBoardsAndNotes(deps: { readonly doc: Dynamic; readonly set
                   value662 &&
                   value661.length > 0 &&
                   deps.value298(
-                    (0, neighboringCanvasPageId)(
+                    neighboringCanvasPageId(
                       value660,
                       value653.spec.id,
                     ) ?? value661[0].id,
                   );
                 (value653 === undefined || value662) &&
                   deps.setSelection(emptyCanvasSelection);
-                (0, announce)(
+                announce(
                   value653 !== undefined
-                    ? (0, pageDeletedAnnouncement)(
+                    ? pageDeletedAnnouncement(
                         value653.spec.name,
                         items.length,
                         value657.length,
                       )
                     : value657.length > 0
-                      ? (0, objectsDeletedAnnouncement)(
+                      ? objectsDeletedAnnouncement(
                           value654.length + value657.length,
                         )
-                      : (0, artboardsDeletedAnnouncement)(
+                      : artboardsDeletedAnnouncement(
                           value654.map(
                             (input2?: Dynamic): Dynamic =>
                               input2.title ??
@@ -880,7 +879,7 @@ export function deleteBoardsAndNotes(deps: { readonly doc: Dynamic; readonly set
                         ),
                 );
                 items.length > 0 &&
-                  (0, frameAnalyticsReporter)(
+                  frameAnalyticsReporter(
                     designAnalyticsEvents.artboardDeleted,
                   );
               } catch (value655: Dynamic) {
@@ -927,7 +926,7 @@ export async function fitArtboardHeightToContent(deps: { readonly callback2: Dyn
                     pinned: true,
                   },
                 )
-              : value653 && (0, isFillPagedExport)(value653)
+              : value653 && isFillPagedExport(value653)
                 ? deps.showToast(
                     uiMessage("canvas.designCanvas.measuring2") + deps.callback2(value653.file) + '"\u2026',
                     "info",
@@ -952,13 +951,13 @@ export async function fitArtboardHeightToContent(deps: { readonly callback2: Dyn
                   (input?: Dynamic): Dynamic => input.file === value656,
                 );
                 items3.push(deps.callback2(value656));
-                if (!value657 || !(0, needsPagedExport)(value657)) {
+                if (!value657 || !needsPagedExport(value657)) {
                   items2.push(value657 ? "keeps" : "gone");
                   continue;
                 }
                 let value658: Dynamic = await deps.value483(value656),
                   value659: Dynamic = value658
-                    ? (0, createPreviewHandle)(value658)
+                    ? createPreviewHandle(value658)
                     : null;
                 if (!value658 || !value659) {
                   items2.push(
@@ -976,16 +975,15 @@ export async function fitArtboardHeightToContent(deps: { readonly callback2: Dyn
                   items2.push("hidden");
                   continue;
                 }
-                let value660: Dynamic = await (0,
-                  measureExpandedContentHeight)(value659, {
+                let value660: Dynamic = await measureExpandedContentHeight(value659, {
                     w: value657.w,
                     h: value657.h,
                   }),
                   value661: Dynamic =
                     typeof value660 == "number" &&
                     value660 <= value657.h + exportHeightTolerance &&
-                    (0, isFillPagedExport)(value657)
-                      ? await (0, measureFlowExportHeight)(value659, {
+                    isFillPagedExport(value657)
+                      ? await measureFlowExportHeight(value659, {
                           w: value657.w,
                           h: value657.h,
                         })
@@ -999,7 +997,7 @@ export async function fitArtboardHeightToContent(deps: { readonly callback2: Dyn
                 );
                 if (
                   !value662 ||
-                  !(0, needsPagedExport)(value662) ||
+                  !needsPagedExport(value662) ||
                   value662.w !== value657.w
                 ) {
                   items2.push(
@@ -1032,13 +1030,12 @@ export async function fitArtboardHeightToContent(deps: { readonly callback2: Dyn
                 if (
                   value661 !== undefined &&
                   (value662.h !== value657.h ||
-                    !(0, isFillPagedExport)(value662))
+                    !isFillPagedExport(value662))
                 ) {
                   items2.push("changed");
                   continue;
                 }
-                let value663: Dynamic = (0,
-                resolveMeasuredExportHeight)(
+                let value663: Dynamic = resolveMeasuredExportHeight(
                   Math.max(value662.h, value657.h),
                   value660,
                   value661,
@@ -1076,7 +1073,7 @@ export async function fitArtboardHeightToContent(deps: { readonly callback2: Dyn
           );
           return;
         }
-        let value655: Dynamic = (0, fitContentResultMessage)(
+        let value655: Dynamic = fitContentResultMessage(
           items2,
           items3,
         );
@@ -1085,7 +1082,7 @@ export async function fitArtboardHeightToContent(deps: { readonly callback2: Dyn
             (input?: Dynamic): Dynamic =>
               input === "grown" || input === "shrunk",
           )
-            ? (0, announce)(value655)
+            ? announce(value655)
             : deps.showToast(value655));
       }
 
@@ -1142,7 +1139,7 @@ export function syncFramelessArtboardHull(deps: { readonly focusedFileRef: Dynam
           }
           deps.value585.current.set(input, [...value656, value655]);
           let value657: Dynamic = deps.value72(
-            (0, replaceDesignArtboards)(
+            replaceDesignArtboards(
               deps.value73.current,
               deps.value73.current.artboards.map(
                 (input2?: Dynamic): Dynamic =>
@@ -1159,12 +1156,12 @@ export function syncFramelessArtboardHull(deps: { readonly focusedFileRef: Dynam
           deps.value70.current = value657;
           deps.value73.current = value657;
           deps.value68(value657);
-          (0, getKvClient)()
+          getKvClient()
             .set(
-              (0, PlatformFileContentHandler_4)(
+              PlatformFileContentHandler_4(
                 canvasMetadataFile,
               ),
-              (0, serializeCanvasMetadata)(value657),
+              serializeCanvasMetadata(value657),
               {
                 auto: true,
               },
@@ -1178,8 +1175,7 @@ export function syncFramelessArtboardHull(deps: { readonly focusedFileRef: Dynam
 export function commitInteractionLayerChange(deps: { readonly value143: Dynamic; readonly value169: Dynamic; readonly value413: Dynamic; readonly value67: Dynamic; readonly value68: Dynamic; readonly value70: Dynamic; readonly value72: Dynamic; readonly value73: Dynamic; readonly value80: Dynamic; readonly value98: Dynamic }, input?: Dynamic,
                       options?: Dynamic,
                       context?: Dynamic): Dynamic {
-                      let value653: Dynamic = (0,
-                        replaceDesignPageContents)(
+                      let value653: Dynamic = replaceDesignPageContents(
                           deps.value73.current,
                           deps.value80.current,
                           input,
@@ -1323,10 +1319,10 @@ export function commitInteractionLayerChange(deps: { readonly value143: Dynamic;
                                 value681: Dynamic =
                                   entry &&
                                   callback21(
-                                    (0, artboardTransformSnapshot)(
+                                    artboardTransformSnapshot(
                                       entry,
                                     ),
-                                    (0, artboardTransformSnapshot)(
+                                    artboardTransformSnapshot(
                                       input2,
                                     ),
                                   );
@@ -1349,10 +1345,10 @@ export function commitInteractionLayerChange(deps: { readonly value143: Dynamic;
                               value681: Dynamic =
                                 entry &&
                                 callback21(
-                                  (0, annotationTransformSnapshot)(
+                                  annotationTransformSnapshot(
                                     entry,
                                   ),
-                                  (0, annotationTransformSnapshot)(
+                                  annotationTransformSnapshot(
                                     input2,
                                   ),
                                 );
@@ -1426,8 +1422,8 @@ export function commitInteractionLayerChange(deps: { readonly value143: Dynamic;
                                 );
                             if (
                               value680 &&
-                              !(0, isShapeAnnotation)(value680) &&
-                              !(0, isShapeAnnotation)(value679) &&
+                              !isShapeAnnotation(value680) &&
+                              !isShapeAnnotation(value679) &&
                               input2(value680, value679)
                             )
                               return [value680, value679];
@@ -1444,8 +1440,8 @@ export function commitInteractionLayerChange(deps: { readonly value143: Dynamic;
                                 );
                             if (
                               value680 &&
-                              (0, isShapeAnnotation)(value680) &&
-                              (0, isShapeAnnotation)(value679) &&
+                              isShapeAnnotation(value680) &&
+                              isShapeAnnotation(value679) &&
                               input2(value680, value679)
                             )
                               return [value680, value679];
@@ -1482,7 +1478,7 @@ export function commitInteractionLayerChange(deps: { readonly value143: Dynamic;
                       let callback19: Dynamic = (input2?: Dynamic): Dynamic =>
                           JSON.stringify(
                             Object.values(
-                              (0, annotationGeometry)(input2),
+                              annotationGeometry(input2),
                             ).map(Math.round as Dynamic),
                           ),
                         value668: Dynamic = callback17(
@@ -1507,10 +1503,10 @@ export function commitInteractionLayerChange(deps: { readonly value143: Dynamic;
                           {
                             kind: "ann-box",
                             id: value668[1].id,
-                            from: (0, annotationGeometry)(
+                            from: annotationGeometry(
                               value668[0],
                             ),
-                            to: (0, annotationGeometry)(value668[1]),
+                            to: annotationGeometry(value668[1]),
                           },
                           new Set(),
                         );
@@ -1541,10 +1537,10 @@ export function commitInteractionLayerChange(deps: { readonly value143: Dynamic;
                               : {}),
                             ...(value670
                               ? {
-                                  geomFrom: (0, annotationGeometry)(
+                                  geomFrom: annotationGeometry(
                                     value679,
                                   ),
-                                  geomTo: (0, annotationGeometry)(
+                                  geomTo: annotationGeometry(
                                     value680,
                                   ),
                                 }
@@ -1585,7 +1581,7 @@ export function commitInteractionLayerChange(deps: { readonly value143: Dynamic;
                             Math.round(input2.y) !== Math.round(options2.y),
                         ),
                         value674: Dynamic =
-                          (0, PlatformFileContentHas)(
+                          PlatformFileContentHas(
                             value665,
                             value666,
                             new Set(
@@ -1680,8 +1676,8 @@ export function commitInteractionLayerChange(deps: { readonly value143: Dynamic;
                       let value677: Dynamic = callback16(
                         (input2?: Dynamic, options2?: Dynamic): Dynamic => {
                           let [items, items2]: Dynamic = [
-                            (0, annotationTextStyle)(input2),
-                            (0, annotationTextStyle)(options2),
+                            annotationTextStyle(input2),
+                            annotationTextStyle(options2),
                           ];
                           return Object.keys(items).some(
                             (input3?: Dynamic): Dynamic =>
@@ -1694,10 +1690,10 @@ export function commitInteractionLayerChange(deps: { readonly value143: Dynamic;
                           {
                             kind: "ann-style",
                             id: value677[1].id,
-                            from: (0, annotationTextStyle)(
+                            from: annotationTextStyle(
                               value677[0],
                             ),
-                            to: (0, annotationTextStyle)(value677[1]),
+                            to: annotationTextStyle(value677[1]),
                             ...(value677[0].kind !== value677[1].kind &&
                             (value677[0].maxW !== value677[1].maxW ||
                               value677[0].maxH !== value677[1].maxH)

@@ -24,7 +24,7 @@ function positionPastedHtml(
     value2: Dynamic = Math.round(value.ox),
     value3: Dynamic = Math.round(value.oy),
     value4: Dynamic = doc.createElement("template");
-  value4.innerHTML = (0, toParserHtml)(input);
+  value4.innerHTML = toParserHtml(input);
   let value5: Dynamic =
       value.ew == null
         ? ""
@@ -54,14 +54,14 @@ function positionPastedHtml(
       (value8 === "" ? "" : value8.replace(/;?$/, "; ")) + value9,
     );
   }
-  return (0, fromParserHtml)(value4.innerHTML);
+  return fromParserHtml(value4.innerHTML);
 }
 function unpositionPastedHtml(
   input?: Dynamic,
   doc: Dynamic = document,
 ): Dynamic {
   let value: Dynamic = doc.createElement("template");
-  value.innerHTML = (0, toParserHtml)(input);
+  value.innerHTML = toParserHtml(input);
   let value2: Dynamic = Array.from(value.content.children).filter(
       (input2?: Dynamic): Dynamic =>
         !/^(style|script|link|meta|title|template|noscript|sc-helmet)$/i.test(
@@ -129,14 +129,14 @@ function unpositionPastedHtml(
       ? value3.removeAttribute("style")
       : value3.setAttribute("style", value8);
   }
-  return (0, fromParserHtml)(value.innerHTML);
+  return fromParserHtml(value.innerHTML);
 }
 function buildDcDocument(
   input?: Dynamic,
   options: Dynamic = "",
   context: Dynamic = {},
 ): Dynamic {
-  let value: Dynamic = (0, parseDcHtmlDocument)(options),
+  let value: Dynamic = parseDcHtmlDocument(options),
     value2: Dynamic = value ? options.slice(0, value.templateStart) : "",
     value3: Dynamic = /<script\b[^>]*support\.js/i.test(value2)
       ? value2
@@ -172,7 +172,7 @@ function buildDcDocument(
 }
 function stripPrivateDcProps(input?: Dynamic): Dynamic {
   let value: Dynamic = input,
-    value2: Dynamic = (0, getDcPropsJson)(input);
+    value2: Dynamic = getDcPropsJson(input);
   if (value2 != null) {
     let text: Dynamic = "";
     try {
@@ -186,9 +186,9 @@ function stripPrivateDcProps(input?: Dynamic): Dynamic {
     } catch {
       text = "";
     }
-    value = (0, setDcPropsJson)(input, text) ?? input;
+    value = setDcPropsJson(input, text) ?? input;
   }
-  let value3: Dynamic = (0, parseDcHtmlDocument)(value);
+  let value3: Dynamic = parseDcHtmlDocument(value);
   return value3?.jsMatch && value3.jsMatch.index >= value3.templateEnd
     ? value3.jsMatch[0]
     : null;

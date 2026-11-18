@@ -32,7 +32,7 @@ export function installCanvasFocusOverlay(): () => void {
               ? keys.onDescend(file)
               : keys.onEnter(file)
             : onActivate(file, false),
-        value: Dynamic = (0, buttonKeyboardActivation)(
+        value: Dynamic = buttonKeyboardActivation(
           (input?: Dynamic): Dynamic => {
             (inside && keys) ||
               onActivate(file, input.shiftKey || input.metaKey);
@@ -49,7 +49,7 @@ export function installCanvasFocusOverlay(): () => void {
           data-mega-inside={inside ? "" : undefined}
           data-testid={testId}
           inert={inert ? true : undefined}
-          className={(0, joinClassNames)(
+          className={joinClassNames(
             "peer min-w-16 truncate rounded-sm outline-none group-data-[proto]/hdr:@max-[7.25rem]/hdr:min-w-8 focus-visible:outline-hidden focus-visible:shadow-focus",
             inside && "focus:outline-hidden focus:shadow-focus",
           )}
@@ -115,7 +115,7 @@ export function installCanvasFocusOverlay(): () => void {
               event.repeat || keys.onLeave(file);
               return;
             }
-            !(0, isCanvasReservedShortcut)(event) &&
+            !isCanvasReservedShortcut(event) &&
               keys.holdKey(file) &&
               (event.preventDefault(), event.stopPropagation());
           }}

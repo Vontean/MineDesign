@@ -85,7 +85,7 @@ export function installEditorMediaVideoPlayback(): () => void {
   return () => {
     B6b0a7Value = "#b6b0a7";
     defaultAnnotationStrokeColor = "#8a8378";
-    (0, initializeCdsIndex)();
+    initializeCdsIndex();
     MediaVideoPlaybackPlayPauseSeekConfig = {
       get play() { return uiMessage("inspector.videoPlayback.play"); },
       pause: "Pause",

@@ -353,10 +353,10 @@ function canUseHeldFilePointer(path: string) {
   if (allowAllBinaryFilePointers) {
     return (
       canUseStoragePointer(path) &&
-      (0, isPublishableFilePathModelFileTable)(path)
+      isPublishableFilePathModelFileTable(path)
     );
   }
-  let mime = (0, mirrorMimeTypeForPath)(path),
+  let mime = mirrorMimeTypeForPath(path),
     supported =
       mime !== null
         ? !mime.startsWith("font/")
@@ -366,7 +366,7 @@ function canUseHeldFilePointer(path: string) {
     fileExtension(path) !== "lottie" &&
     supported &&
     !path.startsWith(DESIGN_SYSTEM_PATHS.fontsDir) &&
-    (0, isPublishableFilePathModelFileTable)(path)
+    isPublishableFilePathModelFileTable(path)
   );
 }
 function isHeldFilePointer(path: string, content: string) {

@@ -42,14 +42,14 @@ function rewriteHtmlDependencies(
       options2?: Dynamic,
       context2?: Dynamic,
     ): Dynamic => {
-      let value3: Dynamic = (0, maskHtmlRawContent)(input2),
+      let value3: Dynamic = maskHtmlRawContent(input2),
         value4: Dynamic = value3.replace(
           /[A-Z]+/g,
           (input3?: Dynamic): Dynamic => input3.toLowerCase(),
         ),
         text: Dynamic = "",
         index: Dynamic = 0;
-      for (let [value5, value6] of (0, findHtmlTags)(
+      for (let [value5, value6] of findHtmlTags(
         value3,
         options2,
       ) as Dynamic) {
@@ -76,15 +76,15 @@ function rewriteHtmlDependencies(
         value3?: Dynamic,
       ): Dynamic => {
         let value4: Dynamic = (
-          (0, getHtmlAttribute)(items, "rel") ?? ""
+          getHtmlAttribute(items, "rel") ?? ""
         )
           .toLowerCase()
           .split(/\s+/);
         if (!value4.includes("stylesheet") || value4.includes("alternate"))
           return;
-        let value5: Dynamic = (0, resolveProjectAssetPath)(
+        let value5: Dynamic = resolveProjectAssetPath(
           context,
-          (0, getHtmlAttribute)(items, "href") ?? "",
+          getHtmlAttribute(items, "href") ?? "",
         );
         if (
           value5 === null ||
@@ -92,7 +92,7 @@ function rewriteHtmlDependencies(
           options[value5] == null
         )
           return;
-        let value6: Dynamic = (0, parseHtmlAttributes)(items, [
+        let value6: Dynamic = parseHtmlAttributes(items, [
             "href",
             "rel",
             "type",
@@ -103,9 +103,9 @@ function rewriteHtmlDependencies(
             "media",
           ]),
           value7: Dynamic =
-            (0, getHtmlAttribute)(items, "disabled") !== null
+            getHtmlAttribute(items, "disabled") !== null
               ? "not all"
-              : (0, getHtmlAttribute)(items, "media");
+              : getHtmlAttribute(items, "media");
         value7 !== null && (value6.media = value7);
         value.covered?.has(value5) && (value6["data-dc-sheet"] = value5);
         let value8: Dynamic =
@@ -163,8 +163,8 @@ function rewriteHtmlDependencies(
           ];
         }
         let values: Dynamic = new Set(value.covered ?? []),
-          value11: Dynamic = (0, moveCssImportsFirst)(
-            (0, inlineStylesheetImports)(value5, options, values),
+          value11: Dynamic = moveCssImportsFirst(
+            inlineStylesheetImports(value5, options, values),
           );
         if (value7 === null)
           for (let value14 of values as Dynamic) value.inlined?.add(value14);
@@ -172,7 +172,7 @@ function rewriteHtmlDependencies(
           value9 &&
           [...values].every(
             (input2?: Dynamic): Dynamic =>
-              !(0, hasRootRelativeCssReference)(options[input2] ?? "") &&
+              !hasRootRelativeCssReference(options[input2] ?? "") &&
               value.installedUrlFor?.(input2, options[input2] ?? "") !==
                 undefined,
           )
@@ -180,8 +180,7 @@ function rewriteHtmlDependencies(
             : undefined;
         if (value12 !== undefined) {
           value.byAddress && (value.byAddress[value5] = value12);
-          let { onerror: value14, ...value15 }: Dynamic = (0,
-          parseHtmlAttributes)(
+          let { onerror: value14, ...value15 }: Dynamic = parseHtmlAttributes(
             items,
             ["href", "type", "integrity", "crossorigin"],
             true,
@@ -210,7 +209,7 @@ function rewriteHtmlDependencies(
             options2,
           ];
         }
-        let value13: Dynamic = (0, escapeNoscriptInCss)(
+        let value13: Dynamic = escapeNoscriptInCss(
           value11.replace(/<\/style/gi, "<\\/style"),
         );
         return [value8 + value13 + "</style>", options2];
@@ -233,8 +232,8 @@ function rewriteHtmlDependencies(
       if (!/@import/i.test(value5)) return;
       let values: Dynamic = new Set(value.covered ?? []),
         flag: Dynamic = false,
-        value6: Dynamic = (0, stripStylesheetComments)(value5),
-        value7: Dynamic = (0, leadingStylesheetAtRuleEnd)(value6),
+        value6: Dynamic = stripStylesheetComments(value5),
+        value7: Dynamic = leadingStylesheetAtRuleEnd(value6),
         value8: Dynamic = value6.replace(
           cssImportPattern,
           (input3?: Dynamic, ...options3: Dynamic[]): Dynamic => {
@@ -243,7 +242,7 @@ function rewriteHtmlDependencies(
               return "";
             }
             if (options3[5]) return input3;
-            let value9: Dynamic = (0, resolveProjectAssetPath)(
+            let value9: Dynamic = resolveProjectAssetPath(
               context,
               String(
                 options3[0] ??
@@ -259,7 +258,7 @@ function rewriteHtmlDependencies(
               options[value9] == null
               ? input3
               : ((flag = true),
-                (0, inlineStylesheetImports)(
+                inlineStylesheetImports(
                   value9,
                   options,
                   values,
@@ -272,8 +271,8 @@ function rewriteHtmlDependencies(
         for (let value9 of values as Dynamic) value.inlined?.add(value9);
         return [
           input2 +
-            (0, escapeNoscriptInCss)(
-              (0, moveCssImportsFirst)(value8).replace(
+            escapeNoscriptInCss(
+              moveCssImportsFirst(value8).replace(
                 /<\/style/gi,
                 "<\\/style",
               ),
@@ -294,18 +293,18 @@ function rewriteHtmlDependencies(
     ): Dynamic => {
       let value4: Dynamic = value3.indexOf("<\/script", options2),
         value5: Dynamic = value4 < 0 ? -1 : context2.indexOf(">", value4),
-        value6: Dynamic = (0, getHtmlAttribute)(items, "src");
+        value6: Dynamic = getHtmlAttribute(items, "src");
       if (
         value5 < 0 ||
         value6 === null ||
-        (0, getHtmlAttribute)(items, "nomodule") !== null
+        getHtmlAttribute(items, "nomodule") !== null
       )
         return;
       let value7: Dynamic = value5 + 1,
-        value8: Dynamic = ((0, getHtmlAttribute)(items, "type") ?? "")
+        value8: Dynamic = (getHtmlAttribute(items, "type") ?? "")
           .trim()
           .toLowerCase(),
-        value9: Dynamic = (0, resolveProjectAssetPath)(
+        value9: Dynamic = resolveProjectAssetPath(
           context,
           value6,
         );
@@ -342,7 +341,7 @@ function rewriteHtmlDependencies(
           async: value12,
           onerror: value13,
           ...value14
-        }: Dynamic = (0, parseHtmlAttributes)(
+        }: Dynamic = parseHtmlAttributes(
           items,
           ["src", "integrity", "crossorigin"],
           true,
@@ -361,7 +360,7 @@ function rewriteHtmlDependencies(
           value7,
         ];
       }
-      let value11: Dynamic = (0, parseHtmlAttributes)(items, [
+      let value11: Dynamic = parseHtmlAttributes(items, [
         "src",
         "type",
         "nomodule",
@@ -389,9 +388,9 @@ function rewritePreviewAssets(
   context?: Dynamic,
   value?: Dynamic,
 ): Dynamic {
-  let value2: Dynamic = (0, projectDirectoryOf)(context);
+  let value2: Dynamic = projectDirectoryOf(context);
   return rewriteHtmlDependencies(
-    (0, rewriteProjectAssets)(input, options, value2),
+    rewriteProjectAssets(input, options, value2),
     options,
     value2,
     value,

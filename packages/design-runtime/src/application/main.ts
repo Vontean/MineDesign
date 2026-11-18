@@ -10,10 +10,10 @@ import { interceptSamplingCapability } from "../fast-edit/sampling-capability";
 
 export function installApplicationMain(): () => void {
   return () => {
-    (0, interceptSamplingCapability)();
-    (0, initializeFastEdit)();
-    (0, claimCustomAnchors)();
-    (0, bootstrapArtifactApplication)({
+    interceptSamplingCapability();
+    initializeFastEdit();
+    claimCustomAnchors();
+    bootstrapArtifactApplication({
       tree: loadDesignDocumentTree,
     });
   };

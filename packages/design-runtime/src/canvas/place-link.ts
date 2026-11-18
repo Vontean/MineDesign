@@ -28,8 +28,8 @@ function placeLinkStorageKey(scope: Dynamic = ""): Dynamic {
     typeof location === "undefined" ? "/" : location.pathname;
   return (
     "place-link/" +
-    (0, getDocumentStashKey)(value).slice(
-      (0, getDocumentStashKey)("").length,
+    getDocumentStashKey(value).slice(
+      getDocumentStashKey("").length,
     ) +
     (scope ? "/" + scope : "")
   );
@@ -171,7 +171,7 @@ function observeGotoAnchorMessages(
   let callback: Dynamic = (dataset?: Dynamic): Dynamic => {
     if (
       dataset.source !== targetWindow.parent ||
-      !(0, isTrustedHostOrigin)(dataset.origin)
+      !isTrustedHostOrigin(dataset.origin)
     )
       return;
     let value: Dynamic = parseGotoAnchorMessage(

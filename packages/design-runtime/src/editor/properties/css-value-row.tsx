@@ -17,8 +17,7 @@ function PropertyCssTextRow({
   shell: shell,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let { text: value, placeholder: value2 }: Dynamic = (0,
-  inspectorFieldDisplay)(state);
+  let { text: value, placeholder: value2 }: Dynamic = inspectorFieldDisplay(state);
   return (
     <PropertyRow {...shell}>
       <PropertyTextInput
@@ -31,7 +30,7 @@ function PropertyCssTextRow({
           onCommit(
             state.prop,
             input.trim()
-              ? (0, normalizePropertyNumber)(state.prop, input.trim())
+              ? normalizePropertyNumber(state.prop, input.trim())
               : null,
           )
         }
@@ -51,8 +50,7 @@ function PropertyCssEnumRow({
   shell: shell,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let { text: value, isLiteral: value2 }: Dynamic = (0,
-  inspectorFieldDisplay)(state);
+  let { text: value, isLiteral: value2 }: Dynamic = inspectorFieldDisplay(state);
   if (!value2 && value)
     return (
       <PropertyCssTextRow state={state} onCommit={onCommit} shell={shell} />

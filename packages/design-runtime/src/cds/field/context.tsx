@@ -30,11 +30,11 @@ export {
 };
 export function installCdsFieldContext(): () => void {
   return () => {
-    initializeFieldContext = (0, initializeOnce)(() => {
+    initializeFieldContext = initializeOnce(() => {
       "use client";
 
-      reactFieldContext = (0, toModuleNamespace)(
-        (0, load_react)(),
+      reactFieldContext = toModuleNamespace(
+        load_react(),
       );
       FieldStateContext = (0,
       reactFieldContext.createContext)<FieldState | null>(null);

@@ -36,8 +36,8 @@ export {
 };
 export function installUiPropertyIcons(): () => void {
   return () => {
-    jsxForUiPropertyIcons = (0, toModuleNamespace)(
-      (0, loadJsxNamespace)(),
+    jsxForUiPropertyIcons = toModuleNamespace(
+      loadJsxNamespace(),
       1,
     );
   };

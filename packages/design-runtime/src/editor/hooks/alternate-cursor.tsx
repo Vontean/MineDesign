@@ -66,8 +66,8 @@ export {
 };
 export function installEditorHooksAlternateCursor(): () => void {
   return () => {
-    reactHooksAlternateCursor = (0, toModuleNamespace)(
-      (0, load_react)(),
+    reactHooksAlternateCursor = toModuleNamespace(
+      load_react(),
       1,
     );
     HooksAlternateCursorProgressCrosshairConfig = {

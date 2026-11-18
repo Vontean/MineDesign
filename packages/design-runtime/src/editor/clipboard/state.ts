@@ -43,7 +43,7 @@ function readBoundedClipboardObject(input?: Dynamic): Dynamic {
   return (input.clipboardData?.getData("text/html") ?? "").length >
     ClipboardStateResolvedValue
     ? undefined
-    : (0, readClipboardObject)(input);
+    : readClipboardObject(input);
 }
 function readArtboardClipboard(input?: Dynamic): Dynamic {
   if (input?.kind !== DesignArtboardsKey) return;

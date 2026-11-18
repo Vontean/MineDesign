@@ -142,11 +142,11 @@ function useSheetSiblingsInert({
   open: open,
   liftOnClose: liftOnClose,
 }: Dynamic): Dynamic {
-  let value: Dynamic = (0, useCdsWindow)(),
-    value2: Dynamic = (0, useOptionalStableCallback)(liftOnClose),
+  let value: Dynamic = useCdsWindow(),
+    value2: Dynamic = useOptionalStableCallback(liftOnClose),
     value3: Dynamic = (0, reactSheetsMenuPopup_2.useRef)(null),
     value4: Dynamic = (0, reactSheetsMenuPopup_2.useRef)(null);
-  (0, useIsomorphicLayoutEffect)((): Dynamic => {
+  useIsomorphicLayoutEffect((): Dynamic => {
     if (!open || node === null || value === undefined) return;
     let value5: Dynamic = value.requestAnimationFrame((): Dynamic => {
       if (value3.current === null) {
@@ -181,7 +181,7 @@ function useSheetSiblingsInert({
 function canAnimateSheetUnmount(input?: Dynamic): Dynamic {
   return (
     !shouldSkipSheetAnimation(input) &&
-    !(0, prefersReducedMotion)() &&
+    !prefersReducedMotion() &&
     input.document.visibilityState !== "hidden"
   );
 }
@@ -277,7 +277,7 @@ function SheetBackButton({ nested: nested }: Dynamic): Dynamic {
     value3: Dynamic = (0, reactSheetsMenuPopup_3.useContext)(
       MenuSheetLabelsContext,
     ),
-    value4: Dynamic = (0, useLabel)("back", "Back"),
+    value4: Dynamic = useLabel("back", "Back"),
     value5: Dynamic = value3.backLabel ?? value4;
   return (
     <SheetHeading
@@ -289,8 +289,8 @@ function SheetBackButton({ nested: nested }: Dynamic): Dynamic {
             onClick={(): Dynamic => value?.close()}
             aria-label={value5}
             label={value5}
-            className={(0, cn)(
-              (0, menuItemVariants)({
+            className={cn(
+              menuItemVariants({
                 variant: "default",
               }),
               "min-h-control w-auto",
@@ -312,7 +312,7 @@ function SheetCloseButton(): Dynamic {
   let value: Dynamic = (0, reactSheetsMenuPopup_3.useContext)(
       SheetPopupContext,
     ),
-    value2: Dynamic = (0, useLabel)("close", "Close"),
+    value2: Dynamic = useLabel("close", "Close"),
     value3: Dynamic =
       (0, reactSheetsMenuPopup_3.useContext)(MenuSheetLabelsContext)
         .closeLabel ?? value2;
@@ -328,8 +328,8 @@ function SheetCloseButton(): Dynamic {
       }
     >
       <span
-        className={(0, cn)(
-          (0, menuItemVariants)({
+        className={cn(
+          menuItemVariants({
             variant: "default",
           }),
           "group-data-[highlighted]/sheet-close:bg-fill-ghost-hover",
@@ -371,7 +371,7 @@ function MobileSheetsPopoverSheetContent({
     <SheetStackContext.Provider value={sheetPopup.stack}>
       <value.Handle />
       <value.Body
-        className={(0, cn)(
+        className={cn(
           className,
           "h-auto max-h-none min-h-0 w-full min-w-0 max-w-none flex-auto",
         )}
@@ -457,31 +457,31 @@ export {
 };
 export function installCdsSheetsMenuPopup(): () => void {
   return () => {
-    initializeSheetsMenuPopup = (0, initializeOnce)((): Dynamic => {
+    initializeSheetsMenuPopup = initializeOnce((): Dynamic => {
       "use client";
 
-      reactSheetsMenuPopup = (0, toModuleNamespace)(
-        (0, load_react)(),
+      reactSheetsMenuPopup = toModuleNamespace(
+        load_react(),
       );
       PointerEventsNoneValue = "pointer-events-none";
       SheetsMenuPopupLimit = 2;
     });
-    initializeSheetsMenuPopup_2 = (0, initializeOnce)((): Dynamic => {
+    initializeSheetsMenuPopup_2 = initializeOnce((): Dynamic => {
       SheetsMenuPopupLabel = "(pointer: coarse), (hover: none)";
       SheetsMenuPopupLabel_2 = "(width < 40rem)";
       SheetsMenuPopupMediaQuery = "(pointer: coarse)";
       SheetsMenuPopupLabel_3 = " Electron/";
     });
-    initializeSheetsMenuPopup_3 = (0, initializeOnce)((): Dynamic => {
+    initializeSheetsMenuPopup_3 = initializeOnce((): Dynamic => {
       "use client";
 
-      (0, initializeHooksLayoutEffect)();
-      (0, initializeCdsRoot)();
+      initializeHooksLayoutEffect();
+      initializeCdsRoot();
       initializeSheetsMenuPopup_2();
-      (0, initializeHooksStableCallback_2)();
-      (0, initializePlatformReducedMotion)();
-      reactSheetsMenuPopup_2 = (0, toModuleNamespace)(
-        (0, load_react)(),
+      initializeHooksStableCallback_2();
+      initializePlatformReducedMotion();
+      reactSheetsMenuPopup_2 = toModuleNamespace(
+        load_react(),
       );
       SheetsMenuPopupSCRIPTSTYLELINKSet = new Set([
         "SCRIPT",
@@ -494,43 +494,43 @@ export function installCdsSheetsMenuPopup(): () => void {
         '[aria-live]:not([aria-live="off"]), [role="status"], [role="alert"], [role="log"], [data-cds="Toast"]';
       SheetsMenuPopupElementCache = new WeakMap();
     });
-    initializeSheetsMenuPopup_4 = (0, initializeOnce)((): Dynamic => {
+    initializeSheetsMenuPopup_4 = initializeOnce((): Dynamic => {
       "use client";
 
-      (0, initializeHooksLayoutEffect)();
-      (0, initializeClassNames)();
-      (0, initializeSheetsStyles_2)();
-      (0, initializeCdsRoot)();
-      (0, initializeOverlaysLayers)();
-      (0, initializeOverlaysAndroidCloseWatcher)();
-      (0, initializeDomRefComposition)();
-      (0, initializePlatformRootFontSize_2)();
-      (0, initializeComponentsIcon_2)();
-      (0, initializeComponentsIcon_3)();
-      (0, initializeThemeSurfaces)();
-      (0, initializeSheetsLayout)();
-      (0, initializeSheetsPresentation)();
-      (0, initializeSheetsPopupStack)();
-      (0, initializePlatformReducedMotion_2)();
-      (0, initializeMenuConfiguration)();
-      (0, initializeSheetsScrollArea)();
-      (0, initializeMenuPopup)();
-      (0, initializeMenuPassiveOpenGate)();
-      (0, initializeMenuItemStyles)();
-      (0, initializeMenuItemStyles_2)();
-      (0, initializeMenuItemStyles_3)();
+      initializeHooksLayoutEffect();
+      initializeClassNames();
+      initializeSheetsStyles_2();
+      initializeCdsRoot();
+      initializeOverlaysLayers();
+      initializeOverlaysAndroidCloseWatcher();
+      initializeDomRefComposition();
+      initializePlatformRootFontSize_2();
+      initializeComponentsIcon_2();
+      initializeComponentsIcon_3();
+      initializeThemeSurfaces();
+      initializeSheetsLayout();
+      initializeSheetsPresentation();
+      initializeSheetsPopupStack();
+      initializePlatformReducedMotion_2();
+      initializeMenuConfiguration();
+      initializeSheetsScrollArea();
+      initializeMenuPopup();
+      initializeMenuPassiveOpenGate();
+      initializeMenuItemStyles();
+      initializeMenuItemStyles_2();
+      initializeMenuItemStyles_3();
       initializeSheetsMenuPopup();
-      (0, initializeSheetsStyles)();
-      (0, initializeSheetsChrome)();
-      (0, initializeSheetsChrome_2)();
+      initializeSheetsStyles();
+      initializeSheetsChrome();
+      initializeSheetsChrome_2();
       initializeSheetsMenuPopup_3();
-      reactSheetsMenuPopup_3 = (0, toModuleNamespace)(
-        (0, load_react)(),
+      reactSheetsMenuPopup_3 = toModuleNamespace(
+        load_react(),
       );
-      jsxSheetsMenuPopup = (0, toModuleNamespace)(
-        (0, load_react_jsx_runtime)(),
+      jsxSheetsMenuPopup = toModuleNamespace(
+        load_react_jsx_runtime(),
       );
-      (0, initializeNpm__base_ui_react_jj)();
+      initializeNpm__base_ui_react_jj();
       SheetsMenuPopupElementCache_2 = new WeakMap();
       MenuSheetPopup = (0, reactSheetsMenuPopup_3.forwardRef)(
         (
@@ -558,7 +558,7 @@ export function installCdsSheetsMenuPopup(): () => void {
         ): Dynamic => {
           "use no memo";
 
-          let value: Dynamic = (0, useOverlayRoot)(),
+          let value: Dynamic = useOverlayRoot(),
             value2: Dynamic = (0, reactSheetsMenuPopup_3.useContext)(
               MenuRootContext,
             ),
@@ -566,7 +566,7 @@ export function installCdsSheetsMenuPopup(): () => void {
               (0, reactSheetsMenuPopup_3.useContext)(
                 MenuConfigurationContext,
               ) && value2 === null,
-            value4: Dynamic = (0, useIsSheet)(),
+            value4: Dynamic = useIsSheet(),
             value5: Dynamic = value4 && value2 !== null,
             value6: Dynamic = (0, reactSheetsMenuPopup_3.useContext)(
               ComponentsIconContext,
@@ -576,13 +576,13 @@ export function installCdsSheetsMenuPopup(): () => void {
               (): Dynamic =>
                 anchor !== undefined || !value2
                   ? anchor
-                  : (0, virtualTriggerAnchor)(value2),
+                  : virtualTriggerAnchor(value2),
               [anchor, value2],
             ),
             value9: Dynamic =
               sideOffset ??
               (value3 ? undefined : value2 && anchor === undefined ? 2 : 6),
-            value10: Dynamic = (0, usePopupEntryAnimation)({
+            value10: Dynamic = usePopupEntryAnimation({
               enabled: stableWhileOpen && !value4 && !value3,
               side: side,
               align: align,
@@ -647,7 +647,7 @@ export function installCdsSheetsMenuPopup(): () => void {
               open: value4 && !value5 && (value11?.open ?? false),
               liftOnClose: value24,
             }),
-            value26: Dynamic = (0, useSheetState)(),
+            value26: Dynamic = useSheetState(),
             value27: Dynamic = (0, reactSheetsMenuPopup_3.useContext)(
               SheetStackContext,
             ),
@@ -673,7 +673,7 @@ export function installCdsSheetsMenuPopup(): () => void {
                   return;
                 }
                 if (!value5) {
-                  let value55: Dynamic = (0, sheetContainsTextInput)(
+                  let value55: Dynamic = sheetContainsTextInput(
                     element,
                   );
                   value55 &&
@@ -682,7 +682,7 @@ export function installCdsSheetsMenuPopup(): () => void {
                   value20(value55);
                   value11?.pinHeight(
                     element.getBoundingClientRect().height,
-                    (0, sheetNeedsScrolling)(element),
+                    sheetNeedsScrolling(element),
                   );
                   return;
                 }
@@ -699,18 +699,18 @@ export function installCdsSheetsMenuPopup(): () => void {
               },
               [value4, value5, value11, value15, value16, value20, value25],
             );
-          (0, useSheetTextFocus)(value29, value11);
-          (0, useCoveredSheetState)(value29);
-          (0, useSheetDismissal)(value29, value11, value26.covered);
+          useSheetTextFocus(value29, value11);
+          useCoveredSheetState(value29);
+          useSheetDismissal(value29, value11, value26.covered);
           let value32: Dynamic = value4 && value26.covered,
             value33: Dynamic = value4 && value26.inert;
-          (0, useAndroidCloseWatcher)(
+          useAndroidCloseWatcher(
             value4 && (value5 ? value12.open : (value11?.open ?? false)),
             value5 ? value2?.close : value11?.dismiss,
           );
           let value34: Dynamic = (0, reactSheetsMenuPopup_3.useRef)(false),
             value35: Dynamic = value11?.open ?? false;
-          (0, useIsomorphicLayoutEffect)((): Dynamic => {
+          useIsomorphicLayoutEffect((): Dynamic => {
             let current: Dynamic = value13.current,
               value55: Dynamic = value5 && value12.open && current !== null,
               current2: Dynamic = value34.current;
@@ -723,18 +723,18 @@ export function installCdsSheetsMenuPopup(): () => void {
             [value37, value38]: Dynamic = (0, reactSheetsMenuPopup_3.useState)(
               false,
             );
-          (0, useIsomorphicLayoutEffect)((): Dynamic => {
+          useIsomorphicLayoutEffect((): Dynamic => {
             let value55: Dynamic = value5 && value12.open,
               current: Dynamic = value36.current;
             value36.current = value55;
             value55 !== current && value38(!value55 && value35);
           }, [value5, value12.open, value35]);
-          (0, useIsomorphicLayoutEffect)((): Dynamic => {
+          useIsomorphicLayoutEffect((): Dynamic => {
             let current: Dynamic = value13.current;
             value5 &&
               value12.open &&
               current !== null &&
-              (0, clearSheetTransition)(current);
+              clearSheetTransition(current);
           }, [value5, value12.open]);
           let value39: Dynamic = value11?.pushLevelHeight,
             value40: Dynamic = value11?.drag;
@@ -752,10 +752,10 @@ export function installCdsSheetsMenuPopup(): () => void {
               callback: Dynamic = (): Dynamic => {
                 let value58: Dynamic = defaultView?.innerHeight ?? 1 / 0,
                   value59: Dynamic = value58 * SheetsLayoutConstant,
-                  value60: Dynamic = (0, sheetContainsTextInput)(
+                  value60: Dynamic = sheetContainsTextInput(
                     value29,
                   ),
-                  value61: Dynamic = (0, sheetNaturalHeight)(value29);
+                  value61: Dynamic = sheetNaturalHeight(value29);
                 flag = value61 > value59;
                 let value62: Dynamic = value60
                     ? value58 * SheetsLayoutConstant_2
@@ -782,7 +782,7 @@ export function installCdsSheetsMenuPopup(): () => void {
                         if (
                           value56 !== undefined ||
                           value55 === undefined ||
-                          (0, sheetMutationIsScrollOnly)(input, flag)
+                          sheetMutationIsScrollOnly(input, flag)
                         )
                           return;
                         let callback3: Dynamic = (): Dynamic => {
@@ -832,7 +832,7 @@ export function installCdsSheetsMenuPopup(): () => void {
                 (input?: Dynamic): Dynamic => {
                   if (
                     index !== 0 ||
-                    (0, sheetMutationIsScrollOnly)(input, flag)
+                    sheetMutationIsScrollOnly(input, flag)
                   )
                     return;
                   let callback: Dynamic = (): Dynamic => {
@@ -841,7 +841,7 @@ export function installCdsSheetsMenuPopup(): () => void {
                       index = defaultView.requestAnimationFrame(callback);
                       return;
                     }
-                    if ((0, sheetContainsTextInput)(value29)) {
+                    if (sheetContainsTextInput(value29)) {
                       value19.current ||
                         (value20(true),
                         value41(
@@ -853,7 +853,7 @@ export function installCdsSheetsMenuPopup(): () => void {
                     }
                     let value56: Dynamic =
                         defaultView.innerHeight * SheetsLayoutConstant,
-                      value57: Dynamic = (0, sheetNaturalHeight)(
+                      value57: Dynamic = sheetNaturalHeight(
                         value29,
                       );
                     flag = value57 > value56;
@@ -873,19 +873,19 @@ export function installCdsSheetsMenuPopup(): () => void {
           }, [value4, value5, value42, value29, value41, value40, value20]);
           let value43: Dynamic = value11?.height,
             value44: Dynamic = value11?.pinHeight;
-          (0, useIsomorphicLayoutEffect)((): Dynamic => {
+          useIsomorphicLayoutEffect((): Dynamic => {
             let current: Dynamic = value13.current;
             !value4 ||
               value5 ||
               value43 !== undefined ||
               current === null ||
-              ((0, clearSheetTransition)(current),
+              (clearSheetTransition(current),
               value44?.(
                 current.getBoundingClientRect().height,
-                (0, sheetNeedsScrolling)(current),
+                sheetNeedsScrolling(current),
               ));
           }, [value4, value5, value43, value44]);
-          let value45: Dynamic = (0, useMenuPopupFocus)(
+          let value45: Dynamic = useMenuPopupFocus(
               value2?.triggerRef,
               props.finalFocus,
             ),
@@ -894,11 +894,11 @@ export function installCdsSheetsMenuPopup(): () => void {
               : anchor != null &&
                 value2 === null &&
                 props.finalFocus === undefined,
-            value47: Dynamic = (0, usePassiveOpenCell)(value2 === null);
+            value47: Dynamic = usePassiveOpenCell(value2 === null);
           value47.root?.declareFocusProps(initialFocus, props.finalFocus);
           value2 !== null &&
             initialFocus !== undefined &&
-            (0, warnNestedMenuInitialFocus)();
+            warnNestedMenuInitialFocus();
           let state: Dynamic = {
               ...props,
               onKeyDown: (input?: Dynamic): Dynamic => {
@@ -906,7 +906,7 @@ export function installCdsSheetsMenuPopup(): () => void {
                 preventSheetTab(input);
               },
             },
-            value48: Dynamic = (0, useEventRef)(
+            value48: Dynamic = useEventRef(
               (input?: Dynamic): Dynamic => {
                 value10.popupRef(input);
                 value31(input);
@@ -916,7 +916,7 @@ export function installCdsSheetsMenuPopup(): () => void {
               options,
             ),
             value49: Dynamic = value4
-              ? (0, getSheetFrameStyle)(value11, {
+              ? getSheetFrameStyle(value11, {
                   floor: value17 ? "half" : "content",
                   parentFrameHeight: value5 ? undefined : value27?.frameHeight,
                 })
@@ -939,13 +939,13 @@ export function installCdsSheetsMenuPopup(): () => void {
                     };
           value2 !== null &&
             layerOffset !== undefined &&
-            (0, warnNestedMenuLayerOffset)();
-          let value51: Dynamic = (0, useLayer)(
+            warnNestedMenuLayerOffset();
+          let value51: Dynamic = useLayer(
               value3 ? "contextmenu" : "menu",
               value2 === null ? layerOffset : undefined,
             ),
-            value52: Dynamic = (0, useCdsWindow)(),
-            value53: Dynamic = (0, sheetFrameHeight)(value11, value52),
+            value52: Dynamic = useCdsWindow(),
+            value53: Dynamic = sheetFrameHeight(value11, value52),
             value54: Dynamic = (0, reactSheetsMenuPopup_3.useMemo)(
               (): Dynamic =>
                 value4 && value28 !== null
@@ -989,7 +989,7 @@ export function installCdsSheetsMenuPopup(): () => void {
                           value4
                             ? {
                                 ...value51.style,
-                                ...(0, getSheetFixedPosition)(value11),
+                                ...getSheetFixedPosition(value11),
                               }
                             : value10.held !== null
                               ? {
@@ -1050,12 +1050,12 @@ export function installCdsSheetsMenuPopup(): () => void {
                                   }
                                 : {})}
                               {...(value4
-                                ? (0, getSizeAttribute)("lg")
+                                ? getSizeAttribute("lg")
                                 : {})}
                               ref={value48}
                               {...input2(value4 ? state : props)}
                               style={value50}
-                              className={(0, cn)(
+                              className={cn(
                                 MenuPopupCss,
                                 value4 && PlatformReducedMotionCss_2,
                                 value4 &&
@@ -1110,26 +1110,26 @@ export function installCdsSheetsMenuPopup(): () => void {
       );
       MenuSheetPopup.displayName = "MenuSheetPopup";
     });
-    initializeSheetsMenuPopup_5 = (0, initializeOnce)((): Dynamic => {
+    initializeSheetsMenuPopup_5 = initializeOnce((): Dynamic => {
       "use client";
 
-      (0, initializeClassNames)();
-      (0, initializeSheetsPresentation)();
-      (0, initializeSheetsPopupStack)();
-      (0, initializePlatformReducedMotion_2)();
-      jsxSheetsMenuPopup_2 = (0, toModuleNamespace)(
-        (0, load_react_jsx_runtime)(),
+      initializeClassNames();
+      initializeSheetsPresentation();
+      initializeSheetsPopupStack();
+      initializePlatformReducedMotion_2();
+      jsxSheetsMenuPopup_2 = toModuleNamespace(
+        load_react_jsx_runtime(),
       );
-      (0, initializeNpm__base_ui_react_pge)();
+      initializeNpm__base_ui_react_pge();
     });
-    initializeSheetsMenuPopup_6 = (0, initializeOnce)((): Dynamic => {
+    initializeSheetsMenuPopup_6 = initializeOnce((): Dynamic => {
       "use client";
 
-      (0, initializePlatformReducedMotion_2)();
-      jsxSheetsMenuPopup_3 = (0, toModuleNamespace)(
-        (0, load_react_jsx_runtime)(),
+      initializePlatformReducedMotion_2();
+      jsxSheetsMenuPopup_3 = toModuleNamespace(
+        load_react_jsx_runtime(),
       );
-      (0, initializeNpm__base_ui_react_wY)();
+      initializeNpm__base_ui_react_wY();
     });
   };
 }

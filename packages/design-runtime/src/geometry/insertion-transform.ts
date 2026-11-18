@@ -186,7 +186,7 @@ async function placeElementAtMeasuredPoint(
     initialPlacement: Dynamic = makePlacement(clientX, clientY),
     currentState: Dynamic = session.state(),
     initialTarget: Dynamic = currentState
-      ? (0, defaultInsertionPoint)(
+      ? defaultInsertionPoint(
           currentState.model,
           initialPlacement,
         )
@@ -210,7 +210,7 @@ async function placeElementAtMeasuredPoint(
     ? insertionPointInContainer(containerTransform, clientX, clientY)
     : null;
   return session.mutate((input?: Dynamic): Dynamic => {
-    let value: Dynamic = (0, defaultInsertionPoint)(
+    let value: Dynamic = defaultInsertionPoint(
         input.model,
         initialPlacement,
       ),
@@ -220,7 +220,7 @@ async function placeElementAtMeasuredPoint(
         value.position === "into" &&
         value.targetTid != null &&
         input.model.element(value.targetTid) === containerElement;
-    return (0, insertHtmlIntoModel)(
+    return insertHtmlIntoModel(
       input,
       value2
         ? makePlacement(containerPoint.left, containerPoint.top)

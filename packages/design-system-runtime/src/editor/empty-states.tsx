@@ -100,8 +100,8 @@ export {
 };
 export function installEditorEmptyStates(): () => void {
   return () => {
-    jsxEditorEmptyStates = (0, toModuleNamespace)(
-      (0, loadJsxNamespace)(),
+    jsxEditorEmptyStates = toModuleNamespace(
+      loadJsxNamespace(),
       1,
     );
     // MineDesign: user-facing copy calls the agent "the agent", not Claude.

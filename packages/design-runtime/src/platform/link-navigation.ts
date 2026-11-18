@@ -23,12 +23,12 @@ function openPreviewExternalLink(
   }
   if (
     (value.protocol !== "http:" && value.protocol !== "https:") ||
-    value.origin === (0, currentHttpOrigin)() ||
+    value.origin === currentHttpOrigin() ||
     !options.take()
   )
     return;
   let value2: Dynamic =
-      (0, getEmbedContext)() !== null &&
+      getEmbedContext() !== null &&
       (window as Dynamic).parent !== window
         ? (window as Dynamic).parent.document
         : document,

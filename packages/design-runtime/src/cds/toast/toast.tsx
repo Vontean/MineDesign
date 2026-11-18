@@ -52,7 +52,7 @@ function ToastCard({
     value3: Dynamic = value2 != null && typeof value2 != "boolean",
     value4: Dynamic = !front,
     value5: Dynamic = value4 && frontHeight ? frontHeight : undefined,
-    value6: Dynamic = (0, useLabel)("dismiss", "Dismiss"),
+    value6: Dynamic = useLabel("dismiss", "Dismiss"),
     { update: value7 }: Dynamic = npm_Toast_Ty.useToastManager(),
     value8: Dynamic = (0, reactToastToast.useContext)(ToastContext),
     value9: Dynamic = (0, reactToastToast.useRef)(null),
@@ -170,7 +170,7 @@ function PinnedToastCard({
 }: Dynamic): Dynamic {
   useUiLocale();
   let value: Dynamic = pinned.variant ?? "neutral",
-    value2: Dynamic = (0, useLabel)("dismiss", "Dismiss");
+    value2: Dynamic = useLabel("dismiss", "Dismiss");
   return (
     <div
       data-pinned={""}
@@ -279,7 +279,7 @@ function ToastViewport({ className: className }: Dynamic): Dynamic {
   useUiLocale();
   let { toasts: value }: Dynamic = npm_Toast_Ty.useToastManager(),
     value2: Dynamic = (0, reactToastToast.useContext)(ToastContext);
-  (0, useIsomorphicLayoutEffect)((): Dynamic => {
+  useIsomorphicLayoutEffect((): Dynamic => {
     value2?.syncLiveToasts(value);
   }, [value, value2]);
   let value3: Dynamic = value.find(
@@ -293,7 +293,7 @@ function ToastViewport({ className: className }: Dynamic): Dynamic {
           render={
             <div
               data-cds={"Toast"}
-              className={(0, cn)(
+              className={cn(
                 "cds-reset pointer-events-none fixed right-4 bottom-4 flex w-[360px] max-w-[calc(100vw-2rem)] flex-col-reverse gap-md",
                 className,
               )}
@@ -632,26 +632,26 @@ export {
 };
 export function installCdsToastToast(): () => void {
   return () => {
-    initializeToastToast = (0, initializeOnce)((): Dynamic => {
+    initializeToastToast = initializeOnce((): Dynamic => {
       "use client";
 
-      (0, initializeHooksLayoutEffect)();
-      (0, initializeClassNames)();
-      (0, initializeSheetsStyles_2)();
-      (0, initializeOverlaysLayers)();
-      (0, initializePlatformRootFontSize_2)();
-      (0, initializeComponentsIcon_2)();
-      (0, initializeThemeSurfaces)();
-      reactToastToast = (0, toModuleNamespace)(
-        (0, load_react)(),
+      initializeHooksLayoutEffect();
+      initializeClassNames();
+      initializeSheetsStyles_2();
+      initializeOverlaysLayers();
+      initializePlatformRootFontSize_2();
+      initializeComponentsIcon_2();
+      initializeThemeSurfaces();
+      reactToastToast = toModuleNamespace(
+        load_react(),
       );
-      jsxToastToast = (0, toModuleNamespace)(
-        (0, load_react_jsx_runtime)(),
+      jsxToastToast = toModuleNamespace(
+        load_react_jsx_runtime(),
       );
-      (0, initializeNpm__base_ui_react_oet)();
+      initializeNpm__base_ui_react_oet();
       ToastToastConstant = 6e3;
       ToastToastLimit = 1e3;
-      popupSurfaceClassNameValue = (0, popupSurfaceClassName)(
+      popupSurfaceClassNameValue = popupSurfaceClassName(
         "popover",
       );
       ToastToastNeutralWarningDangerConfig = {

@@ -102,22 +102,22 @@ function designSystemMigrationDbRules() {
   );
 }
 function migrationPublishInput(path: string, content: string) {
-  let relative = (0, relativeProjectFilePath)(path),
-    mime = (0, publishableFileMimeType)(relative, content);
+  let relative = relativeProjectFilePath(path),
+    mime = publishableFileMimeType(relative, content);
   if (mime === null) {
     throw new DesignSystemMigrationError("unpublishable_file");
   }
-  if ((0, isTextFilePath)(relative!)) {
+  if (isTextFilePath(relative!)) {
     return {
       content: content,
       contentType: mime,
     };
   }
-  let decoded = (0, decodeHeldFileDataUri)(content);
+  let decoded = decodeHeldFileDataUri(content);
   if (decoded === null) {
     throw new DesignSystemMigrationError("invalid_content");
   }
-  if ((0, isTextMimeType)(mime)) {
+  if (isTextMimeType(mime)) {
     return {
       content: new TextDecoder("utf-8", {
         ignoreBOM: true,
@@ -136,7 +136,7 @@ async function legacyStoreSnapshotToFiles(
   snapshot: Migration.StoreSnapshot,
   fetchBlob: Migration.FetchMigrationBlob,
 ): Promise<Migration.LegacyMigrationSystem> {
-  let state = (0, composeStoredSystemFiles)(
+  let state = composeStoredSystemFiles(
       storeDocumentDataMap(snapshot),
     ),
     remoteText = new Map<string, string>();
@@ -146,7 +146,7 @@ async function legacyStoreSnapshotToFiles(
       new TextDecoder().decode(
         await readMigrationBlob(
           fetchBlob,
-          (0, blobIdFromReference)(value2.dataRef),
+          blobIdFromReference(value2.dataRef),
           typeof value2.dataBytes === "number" ? value2.dataBytes : undefined,
         ),
       ),
@@ -156,7 +156,7 @@ async function legacyStoreSnapshotToFiles(
     title: state.title,
     files: await materializeMigrationBlobFiles(
       {
-        ...(0, hydrateStoredSystemText)(state, remoteText),
+        ...hydrateStoredSystemText(state, remoteText),
       },
       state.title,
       fetchBlob,
@@ -187,21 +187,20 @@ async function materializeMigrationBlobFiles(
   title: string,
   fetchBlob: Migration.FetchMigrationBlob,
 ): Promise<Model.FileTable> {
-  let manifest = (0, storageCatalogFromManifest)(
+  let manifest = storageCatalogFromManifest(
     files[DESIGN_SYSTEM_PATHS.manifest] ?? "",
   );
-  for (let { path: value, id: value2 } of (0,
-  blobFilesOwedToFileStorage)(files)) {
+  for (let { path: value, id: value2 } of blobFilesOwedToFileStorage(files)) {
     let value3 = await readMigrationBlob(
       fetchBlob,
       value2,
       manifest.files[value]?.bytes,
     );
-    files[value] = (0, isTextFilePath)(value)
+    files[value] = isTextFilePath(value)
       ? new TextDecoder().decode(value3)
-      : (0, bytesToFileDataUri)(
+      : bytesToFileDataUri(
           value3,
-          (0, publishableFileMimeType)(value) ??
+          publishableFileMimeType(value) ??
             "application/octet-stream",
         );
   }
@@ -211,7 +210,7 @@ function designSystemFilesMigrationTree(
   system: Migration.LegacyMigrationSystem,
   sourcesFor: (path: string) => string[],
 ) {
-  lastUnpublishableMigrationPaths = (0, filesLeftOutOfMigration)(
+  lastUnpublishableMigrationPaths = filesLeftOutOfMigration(
     system.files,
   ).map((input) => input.path);
   if (lastUnpublishableMigrationPaths.length > 0) {
@@ -219,28 +218,28 @@ function designSystemFilesMigrationTree(
   }
   let files = new Map<string, Model.FilePublishInput>(),
     sources = new Map<string, string[]>();
-  for (let [value, value2] of (0, publishableProjectFiles)(
+  for (let [value, value2] of publishableProjectFiles(
     system.files,
   )) {
     files.set(value, migrationPublishInput(value, value2));
     sources.set(
       value,
-      sourcesFor((0, relativeProjectFilePath)(value)!),
+      sourcesFor(relativeProjectFilePath(value)!),
     );
   }
-  for (let [value, value2] of (0, validDerivedProjectFiles)(
+  for (let [value, value2] of validDerivedProjectFiles(
     system.files,
   )) {
     files.set(value, {
       content: value2,
       contentType:
-        (0, publishableFileMimeType)(
-          (0, relativeProjectFilePath)(value),
+        publishableFileMimeType(
+          relativeProjectFilePath(value),
         ) ?? "text/plain",
     });
   }
-  let index = (0, buildFilesIndex)(system.title, system.files, {
-    ...(0, createEmptyFilesIndex)(),
+  let index = buildFilesIndex(system.title, system.files, {
+    ...createEmptyFilesIndex(),
     ...(system.source !== null
       ? {
           source: {
@@ -278,11 +277,11 @@ function trackMigrationDownloadFailures(files: Model.BrowserFilesPort) {
     if (!value.ok && value.code === "invalid_content") {
       refusedDownloads = Object.entries(input)
         .filter(([, input2]) =>
-          (0, isDownloadOnlyPublishInput)(input2),
+          isDownloadOnlyPublishInput(input2),
         )
         .map(
           ([input2]) =>
-            (0, relativeProjectFilePath)(input2) ?? input2,
+            relativeProjectFilePath(input2) ?? input2,
         );
     }
     return value;
@@ -293,7 +292,7 @@ function trackMigrationDownloadFailures(files: Model.BrowserFilesPort) {
   };
 }
 function serializeMigrationIndex(index: unknown) {
-  let text = (0, serializeIndexDocument)(index);
+  let text = serializeIndexDocument(index);
   if (text.length > MAX_DESIGN_SYSTEM_INDEX_CHARS) {
     throw new DesignSystemMigrationError("index_too_large");
   }
@@ -330,7 +329,7 @@ function createDesignSystemMigrationCodec(
     },
     serializeIndex: serializeMigrationIndex,
     fold: (input) =>
-      (0, foldLegacyStoreChangesIntoFiles)(input, fetchBlob),
+      foldLegacyStoreChangesIntoFiles(input, fetchBlob),
   };
 }
 export {
@@ -422,10 +421,9 @@ export function installFilesMigrationCodec(): () => void {
     storeDocumentDataMap = (snapshot) =>
       new Map([...snapshot].map(([input, input2]) => [input, input2.data]));
     finalizeMigrationFiles = (input, options) => {
-      input[DESIGN_SYSTEM_PATHS.manifest] = (0,
-      stringifyManifestWithinBudget)(
-        (0, buildDesignSystemManifest)(
-          (0, parsedDesignSystem)({
+      input[DESIGN_SYSTEM_PATHS.manifest] = stringifyManifestWithinBudget(
+        buildDesignSystemManifest(
+          parsedDesignSystem({
             v: 2,
             files: {
               ...input,
@@ -448,7 +446,7 @@ export function installFilesMigrationCodec(): () => void {
         input === DESIGN_SYSTEM_PATHS.tokens &&
         !options.has(SYSTEM_TOKENS_DOCUMENT_PATH)
           ? RAW_TOKENS_DOCUMENT_PATH
-          : (0, documentPathForFile)(input);
+          : documentPathForFile(input);
       if (options.has(value)) {
         return [value];
       } else {

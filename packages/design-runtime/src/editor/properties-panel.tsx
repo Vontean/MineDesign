@@ -21,7 +21,7 @@ import { CdsIsland } from "../platform/cds-island";
 
 function DesignPropertiesSidebar({ children: children }: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic = (0, usePanelWidth)(312);
+  let value: Dynamic = usePanelWidth(312);
   return (
     <div
       data-testid={"dc-edit-side-panel"}
@@ -43,13 +43,13 @@ function AnchoredDesignProperties({
   readOnly = false,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic = (0, useInspectorPosture)(),
-    value2: Dynamic = (0, useElementById)(inspectorPanelId),
-    [value3]: Dynamic = (0, useInspectorOpen)(),
-    value4: Dynamic = (0, useDesignColorTokens)("appifact"),
+  let value: Dynamic = useInspectorPosture(),
+    value2: Dynamic = useElementById(inspectorPanelId),
+    [value3]: Dynamic = useInspectorOpen(),
+    value4: Dynamic = useDesignColorTokens("appifact"),
     value5: Dynamic = (0, reactCanvasShape_2.useMemo)(
       (): Dynamic => ({
-        dsColorTokens: (0, activeDesignColorTokens)(
+        dsColorTokens: activeDesignColorTokens(
           value4.tokens,
           value4.themes,
           undefined,
@@ -67,7 +67,7 @@ function AnchoredDesignProperties({
     <InspectorContext.Provider value={value5}>
       <div
         data-testid={"dc-anchored-content"}
-        className={(0, cn)(
+        className={cn(
           "flex min-h-0 flex-1 flex-col overflow-y-auto pb-3 select-none [&_input]:select-text",
           ChromeScrollbarLabel,
         )}

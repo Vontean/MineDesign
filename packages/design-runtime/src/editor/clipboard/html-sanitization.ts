@@ -157,7 +157,7 @@ function sanitizePastedStyle(items?: Dynamic): Dynamic {
       value6: Dynamic = value3.slice(value4 + 1).trim();
     if (
       !/^(?:--[A-Za-z0-9_-]+|-?[A-Za-z][A-Za-z0-9-]*)$/.test(value5) ||
-      (0, isUnsafeCssProperty)(value5) ||
+      isUnsafeCssProperty(value5) ||
       ClipboardHtmlSanitizationScriptDataDcScriptPattern.test(value5) ||
       ClipboardHtmlSanitizationScriptDataDcScriptPattern.test(value6) ||
       /\\$/.test(value6) ||
@@ -337,7 +337,7 @@ function sanitizePastedDom(input?: Dynamic, options?: Dynamic): Dynamic {
   }
 }
 function sanitizePastedHtml(input?: Dynamic): Dynamic {
-  if (typeof DOMParser === "undefined") return (0, escapeHtml)(input);
+  if (typeof DOMParser === "undefined") return escapeHtml(input);
   let value: Dynamic = input;
   for (let index: Dynamic = 0; index < 2; index++) {
     let value2: Dynamic = new DOMParser().parseFromString(value, "text/html");

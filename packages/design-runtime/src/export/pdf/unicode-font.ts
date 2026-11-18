@@ -126,7 +126,7 @@ function buildPdfFontObjects(input?: Dynamic, options?: Dynamic): Dynamic {
   let callback: Dynamic = (input2?: Dynamic): Dynamic =>
       String(input + input2) + " 0 R",
     callback2: Dynamic = (input2?: Dynamic, items?: Dynamic): Dynamic => [
-      (0, encodeAsciiBytes)(
+      encodeAsciiBytes(
         input2 +
           " /Length " +
           String(items.length) +
@@ -135,10 +135,10 @@ stream
 `,
       ),
       items,
-      (0, encodeAsciiBytes)(`
+      encodeAsciiBytes(`
 endstream`),
     ],
-    value: Dynamic = (0, decodeBase64Bytes)(pdfFallbackFontBase64),
+    value: Dynamic = decodeBase64Bytes(pdfFallbackFontBase64),
     value2: Dynamic =
       "/DW " +
       String(PdfUnicodeFontConstant_2) +
@@ -152,7 +152,7 @@ endstream`),
       "]";
   return [
     [
-      (0, encodeAsciiBytes)(
+      encodeAsciiBytes(
         "<< /Type /Font /Subtype /Type0 /BaseFont /Glyphless /Encoding /Identity-H /DescendantFonts [" +
           callback(1) +
           "] /ToUnicode " +
@@ -161,7 +161,7 @@ endstream`),
       ),
     ],
     [
-      (0, encodeAsciiBytes)(
+      encodeAsciiBytes(
         "<< /Type /Font /Subtype /CIDFontType2 /BaseFont /Glyphless /CIDSystemInfo << /Registry (Adobe) /Ordering (Identity) /Supplement 0 >> /FontDescriptor " +
           callback(2) +
           " " +
@@ -172,7 +172,7 @@ endstream`),
       ),
     ],
     [
-      (0, encodeAsciiBytes)(
+      encodeAsciiBytes(
         "<< /Type /FontDescriptor /FontName /Glyphless /Flags 4 /FontBBox [0 -207 500 718] /ItalicAngle 0 /Ascent 718 /Descent -207 /CapHeight 718 /StemV 80 /FontFile2 " +
           callback(3) +
           " >>",
@@ -181,9 +181,9 @@ endstream`),
     callback2("<< /Length1 " + String(value.length), value),
     callback2(
       "<< /Filter /FlateDecode",
-      (0, decodeBase64Bytes)(pdfFallbackGlyphData),
+      decodeBase64Bytes(pdfFallbackGlyphData),
     ),
-    callback2("<<", (0, encodeAsciiBytes)(buildUnicodeCmap(options))),
+    callback2("<<", encodeAsciiBytes(buildUnicodeCmap(options))),
   ];
 }
 export {

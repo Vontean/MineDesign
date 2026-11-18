@@ -37,7 +37,7 @@ function selectHtmlExportArtboards(
     : {
         artboards: manifest.artboards.filter(
           (input?: Dynamic): Dynamic =>
-            (0, designPageId)(input, manifest.pages) === pageId &&
+            designPageId(input, manifest.pages) === pageId &&
             !input.frameless,
         ),
       };
@@ -46,20 +46,20 @@ function exportedCanvasOverviewHtml(
   title?: Dynamic,
   manifest?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = (0, artboardsInReadingOrder)(manifest).map(
+  let value: Dynamic = artboardsInReadingOrder(manifest).map(
     (input?: Dynamic): Dynamic => {
       let value2: Dynamic =
-          input.title ?? (0, exportBaseFileName)(input.file),
+          input.title ?? exportBaseFileName(input.file),
         value3: Dynamic = Math.max(1, Math.round(input.w)),
         value4: Dynamic = Math.max(1, Math.round(input.h)),
-        value5: Dynamic = (0, artboardRadiusCss)(input.radius);
+        value5: Dynamic = artboardRadiusCss(input.radius);
       return (
         '<section class="board"><h2>' +
-        (0, escapeHtml)(value2) +
+        escapeHtml(value2) +
         '</h2><iframe src="' +
-        (0, escapeHtmlAttributeValue)(encodeURI(input.file)) +
+        escapeHtmlAttributeValue(encodeURI(input.file)) +
         '" title="' +
-        (0, escapeHtmlAttributeValue)(value2) +
+        escapeHtmlAttributeValue(value2) +
         '" width="' +
         String(value3) +
         '" height="' +
@@ -81,7 +81,7 @@ function exportedCanvasOverviewHtml(
     "<head>",
     '<meta charset="utf-8">',
     '<meta name="viewport" content="width=device-width, initial-scale=1">',
-    "<title>" + (0, escapeHtml)(title) + "</title>",
+    "<title>" + escapeHtml(title) + "</title>",
     "<style>",
     'html{background:#f5f4ef;color:#1f1e1d;font:14px/1.4 system-ui,-apple-system,"Segoe UI",sans-serif}',
     "body{margin:0;padding:48px;display:flex;flex-direction:column;align-items:flex-start;gap:48px}",
@@ -103,12 +103,12 @@ function standaloneExportFilename(
   artboardTitle?: Dynamic,
 ): Dynamic {
   let value: Dynamic =
-      (0, sanitizeExportFileName)(title) ||
-      (0, exportBaseFileName)(file),
+      sanitizeExportFileName(title) ||
+      exportBaseFileName(file),
     value2: Dynamic =
       artboardTitle === undefined
         ? ""
-        : (0, sanitizeExportFileName)(artboardTitle);
+        : sanitizeExportFileName(artboardTitle);
   return (
     [...(value2 === "" ? value : value + " \u2013 " + value2)]
       .slice(0, 120)
@@ -152,11 +152,11 @@ function createDesignDocumentAssetReader(document2?: Dynamic): Dynamic {
     if (!values.has(input)) return null;
     let value3: Dynamic = await document2.read(input);
     if (value3 === undefined) return null;
-    let value4: Dynamic = (0, exportMimeForPath)(input);
+    let value4: Dynamic = exportMimeForPath(input);
     if (exportImageFilenamePattern.test(input))
       try {
         return {
-          data: (0, decodeBinaryBase64)(
+          data: decodeBinaryBase64(
             value3.replace(/^data:[^,]*,/, ""),
           ),
           mime: value4,
@@ -167,7 +167,7 @@ function createDesignDocumentAssetReader(document2?: Dynamic): Dynamic {
     return {
       data: value.encode(
         value4 === "text/html"
-          ? (0, normalizeDcScriptType)(value3)
+          ? normalizeDcScriptType(value3)
           : value3,
       ),
       mime: value4,
@@ -182,7 +182,7 @@ function explainSkippedGoogleFontAssets(
   let value: Dynamic = skippedFonts.map(
       (input?: Dynamic): Dynamic =>
         "asset not found: " +
-        (0, redactProjectServeAccessToken)(input),
+        redactProjectServeAccessToken(input),
     ),
     callback: Dynamic = (input?: Dynamic): Dynamic =>
       value.some(
@@ -237,18 +237,18 @@ async function produceStandaloneHtmlExport(
           "empty",
           value14.file + " could not be read",
         );
-      value = (0, normalizeDcScriptType)(value15);
+      value = normalizeDcScriptType(value15);
       value2 = value14.file;
       value13 !== undefined &&
         (value3 =
-          value13.title ?? (0, exportBaseFileName)(value13.file));
+          value13.title ?? exportBaseFileName(value13.file));
       input.importerReady === true &&
         (value5 = {
           w: value14.w,
           h: value14.h,
           label:
             value14.title?.trim() ||
-            (0, exportBaseFileName)(value14.file),
+            exportBaseFileName(value14.file),
         });
     } else {
       for (let value14 of input.artboards as Dynamic)
@@ -262,7 +262,7 @@ async function produceStandaloneHtmlExport(
     }
   }
   let assets: Dynamic = input.assets,
-    value6: Dynamic = (0, createExportAssetResolver)(
+    value6: Dynamic = createExportAssetResolver(
       value4,
       assets,
       options,
@@ -271,10 +271,9 @@ async function produceStandaloneHtmlExport(
       input.kind === "canvas" &&
       input.fontLoads !== undefined &&
       input.fontLoads.length > 0
-        ? (0, createFontAwareExportResolver)(value6, input.fontLoads)
+        ? createFontAwareExportResolver(value6, input.fontLoads)
         : undefined,
-    { html: value8, warnings: value9 }: Dynamic = await (0,
-    bundleStandaloneDesignHtml)(
+    { html: value8, warnings: value9 }: Dynamic = await bundleStandaloneDesignHtml(
       value,
       value2,
       value7?.resolve ?? value6,
@@ -286,7 +285,7 @@ async function produceStandaloneHtmlExport(
               input2?: Dynamic,
               options2?: Dynamic,
             ): Dynamic =>
-              (0, prepareStaticArtboardExport)(
+              prepareStaticArtboardExport(
                 input2,
                 value5,
                 options2,

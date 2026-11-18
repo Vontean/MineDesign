@@ -45,7 +45,7 @@ export function dispatchCanvasCommand(deps: { readonly abandonSelectionGesture: 
         context: Dynamic = false,
         value653?: Dynamic): Dynamic {
         let callback15: Dynamic = (): Dynamic => (
-          context && (0, startClipboardMark)().drop(),
+          context && startClipboardMark().drop(),
           true
         );
         if (input === "artboard") {
@@ -91,7 +91,7 @@ export function dispatchCanvasCommand(deps: { readonly abandonSelectionGesture: 
             });
           } else if (input === "a") {
             if (
-              (0, selectionNavigationScope)(
+              selectionNavigationScope(
                 deps.selectionRef.current,
                 false,
               ) === "panel"
@@ -109,7 +109,7 @@ export function dispatchCanvasCommand(deps: { readonly abandonSelectionGesture: 
         if (input === "z" || input === "Z") {
           let value654: Dynamic = input === "Z" ? "redo" : "undo";
           if (
-            (0, hasHeldUndoOverlay)() ||
+            hasHeldUndoOverlay() ||
             deps.value432.current?.busy() ||
             deps.value155.current > 0
           )
@@ -130,7 +130,7 @@ export function dispatchCanvasCommand(deps: { readonly abandonSelectionGesture: 
                   " \u2014 that artboard's history changed.",
               )
             : value655 === "empty" &&
-              (0, announce)(
+              announce(
                 AccessibilityAnnouncementsUndoRedoConfig[value654],
               );
           return true;
@@ -138,13 +138,13 @@ export function dispatchCanvasCommand(deps: { readonly abandonSelectionGesture: 
         if (input === "v") {
           if (
             options?.seen.artboards != null &&
-            (0, getActiveClipboardSource)(options.seen) ===
+            getActiveClipboardSource(options.seen) ===
               "foreign-artboards"
           ) {
             if (!deps.value224.current) return false;
             if (
               hasActiveUserGesture() &&
-              !(0, hasBlockingEditorOverlay)()
+              !hasBlockingEditorOverlay()
             ) {
               let current4: Dynamic = deps.focusedFileRef.current,
                 value658: Dynamic =
@@ -161,20 +161,20 @@ export function dispatchCanvasCommand(deps: { readonly abandonSelectionGesture: 
               (window as Dynamic).focus();
               deps.value188(
                 ClipboardFileTransferRegistry.pressAgain(
-                  (0, keyboardShortcutLabel)("V"),
+                  keyboardShortcutLabel("V"),
                 ),
               );
             }
             return true;
           }
           let value654: Dynamic =
-            hasActiveUserGesture() && !(0, hasBlockingEditorOverlay)()
+            hasActiveUserGesture() && !hasBlockingEditorOverlay()
               ? deps.value109()
               : null;
           if (value654 == null) return false;
-          let value655: Dynamic = (0, getAnnotationClipboard)();
+          let value655: Dynamic = getAnnotationClipboard();
           if (value654.overAnnotation && value655.length === 0) return false;
-          let value656: Dynamic = (0, getActiveClipboardSource)(
+          let value656: Dynamic = getActiveClipboardSource(
             options?.seen ?? {
               text: "",
               stamp: null,
@@ -182,12 +182,12 @@ export function dispatchCanvasCommand(deps: { readonly abandonSelectionGesture: 
             },
           );
           if (value656 === "text") return false;
-          let value657: Dynamic = (0, getArtboardClipboard)();
+          let value657: Dynamic = getArtboardClipboard();
           if (value656 === "artboards" && value657)
             deps.value464.current(
               value657,
               value655,
-              (0, pointerCoordinates)(value654),
+              pointerCoordinates(value654),
             );
           else {
             if (value654.overAnnotation) return false;
@@ -205,14 +205,14 @@ export function dispatchCanvasCommand(deps: { readonly abandonSelectionGesture: 
         if (!deps.value137) return false;
         if (input === "c") {
           if (deps.value48.current === 0) return deps.value139();
-          let value654: Dynamic = (0, startClipboardMark)();
+          let value654: Dynamic = startClipboardMark();
           deps.value51((): Dynamic => {
             deps.value139(value654);
           }, value654.drop);
           return true;
         }
         if (input === "x")
-          return (0, sessionAllowsMutation)({
+          return sessionAllowsMutation({
             gesturing: deps.value218.current,
             setMoveCommits: deps.value155.current,
           })
@@ -233,13 +233,13 @@ export function dispatchCanvasCommand(deps: { readonly abandonSelectionGesture: 
             ? false
             : (deps.value51((): Dynamic => {
                 if (context) {
-                  let value654: Dynamic = (0, canvasBoardSelection)(
+                  let value654: Dynamic = canvasBoardSelection(
                     deps.selectionRef.current,
                   );
                   deps.value145(DeletedValue, {
                     elementsOnly: true,
                   }) &&
-                    (0, boardSelectionCount)(value654) > 0 &&
+                    boardSelectionCount(value654) > 0 &&
                     deps.value161(
                       uiMessage("canvas.designCanvas.theArtboardsAndNotesStay"),
                     );
@@ -248,10 +248,10 @@ export function dispatchCanvasCommand(deps: { readonly abandonSelectionGesture: 
               true);
         if (input === "flip-horizontal" || input === "flip-vertical") {
           let value654: Dynamic = context
-              ? (0, canvasBoardSelection)(deps.selectionRef.current)
+              ? canvasBoardSelection(deps.selectionRef.current)
               : emptyBoardSelection,
             value655: Dynamic =
-              ((0, isApplePlatform)() ? "\u21E7" : "Shift+") +
+              (isApplePlatform() ? "\u21E7" : "Shift+") +
               (input === "flip-horizontal" ? "H" : "V"),
             value656: Dynamic =
               input === "flip-horizontal" ? "horizontal" : "vertical",
@@ -282,7 +282,7 @@ export function dispatchCanvasCommand(deps: { readonly abandonSelectionGesture: 
                   then: (input2?: Dynamic, options2?: Dynamic): Dynamic =>
                     !deps.value224.current ||
                     !callback16(current4, deps.selectionRef.current) ||
-                    (0, flipAnnotations)(
+                    flipAnnotations(
                       (deps.value73.current.annotations ?? []).filter(
                         (input3?: Dynamic): Dynamic =>
                           value654.notes.has(input3.id),
@@ -292,13 +292,13 @@ export function dispatchCanvasCommand(deps: { readonly abandonSelectionGesture: 
                       ? false
                       : (deps.abandonSelectionGesture(),
                         deps.applyCanvasSelection(
-                          (0, selectionFromBoards)(value654),
+                          selectionFromBoards(value654),
                         ),
                         deps.value161(
                           (input2 !== undefined
                             ? input2 + " "
                             : options2
-                              ? (0, flipDirectionAnnouncement)(
+                              ? flipDirectionAnnouncement(
                                   value656,
                                 ) + ". "
                               : "") +
@@ -314,7 +314,7 @@ export function dispatchCanvasCommand(deps: { readonly abandonSelectionGesture: 
         }
         if (input === "d") {
           let value654: Dynamic = context
-            ? (0, canvasBoardSelection)(deps.selectionRef.current)
+            ? canvasBoardSelection(deps.selectionRef.current)
             : emptyBoardSelection;
           deps.value148(
             context
@@ -323,11 +323,11 @@ export function dispatchCanvasCommand(deps: { readonly abandonSelectionGesture: 
                 }
               : {},
           ) &&
-            (0, boardSelectionCount)(value654) > 0 &&
-            (deps.applyCanvasSelection((0, selectionFromBoards)(value654)),
+            boardSelectionCount(value654) > 0 &&
+            (deps.applyCanvasSelection(selectionFromBoards(value654)),
             deps.value161(
               uiMessage("canvas.designCanvas.theArtboardsAndNotesStay2") +
-                (0, keyboardShortcutLabel)("D") +
+                keyboardShortcutLabel("D") +
                 " again to copy them",
             ));
           return true;
@@ -341,11 +341,11 @@ export function subscribeCanvasKeyDown(deps: { readonly abandonSelectionGesture:
         let current4: Dynamic = deps.selectionRef.current;
         !deps.value224.current ||
           deps.value218.current ||
-          (0, hasBlockingEditorOverlay)() ||
-          (0, isEmptyCanvasSelection)(current4) ||
+          hasBlockingEditorOverlay() ||
+          isEmptyCanvasSelection(current4) ||
           (current4.elements.size > 0
             ? deps.value147.current(DeletedValue)
-            : deps.value459.current((0, canvasBoardSelection)(current4)));
+            : deps.value459.current(canvasBoardSelection(current4)));
       },
       callback16: Dynamic = (event?: Dynamic): Dynamic => {
         if (event.defaultPrevented || !deps.value224.current || deps.value345.current)
@@ -353,7 +353,7 @@ export function subscribeCanvasKeyDown(deps: { readonly abandonSelectionGesture:
         let current4: Dynamic = deps.selectionRef.current,
           value653: Dynamic =
             event.key === "Escape" &&
-            (0, isEmptyCanvasSelection)(current4) &&
+            isEmptyCanvasSelection(current4) &&
             deps.value125.current != null,
           value654: Dynamic =
             deps.focusedFileRef.current != null &&
@@ -397,24 +397,24 @@ export function subscribeCanvasKeyDown(deps: { readonly abandonSelectionGesture:
             event.key === "Enter" &&
             !value655 &&
             !event.altKey &&
-            !(0, hasBlockingEditorOverlay)() &&
+            !hasBlockingEditorOverlay() &&
             !deps.value218.current &&
             (event.shiftKey ? current4.elements.size > 0 : value662),
           value664: Dynamic =
             value655 || event.altKey
               ? null
-              : (0, keyboardNudgeDelta)(event.key, event.shiftKey),
+              : keyboardNudgeDelta(event.key, event.shiftKey),
           value665: Dynamic = value664 != null && deps.value159.current,
           callback17: Dynamic = (input?: Dynamic): Dynamic =>
             input instanceof Element &&
-            ((0, isEditingInputTarget)(input) ||
+            (isEditingInputTarget(input) ||
               input.closest(
                 "[data-mega-chrome],[data-mega-title-text],[data-mega-piece],button,[role=button],a[href],input,textarea,select",
               ) != null),
           callback18: Dynamic = (input?: Dynamic): Dynamic =>
             input instanceof Element
-              ? (0, isEditingInputTarget)(input) ||
-                (0, isInteractivePreviewTarget)(input) ||
+              ? isEditingInputTarget(input) ||
+                isInteractivePreviewTarget(input) ||
                 input.closest(
                   '[data-mega-inside],[data-mega-selection-strip],[aria-haspopup="menu"],[aria-haspopup="listbox"],input,textarea,select',
                 ) != null
@@ -432,7 +432,7 @@ export function subscribeCanvasKeyDown(deps: { readonly abandonSelectionGesture:
           if (
             value654 ||
             callback18(event.target) ||
-            (0, hasBlockingEditorOverlay)() ||
+            hasBlockingEditorOverlay() ||
             deps.value218.current
           )
             return;
@@ -454,12 +454,12 @@ export function subscribeCanvasKeyDown(deps: { readonly abandonSelectionGesture:
         if (
           value666 !== null &&
           !value654 &&
-          !(0, isEmptyCanvasSelection)(current4)
+          !isEmptyCanvasSelection(current4)
         ) {
           if (
             event.repeat ||
-            (0, isEditingInputTarget)(event.target) ||
-            (0, hasBlockingEditorOverlay)() ||
+            isEditingInputTarget(event.target) ||
+            hasBlockingEditorOverlay() ||
             (event.target instanceof Element &&
               event.target.closest('[data-mega-chrome="selection-menu"]'))
           )
@@ -478,8 +478,8 @@ export function subscribeCanvasKeyDown(deps: { readonly abandonSelectionGesture:
               !current4.elements.has(value673)
             ) {
               event.preventDefault();
-              (0, announce)(
-                (0, artboardNotSelectedAnnouncement)(
+              announce(
+                artboardNotSelectedAnnouncement(
                   deps.value73.current.artboards.find(
                     (input?: Dynamic): Dynamic => input.file === value673,
                   )?.title ?? value673.replace(/\.dc\.html$/, ""),
@@ -503,7 +503,7 @@ export function subscribeCanvasKeyDown(deps: { readonly abandonSelectionGesture:
                   ?.closest("[data-mega-artboard]")
                   ?.getAttribute("data-mega-artboard") ?? null);
         if (
-          (0, isContextMenuShortcut)(event) &&
+          isContextMenuShortcut(event) &&
           !value655 &&
           !event.altKey &&
           (value668 != null ||
@@ -512,11 +512,11 @@ export function subscribeCanvasKeyDown(deps: { readonly abandonSelectionGesture:
         ) {
           if (
             (value668 == null &&
-              ((0, isEditingInputTarget)(value667) ||
+              (isEditingInputTarget(value667) ||
                 value667?.closest(
                   "button,[role=button],[role=treeitem],[role=textbox],[data-mega-selection-strip],.tb-root",
                 ) != null)) ||
-            (0, hasBlockingEditorOverlay)() ||
+            hasBlockingEditorOverlay() ||
             deps.value218.current
           )
             return;
@@ -533,7 +533,7 @@ export function subscribeCanvasKeyDown(deps: { readonly abandonSelectionGesture:
             value675 == null ||
             (event.preventDefault(),
             event.stopPropagation(),
-            (0, suppressNativeContextMenu)(false),
+            suppressNativeContextMenu(false),
             event.repeat)
           )
             return;
@@ -575,7 +575,7 @@ export function subscribeCanvasKeyDown(deps: { readonly abandonSelectionGesture:
           return;
         }
         if (
-          ((0, isEmptyCanvasSelection)(current4) || value654) &&
+          (isEmptyCanvasSelection(current4) || value654) &&
           !value658 &&
           !value653 &&
           !value663 &&
@@ -588,10 +588,10 @@ export function subscribeCanvasKeyDown(deps: { readonly abandonSelectionGesture:
               event.target == null ||
               event.target === (document as Dynamic).body ||
               event.target === (document as Dynamic).documentElement ||
-              (0, isCanvasEnterAction)(event) ||
+              isCanvasEnterAction(event) ||
               value663
             ) ||
-            (0, hasBlockingEditorOverlay)() ||
+            hasBlockingEditorOverlay() ||
             deps.value218.current
           )
             return;
@@ -619,7 +619,7 @@ export function subscribeCanvasKeyDown(deps: { readonly abandonSelectionGesture:
               return;
             event.preventDefault();
             artboards !== deps.focusedFileRef.current &&
-              (0, isCanvasEnterAction)(event) &&
+              isCanvasEnterAction(event) &&
               (deps.value552.refocusAt = Date.now());
             deps.value42.current(artboards);
             return;
@@ -635,9 +635,9 @@ export function subscribeCanvasKeyDown(deps: { readonly abandonSelectionGesture:
           if (
             current4.elements.size === 0 ||
             callback17(event.target) ||
-            (0, hasBlockingEditorOverlay)() ||
+            hasBlockingEditorOverlay() ||
             deps.value218.current ||
-            (0, activeCropElement)() !== null ||
+            activeCropElement() !== null ||
             (event.target != null &&
               event.target !== (document as Dynamic).body &&
               event.target !== (document as Dynamic).documentElement)
@@ -653,7 +653,7 @@ export function subscribeCanvasKeyDown(deps: { readonly abandonSelectionGesture:
         if (value664) {
           if (
             callback18(event.target) ||
-            (0, hasBlockingEditorOverlay)() ||
+            hasBlockingEditorOverlay() ||
             deps.value218.current
           )
             return;
@@ -682,7 +682,7 @@ export function subscribeCanvasKeyDown(deps: { readonly abandonSelectionGesture:
           let value673: Dynamic =
             event.target instanceof Element ? event.target : null;
           if (
-            (0, isEditingInputTarget)(value673) ||
+            isEditingInputTarget(value673) ||
             value673?.closest(
               '[role=textbox],[role=searchbox],[role=combobox],[data-mega-selection-strip],[data-mega-chrome="selection-menu"]',
             ) != null
@@ -694,8 +694,8 @@ export function subscribeCanvasKeyDown(deps: { readonly abandonSelectionGesture:
             ?.getAttribute("data-mega-artboard");
           if (
             (value674 != null && !current4.artboards.has(value674)) ||
-            (0, hasBlockingEditorOverlay)() ||
-            !(0, sessionAllowsMutation)({
+            hasBlockingEditorOverlay() ||
+            !sessionAllowsMutation({
               gesturing: deps.value218.current,
               setMoveCommits: deps.value155.current,
             }) ||
@@ -705,10 +705,10 @@ export function subscribeCanvasKeyDown(deps: { readonly abandonSelectionGesture:
           deps.value52.current((): Dynamic => {
             let current5: Dynamic = deps.selectionRef.current;
             !deps.value224.current ||
-              (0, hasBlockingEditorOverlay)() ||
+              hasBlockingEditorOverlay() ||
               current5.artboards.size === 0 ||
               current5.elements.size > 0 ||
-              !(0, sessionAllowsMutation)({
+              !sessionAllowsMutation({
                 gesturing: deps.value218.current,
                 setMoveCommits: deps.value155.current,
               }) ||
@@ -734,10 +734,10 @@ export function subscribeCanvasKeyDown(deps: { readonly abandonSelectionGesture:
                 blockingOverlaySelector,
             ) != null;
         if (
-          (0, isEditingInputTarget)(target) &&
+          isEditingInputTarget(target) &&
           !(
             event.key === "Escape" &&
-            (0, isPropertyEditorTarget)(target) &&
+            isPropertyEditorTarget(target) &&
             !value670 &&
             !value671
           )
@@ -746,7 +746,7 @@ export function subscribeCanvasKeyDown(deps: { readonly abandonSelectionGesture:
         if (event.key === "Escape") {
           if (
             deps.value339.current !== "select" ||
-            (value653 && (0, hasBlockingEditorOverlay)())
+            (value653 && hasBlockingEditorOverlay())
           )
             return;
           if (deps.value61.current()) {
@@ -766,7 +766,7 @@ export function subscribeCanvasKeyDown(deps: { readonly abandonSelectionGesture:
           return;
         }
         if (
-          (0, hasBlockingEditorOverlay)() ||
+          hasBlockingEditorOverlay() ||
           (event.target instanceof Element &&
             event.target.closest('[data-mega-chrome="selection-menu"]'))
         )
@@ -784,19 +784,19 @@ export function subscribeCanvasKeyDown(deps: { readonly abandonSelectionGesture:
             let value674: Dynamic = deps.value73.current.artboards.find(
               (input?: Dynamic): Dynamic => input.file === value673,
             );
-            (0, announce)(
-              (0, artboardNotSelectedAnnouncement)(
+            announce(
+              artboardNotSelectedAnnouncement(
                 value674?.title ?? value673.replace(/\.dc\.html$/, ""),
               ),
             );
             return;
           }
         }
-        let value672: Dynamic = (0, focusedOutlineRow)(event.target);
+        let value672: Dynamic = focusedOutlineRow(event.target);
         if (value672 != null) {
           event.preventDefault();
-          (0, announce)(
-            (0, selectionActionRefusalAnnouncement)(
+          announce(
+            selectionActionRefusalAnnouncement(
               value672.name,
               "deleted",
               value672.onRow,
@@ -824,7 +824,7 @@ export function subscribeCanvasKeyDown(deps: { readonly abandonSelectionGesture:
                     : null,
                 current5: Dynamic = deps.selectionRef.current;
               value673 == null ||
-                (0, isEmptyCanvasSelection)(current5) ||
+                isEmptyCanvasSelection(current5) ||
                 !canvasSelectionsEqual(value673, current5) ||
                 deps.value52.current(callback15);
             },
@@ -846,9 +846,9 @@ export function subscribeZoomShortcuts(deps: { readonly value105: Dynamic; reado
           (input === "0"
             ? deps.value619()
             : deps.value617(deps.value105.get().scale * (input === "-" ? 0.8 : 1.25)),
-          (0, announce)(
+          announce(
             (): Dynamic =>
-              (0, zoomAnnouncement)(deps.value105.get().scale),
+              zoomAnnouncement(deps.value105.get().scale),
           ));
       },
       callback16: Dynamic = (event?: Dynamic): Dynamic => {
@@ -886,8 +886,8 @@ export function subscribeZoomShortcuts(deps: { readonly value105: Dynamic; reado
           event.altKey ||
           event.defaultPrevented ||
           event.repeat ||
-          (0, isEditingInputTarget)(event.target) ||
-          (0, hasBlockingEditorOverlay)() ||
+          isEditingInputTarget(event.target) ||
+          hasBlockingEditorOverlay() ||
           (event.preventDefault(), callback18());
       };
     (window as Dynamic).addEventListener("keydown", callback16);

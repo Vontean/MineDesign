@@ -23,7 +23,7 @@ function backgroundWellValue(input?: Dynamic): Dynamic {
     };
   let value: Dynamic = (input.fallback ?? "").trim(),
     value2: Dynamic =
-      value && (0, classifyStyleValue)(value).kind === "literal"
+      value && classifyStyleValue(value).kind === "literal"
         ? {
             css: value,
             empty: false,
@@ -33,7 +33,7 @@ function backgroundWellValue(input?: Dynamic): Dynamic {
           },
     value3: Dynamic = (input.value ?? "").trim();
   if (!value3) return value2;
-  let kind: Dynamic = (0, classifyStyleValue)(value3).kind;
+  let kind: Dynamic = classifyStyleValue(value3).kind;
   return kind === "var"
     ? value2
     : kind !== "literal"
@@ -56,11 +56,10 @@ function PropertyCssColorRow({
       artboardColors: value2,
       iframeDefinedVars: value3,
       editsAreUndoSteps: value4,
-    }: Dynamic = (0, useInspectorContext)(),
-    { text: value5, placeholder: value6 }: Dynamic = (0,
-    inspectorFieldDisplay)(state),
+    }: Dynamic = useInspectorContext(),
+    { text: value5, placeholder: value6 }: Dynamic = inspectorFieldDisplay(state),
     { css: value7, empty: value8 }: Dynamic = backgroundWellValue(state),
-    value9: Dynamic = (0, resolveColorTokenValue)(
+    value9: Dynamic = resolveColorTokenValue(
       state.varSource ?? state.value,
       value,
     );
@@ -71,7 +70,7 @@ function PropertyCssColorRow({
     value11: Dynamic = state.varPartial ? value5 || value6 : value10,
     value12: Dynamic = (0, reactPropertiesDropShadowEditor_2.useMemo)(
       (): Dynamic =>
-        (0, matchArtboardColorToken)(value11, value, value3),
+        matchArtboardColorToken(value11, value, value3),
       [value11, value, value3],
     ),
     value13: Dynamic =
@@ -80,23 +79,23 @@ function PropertyCssColorRow({
     reactPropertiesDropShadowEditor_2.useState)(undefined),
     value16: Dynamic = (0, reactPropertiesDropShadowEditor_2.useMemo)(
       (): Dynamic =>
-        (0, mergeDesignSystemSwatches)(
+        mergeDesignSystemSwatches(
           value14,
-          (0, editorColorSwatches)(value),
+          editorColorSwatches(value),
         ),
       [value14, value],
     ),
     value17: Dynamic = (0, reactPropertiesDropShadowEditor_2.useMemo)(
       (): Dynamic =>
-        (0, matchAuthoredColorToken)(value10, value16, value3),
+        matchAuthoredColorToken(value10, value16, value3),
       [value10, value16, value3],
     ),
     value18: Dynamic =
       value7 !== undefined &&
-      (0, PropertiesDropShadowEditorTest)(value7)
-        ? ((0, normalizeCssColor)(value7) ??
-          (0, normalizeCssColor)(
-            (0, describeColorValue)(value7),
+      PropertiesDropShadowEditorTest(value7)
+        ? (normalizeCssColor(value7) ??
+          normalizeCssColor(
+            describeColorValue(value7),
           ) ??
           value7)
         : undefined;
@@ -107,8 +106,8 @@ function PropertyCssColorRow({
         label={state.label}
         value={value8 ? undefined : value18}
         clearLabel={
-          (0, describeColorValue)(value5) ||
-          (0, describeColorValue)(value6) ||
+          describeColorValue(value5) ||
+          describeColorValue(value6) ||
           Value_6
         }
         unset={value13}
@@ -121,10 +120,10 @@ function PropertyCssColorRow({
         popoverTitle={ColorValue}
         editsAreUndoSteps={value4}
         onOpenChange={(input?: Dynamic): Dynamic => {
-          input && value15((0, artboardColorSwatchGroup)(value2));
+          input && value15(artboardColorSwatchGroup(value2));
         }}
         onSwatch={(input?: Dynamic): Dynamic => {
-          let value19: Dynamic = (0, resolveColorSwatchValue)(
+          let value19: Dynamic = resolveColorSwatchValue(
             input,
             value16,
             value3,

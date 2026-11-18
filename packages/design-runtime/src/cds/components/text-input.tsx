@@ -32,24 +32,24 @@ export {
 };
 export function installCdsComponentsTextInput(): () => void {
   return () => {
-    initializeComponentsTextInput = (0, initializeOnce)(() => {
+    initializeComponentsTextInput = initializeOnce(() => {
       "use client";
 
-      (0, initializeClassNames)();
-      (0, initializeSheetsStyles_2)();
-      (0, initializeCdsRoot)();
-      (0, initializeMenuPopup_2)();
-      (0, initializeDomRefComposition)();
-      (0, initializeButtonButton)();
-      (0, initializeButtonButton_2)();
-      (0, initializeFieldContext)();
-      reactComponentsTextInput = (0, toModuleNamespace)(
-        (0, load_react)(),
+      initializeClassNames();
+      initializeSheetsStyles_2();
+      initializeCdsRoot();
+      initializeMenuPopup_2();
+      initializeDomRefComposition();
+      initializeButtonButton();
+      initializeButtonButton_2();
+      initializeFieldContext();
+      reactComponentsTextInput = toModuleNamespace(
+        load_react(),
       );
-      jsxComponentsTextInput = (0, toModuleNamespace)(
-        (0, load_react_jsx_runtime)(),
+      jsxComponentsTextInput = toModuleNamespace(
+        load_react_jsx_runtime(),
       );
-      (0, initializeNpm__base_ui_react_x7)();
+      initializeNpm__base_ui_react_x7();
       ButtonButtonCssAlias = ButtonButtonCss;
       ButtonButtonClassNamesAlias = ButtonButtonClassNames_4;
       ComponentsTextInputClassNames =
@@ -87,23 +87,23 @@ export function installCdsComponentsTextInput(): () => void {
               "aria-describedby": value2,
               disabled: value4,
             },
-            value6 = (0, useLabel)("clear", "Clear"),
+            value6 = useLabel("clear", "Clear"),
             value7 = clearLabel ?? value6,
-            value8 = (0, useFieldInvalid)(),
+            value8 = useFieldInvalid(),
             value9 = value8 || value3,
-            value10 = (0, useFieldDisabled)(),
+            value10 = useFieldDisabled(),
             value11 = value4 || value10,
             value12 = fullWidth ? "w-full" : "",
             value13 = (0,
             reactComponentsTextInput.useRef)<HTMLInputElement | null>(null),
-            { clickToFocusProps: value14 } = (0, useClickToFocus)(
+            { clickToFocusProps: value14 } = useClickToFocus(
               () => value13.current?.focus(),
               {
                 disabled: value11,
                 readOnly: value5.readOnly,
               },
             ),
-            value15 = (0, useMergedRefs)(value13, options),
+            value15 = useMergedRefs(value13, options),
             value16 = value5.value !== undefined,
             [value17, value18] = (0, reactComponentsTextInput.useState)(
               () =>
@@ -162,10 +162,10 @@ export function installCdsComponentsTextInput(): () => void {
             return (
               <div
                 data-cds={"TextInput"}
-                {...(0, getSizeAttribute)(size)}
+                {...getSizeAttribute(size)}
                 data-invalid={value8 || undefined}
                 onMouseDown={value14.onMouseDown}
-                className={(0, cn)(
+                className={cn(
                   ButtonButtonCssAlias,
                   value22,
                   ComponentsTextInputClassNames_2,
@@ -189,7 +189,7 @@ export function installCdsComponentsTextInput(): () => void {
                       aria-invalid={value9}
                       {...value5}
                       onChange={callback}
-                      className={(0, cn)(
+                      className={cn(
                         ButtonButtonClassNamesAlias,
                         "disabled:opacity-100",
                       )}
@@ -210,12 +210,12 @@ export function installCdsComponentsTextInput(): () => void {
               render={
                 <input
                   data-cds={"TextInput"}
-                  {...(0, getSizeAttribute)(size)}
+                  {...getSizeAttribute(size)}
                   data-invalid={value8 || undefined}
                   aria-invalid={value9}
                   {...value5}
                   onChange={callback}
-                  className={(0, cn)(
+                  className={cn(
                     "cds-input cds-reset",
                     ButtonButtonCssAlias,
                     "pr-md",

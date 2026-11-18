@@ -94,10 +94,10 @@ function FindBarContents({
           ? event.shiftKey
             ? -1
             : 1
-          : (0, findDirectionShortcut)(event);
+          : findDirectionShortcut(event);
     if (event.key === "Escape") onClose();
     else if (value9 !== undefined) onStep(value9);
-    else if ((0, isFindShortcut)(event)) {
+    else if (isFindShortcut(event)) {
       current?.focus();
       current?.select();
     } else return false;
@@ -108,7 +108,7 @@ function FindBarContents({
     (): Dynamic =>
       value5.current === null
         ? undefined
-        : (0, registerFindOwner)(
+        : registerFindOwner(
             value5.current,
             (input?: Dynamic): Dynamic => value6.current(input),
           ),
@@ -225,16 +225,16 @@ export {
 };
 export function installFindBar(): () => void {
   return () => {
-    react_Kw = (0, toModuleNamespace)((0, load_react)(), 1);
-    (0, initializeCdsIndex)();
+    react_Kw = toModuleNamespace(load_react(), 1);
+    initializeCdsIndex();
     findInPageLabel = "Find in page";
     previousFindMatchLabel = "Previous match";
     nextFindMatchLabel = "Next match";
     closeFindBarLabel = "Close find bar";
     findFieldPlaceholder = "Type to search";
     noFindMatchesLabel = "No matches";
-    jsx_tv = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    jsx_tv = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
     findBarStyle = {

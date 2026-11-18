@@ -50,7 +50,7 @@ export function buildArtboardContextMenu(deps: { readonly doc: Dynamic; readonly
               );
             },
           },
-          ...(deps.value92 && (0, supportsClipboardImages)()
+          ...(deps.value92 && supportsClipboardImages()
             ? [
                 {
                   get label() { return uiMessage("canvas.designCanvas.copyAsPNG"); },
@@ -101,13 +101,13 @@ export function buildArtboardContextMenu(deps: { readonly doc: Dynamic; readonly
               separatorBefore: options2 === 0,
               disabledReason:
                 value656 ??
-                ((0, reorderArtboardsOnPages)(
+                (reorderArtboardsOnPages(
                   current5.artboards,
                   value654,
                   input2,
                   current5.pages,
                 ) === null
-                  ? (0, stackingAnnouncement)(input2, false)
+                  ? stackingAnnouncement(input2, false)
                   : undefined),
               onClick: (): Dynamic => {
                 callback15() && deps.value403(value654, input2);
@@ -142,7 +142,7 @@ export function buildArtboardContextMenu(deps: { readonly doc: Dynamic; readonly
               ? current5.cover === input
                 ? existingThumbnailMessage
                 : value657 !== undefined &&
-                    (0, shouldStoreArtboardByReference)(
+                    shouldStoreArtboardByReference(
                       value657,
                       deps.doc.content().files[input] ?? "",
                     )
@@ -208,7 +208,7 @@ export function buildAnnotationContextMenu(deps: { readonly selectionRef: Dynami
           ),
           callback15: Dynamic = (input2?: Dynamic): Dynamic => {
             if (value653 && current4.elements.size > 0) return;
-            let value657: Dynamic = (0, flipAnnotations)(
+            let value657: Dynamic = flipAnnotations(
               value656,
               input2,
             );

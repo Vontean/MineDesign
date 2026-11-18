@@ -38,12 +38,12 @@ var clickPlacementTools: Dynamic;
 var defaultClickPlacementSizes: Dynamic;
 function DesignToolToolbar({ tool: tool, onTool: onTool }: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic = (0, toolbarDensity)(),
-    value2: Dynamic = (0, useLatestCallback)(
+  let value: Dynamic = toolbarDensity(),
+    value2: Dynamic = useLatestCallback(
       (input?: Dynamic): Dynamic =>
         onTool(input === tool && input !== "select" ? "select" : input),
     );
-  (0, npm_useEventListener_bc)(
+  npm_useEventListener_bc(
     "keydown",
     (event?: Dynamic): Dynamic => {
       if (
@@ -63,17 +63,17 @@ function DesignToolToolbar({ tool: tool, onTool: onTool }: Dynamic): Dynamic {
       )
         return;
       if (event.key === "Escape") {
-        if (tool === "select" || (0, hasBlockingEditorOverlay)())
+        if (tool === "select" || hasBlockingEditorOverlay())
           return;
         event.preventDefault();
         onTool("select");
         return;
       }
       if (
-        (0, isPropertyEditorTarget)(value3) ||
+        isPropertyEditorTarget(value3) ||
         value3?.closest("[data-mega-selection-strip]") != null ||
-        (0, shouldKeepLocalKeyboardEvent)(event) ||
-        (0, hasBlockingEditorOverlay)()
+        shouldKeepLocalKeyboardEvent(event) ||
+        hasBlockingEditorOverlay()
       )
         return;
       let value4: Dynamic = designToolForShortcut(event.key, event.shiftKey);
@@ -228,7 +228,7 @@ export function installEditorTools(): () => void {
       oval: `<div style="box-sizing: border-box; display: flex; flex-direction: column; align-items: center; justify-content: center; width: ${defaultOvalSize}px; height: ${defaultOvalSize}px; background-color: ${B6b0a7Value}; border-radius: 50%"></div>`,
       text: `<div style="font-size: 16px; line-height: 1">${TextPlaceholderLabel}</div>`,
       arrow: "",
-      line: (0, lineDrawingHtml)(
+      line: lineDrawingHtml(
         defaultLineLength,
         0,
         1,

@@ -18,13 +18,13 @@ var StyleSchemaValuesHandlerValue_13: Dynamic;
 var StyleSchemaValuesHandlerValue_14: Dynamic;
 var StyleSchemaValuesHandlerValue_15: Dynamic;
 function validateStyleFields(input?: Dynamic, options?: Dynamic): Dynamic {
-  if (!(0, isStyleObject)(options)) return;
+  if (!isStyleObject(options)) return;
   let value: Dynamic = Object.create(null),
     index: Dynamic = 0;
   for (let value2 of input as Dynamic) {
-    if (!(0, StyleSchemaColorAndFontCall)(options, value2.field))
+    if (!StyleSchemaColorAndFontCall(options, value2.field))
       continue;
-    let value3: Dynamic = (0, validateStyleNumber)(
+    let value3: Dynamic = validateStyleNumber(
       value2.cls,
       options[value2.field],
     );
@@ -35,12 +35,12 @@ function validateStyleFields(input?: Dynamic, options?: Dynamic): Dynamic {
   return index > 0 ? value : undefined;
 }
 function validateStyleLength(input?: Dynamic): Dynamic {
-  if (!(0, isStyleObject)(input)) return;
-  let value: Dynamic = (0, StyleSchemaColorAndFontCall)(input, "px"),
-    value2: Dynamic = (0, StyleSchemaColorAndFontCall)(input, "pct");
+  if (!isStyleObject(input)) return;
+  let value: Dynamic = StyleSchemaColorAndFontCall(input, "px"),
+    value2: Dynamic = StyleSchemaColorAndFontCall(input, "pct");
   if (value === value2) return;
   if (value) {
-    let value4: Dynamic = (0, validateStyleNumber)(
+    let value4: Dynamic = validateStyleNumber(
       StyleSchemaValuesHandlerValue_8,
       input.px,
     );
@@ -50,7 +50,7 @@ function validateStyleLength(input?: Dynamic): Dynamic {
           px: value4,
         };
   }
-  let value3: Dynamic = (0, validateStyleNumber)(
+  let value3: Dynamic = validateStyleNumber(
     StyleSchemaValuesHandlerValue_9,
     input.pct,
   );
@@ -61,7 +61,7 @@ function validateStyleLength(input?: Dynamic): Dynamic {
       };
 }
 function validateStyleTransition(input?: Dynamic): Dynamic {
-  if (!(0, isStyleObject)(input)) return;
+  if (!isStyleObject(input)) return;
   let value: Dynamic,
     properties: Dynamic = input.properties;
   if (properties === undefined || properties === "all")
@@ -78,7 +78,7 @@ function validateStyleTransition(input?: Dynamic): Dynamic {
       return;
     let items: Dynamic = [];
     for (let value6 of value5 as Dynamic) {
-      let value7: Dynamic = (0, validateStyleEnum)(
+      let value7: Dynamic = validateStyleEnum(
         StyleSchemaValuesTransformOpacityColorValues,
         value6,
       );
@@ -87,12 +87,12 @@ function validateStyleTransition(input?: Dynamic): Dynamic {
     }
     value = items;
   }
-  let value2: Dynamic = (0, validateOptionalStyleNumber)(
+  let value2: Dynamic = validateOptionalStyleNumber(
       StyleSchemaValuesHandlerValue_10,
       input.duration,
       200,
     ),
-    value3: Dynamic = (0, validateOptionalStyleNumber)(
+    value3: Dynamic = validateOptionalStyleNumber(
       StyleSchemaValuesHandlerValue_11,
       input.delay,
       0,
@@ -100,7 +100,7 @@ function validateStyleTransition(input?: Dynamic): Dynamic {
     value4: Dynamic =
       input.easing === undefined
         ? "ease"
-        : (0, validateStyleEnum)(
+        : validateStyleEnum(
             StyleSchemaNodeTypesLinearEaseEaseInValues,
             input.easing,
           );
@@ -117,7 +117,7 @@ function validateStyleValue(
   options?: Dynamic,
   context?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = (0, getPropertyValidationClass)(
+  let value: Dynamic = getPropertyValidationClass(
     input,
     context,
   );
@@ -125,21 +125,21 @@ function validateStyleValue(
     case "len":
     case "num":
     case "int":
-      return (0, validateStyleNumber)(value, options);
+      return validateStyleNumber(value, options);
     case "enum":
-      return (0, validateStyleEnum)(value.values, options);
+      return validateStyleEnum(value.values, options);
     case "color":
-      return (0, validateStyleColor)(options);
+      return validateStyleColor(options);
     case "fontFamily":
-      return (0, validateFontFamily)(options);
+      return validateFontFamily(options);
     case "shadow":
-      return (0, validateStyleShadows)(
+      return validateStyleShadows(
         options,
         value.spread,
         value.blur,
       );
     case "gradient":
-      return (0, validateStyleGradient)(
+      return validateStyleGradient(
         options,
         value.repeat === true,
       );
@@ -171,36 +171,36 @@ export {
 };
 export function installEditorStyleSchemaStructuredValues(): () => void {
   return () => {
-    StyleSchemaValuesHandlerValue_8 = (0, StyleSchemaValuesHandler)(
+    StyleSchemaValuesHandlerValue_8 = StyleSchemaValuesHandler(
       0,
       4096,
     );
-    StyleSchemaValuesHandlerValue_9 = (0, StyleSchemaValuesHandler_2)(
+    StyleSchemaValuesHandlerValue_9 = StyleSchemaValuesHandler_2(
       1,
       100,
     );
-    StyleSchemaValuesHandlerValue_10 = (0, StyleSchemaValuesHandler_2)(
+    StyleSchemaValuesHandlerValue_10 = StyleSchemaValuesHandler_2(
       0,
       5e3,
     );
-    StyleSchemaValuesHandlerValue_11 = (0, StyleSchemaValuesHandler_2)(
+    StyleSchemaValuesHandlerValue_11 = StyleSchemaValuesHandler_2(
       0,
       5e3,
     );
-    StyleSchemaValuesHandlerValue_12 = (0, StyleSchemaValuesHandler_2)(
+    StyleSchemaValuesHandlerValue_12 = StyleSchemaValuesHandler_2(
       200,
       1e4,
     );
-    StyleSchemaValuesHandlerValue_13 = (0, StyleSchemaValuesHandler_2)(
+    StyleSchemaValuesHandlerValue_13 = StyleSchemaValuesHandler_2(
       0,
       5e3,
     );
-    StyleSchemaValuesHandlerValue_14 = (0, StyleSchemaValuesHandler_3)(
+    StyleSchemaValuesHandlerValue_14 = StyleSchemaValuesHandler_3(
       1,
       1e3,
       1,
     );
-    StyleSchemaValuesHandlerValue_15 = (0, StyleSchemaValuesHandler_2)(
+    StyleSchemaValuesHandlerValue_15 = StyleSchemaValuesHandler_2(
       0,
       100,
     );

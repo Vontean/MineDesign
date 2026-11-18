@@ -265,8 +265,8 @@ export {
 };
 export function installCanvasPreviewMounting(): () => void {
   return () => {
-    reactCanvasPreviewMounting = (0, toModuleNamespace)(
-      (0, load_react)(),
+    reactCanvasPreviewMounting = toModuleNamespace(
+      load_react(),
       1,
     );
     CanvasPreviewMountingConstant = 0.7;

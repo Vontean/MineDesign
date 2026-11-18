@@ -136,8 +136,8 @@ export {
 };
 export function installCommentsPageSurfaces(): () => void {
   return () => {
-    jsx_zMe = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    jsx_zMe = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
     zeroPageScroll = {
@@ -145,8 +145,8 @@ export function installCommentsPageSurfaces(): () => void {
       y: 0,
     };
     pageCommentSurfaceKey = (input?: Dynamic): Dynamic =>
-      (0, embedMemoryPrefix)() +
+      embedMemoryPrefix() +
       "page:" +
-      (0, stableAnchorHash)(input);
+      stableAnchorHash(input);
   };
 }

@@ -51,21 +51,21 @@ export {
 };
 export function installCdsComponentsBadge(): () => void {
   return () => {
-    initializeComponentsBadge = (0, initializeOnce)(() => {
+    initializeComponentsBadge = initializeOnce(() => {
       "use client";
 
-      (0, initializeClassNames)();
-      (0, initializeSheetsStyles_2)();
-      (0, initializeCdsRoot)();
-      (0, initializeComponentsIcon_2)();
-      reactComponentsBadge = (0, toModuleNamespace)(
-        (0, load_react)(),
+      initializeClassNames();
+      initializeSheetsStyles_2();
+      initializeCdsRoot();
+      initializeComponentsIcon_2();
+      reactComponentsBadge = toModuleNamespace(
+        load_react(),
       );
-      (0, initializeNpm_clsx_xh)();
-      jsxComponentsBadge = (0, toModuleNamespace)(
-        (0, load_react_jsx_runtime)(),
+      initializeNpm_clsx_xh();
+      jsxComponentsBadge = toModuleNamespace(
+        load_react_jsx_runtime(),
       );
-      (0, initializeNpm__base_ui_react_gx)();
+      initializeNpm__base_ui_react_gx();
       ComponentsBadgeNeutralAccentSuccessConfig = {
         neutral: "bg-neutral text-secondary",
         accent: "bg-tint-blue text-accent",
@@ -144,10 +144,10 @@ export function installCdsComponentsBadge(): () => void {
           options: React.ForwardedRef<HTMLSpanElement>,
         ): React.ReactElement => {
           let value = variant ?? "accent",
-            value2 = (0, useLabel)("removeItem", "Remove {item}", {
+            value2 = useLabel("removeItem", "Remove {item}", {
               item: typeof children == "string" ? children : "item",
             }),
-            value3 = (0, useDensity)(),
+            value3 = useDensity(),
             value4 =
               ComponentsBadgeComfortableCompactConfig[value3][size ?? "base"],
             length = reactComponentsBadge.Children.toArray(children).length,
@@ -161,11 +161,11 @@ export function installCdsComponentsBadge(): () => void {
             value6 =
               (size === "xxs"
                 ? 1
-                : (0, getControlSizeRank)(value3, size)) === 1
+                : getControlSizeRank(value3, size)) === 1
                 ? ComponentsBadgeClassNames
                 : "pb-[0.05em]",
             value7 = removeLabel || value2,
-            value8 = (0, npm_clsx_Ea)(
+            value8 = npm_clsx_Ea(
               "cds-reset relative inline-flex shrink-0 items-center justify-center",
               "before:absolute before:left-[-2px] before:top-1/2 before:-translate-y-1/2 before:content-['']",
               "before:h-[max(24px,100%)] before:w-[max(24px,calc(100%+2px))]",
@@ -202,9 +202,9 @@ export function installCdsComponentsBadge(): () => void {
               removeRender !== undefined
                 ? (0, reactComponentsBadge.cloneElement)(
                     removeRender,
-                    (0, npm_mergeProps_Ac)(
+                    npm_mergeProps_Ac(
                       {
-                        className: (0, cn)(value8, value9),
+                        className: cn(value8, value9),
                         "aria-label": value7,
                         children: value11,
                       },
@@ -256,9 +256,9 @@ export function installCdsComponentsBadge(): () => void {
                 ? {
                     "data-step": "1",
                   }
-                : (0, getSizeAttribute)(size))}
+                : getSizeAttribute(size))}
               {...props}
-              className={(0, cn)(
+              className={cn(
                 "inline-flex items-center gap-1 align-middle h-control-nested whitespace-nowrap rounded-chip",
                 iconOnly
                   ? "aspect-square w-control-nested justify-center px-0"
@@ -270,14 +270,14 @@ export function installCdsComponentsBadge(): () => void {
               )}
             >
               {typeof icon != "number" &&
-                icon && ((0, isIconName)(icon) ? (<Icon name={icon} size={value4} className={value5} />) : (<span
+                icon && (isIconName(icon) ? (<Icon name={icon} size={value4} className={value5} />) : (<span
                     aria-hidden={true}
-                    className={(0, cn)("inline-flex", value5)}
+                    className={cn("inline-flex", value5)}
                   >
                     {icon}
                   </span>))}
               {truncate ? (<span
-                  className={(0, cn)(
+                  className={cn(
                     value6,
                     "min-w-0 overflow-x-clip text-ellipsis whitespace-nowrap",
                   )}

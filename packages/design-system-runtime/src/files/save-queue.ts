@@ -55,14 +55,14 @@ function createFilesSaveQueue(
   options: FilesSaveQueueOptions,
 ): FilesSaveQueue {
   let { port: port } = options,
-    normalizedPort = (0, filesPortExtensions)(port),
+    normalizedPort = filesPortExtensions(port),
     timers = options.timers ?? defaultFilesSaveTimers(),
     indexStore = options.index,
     indexPath = indexStore?.path,
     isIndexPath = (input: string) =>
       indexPath !== undefined
         ? input === indexPath
-        : (0, isProjectIndexFilePath)(input),
+        : isProjectIndexFilePath(input),
     dirtyEntries: Map<string, DirtyFileEntry> = new Map(),
     conflictedEntries: Map<string, FileSaveConflict> = new Map(),
     recentConflictTimes: Map<string, number[]> = new Map(),
@@ -626,13 +626,13 @@ function createFilesSaveQueue(
                   cause: "other",
                 };
         } else {
-          value7 = (0, filePublishRejection)(value4, value6);
+          value7 = filePublishRejection(value4, value6);
         }
       } catch {
-        value7 = (0, filePublishRejection)(value4, value6);
+        value7 = filePublishRejection(value4, value6);
       }
       if (value7 === undefined) {
-        let value8 = (0, filePublishSizeRejection)(value6);
+        let value8 = filePublishSizeRejection(value6);
         if (value8 !== undefined) {
           value7 = {
             why: value8,
@@ -685,7 +685,7 @@ function createFilesSaveQueue(
       return markStuck("invalid_content", false);
     }
     notifyState();
-    let value2 = (0, splitFilePublishBatches)(state, isIndexPath),
+    let value2 = splitFilePublishBatches(state, isIndexPath),
       value3: Files.FilePublishFailure | undefined;
     for (let value4 of value2) {
       let value5 = timers.now(),
@@ -755,10 +755,10 @@ function createFilesSaveQueue(
       counters.pathsSent += Object.keys(value4).length;
       counters.lastPublishMs = timers.now() - value5;
       let value9 =
-        value6.shas ?? (await (0, hashFilePublishEntries)(value4));
+        value6.shas ?? (await hashFilePublishEntries(value4));
       for (let [value10, value11] of Object.entries(value4)) {
         let value12 = value11 === null ? null : (value9[value10] ?? null);
-        counters.bytesSent += (0, filePublishRawBytes)(value11);
+        counters.bytesSent += filePublishRawBytes(value11);
         ownPublishedShas.set(value10, value12);
         remoteShas.set(value10, value12);
         if (
@@ -767,7 +767,7 @@ function createFilesSaveQueue(
             value6.computed?.includes(value10) !== true
           ) &&
           value12 !== null &&
-          (0, fileContentContainsRuntimeMarkers)(value11)
+          fileContentContainsRuntimeMarkers(value11)
         ) {
           awaitingComputedShas.add(value10);
         } else {
@@ -1281,13 +1281,13 @@ function createFilesSaveQueue(
   }
   async function refreshLiveFileShas(): Promise<boolean | undefined> {
     try {
-      let value = await (0, retryFileRead)(
-        () => (0, listWritableFiles)(port),
+      let value = await retryFileRead(
+        () => listWritableFiles(port),
         timers,
         undefined,
         FILE_SAVE_READ_RETRY_DELAYS_MS,
       );
-      if ((0, fileListingIsNarrowed)(value, port)) {
+      if (fileListingIsNarrowed(value, port)) {
         return false;
       }
       let entries = new Map(value.map((input) => [input.path, input.sha256]));
@@ -1309,7 +1309,7 @@ function createFilesSaveQueue(
       return "merged";
     }
     try {
-      let value = await (0, retryFileRead)(
+      let value = await retryFileRead(
         () => indexStore.reloadAndMerge(),
         timers,
         undefined,

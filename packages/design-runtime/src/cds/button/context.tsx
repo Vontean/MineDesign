@@ -58,11 +58,11 @@ export {
 };
 export function installCdsButtonContext(): () => void {
   return () => {
-    initializeButtonContext = (0, initializeOnce)(() => {
+    initializeButtonContext = initializeOnce(() => {
       "use client";
 
-      reactButtonContext = (0, toModuleNamespace)(
-        (0, load_react)(),
+      reactButtonContext = toModuleNamespace(
+        load_react(),
       );
       ButtonGroupContext = (0,
       reactButtonContext.createContext)<ButtonGroupState>({
@@ -70,12 +70,12 @@ export function installCdsButtonContext(): () => void {
       });
       CdsCompactableAttribute = "data-cds-compactable";
     });
-    initializeButtonContext_2 = (0, initializeOnce)(() => {
-      reactButtonContext_2 = (0, toModuleNamespace)(
-        (0, load_react)(),
+    initializeButtonContext_2 = initializeOnce(() => {
+      reactButtonContext_2 = toModuleNamespace(
+        load_react(),
       );
     });
-    initializeButtonContext_3 = (0, initializeOnce)(() => {
+    initializeButtonContext_3 = initializeOnce(() => {
       ButtonContextClassNames = "absolute -z-[1] rounded-[inherit]";
       ButtonContextClassNames_2 =
         "focus-visible:shadow-focus [&[data-initial-focus]:focus]:shadow-focus";

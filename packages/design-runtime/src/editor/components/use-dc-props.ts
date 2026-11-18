@@ -39,12 +39,12 @@ function useDcProps(input?: Dynamic): Dynamic {
   let value19: Dynamic = (0, reactComponentsPropCache.useCallback)(
     (input2?: Dynamic): Dynamic => {
       if (!value17.current) return;
-      let value33: Dynamic = (0, normalizePropString)(
+      let value33: Dynamic = normalizePropString(
         input2.rootName,
       );
       value10(value33);
       value8.current = value33
-        ? (0, parsePropsMetadata)(input2.propsMeta)
+        ? parsePropsMetadata(input2.propsMeta)
         : {};
       value7(value8.current);
       value12((input3?: Dynamic): Dynamic => input3 + 1);
@@ -58,7 +58,7 @@ function useDcProps(input?: Dynamic): Dynamic {
       value10(null);
       return;
     }
-    let value33: Dynamic = (0, createPreviewHandle)(value.current);
+    let value33: Dynamic = createPreviewHandle(value.current);
     if (!value33) return;
     let flag: Dynamic = false,
       current: Dynamic = value18.current,
@@ -107,11 +107,11 @@ function useDcProps(input?: Dynamic): Dynamic {
   value20.current = value13;
   (0, reactComponentsPropCache.useEffect)((): Dynamic => {
     if (!value5 || value11 === 0 || !value9) return;
-    let value33: Dynamic = (0, createPreviewHandle)(value.current);
+    let value33: Dynamic = createPreviewHandle(value.current);
     if (!value33) return;
     let state: Dynamic = {};
     for (let [value35, value36] of Object.entries(value8.current) as Dynamic)
-      (0, isEditablePropMetadata)(value36) &&
+      isEditablePropMetadata(value36) &&
         value36.default !== undefined &&
         (state[value35] = value36.default);
     for (let [value35, value36] of Object.entries(value20.current) as Dynamic)
@@ -146,7 +146,7 @@ function useDcProps(input?: Dynamic): Dynamic {
           value21.current;
         current &&
           current2 &&
-          (0, cacheUnsavedComponentProp)(
+          cacheUnsavedComponentProp(
             current,
             current2,
             input2,
@@ -175,7 +175,7 @@ function useDcProps(input?: Dynamic): Dynamic {
         value21.current;
       current &&
         current2 &&
-        (0, clearUnsavedComponentProps)(current, current2);
+        clearUnsavedComponentProps(current, current2);
       value14({});
     }, []),
     value27: Dynamic = (0, reactComponentsPropCache.useMemo)(
@@ -188,7 +188,7 @@ function useDcProps(input?: Dynamic): Dynamic {
       for (let [value33, value34] of Object.entries(value13) as Dynamic)
         if (
           value33 in value6 &&
-          !(0, equalPropValues)(value6[value33]?.default, value34)
+          !equalPropValues(value6[value33]?.default, value34)
         )
           return true;
       return false;
@@ -219,7 +219,7 @@ function useDcProps(input?: Dynamic): Dynamic {
                 version: undefined,
               },
           content: Dynamic = value35.content,
-          value36: Dynamic = (0, getDcPropsJson)(content);
+          value36: Dynamic = getDcPropsJson(content);
         if (value36 == null) {
           console.error(
             "[dc-props] could not read data-props from",
@@ -265,7 +265,7 @@ function useDcProps(input?: Dynamic): Dynamic {
             default: value41,
           };
         }
-        let value39: Dynamic = (0, setDcPropsJson)(
+        let value39: Dynamic = setDcPropsJson(
           content,
           JSON.stringify(value38),
         );
@@ -282,24 +282,24 @@ function useDcProps(input?: Dynamic): Dynamic {
         value33 = value30.current?.(current2, value39);
         await projectFilesystem.writeFile(value34, value39);
         value33 = undefined;
-        (0, markLocalFileChange)(current, current2);
+        markLocalFileChange(current, current2);
         let state2: Dynamic = {};
         for (let [value40, value41] of Object.entries(state) as Dynamic)
           value40 in current3 && (state2[value40] = value41);
-        (0, adoptComponentPropDefaults)(current, current2, state2);
+        adoptComponentPropDefaults(current, current2, state2);
         value21.current.projectPath === current &&
           value21.current.filePath === current2 &&
-          ((value8.current = (0, applyComponentPropDefaults)(
+          ((value8.current = applyComponentPropDefaults(
             value8.current,
             state,
           )),
           value7(
             (input2?: Dynamic): Dynamic =>
-              (0, applyComponentPropDefaults)(input2, state),
+              applyComponentPropDefaults(input2, state),
           ),
           value14(
             (input2?: Dynamic): Dynamic =>
-              (0, omitUnchangedProps)(input2, state2),
+              omitUnchangedProps(input2, state2),
           ));
       } catch (value34: Dynamic) {
         value33?.();
@@ -312,7 +312,7 @@ function useDcProps(input?: Dynamic): Dynamic {
     value32: Dynamic = (0, reactComponentsPropCache.useCallback)(
       (input2?: Dynamic): Dynamic => {
         let current: Dynamic = value8.current,
-          value33: Dynamic = (0, normalizePropValues)(input2),
+          value33: Dynamic = normalizePropValues(input2),
           state: Dynamic = {};
         for (let [value34, value35] of Object.entries(value33) as Dynamic)
           Object.hasOwn(current, value34) && (state[value34] = value35);
@@ -321,18 +321,18 @@ function useDcProps(input?: Dynamic): Dynamic {
           value21.current;
         current2 &&
           current3 &&
-          (0, adoptComponentPropDefaults)(current2, current3, state);
-        value8.current = (0, applyComponentPropDefaults)(
+          adoptComponentPropDefaults(current2, current3, state);
+        value8.current = applyComponentPropDefaults(
           value8.current,
           state,
         );
         value7(
           (input3?: Dynamic): Dynamic =>
-            (0, applyComponentPropDefaults)(input3, state),
+            applyComponentPropDefaults(input3, state),
         );
         value14(
           (input3?: Dynamic): Dynamic =>
-            (0, omitUnchangedProps)(input3, state),
+            omitUnchangedProps(input3, state),
         );
       },
       [],

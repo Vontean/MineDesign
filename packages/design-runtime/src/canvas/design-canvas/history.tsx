@@ -50,7 +50,7 @@ export function recordCanvasHistoryStep(deps: { readonly value140: Dynamic; read
         }
         deps.value412();
         deps.value4.current !== null &&
-          (0, updateTextEditHistoryCounts)(
+          updateTextEditHistoryCounts(
             deps.value4.current,
             "clear-redo",
           );
@@ -81,7 +81,7 @@ export function recordCanvasHistoryStep(deps: { readonly value140: Dynamic; read
                 }
               : {}),
             ...(deps.value4.current !== null &&
-            (0, CanvasWorkingStateHandler_3)(source.kind)
+            CanvasWorkingStateHandler_3(source.kind)
               ? {
                   duringTextEdit: deps.value4.current,
                 }
@@ -108,15 +108,14 @@ export async function applyCanvasHistoryStep(deps: { readonly doc: Dynamic; read
           return;
         }
         if (source.kind !== "add" && source.kind !== "delete") {
-          let value658: Dynamic = (0, applyCanvasManifestHistory)(
+          let value658: Dynamic = applyCanvasManifestHistory(
             current4,
             source,
             options,
           );
           if (value658 === "nothing" || value658 === "full") return value658;
           if (source.kind === "page-add" && options === "undo") {
-            let value659: Dynamic = (0,
-            repairCanvasLaunchAfterDeletion)(
+            let value659: Dynamic = repairCanvasLaunchAfterDeletion(
               current4,
               emptyCanvasSelectionFiles,
               source.page.id,
@@ -124,8 +123,7 @@ export async function applyCanvasHistoryStep(deps: { readonly doc: Dynamic; read
             value659 !== undefined && (source.launch = value659);
           }
           if (source.kind === "page-add" && options === "redo") {
-            let value659: Dynamic = (0,
-            compatibleRestoredCanvasLaunch)(
+            let value659: Dynamic = compatibleRestoredCanvasLaunch(
               source.launch,
               current4.launch,
             );
@@ -181,7 +179,7 @@ export async function applyCanvasHistoryStep(deps: { readonly doc: Dynamic; read
             return input.map((input2?: Dynamic): Dynamic => {
               let entry: Dynamic = entries.get(input2.id);
               return entry
-                ? (0, moveAnnotation)(input2, entry.x, entry.y)
+                ? moveAnnotation(input2, entry.x, entry.y)
                 : input2;
             });
           },
@@ -201,7 +199,7 @@ export async function applyCanvasHistoryStep(deps: { readonly doc: Dynamic; read
             )
           )
             throw new Error("it is the only page left.");
-          let value658: Dynamic = (0, remainingCanvasPageObjects)(
+          let value658: Dynamic = remainingCanvasPageObjects(
             current4,
             page.spec.id,
             new Set(
@@ -216,8 +214,8 @@ export async function applyCanvasHistoryStep(deps: { readonly doc: Dynamic; read
           for (let value659 of value658.artboards as Dynamic) {
             await deps.value177.current.get(value659.file)?.flushPending();
             let value660: Dynamic =
-              (await (0, getKvClient)().get(
-                (0, PlatformFileContentHandler_4)(value659.file),
+              (await getKvClient().get(
+                PlatformFileContentHandler_4(value659.file),
               )) ??
               deps.doc.content().files[value659.file] ??
               "";
@@ -253,8 +251,7 @@ export async function applyCanvasHistoryStep(deps: { readonly doc: Dynamic; read
           current4.cover !== undefined &&
             values.has(current4.cover) &&
             (source.cover = current4.cover);
-          let value658: Dynamic = (0,
-          repairCanvasLaunchAfterDeletion)(
+          let value658: Dynamic = repairCanvasLaunchAfterDeletion(
             current4,
             values,
             source.kind === "delete" ? source.page?.spec.id : undefined,
@@ -305,9 +302,9 @@ export async function applyCanvasHistoryStep(deps: { readonly doc: Dynamic; read
                   ").",
               );
             value658 &&
-              (0, retargetCanvasPageHistory)(
+              retargetCanvasPageHistory(
                 source,
-                (0, createPageId)(current4.pages ?? [], true),
+                createPageId(current4.pages ?? [], true),
               );
           }
         }
@@ -320,13 +317,13 @@ export async function applyCanvasHistoryStep(deps: { readonly doc: Dynamic; read
             items.splice(
               0,
               items.length,
-              ...(0, assignImplicitFirstCanvasPage)(
+              ...assignImplicitFirstCanvasPage(
                 items,
                 current4.pages,
               ),
             );
           let value659: Dynamic = value658
-            ? (0, assignImplicitFirstCanvasPage)(
+            ? assignImplicitFirstCanvasPage(
                 current4.artboards,
                 current4.pages,
               )
@@ -360,7 +357,7 @@ export async function applyCanvasHistoryStep(deps: { readonly doc: Dynamic; read
                 0,
                 value661.spec,
               );
-          let value660: Dynamic = (0, compatibleRestoredCanvasLaunch)(
+          let value660: Dynamic = compatibleRestoredCanvasLaunch(
             source.launch,
             current4.launch,
           );
@@ -380,7 +377,7 @@ export async function applyCanvasHistoryStep(deps: { readonly doc: Dynamic; read
               : {}),
             ...(value657 !== undefined
               ? {
-                  pages: (0, restoreCanvasPageSpec)(
+                  pages: restoreCanvasPageSpec(
                     current4.pages,
                     value657,
                   ),
@@ -397,13 +394,13 @@ export async function applyCanvasHistoryStep(deps: { readonly doc: Dynamic; read
             for (let value661 of (source.files ?? []) as Dynamic)
               (deps.doc.content().files[value661.path] ?? value661.src) ===
                 value661.src &&
-                (await (0, getKvClient)().set(
-                  (0, PlatformFileContentHandler_4)(value661.path),
+                (await getKvClient().set(
+                  PlatformFileContentHandler_4(value661.path),
                   value661.src,
                 ));
           for (let value661 of source.entries as Dynamic)
-            await (0, getKvClient)().set(
-              (0, PlatformFileContentHandler_4)(value661.file),
+            await getKvClient().set(
+              PlatformFileContentHandler_4(value661.file),
               value661.src,
             );
           value657 !== undefined && deps.value298(value657.spec.id);
@@ -412,15 +409,15 @@ export async function applyCanvasHistoryStep(deps: { readonly doc: Dynamic; read
         } else {
           for (let value660 of source.entries as Dynamic) {
             await deps.value177.current.get(value660.file)?.flushPending();
-            await (0, getKvClient)().delete(
-              (0, PlatformFileContentHandler_4)(value660.file),
+            await getKvClient().delete(
+              PlatformFileContentHandler_4(value660.file),
             );
           }
           if (source.kind === "add")
             for (let value660 of (source.files ?? []) as Dynamic)
               deps.doc.content().files[value660.path] === value660.src &&
-                (await (0, getKvClient)().delete(
-                  (0, PlatformFileContentHandler_4)(value660.path),
+                (await getKvClient().delete(
+                  PlatformFileContentHandler_4(value660.path),
                 ));
           let current5: Dynamic = deps.value70.current,
             value658: Dynamic =
@@ -434,7 +431,7 @@ export async function applyCanvasHistoryStep(deps: { readonly doc: Dynamic; read
               value657 !== undefined &&
               value658.length > 0 &&
               deps.value80.current === value657.spec.id
-                ? ((0, neighboringCanvasPageId)(
+                ? (neighboringCanvasPageId(
                     current5.pages ?? [],
                     value657.spec.id,
                   ) ?? value658[0].id)
@@ -508,7 +505,7 @@ export function applyUndoRedoStep(deps: { readonly showToast: Dynamic; readonly 
               value653.op.kind === "delete" ? value653.op.page : undefined;
             return value656 === undefined
               ? undefined
-              : (0, pageUndoFailureMessage)(
+              : pageUndoFailureMessage(
                   input,
                   value656.relisted === true &&
                     (deps.value73.current.pages ?? []).some(
@@ -521,7 +518,7 @@ export function applyUndoRedoStep(deps: { readonly showToast: Dynamic; readonly 
           .then((input2?: Dynamic): Dynamic => {
             if (input2 === "full") {
               callback15(
-                (0, clipboardActionFailureMessage)(
+                clipboardActionFailureMessage(
                   input,
                   PlatformFileContentLimit_5,
                   value653.op.kind === "ann-add" ||
@@ -538,14 +535,13 @@ export function applyUndoRedoStep(deps: { readonly showToast: Dynamic; readonly 
             if (input2 === "nothing") {
               deps.value427.current = null;
               deps.value408((input3?: Dynamic): Dynamic => input3 + 1);
-              let value659: Dynamic = (0,
-                canvasHistoryAnnouncementMode)(
+              let value659: Dynamic = canvasHistoryAnnouncementMode(
                   input,
                   value653.bound !== undefined,
                   options,
                 ),
                 callback17: Dynamic = (): Dynamic =>
-                  (0, announce)(
+                  announce(
                     NothingChangedThatStepNoLongerMessage,
                   );
               value659 === "partner"
@@ -636,7 +632,7 @@ export function applyUndoRedoStep(deps: { readonly showToast: Dynamic; readonly 
                         ? state2[op2.kind][0]
                         : String(value657) + " " + state2[op2.kind][1]
                     : (op2.kind === "ann-add" || op2.kind === "ann-delete") &&
-                        (0, isShapeAnnotation)(op2.spec)
+                        isShapeAnnotation(op2.spec)
                       ? op2.spec.kind === "image"
                         ? op2.spec.video !== undefined
                           ? op2.kind === "ann-add"
@@ -692,7 +688,7 @@ export function applyUndoRedoStep(deps: { readonly showToast: Dynamic; readonly 
             let value656: Dynamic = callback16();
             callback15(
               value656 !== undefined
-                ? value656 + (0, errorMessage)(input2)
+                ? value656 + errorMessage(input2)
                 : uiMessage("canvas.designCanvas.couldnTUndoTheArtboard") + String(input2),
               "error",
             );
@@ -712,7 +708,7 @@ export function initSessionHistoryKeeper(deps: { readonly callback2: Dynamic; re
             (input2?: Dynamic): Dynamic => input2.file === input,
           );
         return current4 && value655
-          ? (0, designPageId)(value655, current4.pages)
+          ? designPageId(value655, current4.pages)
           : undefined;
       },
       state: Dynamic = {
@@ -726,7 +722,7 @@ export function initSessionHistoryKeeper(deps: { readonly callback2: Dynamic; re
         state.changed.length = 0;
         state.other.length = 0;
       },
-      value654: Dynamic = (0, createSessionHistory)({
+      value654: Dynamic = createSessionHistory({
         inDocument: callback15,
         isProtected: (input?: Dynamic): Dynamic =>
           callback16(input) === deps.value80.current ||
@@ -736,7 +732,7 @@ export function initSessionHistoryKeeper(deps: { readonly callback2: Dynamic; re
         onDrop: (input?: Dynamic, options?: Dynamic): Dynamic => {
           deps.value434.current?.forget(input);
           if (
-            !(0, CanvasWorkingStateHas)(options) ||
+            !CanvasWorkingStateHas(options) ||
             ((options === "changed" ? state.changed : state.other).push(
               deps.callback2(input),
             ),
@@ -747,8 +743,7 @@ export function initSessionHistoryKeeper(deps: { readonly callback2: Dynamic; re
           value653 = setTimeout((): Dynamic => {
             value653 = undefined;
             if (deps.value435.current !== current4) return callback17();
-            let { message: value655, description: value656 }: Dynamic = (0,
-            summarizeChangedArtboards)(
+            let { message: value655, description: value656 }: Dynamic = summarizeChangedArtboards(
               state.changed.splice(0),
               state.other.splice(0),
             );
@@ -777,7 +772,7 @@ export function initSessionHistoryKeeper(deps: { readonly callback2: Dynamic; re
           ) === true,
         startLoad: (input?: Dynamic): Dynamic => {
           let entry: Dynamic = deps.value177.current.get(input);
-          (0, recordSessionLoadStart)(
+          recordSessionLoadStart(
             value654,
             input,
             entry
@@ -794,14 +789,14 @@ export function initSessionHistoryKeeper(deps: { readonly callback2: Dynamic; re
           deps.value436.current(input, options),
         say: (source?: Dynamic): Dynamic => {
           source.kind === "loading"
-            ? (0, announce)(
-                (0, pendingUndoAnnouncement)(
+            ? announce(
+                pendingUndoAnnouncement(
                   source.dir,
                   deps.callback2(source.file),
                 ),
               )
             : deps.value448.current?.(
-                (0, undoTargetAnnouncement)(
+                undoTargetAnnouncement(
                   source.dir,
                   deps.value70.current?.pages?.find(
                     (input?: Dynamic): Dynamic => input.id === source.page,

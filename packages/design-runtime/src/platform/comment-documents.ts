@@ -19,7 +19,7 @@ function decomposeComments(
     let value3: Dynamic = options?.get(value2);
     context.set(
       value2,
-      value3 !== undefined && (0, structurallyEqual)(value3, state)
+      value3 !== undefined && structurallyEqual(value3, state)
         ? value3
         : state,
     );
@@ -35,7 +35,7 @@ function composeComments(input?: Dynamic): Dynamic {
         ...value3,
         id: value2.slice(value.length),
       });
-  return (0, parseDocumentComments)(items);
+  return parseDocumentComments(items);
 }
 export {
   CommentsValue,

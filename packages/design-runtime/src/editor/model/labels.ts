@@ -22,10 +22,10 @@ function tagIcon(input?: Dynamic): Dynamic {
 function detectContainerLayout(input?: Dynamic, options?: Dynamic): Dynamic {
   if (input.children.length === 0) return null;
   let value: Dynamic = (
-    (0, getStyleProperty)(options, "display") ?? ""
+    getStyleProperty(options, "display") ?? ""
   ).trim();
   return value === "flex" || value === "inline-flex"
-    ? ((0, getStyleProperty)(options, "flex-direction") ?? "")
+    ? (getStyleProperty(options, "flex-direction") ?? "")
         .trim()
         .startsWith("column")
       ? "column"

@@ -83,7 +83,7 @@ function collectionAndIdForFilePath(path: string): {
       id: TOKENS_DOCUMENT_ID,
     };
   }
-  if ((0, classifyDesignSystemFile)(path) === "preview") {
+  if (classifyDesignSystemFile(path) === "preview") {
     return {
       collection: PREVIEWS_COLLECTION,
       id: encodeDocumentId(path.split("/")[1]),
@@ -92,7 +92,7 @@ function collectionAndIdForFilePath(path: string): {
   for (let value of DIRECT_PATH_COLLECTIONS) {
     if (
       path.startsWith(value + "/") &&
-      (value !== API_COLLECTION || (0, isGeneratedApiPath)(path))
+      (value !== API_COLLECTION || isGeneratedApiPath(path))
     ) {
       return {
         collection: value,
@@ -119,10 +119,10 @@ function validatedFilePathForDocument(
   let path = record.path;
   if (
     typeof path !== "string" ||
-    !(0, isValidDesignSystemPath)(path) ||
-    (0, normalizeDesignSystemPath)(path) !== path ||
+    !isValidDesignSystemPath(path) ||
+    normalizeDesignSystemPath(path) !== path ||
     path === DESIGN_SYSTEM_PATHS.manifest ||
-    (0, explainUnsafeMirrorPath)(path) !== null
+    explainUnsafeMirrorPath(path) !== null
   ) {
     return null;
   }
@@ -140,10 +140,10 @@ function validatedFilePathForDocument(
   }
 }
 function storedFileKind(path: string): Storage.StoredFileKind {
-  let extension = (0, fileExtension)(path);
+  let extension = fileExtension(path);
   if (
     Object.hasOwn(STORED_CODE_MIME_TYPES, extension) ||
-    (0, classifyDesignSystemFile)(path) === "preview" ||
+    classifyDesignSystemFile(path) === "preview" ||
     path === GENERATED_TOKENS_CSS_PATH
   ) {
     return "code";
@@ -155,7 +155,7 @@ function storedFileKind(path: string): Storage.StoredFileKind {
   if (mime.startsWith("image/")) {
     return "image";
   }
-  if ((0, isTextFilePath)(path)) {
+  if (isTextFilePath(path)) {
     return "text";
   } else {
     return "binary";
@@ -165,7 +165,7 @@ function storedContentType(
   path: string,
   providedMime: string = "",
 ): string | null {
-  let extension = (0, fileExtension)(path),
+  let extension = fileExtension(path),
     mime =
       BLOB_STORAGE_MIME_TYPES[extension] ??
       STORED_CODE_MIME_TYPES[extension] ??
@@ -173,7 +173,7 @@ function storedContentType(
   if (mime !== undefined) {
     return mime;
   }
-  if ((0, isTextFilePath)(path)) {
+  if (isTextFilePath(path)) {
     return "text/plain";
   }
   let normalizedMime = providedMime.split(";")[0]?.trim().toLowerCase() ?? "";
@@ -201,10 +201,10 @@ function chooseStoredConversionRoute(
   content: string,
   bytes: number = storedContentByteLength(content, path),
 ): Storage.StoredConversionRoute {
-  let pointer = (0, storagePointerForFile)(path, content),
+  let pointer = storagePointerForFile(path, content),
     mime = storedContentType(
       path,
-      (0, parseDataUriHeader)(content)?.mime ?? "",
+      parseDataUriHeader(content)?.mime ?? "",
     );
   if (pointer?.store === "file") {
     return {
@@ -216,7 +216,7 @@ function chooseStoredConversionRoute(
   if (pointer !== null) {
     return {
       to: "blob",
-      contentType: mime ?? (0, mimeTypeForPath)(path),
+      contentType: mime ?? mimeTypeForPath(path),
     };
   }
   let tooLarge = (input: string | null): Storage.StoredConversionRoute => ({
@@ -224,15 +224,15 @@ function chooseStoredConversionRoute(
     carried:
       formatStoredFileKilobytes(bytes) +
       " is more than the " +
-      formatStoredFileKilobytes((0, storedFileByteLimit)(input)) +
+      formatStoredFileKilobytes(storedFileByteLimit(input)) +
       " a stored file can be, so it was left out",
   });
   if (
     storedFileKind(path) === "code" &&
-    (0, classifyDesignSystemFile)(path) !== "preview" &&
+    classifyDesignSystemFile(path) !== "preview" &&
     path !== GENERATED_TOKENS_CSS_PATH
   ) {
-    if (bytes > (0, storedFileByteLimit)(mime)) {
+    if (bytes > storedFileByteLimit(mime)) {
       return tooLarge(mime);
     } else {
       return {
@@ -242,7 +242,7 @@ function chooseStoredConversionRoute(
     }
   }
   let fitsDocument: boolean =
-    (0, estimateEmbeddedJsonBytes)(
+    estimateEmbeddedJsonBytes(
       path === DESIGN_SYSTEM_PATHS.tokens
         ? (parseJsonObjectOrNull(content) ?? {
             path: path,
@@ -255,8 +255,8 @@ function chooseStoredConversionRoute(
             data: content,
           },
     ) <= MAX_SYNC_DOCUMENT_BYTES;
-  if (!(0, isTextFilePath)(path) && mime !== null) {
-    if (bytes > (0, storedFileByteLimit)(mime)) {
+  if (!isTextFilePath(path) && mime !== null) {
+    if (bytes > storedFileByteLimit(mime)) {
       return tooLarge(mime);
     } else {
       return {
@@ -265,10 +265,10 @@ function chooseStoredConversionRoute(
       };
     }
   }
-  if (!(0, isTextFilePath)(path)) {
+  if (!isTextFilePath(path)) {
     let value = sniffDataUriKind(content, path);
     if (value === "json") {
-      if (bytes > (0, storedFileByteLimit)("application/json")) {
+      if (bytes > storedFileByteLimit("application/json")) {
         return tooLarge("application/json");
       } else {
         return {
@@ -277,7 +277,7 @@ function chooseStoredConversionRoute(
         };
       }
     }
-    if (value === "zip" && (0, fileExtension)(path) === "lottie") {
+    if (value === "zip" && fileExtension(path) === "lottie") {
       return {
         to: "omit",
         carried:
@@ -286,7 +286,7 @@ function chooseStoredConversionRoute(
     }
   }
   if (fitsDocument) {
-    if ((0, isTextFilePath)(path)) {
+    if (isTextFilePath(path)) {
       return {
         to: "inline",
       };
@@ -311,7 +311,7 @@ function chooseStoredConversionRoute(
         " is too much to keep inline, so it was left out",
     };
   }
-  if (bytes > (0, storedFileByteLimit)(mime)) {
+  if (bytes > storedFileByteLimit(mime)) {
     return tooLarge(mime);
   }
   return {
@@ -381,10 +381,10 @@ function binaryDataUriHeader(
   content: string,
   path: string,
 ): Storage.BinaryHeader | null {
-  if ((0, isTextFilePath)(path)) {
+  if (isTextFilePath(path)) {
     return null;
   } else {
-    return (0, parseDataUriHeader)(content);
+    return parseDataUriHeader(content);
   }
 }
 function storedContentByteLength(content: string, path: string): number {
@@ -549,34 +549,34 @@ function makeStoredSystemMetadata(
     "convertedFrom" | "snapshot"
   > = {},
 ): Storage.StoredSystemMetadata {
-  let manifest = (0, parseManifest)(
+  let manifest = parseManifest(
       files[DESIGN_SYSTEM_PATHS.manifest] ?? "",
     ),
     metadata: Storage.StoredSystemMetadata = {
       v: 1,
       title: title,
     },
-    bundleMetadata = (0, parseManifestBundleMetadata)(manifest);
+    bundleMetadata = parseManifestBundleMetadata(manifest);
   if (bundleMetadata.namespace !== null) {
     metadata.namespace = bundleMetadata.namespace;
   }
   if (bundleMetadata.libraries !== null) {
     metadata.libraries = bundleMetadata.libraries;
   }
-  let assetGroups = (0, serializeAssetGroupMetadata)(
-    (0, parseAssetGroupMetadata)(manifest),
+  let assetGroups = serializeAssetGroupMetadata(
+    parseAssetGroupMetadata(manifest),
   );
   if (assetGroups.length > 0) {
     metadata.assetGroups = assetGroups;
   }
-  let sections = (0, serializeSectionTitles)(
-    (0, sectionTitlesFromManifest)(manifest),
+  let sections = serializeSectionTitles(
+    sectionTitlesFromManifest(manifest),
   );
   if (sections !== undefined) {
     metadata.sections = sections;
   }
-  let lastChange = (0, serializeLastChange)(
-    (0, lastChangeFromManifest)(manifest),
+  let lastChange = serializeLastChange(
+    lastChangeFromManifest(manifest),
   );
   if (lastChange !== undefined) {
     metadata.lastChange = lastChange;
@@ -590,7 +590,7 @@ function makeStoredSystemMetadata(
   return metadata;
 }
 function generatedReadmeTail(readme: string): string {
-  let offset = (0, generatedReadmeTailOffset)(readme);
+  let offset = generatedReadmeTailOffset(readme);
   if (offset < 0) {
     return "";
   } else {
@@ -603,7 +603,7 @@ function mergeReadmeWithGeneratedTail(
   readme: string,
   generatedTail: string,
 ): string {
-  let authorReadme = (0, stripGeneratedReadmeTail)(readme);
+  let authorReadme = stripGeneratedReadmeTail(readme);
   if (authorReadme === "") {
     return generatedTail;
   } else {
@@ -745,9 +745,9 @@ export function installModelStoredFileCodec(): () => void {
     formatStoredFileKilobytes = (input: number): string =>
       String(Math.round(input / 1024)) + " KB";
     fileKindDescription = (input: string): string =>
-      (0, fileExtension)(input) === ""
+      fileExtension(input) === ""
         ? "files of this kind"
-        : "." + (0, fileExtension)(input) + " files";
+        : "." + fileExtension(input) + " files";
     BASE64_ALPHABETModelStoredFileCodec =
       "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
     storedPathBasename = (input: string) =>

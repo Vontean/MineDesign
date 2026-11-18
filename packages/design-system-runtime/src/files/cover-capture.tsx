@@ -65,7 +65,7 @@ async function readCoverCaptureFonts(
     reads = [...new Set(paths)]
       .filter(
         (input) =>
-          (0, assetKindForPath)(input) === "font" &&
+          assetKindForPath(input) === "font" &&
           !COVER_CAPTURE_REQUIRED_PATHS.includes(input) &&
           !/[%?#]/.test(input),
       )
@@ -73,8 +73,8 @@ async function readCoverCaptureFonts(
       .map(async (input): Promise<void> => {
         try {
           let value = await reader.bytes(
-              (0, projectFilePath)(
-                (0, encodeRelativeUrlPath)(input),
+              projectFilePath(
+                encodeRelativeUrlPath(input),
               ),
             ),
             value2 =
@@ -88,7 +88,7 @@ async function readCoverCaptureFonts(
           remainingBytes -= value2;
           fonts[input] = coverFontDataUri(
             value,
-            (0, mimeTypeForPath)(input),
+            mimeTypeForPath(input),
           );
         } catch {}
       });
@@ -107,7 +107,7 @@ async function readCoverCaptureSystem(
 ): Promise<Boot.CapturedCover | null> {
   let textFiles = await Promise.all(
       COVER_CAPTURE_REQUIRED_PATHS.map((input) =>
-        reader.text((0, projectFilePath)(input)),
+        reader.text(projectFilePath(input)),
       ),
     ),
     files: Record<string, string> = {};
@@ -117,7 +117,7 @@ async function readCoverCaptureSystem(
       files[input] = value;
     }
   });
-  let system = (0, parseDesignSystemFiles)(files);
+  let system = parseDesignSystemFiles(files);
   if (
     system.cover === null ||
     system.cover.previewHtml.trim() === "" ||
@@ -134,7 +134,7 @@ async function readCoverCaptureSystem(
     capturedSystem =
       fontPaths.length === 0
         ? system
-        : (0, parseDesignSystemFiles)({
+        : parseDesignSystemFiles({
             ...files,
             ...fontFiles,
           });
@@ -193,10 +193,9 @@ function CapturedDesignSystemCover({
   useUiLocale();
   let { system: value } = captured,
     ref = reactCoverCapture.useRef<HTMLDivElement | null>(null),
-    value2 = (0, useHostThemeMode)(),
-    { hostThemeId: value3, hostThemeMode: value4 } = (0,
-    resolvePreviewTheme)(value.tokens.color.themes, value2, null),
-    head = (0, createPreviewHead)(
+    value2 = useHostThemeMode(),
+    { hostThemeId: value3, hostThemeMode: value4 } = resolvePreviewTheme(value.tokens.color.themes, value2, null),
+    head = createPreviewHead(
       value,
       value4,
       value3,
@@ -204,7 +203,7 @@ function CapturedDesignSystemCover({
       undefined,
       !(
         preferLivePreviewUrls &&
-        (0, supportsLivePreviewUrls)()
+        supportsLivePreviewUrls()
       ),
     ).head,
     memo = reactCoverCapture.useMemo(
@@ -250,7 +249,7 @@ function CapturedDesignSystemCover({
   if (value.cover === null) {
     return null;
   }
-  let value5 = (0, clampComponentStageHeight)(value.cover.height),
+  let value5 = clampComponentStageHeight(value.cover.height),
     value6 = coverCaptureFitWidth(
       document.documentElement.clientWidth,
       document.documentElement.clientHeight,
@@ -285,17 +284,17 @@ async function renderDesignSystemCoverCapture(
   timeoutMs: number = COVER_CAPTURE_TIMEOUT_MS,
 ): Promise<void> {
   let fallbackTimer = setTimeout(
-      () => (0, prepareDesignSystemThumbnailCapture)(),
+      () => prepareDesignSystemThumbnailCapture(),
       timeoutMs,
     ),
     captured = await readCoverCaptureSystem(reader).catch((): null => null);
   if (captured === null || root === null) {
     clearTimeout(fallbackTimer);
-    return (0, prepareDesignSystemThumbnailCapture)();
+    return prepareDesignSystemThumbnailCapture();
   }
   let painted = (): void => {
     clearTimeout(fallbackTimer);
-    (0, markThumbnailReady)();
+    markThumbnailReady();
   };
   reactDomCoverCapture
     .createRoot(root)
@@ -305,7 +304,7 @@ async function renderDesignSystemCoverCapture(
 }
 async function captureDesignSystemAndHoldBoot(): Promise<void> {
   await renderDesignSystemCoverCapture().catch(() =>
-    (0, prepareDesignSystemThumbnailCapture)(),
+    prepareDesignSystemThumbnailCapture(),
   );
   return new Promise((): void => {
     return;
@@ -336,16 +335,16 @@ export {
 };
 export function installFilesCoverCapture(): () => void {
   return () => {
-    reactCoverCapture = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    reactCoverCapture = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
-    reactDomCoverCapture = (0, toModuleNamespace)(
-      (0, loadReactDomClientNamespace)(),
+    reactDomCoverCapture = toModuleNamespace(
+      loadReactDomClientNamespace(),
       1,
     );
-    jsxCoverCapture = (0, toModuleNamespace)(
-      (0, loadJsxNamespace)(),
+    jsxCoverCapture = toModuleNamespace(
+      loadJsxNamespace(),
       1,
     );
     COVER_COMPONENT_DIRECTORY =

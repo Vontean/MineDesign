@@ -34,7 +34,7 @@ function transformArtboardBounds(
   toRect?: Dynamic,
   axes?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = (0, transformRectBetweenRects)(
+  let value: Dynamic = transformRectBetweenRects(
       artboard,
       fromRect,
       toRect,
@@ -73,9 +73,9 @@ function transformAnnotationBounds(
   axes?: Dynamic,
 ): Dynamic {
   let value: Dynamic = transformTouchedProperties(axes);
-  if (!(0, isShapeAnnotation)(annotation))
+  if (!isShapeAnnotation(annotation))
     return preserveRoundedTransformValues(
-      (0, transformPointBetweenRects)(annotation, fromRect, toRect),
+      transformPointBetweenRects(annotation, fromRect, toRect),
       annotationTransformSnapshot(annotation),
       value,
     );
@@ -84,8 +84,8 @@ function transformAnnotationBounds(
     case "line":
     case "arrow": {
       let [items, items2]: Dynamic = [
-        (0, transformPointBetweenRects)(value2, fromRect, toRect),
-        (0, transformPointBetweenRects)(
+        transformPointBetweenRects(value2, fromRect, toRect),
+        transformPointBetweenRects(
           {
             x: value2.x2,
             y: value2.y2,
@@ -101,7 +101,7 @@ function transformAnnotationBounds(
           x2: items2.x,
           y2: items2.y,
         },
-        (0, annotationGeometry)(value2),
+        annotationGeometry(value2),
         value,
       );
     }
@@ -109,8 +109,8 @@ function transformAnnotationBounds(
     case "rect":
     case "oval":
     case "pen": {
-      let value3: Dynamic = (0, transformRectBetweenRects)(
-          (0, annotationBounds)(value2),
+      let value3: Dynamic = transformRectBetweenRects(
+          annotationBounds(value2),
           fromRect,
           toRect,
         ),
@@ -135,7 +135,7 @@ function transformAnnotationBounds(
             PlatformFileContentLimit_6,
           ),
         },
-        (0, annotationGeometry)(value2),
+        annotationGeometry(value2),
         value,
       );
     }
@@ -150,8 +150,8 @@ function rotateAnnotationAboutPoint(
   let value: Dynamic = transformTouchedProperties("rotate");
   if (annotation.kind === "line" || annotation.kind === "arrow") {
     let [items, items2]: Dynamic = [
-      (0, rotatePoint)(annotation, pivot, degrees),
-      (0, rotatePoint)(
+      rotatePoint(annotation, pivot, degrees),
+      rotatePoint(
         {
           x: annotation.x2,
           y: annotation.y2,
@@ -167,7 +167,7 @@ function rotateAnnotationAboutPoint(
         x2: items2.x,
         y2: items2.y,
       },
-      (0, annotationGeometry)(annotation),
+      annotationGeometry(annotation),
       value,
     );
   }
@@ -175,13 +175,13 @@ function rotateAnnotationAboutPoint(
       x: box.x + box.w / 2,
       y: box.y + box.h / 2,
     },
-    value2: Dynamic = (0, rotatePoint)(state, pivot, degrees);
+    value2: Dynamic = rotatePoint(state, pivot, degrees);
   return preserveRoundedTransformValues(
     {
       x: annotation.x + value2.x - state.x,
       y: annotation.y + value2.y - state.y,
-      rotate: (0, normalizeRotationDegrees)(
-        (0, annotationRotation)(annotation) + degrees,
+      rotate: normalizeRotationDegrees(
+        annotationRotation(annotation) + degrees,
       ),
     },
     annotationTransformSnapshot(annotation),
@@ -197,7 +197,7 @@ function selectionScaleLimits(
       w: input,
       h: input,
     }),
-    { min: value, max: value2 }: Dynamic = (0, selectionResizeLimits)(
+    { min: value, max: value2 }: Dynamic = selectionResizeLimits(
       selectionBox,
       [
         ...artboards
@@ -212,7 +212,7 @@ function selectionScaleLimits(
           ),
         ...annotations.flatMap(
           ({ spec: spec, box: box }: Dynamic): Dynamic =>
-            (0, isShapeAnnotation)(spec) &&
+            isShapeAnnotation(spec) &&
             spec.kind !== "line" &&
             spec.kind !== "arrow"
               ? [
@@ -268,13 +268,13 @@ function selectionTransformMembers(
           : {
               id: source.id,
               at: [source.x, source.y],
-              fixed: (0, isShapeAnnotation)(source)
+              fixed: isShapeAnnotation(source)
                 ? [
-                    (0, annotationBounds)(source).w,
-                    (0, annotationBounds)(source).h,
-                    (0, annotationRotation)(source),
+                    annotationBounds(source).w,
+                    annotationBounds(source).h,
+                    annotationRotation(source),
                   ]
-                : [source.w, (0, annotationRotation)(source)],
+                : [source.w, annotationRotation(source)],
             },
     ),
   ];
@@ -357,8 +357,8 @@ export {
 export function installGeometrySelectionTransform(): () => void {
   return () => {
     annotationTransformSnapshot = (input?: Dynamic): Dynamic =>
-      (0, isShapeAnnotation)(input)
-        ? (0, annotationGeometry)(input)
+      isShapeAnnotation(input)
+        ? annotationGeometry(input)
         : {
             x: input.x,
             y: input.y,

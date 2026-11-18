@@ -263,8 +263,8 @@ export {
 };
 export function installEditorToolbarLayout(): () => void {
   return () => {
-    jsxToolbarLayout = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    jsxToolbarLayout = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
     ToolbarLayoutLimit = 1e3;

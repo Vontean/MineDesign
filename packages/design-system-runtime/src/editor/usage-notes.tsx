@@ -143,7 +143,7 @@ function UsageNoteEditor({
             }
             aria-label={((value6) + (": ")) + (label)}
             tooltip={value6}
-            className={(0, joinClassNames)(
+            className={joinClassNames(
               "ds-nmark",
               !value3 &&
                 "opacity-0 group-hover/row:opacity-100 group-focus-within/row:opacity-100 focus-visible:opacity-100 aria-expanded:opacity-100 pointer-coarse:opacity-100",
@@ -298,7 +298,7 @@ function NotesPopoverEditor({
   };
   return (
     <div
-      className={(0, joinClassNames)(
+      className={joinClassNames(
         "ds-postit flex flex-col",
         size === "doc" ? "ds-postit-doc" : undefined,
       )}
@@ -306,7 +306,7 @@ function NotesPopoverEditor({
       aria-label={((title) + (": ")) + (label)}
       data-testid={testid !== undefined ? testid + "-note" : undefined}
       {...(anchorKey !== undefined
-        ? (0, commentTargetProps)("note", anchorKey)
+        ? commentTargetProps("note", anchorKey)
         : {})}
     >
       {[<div className={"ds-postit-head flex items-center gap-xs"}>
@@ -332,7 +332,7 @@ function NotesPopoverEditor({
                   event.preventDefault()
                 }
                 onClick={(): void => {
-                  (0, flushMarkdownCommitQueues)();
+                  flushMarkdownCommitQueues();
                   onChange!("");
                   ref.current.open = false;
                   onDone?.();
@@ -396,12 +396,12 @@ export {
 };
 export function installEditorUsageNotes(): () => void {
   return () => {
-    reactUsageEditor = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    reactUsageEditor = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
-    jsxUsageEditor = (0, toModuleNamespace)(
-      (0, loadJsxNamespace)(),
+    jsxUsageEditor = toModuleNamespace(
+      loadJsxNamespace(),
       1,
     );
     prefersCoarsePointer = () =>

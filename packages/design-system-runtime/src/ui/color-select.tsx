@@ -42,8 +42,8 @@ function swatchPreviewStyle(
       backgroundColor: input,
     };
   }
-  let value = (0, parseCssColorToHsva)(input),
-    value2 = (0, hsvaToCssColor)(value);
+  let value = parseCssColorToHsva(input),
+    value2 = hsvaToCssColor(value);
   if (value.a < 1) {
     return {
       background: `linear-gradient(${value2}, ${value2}), ${COLOR_ALPHA_CHECKERBOARD}`,
@@ -58,8 +58,8 @@ function swatchColorKey(color: string): string {
   if (symbolicColorPattern.test(color)) {
     return "sym:" + color.trim();
   } else {
-    return (0, hsvaToCssColor)(
-      (0, parseCssColorToHsva)(color),
+    return hsvaToCssColor(
+      parseCssColorToHsva(color),
     );
   }
 }
@@ -149,7 +149,7 @@ function SwatchPalette({
     }, [value12, fold]),
     value13 = current !== null ? (memo2.get(current) ?? current) : null,
     value14 = memo.filter((input) =>
-      (0, optionMatchesQuery)(
+      optionMatchesQuery(
         value11,
         swatchLabel(input),
         input.color,
@@ -165,7 +165,7 @@ function SwatchPalette({
         className={"mt-1 mb-2 w-0 min-w-full"}
         rowSelector={"[data-swatch]"}
         onEnterIndex={() =>
-          (0, optionTypeaheadMatch)(
+          optionTypeaheadMatch(
             value11,
             value14
               .filter((input) => input.disabledReason === undefined)
@@ -222,7 +222,7 @@ function SwatchPalette({
     callback3 = (input: Color.ColorSwatch[], options?: string) => (
       <ColorPickerGroup
         label={title}
-        className={(0, joinClassNames)("w-0 min-w-full", options)}
+        className={joinClassNames("w-0 min-w-full", options)}
       >
         {input.map((input2, options2) => {
           let value19 =
@@ -257,7 +257,7 @@ function SwatchPalette({
     value16 =
       !headless && (value2 || headerEnd !== undefined) ? (
         <div
-          className={(0, joinClassNames)(
+          className={joinClassNames(
             "-mx-2 -mt-2 mb-1 flex items-center justify-between gap-2",
             !value2 && "order-first",
           )}
@@ -299,7 +299,7 @@ function SwatchPalette({
                 aria-label={value3.label ?? (uiMessage("design-system.colorSelect.fillType"))}
                 fullWidth={true}
                 segments={value3.options.map((input) => ({
-                  ...(0, fillModeOption)(
+                  ...fillModeOption(
                     input.value,
                     input.label,
                     value3.disabled === true ||
@@ -332,15 +332,15 @@ function SwatchPalette({
     <div
       data-kit={"color-selector"}
       data-search-scope={""}
-      onKeyDown={(0, createOptionListKeyHandler)("[data-swatch]")}
-      className={(0, joinClassNames)(
+      onKeyDown={createOptionListKeyHandler("[data-swatch]")}
+      className={joinClassNames(
         "flex min-w-56 flex-col [--pp-gutter-l:0px] [--pp-gutter-r:0px] [--pp-label-w:3rem]",
         className,
       )}
     >
       {[value2 ? value16 : null, value7 === "system" ? (
           <div
-            className={(0, joinClassNames)(
+            className={joinClassNames(
               "flex min-h-0 flex-col",
               value2 ? "-mx-2" : "-m-2",
             )}
@@ -433,8 +433,8 @@ function ColorSelect({
       [swatches, none !== undefined, none?.disabledReason],
     ),
     callback = (input: string) =>
-      (0, rgbaHexColor)({
-        ...(0, parseCssColorToHsva)(input),
+      rgbaHexColor({
+        ...parseCssColorToHsva(input),
         ...(opaque
           ? {
               a: 1,
@@ -487,12 +487,12 @@ function ColorSelect({
         onChange(value4);
         onPickEnd?.(value4);
         if (contrast !== undefined) {
-          (0, announceLiveMessage)(() => {
-            let value5 = (0, colorContrastResults)(value4, contrast);
+          announceLiveMessage(() => {
+            let value5 = colorContrastResults(value4, contrast);
             if (value5 === undefined) {
               return null;
             } else {
-              return (0, contrastDisplayInfo)(value5).spoken;
+              return contrastDisplayInfo(value5).spoken;
             }
           });
         }
@@ -525,12 +525,12 @@ export {
 };
 export function installUiColorSelect(): () => void {
   return () => {
-    jsxColorSelectPrimitives = (0, toModuleNamespace)(
-      (0, loadJsxNamespace)(),
+    jsxColorSelectPrimitives = toModuleNamespace(
+      loadJsxNamespace(),
       1,
     );
-    ColorSelectJsx = (0, toModuleNamespace)(
-      (0, loadJsxNamespace)(),
+    ColorSelectJsx = toModuleNamespace(
+      loadJsxNamespace(),
       1,
     );
     symbolicColorPattern = /^\s*(var|color-mix)\(/i;

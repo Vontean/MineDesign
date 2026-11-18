@@ -25,7 +25,7 @@ function snapCanvasDrag(
       w: box.w,
       h: box.h,
     },
-    value: Dynamic = (0, snapTranslation)(
+    value: Dynamic = snapTranslation(
       state,
       snapState.lines,
       tolerance,
@@ -102,7 +102,7 @@ function canvasSnapReferenceLines(
   selection?: Dynamic,
   includeSelected?: Dynamic,
 ): Dynamic {
-  return (0, rectangleSnapGuides)(
+  return rectangleSnapGuides(
     canvasSnapReferenceObjects(
       artboards,
       annotations,

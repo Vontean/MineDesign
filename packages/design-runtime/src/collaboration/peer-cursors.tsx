@@ -170,7 +170,7 @@ function createPresenceReporter(input: Dynamic = {}): Dynamic {
     value2: Dynamic = input.minDelta ?? 0.002,
     value3: Dynamic =
       input.idleNullMs ?? CollaborationPeerCursorsResolvedValue,
-    value4: Dynamic = !(0, hasRoomCapability)(),
+    value4: Dynamic = !hasRoomCapability(),
     value5: Dynamic,
     value6: Dynamic,
     value7: Dynamic,
@@ -180,7 +180,7 @@ function createPresenceReporter(input: Dynamic = {}): Dynamic {
     text: Dynamic = "";
   async function value10(input2?: Dynamic): Promise<Dynamic> {
     if (value4) return;
-    let value13: Dynamic = await (0, cachedRoomCapability)();
+    let value13: Dynamic = await cachedRoomCapability();
     if (typeof value13?.presence != "function") {
       value4 = true;
       return;
@@ -388,7 +388,7 @@ function usePeerProfiles(input?: Dynamic): Dynamic {
   (0, reactCollaborationPeerCursors_3.useEffect)((): Dynamic => {
     if (value === "") return;
     let flag: Dynamic = true;
-    (0, getUserNames)(
+    getUserNames(
       value.split(`
 `),
     ).then((input2?: Dynamic): Dynamic => {
@@ -515,26 +515,26 @@ export {
 };
 export function installCollaborationPeerCursors(): () => void {
   return () => {
-    reactCollaborationPeerCursors = (0, toModuleNamespace)(
-      (0, load_react)(),
+    reactCollaborationPeerCursors = toModuleNamespace(
+      load_react(),
       1,
     );
-    reactCollaborationPeerCursors_2 = (0, toModuleNamespace)(
-      (0, load_react)(),
+    reactCollaborationPeerCursors_2 = toModuleNamespace(
+      load_react(),
       1,
     );
-    (0, initializeCdsIndex)();
-    reactCollaborationPeerCursors_3 = (0, toModuleNamespace)(
-      (0, load_react)(),
+    initializeCdsIndex();
+    reactCollaborationPeerCursors_3 = toModuleNamespace(
+      load_react(),
       1,
     );
-    (0, initializeCdsIndex)();
-    jsxCollaborationPeerCursors = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    initializeCdsIndex();
+    jsxCollaborationPeerCursors = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
-    jsxCollaborationPeerCursors_2 = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    jsxCollaborationPeerCursors_2 = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
     CollaborationPeerCursorsResolvedValue = 15 * 6e4;

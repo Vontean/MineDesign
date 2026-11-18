@@ -115,7 +115,7 @@ function TabsListMenu({
   triggerHadFocusRef: triggerHadFocusRef,
 }: TabsListMenuProps): React.ReactElement {
   useUiLocale();
-  let value = (0, useFlipIndicatorContext)(),
+  let value = useFlipIndicatorContext(),
     value2 = (0, reactTabsListMenu.useRef)<HTMLButtonElement | null>(null),
     value3 = (0, reactTabsListMenu.useId)(),
     value4 = (0, reactTabsListMenu.useId)(),
@@ -129,7 +129,7 @@ function TabsListMenu({
       );
       value6((input) => (sameTabMenuItems(input, value10) ? input : value10));
     }, [listRef, value]);
-  (0, useIsomorphicLayoutEffect)(() => {
+  useIsomorphicLayoutEffect(() => {
     value7();
     let current = listRef.current;
     if (current === null || typeof MutationObserver === "undefined") return;
@@ -144,7 +144,7 @@ function TabsListMenu({
     return () => observer.disconnect();
   }, [value7, listRef]);
   (0, reactTabsListMenu.useEffect)(value7, [value7]);
-  (0, useIsomorphicLayoutEffect)(() => {
+  useIsomorphicLayoutEffect(() => {
     let current = listRef.current,
       value10 = current?.ownerDocument.activeElement ?? null;
     current !== null &&
@@ -251,17 +251,17 @@ export {
 };
 export function installCdsComponentsNumberInput(): () => void {
   return () => {
-    initializeTabsListMenu = (0, initializeOnce)(() => {
+    initializeTabsListMenu = initializeOnce(() => {
       "use client";
 
-      (0, initializeHooksLayoutEffect)();
-      (0, initializeMenuMenu_5)();
-      (0, initializeSwitchContext_2)();
-      reactTabsListMenu = (0, toModuleNamespace)(
-        (0, load_react)(),
+      initializeHooksLayoutEffect();
+      initializeMenuMenu_5();
+      initializeSwitchContext_2();
+      reactTabsListMenu = toModuleNamespace(
+        load_react(),
       );
-      jsxTabsListMenu = (0, toModuleNamespace)(
-        (0, load_react_jsx_runtime)(),
+      jsxTabsListMenu = toModuleNamespace(
+        load_react_jsx_runtime(),
       );
       RoleTabValue = '[role="tab"]';
       TabsListMenuLabel =

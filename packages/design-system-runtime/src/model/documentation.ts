@@ -222,7 +222,7 @@ function documentationManifestFacts(
         let value: string | undefined =
           typeof input.global === "string"
             ? input.global
-            : (0, findPackagedLibrary)(input.name)?.provides[0];
+            : findPackagedLibrary(input.name)?.provides[0];
         return {
           name: input.name,
           version: input.version,
@@ -1438,14 +1438,14 @@ function generateComponentApiCards(
       let value3: Core.InferredPropControl[];
       try {
         refinementBudget--;
-        value3 = (0, inferComponentPropControls)(
+        value3 = inferComponentPropControls(
           input.replace(/Props(?:\$\d+)?$/, ""),
           [declarationText ?? ""],
           {
             keep: items.map((input2) => input2[0]),
           },
         );
-        if ((0, wasTypeInferenceIncomplete)()) {
+        if (wasTypeInferenceIncomplete()) {
           refinementBudget = 0;
         }
       } catch {
@@ -2156,7 +2156,7 @@ function generateComponentApiCards(
       );
     }
     if (
-      (0, isPublishableFilePathModelFileTable)(
+      isPublishableFilePathModelFileTable(
         GENERATED_API_DIRECTORY + "components/" + name + ".md",
       )
     ) {
@@ -2314,7 +2314,7 @@ function generateConsumptionDocumentation(
           value3 !== undefined
             ? markdownCodeSpan(
                 "var(--font-" +
-                  (0, escapeTokenCssIdentifier)(value3) +
+                  escapeTokenCssIdentifier(value3) +
                   ")",
               )
             : "",
@@ -2369,7 +2369,7 @@ function generateConsumptionDocumentation(
     };
   if (tokens !== null && tokens.color.tokens.length > 0) {
     let value = tokens.color.themes.map((input) => input.id),
-      value2 = (0, commonTokenNamePrefix)(
+      value2 = commonTokenNamePrefix(
         tokens.color.tokens.map((input) => input.name),
       ),
       callback = (input: Core.ColorToken) =>
@@ -2380,7 +2380,7 @@ function generateConsumptionDocumentation(
         value
           .map((input2) =>
             markdownTableCell(
-              (0, resolveColorTokenValue)(input, input2, tokens) ??
+              resolveColorTokenValue(input, input2, tokens) ??
                 "",
             ),
           )
@@ -2408,7 +2408,7 @@ function generateConsumptionDocumentation(
         MARKDOWN_CODE_FENCE + "css",
         "/* any surface that loads " + value3 + " */",
         "color: var(--" +
-          (0, escapeTokenCssIdentifier)(value5[0].name) +
+          escapeTokenCssIdentifier(value5[0].name) +
           ");",
         "/* a surface with no stylesheet (a slide): the " +
           (value[0] ?? "first") +
@@ -2446,7 +2446,7 @@ function generateConsumptionDocumentation(
             .get(value8)!
             .push([
               parseInt(value7[2], 10),
-              (0, resolveColorTokenValue)(
+              resolveColorTokenValue(
                 value6,
                 value[0] ?? "",
                 tokens,
@@ -2537,11 +2537,11 @@ function generateConsumptionDocumentation(
             markdownCodeSpan(input2.name) +
             " | " +
             markdownCodeSpan(
-              "." + (0, escapeTokenCssIdentifier)(input2.name),
+              "." + escapeTokenCssIdentifier(input2.name),
             ) +
             ", " +
             markdownCodeSpan(
-              "--text-" + (0, escapeTokenCssIdentifier)(input2.name),
+              "--text-" + escapeTokenCssIdentifier(input2.name),
             ) +
             " | " +
             markdownTableCell(input2.fontSize) +
@@ -2576,10 +2576,10 @@ function generateConsumptionDocumentation(
         "",
         MARKDOWN_CODE_FENCE + "css",
         "font: var(--text-" +
-          (0, escapeTokenCssIdentifier)(value2) +
+          escapeTokenCssIdentifier(value2) +
           ");            /* with tokens.css */",
         "font-family: var(--font-" +
-          (0, escapeTokenCssIdentifier)(value3) +
+          escapeTokenCssIdentifier(value3) +
           ");   /* the family alone */",
         MARKDOWN_CODE_FENCE,
         "",
@@ -2703,10 +2703,10 @@ function generateConsumptionDocumentation(
             MARKDOWN_CODE_FENCE + "css",
             input === "spacing"
               ? "padding: var(--" +
-                (0, escapeTokenCssIdentifier)(name) +
+                escapeTokenCssIdentifier(name) +
                 ");"
               : "/* var(--" +
-                (0, escapeTokenCssIdentifier)(name) +
+                escapeTokenCssIdentifier(name) +
                 ") */",
             MARKDOWN_CODE_FENCE,
             "",
@@ -2823,7 +2823,7 @@ function generateConsumptionDocumentation(
           typeof input === "object" &&
           input !== null &&
           typeof input.name === "string" &&
-          (0, isPublishableFilePathModelFileTable)(
+          isPublishableFilePathModelFileTable(
             GENERATED_API_DIRECTORY +
               "assets/" +
               assetDocumentationSlug(input.name) +
@@ -2838,7 +2838,7 @@ function generateConsumptionDocumentation(
             typeof input?.path === "string" &&
             typeof input.id === "string" &&
             BLOB_ID_PATTERN.test(input.id) &&
-            (0, isValidDesignSystemPath)(input.path),
+            isValidDesignSystemPath(input.path),
         )
       : [];
     if (value2.length === 0) {
@@ -3505,7 +3505,7 @@ function bundleCssReadsTokens(
   if (cached !== undefined) {
     return cached.reads;
   }
-  let tokensCss: string | null = (0, generatedTokensCssForFiles)(
+  let tokensCss: string | null = generatedTokensCssForFiles(
       files,
     ),
     cssWithoutComments = stripCssComments(bundleCss),
@@ -3584,9 +3584,9 @@ function consumptionDocumentationForFiles(files: Core.FileTable, root = "") {
         typeof rawTokens === "object" &&
         rawTokens !== null &&
         !Array.isArray(rawTokens)
-          ? (0, parseTokens)(rawTokens)
+          ? parseTokens(rawTokens)
           : null,
-      manifest: (0, parseManifest)(cacheKey[2] ?? ""),
+      manifest: parseManifest(cacheKey[2] ?? ""),
       readme: stripGeneratedReadmeTail(cacheKey[0] ?? ""),
       assetReadmes: assetReadmes,
       root: root,

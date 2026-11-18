@@ -24,7 +24,7 @@ export function trackHandleDragGesture(deps: { readonly callback30: Dynamic; rea
         return;
       event.preventDefault();
       event.stopPropagation();
-      (0, focusCanvasDocument)();
+      focusCanvasDocument();
       let pointerId: Dynamic = event.pointerId,
         ancestor: Dynamic = event.currentTarget.closest(
           '[data-mega-chrome="' + options2 + '"]',
@@ -146,7 +146,7 @@ export function runSelectionTransformGesture(deps: { readonly callback57: Dynami
                         ...(input2
                           ? input2.board(entry2)
                           : callback61(
-                              (0, artboardTransformSnapshot)(entry2),
+                              artboardTransformSnapshot(entry2),
                             )),
                       }
                     : input3;
@@ -163,7 +163,7 @@ export function runSelectionTransformGesture(deps: { readonly callback57: Dynami
                               ...(input2
                                 ? input2.ann(entry2)
                                 : callback61(
-                                    (0, annotationTransformSnapshot)(
+                                    annotationTransformSnapshot(
                                       entry2.spec,
                                     ),
                                   )),
@@ -183,7 +183,7 @@ export function runSelectionTransformGesture(deps: { readonly callback57: Dynami
                   {
                     box: input2.box,
                     deg: input2.deg,
-                    members: (0, selectionTransformMembers)(
+                    members: selectionTransformMembers(
                       state.artboards.filter(
                         (input4?: Dynamic): Dynamic =>
                           entries2.has(input4.file),
@@ -246,15 +246,14 @@ export function runSelectionTransformGesture(deps: { readonly callback57: Dynami
 export function beginSelectionGroupResize(deps: { readonly callback45: Dynamic; readonly callback58: Dynamic; readonly camera: Dynamic; readonly selectedArtboards: Dynamic; readonly selectedNotes: Dynamic; readonly value230: Dynamic; readonly value231: Dynamic; readonly value241: Dynamic; readonly value242: Dynamic; readonly value243: Dynamic; readonly value70: Dynamic }, input?: Dynamic, options2?: Dynamic): Dynamic {
       if (!deps.value241) return;
       let [items, items2]: Dynamic = [deps.value241, deps.value242],
-        { min: value250, max: value251 }: Dynamic = (0,
-        selectionScaleLimits)(items, deps.value230, deps.value231),
+        { min: value250, max: value251 }: Dynamic = selectionScaleLimits(items, deps.value230, deps.value231),
         state: Dynamic = {
           x: input.x !== null,
           y: input.y !== null,
         },
         value252: Dynamic = state.x && state.y && items.w > 0 && items.h > 0,
         [items3, items4]: Dynamic = [options2.clientX, options2.clientY],
-        value253: Dynamic = (0, transformTouchedProperties)(
+        value253: Dynamic = transformTouchedProperties(
           items2
             ? {
                 x: true,
@@ -284,7 +283,7 @@ export function beginSelectionGroupResize(deps: { readonly callback45: Dynamic; 
                     ...state2,
                     guides: [],
                   }
-                : (0, snapResize)(
+                : snapResize(
                     items,
                     input,
                     state2.dx,
@@ -294,7 +293,7 @@ export function beginSelectionGroupResize(deps: { readonly callback45: Dynamic; 
                   ),
             [items5, items6]: Dynamic = [value255.dx, value255.dy];
           if (items2) {
-            let value258: Dynamic = (0, resizeRotatedRect)(
+            let value258: Dynamic = resizeRotatedRect(
               items,
               items2,
               input,
@@ -305,8 +304,7 @@ export function beginSelectionGroupResize(deps: { readonly callback45: Dynamic; 
               true,
             );
             if (value258.w === items.w && value258.h === items.h) return null;
-            let value259: Dynamic = (0,
-            selectionUniformScaleTransform)(
+            let value259: Dynamic = selectionUniformScaleTransform(
               {
                 x: items.x + items.w / 2,
                 y: items.y + items.h / 2,
@@ -322,14 +320,14 @@ export function beginSelectionGroupResize(deps: { readonly callback45: Dynamic; 
               deg: items2,
               keys: value253,
               board: (input3?: Dynamic): Dynamic =>
-                (0, transformArtboardBounds)(
+                transformArtboardBounds(
                   input3,
                   value259.from,
                   value259.to,
                   bothTransformAxes,
                 ),
               ann: (input3?: Dynamic): Dynamic =>
-                (0, transformAnnotationBounds)(
+                transformAnnotationBounds(
                   input3.spec,
                   value259.from,
                   value259.to,
@@ -339,7 +337,7 @@ export function beginSelectionGroupResize(deps: { readonly callback45: Dynamic; 
           }
           let value256: Dynamic =
               value252 && (deps.value243 || input2.shiftKey)
-                ? (0, resizeRectKeepingAspect)(
+                ? resizeRectKeepingAspect(
                     items,
                     input,
                     items5,
@@ -347,7 +345,7 @@ export function beginSelectionGroupResize(deps: { readonly callback45: Dynamic; 
                     value250,
                     value251,
                   )
-                : (0, resizeRect)(
+                : resizeRect(
                     items,
                     input,
                     items5,
@@ -355,7 +353,7 @@ export function beginSelectionGroupResize(deps: { readonly callback45: Dynamic; 
                     value250,
                     value251,
                   ),
-            value257: Dynamic = (0, activeResizeGuides)(
+            value257: Dynamic = activeResizeGuides(
               value256,
               input,
               value255.guides,
@@ -371,14 +369,14 @@ export function beginSelectionGroupResize(deps: { readonly callback45: Dynamic; 
                 deg: 0,
                 keys: value253,
                 board: (input3?: Dynamic): Dynamic =>
-                  (0, transformArtboardBounds)(
+                  transformArtboardBounds(
                     input3,
                     items,
                     value256,
                     state,
                   ),
                 ann: (input3?: Dynamic): Dynamic =>
-                  (0, transformAnnotationBounds)(
+                  transformAnnotationBounds(
                     input3.spec,
                     items,
                     value256,

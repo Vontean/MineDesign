@@ -94,7 +94,7 @@ function projectListingFiles(
   for (let [value, value2] of Object.entries(files)) {
     if (
       !value.startsWith(PROJECT_FILE_PREFIX) ||
-      (0, isReservedProjectFile)(type, value)
+      isReservedProjectFile(type, value)
     ) {
       continue;
     }
@@ -507,20 +507,20 @@ export {
 };
 export function installFilesUiFileTree(): () => void {
   return () => {
-    reactDesignSystemFiles = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    reactDesignSystemFiles = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
-    reactDomDesignSystemFiles = (0, toModuleNamespace)(
-      (0, loadReactDomNamespace)(),
+    reactDomDesignSystemFiles = toModuleNamespace(
+      loadReactDomNamespace(),
       1,
     );
-    reactFilesBrowser = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    reactFilesBrowser = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
-    reactDomFilesBrowser = (0, toModuleNamespace)(
-      (0, loadReactDomNamespace)(),
+    reactDomFilesBrowser = toModuleNamespace(
+      loadReactDomNamespace(),
       1,
     );
     FILE_BROWSER_SECTION_ORDER = [

@@ -82,8 +82,8 @@ function measureTabStripContents(input: HTMLElement): number {
   let { POSITIVE_INFINITY: value, NEGATIVE_INFINITY: value2 } = Number;
   for (let value4 of Array.from(input.children)) {
     if (
-      !(0, isHtmlElement)(value4) &&
-      !(0, isSvgElement)(value4)
+      !isHtmlElement(value4) &&
+      !isSvgElement(value4)
     ) {
       continue;
     }
@@ -244,13 +244,13 @@ function TabsListMenu({
         areTabMenuItemsEqual(input, value8) ? input : value8,
       );
     }, [listRef, value]);
-  (0, useIsomorphicLayoutEffect)(() => {
+  useIsomorphicLayoutEffect(() => {
     callback();
     let current = listRef.current;
     if (current === null || typeof MutationObserver === "undefined") {
       return;
     }
-    let value8 = (0, createSafeMutationObserver)(
+    let value8 = createSafeMutationObserver(
       MutationObserver,
       callback,
     );
@@ -264,7 +264,7 @@ function TabsListMenu({
     return () => value8.disconnect();
   }, [callback, listRef]);
   reactForUiTabs.useEffect(callback, [callback]);
-  (0, useIsomorphicLayoutEffect)(() => {
+  useIsomorphicLayoutEffect(() => {
     let current = listRef.current,
       value8 = current?.ownerDocument.activeElement ?? null;
     if (current !== null && value8 !== null && current.contains(value8)) {
@@ -381,7 +381,7 @@ function canTabsOverflowInline(input: Element, options: Element): boolean {
     if (
       value === options ||
       value.contains(options) ||
-      !(0, isHtmlElement)(value) ||
+      !isHtmlElement(value) ||
       value.getAttribute("data-cds-part") === "tabs-menu-trigger"
     ) {
       continue;
@@ -409,14 +409,14 @@ function useTabsOverflowMenu(
     ref3 = reactForUiTabs2.useRef(NaN),
     ref4 = reactForUiTabs2.useRef(context),
     ref5 = reactForUiTabs2.useRef(value);
-  (0, useIsomorphicLayoutEffect)(() => {
+  useIsomorphicLayoutEffect(() => {
     let current = input.current,
       value4 = current?.closest<HTMLElement>('[data-cds="Tabs"]') ?? null,
       value5 = value4?.parentElement ?? null;
     if (current === null || value4 === null || value5 === null) {
       return;
     }
-    let value6 = (0, getResizeObserverConstructor)(value5);
+    let value6 = getResizeObserverConstructor(value5);
     if (value6 === undefined) {
       return;
     }
@@ -453,7 +453,7 @@ function useTabsOverflowMenu(
         value4.getAttribute("data-orientation") === "vertical" ||
         canTabsOverflowInline(value4, current) ||
         resetAncestorHorizontalScroll(current, value4) ||
-        !(0, isUnwrappedHorizontalFlex)(value5),
+        !isUnwrappedHorizontalFlex(value5),
       callback3 = (input2: boolean) => {
         if (callback2()) {
           if (value2) {
@@ -461,7 +461,7 @@ function useTabsOverflowMenu(
           }
           return;
         }
-        let value12 = (0, getInnerElementWidth)(value5);
+        let value12 = getInnerElementWidth(value5);
         if (value12 <= 0) {
           return;
         }
@@ -479,7 +479,7 @@ function useTabsOverflowMenu(
             (Number.parseFloat(value15.paddingRight) || 0) +
             (Number.parseFloat(value15.borderLeftWidth) || 0) +
             (Number.parseFloat(value15.borderRightWidth) || 0),
-          value17 = (0, getTabOverflowWidth)(value5, value4, value16);
+          value17 = getTabOverflowWidth(value5, value4, value16);
         if (value2) {
           if (!context && value12 >= value17 + (value ? 0 : 64)) {
             callback(false, value12, input2);
@@ -497,7 +497,7 @@ function useTabsOverflowMenu(
         }
       };
     callback3(value7);
-    let value9 = (0, createSafeResizeObserver)(value6, () =>
+    let value9 = createSafeResizeObserver(value6, () =>
       callback3(false),
     );
     value9.observe(value5);
@@ -505,7 +505,7 @@ function useTabsOverflowMenu(
     let value10 =
       typeof MutationObserver === "undefined"
         ? null
-        : (0, createSafeMutationObserver)(MutationObserver, () =>
+        : createSafeMutationObserver(MutationObserver, () =>
             callback3(true),
           );
     value10?.observe(current, {
@@ -516,7 +516,7 @@ function useTabsOverflowMenu(
     let value11 =
       typeof MutationObserver === "undefined"
         ? null
-        : (0, createSafeMutationObserver)(MutationObserver, () =>
+        : createSafeMutationObserver(MutationObserver, () =>
             callback3(false),
           );
     value11?.observe(value5, {
@@ -575,22 +575,22 @@ export {
 };
 export function installUiTabs(): () => void {
   return () => {
-    reactuP = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    reactuP = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
     tabsOverflowContext = reactuP.createContext<TabsOverflowState | null>(null);
     TABS_STASHED_ATTRIBUTE = "data-cds-stashed";
     TABS_MENU_TRIGGER_ID = "tabs-menu-trigger";
     TABS_MENU_LABEL_ID = "tabs-menu-label";
-    (0, initializeSafeObservers)();
-    (0, initializeIsomorphicLayoutEffect)();
-    reactForUiTabs = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    initializeSafeObservers();
+    initializeIsomorphicLayoutEffect();
+    reactForUiTabs = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
-    jsxForUiTabs = (0, toModuleNamespace)(
-      (0, loadJsxNamespace)(),
+    jsxForUiTabs = toModuleNamespace(
+      loadJsxNamespace(),
       1,
     );
     TAB_SELECTOR = '[role="tab"]';
@@ -601,11 +601,11 @@ export function installUiTabs(): () => void {
         displayName?: string;
       }
     ).displayName = "Tabs.ListMenu";
-    reactForUiTabs2 = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    reactForUiTabs2 = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
-    jsxrZ = (0, toModuleNamespace)((0, loadJsxNamespace)(), 1);
+    jsxrZ = toModuleNamespace(loadJsxNamespace(), 1);
     tabsListBaseClasses = "flex items-center font-sans";
     tabsFirstTabIndicatorClasses =
       "data-[orientation=horizontal]:[&>[role=tab]:first-child]:before:start-0 data-[orientation=horizontal]:[&>:first-child>[data-orientation][role=tab]:first-child]:before:start-0 data-[orientation=horizontal]:[&>:first-child>:first-child>[data-orientation][role=tab]:first-child]:before:start-0";
@@ -627,8 +627,8 @@ export function installUiTabs(): () => void {
         options: React.ForwardedRef<HTMLDivElement>,
       ) => {
         let ref = reactForUiTabs2.useRef<HTMLElement | null>(null),
-          value = (0, useMergedRefs)(options, ref),
-          value2 = (0, useCompactableControl)(),
+          value = useMergedRefs(options, ref),
+          value2 = useCompactableControl(),
           value3 = useTabsOverflowMenu(
             ref,
             props["aria-label"] ?? props["aria-labelledby"],
@@ -636,12 +636,12 @@ export function installUiTabs(): () => void {
             value2.exactFit === true,
           ),
           value4 = useTabsOverflow()?.setCollapsed;
-        (0, useIsomorphicLayoutEffect)(() => {
+        useIsomorphicLayoutEffect(() => {
           value4?.(value3);
           return () => value4?.(false);
         }, [value3, value4]);
         let ref2 = reactForUiTabs2.useRef(false);
-        (0, useIsomorphicLayoutEffect)(() => {
+        useIsomorphicLayoutEffect(() => {
           if (!value3 && ref2.current) {
             ref2.current = false;
             ref.current
@@ -655,14 +655,14 @@ export function installUiTabs(): () => void {
                 ref={value}
                 activateOnFocus={activateOnFocus}
                 {...props}
-                {...(0, getControlSizeAttributes)(size)}
-                {...((0, getInertProps)(value3) as React.HTMLAttributes<HTMLDivElement>)}
+                {...getControlSizeAttributes(size)}
+                {...(getInertProps(value3) as React.HTMLAttributes<HTMLDivElement>)}
                 {...(value3
                   ? {
                       [TABS_STASHED_ATTRIBUTE]: "",
                     }
                   : null)}
-                className={(0, cn)(
+                className={cn(
                   tabsListBaseClasses,
                   tabsFirstTabIndicatorClasses,
                   tabsLastTabIndicatorClasses,
@@ -701,7 +701,7 @@ export function installUiTabs(): () => void {
       ) => {
         let value = reactForUiTabs2.useId(),
           value2 =
-            !!props.disabled && (0, hasDisabledReason)(disabledReason),
+            !!props.disabled && hasDisabledReason(disabledReason),
           value3 = useTabsOverflow()?.registerTab,
           { value: value4 } = props,
           ref = reactForUiTabs2.useRef<HTMLElement | null>(null),
@@ -712,7 +712,7 @@ export function installUiTabs(): () => void {
             },
             [value3, value4],
           ),
-          value5 = (0, useMergedRefs)(options, callback),
+          value5 = useMergedRefs(options, callback),
           value6 = (
             <baseTabs.Tab
               ref={value5}
@@ -722,12 +722,12 @@ export function installUiTabs(): () => void {
                   ? [ariaDescribedby, value].filter(Boolean).join(" ")
                   : ariaDescribedby
               }
-              className={(0, cn)(
+              className={cn(
                 tabBaseClasses,
                 value2 ? disabledTabPointerClasses : undefined,
                 className,
               )}
-              onMouseDown={(0, withRepeatedClickSelectionPrevention)(
+              onMouseDown={withRepeatedClickSelectionPrevention(
                 props.onMouseDown,
               )}
             >
@@ -765,7 +765,7 @@ export function installUiTabs(): () => void {
         <baseTabs.Panel
           ref={options}
           {...props}
-          className={(0, cn)(
+          className={cn(
             "cds-reset outline-none focus-visible:outline-hidden",
             className,
           )}
@@ -839,11 +839,11 @@ export function installUiTabs(): () => void {
               className={
                 typeof className === "function"
                   ? (input2: import("@base-ui/react/tabs").Tabs.Root.State) =>
-                      (0, cn)(
+                      cn(
                         value7 && "min-w-0 max-w-full",
                         className(input2),
                       )
-                  : (0, cn)(value7 && "min-w-0 max-w-full", className)
+                  : cn(value7 && "min-w-0 max-w-full", className)
               }
               onValueChange={callback}
             />

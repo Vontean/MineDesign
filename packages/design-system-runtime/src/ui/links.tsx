@@ -53,14 +53,13 @@ function InteractiveLinkElement({
 }: C.InteractiveLinkElementProps) {
   useUiLocale();
   let value = reactForUiIcons2.isValidElement(render),
-    value2: import("../contracts/overlays").LinkAttributes = (0,
-    useCdsLink)({
+    value2: import("../contracts/overlays").LinkAttributes = useCdsLink({
       ...linkInput,
-      ...(0, pickLinkEventProps)(rest),
+      ...pickLinkEventProps(rest),
       href: value ? undefined : linkInput.href,
     }),
     value3 = omitProps(rest, [...interactiveLinkReservedProps, "disabled"]),
-    value4 = (0, baseUseRender)({
+    value4 = baseUseRender({
       enabled: value,
       render: render,
       ref: forwardedRef,
@@ -113,13 +112,13 @@ function NewTabAnnouncement({ id: id }: { id: string }) {
   useUiLocale();
   return (
     <span id={id} hidden={true} className={"sr-only"}>
-      {(0, useTranslation)("opensInNewTab", "(opens in new tab)")}
+      {useTranslation("opensInNewTab", "(opens in new tab)")}
     </span>
   );
 }
 function TextLinkIcon(input: React.ReactNode) {
   useUiLocale();
-  if ((0, isIconName)(input)) {
+  if (isIconName(input)) {
     return (
       <Icon
         name={input}
@@ -161,17 +160,17 @@ export function installUiLinks(): () => void {
       "rel",
       "download",
     ];
-    (0, initializeTranslations)();
-    jsxForUiLinks = (0, toModuleNamespace)(
-      (0, loadJsxNamespace)(),
+    initializeTranslations();
+    jsxForUiLinks = toModuleNamespace(
+      loadJsxNamespace(),
       1,
     );
-    reactyq = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    reactyq = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
-    jsxForUiLinks2 = (0, toModuleNamespace)(
-      (0, loadJsxNamespace)(),
+    jsxForUiLinks2 = toModuleNamespace(
+      loadJsxNamespace(),
       1,
     );
     textLinkResetClasses = "cds-reset cds-text-link";
@@ -206,9 +205,9 @@ export function installUiLinks(): () => void {
             !(
               value &&
               !reactyq.isValidElement(render) &&
-              (0, isSanitizedHrefFallback)(
+              isSanitizedHrefFallback(
                 props.href,
-                (0, sanitizeHref)(props.href),
+                sanitizeHref(props.href),
               )
             )
               ? external
@@ -220,8 +219,8 @@ export function installUiLinks(): () => void {
             ? (props.rel ??
               (value4 &&
               value5 !== undefined &&
-              !(0, opensInSeparateBrowsingContext)(value5)
-                ? (0, getAutomaticLinkRel)(props.href, value5)
+              !opensInSeparateBrowsingContext(value5)
+                ? getAutomaticLinkRel(props.href, value5)
                 : undefined))
             : undefined,
           value7 = reactyq.useId(),
@@ -229,11 +228,11 @@ export function installUiLinks(): () => void {
           value9 =
             icon || (value4 === "with-icon" ? "ArrowUpRight" : undefined),
           value10 = !!value9,
-          value11 = `${(0, cn)(value10 ? (0, clsx)(textLinkWithIconClasses, icon ? "gap-[0.25em]" : "gap-0") : inlineTextLinkClasses, value3 && inheritedTextLinkColorClasses)}`,
+          value11 = `${cn(value10 ? clsx(textLinkWithIconClasses, icon ? "gap-[0.25em]" : "gap-0") : inlineTextLinkClasses, value3 && inheritedTextLinkColorClasses)}`,
           value12 = value10 ? (
             <jsxForUiLinks2.Fragment>
               {[iconPosition === "start" && TextLinkIcon(value9), <span
-                  className={(0, clsx)(
+                  className={clsx(
                     textLinkDecorationAlias,
                     value3 && textLinkDecorationTransitionClasses,
                   )}
@@ -248,7 +247,7 @@ export function installUiLinks(): () => void {
           ) : (
             children
           ),
-          value13: string = (0, cn)(
+          value13: string = cn(
             value11,
             "cursor-pointer",
             className,
@@ -270,7 +269,7 @@ export function installUiLinks(): () => void {
             render={render}
             body={value12}
             className={value13}
-            actionClassName={(0, cn)(
+            actionClassName={cn(
               value11,
               value14 ? "cursor-default opacity-disabled" : "cursor-pointer",
               className,

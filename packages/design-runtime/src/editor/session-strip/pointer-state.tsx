@@ -118,7 +118,7 @@ function observeSessionStripPointers(input?: Dynamic): Dynamic {
             y: input2.clientY,
             perf: SessionStripPointerStateNow(),
           });
-        (0, refreshSessionStripPointers)();
+        refreshSessionStripPointers();
       },
       true,
     ));
@@ -240,7 +240,7 @@ function recordSessionStripOcclusion(
         state.end,
         value8 + SessionStripPointerStateLimit,
       ));
-    (0, refreshSessionStripPointers)();
+    refreshSessionStripPointers();
   });
 }
 function sessionStripHoldUntil(input?: Dynamic): Dynamic {
@@ -318,7 +318,7 @@ function sessionStripReleaseDeadline(
           value5 + SessionStripPointerStateLimit,
           SessionStripPointerStateMinValue ?? 0,
         ));
-      (0, refreshSessionStripPointers)();
+      refreshSessionStripPointers();
     });
   }
   return options < value.end &&
@@ -366,13 +366,13 @@ export function set_SessionStripPointerStateCurrentState(value: any): any {
 }
 export function installEditorSessionStripPointerState(): () => void {
   return () => {
-    reactSessionStripPointerState = (0, toModuleNamespace)(
-      (0, load_react)(),
+    reactSessionStripPointerState = toModuleNamespace(
+      load_react(),
       1,
     );
-    (0, initializeCdsIndex)();
-    jsxSessionStripPointerState = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    initializeCdsIndex();
+    jsxSessionStripPointerState = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
     SessionStripPointerStateAlias = null;

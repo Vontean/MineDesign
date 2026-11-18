@@ -170,7 +170,7 @@ function ClassStyleTargets({
                 input.decls.map((input2?: Dynamic): Dynamic => {
                   let value6: Dynamic =
                       input2.prop === "color"
-                        ? (0, normalizeCssColor)(input2.value)
+                        ? normalizeCssColor(input2.value)
                         : undefined,
                     value7: Dynamic = lockFor(input2.prop, input2.value);
                   return (() => {
@@ -250,8 +250,8 @@ export function installEditorInspectorClassTargets(): () => void {
   return () => {
     InspectorClassTargetsLimit = 20;
     InspectorClassTargetsLabel = "pointer-coarse:h-10 pointer-coarse:min-w-10";
-    jsxInspectorClassTargets = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    jsxInspectorClassTargets = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
     InspectorClassTargetsDataDcDataScPattern =

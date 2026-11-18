@@ -59,7 +59,7 @@ var AccessibilityAnnouncementsLabel_24: Dynamic;
 var AccessibilityAnnouncementsHandler: Dynamic;
 var AccessibilityAnnouncementsReadyUpdatedChangedConfig: Dynamic;
 function resolveColorTokenValue(input?: Dynamic, options?: Dynamic): Dynamic {
-  let value: Dynamic = (0, cssVariableName)(input);
+  let value: Dynamic = cssVariableName(input);
   if (!value) return;
   let values: Dynamic = new Set();
   for (; !values.has(value); ) {
@@ -68,7 +68,7 @@ function resolveColorTokenValue(input?: Dynamic, options?: Dynamic): Dynamic {
       (input2?: Dynamic): Dynamic => input2.name === value,
     );
     if (!value2) return;
-    let value3: Dynamic = (0, cssVariableName)(value2.value);
+    let value3: Dynamic = cssVariableName(value2.value);
     if (!value3) return value2.value;
     value = value3;
   }
@@ -95,9 +95,9 @@ function textContrastContext(
 }
 function resolvedContrastColor(input?: Dynamic, options?: Dynamic): Dynamic {
   let value: Dynamic = resolveColorTokenValue(input, options) ?? input;
-  return (0, parseRgbaColor)(value) !== undefined
+  return parseRgbaColor(value) !== undefined
     ? value
-    : (0, normalizeCssColor)(value);
+    : normalizeCssColor(value);
 }
 function findOutlineLocation(input?: Dynamic, options?: Dynamic): Dynamic {
   let callback: Dynamic = (
@@ -176,7 +176,7 @@ function clipboardActionFailureMessage(
         ? source.video !== undefined
           ? "video"
           : "picture"
-        : (0, isShapeAnnotation)(source)
+        : isShapeAnnotation(source)
           ? "shape"
           : "note";
   return (
@@ -399,7 +399,7 @@ function pageAnnouncement(input?: Dynamic): Dynamic {
   return "Page: " + input;
 }
 function canvasSelectionKey(input?: Dynamic): Dynamic {
-  return (0, isEmptyCanvasSelection)(input)
+  return isEmptyCanvasSelection(input)
     ? "none"
     : "ab:" +
         [...input.artboards].sort().join(`
@@ -455,7 +455,7 @@ function selectionAnnouncement(
   context?: Dynamic,
   value: Dynamic = (): Dynamic => "note",
 ): Dynamic {
-  if ((0, isEmptyCanvasSelection)(input))
+  if (isEmptyCanvasSelection(input))
     return NothingSelectedMessage;
   let index: Dynamic = 0;
   for (let value4 of input.elements.values() as Dynamic)
@@ -699,7 +699,7 @@ function propertyAnnouncementLabel(input?: Dynamic): Dynamic {
       humanizePropertyName(value3)
     );
   }
-  let value: Dynamic = (0, getPropertySpecification)(input);
+  let value: Dynamic = getPropertySpecification(input);
   if (!value || value.label === "") return humanizePropertyName(input);
   let value2: Dynamic =
     AccessibilityAnnouncementsPaddingMarginConfig[value.section];
@@ -741,10 +741,10 @@ function addContrastToAnnouncement(
     value5: Dynamic =
       value4 === undefined
         ? undefined
-        : (0, evaluateColorContrast)(value4, context);
+        : evaluateColorContrast(value4, context);
   return value5 === undefined
     ? input
-    : input + ". " + (0, summarizeContrastResults)(value5).spoken;
+    : input + ". " + summarizeContrastResults(value5).spoken;
 }
 function sourceLineErrorAnnouncement(
   input?: Dynamic,
@@ -942,7 +942,7 @@ export function installEditorAccessibilityAnnouncements(): () => void {
     ThisIsTheOnlyArtboardMessage = uiMessage("inspector.announcements.thisIsTheOnlyArtboard");
     AccessibilityAnnouncementsResolvedValue =
       "Tab: next layer \xB7 " +
-      ((0, isApplePlatform)()
+      (isApplePlatform()
         ? "Return: deeper \xB7 \u21E7Return: up"
         : "Enter: deeper \xB7 Shift+Enter: up") +
       " \xB7 Esc: leave";

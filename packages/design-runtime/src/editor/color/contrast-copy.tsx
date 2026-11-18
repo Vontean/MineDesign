@@ -131,11 +131,11 @@ export {
 };
 export function installEditorColorContrastCopy(): () => void {
   return () => {
-    reactColorContrastCopy = (0, toModuleNamespace)(
-      (0, load_react)(),
+    reactColorContrastCopy = toModuleNamespace(
+      load_react(),
       1,
     );
-    (0, initializeCdsIndex)();
+    initializeCdsIndex();
     ResetValue = "Reset";
     ColorContrastCopyLabel = uiMessage("inspector.contrastCopy.moreActions");
     ColorContrastCopyHandler = (input?: Dynamic): Dynamic => uiMessage("inspector.contrastCopy.addTo") + input;

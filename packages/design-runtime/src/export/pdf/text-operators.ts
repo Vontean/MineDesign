@@ -176,10 +176,10 @@ function buildPdfTextRuns(
 function textRunsNeedSpace(input?: Dynamic, options?: Dynamic): Dynamic {
   return options.spaceBefore !== undefined
     ? options.spaceBefore &&
-        (0, needsInterwordSpace)(input.text, options.text, true)
+        needsInterwordSpace(input.text, options.text, true)
     : Math.abs(options.yPt - input.yPt) >=
         0.5 * Math.max(input.sizePt, options.sizePt) &&
-        (0, needsInterwordSpace)(input.text, options.text, false);
+        needsInterwordSpace(input.text, options.text, false);
 }
 function buildPdfTextOperators(
   items?: Dynamic,
@@ -263,15 +263,15 @@ function buildPdfTextOperators(
     value11 = Math.max(10, Math.min(1e3, value11));
     value2 +=
       "/F0 " +
-      (0, formatPdfNumber)(value3.sizePt) +
+      formatPdfNumber(value3.sizePt) +
       ` Tf
 ` +
-      (0, formatPdfNumber)(value11) +
+      formatPdfNumber(value11) +
       ` Tz
 1 0 0 1 ` +
-      (0, formatPdfNumber)(value3.xPt) +
+      formatPdfNumber(value3.xPt) +
       " " +
-      (0, formatPdfNumber)(value3.yPt) +
+      formatPdfNumber(value3.yPt) +
       ` Tm
 `;
     value2 +=
@@ -282,7 +282,7 @@ function buildPdfTextOperators(
         : "[" +
           value4.operand +
           " " +
-          (0, formatPdfNumber)(value9.em * 1e3) +
+          formatPdfNumber(value9.em * 1e3) +
           " " +
           value9.operand +
           `] TJ

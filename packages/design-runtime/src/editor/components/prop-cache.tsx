@@ -65,8 +65,8 @@ export {
 };
 export function installEditorComponentsPropCache(): () => void {
   return () => {
-    reactComponentsPropCache = (0, toModuleNamespace)(
-      (0, load_react)(),
+    reactComponentsPropCache = toModuleNamespace(
+      load_react(),
       1,
     );
     ComponentsPropCacheCache = new Map();

@@ -139,8 +139,8 @@ function readStoreMetaThroughSubscription(
   });
 }
 function lastChangeIsImported(lastChange: unknown): boolean {
-  return (0, isCiLastChange)(
-    (0, parseLastChange)(lastChange).value,
+  return isCiLastChange(
+    parseLastChange(lastChange).value,
   );
 }
 function chooseDesignSystemFileHome(

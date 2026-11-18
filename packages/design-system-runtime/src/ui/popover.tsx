@@ -94,7 +94,7 @@ function usePopoverOverlayStack(input: PopoverRootProps["onOpenChange"]): {
         options: import("@base-ui/react/popover").Popover.Root.ChangeEventDetails,
       ): void => {
         if (
-          (0, interceptEscapeForInnerOverlay)(value, input2, options)
+          interceptEscapeForInnerOverlay(value, input2, options)
         ) {
           return;
         }
@@ -136,7 +136,7 @@ function popoverRefusesFocusOut(input: PopoverAnchorState): boolean {
     return false;
   }
   return (
-    (0, isEditableElement)(value) ||
+    isEditableElement(value) ||
     value.querySelector(
       'input:not([type=button],[type=checkbox],[type=radio],[type=range],[type=submit],[type=reset],[type=color],[type=file],[type=image],[type=hidden],[readonly]), textarea:not([readonly]), [contenteditable=""], [contenteditable="true"], [contenteditable="plaintext-only"]',
     ) !== null ||
@@ -152,9 +152,9 @@ function PopoverRoot<Payload = void>({
 }: PopoverRootProps<Payload>): React.ReactElement {
   useUiLocale();
   let value = usePopoverOverlayStack(onOpenChange),
-    value2 = (0, useSheetCapablePresentation)(),
+    value2 = useSheetCapablePresentation(),
     ref = reactForUiPopover.useRef<OverlayActions | null>(null);
-  (0, useForwardedOverlayActions)(ref, actionsRef);
+  useForwardedOverlayActions(ref, actionsRef);
   return (
     <popoverControlledStateContext.Provider value={value.innerOverlays}>
       <CloseOnActivityHideProvider actionsRef={ref}>
@@ -179,7 +179,7 @@ function ControlledPopoverRoot<Payload = void>({
   consumerHandlesOpenChange: boolean;
 }): React.ReactElement {
   useUiLocale();
-  let value = (0, useControllableOpen)(props),
+  let value = useControllableOpen(props),
     ref = reactForUiPopover.useRef<PopoverAnchorState>({
       popupMounted: false,
       declinesFocus: false,
@@ -195,7 +195,7 @@ function ControlledPopoverRoot<Payload = void>({
       }),
       [],
     ),
-    value2 = (0, useValueCapturedOnOpen)(
+    value2 = useValueCapturedOnOpen(
       value.open,
       () => {
         let value4 = memo.read();
@@ -203,7 +203,7 @@ function ControlledPopoverRoot<Payload = void>({
       },
       false,
     ),
-    value3 = (0, useAdaptiveSheet)({
+    value3 = useAdaptiveSheet({
       open: value.open,
       actionsRef: props.actionsRef,
       onOpenChange: value.onOpenChange,
@@ -252,15 +252,15 @@ export {
 };
 export function installUiPopover(): () => void {
   return () => {
-    reactForUiPopover = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    reactForUiPopover = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
-    jsxForUiPopover = (0, toModuleNamespace)(
-      (0, loadJsxNamespace)(),
+    jsxForUiPopover = toModuleNamespace(
+      loadJsxNamespace(),
       1,
     );
-    popoverPopupClasses = `draggable-none max-w-[320px] max-h-[var(--available-height)] ${(0, getSurfaceClasses)("popover")} cds-reset text-body font-normal text-primary outline-none focus-visible:outline-hidden`;
+    popoverPopupClasses = `draggable-none max-w-[320px] max-h-[var(--available-height)] ${getSurfaceClasses("popover")} cds-reset text-body font-normal text-primary outline-none focus-visible:outline-hidden`;
     popoverScrollBodyClasses =
       "[display:inherit] [flex-direction:inherit] [flex-wrap:inherit] [align-items:inherit] [justify-content:inherit] [justify-items:inherit] [gap:inherit] [grid-template-columns:inherit] [grid-template-rows:inherit] [grid-auto-flow:inherit] [grid-auto-columns:inherit] [grid-auto-rows:inherit] col-span-full row-span-full self-stretch justify-self-stretch max-h-[inherit] min-h-0 min-w-0 flex-auto overflow-y-auto rounded-[inherit] outline-none focus-visible:outline-hidden";
     popoverPaddingClasses = {
@@ -289,12 +289,12 @@ export function installUiPopover(): () => void {
               sheetFrameContext,
             )?.open ?? true,
           value2 = anchored && finalFocus === undefined,
-          value3 = (0, useOverlayFocusReturn)({
+          value3 = useOverlayFocusReturn({
             skipRestoreOnOutsideFocus: true,
             open: value,
             registerOpenerReturn: value2,
           }),
-          value4 = (0, useMergedRefs)(options, value3.popupRef);
+          value4 = useMergedRefs(options, value3.popupRef);
         return (
           <basePopover.Popup
             data-cds={"Popover"}
@@ -332,7 +332,7 @@ export function installUiPopover(): () => void {
           scrollFade: scrollFade,
           ...props,
         };
-        if ((0, useHasSheetFrame)()) {
+        if (useHasSheetFrame()) {
           return <PopoverSheetCapablePopup {...state} ref={options} />;
         } else {
           return (
@@ -402,7 +402,7 @@ export function installUiPopover(): () => void {
         ),
         value19 = (value18?.open ?? false) && value18?.height !== undefined,
         value20 = value18?.setDetent;
-      (0, useIsomorphicLayoutEffect)(() => {
+      useIsomorphicLayoutEffect(() => {
         let current = ref.current;
         if (
           sheet &&
@@ -420,7 +420,7 @@ export function installUiPopover(): () => void {
         value22 = reactForUiPopover.useContext(popoverStateContext),
         value23 = value11.initialFocus === false,
         callback: React.MouseEventHandler<HTMLDivElement> = (event) => {
-          let value31 = (0, asElement)(event.target);
+          let value31 = asElement(event.target);
           if (
             !value17 ||
             value31 === null ||
@@ -429,7 +429,7 @@ export function installUiPopover(): () => void {
             return;
           }
           if (
-            !(0, shouldAllowPopupPointerFocus)(event, {
+            !shouldAllowPopupPointerFocus(event, {
               draggable: true,
             })
           ) {
@@ -437,7 +437,7 @@ export function installUiPopover(): () => void {
           }
         },
         value24 = reactForUiPopover.useContext(popoverControlledStateContext);
-      (0, useIsomorphicLayoutEffect)(() => {
+      useIsomorphicLayoutEffect(() => {
         if (value22 === null) {
           return;
         }
@@ -452,11 +452,11 @@ export function installUiPopover(): () => void {
           });
         };
       }, [value22, value23, value2]);
-      let value25 = (0, useRefocusAfterPendingSheet)(
+      let value25 = useRefocusAfterPendingSheet(
           sheetPopup.concealed && !value23,
         ),
-        value26 = (0, useMergedRefs)(options, sheetPopup.ref, value25),
-        value27 = (0, useOverlayLayer)("popover", value4);
+        value26 = useMergedRefs(options, sheetPopup.ref, value25),
+        value27 = useOverlayLayer("popover", value4);
       usePopoverStyleDebug(value7, value11.style);
       let value28 = reactForUiPopover.Children.toArray(value8),
         value29 = value28.filter(isPopoverArrow),
@@ -469,7 +469,7 @@ export function installUiPopover(): () => void {
         );
       return (
         <basePopover.Portal
-          container={((0, usePortalContainer)()) as import("../contracts/overlays").BaseUIPortalContainer}
+          container={(usePortalContainer()) as import("../contracts/overlays").BaseUIPortalContainer}
         >
           <PortalRoot
             {...value27.portalProps}
@@ -569,7 +569,7 @@ export function installUiPopover(): () => void {
                         });
                       }
                     }}
-                    className={(0, cn)(
+                    className={cn(
                       popoverPopupClasses,
                       sheet && sheetPopupClasses,
                       sheet &&
@@ -584,7 +584,7 @@ export function installUiPopover(): () => void {
                         sheetPopup={sheetPopup as SheetRenderState & {chrome: NonNullable<SheetRenderState["chrome"]>}}
                         className={value7}
                         bodyRef={ref}
-                        bodyClassName={(0, cn)(
+                        bodyClassName={cn(
                           popoverScrollBodyClasses,
                           value16 && "scroll-fade-y",
                           popoverPaddingClasses[value15],
@@ -600,7 +600,7 @@ export function installUiPopover(): () => void {
                             {...{
                               [SHEET_SCROLL_ATTRIBUTE]: "",
                             }}
-                            className={(0, cn)(
+                            className={cn(
                               popoverScrollBodyClasses,
                               value16 && "scroll-fade-y",
                               popoverPaddingClasses[value15],
@@ -635,7 +635,7 @@ export function installUiPopover(): () => void {
           },
           [value],
         ),
-        value2 = (0, useMergedRefs)(options, callback);
+        value2 = useMergedRefs(options, callback);
       return <basePopover.Trigger {...input} ref={value2} />;
     });
     PopoverTrigger.displayName = "Popover.Trigger";

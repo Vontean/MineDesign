@@ -82,7 +82,7 @@ function compileTemplateExpression(input?: Dynamic): Dynamic {
   if (value) {
     let value2: Dynamic = value[1];
     return (input2?: Dynamic): Dynamic =>
-      (0, evaluateTemplateExpression)(input2, value2);
+      evaluateTemplateExpression(input2, value2);
   }
   if (input.includes("{{")) {
     let value2: Dynamic = input.split(/\{\{([\s\S]+?)\}\}/g);
@@ -91,7 +91,7 @@ function compileTemplateExpression(input?: Dynamic): Dynamic {
         .map(
           (input3?: Dynamic, options?: Dynamic): Dynamic =>
             options & 1
-              ? ((0, evaluateTemplateExpression)(input2, input3) ??
+              ? (evaluateTemplateExpression(input2, input3) ??
                 "")
               : input3,
         )

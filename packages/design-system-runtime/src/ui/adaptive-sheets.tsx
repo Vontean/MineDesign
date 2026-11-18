@@ -19,8 +19,8 @@ function AdaptiveSheetPopupHost({
   children: children,
 }: AdaptiveSheetPopupHostProps): React.ReactElement {
   useUiLocale();
-  let value: MobileSheetParts | null = (0, useSheetImplementation)(),
-    { pending: value2 } = (0, useSheetState)();
+  let value: MobileSheetParts | null = useSheetImplementation(),
+    { pending: value2 } = useSheetState();
   if (value !== null) {
     return (
       <value.SheetPopupHost>
@@ -43,14 +43,14 @@ export {
 };
 export function installUiAdaptiveSheets(): () => void {
   return () => {
-    (0, initializeSheetStyles)();
-    (0, initializePresentationMode)();
-    (0, initializeAdaptiveSheets)();
-    (0, initializeSheetClassNames)();
-    (0, initializeAdaptiveSheets)();
-    jsxtK = (0, toModuleNamespace)((0, loadJsxNamespace)(), 1);
-    (0, initializeOverlayFocus)();
-    (0, initializeOverlayStack)();
-    (0, initializePopupPointerFocus)();
+    initializeSheetStyles();
+    initializePresentationMode();
+    initializeAdaptiveSheets();
+    initializeSheetClassNames();
+    initializeAdaptiveSheets();
+    jsxtK = toModuleNamespace(loadJsxNamespace(), 1);
+    initializeOverlayFocus();
+    initializeOverlayStack();
+    initializePopupPointerFocus();
   };
 }

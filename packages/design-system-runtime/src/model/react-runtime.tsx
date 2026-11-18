@@ -8,8 +8,8 @@ export {
 };
 export function installModelReactRuntime(): () => void {
   return () => {
-    DesignSystemReactRuntime = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    DesignSystemReactRuntime = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
   };

@@ -18,7 +18,7 @@ function createNoteInlineDom(
   options?: Dynamic,
   context?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = (0, NotesBlocksHandler)(options, context);
+  let value: Dynamic = NotesBlocksHandler(options, context);
   return value.every((input?: Dynamic): Dynamic => input.text === "")
     ? [doc.createElement("br")]
     : value.map((source?: Dynamic): Dynamic => {
@@ -48,7 +48,7 @@ function applyNoteMarkdownDom(
 ): Dynamic {
   let ownerDocument: Dynamic = element.ownerDocument;
   element.replaceChildren();
-  for (let value of (0, parseNoteBlocks)(
+  for (let value of parseNoteBlocks(
     options,
     context,
   ) as Dynamic) {
@@ -152,7 +152,7 @@ function serializeNoteDom(input?: Dynamic, options?: Dynamic): Dynamic {
         .map(
           (input3?: Dynamic): Dynamic =>
             input3.k === "text"
-              ? (0, escapeMarkdownInline)(input3.text)
+              ? escapeMarkdownInline(input3.text)
               : input3.k === "link"
                 ? "[" +
                   callback3(input3.text) +
@@ -161,9 +161,9 @@ function serializeNoteDom(input?: Dynamic, options?: Dynamic): Dynamic {
                   ")"
                 : input3.k === "code"
                   ? (NotesDomRepeat(input3.text) ??
-                    (0, escapeMarkdownInline)(input3.text))
+                    escapeMarkdownInline(input3.text))
                   : state[input3.k] +
-                    (0, escapeMarkdownInline)(input3.text) +
+                    escapeMarkdownInline(input3.text) +
                     state[input3.k],
         )
         .join(""),
@@ -174,7 +174,7 @@ function serializeNoteDom(input?: Dynamic, options?: Dynamic): Dynamic {
         let value4: Dynamic = callback5(items2);
         text === "" &&
           value &&
-          (value4 = (0, NotesBlocksReplace)(value4));
+          (value4 = NotesBlocksReplace(value4));
         callback2(callback7(value4)) !== callback2(items2) &&
           (value4 = callback5(
             items2.map(
@@ -193,7 +193,7 @@ function serializeNoteDom(input?: Dynamic, options?: Dynamic): Dynamic {
       flag = false;
     },
     callback7: Dynamic = (input2?: Dynamic): Dynamic =>
-      (0, NotesBlocksHandler)(
+      NotesBlocksHandler(
         value ? input2.replace(NotesBlocksPattern_3, "$1$2") : input2,
       ).map(
         (source?: Dynamic): Dynamic => ({
@@ -359,7 +359,7 @@ export function installEditorNotesDom(): () => void {
       );
       for (let value2 of ["", " "] as Dynamic) {
         let value3: Dynamic = value + value2 + input + value2 + value,
-          value4: Dynamic = (0, NotesBlocksHandler)(value3);
+          value4: Dynamic = NotesBlocksHandler(value3);
         if (
           value4.length === 1 &&
           value4[0]?.kind === "code" &&
@@ -389,8 +389,8 @@ export function installEditorNotesDom(): () => void {
         )
         .map(
           (input2?: Dynamic): Dynamic =>
-            (0, NotesBlocksReplace)(
-              (0, escapeMarkdownInline)(input2),
+            NotesBlocksReplace(
+              escapeMarkdownInline(input2),
             ),
         ).join(`
 `);

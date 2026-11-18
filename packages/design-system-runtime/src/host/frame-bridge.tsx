@@ -724,8 +724,8 @@ export {
 };
 export function installHostFrameBridge(): () => void {
   return () => {
-    react_z = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    react_z = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
     SAVE_NOW_COMMAND = "save_now";

@@ -227,7 +227,7 @@ export {
 };
 export function installEditorAttributeValidation(): () => void {
   return () => {
-    initializeEditorAttributeValidation = (0, initializeOnce)(
+    initializeEditorAttributeValidation = initializeOnce(
       (): Dynamic => {
         "use strict";
 

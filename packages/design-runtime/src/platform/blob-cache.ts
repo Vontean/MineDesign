@@ -38,7 +38,7 @@ function fetchBlobAsset(
   )
     return Promise.reject(new Error("blob fetch failed recently"));
   let value: Dynamic = (async (): Promise<Dynamic> => {
-    if (!(0, isBlobAssetUrl)(input))
+    if (!isBlobAssetUrl(input))
       throw new Error("not a blob ref");
     let value2: Dynamic =
         typeof AbortController == "function"

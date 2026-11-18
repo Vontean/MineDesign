@@ -26,12 +26,12 @@ export {
 };
 export function installUiPlatformShortcuts(): () => void {
   return () => {
-    reactPlatformShortcuts = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    reactPlatformShortcuts = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
-    jsxPlatformShortcuts = (0, toModuleNamespace)(
-      (0, loadJsxNamespace)(),
+    jsxPlatformShortcuts = toModuleNamespace(
+      loadJsxNamespace(),
       1,
     );
   };

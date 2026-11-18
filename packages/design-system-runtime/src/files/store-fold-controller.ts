@@ -35,7 +35,7 @@ function createStoreToFilesFoldController<
     ): Promise<Migration.FileReadState> => {
       try {
         if (
-          !(await (0, listWritableFiles)(files)).some(
+          !(await listWritableFiles(files)).some(
             (input2): boolean => input2.path === input,
           )
         ) {
@@ -57,7 +57,7 @@ function createStoreToFilesFoldController<
     | Migration.StoreFoldSnapshot<Index>
     | Extract<Migration.FoldOutcome, { result: "skipped" }>
   > {
-    let value = await (0, readJsonFileState)(
+    let value = await readJsonFileState(
       files,
       adapter.indexPath,
       timers,
@@ -70,7 +70,7 @@ function createStoreToFilesFoldController<
     }
     let value2 =
       value.state === "read"
-        ? (0, readFileMigrationMarker)(value.value)
+        ? readFileMigrationMarker(value.value)
         : null;
     if (value.state !== "read" || value2 === null) {
       return {
@@ -90,11 +90,11 @@ function createStoreToFilesFoldController<
     } catch {
       value3 = null;
     }
-    let value4 = (0, parseMigrationSentinel)(value3?.text ?? null);
+    let value4 = parseMigrationSentinel(value3?.text ?? null);
     if (
       value3 === null ||
       value4 === null ||
-      !(0, migrationSentinelMatchesArtifact)(
+      !migrationSentinelMatchesArtifact(
         value4,
         options.artifactId,
       )
@@ -104,7 +104,7 @@ function createStoreToFilesFoldController<
         reason: "no_record",
       };
     }
-    let value5 = await (0, readAllowlistedStoreDocuments)(
+    let value5 = await readAllowlistedStoreDocuments(
       store,
       adapter.allowlist,
     );
@@ -114,12 +114,12 @@ function createStoreToFilesFoldController<
         reason: "store_absent",
       };
     }
-    let value6 = await (0, hashStoreSnapshot)(value5, adapter),
+    let value6 = await hashStoreSnapshot(value5, adapter),
       value7 = [...value5.values()].filter(
         (input): boolean =>
           value4.documents[input.path] !== value6.get(input.path),
       ),
-      value8 = (0, readMovedToMarker)(
+      value8 = readMovedToMarker(
         value5.get(adapter.metaPath)!.data,
       ),
       value9 = Object.keys(value4.documents).filter(
@@ -167,7 +167,7 @@ function createStoreToFilesFoldController<
     let flag: boolean = false;
     lastUnfoldedCount = 0;
     try {
-      (0, validateMigrationAllowlist)(adapter);
+      validateMigrationAllowlist(adapter);
       if (!files.canWrite) {
         return {
           result: "skipped",
@@ -227,11 +227,11 @@ function createStoreToFilesFoldController<
           readFile: readFileText,
           readFileState: readFileState,
         }),
-        value5 = (0, removeUnpublishableMigrationFiles)(
+        value5 = removeUnpublishableMigrationFiles(
           value4.files,
           adapter.type,
         );
-      (0, validateMigrationTreePaths)(
+      validateMigrationTreePaths(
         value4.files.keys(),
         adapter.type,
       );
@@ -259,8 +259,8 @@ function createStoreToFilesFoldController<
         },
       };
       for (let value11 of value3.changed) {
-        state.fields[value11.path] = await (0, hashStoreFields)(
-          (0, storeDocumentDigestView)(value11, adapter),
+        state.fields[value11.path] = await hashStoreFields(
+          storeDocumentDigestView(value11, adapter),
           adapter.secretFields,
         );
       }
@@ -312,7 +312,7 @@ function createStoreToFilesFoldController<
           continue;
         }
         state2[value11] = value12;
-        let value13 = (0, normalizeFilePublishInput)(
+        let value13 = normalizeFilePublishInput(
           value11,
           value12,
         );
@@ -325,8 +325,8 @@ function createStoreToFilesFoldController<
         let value14 =
           value4.sources.get(value11) ?? state.files[value11]?.from ?? [];
         state.files[value11] = {
-          sha256: await (0, sha256)(
-            await (0, fileContentBytes)(value13.content),
+          sha256: await sha256(
+            await fileContentBytes(value13.content),
           ),
           from: value14,
           of: Object.fromEntries(
@@ -340,15 +340,14 @@ function createStoreToFilesFoldController<
       }
       let state4 = {
           ...state3,
-          [MIGRATION_SENTINEL_PATH]: (0,
-          serializeIndexDocument)(state),
+          [MIGRATION_SENTINEL_PATH]: serializeIndexDocument(state),
           [adapter.indexPath]: adapter.codec.serializeIndex({
             ...value3.index,
             ...value4.index,
             [value3.markerKey]: value3.marker,
           }),
         },
-        value7 = await (0, listWritableFiles)(files),
+        value7 = await listWritableFiles(files),
         entries2 = new Map(value7.map((input) => [input.path, input.sha256]));
       if (
         entries2.get(adapter.indexPath) !== value3.indexSha ||
@@ -386,13 +385,13 @@ function createStoreToFilesFoldController<
           ) => files.publish(input, options2)),
         value9 = files.version(),
         version = value9.version,
-        value10 = (0, splitMigrationPublishBatches)({
+        value10 = splitMigrationPublishBatches({
           ...state2,
           ...state4,
         });
       for (let value11 of value10.length === 1
         ? value10
-        : [...(0, splitMigrationPublishBatches)(state2), state4]) {
+        : [...splitMigrationPublishBatches(state2), state4]) {
         lastPublishAt = timers.now();
         let value12 = await value8(value11, callback(value11));
         if (!value12.ok) {
@@ -422,7 +421,7 @@ function createStoreToFilesFoldController<
               value12 === null
                 ? null
                 : (state.files[value11]?.sha256 ??
-                  (await (0, sha256)(value12 as string))),
+                  (await sha256(value12 as string))),
           });
         }
         try {
@@ -606,7 +605,7 @@ function createStoreToFilesFoldController<
           }
         }),
         callback5 = () =>
-          (0, finishMigrationTombstone)({
+          finishMigrationTombstone({
             indexPath: adapter.indexPath,
             metaPath: adapter.metaPath,
             files: files,

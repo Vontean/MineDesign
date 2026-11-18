@@ -81,7 +81,7 @@ function ToolbarCaret({
     <Icon
       name={"CaretDown"}
       size={"xs"}
-      className={(0, joinClassNames)(
+      className={joinClassNames(
         "-mx-0.5 shrink-0",
         !inherit && "text-fg-muted",
       )}
@@ -299,7 +299,7 @@ function useButtonAccessibility(
   props: Color.ToolbarAccessibleDescription,
 ): Color.ToolbarAccessibility {
   let value = reactForUiToolbarControls2.useId(),
-    value2 = (0, useAppleKeyboard)(),
+    value2 = useAppleKeyboard(),
     value3 = !props.disabled,
     value4 = props.tip !== "" && !props.name.includes(props.tip),
     value5 =
@@ -308,7 +308,7 @@ function useButtonAccessibility(
         : undefined,
     value6 =
       value3 && props.shortcut !== undefined
-        ? (0, shortcutToAriaKeyShortcuts)(props.shortcut, value2)
+        ? shortcutToAriaKeyShortcuts(props.shortcut, value2)
         : undefined,
     value7 =
       value3 && props.descriptionSuffix ? props.descriptionSuffix : undefined,
@@ -713,7 +713,7 @@ function ToolbarStrip({
   );
   let ref = reactForUiToolbarControls.useRef<HTMLDivElement | null>(null),
     ref2 = reactForUiToolbarControls.useRef<HTMLDivElement | null>(null),
-    value = (0, useCoarsePointer)();
+    value = useCoarsePointer();
   reactForUiToolbarControls.useLayoutEffect(() => {
     let current = ref.current;
     if (current === null) {
@@ -834,7 +834,7 @@ function ToolbarStrip({
             }
             onMouseDown?.(event);
           }}
-          className={(0, joinClassNames)(
+          className={joinClassNames(
             "z-selection flex items-center",
             surface === "popover"
               ? "[--mc-group-gap:2px] [--mc-strip-gap:4px] [--mc-strip-pad:5px] pointer-coarse:rounded-xl pointer-coarse:[--mc-group-gap:8px] pointer-coarse:[--mc-strip-gap:8px] pointer-coarse:[--mc-strip-pad:6px] [&_[data-mc-divider]]:mx-0"
@@ -860,7 +860,7 @@ function ToolbarStrip({
               }
               onScroll?.(input);
             }}
-            className={(0, joinClassNames)(
+            className={joinClassNames(
               "flex min-w-0 items-center gap-[var(--mc-strip-gap)] rounded-[inherit] p-[var(--mc-strip-pad)]",
               wrap
                 ? "flex-wrap"
@@ -977,50 +977,50 @@ export {
 };
 export function installUiToolbarControls(): () => void {
   return () => {
-    jsxToolbarLabels = (0, toModuleNamespace)(
-      (0, loadJsxNamespace)(),
+    jsxToolbarLabels = toModuleNamespace(
+      loadJsxNamespace(),
       1,
     );
-    jsxToolbarSeparators = (0, toModuleNamespace)(
-      (0, loadJsxNamespace)(),
+    jsxToolbarSeparators = toModuleNamespace(
+      loadJsxNamespace(),
       1,
     );
-    reactToolbarLayout = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    reactToolbarLayout = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
-    jsxToolbarLayout = (0, toModuleNamespace)(
-      (0, loadJsxNamespace)(),
+    jsxToolbarLayout = toModuleNamespace(
+      loadJsxNamespace(),
       1,
     );
-    reactToolbarButtons = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    reactToolbarButtons = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
-    jsxToolbarButtons = (0, toModuleNamespace)(
-      (0, loadJsxNamespace)(),
+    jsxToolbarButtons = toModuleNamespace(
+      loadJsxNamespace(),
       1,
     );
-    jsxToolbarIndicators = (0, toModuleNamespace)(
-      (0, loadJsxNamespace)(),
+    jsxToolbarIndicators = toModuleNamespace(
+      loadJsxNamespace(),
       1,
     );
-    reactToolbarControls = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    reactToolbarControls = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
-    reactForUiToolbarControls = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    reactForUiToolbarControls = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
     PANEL_ELEVATION = "panel";
     POPOVER_ELEVATION = "popover";
-    reactForUiToolbarControls2 = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    reactForUiToolbarControls2 = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
-    jsxForUiToolbarControls = (0, toModuleNamespace)(
-      (0, loadJsxNamespace)(),
+    jsxForUiToolbarControls = toModuleNamespace(
+      loadJsxNamespace(),
       1,
     );
     ToolbarFloatingContext = reactForUiToolbarControls2.createContext(false);
@@ -1159,7 +1159,7 @@ export function installUiToolbarControls(): () => void {
             tabIndex={value2 ? 0 : -1}
             {...value7.props}
             data-tb-icon={value9 ? "" : undefined}
-            className={(0, joinClassNames)(
+            className={joinClassNames(
               "relative inline-flex shrink-0 rounded align-top outline-none focus-visible:outline-hidden focus-visible:shadow-focus",
               className,
             )}
@@ -1201,8 +1201,8 @@ export function installUiToolbarControls(): () => void {
         </Tooltip>
       );
     });
-    jsxForUiToolbarControls2 = (0, toModuleNamespace)(
-      (0, loadJsxNamespace)(),
+    jsxForUiToolbarControls2 = toModuleNamespace(
+      loadJsxNamespace(),
       1,
     );
     toolbarPointerSession = null;
@@ -1309,7 +1309,7 @@ export function installUiToolbarControls(): () => void {
           "aria-expanded": ariaExpanded,
           "aria-describedby": value8,
           onMouseDown: callback,
-          className: (0, joinClassNames)("shrink-0", className),
+          className: joinClassNames("shrink-0", className),
           ...props,
           "data-mc-item": "",
           ...value5.inner,

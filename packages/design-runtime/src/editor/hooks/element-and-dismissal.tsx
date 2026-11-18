@@ -31,7 +31,7 @@ function useLiveDismissalGuard(input?: Dynamic): Dynamic {
       HooksElementAndDismissalSubscribers.delete(callback);
     };
   }, []);
-  (0, npm_useEventListener_bc)(
+  npm_useEventListener_bc(
     "beforeunload",
     (event?: Dynamic): Dynamic => {
       (typeof input == "function" ? input() : input) &&
@@ -48,15 +48,15 @@ export {
 };
 export function installEditorHooksElementAndDismissal(): () => void {
   return () => {
-    reactHooksElementAndDismissal = (0, toModuleNamespace)(
-      (0, load_react)(),
+    reactHooksElementAndDismissal = toModuleNamespace(
+      load_react(),
       1,
     );
-    reactHooksElementAndDismissal_2 = (0, toModuleNamespace)(
-      (0, load_react)(),
+    reactHooksElementAndDismissal_2 = toModuleNamespace(
+      load_react(),
       1,
     );
-    (0, initializeNpm_usehooks_ts_p0)();
+    initializeNpm_usehooks_ts_p0();
     HooksElementAndDismissalSubscribers = new Set();
   };
 }

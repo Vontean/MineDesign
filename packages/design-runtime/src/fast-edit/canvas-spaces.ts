@@ -37,7 +37,7 @@ function findFreeSpotAfterRow(row?: Dynamic, occupied?: Dynamic): Dynamic {
   ) {
     let value: Dynamic = occupied.filter(
       (input?: Dynamic): Dynamic =>
-        (0, artboardRectanglesOverlap)(
+        artboardRectanglesOverlap(
           {
             ...lastBoard,
             x: nextX,

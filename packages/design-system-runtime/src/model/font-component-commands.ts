@@ -27,7 +27,7 @@ function setComponentGuidelines(
   componentName: string,
   markdown: string,
 ) {
-  let system = (0, parsedDesignSystem)(content);
+  let system = parsedDesignSystem(content);
   if (
     !COMPONENT_NAME_PATTERN.test(componentName) ||
     !system.components.some((input): boolean => input.name === componentName)
@@ -39,9 +39,9 @@ function setComponentGuidelines(
     return content;
   }
   if (markdown === "") {
-    return (0, deleteDesignSystemFiles)(content, [path]);
+    return deleteDesignSystemFiles(content, [path]);
   }
-  return (0, setDesignSystemFile)(content, path, markdown);
+  return setDesignSystemFile(content, path, markdown);
 }
 function addFontFace(
   content: Model.DesignSystemContent,
@@ -56,31 +56,31 @@ function addFontFace(
     return content;
   }
   if (
-    (0, parseDataUriHeader)(font.value) === null &&
-    (0, parseStoragePointer)(font.value) === null
+    parseDataUriHeader(font.value) === null &&
+    parseStoragePointer(font.value) === null
   ) {
     return content;
   }
-  let filename = (0, unusedFileName)(
+  let filename = unusedFileName(
       content.files,
       "fonts",
-      (0, sanitizeUploadFileName)(font.fileName),
+      sanitizeUploadFileName(font.fileName),
     ),
     path = DESIGN_SYSTEM_PATHS.fontsDir + filename;
-  if ((0, isTextFilePath)(path)) {
+  if (isTextFilePath(path)) {
     return content;
   }
-  let withFile = (0, setDesignSystemFile)(content, path, font.value);
+  let withFile = setDesignSystemFile(content, path, font.value);
   if (withFile === content) {
     return content;
   }
   if (
     font.record !== undefined &&
-    (0, parseStoragePointer)(font.value) !== null
+    parseStoragePointer(font.value) !== null
   ) {
-    withFile = (0, setFileStorageRecord)(withFile, path, font.record);
+    withFile = setFileStorageRecord(withFile, path, font.record);
   }
-  let withFont = (0, updateTokens)(withFile, (input): boolean => {
+  let withFont = updateTokens(withFile, (input): boolean => {
     let state: Model.FontFace = {
       family: family,
       file: path,
@@ -100,8 +100,8 @@ function deleteFontFace(
   content: Model.DesignSystemContent,
   path: string,
 ): Model.DesignSystemContent {
-  let withoutFile = (0, deleteDesignSystemFiles)(content, [path]),
-    withoutFont = (0, updateTokens)(withoutFile, (input): boolean => {
+  let withoutFile = deleteDesignSystemFiles(content, [path]),
+    withoutFont = updateTokens(withoutFile, (input): boolean => {
       let length = input.type.fonts.length;
       input.type.fonts = input.type.fonts.filter(
         (input2): boolean => input2.file !== path,
@@ -109,7 +109,7 @@ function deleteFontFace(
       if (input.type.fonts.length === length) {
         return false;
       }
-      (0, pruneUnusedFontFamilies)(input);
+      pruneUnusedFontFamilies(input);
       return true;
     });
   if (withoutFont === content) {
@@ -121,7 +121,7 @@ function deleteFontFace(
 function removeMissingFontReferences(
   content: Model.DesignSystemContent,
 ): Model.DesignSystemContent {
-  return (0, updateTokens)(content, (input): boolean => {
+  return updateTokens(content, (input): boolean => {
     let length = input.type.fonts.length;
     input.type.fonts = input.type.fonts.filter((input2) =>
       Object.hasOwn(content.files, input2.file),
@@ -129,7 +129,7 @@ function removeMissingFontReferences(
     if (input.type.fonts.length === length) {
       return false;
     }
-    (0, pruneUnusedFontFamilies)(input);
+    pruneUnusedFontFamilies(input);
     return true;
   });
 }

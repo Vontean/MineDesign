@@ -44,7 +44,7 @@ function useCanvasKeyboardNavigation(
       if (
         current != null &&
         current.file === input &&
-        (0, findOutlineLocation)(options3, current.tid)
+        findOutlineLocation(options3, current.tid)
       )
         return current.tid;
       let value31: Dynamic =
@@ -123,8 +123,8 @@ function useCanvasKeyboardNavigation(
           !current ||
             current.file !== input.file ||
             current.tid !== input.tid ||
-            ((0, announce)(
-              (0, artboardLoadFailureAnnouncement)(
+            (announce(
+              artboardLoadFailureAnnouncement(
                 value.current.titleOf(input.file),
               ),
             ),
@@ -191,9 +191,9 @@ function useCanvasKeyboardNavigation(
       callback(null);
       callback11(input);
       current.focusArtboard(input);
-      (0, announce)(
-        (0, selectionAnnouncement)(
-          (0, selectionFromArtboards)(new Set([input])),
+      announce(
+        selectionAnnouncement(
+          selectionFromArtboards(new Set([input])),
           value2.current,
           current.titleOf,
         ),
@@ -217,7 +217,7 @@ function useCanvasKeyboardNavigation(
         tid: options3,
       };
       value7.current = value2.current[input];
-      (0, announce)(context);
+      announce(context);
       let state: Dynamic = {
           file: input,
           tid: options3,
@@ -247,8 +247,8 @@ function useCanvasKeyboardNavigation(
           callback(null);
           callback11(input);
           current.focusArtboard(input);
-          (0, announce)(
-            (0, artboardLoadFailureAnnouncement)(value32),
+          announce(
+            artboardLoadFailureAnnouncement(value32),
           );
           return;
         }
@@ -257,8 +257,8 @@ function useCanvasKeyboardNavigation(
           value16.current = input;
           current.clearSelectionQuietly();
           current.focusArtboard(input);
-          (0, announce)(
-            (0, artboardLoadingAnnouncement)(value32),
+          announce(
+            artboardLoadingAnnouncement(value32),
           );
           return;
         }
@@ -268,13 +268,13 @@ function useCanvasKeyboardNavigation(
           callback(null);
           callback11(input);
           current.focusArtboard(input);
-          (0, announce)(
-            (0, emptyArtboardSelectionAnnouncement)(value32),
+          announce(
+            emptyArtboardSelectionAnnouncement(value32),
           );
           return;
         }
         callback(input);
-        (0, canvasElementSelectionCount)(
+        canvasElementSelectionCount(
           current.megaSelRef.current,
         ) && current.clearSelectionQuietly();
         let value33: Dynamic =
@@ -283,13 +283,13 @@ function useCanvasKeyboardNavigation(
               : null,
           value34: Dynamic =
             value33 != null
-              ? (0, findOutlineLocation)(value31, value33).node
-              : (0, deepestSingleOutlineNode)(value31);
+              ? findOutlineLocation(value31, value33).node
+              : deepestSingleOutlineNode(value31);
         callback13(
           input,
           value34.tid,
-          (0, outlineLayerNavigationAnnouncement)(
-            (0, findOutlineLocation)(value31, value34.tid),
+          outlineLayerNavigationAnnouncement(
+            findOutlineLocation(value31, value34.tid),
           ),
         );
       },
@@ -305,8 +305,8 @@ function useCanvasKeyboardNavigation(
       value16.current = null;
       callback(null);
       callback11(current);
-      (0, announce)(
-        (0, artboardLoadFailureAnnouncement)(
+      announce(
+        artboardLoadFailureAnnouncement(
           current2.titleOf(current),
         ),
       );
@@ -318,19 +318,19 @@ function useCanvasKeyboardNavigation(
     if (value31.length === 0) {
       callback(null);
       callback11(current);
-      (0, announce)(
-        (0, emptyArtboardSelectionAnnouncement)(
+      announce(
+        emptyArtboardSelectionAnnouncement(
           current2.titleOf(current),
         ),
       );
       return;
     }
-    let value32: Dynamic = (0, deepestSingleOutlineNode)(value31);
+    let value32: Dynamic = deepestSingleOutlineNode(value31);
     callback13(
       current,
       value32.tid,
-      (0, outlineLayerNavigationAnnouncement)(
-        (0, findOutlineLocation)(value31, value32.tid),
+      outlineLayerNavigationAnnouncement(
+        findOutlineLocation(value31, value32.tid),
       ),
     );
   }, [options2, value3]);
@@ -339,15 +339,15 @@ function useCanvasKeyboardNavigation(
         if (value5.current !== input) return;
         let value31: Dynamic = value2.current[input];
         if (value31 === undefined) {
-          (0, announce)(
-            (0, artboardLoadingAnnouncement)(
+          announce(
+            artboardLoadingAnnouncement(
               value.current.titleOf(input),
             ),
           );
           return;
         }
         if (value31 === null) return callback12(input);
-        let value32: Dynamic = (0, adjacentOutlineNode)(
+        let value32: Dynamic = adjacentOutlineNode(
           value31,
           callback2(input, value31),
           options3,
@@ -358,8 +358,8 @@ function useCanvasKeyboardNavigation(
           value6.current = null;
           callback(null);
           callback11(input);
-          (0, announce)(
-            (0, emptyArtboardSelectionAnnouncement)(
+          announce(
+            emptyArtboardSelectionAnnouncement(
               current.titleOf(input),
             ),
           );
@@ -368,8 +368,8 @@ function useCanvasKeyboardNavigation(
         callback13(
           input,
           value32.tid,
-          (0, outlineLayerAnnouncement)(
-            (0, findOutlineLocation)(value31, value32.tid),
+          outlineLayerAnnouncement(
+            findOutlineLocation(value31, value32.tid),
           ),
         );
       },
@@ -381,8 +381,8 @@ function useCanvasKeyboardNavigation(
         let current: Dynamic = value.current,
           value31: Dynamic = value2.current[input];
         if (value31 === undefined) {
-          (0, announce)(
-            (0, artboardLoadingAnnouncement)(current.titleOf(input)),
+          announce(
+            artboardLoadingAnnouncement(current.titleOf(input)),
           );
           return;
         }
@@ -392,7 +392,7 @@ function useCanvasKeyboardNavigation(
           value19(input, "first");
           return;
         }
-        let value33: Dynamic = (0, findOutlineLocation)(
+        let value33: Dynamic = findOutlineLocation(
             value31,
             value32,
           ),
@@ -404,8 +404,8 @@ function useCanvasKeyboardNavigation(
           entry.describeTids([value32])[0]?.editable === true
         ) {
           if (!entry.isReady()) {
-            (0, announce)(
-              (0, artboardLoadingAnnouncement)(
+            announce(
+              artboardLoadingAnnouncement(
                 current.titleOf(input),
               ),
             );
@@ -413,21 +413,21 @@ function useCanvasKeyboardNavigation(
           }
           value17.current = input;
           entry.startTextEdit(current.rootNameOf(input), value32, "end");
-          (0, announce)(AccessibilityAnnouncementsLabel_16);
+          announce(AccessibilityAnnouncementsLabel_16);
           return;
         }
-        let value34: Dynamic = (0, firstNestedOutlineNode)(
+        let value34: Dynamic = firstNestedOutlineNode(
           value33.node,
         );
         if (!value34) {
-          (0, announce)(NoLayersInsideThisOneMessage);
+          announce(NoLayersInsideThisOneMessage);
           return;
         }
         callback13(
           input,
           value34.tid,
-          (0, outlineLayerAnnouncement)(
-            (0, findOutlineLocation)(value31, value34.tid),
+          outlineLayerAnnouncement(
+            findOutlineLocation(value31, value34.tid),
           ),
         );
       },
@@ -442,8 +442,8 @@ function useCanvasKeyboardNavigation(
         value15.current = null;
         callback(null);
         callback11(input);
-        (0, announce)(
-          (0, exitOutlineAnnouncement)(current.titleOf(input)),
+        announce(
+          exitOutlineAnnouncement(current.titleOf(input)),
         );
       },
       [],
@@ -453,8 +453,8 @@ function useCanvasKeyboardNavigation(
         if (value5.current !== input) return;
         let value31: Dynamic = value2.current[input];
         if (value31 === undefined) {
-          (0, announce)(
-            (0, artboardLoadingAnnouncement)(
+          announce(
+            artboardLoadingAnnouncement(
               value.current.titleOf(input),
             ),
           );
@@ -466,7 +466,7 @@ function useCanvasKeyboardNavigation(
           value19(input, "first");
           return;
         }
-        let value33: Dynamic = (0, findOutlineLocation)(
+        let value33: Dynamic = findOutlineLocation(
           value31,
           value32,
         );
@@ -477,8 +477,8 @@ function useCanvasKeyboardNavigation(
         callback13(
           input,
           value33.parent.tid,
-          (0, outlineLayerAnnouncement)(
-            (0, findOutlineLocation)(value31, value33.parent.tid),
+          outlineLayerAnnouncement(
+            findOutlineLocation(value31, value33.parent.tid),
           ),
         );
       },
@@ -565,7 +565,7 @@ function useCanvasKeyboardNavigation(
               ? false
               : ([...current.elements.keys()].some(
                   (input2?: Dynamic): Dynamic => input2 !== input,
-                ) || (0, announce)(NothingSelectedMessage),
+                ) || announce(NothingSelectedMessage),
                 "lost"));
       },
       [],
@@ -684,12 +684,12 @@ function useCanvasKeyboardNavigation(
               return;
             let value33: Dynamic = value2.current[input],
               value34: Dynamic = value33
-                ? (0, findOutlineLocation)(value33, current.tid)
+                ? findOutlineLocation(value33, current.tid)
                 : null;
             value34 &&
-              (0, announce)(
-                (0, selectingAnnouncement)(
-                  (0, outlineNodeDescription)(value34.node),
+              announce(
+                selectingAnnouncement(
+                  outlineNodeDescription(value34.node),
                 ),
               );
           },
@@ -751,7 +751,7 @@ export {
 };
 export function installCanvasKeyboardNavigation(): () => void {
   return () => {
-    react_ta = (0, toModuleNamespace)((0, load_react)(), 1);
+    react_ta = toModuleNamespace(load_react(), 1);
     canvasFocusAnnouncementDelayMs = 1500;
     canvasFocusAnnouncementRepeatCount = 3;
     keyboardNavigationMode = "kb";

@@ -19,14 +19,14 @@ function PendingArtboardTitle({
   className: className,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic = (0, useViewportStore)();
+  let value: Dynamic = useViewportStore();
   return (
     <div
       ref={value.stamp}
       aria-hidden={"true"}
       data-mega-pending-title={""}
       data-testid={"mega-pending-title-" + spec.file}
-      className={(0, joinClassNames)(
+      className={joinClassNames(
         "pointer-events-none absolute bottom-full left-0 flex h-6 items-center text-xs select-none",
         CanvasPendingArtboardsActiveWaitingArrivedConfig[tone],
         className,
@@ -54,13 +54,13 @@ function PendingArtboardFace({
     <div
       aria-hidden={"true"}
       data-testid={"mega-pending-face-" + spec.file}
-      className={(0, joinClassNames)(
+      className={joinClassNames(
         "pointer-events-none absolute inset-0 bg-om-bg-canvas mc-claude-box",
         sheen && "mc-claude-sheen",
         className,
       )}
       style={{
-        borderRadius: (0, artboardRadiusCss)(spec.radius),
+        borderRadius: artboardRadiusCss(spec.radius),
       }}
     />
   );
@@ -162,8 +162,8 @@ export {
 };
 export function installCanvasPendingArtboards(): () => void {
   return () => {
-    jsxCanvasPendingArtboards = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    jsxCanvasPendingArtboards = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
     CanvasPendingArtboardsActiveWaitingArrivedConfig = {

@@ -58,7 +58,7 @@ function PlacementGhostFrame({
             "*",
           ));
       }}
-      className={(0, joinClassNames)(
+      className={joinClassNames(
         "pointer-events-none absolute left-0 top-0 border-0 transition-opacity duration-100",
         value3 ? "opacity-80" : "opacity-0",
       )}

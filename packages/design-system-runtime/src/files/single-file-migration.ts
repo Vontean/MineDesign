@@ -19,7 +19,7 @@ var SINGLE_FILE_REPLACEMENT_CHARACTER: string;
 var SINGLE_FILE_SYNTHETIC_META_FIELD: string;
 var SINGLE_FILE_MIGRATION_PUBLISH_SPACING_MS: number;
 function parseSingleFileDesignSystem(text: string) {
-  let parsed = (0, parseDesignSystemEnvelope)(text);
+  let parsed = parseDesignSystemEnvelope(text);
   if (typeof parsed === "string") {
     return null;
   }
@@ -27,7 +27,7 @@ function parseSingleFileDesignSystem(text: string) {
     title:
       typeof parsed.envelope.title === "string" ? parsed.envelope.title : "",
     files: {
-      ...(0, parseDesignSystemContent)(
+      ...parseDesignSystemContent(
         parsed.envelope.content,
         undefined,
         {
@@ -139,10 +139,10 @@ function createSingleFileMigrationAdapter(
         if (value2 === null || typeof value?.sha256 !== "string") {
           throw new DesignSystemMigrationError("invalid_content");
         }
-        let value3 = (0, designSystemFilesMigrationTree)(
+        let value3 = designSystemFilesMigrationTree(
           {
             title: value2.title,
-            files: await (0, materializeMigrationBlobFiles)(
+            files: await materializeMigrationBlobFiles(
               value2.files,
               value2.title,
               fetchBlob,
@@ -177,7 +177,7 @@ function createSingleFileMigrationAdapter(
           docId: META_DOCUMENT_ID,
         },
       ],
-      dbRules: (0, designSystemMigrationDbRules)(),
+      dbRules: designSystemMigrationDbRules(),
       codec: codec,
       home: "file",
       kept: () =>
@@ -221,8 +221,8 @@ function createSingleFileMigrationFiles(
           );
   return {
     async list(): Promise<Model.FileListing> {
-      let value = (await (0, listWritableFiles)(files)).filter(
-        (input): boolean => !(0, isProjectContentPath)(input.path),
+      let value = (await listWritableFiles(files)).filter(
+        (input): boolean => !isProjectContentPath(input.path),
       );
       if (
         value.some(
@@ -264,7 +264,7 @@ function createSingleFileMigrationFiles(
       if (needsCleanup) {
         let value2: Model.FileListing;
         try {
-          value2 = await (0, listWritableFiles)(files);
+          value2 = await listWritableFiles(files);
         } catch {
           return {
             ok: false,
@@ -275,7 +275,7 @@ function createSingleFileMigrationFiles(
           .map((input2) => input2.path)
           .filter(
             (input2) =>
-              (0, isProjectContentPath)(input2) &&
+              isProjectContentPath(input2) &&
               !adapter.builtPaths().has(input2) &&
               !Object.hasOwn(input, input2),
           );
@@ -347,7 +347,7 @@ async function classifySingleFileMigrationSentinel(
   }
   try {
     if (
-      (0, parseMigrationSentinel)(
+      parseMigrationSentinel(
         (await files.readText(MIGRATION_SENTINEL_PATH)).text,
       )?.type === "design_system"
     ) {
@@ -375,11 +375,11 @@ async function preflightSingleFileMigration(options: {
     }
     let value2: Model.FileListing;
     try {
-      value2 = await (0, listWritableFiles)(options.files);
+      value2 = await listWritableFiles(options.files);
     } catch {
       return "not_now";
     }
-    if ((0, fileListingIsNarrowed)(value2, options.files)) {
+    if (fileListingIsNarrowed(value2, options.files)) {
       return "not_now";
     }
     let value3 = await classifySingleFileMigrationSentinel(
@@ -412,13 +412,13 @@ async function preflightSingleFileMigration(options: {
         ],
       };
     }
-    let value4 = (0, filesLeftOutOfMigration)(value.files);
+    let value4 = filesLeftOutOfMigration(value.files);
     if (value4.length > 0) {
       return {
         unpublishable: value4,
       };
     }
-    let value5 = (0, designSystemFilesMigrationTree)(
+    let value5 = designSystemFilesMigrationTree(
         {
           title: value.title,
           files: Object.freeze({
@@ -429,14 +429,14 @@ async function preflightSingleFileMigration(options: {
         },
         () => [],
       ),
-      value6 = (0, blobFilesOwedToFileStorage)(value.files),
-      value7 = (0, storageCatalogFromManifest)(
+      value6 = blobFilesOwedToFileStorage(value.files),
+      value7 = storageCatalogFromManifest(
         value.files["manifest.json"] ?? "",
       ),
       items = [
         ...value2.filter(
           (input) =>
-            !(0, isProjectContentPath)(input.path) &&
+            !isProjectContentPath(input.path) &&
             input.path !== SINGLE_FILE_MIGRATION_BACKUP_PATH,
         ),
         {
@@ -444,11 +444,11 @@ async function preflightSingleFileMigration(options: {
           size: new TextEncoder().encode(options.text).length,
         },
       ],
-      value8 = (0, migrationVersionSize)(
+      value8 = migrationVersionSize(
         items,
         value5,
         FILES_INDEX_PROJECT_PATH,
-        (0, serializeMigrationIndex)(value5.index),
+        serializeMigrationIndex(value5.index),
       );
     if (
       value8.oversized.length > 0 ||
@@ -487,7 +487,7 @@ async function migrateSingleFileDesignSystem(
     },
     listing: Model.FileListing;
   try {
-    listing = await (0, listWritableFiles)(options.files);
+    listing = await listWritableFiles(options.files);
   } catch (value) {
     if (
       (value as { narrowed?: unknown } | null | undefined)?.narrowed === true
@@ -505,7 +505,7 @@ async function migrateSingleFileDesignSystem(
       };
     }
   }
-  if ((0, fileListingIsNarrowed)(listing, options.files)) {
+  if (fileListingIsNarrowed(listing, options.files)) {
     return {
       result: "skipped",
       reason: "narrowed_listing",
@@ -548,7 +548,7 @@ async function migrateSingleFileDesignSystem(
     };
   }
   let adapter = createSingleFileMigrationAdapter(options.fetchBlob);
-  return (0, migrateStoreToFiles)({
+  return migrateStoreToFiles({
     adapter: adapter.adapter,
     versionCaps: ARTIFACT_FILE_CAPACITY,
     files: createSingleFileMigrationFiles(

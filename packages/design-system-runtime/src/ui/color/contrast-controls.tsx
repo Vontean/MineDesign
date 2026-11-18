@@ -20,21 +20,21 @@ var contrastVerdictClass: (passes: boolean) => string;
 function contrastDisplayInfo(
   results: Color.ContrastResult[],
 ): Color.ContrastDisplayInfo {
-  let value = (0, worstContrastResult)(results),
+  let value = worstContrastResult(results),
     value2 = results.filter((input) => input !== value),
     items = [
       value,
       ...value2.sort((input, options) => input.ratio - options.ratio),
     ],
     state = {
-      ratio: (0, contrastRatioSpoken)(value.ratio),
+      ratio: contrastRatioSpoken(value.ratio),
       ground: value.ground.label,
       passes: value.passes,
-      min: (0, contrastRatioSpoken)(value.min),
+      min: contrastRatioSpoken(value.min),
       alsoPassing: value2.filter((input) => input.passes).length,
     },
     value3 = value2.filter((input) => !input.passes),
-    value4 = (0, contrastResultCountSummary)({
+    value4 = contrastResultCountSummary({
       ...state,
       alsoFailing: value3.length,
     }),
@@ -43,7 +43,7 @@ function contrastDisplayInfo(
     let value6 = state.ground
       .slice(0, Math.max(1, state.ground.length - value5 - 1))
       .replace(/[\uD800-\uDBFF]$/, "");
-    value4 = (0, contrastResultCountSummary)({
+    value4 = contrastResultCountSummary({
       ...state,
       ground: value6 + "…",
       alsoFailing: value3.length,
@@ -54,14 +54,14 @@ function contrastDisplayInfo(
     title: items
       .map(
         (input) =>
-          (0, contrastRatioReadout)(input.ratio) +
+          contrastRatioReadout(input.ratio) +
           " " +
           CONTRAST_GROUND_PREPOSITION +
           " " +
           input.ground.label,
       )
       .join(" · "),
-    sentence: (0, contrastResultDetails)({
+    sentence: contrastResultDetails({
       ...state,
       alsoFailing: value3.map((input) => input.ground.label),
     }),
@@ -101,7 +101,7 @@ function ContrastMark({
       data-verdict={worst.passes ? "pass" : "fail"}
       title={value.title}
       aria-hidden={sentence ? undefined : true}
-      className={(0, joinClassNames)(
+      className={joinClassNames(
         "inline-flex shrink-0 items-center gap-0.5 text-caption",
         contrastVerdictClass(worst.passes),
         className,
@@ -112,7 +112,7 @@ function ContrastMark({
               name={worst.passes ? "Check" : "Warning"}
               size={"xs"}
             />, <span className={"tabular-nums"}>
-              {(0, contrastRatioReadout)(worst.ratio)}
+              {contrastRatioReadout(worst.ratio)}
             </span>]}
         </span>, sentence ? <span className={"sr-only"}>{value.sentence}</span> : null]}
     </span>
@@ -128,7 +128,7 @@ function ContrastCaption({
     <span
       data-kit={"contrast-caption"}
       aria-hidden={"true"}
-      className={(0, joinClassNames)(
+      className={joinClassNames(
         "flex min-w-0 flex-wrap items-center gap-x-1 text-caption leading-tight",
         contrastVerdictClass(result.passes),
         className,
@@ -145,7 +145,7 @@ function ContrastCaption({
               }
               style={{
                 backgroundColor: contrastRgbCss(
-                  (0, parseContrastColor)(result.ground.css),
+                  parseContrastColor(result.ground.css),
                 ),
               }}
             />]}
@@ -167,7 +167,7 @@ function ContrastLockup({
       data-verdict={worst.passes ? "pass" : "fail"}
       aria-hidden={"true"}
       title={value.title}
-      className={(0, joinClassNames)(
+      className={joinClassNames(
         "inline-flex min-w-0 items-center gap-1.5 text-caption leading-4",
         className,
       )}
@@ -180,12 +180,12 @@ function ContrastLockup({
           style={{
             backgroundColor: contrastRgbCss(
               opaqueContrastColor(
-                (0, parseContrastColor)(worst.ground.css),
+                parseContrastColor(worst.ground.css),
               ),
             ),
             color: contrastRgbCss(
               typeof fg === "string"
-                ? (0, parseContrastColor)(fg)
+                ? parseContrastColor(fg)
                 : fg,
             ),
           }}
@@ -283,7 +283,7 @@ function ContrastFixButton({
       data-kit={"contrast-fix"}
       data-shade={fix.css}
       aria-hidden={held ? true : undefined}
-      className={(0, joinClassNames)(
+      className={joinClassNames(
         "inline-flex min-w-0 items-center",
         held && "invisible",
       )}
@@ -291,7 +291,7 @@ function ContrastFixButton({
       {[<Button
           variant={"secondary"}
           title={
-            ((((((fix.css) + (" · ")) + ((0, contrastRatioReadout)(fix.ratio))) + (" ")) + (CONTRAST_GROUND_PREPOSITION)) + (" ")) + (fix.ground)
+            ((((((fix.css) + (" · ")) + (contrastRatioReadout(fix.ratio))) + (" ")) + (CONTRAST_GROUND_PREPOSITION)) + (" ")) + (fix.ground)
           }
           aria-describedby={value}
           disabled={held}
@@ -307,9 +307,9 @@ function ContrastFixButton({
         >
           {get_COLOR_FIX_LABEL()}
         </Button>, <span id={value} className={"sr-only"}>
-          {(0, contrastFixDescription)({
+          {contrastFixDescription({
             hex: fix.css,
-            ratio: (0, contrastRatioSpoken)(fix.ratio),
+            ratio: contrastRatioSpoken(fix.ratio),
             ground: fix.ground,
           })}
         </span>]}
@@ -330,8 +330,8 @@ export {
 };
 export function installUiColorContrastControls(): () => void {
   return () => {
-    jsxForUiContrastControls = (0, toModuleNamespace)(
-      (0, loadJsxNamespace)(),
+    jsxForUiContrastControls = toModuleNamespace(
+      loadJsxNamespace(),
       1,
     );
     opaqueContrastColor = (color) =>

@@ -81,13 +81,13 @@ export {
 };
 export function installEditorPropertiesToolOptions(): () => void {
   return () => {
-    reactPropertiesToolOptions = (0, toModuleNamespace)(
-      (0, load_react)(),
+    reactPropertiesToolOptions = toModuleNamespace(
+      load_react(),
       1,
     );
-    (0, initializeCdsIndex)();
-    reactPropertiesToolOptions_2 = (0, toModuleNamespace)(
-      (0, load_react)(),
+    initializeCdsIndex();
+    reactPropertiesToolOptions_2 = toModuleNamespace(
+      load_react(),
       1,
     );
   };

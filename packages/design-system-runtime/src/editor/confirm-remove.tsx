@@ -48,8 +48,8 @@ export {
 };
 export function installEditorConfirmRemove(): () => void {
   return () => {
-    jsxConfirmDialog = (0, toModuleNamespace)(
-      (0, loadJsxNamespace)(),
+    jsxConfirmDialog = toModuleNamespace(
+      loadJsxNamespace(),
       1,
     );
   };

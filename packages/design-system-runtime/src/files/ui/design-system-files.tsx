@@ -69,7 +69,7 @@ function designSystemFileHome(
   }
   if (!context.held(path)) {
     if (
-      (0, isGeneratedSystemPath)(path) ||
+      isGeneratedSystemPath(path) ||
       path === DESIGN_SYSTEM_PATHS.manifest
     ) {
       return {
@@ -81,8 +81,7 @@ function designSystemFileHome(
       };
     }
   }
-  let kind: import("../../contracts").FileKind = (0,
-  classifyDesignSystemFile)(path);
+  let kind: import("../../contracts").FileKind = classifyDesignSystemFile(path);
   if (kind === "manifest") {
     return {
       at: "written",
@@ -114,25 +113,25 @@ function designSystemFileHome(
 function heldFileBrowserSource(path: string, content: string | undefined) {
   if (content === undefined) {
     return {
-      url: (0, projectFileUrl)(path),
+      url: projectFileUrl(path),
     };
   }
-  let reference = (0, storagePointerForFile)(path, content);
+  let reference = storagePointerForFile(path, content);
   if (reference !== null) {
     return {
       url:
         reference.store === "blob"
-          ? (0, blobRelativeUrlModelFilePolicy)(reference.id)
+          ? blobRelativeUrlModelFilePolicy(reference.id)
           : ((reference.rel === "" &&
-            (0, isHeldFilePointer)(path, content)
-              ? (0, addressedProjectFileUrl)(path)
+            isHeldFilePointer(path, content)
+              ? addressedProjectFileUrl(path)
               : undefined) ??
-            (0, projectFileUrl)(
+            projectFileUrl(
               reference.rel === "" ? path : reference.rel,
             )),
     };
   }
-  if (!(0, isTextFilePath)(path) && content.startsWith("data:")) {
+  if (!isTextFilePath(path) && content.startsWith("data:")) {
     return {
       dataUri: content,
     };
@@ -194,7 +193,7 @@ function useDesignSystemFilesBrowser({
                 );
               }
             };
-          (0, fetchFileWithRetries)(
+          fetchFileWithRetries(
             FILES_LISTING_URL,
             input2 === 0 ? FILES_BROWSER_READ_RETRY_MS : 0,
             value.signal,
@@ -216,7 +215,7 @@ function useDesignSystemFilesBrowser({
               }
               let value2 = input3.narrowed === true;
               setListing({
-                files: (0, projectListingFiles)(
+                files: projectListingFiles(
                   input3.files,
                   "design_system",
                 ),
@@ -309,7 +308,7 @@ function useDesignSystemFilesBrowser({
       for (let value2 of Object.keys(files)) {
         if (
           !values.has(value2) &&
-          !(0, isHiddenBrowserPath)(value2)
+          !isHiddenBrowserPath(value2)
         ) {
           value.push(value2);
         }
@@ -397,7 +396,7 @@ function useDesignSystemFilesBrowser({
       if (
         event.key !== "Escape" ||
         event.defaultPrevented ||
-        (0, hasOpenOverlay)() ||
+        hasOpenOverlay() ||
         (target instanceof HTMLElement &&
           (target.isContentEditable ||
             ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName)))
@@ -477,10 +476,10 @@ function useDesignSystemFilesBrowser({
               },
               ...unshownPaths.map((input: string) => ({
                 section: FILES_SECTION_ID,
-                label: (0, visibleFileName)(
+                label: visibleFileName(
                   input.slice(input.lastIndexOf("/") + 1),
                 ),
-                words: [(0, visibleFileName)(input)],
+                words: [visibleFileName(input)],
                 target: input,
               })),
             ],
@@ -530,14 +529,14 @@ function DesignSystemFilesLayer({
       let entries = new Map<string, BrowserListingEntry>(
         listed.map((input: BrowserListingEntry) => [input.path, input]),
       );
-      return (0, buildFileBrowserTree)(
+      return buildFileBrowserTree(
         paths.map((input: string) => {
           let value4 = Object.hasOwn(files, input) ? files[input] : undefined,
             entry = entries.get(input);
           if (
             entry !== undefined ||
             value4 === undefined ||
-            (0, storagePointerForFile)(input, value4) !== null
+            storagePointerForFile(input, value4) !== null
           ) {
             return (
               entry ?? {
@@ -545,7 +544,7 @@ function DesignSystemFilesLayer({
               }
             );
           }
-          let value5 = (0, publishableFileMimeType)(input, value4);
+          let value5 = publishableFileMimeType(input, value4);
           return {
             path: input,
             size: heldBrowserFileByteSize(input, value4),
@@ -569,10 +568,10 @@ function DesignSystemFilesLayer({
   }, [doc]);
   let memo2 = reactDesignSystemFiles.useMemo(() => {
       let entries: Map<string, string> = new Map(
-        (0, filesLeftOutOfMigration)(files)
+        filesLeftOutOfMigration(files)
           .filter(
             (input: { path: string; reason: string }) =>
-              !(0, isHeldFilePointer)(
+              !isHeldFilePointer(
                 input.path,
                 files[input.path] ?? "",
               ),
@@ -767,8 +766,8 @@ export function installFilesUiDesignSystemFiles(): () => void {
       componentReadme: "components",
       componentLib: "components",
     };
-    jsxDesignSystemFiles = (0, toModuleNamespace)(
-      (0, loadJsxNamespace)(),
+    jsxDesignSystemFiles = toModuleNamespace(
+      loadJsxNamespace(),
       1,
     );
     FILES_SECTION_ID = "files";
@@ -780,7 +779,7 @@ export function installFilesUiDesignSystemFiles(): () => void {
     FILES_LISTING_NARROWED_RETRY_DELAYS_MS = [4000, 12000, 36000];
     EMPTY_BROWSER_FILE_LIST = [];
     heldBrowserFileByteSize = (input: string, items: string) => {
-      let value = (0, isTextFilePath)(input)
+      let value = isTextFilePath(input)
         ? null
         : /^data:[^,]*;base64,/i.exec(items);
       if (value === null) {

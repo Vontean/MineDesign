@@ -241,7 +241,7 @@ function ComponentPropField({
           onChange(
             input === ""
               ? undefined
-              : (0, coerceControlOption)(spec, input),
+              : coerceControlOption(spec, input),
           )
         }
         data-testid={value2}
@@ -293,7 +293,7 @@ function ComponentPropsEditor({
       role={"group"}
       aria-label={uiMessage("design-system.components.props2", { value1: String(c.name) })}
       data-testid={"ds-comp-props-" + c.name}
-      {...(0, commentTargetProps)("props", c.name)}
+      {...commentTargetProps("props", c.name)}
     >
       {[<PropertySectionHeader
           title={<span className={"ds-pop-name"}>{uiMessage("design-system.components.props")}</span>}
@@ -325,7 +325,7 @@ function ComponentPropsEditor({
                     className: "font-mono",
                   },
                   className: "ds-prow",
-                  ...(0, commentTargetProps)(
+                  ...commentTargetProps(
                     "prop",
                     c.name + "/" + source.name,
                   ),
@@ -486,7 +486,7 @@ function ComponentsSection({
                   className: "ds-cmrow ds-tokrow ds-comprow group/row",
                   role: "row",
                   "data-testid": "ds-comp-" + input.name,
-                  ...(0, commentTargetProps)("comp", input.name),
+                  ...commentTargetProps("comp", input.name),
                   children: [
                     <span
                       className={"ds-cmname flex min-w-0 flex-col gap-0.5"}
@@ -510,7 +510,7 @@ function ComponentsSection({
                                     size={"sm"}
                                     iconOnly={true}
                                     icon={"Filter"}
-                                    className={(0, joinClassNames)(
+                                    className={joinClassNames(
                                       "ds-cact",
                                       value6 !== undefined &&
                                         "ds-cact-on text-accent",
@@ -693,8 +693,8 @@ export {
 };
 export function installEditorComponents(): () => void {
   return () => {
-    reactComponentsSection = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    reactComponentsSection = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
     DEFAULT_EDITOR_FEATURE_FLAGS = {
@@ -707,8 +707,8 @@ export function installEditorComponents(): () => void {
     editorFeatureFlags = {
       componentProps: isEditorFeatureEnabled("componentProps", "ds_props"),
     };
-    jsxComponentsSection = (0, toModuleNamespace)(
-      (0, loadJsxNamespace)(),
+    jsxComponentsSection = toModuleNamespace(
+      loadJsxNamespace(),
       1,
     );
     normalizedComponentTitle = (title: string) =>

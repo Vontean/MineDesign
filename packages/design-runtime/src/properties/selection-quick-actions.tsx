@@ -83,7 +83,7 @@ function quickActionPaintAndSeed(
         paint: undefined,
         seed: seed,
       }
-    : (0, parseHsvaColor)(value3).a === 0
+    : parseHsvaColor(value3).a === 0
       ? {
           paint: undefined,
           seed: value2 ?? seed,
@@ -99,7 +99,7 @@ function buildQuickActionSwatches(
   tokens2?: Dynamic,
   themes?: Dynamic,
 ): Dynamic {
-  if (!(0, hasDesignSystems)(themes))
+  if (!hasDesignSystems(themes))
     return (colors ?? []).map(
       (input?: Dynamic): Dynamic => ({
         name: input,
@@ -114,12 +114,12 @@ function buildQuickActionSwatches(
             name: "ds:" + String(options) + ":" + input2.name,
             color: input2.value,
             label: input2.name,
-            ...(0, colorTokenGroupLabels)(input, input2),
+            ...colorTokenGroupLabels(input, input2),
           }),
         ),
     ),
     value2: Dynamic = swatches ?? [];
-  return (0, mergeDesignSystemSwatches)(
+  return mergeDesignSystemSwatches(
     value2.length > 0
       ? {
           label: tokens2
@@ -135,7 +135,7 @@ function selectionHasVisiblePaint(style?: Dynamic): Dynamic {
   let value: Dynamic =
       style.textClip !== true &&
       style.bg !== undefined &&
-      (0, normalizeHexColor)(style.bg) !== null,
+      normalizeHexColor(style.bg) !== null,
     value2: Dynamic =
       style.borderWidth !== undefined &&
       style.borderWidth
@@ -151,7 +151,7 @@ function selectionHasVisiblePaint(style?: Dynamic): Dynamic {
     value4: Dynamic =
       style.textClip !== true &&
       style.renderedBg != null &&
-      (0, normalizeHexColor)(style.renderedBg) !== null;
+      normalizeHexColor(style.renderedBg) !== null;
   return value || value3 || value4;
 }
 function toggleUnderlineDecoration(decoration?: Dynamic): Dynamic {
@@ -279,7 +279,7 @@ function SelectionQuickActions({
         stroke: seed?.rendered?.stroke ?? null,
       },
     },
-    value10: Dynamic = (0, useDesignSystems)();
+    value10: Dynamic = useDesignSystems();
   contrastRef && (contrastRef.current = undefined);
   let value11: Dynamic = (0, react_Gw.useMemo)(
       (): Dynamic =>
@@ -292,13 +292,13 @@ function SelectionQuickActions({
       [seed?.colors, seed?.artboardColors, crossFile !== null, value10],
     ),
     value12: Dynamic = crossFile ? undefined : seed?.definedVars,
-    value13: Dynamic = (0, hasTextBackgroundClip)(
+    value13: Dynamic = hasTextBackgroundClip(
       (input?: Dynamic): Dynamic => state.get(input),
     ),
     value14: Dynamic = value13 || seed?.rendered?.textClip === true,
     value15: Dynamic = seed?.rendered?.color ?? null,
     [value16, value17]: Dynamic = (0, react_Gw.useState)(false),
-    value18: Dynamic = (0, useBackgroundEditor)({
+    value18: Dynamic = useBackgroundEditor({
       value: state.get("color") ?? null,
       fallback: value15 ?? undefined,
       textFill: {
@@ -307,19 +307,19 @@ function SelectionQuickActions({
         layer:
           state.get("background-image") ?? state.get("background") ?? null,
         size: state.get("background-size") ?? null,
-        ...((0, isTransparentColor)(
+        ...(isTransparentColor(
           (state.get("color") ?? "").trim().toLowerCase(),
         )
           ? {
               transparentInk: "inline",
             }
-          : value15 !== null && (0, parseHsvaColor)(value15).a === 0
+          : value15 !== null && parseHsvaColor(value15).a === 0
             ? {
                 transparentInk: "computed",
               }
             : {}),
       },
-      writer: (0, quickPanelStyleIo)(state),
+      writer: quickPanelStyleIo(state),
       open: value16,
       tokens: emptySelectionPropertyItems,
     }),
@@ -413,7 +413,7 @@ function SelectionQuickActions({
           data-testid={"mega-sel-duplicate"}
           icon={"Copy"}
           title={
-            uiMessage("inspector.selectionQuickActions.duplicate2", { value1: String(value26), value2: String((0, keyboardShortcutLabel)("D")) })
+            uiMessage("inspector.selectionQuickActions.duplicate2", { value1: String(value26), value2: String(keyboardShortcutLabel("D")) })
           }
           aria-label={uiMessage("inspector.selectionQuickActions.duplicate")}
           onClick={crossFile.onDuplicate}
@@ -493,7 +493,7 @@ function SelectionQuickActions({
                   swatches={value11}
                   value={null}
                   onSwatch={(input?: Dynamic): Dynamic => {
-                    let value32: Dynamic = (0, valueForDesignSwatch)(
+                    let value32: Dynamic = valueForDesignSwatch(
                       value11,
                       input,
                       value12,
@@ -564,7 +564,7 @@ function SelectionQuickActions({
         sizes: value38,
         sizeNames: value39,
         sizeFamilies: value40,
-      }: Dynamic = (0, typographyCensusOptions)({
+      }: Dynamic = typographyCensusOptions({
         sizes: seed?.sizes ?? [],
         sizeRoles: seed?.sizeRoles,
         sizeFamilies: seed?.sizeFamilies,
@@ -579,7 +579,7 @@ function SelectionQuickActions({
         : "",
       value43: Dynamic = value42 || (seed?.rendered?.fontFamily ?? ""),
       value44: Dynamic = /^(italic|oblique)/.test(value35),
-      value45: Dynamic = (0, fontFamilyPickerOptions)(
+      value45: Dynamic = fontFamilyPickerOptions(
         (seed?.fonts ?? []).filter(
           (input?: Dynamic): Dynamic =>
             InspectorComputedDataPattern.test(input),
@@ -588,7 +588,7 @@ function SelectionQuickActions({
       value46: Dynamic = value45.find(
         (input?: Dynamic): Dynamic =>
           input.value.toLowerCase() ===
-          (0, displayFontFamily)(value42).toLowerCase(),
+          displayFontFamily(value42).toLowerCase(),
       ),
       value47: Dynamic =
         value46 || !value42
@@ -596,7 +596,7 @@ function SelectionQuickActions({
           : [
               {
                 value: value42,
-                label: (0, displayFontFamily)(value42),
+                label: displayFontFamily(value42),
                 labelStyle: {
                   fontFamily: value42,
                 },
@@ -611,7 +611,7 @@ function SelectionQuickActions({
       value49: Dynamic = seed?.rendered?.ground,
       value50: Dynamic =
         value49 != null && !value23 && !value14
-          ? (0, textContrastContext)(
+          ? textContrastContext(
               value49.behind,
               callback2(seed?.rendered?.fontSizePx) ?? value31 ?? null,
               parseQuickActionNumber(seed?.rendered?.fontWeight) ??
@@ -627,7 +627,7 @@ function SelectionQuickActions({
           value11.find(
             (input2?: Dynamic): Dynamic =>
               input2.name ===
-              (0, matchingDesignSwatchName)(value11, input, value12),
+              matchingDesignSwatchName(value11, input, value12),
           )?.color ?? input,
       });
     let value51: Dynamic = textEdit != null && value24 === null,
@@ -652,7 +652,7 @@ function SelectionQuickActions({
     }) && (value6.current = true);
     let current: Dynamic = value6.current,
       value55: Dynamic = value14
-        ? (0, sanitizeCssBackground)(
+        ? sanitizeCssBackground(
             state.get("background-image") ?? state.get("background") ?? "",
           )
         : "transparent",
@@ -681,9 +681,9 @@ function SelectionQuickActions({
         Math.round(input * 10) / 10,
       value58: Dynamic =
         state.get("font-family") ?? seed?.fontFamily ?? undefined,
-      value59: Dynamic = (0, designSystemTypographyOptions)(value10),
-      value60: Dynamic = (0, typographySessionModel)({
-        metrics: (0, resolvedTypographyMetrics)(state, seed),
+      value59: Dynamic = designSystemTypographyOptions(value10),
+      value60: Dynamic = typographySessionModel({
+        metrics: resolvedTypographyMetrics(state, seed),
         sizeMixed: value54,
         ownFamily: value58,
         family: value42,
@@ -691,7 +691,7 @@ function SelectionQuickActions({
         sizeNames: value39,
         sizeFamilies: value40,
         systemRows: value59,
-        hasSystem: (0, hasDesignSystems)(value10),
+        hasSystem: hasDesignSystems(value10),
         single: (seed?.fontSizes?.length ?? 1) <= 1,
       }),
       state3: Dynamic = {
@@ -721,7 +721,7 @@ function SelectionQuickActions({
             searchable: true,
             onOpenChange: (input?: Dynamic): Dynamic =>
               input &&
-              (0, ensureWebFonts)([
+              ensureWebFonts([
                 ...TypographyFontCatalogMapValue,
                 ...(seed?.webfonts ?? []),
               ]),
@@ -731,16 +731,16 @@ function SelectionQuickActions({
                   "font-family",
                   input === value42
                     ? input
-                    : (0, normalizedFontFamilyOption)(input),
+                    : normalizedFontFamilyOption(input),
                 ],
               ]),
           },
           face: {
             weight: value34,
             italic: value44,
-            faces: (0, resolveFontVariants)(
+            faces: resolveFontVariants(
               value43,
-              (0, getAvailableFontVariants)(
+              getAvailableFontVariants(
                 seed?.faces ?? [],
                 value43,
               ),
@@ -833,13 +833,13 @@ function SelectionQuickActions({
         swatches: value11,
         value: value14
           ? null
-          : (0, matchingDesignSwatchName)(
+          : matchingDesignSwatchName(
               value11,
               state.get("color"),
               value12,
             ),
         onSwatch: (input?: Dynamic): Dynamic => {
-          let value62: Dynamic = (0, valueForDesignSwatch)(
+          let value62: Dynamic = valueForDesignSwatch(
             value11,
             input,
             value12,
@@ -979,7 +979,7 @@ function SelectionQuickActions({
                 : value52,
             get disabledReason() { return value53 !== null ? (value23 && !value30 ? (uiMessage("inspector.selectionQuickActions.makeListsOneTextAt")) : (value53)) : (null); },
             onChange: (input?: Dynamic): Dynamic => {
-              let value62: Dynamic = (0, listKindToTag)(
+              let value62: Dynamic = listKindToTag(
                 input,
                 value30
                   ? value24.ol
@@ -1113,10 +1113,10 @@ export {
 };
 export function installPropertiesSelectionQuickActions(): () => void {
   return () => {
-    react_Gw = (0, toModuleNamespace)((0, load_react)(), 1);
-    (0, initializeEditorAttributeValidation)();
-    jsx_Ki = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    react_Gw = toModuleNamespace(load_react(), 1);
+    initializeEditorAttributeValidation();
+    jsx_Ki = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
     emptySelectionPropertyItems = [];

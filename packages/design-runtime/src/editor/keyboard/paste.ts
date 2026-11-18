@@ -33,7 +33,7 @@ function imagePasteRefusal(
     };
   let callback: Dynamic = (input2?: Dynamic): Dynamic =>
     value === "video" ? KeyboardPasteReplace(input2) : input2;
-  return (0, hasBlockingOverlay)(value2?.ownerDocument ?? document)
+  return hasBlockingOverlay(value2?.ownerDocument ?? document)
     ? options
       ? {
           to: "nobody",
@@ -52,7 +52,7 @@ function imagePasteRefusal(
             to: "canvas",
           }
       : {
-          to: (0, isEditingInputTarget)(input) ? "chrome" : "canvas",
+          to: isEditingInputTarget(input) ? "chrome" : "canvas",
         };
 }
 function isControlTarget(input?: Dynamic): Dynamic {

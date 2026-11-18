@@ -61,7 +61,7 @@ function installDesignSystemTypingListener(): void {
   );
 }
 function restartDesignSystemWithFallback(message?: string): void {
-  (0, restartWithReloadFallback)({
+  restartWithReloadFallback({
     restart: designSystemRestartFunction(),
     note: "design system keeps its content as files",
     ask: () => announceReloadRequired(message),
@@ -90,13 +90,13 @@ function reopenForEditingTransition(transition: "on" | "off"): void {
       announceReloadRequired(get_REOPEN_FAILED_MESSAGE());
     }
   };
-  (0, announceAndWaitToReopen)({
-    say: (input: string) => (0, announceLiveMessage)(input),
+  announceAndWaitToReopen({
+    say: (input: string) => announceLiveMessage(input),
     message: get_DESIGN_SYSTEM_CHANGED_MESSAGE(),
     isTyping: (): boolean => Date.now() - lastDesignSystemTypingAt < 2000,
     hasUnsentEdits: activeDesignSystemHasUnsentEdits,
     reopen: () =>
-      (0, restartWithReloadFallback)({
+      restartWithReloadFallback({
         restart: restart,
         note:
           uiMessage("design-system.reopen.designSystemTheEditingOff") +
@@ -170,8 +170,8 @@ function reopenAfterFilesMigration(
         restartDesignSystemWithFallback(fallbackMessage);
       }
     };
-  (0, announceAndWaitToReopen)({
-    say: (input: string) => (0, announceLiveMessage)(input),
+  announceAndWaitToReopen({
+    say: (input: string) => announceLiveMessage(input),
     message:
       message ??
       (restart
@@ -195,17 +195,17 @@ function reopenAfterFilesMigration(
   });
 }
 function announceDesignSystemReopened(): void {
-  (0, announceReopenedArtifact)({
+  announceReopenedArtifact({
     store: safeReopenSessionStorage(),
     now: Date.now(),
-    say: (input: string) => (0, announceLiveMessage)(input),
+    say: (input: string) => announceLiveMessage(input),
     message: (): string =>
       activeDesignSystemDocument !== undefined &&
       !activeDesignSystemDocument.readOnly()
         ? uiMessage("design-system.reopen.theDesignSystemHasReopened")
         : uiMessage("design-system.reopen.theDesignSystemHasReopened2"),
     focus: (input: string | undefined) =>
-      (0, restoreReopenedFocus)(window, input),
+      restoreReopenedFocus(window, input),
   });
 }
 function waitForBootLiveAnnouncer(message?: string): void {
@@ -224,7 +224,7 @@ function waitForBootLiveAnnouncer(message?: string): void {
         message !== undefined &&
         BOOT_LIVE_NOTICE_MESSAGES.has(message)
       ) {
-        (0, announceLiveMessage)(
+        announceLiveMessage(
           BOOT_LIVE_ANNOUNCEMENT_MESSAGES.get(message) ?? message,
         );
       }
@@ -307,7 +307,7 @@ export function installFilesReopen(): () => void {
       ],
     ]);
     legacyDesignSystemIsBusy = (): boolean => false;
-    (0, setAutosaveInstaller)(
+    setAutosaveInstaller(
       (input: Boot.ActiveDocument, options: () => boolean): void => {
         legacyDesignSystemDocument = input;
         legacyDesignSystemIsBusy = options;
@@ -328,7 +328,7 @@ export function installFilesReopen(): () => void {
       }
     };
     designSystemRestartFunction = () => {
-      if (!(0, canRestartArtifact)()) {
+      if (!canRestartArtifact()) {
         return;
       }
       // MineDesign: the host is globalThis.designSystemHost (packages/design-system/src/editor/design-system-host.ts), not globalThis.claude.
@@ -340,8 +340,8 @@ export function installFilesReopen(): () => void {
     };
     DEFAULT_RELOAD_MESSAGE = get_MOVED_RELOAD_MESSAGE();
     announceReloadRequired = (input = DEFAULT_RELOAD_MESSAGE): void => {
-      (0, showEditorPromiseNotification)(input, null);
-      (0, announceLiveMessage)(input);
+      showEditorPromiseNotification(input, null);
+      announceLiveMessage(input);
     };
     DESIGN_SYSTEM_REOPEN_WATCHDOG_MS = 6000;
     designSystemReopenPending = false;

@@ -50,13 +50,13 @@ export {
 };
 export function installUiBadges(): () => void {
   return () => {
-    (0, initializeCdsRoot)();
-    (0, initializeIcons)();
-    reactzV = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    initializeCdsRoot();
+    initializeIcons();
+    reactzV = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
-    jsxs_ = (0, toModuleNamespace)((0, loadJsxNamespace)(), 1);
+    jsxs_ = toModuleNamespace(loadJsxNamespace(), 1);
     badgeVariantClasses = {
       neutral: "bg-neutral text-secondary",
       accent: "bg-tint-blue text-accent",
@@ -135,14 +135,14 @@ export function installUiBadges(): () => void {
         options: React.ForwardedRef<HTMLSpanElement>,
       ) => {
         let value = variant ?? "accent",
-          value2: string = (0, useTranslation)(
+          value2: string = useTranslation(
             "removeItem",
             uiMessage("design-system.badges.removeItem", { item: typeof children === "string" ? children : uiMessage("design-system.badges.item") }),
             {
               item: typeof children === "string" ? children : "item",
             },
           ),
-          value3: C.Density = (0, useDensity)(),
+          value3: C.Density = useDensity(),
           value4 = badgeSizeByDensity[value3][size ?? "base"],
           length = reactzV.Children.toArray(children).length,
           value5 =
@@ -153,11 +153,11 @@ export function installUiBadges(): () => void {
           value6 =
             (size === "xxs"
               ? 1
-              : (0, getDensitySizeIndex)(value3, size)) === 1
+              : getDensitySizeIndex(value3, size)) === 1
               ? badgeLineHeightClasses
               : "pb-[0.05em]",
           value7 = removeLabel || value2,
-          value8 = (0, clsx)(
+          value8 = clsx(
             "cds-reset relative inline-flex shrink-0 items-center justify-center",
             "before:absolute before:left-[-2px] before:top-1/2 before:-translate-y-1/2 before:content-['']",
             "before:h-[max(24px,100%)] before:w-[max(24px,calc(100%+2px))]",
@@ -194,9 +194,9 @@ export function installUiBadges(): () => void {
             removeRender !== undefined
               ? reactzV.cloneElement(
                   removeRender,
-                  (0, baseMergeProps)(
+                  baseMergeProps(
                     {
-                      className: (0, cn)(value8, value9),
+                      className: cn(value8, value9),
                       "aria-label": value7,
                       children: value11,
                     },
@@ -248,9 +248,9 @@ export function installUiBadges(): () => void {
               ? {
                   "data-step": "1",
                 }
-              : (0, getControlSizeAttributes)(size))}
+              : getControlSizeAttributes(size))}
             {...props}
-            className={(0, cn)(
+            className={cn(
               "inline-flex items-center gap-1 align-middle h-control-nested whitespace-nowrap rounded-chip",
               iconOnly
                 ? "aspect-square w-control-nested justify-center px-0"
@@ -263,18 +263,18 @@ export function installUiBadges(): () => void {
           >
             {[typeof icon !== "number" &&
                 icon &&
-                ((0, isIconName)(icon) ? (
+                (isIconName(icon) ? (
                   <Icon name={icon} size={value4} className={value5} />
                 ) : (
                   <span
                     aria-hidden={true}
-                    className={(0, cn)("inline-flex", value5)}
+                    className={cn("inline-flex", value5)}
                   >
                     {icon}
                   </span>
                 )), truncate ? (
                 <span
-                  className={(0, cn)(
+                  className={cn(
                     value6,
                     "min-w-0 overflow-x-clip text-ellipsis whitespace-nowrap",
                   )}
@@ -291,13 +291,13 @@ export function installUiBadges(): () => void {
       },
     );
     Badge.displayName = "Badge";
-    (0, initializeClassNames)();
-    (0, initializeCdsRoot)();
-    reactForUiBadges = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    initializeClassNames();
+    initializeCdsRoot();
+    reactForUiBadges = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
-    jsxMu = (0, toModuleNamespace)((0, loadJsxNamespace)(), 1);
+    jsxMu = toModuleNamespace(loadJsxNamespace(), 1);
     counterVariantClasses = {
       neutral: "bg-neutral text-secondary",
       accent: "bg-fill-accent text-on-accent",
@@ -333,7 +333,7 @@ export function installUiBadges(): () => void {
               data-cds={"Counter"}
               aria-hidden={"true"}
               {...props}
-              className={(0, cn)(
+              className={cn(
                 "inline-block size-2 shrink-0 rounded-full align-middle",
                 counterFillClasses[variant],
                 className,
@@ -353,9 +353,9 @@ export function installUiBadges(): () => void {
           <span
             ref={options}
             data-cds={"Counter"}
-            {...(0, getControlSizeAttributes)(size)}
+            {...getControlSizeAttributes(size)}
             {...props}
-            className={(0, cn)(
+            className={cn(
               "inline-flex shrink-0 items-center justify-center align-middle",
               "h-control-nested min-w-[var(--cds-h-control-nested)] rounded-full",
               value3.length === 1

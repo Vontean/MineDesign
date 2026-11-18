@@ -238,7 +238,7 @@ function ShadowValueEditor({
     callback9 = (input: string) =>
       /^#|^rgba?\(/i.test(input)
         ? input
-        : ((0, colorCssForPicker)(input) ?? input),
+        : (colorCssForPicker(input) ?? input),
     value10 = (
       <Button
         variant={"ghost"}
@@ -386,7 +386,7 @@ function ShadowValueEditor({
               ? {
                   role: "group",
                   get "aria-label"() { return (uiMessage("design-system.shadows.shadow")) + (label); },
-                  ...(0, commentTargetProps)(
+                  ...commentTargetProps(
                     "editor",
                     "shadow/" + anchorKey,
                   ),
@@ -466,7 +466,7 @@ function ShadowValueEditor({
                                       ? {
                                           role: "group",
                                           get "aria-label"() { return uiMessage("design-system.shadows.layer", { value1: String(label), value2: String(String(options + 1)) }); },
-                                          ...(0, commentTargetProps)(
+                                          ...commentTargetProps(
                                             "editor",
                                             "shadow/" +
                                               anchorKey +
@@ -542,9 +542,9 @@ function ShadowValueCell({
           aria-label={uiMessage("design-system.shadows.copy", { value1: String(t.name), value2: String(theme.name), value3: String(value) })}
           data-testid={testid}
           onClick={() =>
-            void (0, copyTextToClipboard)(value).then(
+            void copyTextToClipboard(value).then(
               (input: boolean) =>
-                (0, showEditorNotification)(
+                showEditorNotification(
                   input
                     ? "Copied " + t.name + " (" + theme.name + ")"
                     : "Couldn’t copy",
@@ -583,7 +583,7 @@ function ShadowTokenRow({
   edit: edit,
 }: Token.ShadowTokenRowProps): React.ReactElement {
   useUiLocale();
-  let value = (0, useRowContextMenu)(
+  let value = useRowContextMenu(
       edit !== undefined || (t.value[preview.id] ?? "") !== "",
     ),
     value2 =
@@ -604,7 +604,7 @@ function ShadowTokenRow({
         ["--ds-themes"]: String(themes.length),
       } as import("../contracts/controls").DesignStyle}
       data-testid={"ds-shadow-" + t.name}
-      {...(0, commentTargetProps)("token", t.name)}
+      {...commentTargetProps("token", t.name)}
       {...value.rowProps}
     >
       {[<span
@@ -833,20 +833,20 @@ export function installEditorShadows(): () => void {
       onDragLeave: stopFileDropEvent,
       onDrop: stopFileDropEvent,
     };
-    reactShadowEditors = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    reactShadowEditors = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
-    reactDomShadowEditors = (0, toModuleNamespace)(
-      (0, loadReactDomNamespace)(),
+    reactDomShadowEditors = toModuleNamespace(
+      loadReactDomNamespace(),
       1,
     );
-    jsxShadowEditors = (0, toModuleNamespace)(
-      (0, loadJsxNamespace)(),
+    jsxShadowEditors = toModuleNamespace(
+      loadJsxNamespace(),
       1,
     );
     safeShadowPreviewStyle = (shadow: string) =>
-      (0, isSafeBoxShadow)(shadow)
+      isSafeBoxShadow(shadow)
         ? {
             boxShadow: shadow,
           }

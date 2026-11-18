@@ -30,7 +30,7 @@ function sendEditorAttachments(
   context?: Dynamic,
   value?: Dynamic,
 ): Dynamic {
-  (0, emitEditorEvent)("autosend-attachments", {
+  emitEditorEvent("autosend-attachments", {
     label: input,
     attachments: options,
     kind: context,

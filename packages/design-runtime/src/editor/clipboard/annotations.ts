@@ -29,7 +29,7 @@ var ClipboardAnnotationsSrcAltValues: Dynamic;
 var ClipboardAnnotationsLimit_2: Dynamic;
 var ClipboardAnnotationsCharCodeAt: Dynamic;
 function blankArtboardBody(input?: Dynamic): Dynamic {
-  let value: Dynamic = (0, blankDcDocument)(),
+  let value: Dynamic = blankDcDocument(),
     value2: Dynamic = value.indexOf('<section class="stage"'),
     value3: Dynamic = value.indexOf("</section>", value2) + 10;
   if (value2 < 0 || value3 < value2)
@@ -41,7 +41,7 @@ function blankArtboardBody(input?: Dynamic): Dynamic {
         ...input2,
         src: callback(
           ClipboardAnnotationsTest(
-            (0, parseDcHtmlDocument)(input2.src)?.template ??
+            parseDcHtmlDocument(input2.src)?.template ??
               input2.src,
           ),
         ),
@@ -109,7 +109,7 @@ function annotationClipboardEntries(
       value3 > ClipboardAnnotationsResolvedValue_2 || value3 > context
         ? "budget"
         : value &&
-            (0, ClipboardPastePlanningKind)(
+            ClipboardPastePlanningKind(
               value2.filter(ClipboardAnnotationsIncludes_2),
             )
           ? "bounds"
@@ -276,7 +276,7 @@ function replaceClipboardPictureSource(
   input?: Dynamic,
   options?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = (0, PlatformFileContentTest_2)(options);
+  let value: Dynamic = PlatformFileContentTest_2(options);
   return value === null
     ? null
     : {
@@ -325,9 +325,9 @@ export function installEditorClipboardAnnotations(): () => void {
     ClipboardAnnotationsHelmetScHelmetPattern =
       /<\/?(?:helmet|sc-helmet|x-import|dc-import|script)\b/i;
     ClipboardAnnotationsTest = (input?: Dynamic): Dynamic => {
-      let value: Dynamic = (0, sanitizePastedHtml)(input);
+      let value: Dynamic = sanitizePastedHtml(input);
       return ClipboardAnnotationsHelmetScHelmetPattern.test(value)
-        ? (0, escapeHtml)(input)
+        ? escapeHtml(input)
         : value;
     };
     ClipboardAnnotationsResolvedValue = 64 * 1024;

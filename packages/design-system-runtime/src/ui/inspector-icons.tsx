@@ -103,16 +103,16 @@ export {
 };
 export function installUiInspectorIcons(): () => void {
   return () => {
-    ColorSelectReact = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    ColorSelectReact = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
-    reactInspectorIcons = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    reactInspectorIcons = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
-    reactForUiInspectorIcons = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    reactForUiInspectorIcons = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
     iconStrokePath = (input: string, options: number = 1) => ({

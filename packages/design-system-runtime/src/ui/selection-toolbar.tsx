@@ -133,8 +133,8 @@ export {
 };
 export function installUiSelectionToolbar(): () => void {
   return () => {
-    reactSelectionToolbar = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    reactSelectionToolbar = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
     HIDDEN_SELECTION_TOOLBAR_STYLE = {

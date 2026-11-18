@@ -18,7 +18,7 @@ function getSelectionCodeEntries(
 ): Dynamic {
   let value: Dynamic = options.map((input2?: Dynamic): Dynamic => {
     let entries: Dynamic = new Map();
-    for (let value5 of (0, parseStyleDeclarations)(
+    for (let value5 of parseStyleDeclarations(
       input.effectiveStyleAttr(input2),
     ) as Dynamic)
       entries.set(value5.prop, value5.value);
@@ -160,7 +160,7 @@ function parseInspectorCode(input?: Dynamic): Dynamic {
       };
     let value4: Dynamic = value3[1].startsWith("@")
         ? value3[1]
-        : (0, normalizeCssProperty)(value3[1]),
+        : normalizeCssProperty(value3[1]),
       value5: Dynamic = value3[2].trim();
     if (value5 === "" && !value4.startsWith("@"))
       return {
@@ -221,7 +221,7 @@ function parseInspectorCode(input?: Dynamic): Dynamic {
           get message() { return uiMessage("inspector.propertyCode.unbalancedOrQuote"); },
         };
       if (/[{}]/.test(value5)) {
-        let value7: Dynamic = (0, parseStyleDeclarations)(
+        let value7: Dynamic = parseStyleDeclarations(
           "--a: " + value5 + "; --b: 0",
         );
         if (value7.length !== 2 || value7[0].value !== value5) {
@@ -264,7 +264,7 @@ function useCodeErrorAnnouncement(
     if (input === undefined || input === value.current) return;
     let value2: Dynamic = (window as Dynamic).setTimeout((): Dynamic => {
       value.current = input;
-      (0, announce)((0, pausedChangesAnnouncement)(input));
+      announce(pausedChangesAnnouncement(input));
     }, CodePropertyCodeConstant);
     return (): Dynamic => (window as Dynamic).clearTimeout(value2);
   }, [input, options]);

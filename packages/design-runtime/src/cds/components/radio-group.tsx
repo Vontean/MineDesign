@@ -37,7 +37,7 @@ function RadioGlyph({
   useUiLocale();
   return (
     <span
-      className={(0, npm_clsx_Ea)(
+      className={npm_clsx_Ea(
         radioGlyphClasses,
         focusRing && "group-focus-visible/rd:shadow-focus",
         topAlign && "mt-[calc((1lh_-_var(--cds-checkbox,1rem))_/_2)]",
@@ -74,8 +74,8 @@ var RadioGroup: React.FC<RadioGroupProps> = function (
       onValueChange={value3 ? (input2: string) => value3(input2) : undefined}
       disabled={value5}
       name={value7}
-      {...(0, getSizeAttribute)(value6)}
-      className={(0, cn)("flex flex-col gap-2 font-sans", value8)}
+      {...getSizeAttribute(value6)}
+      className={cn("flex flex-col gap-2 font-sans", value8)}
     >
       {value4.map((input2) =>
         (() => {
@@ -108,23 +108,23 @@ export {
 };
 export function installCdsComponentsRadioGroup(): () => void {
   return () => {
-    initializeComponentsRadioGroup = (0, initializeOnce)(() => {
+    initializeComponentsRadioGroup = initializeOnce(() => {
       "use client";
 
-      (0, initializeClassNames)();
-      (0, initializeCdsRoot)();
-      (0, initializeDomSelectionPrevention)();
-      (0, initializeFieldContext)();
-      reactComponentsRadioGroup = (0, toModuleNamespace)(
-        (0, load_react)(),
+      initializeClassNames();
+      initializeCdsRoot();
+      initializeDomSelectionPrevention();
+      initializeFieldContext();
+      reactComponentsRadioGroup = toModuleNamespace(
+        load_react(),
       );
-      (0, initializeNpm_clsx_xh)();
-      jsxComponentsRadioGroup = (0, toModuleNamespace)(
-        (0, load_react_jsx_runtime)(),
+      initializeNpm_clsx_xh();
+      jsxComponentsRadioGroup = toModuleNamespace(
+        load_react_jsx_runtime(),
       );
-      (0, initializeNpm__base_ui_react_H5)();
-      (0, initializeNpm__base_ui_react_zve)();
-      (0, initializeNpm__base_ui_react_jve)();
+      initializeNpm__base_ui_react_H5();
+      initializeNpm__base_ui_react_zve();
+      initializeNpm__base_ui_react_jve();
       radioGlyphClasses =
         "flex shrink-0 size-[var(--cds-checkbox)] items-center justify-center rounded-full border border-strong bg-transparent group-hover/rd:border-stronger group-data-[checked]/rd:bg-fill-accent group-data-[checked]/rd:border-0 group-data-[checked]/rd:group-hover/rd:bg-fill-accent-hover group-data-[disabled]/rd:group-hover/rd:border-strong";
       RadioGroupItem = (0, reactComponentsRadioGroup.forwardRef)<
@@ -141,7 +141,7 @@ export function installCdsComponentsRadioGroup(): () => void {
           }: RadioItemProps,
           options: React.ForwardedRef<HTMLButtonElement>,
         ): React.ReactElement => {
-          let value2 = (0, isInsideField)(),
+          let value2 = isInsideField(),
             value3 = (0, reactComponentsRadioGroup.useId)(),
             value4 = (0, reactComponentsRadioGroup.useId)(),
             value5 = (
@@ -151,8 +151,8 @@ export function installCdsComponentsRadioGroup(): () => void {
                 disabled={disabled2}
                 aria-labelledby={value3}
                 aria-describedby={description ? value4 : undefined}
-                onMouseDown={(0, withSelectionPrevention)(undefined)}
-                className={(0, cn)(
+                onMouseDown={withSelectionPrevention(undefined)}
+                className={cn(
                   "cds-reset group/rd inline-flex",
                   description ? "items-start" : "items-center",
                   "gap-2 border-0 outline-none focus-visible:outline-hidden text-start text-body font-normal text-primary data-[disabled]:opacity-disabled",
@@ -200,7 +200,7 @@ export function installCdsComponentsRadioGroup(): () => void {
           }: RadioCardProps,
           options: React.ForwardedRef<HTMLButtonElement>,
         ): React.ReactElement => {
-          let value2 = (0, isInsideField)(),
+          let value2 = isInsideField(),
             value3 = (0, reactComponentsRadioGroup.useId)(),
             value4 = (0, reactComponentsRadioGroup.useId)(),
             value5 = (
@@ -210,8 +210,8 @@ export function installCdsComponentsRadioGroup(): () => void {
                 disabled={disabled2}
                 aria-labelledby={value3}
                 aria-describedby={description ? value4 : undefined}
-                onMouseDown={(0, withSelectionPrevention)(undefined)}
-                className={(0, cn)(radioItemClasses, className)}
+                onMouseDown={withSelectionPrevention(undefined)}
+                className={cn(radioItemClasses, className)}
               >
                 <RadioGlyph topAlign={true} />
                 {leading ? (<span className={"shrink-0"}>{leading}</span>) : (null)}
@@ -257,8 +257,8 @@ export function installCdsComponentsRadioGroup(): () => void {
             data-cds={"RadioGroup"}
             ref={options}
             {...props}
-            {...(0, getSizeAttribute)(size)}
-            className={(0, cn)(
+            {...getSizeAttribute(size)}
+            className={cn(
               "flex flex-col gap-2 font-sans",
               className,
             )}

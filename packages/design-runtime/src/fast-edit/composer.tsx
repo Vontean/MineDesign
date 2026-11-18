@@ -42,8 +42,8 @@ function useSamplingCapability(
     }
     let flag: Dynamic = true;
     (capabilityName === "sample"
-      ? (0, resolveSamplingCapability)(isValid)
-      : (0, awaitHostCapability)(capabilityName, isValid)
+      ? resolveSamplingCapability(isValid)
+      : awaitHostCapability(capabilityName, isValid)
     ).then((input?: Dynamic): Dynamic => {
       flag && setCapability((): Dynamic => input);
     });
@@ -90,7 +90,7 @@ function FastEditComposer({ host: host, parts: parts }: Dynamic): Dynamic {
       host.readOnly ? null : "sample",
     ),
     debugEnabled: Dynamic = (0, ReactFastEdit.useMemo)(
-      (): Dynamic => (0, isFastEditDebugEnabled)(),
+      (): Dynamic => isFastEditDebugEnabled(),
       [],
     ),
     engine: Dynamic = (0, ReactFastEdit.useMemo)(
@@ -98,7 +98,7 @@ function FastEditComposer({ host: host, parts: parts }: Dynamic): Dynamic {
         typeof sample != "function"
           ? null
           : debugEnabled
-            ? (0, instrumentSamplingClient)(
+            ? instrumentSamplingClient(
                 parts.createEngine(sample),
               )
             : parts.createEngine(sample),
@@ -120,14 +120,14 @@ function FastEditComposer({ host: host, parts: parts }: Dynamic): Dynamic {
       .catch((): Dynamic => {});
   }, [engine]);
   let sessionRef: Dynamic = (0, ReactFastEdit.useRef)(
-      (0, createFastEditSessionState)(undefined),
+      createFastEditSessionState(undefined),
     ),
     busyRef: Dynamic = (0, ReactFastEdit.useRef)(false),
     enabled: Dynamic = engine !== null && !host.readOnly,
     controllerRef: Dynamic = (0, ReactFastEdit.useRef)(null);
   (0, ReactFastEdit.useEffect)((): Dynamic => {
     if (!enabled) return;
-    let value: Dynamic = (0, subscribeDraftPreviews)(
+    let value: Dynamic = subscribeDraftPreviews(
       (input?: Dynamic): Dynamic => {
         if (input.html === null) {
           draftHtmlPreviewStore.hold(input.path, false);
@@ -142,7 +142,7 @@ function FastEditComposer({ host: host, parts: parts }: Dynamic): Dynamic {
               ?.askTemplate()
               .catch((): Dynamic => null);
             if (typeof value3 != "string" || !value.holds(input.path)) return;
-            let value4: Dynamic = (0, validateFastEditTemplate)(
+            let value4: Dynamic = validateFastEditTemplate(
               value3,
               html,
             );
@@ -151,7 +151,7 @@ function FastEditComposer({ host: host, parts: parts }: Dynamic): Dynamic {
                 draftHtmlPreviewStore.hold(
                   input.path,
                   true,
-                  (0, buildStaticFastEditPreview)(
+                  buildStaticFastEditPreview(
                     value4.template,
                     {},
                   ),
@@ -191,7 +191,7 @@ function FastEditComposer({ host: host, parts: parts }: Dynamic): Dynamic {
         capture: true,
         passive: true,
       });
-    let value: Dynamic = (0, subscribeSaveEvents)(
+    let value: Dynamic = subscribeSaveEvents(
       (input?: Dynamic): Dynamic => {
         let current: Dynamic = sessionRef.current;
         if (input.type === "event" && input.name === "apply")
@@ -222,7 +222,7 @@ function FastEditComposer({ host: host, parts: parts }: Dynamic): Dynamic {
   }, [enabled]);
   (0, ReactFastEdit.useEffect)((): Dynamic => {
     if (!enabled || engine === null) return;
-    let value: Dynamic = (0, createFastEditController)(
+    let value: Dynamic = createFastEditController(
       (): Dynamic => ({
         rules: parts.commentRules,
         addRules: parts.newArtboardRules,
@@ -235,7 +235,7 @@ function FastEditComposer({ host: host, parts: parts }: Dynamic): Dynamic {
         inView: rankVisibleArtboards,
         pointerDown: (): Dynamic => busyRef.current,
         maxBytes: historyLimitRef.current,
-        ...((0, PlatformSaveEventsHandler_2)()
+        ...(PlatformSaveEventsHandler_2()
           ? {
               onDocEvent: subscribeSaveEvents,
             }
@@ -253,11 +253,11 @@ function FastEditComposer({ host: host, parts: parts }: Dynamic): Dynamic {
               hostRef.current.handlesRef.current?.get(input),
             value3: Dynamic =
               value2?.isReady() === true && !value2.isBlocked()
-                ? (0, createPreviewHandle)(value2.webviewRef.current)
+                ? createPreviewHandle(value2.webviewRef.current)
                 : null;
           return value3 == null
             ? null
-            : (0, pickerCommentRects)(value3, options);
+            : pickerCommentRects(value3, options);
         },
         layoutOf: async (
           input?: Dynamic,
@@ -267,11 +267,11 @@ function FastEditComposer({ host: host, parts: parts }: Dynamic): Dynamic {
               hostRef.current.handlesRef.current?.get(input),
             value3: Dynamic =
               value2?.isReady() === true && !value2.isBlocked()
-                ? (0, createPreviewHandle)(value2.webviewRef.current)
+                ? createPreviewHandle(value2.webviewRef.current)
                 : null;
           return value3 == null
             ? null
-            : (0, probeRenderedElementLayout)(value3, options);
+            : probeRenderedElementLayout(value3, options);
         },
         drawnAt: async (
           input?: Dynamic,
@@ -282,23 +282,23 @@ function FastEditComposer({ host: host, parts: parts }: Dynamic): Dynamic {
               hostRef.current.handlesRef.current?.get(input),
             value3: Dynamic =
               value2?.isReady() === true && !value2.isBlocked()
-                ? (0, createPreviewHandle)(value2.webviewRef.current)
+                ? createPreviewHandle(value2.webviewRef.current)
                 : null;
           return value3 == null
             ? null
-            : (0, probeRenderedElementHit)(value3, options, context);
+            : probeRenderedElementHit(value3, options, context);
         },
       }),
       {
         tier: (): Dynamic => parts.tier,
       },
     );
-    (0, setSelectionActionHandler)(value.fastTrack);
-    (0, setSelectionHostFactory)(value.side);
+    setSelectionActionHandler(value.fastTrack);
+    setSelectionHostFactory(value.side);
     let flag: Dynamic = true;
     (async (): Promise<Dynamic> => {
       for (; flag; ) {
-        let value2: Dynamic = await (0, captureFastEditCanvasState)({
+        let value2: Dynamic = await captureFastEditCanvasState({
           host: (): Dynamic => hostRef.current,
           session: sessionRef.current,
         }).catch((): Dynamic => 1);
@@ -310,8 +310,8 @@ function FastEditComposer({ host: host, parts: parts }: Dynamic): Dynamic {
     })();
     return (): Dynamic => {
       flag = false;
-      (0, setSelectionActionHandler)(null);
-      (0, setSelectionHostFactory)(null);
+      setSelectionActionHandler(null);
+      setSelectionHostFactory(null);
     };
   }, [enabled, engine, parts, debugEnabled]);
   return enabled ? (
@@ -324,7 +324,7 @@ function FastEditComposer({ host: host, parts: parts }: Dynamic): Dynamic {
   ) : null;
 }
 function registerFastEditComposer(parts?: Dynamic): Dynamic {
-  (0, setHostedEditorComponent)(
+  setHostedEditorComponent(
     ({ host: host }: Dynamic): Dynamic => (
       <FastEditComposer host={host} parts={parts} />
     ),
@@ -343,14 +343,14 @@ export {
 };
 export function installFastEditComposer(): () => void {
   return () => {
-    ReactSamplingCapability = (0, toModuleNamespace)(
-      (0, load_react)(),
+    ReactSamplingCapability = toModuleNamespace(
+      load_react(),
       1,
     );
     isSamplingFunction = (input?: Dynamic): Dynamic =>
       typeof input == "function";
-    fastEditUiJsxRuntime = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    fastEditUiJsxRuntime = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
     getArtboardViewportBounds = (input?: Dynamic): Dynamic =>

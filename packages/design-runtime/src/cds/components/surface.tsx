@@ -17,9 +17,9 @@ var jsxComponentsSurface: typeof import("react/jsx-runtime");
 var Surface: ForwardComponent<HTMLDivElement, SurfaceProps>;
 var initializeComponentsSurface: () => void;
 function surfaceFocusStyle(input?: string): DesignStyle {
-  let value = (0, useResolvedColorMode)();
+  let value = useResolvedColorMode();
   return {
-    ...(0, pageBackgroundStyle)(input),
+    ...pageBackgroundStyle(input),
     "--cds-focus-shadow": focusShadowTokens[value],
     "--cds-focus-shadow-danger": dangerFocusShadowTokens[value],
   };
@@ -33,17 +33,17 @@ export {
 };
 export function installCdsComponentsSurface(): () => void {
   return () => {
-    initializeComponentsSurface = (0, initializeOnce)(() => {
+    initializeComponentsSurface = initializeOnce(() => {
       "use client";
 
-      (0, initializeClassNames)();
-      (0, initializeCdsRoot)();
-      (0, initializeThemeSurfaces)();
-      reactComponentsSurface = (0, toModuleNamespace)(
-        (0, load_react)(),
+      initializeClassNames();
+      initializeCdsRoot();
+      initializeThemeSurfaces();
+      reactComponentsSurface = toModuleNamespace(
+        load_react(),
       );
-      jsxComponentsSurface = (0, toModuleNamespace)(
-        (0, load_react_jsx_runtime)(),
+      jsxComponentsSurface = toModuleNamespace(
+        load_react_jsx_runtime(),
       );
       Surface = (0, reactComponentsSurface.forwardRef)<
         HTMLDivElement,
@@ -68,8 +68,8 @@ export function installCdsComponentsSurface(): () => void {
               data-cds={"Surface"}
               data-surface={elevation}
               {...props}
-              className={(0, cn)(
-                (0, popupSurfaceClassName)(elevation),
+              className={cn(
+                popupSurfaceClassName(elevation),
                 className,
               )}
               style={{

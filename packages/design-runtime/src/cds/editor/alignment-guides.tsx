@@ -19,17 +19,17 @@ export {
 };
 export function installCdsEditorAlignmentGuides(): () => void {
   return () => {
-    initializeEditorAlignmentGuides = (0, initializeOnce)(
+    initializeEditorAlignmentGuides = initializeOnce(
       (): Dynamic => {
         "use client";
 
-        (0, initializeClassNames)();
-        (0, initializeEditorSelectionGeometry)();
-        reactEditorAlignmentGuides = (0, toModuleNamespace)(
-          (0, load_react)(),
+        initializeClassNames();
+        initializeEditorSelectionGeometry();
+        reactEditorAlignmentGuides = toModuleNamespace(
+          load_react(),
         );
-        jsxEditorAlignmentGuides = (0, toModuleNamespace)(
-          (0, load_react_jsx_runtime)(),
+        jsxEditorAlignmentGuides = toModuleNamespace(
+          load_react_jsx_runtime(),
         );
         AlignmentGuides = (0, reactEditorAlignmentGuides.forwardRef)(function (
           {
@@ -41,7 +41,7 @@ export function installCdsEditorAlignmentGuides(): () => void {
           }: Dynamic,
           options?: Dynamic,
         ): Dynamic {
-          let value: Dynamic = (0, normalizeSelectionScale)(scale),
+          let value: Dynamic = normalizeSelectionScale(scale),
             guide: Dynamic = selectionMetrics.guide,
             value2: Dynamic = 1 / value;
           return (
@@ -50,7 +50,7 @@ export function installCdsEditorAlignmentGuides(): () => void {
               ref={options}
               data-cds={"AlignmentGuides"}
               aria-hidden={"true"}
-              className={(0, cn)("absolute inset-0", className)}
+              className={cn("absolute inset-0", className)}
               style={{
                 ...style,
                 pointerEvents: "none",

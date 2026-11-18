@@ -54,27 +54,27 @@ function CanvasShape({
   onEditPoints: onEditPoints,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic = (0, annotationBounds)(spec),
+  let value: Dynamic = annotationBounds(spec),
     value2: Dynamic =
       spec.kind === "line" || spec.kind === "arrow" ? spec : null,
     value3: Dynamic = value2
-      ? (0, annotationArrowHeads)(value2)
+      ? annotationArrowHeads(value2)
       : null,
     value4: Dynamic =
       !value2 || !value3
         ? null
-        : (0, shortenLineEnds)(
+        : shortenLineEnds(
             value2.x,
             value2.y,
             value2.x2,
             value2.y2,
-            (0, SvgArrowsRefX)(value3.start) *
-              (0, annotationStrokeWidth)(
+            SvgArrowsRefX(value3.start) *
+              annotationStrokeWidth(
                 value2.css,
                 CanvasAnnotationShapeStyleConstant_2,
               ),
-            (0, SvgArrowsRefX)(value3.end) *
-              (0, annotationStrokeWidth)(
+            SvgArrowsRefX(value3.end) *
+              annotationStrokeWidth(
                 value2.css,
                 CanvasAnnotationShapeStyleConstant_2,
               ),
@@ -123,7 +123,7 @@ function CanvasShape({
     value20: Dynamic = value12 !== null && value12 !== value13 && value16;
   (0, reactHooksLatestCallback_2.useEffect)((): Dynamic => {
     if (!value20) return;
-    let value41: Dynamic = (0, scheduleImageDecode)(
+    let value41: Dynamic = scheduleImageDecode(
       spec.id,
       (): Dynamic => value19(true),
     );
@@ -139,7 +139,7 @@ function CanvasShape({
   (0, reactHooksLatestCallback_2.useEffect)((): Dynamic => {
     let value41: Dynamic = value21 ? value22.current : null;
     if (!value41) return;
-    let value42: Dynamic = (0, createVideoPlaybackStore)(value41);
+    let value42: Dynamic = createVideoPlaybackStore(value41);
     value23.current = value42;
     return (): Dynamic => {
       value42.detach();
@@ -153,10 +153,10 @@ function CanvasShape({
       (): Dynamic =>
         value25 === undefined
           ? null
-          : (0, annotationPathViewBox)(value25),
+          : annotationPathViewBox(value25),
       [value25],
     ),
-    value27: Dynamic = (0, annotationColor)(
+    value27: Dynamic = annotationColor(
       spec.kind,
       spec.color ?? "default",
     ),
@@ -168,8 +168,8 @@ function CanvasShape({
           }
         : undefined,
     value30: Dynamic = editing ? objectPress : {},
-    value31: Dynamic = (0, useViewportStore)(),
-    value32: Dynamic = (0, annotationRotation)(spec),
+    value31: Dynamic = useViewportStore(),
+    value32: Dynamic = annotationRotation(spec),
     value33: Dynamic = value32
       ? {
           transform: "rotate(" + String(value32) + "deg)",
@@ -181,7 +181,7 @@ function CanvasShape({
         }
       : undefined,
     value35: Dynamic = value32 ? (value32 * Math.PI) / 180 : undefined,
-    value36: Dynamic = (0, imageFlipCss)(spec),
+    value36: Dynamic = imageFlipCss(spec),
     value37: Dynamic = vectorEdit && value6 !== null && !grouped && !value32,
     [value38, value39]: Dynamic = (0,
     reactHooksLatestCallback_2.useState)(null),
@@ -197,7 +197,7 @@ function CanvasShape({
         ],
         [items3, items4]: Dynamic = [
           value32,
-          (0, angleBetweenPoints)(
+          angleBetweenPoints(
             items,
             items2,
             options.clientX,
@@ -212,9 +212,9 @@ function CanvasShape({
           options2?: Dynamic,
           context?: Dynamic,
         ): Dynamic => {
-          let value41: Dynamic = (0, snapRotation)(
+          let value41: Dynamic = snapRotation(
             items3 +
-              (0, angleBetweenPoints)(
+              angleBetweenPoints(
                 items,
                 items2,
                 context.clientX,
@@ -245,7 +245,7 @@ function CanvasShape({
     value41?: Dynamic,
     extra?: Dynamic,
   ): Dynamic =>
-    (0, beginArtboardResize)(input, {
+    beginArtboardResize(input, {
       src: options,
       scale: value31.get().scale,
       onGesture: onGesture,
@@ -287,17 +287,17 @@ function CanvasShape({
           const _Component = "div";
           const _props = {
             "data-testid": "mega-shape-body-" + spec.id,
-            className: (0, joinClassNames)(
+            className: joinClassNames(
               "absolute inset-0 box-border",
               value28 && "pointer-events-auto cursor-grab",
             ),
             style: {
-              ...(0, annotationFillDefaults)(
+              ...annotationFillDefaults(
                 value5.css,
                 value27,
                 value5.kind === "oval",
               ),
-              ...(0, annotationCssStyle)(value5.css),
+              ...annotationCssStyle(value5.css),
               ...(value5.kind === "oval"
                 ? {
                     borderRadius: "50%",
@@ -308,7 +308,7 @@ function CanvasShape({
             },
             ...value30,
           } as const;
-          const _key = (0, annotationFillSignature)(
+          const _key = annotationFillSignature(
             value5.css,
             value5.kind === "oval",
           );
@@ -333,13 +333,13 @@ function CanvasShape({
             poster={value11 ?? undefined}
             onLoadedMetadata={onPictureLoad}
             {...MediaVideoUploadAutoPlayLoopMutedConfig}
-            autoPlay={!(0, CanvasAnnotationShapeStyleMatches)()}
+            autoPlay={!CanvasAnnotationShapeStyleMatches()}
             disablePictureInPicture={true}
             disableRemotePlayback={true}
             aria-label={value7.alt}
             draggable={false}
             onError={(): Dynamic => value14(value12)}
-            className={(0, joinClassNames)(
+            className={joinClassNames(
               "absolute inset-0 box-border block h-full w-full select-none",
               value28
                 ? "pointer-events-auto cursor-grab"
@@ -347,10 +347,10 @@ function CanvasShape({
             )}
             style={{
               ...(value7.crop !== undefined
-                ? (0, imageCropCss)(value7.crop)
+                ? imageCropCss(value7.crop)
                 : {
                     objectFit: "fill",
-                    ...(0, annotationCssStyle)(value7.css),
+                    ...annotationCssStyle(value7.css),
                   }),
               ...value29,
             }}
@@ -365,7 +365,7 @@ function CanvasShape({
                 !event.ctrlKey;
               if (!editing) {
                 value41 &&
-                  (0, watchPointerRelease)(
+                  watchPointerRelease(
                     event.nativeEvent,
                     (): Dynamic => value23.current?.toggle(),
                   );
@@ -399,12 +399,12 @@ function CanvasShape({
         </AnnotationShapeBody>)}
       {value7 && !value21 && value7.crop !== undefined && value11 !== null ? (<div
           data-testid={"mega-shape-body-" + spec.id}
-          className={(0, joinClassNames)(
+          className={joinClassNames(
             "absolute inset-0 box-border overflow-hidden",
             value28 && "pointer-events-auto cursor-grab",
           )}
           style={{
-            ...(0, annotationCssStyle)(value7.css),
+            ...annotationCssStyle(value7.css),
             ...value36,
             ...value29,
           }}
@@ -419,7 +419,7 @@ function CanvasShape({
             onLoad={onPictureLoad}
             onError={(): Dynamic => value9(value11)}
             className={"block select-none"}
-            style={(0, imageCropCss)(value7.crop)}
+            style={imageCropCss(value7.crop)}
           />
         </div>) : (value7 &&
         !value21 && (<img
@@ -432,7 +432,7 @@ function CanvasShape({
             onError={(): Dynamic => {
               value10 !== null && value9(value10);
             }}
-            className={(0, joinClassNames)(
+            className={joinClassNames(
               "absolute inset-0 box-border block h-full w-full select-none",
               value28 && "pointer-events-auto cursor-grab",
             )}
@@ -443,7 +443,7 @@ function CanvasShape({
                 value7.css?.["background-color"] === undefined
                   ? "#e8e6e1"
                   : undefined,
-              ...(0, annotationCssStyle)(value7.css),
+              ...annotationCssStyle(value7.css),
               ...value36,
               ...value29,
             }}
@@ -459,7 +459,7 @@ function CanvasShape({
             left: -CanvasAnnotationShapeStyleConstant_3,
             top: -CanvasAnnotationShapeStyleConstant_3,
             overflow: "visible",
-            ...(0, annotationEffectsCss)(value2.css),
+            ...annotationEffectsCss(value2.css),
           }}
           width={value.w + 2 * CanvasAnnotationShapeStyleConstant_3}
           height={value.h + 2 * CanvasAnnotationShapeStyleConstant_3}
@@ -511,7 +511,7 @@ function CanvasShape({
               CanvasAnnotationShapeStyleConstant_3
             }
             stroke={value2.css?.stroke ?? value27}
-            strokeWidth={(0, annotationStrokeWidth)(
+            strokeWidth={annotationStrokeWidth(
               value2.css,
               CanvasAnnotationShapeStyleConstant_2,
             )}
@@ -555,7 +555,7 @@ function CanvasShape({
               16 / scale,
             )}
             strokeLinecap={"round"}
-            className={(0, joinClassNames)(value28 && "cursor-grab")}
+            className={joinClassNames(value28 && "cursor-grab")}
             style={{
               pointerEvents: value28 || commenting ? "stroke" : "none",
             }}
@@ -567,7 +567,7 @@ function CanvasShape({
           className={"pointer-events-none absolute inset-0"}
           style={{
             overflow: "visible",
-            ...(0, annotationEffectsCss)(value6.css),
+            ...annotationEffectsCss(value6.css),
           }}
           width={value.w}
           height={value.h}
@@ -578,7 +578,7 @@ function CanvasShape({
             d={value6.d}
             fill={"none"}
             stroke={value6.css?.stroke ?? value27}
-            strokeWidth={(0, annotationStrokeWidth)(
+            strokeWidth={annotationStrokeWidth(
               value6.css,
               CanvasAnnotationShapeStyleConstant,
             )}
@@ -595,7 +595,7 @@ function CanvasShape({
             strokeLinecap={"round"}
             strokeLinejoin={"round"}
             vectorEffect={"non-scaling-stroke"}
-            className={(0, joinClassNames)(value28 && "cursor-grab")}
+            className={joinClassNames(value28 && "cursor-grab")}
             style={{
               pointerEvents: value28 || commenting ? "stroke" : "none",
             }}
@@ -670,7 +670,7 @@ function CanvasShape({
                         ): Dynamic => {
                           let value44: Dynamic =
                               value43 && !(context.metaKey || context.ctrlKey)
-                                ? (0, snapResize)(
+                                ? snapResize(
                                     state,
                                     input2,
                                     input3,
@@ -684,7 +684,7 @@ function CanvasShape({
                                     guides: [],
                                   },
                             value45: Dynamic = CanvasShapeX(
-                              (0, resizeRotatedRect)(
+                              resizeRotatedRect(
                                 state,
                                 value32,
                                 input2,
@@ -704,8 +704,7 @@ function CanvasShape({
                                     input2.y !== null),
                               ),
                             ),
-                            value46: Dynamic = (0,
-                            activeResizeGuides)(
+                            value46: Dynamic = activeResizeGuides(
                               value45,
                               input2,
                               value44.guides,
@@ -769,7 +768,7 @@ function CanvasShape({
                             y: value43 + options2,
                           },
                           value45: Dynamic = context.shiftKey
-                            ? (0, constrainLineAngle)(value44, state)
+                            ? constrainLineAngle(value44, state)
                             : state;
                         return value41
                           ? {
@@ -815,24 +814,24 @@ export function installCanvasShape(): () => void {
       w: Math.round(input.w),
       h: Math.round(input.h),
     });
-    reactCanvasShape = (0, toModuleNamespace)(
-      (0, load_react)(),
+    reactCanvasShape = toModuleNamespace(
+      load_react(),
       1,
     );
-    reactDomCanvasShape = (0, toModuleNamespace)(
-      (0, load_react_dom)(),
+    reactDomCanvasShape = toModuleNamespace(
+      load_react_dom(),
       1,
     );
-    (0, initializeNpm_usehooks_ts_p0)();
-    reactCanvasShape_2 = (0, toModuleNamespace)(
-      (0, load_react)(),
+    initializeNpm_usehooks_ts_p0();
+    reactCanvasShape_2 = toModuleNamespace(
+      load_react(),
       1,
     );
-    reactDomCanvasShape_2 = (0, toModuleNamespace)(
-      (0, load_react_dom)(),
+    reactDomCanvasShape_2 = toModuleNamespace(
+      load_react_dom(),
       1,
     );
-    (0, initializeNpm_usehooks_ts_p0)();
-    (0, initializePlatformCdsIsland)();
+    initializeNpm_usehooks_ts_p0();
+    initializePlatformCdsIsland();
   };
 }

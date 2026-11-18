@@ -72,7 +72,7 @@ function CanvasLoadFailure({
   let callback: Dynamic = (): Dynamic => {
     doc.save();
   };
-  (0, useFrameSaveState)(value.status, callback);
+  useFrameSaveState(value.status, callback);
   return (
     <div
       className={

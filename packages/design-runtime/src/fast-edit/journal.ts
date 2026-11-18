@@ -95,7 +95,7 @@ function isDecorativeElement(element?: Dynamic): Dynamic {
 }
 function parseJournalStyle(style?: Dynamic): Dynamic {
   let properties: Dynamic = new Map();
-  for (let value of (0, splitCssDeclarations_2)(
+  for (let value of splitCssDeclarations_2(
     style ?? "",
   ) as Dynamic) {
     let value2: Dynamic = value.indexOf(":");
@@ -116,14 +116,14 @@ function describeStyleChanges(before?: Dynamic, after?: Dynamic): Dynamic {
         value +
           ": " +
           truncateJournalText(
-            (0, truncateLargeDataUris)(value2),
+            truncateLargeDataUris(value2),
             100,
           ) +
           " (was " +
           (entry === undefined
             ? "not set"
             : truncateJournalText(
-                (0, truncateLargeDataUris)(entry),
+                truncateLargeDataUris(entry),
                 40,
               )) +
           ")",
@@ -135,7 +135,7 @@ function describeStyleChanges(before?: Dynamic, after?: Dynamic): Dynamic {
         value +
           ": removed (was " +
           truncateJournalText(
-            (0, truncateLargeDataUris)(value2),
+            truncateLargeDataUris(value2),
             40,
           ) +
           ")",
@@ -768,7 +768,7 @@ function finishFastEditJournalTurn(
   let turn: Dynamic = session.turn;
   session.turn = null;
   turn?.open === true &&
-    (0, closeHistoryTurn)(
+    closeHistoryTurn(
       session.history,
       status === null ? null : HISTORY_TURN_COMPLETION_MESSAGES[status],
     );
@@ -876,12 +876,12 @@ function recordFastEditReadResult(
       for (
         ;
         value5 > 1 &&
-        (0, summarizeTurnIds)(value4, value5).length >
+        summarizeTurnIds(value4, value5).length >
           MAX_JOURNAL_ATTRIBUTE_CHARS;
 
       )
         value5 -= 1;
-      return (0, summarizeTurnIds)(value4, value5);
+      return summarizeTurnIds(value4, value5);
     },
     values: Dynamic = new Set(),
     callback4: Dynamic = (input?: Dynamic): Dynamic =>
@@ -1196,7 +1196,7 @@ export function installFastEditJournal(): () => void {
     sanitizeJournalText = (input?: Dynamic): Dynamic => {
       let value: Dynamic = input.replace(/\p{Cf}/gu, "");
       return UNTRUSTED_TEXT_PATTERN.test(value)
-        ? (0, sanitizeUntrustedText)(value)
+        ? sanitizeUntrustedText(value)
         : value;
     };
     normalizeJournalWhitespace = (input?: Dynamic): Dynamic =>
@@ -1327,7 +1327,7 @@ export function installFastEditJournal(): () => void {
       options?: Dynamic,
     ): Dynamic => ({
       journal: [],
-      history: (0, createFastEditHistory)(options),
+      history: createFastEditHistory(options),
       seen: new Map(),
       beforeLast: new Map(),
       opened: new Set(),

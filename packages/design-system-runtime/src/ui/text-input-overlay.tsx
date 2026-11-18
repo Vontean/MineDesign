@@ -39,16 +39,15 @@ function PendingSheetBackdrop({ kind: kind }: { kind: C.OverlayKind }) {
   let value = reactiZ.useContext<
       import("../contracts/overlays").SheetFrameContext | null
     >(sheetFrameContext),
-    value2: Element | ShadowRoot | null | undefined = (0,
-    usePortalContainer)(),
+    value2: Element | ShadowRoot | null | undefined = usePortalContainer(),
     value3: {
       portalProps: React.HTMLAttributes<HTMLElement>;
       style: C.DesignStyle;
-    } = (0, useDefaultOverlayLayer)(kind);
-  (0, useAndroidCloseWatcher)(value?.open ?? false, value?.dismiss);
+    } = useDefaultOverlayLayer(kind);
+  useAndroidCloseWatcher(value?.open ?? false, value?.dismiss);
   let [value4, value5] = reactiZ.useState(false),
     ref = reactiZ.useRef(false),
-    value6: Window | undefined = (0, useRootWindow)();
+    value6: Window | undefined = useRootWindow();
   reactiZ.useEffect(() => {
     if (value6 === undefined) {
       return;
@@ -72,7 +71,7 @@ function PendingSheetBackdrop({ kind: kind }: { kind: C.OverlayKind }) {
         {...{
           [SHEET_PENDING_ATTRIBUTE]: "",
         }}
-        className={(0, clsx)(
+        className={clsx(
           sheetBackdropClasses,
           !value4 && "opacity-0",
         )}
@@ -199,13 +198,13 @@ export {
 };
 export function installUiTextInputOverlay(): () => void {
   return () => {
-    reactiZ = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    reactiZ = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
-    jsxZu = (0, toModuleNamespace)((0, loadJsxNamespace)(), 1);
-    reactDOMForUiTextInputOverlay = (0, toModuleNamespace)(
-      (0, loadReactDomNamespace)(),
+    jsxZu = toModuleNamespace(loadJsxNamespace(), 1);
+    reactDOMForUiTextInputOverlay = toModuleNamespace(
+      loadReactDomNamespace(),
       1,
     );
     SHEET_PENDING_ATTRIBUTE = "data-cds-sheet-pending";
@@ -230,7 +229,7 @@ export function installUiTextInputOverlay(): () => void {
       "compositionstart",
       "focusout",
     ];
-    (0, initializeClassNames)();
-    (0, initializeIcons)();
+    initializeClassNames();
+    initializeIcons();
   };
 }

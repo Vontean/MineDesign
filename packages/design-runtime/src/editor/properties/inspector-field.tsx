@@ -41,11 +41,10 @@ function PropertyInspectorField(input?: Dynamic): Dynamic {
   useUiLocale();
   let [value, value2]: Dynamic = (0,
     reactPropertiesDropShadowEditor_2.useState)(null),
-    { textContrast: value3 = null }: Dynamic = (0,
-    useInspectorContext)(),
+    { textContrast: value3 = null }: Dynamic = useInspectorContext(),
     [value4, value5]: Dynamic = (0,
     reactPropertiesDropShadowEditor_2.useState)(false),
-    value6: Dynamic = (0, isInheritedInspectorField)(input.state),
+    value6: Dynamic = isInheritedInspectorField(input.state),
     value7: Dynamic =
       value6 &&
       !input.state.stale &&
@@ -55,7 +54,7 @@ function PropertyInspectorField(input?: Dynamic): Dynamic {
         ))
         ? {
             ...input,
-            state: (0, inheritedFieldForEdit)(input.state),
+            state: inheritedFieldForEdit(input.state),
           }
         : input,
     { state: value8 }: Dynamic = value7,
@@ -245,11 +244,11 @@ function PropertyInspectorField(input?: Dynamic): Dynamic {
       "data-testid": `dc-prop-${value8.prop}`,
       title:
         value8.whyDisabled ??
-        (0, inheritedFieldTooltip)(input.state) ??
+        inheritedFieldTooltip(input.state) ??
         (value8.varSource
           ? uiMessage("inspector.inspectorField.authoredAsValue1EditingWrites", { value1: String(value8.varSource) })
           : undefined),
-      description: (0, inheritedFieldDescription)(input.state),
+      description: inheritedFieldDescription(input.state),
       onReset: value21,
       trailing: value7.trailing,
       resetLabel: value7.onRemoveRow
@@ -275,7 +274,7 @@ function PropertyInspectorField(input?: Dynamic): Dynamic {
               value14(input2, options);
               input2 === value8.prop &&
                 (options == null ||
-                  (0, parseCssNumber)(options) != null) &&
+                  parseCssNumber(options) != null) &&
                 setTimeout((): Dynamic => {
                   value9.current = true;
                   value5(false);
@@ -285,7 +284,7 @@ function PropertyInspectorField(input?: Dynamic): Dynamic {
       onCommitMany: value20,
       shell: state,
     },
-    { isLiteral: value22 }: Dynamic = (0, inspectorFieldDisplay)(
+    { isLiteral: value22 }: Dynamic = inspectorFieldDisplay(
       input.state,
     ),
     value23: Dynamic = input.state.value,
@@ -301,7 +300,7 @@ function PropertyInspectorField(input?: Dynamic): Dynamic {
       value28: Dynamic = value8.mixed
         ? "Mixed"
         : value27
-          ? (0, propertyOptionLabel)(value8.spec, value26)
+          ? propertyOptionLabel(value8.spec, value26)
           : value26;
     return (
       <jsxPropertiesSizingRow.Fragment>
@@ -313,7 +312,7 @@ function PropertyInspectorField(input?: Dynamic): Dynamic {
         >
           <span
             data-testid={`dc-stale-${value8.prop}`}
-            className={(0, cn)(
+            className={cn(
               "min-w-0 truncate px-1 text-footnote",
               value8.mixed && "text-muted",
             )}
@@ -370,7 +369,7 @@ function PropertyInspectorField(input?: Dynamic): Dynamic {
         value6 &&
         value23 &&
         value22 &&
-        (0, parseCssNumber)(value23) == null ? (
+        parseCssNumber(value23) == null ? (
           <PropertyCssTextRow {...state2} />
         ) : (
           <R_useFieldNumericArrowStep {...state2} />
@@ -394,12 +393,12 @@ function PropertyInspectorField(input?: Dynamic): Dynamic {
             : undefined,
         value27: Dynamic =
           value3 && value26 !== undefined
-            ? (0, evaluateColorContrast)(value3.ink, value26)
+            ? evaluateColorContrast(value3.ink, value26)
             : undefined,
         value28: Dynamic =
           value27 === undefined
             ? undefined
-            : (0, summarizeContrastResults)(value27).sentence,
+            : summarizeContrastResults(value27).sentence,
         value29: Dynamic = (
           <PropertyRow
             {...state}
@@ -451,7 +450,7 @@ function PropertyInspectorField(input?: Dynamic): Dynamic {
     case "gridTracks":
       value25 =
         value23 &&
-        (!value22 || (0, parseEqualGridColumns)(value23) == null) ? (
+        (!value22 || parseEqualGridColumns(value23) == null) ? (
           <PropertyCssTextRow {...state2} />
         ) : (
           <PropertyGridColumnsRow {...state2} />
@@ -460,7 +459,7 @@ function PropertyInspectorField(input?: Dynamic): Dynamic {
     case "gridSpan":
       value25 =
         value23 &&
-        (!value22 || (0, parseGridSpan)(value23) == null) ? (
+        (!value22 || parseGridSpan(value23) == null) ? (
           <PropertyCssTextRow {...state2} />
         ) : (
           <PropertyGridSpanRow {...state2} />
@@ -592,8 +591,8 @@ export {
 };
 export function installEditorPropertiesInspectorField(): () => void {
   return () => {
-    jsxPropertiesInspectorField = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    jsxPropertiesInspectorField = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
     PropertiesInspectorFieldPattern = /^\s*\{\{([\s\S]+?)\}\}\s*$/;

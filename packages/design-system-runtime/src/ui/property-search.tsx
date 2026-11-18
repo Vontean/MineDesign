@@ -185,12 +185,12 @@ export {
 };
 export function installUiPropertySearch(): () => void {
   return () => {
-    SelectReact = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    SelectReact = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
-    jsxCommentSelection = (0, toModuleNamespace)(
-      (0, loadJsxNamespace)(),
+    jsxCommentSelection = toModuleNamespace(
+      loadJsxNamespace(),
       1,
     );
     COMMENT_AREA_RESIZE_MIN_PX = 12;

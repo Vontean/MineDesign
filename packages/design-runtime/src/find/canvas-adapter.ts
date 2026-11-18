@@ -37,13 +37,13 @@ function normalizedElementBox(element?: Dynamic, box?: Dynamic): Dynamic {
 }
 function annotationTextLines(annotation?: Dynamic): Dynamic {
   if (annotation.kind === "title1")
-    return (0, NotesDomHandler_2)(annotation.text).split(`
+    return NotesDomHandler_2(annotation.text).split(`
 `);
   let callback: Dynamic = (input?: Dynamic): Dynamic =>
-    (0, NotesBlocksHandler)(input)
+    NotesBlocksHandler(input)
       .map((input2?: Dynamic): Dynamic => input2.text)
       .join("");
-  return (0, parseNoteBlocks)(annotation.text).flatMap(
+  return parseNoteBlocks(annotation.text).flatMap(
     (source?: Dynamic): Dynamic =>
       source.kind === "p"
         ? [callback(source.text)]
@@ -131,7 +131,7 @@ function createCanvasFindAdapter(
       options?: Dynamic,
       context?: Dynamic,
     ): Dynamic =>
-      (0, revealTextRange)(input, {
+      revealTextRange(input, {
         ...options,
         onScroll: (input2?: Dynamic): Dynamic => {
           let value2: Dynamic =
@@ -197,7 +197,7 @@ function createCanvasFindAdapter(
     ): Dynamic => {
       if (!input) return null;
       try {
-        return (0, findRenderedTextRanges)(input, context, {
+        return findRenderedTextRanges(input, context, {
           limit: options,
           skip: (input2?: Dynamic): Dynamic =>
             input2.matches(findExcludedEditorSelector),
@@ -219,7 +219,7 @@ function createCanvasFindAdapter(
     ): Dynamic =>
       (input ?? []).flatMap(
         (input2?: Dynamic): Dynamic =>
-          (0, findTextOffsets)(input2, options).map(
+          findTextOffsets(input2, options).map(
             (): Dynamic => null,
           ),
       ),
@@ -291,7 +291,7 @@ function createCanvasFindAdapter(
           value11: Dynamic = value3.artboards
             .filter(
               (input2?: Dynamic): Dynamic =>
-                (0, designPageId)(input2, value3.pages) === value9 &&
+                designPageId(input2, value3.pages) === value9 &&
                 !(value5 && input2.frameless),
             )
             .map(
@@ -306,20 +306,19 @@ function createCanvasFindAdapter(
             : (value3.annotations ?? [])
                 .filter(
                   (input2?: Dynamic): Dynamic =>
-                    !(0, isShapeAnnotation)(input2) &&
+                    !isShapeAnnotation(input2) &&
                     input2.text !== "" &&
-                    (0, designPageId)(input2, value3.pages) ===
+                    designPageId(input2, value3.pages) ===
                       value9,
                 )
                 .map(
                   (input2?: Dynamic): Dynamic => ({
-                    ...(0, annotationVisibleBounds)(input2),
+                    ...annotationVisibleBounds(input2),
                     note: input2,
                     board: undefined,
                   }),
                 );
-        for (let { board: value13, note: value14 } of (0,
-        sortArtboardsInReadingOrder)([
+        for (let { board: value13, note: value14 } of sortArtboardsInReadingOrder([
           ...value11,
           ...value12,
         ]) as Dynamic) {
@@ -365,7 +364,7 @@ function createCanvasFindAdapter(
                 : null) ??
                 callback8(
                   environment.storedText?.(value13.file),
-                  (0, collapseFindWhitespace)(text),
+                  collapseFindWhitespace(text),
                 ),
             );
           !(performance.now() - value7 < findViewportTransformTolerance) &&
@@ -466,7 +465,7 @@ function createCanvasFindAdapter(
             (): Dynamic => environment.scrollsItself(input.file),
           ),
           !callback15(environment.frame(input.file)) ||
-            (0, classifyTextRangeVisibility)(value5) !== "never");
+            classifyTextRangeVisibility(value5) !== "never");
     },
     callback17: Dynamic = async (
       input?: Dynamic,
@@ -515,7 +514,7 @@ function createCanvasFindAdapter(
         value3 === null ? null : callback14(input, callback7(value2.file));
       if (value3 === null || value4 === null || !callback15(value3))
         return true;
-      (0, classifyTextRangeVisibility)(value4) !== "never" &&
+      classifyTextRangeVisibility(value4) !== "never" &&
         callback3(
           value4,
           {
@@ -524,8 +523,8 @@ function createCanvasFindAdapter(
           (): Dynamic => environment.scrollsItself(value2.file),
         );
       let value5: Dynamic =
-        (0, classifyTextRangeVisibility)(value4) === "shown"
-          ? (0, rangeCanvasRect)(value4)
+        classifyTextRangeVisibility(value4) === "shown"
+          ? rangeCanvasRect(value4)
           : null;
       if (value5 === null) return false;
       let value6: Dynamic = normalizedElementBox(value3, value5);
@@ -553,7 +552,7 @@ function createCanvasFindAdapter(
           ) ?? null
         );
       let value3: Dynamic = callback18(source.id);
-      return value3 ? (0, annotationVisibleBounds)(value3) : null;
+      return value3 ? annotationVisibleBounds(value3) : null;
     },
     callback20: Dynamic = async (
       source?: Dynamic,
@@ -602,10 +601,10 @@ function createCanvasFindAdapter(
           {
             viewport: false,
             within: value3,
-            fade: (0, isShapeAnnotation)(value5)
+            fade: isShapeAnnotation(value5)
               ? 0
-              : (0, CanvasPanZoomRound)(
-                  (0, annotationTextStyle)(value5).size,
+              : CanvasPanZoomRound(
+                  annotationTextStyle(value5).size,
                 ),
             card: value6,
           },
@@ -614,14 +613,14 @@ function createCanvasFindAdapter(
       let value7: Dynamic =
         value4 !== null &&
         value3 !== null &&
-        (0, classifyTextRangeVisibility)(value4, {
+        classifyTextRangeVisibility(value4, {
           within: value3,
         }) === "never";
       if (value7 && source.kind === "note") return false;
       let value8: Dynamic =
         value4 === null || value7
           ? null
-          : (0, rangeCanvasRect)(value4);
+          : rangeCanvasRect(value4);
       environment.panTo(
         value8 === null ? value2 : environment.toCanvas(value8),
       );
@@ -662,12 +661,12 @@ function createCanvasFindAdapter(
         let entry: Dynamic = entries3.get(value3);
         try {
           entry
-            ? (0, applyFindHighlights)(
+            ? applyFindHighlights(
                 value3,
                 entry,
                 value2 !== null && entry.includes(value2) ? value2 : null,
               )
-            : (0, clearFindHighlights)(value3);
+            : clearFindHighlights(value3);
         } catch {
           values4.add(value3);
         }
@@ -678,7 +677,7 @@ function createCanvasFindAdapter(
       callback4();
       for (let value2 of values2 as Dynamic)
         try {
-          (0, clearFindHighlights)(value2);
+          clearFindHighlights(value2);
         } catch {}
       values2 = new Set();
       text = "";
@@ -763,12 +762,12 @@ function isCompatibleFindCameraGlide(
   return value7 <= value6 && value8 >= -value6 && value8 <= value5 + value6;
 }
 function designFileTextRuns(file?: Dynamic, source?: Dynamic): Dynamic {
-  if (source === undefined || (0, isLoadingArtboardHtml)(source))
+  if (source === undefined || isLoadingArtboardHtml(source))
     return null;
   let entry: Dynamic = cachedDesignTextRuns.get(file);
   if (entry?.src === source) return entry.runs;
   try {
-    let value: Dynamic = (0, parseDcHtmlDocument)(source),
+    let value: Dynamic = parseDcHtmlDocument(source),
       value2: Dynamic = (
         value
           ? new DcEditorModel(value.template)
@@ -779,7 +778,7 @@ function designFileTextRuns(file?: Dynamic, source?: Dynamic): Dynamic {
         .textRuns()
         .map(
           (input?: Dynamic): Dynamic =>
-            (0, collapseFindWhitespace)(input).trim(),
+            collapseFindWhitespace(input).trim(),
         );
     cachedDesignTextRuns.delete(file);
     cachedDesignTextRuns.set(file, {

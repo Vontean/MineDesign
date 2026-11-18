@@ -18,7 +18,7 @@ var DesignSystemStoreSubscribers_2: Dynamic;
 function setDesignSystems(input?: Dynamic): Dynamic {
   if (input === DesignSystemStoreAlias) return;
   DesignSystemStoreAlias = input;
-  let value: Dynamic = (0, parseDesignSystems)(input),
+  let value: Dynamic = parseDesignSystems(input),
     value2: Dynamic = JSON.stringify(value);
   if (value2 !== DesignSystemStoreAlias_2) {
     DesignSystemStoreAlias_2 = value2;
@@ -65,7 +65,7 @@ function designSystemColorOptions(input?: Dynamic): Dynamic {
           name: input3.name,
           value: input3.value,
           label: input3.name,
-          ...(0, colorTokenGroupLabels)(input2, input3),
+          ...colorTokenGroupLabels(input2, input3),
         }),
       ),
   );
@@ -78,8 +78,8 @@ function designSystemTypographyOptions(input?: Dynamic): Dynamic {
           id: "ds-" + String(options) + "-" + input3.name,
           system: options,
           style: input3,
-          subtitle: (0, typographyStyleSubtitle)(input3),
-          ...(0, typographyGroupLabels)(input2, input3),
+          subtitle: typographyStyleSubtitle(input3),
+          ...typographyGroupLabels(input2, input3),
         }),
       ),
   );
@@ -104,8 +104,8 @@ export {
 };
 export function installDesignSystemStore(): () => void {
   return () => {
-    reactDesignSystemStore = (0, toModuleNamespace)(
-      (0, load_react)(),
+    reactDesignSystemStore = toModuleNamespace(
+      load_react(),
       1,
     );
     DesignSystemStoreItems = [];

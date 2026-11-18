@@ -161,7 +161,7 @@ export function installEditorExternalLinks(): () => void {
     EXTERNAL_LINK_CLASS_NAME = "text-blue-text underline underline-offset-2";
     EXTERNAL_LINK_PATTERN = /^https?:\/\/[^\s)\[]*$/;
     STORED_EXTERNAL_LINK_PATTERN = /^https?:\/\/\S*$/;
-    MODIFIER_KEY_LABEL = (0, isApplePlatform)() ? "⌘" : "Ctrl";
+    MODIFIER_KEY_LABEL = isApplePlatform() ? "⌘" : "Ctrl";
     EXTERNAL_LINK_OPEN_HINT =
       " (" +
       MODIFIER_KEY_LABEL +

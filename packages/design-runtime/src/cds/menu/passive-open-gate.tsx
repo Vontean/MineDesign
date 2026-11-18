@@ -45,20 +45,20 @@ export {
 };
 export function installCdsMenuPassiveOpenGate(): () => void {
   return () => {
-    initializeMenuPassiveOpenGate = (0, initializeOnce)(() => {
+    initializeMenuPassiveOpenGate = initializeOnce(() => {
       "use client";
 
-      (0, initializeHooksStableCallback)();
-      (0, initializeSheetsScrollArea_4)();
-      (0, initializeMenuPopup_3)();
-      reactMenuPassiveOpenGate = (0, toModuleNamespace)(
-        (0, load_react)(),
+      initializeHooksStableCallback();
+      initializeSheetsScrollArea_4();
+      initializeMenuPopup_3();
+      reactMenuPassiveOpenGate = toModuleNamespace(
+        load_react(),
       );
-      jsxMenuPassiveOpenGate = (0, toModuleNamespace)(
-        (0, load_react_jsx_runtime)(),
+      jsxMenuPassiveOpenGate = toModuleNamespace(
+        load_react_jsx_runtime(),
       );
-      reactDomMenuPassiveOpenGate = (0, toModuleNamespace)(
-        (0, load_react_dom)(),
+      reactDomMenuPassiveOpenGate = toModuleNamespace(
+        load_react_dom(),
       );
       TriggerHoverValue = "trigger-hover";
       FocusOutValue = "focus-out";

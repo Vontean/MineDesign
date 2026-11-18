@@ -235,11 +235,11 @@ async function uploadVideo(
       height: value3.height,
       duration: value3.duration,
     },
-    value4: Dynamic = await (0, getAssetsCapability)();
+    value4: Dynamic = await getAssetsCapability();
   if (value4 === null || typeof value4.upload != "function")
     return callback("unavailable");
   try {
-    let value5: Dynamic = (0, normalizeUploadedAsset)(
+    let value5: Dynamic = normalizeUploadedAsset(
       await value4.upload.call(value4, input, {
         type: value2.type,
       }),
@@ -283,7 +283,7 @@ function videoUploadFailureMessage(input?: Dynamic): Dynamic {
   }
 }
 function uploadedVideoHtml(input?: Dynamic, options?: Dynamic): Dynamic {
-  if (!(0, isBlobAssetUrl)(input)) return "";
+  if (!isBlobAssetUrl(input)) return "";
   let value: Dynamic = Object.entries(MediaVideoUploadAutoplayLoopMutedConfig)
       .map(([input2, input3]: Dynamic): Dynamic => `${input2}="${input3}"`)
       .join(" "),

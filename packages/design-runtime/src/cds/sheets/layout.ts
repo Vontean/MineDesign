@@ -88,8 +88,8 @@ export {
 };
 export function installCdsSheetsLayout(): () => void {
   return () => {
-    initializeSheetsLayout = (0, initializeOnce)(() => {
-      (0, initializeSheetsGesturePhysics)();
+    initializeSheetsLayout = initializeOnce(() => {
+      initializeSheetsGesturePhysics();
       SheetsLayoutPositionTopRightConfig = {
         position: "fixed",
         get top() { return uiMessage("canvas.layout.auto"); },

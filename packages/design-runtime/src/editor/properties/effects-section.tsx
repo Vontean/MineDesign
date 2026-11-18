@@ -23,9 +23,9 @@ function propertyEffectAddItems(
 ): Dynamic {
   let items: Dynamic = [],
     value2: Dynamic = getShadowProperty(input, value);
-  if ((0, propertyAppliesToNode)(value2, input)) {
-    let value3: Dynamic = (0, styleRecordList)(
-        (0, ownStyleBagValue)(options, value2),
+  if (propertyAppliesToNode(value2, input)) {
+    let value3: Dynamic = styleRecordList(
+        ownStyleBagValue(options, value2),
       ),
       value4: Dynamic =
         value3.length >= StyleSchemaValuesLimit
@@ -38,7 +38,7 @@ function propertyEffectAddItems(
         (): Dynamic =>
           context(value2, [
             ...value3,
-            (0, defaultShadowValue)(value2, input2),
+            defaultShadowValue(value2, input2),
           ]),
       value5: Dynamic =
         extra ??
@@ -79,19 +79,19 @@ function propertyEffectAddItems(
     );
   }
   for (let value3 of ["filter", "backdropFilter"] as Dynamic) {
-    let value4: Dynamic = (0, asStyleRecord)(
-      (0, ownStyleBagValue)(options, value3),
+    let value4: Dynamic = asStyleRecord(
+      ownStyleBagValue(options, value3),
     );
-    !(0, propertyAppliesToNode)(value3, input) ||
+    !propertyAppliesToNode(value3, input) ||
       value4?.blur !== undefined ||
       items.push({
         label:
           PropertiesStyleBagFilterBackdropFilterConfig[value3] ??
-          (0, propertyEffectLabel)(value3),
+          propertyEffectLabel(value3),
         onSelect: (): Dynamic =>
           context(
             value3,
-            (0, setOptionalEffectField)(
+            setOptionalEffectField(
               value4,
               "blur",
               PropertiesStyleBagConstant,
@@ -108,7 +108,7 @@ function propertyEffectAddItems(
 }
 function getShadowProperty(input?: Dynamic, options?: Dynamic): Dynamic {
   return options === "text" &&
-    (0, propertyAppliesToNode)("textShadow", input)
+    propertyAppliesToNode("textShadow", input)
     ? "textShadow"
     : "boxShadow";
 }
@@ -131,7 +131,7 @@ function EffectsSection(input?: Dynamic): Dynamic {
         ? [input.openEditor, input.setOpenEditor]
         : value8,
     state: Dynamic = {
-      ...(0, createStyleBagEditor)(input),
+      ...createStyleBagEditor(input),
       openEditor: value9,
       setOpenEditor: value10,
     },
@@ -160,7 +160,7 @@ function EffectsSection(input?: Dynamic): Dynamic {
     value4 === undefined &&
     !PropertiesEffectsSectionBoxShadowFilterBackdropFilterValues.some(
       (input2?: Dynamic): Dynamic =>
-        (0, propertyAppliesToNode)(input2, value),
+        propertyAppliesToNode(input2, value),
     )
   )
     return null;
@@ -170,14 +170,14 @@ function EffectsSection(input?: Dynamic): Dynamic {
         : ["boxShadow"],
     callback: Dynamic = (input2?: Dynamic, options?: Dynamic): Dynamic =>
       value7 !== "text"
-        ? (0, shadowEffectLabel)(input2, options)
+        ? shadowEffectLabel(input2, options)
         : input2 === "textShadow"
           ? uiMessage("inspector.effectsSection.dropShadow")
           : input2 === "boxShadow"
-            ? (0, asStyleRecord)(options)?.inset === true
+            ? asStyleRecord(options)?.inset === true
               ? uiMessage("inspector.effectsSection.innerShadow")
               : uiMessage("inspector.effectsSection.boxShadow")
-            : (0, shadowEffectLabel)(input2, options);
+            : shadowEffectLabel(input2, options);
   return (
     <PropertySection
       title={uiMessage("inspector.effectsSection.effects")}
@@ -192,8 +192,8 @@ function EffectsSection(input?: Dynamic): Dynamic {
       }
     >
       {value11.flatMap((input2?: Dynamic): Dynamic => {
-        let value12: Dynamic = (0, styleRecordList)(
-          (0, ownStyleBagValue)(value2, input2),
+        let value12: Dynamic = styleRecordList(
+          ownStyleBagValue(value2, input2),
         );
         return value12.map(
           (input3?: Dynamic, options?: Dynamic): Dynamic =>
@@ -213,17 +213,17 @@ function EffectsSection(input?: Dynamic): Dynamic {
         );
       })}
       {value6 && (["filter", "backdropFilter"].map((input2?: Dynamic): Dynamic => {
-          let value12: Dynamic = (0, asStyleRecord)(
-            (0, ownStyleBagValue)(value2, input2),
+          let value12: Dynamic = asStyleRecord(
+            ownStyleBagValue(value2, input2),
           );
           return value12?.blur !== undefined &&
-            (0, propertyAppliesToNode)(input2, value) ? (
+            propertyAppliesToNode(input2, value) ? (
             <BlurEffectRow
               key={input2}
               label={
                 PropertiesStyleBagFilterBackdropFilterConfig[
                   input2
-                ] ?? ((0, propertyEffectLabel)(input2))
+                ] ?? (propertyEffectLabel(input2))
               }
               propKey={input2}
               rec={value12}

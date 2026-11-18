@@ -73,13 +73,13 @@ function isUnconstrainedAbsoluteElement(
   options?: Dynamic,
 ): Dynamic {
   let value: Dynamic = element.getAttribute("style") ?? "",
-    value2: Dynamic = (0, getStyleProperty)(value, "position").trim();
+    value2: Dynamic = getStyleProperty(value, "position").trim();
   if (value2 !== "absolute" && value2 !== "fixed") return false;
   let { inset: value3, margin: value4 }: Dynamic = parseAuthoredInsets(value),
     callback: Dynamic = (input?: Dynamic): Dynamic =>
       /^0(px)?$/.test(value3[input]) &&
       /^100(%|vw|vh)$/.test(
-        (0, getStyleProperty)(
+        getStyleProperty(
           value,
           input === "left" ? "width" : "height",
         ).trim(),

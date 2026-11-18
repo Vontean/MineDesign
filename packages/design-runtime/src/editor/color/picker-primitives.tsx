@@ -352,8 +352,8 @@ export {
 };
 export function installEditorColorPickerPrimitives(): () => void {
   return () => {
-    jsxColorPickerPrimitives = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    jsxColorPickerPrimitives = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
     alphaCheckerboardBackground =

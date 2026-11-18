@@ -53,7 +53,7 @@ function animateFlipIndicator(
     !(
       flipAt === undefined ||
       !supportsElementAnimations(input) ||
-      (0, prefersReducedMotion)()
+      prefersReducedMotion()
     ) &&
     !value7
   )
@@ -176,17 +176,17 @@ export {
 };
 export function installCdsSwitchContext(): () => void {
   return () => {
-    initializeSwitchContext = (0, initializeOnce)(() => {
-      (0, initializePlatformReducedMotion)();
+    initializeSwitchContext = initializeOnce(() => {
+      initializePlatformReducedMotion();
       HeldValue = "held";
       SwitchContextConstant = 1e3;
       SwitchContextElementCache = new WeakMap();
     });
-    initializeSwitchContext_2 = (0, initializeOnce)(() => {
+    initializeSwitchContext_2 = initializeOnce(() => {
       "use client";
 
-      reactSwitchContext = (0, toModuleNamespace)(
-        (0, load_react)(),
+      reactSwitchContext = toModuleNamespace(
+        load_react(),
       );
       FlipIndicatorContext = (0,
       reactSwitchContext.createContext)<FlipIndicatorState | null>(null);

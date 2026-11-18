@@ -39,7 +39,7 @@ function useFieldLabelId() {
   }: {
     labelId?: string;
     controlId?: string | null;
-  } = (0, baseUseLabelableContext)();
+  } = baseUseLabelableContext();
   return labelId ?? (controlId ? `${controlId}-label` : undefined);
 }
 function useHasFieldContext() {
@@ -69,8 +69,8 @@ export {
 };
 export function installUiTextInput(): () => void {
   return () => {
-    (0, initializeClickToFocus)();
-    (0, initializeMergedRefs)();
+    initializeClickToFocus();
+    initializeMergedRefs();
     fieldRingClasses =
       "bg-fill-field shadow-field-ring data-[invalid]:shadow-field-invalid";
     fieldHoverClasses =
@@ -80,16 +80,16 @@ export function installUiTextInput(): () => void {
       "cds-input cds-reset min-w-0 flex-1 h-full bg-transparent border-0 p-0 outline-none focus-visible:outline-hidden text-body font-normal text-primary focus-visible:shadow-none placeholder:text-muted disabled:opacity-disabled";
     textAreaBaseClasses = `rounded ${fieldRingClasses} px-md py-sm transition duration-fast`;
     textAreaContainerClasses = `${textAreaBaseClasses} [&:hover:not(:focus-within):not([data-invalid]):not([data-disabled])]:shadow-field-hover focus-within:shadow-focus data-[invalid]:focus-within:shadow-focus-danger font-sans text-body text-primary`;
-    reactiK = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    reactiK = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
     textFieldStateContext = reactiK.createContext<C.FieldState | null>(null);
-    reactoK = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    reactoK = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
-    jsxeJ = (0, toModuleNamespace)((0, loadJsxNamespace)(), 1);
+    jsxeJ = toModuleNamespace(loadJsxNamespace(), 1);
     textInputContainerBaseClasses = inputContainerClasses;
     textInputElementBaseClasses = inputElementClasses;
     textInputNestedControlClasses =
@@ -127,7 +127,7 @@ export function installUiTextInput(): () => void {
             "aria-describedby": value2,
             disabled: value4,
           },
-          value6: string = (0, useTranslation)("clear", "Clear"),
+          value6: string = useTranslation("clear", "Clear"),
           value7 = clearLabel ?? value6,
           value8 = useFieldInvalid(),
           value9 = value8 || value3,
@@ -140,11 +140,11 @@ export function installUiTextInput(): () => void {
             clickToFocusProps: value14,
           }: {
             clickToFocusProps: React.HTMLAttributes<HTMLDivElement>;
-          } = (0, useClickToFocus)(() => ref.current?.focus(), {
+          } = useClickToFocus(() => ref.current?.focus(), {
             disabled: value11,
             readOnly: value5.readOnly,
           }),
-          value15: React.Ref<HTMLInputElement> = (0, useMergedRefs)(
+          value15: React.Ref<HTMLInputElement> = useMergedRefs(
             ref,
             options,
           ),
@@ -251,10 +251,10 @@ export function installUiTextInput(): () => void {
           return (
             <div
               data-cds={"TextInput"}
-              {...(0, getControlSizeAttributes)(size)}
+              {...getControlSizeAttributes(size)}
               data-invalid={value8 || undefined}
               onMouseDown={value14.onMouseDown}
-              className={(0, cn)(
+              className={cn(
                 textInputContainerBaseClasses,
                 value23,
                 textInputTrailingControlPaddingClasses,
@@ -280,7 +280,7 @@ export function installUiTextInput(): () => void {
                       {...value5}
                       onChange={callback}
                       onKeyDown={callback4}
-                      className={(0, cn)(
+                      className={cn(
                         textInputElementBaseClasses,
                         "disabled:opacity-100",
                       )}
@@ -301,13 +301,13 @@ export function installUiTextInput(): () => void {
             render={
               <input
                 data-cds={"TextInput"}
-                {...(0, getControlSizeAttributes)(size)}
+                {...getControlSizeAttributes(size)}
                 data-invalid={value8 || undefined}
                 aria-invalid={value9}
                 {...value5}
                 onChange={callback}
                 onKeyDown={callback4}
-                className={(0, cn)(
+                className={cn(
                   "cds-input cds-reset",
                   textInputContainerBaseClasses,
                   "pr-md",
@@ -322,33 +322,33 @@ export function installUiTextInput(): () => void {
       },
     );
     TextInput.displayName = "TextInput";
-    (0, initializeMediaQueryStores)();
-    (0, initializeIsomorphicLayoutEffect)();
-    (0, initializeClassNames)();
-    (0, initializeCdsLink)();
-    (0, initializeCdsRoot)();
-    (0, initializeElementAccess)();
-    (0, initializeLayers)();
-    (0, initializeEventCallbacks)();
-    (0, initializeClickToFocus)();
-    (0, initializeElementNamespaces)();
-    (0, initializeCloseOnActivityHide)();
-    (0, initializeMergedRefs)();
-    (0, initializePortalRoot)();
-    (0, initializeIcons)();
-    (0, initializeCollisionPadding)();
-    (0, initializeShortcuts)();
-    (0, initializeDisabledReason)();
-    (0, initializeTooltip)();
-    (0, initializeSurfaces)();
-    (0, initializeOverlayActions)();
-    (0, initializePresentationMode)();
-    (0, initializeAdaptiveSheets)();
-    (0, initializeCdsRoot)();
-    (0, initializeLayers)();
-    (0, initializeAndroidCloseWatcher)();
-    (0, initializePortalRoot)();
-    (0, initializeAdaptiveSheets)();
-    (0, initializeSheetClassNames)();
+    initializeMediaQueryStores();
+    initializeIsomorphicLayoutEffect();
+    initializeClassNames();
+    initializeCdsLink();
+    initializeCdsRoot();
+    initializeElementAccess();
+    initializeLayers();
+    initializeEventCallbacks();
+    initializeClickToFocus();
+    initializeElementNamespaces();
+    initializeCloseOnActivityHide();
+    initializeMergedRefs();
+    initializePortalRoot();
+    initializeIcons();
+    initializeCollisionPadding();
+    initializeShortcuts();
+    initializeDisabledReason();
+    initializeTooltip();
+    initializeSurfaces();
+    initializeOverlayActions();
+    initializePresentationMode();
+    initializeAdaptiveSheets();
+    initializeCdsRoot();
+    initializeLayers();
+    initializeAndroidCloseWatcher();
+    initializePortalRoot();
+    initializeAdaptiveSheets();
+    initializeSheetClassNames();
   };
 }

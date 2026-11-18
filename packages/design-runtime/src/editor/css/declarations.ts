@@ -10,7 +10,7 @@ function normalizeCssProperty(input?: Dynamic): Dynamic {
   return input.startsWith("--")
     ? input
     : CssDeclarationsAZaZPattern.test(input)
-      ? (0, camelToKebabCss)(input).toLowerCase()
+      ? camelToKebabCss(input).toLowerCase()
       : input.toLowerCase();
 }
 function isUnsafeCssProperty(input?: Dynamic): Dynamic {

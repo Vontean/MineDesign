@@ -24,7 +24,7 @@ function isSafePictureShadow(input?: Dynamic): Dynamic {
     callback(value[2], "y") &&
     callback(value[3], "blur") &&
     callback(value[4], "spread") &&
-    (0, validateStyleColor)(value[5]) !== undefined
+    validateStyleColor(value[5]) !== undefined
   );
 }
 function normalizeClipboardPictureCss(
@@ -42,7 +42,7 @@ function normalizeClipboardPictureCss(
     spec[value3] !== undefined && (state[value3] = spec[value3]);
   for (let value3 of ["background", "background-color"] as Dynamic)
     spec[value3] !== undefined &&
-      (0, validateStyleColor)(spec[value3]) !== undefined &&
+      validateStyleColor(spec[value3]) !== undefined &&
       (state[value3] = spec[value3]);
   let value: Dynamic = ClipboardPicturesJoin(spec["box-shadow"] ?? "");
   value !== "" && (state["box-shadow"] = value);
@@ -66,9 +66,9 @@ function normalizeClipboardPictureCss(
 function parseAnnotationClipboard(input?: Dynamic): Dynamic {
   if (typeof input != "object" || input === null) return null;
   let value: Dynamic = input,
-    value2: Dynamic = (0, ClipboardStateHandler)(value.leftOut),
+    value2: Dynamic = ClipboardStateHandler(value.leftOut),
     value3: Dynamic = Math.min(
-      (0, ClipboardStateHandler)(value.videos),
+      ClipboardStateHandler(value.videos),
       value2,
     ),
     value4: Dynamic = Array.isArray(value.annotations)
@@ -93,7 +93,7 @@ function parseAnnotationClipboard(input?: Dynamic): Dynamic {
       )
         continue;
       let value12: Dynamic = value9,
-        value13: Dynamic = (0, ClipboardAnnotationsIncludes)(
+        value13: Dynamic = ClipboardAnnotationsIncludes(
           Object.hasOwn(value12, "kind") ? value12.kind : undefined,
         );
       if (
@@ -101,14 +101,14 @@ function parseAnnotationClipboard(input?: Dynamic): Dynamic {
         (index3++,
         Object.hasOwn(value12, "video") ||
           typeof value12.src != "string" ||
-          (0, ClipboardAnnotationsTest_2)(value12.src) !==
+          ClipboardAnnotationsTest_2(value12.src) !==
             value12.src)
       )
         continue;
       let value14: Dynamic =
         value13 === null || values.has(value12.id)
           ? null
-          : (0, normalizeClipboardAnnotation)(
+          : normalizeClipboardAnnotation(
               value12,
               value13 === "image",
             );
@@ -124,7 +124,7 @@ function parseAnnotationClipboard(input?: Dynamic): Dynamic {
         return null;
       if (value15.length > ClipboardAnnotationsResolvedValue)
         continue;
-      let value16: Dynamic = (0, parseCanvasMetadata)(value15, {})
+      let value16: Dynamic = parseCanvasMetadata(value15, {})
         .annotations?.[0];
       if (
         value16 === undefined ||
@@ -133,18 +133,18 @@ function parseAnnotationClipboard(input?: Dynamic): Dynamic {
       )
         continue;
       if (
-        (index2 += (0, ClipboardAnnotationsGetLength)(value16)) >
+        (index2 += ClipboardAnnotationsGetLength(value16)) >
         ClipboardAnnotationsResolvedValue_2
       )
         return null;
       values2.add(value16.id);
-      let value17: Dynamic = (0, annotationVisibleBounds)(value16),
+      let value17: Dynamic = annotationVisibleBounds(value16),
         state: Dynamic = {
-          dx: (0, ClipboardArtboardsMax)(
+          dx: ClipboardArtboardsMax(
             value10,
             -ClipboardArtboardsConstant_4,
           ),
-          dy: (0, ClipboardArtboardsMax)(
+          dy: ClipboardArtboardsMax(
             value11,
             -ClipboardArtboardsConstant_4,
           ),
@@ -188,7 +188,7 @@ function parseAnnotationClipboard(input?: Dynamic): Dynamic {
 function clipboardPictureEntries(items?: Dynamic): Dynamic {
   let value: Dynamic = items.filter(
     (input?: Dynamic): Dynamic =>
-      (0, ClipboardAnnotationsIncludes_2)(input.spec),
+      ClipboardAnnotationsIncludes_2(input.spec),
   );
   return {
     entries: value,

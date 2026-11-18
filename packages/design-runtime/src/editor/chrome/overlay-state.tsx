@@ -82,8 +82,8 @@ export {
 };
 export function installEditorChromeOverlayState(): () => void {
   return () => {
-    reactChromeOverlayState = (0, toModuleNamespace)(
-      (0, load_react)(),
+    reactChromeOverlayState = toModuleNamespace(
+      load_react(),
       1,
     );
     blockingOverlaySelector = [

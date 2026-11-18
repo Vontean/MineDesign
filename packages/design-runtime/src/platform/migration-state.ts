@@ -29,7 +29,7 @@ var PlatformMigrationStateHandler_2: Dynamic;
 var PlatformMigrationStateSubscribers_2: Dynamic;
 var migrationRestartHandlerInstalled: Dynamic;
 function updateMovedToFilesState(input?: Dynamic): Dynamic {
-  let value: Dynamic = (0, getMovedToMarker)(input) !== null,
+  let value: Dynamic = getMovedToMarker(input) !== null,
     value2: Dynamic =
       migrationStateLoaded && value && !PlatformMigrationStateAlias;
   PlatformMigrationStateAlias = value;
@@ -63,18 +63,18 @@ function installMigrationRestartHandler(input: Dynamic = {}): Dynamic {
     value2: Dynamic = input.show ?? showEditorToast,
     value3: Dynamic =
       input.say ??
-      ((input2?: Dynamic): Dynamic => (0, announce)(input2)),
+      ((input2?: Dynamic): Dynamic => announce(input2)),
     callback: Dynamic = (): Dynamic => {
       (
         input.show ??
         ((input2?: Dynamic): Dynamic => {
-          (0, showEditorActionToast)(input2, null);
+          showEditorActionToast(input2, null);
         })
       )(ThisCanvasNowSavesInAMessage);
       try {
         value3(ThisCanvasNowSavesInAMessage);
       } catch {}
-      (0, clearMigrationInputBlocker)();
+      clearMigrationInputBlocker();
       try {
         input.onStranded?.();
       } catch {}
@@ -111,7 +111,7 @@ function installMigrationRestartHandler(input: Dynamic = {}): Dynamic {
   if (input.quiet === true) return callback2();
   let value5: Dynamic =
       input.say ??
-      ((input2?: Dynamic): Dynamic => (0, announce)(input2)),
+      ((input2?: Dynamic): Dynamic => announce(input2)),
     value6: Dynamic = value4,
     value7: Dynamic = input.store ?? PlatformMigrationStateHandler_2(),
     flag: Dynamic = false,
@@ -138,7 +138,7 @@ function installMigrationRestartHandler(input: Dynamic = {}): Dynamic {
       if (!flag) return callback2();
       flag = false;
       value2(ThatChangeIsSavedThisCanvasMessage);
-      (0, scheduleTypingAwareAnnouncement)({
+      scheduleTypingAwareAnnouncement({
         say: value5,
         message: ThatChangeIsSavedThisCanvasMessage,
         ...(input.isTyping !== undefined
@@ -160,7 +160,7 @@ function installMigrationRestartHandler(input: Dynamic = {}): Dynamic {
       });
     };
   value2(ThisCanvasNowSavesInAMessage_2);
-  (0, scheduleTypingAwareAnnouncement)({
+  scheduleTypingAwareAnnouncement({
     say: value5,
     message: ThisCanvasNowSavesInAMessage_2,
     ...(input.isTyping !== undefined
@@ -182,12 +182,12 @@ function installMigrationRestartHandler(input: Dynamic = {}): Dynamic {
   });
 }
 function announceMigrationReopen(input?: Dynamic): Dynamic {
-  return (0, announceReopenedArtifact)({
+  return announceReopenedArtifact({
     store: input.store ?? PlatformMigrationStateHandler_2(),
     now: input.now ?? Date.now(),
     say:
       input.say ??
-      ((input2?: Dynamic): Dynamic => (0, announce)(input2)),
+      ((input2?: Dynamic): Dynamic => announce(input2)),
     message: (): Dynamic =>
       input.canWrite
         ? ThisCanvasIsOpenAgainYouMessage
@@ -228,7 +228,7 @@ export function installPlatformMigrationState(): () => void {
     migrationStateLoaded = false;
     PlatformMigrationStateSubscribers = new Set();
     MovedToFilesValue = "moved_to_files";
-    PlatformMigrationStateHandler = (): Dynamic => (0, canHotRestart)();
+    PlatformMigrationStateHandler = (): Dynamic => canHotRestart();
     ThisCanvasNowSavesInAMessage =
       "This canvas now saves in a newer way. Reload the page to keep editing it.";
     ThisCanvasNowSavesInAMessage_2 =

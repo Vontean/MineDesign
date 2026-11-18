@@ -36,7 +36,7 @@ function inferComponentProps(
   let value: Dynamic = options.filter(
     (input2?: Dynamic): Dynamic => typeof input2 == "string" && input2 !== "",
   );
-  if (!(0, isValidTypeDeclarationName)(input) || value.length === 0)
+  if (!isValidTypeDeclarationName(input) || value.length === 0)
     return [];
   let values: Dynamic = new Set(context?.keep),
     entries: Dynamic = new Map(),
@@ -93,7 +93,7 @@ function inferComponentProps(
           value7.numeric === true && (state.numeric = true);
           value7.withBool === true && (state.withBool = true);
           value7.typeName !== undefined && (state.typeName = value7.typeName);
-          let value8: Dynamic = (0, inferJSDocDefault)(
+          let value8: Dynamic = inferJSDocDefault(
             value6.doc,
             value7,
           );
@@ -102,7 +102,7 @@ function inferComponentProps(
           entries.set(value6.name, state);
         }
       value2.charge(value3.head.length);
-      for (let value5 of (0, typeExpressionReferences)(
+      for (let value5 of typeExpressionReferences(
         value3.head,
       ) as Dynamic)
         callback(value5, options2 + 1);

@@ -83,7 +83,7 @@ function oklchToGamutMappedRgba(
   }
   let [value3, value4, value5]: Dynamic = oklchToRgb(input, value2, context),
     callback: Dynamic = (input2?: Dynamic): Dynamic =>
-      Math.round((0, clampColorChannel)(input2) * 255) / 255;
+      Math.round(clampColorChannel(input2) * 255) / 255;
   return {
     r: callback(value3),
     g: callback(value4),
@@ -93,10 +93,10 @@ function oklchToGamutMappedRgba(
 }
 function findReadableShade(input?: Dynamic, options?: Dynamic): Dynamic {
   let value: Dynamic =
-    typeof input == "string" ? (0, parseRgbaColor)(input) : input;
+    typeof input == "string" ? parseRgbaColor(input) : input;
   if (value === undefined) return;
   let callback: Dynamic = (input2?: Dynamic): Dynamic => {
-    let value11: Dynamic = (0, evaluateColorContrast)(
+    let value11: Dynamic = evaluateColorContrast(
       input2,
       options,
     );
@@ -104,7 +104,7 @@ function findReadableShade(input?: Dynamic, options?: Dynamic): Dynamic {
       ? undefined
       : {
           passes: value11.every((input3?: Dynamic): Dynamic => input3.passes),
-          worst: (0, worstContrastResult)(value11),
+          worst: worstContrastResult(value11),
         };
   };
   if (callback(value)?.passes !== false) return;
@@ -176,7 +176,7 @@ function findReadableShade(input?: Dynamic, options?: Dynamic): Dynamic {
     ? undefined
     : {
         rgba: value10.rgba,
-        css: (0, rgbaToHex)(value10.rgba),
+        css: rgbaToHex(value10.rgba),
         ground: value10.worst.ground,
         ratio: value10.worst.ratio,
       };

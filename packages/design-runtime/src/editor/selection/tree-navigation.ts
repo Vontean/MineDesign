@@ -88,7 +88,7 @@ function promotedSvgSelection(input?: Dynamic, options?: Dynamic): Dynamic {
     value2: Dynamic = SelectionTreeNavigationHandler(
       value.map(
         (input2?: Dynamic): Dynamic =>
-          (0, promoteSvgShapeToRoot)(input, input2),
+          promoteSvgShapeToRoot(input, input2),
       ),
     ),
     value3: Dynamic =

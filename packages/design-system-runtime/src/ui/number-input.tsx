@@ -64,7 +64,7 @@ function measureVisibleSiblingWidth(
 ) {
   let index = 0;
   for (let value of Array.from<Element>(input.children)) {
-    if (value === options || !(0, isHtmlElement)(value)) {
+    if (value === options || !isHtmlElement(value)) {
       continue;
     }
     let value2 = getComputedStyle(value);
@@ -87,13 +87,13 @@ function measureVisibleSiblingWidth(
       index += value.getBoundingClientRect().width + context;
       continue;
     }
-    let value3: number = (0, parsePixelCssValue)(value2.flexBasis),
+    let value3: number = parsePixelCssValue(value2.flexBasis),
       attribute = value.getAttribute("style"),
       cssText = (value as HTMLElement).style.cssText;
     (value as HTMLElement).style.flex = "0 0 auto";
     (value as HTMLElement).style.width = "min-content";
     let width = value.getBoundingClientRect().width;
-    (0, applyTabFlexCorrection)(value, attribute, cssText);
+    applyTabFlexCorrection(value, attribute, cssText);
     index += Math.max(width, value3) + context;
   }
   return index;
@@ -113,12 +113,12 @@ export {
 };
 export function installUiNumberInput(): () => void {
   return () => {
-    reactForUiTable3 = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    reactForUiTable3 = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
-    jsxNumberInput = (0, toModuleNamespace)(
-      (0, loadJsxNamespace)(),
+    jsxNumberInput = toModuleNamespace(
+      loadJsxNamespace(),
       1,
     );
     numberFieldHydrationNoop = () => {
@@ -157,8 +157,7 @@ export function installUiNumberInput(): () => void {
         options: React.ForwardedRef<HTMLInputElement>,
       ) => {
         let { id: value2, ...value3 } = props,
-          value4: Intl.LocalesArgument | undefined = (0,
-          useCdsLocale)(),
+          value4: Intl.LocalesArgument | undefined = useCdsLocale(),
           value5 = locale ?? value4,
           value6 = useClientHydrated(),
           value7 = value5 ?? (value6 ? undefined : "en-US"),
@@ -167,22 +166,22 @@ export function installUiNumberInput(): () => void {
               currency !== undefined &&
               slotStart === undefined &&
               slotEnd === undefined
-                ? (0, currencyDisplayParts)(currency, value7)
+                ? currencyDisplayParts(currency, value7)
                 : null,
             [currency, value7, slotStart, slotEnd],
           ),
           value8 = slotStart ?? (memo?.side === "start" ? memo.symbol : null),
           value9 = slotEnd ?? (memo?.side === "end" ? memo.symbol : null),
           value10 = memo !== null || undefined,
-          value11: boolean = (0, useFieldInvalid)(),
-          value12: boolean = (0, useFieldDisabled)(),
+          value11: boolean = useFieldInvalid(),
+          value12: boolean = useFieldDisabled(),
           value13 = fullWidth ? "w-full min-w-0" : "",
           ref = reactForUiTable3.useRef<HTMLInputElement>(null),
           {
             clickToFocusProps: value14,
           }: {
             clickToFocusProps: React.HTMLAttributes<HTMLDivElement>;
-          } = (0, useClickToFocus)(() => ref.current?.focus(), {
+          } = useClickToFocus(() => ref.current?.focus(), {
             disabled: disabled || value12,
             readOnly: readOnly,
           }),
@@ -194,12 +193,11 @@ export function installUiNumberInput(): () => void {
             value3.onBlur?.(input);
             value15();
           },
-          value16: React.RefCallback<HTMLInputElement> = (0,
-          useMergedRefs)(ref, options);
+          value16: React.RefCallback<HTMLInputElement> = useMergedRefs(ref, options);
         return (
           <baseNumberField.Root
             data-cds={"NumberInput"}
-            {...(0, getControlSizeAttributes)(size)}
+            {...getControlSizeAttributes(size)}
             data-invalid={value11 || undefined}
             id={value2}
             value={value}
@@ -221,7 +219,7 @@ export function installUiNumberInput(): () => void {
             name={name}
             form={form}
             onMouseDown={value14.onMouseDown}
-            className={(0, cn)(
+            className={cn(
               inputContainerClasses,
               "pr-md",
               "inline-flex",
@@ -245,7 +243,7 @@ export function installUiNumberInput(): () => void {
                 aria-invalid={value3["aria-invalid"] ?? (value11 || undefined)}
                 {...value3}
                 onBlur={callback}
-                className={(0, cn)(
+                className={cn(
                   inputElementClasses,
                   "disabled:opacity-100",
                 )}
@@ -262,17 +260,17 @@ export function installUiNumberInput(): () => void {
       },
     );
     NumberInput.displayName = "NumberInput";
-    (0, initializeSafeObservers)();
-    (0, initializeIsomorphicLayoutEffect)();
-    (0, initializeClassNames)();
-    (0, initializeCdsRoot)();
-    (0, initializeIconSupport)();
-    (0, initializeElementNamespaces)();
-    (0, initializeMergedRefs)();
-    (0, initializeDisabledReason)();
-    (0, initializeTooltip)();
-    (0, initializeInertProps)();
-    (0, initializeElementNamespaces)();
+    initializeSafeObservers();
+    initializeIsomorphicLayoutEffect();
+    initializeClassNames();
+    initializeCdsRoot();
+    initializeIconSupport();
+    initializeElementNamespaces();
+    initializeMergedRefs();
+    initializeDisabledReason();
+    initializeTooltip();
+    initializeInertProps();
+    initializeElementNamespaces();
     findBarListenerWindows = new WeakSet();
   };
 }

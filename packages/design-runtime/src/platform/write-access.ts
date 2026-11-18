@@ -14,22 +14,22 @@ var CANVAS_READ_ERROR_REASON: Dynamic;
 var unavailableEmbeddedCache: Dynamic;
 var EMPTY_EMBEDDED_CONTENT: Dynamic;
 async function resolveDesignWriteAccess(): Promise<Dynamic> {
-  if (!(0, canRequestPublishCapability)())
+  if (!canRequestPublishCapability())
     return {
       canWrite: false,
       reason: EDITING_UNAVAILABLE_REASON,
     };
-  let value: Dynamic = (0, readReadOnlyStash)();
+  let value: Dynamic = readReadOnlyStash();
   if (value !== null)
     return {
       canWrite: false,
       reason: value,
     };
   let [value2, value3, value4, value5]: Dynamic = await Promise.all([
-    (0, getCurrentUserPermission)("data.write"),
-    (0, getCurrentUserPermission)("files.write"),
-    (0, getCurrentUserCanEdit)(),
-    (0, getAssetsCapability)(),
+    getCurrentUserPermission("data.write"),
+    getCurrentUserPermission("files.write"),
+    getCurrentUserCanEdit(),
+    getAssetsCapability(),
   ]);
   return value2 !== null || value3 !== null
     ? (value2 === true || value3 === true) && value4 !== false

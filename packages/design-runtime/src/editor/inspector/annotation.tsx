@@ -55,7 +55,7 @@ function AnnotationInspector({
   readOnly = false,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let { showToast: value }: Dynamic = (0, useToast)(),
+  let { showToast: value }: Dynamic = useToast(),
     value2: Dynamic = settings.kind === "image",
     value3: Dynamic = value2 && settings.video !== undefined,
     value4: Dynamic = settings.kind === "line" || settings.kind === "arrow",
@@ -81,7 +81,7 @@ function AnnotationInspector({
       settings.textStyle,
     ],
   );
-  let value12: Dynamic = (0, useInspectorContext)(),
+  let value12: Dynamic = useInspectorContext(),
     value13: Dynamic = (0, reactMediaPlaybackControls.useMemo)(
       (): Dynamic => ({
         ...value12,
@@ -147,7 +147,7 @@ function AnnotationInspector({
                 input + ": " + String(input2),
             ),
         ];
-      return (0, inspectSingleElement)({
+      return inspectSingleElement({
         tag: value3
           ? "video"
           : (PropertiesAppearanceSectionImageRectOvalConfig[
@@ -275,8 +275,7 @@ function AnnotationInspector({
                         input2.prop === "max-width"
                       ? {
                           ...input2,
-                          fallback: (0,
-                          PropertiesAppearanceSectionHandler)(
+                          fallback: PropertiesAppearanceSectionHandler(
                             input2.prop === "max-width"
                               ? settings.defaultMaxW
                               : settings.defaultMaxH,
@@ -395,7 +394,7 @@ function AnnotationInspector({
           let value22: Dynamic =
             value21.value == null
               ? null
-              : (0, parseCssNumber)(value21.value);
+              : parseCssNumber(value21.value);
           if (!value22 || (value22.unit !== "px" && value22.unit !== ""))
             continue;
           state[
@@ -416,7 +415,7 @@ function AnnotationInspector({
           let value22: Dynamic =
             value21.value == null
               ? null
-              : (0, parseCssNumber)(value21.value);
+              : parseCssNumber(value21.value);
           if (
             value21.value != null &&
             (!value22 || (value22.unit !== "px" && value22.unit !== ""))
@@ -438,7 +437,7 @@ function AnnotationInspector({
             );
         else if (value21.prop === "@src")
           value21.value != null &&
-          (0, PlatformFileContentTest_2)(value21.value) !== null
+          PlatformFileContentTest_2(value21.value) !== null
             ? settings.onReplaceImage?.(value21.value)
             : value21.value != null &&
               value(
@@ -449,7 +448,7 @@ function AnnotationInspector({
           let value22: Dynamic =
             value21.value == null
               ? null
-              : (0, parseCssNumber)(value21.value);
+              : parseCssNumber(value21.value);
           value22 &&
             (value22.unit === "px" || value22.unit === "") &&
             (state2.size = value22.value);
@@ -497,7 +496,7 @@ function AnnotationInspector({
       }),
       [value13, settings],
     ),
-    value17: Dynamic = (0, useVisibleInspectorProperties)({
+    value17: Dynamic = useVisibleInspectorProperties({
       selKey: value7,
       forceShown: value8,
       setForceShown: value9,
@@ -578,11 +577,11 @@ function AnnotationInspector({
                     key={value7}
                     find={(): Dynamic =>
                       (document as Dynamic).querySelector(
-                        (0, SessionArtboardStateEscape)(settings.id),
+                        SessionArtboardStateEscape(settings.id),
                       )
                     }
                     whyAbsent={(): Dynamic =>
-                      (0, MediaPlaybackControlsQuerySelector)(
+                      MediaPlaybackControlsQuerySelector(
                         settings.id,
                       )
                     }
@@ -621,18 +620,18 @@ export {
 };
 export function installEditorInspectorAnnotation(): () => void {
   return () => {
-    reactInspectorAnnotation = (0, toModuleNamespace)(
-      (0, load_react)(),
+    reactInspectorAnnotation = toModuleNamespace(
+      load_react(),
       1,
     );
-    reactInspectorAnnotation_2 = (0, toModuleNamespace)(
-      (0, load_react)(),
+    reactInspectorAnnotation_2 = toModuleNamespace(
+      load_react(),
       1,
     );
-    (0, initializeCdsIndex)();
-    (0, initializePlatformCdsIsland)();
-    jsxInspectorAnnotation = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    initializeCdsIndex();
+    initializePlatformCdsIsland();
+    jsxInspectorAnnotation = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
     InspectorAnnotationLargerSmallerPattern =

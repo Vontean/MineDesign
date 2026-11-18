@@ -17,11 +17,11 @@ var FILE_PORT_REQUEST_TIMEOUT_MS: Dynamic;
 var filePortTextDecoder: Dynamic;
 async function resolvePublishCapability(): Promise<Dynamic> {
   return (
-    (await (0, resolveHostCapability)(
+    (await resolveHostCapability(
       "artifact",
       publishCapabilityName,
     )) ??
-    (await (0, resolveHostCapability)("self", publishCapabilityName))
+    (await resolveHostCapability("self", publishCapabilityName))
   );
 }
 function parsePublishedFileHashes(value?: Dynamic): Dynamic {
@@ -163,7 +163,7 @@ function createDesignFilesPort(options: Dynamic = {}): Dynamic {
             contentType:
               typeof options2.contentType == "string"
                 ? options2.contentType
-                : ((0, getMimeTypeForPath)(input) ??
+                : (getMimeTypeForPath(input) ??
                   "application/octet-stream"),
           }
         : undefined;
@@ -349,7 +349,7 @@ function createDesignFilesPort(options: Dynamic = {}): Dynamic {
       };
     let value: Dynamic = addressedVersion(),
       [value2, value3]: Dynamic = await Promise.all([
-        readResponse((0, encodePathSegments)(input)),
+        readResponse(encodePathSegments(input)),
         listing !== undefined ? Promise.resolve(listing) : getListing(),
       ]);
     options2 || rejectWrongVersionRedirect(value2, input, value);
@@ -365,7 +365,7 @@ function createDesignFilesPort(options: Dynamic = {}): Dynamic {
       value7: Dynamic =
         value5?.contentType ??
         value2.headers?.get("content-type")?.split(";")[0]?.trim() ??
-        (0, getMimeTypeForPath)(input) ??
+        getMimeTypeForPath(input) ??
         "application/octet-stream";
     return {
       bytes: value4,
@@ -407,7 +407,7 @@ function createDesignFilesPort(options: Dynamic = {}): Dynamic {
         ok: false,
         code: "not_writer",
       };
-    let value: Dynamic = (0, validatePublishFileMap)(input);
+    let value: Dynamic = validatePublishFileMap(input);
     if (value) return value;
     if (context !== publishGeneration && options2?.ifMatch !== undefined)
       return {
@@ -460,7 +460,7 @@ function createDesignFilesPort(options: Dynamic = {}): Dynamic {
       };
     let state: Dynamic = {};
     for (let [value12, value13] of Object.entries(input) as Dynamic)
-      state[value12] = (0, normalizeFileEntry)(value12, value13);
+      state[value12] = normalizeFileEntry(value12, value13);
     let state2: Dynamic = {},
       items: Dynamic = [],
       value4: Dynamic =
@@ -511,12 +511,12 @@ function createDesignFilesPort(options: Dynamic = {}): Dynamic {
     let entries: Dynamic = new Map();
     for (let [value12, value13] of Object.entries(state) as Dynamic)
       if (value13 !== null) {
-        let value14: Dynamic = await (0, fileContentToBytes)(
+        let value14: Dynamic = await fileContentToBytes(
           value13.content,
         );
         entries.set(value12, {
           bytes: value14,
-          hash: await (0, sha256)(value14),
+          hash: await sha256(value14),
         });
       }
     if (context !== publishGeneration && options2?.ifMatch !== undefined)
@@ -557,7 +557,7 @@ function createDesignFilesPort(options: Dynamic = {}): Dynamic {
       state3[value12] = value15;
       readHashes.set(value12, value15);
       !value9 &&
-        (value14 === undefined && (0, hasInjectedRuntime)(value13)
+        (value14 === undefined && hasInjectedRuntime(value13)
           ? publishingPaths.add(value12)
           : publishingPaths.delete(value12),
         localFiles.set(value12, {
@@ -646,10 +646,10 @@ function createDesignFilesPort(options: Dynamic = {}): Dynamic {
     let value: Dynamic = await readFileBytes(input, options2),
       value2: Dynamic = filePortTextDecoder.decode(value.bytes);
     value.raw &&
-      (0, isHtmlPath)(input) &&
-      (value2 = (0, stripFrameRuntime)(value2));
+      isHtmlPath(input) &&
+      (value2 = stripFrameRuntime(value2));
     let value3: Dynamic =
-      value.sha256 !== "" ? value.sha256 : await (0, sha256)(value2);
+      value.sha256 !== "" ? value.sha256 : await sha256(value2);
     readHashes.set(input, value3);
     return {
       text: value2,
@@ -704,7 +704,7 @@ function createDesignFilesPort(options: Dynamic = {}): Dynamic {
         value2: Dynamic =
           value.sha256 !== ""
             ? value.sha256
-            : await (0, sha256)(value.bytes);
+            : await sha256(value.bytes);
       readHashes.set(input, value2);
       return {
         bytes: value.bytes,
@@ -749,7 +749,7 @@ function createDesignFilesPort(options: Dynamic = {}): Dynamic {
         value3: Dynamic = listing?.get(input)?.sha256,
         value4: Dynamic = addressedVersion(),
         value5: Dynamic = await readResponse(
-          (0, encodePathSegments)(input),
+          encodePathSegments(input),
         );
       rejectWrongVersionRedirect(value5, input, value4);
       if (!value5.ok)
@@ -779,7 +779,7 @@ function createDesignFilesPort(options: Dynamic = {}): Dynamic {
         contentType:
           value8?.contentType ??
           value5.headers?.get("content-type")?.split(";")[0]?.trim() ??
-          (0, getMimeTypeForPath)(input) ??
+          getMimeTypeForPath(input) ??
           "application/octet-stream",
       };
     },
@@ -844,7 +844,7 @@ function createDesignFilesPort(options: Dynamic = {}): Dynamic {
                 size: 0,
                 contentType:
                   entry?.contentType ??
-                  (0, getMimeTypeForPath)(value.path) ??
+                  getMimeTypeForPath(value.path) ??
                   "application/octet-stream",
               });
           }
@@ -870,7 +870,7 @@ function createDesignFilesPort(options: Dynamic = {}): Dynamic {
                 size: listing.get(value)?.size ?? 0,
                 contentType:
                   listing.get(value)?.contentType ??
-                  (0, getMimeTypeForPath)(value) ??
+                  getMimeTypeForPath(value) ??
                   "application/octet-stream",
               }),
             localFiles.delete(value),
@@ -885,7 +885,7 @@ function createDesignFilesPort(options: Dynamic = {}): Dynamic {
                 size: listing.get(value)?.size ?? 0,
                 contentType:
                   listing.get(value)?.contentType ??
-                  (0, getMimeTypeForPath)(value) ??
+                  getMimeTypeForPath(value) ??
                   "application/octet-stream",
               });
         for (let value of [...changeListeners] as Dynamic)
@@ -910,7 +910,7 @@ function createDesignFilesPort(options: Dynamic = {}): Dynamic {
               size: entry?.sha256 === value3.sha256 ? entry.size : 0,
               contentType:
                 entry?.contentType ??
-                (0, getMimeTypeForPath)(value3.path) ??
+                getMimeTypeForPath(value3.path) ??
                 "application/octet-stream",
             });
           }
@@ -947,7 +947,7 @@ export {
 export function installPlatformDesignFilesPort(): () => void {
   return () => {
     ARTIFACT_FILE_LIST_PATH = "_files.json";
-    publishCapabilityName = (0, hasCapabilityMethod)("publish");
+    publishCapabilityName = hasCapabilityMethod("publish");
     PUBLISH_ACCESS_ERROR_CODES = new Set([
       "not_writer",
       "not_declared",

@@ -59,7 +59,7 @@ export {
 };
 export function installCdsDomInputObservation(): () => void {
   return () => {
-    initializeDomInputObservation = (0, initializeOnce)(() => {
+    initializeDomInputObservation = initializeOnce(() => {
       documentInputStates = new WeakMap();
       dismissalKeys = new Set(["Escape", "Enter", " "]);
     });

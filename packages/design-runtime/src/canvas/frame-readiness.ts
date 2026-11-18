@@ -22,7 +22,7 @@ function waitForDesignFramesReady(): Dynamic {
   return designFramesReadyPromise;
 }
 function waitForActiveDesignFramesReady(): Dynamic {
-  return (0, isFrameCaptureDocument)()
+  return isFrameCaptureDocument()
     ? captureFramesReadyPromise
     : designFramesReadyPromise;
 }

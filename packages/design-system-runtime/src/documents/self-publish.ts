@@ -8,13 +8,13 @@ var SELF_PUBLISH_PERMISSION_ERROR_CODES: string[];
 var supportsSelfPublish: (value: unknown) => value is Host.SelfCapability;
 var SELF_PUBLISH_ERROR_CODE_SET: Set<string>;
 function selfPublishInstalled(): boolean {
-  return supportsSelfPublish((0, getClaudeCapability)("self"));
+  return supportsSelfPublish(getClaudeCapability("self"));
 }
 function selfPublishAvailable(): boolean {
-  return selfPublishInstalled() || (0, hasClaudeCapabilityLoader)();
+  return selfPublishInstalled() || hasClaudeCapabilityLoader();
 }
 function getSelfPublishCapability(): Promise<Host.SelfCapability | null> {
-  return (0, getOrLoadClaudeCapability)("self", supportsSelfPublish);
+  return getOrLoadClaudeCapability("self", supportsSelfPublish);
 }
 function normalizeSelfPublishError(error: unknown): Host.PublishError {
   if (typeof error === "object" && error !== null && "code" in error) {
@@ -96,7 +96,7 @@ export function installDocumentsSelfPublish(): () => void {
       "capability_disabled",
       "capability_removed",
     ];
-    supportsSelfPublish = (0, capabilityHasMethod)(
+    supportsSelfPublish = capabilityHasMethod(
       "publish",
     ) as typeof supportsSelfPublish;
     SELF_PUBLISH_ERROR_CODE_SET = new Set([

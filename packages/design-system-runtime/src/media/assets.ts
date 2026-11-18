@@ -12,9 +12,9 @@ async function getAssetsCapability(): Promise<Host.AssetsCapability | null> {
       Pick<Host.ProtocolGlobal, "designSystemHost">
   ).designSystemHost;
   if (typeof claude?.use === "function") {
-    return (0, loadClaudeCapabilityWithTimeout)(
+    return loadClaudeCapabilityWithTimeout(
       "assets",
-      (0, capabilityHasMethod)("upload"),
+      capabilityHasMethod("upload"),
     ) as Promise<Host.AssetsCapability | null>;
   }
   if (typeof claude?.assets?.upload === "function") {
@@ -24,7 +24,7 @@ async function getAssetsCapability(): Promise<Host.AssetsCapability | null> {
   }
 }
 function isEmulatorBlobUrl(url: string): boolean {
-  return url.startsWith("blob:") && (0, isEmulatorPage)();
+  return url.startsWith("blob:") && isEmulatorPage();
 }
 function isStoredBlobReference(url: string): boolean {
   return storedBlobPattern.test(url) || isEmulatorBlobUrl(url);

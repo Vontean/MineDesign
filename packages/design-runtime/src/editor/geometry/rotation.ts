@@ -129,7 +129,7 @@ function resizeRotatedRect(
     [items, items2] = [Math.cos(value2), Math.sin(value2)],
     [items3, items4] = [dx * items + dy * items2, -dx * items2 + dy * items],
     value3 = keepAspect
-      ? (0, resizeRectKeepingAspect)(
+      ? resizeRectKeepingAspect(
           rect,
           handle,
           items3,
@@ -137,7 +137,7 @@ function resizeRotatedRect(
           min,
           max,
         )
-      : (0, resizeRect)(rect, handle, items3, items4, min, max);
+      : resizeRect(rect, handle, items3, items4, min, max);
   if (!degrees) return value3;
   let [items5, items6] = [
       handle.x === "left" ? 1 : handle.x === "right" ? -1 : 0,

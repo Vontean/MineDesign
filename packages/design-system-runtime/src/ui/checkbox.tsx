@@ -23,7 +23,7 @@ function preserveFieldCheckboxFocus(
   event: React.MouseEvent<HTMLLabelElement>,
 ) {
   if (
-    (0, asElement)(event.target)
+    asElement(event.target)
       ?.closest('label, [role="button"]')
       ?.matches('[role="button"]:not(a[href])')
   ) {
@@ -42,18 +42,18 @@ export {
 };
 export function installUiCheckbox(): () => void {
   return () => {
-    (0, initializeClassNames)();
-    (0, initializeCdsRoot)();
-    (0, initializeElementAccess)();
-    (0, initializeClassNames)();
-    (0, initializeCdsRoot)();
-    (0, initializeTooltip)();
-    reactCheckbox = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    initializeClassNames();
+    initializeCdsRoot();
+    initializeElementAccess();
+    initializeClassNames();
+    initializeCdsRoot();
+    initializeTooltip();
+    reactCheckbox = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
-    jsxCheckbox = (0, toModuleNamespace)(
-      (0, loadJsxNamespace)(),
+    jsxCheckbox = toModuleNamespace(
+      loadJsxNamespace(),
       1,
     );
     CHECKBOX_INDICATOR_CLASS = `${checkboxVisualClasses} transition-colors duration-fast ease-out motion-reduce:transition-none group-data-[unchecked]/cb:group-hover/cb:border-stronger group-data-[checked]/cb:bg-fill-accent group-data-[checked]/cb:border-transparent group-data-[indeterminate]/cb:bg-fill-accent group-data-[indeterminate]/cb:border-transparent group-data-[checked]/cb:group-hover/cb:bg-fill-accent-hover group-data-[indeterminate]/cb:group-hover/cb:bg-fill-accent-hover group-data-[disabled]/cb:group-data-[unchecked]/cb:group-hover/cb:border-strong group-focus-visible/cb:shadow-focus`;
@@ -106,11 +106,11 @@ export function installUiCheckbox(): () => void {
               ? {
                   "data-size": "xxs",
                 }
-              : (0, getControlSizeAttributes)(size))}
-            onMouseDown={(0, withRepeatedClickSelectionPrevention)(
+              : getControlSizeAttributes(size))}
+            onMouseDown={withRepeatedClickSelectionPrevention(
               onMouseDown,
             )}
-            className={(0, cn)(
+            className={cn(
               "cds-reset group/cb border-0 outline-none focus-visible:outline-hidden data-[disabled]:opacity-disabled",
               CONTROL_LABEL_CLASS,
               value3 ? "items-start" : "items-center",
@@ -120,7 +120,7 @@ export function installUiCheckbox(): () => void {
             )}
           >
             {[<span
-                className={(0, clsx)(
+                className={clsx(
                   CHECKBOX_INDICATOR_CLASS,
                   value3 && "mt-[calc((1lh_-_var(--cds-checkbox,1rem))_/_2)]",
                 )}
@@ -160,12 +160,12 @@ export function installUiCheckbox(): () => void {
       },
     );
     Checkbox.displayName = "Checkbox";
-    reactFieldCheckbox = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    reactFieldCheckbox = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
-    jsxFieldCheckbox = (0, toModuleNamespace)(
-      (0, loadJsxNamespace)(),
+    jsxFieldCheckbox = toModuleNamespace(
+      loadJsxNamespace(),
       1,
     );
     FieldCheckbox = reactFieldCheckbox.forwardRef(
@@ -187,10 +187,10 @@ export function installUiCheckbox(): () => void {
         return (
           <FieldWrapper error={error} fieldClassName={fieldClassName}>
             <label
-              {...(0, getControlSizeAttributes)(props.size)}
+              {...getControlSizeAttributes(props.size)}
               onMouseDown={preventRepeatedClickSelection}
               onClick={preserveFieldCheckboxFocus}
-              className={(0, cn)(
+              className={cn(
                 CONTROL_LABEL_CLASS,
                 "group/cb items-start self-start",
                 props.disabled ? "cursor-default" : "cursor-interactive",
@@ -198,7 +198,7 @@ export function installUiCheckbox(): () => void {
               )}
             >
               {[<span
-                  className={(0, clsx)(
+                  className={clsx(
                     "flex",
                     CHECKBOX_LABEL_ALIGNMENT_CLASS,
                   )}
@@ -214,7 +214,7 @@ export function installUiCheckbox(): () => void {
                     {...props}
                   />
                 </span>, <span
-                  className={(0, clsx)(
+                  className={clsx(
                     "flex min-w-0 flex-col",
                     props.disabled && "text-disabled",
                   )}
@@ -222,7 +222,7 @@ export function installUiCheckbox(): () => void {
                   {[<span id={value}>{label}</span>, !!description && (
                       <span
                         id={value2}
-                        className={(0, cn)(
+                        className={cn(
                           "text-footnote leading-snug text-muted",
                           props.disabled && "text-disabled",
                         )}

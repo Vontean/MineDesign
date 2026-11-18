@@ -42,8 +42,7 @@ export function scheduleLiveDomSyncCheck(deps: { readonly delegatedFileRef: Dyna
                   }
                 };
               callback8(value307.model.outline(), null);
-              let value309: Dynamic = await (0,
-              verifyPickerSelection)(value308, input, state, state2);
+              let value309: Dynamic = await verifyPickerSelection(value308, input, state, state2);
               if (!value309) return;
               let {
                 parentMismatches: value310,
@@ -87,13 +86,13 @@ export function remapSelectionAfterModelSwap(deps: { readonly incrementSessionEp
         deps.textEditRef.current != null &&
         ((deps.textEditRef.current =
           (options &&
-            (0, relocateModelElementIds)(options, value307, [
+            relocateModelElementIds(options, value307, [
               deps.textEditRef.current,
             ])[0]) ??
           null),
         deps.value5(deps.textEditRef.current));
       let current: Dynamic = deps.value49.current,
-        value309: Dynamic = (0, relocateSelectionRef)(
+        value309: Dynamic = relocateSelectionRef(
           deps.value49,
           input,
           options,
@@ -104,7 +103,7 @@ export function remapSelectionAfterModelSwap(deps: { readonly incrementSessionEp
       deps.value46.current = null;
       if (value309 === null) {
         value308 &&
-          (0, setPickerSelection)(
+          setPickerSelection(
             value308,
             null,
             null,
@@ -121,13 +120,13 @@ export function remapSelectionAfterModelSwap(deps: { readonly incrementSessionEp
       )
         return;
       let current2: Dynamic = deps.value50.current;
-      (0, deferSelectionClear)(
+      deferSelectionClear(
         deps.value46,
         input,
         (): Dynamic => {
           setTimeout((): Dynamic => {
             deps.value50.current === current2 &&
-              (0, setPickerSelection)(
+              setPickerSelection(
                 value308,
                 value310,
                 input,

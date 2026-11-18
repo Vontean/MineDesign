@@ -130,7 +130,7 @@ function SelectionGrip({
     <span
       data-selection-grip={""}
       data-disabled={disabled2 ? "" : undefined}
-      className={(0, cn)(
+      className={cn(
         "absolute left-1/2 top-1/2 box-border block -translate-x-1/2 -translate-y-1/2",
         OutlineFillAccentValue,
       )}
@@ -170,7 +170,7 @@ function SelectionPoint({
     <span
       {...props}
       data-variant={variant}
-      className={(0, cn)(
+      className={cn(
         "absolute block whitespace-nowrap rounded-full font-sans text-caption font-medium",
         variant === "component"
           ? "bg-fill-pro text-on-pro"
@@ -215,12 +215,12 @@ export {
 };
 export function installCdsEditorSelectionGeometry(): () => void {
   return () => {
-    initializeEditorSelectionGeometry = (0, initializeOnce)(
+    initializeEditorSelectionGeometry = initializeOnce(
       (): Dynamic => {
-        (0, initializeClassNames)();
-        (0, initializeTokens)();
-        jsxEditorSelectionGeometry = (0, toModuleNamespace)(
-          (0, load_react_jsx_runtime)(),
+        initializeClassNames();
+        initializeTokens();
+        jsxEditorSelectionGeometry = toModuleNamespace(
+          load_react_jsx_runtime(),
         );
         selectionMetrics = {
           ring: 2,

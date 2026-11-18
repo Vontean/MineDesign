@@ -90,8 +90,8 @@ function useClickToFocus(
       readOnly: value3 = false,
       shouldIgnoreTarget: value,
     } = options,
-    value4 = (0, useOptionalStableCallback)(input),
-    value5 = (0, useOptionalStableCallback)(value);
+    value4 = useOptionalStableCallback(input),
+    value5 = useOptionalStableCallback(value);
   return {
     clickToFocusProps: {
       onMouseDown: (0, reactMenuPopup_2.useCallback)(
@@ -131,10 +131,10 @@ function isInteractivePressTarget(
     draggable?: boolean;
   } = {},
 ): boolean {
-  let value = (0, asElement)(event.target);
+  let value = asElement(event.target);
   return value === null
     ? false
-    : (0, isTextInputElement)(value) ||
+    : isTextInputElement(value) ||
         value.matches(MenuPopupLabel) ||
         closestMatchesWithin(value, SelectValue, event.currentTarget) ||
         (options &&
@@ -324,7 +324,7 @@ function createPassiveOpenGate(): PassiveOpenGateState {
               : "off";
       (value10 && value12) ||
         ((value6 = activeDocumentElement(value11)),
-        (value7 = (0, asElement)(
+        (value7 = asElement(
           options.trigger ?? null,
         ) as HTMLElement | null),
         (value8 = value12
@@ -380,7 +380,7 @@ function resolveInitialFocusTarget(
   ) as FocusableElement | null;
 }
 function activeDocumentElement(input?: Document): Element | null {
-  let value = (0, asElement)(input?.activeElement ?? null);
+  let value = asElement(input?.activeElement ?? null);
   return value === null || value === input?.body ? null : value;
 }
 function isInsidePopup(input: Node | null, options: Element | null): boolean {
@@ -401,8 +401,8 @@ function focusPopupAfterMicrotask(
       context !== activeElement
     ) {
       let value3 =
-        value && value2 ? (0, asElement)(activeElement) : null;
-      value3 !== null && (0, normalizeFocusRelatedTarget)(value3);
+        value && value2 ? asElement(activeElement) : null;
+      value3 !== null && normalizeFocusRelatedTarget(value3);
       context.focus({
         preventScroll: true,
       });
@@ -514,7 +514,7 @@ function PassiveOpenTypingWatcher({
               ),
         value4 =
           event.key === "ArrowDown" ? value3[0] : value3[value3.length - 1],
-        value5 = (0, asElement)(value4 ?? null);
+        value5 = asElement(value4 ?? null);
       value5 !== null &&
         value5.hasAttribute("data-highlighted") &&
         (event.preventDefault(),
@@ -564,28 +564,28 @@ export {
 };
 export function installCdsMenuPopup(): () => void {
   return () => {
-    initializeMenuPopup = (0, initializeOnce)(() => {
+    initializeMenuPopup = initializeOnce(() => {
       "use client";
 
-      (0, initializeClassNames)();
-      (0, initializeOverlaysLayers)();
-      (0, initializeDomRefComposition)();
-      (0, initializePlatformRootFontSize_2)();
-      (0, initializeComponentsIcon_3)();
-      (0, initializeThemeSurfaces)();
-      (0, initializeSheetsPopupStack)();
-      (0, initializeSheetsScrollArea_2)();
-      (0, initializeSheetsScrollArea_6)();
-      (0, initializeSheetsScrollArea_8)();
-      (0, initializeSheetsScrollArea)();
-      reactMenuPopup = (0, toModuleNamespace)(
-        (0, load_react)(),
+      initializeClassNames();
+      initializeOverlaysLayers();
+      initializeDomRefComposition();
+      initializePlatformRootFontSize_2();
+      initializeComponentsIcon_3();
+      initializeThemeSurfaces();
+      initializeSheetsPopupStack();
+      initializeSheetsScrollArea_2();
+      initializeSheetsScrollArea_6();
+      initializeSheetsScrollArea_8();
+      initializeSheetsScrollArea();
+      reactMenuPopup = toModuleNamespace(
+        load_react(),
       );
-      jsxMenuPopup = (0, toModuleNamespace)(
-        (0, load_react_jsx_runtime)(),
+      jsxMenuPopup = toModuleNamespace(
+        load_react_jsx_runtime(),
       );
-      (0, initializeNpm__base_ui_react_jhe)();
-      MenuPopupCss = `cds-reset draggable-none group/menu-popup relative flex flex-col min-w-[128px] max-w-[320px] max-h-[var(--available-height)] ${(0, popupSurfaceClassName)("popover")} text-body font-normal text-primary outline-none focus-visible:outline-hidden`;
+      initializeNpm__base_ui_react_jhe();
+      MenuPopupCss = `cds-reset draggable-none group/menu-popup relative flex flex-col min-w-[128px] max-w-[320px] max-h-[var(--available-height)] ${popupSurfaceClassName("popover")} text-body font-normal text-primary outline-none focus-visible:outline-hidden`;
       ContextMenuPopupFrame = (0, reactMenuPopup.forwardRef)<
         HTMLDivElement,
         MenuPopupProps
@@ -605,15 +605,13 @@ export function installCdsMenuPopup(): () => void {
           }: MenuPopupProps,
           options: React.ForwardedRef<HTMLDivElement>,
         ): React.ReactElement => {
-          let { finalFocus: value, popupRef: value2 } = (0,
-          useOpenerReturn)({
+          let { finalFocus: value, popupRef: value2 } = useOpenerReturn({
             registerOpenerReturn: finalFocus == null,
           });
-          (0, useKeyboardContextMenuFocus)(value2);
-          let value3 = (0, useDefaultLayer)("contextmenu"),
-            { elementRef: value4, overlayAttrs: value5 } = (0,
-            useMenuInnerOverlay)(),
-            value6 = (0, useMergedRefs)(options, value2, value4);
+          useKeyboardContextMenuFocus(value2);
+          let value3 = useDefaultLayer("contextmenu"),
+            { elementRef: value4, overlayAttrs: value5 } = useMenuInnerOverlay(),
+            value6 = useMergedRefs(options, value2, value4);
           return (
             <ResetSheetContext>
               <PopupSurface
@@ -642,7 +640,7 @@ export function installCdsMenuPopup(): () => void {
                           ref={value6}
                           finalFocus={finalFocus ?? value}
                           {...props}
-                          className={(0, cn)(MenuPopupCss, className)}
+                          className={cn(MenuPopupCss, className)}
                         >
                           <PopupScrollArea>
                             {children}
@@ -659,20 +657,20 @@ export function installCdsMenuPopup(): () => void {
       );
       ContextMenuPopupFrame.displayName = "ContextMenuPopupFrame";
     });
-    initializeMenuPopup_2 = (0, initializeOnce)(() => {
+    initializeMenuPopup_2 = initializeOnce(() => {
       "use client";
 
-      (0, initializeSheetsScrollArea_3)();
-      (0, initializeHooksStableCallback_2)();
-      reactMenuPopup_2 = (0, toModuleNamespace)(
-        (0, load_react)(),
+      initializeSheetsScrollArea_3();
+      initializeHooksStableCallback_2();
+      reactMenuPopup_2 = toModuleNamespace(
+        load_react(),
       );
       MenuPopupCss_2 = `button,a[href],label,[role="button"],select,[tabindex]:not([tabindex="-1"]),${SheetsScrollAreaLabel_2}`;
     });
-    initializeMenuPopup_3 = (0, initializeOnce)(() => {
-      (0, initializeHooksStableCallback)();
+    initializeMenuPopup_3 = initializeOnce(() => {
+      initializeHooksStableCallback();
       initializeMenuPopup_2();
-      (0, initializeSheetsKeyboardViewport)();
+      initializeSheetsKeyboardViewport();
       MenuPopupLabel =
         'input[type="range"], select, input[readonly], textarea[readonly]';
       SelectValue = "select";

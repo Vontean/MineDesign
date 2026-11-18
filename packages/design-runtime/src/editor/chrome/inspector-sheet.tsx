@@ -257,7 +257,7 @@ function useInspectorSheetHeight(input?: Dynamic): Dynamic {
   );
 }
 function useInspectorPosture(): Dynamic {
-  return (0, npm_useMediaQuery_Wpt)(ChromeInspectorSheetMediaQuery)
+  return npm_useMediaQuery_Wpt(ChromeInspectorSheetMediaQuery)
     ? "sheet"
     : "wide";
 }
@@ -268,7 +268,7 @@ function inspectorShellStyle(
 ): Dynamic {
   return input === "wide"
     ? {
-        container: (0, cn)(
+        container: cn(
           "absolute z-20 flex flex-col overflow-hidden rounded-xl",
           "border bg-surface-2 shadow-lg",
         ),
@@ -278,14 +278,14 @@ function inspectorShellStyle(
           width: ChromeInspectorSheetConstant,
           maxHeight: `calc(100% - ${ChromeInspectorSheetConstant_2 * 2}px)`,
         },
-        contentClass: (0, cn)(
+        contentClass: cn(
           "min-h-0 overflow-y-auto border-t",
           ChromeScrollbarLabel,
         ),
         showHandle: false,
       }
     : {
-        container: (0, cn)(
+        container: cn(
           "relative z-20 flex w-full flex-col",
           "border-t bg-surface-panel",
           "pb-[var(--mc-foot-inset,0px)]",
@@ -297,7 +297,7 @@ function inspectorShellStyle(
               : `calc((100dvh - 68px) * ${0.47})`
             : undefined,
         },
-        contentClass: (0, cn)(
+        contentClass: cn(
           "flex min-h-0 flex-1 flex-col overflow-y-auto",
           ChromeScrollbarLabel,
         ),
@@ -323,7 +323,7 @@ function InspectorPanelShell({
       <div
         data-testid={"dc-anchored-content"}
         ref={posture === "sheet" ? value.contentProps.ref : undefined}
-        className={(0, cn)(
+        className={cn(
           value2.contentClass,
           "pb-3 select-none [&_input]:select-text [&_textarea]:select-text [--pp-label-w:88px]",
         )}
@@ -336,7 +336,7 @@ function InspectorPanelShell({
     <div
       data-testid={dataTestid}
       data-posture={posture}
-      className={(0, cn)(value2.container, value3)}
+      className={cn(value2.container, value3)}
       style={{
         ...value2.style,
         ...(value.keyboardInset > 0
@@ -369,7 +369,7 @@ function InspectorPanelShell({
           {headerRow != null && headerAt === "top" && (<div className={"shrink-0 border-b"}>{headerRow}</div>)}
           {value4}
           {headerRow && headerAt === "bottom" && (<div
-              className={(0, cn)("shrink-0", filled && "border-t")}
+              className={cn("shrink-0", filled && "border-t")}
             >
               {headerRow}
             </div>)}
@@ -395,17 +395,17 @@ export {
 };
 export function installEditorChromeInspectorSheet(): () => void {
   return () => {
-    jsxChromeInspectorSheet = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    jsxChromeInspectorSheet = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
     ChromeInspectorSheetMediaQuery = "(max-width: 599px)";
     ChromeInspectorSheetConstant = 257;
     ChromeInspectorSheetConstant_2 = 12;
-    reactChromeInspectorSheet = (0, toModuleNamespace)(
-      (0, load_react)(),
+    reactChromeInspectorSheet = toModuleNamespace(
+      load_react(),
       1,
     );
-    (0, initializeCdsIndex)();
+    initializeCdsIndex();
   };
 }

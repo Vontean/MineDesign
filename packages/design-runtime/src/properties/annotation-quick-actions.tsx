@@ -46,7 +46,7 @@ function TextSelectionCount({
       (document as Dynamic).removeEventListener("keyup", callback2);
     };
   }, []);
-  let value2: Dynamic = (0, getNoteFormattingState)(document, base),
+  let value2: Dynamic = getNoteFormattingState(document, base),
     callback: Dynamic = (
       input?: Dynamic,
       options?: Dynamic,
@@ -54,7 +54,7 @@ function TextSelectionCount({
       value3?: Dynamic,
       extra?: Dynamic,
     ): Dynamic => {
-      let value4: Dynamic = (0, noteFormattingRefusal)(
+      let value4: Dynamic = noteFormattingRefusal(
         input,
         base,
         document,
@@ -66,7 +66,7 @@ function TextSelectionCount({
             testid === undefined ? undefined : testid + "-" + input
           }
           title={
-            (value4) || (chords ? ((((options) + (" (")) + ((0, keyboardShortcutLabel)(value3))) + (")")) : (options))
+            (value4) || (chords ? ((((options) + (" (")) + (keyboardShortcutLabel(value3))) + (")")) : (options))
           }
           aria-label={options}
           aria-pressed={value4 === "" && extra}
@@ -74,7 +74,7 @@ function TextSelectionCount({
           icon={context}
           onPointerDown={(event?: Dynamic): Dynamic => event.preventDefault()}
           onClick={(): Dynamic => {
-            (0, toggleNoteFormatting)(input, base);
+            toggleNoteFormatting(input, base);
             value((input2?: Dynamic): Dynamic => input2 + 1);
           }}
         />
@@ -93,14 +93,14 @@ function NoteTypographyQuickActions({
   typing = false,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic = (0, annotationTextStyle)(spec),
+  let value: Dynamic = annotationTextStyle(spec),
     value2: Dynamic = [
       "default",
       ...PlatformFileContentGrayRedOrangeValues,
     ].map(
       (input?: Dynamic): Dynamic => ({
         name: input,
-        color: (0, NotesLinkEditingHandler_2)(value.kind, input),
+        color: NotesLinkEditingHandler_2(value.kind, input),
         get label() { return input === "default" ? (uiMessage("inspector.annotationQuickActions.defaultInk")) : (input[0].toUpperCase() + input.slice(1)); },
       }),
     ),
@@ -182,7 +182,7 @@ function NoteTypographyQuickActions({
       <SessionActionsPopover
         testid={"mega-note-color"}
         title={uiMessage("inspector.annotationQuickActions.ink")}
-        paint={(0, NotesLinkEditingHandler_2)(
+        paint={NotesLinkEditingHandler_2(
           value.kind,
           value.color,
         )}
@@ -204,7 +204,7 @@ function NoteFillQuickActions({
   typing = false,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic = (0, annotationTextStyle)(spec);
+  let value: Dynamic = annotationTextStyle(spec);
   if (value.kind !== "note") return null;
   let value2: Dynamic = [
     "default",
@@ -212,7 +212,7 @@ function NoteFillQuickActions({
   ].map(
     (input?: Dynamic): Dynamic => ({
       name: input,
-      color: (0, NotesLinkEditingHandler)(input),
+      color: NotesLinkEditingHandler(input),
       get label() { return input === "default" ? (uiMessage("inspector.annotationQuickActions.defaultYellow")) : (input[0].toUpperCase() + input.slice(1)); },
     }),
   );
@@ -223,7 +223,7 @@ function NoteFillQuickActions({
         <SessionActionsPopover
           testid={"mega-note-fill"}
           title={uiMessage("inspector.annotationQuickActions.fill")}
-          paint={(0, NotesLinkEditingHandler)(value.fill)}
+          paint={NotesLinkEditingHandler(value.fill)}
           swatches={value2}
           value={value.fill}
           onSwatch={(input?: Dynamic): Dynamic =>
@@ -244,7 +244,7 @@ function NoteQuickActions({
   onComment: onComment,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic = (0, annotationTextStyle)(spec),
+  let value: Dynamic = annotationTextStyle(spec),
     value2: Dynamic =
       typeof window !== "undefined" &&
       (window as Dynamic).matchMedia("(pointer: coarse)").matches;
@@ -313,7 +313,7 @@ function EditingNoteQuickActions({
   onComment: onComment,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic = (0, annotationTextStyle)(spec),
+  let value: Dynamic = annotationTextStyle(spec),
     [, value2]: Dynamic = (0, react_RB.useState)(0);
   (0, react_RB.useEffect)((): Dynamic => {
     let callback2: Dynamic = (): Dynamic =>
@@ -325,7 +325,7 @@ function EditingNoteQuickActions({
       (document as Dynamic).removeEventListener("keyup", callback2);
     };
   }, []);
-  let value3: Dynamic = (0, getNoteFormattingState)(document, value),
+  let value3: Dynamic = getNoteFormattingState(document, value),
     callback: Dynamic =
       (input?: Dynamic): Dynamic =>
       (): Dynamic => {
@@ -342,7 +342,7 @@ function EditingNoteQuickActions({
       onKeyDown={(event?: Dynamic): Dynamic => {
         event.key === "Escape" &&
           (event.preventDefault(),
-          (0, NotesFormattingGetSelection)());
+          NotesFormattingGetSelection());
       }}
     >
       <NoteTypographyQuickActions
@@ -381,9 +381,9 @@ function EditingNoteQuickActions({
             callback((): Dynamic => {
               input === "none"
                 ? value3.ul
-                  ? (0, toggleNoteList)("ul")
-                  : value3.ol && (0, toggleNoteList)("ol")
-                : (0, toggleNoteList)(
+                  ? toggleNoteList("ul")
+                  : value3.ol && toggleNoteList("ol")
+                : toggleNoteList(
                     input === "bullet" ? "ul" : "ol",
                   );
             })()
@@ -462,11 +462,11 @@ function CanvasObjectQuickActions({
           <VideoPlayControl
             find={(): Dynamic =>
               (document as Dynamic).querySelector(
-                (0, SessionArtboardStateEscape)(spec.id),
+                SessionArtboardStateEscape(spec.id),
               )
             }
             whyAbsent={(): Dynamic =>
-              (0, MediaPlaybackControlsQuerySelector)(spec.id)
+              MediaPlaybackControlsQuerySelector(spec.id)
             }
           />
         </SessionStripGroup>
@@ -528,7 +528,7 @@ function CanvasObjectQuickActions({
     ].map(
       (input?: Dynamic): Dynamic => ({
         name: input,
-        color: (0, annotationColor)(spec.kind, input),
+        color: annotationColor(spec.kind, input),
         get label() { return input === "default" ? (uiMessage("inspector.annotationQuickActions.defaultGray")) : (input[0].toUpperCase() + input.slice(1)); },
       }),
     ),
@@ -541,7 +541,7 @@ function CanvasObjectQuickActions({
           <SessionActionsPopover
             testid={"mega-shape-color"}
             title={value2 ? (uiMessage("inspector.annotationQuickActions.stroke")) : (uiMessage("inspector.annotationQuickActions.fill"))}
-            paint={value5 ?? (0, annotationColor)(spec.kind, value4)}
+            paint={value5 ?? annotationColor(spec.kind, value4)}
             swatches={value6}
             value={value5 !== undefined ? null : value4}
             onSwatch={(input?: Dynamic): Dynamic =>
@@ -612,15 +612,15 @@ export {
 };
 export function installPropertiesAnnotationQuickActions(): () => void {
   return () => {
-    react_RB = (0, toModuleNamespace)((0, load_react)(), 1);
-    (0, initializeCdsIndex)();
-    react_Nse = (0, toModuleNamespace)((0, load_react)(), 1);
-    jsx_Dse = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    react_RB = toModuleNamespace(load_react(), 1);
+    initializeCdsIndex();
+    react_Nse = toModuleNamespace(load_react(), 1);
+    jsx_Dse = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
-    jsx_Eo = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    jsx_Eo = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
     noteFontSizePresets = [

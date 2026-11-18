@@ -9,7 +9,7 @@ var documentStashStoragePrefix: Dynamic;
 var readOnlyStashStoragePrefix: Dynamic;
 function getDocumentStashKey(input?: Dynamic): Dynamic {
   return (
-    documentStashStoragePrefix + (0, normalizeArtifactPath)(input)
+    documentStashStoragePrefix + normalizeArtifactPath(input)
   );
 }
 function createSessionStorageAdapter(input?: Dynamic): Dynamic {

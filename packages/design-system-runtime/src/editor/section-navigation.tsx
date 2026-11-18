@@ -339,8 +339,7 @@ export {
 };
 export function installEditorSectionNavigation(): () => void {
   return () => {
-    reactSectionNavigationEditorSectionNavigation = (0,
-    toModuleNamespace)((0, loadReactNamespace)(), 1);
+    reactSectionNavigationEditorSectionNavigation = toModuleNamespace(loadReactNamespace(), 1);
     editorCardKey = (kind: string, key: string): string => kind + ":" + key;
     CARD_FLASH_DURATION_MS = 1500;
     CARD_RETRY_TIMEOUT_MS = 15000;

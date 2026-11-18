@@ -20,7 +20,7 @@ var HTML_INSERTION_METHODS: Dynamic;
 var isOutsideArtboardSelector: Dynamic;
 function parseScopedTemplate(html?: Dynamic): Dynamic {
   let template: Dynamic = (document as Dynamic).createElement("template");
-  template.innerHTML = (0, toParserHtml)(html);
+  template.innerHTML = toParserHtml(html);
   return template;
 }
 function mapFastEditCssChanges(
@@ -33,11 +33,11 @@ function mapFastEditCssChanges(
   let changes: Dynamic = [];
   try {
     let callback: Dynamic = (input?: Dynamic): Dynamic =>
-        (0, camelToKebabCss)(
+        camelToKebabCss(
           input.slice(0, Math.max(0, input.indexOf(":"))).trim(),
         ).toLowerCase(),
       callback2: Dynamic = (input?: Dynamic): Dynamic =>
-        (0, splitCssDeclarations_2)(
+        splitCssDeclarations_2(
           input?.getAttribute("style") ?? "",
         ),
       callback3: Dynamic = (
@@ -78,7 +78,7 @@ function mapFastEditCssChanges(
             PAGE_STYLE_PROPERTY_ALIASES.background.includes(callback(input2)),
           callback8: Dynamic = (input2?: Dynamic): Dynamic =>
             callback(input2) === "background" &&
-            (0, validatePageColor)(
+            validatePageColor(
               splitCssPropertyValue(input2)[1],
             ) === null,
           value4: Dynamic = input.map(callback8).lastIndexOf(true),
@@ -161,7 +161,7 @@ function mapFastEditCssChanges(
       }
     }
     return {
-      text: flag ? (0, fromParserHtml)(value.innerHTML) : after,
+      text: flag ? fromParserHtml(value.innerHTML) : after,
       own: changes,
     };
   } catch {
@@ -185,7 +185,7 @@ function nextHandleSequence(htmls?: Dynamic, prefix?: Dynamic): Dynamic {
     next: Dynamic = 0;
   for (let value of htmls as Dynamic) {
     let value2: Dynamic = (document as Dynamic).createElement("template");
-    value2.innerHTML = (0, toParserHtml)(value);
+    value2.innerHTML = toParserHtml(value);
     for (let value3 of Array.from(
       value2.content.querySelectorAll("[id]"),
     ) as Dynamic)
@@ -491,7 +491,7 @@ function resolveOwnedElementIdCollisions(
         replacements.get(options) ?? input,
     ),
     value2: Dynamic = (document as Dynamic).createElement("template");
-  value2.innerHTML = (0, toParserHtml)(value);
+  value2.innerHTML = toParserHtml(value);
   let callback: Dynamic = (input?: Dynamic): Dynamic =>
       (
         value.match(new RegExp("(?<![\\w-])" + input + "(?![\\w-])", "g")) ??
@@ -515,7 +515,7 @@ function resolveOwnedElementIdCollisions(
       for (let value6 of value5 as Dynamic) value6.removeAttribute("id");
       flag = true;
     }
-  return flag ? (0, fromParserHtml)(value2.innerHTML) : value;
+  return flag ? fromParserHtml(value2.innerHTML) : value;
 }
 export {
   adoptHandleIds,

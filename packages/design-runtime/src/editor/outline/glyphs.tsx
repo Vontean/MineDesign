@@ -38,13 +38,13 @@ function OutlineElementGlyph({ dimmed: dimmed }: Dynamic): Dynamic {
   return (
     <span
       aria-hidden={true}
-      className={(0, cn)(
+      className={cn(
         OutlineGlyphsClassNames,
         dimmed ? "opacity-50" : "opacity-100",
       )}
     >
       <span
-        className={(0, cn)(
+        className={cn(
           "box-border h-[9px] w-[9px] border border-dotted border-strong",
           OutlineGlyphsClassNames_3,
           "forced-colors:group-aria-selected:border-[color:HighlightText]",
@@ -59,11 +59,11 @@ function OutlineIconGlyph({
   ink: ink,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic = (0, cn)(
+  let value: Dynamic = cn(
       OutlineGlyphsClassNames,
       dimmed ? "opacity-50" : "opacity-100",
     ),
-    value2: Dynamic = (0, cn)(
+    value2: Dynamic = cn(
       ink == null && "text-disabled",
       OutlineGlyphsClassNames_3,
     ),
@@ -122,8 +122,8 @@ export function installEditorOutlineGlyphs(): () => void {
       uiMessage("inspector.glyphs.canTReadThisArtboard");
     OutlineGlyphsTest = (input?: Dynamic): Dynamic =>
       /<x-dc[\s/>]/i.test(input);
-    jsxOutlineGlyphs = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    jsxOutlineGlyphs = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
     OutlineGlyphsResolvedValue =

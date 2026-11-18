@@ -26,7 +26,7 @@ function selectPageFiles(files?: Dynamic): Dynamic {
       pages: Object.fromEntries(
         Object.entries(files).filter(
           ([input]: Dynamic): Dynamic =>
-            (0, PreviewAddressedArtboardsTest)(input),
+            PreviewAddressedArtboardsTest(input),
         ),
       ),
     });
@@ -40,14 +40,14 @@ function createProjectAssetReadinessProbe(files?: Dynamic): Dynamic {
     typeof location === "undefined"
   )
     return;
-  let value: Dynamic = (0, getDesignSystemFiles)();
+  let value: Dynamic = getDesignSystemFiles();
   return (input?: Dynamic): Dynamic => {
     if (
       files[input] !== value[input] ||
-      !(0, isStandaloneStylesheet)(input, files, value)
+      !isStandaloneStylesheet(input, files, value)
     )
       return;
-    let value2: Dynamic = (0, getDesignSystemFileUrl)(input);
+    let value2: Dynamic = getDesignSystemFileUrl(input);
     if (value2 !== undefined)
       try {
         return new URL(value2).origin === location.origin
@@ -130,8 +130,8 @@ export function set_lastDesignEditAt(value: any): any {
 }
 export function installCanvasCompilationCache(): () => void {
   return () => {
-    jsx_ip = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    jsx_ip = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
     equivalentDesignImportTags = (

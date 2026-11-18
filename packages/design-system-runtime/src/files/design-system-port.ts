@@ -38,7 +38,7 @@ function createDesignSystemFilesPort(
           value: Model.FilePublishInput;
           bytes?: Uint8Array<ArrayBuffer>;
         } => {
-      let value = (0, relativeProjectFilePath)(input);
+      let value = relativeProjectFilePath(input);
       if (
         options2 === null ||
         value === undefined ||
@@ -48,14 +48,14 @@ function createDesignSystemFilesPort(
           value: options2,
         };
       }
-      if ((0, isHeldFilePointer)(value, options2)) {
+      if (isHeldFilePointer(value, options2)) {
         return "held";
       }
-      let value2 = (0, publishableFileMimeType)(value, options2);
+      let value2 = publishableFileMimeType(value, options2);
       if (value2 === null) {
         return "untyped";
       }
-      if ((0, isTextFilePath)(value)) {
+      if (isTextFilePath(value)) {
         return {
           value: {
             content: options.wireText?.(input, options2) ?? options2,
@@ -63,12 +63,12 @@ function createDesignSystemFilesPort(
           },
         };
       }
-      let value3 = (0, decodeHeldFileDataUri)(options2);
+      let value3 = decodeHeldFileDataUri(options2);
       if (value3 === null) {
         return "unreadable";
       }
       return {
-        value: (0, isTextMimeType)(value2)
+        value: isTextMimeType(value2)
           ? {
               content: new TextDecoder("utf-8", {
                 ignoreBOM: true,
@@ -85,7 +85,7 @@ function createDesignSystemFilesPort(
       };
     },
     referenceSha = (input: string) => {
-      let value = (0, relativeProjectFilePath)(input);
+      let value = relativeProjectFilePath(input);
       if (
         value === undefined ||
         !fileMayStayByReference(input, value, lazy) ||
@@ -96,7 +96,7 @@ function createDesignSystemFilesPort(
       let value2 = extensions.liveSha?.(input);
       if (
         lazy !== undefined &&
-        (0, isTextFilePath)(value) &&
+        isTextFilePath(value) &&
         lazy.rows.get(input)?.sha256 !== value2
       ) {
         return;
@@ -130,8 +130,8 @@ function createDesignSystemFilesPort(
       }
       if (value === "untyped") {
         return (
-          (0, explainUnpublishableFile)(
-            (0, relativeProjectFilePath)(input),
+          explainUnpublishableFile(
+            relativeProjectFilePath(input),
             options2 as string,
           ) ?? {
             why: "files of this kind cannot be saved here. Use another format",
@@ -157,7 +157,7 @@ function createDesignSystemFilesPort(
           cause: "kind",
         };
       }
-      return (0, filePublishRejection)(input, value.value);
+      return filePublishRejection(input, value.value);
     },
     adapter: Migration.DesignSystemFilesPort = {
       list: () => {
@@ -168,7 +168,7 @@ function createDesignSystemFilesPort(
         return port.list().then((input) => {
           if (value > lastListingResponseId) {
             lastListingResponseId = value;
-            (0, updateLazyReadListing)(lazy, input);
+            updateLazyReadListing(lazy, input);
           }
           return input;
         });
@@ -177,7 +177,7 @@ function createDesignSystemFilesPort(
       answersByReference: (input) =>
         referenceSha(input) !== undefined ||
         (lazy !== undefined &&
-          (0, lazyFileReadMode)(lazy, input) === "skipped"),
+          lazyFileReadMode(lazy, input) === "skipped"),
       async readText(input: string): Promise<Model.FileTextRead> {
         if (
           !isBinaryProjectFilePath(input) &&
@@ -199,19 +199,19 @@ function createDesignSystemFilesPort(
         let value = referenceSha(input);
         if (value !== undefined) {
           try {
-            options.onReadText?.(input, (0, filePointer)(), value);
+            options.onReadText?.(input, filePointer(), value);
           } catch {}
           return {
-            text: (0, filePointer)(),
+            text: filePointer(),
             sha256: value,
           };
         }
         let value2 = await port.readBytes(input),
           value3 =
-            (0, publishableFileMimeType)(
-              (0, relativeProjectFilePath)(input),
+            publishableFileMimeType(
+              relativeProjectFilePath(input),
             ) ?? "application/octet-stream",
-          value4 = (0, bytesToFileDataUri)(value2.bytes, value3);
+          value4 = bytesToFileDataUri(value2.bytes, value3);
         try {
           options.onReadText?.(input, value4, value2.sha256);
         } catch {}
@@ -255,7 +255,7 @@ function createDesignSystemFilesPort(
           }
           state[value3] = value5.value;
           if (value5.bytes !== undefined) {
-            state2[value3] = (0, sha256)(value5.bytes);
+            state2[value3] = sha256(value5.bytes);
           }
         }
         let state4: Record<string, string | null> = {};
@@ -343,7 +343,7 @@ function createDesignSystemFilesPort(
         }
         for (let [value3, value4] of Object.entries(state)) {
           if (value4 !== null && state5[value3] === undefined) {
-            state5[value3] = await (0, sha256)(
+            state5[value3] = await sha256(
               (
                 new TextEncoder().encode as (
                   input: unknown,
@@ -426,8 +426,8 @@ export function installFilesDesignSystemPort(): () => void {
   return () => {
     DAMAGED_FILE_REPLACEMENT_CHARACTER = String.fromCharCode(65533);
     isBinaryProjectFilePath = (input) => {
-      let value = (0, relativeProjectFilePath)(input);
-      return value !== undefined && !(0, isTextFilePath)(value);
+      let value = relativeProjectFilePath(input);
+      return value !== undefined && !isTextFilePath(value);
     };
     isDownloadOnlyPublishInput = (input) =>
       input !== null &&
@@ -435,9 +435,9 @@ export function installFilesDesignSystemPort(): () => void {
       !(input instanceof Blob) &&
       FILE_BINARY_MIME_TYPES.has(input.contentType ?? "");
     fileMayStayByReference = (input, options, context) =>
-      (0, canUseHeldFilePointer)(options) &&
+      canUseHeldFilePointer(options) &&
       (context === undefined
-        ? (0, assetKindForPath)(options) !== "video"
-        : (0, lazyFileReadMode)(context, input) === "held");
+        ? assetKindForPath(options) !== "video"
+        : lazyFileReadMode(context, input) === "held");
   };
 }

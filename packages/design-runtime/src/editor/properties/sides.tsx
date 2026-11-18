@@ -307,13 +307,13 @@ export function installEditorPropertiesSides(): () => void {
       "CornerBottomRight",
       "CornerBottomLeft",
     ];
-    reactPropertiesSides = (0, toModuleNamespace)(
-      (0, load_react)(),
+    reactPropertiesSides = toModuleNamespace(
+      load_react(),
       1,
     );
-    (0, initializeCdsIndex)();
-    jsxPropertiesSides = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    initializeCdsIndex();
+    jsxPropertiesSides = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
     PropertiesSidesNwNeSeValues = ["nw", "ne", "se", "sw"];

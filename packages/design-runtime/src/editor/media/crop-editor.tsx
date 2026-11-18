@@ -85,7 +85,7 @@ function MediaCropEditor({
             crop: input,
             frame: options,
           }))
-        : (0, sameImageCrop)(input, current.crop) ||
+        : sameImageCrop(input, current.crop) ||
           current.onLive(input);
     },
     callback2: Dynamic = (input?: Dynamic): Dynamic => {
@@ -109,7 +109,7 @@ function MediaCropEditor({
     };
   (0, reactPropertiesSides.useEffect)((): Dynamic => {
     let current: Dynamic = value.current;
-    (0, announce)(
+    announce(
       "Cropping. Press Enter when done. " +
         (current.onFrame ? uiMessage("inspector.cropEditor.dragAnEdgeToCrop") : "") +
         uiMessage("inspector.cropEditor.arrowKeysMoveThePicture") +
@@ -174,7 +174,7 @@ function MediaCropEditor({
         if (value24) {
           let value25: Dynamic = (event.shiftKey ? 10 : 1) / current3.scale;
           callback(
-            (0, translateImageCrop)(
+            translateImageCrop(
               current3.frame,
               current3.natural,
               current3.crop,
@@ -186,14 +186,14 @@ function MediaCropEditor({
           value23 !== 0
             ? current3.zoomDisabledReason === undefined
               ? callback(
-                  (0, zoomImageCrop)(
+                  zoomImageCrop(
                     current3.frame,
                     current3.natural,
                     current3.crop,
                     value23,
                   ),
                 )
-              : (0, announce)(current3.zoomDisabledReason)
+              : announce(current3.zoomDisabledReason)
             : value22
               ? event.key.toLowerCase() === "z" &&
                 !event.shiftKey &&
@@ -230,14 +230,14 @@ function MediaCropEditor({
             x: current3.frame.w / 2 + items5 * items7 - items6 * items8,
             y: current3.frame.h / 2 + items5 * items8 + items6 * items7,
           },
-          value22: Dynamic = (0, zoomImageCrop)(
+          value22: Dynamic = zoomImageCrop(
             current3.frame,
             current3.natural,
             current3.crop,
             Math.min(2, Math.max(0.5, context)),
             state6,
           );
-        (0, sameImageCrop)(value22, current3.crop) ||
+        sameImageCrop(value22, current3.crop) ||
           current3.onLive(value22);
       },
       [items3, items4]: Dynamic = [0, 0],
@@ -340,7 +340,7 @@ function MediaCropEditor({
           items3 * items6 + items4 * items5,
         ];
       if (current.drag.of === "side") {
-        let value22: Dynamic = (0, resizeImageCropFrame)(
+        let value22: Dynamic = resizeImageCropFrame(
             current.frame,
             natural,
             current.start,
@@ -357,7 +357,7 @@ function MediaCropEditor({
           },
           value23: Dynamic = snapFrame ? snapFrame(state6) : state6,
           value24: Dynamic = snapFrame
-            ? (0, cropIntoFrame)(
+            ? cropIntoFrame(
                 current.frame,
                 natural,
                 current.start,
@@ -375,14 +375,14 @@ function MediaCropEditor({
       } else
         callback(
           current.drag.of === "media"
-            ? (0, translateImageCrop)(
+            ? translateImageCrop(
                 current.frame,
                 natural,
                 current.start,
                 items7,
                 items8,
               )
-            : (0, resizeImageCropCorner)(
+            : resizeImageCropCorner(
                 current.frame,
                 natural,
                 current.start,
@@ -459,10 +459,10 @@ function MediaCropEditor({
       onPointerDown: (event?: Dynamic): Dynamic => (
         event.preventDefault(),
         event.stopPropagation(),
-        (0, announce)(input)
+        announce(input)
       ),
     }),
-    value10: Dynamic = (0, imageCropRect)(frame, natural, crop),
+    value10: Dynamic = imageCropRect(frame, natural, crop),
     value11: Dynamic =
       typeof matchMedia == "function" &&
       matchMedia("(pointer: coarse)").matches,

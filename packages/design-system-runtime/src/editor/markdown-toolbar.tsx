@@ -269,7 +269,7 @@ function readMarkdownSelectionFormat(root: HTMLElement) {
     } else if (tagName === "OL") {
       [format.ul, format.ol] = [false, true];
     } else if (tagName === "A" && format.link === undefined) {
-      format.link = (0, linkUrlFromElement)(element);
+      format.link = linkUrlFromElement(element);
     } else if (format.block === "p") {
       if (tagName === "H1") {
         format.block = "h1";
@@ -294,7 +294,7 @@ function normalizeExternalLinkInput(input: string) {
   if (!/^[a-z][a-z0-9+.-]*:/i.test(url)) {
     url = "https://" + url;
   }
-  return (0, classifyExternalLink)(url);
+  return classifyExternalLink(url);
 }
 function executeMarkdownCommand(
   document2: Document,
@@ -351,7 +351,7 @@ function applyMarkdownLink(
   }
   executeMarkdownCommand(document2, "createLink", value);
   if (root !== undefined) {
-    (0, prepareEditableLinks)(root);
+    prepareEditableLinks(root);
   }
   return true;
 }
@@ -380,20 +380,20 @@ export {
 };
 export function installEditorMarkdownToolbar(): () => void {
   return () => {
-    reactMarkdownToolbar = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    reactMarkdownToolbar = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
-    reactDomMarkdownToolbar = (0, toModuleNamespace)(
-      (0, loadReactDomNamespace)(),
+    reactDomMarkdownToolbar = toModuleNamespace(
+      loadReactDomNamespace(),
       1,
     );
-    reactToolbarPicker = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    reactToolbarPicker = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
-    jsxToolbarPicker = (0, toModuleNamespace)(
-      (0, loadJsxNamespace)(),
+    jsxToolbarPicker = toModuleNamespace(
+      loadJsxNamespace(),
       1,
     );
     EMPTY_MARKDOWN_FORMAT_STATE = {

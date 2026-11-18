@@ -110,8 +110,8 @@ function ButtonGroupLayout({
       {...props}
       role={"group"}
       aria-label={ariaLabel}
-      {...(0, getSizeAttribute)(size)}
-      className={(0, cn)(
+      {...getSizeAttribute(size)}
+      className={cn(
         "relative inline-flex w-fit shrink-0",
         orientation === "vertical"
           ? "flex-col items-stretch"
@@ -185,10 +185,10 @@ function SplitButton({
   className: className,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic = (0, useLabel)("moreOptions", "More options"),
+  let value: Dynamic = useLabel("moreOptions", "More options"),
     value2: Dynamic = menuLabel ?? value,
-    value3: Dynamic = (0, useDensity)(),
-    value4: Dynamic = caretSize ?? (0, menuCaretSize)(value3, size),
+    value3: Dynamic = useDensity(),
+    value4: Dynamic = caretSize ?? menuCaretSize(value3, size),
     value5: Dynamic =
       !disabled2 && (variant === "secondary" || variant === "ghost"),
     [value6, value7]: Dynamic = (0, reactButtonGroup_2.useState)(false),
@@ -202,8 +202,8 @@ function SplitButton({
     value11: Dynamic = variant === "ghost" && label === undefined && !value9,
     value12: Dynamic = variant === "ghost" && value9,
     value13: Dynamic = value10 || value11,
-    value14: Dynamic = (0, buttonIconPadding)(
-      (0, useButtonIconSize)(size),
+    value14: Dynamic = buttonIconPadding(
+      useButtonIconSize(size),
     ),
     value15: Dynamic =
       variant !== "ghost"
@@ -239,7 +239,7 @@ function SplitButton({
               : undefined)}
             tooltip={tooltip}
             tooltipSide={tooltipSide}
-            className={(0, npm_clsx_Ea)(
+            className={npm_clsx_Ea(
               value9 && "peer/slot",
               value12 && ButtonGroupClassNames_3,
               value11 && GroupDataPopupOpenSplitPointerEventsNoneValue,
@@ -261,7 +261,7 @@ function SplitButton({
               : undefined)}
             icon={icon}
             shortcut={shortcut}
-            className={(0, npm_clsx_Ea)(
+            className={npm_clsx_Ea(
               ButtonGroupLabel_2,
               value9 && "peer/slot",
               value12 && ButtonGroupClassNames_3,
@@ -277,7 +277,7 @@ function SplitButton({
             {label}
           </Button>)}
         {value9 && (<span
-            className={(0, cn)(
+            className={cn(
               "flex shrink-0 items-center self-stretch pe-md",
               value12 && ButtonGroupClassNames_4,
               ButtonGroupSecondaryPrimaryDangerConfig[variant]?.seam,
@@ -297,7 +297,7 @@ function SplitButton({
       variant={"joined"}
       buttonVariant={variant}
       size={size}
-      className={(0, cn)(
+      className={cn(
         "group/split",
         value13 && ButtonGroupJoinValue,
         value10 && ButtonGroupLabel_5,
@@ -328,7 +328,7 @@ function SplitButton({
         disabled={disabled2}
         className={
           variant === "ghost"
-            ? (0, cn)(
+            ? cn(
                 ButtonGroupClassNames_2,
                 value11 && ButtonGroupLabel_4,
               )
@@ -384,7 +384,7 @@ function flexSiblingWidth(
 ): Dynamic {
   let index: Dynamic = 0;
   for (let value of Array.from(input.children) as Dynamic) {
-    if (value === options || !(0, isHtmlElement)(value)) continue;
+    if (value === options || !isHtmlElement(value)) continue;
     let value2: Dynamic = getComputedStyle(value);
     if (
       value2.position === "absolute" ||
@@ -436,8 +436,8 @@ function flexContentBounds(input?: Dynamic): Dynamic {
     NEGATIVE_INFINITY: Dynamic = Number.NEGATIVE_INFINITY;
   for (let value2 of Array.from(input.children) as Dynamic) {
     if (
-      !(0, isHtmlElement)(value2) &&
-      !(0, isSvgElement)(value2)
+      !isHtmlElement(value2) &&
+      !isSvgElement(value2)
     )
       continue;
     let position: Dynamic = getComputedStyle(value2).position;
@@ -475,12 +475,12 @@ function ButtonGroup(input?: Dynamic): Dynamic {
   let value9: Dynamic = (0, reactButtonGroup_3.useRef)(null),
     [value10, value11]: Dynamic = (0, reactButtonGroup_3.useState)(false),
     value12: Dynamic = (0, reactButtonGroup_3.useRef)(0);
-  (0, useIsomorphicLayoutEffect)((): Dynamic => {
+  useIsomorphicLayoutEffect((): Dynamic => {
     if (!value8) return;
     let current: Dynamic = value9.current,
       value14: Dynamic = current?.parentElement ?? null;
     if (current === null || value14 === null) return;
-    let value15: Dynamic = (0, getResizeObserver)(value14);
+    let value15: Dynamic = getResizeObserver(value14);
     if (value15 === undefined) return;
     let callback: Dynamic = (): Dynamic => {
       let value17: Dynamic = elementInnerWidth(value14);
@@ -494,7 +494,7 @@ function ButtonGroup(input?: Dynamic): Dynamic {
         return;
       }
       let firstElementChild2: Dynamic = current.firstElementChild;
-      if (!(0, isHtmlElement)(firstElementChild2)) return;
+      if (!isHtmlElement(firstElementChild2)) return;
       let value18: Dynamic = flexRowWidth(
         value14,
         current,
@@ -507,7 +507,7 @@ function ButtonGroup(input?: Dynamic): Dynamic {
     let value16: Dynamic = new value15(callback);
     value16.observe(value14);
     let firstElementChild: Dynamic = current.firstElementChild;
-    (0, isHtmlElement)(firstElementChild) &&
+    isHtmlElement(firstElementChild) &&
       value16.observe(firstElementChild);
     return (): Dynamic => value16.disconnect();
   }, [value8, value10]);
@@ -686,18 +686,18 @@ export {
 };
 export function installCdsButtonGroup(): () => void {
   return () => {
-    initializeButtonGroup = (0, initializeOnce)((): Dynamic => {
+    initializeButtonGroup = initializeOnce((): Dynamic => {
       "use client";
 
-      (0, initializeClassNames)();
-      (0, initializeCdsRoot)();
-      (0, initializeTooltipTooltip)();
-      (0, initializeButtonButton)();
-      reactButtonGroup = (0, toModuleNamespace)(
-        (0, load_react)(),
+      initializeClassNames();
+      initializeCdsRoot();
+      initializeTooltipTooltip();
+      initializeButtonButton();
+      reactButtonGroup = toModuleNamespace(
+        load_react(),
       );
-      jsxButtonGroup = (0, toModuleNamespace)(
-        (0, load_react_jsx_runtime)(),
+      jsxButtonGroup = toModuleNamespace(
+        load_react_jsx_runtime(),
       );
       ButtonGroupClassNames =
         "after:pointer-events-none after:absolute after:inset-0 after:rounded-[inherit] after:[box-shadow:inset_0_0_0_1px_var(--cds-fill-secondary-ring)]";
@@ -724,22 +724,22 @@ export function installCdsButtonGroup(): () => void {
       ButtonGroupLabel =
         "[[data-cds-segment]:has(:disabled:not([aria-busy]))+&:has(+[data-cds-segment]_:disabled:not([aria-busy]))]:opacity-disabled";
     });
-    initializeButtonGroup_2 = (0, initializeOnce)((): Dynamic => {
+    initializeButtonGroup_2 = initializeOnce((): Dynamic => {
       "use client";
 
-      (0, initializeClassNames)();
-      (0, initializeSheetsStyles_2)();
-      (0, initializeCdsRoot)();
-      (0, initializeComponentsIcon_2)();
-      (0, initializeButtonButton)();
-      (0, initializeMenuMenu_5)();
+      initializeClassNames();
+      initializeSheetsStyles_2();
+      initializeCdsRoot();
+      initializeComponentsIcon_2();
+      initializeButtonButton();
+      initializeMenuMenu_5();
       initializeButtonGroup();
-      reactButtonGroup_2 = (0, toModuleNamespace)(
-        (0, load_react)(),
+      reactButtonGroup_2 = toModuleNamespace(
+        load_react(),
       );
-      (0, initializeNpm_clsx_xh)();
-      jsxButtonGroup_2 = (0, toModuleNamespace)(
-        (0, load_react_jsx_runtime)(),
+      initializeNpm_clsx_xh();
+      jsxButtonGroup_2 = toModuleNamespace(
+        load_react_jsx_runtime(),
       );
       ButtonGroupAspectRatioPaddingInlineMinWidthConfig = {
         get aspectRatio() { return uiMessage("canvas.group.auto"); },
@@ -789,25 +789,25 @@ export function installCdsButtonGroup(): () => void {
       ButtonGroupLabel_5 =
         "[&>[data-cds-segment]:first-child_[data-cds-part=paint]]:pe-0 [&>[data-cds-segment]:last-child_[data-cds-part=paint]]:ps-0";
     });
-    initializeButtonGroup_3 = (0, initializeOnce)((): Dynamic => {
-      (0, initializeDomRefComposition_2)();
+    initializeButtonGroup_3 = initializeOnce((): Dynamic => {
+      initializeDomRefComposition_2();
       ButtonGroupObservedElements = new WeakSet();
     });
-    initializeButtonGroup_4 = (0, initializeOnce)((): Dynamic => {
+    initializeButtonGroup_4 = initializeOnce((): Dynamic => {
       "use client";
 
-      (0, initializeHooksLayoutEffect)();
-      (0, initializeDomRefComposition_2)();
-      (0, initializeTooltipTrigger_2)();
-      (0, initializeButtonButton)();
+      initializeHooksLayoutEffect();
+      initializeDomRefComposition_2();
+      initializeTooltipTrigger_2();
+      initializeButtonButton();
       initializeButtonGroup_3();
       initializeButtonGroup();
       initializeButtonGroup_2();
-      reactButtonGroup_3 = (0, toModuleNamespace)(
-        (0, load_react)(),
+      reactButtonGroup_3 = toModuleNamespace(
+        load_react(),
       );
-      jsxButtonGroup_3 = (0, toModuleNamespace)(
-        (0, load_react_jsx_runtime)(),
+      jsxButtonGroup_3 = toModuleNamespace(
+        load_react_jsx_runtime(),
       );
       (ButtonGroup as Dynamic).displayName = "ButtonGroup";
     });

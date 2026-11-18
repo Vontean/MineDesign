@@ -106,16 +106,16 @@ export {
 };
 export function installUiAnnouncements(): () => void {
   return () => {
-    reactForUiColorPicker = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    reactForUiColorPicker = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
-    reactLC = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    reactLC = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
-    jsxForUiAnnouncements = (0, toModuleNamespace)(
-      (0, loadJsxNamespace)(),
+    jsxForUiAnnouncements = toModuleNamespace(
+      loadJsxNamespace(),
       1,
     );
     liveAnnouncementListeners = new Set();

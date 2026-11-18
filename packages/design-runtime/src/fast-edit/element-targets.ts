@@ -23,7 +23,7 @@ var containsOnlyTemplateInterpolation: Dynamic;
 var directTargetText: Dynamic;
 function parseTargetTemplate(html?: Dynamic): Dynamic {
   let template: Dynamic = (document as Dynamic).createElement("template");
-  template.innerHTML = (0, toParserHtml)(html);
+  template.innerHTML = toParserHtml(html);
   return template.content;
 }
 function findEmptyDrawingTarget(
@@ -40,12 +40,12 @@ function findEmptyDrawingTarget(
     for (
       let parentElement: Dynamic = drawing.parentElement;
       parentElement !== null &&
-      (0, isDecorativeElement)(parentElement);
+      isDecorativeElement(parentElement);
       parentElement = parentElement.parentElement
     )
       drawing = parentElement;
   let value: Dynamic = drawing.getAttribute("id") ?? "";
-  return (0, isDecorativeElement)(drawing) && prefix.test(value)
+  return isDecorativeElement(drawing) && prefix.test(value)
     ? {
         id: value,
         parts: drawing.querySelectorAll("*").length,
@@ -94,11 +94,11 @@ function resolveClickedElementTarget(
   let pathTarget: Dynamic =
       hit2 !== null && !hit2.atPath
         ? null
-        : (0, resolveRenderedElementPath)(selectorPath, html, prefix),
+        : resolveRenderedElementPath(selectorPath, html, prefix),
     handleTarget: Dynamic =
       hit2 === null || hit2.tid === null
         ? null
-        : (0, resolveTemplateHandleId)(
+        : resolveTemplateHandleId(
             hit2.tid,
             handles,
             html,
@@ -195,7 +195,7 @@ async function resolveFastEditClickTarget(
               : {}),
           };
   if (webview.rectsOf === undefined) return value5;
-  let value6: Dynamic = await (0, withFastEditTimeout)(
+  let value6: Dynamic = await withFastEditTimeout(
     webview
       .rectsOf(
         html,
@@ -397,11 +397,11 @@ export function installFastEditElementTargets(): () => void {
     };
     isSuitableTextTarget = (input?: Dynamic): Dynamic =>
       (nearestRawTemplateParent(input)?.parentElement ?? null) !== null &&
-      (0, extractVisibleElementText)(input, {
+      extractVisibleElementText(input, {
         enough: 1 / 0,
       }).trim() !== "" &&
       targetUtf8Encoder.encode(
-        (0, truncateLargeDataUris)(input.outerHTML),
+        truncateLargeDataUris(input.outerHTML),
       ).length <= 12e3;
     containsOnlyTemplateInterpolation = (input?: Dynamic): Dynamic =>
       input.includes("{{") &&

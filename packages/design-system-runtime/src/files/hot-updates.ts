@@ -32,7 +32,7 @@ var describeHotChangedPaths: (
 var hotAdoptMethodKind: (update: Host.HotUpdate) => string;
 var HOT_INDEX_RECHECK_DELAY_MS: number;
 function getHotCapability(): FilesHotCapability | null {
-  let value = (0, getClaudeCapability)("hot");
+  let value = getClaudeCapability("hot");
   if (
     (typeof value === "object" || typeof value === "function") &&
     value !== null
@@ -128,7 +128,7 @@ function createFilesHotUpdateController(
     };
   }
   let { port: port } = options,
-    portExtensions = (0, filesPortExtensions)(port),
+    portExtensions = filesPortExtensions(port),
     isCodePath = options.isCode ?? isRuntimeInternalFilePath,
     retryDelays = options.retryMs ?? BOOT_FILE_READ_RETRY_DELAYS_MS,
     timers = options.timers ?? {
@@ -220,7 +220,7 @@ function createFilesHotUpdateController(
         portExtensions.knownListing?.() ?? fallbackListing ?? [],
       ),
       entries2 = new Map(
-        (await (0, listWritableFiles)(port)).map((input) => [
+        (await listWritableFiles(port)).map((input) => [
           input.path,
           input.sha256,
         ]),
@@ -460,7 +460,7 @@ function createFilesHotUpdateController(
         options3: () => Promise<Result>,
       ): Promise<Result> => {
         let index2 = 0;
-        return (0, retryFileRead)(
+        return retryFileRead(
           () => {
             index2 += 1;
             return options3();
@@ -590,7 +590,7 @@ function createFilesHotUpdateController(
     if (value5.length === 0 && value4.length > 0 && input !== null) {
       try {
         await callback3("_files.json", () =>
-          (0, listWritableFiles)(port),
+          listWritableFiles(port),
         );
         value6 = now() - value;
       } catch (value9: unknown) {
@@ -673,7 +673,7 @@ function createFilesHotUpdateController(
     return "applied";
   }
   let earlyUpdates =
-    options.early ?? (0, currentHotReloadBridge)(hot);
+    options.early ?? currentHotReloadBridge(hot);
   if (options.snapshot !== undefined && typeof hot.snapshot === "function") {
     hot.snapshot((input: unknown) =>
       disposed ? undefined : options.snapshot!(input),

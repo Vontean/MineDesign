@@ -21,7 +21,7 @@ var PlatformFilesHotReloadPath: Dynamic;
 var PlatformFilesHotReloadAdopt: Dynamic;
 var PlatformFilesHotReloadConstant: Dynamic;
 function getHotCapability(): Dynamic {
-  let value: Dynamic = (0, getCachedHostCapability)("hot");
+  let value: Dynamic = getCachedHostCapability("hot");
   return (typeof value == "object" || typeof value == "function") &&
     value !== null
     ? value
@@ -190,7 +190,7 @@ function createFilesHotReloadController(input?: Dynamic): Dynamic {
   async function value12(): Promise<Dynamic> {
     let entries: Dynamic = new Map(value3.knownListing?.() ?? value9 ?? []),
       entries2: Dynamic = new Map(
-        (await (0, listWritableFiles)(value2)).map(
+        (await listWritableFiles(value2)).map(
           (input2?: Dynamic): Dynamic => [input2.path, input2.sha256],
         ),
       );
@@ -422,7 +422,7 @@ function createFilesHotReloadController(input?: Dynamic): Dynamic {
         options2?: Dynamic,
       ): Dynamic => {
         let index2: Dynamic = 0;
-        return (0, retryAccessFailure)(
+        return retryAccessFailure(
           (): Dynamic => ((index2 += 1), options2()),
           value6,
           (input4?: Dynamic, options3?: Dynamic): Dynamic => {
@@ -549,7 +549,7 @@ function createFilesHotReloadController(input?: Dynamic): Dynamic {
       try {
         await callback5(
           "_files.json",
-          (): Dynamic => (0, listWritableFiles)(value2),
+          (): Dynamic => listWritableFiles(value2),
         );
         value21 = callback() - value16;
       } catch (value24: Dynamic) {
@@ -625,7 +625,7 @@ function createFilesHotReloadController(input?: Dynamic): Dynamic {
     return "applied";
   }
   let value15: Dynamic =
-    input.early ?? (0, getHotReloadController)(value);
+    input.early ?? getHotReloadController(value);
   input.snapshot !== undefined &&
     typeof value.snapshot == "function" &&
     value.snapshot(

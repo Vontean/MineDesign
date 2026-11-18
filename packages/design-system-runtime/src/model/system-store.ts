@@ -58,7 +58,7 @@ function refreshNonemptyManifest(
   if (Object.keys(content.files).length === 0) {
     return content;
   }
-  return (0, refreshManifest)(content, title);
+  return refreshManifest(content, title);
 }
 async function isLegacyEnvelopeCurrent(
   convertedAt?: string,
@@ -90,11 +90,11 @@ async function isLegacyEnvelopeCurrent(
     )?.content?.files?.[DESIGN_SYSTEM_PATHS.manifest];
     if (
       typeof value2 !== "string" ||
-      Object.keys((0, parseManifest)(value2)).length === 0
+      Object.keys(parseManifest(value2)).length === 0
     ) {
       return null;
     }
-    let value3 = (0, lastChangeFromManifest)(value2)?.at;
+    let value3 = lastChangeFromManifest(value2)?.at;
     if (
       value3 === undefined ||
       Date.parse(value3) <= Date.parse(convertedAt)
@@ -153,7 +153,7 @@ function documentOptionsForBootMode(
     opts: {
       embeddedState: mode.state,
       pageParts: EMPTY_EMBEDDED_PAGE_PARTS,
-      roFlag: (0, constantReadOnlyReasonSlot)(mode.reason),
+      roFlag: constantReadOnlyReasonSlot(mode.reason),
       stash: unavailableStorageSlot,
       canPublish: true,
     },
@@ -179,7 +179,7 @@ function changedHeldFilePaths(
   for (let value of Object.keys(beforeFiles)) {
     let value2 = beforeFiles[value];
     if (
-      (0, isHeldFilePointer)(value, value2) &&
+      isHeldFilePointer(value, value2) &&
       afterFiles[value] !== value2 &&
       !isGone(value)
     ) {
@@ -199,7 +199,7 @@ function introducedHeldFilePaths(
   for (let value of Object.keys(afterFiles)) {
     let value2 = afterFiles[value];
     if (
-      (0, isHeldFilePointer)(value, value2) &&
+      isHeldFilePointer(value, value2) &&
       beforeFiles[value] !== value2
     ) {
       introduced.push(value);
@@ -218,7 +218,7 @@ function createDesignSystemCommands(
     commands.bindUndoStack?.(sharedUndoStack);
   }
   let refresh = (input: Model.DesignSystemContent) =>
-      (0, refreshManifest)(input, document2.title()),
+      refreshManifest(input, document2.title()),
     coalescedStep: Storage.CoalescedEdit | null = null,
     seal = (): void => {
       if (coalescedStep !== null) {
@@ -245,7 +245,7 @@ function createDesignSystemCommands(
         return false;
       }
       if (
-        !(0, isHeldFilePointer)(
+        !isHeldFilePointer(
           input,
           document2.content().files[input] ?? "",
         ) ||
@@ -272,7 +272,7 @@ function createDesignSystemCommands(
       } else {
         return changedHeldFilePaths(
           input.files,
-          (0, finalizeContentChange)(input, value, document2.title())
+          finalizeContentChange(input, value, document2.title())
             .files,
           isGone,
         );
@@ -400,7 +400,7 @@ function createDesignSystemCommands(
                   items.push(input2);
                 } else if (
                   (preparedBytes.set(input2, value5),
-                  (0, isExpensiveHeldImagePath)(input2))
+                  isExpensiveHeldImagePath(input2))
                 ) {
                   index += value5.value.length;
                 }
@@ -438,7 +438,7 @@ function createDesignSystemCommands(
         seal();
       }
       let value = document2.content(),
-        value2 = (0, finalizeContentChange)(
+        value2 = finalizeContentChange(
           value,
           options2(value),
           document2.title(),
@@ -521,7 +521,7 @@ function createDesignSystemCommands(
         return false;
       }
       let value3 = value,
-        value4 = (0, finalizeContentChange)(
+        value4 = finalizeContentChange(
           value,
           value2,
           document2.title(),
@@ -555,7 +555,7 @@ function createDesignSystemCommands(
         }
         if (Object.keys(state).length > 0) {
           flag = true;
-          value3 = (0, finalizeContentChange)(
+          value3 = finalizeContentChange(
             value,
             {
               ...value,
@@ -573,7 +573,7 @@ function createDesignSystemCommands(
             }
             return false;
           }
-          value4 = (0, finalizeContentChange)(
+          value4 = finalizeContentChange(
             value3,
             value8,
             document2.title(),
@@ -605,7 +605,7 @@ function createDesignSystemCommands(
       if (value6.length > 0) {
         let value8 = Object.keys(value.files).filter(
             (input2) =>
-              (0, isHeldFilePointer)(input2, value.files[input2]) &&
+              isHeldFilePointer(input2, value.files[input2]) &&
               !Object.hasOwn(value4.files, input2),
           ),
           value9 = value8.find(isGone) ?? value8[0] ?? value6[0];
@@ -627,7 +627,7 @@ function createDesignSystemCommands(
       if (commands?.heldBytes !== undefined) {
         for (let value8 of Object.keys(value.files)) {
           if (
-            (0, isHeldFilePointer)(value8, value.files[value8]) &&
+            isHeldFilePointer(value8, value.files[value8]) &&
             !Object.hasOwn(value4.files, value8) &&
             isGone(value8)
           ) {
@@ -736,7 +736,7 @@ export function installModelSystemStore(): () => void {
       ) {
         let parserOptions = {
           parseContent: (input: unknown) =>
-            (0, parseDesignSystemContent)(
+            parseDesignSystemContent(
               input,
               this.bootReport,
               storedSystemDocumentFactory !== undefined &&
@@ -746,7 +746,7 @@ export function installModelSystemStore(): () => void {
                   }
                 : undefined,
             ),
-          initialContent: (0, parseDesignSystemContent)(
+          initialContent: parseDesignSystemContent(
             EMPTY_DESIGN_SYSTEM_CONTENT,
           ),
           defaultTitle:
@@ -757,10 +757,10 @@ export function installModelSystemStore(): () => void {
           providedDocument === undefined &&
           storedSystemDocumentFactory !== undefined
         ) {
-          (0, setUnboundedFileParsing)(true);
-          (0, setProtectedFilePathPredicate)(
+          setUnboundedFileParsing(true);
+          setProtectedFilePathPredicate(
             (input: string): boolean =>
-              (0, remoteTextEntry)(input) !== undefined,
+              remoteTextEntry(input) !== undefined,
           );
         }
         if (
@@ -768,7 +768,7 @@ export function installModelSystemStore(): () => void {
           storedSystemDocumentFactory === undefined &&
           fileSystemDocumentFactory !== undefined
         ) {
-          (0, setUnboundedFileParsing)(true);
+          setUnboundedFileParsing(true);
         }
         let fileSystemDocument =
             providedDocument === undefined &&
@@ -776,7 +776,7 @@ export function installModelSystemStore(): () => void {
               ? fileSystemDocumentFactory?.({
                   ...parserOptions,
                   parseContent: (input: unknown) =>
-                    (0, parseDesignSystemContent)(
+                    parseDesignSystemContent(
                       input,
                       this.bootReport,
                       {
@@ -793,25 +793,25 @@ export function installModelSystemStore(): () => void {
             providedDocument ??
             fileSystemDocument ??
             storedDocument ??
-            (0, createArtifactDocument)({
+            createArtifactDocument({
               parseContent: (input: unknown) =>
-                (0, parseDesignSystemContent)(input, this.bootReport),
-              initialContent: (0, parseDesignSystemContent)(
+                parseDesignSystemContent(input, this.bootReport),
+              initialContent: parseDesignSystemContent(
                 EMPTY_DESIGN_SYSTEM_CONTENT,
               ),
               defaultTitle:
                 (typeof document !== "undefined" && document.title) ||
                 "Design System",
-              ...((0, getAutoSavingArtifactRuntime)() === undefined &&
-              (0, selfPublishAvailable)()
+              ...(getAutoSavingArtifactRuntime() === undefined &&
+              selfPublishAvailable()
                 ? {
-                    publish: (0, reportPublisherOutcome)(
+                    publish: reportPublisherOutcome(
                       instanceUsesFilesPublisher
-                        ? (0, createSystemFilesPublisher)({
+                        ? createSystemFilesPublisher({
                             onStale: (input: string) =>
                               console.warn("[design-system] " + input),
                           })
-                        : (0, createPageMirrorPublisher)({
+                        : createPageMirrorPublisher({
                             onStale: (input: string) =>
                               console.warn(
                                 "[design-system] saved the page alone; the files mirrored beside it were NOT updated (" +
@@ -836,7 +836,7 @@ export function installModelSystemStore(): () => void {
         this.by =
           options?.by !== undefined
             ? Promise.resolve(options.by)
-            : (0, getCurrentUserName)().then(
+            : getCurrentUserName().then(
                 (input) => input ?? "someone",
               );
         this.by.then((input: string) => (this.byName = input));
@@ -854,7 +854,7 @@ export function installModelSystemStore(): () => void {
           return;
         }
         if (storedDocument !== undefined) {
-          (0, setRemoteTextHydrator)({
+          setRemoteTextHydrator({
             hydrate: (input: string, options2: string, context?: boolean) =>
               this.update(
                 (input2) =>
@@ -872,7 +872,7 @@ export function installModelSystemStore(): () => void {
                 },
               ),
           });
-          (0, setRemoteTextUploadedCallback)(() =>
+          setRemoteTextUploadedCallback(() =>
             this.doc.updateContent(
               (input) => ({
                 ...input,
@@ -898,7 +898,7 @@ export function installModelSystemStore(): () => void {
             autosaveInstaller?.(this.doc, () => this.holdAutosave);
           } catch {}
         });
-        this.doc = (0, withAutomaticSave)(
+        this.doc = withAutomaticSave(
           {
             ...baseDocument,
             save: async (): Promise<void> => {
@@ -924,9 +924,9 @@ export function installModelSystemStore(): () => void {
               let value2 = this.saveNote().trim();
               this.update(
                 (input) =>
-                  (0, removeMissingStorageDigests)(
+                  removeMissingStorageDigests(
                     input,
-                    (0, missingStoredBlobIds)(input.files),
+                    missingStoredBlobIds(input.files),
                   ),
                 {
                   auto: true,
@@ -934,7 +934,7 @@ export function installModelSystemStore(): () => void {
               );
               this.update(
                 (input) =>
-                  (0, setLastChange)(input, {
+                  setLastChange(input, {
                     by: value,
                     via: "page",
                     at: now(),
@@ -950,8 +950,7 @@ export function installModelSystemStore(): () => void {
               );
               this.publishEnd = undefined;
               await baseDocument.save();
-              let value3: Storage.HealthEvent | null = (0,
-              saveHealthOutcome)(
+              let value3: Storage.HealthEvent | null = saveHealthOutcome(
                 baseDocument.saveState().status,
                 this.publishEnd,
               );
@@ -987,11 +986,11 @@ export function installModelSystemStore(): () => void {
       }
       episodeStamped = false;
       async publishOwed(now?: () => string): Promise<void> {
-        let status = (0, getStoredSystemStatus)(),
+        let status = getStoredSystemStatus(),
           isLive = "loadState" in this.doc && this.doc.loadState() === "live";
         if (
           typeof location !== "undefined" &&
-          (0, isMigrationExemptHost)(location.hostname)
+          isMigrationExemptHost(location.hostname)
         ) {
           return;
         }
@@ -1001,7 +1000,7 @@ export function installModelSystemStore(): () => void {
           !isLive ||
           !status.loaded ||
           this.doc.readOnly() ||
-          (0, hasUnhydratedRemoteText)()
+          hasUnhydratedRemoteText()
         ) {
           return;
         }
@@ -1011,7 +1010,7 @@ export function installModelSystemStore(): () => void {
         }
         this.owedRunning = true;
         try {
-          let value = await (0, getSelfPublishCapability)();
+          let value = await getSelfPublishCapability();
           if (value === null) {
             return;
           }
@@ -1029,8 +1028,8 @@ export function installModelSystemStore(): () => void {
               return;
             }
           }
-          for (let value2 of (0, chunkPublishChanges)(
-            (0, obsoleteMirrorDeletions)(this.doc.content().files),
+          for (let value2 of chunkPublishChanges(
+            obsoleteMirrorDeletions(this.doc.content().files),
           )) {
             await value.publish(value2);
           }
@@ -1069,15 +1068,15 @@ export function installModelSystemStore(): () => void {
             return;
           }
           if (
-            (0, hasUnhydratedRemoteText)() ||
-            (0, hasPendingRemoteTextUploads)()
+            hasUnhydratedRemoteText() ||
+            hasPendingRemoteTextUploads()
           ) {
             this.scheduleDerived("ready");
             return;
           }
           this.sawDirty = false;
           this.episodeStamped = false;
-          (0, requestStoredDerivedRegeneration)();
+          requestStoredDerivedRegeneration();
           this.doc.updateContent(
             (input) => ({
               ...input,
@@ -1164,7 +1163,7 @@ export function installModelSystemStore(): () => void {
         options?: { auto?: boolean },
       ): void {
         let before = this.doc.content(),
-          after = (0, finalizeContentChange)(
+          after = finalizeContentChange(
             before,
             mutate(before),
             this.doc.title(),
@@ -1176,7 +1175,7 @@ export function installModelSystemStore(): () => void {
           this.sawDirty = true;
           if (this.synced && !this.episodeStamped) {
             this.episodeStamped = true;
-            (0, stampLocalSystemLastChange)({
+            stampLocalSystemLastChange({
               by: this.stampBy(),
               via: "page",
               at: this.stampNow(),
@@ -1186,7 +1185,7 @@ export function installModelSystemStore(): () => void {
         this.doc.updateContent(() => after, options);
       }
       buildSnapshot(): Model.ParsedDesignSystem & { title: string } {
-        let system = (0, parsedDesignSystem)(this.doc.content()),
+        let system = parsedDesignSystem(this.doc.content()),
           title = this.doc.title(),
           previousSnapshot = this.snapshot;
         if (

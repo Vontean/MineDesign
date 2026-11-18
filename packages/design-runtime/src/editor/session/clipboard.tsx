@@ -42,14 +42,14 @@ export async function pasteClipboardAtPoint(deps: { readonly insertAtPoint: Dyna
         let { text: value308, foreign: value309 }: Dynamic = value307;
         if (!value308)
           return void deps.showToast(
-            (0, emptyClipboardMessage)(
-              (0, keyboardShortcutLabel)("V"),
+            emptyClipboardMessage(
+              keyboardShortcutLabel("V"),
             ),
           );
         let value310: Dynamic = value308.startsWith("<")
-            ? (0, wrapInlinePastedHtml)(
+            ? wrapInlinePastedHtml(
                 value309
-                  ? (0, sanitizePastedHtml)(value308)
+                  ? sanitizePastedHtml(value308)
                   : value308,
               )
             : null,
@@ -67,8 +67,8 @@ export async function pasteClipboardAtPoint(deps: { readonly insertAtPoint: Dyna
               : 1;
         if (value312 === 0)
           return void deps.showToast(
-            (0, emptyClipboardMessage)(
-              (0, keyboardShortcutLabel)("V"),
+            emptyClipboardMessage(
+              keyboardShortcutLabel("V"),
             ),
           );
         if (value312 > 1)
@@ -77,11 +77,11 @@ export async function pasteClipboardAtPoint(deps: { readonly insertAtPoint: Dyna
             input,
             (input2?: Dynamic, options?: Dynamic): Dynamic =>
               value310 != null
-                ? (0, positionPastedHtml)(value310, {
+                ? positionPastedHtml(value310, {
                     ox: input2,
                     oy: options,
                   })
-                : (0, textToParagraphHtml)(
+                : textToParagraphHtml(
                     value308,
                     `margin: 0; position: absolute; left: ${input2}px; top: ${options}px`,
                   ),
@@ -97,8 +97,8 @@ export async function pasteClipboardAtPoint(deps: { readonly insertAtPoint: Dyna
           setTimeout((): Dynamic => {
             let current: Dynamic = deps.value49.current;
             current?.name === deps.rootName &&
-              (0, InspectorEditorEvery)(current.tids, value313) &&
-              (0, setPickerSelection)(value315, value313, deps.rootName);
+              InspectorEditorEvery(current.tids, value313) &&
+              setPickerSelection(value315, value313, deps.rootName);
           }, 60);
       }
 
@@ -110,24 +110,24 @@ export function copySelectionAsPngImage(deps: { readonly rootName: Dynamic; read
           return void deps.showToast(AccessibilityAnnouncementsLabel_5);
         deps.value72.current = true;
         deps.value74(true);
-        let value308: Dynamic = (0, clipboardGeneration)(),
-          value309: Dynamic = (0, createCurrentWorkingGeneration)(),
+        let value308: Dynamic = clipboardGeneration(),
+          value309: Dynamic = createCurrentWorkingGeneration(),
           value310: Dynamic = null,
           flag: Dynamic = false,
           index: Dynamic = 0,
           value311: Dynamic = (async (): Promise<Dynamic> => {
             try {
-              if (!(await (0, allowsClipboardImages)())) {
+              if (!(await allowsClipboardImages())) {
                 flag = true;
                 return null;
               }
-              let value312: Dynamic = await (0, captureArtboardImage)(
+              let value312: Dynamic = await captureArtboardImage(
                 value307,
                 "png",
                 2,
                 {
                   onBeforeCapture: (): Dynamic =>
-                    (0, setPickerSelection)(
+                    setPickerSelection(
                       value307,
                       [...items2],
                       deps.rootName,
@@ -135,16 +135,16 @@ export function copySelectionAsPngImage(deps: { readonly rootName: Dynamic; read
                 },
               ).catch(
                 (input?: Dynamic): Dynamic => (
-                  (value310 = (0, errorMessage)(input)),
+                  (value310 = errorMessage(input)),
                   null
                 ),
               );
               return value312
                 ? value312.ok
                   ? ((index = value312.embedWarningCount),
-                    (0, clipboardGeneration)() === value308 &&
+                    clipboardGeneration() === value308 &&
                     value309()
-                      ? (0, pngDataUrlToBlob)(value312.uri)
+                      ? pngDataUrlToBlob(value312.uri)
                       : null)
                   : ((value310 =
                       value312.softError === "zero-size"
@@ -161,24 +161,24 @@ export function copySelectionAsPngImage(deps: { readonly rootName: Dynamic; read
               deps.value74(false);
             }
           })();
-        (0, writeClipboardPng)(value311).then(
+        writeClipboardPng(value311).then(
           (input?: Dynamic): Dynamic => {
-            (0, clipboardGeneration)() !== value308 ||
+            clipboardGeneration() !== value308 ||
               !value309() ||
               (input === "copied"
-                ? ((0, clearClipboardBuffers)(),
-                  (0, announce)(
+                ? (clearClipboardBuffers(),
+                  announce(
                     AccessibilityAnnouncementsLabel_2,
                   ),
                   index > 0 &&
                     deps.showToast(
-                      (0, missingCopiedImagesMessage)(index),
+                      missingCopiedImagesMessage(index),
                       "info",
                     ))
                 : flag
                   ? deps.showToast(DownloadsArenTAvailableToYouForMessage)
                   : deps.showToast(
-                      (0, pngCopyFailureMessage)(
+                      pngCopyFailureMessage(
                         "element",
                         input === "refused" ? null : value310,
                       ),
@@ -196,36 +196,36 @@ export function copySelectionAsSvgMarkup(deps: { readonly rootName: Dynamic; rea
           return void deps.showToast(AccessibilityAnnouncementsLabel_5);
         deps.value72.current = true;
         deps.value74(true);
-        let value308: Dynamic = (0, clipboardGeneration)(),
-          value309: Dynamic = (0, createCurrentWorkingGeneration)(),
+        let value308: Dynamic = clipboardGeneration(),
+          value309: Dynamic = createCurrentWorkingGeneration(),
           value310: Dynamic = null,
           flag: Dynamic = false,
           index: Dynamic = 0,
           value311: Dynamic = (async (): Promise<Dynamic> => {
             try {
-              if (!(await (0, allowsClipboardImages)())) {
+              if (!(await allowsClipboardImages())) {
                 flag = true;
                 return null;
               }
-              (0, setPickerSelection)(
+              setPickerSelection(
                 value307,
                 [...items2],
                 deps.rootName,
               );
-              let value312: Dynamic = await (0, captureClipboardSvg)(
+              let value312: Dynamic = await captureClipboardSvg(
                 value307,
                 "selection",
               ).catch(
                 (input?: Dynamic): Dynamic => (
                   console.error("[copy-svg] element", input),
-                  (value310 = (0, svgCopyErrorMessage)(input)),
+                  (value310 = svgCopyErrorMessage(input)),
                   null
                 ),
               );
               return value312
                 ? value312.ok
                   ? ((index = value312.blank),
-                    (0, clipboardGeneration)() === value308 &&
+                    clipboardGeneration() === value308 &&
                     value309()
                       ? value312.svg
                       : null)
@@ -246,24 +246,24 @@ export function copySelectionAsSvgMarkup(deps: { readonly rootName: Dynamic; rea
               deps.value74(false);
             }
           })();
-        (0, writeClipboardSvg)(value311).then(
+        writeClipboardSvg(value311).then(
           (input?: Dynamic): Dynamic => {
-            (0, clipboardGeneration)() !== value308 ||
+            clipboardGeneration() !== value308 ||
               !value309() ||
               (input === "copied"
-                ? ((0, clearClipboardBuffers)(),
-                  (0, announce)(
+                ? (clearClipboardBuffers(),
+                  announce(
                     AccessibilityAnnouncementsLabel_3,
                   ),
                   index > 0 &&
                     deps.showToast(
-                      (0, missingSvgImagesMessage)(index),
+                      missingSvgImagesMessage(index),
                       "info",
                     ))
                 : flag
                   ? deps.showToast(DownloadsArenTAvailableToYouForMessage)
                   : deps.showToast(
-                      (0, svgCopyFailureMessage)(
+                      svgCopyFailureMessage(
                         "element",
                         input === "refused" ? null : value310,
                       ),

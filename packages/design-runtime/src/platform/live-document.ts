@@ -83,7 +83,7 @@ function createLiveDocument(options?: Dynamic): Dynamic {
   }
   function normalizeTitle(input?: Dynamic, options2?: Dynamic): Dynamic {
     return (
-      (0, normalizeDocumentTitle)(
+      normalizeDocumentTitle(
         typeof input == "string" ? input.trim() : input,
       ) ?? options2
     );
@@ -179,7 +179,7 @@ function createLiveDocument(options?: Dynamic): Dynamic {
     )
       return options2.replace || input === undefined
         ? options2.patch
-        : (0, deepMerge)(input, options2.patch);
+        : deepMerge(input, options2.patch);
   }
   function effectivePathValue(input?: Dynamic): Dynamic {
     let entry: Dynamic = pathStates.get(input);
@@ -203,7 +203,7 @@ function createLiveDocument(options?: Dynamic): Dynamic {
       value24: Dynamic =
         value23 === undefined
           ? undefined
-          : (0, removeNullValues)(value23),
+          : removeNullValues(value23),
       entry: Dynamic = effectiveDocuments.get(input);
     return value24 === undefined
       ? entry === undefined
@@ -211,12 +211,12 @@ function createLiveDocument(options?: Dynamic): Dynamic {
         : (effectiveDocuments.delete(input),
           documentSizes.delete(input),
           true)
-      : entry !== undefined && (0, structurallyEqual)(entry, value24)
+      : entry !== undefined && structurallyEqual(entry, value24)
         ? false
         : (effectiveDocuments.set(input, value24),
           documentSizes.set(
             input,
-            (0, serializedDocumentBytes)(value24),
+            serializedDocumentBytes(value24),
           ),
           true);
   }
@@ -226,13 +226,13 @@ function createLiveDocument(options?: Dynamic): Dynamic {
   ): Dynamic {
     let index9: Dynamic = 0;
     for (let [value23, value24] of documentSizes as Dynamic) {
-      if (value23 === options2 || (0, dirname)(value23) !== input)
+      if (value23 === options2 || dirname(value23) !== input)
         continue;
       let entry: Dynamic = pathStates.get(value23);
       index9 +=
         entry?.parked !== undefined
           ? entry.server !== undefined
-            ? (0, serializedDocumentBytes)(entry.server)
+            ? serializedDocumentBytes(entry.server)
             : 0
           : value24;
     }
@@ -422,7 +422,7 @@ function createLiveDocument(options?: Dynamic): Dynamic {
     state = {
       title: normalizeTitle(value23.title, state.title),
       content: parseContentOrFallback(value23.content, state.content),
-      comments: (0, parseDocumentComments)(value23.comments),
+      comments: parseDocumentComments(value23.comments),
     };
     decomposedDocuments = new Map(
       codec.decompose(state, decomposedDocuments, value),
@@ -459,7 +459,7 @@ function createLiveDocument(options?: Dynamic): Dynamic {
     for (let [value25, value26] of entries3 as Dynamic) {
       let entry: Dynamic = value23.get(value25);
       if (entry === value26) continue;
-      let value27: Dynamic = (0, diffRecord)(entry, value26);
+      let value27: Dynamic = diffRecord(entry, value26);
       if (value27 === null) continue;
       let entry2: Dynamic = pathStates.get(value25),
         value28: Dynamic =
@@ -509,8 +509,8 @@ function createLiveDocument(options?: Dynamic): Dynamic {
         value24.pending.replace && (value24.reAdd = !value24.exists))
       : pending.replace
         ? (value24.pending = {
-            patch: (0, removeNullValues)(
-              (0, deepMerge)(pending.patch, options2),
+            patch: removeNullValues(
+              deepMerge(pending.patch, options2),
             ),
             replace: true,
           })
@@ -534,7 +534,7 @@ function createLiveDocument(options?: Dynamic): Dynamic {
     let value24: Dynamic = ensurePathState(input);
     touchPendingState(value24, context, value24.pending === undefined);
     value24.pending = {
-      patch: (0, removeNullValues)(options2),
+      patch: removeNullValues(options2),
       replace: true,
     };
     value24.reAdd = !value24.exists;
@@ -547,7 +547,7 @@ function createLiveDocument(options?: Dynamic): Dynamic {
     options2?: Dynamic,
     context?: Dynamic,
   ): Dynamic {
-    let value23: Dynamic = (0, diffRecord)(input, options2);
+    let value23: Dynamic = diffRecord(input, options2);
     if (value23 === null) return null;
     let state2: Dynamic = {
       ...value23,
@@ -570,7 +570,7 @@ function createLiveDocument(options?: Dynamic): Dynamic {
             !value25.includes(input2) && !value27.includes(input2),
         ),
       ];
-      (0, structurallyEqual)(items2, value27)
+      structurallyEqual(items2, value27)
         ? delete state2[value24]
         : (state2[value24] = items2);
     }
@@ -581,7 +581,7 @@ function createLiveDocument(options?: Dynamic): Dynamic {
     options2?: Dynamic,
     context?: Dynamic,
   ): Dynamic {
-    let value23: Dynamic = (0, mergeCompatibleRecords)(
+    let value23: Dynamic = mergeCompatibleRecords(
       input,
       options2,
     );
@@ -592,13 +592,13 @@ function createLiveDocument(options?: Dynamic): Dynamic {
       };
     if (context === undefined)
       return {
-        patch: (0, deepMerge)(input, options2),
+        patch: deepMerge(input, options2),
         replace: false,
       };
-    let value24: Dynamic = (0, diffRecord)(
+    let value24: Dynamic = diffRecord(
       context,
-      (0, deepMerge)(
-        (0, deepMerge)(context, input),
+      deepMerge(
+        deepMerge(context, input),
         options2,
       ),
     );
@@ -645,8 +645,8 @@ function createLiveDocument(options?: Dynamic): Dynamic {
     let value23: Dynamic = effectivePathValue(input);
     if (value23 === undefined) return;
     let value24: Dynamic =
-        collectionContentSize((0, dirname)(input), input) +
-        (0, serializedDocumentBytes)(value23),
+        collectionContentSize(dirname(input), input) +
+        serializedDocumentBytes(value23),
       value25: Dynamic = codec.refuse(input, value23, value24);
     if (value25 === undefined) {
       options2.parked !== undefined &&
@@ -696,7 +696,7 @@ function createLiveDocument(options?: Dynamic): Dynamic {
     notifySaveState();
   }
   function collectionWriteOrder(input?: Dynamic): Dynamic {
-    let value23: Dynamic = collections.indexOf((0, dirname)(input));
+    let value23: Dynamic = collections.indexOf(dirname(input));
     return value23 < 0 ? collections.length : value23;
   }
   function selectNextWrite(): Dynamic {
@@ -796,9 +796,9 @@ function createLiveDocument(options?: Dynamic): Dynamic {
           value28: Dynamic =
             value27 === undefined
               ? undefined
-              : (0, diffRecord)(
+              : diffRecord(
                   value27,
-                  (0, removeNullValues)(value24),
+                  removeNullValues(value24),
                 );
         if (value28 === null) return false;
         value28 !== undefined &&
@@ -814,17 +814,17 @@ function createLiveDocument(options?: Dynamic): Dynamic {
           !entry.held &&
           entry.acked.length === 0 &&
           entry.server !== undefined &&
-          (0, countRecordNulls)(
-            (0, deepMerge)(entry.server, state2.patch),
+          countRecordNulls(
+            deepMerge(entry.server, state2.patch),
           ) > LIVE_MAX_PATCH_PROPERTY_COUNT,
         value26: Dynamic = timers.now();
       value23 = state2.replace
         ? {
             path: input,
             verb: "set",
-            body: (0, removeNullValues)(value24),
+            body: removeNullValues(value24),
             op: {
-              patch: (0, removeNullValues)(value24),
+              patch: removeNullValues(value24),
               replace: true,
             },
             sent: value26,
@@ -833,7 +833,7 @@ function createLiveDocument(options?: Dynamic): Dynamic {
           ? {
               path: input,
               verb: "set",
-              body: (0, removeNullValues)(value24),
+              body: removeNullValues(value24),
               op: state2,
               sent: value26,
             }
@@ -858,7 +858,7 @@ function createLiveDocument(options?: Dynamic): Dynamic {
       (input2?: Dynamic): Dynamic =>
         handleWriteFailure(
           value23,
-          (0, normalizeDatabaseError)(input2),
+          normalizeDatabaseError(input2),
         ),
     );
     return true;
@@ -922,7 +922,7 @@ function createLiveDocument(options?: Dynamic): Dynamic {
         value23.createTheirs !== undefined &&
         input.verb === "set"
       ) {
-        let value28: Dynamic = (0, deepMerge)(
+        let value28: Dynamic = deepMerge(
             value23.createTheirs,
             rebaseReplacementPatch(
               value23.createBase,
@@ -930,7 +930,7 @@ function createLiveDocument(options?: Dynamic): Dynamic {
               value23.createTheirs,
             ) ?? {},
           ),
-          value29: Dynamic = (0, diffRecord)(input.body, value28);
+          value29: Dynamic = diffRecord(input.body, value28);
         if (value29 !== null) {
           let pending: Dynamic = value23.pending;
           value23.pending =
@@ -953,7 +953,7 @@ function createLiveDocument(options?: Dynamic): Dynamic {
           value23.acked.length === 0 &&
           value23.server !== undefined &&
           (value26
-            ? (0, structurallyEqual)(value23.server, input.body)
+            ? structurallyEqual(value23.server, input.body)
             : containsServerPatch(value23.server, input.body));
       if (value24 || value27) {
         for (let value28 of value23.acked as Dynamic)
@@ -989,8 +989,8 @@ function createLiveDocument(options?: Dynamic): Dynamic {
             value30.del || value30.replace || value29.del
               ? undefined
               : value29.replace
-                ? (0, deepMerge)(value29.patch, value30.patch)
-                : (0, mergeCompatibleRecords)(
+                ? deepMerge(value29.patch, value30.patch)
+                : mergeCompatibleRecords(
                     value29.patch,
                     value30.patch,
                   ),
@@ -1144,7 +1144,7 @@ function createLiveDocument(options?: Dynamic): Dynamic {
               ? entry.removedSeen && value24 !== undefined
                 ? "ghost"
                 : undefined
-              : (0, structurallyEqual)(value24 ?? null, entry.server)
+              : structurallyEqual(value24 ?? null, entry.server)
                 ? undefined
                 : "stale";
         if (value25 !== undefined) {
@@ -1221,8 +1221,8 @@ function createLiveDocument(options?: Dynamic): Dynamic {
           pending !== undefined && pending.patch !== DELETE_DOCUMENT
             ? pending.replace
               ? pending.patch
-              : (0, removeNullValues)(
-                  (0, deepMerge)(input.op.patch, pending.patch),
+              : removeNullValues(
+                  deepMerge(input.op.patch, pending.patch),
                 )
             : input.op.patch,
         value24: Dynamic = rebaseReplacementPatch(
@@ -1252,8 +1252,8 @@ function createLiveDocument(options?: Dynamic): Dynamic {
       if (pending.replace) options2.pending = pending;
       else if (input.op.replace)
         options2.pending = {
-          patch: (0, removeNullValues)(
-            (0, deepMerge)(input.op.patch, pending.patch),
+          patch: removeNullValues(
+            deepMerge(input.op.patch, pending.patch),
           ),
           replace: true,
         };
@@ -1367,7 +1367,7 @@ function createLiveDocument(options?: Dynamic): Dynamic {
           ? codec.refuse?.(
               input.path,
               value23,
-              collectionContentSize((0, dirname)(input.path)),
+              collectionContentSize(dirname(input.path)),
             )
           : undefined) ??
         "This change can\u2019t be stored (" + context.message + ").";
@@ -1473,7 +1473,7 @@ function createLiveDocument(options?: Dynamic): Dynamic {
       value23 !== undefined &&
       value23.patch !== DELETE_DOCUMENT &&
       value23.replace &&
-      !(0, structurallyEqual)(input.data ?? {}, value23.patch) &&
+      !structurallyEqual(input.data ?? {}, value23.patch) &&
       (entry.createTheirs = input.data ?? {});
     return true;
   }
@@ -1496,7 +1496,7 @@ function createLiveDocument(options?: Dynamic): Dynamic {
           options2.patch === DELETE_DOCUMENT
         ? input.patch === options2.patch
         : input.replace === options2.replace &&
-          (0, structurallyEqual)(input.patch, options2.patch);
+          structurallyEqual(input.patch, options2.patch);
   }
   function handleCollectionSnapshot(
     input?: Dynamic,
@@ -1538,7 +1538,7 @@ function createLiveDocument(options?: Dynamic): Dynamic {
     else if (values3.delete(input)) {
       let value25: Dynamic = timers.now();
       for (let [value26, value27] of pathStates as Dynamic)
-        (0, dirname)(value26) === input &&
+        dirname(value26) === input &&
           (value27.deliveredAt = value25);
     }
     values2.add(input);
@@ -1577,9 +1577,9 @@ function createLiveDocument(options?: Dynamic): Dynamic {
         value27: Dynamic = input[value25],
         value28: Dynamic = options2[value25];
       if (
-        (0, isPlainRecord)(value26) &&
-        (0, isPlainRecord)(value27) &&
-        !(0, isPlainRecord)(value28)
+        isPlainRecord(value26) &&
+        isPlainRecord(value27) &&
+        !isPlainRecord(value28)
       ) {
         if (pendingWritesObjectField(value23, value25)) {
           index9 += 1;
@@ -1592,9 +1592,9 @@ function createLiveDocument(options?: Dynamic): Dynamic {
         continue;
       }
       if (
-        (0, isPlainRecord)(value26) &&
-        (0, isPlainRecord)(value27) &&
-        (0, isPlainRecord)(value28)
+        isPlainRecord(value26) &&
+        isPlainRecord(value27) &&
+        isPlainRecord(value28)
       ) {
         let value29: Dynamic = resolveNestedServerPatch(
           value27,
@@ -1623,14 +1623,14 @@ function createLiveDocument(options?: Dynamic): Dynamic {
     let flag19: Dynamic = false;
     for (let value23 of input as Dynamic)
       (value23.replace || Object.hasOwn(value23.patch, options2)) &&
-        (flag19 = !(0, isPlainRecord)(value23.patch[options2]));
+        (flag19 = !isPlainRecord(value23.patch[options2]));
     return flag19;
   }
   function pendingFieldPatches(input?: Dynamic, options2?: Dynamic): Dynamic {
     let items2: Dynamic = [];
     for (let value23 of input as Dynamic) {
       let value24: Dynamic = value23.patch[options2];
-      (0, isPlainRecord)(value24)
+      isPlainRecord(value24)
         ? items2.push({
             patch: value24,
             replace: value23.replace,
@@ -1650,11 +1650,11 @@ function createLiveDocument(options?: Dynamic): Dynamic {
       if (value24 === null) {
         if (value25 != null) return false;
       } else if (
-        (0, isPlainRecord)(value24) &&
-        (0, isPlainRecord)(value25)
+        isPlainRecord(value24) &&
+        isPlainRecord(value25)
       ) {
         if (!containsServerPatch(value25, value24)) return false;
-      } else if (!(0, structurallyEqual)(value24, value25))
+      } else if (!structurallyEqual(value24, value25))
         return false;
     }
     return true;
@@ -1726,7 +1726,7 @@ function createLiveDocument(options?: Dynamic): Dynamic {
           inflight.patch !== DELETE_DOCUMENT &&
           value26.inflightEchoed !== true &&
           ((value26.inflightEchoed = inflight.replace
-            ? (0, structurallyEqual)(server2, inflight.patch)
+            ? structurallyEqual(server2, inflight.patch)
             : containsServerPatch(server2, inflight.patch)),
           (flag21 = value26.inflightEchoed === true));
         if (value26.createBase !== undefined)
@@ -1781,7 +1781,7 @@ function createLiveDocument(options?: Dynamic): Dynamic {
             (input?: Dynamic, options2?: Dynamic): Dynamic => {
               !input.del &&
                 (input.replace
-                  ? (0, structurallyEqual)(server2, input.patch)
+                  ? structurallyEqual(server2, input.patch)
                   : containsServerPatch(server2, input.patch)) &&
                 (value28 = options2);
             },
@@ -1912,7 +1912,7 @@ function createLiveDocument(options?: Dynamic): Dynamic {
     for (let value23 of pathStates.keys() as Dynamic) {
       let value24: Dynamic = effectivePathValue(value23);
       value24 !== undefined &&
-        entries3.set(value23, (0, removeNullValues)(value24));
+        entries3.set(value23, removeNullValues(value24));
     }
     try {
       return codec
@@ -2117,7 +2117,7 @@ function createLiveDocument(options?: Dynamic): Dynamic {
     let value23: Dynamic = timers.now();
     for (let [value24, value25] of pathStates as Dynamic) {
       if (
-        (0, dirname)(value24) !== input ||
+        dirname(value24) !== input ||
         value25.server === undefined ||
         options2.has(value24)
       )
@@ -2289,7 +2289,7 @@ function createLiveDocument(options?: Dynamic): Dynamic {
           ...state,
           content: input,
         }),
-        (0, recordEdit)());
+        recordEdit());
     },
     updateContent(input: Dynamic, options2: Dynamic): Dynamic {
       let value23: Dynamic = input(state.content);
@@ -2298,21 +2298,21 @@ function createLiveDocument(options?: Dynamic): Dynamic {
           ...state,
           content: value23,
         }),
-        options2?.auto !== true && (0, recordEdit)());
+        options2?.auto !== true && recordEdit());
     },
     setTitle(input: Dynamic): Dynamic {
-      let value23: Dynamic = (0, normalizeNewDocumentTitle)(input);
+      let value23: Dynamic = normalizeNewDocumentTitle(input);
       value23.length === 0 ||
         value23 === state.title ||
         (changeDocument({
           ...state,
           title: value23,
         }),
-        (0, recordEdit)());
+        recordEdit());
     },
     addComment(input: Dynamic): Dynamic {
       if (state.comments.length >= maxDocumentComments) return;
-      let value23: Dynamic = (0, parseDocumentComments)([
+      let value23: Dynamic = parseDocumentComments([
         {
           ...input,
           id: crypto.randomUUID().slice(0, 8),

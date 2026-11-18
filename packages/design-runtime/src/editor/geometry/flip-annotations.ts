@@ -49,13 +49,13 @@ function flipAnnotationPen(input?: Dynamic, options?: Dynamic): Dynamic {
           : input2,
     ),
     [items3, items4]: Dynamic = [
-      (0, annotationRotation)(input),
-      (0, normalizeRotationDegrees)(
-        -(0, annotationRotation)(input),
+      annotationRotation(input),
+      normalizeRotationDegrees(
+        -annotationRotation(input),
       ),
     ];
   if (value5 === input.d && items4 === items3) return "same";
-  if ((0, PlatformFileContentTrim_2)(value5) !== value5) return null;
+  if (PlatformFileContentTrim_2(value5) !== value5) return null;
   let state: Dynamic = {
       d: input.d,
       ...(items4 !== items3
@@ -109,7 +109,7 @@ function flipAnnotationPen(input?: Dynamic, options?: Dynamic): Dynamic {
   };
 }
 function flipAnnotation(source?: Dynamic, options?: Dynamic): Dynamic {
-  if (!(0, isShapeAnnotation)(source))
+  if (!isShapeAnnotation(source))
     return GeometryFlipAnnotationsLabel;
   if (source.kind === "pen")
     try {
@@ -152,9 +152,9 @@ function flipAnnotation(source?: Dynamic, options?: Dynamic): Dynamic {
           };
   let value: Dynamic = options === "horizontal" ? "flipX" : "flipY",
     [items, items2]: Dynamic = [
-      (0, annotationRotation)(source),
-      (0, normalizeRotationDegrees)(
-        -(0, annotationRotation)(source),
+      annotationRotation(source),
+      normalizeRotationDegrees(
+        -annotationRotation(source),
       ),
     ];
   return {

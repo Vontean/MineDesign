@@ -10,9 +10,9 @@ var reactForUiSurfaces: typeof React;
 var jsxrm: typeof import("react/jsx-runtime");
 var Surface: C.ForwardComponent<HTMLDivElement, C.SurfaceProps>;
 function useSurfaceStyle(input: C.SurfaceBackground): C.DesignStyle {
-  let value: "light" | "dark" = (0, useResolvedColorMode)();
+  let value: "light" | "dark" = useResolvedColorMode();
   return {
-    ...(0, getSurfaceBackgroundStyle)(input),
+    ...getSurfaceBackgroundStyle(input),
     "--cds-focus-shadow": focusShadowByMode[value],
     "--cds-focus-shadow-danger": dangerFocusShadowByMode[value],
   };
@@ -25,13 +25,13 @@ export {
 };
 export function installUiSurfaces(): () => void {
   return () => {
-    (0, initializeCdsRoot)();
-    (0, initializeSurfaces)();
-    reactForUiSurfaces = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    initializeCdsRoot();
+    initializeSurfaces();
+    reactForUiSurfaces = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
-    jsxrm = (0, toModuleNamespace)((0, loadJsxNamespace)(), 1);
+    jsxrm = toModuleNamespace(loadJsxNamespace(), 1);
     Surface = reactForUiSurfaces.forwardRef(
       (
         {
@@ -50,8 +50,8 @@ export function installUiSurfaces(): () => void {
             data-cds={"Surface"}
             data-surface={elevation}
             {...props}
-            className={(0, cn)(
-              (0, getSurfaceClasses)(elevation),
+            className={cn(
+              getSurfaceClasses(elevation),
               className,
             )}
             style={{
@@ -69,8 +69,8 @@ export function installUiSurfaces(): () => void {
       },
     );
     Surface.displayName = "Surface";
-    (0, initializeClassNames)();
-    (0, initializeTranslations)();
-    (0, initializeCdsRoot)();
+    initializeClassNames();
+    initializeTranslations();
+    initializeCdsRoot();
   };
 }

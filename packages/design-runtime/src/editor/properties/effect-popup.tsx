@@ -210,7 +210,7 @@ function PropertyEditorPopover({
       positionAnchor={anchor}
       focusOnOpen={focusOnOpen}
       padding={"none"}
-      className={(0, joinClassNames)(
+      className={joinClassNames(
         "w-[14.5rem] pointer-coarse:w-[17rem]",
         className,
       )}
@@ -267,7 +267,7 @@ export function installEditorPropertiesEffectPopup(): () => void {
         let value: Dynamic = (0, reactSessionStripPopover.useMemo)(
           (): Dynamic =>
             typeof color == "string"
-              ? (0, parseHsvaColor)(color)
+              ? parseHsvaColor(color)
               : undefined,
           [color],
         );
@@ -287,7 +287,7 @@ export function installEditorPropertiesEffectPopup(): () => void {
             chip={
               color !== undefined ? (
                 <ColorWellFace
-                  hex={value ? (0, hsvaToRgbHex)(value) : null}
+                  hex={value ? hsvaToRgbHex(value) : null}
                   alpha={(value?.a ?? 1) * 100}
                 />
               ) : undefined

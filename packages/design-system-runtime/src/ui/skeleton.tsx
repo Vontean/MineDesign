@@ -94,7 +94,7 @@ function createSkeletonShownStore(): C.SkeletonShownStore {
       }
       snapshot = input;
       for (let value of listeners) {
-        (0, invokeAndReportError)(value);
+        invokeAndReportError(value);
       }
     };
   return {
@@ -238,7 +238,7 @@ function SkeletonGroup({
       },
       [value8],
     ),
-    value13: string = (0, useTranslation)("loading", "Loading"),
+    value13: string = useTranslation("loading", "Loading"),
     [value14] = reactForUiSkeleton.useState(hold),
     value15 = value14 === "delayed",
     value16 = label ?? value13,
@@ -373,9 +373,8 @@ function SkeletonGroup({
         current.style.visibility = items.length ? "visible" : "hidden";
       };
     callback4();
-    let value19: Pick<ResizeObserver, "observe" | "disconnect"> = (0,
-    createSafeResizeObserver)(
-      (0, getResizeObserverConstructor)(current2) ?? ResizeObserver,
+    let value19: Pick<ResizeObserver, "observe" | "disconnect"> = createSafeResizeObserver(
+      getResizeObserverConstructor(current2) ?? ResizeObserver,
       callback4,
     );
     value19.observe(current2);
@@ -413,8 +412,7 @@ function SkeletonGroup({
       setSkeletonMotion(current, value19.length === 0 ? "lockstep" : "wave");
     };
     callback4();
-    let value18: Pick<MutationObserver, "observe" | "disconnect"> = (0,
-    createSafeMutationObserver)(MutationObserver, callback4);
+    let value18: Pick<MutationObserver, "observe" | "disconnect"> = createSafeMutationObserver(MutationObserver, callback4);
     value18.observe(current, {
       childList: true,
       subtree: true,
@@ -422,7 +420,7 @@ function SkeletonGroup({
     return () => value18.disconnect();
   }, [motion, value12]);
   let value17: string | undefined = value5
-    ? (0, cn)("block", className)
+    ? cn("block", className)
     : className;
   if (value12) {
     return (() => {
@@ -579,13 +577,13 @@ function Skeleton({
     ),
     value3 = skeletonElementTags[as2 ?? value2],
     value4 = value3 === "span" ? "block" : undefined,
-    value5: string = (0, useTranslation)("loading", "Loading");
+    value5: string = useTranslation("loading", "Loading");
   if (value) {
     return (() => {
       const _Element6 = value3;
       const _elementProps6 = {
         "data-cds": "Skeleton",
-        className: (0, cn)(
+        className: cn(
           value4,
           "h-[1em] max-w-full rounded bg-[var(--cds-skeleton-base)]",
           className,
@@ -605,7 +603,7 @@ function Skeleton({
       "data-cds": "Skeleton",
       role: decorative ? undefined : "status",
       "aria-hidden": decorative ? true : undefined,
-      className: (0, cn)(
+      className: cn(
         value4,
         "relative h-[1em] max-w-full overflow-hidden rounded bg-[var(--cds-skeleton-base)] after:absolute after:inset-0 after:animate-[cds-shimmer_2s_linear_infinite] after:bg-[linear-gradient(90deg,transparent,var(--cds-skeleton-sheen),transparent)] motion-reduce:after:hidden",
         className,
@@ -645,7 +643,7 @@ function SkeletonRows({ rows = 3, icon = true }: C.SkeletonRowsProps) {
           const _elementProps8 = {
             "aria-hidden": true,
             "data-slot": "menu-skeleton-separator",
-            className: (0, cn)(
+            className: cn(
               value2,
               "compact:mx-2 comfortable:mx-2.5 my-1 h-px bg-border",
             ),
@@ -718,7 +716,7 @@ function SkeletonLines({
   return (() => {
     const _Element10 = value;
     const _elementProps10 = {
-      className: (0, cn)("flex flex-col gap-sm", className),
+      className: cn("flex flex-col gap-sm", className),
       children: Array.from<unknown, React.ReactElement>(
         {
           length: lines,
@@ -794,16 +792,16 @@ export {
 };
 export function installUiSkeleton(): () => void {
   return () => {
-    (0, initializeClassNames)();
-    (0, initializeTranslations)();
-    (0, initializeIconSupport)();
-    (0, initializeSkeletonContexts)();
-    reactForUiSkeleton = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    initializeClassNames();
+    initializeTranslations();
+    initializeIconSupport();
+    initializeSkeletonContexts();
+    reactForUiSkeleton = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
-    jsxForUiSkeleton = (0, toModuleNamespace)(
-      (0, loadJsxNamespace)(),
+    jsxForUiSkeleton = toModuleNamespace(
+      loadJsxNamespace(),
       1,
     );
     skeletonElementTags = {
@@ -850,6 +848,6 @@ export function installUiSkeleton(): () => void {
       Lines: SkeletonLines,
       Block: SkeletonBlock,
     });
-    (0, initializeClassNames)();
+    initializeClassNames();
   };
 }

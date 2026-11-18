@@ -65,8 +65,8 @@ function SelectOptionRow({
       | ((state: import("@base-ui/react/menu").Menu.Item.State) => string) =
       typeof className === "function"
         ? (input: import("@base-ui/react/menu").Menu.Item.State) =>
-            (0, joinClassNames)(value, className(input))
-        : (0, joinClassNames)(value, className),
+            joinClassNames(value, className(input))
+        : joinClassNames(value, className),
     value4 = disabledReason !== undefined && disabledReason !== "";
   return (
     <Menu.Item
@@ -194,7 +194,7 @@ function Select<Value extends string | number>({
                 value6 === "" ? (ariaLabel) : (((ariaLabel) + (": ")) + (value6))
               }
               title={title}
-              className={(0, joinClassNames)(
+              className={joinClassNames(
                 selectTriggerClasses,
                 compact ? "w-[4.5rem] shrink-0" : "w-full flex-1",
                 className,
@@ -209,7 +209,7 @@ function Select<Value extends string | number>({
                     }
                   />
                 ) : null, <span
-                  className={(0, joinClassNames)(
+                  className={joinClassNames(
                     "min-w-0 flex-1 truncate",
                     value5 === undefined && "text-muted",
                     value2 === undefined &&
@@ -230,7 +230,7 @@ function Select<Value extends string | number>({
         />, <Menu.Popup
           {...popupAttrs}
           align={align ?? (value4 ? "end" : "start")}
-          className={(0, joinClassNames)(
+          className={joinClassNames(
             value4
               ? "w-[calc(var(--anchor-width)+1.375rem)]"
               : "w-[var(--anchor-width)]",
@@ -277,7 +277,7 @@ function Select<Value extends string | number>({
                             value13.focus();
                           } else if (value10 !== "") {
                             callback(event.currentTarget)[
-                              (0, optionTypeaheadMatch)(
+                              optionTypeaheadMatch(
                                 value10,
                                 value11
                                   .filter(
@@ -452,16 +452,16 @@ export {
 };
 export function installUiSelect(): () => void {
   return () => {
-    reactAC = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    reactAC = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
     COARSE_POINTER_QUERY = "(pointer: coarse)";
-    SelectJsx = (0, toModuleNamespace)(
-      (0, loadJsxNamespace)(),
+    SelectJsx = toModuleNamespace(
+      loadJsxNamespace(),
       1,
     );
-    selectTriggerClasses = (0, joinClassNames)(
+    selectTriggerClasses = joinClassNames(
       "group/select flex h-control min-w-0 items-center gap-1.5 border-0 pl-md pr-sm text-left font-sans text-body enabled:cursor-default pointer-coarse:h-10",
       FIELD_SURFACE_CLASS,
     );

@@ -232,7 +232,7 @@ function publishedFileBytes(
   if (kind !== "font") {
     return contents;
   }
-  let value = (0, parseDataUriHeader)(contents);
+  let value = parseDataUriHeader(contents);
   if (value === null || !value.base64) {
     return null;
   }
@@ -252,7 +252,7 @@ function createPublishedPreviewCache(
 ): Editor.PublishedPreviewCache {
   let enabled =
       options.enabled ??
-      (() => (0, isPreviewRunnerEnabled)(globalThis)),
+      (() => isPreviewRunnerEnabled(globalThis)),
     addressedFile = options.addressedFile ?? addressedFileEntry,
     baseURI = options.baseURI ?? (() => globalThis.document?.baseURI ?? ""),
     hash = options.hash ?? sha256,
@@ -329,7 +329,7 @@ function createPublishedPreviewCache(
         value: options2,
         stays:
           (context === "font" &&
-            (0, parseDataUriHeader)(options2)?.base64 !== true) ||
+            parseDataUriHeader(options2)?.base64 !== true) ||
           hasAddressDependentPreviewCode(options2, context),
       };
       fileHashCache.set(input, (entry = state));
@@ -369,8 +369,8 @@ function createPublishedPreviewCache(
       try {
         value2 = /^https?:/i.test(value)
           ? new URL(
-              (0, encodeRelativeUrlPath)(
-                (0, projectFilePath)(input),
+              encodeRelativeUrlPath(
+                projectFilePath(input),
               ),
               value,
             ).pathname
@@ -402,7 +402,7 @@ function createPublishedPreviewCache(
       ) {
         return;
       }
-      let value2 = addressedFile((0, projectFilePath)(input));
+      let value2 = addressedFile(projectFilePath(input));
       if (value2 === undefined) {
         noteUnusableListing(value);
       }
@@ -421,7 +421,7 @@ function createPublishedPreviewCache(
       }
       if (
         context === "font"
-          ? (0, estimateDataUriBytes)(items) !== value2.size
+          ? estimateDataUriBytes(items) !== value2.size
           : value2.size < items.length || value2.size > items.length * 3
       ) {
         return;
@@ -544,8 +544,8 @@ export {
 };
 export function installEditorPublishedPreview(): () => void {
   return () => {
-    reactPublishedPreview = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    reactPublishedPreview = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
     FILES_LISTING_NAME = "_files.json";

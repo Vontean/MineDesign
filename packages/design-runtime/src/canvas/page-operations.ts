@@ -17,7 +17,7 @@ function canvasPageDeleteSnapshot(
     );
   if (value2 < 0 || value.length < 2) return null;
   let callback: Dynamic = (input?: Dynamic): Dynamic =>
-    (0, designPageId)(input, value) === pageId;
+    designPageId(input, value) === pageId;
   return {
     spec: value[value2],
     index: value2,
@@ -106,7 +106,7 @@ function assignImplicitFirstCanvasPage(
     (input?: Dynamic): Dynamic =>
       value !== undefined &&
       input.page !== value &&
-      (0, designPageId)(input, pages) === value
+      designPageId(input, pages) === value
         ? {
             ...input,
             page: value,

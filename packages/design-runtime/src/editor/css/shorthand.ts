@@ -18,8 +18,8 @@ function expandCssSides(items?: Dynamic): Dynamic {
 }
 function expandCssShorthand(input?: Dynamic): Dynamic {
   let { prop: value, value: value2 }: Dynamic = input;
-  if ((0, classifyStyleValue)(value2).kind !== "literal") return null;
-  let value3: Dynamic = (0, splitCssTokens)(value2, " ")
+  if (classifyStyleValue(value2).kind !== "literal") return null;
+  let value3: Dynamic = splitCssTokens(value2, " ")
     .map((input2?: Dynamic): Dynamic => input2.trim())
     .filter(Boolean);
   switch (value) {
@@ -68,7 +68,7 @@ function expandCssShorthand(input?: Dynamic): Dynamic {
               prop: "border-style",
               value: value4,
             })
-          : (0, parseCssNumber)(value4) ||
+          : parseCssNumber(value4) ||
               ["thin", "medium", "thick"].includes(value4.toLowerCase())
             ? items.push({
                 prop: "border-width",
@@ -91,7 +91,7 @@ function expandCssShorthand(input?: Dynamic): Dynamic {
               prop: `${value}-style`,
               value: value4,
             })
-          : (0, parseCssNumber)(value4) ||
+          : parseCssNumber(value4) ||
               ["thin", "medium", "thick"].includes(value4.toLowerCase())
             ? items.push({
                 prop: `${value}-width`,
@@ -149,7 +149,7 @@ function expandCssShorthand(input?: Dynamic): Dynamic {
                 prop: "text-decoration-style",
                 value: value4,
               })
-            : (0, parseCssNumber)(value4) ||
+            : parseCssNumber(value4) ||
                 value5 === "auto" ||
                 value5 === "from-font"
               ? items2.push({
@@ -177,7 +177,7 @@ function expandShorthandForProperty(
   options?: Dynamic,
   context: Dynamic = false,
 ): Dynamic {
-  options = (0, normalizeCssProperty)(options);
+  options = normalizeCssProperty(options);
   let value: Dynamic = (
     CssShorthandTextDecorationLineTextDecorationStyleTextDecorationColorConfig[
       options
@@ -187,7 +187,7 @@ function expandShorthandForProperty(
       context || !CssShorthandBorderBorderWidthBorderStyleSet.has(input2),
   );
   if (value.length === 0 || !input) return input ?? "";
-  let value2: Dynamic = (0, parseStyleDeclarations)(input),
+  let value2: Dynamic = parseStyleDeclarations(input),
     flag: Dynamic = false;
   for (let value3 of value as Dynamic)
     value2.some((input2?: Dynamic): Dynamic => input2.prop === value3) &&
@@ -202,7 +202,7 @@ function expandShorthandForProperty(
     !value2.some((input2?: Dynamic): Dynamic => input2.prop === options)
     ? input
     : flag
-      ? (0, serializeStyleDeclarations)(value2)
+      ? serializeStyleDeclarations(value2)
       : input;
 }
 function expandCssDeclarations(input?: Dynamic): Dynamic {

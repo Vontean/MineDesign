@@ -463,12 +463,12 @@ export {
 };
 export function installFilesUiSectionScroll(): () => void {
   return () => {
-    reactSectionScroller = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    reactSectionScroller = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
-    jsxLazySection = (0, toModuleNamespace)(
-      (0, loadJsxNamespace)(),
+    jsxLazySection = toModuleNamespace(
+      loadJsxNamespace(),
       1,
     );
     SECTION_SCROLL_MIN_LEAD_PX = 40;

@@ -11,7 +11,7 @@ function withAutomaticSave<Content>(
   options: Host.AutosaveOptions = {},
 ): Host.ArtifactDocument<Content> {
   let offFlag =
-    options.offFlag ?? (0, createArtifactLocalFlag)("autosave-off");
+    options.offFlag ?? createArtifactLocalFlag("autosave-off");
   if (artifactDocument.saveMode() === "auto" || offFlag.read() !== null) {
     return artifactDocument;
   }

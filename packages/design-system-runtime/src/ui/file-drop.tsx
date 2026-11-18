@@ -279,36 +279,36 @@ export {
 };
 export function installUiFileDrop(): () => void {
   return () => {
-    reactFileDropTarget = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    reactFileDropTarget = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
-    jsxFileDropTarget = (0, toModuleNamespace)(
-      (0, loadJsxNamespace)(),
+    jsxFileDropTarget = toModuleNamespace(
+      loadJsxNamespace(),
       1,
     );
-    jsxFileDropHints = (0, toModuleNamespace)(
-      (0, loadJsxNamespace)(),
+    jsxFileDropHints = toModuleNamespace(
+      loadJsxNamespace(),
       1,
     );
-    reactFileDropUiFileDrop = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    reactFileDropUiFileDrop = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
-    jsxFileDropUiFileDrop = (0, toModuleNamespace)(
-      (0, loadJsxNamespace)(),
+    jsxFileDropUiFileDrop = toModuleNamespace(
+      loadJsxNamespace(),
       1,
     );
-    jsxFileDropContent = (0, toModuleNamespace)(
-      (0, loadJsxNamespace)(),
+    jsxFileDropContent = toModuleNamespace(
+      loadJsxNamespace(),
       1,
     );
-    reactpC = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    reactpC = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
-    jsxFileDropOverlay = (0, toModuleNamespace)(
-      (0, loadJsxNamespace)(),
+    jsxFileDropOverlay = toModuleNamespace(
+      loadJsxNamespace(),
       1,
     );
     FILE_DROP_RING_CLASS = "shadow-[inset_0_0_0_2px_var(--cds-fill-accent)]";

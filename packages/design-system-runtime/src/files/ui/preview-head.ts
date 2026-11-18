@@ -29,7 +29,7 @@ function previewFontIdentity(
   if (file === undefined) {
     return "missing:" + path;
   }
-  let reference = (0, storagePointerForFile)(path, file);
+  let reference = storagePointerForFile(path, file);
   if (reference !== null) {
     return (
       reference.store +
@@ -38,14 +38,14 @@ function previewFontIdentity(
       ":" +
       (reference.store === "blob"
         ? reference.id
-        : reference.rel || ((0, resolveFileVersion)(path) ?? ""))
+        : reference.rel || (resolveFileVersion(path) ?? ""))
     );
   } else {
     return (
       "held:" +
       path +
       ":" +
-      String((0, estimateDataUriBytes)(file)) +
+      String(estimateDataUriBytes(file)) +
       ":" +
       hashPreviewContent(file)
     );
@@ -68,11 +68,11 @@ function previewFontSource(
   if (file === undefined) {
     return null;
   }
-  let reference = (0, storagePointerForFile)(path, file);
+  let reference = storagePointerForFile(path, file);
   if (reference !== null) {
     if (reference.store !== "blob") {
-      let value = (0, isHeldFilePointer)(path, file)
-        ? ((0, addressedProjectFileUrl)(path) ??
+      let value = isHeldFilePointer(path, file)
+        ? (addressedProjectFileUrl(path) ??
           system.fonts.find((input) => input.path === path)?.src ??
           "")
         : "";
@@ -86,7 +86,7 @@ function previewFontSource(
         return null;
       }
     }
-    if ((0, isClaudeEmulator)()) {
+    if (isClaudeEmulator()) {
       let value =
         system.fonts.find((input) => input.path === path)?.src ?? "";
       if (value === "") {
@@ -97,22 +97,22 @@ function previewFontSource(
     }
     return blobRelativeUrl(reference.id);
   }
-  if ((0, parseDataUriHeader)(file) === null) {
+  if (parseDataUriHeader(file) === null) {
     return null;
   }
   if (!preferUrl) {
     return file;
   }
   if (preferLivePreviewUrls && supportsLivePreviewUrls()) {
-    return (0, publishedPreviewUrl)(path, file, "font")?.url ?? file;
+    return publishedPreviewUrl(path, file, "font")?.url ?? file;
   }
   if (
-    (0, cachedFileAvailability)(
+    cachedFileAvailability(
       path,
-      (0, estimateDataUriBytes)(file),
+      estimateDataUriBytes(file),
     ) === true
   ) {
-    return (0, fileAvailabilityUrlPath)(path);
+    return fileAvailabilityUrlPath(path);
   } else {
     return file;
   }
@@ -152,7 +152,7 @@ function previewLibraries(
   system: Preview.PreviewSystem,
 ): Preview.PreviewLibraryResult {
   let addReact =
-      (0, previewStaticNoticeSnapshot)() &&
+      previewStaticNoticeSnapshot() &&
       system.bundle.js !== null &&
       !system.bundle.declared.some((input) =>
         REACT_LIBRARY_CATALOG.some(
@@ -182,7 +182,7 @@ function previewLibraries(
     libraries:
       system.bundle.js === null
         ? system.bundle.libraries
-        : (0, resolvePreviewLibraries)(
+        : resolvePreviewLibraries(
             declared,
             hasLibraryFile,
             undefined,
@@ -214,7 +214,7 @@ function previewStaticStatus(
     staticReason:
       system.components.length > 0 &&
       system.bundle.js === null &&
-      (0, hasBundleMetadata)(system.bundle)
+      hasBundleMetadata(system.bundle)
         ? uiMessage("design-system.previewHead.previewsCanTRunComponents")
         : "",
     staticMissing: Object.freeze([]),
@@ -248,7 +248,7 @@ function createPreviewHead(
         value2 =
           value === undefined || value === ""
             ? undefined
-            : (0, publishedPreviewUrl)(input, value, options);
+            : publishedPreviewUrl(input, value, options);
       if (value2 === undefined) {
         return undefined;
       } else {
@@ -268,9 +268,9 @@ function createPreviewHead(
           let value = system.files[input.file],
             value2 =
               value === undefined ||
-              (0, parseDataUriHeader)(value) === null
+              parseDataUriHeader(value) === null
                 ? undefined
-                : (0, publishedPreviewUrl)(input.file, value, "font");
+                : publishedPreviewUrl(input.file, value, "font");
           if (value2 === undefined) {
             return [];
           } else {
@@ -292,7 +292,7 @@ function createPreviewHead(
       (!preferUrl
         ? "off"
         : !useLiveUrls
-          ? "g" + String((0, getFileAvailabilityRevision)())
+          ? "g" + String(getFileAvailabilityRevision())
           : [bundleCssUrl, ...libraryScriptUrls, bundleJsUrl, ...fontUrls]
               .map((input) => input?.url ?? "")
               .join(",")),
@@ -320,18 +320,18 @@ function createPreviewHead(
   }
   let hasDarkTheme = darkThemeId(system) !== undefined,
     tokensCss =
-      (0, generateTokensCss)(system.tokens, {
+      generateTokensCss(system.tokens, {
         fontFaces: false,
       }) +
       previewColorSchemeCss(mode, hasDarkTheme, transparent) +
-      (ground !== undefined && (0, isColorLiteral)(ground)
+      (ground !== undefined && isColorLiteral(ground)
         ? "html{background:" + ground + "!important}"
         : ""),
-    fontsCss = (0, generateFontFacesCss)(
+    fontsCss = generateFontFacesCss(
       system.tokens,
       (input: string) => previewFontSource(system, input, preferUrl),
     ),
-    fontsKey = (0, generateFontFacesCss)(
+    fontsKey = generateFontFacesCss(
       system.tokens,
       (input: string) => previewFontIdentity(system, input),
     ),
@@ -352,7 +352,7 @@ function createPreviewHead(
         bundleCss: system.bundle.css ?? "",
         runtimeScripts: Object.freeze(
           staticReason === ""
-            ? (0, previewLibraryScripts)(libraries, system.files)
+            ? previewLibraryScripts(libraries, system.files)
             : [],
         ),
         runtimeTags: Object.freeze(
@@ -368,7 +368,7 @@ function createPreviewHead(
         bundleJs: system.bundle.js ?? "",
         ...(fontUrls.length > 0
           ? {
-              fontsCssHeld: (0, generateFontFacesCss)(
+              fontsCssHeld: generateFontFacesCss(
                 system.tokens,
                 (input: string) => previewFontSource(system, input, false),
               ),
@@ -406,7 +406,7 @@ function createPreviewHead(
       staticMissing: staticMissing,
     });
   if (previous !== undefined) {
-    (0, swatchHeadsEqual)(previous.head, result.head);
+    swatchHeadsEqual(previous.head, result.head);
   }
   cache.set(cacheKey, result);
   return result;
@@ -431,6 +431,6 @@ export function installFilesUiPreviewHead(): () => void {
     preferLivePreviewUrls = true;
     previewHeadCache = new WeakMap();
     supportsLivePreviewUrls = () =>
-      (0, isPreviewRunnerEnabled)(globalThis);
+      isPreviewRunnerEnabled(globalThis);
   };
 }

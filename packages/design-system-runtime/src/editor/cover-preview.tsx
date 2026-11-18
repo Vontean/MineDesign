@@ -42,7 +42,7 @@ function CoverPreview({
     () => value2(true),
     [],
   );
-  let value3 = (0, clampComponentStageHeight)(cover.height),
+  let value3 = clampComponentStageHeight(cover.height),
     memo = (reactPreviewComponents as typeof React).useMemo(
       () => coverPreviewHead(head),
       [head],
@@ -57,7 +57,7 @@ function CoverPreview({
           role={"group"}
           aria-label={uiMessage("design-system.coverPreview.cover")}
           data-testid={"ds-cover"}
-          {...(0, commentTargetProps)("ds", "cover")}
+          {...commentTargetProps("ds", "cover")}
         >
           {[<PreviewFitBox
               width={COVER_PREVIEW_WIDTH}
@@ -66,8 +66,8 @@ function CoverPreview({
             >
               {value ? (<ComponentPreview
                   html={cover.previewHtml}
-                  cardFile={(0, projectFilePath)(
-                    (0, componentPreviewPath)(
+                  cardFile={projectFilePath(
+                    componentPreviewPath(
                       COVER_COMPONENT_NAME,
                     ),
                   )}
@@ -104,8 +104,8 @@ export {
 };
 export function installEditorCoverPreview(): () => void {
   return () => {
-    jsxCoverPreview = (0, toModuleNamespace)(
-      (0, loadJsxNamespace)(),
+    jsxCoverPreview = toModuleNamespace(
+      loadJsxNamespace(),
       1,
     );
     COVER_PREVIEW_WIDTH = 960;

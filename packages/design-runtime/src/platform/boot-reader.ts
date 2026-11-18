@@ -26,7 +26,7 @@ async function readBootFiles(options?: Dynamic): Promise<Dynamic> {
         setTimeout(input, options2),
     },
     earlyUpdates: Dynamic =
-      options.early ?? (0, getHotReloadController)(),
+      options.early ?? getHotReloadController(),
     maxPasses: Dynamic = Math.max(
       1,
       options.maxPasses ?? BOOT_READ_MAX_PASSES,
@@ -97,7 +97,7 @@ async function readBootFiles(options?: Dynamic): Promise<Dynamic> {
       try {
         return await options2();
       } catch (value7: Dynamic) {
-        if (!(0, isRetryableAccessFailure)(value7))
+        if (!isRetryableAccessFailure(value7))
           throw wrapReadError(value7, input);
         if (
           context !== undefined &&
@@ -140,7 +140,7 @@ async function readBootFiles(options?: Dynamic): Promise<Dynamic> {
           ? retryWaits
           : PlatformAccessRetryItems;
     try {
-      return await (0, retryAccessFailure)(
+      return await retryAccessFailure(
         (): Dynamic => port.readText(indexPath),
         timers,
         (input?: Dynamic, options2?: Dynamic): Dynamic => {
@@ -181,7 +181,7 @@ async function readBootFiles(options?: Dynamic): Promise<Dynamic> {
       );
       if (
         options.mayWrite !== true ||
-        !(0, isNarrowedFileContext)(value6, port) ||
+        !isNarrowedFileContext(value6, port) ||
         index >= retryWaits.length
       )
         return value6;
@@ -208,7 +208,7 @@ async function readBootFiles(options?: Dynamic): Promise<Dynamic> {
         let value6: Dynamic = await port.list().catch((): Dynamic => {});
         return (
           value6 !== undefined &&
-          !(0, isNarrowedFileContext)(value6, port) &&
+          !isNarrowedFileContext(value6, port) &&
           !value6.some((input2?: Dynamic): Dynamic => input2.path === input)
         );
       },
@@ -219,7 +219,7 @@ async function readBootFiles(options?: Dynamic): Promise<Dynamic> {
     adoptQueuedVersion();
     let version: Dynamic = port.version().version,
       value6: Dynamic = await value4(),
-      value7: Dynamic = (0, isNarrowedFileContext)(value6, port),
+      value7: Dynamic = isNarrowedFileContext(value6, port),
       entries3: Dynamic = new Map(
         value6.map((input?: Dynamic): Dynamic => [input.path, input]),
       ),

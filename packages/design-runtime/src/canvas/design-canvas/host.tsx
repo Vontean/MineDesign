@@ -36,7 +36,7 @@ export function reportDesignContextSnapshot(deps: { readonly flag: Dynamic; read
         : deps.value86.artboards
             .filter(
               (input?: Dynamic): Dynamic =>
-                (0, distanceBetweenRects)(input, state) === 0,
+                distanceBetweenRects(input, state) === 0,
             )
             .map((input?: Dynamic): Dynamic => input.file),
       items: Dynamic = [],
@@ -49,7 +49,7 @@ export function reportDesignContextSnapshot(deps: { readonly flag: Dynamic; read
       value662.push(deps.selection.primary);
       for (let value663 of value662 as Dynamic) {
         let value664: Dynamic = deps.selection.elements.get(value663)?.tids ?? [],
-          value665: Dynamic = (0, encodeArtboardSelectionPath)(
+          value665: Dynamic = encodeArtboardSelectionPath(
             value663,
           );
         if (value665 !== null)
@@ -76,13 +76,13 @@ export function reportDesignContextSnapshot(deps: { readonly flag: Dynamic; read
         pageName: {
           text: deps.value79 === "" ? "" : deps.value81,
         },
-        visibleArtboards: (0, normalizeSelectedArtboardPaths)(
+        visibleArtboards: normalizeSelectedArtboardPaths(
           value656,
         ),
-        selectedArtboards: (0, normalizeSelectedArtboardPaths)(
+        selectedArtboards: normalizeSelectedArtboardPaths(
           value658,
         ),
-        ...(0, getEmbeddedPresence)(),
+        ...getEmbeddedPresence(),
         dirty: deps.value375,
         selected: items.slice(-20),
         selection: items2.slice(-5).map(
@@ -94,7 +94,7 @@ export function reportDesignContextSnapshot(deps: { readonly flag: Dynamic; read
         ),
       },
       value659: Dynamic = deps.value266.flatMap((input?: Dynamic): Dynamic => {
-        let value662: Dynamic = (0, encodeArtboardSelectionPath)(
+        let value662: Dynamic = encodeArtboardSelectionPath(
           input.file,
         );
         return value662 === null
@@ -107,7 +107,7 @@ export function reportDesignContextSnapshot(deps: { readonly flag: Dynamic; read
             ];
       }),
       value660: Dynamic = value659[0]?.first ?? "",
-      value661: Dynamic = (0, serializeArtboardErrorContext)(
+      value661: Dynamic = serializeArtboardErrorContext(
         value659.map((input?: Dynamic): Dynamic => input.name),
         value660,
         state2,
@@ -141,7 +141,7 @@ export function buildHostedEditorCanvasApi(deps: { readonly doc: Dynamic; readon
           return true;
         },
         callback16: Dynamic = (): Dynamic =>
-          (0, designPageContents)(deps.value73.current, deps.value80.current)
+          designPageContents(deps.value73.current, deps.value80.current)
             .artboards,
         callback17: Dynamic = (input?: Dynamic): Dynamic =>
           Math.min(
@@ -164,12 +164,12 @@ export function buildHostedEditorCanvasApi(deps: { readonly doc: Dynamic; readon
             }),
           ),
         pageIs: (input?: Dynamic): Dynamic =>
-          (0, isCanvasPageMatch)(
+          isCanvasPageMatch(
             input,
             deps.value80.current,
             deps.value73.current.pages?.[0]?.id ?? "",
           ),
-        token: (): Dynamic => (0, randomSessionToken)(),
+        token: (): Dynamic => randomSessionToken(),
         group: (input?: Dynamic, options?: Dynamic): Dynamic =>
           deps.value432.current?.group(
             input,
@@ -312,7 +312,7 @@ export function buildHostedEditorCanvasApi(deps: { readonly doc: Dynamic; readon
           options?: Dynamic,
           context?: Dynamic,
         ): Dynamic => {
-          let value653: Dynamic = (0, PlatformFileContentSlice)(
+          let value653: Dynamic = PlatformFileContentSlice(
               options,
             ),
             value654: Dynamic = deps.value73.current.artboards.find(
@@ -361,13 +361,13 @@ export function buildHostedEditorCanvasApi(deps: { readonly doc: Dynamic; readon
             items: Dynamic = [...callback16()],
             items2: Dynamic = [];
           for (let value654 of input as Dynamic) {
-            let value655: Dynamic = (0, uniqueArtboardFile)(
+            let value655: Dynamic = uniqueArtboardFile(
                 state,
                 "Artboard",
                 deps.supportsLoadState,
               ),
               value656: Dynamic = value653.test(value654.pageRule ?? "")
-                ? (0, blankDcDocument)().replace(
+                ? blankDcDocument().replace(
                     /[ \t]*<\/style>/,
                     (input2?: Dynamic): Dynamic =>
                       value654.pageRule +
@@ -375,7 +375,7 @@ export function buildHostedEditorCanvasApi(deps: { readonly doc: Dynamic; readon
 ` +
                       input2,
                   )
-                : (0, blankDcDocument)(),
+                : blankDcDocument(),
               value657: Dynamic =
                 value654.body.trim() === ""
                   ? value656
@@ -401,8 +401,8 @@ export function buildHostedEditorCanvasApi(deps: { readonly doc: Dynamic; readon
                 w: callback17(value654.w),
                 h: callback17(value654.h),
                 title:
-                  (0, PlatformFileContentSlice)(value654.title) ??
-                  (0, nextArtboardTitle)(items),
+                  PlatformFileContentSlice(value654.title) ??
+                  nextArtboardTitle(items),
                 ...deps.value452.current(),
               };
             items.push(state2);
@@ -421,16 +421,16 @@ export function buildHostedEditorCanvasApi(deps: { readonly doc: Dynamic; readon
           let values: Dynamic = new Set();
           try {
             for (let value654 of items2 as Dynamic) {
-              await (0, getKvClient)().set(
-                (0, PlatformFileContentHandler_4)(value654.file),
+              await getKvClient().set(
+                PlatformFileContentHandler_4(value654.file),
                 value654.src,
               );
               values.add(value654.file);
             }
           } catch {
             for (let value654 of values as Dynamic)
-              await (0, getKvClient)()
-                .delete((0, PlatformFileContentHandler_4)(value654))
+              await getKvClient()
+                .delete(PlatformFileContentHandler_4(value654))
                 .catch((): Dynamic => false);
             return [];
           }

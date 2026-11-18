@@ -41,7 +41,7 @@ function useVectorEditor(request?: Dynamic): Dynamic {
       undefined,
     ),
     value15: Dynamic = (0, reactHooksLatestCallback_4.useRef)(null),
-    value16: Dynamic = (0, vectorUsesCoarsePointer)()
+    value16: Dynamic = vectorUsesCoarsePointer()
       ? VectorPathEditingConstant_2
       : VectorPathEditingConstant,
     value17: Dynamic = (0, reactHooksLatestCallback_4.useCallback)(
@@ -70,7 +70,7 @@ function useVectorEditor(request?: Dynamic): Dynamic {
                 });
                 if (!(options3 > 0 || input2.closed)) return;
                 let callback2: Dynamic = (input4?: Dynamic): Dynamic =>
-                  (0, showVectorControls)(
+                  showVectorControls(
                     request.controls,
                     input2,
                     options2,
@@ -113,7 +113,7 @@ function useVectorEditor(request?: Dynamic): Dynamic {
         let value29: Dynamic = value28.anchors[input.anchor];
         if (!value29) return;
         if (input.part === "c" && value29.seg.kind === "cubic") {
-          let value31: Dynamic = (0, previousContourAnchor)(
+          let value31: Dynamic = previousContourAnchor(
             value28,
             input.anchor,
           );
@@ -132,7 +132,7 @@ function useVectorEditor(request?: Dynamic): Dynamic {
             x: value29.x,
             y: value29.y,
           };
-        let value30: Dynamic = (0, previousContourAnchor)(
+        let value30: Dynamic = previousContourAnchor(
           value28,
           input.anchor,
         );
@@ -155,7 +155,7 @@ function useVectorEditor(request?: Dynamic): Dynamic {
         if (request.readOnly) {
           request.tool !== "pen"
             ? request.onPanStart?.(event)
-            : (0, captureVectorPointer)(
+            : captureVectorPointer(
                 event.currentTarget,
                 event.pointerId,
               );
@@ -164,11 +164,11 @@ function useVectorEditor(request?: Dynamic): Dynamic {
         if (request.tool === "pen") {
           event.preventDefault();
           if (value9.current !== undefined) return;
-          (0, blurVectorInput)();
+          blurVectorInput();
           let current: Dynamic = value3.current,
             value31: Dynamic =
               event.shiftKey && current.length > 0
-                ? (0, constrainVectorPointAngle)(
+                ? constrainVectorPointAngle(
                     current[current.length - 1],
                     value28,
                   )
@@ -176,14 +176,14 @@ function useVectorEditor(request?: Dynamic): Dynamic {
           if (current.length >= 3) {
             let value32: Dynamic = current[0],
               value33: Dynamic =
-                (0, vectorHitRadius)(event) / request.view.scale;
+                vectorHitRadius(event) / request.view.scale;
             if (
               Math.hypot(value32.x - value31.x, value32.y - value31.y) <=
               value33
             ) {
               value9.current = event.pointerId;
               value13.current = "close";
-              (0, captureVectorPointer)(
+              captureVectorPointer(
                 event.currentTarget,
                 event.pointerId,
               );
@@ -193,7 +193,7 @@ function useVectorEditor(request?: Dynamic): Dynamic {
           value4([...current, value31]);
           value13.current = "append";
           value6(value31);
-          (0, captureVectorPointer)(
+          captureVectorPointer(
             event.currentTarget,
             event.pointerId,
           );
@@ -202,20 +202,20 @@ function useVectorEditor(request?: Dynamic): Dynamic {
         if (value14.current) return;
         let value29: Dynamic = value17(
           value28,
-          Math.max((0, vectorHitRadius)(event), value16),
+          Math.max(vectorHitRadius(event), value16),
         );
         request.onSelect(value29);
         if (!value29) {
           request.onPanStart?.(event);
           return;
         }
-        (0, blurVectorInput)();
+        blurVectorInput();
         event.preventDefault();
-        (0, captureVectorPointer)(
+        captureVectorPointer(
           event.currentTarget,
           event.pointerId,
         );
-        let value30: Dynamic = (0, vectorPartPoint)(
+        let value30: Dynamic = vectorPartPoint(
           request.path,
           value29,
         );
@@ -264,7 +264,7 @@ function useVectorEditor(request?: Dynamic): Dynamic {
           input.buttons === 0 && (value7.current = value28);
           value6(
             input.shiftKey && current2.length > 0
-              ? (0, constrainVectorPointAngle)(
+              ? constrainVectorPointAngle(
                   current2[current2.length - 1],
                   value28,
                 )
@@ -281,7 +281,7 @@ function useVectorEditor(request?: Dynamic): Dynamic {
             return;
           current.moved = true;
           current.before = value11.current;
-          let value33: Dynamic = (0, vectorPartPoint)(
+          let value33: Dynamic = vectorPartPoint(
             current.before,
             current.sel,
           );
@@ -297,7 +297,7 @@ function useVectorEditor(request?: Dynamic): Dynamic {
             y: value28.y + current.grabOffset.y,
           },
           value29: Dynamic = input.shiftKey
-            ? (0, constrainVectorPointAngle)(
+            ? constrainVectorPointAngle(
                 current.chordOrigin ?? {
                   x: current.startModel.x + current.grabOffset.x,
                   y: current.startModel.y + current.grabOffset.y,
@@ -306,7 +306,7 @@ function useVectorEditor(request?: Dynamic): Dynamic {
               )
             : state;
         current.lastRaw = state;
-        let value30: Dynamic = (0, moveVectorPart)(
+        let value30: Dynamic = moveVectorPart(
           current.before,
           current.sel,
           value29,
@@ -332,10 +332,10 @@ function useVectorEditor(request?: Dynamic): Dynamic {
               value30: Dynamic = current3[current3.length - 1],
               value31: Dynamic =
                 input.shiftKey && current3.length > 0 && value30
-                  ? (0, constrainVectorPointAngle)(value30, value29)
+                  ? constrainVectorPointAngle(value30, value29)
                   : value29,
               value32: Dynamic =
-                (0, vectorHitRadius)(input) / current4.scale;
+                vectorHitRadius(input) / current4.scale;
             Math.hypot(value28.x - value31.x, value28.y - value31.y) <=
               value32 && value26.current();
           }
@@ -351,7 +351,7 @@ function useVectorEditor(request?: Dynamic): Dynamic {
         let current2: Dynamic = value15.current;
         value15.current = null;
         current2 &&
-          !(0, sameVectorPath)(current2, current.before) &&
+          !sameVectorPath(current2, current.before) &&
           request.onCommit(current.before, current2);
       },
       [request.onCommit],
@@ -373,7 +373,7 @@ function useVectorEditor(request?: Dynamic): Dynamic {
       let current: Dynamic = value14.current;
       if (current && current.moved && current.lastRaw) {
         let value29: Dynamic = value28
-            ? (0, constrainVectorPointAngle)(
+            ? constrainVectorPointAngle(
                 current.chordOrigin ?? {
                   x: current.startModel.x + current.grabOffset.x,
                   y: current.startModel.y + current.grabOffset.y,
@@ -381,7 +381,7 @@ function useVectorEditor(request?: Dynamic): Dynamic {
                 current.lastRaw,
               )
             : current.lastRaw,
-          value30: Dynamic = (0, moveVectorPart)(
+          value30: Dynamic = moveVectorPart(
             current.before,
             current.sel,
             value29,
@@ -393,7 +393,7 @@ function useVectorEditor(request?: Dynamic): Dynamic {
         let current2: Dynamic = value3.current;
         value6(
           value28 && current2.length > 0
-            ? (0, constrainVectorPointAngle)(
+            ? constrainVectorPointAngle(
                 current2[current2.length - 1],
                 value7.current,
               )
@@ -427,7 +427,7 @@ function useVectorEditor(request?: Dynamic): Dynamic {
     let value28: Dynamic = items[items.length - 1];
     value6(
       options && value28
-        ? (0, constrainVectorPointAngle)(value28, current)
+        ? constrainVectorPointAngle(value28, current)
         : current,
     );
   }
@@ -503,8 +503,8 @@ function useVectorEditor(request?: Dynamic): Dynamic {
         let value28: Dynamic = current?.moved ? current.before : request.path,
           value29: Dynamic =
             request.selected.part === "anchor"
-              ? (0, deleteVectorAnchor)(value28, request.selected)
-              : (0, resetVectorControl)(value28, request.selected);
+              ? deleteVectorAnchor(value28, request.selected)
+              : resetVectorControl(value28, request.selected);
         value29 !== value28 &&
           (request.onCommit(value28, value29), request.onSelect(undefined));
         return true;

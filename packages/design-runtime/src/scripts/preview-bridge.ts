@@ -520,7 +520,7 @@ const text: Dynamic = "__ARROW_OWNER__";
         input.source.postMessage(input2, "*");
       };
       try {
-        var value_r: Dynamic = (0, eval)(data.code);
+        var value_r: Dynamic = eval(data.code);
         if (value_r && typeof value_r.then === "function") {
           value_r.then(
             function (

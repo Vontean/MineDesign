@@ -13,8 +13,8 @@ export {
 };
 export function installPlatformReactRuntime(): () => void {
   return () => {
-    reactDomClientPlatformReactRuntime = (0, toModuleNamespace)(
-      (0, load_react_dom_client)(),
+    reactDomClientPlatformReactRuntime = toModuleNamespace(
+      load_react_dom_client(),
       1,
     );
     runtimeEmbeddedReact = {

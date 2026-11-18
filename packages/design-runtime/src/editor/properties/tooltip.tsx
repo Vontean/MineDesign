@@ -60,7 +60,7 @@ function EditorTooltip({
     >
       <span
         data-tip={typeof tip == "string" ? (tip) : (undefined)}
-        className={(0, joinClassNames)(
+        className={joinClassNames(
           "relative inline-flex align-top",
           className,
         )}
@@ -100,25 +100,25 @@ export {
 };
 export function installEditorPropertiesTooltip(): () => void {
   return () => {
-    jsxPropertiesTooltip = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    jsxPropertiesTooltip = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
-    reactPropertiesTooltip = (0, toModuleNamespace)(
-      (0, load_react)(),
+    reactPropertiesTooltip = toModuleNamespace(
+      load_react(),
       1,
     );
-    (0, initializeCdsIndex)();
-    reactPropertiesTooltip_2 = (0, toModuleNamespace)(
-      (0, load_react)(),
+    initializeCdsIndex();
+    reactPropertiesTooltip_2 = toModuleNamespace(
+      load_react(),
       1,
     );
-    (0, initializeCdsIndex)();
-    reactPropertiesTooltip_3 = (0, toModuleNamespace)(
-      (0, load_react)(),
+    initializeCdsIndex();
+    reactPropertiesTooltip_3 = toModuleNamespace(
+      load_react(),
       1,
     );
-    (0, initializeCdsIndex)();
+    initializeCdsIndex();
     PropertiesTooltipHandler = (
       input?: Dynamic,
       options: Dynamic = 1,

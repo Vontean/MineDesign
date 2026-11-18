@@ -17,7 +17,7 @@ var artboardNavigationGroupLabels: Dynamic;
 function defaultPageArtboard(manifest?: Dynamic, pageId?: Dynamic): Dynamic {
   let value: Dynamic = manifest.artboards.filter(
       (input?: Dynamic): Dynamic =>
-        (0, designPageId)(input, manifest.pages) === pageId,
+        designPageId(input, manifest.pages) === pageId,
     ),
     value2: Dynamic =
       manifest.launch?.view === "focused" ? manifest.launch.file : undefined;
@@ -37,7 +37,7 @@ function phoneCanvasFallbackArtboard(
       (input?: Dynamic): Dynamic =>
         input.file === entryFile &&
         !input.frameless &&
-        (0, designPageId)(input, manifest.pages) === pageId,
+        designPageId(input, manifest.pages) === pageId,
     ),
     value2: Dynamic =
       (laidOut ? undefined : value) ?? defaultPageArtboard(manifest, pageId);
@@ -46,7 +46,7 @@ function phoneCanvasFallbackArtboard(
         manifest.artboards.find(
           (input?: Dynamic): Dynamic =>
             !input.frameless &&
-            (0, designPageId)(input, manifest.pages) === pageId,
+            designPageId(input, manifest.pages) === pageId,
         ))
     : value2;
 }
@@ -59,7 +59,7 @@ function oversizedPhoneCanvasFallbackArtboard(
   let value: Dynamic = manifest.artboards.filter(
     (input?: Dynamic): Dynamic =>
       !input.frameless &&
-      (0, designPageId)(input, manifest.pages) === pageId,
+      designPageId(input, manifest.pages) === pageId,
   );
   if (
     !value.some((input?: Dynamic): Dynamic => input.w * input.h <= areaBudget)
@@ -117,7 +117,7 @@ function parseCanvasPlaceFragment(
     let value3: Dynamic = value.slice(value2.length),
       value4: Dynamic = manifest.artboards.find(
         (input?: Dynamic): Dynamic =>
-          (0, stableAnchorHash)(input.file) === value3,
+          stableAnchorHash(input.file) === value3,
       );
     return value4
       ? {
@@ -134,7 +134,7 @@ function parseCanvasPlaceFragment(
         ...(manifest.pages ?? []).map((input?: Dynamic): Dynamic => input.id),
       ].find(
         (input?: Dynamic): Dynamic =>
-          (0, stableAnchorHash)(input) === value3,
+          stableAnchorHash(input) === value3,
       );
     return value4 === undefined
       ? undefined
@@ -189,14 +189,14 @@ function resolveCanvasPlaceAction(
     return {
       do: "play",
       file: value2.file,
-      page: (0, designPageId)(value2, manifest.pages),
+      page: designPageId(value2, manifest.pages),
       lands: prototypePlaceFragment(value2.file),
     };
   if (value2 && state.filling === null)
     return {
       do: "artboard",
       file: value2.file,
-      page: (0, designPageId)(value2, manifest.pages),
+      page: designPageId(value2, manifest.pages),
       focus: state.mayFocus && value2.frameless !== true,
       camera: value3,
       lands: artboardPlaceFragment(value2.file),
@@ -214,12 +214,12 @@ function resolveCanvasPlaceAction(
       : {
           do: "window",
           file: value2.file,
-          page: (0, designPageId)(value2, manifest.pages),
+          page: designPageId(value2, manifest.pages),
           lands: value6,
         };
   }
   let value4: Dynamic = value2
-    ? (0, designPageId)(value2, manifest.pages)
+    ? designPageId(value2, manifest.pages)
     : value.kind === "page" && value.id !== ""
       ? value.id
       : (manifest.pages?.[0]?.id ?? "");
@@ -324,11 +324,11 @@ export function installCanvasNavigation(): () => void {
     prototypeFragmentPrefix = "play-";
     canvasPageFragmentPrefix = "page-";
     artboardPlaceFragment = (input?: Dynamic): Dynamic =>
-      artboardFragmentPrefix + (0, stableAnchorHash)(input);
+      artboardFragmentPrefix + stableAnchorHash(input);
     prototypePlaceFragment = (input?: Dynamic): Dynamic =>
-      prototypeFragmentPrefix + (0, stableAnchorHash)(input);
+      prototypeFragmentPrefix + stableAnchorHash(input);
     canvasPagePlaceFragment = (input?: Dynamic): Dynamic =>
-      canvasPageFragmentPrefix + (0, stableAnchorHash)(input);
+      canvasPageFragmentPrefix + stableAnchorHash(input);
     artboardPlaybackPlaceFragment = (
       input?: Dynamic,
       options?: Dynamic,

@@ -204,7 +204,7 @@ function isFindBlockedByDialog(document2?: Dynamic): Dynamic {
   return (
     !!document2.fullscreenElement ||
     [...document2.querySelectorAll(blockingFindDialogSelector)].some(
-      (input?: Dynamic): Dynamic => !(0, isClosedOverlay)(input),
+      (input?: Dynamic): Dynamic => !isClosedOverlay(input),
     )
   );
 }
@@ -229,7 +229,7 @@ function dispatchFindEscape(document2?: Dynamic): Dynamic {
   activeElement !== null &&
     value3 !== null &&
     value3 !== activeElement &&
-    (0, isTextEditableTarget)(activeElement) &&
+    isTextEditableTarget(activeElement) &&
     activeElement.blur();
   (value3 !== null && document2.activeElement !== activeElement
     ? value3
@@ -277,7 +277,7 @@ function useFindInPage({
   });
   let [{ controller: value11, changes: value12 }]: Dynamic = (0,
   react_Cl.useState)((): Dynamic => {
-    (0, installFindKeyboardHandlers)(window);
+    installFindKeyboardHandlers(window);
     let state: Dynamic = {};
     return {
       controller: createFindController({
@@ -353,13 +353,13 @@ function useFindInPage({
         if (value10.current.isOurs?.(input) === false) return false;
         let value22: Dynamic = ++value8.current;
         if (!value14() || isFindBlockedByLinkMode(document)) return true;
-        if ((0, hasBlockingOverlay)(document)) {
+        if (hasBlockingOverlay(document)) {
           let index: Dynamic = 0,
             callback: Dynamic = (): Dynamic => {
               if (value22 !== value8.current || !value14()) return;
               let flag: Dynamic = false;
               try {
-                (0, hasBlockingOverlay)(document)
+                hasBlockingOverlay(document)
                   ? index > 0 &&
                     index % 6 === 0 &&
                     index <= 18 &&
@@ -393,7 +393,7 @@ function useFindInPage({
       (event?: Dynamic): Dynamic => {
         let value22: Dynamic = event.defaultPrevented
           ? undefined
-          : (0, findDirectionShortcut)(event);
+          : findDirectionShortcut(event);
         if (
           !(
             value22 === undefined ||
@@ -464,7 +464,7 @@ function useFindInPage({
     value20: Dynamic = (0, react_Cl.useCallback)((): Dynamic => {
       value15(null);
     }, [value15]);
-  (0, useFrameFind)(value3, value20);
+  useFrameFind(value3, value20);
   (0, react_Cl.useEffect)((): Dynamic => {
     enabled || value18(false);
   }, [enabled, value18]);
@@ -472,13 +472,13 @@ function useFindInPage({
     let callback: Dynamic = (event?: Dynamic): Dynamic => {
       try {
         if (event.isComposing) {
-          ((0, isFindShortcut)(event) ||
-            (0, findDirectionShortcut)(event) !== undefined) &&
+          (isFindShortcut(event) ||
+            findDirectionShortcut(event) !== undefined) &&
             value10.current.isOurs?.(event.target) !== false &&
             event.preventDefault();
           return;
         }
-        (0, isFindShortcut)(event)
+        isFindShortcut(event)
           ? value15(event.target) && event.preventDefault()
           : value17(event);
       } catch {
@@ -495,7 +495,7 @@ function useFindInPage({
       options?: Dynamic,
       context: Dynamic = (input2?: Dynamic): Dynamic => input2(),
     ): Dynamic => {
-      let value22: Dynamic = (0, guardedNativeEventHandler)(
+      let value22: Dynamic = guardedNativeEventHandler(
           {
             findKey: (): Dynamic => value15(null),
             isOpen: (): Dynamic => value10.current.isOpen,
@@ -508,13 +508,13 @@ function useFindInPage({
           options,
         ),
         items: Dynamic = [
-          (0, addNativeEventListener)(
+          addNativeEventListener(
             input,
             "keydown",
             value22,
             true,
           ),
-          (0, addNativeEventListener)(
+          addNativeEventListener(
             input,
             "keydown",
             value22,
@@ -561,9 +561,9 @@ export {
 };
 export function installFindController(): () => void {
   return () => {
-    react_Cl = (0, toModuleNamespace)((0, load_react)(), 1);
-    reactDOM_jCt = (0, toModuleNamespace)(
-      (0, load_react_dom)(),
+    react_Cl = toModuleNamespace(load_react(), 1);
+    reactDOM_jCt = toModuleNamespace(
+      load_react_dom(),
       1,
     );
     emptyFindStatus = {

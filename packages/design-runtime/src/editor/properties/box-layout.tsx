@@ -36,7 +36,7 @@ function unifiedBoxSideValues(
   for (let index: Dynamic = 0; index < 4; index++) {
     let value4: Dynamic = (value2[index].value ?? "").trim();
     if (!value4 || value2[index].mixed) continue;
-    let value5: Dynamic = (0, parseCssNumber)(value4);
+    let value5: Dynamic = parseCssNumber(value4);
     if (!value5) return null;
     let value6: Dynamic = value5.unit || "px";
     if (value3 != null && value3 !== value6) return null;
@@ -44,13 +44,13 @@ function unifiedBoxSideValues(
     items[index] = value5.value;
   }
   let callback: Dynamic = (input2?: Dynamic): Dynamic => {
-      let value4: Dynamic = (0, parseCssNumber)(
+      let value4: Dynamic = parseCssNumber(
         input2.fallback ?? "",
       );
       if (!value4) return input2.fallback ?? "";
       let value5: Dynamic = value4.unit || "px";
-      return (0, formatCssNumber)(
-        (0, roundCssNumber)(value4.value, value4.unit),
+      return formatCssNumber(
+        roundCssNumber(value4.value, value4.unit),
         value5 === (context ?? value3 ?? "px") ? "" : value5,
       );
     },
@@ -77,7 +77,7 @@ function PropertyBoxSides({
   onCommitMany: onCommitMany,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic = (0, inheritedFieldsDisabledReason)(
+  let value: Dynamic = inheritedFieldsDisabledReason(
       ...["top", "right", "bottom", "left"].map(
         (input?: Dynamic): Dynamic =>
           rows.find(
@@ -85,7 +85,7 @@ function PropertyBoxSides({
           ),
       ),
     ),
-    value2: Dynamic = (0, inheritedFieldsDescription)(
+    value2: Dynamic = inheritedFieldsDescription(
       ...["top", "right", "bottom", "left"].map(
         (input?: Dynamic): Dynamic =>
           rows.find(
@@ -93,7 +93,7 @@ function PropertyBoxSides({
           ),
       ),
     ),
-    value3: Dynamic = (0, useStyleCommitScrub)(
+    value3: Dynamic = useStyleCommitScrub(
       (input?: Dynamic): Dynamic => onCommitMany(input),
     ),
     value4: Dynamic = unifiedBoxSideValues(rows, base),
@@ -102,7 +102,7 @@ function PropertyBoxSides({
       unifiedBoxSideValues(
         rows.map(
           (input?: Dynamic): Dynamic =>
-            (0, inheritedFieldForEdit)(input),
+            inheritedFieldForEdit(input),
         ),
         base,
         value4.unit,
@@ -146,11 +146,11 @@ function PropertyBoxSides({
           value:
             input2.value === undefined
               ? null
-              : (0, formatCssNumber)(input2.value, value6.unit),
+              : formatCssNumber(input2.value, value6.unit),
         }),
       ),
     value8: Dynamic =
-      (0, getFineUnitStep)(value6.unit, undefined) != null;
+      getFineUnitStep(value6.unit, undefined) != null;
   return (
     <PropertySidesRow
       label={label}
@@ -200,7 +200,7 @@ function PropertyPositionXY({
   let callback: Dynamic = (input?: Dynamic): Dynamic => {
     let value4: Dynamic = (input.value ?? "").trim();
     return (
-      input.mixed || !value4 || (0, parseCssNumber)(value4) != null
+      input.mixed || !value4 || parseCssNumber(value4) != null
     );
   };
   if (!callback(left) || !callback(top))
@@ -218,10 +218,10 @@ function PropertyPositionXY({
         ])}
       </jsxMediaPlaybackControls.Fragment>
     );
-  let value: Dynamic = (0, inheritedFieldsDisabledReason)(left, top),
-    value2: Dynamic = (0, inheritedFieldsDescription)(left, top);
-  left = (0, inheritedFieldForEdit)(left);
-  top = (0, inheritedFieldForEdit)(top);
+  let value: Dynamic = inheritedFieldsDisabledReason(left, top),
+    value2: Dynamic = inheritedFieldsDescription(left, top);
+  left = inheritedFieldForEdit(left);
+  top = inheritedFieldForEdit(top);
   let callback2: Dynamic = (
       input?: Dynamic,
       options?: Dynamic,
@@ -229,8 +229,8 @@ function PropertyPositionXY({
     ): Dynamic => {
       let value4: Dynamic = input.mixed
           ? null
-          : (0, parseCssNumber)((input.value ?? "").trim()),
-        value5: Dynamic = (0, parseCssNumber)(input.fallback ?? ""),
+          : parseCssNumber((input.value ?? "").trim()),
+        value5: Dynamic = parseCssNumber(input.fallback ?? ""),
         value6: Dynamic = value4?.unit || value5?.unit || "px";
       return (
         <NumericInput
@@ -238,8 +238,8 @@ function PropertyPositionXY({
           prefix={options}
           value={value4 ? value4.value : undefined}
           placeholder={
-            input.mixed ? (undefined) : (value5 ? ((0, formatCssNumber)(
-                    (0, roundCssNumber)(value5.value, value5.unit),
+            input.mixed ? (undefined) : (value5 ? (formatCssNumber(
+                    roundCssNumber(value5.value, value5.unit),
                     "",
                   )) : (input.fallback || (uiMessage("inspector.boxLayout.auto"))))
           }
@@ -256,7 +256,7 @@ function PropertyPositionXY({
                 value:
                   input2 === undefined
                     ? null
-                    : (0, formatCssNumber)(input2, value6),
+                    : formatCssNumber(input2, value6),
               },
               ...((input2 !== undefined && input.alsoCommit) || []),
             ])
@@ -265,8 +265,8 @@ function PropertyPositionXY({
       );
     },
     value3: Dynamic =
-      (0, PropertiesInheritedFieldMixedAlias)(left) ||
-      (0, PropertiesInheritedFieldMixedAlias)(top);
+      PropertiesInheritedFieldMixedAlias(left) ||
+      PropertiesInheritedFieldMixedAlias(top);
   return (
     <PropertyRow
       label={uiMessage("inspector.boxLayout.offset")}
@@ -307,13 +307,13 @@ function PropertyFlexAlignment({
   onCommitMany: onCommitMany,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic = (0, inheritedFieldsDisabledReason)(
+  let value: Dynamic = inheritedFieldsDisabledReason(
       justify,
       align,
     ),
-    value2: Dynamic = (0, inheritedFieldsDescription)(justify, align);
-  justify = (0, inheritedFieldForEdit)(justify);
-  align = (0, inheritedFieldForEdit)(align);
+    value2: Dynamic = inheritedFieldsDescription(justify, align);
+  justify = inheritedFieldForEdit(justify);
+  align = inheritedFieldForEdit(align);
   let value3: Dynamic = (justify.mixed ? "" : (justify.value ?? ""))
       .trim()
       .toLowerCase(),
@@ -358,8 +358,8 @@ function PropertyFlexAlignment({
     ),
     value10: Dynamic = !!justify.disabled || !!align.disabled,
     value11: Dynamic =
-      (0, PropertiesInheritedFieldMixedAlias)(justify) ||
-      (0, PropertiesInheritedFieldMixedAlias)(align),
+      PropertiesInheritedFieldMixedAlias(justify) ||
+      PropertiesInheritedFieldMixedAlias(align),
     callback4: Dynamic = (input?: Dynamic, options?: Dynamic): Dynamic =>
       input[options];
   return (
@@ -407,7 +407,7 @@ function PropertyFlexAlignment({
             disabled={value10}
             data-testid={"dc-distribute"}
             data-inherited={value6 && !value5 ? "" : undefined}
-            className={(0, cn)("shrink-0", vertical && "rotate-90")}
+            className={cn("shrink-0", vertical && "rotate-90")}
             onClick={(): Dynamic =>
               onCommitMany([
                 {
@@ -438,7 +438,7 @@ function PropertyFlexAlignment({
             value={
               value6 || justify.mixed
                 ? undefined
-                : (0, PropertiesInheritedFieldValueAlias)(justify) &&
+                : PropertiesInheritedFieldValueAlias(justify) &&
                     value7.includes(callback(value3))
                   ? callback(value3)
                   : undefined
@@ -446,7 +446,7 @@ function PropertyFlexAlignment({
             inherited={
               value6 ||
               justify.mixed ||
-              (0, PropertiesInheritedFieldValueAlias)(justify)
+              PropertiesInheritedFieldValueAlias(justify)
                 ? undefined
                 : value7.includes(value8)
                   ? value8
@@ -485,14 +485,14 @@ function PropertyFlexAlignment({
             value={
               align.mixed
                 ? undefined
-                : (0, PropertiesInheritedFieldValueAlias)(align) &&
+                : PropertiesInheritedFieldValueAlias(align) &&
                     items.includes(callback2(value4))
                   ? callback2(value4)
                   : undefined
             }
             inherited={
               align.mixed ||
-              (0, PropertiesInheritedFieldValueAlias)(align)
+              PropertiesInheritedFieldValueAlias(align)
                 ? undefined
                 : items.includes(value9)
                   ? value9

@@ -1,0 +1,53 @@
+import assert from 'node:assert/strict';
+import test from 'node:test';
+import { applyRenames, listBindings } from '../scripts/rename-bindings.mjs';
+import { canonical } from '../scripts/check-equivalence.mjs';
+import { measure } from '../scripts/readability.mjs';
+
+const source = `import { helper } from "./lib";
+export function make(input: number) {
+  let value2 = input * 2;
+  const { width, value3 = 1 } = helper(value2);
+  const out = { value2, width };
+  value2 += value3;
+  return (0, helper)(out, value2);
+}
+const value9 = 3;
+export { value9 };
+`;
+
+test('列出机器名的绑定，带位置与所在函数', () => {
+  const keys = listBindings(source).map(r => r.key);
+  assert.deepEqual(keys, ['value2@3:6', 'value3@4:17', 'value9@9:6']);
+});
+
+test('改名覆盖声明、引用、赋值与简写属性，并保留导出名', () => {
+  const { code, problems } = applyRenames(source, { 'value2@3': 'doubled', 'value3@4': 'extra', 'value9@9': 'limit' });
+  assert.deepEqual(problems, []);
+  assert.match(code, /let doubled = input \* 2;/);
+  assert.match(code, /const \{ width, value3: extra = 1 \} = helper\(doubled\);/);
+  assert.match(code, /const out = \{ value2: doubled, width \};/);
+  assert.match(code, /doubled \+= extra;/);
+  assert.match(code, /export \{ limit as value9 \};/);
+  // 改名前后在 α 等价意义下相同
+  assert.equal(canonical(code, 'a.ts'), canonical(source, 'a.ts'));
+});
+
+test('新名字与作用域内已有的名字冲突时拒绝', () => {
+  const { problems } = applyRenames(source, { 'value2@3': 'width' });
+  assert.equal(problems.length, 1);
+  const twice = applyRenames(source, { 'value2@3': 'total', 'value3@4': 'total' });
+  assert.equal(twice.problems.length, 1);
+});
+
+test('等价校验：类型与 (0, f)() 写法不影响结果，逻辑或属性名的变化会被发现', () => {
+  assert.equal(canonical('const a: number = (0, f)(1);', 'a.ts'), canonical('const b = f(1);', 'a.ts'));
+  assert.notEqual(canonical('const a = { x: 1 };', 'a.ts'), canonical('const a = { y: 1 };', 'a.ts'));
+  assert.notEqual(canonical('export const a = 1;', 'a.ts'), canonical('export const b = 1;', 'a.ts'));
+  assert.notEqual(canonical('f(a, b);', 'a.ts'), canonical('f(b, a);', 'a.ts'));
+});
+
+test('可读性指标', () => {
+  assert.equal(measure('const value12 = 1;\n'.repeat(10)).readable, false);
+  assert.equal(measure('const width = 1;\n'.repeat(10)).readable, true);
+});

@@ -642,7 +642,7 @@ export {
 };
 export function installCdsComponentsShrinkWrap(): () => void {
   return () => {
-    initializeComponentsShrinkWrap = (0, initializeOnce)(
+    initializeComponentsShrinkWrap = initializeOnce(
       (): Dynamic => {
         MaxWidthValue = "maxWidth";
         ComponentsShrinkWrapElementCache = new WeakMap();
@@ -670,17 +670,17 @@ export function installCdsComponentsShrinkWrap(): () => void {
         ComponentsShrinkWrapElementCache_4 = new WeakMap();
       },
     );
-    initializeComponentsShrinkWrap_2 = (0, initializeOnce)(
+    initializeComponentsShrinkWrap_2 = initializeOnce(
       (): Dynamic => {
         "use client";
 
-        (0, initializeDomRefComposition)();
+        initializeDomRefComposition();
         initializeComponentsShrinkWrap();
-        reactComponentsShrinkWrap = (0, toModuleNamespace)(
-          (0, load_react)(),
+        reactComponentsShrinkWrap = toModuleNamespace(
+          load_react(),
         );
-        jsxComponentsShrinkWrap = (0, toModuleNamespace)(
-          (0, load_react_jsx_runtime)(),
+        jsxComponentsShrinkWrap = toModuleNamespace(
+          load_react_jsx_runtime(),
         );
         ShrinkWrap = (0, reactComponentsShrinkWrap.forwardRef)(
           (
@@ -696,7 +696,7 @@ export function installCdsComponentsShrinkWrap(): () => void {
                 enabled: enabled,
                 immediate: immediate,
               }),
-              value2: Dynamic = (0, useMergedRefs)(options, value);
+              value2: Dynamic = useMergedRefs(options, value);
             return (
               <div ref={value2} data-cds={"ShrinkWrap"} {...props}>
                 {children}

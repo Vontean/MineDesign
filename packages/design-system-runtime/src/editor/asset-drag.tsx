@@ -414,8 +414,8 @@ export {
 };
 export function installEditorAssetDrag(): () => void {
   return () => {
-    reactAssetDrag = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    reactAssetDrag = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
     ASSET_DRAG_START_DISTANCE_PX = 5;

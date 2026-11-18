@@ -36,7 +36,7 @@ function CheckboxVisual({
       data-checked={checked && !indeterminate ? "" : undefined}
       data-indeterminate={indeterminate ? "" : undefined}
       data-unchecked={value ? undefined : ""}
-      className={(0, cn)(
+      className={cn(
         checkboxVisualClasses,
         value && "bg-fill-accent border-transparent",
         className,
@@ -58,7 +58,7 @@ export {
 };
 export function installUiControlLabels(): () => void {
   return () => {
-    jsxsM = (0, toModuleNamespace)((0, loadJsxNamespace)(), 1);
+    jsxsM = toModuleNamespace(loadJsxNamespace(), 1);
     checkboxVisualClasses =
       "flex shrink-0 size-[var(--cds-checkbox)] items-center justify-center rounded-[var(--cds-checkbox-radius)] border border-strong bg-transparent";
     CONTROL_LABEL_CLASS =

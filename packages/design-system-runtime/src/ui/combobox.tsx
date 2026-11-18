@@ -193,7 +193,7 @@ function VirtualizedComboboxRows({
   useUiLocale();
   let callback = (input: number): number =>
       estimateRowSize?.(input) ?? estimateItemSize,
-    value = (0, useVirtualizer)({
+    value = useVirtualizer({
       count: count,
       getItemKey: getItemKey,
       getScrollElement: () => scrollEl,
@@ -207,7 +207,7 @@ function VirtualizedComboboxRows({
         >,
       ) =>
         Math.max(
-          (0, measureVirtualElement)(input, options, context),
+          measureVirtualElement(input, options, context),
           callback(context.indexFromElement(input)),
         ),
       overscan: COMBOBOX_VIRTUAL_OVERSCAN,
@@ -222,7 +222,7 @@ function VirtualizedComboboxRows({
     }),
     [value],
   );
-  (0, useIsomorphicLayoutEffect)(() => {
+  useIsomorphicLayoutEffect(() => {
     value.measure();
   }, [value, estimateItemSize]);
   let value2 = value.getVirtualItems();
@@ -309,7 +309,7 @@ function comboboxSelectionLabel<Value extends ComboboxKey>(
   if (noun !== undefined) {
     return `${selected.length} ${noun}`;
   }
-  return (0, translateWithFallback)(
+  return translateWithFallback(
     locale,
     "nSelected",
     "{count} selected",
@@ -431,9 +431,9 @@ function Combobox<Value extends ComboboxKey>(
     value6 = reactForUiInputs25.useContext<LabelResolver | undefined>(
       translationContext,
     ),
-    value7 = (0, useTranslation)("clearSelection", uiMessage("design-system.combobox.clearSelection")),
+    value7 = useTranslation("clearSelection", uiMessage("design-system.combobox.clearSelection")),
     value8 = clearLabel ?? value7,
-    value9 = (0, useTranslation)(
+    value9 = useTranslation(
       "noResults",
       uiMessage("design-system.combobox.noResults"),
     ),
@@ -450,9 +450,9 @@ function Combobox<Value extends ComboboxKey>(
     value20 = value19 && !value16,
     value21 = props.multiple && (props.selectAllFooter ?? false),
     value22 = indicator ?? (value12 ? "checkbox" : "check"),
-    value23 = (0, useFieldInvalid)(),
-    value24 = (0, useHasFieldContext)(),
-    value25 = (0, useFieldDisabled)(),
+    value23 = useFieldInvalid(),
+    value24 = useHasFieldContext(),
+    value25 = useFieldDisabled(),
     value26 = disabled || value25,
     value27 = props.value !== undefined,
     [value28, value29] = reactForUiInputs25.useState(() =>
@@ -782,7 +782,7 @@ function Combobox<Value extends ComboboxKey>(
   let callback9 = reactForUiInputs25.useCallback(() => {
       ref9.current?.querySelector("input")?.focus();
     }, []),
-    { clickToFocusProps: clickToFocusProps } = (0, useClickToFocus)(
+    { clickToFocusProps: clickToFocusProps } = useClickToFocus(
       () => {
         if (value34 || ref10.current) {
           return;
@@ -824,7 +824,7 @@ function Combobox<Value extends ComboboxKey>(
         ) : (
           <span className={"flex min-w-0 items-center gap-2"}>
             {[<IconSlot icon={value32.icon} />, <span
-                className={(0, cn)(
+                className={cn(
                   "min-w-0 truncate",
                   options && "self-baseline",
                 )}
@@ -928,7 +928,7 @@ function Combobox<Value extends ComboboxKey>(
       triggerId: triggerId,
       triggerValueId: triggerValueId,
       ownLabelProps: ownLabelProps,
-    } = (0, comboboxAccessibilityProps)({
+    } = comboboxAccessibilityProps({
       reactId: value51,
       label: label,
       triggerPrefix: triggerPrefix,
@@ -978,7 +978,7 @@ function Combobox<Value extends ComboboxKey>(
       value13 === "chips"
         ? `${COMBOBOX_CHIPS_INPUT_CLASS} ${value53} ${value50}`
         : `${COMBOBOX_TRIGGER_CLASS} ${COMBOBOX_VARIANT_CLASSES[variant]} ${COMBOBOX_MODE_CLASSES[mode]} ${value52} ${value50}`,
-    value55 = (0, useSheetCapablePresentation)(),
+    value55 = useSheetCapablePresentation(),
     value56 = (
       <baseCombobox.Root
         multiple={value12}
@@ -1007,8 +1007,8 @@ function Combobox<Value extends ComboboxKey>(
             <div
               ref={ref9}
               data-cds={value5}
-              {...(0, getControlSizeAttributes)(size)}
-              className={(0, cn)(value54, className)}
+              {...getControlSizeAttributes(size)}
+              className={cn(value54, className)}
               data-disabled={value26 || undefined}
               data-invalid={value23 || undefined}
               onMouseDown={clickToFocusProps.onMouseDown}
@@ -1056,8 +1056,8 @@ function Combobox<Value extends ComboboxKey>(
             <div
               ref={ref9}
               data-cds={value5}
-              {...(0, getControlSizeAttributes)(size)}
-              className={(0, cn)(value54, className)}
+              {...getControlSizeAttributes(size)}
+              className={cn(value54, className)}
               data-disabled={value26 || undefined}
               data-invalid={value23 || undefined}
               onMouseDown={clickToFocusProps.onMouseDown}
@@ -1098,8 +1098,8 @@ function Combobox<Value extends ComboboxKey>(
             <div
               ref={ref9}
               data-cds={value5}
-              {...(0, getControlSizeAttributes)(size)}
-              className={(0, cn)(value54, className)}
+              {...getControlSizeAttributes(size)}
+              className={cn(value54, className)}
               data-disabled={value26 || undefined}
               data-invalid={value23 || undefined}
             >
@@ -1133,7 +1133,7 @@ function Combobox<Value extends ComboboxKey>(
                 </baseCombobox.Trigger>, value49]}
             </div>
           ), <baseCombobox.Portal
-            container={((0, usePortalContainer)()) as import("../contracts/overlays").BaseUIPortalContainer}
+            container={(usePortalContainer()) as import("../contracts/overlays").BaseUIPortalContainer}
           >
             <ComboboxPopupResponsive
               anchorRef={ref9}
@@ -1246,7 +1246,7 @@ function ComboboxPopupResponsive<Value extends ComboboxKey>(
   props: ComboboxBridgeProps<Value>,
 ): React.ReactElement {
   useUiLocale();
-  if ((0, useHasSheetFrame)()) {
+  if (useHasSheetFrame()) {
     return <ComboboxPopupAsSheet {...props} />;
   } else {
     return (
@@ -1318,26 +1318,26 @@ function ComboboxPopupFrame<Value extends ComboboxKey>({
   closeLabel: closeLabel,
 }: ComboboxHostProps<Value>): React.ReactElement {
   useUiLocale();
-  let selectAllDisabled2 = (0, useTranslation)(
+  let selectAllDisabled2 = useTranslation(
       "loadingOptions",
       uiMessage("design-system.combobox.loadingOptions"),
     ),
-    value = (0, useTranslation)(
+    value = useTranslation(
       "loadingMoreOptions",
       uiMessage("design-system.combobox.loadingMoreOptions"),
     ),
     value2 = isLoading && displayedItems === 0,
-    value3 = (0, useTranslation)("selectAll", uiMessage("design-system.combobox.selectAll")),
-    closeLabel2 = (0, useTranslation)("clear", "Clear"),
+    value3 = useTranslation("selectAll", uiMessage("design-system.combobox.selectAll")),
+    closeLabel2 = useTranslation("clear", "Clear"),
     [value4, value5] = reactForUiInputs25.useState<HTMLDivElement | null>(
       null,
     ),
-    value6 = (0, useRootRemSize)(),
-    close2 = (0, useDensity)(),
+    value6 = useRootRemSize(),
+    close2 = useDensity(),
     sheet = anchorRef.sheet,
     value7 = sheet
       ? (typographyThemeValues["leading-body"].steps[
-          (0, getDensitySizeIndex)("comfortable", "lg") - 1
+          getDensitySizeIndex("comfortable", "lg") - 1
         ] ?? typographyThemeValues["leading-body"].comfortable)
       : typographyThemeValues["leading-body"][close2],
     value8 =
@@ -1453,7 +1453,7 @@ function ComboboxPopupFrame<Value extends ComboboxKey>({
     groupSelected,
     value8,
   ]);
-  let value16 = (0, useOverlayLayer)("combobox", collisionPadding),
+  let value16 = useOverlayLayer("combobox", collisionPadding),
     value17 = anchorRef.sheet ? anchorRef.chrome : null,
     value18 = anchorRef.sheet && sheetParts !== null ? sheetParts : null,
     value19 = reactForUiInputs25.useContext(sheetParentContext),
@@ -1480,14 +1480,13 @@ function ComboboxPopupFrame<Value extends ComboboxKey>({
       [virtualized, memo, value20],
     ),
     ref4 = reactForUiInputs25.useRef(null),
-    value21 = (0, useMergedRefs)(ref4, anchorRef.ref),
+    value21 = useMergedRefs(ref4, anchorRef.ref),
     callback4 = reactForUiInputs25.useCallback(
       () => align.current?.querySelector('[role="combobox"]'),
       [align],
     ),
     ref5 = reactForUiInputs25.useRef(null),
-    { ref: value22, nameProps: value23 } = (0,
-    useMirroredAccessibleName)(
+    { ref: value22, nameProps: value23 } = useMirroredAccessibleName(
       ref5,
       callback4,
       {},
@@ -1535,7 +1534,7 @@ function ComboboxPopupFrame<Value extends ComboboxKey>({
             collisionPadding={showPopupSearch}
             positionMethod={"fixed"}
             {...(sheet ? (sheetPositioningOverrides as Partial<typeof runtime.sheetPositioningOverrides>) : {})}
-            className={(0, cn)(
+            className={cn(
               popupClassName ?? "w-[var(--anchor-width)] min-w-[12rem]",
               !sheet && COMBOBOX_ANCHOR_HIDDEN_CLASS,
               sheet &&
@@ -1549,7 +1548,7 @@ function ComboboxPopupFrame<Value extends ComboboxKey>({
               initialFocus={loadingStaleAfter ? callback5 : undefined}
               {...value23}
               {...(anchorRef.attrs as React.HTMLAttributes<HTMLDivElement>)}
-              className={(0, cn)(
+              className={cn(
                 COMBOBOX_POPUP_CLASS,
                 sheet && sheetPopupClasses,
                 sheet &&
@@ -1688,7 +1687,7 @@ function ComboboxPopupFrame<Value extends ComboboxKey>({
 function useComboboxOutsideInputRegistration(): void {
   let value = reactForUiInputs25.useContext(ComboboxRegistrationContext),
     value2 = reactForUiInputs25.useContext(ComboboxPopupInputContext);
-  (0, useIsomorphicLayoutEffect)(() => {
+  useIsomorphicLayoutEffect(() => {
     if (value === null || value2) {
       return;
     }
@@ -1705,7 +1704,7 @@ function useComboboxTriggerRef(
         : value?.setTrigger,
       value?.getTrigger,
     );
-  return (0, useMergedRefs)(ref, value2);
+  return useMergedRefs(ref, value2);
 }
 function useComboboxPopupInputRef(
   ref?: React.Ref<HTMLElement>,
@@ -1717,7 +1716,7 @@ function useComboboxPopupInputRef(
         : undefined,
       value?.getPopupInput,
     );
-  return (0, useMergedRefs)(ref, value2);
+  return useMergedRefs(ref, value2);
 }
 function useComboboxTriggerElement(): () => HTMLElement | null {
   let value = reactForUiInputs25.useContext(ComboboxRegistrationContext);
@@ -1737,7 +1736,7 @@ function useComboboxAccessibleName(
 } {
   let value = reactForUiInputs25.useContext(ComboboxPopupInputContext),
     value2 = useComboboxTriggerElement();
-  return (0, useMirroredAccessibleName)(
+  return useMirroredAccessibleName(
     ref,
     value ? value2 : nullComboboxElement,
     {
@@ -1755,7 +1754,7 @@ function useComboboxListRef(
 ): React.RefCallback<HTMLElement> {
   let value = reactForUiInputs25.useContext(ComboboxRegistrationContext),
     value2 = useComboboxRegistrationRef(value?.setList, value?.getList);
-  return (0, useMergedRefs)(ref, value2);
+  return useMergedRefs(ref, value2);
 }
 function useComboboxRegistrationRef(
   setElement: ((element: HTMLElement | null) => void) | undefined,
@@ -1786,7 +1785,7 @@ function ComboboxCaret({
   return (
     <span
       aria-hidden={true}
-      className={(0, cn)(
+      className={cn(
         "pointer-events-none flex size-icon shrink-0 items-center justify-center text-muted",
         className,
       )}
@@ -1803,7 +1802,7 @@ function ComboboxSeparator({
   useUiLocale();
   return (
     <baseCombobox.Separator
-      className={(0, cn)(COMBOBOX_SEPARATOR_CLASS, className)}
+      className={cn(COMBOBOX_SEPARATOR_CLASS, className)}
       data-cds-part={COMBOBOX_SEPARATOR_PART}
     />
   );
@@ -1817,7 +1816,7 @@ function ComboboxFooter({
   useUiLocale();
   return (
     <jsxForUiInputs24.Fragment>
-      {[<div aria-hidden={true} className={COMBOBOX_FOOTER_DIVIDER_CLASS} />, <div className={(0, cn)(COMBOBOX_FOOTER_CLASS, className)}>
+      {[<div aria-hidden={true} className={COMBOBOX_FOOTER_DIVIDER_CLASS} />, <div className={cn(COMBOBOX_FOOTER_CLASS, className)}>
           {children}
         </div>]}
     </jsxForUiInputs24.Fragment>
@@ -1881,7 +1880,7 @@ function ComboboxRoot<Value, Multiple extends boolean = false>(
       }),
       [],
     ),
-    value3 = (0, useSheetCapablePresentation)();
+    value3 = useSheetCapablePresentation();
   return (
     <ComboboxRegistrationContext.Provider value={memo}>
       <ComboboxChipsContext.Provider value={value}>
@@ -1900,17 +1899,17 @@ function ComboboxRootRegistration<Value, Multiple extends boolean = false>({
   registration: ComboboxRegistration;
 }): React.ReactElement {
   useUiLocale();
-  let value = (0, useControllableOpen)(rootProps),
+  let value = useControllableOpen(rootProps),
     { onOpenChange: onOpenChange } = value,
     callback = reactForUiInputs25.useCallback(() => {
       onOpenChange(false, comboboxCloseEventDetails());
     }, [onOpenChange]),
-    value2 = (0, useValueCapturedOnOpen)(
+    value2 = useValueCapturedOnOpen(
       value.open,
       registration.hasOutsideInput,
       false,
     ),
-    value3 = (0, useAdaptiveSheet)({
+    value3 = useAdaptiveSheet({
       open: value.open,
       close: callback,
       onOpenChange: value.onOpenChange,
@@ -2057,12 +2056,12 @@ export {
 };
 export function installUiCombobox(): () => void {
   return () => {
-    reactForUiInputs25 = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    reactForUiInputs25 = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
-    jsxForUiInputs24 = (0, toModuleNamespace)(
-      (0, loadJsxNamespace)(),
+    jsxForUiInputs24 = toModuleNamespace(
+      loadJsxNamespace(),
       1,
     );
     COMBOBOX_TRIGGER_CLASS =
@@ -2089,7 +2088,7 @@ export function installUiCombobox(): () => void {
       "relative max-w-full shrink-0 outline-none focus-visible:outline-hidden focus-visible:[box-shadow:inset_0_0_0_1px_var(--cds-fill-accent)]";
     COMBOBOX_CHIP_LIST_CLASS =
       "flex min-w-0 flex-1 flex-nowrap items-center gap-1 overflow-hidden [&>*]:relative [mask-image:linear-gradient(to_right,#000_calc(100%-24px),transparent)]";
-    COMBOBOX_POPUP_CLASS = `draggable-none flex flex-col max-h-[min(var(--available-height,100dvh),var(--cds-popup-max-h,320px))] ${(0, getSurfaceClasses)("popover")} cds-reset text-body font-normal text-primary outline-none focus-visible:outline-hidden`;
+    COMBOBOX_POPUP_CLASS = `draggable-none flex flex-col max-h-[min(var(--available-height,100dvh),var(--cds-popup-max-h,320px))] ${getSurfaceClasses("popover")} cds-reset text-body font-normal text-primary outline-none focus-visible:outline-hidden`;
     COMBOBOX_POPUP_BODY_CLASS =
       "flex min-h-0 flex-1 flex-col overflow-hidden rounded-[inherit] p-1";
     COMBOBOX_ANCHOR_HIDDEN_CLASS = "data-[anchor-hidden]:invisible";
@@ -2138,7 +2137,7 @@ export function installUiCombobox(): () => void {
           <baseCombobox.Chip
             ref={value}
             {...props}
-            className={(0, cn)(COMBOBOX_CHIP_CLASS, className)}
+            className={cn(COMBOBOX_CHIP_CLASS, className)}
             render={
               render ?? (
                 <Badge
@@ -2170,7 +2169,7 @@ export function installUiCombobox(): () => void {
         }: ComboboxPartProps<"ChipRemove">,
         options: React.ForwardedRef<HTMLButtonElement>,
       ): React.ReactElement => {
-        let value = (0, useTranslation)("removeItem", uiMessage("design-system.combobox.removeItem", { item: uiMessage("design-system.badges.item") }), {
+        let value = useTranslation("removeItem", uiMessage("design-system.combobox.removeItem", { item: uiMessage("design-system.badges.item") }), {
           item: "item",
         });
         return (
@@ -2178,7 +2177,7 @@ export function installUiCombobox(): () => void {
             ref={options}
             aria-label={value}
             {...props}
-            className={(0, cn)(COMBOBOX_CHIP_REMOVE_CLASS, className)}
+            className={cn(COMBOBOX_CHIP_REMOVE_CLASS, className)}
           >
             {children ?? (<Icon name={"X"} size={"sm"} />)}
           </baseCombobox.ChipRemove>
@@ -2282,7 +2281,7 @@ export function installUiCombobox(): () => void {
         options: React.ForwardedRef<HTMLButtonElement>,
       ): React.ReactElement => {
         let value = reactForUiInputs25.useId(),
-          value2 = (0, useHasFieldContext)(),
+          value2 = useHasFieldContext(),
           value3 =
             props["aria-label"] !== undefined ||
             props["aria-labelledby"] !== undefined ||
@@ -2300,8 +2299,8 @@ export function installUiCombobox(): () => void {
                 })}
             data-cds={"Combobox"}
             {...props}
-            {...(0, getControlSizeAttributes)(size)}
-            className={(0, cn)(
+            {...getControlSizeAttributes(size)}
+            className={cn(
               COMBOBOX_TRIGGER_CLASS,
               COMBOBOX_VARIANT_CLASSES[variant],
               "px-sm focus-visible:shadow-focus data-[invalid]:focus-visible:shadow-focus-danger",
@@ -2327,7 +2326,7 @@ export function installUiCombobox(): () => void {
       ): React.ReactElement => (
         <span
           ref={options}
-          className={(0, cn)(
+          className={cn(
             "min-w-0 flex-1 truncate text-left",
             className,
           )}
@@ -2372,7 +2371,7 @@ export function installUiCombobox(): () => void {
             {...COMBOBOX_AUTOCOMPLETE_INPUT_PROPS}
             {...value2}
             {...props}
-            className={(0, cn)(COMBOBOX_INLINE_INPUT_CLASS, className)}
+            className={cn(COMBOBOX_INLINE_INPUT_CLASS, className)}
           />
         );
       },
@@ -2399,7 +2398,7 @@ export function installUiCombobox(): () => void {
             {...COMBOBOX_AUTOCOMPLETE_INPUT_PROPS}
             {...value2}
             {...props}
-            className={(0, cn)(COMBOBOX_POPUP_SEARCH_CLASS, className)}
+            className={cn(COMBOBOX_POPUP_SEARCH_CLASS, className)}
           />
         );
       },
@@ -2415,7 +2414,7 @@ export function installUiCombobox(): () => void {
         }: ComboboxPartProps<"Clear">,
         options: React.ForwardedRef<HTMLButtonElement>,
       ): React.ReactElement => {
-        let value = (0, useTranslation)(
+        let value = useTranslation(
           "clearSelection",
           uiMessage("design-system.combobox.clearSelection"),
         );
@@ -2431,7 +2430,7 @@ export function installUiCombobox(): () => void {
                 icon={children || "X"}
                 aria-label={ariaLabel ?? (value)}
                 tooltip={false}
-                className={(0, cn)(
+                className={cn(
                   "data-[ending-style]:hidden",
                   className,
                 )}
@@ -2461,7 +2460,7 @@ export function installUiCombobox(): () => void {
           ref={options}
           type={"button"}
           {...props}
-          className={(0, cn)(
+          className={cn(
             "cds-reset flex w-full items-center gap-2 min-h-control px-md rounded",
             "text-body font-normal text-primary select-none outline-none focus-visible:outline-hidden",
             "hover:bg-fill-ghost-hover focus-visible:bg-fill-ghost-hover",
@@ -2501,7 +2500,7 @@ export function installUiCombobox(): () => void {
           "data-cds": dataCds,
           ...props,
         };
-        if ((0, useHasSheetFrame)()) {
+        if (useHasSheetFrame()) {
           return <ComboboxSheetCapablePopup {...state} ref={options} />;
         } else {
           return (
@@ -2561,15 +2560,14 @@ export function installUiCombobox(): () => void {
           "aria-labelledby": value12,
           ...value13
         } = props,
-        value18 = (0, useOverlayLayer)("combobox", value5),
+        value18 = useOverlayLayer("combobox", value5),
         sheet = sheetPopup.sheet,
         value19 = sheetPopup.sheet ? sheetPopup.chrome : null,
         value20 = sheetPopup.sheet && sheetParts !== null ? sheetParts : null,
         ref = reactForUiInputs25.useRef(null),
         value21 = reactForUiInputs25.useContext(ComboboxRegistrationContext),
         value22 = reactForUiInputs25.useContext(ComboboxChipsContext),
-        { ref: value23, nameProps: value24 } = (0,
-        useMirroredAccessibleName)(
+        { ref: value23, nameProps: value24 } = useMirroredAccessibleName(
           options,
           useComboboxTriggerElement(),
           {
@@ -2581,7 +2579,7 @@ export function installUiCombobox(): () => void {
             }),
           },
         ),
-        value25 = (0, useMergedRefs)(value23, ref, sheetPopup.ref),
+        value25 = useMergedRefs(value23, ref, sheetPopup.ref),
         callback = reactForUiInputs25.useCallback(
           (input: PopupInputKind): HTMLElement | undefined =>
             comboboxSheetLabel(
@@ -2624,7 +2622,7 @@ export function installUiCombobox(): () => void {
                 };
       return (
         <baseCombobox.Portal
-          container={((0, usePortalContainer)()) as import("../contracts/overlays").BaseUIPortalContainer}
+          container={(usePortalContainer()) as import("../contracts/overlays").BaseUIPortalContainer}
         >
           <PortalRoot
             {...value18.portalProps}
@@ -2658,7 +2656,7 @@ export function installUiCombobox(): () => void {
                   collisionAvoidance={value2}
                   positionMethod={"fixed"}
                   {...(sheet ? (sheetPositioningOverrides as Partial<typeof runtime.sheetPositioningOverrides>) : {})}
-                  className={(0, cn)(
+                  className={cn(
                     value4 ?? "w-[var(--anchor-width)] min-w-[12rem]",
                     !sheet && COMBOBOX_ANCHOR_HIDDEN_CLASS,
                     sheet &&
@@ -2674,7 +2672,7 @@ export function installUiCombobox(): () => void {
                     {...(sheetPopup.attrs as React.HTMLAttributes<HTMLDivElement>)}
                     {...value13}
                     style={value30}
-                    className={(0, cn)(
+                    className={cn(
                       COMBOBOX_POPUP_CLASS,
                       sheet && sheetPopupClasses,
                       sheet &&
@@ -2718,8 +2716,7 @@ export function installUiCombobox(): () => void {
         }: ComboboxPartProps<"List">,
         options: React.ForwardedRef<HTMLDivElement>,
       ): React.ReactElement => {
-        let { ref: value, nameProps: value2 } = (0,
-        useMirroredAccessibleName)(
+        let { ref: value, nameProps: value2 } = useMirroredAccessibleName(
           useComboboxListRef(options),
           useComboboxTriggerElement(),
           {
@@ -2736,7 +2733,7 @@ export function installUiCombobox(): () => void {
             ref={value}
             {...value2}
             {...props}
-            className={(0, cn)(COMBOBOX_LIST_CLASS, className)}
+            className={cn(COMBOBOX_LIST_CLASS, className)}
             {...{
               [SHEET_SCROLL_ATTRIBUTE]: "",
             }}
@@ -2754,7 +2751,7 @@ export function installUiCombobox(): () => void {
         }: ComboboxPartProps<"Empty">,
         options: React.ForwardedRef<HTMLDivElement>,
       ): React.ReactElement => {
-        let value = (0, useTranslation)(
+        let value = useTranslation(
           "noResults",
           uiMessage("design-system.combobox.noResults"),
         );
@@ -2762,7 +2759,7 @@ export function installUiCombobox(): () => void {
           <baseCombobox.Empty
             ref={options}
             {...props}
-            className={(0, cn)(COMBOBOX_EMPTY_CLASS, className)}
+            className={cn(COMBOBOX_EMPTY_CLASS, className)}
           >
             {children === undefined ? (value) : (children)}
           </baseCombobox.Empty>
@@ -2786,7 +2783,7 @@ export function installUiCombobox(): () => void {
           ref={options}
           data-stale={stale || undefined}
           {...props}
-          className={(0, cn)(COMBOBOX_ITEM_CLASS, className)}
+          className={cn(COMBOBOX_ITEM_CLASS, className)}
         >
           {[icon !== undefined && <IconSlot icon={icon} />, <div className={"flex min-w-0 flex-1 flex-col gap-0.5"}>
               {[<span className={"truncate"}>{children}</span>, description !== undefined && (
@@ -2815,7 +2812,7 @@ export function installUiCombobox(): () => void {
         <baseCombobox.ItemIndicator
           ref={options}
           {...props}
-          className={(0, cn)("shrink-0 text-accent", className)}
+          className={cn("shrink-0 text-accent", className)}
         >
           {children ?? (<Icon name={"Check"} size={"md"} bold={true} />)}
         </baseCombobox.ItemIndicator>
@@ -2830,7 +2827,7 @@ export function installUiCombobox(): () => void {
         <baseCombobox.GroupLabel
           ref={options}
           {...props}
-          className={(0, cn)(COMBOBOX_GROUP_LABEL_CLASS, className)}
+          className={cn(COMBOBOX_GROUP_LABEL_CLASS, className)}
         />
       ),
     );
@@ -2853,8 +2850,8 @@ export function installUiCombobox(): () => void {
         <baseCombobox.Chips
           ref={options}
           {...props}
-          {...(0, getControlSizeAttributes)(size)}
-          className={(0, cn)(
+          {...getControlSizeAttributes(size)}
+          className={cn(
             COMBOBOX_CHIPS_INPUT_CLASS,
             "h-auto min-h-control flex-wrap py-1 pl-sm [&>*]:relative",
             className,
@@ -2897,8 +2894,8 @@ export function installUiCombobox(): () => void {
       ChipRemove: ComboboxChipRemove,
       Collection: baseCombobox.Collection,
     });
-    jsxForUiInputs25 = (0, toModuleNamespace)(
-      (0, loadJsxNamespace)(),
+    jsxForUiInputs25 = toModuleNamespace(
+      loadJsxNamespace(),
       1,
     );
     (

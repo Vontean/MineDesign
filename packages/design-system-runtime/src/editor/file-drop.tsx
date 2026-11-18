@@ -44,7 +44,7 @@ function FileDropZone({
       event.preventDefault();
       event.stopPropagation();
       value2(false);
-      (0, extractDroppedFiles)(event.dataTransfer).then((input) =>
+      extractDroppedFiles(event.dataTransfer).then((input) =>
         callback(input.files, input.leftOut),
       );
     };
@@ -92,7 +92,7 @@ function FileDropZone({
                 variant={large ? "ghost" : "secondary"}
                 size={"sm"}
                 onClick={() =>
-                  void (0, pickUploadFiles)(true).then((input) =>
+                  void pickUploadFiles(true).then((input) =>
                     callback(input),
                   )
                 }
@@ -168,16 +168,16 @@ export {
 };
 export function installEditorFileDrop(): () => void {
   return () => {
-    reactAssetFileDrop = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    reactAssetFileDrop = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
-    reactFileDrop = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    reactFileDrop = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
-    jsxFileDrop = (0, toModuleNamespace)(
-      (0, loadJsxNamespace)(),
+    jsxFileDrop = toModuleNamespace(
+      loadJsxNamespace(),
       1,
     );
   };

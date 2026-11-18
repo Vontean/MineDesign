@@ -47,9 +47,9 @@ export {
 };
 export function installCanvasEmptyNotice(): () => void {
   return () => {
-    react_HAt = (0, toModuleNamespace)((0, load_react)(), 1);
-    jsx_H_ = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    react_HAt = toModuleNamespace(load_react(), 1);
+    jsx_H_ = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
   };

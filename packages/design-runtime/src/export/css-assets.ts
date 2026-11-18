@@ -76,7 +76,7 @@ async function inlineExportCssImports(
         .slice(0, value2.indexOf(":") + 1)
         .toLowerCase();
     if (value3 === "data:" || value3 === "blob:") continue;
-    let value4: Dynamic = (0, resolveExportAssetUrl)(value2, path),
+    let value4: Dynamic = resolveExportAssetUrl(value2, path),
       value5: Dynamic = await resolveAsset(value4);
     if (value5) {
       let value6: Dynamic = new TextDecoder().decode(value5.data);
@@ -119,7 +119,7 @@ async function replaceCssAssetUrlsWithIds(
     if (exportAssetUuidPattern.test(value2.split("#")[0])) continue;
     let value3: Dynamic = value2.indexOf("#"),
       value4: Dynamic = value3 >= 0 ? value2.slice(value3) : "",
-      value5: Dynamic = (0, resolveExportAssetUrl)(value2, path),
+      value5: Dynamic = resolveExportAssetUrl(value2, path),
       value6: Dynamic;
     if (assets.has(value5)) value6 = assets.get(value5).uuid;
     else {
@@ -159,7 +159,7 @@ async function inlineExportCssAssetUrls(
     let value2: Dynamic = value[1] ?? value[2] ?? value[3],
       value3: Dynamic = value2.indexOf("#"),
       value4: Dynamic = value3 >= 0 ? value2.slice(value3) : "",
-      value5: Dynamic = (0, resolveExportAssetUrl)(
+      value5: Dynamic = resolveExportAssetUrl(
         value2.split("#")[0],
         path,
       );
@@ -174,14 +174,14 @@ async function inlineExportCssAssetUrls(
     if (
       !(
         alreadyCompressedExportMimeTypes.has(value6) &&
-        (0, hasCompressedFileSignature)(entry.data)
+        hasCompressedFileSignature(entry.data)
       ) &&
-      (0, containsProjectServeAccessToken)(
+      containsProjectServeAccessToken(
         new TextDecoder().decode(entry.data),
       )
     ) {
       warnings.push(
-        `serve token not removed: asset "${(0, redactProjectServeAccessToken)(value5)}" referenced from a stylesheet ships bytes matching a project serve access token \u2014 the published file may carry a live access token`,
+        `serve token not removed: asset "${redactProjectServeAccessToken(value5)}" referenced from a stylesheet ships bytes matching a project serve access token \u2014 the published file may carry a live access token`,
       );
       values.add(value5);
       continue;
@@ -191,7 +191,7 @@ async function inlineExportCssAssetUrls(
       : "application/octet-stream";
     items.push({
       original: value[0],
-      replacement: `url("data:${value7};base64,${(0, encodeBinaryBase64)(entry.data)}${value4}")`,
+      replacement: `url("data:${value7};base64,${encodeBinaryBase64(entry.data)}${value4}")`,
     });
   }
   for (let value2 of items as Dynamic)

@@ -72,13 +72,13 @@ function HandoffNotice({
     >
       {[<p>
           {kind === "failed" ? (<jsxWelcome.Fragment>
-              {[(0, claudeDeliveryStatusMessage)("failed", held), " ", <TextLink
+              {[claudeDeliveryStatusMessage("failed", held), " ", <TextLink
                   onClick={onCopy}
                   data-testid={"ds-handoff-copy"}
                 >
                   {uiMessage("design-system.welcome.copyIt")}
                 </TextLink>]}
-            </jsxWelcome.Fragment>) : ((0, claudeDeliveryStatusMessage)(kind, held))}
+            </jsxWelcome.Fragment>) : (claudeDeliveryStatusMessage(kind, held))}
         </p>, kind === "failed" && prompt !== undefined ? (
           <Collapsible.Root>
             {[<Collapsible.Trigger className={"w-fit text-secondary"}>
@@ -568,16 +568,16 @@ export {
 };
 export function installFilesUiWelcome(): () => void {
   return () => {
-    reactBrandUpload = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    reactBrandUpload = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
-    reactWelcome = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    reactWelcome = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
-    jsxWelcomeIcons = (0, toModuleNamespace)(
-      (0, loadJsxNamespace)(),
+    jsxWelcomeIcons = toModuleNamespace(
+      loadJsxNamespace(),
       1,
     );
     WELCOME_ICON_PATHS = {
@@ -591,8 +591,8 @@ export function installFilesUiWelcome(): () => void {
         />
       ),
     };
-    jsxWelcome = (0, toModuleNamespace)(
-      (0, loadJsxNamespace)(),
+    jsxWelcome = toModuleNamespace(
+      loadJsxNamespace(),
       1,
     );
     // MineDesign: user-facing copy calls the agent "the agent", not Claude.
@@ -639,8 +639,8 @@ export function installFilesUiWelcome(): () => void {
         "FileUpload",
       ],
     };
-    jsxBrandUpload = (0, toModuleNamespace)(
-      (0, loadJsxNamespace)(),
+    jsxBrandUpload = toModuleNamespace(
+      loadJsxNamespace(),
       1,
     );
     BRAND_UPLOAD_TEXT = {

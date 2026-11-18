@@ -38,8 +38,8 @@ function colorWellStyle(input?: Dynamic): Dynamic {
     return {
       backgroundColor: input,
     };
-  let value: Dynamic = (0, parseHsvaColor)(input),
-    value2: Dynamic = (0, hsvaToRgbaCss)(value);
+  let value: Dynamic = parseHsvaColor(input),
+    value2: Dynamic = hsvaToRgbaCss(value);
   return value.a < 1
     ? {
         background: `linear-gradient(${value2}, ${value2}), ${alphaCheckerboardBackground}`,
@@ -51,7 +51,7 @@ function colorWellStyle(input?: Dynamic): Dynamic {
 function normalizedPaintKey(input?: Dynamic): Dynamic {
   return PropertiesGradientEditorColorMixPattern.test(input)
     ? "sym:" + input.trim()
-    : (0, hsvaToRgbaCss)((0, parseHsvaColor)(input));
+    : hsvaToRgbaCss(parseHsvaColor(input));
 }
 function samePaint(input?: Dynamic, options?: Dynamic): Dynamic {
   return normalizedPaintKey(input) === normalizedPaintKey(options);
@@ -222,9 +222,9 @@ function ColorSwatchPicker({
       current !== null ? (value14.get(current) ?? current) : null,
     value16: Dynamic = value13.filter(
       (input?: Dynamic): Dynamic =>
-        (0, pickerSearchMatches)(
+        pickerSearchMatches(
           value11,
-          (0, PropertiesGradientEditorLabel)(input),
+          PropertiesGradientEditorLabel(input),
           input.color,
           input.subgroup,
           input.group,
@@ -238,7 +238,7 @@ function ColorSwatchPicker({
         className={"mt-1 mb-2 w-0 min-w-full"}
         rowSelector={"[data-swatch]"}
         onEnterIndex={(): Dynamic =>
-          (0, pickerSearchInitialIndex)(
+          pickerSearchInitialIndex(
             value11,
             value16
               .filter(
@@ -247,7 +247,7 @@ function ColorSwatchPicker({
               )
               .map(
                 (input?: Dynamic): Dynamic =>
-                  (0, PropertiesGradientEditorLabel)(input),
+                  PropertiesGradientEditorLabel(input),
               ),
           )
         }
@@ -257,7 +257,7 @@ function ColorSwatchPicker({
     callback2: Dynamic = (input?: Dynamic): Dynamic => {
       let value21: Dynamic = (
         <ColorSwatchRow
-          label={(0, PropertiesGradientEditorLabel)(input)}
+          label={PropertiesGradientEditorLabel(input)}
           data-testid={
             testid !== undefined ? testid + "-" + input.name : undefined
           }
@@ -294,7 +294,7 @@ function ColorSwatchPicker({
     callback3: Dynamic = (input?: Dynamic, options?: Dynamic): Dynamic => (
       <PickerListGroup
         label={title}
-        className={(0, joinClassNames)("w-0 min-w-full", options)}
+        className={joinClassNames("w-0 min-w-full", options)}
       >
         {input.map((input2?: Dynamic, options2?: Dynamic): Dynamic => {
           let value21: Dynamic =
@@ -328,7 +328,7 @@ function ColorSwatchPicker({
     value18: Dynamic =
       !headless && (value2 || headerEnd !== undefined) ? (
         <div
-          className={(0, joinClassNames)(
+          className={joinClassNames(
             "-mx-2 -mt-2 mb-1 flex items-center justify-between gap-2",
             !value2 && "order-first",
           )}
@@ -365,7 +365,7 @@ function ColorSwatchPicker({
               fullWidth={true}
               segments={value3.options.map(
                 (input?: Dynamic): Dynamic => ({
-                  ...(0, toolSegmentOption)(
+                  ...toolSegmentOption(
                     input.value,
                     input.label,
                     value3.disabled === true ||
@@ -395,15 +395,15 @@ function ColorSwatchPicker({
     <div
       data-kit={"color-selector"}
       data-search-scope={""}
-      onKeyDown={(0, pickerSearchKeyHandler)("[data-swatch]")}
-      className={(0, joinClassNames)(
+      onKeyDown={pickerSearchKeyHandler("[data-swatch]")}
+      className={joinClassNames(
         "flex min-w-56 flex-col [--pp-gutter-l:0px] [--pp-gutter-r:0px] [--pp-label-w:3rem]",
         className,
       )}
     >
       {value2 ? (value18) : (null)}
       {value7 === "system" ? (<div
-          className={(0, joinClassNames)(
+          className={joinClassNames(
             "flex min-h-0 flex-col",
             value2 ? "-mx-2" : "-m-2",
           )}

@@ -332,9 +332,9 @@ export {
 };
 export function installCanvasSelectionChrome(): () => void {
   return () => {
-    (0, initializeCdsIndex)();
-    jsx__b = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    initializeCdsIndex();
+    jsx__b = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
     resizeGripCursorOverrides = {

@@ -50,7 +50,7 @@ function getPropertyValidationClass(
     ? value.shapeValue
     : options !== undefined &&
         value.slidesValue !== undefined &&
-        (0, StyleSchemaNodeTypesStartsWith)(options)
+        StyleSchemaNodeTypesStartsWith(options)
       ? value.slidesValue
       : value.value;
 }

@@ -73,14 +73,14 @@ function captureDesignViewState(): Dynamic {
   };
 }
 function decodeFocusedDesignRoute(): Dynamic {
-  let route: Dynamic = (0, currentEditingArtboardPath)();
+  let route: Dynamic = currentEditingArtboardPath();
   if (route === null) return null;
   let encodedFile: Dynamic = route.slice(route.indexOf("/") + 1);
   try {
     let value: Dynamic = decodeURIComponent(
       encodedFile.replace(/~([0-9a-f]{2})/g, "%$1"),
     );
-    return (0, artboardStorePath)(value) === route ? value : null;
+    return artboardStorePath(value) === route ? value : null;
   } catch {
     return null;
   }
@@ -108,7 +108,7 @@ function showCrashRecoveryNotice(recovery?: Dynamic): Dynamic {
   let noticeId: Dynamic = 0,
     singleFile: Dynamic = recovery.files === 1,
     description: Dynamic = `${singleFile ? "An edit" : String(recovery.files) + " edits"} you made here earlier`;
-  noticeId = (0, showEditorActionToast)(
+  noticeId = showEditorActionToast(
     recovery.changedSince === 0
       ? `${description} ${singleFile ? "was" : "were"} never saved. Put ${singleFile ? "it" : "them"} back?`
       : `${description} may not have been saved. The canvas has changed since then, so putting ${singleFile ? "it" : "them"} back can replace newer changes. Put ${singleFile ? "it" : "them"} back anyway?`,
@@ -117,7 +117,7 @@ function showCrashRecoveryNotice(recovery?: Dynamic): Dynamic {
         type={"button"}
         variant={"ghost"}
         onClick={(): Dynamic => {
-          (0, closeEditorToast)(noticeId);
+          closeEditorToast(noticeId);
           recovery.discard();
         }}
       >
@@ -127,7 +127,7 @@ function showCrashRecoveryNotice(recovery?: Dynamic): Dynamic {
         type={"button"}
         variant={"primary"}
         onClick={(): Dynamic => {
-          (0, closeEditorToast)(noticeId);
+          closeEditorToast(noticeId);
           recovery.restore();
         }}
       >
@@ -136,19 +136,19 @@ function showCrashRecoveryNotice(recovery?: Dynamic): Dynamic {
     </span>,
   );
   recovery.whenAnswered(
-    (): Dynamic => (0, closeEditorToast)(noticeId),
+    (): Dynamic => closeEditorToast(noticeId),
   );
 }
 function showOverwrittenEditNotice(edit?: Dynamic): Dynamic {
   let title: Dynamic = edit.file.replace(/\.dc\.html$/, ""),
     noticeId: Dynamic = 0;
-  noticeId = (0, showEditorActionToast)(
+  noticeId = showEditorActionToast(
     uiMessage("canvas.designBootstrap.value1WasSavedOverBy", { value1: String(title) }),
     <Button
       type={"button"}
       variant={"primary"}
       onClick={(): Dynamic => {
-        (0, closeEditorToast)(noticeId);
+        closeEditorToast(noticeId);
         edit.putBack();
       }}
     >
@@ -171,8 +171,8 @@ function getSkippedDesignFiles(listing?: Dynamic): Dynamic {
     Object.entries(listing ?? {}).filter(
       ([input, input2]: Dynamic): Dynamic =>
         input.startsWith(projectPathPrefix) &&
-        !(0, isReservedProjectPath)("design", input) &&
-        (0, validateListedDesignFile)({
+        !isReservedProjectPath("design", input) &&
+        validateListedDesignFile({
           path: input,
           size: Number(input2?.size ?? 0),
         }) === null,
@@ -204,7 +204,7 @@ async function chooseDesignBootstrapMode(
     return {
       boot: "unreadable",
     };
-  if (text === null || (0, getStorageModeFromJson)(text) !== "files")
+  if (text === null || getStorageModeFromJson(text) !== "files")
     return {
       boot: "store",
     };
@@ -260,7 +260,7 @@ function createBootstrapFileReader(
 }
 function readDesignIndexKind(indexText?: Dynamic): Dynamic {
   try {
-    return (0, getStorageMigrationMarker)(JSON.parse(indexText))
+    return getStorageMigrationMarker(JSON.parse(indexText))
       ?.kind;
   } catch {
     return;
@@ -316,7 +316,7 @@ function shouldDeferDesignRestart(): Dynamic {
     performance.now() -
       Math.max(
         lastDesignInteractionAt,
-        (0, ModelHistoryRebaseHandler_4)(),
+        ModelHistoryRebaseHandler_4(),
       ) <
     1500
   );
@@ -326,10 +326,10 @@ function createDesignBootstrapDebugger(
   options?: Dynamic,
 ): Dynamic {
   if (options || input !== "files")
-    return (0, createNoopHotDebugger)();
-  let value: Dynamic = (0, createHotDebugger)({
+    return createNoopHotDebugger();
+  let value: Dynamic = createHotDebugger({
     product: "design",
-    hot: (0, getHotCapability)(),
+    hot: getHotCapability(),
     bootStartedAt: applicationBootTime,
   });
   value.mount(input);
@@ -387,7 +387,7 @@ function createBootDesignFilesPort(
   debugContext?: Dynamic,
   narrowed: Dynamic = false,
 ): Dynamic {
-  return (0, createDesignFilesPort)({
+  return createDesignFilesPort({
     fetch: fetchFile,
     fetchFresh: (input?: Dynamic): Dynamic =>
       fetch(input, {
@@ -502,7 +502,7 @@ async function buildFallbackDesignFileListing(
     let value: Dynamic = await fetchFile(projectMetadataPaths.design);
     if (!value.ok) return null;
     let value2: Dynamic = await value.text(),
-      value3: Dynamic = (0, normalizeDesignIndex)(JSON.parse(value2)),
+      value3: Dynamic = normalizeDesignIndex(JSON.parse(value2)),
       state: Dynamic = {
         [projectMetadataPaths.design]: {
           sha256: "",
@@ -516,12 +516,12 @@ async function buildFallbackDesignFileListing(
         sha256: "",
       };
     }
-    let value4: Dynamic = (0, orderedDesignMapKeys)(
+    let value4: Dynamic = orderedDesignMapKeys(
         value3.order,
         value3.boards,
       ).filter(
         (input?: Dynamic): Dynamic =>
-          (0, validateListedDesignFile)({
+          validateListedDesignFile({
             path: projectPathPrefix + input,
             size: 0,
           }) === input,
@@ -532,11 +532,10 @@ async function buildFallbackDesignFileListing(
               .filter((input2?: Dynamic): Dynamic => !input.has(input2))
               .map((input2?: Dynamic): Dynamic => [input2, ""]),
           ),
-          value10: Dynamic = (0, selectDesignCover)({
+          value10: Dynamic = selectDesignCover({
             files: {
               ...value9,
-              [canvasMetadataFile]: (0,
-              buildDesignDocumentFromIndex)(value3, value9),
+              [canvasMetadataFile]: buildDesignDocumentFromIndex(value3, value9),
             },
           });
         return {
@@ -627,10 +626,10 @@ async function buildFallbackDesignFileListing(
           : value11 !== "." && value11 !== "" && items.push(value11);
       let value10: Dynamic = items.join("/");
       (value5.snapshot &&
-        (0, isArtboardFile)(value10) &&
+        isArtboardFile(value10) &&
         !files.includes(value10)) ||
         (items[items.length - 1] !== "support.js" &&
-          (0, validateListedDesignFile)({
+          validateListedDesignFile({
             path: projectPathPrefix + value10,
             size: 0,
           }) !== null &&
@@ -651,11 +650,11 @@ async function bootDesignDocument({
 }: Dynamic): Promise<Dynamic> {
   let isEmbedded: Dynamic = embedded || isEmbeddedApplication,
     debugContext: Dynamic = {
-      dbg: (0, createNoopHotDebugger)(),
+      dbg: createNoopHotDebugger(),
     },
     listing: Dynamic = await listingPromise;
   !isEmbedded &&
-    (0, isFrameCaptureDocument)() &&
+    isFrameCaptureDocument() &&
     !hasDesignIndexListing(listing) &&
     (listing = (await buildFallbackDesignFileListing(fetchFile)) ?? listing);
   let narrowed: Dynamic =
@@ -669,7 +668,7 @@ async function bootDesignDocument({
         ask: createBootstrapFileReader(
           fetchFile,
           (): Dynamic =>
-            (0, resolveDesignWriteAccess)().then(
+            resolveDesignWriteAccess().then(
               (input?: Dynamic): Dynamic => input.canWrite,
             ),
         ),
@@ -694,7 +693,7 @@ async function bootDesignDocument({
     hotReloadController.detach();
     if (value3 && !value4)
       try {
-        (0, getHotCapability)()?.restart?.({
+        getHotCapability()?.restart?.({
           note: "store canvas: content adopted during boot",
         });
       } catch {}
@@ -706,16 +705,16 @@ async function bootDesignDocument({
   if (
     !isEmbedded &&
     !hasDesignFilesListing(listing) &&
-    !(0, isFrameCaptureDocument)()
+    !isFrameCaptureDocument()
   ) {
     let value3: Dynamic =
         hotReloadController.queued.length > 0
           ? "an update was adopted during this open"
           : undefined,
-      value4: Dynamic = await (0, convertDatabaseDesignToFiles)({
+      value4: Dynamic = await convertDatabaseDesignToFiles({
         listing: narrowed ? undefined : listing,
         canWrite: (): Dynamic =>
-          (0, resolveDesignWriteAccess)().then(
+          resolveDesignWriteAccess().then(
             (input?: Dynamic): Dynamic => input.canWrite,
           ),
         port: (): Dynamic =>
@@ -726,7 +725,7 @@ async function bootDesignDocument({
             debugContext,
             narrowed,
           )),
-        store: (): Dynamic => (0, getSnapshotDatabaseAdapter)(),
+        store: (): Dynamic => getSnapshotDatabaseAdapter(),
         readBlob: async (input?: Dynamic): Promise<Dynamic> => {
           for (let index: Dynamic = 0; ; index += 1)
             try {
@@ -775,12 +774,12 @@ async function bootDesignDocument({
     "inplace",
     "apply a remote board change in place (__dcUpdate) instead of rebuilding its iframe",
   );
-  (0, setEditorOwnsUndoProbe)(value2);
-  (0, setUndoGestureObserver)(
+  setEditorOwnsUndoProbe(value2);
+  setUndoGestureObserver(
     (input?: Dynamic, options?: Dynamic): Dynamic =>
       value.event(input, options),
   );
-  (0, ModelHistoryRebaseHandler)(
+  ModelHistoryRebaseHandler(
     true,
     (input?: Dynamic, options?: Dynamic): Dynamic =>
       value.event("undo-rebased", {
@@ -792,10 +791,10 @@ async function bootDesignDocument({
     if (
       converted &&
       hotReloadController.queued.length > 0 &&
-      ((conversionAttempted = true), (0, canHotRestart)())
+      ((conversionAttempted = true), canHotRestart())
     )
       try {
-        (0, getHotCapability)()?.restart?.({
+        getHotCapability()?.restart?.({
           note: "design: an update arrived while the old store was being copied",
         });
       } catch {}
@@ -821,7 +820,7 @@ async function bootDesignDocument({
           : "no" +
               (input.reason !== undefined ? " \xB7 " + input.reason : ""),
       );
-      let value4: Dynamic = (0, createFilesDesignDocument)({
+      let value4: Dynamic = createFilesDesignDocument({
         port: value3,
         defaultTitle: (document as Dynamic).title || "Design",
         canWrite: input.canWrite && !conversionAttempted,
@@ -835,13 +834,13 @@ async function bootDesignDocument({
               }
             : {}),
         holdRemote: (input2?: Dynamic): Dynamic =>
-          (0, artboardStorePath)(input2) ===
-            (0, currentEditingArtboardPath)() &&
+          artboardStorePath(input2) ===
+            currentEditingArtboardPath() &&
           shouldDeferDesignRestart(),
         sameBoardRule: LAST_FOCUSED_ARTBOARD_KEY,
         onSaveDropped: showOverwrittenEditNotice,
         saveStash: deferCrashStashAccess(
-          (0, restoreBrowserCrashStash)("design"),
+          restoreBrowserCrashStash("design"),
         ),
         ...(isEmbedded
           ? {}
@@ -853,15 +852,15 @@ async function bootDesignDocument({
           value.event("notice", {
             message: input2,
           });
-          (0, showEditorToast)(input2);
+          showEditorToast(input2);
         },
-        debug: (0, createSaveEventReporter)({
+        debug: createSaveEventReporter({
           saveStart: (input2?: Dynamic, options?: Dynamic): Dynamic => (
-            (0, removePublishedFiles)(input2),
+            removePublishedFiles(input2),
             value.saveStart(input2, options)
           ),
           saveEnd: (input2?: Dynamic, options?: Dynamic): Dynamic => (
-            (0, recordPublishedVersion)(options),
+            recordPublishedVersion(options),
             value.saveEnd(input2, options)
           ),
           event: (input2?: Dynamic, options?: Dynamic): Dynamic =>
@@ -873,12 +872,12 @@ async function bootDesignDocument({
         queue: (): Dynamic => value4.debugState().queue,
       });
       let value5: Dynamic = value4.healthSource(),
-        value6: Dynamic = (0, monitorDocumentLoadHealth)(
+        value6: Dynamic = monitorDocumentLoadHealth(
           value5,
           (input2?: Dynamic): Dynamic =>
             healthReporter.report(...input2),
         ),
-        value7: Dynamic = (0, monitorDocumentSaveHealth)(
+        value7: Dynamic = monitorDocumentSaveHealth(
           value5,
           (input2?: Dynamic): Dynamic =>
             healthReporter.report(...input2),
@@ -894,22 +893,22 @@ async function bootDesignDocument({
           (lastDesignInteractionAt = performance.now());
       });
       let value9: Dynamic = getSkippedDesignFiles(listing);
-      (0, setPublishedFileReferences)(value9);
-      (0, resetPublishedFileIndex)(
+      setPublishedFileReferences(value9);
+      resetPublishedFileIndex(
         selectWritableBootListing(listing, {
           hosted: isEmbedded,
-          capture: (0, isFrameCaptureDocument)(),
+          capture: isFrameCaptureDocument(),
           narrowed: narrowed,
         }),
       );
       if ((narrowed && input.canWrite) || listing === undefined) {
-        (0, clearPendingFileOverlay)();
+        clearPendingFileOverlay();
         let value11: Dynamic =
             listing === undefined
               ? (): Dynamic => value3.list()
               : (): Dynamic =>
-                  (0, retryAccessFailure)(
-                    (): Dynamic => (0, listWritableFiles)(value3),
+                  retryAccessFailure(
+                    (): Dynamic => listWritableFiles(value3),
                   ),
           promise2: Dynamic = new Promise((input2?: Dynamic): Dynamic => {
             if (value4.loadState() === "live") return input2();
@@ -921,7 +920,7 @@ async function bootDesignDocument({
           .then(value11)
           .then(
             (input2?: Dynamic): Dynamic =>
-              (0, setPublishedFileReferences)(
+              setPublishedFileReferences(
                 getSkippedDesignFiles(
                   Object.fromEntries(
                     input2.map(
@@ -941,10 +940,10 @@ async function bootDesignDocument({
           .catch((): Dynamic => {});
       }
       trackPointerInteractions();
-      (0, createFilesHotReloadController)({
+      createFilesHotReloadController({
         port: value3,
         applyRemote: async (input2?: Dynamic): Promise<Dynamic> => {
-          (0, updatePublishedFileIndex)(input2.changed);
+          updatePublishedFileIndex(input2.changed);
           await value4.applyRemote(input2);
           afterTwoAnimationFrames(
             (): Dynamic => value.visible(input2.to.version, "adopted"),
@@ -952,13 +951,13 @@ async function bootDesignDocument({
         },
         isBusy: (): Dynamic =>
           hasActiveEditorInteraction() ||
-          (0, hasUnstashedUnsendableEdits)(value4.queue.state()),
+          hasUnstashedUnsendableEdits(value4.queue.state()),
         snapshot: (): Dynamic => captureDesignViewState(),
         restore: (input2?: Dynamic): Dynamic =>
           restoreDesignViewState(input2),
         reveal: promise,
         onEvent: (input2?: Dynamic): Dynamic => {
-          let value11: Dynamic = (0, classifyHotEditMetric)(input2);
+          let value11: Dynamic = classifyHotEditMetric(input2);
           value11 !== null && healthReporter.report(...value11);
           value.hotEvent(input2);
         },
@@ -967,10 +966,10 @@ async function bootDesignDocument({
           value4.flushNow();
         },
       });
-      (0, completeThumbnailAfterPromise)(
+      completeThumbnailAfterPromise(
         (): Dynamic =>
-          (0, waitForActiveDesignFramesReady)().then(
-            (): Dynamic => (0, waitForThumbnailPaint)(),
+          waitForActiveDesignFramesReady().then(
+            (): Dynamic => waitForThumbnailPaint(),
           ),
       );
       value4.ready.then((): Dynamic => {
@@ -983,17 +982,17 @@ async function bootDesignDocument({
         (!value11 ||
           !Object.keys(value4.content().files).some(
             (input2?: Dynamic): Dynamic =>
-              (0, isArtboardFile)(input2) &&
-              !(0, isDesignSystemFile)(input2),
+              isArtboardFile(input2) &&
+              !isDesignSystemFile(input2),
           )) &&
           callback();
-        !value11 || isEmbedded || (0, isFrameCaptureDocument)();
+        !value11 || isEmbedded || isFrameCaptureDocument();
       });
-      (0, waitForDesignFramesReady)().then((): Dynamic => {
+      waitForDesignFramesReady().then((): Dynamic => {
         value.phase("first artboard painted");
         afterTwoAnimationFrames((): Dynamic => {
           callback();
-          (0, announceMigrationReopen)({
+          announceMigrationReopen({
             canWrite: input.canWrite,
             focus: (input2?: Dynamic): Dynamic =>
               focusDesignArtboardWhenWindowActive(
@@ -1003,7 +1002,7 @@ async function bootDesignDocument({
           hotReloadController.restarted &&
             value.visible(value3.version().version, "restarted");
         });
-        (0, waitForThumbnailPaint)().then(
+        waitForThumbnailPaint().then(
           (): Dynamic => value.phase("all painted"),
         );
       });
@@ -1012,7 +1011,7 @@ async function bootDesignDocument({
         doc: value4,
         census: {
           canWrite: input.canWrite && !conversionAttempted,
-          capture: (0, isFrameCaptureDocument)(),
+          capture: isFrameCaptureDocument(),
           embedded: isEmbedded,
         },
         ...(value10?.focused !== undefined
@@ -1071,9 +1070,9 @@ export function installApplicationDesignBootstrap(): () => void {
     lastFocusedDesignFile = null;
     DESIGN_VIEW_STORAGE_KEY_PATTERN = /^design-view\//;
     getRestoredDesignViewState = (): Dynamic => restoredDesignViewState;
-    (0, initializeCdsIndex)();
-    recoveryJsxRuntime = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    initializeCdsIndex();
+    recoveryJsxRuntime = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
     afterTwoAnimationFrames = (input?: Dynamic): Dynamic => {

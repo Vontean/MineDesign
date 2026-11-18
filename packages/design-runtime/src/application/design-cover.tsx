@@ -59,12 +59,12 @@ function computeCoverBounds(
   };
 }
 function selectCoverArtboard(content?: Dynamic): Dynamic {
-  let manifest: Dynamic = (0, parseCanvasMetadata)(
+  let manifest: Dynamic = parseCanvasMetadata(
       content.files[canvasMetadataFile] ?? null,
       content.files,
     ),
     hasContent: Dynamic = (input?: Dynamic): Dynamic =>
-      !(0, isLoadingArtboardHtml)(content.files[input.file] ?? ""),
+      !isLoadingArtboardHtml(content.files[input.file] ?? ""),
     coverBoard: Dynamic = manifest.artboards.find(
       (input?: Dynamic): Dynamic => input.file === manifest.cover,
     );
@@ -75,24 +75,24 @@ function selectCoverArtboard(content?: Dynamic): Dynamic {
       ) ?? manifest.artboards.find(hasContent));
 }
 function selectCoverSnapshotBoards(content?: Dynamic): Dynamic {
-  let manifest: Dynamic = (0, parseCanvasMetadata)(
+  let manifest: Dynamic = parseCanvasMetadata(
     content.files[canvasMetadataFile] ?? null,
     content.files,
   );
   if (manifest.cover !== undefined) return;
   let isSnapshotBoard: Dynamic = (input?: Dynamic): Dynamic =>
       !input.frameless &&
-      !(0, isLoadingArtboardHtml)(content.files[input.file] ?? ""),
+      !isLoadingArtboardHtml(content.files[input.file] ?? ""),
     firstBoard: Dynamic = manifest.artboards.find(isSnapshotBoard);
   if (firstBoard === undefined) return;
   let boardsForPage: Dynamic = (input?: Dynamic): Dynamic =>
-      (0, designPageContents)(manifest, input)
+      designPageContents(manifest, input)
         .artboards.filter(isSnapshotBoard)
         .slice(0, MAX_COVER_ARTBOARDS),
     launchFile: Dynamic =
       manifest.launch?.view === "focused"
         ? manifest.launch.file
-        : (0, primaryDesignFile)(content),
+        : primaryDesignFile(content),
     launchBoard: Dynamic = manifest.artboards.find(
       (input?: Dynamic): Dynamic => input.file === launchFile,
     ),
@@ -100,13 +100,13 @@ function selectCoverSnapshotBoards(content?: Dynamic): Dynamic {
       manifest.launch?.view === "canvas" && manifest.launch.page !== undefined
         ? manifest.launch.page
         : launchBoard !== undefined
-          ? (0, designPageId)(launchBoard, manifest.pages)
+          ? designPageId(launchBoard, manifest.pages)
           : undefined,
     pageBoards: Dynamic =
       launchPage !== undefined ? boardsForPage(launchPage) : [];
   return pageBoards.length > 0
     ? pageBoards
-    : boardsForPage((0, designPageId)(firstBoard, manifest.pages));
+    : boardsForPage(designPageId(firstBoard, manifest.pages));
 }
 function selectDesignCover(
   content?: Dynamic,
@@ -215,7 +215,7 @@ function DesignCover({
   (0, ReactCover.useEffect)((): Dynamic => {
     thumbnailReady &&
       requestAnimationFrame(
-        (): Dynamic => (0, markCaptureFramesReady)(),
+        (): Dynamic => markCaptureFramesReady(),
       );
   }, [thumbnailReady]);
   let renderBoard: Dynamic = (input?: Dynamic): Dynamic =>
@@ -397,7 +397,7 @@ function CanvasSnapshotCover({
                     width: input.w,
                     height: input.h,
                     boxShadow: borderShadow,
-                    borderRadius: (0, artboardRadiusCss)(
+                    borderRadius: artboardRadiusCss(
                       input.radius,
                     ),
                   },
@@ -442,15 +442,15 @@ export {
 };
 export function installApplicationDesignCover(): () => void {
   return () => {
-    ReactCover = (0, toModuleNamespace)((0, load_react)(), 1);
+    ReactCover = toModuleNamespace(load_react(), 1);
     MAX_COVER_ARTBOARDS = 24;
     COVER_VIEWPORT_PADDING = 24;
     COVER_ASPECT_LIMITS = {
       narrow: 1.5,
       wide: 2.5,
     };
-    coverJsxRuntime = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    coverJsxRuntime = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
     ignoreCoverCallback = (): Dynamic => {};

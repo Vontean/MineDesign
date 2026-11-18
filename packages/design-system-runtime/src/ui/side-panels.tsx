@@ -130,7 +130,7 @@ function PanelHeader(props: Color.PanelHeaderProps): React.ReactElement {
         onValueChange={(input: unknown) => value3(input as string)}
         data-kit={"panel-header"}
         data-testid={value}
-        className={(0, joinClassNames)(PANEL_HEADER_CLASS, className)}
+        className={joinClassNames(PANEL_HEADER_CLASS, className)}
       >
         <PanelHeaderContent {...props} />
       </Tabs.Root>
@@ -140,7 +140,7 @@ function PanelHeader(props: Color.PanelHeaderProps): React.ReactElement {
     <div
       data-kit={"panel-header"}
       data-testid={value}
-      className={(0, joinClassNames)(PANEL_HEADER_CLASS, className)}
+      className={joinClassNames(PANEL_HEADER_CLASS, className)}
     >
       <PanelHeaderContent {...props} />
     </div>
@@ -467,7 +467,7 @@ function PanelWidthResizeHandle({
       onHome={callback(min)}
       onEnd={callback(max)}
       onReset={callback(defaultWidth)}
-      className={(0, joinClassNames)(
+      className={joinClassNames(
         "[&:not(:focus-visible)>[data-cds-part=resize-pill]]:opacity-0",
         className,
       )}
@@ -639,7 +639,7 @@ function PanelResizeHandle({
           event.preventDefault();
           callback2(value12);
         }}
-        className={(0, joinClassNames)(
+        className={joinClassNames(
           "z-10 touch-none [--cds-ring-outer:1px] [--cds-ring-inner:0px]",
           value2 && "[--cds-resize-pill-force:1]",
           disabled
@@ -662,7 +662,7 @@ function PanelResizeHandle({
               callback(input, value ? "all" : "touch")
             }
             aria-hidden={"true"}
-            className={(0, joinClassNames)(
+            className={joinClassNames(
               "absolute z-10 hidden touch-none",
               value
                 ? "inset-y-0 left-0 w-0 flex-col items-center"
@@ -671,7 +671,7 @@ function PanelResizeHandle({
             )}
           >
             <span
-              className={(0, joinClassNames)(
+              className={joinClassNames(
                 value ? "h-full w-10 cursor-col-resize" : "h-10 w-24",
                 grabTargetClassName,
               )}
@@ -1047,7 +1047,7 @@ function SidePanelHost(): React.ReactElement | null {
       ) {
         return;
       }
-      if ((0, hasOpenOverlay)()) {
+      if (hasOpenOverlay()) {
         return;
       }
       let target = event.target as
@@ -1097,7 +1097,7 @@ function SidePanelHost(): React.ReactElement | null {
       value25 !== undefined ? (
         <div
           onPointerDown={callback3}
-          className={(0, joinClassNames)(
+          className={joinClassNames(
             "shrink-0 touch-none select-none border-b border-border-line",
             value11 && (value15 ? "cursor-grabbing" : "cursor-grab"),
           )}
@@ -1133,7 +1133,7 @@ function SidePanelHost(): React.ReactElement | null {
         <div
           data-kit={"panel-header"}
           onPointerDown={callback3}
-          className={(0, joinClassNames)(
+          className={joinClassNames(
             "flex h-[38px] shrink-0 touch-none items-center gap-1.5 px-3",
             "pointer-coarse:gap-4",
             "select-none border-b transition-colors",
@@ -1196,17 +1196,17 @@ function SidePanelHost(): React.ReactElement | null {
             }
           : {}),
       }}
-      className={(0, joinClassNames)(
+      className={joinClassNames(
         "z-panel flex min-h-0 flex-col",
         value22
           ? "max-h-[min(75dvh,42rem)] rounded-lg border border-border-line bg-panel shadow-xl"
-          : (0, joinClassNames)(
+          : joinClassNames(
               "bg-surface-panel",
               "relative w-[var(--mc-side-w)] shrink-0 border-l border-border-line",
               meta.wide === "overlay" &&
                 "md:absolute md:top-[var(--tb-row-h,0px)] md:right-0 md:bottom-0 md:shadow-xl",
               meta.narrow === "sheet"
-                ? (0, joinClassNames)(
+                ? joinClassNames(
                     "max-md:relative max-md:z-sheet",
                     value23
                       ? "max-md:max-h-[85dvh]"
@@ -1228,7 +1228,7 @@ function SidePanelHost(): React.ReactElement | null {
             max={maximumPanelHeight(value4)}
             gesture={memo2}
             className={"hidden max-md:block"}
-            grabClassName={(0, joinClassNames)(
+            grabClassName={joinClassNames(
               "max-md:pointer-coarse:flex pointer-coarse:right-14",
               value26 ? "justify-end" : "justify-center",
             )}
@@ -1343,26 +1343,26 @@ export {
 };
 export function installUiSidePanels(): () => void {
   return () => {
-    reactForUiSidePanels = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    reactForUiSidePanels = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
-    reactDomSidePanels = (0, toModuleNamespace)(
-      (0, loadReactDomNamespace)(),
+    reactDomSidePanels = toModuleNamespace(
+      loadReactDomNamespace(),
       1,
     );
-    reactForUiSidePanels2 = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    reactForUiSidePanels2 = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
-    jsxForUiSidePanels = (0, toModuleNamespace)(
-      (0, loadJsxNamespace)(),
+    jsxForUiSidePanels = toModuleNamespace(
+      loadJsxNamespace(),
       1,
     );
     PANEL_HEADER_CLASS =
       "flex min-w-0 shrink-0 items-center gap-xs py-md pr-sm pl-sm";
-    jsxForUiSidePanels2 = (0, toModuleNamespace)(
-      (0, loadJsxNamespace)(),
+    jsxForUiSidePanels2 = toModuleNamespace(
+      loadJsxNamespace(),
       1,
     );
     PanelIconButton = reactForUiSidePanels.forwardRef(function (
@@ -1404,6 +1404,6 @@ export function installUiSidePanels(): () => void {
     IFRAME_POINTER_LOCK_CLASS = "[&_iframe]:pointer-events-none!";
     activeIframePointerLocks = 0;
     COARSE_PANEL_WIDTH = 376;
-    jsxaZ = (0, toModuleNamespace)((0, loadJsxNamespace)(), 1);
+    jsxaZ = toModuleNamespace(loadJsxNamespace(), 1);
   };
 }

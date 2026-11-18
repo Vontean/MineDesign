@@ -12,7 +12,7 @@ function isEmulator(): Dynamic {
   PlatformEmulatorResolvedValue ??=
     typeof document !== "undefined" &&
     ((document as Dynamic).querySelector(
-      'meta[name="' + (0, emulatorBuildMetaName)() + '"]',
+      'meta[name="' + emulatorBuildMetaName() + '"]',
     ) !== null ||
       (document as Dynamic).querySelector(
         'meta[name="' + emulatorHostMetaName() + '"]',

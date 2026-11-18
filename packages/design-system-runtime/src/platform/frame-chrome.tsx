@@ -16,12 +16,12 @@ export {
 };
 export function installPlatformFrameChrome(): () => void {
   return () => {
-    reactForPlatformFrameChrome = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    reactForPlatformFrameChrome = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
-    reactForPlatformFrameChrome2 = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    reactForPlatformFrameChrome2 = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
     OPEN_OVERLAY_SELECTOR = [

@@ -180,7 +180,7 @@ function createCanvasKeyboardFocusController(
       let target: Dynamic = event.target;
       if (
         !(target instanceof HTMLElement) ||
-        (0, isEditingInputTarget)(target) ||
+        isEditingInputTarget(target) ||
         target.getAttribute("aria-expanded") === "true"
       )
         return;
@@ -231,7 +231,7 @@ function useCanvasKeyboardFocus(root?: Dynamic, blocked?: Dynamic): Dynamic {
       (): Dynamic => value.current,
       {
         blocked: (): Dynamic =>
-          (0, hasBlockingEditorOverlay)() ||
+          hasBlockingEditorOverlay() ||
           (value2.current?.() ?? false),
       },
     );
@@ -249,8 +249,8 @@ export {
 };
 export function installCanvasKeyboardFocus(): () => void {
   return () => {
-    (0, initializeInspectorContext)();
-    react_LB = (0, toModuleNamespace)((0, load_react)(), 1);
+    initializeInspectorContext();
+    react_LB = toModuleNamespace(load_react(), 1);
     canvasFocusableSelector =
       'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
   };

@@ -184,7 +184,7 @@ function CanvasValuePromptDialog({ p: p }: Dynamic): Dynamic {
 function CanvasDialogHost(): Dynamic {
   useUiLocale();
   let [value, value2]: Dynamic = (0, react_M6.useState)(activeCanvasDialog);
-  (0, usePanelClose)(
+  usePanelClose(
     value,
     (): Dynamic => activeCanvasDialog !== null,
   );
@@ -239,10 +239,10 @@ export {
 };
 export function installCanvasDialogs(): () => void {
   return () => {
-    react_M6 = (0, toModuleNamespace)((0, load_react)(), 1);
-    (0, initializeCdsIndex)();
-    jsx_Af = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    react_M6 = toModuleNamespace(load_react(), 1);
+    initializeCdsIndex();
+    jsx_Af = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
     activeCanvasDialog = null;

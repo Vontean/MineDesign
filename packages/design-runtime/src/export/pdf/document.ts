@@ -61,7 +61,7 @@ function pdfStringOperand(items?: Dynamic): Dynamic {
     return "(" + items.replace(/[\\()]/g, "\\$&") + ")";
   let text: Dynamic = "feff";
   for (let index: Dynamic = 0; index < items.length; index++)
-    text += (0, pdfHexCodeUnit)(items.charCodeAt(index));
+    text += pdfHexCodeUnit(items.charCodeAt(index));
   return "<" + text + ">";
 }
 function pdfTextOperand(input?: Dynamic, options?: Dynamic): Dynamic {
@@ -76,7 +76,7 @@ function pdfTextOperand(input?: Dynamic, options?: Dynamic): Dynamic {
     return "(" + value.replace(/[\\()]/g, "\\$&") + ")";
   let text: Dynamic = "feff";
   for (let index: Dynamic = 0; index < value.length; index++)
-    text += (0, pdfHexCodeUnit)(value.charCodeAt(index));
+    text += pdfHexCodeUnit(value.charCodeAt(index));
   return "<" + text + ">";
 }
 function buildPdfXmpMetadata(input?: Dynamic): Dynamic {
@@ -141,9 +141,9 @@ function buildPdfDocument(items?: Dynamic, options?: Dynamic): Dynamic {
             "page " + String(options2 + 1) + " has an out-of-range page size",
           );
         try {
-          let value29: Dynamic = (0, readJpegDimensions)(input.jpeg);
+          let value29: Dynamic = readJpegDimensions(input.jpeg);
           input.lossless != null &&
-            (0, validateLosslessPicture)(input.lossless, value29);
+            validateLosslessPicture(input.lossless, value29);
           if (options?.tagged === true && input.blocks != null) {
             if (!Array.isArray(input.blocks))
               throw new Error("its blocks are not a list");
@@ -307,13 +307,13 @@ function buildPdfDocument(items?: Dynamic, options?: Dynamic): Dynamic {
     },
     value4: Dynamic =
       value3 === "unicode"
-        ? (0, createPdfUnicodeEncoder)(state)
+        ? createPdfUnicodeEncoder(state)
         : encodeWinAnsiOperand,
     value5: Dynamic = 4 + 3 * items.length,
     value6: Dynamic = value2 ? (value3 === "unicode" ? 6 : 1) : 0,
     value7: Dynamic = options?.tagged === true,
     value8: Dynamic = options?.lang;
-  if (value7 && value8 !== undefined && !(0, isLanguageTag)(value8))
+  if (value7 && value8 !== undefined && !isLanguageTag(value8))
     throw new Error(
       "the document language " +
         JSON.stringify(String(value8).slice(0, 40)) +
@@ -322,7 +322,7 @@ function buildPdfDocument(items?: Dynamic, options?: Dynamic): Dynamic {
   let value9: Dynamic = items.map(
       (input?: Dynamic, options2?: Dynamic): Dynamic =>
         (input.textRuns?.length ?? 0) > 0
-          ? (0, buildPdfTextRuns)(
+          ? buildPdfTextRuns(
               input.textRuns,
               options2,
               input.widthPt,
@@ -336,7 +336,7 @@ function buildPdfDocument(items?: Dynamic, options?: Dynamic): Dynamic {
     value10: Dynamic = value9.map(
       (input?: Dynamic, options2?: Dynamic): Dynamic =>
         value7
-          ? (0, mapPdfFigureLinks)(
+          ? mapPdfFigureLinks(
               items[options2].blocks,
               input,
               items[options2].widthPt,
@@ -358,7 +358,7 @@ function buildPdfDocument(items?: Dynamic, options?: Dynamic): Dynamic {
             : entries.set(value29.link, {
                 text:
                   entry.text +
-                  ((0, textRunsNeedSpace)(entry.last, value29.run)
+                  (textRunsNeedSpace(entry.last, value29.run)
                     ? " "
                     : "") +
                   value29.run.text,
@@ -389,7 +389,7 @@ function buildPdfDocument(items?: Dynamic, options?: Dynamic): Dynamic {
     index: Dynamic = 0,
     value13: Dynamic = items.map(
       (input?: Dynamic, options2?: Dynamic): Dynamic => {
-        let value29: Dynamic = (0, buildPdfLinkAnnotations)(
+        let value29: Dynamic = buildPdfLinkAnnotations(
           input.links,
           input.widthPt,
           input.heightPt,
@@ -420,11 +420,11 @@ function buildPdfDocument(items?: Dynamic, options?: Dynamic): Dynamic {
           .join(" "),
     ),
     value17: Dynamic = value7
-      ? (0, collectPdfStructureRoles)(items, value9)
+      ? collectPdfStructureRoles(items, value9)
       : items.map((): Dynamic => []),
     value18: Dynamic = value9.map(
       (input?: Dynamic, options2?: Dynamic): Dynamic =>
-        (0, buildPdfTextOperators)(
+        buildPdfTextOperators(
           input,
           spaceOperands[value3],
           value7,
@@ -439,7 +439,7 @@ function buildPdfDocument(items?: Dynamic, options?: Dynamic): Dynamic {
     ),
     value19: Dynamic = items.map(
       (input?: Dynamic, options2?: Dynamic): Dynamic =>
-        (0, buildPdfFigureOperators)(
+        buildPdfFigureOperators(
           input.blocks,
           input.widthPt,
           input.heightPt,
@@ -449,7 +449,7 @@ function buildPdfDocument(items?: Dynamic, options?: Dynamic): Dynamic {
     );
   value7 && value3 === "unicode" && state.highBytes.add(0);
   let value20: Dynamic = value7
-      ? (0, buildPdfStructureTree)(
+      ? buildPdfStructureTree(
           value14,
           items,
           value18,
@@ -463,7 +463,7 @@ function buildPdfDocument(items?: Dynamic, options?: Dynamic): Dynamic {
       : undefined,
     value21: Dynamic =
       value20 !== undefined && options?.outline === true
-        ? (0, buildPdfOutline)(
+        ? buildPdfOutline(
             value20.nextObj,
             value9,
             value17,
@@ -604,7 +604,7 @@ endstream`),
     ]);
   });
   value2 && value3 === "unicode"
-    ? items2.push(...(0, buildPdfFontObjects)(value5, state))
+    ? items2.push(...buildPdfFontObjects(value5, state))
     : value2 &&
       items2.push([
         encodeAsciiBytes(

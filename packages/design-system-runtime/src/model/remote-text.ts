@@ -127,13 +127,13 @@ async function fetchRemoteFileText(
   dataRef: string,
   fetchText: Storage.RemoteTextFetch,
 ): Promise<string | undefined> {
-  let id = (0, blobIdFromReference)(dataRef);
+  let id = blobIdFromReference(dataRef);
   if (id === null) {
     return;
   }
   try {
     let value = await fetchText(
-      "/" + (0, blobRelativeUrlModelFilePolicy)(id),
+      "/" + blobRelativeUrlModelFilePolicy(id),
     );
     if (!value.ok) {
       throw Error("not served");
@@ -257,7 +257,7 @@ function setRetainedBlobIdsProvider(provider: () => Iterable<string>): void {
 function retainedRemoteTextBlobIds(): Set<string> {
   let ids = new Set(extraRetainedBlobIdsProvider());
   for (let [, value] of remoteTextEntries) {
-    let value2 = (0, blobIdFromReference)(value.ptr.dataRef);
+    let value2 = blobIdFromReference(value.ptr.dataRef);
     if (value2 !== null) {
       ids.add(value2);
     }

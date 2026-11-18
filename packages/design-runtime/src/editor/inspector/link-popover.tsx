@@ -61,8 +61,8 @@ function DcLinkPopover({
   if (!open) return null;
   let value11: Dynamic = href.trim() !== "",
     value12: Dynamic = value11
-      ? (0, sanitizeEditableLink)(value)
-      : (0, normalizeLinkInput)(value),
+      ? sanitizeEditableLink(value)
+      : normalizeLinkInput(value),
     value13: Dynamic = collapsed && !value11,
     value14: Dynamic = isElementLink || value11,
     value15: Dynamic =
@@ -219,23 +219,23 @@ export {
 export function installEditorInspectorLinkPopover(): () => void {
   return () => {
     linkPopoverExports = {};
-    (0, defineLiveExports)(linkPopoverExports, {
+    defineLiveExports(linkPopoverExports, {
       DcLinkPopover: (): Dynamic => DcLinkPopover,
     });
-    initializeInspectorLinkPopover = (0, initializeOnce)(
+    initializeInspectorLinkPopover = initializeOnce(
       (): Dynamic => {
         "use strict";
 
-        reactInspectorLinkPopover = (0, toModuleNamespace)(
-          (0, load_react)(),
+        reactInspectorLinkPopover = toModuleNamespace(
+          load_react(),
           1,
         );
-        (0, initializeCdsIndex)();
-        (0, initializePlatformCdsIsland)();
-        (0, initializeInspectorContext)();
-        (0, initializeEditorAttributeValidation)();
-        jsxInspectorLinkPopover = (0, toModuleNamespace)(
-          (0, load_react_jsx_runtime)(),
+        initializeCdsIndex();
+        initializePlatformCdsIsland();
+        initializeInspectorContext();
+        initializeEditorAttributeValidation();
+        jsxInspectorLinkPopover = toModuleNamespace(
+          load_react_jsx_runtime(),
           1,
         );
       },

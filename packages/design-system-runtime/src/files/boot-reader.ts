@@ -23,13 +23,13 @@ async function readFilesBootState(
   options: Boot.BootReaderOptions,
 ): Promise<Boot.BootReadResult> {
   let { port: port, indexPath: indexPath } = options,
-    normalizedPort = (0, filesPortExtensions)(port),
+    normalizedPort = filesPortExtensions(port),
     retryDelays = options.waits ?? BOOT_FILE_READ_RETRY_DELAYS_MS,
     wantsEarlySlide = options.wants ?? ((): boolean => false),
     timers = options.timers ?? {
       setTimeout: (input, options2) => setTimeout(input, options2),
     },
-    earlyHotSource = options.early ?? (0, currentHotReloadBridge)(),
+    earlyHotSource = options.early ?? currentHotReloadBridge(),
     value: number = Math.max(
       1,
       options.maxPasses ?? MAX_BOOT_EARLY_FILE_READ_PASSES,
@@ -108,7 +108,7 @@ async function readFilesBootState(
       try {
         return await options2();
       } catch (value10: unknown) {
-        if (!(0, isRetryableFileReadAccessError)(value10)) {
+        if (!isRetryableFileReadAccessError(value10)) {
           throw value3(value10, input);
         }
         if (
@@ -156,7 +156,7 @@ async function readFilesBootState(
           ? retryDelays
           : FILE_FETCH_RETRY_DELAYS_MS;
     try {
-      return await (0, retryFileRead)(
+      return await retryFileRead(
         () => port.readText(indexPath),
         timers,
         (input, options2): void => {
@@ -199,7 +199,7 @@ async function readFilesBootState(
       )) as Model.FileListing;
       if (
         options.mayWrite !== true ||
-        !(0, fileListingIsNarrowed)(value9, port) ||
+        !fileListingIsNarrowed(value9, port) ||
         index2 >= retryDelays.length
       ) {
         return value9;
@@ -227,7 +227,7 @@ async function readFilesBootState(
       });
       return (
         value9 !== undefined &&
-        !(0, fileListingIsNarrowed)(value9, port) &&
+        !fileListingIsNarrowed(value9, port) &&
         !value9.some((input2): boolean => input2.path === input)
       );
     },
@@ -238,7 +238,7 @@ async function readFilesBootState(
     value2();
     let version = port.version().version,
       value9 = await value7(),
-      value10 = (0, fileListingIsNarrowed)(value9, port),
+      value10 = fileListingIsNarrowed(value9, port),
       entries3 = new Map(value9.map((input) => [input.path, input])),
       entry = entries3.get(indexPath);
     if (entry === undefined) {

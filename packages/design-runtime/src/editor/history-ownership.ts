@@ -25,8 +25,8 @@ function compareDesignSourceScripts(
       ok: false,
       why: "no earlier source to compare with",
     };
-  let value: Dynamic = (0, parseDcHtmlDocument)(currentSource),
-    value2: Dynamic = (0, parseDcHtmlDocument)(previousSource);
+  let value: Dynamic = parseDcHtmlDocument(currentSource),
+    value2: Dynamic = parseDcHtmlDocument(previousSource);
   return !value || !value2
     ? {
         ok: false,
@@ -37,7 +37,7 @@ function compareDesignSourceScripts(
           ok: false,
           why: "the logic script changed",
         }
-      : (0, replaceDcTemplate)(
+      : replaceDcTemplate(
             currentSource,
             value,
             value2.template,

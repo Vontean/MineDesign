@@ -69,20 +69,20 @@ export {
 };
 export function installUiColorMode(): () => void {
   return () => {
-    jsxColorModePrimitives = (0, toModuleNamespace)(
-      (0, loadJsxNamespace)(),
+    jsxColorModePrimitives = toModuleNamespace(
+      loadJsxNamespace(),
       1,
     );
-    reactColorMode = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    reactColorMode = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
-    reactDomColorMode = (0, toModuleNamespace)(
-      (0, loadReactDomNamespace)(),
+    reactDomColorMode = toModuleNamespace(
+      loadReactDomNamespace(),
       1,
     );
-    jsxColorMode = (0, toModuleNamespace)(
-      (0, loadJsxNamespace)(),
+    jsxColorMode = toModuleNamespace(
+      loadJsxNamespace(),
       1,
     );
     APP_DENSITY = "comfortable";

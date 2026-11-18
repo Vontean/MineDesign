@@ -90,7 +90,7 @@ function getAvailableFontVariants(
 }
 function knownWebFontVariants(input?: Dynamic): Dynamic {
   let value: Dynamic = normalizeFirstFontFamily(input),
-    value2: Dynamic = (0, getKnownWebFont)(value);
+    value2: Dynamic = getKnownWebFont(value);
   if (value2 !== undefined)
     return (
       value2.wght !== undefined

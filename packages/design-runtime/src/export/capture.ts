@@ -96,7 +96,7 @@ async function captureExportArtboards(
   scale?: Dynamic,
   { signal: context }: Dynamic = {},
 ): Promise<Dynamic> {
-  let value: Dynamic = (0, uniqueExportFileNames)(),
+  let value: Dynamic = uniqueExportFileNames(),
     items: Dynamic = [],
     items2: Dynamic = [],
     index: Dynamic = 0,
@@ -107,7 +107,7 @@ async function captureExportArtboards(
       collapsed: 0,
       unrevealed: 0,
     };
-  for (let value2 of (0, artboardsInReadingOrder)(
+  for (let value2 of artboardsInReadingOrder(
     artboards,
   ) as Dynamic) {
     context?.throwIfAborted();
@@ -132,7 +132,7 @@ async function captureExportArtboards(
   }
   if (items.length === 0) throw new Error("no artboards to export");
   return {
-    blob: (0, createStoredZip)(items),
+    blob: createStoredZip(items),
     clipped: items2,
     blank: index,
     fontFallback: index2,

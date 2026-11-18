@@ -69,7 +69,7 @@ function foreignArtboardPasteContext(input?: Dynamic): Dynamic {
 }
 function boundedPasteText(input?: Dynamic): Dynamic {
   return typeof input.text == "string"
-    ? (0, utf16SafeSlice)(input.text, InspectorEditorResolvedValue)
+    ? utf16SafeSlice(input.text, InspectorEditorResolvedValue)
     : "";
 }
 function textContrastGround(input?: Dynamic, options?: Dynamic): Dynamic {
@@ -79,10 +79,10 @@ function textContrastGround(input?: Dynamic, options?: Dynamic): Dynamic {
     options.webkitBackgroundClip === "text"
   )
     return null;
-  let value: Dynamic = (0, normalizePixelValue)(options.fontSize),
-    value2: Dynamic = (0, normalizeFontWeight)(options.fontWeight);
+  let value: Dynamic = normalizePixelValue(options.fontSize),
+    value2: Dynamic = normalizeFontWeight(options.fontWeight);
   return {
-    ...(0, textContrastContext)(
+    ...textContrastContext(
       input.behind,
       value === null ? null : parseFloat(value),
       value2 === null ? null : parseFloat(value2),
@@ -95,7 +95,7 @@ function InspectorEmptyState(input?: Dynamic): Dynamic {
   return (
     <div
       {...input}
-      className={(0, cn)(
+      className={cn(
         "py-7 px-5 text-center text-xs text-secondary leading-normal",
         input.className,
       )}
@@ -137,8 +137,8 @@ export {
 };
 export function installEditorInspectorEditor(): () => void {
   return () => {
-    jsxInspectorEditor = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    jsxInspectorEditor = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
     InspectorEditorLazyComponent = (0, reactCanvasShape_2.lazy)(
@@ -146,7 +146,7 @@ export function installEditorInspectorEditor(): () => void {
         Promise.resolve()
           .then(
             (): Dynamic => (
-              (0, initializeInspectorLinkPopover)(),
+              initializeInspectorLinkPopover(),
               linkPopoverExports
             ),
           )
@@ -201,7 +201,7 @@ export function installEditorInspectorEditor(): () => void {
             !(
               options &&
               PropertiesInspectorFieldNameComponentFromSet.has(input2)
-            ) && (0, isEditablePropMetadata)(input?.[input2]),
+            ) && isEditablePropMetadata(input?.[input2]),
         ),
       );
     InspectorEditorSubscribers_3 = new Set();

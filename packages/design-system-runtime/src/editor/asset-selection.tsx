@@ -209,12 +209,12 @@ export {
 };
 export function installEditorAssetSelection(): () => void {
   return () => {
-    reactAssetInteractions = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    reactAssetInteractions = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
-    reactAssetSelection = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    reactAssetSelection = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
     EMPTY_ASSET_SELECTION = {

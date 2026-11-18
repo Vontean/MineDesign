@@ -38,12 +38,12 @@ function truncateUtf8Text(text?: Dynamic, maxBytes?: Dynamic): Dynamic {
 }
 function commentPinnedFile(anchor?: Dynamic, files?: Dynamic): Dynamic {
   let pin2: Dynamic =
-    anchor === null ? null : (0, parseDesignCommentAnchor)(anchor);
+    anchor === null ? null : parseDesignCommentAnchor(anchor);
   return pin2 === null || !("fileHash" in pin2)
     ? null
     : (files.find(
         (input?: Dynamic): Dynamic =>
-          (0, stableAnchorHash)(input) === pin2.fileHash,
+          stableAnchorHash(input) === pin2.fileHash,
       ) ?? null);
 }
 function findNearbyCommentArtboards(
@@ -253,7 +253,7 @@ function createFastEditController(
               ms: lastOutcome.ms,
             }),
           input !== null &&
-            (0, finishFastEditJournalTurn)(
+            finishFastEditJournalTurn(
               input.session,
               input2 === "done"
                 ? "done"
@@ -262,7 +262,7 @@ function createFastEditController(
                   : options3 === "ask_claude"
                     ? "handed"
                     : text,
-              (0, stableAnchorHash)(options2.anchor ?? ""),
+              stableAnchorHash(options2.anchor ?? ""),
             ),
           input2 === "done"
             ? {
@@ -284,7 +284,7 @@ function createFastEditController(
       let value3: Dynamic =
           options2.anchor === null
             ? null
-            : (0, parseDesignCommentAnchor)(options2.anchor),
+            : parseDesignCommentAnchor(options2.anchor),
         value4: Dynamic =
           value3?.kind === "canvas"
             ? input.inView(
@@ -300,7 +300,7 @@ function createFastEditController(
             .host()
             .canvas.pageIs(
               (input2?: Dynamic): Dynamic =>
-                (0, stableAnchorHash)(input2) === value3.pageHash,
+                stableAnchorHash(input2) === value3.pageHash,
             )
             ? findNearbyCommentArtboards(
                 input.host().canvas.boards(),
@@ -364,7 +364,7 @@ function createFastEditController(
       input.session.turn = {
         file: value8,
       };
-      let value11: Dynamic = await (0, applyFastEditRequest)(
+      let value11: Dynamic = await applyFastEditRequest(
         {
           ...input,
           held: true,
@@ -417,7 +417,7 @@ function createFastEditController(
           report: (): Dynamic => {},
         },
       );
-      (0, reportFastEditOutcome)(value11);
+      reportFastEditOutcome(value11);
       index = value11.skipped ?? 0;
       let value12: Dynamic = value11.steps ?? 0,
         value13: Dynamic = value11.mark ?? null;
@@ -467,7 +467,7 @@ function createFastEditController(
           value17: Dynamic =
             value16 === "undone" ? "part_taken_back" : "part_left";
         if (value16 === "undone") {
-          await (0, withFastEditTimeout)(
+          await withFastEditTimeout(
             (async (): Promise<Dynamic> =>
               Promise.all(
                 [...(input.host().handlesRef.current?.values() ?? [])].map(
@@ -491,7 +491,7 @@ function createFastEditController(
               neither: "left_changed",
             } as Dynamic
           )[
-            await (0, updateFastEditHistoryFromCanvas)(input).catch(
+            await updateFastEditHistoryFromCanvas(input).catch(
               (): Dynamic => "neither",
             )
           ];

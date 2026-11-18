@@ -26,7 +26,7 @@ function isEditableComponentName(items?: Dynamic): Dynamic {
     items.length > 0 &&
     items.length <= 128 &&
     !items.includes("/") &&
-    (0, isSafeProjectPath)(items + ".dc.html")
+    isSafeProjectPath(items + ".dc.html")
   );
 }
 function parseObjectPosition(input?: Dynamic): Dynamic {
@@ -105,7 +105,7 @@ function imageCropStyleEdits(
   context?: Dynamic,
   value: Dynamic = MediaObjectCropSupports(),
 ): Dynamic {
-  let value2: Dynamic = (0, imageCropVisibleRect)(
+  let value2: Dynamic = imageCropVisibleRect(
       input,
       options,
       context,

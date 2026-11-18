@@ -133,8 +133,8 @@ export {
 };
 export function installEditorNotesBlocks(): () => void {
   return () => {
-    jsxNotesBlocks = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    jsxNotesBlocks = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
     NotesBlocksPattern = /^ *[-•*] (.*)$/;
@@ -153,7 +153,7 @@ export function installEditorNotesBlocks(): () => void {
       literalUnsafeLinks: true,
     };
     NotesBlocksHandler = (input?: Dynamic, options?: Dynamic): Dynamic =>
-      (0, parseNoteInlineMarkdown)(
+      parseNoteInlineMarkdown(
         input,
         options
           ? {

@@ -62,7 +62,7 @@ function cancelRestoredTooltipFocus(
 ): boolean {
   return input &&
     options.reason === "trigger-focus" &&
-    (0, isRestoredFocus)(options.event)
+    isRestoredFocus(options.event)
     ? (options.cancel(), true)
     : false;
 }
@@ -102,7 +102,7 @@ function TooltipShortcut({
     <Shortcut
       keys={keys}
       variant={"text"}
-      className={(0, cn)(
+      className={cn(
         "text-[calc(0.75rem*var(--cds-rem-scale,1))] [--cds-shortcut-cap-ink:var(--cds-text-muted)]",
         className,
       )}
@@ -134,8 +134,8 @@ function Tooltip({
   children: children,
 }: TooltipProps): React.ReactElement {
   useUiLocale();
-  let value = (0, useOverlayRoot)(),
-    value2 = (0, useShrinkWrap)({
+  let value = useOverlayRoot(),
+    value2 = useShrinkWrap({
       immediate: true,
     }),
     value3 = (0, reactTooltipTooltip.useId)(),
@@ -256,7 +256,7 @@ function Tooltip({
     },
     [],
   );
-  let value20 = (0, useDefaultLayer)("tooltip"),
+  let value20 = useDefaultLayer("tooltip"),
     [value21] = (0, reactTooltipTooltip.useState)(() =>
       lazy && open === undefined
         ? npm_Tooltip_Ax.createHandle()
@@ -269,13 +269,13 @@ function Tooltip({
       value25.current = true;
       value23(true);
     }, []),
-    value27 = (0, useTooltipDelay)(),
+    value27 = useTooltipDelay(),
     value28 = (0, reactTooltipTooltip.useRef)<HTMLElement | null>(null),
     value29 = (0, reactTooltipTooltip.useRef)(false);
   (0, reactTooltipTooltip.useEffect)(() => {
     open === false && (value29.current = false);
   }, [open]);
-  let value30 = (0, useOptionalStableCallback)(() => {
+  let value30 = useOptionalStableCallback(() => {
       if (value25.current || value24 || !value13 || open !== undefined)
         return;
       let value38: React.ReactNode;
@@ -292,23 +292,21 @@ function Tooltip({
       value29.current = true;
       onOpenChange?.(true);
     }),
-    value31: (event: React.PointerEvent<HTMLElement>) => void = (0,
-    useOptionalStableCallback)((input) => {
+    value31: (event: React.PointerEvent<HTMLElement>) => void = useOptionalStableCallback((input) => {
       value24 ||
         input.pointerType === "touch" ||
         (value13 &&
           ((value28.current = input.currentTarget),
           value27.start(delay, value30)));
     }),
-    value32 = (0, useOptionalStableCallback)(() => {
+    value32 = useOptionalStableCallback(() => {
       closeOnClick !== false && value27.cancel();
     }),
-    value33: (event: React.FocusEvent<HTMLElement>) => void = (0,
-    useOptionalStableCallback)((event) => {
+    value33: (event: React.FocusEvent<HTMLElement>) => void = useOptionalStableCallback((event) => {
       value24 ||
         ((event.target as Element).matches(":focus-visible") &&
           ((!openOnHandedBackFocus &&
-            (0, isRestoredFocus)(event.nativeEvent)) ||
+            isRestoredFocus(event.nativeEvent)) ||
             ((value28.current = null), value27.cancel(), value30())));
     });
   value21 !== null && open === true && !value22 && value23(true);
@@ -390,7 +388,7 @@ function Tooltip({
                             }
                           : undefined
                       }
-                      className={(0, cn)(
+                      className={cn(
                         TooltipStylesCssAlias,
                         TooltipTooltipAlias,
                         multiline || detail || secondaryHint
@@ -511,7 +509,7 @@ function DisabledReasonTooltip({
   let value = (0, reactTooltipTooltip.useId)();
   return (
     <Tooltip
-      content={(0, hasDisabledReason)(reason) ? reason : undefined}
+      content={hasDisabledReason(reason) ? reason : undefined}
       side={side}
       align={align}
       sideOffset={sideOffset}
@@ -524,7 +522,7 @@ function DisabledReasonTooltip({
       openOnHandedBackFocus={true}
     >
       <span
-        {...(0, disabledReasonWrapperProps)(
+        {...disabledReasonWrapperProps(
           reason,
           value,
           wrapperClassName,
@@ -603,7 +601,7 @@ export {
 };
 export function installCdsTooltipTooltip(): () => void {
   return () => {
-    (0, defineLiveExports)(tooltipImplementationExports, {
+    defineLiveExports(tooltipImplementationExports, {
       DisabledReasonTooltip: () => DisabledReasonTooltip,
       OverflowTooltip: () => OverflowTooltip,
       Tooltip: () => Tooltip,
@@ -612,31 +610,31 @@ export function installCdsTooltipTooltip(): () => void {
       useTooltipGroup: () => useTooltipGroup,
       useTooltipTrigger: () => useTooltipTrigger,
     });
-    initializeTooltipTooltip = (0, initializeOnce)(() => {
+    initializeTooltipTooltip = initializeOnce(() => {
       "use client";
 
-      (0, initializeDomInputObservation)();
-      (0, initializeClassNames)();
-      (0, initializeCdsRoot)();
-      (0, initializeOverlaysLayers)();
-      (0, initializeHooksStableCallback_2)();
-      (0, initializeDomRefComposition)();
-      (0, initializePlatformRootFontSize_2)();
-      (0, initializeComponentsIcon_3)();
-      (0, initializeTooltipTrigger_3)();
-      (0, initializeTooltipTrigger_4)();
-      (0, initializeComponentsShortcut)();
-      (0, initializeComponentsShrinkWrap_2)();
-      (0, initializeTooltipDisabledReason)();
-      (0, initializeTooltipStyles)();
-      (0, initializeTooltipTrigger)();
-      reactTooltipTooltip = (0, toModuleNamespace)(
-        (0, load_react)(),
+      initializeDomInputObservation();
+      initializeClassNames();
+      initializeCdsRoot();
+      initializeOverlaysLayers();
+      initializeHooksStableCallback_2();
+      initializeDomRefComposition();
+      initializePlatformRootFontSize_2();
+      initializeComponentsIcon_3();
+      initializeTooltipTrigger_3();
+      initializeTooltipTrigger_4();
+      initializeComponentsShortcut();
+      initializeComponentsShrinkWrap_2();
+      initializeTooltipDisabledReason();
+      initializeTooltipStyles();
+      initializeTooltipTrigger();
+      reactTooltipTooltip = toModuleNamespace(
+        load_react(),
       );
-      jsxTooltipTooltip = (0, toModuleNamespace)(
-        (0, load_react_jsx_runtime)(),
+      jsxTooltipTooltip = toModuleNamespace(
+        load_react_jsx_runtime(),
       );
-      (0, initializeNpm__base_ui_react_V8e)();
+      initializeNpm__base_ui_react_V8e();
       TooltipTooltipCurrentState = null;
       emptyTooltipContent = Symbol("cds.Tooltip.noShow") as EmptyTooltipContent;
       TooltipTooltipOpenBodyConfig = {
@@ -714,8 +712,8 @@ export function installCdsTooltipTooltip(): () => void {
         let value = (0, reactTooltipTooltip.useRef)<HTMLSpanElement | null>(
             null,
           ),
-          value2 = (0, useMergedRefs)(value, options),
-          value3 = (0, useTooltipTrigger)();
+          value2 = useMergedRefs(value, options),
+          value3 = useTooltipTrigger();
         return (
           <Tooltip
             content={
@@ -725,7 +723,7 @@ export function installCdsTooltipTooltip(): () => void {
                     let current = value.current;
                     if (current !== null)
                       return current.scrollWidth > current.clientWidth ||
-                        (0, measureContentRect)(current)
+                        measureContentRect(current)
                         ? children
                         : undefined;
                   }
@@ -742,7 +740,7 @@ export function installCdsTooltipTooltip(): () => void {
               {...props}
               ref={value2}
               data-cds={"OverflowTooltip"}
-              className={(0, cn)(
+              className={cn(
                 "block min-w-0 overflow-x-clip text-ellipsis whitespace-nowrap",
                 className,
               )}

@@ -13,8 +13,8 @@ var rememberCanvasView: Dynamic;
 function getArtifactMemoryScope(): Dynamic {
   let value: Dynamic =
     typeof location === "undefined" ? "/" : location.pathname;
-  return (0, getDocumentStashKey)(value).slice(
-    (0, getDocumentStashKey)("").length,
+  return getDocumentStashKey(value).slice(
+    getDocumentStashKey("").length,
   );
 }
 function createViewportMemory(input?: Dynamic, options?: Dynamic): Dynamic {
@@ -73,7 +73,7 @@ function createViewportMemory(input?: Dynamic, options?: Dynamic): Dynamic {
   };
 }
 function getViewportMemoryScope(): Dynamic {
-  let value: Dynamic = (0, getEmbedContext)();
+  let value: Dynamic = getEmbedContext();
   return value !== null
     ? "embed/" + value.memoryScope
     : getArtifactMemoryScope();

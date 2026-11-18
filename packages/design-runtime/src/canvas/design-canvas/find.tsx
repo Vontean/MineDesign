@@ -26,15 +26,15 @@ export function buildFindCanvasAdapter(deps: { readonly doc: Dynamic; readonly v
         },
         canvasRoot: (): Dynamic => deps.value106.current,
         storedText: (input?: Dynamic): Dynamic =>
-          (0, designFileTextRuns)(input, deps.doc.content().files[input]),
+          designFileTextRuns(input, deps.doc.content().files[input]),
         keepRunning: deps.value566,
         showPage: (
           input?: Dynamic,
           options?: Dynamic,
           context?: Dynamic,
         ): Dynamic => (
-          (0, initializeDesignKeyboardBindings)(),
-          (0, runFindRevealAfterSettle)(
+          initializeDesignKeyboardBindings(),
+          runFindRevealAfterSettle(
             deps.value2.current?.() === true,
             context,
             deps.value275,
@@ -63,13 +63,13 @@ export function buildFindCanvasAdapter(deps: { readonly doc: Dynamic; readonly v
           options?: Dynamic,
           context?: Dynamic,
         ): Dynamic => {
-          let value653: Dynamic = (0, canRevealFindMatch)(
+          let value653: Dynamic = canRevealFindMatch(
             input !== deps.value80.current,
             deps.value345.current,
             options === deps.value346.current,
           );
-          value653 && (0, initializeDesignKeyboardBindings)();
-          return (0, runFindRevealAfterSettle)(
+          value653 && initializeDesignKeyboardBindings();
+          return runFindRevealAfterSettle(
             value653 && deps.value2.current?.() === true,
             context,
             deps.value275,
@@ -93,7 +93,7 @@ export function buildFindCanvasAdapter(deps: { readonly doc: Dynamic; readonly v
                   deps.value379.current(
                     options,
                     value655 === "page"
-                      ? ((0, recallCanvasView)(input) ??
+                      ? (recallCanvasView(input) ??
                           defaultCanvasCamera)
                       : value655 === "fit"
                         ? defaultCanvasCamera
@@ -109,11 +109,11 @@ export function buildFindCanvasAdapter(deps: { readonly doc: Dynamic; readonly v
         panTo: (input?: Dynamic, options?: Dynamic): Dynamic =>
           deps.value105.glide((input2?: Dynamic): Dynamic => {
             deps.value569.pansFrom(input2, deps.value568.current);
-            let value653: Dynamic = (0, isArtboardInViewport)(
+            let value653: Dynamic = isArtboardInViewport(
                 options === true
                   ? {
                       ...input2,
-                      ...(0, findRestoreCamera)(
+                      ...findRestoreCamera(
                         input2,
                         deps.value568.current,
                       ),

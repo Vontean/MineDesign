@@ -218,7 +218,7 @@ function FloatingScrollbar({
         ref={value2}
         data-kit={"overlay-scrollbar-thumb"}
         data-dragging={value7 ? "" : undefined}
-        className={(0, joinClassNames)(
+        className={joinClassNames(
           "absolute cursor-default select-none",
           ChromeScrollbarClassNames,
           !value13 && "pointer-events-none",
@@ -243,7 +243,7 @@ function FloatingScrollbar({
       ref={value}
       aria-hidden={"true"}
       data-kit={"overlay-scrollbar"}
-      className={(0, joinClassNames)(
+      className={joinClassNames(
         value14
           ? "contents"
           : "sticky bottom-0 z-10 h-0 w-full shrink-0 overflow-visible",
@@ -268,12 +268,12 @@ export {
 };
 export function installEditorChromeScrollbar(): () => void {
   return () => {
-    reactChromeScrollbar = (0, toModuleNamespace)(
-      (0, load_react)(),
+    reactChromeScrollbar = toModuleNamespace(
+      load_react(),
       1,
     );
-    jsxChromeScrollbar = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    jsxChromeScrollbar = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
     ChromeScrollbarLabel =

@@ -416,13 +416,13 @@ export {
 };
 export function installEditorPropertiesStyleBag(): () => void {
   return () => {
-    reactPropertiesStyleBag = (0, toModuleNamespace)(
-      (0, load_react)(),
+    reactPropertiesStyleBag = toModuleNamespace(
+      load_react(),
       1,
     );
-    (0, initializeCdsIndex)();
-    jsxPropertiesStyleBag = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    initializeCdsIndex();
+    jsxPropertiesStyleBag = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
     PropertiesStyleBagBorderWidthBorderRadiusConfig = {

@@ -35,7 +35,7 @@ function EditorIcon({
     <Icon
       name={name}
       customSize={size}
-      className={(0, joinClassNames)("shrink-0", className)}
+      className={joinClassNames("shrink-0", className)}
       style={{
         display: "inline-flex",
         ...style,
@@ -85,7 +85,7 @@ function PropertyActions({
   let value4: Dynamic =
       ariaLabel ??
       (section !== undefined && section !== ""
-        ? (0, ColorContrastCopyHandler)(section)
+        ? ColorContrastCopyHandler(section)
         : "Add"),
     value5: Dynamic = (
       <MenuMenuAssignValue
@@ -133,7 +133,7 @@ function PropertyColorWell({
     <span
       aria-hidden={"true"}
       {...props}
-      className={(0, joinClassNames)(
+      className={joinClassNames(
         PropertiesPrimitivesClassNames_2,
         className,
       )}
@@ -170,26 +170,26 @@ export function installEditorPropertiesPrimitives(): () => void {
   return () => {
     PropertiesPrimitivesLabel =
       'button,input,select,textarea,label,[role="slider"],[role="switch"],[role="radio"],[role="checkbox"],[role="menuitem"]';
-    reactPropertiesPrimitives = (0, toModuleNamespace)(
-      (0, load_react)(),
+    reactPropertiesPrimitives = toModuleNamespace(
+      load_react(),
       1,
     );
-    (0, initializeCdsIndex)();
-    jsxPropertiesPrimitives = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    initializeCdsIndex();
+    jsxPropertiesPrimitives = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
-    jsxPropertiesPrimitives_2 = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    jsxPropertiesPrimitives_2 = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
     PropertiesPrimitivesClassNames =
       "rounded bg-fill-field text-primary shadow-field-ring outline-none transition duration-fast placeholder:text-muted enabled:hover:shadow-field-hover focus-visible:outline-hidden focus-visible:shadow-focus aria-expanded:shadow-field-hover disabled:opacity-50";
-    joinClassNamesValue = (0, joinClassNames)(
+    joinClassNamesValue = joinClassNames(
       "h-control min-w-0 px-md text-body pointer-coarse:h-10",
       PropertiesPrimitivesClassNames,
     );
-    joinClassNamesValue_2 = (0, joinClassNames)(
+    joinClassNamesValue_2 = joinClassNames(
       "flex h-control min-w-0 items-center gap-sm pr-md pl-1 text-left text-body pointer-coarse:h-10",
       PropertiesPrimitivesClassNames,
     );
@@ -214,10 +214,10 @@ export function installEditorPropertiesPrimitives(): () => void {
             {...props}
             ref={options}
             type={type}
-            className={(0, joinClassNames)(
+            className={joinClassNames(
               chip != null
                 ? joinClassNamesValue_2
-                : (0, joinClassNames)(
+                : joinClassNames(
                     joinClassNamesValue,
                     "flex items-center gap-sm text-left",
                   ),
@@ -227,7 +227,7 @@ export function installEditorPropertiesPrimitives(): () => void {
           >
             {chip}
             <span
-              className={(0, joinClassNames)(
+              className={joinClassNames(
                 "min-w-0 flex-1 truncate",
                 muted && "text-muted",
               )}

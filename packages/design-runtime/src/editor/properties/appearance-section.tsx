@@ -81,7 +81,7 @@ function PropertyCornerRadius({
   onCommitMany: onCommitMany,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic = (0, useStyleCommitScrub)(
+  let value: Dynamic = useStyleCommitScrub(
       (input?: Dynamic): Dynamic => onCommitMany(input),
     ),
     value2: Dynamic =
@@ -105,7 +105,7 @@ function PropertyCornerRadius({
     callback2: Dynamic = (input?: Dynamic): Dynamic => {
       let value15: Dynamic = (input ?? "").trim();
       if (!value15) return;
-      let value16: Dynamic = (0, parseCssNumber)(value15);
+      let value16: Dynamic = parseCssNumber(value15);
       if (!value16) return "bad";
       let value17: Dynamic = value16.unit || "px";
       return value3 != null && value3 !== value17
@@ -119,17 +119,17 @@ function PropertyCornerRadius({
       (input?: Dynamic): Dynamic =>
         PropertiesInheritedFieldValueAlias_2(input) && !input.inheritedFrom,
     ),
-    value5: Dynamic = (0, inheritedFieldsDisabledReason)(
+    value5: Dynamic = inheritedFieldsDisabledReason(
       ...(value4 ? [] : [radius]),
       ...value2,
     ),
-    value6: Dynamic = (0, inheritedFieldsDescription)(
+    value6: Dynamic = inheritedFieldsDescription(
       ...(value4 ? [] : [radius]),
       ...value2,
     ),
-    value7: Dynamic = (0, inheritedFieldForEdit)(radius),
+    value7: Dynamic = inheritedFieldForEdit(radius),
     value8: Dynamic = value2.map(
-      (input?: Dynamic): Dynamic => (0, inheritedFieldForEdit)(input),
+      (input?: Dynamic): Dynamic => inheritedFieldForEdit(input),
     ),
     value9: Dynamic = value7.mixed ? undefined : callback2(value7.value);
   if (value9 === "bad") return callback();
@@ -162,7 +162,7 @@ function PropertyCornerRadius({
         }),
       ),
     value14: Dynamic =
-      (0, getFineUnitStep)(value10, undefined) != null,
+      getFineUnitStep(value10, undefined) != null,
     callback3: Dynamic = (items3?: Dynamic, options?: Dynamic): Dynamic => {
       if (
         items3.length === 4 &&
@@ -177,7 +177,7 @@ function PropertyCornerRadius({
             value:
               value15 === undefined
                 ? null
-                : (0, formatCssNumber)(value15, value10),
+                : formatCssNumber(value15, value10),
           },
           ...value13,
         ]);
@@ -196,7 +196,7 @@ function PropertyCornerRadius({
               value:
                 input.value === undefined
                   ? null
-                  : (0, formatCssNumber)(input.value, value10),
+                  : formatCssNumber(input.value, value10),
             }),
           ),
         );
@@ -216,7 +216,7 @@ function PropertyCornerRadius({
             value:
               items4[options2] === undefined
                 ? null
-                : (0, formatCssNumber)(items4[options2], value10),
+                : formatCssNumber(items4[options2], value10),
           }),
         ),
       ]);
@@ -268,7 +268,7 @@ function PropertyBorderSection({
   uaBorder: uaBorder,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic = (0, useStyleCommitScrub)(
+  let value: Dynamic = useStyleCommitScrub(
       (input?: Dynamic): Dynamic => onCommitMany(input),
     ),
     value2: Dynamic = rows.find(
@@ -282,13 +282,13 @@ function PropertyBorderSection({
         (input?: Dynamic): Dynamic =>
           rows.find((input2?: Dynamic): Dynamic => input2.prop === input),
       ),
-    value5: Dynamic = (0, inheritedFieldForEdit)(value2),
-    value6: Dynamic = (0, inheritedFieldForEdit)(value3),
+    value5: Dynamic = inheritedFieldForEdit(value2),
+    value6: Dynamic = inheritedFieldForEdit(value3),
     value7: Dynamic = rows.find(
       (input?: Dynamic): Dynamic => input.prop === "border-color",
     ),
     value8: Dynamic = value4.map(
-      (input?: Dynamic): Dynamic => (0, inheritedFieldForEdit)(input),
+      (input?: Dynamic): Dynamic => inheritedFieldForEdit(input),
     );
   if (
     !value5 ||
@@ -303,16 +303,16 @@ function PropertyBorderSection({
     );
   let value9: Dynamic = value8,
     value10: Dynamic = value2
-      ? (0, inheritedFieldTooltip)(value2)
+      ? inheritedFieldTooltip(value2)
       : undefined,
     value11: Dynamic = value2
-      ? (0, inheritedFieldDescription)(value2)
+      ? inheritedFieldDescription(value2)
       : undefined,
-    value12: Dynamic = (0, inheritedFieldsDisabledReason)(
+    value12: Dynamic = inheritedFieldsDisabledReason(
       value3,
       ...value4,
     ),
-    value13: Dynamic = (0, inheritedFieldsDescription)(
+    value13: Dynamic = inheritedFieldsDescription(
       value3,
       ...value4,
     ),
@@ -336,12 +336,12 @@ function PropertyBorderSection({
           ? "solid"
           : value14,
     value16: Dynamic = callback(value15),
-    value17: Dynamic = (0, parseCssNumber)(
+    value17: Dynamic = parseCssNumber(
       ((value6.value || value6.fallback) ?? "").trim(),
     ),
     value18: Dynamic = value9.map(
       (input?: Dynamic): Dynamic =>
-        (0, parseCssNumber)(
+        parseCssNumber(
           ((input.value || input.fallback) ?? "").trim(),
         ),
     ),
@@ -457,7 +457,7 @@ function PropertyBorderSection({
     callback3: Dynamic = (input?: Dynamic): Dynamic => {
       let value30: Dynamic = (input ?? "").trim();
       if (!value30) return;
-      let value31: Dynamic = (0, parseCssNumber)(value30);
+      let value31: Dynamic = parseCssNumber(value30);
       if (!value31) return "bad";
       let value32: Dynamic = value31.unit || "px";
       return value23 != null && value23 !== value32
@@ -503,7 +503,7 @@ function PropertyBorderSection({
         (input2?: Dynamic, options?: Dynamic): Dynamic =>
           input2 ??
           (/^-?[\d.]+$/.test(items2[options] ?? "")
-            ? (0, parseCssNumber)(items2[options] ?? "")?.value
+            ? parseCssNumber(items2[options] ?? "")?.value
             : undefined),
       );
       for (let value31 of input as Dynamic)
@@ -516,7 +516,7 @@ function PropertyBorderSection({
         : !value28 &&
           callback5(input).every((input2?: Dynamic): Dynamic => input2 === 0),
     value29: Dynamic =
-      (0, getFineUnitStep)(value26, undefined) != null ? 0.1 : 1,
+      getFineUnitStep(value26, undefined) != null ? 0.1 : 1,
     callback7: Dynamic = (input?: Dynamic): Dynamic => {
       let value30: Dynamic = callback5([])[input];
       return value30 !== undefined && value30 > 0 && value30 < value29
@@ -534,7 +534,7 @@ function PropertyBorderSection({
         options([
           {
             prop: "border-width",
-            value: (0, formatCssNumber)(
+            value: formatCssNumber(
               value30 ? callback7(0) : input[0].value,
               value26,
             ),
@@ -556,7 +556,7 @@ function PropertyBorderSection({
               prop: PropertiesAppearanceSectionBorderTopWidthBorderRightWidthBorderBottomWidthValues[
                 input2.side
               ],
-              value: (0, formatCssNumber)(input2.value ?? 0, value26),
+              value: formatCssNumber(input2.value ?? 0, value26),
             }),
           ),
           ...(value6.alsoCommit ?? []),
@@ -578,7 +578,7 @@ function PropertyBorderSection({
             value:
               value31[options2] === undefined
                 ? null
-                : (0, formatCssNumber)(value31[options2], value26),
+                : formatCssNumber(value31[options2], value26),
           }),
         ),
         ...(value6.alsoCommit ?? []),
@@ -952,19 +952,19 @@ export {
 };
 export function installEditorPropertiesAppearanceSection(): () => void {
   return () => {
-    jsxPropertiesAppearanceSection = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    jsxPropertiesAppearanceSection = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
     PropertiesAppearanceSectionFallback = (
       input?: Dynamic,
       options: Dynamic = "px",
     ): Dynamic => {
-      let value: Dynamic = (0, parseCssNumber)(input.fallback ?? "");
+      let value: Dynamic = parseCssNumber(input.fallback ?? "");
       if (!value) return input.fallback ?? "";
       let value2: Dynamic = value.unit || "px";
-      return (0, formatCssNumber)(
-        (0, roundCssNumber)(value.value, value.unit),
+      return formatCssNumber(
+        roundCssNumber(value.value, value.unit),
         value2 === options ? "" : value2,
       );
     };
@@ -1015,12 +1015,12 @@ export function installEditorPropertiesAppearanceSection(): () => void {
           value: null,
         }),
       );
-    jsxPropertiesAppearanceSection_2 = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    jsxPropertiesAppearanceSection_2 = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
-    jsxPropertiesAppearanceSection_3 = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    jsxPropertiesAppearanceSection_3 = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
     PropertiesAppearanceSectionSubscribers = new Set();

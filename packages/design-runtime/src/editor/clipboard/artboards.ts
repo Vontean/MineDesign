@@ -63,7 +63,7 @@ function getBlobAssetReferences(input?: Dynamic): Dynamic {
       ClipboardArtboardsBlobPattern,
     ) as Dynamic)
       values.add("_blob/" + value[1]);
-  if (input.includes("blob:") && (0, isEmulatorBlobUrl)("blob:"))
+  if (input.includes("blob:") && isEmulatorBlobUrl("blob:"))
     for (let value of input.matchAll(
       ClipboardArtboardsBlobHttpsPattern,
     ) as Dynamic)
@@ -78,7 +78,7 @@ function collectArtboardClipboardSource(
   let value: Dynamic = input.filter(
     (input2?: Dynamic): Dynamic =>
       typeof context[input2.file] == "string" &&
-      !(0, isLoadingArtboardHtml)(context[input2.file]),
+      !isLoadingArtboardHtml(context[input2.file]),
   );
   if (value.length === 0) return null;
   let value2: Dynamic = Math.min(
@@ -103,7 +103,7 @@ function collectArtboardClipboardSource(
             title: input2.title,
           }
         : {}),
-      ...(0, artboardAppearanceProperties)(input2),
+      ...artboardAppearanceProperties(input2),
     }),
     value4: Dynamic = value.map(
       (input2?: Dynamic): Dynamic =>
@@ -124,14 +124,14 @@ function collectArtboardClipboardSource(
         ...value4.map((input2?: Dynamic): Dynamic => input2.dx + input2.w),
       ) + ClipboardArtboardsConstant_3;
   for (let index: Dynamic = 0; index < value4.length; index++)
-    for (let value6 of (0, getImportedArtboardNames)(
+    for (let value6 of getImportedArtboardNames(
       value4[index].src,
     ) as Dynamic) {
       let entry: Dynamic = entries.get(value6);
       if (
         entry === undefined ||
         values.has(entry) ||
-        (0, isLoadingArtboardHtml)(context[entry])
+        isLoadingArtboardHtml(context[entry])
       )
         continue;
       values.add(entry);
@@ -141,21 +141,21 @@ function collectArtboardClipboardSource(
         file: entry,
         x: 0,
         y: 0,
-        ...(0, artboardSpecFromProps)({}),
+        ...artboardSpecFromProps({}),
       };
       value4.push(callback(value7, value5, 0));
       value5 += value7.w + ClipboardArtboardsConstant_3;
     }
   let state: Dynamic = {};
   for (let [value6, value7] of Object.entries(context) as Dynamic)
-    !(0, isArtboardFile)(value6) &&
+    !isArtboardFile(value6) &&
       value6 !== canvasMetadataFile &&
       (state[value6] = value7);
   let state2: Dynamic = {};
   for (let value6 of value4 as Dynamic) {
     let value7: Dynamic = value6.stem + ".dc.html";
     for (let [value8, value9] of Object.entries(
-      (0, collectProjectDependencyFiles)(
+      collectProjectDependencyFiles(
         {
           ...state,
           [value7]: value6.src,
@@ -343,8 +343,8 @@ function parseArtboardClipboard(input?: Dynamic): Dynamic {
     if (!callback(value6.src)) return null;
     let value7: Dynamic =
       typeof value6.stem == "string" &&
-      (0, ClipboardFileTransferHandler_7)(value6.stem + ".dc.html") &&
-      !(0, ClipboardFileTransferTest)(value6.stem)
+      ClipboardFileTransferHandler_7(value6.stem + ".dc.html") &&
+      !ClipboardFileTransferTest(value6.stem)
         ? value6.stem
         : "Artboard";
     items.push({
@@ -352,7 +352,7 @@ function parseArtboardClipboard(input?: Dynamic): Dynamic {
       stem: value7,
       dx: ClipboardArtboardsMax(value6.dx),
       dy: ClipboardArtboardsMax(value6.dy),
-      ...(0, artboardSpecFromProps)(value6),
+      ...artboardSpecFromProps(value6),
     });
   }
   if (items.length === 0) return null;
@@ -363,7 +363,7 @@ function parseArtboardClipboard(input?: Dynamic): Dynamic {
       if (index3 >= PlatformFileContentFilesValue) break;
       if (
         !(
-          !(0, isCarryableProjectFile)(value5) ||
+          !isCarryableProjectFile(value5) ||
           typeof value6 != "string" ||
           !ClipboardArtboardsEncode(value6)
         ) &&
@@ -411,7 +411,7 @@ function parseArtboardClipboard(input?: Dynamic): Dynamic {
       ...Object.entries(state)
         .filter(
           ([input2]: Dynamic): Dynamic =>
-            (0, isProjectSourcePath)(input2),
+            isProjectSourcePath(input2),
         )
         .map(([, input2]: Dynamic): Dynamic => input2),
     ],
@@ -534,9 +534,9 @@ export function installEditorClipboardArtboards(): () => void {
       input.replace(/\.(?:d\.ts|css|m?js)$/i, "");
     ClipboardArtboardsTest_4 = (items?: Dynamic): Dynamic =>
       typeof items == "string" &&
-      (((0, isProjectTextFilePath)(items) &&
+      ((isProjectTextFilePath(items) &&
         /\.(?:css|m?js)$/i.test(items)) ||
-        (0, isTypeDeclarationPath)(items)) &&
+        isTypeDeclarationPath(items)) &&
       items.length <= PlatformFileContentLimit_8 - 16 &&
       !/^(?:artifact-type|project)\//i.test(items) &&
       !ClipboardFileTransferSubscribers.has(
@@ -559,7 +559,7 @@ export function installEditorClipboardArtboards(): () => void {
       ...Object.entries(input.carried)
         .filter(
           ([input2]: Dynamic): Dynamic =>
-            (0, isProjectSourcePath)(input2),
+            isProjectSourcePath(input2),
         )
         .map(([, input2]: Dynamic): Dynamic => input2),
     ];

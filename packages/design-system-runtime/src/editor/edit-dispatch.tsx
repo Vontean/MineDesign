@@ -73,8 +73,8 @@ export {
 };
 export function installEditorEditDispatch(): () => void {
   return () => {
-    reactAssetGroupEditor = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    reactAssetGroupEditor = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
     summarizeChangedFileNames = (names: string[]) =>

@@ -21,8 +21,8 @@ function parseFileReferences(input?: Dynamic): Dynamic {
       items.length >= PlatformFileReferencesLimit ||
       value3 === null ||
       typeof value3 != "object" ||
-      !(0, isProjectTextFilePath)(value3.path) ||
-      !(0, isFullProjectPath)(value3.file) ||
+      !isProjectTextFilePath(value3.path) ||
+      !isFullProjectPath(value3.file) ||
       (typeof value3.bytes == "number" &&
         value3.bytes > PlatformFileReferencesResolvedValue) ||
       items.some((input2?: Dynamic): Dynamic => input2.path === value3.path)

@@ -15,8 +15,8 @@ function artboardErrorsPromptText(problems?: Dynamic): Dynamic {
     (input?: Dynamic): Dynamic =>
       input.messages.map(
         (input2?: Dynamic): Dynamic =>
-          ((0, encodeArtboardSelectionPath)(input.file) ??
-            (0, sanitizeDesignContextText)(
+          (encodeArtboardSelectionPath(input.file) ??
+            sanitizeDesignContextText(
               input.file,
               maxArtboardErrorFileLabelLength,
             )) +
@@ -45,9 +45,9 @@ function artboardErrorsFallbackPrompt(
 
 The canvas\u2019s title, from its saved document:
 ` +
-          (0, wrapUntrustedDesignData)(
+          wrapUntrustedDesignData(
             "canvas title",
-            (0, sanitizeDesignDataLabel)(canvasTitle),
+            sanitizeDesignDataLabel(canvasTitle),
           )
         : "",
     value3: Dynamic =
@@ -64,9 +64,9 @@ Only the first ` +
     `
 
 ` +
-    (0, wrapUntrustedDesignData)(
+    wrapUntrustedDesignData(
       "error text (it can quote the artboards\u2019 own content)",
-      (0, truncateUtf16Safely)(value, maxArtboardErrorPromptLength),
+      truncateUtf16Safely(value, maxArtboardErrorPromptLength),
     ) +
     value3
   );
@@ -78,8 +78,8 @@ function sendArtboardErrorsToClaude(
 ): Dynamic {
   let value: Dynamic = artboardErrorsFallbackPrompt(problems, canvasTitle);
   return session === null
-    ? (0, sendOrCopyClaudePrompt)(value)
-    : (0, sendDesignSelectionToClaude)(
+    ? sendOrCopyClaudePrompt(value)
+    : sendDesignSelectionToClaude(
         {
           selection: {
             get label() { return uiMessage("canvas.errorPrompt.artboardErrors"); },

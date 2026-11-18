@@ -36,8 +36,8 @@ function watchThumbnailDocumentReady(
   };
 }
 function initializeDatabaseThumbnail(input: Dynamic = document): Dynamic {
-  if ((0, detectDocumentStorageMode)(input) === "db") {
-    if (!(0, isFrameCaptureDocument)(input))
+  if (detectDocumentStorageMode(input) === "db") {
+    if (!isFrameCaptureDocument(input))
       return completeThumbnailAfterPromise(
         (): Dynamic => waitForThumbnailPaint(input),
         input,

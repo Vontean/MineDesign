@@ -23,8 +23,8 @@ function TransformAxisRow({
 }: Dynamic): Dynamic {
   useUiLocale();
   let value2: Dynamic =
-      (0, getFineUnitStep)(unit, undefined) != null ? 0.1 : step,
-    value3: Dynamic = (0, useStyleCommitScrub)(
+      getFineUnitStep(unit, undefined) != null ? 0.1 : step,
+    value3: Dynamic = useStyleCommitScrub(
       (input?: Dynamic): Dynamic =>
         onChange({
           value: input,
@@ -34,7 +34,7 @@ function TransformAxisRow({
   return (
     <div className={"min-w-[4.25rem] flex-1 basis-[4.25rem]"}>
       <NumericInput
-        value={mixed ? undefined : (0, roundCssNumber)(value, unit)}
+        value={mixed ? undefined : roundCssNumber(value, unit)}
         mixed={mixed}
         prefix={label}
         unit={unit && unit !== "px" && unit !== "deg" ? unit : undefined}
@@ -67,7 +67,7 @@ function PropertyTransformRow({
 }: Dynamic): Dynamic {
   useUiLocale();
   let value: Dynamic = state.mixed ? "" : (state.value ?? ""),
-    value2: Dynamic = (0, parseCssTransform)(value);
+    value2: Dynamic = parseCssTransform(value);
   if (!value2)
     return (
       <PropertyCssTextRow
@@ -77,7 +77,7 @@ function PropertyTransformRow({
       />
     );
   let callback: Dynamic = (input?: Dynamic): Dynamic => {
-    let value3: Dynamic = (0, serializeCssTransform)(input);
+    let value3: Dynamic = serializeCssTransform(input);
     (!state.mixed && value3 === value) ||
       onCommit(state.prop, value3 || (state.inheritedFrom ? "none" : null));
   };

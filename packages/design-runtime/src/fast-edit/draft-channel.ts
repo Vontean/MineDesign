@@ -272,7 +272,7 @@ export function installFastEditDraftChannel(): () => void {
     DRAFT_MAX_LIFETIME_MS = 18e4;
     DRAFT_MAX_TOMBSTONES = 64;
     resolveDraftChannel = async (): Promise<Dynamic> =>
-      await (0, cachedRoomCapability)();
+      await cachedRoomCapability();
     DRAFT_MAX_ACTIVE_FILES = 8;
   };
 }

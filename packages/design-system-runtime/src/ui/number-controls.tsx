@@ -287,8 +287,8 @@ function PropertyNumberInput({
         return;
       }
       if (callback2()) {
-        (0, announceLiveMessage)(
-          (0, numberChangeRefusalMessage)(value7, ownUnit),
+        announceLiveMessage(
+          numberChangeRefusalMessage(value7, ownUnit),
         );
         return;
       }
@@ -540,7 +540,7 @@ function PropertyNumberInput({
       {...state}
       title={title}
       fullWidth={fullWidth}
-      className={(0, joinClassNames)(
+      className={joinClassNames(
         "group/field min-w-12",
         !mixed &&
           value3 === undefined &&
@@ -555,7 +555,7 @@ function PropertyNumberInput({
             data-scrub={""}
             onMouseDown={value9 ? callback5 : undefined}
             onPointerDown={value9 ? captureNumberScrubPointer : undefined}
-            className={(0, joinClassNames)(
+            className={joinClassNames(
               PROPERTY_NUMBER_UNIT_CLASS,
               "inline-flex items-center text-caption-medium",
               value9 && "cursor-ew-resize",
@@ -577,7 +577,7 @@ function PropertyNumberInput({
                       ? captureNumberScrubPointer
                       : undefined
                   }
-                  className={(0, joinClassNames)(
+                  className={joinClassNames(
                     PROPERTY_NUMBER_INPUT_CLASS,
                     value9 && unitScrubs && "cursor-ew-resize",
                   )}
@@ -668,17 +668,17 @@ export {
 };
 export function installUiNumberControls(): () => void {
   return () => {
-    reactForUiNumberControls2 = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    reactForUiNumberControls2 = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
-    reactForUiNumberControls = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    reactForUiNumberControls = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
     activeNumberScrubCleanup = null;
-    jsxForUiNumberControls = (0, toModuleNamespace)(
-      (0, loadJsxNamespace)(),
+    jsxForUiNumberControls = toModuleNamespace(
+      loadJsxNamespace(),
       1,
     );
     PROPERTY_NUMBER_FORMAT_OPTIONS = {

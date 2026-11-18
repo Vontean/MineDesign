@@ -28,7 +28,7 @@ var reactSheetsChrome_3: Dynamic;
 var initializeSheetsChrome_3: Dynamic;
 function SheetHandle({ drawPill = true }: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic = (0, useSheetState_2)();
+  let value: Dynamic = useSheetState_2();
   return (
     <div
       aria-hidden={true}
@@ -39,7 +39,7 @@ function SheetHandle({ drawPill = true }: Dynamic): Dynamic {
       }
     >
       <div
-        className={(0, npm_clsx_Ea)(
+        className={npm_clsx_Ea(
           "h-1 w-9 rounded-full bg-border",
           !drawPill && "opacity-0",
         )}
@@ -49,7 +49,7 @@ function SheetHandle({ drawPill = true }: Dynamic): Dynamic {
 }
 function SheetHeading({ leading: leading, title: title }: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic = (0, useSheetState_2)(),
+  let value: Dynamic = useSheetState_2(),
     value2: Dynamic = leading != null && leading !== false;
   return !value2 &&
     !(title != null && title !== false && title !== "") ? null : (
@@ -62,7 +62,7 @@ function SheetHeading({ leading: leading, title: title }: Dynamic): Dynamic {
       {value2 && (<span className={"-me-2.5 shrink-0"}>{leading}</span>)}
       <span
         aria-hidden={true}
-        className={(0, npm_clsx_Ea)(
+        className={npm_clsx_Ea(
           "min-w-0 flex-1 truncate text-start text-heading font-semibold text-primary",
           !value2 && "ps-2.5",
         )}
@@ -79,7 +79,7 @@ function SheetBody({
   useUiLocale();
   return (
     <div
-      className={(0, cn)(
+      className={cn(
         "flex min-h-0 flex-auto flex-col",
         className,
       )}
@@ -105,7 +105,7 @@ function useSheetTextFocus(element?: Dynamic, options?: Dynamic): Dynamic {
       index: Dynamic = 0,
       callback3: Dynamic = (input?: Dynamic): Dynamic => {
         if (!(input instanceof Element)) return false;
-        if ((0, isTextInputElement)(input)) return true;
+        if (isTextInputElement(input)) return true;
         let ancestor: Dynamic = input.closest(
           '[data-cds="TextInput"], label',
         );
@@ -113,7 +113,7 @@ function useSheetTextFocus(element?: Dynamic, options?: Dynamic): Dynamic {
         let value4: Dynamic =
           ancestor instanceof HTMLLabelElement ? ancestor.control : null;
         return (
-          (0, isTextInputElement)(value4) ||
+          isTextInputElement(value4) ||
           ancestor.querySelector(
             'input:not([type=button],[type=checkbox],[type=radio],[type=range],[type=submit],[type=reset],[type=color],[type=file],[type=image],[type=hidden],[readonly]), textarea:not([readonly]), [contenteditable=""], [contenteditable="true"], [contenteditable="plaintext-only"]',
           ) !== null
@@ -123,7 +123,7 @@ function useSheetTextFocus(element?: Dynamic, options?: Dynamic): Dynamic {
         callback3(event.target) && (index = event.timeStamp || Date.now());
       },
       callback5: Dynamic = (event?: Dynamic): Dynamic => {
-        (0, isTextInputElement)(event.target) &&
+        isTextInputElement(event.target) &&
           (callback(),
           index > 0 &&
             (event.timeStamp || Date.now()) - index < 1e3 &&
@@ -133,14 +133,14 @@ function useSheetTextFocus(element?: Dynamic, options?: Dynamic): Dynamic {
         index > 0 && callback3(event.target) && ((index = 0), value("tall"));
       },
       callback7: Dynamic = (event?: Dynamic): Dynamic => {
-        (0, isTextInputElement)(event.target) && callback2();
+        isTextInputElement(event.target) && callback2();
       };
     element.addEventListener("pointerdown", callback4);
     element.addEventListener("focusin", callback5);
     element.addEventListener("focusout", callback7);
     element.addEventListener("click", callback6);
     element.contains(element.ownerDocument.activeElement) &&
-      (0, isTextInputElement)(element.ownerDocument.activeElement) &&
+      isTextInputElement(element.ownerDocument.activeElement) &&
       callback();
     return (): Dynamic => {
       element.removeEventListener("pointerdown", callback4);
@@ -354,7 +354,7 @@ function sheetMeasuredFrame(
 function useSheetPopupHost(): Dynamic {
   "use no memo";
 
-  let value: Dynamic = (0, useSheetState)(),
+  let value: Dynamic = useSheetState(),
     [value2, value3]: Dynamic = (0, reactSheetsChrome_3.useState)(false),
     value4: Dynamic = (0, reactSheetsChrome_3.useRef)(false),
     value5: Dynamic = (0, reactSheetsChrome_3.useRef)(null),
@@ -382,7 +382,7 @@ function useSheetPopupHost(): Dynamic {
         value9(value10 ? input : null);
         (input === null || !value10) && value7(false);
         if (input !== null && value10) {
-          let value27: Dynamic = (0, sheetContainsTextInput)(input);
+          let value27: Dynamic = sheetContainsTextInput(input);
           if (value27) {
             let value29: Dynamic = `min(${SheetsLayoutCss_3}, ${SheetsLayoutCss})`;
             input.style.minHeight = value29;
@@ -390,7 +390,7 @@ function useSheetPopupHost(): Dynamic {
           }
           value7(value27);
           let height: Dynamic = input.getBoundingClientRect().height,
-            value28: Dynamic = (0, sheetNeedsScrolling)(input);
+            value28: Dynamic = sheetNeedsScrolling(input);
           value14?.(height, value28);
           value6.current !== input &&
             ((value6.current = input),
@@ -400,12 +400,12 @@ function useSheetPopupHost(): Dynamic {
       [value10, value14, value7],
     ),
     value16: Dynamic = value11?.height;
-  (0, useIsomorphicLayoutEffect)((): Dynamic => {
+  useIsomorphicLayoutEffect((): Dynamic => {
     let current: Dynamic = value13.current;
     if (!value10 || value16 !== undefined || current === null) return;
-    (0, clearSheetTransition)(current);
+    clearSheetTransition(current);
     let height: Dynamic = current.getBoundingClientRect().height,
-      value27: Dynamic = (0, sheetNeedsScrolling)(current);
+      value27: Dynamic = sheetNeedsScrolling(current);
     value14?.(height, value27);
     value6.current = current;
     value5.current = sheetMeasuredFrame(current, height, value27);
@@ -449,7 +449,7 @@ function useSheetPopupHost(): Dynamic {
           return;
         }
         callback();
-        if ((0, sheetContainsTextInput)(value8)) {
+        if (sheetContainsTextInput(value8)) {
           value4.current ||
             (value7(true),
             value17(
@@ -527,15 +527,15 @@ function useSheetPopupHost(): Dynamic {
   useSheetTextFocus(value8, value11);
   useCoveredSheetState(value8);
   useSheetDismissal(value8, value11, value.covered);
-  (0, useAndroidCloseWatcher)(
+  useAndroidCloseWatcher(
     value10 && (value11?.open ?? false),
     value11?.dismiss,
   );
   let value20: Dynamic = (0, reactSheetsChrome_3.useContext)(
       SheetPopupBridgeContext,
     ),
-    value21: Dynamic = (0, useCdsWindow)(),
-    value22: Dynamic = (0, sheetFrameHeight)(value11, value21),
+    value21: Dynamic = useCdsWindow(),
+    value22: Dynamic = sheetFrameHeight(value11, value21),
     value23: Dynamic = (0, reactSheetsChrome_3.useMemo)(
       (): Dynamic =>
         value10 && value20 !== null
@@ -550,7 +550,7 @@ function useSheetPopupHost(): Dynamic {
     value24: Dynamic = value10 && value.covered,
     value25: Dynamic = value10 && value.inert,
     value26: Dynamic = value10
-      ? (0, getSheetFrameStyle)(value11, {
+      ? getSheetFrameStyle(value11, {
           floor: value2 ? "half" : "content",
           parentFrameHeight: value12?.frameHeight,
         })
@@ -562,10 +562,10 @@ function useSheetPopupHost(): Dynamic {
     ref: value15,
     style: value26,
     positionerStyle: value10
-      ? (0, getSheetFixedPosition)(value11)
+      ? getSheetFixedPosition(value11)
       : undefined,
     attrs: {
-      ...(value10 ? (0, getSizeAttribute)("lg") : {}),
+      ...(value10 ? getSizeAttribute("lg") : {}),
       "data-presentation": value10 ? "sheet" : undefined,
       "data-sheet-tree": value10 ? value11?.treeId : undefined,
       [coveredSheetAttribute]: value24 ? "" : undefined,
@@ -610,18 +610,18 @@ export {
 };
 export function installCdsSheetsChrome(): () => void {
   return () => {
-    initializeSheetsChrome = (0, initializeOnce)((): Dynamic => {
+    initializeSheetsChrome = initializeOnce((): Dynamic => {
       "use client";
 
-      (0, initializeClassNames)();
-      (0, initializeSheetsStyles_2)();
-      (0, initializeSheetsStyles)();
-      reactSheetsChrome = (0, toModuleNamespace)(
-        (0, load_react)(),
+      initializeClassNames();
+      initializeSheetsStyles_2();
+      initializeSheetsStyles();
+      reactSheetsChrome = toModuleNamespace(
+        load_react(),
       );
-      (0, initializeNpm_clsx_xh)();
-      jsxSheetsChrome = (0, toModuleNamespace)(
-        (0, load_react_jsx_runtime)(),
+      initializeNpm_clsx_xh();
+      jsxSheetsChrome = toModuleNamespace(
+        load_react_jsx_runtime(),
       );
       SheetChromeButton = (0, reactSheetsChrome.forwardRef)(function (
         {
@@ -633,7 +633,7 @@ export function installCdsSheetsChrome(): () => void {
         }: Dynamic,
         options?: Dynamic,
       ): Dynamic {
-        let value: Dynamic = (0, useLabel)("close", "Close"),
+        let value: Dynamic = useLabel("close", "Close"),
           value2: Dynamic = label ?? value;
         return (() => {
           const _Component = as;
@@ -644,7 +644,7 @@ export function installCdsSheetsChrome(): () => void {
               data-cds-sheet-control={""}
               onClick={onDismiss}
               {...props}
-              className={(0, cn)(
+              className={cn(
                 "cds-reset mx-1 mb-1 block shrink-0 rounded px-2 text-start text-body font-normal text-primary outline-none select-none focus-visible:bg-fill-ghost-hover focus-visible:outline-hidden [&:not(:focus-visible):not([data-cds-sheet-control-held])]:sr-only",
                 "min-h-control",
                 className,
@@ -662,29 +662,29 @@ export function installCdsSheetsChrome(): () => void {
         Body: SheetBody,
       };
     });
-    initializeSheetsChrome_2 = (0, initializeOnce)((): Dynamic => {
+    initializeSheetsChrome_2 = initializeOnce((): Dynamic => {
       "use client";
 
-      (0, initializeSheetsKeyboardViewport)();
-      (0, initializeSheetsPresentation)();
-      reactSheetsChrome_2 = (0, toModuleNamespace)(
-        (0, load_react)(),
+      initializeSheetsKeyboardViewport();
+      initializeSheetsPresentation();
+      reactSheetsChrome_2 = toModuleNamespace(
+        load_react(),
       );
     });
-    initializeSheetsChrome_3 = (0, initializeOnce)((): Dynamic => {
+    initializeSheetsChrome_3 = initializeOnce((): Dynamic => {
       "use client";
 
-      (0, initializeHooksLayoutEffect)();
-      (0, initializeCdsRoot)();
-      (0, initializeOverlaysAndroidCloseWatcher)();
-      (0, initializeSheetsLayout)();
-      (0, initializeSheetsPresentation)();
-      (0, initializeSheetsPopupStack)();
-      (0, initializeSheetsStyles)();
+      initializeHooksLayoutEffect();
+      initializeCdsRoot();
+      initializeOverlaysAndroidCloseWatcher();
+      initializeSheetsLayout();
+      initializeSheetsPresentation();
+      initializeSheetsPopupStack();
+      initializeSheetsStyles();
       initializeSheetsChrome();
       initializeSheetsChrome_2();
-      reactSheetsChrome_3 = (0, toModuleNamespace)(
-        (0, load_react)(),
+      reactSheetsChrome_3 = toModuleNamespace(
+        load_react(),
       );
     });
   };

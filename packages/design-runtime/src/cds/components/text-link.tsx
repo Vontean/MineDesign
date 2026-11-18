@@ -85,7 +85,7 @@ function useDialogKeyboardViewport(input?: Dynamic): Dynamic {
       let activeElement: Dynamic = value.ownerDocument.activeElement;
       return (
         value.contains(activeElement) &&
-        (0, isTextInputElement)(activeElement)
+        isTextInputElement(activeElement)
       );
     }, [input, value]),
     value7: Dynamic = (0, reactComponentsTextLink_2.useSyncExternalStore)(
@@ -93,7 +93,7 @@ function useDialogKeyboardViewport(input?: Dynamic): Dynamic {
       value6,
       (): Dynamic => false,
     );
-  (0, useKeyboardViewport)(
+  useKeyboardViewport(
     input && (value7 || value3 !== null),
     value4,
   );
@@ -102,7 +102,7 @@ function useDialogKeyboardViewport(input?: Dynamic): Dynamic {
       [value3],
     ),
     value9: Dynamic = (0, reactComponentsTextLink_2.useRef)(null);
-  (0, useIsomorphicLayoutEffect)((): Dynamic => {
+  useIsomorphicLayoutEffect((): Dynamic => {
     let current: Dynamic = value9.current;
     current !== null &&
       (current.node !== value || value8 === undefined) &&
@@ -172,7 +172,7 @@ function useDialogKeyboardViewport(input?: Dynamic): Dynamic {
         scrollDialogInputIntoView(value, activeElement);
     }
   });
-  (0, useIsomorphicLayoutEffect)(
+  useIsomorphicLayoutEffect(
     (): Dynamic => (): Dynamic => {
       value9.current !== null &&
         (restoreOwnedDialogStyles(value9.current), (value9.current = null));
@@ -225,7 +225,7 @@ function preserveDialogFocus(event?: Dynamic): Dynamic {
   let currentTarget: Dynamic = event.currentTarget,
     parentElement: Dynamic = currentTarget.parentElement,
     ownerDocument: Dynamic = currentTarget.ownerDocument,
-    value: Dynamic = (0, asElement)(ownerDocument.activeElement);
+    value: Dynamic = asElement(ownerDocument.activeElement);
   if (
     parentElement === null ||
     value === null ||
@@ -301,23 +301,23 @@ export {
 };
 export function installCdsComponentsTextLink(): () => void {
   return () => {
-    initializeComponentsTextLink = (0, initializeOnce)((): Dynamic => {
+    initializeComponentsTextLink = initializeOnce((): Dynamic => {
       "use client";
 
-      (0, initializeClassNames)();
-      (0, initializeSheetsStyles_2)();
-      (0, initializeCdsLinks)();
-      (0, initializeCdsLinks_2)();
-      (0, initializeLinkRouter)();
-      (0, initializeDomRefComposition_5)();
-      (0, initializeComponentsIcon_2)();
-      (0, initializeComponentsCounter_6)();
-      reactComponentsTextLink = (0, toModuleNamespace)(
-        (0, load_react)(),
+      initializeClassNames();
+      initializeSheetsStyles_2();
+      initializeCdsLinks();
+      initializeCdsLinks_2();
+      initializeLinkRouter();
+      initializeDomRefComposition_5();
+      initializeComponentsIcon_2();
+      initializeComponentsCounter_6();
+      reactComponentsTextLink = toModuleNamespace(
+        load_react(),
       );
-      (0, initializeNpm_clsx_xh)();
-      jsxComponentsTextLink = (0, toModuleNamespace)(
-        (0, load_react_jsx_runtime)(),
+      initializeNpm_clsx_xh();
+      jsxComponentsTextLink = toModuleNamespace(
+        load_react_jsx_runtime(),
       );
       ComponentsTextLinkClassNames = "cds-reset cds-text-link";
       ComponentsTextLinkClassNames_2 = "cds-text-link-underline";
@@ -353,9 +353,9 @@ export function installCdsComponentsTextLink(): () => void {
               !(
                 value &&
                 !(0, reactComponentsTextLink.isValidElement)(render) &&
-                (0, isBlockedHref)(
+                isBlockedHref(
                   props.href,
-                  (0, sanitizeHref)(props.href),
+                  sanitizeHref(props.href),
                 )
               )
                 ? external
@@ -367,32 +367,32 @@ export function installCdsComponentsTextLink(): () => void {
               ? (props.rel ??
                 (value4 &&
                 value5 !== undefined &&
-                !(0, isNewBrowsingContext)(value5)
-                  ? (0, getLinkRel)(props.href, value5)
+                !isNewBrowsingContext(value5)
+                  ? getLinkRel(props.href, value5)
                   : undefined))
               : undefined,
             value7: Dynamic = (0, reactComponentsTextLink.useId)(),
             value8: Dynamic = (
               <span id={value7} hidden={true} className={"sr-only"}>
-                {(0, useLabel)("opensInNewTab", "(opens in new tab)")}
+                {useLabel("opensInNewTab", "(opens in new tab)")}
               </span>
             ),
             value9: Dynamic =
               icon || (value4 === "with-icon" ? "ArrowUpRight" : undefined),
             value10: Dynamic = !!value9,
-            value11: Dynamic = `${(0, cn)(value10 ? (0, npm_clsx_Ea)(ComponentsTextLinkCss_2, icon ? "gap-[0.25em]" : "gap-0") : ComponentsTextLinkCss, value3 && ComponentsTextLinkClassNames_3)}`,
+            value11: Dynamic = `${cn(value10 ? npm_clsx_Ea(ComponentsTextLinkCss_2, icon ? "gap-[0.25em]" : "gap-0") : ComponentsTextLinkCss, value3 && ComponentsTextLinkClassNames_3)}`,
             value12: Dynamic = value10 ? (
               <jsxComponentsTextLink.Fragment>
-                {iconPosition === "start" && ((0, TextLinkIcon)(value9))}
+                {iconPosition === "start" && (TextLinkIcon(value9))}
                 <span
-                  className={(0, npm_clsx_Ea)(
+                  className={npm_clsx_Ea(
                     ComponentsTextLinkClassNamesAlias,
                     value3 && ComponentsTextLinkClassNames_4,
                   )}
                 >
                   {children}
                 </span>
-                {iconPosition === "end" && ((0, TextLinkIcon)(value9))}
+                {iconPosition === "end" && (TextLinkIcon(value9))}
                 {value4 && (value8)}
               </jsxComponentsTextLink.Fragment>
             ) : value4 ? (
@@ -403,7 +403,7 @@ export function installCdsComponentsTextLink(): () => void {
             ) : (
               children
             ),
-            value13: Dynamic = (0, cn)(
+            value13: Dynamic = cn(
               value11,
               "cursor-pointer",
               className,
@@ -425,7 +425,7 @@ export function installCdsComponentsTextLink(): () => void {
               render={render}
               body={value12}
               className={value13}
-              actionClassName={(0, cn)(
+              actionClassName={cn(
                 value11,
                 value14 ? "cursor-default opacity-disabled" : "cursor-pointer",
                 className,
@@ -447,14 +447,14 @@ export function installCdsComponentsTextLink(): () => void {
       );
       TextLink.displayName = "TextLink";
     });
-    initializeComponentsTextLink_2 = (0, initializeOnce)(
+    initializeComponentsTextLink_2 = initializeOnce(
       (): Dynamic => {
         "use client";
 
-        (0, initializeHooksLayoutEffect)();
-        (0, initializeSheetsKeyboardViewport)();
-        reactComponentsTextLink_2 = (0, toModuleNamespace)(
-          (0, load_react)(),
+        initializeHooksLayoutEffect();
+        initializeSheetsKeyboardViewport();
+        reactComponentsTextLink_2 = toModuleNamespace(
+          load_react(),
         );
         ComponentsTextLinkConstant = 8;
         ComponentsTextLinkCss_3 = `max(${ComponentsTextLinkConstant}px, env(safe-area-inset-bottom, 0px))`;

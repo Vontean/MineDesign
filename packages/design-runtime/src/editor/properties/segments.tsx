@@ -43,7 +43,7 @@ function PropertySegments({
       (value2 && input.value === inherited ? " (" + inheritedHint + ")" : "");
   return (
     <span
-      className={(0, joinClassNames)(
+      className={joinClassNames(
         "block min-w-0 flex-1",
         compact
           ? ChromePanelCloseClassNames_2
@@ -83,7 +83,7 @@ function PropertySegments({
                       <span
                         role={"img"}
                         aria-label={input.label}
-                        className={(0, joinClassNames)(
+                        className={joinClassNames(
                           "inline-flex",
                           vertical && "rotate-90",
                         )}
@@ -174,13 +174,13 @@ export {
 };
 export function installEditorPropertiesSegments(): () => void {
   return () => {
-    reactPropertiesSegments = (0, toModuleNamespace)(
-      (0, load_react)(),
+    reactPropertiesSegments = toModuleNamespace(
+      load_react(),
       1,
     );
-    (0, initializeCdsIndex)();
-    jsxPropertiesSegments = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    initializeCdsIndex();
+    jsxPropertiesSegments = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
     PropertiesSegmentsSideCornerConfig = {

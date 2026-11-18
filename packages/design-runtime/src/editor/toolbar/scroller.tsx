@@ -45,7 +45,7 @@ function ToolbarScrollPaddle({
     <div
       data-tb-paddle={""}
       onClick={(input?: Dynamic): Dynamic => onPress(input.detail === 0)}
-      className={(0, joinClassNames)(
+      className={joinClassNames(
         ToolbarScrollerClassNames,
         dir === -1 ? "left-0" : "right-0",
       )}
@@ -77,7 +77,7 @@ function ToolbarScroller({
     [value5, value6]: Dynamic = (0, reactCanvasMeasurements.useState)(
       false,
     ),
-    value7: Dynamic = (0, useTouchToolbar)(),
+    value7: Dynamic = useTouchToolbar(),
     value8: Dynamic = (0, reactCanvasMeasurements.useRef)(undefined),
     value9: Dynamic = (0, reactCanvasMeasurements.useRef)(false),
     value10: Dynamic = (0, reactCanvasMeasurements.useRef)(false);
@@ -112,7 +112,7 @@ function ToolbarScroller({
     ) {
       let value16: Dynamic = value15 === current2.lastElementChild;
       if (!(value16 ? value14 : value13)) {
-        let value17: Dynamic = (0, getFocusableElements)(current);
+        let value17: Dynamic = getFocusableElements(current);
         value10.current = true;
         try {
           for (let value18 of (value16
@@ -125,7 +125,7 @@ function ToolbarScroller({
               }),
               !value15.contains(current.ownerDocument.activeElement))
             ) {
-              (0, clearEscapeReleaseSuppression)();
+              clearEscapeReleaseSuppression();
               break;
             }
         } finally {
@@ -147,7 +147,7 @@ function ToolbarScroller({
         cancelAnimationFrame(index);
         ancestor &&
           (index = requestAnimationFrame(
-            (): Dynamic => (0, updateToolbarPinnedWords)(ancestor),
+            (): Dynamic => updateToolbarPinnedWords(ancestor),
           ));
       });
     observer.observe(current);

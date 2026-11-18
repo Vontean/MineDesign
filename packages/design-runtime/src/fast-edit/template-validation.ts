@@ -55,12 +55,12 @@ function splitCssDeclarations_2(style?: Dynamic): Dynamic {
 }
 function parseFastEditTemplate(html?: Dynamic): Dynamic {
   let template: Dynamic = (document as Dynamic).createElement("template");
-  template.innerHTML = (0, toParserHtml)(html);
+  template.innerHTML = toParserHtml(html);
   return template;
 }
 function findForbiddenTemplateMarkup(html?: Dynamic): Dynamic {
   let forbiddenMarkup: Dynamic =
-    (0, findForbiddenTemplateTag)(html) ??
+    findForbiddenTemplateTag(html) ??
     (/<\/?x-dc/i.test(html)
       ? "<x-dc>"
       : /<noscript/i.test(html)
@@ -83,7 +83,7 @@ function* inspectTemplateElementNames(
     (yield ["an element named " + element.localName, element.localName]);
   for (let value of element.attributes as Dynamic) {
     let value2: Dynamic = value.name.startsWith(ScCamelValue)
-      ? (0, kebabToCamelCase)(
+      ? kebabToCamelCase(
           value.name.slice(ScCamelValue.length),
         )
       : value.name;
@@ -256,16 +256,16 @@ function validateArtboardTemplateReplacement(
           }
         : {}),
     }),
-    region: Dynamic = (0, parseDcHtmlDocument)(documentHtml);
+    region: Dynamic = parseDcHtmlDocument(documentHtml);
   if (region === null) return failure("not_template", "no x-dc", "no_region");
   if (/<\/?x-dc/i.test(templateHtml) || /data-dc-script/i.test(templateHtml))
     return failure("outside", "scaffold", "scaffold");
-  let value: Dynamic = (0, replaceDcTemplate)(
+  let value: Dynamic = replaceDcTemplate(
       documentHtml,
       region,
       templateHtml,
     ),
-    value2: Dynamic = (0, parseDcHtmlDocument)(value);
+    value2: Dynamic = parseDcHtmlDocument(value);
   if (value2 === null) return failure("outside", "unparsable", "unparsable");
   let value3: Dynamic = documentHtml.slice(0, region.templateStart),
     value4: Dynamic = documentHtml.slice(region.templateEnd);
@@ -297,8 +297,8 @@ function validateArtboardTemplateReplacement(
   )
     return failure("outside", "script", "script");
   if (
-    (0, getDcPropsJson)(value) !==
-    (0, getDcPropsJson)(documentHtml)
+    getDcPropsJson(value) !==
+    getDcPropsJson(documentHtml)
   )
     return failure("outside", "props", "props");
   try {
@@ -353,7 +353,7 @@ export function installFastEditTemplateValidation(): () => void {
     MAX_FAST_EDIT_TEMPLATE_ELEMENTS = 5e3;
     MAX_FAST_EDIT_TEMPLATE_DEPTH = 100;
     serializeFastEditTemplate = (input?: Dynamic): Dynamic =>
-      (0, fromParserHtml)(input.innerHTML);
+      fromParserHtml(input.innerHTML);
     fastEditTemplateFailure = (
       input?: Dynamic,
       options?: Dynamic,
@@ -427,7 +427,7 @@ export function installFastEditTemplateValidation(): () => void {
           .some(
             (input?: Dynamic): Dynamic =>
               MULTICOLUMN_PROPERTY_PATTERN.test(
-                (0, camelToKebabCss)(
+                camelToKebabCss(
                   input.slice(0, Math.max(0, input.indexOf(":"))).trim(),
                 ).toLowerCase(),
               ),

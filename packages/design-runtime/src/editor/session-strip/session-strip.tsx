@@ -32,13 +32,13 @@ function refreshSessionStripPointers(): Dynamic {
   SessionStripPointerStateCurrentState !== null &&
     clearTimeout(SessionStripPointerStateCurrentState);
   set_SessionStripPointerStateCurrentState(null);
-  let value: Dynamic = (0, SessionStripPointerStateNow)(),
+  let value: Dynamic = SessionStripPointerStateNow(),
     index: Dynamic = 0;
   for (let value2 of SessionStripPointerStateSubscribers as Dynamic) {
     let value3: Dynamic =
       value === null
         ? 0
-        : (0, sessionStripPointerDeadline)(value2, value);
+        : sessionStripPointerDeadline(value2, value);
     value !== null && value < value3
       ? (value2.setAttribute("data-mc-through", String(Math.ceil(value3))),
         (index = Math.max(index, value3)))
@@ -70,14 +70,14 @@ function SessionStrip({
 }: Dynamic): Dynamic {
   useUiLocale();
   (0, reactSessionStripPointerState.useEffect)(
-    (): Dynamic => (0, observeSessionStripPointers)(document),
+    (): Dynamic => observeSessionStripPointers(document),
     [],
   );
   let value: Dynamic = (0, reactSessionStripPointerState.useRef)(
       null,
     ),
     value2: Dynamic = (0, reactSessionStripPointerState.useRef)(null),
-    value3: Dynamic = (0, useTouchToolbar)();
+    value3: Dynamic = useTouchToolbar();
   (0, reactSessionStripPointerState.useLayoutEffect)((): Dynamic => {
     let current: Dynamic = value.current;
     if (current !== null) {
@@ -93,7 +93,7 @@ function SessionStrip({
   }, []);
   (0, reactSessionStripPointerState.useLayoutEffect)((): Dynamic => {
     value.current !== null &&
-      (0, recordSessionStripOcclusion)(
+      recordSessionStripOcclusion(
         value.current,
         coversSelection === true,
       );
@@ -159,13 +159,13 @@ function SessionStrip({
           }}
           onMouseDownCapture={(event?: Dynamic): Dynamic => {
             event.currentTarget.contains(event.target) &&
-              (0, suppressSessionStripClick)(event) &&
+              suppressSessionStripClick(event) &&
               (event.preventDefault(), event.stopPropagation());
             onMouseDownCapture?.(event);
           }}
           onClickCapture={(event?: Dynamic): Dynamic => {
             event.currentTarget.contains(event.target) &&
-              (0, suppressSessionStripClick)(event) &&
+              suppressSessionStripClick(event) &&
               (event.preventDefault(), event.stopPropagation());
             onClickCapture?.(event);
           }}
@@ -174,7 +174,7 @@ function SessionStrip({
               event.preventDefault();
             onMouseDown?.(event);
           }}
-          className={(0, joinClassNames)(
+          className={joinClassNames(
             "z-selection flex items-center",
             surface === "popover"
               ? "[--mc-group-gap:2px] [--mc-strip-gap:4px] [--mc-strip-pad:5px] pointer-coarse:rounded-xl pointer-coarse:[--mc-group-gap:8px] pointer-coarse:[--mc-strip-gap:8px] pointer-coarse:[--mc-strip-pad:6px] [&_[data-mc-divider]]:mx-0"
@@ -199,7 +199,7 @@ function SessionStrip({
               );
             onScroll?.(input);
           }}
-          className={(0, joinClassNames)(
+          className={joinClassNames(
             "flex min-w-0 items-center gap-[var(--mc-strip-gap)] rounded-[inherit] p-[var(--mc-strip-pad)]",
             wrap
               ? "flex-wrap"
@@ -257,7 +257,7 @@ function SessionStripGroup({
   return (
     <span
       data-mc-group={""}
-      className={(0, joinClassNames)(
+      className={joinClassNames(
         "flex items-center gap-y-1",
         fields ? "gap-x-1" : "gap-x-[var(--mc-group-gap,4px)]",
         wrap && value && "max-w-full shrink-0 flex-wrap",
@@ -321,7 +321,7 @@ export function installEditorSessionStripSessionStrip(): () => void {
             ) ?? "top",
           value4: Dynamic =
             ariaLabel ?? (typeof children == "string" ? children : undefined),
-          value5: Dynamic = (0, useDisabledToolbarItem)({
+          value5: Dynamic = useDisabledToolbarItem({
             disabled: value2 && title !== undefined,
             name: value4 ?? title ?? "",
             reason: title,
@@ -332,7 +332,7 @@ export function installEditorSessionStripSessionStrip(): () => void {
           value6: Dynamic = (0, reactSessionStripPointerState.useRef)(
             null,
           );
-        (0, useToolbarPress)(value6, value2 && title !== undefined);
+        useToolbarPress(value6, value2 && title !== undefined);
         let value7: Dynamic = (0,
           reactSessionStripPointerState.useId)(),
           value8: Dynamic =
@@ -350,7 +350,7 @@ export function installEditorSessionStripSessionStrip(): () => void {
             "aria-expanded": ariaExpanded,
             "aria-describedby": value9,
             onMouseDown: callback,
-            className: (0, joinClassNames)("shrink-0", className),
+            className: joinClassNames("shrink-0", className),
             ...props,
             "data-mc-item": "",
             ...value5.inner,

@@ -13,10 +13,10 @@ function refreshDesignSystemFileOverlay(
   options?: Dynamic,
   context?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = (0, parseInstalledDesignSystems)(input),
+  let value: Dynamic = parseInstalledDesignSystems(input),
     entries: Dynamic = new Map(
       value.map((input2?: Dynamic): Dynamic => {
-        let value5: Dynamic = (0, designSystemTokensPath)(
+        let value5: Dynamic = designSystemTokensPath(
             input2.namespace,
           ),
           value6: Dynamic = value5.slice(ProjectValue.length);
@@ -40,7 +40,7 @@ function refreshDesignSystemFileOverlay(
   )
     return value3.doc;
   let value4: Dynamic =
-    (0, readInstalledDesignSystemTokens)(
+    readInstalledDesignSystemTokens(
       input,
       (input2?: Dynamic): Dynamic => entries.get(input2),
       context,

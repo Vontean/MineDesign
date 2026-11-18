@@ -18,20 +18,20 @@ function getElementInspector(
   input?: Dynamic,
   options: Dynamic = {},
 ): Dynamic {
-  let value: Dynamic = (0, expandCssDeclarations)(
-      (0, parseStyleDeclarations)(input.authoredStyle),
+  let value: Dynamic = expandCssDeclarations(
+      parseStyleDeclarations(input.authoredStyle),
     ),
     entries: Dynamic = new Map();
   for (let value26 of value as Dynamic)
     entries.set(value26.prop, value26.value);
   let callback: Dynamic = (input2?: Dynamic): Dynamic =>
-      input.computed[(0, cssPropertyToComputedKey)(input2)] ?? "",
+      input.computed[cssPropertyToComputedKey(input2)] ?? "",
     callback2: Dynamic = (input2?: Dynamic): Dynamic => {
       if (!input2 || !input2.includes("var("))
         return {
           value: input2,
         };
-      let value26: Dynamic = (0, replaceCssVariables)(
+      let value26: Dynamic = replaceCssVariables(
         input2,
         input.varValues ?? {},
       );
@@ -45,7 +45,7 @@ function getElementInspector(
           };
     },
     callback3: Dynamic = (input2?: Dynamic): Dynamic => {
-      let value26: Dynamic = (0, getPropertySpecification)(input2);
+      let value26: Dynamic = getPropertySpecification(input2);
       return {
         prop: input2,
         label: value26?.label ?? input2,
@@ -116,7 +116,7 @@ function getElementInspector(
     flag: Dynamic = false;
   if (input.tag === "a") {
     let callback10: Dynamic = (input2?: Dynamic): Dynamic => {
-        let kind: Dynamic = (0, classifyStyleValue)(input2).kind;
+        let kind: Dynamic = classifyStyleValue(input2).kind;
         return kind === "template" || kind === "var";
       },
       target: Dynamic = input.attrs.target,
@@ -307,7 +307,7 @@ function getElementInspector(
     callback5: Dynamic = (input2?: Dynamic): Dynamic =>
       options.cssPaint?.has(input2)
         ? input2
-        : (0, formatPropertyKey)(
+        : formatPropertyKey(
             input2,
             (input3?: Dynamic): Dynamic => entries.get(input3),
           );
@@ -342,7 +342,7 @@ function getElementInspector(
         ...(value5 ? [] : [callback10("fill", "Fill", "color")]),
         callback10("stroke", value5 ? "Color" : "Stroke", "color"),
         callback10("stroke-width", "Thickness", "number"),
-        ...(0, arrowHeadPropertyRows)(input),
+        ...arrowHeadPropertyRows(input),
       ],
     });
   }
@@ -398,7 +398,7 @@ function getElementInspector(
     ((input.tag === "input" && !value10) || input.tag === "textarea") &&
       items5.push(callback10("placeholder", "Placeholder", "string"));
     input.tag === "input" &&
-      (0, classifyStyleValue)(input.attrs.type ?? "").kind ===
+      classifyStyleValue(input.attrs.type ?? "").kind ===
         "literal" &&
       values2.add("type");
     if (value10) {
@@ -406,7 +406,7 @@ function getElementInspector(
         value26: Dynamic =
           checked == null ||
           checked === "" ||
-          (0, classifyStyleValue)(checked).kind === "literal";
+          classifyStyleValue(checked).kind === "literal";
       value26 && values2.add("checked");
       value26 &&
         items5.push({
@@ -501,7 +501,7 @@ function getElementInspector(
     items2 = [
       callback10("stroke", value28 ? "Stroke" : "Color", "color"),
       callback10("stroke-width", "Thickness", "number"),
-      ...(0, arrowHeadPropertyRows)(input),
+      ...arrowHeadPropertyRows(input),
       ...(value28 ? [callback10("fill", "Fill", "color")] : []),
       callback10("stroke-linecap", "Cap", "select", [
         "butt",
@@ -544,13 +544,13 @@ function getElementInspector(
       "min-height",
       "max-height",
     ]),
-    value16: Dynamic = (0, hasTextBackgroundClip)(
+    value16: Dynamic = hasTextBackgroundClip(
       (input2?: Dynamic): Dynamic => entries.get(input2),
     ),
     value17: Dynamic =
       !value6 &&
       (value16 ||
-        (0, hasTextBackgroundClip)(
+        hasTextBackgroundClip(
           (input2?: Dynamic): Dynamic =>
             input2 === "background-clip"
               ? input.computed.backgroundClip
@@ -558,7 +558,7 @@ function getElementInspector(
         )),
     value18: Dynamic = (entries.get("color") ?? "").trim().toLowerCase(),
     value19: Dynamic = value17
-      ? (0, sanitizeCssBackground)(
+      ? sanitizeCssBackground(
           input.computed.backgroundImage ?? "",
         )
       : "transparent",
@@ -578,11 +578,11 @@ function getElementInspector(
           }
         : {}),
       size: entries.get("background-size") ?? null,
-      ...((0, isTransparentColor)(value18)
+      ...(isTransparentColor(value18)
         ? {
             transparentInk: "inline",
           }
-        : (0, isTransparentColor)(
+        : isTransparentColor(
               (input.computed.color ?? "").trim().toLowerCase(),
             )
           ? {
@@ -636,18 +636,18 @@ function getElementInspector(
         let value27: Dynamic =
             callback2(entries.get("font-family") ?? null).value ?? "",
           value28: Dynamic =
-            (0, classifyStyleValue)(value27).kind === "literal" &&
+            classifyStyleValue(value27).kind === "literal" &&
             !/^(?:inherit|initial|unset|revert|revert-layer)\b/i.test(
               value27.trim(),
             )
               ? value27
               : "",
-          value29: Dynamic = (0, firstFontFamily)(
+          value29: Dynamic = firstFontFamily(
             value28 || input.computed.fontFamily || "",
           );
-        value26.faces = (0, resolveFontVariants)(
+        value26.faces = resolveFontVariants(
           value29,
-          (0, getAvailableFontVariants)(
+          getAvailableFontVariants(
             input.fontFaces ?? [],
             value29,
           ),
@@ -699,7 +699,7 @@ function getElementInspector(
         value27: Dynamic =
           input2.companionValue != null &&
           input2.companionValue !== "" &&
-          !(value26 && (0, getPropertySpecification)(value26));
+          !(value26 && getPropertySpecification(value26));
       (callback8(input2) || value27) &&
         items3.push({
           ...input2,
@@ -1031,7 +1031,7 @@ function getElementInspector(
               input2,
             ) &&
             !(value17 && /^background(?:-color|-image)?$/.test(input2)) &&
-            (0, hasVisiblePaint)(callback2(input3).value),
+            hasVisiblePaint(callback2(input3).value),
         ),
       value28: Dynamic = input.textLeaf ?? input.text != null,
       value29: Dynamic =
@@ -1155,8 +1155,8 @@ function getElementInspector(
         value: value27,
         disabled: input.disabled,
       });
-  (0, orderInspectorSections)(items);
-  (0, resolveInspectorInheritedValues)(
+  orderInspectorSections(items);
+  resolveInspectorInheritedValues(
     items,
     items4,
     input.classSources,

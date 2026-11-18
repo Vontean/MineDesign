@@ -52,7 +52,7 @@ function selectionUngroupRefusal(
   options?: Dynamic,
 ): Dynamic {
   let value: Dynamic;
-  for (let value2 of (0, selectedRootElementIds)(input, [
+  for (let value2 of selectedRootElementIds(input, [
     ...options,
   ]) as Dynamic) {
     let value3: Dynamic = ungroupElementRefusal(input, value2);
@@ -78,11 +78,11 @@ function ungroupModelElement(
       (value3.position !== "flow" &&
         !value3.sameSpace &&
         !value3.transformed &&
-        (0, restoreUngroupedLayout)(
+        restoreUngroupedLayout(
           input,
           value2,
           value3,
-          (0, ungroupedElementRect)(input, value2, value3),
+          ungroupedElementRect(input, value2, value3),
           0,
           0,
         ),

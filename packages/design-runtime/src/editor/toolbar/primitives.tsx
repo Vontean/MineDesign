@@ -32,7 +32,7 @@ function ToolbarCaret({ inherit: input = false }: Dynamic = {}): Dynamic {
     <Icon
       name={"CaretDown"}
       size={"xs"}
-      className={(0, joinClassNames)(
+      className={joinClassNames(
         "-mx-0.5 shrink-0",
         !input && "text-fg-muted",
       )}
@@ -227,7 +227,7 @@ function normalizeToolbarTooltip(
 }
 function useToolbarItemAccessibility(input?: Dynamic): Dynamic {
   let value: Dynamic = (0, reactPlatformFrameHostBridge.useId)(),
-    value2: Dynamic = (0, useAppleKeyboard)(),
+    value2: Dynamic = useAppleKeyboard(),
     value3: Dynamic = !input.disabled,
     value4: Dynamic = input.tip !== "" && !input.name.includes(input.tip),
     value5: Dynamic =
@@ -236,7 +236,7 @@ function useToolbarItemAccessibility(input?: Dynamic): Dynamic {
         : undefined,
     value6: Dynamic =
       value3 && input.shortcut !== undefined
-        ? (0, parseSingleShortcut)(input.shortcut, value2)
+        ? parseSingleShortcut(input.shortcut, value2)
         : undefined,
     value7: Dynamic =
       value3 && input.descriptionSuffix ? input.descriptionSuffix : undefined,
@@ -297,8 +297,8 @@ export {
 };
 export function installEditorToolbarPrimitives(): () => void {
   return () => {
-    jsxToolbarPrimitives = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    jsxToolbarPrimitives = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
     ToolbarPrimitivesContext = (0,
@@ -444,7 +444,7 @@ export function installEditorToolbarPrimitives(): () => void {
             tabIndex={value2 ? 0 : -1}
             {...value7.props}
             data-tb-icon={value10 ? "" : undefined}
-            className={(0, joinClassNames)(
+            className={joinClassNames(
               "relative inline-flex shrink-0 rounded align-top outline-none focus-visible:outline-hidden focus-visible:shadow-focus",
               className,
             )}
@@ -475,8 +475,8 @@ export function installEditorToolbarPrimitives(): () => void {
         </Tooltip>
       );
     });
-    reactToolbarPrimitives = (0, toModuleNamespace)(
-      (0, load_react)(),
+    reactToolbarPrimitives = toModuleNamespace(
+      load_react(),
       1,
     );
     ToolbarPrimitivesMediaQuery = "(pointer: coarse)";

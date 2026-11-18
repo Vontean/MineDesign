@@ -65,7 +65,7 @@ function filesPortExtensions<Port extends Files.BrowserFilesPort>(
 function validateFilePath(path: string): string | undefined {
   if (
     path === "" ||
-    (0, encodeFileUtf8)(path).length > MAX_FILE_PATH_UTF8_BYTES
+    encodeFileUtf8(path).length > MAX_FILE_PATH_UTF8_BYTES
   ) {
     return uiMessage("design-system.paths.itsNameIsEmptyOr");
   }
@@ -242,7 +242,7 @@ function filePublishEncodedBytes(input: Files.FilePublishInput) {
   }
   let content = filePublishContent(input);
   if (typeof content === "string") {
-    return (0, encodeFileUtf8)(content).length;
+    return encodeFileUtf8(content).length;
   } else {
     return Math.ceil(content.size / 3) * 4;
   }
@@ -253,7 +253,7 @@ function filePublishRawBytes(input: Files.FilePublishInput) {
   }
   let content = filePublishContent(input);
   if (typeof content === "string") {
-    return (0, encodeFileUtf8)(content).length;
+    return encodeFileUtf8(content).length;
   } else {
     return content.size;
   }
@@ -283,7 +283,7 @@ async function fileContentBytes(
   content: Files.FileContents,
 ): Promise<Uint8Array<ArrayBuffer>> {
   if (typeof content === "string") {
-    return (0, encodeFileUtf8)(content);
+    return encodeFileUtf8(content);
   } else {
     return new Uint8Array(await content.arrayBuffer());
   }
@@ -297,7 +297,7 @@ async function hashFilePublishEntries(
     if (value3 === null || typeof value3 === "string") {
       continue;
     }
-    hashes[value] = await (0, sha256)(
+    hashes[value] = await sha256(
       await fileContentBytes(value3.content),
     );
   }
@@ -586,7 +586,7 @@ function removeUnpublishableMigrationFiles(
       (type !== undefined && isPrivateProjectFile(type, value)
         ? uiMessage("design-system.paths.thisNameIsUsedBy")
         : undefined) ??
-      ((0, isPublishableFilePath)(value)
+      (isPublishableFilePath(value)
         ? filePublishRejectionReason(value, value2)
         : undefined);
     if (value3 === undefined) {

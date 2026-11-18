@@ -164,7 +164,7 @@ async function captureClipboardSvg(
 function svgCopyErrorMessage(input?: Dynamic): Dynamic {
   let value: Dynamic = input instanceof Error ? input.message : "";
   return /^(executeJavaScript timed out|preview is blocked)/.test(value)
-    ? (0, describeCaptureFailure)(input)
+    ? describeCaptureFailure(input)
     : AccessibilityAnnouncementsLabel_4;
 }
 async function writeClipboardSvg(

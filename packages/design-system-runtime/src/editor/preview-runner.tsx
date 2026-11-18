@@ -469,8 +469,8 @@ export {
 };
 export function installEditorPreviewRunner(): () => void {
   return () => {
-    reactPreviewComponents = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    reactPreviewComponents = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
     PREVIEW_PROJECT_PREFIX = "project/";

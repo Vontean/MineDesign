@@ -212,7 +212,7 @@ function validateSourceOffset(
     )
       return false;
     let value7: Dynamic = (document as Dynamic).createElement("template");
-    value7.innerHTML = (0, toParserHtml)(items);
+    value7.innerHTML = toParserHtml(items);
     let items3: Dynamic = [...value6[0].querySelectorAll("*")];
     if (
       HtmlDcDocumentJoin(value7.content.querySelectorAll("*")) !==

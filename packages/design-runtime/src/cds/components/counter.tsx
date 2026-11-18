@@ -87,11 +87,11 @@ function Alert({
   children: children,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic = (0, useLabel)("dismiss", "Dismiss"),
+  let value: Dynamic = useLabel("dismiss", "Dismiss"),
     value2: Dynamic = dismissLabel ?? value,
-    value3: Dynamic = (0, useDensity)(),
+    value3: Dynamic = useDensity(),
     state: Dynamic = {
-      "data-step": (0, getControlSizeRank)(
+      "data-step": getControlSizeRank(
         value3,
         ComponentsCounterComfortableCompactConfig[value3],
       ),
@@ -128,7 +128,7 @@ function Alert({
     (!value6 || !value21) && (value18.current = 0);
     if (!value21) return;
     let current: Dynamic = value15.current,
-      value27: Dynamic = (0, getResizeObserver)(current);
+      value27: Dynamic = getResizeObserver(current);
     if (current === null || value27 === undefined) return;
     let callback2: Dynamic = (): Dynamic => {
       if (value23) {
@@ -165,7 +165,7 @@ function Alert({
       <span
         ref={value17}
         {...state}
-        className={(0, cn)(
+        className={cn(
           "flex shrink-0 items-center gap-xs",
           !value22 && "h-[1lh]",
           value23 && "basis-full",
@@ -190,7 +190,7 @@ function Alert({
       data-testid={dataTestid}
       role={value10 === "none" ? undefined : value10}
       ref={value15}
-      className={(0, cn)(
+      className={cn(
         "flex",
         value25 ? "items-start" : "items-center",
         "gap-xs py-md font-sans text-body font-normal",
@@ -202,7 +202,7 @@ function Alert({
       )}
     >
       {icon !== null && !value23 && (<span
-          className={(0, cn)(
+          className={cn(
             value25 ? "flex min-h-[1lh] shrink-0 items-center" : "shrink-0",
             ComponentsCounterNeutralWarningDangerConfig_2[value4],
             value6 && "ms-[4px] -me-[4px]",
@@ -214,7 +214,7 @@ function Alert({
             />)}
         </span>)}
       {value9 ? (<div
-          className={(0, cn)(
+          className={cn(
             "flex min-w-0 flex-1 flex-col",
             value5 && ComponentsCounterGlyphTextConfig[value5],
           )}
@@ -255,7 +255,7 @@ function Alert({
             </ComponentsCollapsibleRootTriggerPanelConfig.Panel>
           </ComponentsCollapsibleRootTriggerPanelConfig.Root>
         </div>) : (<div
-          className={(0, cn)(
+          className={cn(
             "flex min-w-0 flex-wrap",
             value20 ? "items-center" : "items-start",
             "gap-y-sm gap-x-md flex-1",
@@ -311,16 +311,16 @@ function LinkElement({
 }: Dynamic): Dynamic {
   useUiLocale();
   let value: Dynamic = (0, reactComponentsCounter_4.isValidElement)(render),
-    value2: Dynamic = (0, useLinkProps)({
+    value2: Dynamic = useLinkProps({
       ...linkInput,
-      ...(0, pickRouterOptions)(rest),
+      ...pickRouterOptions(rest),
       href: value ? undefined : linkInput.href,
     }),
     value3: Dynamic = omitProperties(rest, [
       ...ComponentsCounterHrefRouterOptionsTargetValues,
       "disabled",
     ]),
-    value4: Dynamic = (0, npm_useRender_LL)({
+    value4: Dynamic = npm_useRender_LL({
       enabled: value,
       render: render,
       ref: forwardedRef,
@@ -369,7 +369,7 @@ function LinkElement({
 }
 function TextLinkIcon(input?: Dynamic): Dynamic {
   useUiLocale();
-  return (0, isIconName)(input) ? (
+  return isIconName(input) ? (
     <Icon
       name={input}
       size={"sm"}
@@ -424,26 +424,26 @@ export {
 };
 export function installCdsComponentsCounter(): () => void {
   return () => {
-    initializeComponentsCounter = (0, initializeOnce)((): Dynamic => {
-      reactComponentsCounter = (0, toModuleNamespace)(
-        (0, load_react)(),
+    initializeComponentsCounter = initializeOnce((): Dynamic => {
+      reactComponentsCounter = toModuleNamespace(
+        load_react(),
       );
       ComponentsCounterForValue = Symbol.for("react.memo");
       ComponentsCounterForValue_2 = Symbol.for("react.forward_ref");
     });
-    initializeComponentsCounter_2 = (0, initializeOnce)((): Dynamic => {
+    initializeComponentsCounter_2 = initializeOnce((): Dynamic => {
       ComponentsCounterClassNames = "rounded-composer";
     });
-    initializeComponentsCounter_3 = (0, initializeOnce)((): Dynamic => {
+    initializeComponentsCounter_3 = initializeOnce((): Dynamic => {
       "use client";
 
-      (0, initializeClassNames)();
-      (0, initializeCdsRoot)();
-      reactComponentsCounter_2 = (0, toModuleNamespace)(
-        (0, load_react)(),
+      initializeClassNames();
+      initializeCdsRoot();
+      reactComponentsCounter_2 = toModuleNamespace(
+        load_react(),
       );
-      jsxComponentsCounter = (0, toModuleNamespace)(
-        (0, load_react_jsx_runtime)(),
+      jsxComponentsCounter = toModuleNamespace(
+        load_react_jsx_runtime(),
       );
       ComponentsCounterNeutralAccentSuccessConfig = {
         neutral: "bg-neutral text-secondary",
@@ -480,7 +480,7 @@ export function installCdsComponentsCounter(): () => void {
                 data-cds={"Counter"}
                 aria-hidden={"true"}
                 {...props}
-                className={(0, cn)(
+                className={cn(
                   "inline-block size-2 shrink-0 rounded-full align-middle",
                   ComponentsCounterNeutralAccentSuccessConfig_2[variant],
                   className,
@@ -495,9 +495,9 @@ export function installCdsComponentsCounter(): () => void {
             <span
               ref={options}
               data-cds={"Counter"}
-              {...(0, getSizeAttribute)(size)}
+              {...getSizeAttribute(size)}
               {...props}
-              className={(0, cn)(
+              className={cn(
                 "inline-flex shrink-0 items-center justify-center align-middle",
                 "h-control-nested min-w-[var(--cds-h-control-nested)] rounded-full",
                 value3.length === 1
@@ -515,7 +515,7 @@ export function installCdsComponentsCounter(): () => void {
       );
       Counter.displayName = "Counter";
     });
-    initializeComponentsCounter_4 = (0, initializeOnce)((): Dynamic => {
+    initializeComponentsCounter_4 = initializeOnce((): Dynamic => {
       ComponentsCounterGlyphTextConfig = {
         glyph: "ml-[6px] compact:ml-[6px] comfortable:ml-[4px]",
         text: "ml-[4px] compact:ml-[4px] comfortable:ml-[2px]",
@@ -537,24 +537,24 @@ export function installCdsComponentsCounter(): () => void {
       };
       ComponentsCounterGlyphValue_3 = ComponentsCounterGlyphTextConfig_4.glyph;
     });
-    initializeComponentsCounter_5 = (0, initializeOnce)((): Dynamic => {
+    initializeComponentsCounter_5 = initializeOnce((): Dynamic => {
       "use client";
 
-      (0, initializeClassNames)();
-      (0, initializeSheetsStyles_2)();
-      (0, initializeCdsRoot)();
-      (0, initializeComponentsIcon_2)();
-      (0, initializeTooltipTrigger_2)();
-      (0, initializeComponentsCollapsible)();
-      (0, initializeButtonButton)();
+      initializeClassNames();
+      initializeSheetsStyles_2();
+      initializeCdsRoot();
+      initializeComponentsIcon_2();
+      initializeTooltipTrigger_2();
+      initializeComponentsCollapsible();
+      initializeButtonButton();
       initializeComponentsCounter();
       initializeComponentsCounter_2();
       initializeComponentsCounter_4();
-      reactComponentsCounter_3 = (0, toModuleNamespace)(
-        (0, load_react)(),
+      reactComponentsCounter_3 = toModuleNamespace(
+        load_react(),
       );
-      jsxComponentsCounter_2 = (0, toModuleNamespace)(
-        (0, load_react_jsx_runtime)(),
+      jsxComponentsCounter_2 = toModuleNamespace(
+        load_react_jsx_runtime(),
       );
       ComponentsCounterComfortableCompactConfig = {
         comfortable: "sm",
@@ -580,18 +580,18 @@ export function installCdsComponentsCounter(): () => void {
         get danger() { return uiMessage("canvas.counter.warning"); },
       };
     });
-    initializeComponentsCounter_6 = (0, initializeOnce)((): Dynamic => {
+    initializeComponentsCounter_6 = initializeOnce((): Dynamic => {
       "use client";
 
-      (0, initializeLinkRouter)();
-      (0, initializeNpm__base_ui_react_SY)();
-      reactComponentsCounter_4 = (0, toModuleNamespace)(
-        (0, load_react)(),
+      initializeLinkRouter();
+      initializeNpm__base_ui_react_SY();
+      reactComponentsCounter_4 = toModuleNamespace(
+        load_react(),
       );
-      jsxComponentsCounter_3 = (0, toModuleNamespace)(
-        (0, load_react_jsx_runtime)(),
+      jsxComponentsCounter_3 = toModuleNamespace(
+        load_react_jsx_runtime(),
       );
-      (0, initializeNpm__base_ui_react_R9e)();
+      initializeNpm__base_ui_react_R9e();
       ComponentsCounterHrefRouterOptionsTargetValues = [
         "href",
         "routerOptions",

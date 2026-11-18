@@ -67,7 +67,7 @@ export function insertHtmlAtTarget(deps: { readonly incrementSessionEpoch: Dynam
               ? Math.max(
                   ...value309.map(
                     (input2?: Dynamic): Dynamic =>
-                      (0, promoteSvgShapeToRoot)(
+                      promoteSvgShapeToRoot(
                         value308.model,
                         input2,
                       ),
@@ -82,7 +82,7 @@ export function insertHtmlAtTarget(deps: { readonly incrementSessionEpoch: Dynam
               : "after",
           redo: Dynamic = value308.redo,
           value313: Dynamic = deps.value101(deps.rootName, options, value308),
-          value314: Dynamic = (0, insertHtmlIntoModel)(
+          value314: Dynamic = insertHtmlIntoModel(
             value308,
             input,
             {
@@ -110,16 +110,16 @@ export function insertHtmlAtTarget(deps: { readonly incrementSessionEpoch: Dynam
               ((deps.value51.current === current2 &&
                 current2?.seq === deps.value50.current) ||
                 (current3?.name === deps.rootName &&
-                  (0, InspectorEditorEvery)(
+                  InspectorEditorEvery(
                     current3.tids,
                     value314,
                   ))) &&
-                (0, setPickerSelection)(value315, value314, deps.rootName);
+                setPickerSelection(value315, value314, deps.rootName);
             }, 60);
         } else
           deps.value49.current?.name === deps.rootName &&
             (value315 &&
-              (0, setPickerSelection)(value315, null, null),
+              setPickerSelection(value315, null, null),
             deps.value50.current++,
             deps.value3(null));
         return value314;
@@ -142,7 +142,7 @@ export async function placeToolElementAtPoint(deps: { readonly drawExitGraceUnti
           return;
         let value309: Dynamic =
             value308 === "arrow"
-              ? (0, arrowDrawingHtml)(
+              ? arrowDrawingHtml(
                   defaultLineLength,
                   0,
                   1,
@@ -155,22 +155,22 @@ export async function placeToolElementAtPoint(deps: { readonly drawExitGraceUnti
             value308 !== "text"
               ? null
               : options === undefined
-                ? (0, beginDeferredTextInput)()
+                ? beginDeferredTextInput()
                 : (context ?? null);
         if (value308 === "text") {
           if (options === undefined && value310 === null) return;
           let value313: Dynamic = deps.value67(),
             value314: Dynamic = value313
-              ? await (0, getPickerFirstTextFont)(value313)
+              ? await getPickerFirstTextFont(value313)
               : null;
           if (!deps.sessionAliveRef.current) {
             value310 !== null &&
-              (0, finishDeferredTextInput)("edit", value310);
+              finishDeferredTextInput("edit", value310);
             return;
           }
           let value315: Dynamic =
             typeof value314 == "string" && value314
-              ? (0, normalizeStyleEdits)([
+              ? normalizeStyleEdits([
                   ["font-family", value314.replace(/"/g, "'")],
                 ])
               : [];
@@ -197,8 +197,7 @@ export async function placeToolElementAtPoint(deps: { readonly drawExitGraceUnti
               value308 === "arrow"
                 ? arrowDrawingHtml
                 : lineDrawingHtml,
-            { dx: value314, dy: value315 }: Dynamic = (0,
-            lineDrawingInset)(rect.w, rect.h);
+            { dx: value314, dy: value315 }: Dynamic = lineDrawingInset(rect.w, rect.h);
           value309 = value313(
             rect.w,
             rect.h,
@@ -225,7 +224,7 @@ export async function placeToolElementAtPoint(deps: { readonly drawExitGraceUnti
         }
         if (value308 === "text") {
           let value313: Dynamic = deps.value67();
-          value313 && (0, notePickerTextInsert)(value313);
+          value313 && notePickerTextInsert(value313);
         }
         let value312: Dynamic = deps.value163(
           value309,
@@ -249,14 +248,14 @@ export async function placeToolElementAtPoint(deps: { readonly drawExitGraceUnti
           let value313: Dynamic = deps.value67(),
             value314: Dynamic =
               value313 && value312 && value312.length > 0 && value310 !== null
-                ? (0, attachDeferredTextSink)(value310, {
+                ? attachDeferredTextSink(value310, {
                     key: (input2?: Dynamic): Dynamic =>
-                      (0, pickerHeldTextKey)(value313, input2),
+                      pickerHeldTextKey(value313, input2),
                     drop: (input2?: Dynamic): Dynamic => {
                       !input2 &&
                         deps.value107.current === value312[0] &&
                         (deps.value107.current = null);
-                      (0, dropPickerInsertedTextEdit)(
+                      dropPickerInsertedTextEdit(
                         value313,
                         input2,
                       );
@@ -265,12 +264,12 @@ export async function placeToolElementAtPoint(deps: { readonly drawExitGraceUnti
                 : null;
           !value313 || !value312 || !value314
             ? (value310 !== null &&
-                (0, finishDeferredTextInput)("edit", value310),
+                finishDeferredTextInput("edit", value310),
               value313 &&
-                !(0, hasDeferredTextSink)() &&
-                (0, dropPickerInsertedTextEdit)(value313, false))
+                !hasDeferredTextSink() &&
+                dropPickerInsertedTextEdit(value313, false))
             : ((deps.value107.current = value312[0]),
-              (0, startPickerInsertedTextEdit)(
+              startPickerInsertedTextEdit(
                 value313,
                 value312[0],
                 deps.rootName,
@@ -287,7 +286,7 @@ export async function placeToolElementAtPoint(deps: { readonly drawExitGraceUnti
             let value314: Dynamic = value313.model.element(input.targetTid),
               value315: Dynamic = deps.value67();
             ((value315
-              ? await (0, inspectPickerSelection)(
+              ? await inspectPickerSelection(
                   value315,
                   input.targetTid,
                   deps.rootName,
@@ -319,19 +318,19 @@ export async function insertImageFilesIntoArtboard(deps: { readonly fileDirector
             dataset.source === "paste" ? "pasted" : "dropped",
           value309: Dynamic = items2.map(
             (input?: Dynamic): Dynamic =>
-              (0, imageHeaderDimensions)(input),
+              imageHeaderDimensions(input),
           ),
           value310: Dynamic = items2.map(
             (input?: Dynamic, options?: Dynamic): Dynamic =>
-              ((0, isSvgFile)(input)
-                ? (0, previewImageFile)(input)
+              (isSvgFile(input)
+                ? previewImageFile(input)
                 : Promise.all([
                     context.sized[options],
                     value309[options],
                   ]).then(
                     ([input2, input3]: Dynamic): Dynamic =>
                       input2
-                        ? (0, previewImageFile)(input, {
+                        ? previewImageFile(input, {
                             sized: true,
                             head: input3,
                           })
@@ -413,7 +412,7 @@ export async function insertImageFilesIntoArtboard(deps: { readonly fileDirector
           return;
         }
         let value318: Dynamic = value311
-            ? (0, relocateSingleElementId)(
+            ? relocateSingleElementId(
                 value307,
                 value317.model,
                 dataset.targetTid,
@@ -436,7 +435,7 @@ export async function insertImageFilesIntoArtboard(deps: { readonly fileDirector
         value319 != null &&
           position !== "into" &&
           value319.parentElement != null &&
-          (0, isDeckStageElement)(value319.parentElement) &&
+          isDeckStageElement(value319.parentElement) &&
           (position = "into");
         let text2: Dynamic =
             "data:image/svg+xml,%3Csvg%20xmlns=%27http://www.w3.org/2000/svg%27%20width=%27320%27%20height=%27200%27%3E%3Crect%20width=%27100%25%27%20height=%27100%25%27%20fill=%27%23b6b0a7%27/%3E%3C/svg%3E",
@@ -459,7 +458,7 @@ export async function insertImageFilesIntoArtboard(deps: { readonly fileDirector
             (input?: Dynamic): Dynamic =>
               input
                 ? {
-                    src: (0, createDropMarker)(input.url),
+                    src: createDropMarker(input.url),
                   }
                 : null,
           ),
@@ -489,7 +488,7 @@ export async function insertImageFilesIntoArtboard(deps: { readonly fileDirector
         }
         let value324: Dynamic =
             value323 != null
-              ? (0, getDropContainer)(
+              ? getDropContainer(
                   value317.model.element(value323),
                   position,
                 )
@@ -498,11 +497,11 @@ export async function insertImageFilesIntoArtboard(deps: { readonly fileDirector
             value314 != null && value324 != null ? value314 : null,
           value326: Dynamic =
             value325 == null && value313 == null && value316 != null
-              ? (0, emptyArtboardDropTarget)(value317.model)
+              ? emptyArtboardDropTarget(value317.model)
               : null,
           value327: Dynamic =
             value326 != null && value323 != null && value323 !== value326.page
-              ? (0, rootDropContainer)(
+              ? rootDropContainer(
                   value317.model,
                   value326,
                   value323,
@@ -521,7 +520,7 @@ export async function insertImageFilesIntoArtboard(deps: { readonly fileDirector
           value317.model.setStyleProperty(value323, "position", "relative");
         let callback9: Dynamic = (input?: Dynamic): Dynamic =>
             value324
-              ? (0, droppedImageWidth)(input, value324.w, value324.h)
+              ? droppedImageWidth(input, value324.w, value324.h)
               : value328
                 ? Math.round(
                     Math.min(input.width, Math.max(48, value328.w * 0.6)),
@@ -535,7 +534,7 @@ export async function insertImageFilesIntoArtboard(deps: { readonly fileDirector
                   options?: Dynamic,
                   context2?: Dynamic,
                 ): Dynamic =>
-                  (0, clampDroppedImagePosition)(
+                  clampDroppedImagePosition(
                     value325.x - options / 2 + input * 24,
                     value325.y - context2 / 2 + input * 24,
                     options,
@@ -552,7 +551,7 @@ export async function insertImageFilesIntoArtboard(deps: { readonly fileDirector
                   options?: Dynamic,
                   context2?: Dynamic,
                 ): Dynamic =>
-                  (0, fileDropPosition)(
+                  fileDropPosition(
                     value328,
                     input,
                     options,
@@ -578,7 +577,7 @@ export async function insertImageFilesIntoArtboard(deps: { readonly fileDirector
                   )
                 : 200,
               { left: value338, top: value339 }: Dynamic = value328
-                ? (0, fileDropPosition)(
+                ? fileDropPosition(
                     value328,
                     options,
                     value336,
@@ -663,17 +662,17 @@ export async function insertImageFilesIntoArtboard(deps: { readonly fileDirector
         }
         let callback10: Dynamic = (): Dynamic =>
           deps.modelRef.current.state(deps.rootName) ?? value317;
-        (0, markDropPerformance)("insert");
+        markDropPerformance("insert");
         let value333: Dynamic = marks.map(registerHiddenPickerTag);
         context.landed();
-        let value334: Dynamic = await (0, insertUploadedFiles)({
+        let value334: Dynamic = await insertUploadedFiles({
           files: items2,
           targets: value332,
           upload: (input?: Dynamic): Dynamic =>
-            (0, uploadDesignFile)(deps.projectPath, deps.fileDirectory, input),
+            uploadDesignFile(deps.projectPath, deps.fileDirectory, input),
           preview: (input?: Dynamic): Dynamic =>
             value310[items2.indexOf(input)] ??
-            (0, previewImageFile)(input),
+            previewImageFile(input),
           preApplied: value322,
           patch: (element?: Dynamic, options?: Dynamic): Dynamic => {
             let value335: Dynamic = callback10(),
@@ -712,10 +711,10 @@ export async function insertImageFilesIntoArtboard(deps: { readonly fileDirector
           readSrc: (element?: Dynamic): Dynamic =>
             element.getAttribute("src"),
           onStage: (input?: Dynamic): Dynamic => {
-            (0, markDropPerformance)(input);
+            markDropPerformance(input);
           },
           onSettled: (input?: Dynamic, options?: Dynamic): Dynamic =>
-            (0, rememberImageInsert)(deps.pendingStampEditsRef.current, {
+            rememberImageInsert(deps.pendingStampEditsRef.current, {
               name: deps.rootName,
               src: input,
               attrs: options,
@@ -822,7 +821,7 @@ export async function routeDroppedMediaFiles(deps: { readonly filePath: Dynamic;
             deps.webviewRef.current?.contentDocument?.querySelector(
               "deck-stage",
             ) != null
-            ? deps.showToast((0, CanvasWorkingStateHandler)("artboard"))
+            ? deps.showToast(CanvasWorkingStateHandler("artboard"))
             : deps.onDropVideos
               ? deps.onDropVideos(value309, {
                   at: value311,
@@ -830,7 +829,7 @@ export async function routeDroppedMediaFiles(deps: { readonly filePath: Dynamic;
                   after: value308.length,
                 })
               : deps.showToast(
-                  (0, videoUploadFailureMessage)("unavailable"),
+                  videoUploadFailureMessage("unavailable"),
                 )
           : value308.length === 0 &&
             Date.now() - deps.value180.current > 5e3 &&
@@ -841,7 +840,7 @@ export async function routeDroppedMediaFiles(deps: { readonly filePath: Dynamic;
                 : uiMessage("inspector.session.onlyImagesAndMp4Mov", { value1: uiOperation(value310) }),
             ));
         if (value308.length === 0) return;
-        let value312: Dynamic = (0, receiveFileDrops)(
+        let value312: Dynamic = receiveFileDrops(
           value308,
           deps.filePath,
           at != null &&
@@ -877,8 +876,7 @@ export async function uploadReplacementImage(deps: { readonly fileDirectory: Dyn
         if (value308.length === 0) return;
         if (value308.length > 1) {
           try {
-            let { src: value318 }: Dynamic = await (0,
-            uploadDesignFile)(deps.projectPath, deps.fileDirectory, input);
+            let { src: value318 }: Dynamic = await uploadDesignFile(deps.projectPath, deps.fileDirectory, input);
             deps.value151("@src", value318);
           } catch (value318: Dynamic) {
             console.error("[dc-editor] image pick upload failed:", value318);
@@ -899,14 +897,14 @@ export async function uploadReplacementImage(deps: { readonly fileDirectory: Dyn
             relName: value315,
             src: value316,
             applied: value317,
-          }: Dynamic = await (0, replaceSelectedImage)({
+          }: Dynamic = await replaceSelectedImage({
             file: input,
             el: value310,
             getModel: (): Dynamic => callback7().model,
             isCurrent: (): Dynamic =>
               deps.value183.current.get(value310) === value311,
             upload: (input2?: Dynamic): Dynamic =>
-              (0, uploadDesignFile)(
+              uploadDesignFile(
                 deps.projectPath,
                 deps.fileDirectory,
                 input2,
@@ -923,7 +921,7 @@ export async function uploadReplacementImage(deps: { readonly fileDirectory: Dyn
               deps.incrementSessionEpoch();
             },
             recordSettled: (input2?: Dynamic): Dynamic =>
-              (0, rememberImageInsert)(deps.pendingStampEditsRef.current, {
+              rememberImageInsert(deps.pendingStampEditsRef.current, {
                 name: current.name,
                 ...input2,
               }),

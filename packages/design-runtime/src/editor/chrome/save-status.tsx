@@ -89,14 +89,14 @@ export {
 };
 export function installEditorChromeSaveStatus(): () => void {
   return () => {
-    reactChromeSaveStatus = (0, toModuleNamespace)(
-      (0, load_react)(),
+    reactChromeSaveStatus = toModuleNamespace(
+      load_react(),
       1,
     );
-    (0, initializeCdsIndex)();
-    (0, initializePlatformCdsIsland)();
-    jsxChromeSaveStatus = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    initializeCdsIndex();
+    initializePlatformCdsIsland();
+    jsxChromeSaveStatus = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
   };

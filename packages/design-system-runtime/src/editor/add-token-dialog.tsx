@@ -57,7 +57,7 @@ function addTokenDialogTitle(request: AddTokenRequest): string {
   }
 }
 function normalizeNewTokenName(value: string): string {
-  return (0, normalizeTokenName)(value).replace(/\s+/g, "-");
+  return normalizeTokenName(value).replace(/\s+/g, "-");
 }
 function validateNewColorValue(
   value: string,
@@ -73,10 +73,10 @@ function validateNewColorValue(
       return uiMessage("design-system.addTokenDialog.colorRequired");
     }
   }
-  if (!(0, isColorOrAlias)(value2)) {
+  if (!isColorOrAlias(value2)) {
     return uiMessage("design-system.addTokenDialog.notAColorTryRrggbb", { token: "{token}" });
   }
-  let value3 = (0, colorAliasTarget)(value2);
+  let value3 = colorAliasTarget(value2);
   if (value3 === undefined) {
     return null;
   }
@@ -89,7 +89,7 @@ function validateNewColorValue(
   return null;
 }
 function normalizeNewColorValue(value: string): string {
-  return (0, normalizeColorEditorInput)(value);
+  return normalizeColorEditorInput(value);
 }
 function appendDefaultLengthUnit(value: string): string {
   let value2 = value.trim();
@@ -103,7 +103,7 @@ function validateNewTokenValue(
   kind: ScalarTokenKind,
   value: string,
 ): string | undefined {
-  return (0, normalizeScalarTokenValue)(
+  return normalizeScalarTokenValue(
     kind,
     kind === "spacing" || kind === "radius"
       ? appendDefaultLengthUnit(value)
@@ -118,7 +118,7 @@ function validateNewTypeField(
   switch (field) {
     case "fontSize":
       if (
-        (0, normalizeCssLength)(
+        normalizeCssLength(
           appendDefaultLengthUnit(value2),
           false,
         ) === undefined
@@ -128,7 +128,7 @@ function validateNewTypeField(
         return null;
       }
     case "lineHeight":
-      if ((0, normalizeLineHeight)(value2) === undefined) {
+      if (normalizeLineHeight(value2) === undefined) {
         return uiMessage("design-system.addTokenDialog.notALineHeightTry");
       } else {
         return null;
@@ -136,7 +136,7 @@ function validateNewTypeField(
     case "letterSpacing":
       if (
         value2 === "" ||
-        (0, normalizeCssLength)(
+        normalizeCssLength(
           appendDefaultLengthUnit(value2),
           false,
         ) !== undefined
@@ -276,14 +276,14 @@ function AddTokenDialog({
     value12 =
       value10 === null || req.kind !== "type"
         ? null
-        : (0, validateNewFontFamily)(value10, req.families),
+        : validateNewFontFamily(value10, req.families),
     [value13, value14] = reactDesignSystemEditors.useState(false),
     [value15, value16] = reactDesignSystemEditors.useState(req.name),
     [value17, value18] = reactDesignSystemEditors.useState(false),
     ref4 = reactDesignSystemEditors.useRef(req.name),
     callback2 = (input: string, options: string) => {
       let value49 = stripAddDialogNamespace(
-        (0, normalizeThemeId)(options),
+        normalizeThemeId(options),
         value5,
       );
       if (req.kind === "color" && input === NEW_TOKEN_GROUP_SENTINEL) {
@@ -406,7 +406,7 @@ function AddTokenDialog({
       req.kind === "type"
         ? value8.replace(/\s+/g, " ").trim()
         : stripAddDialogNamespace(
-            (0, normalizeThemeId)(value8),
+            normalizeThemeId(value8),
             value5,
           ),
     value29 = value28.toLowerCase(),
@@ -436,7 +436,7 @@ function AddTokenDialog({
     value36 = value35 && !value17,
     value37: React.ReactNode = value36
       ? null
-      : ((0, validateTokenRename)(value34, "", req.taken) ??
+      : (validateTokenRename(value34, "", req.taken) ??
         (value35 ? uiMessage("design-system.addTokenDialog.finishTheNameEG") + value34 + "500." : null)),
     value38 = value36 || value37 !== null ? null : value39();
   if (value38 !== null) {
@@ -527,7 +527,7 @@ function AddTokenDialog({
     }
     if (
       value52 !== "" &&
-      (0, normalizeThemeId)(value52) === value52 &&
+      normalizeThemeId(value52) === value52 &&
       stripAddDialogNamespace(value52, value49) === value52 &&
       !value3.some((input) => input.label.toLowerCase() === value52)
     ) {
@@ -553,7 +553,7 @@ function AddTokenDialog({
         value53 +
         " — names there start with " +
         value55 +
-        (value52 !== "" && (0, normalizeThemeId)(value52) !== value52
+        (value52 !== "" && normalizeThemeId(value52) !== value52
           ? " (group prefixes are lowercase letters, digits and single hyphens)"
           : "") +
         ".",
@@ -583,7 +583,7 @@ function AddTokenDialog({
           ? value49.id === value41
             ? uiMessage("design-system.addTokenDialog.aBoxShadowIsNeeded")
             : null
-          : (0, normalizeBoxShadow)(value50) === undefined
+          : normalizeBoxShadow(value50) === undefined
             ? uiMessage("design-system.addTokenDialog.notABoxShadowTry")
             : null;
     }
@@ -645,7 +645,7 @@ function AddTokenDialog({
         return false;
       }
       let value50 = Number(options.replace(/,/g, "")),
-        value51 = (0, parseEditableCssLength)(value49)?.n;
+        value51 = parseEditableCssLength(value49)?.n;
       return (
         value51 !== undefined && Math.abs(value50 - value51) < 0.000000001
       );
@@ -673,7 +673,7 @@ function AddTokenDialog({
         value49.blur();
         if (
           ref3.current !== null &&
-          (0, validateNewFontFamily)(
+          validateNewFontFamily(
             ref3.current,
             req.kind === "type" ? req.families : {},
           ) !== null
@@ -719,7 +719,7 @@ function AddTokenDialog({
             let value52 = (ref6.current[value51.id] ?? "").trim();
             if (
               value52 !== "" &&
-              (0, normalizeBoxShadow)(value52) !== undefined
+              normalizeBoxShadow(value52) !== undefined
             ) {
               state3[value51.id] = value52;
             }
@@ -773,7 +773,7 @@ function AddTokenDialog({
       if (
         event.key === "Enter" &&
         (event.metaKey || event.ctrlKey) &&
-        !(0, isComposingEvent)(event)
+        !isComposingEvent(event)
       ) {
         event.preventDefault();
         callback10();
@@ -793,7 +793,7 @@ function AddTokenDialog({
         !event.isDefaultPrevented() ||
         event.metaKey ||
         event.ctrlKey ||
-        (0, isComposingEvent)(event)
+        isComposingEvent(event)
       ) {
         return;
       }
@@ -937,15 +937,15 @@ function AddTokenDialog({
           data-testid={dataTestid + "-preview"}
         >
           {value40.map((input, options) => {
-            let value49 = (0, normalizeColorEditorInput)(
+            let value49 = normalizeColorEditorInput(
                 value21[input.id] ?? "",
               ),
-              value50 = (0, normalizeColorEditorInput)(
+              value50 = normalizeColorEditorInput(
                 value21[value41 ?? ""] ?? "",
               ),
-              value51 = (0, isColorLiteral)(value49)
+              value51 = isColorLiteral(value49)
                 ? value49
-                : options > 0 && (0, isColorLiteral)(value50)
+                : options > 0 && isColorLiteral(value50)
                   ? value50
                   : undefined;
             return (() => {
@@ -976,10 +976,10 @@ function AddTokenDialog({
               })),
               "e.g. brand",
             ), value45, value40.map((input, options) => {
-              let value49 = (0, normalizeColorEditorInput)(
+              let value49 = normalizeColorEditorInput(
                   value21[input.id] ?? "",
                 ),
-                value50 = (0, normalizeColorEditorInput)(
+                value50 = normalizeColorEditorInput(
                   value21[value41 ?? ""] ?? "",
                 );
               return (() => {
@@ -991,12 +991,12 @@ function AddTokenDialog({
                   children: (
                     <ColorTextPropertyRow
                       label={value40.length > 1 ? (input.name) : (uiMessage("design-system.addTokenDialog.value"))}
-                      popupAttrs={(0, commentTargetProps)(
+                      popupAttrs={commentTargetProps(
                         "picker",
                         "add-dialog:" + input.id,
                       )}
                       value={
-                        value49 !== "" && (0, isColorLiteral)(value49)
+                        value49 !== "" && isColorLiteral(value49)
                           ? value49
                           : undefined
                       }
@@ -1004,7 +1004,7 @@ function AddTokenDialog({
                         ? {
                             clearLabel:
                               uiMessage("design-system.addTokenDialog.inherits") + (value40[0]?.name ?? ""),
-                            ...((0, isColorLiteral)(value50)
+                            ...(isColorLiteral(value50)
                               ? {
                                   placeholder: value50,
                                 }
@@ -1071,7 +1071,7 @@ function AddTokenDialog({
           <span
             className={"ds-shadow-surface"}
             style={
-              (0, isSafeBoxShadow)(value49)
+              isSafeBoxShadow(value49)
                 ? {
                     boxShadow: value49,
                   }
@@ -1089,7 +1089,7 @@ function AddTokenDialog({
             : (req.families[value25.family] ??
               Object.values(req.families)[0] ??
               "system-ui, sans-serif"),
-        value50 = (0, typeStylePreviewStyle)(
+        value50 = typeStylePreviewStyle(
           {
             name: value34,
             fontSize: appendDefaultLengthUnit(value25.fontSize),
@@ -1107,14 +1107,14 @@ function AddTokenDialog({
           56,
           Math.max(
             14,
-            (0, parseEditableCssLength)(
+            parseEditableCssLength(
               appendDefaultLengthUnit(value25.fontSize),
             )?.unit === "px"
-              ? ((0, parseEditableCssLength)(
+              ? (parseEditableCssLength(
                   appendDefaultLengthUnit(value25.fontSize),
                 )?.n ?? 16)
               : 16 *
-                  ((0, parseEditableCssLength)(
+                  (parseEditableCssLength(
                     appendDefaultLengthUnit(value25.fontSize),
                   )?.n ?? 1),
           ),
@@ -1220,7 +1220,7 @@ function AddTokenDialog({
       let value49 = validateNewTokenValue(req.kind, value23),
         value50 =
           value49 !== undefined
-            ? (0, cssLengthPreviewPixels)(value49)
+            ? cssLengthPreviewPixels(value49)
             : null;
       if (req.kind === "spacing") {
         value48 = (
@@ -1260,7 +1260,7 @@ function AddTokenDialog({
       }
       let value51: React.ReactNode;
       if (req.kind === "spacing" || req.kind === "radius") {
-        let value52 = (0, parseEditableCssLength)(
+        let value52 = parseEditableCssLength(
           appendDefaultLengthUnit(value23),
         ) ?? {
           n: 0,
@@ -1281,7 +1281,7 @@ function AddTokenDialog({
               value={value52.n}
               min={0}
               max={MAX_EDITABLE_CSS_LENGTH}
-              step={(0, cssLengthInputStep)(value52.unit)}
+              step={cssLengthInputStep(value52.unit)}
               onValue={(input: number | undefined) => {
                 if (input !== undefined) {
                   callback6(formatNumberWithUnit(input, value52.unit));
@@ -1342,7 +1342,7 @@ function AddTokenDialog({
             className={"max-w-[22.5rem]"}
             aria-label={addTokenDialogTitle(req)}
             data-testid={dataTestid}
-            {...(0, commentTargetProps)("dialog", "add")}
+            {...commentTargetProps("dialog", "add")}
           >
             {[<Dialog.Header showClose={true}>
                 {addTokenDialogTitle(req)}
@@ -1403,8 +1403,8 @@ export {
 };
 export function installEditorAddTokenDialog(): () => void {
   return () => {
-    jsxAddTokenDialog = (0, toModuleNamespace)(
-      (0, loadJsxNamespace)(),
+    jsxAddTokenDialog = toModuleNamespace(
+      loadJsxNamespace(),
       1,
     );
     NEW_TOKEN_GROUP_SENTINEL = "\x00new";

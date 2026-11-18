@@ -314,7 +314,7 @@ function synchronizeSelectedElementIds(
   if (
     !entry ||
     (entry.name != null &&
-      entry.name !== (0, SelectionActionsReplace)(options))
+      entry.name !== SelectionActionsReplace(options))
   )
     return input;
   let value: Dynamic =
@@ -364,7 +364,7 @@ function reconcileSelectedElementIds(
     entry: Dynamic = value2.elements.get(options),
     value3: Dynamic =
       entry != null &&
-      entry.name === (0, SelectionActionsReplace)(options);
+      entry.name === SelectionActionsReplace(options);
   return {
     next: value2,
     tell:

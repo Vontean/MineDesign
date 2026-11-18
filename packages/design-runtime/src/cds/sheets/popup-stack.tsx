@@ -43,7 +43,7 @@ function useSheetStack(
   value?: Dynamic,
 ): Dynamic {
   let value2: Dynamic = (0, reactSheetsPopupStack.useRef)(null);
-  (0, useOverlayImperativeHandle)(value2, options);
+  useOverlayImperativeHandle(value2, options);
   let value3: Dynamic = (0, reactSheetsPopupStack.useId)(),
     [value4, value5]: Dynamic = (0, reactSheetsPopupStack.useState)(),
     [value6, value7]: Dynamic = (0, reactSheetsPopupStack.useState)(true),
@@ -59,15 +59,14 @@ function useSheetStack(
     (value17(input),
     input &&
       (value5(undefined), value7(true), value10("default"), value13(false)));
-  (0, useIsomorphicLayoutEffect)((): Dynamic => {
+  useIsomorphicLayoutEffect((): Dynamic => {
     input || ((value8.current = []), (value11.current = new Set()));
   }, [input]);
-  (0, useKeyboardViewport)(input && value12, value15, {
+  useKeyboardViewport(input && value12, value15, {
     unpan: true,
   });
-  let { showing: value18, onOpenChangeComplete: value19 }: Dynamic = (0,
-    useSheetPendingUnmount)(input),
-    value20: Dynamic = (0, useOptionalStableCallback)(context),
+  let { showing: value18, onOpenChangeComplete: value19 }: Dynamic = useSheetPendingUnmount(input),
+    value20: Dynamic = useOptionalStableCallback(context),
     value21: Dynamic = (0, reactSheetsPopupStack.useRef)(null);
   (0, reactSheetsPopupStack.useEffect)((): Dynamic => {
     value21.current = null;
@@ -103,7 +102,7 @@ function useSheetStack(
           !(input2 > 0) ||
           ((value30.height = Math.round(input2)),
           options2 !== undefined && (value30.grows = options2),
-          value5((0, sheetStackMaxHeight)(current)),
+          value5(sheetStackMaxHeight(current)),
           value7(SheetsPopupStackAt(current)));
       },
       [],
@@ -116,7 +115,7 @@ function useSheetStack(
           },
           current: Dynamic = value8.current;
         current.push(state);
-        value5((0, sheetStackMaxHeight)(current));
+        value5(sheetStackMaxHeight(current));
         value7(SheetsPopupStackAt(current));
         let flag: Dynamic = false,
           callback: Dynamic = (): Dynamic =>
@@ -126,7 +125,7 @@ function useSheetStack(
             callback() &&
               ((state.height = Math.round(input3)),
               options3 !== undefined && (state.grows = options3),
-              value5((0, sheetStackMaxHeight)(current)),
+              value5(sheetStackMaxHeight(current)),
               value7(SheetsPopupStackAt(current)));
           },
           release: (): Dynamic => {
@@ -135,7 +134,7 @@ function useSheetStack(
             flag = true;
             value30 >= 0 && current.splice(value30, 1);
             current === value8.current &&
-              (value5((0, sheetStackMaxHeight)(current)),
+              (value5(sheetStackMaxHeight(current)),
               value7(SheetsPopupStackAt(current)));
           },
         };
@@ -152,7 +151,7 @@ function useSheetStack(
         current === value11.current && value13(current.size > 0);
       };
     }, []),
-    value27: Dynamic = (0, useOptionalStableCallback)(value),
+    value27: Dynamic = useOptionalStableCallback(value),
     value28: Dynamic = (0, reactSheetsPopupStack.useCallback)((): Dynamic => {
       value27 !== undefined ? value27() : value2.current?.close?.();
     }, [value27]),
@@ -224,17 +223,17 @@ function useSheetPopup(input?: Dynamic): Dynamic {
     value9: Dynamic = (0, reactSheetsPopupStack.useContext)(
       SheetStackContext,
     ),
-    value10: Dynamic = (0, useOverlayPresentation)(),
-    value11: Dynamic = (0, useMobileSheets)(),
+    value10: Dynamic = useOverlayPresentation(),
+    value11: Dynamic = useMobileSheets(),
     value12: Dynamic = useSheetStack(value, value2, value5, value3),
-    value13: Dynamic = (0, useMobileSheetsLoaded)(),
-    value14: Dynamic = (0, useMobileSheetsUnavailable)(),
-    value15: Dynamic = (0, useTouchOverlay)();
+    value13: Dynamic = useMobileSheetsLoaded(),
+    value14: Dynamic = useMobileSheetsUnavailable(),
+    value15: Dynamic = useTouchOverlay();
   (0, reactSheetsPopupStack.useEffect)((): Dynamic => {
-    value15 && !value13 && !value14 && (0, preloadMobileSheets)();
+    value15 && !value13 && !value14 && preloadMobileSheets();
   }, [value15, value13, value14, value]);
-  let value16: Dynamic = (0, useFrozenSheetMode)(
-      (0, shouldUseSheet)(value10, false, value11) &&
+  let value16: Dynamic = useFrozenSheetMode(
+      shouldUseSheet(value10, false, value11) &&
         (value8 || value10 === "sheet"),
       value,
       value12.showing,
@@ -254,7 +253,7 @@ function useSheetPopup(input?: Dynamic): Dynamic {
   (0, reactSheetsPopupStack.useEffect)((): Dynamic => {
     if (!value21 || !value) return;
     let callback: Dynamic = (): Dynamic => {
-      (0, areMobileSheetsLoaded)() ||
+      areMobileSheetsLoaded() ||
         ((sheetActivityListenersInstalled = true), value18(true));
     };
     SheetsPopupStackSubscribers.add(callback);
@@ -265,7 +264,7 @@ function useSheetPopup(input?: Dynamic): Dynamic {
     };
   }, [value21, value]);
   let value22: Dynamic = value16 && !value7 && !value17;
-  (0, useAndroidCloseWatcher)(
+  useAndroidCloseWatcher(
     value && value16 && !value7 && value17,
     value12.frame.dismiss,
   );
@@ -289,14 +288,14 @@ function useSheetPopup(input?: Dynamic): Dynamic {
     [value30]: Dynamic = (0, reactSheetsPopupStack.useState)(
       (): Dynamic => ({}),
     );
-  (0, useIsomorphicLayoutEffect)((): Dynamic => {
+  useIsomorphicLayoutEffect((): Dynamic => {
     if (!(!value22 || !value || value9 === null))
       return value9.cover(value30);
   }, [value22, value, value9, value30]);
-  let value31: Dynamic = (0, useCdsWindow)(),
+  let value31: Dynamic = useCdsWindow(),
     treeId: Dynamic = value12.frame.treeId,
     [value32, value33]: Dynamic = (0, reactSheetsPopupStack.useState)(false);
-  (0, useIsomorphicLayoutEffect)((): Dynamic => {
+  useIsomorphicLayoutEffect((): Dynamic => {
     if (!value27 || value31 === undefined) return;
     let index: Dynamic = 0,
       callback: Dynamic = (): Dynamic => {
@@ -319,10 +318,10 @@ function useSheetPopup(input?: Dynamic): Dynamic {
     };
   }, [value27, treeId, value31]);
   let value34: Dynamic = value27 && value32,
-    value35: Dynamic = (0, useOptionalStableCallback)(value4),
-    value36: Dynamic = (0, useOptionalStableCallback)(value6),
+    value35: Dynamic = useOptionalStableCallback(value4),
+    value36: Dynamic = useOptionalStableCallback(value6),
     value37: Dynamic = (0, reactSheetsPopupStack.useRef)(value22);
-  (0, useIsomorphicLayoutEffect)((): Dynamic => {
+  useIsomorphicLayoutEffect((): Dynamic => {
     value37.current = value22;
   }, [value22]);
   let value38: Dynamic = (0, reactSheetsPopupStack.useCallback)(
@@ -366,7 +365,7 @@ function useSheetPopup(input?: Dynamic): Dynamic {
           value31?.requestAnimationFrame((): Dynamic => {
             value39.current === value48 && (value39.current = null);
           });
-        input2 && value15 && (0, preloadMobileSheets)();
+        input2 && value15 && preloadMobileSheets();
         value35?.(input2, options);
       },
       [value35, value36, value38, treeId, value15, value31],
@@ -402,7 +401,7 @@ function useSheetPopup(input?: Dynamic): Dynamic {
       }),
       [value44, value38, value40],
     ),
-    value46: Dynamic = (0, sheetFrameHeight)(value44, value31),
+    value46: Dynamic = sheetFrameHeight(value44, value31),
     value47: Dynamic = (0, reactSheetsPopupStack.useMemo)(
       (): Dynamic => ({
         depth: value24,
@@ -467,7 +466,7 @@ function useOverlayOpenState(input?: Dynamic): Dynamic {
       input.defaultOpen ?? false,
     ),
     value3: Dynamic = input.open ?? value,
-    value4: Dynamic = (0, useOptionalStableCallback)(
+    value4: Dynamic = useOptionalStableCallback(
       input.onOpenChange,
     );
   return {
@@ -485,13 +484,13 @@ function isInsideSheetPopup(): Dynamic {
   return (0, reactSheetsPopupStack.useContext)(SheetPopupContext) !== null;
 }
 function useSheetInteractionMode(): Dynamic {
-  let value: Dynamic = (0, useTouchOverlay)(),
+  let value: Dynamic = useTouchOverlay(),
     value2: Dynamic =
       (0, reactSheetsPopupStack.useContext)(SheetPopupContext) !== null;
   return value || value2;
 }
 function useAvailableSheetParts(): Dynamic {
-  let value: Dynamic = (0, useMobileSheetComponents)(),
+  let value: Dynamic = useMobileSheetComponents(),
     value2: Dynamic = (0, reactSheetsPopupStack.useContext)(
       SheetPopupContext,
     ),
@@ -552,24 +551,24 @@ export {
 };
 export function installCdsSheetsPopupStack(): () => void {
   return () => {
-    initializeSheetsPopupStack = (0, initializeOnce)((): Dynamic => {
+    initializeSheetsPopupStack = initializeOnce((): Dynamic => {
       "use client";
 
-      (0, initializeMobileSheetLoader)();
-      (0, initializeHooksLayoutEffect)();
-      (0, initializeCdsRoot)();
-      (0, initializeOverlaysAndroidCloseWatcher)();
-      (0, initializeHooksStableCallback_2)();
-      (0, initializeOverlaysImperativeHandle)();
-      (0, initializeDomInert)();
-      (0, initializeSheetsKeyboardViewport)();
-      (0, initializeSheetsLayout)();
-      (0, initializeSheetsPresentation)();
-      reactSheetsPopupStack = (0, toModuleNamespace)(
-        (0, load_react)(),
+      initializeMobileSheetLoader();
+      initializeHooksLayoutEffect();
+      initializeCdsRoot();
+      initializeOverlaysAndroidCloseWatcher();
+      initializeHooksStableCallback_2();
+      initializeOverlaysImperativeHandle();
+      initializeDomInert();
+      initializeSheetsKeyboardViewport();
+      initializeSheetsLayout();
+      initializeSheetsPresentation();
+      reactSheetsPopupStack = toModuleNamespace(
+        load_react(),
       );
-      jsxSheetsPopupStack = (0, toModuleNamespace)(
-        (0, load_react_jsx_runtime)(),
+      jsxSheetsPopupStack = toModuleNamespace(
+        load_react_jsx_runtime(),
       );
       SheetPopupContext = (0, reactSheetsPopupStack.createContext)(null);
       SheetsPopupStackAt = (input?: Dynamic): Dynamic =>
@@ -582,7 +581,7 @@ export function installCdsSheetsPopupStack(): () => void {
         inert: false,
         depth: 0,
       });
-      getInertPropsValue = (0, getInertProps)(true);
+      getInertPropsValue = getInertProps(true);
       SheetsPopupStackDelayMs = 600;
       sheetActivityListenersInstalled = false;
       SheetsPopupStackSubscribers = new Set();

@@ -64,23 +64,23 @@ export function annotationToElementHtml(deps: Record<string, never>, source?: Dy
             .replace(/"/g, "&quot;")
             .replace(/</g, "&lt;"),
         value653: Dynamic = [
-          (0, annotationRotation)(source) !== 0
+          annotationRotation(source) !== 0
             ? "rotate(" +
-              String((0, annotationRotation)(source)) +
+              String(annotationRotation(source)) +
               "deg)"
             : "",
-          (0, imageFlipCss)(source)?.transform ?? "",
+          imageFlipCss(source)?.transform ?? "",
         ]
           .filter((input?: Dynamic): Dynamic => input !== "")
           .join(" "),
         value654: Dynamic =
           value653 !== "" ? " transform: " + value653 + ";" : "";
-      if ((0, isShapeAnnotation)(source)) {
+      if (isShapeAnnotation(source)) {
         if (source.kind !== "image" || source.video) return null;
         let value657: Dynamic = String(Math.round(source.w)),
           value658: Dynamic = String(Math.round(source.h));
         if (source.crop) {
-          let value659: Dynamic = (0, imageCropCss)(source.crop),
+          let value659: Dynamic = imageCropCss(source.crop),
             value660: Dynamic =
               "position: absolute; width: " +
               value659.width +
@@ -124,7 +124,7 @@ export function annotationToElementHtml(deps: Record<string, never>, source?: Dy
           '">'
         );
       }
-      let value655: Dynamic = (0, annotationTextStyle)(source),
+      let value655: Dynamic = annotationTextStyle(source),
         callback16: Dynamic = (input?: Dynamic): Dynamic =>
           input
             .replace(/&/g, "&amp;")
@@ -136,7 +136,7 @@ export function annotationToElementHtml(deps: Record<string, never>, source?: Dy
           code: "code",
         },
         callback17: Dynamic = (input?: Dynamic): Dynamic =>
-          (0, NotesBlocksHandler)(input)
+          NotesBlocksHandler(input)
             .map(
               (source2?: Dynamic): Dynamic =>
                 source2.kind === "text"
@@ -158,7 +158,7 @@ export function annotationToElementHtml(deps: Record<string, never>, source?: Dy
                       ">",
             )
             .join(""),
-        value656: Dynamic = (0, parseNoteBlocks)(source.text)
+        value656: Dynamic = parseNoteBlocks(source.text)
           .map(
             (source2?: Dynamic): Dynamic =>
               source2.kind === "p"
@@ -207,7 +207,7 @@ export function flipAnnotationsWithHistory(deps: { readonly value140: Dynamic; r
         let current4: Dynamic = deps.value73.current,
           value653: Dynamic = deps.value224.current && true,
           { flips: value654, refused: value655 }: Dynamic = value653
-            ? (0, flipAnnotations)(
+            ? flipAnnotations(
                 (current4.annotations ?? []).filter(
                   (input2?: Dynamic): Dynamic => input.has(input2.id),
                 ),
@@ -332,9 +332,9 @@ export function setAnnotationBox(deps: { readonly value396: Dynamic; readonly va
             w: value660,
             h: value661,
           };
-        } else if ((0, isShapeAnnotation)(value655)) {
-          let value659: Dynamic = (0, annotationBounds)(value655);
-          value657 = (0, moveAnnotation)(
+        } else if (isShapeAnnotation(value655)) {
+          let value659: Dynamic = annotationBounds(value655);
+          value657 = moveAnnotation(
             value655,
             callback15(value655.x + ((options.x ?? value659.x) - value659.x)),
             callback15(value655.y + ((options.y ?? value659.y) - value659.y)),
@@ -420,21 +420,21 @@ export function setAnnotationBox(deps: { readonly value396: Dynamic; readonly va
           return;
         }
         if (
-          (0, isShapeAnnotation)(value656) &&
-          (0, isShapeAnnotation)(value657)
+          isShapeAnnotation(value656) &&
+          isShapeAnnotation(value657)
         )
           deps.value396.current(
             {
               kind: "ann-box",
               id: input,
-              from: (0, annotationGeometry)(value656),
-              to: (0, annotationGeometry)(value657),
+              from: annotationGeometry(value656),
+              to: annotationGeometry(value657),
             },
             new Set(),
           );
         else if (
-          !(0, isShapeAnnotation)(value656) &&
-          !(0, isShapeAnnotation)(value657)
+          !isShapeAnnotation(value656) &&
+          !isShapeAnnotation(value657)
         ) {
           let value659: Dynamic = ["maxW", "maxH"].filter(
             (input2?: Dynamic): Dynamic =>
@@ -511,7 +511,7 @@ export function setAnnotationCss(deps: { readonly value188: Dynamic; readonly va
           value654: Dynamic = value653.find(
             (input2?: Dynamic): Dynamic => input2.id === input,
           );
-        if (!value654 || !(0, isShapeAnnotation)(value654)) return;
+        if (!value654 || !isShapeAnnotation(value654)) return;
         let value655: Dynamic = context
             ? value654
             : ((deps.value70.current ?? deps.value73.current).annotations?.find(
@@ -532,7 +532,7 @@ export function setAnnotationCss(deps: { readonly value188: Dynamic; readonly va
           if (value662 === null || value662.trim() === "")
             delete state[value663];
           else {
-            let value664: Dynamic = (0, PlatformFileContentTrim)(
+            let value664: Dynamic = PlatformFileContentTrim(
               value663,
               value662,
             );
@@ -553,13 +553,13 @@ export function setAnnotationCss(deps: { readonly value188: Dynamic; readonly va
               annotations: value653.map(
                 (input2?: Dynamic): Dynamic =>
                   input2.id === input
-                    ? (0, updateAnnotationCss)(value654, value656)
+                    ? updateAnnotationCss(value654, value656)
                     : input2,
               ),
             });
           return;
         }
-        let value657: Dynamic = (0, isShapeAnnotation)(value655)
+        let value657: Dynamic = isShapeAnnotation(value655)
             ? value655.css
             : undefined,
           callback15: Dynamic = (input2?: Dynamic): Dynamic =>
@@ -571,11 +571,11 @@ export function setAnnotationCss(deps: { readonly value188: Dynamic; readonly va
               : undefined,
           callback16: Dynamic = (): Dynamic =>
             value658 !== undefined && value654.kind === "image"
-              ? (0, updateAnnotationCrop)(
-                  (0, updateAnnotationCss)(value654, value656),
+              ? updateAnnotationCrop(
+                  updateAnnotationCss(value654, value656),
                   undefined,
                 )
-              : (0, updateAnnotationCss)(value654, value656);
+              : updateAnnotationCss(value654, value656);
         if (
           JSON.stringify(value656 ?? null) ===
           JSON.stringify(value657 ?? null)
@@ -587,7 +587,7 @@ export function setAnnotationCss(deps: { readonly value188: Dynamic; readonly va
               annotations: value653.map(
                 (input2?: Dynamic): Dynamic =>
                   input2.id === input
-                    ? (0, updateAnnotationCss)(value654, value656)
+                    ? updateAnnotationCss(value654, value656)
                     : input2,
               ),
             });
@@ -610,7 +610,7 @@ export function setAnnotationCss(deps: { readonly value188: Dynamic; readonly va
           Date.now() - value660.at < ModelModelStateLimit &&
           deps.value415("undo") === value660
         ) {
-          let value661: Dynamic = (0, filterSettingHistoryStep)(
+          let value661: Dynamic = filterSettingHistoryStep(
             value660.op,
             value659[0],
             value656,
@@ -659,8 +659,8 @@ export function setAnnotationTextStyle(deps: { readonly value396: Dynamic; reado
           value654: Dynamic = value653.find(
             (input2?: Dynamic): Dynamic => input2.id === input,
           );
-        if (!value654 || (0, isShapeAnnotation)(value654)) return;
-        let value655: Dynamic = (0, updateAnnotationTextStyle)(
+        if (!value654 || isShapeAnnotation(value654)) return;
+        let value655: Dynamic = updateAnnotationTextStyle(
             value654,
             options,
           ),
@@ -669,8 +669,8 @@ export function setAnnotationTextStyle(deps: { readonly value396: Dynamic; reado
               input2.id === input ? value655 : input2,
           );
         if (context) {
-          JSON.stringify((0, annotationTextStyle)(value654)) !==
-            JSON.stringify((0, annotationTextStyle)(value655)) &&
+          JSON.stringify(annotationTextStyle(value654)) !==
+            JSON.stringify(annotationTextStyle(value655)) &&
             deps.value68({
               ...deps.value73.current,
               annotations: value656,
@@ -682,13 +682,13 @@ export function setAnnotationTextStyle(deps: { readonly value396: Dynamic; reado
           ).annotations?.find(
             (input2?: Dynamic): Dynamic => input2.id === input,
           ),
-          value658: Dynamic = (0, annotationTextStyle)(
+          value658: Dynamic = annotationTextStyle(
             value657 !== undefined &&
-              !(0, isShapeAnnotation)(value657)
+              !isShapeAnnotation(value657)
               ? value657
               : value654,
           ),
-          value659: Dynamic = (0, annotationTextStyle)(value655);
+          value659: Dynamic = annotationTextStyle(value655);
         if (JSON.stringify(value658) === JSON.stringify(value659)) {
           value654 !== value655 &&
             deps.value68({
@@ -716,7 +716,7 @@ export function setAnnotationTextStyle(deps: { readonly value396: Dynamic; reado
 export function replaceAnnotationPicture(deps: { readonly value188: Dynamic; readonly value396: Dynamic; readonly value73: Dynamic; readonly value98: Dynamic }, input?: Dynamic, options?: Dynamic): Dynamic {
         if (
           typeof options == "string"
-            ? (0, PlatformFileContentTest_2)(options) === null
+            ? PlatformFileContentTest_2(options) === null
             : !(options instanceof File) || !options.type.startsWith("image/")
         )
           return;
@@ -725,11 +725,10 @@ export function replaceAnnotationPicture(deps: { readonly value188: Dynamic; rea
           ),
           value654: Dynamic =
             value653?.kind === "image" ? value653.src : undefined;
-        (0, trackEmbeddedWrite)(
+        trackEmbeddedWrite(
           (async (): Promise<Dynamic> => {
             if (typeof options != "string") {
-              let value655: Dynamic = await (0,
-              validateCanvasPlacedImage)(options);
+              let value655: Dynamic = await validateCanvasPlacedImage(options);
               if (value655 !== null)
                 throw new CanvasImagePlacementError(value655);
             }
@@ -737,10 +736,10 @@ export function replaceAnnotationPicture(deps: { readonly value188: Dynamic; rea
               ? {
                   src: options,
                 }
-              : (0, uploadDesignFile)("appifact", null, options);
+              : uploadDesignFile("appifact", null, options);
           })().then(({ src: src }: Dynamic): Dynamic => {
-            if ((0, isEmbedFrozen)()) return;
-            let value655: Dynamic = (0, PlatformFileContentTest_2)(
+            if (isEmbedFrozen()) return;
+            let value655: Dynamic = PlatformFileContentTest_2(
               src,
             );
             if (value655 === null) {
@@ -761,8 +760,8 @@ export function replaceAnnotationPicture(deps: { readonly value188: Dynamic; rea
             let value658: Dynamic =
               typeof options == "string"
                 ? value657.alt
-                : ((0, PlatformFileContentSlice)(
-                    (0, droppedImageLabel)(options, "dropped"),
+                : (PlatformFileContentSlice(
+                    droppedImageLabel(options, "dropped"),
                   ) ?? value657.alt);
             deps.value396.current(
               {
@@ -785,8 +784,8 @@ export function replaceAnnotationPicture(deps: { readonly value188: Dynamic; rea
               annotations: value656.map(
                 (input2?: Dynamic): Dynamic =>
                   input2.id === input
-                    ? (0, updateAnnotationCrop)(
-                        (0, updateAnnotationAlt)(
+                    ? updateAnnotationCrop(
+                        updateAnnotationAlt(
                           {
                             ...value657,
                             src: value655,
@@ -818,9 +817,9 @@ export function replaceAnnotationMedia(deps: { readonly value188: Dynamic; reado
           !(options instanceof File)
         )
           return;
-        let value654: Dynamic = (0, CanvasWorkingStateJoin)(options);
+        let value654: Dynamic = CanvasWorkingStateJoin(options);
         if (
-          (0, CanvasWorkingStatePrint)(
+          CanvasWorkingStatePrint(
             deps.value425.current.get(input),
             value654,
             value653,
@@ -848,7 +847,7 @@ export function replaceAnnotationMedia(deps: { readonly value188: Dynamic; reado
               (value657.src === input2.src && value657.video === input2.video)
             )
               return false;
-            let value658: Dynamic = (0, CanvasWorkingStateWidth)(
+            let value658: Dynamic = CanvasWorkingStateWidth(
               value657.w,
               context,
               value657.h,
@@ -892,9 +891,9 @@ export function replaceAnnotationMedia(deps: { readonly value188: Dynamic; reado
               annotations: value656.map(
                 (input3?: Dynamic): Dynamic =>
                   input3.id === input
-                    ? (0, updateAnnotationCrop)(
-                        (0, updateAnnotationAlt)(
-                          (0, updateAnnotationVideo)(
+                    ? updateAnnotationCrop(
+                        updateAnnotationAlt(
+                          updateAnnotationVideo(
                             {
                               ...value657,
                               src: input2.src,
@@ -916,11 +915,10 @@ export function replaceAnnotationMedia(deps: { readonly value188: Dynamic; reado
             });
             return true;
           };
-        if ((0, isImageFile)(options)) {
-          (0, trackEmbeddedWrite)(
+        if (isImageFile(options)) {
+          trackEmbeddedWrite(
             (async (): Promise<Dynamic> => {
-              let value656: Dynamic = await (0,
-              validateCanvasPlacedImage)(options);
+              let value656: Dynamic = await validateCanvasPlacedImage(options);
               if (value656 !== null)
                 throw new CanvasImagePlacementError(value656);
               let value657: Dynamic = await createImageBitmap(options).then(
@@ -935,7 +933,7 @@ export function replaceAnnotationMedia(deps: { readonly value188: Dynamic; reado
                 (): Dynamic => null,
               );
               return {
-                ...(await (0, uploadDesignFile)(
+                ...(await uploadDesignFile(
                   "appifact",
                   null,
                   options,
@@ -943,8 +941,8 @@ export function replaceAnnotationMedia(deps: { readonly value188: Dynamic; reado
                 size: value657,
               };
             })().then(({ src: src, size: size }: Dynamic): Dynamic => {
-              if ((0, isEmbedFrozen)()) return false;
-              let value656: Dynamic = (0, PlatformFileContentTest_2)(
+              if (isEmbedFrozen()) return false;
+              let value656: Dynamic = PlatformFileContentTest_2(
                 src,
               );
               return value656 === null
@@ -956,8 +954,8 @@ export function replaceAnnotationMedia(deps: { readonly value188: Dynamic; reado
                     {
                       src: value656,
                     },
-                    (0, PlatformFileContentSlice)(
-                      (0, droppedImageLabel)(options, "dropped"),
+                    PlatformFileContentSlice(
+                      droppedImageLabel(options, "dropped"),
                     ),
                     size,
                   );
@@ -972,65 +970,65 @@ export function replaceAnnotationMedia(deps: { readonly value188: Dynamic; reado
           );
           return;
         }
-        let value655: Dynamic = (0, isVideoFile)(options)
-          ? (0, videoUploadRefusal)(options)
+        let value655: Dynamic = isVideoFile(options)
+          ? videoUploadRefusal(options)
           : "unsupported_type";
         if (value655 !== null) {
           deps.value188(
-            (0, CanvasWorkingStateReplace)(
-              (0, videoUploadFailureMessage)(value655),
+            CanvasWorkingStateReplace(
+              videoUploadFailureMessage(value655),
             ),
           );
           return;
         }
-        (0, announce)(uiMessage("canvas.designCanvas.uploadingVideo"));
-        (0, trackEmbeddedWrite)(
+        announce(uiMessage("canvas.designCanvas.uploadingVideo"));
+        trackEmbeddedWrite(
           (async (): Promise<Dynamic> => {
-            let value656: Dynamic = await (0, captureVideoPoster)(
+            let value656: Dynamic = await captureVideoPoster(
               options,
             ).catch((): Dynamic => "probe_timeout");
             if (typeof value656 == "string") {
               deps.value188(
-                (0, CanvasWorkingStateReplace)(
-                  (0, videoUploadFailureMessage)(value656),
+                CanvasWorkingStateReplace(
+                  videoUploadFailureMessage(value656),
                 ),
               );
               return false;
             }
-            let value657: Dynamic = await (0, uploadDesignFile)(
+            let value657: Dynamic = await uploadDesignFile(
               "appifact",
               null,
               new File(
                 [value656.blob],
-                (0, videoFileTitle)(options) + ".jpg",
+                videoFileTitle(options) + ".jpg",
                 {
                   type: "image/jpeg",
                 },
               ),
             ).then(
               (input2?: Dynamic): Dynamic =>
-                (0, PlatformFileContentTest_2)(input2.src),
+                PlatformFileContentTest_2(input2.src),
               (): Dynamic => null,
             );
-            if ((0, isEmbedFrozen)()) return false;
+            if (isEmbedFrozen()) return false;
             if (value657 === null) {
               deps.value188(
                 uiMessage("canvas.designCanvas.couldnTStoreAStill"),
               );
               return false;
             }
-            let value658: Dynamic = await (0, uploadDesignVideo)(
+            let value658: Dynamic = await uploadDesignVideo(
               options,
               value656,
             );
-            if ((0, isEmbedFrozen)()) return false;
+            if (isEmbedFrozen()) return false;
             if ("refused" in value658) {
               deps.value188(
-                (0, CanvasWorkingStateReplace)(value658.refused),
+                CanvasWorkingStateReplace(value658.refused),
               );
               return false;
             }
-            let value659: Dynamic = (0, PlatformFileContentTest_3)(
+            let value659: Dynamic = PlatformFileContentTest_3(
               value658.src,
             );
             if (value659 === null) {
@@ -1042,12 +1040,12 @@ export function replaceAnnotationMedia(deps: { readonly value188: Dynamic; reado
                 src: value657,
                 video: value659,
               },
-              (0, PlatformFileContentSlice)(
-                (0, videoFileTitle)(options),
+              PlatformFileContentSlice(
+                videoFileTitle(options),
               ),
               value656,
             );
-            value660 && (0, announce)(uiMessage("canvas.designCanvas.videoReplaced"));
+            value660 && announce(uiMessage("canvas.designCanvas.videoReplaced"));
             return value660;
           })(),
         );
@@ -1061,8 +1059,8 @@ export function deriveAnnotationSettings(deps: { readonly value168: Dynamic; rea
           (input?: Dynamic): Dynamic => input.id === value653,
         );
       if (!value654) return null;
-      let value655: Dynamic = (0, isShapeAnnotation)(value654)
-        ? (0, annotationBounds)(value654)
+      let value655: Dynamic = isShapeAnnotation(value654)
+        ? annotationBounds(value654)
         : {
             x: value654.x,
             y: value654.y,
@@ -1081,10 +1079,10 @@ export function deriveAnnotationSettings(deps: { readonly value168: Dynamic; rea
               h: value655.h,
             }
           : {}),
-        ...((0, isShapeAnnotation)(value654)
+        ...(isShapeAnnotation(value654)
           ? {
               css: value654.css,
-              paint: (0, annotationColor)(
+              paint: annotationColor(
                 value654.kind,
                 value654.color ?? "default",
               ),
@@ -1100,7 +1098,7 @@ export function deriveAnnotationSettings(deps: { readonly value168: Dynamic; rea
                 : {}),
               ...(value654.kind === "line" || value654.kind === "arrow"
                 ? {
-                    heads: (0, annotationArrowHeads)(value654),
+                    heads: annotationArrowHeads(value654),
                     onSetHeads: (
                       input?: Dynamic,
                       options?: Dynamic,
@@ -1111,23 +1109,23 @@ export function deriveAnnotationSettings(deps: { readonly value168: Dynamic; rea
                 deps.value421(value653, input, options),
             }
           : {
-              textStyle: (0, annotationTextStyle)(value654),
+              textStyle: annotationTextStyle(value654),
               maxW: value654.maxW,
               maxH: value654.maxH,
               defaultMaxW:
                 value654.kind === "title1"
-                  ? (0, PlatformFileContentMaxW)({
+                  ? PlatformFileContentMaxW({
                       ...value654,
                       maxW: undefined,
                     })
                   : undefined,
               defaultMaxH: Number.isFinite(
-                (0, PlatformFileContentKind)({
+                PlatformFileContentKind({
                   ...value654,
                   maxH: undefined,
                 }),
               )
-                ? (0, PlatformFileContentKind)({
+                ? PlatformFileContentKind({
                     ...value654,
                     maxH: undefined,
                   })

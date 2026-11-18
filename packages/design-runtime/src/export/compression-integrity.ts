@@ -39,7 +39,7 @@ async function verifyExportAssetIntegrity(
   if (!value2) return false;
   let value3 = await crypto.subtle.digest(value2, bytes);
   return (
-    (0, encodeBinaryBase64)(new Uint8Array(value3)) ===
+    encodeBinaryBase64(new Uint8Array(value3)) ===
     integrity.slice(value + 1)
   );
 }

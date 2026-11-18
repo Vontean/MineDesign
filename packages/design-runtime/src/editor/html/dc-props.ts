@@ -26,9 +26,9 @@ function decodeHtmlEntities(input?: Dynamic): Dynamic {
   );
 }
 function getDcPropsJson(input?: Dynamic): Dynamic {
-  let value: Dynamic = (0, parseDcHtmlDocument)(input);
+  let value: Dynamic = parseDcHtmlDocument(input);
   if (!value?.jsMatch) return null;
-  let value2: Dynamic = (0, findHtmlTagEnd)(
+  let value2: Dynamic = findHtmlTagEnd(
     input,
     value.jsMatch.index,
   );
@@ -40,10 +40,10 @@ function getDcPropsJson(input?: Dynamic): Dynamic {
   return value4 ? decodeHtmlEntities(value4[1]) : null;
 }
 function setDcPropsJson(input?: Dynamic, options?: Dynamic): Dynamic {
-  let value: Dynamic = (0, parseDcHtmlDocument)(input);
+  let value: Dynamic = parseDcHtmlDocument(input);
   if (!value) return null;
   let value2: Dynamic = options.trim()
-    ? ` data-props="${(0, escapeHtmlAttributeValue)(options.trim())}"`
+    ? ` data-props="${escapeHtmlAttributeValue(options.trim())}"`
     : "";
   if (!value.jsMatch) {
     let value5: Dynamic = `<script type="${TextXDcValue}" data-dc-script${value2}><\/script>
@@ -54,7 +54,7 @@ function setDcPropsJson(input?: Dynamic, options?: Dynamic): Dynamic {
       : input.slice(0, value6) + value5 + input.slice(value6);
   }
   let index: Dynamic = value.jsMatch.index,
-    value3: Dynamic = (0, findHtmlTagEnd)(input, index);
+    value3: Dynamic = findHtmlTagEnd(input, index);
   if (value3 === -1) return null;
   let value4: Dynamic = input
     .slice(index, value3)

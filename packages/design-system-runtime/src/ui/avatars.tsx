@@ -151,7 +151,7 @@ function Shortcut({
 }: ShortcutProps): React.ReactElement {
   useUiLocale();
   let value = useAppleKeyboard(),
-    value2 = (0, useTranslation)(
+    value2 = useTranslation(
       "sequenceThen",
       SHORTCUT_SEQUENCE_SEPARATOR,
     ),
@@ -164,7 +164,7 @@ function Shortcut({
       {...props}
       data-cds={"Shortcut"}
       data-variant={variant}
-      className={(0, cn)(
+      className={cn(
         shortcutVariantClasses[variant],
         onFill && "[--cds-shortcut-cap-ink:currentColor]",
         className,
@@ -1210,7 +1210,7 @@ function useShrinkWrapRef({
       let current = ref.current;
       ref.current = null;
       if (current) {
-        (0, invokeAndReportError)(current);
+        invokeAndReportError(current);
       }
       if (!input3) {
         return;
@@ -1219,7 +1219,7 @@ function useShrinkWrapRef({
         restoreShrinkWrapWidth(input3);
         return;
       }
-      (0, invokeAndReportError)(() => {
+      invokeAndReportError(() => {
         ref.current = observeShrinkWrap(input3, {
           immediate: input2,
         });
@@ -1246,7 +1246,7 @@ function getDisabledReasonWrapperProps(
     tabIndex: value ? 0 : -1,
     "aria-describedby": value ? options : undefined,
     "data-cds-disabled-reason-wrapper": "",
-    className: (0, cn)(
+    className: cn(
       "inline-flex",
       disabledReasonFocusClasses,
       context,
@@ -1301,7 +1301,7 @@ function cancelInputDismissingTooltipOpen(
   if (
     input &&
     options.reason === "trigger-focus" &&
-    (0, isInputTriggeredBlur)(options.event)
+    isInputTriggeredBlur(options.event)
   ) {
     options.cancel();
     return true;
@@ -1347,7 +1347,7 @@ function TooltipShortcut({
     <Shortcut
       keys={keys}
       variant={"text"}
-      className={(0, cn)(
+      className={cn(
         "text-[calc(0.75rem*var(--cds-rem-scale,1))] [--cds-shortcut-cap-ink:var(--cds-text-muted)]",
         className,
       )}
@@ -1379,7 +1379,7 @@ function Tooltip({
   children: children,
 }: Overlays.TooltipProps): React.ReactElement {
   useUiLocale();
-  let value = (0, usePortalContainer)(),
+  let value = usePortalContainer(),
     value2 = useShrinkWrapRef({
       immediate: true,
     }),
@@ -1497,7 +1497,7 @@ function Tooltip({
       }
     };
   }, []);
-  let value16 = (0, useDefaultOverlayLayer)("tooltip"),
+  let value16 = useDefaultOverlayLayer("tooltip"),
     [value17] = reactTooltip.useState(() =>
       lazy && open === undefined ? baseTooltip.createHandle() : null,
     ),
@@ -1516,7 +1516,7 @@ function Tooltip({
       ref5.current = false;
     }
   }, [open]);
-  let value22 = (0, useOptionalEventCallback)(() => {
+  let value22 = useOptionalEventCallback(() => {
       if (ref3.current || value20 || !value11 || open !== undefined) {
         return;
       }
@@ -1538,7 +1538,7 @@ function Tooltip({
       ref5.current = true;
       onOpenChange?.(true);
     }),
-    value23 = (0, useOptionalEventCallback)(
+    value23 = useOptionalEventCallback(
       (input: React.PointerEvent<HTMLElement>) => {
         if (value20 || input.pointerType === "touch") {
           return;
@@ -1550,12 +1550,12 @@ function Tooltip({
         value21.start(delay, value22);
       },
     ),
-    value24 = (0, useOptionalEventCallback)(() => {
+    value24 = useOptionalEventCallback(() => {
       if (closeOnClick !== false) {
         value21.cancel();
       }
     }),
-    value25 = (0, useOptionalEventCallback)(
+    value25 = useOptionalEventCallback(
       (event: React.FocusEvent<HTMLElement>) => {
         if (value20) {
           return;
@@ -1565,7 +1565,7 @@ function Tooltip({
         }
         if (
           !openOnHandedBackFocus &&
-          (0, isInputTriggeredBlur)(event.nativeEvent)
+          isInputTriggeredBlur(event.nativeEvent)
         ) {
           return;
         }
@@ -1649,7 +1649,7 @@ function Tooltip({
                             }
                           : undefined
                       }
-                      className={(0, cn)(
+                      className={cn(
                         tooltipSingleLineClasses,
                         tooltipSecondaryDetailClasses,
                         multiline || detail || secondaryHint
@@ -1994,15 +1994,15 @@ export function installUiAvatars(): () => void {
     };
     isShortcutModifier = (input: string): input is ShortcutModifier =>
       (shortcutModifierNames as readonly string[]).includes(input);
-    initializeShortcuts = (0, initializeOnce)(() => {
-      (0, initializeClassNames)();
-      (0, initializeTranslations)();
-      reactShortcut = (0, toModuleNamespace)(
-        (0, loadReactNamespace)(),
+    initializeShortcuts = initializeOnce(() => {
+      initializeClassNames();
+      initializeTranslations();
+      reactShortcut = toModuleNamespace(
+        loadReactNamespace(),
         1,
       );
-      jsxShortcut = (0, toModuleNamespace)(
-        (0, loadJsxNamespace)(),
+      jsxShortcut = toModuleNamespace(
+        loadJsxNamespace(),
         1,
       );
       shortcutVariantClasses = {
@@ -2133,16 +2133,16 @@ export function installUiAvatars(): () => void {
         insert: "Insert",
       };
     });
-    initializeTextClipping = (0, initializeOnce)(() => {
-      reactTextOverflow = (0, toModuleNamespace)(
-        (0, loadReactNamespace)(),
+    initializeTextClipping = initializeOnce(() => {
+      reactTextOverflow = toModuleNamespace(
+        loadReactNamespace(),
         1,
       );
       documentTextRanges = new WeakMap();
     });
-    initializeCancelableTimeout = (0, initializeOnce)(() => {
-      reactCancelableTimeout = (0, toModuleNamespace)(
-        (0, loadReactNamespace)(),
+    initializeCancelableTimeout = initializeOnce(() => {
+      reactCancelableTimeout = toModuleNamespace(
+        loadReactNamespace(),
         1,
       );
     });
@@ -2150,7 +2150,7 @@ export function installUiAvatars(): () => void {
     SHRINK_WRAP_MAX_ITERATIONS = 12;
     SHRINK_WRAP_ATTRIBUTE = "data-shrinkwrap";
     SHRINK_WRAP_MAX_LINE_RECTS = 16;
-    initializeShrinkWrapMeasurement = (0, initializeOnce)(() => {
+    initializeShrinkWrapMeasurement = initializeOnce(() => {
       shrinkWrapBaselineWidths = new WeakMap();
       shrinkWrapWrittenWidths = new WeakMap();
       shrinkWrapAtomicTags = new Set([
@@ -2173,16 +2173,16 @@ export function installUiAvatars(): () => void {
       shrinkWrapResizeObservers = new WeakMap();
       shrinkWrapWindowResizeStores = new WeakMap();
     });
-    initializeShrinkWrap = (0, initializeOnce)(() => {
-      (0, initializeErrorReporting)();
-      (0, initializeMergedRefs)();
+    initializeShrinkWrap = initializeOnce(() => {
+      initializeErrorReporting();
+      initializeMergedRefs();
       initializeShrinkWrapMeasurement();
-      reactShrinkWrap = (0, toModuleNamespace)(
-        (0, loadReactNamespace)(),
+      reactShrinkWrap = toModuleNamespace(
+        loadReactNamespace(),
         1,
       );
-      jsxShrinkWrap = (0, toModuleNamespace)(
-        (0, loadJsxNamespace)(),
+      jsxShrinkWrap = toModuleNamespace(
+        loadJsxNamespace(),
         1,
       );
       ShrinkWrap = reactShrinkWrap.forwardRef(
@@ -2199,7 +2199,7 @@ export function installUiAvatars(): () => void {
               enabled: enabled,
               immediate: immediate,
             }),
-            value2 = (0, useMergedRefs)(options, value);
+            value2 = useMergedRefs(options, value);
           return (
             <div ref={value2} data-cds={"ShrinkWrap"} {...props}>
               {children}
@@ -2226,15 +2226,15 @@ export function installUiAvatars(): () => void {
     buttonSolidInsetClasses = "inset-[0.5px]";
     initializeDisabledReasonDebug = () => {};
     DISABLED_REASON_ATTRIBUTE = "data-cds-disabled-reason";
-    initializeDisabledReason = (0, initializeOnce)(() => {
-      (0, initializeClassNames)();
+    initializeDisabledReason = initializeOnce(() => {
+      initializeClassNames();
       initializeDisabledReasonDebug();
-      reactDisabledReason = (0, toModuleNamespace)(
-        (0, loadReactNamespace)(),
+      reactDisabledReason = toModuleNamespace(
+        loadReactNamespace(),
         1,
       );
-      jsxDisabledReason = (0, toModuleNamespace)(
-        (0, loadJsxNamespace)(),
+      jsxDisabledReason = toModuleNamespace(
+        loadJsxNamespace(),
         1,
       );
       disabledReasonFocusClasses = `rounded outline-none focus-visible:outline-hidden [&[data-initial-focus]:focus]:outline-hidden transition-shadow duration-fast ${buttonFocusClasses}`;
@@ -2245,17 +2245,17 @@ export function installUiAvatars(): () => void {
       "origin-[var(--transform-origin)] transition-[opacity,scale] duration-snap ease-snap motion-reduce:transition-none data-[starting-style]:opacity-0 data-[starting-style]:scale-[0.98] data-[ending-style]:opacity-0 data-[ending-style]:scale-[0.98] data-[instant]:duration-0";
     multilineTooltipBaseClasses = "max-w-[240px] whitespace-normal";
     multilineTooltipArrowClass = "min-w-0 break-words";
-    initializeTooltipClasses = (0, initializeOnce)(() => {
-      jsxTooltipClasses = (0, toModuleNamespace)(
-        (0, loadJsxNamespace)(),
+    initializeTooltipClasses = initializeOnce(() => {
+      jsxTooltipClasses = toModuleNamespace(
+        loadJsxNamespace(),
         1,
       );
       singleLineTooltipClasses = `px-2 ${tooltipBaseClasses}`;
       multilineTooltipClasses = `${multilineTooltipBaseClasses} py-1.5`;
     });
-    initializeTooltipContext = (0, initializeOnce)(() => {
-      reactTooltipContext = (0, toModuleNamespace)(
-        (0, loadReactNamespace)(),
+    initializeTooltipContext = initializeOnce(() => {
+      reactTooltipContext = toModuleNamespace(
+        loadReactNamespace(),
         1,
       );
       tooltipsDisabledContext = reactTooltipContext.createContext(false);
@@ -2265,7 +2265,7 @@ export function installUiAvatars(): () => void {
         );
     });
     tooltipExports = {} as typeof tooltipExports;
-    (0, defineLiveExports)(tooltipExports, {
+    defineLiveExports(tooltipExports, {
       useTooltipTrigger: () => useTooltipsDisabled,
       useTooltipGroup: () => useHasTooltipProvider,
       TooltipImplProvider: () => TooltipImplementationProvider,
@@ -2316,15 +2316,15 @@ export function installUiAvatars(): () => void {
     tooltipContentRowClasses =
       "inline-flex items-center gap-2 min-h-[calc(1.5rem*var(--cds-rem-scale,1))] max-w-[240px] py-[calc(0.1875rem*var(--cds-rem-scale,1))]";
     tooltipContentAlignmentClass = "self-start";
-    initializeTooltip = (0, initializeOnce)(() => {
-      (0, initializeInputDismissalTracking)();
-      (0, initializeClassNames)();
-      (0, initializeCdsRoot)();
-      (0, initializeLayers)();
-      (0, initializeEventCallbacks)();
-      (0, initializeMergedRefs)();
-      (0, initializePortalRoot)();
-      (0, initializeCollisionPadding)();
+    initializeTooltip = initializeOnce(() => {
+      initializeInputDismissalTracking();
+      initializeClassNames();
+      initializeCdsRoot();
+      initializeLayers();
+      initializeEventCallbacks();
+      initializeMergedRefs();
+      initializePortalRoot();
+      initializeCollisionPadding();
       initializeTextClipping();
       initializeCancelableTimeout();
       initializeShortcuts();
@@ -2332,13 +2332,13 @@ export function installUiAvatars(): () => void {
       initializeDisabledReason();
       initializeTooltipClasses();
       initializeTooltipContext();
-      (0, initializeNpmDependency)();
-      reactTooltip = (0, toModuleNamespace)(
-        (0, loadReactNamespace)(),
+      initializeNpmDependency();
+      reactTooltip = toModuleNamespace(
+        loadReactNamespace(),
         1,
       );
-      jsxTooltip = (0, toModuleNamespace)(
-        (0, loadJsxNamespace)(),
+      jsxTooltip = toModuleNamespace(
+        loadJsxNamespace(),
         1,
       );
       TOOLTIP_NO_SHOW = Symbol(
@@ -2367,7 +2367,7 @@ export function installUiAvatars(): () => void {
         options: React.ForwardedRef<HTMLSpanElement>,
       ): React.ReactElement {
         let ref = reactTooltip.useRef<HTMLSpanElement | null>(null),
-          value = (0, useMergedRefs)(ref, options),
+          value = useMergedRefs(ref, options),
           value2 = useTooltipsDisabled();
         return (
           <Tooltip
@@ -2401,7 +2401,7 @@ export function installUiAvatars(): () => void {
               {...props}
               ref={value}
               data-cds={"OverflowTooltip"}
-              className={(0, cn)(
+              className={cn(
                 "block min-w-0 overflow-x-clip text-ellipsis whitespace-nowrap",
                 className,
               )}
@@ -2420,7 +2420,7 @@ export function installUiAvatars(): () => void {
     });
     initializeHostSupport = () => {};
     hotReloadCopyExports = {} as HotReloadCopyExports;
-    (0, defineLiveExports)(hotReloadCopyExports, {
+    defineLiveExports(hotReloadCopyExports, {
       unpublishableWords: (): HotReloadCopyExports["unpublishableWords"] =>
         unpublishableMigrationFilesMessage,
       keptWords: (): HotReloadCopyExports["keptWords"] =>

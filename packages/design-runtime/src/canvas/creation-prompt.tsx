@@ -45,7 +45,7 @@ function BusyCanvasPrompt({
   onAdd: onAdd,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic = (0, useClaudeActivity)() === "working";
+  let value: Dynamic = useClaudeActivity() === "working";
   return (
     <ClaudeWorkingLabel
       working={value}
@@ -75,7 +75,7 @@ function DesignCreationPrompt({
   onAdd: onAdd,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic = (0, useHostDrawsClaudeTips)(),
+  let value: Dynamic = useHostDrawsClaudeTips(),
     value2: Dynamic = (
       <PeerBadge
         tint={"violet"}
@@ -171,7 +171,7 @@ export {
 };
 export function installCanvasCreationPrompt(): () => void {
   return () => {
-    (0, initializeCdsIndex)();
+    initializeCdsIndex();
     designCreationTips = [
       "Double-click text to edit it.",
       // MineDesign: user-facing copy calls the agent "the agent", not Claude.
@@ -184,8 +184,8 @@ export function installCanvasCreationPrompt(): () => void {
       uiMessage("canvas.creationPrompt.dragAnArtboardByIts"),
       uiMessage("canvas.creationPrompt.selectAnyElementToComment"),
     ];
-    jsx_xu = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    jsx_xu = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
     AddArtboardPromptButton = (

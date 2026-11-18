@@ -49,7 +49,7 @@ function rebaseUndoEntries(
         " entry does not outlive a reset of the base";
       break;
     }
-    let value4: Dynamic = (0, mergeDcTemplates)(
+    let value4: Dynamic = mergeDcTemplates(
       options,
       value3,
       context,
@@ -79,7 +79,7 @@ function rebaseModelHistory(
 ): Dynamic {
   if (!ModelHistoryRebaseAlias) {
     let value4: Dynamic = input.undo.length + input.redo.length;
-    (0, resetUndoHistory)(input);
+    resetUndoHistory(input);
     return {
       undo: 0,
       redo: 0,

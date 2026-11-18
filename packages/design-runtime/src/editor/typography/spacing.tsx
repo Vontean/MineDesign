@@ -23,19 +23,19 @@ function PropertyTextSpacing({
   onCommitMany: onCommitMany,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic = (0, useStyleCommitScrub)(
+  let value: Dynamic = useStyleCommitScrub(
       (input?: Dynamic): Dynamic => onCommitMany(input),
     ),
-    value2: Dynamic = (0, inheritedFieldsDisabledReason)(lh, ls),
-    value3: Dynamic = (0, inheritedFieldsDescription)(lh, ls),
-    value4: Dynamic = (0, inheritedFieldForEdit)(lh),
-    value5: Dynamic = (0, inheritedFieldForEdit)(ls),
+    value2: Dynamic = inheritedFieldsDisabledReason(lh, ls),
+    value3: Dynamic = inheritedFieldsDescription(lh, ls),
+    value4: Dynamic = inheritedFieldForEdit(lh),
+    value5: Dynamic = inheritedFieldForEdit(ls),
     callback: Dynamic = (input?: Dynamic): Dynamic => {
       let value9: Dynamic = (input.mixed ? "" : (input.value ?? "")).trim();
       return {
         v: value9,
-        n: (0, parseCssNumber)(value9),
-        fb: (0, parseCssNumber)(input.fallback ?? ""),
+        n: parseCssNumber(value9),
+        fb: parseCssNumber(input.fallback ?? ""),
       };
     },
     value6: Dynamic = callback(value4),
@@ -60,8 +60,8 @@ function PropertyTextSpacing({
       context?: Dynamic,
     ): Dynamic =>
       input.fb
-        ? (0, formatCssNumber)(
-            (0, roundCssNumber)(input.fb.value, input.fb.unit),
+        ? formatCssNumber(
+            roundCssNumber(input.fb.value, input.fb.unit),
             input.fb.unit === callback3(input, options) ? "" : input.fb.unit,
           )
         : context.fallback || "",
@@ -126,7 +126,7 @@ function PropertyTextSpacing({
               value:
                 input2 === undefined
                   ? null
-                  : (0, formatCssNumber)(
+                  : formatCssNumber(
                       input2,
                       callback3(options, extra),
                     ),
@@ -137,7 +137,7 @@ function PropertyTextSpacing({
           value.onScrub([
             {
               prop: input.prop,
-              value: (0, formatCssNumber)(
+              value: formatCssNumber(
                 input2,
                 callback3(options, extra),
               ),
@@ -204,8 +204,8 @@ export {
 };
 export function installEditorTypographySpacing(): () => void {
   return () => {
-    jsxTypographySpacing = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    jsxTypographySpacing = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
     PropertiesInheritedFieldMixedAlias_3 =

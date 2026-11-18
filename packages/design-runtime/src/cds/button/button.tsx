@@ -77,7 +77,7 @@ function useButtonIconSize(input?: Dynamic): Dynamic {
     value2: Dynamic = (0, reactButtonButton.useContext)(
       ButtonIconSizeContext,
     );
-  return (0, useIconSize)(
+  return useIconSize(
     input !== undefined
       ? buttonSizeToIconSize(input)
       : (value2 ??
@@ -87,7 +87,7 @@ function useButtonIconSize(input?: Dynamic): Dynamic {
   );
 }
 function buttonIconPadding(input?: Dynamic): Dynamic {
-  return `calc((var(--cds-h-control) - ${(0, scaleCssPixels)(iconSizeMetrics[input].px)}) / 2)`;
+  return `calc((var(--cds-h-control) - ${scaleCssPixels(iconSizeMetrics[input].px)}) / 2)`;
 }
 export {
   Button,
@@ -121,31 +121,31 @@ export {
 };
 export function installCdsButtonButton(): () => void {
   return () => {
-    initializeButtonButton = (0, initializeOnce)((): Dynamic => {
+    initializeButtonButton = initializeOnce((): Dynamic => {
       "use client";
 
-      (0, initializeClassNames)();
-      (0, initializeLinkRouter)();
-      (0, initializeCdsRoot)();
-      (0, initializeDomSelectionPrevention)();
-      (0, initializePlatformRootFontSize_3)();
-      (0, initializeComponentsIcon_2)();
-      (0, initializeComponentsShortcut)();
-      (0, initializeTooltipTrigger)();
-      (0, initializeButtonContext)();
-      (0, initializeButtonContext_2)();
-      (0, initializeComponentsSpinner)();
-      (0, initializeTooltipDeferredProvider)();
-      (0, initializeButtonContext_3)();
-      (0, initializeNpm__base_ui_react_SY)();
-      reactButtonButton = (0, toModuleNamespace)(
-        (0, load_react)(),
+      initializeClassNames();
+      initializeLinkRouter();
+      initializeCdsRoot();
+      initializeDomSelectionPrevention();
+      initializePlatformRootFontSize_3();
+      initializeComponentsIcon_2();
+      initializeComponentsShortcut();
+      initializeTooltipTrigger();
+      initializeButtonContext();
+      initializeButtonContext_2();
+      initializeComponentsSpinner();
+      initializeTooltipDeferredProvider();
+      initializeButtonContext_3();
+      initializeNpm__base_ui_react_SY();
+      reactButtonButton = toModuleNamespace(
+        load_react(),
       );
-      (0, initializeNpm_clsx_xh)();
-      jsxButtonButton = (0, toModuleNamespace)(
-        (0, load_react_jsx_runtime)(),
+      initializeNpm_clsx_xh();
+      jsxButtonButton = toModuleNamespace(
+        load_react_jsx_runtime(),
       );
-      (0, initializeNpm_class_variance_authority_Zhe)();
+      initializeNpm_class_variance_authority_Zhe();
       ButtonButtonPreventDefault = (event?: Dynamic): Dynamic => {
         event.preventDefault();
         event.stopPropagation();
@@ -154,7 +154,7 @@ export function installCdsButtonButton(): () => void {
         "text-primary font-medium focus-visible:shadow-[0_0_0_2px_rgb(255_255_255/0.7)] [&[data-initial-focus]:focus]:shadow-[0_0_0_2px_rgb(255_255_255/0.7)]";
       MeCalcVarCdsHControl1em6px2VarCdsPadMdValue =
         "me-[calc((var(--cds-h-control)-1em-6px)/2-var(--cds-pad-md))]";
-      buttonContentClassNames = (0, npm_cva_Kj)(
+      buttonContentClassNames = npm_cva_Kj(
         "cds-reset group/btn relative isolate inline-flex shrink-0 items-center justify-center gap-1.5 whitespace-nowrap select-none cursor-[var(--cds-cursor-interactive)] aria-disabled:cursor-default data-[disabled]:cursor-default border-0 outline-none focus-visible:outline-hidden [&[data-initial-focus]:focus]:outline-hidden rounded h-control font-sans text-body [&:disabled:not([aria-busy])]:opacity-disabled disabled:pointer-events-none transition-shadow duration-fast",
         {
           variants: {
@@ -180,7 +180,7 @@ export function installCdsButtonButton(): () => void {
       );
       buttonStyleVariants =
         "bg-[var(--cds-button-on-content)] backdrop-blur-md shadow-[inset_0_0_0_1px_var(--cds-button-on-content-ring)] group-focus-visible/btn:!shadow-[inset_0_0_0_1px_var(--cds-button-on-content-ring)] group-[[data-initial-focus]:focus]/btn:!shadow-[inset_0_0_0_1px_var(--cds-button-on-content-ring)] group-hover/btn:bg-[var(--cds-button-on-content-hover)] group-[[aria-haspopup][aria-expanded=true]]/btn:bg-[var(--cds-button-on-content-hover)]";
-      buttonIconOnlyVariants = (0, npm_cva_Kj)(
+      buttonIconOnlyVariants = npm_cva_Kj(
         ButtonContextClassNames_4,
         {
           variants: {
@@ -260,7 +260,7 @@ export function installCdsButtonButton(): () => void {
               ? (variant = value.buttonVariant)
               : (variant = variant ?? value.buttonVariant));
           let value3: Dynamic = variant ?? "secondary",
-            value4: Dynamic = (0, useButtonGroup)(),
+            value4: Dynamic = useButtonGroup(),
             value5: Dynamic = iconOnly === true ? undefined : value4.icon,
             value6: Dynamic = value5 !== undefined && value4.compact,
             value7: Dynamic = iconOnly === true || value6,
@@ -281,19 +281,19 @@ export function installCdsButtonButton(): () => void {
               value11 !== undefined && !value2 && value3 === "ghost"
                 ? value11
                 : undefined,
-            value13: Dynamic = (0, useAppleKeyboard)(),
+            value13: Dynamic = useAppleKeyboard(),
             value14: Dynamic = (0, reactButtonButton.useRef)(null);
-          (0, useButtonAnimation)(value14, "Button");
+          useButtonAnimation(value14, "Button");
           let value15: Dynamic = useButtonIconSize(size),
             value16: Dynamic =
               value7 && value8 ? (
-                (0, isIconName)(value8) ? (
+                isIconName(value8) ? (
                   <Icon name={value8} size={value15} />
                 ) : (
                   value8
                 )
               ) : null,
-            value17: Dynamic = (0, useTooltipTrigger)(),
+            value17: Dynamic = useTooltipTrigger(),
             value18: Dynamic =
               (value7 && ariaLabel && tooltip !== false) ||
               value5 !== undefined,
@@ -336,7 +336,7 @@ export function installCdsButtonButton(): () => void {
                       "--cds-outset-x": buttonIconPadding(value15),
                     }
                   : ButtonButtonCdsOutsetXConfig,
-            value24: Dynamic = (0, cn)(
+            value24: Dynamic = cn(
               buttonContentClassNames({
                 variant: variant,
                 iconOnly: value7,
@@ -352,7 +352,7 @@ export function installCdsButtonButton(): () => void {
               <jsxButtonButton.Fragment>
                 <span
                   aria-hidden={true}
-                  className={(0, buttonBackgroundClassName)({
+                  className={buttonBackgroundClassName({
                     joined: !!value2,
                     solid:
                       value3 === "primary" ||
@@ -394,7 +394,7 @@ export function installCdsButtonButton(): () => void {
                           <span className={"sr-only"}>{value9}</span>
                         </jsxButtonButton.Fragment>) : (value16))) : (<jsxButtonButton.Fragment>
                         {value8 &&
-                          iconPosition === "start" && ((0, isIconName)(value8) ? (<Icon
+                          iconPosition === "start" && (isIconName(value8) ? (<Icon
                               name={value8}
                               size={value15}
                               className={"-ms-1"}
@@ -403,7 +403,7 @@ export function installCdsButtonButton(): () => void {
                             </span>))}
                         {children}
                         {value8 &&
-                          iconPosition === "end" && ((0, isIconName)(value8) ? (<Icon
+                          iconPosition === "end" && (isIconName(value8) ? (<Icon
                               name={value8}
                               size={value15}
                               className={"-me-1"}
@@ -413,7 +413,7 @@ export function installCdsButtonButton(): () => void {
                         {shortcut && (<Shortcut
                             keys={shortcut}
                             aria-hidden={true}
-                            className={(0, npm_clsx_Ea)(
+                            className={npm_clsx_Ea(
                               "pointer-coarse:hidden ms-1",
                               (!value2 || value2 === "end") &&
                                 MeCalcVarCdsHControl1em6px2VarCdsPadMdValue,
@@ -435,15 +435,15 @@ export function installCdsButtonButton(): () => void {
                   </span>)}
               </jsxButtonButton.Fragment>
             ),
-            value26: Dynamic = (0, useLinkProps)({
+            value26: Dynamic = useLinkProps({
               href: href,
               routerOptions: routerOptions,
               target: target,
               rel: rel,
               download: download,
-              ...(0, pickRouterOptions)(props),
+              ...pickRouterOptions(props),
             }),
-            value27: Dynamic = (0, npm_useRender_LL)({
+            value27: Dynamic = npm_useRender_LL({
               render:
                 render ??
                 (href !== undefined ? (
@@ -473,7 +473,7 @@ export function installCdsButtonButton(): () => void {
                   ? {
                       "data-step": "1",
                     }
-                  : (0, getSizeAttribute)(size)),
+                  : getSizeAttribute(size)),
                 className: value24,
                 style: value23
                   ? {
@@ -486,11 +486,11 @@ export function installCdsButtonButton(): () => void {
                 "aria-disabled": value22 || undefined,
                 "aria-label": ariaLabel,
                 "aria-keyshortcuts": shortcut
-                  ? (0, parseSingleShortcut)(shortcut, value13)
+                  ? parseSingleShortcut(shortcut, value13)
                   : undefined,
                 children: value25,
                 ...props,
-                onMouseDown: (0, withSelectionPrevention)(
+                onMouseDown: withSelectionPrevention(
                   props.onMouseDown,
                 ),
                 onClick: value22 ? ButtonButtonPreventDefault : props.onClick,
@@ -525,7 +525,7 @@ export function installCdsButtonButton(): () => void {
       );
       Button.displayName = "Button";
     });
-    initializeButtonButton_2 = (0, initializeOnce)((): Dynamic => {
+    initializeButtonButton_2 = initializeOnce((): Dynamic => {
       ButtonButtonClassNames_2 =
         "bg-fill-field shadow-field-ring data-[invalid]:shadow-field-invalid";
       ButtonButtonClassNames_3 =

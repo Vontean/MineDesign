@@ -43,7 +43,7 @@ function createFrameKeyListenerRegistry(): Dynamic {
         },
         callback4: Dynamic = (): Dynamic => {};
       try {
-        callback4 = (0, addNativeEventListener)(
+        callback4 = addNativeEventListener(
           options,
           "pagehide",
           callback3,
@@ -101,9 +101,9 @@ function useArtboardKeyRouting({
   stopOf: stopOf,
 }: Dynamic): Dynamic {
   let [value]: Dynamic = (0, react_Eu.useState)(
-      (): Dynamic => (0, createCanvasFindAdapter)(host),
+      (): Dynamic => createCanvasFindAdapter(host),
     ),
-    value2: Dynamic = (0, useFindInPage)({
+    value2: Dynamic = useFindInPage({
       adapter: value,
       enabled: enabled,
       ownsStepChord: ownsStepChord,
@@ -175,7 +175,7 @@ function useArtboardKeyRouting({
           input2?: Dynamic,
           options?: Dynamic,
         ): Dynamic =>
-          (0, revealFindMatchAfterTextEdit)(
+          revealFindMatchAfterTextEdit(
             options,
             value5.current(input),
             input2,
@@ -212,7 +212,7 @@ function useArtboardKeyRouting({
   let { step: value16 }: Dynamic = value2,
     value17: Dynamic = (0, react_Eu.useCallback)(
       (input?: Dynamic): Dynamic =>
-        (0, revealFindMatchAfterSettle)(
+        revealFindMatchAfterSettle(
           (document as Dynamic).activeElement instanceof HTMLIFrameElement &&
             value15.current(),
           (): Dynamic => value16(input),
@@ -247,6 +247,6 @@ export {
 };
 export function installCanvasKeyRouting(): () => void {
   return () => {
-    react_Eu = (0, toModuleNamespace)((0, load_react)(), 1);
+    react_Eu = toModuleNamespace(load_react(), 1);
   };
 }

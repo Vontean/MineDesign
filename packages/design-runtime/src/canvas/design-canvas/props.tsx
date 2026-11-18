@@ -327,8 +327,8 @@ export function pickReplacementImage(deps: { readonly value177: Dynamic; readonl
                                         value654.files?.[0];
                                       value654.remove();
                                       value655 &&
-                                        (0, trackEmbeddedWrite)(
-                                          (0, uploadDesignFile)(
+                                        trackEmbeddedWrite(
+                                          uploadDesignFile(
                                             "appifact",
                                             null,
                                             value655,
@@ -336,7 +336,7 @@ export function pickReplacementImage(deps: { readonly value177: Dynamic; readonl
                                             ({
                                               src: src,
                                             }: Dynamic): Dynamic =>
-                                              (0, isEmbedFrozen)() ||
+                                              isEmbedFrozen() ||
                                               deps.value64.current?.identity !==
                                                 value653
                                                 ? null
@@ -405,56 +405,48 @@ export function pickReplacementVideo(deps: { readonly value177: Dynamic; readonl
                                         value654.files?.[0];
                                       value654.remove();
                                       if (!value655) return;
-                                      if (!(0, isVideoFile)(value655))
+                                      if (!isVideoFile(value655))
                                         return deps.value188(
                                           "Pick a video file to replace a video.",
                                         );
-                                      let value656: Dynamic = (0,
-                                      videoUploadRefusal)(value655);
+                                      let value656: Dynamic = videoUploadRefusal(value655);
                                       if (value656 !== null)
                                         return deps.value188(
-                                          (0,
-                                          CanvasWorkingStateReplace)(
-                                            (0,
-                                            videoUploadFailureMessage)(
+                                          CanvasWorkingStateReplace(
+                                            videoUploadFailureMessage(
                                               value656,
                                             ),
                                           ),
                                         );
-                                      (0, announce)(
+                                      announce(
                                         "Uploading video",
                                       );
-                                      (0, trackEmbeddedWrite)(
+                                      trackEmbeddedWrite(
                                         (async (): Promise<Dynamic> => {
-                                          let value657: Dynamic = await (0,
-                                          probeVideoFile)(
+                                          let value657: Dynamic = await probeVideoFile(
                                             value655,
                                           ).catch(
                                             (): Dynamic => "probe_timeout",
                                           );
                                           if (typeof value657 == "string") {
                                             deps.value188(
-                                              (0,
-                                              CanvasWorkingStateReplace)(
-                                                (0,
-                                                videoUploadFailureMessage)(
+                                              CanvasWorkingStateReplace(
+                                                videoUploadFailureMessage(
                                                   value657,
                                                 ),
                                               ),
                                             );
                                             return false;
                                           }
-                                          let value658: Dynamic = await (0,
-                                          uploadDesignVideo)(
+                                          let value658: Dynamic = await uploadDesignVideo(
                                             value655,
                                             value657,
                                           );
-                                          if ((0, isEmbedFrozen)())
+                                          if (isEmbedFrozen())
                                             return false;
                                           if ("refused" in value658) {
                                             deps.value188(
-                                              (0,
-                                              CanvasWorkingStateReplace)(
+                                              CanvasWorkingStateReplace(
                                                 value658.refused,
                                               ),
                                             );
@@ -473,7 +465,7 @@ export function pickReplacementVideo(deps: { readonly value177: Dynamic; readonl
                                             let index: Dynamic = 0;
                                             !value659 &&
                                             index < 240 &&
-                                            !(0, isEmbedFrozen)();
+                                            !isEmbedFrozen();
                                             index++
                                           ) {
                                             await new Promise(
@@ -482,7 +474,7 @@ export function pickReplacementVideo(deps: { readonly value177: Dynamic; readonl
                                             );
                                             value659 = callback15();
                                           }
-                                          if ((0, isEmbedFrozen)())
+                                          if (isEmbedFrozen())
                                             return false;
                                           if (!value659) {
                                             deps.value188(
@@ -500,7 +492,7 @@ export function pickReplacementVideo(deps: { readonly value177: Dynamic; readonl
                                               },
                                             );
                                           value660 === "ok"
-                                            ? (0, announce)(
+                                            ? announce(
                                                 "Video replaced",
                                               )
                                             : deps.value188(

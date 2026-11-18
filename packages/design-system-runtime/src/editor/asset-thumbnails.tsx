@@ -39,12 +39,12 @@ function resolvedAssetFileBytes(
 ): number {
   if (
     (bytes ?? 0) > 0 ||
-    !(0, isHeldFilePointer)(path, files[path] ?? "")
+    !isHeldFilePointer(path, files[path] ?? "")
   ) {
     return bytes ?? 0;
   }
   return (
-    (0, addressedFileEntry)((0, projectFilePath)(path))
+    addressedFileEntry(projectFilePath(path))
       ?.size ?? 0
   );
 }
@@ -59,8 +59,8 @@ function retryAssetThumbnailAddress(
       value2 =
         image?.currentTarget?.currentSrc ||
         image?.currentTarget?.src ||
-        (0, encodeRelativeUrlPath)(
-          (0, projectFilePath)(files),
+        encodeRelativeUrlPath(
+          projectFilePath(files),
         ),
       pathname = new URL(value2, value).pathname,
       value3 = assetAddressRoot(pathname),
@@ -101,9 +101,9 @@ function retryAssetThumbnailAddress(
       reportedAssetThumbnailFailures.add(value3);
       if (
         value3 === assetAddressRoot(new URL(value).pathname) &&
-        (0, isPublishedPreviewStillOffered)(pathname)
+        isPublishedPreviewStillOffered(pathname)
       ) {
-        (0, notePublishedPreviewFailure)(pathname, files);
+        notePublishedPreviewFailure(pathname, files);
       } else {
         console.warn(
           "design-system: could not load " +
@@ -125,7 +125,7 @@ function useAssetThumbnailSource(
   path: string,
 ): Editor.ThumbnailSource {
   useAssetThumbnailSources();
-  let value = (0, isHeldFilePointer)(path, files[path] ?? ""),
+  let value = isHeldFilePointer(path, files[path] ?? ""),
     ref = reactAssetThumbnail.useRef<Editor.AddressedLoadState | null>(null),
     [, value2] = reactAssetThumbnail.useReducer(
       (input: number) => input + 1,
@@ -137,21 +137,21 @@ function useAssetThumbnailSource(
       part: 0,
     };
   }
-  let callback = () => (0, addressedProjectFileUrl)(path);
+  let callback = () => addressedProjectFileUrl(path);
   if (ref.current === null) {
-    ref.current = (0, createAddressedFileLoadState)(
-      (0, resolveFileVersion)(path),
+    ref.current = createAddressedFileLoadState(
+      resolveFileVersion(path),
       callback(),
     );
   }
   let current = ref.current!,
-    value3 = (0, refreshAddressedFileVersion)(
+    value3 = refreshAddressedFileVersion(
       current,
-      (0, addressedFileEntry)((0, projectFilePath)(path))
-        ?.sha256 ?? (0, resolveFileVersion)(path),
+      addressedFileEntry(projectFilePath(path))
+        ?.sha256 ?? resolveFileVersion(path),
       callback,
     ),
-    value4 = (0, currentAddressedFileSource)(current, callback);
+    value4 = currentAddressedFileSource(current, callback);
   return {
     part: value3,
     ...(value4 !== undefined
@@ -163,9 +163,9 @@ function useAssetThumbnailSource(
       current.loaded = true;
     },
     onError: (input: Editor.ThumbnailEvent): void => {
-      if ((0, retryAddressedFileSource)(current, callback)) {
+      if (retryAddressedFileSource(current, callback)) {
         setTimeout((): void => {
-          (0, advanceAddressedFileSource)(current);
+          advanceAddressedFileSource(current);
           value2();
         }, ASSET_THUMBNAIL_RETRY_MS);
         return;
@@ -185,7 +185,7 @@ function useAssetThumbnailSource(
         },
         (): void => {
           if (current.last === last) {
-            (0, refuseAddressedFileSource)(current, () => value5);
+            refuseAddressedFileSource(current, () => value5);
           }
         },
       );
@@ -212,16 +212,16 @@ export {
 };
 export function installEditorAssetThumbnails(): () => void {
   return () => {
-    reactAssetGroups = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    reactAssetGroups = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
-    reactDomAssetGroups = (0, toModuleNamespace)(
-      (0, loadReactDomNamespace)(),
+    reactDomAssetGroups = toModuleNamespace(
+      loadReactDomNamespace(),
       1,
     );
-    reactAssetThumbnail = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    reactAssetThumbnail = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
     assetThumbnailGeneration = 0;
@@ -234,8 +234,8 @@ export function installEditorAssetThumbnails(): () => void {
         } catch {}
       }
     };
-    (0, subscribeAddressedFileEntries)(notifyAssetThumbnailSources);
-    (0, subscribeAddressedFiles)(notifyAssetThumbnailSources);
+    subscribeAddressedFileEntries(notifyAssetThumbnailSources);
+    subscribeAddressedFiles(notifyAssetThumbnailSources);
     subscribeAssetThumbnailSources = (input: () => void) => {
       assetThumbnailSubscribers.add(input);
       return () => void assetThumbnailSubscribers.delete(input);

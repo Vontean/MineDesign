@@ -36,8 +36,8 @@ function validateAssetGroupName(
     );
   }
   if (
-    !(0, isAssetGroupName)(name) ||
-    !(0, isValidDesignSystemPath)("assets/" + name + "/x")
+    !isAssetGroupName(name) ||
+    !isValidDesignSystemPath("assets/" + name + "/x")
   ) {
     return uiMessage("design-system.assetGroupEditor.setNamesCanTContain2");
   }
@@ -80,7 +80,7 @@ function useAssetGroupEditor(
     ref = (reactAssetGroupEditor as typeof React).useRef(options);
   ref.current = options;
   let value4 = assetGroupDisplayName,
-    value5 = (0, useCoarsePointer)(),
+    value5 = useCoarsePointer(),
     memo = (reactAssetGroupEditor as typeof React).useMemo(
       () =>
         value.flatMap((input) => input.assets.map((input2) => input2.path)),
@@ -138,8 +138,8 @@ function useAssetGroupEditor(
           values = new Set(items.map((input) => memo2.get(input)?.group)),
           value16 = !value13 && values.size === 1 && values.has(value14),
           callback5 = (input: Model.DesignSystemContent) =>
-            (0, moveAssetsToGroup)(input, items, value14, value15);
-        (0, performDesignSystemEdit)(
+            moveAssetsToGroup(input, items, value14, value15);
+        performDesignSystemEdit(
           value2,
           callback5,
           (): boolean => {
@@ -185,7 +185,7 @@ function useAssetGroupEditor(
                 memo2.get(input)?.group !== value14,
             ).length;
             if (length > 0) {
-              (0, showEditorNotification)(
+              showEditorNotification(
                 assetFileCountLabel(length) + " couldn’t be moved",
               );
             }
@@ -203,10 +203,10 @@ function useAssetGroupEditor(
         }
         let value13 = items.filter(
           (input: string): boolean =>
-            (0, remoteTextEntry)(input) !== undefined,
+            remoteTextEntry(input) !== undefined,
         );
         if (value13.length > 0) {
-          (0, showEditorNotification)(
+          showEditorNotification(
             (value13.length === 1
               ? (memo2.get(value13[0])?.name ?? "1 file") + " is"
               : assetFileCountLabel(value13.length) + " are") +
@@ -217,7 +217,7 @@ function useAssetGroupEditor(
           );
           items = items.filter(
             (input: string): boolean =>
-              (0, remoteTextEntry)(input) === undefined,
+              remoteTextEntry(input) === undefined,
           );
           if (items.length === 0) {
             return;
@@ -236,8 +236,8 @@ function useAssetGroupEditor(
                 .find((input: string): boolean => !values.has(input)) ??
               null,
             callback6 = (input: Model.DesignSystemContent) =>
-              (0, deleteAssetFiles)(input, items);
-          (0, performDesignSystemEdit)(
+              deleteAssetFiles(input, items);
+          performDesignSystemEdit(
             value2,
             callback6,
             (input?: { withoutBytes: string[] }): boolean => {
@@ -259,7 +259,7 @@ function useAssetGroupEditor(
               if (length === 0) {
                 ref.current.removed(value16);
               } else if (length >= items.length) {
-                (0, showEditorNotification)(
+                showEditorNotification(
                   value16 + ". This cannot be undone.",
                 );
               } else {
@@ -289,7 +289,7 @@ function useAssetGroupEditor(
       },
       [value2, memo2, memo],
     ),
-    value10 = (0, useAssetGridInteractions)({
+    value10 = useAssetGridInteractions({
       order: memo,
       editable: value2 !== undefined,
       coarse: value5,
@@ -368,23 +368,23 @@ function useAssetGroupEditor(
                   ...new Set(
                     Object.keys(ref.current.files()).flatMap(
                       (input3) =>
-                        (0, parseAssetGroupPath)(input3)?.group ?? [],
+                        parseAssetGroupPath(input3)?.group ?? [],
                     ),
                   ),
                 ],
                 value14 = validateAssetGroupName(value13, input.name, items);
               if (value14 !== null) {
-                (0, showEditorNotification)(value14);
+                showEditorNotification(value14);
                 return;
               }
               let callback5 = (input3: Model.DesignSystemContent) =>
-                (0, renameAssetGroup)(input3, input.name, value13);
-              (0, performDesignSystemEdit)(
+                renameAssetGroup(input3, input.name, value13);
+              performDesignSystemEdit(
                 value2,
                 callback5,
                 (): boolean => {
                   if (!value2.exec(uiMessage("design-system.assetGroupEditor.renameGroup") + input.name, callback5)) {
-                    (0, showEditorNotification)(
+                    showEditorNotification(
                       uiMessage("design-system.assetGroupEditor.couldNotRename") +
                         value4(input.name) +
                         " to “" +
@@ -427,20 +427,20 @@ function useAssetGroupEditor(
               );
             },
             onRemove: (): void => {
-              let value13 = (0, assetGroupFilePaths)(
+              let value13 = assetGroupFilePaths(
                   ref.current.files(),
                   input.name,
                 ),
                 value14 = value13.filter(
                   (input2: string): boolean =>
-                    (0, remoteTextEntry)(input2) !== undefined,
+                    remoteTextEntry(input2) !== undefined,
                 ),
                 value15 = value13.filter(
                   (input2: string): boolean =>
-                    (0, remoteTextEntry)(input2) === undefined,
+                    remoteTextEntry(input2) === undefined,
                 );
               if (value14.length > 0 && value15.length === 0) {
-                (0, showEditorNotification)(
+                showEditorNotification(
                   assetFileCountLabel(value14.length) +
                     " in " +
                     value4(input.name) +
@@ -468,18 +468,18 @@ function useAssetGroupEditor(
                       (value16 > 0 ? memo[value16 - 1] : null) ??
                       null,
                     callback5 = (input2: Model.DesignSystemContent) =>
-                      (0, deleteAssetFiles)(
+                      deleteAssetFiles(
                         input2,
-                        (0, assetGroupFilePaths)(
+                        assetGroupFilePaths(
                           input2.files,
                           input.name,
                         ).filter(
                           (input3: string): boolean =>
-                            (0, remoteTextEntry)(input3) ===
+                            remoteTextEntry(input3) ===
                             undefined,
                         ),
                       );
-                  (0, performDesignSystemEdit)(
+                  performDesignSystemEdit(
                     value2,
                     callback5,
                     (input2?: { withoutBytes: string[] }): boolean => {
@@ -507,7 +507,7 @@ function useAssetGroupEditor(
                       if (length === 0) {
                         ref.current.removed(value18);
                       } else if (length >= value15.length) {
-                        (0, showEditorNotification)(
+                        showEditorNotification(
                           value18 + ". This cannot be undone.",
                         );
                       } else {
@@ -561,8 +561,8 @@ export {
 };
 export function installEditorAssetGroupEditor(): () => void {
   return () => {
-    jsxAssetGroupEditor = (0, toModuleNamespace)(
-      (0, loadJsxNamespace)(),
+    jsxAssetGroupEditor = toModuleNamespace(
+      loadJsxNamespace(),
       1,
     );
     NEW_ASSET_GROUP_PLACEHOLDER = "Name this set";

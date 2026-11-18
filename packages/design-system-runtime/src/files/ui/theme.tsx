@@ -180,16 +180,16 @@ export {
 };
 export function installFilesUiTheme(): () => void {
   return () => {
-    reactHostTheme = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    reactHostTheme = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
-    reactPreviewThemeMenu = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    reactPreviewThemeMenu = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
-    jsxPreviewThemeMenu = (0, toModuleNamespace)(
-      (0, loadJsxNamespace)(),
+    jsxPreviewThemeMenu = toModuleNamespace(
+      loadJsxNamespace(),
       1,
     );
   };

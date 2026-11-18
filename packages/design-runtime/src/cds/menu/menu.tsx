@@ -205,10 +205,10 @@ function isNestedSheetTarget(
   input: EventTarget | null | undefined,
   options?: string,
 ): boolean {
-  let value = (0, asElement)(input)?.closest("[data-nested]") ?? null;
+  let value = asElement(input)?.closest("[data-nested]") ?? null;
   if (value === null) return false;
   if (options === undefined) return true;
-  let value2 = (0, asElement)(value.closest("[data-sheet-tree]"));
+  let value2 = asElement(value.closest("[data-sheet-tree]"));
   return (
     value2 !== null && value2.getAttribute("data-sheet-tree") === options
   );
@@ -230,7 +230,7 @@ function shouldKeepNestedMenuOpen(
   if (value === "outside-press")
     return isNestedSheetTarget(value2?.target, context);
   if (value === "focus-out" && isFocusOutEvent(value2)) {
-    let value3 = (0, asElement)(value2.relatedTarget),
+    let value3 = asElement(value2.relatedTarget),
       value4 =
         value2.relatedTarget === null ||
         (value3 !== null &&
@@ -279,7 +279,7 @@ function useMenuItemText(
         normalizeMenuText(extractReactText(input) ?? "")) ||
       undefined,
     value6 = options === undefined && value5 === undefined;
-  (0, useIsomorphicLayoutEffect)(() => {
+  useIsomorphicLayoutEffect(() => {
     if (!value6) return;
     let value7 = normalizeMenuText(value.current?.textContent ?? ""),
       value8 = (value2.current?.textContent ?? "").startsWith(value7),
@@ -309,7 +309,7 @@ function MenuShortcut({
       keys={keys}
       variant={"text"}
       aria-hidden={true}
-      className={(0, cn)(
+      className={cn(
         "pointer-coarse:hidden text-footnote",
         menuShortcutClassName(keys),
       )}
@@ -343,7 +343,7 @@ function MenuPopupContent(
       initialFocus: value15,
       ...value16
     } = input,
-    value20 = (0, useOverlayRoot)(),
+    value20 = useOverlayRoot(),
     value21 = (0, reactMenuMenu_2.useContext)(MenuRootContext),
     value22 =
       (0, reactMenuMenu_2.useContext)(MenuConfigurationContext) &&
@@ -354,18 +354,18 @@ function MenuPopupContent(
       () =>
         value6 !== undefined || !value21
           ? value6
-          : (0, virtualTriggerAnchor)(value21),
+          : virtualTriggerAnchor(value21),
       [value6, value21],
     ),
     value26 =
       value3 ??
       (value22 ? undefined : value21 && value6 === undefined ? 2 : 6),
-    value27 = (0, usePopupEntryAnimation)({
+    value27 = usePopupEntryAnimation({
       enabled: value18 && !value22,
       side: value2,
       align: value17,
     }),
-    value28 = (0, useMenuPopupFocus)(
+    value28 = useMenuPopupFocus(
       value21?.triggerRef,
       value16.finalFocus,
     ),
@@ -374,14 +374,14 @@ function MenuPopupContent(
       : value6 != null &&
         value21 === null &&
         value16.finalFocus === undefined,
-    value30 = (0, usePassiveOpenCell)(value21 === null);
+    value30 = usePassiveOpenCell(value21 === null);
   value30.root?.declareFocusProps(value15, value16.finalFocus);
   context &&
     value21 !== null &&
     value15 !== undefined &&
-    (0, warnNestedMenuInitialFocus)();
-  let value31 = (0, useRestoreFocusOnClose)(value),
-    value32 = (0, useEventRef)((input2) => {
+    warnNestedMenuInitialFocus();
+  let value31 = useRestoreFocusOnClose(value),
+    value32 = useEventRef((input2) => {
       value27.popupRef(input2);
       value28(input2);
       value31(input2);
@@ -390,8 +390,8 @@ function MenuPopupContent(
   context &&
     value21 !== null &&
     value13 !== undefined &&
-    (0, warnNestedMenuLayerOffset)();
-  let value33 = (0, useLayer)(
+    warnNestedMenuLayerOffset();
+  let value33 = useLayer(
     value22 ? "contextmenu" : "menu",
     value21 === null ? value13 : undefined,
   );
@@ -462,7 +462,7 @@ function MenuPopupContent(
                               }
                           : value14
                       }
-                      className={(0, cn)(
+                      className={cn(
                         MenuPopupCss,
                         value8,
                       )}
@@ -494,8 +494,8 @@ function MenuSubmenu({
       props.open ?? props.defaultOpen ?? false,
     ),
     value3 = (0, reactMenuMenu_2.useRef)(value),
-    value4 = (0, useOptionalStableCallback)(props.onOpenChange),
-    { sheet: value5 } = (0, useSheetState)(),
+    value4 = useOptionalStableCallback(props.onOpenChange),
+    { sheet: value5 } = useSheetState(),
     value6 = (0, reactMenuMenu_2.useContext)(SheetPopupContext),
     value7 = value6?.treeId,
     value8: React.RefObject<React.ReactNode> = (0, reactMenuMenu_2.useRef)(
@@ -539,7 +539,7 @@ function MenuSubmenu({
       [],
     ),
     value15 = (0, reactMenuMenu_2.useRef)<OverlayActions | null>(null);
-  (0, useOverlayImperativeHandle)(value15, actionsRef);
+  useOverlayImperativeHandle(value15, actionsRef);
   let value16 = (0, reactMenuMenu_2.useCallback)(() => {
       (value15.current as Required<OverlayActions> | null)?.close();
     }, []),
@@ -557,7 +557,7 @@ function MenuSubmenu({
       [value14, value16, value9],
     ),
     value21 = props.open ?? value;
-  (0, useIsomorphicLayoutEffect)(() => {
+  useIsomorphicLayoutEffect(() => {
     value3.current = value21;
     if (value21) {
       let current = value8.current;
@@ -602,7 +602,7 @@ function MenuHeader({
   className?: string;
 }>): React.ReactElement {
   useUiLocale();
-  let value = (0, useIsSheet)(),
+  let value = useIsSheet(),
     value2 =
       (0, reactMenuMenu_2.useContext)(MenuRootContext) !== null,
     { label: value3 } = (0, reactMenuMenu_2.useContext)(
@@ -617,7 +617,7 @@ function MenuHeader({
   return (
     <div
       role={"presentation"}
-      className={(0, cn)(
+      className={cn(
         MenuMenuClassNames,
         value4 && "first:hidden",
         className,
@@ -636,7 +636,7 @@ function MenuGroupLabel({
   useUiLocale();
   return (
     <npm_Menu_La.GroupLabel
-      className={(0, cn)(MenuMenuClassNames, className)}
+      className={cn(MenuMenuClassNames, className)}
     >
       {children}
     </npm_Menu_La.GroupLabel>
@@ -694,7 +694,7 @@ function renderMenuItems(input: MenuItemsContent): React.ReactNode {
     : input;
 }
 function menuCaretSize(input: Density, options?: ControlSize): "sm" | "xs" {
-  return (0, getControlSizeRank)(input, options) >= 4 ? "sm" : "xs";
+  return getControlSizeRank(input, options) >= 4 ? "sm" : "xs";
 }
 function MenuCaret({
   size: size,
@@ -702,8 +702,8 @@ function MenuCaret({
   size?: ControlSize;
 }): React.ReactElement {
   useUiLocale();
-  let value = (0, useDensity)(),
-    value2 = (0, useButtonGroupOptions)();
+  let value = useDensity(),
+    value2 = useButtonGroupOptions();
   return (
     <Icon
       name={"CaretDown"}
@@ -744,19 +744,17 @@ function ContextMenuContent({
 }
 function Menu(input: MenuProps): React.ReactElement {
   useUiLocale();
-  let value = (0, useSheetInteractionMode)(),
+  let value = useSheetInteractionMode(),
     value2 = (0, reactMenuMenu_2.useContext)(
       MenuConfigurationContext_2,
     ),
-    value3: React.RefObject<OverlayActions | null> = (0,
-    useMutableMenuRef)(),
+    value3: React.RefObject<OverlayActions | null> = useMutableMenuRef(),
     onOpenChange = input.onOpenChange,
-    { onOpenChange: value4, triggerRef: value5 } = (0,
-    useMenuTriggerRef)((input2, options) => {
+    { onOpenChange: value4, triggerRef: value5 } = useMenuTriggerRef((input2, options) => {
       onOpenChange?.(input2, options);
-      (0, recordKeyboardContextMenu)(value3, input2, options);
+      recordKeyboardContextMenu(value3, input2, options);
     }, value2),
-    value6 = (0, useOverlayRoot)();
+    value6 = useOverlayRoot();
   return value
     ? (() => {
         const _Component = useContextMenuRoot;
@@ -785,18 +783,17 @@ function useContextMenuRoot(input: MenuProps): React.ReactElement {
       }),
       [value2, value3, value4],
     ),
-    value6 = (0, useOverlayRoot)(),
+    value6 = useOverlayRoot(),
     value7 = (0, reactMenuMenu_2.useContext)(
       MenuConfigurationContext_2,
     ),
-    { onOpenChange: value8, triggerRef: value9 } = (0,
-    useMenuTriggerRef)(input.onOpenChange, value7),
-    value10 = (0, useOverlayOpenState)({
+    { onOpenChange: value8, triggerRef: value9 } = useMenuTriggerRef(input.onOpenChange, value7),
+    value10 = useOverlayOpenState({
       open: value,
       onOpenChange: value8,
     }),
     open = value10.open,
-    value11 = (0, useSheetPopup)({
+    value11 = useSheetPopup({
       open: open,
       onOpenChange: value10.onOpenChange,
       closable: !(value !== undefined && input.onOpenChange === undefined),
@@ -1016,16 +1013,14 @@ function MenuRoot(input: MenuRootProps): React.ReactElement {
       closeLabel: value4,
       ...value5
     } = input,
-    value6 = (0, useSheetInteractionMode)(),
+    value6 = useSheetInteractionMode(),
     value7 = (0, reactMenuMenu_2.useContext)(
       MenuConfigurationContext_2,
     ),
-    { onOpenChange: value8, triggerRef: value9 } = (0,
-    useMenuTriggerRef)(value5.onOpenChange, value7),
-    value10 = (0, usePassiveOpenGate)(value8, value5.open, !value7),
-    value11: React.RefObject<OverlayActions | null> = (0,
-    useMutableMenuRef)();
-  (0, useOverlayImperativeHandle)(value11, value5.actionsRef);
+    { onOpenChange: value8, triggerRef: value9 } = useMenuTriggerRef(value5.onOpenChange, value7),
+    value10 = usePassiveOpenGate(value8, value5.open, !value7),
+    value11: React.RefObject<OverlayActions | null> = useMutableMenuRef();
+  useOverlayImperativeHandle(value11, value5.actionsRef);
   return value6 ? (
     <ActivityBoundary actionsRef={value11}>
       <MenuRoot_2 {...input} actionsRef={value11} />
@@ -1066,19 +1061,18 @@ function MenuRoot_2(input: MenuRootProps): React.ReactElement {
     value7 = (0, reactMenuMenu_2.useContext)(
       MenuConfigurationContext_2,
     ),
-    { onOpenChange: value8, triggerRef: value9 } = (0,
-    useMenuTriggerRef)(input.onOpenChange, value7),
-    value10 = (0, usePassiveOpenGate)(value8, input.open, !value7),
-    value11 = (0, useOverlayOpenState)({
+    { onOpenChange: value8, triggerRef: value9 } = useMenuTriggerRef(input.onOpenChange, value7),
+    value10 = usePassiveOpenGate(value8, input.open, !value7),
+    value11 = useOverlayOpenState({
       ...input,
       onOpenChange: value10.onOpenChange,
     }),
-    value12 = (0, useOpenSnapshot)(
+    value12 = useOpenSnapshot(
       value11.open,
       () => value10.cell.getLevel() === "declared",
       false,
     ),
-    value13 = (0, useSheetPopup)({
+    value13 = useSheetPopup({
       open: value11.open,
       actionsRef: input.actionsRef,
       onOpenChange: value11.onOpenChange,
@@ -1168,7 +1162,7 @@ function MenuSearchTriggerWatcher({
     let { openRef: value3 } = value,
       callback = (input: FocusEvent): void => {
         let current = inputRef.current,
-          value4 = (0, asElement)(input.relatedTarget);
+          value4 = asElement(input.relatedTarget);
         current &&
           value4 &&
           value3.current &&
@@ -1220,20 +1214,20 @@ function MenuSearchablePopup({
   useUiLocale();
   let [value, value2] = (0, reactMenuMenu_2.useState)(""),
     value3 = query ?? value,
-    value4: (input: string) => void = (0, useStableCallback)(
+    value4: (input: string) => void = useStableCallback(
       (input) => {
         value2(input);
         onQueryChange?.(input);
       },
     ),
-    value5 = (0, useStableCallback)(() => {
+    value5 = useStableCallback(() => {
       value3 !== "" && value4("");
     }),
     value6 = (0, reactMenuMenu_2.useRef)(false);
   (0, reactMenuMenu_2.useEffect)(() => {}, [query, onQueryChange]);
-  let value7 = (0, useIsSheet)(),
-    value8 = (0, useWindowMediaQuery)(
-      (0, useCdsWindow)(),
+  let value7 = useIsSheet(),
+    value8 = useWindowMediaQuery(
+      useCdsWindow(),
       coarsePointerMediaQuery,
     ),
     value9 = !value7 && !value8,
@@ -1321,11 +1315,11 @@ function MenuSearchablePopup({
       }}
       onMouseDown={(event: React.MouseEvent<HTMLElement>) => {
         let target = event.target as HTMLElement;
-        ((0, isHtmlElement)(target) &&
+        (isHtmlElement(target) &&
           target.localName === "input") ||
           target === event.currentTarget ||
           (target.classList.contains("overflow-y-auto") &&
-            (0, isScrollbarPointerEvent)(
+            isScrollbarPointerEvent(
               event.nativeEvent.offsetX,
               event.nativeEvent.offsetY,
               target,
@@ -1439,7 +1433,7 @@ function useSearchMenuFocus(
   options: boolean,
 ): void {
   let value = (0, reactMenuMenu_2.useRef)(options);
-  (0, useIsomorphicLayoutEffect)(() => {
+  useIsomorphicLayoutEffect(() => {
     let value2 = input.current?.closest('[role="menu"]');
     if (!options || value.current || !value2?.hasAttribute("data-open"))
       return;
@@ -1495,7 +1489,7 @@ function MenuPendingList({
     [value4, value5] = (0, reactMenuMenu_2.useState)(
       MenuMenuWidthHeightConfig,
     );
-  (0, useIsomorphicLayoutEffect)(() => {
+  useIsomorphicLayoutEffect(() => {
     let current = value.current;
     if (!value3 || !current) {
       value5(MenuMenuWidthHeightConfig);
@@ -1607,7 +1601,7 @@ export {
 };
 export function installCdsMenuMenu(): () => void {
   return () => {
-    initializeMenuMenu = (0, initializeOnce)(() => {
+    initializeMenuMenu = initializeOnce(() => {
       noImeTimestamp = -1e8;
       MenuMenuAlias = noImeTimestamp;
       MenuMenuObservedElements = new WeakSet();
@@ -1623,79 +1617,79 @@ export function installCdsMenuMenu(): () => void {
         "focusout",
       ];
     });
-    initializeMenuMenu_2 = (0, initializeOnce)(() => {
+    initializeMenuMenu_2 = initializeOnce(() => {
       "use client";
 
-      (0, initializeTooltipTooltip)();
-      (0, initializeMenuConfiguration)();
-      (0, initializeMenuPassiveOpenGate)();
-      (0, initializeMenuItemStyles_2)();
-      jsxMenuMenu = (0, toModuleNamespace)(
-        (0, load_react_jsx_runtime)(),
+      initializeTooltipTooltip();
+      initializeMenuConfiguration();
+      initializeMenuPassiveOpenGate();
+      initializeMenuItemStyles_2();
+      jsxMenuMenu = toModuleNamespace(
+        load_react_jsx_runtime(),
       );
     });
-    initializeMenuMenu_3 = (0, initializeOnce)(() => {
-      (0, initializeHooksStableCallback)();
+    initializeMenuMenu_3 = initializeOnce(() => {
+      initializeHooksStableCallback();
     });
-    initializeMenuMenu_4 = (0, initializeOnce)(() => {
+    initializeMenuMenu_4 = initializeOnce(() => {
       "use client";
 
-      (0, initializeHooksLayoutEffect)();
-      reactMenuMenu = (0, toModuleNamespace)((0, load_react)());
+      initializeHooksLayoutEffect();
+      reactMenuMenu = toModuleNamespace(load_react());
     });
-    initializeMenuMenu_5 = (0, initializeOnce)(() => {
+    initializeMenuMenu_5 = initializeOnce(() => {
       "use client";
 
-      (0, initializeHooksMediaQuery)();
-      (0, initializeHooksLayoutEffect)();
-      (0, initializeClassNames)();
-      (0, initializeLinkRouter)();
-      (0, initializeCdsRoot)();
-      (0, initializeHooksStableCallback)();
-      (0, initializeOverlaysLayers)();
-      (0, initializeHooksStableCallback_2)();
-      (0, initializeMenuPopup_2)();
-      (0, initializeDomRefComposition_2)();
-      (0, initializeDomRefComposition_3)();
-      (0, initializeDomRefComposition)();
-      (0, initializePlatformRootFontSize_2)();
-      (0, initializeComponentsIcon_2)();
-      (0, initializeComponentsIcon_3)();
-      (0, initializeComponentsShortcut)();
-      (0, initializeTooltipDisabledReason)();
-      (0, initializeTooltipTooltip)();
-      (0, initializeButtonButton)();
-      (0, initializeComponentsSkeleton)();
-      (0, initializeThemeSurfaces)();
-      (0, initializeOverlaysImperativeHandle)();
-      (0, initializeSheetsPresentation)();
-      (0, initializeSheetsPopupStack)();
-      (0, initializeOverlaysBackdrop)();
+      initializeHooksMediaQuery();
+      initializeHooksLayoutEffect();
+      initializeClassNames();
+      initializeLinkRouter();
+      initializeCdsRoot();
+      initializeHooksStableCallback();
+      initializeOverlaysLayers();
+      initializeHooksStableCallback_2();
+      initializeMenuPopup_2();
+      initializeDomRefComposition_2();
+      initializeDomRefComposition_3();
+      initializeDomRefComposition();
+      initializePlatformRootFontSize_2();
+      initializeComponentsIcon_2();
+      initializeComponentsIcon_3();
+      initializeComponentsShortcut();
+      initializeTooltipDisabledReason();
+      initializeTooltipTooltip();
+      initializeButtonButton();
+      initializeComponentsSkeleton();
+      initializeThemeSurfaces();
+      initializeOverlaysImperativeHandle();
+      initializeSheetsPresentation();
+      initializeSheetsPopupStack();
+      initializeOverlaysBackdrop();
       initializeMenuMenu();
-      (0, initializeComponentsCheckbox)();
-      (0, initializeComponentsTextInput)();
-      (0, initializeMenuConfiguration)();
-      (0, initializeSheetsScrollArea_2)();
-      (0, initializeSheetsScrollArea)();
-      (0, initializeMenuPopup)();
-      (0, initializeMenuPassiveOpenGate)();
-      (0, initializeMenuItemStyles)();
-      (0, initializeMenuItemStyles_2)();
+      initializeComponentsCheckbox();
+      initializeComponentsTextInput();
+      initializeMenuConfiguration();
+      initializeSheetsScrollArea_2();
+      initializeSheetsScrollArea();
+      initializeMenuPopup();
+      initializeMenuPassiveOpenGate();
+      initializeMenuItemStyles();
+      initializeMenuItemStyles_2();
       initializeMenuMenu_2();
-      (0, initializeMenuItemStyles_3)();
+      initializeMenuItemStyles_3();
       initializeMenuMenu_3();
-      (0, initializeSheetsMenuPopup)();
+      initializeSheetsMenuPopup();
       initializeMenuMenu_4();
-      reactMenuMenu_2 = (0, toModuleNamespace)(
-        (0, load_react)(),
+      reactMenuMenu_2 = toModuleNamespace(
+        load_react(),
       );
-      (0, initializeNpm_clsx_xh)();
-      jsxMenuMenu_2 = (0, toModuleNamespace)(
-        (0, load_react_jsx_runtime)(),
+      initializeNpm_clsx_xh();
+      jsxMenuMenu_2 = toModuleNamespace(
+        load_react_jsx_runtime(),
       );
-      (0, initializeNpm__base_ui_react_jhe)();
-      (0, initializeNpm__base_ui_react_jj)();
-      (0, initializeNpm__base_ui_react_BXe)();
+      initializeNpm__base_ui_react_jhe();
+      initializeNpm__base_ui_react_jj();
+      initializeNpm__base_ui_react_BXe();
       MenuMenuPattern = /^\d+$/;
       MenuPopup = (0, reactMenuMenu_2.forwardRef)<
         HTMLDivElement,
@@ -1716,7 +1710,7 @@ export function installCdsMenuMenu(): () => void {
               "data-cds": dataCds,
               ...props,
             },
-            value = (0, isInsideSheetPopup)(),
+            value = isInsideSheetPopup(),
             value2 = MenuPopupContent(state, options, !value, false);
           return value ? (
             <MenuSheetCapablePopup {...state} ref={options} />
@@ -1734,8 +1728,8 @@ export function installCdsMenuMenu(): () => void {
           input: MenuPopupProps,
           options: React.ForwardedRef<HTMLDivElement>,
         ): React.ReactElement => {
-          let value = (0, useAvailableSheetParts)(),
-            { pending: value2 } = (0, useSheetState)(),
+          let value = useAvailableSheetParts(),
+            { pending: value2 } = useSheetState(),
             value3 = (0, reactMenuMenu_2.useContext)(MenuRootContext),
             value4: OverlayKind =
               (0, reactMenuMenu_2.useContext)(
@@ -1797,20 +1791,20 @@ export function installCdsMenuMenu(): () => void {
               : checked,
             value3 = value ? "checkbox" : (checkedRole ?? "checkbox"),
             value4 = checkPosition ?? (value ? "leading" : "trailing"),
-            value5 = (0, useAppleKeyboard)(),
+            value5 = useAppleKeyboard(),
             value6 = (0, reactMenuMenu_2.useId)(),
             {
               label: value7,
               labelSpanRef: value8,
               rowRef: value9,
             } = useMenuItemText(children, props.label),
-            value10 = (0, useMergedRefs)(options, value9),
+            value10 = useMergedRefs(options, value9),
             value11 =
               props.disabled === true &&
-              (0, hasDisabledReason)(disabledReason),
+              hasDisabledReason(disabledReason),
             state = {
               "aria-keyshortcuts": shortcut
-                ? (0, parseSingleShortcut)(shortcut, value5)
+                ? parseSingleShortcut(shortcut, value5)
                 : undefined,
               "data-cds-icon-row":
                 icon !== undefined &&
@@ -1827,7 +1821,7 @@ export function installCdsMenuMenu(): () => void {
                   .filter(Boolean)
                   .join(" ") || undefined,
             },
-            value12 = (0, usePassiveOpenHandlers)(),
+            value12 = usePassiveOpenHandlers(),
             callback = (input: React.ReactElement): React.ReactElement =>
               disabledReason === undefined ? (
                 input
@@ -1847,16 +1841,16 @@ export function installCdsMenuMenu(): () => void {
                   </div>
                 </Tooltip>
               ),
-            value13 = (0, useLinkProps)({
+            value13 = useLinkProps({
               href: href,
               routerOptions: routerOptions,
               target: target,
               rel: rel,
               download: download,
-              ...(0, pickRouterOptions)(props),
+              ...pickRouterOptions(props),
             }),
-            value14 = (0, cn)(
-              (0, menuItemVariants)({
+            value14 = cn(
+              menuItemVariants({
                 variant: variant,
               }),
               description ? `${MenuItemStylesClassNames} ` : "",
@@ -1864,7 +1858,7 @@ export function installCdsMenuMenu(): () => void {
             ),
             value15 = value2 !== undefined && (
               <span
-                className={(0, npm_clsx_Ea)(
+                className={npm_clsx_Ea(
                   "flex size-icon shrink-0 items-center justify-center",
                   value4 === "trailing" && !hint && !shortcut && "-mr-1",
                   !!(value4 === "trailing" && shortcut && !hint) &&
@@ -1914,7 +1908,7 @@ export function installCdsMenuMenu(): () => void {
                   hint ||
                   shortcut
                 ) && (<span
-                    className={(0, npm_clsx_Ea)(
+                    className={npm_clsx_Ea(
                       "ml-md flex shrink-0 items-center gap-xs",
                       !!(
                         shortcut &&
@@ -1936,7 +1930,7 @@ export function installCdsMenuMenu(): () => void {
               </jsxMenuMenu_2.Fragment>
             );
           if (href !== undefined) {
-            let value17 = (0, omitRouterOptions)(state);
+            let value17 = omitRouterOptions(state);
             return callback(
               <npm_Menu_La.Item
                 ref={value10}
@@ -2014,20 +2008,20 @@ export function installCdsMenuMenu(): () => void {
           options: React.ForwardedRef<HTMLDivElement>,
         ): React.ReactElement => {
           let value = (0, reactMenuMenu_2.useContext)(MenuRootContext),
-            value2 = (0, useIsSheet)(),
-            value3 = (0, usePassiveOpenHandlers)(),
+            value2 = useIsSheet(),
+            value3 = usePassiveOpenHandlers(),
             {
               label: value4,
               labelSpanRef: value5,
               rowRef: value6,
             } = useMenuItemText(children, props.label),
-            value7 = (0, useMergedRefs)(
+            value7 = useMergedRefs(
               value?.setTriggerNode,
               options,
               value6,
             ),
             value8 = value?.stashLabel;
-          (0, useIsomorphicLayoutEffect)(() => {
+          useIsomorphicLayoutEffect(() => {
             value2 && value8?.(children);
           }, [value2, value8, children]);
           return (
@@ -2038,8 +2032,8 @@ export function installCdsMenuMenu(): () => void {
               label={value4}
               {...value3}
               openOnHover={value2 ? false : openOnHover}
-              className={(0, cn)(
-                (0, menuItemVariants)({
+              className={cn(
+                menuItemVariants({
                   variant: "default",
                 }),
                 "justify-between data-[popup-open]:bg-fill-ghost-hover",
@@ -2140,7 +2134,7 @@ export function installCdsMenuMenu(): () => void {
               ref={options}
               data-cds={"MenuBar"}
               {...props}
-              className={(0, cn)("flex items-center gap-xs", className)}
+              className={cn("flex items-center gap-xs", className)}
             />
           </MenuConfigurationContext_2.Provider>
         );

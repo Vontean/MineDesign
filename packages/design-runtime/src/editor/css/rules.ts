@@ -72,7 +72,7 @@ function parseUtilityClasses(input?: Dynamic): Dynamic {
     );
     index = value5;
     if (value4.startsWith("@")) continue;
-    let value8: Dynamic = (0, parseStyleDeclarations)(value7);
+    let value8: Dynamic = parseStyleDeclarations(value7);
     for (let value9 of value4.split(",") as Dynamic) {
       let value10: Dynamic = value9.trim(),
         value11: Dynamic = /^\.(-?[_A-Za-z][\w-]*)$/.exec(value10);
@@ -289,7 +289,7 @@ function getCssRuleProperties(
     let value2: Dynamic = input.slice(value.start, value.end);
     for (let value3 of parseCssRuleDeclarations(value2) as Dynamic) {
       if (!context.includes(value3.prop)) continue;
-      let value4: Dynamic = (0, getStyleProperty)(
+      let value4: Dynamic = getStyleProperty(
           stripCssComments(value2.slice(value3.start, value3.end)).replace(
             /;\s*$/,
             "",
@@ -464,7 +464,7 @@ function updateCssRuleProperties(
     return items;
   let callback3: Dynamic = (input?: Dynamic): Dynamic => {
       let value3: Dynamic = /^var\(/i.test(input)
-        ? (0, resolveCssVariable)(items, options, input)
+        ? resolveCssVariable(items, options, input)
         : input;
       return (
         value3 !== "" &&

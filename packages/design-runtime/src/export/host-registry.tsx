@@ -111,7 +111,7 @@ function scheduleInteractiveExportRelease(
     (request.releaseTimer = setTimeout((): Dynamic => {
       request.releaseTimer = undefined;
       request.released = true;
-      (0, declineFrameExport)(request.request, true);
+      declineFrameExport(request.request, true);
     }, format.releaseRequestAfterMs));
 }
 function clearExportReleaseTimer(request?: Dynamic): Dynamic {
@@ -173,7 +173,7 @@ async function runExportProducer(
         : takeQueuedExportRequest(value, request);
     clearExportReleaseTimer(value11);
     value11.released !== true &&
-      (0, declineFrameExport)(value11.request, value10);
+      declineFrameExport(value11.request, value10);
     return value10
       ? {
           format: value,
@@ -199,8 +199,8 @@ async function runExportProducer(
     };
   let value6: Dynamic = value5.released === true,
     value7: Dynamic = value6
-      ? await (0, saveThroughHost)(value4.data, value4.filename)
-      : await (0, saveThroughHost)(value4.data, value4.filename, {
+      ? await saveThroughHost(value4.data, value4.filename)
+      : await saveThroughHost(value4.data, value4.filename, {
           request: value5.request,
         });
   !value6 &&
@@ -209,14 +209,14 @@ async function runExportProducer(
     format.releaseRequestAfterMs !== undefined &&
     value7.outcome === "unsupported" &&
     value7.code === "request_unknown" &&
-    ((value7 = await (0, saveThroughHost)(
+    ((value7 = await saveThroughHost(
       value4.data,
       value4.filename,
     )),
     (value6 = true));
   !value6 &&
     !isExportOutcomeFinal(value7) &&
-    (0, declineFrameExport)(value5.request);
+    declineFrameExport(value5.request);
   let value8: Dynamic =
     value7.outcome === "saved" ? "delivered" : value7.outcome;
   return {
@@ -261,7 +261,7 @@ async function receiveExportRequest(
         (input?: Dynamic): Dynamic =>
           input.format === format && input.variant !== undefined,
       ) === true &&
-      (0, declineFrameExport)(request);
+      declineFrameExport(request);
     return;
   }
   let state: Dynamic = {
@@ -323,7 +323,7 @@ async function receiveExportRequest(
       (queuedExportRequests.delete(format),
       clearExportReleaseTimer(entry2),
       entry2.released !== true &&
-        (0, declineFrameExport)(entry2.request));
+        declineFrameExport(entry2.request));
   } finally {
     activeExportRequests.delete(format);
   }
@@ -382,8 +382,8 @@ function registerExportFormats(
   let value: Dynamic = normalizeExportFormats(formats);
   registeredExportFormats = value;
   registeredExportOptions = options;
-  (0, setFrameExportHandler)(onHostExportRequest);
-  (0, setFrameExports)(exportCapabilitiesByFormat(value));
+  setFrameExportHandler(onHostExportRequest);
+  setFrameExports(exportCapabilitiesByFormat(value));
   return (): Dynamic => {
     if (registeredExportFormats === value) {
       registeredExportFormats = null;
@@ -391,13 +391,13 @@ function registerExportFormats(
       for (let value2 of queuedExportRequests.values() as Dynamic) {
         clearExportReleaseTimer(value2);
         value2.released !== true &&
-          (0, declineFrameExport)(value2.request);
+          declineFrameExport(value2.request);
       }
       queuedExportRequests.clear();
       for (let value2 of activeExportRequests.values() as Dynamic)
         value2.abort.abort();
-      (0, setFrameExports)(null);
-      (0, setFrameExportHandler)(null);
+      setFrameExports(null);
+      setFrameExportHandler(null);
     }
   };
 }
@@ -490,11 +490,11 @@ export {
 };
 export function installExportHostRegistry(): () => void {
   return () => {
-    react_Su = (0, toModuleNamespace)((0, load_react)(), 1);
-    (0, initializeButtonButton)();
-    (0, initializeComponentsIcon_2)();
-    (0, initializeComponentsSelectionRing_5)();
-    react_DB = (0, toModuleNamespace)((0, load_react)(), 1);
+    react_Su = toModuleNamespace(load_react(), 1);
+    initializeButtonButton();
+    initializeComponentsIcon_2();
+    initializeComponentsSelectionRing_5();
+    react_DB = toModuleNamespace(load_react(), 1);
     noninteractiveExportWindowMs = 6e4;
     interactiveExportWindowMs = 5 * 6e4;
     ExportCancelled = class extends Error {

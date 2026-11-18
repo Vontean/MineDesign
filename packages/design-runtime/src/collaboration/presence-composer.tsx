@@ -116,7 +116,7 @@ function usePresenceComposer({
     callback4: Dynamic = (input?: Dynamic): Dynamic => {
       value20.current
         .reporter()
-        ?.say((0, normalizePeerMessage)(input).trim());
+        ?.say(normalizePeerMessage(input).trim());
     };
   (0, reactCollaborationPeerCursors_3.useEffect)((): Dynamic => {
     let callback5: Dynamic = (input?: Dynamic): Dynamic => {
@@ -159,8 +159,8 @@ function usePresenceComposer({
           .getSnapshot()
           .find((input?: Dynamic): Dynamic => input.sameTab);
         value11(
-          (0, peerCollaboratorToken)(
-            (0, peerCollaboratorIndex)(current3, value22?.peer ?? ""),
+          peerCollaboratorToken(
+            peerCollaboratorIndex(current3, value22?.peer ?? ""),
           ),
         );
         value13(value14.current);
@@ -188,7 +188,7 @@ function usePresenceComposer({
               event.keyCode !== 229 &&
               !value22 &&
               !isPeerTextInput(event.target) &&
-              !(0, hasBlockingOverlay)();
+              !hasBlockingOverlay();
           }
           flag &&
             (event.preventDefault(),

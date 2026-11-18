@@ -118,7 +118,7 @@ function computeDesignOpenMetricEvents({
   designSystems > 0 && events.push(DESIGN_OPEN_METRIC_EVENTS.tokens);
   [
     ...Object.keys(files).filter(
-      (input?: Dynamic): Dynamic => !(0, isArtboardFile)(input),
+      (input?: Dynamic): Dynamic => !isArtboardFile(input),
     ),
     ...published,
   ].some(
@@ -130,8 +130,8 @@ function computeDesignOpenMetricEvents({
     index2: Dynamic = 0;
   for (let [value, value2] of Object.entries(files) as Dynamic) {
     if (
-      !(0, isArtboardFile)(value) ||
-      (0, isLoadingArtboardHtml)(value2)
+      !isArtboardFile(value) ||
+      isLoadingArtboardHtml(value2)
     )
       continue;
     let value3: Dynamic = countDesignSystemImportTags(value2);
@@ -187,8 +187,8 @@ function whenPublishedBoardsReady(
           for (let [value3, value4] of Object.entries(
             doc.content().files,
           ) as Dynamic)
-            if ((0, isArtboardFile)(value3)) {
-              if ((0, isLoadingArtboardHtml)(value4))
+            if (isArtboardFile(value3)) {
+              if (isLoadingArtboardHtml(value4))
                 return "loading";
               flag2 = true;
             }
@@ -224,7 +224,7 @@ function reportDesignOpened(
     whenPublishedBoardsReady(
       doc,
       (): Dynamic =>
-        (0, sendStaggeredAnalytics)(
+        sendStaggeredAnalytics(
           computeDesignOpenMetricEvents({
             files: doc.content().files,
             ...published(),

@@ -243,8 +243,7 @@ export function pressArtboardCover(deps: { readonly callback17: Dynamic; readonl
             }
             if ("empty" in input2) {
               callback64();
-              let value262: Dynamic = (0,
-              selectionPointerDownDecision)(
+              let value262: Dynamic = selectionPointerDownDecision(
                 deps.value57.current,
                 {
                   file: options2.file,
@@ -259,7 +258,7 @@ export function pressArtboardCover(deps: { readonly callback17: Dynamic; readonl
                 ? !flag2 &&
                   value262.click &&
                   deps.onSelectObjects(
-                    (0, boardSelectionItems)({
+                    boardSelectionItems({
                       file: options2.file,
                     }),
                     value262.click === "toggle" ? "toggle" : "replace",
@@ -474,16 +473,16 @@ export function buildObjectPressHandlers(deps: { readonly callback46: Dynamic; r
         if (event.button !== 0) return;
         let shiftKey: Dynamic = event.shiftKey;
         if (
-          (0, isTouchSelectionStart)(
+          isTouchSelectionStart(
             event.pointerType,
             deps.value57.current.notes.has(input.id),
           )
         ) {
-          (0, watchPointerRelease)(
+          watchPointerRelease(
             event.nativeEvent,
             (): Dynamic =>
               deps.onSelectObjects(
-                (0, boardSelectionItems)({
+                boardSelectionItems({
                   note: input.id,
                 }),
                 shiftKey ? "toggle" : "replace",
@@ -497,7 +496,7 @@ export function buildObjectPressHandlers(deps: { readonly callback46: Dynamic; r
           event.pointerType !== "touch" &&
           !shiftKey &&
           !event.altKey &&
-          (0, hasBoardSelection)(deps.value57.current, {
+          hasBoardSelection(deps.value57.current, {
             note: input.id,
           }) &&
           deps.callback54()
@@ -514,7 +513,7 @@ export function buildObjectPressHandlers(deps: { readonly callback46: Dynamic; r
             },
             stillAction: (): Dynamic =>
               deps.onSelectObjects(
-                (0, boardSelectionItems)({
+                boardSelectionItems({
                   note: input.id,
                 }),
                 "replace",
@@ -524,7 +523,7 @@ export function buildObjectPressHandlers(deps: { readonly callback46: Dynamic; r
           });
           return;
         }
-        let value250: Dynamic = (0, selectionPointerDownDecision)(
+        let value250: Dynamic = selectionPointerDownDecision(
           deps.value57.current,
           {
             note: input.id,
@@ -533,7 +532,7 @@ export function buildObjectPressHandlers(deps: { readonly callback46: Dynamic; r
         );
         value250.selectNow &&
           deps.onSelectObjects(
-            (0, boardSelectionItems)({
+            boardSelectionItems({
               note: input.id,
             }),
             shiftKey ? "toggle" : "replace",

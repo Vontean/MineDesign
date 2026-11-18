@@ -25,20 +25,19 @@ function PropertyShadowRow({
   let value2: Dynamic = prop === "text-shadow",
     [value3, value4]: Dynamic = (0,
     reactPropertiesAssetPicker_3.useState)(false),
-    { setOverlayHidden: value5 }: Dynamic = (0,
-    useInspectorContext)();
+    { setOverlayHidden: value5 }: Dynamic = useInspectorContext();
   (0, reactPropertiesAssetPicker_3.useEffect)((): Dynamic => {
     if (value3) {
       value5(true);
       return (): Dynamic => value5(false);
     }
   }, [value3, value5]);
-  let value6: Dynamic = (0, parseCssBoxShadow)(value),
+  let value6: Dynamic = parseCssBoxShadow(value),
     value7: Dynamic = mixed
       ? "Mixed"
       : value6
         ? `${value6.x} ${value6.y} ${value6.blur}`
-        : value && (0, classifyStyleValue)(value).kind !== "literal"
+        : value && classifyStyleValue(value).kind !== "literal"
           ? value
           : "None",
     callback: Dynamic = (input?: Dynamic): Dynamic =>
@@ -48,7 +47,7 @@ function PropertyShadowRow({
           value: input
             ? value2
               ? `${input.x}px ${input.y}px ${input.blur}px ${input.color}`
-              : (0, serializeCssBoxShadow)(input)
+              : serializeCssBoxShadow(input)
             : null,
         },
       ]),

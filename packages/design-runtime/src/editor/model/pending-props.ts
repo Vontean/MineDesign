@@ -5,7 +5,7 @@ import {
 import { getDcPropsJson, setDcPropsJson } from "../html/dc-props";
 
 function getPendingPropKeys(input?: Dynamic, options?: Dynamic): Dynamic {
-  let value: Dynamic = (0, getDcPropsJson)(input);
+  let value: Dynamic = getDcPropsJson(input);
   if (value == null) return null;
   let value2: Dynamic;
   try {
@@ -27,11 +27,11 @@ function getPendingPropKeys(input?: Dynamic, options?: Dynamic): Dynamic {
       default: value5,
     };
   }
-  return (0, setDcPropsJson)(input, JSON.stringify(value3));
+  return setDcPropsJson(input, JSON.stringify(value3));
 }
 function getSavedPendingProps(input?: Dynamic, options?: Dynamic): Dynamic {
   if (options === undefined) return;
-  let value: Dynamic = (0, getDcPropsJson)(input);
+  let value: Dynamic = getDcPropsJson(input);
   if (value == null) return;
   let value2: Dynamic;
   try {
@@ -73,7 +73,7 @@ function clearSavedPendingProps(input?: Dynamic): Dynamic {
   }
   length < Object.keys(pendingProps).length && (input.pendingProps = value2);
   input.pendingPropsBase =
-    (0, getDcPropsJson)(input.src) ?? input.pendingPropsBase;
+    getDcPropsJson(input.src) ?? input.pendingPropsBase;
 }
 export {
   clearSavedPendingProps,

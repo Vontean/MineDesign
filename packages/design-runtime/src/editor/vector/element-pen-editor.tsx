@@ -51,8 +51,8 @@ function ElementPenEditor({
       value4.current = requestAnimationFrame((): Dynamic => {
         onPreview(
           pen.tid,
-          (0, serializeVectorPath)(
-            (0, mapVectorPath)(
+          serializeVectorPath(
+            mapVectorPath(
               input,
               (input2?: Dynamic): Dynamic => ({
                 x: ((input2.x - pen.x) * pen.vbW) / pen.w,
@@ -76,8 +76,8 @@ function ElementPenEditor({
       input?: Dynamic,
       options: Dynamic = false,
     ): Dynamic => {
-      let value6: Dynamic = (0, serializeVectorPathBounds)(
-        (0, mapVectorPath)(
+      let value6: Dynamic = serializeVectorPathBounds(
+        mapVectorPath(
           input,
           (input2?: Dynamic): Dynamic => ({
             x: input2.x * pen.kx,
@@ -142,7 +142,7 @@ function ElementPenEditor({
   );
 }
 function elementVectorPath(input?: Dynamic): Dynamic {
-  return (0, simplifyVectorPath)(
+  return simplifyVectorPath(
     input.d,
     {
       ox: input.x,

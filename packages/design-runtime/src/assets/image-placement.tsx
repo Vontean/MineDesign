@@ -15,7 +15,7 @@ function imagePlacementRejectionReason(file?: Dynamic): Dynamic {
   return file.type === "image/gif" && file.size > maxAnimatedGifPlacementBytes
     ? `animated GIFs over ${maxAnimatedGifPlacementBytes >> 20} MB can't be placed`
     : file.size > maxCanvasImagePlacementBytes ||
-        (((0, isSvgFile)(file) || file.type === "image/gif") &&
+        ((isSvgFile(file) || file.type === "image/gif") &&
           file.size > CanvasWorkingStateFloorValue)
       ? "too large to place here"
       : null;
@@ -26,7 +26,7 @@ async function validateCanvasPlacedImage(
 ): Promise<Dynamic> {
   return (
     imagePlacementRejectionReason(file) ??
-    ((await (0, isPlayableImage)(file, decodeOptions).catch(
+    ((await isPlayableImage(file, decodeOptions).catch(
       (): Dynamic => false,
     ))
       ? null
@@ -43,8 +43,8 @@ export {
 };
 export function installAssetsImagePlacement(): () => void {
   return () => {
-    jsx_Gn = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    jsx_Gn = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
     maxAnimatedGifPlacementBytes = 2 * 1024 * 1024;

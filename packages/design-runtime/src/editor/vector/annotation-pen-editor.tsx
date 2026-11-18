@@ -19,7 +19,7 @@ function simplifyVectorPath(
 ): Dynamic {
   let value: Dynamic =
       Math.max(Math.abs(options.sx), Math.abs(options.sy)) || 1,
-    value2: Dynamic = (0, parseVectorPath)(
+    value2: Dynamic = parseVectorPath(
       input,
       options,
       VectorAnnotationPenEditorConstant * value,
@@ -28,11 +28,11 @@ function simplifyVectorPath(
     let value3: Dynamic = 2 * VectorAnnotationPenEditorConstant;
     value3 <= 64 * VectorAnnotationPenEditorConstant &&
     /L/.test(input) &&
-    ((0, serializeVectorPathBounds)(value2, 1)?.d.length ?? 0) >
+    (serializeVectorPathBounds(value2, 1)?.d.length ?? 0) >
       context;
     value3 *= 2
   )
-    value2 = (0, parseVectorPath)(input, options, value3 * value);
+    value2 = parseVectorPath(input, options, value3 * value);
   return value2;
 }
 function AnnotationPenEditor({
@@ -94,7 +94,7 @@ function AnnotationPenEditor({
       input?: Dynamic,
       options: Dynamic = false,
     ): Dynamic => {
-      let value5: Dynamic = (0, serializeVectorPathBounds)(
+      let value5: Dynamic = serializeVectorPathBounds(
         input,
         1,
         !options,
@@ -102,7 +102,7 @@ function AnnotationPenEditor({
       return !value5 ||
         value5.w > PlatformFileContentLimit_6 ||
         value5.h > PlatformFileContentLimit_6 ||
-        (0, PlatformFileContentTrim_2)(value5.d) === null
+        PlatformFileContentTrim_2(value5.d) === null
         ? null
         : {
             ...value5,

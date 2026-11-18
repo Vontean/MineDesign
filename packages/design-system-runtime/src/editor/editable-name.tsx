@@ -20,15 +20,15 @@ var TOKEN_ROW_SELECTOR: string;
 var RENAME_NAME_SELECTOR: string;
 var RENAME_BUTTON_SELECTOR: string;
 function showEditorNotification(message: string, options?: number): void {
-  (0, clearNonActionToasts)();
-  (0, showToast)(message, options);
+  clearNonActionToasts();
+  showToast(message, options);
 }
 function showEditorPromiseNotification(
   promise: string,
   options: Parameters<RuntimeBindings["showActionToast"]>[1],
 ): number {
-  (0, clearAllToasts)();
-  return (0, showActionToast)(promise, options);
+  clearAllToasts();
+  return showActionToast(promise, options);
 }
 function validateTokenRename(
   name: string,
@@ -142,7 +142,7 @@ function EditableName({
           }
         }
       }
-      let value2 = (0, normalizeTokenName)(input).replace(
+      let value2 = normalizeTokenName(input).replace(
         /\s+/g,
         "-",
       );
@@ -189,7 +189,7 @@ function EditableName({
           }
           return;
         }
-        if ((0, isComposingEvent)(event)) {
+        if (isComposingEvent(event)) {
           return;
         }
         if (
@@ -243,12 +243,12 @@ export {
 };
 export function installEditorEditableName(): () => void {
   return () => {
-    reactTokenRename = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    reactTokenRename = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
-    jsxTokenRename = (0, toModuleNamespace)(
-      (0, loadJsxNamespace)(),
+    jsxTokenRename = toModuleNamespace(
+      loadJsxNamespace(),
       1,
     );
     TOKEN_ROW_SELECTOR = ".ds-tokrow, tr";

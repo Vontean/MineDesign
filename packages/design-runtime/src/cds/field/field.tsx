@@ -100,19 +100,19 @@ export {
 };
 export function installCdsFieldField(): () => void {
   return () => {
-    initializeFieldField = (0, initializeOnce)((): Dynamic => {
+    initializeFieldField = initializeOnce((): Dynamic => {
       "use client";
 
-      (0, initializeClassNames)();
-      (0, initializeComponentsIcon_2)();
-      (0, initializeFieldContext)();
-      reactFieldField = (0, toModuleNamespace)(
-        (0, load_react)(),
+      initializeClassNames();
+      initializeComponentsIcon_2();
+      initializeFieldContext();
+      reactFieldField = toModuleNamespace(
+        load_react(),
       );
-      jsxFieldField = (0, toModuleNamespace)(
-        (0, load_react_jsx_runtime)(),
+      jsxFieldField = toModuleNamespace(
+        load_react_jsx_runtime(),
       );
-      (0, initializeNpm__base_ui_react_x7)();
+      initializeNpm__base_ui_react_x7();
       FieldFieldFalseTrueConfig = {
         false: {
           false: {
@@ -149,7 +149,7 @@ export function installCdsFieldField(): () => void {
             data-cds={"Field"}
             validationMode={validationMode}
             {...props}
-            className={(0, cn)(
+            className={cn(
               "flex flex-col gap-xs font-sans",
               className,
             )}
@@ -176,7 +176,7 @@ export function installCdsFieldField(): () => void {
           <npm_Field_qg.Label
             ref={options}
             {...props}
-            className={(0, cn)(
+            className={cn(
               "text-body font-medium leading-none text-primary",
               className,
             )}
@@ -192,7 +192,7 @@ export function installCdsFieldField(): () => void {
           <npm_Field_qg.Description
             ref={options}
             {...props}
-            className={(0, cn)(
+            className={cn(
               "text-footnote font-normal leading-snug text-muted",
               className,
             )}
@@ -208,7 +208,7 @@ export function installCdsFieldField(): () => void {
           <npm_Field_qg.Error
             ref={options}
             {...props}
-            className={(0, cn)(
+            className={cn(
               "flex items-start gap-1 text-footnote font-normal leading-snug text-danger",
               className,
             )}
@@ -243,16 +243,16 @@ export function installCdsFieldField(): () => void {
       FieldControl = npm_Field_qg.Control;
       FieldValidity = npm_Field_qg.Validity;
     });
-    initializeFieldField_2 = (0, initializeOnce)((): Dynamic => {
+    initializeFieldField_2 = initializeOnce((): Dynamic => {
       "use client";
 
-      (0, initializeComponentsTextInput)();
+      initializeComponentsTextInput();
       initializeFieldField();
-      reactFieldField_2 = (0, toModuleNamespace)(
-        (0, load_react)(),
+      reactFieldField_2 = toModuleNamespace(
+        load_react(),
       );
-      jsxFieldField_2 = (0, toModuleNamespace)(
-        (0, load_react_jsx_runtime)(),
+      jsxFieldField_2 = toModuleNamespace(
+        load_react_jsx_runtime(),
       );
       FieldTextInput = (0, reactFieldField_2.forwardRef)(
         (
@@ -278,16 +278,16 @@ export function installCdsFieldField(): () => void {
       );
       FieldTextInput.displayName = "Field.TextInput";
     });
-    initializeFieldField_3 = (0, initializeOnce)((): Dynamic => {
+    initializeFieldField_3 = initializeOnce((): Dynamic => {
       "use client";
 
-      (0, initializeComponentsTextArea)();
+      initializeComponentsTextArea();
       initializeFieldField();
-      reactFieldField_3 = (0, toModuleNamespace)(
-        (0, load_react)(),
+      reactFieldField_3 = toModuleNamespace(
+        load_react(),
       );
-      jsxFieldField_3 = (0, toModuleNamespace)(
-        (0, load_react_jsx_runtime)(),
+      jsxFieldField_3 = toModuleNamespace(
+        load_react_jsx_runtime(),
       );
       FieldTextArea = (0, reactFieldField_3.forwardRef)(
         (
@@ -313,16 +313,16 @@ export function installCdsFieldField(): () => void {
       );
       FieldTextArea.displayName = "Field.TextArea";
     });
-    initializeFieldField_4 = (0, initializeOnce)((): Dynamic => {
+    initializeFieldField_4 = initializeOnce((): Dynamic => {
       "use client";
 
-      (0, initializeComponentsSelectionRing_7)();
+      initializeComponentsSelectionRing_7();
       initializeFieldField();
-      reactFieldField_4 = (0, toModuleNamespace)(
-        (0, load_react)(),
+      reactFieldField_4 = toModuleNamespace(
+        load_react(),
       );
-      jsxFieldField_4 = (0, toModuleNamespace)(
-        (0, load_react_jsx_runtime)(),
+      jsxFieldField_4 = toModuleNamespace(
+        load_react_jsx_runtime(),
       );
       FieldNumberInput = (0, reactFieldField_4.forwardRef)(
         (
@@ -348,18 +348,18 @@ export function installCdsFieldField(): () => void {
       );
       FieldNumberInput.displayName = "Field.NumberInput";
     });
-    initializeFieldField_5 = (0, initializeOnce)((): Dynamic => {
+    initializeFieldField_5 = initializeOnce((): Dynamic => {
       "use client";
 
-      (0, initializeComboboxCombobox_6)();
+      initializeComboboxCombobox_6();
       initializeFieldField();
-      jsxFieldField_5 = (0, toModuleNamespace)(
-        (0, load_react_jsx_runtime)(),
+      jsxFieldField_5 = toModuleNamespace(
+        load_react_jsx_runtime(),
       );
       (FieldCombobox as Dynamic).displayName = "Field.Combobox";
     });
     FieldExports = {};
-    (0, defineLiveExports)(FieldExports, {
+    defineLiveExports(FieldExports, {
       Combobox: (): Dynamic => FieldCombobox,
       Control: (): Dynamic => FieldControl,
       Description: (): Dynamic => FieldDescription,
@@ -371,7 +371,7 @@ export function installCdsFieldField(): () => void {
       TextInput: (): Dynamic => FieldTextInput,
       Validity: (): Dynamic => FieldValidity,
     });
-    initializeFieldField_6 = (0, initializeOnce)((): Dynamic => {
+    initializeFieldField_6 = initializeOnce((): Dynamic => {
       initializeFieldField();
       initializeFieldField_2();
       initializeFieldField_3();

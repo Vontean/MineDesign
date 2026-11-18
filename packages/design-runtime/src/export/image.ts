@@ -37,7 +37,7 @@ async function captureArtboardImage(
               count: 1,
             }
           : null,
-      value5: Dynamic = (0, buildCaptureScript)(
+      value5: Dynamic = buildCaptureScript(
         exportImageMimeTypes[options],
         options === "jpg" ? 0.92 : 1,
         0,
@@ -66,7 +66,7 @@ async function captureArtboardImage(
       value6: Dynamic,
       index: Dynamic = 0;
     try {
-      value6 = await (0, withCaptureViewport)(
+      value6 = await withCaptureViewport(
         input,
         value?.frame,
         (input2?: Dynamic): Dynamic => (
@@ -78,7 +78,7 @@ async function captureArtboardImage(
     } catch (value13: Dynamic) {
       throw (
         console.error("[selection-export] capture failed:", value13),
-        new Error((0, describeCaptureFailure)(value13))
+        new Error(describeCaptureFailure(value13))
       );
     }
     if (typeof value6 != "object" || value6 === null)
@@ -98,11 +98,11 @@ async function captureArtboardImage(
     }
     let value8: Dynamic = Array.isArray(value7.w) ? value7.w.length : 0;
     value8 && console.warn("[selection-export] capture warnings:", value7.w);
-    let value9: Dynamic = (0, countMatchingExportWarnings)(
+    let value9: Dynamic = countMatchingExportWarnings(
         value7.w,
         ExportCaptureWarningsItems,
       ),
-      value10: Dynamic = (0, countMatchingExportWarnings)(
+      value10: Dynamic = countMatchingExportWarnings(
         value7.w,
         ExportCaptureWarningsItems_2,
       ),
@@ -120,7 +120,7 @@ async function captureArtboardImage(
       throw new Error(
         "the image came back empty; it may be too large to export at this scale",
       );
-    let value12: Dynamic = (0, normalizeExportWarnings)(value7.hc);
+    let value12: Dynamic = normalizeExportWarnings(value7.hc);
     return {
       ok: true,
       uri: value11,
@@ -160,9 +160,9 @@ async function exportArtboardImage(
   value: Dynamic = 2,
   extra?: Dynamic,
 ): Promise<Dynamic> {
-  if (await (0, downloadsWithheld)()) {
+  if (await downloadsWithheld()) {
     healthReporter.report(
-      ...(0, classifyExportAbort)("image"),
+      ...classifyExportAbort("image"),
     );
     return {
       ok: true,
@@ -178,7 +178,7 @@ async function exportArtboardImage(
     );
     if (!value2.ok) {
       healthReporter.report(
-        ...(0, classifyExportAbort)("image"),
+        ...classifyExportAbort("image"),
       );
       return {
         ok: false,
@@ -191,7 +191,7 @@ async function exportArtboardImage(
       clipped: value5,
       fontWarningCount: value6,
     }: Dynamic = value2;
-    (0, reportExportBuilt)({
+    reportExportBuilt({
       blankImages: value4,
       clipped: value5,
       fontFallback: value6,
@@ -201,8 +201,8 @@ async function exportArtboardImage(
     let value7: Dynamic =
         extra?.filename ??
         (extra?.selectionRoot
-          ? `${(0, exportFileName)(options, extra.title)}-element.${context}`
-          : (0, selectionExportFileName)(
+          ? `${exportFileName(options, extra.title)}-element.${context}`
+          : selectionExportFileName(
               options,
               context,
               extra?.title,
@@ -210,13 +210,13 @@ async function exportArtboardImage(
       value8: Dynamic =
         value4 > 0
           ? null
-          : await (0, saveThroughHost)(
-              (0, dataUrlToBytes)(value3),
+          : await saveThroughHost(
+              dataUrlToBytes(value3),
               value7,
             ),
       value9: Dynamic = value8?.outcome ?? "unsupported";
     value9 === "unsupported" &&
-      ((0, triggerBrowserDownload)(value3, value7),
+      (triggerBrowserDownload(value3, value7),
       (window as Dynamic).dispatchEvent(
         new CustomEvent(exportDeliveryEventName, {
           detail: {
@@ -228,8 +228,8 @@ async function exportArtboardImage(
           },
         }),
       ));
-    (0, reportExportOutcome)(
-      (0, classifyImageSaveOutcome)(value8),
+    reportExportOutcome(
+      classifyImageSaveOutcome(value8),
       designAnalyticsEvents.exported[context],
     );
     return {
@@ -254,16 +254,16 @@ async function exportArtboardImage(
   } catch (value2: Dynamic) {
     throw (
       healthReporter.report(
-        ...(0, classifyExportFailure)("image"),
+        ...classifyExportFailure("image"),
       ),
-      (0, reportExportEvent)("failed"),
+      reportExportEvent("failed"),
       value2
     );
   }
 }
 async function captureArtboardThumbnail(input?: Dynamic): Promise<Dynamic> {
   try {
-    let value: Dynamic = (0, buildCaptureScript)(
+    let value: Dynamic = buildCaptureScript(
         "image/png",
         1,
         artboardThumbnailWidth,

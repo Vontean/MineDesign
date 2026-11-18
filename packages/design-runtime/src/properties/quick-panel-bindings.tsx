@@ -76,7 +76,7 @@ function matchingDesignSwatchName(
   definedVariables?: Dynamic,
 ): Dynamic {
   if (value === undefined) return null;
-  let value2: Dynamic = (0, cssVariableName)(value.trim());
+  let value2: Dynamic = cssVariableName(value.trim());
   if (value2 !== null)
     return (
       swatches.find(
@@ -92,7 +92,7 @@ function matchingDesignSwatchName(
           designSwatchCssVariable(input.picks ?? input.name) ?? "",
         ) ?? false
       ) &&
-      (0, samePaint)(input.color, value),
+      samePaint(input.color, value),
   );
   return value3 === undefined ? null : (value3.picks ?? value3.name);
 }
@@ -112,7 +112,7 @@ function valueForDesignSwatch(
       (input?: Dynamic): Dynamic =>
         input !== value &&
         designSwatchCssVariable(input.name) === value2 &&
-        !(0, samePaint)(input.color, value.color),
+        !samePaint(input.color, value.color),
     )
     ? value.color
     : "var(" + value2 + ")";
@@ -128,7 +128,7 @@ function BackgroundQuickPanel({
   useUiLocale();
   let entry: Dynamic = io.get("background-color"),
     [value, value2]: Dynamic = (0, react_mEt.useState)(false),
-    value3: Dynamic = (0, useBackgroundEditor)({
+    value3: Dynamic = useBackgroundEditor({
       value: io.get("background") ?? null,
       companionValue: entry ?? null,
       fallback: io.rendered?.background ?? undefined,
@@ -788,16 +788,16 @@ export {
 };
 export function installPropertiesQuickPanelBindings(): () => void {
   return () => {
-    react_mEt = (0, toModuleNamespace)((0, load_react)(), 1);
-    jsx_il = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    react_mEt = toModuleNamespace(load_react(), 1);
+    jsx_il = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
     cssBoxSides = ["top", "right", "bottom", "left"];
     parseQuickPanelColor = (input?: Dynamic): Dynamic =>
       input == null
         ? undefined
-        : ((0, normalizeHexColor)(input) ?? undefined);
+        : (normalizeHexColor(input) ?? undefined);
     inlineImageUrl = (input?: Dynamic): Dynamic =>
       input !== undefined && /^(data:image\/|blob:)/i.test(input)
         ? input
@@ -828,14 +828,14 @@ export function installPropertiesQuickPanelBindings(): () => void {
     unsupportedQuickPanelValueMessage =
       uiMessage("inspector.quickPanelBindings.thatValueCanTBe");
     areStyleEditsSupported = (items?: Dynamic): Dynamic =>
-      (0, normalizeStyleEdits)(
+      normalizeStyleEdits(
         items.map((input?: Dynamic): Dynamic => [input.prop, input.value]),
       ).length === items.length;
     quickPanelStyleIo = (io?: Dynamic): Dynamic => ({
       commit: (input?: Dynamic): Dynamic => {
         areStyleEditsSupported(input)
           ? io.set(editListToStylePairs(input))
-          : (0, showEditorToast)(unsupportedQuickPanelValueMessage);
+          : showEditorToast(unsupportedQuickPanelValueMessage);
       },
       live: (input?: Dynamic): Dynamic => {
         areStyleEditsSupported(input) &&

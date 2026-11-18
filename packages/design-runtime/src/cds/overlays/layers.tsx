@@ -101,7 +101,7 @@ function CdsLayerVarBridge({
   let value = (0, reactOverlaysLayers.useContext)(LayerBaseContext);
   return (
     <div
-      className={(0, cn)("contents", className)}
+      className={cn("contents", className)}
       data-cds={"CdsLayerVarBridge"}
       data-cds-layer-var-bridge={""}
       style={
@@ -131,15 +131,15 @@ export {
 };
 export function installCdsOverlaysLayers(): () => void {
   return () => {
-    initializeOverlaysLayers = (0, initializeOnce)(() => {
+    initializeOverlaysLayers = initializeOnce(() => {
       "use client";
 
-      (0, initializeClassNames)();
-      reactOverlaysLayers = (0, toModuleNamespace)(
-        (0, load_react)(),
+      initializeClassNames();
+      reactOverlaysLayers = toModuleNamespace(
+        load_react(),
       );
-      jsxOverlaysLayers = (0, toModuleNamespace)(
-        (0, load_react_jsx_runtime)(),
+      jsxOverlaysLayers = toModuleNamespace(
+        load_react_jsx_runtime(),
       );
       LAYER_BAND_SIZE = 100;
       GLOBAL_LAYER_BASE = 9e3;

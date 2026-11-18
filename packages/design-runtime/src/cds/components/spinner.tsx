@@ -45,14 +45,14 @@ function Spinner({
     value8 = inheritColor
       ? "color-mix(in srgb, currentColor 25%, transparent)"
       : "var(--cds-border)",
-    value9 = (0, scaleCssPixels)(value6.box),
-    value10 = (0, scaleCssPixels)(value6.stroke),
+    value9 = scaleCssPixels(value6.box),
+    value10 = scaleCssPixels(value6.stroke),
     value11 = `calc(100% - ${value10})`,
     value12 = `radial-gradient(farthest-side, transparent ${value11}, #000 calc(${value11} + 0.5px))`,
     value13 = value5 ? (
       <span
         data-cds={"Spinner"}
-        className={(0, cn)(
+        className={cn(
           "relative inline-block shrink-0 align-middle",
           className,
         )}
@@ -112,16 +112,16 @@ export {
 };
 export function installCdsComponentsSpinner(): () => void {
   return () => {
-    initializeComponentsSpinner = (0, initializeOnce)(() => {
+    initializeComponentsSpinner = initializeOnce(() => {
       "use client";
 
-      (0, initializeClassNames)();
-      (0, initializePlatformRootFontSize_3)();
-      reactComponentsSpinner = (0, toModuleNamespace)(
-        (0, load_react)(),
+      initializeClassNames();
+      initializePlatformRootFontSize_3();
+      reactComponentsSpinner = toModuleNamespace(
+        load_react(),
       );
-      jsxComponentsSpinner = (0, toModuleNamespace)(
-        (0, load_react_jsx_runtime)(),
+      jsxComponentsSpinner = toModuleNamespace(
+        load_react_jsx_runtime(),
       );
       ComponentsSpinnerSMLConfig = {
         s: "sm",

@@ -89,7 +89,7 @@ function PropertyAssetPopup({
     open &&
       value4(
         planHeight !== undefined
-          ? (0, choosePopoverPlacement)(
+          ? choosePopoverPlacement(
               value2.current?.firstElementChild,
               planHeight,
             )
@@ -156,7 +156,7 @@ function PropertyAssetPopup({
       >
         <div
           ref={value}
-          className={(0, cn)(
+          className={cn(
             "flex flex-col pt-md [--pp-label-w:3rem]",
             header !== undefined
               ? "pb-4 [--pp-edge:16px] [--pp-gutter-l:16px] [--pp-gutter-r:16px]"
@@ -212,7 +212,7 @@ function PropertyAssetPopup({
           }}
         >
           <div
-            className={(0, cn)(
+            className={cn(
               "flex items-center gap-xs pr-md",
               header !== undefined ? "pb-1 pl-md" : "pb-xs pl-lg",
             )}
@@ -270,7 +270,7 @@ function PropertyPopupField({
   useUiLocale();
   return (
     <div
-      className={(0, cn)(
+      className={cn(
         "flex flex-col gap-xs pt-xs pl-[var(--pp-edge,var(--cds-pad-lg))] pr-[var(--pp-gutter-r,var(--cds-pad-lg))]",
         className,
       )}
@@ -289,7 +289,7 @@ function resolveAssetPreviewUrl(input?: Dynamic, options?: Dynamic): Dynamic {
     ? /^(https?:|data:|blob:)/i.test(value) ||
       blobAssetPathPattern.test(value)
       ? value
-      : (0, resolveProjectAssetUrl)(input, value.replace(/^\.\//, ""))
+      : resolveProjectAssetUrl(input, value.replace(/^\.\//, ""))
     : null;
 }
 function escapeCssUrl(input?: Dynamic): Dynamic {
@@ -324,7 +324,7 @@ function ImageAssetPicker({
   useUiLocale();
   let { projectPath: value2 }: Dynamic = useAssetPickerContext(),
     { files: value3 }: Dynamic = useProjectFiles(value2),
-    { showToast: value4 }: Dynamic = (0, useToast)(),
+    { showToast: value4 }: Dynamic = useToast(),
     [value5, value6]: Dynamic = (0,
     reactPropertiesTokenColorPicker.useState)(value ?? ""),
     value7: Dynamic = (0, reactPropertiesTokenColorPicker.useRef)(
@@ -343,7 +343,7 @@ function ImageAssetPicker({
     ),
     callback: Dynamic = async (input?: Dynamic): Promise<Dynamic> => {
       try {
-        let { src: value13 }: Dynamic = await (0, uploadDesignFile)(
+        let { src: value13 }: Dynamic = await uploadDesignFile(
           value2,
           null,
           input,
@@ -424,7 +424,7 @@ function ImageAssetPicker({
             value13 &&
               (onPickFile
                 ? onPickFile(value13)
-                : (0, trackEmbeddedWrite)(callback(value13)));
+                : trackEmbeddedWrite(callback(value13)));
             event.target.value = "";
           }}
         />
@@ -438,7 +438,7 @@ function ImageAssetPicker({
                 const _props = {
                   type: "button",
                   "aria-pressed": value13,
-                  className: (0, cn)(
+                  className: cn(
                     "flex min-h-control min-w-0 cursor-default items-center gap-sm overflow-hidden rounded-md px-1 text-left text-body text-primary outline-none focus-visible:outline-hidden focus-visible:shadow-focus forced-colors:focus-visible:-outline-offset-2",
                     value13
                       ? "bg-fill-ghost-hover"
@@ -554,33 +554,33 @@ export {
 };
 export function installEditorPropertiesAssetPicker(): () => void {
   return () => {
-    reactPropertiesAssetPicker = (0, toModuleNamespace)(
-      (0, load_react)(),
+    reactPropertiesAssetPicker = toModuleNamespace(
+      load_react(),
       1,
     );
-    reactPropertiesAssetPicker_2 = (0, toModuleNamespace)(
-      (0, load_react)(),
+    reactPropertiesAssetPicker_2 = toModuleNamespace(
+      load_react(),
       1,
     );
-    (0, initializeCdsIndex)();
-    jsxPropertiesAssetPicker = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    initializeCdsIndex();
+    jsxPropertiesAssetPicker = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
     W155remValue = "w-[15.5rem]";
     W64Value = "w-64";
-    jsxPropertiesAssetPicker_2 = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    jsxPropertiesAssetPicker_2 = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
     PropertiesAssetPickerWebpAvifPattern = /\.(png|jpe?g|gif|webp|svg|avif)$/i;
-    reactPropertiesAssetPicker_3 = (0, toModuleNamespace)(
-      (0, load_react)(),
+    reactPropertiesAssetPicker_3 = toModuleNamespace(
+      load_react(),
       1,
     );
-    (0, initializeCdsIndex)();
-    jsxPropertiesAssetPicker_3 = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    initializeCdsIndex();
+    jsxPropertiesAssetPicker_3 = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
     PropertiesAssetPickerPattern = /^-?[\d.]+(%|[a-z]+)?$/i;

@@ -15,7 +15,7 @@ function resolveCommentPinPosition(
       rectangles[
         boards.findIndex((input?: Dynamic): Dynamic => input.file === file)
       ],
-    placement: Dynamic = (0, findAvailableArtboardPosition)(
+    placement: Dynamic = findAvailableArtboardPosition(
       {
         x: Math.round(pin2.x),
         y: Math.round(pin2.y),
@@ -53,7 +53,7 @@ function prepareFastEditArtboardChanges(
   let reference: Dynamic =
       placements.get(targetFile) ??
       (boardByFile.has(targetFile)
-        ? (0, artboardRectangle)(boardByFile.get(targetFile))
+        ? artboardRectangle(boardByFile.get(targetFile))
         : pin2),
     movedFiles: Dynamic = [...operations.places]
       .filter(
@@ -72,7 +72,7 @@ function prepareFastEditArtboardChanges(
       callback: Dynamic = (input?: Dynamic): Dynamic =>
         !occupied.some(
           (input2?: Dynamic): Dynamic =>
-            (0, artboardRectanglesOverlap)(input, input2),
+            artboardRectanglesOverlap(input, input2),
         ),
       state: Dynamic = {
         x: entry.x,
@@ -93,7 +93,7 @@ function prepareFastEditArtboardChanges(
           y: value2.y,
         };
       else {
-        let value3: Dynamic = (0, findAvailableArtboardPosition)(
+        let value3: Dynamic = findAvailableArtboardPosition(
           entry,
           occupied,
           reference,
@@ -143,7 +143,7 @@ function prepareFastEditArtboardChanges(
         Math.min(
           ...allRectangles.map(
             (input?: Dynamic): Dynamic =>
-              (0, distanceBetweenArtboards)(
+              distanceBetweenArtboards(
                 {
                   x: value.x,
                   y: value.y,
@@ -167,14 +167,14 @@ function prepareFastEditArtboardChanges(
         value3 !== null &&
         !allRectangles.some(
           (input?: Dynamic): Dynamic =>
-            (0, artboardRectanglesOverlap)(value3, input),
+            artboardRectanglesOverlap(value3, input),
         )
           ? {
               x: value3.x,
               y: value3.y,
               moved: "below",
             }
-          : (0, findAvailableArtboardPosition)(
+          : findAvailableArtboardPosition(
               {
                 ...(value.x !== undefined && value.y !== undefined && !value2
                   ? {
@@ -216,7 +216,7 @@ function prepareFastEditArtboardChanges(
       });
       continue;
     }
-    let value3: Dynamic = (0, findAvailableArtboardPosition)(
+    let value3: Dynamic = findAvailableArtboardPosition(
       {
         ...(value.x !== undefined && value.y !== undefined
           ? {
@@ -254,7 +254,7 @@ async function commitFastEditArtboardChanges(
 ): Promise<Dynamic> {
   let renames: Dynamic = [...operations.renames].filter(
       ([input, input2]: Dynamic): Dynamic =>
-        (0, sanitizeArtboardTitle)(input2) !== "" &&
+        sanitizeArtboardTitle(input2) !== "" &&
         boardByFile.get(input) !== undefined,
     ),
     operationKinds: Dynamic = [

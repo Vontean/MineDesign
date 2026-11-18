@@ -71,7 +71,7 @@ function createErrorDocumentState(
 function readBootstrapTitle(input?: Dynamic): Dynamic {
   let title: Dynamic = input.title;
   return typeof title == "string" && title.length > 0
-    ? (0, truncateUtf16Safely)(title, 200)
+    ? truncateUtf16Safely(title, 200)
     : undefined;
 }
 function createStaticWritableCache(input?: Dynamic): Dynamic {
@@ -98,7 +98,7 @@ function createFilesFallbackDocument(bootResult?: Dynamic): Dynamic {
         : (bootResult.origin === "demo" && bootResult.indexFound === true
             ? SHARED_RUNTIME_SAVE_REASON +
               " This is the demo canvas: the canvas\u2019s own design.json couldn\u2019t be used (" +
-              (0, truncateUtf16Safely)(bootResult.error ?? "", 300) +
+              truncateUtf16Safely(bootResult.error ?? "", 300) +
               ")."
             : SHARED_RUNTIME_SAVE_REASON) +
           (skipped.length > 0

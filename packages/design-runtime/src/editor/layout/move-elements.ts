@@ -14,7 +14,7 @@ function freezeInheritedTextStyle(
   context?: Dynamic,
 ): Dynamic {
   let entries: Dynamic = new Map();
-  for (let [value, value2] of (0, normalizeTextStyleSnapshot)(
+  for (let [value, value2] of normalizeTextStyleSnapshot(
     context,
   ) as Dynamic)
     input.hasAuthoredStyle(options, value) ||
@@ -35,7 +35,7 @@ function displacedDropFollowers(
     if (
       !value3 ||
       value2.tid === context ||
-      (0, containsUneditableSelection)(input, [value2.tid]) ||
+      containsUneditableSelection(input, [value2.tid]) ||
       input.isWithin(context, value2.tid)
     )
       continue;
@@ -92,7 +92,7 @@ function sameParentDropGroup(
         input2 !== options &&
         input.parentTid(input2) === value &&
         !input.isUneditable(input2) &&
-        !(0, containsUneditableSelection)(input, [input2]),
+        !containsUneditableSelection(input, [input2]),
     );
   return value2.length > 0 ? [options, ...value2] : null;
 }
@@ -109,9 +109,9 @@ function elementMoveRefusal(input?: Dynamic, options?: Dynamic): Dynamic {
   if (options.targetTid != null && !input.element(options.targetTid))
     return "target-missing";
   if (
-    (0, containsUneditableSelection)(input, [options.tid]) ||
+    containsUneditableSelection(input, [options.tid]) ||
     (options.targetTid != null &&
-      (0, containsUneditableSelection)(input, [options.targetTid]))
+      containsUneditableSelection(input, [options.targetTid]))
   )
     return "loop-driven";
   if (input.targetParentLocked(options.targetTid, options.position))
@@ -206,7 +206,7 @@ function moveModelElement(input?: Dynamic, options?: Dynamic): Dynamic {
       input.model.setStyleProperty(value2, "position", "relative");
     options.flatten &&
       !options.alt &&
-      (0, restoreGroupPosition)(
+      restoreGroupPosition(
         input.model,
         options.flatten,
         tid,
@@ -224,7 +224,7 @@ function moveModelElement(input?: Dynamic, options?: Dynamic): Dynamic {
           value11.tid === tid ||
           !input.model.element(value11.tid) ||
           input.model.parentTid(value11.tid) !== value10 ||
-          (0, containsUneditableSelection)(input.model, [value11.tid])
+          containsUneditableSelection(input.model, [value11.tid])
         )
           continue;
         let value12: Dynamic = input.model.inlineStyleValue(

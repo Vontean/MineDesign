@@ -31,7 +31,7 @@ function PropertySelectTrigger({
   useUiLocale();
   return (
     <PropertyPickerButton
-      className={(0, cn)("w-full", className)}
+      className={cn("w-full", className)}
       {...props}
     />
   );
@@ -40,7 +40,7 @@ function CssColorWell({ css: css }: Dynamic): Dynamic {
   useUiLocale();
   return (
     <PropertyColorWell
-      background={css ? (0, sanitizeCssBackground)(css) : undefined}
+      background={css ? sanitizeCssBackground(css) : undefined}
     />
   );
 }
@@ -58,10 +58,10 @@ function AuthoredColorPicker({
       dsColorTokens: value2,
       artboardColors: value3,
       iframeDefinedVars: value4,
-    }: Dynamic = (0, useInspectorContext)(),
+    }: Dynamic = useInspectorContext(),
     [value5]: Dynamic = (0, reactPropertiesAssetPicker_3.useState)(
       (): Dynamic =>
-        plain ? undefined : (0, artboardColorSwatchGroup)(value3),
+        plain ? undefined : artboardColorSwatchGroup(value3),
     );
   return disabled2 ? null : (
     <TokenColorPicker
@@ -93,7 +93,7 @@ function CssNumericPopupInput({
   useUiLocale();
   let [value2, value3]: Dynamic = (0,
     reactPropertiesAssetPicker_3.useState)(null),
-    value4: Dynamic = (0, useStyleCommitScrub)(
+    value4: Dynamic = useStyleCommitScrub(
       (input?: Dynamic): Dynamic => {
         value3(input);
         onChange(input);
@@ -135,8 +135,7 @@ function CssNumericPopupRow({
   onChange: onChange,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let { start: value2, live: value3 }: Dynamic = (0,
-  useLiveStyleScrub)({
+  let { start: value2, live: value3 }: Dynamic = useLiveStyleScrub({
     value: Number.isFinite(value) ? value : 0,
     min: min2,
     max: max,
@@ -201,7 +200,7 @@ function useBackgroundEditor({
         : ""
       : (value ?? ""),
     value8: Dynamic = value6 ? (value ?? "") : (companionValue ?? ""),
-    value9: Dynamic = (0, parseCssGradient)(value7),
+    value9: Dynamic = parseCssGradient(value7),
     value10: Dynamic =
       /url\("((?:[^"\\]|\\.)*)"\)/
         .exec(value7)?.[1]
@@ -244,7 +243,7 @@ function useBackgroundEditor({
     value20: Dynamic = (0, reactPropertiesAssetPicker_3.useRef)(null);
   open && value9 && (value20.current = value9);
   let value21: Dynamic = (0, reactPropertiesAssetPicker_3.useRef)({}),
-    value22: Dynamic = (0, useStyleCommitScrub)(
+    value22: Dynamic = useStyleCommitScrub(
       (input?: Dynamic): Dynamic => {
         value9 &&
           callback4({
@@ -257,18 +256,18 @@ function useBackgroundEditor({
       fallback &&
       fallback !== "rgba(0, 0, 0, 0)" &&
       fallback !== "transparent" &&
-      (0, classifyStyleValue)(fallback).kind === "literal"
+      classifyStyleValue(fallback).kind === "literal"
         ? fallback
         : undefined,
-    kind: Dynamic = (0, classifyStyleValue)(value19).kind,
+    kind: Dynamic = classifyStyleValue(value19).kind,
     value24: Dynamic =
       kind === "literal"
         ? value19
-        : (0, resolveColorTokenValue)(value19, tokens2),
+        : resolveColorTokenValue(value19, tokens2),
     value25: Dynamic = mixed
       ? undefined
       : value9
-        ? (0, serializeCssGradient)(value9)
+        ? serializeCssGradient(value9)
         : value10
           ? undefined
           : (value24 ??
@@ -279,7 +278,7 @@ function useBackgroundEditor({
       ? "Mixed"
       : value18 === "none"
         ? value23
-          ? (0, describeColorValue)(value23)
+          ? describeColorValue(value23)
           : "None"
         : value18 === "gradient"
           ? value9?.radial
@@ -287,7 +286,7 @@ function useBackgroundEditor({
             : "Linear"
           : value18 === "image"
             ? "Image"
-            : (0, describeColorValue)(value19),
+            : describeColorValue(value19),
     value27: Dynamic = value6
       ? (varSource ?? valueAuthored)
       : value8
@@ -304,11 +303,10 @@ function useBackgroundEditor({
           : undefined,
     value29: Dynamic = (0, reactPropertiesAssetPicker_3.useMemo)(
       (): Dynamic =>
-        (0, matchArtboardColorToken)(value28, tokens2, definedVars),
+        matchArtboardColorToken(value28, tokens2, definedVars),
       [value28, tokens2, definedVars],
     ),
-    { main: value30, alphaPct: value31 }: Dynamic = (0,
-    splitColorAlpha)(value29 ?? value26),
+    { main: value30, alphaPct: value31 }: Dynamic = splitColorAlpha(value29 ?? value26),
     value32: Dynamic =
       value6 && textFill.transparentInk !== undefined
         ? [
@@ -368,7 +366,7 @@ function useBackgroundEditor({
         ? [
             {
               prop: "background-image",
-              value: (0, serializeCssGradient)(input),
+              value: serializeCssGradient(input),
             },
             {
               prop: "background-size",
@@ -387,7 +385,7 @@ function useBackgroundEditor({
         : [
             {
               prop: "background",
-              value: (0, serializeCssGradient)(input),
+              value: serializeCssGradient(input),
             },
             {
               prop: "background-color",
@@ -398,7 +396,7 @@ function useBackgroundEditor({
       commit(callback3(input)),
     callback5: Dynamic = (input?: Dynamic): Dynamic =>
       /^https?:/i.test(input)
-        ? `url("${(0, escapeCssUrl)(input)}")`
+        ? `url("${escapeCssUrl(input)}")`
         : `url("${input.replace(/["\\]/g, "\\$&")}")`,
     callback6: Dynamic = (input?: Dynamic, options?: Dynamic): Dynamic =>
       commit(
@@ -442,7 +440,7 @@ function useBackgroundEditor({
       value5(input);
       let callback9: Dynamic = (input2?: Dynamic): Dynamic =>
         !!input2 &&
-        (0, classifyStyleValue)(input2).kind === "literal" &&
+        classifyStyleValue(input2).kind === "literal" &&
         !/url\(/i.test(input2);
       if (input === "color" && value6) {
         textFill.clipped && commit(value33);
@@ -472,14 +470,14 @@ function useBackgroundEditor({
       else {
         let current: Dynamic = value20.current,
           callback10: Dynamic = (input2?: Dynamic): Dynamic =>
-            callback9(input2) && (0, parseHsvaColor)(input2).a > 0,
+            callback9(input2) && parseHsvaColor(input2).a > 0,
           value37: Dynamic = callback10(value24)
             ? value24
             : value6 && callback10(value23)
-              ? (0, describeColorValue)(value23).toLowerCase()
+              ? describeColorValue(value23).toLowerCase()
               : "#c1672a",
           value38: Dynamic = value6
-            ? (0, contrastingGradientSeed)(value37)
+            ? contrastingGradientSeed(value37)
             : "#28211a",
           value39: Dynamic = current ?? {
             angle: 180,
@@ -489,8 +487,8 @@ function useBackgroundEditor({
         if (
           (value6 || !value8) &&
           value9 &&
-          (0, serializeCssGradient)(value9) ===
-            (0, serializeCssGradient)(value39)
+          serializeCssGradient(value9) ===
+            serializeCssGradient(value39)
         )
           return;
         callback4(value39);
@@ -548,7 +546,7 @@ function useBackgroundEditor({
         ((): Dynamic => {
           let callback9: Dynamic = (input?: Dynamic): Dynamic =>
               input && /^var\(/i.test(input)
-                ? (0, resolveColorTokenValue)(input, tokens2)
+                ? resolveColorTokenValue(input, tokens2)
                 : input,
             value37: Dynamic = value9.stops
               .map(parseCssGradientStop)
@@ -595,7 +593,7 @@ function useBackgroundEditor({
                           color: options,
                           pos:
                             input2.pos ??
-                            (0, normalizedGradientStops)(value37)[
+                            normalizedGradientStops(value37)[
                               input
                             ],
                         }
@@ -753,7 +751,7 @@ function PropertyBackgroundRow({
       dsColorTokens: value3,
       iframeDefinedVars: value4,
       editsAreUndoSteps: value5,
-    }: Dynamic = (0, useInspectorContext)(),
+    }: Dynamic = useInspectorContext(),
     value6: Dynamic = useBackgroundEditor({
       ...props,
       writer: {
@@ -814,7 +812,7 @@ function PropertyBackgroundRow({
       }
     >
       <div
-        className={(0, cn)(
+        className={cn(
           value9 ? "px-4" : "px-lg",
           "[--pp-edge:0px]",
         )}

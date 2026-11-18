@@ -16,13 +16,13 @@ export function openCanvasContextMenu(deps: { readonly callback12: Dynamic; read
             deps.onCanvasMenu == null ||
             deps.value55.current != null ||
             deps.value128.current ||
-            (0, OutlineDcOutlineHandler)(event.target)
+            OutlineDcOutlineHandler(event.target)
           )
             return;
           if (deps.value108.contextmenu()) return void event.preventDefault();
           let value250: Dynamic =
               deps.callback20(event) && deps.value130.current.size === 0
-                ? (0, canvasContextMenuTargetFromElement)(
+                ? canvasContextMenuTargetFromElement(
                     event.target,
                   )
                 : null,
@@ -87,7 +87,7 @@ export function pressCanvasBackground(deps: { readonly callback10: Dynamic; read
             ) {
               event.preventDefault();
               event.stopPropagation();
-              (0, focusCanvasDocument)();
+              focusCanvasDocument();
               let bounds: Dynamic =
                 event.currentTarget.getBoundingClientRect();
               deps.onAddAnnotation?.(
@@ -108,7 +108,7 @@ export function pressCanvasBackground(deps: { readonly callback10: Dynamic; read
             ) {
               event.preventDefault();
               event.stopPropagation();
-              (0, focusCanvasDocument)();
+              focusCanvasDocument();
               let bounds: Dynamic =
                   event.currentTarget.getBoundingClientRect(),
                 value250: Dynamic = deps.callback16(
@@ -206,7 +206,7 @@ export function pressCanvasBackground(deps: { readonly callback10: Dynamic; read
             if (
               !deps.value96.current &&
               deps.value19.current &&
-              (0, supportsClickPlacement)(deps.value85.current) &&
+              supportsClickPlacement(deps.value85.current) &&
               event.button === 0 &&
               event.isPrimary &&
               !deps.value79.current &&
@@ -216,7 +216,7 @@ export function pressCanvasBackground(deps: { readonly callback10: Dynamic; read
             ) {
               event.preventDefault();
               event.stopPropagation();
-              (0, focusCanvasDocument)();
+              focusCanvasDocument();
               let current: Dynamic = deps.value85.current,
                 value250: Dynamic =
                   (event.target instanceof Element
@@ -260,7 +260,7 @@ export function pressCanvasBackground(deps: { readonly callback10: Dynamic; read
                     ),
                     value259: Dynamic =
                       input.shiftKey && value256
-                        ? (0, constrainLineAngle)(value255, value258)
+                        ? constrainLineAngle(value255, value258)
                         : value258,
                     value260: Dynamic = Math.abs(value259.x - value255.x),
                     value261: Dynamic = Math.abs(value259.y - value255.y);
@@ -408,7 +408,7 @@ export function pressCanvasBackground(deps: { readonly callback10: Dynamic; read
             ) {
               event.preventDefault();
               event.stopPropagation();
-              (0, focusCanvasDocument)();
+              focusCanvasDocument();
               let bounds: Dynamic =
                   event.currentTarget.getBoundingClientRect(),
                 pointerId: Dynamic = event.pointerId,
@@ -424,7 +424,7 @@ export function pressCanvasBackground(deps: { readonly callback10: Dynamic; read
                       deps.callback16(input, input2, bounds),
                   );
                   deps.value83(
-                    (0, freehandDrawingAnnotation)(
+                    freehandDrawingAnnotation(
                       value250,
                       callback61(),
                       false,
@@ -473,7 +473,7 @@ export function pressCanvasBackground(deps: { readonly callback10: Dynamic; read
                     (callback64(),
                     !(!deps.value19.current || items.length < 2) &&
                       deps.onAddPen(
-                        (0, freehandDrawingAnnotation)(
+                        freehandDrawingAnnotation(
                           items.map(
                             ([input2, input3]: Dynamic): Dynamic =>
                               deps.callback16(input2, input3, bounds),
@@ -513,7 +513,7 @@ export function pressCanvasBackground(deps: { readonly callback10: Dynamic; read
                 origin: {
                   kind: "canvas",
                 },
-                mode: (0, isPrimaryModifierEvent)(event)
+                mode: isPrimaryModifierEvent(event)
                   ? "deep"
                   : "plain",
                 toggle: event.shiftKey,
@@ -539,7 +539,7 @@ export function pressCanvasBackground(deps: { readonly callback10: Dynamic; read
                 event.currentTarget.setAttribute("data-mega-grabbing", "");
               let value250: Dynamic =
                 event.button === 2 && !deps.value128.current
-                  ? (0, canvasContextMenuTargetFromElement)(
+                  ? canvasContextMenuTargetFromElement(
                       event.target,
                     )
                   : null;

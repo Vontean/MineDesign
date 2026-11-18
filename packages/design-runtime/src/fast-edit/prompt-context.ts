@@ -203,7 +203,7 @@ function truncateLargeDataUris(text?: Dynamic): Dynamic {
   return copyOffset === 0 ? text : result + text.slice(copyOffset);
 }
 function buildFastEditPrompt(context?: Dynamic): Dynamic {
-  let marker: Dynamic = (0, createUntrustedMarker)(),
+  let marker: Dynamic = createUntrustedMarker(),
     click: Dynamic = context.click,
     width: Dynamic = Number(boundedPromptNumber(context.shown.w, 1e5)),
     height: Dynamic = Number(boundedPromptNumber(context.shown.h, 1e5)),
@@ -386,7 +386,7 @@ function buildFastEditPrompt(context?: Dynamic): Dynamic {
           ) +
           `
 ` +
-          (0, fenceUntrustedContent)(
+          fenceUntrustedContent(
             "selected",
             value7.map(
               (input?: Dynamic): Dynamic =>
@@ -443,7 +443,7 @@ function buildFastEditPrompt(context?: Dynamic): Dynamic {
                 ) +
                 `
 ` +
-                (0, fenceUntrustedContent)(
+                fenceUntrustedContent(
                   "clicked element",
                   callback6(pointedElement, tagName) +
                     (pointedElement.drawnAs !== undefined &&
@@ -698,7 +698,7 @@ function buildFastEditPrompt(context?: Dynamic): Dynamic {
               FAST_EDIT_PROMPT_PHRASES.design(value14.length) +
                 `
 ` +
-                (0, fenceUntrustedContent)(
+                fenceUntrustedContent(
                   "design",
                   callback11(),
                   marker,
@@ -729,7 +729,7 @@ function buildFastEditPrompt(context?: Dynamic): Dynamic {
                           `
 `
                         : "") +
-                      (0, fenceUntrustedContent)(
+                      fenceUntrustedContent(
                         "file",
                         shownHtml.html,
                         marker,
@@ -745,7 +745,7 @@ function buildFastEditPrompt(context?: Dynamic): Dynamic {
                         : FAST_EDIT_PROMPT_PHRASES.artboard(value10.id)) +
                       `
 ` +
-                      (0, fenceUntrustedContent)(
+                      fenceUntrustedContent(
                         "file",
                         callback10(value10.html),
                         marker,
@@ -758,7 +758,7 @@ function buildFastEditPrompt(context?: Dynamic): Dynamic {
                     : FAST_EDIT_PROMPT_PHRASES.forContext(input2.id)) +
                   `
 ` +
-                  (0, fenceUntrustedContent)(
+                  fenceUntrustedContent(
                     "file",
                     input2.html,
                     marker,
@@ -776,7 +776,7 @@ function buildFastEditPrompt(context?: Dynamic): Dynamic {
               FAST_EDIT_PROMPT_PHRASES.journal +
                 `
 ` +
-                (0, fenceUntrustedContent)(
+                fenceUntrustedContent(
                   "journal",
                   journal,
                   marker,
@@ -815,7 +815,7 @@ function buildFastEditPrompt(context?: Dynamic): Dynamic {
         FAST_EDIT_PROMPT_PHRASES.prompt +
           `
 ` +
-          (0, fenceUntrustedContent)(
+          fenceUntrustedContent(
             "comment",
             context.comment,
             marker,
@@ -828,7 +828,7 @@ function buildFastEditPrompt(context?: Dynamic): Dynamic {
 ` +
                 value13.map(
                   (input2?: Dynamic, options?: Dynamic): Dynamic =>
-                    (0, fenceUntrustedContent)(
+                    fenceUntrustedContent(
                       "log " + String(options + 1),
                       input2,
                       marker,
@@ -853,7 +853,7 @@ function buildFastEditPrompt(context?: Dynamic): Dynamic {
                   ? ""
                   : `
 ` +
-                    (0, fenceUntrustedContent)(
+                    fenceUntrustedContent(
                       "line",
                       context.noteLine.slice(0, MAX_PROMPT_TAG_NAME_CHARS),
                       marker,
@@ -861,7 +861,7 @@ function buildFastEditPrompt(context?: Dynamic): Dynamic {
             ]),
         ...(input
           ? [
-              (0, describeHistoryPressure)(
+              describeHistoryPressure(
                 [
                   ...value20,
                   {

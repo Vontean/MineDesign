@@ -39,7 +39,7 @@ function ArtboardInspector({
     value4: Dynamic = readOnly
       ? ViewOnlyYouCanInspectThisMessage
       : undefined,
-    value5: Dynamic = (0, useInspectorContext)(),
+    value5: Dynamic = useInspectorContext(),
     value6: Dynamic = (0, reactCanvasShape_2.useMemo)(
       (): Dynamic => ({
         ...value5,

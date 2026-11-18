@@ -105,7 +105,7 @@ function PanelShell(input?: Dynamic): Dynamic {
       onValueChange={(input2?: Dynamic): Dynamic => value5(input2)}
       data-kit={"panel-header"}
       data-testid={value3}
-      className={(0, joinClassNames)(
+      className={joinClassNames(
         ChromePanelShellClassNames,
         value2,
       )}
@@ -116,7 +116,7 @@ function PanelShell(input?: Dynamic): Dynamic {
     <div
       data-kit={"panel-header"}
       data-testid={value3}
-      className={(0, joinClassNames)(
+      className={joinClassNames(
         ChromePanelShellClassNames,
         value2,
       )}
@@ -141,28 +141,28 @@ export {
 };
 export function installEditorChromePanelShell(): () => void {
   return () => {
-    (0, initializeCdsIndex)();
-    reactChromePanelShell = (0, toModuleNamespace)(
-      (0, load_react)(),
+    initializeCdsIndex();
+    reactChromePanelShell = toModuleNamespace(
+      load_react(),
       1,
     );
-    reactDomChromePanelShell = (0, toModuleNamespace)(
-      (0, load_react_dom)(),
+    reactDomChromePanelShell = toModuleNamespace(
+      load_react_dom(),
       1,
     );
-    reactChromePanelShell_2 = (0, toModuleNamespace)(
-      (0, load_react)(),
+    reactChromePanelShell_2 = toModuleNamespace(
+      load_react(),
       1,
     );
-    (0, initializeCdsIndex)();
-    jsxChromePanelShell = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    initializeCdsIndex();
+    jsxChromePanelShell = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
     ChromePanelShellClassNames =
       "flex min-w-0 shrink-0 items-center gap-xs py-md pr-sm pl-sm";
-    jsxChromePanelShell_2 = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    jsxChromePanelShell_2 = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
     ChromePanelShellComponent = (0, reactChromePanelShell.forwardRef)(function (

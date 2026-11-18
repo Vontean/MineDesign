@@ -81,9 +81,9 @@ export {
 };
 export function installEditorSessionTouchAndHistory(): () => void {
   return () => {
-    (0, initializeCdsIndex)();
-    jsxSessionTouchAndHistory = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    initializeCdsIndex();
+    jsxSessionTouchAndHistory = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
     SessionTouchAndHistoryJsx = (input?: Dynamic): Dynamic => (
@@ -91,7 +91,7 @@ export function installEditorSessionTouchAndHistory(): () => void {
     );
     SessionTouchAndHistoryJsxValue = SessionTouchAndHistoryJsx("TextT");
     SessionTouchAndHistoryJsxValue_2 = SessionTouchAndHistoryJsx("FrameHash");
-    (0, initializeCdsIndex)();
-    (0, initializeInspectorContext)();
+    initializeCdsIndex();
+    initializeInspectorContext();
   };
 }

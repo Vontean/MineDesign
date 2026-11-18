@@ -35,7 +35,7 @@ function removeTemplateInterpolations(text?: Dynamic): Dynamic {
 }
 function parseStaticPreviewTemplate(html?: Dynamic): Dynamic {
   let template: Dynamic = (document as Dynamic).createElement("template");
-  template.innerHTML = (0, toParserHtml)(html);
+  template.innerHTML = toParserHtml(html);
   return template;
 }
 function buildStaticFastEditPreview(
@@ -44,7 +44,7 @@ function buildStaticFastEditPreview(
 ): Dynamic {
   let resolvedHtml: Dynamic = html;
   try {
-    resolvedHtml = (0, flattenTemplateValues)(
+    resolvedHtml = flattenTemplateValues(
       resolvedHtml,
       (input?: Dynamic): Dynamic =>
         Object.prototype.hasOwnProperty.call(defaults, input)
@@ -147,7 +147,7 @@ function buildStaticFastEditPreview(
           value3.namespaceURI === "http://www.w3.org/2000/svg";
         for (let value5 of Array.from(value3.attributes) as Dynamic) {
           let value6: Dynamic = value5.name.startsWith(ScCamelValue)
-              ? (0, kebabToCamelCase)(
+              ? kebabToCamelCase(
                   value5.name.slice(ScCamelValue.length),
                 )
               : value5.name,
@@ -197,7 +197,7 @@ function buildStaticFastEditPreview(
       }
     };
   walk(template.content);
-  let value: Dynamic = (0, fromParserHtml)(template.innerHTML);
+  let value: Dynamic = fromParserHtml(template.innerHTML);
   return (
     '<!doctype html><html><head><meta charset="utf-8"><style>' +
     FAST_EDIT_STATIC_PREVIEW_CSS +
@@ -224,7 +224,7 @@ export function installFastEditStaticPreview(): () => void {
     FAST_EDIT_ARTBOARD_SECTION_OPEN = '<section id="artboard">';
     wrapFastEditTemplate = (input?: Dynamic): Dynamic =>
       FAST_EDIT_ARTBOARD_SECTION_OPEN +
-      (0, encodeCamelCaseAttributes)(input) +
+      encodeCamelCaseAttributes(input) +
       "</section>";
     CASE_SENSITIVE_SVG_ATTRIBUTES = new Set([
       "viewBox",

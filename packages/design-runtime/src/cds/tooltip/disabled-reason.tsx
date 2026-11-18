@@ -23,7 +23,7 @@ function disabledReasonWrapperProps(
   return {
     tabIndex: value ? 0 : -1,
     "aria-describedby": value ? options : undefined,
-    className: (0, cn)("inline-flex", context),
+    className: cn("inline-flex", context),
   };
 }
 function hasDisabledReason(input: React.ReactNode): boolean {
@@ -65,15 +65,15 @@ export {
 };
 export function installCdsTooltipDisabledReason(): () => void {
   return () => {
-    initializeTooltipDisabledReason = (0, initializeOnce)(() => {
+    initializeTooltipDisabledReason = initializeOnce(() => {
       "use client";
 
-      (0, initializeClassNames)();
-      reactTooltipDisabledReason = (0, toModuleNamespace)(
-        (0, load_react)(),
+      initializeClassNames();
+      reactTooltipDisabledReason = toModuleNamespace(
+        load_react(),
       );
-      jsxTooltipDisabledReason = (0, toModuleNamespace)(
-        (0, load_react_jsx_runtime)(),
+      jsxTooltipDisabledReason = toModuleNamespace(
+        load_react_jsx_runtime(),
       );
       CdsDisabledReasonAttribute = "data-cds-disabled-reason";
     });

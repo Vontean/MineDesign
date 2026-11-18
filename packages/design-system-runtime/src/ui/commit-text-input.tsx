@@ -82,7 +82,7 @@ function CommitTextInput({
     <input
       {...remainingProps}
       ref={ref4}
-      className={(0, joinClassNames)("kit-rn-in", className)}
+      className={joinClassNames("kit-rn-in", className)}
       value={value2}
       placeholder={placeholder}
       spellCheck={false}
@@ -158,7 +158,7 @@ function EditableText({
   if (readOnly) {
     return (
       <span
-        className={(0, joinClassNames)("kit-rn", className)}
+        className={joinClassNames("kit-rn", className)}
         data-testid={testId}
       >
         {value}
@@ -169,7 +169,7 @@ function EditableText({
     return (
       <span
         ref={inputRef}
-        className={(0, joinClassNames)(
+        className={joinClassNames(
           "kit-rn kit-rn-editable",
           className,
         )}
@@ -195,7 +195,7 @@ function EditableText({
   }
   return (
     <span
-      className={(0, joinClassNames)("kit-rn-on", className)}
+      className={joinClassNames("kit-rn-on", className)}
       onClick={(input: React.MouseEvent<HTMLSpanElement>) =>
         input.stopPropagation()
       }
@@ -232,13 +232,13 @@ export {
 };
 export function installUiCommitTextInput(): () => void {
   return () => {
-    jsxSC = (0, toModuleNamespace)((0, loadJsxNamespace)(), 1);
-    reactJW = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    jsxSC = toModuleNamespace(loadJsxNamespace(), 1);
+    reactJW = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
-    jsxForUiCommitTextInput = (0, toModuleNamespace)(
-      (0, loadJsxNamespace)(),
+    jsxForUiCommitTextInput = toModuleNamespace(
+      loadJsxNamespace(),
       1,
     );
   };

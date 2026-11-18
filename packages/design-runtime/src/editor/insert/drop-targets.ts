@@ -43,7 +43,7 @@ function isAbsolutelyPositionedModelElement(
   let value: Dynamic = input.element(options);
   return (
     value != null &&
-    (0, isUnconstrainedAbsoluteElement)(value, context)
+    isUnconstrainedAbsoluteElement(value, context)
   );
 }
 function isAbsolutelyPositionedHtml(
@@ -52,12 +52,12 @@ function isAbsolutelyPositionedHtml(
 ): Dynamic {
   let value: Dynamic = singlePastedRootElement(input, options);
   return (
-    value != null && (0, isUnconstrainedAbsoluteElement)(value, true)
+    value != null && isUnconstrainedAbsoluteElement(value, true)
   );
 }
 function parseHtmlFragment(input?: Dynamic, doc?: Dynamic): Dynamic {
   let value: Dynamic = doc.createElement("template");
-  value.innerHTML = (0, toParserHtml)(input);
+  value.innerHTML = toParserHtml(input);
   return value.content;
 }
 function fragmentContentElements(
@@ -75,10 +75,10 @@ function wrapInlinePastedHtml(
 ): Dynamic {
   let value: Dynamic = parseHtmlFragment(input, options);
   return value.children.length > 0 &&
-    (0, isInlineTextContainer)(value) &&
+    isInlineTextContainer(value) &&
     ![...value.children].some(
       (input2?: Dynamic): Dynamic =>
-        (0, isUnconstrainedAbsoluteElement)(input2, false),
+        isUnconstrainedAbsoluteElement(input2, false),
     )
     ? `<p style="margin: 0">${input}</p>`
     : input;
@@ -105,7 +105,7 @@ function containsFlowPastedElements(
     !input &&
     fragmentContentElements(options, context).some(
       (input2?: Dynamic): Dynamic =>
-        !(0, isUnconstrainedAbsoluteElement)(input2, true),
+        !isUnconstrainedAbsoluteElement(input2, true),
     )
   );
 }
@@ -118,7 +118,7 @@ function pastedElementGeometry(
   return value
     ? {
         tid: 0,
-        tag: (0, readableTagName)(value.tagName.toLowerCase()),
+        tag: readableTagName(value.tagName.toLowerCase()),
         w: options.ew,
         h: options.eh,
         dx: options.ox - options.gx,
@@ -172,7 +172,7 @@ function rootDropContainer(
     top: value,
     takesFiles:
       value2 !== "svg" &&
-      (0, canContainHtmlTag)(value2, "img") &&
+      canContainHtmlTag(value2, "img") &&
       !input.isTextEditable(value),
   };
 }
@@ -213,10 +213,10 @@ function emptyArtboardDropTarget(
       value6.remove();
   }
   if (
-    !(0, pickerElementSignature)(
+    !pickerElementSignature(
       value4,
       (input2?: Dynamic): Dynamic =>
-        (0, classifyElementStyleKind)(input2) === "text",
+        classifyElementStyleKind(input2) === "text",
     )
   )
     return null;
@@ -235,7 +235,7 @@ function emptyArtboardDropTarget(
           .topLevelTags(options)
           .every(
             (input2?: Dynamic): Dynamic =>
-              (0, canContainHtmlTag)(
+              canContainHtmlTag(
                 input.tagName(value2) ?? "",
                 input2,
               ),

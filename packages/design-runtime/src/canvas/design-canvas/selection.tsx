@@ -52,7 +52,7 @@ export function routeFrameSelectionEvent(deps: { readonly focusedFileRef: Dynami
         )
           return;
         if (
-          (0, isSessionCancelMessage)(options.re, deps.value27.current)
+          isSessionCancelMessage(options.re, deps.value27.current)
         ) {
           deps.value27.current = null;
           return;
@@ -101,7 +101,7 @@ export function routeFrameSelectionEvent(deps: { readonly focusedFileRef: Dynami
           !value655 &&
           !value653 &&
           ((deps.value25.current = null), deps.selectionEpochRef.current++);
-        let value656: Dynamic = (0, applyHostSelectionResponse)(
+        let value656: Dynamic = applyHostSelectionResponse(
           deps.selectionRef.current,
           input,
           {
@@ -267,16 +267,16 @@ export function focusArtboardAndReplaySelection(deps: { readonly abandonSelectio
 /** 键盘选择导航入口：按 kind 处理全选、方向键微移（含长按节流）、重排层级、进入子级/返回父级/切换兄弟元素，并播报结果。 */
 export function navigateSelectionByKind(deps: { readonly abandonSelectionGesture: Dynamic; readonly applyCanvasSelection: Dynamic; readonly callback: Dynamic; readonly count3: Dynamic; readonly focusedFileRef: Dynamic; readonly frameSelectionTokensRef: Dynamic; readonly selectionEpochRef: Dynamic; readonly selectionRef: Dynamic; readonly value155: Dynamic; readonly value177: Dynamic; readonly value19: Dynamic; readonly value218: Dynamic; readonly value31: Dynamic; readonly value34: Dynamic; readonly value432: Dynamic; readonly value44: Dynamic; readonly value440: Dynamic; readonly value48: Dynamic; readonly value49: Dynamic; readonly value50: Dynamic; readonly value53: Dynamic; readonly value54: Dynamic; readonly value73: Dynamic; readonly value87: Dynamic }, source?: Dynamic): Dynamic {
         let callback15: Dynamic = (): Dynamic =>
-          (0, canNavigateSelection)({
+          canNavigateSelection({
             gesturing: deps.value218.current,
             setMoveCommits: deps.value155.current,
           });
         if (!callback15()) return;
         let current4: Dynamic = deps.selectionRef.current,
           callback16: Dynamic = (input?: Dynamic): Dynamic =>
-            (0, sameSelectionStructure)(current4, input);
+            sameSelectionStructure(current4, input);
         if (source.kind === "all") {
-          let value654: Dynamic = (0, selectionNavigationScope)(
+          let value654: Dynamic = selectionNavigationScope(
             current4,
             false,
           );
@@ -285,7 +285,7 @@ export function navigateSelectionByKind(deps: { readonly abandonSelectionGesture
             deps.abandonSelectionGesture();
             let current5: Dynamic = deps.value87.current;
             deps.applyCanvasSelection(
-              (0, selectionFromBoards)({
+              selectionFromBoards({
                 files: new Set(
                   current5.artboards.map(
                     (input?: Dynamic): Dynamic => input.file,
@@ -331,17 +331,17 @@ export function navigateSelectionByKind(deps: { readonly abandonSelectionGesture
                 values: Dynamic = new Set(
                   value658.map(([input]: Dynamic): Dynamic => input),
                 ),
-                value659: Dynamic = (0, canvasBoardSelection)(
+                value659: Dynamic = canvasBoardSelection(
                   current5,
                 ),
                 value660: Dynamic =
-                  (0, boardSelectionCount)(value659) > 0 &&
+                  boardSelectionCount(value659) > 0 &&
                   true &&
                   deps.value44.current(value659, value654, value655, current6.seq);
               if (value658.length === 0) {
                 value660 &&
-                  (0, announce)(
-                    (0, moveDirectionAnnouncement)(
+                  announce(
+                    moveDirectionAnnouncement(
                       value654,
                       value655,
                     ),
@@ -400,15 +400,15 @@ export function navigateSelectionByKind(deps: { readonly abandonSelectionGesture
                 },
               );
               index > 0 || value660
-                ? (0, announce)(
-                    (0, moveDirectionAnnouncement)(
+                ? announce(
+                    moveDirectionAnnouncement(
                       value654,
                       value655,
                     ),
                   )
                 : index2 > 0 &&
-                  (0, announce)(
-                    (0, reorderAnnouncement)(
+                  announce(
+                    reorderAnnouncement(
                       value654 < 0 || value655 < 0 ? -1 : 1,
                       false,
                     ),
@@ -421,7 +421,7 @@ export function navigateSelectionByKind(deps: { readonly abandonSelectionGesture
               let current8: Dynamic = deps.selectionRef.current;
               deps.applyCanvasSelection(
                 entries.size > 0
-                  ? (0, selectionAfterElementEdits)(
+                  ? selectionAfterElementEdits(
                       current8,
                       "next",
                       new Map(),
@@ -512,7 +512,7 @@ export function navigateSelectionByKind(deps: { readonly abandonSelectionGesture
               Promise.all(value657),
             ]);
           if (deps.selectionEpochRef.current !== value654) return;
-          let value660: Dynamic = (0, selectionAfterElementEdits)(
+          let value660: Dynamic = selectionAfterElementEdits(
             current5,
             value653,
             new Map(
@@ -543,7 +543,7 @@ export function navigateSelectionByKind(deps: { readonly abandonSelectionGesture
 /** 删除命令触发时运行：在各画板中移除选中的元素并记录历史；只读、失败或重复行无法删除时提示原因。 */
 export function deleteSelectedElements(deps: { readonly abandonSelectionGesture: Dynamic; readonly applyCanvasSelection: Dynamic; readonly selectionRef: Dynamic; readonly value144: Dynamic; readonly value155: Dynamic; readonly value177: Dynamic; readonly value218: Dynamic; readonly value22: Dynamic; readonly value432: Dynamic; readonly value448: Dynamic; readonly value459: Dynamic }, input?: Dynamic, options: Dynamic = {}): Dynamic {
         if (
-          !(0, sessionAllowsMutation)({
+          !sessionAllowsMutation({
             gesturing: deps.value218.current,
             setMoveCommits: deps.value155.current,
           })
@@ -561,16 +561,16 @@ export function deleteSelectedElements(deps: { readonly abandonSelectionGesture:
         deps.abandonSelectionGesture();
         let value654: Dynamic = options.elementsOnly
             ? emptyBoardSelection
-            : (0, canvasBoardSelection)(current4),
+            : canvasBoardSelection(current4),
           value655: Dynamic =
-            (0, boardSelectionCount)(value654) > 0 &&
+            boardSelectionCount(value654) > 0 &&
             value653.length > 0
-              ? (0, randomSessionToken)()
+              ? randomSessionToken()
               : undefined,
           value656: Dynamic =
             value655 !== undefined ? deps.value144(value655) : null,
           value657: Dynamic =
-            (0, boardSelectionCount)(value654) > 0
+            boardSelectionCount(value654) > 0
               ? deps.value459.current(value654, value655)
               : false,
           value658: Dynamic = deps.value432.current?.group(
@@ -619,7 +619,7 @@ export function deleteSelectedElements(deps: { readonly abandonSelectionGesture:
             ).length;
             if (length > 0) {
               deps.value448.current(
-                (0, selectionActionFailureMessage)(
+                selectionActionFailureMessage(
                   "delete",
                   length,
                   value659,
@@ -631,7 +631,7 @@ export function deleteSelectedElements(deps: { readonly abandonSelectionGesture:
               ? deps.value448.current(
                   uiMessage("canvas.designCanvas.nothingDeletedRepeatedRowsAre"),
                 )
-              : (0, announce)(
+              : announce(
                   items.every(Boolean)
                     ? input
                     : input + " \u2014 repeated rows stayed",
@@ -639,8 +639,8 @@ export function deleteSelectedElements(deps: { readonly abandonSelectionGesture:
           });
         deps.applyCanvasSelection(
           options.elementsOnly
-            ? (0, selectionFromBoards)(
-                (0, canvasBoardSelection)(current4),
+            ? selectionFromBoards(
+                canvasBoardSelection(current4),
               )
             : emptyCanvasSelection,
         );
@@ -650,7 +650,7 @@ export function deleteSelectedElements(deps: { readonly abandonSelectionGesture:
 /** 复制（Duplicate）命令触发时运行：在各画板内就地复制选中的元素并更新选择，失败或不可复制时提示原因。 */
 export function duplicateSelectedElements(deps: { readonly abandonSelectionGesture: Dynamic; readonly selectionRef: Dynamic; readonly value138: Dynamic; readonly value144: Dynamic; readonly value155: Dynamic; readonly value177: Dynamic; readonly value218: Dynamic; readonly value22: Dynamic; readonly value31: Dynamic; readonly value323: Dynamic; readonly value432: Dynamic; readonly value448: Dynamic; readonly value48: Dynamic }, input: Dynamic = {}): Dynamic {
         if (
-          !(0, sessionAllowsMutation)({
+          !sessionAllowsMutation({
             gesturing: deps.value218.current,
             setMoveCommits: deps.value155.current,
           }) ||
@@ -662,16 +662,16 @@ export function duplicateSelectedElements(deps: { readonly abandonSelectionGestu
         let value653: Dynamic = deps.value138(),
           value654: Dynamic = input.elementsOnly
             ? emptyBoardSelection
-            : (0, canvasBoardSelection)(deps.selectionRef.current),
+            : canvasBoardSelection(deps.selectionRef.current),
           value655: Dynamic =
-            (0, boardSelectionCount)(value654) > 0 &&
+            boardSelectionCount(value654) > 0 &&
             value653.length > 0
-              ? (0, randomSessionToken)()
+              ? randomSessionToken()
               : undefined,
           value656: Dynamic =
             value655 !== undefined ? deps.value144(value655) : null,
           value657: Dynamic =
-            (0, boardSelectionCount)(value654) > 0
+            boardSelectionCount(value654) > 0
               ? deps.value323.current(value654, value655)
               : false,
           value658: Dynamic = deps.value432.current?.group(
@@ -719,7 +719,7 @@ export function duplicateSelectedElements(deps: { readonly abandonSelectionGestu
             ).length;
             if (length > 0) {
               deps.value448.current(
-                (0, selectionActionFailureMessage)(
+                selectionActionFailureMessage(
                   "duplicate",
                   length,
                   value659,
@@ -744,7 +744,7 @@ export function flipSelectedObjects(deps: { readonly applyCanvasSelection: Dynam
         }
         if (
           !deps.value224.current ||
-          !(0, sessionAllowsMutation)({
+          !sessionAllowsMutation({
             gesturing: deps.value218.current,
             setMoveCommits: deps.value155.current,
           }) ||
@@ -820,7 +820,7 @@ export function flipSelectedObjects(deps: { readonly applyCanvasSelection: Dynam
             );
           let value657: Dynamic =
               value654.size > 0
-                ? (0, randomSessionToken)()
+                ? randomSessionToken()
                 : undefined,
             value658: Dynamic =
               value657 !== undefined ? deps.value144(value657) : null,
@@ -874,7 +874,7 @@ export function flipSelectedObjects(deps: { readonly applyCanvasSelection: Dynam
                 ? PartOfTheSelectionCouldnTBeMessage
                 : CouldnTFlipRightNowTryAgainMessage
               : value666 !== undefined
-                ? (0, partialFlipMessage)(
+                ? partialFlipMessage(
                     value666,
                     value663,
                     GeometryFlipAnnotationsWytKytYtConfig,
@@ -889,8 +889,8 @@ export function flipSelectedObjects(deps: { readonly applyCanvasSelection: Dynam
           !(!value664 && options.then?.(value667, value663) === true) &&
             (value667 !== undefined && deps.value448.current(value667),
             value663 &&
-              (0, announce)(
-                (0, flipDirectionAnnouncement)(input),
+              announce(
+                flipDirectionAnnouncement(input),
               ));
         })().finally((): Dynamic => {
           (window as Dynamic).clearTimeout(value655);
@@ -988,7 +988,7 @@ export function buildOutlineArtboardRows(deps: { readonly abandonSelectionGestur
         onSelectObject: (input?: Dynamic, options?: Dynamic): Dynamic => {
           deps.value224.current &&
             deps.value314(
-              (0, boardSelectionItems)({
+              boardSelectionItems({
                 note: input,
               }),
               options ? "toggle" : "replace",
@@ -1020,7 +1020,7 @@ export function buildOutlineArtboardRows(deps: { readonly abandonSelectionGestur
               input2.has(input) ? input2 : new Set([...input2, input]),
           );
           deps.value62();
-          deps.setSelection((0, selectionFromArtboards)(new Set([input])));
+          deps.setSelection(selectionFromArtboards(new Set([input])));
           deps.value273(input);
           deps.value559(input);
           deps.value549.current[input] === null && deps.value40(input);

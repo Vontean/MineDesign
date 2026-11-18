@@ -31,7 +31,7 @@ function normalizePropertyNumber(
   options?: Dynamic,
 ): Dynamic {
   let value: Dynamic = options.trim(),
-    value2: Dynamic = (0, parseCssNumber)(value);
+    value2: Dynamic = parseCssNumber(value);
   return !value2 ||
     input.startsWith("@") ||
     /^(line-height|opacity|font-weight|z-index|order|flex|flex-grow|flex-shrink)$/.test(
@@ -41,7 +41,7 @@ function normalizePropertyNumber(
       input,
     ) ||
     value === "0" ||
-    (value2.unit && (0, normalizeCssUnit)(value2.unit))
+    (value2.unit && normalizeCssUnit(value2.unit))
     ? value
     : `${value2.value}px`;
 }

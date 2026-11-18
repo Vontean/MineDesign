@@ -231,12 +231,12 @@ export {
 };
 export function installEditorPipelineBanners(): () => void {
   return () => {
-    reactPipelineBanners = (0, toModuleNamespace)(
-      (0, loadReactNamespace)(),
+    reactPipelineBanners = toModuleNamespace(
+      loadReactNamespace(),
       1,
     );
-    jsxPipelineBanners = (0, toModuleNamespace)(
-      (0, loadJsxNamespace)(),
+    jsxPipelineBanners = toModuleNamespace(
+      loadJsxNamespace(),
       1,
     );
     PIPELINE_BANNER_STORAGE_PREFIX = "ds-pipeline-banner/";

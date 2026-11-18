@@ -22,7 +22,7 @@ function ArtboardRadiusRow({
   onSetRadius: onSetRadius,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic = (0, artboardRadiusCorners)(radius),
+  let value: Dynamic = artboardRadiusCorners(radius),
     callback: Dynamic = (input?: Dynamic): Dynamic => {
       let items: Dynamic = [...value];
       for (let value2 of input as Dynamic)
@@ -67,21 +67,21 @@ export {
 };
 export function installEditorInspectorArtboardRadius(): () => void {
   return () => {
-    jsxInspectorArtboardRadius = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    jsxInspectorArtboardRadius = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
     InspectorArtboardRadiusItems = [undefined, undefined, undefined, undefined];
     InspectorArtboardRadiusItems_2 = ["0", "0", "0", "0"];
-    (0, initializeCdsIndex)();
-    reactInspectorArtboardRadius = (0, toModuleNamespace)(
-      (0, load_react)(),
+    initializeCdsIndex();
+    reactInspectorArtboardRadius = toModuleNamespace(
+      load_react(),
       1,
     );
-    reactInspectorArtboardRadius_2 = (0, toModuleNamespace)(
-      (0, load_react)(),
+    reactInspectorArtboardRadius_2 = toModuleNamespace(
+      load_react(),
       1,
     );
-    (0, initializeCdsIndex)();
+    initializeCdsIndex();
   };
 }

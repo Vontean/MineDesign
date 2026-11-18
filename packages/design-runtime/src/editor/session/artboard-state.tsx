@@ -25,7 +25,7 @@ function isArtboardWritable(input?: Dynamic): Dynamic {
 }
 function artboardStorePath(input?: Dynamic): Dynamic {
   return (
-    BoardsValue + "/" + (0, encodeStorePathSegment)(input)
+    BoardsValue + "/" + encodeStorePathSegment(input)
   );
 }
 function currentEditingArtboardPath(): Dynamic {
@@ -63,13 +63,13 @@ export function installEditorSessionArtboardState(): () => void {
     SessionArtboardStateConstant = 3e4;
     SessionArtboardStateAlias = null;
     SessionArtboardStateAlias_2 = null;
-    reactSessionArtboardState = (0, toModuleNamespace)(
-      (0, load_react)(),
+    reactSessionArtboardState = toModuleNamespace(
+      load_react(),
       1,
     );
-    (0, initializeCdsIndex)();
-    jsxSessionArtboardState = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    initializeCdsIndex();
+    jsxSessionArtboardState = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
     SessionArtboardStatePausedCurrentTimeDurationConfig = {

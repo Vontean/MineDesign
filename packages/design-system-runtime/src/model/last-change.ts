@@ -175,7 +175,7 @@ function lastChangeFromManifest(
     warnings: [],
   },
 ) {
-  let manifest = (0, parseManifest)(manifestInput, report);
+  let manifest = parseManifest(manifestInput, report);
   if (!Object.hasOwn(manifest, "lastChange")) {
     return null;
   }

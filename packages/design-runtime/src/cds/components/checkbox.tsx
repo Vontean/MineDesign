@@ -41,7 +41,7 @@ function CheckboxVisual({
       data-checked={checked && !indeterminate ? "" : undefined}
       data-indeterminate={indeterminate ? "" : undefined}
       data-unchecked={value ? undefined : ""}
-      className={(0, cn)(
+      className={cn(
         ComponentsCheckboxClassNames,
         value && "bg-fill-accent border-transparent",
         className,
@@ -62,11 +62,11 @@ export {
 };
 export function installCdsComponentsCheckbox(): () => void {
   return () => {
-    initializeComponentsCheckbox = (0, initializeOnce)(() => {
-      (0, initializeClassNames)();
-      (0, initializeComponentsIcon_2)();
-      jsxComponentsCheckbox = (0, toModuleNamespace)(
-        (0, load_react_jsx_runtime)(),
+    initializeComponentsCheckbox = initializeOnce(() => {
+      initializeClassNames();
+      initializeComponentsIcon_2();
+      jsxComponentsCheckbox = toModuleNamespace(
+        load_react_jsx_runtime(),
       );
       ComponentsCheckboxClassNames =
         "flex shrink-0 size-[var(--cds-checkbox)] items-center justify-center rounded-[var(--cds-checkbox-radius)] border border-strong bg-transparent";

@@ -127,14 +127,14 @@ function sharedExportLanguage(
 `),
     value4: Dynamic =
       value.length === 0
-        ? (0, inferPdfLanguage)(value3)
-        : (0, inferPdfLanguage)(value3, value2 ?? "und");
+        ? inferPdfLanguage(value3)
+        : inferPdfLanguage(value3, value2 ?? "und");
   return value2 === undefined
     ? value4
     : callback(value4) === callback(value2) ||
         (callback(value2) !== "en" &&
           callback(
-            (0, inferPdfLanguage)(
+            inferPdfLanguage(
               value3.replace(/[^\p{L}]+/gu, ""),
               value2,
             ),
@@ -167,7 +167,7 @@ function capturedLinksToPdfPoints(
   );
 }
 function pdfExportFileName(input?: Dynamic): Dynamic {
-  return ((0, sanitizeExportFileName)(input) || "design") + ".pdf";
+  return (sanitizeExportFileName(input) || "design") + ".pdf";
 }
 async function collectPdfExportPages(
   input?: Dynamic,
@@ -201,9 +201,9 @@ async function collectPdfExportPages(
       unrevealed: 0,
     },
     items10: Dynamic = [];
-  for (let value8 of (0, artboardsInReadingOrder)(input) as Dynamic) {
+  for (let value8 of artboardsInReadingOrder(input) as Dynamic) {
     value.signal?.throwIfAborted();
-    let value9: Dynamic = (0, exportFileName)(
+    let value9: Dynamic = exportFileName(
         value8.file,
         value8.title,
       ),
@@ -218,19 +218,19 @@ async function collectPdfExportPages(
       throw new Error(
         '"' + value9 + '" is still loading \u2014 try again in a moment',
       );
-    let value12: Dynamic = (0, isFlowExport)(
+    let value12: Dynamic = isFlowExport(
         {
           expand: value8.expand,
         },
         value.rules,
       ),
-      value13: Dynamic = (0, isFlowExport)(value8, value.rules)
-        ? (0, getArtboardPaperSize)(value8)
+      value13: Dynamic = isFlowExport(value8, value.rules)
+        ? getArtboardPaperSize(value8)
         : null,
       value14: Dynamic;
     try {
       let value19: Dynamic = value13
-        ? (0, paperHeightForWidth)(value8.w, value13)
+        ? paperHeightForWidth(value8.w, value13)
         : 0;
       value14 = await value2(
         value11,
@@ -244,7 +244,7 @@ async function collectPdfExportPages(
               pageH: value19,
               ...(value12
                 ? {
-                    maxScale: (0, getPdfRasterScale)(value8.w),
+                    maxScale: getPdfRasterScale(value8.w),
                     ifScrolls: value8.print !== "flow" && value8.h <= value19,
                   }
                 : {}),
@@ -272,10 +272,10 @@ async function collectPdfExportPages(
     }
     value14.atFrame && (value13 = null);
     let value15: Dynamic = value14.pages.map((input2?: Dynamic): Dynamic => {
-        let value19: Dynamic = (0, decodeJpegDataUrl)(input2.uri);
+        let value19: Dynamic = decodeJpegDataUrl(input2.uri);
         try {
           if (value19 === undefined) throw new Error("not a JPEG data URI");
-          (0, readJpegDimensions)(value19);
+          readJpegDimensions(value19);
         } catch (value20: Dynamic) {
           throw new Error(
             '"' +
@@ -288,10 +288,10 @@ async function collectPdfExportPages(
       }),
       value16: Dynamic = value13
         ? paperSizes[value13].wPt
-        : (0, pixelsToPoints)(value14.cssW),
+        : pixelsToPoints(value14.cssW),
       value17: Dynamic = value13
         ? paperSizes[value13].hPt
-        : (0, pixelsToPoints)(value14.cssH),
+        : pixelsToPoints(value14.cssH),
       value18: Dynamic = Math.max(value16, value17);
     value18 > PdfOrchestrationLimit_2 &&
       (value16 >= value17
@@ -340,7 +340,7 @@ async function collectPdfExportPages(
       value12 &&
       value14.atFrame === true &&
       !value14.overflowed &&
-      (0, isFillPagedExport)(value8) &&
+      isFillPagedExport(value8) &&
       index < PdfOrchestrationLimit
     ) {
       let value19: Dynamic = Date.now(),
@@ -412,11 +412,11 @@ async function collectPdfExportPages(
         : state2,
     value7: Dynamic;
   try {
-    value7 = (0, buildPdfDocument)(items, value6);
+    value7 = buildPdfDocument(items, value6);
   } catch (value8: Dynamic) {
     try {
       if (value6 === state2) throw value8;
-      value7 = (0, buildPdfDocument)(items, state2);
+      value7 = buildPdfDocument(items, state2);
       console.warn(
         "[pdf-export] the PDF writer rejected the accessibility tags; the file was written without them:",
         value8,
@@ -429,7 +429,7 @@ async function collectPdfExportPages(
         )
       )
         throw value9;
-      value7 = (0, buildPdfDocument)(
+      value7 = buildPdfDocument(
         items.map(
           (input2?: Dynamic): Dynamic => ({
             jpeg: input2.jpeg,
@@ -482,7 +482,7 @@ async function exportPdf(
   context?: Dynamic,
   value: Dynamic = {},
 ): Promise<Dynamic> {
-  if (await (0, downloadsWithheld)())
+  if (await downloadsWithheld())
     return {
       exported: 0,
       pages: 0,
@@ -513,13 +513,13 @@ async function exportPdf(
     context,
     value,
   );
-  (0, reportExportBuilt)({
+  reportExportBuilt({
     ...pdfExportWarnings(value3),
     ...value.scope,
   });
   let { filename: value4, embedWarningCount: value5 }: Dynamic = value3,
     value6: Dynamic =
-      value5 > 0 ? null : await (0, saveThroughHost)(value2, value4),
+      value5 > 0 ? null : await saveThroughHost(value2, value4),
     value7: Dynamic = value6?.outcome ?? "unsupported";
   if (value7 === "unsupported") {
     try {
@@ -609,7 +609,7 @@ function pdfExportMessage(
     );
   input.emptyTail.length > 0 &&
     items.push(
-      (0, emptyExportTailMessage)(
+      emptyExportTailMessage(
         input.emptyTail,
         input.emptyTailPx,
         context3,
@@ -617,7 +617,7 @@ function pdfExportMessage(
     );
   context4 &&
     items.push(
-      ...(0, fontSubstitutionWarnings)(input.fontWarningCount),
+      ...fontSubstitutionWarnings(input.fontWarningCount),
     );
   input.boxed.length > 0 &&
     items.push(
@@ -637,8 +637,8 @@ async function exportPdfWithFeedback(
 ): Promise<Dynamic> {
   try {
     let value2: Dynamic = await exportPdf(items, options, context, extra);
-    (0, reportExportOutcome)(
-      (0, classifyExportSaveOutcome)("pdf", value2.saveOutcome),
+    reportExportOutcome(
+      classifyExportSaveOutcome("pdf", value2.saveOutcome),
       designAnalyticsEvents.exported.pdf,
     );
     if (value2.saveOutcome === "withheld") {
@@ -686,9 +686,9 @@ async function exportPdfWithFeedback(
     );
   } catch (value2: Dynamic) {
     healthReporter.report(
-      ...(0, classifyExportFailure)("pdf"),
+      ...classifyExportFailure("pdf"),
     );
-    (0, reportExportEvent)("failed");
+    reportExportEvent("failed");
     value(
       "PDF export failed \u2014 " +
         (value2 instanceof Error ? value2.message : String(value2)) +
