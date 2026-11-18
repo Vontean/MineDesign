@@ -32,7 +32,7 @@ var Badge: ForwardComponent<HTMLSpanElement, BadgeProps>;
 var initializeComponentsBadge: () => void;
 function isBadgeVariant(
   variant: BadgeVariant | AccentColor,
-): input is BadgeVariant {
+): variant is BadgeVariant {
   return Object.hasOwn(ComponentsBadgeNeutralAccentSuccessConfig, variant);
 }
 export {

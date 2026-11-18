@@ -454,9 +454,7 @@ async function foldLegacyMetaFields(
   }
   if (await fieldChanged("assetGroups")) {
     for (let value of parsed.assetGroups ?? []) {
-      let value2 = (0,
-      (runtime as { encodeFileIndexKey(input: unknown): string })
-        .encodeFileIndexKey)((value as { name?: unknown }).name);
+      let value2 = (encodeFileIndexKey_r as (input: unknown) => string)((value as { name?: unknown }).name);
       if (
         !isAssetGroupName((value as { name?: unknown }).name) ||
         Object.hasOwn(index.assetGroups, value2)

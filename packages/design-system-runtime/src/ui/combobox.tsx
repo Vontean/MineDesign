@@ -1533,7 +1533,7 @@ function ComboboxPopupFrame<Value extends ComboboxKey>({
             sideOffset={6}
             collisionPadding={showPopupSearch}
             positionMethod={"fixed"}
-            {...(sheet ? (sheetPositioningOverrides as Partial<typeof runtime.sheetPositioningOverrides>) : {})}
+            {...(sheet ? (sheetPositioningOverrides as Partial<typeof sheetPositioningOverrides>) : {})}
             className={cn(
               popupClassName ?? "w-[var(--anchor-width)] min-w-[12rem]",
               !sheet && COMBOBOX_ANCHOR_HIDDEN_CLASS,
@@ -2655,7 +2655,7 @@ export function installUiCombobox(): () => void {
                   collisionPadding={value}
                   collisionAvoidance={value2}
                   positionMethod={"fixed"}
-                  {...(sheet ? (sheetPositioningOverrides as Partial<typeof runtime.sheetPositioningOverrides>) : {})}
+                  {...(sheet ? (sheetPositioningOverrides as Partial<typeof sheetPositioningOverrides>) : {})}
                   className={cn(
                     value4 ?? "w-[var(--anchor-width)] min-w-[12rem]",
                     !sheet && COMBOBOX_ANCHOR_HIDDEN_CLASS,

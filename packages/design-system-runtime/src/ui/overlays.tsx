@@ -4074,7 +4074,7 @@ export function installUiOverlays(): () => void {
                           collisionPadding={input}
                           collisionAvoidance={collisionAvoidance}
                           anchor={memo}
-                          {...(value4 ? (sheetPositioningOverrides as Partial<typeof runtime.sheetPositioningOverrides>) : {})}
+                          {...(value4 ? (sheetPositioningOverrides as Partial<typeof sheetPositioningOverrides>) : {})}
                           className={
                             value4
                               ? value5

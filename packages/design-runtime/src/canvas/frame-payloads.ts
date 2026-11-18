@@ -132,7 +132,7 @@ export function parseImageCropDescriptor(rawDescriptor?: unknown): ImageCropDesc
   const media = rawDescriptor as Loose;
   if (!media || typeof media != "object") return null;
   if (media.off === "unloaded" || media.off === "turned" || media.off === "auto") return { off: media.off };
-  const isSize = (candidate: unknown): input is number => typeof candidate == "number" && candidate >= 1 && candidate <= 1e5;
+  const isSize = (candidate: unknown): candidate is number => typeof candidate == "number" && candidate >= 1 && candidate <= 1e5;
   if (
     !Number.isSafeInteger(media.tid) ||
     !isSize(media.w) ||

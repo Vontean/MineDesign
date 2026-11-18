@@ -101,3 +101,26 @@ for (const pkg of Object.keys(packages)) {
     for (const [key, n] of Object.entries(counts)) assert.ok(n <= (allowed[key] ?? 0), `${key} 反向 import 了 ${n} 个文件，允许 ${allowed[key] ?? 0} 个`);
   });
 }
+
+// 注册表已删除：任何地方都不能再把 runtime 当作值读取（藏在类型断言后面的引用曾漏过迁移脚本）
+import { createRequire } from 'node:module';
+const { parser, traverse: traversePkg } = createRequire(import.meta.url)('@babel/standalone').packages;
+const traverseAst = traversePkg.default ?? traversePkg;
+for (const pkg of Object.keys(packages)) {
+  test(`${pkg}：没有对已删除注册表的值引用`, () => {
+    const src = path.join(root, 'packages', pkg, 'src');
+    const found = [];
+    for (const file of sources(src)) {
+      const text = fs.readFileSync(path.join(src, file), 'utf8');
+      if (!/\bruntime\b/.test(text)) continue;
+      traverseAst(parser.parse(text, { sourceType: 'module', plugins: ['typescript', 'jsx'] }), {
+        Identifier(p) {
+          if (p.node.name !== 'runtime' || !p.isReferencedIdentifier() || p.scope.hasBinding('runtime')) return;
+          if (p.findParent(q => q.isTSType?.() || q.isTSTypeQuery?.())) return;
+          found.push(`${file}:${p.node.loc.start.line}`);
+        },
+      });
+    }
+    assert.deepEqual(found, []);
+  });
+}
