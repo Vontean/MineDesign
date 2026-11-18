@@ -16,13 +16,13 @@ import { canvasBoardSelection, selectionFromParts } from "../editor/selection/ca
 import { toModuleNamespace } from "../module-helpers";
 import { claudeActivityStore } from "../platform/claude-activity";
 import { truncateUtf16Safely } from "../platform/comments";
-import { moveAnnotation, PlatformFileContentConstant_18, projectFilesystem, updateAnnotationAlt, updateAnnotationVideo } from "../platform/file-content";
+import { moveAnnotation, PlatformFileContentConstant_18 as coordinateLimit, projectFilesystem, updateAnnotationAlt, updateAnnotationVideo } from "../platform/file-content";
 import { healthReporter } from "../platform/health-and-analytics";
 import { blobAssetPathPattern, classifyUploadResult, isBlobAssetUrl, uploadImageWithFallback } from "../platform/image-upload";
 
 var Value_5: Dynamic;
 var CanvasWorkingStateConstant: Dynamic;
-var CanvasWorkingStateConstant_2: Dynamic;
+var announcementCooldownMs: Dynamic;
 var CanvasWorkingStateRegistry: Dynamic;
 var CanvasWorkingStateFloorValue: Dynamic;
 var CanvasWorkingStateLimit: Dynamic;
@@ -31,16 +31,16 @@ var CanvasWorkingStateItems: Dynamic;
 var CanvasWorkingStateCache: Dynamic;
 var CanvasWorkingStateSubscribers: Dynamic;
 var CanvasWorkingStateMapValue: Dynamic;
-var CanvasWorkingStateConstant_3: Dynamic;
+var dropGhostCounter: Dynamic;
 var CanvasWorkingStateHtml: Dynamic;
 var imagePreviewWorker: Dynamic;
 var imagePreviewWorkerUnavailable: Dynamic;
-var CanvasWorkingStateItems_2: Dynamic;
+var imagePreviewQueue: Dynamic;
 var CanvasWorkingStateJobState: Dynamic;
 var CanvasWorkingStateDelayMs: Dynamic;
 var imagePreviewWorkerDeadline: Dynamic;
-var CanvasWorkingStateConstant_4: Dynamic;
-var CanvasWorkingStateLimit_2: Dynamic;
+var maxPreviewEdge: Dynamic;
+var maxPreviewChars: Dynamic;
 var CanvasWorkingStateOnload: Dynamic;
 var CanvasWorkingStateAlias: Dynamic;
 var filePublishInProgress: Dynamic;
@@ -49,16 +49,16 @@ var CanvasWorkingStateResolvedValue: Dynamic;
 var CanvasWorkingStateWidth: Dynamic;
 var CanvasWorkingStateReplace: Dynamic;
 var CanvasWorkingStateHandler: Dynamic;
-var CanvasWorkingStateConstant_5: Dynamic;
+var maxVideosPerDrop: Dynamic;
 var CanvasWorkingStateQuotaOrStateRateLimitedStoreUnavailableSet: Dynamic;
 var CanvasWorkingStateJoin: Dynamic;
 var CanvasWorkingStatePrint: Dynamic;
 var BoxcancelValue: Dynamic;
-var CanvasWorkingStateLimit_3: Dynamic;
+var pressStaleMs: Dynamic;
 var reactCanvasWorkingState: Dynamic;
-var CanvasWorkingStateLimit_4: Dynamic;
-var CanvasWorkingStateConstant_6: Dynamic;
-var CanvasWorkingStateConstant_7: Dynamic;
+var keptFilesMax: Dynamic;
+var writeSettleMs: Dynamic;
+var loadLimitMs: Dynamic;
 var CanvasWorkingStateKEEPFILESMAXWaitsConfig: Dynamic;
 var CanvasWorkingStateChangedStaleUnsavedSet: Dynamic;
 var CanvasWorkingStateHas: Dynamic;
@@ -66,178 +66,178 @@ var CanvasWorkingStateContext: Dynamic;
 var CanvasWorkingStateHandler_2: Dynamic;
 var CanvasWorkingStateAddDeletePageAddConfig: Dynamic;
 var CanvasWorkingStateHandler_3: Dynamic;
-var CanvasWorkingStateLimit_5: Dynamic;
-var CanvasWorkingStateConstant_8: Dynamic;
+var releaseGuardMs: Dynamic;
+var travelCommitTimeoutMs: Dynamic;
 var CanvasValue: Dynamic;
 var CanvasWorkingStateCtrlKey: Dynamic;
 var CanvasWorkingStateGetAltKey: Dynamic;
 var CanvasWorkingStateCtrl: Dynamic;
 var CanvasWorkingStateMetaKey: Dynamic;
-function createCanvasWorkingState(input?: Dynamic): Dynamic {
-  let flag: Dynamic = false,
-    flag2: Dynamic = false,
-    value: Dynamic,
-    callback: Dynamic = (): Dynamic => new Map(),
-    flag3: Dynamic = false,
-    flag4: Dynamic = false,
-    flag5: Dynamic = false,
-    flag6: Dynamic = false,
-    flag7: Dynamic = false,
-    flag8: Dynamic = false,
-    flag9: Dynamic = false,
-    entries: Dynamic = new Map(),
-    values: Dynamic = new Set(),
-    callback2: Dynamic = (): Dynamic => (
-      (flag7 = false),
-      (flag5 = flag4),
-      flag4 || (flag6 = false),
-      flag4
+function createCanvasWorkingState(deps?: Dynamic): Dynamic {
+  let isWorking: Dynamic = false,
+    isSessionActive: Dynamic = false,
+    cancelFinishTimer: Dynamic,
+    readItemsSource: Dynamic = (): Dynamic => new Map(),
+    isDocEmpty: Dynamic = false,
+    isBusy: Dynamic = false,
+    hasAnnouncedBusy: Dynamic = false,
+    hasIdleAnnouncement: Dynamic = false,
+    isAnnouncementPending: Dynamic = false,
+    hasChanges: Dynamic = false,
+    wasEmptyAtStart: Dynamic = false,
+    snapshotItems: Dynamic = new Map(),
+    changedKeys: Dynamic = new Set(),
+    confirmAnnouncement: Dynamic = (): Dynamic => (
+      (isAnnouncementPending = false),
+      (hasAnnouncedBusy = isBusy),
+      isBusy || (hasIdleAnnouncement = false),
+      isBusy
     ),
-    callback3: Dynamic = (input2?: Dynamic): Dynamic => {
-      let value2: Dynamic = (flag && flag3) || (flag2 && flag8);
-      value2 !== flag4 && ((flag4 = value2), input.onBusy(value2));
-      !(!flag4 || flag5 || flag7 || (input2 && flag6)) &&
-        (input2
-          ? (flag6 = true)
-          : ((flag7 = true),
-            input.after(
-              CanvasWorkingStateConstant_2,
-              (): Dynamic => (flag7 = false),
+    updateBusyState: Dynamic = (isQuiet?: Dynamic): Dynamic => {
+      let nextBusy: Dynamic = (isWorking && isDocEmpty) || (isSessionActive && hasChanges);
+      nextBusy !== isBusy && ((isBusy = nextBusy), deps.onBusy(nextBusy));
+      !(!isBusy || hasAnnouncedBusy || isAnnouncementPending || (isQuiet && hasIdleAnnouncement)) &&
+        (isQuiet
+          ? (hasIdleAnnouncement = true)
+          : ((isAnnouncementPending = true),
+            deps.after(
+              announcementCooldownMs,
+              (): Dynamic => (isAnnouncementPending = false),
             )),
-        input.say(
+        deps.say(
           CanvasWorkingLabelAnimationLabel,
-          input2,
-          callback2,
+          isQuiet,
+          confirmAnnouncement,
         ));
     },
-    callback4: Dynamic = (): Dynamic => {
-      value = undefined;
-      let value2: Dynamic = callback7(callback);
-      flag2 = false;
-      entries = value2;
-      callback3(true);
-      if (!flag8 || (flag9 && callback6(value2) === 0)) {
-        (flag5 || flag6) && input.hush();
+    finishSession: Dynamic = (): Dynamic => {
+      cancelFinishTimer = undefined;
+      let latestItems: Dynamic = readItemsSafely(readItemsSource);
+      isSessionActive = false;
+      snapshotItems = latestItems;
+      updateBusyState(true);
+      if (!hasChanges || (wasEmptyAtStart && countVisibleItems(latestItems) === 0)) {
+        (hasAnnouncedBusy || hasIdleAnnouncement) && deps.hush();
         return;
       }
       let index: Dynamic = 0;
-      for (let value3 of values as Dynamic) value2.has(value3) && index++;
-      input.say(
-        flag9
-          ? input.words.ready(callback6(value2))
+      for (let key of changedKeys as Dynamic) latestItems.has(key) && index++;
+      deps.say(
+        wasEmptyAtStart
+          ? deps.words.ready(countVisibleItems(latestItems))
           : index > 0
-            ? input.words.updated(index)
-            : input.words.changed(callback6(value2)),
+            ? deps.words.updated(index)
+            : deps.words.changed(countVisibleItems(latestItems)),
         false,
       );
     },
-    callback5: Dynamic = (input2?: Dynamic): Dynamic =>
-      input2.startsWith(Value_5),
-    callback6: Dynamic = (input2?: Dynamic): Dynamic => {
+    isInternalKey: Dynamic = (key?: Dynamic): Dynamic =>
+      key.startsWith(Value_5),
+    countVisibleItems: Dynamic = (items?: Dynamic): Dynamic => {
       let index: Dynamic = 0;
-      for (let value2 of input2.keys() as Dynamic)
-        callback5(value2) || index++;
+      for (let key of items.keys() as Dynamic)
+        isInternalKey(key) || index++;
       return index;
     },
-    callback7: Dynamic = (input2?: Dynamic): Dynamic => {
+    readItemsSafely: Dynamic = (readItems?: Dynamic): Dynamic => {
       try {
-        return input2();
+        return readItems();
       } catch {
-        return entries;
+        return snapshotItems;
       }
     };
   return {
-    busy: (): Dynamic => flag4,
-    set(input2: Dynamic, options: Dynamic, context: Dynamic): Dynamic {
-      callback = context;
-      let value2: Dynamic = input2 && value !== undefined;
-      value2 && value();
-      value2 && (value = undefined);
-      let value3: Dynamic = input2 && !flag2,
-        value4: Dynamic = input2 || flag2 ? callback7(callback) : entries;
-      value3 &&
-        ((flag5 = false),
-        (flag6 = false),
-        (flag7 = false),
-        (flag8 = false),
-        values.clear(),
-        (flag9 = callback6(value4) === 0));
-      flag = input2;
-      input2 && (flag2 = true);
-      flag3 = options;
-      entries = value4;
-      callback3(!value3);
-      !input2 &&
-        flag2 &&
-        value === undefined &&
-        (value = input.after(CanvasWorkingStateConstant, callback4));
+    busy: (): Dynamic => isBusy,
+    set(isWorkingNow: Dynamic, isEmpty: Dynamic, itemsSource: Dynamic): Dynamic {
+      readItemsSource = itemsSource;
+      let hadPendingFinish: Dynamic = isWorkingNow && cancelFinishTimer !== undefined;
+      hadPendingFinish && cancelFinishTimer();
+      hadPendingFinish && (cancelFinishTimer = undefined);
+      let isNewSession: Dynamic = isWorkingNow && !isSessionActive,
+        freshItems: Dynamic = isWorkingNow || isSessionActive ? readItemsSafely(readItemsSource) : snapshotItems;
+      isNewSession &&
+        ((hasAnnouncedBusy = false),
+        (hasIdleAnnouncement = false),
+        (isAnnouncementPending = false),
+        (hasChanges = false),
+        changedKeys.clear(),
+        (wasEmptyAtStart = countVisibleItems(freshItems) === 0));
+      isWorking = isWorkingNow;
+      isWorkingNow && (isSessionActive = true);
+      isDocEmpty = isEmpty;
+      snapshotItems = freshItems;
+      updateBusyState(!isNewSession);
+      !isWorkingNow &&
+        isSessionActive &&
+        cancelFinishTimer === undefined &&
+        (cancelFinishTimer = deps.after(CanvasWorkingStateConstant, finishSession));
     },
-    changed(input2: Dynamic, options: Dynamic): Dynamic {
-      if (!flag2) return;
-      callback = options;
-      let value2: Dynamic = callback7(callback),
-        flag10: Dynamic = false;
-      if (input2) {
-        for (let [value3, value4] of value2 as Dynamic)
-          (!entries.has(value3) || !Object.is(entries.get(value3), value4)) &&
-            ((flag10 = true), callback5(value3) || values.add(value3));
-        for (let value3 of entries.keys() as Dynamic)
-          value2.has(value3) || (flag10 = true);
-        flag10 && (flag8 = true);
+    changed(shouldTrack: Dynamic, itemsSource: Dynamic): Dynamic {
+      if (!isSessionActive) return;
+      readItemsSource = itemsSource;
+      let latestItems: Dynamic = readItemsSafely(readItemsSource),
+        hasItemChange: Dynamic = false;
+      if (shouldTrack) {
+        for (let [key, itemValue] of latestItems as Dynamic)
+          (!snapshotItems.has(key) || !Object.is(snapshotItems.get(key), itemValue)) &&
+            ((hasItemChange = true), isInternalKey(key) || changedKeys.add(key));
+        for (let key of snapshotItems.keys() as Dynamic)
+          latestItems.has(key) || (hasItemChange = true);
+        hasItemChange && (hasChanges = true);
       }
-      entries = value2;
-      flag10 && callback3(false);
+      snapshotItems = latestItems;
+      hasItemChange && updateBusyState(false);
     },
     stop(): Dynamic {
-      value?.();
-      value = undefined;
-      flag = false;
-      flag2 = false;
-      flag4 = false;
+      cancelFinishTimer?.();
+      cancelFinishTimer = undefined;
+      isWorking = false;
+      isSessionActive = false;
+      isBusy = false;
     },
   };
 }
 function subscribeRemoteDocumentUpdates(
-  input?: Dynamic,
-  options?: Dynamic,
+  documentState?: Dynamic,
+  onRemoteUpdate?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = input.loadState?.();
-  return input.subscribe((input2?: Dynamic): Dynamic => {
-    let value2: Dynamic = input.loadState?.(),
-      value3: Dynamic = value2 !== value;
-    value = value2;
-    options(input2?.remote === true && !value3);
+  let lastState: Dynamic = documentState.loadState?.();
+  return documentState.subscribe((event?: Dynamic): Dynamic => {
+    let currentState: Dynamic = documentState.loadState?.(),
+      hasStateChanged: Dynamic = currentState !== lastState;
+    lastState = currentState;
+    onRemoteUpdate(event?.remote === true && !hasStateChanged);
   });
 }
-function useCanvasWorkingState(input?: Dynamic): Dynamic {
-  let value: Dynamic = (0, reactCanvasWorkingLabelAnimation.useRef)(
-    input,
+function useCanvasWorkingState(props?: Dynamic): Dynamic {
+  let propsRef: Dynamic = (0, reactCanvasWorkingLabelAnimation.useRef)(
+    props,
   );
-  value.current = input;
-  let value2: Dynamic = (0, reactCanvasWorkingLabelAnimation.useRef)(
+  propsRef.current = props;
+  let stateRef: Dynamic = (0, reactCanvasWorkingLabelAnimation.useRef)(
     null,
   );
-  value2.current ??= createCanvasWorkingState({
+  stateRef.current ??= createCanvasWorkingState({
     words: {
-      ready: (input2?: Dynamic): Dynamic => value.current.words.ready(input2),
-      updated: (input2?: Dynamic): Dynamic =>
-        value.current.words.updated(input2),
-      changed: (input2?: Dynamic): Dynamic =>
-        value.current.words.changed(input2),
+      ready: (count?: Dynamic): Dynamic => propsRef.current.words.ready(count),
+      updated: (count?: Dynamic): Dynamic =>
+        propsRef.current.words.updated(count),
+      changed: (count?: Dynamic): Dynamic =>
+        propsRef.current.words.changed(count),
     },
-    after: (input2?: Dynamic, options?: Dynamic): Dynamic => {
-      let value5: Dynamic = setTimeout(
-        options,
-        input2 === CanvasWorkingStateConstant
-          ? (CanvasWorkingStateRegistry.graceMs ?? input2)
-          : input2,
+    after: (delayMs?: Dynamic, onElapsed?: Dynamic): Dynamic => {
+      let timerId: Dynamic = setTimeout(
+        onElapsed,
+        delayMs === CanvasWorkingStateConstant
+          ? (CanvasWorkingStateRegistry.graceMs ?? delayMs)
+          : delayMs,
       );
-      return (): Dynamic => clearTimeout(value5);
+      return (): Dynamic => clearTimeout(timerId);
     },
-    say: (input2?: Dynamic, options?: Dynamic, context?: Dynamic): Dynamic =>
+    say: (message?: Dynamic, ifIdle?: Dynamic, shouldAnnounce?: Dynamic): Dynamic =>
       announce(
-        context ? (): Dynamic => (context() ? input2 : null) : input2,
-        options
+        shouldAnnounce ? (): Dynamic => (shouldAnnounce() ? message : null) : message,
+        ifIdle
           ? {
               ifIdle: true,
             }
@@ -247,18 +247,18 @@ function useCanvasWorkingState(input?: Dynamic): Dynamic {
       announce("", {
         ifIdle: true,
       }),
-    onBusy: (input2?: Dynamic): Dynamic => value.current.onBusy(input2),
+    onBusy: (isBusy?: Dynamic): Dynamic => propsRef.current.onBusy(isBusy),
   });
-  let current: Dynamic = value2.current,
-    { doc: value3, empty: value4 }: Dynamic = input,
-    callback: Dynamic = (): Dynamic => value.current.items();
+  let current: Dynamic = stateRef.current,
+    { doc: doc, empty: empty }: Dynamic = props,
+    readItems: Dynamic = (): Dynamic => propsRef.current.items();
   (0, reactCanvasWorkingLabelAnimation.useEffect)(
     (): Dynamic =>
       subscribeRemoteDocumentUpdates(
-        value3,
-        (input2?: Dynamic): Dynamic => current.changed(input2, callback),
+        doc,
+        (isRemote?: Dynamic): Dynamic => current.changed(isRemote, readItems),
       ),
-    [value3, current],
+    [doc, current],
   );
   (0, reactCanvasWorkingLabelAnimation.useEffect)(
     (): Dynamic =>
@@ -266,8 +266,8 @@ function useCanvasWorkingState(input?: Dynamic): Dynamic {
         (): Dynamic =>
           current.set(
             claudeActivityStore.get() === "working",
-            value.current.empty,
-            callback,
+            propsRef.current.empty,
+            readItems,
           ),
       ),
     [current],
@@ -276,241 +276,241 @@ function useCanvasWorkingState(input?: Dynamic): Dynamic {
     (): Dynamic =>
       current.set(
         claudeActivityStore.get() === "working",
-        value4,
-        callback,
+        empty,
+        readItems,
       ),
-    [current, value4],
+    [current, empty],
   );
   (0, reactCanvasWorkingLabelAnimation.useEffect)(
     (): Dynamic => (
-      value.current.onBusy(current.busy()),
+      propsRef.current.onBusy(current.busy()),
       (): Dynamic => {
         current.stop();
-        value.current.onBusy(false);
+        propsRef.current.onBusy(false);
       }
     ),
     [current],
   );
   return null;
 }
-function isSvgFile(input?: Dynamic): Dynamic {
-  return input.type === "image/svg+xml" || /\.svg$/i.test(input.name);
+function isSvgFile(file?: Dynamic): Dynamic {
+  return file.type === "image/svg+xml" || /\.svg$/i.test(file.name);
 }
-async function imageHeaderDimensions(input?: Dynamic): Promise<Dynamic> {
-  if (isSvgFile(input))
+async function imageHeaderDimensions(file?: Dynamic): Promise<Dynamic> {
+  if (isSvgFile(file))
     try {
-      return svgHeaderDimensions(await input.slice(0, 262144).text());
+      return svgHeaderDimensions(await file.slice(0, 262144).text());
     } catch {
       return null;
     }
-  let value: Dynamic;
+  let headerView: Dynamic;
   try {
-    value = new DataView(await input.slice(0, 262144).arrayBuffer());
+    headerView = new DataView(await file.slice(0, 262144).arrayBuffer());
   } catch {
     return null;
   }
-  return rasterImageDimensions(value);
+  return rasterImageDimensions(headerView);
 }
-function pngPhysicalDimensions(input?: Dynamic): Dynamic {
+function pngPhysicalDimensions(view?: Dynamic): Dynamic {
   if (
-    input.byteLength < 8 ||
-    input.getUint32(0) !== 2303741511 ||
-    input.getUint32(4) !== 218765834
+    view.byteLength < 8 ||
+    view.getUint32(0) !== 2303741511 ||
+    view.getUint32(4) !== 218765834
   )
     return null;
   for (
     let count: Dynamic = 8;
-    count + 12 <= input.byteLength;
-    count += 12 + input.getUint32(count)
+    count + 12 <= view.byteLength;
+    count += 12 + view.getUint32(count)
   ) {
-    let value: Dynamic = input.getUint32(count + 4);
-    if (value === 1229209940) return null;
-    if (value === 1883789683 && count + 17 <= input.byteLength)
-      return input.getUint8(count + 16) === 1
-        ? input.getUint32(count + 8)
+    let chunkType: Dynamic = view.getUint32(count + 4);
+    if (chunkType === 1229209940) return null;
+    if (chunkType === 1883789683 && count + 17 <= view.byteLength)
+      return view.getUint8(count + 16) === 1
+        ? view.getUint32(count + 8)
         : null;
   }
   return null;
 }
-function rasterImageDimensions(input?: Dynamic): Dynamic {
-  let value: Dynamic =
-    input instanceof DataView
+function rasterImageDimensions(source?: Dynamic): Dynamic {
+  let view: Dynamic =
+    source instanceof DataView
       ? new DataView(
-          input.buffer,
-          input.byteOffset,
-          Math.min(input.byteLength, 262144),
+          source.buffer,
+          source.byteOffset,
+          Math.min(source.byteLength, 262144),
         )
-      : new DataView(input, 0, Math.min(input.byteLength, 262144));
+      : new DataView(source, 0, Math.min(source.byteLength, 262144));
   try {
-    return parseRasterHeaderDimensions(value);
+    return parseRasterHeaderDimensions(view);
   } catch {
     return null;
   }
 }
-function parseRasterHeaderDimensions(input?: Dynamic): Dynamic {
-  if (input.byteLength < 10) return null;
-  if (input.getUint32(0) === 2303741511 && input.getUint32(4) === 218765834)
-    return input.getUint32(12) !== 1229472850
+function parseRasterHeaderDimensions(view?: Dynamic): Dynamic {
+  if (view.byteLength < 10) return null;
+  if (view.getUint32(0) === 2303741511 && view.getUint32(4) === 218765834)
+    return view.getUint32(12) !== 1229472850
       ? null
-      : validImageDimensions(input.getUint32(16), input.getUint32(20));
-  if (input.getUint32(0) === 1195984440)
+      : validImageDimensions(view.getUint32(16), view.getUint32(20));
+  if (view.getUint32(0) === 1195984440)
     return validImageDimensions(
-      input.getUint16(6, true),
-      input.getUint16(8, true),
+      view.getUint16(6, true),
+      view.getUint16(8, true),
     );
   if (
-    input.getUint32(0) === 1380533830 &&
-    input.getUint32(8) === 1464156752
+    view.getUint32(0) === 1380533830 &&
+    view.getUint32(8) === 1464156752
   ) {
-    let value: Dynamic = input.getUint32(12);
-    if (value === 1448097880) {
-      let value2: Dynamic =
+    let riffChunkType: Dynamic = view.getUint32(12);
+    if (riffChunkType === 1448097880) {
+      let canvasWidth: Dynamic =
           1 +
-          (input.getUint8(24) |
-            (input.getUint8(25) << 8) |
-            (input.getUint8(26) << 16)),
-        value3: Dynamic =
+          (view.getUint8(24) |
+            (view.getUint8(25) << 8) |
+            (view.getUint8(26) << 16)),
+        canvasHeight: Dynamic =
           1 +
-          (input.getUint8(27) |
-            (input.getUint8(28) << 8) |
-            (input.getUint8(29) << 16));
-      return validImageDimensions(value2, value3);
+          (view.getUint8(27) |
+            (view.getUint8(28) << 8) |
+            (view.getUint8(29) << 16));
+      return validImageDimensions(canvasWidth, canvasHeight);
     }
-    if (value === 1448097824)
-      return input.getUint8(23) !== 157 ||
-        input.getUint8(24) !== 1 ||
-        input.getUint8(25) !== 42
+    if (riffChunkType === 1448097824)
+      return view.getUint8(23) !== 157 ||
+        view.getUint8(24) !== 1 ||
+        view.getUint8(25) !== 42
         ? null
         : validImageDimensions(
-            input.getUint16(26, true) & 16383,
-            input.getUint16(28, true) & 16383,
+            view.getUint16(26, true) & 16383,
+            view.getUint16(28, true) & 16383,
           );
-    if (value === 1448097868) {
-      if (input.getUint8(20) !== 47) return null;
-      let value2: Dynamic = input.getUint32(21, true);
+    if (riffChunkType === 1448097868) {
+      if (view.getUint8(20) !== 47) return null;
+      let losslessBits: Dynamic = view.getUint32(21, true);
       return validImageDimensions(
-        1 + (value2 & 16383),
-        1 + ((value2 >> 14) & 16383),
+        1 + (losslessBits & 16383),
+        1 + ((losslessBits >> 14) & 16383),
       );
     }
     return null;
   }
-  return input.getUint16(0) === 65496 ? jpegHeaderDimensions(input) : null;
+  return view.getUint16(0) === 65496 ? jpegHeaderDimensions(view) : null;
 }
-function validImageDimensions(input?: Dynamic, options?: Dynamic): Dynamic {
-  return input > 0 &&
-    options > 0 &&
-    input <= CanvasWorkingStateLimit &&
-    options <= CanvasWorkingStateLimit
+function validImageDimensions(width?: Dynamic, height?: Dynamic): Dynamic {
+  return width > 0 &&
+    height > 0 &&
+    width <= CanvasWorkingStateLimit &&
+    height <= CanvasWorkingStateLimit
     ? {
-        width: input,
-        height: options,
+        width: width,
+        height: height,
       }
     : null;
 }
-function svgLengthToPixels(input?: Dynamic): Dynamic {
-  if (input == null) return null;
-  let value: Dynamic = /^\s*\+?(\d*\.?\d+)([a-z%]*)\s*$/i.exec(input);
-  if (!value) return null;
-  let value2: Dynamic =
-    CanvasWorkingStatePxPtPcConfig[(value[2] ?? "").toLowerCase()];
-  return value2 == null ? null : parseFloat(value[1] ?? "") * value2;
+function svgLengthToPixels(lengthText?: Dynamic): Dynamic {
+  if (lengthText == null) return null;
+  let match: Dynamic = /^\s*\+?(\d*\.?\d+)([a-z%]*)\s*$/i.exec(lengthText);
+  if (!match) return null;
+  let unitScale: Dynamic =
+    CanvasWorkingStatePxPtPcConfig[(match[2] ?? "").toLowerCase()];
+  return unitScale == null ? null : parseFloat(match[1] ?? "") * unitScale;
 }
-function svgAttributeValue(input?: Dynamic, options?: Dynamic): Dynamic {
-  let value: Dynamic = new RegExp(
-    "(?<![\\w-])" + options + `\\s*=\\s*("([^"]*)"|'([^']*)')`,
+function svgAttributeValue(svgTag?: Dynamic, attributeName?: Dynamic): Dynamic {
+  let match: Dynamic = new RegExp(
+    "(?<![\\w-])" + attributeName + `\\s*=\\s*("([^"]*)"|'([^']*)')`,
     "i",
-  ).exec(input);
-  return value ? (value[2] ?? value[3]) : undefined;
+  ).exec(svgTag);
+  return match ? (match[2] ?? match[3]) : undefined;
 }
-function svgHeaderDimensions(input?: Dynamic): Dynamic {
-  let value: Dynamic = /<svg(?=[\s>])[^>]*/i.exec(input);
-  if (!value) return null;
-  let value2: Dynamic = value[0],
-    value3: Dynamic = svgLengthToPixels(svgAttributeValue(value2, "width")),
-    value4: Dynamic = svgLengthToPixels(svgAttributeValue(value2, "height"));
-  if (value3 != null && value4 != null)
-    return validImageDimensions(value3, value4);
-  let value5: Dynamic = svgAttributeValue(value2, "viewBox");
-  if (value5 == null) return null;
-  let value6: Dynamic = value5
+function svgHeaderDimensions(svgSource?: Dynamic): Dynamic {
+  let tagMatch: Dynamic = /<svg(?=[\s>])[^>]*/i.exec(svgSource);
+  if (!tagMatch) return null;
+  let tagText: Dynamic = tagMatch[0],
+    width: Dynamic = svgLengthToPixels(svgAttributeValue(tagText, "width")),
+    height: Dynamic = svgLengthToPixels(svgAttributeValue(tagText, "height"));
+  if (width != null && height != null)
+    return validImageDimensions(width, height);
+  let viewBoxText: Dynamic = svgAttributeValue(tagText, "viewBox");
+  if (viewBoxText == null) return null;
+  let viewBoxNumbers: Dynamic = viewBoxText
     .trim()
     .split(/[\s,]+/)
     .map(parseFloat);
-  return value6.length !== 4 ||
-    value6.some((input2?: Dynamic): Dynamic => !Number.isFinite(input2))
+  return viewBoxNumbers.length !== 4 ||
+    viewBoxNumbers.some((coordinate?: Dynamic): Dynamic => !Number.isFinite(coordinate))
     ? null
-    : validImageDimensions(value6[2], value6[3]);
+    : validImageDimensions(viewBoxNumbers[2], viewBoxNumbers[3]);
 }
-function jpegHeaderDimensions(input?: Dynamic): Dynamic {
+function jpegHeaderDimensions(view?: Dynamic): Dynamic {
   let count: Dynamic = 2,
-    count2: Dynamic = 1;
-  for (; count + 4 <= input.byteLength; ) {
-    if (input.getUint8(count) !== 255) return null;
-    let value: Dynamic = input.getUint8(count + 1);
-    for (; value === 255 && count + 2 < input.byteLength; ) {
+    orientation: Dynamic = 1;
+  for (; count + 4 <= view.byteLength; ) {
+    if (view.getUint8(count) !== 255) return null;
+    let marker: Dynamic = view.getUint8(count + 1);
+    for (; marker === 255 && count + 2 < view.byteLength; ) {
       count++;
-      value = input.getUint8(count + 1);
+      marker = view.getUint8(count + 1);
     }
-    if (value === 1 || (value >= 208 && value <= 215)) {
+    if (marker === 1 || (marker >= 208 && marker <= 215)) {
       count += 2;
       continue;
     }
-    if (value === 217 || value === 218) return null;
-    let value2: Dynamic = input.getUint16(count + 2);
-    if (value2 < 2) return null;
+    if (marker === 217 || marker === 218) return null;
+    let segmentLength: Dynamic = view.getUint16(count + 2);
+    if (segmentLength < 2) return null;
     if (
-      value >= 192 &&
-      value <= 207 &&
-      value !== 196 &&
-      value !== 200 &&
-      value !== 204
+      marker >= 192 &&
+      marker <= 207 &&
+      marker !== 196 &&
+      marker !== 200 &&
+      marker !== 204
     ) {
-      let value3: Dynamic = input.getUint16(count + 5),
-        value4: Dynamic = input.getUint16(count + 7),
-        value5: Dynamic = count2 >= 5 && count2 <= 8;
+      let frameHeight: Dynamic = view.getUint16(count + 5),
+        frameWidth: Dynamic = view.getUint16(count + 7),
+        isRotated: Dynamic = orientation >= 5 && orientation <= 8;
       return validImageDimensions(
-        value5 ? value3 : value4,
-        value5 ? value4 : value3,
+        isRotated ? frameHeight : frameWidth,
+        isRotated ? frameWidth : frameHeight,
       );
     }
     if (
-      value === 225 &&
-      value2 >= 16 &&
-      input.getUint32(count + 4) === 1165519206
+      marker === 225 &&
+      segmentLength >= 16 &&
+      view.getUint32(count + 4) === 1165519206
     )
       try {
-        count2 =
-          exifImageOrientation(input, count + 10, value2 - 8) ?? count2;
+        orientation =
+          exifImageOrientation(view, count + 10, segmentLength - 8) ?? orientation;
       } catch {}
-    count += 2 + value2;
+    count += 2 + segmentLength;
   }
   return null;
 }
 function exifImageOrientation(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  view?: Dynamic,
+  tiffStart?: Dynamic,
+  availableLength?: Dynamic,
 ): Dynamic {
-  let callback: Dynamic = (input2?: Dynamic, options2?: Dynamic): Dynamic =>
-    input2 >= 0 && input2 + options2 <= context;
-  if (!callback(0, 8)) return null;
-  let value: Dynamic = input.getUint16(options),
-    value2: Dynamic = value === 18761;
+  let isInRange: Dynamic = (offset?: Dynamic, length?: Dynamic): Dynamic =>
+    offset >= 0 && offset + length <= availableLength;
+  if (!isInRange(0, 8)) return null;
+  let byteOrderMark: Dynamic = view.getUint16(tiffStart),
+    isLittleEndian: Dynamic = byteOrderMark === 18761;
   if (
-    (!value2 && value !== 19789) ||
-    input.getUint16(options + 2, value2) !== 42
+    (!isLittleEndian && byteOrderMark !== 19789) ||
+    view.getUint16(tiffStart + 2, isLittleEndian) !== 42
   )
     return null;
-  let value3: Dynamic = input.getUint32(options + 4, value2);
-  if (!callback(value3, 2)) return null;
-  let value4: Dynamic = input.getUint16(options + value3, value2);
-  for (let index: Dynamic = 0; index < value4; index++) {
-    let value5: Dynamic = value3 + 2 + index * 12;
-    if (!callback(value5, 12)) return null;
-    if (input.getUint16(options + value5, value2) === 274) {
-      let value6: Dynamic = input.getUint16(options + value5 + 8, value2);
-      return value6 >= 1 && value6 <= 8 ? value6 : null;
+  let ifdOffset: Dynamic = view.getUint32(tiffStart + 4, isLittleEndian);
+  if (!isInRange(ifdOffset, 2)) return null;
+  let entryCount: Dynamic = view.getUint16(tiffStart + ifdOffset, isLittleEndian);
+  for (let index: Dynamic = 0; index < entryCount; index++) {
+    let entryOffset: Dynamic = ifdOffset + 2 + index * 12;
+    if (!isInRange(entryOffset, 12)) return null;
+    if (view.getUint16(tiffStart + entryOffset, isLittleEndian) === 274) {
+      let orientation: Dynamic = view.getUint16(tiffStart + entryOffset + 8, isLittleEndian);
+      return orientation >= 1 && orientation <= 8 ? orientation : null;
     }
   }
   return null;
@@ -519,22 +519,22 @@ function notifyDropGhosts(): Dynamic {
   CanvasWorkingStateMapValue = CanvasWorkingStateItems.map(
     ({ need: need, ...props }: Dynamic): Dynamic => props,
   );
-  for (let value of CanvasWorkingStateSubscribers as Dynamic) value();
+  for (let notify of CanvasWorkingStateSubscribers as Dynamic) notify();
 }
-function removeDropGhost(input?: Dynamic): Dynamic {
-  let value: Dynamic = CanvasWorkingStateItems.indexOf(input);
-  value < 0 || (CanvasWorkingStateItems.splice(value, 1), notifyDropGhosts());
+function removeDropGhost(ghost?: Dynamic): Dynamic {
+  let ghostIndex: Dynamic = CanvasWorkingStateItems.indexOf(ghost);
+  ghostIndex < 0 || (CanvasWorkingStateItems.splice(ghostIndex, 1), notifyDropGhosts());
 }
 function createDropGhost({ washless: washless, ...props }: Dynamic): Dynamic {
   let length: Dynamic = CanvasWorkingStateItems.filter(
-      (input?: Dynamic): Dynamic =>
-        input.file != null &&
-        input.file === props.file &&
-        input.need !== 1 / 0,
+      (otherGhost?: Dynamic): Dynamic =>
+        otherGhost.file != null &&
+        otherGhost.file === props.file &&
+        otherGhost.need !== 1 / 0,
     ).length,
     state: Dynamic = {
       ...props,
-      key: "dg-" + String(++CanvasWorkingStateConstant_3),
+      key: "dg-" + String(++dropGhostCounter),
       need:
         props.file == null || washless
           ? 1 / 0
@@ -547,51 +547,51 @@ function createDropGhost({ washless: washless, ...props }: Dynamic): Dynamic {
       afterRendering((): Dynamic => removeDropGhost(state)),
     cancel: (): Dynamic => {
       if (CanvasWorkingStateItems.includes(state)) {
-        for (let value of CanvasWorkingStateItems as Dynamic)
-          value !== state &&
-            value.file != null &&
-            value.file === state.file &&
-            value.need > state.need &&
-            (value.need -= 1);
+        for (let otherGhost of CanvasWorkingStateItems as Dynamic)
+          otherGhost !== state &&
+            otherGhost.file != null &&
+            otherGhost.file === state.file &&
+            otherGhost.need > state.need &&
+            (otherGhost.need -= 1);
         removeDropGhost(state);
       }
     },
     landed: (): Dynamic => {
       setTimeout((): Dynamic => removeDropGhost(state), 700);
     },
-    move: (input?: Dynamic, options?: Dynamic): Dynamic => {
+    move: (x?: Dynamic, y?: Dynamic): Dynamic => {
       !CanvasWorkingStateItems.includes(state) ||
-        (state.x === input && state.y === options) ||
-        ((state.x = input), (state.y = options), notifyDropGhosts());
+        (state.x === x && state.y === y) ||
+        ((state.x = x), (state.y = y), notifyDropGhosts());
     },
-    place: (input?: Dynamic): Dynamic => {
+    place: (rect?: Dynamic): Dynamic => {
       !CanvasWorkingStateItems.includes(state) ||
-        (state.x === input.x &&
-          state.y === input.y &&
-          state.w === input.w &&
-          state.h === input.h) ||
-        (Object.assign(state, input), notifyDropGhosts());
+        (state.x === rect.x &&
+          state.y === rect.y &&
+          state.w === rect.w &&
+          state.h === rect.h) ||
+        (Object.assign(state, rect), notifyDropGhosts());
     },
   };
 }
-function updateDropGhostDemand(input?: Dynamic, options?: Dynamic): Dynamic {
-  let value: Dynamic = Math.max(
+function updateDropGhostDemand(file?: Dynamic, pendingCount?: Dynamic): Dynamic {
+  let resolvedCount: Dynamic = Math.max(
     0,
-    (CanvasWorkingStateCache.get(input) ?? 0) - options,
+    (CanvasWorkingStateCache.get(file) ?? 0) - pendingCount,
   );
-  CanvasWorkingStateCache.set(input, options);
-  value > 0 &&
+  CanvasWorkingStateCache.set(file, pendingCount);
+  resolvedCount > 0 &&
     CanvasWorkingStateItems.filter(
-      (input2?: Dynamic): Dynamic =>
-        input2.file === input && input2.need !== 1 / 0,
-    ).forEach((input2?: Dynamic, options2?: Dynamic): Dynamic => {
-      input2.need = Math.max(options2 + 1, input2.need - value);
+      (ghost?: Dynamic): Dynamic =>
+        ghost.file === file && ghost.need !== 1 / 0,
+    ).forEach((ghost?: Dynamic, index?: Dynamic): Dynamic => {
+      ghost.need = Math.max(index + 1, ghost.need - resolvedCount);
     });
-  for (let value2 of CanvasWorkingStateItems.filter(
-    (input2?: Dynamic): Dynamic => input2.file === input,
+  for (let ghostToRemove of CanvasWorkingStateItems.filter(
+    (ghost?: Dynamic): Dynamic => ghost.file === file,
   ) as Dynamic)
-    options >= value2.need &&
-      afterRendering((): Dynamic => removeDropGhost(value2));
+    pendingCount >= ghostToRemove.need &&
+      afterRendering((): Dynamic => removeDropGhost(ghostToRemove));
 }
 function uploadingAnimationDelay(): Dynamic {
   return "-" + String(Date.now() % 1600) + "ms";
@@ -599,31 +599,31 @@ function uploadingAnimationDelay(): Dynamic {
 function getDropGhosts(): Dynamic {
   return CanvasWorkingStateMapValue;
 }
-function subscribeDropGhosts(input?: Dynamic): Dynamic {
-  CanvasWorkingStateSubscribers.add(input);
+function subscribeDropGhosts(listener?: Dynamic): Dynamic {
+  CanvasWorkingStateSubscribers.add(listener);
   return (): Dynamic => {
-    CanvasWorkingStateSubscribers.delete(input);
+    CanvasWorkingStateSubscribers.delete(listener);
   };
 }
 function afterNextPaint(): Dynamic {
-  return new Promise((input?: Dynamic): Dynamic => {
+  return new Promise((resolve?: Dynamic): Dynamic => {
     typeof requestAnimationFrame == "function" &&
-      requestAnimationFrame((): Dynamic => setTimeout(input, 0));
-    setTimeout(input, 100);
+      requestAnimationFrame((): Dynamic => setTimeout(resolve, 0));
+    setTimeout(resolve, 100);
   });
 }
-function afterRendering(input?: Dynamic): Dynamic {
+function afterRendering(render?: Dynamic): Dynamic {
   typeof requestAnimationFrame == "function"
-    ? afterNextPaint().then(input)
-    : input();
+    ? afterNextPaint().then(render)
+    : render();
 }
-function markDropPerformance(input?: Dynamic): Dynamic {
+function markDropPerformance(stage?: Dynamic): Dynamic {
   try {
-    if (input === "received")
-      for (let value of performance.getEntriesByType("mark") as Dynamic)
-        value.name.startsWith("dc-drop:") &&
-          performance.clearMarks(value.name);
-    performance.mark("dc-drop:" + input);
+    if (stage === "received")
+      for (let entry of performance.getEntriesByType("mark") as Dynamic)
+        entry.name.startsWith("dc-drop:") &&
+          performance.clearMarks(entry.name);
+    performance.mark("dc-drop:" + stage);
   } catch {}
 }
 function stopImagePreviewWorker(): Dynamic {
@@ -631,21 +631,21 @@ function stopImagePreviewWorker(): Dynamic {
   imagePreviewWorkerUnavailable = true;
   imagePreviewWorker?.terminate();
   imagePreviewWorker = null;
-  for (let value of [
+  for (let job of [
     ...(CanvasWorkingStateJobState ? [CanvasWorkingStateJobState] : []),
-    ...CanvasWorkingStateItems_2.splice(0),
+    ...imagePreviewQueue.splice(0),
   ] as Dynamic)
-    value.settle("unavailable");
+    job.settle("unavailable");
   CanvasWorkingStateJobState = null;
 }
 function runNextImagePreviewJob(): Dynamic {
   if (
     !(
       CanvasWorkingStateJobState !== null ||
-      CanvasWorkingStateItems_2.length === 0
+      imagePreviewQueue.length === 0
     )
   ) {
-    CanvasWorkingStateJobState = CanvasWorkingStateItems_2.shift();
+    CanvasWorkingStateJobState = imagePreviewQueue.shift();
     try {
       imagePreviewWorker === null &&
         ((imagePreviewWorker = new Worker(
@@ -655,18 +655,18 @@ function runNextImagePreviewJob(): Dynamic {
             }),
           ),
         )),
-        (imagePreviewWorker.onmessage = (input?: Dynamic): Dynamic => {
-          if (input.data.unavailable) return stopImagePreviewWorker();
+        (imagePreviewWorker.onmessage = (event?: Dynamic): Dynamic => {
+          if (event.data.unavailable) return stopImagePreviewWorker();
           clearTimeout(imagePreviewWorkerDeadline);
-          let value: Dynamic = CanvasWorkingStateJobState;
+          let job: Dynamic = CanvasWorkingStateJobState;
           CanvasWorkingStateJobState = null;
-          value?.settle(
-            input.data.threw
+          job?.settle(
+            event.data.threw
               ? "unavailable"
               : {
-                  url: input.data.url ?? null,
-                  width: input.data.width ?? 0,
-                  height: input.data.height ?? 0,
+                  url: event.data.url ?? null,
+                  width: event.data.width ?? 0,
+                  height: event.data.height ?? 0,
                 },
           );
           runNextImagePreviewJob();
@@ -684,145 +684,145 @@ function runNextImagePreviewJob(): Dynamic {
   }
 }
 function previewImageInWorker(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
+  file?: Dynamic,
+  width?: Dynamic,
+  edge?: Dynamic,
+  maxChars?: Dynamic,
 ): Dynamic {
   return imagePreviewWorkerUnavailable ||
     typeof Worker === "undefined" ||
     typeof OffscreenCanvas === "undefined"
     ? Promise.resolve("unavailable")
-    : new Promise((input2?: Dynamic): Dynamic => {
-        CanvasWorkingStateItems_2.push({
+    : new Promise((resolve?: Dynamic): Dynamic => {
+        imagePreviewQueue.push({
           job: {
-            file: input,
-            width: options,
-            edge: context,
-            maxChars: value,
+            file: file,
+            width: width,
+            edge: edge,
+            maxChars: maxChars,
           },
-          settle: input2,
+          settle: resolve,
         });
         runNextImagePreviewJob();
       });
 }
 function encodeImagePreview(
-  input?: Dynamic,
-  options?: Dynamic,
-  context: Dynamic = 0,
+  canvas?: Dynamic,
+  quality?: Dynamic,
+  maxChars: Dynamic = 0,
 ): Dynamic {
-  let value: Dynamic = input,
+  let source: Dynamic = canvas,
     text: Dynamic = "image/webp",
-    value2: Dynamic = options,
-    value3: Dynamic = value.toDataURL(text, value2);
-  if (!value3.startsWith("data:image/webp")) {
-    let value4: Dynamic = (document as Dynamic).createElement("canvas");
-    value4.width = value.width;
-    value4.height = value.height;
-    let value5: Dynamic = value4.getContext("2d");
-    value5 &&
-      ((value5.fillStyle = "#fff"),
-      value5.fillRect(0, 0, value4.width, value4.height),
-      value5.drawImage(value, 0, 0));
-    value = value4;
+    currentQuality: Dynamic = quality,
+    dataUrl: Dynamic = source.toDataURL(text, currentQuality);
+  if (!dataUrl.startsWith("data:image/webp")) {
+    let fallbackCanvas: Dynamic = (document as Dynamic).createElement("canvas");
+    fallbackCanvas.width = source.width;
+    fallbackCanvas.height = source.height;
+    let context2d: Dynamic = fallbackCanvas.getContext("2d");
+    context2d &&
+      ((context2d.fillStyle = "#fff"),
+      context2d.fillRect(0, 0, fallbackCanvas.width, fallbackCanvas.height),
+      context2d.drawImage(source, 0, 0));
+    source = fallbackCanvas;
     text = "image/jpeg";
-    value3 = value.toDataURL(text, value2);
+    dataUrl = source.toDataURL(text, currentQuality);
   }
-  for (; context && value3.length > context && value2 > 0.3; ) {
-    value2 -= 0.1;
-    value3 = value.toDataURL(text, value2);
+  for (; maxChars && dataUrl.length > maxChars && currentQuality > 0.3; ) {
+    currentQuality -= 0.1;
+    dataUrl = source.toDataURL(text, currentQuality);
   }
-  if (context && value3.length > context) {
-    let value4: Dynamic = (document as Dynamic).createElement("canvas");
-    value4.width = value.width >> 1 || 1;
-    value4.height = value.height >> 1 || 1;
-    value4
+  if (maxChars && dataUrl.length > maxChars) {
+    let halfCanvas: Dynamic = (document as Dynamic).createElement("canvas");
+    halfCanvas.width = source.width >> 1 || 1;
+    halfCanvas.height = source.height >> 1 || 1;
+    halfCanvas
       .getContext("2d")
-      ?.drawImage(value, 0, 0, value4.width, value4.height);
-    value3 = value4.toDataURL(text, value2);
+      ?.drawImage(source, 0, 0, halfCanvas.width, halfCanvas.height);
+    dataUrl = halfCanvas.toDataURL(text, currentQuality);
   }
-  return value3;
+  return dataUrl;
 }
-function imagePreviewDecodeWidth(input?: Dynamic): Dynamic {
-  let value: Dynamic = input
+function imagePreviewDecodeWidth(dimensions?: Dynamic): Dynamic {
+  let downscaleFactor: Dynamic = dimensions
     ? Math.max(
         1,
         Math.ceil(
-          Math.max(input.width, input.height) / CanvasWorkingStateConstant_4,
+          Math.max(dimensions.width, dimensions.height) / maxPreviewEdge,
         ),
       )
     : 1;
-  if (input == null || value === 1) return 0;
-  let value2: Dynamic = Math.max(1, Math.round(input.width / value)),
-    value3: Dynamic = input.width / input.height;
-  return value2 * value2 * Math.max(value3, 1 / value3) > 67108864
+  if (dimensions == null || downscaleFactor === 1) return 0;
+  let scaledWidth: Dynamic = Math.max(1, Math.round(dimensions.width / downscaleFactor)),
+    aspectRatio: Dynamic = dimensions.width / dimensions.height;
+  return scaledWidth * scaledWidth * Math.max(aspectRatio, 1 / aspectRatio) > 67108864
     ? 0
-    : value2;
+    : scaledWidth;
 }
 function reconcileImageDimensions(
-  input?: Dynamic,
-  options?: Dynamic,
+  headerSize?: Dynamic,
+  decodedSize?: Dynamic,
 ): Dynamic {
-  return input == null
+  return headerSize == null
     ? {
-        width: options.width,
-        height: options.height,
+        width: decodedSize.width,
+        height: decodedSize.height,
       }
     : Math.abs(
           Math.log(
-            (options.width / options.height) * (input.width / input.height),
+            (decodedSize.width / decodedSize.height) * (headerSize.width / headerSize.height),
           ),
-        ) < 0.02 && Math.abs(Math.log(input.width / input.height)) > 0.04
+        ) < 0.02 && Math.abs(Math.log(headerSize.width / headerSize.height)) > 0.04
       ? {
-          width: input.height,
-          height: input.width,
+          width: headerSize.height,
+          height: headerSize.width,
         }
-      : input;
+      : headerSize;
 }
 async function previewImageFile(
-  input?: Dynamic,
-  options: Dynamic = {},
+  file?: Dynamic,
+  hints: Dynamic = {},
 ): Promise<Dynamic> {
-  if (isSvgFile(input))
-    return input.size > CanvasWorkingStateFloorValue
+  if (isSvgFile(file))
+    return file.size > CanvasWorkingStateFloorValue
       ? null
-      : previewSvgFile(input);
-  let [value, value2]: Dynamic = await Promise.all([
-    options.sized ?? canDecodeRasterImage(input),
-    options.head !== undefined
-      ? options.head
-      : imageHeaderDimensions(input).catch((): Dynamic => null),
+      : previewSvgFile(file);
+  let [canDecode, headerSize]: Dynamic = await Promise.all([
+    hints.sized ?? canDecodeRasterImage(file),
+    hints.head !== undefined
+      ? hints.head
+      : imageHeaderDimensions(file).catch((): Dynamic => null),
   ]);
-  if (!value) return null;
-  let value3: Dynamic = imagePreviewDecodeWidth(value2),
-    value4: Dynamic = await previewImageInWorker(
-      input,
-      value3,
-      CanvasWorkingStateConstant_4,
-      CanvasWorkingStateLimit_2,
+  if (!canDecode) return null;
+  let decodeWidth: Dynamic = imagePreviewDecodeWidth(headerSize),
+    preview: Dynamic = await previewImageInWorker(
+      file,
+      decodeWidth,
+      maxPreviewEdge,
+      maxPreviewChars,
     );
-  value4 === "unavailable"
-    ? (value4 = await decodeRasterPreview(input, value3))
-    : value4.url != null && markDropPerformance("worker");
-  return value4.url == null
+  preview === "unavailable"
+    ? (preview = await decodeRasterPreview(file, decodeWidth))
+    : preview.url != null && markDropPerformance("worker");
+  return preview.url == null
     ? null
     : {
-        url: value4.url,
-        ...reconcileImageDimensions(value2, value4),
+        url: preview.url,
+        ...reconcileImageDimensions(headerSize, preview),
       };
 }
 async function decodeRasterPreview(
-  input?: Dynamic,
-  options?: Dynamic,
+  file?: Dynamic,
+  decodeWidth?: Dynamic,
 ): Promise<Dynamic> {
-  let value: Dynamic;
+  let bitmap: Dynamic;
   try {
-    value = await (options > 0
-      ? createImageBitmap(input, {
-          resizeWidth: options,
+    bitmap = await (decodeWidth > 0
+      ? createImageBitmap(file, {
+          resizeWidth: decodeWidth,
           resizeQuality: "medium",
-        }).catch((): Dynamic => createImageBitmap(input))
-      : createImageBitmap(input));
+        }).catch((): Dynamic => createImageBitmap(file))
+      : createImageBitmap(file));
   } catch {
     return {
       url: null,
@@ -831,56 +831,56 @@ async function decodeRasterPreview(
     };
   }
   try {
-    let value2: Dynamic = Math.max(
+    let downscaleFactor: Dynamic = Math.max(
         1,
         Math.ceil(
-          Math.max(value.width, value.height) / CanvasWorkingStateConstant_4,
+          Math.max(bitmap.width, bitmap.height) / maxPreviewEdge,
         ),
       ),
-      value3: Dynamic = Math.max(1, Math.round(value.width / value2)),
-      value4: Dynamic = Math.max(1, Math.round(value.height / value2)),
-      value5: Dynamic =
-        (await encodeOffscreenPreview(value, value3, value4)) ??
-        encodeCanvasPreview(value, value3, value4);
+      scaledWidth: Dynamic = Math.max(1, Math.round(bitmap.width / downscaleFactor)),
+      scaledHeight: Dynamic = Math.max(1, Math.round(bitmap.height / downscaleFactor)),
+      previewUrl: Dynamic =
+        (await encodeOffscreenPreview(bitmap, scaledWidth, scaledHeight)) ??
+        encodeCanvasPreview(bitmap, scaledWidth, scaledHeight);
     return {
       url:
-        value5 != null && value5.length <= CanvasWorkingStateLimit_2
-          ? value5
+        previewUrl != null && previewUrl.length <= maxPreviewChars
+          ? previewUrl
           : null,
-      width: value.width,
-      height: value.height,
+      width: bitmap.width,
+      height: bitmap.height,
     };
   } finally {
-    value.close();
+    bitmap.close();
   }
 }
 async function encodeOffscreenPreview(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  bitmap?: Dynamic,
+  width?: Dynamic,
+  height?: Dynamic,
 ): Promise<Dynamic> {
   if (typeof OffscreenCanvas === "undefined") return null;
   try {
-    let value: Dynamic = new OffscreenCanvas(options, context);
-    value.getContext("2d")?.drawImage(input, 0, 0, options, context);
-    for (let count: Dynamic = 0.8; count > 0.25; count -= 0.1) {
-      let value3: Dynamic = await value.convertToBlob({
+    let canvas: Dynamic = new OffscreenCanvas(width, height);
+    canvas.getContext("2d")?.drawImage(bitmap, 0, 0, width, height);
+    for (let quality: Dynamic = 0.8; quality > 0.25; quality -= 0.1) {
+      let blob: Dynamic = await canvas.convertToBlob({
         type: "image/webp",
-        quality: count,
+        quality: quality,
       });
-      if (value3.type !== "image/webp") return null;
-      let value4: Dynamic = await CanvasWorkingStateOnload(value3);
-      if (value4.length <= CanvasWorkingStateLimit_2) return value4;
+      if (blob.type !== "image/webp") return null;
+      let dataUrl: Dynamic = await CanvasWorkingStateOnload(blob);
+      if (dataUrl.length <= maxPreviewChars) return dataUrl;
     }
-    let value2: Dynamic = new OffscreenCanvas(
-      options >> 1 || 1,
-      context >> 1 || 1,
+    let halfCanvas: Dynamic = new OffscreenCanvas(
+      width >> 1 || 1,
+      height >> 1 || 1,
     );
-    value2
+    halfCanvas
       .getContext("2d")
-      ?.drawImage(value, 0, 0, value2.width, value2.height);
+      ?.drawImage(canvas, 0, 0, halfCanvas.width, halfCanvas.height);
     return await CanvasWorkingStateOnload(
-      await value2.convertToBlob({
+      await halfCanvas.convertToBlob({
         type: "image/webp",
         quality: 0.3,
       }),
@@ -890,50 +890,50 @@ async function encodeOffscreenPreview(
   }
 }
 function encodeCanvasPreview(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  bitmap?: Dynamic,
+  width?: Dynamic,
+  height?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = (document as Dynamic).createElement("canvas");
-  value.width = options;
-  value.height = context;
-  let value2: Dynamic = value.getContext("2d");
-  return value2
-    ? (value2.drawImage(input, 0, 0, options, context),
-      encodeImagePreview(value, 0.8, CanvasWorkingStateLimit_2))
+  let canvas: Dynamic = (document as Dynamic).createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  let context2d: Dynamic = canvas.getContext("2d");
+  return context2d
+    ? (context2d.drawImage(bitmap, 0, 0, width, height),
+      encodeImagePreview(canvas, 0.8, maxPreviewChars))
     : null;
 }
-async function previewSvgFile(input?: Dynamic): Promise<Dynamic> {
+async function previewSvgFile(file?: Dynamic): Promise<Dynamic> {
   try {
-    let value: Dynamic = new Image();
-    value.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(await input.text())}`;
-    await value.decode();
-    let naturalWidth: Dynamic = value.naturalWidth,
-      naturalHeight: Dynamic = value.naturalHeight;
+    let image: Dynamic = new Image();
+    image.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(await file.text())}`;
+    await image.decode();
+    let naturalWidth: Dynamic = image.naturalWidth,
+      naturalHeight: Dynamic = image.naturalHeight;
     if (!(naturalWidth > 0) || !(naturalHeight > 0)) return null;
-    let value2: Dynamic = Math.max(
+    let downscaleFactor: Dynamic = Math.max(
         1,
         Math.ceil(
           Math.max(naturalWidth, naturalHeight) /
-            CanvasWorkingStateConstant_4,
+            maxPreviewEdge,
         ),
       ),
-      value3: Dynamic = Math.max(1, Math.round(naturalWidth / value2)),
-      value4: Dynamic = Math.max(1, Math.round(naturalHeight / value2)),
-      value5: Dynamic = (document as Dynamic).createElement("canvas");
-    value5.width = value3;
-    value5.height = value4;
-    let value6: Dynamic = value5.getContext("2d");
-    if (!value6) return null;
-    value6.drawImage(value, 0, 0, value3, value4);
-    let value7: Dynamic = encodeImagePreview(
-      value5,
+      scaledWidth: Dynamic = Math.max(1, Math.round(naturalWidth / downscaleFactor)),
+      scaledHeight: Dynamic = Math.max(1, Math.round(naturalHeight / downscaleFactor)),
+      canvas: Dynamic = (document as Dynamic).createElement("canvas");
+    canvas.width = scaledWidth;
+    canvas.height = scaledHeight;
+    let context2d: Dynamic = canvas.getContext("2d");
+    if (!context2d) return null;
+    context2d.drawImage(image, 0, 0, scaledWidth, scaledHeight);
+    let previewUrl: Dynamic = encodeImagePreview(
+      canvas,
       0.8,
-      CanvasWorkingStateLimit_2,
+      maxPreviewChars,
     );
-    return value7.length <= CanvasWorkingStateLimit_2
+    return previewUrl.length <= maxPreviewChars
       ? {
-          url: value7,
+          url: previewUrl,
           width: naturalWidth,
           height: naturalHeight,
         }
@@ -943,119 +943,119 @@ async function previewSvgFile(input?: Dynamic): Promise<Dynamic> {
   }
 }
 async function writeVersionedProjectFile(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  path?: Dynamic,
+  content?: Dynamic,
+  writeOptions?: Dynamic,
 ): Promise<Dynamic> {
   if (!projectFilesystem.writeFileVersioned) {
     await projectFilesystem.writeFile(
-      input,
-      options,
-      context?.encoding,
+      path,
+      content,
+      writeOptions?.encoding,
     );
     return "unversioned";
   }
   try {
-    await projectFilesystem.writeFileVersioned(input, options, {
-      encoding: context?.encoding,
+    await projectFilesystem.writeFileVersioned(path, content, {
+      encoding: writeOptions?.encoding,
       baseline: {
         occToken: 0n,
       },
       conflictPolicy: "fail",
     });
     return "created";
-  } catch (value: Dynamic) {
-    if (value?.code === 10) {
-      console.warn("[occ] create-assert collision:", input);
+  } catch (error: Dynamic) {
+    if (error?.code === 10) {
+      console.warn("[occ] create-assert collision:", path);
       return "exists";
     }
-    throw value;
+    throw error;
   }
 }
-function setFilePublishHandler(input?: Dynamic): Dynamic {
-  CanvasWorkingStateAlias = input;
+function setFilePublishHandler(handler?: Dynamic): Dynamic {
+  CanvasWorkingStateAlias = handler;
 }
 async function uploadDesignFile(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  designDir?: Dynamic,
+  subfolder?: Dynamic,
+  file?: Dynamic,
 ): Promise<Dynamic> {
-  let value: Dynamic =
-      (context.name.replace(/\.[^.]*$/, "") || "image")
+  let baseName: Dynamic =
+      (file.name.replace(/\.[^.]*$/, "") || "image")
         .toLowerCase()
         .replace(/[^a-z0-9_-]+/g, "-")
         .replace(/^-+/, "")
         .slice(0, 40) || "image",
-    value2: Dynamic = await uploadImageWithFallback(context, {}),
-    value3: Dynamic = classifyUploadResult(value2);
-  value3 && healthReporter.report(...value3);
-  if (value2.kind === "blob")
+    uploadResult: Dynamic = await uploadImageWithFallback(file, {}),
+    uploadHealth: Dynamic = classifyUploadResult(uploadResult);
+  uploadHealth && healthReporter.report(...uploadHealth);
+  if (uploadResult.kind === "blob")
     return {
-      relName: value2.src,
-      relPath: value2.src,
-      base: value,
-      src: value2.src,
+      relName: uploadResult.src,
+      relPath: uploadResult.src,
+      base: baseName,
+      src: uploadResult.src,
     };
   filePublishInProgress ||
     ((filePublishInProgress = true),
-    CanvasWorkingStateAlias?.(value2.reason));
-  let value4: Dynamic = CanvasWorkingStateDataImagePattern.exec(value2.src);
-  if (value4 === null) throw new Error("could not encode the image");
-  let value5: Dynamic = value4[1].toLowerCase(),
-    value6: Dynamic =
-      value5 === "jpeg"
+    CanvasWorkingStateAlias?.(uploadResult.reason));
+  let dataUrlMatch: Dynamic = CanvasWorkingStateDataImagePattern.exec(uploadResult.src);
+  if (dataUrlMatch === null) throw new Error("could not encode the image");
+  let mimeSubtype: Dynamic = dataUrlMatch[1].toLowerCase(),
+    extension: Dynamic =
+      mimeSubtype === "jpeg"
         ? "jpg"
-        : value5 === "svg+xml"
+        : mimeSubtype === "svg+xml"
           ? "svg"
-          : value5.replace(/[^a-z0-9]/g, "") || "png",
-    value7: Dynamic = value2.src.slice(value4[0].length),
-    callback: Dynamic = (input2?: Dynamic): Dynamic =>
-      `${value}-${Date.now().toString(36)}${input2}.${value6}`,
-    value8: Dynamic = callback(`-${Math.random().toString(36).slice(2, 6)}`),
-    value9: Dynamic = options ? `${options}/${value8}` : value8;
+          : mimeSubtype.replace(/[^a-z0-9]/g, "") || "png",
+    base64Data: Dynamic = uploadResult.src.slice(dataUrlMatch[0].length),
+    makeFileName: Dynamic = (suffix?: Dynamic): Dynamic =>
+      `${baseName}-${Date.now().toString(36)}${suffix}.${extension}`,
+    fileName: Dynamic = makeFileName(`-${Math.random().toString(36).slice(2, 6)}`),
+    relPath: Dynamic = subfolder ? `${subfolder}/${fileName}` : fileName;
   if (
-    (await writeVersionedProjectFile(`${input}/${value9}`, value7, {
+    (await writeVersionedProjectFile(`${designDir}/${relPath}`, base64Data, {
       encoding: "base64",
     })) === "exists" &&
-    ((value8 = callback(`-${Math.random().toString(36).slice(2, 6)}`)),
-    (value9 = options ? `${options}/${value8}` : value8),
-    (await writeVersionedProjectFile(`${input}/${value9}`, value7, {
+    ((fileName = makeFileName(`-${Math.random().toString(36).slice(2, 6)}`)),
+    (relPath = subfolder ? `${subfolder}/${fileName}` : fileName),
+    (await writeVersionedProjectFile(`${designDir}/${relPath}`, base64Data, {
       encoding: "base64",
     })) === "exists")
   )
-    throw new Error(`upload target already exists: ${value9}`);
-  markLocalFileChange(input, value9);
+    throw new Error(`upload target already exists: ${relPath}`);
+  markLocalFileChange(designDir, relPath);
   return {
-    relName: value8,
-    relPath: value9,
-    base: value,
-    src: "./" + value8,
+    relName: fileName,
+    relPath: relPath,
+    base: baseName,
+    src: "./" + fileName,
   };
 }
 async function uploadDesignVideo(
-  input?: Dynamic,
-  options?: Dynamic,
+  file?: Dynamic,
+  probedMeta?: Dynamic,
 ): Promise<Dynamic> {
-  let value: Dynamic = await uploadVideo(input, {
-      probed: options,
+  let uploadResult: Dynamic = await uploadVideo(file, {
+      probed: probedMeta,
     }),
-    value2: Dynamic = classifyUploadResult(value);
-  value2 && healthReporter.report(...value2);
-  return value.kind === "refused"
+    uploadHealth: Dynamic = classifyUploadResult(uploadResult);
+  uploadHealth && healthReporter.report(...uploadHealth);
+  return uploadResult.kind === "refused"
     ? {
-        refused: videoUploadFailureMessage(value.reason),
+        refused: videoUploadFailureMessage(uploadResult.reason),
         repeats:
           CanvasWorkingStateQuotaOrStateRateLimitedStoreUnavailableSet.has(
-            value.reason,
+            uploadResult.reason,
           ),
       }
-    : isBlobAssetUrl(value.src)
+    : isBlobAssetUrl(uploadResult.src)
       ? {
           src:
-            blobAssetPathPattern.test(value.src) &&
-            !value.src.startsWith("/")
-              ? "/" + value.src
-              : value.src,
+            blobAssetPathPattern.test(uploadResult.src) &&
+            !uploadResult.src.startsWith("/")
+              ? "/" + uploadResult.src
+              : uploadResult.src,
         }
       : {
           refused: videoUploadFailureMessage("bad_result"),
@@ -1063,92 +1063,92 @@ async function uploadDesignVideo(
         };
 }
 function positionedVideoHtml(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
+  src?: Dynamic,
+  attrs?: Dynamic,
+  rect?: Dynamic,
+  label?: Dynamic,
 ): Dynamic {
-  return uploadedVideoHtml(input, {
-    ...options,
-    style: `position: absolute; left: ${String(context.left)}px; top: ${String(context.top)}px; width: ${String(context.w)}px; height: auto`,
-    label: value,
+  return uploadedVideoHtml(src, {
+    ...attrs,
+    style: `position: absolute; left: ${String(rect.left)}px; top: ${String(rect.top)}px; width: ${String(rect.w)}px; height: auto`,
+    label: label,
   });
 }
-function videoFileTitle(input?: Dynamic): Dynamic {
+function videoFileTitle(file?: Dynamic): Dynamic {
   return (
     truncateUtf16Safely(
-      input.name.replace(/\.[^.]*$/, "").trim(),
+      file.name.replace(/\.[^.]*$/, "").trim(),
       60,
     ) || "Video"
   );
 }
 function uploadedVideoAnnotation(
-  input?: Dynamic,
-  options?: Dynamic,
+  annotation?: Dynamic,
+  upload?: Dynamic,
 ): Dynamic {
   return updateAnnotationAlt(
     updateAnnotationVideo(
       {
-        ...input,
-        src: options.src,
-        ...(options.h !== undefined
+        ...annotation,
+        src: upload.src,
+        ...(upload.h !== undefined
           ? {
-              h: options.h,
+              h: upload.h,
             }
           : {}),
       },
-      options.video,
+      upload.video,
     ),
-    options.alt,
+    upload.alt,
   );
 }
-function isSessionCancelMessage(input?: Dynamic, options?: Dynamic): Dynamic {
+function isSessionCancelMessage(message?: Dynamic, key?: Dynamic): Dynamic {
   return (
-    input != null && options != null && input === BoxcancelValue + options
+    message != null && key != null && message === BoxcancelValue + key
   );
 }
 function reduceSessionCancellation(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  record?: Dynamic,
+  event?: Dynamic,
+  status?: Dynamic,
 ): Dynamic {
   let state: Dynamic = {
-    rec: input,
+    rec: record,
     restore: null,
     cancelKey: null,
   };
-  return options.type === "escape"
-    ? !input || !input.live || input.cancelling || context.busy
+  return event.type === "escape"
+    ? !record || !record.live || record.cancelling || status.busy
       ? state
       : {
           rec: {
-            ...input,
+            ...record,
             cancelling: true,
           },
           restore: null,
-          cancelKey: input.key,
+          cancelKey: record.key,
         }
-    : options.file !== context.focusedFile
+    : event.file !== status.focusedFile
       ? state
-      : options.type === "press"
-        ? context.busy
+      : event.type === "press"
+        ? status.busy
           ? state
           : {
               rec: {
-                file: options.file,
-                key: options.key,
+                file: event.file,
+                key: event.key,
                 live: false,
-                prior: context.selection,
-                at: context.now,
+                prior: status.selection,
+                at: status.now,
               },
               restore: null,
               cancelKey: null,
             }
-        : !input || input.file !== options.file || input.key !== options.key
+        : !record || record.file !== event.file || record.key !== event.key
           ? state
-          : options.type === "live"
-            ? context.busy ||
-              context.now - input.at > CanvasWorkingStateLimit_3
+          : event.type === "live"
+            ? status.busy ||
+              status.now - record.at > pressStaleMs
               ? {
                   rec: null,
                   restore: null,
@@ -1156,21 +1156,21 @@ function reduceSessionCancellation(
                 }
               : {
                   rec: {
-                    ...input,
+                    ...record,
                     live: true,
                   },
                   restore: null,
                   cancelKey: null,
                 }
-            : options.type === "end"
+            : event.type === "end"
               ? {
                   rec: null,
                   restore: null,
                   cancelKey: null,
                 }
-              : !input.live ||
-                  context.busy ||
-                  !(input.cancelling || context.frameFocused)
+              : !record.live ||
+                  status.busy ||
+                  !(record.cancelling || status.frameFocused)
                 ? {
                     rec: null,
                     restore: null,
@@ -1178,761 +1178,761 @@ function reduceSessionCancellation(
                   }
                 : {
                     rec: null,
-                    restore: input.prior,
+                    restore: record.prior,
                     cancelKey: null,
                   };
 }
 function randomSessionToken(): Dynamic {
   return Array.from(
     crypto.getRandomValues(new Uint8Array(8)),
-    (input?: Dynamic): Dynamic => input.toString(16).padStart(2, "0"),
+    (byte?: Dynamic): Dynamic => byte.toString(16).padStart(2, "0"),
   ).join("");
 }
-function createEditSessionManager(input?: Dynamic): Dynamic {
-  let items: Dynamic = [],
-    items2: Dynamic = [],
-    flag: Dynamic = false,
+function createEditSessionManager(host?: Dynamic): Dynamic {
+  let undoStack: Dynamic = [],
+    redoStack: Dynamic = [],
+    isApplying: Dynamic = false,
     index: Dynamic = 0,
-    index2: Dynamic = 0,
-    value: Dynamic = new WeakSet(),
-    value2: Dynamic = null,
-    flag2: Dynamic = false,
-    callback: Dynamic = (): Dynamic => {
-      flag2 = true;
+    pushCount: Dynamic = 0,
+    refusedEntries: Dynamic = new WeakSet(),
+    activeGroup: Dynamic = null,
+    isSettling: Dynamic = false,
+    markSettling: Dynamic = (): Dynamic => {
+      isSettling = true;
       queueMicrotask((): Dynamic => {
-        flag2 = false;
+        isSettling = false;
       });
     },
-    values: Dynamic = new Set(),
-    callback2: Dynamic = (): Dynamic => {
-      for (let value3 of values as Dynamic) value3();
+    listeners: Dynamic = new Set(),
+    notifyListeners: Dynamic = (): Dynamic => {
+      for (let listener of listeners as Dynamic) listener();
     },
-    callback3: Dynamic = (input2?: Dynamic): Dynamic =>
-      input.floor?.(input2) ?? 0,
-    callback4: Dynamic = (input2?: Dynamic): Dynamic => {
-      let value3: Dynamic = callback3(input2.file);
-      return value3 < input2.floor
+    readFloor: Dynamic = (file?: Dynamic): Dynamic =>
+      host.floor?.(file) ?? 0,
+    effectiveDepth: Dynamic = (part?: Dynamic): Dynamic => {
+      let floor: Dynamic = readFloor(part.file);
+      return floor < part.floor
         ? 0
-        : Math.max(0, input2.depth - (value3 - input2.floor));
+        : Math.max(0, part.depth - (floor - part.floor));
     },
-    callback5: Dynamic = (input2?: Dynamic): Dynamic => {
-      let value3: Dynamic = input.depths(input2.file);
-      return value3 != null && value3 > 0 && value3 === callback4(input2);
+    isUndoable: Dynamic = (part?: Dynamic): Dynamic => {
+      let depth: Dynamic = host.depths(part.file);
+      return depth != null && depth > 0 && depth === effectiveDepth(part);
     },
-    callback6: Dynamic = (input2?: Dynamic): Dynamic => {
-      let value3: Dynamic = input.depths(input2.file);
+    isRedoable: Dynamic = (part?: Dynamic): Dynamic => {
+      let depth: Dynamic = host.depths(part.file);
       return (
-        value3 != null &&
-        callback4(input2) > 0 &&
-        value3 === callback4(input2) - 1 &&
-        (input.redos?.(input2.file) ?? 1) > 0
+        depth != null &&
+        effectiveDepth(part) > 0 &&
+        depth === effectiveDepth(part) - 1 &&
+        (host.redos?.(part.file) ?? 1) > 0
       );
     },
-    callback7: Dynamic = (input2?: Dynamic, options?: Dynamic): Dynamic =>
-      input2.atomic
-        ? input2.parts.every(options)
-        : input2.parts.some(options),
-    callback8: Dynamic = (
-      input2?: Dynamic,
-      options?: Dynamic,
-      context: Dynamic = false,
-      value3?: Dynamic,
-      extra?: Dynamic,
+    entryMatches: Dynamic = (entry?: Dynamic, predicate?: Dynamic): Dynamic =>
+      entry.atomic
+        ? entry.parts.every(predicate)
+        : entry.parts.some(predicate),
+    reportAtomicRefusal: Dynamic = (
+      entry?: Dynamic,
+      reason?: Dynamic,
+      once: Dynamic = false,
+      outcome?: Dynamic,
+      holderFile?: Dynamic,
     ): Dynamic => {
-      if (context && value.has(input2)) return;
-      options === "stale" && value.add(input2);
-      let bound: Dynamic = input2.bound;
+      if (once && refusedEntries.has(entry)) return;
+      reason === "stale" && refusedEntries.add(entry);
+      let bound: Dynamic = entry.bound;
       queueMicrotask(
-        (): Dynamic => input.onAtomicRefused?.(bound, options, value3, extra),
+        (): Dynamic => host.onAtomicRefused?.(bound, reason, outcome, holderFile),
       );
     },
-    callback9: Dynamic = (input2?: Dynamic, options?: Dynamic): Dynamic =>
-      !value.has(input2) && callback7(input2, options),
-    callback10: Dynamic = (
-      input2?: Dynamic,
-      options?: Dynamic,
-      context?: Dynamic,
+    isEntryUsable: Dynamic = (entry?: Dynamic, predicate?: Dynamic): Dynamic =>
+      !refusedEntries.has(entry) && entryMatches(entry, predicate),
+    splitEntry: Dynamic = (
+      entry?: Dynamic,
+      direction?: Dynamic,
+      predicate?: Dynamic,
     ): Dynamic => {
-      let value3: Dynamic = input2.parts.filter(context);
-      if (value3.length === input2.parts.length)
+      let livingParts: Dynamic = entry.parts.filter(predicate);
+      if (livingParts.length === entry.parts.length)
         return {
-          parts: value3,
+          parts: livingParts,
           atomic: true,
-          ...(input2.holder !== undefined
+          ...(entry.holder !== undefined
             ? {
-                holder: input2.holder,
+                holder: entry.holder,
               }
             : {}),
         };
-      if (input2.holder === undefined) return null;
-      let value4: Dynamic = value3.filter(
-        (input3?: Dynamic): Dynamic =>
-          options === "undo"
-            ? input3.file !== input2.holder
-            : input3.file === input2.holder,
+      if (entry.holder === undefined) return null;
+      let remainingParts: Dynamic = livingParts.filter(
+        (part?: Dynamic): Dynamic =>
+          direction === "undo"
+            ? part.file !== entry.holder
+            : part.file === entry.holder,
       );
-      return value4.length > 0
+      return remainingParts.length > 0
         ? {
-            parts: value4,
+            parts: remainingParts,
           }
         : null;
     },
-    callback11: Dynamic = (
-      input2?: Dynamic,
-      options?: Dynamic,
-      context?: Dynamic,
+    entryOutcome: Dynamic = (
+      entry?: Dynamic,
+      direction?: Dynamic,
+      predicate?: Dynamic,
     ): Dynamic => {
-      let value3: Dynamic = callback10(input2, options, context);
-      return value3
-        ? value3.atomic
+      let split: Dynamic = splitEntry(entry, direction, predicate);
+      return split
+        ? split.atomic
           ? "whole"
-          : options === "undo"
+          : direction === "undo"
             ? "others"
             : "holder"
         : "nothing";
     },
-    callback12: Dynamic = (input2?: Dynamic, options?: Dynamic): Dynamic => {
+    findHolderPart: Dynamic = (entry?: Dynamic, predicate?: Dynamic): Dynamic => {
       if (
-        input2.holder === undefined ||
-        callback10(input2, "undo", options)?.atomic
+        entry.holder === undefined ||
+        splitEntry(entry, "undo", predicate)?.atomic
       )
         return;
-      let value3: Dynamic = input2.parts.find(
-          (input3?: Dynamic): Dynamic => input3.file === input2.holder,
+      let holder: Dynamic = entry.parts.find(
+          (part?: Dynamic): Dynamic => part.file === entry.holder,
         ),
-        value4: Dynamic = value3 ? input.depths(value3.file) : null;
-      return value3 &&
-        value4 != null &&
-        callback4(value3) > 0 &&
-        value4 >= callback4(value3)
-        ? value3
+        holderDepth: Dynamic = holder ? host.depths(holder.file) : null;
+      return holder &&
+        holderDepth != null &&
+        effectiveDepth(holder) > 0 &&
+        holderDepth >= effectiveDepth(holder)
+        ? holder
         : undefined;
     },
-    callback13: Dynamic = (input2?: Dynamic): Dynamic => {
-      if (!input.dropRedo) return [];
-      let value3: Dynamic = input2.filter((input3?: Dynamic): Dynamic => {
-        let value4: Dynamic = input.depths(input3.file);
-        return value4 != null && value4 < callback4(input3);
+    dropStaleRedo: Dynamic = (parts?: Dynamic): Dynamic => {
+      if (!host.dropRedo) return [];
+      let staleParts: Dynamic = parts.filter((part?: Dynamic): Dynamic => {
+        let depth: Dynamic = host.depths(part.file);
+        return depth != null && depth < effectiveDepth(part);
       });
-      for (let value4 of value3 as Dynamic)
-        input.dropRedo(value4.file, callback4(value4));
-      return value3;
+      for (let part of staleParts as Dynamic)
+        host.dropRedo(part.file, effectiveDepth(part));
+      return staleParts;
     },
-    callback14: Dynamic = (items3?: Dynamic, options?: Dynamic): Dynamic =>
-      items3.length < 2
+    dropStaleRedoExcept: Dynamic = (parts?: Dynamic, file?: Dynamic): Dynamic =>
+      parts.length < 2
         ? []
-        : callback13(
-            items3.filter(
-              (input2?: Dynamic): Dynamic => input2.file !== options,
+        : dropStaleRedo(
+            parts.filter(
+              (part?: Dynamic): Dynamic => part.file !== file,
             ),
           ),
-    callback15: Dynamic = (input2?: Dynamic): Dynamic => {
-      let items3: Dynamic = [...input2];
-      for (; items3.length > 0; ) {
-        let value3: Dynamic = items3,
-          callback19: Dynamic = (input3?: Dynamic): Dynamic =>
-            value3.some(
-              (input4?: Dynamic): Dynamic =>
-                input4.file === input3.file &&
-                callback4(input3) >= callback4(input4),
+    pruneRedoEntries: Dynamic = (parts?: Dynamic): Dynamic => {
+      let pendingParts: Dynamic = [...parts];
+      for (; pendingParts.length > 0; ) {
+        let currentParts: Dynamic = pendingParts,
+          isCovered: Dynamic = (part?: Dynamic): Dynamic =>
+            currentParts.some(
+              (other?: Dynamic): Dynamic =>
+                other.file === part.file &&
+                effectiveDepth(part) >= effectiveDepth(other),
             ),
-          items4: Dynamic = [],
-          items5: Dynamic = [];
-        for (let value4 of items2 as Dynamic)
-          value4.parts.some(callback19)
-            ? value4.atomic
-              ? (callback8(value4, "stale", false, "nothing"),
-                items4.push(
-                  ...callback13(
-                    value4.parts.filter(
-                      (input3?: Dynamic): Dynamic => !callback19(input3),
+          nextPending: Dynamic = [],
+          keptEntries: Dynamic = [];
+        for (let entry of redoStack as Dynamic)
+          entry.parts.some(isCovered)
+            ? entry.atomic
+              ? (reportAtomicRefusal(entry, "stale", false, "nothing"),
+                nextPending.push(
+                  ...dropStaleRedo(
+                    entry.parts.filter(
+                      (part?: Dynamic): Dynamic => !isCovered(part),
                     ),
                   ),
                 ))
-              : ((value4.parts = value4.parts.filter(
-                  (input3?: Dynamic): Dynamic => !callback19(input3),
+              : ((entry.parts = entry.parts.filter(
+                  (part?: Dynamic): Dynamic => !isCovered(part),
                 )),
-                value4.parts.length > 0 && items5.push(value4))
-            : items5.push(value4);
-        items2 = items5;
-        items3 = items4;
+                entry.parts.length > 0 && keptEntries.push(entry))
+            : keptEntries.push(entry);
+        redoStack = keptEntries;
+        pendingParts = nextPending;
       }
     },
-    callback16: Dynamic = (): Dynamic => {
-      if (flag || index > 0) return;
-      let length: Dynamic = items.length;
+    trimStaleEntries: Dynamic = (): Dynamic => {
+      if (isApplying || index > 0) return;
+      let length: Dynamic = undoStack.length;
       for (
         ;
         length > 0 &&
-        !items[length - 1].atomic &&
-        !callback7(items[length - 1], callback5);
+        !undoStack[length - 1].atomic &&
+        !entryMatches(undoStack[length - 1], isUndoable);
 
       )
         length--;
-      length !== items.length && (items = items.slice(0, length));
-      let value3: Dynamic = items[items.length - 1];
-      value3?.atomic &&
-        !callback7(value3, callback5) &&
-        callback8(
-          value3,
+      length !== undoStack.length && (undoStack = undoStack.slice(0, length));
+      let topUndo: Dynamic = undoStack[undoStack.length - 1];
+      topUndo?.atomic &&
+        !entryMatches(topUndo, isUndoable) &&
+        reportAtomicRefusal(
+          topUndo,
           "stale",
           true,
-          callback11(value3, "undo", callback5),
+          entryOutcome(topUndo, "undo", isUndoable),
         );
-      let length2: Dynamic = items2.length;
+      let redoLength: Dynamic = redoStack.length;
       for (
         ;
-        length2 > 0 &&
-        !items2[length2 - 1].atomic &&
-        !callback7(items2[length2 - 1], callback6);
+        redoLength > 0 &&
+        !redoStack[redoLength - 1].atomic &&
+        !entryMatches(redoStack[redoLength - 1], isRedoable);
 
       )
-        length2--;
-      length2 !== items2.length && (items2 = items2.slice(0, length2));
-      let value4: Dynamic = items2[items2.length - 1];
-      value4?.atomic &&
-        !callback7(value4, callback6) &&
-        callback8(
-          value4,
+        redoLength--;
+      redoLength !== redoStack.length && (redoStack = redoStack.slice(0, redoLength));
+      let topRedo: Dynamic = redoStack[redoStack.length - 1];
+      topRedo?.atomic &&
+        !entryMatches(topRedo, isRedoable) &&
+        reportAtomicRefusal(
+          topRedo,
           "stale",
           true,
-          callback11(value4, "redo", callback6),
+          entryOutcome(topRedo, "redo", isRedoable),
         );
     },
-    callback17: Dynamic = (
-      input2?: Dynamic,
-      options?: Dynamic,
-      context?: Dynamic,
+    applyEntry: Dynamic = (
+      entry?: Dynamic,
+      direction?: Dynamic,
+      isUsable?: Dynamic,
     ): Dynamic => {
-      let callback19: Dynamic = (input3?: Dynamic): Dynamic => (
-        (flag = true),
-        input3
+      let trackApply: Dynamic = (promise?: Dynamic): Dynamic => (
+        (isApplying = true),
+        promise
           .then(
             (): Dynamic => true,
             (): Dynamic => false,
           )
           .finally((): Dynamic => {
-            flag = false;
-            callback2();
+            isApplying = false;
+            notifyListeners();
           })
       );
-      if (input2.parts.length === 1) {
-        let value5: Dynamic = input.apply(input2.parts[0].file, options);
-        return value5
-          ? callback19(Promise.resolve(value5))
+      if (entry.parts.length === 1) {
+        let applyResult: Dynamic = host.apply(entry.parts[0].file, direction);
+        return applyResult
+          ? trackApply(Promise.resolve(applyResult))
           : Promise.resolve(true);
       }
-      let value3: Dynamic =
-        options === "undo" ? [...input2.parts].reverse() : input2.parts;
-      if (!input2.atomic)
-        return callback19(
+      let orderedParts: Dynamic =
+        direction === "undo" ? [...entry.parts].reverse() : entry.parts;
+      if (!entry.atomic)
+        return trackApply(
           (async (): Promise<Dynamic> => {
-            for (let value5 of value3 as Dynamic)
-              context(value5) &&
-                (await input.apply(value5.file, options, true));
+            for (let part of orderedParts as Dynamic)
+              isUsable(part) &&
+                (await host.apply(part.file, direction, true));
           })(),
         );
-      let value4: Dynamic = options === "undo" ? "redo" : "undo",
-        items3: Dynamic = [];
-      return callback19(
+      let reverseDirection: Dynamic = direction === "undo" ? "redo" : "undo",
+        appliedParts: Dynamic = [];
+      return trackApply(
         (async (): Promise<Dynamic> => {
-          for (let value5 of value3 as Dynamic) {
-            let value6: Dynamic = input.depths(value5.file);
-            if (!context(value5)) {
-              for (let value8 of [...items3].reverse() as Dynamic)
-                await input.apply(value8.file, value4);
-              throw new Error("atomic part went stale: " + value5.file);
+          for (let part of orderedParts as Dynamic) {
+            let depthBefore: Dynamic = host.depths(part.file);
+            if (!isUsable(part)) {
+              for (let appliedPart of [...appliedParts].reverse() as Dynamic)
+                await host.apply(appliedPart.file, reverseDirection);
+              throw new Error("atomic part went stale: " + part.file);
             }
-            await input.apply(value5.file, options, true);
-            let value7: Dynamic = input.depths(value5.file);
+            await host.apply(part.file, direction, true);
+            let depthAfter: Dynamic = host.depths(part.file);
             if (
-              value6 == null ||
-              value7 == null ||
-              value7 !== value6 + (options === "undo" ? -1 : 1)
+              depthBefore == null ||
+              depthAfter == null ||
+              depthAfter !== depthBefore + (direction === "undo" ? -1 : 1)
             ) {
-              for (let value8 of [...items3].reverse() as Dynamic)
-                await input.apply(value8.file, value4);
-              throw new Error("atomic part did not land: " + value5.file);
+              for (let appliedPart of [...appliedParts].reverse() as Dynamic)
+                await host.apply(appliedPart.file, reverseDirection);
+              throw new Error("atomic part did not land: " + part.file);
             }
-            items3.push(value5);
+            appliedParts.push(part);
           }
         })(),
       );
     },
-    callback18: Dynamic = (
-      input2?: Dynamic,
-      options?: Dynamic,
-      context?: Dynamic,
+    notifyBoundApplied: Dynamic = (
+      entry?: Dynamic,
+      direction?: Dynamic,
+      applyPromise?: Dynamic,
     ): Dynamic => {
-      let bound: Dynamic = input2.bound;
+      let bound: Dynamic = entry.bound;
       bound === undefined ||
-        !input.onBoundApplied ||
-        context.then((input3?: Dynamic): Dynamic => {
-          input3 &&
+        !host.onBoundApplied ||
+        applyPromise.then((didApply?: Dynamic): Dynamic => {
+          didApply &&
             setTimeout(
-              (): Dynamic => input.onBoundApplied?.(bound, options),
+              (): Dynamic => host.onBoundApplied?.(bound, direction),
               0,
             );
         });
     };
   return {
-    reportPush(input2: Dynamic): Dynamic {
-      let value3: Dynamic = input.depths(input2);
-      if (value3 == null || value3 <= 0) return;
-      value2 &&
-        !value2.atomic &&
-        !value2.files.has(input2) &&
-        !value2.taken.has(input2) &&
-        (value2 = null);
-      index2 += 1;
+    reportPush(file: Dynamic): Dynamic {
+      let depth: Dynamic = host.depths(file);
+      if (depth == null || depth <= 0) return;
+      activeGroup &&
+        !activeGroup.atomic &&
+        !activeGroup.files.has(file) &&
+        !activeGroup.taken.has(file) &&
+        (activeGroup = null);
+      pushCount += 1;
       let state: Dynamic = {
-          file: input2,
-          depth: value3,
-          floor: callback3(input2),
+          file: file,
+          depth: depth,
+          floor: readFloor(file),
         },
-        value4: Dynamic =
-          value2 != null &&
-          value2.files.has(input2) &&
-          !value2.taken.has(input2) &&
-          !value2.waiting.has(input2);
-      if (value4 && value2?.entry && items.includes(value2.entry)) {
-        let entry: Dynamic = value2.entry;
+        joinsGroup: Dynamic =
+          activeGroup != null &&
+          activeGroup.files.has(file) &&
+          !activeGroup.taken.has(file) &&
+          !activeGroup.waiting.has(file);
+      if (joinsGroup && activeGroup?.entry && undoStack.includes(activeGroup.entry)) {
+        let entry: Dynamic = activeGroup.entry;
         entry.parts.push(state);
-        let value5: Dynamic = items.indexOf(entry),
-          value6: Dynamic = items.slice(value5 + 1);
+        let entryIndex: Dynamic = undoStack.indexOf(entry),
+          laterEntries: Dynamic = undoStack.slice(entryIndex + 1);
         if (
-          value6.some(
-            (input3?: Dynamic): Dynamic =>
-              input3.parts.some(
-                (input4?: Dynamic): Dynamic => input4.file === input2,
+          laterEntries.some(
+            (laterEntry?: Dynamic): Dynamic =>
+              laterEntry.parts.some(
+                (part?: Dynamic): Dynamic => part.file === file,
               ),
           )
         ) {
-          let values2: Dynamic = new Set(
+          let otherFiles: Dynamic = new Set(
               entry.parts
-                .map((input3?: Dynamic): Dynamic => input3.file)
-                .filter((input3?: Dynamic): Dynamic => input3 !== input2),
+                .map((part?: Dynamic): Dynamic => part.file)
+                .filter((otherFile?: Dynamic): Dynamic => otherFile !== file),
             ),
-            value7: Dynamic = value6.filter(
-              (input3?: Dynamic): Dynamic =>
-                input3.parts.some(
-                  (input4?: Dynamic): Dynamic => values2.has(input4.file),
+            dependentEntries: Dynamic = laterEntries.filter(
+              (laterEntry?: Dynamic): Dynamic =>
+                laterEntry.parts.some(
+                  (part?: Dynamic): Dynamic => otherFiles.has(part.file),
                 ),
             ),
-            value8: Dynamic = value6.filter(
-              (input3?: Dynamic): Dynamic => !value7.includes(input3),
+            independentEntries: Dynamic = laterEntries.filter(
+              (laterEntry?: Dynamic): Dynamic => !dependentEntries.includes(laterEntry),
             ),
-            values3: Dynamic = new Set(
-              value7.flatMap(
-                (input3?: Dynamic): Dynamic =>
-                  input3.parts.map(
-                    (input4?: Dynamic): Dynamic => input4.file,
+            dependentFiles: Dynamic = new Set(
+              dependentEntries.flatMap(
+                (laterEntry?: Dynamic): Dynamic =>
+                  laterEntry.parts.map(
+                    (part?: Dynamic): Dynamic => part.file,
                   ),
               ),
             );
-          !values3.has(input2) &&
-            !value8.some(
-              (input3?: Dynamic): Dynamic =>
-                input3.parts.some(
-                  (input4?: Dynamic): Dynamic => values3.has(input4.file),
+          !dependentFiles.has(file) &&
+            !independentEntries.some(
+              (laterEntry?: Dynamic): Dynamic =>
+                laterEntry.parts.some(
+                  (part?: Dynamic): Dynamic => dependentFiles.has(part.file),
                 ),
             ) &&
-            (items = [
-              ...items.slice(0, value5),
-              ...value8,
+            (undoStack = [
+              ...undoStack.slice(0, entryIndex),
+              ...independentEntries,
               entry,
-              ...value7,
+              ...dependentEntries,
             ]);
         }
       } else {
-        let state2: Dynamic = {
+        let newEntry: Dynamic = {
           parts: [state],
-          ...(value4 && value2?.bound !== undefined
+          ...(joinsGroup && activeGroup?.bound !== undefined
             ? {
-                bound: value2.bound,
+                bound: activeGroup.bound,
               }
             : {}),
-          ...(value4 && value2?.atomic
+          ...(joinsGroup && activeGroup?.atomic
             ? {
                 atomic: true,
               }
             : {}),
-          ...(value4 && value2?.atomic && value2.holder !== undefined
+          ...(joinsGroup && activeGroup?.atomic && activeGroup.holder !== undefined
             ? {
-                holder: value2.holder,
+                holder: activeGroup.holder,
               }
             : {}),
         };
-        value4 && value2 && (value2.entry = state2);
-        let items3: Dynamic = [...items, state2];
-        for (let value5 of items3.slice(
+        joinsGroup && activeGroup && (activeGroup.entry = newEntry);
+        let nextStack: Dynamic = [...undoStack, newEntry];
+        for (let droppedEntry of nextStack.slice(
           0,
-          Math.max(0, items3.length - 50),
+          Math.max(0, nextStack.length - 50),
         ) as Dynamic)
-          value5.atomic && callback8(value5, "capped");
-        items = items3.slice(-50);
+          droppedEntry.atomic && reportAtomicRefusal(droppedEntry, "capped");
+        undoStack = nextStack.slice(-50);
       }
-      value4 &&
-        value2 &&
-        (value2.taken.add(input2),
-        value2.taken.size === value2.files.size && (value2 = null));
-      items2 = [];
-      callback2();
+      joinsGroup &&
+        activeGroup &&
+        (activeGroup.taken.add(file),
+        activeGroup.taken.size === activeGroup.files.size && (activeGroup = null));
+      redoStack = [];
+      notifyListeners();
     },
-    group(input2: Dynamic, options: Dynamic): Dynamic {
+    group(files: Dynamic, groupOptions: Dynamic): Dynamic {
       let state: Dynamic = {
-        files: new Set(input2),
+        files: new Set(files),
         taken: new Set(),
-        waiting: new Set(options?.waiting ?? []),
+        waiting: new Set(groupOptions?.waiting ?? []),
         entry: null,
-        ...(options?.bound !== undefined
+        ...(groupOptions?.bound !== undefined
           ? {
-              bound: options.bound,
+              bound: groupOptions.bound,
             }
           : {}),
-        ...(options?.atomic
+        ...(groupOptions?.atomic
           ? {
               atomic: true,
             }
           : {}),
-        ...(options?.atomic && options.holder !== undefined
+        ...(groupOptions?.atomic && groupOptions.holder !== undefined
           ? {
-              holder: options.holder,
+              holder: groupOptions.holder,
             }
           : {}),
       };
-      value2 = state;
+      activeGroup = state;
       return {
         end(): Dynamic {
-          value2 === state && (value2 = null);
+          activeGroup === state && (activeGroup = null);
         },
-        admit(input3: Dynamic): Dynamic {
-          state.waiting.delete(input3);
+        admit(file: Dynamic): Dynamic {
+          state.waiting.delete(file);
         },
-        settled(input3: Dynamic): Dynamic {
-          value2 !== state ||
-            !state.files.has(input3) ||
-            (state.taken.add(input3),
-            state.taken.size === state.files.size && (value2 = null));
+        settled(file: Dynamic): Dynamic {
+          activeGroup !== state ||
+            !state.files.has(file) ||
+            (state.taken.add(file),
+            state.taken.size === state.files.size && (activeGroup = null));
         },
-        discard(input3: Dynamic): Dynamic {
+        discard(file: Dynamic): Dynamic {
           let entry: Dynamic = state.entry,
-            value3: Dynamic =
-              entry && items.includes(entry)
+            entryPart: Dynamic =
+              entry && undoStack.includes(entry)
                 ? entry.parts.find(
-                    (input4?: Dynamic): Dynamic => input4.file === input3,
+                    (part?: Dynamic): Dynamic => part.file === file,
                   )
                 : undefined;
-          if (!entry || !value3 || !callback5(value3)) return null;
-          let state2: Dynamic = {
+          if (!entry || !entryPart || !isUndoable(entryPart)) return null;
+          let savedEntry: Dynamic = {
             parts: entry.parts,
             atomic: entry.atomic,
             holder: entry.holder,
           };
           entry.parts = entry.parts.filter(
-            (input4?: Dynamic): Dynamic => input4.file !== input3,
+            (part?: Dynamic): Dynamic => part.file !== file,
           );
-          input3 === entry.holder &&
+          file === entry.holder &&
             (delete entry.atomic, delete entry.holder);
           entry.parts.length === 0 &&
-            (items = items.filter(
-              (input4?: Dynamic): Dynamic => input4 !== entry,
+            (undoStack = undoStack.filter(
+              (item?: Dynamic): Dynamic => item !== entry,
             ));
-          callback2();
+          notifyListeners();
           return (): Dynamic => {
-            entry.parts = state2.parts;
-            state2.atomic && (entry.atomic = state2.atomic);
-            state2.holder !== undefined && (entry.holder = state2.holder);
-            items.includes(entry) || (items = [...items, entry].slice(-50));
-            callback2();
+            entry.parts = savedEntry.parts;
+            savedEntry.atomic && (entry.atomic = savedEntry.atomic);
+            savedEntry.holder !== undefined && (entry.holder = savedEntry.holder);
+            undoStack.includes(entry) || (undoStack = [...undoStack, entry].slice(-50));
+            notifyListeners();
           };
         },
       };
     },
     canUndo(): Dynamic {
-      callback16();
-      return items.length > 0;
+      trimStaleEntries();
+      return undoStack.length > 0;
     },
     canRedo(): Dynamic {
-      callback16();
-      return items2.length > 0;
+      trimStaleEntries();
+      return redoStack.length > 0;
     },
     undoFile(): Dynamic {
-      callback16();
-      let value3: Dynamic = items[items.length - 1];
+      trimStaleEntries();
+      let topEntry: Dynamic = undoStack[undoStack.length - 1];
       return (
         [
-          ...((value3?.atomic && !callback9(value3, callback5)
-            ? callback10(value3, "undo", callback5)
-            : value3
+          ...((topEntry?.atomic && !isEntryUsable(topEntry, isUndoable)
+            ? splitEntry(topEntry, "undo", isUndoable)
+            : topEntry
           )?.parts ?? []),
         ]
           .reverse()
-          .find(callback5)?.file ?? null
+          .find(isUndoable)?.file ?? null
       );
     },
     redoFile(): Dynamic {
-      callback16();
-      let value3: Dynamic = items2[items2.length - 1];
+      trimStaleEntries();
+      let topEntry: Dynamic = redoStack[redoStack.length - 1];
       return (
-        (value3?.atomic && !callback9(value3, callback6)
-          ? callback10(value3, "redo", callback6)
-          : value3
-        )?.parts.find(callback6)?.file ?? null
+        (topEntry?.atomic && !isEntryUsable(topEntry, isRedoable)
+          ? splitEntry(topEntry, "redo", isRedoable)
+          : topEntry
+        )?.parts.find(isRedoable)?.file ?? null
       );
     },
     undo(): Dynamic {
-      if (flag || flag2) return "applied";
-      let value3: Dynamic = items.length > 0;
-      for (; items.length > 0; ) {
-        let value4: Dynamic = items[items.length - 1];
-        items = items.slice(0, -1);
+      if (isApplying || isSettling) return "applied";
+      let hadEntries: Dynamic = undoStack.length > 0;
+      for (; undoStack.length > 0; ) {
+        let entry: Dynamic = undoStack[undoStack.length - 1];
+        undoStack = undoStack.slice(0, -1);
         if (
-          value4.atomic
-            ? !callback9(value4, callback5)
-            : !callback7(value4, callback5)
+          entry.atomic
+            ? !isEntryUsable(entry, isUndoable)
+            : !entryMatches(entry, isUndoable)
         ) {
-          if (value4.atomic) {
-            let value7: Dynamic = callback12(value4, callback5);
-            callback8(
-              value4,
+          if (entry.atomic) {
+            let holder: Dynamic = findHolderPart(entry, isUndoable);
+            reportAtomicRefusal(
+              entry,
               "stale",
               false,
-              callback11(value4, "undo", callback5),
-              value7?.file,
+              entryOutcome(entry, "undo", isUndoable),
+              holder?.file,
             );
-            let value8: Dynamic = callback10(value4, "undo", callback5);
-            value7 && input.cutUndo?.(value7.file, callback4(value7));
-            if (value8) {
-              items = [...items, value8];
+            let remaining: Dynamic = splitEntry(entry, "undo", isUndoable);
+            holder && host.cutUndo?.(holder.file, effectiveDepth(holder));
+            if (remaining) {
+              undoStack = [...undoStack, remaining];
               continue;
             }
-            callback2();
+            notifyListeners();
             return "refused-atomic";
           }
           continue;
         }
-        callback();
-        let value5: Dynamic = index2,
-          value6: Dynamic = callback17(value4, "undo", callback5);
-        value4.atomic && index++;
-        callback18(value4, "undo", value6);
-        value4.atomic
-          ? value6
+        markSettling();
+        let epoch: Dynamic = pushCount,
+          applyPromise: Dynamic = applyEntry(entry, "undo", isUndoable);
+        entry.atomic && index++;
+        notifyBoundApplied(entry, "undo", applyPromise);
+        entry.atomic
+          ? applyPromise
               .catch((): Dynamic => false)
-              .then((input2?: Dynamic): Dynamic => {
+              .then((didApply?: Dynamic): Dynamic => {
                 index--;
-                input2
-                  ? index2 === value5
-                    ? (items2 = [...items2, value4].slice(-50))
-                    : callback8(value4, "stale", false, "nothing")
-                  : index2 === value5
-                    ? ((items = [...items, value4].slice(-50)),
-                      callback8(value4, "failed"))
-                    : callback8(value4, "stale", false, "nothing");
-                callback2();
+                didApply
+                  ? pushCount === epoch
+                    ? (redoStack = [...redoStack, entry].slice(-50))
+                    : reportAtomicRefusal(entry, "stale", false, "nothing")
+                  : pushCount === epoch
+                    ? ((undoStack = [...undoStack, entry].slice(-50)),
+                      reportAtomicRefusal(entry, "failed"))
+                    : reportAtomicRefusal(entry, "stale", false, "nothing");
+                notifyListeners();
               })
-          : (items2 = [...items2, value4].slice(-50));
-        callback2();
+          : (redoStack = [...redoStack, entry].slice(-50));
+        notifyListeners();
         return "applied";
       }
-      callback2();
-      return value3 ? "skipped-all" : "empty";
+      notifyListeners();
+      return hadEntries ? "skipped-all" : "empty";
     },
     redo(): Dynamic {
-      if (flag || flag2) return "applied";
-      let value3: Dynamic = items2.length > 0;
-      for (; items2.length > 0; ) {
-        let value4: Dynamic = items2[items2.length - 1];
-        items2 = items2.slice(0, -1);
+      if (isApplying || isSettling) return "applied";
+      let hadEntries: Dynamic = redoStack.length > 0;
+      for (; redoStack.length > 0; ) {
+        let entry: Dynamic = redoStack[redoStack.length - 1];
+        redoStack = redoStack.slice(0, -1);
         if (
-          value4.atomic
-            ? !callback9(value4, callback6)
-            : !callback7(value4, callback6)
+          entry.atomic
+            ? !isEntryUsable(entry, isRedoable)
+            : !entryMatches(entry, isRedoable)
         ) {
-          if (value4.atomic) {
-            callback8(
-              value4,
+          if (entry.atomic) {
+            reportAtomicRefusal(
+              entry,
               "stale",
               false,
-              callback11(value4, "redo", callback6),
+              entryOutcome(entry, "redo", isRedoable),
             );
-            let value7: Dynamic = callback10(value4, "redo", callback6);
-            if (value7) {
-              items2 = [...items2, value7];
+            let remaining: Dynamic = splitEntry(entry, "redo", isRedoable);
+            if (remaining) {
+              redoStack = [...redoStack, remaining];
               continue;
             }
-            callback15(callback14(value4.parts));
-            callback2();
+            pruneRedoEntries(dropStaleRedoExcept(entry.parts));
+            notifyListeners();
             return "refused-atomic";
           }
           continue;
         }
-        callback();
-        let value5: Dynamic = index2,
-          value6: Dynamic = callback17(value4, "redo", callback6);
-        value4.atomic && index++;
-        callback18(value4, "redo", value6);
-        value4.atomic
-          ? value6
+        markSettling();
+        let epoch: Dynamic = pushCount,
+          applyPromise: Dynamic = applyEntry(entry, "redo", isRedoable);
+        entry.atomic && index++;
+        notifyBoundApplied(entry, "redo", applyPromise);
+        entry.atomic
+          ? applyPromise
               .catch((): Dynamic => false)
-              .then((input2?: Dynamic): Dynamic => {
+              .then((didApply?: Dynamic): Dynamic => {
                 index--;
-                input2
-                  ? index2 === value5
-                    ? (items = [...items, value4].slice(-50))
-                    : callback8(value4, "stale", false, "nothing")
-                  : index2 === value5
-                    ? ((items2 = [...items2, value4].slice(-50)),
-                      callback8(value4, "failed"))
-                    : callback8(value4, "stale", false, "nothing");
-                callback2();
+                didApply
+                  ? pushCount === epoch
+                    ? (undoStack = [...undoStack, entry].slice(-50))
+                    : reportAtomicRefusal(entry, "stale", false, "nothing")
+                  : pushCount === epoch
+                    ? ((redoStack = [...redoStack, entry].slice(-50)),
+                      reportAtomicRefusal(entry, "failed"))
+                    : reportAtomicRefusal(entry, "stale", false, "nothing");
+                notifyListeners();
               })
-          : (items = [...items, value4].slice(-50));
-        callback2();
+          : (undoStack = [...undoStack, entry].slice(-50));
+        notifyListeners();
         return "applied";
       }
-      callback2();
-      return value3 ? "skipped-all" : "empty";
+      notifyListeners();
+      return hadEntries ? "skipped-all" : "empty";
     },
-    busy: (): Dynamic => flag || index > 0,
-    settle: callback16,
-    staleBound(input2: Dynamic): Dynamic {
-      let value3: Dynamic = input2 === "undo" ? items : items2,
-        value4: Dynamic = value3[value3.length - 1];
-      return value4?.atomic &&
-        !callback9(value4, input2 === "undo" ? callback5 : callback6)
-        ? (value4.bound ?? null)
+    busy: (): Dynamic => isApplying || index > 0,
+    settle: trimStaleEntries,
+    staleBound(direction: Dynamic): Dynamic {
+      let stack: Dynamic = direction === "undo" ? undoStack : redoStack,
+        topEntry: Dynamic = stack[stack.length - 1];
+      return topEntry?.atomic &&
+        !isEntryUsable(topEntry, direction === "undo" ? isUndoable : isRedoable)
+        ? (topEntry.bound ?? null)
         : null;
     },
-    headBound(input2: Dynamic): Dynamic {
-      callback16();
-      let value3: Dynamic = input2 === "undo" ? items : items2;
-      return value3[value3.length - 1]?.bound ?? null;
+    headBound(direction: Dynamic): Dynamic {
+      trimStaleEntries();
+      let stack: Dynamic = direction === "undo" ? undoStack : redoStack;
+      return stack[stack.length - 1]?.bound ?? null;
     },
-    forget(input2: Dynamic): Dynamic {
-      let items3: Dynamic = [],
-        callback19: Dynamic = (
-          input3?: Dynamic,
-          options?: Dynamic,
+    forget(file: Dynamic): Dynamic {
+      let staleRedoParts: Dynamic = [],
+        dropFile: Dynamic = (
+          entries?: Dynamic,
+          direction?: Dynamic,
         ): Dynamic => {
-          for (let value3 of input3 as Dynamic)
+          for (let entry of entries as Dynamic)
             if (
-              value3.atomic &&
-              value3.parts.some(
-                (input4?: Dynamic): Dynamic => input4.file === input2,
+              entry.atomic &&
+              entry.parts.some(
+                (part?: Dynamic): Dynamic => part.file === file,
               )
             ) {
-              let value4: Dynamic = callback10(
-                  value3,
-                  options,
-                  (input4?: Dynamic): Dynamic => input4.file !== input2,
+              let remaining: Dynamic = splitEntry(
+                  entry,
+                  direction,
+                  (part?: Dynamic): Dynamic => part.file !== file,
                 ),
-                value5: Dynamic =
-                  options === "undo"
-                    ? callback12(
-                        value3,
-                        (input4?: Dynamic): Dynamic => input4.file !== input2,
+                holder: Dynamic =
+                  direction === "undo"
+                    ? findHolderPart(
+                        entry,
+                        (part?: Dynamic): Dynamic => part.file !== file,
                       )
                     : undefined;
-              callback8(
-                value3,
+              reportAtomicRefusal(
+                entry,
                 "stale",
                 false,
-                value4
-                  ? options === "undo"
+                remaining
+                  ? direction === "undo"
                     ? "others"
                     : "holder"
                   : "nothing",
-                value5?.file,
+                holder?.file,
               );
-              !value4 &&
-                options === "redo" &&
-                items3.push(...callback14(value3.parts, input2));
-              value5 && input.cutUndo?.(value5.file, callback4(value5));
-              value3.parts = value4?.parts ?? [];
-              delete value3.atomic;
-              delete value3.bound;
-              delete value3.holder;
+              !remaining &&
+                direction === "redo" &&
+                staleRedoParts.push(...dropStaleRedoExcept(entry.parts, file));
+              holder && host.cutUndo?.(holder.file, effectiveDepth(holder));
+              entry.parts = remaining?.parts ?? [];
+              delete entry.atomic;
+              delete entry.bound;
+              delete entry.holder;
             } else
-              value3.parts = value3.parts.filter(
-                (input4?: Dynamic): Dynamic => input4.file !== input2,
+              entry.parts = entry.parts.filter(
+                (part?: Dynamic): Dynamic => part.file !== file,
               );
-          return input3.filter(
-            (input4?: Dynamic): Dynamic => input4.parts.length > 0,
+          return entries.filter(
+            (part?: Dynamic): Dynamic => part.parts.length > 0,
           );
         };
-      items = callback19(items, "undo");
-      items2 = callback19(items2, "redo");
-      callback15(items3);
-      value2?.entry &&
-        value2.entry.parts.length === 0 &&
-        (value2.entry = null);
-      callback2();
+      undoStack = dropFile(undoStack, "undo");
+      redoStack = dropFile(redoStack, "redo");
+      pruneRedoEntries(staleRedoParts);
+      activeGroup?.entry &&
+        activeGroup.entry.parts.length === 0 &&
+        (activeGroup.entry = null);
+      notifyListeners();
     },
     clearRedo(): Dynamic {
-      let value3: Dynamic = items2;
-      return value3.length === 0
+      let savedRedo: Dynamic = redoStack;
+      return savedRedo.length === 0
         ? (): Dynamic => {}
-        : ((items2 = []),
-          callback2(),
+        : ((redoStack = []),
+          notifyListeners(),
           (): Dynamic => {
-            items2.length > 0 || ((items2 = value3), callback2());
+            redoStack.length > 0 || ((redoStack = savedRedo), notifyListeners());
           });
     },
-    subscribe(input2: Dynamic): Dynamic {
-      values.add(input2);
+    subscribe(listener: Dynamic): Dynamic {
+      listeners.add(listener);
       return (): Dynamic => {
-        values.delete(input2);
+        listeners.delete(listener);
       };
     },
   };
 }
-function createSessionHistory(input?: Dynamic): Dynamic {
+function createSessionHistory(host?: Dynamic): Dynamic {
   let entries: Dynamic = new Map(),
     values: Dynamic = new Set(),
-    value: Dynamic,
-    callback: Dynamic = (input2?: Dynamic, options?: Dynamic): Dynamic => {
-      entries.delete(input2) && input.onDrop(input2, options);
+    epoch: Dynamic,
+    dropEntry: Dynamic = (key?: Dynamic, reason?: Dynamic): Dynamic => {
+      entries.delete(key) && host.onDrop(key, reason);
     },
-    callback2: Dynamic = (items?: Dynamic, items2?: Dynamic): Dynamic =>
-      items === items2.entries && items.length === items2.length,
-    callback3: Dynamic = (input2?: Dynamic): Dynamic =>
-      [...input2.undo, ...input2.redo].some(
+    isSameStack: Dynamic = (items?: Dynamic, snapshot?: Dynamic): Dynamic =>
+      items === snapshot.entries && items.length === snapshot.length,
+    hasPropEntries: Dynamic = (state?: Dynamic): Dynamic =>
+      [...state.undo, ...state.redo].some(
         (source?: Dynamic): Dynamic =>
           typeof source != "string" && source.kind === "prop",
       ),
-    callback4: Dynamic = (input2?: Dynamic, options?: Dynamic): Dynamic => {
+    readPropDefault: Dynamic = (propsJson?: Dynamic, propName?: Dynamic): Dynamic => {
       try {
-        return JSON.parse(input2 ?? "")?.[options]?.default;
+        return JSON.parse(propsJson ?? "")?.[propName]?.default;
       } catch {
         return;
       }
     },
-    callback5: Dynamic = (input2?: Dynamic, options?: Dynamic): Dynamic => {
-      let value2: Dynamic = getDcPropsJson(options),
-        values2: Dynamic = new Set();
-      for (let value3 of [...input2.redo].reverse() as Dynamic)
-        if (!(typeof value3 == "string" || value3.kind !== "prop")) {
-          if (value3.before === undefined && !values2.has(value3.prop)) {
-            let value4: Dynamic = callback4(value2, value3.prop);
+    canReplayRedo: Dynamic = (state?: Dynamic, source?: Dynamic): Dynamic => {
+      let currentProps: Dynamic = getDcPropsJson(source),
+        seenProps: Dynamic = new Set();
+      for (let item of [...state.redo].reverse() as Dynamic)
+        if (!(typeof item == "string" || item.kind !== "prop")) {
+          if (item.before === undefined && !seenProps.has(item.prop)) {
+            let currentDefault: Dynamic = readPropDefault(currentProps, item.prop);
             if (
-              typeof value4 != "string" ||
-              value4 !== callback4(value3.base, value3.prop)
+              typeof currentDefault != "string" ||
+              currentDefault !== readPropDefault(item.base, item.prop)
             )
               return false;
           }
-          values2.add(value3.prop);
+          seenProps.add(item.prop);
         }
       return true;
     },
-    callback6: Dynamic = (
-      input2?: Dynamic,
-      options?: Dynamic,
-      context?: Dynamic,
+    compareKeptHistory: Dynamic = (
+      file?: Dynamic,
+      kept?: Dynamic,
+      currentSource?: Dynamic,
     ): Dynamic => {
-      let state: Dynamic = options.state;
-      if (!options.settled) return "unsaved";
+      let state: Dynamic = kept.state;
+      if (!kept.settled) return "unsaved";
       if (state.adoptedMerge) return "merged";
       if (
         state.dirty ||
@@ -1942,217 +1942,217 @@ function createSessionHistory(input?: Dynamic): Dynamic {
         return "unsaved";
       try {
         if (
-          !callback2(state.undo, options.undo) ||
-          !callback2(state.redo, options.redo)
+          !isSameStack(state.undo, kept.undo) ||
+          !isSameStack(state.redo, kept.redo)
         )
           return "stale";
-        if (context === undefined) return "changed";
-        let value2: Dynamic = parseDcHtmlDocument(context);
+        if (currentSource === undefined) return "changed";
+        let parsedDoc: Dynamic = parseDcHtmlDocument(currentSource);
         if (
-          !value2 ||
-          !sameDcTemplate(context, state.src) ||
-          (callback3(state) &&
-            getDcPropsJson(context) !==
+          !parsedDoc ||
+          !sameDcTemplate(currentSource, state.src) ||
+          (hasPropEntries(state) &&
+            getDcPropsJson(currentSource) !==
               getDcPropsJson(state.src))
         )
           return "changed";
-        if (!callback5(state, context)) return "stale";
-        let value3: Dynamic = serializeStableModel(state);
-        return value2.template === value3 ||
-          state.model.rebuild(value2.template).serialize() ===
-            state.model.rebuild(value3).serialize()
+        if (!canReplayRedo(state, currentSource)) return "stale";
+        let stableModel: Dynamic = serializeStableModel(state);
+        return parsedDoc.template === stableModel ||
+          state.model.rebuild(parsedDoc.template).serialize() ===
+            state.model.rebuild(stableModel).serialize()
           ? "same"
           : "changed";
-      } catch (value2: Dynamic) {
+      } catch (error: Dynamic) {
         console.warn(
-          "[history-keeper] could not compare the kept history of " + input2,
-          value2,
+          "[history-keeper] could not compare the kept history of " + file,
+          error,
         );
         return "stale";
       }
     };
   return {
-    setEpoch(input2: Dynamic): Dynamic {
-      value = input2;
+    setEpoch(newEpoch: Dynamic): Dynamic {
+      epoch = newEpoch;
     },
     keep(
-      input2: Dynamic,
-      options: Dynamic,
-      context: Dynamic,
-      value2: Dynamic,
+      file: Dynamic,
+      historyState: Dynamic,
+      loadPromise: Dynamic,
+      keptEpoch: Dynamic,
     ): Dynamic {
       if (
-        entries.has(input2) ||
-        values.has(input2) ||
-        !input.inDocument(input2) ||
-        value2 === undefined ||
-        value2 !== value ||
-        (options.undo.length === 0 && options.redo.length === 0) ||
-        options.adoptedMerge
+        entries.has(file) ||
+        values.has(file) ||
+        !host.inDocument(file) ||
+        keptEpoch === undefined ||
+        keptEpoch !== epoch ||
+        (historyState.undo.length === 0 && historyState.redo.length === 0) ||
+        historyState.adoptedMerge
       )
         return false;
       let state: Dynamic = {
-          state: options,
+          state: historyState,
           undo: {
-            entries: options.undo,
-            length: options.undo.length,
+            entries: historyState.undo,
+            length: historyState.undo.length,
           },
           redo: {
-            entries: options.redo,
-            length: options.redo.length,
+            entries: historyState.redo,
+            length: historyState.redo.length,
           },
-          epoch: value2,
+          epoch: keptEpoch,
           settled: false,
           chain: Promise.resolve(),
           loadStarted: false,
         },
-        callback7: Dynamic = (): Dynamic => {
+        markSettled: Dynamic = (): Dynamic => {
           state.settled = true;
         };
       for (
-        state.chain = context.then(callback7, callback7),
-          entries.set(input2, state);
-        entries.size > CanvasWorkingStateLimit_4;
+        state.chain = loadPromise.then(markSettled, markSettled),
+          entries.set(file, state);
+        entries.size > keptFilesMax;
 
       ) {
-        let value3: Dynamic = [...entries.keys()].find(
-          (input3?: Dynamic): Dynamic =>
-            input3 !== input2 && !input.isProtected(input3),
+        let evictKey: Dynamic = [...entries.keys()].find(
+          (key?: Dynamic): Dynamic =>
+            key !== file && !host.isProtected(key),
         );
-        if (value3 === undefined) {
-          entries.delete(input2);
+        if (evictKey === undefined) {
+          entries.delete(file);
           return false;
         }
-        callback(value3, "cap");
+        dropEntry(evictKey, "cap");
       }
       return true;
     },
-    decline(input2: Dynamic): Dynamic {
-      let entry: Dynamic = entries.get(input2);
-      if (!entry) return input.onDrop(input2, "declined");
+    decline(file: Dynamic): Dynamic {
+      let entry: Dynamic = entries.get(file);
+      if (!entry) return host.onDrop(file, "declined");
       entry.loadStarted = false;
       entry.waitingSince = undefined;
     },
-    holds: (input2?: Dynamic): Dynamic => entries.has(input2),
+    holds: (file?: Dynamic): Dynamic => entries.has(file),
     heldFiles: (): Dynamic => [...entries.keys()],
-    read(input2: Dynamic, options: Dynamic): Dynamic {
-      let value2: Dynamic = entries.get(input2)?.state;
-      return value2
-        ? options === "depth"
-          ? value2.undo.length
-          : options === "redos"
-            ? value2.redo.length
-            : (value2.undoFloor ?? 0)
+    read(file: Dynamic, field: Dynamic): Dynamic {
+      let keptState: Dynamic = entries.get(file)?.state;
+      return keptState
+        ? field === "depth"
+          ? keptState.undo.length
+          : field === "redos"
+            ? keptState.redo.length
+            : (keptState.undoFloor ?? 0)
         : null;
     },
-    peekEpoch: (input2?: Dynamic): Dynamic => entries.get(input2)?.epoch,
-    settledOf: (input2?: Dynamic): Dynamic =>
-      entries.get(input2)?.settled ?? false,
-    whenSettled(input2: Dynamic): Dynamic {
-      let entry: Dynamic = entries.get(input2);
+    peekEpoch: (file?: Dynamic): Dynamic => entries.get(file)?.epoch,
+    settledOf: (file?: Dynamic): Dynamic =>
+      entries.get(file)?.settled ?? false,
+    whenSettled(file: Dynamic): Dynamic {
+      let entry: Dynamic = entries.get(file);
       return entry
-        ? new Promise((input3?: Dynamic): Dynamic => {
-            let value2: Dynamic = setTimeout(
-              (): Dynamic => input3(false),
-              input.writeSettleMs ??
+        ? new Promise((resolve?: Dynamic): Dynamic => {
+            let timerId: Dynamic = setTimeout(
+              (): Dynamic => resolve(false),
+              host.writeSettleMs ??
                 CanvasWorkingStateKEEPFILESMAXWaitsConfig.waits.writeSettleMs,
             );
             entry.chain.then((): Dynamic => {
-              clearTimeout(value2);
-              input3(true);
+              clearTimeout(timerId);
+              resolve(true);
             });
           })
         : Promise.resolve(true);
     },
-    check(input2: Dynamic, options: Dynamic): Dynamic {
-      let entry: Dynamic = entries.get(input2);
-      return entry ? callback6(input2, entry, options) : "gone";
+    check(file: Dynamic, currentSource: Dynamic): Dynamic {
+      let entry: Dynamic = entries.get(file);
+      return entry ? compareKeptHistory(file, entry, currentSource) : "gone";
     },
-    take(input2: Dynamic, options: Dynamic, context: Dynamic): Dynamic {
-      let entry: Dynamic = entries.get(input2);
+    take(file: Dynamic, currentSource: Dynamic, currentEpoch: Dynamic): Dynamic {
+      let entry: Dynamic = entries.get(file);
       if (!entry) return null;
-      let value2: Dynamic = callback6(input2, entry, options),
-        value3: Dynamic =
-          value2 !== "same"
-            ? value2
-            : context !== entry.epoch
+      let comparison: Dynamic = compareKeptHistory(file, entry, currentSource),
+        dropReason: Dynamic =
+          comparison !== "same"
+            ? comparison
+            : currentEpoch !== entry.epoch
               ? "epoch"
               : null;
-      return value3 !== null
-        ? (callback(input2, value3), null)
-        : (entries.delete(input2),
+      return dropReason !== null
+        ? (dropEntry(file, dropReason), null)
+        : (entries.delete(file),
           {
             undo: [...entry.state.undo],
             redo: [...entry.state.redo],
             undoFloor: entry.state.undoFloor ?? 0,
           });
     },
-    drop: callback,
-    taint(input2: Dynamic): Dynamic {
-      for (let value2 of input2 as Dynamic) values.add(value2);
+    drop: dropEntry,
+    taint(files: Dynamic): Dynamic {
+      for (let file of files as Dynamic) values.add(file);
     },
     prune(): Dynamic {
-      for (let value2 of [...entries.keys()] as Dynamic)
-        input.inDocument(value2) || callback(value2, "gone");
+      for (let file of [...entries.keys()] as Dynamic)
+        host.inDocument(file) || dropEntry(file, "gone");
     },
     clearAll(): Dynamic {
-      for (let value2 of [...entries.keys()] as Dynamic)
-        callback(value2, "session");
+      for (let file of [...entries.keys()] as Dynamic)
+        dropEntry(file, "session");
     },
     clearRedo(): Dynamic {
       let items: Dynamic = [],
-        callback7: Dynamic = (
-          input2?: Dynamic,
-          items2?: Dynamic,
+        setRedo: Dynamic = (
+          entry?: Dynamic,
+          redoEntries?: Dynamic,
         ): Dynamic => {
-          input2.state.redo = items2;
-          input2.redo = {
-            entries: items2,
-            length: items2.length,
+          entry.state.redo = redoEntries;
+          entry.redo = {
+            entries: redoEntries,
+            length: redoEntries.length,
           };
         };
-      for (let [value2, value3] of entries as Dynamic)
-        value3.state.redo.length === 0 ||
-          !callback2(value3.state.redo, value3.redo) ||
-          (items.push([value2, value3, value3.state.redo]),
-          callback7(value3, []));
+      for (let [file, entry] of entries as Dynamic)
+        entry.state.redo.length === 0 ||
+          !isSameStack(entry.state.redo, entry.redo) ||
+          (items.push([file, entry, entry.state.redo]),
+          setRedo(entry, []));
       return (): Dynamic => {
-        for (let [value2, value3, value4] of items as Dynamic)
-          entries.get(value2) === value3 &&
-            callback2(value3.state.redo, value3.redo) &&
-            value3.state.redo.length === 0 &&
-            callback7(value3, value4);
+        for (let [file, entry, savedRedo] of items as Dynamic)
+          entries.get(file) === entry &&
+            isSameStack(entry.state.redo, entry.redo) &&
+            entry.state.redo.length === 0 &&
+            setRedo(entry, savedRedo);
       };
     },
-    noteAbsorbed(input2: Dynamic): Dynamic {
-      let entry: Dynamic = entries.get(input2);
-      entry && (entry.waitingSince ??= input.now());
+    noteAbsorbed(file: Dynamic): Dynamic {
+      let entry: Dynamic = entries.get(file);
+      entry && (entry.waitingSince ??= host.now());
     },
-    noteLoadStart(input2: Dynamic): Dynamic {
-      let entry: Dynamic = entries.get(input2);
+    noteLoadStart(file: Dynamic): Dynamic {
+      let entry: Dynamic = entries.get(file);
       entry &&
-        ((entry.loadStarted = true), (entry.waitingSince ??= input.now()));
+        ((entry.loadStarted = true), (entry.waitingSince ??= host.now()));
     },
-    loadStarted: (input2?: Dynamic): Dynamic =>
-      entries.get(input2)?.loadStarted ?? false,
-    waitedTooLong(input2: Dynamic): Dynamic {
-      let value2: Dynamic = entries.get(input2)?.waitingSince;
+    loadStarted: (file?: Dynamic): Dynamic =>
+      entries.get(file)?.loadStarted ?? false,
+    waitedTooLong(file: Dynamic): Dynamic {
+      let waitingSince: Dynamic = entries.get(file)?.waitingSince;
       return (
-        value2 !== undefined &&
-        input.now() - value2 >
+        waitingSince !== undefined &&
+        host.now() - waitingSince >
           CanvasWorkingStateKEEPFILESMAXWaitsConfig.waits.loadLimitMs
       );
     },
   };
 }
 function textEditHistoryEpoch(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  isEditing?: Dynamic,
+  keepsEpoch?: Dynamic,
+  epoch?: Dynamic,
 ): Dynamic {
-  return input
+  return isEditing
     ? {
-        epoch: options ? context : undefined,
+        epoch: keepsEpoch ? epoch : undefined,
         clear: false,
       }
     : {
@@ -2161,173 +2161,173 @@ function textEditHistoryEpoch(
       };
 }
 function createInlineHistoryBridge(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  canvasHistory?: Dynamic,
+  keptHistory?: Dynamic,
+  page?: Dynamic,
 ): Dynamic {
-  let flag: Dynamic = false,
-    flag2: Dynamic = false,
-    callback: Dynamic = (input2?: Dynamic): Dynamic => {
-      let value: Dynamic = input2 === "undo" ? input.undo() : input.redo();
-      value === "applied" &&
-        ((flag = true),
+  let justApplied: Dynamic = false,
+    isSwitching: Dynamic = false,
+    stepCanvasHistory: Dynamic = (direction?: Dynamic): Dynamic => {
+      let status: Dynamic = direction === "undo" ? canvasHistory.undo() : canvasHistory.redo();
+      status === "applied" &&
+        ((justApplied = true),
         queueMicrotask((): Dynamic => {
-          flag = false;
+          justApplied = false;
         }));
-      return value;
+      return status;
     },
-    callback2: Dynamic = (input2?: Dynamic): Dynamic =>
-      input2 === "undo" ? input.undoFile() : input.redoFile(),
-    callback3: Dynamic = (input2?: Dynamic): Dynamic => {
-      if (!context.inDocument(input2)) return "gone";
-      let value: Dynamic = options.check(input2, context.currentSrc(input2));
-      return value === "same" ? null : value;
+    peekFile: Dynamic = (direction?: Dynamic): Dynamic =>
+      direction === "undo" ? canvasHistory.undoFile() : canvasHistory.redoFile(),
+    checkKept: Dynamic = (file?: Dynamic): Dynamic => {
+      if (!page.inDocument(file)) return "gone";
+      let verdict: Dynamic = keptHistory.check(file, page.currentSrc(file));
+      return verdict === "same" ? null : verdict;
     },
-    callback4: Dynamic = (
-      input2?: Dynamic,
-      options2?: Dynamic,
-      context2?: Dynamic,
+    scheduleFirstPress: Dynamic = (
+      direction?: Dynamic,
+      file?: Dynamic,
+      openPage?: Dynamic,
     ): Dynamic => {
-      flag2 = true;
-      context.afterExitGuard((): Dynamic => {
-        flag2 = false;
-        let value: Dynamic = context.pageOfFile(options2);
-        !context.mayShowPage() ||
-          context.openPage() !== context2 ||
-          callback2(input2) !== options2 ||
-          !options.holds(options2) ||
-          value === undefined ||
-          !context.inDocument(options2) ||
-          (context.switchPage(
-            value,
-            context.isFramed(options2) ? options2 : undefined,
+      isSwitching = true;
+      page.afterExitGuard((): Dynamic => {
+        isSwitching = false;
+        let targetPage: Dynamic = page.pageOfFile(file);
+        !page.mayShowPage() ||
+          page.openPage() !== openPage ||
+          peekFile(direction) !== file ||
+          !keptHistory.holds(file) ||
+          targetPage === undefined ||
+          !page.inDocument(file) ||
+          (page.switchPage(
+            targetPage,
+            page.isFramed(file) ? file : undefined,
           ),
-          context.say({
+          page.say({
             kind: "first-press",
-            dir: input2,
-            file: options2,
-            page: value,
+            dir: direction,
+            file: file,
+            page: targetPage,
           }));
       });
     },
-    callback5: Dynamic = (input2?: Dynamic): Dynamic => {
-      if (flag) return "applied";
+    stepHistory: Dynamic = (direction?: Dynamic): Dynamic => {
+      if (justApplied) return "applied";
       for (;;) {
-        let value: Dynamic = callback2(input2);
-        if (value === null || !options.holds(value)) return callback(input2);
-        if (!context.inDocument(value)) {
-          options.drop(value, "gone");
-          input.forget(value);
+        let nextFile: Dynamic = peekFile(direction);
+        if (nextFile === null || !keptHistory.holds(nextFile)) return stepCanvasHistory(direction);
+        if (!page.inDocument(nextFile)) {
+          keptHistory.drop(nextFile, "gone");
+          canvasHistory.forget(nextFile);
           continue;
         }
-        let value2: Dynamic = context.openPage();
-        if (context.pageOfFile(value) === value2) {
-          options.waitedTooLong(value)
-            ? options.drop(value, "load")
-            : (options.noteAbsorbed(value),
-              context.startLoad(value),
-              context.say({
+        let openPage: Dynamic = page.openPage();
+        if (page.pageOfFile(nextFile) === openPage) {
+          keptHistory.waitedTooLong(nextFile)
+            ? keptHistory.drop(nextFile, "load")
+            : (keptHistory.noteAbsorbed(nextFile),
+              page.startLoad(nextFile),
+              page.say({
                 kind: "loading",
-                dir: input2,
-                file: value,
+                dir: direction,
+                file: nextFile,
               }));
           return "deferred";
         }
-        if (flag2 || !context.mayShowPage()) return "deferred";
-        let value3: Dynamic = options.settledOf(value)
-          ? callback3(value)
+        if (isSwitching || !page.mayShowPage()) return "deferred";
+        let staleReason: Dynamic = keptHistory.settledOf(nextFile)
+          ? checkKept(nextFile)
           : null;
-        if (value3 !== null) {
-          options.drop(value, value3);
-          for (let value4 of options.heldFiles() as Dynamic) {
-            let value5: Dynamic = options.settledOf(value4)
-              ? callback3(value4)
+        if (staleReason !== null) {
+          keptHistory.drop(nextFile, staleReason);
+          for (let heldFile of keptHistory.heldFiles() as Dynamic) {
+            let heldReason: Dynamic = keptHistory.settledOf(heldFile)
+              ? checkKept(heldFile)
               : null;
-            value5 !== null && options.drop(value4, value5);
+            heldReason !== null && keptHistory.drop(heldFile, heldReason);
           }
           return "deferred";
         }
-        callback4(input2, value, value2);
+        scheduleFirstPress(direction, nextFile, openPage);
         return "deferred";
       }
     };
   return {
-    ...input,
-    group(input2: Dynamic, options2: Dynamic): Dynamic {
-      let items: Dynamic = [...input2];
+    ...canvasHistory,
+    group(files: Dynamic, groupOptions: Dynamic): Dynamic {
+      let items: Dynamic = [...files];
       (items.length > 1 ||
-        options2?.bound !== undefined ||
-        options2?.atomic) &&
-        options.taint(items);
-      return input.group(items, options2);
+        groupOptions?.bound !== undefined ||
+        groupOptions?.atomic) &&
+        keptHistory.taint(items);
+      return canvasHistory.group(items, groupOptions);
     },
-    reportPush(input2: Dynamic): Dynamic {
-      options.holds(input2) || input.reportPush(input2);
+    reportPush(file: Dynamic): Dynamic {
+      keptHistory.holds(file) || canvasHistory.reportPush(file);
     },
-    undo: (): Dynamic => callback5("undo"),
-    redo: (): Dynamic => callback5("redo"),
+    undo: (): Dynamic => stepHistory("undo"),
+    redo: (): Dynamic => stepHistory("redo"),
   };
 }
 function recordSessionLoadStart(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  session?: Dynamic,
+  file?: Dynamic,
+  startLoad?: Dynamic,
 ): Dynamic {
-  !context ||
-    input.loadStarted(options) ||
-    (input.noteLoadStart(options), context());
+  !startLoad ||
+    session.loadStarted(file) ||
+    (session.noteLoadStart(file), startLoad());
 }
 function readHeldSessionState(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
-  extra?: Dynamic,
+  session?: Dynamic,
+  isReady?: Dynamic,
+  file?: Dynamic,
+  field?: Dynamic,
+  fallback?: Dynamic,
 ): Dynamic {
-  return input.holds(context)
-    ? options(context)
-      ? input.read(context, value)
+  return session.holds(file)
+    ? isReady(file)
+      ? session.read(file, field)
       : null
-    : extra();
+    : fallback();
 }
 function updateTextEditHistoryCounts(
-  input?: Dynamic,
-  options?: Dynamic,
+  counts?: Dynamic,
+  action?: Dynamic,
 ): Dynamic {
-  input.counts &&
-    (options === "push"
-      ? ((input.redoableBeforePush = input.redoable),
-        (input.applied += 1),
-        (input.redoable = 0))
-      : options === "revoke"
-        ? input.applied > 0 &&
-          ((input.applied -= 1), (input.redoable = input.redoableBeforePush))
-        : options === "undo"
-          ? input.applied > 0 && ((input.applied -= 1), (input.redoable += 1))
-          : options === "redo"
-            ? input.redoable > 0 &&
-              ((input.redoable -= 1), (input.applied += 1))
-            : options === "drop-undo"
-              ? input.applied > 0 && (input.applied -= 1)
-              : options === "clear-redo"
-                ? ((input.redoable = 0), (input.redoableBeforePush = 0))
-                : options === "drop-redo" &&
-                  input.redoable > 0 &&
-                  (input.redoable -= 1));
+  counts.counts &&
+    (action === "push"
+      ? ((counts.redoableBeforePush = counts.redoable),
+        (counts.applied += 1),
+        (counts.redoable = 0))
+      : action === "revoke"
+        ? counts.applied > 0 &&
+          ((counts.applied -= 1), (counts.redoable = counts.redoableBeforePush))
+        : action === "undo"
+          ? counts.applied > 0 && ((counts.applied -= 1), (counts.redoable += 1))
+          : action === "redo"
+            ? counts.redoable > 0 &&
+              ((counts.redoable -= 1), (counts.applied += 1))
+            : action === "drop-undo"
+              ? counts.applied > 0 && (counts.applied -= 1)
+              : action === "clear-redo"
+                ? ((counts.redoable = 0), (counts.redoableBeforePush = 0))
+                : action === "drop-redo" &&
+                  counts.redoable > 0 &&
+                  (counts.redoable -= 1));
 }
 function canApplyTextEditHistory(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value: Dynamic = null,
+  counts?: Dynamic,
+  direction?: Dynamic,
+  liveDepth?: Dynamic,
+  canvasStep: Dynamic = null,
 ): Dynamic {
-  return value !== null
-    ? input.counts && value.duringTextEdit === input
-    : ((context === null || context < input.applied) &&
-        ((input.applied = 0),
-        (input.redoable = 0),
-        (input.redoableBeforePush = 0)),
-      options === "undo" ? input.applied > 0 : input.redoable > 0);
+  return canvasStep !== null
+    ? counts.counts && canvasStep.duringTextEdit === counts
+    : ((liveDepth === null || liveDepth < counts.applied) &&
+        ((counts.applied = 0),
+        (counts.redoable = 0),
+        (counts.redoableBeforePush = 0)),
+      direction === "undo" ? counts.applied > 0 : counts.redoable > 0);
 }
 function stepInlineHistory({
   blocked: blocked,
@@ -2354,191 +2354,191 @@ function stepInlineHistory({
     }
     pending.current = true;
     return (async (): Promise<Dynamic> => {
-      let flag: Dynamic = false;
+      let didCommit: Dynamic = false;
       try {
-        flag = await textEdit.commit();
-      } catch (value: Dynamic) {
+        didCommit = await textEdit.commit();
+      } catch (error: Dynamic) {
         console.error(
           "[design/undo] could not commit the open text edit before undo or redo; nothing was undone or redone:",
-          value,
+          error,
         );
       } finally {
         pending.current = false;
       }
-      flag === true && !blocked() && stillOk() && step();
+      didCommit === true && !blocked() && stillOk() && step();
     })();
   }
 }
-function handleInlineUndoKey(input?: Dynamic, options?: Dynamic): Dynamic {
+function handleInlineUndoKey(event?: Dynamic, state?: Dynamic): Dynamic {
   if (
-    !(input.metaKey || input.ctrlKey) ||
-    typeof input.key != "string" ||
-    input.key.toLowerCase() !== "z" ||
-    input.defaultPrevented ||
-    !options.editing ||
-    options.filesOpen ||
-    (!options.textEditOpen && !options.pending) ||
-    options.targetOwnsKey()
+    !(event.metaKey || event.ctrlKey) ||
+    typeof event.key != "string" ||
+    event.key.toLowerCase() !== "z" ||
+    event.defaultPrevented ||
+    !state.editing ||
+    state.filesOpen ||
+    (!state.textEditOpen && !state.pending) ||
+    state.targetOwnsKey()
   )
     return "ignore";
-  if (options.pending) return "drop";
-  let value: Dynamic = input.shiftKey ? "redo" : "undo";
-  return input.repeat && options.canvasStepOnTop(value)
+  if (state.pending) return "drop";
+  let direction: Dynamic = event.shiftKey ? "redo" : "undo";
+  return event.repeat && state.canvasStepOnTop(direction)
     ? "drop"
-    : options.stepMadeDuringEdit(value)
+    : state.stepMadeDuringEdit(direction)
       ? "ignore"
-      : input.repeat
+      : event.repeat
         ? "drop"
-        : value;
+        : direction;
 }
 function hasMultipleEditingGroups(
-  input?: Dynamic,
-  options?: Dynamic,
+  groups?: Dynamic,
+  extraCount?: Dynamic,
 ): Dynamic {
-  let length: Dynamic = Object.values(input ?? {}).filter(
-    (items?: Dynamic): Dynamic => items.length > 0,
+  let length: Dynamic = Object.values(groups ?? {}).filter(
+    (group?: Dynamic): Dynamic => group.length > 0,
   ).length;
-  return length >= 2 || (length >= 1 && options >= 1);
+  return length >= 2 || (length >= 1 && extraCount >= 1);
 }
-function sessionAllowsMutation(input?: Dynamic): Dynamic {
-  return !input.gesturing && input.setMoveCommits <= 0;
+function sessionAllowsMutation(session?: Dynamic): Dynamic {
+  return !session.gesturing && session.setMoveCommits <= 0;
 }
-function pointerDelta(input?: Dynamic, options?: Dynamic): Dynamic {
+function pointerDelta(point?: Dynamic, origin?: Dynamic): Dynamic {
   return {
-    x: input.x - options.x,
-    y: input.y - options.y,
+    x: point.x - origin.x,
+    y: point.y - origin.y,
   };
 }
-function createElementMoveSessions(input?: Dynamic): Dynamic {
-  let value: Dynamic = null,
-    callback: Dynamic = (input2?: Dynamic, options?: Dynamic): Dynamic => {
-      if (!options.pure || options.canvas) return;
-      let value4: Dynamic = (options.opened ?? Promise.resolve(true))
+function createElementMoveSessions(host?: Dynamic): Dynamic {
+  let activeMove: Dynamic = null,
+    closeTarget: Dynamic = (move?: Dynamic, target?: Dynamic): Dynamic => {
+      if (!target.pure || target.canvas) return;
+      let closePromise: Dynamic = (target.opened ?? Promise.resolve(true))
         .then(
           (): Dynamic =>
-            input.handle(options.file)?.moveHost(input2.key, "close"),
+            host.handle(target.file)?.moveHost(move.key, "close"),
         )
         .catch((): Dynamic => false);
-      input2.closing.set(options.file, value4);
+      move.closing.set(target.file, closePromise);
     },
-    callback2: Dynamic = (event?: Dynamic): Dynamic => {
+    cancelMove: Dynamic = (event?: Dynamic): Dynamic => {
       let target: Dynamic = event.target;
       target &&
-        (input.handle(target.file)?.dropPlanClear(event.key),
-        callback(event, target),
+        (host.handle(target.file)?.dropPlanClear(event.key),
+        closeTarget(event, target),
         (event.target = null));
-      for (let [value4, value5] of event.files as Dynamic)
-        value5.started && input.handle(value4)?.moveCancel(event.key);
+      for (let [file, fileState] of event.files as Dynamic)
+        fileState.started && host.handle(file)?.moveCancel(event.key);
       event.live &&
         !event.canvasCommitted &&
         (event.canvas.files.size > 0 || event.canvas.notes.size > 0) &&
-        input.canvas.cancel(event.key, event.pointerId);
+        host.canvas.cancel(event.key, event.pointerId);
       event.committed = true;
-      value3 === event && (value3 = null);
-      callback3(event);
+      releasedMove === event && (releasedMove = null);
+      finishMove(event);
     },
-    callback3: Dynamic = (input2?: Dynamic): Dynamic => {
-      let value4: Dynamic = input2 ?? value;
-      if (!value4) return;
-      let value5: Dynamic = value === value4;
-      value5 && (value = null);
-      value4.done = true;
-      value4.off();
-      clearInterval(value4.keepalive);
-      for (let value6 of value4.files.values() as Dynamic)
-        value6.raf && cancelAnimationFrame(value6.raf);
-      input.showGhost(null);
-      if (!!value5) {
-        input.setGestureSource("set-move", false);
-        input.setHeldCover(null);
+    finishMove: Dynamic = (explicitMove?: Dynamic): Dynamic => {
+      let move: Dynamic = explicitMove ?? activeMove;
+      if (!move) return;
+      let isActive: Dynamic = activeMove === move;
+      isActive && (activeMove = null);
+      move.done = true;
+      move.off();
+      clearInterval(move.keepalive);
+      for (let fileState of move.files.values() as Dynamic)
+        fileState.raf && cancelAnimationFrame(fileState.raf);
+      host.showGhost(null);
+      if (!!isActive) {
+        host.setGestureSource("set-move", false);
+        host.setHeldCover(null);
         try {
-          value4.captureEl?.releasePointerCapture(value4.pointerId);
+          move.captureEl?.releasePointerCapture(move.pointerId);
         } catch {}
       }
     },
-    callback4: Dynamic = (): Dynamic => {
-      !value || value.releasing || callback2(value);
+    cancelActive: Dynamic = (): Dynamic => {
+      !activeMove || activeMove.releasing || cancelMove(activeMove);
     },
-    callback5: Dynamic = async (input2?: Dynamic): Promise<Dynamic> => {
-      let value4: Dynamic = input.canvasPoint(
-        input2.press.clientX,
-        input2.press.clientY,
+    startFileMoves: Dynamic = async (move?: Dynamic): Promise<Dynamic> => {
+      let pressPoint: Dynamic = host.canvasPoint(
+        move.press.clientX,
+        move.press.clientY,
       );
       await Promise.all(
-        [...input2.files].map(
-          async ([input3, input4]: Dynamic): Promise<Dynamic> => {
-            let value5: Dynamic = input.handle(input3),
-              value6: Dynamic = input.origin(input3),
-              value7: Dynamic =
-                "file" in input2.leader && input2.leader.file === input3,
-              value8: Dynamic =
-                value7 && "tid" in input2.leader
-                  ? input2.leader.tid
-                  : input4.tids[0];
+        [...move.files].map(
+          async ([file, fileState]: Dynamic): Promise<Dynamic> => {
+            let fileHandle: Dynamic = host.handle(file),
+              origin: Dynamic = host.origin(file),
+              isLeader: Dynamic =
+                "file" in move.leader && move.leader.file === file,
+              leaderTid: Dynamic =
+                isLeader && "tid" in move.leader
+                  ? move.leader.tid
+                  : fileState.tids[0];
             if (
-              !value5 ||
-              !value6 ||
-              !value5.isReady() ||
-              value8 === undefined
+              !fileHandle ||
+              !origin ||
+              !fileHandle.isReady() ||
+              leaderTid === undefined
             ) {
-              input2.dropped.push(input3);
+              move.dropped.push(file);
               return;
             }
-            let value9: Dynamic = value7
-                ? pointerDelta(value4, value6)
+            let grabOffset: Dynamic = isLeader
+                ? pointerDelta(pressPoint, origin)
                 : null,
-              value10: Dynamic = await value5
+              startResult: Dynamic = await fileHandle
                 .moveStart(
-                  input2.key,
-                  value8,
-                  value9,
-                  input2.last.mods,
-                  input4.tids,
+                  move.key,
+                  leaderTid,
+                  grabOffset,
+                  move.last.mods,
+                  fileState.tids,
                 )
                 .catch((): Dynamic => null);
-            if (!value10) {
-              input2.dropped.push(input3);
+            if (!startResult) {
+              move.dropped.push(file);
               return;
             }
-            if (input2.done) {
-              value5.moveCancel(input2.key);
+            if (move.done) {
+              fileHandle.moveCancel(move.key);
               return;
             }
-            if (!value7 && value10.tids.length < input4.tids.length) {
-              value5.moveCancel(input2.key);
-              input2.dropped.push(input3);
+            if (!isLeader && startResult.tids.length < fileState.tids.length) {
+              fileHandle.moveCancel(move.key);
+              move.dropped.push(file);
               return;
             }
-            input4.started = true;
-            input4.tids = value10.tids;
-            input4.members = value10.members ?? [];
-            input4.anchor = value9 ?? {
-              x: value10.rect.x + value10.rect.w / 2,
-              y: value10.rect.y + value10.rect.h / 2,
+            fileState.started = true;
+            fileState.tids = startResult.tids;
+            fileState.members = startResult.members ?? [];
+            fileState.anchor = grabOffset ?? {
+              x: startResult.rect.x + startResult.rect.w / 2,
+              y: startResult.rect.y + startResult.rect.h / 2,
             };
-            callback9(input2);
+            updateMove(move);
           },
         ),
       );
     },
-    callback6: Dynamic = (event?: Dynamic): Dynamic => {
-      let value4: Dynamic = input.targetAt(
+    updateTarget: Dynamic = (event?: Dynamic): Dynamic => {
+      let hit: Dynamic = host.targetAt(
         event.last.clientX,
         event.last.clientY,
       );
-      event.blockedTarget = value4?.blocked ? value4.file : null;
-      let value5: Dynamic = value4?.blocked ? null : value4,
-        value6: Dynamic = value5
-          ? event.files.get(value5.file)?.started
+      event.blockedTarget = hit?.blocked ? hit.file : null;
+      let allowedHit: Dynamic = hit?.blocked ? null : hit,
+        nextTarget: Dynamic = allowedHit
+          ? event.files.get(allowedHit.file)?.started
             ? {
-                file: value5.file,
+                file: allowedHit.file,
                 pure: false,
               }
             : {
-                file: value5.file,
+                file: allowedHit.file,
                 pure: true,
               }
-          : !value4 && event.files.size > 0 && input.piecesAllowed()
+          : !hit && event.files.size > 0 && host.piecesAllowed()
             ? {
                 file: CanvasValue,
                 pure: true,
@@ -2547,110 +2547,110 @@ function createElementMoveSessions(input?: Dynamic): Dynamic {
             : null,
         target: Dynamic = event.target;
       target &&
-        (!value6 || value6.file !== target.file) &&
-        (target.canvas || input.handle(target.file)?.dropPlanClear(event.key),
-        callback(event, target),
+        (!nextTarget || nextTarget.file !== target.file) &&
+        (target.canvas || host.handle(target.file)?.dropPlanClear(event.key),
+        closeTarget(event, target),
         (event.dropPlan = null));
-      if (value6 && (!target || target.file !== value6.file)) {
-        let value9: Dynamic =
-          value6.pure && !value6.canvas
-            ? (event.closing.get(value6.file) ?? Promise.resolve()).then(
+      if (nextTarget && (!target || target.file !== nextTarget.file)) {
+        let openPromise: Dynamic =
+          nextTarget.pure && !nextTarget.canvas
+            ? (event.closing.get(nextTarget.file) ?? Promise.resolve()).then(
                 (): Dynamic =>
-                  input.handle(value6.file)?.moveHost(event.key, "open") ??
+                  host.handle(nextTarget.file)?.moveHost(event.key, "open") ??
                   false,
               )
             : null;
         event.target = {
-          ...value6,
-          opened: value9,
+          ...nextTarget,
+          opened: openPromise,
         };
-      } else value6 || (event.target = null);
-      let value7: Dynamic = input.canvasPoint(
+      } else nextTarget || (event.target = null);
+      let pointerPoint: Dynamic = host.canvasPoint(
           event.last.clientX,
           event.last.clientY,
         ),
-        value8: Dynamic = input.canvasPoint(
+        pressPoint: Dynamic = host.canvasPoint(
           event.press.clientX,
           event.press.clientY,
         );
-      for (let [value9, value10] of event.files as Dynamic) {
-        if (!value10.started) continue;
-        let callback12: Dynamic = (): Dynamic => {
-            let value12: Dynamic = input.origin(value9),
-              value13: Dynamic = input.bounds(value9);
-            if (!value12 || !value13) return true;
-            let callback13: Dynamic = (
-              input2?: Dynamic,
-              options?: Dynamic,
+      for (let [file, fileState] of event.files as Dynamic) {
+        if (!fileState.started) continue;
+        let isOutsideSource: Dynamic = (): Dynamic => {
+            let origin: Dynamic = host.origin(file),
+              bounds: Dynamic = host.bounds(file);
+            if (!origin || !bounds) return true;
+            let isInBounds: Dynamic = (
+              x?: Dynamic,
+              y?: Dynamic,
             ): Dynamic =>
-              input2 >= value13.x &&
-              options >= value13.y &&
-              input2 <= value13.x + value13.w &&
-              options <= value13.y + value13.h;
-            return value10.members.some((input2?: Dynamic): Dynamic => {
-              let value14: Dynamic =
-                  value12.x + input2.rect.x + input2.rect.w / 2,
-                value15: Dynamic =
-                  value12.y + input2.rect.y + input2.rect.h / 2;
+              x >= bounds.x &&
+              y >= bounds.y &&
+              x <= bounds.x + bounds.w &&
+              y <= bounds.y + bounds.h;
+            return fileState.members.some((member?: Dynamic): Dynamic => {
+              let centerX: Dynamic =
+                  origin.x + member.rect.x + member.rect.w / 2,
+                centerY: Dynamic =
+                  origin.y + member.rect.y + member.rect.h / 2;
               return (
-                callback13(value14, value15) &&
-                !callback13(
-                  value14 + (value7.x - value8.x),
-                  value15 + (value7.y - value8.y),
+                isInBounds(centerX, centerY) &&
+                !isInBounds(
+                  centerX + (pointerPoint.x - pressPoint.x),
+                  centerY + (pointerPoint.y - pressPoint.y),
                 )
               );
             });
           },
-          value11: Dynamic =
-            value6 != null &&
-            (value6.canvas
-              ? event.last.alt || callback12()
-              : value6.file !== value9 || event.last.alt);
-        value11 && !value10.travelling
-          ? ((value10.travelling = true),
-            input.handle(value9)?.moveExit(event.key))
-          : !value11 &&
-            value10.travelling &&
-            ((value10.travelling = false),
-            input.handle(value9)?.moveReturn(event.key));
+          shouldTravel: Dynamic =
+            nextTarget != null &&
+            (nextTarget.canvas
+              ? event.last.alt || isOutsideSource()
+              : nextTarget.file !== file || event.last.alt);
+        shouldTravel && !fileState.travelling
+          ? ((fileState.travelling = true),
+            host.handle(file)?.moveExit(event.key))
+          : !shouldTravel &&
+            fileState.travelling &&
+            ((fileState.travelling = false),
+            host.handle(file)?.moveReturn(event.key));
       }
     },
-    callback7: Dynamic = (input2?: Dynamic): Dynamic => {
-      let value4: Dynamic = input.canvasPoint(
-          input2.press.clientX,
-          input2.press.clientY,
+    collectTravellers: Dynamic = (move?: Dynamic): Dynamic => {
+      let pressPoint: Dynamic = host.canvasPoint(
+          move.press.clientX,
+          move.press.clientY,
         ),
         items: Dynamic = [],
-        items2: Dynamic = [];
-      for (let [value5, value6] of input2.files as Dynamic) {
-        if (!value6.travelling) continue;
-        let value7: Dynamic = input.origin(value5);
-        if (value7)
-          for (let value8 of value6.members as Dynamic) {
+        memberMap: Dynamic = [];
+      for (let [file, fileState] of move.files as Dynamic) {
+        if (!fileState.travelling) continue;
+        let origin: Dynamic = host.origin(file);
+        if (origin)
+          for (let member of fileState.members as Dynamic) {
             let length: Dynamic = items.length;
             items.push({
               tid: length,
-              tag: value8.tag,
-              w: value8.rect.w,
-              h: value8.rect.h,
-              dx: value7.x + value8.rect.x - value4.x,
-              dy: value7.y + value8.rect.y - value4.y,
+              tag: member.tag,
+              w: member.rect.w,
+              h: member.rect.h,
+              dx: origin.x + member.rect.x - pressPoint.x,
+              dy: origin.y + member.rect.y - pressPoint.y,
             });
-            items2.push({
-              file: value5,
-              tid: value8.tid,
+            memberMap.push({
+              file: file,
+              tid: member.tid,
               index: length,
             });
           }
       }
       return {
         members: items,
-        map: items2,
+        map: memberMap,
       };
     },
-    callback8: Dynamic = (
+    planDrop: Dynamic = (
       event?: Dynamic,
-      options: Dynamic = false,
+      isForced: Dynamic = false,
     ): Dynamic => {
       let target: Dynamic = event.target;
       if (!target || target.canvas) return null;
@@ -2658,38 +2658,38 @@ function createElementMoveSessions(input?: Dynamic): Dynamic {
         event.planPending = true;
         return event.planInFlight;
       }
-      let { members: value4, map: value5 }: Dynamic = callback7(event);
-      if (value4.length === 0) return null;
-      let value6: Dynamic = input.origin(target.file),
-        value7: Dynamic = input.handle(target.file);
-      if (!value6 || !value7) return null;
+      let { members: members, map: memberMap }: Dynamic = collectTravellers(event);
+      if (members.length === 0) return null;
+      let origin: Dynamic = host.origin(target.file),
+        targetHandle: Dynamic = host.handle(target.file);
+      if (!origin || !targetHandle) return null;
       let state: Dynamic = {
           clientX: event.last.clientX,
           clientY: event.last.clientY,
         },
-        value8: Dynamic = CanvasWorkingStateCtrl(event.last.mods),
-        alt2: Dynamic = event.last.alt,
-        value9: Dynamic = pointerDelta(
-          input.canvasPoint(state.clientX, state.clientY),
-          value6,
+        mode: Dynamic = CanvasWorkingStateCtrl(event.last.mods),
+        isAlt: Dynamic = event.last.alt,
+        grabOffset: Dynamic = pointerDelta(
+          host.canvasPoint(state.clientX, state.clientY),
+          origin,
         );
       event.planInFlight = (target.opened ?? Promise.resolve(true))
         .then(
-          (input2?: Dynamic): Dynamic =>
-            input2
-              ? value7.dropPlanAt(event.key, value9, value4, value8)
+          (isOpened?: Dynamic): Dynamic =>
+            isOpened
+              ? targetHandle.dropPlanAt(event.key, grabOffset, members, mode)
               : null,
         )
-        .then((input2?: Dynamic): Dynamic => {
+        .then((plan?: Dynamic): Dynamic => {
           event.target?.file === target.file &&
-            (event.dropPlan = input2
+            (event.dropPlan = plan
               ? {
                   file: target.file,
-                  plan: input2,
-                  members: value5,
+                  plan: plan,
+                  members: memberMap,
                   at: state,
-                  mode: value8,
-                  alt: alt2,
+                  mode: mode,
+                  alt: isAlt,
                 }
               : null);
         })
@@ -2700,44 +2700,44 @@ function createElementMoveSessions(input?: Dynamic): Dynamic {
           event.planInFlight = null;
           event.planPending &&
             !event.done &&
-            !options &&
+            !isForced &&
             !event.releasing &&
-            ((event.planPending = false), callback8(event));
+            ((event.planPending = false), planDrop(event));
         });
       return event.planInFlight;
     },
-    callback9: Dynamic = (event?: Dynamic): Dynamic => {
+    updateMove: Dynamic = (event?: Dynamic): Dynamic => {
       if (event.done) return;
-      callback6(event);
-      let value4: Dynamic = input.canvasPoint(
+      updateTarget(event);
+      let pointer: Dynamic = host.canvasPoint(
           event.last.clientX,
           event.last.clientY,
         ),
-        value5: Dynamic = input.canvasPoint(
+        press: Dynamic = host.canvasPoint(
           event.press.clientX,
           event.press.clientY,
         );
-      for (let [value6, value7] of event.files as Dynamic) {
-        if (!value7.started || !value7.anchor) continue;
-        if (value7.travelling) {
-          input.handle(value6)?.moveTouch(event.key);
+      for (let [file, fileState] of event.files as Dynamic) {
+        if (!fileState.started || !fileState.anchor) continue;
+        if (fileState.travelling) {
+          host.handle(file)?.moveTouch(event.key);
           continue;
         }
         let state: Dynamic = {
-          x: value7.anchor.x + (value4.x - value5.x),
-          y: value7.anchor.y + (value4.y - value5.y),
+          x: fileState.anchor.x + (pointer.x - press.x),
+          y: fileState.anchor.y + (pointer.y - press.y),
         };
-        value7.pending = {
+        fileState.pending = {
           ...state,
           mods: event.last.mods,
         };
-        !value7.raf &&
-          (value7.raf = requestAnimationFrame((): Dynamic => {
-            value7.raf = 0;
-            let pending: Dynamic = value7.pending;
-            value7.pending = null;
+        !fileState.raf &&
+          (fileState.raf = requestAnimationFrame((): Dynamic => {
+            fileState.raf = 0;
+            let pending: Dynamic = fileState.pending;
+            fileState.pending = null;
             !(!pending || event.done) &&
-              input.handle(value6)?.moveMove(
+              host.handle(file)?.moveMove(
                 event.key,
                 {
                   x: pending.x,
@@ -2751,54 +2751,54 @@ function createElementMoveSessions(input?: Dynamic): Dynamic {
         let target: Dynamic = event.target;
         target.pure &&
           (target.opened ?? Promise.resolve(true)).then(
-            (input2?: Dynamic): Dynamic => {
-              input2 &&
+            (isOpened?: Dynamic): Dynamic => {
+              isOpened &&
                 event.target === target &&
                 !event.done &&
-                input.handle(target.file)?.moveTouch(event.key);
+                host.handle(target.file)?.moveTouch(event.key);
             },
           );
-        callback8(event);
-        let { members: value6 }: Dynamic = callback7(event);
-        if (value6.length === 0) input.showGhost(null);
+        planDrop(event);
+        let { members: members }: Dynamic = collectTravellers(event);
+        if (members.length === 0) host.showGhost(null);
         else if (
           CanvasWorkingStateCtrl(event.last.mods) === "keep" ||
           event.target?.canvas
         )
-          input.showGhost(
-            value6.map(
-              (input2?: Dynamic): Dynamic => ({
-                x: value4.x + input2.dx,
-                y: value4.y + input2.dy,
-                w: input2.w,
-                h: input2.h,
+          host.showGhost(
+            members.map(
+              (member?: Dynamic): Dynamic => ({
+                x: pointer.x + member.dx,
+                y: pointer.y + member.dy,
+                w: member.w,
+                h: member.h,
               }),
             ),
           );
         else {
-          let y: Dynamic = value4.y;
-          input.showGhost(
-            value6.map((input2?: Dynamic): Dynamic => {
+          let y: Dynamic = pointer.y;
+          host.showGhost(
+            members.map((member?: Dynamic): Dynamic => {
               let state: Dynamic = {
-                x: value4.x - input2.w / 2,
+                x: pointer.x - member.w / 2,
                 y: y,
-                w: input2.w,
-                h: input2.h,
+                w: member.w,
+                h: member.h,
               };
-              y += input2.h + 8;
+              y += member.h + 8;
               return state;
             }),
           );
         }
-      } else input.showGhost(null);
+      } else host.showGhost(null);
     },
-    callback10: Dynamic = (input2?: Dynamic): Dynamic => {
-      if (!(input2.live || input2.done)) {
-        input2.live = true;
-        if (input2.canvas.files.size > 0 || input2.canvas.notes.size > 0) {
-          let callback12: Dynamic = (): Dynamic => {
-              let [files]: Dynamic = input2.canvas.files,
-                [notes]: Dynamic = input2.canvas.notes;
+    startMove: Dynamic = (move?: Dynamic): Dynamic => {
+      if (!(move.live || move.done)) {
+        move.live = true;
+        if (move.canvas.files.size > 0 || move.canvas.notes.size > 0) {
+          let firstCanvasItem: Dynamic = (): Dynamic => {
+              let [files]: Dynamic = move.canvas.files,
+                [notes]: Dynamic = move.canvas.notes;
               return files !== undefined
                 ? {
                     file: files,
@@ -2807,174 +2807,174 @@ function createElementMoveSessions(input?: Dynamic): Dynamic {
                     note: notes,
                   };
             },
-            value4: Dynamic =
-              "canvas" in input2.leader
-                ? input2.leader.canvas
-                : "file" in input2.leader
+            leader: Dynamic =
+              "canvas" in move.leader
+                ? move.leader.canvas
+                : "file" in move.leader
                   ? {
-                      file: input2.leader.file,
+                      file: move.leader.file,
                     }
-                  : callback12();
-          input.canvas.start(
-            input2.key,
-            input2.pointerId,
-            value4,
-            input2.canvas,
-            input2.press.clientX,
-            input2.press.clientY,
+                  : firstCanvasItem();
+          host.canvas.start(
+            move.key,
+            move.pointerId,
+            leader,
+            move.canvas,
+            move.press.clientX,
+            move.press.clientY,
           );
         }
-        input2.starting = (input2.armWait ?? Promise.resolve(true)).then(
-          async (input3?: Dynamic): Promise<Dynamic> => {
-            if (!input2.done) {
-              if (!input3) {
-                callback2(input2);
+        move.starting = (move.armWait ?? Promise.resolve(true)).then(
+          async (isArmed?: Dynamic): Promise<Dynamic> => {
+            if (!move.done) {
+              if (!isArmed) {
+                cancelMove(move);
                 return;
               }
-              await callback5(input2);
+              await startFileMoves(move);
             }
           },
         );
-        input2.keepalive = (window as Dynamic).setInterval((): Dynamic => {
-          input2.done || callback9(input2);
+        move.keepalive = (window as Dynamic).setInterval((): Dynamic => {
+          move.done || updateMove(move);
         }, 2e4);
       }
     },
-    callback11: Dynamic = async (): Promise<Dynamic> => {
-      if (!value) return;
-      let value4: Dynamic = value;
-      if (!value4.live) {
-        let stillAction: Dynamic = value4.stillAction;
-        callback3();
+    commitMove: Dynamic = async (): Promise<Dynamic> => {
+      if (!activeMove) return;
+      let move: Dynamic = activeMove;
+      if (!move.live) {
+        let stillAction: Dynamic = move.stillAction;
+        finishMove();
         stillAction?.();
         return;
       }
-      value4.releasing = true;
-      value3 = value4;
-      index = Date.now();
-      let value5: Dynamic = index;
-      value4.offPointer();
-      input.showGhost(null);
-      if (input.readOnly()) {
-        callback2(value4);
+      move.releasing = true;
+      releasedMove = move;
+      releasedAt = Date.now();
+      let releasedStamp: Dynamic = releasedAt;
+      move.offPointer();
+      host.showGhost(null);
+      if (host.readOnly()) {
+        cancelMove(move);
         return;
       }
-      let value6: Dynamic =
-          value4.canvas.files.size > 0 || value4.canvas.notes.size > 0,
-        value7: Dynamic =
-          value4.target?.canvas === true &&
-          [...value4.files.values()].some(
-            (input2?: Dynamic): Dynamic =>
-              input2.started && input2.travelling,
+      let hasCanvasItems: Dynamic =
+          move.canvas.files.size > 0 || move.canvas.notes.size > 0,
+        isCanvasTravel: Dynamic =
+          move.target?.canvas === true &&
+          [...move.files.values()].some(
+            (fileState?: Dynamic): Dynamic =>
+              fileState.started && fileState.travelling,
           ),
-        callback12: Dynamic = (): Dynamic =>
-          value6
-            ? input.canvas.update(
-                value4.key,
-                value4.pointerId,
-                value4.last.clientX,
-                value4.last.clientY,
-                value4.last.free,
+        updateCanvasDrop: Dynamic = (): Dynamic =>
+          hasCanvasItems
+            ? host.canvas.update(
+                move.key,
+                move.pointerId,
+                move.last.clientX,
+                move.last.clientY,
+                move.last.free,
                 true,
-                value4.key,
-                value4.last.alt,
+                move.key,
+                move.last.alt,
               )
             : true,
-        value8: Dynamic = value7 || value4.last.alt ? true : callback12();
-      value4.canvasCommitted = true;
-      value4.blockedTarget &&
-        value4.files.size > 0 &&
-        !value4.last.alt &&
-        input.say(
+        canvasDropOk: Dynamic = isCanvasTravel || move.last.alt ? true : updateCanvasDrop();
+      move.canvasCommitted = true;
+      move.blockedTarget &&
+        move.files.size > 0 &&
+        !move.last.alt &&
+        host.say(
           uiMessage("canvas.workingState.thatArtboardIsPlayingStop"),
         );
-      await value4.starting;
-      if (value4.done) return;
-      let value9: Dynamic = input.canvasPoint(
-          value4.last.clientX,
-          value4.last.clientY,
+      await move.starting;
+      if (move.done) return;
+      let pointer: Dynamic = host.canvasPoint(
+          move.last.clientX,
+          move.last.clientY,
         ),
-        value10: Dynamic = input.canvasPoint(
-          value4.press.clientX,
-          value4.press.clientY,
+        press: Dynamic = host.canvasPoint(
+          move.press.clientX,
+          move.press.clientY,
         ),
         entries: Dynamic = new Map(),
         items: Dynamic = [],
-        target: Dynamic = value4.target;
+        target: Dynamic = move.target;
       if (target && !target.canvas) {
-        let callback14: Dynamic = (input2?: Dynamic): Dynamic =>
-          input2
+        let awaitWithTimeout: Dynamic = (promise?: Dynamic): Dynamic =>
+          promise
             ? Promise.race([
-                input2,
+                promise,
                 new Promise(
-                  (input3?: Dynamic): Dynamic => setTimeout(input3, 1500),
+                  (resolve?: Dynamic): Dynamic => setTimeout(resolve, 1500),
                 ),
               ])
             : Promise.resolve();
-        await callback14(value4.planInFlight);
-        let dropPlan: Dynamic = value4.dropPlan;
+        await awaitWithTimeout(move.planInFlight);
+        let dropPlan: Dynamic = move.dropPlan;
         (!dropPlan ||
           dropPlan.file !== target.file ||
-          dropPlan.at.clientX !== value4.last.clientX ||
-          dropPlan.at.clientY !== value4.last.clientY ||
-          dropPlan.mode !== CanvasWorkingStateCtrl(value4.last.mods) ||
-          dropPlan.alt !== value4.last.alt) &&
-          ((value4.planPending = false),
-          await callback14(callback8(value4, true)));
+          dropPlan.at.clientX !== move.last.clientX ||
+          dropPlan.at.clientY !== move.last.clientY ||
+          dropPlan.mode !== CanvasWorkingStateCtrl(move.last.mods) ||
+          dropPlan.alt !== move.last.alt) &&
+          ((move.planPending = false),
+          await awaitWithTimeout(planDrop(move, true)));
       }
-      let value11: Dynamic =
+      let currentPlan: Dynamic =
           target &&
-          value4.dropPlan &&
-          value4.dropPlan.file === target.file &&
-          value4.dropPlan.at.clientX === value4.last.clientX &&
-          value4.dropPlan.at.clientY === value4.last.clientY &&
-          value4.dropPlan.mode === CanvasWorkingStateCtrl(value4.last.mods) &&
-          value4.dropPlan.alt === value4.last.alt
-            ? value4.dropPlan
+          move.dropPlan &&
+          move.dropPlan.file === target.file &&
+          move.dropPlan.at.clientX === move.last.clientX &&
+          move.dropPlan.at.clientY === move.last.clientY &&
+          move.dropPlan.mode === CanvasWorkingStateCtrl(move.last.mods) &&
+          move.dropPlan.alt === move.last.alt
+            ? move.dropPlan
             : null,
-        value12: Dynamic = null;
-      if (target && value11) {
-        let entries2: Dynamic = new Map();
-        for (let value15 of value11.members as Dynamic) {
-          if (!value4.files.get(value15.file)?.travelling) continue;
-          let value16: Dynamic = entries2.get(value15.file) ?? [];
-          value16.push({
-            tid: value15.tid,
-            index: value15.index,
+        travelPlan: Dynamic = null;
+      if (target && currentPlan) {
+        let travellerMap: Dynamic = new Map();
+        for (let member of currentPlan.members as Dynamic) {
+          if (!move.files.get(member.file)?.travelling) continue;
+          let indices: Dynamic = travellerMap.get(member.file) ?? [];
+          indices.push({
+            tid: member.tid,
+            index: member.index,
           });
-          entries2.set(value15.file, value16);
+          travellerMap.set(member.file, indices);
         }
-        entries2.size > 0 &&
-          (value12 = {
+        travellerMap.size > 0 &&
+          (travelPlan = {
             target: target.file,
             pureTarget: target.pure,
-            plan: value11.plan,
-            travellers: [...entries2].map(
-              ([input2, input3]: Dynamic): Dynamic => ({
-                file: input2,
-                members: input3,
+            plan: currentPlan.plan,
+            travellers: [...travellerMap].map(
+              ([file, members]: Dynamic): Dynamic => ({
+                file: file,
+                members: members,
               }),
             ),
-            endHome: (input2?: Dynamic): Dynamic =>
-              input.handle(input2)?.moveCancel(value4.key),
-            ...(value4.last.alt
+            endHome: (file?: Dynamic): Dynamic =>
+              host.handle(file)?.moveCancel(move.key),
+            ...(move.last.alt
               ? {
                   copy: true,
                 }
               : {}),
           });
-      } else if (target?.canvas && value7) {
-        let { members: value15, map: value16 }: Dynamic = callback7(value4),
-          entries2: Dynamic = new Map();
-        for (let value17 of value16 as Dynamic) {
-          let value18: Dynamic = entries2.get(value17.file) ?? [];
-          value18.push({
-            tid: value17.tid,
-            index: value17.index,
+      } else if (target?.canvas && isCanvasTravel) {
+        let { members: canvasMembers, map: canvasMap }: Dynamic = collectTravellers(move),
+          travellerMap: Dynamic = new Map();
+        for (let entry of canvasMap as Dynamic) {
+          let indices: Dynamic = travellerMap.get(entry.file) ?? [];
+          indices.push({
+            tid: entry.tid,
+            index: entry.index,
           });
-          entries2.set(value17.file, value18);
+          travellerMap.set(entry.file, indices);
         }
-        value12 = {
+        travelPlan = {
           target: CanvasValue,
           pureTarget: true,
           plan: {
@@ -2982,168 +2982,168 @@ function createElementMoveSessions(input?: Dynamic): Dynamic {
             landing: [],
             refused: [],
           },
-          travellers: [...entries2].map(
-            ([input2, input3]: Dynamic): Dynamic => ({
-              file: input2,
-              members: input3,
+          travellers: [...travellerMap].map(
+            ([file, members]: Dynamic): Dynamic => ({
+              file: file,
+              members: members,
             }),
           ),
-          pieces: value16.map((input2?: Dynamic): Dynamic => {
-            let value17: Dynamic = value15[input2.index];
+          pieces: canvasMap.map((entry?: Dynamic): Dynamic => {
+            let member: Dynamic = canvasMembers[entry.index];
             return {
-              file: input2.file,
-              tid: input2.tid,
-              index: input2.index,
+              file: entry.file,
+              tid: entry.tid,
+              index: entry.index,
               box: {
-                x: value9.x + value17.dx,
-                y: value9.y + value17.dy,
-                w: value17.w,
-                h: value17.h,
+                x: pointer.x + member.dx,
+                y: pointer.y + member.dy,
+                w: member.w,
+                h: member.h,
               },
             };
           }),
-          endHome: (input2?: Dynamic): Dynamic =>
-            input.handle(input2)?.moveCancel(value4.key),
-          ...(value4.last.alt
+          endHome: (file?: Dynamic): Dynamic =>
+            host.handle(file)?.moveCancel(move.key),
+          ...(move.last.alt
             ? {
                 copy: true,
               }
             : {}),
         };
       }
-      let value13: Dynamic = value4.last.alt && !value12;
-      if (value13) {
-        value6 && input.canvas.cancel(value4.key, value4.pointerId);
-        for (let [value16, value17] of value4.files as Dynamic)
-          value17.started &&
-            (value17.raf &&
-              (cancelAnimationFrame(value17.raf), (value17.raf = 0)),
-            input.handle(value16)?.moveCancel(value4.key));
-        let value15: Dynamic = value4.blockedTarget
+      let isNothingDropped: Dynamic = move.last.alt && !travelPlan;
+      if (isNothingDropped) {
+        hasCanvasItems && host.canvas.cancel(move.key, move.pointerId);
+        for (let [file, fileState] of move.files as Dynamic)
+          fileState.started &&
+            (fileState.raf &&
+              (cancelAnimationFrame(fileState.raf), (fileState.raf = 0)),
+            host.handle(file)?.moveCancel(move.key));
+        let hint: Dynamic = move.blockedTarget
           ? uiMessage("canvas.workingState.thatArtboardIsPlaying")
           : target && !target.canvas
             ? uiMessage("canvas.workingState.thatArtboardDidNotAnswer")
             : target
               ? uiMessage("canvas.workingState.nothingCouldTravelTryAgain")
-              : input.piecesAllowed()
+              : host.piecesAllowed()
                 ? uiMessage("canvas.workingState.releaseOverAnArtboardOr")
                 : uiMessage("canvas.workingState.releaseOverAnArtboard");
-        input.say(uiMessage("canvas.workingState.nothingCopied") + value15);
+        host.say(uiMessage("canvas.workingState.nothingCopied") + hint);
         target &&
           !target.canvas &&
-          (input.handle(target.file)?.dropPlanClear(value4.key),
-          callback(value4, target));
-        for (let value16 of value4.files.keys() as Dynamic)
-          input.handle(value16)?.moveSettle();
-        callback3(value4);
-        value4.committed = true;
-        value4.offKeys();
-        value3 === value4 && (value3 = null);
+          (host.handle(target.file)?.dropPlanClear(move.key),
+          closeTarget(move, target));
+        for (let file of move.files.keys() as Dynamic)
+          host.handle(file)?.moveSettle();
+        finishMove(move);
+        move.committed = true;
+        move.offKeys();
+        releasedMove === move && (releasedMove = null);
         return;
-      } else value4.last.alt && !value7 && (value8 = callback12());
+      } else move.last.alt && !isCanvasTravel && (canvasDropOk = updateCanvasDrop());
       await Promise.all(
-        [...value4.files].map(
-          async ([input2, input3]: Dynamic): Promise<Dynamic> => {
-            if (!input3.started || !input3.anchor) return;
-            let value15: Dynamic = input.handle(input2);
-            if (!value15) return;
-            input3.raf &&
-              (cancelAnimationFrame(input3.raf), (input3.raf = 0));
-            if (input3.travelling) {
+        [...move.files].map(
+          async ([file, fileState]: Dynamic): Promise<Dynamic> => {
+            if (!fileState.started || !fileState.anchor) return;
+            let handle: Dynamic = host.handle(file);
+            if (!handle) return;
+            fileState.raf &&
+              (cancelAnimationFrame(fileState.raf), (fileState.raf = 0));
+            if (fileState.travelling) {
               if (
-                value12 &&
-                value12.travellers.some(
-                  (input4?: Dynamic): Dynamic => input4.file === input2,
+                travelPlan &&
+                travelPlan.travellers.some(
+                  (traveller?: Dynamic): Dynamic => traveller.file === file,
                 )
               )
                 return;
-              value15.moveCancel(value4.key);
-              items.push(input2);
+              handle.moveCancel(move.key);
+              items.push(file);
               return;
             }
             let state: Dynamic = {
-                x: input3.anchor.x + (value9.x - value10.x),
-                y: input3.anchor.y + (value9.y - value10.y),
+                x: fileState.anchor.x + (pointer.x - press.x),
+                y: fileState.anchor.y + (pointer.y - press.y),
               },
-              value16: Dynamic = await Promise.race([
-                value15
-                  .moveEnd(value4.key, state, value4.last.mods, input3.tids)
+              endResult: Dynamic = await Promise.race([
+                handle
+                  .moveEnd(move.key, state, move.last.mods, fileState.tids)
                   .catch((): Dynamic => null),
                 new Promise(
-                  (input4?: Dynamic): Dynamic =>
-                    setTimeout((): Dynamic => input4(null), 1500),
+                  (resolve?: Dynamic): Dynamic =>
+                    setTimeout((): Dynamic => resolve(null), 1500),
                 ),
               ]);
-            value16
-              ? entries.set(input2, [value16])
-              : (value15.moveCancel(value4.key), items.push(input2));
+            endResult
+              ? entries.set(file, [endResult])
+              : (handle.moveCancel(move.key), items.push(file));
           },
         ),
       );
-      callback3(value4);
-      let callback13: Dynamic = (): Dynamic => {
-          value4.committed ||
-            ((value4.committed = true),
-            value4.offKeys(),
-            value3 === value4 && (value3 = null));
+      finishMove(move);
+      let markCommitted: Dynamic = (): Dynamic => {
+          move.committed ||
+            ((move.committed = true),
+            move.offKeys(),
+            releasedMove === move && (releasedMove = null));
         },
-        value14: Dynamic = setTimeout(
-          callback13,
-          value12
-            ? CanvasWorkingStateConstant_8
-            : Math.max(0, CanvasWorkingStateLimit_5 - (Date.now() - index)),
+        timeoutId: Dynamic = setTimeout(
+          markCommitted,
+          travelPlan
+            ? travelCommitTimeoutMs
+            : Math.max(0, releaseGuardMs - (Date.now() - releasedAt)),
         ),
-        flag: Dynamic = false;
+        didLandOnTarget: Dynamic = false;
       try {
-        let value15: Dynamic = await input.commit({
-          token: value4.key,
-          releasedAt: value5,
+        let commitResult: Dynamic = await host.commit({
+          token: move.key,
+          releasedAt: releasedStamp,
           plans: entries,
-          unanswered: [...items, ...value4.dropped],
-          canvasMoved: value6 && !value13,
-          canvasDropped: value6 && !value13 && !value8,
-          copy: value4.last.alt,
-          canvas: value7 ? callback12 : (): Dynamic => {},
-          travel: value12,
+          unanswered: [...items, ...move.dropped],
+          canvasMoved: hasCanvasItems && !isNothingDropped,
+          canvasDropped: hasCanvasItems && !isNothingDropped && !canvasDropOk,
+          copy: move.last.alt,
+          canvas: isCanvasTravel ? updateCanvasDrop : (): Dynamic => {},
+          travel: travelPlan,
         });
-        flag =
-          !!value12 &&
-          !!value15 &&
-          !!value15.written &&
-          value15.written.includes(value12.target);
+        didLandOnTarget =
+          !!travelPlan &&
+          !!commitResult &&
+          !!commitResult.written &&
+          commitResult.written.includes(travelPlan.target);
       } finally {
-        clearTimeout(value14);
-        callback13();
+        clearTimeout(timeoutId);
+        markCommitted();
         target &&
           !target.canvas &&
-          (flag && value12 && target.file === value12.target
-            ? (input.handle(target.file)?.dropPlanClear(value4.key, true),
-              setTimeout((): Dynamic => callback(value4, target), 150))
-            : (input.handle(target.file)?.dropPlanClear(value4.key),
-              callback(value4, target)));
+          (didLandOnTarget && travelPlan && target.file === travelPlan.target
+            ? (host.handle(target.file)?.dropPlanClear(move.key, true),
+              setTimeout((): Dynamic => closeTarget(move, target), 150))
+            : (host.handle(target.file)?.dropPlanClear(move.key),
+              closeTarget(move, target)));
       }
     },
-    value2: Dynamic = null,
-    value3: Dynamic = null,
-    index: Dynamic = 0;
+    stopListening: Dynamic = null,
+    releasedMove: Dynamic = null,
+    releasedAt: Dynamic = 0;
   return {
-    active: (): Dynamic => value !== null,
-    begin(input2: Dynamic): Dynamic {
+    active: (): Dynamic => activeMove !== null,
+    begin(gesture: Dynamic): Dynamic {
       if (
-        value3 &&
-        !value3.committed &&
-        Date.now() - index < CanvasWorkingStateLimit_5
+        releasedMove &&
+        !releasedMove.committed &&
+        Date.now() - releasedAt < releaseGuardMs
       )
         return false;
-      value && callback4();
-      value2?.();
-      value2 = null;
-      let value4: Dynamic = randomSessionToken(),
+      activeMove && cancelActive();
+      stopListening?.();
+      stopListening = null;
+      let moveKey: Dynamic = randomSessionToken(),
         entries: Dynamic = new Map();
-      for (let [value5, value6] of input2.files as Dynamic)
-        value6.length > 0 &&
-          entries.set(value5, {
-            tids: [...value6],
+      for (let [file, tids] of gesture.files as Dynamic)
+        tids.length > 0 &&
+          entries.set(file, {
+            tids: [...tids],
             started: false,
             anchor: null,
             pending: null,
@@ -3151,174 +3151,174 @@ function createElementMoveSessions(input?: Dynamic): Dynamic {
             members: [],
             travelling: false,
           });
-      let callback12: Dynamic = (input3?: Dynamic): Dynamic => {
+      let handlePointerMove: Dynamic = (pointerEvent?: Dynamic): Dynamic => {
           if (
-            !(!value || input3.pointerId !== value.pointerId) &&
-            ((value.last = {
-              clientX: input3.clientX,
-              clientY: input3.clientY,
-              mods: CanvasWorkingStateCtrlKey(input3),
-              free: CanvasWorkingStateMetaKey(input3),
-              alt: CanvasWorkingStateGetAltKey(input3),
+            !(!activeMove || pointerEvent.pointerId !== activeMove.pointerId) &&
+            ((activeMove.last = {
+              clientX: pointerEvent.clientX,
+              clientY: pointerEvent.clientY,
+              mods: CanvasWorkingStateCtrlKey(pointerEvent),
+              free: CanvasWorkingStateMetaKey(pointerEvent),
+              alt: CanvasWorkingStateGetAltKey(pointerEvent),
             }),
             !(
-              !value.live &&
+              !activeMove.live &&
               Math.hypot(
-                input3.clientX - value.press.clientX,
-                input3.clientY - value.press.clientY,
-              ) < input.slopPx
+                pointerEvent.clientX - activeMove.press.clientX,
+                pointerEvent.clientY - activeMove.press.clientY,
+              ) < host.slopPx
             ))
           ) {
-            if (input.readOnly()) {
-              callback4();
+            if (host.readOnly()) {
+              cancelActive();
               return;
             }
-            callback10(value);
-            (value.canvas.files.size > 0 || value.canvas.notes.size > 0) &&
-              input.canvas.update(
-                value.key,
-                value.pointerId,
-                input3.clientX,
-                input3.clientY,
-                CanvasWorkingStateMetaKey(input3),
+            startMove(activeMove);
+            (activeMove.canvas.files.size > 0 || activeMove.canvas.notes.size > 0) &&
+              host.canvas.update(
+                activeMove.key,
+                activeMove.pointerId,
+                pointerEvent.clientX,
+                pointerEvent.clientY,
+                CanvasWorkingStateMetaKey(pointerEvent),
                 false,
                 undefined,
-                CanvasWorkingStateGetAltKey(input3),
+                CanvasWorkingStateGetAltKey(pointerEvent),
               );
-            callback9(value);
+            updateMove(activeMove);
           }
         },
-        callback13: Dynamic = (input3?: Dynamic): Dynamic => {
-          if (!value || input3.pointerId !== value.pointerId) return;
-          let alt2: Dynamic = value.last.alt;
-          value.last = {
-            clientX: input3.clientX,
-            clientY: input3.clientY,
-            mods: CanvasWorkingStateCtrlKey(input3),
-            free: CanvasWorkingStateMetaKey(input3),
-            alt: CanvasWorkingStateGetAltKey(input3),
+        handlePointerUp: Dynamic = (pointerEvent?: Dynamic): Dynamic => {
+          if (!activeMove || pointerEvent.pointerId !== activeMove.pointerId) return;
+          let previousAlt: Dynamic = activeMove.last.alt;
+          activeMove.last = {
+            clientX: pointerEvent.clientX,
+            clientY: pointerEvent.clientY,
+            mods: CanvasWorkingStateCtrlKey(pointerEvent),
+            free: CanvasWorkingStateMetaKey(pointerEvent),
+            alt: CanvasWorkingStateGetAltKey(pointerEvent),
           };
-          value.live && value.last.alt !== alt2 && callback6(value);
-          callback11();
+          activeMove.live && activeMove.last.alt !== previousAlt && updateTarget(activeMove);
+          commitMove();
         },
-        callback14: Dynamic = (input3?: Dynamic): Dynamic => {
-          !value || input3.pointerId !== value.pointerId || callback4();
+        handlePointerCancel: Dynamic = (pointerEvent?: Dynamic): Dynamic => {
+          !activeMove || pointerEvent.pointerId !== activeMove.pointerId || cancelActive();
         },
-        callback15: Dynamic = (): Dynamic => {
-          flag = false;
-          callback4();
-          callback18();
+        handleBlur: Dynamic = (): Dynamic => {
+          isEscapeHeld = false;
+          cancelActive();
+          stopKeyListeners();
         },
-        flag: Dynamic = false,
-        callback16: Dynamic = (input3?: Dynamic): Dynamic =>
-          (input3.metaKey || input3.ctrlKey) &&
-          !input3.shiftKey &&
-          input3.key.toLowerCase() === "x",
-        callback17: Dynamic = (event?: Dynamic): Dynamic => {
-          if (state2.releasing && !state2.committed) {
+        isEscapeHeld: Dynamic = false,
+        isCutShortcut: Dynamic = (event?: Dynamic): Dynamic =>
+          (event.metaKey || event.ctrlKey) &&
+          !event.shiftKey &&
+          event.key.toLowerCase() === "x",
+        handleKey: Dynamic = (event?: Dynamic): Dynamic => {
+          if (moveSession.releasing && !moveSession.committed) {
             (event.key === "Escape" ||
               event.key === "Delete" ||
               event.key === "Backspace" ||
-              callback16(event) ||
+              isCutShortcut(event) ||
               ((event.metaKey || event.ctrlKey) &&
                 (event.key === "z" ||
                   event.key === "Z" ||
                   event.key === "y"))) &&
               (event.preventDefault(),
               event.stopImmediatePropagation(),
-              event.key === "Escape" && (flag = event.type === "keydown"));
+              event.key === "Escape" && (isEscapeHeld = event.type === "keydown"));
             return;
           }
           if (event.key === "Escape" && event.type === "keyup") {
-            flag = false;
-            value || callback18();
+            isEscapeHeld = false;
+            activeMove || stopKeyListeners();
             return;
           }
-          if (event.key === "Escape" && event.type === "keydown" && flag) {
+          if (event.key === "Escape" && event.type === "keydown" && isEscapeHeld) {
             event.preventDefault();
             event.stopImmediatePropagation();
             return;
           }
-          if (value) {
+          if (activeMove) {
             if (event.key === "Escape" && event.type === "keydown") {
               event.preventDefault();
               event.stopImmediatePropagation();
-              flag = true;
-              callback4();
+              isEscapeHeld = true;
+              cancelActive();
               return;
             }
             if (
-              value.live &&
+              activeMove.live &&
               (event.key === "Delete" ||
                 event.key === "Backspace" ||
-                callback16(event))
+                isCutShortcut(event))
             ) {
               event.preventDefault();
               event.stopImmediatePropagation();
               return;
             }
-            value.live &&
+            activeMove.live &&
               !event.repeat &&
               (event.key === "Meta" ||
                 event.key === "Control" ||
                 event.key === "Alt" ||
                 event.key === "Shift") &&
-              ((value.last = {
-                ...value.last,
+              ((activeMove.last = {
+                ...activeMove.last,
                 mods: CanvasWorkingStateCtrlKey(event),
                 free: CanvasWorkingStateMetaKey(event),
                 alt: CanvasWorkingStateGetAltKey(event),
               }),
-              (value.canvas.files.size > 0 || value.canvas.notes.size > 0) &&
-                input.canvas.update(
-                  value.key,
-                  value.pointerId,
-                  value.last.clientX,
-                  value.last.clientY,
+              (activeMove.canvas.files.size > 0 || activeMove.canvas.notes.size > 0) &&
+                host.canvas.update(
+                  activeMove.key,
+                  activeMove.pointerId,
+                  activeMove.last.clientX,
+                  activeMove.last.clientY,
                   CanvasWorkingStateMetaKey(event),
                   false,
                   undefined,
                   CanvasWorkingStateGetAltKey(event),
                 ),
-              callback9(value));
+              updateMove(activeMove));
           }
         },
-        callback18: Dynamic = (): Dynamic => {
+        stopKeyListeners: Dynamic = (): Dynamic => {
           (window as Dynamic).removeEventListener(
             "keydown",
-            callback17,
+            handleKey,
             true,
           );
-          (window as Dynamic).removeEventListener("keyup", callback17, true);
-          value2 === callback18 && (value2 = null);
+          (window as Dynamic).removeEventListener("keyup", handleKey, true);
+          stopListening === stopKeyListeners && (stopListening = null);
         };
-      (window as Dynamic).addEventListener("pointermove", callback12);
-      (window as Dynamic).addEventListener("pointerup", callback13);
-      (window as Dynamic).addEventListener("pointercancel", callback14);
-      (window as Dynamic).addEventListener("blur", callback15);
-      (window as Dynamic).addEventListener("keydown", callback17, true);
-      (window as Dynamic).addEventListener("keyup", callback17, true);
-      let state: Dynamic = {
-          clientX: input2.clientX,
-          clientY: input2.clientY,
+      (window as Dynamic).addEventListener("pointermove", handlePointerMove);
+      (window as Dynamic).addEventListener("pointerup", handlePointerUp);
+      (window as Dynamic).addEventListener("pointercancel", handlePointerCancel);
+      (window as Dynamic).addEventListener("blur", handleBlur);
+      (window as Dynamic).addEventListener("keydown", handleKey, true);
+      (window as Dynamic).addEventListener("keyup", handleKey, true);
+      let pressPoint: Dynamic = {
+          clientX: gesture.clientX,
+          clientY: gesture.clientY,
         },
-        callback19: Dynamic = (): Dynamic => {
-          (window as Dynamic).removeEventListener("pointermove", callback12);
-          (window as Dynamic).removeEventListener("pointerup", callback13);
+        stopPointerListeners: Dynamic = (): Dynamic => {
+          (window as Dynamic).removeEventListener("pointermove", handlePointerMove);
+          (window as Dynamic).removeEventListener("pointerup", handlePointerUp);
           (window as Dynamic).removeEventListener(
             "pointercancel",
-            callback14,
+            handlePointerCancel,
           );
-          (window as Dynamic).removeEventListener("blur", callback15);
+          (window as Dynamic).removeEventListener("blur", handleBlur);
         },
-        state2: Dynamic = {
-          key: value4,
-          pointerId: input2.pointerId,
-          captureEl: input2.captureEl,
-          press: state,
+        moveSession: Dynamic = {
+          key: moveKey,
+          pointerId: gesture.pointerId,
+          captureEl: gesture.captureEl,
+          press: pressPoint,
           last: {
-            clientX: input2.from?.clientX ?? input2.clientX,
-            clientY: input2.from?.clientY ?? input2.clientY,
+            clientX: gesture.from?.clientX ?? gesture.clientX,
+            clientY: gesture.from?.clientY ?? gesture.clientY,
             mods: {
               alt: false,
               ctrl: false,
@@ -3328,23 +3328,23 @@ function createElementMoveSessions(input?: Dynamic): Dynamic {
             free: false,
             alt: false,
           },
-          leader: input2.leader,
+          leader: gesture.leader,
           files: entries,
-          canvas: input2.canvas,
+          canvas: gesture.canvas,
           live: false,
           starting: null,
           keepalive: 0,
           dropped: [],
-          armWait: input2.armWait,
-          stillAction: input2.stillAction,
-          heldCover: input2.heldCover,
+          armWait: gesture.armWait,
+          stillAction: gesture.stillAction,
+          heldCover: gesture.heldCover,
           done: false,
           releasing: false,
           canvasCommitted: false,
           committed: false,
-          offPointer: callback19,
+          offPointer: stopPointerListeners,
           offKeys: (): Dynamic => {
-            flag ? (value2 = callback18) : callback18();
+            isEscapeHeld ? (stopListening = stopKeyListeners) : stopKeyListeners();
           },
           target: null,
           blockedTarget: null,
@@ -3353,100 +3353,100 @@ function createElementMoveSessions(input?: Dynamic): Dynamic {
           planInFlight: null,
           planPending: false,
           off: (): Dynamic => {
-            callback19();
-            (state2.releasing && !state2.committed) || state2.offKeys();
+            stopPointerListeners();
+            (moveSession.releasing && !moveSession.committed) || moveSession.offKeys();
           },
         };
-      value = state2;
-      input.claimKeyboard();
-      input.setGestureSource("set-move", true);
-      input.setHeldCover(input2.heldCover);
+      activeMove = moveSession;
+      host.claimKeyboard();
+      host.setGestureSource("set-move", true);
+      host.setHeldCover(gesture.heldCover);
       try {
-        input2.captureEl?.setPointerCapture(input2.pointerId);
+        gesture.captureEl?.setPointerCapture(gesture.pointerId);
       } catch {}
-      input2.from &&
+      gesture.from &&
         Math.hypot(
-          input2.from.clientX - input2.clientX,
-          input2.from.clientY - input2.clientY,
-        ) >= input.slopPx &&
-        (callback10(value),
-        (value.canvas.files.size > 0 || value.canvas.notes.size > 0) &&
-          input.canvas.update(
-            value.key,
-            value.pointerId,
-            value.last.clientX,
-            value.last.clientY,
+          gesture.from.clientX - gesture.clientX,
+          gesture.from.clientY - gesture.clientY,
+        ) >= host.slopPx &&
+        (startMove(activeMove),
+        (activeMove.canvas.files.size > 0 || activeMove.canvas.notes.size > 0) &&
+          host.canvas.update(
+            activeMove.key,
+            activeMove.pointerId,
+            activeMove.last.clientX,
+            activeMove.last.clientY,
             false,
             false,
           ),
-        callback9(value));
+        updateMove(activeMove));
       return true;
     },
   };
 }
 function selectionAfterElementEdits(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
-  extra?: Dynamic,
+  selection?: Dynamic,
+  scope?: Dynamic,
+  artboardTids?: Dynamic,
+  elementTids?: Dynamic,
+  getArtboardName?: Dynamic,
 ): Dynamic {
-  let values: Dynamic = new Set(input.artboards),
+  let values: Dynamic = new Set(selection.artboards),
     entries: Dynamic = new Map(),
-    flag: Dynamic = false,
+    hasChange: Dynamic = false,
     items: Dynamic = [];
-  for (let [value2, value3] of context as Dynamic)
-    if (values.has(value2)) {
-      if (value3.length === 0) {
-        items.push(value2);
+  for (let [file, tids] of artboardTids as Dynamic)
+    if (values.has(file)) {
+      if (tids.length === 0) {
+        items.push(file);
         continue;
       }
-      values.delete(value2);
-      entries.set(value2, {
-        name: extra(value2),
-        tids: [...value3],
+      values.delete(file);
+      entries.set(file, {
+        name: getArtboardName(file),
+        tids: [...tids],
         rect: null,
-        count: value3.length,
+        count: tids.length,
       });
-      flag = true;
+      hasChange = true;
     }
-  for (let [value2, value3] of input.elements as Dynamic) {
-    let entry: Dynamic = value.get(value2);
+  for (let [file, element] of selection.elements as Dynamic) {
+    let entry: Dynamic = elementTids.get(file);
     if (entry === "artboard") {
-      values.add(value2);
-      flag = true;
+      values.add(file);
+      hasChange = true;
       continue;
     }
     if (entry == null || entry.length === 0) {
-      entry != null && items.push(value2);
-      entries.set(value2, value3);
+      entry != null && items.push(file);
+      entries.set(file, element);
       continue;
     }
-    let value4: Dynamic =
-      entry.length === value3.tids.length &&
+    let isSameTids: Dynamic =
+      entry.length === element.tids.length &&
       entry.every(
-        (input2?: Dynamic, options2?: Dynamic): Dynamic =>
-          input2 === value3.tids[options2],
+        (tid?: Dynamic, index?: Dynamic): Dynamic =>
+          tid === element.tids[index],
       );
     entries.set(
-      value2,
-      value4
-        ? value3
+      file,
+      isSameTids
+        ? element
         : {
-            name: value3.name ?? extra(value2),
+            name: element.name ?? getArtboardName(file),
             tids: [...entry],
             rect: null,
             count: entry.length,
           },
     );
-    value4 || (flag = true);
+    isSameTids || (hasChange = true);
   }
-  if (!flag) return input;
-  let notes: Dynamic = input.notes;
-  if (options === "children") {
-    for (let value2 of items as Dynamic) {
-      values.delete(value2);
-      entries.delete(value2);
+  if (!hasChange) return selection;
+  let notes: Dynamic = selection.notes;
+  if (scope === "children") {
+    for (let file of items as Dynamic) {
+      values.delete(file);
+      entries.delete(file);
     }
     notes = new Set();
   }
@@ -3454,195 +3454,195 @@ function selectionAfterElementEdits(
     values,
     notes,
     entries,
-    input.primary,
+    selection.primary,
   );
 }
 function nudgeCanvasObjects(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
+  manifest?: Dynamic,
+  selection?: Dynamic,
+  dx?: Dynamic,
+  dy?: Dynamic,
 ): Dynamic {
   if (
-    !Number.isFinite(context) ||
-    !Number.isFinite(value) ||
-    (context === 0 && value === 0)
+    !Number.isFinite(dx) ||
+    !Number.isFinite(dy) ||
+    (dx === 0 && dy === 0)
   )
     return null;
-  let callback: Dynamic = (input2?: Dynamic): Dynamic =>
+  let clampCoordinate: Dynamic = (coordinate?: Dynamic): Dynamic =>
       Math.max(
-        -PlatformFileContentConstant_18,
-        Math.min(PlatformFileContentConstant_18, Math.round(input2)),
+        -coordinateLimit,
+        Math.min(coordinateLimit, Math.round(coordinate)),
       ),
-    items: Dynamic = [],
-    value2: Dynamic = input.artboards.map((input2?: Dynamic): Dynamic => {
-      if (!options.files.has(input2.file)) return input2;
+    artboardMoves: Dynamic = [],
+    artboards: Dynamic = manifest.artboards.map((artboard?: Dynamic): Dynamic => {
+      if (!selection.files.has(artboard.file)) return artboard;
       let state: Dynamic = {
-        x: callback(input2.x + context),
-        y: callback(input2.y + value),
+        x: clampCoordinate(artboard.x + dx),
+        y: clampCoordinate(artboard.y + dy),
       };
-      return state.x === input2.x && state.y === input2.y
-        ? input2
-        : (items.push({
-            file: input2.file,
+      return state.x === artboard.x && state.y === artboard.y
+        ? artboard
+        : (artboardMoves.push({
+            file: artboard.file,
             from: {
-              x: input2.x,
-              y: input2.y,
+              x: artboard.x,
+              y: artboard.y,
             },
             to: state,
           }),
           {
-            ...input2,
+            ...artboard,
             ...state,
           });
     }),
-    items2: Dynamic = [],
-    value3: Dynamic = input.annotations?.map((input2?: Dynamic): Dynamic => {
-      if (!options.notes.has(input2.id)) return input2;
+    noteMoves: Dynamic = [],
+    annotations: Dynamic = manifest.annotations?.map((annotation?: Dynamic): Dynamic => {
+      if (!selection.notes.has(annotation.id)) return annotation;
       let state: Dynamic = {
-        x: callback(input2.x + context),
-        y: callback(input2.y + value),
+        x: clampCoordinate(annotation.x + dx),
+        y: clampCoordinate(annotation.y + dy),
       };
-      return state.x === input2.x && state.y === input2.y
-        ? input2
-        : (items2.push({
-            id: input2.id,
+      return state.x === annotation.x && state.y === annotation.y
+        ? annotation
+        : (noteMoves.push({
+            id: annotation.id,
             from: {
-              x: input2.x,
-              y: input2.y,
+              x: annotation.x,
+              y: annotation.y,
             },
             to: state,
           }),
-          moveAnnotation(input2, state.x, state.y));
+          moveAnnotation(annotation, state.x, state.y));
     });
-  return items.length === 0 && items2.length === 0
+  return artboardMoves.length === 0 && noteMoves.length === 0
     ? null
     : {
-        moves: items,
-        anns: items2,
+        moves: artboardMoves,
+        anns: noteMoves,
         manifest: {
-          ...input,
-          artboards: value2,
-          ...(value3
+          ...manifest,
+          artboards: artboards,
+          ...(annotations
             ? {
-                annotations: value3,
+                annotations: annotations,
               }
             : {}),
         },
       };
 }
-function boardSelectionKey(input?: Dynamic): Dynamic {
+function boardSelectionKey(selection?: Dynamic): Dynamic {
   return (
-    [...input.files].sort().join(`
+    [...selection.files].sort().join(`
 `) +
     `
 
 ` +
-    [...input.notes].sort().join(`
+    [...selection.notes].sort().join(`
 `)
   );
 }
 function selectionNavigationScope(
-  input?: Dynamic,
-  options?: Dynamic,
+  selection?: Dynamic,
+  isPanel?: Dynamic,
 ): Dynamic {
-  return options
+  return isPanel
     ? "panel"
-    : input.elements.size === 0 ||
-        input.artboards.size > 0 ||
-        input.notes.size > 0
+    : selection.elements.size === 0 ||
+        selection.artboards.size > 0 ||
+        selection.notes.size > 0
       ? "canvas"
       : "siblings";
 }
-function canNavigateSelection(input?: Dynamic): Dynamic {
-  return !input.gesturing && input.setMoveCommits <= 0;
+function canNavigateSelection(session?: Dynamic): Dynamic {
+  return !session.gesturing && session.setMoveCommits <= 0;
 }
-function sameSelectionStructure(input?: Dynamic, options?: Dynamic): Dynamic {
-  let value: Dynamic = canvasBoardSelection(input),
-    value2: Dynamic = canvasBoardSelection(options);
+function sameSelectionStructure(previous?: Dynamic, next?: Dynamic): Dynamic {
+  let previousBoards: Dynamic = canvasBoardSelection(previous),
+    nextBoards: Dynamic = canvasBoardSelection(next);
   return (
-    options.elements.size === input.elements.size &&
-    [...options.elements.keys()].every(
-      (input2?: Dynamic): Dynamic => input.elements.has(input2),
+    next.elements.size === previous.elements.size &&
+    [...next.elements.keys()].every(
+      (item?: Dynamic): Dynamic => previous.elements.has(item),
     ) &&
-    value2.files.size === value.files.size &&
-    [...value2.files].every(
-      (input2?: Dynamic): Dynamic => value.files.has(input2),
+    nextBoards.files.size === previousBoards.files.size &&
+    [...nextBoards.files].every(
+      (item?: Dynamic): Dynamic => previousBoards.files.has(item),
     ) &&
-    value2.notes.size === value.notes.size &&
-    [...value2.notes].every(
-      (input2?: Dynamic): Dynamic => value.notes.has(input2),
+    nextBoards.notes.size === previousBoards.notes.size &&
+    [...nextBoards.notes].every(
+      (item?: Dynamic): Dynamic => previousBoards.notes.has(item),
     )
   );
 }
 function sameSelectedObjectFiles(
-  input?: Dynamic,
-  options?: Dynamic,
+  previous?: Dynamic,
+  next?: Dynamic,
 ): Dynamic {
-  let callback: Dynamic = (input2?: Dynamic): Dynamic =>
-      new Set([...input2.artboards, ...input2.elements.keys()]),
-    value: Dynamic = callback(input),
-    value2: Dynamic = callback(options);
+  let collectObjectFiles: Dynamic = (selection?: Dynamic): Dynamic =>
+      new Set([...selection.artboards, ...selection.elements.keys()]),
+    previousFiles: Dynamic = collectObjectFiles(previous),
+    nextFiles: Dynamic = collectObjectFiles(next);
   return (
-    value2.size === value.size &&
-    [...value2].every((input2?: Dynamic): Dynamic => value.has(input2)) &&
-    options.notes.size === input.notes.size &&
-    [...options.notes].every(
-      (input2?: Dynamic): Dynamic => input.notes.has(input2),
+    nextFiles.size === previousFiles.size &&
+    [...nextFiles].every((file?: Dynamic): Dynamic => previousFiles.has(file)) &&
+    next.notes.size === previous.notes.size &&
+    [...next.notes].every(
+      (file?: Dynamic): Dynamic => previous.notes.has(file),
     )
   );
 }
-function keyboardNudgeDelta(input?: Dynamic, options?: Dynamic): Dynamic {
-  let value: Dynamic = options ? 10 : 1;
-  switch (input) {
+function keyboardNudgeDelta(key?: Dynamic, isShift?: Dynamic): Dynamic {
+  let step: Dynamic = isShift ? 10 : 1;
+  switch (key) {
     case "ArrowLeft":
       return {
-        dx: -value,
+        dx: -step,
         dy: 0,
       };
     case "ArrowRight":
       return {
-        dx: value,
+        dx: step,
         dy: 0,
       };
     case "ArrowUp":
       return {
         dx: 0,
-        dy: -value,
+        dy: -step,
       };
     case "ArrowDown":
       return {
         dx: 0,
-        dy: value,
+        dy: step,
       };
     default:
       return null;
   }
 }
 function activeDesignColorTokens(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  tokens?: Dynamic,
+  scopes?: Dynamic,
+  activeScope?: Dynamic,
 ): Dynamic {
   let values: Dynamic = new Set(
-      options.map((input2?: Dynamic): Dynamic => input2.selector),
+      scopes.map((scope?: Dynamic): Dynamic => scope.selector),
     ),
     entries: Dynamic = new Map(),
-    values2: Dynamic = new Set();
-  for (let value of input as Dynamic) {
-    let value2: Dynamic = context !== undefined && value.scope === context,
-      value3: Dynamic = value.scope === undefined || !values.has(value.scope);
-    (!value2 && !value3) ||
-      ((value2 || !values2.has(value.name)) && entries.set(value.name, value),
-      value2 && values2.add(value.name));
+    activeNames: Dynamic = new Set();
+  for (let token of tokens as Dynamic) {
+    let isActiveScope: Dynamic = activeScope !== undefined && token.scope === activeScope,
+      isUnscoped: Dynamic = token.scope === undefined || !values.has(token.scope);
+    (!isActiveScope && !isUnscoped) ||
+      ((isActiveScope || !activeNames.has(token.name)) && entries.set(token.name, token),
+      isActiveScope && activeNames.add(token.name));
   }
   return [...entries.values()];
 }
 function cssVariableValue(name?: Dynamic): Dynamic {
   return `var(${name.startsWith("--") ? name : `--${name}`})`;
 }
-function cssVariableName(value?: Dynamic): Dynamic {
-  return value?.match(/^var\(\s*(--[\w-]+)\s*\)$/)?.[1] ?? null;
+function cssVariableName(text?: Dynamic): Dynamic {
+  return text?.match(/^var\(\s*(--[\w-]+)\s*\)$/)?.[1] ?? null;
 }
 export {
   activeDesignColorTokens,
@@ -3658,13 +3658,13 @@ export {
   CanvasWorkingStateCache,
   CanvasWorkingStateChangedStaleUnsavedSet,
   CanvasWorkingStateConstant,
-  CanvasWorkingStateConstant_2,
-  CanvasWorkingStateConstant_3,
-  CanvasWorkingStateConstant_4,
-  CanvasWorkingStateConstant_5,
-  CanvasWorkingStateConstant_6,
-  CanvasWorkingStateConstant_7,
-  CanvasWorkingStateConstant_8,
+  announcementCooldownMs as CanvasWorkingStateConstant_2,
+  dropGhostCounter as CanvasWorkingStateConstant_3,
+  maxPreviewEdge as CanvasWorkingStateConstant_4,
+  maxVideosPerDrop as CanvasWorkingStateConstant_5,
+  writeSettleMs as CanvasWorkingStateConstant_6,
+  loadLimitMs as CanvasWorkingStateConstant_7,
+  travelCommitTimeoutMs as CanvasWorkingStateConstant_8,
   CanvasWorkingStateContext,
   CanvasWorkingStateCtrl,
   CanvasWorkingStateCtrlKey,
@@ -3678,15 +3678,15 @@ export {
   CanvasWorkingStateHas,
   CanvasWorkingStateHtml,
   CanvasWorkingStateItems,
-  CanvasWorkingStateItems_2,
+  imagePreviewQueue as CanvasWorkingStateItems_2,
   CanvasWorkingStateJobState,
   CanvasWorkingStateJoin,
   CanvasWorkingStateKEEPFILESMAXWaitsConfig,
   CanvasWorkingStateLimit,
-  CanvasWorkingStateLimit_2,
-  CanvasWorkingStateLimit_3,
-  CanvasWorkingStateLimit_4,
-  CanvasWorkingStateLimit_5,
+  maxPreviewChars as CanvasWorkingStateLimit_2,
+  pressStaleMs as CanvasWorkingStateLimit_3,
+  keptFilesMax as CanvasWorkingStateLimit_4,
+  releaseGuardMs as CanvasWorkingStateLimit_5,
   CanvasWorkingStateMapValue,
   CanvasWorkingStateMetaKey,
   CanvasWorkingStateOnload,
@@ -3773,7 +3773,7 @@ export function installCanvasWorkingState(): () => void {
   return () => {
     Value_5 = "\0";
     CanvasWorkingStateConstant = 2e3;
-    CanvasWorkingStateConstant_2 = 500;
+    announcementCooldownMs = 500;
     CanvasWorkingStateRegistry = {};
     CanvasWorkingStateFloorValue = Math.floor(1572864);
     CanvasWorkingStateLimit = 65535;
@@ -3791,7 +3791,7 @@ export function installCanvasWorkingState(): () => void {
     CanvasWorkingStateCache = new Map();
     CanvasWorkingStateSubscribers = new Set();
     CanvasWorkingStateMapValue = [];
-    CanvasWorkingStateConstant_3 = 0;
+    dropGhostCounter = 0;
     CanvasWorkingStateHtml = `self.onmessage = async function (e) {
   var d = e.data, bm = null;
   try {
@@ -3820,41 +3820,41 @@ export function installCanvasWorkingState(): () => void {
 };`;
     imagePreviewWorker = null;
     imagePreviewWorkerUnavailable = false;
-    CanvasWorkingStateItems_2 = [];
+    imagePreviewQueue = [];
     CanvasWorkingStateJobState = null;
     CanvasWorkingStateDelayMs = 12e3;
-    CanvasWorkingStateConstant_4 = 1600;
-    CanvasWorkingStateLimit_2 = 4e5;
-    CanvasWorkingStateOnload = (input?: Dynamic): Dynamic =>
-      new Promise((input2?: Dynamic, options?: Dynamic): Dynamic => {
-        let value: Dynamic = new FileReader();
-        value.onload = (): Dynamic => input2(String(value.result));
-        value.onerror = (): Dynamic =>
-          options(value.error ?? new Error("could not read the preview"));
-        value.readAsDataURL(input);
+    maxPreviewEdge = 1600;
+    maxPreviewChars = 4e5;
+    CanvasWorkingStateOnload = (blob?: Dynamic): Dynamic =>
+      new Promise((resolve?: Dynamic, reject?: Dynamic): Dynamic => {
+        let reader: Dynamic = new FileReader();
+        reader.onload = (): Dynamic => resolve(String(reader.result));
+        reader.onerror = (): Dynamic =>
+          reject(reader.error ?? new Error("could not read the preview"));
+        reader.readAsDataURL(blob);
       });
     CanvasWorkingStateAlias = null;
     filePublishInProgress = false;
     CanvasWorkingStateDataImagePattern = /^data:image\/([a-z0-9.+-]+);base64,/i;
     CanvasWorkingStateResolvedValue = 512 * 1024;
     CanvasWorkingStateWidth = (
-      input?: Dynamic,
-      options?: Dynamic,
-      context?: Dynamic,
-      value?: Dynamic,
-      extra?: Dynamic,
+      targetWidth?: Dynamic,
+      imageSize?: Dynamic,
+      fallback?: Dynamic,
+      minHeight?: Dynamic,
+      maxHeight?: Dynamic,
     ): Dynamic =>
-      options && options.width > 0 && options.height > 0
+      imageSize && imageSize.width > 0 && imageSize.height > 0
         ? Math.min(
-            extra,
+            maxHeight,
             Math.max(
-              value,
-              Math.round((input * options.height) / options.width),
+              minHeight,
+              Math.round((targetWidth * imageSize.height) / imageSize.width),
             ),
           )
-        : context;
-    CanvasWorkingStateReplace = (input?: Dynamic): Dynamic =>
-      input
+        : fallback;
+    CanvasWorkingStateReplace = (message?: Dynamic): Dynamic =>
+      message
         .replace(uiMessage("canvas.workingState.soVideosCanTBe"), uiMessage("canvas.workingState.soTheVideoCanT"))
         .replace(uiMessage("canvas.workingState.soItWasnTAdded"), uiMessage("canvas.workingState.soTheVideoWasnT"))
         .replace(uiMessage("canvas.workingState.videosCanBeAdded"), uiMessage("canvas.workingState.videosCanBeUsed"))
@@ -3863,9 +3863,9 @@ export function installCanvasWorkingState(): () => void {
           uiMessage("canvas.workingState.noMoreFilesCanBe"),
         )
         .replace(uiMessage("canvas.workingState.canTBeAdded"), uiMessage("canvas.workingState.canTBeUsed"));
-    CanvasWorkingStateHandler = (input?: Dynamic): Dynamic =>
-      `A slide deck can't take videos yet. Add the video to another ${input}.`;
-    CanvasWorkingStateConstant_5 = 4;
+    CanvasWorkingStateHandler = (surface?: Dynamic): Dynamic =>
+      `A slide deck can't take videos yet. Add the video to another ${surface}.`;
+    maxVideosPerDrop = 4;
     CanvasWorkingStateQuotaOrStateRateLimitedStoreUnavailableSet = new Set([
       "quota_or_state",
       "rate_limited",
@@ -3875,31 +3875,31 @@ export function installCanvasWorkingState(): () => void {
       "capability_disabled",
       "capability_removed",
     ]);
-    CanvasWorkingStateJoin = (input?: Dynamic): Dynamic =>
-      [input.name, input.size, input.lastModified].join("|");
+    CanvasWorkingStateJoin = (file?: Dynamic): Dynamic =>
+      [file.name, file.size, file.lastModified].join("|");
     CanvasWorkingStatePrint = (
-      input?: Dynamic,
-      options?: Dynamic,
-      context?: Dynamic,
+      current?: Dynamic,
+      printKey?: Dynamic,
+      next?: Dynamic,
     ): Dynamic =>
-      input !== undefined &&
-      input.print === options &&
-      input.src === context.src &&
-      input.video === context.video;
+      current !== undefined &&
+      current.print === printKey &&
+      current.src === next.src &&
+      current.video === next.video;
     BoxcancelValue = "boxcancel:";
-    CanvasWorkingStateLimit_3 = 1e4;
+    pressStaleMs = 1e4;
     reactCanvasWorkingState = toModuleNamespace(
       load_react(),
       1,
     );
-    CanvasWorkingStateLimit_4 = 24;
-    CanvasWorkingStateConstant_6 = 3e3;
-    CanvasWorkingStateConstant_7 = 5e3;
+    keptFilesMax = 24;
+    writeSettleMs = 3e3;
+    loadLimitMs = 5e3;
     CanvasWorkingStateKEEPFILESMAXWaitsConfig = {
-      KEEP_FILES_MAX: CanvasWorkingStateLimit_4,
+      KEEP_FILES_MAX: keptFilesMax,
       waits: {
-        writeSettleMs: CanvasWorkingStateConstant_6,
-        loadLimitMs: CanvasWorkingStateConstant_7,
+        writeSettleMs: writeSettleMs,
+        loadLimitMs: loadLimitMs,
       },
     };
     CanvasWorkingStateChangedStaleUnsavedSet = new Set([
@@ -3910,17 +3910,17 @@ export function installCanvasWorkingState(): () => void {
       "load",
       "cap",
     ]);
-    CanvasWorkingStateHas = (input?: Dynamic): Dynamic =>
-      CanvasWorkingStateChangedStaleUnsavedSet.has(input);
+    CanvasWorkingStateHas = (reason?: Dynamic): Dynamic =>
+      CanvasWorkingStateChangedStaleUnsavedSet.has(reason);
     CanvasWorkingStateContext = (0, reactCanvasWorkingState.createContext)(
       null,
     );
     CanvasWorkingStateHandler_2 = (
-      input?: Dynamic,
-      options: Dynamic = true,
+      commit?: Dynamic,
+      counts: Dynamic = true,
     ): Dynamic => ({
-      commit: input,
-      counts: options,
+      commit: commit,
+      counts: counts,
       applied: 0,
       redoable: 0,
       redoableBeforePush: 0,
@@ -3955,21 +3955,21 @@ export function installCanvasWorkingState(): () => void {
       "ann-crop": true,
       "ann-heads": true,
     };
-    CanvasWorkingStateHandler_3 = (input?: Dynamic): Dynamic =>
-      CanvasWorkingStateAddDeletePageAddConfig[input];
-    CanvasWorkingStateLimit_5 = 5e3;
-    CanvasWorkingStateConstant_8 = 3e4;
+    CanvasWorkingStateHandler_3 = (action?: Dynamic): Dynamic =>
+      CanvasWorkingStateAddDeletePageAddConfig[action];
+    releaseGuardMs = 5e3;
+    travelCommitTimeoutMs = 3e4;
     CanvasValue = "<canvas>";
-    CanvasWorkingStateCtrlKey = (input?: Dynamic): Dynamic => ({
+    CanvasWorkingStateCtrlKey = (event?: Dynamic): Dynamic => ({
       alt: false,
-      ctrl: input.ctrlKey,
-      meta: input.metaKey,
-      shift: input.shiftKey,
+      ctrl: event.ctrlKey,
+      meta: event.metaKey,
+      shift: event.shiftKey,
     });
-    CanvasWorkingStateGetAltKey = (input?: Dynamic): Dynamic => input.altKey;
-    CanvasWorkingStateCtrl = (input?: Dynamic): Dynamic =>
-      input.ctrl ? "keep" : "flow";
-    CanvasWorkingStateMetaKey = (input?: Dynamic): Dynamic =>
-      input.metaKey || input.ctrlKey;
+    CanvasWorkingStateGetAltKey = (event?: Dynamic): Dynamic => event.altKey;
+    CanvasWorkingStateCtrl = (mods?: Dynamic): Dynamic =>
+      mods.ctrl ? "keep" : "flow";
+    CanvasWorkingStateMetaKey = (event?: Dynamic): Dynamic =>
+      event.metaKey || event.ctrlKey;
   };
 }

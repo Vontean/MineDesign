@@ -42,52 +42,52 @@ var ButtonButtonCss_2: Dynamic;
 var ButtonButtonCss_3: Dynamic;
 var initializeButtonButton_2: Dynamic;
 function isButtonActivationKey(
-  input: Pick<React.KeyboardEvent, "key">,
+  event: Pick<React.KeyboardEvent, "key">,
 ): boolean {
-  return input.key === "Enter" || input.key === " ";
+  return event.key === "Enter" || event.key === " ";
 }
 function isUnmodifiedButtonActivationKey(
-  input: Pick<
+  event: Pick<
     React.KeyboardEvent,
     "key" | "ctrlKey" | "metaKey" | "altKey" | "shiftKey"
   >,
 ): boolean {
   return (
-    isButtonActivationKey(input) &&
-    !input.ctrlKey &&
-    !input.metaKey &&
-    !input.altKey &&
-    !input.shiftKey
+    isButtonActivationKey(event) &&
+    !event.ctrlKey &&
+    !event.metaKey &&
+    !event.altKey &&
+    !event.shiftKey
   );
 }
 function useButtonGroupOptions(): Dynamic {
   return (0, reactButtonButton.useContext)(ButtonGroupOptionsContext);
 }
 function buttonSizeToIconSize(
-  input?: ControlSize,
+  size?: ControlSize,
 ): "auto-sm" | "md" | "auto" {
-  return input === "xs" || input === "xxs"
+  return size === "xs" || size === "xxs"
     ? "auto-sm"
-    : input === "lg"
+    : size === "lg"
       ? "md"
       : "auto";
 }
-function useButtonIconSize(input?: Dynamic): Dynamic {
-  let value: Dynamic = useButtonGroupOptions(),
-    value2: Dynamic = (0, reactButtonButton.useContext)(
+function useButtonIconSize(size?: Dynamic): Dynamic {
+  let groupOptions: Dynamic = useButtonGroupOptions(),
+    inheritedIconSize: Dynamic = (0, reactButtonButton.useContext)(
       ButtonIconSizeContext,
     );
   return useIconSize(
-    input !== undefined
-      ? buttonSizeToIconSize(input)
-      : (value2 ??
-          (value?.size !== undefined
-            ? buttonSizeToIconSize(value.size)
+    size !== undefined
+      ? buttonSizeToIconSize(size)
+      : (inheritedIconSize ??
+          (groupOptions?.size !== undefined
+            ? buttonSizeToIconSize(groupOptions.size)
             : "auto")),
   );
 }
-function buttonIconPadding(input?: Dynamic): Dynamic {
-  return `calc((var(--cds-h-control) - ${scaleCssPixels(iconSizeMetrics[input].px)}) / 2)`;
+function buttonIconPadding(iconSize?: Dynamic): Dynamic {
+  return `calc((var(--cds-h-control) - ${scaleCssPixels(iconSizeMetrics[iconSize].px)}) / 2)`;
 }
 export {
   Button,
@@ -235,7 +235,7 @@ export function installCdsButtonButton(): () => void {
             pressed: pressed,
             flush = false,
             style: style,
-            disabled: disabled2,
+            disabled: isDisabled,
             disabledReason: disabledReason,
             disabledReasonSide: disabledReasonSide,
             type: type,
@@ -250,135 +250,135 @@ export function installCdsButtonButton(): () => void {
             "aria-label": ariaLabel,
             ...props
           }: Dynamic,
-          options?: Dynamic,
+          forwardedRef?: Dynamic,
         ): Dynamic => {
-          let value: Dynamic = useButtonGroupOptions(),
-            value2: Dynamic = value?.joined;
-          value &&
-            ((size = size ?? value.size),
-            value.enforceVariant
-              ? (variant = value.buttonVariant)
-              : (variant = variant ?? value.buttonVariant));
-          let value3: Dynamic = variant ?? "secondary",
-            value4: Dynamic = useButtonGroup(),
-            value5: Dynamic = iconOnly === true ? undefined : value4.icon,
-            value6: Dynamic = value5 !== undefined && value4.compact,
-            value7: Dynamic = iconOnly === true || value6,
-            value8: Dynamic = value6 ? value5 : icon,
-            value9: Dynamic = value6 ? (
+          let groupOptions: Dynamic = useButtonGroupOptions(),
+            joinedPosition: Dynamic = groupOptions?.joined;
+          groupOptions &&
+            ((size = size ?? groupOptions.size),
+            groupOptions.enforceVariant
+              ? (variant = groupOptions.buttonVariant)
+              : (variant = variant ?? groupOptions.buttonVariant));
+          let resolvedVariant: Dynamic = variant ?? "secondary",
+            buttonGroup: Dynamic = useButtonGroup(),
+            groupIcon: Dynamic = iconOnly === true ? undefined : buttonGroup.icon,
+            isCompact: Dynamic = groupIcon !== undefined && buttonGroup.compact,
+            isIconOnly: Dynamic = iconOnly === true || isCompact,
+            resolvedIcon: Dynamic = isCompact ? groupIcon : icon,
+            compactLabel: Dynamic = isCompact ? (
               <span data-cds-part={"compact-name"} className={"contents"}>
                 {children}
               </span>
             ) : null,
-            value10: Dynamic =
+            flushPosition: Dynamic =
               flush === true ? "start" : flush === false ? undefined : flush,
-            value11: Dynamic =
-              value10 !== undefined &&
-              Object.hasOwn(ButtonButtonStartEndBothConfig, value10)
-                ? value10
+            validFlushPosition: Dynamic =
+              flushPosition !== undefined &&
+              Object.hasOwn(ButtonButtonStartEndBothConfig, flushPosition)
+                ? flushPosition
                 : undefined,
-            value12: Dynamic =
-              value11 !== undefined && !value2 && value3 === "ghost"
-                ? value11
+            outsetPosition: Dynamic =
+              validFlushPosition !== undefined && !joinedPosition && resolvedVariant === "ghost"
+                ? validFlushPosition
                 : undefined,
-            value13: Dynamic = useAppleKeyboard(),
-            value14: Dynamic = (0, reactButtonButton.useRef)(null);
-          useButtonAnimation(value14, "Button");
-          let value15: Dynamic = useButtonIconSize(size),
-            value16: Dynamic =
-              value7 && value8 ? (
-                isIconName(value8) ? (
-                  <Icon name={value8} size={value15} />
+            isAppleKeyboard: Dynamic = useAppleKeyboard(),
+            paintRef: Dynamic = (0, reactButtonButton.useRef)(null);
+          useButtonAnimation(paintRef, "Button");
+          let iconSize: Dynamic = useButtonIconSize(size),
+            iconOnlyContent: Dynamic =
+              isIconOnly && resolvedIcon ? (
+                isIconName(resolvedIcon) ? (
+                  <Icon name={resolvedIcon} size={iconSize} />
                 ) : (
-                  value8
+                  resolvedIcon
                 )
               ) : null,
-            value17: Dynamic = useTooltipTrigger(),
-            value18: Dynamic =
-              (value7 && ariaLabel && tooltip !== false) ||
-              value5 !== undefined,
-            value19: Dynamic =
-              value5 !== undefined
-                ? value6
-                  ? value9
+            tooltipTrigger: Dynamic = useTooltipTrigger(),
+            hasTooltip: Dynamic =
+              (isIconOnly && ariaLabel && tooltip !== false) ||
+              groupIcon !== undefined,
+            tooltipContent: Dynamic =
+              groupIcon !== undefined
+                ? isCompact
+                  ? compactLabel
                   : undefined
                 : typeof tooltip == "string"
                   ? tooltip
                   : ariaLabel,
-            value20: Dynamic =
-              href === undefined && !!disabled2 && !!disabledReason,
-            value21: Dynamic = href === undefined && render === undefined,
-            value22: Dynamic = busy && value21,
-            callback: Dynamic = (event?: Dynamic): Dynamic => {
+            showsDisabledReason: Dynamic =
+              href === undefined && !!isDisabled && !!disabledReason,
+            isNativeButton: Dynamic = href === undefined && render === undefined,
+            isBusyBlocked: Dynamic = busy && isNativeButton,
+            handleKeyDown: Dynamic = (event?: Dynamic): Dynamic => {
               if (isButtonActivationKey(event)) {
-                if (value22 && isUnmodifiedButtonActivationKey(event)) {
+                if (isBusyBlocked && isUnmodifiedButtonActivationKey(event)) {
                   event.preventDefault();
                   event.stopPropagation();
                   return;
                 }
-                event.repeat && value21 && event.preventDefault();
+                event.repeat && isNativeButton && event.preventDefault();
               }
               props.onKeyDown?.(event);
             },
-            callback2: Dynamic = (event?: Dynamic): Dynamic => {
-              if (value22 && isUnmodifiedButtonActivationKey(event)) {
+            handleKeyUp: Dynamic = (event?: Dynamic): Dynamic => {
+              if (isBusyBlocked && isUnmodifiedButtonActivationKey(event)) {
                 event.preventDefault();
                 event.stopPropagation();
                 return;
               }
               props.onKeyUp?.(event);
             },
-            value23: Dynamic =
-              value12 === undefined
+            outsetStyle: Dynamic =
+              outsetPosition === undefined
                 ? undefined
-                : value7
+                : isIconOnly
                   ? {
-                      "--cds-outset-x": buttonIconPadding(value15),
+                      "--cds-outset-x": buttonIconPadding(iconSize),
                     }
                   : ButtonButtonCdsOutsetXConfig,
-            value24: Dynamic = cn(
+            buttonClassName: Dynamic = cn(
               buttonContentClassNames({
                 variant: variant,
-                iconOnly: value7,
+                iconOnly: isIconOnly,
               }),
-              value22 ? "pointer-events-none" : "",
-              value12 ? ButtonButtonStartEndBothConfig[value12] : "",
-              value2 && value3 !== "ghost"
-                ? ButtonButtonStartEndMiddleConfig[value2]
+              isBusyBlocked ? "pointer-events-none" : "",
+              outsetPosition ? ButtonButtonStartEndBothConfig[outsetPosition] : "",
+              joinedPosition && resolvedVariant !== "ghost"
+                ? ButtonButtonStartEndMiddleConfig[joinedPosition]
                 : "",
               className,
             ),
-            value25: Dynamic = (
+            buttonContent: Dynamic = (
               <jsxButtonButton.Fragment>
                 <span
                   aria-hidden={true}
                   className={buttonBackgroundClassName({
-                    joined: !!value2,
+                    joined: !!joinedPosition,
                     solid:
-                      value3 === "primary" ||
-                      value3 === "danger" ||
-                      value3 === "brand",
+                      resolvedVariant === "primary" ||
+                      resolvedVariant === "danger" ||
+                      resolvedVariant === "brand",
                   })}
                 >
                   <span
-                    ref={value14}
+                    ref={paintRef}
                     data-cds-part={"paint"}
                     className={`${buttonIconOnlyVariants({
-                      variant: value3,
-                    })} ${ButtonContextClassNames_6} ${value3 === "secondary" && !value2 ? ButtonContextClassNames_5 : ""}`}
+                      variant: resolvedVariant,
+                    })} ${ButtonContextClassNames_6} ${resolvedVariant === "secondary" && !joinedPosition ? ButtonContextClassNames_5 : ""}`}
                   />
                 </span>
                 <span
                   className={`inline-flex min-w-0 items-center gap-1 ${busy ? "opacity-0" : ""}`}
                 >
-                  <ButtonIconSizeContext.Provider value={value15}>
-                    {value16 ? (indicator ? (<span className={"grid"}>
+                  <ButtonIconSizeContext.Provider value={iconSize}>
+                    {iconOnlyContent ? (indicator ? (<span className={"grid"}>
                           <span
                             className={
                               "col-start-1 row-start-1 [--btn-dot-r:calc(0.1875rem*var(--cds-rem-scale,1))] [--btn-dot-x:calc(100%_-_var(--btn-dot-r)_+_1px)] [&:dir(rtl)]:[--btn-dot-x:calc(var(--btn-dot-r)_-_1px)] not-forced-colors:has-[~[data-cds-part=indicator]>[data-cds=Pulse]]:[mask-image:radial-gradient(circle_at_var(--btn-dot-x)_calc(var(--btn-dot-r)_-_1px),transparent_calc(var(--btn-dot-r)_+_2px),black_calc(var(--btn-dot-r)_+_2.5px))]"
                             }
                           >
-                            {value16}
+                            {iconOnlyContent}
                           </span>
                           <span
                             aria-hidden={true}
@@ -389,33 +389,33 @@ export function installCdsButtonButton(): () => void {
                           >
                             {indicator}
                           </span>
-                        </span>) : (value6 ? (<jsxButtonButton.Fragment>
-                          {value16}
-                          <span className={"sr-only"}>{value9}</span>
-                        </jsxButtonButton.Fragment>) : (value16))) : (<jsxButtonButton.Fragment>
-                        {value8 &&
-                          iconPosition === "start" && (isIconName(value8) ? (<Icon
-                              name={value8}
-                              size={value15}
+                        </span>) : (isCompact ? (<jsxButtonButton.Fragment>
+                          {iconOnlyContent}
+                          <span className={"sr-only"}>{compactLabel}</span>
+                        </jsxButtonButton.Fragment>) : (iconOnlyContent))) : (<jsxButtonButton.Fragment>
+                        {resolvedIcon &&
+                          iconPosition === "start" && (isIconName(resolvedIcon) ? (<Icon
+                              name={resolvedIcon}
+                              size={iconSize}
                               className={"-ms-1"}
                             />) : (<span className={"-ms-1 inline-flex"}>
-                              {value8}
+                              {resolvedIcon}
                             </span>))}
                         {children}
-                        {value8 &&
-                          iconPosition === "end" && (isIconName(value8) ? (<Icon
-                              name={value8}
-                              size={value15}
+                        {resolvedIcon &&
+                          iconPosition === "end" && (isIconName(resolvedIcon) ? (<Icon
+                              name={resolvedIcon}
+                              size={iconSize}
                               className={"-me-1"}
                             />) : (<span className={"-me-1 inline-flex"}>
-                              {value8}
+                              {resolvedIcon}
                             </span>))}
                         {shortcut && (<Shortcut
                             keys={shortcut}
                             aria-hidden={true}
                             className={npm_clsx_Ea(
                               "pointer-coarse:hidden ms-1",
-                              (!value2 || value2 === "end") &&
+                              (!joinedPosition || joinedPosition === "end") &&
                                 MeCalcVarCdsHControl1em6px2VarCdsPadMdValue,
                             )}
                           />)}
@@ -435,7 +435,7 @@ export function installCdsButtonButton(): () => void {
                   </span>)}
               </jsxButtonButton.Fragment>
             ),
-            value26: Dynamic = useLinkProps({
+            linkProps: Dynamic = useLinkProps({
               href: href,
               routerOptions: routerOptions,
               target: target,
@@ -443,28 +443,28 @@ export function installCdsButtonButton(): () => void {
               download: download,
               ...pickRouterOptions(props),
             }),
-            value27: Dynamic = npm_useRender_LL({
+            renderedButton: Dynamic = npm_useRender_LL({
               render:
                 render ??
                 (href !== undefined ? (
                   <a />
                 ) : (
-                  <button type={type ?? "button"} disabled={disabled2} />
+                  <button type={type ?? "button"} disabled={isDisabled} />
                 )),
-              ref: options,
+              ref: forwardedRef,
               props: {
                 "data-cds": "Button",
-                ...(value7
+                ...(isIconOnly
                   ? {
                       "data-cds-icon-only": "",
                     }
                   : undefined),
-                ...(value5 !== undefined
+                ...(groupIcon !== undefined
                   ? {
                       [CdsCompactableAttribute]: "",
                     }
                   : undefined),
-                ...(value3 === "ghost"
+                ...(resolvedVariant === "ghost"
                   ? {
                       "data-cds-ghost": "",
                     }
@@ -474,51 +474,51 @@ export function installCdsButtonButton(): () => void {
                       "data-step": "1",
                     }
                   : getSizeAttribute(size)),
-                className: value24,
-                style: value23
+                className: buttonClassName,
+                style: outsetStyle
                   ? {
-                      ...value23,
+                      ...outsetStyle,
                       ...style,
                     }
                   : style,
                 "aria-busy": busy || undefined,
                 "aria-pressed": href === undefined ? pressed : undefined,
-                "aria-disabled": value22 || undefined,
+                "aria-disabled": isBusyBlocked || undefined,
                 "aria-label": ariaLabel,
                 "aria-keyshortcuts": shortcut
-                  ? parseSingleShortcut(shortcut, value13)
+                  ? parseSingleShortcut(shortcut, isAppleKeyboard)
                   : undefined,
-                children: value25,
+                children: buttonContent,
                 ...props,
                 onMouseDown: withSelectionPrevention(
                   props.onMouseDown,
                 ),
-                onClick: value22 ? ButtonButtonPreventDefault : props.onClick,
-                onKeyDown: callback,
-                onKeyUp: callback2,
-                ...(href !== undefined ? value26 : undefined),
+                onClick: isBusyBlocked ? ButtonButtonPreventDefault : props.onClick,
+                onKeyDown: handleKeyDown,
+                onKeyUp: handleKeyUp,
+                ...(href !== undefined ? linkProps : undefined),
               },
             }),
-            value28: Dynamic = value18 ? (
+            buttonWithTooltip: Dynamic = hasTooltip ? (
               <DeferredTooltip
                 side={tooltipSide}
                 hoverable={false}
-                content={value17 || value20 ? undefined : value19}
+                content={tooltipTrigger || showsDisabledReason ? undefined : tooltipContent}
                 shortcut={shortcut}
               >
-                {value27}
+                {renderedButton}
               </DeferredTooltip>
             ) : (
-              value27
+              renderedButton
             );
           return disabledReason === undefined || href !== undefined ? (
-            value28
+            buttonWithTooltip
           ) : (
             <DeferredDisabledReasonTooltip
               side={disabledReasonSide}
-              reason={value20 ? disabledReason : undefined}
+              reason={showsDisabledReason ? disabledReason : undefined}
             >
-              {value28}
+              {buttonWithTooltip}
             </DeferredDisabledReasonTooltip>
           );
         },

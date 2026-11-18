@@ -24,7 +24,7 @@ function CanvasZoomControl({
   getLimits: getLimits,
   fitLabel = "Fit",
   tip = "Zoom",
-  disabled: disabled2 = false,
+  disabled: isDisabled = false,
   disabledTip: disabledTip,
   tipSide: tipSide,
   "data-testid": dataTestid = "mc-zoom",
@@ -37,62 +37,62 @@ function CanvasZoomControl({
   viewToggles = [],
 }: Dynamic): Dynamic {
   useUiLocale();
-  let [value, value2]: Dynamic = (0, react_F_.useState)(1),
-    [value3, value4]: Dynamic = (0, react_F_.useState)(
+  let [zoomScale, setZoomScale]: Dynamic = (0, react_F_.useState)(1),
+    [readoutScale, setReadoutScale]: Dynamic = (0, react_F_.useState)(
       (): Dynamic => (readout ? getScale() : 1),
     ),
-    value5: Dynamic = (0, react_F_.useRef)(false);
+    isOpenRef: Dynamic = (0, react_F_.useRef)(false);
   (0, react_F_.useLayoutEffect)((): Dynamic => {
     if (!(!readout || subscribeScale === undefined))
-      return subscribeScale((input?: Dynamic): Dynamic => {
-        value4(input);
-        value5.current && (value2(input), value7(getLimits?.() ?? {}));
+      return subscribeScale((newScale?: Dynamic): Dynamic => {
+        setReadoutScale(newScale);
+        isOpenRef.current && (setZoomScale(newScale), setZoomLimits(getLimits?.() ?? {}));
       });
   }, [readout, subscribeScale]);
-  let [value6, value7]: Dynamic = (0, react_F_.useState)({}),
-    value8: Dynamic = zoomScalePercent(value),
-    value9: Dynamic =
-      value6.minScale == null ? -1 / 0 : Math.round(value6.minScale * 100),
-    value10: Dynamic =
-      value6.maxScale == null ? 1 / 0 : Math.round(value6.maxScale * 100),
-    callback: Dynamic = (input?: Dynamic): Dynamic => {
-      value5.current = input;
-      input && (value2(getScale()), value7(getLimits?.() ?? {}));
+  let [zoomLimits, setZoomLimits]: Dynamic = (0, react_F_.useState)({}),
+    currentPercent: Dynamic = zoomScalePercent(zoomScale),
+    minPercent: Dynamic =
+      zoomLimits.minScale == null ? -1 / 0 : Math.round(zoomLimits.minScale * 100),
+    maxPercent: Dynamic =
+      zoomLimits.maxScale == null ? 1 / 0 : Math.round(zoomLimits.maxScale * 100),
+    handleOpenChange: Dynamic = (isOpen?: Dynamic): Dynamic => {
+      isOpenRef.current = isOpen;
+      isOpen && (setZoomScale(getScale()), setZoomLimits(getLimits?.() ?? {}));
     },
-    value11: Dynamic =
+    isMac: Dynamic =
       typeof navigator !== "undefined" &&
       /Mac|iPhone|iPad/.test(navigator.platform),
-    callback2: Dynamic = (input?: Dynamic): Dynamic => (
+    renderShortcutHint: Dynamic = (hintText?: Dynamic): Dynamic => (
       <span
         aria-hidden={"true"}
         className={"pointer-coarse:hidden text-footnote text-muted"}
       >
-        {input}
+        {hintText}
       </span>
     ),
-    value12: Dynamic =
+    presetsDisabledReason: Dynamic =
       zoomRowsDisabledTip === undefined
         ? undefined
         : zoomRowsDisabled
           ? zoomRowsDisabledTip
           : null,
-    value13: Dynamic = (
+    menuContent: Dynamic = (
       <jsx_Wl.Fragment>
         {onStepZoom !== undefined ? (<jsx_Wl.Fragment>
             <MenuMenuAssignValue.Item
-              disabled={zoomRowsDisabled || value8 >= value10}
-              disabledReason={value12}
-              trailing={callback2(value11 ? "\u2318+" : "Ctrl +")}
-              aria-keyshortcuts={value11 ? "Meta+=" : "Control+="}
+              disabled={zoomRowsDisabled || currentPercent >= maxPercent}
+              disabledReason={presetsDisabledReason}
+              trailing={renderShortcutHint(isMac ? "\u2318+" : "Ctrl +")}
+              aria-keyshortcuts={isMac ? "Meta+=" : "Control+="}
               onClick={(): Dynamic => onStepZoom(1)}
             >
               {uiMessage("canvas.zoom.zoomIn")}
             </MenuMenuAssignValue.Item>
             <MenuMenuAssignValue.Item
-              disabled={zoomRowsDisabled || value8 <= value9}
-              disabledReason={value12}
-              trailing={callback2(value11 ? "\u2318\u2212" : "Ctrl \u2212")}
-              aria-keyshortcuts={value11 ? "Meta+-" : "Control+-"}
+              disabled={zoomRowsDisabled || currentPercent <= minPercent}
+              disabledReason={presetsDisabledReason}
+              trailing={renderShortcutHint(isMac ? "\u2318\u2212" : "Ctrl \u2212")}
+              aria-keyshortcuts={isMac ? "Meta+-" : "Control+-"}
               onClick={(): Dynamic => onStepZoom(-1)}
             >
               {uiMessage("canvas.zoom.zoomOut")}
@@ -100,7 +100,7 @@ function CanvasZoomControl({
           </jsx_Wl.Fragment>) : (null)}
         <MenuMenuAssignValue.Item
           disabled={zoomRowsDisabled}
-          disabledReason={value12}
+          disabledReason={presetsDisabledReason}
           onClick={onFit}
         >
           {fitLabel}
@@ -108,39 +108,39 @@ function CanvasZoomControl({
         <MenuMenuAssignValue.Separator />
         <MenuMenuAssignValue.Group>
           {zoomScalePresets.every(
-            (input?: Dynamic): Dynamic => Math.round(input * 100) !== value8,
+            (presetScale?: Dynamic): Dynamic => Math.round(presetScale * 100) !== currentPercent,
           ) ? (<MenuMenuAssignValue.GroupLabel>
               <span className={"tabular-nums"}>
                 {uiMessage("canvas.zoom.now")}
-                {value8}
+                {currentPercent}
                 {"%"}
               </span>
             </MenuMenuAssignValue.GroupLabel>) : (null)}
-          {zoomScalePresets.map((input?: Dynamic): Dynamic => {
-            let value14: Dynamic = Math.round(input * 100),
-              value15: Dynamic =
-                value14 < value9
+          {zoomScalePresets.map((presetScale?: Dynamic): Dynamic => {
+            let presetPercent: Dynamic = Math.round(presetScale * 100),
+              limitSide: Dynamic =
+                presetPercent < minPercent
                   ? "below"
-                  : value14 > value10
+                  : presetPercent > maxPercent
                     ? "above"
                     : null,
-              value16: Dynamic = zoomRowsDisabled
-                ? (value12 ?? null)
-                : value15 === null
+              presetDisabledReason: Dynamic = zoomRowsDisabled
+                ? (presetsDisabledReason ?? null)
+                : limitSide === null
                   ? null
-                  : value15 === "below"
-                    ? (value6.minTip ?? zoomLimitMessages.below)
-                    : (value6.maxTip ?? zoomLimitMessages.above);
+                  : limitSide === "below"
+                    ? (zoomLimits.minTip ?? zoomLimitMessages.below)
+                    : (zoomLimits.maxTip ?? zoomLimitMessages.above);
             return (
               <MenuMenuAssignValue.Item
-                key={input}
+                key={presetScale}
                 checkedRole={"radio"}
-                checked={value14 === value8}
-                disabled={zoomRowsDisabled || value15 !== null}
-                disabledReason={value16}
-                onClick={(): Dynamic => onPickScale(input)}
+                checked={presetPercent === currentPercent}
+                disabled={zoomRowsDisabled || limitSide !== null}
+                disabledReason={presetDisabledReason}
+                onClick={(): Dynamic => onPickScale(presetScale)}
               >
-                {value14}
+                {presetPercent}
                 {"%"}
               </MenuMenuAssignValue.Item>
             );
@@ -149,18 +149,18 @@ function CanvasZoomControl({
         {viewToggles.length > 0 ? (<jsx_Wl.Fragment>
             <MenuMenuAssignValue.Separator />
             {viewToggles.map(
-              (input?: Dynamic): Dynamic =>
+              (viewToggle?: Dynamic): Dynamic =>
                 (() => {
                   const _Component = MenuMenuAssignValue.Item;
                   const _props = {
                     checkedRole: "checkbox",
-                    checked: input.checked,
-                    shortcut: input.shortcut,
-                    "aria-describedby": input.describedBy,
-                    onClick: input.onToggle,
-                    children: input.label,
+                    checked: viewToggle.checked,
+                    shortcut: viewToggle.shortcut,
+                    "aria-describedby": viewToggle.describedBy,
+                    onClick: viewToggle.onToggle,
+                    children: viewToggle.label,
                   } as const;
-                  const _key = input.label;
+                  const _key = viewToggle.label;
                   return <_Component key={_key} {..._props} />;
                 })(),
             )}
@@ -188,17 +188,17 @@ function CanvasZoomControl({
     );
   return readout ? (
     <SessionStripPopover
-      readout={String(zoomScalePercent(value3)) + "%"}
+      readout={String(zoomScalePercent(readoutScale)) + "%"}
       readoutSizer={"100%"}
       label={uiMessage("canvas.zoom.zoom")}
       tip={tip}
-      disabled={disabled2}
+      disabled={isDisabled}
       disabledTip={disabledTip}
       side={tipSide}
       data-testid={dataTestid}
-      onOpenChange={callback}
+      onOpenChange={handleOpenChange}
     >
-      {value13}
+      {menuContent}
     </SessionStripPopover>
   ) : (
     <SessionStripPopover
@@ -206,13 +206,13 @@ function CanvasZoomControl({
       iconOnly={true}
       label={uiMessage("canvas.zoom.zoom")}
       tip={tip}
-      disabled={disabled2}
+      disabled={isDisabled}
       disabledTip={disabledTip}
       side={tipSide}
       data-testid={dataTestid}
-      onOpenChange={callback}
+      onOpenChange={handleOpenChange}
     >
-      {value13}
+      {menuContent}
     </SessionStripPopover>
   );
 }
@@ -239,9 +239,9 @@ export function installCanvasZoom(): () => void {
       above: "Past the zoom limit \u2014 that's as far in as it goes",
     };
     zoomControlGlyph = <ZoomToolIcon />;
-    zoomScalePercent = (input?: Dynamic): Dynamic =>
-      Number.isFinite(input) && input > 0
-        ? Math.max(1, Math.round(input * 100))
+    zoomScalePercent = (scale?: Dynamic): Dynamic =>
+      Number.isFinite(scale) && scale > 0
+        ? Math.max(1, Math.round(scale * 100))
         : 100;
   };
 }

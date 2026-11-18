@@ -24,16 +24,16 @@ function useButtonGroup(): ButtonGroupState {
   return (0, reactButtonContext.useContext)(ButtonGroupContext);
 }
 function useButtonAnimation(
-  input: React.RefObject<HTMLElement | null>,
-  options: "Button" | "SegmentedControl",
+  ref: React.RefObject<HTMLElement | null>,
+  variant: "Button" | "SegmentedControl",
 ): void {
-  (0, reactButtonContext_2.useEffect)(() => {}, [input, options]);
+  (0, reactButtonContext_2.useEffect)(() => {}, [ref, variant]);
 }
-function buttonBackgroundClassName(input: {
+function buttonBackgroundClassName(state: {
   joined?: boolean;
   solid?: boolean;
 }): string {
-  return `${ButtonContextClassNames} ${!input.joined && input.solid ? ButtonContextClassNames_8 : "inset-0"} ${input.joined ? "" : CdsBtnSquishValue}`;
+  return `${ButtonContextClassNames} ${!state.joined && state.solid ? ButtonContextClassNames_8 : "inset-0"} ${state.joined ? "" : CdsBtnSquishValue}`;
 }
 export {
   buttonBackgroundClassName,
