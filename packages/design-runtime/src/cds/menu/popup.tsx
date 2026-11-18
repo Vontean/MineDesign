@@ -27,7 +27,7 @@ import { initializeOverlaysLayers, LayerBaseContext, useDefaultLayer } from "../
 import { initializePlatformRootFontSize_2, PopupSurface } from "../platform/root-font-size";
 import { initializeSheetsKeyboardViewport, isTextInputElement } from "../sheets/keyboard-viewport";
 import { initializeSheetsPopupStack, ResetSheetContext } from "../sheets/popup-stack";
-import { initializeSheetsScrollArea, initializeSheetsScrollArea_2, initializeSheetsScrollArea_3, initializeSheetsScrollArea_6, initializeSheetsScrollArea_8, normalizeFocusRelatedTarget, SheetsScrollAreaLabel_2, useKeyboardContextMenuFocus, useMenuInnerOverlay, useOpenerReturn } from "../sheets/scroll-area";
+import { initializeSheetsScrollArea, initializeSheetsScrollArea_2, initializeSheetsScrollArea_3, initializeSheetsScrollArea_6, initializeSheetsScrollArea_8, normalizeFocusRelatedTarget, SheetsScrollAreaLabel_2 as scrollAreaSelector, useKeyboardContextMenuFocus, useMenuInnerOverlay, useOpenerReturn } from "../sheets/scroll-area";
 import { cn, initializeClassNames } from "../theme/class-names";
 import { initializeThemeSurfaces, surfaceBackgroundTokens } from "../theme/surfaces";
 import { initializeNpm__base_ui_react_jhe, load_react, load_react_jsx_runtime, npm_ContextMenu_Ex } from "../../dependencies";
@@ -46,62 +46,62 @@ var SelectValue: string;
 var DraggableTrueValue: string;
 var initializeMenuPopup_3: () => void;
 function scrollbarWidth(
-  input: number,
-  options: number,
-  context?: number,
+  outerSize: number,
+  innerSize: number,
+  borderSize?: number,
 ): number {
-  return input - options - (context || 0);
+  return outerSize - innerSize - (borderSize || 0);
 }
 function isScrollbarPointerEvent(
-  input: number,
-  options: number,
-  context: HTMLElement,
+  offsetX: number,
+  offsetY: number,
+  element: HTMLElement,
 ): boolean {
-  let value = getComputedStyle(context);
+  let value = getComputedStyle(element);
   if (value.display === "inline") return false;
-  let value2 = scrollbarWidth(
-      context.offsetWidth,
-      context.clientWidth,
+  let verticalScrollbarWidth = scrollbarWidth(
+      element.offsetWidth,
+      element.clientWidth,
       parseFloat(value.borderLeftWidth) + parseFloat(value.borderRightWidth),
     ),
-    value3 = scrollbarWidth(
-      context.offsetHeight,
-      context.clientHeight,
+    horizontalScrollbarHeight = scrollbarWidth(
+      element.offsetHeight,
+      element.clientHeight,
       parseFloat(value.borderTopWidth) + parseFloat(value.borderBottomWidth),
     ),
-    value4 =
-      value2 >= 1 &&
+    isOnVerticalScrollbar =
+      verticalScrollbarWidth >= 1 &&
       (value.direction === "rtl"
-        ? input < value2
-        : input >= context.clientWidth),
-    value5 = value3 >= 1 && options >= context.clientHeight;
-  return value4 || value5;
+        ? offsetX < verticalScrollbarWidth
+        : offsetX >= element.clientWidth),
+    isOnHorizontalScrollbar = horizontalScrollbarHeight >= 1 && offsetY >= element.clientHeight;
+  return isOnVerticalScrollbar || isOnHorizontalScrollbar;
 }
 function useClickToFocus(
-  input: (() => void) | undefined,
-  options: ClickToFocusOptions = {},
+  onFocusRequest: (() => void) | undefined,
+  clickToFocusOptions: ClickToFocusOptions = {},
 ): {
   clickToFocusProps: {
     onMouseDown: React.MouseEventHandler<HTMLElement>;
   };
 } {
   let {
-      disabled: value2 = false,
-      readOnly: value3 = false,
+      disabled: isDisabled = false,
+      readOnly: isReadOnly = false,
       shouldIgnoreTarget: value,
-    } = options,
-    value4 = useOptionalStableCallback(input),
-    value5 = useOptionalStableCallback(value);
+    } = clickToFocusOptions,
+    requestFocus = useOptionalStableCallback(onFocusRequest),
+    shouldIgnoreTargetCallback = useOptionalStableCallback(value);
   return {
     clickToFocusProps: {
       onMouseDown: (0, reactMenuPopup_2.useCallback)(
         (event: React.MouseEvent<HTMLElement>) => {
-          if (event.button !== 0 || value3 || value2) return;
+          if (event.button !== 0 || isReadOnly || isDisabled) return;
           let target = event.target as HTMLElement,
             currentTarget = event.currentTarget;
           if (!currentTarget.contains(target)) return;
           if (target !== currentTarget) {
-            if (value5?.(target)) return;
+            if (shouldIgnoreTargetCallback?.(target)) return;
             let ancestor = target.closest(MenuPopupCss_2);
             if (
               ancestor &&
@@ -110,15 +110,15 @@ function useClickToFocus(
             )
               return;
           }
-          let { offsetX: nativeEvent, offsetY: nativeEvent2 } =
+          let { offsetX: nativeEvent, offsetY: offsetYInTarget } =
             event.nativeEvent;
           isScrollbarPointerEvent(
             nativeEvent,
-            nativeEvent2,
+            offsetYInTarget,
             target as HTMLElement,
-          ) || (event.preventDefault(), value4?.());
+          ) || (event.preventDefault(), requestFocus?.());
         },
-        [value2, value3, value4, value5],
+        [isDisabled, isReadOnly, requestFocus, shouldIgnoreTargetCallback],
       ),
     },
   };
@@ -126,7 +126,7 @@ function useClickToFocus(
 function isInteractivePressTarget(
   event: React.MouseEvent<HTMLElement>,
   {
-    draggable: options = false,
+    draggable: isDraggable = false,
   }: {
     draggable?: boolean;
   } = {},
@@ -137,7 +137,7 @@ function isInteractivePressTarget(
     : isTextInputElement(value) ||
         value.matches(MenuPopupLabel) ||
         closestMatchesWithin(value, SelectValue, event.currentTarget) ||
-        (options &&
+        (isDraggable &&
           closestMatchesWithin(
             value,
             DraggableTrueValue,
@@ -150,199 +150,199 @@ function isInteractivePressTarget(
         );
 }
 function closestMatchesWithin(
-  input: Element,
-  options: string,
-  context: Element,
+  element: Element,
+  selector: string,
+  container: Element,
 ): boolean {
-  let ancestor = input.closest(options);
-  return ancestor !== null && context.contains(ancestor);
+  let ancestor = element.closest(selector);
+  return ancestor !== null && container.contains(ancestor);
 }
 function usePassiveOpenGate(
-  input: MenuChange | undefined,
-  options: boolean | undefined,
-  context: boolean = true,
+  onOpenChange: MenuChange | undefined,
+  isOpen: boolean | undefined,
+  isHoverEnabled: boolean = true,
 ): PassiveOpenGateState {
   let [value] = (0, reactMenuPassiveOpenGate.useState)(
     createPassiveOpenGate,
   );
-  value.renderedWith(options, input, context);
+  value.renderedWith(isOpen, onOpenChange, isHoverEnabled);
   return value;
 }
 function createPassiveOpenGate(): PassiveOpenGateState {
   let value: MenuChange | undefined,
     flag = true,
     text: "off" | "declared" | "hover" = "off",
-    value2: HTMLElement | null = null,
-    value3: FocusableElement | null = null,
-    flag2 = false,
-    value4: PopupFocus | null | undefined,
-    value5: InitialPopupFocus | undefined,
-    flag3 = false,
-    value6: Element | null = null,
-    value7: HTMLElement | null = null,
-    value8: {
+    popupElement: HTMLElement | null = null,
+    pendingRestoreTarget: FocusableElement | null = null,
+    shouldCaptureOpenerOnMount = false,
+    finalFocusProp: PopupFocus | null | undefined,
+    initialFocusProp: InitialPopupFocus | undefined,
+    declinesInitialFocusState = false,
+    openerElement: Element | null = null,
+    triggerElement: HTMLElement | null = null,
+    openInput: {
       type: PopupInputKind;
       byHover: boolean;
     } | null = null,
-    value9: boolean | undefined,
-    flag4 = false,
-    flag5 = false,
+    wasOpen: boolean | undefined,
+    hasOpenChangeFired = false,
+    isGateOpen = false,
     values: Set<() => void> = new Set(),
     callback: (
       level: "off" | "declared" | "hover",
       notify: boolean,
-    ) => void = (input, options) => {
-      input !== text &&
-        ((text = input),
-        options &&
-          values.forEach((input2) => {
-            input2();
+    ) => void = (nextLevel, shouldNotify) => {
+      nextLevel !== text &&
+        ((text = nextLevel),
+        shouldNotify &&
+          values.forEach((notifyListener) => {
+            notifyListener();
           }));
     },
-    callback2 = () => {
-      flag3 = false;
-      value6 = null;
-      value7 = null;
-      value8 = null;
-      flag2 = false;
+    resetOpenState = () => {
+      declinesInitialFocusState = false;
+      openerElement = null;
+      triggerElement = null;
+      openInput = null;
+      shouldCaptureOpenerOnMount = false;
     };
   return {
     cell: {
       getLevel: () => text,
-      subscribe(input) {
-        values.add(input);
+      subscribe(listener) {
+        values.add(listener);
         return () => {
-          values.delete(input);
+          values.delete(listener);
         };
       },
       engage() {
-        text === "declared" && (flag3 = false);
+        text === "declared" && (declinesInitialFocusState = false);
         callback("off", true);
       },
       registerPopup(element) {
-        value2 = element;
+        popupElement = element;
         if (element !== null)
-          flag2 &&
-            ((flag2 = false),
-            (value6 = activeDocumentElement(element.ownerDocument)));
-        else if (!flag5 && (callback("off", false), value3 !== null)) {
-          let value10 = value3;
-          value3 = null;
+          shouldCaptureOpenerOnMount &&
+            ((shouldCaptureOpenerOnMount = false),
+            (openerElement = activeDocumentElement(element.ownerDocument)));
+        else if (!isGateOpen && (callback("off", false), pendingRestoreTarget !== null)) {
+          let restoreTarget = pendingRestoreTarget;
+          pendingRestoreTarget = null;
           focusPopupAfterMicrotask(
-            value10.ownerDocument,
+            restoreTarget.ownerDocument,
             null,
-            value10,
+            restoreTarget,
             false,
           );
         }
       },
-      declareFocusProps(input, options) {
-        value4 = options;
-        let value10 = input !== value5;
-        value5 = input;
-        if (!value10 || !flag5 || value2 !== null || value8 === null) return;
-        let value11 = declinesInitialFocus(input, value8.type);
-        if (value11 === (text === "declared")) return;
-        let value12: PassiveOpenLevel = value11
+      declareFocusProps(initialFocus, finalFocus) {
+        finalFocusProp = finalFocus;
+        let isInitialFocusChanged = initialFocus !== initialFocusProp;
+        initialFocusProp = initialFocus;
+        if (!isInitialFocusChanged || !isGateOpen || popupElement !== null || openInput === null) return;
+        let declinesFocusForInput = declinesInitialFocus(initialFocus, openInput.type);
+        if (declinesFocusForInput === (text === "declared")) return;
+        let focusLevel: PassiveOpenLevel = declinesFocusForInput
           ? "declared"
-          : value8.byHover
+          : openInput.byHover
             ? "hover"
             : "off";
-        flag3 = value12 !== "off";
-        callback(value12, false);
+        declinesInitialFocusState = focusLevel !== "off";
+        callback(focusLevel, false);
       },
-      getPopup: () => value2,
-      getTrigger: () => value7,
+      getPopup: () => popupElement,
+      getTrigger: () => triggerElement,
     },
-    renderedWith(input, options, context) {
-      value = options;
-      flag = context;
-      value9 !== true && input === true && !flag4
-        ? ((flag5 = true),
-          (value3 = null),
-          value2 !== null
-            ? (value6 = activeDocumentElement(value2.ownerDocument))
-            : ((value6 = null), (flag2 = true)),
-          (value7 = null),
-          (value8 = {
+    renderedWith(isOpen, onOpenChange, isHoverEnabled) {
+      value = onOpenChange;
+      flag = isHoverEnabled;
+      wasOpen !== true && isOpen === true && !hasOpenChangeFired
+        ? ((isGateOpen = true),
+          (pendingRestoreTarget = null),
+          popupElement !== null
+            ? (openerElement = activeDocumentElement(popupElement.ownerDocument))
+            : ((openerElement = null), (shouldCaptureOpenerOnMount = true)),
+          (triggerElement = null),
+          (openInput = {
             type: "",
             byHover: false,
           }),
-          (flag3 = declinesInitialFocus(value5, "")),
-          callback(flag3 ? "declared" : "off", false))
-        : value9 === true &&
-          input === false &&
-          ((flag5 = false),
-          (flag4 = false),
-          (value3 =
-            text === "declared" && flag3
-              ? resolveInitialFocusTarget(value4, value6)
+          (declinesInitialFocusState = declinesInitialFocus(initialFocusProp, "")),
+          callback(declinesInitialFocusState ? "declared" : "off", false))
+        : wasOpen === true &&
+          isOpen === false &&
+          ((isGateOpen = false),
+          (hasOpenChangeFired = false),
+          (pendingRestoreTarget =
+            text === "declared" && declinesInitialFocusState
+              ? resolveInitialFocusTarget(finalFocusProp, openerElement)
               : null),
-          callback2(),
+          resetOpenState(),
           text === "hover" && callback("off", false));
-      value9 = input;
+      wasOpen = isOpen;
     },
-    onOpenChange(input, options) {
-      value?.(input, options);
-      if (options.isCanceled === true) return;
-      flag2 = false;
-      let value10 = flag && options.reason === TriggerHoverValue,
-        value11 =
-          options.trigger?.ownerDocument ??
-          value2?.ownerDocument ??
+    onOpenChange(isOpen, changeDetails) {
+      value?.(isOpen, changeDetails);
+      if (changeDetails.isCanceled === true) return;
+      shouldCaptureOpenerOnMount = false;
+      let isHoverOpen = flag && changeDetails.reason === TriggerHoverValue,
+        ownerDocument =
+          changeDetails.trigger?.ownerDocument ??
+          popupElement?.ownerDocument ??
           defaultOwnerDocument();
-      if (!input) {
-        flag5 = false;
-        flag4 = false;
-        if (flag3 && value11 !== undefined) {
-          let value15 = resolveInitialFocusTarget(
-            value4,
-            options.reason === FocusOutValue && value7 !== null
-              ? value7
-              : value6,
+      if (!isOpen) {
+        isGateOpen = false;
+        hasOpenChangeFired = false;
+        if (declinesInitialFocusState && ownerDocument !== undefined) {
+          let focusReturnTarget = resolveInitialFocusTarget(
+            finalFocusProp,
+            changeDetails.reason === FocusOutValue && triggerElement !== null
+              ? triggerElement
+              : openerElement,
           );
-          value15 !== null &&
-            focusPopupAfterMicrotask(value11, value2, value15, !value10);
+          focusReturnTarget !== null &&
+            focusPopupAfterMicrotask(ownerDocument, popupElement, focusReturnTarget, !isHoverOpen);
         }
-        callback2();
+        resetOpenState();
         text === "hover" && callback("off", true);
         return;
       }
-      flag5 = true;
-      flag4 = true;
-      value3 = null;
-      let value12 =
-          value11 !== undefined &&
-          isInsidePopup(value11.activeElement, value2),
-        value13 = passiveOpenInputKind(options.event),
-        value14: PassiveOpenLevel = value12
+      isGateOpen = true;
+      hasOpenChangeFired = true;
+      pendingRestoreTarget = null;
+      let isOpenerInsidePopup =
+          ownerDocument !== undefined &&
+          isInsidePopup(ownerDocument.activeElement, popupElement),
+        inputKind = passiveOpenInputKind(changeDetails.event),
+        nextFocusLevel: PassiveOpenLevel = isOpenerInsidePopup
           ? "off"
-          : declinesInitialFocus(value5, value13)
+          : declinesInitialFocus(initialFocusProp, inputKind)
             ? "declared"
-            : value10
+            : isHoverOpen
               ? "hover"
               : "off";
-      (value10 && value12) ||
-        ((value6 = activeDocumentElement(value11)),
-        (value7 = asElement(
-          options.trigger ?? null,
+      (isHoverOpen && isOpenerInsidePopup) ||
+        ((openerElement = activeDocumentElement(ownerDocument)),
+        (triggerElement = asElement(
+          changeDetails.trigger ?? null,
         ) as HTMLElement | null),
-        (value8 = value12
+        (openInput = isOpenerInsidePopup
           ? null
           : {
-              type: value13,
-              byHover: value10,
+              type: inputKind,
+              byHover: isHoverOpen,
             }),
-        (flag3 = value14 !== "off"));
-      callback(value14, true);
+        (declinesInitialFocusState = nextFocusLevel !== "off"));
+      callback(nextFocusLevel, true);
     },
   };
 }
-function passiveOpenInputKind(input?: Event): PopupInputKind {
-  if (input === undefined) return "";
-  if ("key" in input) return "keyboard";
-  let { type: value } = input;
-  return value === "click" && (input as MouseEvent).detail === 0
+function passiveOpenInputKind(event?: Event): PopupInputKind {
+  if (event === undefined) return "";
+  if ("key" in event) return "keyboard";
+  let { type: value } = event;
+  return value === "click" && (event as MouseEvent).detail === 0
     ? "keyboard"
     : value === "click" ||
         value === "contextmenu" ||
@@ -353,70 +353,70 @@ function passiveOpenInputKind(input?: Event): PopupInputKind {
       : "";
 }
 function declinesInitialFocus(
-  input: InitialPopupFocus | undefined,
-  options: PopupInputKind,
+  initialFocus: InitialPopupFocus | undefined,
+  inputKind: PopupInputKind,
 ): boolean {
-  if (input === undefined || input === true) return false;
-  if (input === false) return true;
-  let value = input(options);
+  if (initialFocus === undefined || initialFocus === true) return false;
+  if (initialFocus === false) return true;
+  let value = initialFocus(inputKind);
   return value === false || value === undefined;
 }
 function defaultOwnerDocument(): Document | undefined {
   return typeof document === "undefined" ? undefined : document;
 }
 function resolveInitialFocusTarget(
-  input: PopupFocus | null | undefined,
-  options: Element | null,
+  focusProp: PopupFocus | null | undefined,
+  fallbackElement: Element | null,
 ): FocusableElement | null {
   return (
-    input === false
+    focusProp === false
       ? null
-      : input === undefined ||
-          input === true ||
-          input === null ||
-          typeof input == "function"
-        ? options
-        : (input.current ?? options)
+      : focusProp === undefined ||
+          focusProp === true ||
+          focusProp === null ||
+          typeof focusProp == "function"
+        ? fallbackElement
+        : (focusProp.current ?? fallbackElement)
   ) as FocusableElement | null;
 }
-function activeDocumentElement(input?: Document): Element | null {
-  let value = asElement(input?.activeElement ?? null);
-  return value === null || value === input?.body ? null : value;
+function activeDocumentElement(ownerDocument?: Document): Element | null {
+  let value = asElement(ownerDocument?.activeElement ?? null);
+  return value === null || value === ownerDocument?.body ? null : value;
 }
-function isInsidePopup(input: Node | null, options: Element | null): boolean {
-  return input !== null && options !== null && options.contains(input);
+function isInsidePopup(node: Node | null, popupElement: Element | null): boolean {
+  return node !== null && popupElement !== null && popupElement.contains(node);
 }
 function focusPopupAfterMicrotask(
-  input: Document,
-  options: Element | null,
-  context: FocusableElement,
-  value: boolean,
+  ownerDocument: Document,
+  popupElement: Element | null,
+  focusTarget: FocusableElement,
+  shouldNormalizeRelatedTarget: boolean,
 ): void {
   queueMicrotask(() => {
-    let activeElement = input.activeElement,
-      value2 = isInsidePopup(activeElement, options);
+    let activeElement = ownerDocument.activeElement,
+      isActiveInsidePopup = isInsidePopup(activeElement, popupElement);
     if (
-      (activeElement === null || activeElement === input.body || value2) &&
-      context.isConnected &&
-      context !== activeElement
+      (activeElement === null || activeElement === ownerDocument.body || isActiveInsidePopup) &&
+      focusTarget.isConnected &&
+      focusTarget !== activeElement
     ) {
-      let value3 =
-        value && value2 ? asElement(activeElement) : null;
-      value3 !== null && normalizeFocusRelatedTarget(value3);
-      context.focus({
+      let relatedTarget =
+        shouldNormalizeRelatedTarget && isActiveInsidePopup ? asElement(activeElement) : null;
+      relatedTarget !== null && normalizeFocusRelatedTarget(relatedTarget);
+      focusTarget.focus({
         preventScroll: true,
       });
     }
   });
 }
-function usePassiveOpenCell(input: boolean): {
+function usePassiveOpenCell(isNested: boolean): {
   cell: PassiveOpenCell | null;
   root: PassiveOpenCell | null;
 } {
   let value = (0, reactMenuPassiveOpenGate.useContext)(
     PassiveOpenCellContext,
   );
-  return input
+  return isNested
     ? {
         cell: value,
         root: value,
@@ -444,34 +444,34 @@ function PassiveOpenGate({
       cell === null ? MenuPassiveOpenGateDefaultText : cell.getLevel,
       MenuPassiveOpenGateDefaultText,
     ),
-    value2 = cell === null || (nested && value === "hover") ? "off" : value;
+    effectiveLevel = cell === null || (nested && value === "hover") ? "off" : value;
   return (
     <PassiveOpenDisabledContext.Provider
-      value={value2 === "declared"}
+      value={effectiveLevel === "declared"}
     >
-      {value2 === "declared" && !nested && cell !== null ? (<PassiveOpenTypingWatcher cell={cell} />) : (null)}
+      {effectiveLevel === "declared" && !nested && cell !== null ? (<PassiveOpenTypingWatcher cell={cell} />) : (null)}
       {children(
-        cell === null || value2 === "off"
+        cell === null || effectiveLevel === "off"
           ? MenuPassiveOpenGateHandler_2
-          : value2 === "hover"
-            ? (input) => ({
-                ...input,
+          : effectiveLevel === "hover"
+            ? (popupProps) => ({
+                ...popupProps,
                 tabIndex: undefined,
-                onFocus(input2) {
-                  input.onFocus?.(input2);
+                onFocus(focusEvent) {
+                  popupProps.onFocus?.(focusEvent);
                   cell.engage();
                 },
               })
-            : (input) => ({
-                ...input,
+            : (popupProps) => ({
+                ...popupProps,
                 tabIndex: undefined,
                 finalFocus: false,
                 onMouseDown(event) {
-                  input.onMouseDown?.(event);
+                  popupProps.onMouseDown?.(event);
                   isInteractivePressTarget(event) || event.preventDefault();
                 },
                 onKeyDown(event) {
-                  input.onKeyDown?.(event);
+                  popupProps.onKeyDown?.(event);
                   !event.nativeEvent.isComposing &&
                     MenuPassiveOpenGateArrowDownArrowUpHomeSet.has(
                       event.key,
@@ -503,23 +503,23 @@ function PassiveOpenTypingWatcher({
           value.ownerDocument.activeElement !== value)
       )
         return;
-      let value2 = cell.getPopup(),
-        value3 =
-          value2 === null
+      let popupElement = cell.getPopup(),
+        menuItems =
+          popupElement === null
             ? []
             : Array.from(
-                value2.querySelectorAll<HTMLElement>(
+                popupElement.querySelectorAll<HTMLElement>(
                   '[role^="menuitem"]:not([data-disabled])',
                 ),
               ),
-        value4 =
-          event.key === "ArrowDown" ? value3[0] : value3[value3.length - 1],
-        value5 = asElement(value4 ?? null);
-      value5 !== null &&
-        value5.hasAttribute("data-highlighted") &&
+        targetItem =
+          event.key === "ArrowDown" ? menuItems[0] : menuItems[menuItems.length - 1],
+        targetElement = asElement(targetItem ?? null);
+      targetElement !== null &&
+        targetElement.hasAttribute("data-highlighted") &&
         (event.preventDefault(),
         event.stopImmediatePropagation(),
-        (value5 as HTMLElement).focus({
+        (targetElement as HTMLElement).focus({
           preventScroll: true,
         }));
     };
@@ -603,19 +603,19 @@ export function installCdsMenuPopup(): () => void {
             "data-cds": dataCds,
             ...props
           }: MenuPopupProps,
-          options: React.ForwardedRef<HTMLDivElement>,
+          forwardedRef: React.ForwardedRef<HTMLDivElement>,
         ): React.ReactElement => {
-          let { finalFocus: value, popupRef: value2 } = useOpenerReturn({
+          let { finalFocus: value, popupRef: popupRef } = useOpenerReturn({
             registerOpenerReturn: finalFocus == null,
           });
-          useKeyboardContextMenuFocus(value2);
-          let value3 = useDefaultLayer("contextmenu"),
-            { elementRef: value4, overlayAttrs: value5 } = useMenuInnerOverlay(),
-            value6 = useMergedRefs(options, value2, value4);
+          useKeyboardContextMenuFocus(popupRef);
+          let layer = useDefaultLayer("contextmenu"),
+            { elementRef: innerOverlayRef, overlayAttrs: overlayAttrs } = useMenuInnerOverlay(),
+            mergedRef = useMergedRefs(forwardedRef, popupRef, innerOverlayRef);
           return (
             <ResetSheetContext>
               <PopupSurface
-                {...value3.portalProps}
+                {...layer.portalProps}
                 surface={surfaceBackgroundTokens.popover}
                 companionModalCatcher={true}
                 closeOnActivityHide={true}
@@ -624,20 +624,20 @@ export function installCdsMenuPopup(): () => void {
                   override={collisionPadding}
                   provideInherit={true}
                 >
-                  {(input: CollisionPadding) => (
-                    <LayerBaseContext.Provider value={value3.base}>
+                  {(resolvedCollisionPadding: CollisionPadding) => (
+                    <LayerBaseContext.Provider value={layer.base}>
                       <npm_ContextMenu_Ex.Positioner
-                        style={value3.style}
+                        style={layer.style}
                         anchor={anchor}
                         side={side}
                         align={align}
                         sideOffset={sideOffset}
-                        collisionPadding={input}
+                        collisionPadding={resolvedCollisionPadding}
                       >
                         <npm_ContextMenu_Ex.Popup
                           data-cds={dataCds}
-                          {...value5}
-                          ref={value6}
+                          {...overlayAttrs}
+                          ref={mergedRef}
                           finalFocus={finalFocus ?? value}
                           {...props}
                           className={cn(MenuPopupCss, className)}
@@ -665,7 +665,7 @@ export function installCdsMenuPopup(): () => void {
       reactMenuPopup_2 = toModuleNamespace(
         load_react(),
       );
-      MenuPopupCss_2 = `button,a[href],label,[role="button"],select,[tabindex]:not([tabindex="-1"]),${SheetsScrollAreaLabel_2}`;
+      MenuPopupCss_2 = `button,a[href],label,[role="button"],select,[tabindex]:not([tabindex="-1"]),${scrollAreaSelector}`;
     });
     initializeMenuPopup_3 = initializeOnce(() => {
       initializeHooksStableCallback();

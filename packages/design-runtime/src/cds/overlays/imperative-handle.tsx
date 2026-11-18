@@ -7,16 +7,16 @@ import { initializeOnce, toModuleNamespace } from "../../module-helpers";
 var reactOverlaysImperativeHandle: typeof React;
 var initializeOverlaysImperativeHandle: () => void;
 function useOverlayImperativeHandle(
-  input: React.RefObject<OverlayActions | null>,
-  options?: React.Ref<PublicOverlayActions>,
+  actionsRef: React.RefObject<OverlayActions | null>,
+  publicRef?: React.Ref<PublicOverlayActions>,
 ): void {
   (0, reactOverlaysImperativeHandle.useImperativeHandle)(
-    options,
+    publicRef,
     () => ({
-      close: () => input.current?.close?.(),
-      unmount: () => input.current?.unmount(),
+      close: () => actionsRef.current?.close?.(),
+      unmount: () => actionsRef.current?.unmount(),
     }),
-    [input],
+    [actionsRef],
   );
 }
 export {

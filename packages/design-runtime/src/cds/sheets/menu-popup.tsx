@@ -15,10 +15,10 @@ import { initializeMenuPassiveOpenGate } from "../menu/passive-open-gate";
 import { initializeMenuPopup, MenuPopupCss, PassiveOpenGate, usePassiveOpenCell } from "../menu/popup";
 import { initializeOverlaysAndroidCloseWatcher, useAndroidCloseWatcher } from "../overlays/android-close-watcher";
 import { initializeOverlaysLayers, LayerBaseContext, useLayer } from "../overlays/layers";
-import { ClipPathInset00200vh0Value, initializePlatformReducedMotion, initializePlatformReducedMotion_2, PlatformReducedMotionClassNames_2, PlatformReducedMotionClassNames_3, PlatformReducedMotionCss_2, PlatformReducedMotionCss_3, PlatformReducedMotionCss_4, PlatformReducedMotionLabel_2 } from "../platform/reduced-motion";
+import { ClipPathInset00200vh0Value, initializePlatformReducedMotion, initializePlatformReducedMotion_2, PlatformReducedMotionClassNames_2, PlatformReducedMotionClassNames_3, PlatformReducedMotionCss_2, PlatformReducedMotionCss_3, PlatformReducedMotionCss_4, PlatformReducedMotionLabel_2 as sheetHeaderClassName } from "../platform/reduced-motion";
 import { initializePlatformRootFontSize_2, PopupSurface } from "../platform/root-font-size";
 import { initializeSheetsChrome, initializeSheetsChrome_2, SheetHandle, SheetHeading, sheetMutationIsScrollOnly, sheetNaturalHeight, useCoveredSheetState, useSheetDismissal, useSheetTextFocus } from "./chrome";
-import { ComfortableValue, getSheetFixedPosition, getSheetFrameStyle, initializeSheetsLayout, SheetsLayoutConstant, SheetsLayoutConstant_2, SheetsLayoutCss_3, SheetsLayoutDisableAnchorTrackingCollisionAvoidanceConfig } from "./layout";
+import { ComfortableValue, getSheetFixedPosition, getSheetFrameStyle, initializeSheetsLayout, SheetsLayoutConstant, SheetsLayoutConstant_2 as halfHeightFraction, SheetsLayoutCss_3, SheetsLayoutDisableAnchorTrackingCollisionAvoidanceConfig } from "./layout";
 import { getInertPropsValue, initializeSheetsPopupStack, prefersReducedMotion, SheetPopupBridgeContext, SheetPopupContext, SheetStackContext, useIsSheet, useSheetState } from "./popup-stack";
 import { CdsSheetPeelingAttribute, CdsSheetTreeClosingAttribute, coveredSheetAttribute, drilledSheetAttribute, initializeSheetsPresentation, sheetContainsTextInput, sheetNeedsScrolling, sheetScrollAttribute } from "./presentation";
 import { initializeSheetsScrollArea } from "./scroll-area";
@@ -34,13 +34,13 @@ var PointerEventsNoneValue: Dynamic;
 var SheetsMenuPopupLimit: Dynamic;
 var initializeSheetsMenuPopup: Dynamic;
 var SheetsMenuPopupLabel: Dynamic;
-var SheetsMenuPopupLabel_2: Dynamic;
+var narrowViewportQuery: Dynamic;
 var SheetsMenuPopupMediaQuery: Dynamic;
-var SheetsMenuPopupLabel_3: Dynamic;
+var electronUserAgentToken: Dynamic;
 var initializeSheetsMenuPopup_2: Dynamic;
 var reactSheetsMenuPopup_2: Dynamic;
 var SheetsMenuPopupSCRIPTSTYLELINKSet: Dynamic;
-var SheetsMenuPopupLabel_4: Dynamic;
+var liveRegionSelector: Dynamic;
 var SheetsMenuPopupElementCache: Dynamic;
 var initializeSheetsMenuPopup_3: Dynamic;
 var reactSheetsMenuPopup_3: Dynamic;
@@ -52,88 +52,88 @@ var jsxSheetsMenuPopup_2: Dynamic;
 var initializeSheetsMenuPopup_5: Dynamic;
 var jsxSheetsMenuPopup_3: Dynamic;
 var initializeSheetsMenuPopup_6: Dynamic;
-function browserWindow(input?: Dynamic): Dynamic {
-  return input ?? (typeof window === "undefined" ? undefined : window);
+function browserWindow(windowOverride?: Dynamic): Dynamic {
+  return windowOverride ?? (typeof window === "undefined" ? undefined : window);
 }
-function windowMatchesMedia(input?: Dynamic, options?: Dynamic): Dynamic {
-  let value: Dynamic = browserWindow(options);
+function windowMatchesMedia(mediaQuery?: Dynamic, windowOverride?: Dynamic): Dynamic {
+  let targetWindow: Dynamic = browserWindow(windowOverride);
   return (
-    typeof value?.matchMedia == "function" && value.matchMedia(input).matches
+    typeof targetWindow?.matchMedia == "function" && targetWindow.matchMedia(mediaQuery).matches
   );
 }
-function usesCoarsePointer(input?: Dynamic): Dynamic {
-  return windowMatchesMedia(SheetsMenuPopupLabel, input);
+function usesCoarsePointer(windowOverride?: Dynamic): Dynamic {
+  return windowMatchesMedia(SheetsMenuPopupLabel, windowOverride);
 }
-function shouldSkipSheetAnimation(input?: Dynamic): Dynamic {
-  let value: Dynamic = browserWindow(input);
-  return value?.navigator?.userAgent?.includes(SheetsMenuPopupLabel_3)
+function shouldSkipSheetAnimation(windowOverride?: Dynamic): Dynamic {
+  let targetWindow: Dynamic = browserWindow(windowOverride);
+  return targetWindow?.navigator?.userAgent?.includes(electronUserAgentToken)
     ? true
     : !(
-        windowMatchesMedia(SheetsMenuPopupMediaQuery, value) &&
-        (value?.navigator?.maxTouchPoints ?? 0) > 0
+        windowMatchesMedia(SheetsMenuPopupMediaQuery, targetWindow) &&
+        (targetWindow?.navigator?.maxTouchPoints ?? 0) > 0
       );
 }
-function subscribeSheetMedia(input?: Dynamic, options?: Dynamic): Dynamic {
-  let value: Dynamic = browserWindow(options);
-  if (typeof value?.matchMedia != "function") return (): Dynamic => {};
-  let value2: Dynamic = [
+function subscribeSheetMedia(onChange?: Dynamic, windowOverride?: Dynamic): Dynamic {
+  let targetWindow: Dynamic = browserWindow(windowOverride);
+  if (typeof targetWindow?.matchMedia != "function") return (): Dynamic => {};
+  let mediaQueryLists: Dynamic = [
     SheetsMenuPopupLabel,
-    SheetsMenuPopupLabel_2,
+    narrowViewportQuery,
     SheetsMenuPopupMediaQuery,
-  ].map((input2?: Dynamic): Dynamic => value.matchMedia(input2));
-  for (let value3 of value2 as Dynamic)
-    value3.addEventListener("change", input);
+  ].map((query?: Dynamic): Dynamic => targetWindow.matchMedia(query));
+  for (let mediaQueryList of mediaQueryLists as Dynamic)
+    mediaQueryList.addEventListener("change", onChange);
   return (): Dynamic => {
-    for (let value3 of value2 as Dynamic)
-      value3.removeEventListener("change", input);
+    for (let mediaQueryList of mediaQueryLists as Dynamic)
+      mediaQueryList.removeEventListener("change", onChange);
   };
 }
 function makeSheetSiblingsInert(element?: Dynamic): Dynamic {
   let items: Dynamic = [],
-    callback: Dynamic = (input?: Dynamic): Dynamic => {
-      let value2: Dynamic = SheetsMenuPopupElementCache.get(input) ?? 0;
-      if (value2 === 0) {
-        if (input.hasAttribute("inert")) return;
-        input.setAttribute("inert", "");
-        input.setAttribute("data-cds-sheet-inert", "");
+    markInert: Dynamic = (target?: Dynamic): Dynamic => {
+      let refCount: Dynamic = SheetsMenuPopupElementCache.get(target) ?? 0;
+      if (refCount === 0) {
+        if (target.hasAttribute("inert")) return;
+        target.setAttribute("inert", "");
+        target.setAttribute("data-cds-sheet-inert", "");
       }
-      SheetsMenuPopupElementCache.set(input, value2 + 1);
-      items.push(input);
+      SheetsMenuPopupElementCache.set(target, refCount + 1);
+      items.push(target);
     },
-    callback2: Dynamic = (element2?: Dynamic): Dynamic => {
+    markSiblingInert: Dynamic = (sibling?: Dynamic): Dynamic => {
       if (
         !(
-          SheetsMenuPopupSCRIPTSTYLELINKSet.has(element2.tagName) ||
-          element2.matches(SheetsMenuPopupLabel_4)
+          SheetsMenuPopupSCRIPTSTYLELINKSet.has(sibling.tagName) ||
+          sibling.matches(liveRegionSelector)
         )
       ) {
-        if (element2.querySelector(SheetsMenuPopupLabel_4) === null) {
-          callback(element2);
+        if (sibling.querySelector(liveRegionSelector) === null) {
+          markInert(sibling);
           return;
         }
-        for (let value2 of Array.from(element2.children) as Dynamic)
-          callback2(value2);
+        for (let child of Array.from(sibling.children) as Dynamic)
+          markSiblingInert(child);
       }
     },
-    value: Dynamic = element,
+    currentElement: Dynamic = element,
     body: Dynamic = element.ownerDocument.body;
-  for (; value !== null && value !== body && value.parentElement !== null; ) {
-    let parentElement: Dynamic = value.parentElement,
-      value2: Dynamic = value;
-    for (let value3 of Array.from(parentElement.children) as Dynamic)
-      value3 !== value2 && callback2(value3);
-    value = parentElement;
+  for (; currentElement !== null && currentElement !== body && currentElement.parentElement !== null; ) {
+    let parentElement: Dynamic = currentElement.parentElement,
+      currentChild: Dynamic = currentElement;
+    for (let sibling of Array.from(parentElement.children) as Dynamic)
+      sibling !== currentChild && markSiblingInert(sibling);
+    currentElement = parentElement;
   }
   return (): Dynamic => {
-    for (let value2 of items as Dynamic) {
-      let value3: Dynamic =
-        (SheetsMenuPopupElementCache.get(value2) ?? 1) - 1;
-      value3 <= 0
-        ? (SheetsMenuPopupElementCache.delete(value2),
-          value2.hasAttribute("data-cds-sheet-inert") &&
-            (value2.removeAttribute("inert"),
-            value2.removeAttribute("data-cds-sheet-inert")))
-        : SheetsMenuPopupElementCache.set(value2, value3);
+    for (let inertElement of items as Dynamic) {
+      let remainingCount: Dynamic =
+        (SheetsMenuPopupElementCache.get(inertElement) ?? 1) - 1;
+      remainingCount <= 0
+        ? (SheetsMenuPopupElementCache.delete(inertElement),
+          inertElement.hasAttribute("data-cds-sheet-inert") &&
+            (inertElement.removeAttribute("inert"),
+            inertElement.removeAttribute("data-cds-sheet-inert")))
+        : SheetsMenuPopupElementCache.set(inertElement, remainingCount);
     }
   };
 }
@@ -142,123 +142,123 @@ function useSheetSiblingsInert({
   open: open,
   liftOnClose: liftOnClose,
 }: Dynamic): Dynamic {
-  let value: Dynamic = useCdsWindow(),
-    value2: Dynamic = useOptionalStableCallback(liftOnClose),
-    value3: Dynamic = (0, reactSheetsMenuPopup_2.useRef)(null),
-    value4: Dynamic = (0, reactSheetsMenuPopup_2.useRef)(null);
+  let cdsWindow: Dynamic = useCdsWindow(),
+    getLiftDelay: Dynamic = useOptionalStableCallback(liftOnClose),
+    restoreInertRef: Dynamic = (0, reactSheetsMenuPopup_2.useRef)(null),
+    deferredRemovalRef: Dynamic = (0, reactSheetsMenuPopup_2.useRef)(null);
   useIsomorphicLayoutEffect((): Dynamic => {
-    if (!open || node === null || value === undefined) return;
-    let value5: Dynamic = value.requestAnimationFrame((): Dynamic => {
-      if (value3.current === null) {
-        let value6: Dynamic = sheetPortalAncestor(node);
-        value6 !== null && (value3.current = makeSheetSiblingsInert(value6));
+    if (!open || node === null || cdsWindow === undefined) return;
+    let animationFrameId: Dynamic = cdsWindow.requestAnimationFrame((): Dynamic => {
+      if (restoreInertRef.current === null) {
+        let portalAncestor: Dynamic = sheetPortalAncestor(node);
+        portalAncestor !== null && (restoreInertRef.current = makeSheetSiblingsInert(portalAncestor));
       }
     });
     return (): Dynamic => {
-      value.cancelAnimationFrame(value5);
-      let current: Dynamic = value3.current;
-      value3.current = null;
+      cdsWindow.cancelAnimationFrame(animationFrameId);
+      let current: Dynamic = restoreInertRef.current;
+      restoreInertRef.current = null;
       if (current === null) return;
-      if ((value2?.() ?? "now") === "now" || !canAnimateSheetUnmount(value)) {
+      if ((getLiftDelay?.() ?? "now") === "now" || !canAnimateSheetUnmount(cdsWindow)) {
         current();
         return;
       }
-      let value6: Dynamic = deferSheetInertRemoval(
-        value,
+      let deferredRemoval: Dynamic = deferSheetInertRemoval(
+        cdsWindow,
         current,
         (): Dynamic => {
-          value4.current === value6 && (value4.current = null);
+          deferredRemovalRef.current === deferredRemoval && (deferredRemovalRef.current = null);
         },
       );
-      value4.current = value6;
+      deferredRemovalRef.current = deferredRemoval;
     };
-  }, [node, open, value, value2]);
+  }, [node, open, cdsWindow, getLiftDelay]);
   return (0, reactSheetsMenuPopup_2.useCallback)(
-    (): Dynamic => value4.current?.(),
+    (): Dynamic => deferredRemovalRef.current?.(),
     [],
   );
 }
-function canAnimateSheetUnmount(input?: Dynamic): Dynamic {
+function canAnimateSheetUnmount(targetWindow?: Dynamic): Dynamic {
   return (
-    !shouldSkipSheetAnimation(input) &&
+    !shouldSkipSheetAnimation(targetWindow) &&
     !prefersReducedMotion() &&
-    input.document.visibilityState !== "hidden"
+    targetWindow.document.visibilityState !== "hidden"
   );
 }
 function deferSheetInertRemoval(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  targetWindow?: Dynamic,
+  restoreInert?: Dynamic,
+  onDone?: Dynamic,
 ): Dynamic {
-  let document2: Dynamic = input.document,
-    flag: Dynamic = false,
-    callback: Dynamic = (): Dynamic => {
-      flag ||
-        ((flag = true),
-        input.cancelAnimationFrame(value),
-        input.removeEventListener("pointerdown", callback, true),
-        input.removeEventListener("keydown", callback, true),
-        input.removeEventListener("pagehide", callback),
-        document2.removeEventListener("visibilitychange", callback2),
-        options(),
-        context());
+  let ownerDocument: Dynamic = targetWindow.document,
+    isFinished: Dynamic = false,
+    finishRemoval: Dynamic = (): Dynamic => {
+      isFinished ||
+        ((isFinished = true),
+        targetWindow.cancelAnimationFrame(animationFrameId),
+        targetWindow.removeEventListener("pointerdown", finishRemoval, true),
+        targetWindow.removeEventListener("keydown", finishRemoval, true),
+        targetWindow.removeEventListener("pagehide", finishRemoval),
+        ownerDocument.removeEventListener("visibilitychange", handleVisibilityChange),
+        restoreInert(),
+        onDone());
     },
-    callback2: Dynamic = (): Dynamic => {
-      document2.visibilityState === "hidden" && callback();
+    handleVisibilityChange: Dynamic = (): Dynamic => {
+      ownerDocument.visibilityState === "hidden" && finishRemoval();
     },
-    value: Dynamic = input.requestAnimationFrame((): Dynamic => {
-      value = input.requestAnimationFrame(callback);
+    animationFrameId: Dynamic = targetWindow.requestAnimationFrame((): Dynamic => {
+      animationFrameId = targetWindow.requestAnimationFrame(finishRemoval);
     });
-  input.addEventListener("pointerdown", callback, true);
-  input.addEventListener("keydown", callback, true);
-  input.addEventListener("pagehide", callback);
-  document2.addEventListener("visibilitychange", callback2);
-  return callback;
+  targetWindow.addEventListener("pointerdown", finishRemoval, true);
+  targetWindow.addEventListener("keydown", finishRemoval, true);
+  targetWindow.addEventListener("pagehide", finishRemoval);
+  ownerDocument.addEventListener("visibilitychange", handleVisibilityChange);
+  return finishRemoval;
 }
 function sheetPortalAncestor(element?: Dynamic): Dynamic {
   let body: Dynamic = element.ownerDocument.body,
-    value: Dynamic = element,
-    value2: Dynamic = null;
-  for (; value !== null && value !== body; ) {
+    currentElement: Dynamic = element,
+    lastElement: Dynamic = null;
+  for (; currentElement !== null && currentElement !== body; ) {
     if (
-      value.hasAttribute("data-base-ui-portal") ||
-      value.hasAttribute("data-cds-portal")
+      currentElement.hasAttribute("data-base-ui-portal") ||
+      currentElement.hasAttribute("data-cds-portal")
     )
-      return value;
-    value2 = value;
-    value = value.parentElement;
+      return currentElement;
+    lastElement = currentElement;
+    currentElement = currentElement.parentElement;
   }
-  return value2;
+  return lastElement;
 }
 function preventSheetTab(event?: Dynamic): Dynamic {
   event.key === "Tab" && (event.preventDefault(), event.stopPropagation());
 }
-function hideCoveredSheet(input?: Dynamic, options?: Dynamic): Dynamic {
-  let entry: Dynamic = SheetsMenuPopupElementCache_2.get(input);
+function hideCoveredSheet(sheetElement?: Dynamic, owner?: Dynamic): Dynamic {
+  let entry: Dynamic = SheetsMenuPopupElementCache_2.get(sheetElement);
   entry === undefined &&
-    ((entry = new Set()), SheetsMenuPopupElementCache_2.set(input, entry));
-  entry.add(options);
-  input.setAttribute("aria-hidden", "true");
-  input.setAttribute(drilledSheetAttribute, "");
+    ((entry = new Set()), SheetsMenuPopupElementCache_2.set(sheetElement, entry));
+  entry.add(owner);
+  sheetElement.setAttribute("aria-hidden", "true");
+  sheetElement.setAttribute(drilledSheetAttribute, "");
 }
-function restoreCoveredSheet(input?: Dynamic, options?: Dynamic): Dynamic {
-  let entry: Dynamic = SheetsMenuPopupElementCache_2.get(input);
-  entry?.delete(options);
+function restoreCoveredSheet(sheetElement?: Dynamic, owner?: Dynamic): Dynamic {
+  let entry: Dynamic = SheetsMenuPopupElementCache_2.get(sheetElement);
+  entry?.delete(owner);
   (entry === undefined || entry.size === 0) &&
-    (input.removeAttribute("aria-hidden"),
-    input.removeAttribute(drilledSheetAttribute));
+    (sheetElement.removeAttribute("aria-hidden"),
+    sheetElement.removeAttribute(drilledSheetAttribute));
 }
-function sheetCloseInertDelay(input?: Dynamic): Dynamic {
-  if (input?.reason === "outside-press") return "after-paint";
-  let value: Dynamic = input?.event;
+function sheetCloseInertDelay(closeRequest?: Dynamic): Dynamic {
+  if (closeRequest?.reason === "outside-press") return "after-paint";
+  let closeEvent: Dynamic = closeRequest?.event;
   if (
-    input?.reason !== "item-press" ||
-    value === undefined ||
-    !("detail" in value) ||
-    value.detail === 0
+    closeRequest?.reason !== "item-press" ||
+    closeEvent === undefined ||
+    !("detail" in closeEvent) ||
+    closeEvent.detail === 0
   )
     return "now";
-  let target: Dynamic = value.target;
+  let target: Dynamic = closeEvent.target;
   return (target !== null && "closest" in target
     ? target.closest('[role^="menuitem"]')
     : null
@@ -268,27 +268,27 @@ function sheetCloseInertDelay(input?: Dynamic): Dynamic {
 }
 function SheetBackButton({ nested: nested }: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic = (0, reactSheetsMenuPopup_3.useContext)(
+  let menuRoot: Dynamic = (0, reactSheetsMenuPopup_3.useContext)(
       MenuRootContext,
     ),
-    { label: value2 }: Dynamic = (0, reactSheetsMenuPopup_3.useContext)(
+    { label: itemLabel }: Dynamic = (0, reactSheetsMenuPopup_3.useContext)(
       MenuItemContext,
     ),
-    value3: Dynamic = (0, reactSheetsMenuPopup_3.useContext)(
+    sheetLabels: Dynamic = (0, reactSheetsMenuPopup_3.useContext)(
       MenuSheetLabelsContext,
     ),
-    value4: Dynamic = useLabel("back", "Back"),
-    value5: Dynamic = value3.backLabel ?? value4;
+    defaultBackLabel: Dynamic = useLabel("back", "Back"),
+    backLabel: Dynamic = sheetLabels.backLabel ?? defaultBackLabel;
   return (
     <SheetHeading
-      title={nested ? (value2) : (value3.sheetTitle)}
+      title={nested ? (itemLabel) : (sheetLabels.sheetTitle)}
       leading={
         nested ? (
           <npm_Menu_La.Item
             closeOnClick={false}
-            onClick={(): Dynamic => value?.close()}
-            aria-label={value5}
-            label={value5}
+            onClick={(): Dynamic => menuRoot?.close()}
+            aria-label={backLabel}
+            label={backLabel}
             className={cn(
               menuItemVariants({
                 variant: "default",
@@ -309,19 +309,19 @@ function SheetBackButton({ nested: nested }: Dynamic): Dynamic {
 }
 function SheetCloseButton(): Dynamic {
   useUiLocale();
-  let value: Dynamic = (0, reactSheetsMenuPopup_3.useContext)(
+  let sheetContext: Dynamic = (0, reactSheetsMenuPopup_3.useContext)(
       SheetPopupContext,
     ),
-    value2: Dynamic = useLabel("close", "Close"),
-    value3: Dynamic =
+    defaultCloseLabel: Dynamic = useLabel("close", "Close"),
+    closeLabel: Dynamic =
       (0, reactSheetsMenuPopup_3.useContext)(MenuSheetLabelsContext)
-        .closeLabel ?? value2;
+        .closeLabel ?? defaultCloseLabel;
   return (
     <npm_Menu_La.Item
       closeOnClick={false}
-      onClick={(): Dynamic => value?.dismiss()}
-      aria-label={value3}
-      label={value3}
+      onClick={(): Dynamic => sheetContext?.dismiss()}
+      aria-label={closeLabel}
+      label={closeLabel}
       data-cds-sheet-control={""}
       className={
         "group/sheet-close cds-reset block w-full rounded outline-none select-none focus-visible:outline-hidden [&:not(:focus-visible):not([data-highlighted]):not([data-cds-sheet-control-held])]:sr-only"
@@ -336,7 +336,7 @@ function SheetCloseButton(): Dynamic {
         )}
       >
         <IconRenderer icon={"X"} />
-        <span className={"min-w-0 flex-1 truncate"}>{value3}</span>
+        <span className={"min-w-0 flex-1 truncate"}>{closeLabel}</span>
       </span>
     </npm_Menu_La.Item>
   );
@@ -443,9 +443,9 @@ export {
   SheetsMenuPopupElementCache,
   SheetsMenuPopupElementCache_2,
   SheetsMenuPopupLabel,
-  SheetsMenuPopupLabel_2,
-  SheetsMenuPopupLabel_3,
-  SheetsMenuPopupLabel_4,
+  narrowViewportQuery as SheetsMenuPopupLabel_2,
+  electronUserAgentToken as SheetsMenuPopupLabel_3,
+  liveRegionSelector as SheetsMenuPopupLabel_4,
   SheetsMenuPopupLimit,
   SheetsMenuPopupMediaQuery,
   SheetsMenuPopupSCRIPTSTYLELINKSet,
@@ -468,9 +468,9 @@ export function installCdsSheetsMenuPopup(): () => void {
     });
     initializeSheetsMenuPopup_2 = initializeOnce((): Dynamic => {
       SheetsMenuPopupLabel = "(pointer: coarse), (hover: none)";
-      SheetsMenuPopupLabel_2 = "(width < 40rem)";
+      narrowViewportQuery = "(width < 40rem)";
       SheetsMenuPopupMediaQuery = "(pointer: coarse)";
-      SheetsMenuPopupLabel_3 = " Electron/";
+      electronUserAgentToken = " Electron/";
     });
     initializeSheetsMenuPopup_3 = initializeOnce((): Dynamic => {
       "use client";
@@ -490,7 +490,7 @@ export function installCdsSheetsMenuPopup(): () => void {
         "TEMPLATE",
         "NOSCRIPT",
       ]);
-      SheetsMenuPopupLabel_4 =
+      liveRegionSelector =
         '[aria-live]:not([aria-live="off"]), [role="status"], [role="alert"], [role="log"], [data-cds="Toast"]';
       SheetsMenuPopupElementCache = new WeakMap();
     });
@@ -554,139 +554,139 @@ export function installCdsSheetsMenuPopup(): () => void {
             initialFocus: initialFocus,
             ...props
           }: Dynamic,
-          options?: Dynamic,
+          forwardedRef?: Dynamic,
         ): Dynamic => {
           "use no memo";
 
-          let value: Dynamic = useOverlayRoot(),
-            value2: Dynamic = (0, reactSheetsMenuPopup_3.useContext)(
+          let overlayRoot: Dynamic = useOverlayRoot(),
+            menuRoot: Dynamic = (0, reactSheetsMenuPopup_3.useContext)(
               MenuRootContext,
             ),
-            value3: Dynamic =
+            isContextMenu: Dynamic =
               (0, reactSheetsMenuPopup_3.useContext)(
                 MenuConfigurationContext,
-              ) && value2 === null,
-            value4: Dynamic = useIsSheet(),
-            value5: Dynamic = value4 && value2 !== null,
-            value6: Dynamic = (0, reactSheetsMenuPopup_3.useContext)(
+              ) && menuRoot === null,
+            isSheet: Dynamic = useIsSheet(),
+            isNestedSheet: Dynamic = isSheet && menuRoot !== null,
+            iconContext: Dynamic = (0, reactSheetsMenuPopup_3.useContext)(
               ComponentsIconContext,
             ),
-            value7: Dynamic = collisionPadding ?? value6?.collisionPadding,
-            value8: Dynamic = (0, reactSheetsMenuPopup_3.useMemo)(
+            effectiveCollisionPadding: Dynamic = collisionPadding ?? iconContext?.collisionPadding,
+            effectiveAnchor: Dynamic = (0, reactSheetsMenuPopup_3.useMemo)(
               (): Dynamic =>
-                anchor !== undefined || !value2
+                anchor !== undefined || !menuRoot
                   ? anchor
-                  : virtualTriggerAnchor(value2),
-              [anchor, value2],
+                  : virtualTriggerAnchor(menuRoot),
+              [anchor, menuRoot],
             ),
-            value9: Dynamic =
+            effectiveSideOffset: Dynamic =
               sideOffset ??
-              (value3 ? undefined : value2 && anchor === undefined ? 2 : 6),
-            value10: Dynamic = usePopupEntryAnimation({
-              enabled: stableWhileOpen && !value4 && !value3,
+              (isContextMenu ? undefined : menuRoot && anchor === undefined ? 2 : 6),
+            entryAnimation: Dynamic = usePopupEntryAnimation({
+              enabled: stableWhileOpen && !isSheet && !isContextMenu,
               side: side,
               align: align,
             }),
-            value11: Dynamic = (0, reactSheetsMenuPopup_3.useContext)(
+            sheetFrame: Dynamic = (0, reactSheetsMenuPopup_3.useContext)(
               SheetPopupContext,
             ),
-            value12: Dynamic = (0, reactSheetsMenuPopup_3.useContext)(
+            menuItem: Dynamic = (0, reactSheetsMenuPopup_3.useContext)(
               MenuItemContext,
             ),
-            value13: Dynamic = (0, reactSheetsMenuPopup_3.useRef)(null),
-            value14: Dynamic = (0, reactSheetsMenuPopup_3.useRef)(null),
-            value15: Dynamic = (0,
+            sheetElementRef: Dynamic = (0, reactSheetsMenuPopup_3.useRef)(null),
+            coveredSheetRef: Dynamic = (0, reactSheetsMenuPopup_3.useRef)(null),
+            restoreCoveredParent: Dynamic = (0,
             reactSheetsMenuPopup_3.useCallback)((): Dynamic => {
-              let current: Dynamic = value14.current;
-              current !== null &&
-                (restoreCoveredSheet(current, value14),
-                (value14.current = null));
+              let coveredSheet: Dynamic = coveredSheetRef.current;
+              coveredSheet !== null &&
+                (restoreCoveredSheet(coveredSheet, coveredSheetRef),
+                (coveredSheetRef.current = null));
             }, []),
-            value16: Dynamic = (0, reactSheetsMenuPopup_3.useCallback)(
+            hideParentSheet: Dynamic = (0, reactSheetsMenuPopup_3.useCallback)(
               (element?: Dynamic): Dynamic => {
-                if (value2 === null) return;
-                let value55: Dynamic =
-                  value11 !== null
-                    ? (value2.triggerRef.current?.closest(
-                        `[data-sheet-tree="${CSS.escape(value11.treeId)}"][data-presentation="sheet"]`,
+                if (menuRoot === null) return;
+                let parentSheet: Dynamic =
+                  sheetFrame !== null
+                    ? (menuRoot.triggerRef.current?.closest(
+                        `[data-sheet-tree="${CSS.escape(sheetFrame.treeId)}"][data-presentation="sheet"]`,
                       ) ?? null)
                     : null;
-                value55 !== null &&
-                  value14.current !== value55 &&
-                  (value15(),
-                  hideCoveredSheet(value55, value14),
-                  (value14.current = value55));
+                parentSheet !== null &&
+                  coveredSheetRef.current !== parentSheet &&
+                  (restoreCoveredParent(),
+                  hideCoveredSheet(parentSheet, coveredSheetRef),
+                  (coveredSheetRef.current = parentSheet));
                 element.contains(element.ownerDocument.activeElement) ||
                   element.focus({
                     preventScroll: true,
                   });
               },
-              [value2, value15, value11],
+              [menuRoot, restoreCoveredParent, sheetFrame],
             ),
-            [value17, value18]: Dynamic = (0, reactSheetsMenuPopup_3.useState)(
+            [hasTextInput, setHasTextInput]: Dynamic = (0, reactSheetsMenuPopup_3.useState)(
               false,
             ),
-            value19: Dynamic = (0, reactSheetsMenuPopup_3.useRef)(false),
-            value20: Dynamic = (0, reactSheetsMenuPopup_3.useCallback)(
-              (input?: Dynamic): Dynamic => {
-                value19.current = input;
-                value18(input);
+            hasTextInputRef: Dynamic = (0, reactSheetsMenuPopup_3.useRef)(false),
+            updateHasTextInput: Dynamic = (0, reactSheetsMenuPopup_3.useCallback)(
+              (hasInput?: Dynamic): Dynamic => {
+                hasTextInputRef.current = hasInput;
+                setHasTextInput(hasInput);
               },
               [],
             ),
-            [value21, value22]: Dynamic = (0, reactSheetsMenuPopup_3.useState)(
+            [inertSheetNode, setInertSheetNode]: Dynamic = (0, reactSheetsMenuPopup_3.useState)(
               null,
             ),
-            value23: Dynamic = value11?.takeCloseRequest,
-            value24: Dynamic = (0, reactSheetsMenuPopup_3.useCallback)(
-              (): Dynamic => sheetCloseInertDelay(value23?.() ?? null),
-              [value23],
+            takeCloseRequest: Dynamic = sheetFrame?.takeCloseRequest,
+            getCloseInertDelay: Dynamic = (0, reactSheetsMenuPopup_3.useCallback)(
+              (): Dynamic => sheetCloseInertDelay(takeCloseRequest?.() ?? null),
+              [takeCloseRequest],
             ),
-            value25: Dynamic = useSheetSiblingsInert({
-              node: value21,
-              open: value4 && !value5 && (value11?.open ?? false),
-              liftOnClose: value24,
+            restoreSiblingsInert: Dynamic = useSheetSiblingsInert({
+              node: inertSheetNode,
+              open: isSheet && !isNestedSheet && (sheetFrame?.open ?? false),
+              liftOnClose: getCloseInertDelay,
             }),
-            value26: Dynamic = useSheetState(),
-            value27: Dynamic = (0, reactSheetsMenuPopup_3.useContext)(
+            sheetState: Dynamic = useSheetState(),
+            parentStack: Dynamic = (0, reactSheetsMenuPopup_3.useContext)(
               SheetStackContext,
             ),
-            value28: Dynamic = (0, reactSheetsMenuPopup_3.useContext)(
+            bridgeCover: Dynamic = (0, reactSheetsMenuPopup_3.useContext)(
               SheetPopupBridgeContext,
             ),
-            [value29, value30]: Dynamic = (0, reactSheetsMenuPopup_3.useState)(
+            [sheetElement, setSheetElement]: Dynamic = (0, reactSheetsMenuPopup_3.useState)(
               null,
             ),
-            value31: Dynamic = (0, reactSheetsMenuPopup_3.useCallback)(
+            setPopupElement: Dynamic = (0, reactSheetsMenuPopup_3.useCallback)(
               (element?: Dynamic): Dynamic => {
-                value13.current = value4 ? element : null;
-                value30(value4 ? element : null);
-                value22(value4 && !value5 ? element : null);
+                sheetElementRef.current = isSheet ? element : null;
+                setSheetElement(isSheet ? element : null);
+                setInertSheetNode(isSheet && !isNestedSheet ? element : null);
                 if (element === null) {
-                  value25();
-                  value15();
-                  value20(false);
+                  restoreSiblingsInert();
+                  restoreCoveredParent();
+                  updateHasTextInput(false);
                   return;
                 }
-                if (!value4) {
-                  value20(false);
+                if (!isSheet) {
+                  updateHasTextInput(false);
                   return;
                 }
-                if (!value5) {
-                  let value55: Dynamic = sheetContainsTextInput(
+                if (!isNestedSheet) {
+                  let containsTextInput: Dynamic = sheetContainsTextInput(
                     element,
                   );
-                  value55 &&
+                  containsTextInput &&
                     ((element.style.minHeight = SheetsLayoutCss_3),
                     (element.style.maxHeight = SheetsLayoutCss_3));
-                  value20(value55);
-                  value11?.pinHeight(
+                  updateHasTextInput(containsTextInput);
+                  sheetFrame?.pinHeight(
                     element.getBoundingClientRect().height,
                     sheetNeedsScrolling(element),
                   );
                   return;
                 }
-                value16(element);
+                hideParentSheet(element);
                 element.style.transition = "none";
                 element.style.translate =
                   element.ownerDocument.defaultView?.getComputedStyle(element)
@@ -697,380 +697,380 @@ export function installCdsSheetsMenuPopup(): () => void {
                 element.style.transition = "";
                 element.style.translate = "";
               },
-              [value4, value5, value11, value15, value16, value20, value25],
+              [isSheet, isNestedSheet, sheetFrame, restoreCoveredParent, hideParentSheet, updateHasTextInput, restoreSiblingsInert],
             );
-          useSheetTextFocus(value29, value11);
-          useCoveredSheetState(value29);
-          useSheetDismissal(value29, value11, value26.covered);
-          let value32: Dynamic = value4 && value26.covered,
-            value33: Dynamic = value4 && value26.inert;
+          useSheetTextFocus(sheetElement, sheetFrame);
+          useCoveredSheetState(sheetElement);
+          useSheetDismissal(sheetElement, sheetFrame, sheetState.covered);
+          let isCovered: Dynamic = isSheet && sheetState.covered,
+            isInert: Dynamic = isSheet && sheetState.inert;
           useAndroidCloseWatcher(
-            value4 && (value5 ? value12.open : (value11?.open ?? false)),
-            value5 ? value2?.close : value11?.dismiss,
+            isSheet && (isNestedSheet ? menuItem.open : (sheetFrame?.open ?? false)),
+            isNestedSheet ? menuRoot?.close : sheetFrame?.dismiss,
           );
-          let value34: Dynamic = (0, reactSheetsMenuPopup_3.useRef)(false),
-            value35: Dynamic = value11?.open ?? false;
+          let wasNestedOpenRef: Dynamic = (0, reactSheetsMenuPopup_3.useRef)(false),
+            isSheetOpen: Dynamic = sheetFrame?.open ?? false;
           useIsomorphicLayoutEffect((): Dynamic => {
-            let current: Dynamic = value13.current,
-              value55: Dynamic = value5 && value12.open && current !== null,
-              current2: Dynamic = value34.current;
-            value34.current = value55;
-            value55 && !current2
-              ? value16(current)
-              : !value55 && value35 && value15();
-          }, [value5, value12.open, value35, value16, value15]);
-          let value36: Dynamic = (0, reactSheetsMenuPopup_3.useRef)(false),
-            [value37, value38]: Dynamic = (0, reactSheetsMenuPopup_3.useState)(
+            let current: Dynamic = sheetElementRef.current,
+              isNestedOpen: Dynamic = isNestedSheet && menuItem.open && current !== null,
+              wasNestedOpen: Dynamic = wasNestedOpenRef.current;
+            wasNestedOpenRef.current = isNestedOpen;
+            isNestedOpen && !wasNestedOpen
+              ? hideParentSheet(current)
+              : !isNestedOpen && isSheetOpen && restoreCoveredParent();
+          }, [isNestedSheet, menuItem.open, isSheetOpen, hideParentSheet, restoreCoveredParent]);
+          let prevNestedOpenRef: Dynamic = (0, reactSheetsMenuPopup_3.useRef)(false),
+            [isPeeling, setIsPeeling]: Dynamic = (0, reactSheetsMenuPopup_3.useState)(
               false,
             );
           useIsomorphicLayoutEffect((): Dynamic => {
-            let value55: Dynamic = value5 && value12.open,
-              current: Dynamic = value36.current;
-            value36.current = value55;
-            value55 !== current && value38(!value55 && value35);
-          }, [value5, value12.open, value35]);
+            let isNestedOpen: Dynamic = isNestedSheet && menuItem.open,
+              current: Dynamic = prevNestedOpenRef.current;
+            prevNestedOpenRef.current = isNestedOpen;
+            isNestedOpen !== current && setIsPeeling(!isNestedOpen && isSheetOpen);
+          }, [isNestedSheet, menuItem.open, isSheetOpen]);
           useIsomorphicLayoutEffect((): Dynamic => {
-            let current: Dynamic = value13.current;
-            value5 &&
-              value12.open &&
+            let current: Dynamic = sheetElementRef.current;
+            isNestedSheet &&
+              menuItem.open &&
               current !== null &&
               clearSheetTransition(current);
-          }, [value5, value12.open]);
-          let value39: Dynamic = value11?.pushLevelHeight,
-            value40: Dynamic = value11?.drag;
+          }, [isNestedSheet, menuItem.open]);
+          let pushLevelHeight: Dynamic = sheetFrame?.pushLevelHeight,
+            drag: Dynamic = sheetFrame?.drag;
           (0, reactSheetsMenuPopup_3.useEffect)((): Dynamic => {
             if (
-              !value5 ||
-              !value12.open ||
-              value29 === null ||
-              value39 === undefined
+              !isNestedSheet ||
+              !menuItem.open ||
+              sheetElement === null ||
+              pushLevelHeight === undefined
             )
               return;
-            let defaultView: Dynamic = value29.ownerDocument.defaultView,
-              value55: Dynamic,
-              flag: Dynamic = false,
-              callback: Dynamic = (): Dynamic => {
-                let value58: Dynamic = defaultView?.innerHeight ?? 1 / 0,
-                  value59: Dynamic = value58 * SheetsLayoutConstant,
-                  value60: Dynamic = sheetContainsTextInput(
-                    value29,
+            let defaultView: Dynamic = sheetElement.ownerDocument.defaultView,
+              levelHeightHandle: Dynamic,
+              isGrowing: Dynamic = false,
+              measureLevel: Dynamic = (): Dynamic => {
+                let viewportHeight: Dynamic = defaultView?.innerHeight ?? 1 / 0,
+                  maxHeight: Dynamic = viewportHeight * SheetsLayoutConstant,
+                  containsTextInput: Dynamic = sheetContainsTextInput(
+                    sheetElement,
                   ),
-                  value61: Dynamic = sheetNaturalHeight(value29);
-                flag = value61 > value59;
-                let value62: Dynamic = value60
-                    ? value58 * SheetsLayoutConstant_2
-                    : Math.min(value61, value59),
-                  value63: Dynamic = value60 || flag;
-                value55 === undefined
-                  ? (value55 = value39(value62, value63))
-                  : value55.set(value62, value63);
+                  naturalHeight: Dynamic = sheetNaturalHeight(sheetElement);
+                isGrowing = naturalHeight > maxHeight;
+                let levelHeight: Dynamic = containsTextInput
+                    ? viewportHeight * halfHeightFraction
+                    : Math.min(naturalHeight, maxHeight),
+                  grows: Dynamic = containsTextInput || isGrowing;
+                levelHeightHandle === undefined
+                  ? (levelHeightHandle = pushLevelHeight(levelHeight, grows))
+                  : levelHeightHandle.set(levelHeight, grows);
               },
-              callback2: Dynamic = (): Dynamic => {
-                value56 = undefined;
-                if (value40 !== undefined && value40.get() !== null) {
-                  value56 = defaultView?.requestAnimationFrame(callback2);
+              measureWhenIdle: Dynamic = (): Dynamic => {
+                animationFrameId = undefined;
+                if (drag !== undefined && drag.get() !== null) {
+                  animationFrameId = defaultView?.requestAnimationFrame(measureWhenIdle);
                   return;
                 }
-                callback();
+                measureLevel();
               },
-              value56: Dynamic = defaultView?.requestAnimationFrame(callback2),
-              value57: Dynamic =
+              animationFrameId: Dynamic = defaultView?.requestAnimationFrame(measureWhenIdle),
+              mutationObserver: Dynamic =
                 defaultView !== null &&
                 typeof defaultView.MutationObserver !== "undefined"
                   ? new defaultView.MutationObserver(
-                      (input?: Dynamic): Dynamic => {
+                      (mutations?: Dynamic): Dynamic => {
                         if (
-                          value56 !== undefined ||
-                          value55 === undefined ||
-                          sheetMutationIsScrollOnly(input, flag)
+                          animationFrameId !== undefined ||
+                          levelHeightHandle === undefined ||
+                          sheetMutationIsScrollOnly(mutations, isGrowing)
                         )
                           return;
-                        let callback3: Dynamic = (): Dynamic => {
-                          value56 = undefined;
-                          if (value40 !== undefined && value40.get() !== null) {
-                            value56 =
-                              defaultView.requestAnimationFrame(callback3);
+                        let retryMeasure: Dynamic = (): Dynamic => {
+                          animationFrameId = undefined;
+                          if (drag !== undefined && drag.get() !== null) {
+                            animationFrameId =
+                              defaultView.requestAnimationFrame(retryMeasure);
                             return;
                           }
-                          callback();
+                          measureLevel();
                         };
-                        value56 = defaultView.requestAnimationFrame(callback3);
+                        animationFrameId = defaultView.requestAnimationFrame(retryMeasure);
                       },
                     )
                   : null;
-            value57?.observe(value29, {
+            mutationObserver?.observe(sheetElement, {
               childList: true,
               subtree: true,
             });
             return (): Dynamic => {
-              value57?.disconnect();
-              value56 !== undefined &&
-                defaultView?.cancelAnimationFrame(value56);
-              value55?.release();
+              mutationObserver?.disconnect();
+              animationFrameId !== undefined &&
+                defaultView?.cancelAnimationFrame(animationFrameId);
+              levelHeightHandle?.release();
             };
-          }, [value5, value12.open, value29, value39, value40]);
-          let value41: Dynamic = value11?.repinHeight,
-            value42: Dynamic = value11?.open ?? false;
+          }, [isNestedSheet, menuItem.open, sheetElement, pushLevelHeight, drag]);
+          let repinHeight: Dynamic = sheetFrame?.repinHeight,
+            isFrameOpen: Dynamic = sheetFrame?.open ?? false;
           (0, reactSheetsMenuPopup_3.useEffect)((): Dynamic => {
             if (
-              !value4 ||
-              value5 ||
-              !value42 ||
-              value29 === null ||
-              value41 === undefined
+              !isSheet ||
+              isNestedSheet ||
+              !isFrameOpen ||
+              sheetElement === null ||
+              repinHeight === undefined
             )
               return;
-            let defaultView: Dynamic = value29.ownerDocument.defaultView;
+            let defaultView: Dynamic = sheetElement.ownerDocument.defaultView;
             if (
               defaultView === null ||
               typeof defaultView.MutationObserver === "undefined"
             )
               return;
-            let index: Dynamic = 0,
-              flag: Dynamic = false,
-              value55: Dynamic = new defaultView.MutationObserver(
-                (input?: Dynamic): Dynamic => {
+            let animationFrameId: Dynamic = 0,
+              isGrowing: Dynamic = false,
+              mutationObserver: Dynamic = new defaultView.MutationObserver(
+                (mutations?: Dynamic): Dynamic => {
                   if (
-                    index !== 0 ||
-                    sheetMutationIsScrollOnly(input, flag)
+                    animationFrameId !== 0 ||
+                    sheetMutationIsScrollOnly(mutations, isGrowing)
                   )
                     return;
-                  let callback: Dynamic = (): Dynamic => {
-                    index = 0;
-                    if (value40 !== undefined && value40.get() !== null) {
-                      index = defaultView.requestAnimationFrame(callback);
+                  let repinMeasure: Dynamic = (): Dynamic => {
+                    animationFrameId = 0;
+                    if (drag !== undefined && drag.get() !== null) {
+                      animationFrameId = defaultView.requestAnimationFrame(repinMeasure);
                       return;
                     }
-                    if (sheetContainsTextInput(value29)) {
-                      value19.current ||
-                        (value20(true),
-                        value41(
+                    if (sheetContainsTextInput(sheetElement)) {
+                      hasTextInputRef.current ||
+                        (updateHasTextInput(true),
+                        repinHeight(
                           defaultView.innerHeight *
-                            SheetsLayoutConstant_2,
+                            halfHeightFraction,
                           true,
                         ));
                       return;
                     }
-                    let value56: Dynamic =
+                    let maxHeight: Dynamic =
                         defaultView.innerHeight * SheetsLayoutConstant,
-                      value57: Dynamic = sheetNaturalHeight(
-                        value29,
+                      naturalHeight: Dynamic = sheetNaturalHeight(
+                        sheetElement,
                       );
-                    flag = value57 > value56;
-                    value41(Math.min(value57, value56), flag);
+                    isGrowing = naturalHeight > maxHeight;
+                    repinHeight(Math.min(naturalHeight, maxHeight), isGrowing);
                   };
-                  index = defaultView.requestAnimationFrame(callback);
+                  animationFrameId = defaultView.requestAnimationFrame(repinMeasure);
                 },
               );
-            value55.observe(value29, {
+            mutationObserver.observe(sheetElement, {
               childList: true,
               subtree: true,
             });
             return (): Dynamic => {
-              value55.disconnect();
-              index !== 0 && defaultView.cancelAnimationFrame(index);
+              mutationObserver.disconnect();
+              animationFrameId !== 0 && defaultView.cancelAnimationFrame(animationFrameId);
             };
-          }, [value4, value5, value42, value29, value41, value40, value20]);
-          let value43: Dynamic = value11?.height,
-            value44: Dynamic = value11?.pinHeight;
+          }, [isSheet, isNestedSheet, isFrameOpen, sheetElement, repinHeight, drag, updateHasTextInput]);
+          let frameHeight: Dynamic = sheetFrame?.height,
+            pinHeight: Dynamic = sheetFrame?.pinHeight;
           useIsomorphicLayoutEffect((): Dynamic => {
-            let current: Dynamic = value13.current;
-            !value4 ||
-              value5 ||
-              value43 !== undefined ||
+            let current: Dynamic = sheetElementRef.current;
+            !isSheet ||
+              isNestedSheet ||
+              frameHeight !== undefined ||
               current === null ||
               (clearSheetTransition(current),
-              value44?.(
+              pinHeight?.(
                 current.getBoundingClientRect().height,
                 sheetNeedsScrolling(current),
               ));
-          }, [value4, value5, value43, value44]);
-          let value45: Dynamic = useMenuPopupFocus(
-              value2?.triggerRef,
+          }, [isSheet, isNestedSheet, frameHeight, pinHeight]);
+          let popupFocusRef: Dynamic = useMenuPopupFocus(
+              menuRoot?.triggerRef,
               props.finalFocus,
             ),
-            value46: Dynamic = value3
+            isAnchoredWithoutFinalFocus: Dynamic = isContextMenu
               ? props.finalFocus === undefined || props.finalFocus === null
               : anchor != null &&
-                value2 === null &&
+                menuRoot === null &&
                 props.finalFocus === undefined,
-            value47: Dynamic = usePassiveOpenCell(value2 === null);
-          value47.root?.declareFocusProps(initialFocus, props.finalFocus);
-          value2 !== null &&
+            passiveOpenCells: Dynamic = usePassiveOpenCell(menuRoot === null);
+          passiveOpenCells.root?.declareFocusProps(initialFocus, props.finalFocus);
+          menuRoot !== null &&
             initialFocus !== undefined &&
             warnNestedMenuInitialFocus();
           let state: Dynamic = {
               ...props,
-              onKeyDown: (input?: Dynamic): Dynamic => {
-                props.onKeyDown?.(input);
-                preventSheetTab(input);
+              onKeyDown: (event?: Dynamic): Dynamic => {
+                props.onKeyDown?.(event);
+                preventSheetTab(event);
               },
             },
-            value48: Dynamic = useEventRef(
-              (input?: Dynamic): Dynamic => {
-                value10.popupRef(input);
-                value31(input);
-                value45(input);
-                value47.root?.registerPopup(input);
+            popupRef: Dynamic = useEventRef(
+              (popupElement?: Dynamic): Dynamic => {
+                entryAnimation.popupRef(popupElement);
+                setPopupElement(popupElement);
+                popupFocusRef(popupElement);
+                passiveOpenCells.root?.registerPopup(popupElement);
               },
-              options,
+              forwardedRef,
             ),
-            value49: Dynamic = value4
-              ? getSheetFrameStyle(value11, {
-                  floor: value17 ? "half" : "content",
-                  parentFrameHeight: value5 ? undefined : value27?.frameHeight,
+            sheetStyle: Dynamic = isSheet
+              ? getSheetFrameStyle(sheetFrame, {
+                  floor: hasTextInput ? "half" : "content",
+                  parentFrameHeight: isNestedSheet ? undefined : parentStack?.frameHeight,
                 })
-              : value10.held !== null
+              : entryAnimation.held !== null
                 ? {
                     pointerEvents: "auto",
                   }
                 : undefined,
-            value50: Dynamic =
-              value49 === undefined
+            mergedStyle: Dynamic =
+              sheetStyle === undefined
                 ? style
                 : typeof style == "function"
-                  ? (input?: Dynamic): Dynamic => ({
-                      ...style(input),
-                      ...value49,
+                  ? (popupState?: Dynamic): Dynamic => ({
+                      ...style(popupState),
+                      ...sheetStyle,
                     })
                   : {
                       ...style,
-                      ...value49,
+                      ...sheetStyle,
                     };
-          value2 !== null &&
+          menuRoot !== null &&
             layerOffset !== undefined &&
             warnNestedMenuLayerOffset();
-          let value51: Dynamic = useLayer(
-              value3 ? "contextmenu" : "menu",
-              value2 === null ? layerOffset : undefined,
+          let layer: Dynamic = useLayer(
+              isContextMenu ? "contextmenu" : "menu",
+              menuRoot === null ? layerOffset : undefined,
             ),
-            value52: Dynamic = useCdsWindow(),
-            value53: Dynamic = sheetFrameHeight(value11, value52),
-            value54: Dynamic = (0, reactSheetsMenuPopup_3.useMemo)(
+            cdsWindow: Dynamic = useCdsWindow(),
+            frameHeightPx: Dynamic = sheetFrameHeight(sheetFrame, cdsWindow),
+            stack: Dynamic = (0, reactSheetsMenuPopup_3.useMemo)(
               (): Dynamic =>
-                value4 && value28 !== null
+                isSheet && bridgeCover !== null
                   ? {
-                      depth: value26.depth,
-                      frameHeight: value53,
-                      cover: value28,
+                      depth: sheetState.depth,
+                      frameHeight: frameHeightPx,
+                      cover: bridgeCover,
                     }
                   : null,
-              [value4, value28, value26.depth, value53],
+              [isSheet, bridgeCover, sheetState.depth, frameHeightPx],
             );
           return (
-            <npm_Menu_La.Portal container={container ?? value}>
+            <npm_Menu_La.Portal container={container ?? overlayRoot}>
               <PopupSurface
-                {...value51.portalProps}
+                {...layer.portalProps}
                 surface={surfaceBackgroundTokens.popover}
-                density={value4 ? ComfortableValue : undefined}
-                companionModalCatcher={!value4}
+                density={isSheet ? ComfortableValue : undefined}
+                companionModalCatcher={!isSheet}
                 closeOnActivityHide={true}
               >
-                {value4 && !value5 && (<npm_Menu_La.Backdrop
+                {isSheet && !isNestedSheet && (<npm_Menu_La.Backdrop
                     data-presentation={"sheet"}
-                    data-sheet-scrim={value11?.treeId}
+                    data-sheet-scrim={sheetFrame?.treeId}
                     className={
-                      value26.depth > 0
+                      sheetState.depth > 0
                         ? "draggable-none fixed inset-0 bg-transparent"
                         : PlatformReducedMotionCss_4
                     }
                   />)}
                 <CollisionPaddingProvider
-                  override={value7}
-                  container={container ?? value}
+                  override={effectiveCollisionPadding}
+                  container={container ?? overlayRoot}
                   provideInherit={true}
                 >
-                  {(input?: Dynamic): Dynamic => (
-                    <LayerBaseContext.Provider value={value51.base}>
+                  {(resolvedCollisionPadding?: Dynamic): Dynamic => (
+                    <LayerBaseContext.Provider value={layer.base}>
                       <npm_Menu_La.Positioner
-                        ref={value10.positionerRef}
-                        data-sheet-tree={value4 ? value11?.treeId : undefined}
+                        ref={entryAnimation.positionerRef}
+                        data-sheet-tree={isSheet ? sheetFrame?.treeId : undefined}
                         style={
-                          value4
+                          isSheet
                             ? {
-                                ...value51.style,
-                                ...getSheetFixedPosition(value11),
+                                ...layer.style,
+                                ...getSheetFixedPosition(sheetFrame),
                               }
-                            : value10.held !== null
+                            : entryAnimation.held !== null
                               ? {
-                                  ...value51.style,
-                                  ...value10.held.positionerStyle,
+                                  ...layer.style,
+                                  ...entryAnimation.held.positionerStyle,
                                 }
-                              : value51.style
+                              : layer.style
                         }
-                        side={value10.side}
-                        align={value10.align}
-                        sideOffset={value9}
-                        collisionPadding={input}
+                        side={entryAnimation.side}
+                        align={entryAnimation.align}
+                        sideOffset={effectiveSideOffset}
+                        collisionPadding={resolvedCollisionPadding}
                         collisionAvoidance={collisionAvoidance}
-                        anchor={value8}
-                        {...(value4
+                        anchor={effectiveAnchor}
+                        {...(isSheet
                           ? SheetsLayoutDisableAnchorTrackingCollisionAvoidanceConfig
                           : {})}
                         className={
-                          value4
-                            ? value5
+                          isSheet
+                            ? isNestedSheet
                               ? ClipPathInset00200vh0Value
-                              : value26.depth === 0
+                              : sheetState.depth === 0
                                 ? PlatformReducedMotionClassNames_3
                                 : undefined
-                            : value10.held?.positionerClassName
+                            : entryAnimation.held?.positionerClassName
                         }
                       >
                         <PassiveOpenGate
-                          cell={value4 ? null : value47.cell}
-                          nested={value2 !== null}
+                          cell={isSheet ? null : passiveOpenCells.cell}
+                          nested={menuRoot !== null}
                         >
-                          {(input2?: Dynamic): Dynamic => (
+                          {(applyPassiveProps?: Dynamic): Dynamic => (
                             <MenuPopupElement
-                              anchoredWithoutFinalFocus={value46}
-                              cursorAnchored={value3}
+                              anchoredWithoutFinalFocus={isAnchoredWithoutFinalFocus}
+                              cursorAnchored={isContextMenu}
                               data-cds={dataCds}
-                              data-presentation={value4 ? "sheet" : undefined}
+                              data-presentation={isSheet ? "sheet" : undefined}
                               data-sheet-tree={
-                                value4 ? value11?.treeId : undefined
+                                isSheet ? sheetFrame?.treeId : undefined
                               }
                               data-cds-sheet-depth={
-                                value4 ? String(value26.depth) : undefined
+                                isSheet ? String(sheetState.depth) : undefined
                               }
-                              {...(value32
+                              {...(isCovered
                                 ? {
                                     [coveredSheetAttribute]: "",
                                   }
                                 : {})}
-                              {...(value33 ? getInertPropsValue : {})}
-                              {...(value5 && value11 !== null && !value11.open
+                              {...(isInert ? getInertPropsValue : {})}
+                              {...(isNestedSheet && sheetFrame !== null && !sheetFrame.open
                                 ? {
                                     [CdsSheetTreeClosingAttribute]: "",
                                   }
                                 : {})}
-                              {...(value5 && value37 && !value12.open
+                              {...(isNestedSheet && isPeeling && !menuItem.open
                                 ? {
                                     [CdsSheetPeelingAttribute]: "",
                                   }
                                 : {})}
-                              {...(value4
+                              {...(isSheet
                                 ? getSizeAttribute("lg")
                                 : {})}
-                              ref={value48}
-                              {...input2(value4 ? state : props)}
-                              style={value50}
+                              ref={popupRef}
+                              {...applyPassiveProps(isSheet ? state : props)}
+                              style={mergedStyle}
                               className={cn(
                                 MenuPopupCss,
-                                value4 && PlatformReducedMotionCss_2,
-                                value4 &&
-                                  (value5
+                                isSheet && PlatformReducedMotionCss_2,
+                                isSheet &&
+                                  (isNestedSheet
                                     ? "bg-transparent shadow-none [&[data-ending-style]:not([data-cds-sheet-tree-closing])]:translate-x-full rtl:[&[data-ending-style]:not([data-cds-sheet-tree-closing])]:-translate-x-full [&[data-ending-style][data-cds-sheet-peeling]]:translate-x-full rtl:[&[data-ending-style][data-cds-sheet-peeling]]:-translate-x-full [&[data-ending-style][data-cds-sheet-tree-closing]]:translate-y-[calc(100%+1.5rem)]"
                                     : "data-[starting-style]:translate-y-[calc(100%+1.5rem)] data-[ending-style]:translate-y-[calc(100%+1.5rem)]"),
-                                value4 &&
+                                isSheet &&
                                   "origin-top [&[data-cds-sheet-covered]:not([data-starting-style]):not([data-ending-style])]:-translate-y-3 data-[cds-sheet-covered]:scale-[0.94] after:pointer-events-none after:absolute after:inset-0 after:rounded-[inherit] after:bg-backdrop after:opacity-0 after:transition-opacity after:duration-sheet motion-reduce:after:transition-none data-[cds-sheet-covered]:after:opacity-100",
                                 className,
                               )}
                             >
-                              {value4 ? (<SheetStackContext.Provider
-                                  value={value54}
+                              {isSheet ? (<SheetStackContext.Provider
+                                  value={stack}
                                 >
-                                  <SheetHandle drawPill={!value5} />
+                                  <SheetHandle drawPill={!isNestedSheet} />
                                   <div
                                     className={
                                       PlatformReducedMotionCss_3
@@ -1079,15 +1079,15 @@ export function installCdsSheetsMenuPopup(): () => void {
                                     <PopupScrollArea
                                       header={header}
                                       headerClassName={
-                                        PlatformReducedMotionLabel_2
+                                        sheetHeaderClassName
                                       }
                                       footer={footer}
                                       fill={true}
                                     >
                                       {children}
-                                      {!value5 && (<SheetCloseButton />)}
+                                      {!isNestedSheet && (<SheetCloseButton />)}
                                     </PopupScrollArea>
-                                    <SheetBackButton nested={value5} />
+                                    <SheetBackButton nested={isNestedSheet} />
                                   </div>
                                 </SheetStackContext.Provider>) : (<PopupScrollArea
                                   header={header}

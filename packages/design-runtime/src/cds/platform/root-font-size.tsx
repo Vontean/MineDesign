@@ -55,65 +55,65 @@ function PopupSurface({
   style: style,
   surface: surface,
   density: density,
-  companionModalCatcher: companionModalCatcher2 = false,
+  companionModalCatcher: isCompanionModalCatcher = false,
   closeOnActivityHide = false,
 }: Dynamic): Dynamic {
   useUiLocale();
   let value: Dynamic = useCloseOnHiddenActivity(
       closeOnActivityHide,
     ),
-    value2: Dynamic = useMergedRefs(
+    mergedRef: Dynamic = useMergedRefs(
       ensureDocumentInputObserver,
       value,
     ),
-    value3: Dynamic = useDensity(),
-    value4: Dynamic = density ?? value3,
-    value5: Dynamic = useColorMode(),
-    value6: Dynamic = useThemeId(),
-    value7: Dynamic = usePlatform(),
-    value8: Dynamic = useLocale(),
-    value9: Dynamic = useCdsFont(),
-    value10: Dynamic = useCdsLabels(),
-    value11: Dynamic = usePageBackground(),
-    value12: Dynamic = surface ?? value11,
-    value13: Dynamic =
-      value12 || value9 !== undefined || style
+    inheritedDensity: Dynamic = useDensity(),
+    effectiveDensity: Dynamic = density ?? inheritedDensity,
+    colorMode: Dynamic = useColorMode(),
+    themeId: Dynamic = useThemeId(),
+    platform: Dynamic = usePlatform(),
+    locale: Dynamic = useLocale(),
+    cdsFont: Dynamic = useCdsFont(),
+    cdsLabels: Dynamic = useCdsLabels(),
+    inheritedPageBackground: Dynamic = usePageBackground(),
+    effectivePageBackground: Dynamic = surface ?? inheritedPageBackground,
+    surfaceStyle: Dynamic =
+      effectivePageBackground || cdsFont !== undefined || style
         ? {
-            ...pageBackgroundStyle(value12),
-            ...monoFontOverrideStyle(value9),
+            ...pageBackgroundStyle(effectivePageBackground),
+            ...monoFontOverrideStyle(cdsFont),
             ...style,
           }
         : undefined;
   return (
     <div
-      ref={value2}
+      ref={mergedRef}
       className={cn("cds-root pointer-events-auto", className)}
       data-cds-portal={""}
-      data-density={value4}
-      data-mode={value5}
-      data-cds-theme={value6}
-      data-platform={value7}
-      data-font={value8}
-      data-page-bg={value10}
-      style={value13}
+      data-density={effectiveDensity}
+      data-mode={colorMode}
+      data-cds-theme={themeId}
+      data-platform={platform}
+      data-font={locale}
+      data-page-bg={cdsLabels}
+      style={surfaceStyle}
       onPointerDown={
-        companionModalCatcher2
+        isCompanionModalCatcher
           ? preventModalCatcherPointerFocus
           : undefined
       }
       onMouseDown={
-        companionModalCatcher2
+        isCompanionModalCatcher
           ? preventModalCatcherMouseFocus
           : undefined
       }
       onDragStart={
-        companionModalCatcher2
+        isCompanionModalCatcher
           ? handleModalCatcherDismissal
           : undefined
       }
     >
-      <DensityContextAlias.Provider value={value4}>
-        <PageBackgroundContext.Provider value={value12}>
+      <DensityContextAlias.Provider value={effectiveDensity}>
+        <PageBackgroundContext.Provider value={effectivePageBackground}>
           <RootPresenceContext.Provider value={true}>
             <DisabledContext.Provider value={false}>
               <ResetSkeletonContext>{children}</ResetSkeletonContext>
@@ -181,8 +181,8 @@ function getRootFontSizeSnapshot(): Dynamic {
 function getServerRootFontSize(): Dynamic {
   return 16;
 }
-function subscribeRootFontSize(input?: Dynamic): Dynamic {
-  rootFontSizeSubscribers.add(input);
+function subscribeRootFontSize(onRootFontSizeChange?: Dynamic): Dynamic {
+  rootFontSizeSubscribers.add(onRootFontSizeChange);
   if (
     rootFontSizeObserver === null &&
     typeof document !== "undefined" &&
@@ -190,16 +190,16 @@ function subscribeRootFontSize(input?: Dynamic): Dynamic {
   ) {
     let value: Dynamic = rootFontSizeProbe();
     rootFontSizeObserver = new ResizeObserver((): Dynamic => {
-      let value2: Dynamic = readRootFontSize();
-      if (value2 !== rootFontSizeSnapshot) {
-        rootFontSizeSnapshot = value2;
-        for (let value3 of rootFontSizeSubscribers as Dynamic) value3();
+      let currentRootFontSize: Dynamic = readRootFontSize();
+      if (currentRootFontSize !== rootFontSizeSnapshot) {
+        rootFontSizeSnapshot = currentRootFontSize;
+        for (let notifySubscriber of rootFontSizeSubscribers as Dynamic) notifySubscriber();
       }
     });
     rootFontSizeObserver.observe(value);
   }
   return (): Dynamic => {
-    rootFontSizeSubscribers.delete(input);
+    rootFontSizeSubscribers.delete(onRootFontSizeChange);
     rootFontSizeSubscribers.size === 0 &&
       (rootFontSizeObserver?.disconnect(),
       (rootFontSizeObserver = null),
@@ -301,8 +301,8 @@ export function installCdsPlatformRootFontSize(): () => void {
         PlatformRootFontSizeCss = `calc(${PlatformRootFontSizeConstant}rem * var(${rootRemScaleProperty}, 1))`;
         PlatformRootFontSizeCss_2 = `position:fixed;top:0;left:0;width:${PlatformRootFontSizeCss};min-width:0;max-width:none;height:0;font-size:${PlatformRootFontSizeCss};-webkit-text-size-adjust:none;text-size-adjust:none;visibility:hidden;pointer-events:none;`;
         CdsRootFontSizeProbeAttribute = "data-cds-root-font-size-probe";
-        scaleCssPixels = (input: number): string =>
-          `calc(${input / 16}rem * var(${rootRemScaleProperty}, 1))`;
+        scaleCssPixels = (pixels: number): string =>
+          `calc(${pixels / 16}rem * var(${rootRemScaleProperty}, 1))`;
         PlatformRootFontSizeIsConnectedRemoveState = null;
         rootFontSizeObserver = null;
         rootFontSizeSnapshot = null;

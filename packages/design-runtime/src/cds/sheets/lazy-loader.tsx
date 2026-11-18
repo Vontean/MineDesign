@@ -15,8 +15,8 @@ var reactSheetsLazyLoader: Dynamic;
 var SheetsLazyLoaderCurrentState: Dynamic;
 var mobileSheetsFailed: Dynamic;
 var SheetsLazyLoaderConstant: Dynamic;
-var SheetsLazyLoaderConstant_2: Dynamic;
-var SheetsLazyLoaderCurrentState_2: Dynamic;
+var loadGeneration: Dynamic;
+var mobileSheetsLoadPromise: Dynamic;
 var SheetsLazyLoaderSubscribers: Dynamic;
 var SheetsLazyLoaderHandler: Dynamic;
 var SheetsLazyLoaderHandler_2: Dynamic;
@@ -26,15 +26,15 @@ var SheetsLazyLoaderHandler_5: Dynamic;
 var initializeMobileSheetLoader: Dynamic;
 var reactSheetsLazyLoader_2: Dynamic;
 var initializeSheetsLazyLoader_2: Dynamic;
-function subscribeMobileSheets(input?: Dynamic): Dynamic {
-  SheetsLazyLoaderSubscribers.add(input);
+function subscribeMobileSheets(listener?: Dynamic): Dynamic {
+  SheetsLazyLoaderSubscribers.add(listener);
   return (): Dynamic => {
-    SheetsLazyLoaderSubscribers.delete(input);
+    SheetsLazyLoaderSubscribers.delete(listener);
   };
 }
 function loadMobileSheets(): Dynamic {
-  let value: Dynamic = SheetsLazyLoaderConstant_2;
-  SheetsLazyLoaderCurrentState_2 ??= loadApplicationFeature(
+  let startedGeneration: Dynamic = loadGeneration;
+  mobileSheetsLoadPromise ??= loadApplicationFeature(
     "cds_mobile_sheets",
     (): Dynamic =>
       Promise.resolve().then(
@@ -42,23 +42,23 @@ function loadMobileSheets(): Dynamic {
       ),
   )
     .then(
-      (input?: Dynamic): Dynamic =>
-        typeof input == "object" &&
-        input !== null &&
-        "SheetPopupHost" in input
-          ? input
+      (loadedModule?: Dynamic): Dynamic =>
+        typeof loadedModule == "object" &&
+        loadedModule !== null &&
+        "SheetPopupHost" in loadedModule
+          ? loadedModule
           : null,
       (): Dynamic => null,
     )
-    .then((input?: Dynamic): Dynamic => {
-      if (value !== SheetsLazyLoaderConstant_2) return input;
-      input === null
+    .then((resolvedModule?: Dynamic): Dynamic => {
+      if (startedGeneration !== loadGeneration) return resolvedModule;
+      resolvedModule === null
         ? (mobileSheetsFailed = true)
-        : (SheetsLazyLoaderCurrentState = input);
-      for (let value2 of SheetsLazyLoaderSubscribers as Dynamic) value2();
-      return input;
+        : (SheetsLazyLoaderCurrentState = resolvedModule);
+      for (let notifySubscriber of SheetsLazyLoaderSubscribers as Dynamic) notifySubscriber();
+      return resolvedModule;
     });
-  return SheetsLazyLoaderCurrentState_2;
+  return mobileSheetsLoadPromise;
 }
 function preloadMobileSheets(): Dynamic {
   SheetsLazyLoaderCurrentState !== null ||
@@ -89,14 +89,14 @@ function useMobileSheetComponents(): Dynamic {
     SheetsLazyLoaderHandler_4,
   );
 }
-function useMobileSheetPreload(input?: Dynamic, options?: Dynamic): Dynamic {
-  let value: Dynamic = useWindowMediaQuery(
-    input ? options : undefined,
+function useMobileSheetPreload(shouldPreload?: Dynamic, preloadWindow?: Dynamic): Dynamic {
+  let isCoarsePointer: Dynamic = useWindowMediaQuery(
+    shouldPreload ? preloadWindow : undefined,
     coarsePointerMediaQuery,
   );
   (0, reactSheetsLazyLoader_2.useEffect)((): Dynamic => {
-    input && value && preloadMobileSheets();
-  }, [input, value]);
+    shouldPreload && isCoarsePointer && preloadMobileSheets();
+  }, [shouldPreload, isCoarsePointer]);
 }
 export {
   areMobileSheetsLoaded,
@@ -110,9 +110,9 @@ export {
   reactSheetsLazyLoader,
   reactSheetsLazyLoader_2,
   SheetsLazyLoaderConstant,
-  SheetsLazyLoaderConstant_2,
+  loadGeneration as SheetsLazyLoaderConstant_2,
   SheetsLazyLoaderCurrentState,
-  SheetsLazyLoaderCurrentState_2,
+  mobileSheetsLoadPromise as SheetsLazyLoaderCurrentState_2,
   SheetsLazyLoaderHandler,
   SheetsLazyLoaderHandler_2,
   SheetsLazyLoaderHandler_3,
@@ -156,8 +156,8 @@ export function installCdsSheetsLazyLoader(): () => void {
       SheetsLazyLoaderCurrentState = null;
       mobileSheetsFailed = false;
       SheetsLazyLoaderConstant = 0;
-      SheetsLazyLoaderConstant_2 = 0;
-      SheetsLazyLoaderCurrentState_2 = null;
+      loadGeneration = 0;
+      mobileSheetsLoadPromise = null;
       SheetsLazyLoaderSubscribers = new Set();
       SheetsLazyLoaderHandler = (): Dynamic => SheetsLazyLoaderCurrentState;
       SheetsLazyLoaderHandler_2 = (): Dynamic =>

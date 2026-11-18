@@ -11,24 +11,24 @@ var textInputSelector: string;
 var SheetsKeyboardViewportConstant: number;
 var SheetsKeyboardViewportLimit: number;
 var initializeSheetsKeyboardViewport: () => void;
-function isTextInputElement(input: Element | null | undefined): boolean {
-  return input == null
+function isTextInputElement(element: Element | null | undefined): boolean {
+  return element == null
     ? false
-    : input.matches(
+    : element.matches(
           'input:not([type=button],[type=checkbox],[type=radio],[type=range],[type=submit],[type=reset],[type=color],[type=file],[type=image],[type=hidden],[readonly]), textarea:not([readonly]), [contenteditable=""], [contenteditable="true"], [contenteditable="plaintext-only"]',
         )
       ? true
-      : (asElement(input) as HTMLElement | null)
+      : (asElement(element) as HTMLElement | null)
           ?.isContentEditable === true;
 }
-function measureKeyboardInset(input: Window): KeyboardInset | null {
-  let visualViewport = input.visualViewport;
+function measureKeyboardInset(targetWindow: Window): KeyboardInset | null {
+  let visualViewport = targetWindow.visualViewport;
   if (
     visualViewport == null ||
     Math.abs((visualViewport.scale ?? 1) - 1) > SheetsKeyboardViewportLimit
   )
     return null;
-  let clientHeight = input.document.documentElement.clientHeight;
+  let clientHeight = targetWindow.document.documentElement.clientHeight;
   return {
     inset: Math.max(
       0,
@@ -41,65 +41,65 @@ function measureKeyboardInset(input: Window): KeyboardInset | null {
   };
 }
 function useKeyboardViewport(
-  input: boolean,
-  options: (inset: KeyboardInset | null) => void,
+  isActive: boolean,
+  onInsetChange: (inset: KeyboardInset | null) => void,
   {
-    unpan: context = false,
+    unpan: shouldUnpan = false,
   }: {
     unpan?: boolean;
   } = {},
 ): void {
-  let value = useCdsWindow(),
-    value2 = useStableCallback(options);
+  let cdsWindow = useCdsWindow(),
+    notifyInsetChange = useStableCallback(onInsetChange);
   (0, reactSheetsKeyboardViewport.useEffect)(() => {
-    if (!input || value === undefined) return;
-    let visualViewport = value.visualViewport;
+    if (!isActive || cdsWindow === undefined) return;
+    let visualViewport = cdsWindow.visualViewport;
     if (visualViewport == null) return;
-    let value3: KeyboardInset | null = null,
-      flag = false,
-      index = 0,
-      callback = () => {
-        index = 0;
-        let value4 = measureKeyboardInset(value),
-          clientHeight = value.document.documentElement.clientHeight,
-          value5 =
-            value4 !== null &&
-            value4.visible < clientHeight - SheetsKeyboardViewportConstant,
-          value6 = value5 ? value4 : null;
-        (value6?.inset !== value3?.inset ||
-          value6?.visible !== value3?.visible ||
-          value6?.offset !== value3?.offset) &&
-          ((value3 = value6), value2(value6));
-        context &&
-          value5 &&
-          !flag &&
+    let lastInset: KeyboardInset | null = null,
+      hasUnpanned = false,
+      animationFrameId = 0,
+      measureInset = () => {
+        animationFrameId = 0;
+        let measuredInset = measureKeyboardInset(cdsWindow),
+          clientHeight = cdsWindow.document.documentElement.clientHeight,
+          isKeyboardVisible =
+            measuredInset !== null &&
+            measuredInset.visible < clientHeight - SheetsKeyboardViewportConstant,
+          currentInset = isKeyboardVisible ? measuredInset : null;
+        (currentInset?.inset !== lastInset?.inset ||
+          currentInset?.visible !== lastInset?.visible ||
+          currentInset?.offset !== lastInset?.offset) &&
+          ((lastInset = currentInset), notifyInsetChange(currentInset));
+        shouldUnpan &&
+          isKeyboardVisible &&
+          !hasUnpanned &&
           visualViewport.offsetTop > 0 &&
-          ((flag = true),
-          value.document.documentElement.scrollIntoView({
+          ((hasUnpanned = true),
+          cdsWindow.document.documentElement.scrollIntoView({
             block: "start",
             inline: "start",
             behavior: "instant",
           }),
-          value.scrollTo({
+          cdsWindow.scrollTo({
             top: 0,
             left: 0,
             behavior: "instant",
           }));
-        value5 || (flag = false);
+        isKeyboardVisible || (hasUnpanned = false);
       },
-      callback2 = () => {
-        index === 0 && (index = value.requestAnimationFrame(callback));
+      scheduleMeasure = () => {
+        animationFrameId === 0 && (animationFrameId = cdsWindow.requestAnimationFrame(measureInset));
       };
-    callback();
-    visualViewport.addEventListener("resize", callback2);
-    visualViewport.addEventListener("scroll", callback2);
+    measureInset();
+    visualViewport.addEventListener("resize", scheduleMeasure);
+    visualViewport.addEventListener("scroll", scheduleMeasure);
     return () => {
-      visualViewport.removeEventListener("resize", callback2);
-      visualViewport.removeEventListener("scroll", callback2);
-      index !== 0 && value.cancelAnimationFrame(index);
-      value2(null);
+      visualViewport.removeEventListener("resize", scheduleMeasure);
+      visualViewport.removeEventListener("scroll", scheduleMeasure);
+      animationFrameId !== 0 && cdsWindow.cancelAnimationFrame(animationFrameId);
+      notifyInsetChange(null);
     };
-  }, [input, value, value2, context]);
+  }, [isActive, cdsWindow, notifyInsetChange, shouldUnpan]);
 }
 export {
   initializeSheetsKeyboardViewport,

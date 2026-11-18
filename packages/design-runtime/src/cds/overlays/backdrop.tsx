@@ -21,21 +21,21 @@ var OverlaysBackdropPreventDefault: (
 ) => void;
 var initializeOverlaysBackdrop: typeof import("react-dom");
 function useRestoreFocusOnClose(
-  input: boolean,
+  isOpen: boolean,
 ): React.RefCallback<HTMLElement> {
-  let value = (0, reactOverlaysBackdrop.useRef)<HTMLElement | null>(null),
-    value2 = (0, reactOverlaysBackdrop.useRef)(input);
+  let triggerElementRef = (0, reactOverlaysBackdrop.useRef)<HTMLElement | null>(null),
+    wasOpenRef = (0, reactOverlaysBackdrop.useRef)(isOpen);
   (0, reactOverlaysBackdrop.useEffect)(() => {
-    value2.current &&
-      !input &&
-      value.current?.focus({
+    wasOpenRef.current &&
+      !isOpen &&
+      triggerElementRef.current?.focus({
         preventScroll: true,
       });
-    value2.current = input;
-  }, [input]);
+    wasOpenRef.current = isOpen;
+  }, [isOpen]);
   return (0, reactOverlaysBackdrop.useCallback)(
-    (input2: HTMLElement | null) => {
-      value.current = input2;
+    (element: HTMLElement | null) => {
+      triggerElementRef.current = element;
     },
     [],
   );
@@ -49,27 +49,27 @@ function OverlayBackdrop({
   let value = (0, reactOverlaysBackdrop.useContext)(
       SheetPopupContext,
     ),
-    value2 = useOverlayRoot(),
-    value3 = useDefaultLayer(kind);
+    overlayRoot = useOverlayRoot(),
+    layer = useDefaultLayer(kind);
   useAndroidCloseWatcher(value?.open ?? false, value?.dismiss);
-  let [value4, value5] = (0, reactOverlaysBackdrop.useState)(false),
-    value6 = (0, reactOverlaysBackdrop.useRef)(false),
-    value7 = useCdsWindow();
+  let [isVisible, setIsVisible] = (0, reactOverlaysBackdrop.useState)(false),
+    isPointerDownRef = (0, reactOverlaysBackdrop.useRef)(false),
+    cdsWindow = useCdsWindow();
   (0, reactOverlaysBackdrop.useEffect)(() => {
-    if (value7 === undefined) return;
-    let value9 = value7.requestAnimationFrame(() => {
-      value5(true);
+    if (cdsWindow === undefined) return;
+    let animationFrameId = cdsWindow.requestAnimationFrame(() => {
+      setIsVisible(true);
     });
     return () => {
-      value7.cancelAnimationFrame(value9);
+      cdsWindow.cancelAnimationFrame(animationFrameId);
     };
-  }, [value7]);
-  let value8 =
-    value2 ?? (typeof document === "undefined" ? null : document.body);
-  return value8 === null || value === null || !value.open
+  }, [cdsWindow]);
+  let portalContainer =
+    overlayRoot ?? (typeof document === "undefined" ? null : document.body);
+  return portalContainer === null || value === null || !value.open
     ? null
     : (0, reactDomOverlaysBackdrop.createPortal)(
-        <PopupSurface {...value3.portalProps}>
+        <PopupSurface {...layer.portalProps}>
           <div
             role={"presentation"}
             {...{
@@ -77,23 +77,23 @@ function OverlayBackdrop({
             }}
             className={npm_clsx_Ea(
               PlatformReducedMotionCss_4,
-              !value4 && "opacity-0",
+              !isVisible && "opacity-0",
             )}
-            style={value3.style}
-            onPointerDown={(input: React.PointerEvent<HTMLElement>) => {
-              value6.current = true;
-              OverlaysBackdropPreventDefault(input);
+            style={layer.style}
+            onPointerDown={(event: React.PointerEvent<HTMLElement>) => {
+              isPointerDownRef.current = true;
+              OverlaysBackdropPreventDefault(event);
             }}
             onPointerCancel={() => {
-              value6.current = false;
+              isPointerDownRef.current = false;
             }}
             onMouseDown={OverlaysBackdropPreventDefault}
             onClick={() => {
-              value6.current && ((value6.current = false), value.dismiss());
+              isPointerDownRef.current && ((isPointerDownRef.current = false), value.dismiss());
             }}
           />
         </PopupSurface>,
-        value8,
+        portalContainer,
       );
 }
 export {

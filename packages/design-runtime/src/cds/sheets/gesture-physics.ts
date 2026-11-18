@@ -52,8 +52,8 @@ function calculateSheetDetents(
     ),
   };
 }
-function sheetHasTallDetent(input: SheetDetents): boolean {
-  return input.tall > input.rest;
+function sheetHasTallDetent(detents: SheetDetents): boolean {
+  return detents.tall > detents.rest;
 }
 function calculateSheetPosition(
   detents: SheetDetents,
@@ -91,57 +91,57 @@ function sheetPositionToRawHeight(
     : Math.min(height, detents.tall) - Math.max(0, slide);
 }
 function settleSheetGesture(
-  input: SheetDetents,
-  options: SheetGestureRelease,
+  detents: SheetDetents,
+  release: SheetGestureRelease,
 ): SheetGestureResult {
-  let { slide: value } = calculateSheetPosition(input, options.rawAtRelease),
-    value2 =
-      options.commit &&
-      value > 0 &&
-      (value - options.caughtSlide >
-        input.rest * sheetGestureConstants.dismissFraction ||
-        (options.detent === "default" &&
-          options.velocity > sheetGestureConstants.flingVelocity));
-  if (!options.commit || value2)
+  let { slide: currentSlide } = calculateSheetPosition(detents, release.rawAtRelease),
+    shouldDismiss =
+      release.commit &&
+      currentSlide > 0 &&
+      (currentSlide - release.caughtSlide >
+        detents.rest * sheetGestureConstants.dismissFraction ||
+        (release.detent === "default" &&
+          release.velocity > sheetGestureConstants.flingVelocity));
+  if (!release.commit || shouldDismiss)
     return {
-      dismiss: value2,
-      detent: options.detent,
+      dismiss: shouldDismiss,
+      detent: release.detent,
     };
-  if (options.rawAtGrab > input.rest && options.rawAtGrab < input.tall) {
-    let value3 = options.rawAtRelease - options.rawAtGrab;
-    return value3 > sheetGestureConstants.detentThreshold &&
-      sheetHasTallDetent(input)
+  if (release.rawAtGrab > detents.rest && release.rawAtGrab < detents.tall) {
+    let dragDelta = release.rawAtRelease - release.rawAtGrab;
+    return dragDelta > sheetGestureConstants.detentThreshold &&
+      sheetHasTallDetent(detents)
       ? {
           dismiss: false,
           detent: "tall",
         }
-      : value3 < -sheetGestureConstants.detentThreshold
+      : dragDelta < -sheetGestureConstants.detentThreshold
         ? {
             dismiss: false,
             detent: "default",
           }
         : {
             dismiss: false,
-            detent: options.detent,
+            detent: release.detent,
           };
   }
-  return options.detent === "default" &&
-    sheetHasTallDetent(input) &&
-    options.rawAtRelease > input.rest + sheetGestureConstants.detentThreshold
+  return release.detent === "default" &&
+    sheetHasTallDetent(detents) &&
+    release.rawAtRelease > detents.rest + sheetGestureConstants.detentThreshold
     ? {
         dismiss: false,
         detent: "tall",
       }
-    : options.detent === "tall" &&
-        options.rawAtRelease <
-          input.tall - sheetGestureConstants.detentThreshold
+    : release.detent === "tall" &&
+        release.rawAtRelease <
+          detents.tall - sheetGestureConstants.detentThreshold
       ? {
           dismiss: false,
           detent: "default",
         }
       : {
           dismiss: false,
-          detent: options.detent,
+          detent: release.detent,
         };
 }
 export {

@@ -14,11 +14,11 @@ var SheetsLayoutConstant: number;
 var SheetsLayoutCss: string;
 var SheetsLayoutCss_2: string;
 var ComfortableValue: string;
-var SheetsLayoutConstant_2: number;
+var halfHeightFraction: number;
 var SheetsLayoutCss_3: string;
 var initializeSheetsLayout: () => void;
-function getSheetFixedPosition(input?: SheetFrameState | null): DesignStyle {
-  let value = input?.keyboard?.inset ?? 0;
+function getSheetFixedPosition(frameState?: SheetFrameState | null): DesignStyle {
+  let value = frameState?.keyboard?.inset ?? 0;
   return value > 0
     ? {
         ...SheetsLayoutPositionTopRightConfig,
@@ -27,7 +27,7 @@ function getSheetFixedPosition(input?: SheetFrameState | null): DesignStyle {
     : SheetsLayoutPositionTopRightConfig;
 }
 function getSheetFrameStyle(
-  input: SheetFrameState | null,
+  frameState: SheetFrameState | null,
   {
     floor: floor,
     parentFrameHeight: parentFrameHeight,
@@ -36,8 +36,8 @@ function getSheetFrameStyle(
     parentFrameHeight?: number;
   },
 ): DesignStyle {
-  let value = input?.keyboard ?? null,
-    value2 =
+  let keyboard = frameState?.keyboard ?? null,
+    minHeight =
       floor === "half"
         ? `min(${SheetsLayoutCss_3}, ${SheetsLayoutCss})`
         : "0px";
@@ -48,28 +48,28 @@ function getSheetFrameStyle(
     minWidth: 0,
     borderBottomLeftRadius: 0,
     borderBottomRightRadius: 0,
-    paddingBottom: value !== null ? "0.5rem" : undefined,
+    paddingBottom: keyboard !== null ? "0.5rem" : undefined,
     minHeight:
-      value !== null
+      keyboard !== null
         ? undefined
         : parentFrameHeight !== undefined
-          ? `max(${value2}, ${parentFrameHeight}px)`
+          ? `max(${minHeight}, ${parentFrameHeight}px)`
           : floor === "half"
-            ? value2
+            ? minHeight
             : undefined,
     maxHeight:
-      value !== null
-        ? `${Math.max(0, value.visible - 8)}px`
-        : input?.height !== undefined
+      keyboard !== null
+        ? `${Math.max(0, keyboard.visible - 8)}px`
+        : frameState?.height !== undefined
           ? SheetsLayoutCss_2
           : floor === "half"
-            ? value2
+            ? minHeight
             : SheetsLayoutCss,
     height:
-      input?.detent === "tall"
+      frameState?.detent === "tall"
         ? SheetsLayoutCss
-        : input?.height !== undefined
-          ? `${input.height}px`
+        : frameState?.height !== undefined
+          ? `${frameState.height}px`
           : undefined,
   };
 }
@@ -79,7 +79,7 @@ export {
   getSheetFrameStyle,
   initializeSheetsLayout,
   SheetsLayoutConstant,
-  SheetsLayoutConstant_2,
+  halfHeightFraction as SheetsLayoutConstant_2,
   SheetsLayoutCss,
   SheetsLayoutCss_2,
   SheetsLayoutCss_3,
@@ -112,8 +112,8 @@ export function installCdsSheetsLayout(): () => void {
       SheetsLayoutCss = `${SheetsLayoutConstant * 100}dvh`;
       SheetsLayoutCss_2 = `${(SheetsLayoutConstant + 0.09999999999999998 * sheetGestureConstants.overshootRoom) * 100}dvh`;
       ComfortableValue = "comfortable";
-      SheetsLayoutConstant_2 = 0.5;
-      SheetsLayoutCss_3 = `${SheetsLayoutConstant_2 * 100}dvh`;
+      halfHeightFraction = 0.5;
+      SheetsLayoutCss_3 = `${halfHeightFraction * 100}dvh`;
     });
   };
 }

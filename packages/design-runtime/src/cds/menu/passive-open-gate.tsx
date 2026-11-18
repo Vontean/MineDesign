@@ -97,8 +97,8 @@ export function installCdsMenuPassiveOpenGate(): () => void {
       MenuPassiveOpenGateHandler = () => () => {};
       MenuPassiveOpenGateDefaultText = () => "off";
       MenuPassiveOpenGateHandler_2 = (
-        input: PassivePopupProps,
-      ): PassivePopupProps => input;
+        popupProps: PassivePopupProps,
+      ): PassivePopupProps => popupProps;
     });
   };
 }

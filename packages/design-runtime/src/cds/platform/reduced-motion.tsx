@@ -17,7 +17,7 @@ var PlatformReducedMotionCss_4: string;
 var PlatformReducedMotionClassNames_2: string;
 var PlatformReducedMotionClassNames_3: string;
 var ClipPathInset00200vh0Value: string;
-var PlatformReducedMotionLabel_2: string;
+var sheetHeaderClassName: string;
 var initializePlatformReducedMotion_2: () => void;
 export {
   ClipPathInset00200vh0Value,
@@ -32,7 +32,7 @@ export {
   PlatformReducedMotionCss_3,
   PlatformReducedMotionCss_4,
   PlatformReducedMotionLabel,
-  PlatformReducedMotionLabel_2,
+  sheetHeaderClassName as PlatformReducedMotionLabel_2,
   reactPlatformReducedMotion,
   reducedMotionAttribute,
   reducedMotionMediaQuery,
@@ -61,7 +61,7 @@ export function installCdsPlatformReducedMotion(): () => void {
       PlatformReducedMotionClassNames_3 =
         "after:pointer-events-none after:absolute after:inset-x-0 after:top-full after:h-[100dvh] after:bg-surface-3";
       ClipPathInset00200vh0Value = "[clip-path:inset(0_0_-200vh_0)]";
-      PlatformReducedMotionLabel_2 =
+      sheetHeaderClassName =
         "[&_[role=separator]]:-mx-1 [&_[role=separator]]:mt-0";
     });
   };

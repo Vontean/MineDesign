@@ -51,25 +51,25 @@ function validateLayerOffset(label: string, offset: number): void {
   let message = `cds: ${label} \u2014 value must be an integer in [0, ${LAYER_BAND_SIZE}). A non-integer is silently invalid as a z-index (the declaration is dropped and the element falls to z-auto); anything outside the range escapes its band and stacks unpredictably against other overlays.`;
   console.warn(message);
 }
-function useDefaultLayer(input: OverlayKind): LayerValue {
-  return useLayer(input);
+function useDefaultLayer(kind: OverlayKind): LayerValue {
+  return useLayer(kind);
 }
 function useLayer(kind: OverlayKind, offset?: number): LayerValue {
   let parentBase = (0, reactOverlaysLayers.useContext)(LayerBaseContext);
   if (offset === undefined) {
-    let value = parentBase + LAYER_BAND_SIZE;
-    let value2 = value + overlayLayerOffsets[kind];
+    let layerBase = parentBase + LAYER_BAND_SIZE;
+    let portalZIndex = layerBase + overlayLayerOffsets[kind];
     return {
-      base: value,
+      base: layerBase,
       style: {
-        zIndex: value2,
-        "--cds-layer-base": value,
+        zIndex: portalZIndex,
+        "--cds-layer-base": layerBase,
       },
       portalProps: {
         className: portalLayerClassName,
         style: {
-          "--cds-portal-z": value2,
-          "--cds-layer-base": value,
+          "--cds-portal-z": portalZIndex,
+          "--cds-layer-base": layerBase,
         },
       },
     };

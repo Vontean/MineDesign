@@ -6,14 +6,14 @@ import { initializeOnce } from "../../module-helpers";
 
 var featureLoaderOverride: Dynamic;
 var initializePlatformFeatureLoader: Dynamic;
-function loadApplicationFeature(input?: Dynamic, options?: Dynamic): Dynamic {
+function loadApplicationFeature(featureName?: Dynamic, loadFeature?: Dynamic): Dynamic {
   try {
     return featureLoaderOverride
-      ? Promise.resolve(featureLoaderOverride(input, options))
-      : options();
-  } catch (value: Dynamic) {
+      ? Promise.resolve(featureLoaderOverride(featureName, loadFeature))
+      : loadFeature();
+  } catch (error: Dynamic) {
     return Promise.reject(
-      value instanceof Error ? value : new Error(String(value)),
+      error instanceof Error ? error : new Error(String(error)),
     );
   }
 }

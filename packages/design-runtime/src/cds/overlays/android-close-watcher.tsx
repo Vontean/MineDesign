@@ -7,61 +7,61 @@ import { initializeOnce, toModuleNamespace } from "../../module-helpers";
 
 var reactOverlaysAndroidCloseWatcher: typeof React;
 var initializeOverlaysAndroidCloseWatcher: () => void;
-function isAndroidWindow(input: BrowserWindow): boolean {
-  let navigator2 = input.navigator,
-    value = navigator2.userAgentData?.platform ?? "";
+function isAndroidWindow(browserWindow: BrowserWindow): boolean {
+  let windowNavigator = browserWindow.navigator,
+    platformName = windowNavigator.userAgentData?.platform ?? "";
   return (
-    /android/i.test(value) || /android/i.test(navigator2.userAgent ?? "")
+    /android/i.test(platformName) || /android/i.test(windowNavigator.userAgent ?? "")
   );
 }
-function useAndroidCloseWatcher(input: boolean, options?: () => void): void {
-  let value = useCdsWindow();
+function useAndroidCloseWatcher(isEnabled: boolean, onClose?: () => void): void {
+  let cdsWindow = useCdsWindow();
   (0, reactOverlaysAndroidCloseWatcher.useEffect)(() => {
-    if (!input || value === undefined || options === undefined) return;
-    let CloseWatcher = value.CloseWatcher;
-    if (CloseWatcher === undefined || !isAndroidWindow(value)) return;
-    let value2: CloseWatcherHandle | null = null,
-      flag = false,
-      callback = () => {
+    if (!isEnabled || cdsWindow === undefined || onClose === undefined) return;
+    let CloseWatcher = cdsWindow.CloseWatcher;
+    if (CloseWatcher === undefined || !isAndroidWindow(cdsWindow)) return;
+    let closeWatcher: CloseWatcherHandle | null = null,
+      isDisposed = false,
+      createCloseWatcher = () => {
         try {
-          value2 = new CloseWatcher();
+          closeWatcher = new CloseWatcher();
         } catch {
-          value2 = null;
+          closeWatcher = null;
           return;
         }
-        value2.onclose = () => {
-          options();
-          value.addEventListener("pointerup", callback2, {
+        closeWatcher.onclose = () => {
+          onClose();
+          cdsWindow.addEventListener("pointerup", rearmCloseWatcher, {
             capture: true,
             once: true,
           });
-          value.addEventListener("keydown", callback2, {
+          cdsWindow.addEventListener("keydown", rearmCloseWatcher, {
             capture: true,
             once: true,
           });
         };
       },
-      callback2 = () => {
-        value.removeEventListener("pointerup", callback2, {
+      rearmCloseWatcher = () => {
+        cdsWindow.removeEventListener("pointerup", rearmCloseWatcher, {
           capture: true,
         });
-        value.removeEventListener("keydown", callback2, {
+        cdsWindow.removeEventListener("keydown", rearmCloseWatcher, {
           capture: true,
         });
-        flag || (value2?.destroy(), callback());
+        isDisposed || (closeWatcher?.destroy(), createCloseWatcher());
       };
-    callback();
+    createCloseWatcher();
     return () => {
-      flag = true;
-      value.removeEventListener("pointerup", callback2, {
+      isDisposed = true;
+      cdsWindow.removeEventListener("pointerup", rearmCloseWatcher, {
         capture: true,
       });
-      value.removeEventListener("keydown", callback2, {
+      cdsWindow.removeEventListener("keydown", rearmCloseWatcher, {
         capture: true,
       });
-      value2?.destroy();
+      closeWatcher?.destroy();
     };
-  }, [input, value, options]);
+  }, [isEnabled, cdsWindow, onClose]);
 }
 export {
   initializeOverlaysAndroidCloseWatcher,

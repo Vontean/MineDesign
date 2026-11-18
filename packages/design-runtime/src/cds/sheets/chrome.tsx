@@ -8,7 +8,7 @@ import { sheetFrameHeight } from "../dom/inert";
 import { initializeHooksLayoutEffect, useIsomorphicLayoutEffect } from "../hooks/layout-effect";
 import { initializeOverlaysAndroidCloseWatcher, useAndroidCloseWatcher } from "../overlays/android-close-watcher";
 import { initializeSheetsKeyboardViewport, isTextInputElement } from "./keyboard-viewport";
-import { getSheetFixedPosition, getSheetFrameStyle, initializeSheetsLayout, SheetsLayoutConstant, SheetsLayoutConstant_2, SheetsLayoutCss, SheetsLayoutCss_3 } from "./layout";
+import { getSheetFixedPosition, getSheetFrameStyle, initializeSheetsLayout, SheetsLayoutConstant, SheetsLayoutConstant_2 as halfHeightFraction, SheetsLayoutCss, SheetsLayoutCss_3 } from "./layout";
 import { getInertPropsValue, initializeSheetsPopupStack, SheetPopupBridgeContext, SheetPopupContext, SheetStackContext, useSheetState } from "./popup-stack";
 import { CdsSheetControlHeldAttribute, CdsSheetPressedAttribute, coveredSheetAttribute, initializeSheetsPresentation, sheetContainsTextInput, sheetNeedsScrolling, sheetScrollAttribute } from "./presentation";
 import { clearSheetTransition, initializeSheetsStyles, initializeSheetsStyles_2, useLabel, useSheetState_2 } from "./styles";
@@ -28,12 +28,12 @@ var reactSheetsChrome_3: Dynamic;
 var initializeSheetsChrome_3: Dynamic;
 function SheetHandle({ drawPill = true }: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic = useSheetState_2();
+  let handleProps: Dynamic = useSheetState_2();
   return (
     <div
       aria-hidden={true}
       data-cds-sheet-handle={""}
-      {...value}
+      {...handleProps}
       className={
         "flex min-h-8 shrink-0 touch-none items-center justify-center select-none"
       }
@@ -49,22 +49,22 @@ function SheetHandle({ drawPill = true }: Dynamic): Dynamic {
 }
 function SheetHeading({ leading: leading, title: title }: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic = useSheetState_2(),
-    value2: Dynamic = leading != null && leading !== false;
-  return !value2 &&
+  let headingProps: Dynamic = useSheetState_2(),
+    hasLeading: Dynamic = leading != null && leading !== false;
+  return !hasLeading &&
     !(title != null && title !== false && title !== "") ? null : (
     <div
-      {...value}
+      {...headingProps}
       className={
         "order-first flex min-h-control shrink-0 touch-none items-center gap-xs px-1.5 pb-1 select-none"
       }
     >
-      {value2 && (<span className={"-me-2.5 shrink-0"}>{leading}</span>)}
+      {hasLeading && (<span className={"-me-2.5 shrink-0"}>{leading}</span>)}
       <span
         aria-hidden={true}
         className={npm_clsx_Ea(
           "min-w-0 flex-1 truncate text-start text-heading font-semibold text-primary",
-          !value2 && "ps-2.5",
+          !hasLeading && "ps-2.5",
         )}
       >
         {title}
@@ -88,128 +88,128 @@ function SheetBody({
     </div>
   );
 }
-function useSheetTextFocus(element?: Dynamic, options?: Dynamic): Dynamic {
-  let value: Dynamic = options?.setDetent,
-    value2: Dynamic = options?.holdTextEntryFocus;
+function useSheetTextFocus(element?: Dynamic, sheetFrame?: Dynamic): Dynamic {
+  let setDetent: Dynamic = sheetFrame?.setDetent,
+    holdTextEntryFocus: Dynamic = sheetFrame?.holdTextEntryFocus;
   (0, reactSheetsChrome_2.useEffect)((): Dynamic => {
-    if (element === null || value === undefined || value2 === undefined)
+    if (element === null || setDetent === undefined || holdTextEntryFocus === undefined)
       return;
-    let value3: Dynamic = null,
-      callback: Dynamic = (): Dynamic => {
-        value3 === null && (value3 = value2());
+    let releaseTextEntryFocus: Dynamic = null,
+      holdFocus: Dynamic = (): Dynamic => {
+        releaseTextEntryFocus === null && (releaseTextEntryFocus = holdTextEntryFocus());
       },
-      callback2: Dynamic = (): Dynamic => {
-        value3?.();
-        value3 = null;
+      releaseFocus: Dynamic = (): Dynamic => {
+        releaseTextEntryFocus?.();
+        releaseTextEntryFocus = null;
       },
-      index: Dynamic = 0,
-      callback3: Dynamic = (input?: Dynamic): Dynamic => {
-        if (!(input instanceof Element)) return false;
-        if (isTextInputElement(input)) return true;
-        let ancestor: Dynamic = input.closest(
+      pointerDownTime: Dynamic = 0,
+      isTextEntryTarget: Dynamic = (target?: Dynamic): Dynamic => {
+        if (!(target instanceof Element)) return false;
+        if (isTextInputElement(target)) return true;
+        let ancestor: Dynamic = target.closest(
           '[data-cds="TextInput"], label',
         );
         if (ancestor === null) return false;
-        let value4: Dynamic =
+        let labelControl: Dynamic =
           ancestor instanceof HTMLLabelElement ? ancestor.control : null;
         return (
-          isTextInputElement(value4) ||
+          isTextInputElement(labelControl) ||
           ancestor.querySelector(
             'input:not([type=button],[type=checkbox],[type=radio],[type=range],[type=submit],[type=reset],[type=color],[type=file],[type=image],[type=hidden],[readonly]), textarea:not([readonly]), [contenteditable=""], [contenteditable="true"], [contenteditable="plaintext-only"]',
           ) !== null
         );
       },
-      callback4: Dynamic = (event?: Dynamic): Dynamic => {
-        callback3(event.target) && (index = event.timeStamp || Date.now());
+      handlePointerDown: Dynamic = (event?: Dynamic): Dynamic => {
+        isTextEntryTarget(event.target) && (pointerDownTime = event.timeStamp || Date.now());
       },
-      callback5: Dynamic = (event?: Dynamic): Dynamic => {
+      handleFocusIn: Dynamic = (event?: Dynamic): Dynamic => {
         isTextInputElement(event.target) &&
-          (callback(),
-          index > 0 &&
-            (event.timeStamp || Date.now()) - index < 1e3 &&
-            ((index = 0), value("tall")));
+          (holdFocus(),
+          pointerDownTime > 0 &&
+            (event.timeStamp || Date.now()) - pointerDownTime < 1e3 &&
+            ((pointerDownTime = 0), setDetent("tall")));
       },
-      callback6: Dynamic = (event?: Dynamic): Dynamic => {
-        index > 0 && callback3(event.target) && ((index = 0), value("tall"));
+      handleClick: Dynamic = (event?: Dynamic): Dynamic => {
+        pointerDownTime > 0 && isTextEntryTarget(event.target) && ((pointerDownTime = 0), setDetent("tall"));
       },
-      callback7: Dynamic = (event?: Dynamic): Dynamic => {
-        isTextInputElement(event.target) && callback2();
+      handleFocusOut: Dynamic = (event?: Dynamic): Dynamic => {
+        isTextInputElement(event.target) && releaseFocus();
       };
-    element.addEventListener("pointerdown", callback4);
-    element.addEventListener("focusin", callback5);
-    element.addEventListener("focusout", callback7);
-    element.addEventListener("click", callback6);
+    element.addEventListener("pointerdown", handlePointerDown);
+    element.addEventListener("focusin", handleFocusIn);
+    element.addEventListener("focusout", handleFocusOut);
+    element.addEventListener("click", handleClick);
     element.contains(element.ownerDocument.activeElement) &&
       isTextInputElement(element.ownerDocument.activeElement) &&
-      callback();
+      holdFocus();
     return (): Dynamic => {
-      element.removeEventListener("pointerdown", callback4);
-      element.removeEventListener("focusin", callback5);
-      element.removeEventListener("focusout", callback7);
-      element.removeEventListener("click", callback6);
-      callback2();
+      element.removeEventListener("pointerdown", handlePointerDown);
+      element.removeEventListener("focusin", handleFocusIn);
+      element.removeEventListener("focusout", handleFocusOut);
+      element.removeEventListener("click", handleClick);
+      releaseFocus();
     };
-  }, [element, value, value2]);
+  }, [element, setDetent, holdTextEntryFocus]);
 }
 function useCoveredSheetState(element?: Dynamic): Dynamic {
   (0, reactSheetsChrome_2.useEffect)((): Dynamic => {
     if (element === null) return;
     let ownerDocument: Dynamic = element.ownerDocument,
-      value: Dynamic = null,
-      callback: Dynamic = (): Dynamic => {
+      heldControl: Dynamic = null,
+      clearPressed: Dynamic = (): Dynamic => {
         element.removeAttribute(CdsSheetPressedAttribute);
-        value?.removeAttribute(CdsSheetControlHeldAttribute);
-        value = null;
-        ownerDocument.removeEventListener("click", callback, true);
-        ownerDocument.removeEventListener("pointercancel", callback, true);
-        ownerDocument.removeEventListener("keydown", callback, true);
+        heldControl?.removeAttribute(CdsSheetControlHeldAttribute);
+        heldControl = null;
+        ownerDocument.removeEventListener("click", clearPressed, true);
+        ownerDocument.removeEventListener("pointercancel", clearPressed, true);
+        ownerDocument.removeEventListener("keydown", clearPressed, true);
       },
-      callback2: Dynamic = (): Dynamic => {
-        ownerDocument.addEventListener("click", callback, true);
-        ownerDocument.addEventListener("pointercancel", callback, true);
-        ownerDocument.addEventListener("keydown", callback, true);
+      markPressed: Dynamic = (): Dynamic => {
+        ownerDocument.addEventListener("click", clearPressed, true);
+        ownerDocument.addEventListener("pointercancel", clearPressed, true);
+        ownerDocument.addEventListener("keydown", clearPressed, true);
         element.setAttribute(CdsSheetPressedAttribute, "");
-        let element2: Dynamic = element.querySelector(
+        let control: Dynamic = element.querySelector(
           "[data-cds-sheet-control]",
         );
-        element2?.matches(":focus-visible, [data-highlighted]") &&
-          ((value = element2),
-          element2.setAttribute(CdsSheetControlHeldAttribute, ""));
+        control?.matches(":focus-visible, [data-highlighted]") &&
+          ((heldControl = control),
+          control.setAttribute(CdsSheetControlHeldAttribute, ""));
       };
-    element.addEventListener("pointerdown", callback2, true);
+    element.addEventListener("pointerdown", markPressed, true);
     return (): Dynamic => {
-      element.removeEventListener("pointerdown", callback2, true);
-      callback();
+      element.removeEventListener("pointerdown", markPressed, true);
+      clearPressed();
     };
   }, [element]);
 }
 function sheetMutationIsScrollOnly(
-  input?: Dynamic,
-  options?: Dynamic,
+  mutations?: Dynamic,
+  isGrowing?: Dynamic,
 ): Dynamic {
-  if (!options) return false;
-  let value: Dynamic = `[${sheetScrollAttribute}]`,
-    index: Dynamic = 0,
-    index2: Dynamic = 0;
-  for (let value2 of input as Dynamic) {
-    let target: Dynamic = value2.target,
-      value3: Dynamic =
+  if (!isGrowing) return false;
+  let scrollSelector: Dynamic = `[${sheetScrollAttribute}]`,
+    addedCount: Dynamic = 0,
+    removedCount: Dynamic = 0;
+  for (let mutation of mutations as Dynamic) {
+    let target: Dynamic = mutation.target,
+      mutationElement: Dynamic =
         target.nodeType === Node.ELEMENT_NODE ? target : target.parentElement;
-    if (value3 === null || value3.closest(value) === null) return false;
-    index += value2.addedNodes.length;
-    index2 += value2.removedNodes.length;
+    if (mutationElement === null || mutationElement.closest(scrollSelector) === null) return false;
+    addedCount += mutation.addedNodes.length;
+    removedCount += mutation.removedNodes.length;
   }
-  return index > 0 && index2 > 0 && index2 <= index;
+  return addedCount > 0 && removedCount > 0 && removedCount <= addedCount;
 }
 function sheetNaturalHeight(element?: Dynamic): Dynamic {
   let height: Dynamic = element.getBoundingClientRect().height,
-    value: Dynamic = Array.from(
+    scrollAreas: Dynamic = Array.from(
       element.querySelectorAll(`[${sheetScrollAttribute}]`),
     );
-  if (value.length === 0) return height;
-  let value2: Dynamic = height;
-  for (let value3 of value as Dynamic) {
-    let firstElementChild: Dynamic = value3.firstElementChild;
+  if (scrollAreas.length === 0) return height;
+  let naturalHeight: Dynamic = height;
+  for (let scrollArea of scrollAreas as Dynamic) {
+    let firstElementChild: Dynamic = scrollArea.firstElementChild;
     for (
       ;
       firstElementChild !== null &&
@@ -217,7 +217,7 @@ function sheetNaturalHeight(element?: Dynamic): Dynamic {
 
     )
       firstElementChild = firstElementChild.nextElementSibling;
-    let lastElementChild: Dynamic = value3.lastElementChild;
+    let lastElementChild: Dynamic = scrollArea.lastElementChild;
     for (
       ;
       lastElementChild !== null &&
@@ -225,358 +225,358 @@ function sheetNaturalHeight(element?: Dynamic): Dynamic {
 
     )
       lastElementChild = lastElementChild.previousElementSibling;
-    let value4: Dynamic =
-        element.ownerDocument.defaultView?.getComputedStyle(value3),
-      value5: Dynamic =
-        parseFloat(value4?.paddingTop ?? "0") +
-        parseFloat(value4?.paddingBottom ?? "0"),
-      value6: Dynamic =
+    let computedStyle: Dynamic =
+        element.ownerDocument.defaultView?.getComputedStyle(scrollArea),
+      verticalPadding: Dynamic =
+        parseFloat(computedStyle?.paddingTop ?? "0") +
+        parseFloat(computedStyle?.paddingBottom ?? "0"),
+      contentHeight: Dynamic =
         firstElementChild !== null && lastElementChild !== null
           ? lastElementChild.getBoundingClientRect().bottom -
             firstElementChild.getBoundingClientRect().top +
-            value5
-          : value5;
-    value2 += value6 - value3.clientHeight;
+            verticalPadding
+          : verticalPadding;
+    naturalHeight += contentHeight - scrollArea.clientHeight;
   }
-  return Math.max(0, value2);
+  return Math.max(0, naturalHeight);
 }
-function sheetScrollMetrics(input?: Dynamic): Dynamic {
-  let index: Dynamic = 0,
-    index2: Dynamic = 0;
+function sheetScrollMetrics(sheetElement?: Dynamic): Dynamic {
+  let visibleHeight: Dynamic = 0,
+    overflowContentHeight: Dynamic = 0;
   for (let value of Array.from(
-    input.querySelectorAll(`[${sheetScrollAttribute}]`),
+    sheetElement.querySelectorAll(`[${sheetScrollAttribute}]`),
   ) as Dynamic) {
-    index += value.clientHeight;
+    visibleHeight += value.clientHeight;
     value.scrollHeight > value.clientHeight + 1 &&
-      (index2 += value.scrollHeight);
+      (overflowContentHeight += value.scrollHeight);
   }
   return {
-    visible: index,
-    overflowContent: index2,
+    visible: visibleHeight,
+    overflowContent: overflowContentHeight,
   };
 }
 function sheetFocusedElementBottom(
   element?: Dynamic,
-  options?: Dynamic,
+  focusedElement?: Dynamic,
 ): Dynamic {
   let defaultView: Dynamic = element.ownerDocument.defaultView;
-  if (defaultView === null || options === null || !element.contains(options))
+  if (defaultView === null || focusedElement === null || !element.contains(focusedElement))
     return 0;
-  let position: Dynamic = defaultView.getComputedStyle(options).position;
+  let position: Dynamic = defaultView.getComputedStyle(focusedElement).position;
   if (position === "absolute" || position === "fixed") return 0;
-  let index: Dynamic = 0;
-  for (let value: Dynamic = options; value !== element; ) {
-    let parentElement: Dynamic = value.parentElement;
+  let overflow: Dynamic = 0;
+  for (let currentElement: Dynamic = focusedElement; currentElement !== element; ) {
+    let parentElement: Dynamic = currentElement.parentElement;
     if (parentElement === null) break;
     let style: Dynamic = defaultView.getComputedStyle(parentElement),
-      value2: Dynamic =
+      parentContentBottom: Dynamic =
         parentElement.getBoundingClientRect().bottom -
         parseFloat(style.paddingBottom) -
         parseFloat(style.borderBottomWidth),
-      value3: Dynamic = parseFloat(
-        defaultView.getComputedStyle(value).marginBottom,
+      marginBottom: Dynamic = parseFloat(
+        defaultView.getComputedStyle(currentElement).marginBottom,
       );
-    index += Math.max(
+    overflow += Math.max(
       0,
-      value.getBoundingClientRect().bottom +
-        Math.max(0, value3) -
-        value2 +
+      currentElement.getBoundingClientRect().bottom +
+        Math.max(0, marginBottom) -
+        parentContentBottom +
         parentElement.scrollTop,
     );
-    value = parentElement;
+    currentElement = parentElement;
   }
-  return index;
+  return overflow;
 }
 function useSheetDismissal(
   element?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  sheetFrame?: Dynamic,
+  isCovered?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = (0, reactSheetsChrome_2.useRef)(context);
+  let isCoveredRef: Dynamic = (0, reactSheetsChrome_2.useRef)(isCovered);
   (0, reactSheetsChrome_2.useEffect)((): Dynamic => {
-    value.current = context;
-  }, [context]);
-  let value2: Dynamic = options?.open ?? false,
-    value3: Dynamic = options?.dismiss,
-    value4: Dynamic = options?.treeId;
+    isCoveredRef.current = isCovered;
+  }, [isCovered]);
+  let isOpen: Dynamic = sheetFrame?.open ?? false,
+    dismiss: Dynamic = sheetFrame?.dismiss,
+    treeId: Dynamic = sheetFrame?.treeId;
   (0, reactSheetsChrome_2.useEffect)((): Dynamic => {
     if (
       element === null ||
-      !value2 ||
-      value3 === undefined ||
-      value4 === undefined
+      !isOpen ||
+      dismiss === undefined ||
+      treeId === undefined
     )
       return;
     let ownerDocument: Dynamic = element.ownerDocument,
       defaultView: Dynamic = ownerDocument.defaultView,
-      index: Dynamic = 0,
-      callback: Dynamic = (): Dynamic => {
-        index !== 0 ||
+      animationFrameId: Dynamic = 0,
+      checkFocusLeft: Dynamic = (): Dynamic => {
+        animationFrameId !== 0 ||
           defaultView === null ||
-          (index = defaultView.requestAnimationFrame((): Dynamic => {
-            index = 0;
+          (animationFrameId = defaultView.requestAnimationFrame((): Dynamic => {
+            animationFrameId = 0;
             let activeElement: Dynamic = ownerDocument.activeElement;
-            value.current ||
+            isCoveredRef.current ||
               activeElement === null ||
               activeElement === ownerDocument.body ||
               element.contains(activeElement) ||
               activeElement.closest(
-                `[data-sheet-tree="${CSS.escape(value4)}"]`,
+                `[data-sheet-tree="${CSS.escape(treeId)}"]`,
               ) !== null ||
               activeElement.closest(
                 '[aria-modal="true"], [data-cds="Dialog"]',
               ) === null ||
-              value3();
+              dismiss();
           }));
       };
-    element.addEventListener("focusout", callback);
+    element.addEventListener("focusout", checkFocusLeft);
     return (): Dynamic => {
-      element.removeEventListener("focusout", callback);
-      index !== 0 && defaultView?.cancelAnimationFrame(index);
+      element.removeEventListener("focusout", checkFocusLeft);
+      animationFrameId !== 0 && defaultView?.cancelAnimationFrame(animationFrameId);
     };
-  }, [element, value2, value3, value4]);
+  }, [element, isOpen, dismiss, treeId]);
 }
 function sheetMeasuredFrame(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  sheetElement?: Dynamic,
+  height?: Dynamic,
+  grows?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = Math.round(options),
-    value2: Dynamic = options - sheetScrollMetrics(input).visible;
+  let roundedHeight: Dynamic = Math.round(height),
+    chromeHeight: Dynamic = height - sheetScrollMetrics(sheetElement).visible;
   return {
-    contentHeight: value,
-    written: value,
-    chromeAtPin: value2,
-    chromeSettled: value2,
-    grows: context,
+    contentHeight: roundedHeight,
+    written: roundedHeight,
+    chromeAtPin: chromeHeight,
+    chromeSettled: chromeHeight,
+    grows: grows,
   };
 }
 function useSheetPopupHost(): Dynamic {
   "use no memo";
 
-  let value: Dynamic = useSheetState(),
-    [value2, value3]: Dynamic = (0, reactSheetsChrome_3.useState)(false),
-    value4: Dynamic = (0, reactSheetsChrome_3.useRef)(false),
-    value5: Dynamic = (0, reactSheetsChrome_3.useRef)(null),
-    value6: Dynamic = (0, reactSheetsChrome_3.useRef)(null),
-    value7: Dynamic = (0, reactSheetsChrome_3.useCallback)(
-      (input?: Dynamic): Dynamic => {
-        value4.current = input;
-        value3(input);
+  let sheetState: Dynamic = useSheetState(),
+    [hasTextInput, setHasTextInput]: Dynamic = (0, reactSheetsChrome_3.useState)(false),
+    hasTextInputRef: Dynamic = (0, reactSheetsChrome_3.useRef)(false),
+    pinnedFrameRef: Dynamic = (0, reactSheetsChrome_3.useRef)(null),
+    pinnedElementRef: Dynamic = (0, reactSheetsChrome_3.useRef)(null),
+    updateHasTextInput: Dynamic = (0, reactSheetsChrome_3.useCallback)(
+      (hasInput?: Dynamic): Dynamic => {
+        hasTextInputRef.current = hasInput;
+        setHasTextInput(hasInput);
       },
       [],
     ),
-    [value8, value9]: Dynamic = (0, reactSheetsChrome_3.useState)(null),
-    { sheet: value10 }: Dynamic = value,
-    value11: Dynamic = (0, reactSheetsChrome_3.useContext)(
+    [sheetElement, setSheetElement]: Dynamic = (0, reactSheetsChrome_3.useState)(null),
+    { sheet: isSheet }: Dynamic = sheetState,
+    sheetFrame: Dynamic = (0, reactSheetsChrome_3.useContext)(
       SheetPopupContext,
     ),
-    value12: Dynamic = (0, reactSheetsChrome_3.useContext)(
+    parentStack: Dynamic = (0, reactSheetsChrome_3.useContext)(
       SheetStackContext,
     ),
-    value13: Dynamic = (0, reactSheetsChrome_3.useRef)(null),
-    value14: Dynamic = value11?.pinHeight,
-    value15: Dynamic = (0, reactSheetsChrome_3.useCallback)(
-      (input?: Dynamic): Dynamic => {
-        value13.current = value10 ? input : null;
-        value9(value10 ? input : null);
-        (input === null || !value10) && value7(false);
-        if (input !== null && value10) {
-          let value27: Dynamic = sheetContainsTextInput(input);
-          if (value27) {
-            let value29: Dynamic = `min(${SheetsLayoutCss_3}, ${SheetsLayoutCss})`;
-            input.style.minHeight = value29;
-            input.style.maxHeight = value29;
+    sheetElementRef: Dynamic = (0, reactSheetsChrome_3.useRef)(null),
+    pinHeight: Dynamic = sheetFrame?.pinHeight,
+    setSheetRef: Dynamic = (0, reactSheetsChrome_3.useCallback)(
+      (element?: Dynamic): Dynamic => {
+        sheetElementRef.current = isSheet ? element : null;
+        setSheetElement(isSheet ? element : null);
+        (element === null || !isSheet) && updateHasTextInput(false);
+        if (element !== null && isSheet) {
+          let containsTextInput: Dynamic = sheetContainsTextInput(element);
+          if (containsTextInput) {
+            let textEntryHeight: Dynamic = `min(${SheetsLayoutCss_3}, ${SheetsLayoutCss})`;
+            element.style.minHeight = textEntryHeight;
+            element.style.maxHeight = textEntryHeight;
           }
-          value7(value27);
-          let height: Dynamic = input.getBoundingClientRect().height,
-            value28: Dynamic = sheetNeedsScrolling(input);
-          value14?.(height, value28);
-          value6.current !== input &&
-            ((value6.current = input),
-            (value5.current = sheetMeasuredFrame(input, height, value28)));
+          updateHasTextInput(containsTextInput);
+          let height: Dynamic = element.getBoundingClientRect().height,
+            needsScrolling: Dynamic = sheetNeedsScrolling(element);
+          pinHeight?.(height, needsScrolling);
+          pinnedElementRef.current !== element &&
+            ((pinnedElementRef.current = element),
+            (pinnedFrameRef.current = sheetMeasuredFrame(element, height, needsScrolling)));
         }
       },
-      [value10, value14, value7],
+      [isSheet, pinHeight, updateHasTextInput],
     ),
-    value16: Dynamic = value11?.height;
+    frameHeight: Dynamic = sheetFrame?.height;
   useIsomorphicLayoutEffect((): Dynamic => {
-    let current: Dynamic = value13.current;
-    if (!value10 || value16 !== undefined || current === null) return;
+    let current: Dynamic = sheetElementRef.current;
+    if (!isSheet || frameHeight !== undefined || current === null) return;
     clearSheetTransition(current);
     let height: Dynamic = current.getBoundingClientRect().height,
-      value27: Dynamic = sheetNeedsScrolling(current);
-    value14?.(height, value27);
-    value6.current = current;
-    value5.current = sheetMeasuredFrame(current, height, value27);
-  }, [value10, value16, value14]);
-  let value17: Dynamic = value11?.repinHeight,
-    value18: Dynamic = value11?.drag,
-    value19: Dynamic = value11?.open ?? false;
+      needsScrolling: Dynamic = sheetNeedsScrolling(current);
+    pinHeight?.(height, needsScrolling);
+    pinnedElementRef.current = current;
+    pinnedFrameRef.current = sheetMeasuredFrame(current, height, needsScrolling);
+  }, [isSheet, frameHeight, pinHeight]);
+  let repinHeight: Dynamic = sheetFrame?.repinHeight,
+    drag: Dynamic = sheetFrame?.drag,
+    isOpen: Dynamic = sheetFrame?.open ?? false;
   (0, reactSheetsChrome_3.useEffect)((): Dynamic => {
-    if (!value10 || !value19 || value8 === null || value17 === undefined)
+    if (!isSheet || !isOpen || sheetElement === null || repinHeight === undefined)
       return;
-    let defaultView: Dynamic = value8.ownerDocument.defaultView;
+    let defaultView: Dynamic = sheetElement.ownerDocument.defaultView;
     if (
       defaultView === null ||
       typeof defaultView.MutationObserver === "undefined"
     )
       return;
-    let index: Dynamic = 0,
-      flag: Dynamic = false,
-      flag2: Dynamic = false,
-      value27: Dynamic = null,
-      value28: Dynamic =
+    let animationFrameId: Dynamic = 0,
+      isGrowing: Dynamic = false,
+      shouldRepin: Dynamic = false,
+      observedControl: Dynamic = null,
+      resizeObserver: Dynamic =
         typeof defaultView.ResizeObserver === "undefined"
           ? null
           : new defaultView.ResizeObserver((): Dynamic => {
-              callback3();
+              scheduleMeasure();
             }),
-      callback: Dynamic = (): Dynamic => {
-        let element: Dynamic = value8.querySelector(
+      observeControl: Dynamic = (): Dynamic => {
+        let element: Dynamic = sheetElement.querySelector(
           "[data-cds-sheet-control]",
         );
-        element === value27 ||
-          value28 === null ||
-          (value27 !== null && value28.unobserve(value27),
-          (value27 = element),
-          element !== null && value28.observe(element));
+        element === observedControl ||
+          resizeObserver === null ||
+          (observedControl !== null && resizeObserver.unobserve(observedControl),
+          (observedControl = element),
+          element !== null && resizeObserver.observe(element));
       },
-      callback2: Dynamic = (): Dynamic => {
-        index = 0;
-        if (value18 !== undefined && value18.get() !== null) {
-          index = defaultView.requestAnimationFrame(callback2);
+      measureAndRepin: Dynamic = (): Dynamic => {
+        animationFrameId = 0;
+        if (drag !== undefined && drag.get() !== null) {
+          animationFrameId = defaultView.requestAnimationFrame(measureAndRepin);
           return;
         }
-        callback();
-        if (sheetContainsTextInput(value8)) {
-          value4.current ||
-            (value7(true),
-            value17(
-              defaultView.innerHeight * SheetsLayoutConstant_2,
+        observeControl();
+        if (sheetContainsTextInput(sheetElement)) {
+          hasTextInputRef.current ||
+            (updateHasTextInput(true),
+            repinHeight(
+              defaultView.innerHeight * halfHeightFraction,
               true,
             ));
-          flag2 = false;
+          shouldRepin = false;
           return;
         }
-        let value30: Dynamic = sheetFocusedElementBottom(value8, value27),
-          value31: Dynamic = sheetScrollMetrics(value8),
-          value32: Dynamic =
-            value8.getBoundingClientRect().height + value30 - value31.visible,
-          value33: Dynamic =
+        let focusedBottom: Dynamic = sheetFocusedElementBottom(sheetElement, observedControl),
+          scrollMetrics: Dynamic = sheetScrollMetrics(sheetElement),
+          chromeHeight: Dynamic =
+            sheetElement.getBoundingClientRect().height + focusedBottom - scrollMetrics.visible,
+          maxHeight: Dynamic =
             defaultView.innerHeight * SheetsLayoutConstant;
-        if (flag2) {
-          flag2 = false;
-          let value35: Dynamic = Math.round(
+        if (shouldRepin) {
+          shouldRepin = false;
+          let contentHeight: Dynamic = Math.round(
             Math.max(
-              sheetNaturalHeight(value8) + value30,
-              value31.overflowContent > 0
-                ? value32 + value31.overflowContent
+              sheetNaturalHeight(sheetElement) + focusedBottom,
+              scrollMetrics.overflowContent > 0
+                ? chromeHeight + scrollMetrics.overflowContent
                 : 0,
             ),
           );
-          flag = value35 > value33;
-          value5.current = {
-            contentHeight: value35,
-            written: Math.min(value35, value33),
-            chromeAtPin: value32,
-            chromeSettled: value32,
-            grows: flag,
+          isGrowing = contentHeight > maxHeight;
+          pinnedFrameRef.current = {
+            contentHeight: contentHeight,
+            written: Math.min(contentHeight, maxHeight),
+            chromeAtPin: chromeHeight,
+            chromeSettled: chromeHeight,
+            grows: isGrowing,
           };
-          value17(Math.min(value35, value33), flag);
+          repinHeight(Math.min(contentHeight, maxHeight), isGrowing);
           return;
         }
-        let current: Dynamic = value5.current;
-        if (current === null || Math.abs(value32 - current.chromeSettled) < 1)
+        let current: Dynamic = pinnedFrameRef.current;
+        if (current === null || Math.abs(chromeHeight - current.chromeSettled) < 1)
           return;
-        current.chromeSettled = value32;
-        if (Math.abs(value32 - current.chromeAtPin) < 1) {
-          value17(current.written, current.grows);
+        current.chromeSettled = chromeHeight;
+        if (Math.abs(chromeHeight - current.chromeAtPin) < 1) {
+          repinHeight(current.written, current.grows);
           return;
         }
-        let value34: Dynamic =
-          current.contentHeight + value32 - current.chromeAtPin;
-        value17(
-          Math.min(value34, value33),
-          value34 > value33 || current.grows,
+        let grownContentHeight: Dynamic =
+          current.contentHeight + chromeHeight - current.chromeAtPin;
+        repinHeight(
+          Math.min(grownContentHeight, maxHeight),
+          grownContentHeight > maxHeight || current.grows,
         );
       },
-      callback3: Dynamic = (): Dynamic => {
-        index === 0 && (index = defaultView.requestAnimationFrame(callback2));
+      scheduleMeasure: Dynamic = (): Dynamic => {
+        animationFrameId === 0 && (animationFrameId = defaultView.requestAnimationFrame(measureAndRepin));
       };
-    callback();
-    let value29: Dynamic = new defaultView.MutationObserver(
-      (input?: Dynamic): Dynamic => {
-        (index !== 0 && flag2) ||
-          sheetMutationIsScrollOnly(input, flag) ||
-          ((flag2 = true), callback3());
+    observeControl();
+    let mutationObserver: Dynamic = new defaultView.MutationObserver(
+      (mutations?: Dynamic): Dynamic => {
+        (animationFrameId !== 0 && shouldRepin) ||
+          sheetMutationIsScrollOnly(mutations, isGrowing) ||
+          ((shouldRepin = true), scheduleMeasure());
       },
     );
-    value29.observe(value8, {
+    mutationObserver.observe(sheetElement, {
       childList: true,
       subtree: true,
     });
     return (): Dynamic => {
-      value29.disconnect();
-      value28?.disconnect();
-      index !== 0 && defaultView.cancelAnimationFrame(index);
-      value6.current === value8 &&
-        ((value5.current = null), (value6.current = null));
+      mutationObserver.disconnect();
+      resizeObserver?.disconnect();
+      animationFrameId !== 0 && defaultView.cancelAnimationFrame(animationFrameId);
+      pinnedElementRef.current === sheetElement &&
+        ((pinnedFrameRef.current = null), (pinnedElementRef.current = null));
     };
-  }, [value10, value19, value8, value17, value18, value7]);
-  useSheetTextFocus(value8, value11);
-  useCoveredSheetState(value8);
-  useSheetDismissal(value8, value11, value.covered);
+  }, [isSheet, isOpen, sheetElement, repinHeight, drag, updateHasTextInput]);
+  useSheetTextFocus(sheetElement, sheetFrame);
+  useCoveredSheetState(sheetElement);
+  useSheetDismissal(sheetElement, sheetFrame, sheetState.covered);
   useAndroidCloseWatcher(
-    value10 && (value11?.open ?? false),
-    value11?.dismiss,
+    isSheet && (sheetFrame?.open ?? false),
+    sheetFrame?.dismiss,
   );
-  let value20: Dynamic = (0, reactSheetsChrome_3.useContext)(
+  let bridgeCover: Dynamic = (0, reactSheetsChrome_3.useContext)(
       SheetPopupBridgeContext,
     ),
-    value21: Dynamic = useCdsWindow(),
-    value22: Dynamic = sheetFrameHeight(value11, value21),
-    value23: Dynamic = (0, reactSheetsChrome_3.useMemo)(
+    cdsWindow: Dynamic = useCdsWindow(),
+    frameHeightPx: Dynamic = sheetFrameHeight(sheetFrame, cdsWindow),
+    stack: Dynamic = (0, reactSheetsChrome_3.useMemo)(
       (): Dynamic =>
-        value10 && value20 !== null
+        isSheet && bridgeCover !== null
           ? {
-              depth: value.depth,
-              frameHeight: value22,
-              cover: value20,
+              depth: sheetState.depth,
+              frameHeight: frameHeightPx,
+              cover: bridgeCover,
             }
           : null,
-      [value10, value20, value.depth, value22],
+      [isSheet, bridgeCover, sheetState.depth, frameHeightPx],
     ),
-    value24: Dynamic = value10 && value.covered,
-    value25: Dynamic = value10 && value.inert,
-    value26: Dynamic = value10
-      ? getSheetFrameStyle(value11, {
-          floor: value2 ? "half" : "content",
-          parentFrameHeight: value12?.frameHeight,
+    isCovered: Dynamic = isSheet && sheetState.covered,
+    isInert: Dynamic = isSheet && sheetState.inert,
+    frameStyle: Dynamic = isSheet
+      ? getSheetFrameStyle(sheetFrame, {
+          floor: hasTextInput ? "half" : "content",
+          parentFrameHeight: parentStack?.frameHeight,
         })
       : undefined;
   return {
-    sheet: value10,
+    sheet: isSheet,
     concealed: false,
     chrome: SheetsChromeHandleTitleBarDismissButtonConfig,
-    ref: value15,
-    style: value26,
-    positionerStyle: value10
-      ? getSheetFixedPosition(value11)
+    ref: setSheetRef,
+    style: frameStyle,
+    positionerStyle: isSheet
+      ? getSheetFixedPosition(sheetFrame)
       : undefined,
     attrs: {
-      ...(value10 ? getSizeAttribute("lg") : {}),
-      "data-presentation": value10 ? "sheet" : undefined,
-      "data-sheet-tree": value10 ? value11?.treeId : undefined,
-      [coveredSheetAttribute]: value24 ? "" : undefined,
-      "data-cds-sheet-depth": value10 ? String(value.depth) : undefined,
-      "data-cds-sheet-detent": value10 ? value11?.detent : undefined,
-      "aria-hidden": value25 ? "true" : undefined,
-      ...(value25 ? getInertPropsValue : {}),
+      ...(isSheet ? getSizeAttribute("lg") : {}),
+      "data-presentation": isSheet ? "sheet" : undefined,
+      "data-sheet-tree": isSheet ? sheetFrame?.treeId : undefined,
+      [coveredSheetAttribute]: isCovered ? "" : undefined,
+      "data-cds-sheet-depth": isSheet ? String(sheetState.depth) : undefined,
+      "data-cds-sheet-detent": isSheet ? sheetFrame?.detent : undefined,
+      "aria-hidden": isInert ? "true" : undefined,
+      ...(isInert ? getInertPropsValue : {}),
     },
-    frame: value11,
-    state: value,
-    stack: value23,
+    frame: sheetFrame,
+    state: sheetState,
+    stack: stack,
   };
 }
 function MobileSheetsSheetPopupHost({
@@ -631,15 +631,15 @@ export function installCdsSheetsChrome(): () => void {
           className: className,
           ...props
         }: Dynamic,
-        options?: Dynamic,
+        forwardedRef?: Dynamic,
       ): Dynamic {
-        let value: Dynamic = useLabel("close", "Close"),
-          value2: Dynamic = label ?? value;
+        let defaultLabel: Dynamic = useLabel("close", "Close"),
+          resolvedLabel: Dynamic = label ?? defaultLabel;
         return (() => {
           const _Component = as;
           return (
             <_Component
-              ref={options}
+              ref={forwardedRef}
               type={"button"}
               data-cds-sheet-control={""}
               onClick={onDismiss}
@@ -650,7 +650,7 @@ export function installCdsSheetsChrome(): () => void {
                 className,
               )}
             >
-              {value2}
+              {resolvedLabel}
             </_Component>
           );
         })();
