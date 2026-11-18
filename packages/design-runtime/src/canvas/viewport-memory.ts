@@ -11,61 +11,61 @@ var createViewportMemoryValue: Dynamic;
 var recallCanvasView: Dynamic;
 var rememberCanvasView: Dynamic;
 function getArtifactMemoryScope(): Dynamic {
-  let value: Dynamic =
+  let pathname: Dynamic =
     typeof location === "undefined" ? "/" : location.pathname;
-  return getDocumentStashKey(value).slice(
+  return getDocumentStashKey(pathname).slice(
     getDocumentStashKey("").length,
   );
 }
-function createViewportMemory(input?: Dynamic, options?: Dynamic): Dynamic {
+function createViewportMemory(getStorageKey?: Dynamic, scaleLimits?: Dynamic): Dynamic {
   return {
-    recall(input2: Dynamic): Dynamic {
+    recall(expectedPage: Dynamic): Dynamic {
       try {
-        let value: Dynamic = sessionStorage.getItem(input());
-        if (value === null) return;
-        let value2: Dynamic = JSON.parse(value);
+        let storedText: Dynamic = sessionStorage.getItem(getStorageKey());
+        if (storedText === null) return;
+        let storedView: Dynamic = JSON.parse(storedText);
         if (
-          typeof value2 != "object" ||
-          value2 === null ||
+          typeof storedView != "object" ||
+          storedView === null ||
           !(
-            "page" in value2 &&
-            "x" in value2 &&
-            "y" in value2 &&
-            "scale" in value2
+            "page" in storedView &&
+            "x" in storedView &&
+            "y" in storedView &&
+            "scale" in storedView
           )
         )
           return;
         let {
-          page: value3,
-          x: value4,
-          y: value5,
-          scale: value6,
-        }: Dynamic = value2;
-        return value3 !== input2 ||
-          !isFiniteNumber(value4) ||
-          !isFiniteNumber(value5) ||
-          !isFiniteNumber(value6) ||
-          value6 < options.minScale ||
-          value6 > options.maxScale
+          page: storedPage,
+          x: storedX,
+          y: storedY,
+          scale: storedScale,
+        }: Dynamic = storedView;
+        return storedPage !== expectedPage ||
+          !isFiniteNumber(storedX) ||
+          !isFiniteNumber(storedY) ||
+          !isFiniteNumber(storedScale) ||
+          storedScale < scaleLimits.minScale ||
+          storedScale > scaleLimits.maxScale
           ? undefined
           : {
-              x: value4,
-              y: value5,
-              scale: value6,
+              x: storedX,
+              y: storedY,
+              scale: storedScale,
             };
       } catch {
         return;
       }
     },
-    remember(input2: Dynamic, options2: Dynamic): Dynamic {
+    remember(page: Dynamic, view: Dynamic): Dynamic {
       try {
         sessionStorage.setItem(
-          input(),
+          getStorageKey(),
           JSON.stringify({
-            page: input2,
-            x: options2.x,
-            y: options2.y,
-            scale: options2.scale,
+            page: page,
+            x: view.x,
+            y: view.y,
+            scale: view.scale,
           }),
         );
       } catch {}
@@ -73,9 +73,9 @@ function createViewportMemory(input?: Dynamic, options?: Dynamic): Dynamic {
   };
 }
 function getViewportMemoryScope(): Dynamic {
-  let value: Dynamic = getEmbedContext();
-  return value !== null
-    ? "embed/" + value.memoryScope
+  let embedContext: Dynamic = getEmbedContext();
+  return embedContext !== null
+    ? "embed/" + embedContext.memoryScope
     : getArtifactMemoryScope();
 }
 export {
@@ -90,8 +90,8 @@ export {
 };
 export function installCanvasViewportMemory(): () => void {
   return () => {
-    isFiniteNumber = (input?: Dynamic): Dynamic =>
-      typeof input == "number" && Number.isFinite(input);
+    isFiniteNumber = (candidate?: Dynamic): Dynamic =>
+      typeof candidate == "number" && Number.isFinite(candidate);
     viewportScaleLimits = {
       minScale: 0.05,
       maxScale: 8,

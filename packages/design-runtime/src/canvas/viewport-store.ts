@@ -9,60 +9,60 @@ var CanvasViewportStoreMatches: Dynamic;
 var animateViewportZoom: Dynamic;
 var createViewportStoreValue: Dynamic;
 var ViewportContext: Dynamic;
-function previewZoomDuration(input?: Dynamic): Dynamic {
-  return Math.round(Math.min(900, Math.max(300, 18 * Math.sqrt(input))));
+function previewZoomDuration(distance?: Dynamic): Dynamic {
+  return Math.round(Math.min(900, Math.max(300, 18 * Math.sqrt(distance))));
 }
 function isArtboardInViewport(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  viewport?: Dynamic,
+  artboard?: Dynamic,
+  screen?: Dynamic,
 ): Dynamic {
-  let { w: value, top: value2 }: Dynamic = context,
-    value3: Dynamic = context.h - value2,
-    value4: Dynamic = input.y + value2 / input.scale,
-    value5: Dynamic = options.x + options.w / 2,
-    value6: Dynamic = options.y + options.h / 2;
+  let { w: viewWidth, top: topInset }: Dynamic = screen,
+    viewHeight: Dynamic = screen.h - topInset,
+    visibleTop: Dynamic = viewport.y + topInset / viewport.scale,
+    artboardCenterX: Dynamic = artboard.x + artboard.w / 2,
+    artboardCenterY: Dynamic = artboard.y + artboard.h / 2;
   return (
-    options.w <= value / input.scale && options.h <= value3 / input.scale
-      ? options.x >= input.x &&
-        options.x + options.w <= input.x + value / input.scale &&
-        options.y >= value4 &&
-        options.y + options.h <= value4 + value3 / input.scale
-      : value5 >= input.x &&
-        value5 <= input.x + value / input.scale &&
-        value6 >= value4 &&
-        value6 <= value4 + value3 / input.scale
+    artboard.w <= viewWidth / viewport.scale && artboard.h <= viewHeight / viewport.scale
+      ? artboard.x >= viewport.x &&
+        artboard.x + artboard.w <= viewport.x + viewWidth / viewport.scale &&
+        artboard.y >= visibleTop &&
+        artboard.y + artboard.h <= visibleTop + viewHeight / viewport.scale
+      : artboardCenterX >= viewport.x &&
+        artboardCenterX <= viewport.x + viewWidth / viewport.scale &&
+        artboardCenterY >= visibleTop &&
+        artboardCenterY <= visibleTop + viewHeight / viewport.scale
   )
-    ? input
+    ? viewport
     : {
-        ...input,
-        x: value5 - value / input.scale / 2,
-        y: value6 - value2 / input.scale - value3 / input.scale / 2,
+        ...viewport,
+        x: artboardCenterX - viewWidth / viewport.scale / 2,
+        y: artboardCenterY - topInset / viewport.scale - viewHeight / viewport.scale / 2,
       };
 }
 // MineDesign：网点纸背景画在视口（世界层的父元素）上，随相机平移；
 // 间距以 20 个世界单位为基准按 2 的倍数取舍，使屏幕间距保持在 16–32px，缩小时不会糊成一片
-function paintDotGrid(world?: Dynamic, input?: Dynamic): Dynamic {
+function paintDotGrid(world?: Dynamic, viewport?: Dynamic): Dynamic {
   let host: Dynamic = world?.parentElement;
   if (!host) return;
-  let size: Dynamic = 20 * input.scale;
+  let size: Dynamic = 20 * viewport.scale;
   while (size < 16) size *= 2;
   while (size >= 32) size /= 2;
   // 网点落在世界坐标的网格交点上：瓦片中心对齐交点
-  let offset: Dynamic = (value?: Dynamic): Dynamic =>
-    String(((-value * input.scale) % size) - size / 2) + "px";
+  let offset: Dynamic = (worldCoord?: Dynamic): Dynamic =>
+    String(((-worldCoord * viewport.scale) % size) - size / 2) + "px";
   host.style.setProperty("--mdn-dot-size", String(size) + "px");
-  host.style.setProperty("--mdn-dot-x", offset(input.x));
-  host.style.setProperty("--mdn-dot-y", offset(input.y));
+  host.style.setProperty("--mdn-dot-x", offset(viewport.x));
+  host.style.setProperty("--mdn-dot-y", offset(viewport.y));
 }
-function viewportTransformCss(input?: Dynamic): Dynamic {
+function viewportTransformCss(viewport?: Dynamic): Dynamic {
   return (
     "translate(" +
-    String(-input.x * input.scale) +
+    String(-viewport.x * viewport.scale) +
     "px, " +
-    String(-input.y * input.scale) +
+    String(-viewport.y * viewport.scale) +
     "px) scale(" +
-    String(input.scale) +
+    String(viewport.scale) +
     ")"
   );
 }
@@ -72,191 +72,191 @@ function sameViewport(left?: Dynamic, right?: Dynamic): Dynamic {
     (left.x === right.x && left.y === right.y && left.scale === right.scale)
   );
 }
-function viewportAnimationEasing(input?: Dynamic): Dynamic {
-  if (input <= 0 || input >= 1) return Math.min(1, Math.max(0, input));
-  let index: Dynamic = 0,
-    count: Dynamic = 1,
-    value: Dynamic = input;
-  for (let index2: Dynamic = 0; index2 < 12; index2++) {
-    value = (index + count) / 2;
-    3 * value * (1 - value) * 0.25 + value ** 3 < input
-      ? (index = value)
-      : (count = value);
+function viewportAnimationEasing(progress?: Dynamic): Dynamic {
+  if (progress <= 0 || progress >= 1) return Math.min(1, Math.max(0, progress));
+  let low: Dynamic = 0,
+    high: Dynamic = 1,
+    curveT: Dynamic = progress;
+  for (let iteration: Dynamic = 0; iteration < 12; iteration++) {
+    curveT = (low + high) / 2;
+    3 * curveT * (1 - curveT) * 0.25 + curveT ** 3 < progress
+      ? (low = curveT)
+      : (high = curveT);
   }
-  return 3 * value * (1 - value) * ((1 - value) * 0.1 + value) + value ** 3;
+  return 3 * curveT * (1 - curveT) * ((1 - curveT) * 0.1 + curveT) + curveT ** 3;
 }
 function interpolateViewport(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  from?: Dynamic,
+  to?: Dynamic,
+  progress?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = input.scale + (options.scale - input.scale) * context,
-    value2: Dynamic =
-      input.x * input.scale +
-      (options.x * options.scale - input.x * input.scale) * context,
-    value3: Dynamic =
-      input.y * input.scale +
-      (options.y * options.scale - input.y * input.scale) * context;
+  let scale: Dynamic = from.scale + (to.scale - from.scale) * progress,
+    scaledX: Dynamic =
+      from.x * from.scale +
+      (to.x * to.scale - from.x * from.scale) * progress,
+    scaledY: Dynamic =
+      from.y * from.scale +
+      (to.y * to.scale - from.y * from.scale) * progress;
   return {
-    x: value2 / value,
-    y: value3 / value,
-    scale: value,
+    x: scaledX / scale,
+    y: scaledY / scale,
+    scale: scale,
   };
 }
 function createViewportStore(
-  input?: Dynamic,
-  options?: Dynamic,
-  context: Dynamic = CanvasViewportStoreConstant,
-  value: Dynamic = animateViewportZoom,
-  extra: Dynamic = previewZoomDuration,
+  initialViewport?: Dynamic,
+  onCommit?: Dynamic,
+  settleDelay: Dynamic = CanvasViewportStoreConstant,
+  shouldHintWillChange: Dynamic = animateViewportZoom,
+  getGlideDuration: Dynamic = previewZoomDuration,
 ): Dynamic {
-  let value2: Dynamic = input,
-    value3: Dynamic = input,
-    value4: Dynamic = input,
-    value5: Dynamic = null,
-    value6: Dynamic,
-    index: Dynamic = 0,
-    index2: Dynamic = 0,
-    value7: Dynamic = null,
-    values: Dynamic = new Set(),
-    values2: Dynamic = new Set(),
-    callback: Dynamic = (input2?: Dynamic): Dynamic => {
-      input2.style.setProperty("--mega-scale", String(value2.scale));
-      input2.style.setProperty("--mega-inv-scale", String(1 / value2.scale));
+  let current: Dynamic = initialViewport,
+    painted: Dynamic = initialViewport,
+    committed: Dynamic = initialViewport,
+    worldElement: Dynamic = null,
+    settleTimer: Dynamic,
+    frameHandle: Dynamic = 0,
+    glideFrameHandle: Dynamic = 0,
+    glideTarget: Dynamic = null,
+    listeners: Dynamic = new Set(),
+    scaleElements: Dynamic = new Set(),
+    applyScaleVars: Dynamic = (element?: Dynamic): Dynamic => {
+      element.style.setProperty("--mega-scale", String(current.scale));
+      element.style.setProperty("--mega-inv-scale", String(1 / current.scale));
     },
-    callback2: Dynamic = (): Dynamic => {
-      let value8: Dynamic = value3;
-      if (!sameViewport(value2, value8)) {
-        value3 = value2;
-        value5 &&
-          ((value5.style.transform = viewportTransformCss(value2)),
-          paintDotGrid(value5, value2));
-        if (value2.scale !== value8.scale)
-          for (let value9 of values2 as Dynamic) callback(value9);
-        for (let value9 of values as Dynamic) value9(value2, value8);
+    paintViewport: Dynamic = (): Dynamic => {
+      let previous: Dynamic = painted;
+      if (!sameViewport(current, previous)) {
+        painted = current;
+        worldElement &&
+          ((worldElement.style.transform = viewportTransformCss(current)),
+          paintDotGrid(worldElement, current));
+        if (current.scale !== previous.scale)
+          for (let scaleElement of scaleElements as Dynamic) applyScaleVars(scaleElement);
+        for (let listener of listeners as Dynamic) listener(current, previous);
       }
     },
-    callback3: Dynamic = (): Dynamic => {
-      index = 0;
-      callback2();
+    handleFrame: Dynamic = (): Dynamic => {
+      frameHandle = 0;
+      paintViewport();
     },
-    callback4: Dynamic = (input2?: Dynamic): Dynamic => {
-      clearTimeout(value6);
-      value6 = undefined;
-      value5 && (value5.style.willChange = "");
-      !sameViewport(value4, value2) &&
-        ((value4 = value2), options(value2, input2));
+    commit: Dynamic = (isFinal?: Dynamic): Dynamic => {
+      clearTimeout(settleTimer);
+      settleTimer = undefined;
+      worldElement && (worldElement.style.willChange = "");
+      !sameViewport(committed, current) &&
+        ((committed = current), onCommit(current, isFinal));
     },
-    callback5: Dynamic = (input2?: Dynamic, options2?: Dynamic): Dynamic => {
-      let value8: Dynamic = value2,
-        value9: Dynamic =
-          typeof input2 == "function" ? input2(value8) : input2;
-      sameViewport(value9, value8) || (value2 = value9);
-      if (options2) {
-        let value10: Dynamic = !sameViewport(value4, value2);
-        callback4(true);
-        value10 || callback2();
+    applyViewport: Dynamic = (update?: Dynamic, isImmediate?: Dynamic): Dynamic => {
+      let previousViewport: Dynamic = current,
+        nextViewport: Dynamic =
+          typeof update == "function" ? update(previousViewport) : update;
+      sameViewport(nextViewport, previousViewport) || (current = nextViewport);
+      if (isImmediate) {
+        let hasUncommittedChange: Dynamic = !sameViewport(committed, current);
+        commit(true);
+        hasUncommittedChange || paintViewport();
         return;
       }
-      (sameViewport(value2, value4) && sameViewport(value2, value3)) ||
-        (value &&
-          value5 &&
-          value6 === undefined &&
-          (value5.style.willChange = "transform"),
-        index || (callback2(), (index = requestAnimationFrame(callback3))),
-        clearTimeout(value6),
-        (value6 = setTimeout((): Dynamic => {
-          callback2();
-          callback4(false);
-        }, context)));
+      (sameViewport(current, committed) && sameViewport(current, painted)) ||
+        (shouldHintWillChange &&
+          worldElement &&
+          settleTimer === undefined &&
+          (worldElement.style.willChange = "transform"),
+        frameHandle || (paintViewport(), (frameHandle = requestAnimationFrame(handleFrame))),
+        clearTimeout(settleTimer),
+        (settleTimer = setTimeout((): Dynamic => {
+          paintViewport();
+          commit(false);
+        }, settleDelay)));
     },
-    callback6: Dynamic = (): Dynamic => {
-      index2 && cancelAnimationFrame(index2);
-      index2 = 0;
-      value7 = null;
+    cancelGlide: Dynamic = (): Dynamic => {
+      glideFrameHandle && cancelAnimationFrame(glideFrameHandle);
+      glideFrameHandle = 0;
+      glideTarget = null;
     };
   return {
-    get: (): Dynamic => value2,
-    rest: (): Dynamic => value7 ?? value2,
-    set(input2: Dynamic, options2: Dynamic = false): Dynamic {
-      callback6();
-      callback5(input2, options2);
+    get: (): Dynamic => current,
+    rest: (): Dynamic => glideTarget ?? current,
+    set(update: Dynamic, isImmediate: Dynamic = false): Dynamic {
+      cancelGlide();
+      applyViewport(update, isImmediate);
     },
-    glide(input2: Dynamic): Dynamic {
-      callback6();
-      let value8: Dynamic = value2,
-        value9: Dynamic =
-          typeof input2 == "function" ? input2(value8) : input2,
-        value10: Dynamic = Math.hypot(
-          value9.x * value9.scale - value8.x * value8.scale,
-          value9.y * value9.scale - value8.y * value8.scale,
+    glide(update: Dynamic): Dynamic {
+      cancelGlide();
+      let startViewport: Dynamic = current,
+        targetViewport: Dynamic =
+          typeof update == "function" ? update(startViewport) : update,
+        distance: Dynamic = Math.hypot(
+          targetViewport.x * targetViewport.scale - startViewport.x * startViewport.scale,
+          targetViewport.y * targetViewport.scale - startViewport.y * startViewport.scale,
         ),
-        value11: Dynamic = CanvasViewportStoreMatches() ? 0 : extra(value10);
-      if (value11 <= 0 || sameViewport(value9, value8)) {
-        callback5(value9, true);
+        duration: Dynamic = CanvasViewportStoreMatches() ? 0 : getGlideDuration(distance);
+      if (duration <= 0 || sameViewport(targetViewport, startViewport)) {
+        applyViewport(targetViewport, true);
         return;
       }
-      value7 = value9;
-      let value12: Dynamic,
-        callback7: Dynamic = (input3?: Dynamic): Dynamic => {
-          value12 ??= input3;
-          let value13: Dynamic = Math.min(
+      glideTarget = targetViewport;
+      let startTime: Dynamic,
+        step: Dynamic = (timestamp?: Dynamic): Dynamic => {
+          startTime ??= timestamp;
+          let progress: Dynamic = Math.min(
             1,
-            Math.max(0, (input3 - value12) / value11),
+            Math.max(0, (timestamp - startTime) / duration),
           );
-          index2 = value13 < 1 ? requestAnimationFrame(callback7) : 0;
-          value13 >= 1 && (value7 = null);
-          callback5(
-            value13 < 1
+          glideFrameHandle = progress < 1 ? requestAnimationFrame(step) : 0;
+          progress >= 1 && (glideTarget = null);
+          applyViewport(
+            progress < 1
               ? interpolateViewport(
-                  value8,
-                  value9,
-                  viewportAnimationEasing(value13),
+                  startViewport,
+                  targetViewport,
+                  viewportAnimationEasing(progress),
                 )
-              : value9,
-            value13 >= 1,
+              : targetViewport,
+            progress >= 1,
           );
         };
-      index2 = requestAnimationFrame(callback7);
+      glideFrameHandle = requestAnimationFrame(step);
     },
     settle(): Dynamic {
-      value6 !== undefined && (callback2(), callback4(true));
+      settleTimer !== undefined && (paintViewport(), commit(true));
     },
     halt(): Dynamic {
-      let value8: Dynamic = index2 !== 0;
-      callback6();
-      !(!value8 && value6 === undefined) && (callback2(), callback4(true));
+      let wasGliding: Dynamic = glideFrameHandle !== 0;
+      cancelGlide();
+      !(!wasGliding && settleTimer === undefined) && (paintViewport(), commit(true));
     },
-    subscribe(input2: Dynamic): Dynamic {
-      values.add(input2);
+    subscribe(listener: Dynamic): Dynamic {
+      listeners.add(listener);
       return (): Dynamic => {
-        values.delete(input2);
+        listeners.delete(listener);
       };
     },
-    attach(input2: Dynamic): Dynamic {
-      value5 = input2;
-      if (value5) {
-        value5.style.transform = viewportTransformCss(value2);
-        paintDotGrid(value5, value2);
-        value3 = value2;
+    attach(element: Dynamic): Dynamic {
+      worldElement = element;
+      if (worldElement) {
+        worldElement.style.transform = viewportTransformCss(current);
+        paintDotGrid(worldElement, current);
+        painted = current;
         return;
       }
-      callback6();
-      clearTimeout(value6);
-      value6 = undefined;
-      index && cancelAnimationFrame(index);
-      index = 0;
+      cancelGlide();
+      clearTimeout(settleTimer);
+      settleTimer = undefined;
+      frameHandle && cancelAnimationFrame(frameHandle);
+      frameHandle = 0;
     },
-    stamp(input2: Dynamic): Dynamic {
-      if (input2) {
-        values2.add(input2);
-        callback(input2);
+    stamp(element: Dynamic): Dynamic {
+      if (element) {
+        scaleElements.add(element);
+        applyScaleVars(element);
         return (): Dynamic => {
-          values2.delete(input2);
+          scaleElements.delete(element);
         };
       }
     },
-    paint: callback2,
+    paint: paintViewport,
   };
 }
 function useViewportStore(): Dynamic {
@@ -265,51 +265,51 @@ function useViewportStore(): Dynamic {
     createViewportStoreValue
   );
 }
-function useViewport(input: Dynamic = true, options?: Dynamic): Dynamic {
-  let value: Dynamic = useViewportStore(),
-    value2: Dynamic = options ?? value,
-    value3: Dynamic = (0, reactCanvasPreviewMounting.useRef)(null),
-    callback: Dynamic = (): Dynamic => (
-      (input || value3.current === null) && (value3.current = value2.get()),
-      value3.current
+function useViewport(isLive: Dynamic = true, storeOverride?: Dynamic): Dynamic {
+  let contextStore: Dynamic = useViewportStore(),
+    store: Dynamic = storeOverride ?? contextStore,
+    snapshotRef: Dynamic = (0, reactCanvasPreviewMounting.useRef)(null),
+    getSnapshot: Dynamic = (): Dynamic => (
+      (isLive || snapshotRef.current === null) && (snapshotRef.current = store.get()),
+      snapshotRef.current
     );
   return (0, reactCanvasPreviewMounting.useSyncExternalStore)(
-    value2.subscribe,
-    callback,
-    callback,
+    store.subscribe,
+    getSnapshot,
+    getSnapshot,
   );
 }
-function useViewportScale(input: Dynamic = true): Dynamic {
-  let value: Dynamic = useViewportStore(),
-    value2: Dynamic = (0, reactCanvasPreviewMounting.useRef)(null),
-    callback: Dynamic = (): Dynamic => (
-      (input || value2.current === null) &&
-        (value2.current = value.get().scale),
-      value2.current
+function useViewportScale(isLive: Dynamic = true): Dynamic {
+  let store: Dynamic = useViewportStore(),
+    scaleRef: Dynamic = (0, reactCanvasPreviewMounting.useRef)(null),
+    getSnapshot: Dynamic = (): Dynamic => (
+      (isLive || scaleRef.current === null) &&
+        (scaleRef.current = store.get().scale),
+      scaleRef.current
     );
   return (0, reactCanvasPreviewMounting.useSyncExternalStore)(
-    value.subscribe,
-    callback,
-    callback,
+    store.subscribe,
+    getSnapshot,
+    getSnapshot,
   );
 }
-function useViewportMinScale(input?: Dynamic): Dynamic {
-  let value: Dynamic = useViewportStore(),
-    callback: Dynamic = (): Dynamic => value.get().scale >= input;
+function useViewportMinScale(minScale?: Dynamic): Dynamic {
+  let store: Dynamic = useViewportStore(),
+    getSnapshot: Dynamic = (): Dynamic => store.get().scale >= minScale;
   return (0, reactCanvasPreviewMounting.useSyncExternalStore)(
-    value.subscribe,
-    callback,
-    callback,
+    store.subscribe,
+    getSnapshot,
+    getSnapshot,
   );
 }
 function ViewportScale({ children: children }: Dynamic): Dynamic {
   return children(useViewportScale());
 }
 function ViewportScaleThreshold({
-  min: min2,
+  min: minScale,
   children: children,
 }: Dynamic): Dynamic {
-  return children(useViewportMinScale(min2));
+  return children(useViewportMinScale(minScale));
 }
 export {
   animateViewportZoom,

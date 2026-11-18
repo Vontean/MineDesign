@@ -4,7 +4,7 @@ import { useUiLocale } from '../ui-locale.ts';
 import {
   type Dynamic,
 } from "../runtime-types";
-import { annotationColor, annotationCssStyle, annotationEffectsCss, annotationFillDefaults, annotationFillSignature, annotationPathViewBox, AnnotationShapeBody, annotationStrokeWidth, CanvasAnnotationShapeStyleConstant, CanvasAnnotationShapeStyleConstant_2, CanvasAnnotationShapeStyleConstant_3, CanvasAnnotationShapeStyleMatches, jsxCanvasAnnotationShapeStyle } from "./annotation-shape-style";
+import { annotationColor, annotationCssStyle, annotationEffectsCss, annotationFillDefaults, annotationFillSignature, annotationPathViewBox, AnnotationShapeBody, annotationStrokeWidth, CanvasAnnotationShapeStyleConstant, CanvasAnnotationShapeStyleConstant_2 as lineDefaultStrokeWidth, CanvasAnnotationShapeStyleConstant_3 as lineSvgPadding, CanvasAnnotationShapeStyleMatches, jsxCanvasAnnotationShapeStyle } from "./annotation-shape-style";
 import { beginArtboardResize } from "./artboard-resize";
 import { scheduleImageDecode, watchPointerRelease } from "./image-decode-scheduler";
 import { useViewportStore, ViewportScale } from "./viewport-store";
@@ -19,12 +19,12 @@ import { imageCropCss } from "../editor/media/crop-geometry";
 import { createVideoPlaybackStore } from "../editor/media/video-playback";
 import { MediaVideoUploadAutoPlayLoopMutedConfig } from "../editor/media/video-upload";
 import { PickerRuntimeScriptTAppAccentConfig } from "../editor/picker/runtime-script";
-import { shortenLineEnds, SvgArrowsConstant_2, SvgArrowsFilledOpenConfig, SvgArrowsRefX } from "../editor/svg/arrows";
+import { shortenLineEnds, SvgArrowsConstant_2 as arrowMarkerRefY, SvgArrowsFilledOpenConfig, SvgArrowsRefX } from "../editor/svg/arrows";
 import { constrainLineAngle } from "../editor/svg/drawing";
 import { AnnotationPenEditor } from "../editor/vector/annotation-pen-editor";
 import { toModuleNamespace } from "../module-helpers";
 import { initializePlatformCdsIsland } from "../platform/cds-island";
-import { annotationArrowHeads, annotationBounds, annotationRotation, PlatformFileContentConstant_19, PlatformFileContentConstant_20, PlatformFileContentLimit_6 } from "../platform/file-content";
+import { annotationArrowHeads, annotationBounds, annotationRotation, PlatformFileContentConstant_19 as minShapeSize, PlatformFileContentConstant_20 as minImageSize, PlatformFileContentLimit_6 as maxShapeSize } from "../platform/file-content";
 import { blobPlaceholderImage } from "../preview/blob-paths";
 
 var CanvasShapeX: Dynamic;
@@ -54,213 +54,213 @@ function CanvasShape({
   onEditPoints: onEditPoints,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic = annotationBounds(spec),
-    value2: Dynamic =
+  let shapeBounds: Dynamic = annotationBounds(spec),
+    lineSpec: Dynamic =
       spec.kind === "line" || spec.kind === "arrow" ? spec : null,
-    value3: Dynamic = value2
-      ? annotationArrowHeads(value2)
+    arrowHeads: Dynamic = lineSpec
+      ? annotationArrowHeads(lineSpec)
       : null,
-    value4: Dynamic =
-      !value2 || !value3
+    shortenedLine: Dynamic =
+      !lineSpec || !arrowHeads
         ? null
         : shortenLineEnds(
-            value2.x,
-            value2.y,
-            value2.x2,
-            value2.y2,
-            SvgArrowsRefX(value3.start) *
+            lineSpec.x,
+            lineSpec.y,
+            lineSpec.x2,
+            lineSpec.y2,
+            SvgArrowsRefX(arrowHeads.start) *
               annotationStrokeWidth(
-                value2.css,
-                CanvasAnnotationShapeStyleConstant_2,
+                lineSpec.css,
+                lineDefaultStrokeWidth,
               ),
-            SvgArrowsRefX(value3.end) *
+            SvgArrowsRefX(arrowHeads.end) *
               annotationStrokeWidth(
-                value2.css,
-                CanvasAnnotationShapeStyleConstant_2,
+                lineSpec.css,
+                lineDefaultStrokeWidth,
               ),
           ),
-    callback: Dynamic = (input?: Dynamic): Dynamic =>
-      (input === "start" ? "mega-shape-start-head-" : "mega-shape-head-") +
+    callback: Dynamic = (endName?: Dynamic): Dynamic =>
+      (endName === "start" ? "mega-shape-start-head-" : "mega-shape-head-") +
       spec.id,
-    value5: Dynamic =
+    boxSpec: Dynamic =
       spec.kind === "rect" || spec.kind === "oval" ? spec : null,
-    value6: Dynamic = spec.kind === "pen" ? spec : null,
-    value7: Dynamic = spec.kind === "image" ? spec : null,
-    [value8, value9]: Dynamic = (0,
+    penSpec: Dynamic = spec.kind === "pen" ? spec : null,
+    imageSpec: Dynamic = spec.kind === "image" ? spec : null,
+    [failedImageSrc, setFailedImageSrc]: Dynamic = (0,
     reactHooksLatestCallback_2.useState)(null),
-    value10: Dynamic = value7
-      ? (resolveImageSrc?.(value7.src) ?? null)
+    imageSrc: Dynamic = imageSpec
+      ? (resolveImageSrc?.(imageSpec.src) ?? null)
       : null,
-    value11: Dynamic =
-      value10 !== null && value10 === value8 ? null : value10,
-    value12: Dynamic =
-      value7?.video === undefined
+    displayImageSrc: Dynamic =
+      imageSrc !== null && imageSrc === failedImageSrc ? null : imageSrc,
+    videoSrc: Dynamic =
+      imageSpec?.video === undefined
         ? null
-        : (resolveImageSrc?.(value7.video) ?? null),
-    [value13, value14]: Dynamic = (0,
+        : (resolveImageSrc?.(imageSpec.video) ?? null),
+    [failedVideoSrc, setFailedVideoSrc]: Dynamic = (0,
     reactHooksLatestCallback_2.useState)(null),
-    value15: Dynamic = (0, reactHooksLatestCallback_2.useRef)(null),
-    [value16, value17]: Dynamic = (0,
+    containerRef: Dynamic = (0, reactHooksLatestCallback_2.useRef)(null),
+    [isInViewport, setIsInViewport]: Dynamic = (0,
     reactHooksLatestCallback_2.useState)(false);
   (0, reactHooksLatestCallback_2.useEffect)((): Dynamic => {
-    let value41: Dynamic = value12 === null ? null : value15.current;
-    if (!value41) return;
+    let containerElement: Dynamic = videoSrc === null ? null : containerRef.current;
+    if (!containerElement) return;
     if (typeof IntersectionObserver === "undefined") {
-      value17(true);
+      setIsInViewport(true);
       return;
     }
-    let value42: Dynamic = new IntersectionObserver(
+    let intersectionObserver: Dynamic = new IntersectionObserver(
       (items?: Dynamic): Dynamic => {
-        let value43: Dynamic = items[items.length - 1];
-        value43 && value17(value43.isIntersecting);
+        let lastEntry: Dynamic = items[items.length - 1];
+        lastEntry && setIsInViewport(lastEntry.isIntersecting);
       },
     );
-    value42.observe(value41);
-    return (): Dynamic => value42.disconnect();
-  }, [value12]);
-  let [value18, value19]: Dynamic = (0,
+    intersectionObserver.observe(containerElement);
+    return (): Dynamic => intersectionObserver.disconnect();
+  }, [videoSrc]);
+  let [isDecodeReady, setIsDecodeReady]: Dynamic = (0,
     reactHooksLatestCallback_2.useState)(false),
-    value20: Dynamic = value12 !== null && value12 !== value13 && value16;
+    shouldDecodeVideo: Dynamic = videoSrc !== null && videoSrc !== failedVideoSrc && isInViewport;
   (0, reactHooksLatestCallback_2.useEffect)((): Dynamic => {
-    if (!value20) return;
-    let value41: Dynamic = scheduleImageDecode(
+    if (!shouldDecodeVideo) return;
+    let cancelDecode: Dynamic = scheduleImageDecode(
       spec.id,
-      (): Dynamic => value19(true),
+      (): Dynamic => setIsDecodeReady(true),
     );
     return (): Dynamic => {
-      value41();
-      value19(false);
+      cancelDecode();
+      setIsDecodeReady(false);
     };
-  }, [value20, spec.id]);
-  let value21: Dynamic = value20 && value18,
-    value22: Dynamic = (0, reactHooksLatestCallback_2.useRef)(null),
-    value23: Dynamic = (0, reactHooksLatestCallback_2.useRef)(null),
-    value24: Dynamic = (0, reactHooksLatestCallback_2.useRef)(null);
+  }, [shouldDecodeVideo, spec.id]);
+  let shouldRenderVideo: Dynamic = shouldDecodeVideo && isDecodeReady,
+    videoRef: Dynamic = (0, reactHooksLatestCallback_2.useRef)(null),
+    playbackStoreRef: Dynamic = (0, reactHooksLatestCallback_2.useRef)(null),
+    pressStartRef: Dynamic = (0, reactHooksLatestCallback_2.useRef)(null);
   (0, reactHooksLatestCallback_2.useEffect)((): Dynamic => {
-    let value41: Dynamic = value21 ? value22.current : null;
-    if (!value41) return;
-    let value42: Dynamic = createVideoPlaybackStore(value41);
-    value23.current = value42;
+    let videoElement: Dynamic = shouldRenderVideo ? videoRef.current : null;
+    if (!videoElement) return;
+    let playbackStore: Dynamic = createVideoPlaybackStore(videoElement);
+    playbackStoreRef.current = playbackStore;
     return (): Dynamic => {
-      value42.detach();
-      value23.current = null;
-      value41.isConnected ||
-        (value41.pause(), value41.removeAttribute("src"), value41.load());
+      playbackStore.detach();
+      playbackStoreRef.current = null;
+      videoElement.isConnected ||
+        (videoElement.pause(), videoElement.removeAttribute("src"), videoElement.load());
     };
-  }, [value21, value12]);
-  let value25: Dynamic = value6?.d,
-    value26: Dynamic = (0, reactHooksLatestCallback_2.useMemo)(
+  }, [shouldRenderVideo, videoSrc]);
+  let penPath: Dynamic = penSpec?.d,
+    penViewBox: Dynamic = (0, reactHooksLatestCallback_2.useMemo)(
       (): Dynamic =>
-        value25 === undefined
+        penPath === undefined
           ? null
-          : annotationPathViewBox(value25),
-      [value25],
+          : annotationPathViewBox(penPath),
+      [penPath],
     ),
-    value27: Dynamic = annotationColor(
+    shapeColor: Dynamic = annotationColor(
       spec.kind,
       spec.color ?? "default",
     ),
-    value28: Dynamic = editing && !inert && !cropping,
-    value29: Dynamic =
-      commenting && !value28
+    isDirectlyEditable: Dynamic = editing && !inert && !cropping,
+    commentPointerStyle: Dynamic =
+      commenting && !isDirectlyEditable
         ? {
             pointerEvents: "auto",
           }
         : undefined,
-    value30: Dynamic = editing ? objectPress : {},
-    value31: Dynamic = useViewportStore(),
-    value32: Dynamic = annotationRotation(spec),
-    value33: Dynamic = value32
+    pressHandlers: Dynamic = editing ? objectPress : {},
+    viewportStore: Dynamic = useViewportStore(),
+    rotationDegrees: Dynamic = annotationRotation(spec),
+    rotationStyle: Dynamic = rotationDegrees
       ? {
-          transform: "rotate(" + String(value32) + "deg)",
+          transform: "rotate(" + String(rotationDegrees) + "deg)",
         }
       : undefined,
-    value34: Dynamic = value32
+    counterRotationStyle: Dynamic = rotationDegrees
       ? {
-          transform: "rotate(" + String(-value32) + "deg)",
+          transform: "rotate(" + String(-rotationDegrees) + "deg)",
         }
       : undefined,
-    value35: Dynamic = value32 ? (value32 * Math.PI) / 180 : undefined,
-    value36: Dynamic = imageFlipCss(spec),
-    value37: Dynamic = vectorEdit && value6 !== null && !grouped && !value32,
-    [value38, value39]: Dynamic = (0,
+    rotationRadians: Dynamic = rotationDegrees ? (rotationDegrees * Math.PI) / 180 : undefined,
+    flipStyle: Dynamic = imageFlipCss(spec),
+    isPenVectorEditing: Dynamic = vectorEdit && penSpec !== null && !grouped && !rotationDegrees,
+    [rotationAngleLabel, setRotationAngleLabel]: Dynamic = (0,
     reactHooksLatestCallback_2.useState)(null),
-    callback2: Dynamic = (input?: Dynamic, options?: Dynamic): Dynamic => {
-      let ancestor: Dynamic = options.currentTarget.closest(
+    handleRotateStart: Dynamic = (rotateHandle?: Dynamic, pointerEvent?: Dynamic): Dynamic => {
+      let ancestor: Dynamic = pointerEvent.currentTarget.closest(
         "[data-mega-annotation]",
       );
       if (!ancestor) return;
       let bounds: Dynamic = ancestor.getBoundingClientRect(),
-        [items, items2]: Dynamic = [
+        [centerX, centerY]: Dynamic = [
           bounds.left + bounds.width / 2,
           bounds.top + bounds.height / 2,
         ],
-        [items3, items4]: Dynamic = [
-          value32,
+        [startRotation, startPointerAngle]: Dynamic = [
+          rotationDegrees,
           angleBetweenPoints(
-            items,
-            items2,
-            options.clientX,
-            options.clientY,
+            centerX,
+            centerY,
+            pointerEvent.clientX,
+            pointerEvent.clientY,
           ),
         ];
-      callback3(
-        options,
+      beginResizeGesture(
+        pointerEvent,
         "ann-resize",
         (
-          input2?: Dynamic,
-          options2?: Dynamic,
-          context?: Dynamic,
+          deltaX?: Dynamic,
+          deltaY?: Dynamic,
+          moveEvent?: Dynamic,
         ): Dynamic => {
-          let value41: Dynamic = snapRotation(
-            items3 +
+          let snappedRotation: Dynamic = snapRotation(
+            startRotation +
               angleBetweenPoints(
-                items,
-                items2,
-                context.clientX,
-                context.clientY,
+                centerX,
+                centerY,
+                moveEvent.clientX,
+                moveEvent.clientY,
               ) -
-              items4,
-            context.shiftKey,
+              startPointerAngle,
+            moveEvent.shiftKey,
           );
-          value39(value41);
+          setRotationAngleLabel(snappedRotation);
           return {
-            rotate: value41,
+            rotate: snappedRotation,
           };
         },
         {
-          rotate: items3,
+          rotate: startRotation,
         },
-        (): Dynamic => value39(null),
+        (): Dynamic => setRotationAngleLabel(null),
       );
     },
-    value40: Dynamic = (0, reactHooksLatestCallback_2.useRef)(
+    isEditingRef: Dynamic = (0, reactHooksLatestCallback_2.useRef)(
       editing,
     );
-  value40.current = editing;
-  let callback3: Dynamic = (
-    input?: Dynamic,
-    options?: Dynamic,
-    context?: Dynamic,
-    value41?: Dynamic,
-    extra?: Dynamic,
+  isEditingRef.current = editing;
+  let beginResizeGesture: Dynamic = (
+    startEvent?: Dynamic,
+    source?: Dynamic,
+    computePatch?: Dynamic,
+    restorePatch?: Dynamic,
+    onEnd?: Dynamic,
   ): Dynamic =>
-    beginArtboardResize(input, {
-      src: options,
-      scale: value31.get().scale,
+    beginArtboardResize(startEvent, {
+      src: source,
+      scale: viewportStore.get().scale,
       onGesture: onGesture,
       armWindowGestureEnd: armWindowGestureEnd,
-      patchAt: context,
+      patchAt: computePatch,
       onChange: onChange,
-      restore: value41,
-      onEnd: extra,
-      sound: (): Dynamic => value40.current,
+      restore: restorePatch,
+      onEnd: onEnd,
+      sound: (): Dynamic => isEditingRef.current,
     });
   return (
     <div
-      ref={value15}
+      ref={containerRef}
       data-clip-failed={
-        value12 !== null && value12 === value13 ? "" : undefined
+        videoSrc !== null && videoSrc === failedVideoSrc ? "" : undefined
       }
       data-mega-chrome={"annotation"}
       data-mega-annotation={spec.id}
@@ -268,221 +268,221 @@ function CanvasShape({
       data-shape-kind={spec.kind}
       className={"pointer-events-none absolute"}
       style={{
-        left: value.x,
-        top: value.y,
-        width: value.w,
-        height: value.h,
-        ...value33,
+        left: shapeBounds.x,
+        top: shapeBounds.y,
+        width: shapeBounds.w,
+        height: shapeBounds.h,
+        ...rotationStyle,
       }}
       onDoubleClick={
-        value6 && value28 && onEditPoints && !value32
-          ? (input?: Dynamic): Dynamic => {
-              input.stopPropagation();
+        penSpec && isDirectlyEditable && onEditPoints && !rotationDegrees
+          ? (event?: Dynamic): Dynamic => {
+              event.stopPropagation();
               onEditPoints();
             }
           : undefined
       }
     >
-      {value5 && ((() => {
+      {boxSpec && ((() => {
           const _Component = "div";
           const _props = {
             "data-testid": "mega-shape-body-" + spec.id,
             className: joinClassNames(
               "absolute inset-0 box-border",
-              value28 && "pointer-events-auto cursor-grab",
+              isDirectlyEditable && "pointer-events-auto cursor-grab",
             ),
             style: {
               ...annotationFillDefaults(
-                value5.css,
-                value27,
-                value5.kind === "oval",
+                boxSpec.css,
+                shapeColor,
+                boxSpec.kind === "oval",
               ),
-              ...annotationCssStyle(value5.css),
-              ...(value5.kind === "oval"
+              ...annotationCssStyle(boxSpec.css),
+              ...(boxSpec.kind === "oval"
                 ? {
                     borderRadius: "50%",
                   }
                 : {}),
-              ...value36,
-              ...value29,
+              ...flipStyle,
+              ...commentPointerStyle,
             },
-            ...value30,
+            ...pressHandlers,
           } as const;
           const _key = annotationFillSignature(
-            value5.css,
-            value5.kind === "oval",
+            boxSpec.css,
+            boxSpec.kind === "oval",
           );
           return <_Component key={_key} {..._props} />;
         })())}
-      {value7 && value21 && (<AnnotationShapeBody
-          on={value7.crop !== undefined}
+      {imageSpec && shouldRenderVideo && (<AnnotationShapeBody
+          on={imageSpec.crop !== undefined}
           id={spec.id}
-          css={value7.css}
-          mirror={value36}
+          css={imageSpec.css}
+          mirror={flipStyle}
         >
           <video
-            ref={value22}
+            ref={videoRef}
             data-testid={
-              value7.crop !== undefined
+              imageSpec.crop !== undefined
                 ? undefined
                 : "mega-shape-body-" + spec.id
             }
             data-mega-picture={""}
             data-mega-video={""}
-            src={value12}
-            poster={value11 ?? undefined}
+            src={videoSrc}
+            poster={displayImageSrc ?? undefined}
             onLoadedMetadata={onPictureLoad}
             {...MediaVideoUploadAutoPlayLoopMutedConfig}
             autoPlay={!CanvasAnnotationShapeStyleMatches()}
             disablePictureInPicture={true}
             disableRemotePlayback={true}
-            aria-label={value7.alt}
+            aria-label={imageSpec.alt}
             draggable={false}
-            onError={(): Dynamic => value14(value12)}
+            onError={(): Dynamic => setFailedVideoSrc(videoSrc)}
             className={joinClassNames(
               "absolute inset-0 box-border block h-full w-full select-none",
-              value28
+              isDirectlyEditable
                 ? "pointer-events-auto cursor-grab"
                 : !editing && "pointer-events-auto cursor-pointer",
             )}
             style={{
-              ...(value7.crop !== undefined
-                ? imageCropCss(value7.crop)
+              ...(imageSpec.crop !== undefined
+                ? imageCropCss(imageSpec.crop)
                 : {
                     objectFit: "fill",
-                    ...annotationCssStyle(value7.css),
+                    ...annotationCssStyle(imageSpec.css),
                   }),
-              ...value29,
+              ...commentPointerStyle,
             }}
-            onDoubleClick={value28 ? onCropStart : undefined}
-            {...value30}
+            onDoubleClick={isDirectlyEditable ? onCropStart : undefined}
+            {...pressHandlers}
             onPointerDown={(event?: Dynamic): Dynamic => {
-              let value41: Dynamic =
+              let isPrimaryPress: Dynamic =
                 event.button === 0 &&
                 !event.shiftKey &&
                 !event.altKey &&
                 !event.metaKey &&
                 !event.ctrlKey;
               if (!editing) {
-                value41 &&
+                isPrimaryPress &&
                   watchPointerRelease(
                     event.nativeEvent,
-                    (): Dynamic => value23.current?.toggle(),
+                    (): Dynamic => playbackStoreRef.current?.toggle(),
                   );
                 return;
               }
-              value24.current =
-                value41 && !grouped
+              pressStartRef.current =
+                isPrimaryPress && !grouped
                   ? {
                       x: event.clientX,
                       y: event.clientY,
                       wasSelected: selected,
                     }
                   : null;
-              value30.onPointerDown?.(event);
+              pressHandlers.onPointerDown?.(event);
             }}
-            onClick={(input?: Dynamic): Dynamic => {
-              let current: Dynamic = value24.current;
-              value24.current = null;
+            onClick={(clickEvent?: Dynamic): Dynamic => {
+              let current: Dynamic = pressStartRef.current;
+              pressStartRef.current = null;
               !(
                 !current ||
-                !value28 ||
+                !isDirectlyEditable ||
                 !current.wasSelected ||
-                input.detail > 1 ||
+                clickEvent.detail > 1 ||
                 Math.hypot(
-                  input.clientX - current.x,
-                  input.clientY - current.y,
+                  clickEvent.clientX - current.x,
+                  clickEvent.clientY - current.y,
                 ) > 4
-              ) && value23.current?.toggle();
+              ) && playbackStoreRef.current?.toggle();
             }}
           />
         </AnnotationShapeBody>)}
-      {value7 && !value21 && value7.crop !== undefined && value11 !== null ? (<div
+      {imageSpec && !shouldRenderVideo && imageSpec.crop !== undefined && displayImageSrc !== null ? (<div
           data-testid={"mega-shape-body-" + spec.id}
           className={joinClassNames(
             "absolute inset-0 box-border overflow-hidden",
-            value28 && "pointer-events-auto cursor-grab",
+            isDirectlyEditable && "pointer-events-auto cursor-grab",
           )}
           style={{
-            ...annotationCssStyle(value7.css),
-            ...value36,
-            ...value29,
+            ...annotationCssStyle(imageSpec.css),
+            ...flipStyle,
+            ...commentPointerStyle,
           }}
-          onDoubleClick={value28 ? onCropStart : undefined}
-          {...value30}
+          onDoubleClick={isDirectlyEditable ? onCropStart : undefined}
+          {...pressHandlers}
         >
           <img
             data-mega-picture={""}
-            src={value11}
-            alt={value7.alt ?? ""}
+            src={displayImageSrc}
+            alt={imageSpec.alt ?? ""}
             draggable={false}
             onLoad={onPictureLoad}
-            onError={(): Dynamic => value9(value11)}
+            onError={(): Dynamic => setFailedImageSrc(displayImageSrc)}
             className={"block select-none"}
-            style={imageCropCss(value7.crop)}
+            style={imageCropCss(imageSpec.crop)}
           />
-        </div>) : (value7 &&
-        !value21 && (<img
+        </div>) : (imageSpec &&
+        !shouldRenderVideo && (<img
             data-testid={"mega-shape-body-" + spec.id}
-            data-mega-picture={value11 === null ? "placeholder" : ""}
-            src={value11 ?? blobPlaceholderImage}
-            alt={value7.alt ?? ""}
+            data-mega-picture={displayImageSrc === null ? "placeholder" : ""}
+            src={displayImageSrc ?? blobPlaceholderImage}
+            alt={imageSpec.alt ?? ""}
             draggable={false}
             onLoad={onPictureLoad}
             onError={(): Dynamic => {
-              value10 !== null && value9(value10);
+              imageSrc !== null && setFailedImageSrc(imageSrc);
             }}
             className={joinClassNames(
               "absolute inset-0 box-border block h-full w-full select-none",
-              value28 && "pointer-events-auto cursor-grab",
+              isDirectlyEditable && "pointer-events-auto cursor-grab",
             )}
             style={{
               objectFit: "fill",
               background:
-                value11 === null &&
-                value7.css?.["background-color"] === undefined
+                displayImageSrc === null &&
+                imageSpec.css?.["background-color"] === undefined
                   ? "#e8e6e1"
                   : undefined,
-              ...annotationCssStyle(value7.css),
-              ...value36,
-              ...value29,
+              ...annotationCssStyle(imageSpec.css),
+              ...flipStyle,
+              ...commentPointerStyle,
             }}
             onDoubleClick={
-              value28 && value11 !== null ? onCropStart : undefined
+              isDirectlyEditable && displayImageSrc !== null ? onCropStart : undefined
             }
-            {...value30}
+            {...pressHandlers}
           />))}
-      {value2 && (<svg
+      {lineSpec && (<svg
           data-testid={"mega-shape-svg-" + spec.id}
           className={"pointer-events-none absolute"}
           style={{
-            left: -CanvasAnnotationShapeStyleConstant_3,
-            top: -CanvasAnnotationShapeStyleConstant_3,
+            left: -lineSvgPadding,
+            top: -lineSvgPadding,
             overflow: "visible",
-            ...annotationEffectsCss(value2.css),
+            ...annotationEffectsCss(lineSpec.css),
           }}
-          width={value.w + 2 * CanvasAnnotationShapeStyleConstant_3}
-          height={value.h + 2 * CanvasAnnotationShapeStyleConstant_3}
+          width={shapeBounds.w + 2 * lineSvgPadding}
+          height={shapeBounds.h + 2 * lineSvgPadding}
         >
-          {value3 && (value3.start !== "none" || value3.end !== "none") && (<defs>
-              {["start", "end"].map((input?: Dynamic): Dynamic => {
-                let value41: Dynamic = value3[input];
-                return value41 === "none" ? null : (
+          {arrowHeads && (arrowHeads.start !== "none" || arrowHeads.end !== "none") && (<defs>
+              {["start", "end"].map((endName?: Dynamic): Dynamic => {
+                let headStyle: Dynamic = arrowHeads[endName];
+                return headStyle === "none" ? null : (
                   <marker
-                    key={input}
-                    id={callback(input)}
-                    orient={input === "start" ? "auto-start-reverse" : "auto"}
+                    key={endName}
+                    id={callback(endName)}
+                    orient={endName === "start" ? "auto-start-reverse" : "auto"}
                     markerWidth={"5"}
                     markerHeight={"5"}
-                    refX={SvgArrowsFilledOpenConfig[value41].refX}
-                    refY={SvgArrowsConstant_2}
+                    refX={SvgArrowsFilledOpenConfig[headStyle].refX}
+                    refY={arrowMarkerRefY}
                     overflow={"visible"}
                   >
                     <path
-                      d={SvgArrowsFilledOpenConfig[value41].d}
+                      d={SvgArrowsFilledOpenConfig[headStyle].d}
                       stroke={"none"}
                       style={{
-                        fill: value2.css?.stroke ?? value27,
+                        fill: lineSpec.css?.stroke ?? shapeColor,
                       }}
                     />
                   </marker>
@@ -491,38 +491,38 @@ function CanvasShape({
             </defs>)}
           <line
             x1={
-              (value4?.sx ?? value2.x) -
-              value.x +
-              CanvasAnnotationShapeStyleConstant_3
+              (shortenedLine?.sx ?? lineSpec.x) -
+              shapeBounds.x +
+              lineSvgPadding
             }
             y1={
-              (value4?.sy ?? value2.y) -
-              value.y +
-              CanvasAnnotationShapeStyleConstant_3
+              (shortenedLine?.sy ?? lineSpec.y) -
+              shapeBounds.y +
+              lineSvgPadding
             }
             x2={
-              (value4?.ex ?? value2.x2) -
-              value.x +
-              CanvasAnnotationShapeStyleConstant_3
+              (shortenedLine?.ex ?? lineSpec.x2) -
+              shapeBounds.x +
+              lineSvgPadding
             }
             y2={
-              (value4?.ey ?? value2.y2) -
-              value.y +
-              CanvasAnnotationShapeStyleConstant_3
+              (shortenedLine?.ey ?? lineSpec.y2) -
+              shapeBounds.y +
+              lineSvgPadding
             }
-            stroke={value2.css?.stroke ?? value27}
+            stroke={lineSpec.css?.stroke ?? shapeColor}
             strokeWidth={annotationStrokeWidth(
-              value2.css,
-              CanvasAnnotationShapeStyleConstant_2,
+              lineSpec.css,
+              lineDefaultStrokeWidth,
             )}
             strokeLinecap={"round"}
             markerStart={
-              value3 && value3.start !== "none"
+              arrowHeads && arrowHeads.start !== "none"
                 ? "url(#" + callback("start") + ")"
                 : undefined
             }
             markerEnd={
-              value3 && value3.end !== "none"
+              arrowHeads && arrowHeads.end !== "none"
                 ? "url(#" + callback("end") + ")"
                 : undefined
             }
@@ -530,56 +530,56 @@ function CanvasShape({
           <line
             data-testid={"mega-shape-body-" + spec.id}
             x1={
-              value2.x -
-              value.x +
-              CanvasAnnotationShapeStyleConstant_3
+              lineSpec.x -
+              shapeBounds.x +
+              lineSvgPadding
             }
             y1={
-              value2.y -
-              value.y +
-              CanvasAnnotationShapeStyleConstant_3
+              lineSpec.y -
+              shapeBounds.y +
+              lineSvgPadding
             }
             x2={
-              value2.x2 -
-              value.x +
-              CanvasAnnotationShapeStyleConstant_3
+              lineSpec.x2 -
+              shapeBounds.x +
+              lineSvgPadding
             }
             y2={
-              value2.y2 -
-              value.y +
-              CanvasAnnotationShapeStyleConstant_3
+              lineSpec.y2 -
+              shapeBounds.y +
+              lineSvgPadding
             }
             stroke={"transparent"}
             strokeWidth={Math.max(
-              CanvasAnnotationShapeStyleConstant_2 + 8,
+              lineDefaultStrokeWidth + 8,
               16 / scale,
             )}
             strokeLinecap={"round"}
-            className={joinClassNames(value28 && "cursor-grab")}
+            className={joinClassNames(isDirectlyEditable && "cursor-grab")}
             style={{
-              pointerEvents: value28 || commenting ? "stroke" : "none",
+              pointerEvents: isDirectlyEditable || commenting ? "stroke" : "none",
             }}
-            {...value30}
+            {...pressHandlers}
           />
         </svg>)}
-      {value6 && value26 && (<svg
+      {penSpec && penViewBox && (<svg
           data-testid={"mega-shape-svg-" + spec.id}
           className={"pointer-events-none absolute inset-0"}
           style={{
             overflow: "visible",
-            ...annotationEffectsCss(value6.css),
+            ...annotationEffectsCss(penSpec.css),
           }}
-          width={value.w}
-          height={value.h}
-          viewBox={"0 0 " + String(value26.w) + " " + String(value26.h)}
+          width={shapeBounds.w}
+          height={shapeBounds.h}
+          viewBox={"0 0 " + String(penViewBox.w) + " " + String(penViewBox.h)}
           preserveAspectRatio={"none"}
         >
           <path
-            d={value6.d}
+            d={penSpec.d}
             fill={"none"}
-            stroke={value6.css?.stroke ?? value27}
+            stroke={penSpec.css?.stroke ?? shapeColor}
             strokeWidth={annotationStrokeWidth(
-              value6.css,
+              penSpec.css,
               CanvasAnnotationShapeStyleConstant,
             )}
             strokeLinecap={"round"}
@@ -588,206 +588,206 @@ function CanvasShape({
           />
           <path
             data-testid={"mega-shape-body-" + spec.id}
-            d={value6.d}
+            d={penSpec.d}
             fill={"none"}
             stroke={"transparent"}
             strokeWidth={Math.max(12, 16 / scale)}
             strokeLinecap={"round"}
             strokeLinejoin={"round"}
             vectorEffect={"non-scaling-stroke"}
-            className={joinClassNames(value28 && "cursor-grab")}
+            className={joinClassNames(isDirectlyEditable && "cursor-grab")}
             style={{
-              pointerEvents: value28 || commenting ? "stroke" : "none",
+              pointerEvents: isDirectlyEditable || commenting ? "stroke" : "none",
             }}
-            {...value30}
+            {...pressHandlers}
           />
         </svg>)}
-      {value28 && selected && (<ViewportScale>
-          {(input?: Dynamic): Dynamic => (
+      {isDirectlyEditable && selected && (<ViewportScale>
+          {(viewportScale?: Dynamic): Dynamic => (
             <jsxCanvasAnnotationShapeStyle.Fragment>
-              {value37 && value6 && value26 && (<div
+              {isPenVectorEditing && penSpec && penViewBox && (<div
                   data-mega-chrome={"annotation-resize"}
                   className={"pointer-events-none absolute left-0 top-0"}
                   style={{
                     ...PickerRuntimeScriptTAppAccentConfig,
-                    transform: `scale(${String(1 / input)})`,
+                    transform: `scale(${String(1 / viewportScale)})`,
                     transformOrigin: "0 0",
                   }}
                 >
                   <AnnotationPenEditor
-                    spec={value6}
-                    ext={value26}
-                    scale={input}
+                    spec={penSpec}
+                    ext={penViewBox}
+                    scale={viewportScale}
                     onChange={onChange}
                     onGesture={onGesture}
                     armWindowGestureEnd={armWindowGestureEnd}
                   />
                 </div>)}
-              {(value5 ?? (value37 ? null : value6) ?? value7) ||
+              {(boxSpec ?? (isPenVectorEditing ? null : penSpec) ?? imageSpec) ||
                 grouped && (<div
                   data-mega-chrome={"annotation-resize"}
                   data-testid={"mega-annotation-resize-" + spec.id}
                   data-grouped={grouped ? "" : undefined}
                   className={"pointer-events-none absolute inset-0"}
-                  style={value34}
+                  style={counterRotationStyle}
                 >
                   <SelectionRing
                     frame={{
                       x: 0,
                       y: 0,
-                      w: value.w,
-                      h: value.h,
+                      w: shapeBounds.w,
+                      h: shapeBounds.h,
                     }}
-                    scale={input}
-                    rotation={value35}
+                    scale={viewportScale}
+                    rotation={rotationRadians}
                     state={grouped ? "member" : "selected"}
                     grips={grouped ? "none" : "corners"}
-                    edgeStrips={!value7}
+                    edgeStrips={!imageSpec}
                     onResizeStart={(
-                      input2?: Dynamic,
-                      options?: Dynamic,
+                      handle?: Dynamic,
+                      startEvent?: Dynamic,
                     ): Dynamic => {
-                      let value41: Dynamic = value5 ?? value6 ?? value7,
+                      let targetSpec: Dynamic = boxSpec ?? penSpec ?? imageSpec,
                         state: Dynamic = {
-                          x: value41.x,
-                          y: value41.y,
-                          w: value41.w,
-                          h: value41.h,
+                          x: targetSpec.x,
+                          y: targetSpec.y,
+                          w: targetSpec.w,
+                          h: targetSpec.h,
                         },
-                        value42: Dynamic = value7
-                          ? PlatformFileContentConstant_20
-                          : PlatformFileContentConstant_19,
-                        value43: Dynamic = value32
+                        minSize: Dynamic = imageSpec
+                          ? minImageSize
+                          : minShapeSize,
+                        snapConfig: Dynamic = rotationDegrees
                           ? null
                           : (snapLines?.() ?? null);
-                      callback3(
-                        options,
+                      beginResizeGesture(
+                        startEvent,
                         "ann-resize",
                         (
-                          input3?: Dynamic,
-                          options2?: Dynamic,
-                          context?: Dynamic,
+                          deltaX?: Dynamic,
+                          deltaY?: Dynamic,
+                          moveEvent?: Dynamic,
                         ): Dynamic => {
-                          let value44: Dynamic =
-                              value43 && !(context.metaKey || context.ctrlKey)
+                          let snapped: Dynamic =
+                              snapConfig && !(moveEvent.metaKey || moveEvent.ctrlKey)
                                 ? snapResize(
                                     state,
-                                    input2,
-                                    input3,
-                                    options2,
-                                    value43.lines,
-                                    value43.threshold,
+                                    handle,
+                                    deltaX,
+                                    deltaY,
+                                    snapConfig.lines,
+                                    snapConfig.threshold,
                                   )
                                 : {
-                                    dx: input3,
-                                    dy: options2,
+                                    dx: deltaX,
+                                    dy: deltaY,
                                     guides: [],
                                   },
-                            value45: Dynamic = CanvasShapeX(
+                            newFrame: Dynamic = CanvasShapeX(
                               resizeRotatedRect(
                                 state,
-                                value32,
-                                input2,
-                                value44.dx,
-                                value44.dy,
+                                rotationDegrees,
+                                handle,
+                                snapped.dx,
+                                snapped.dy,
                                 {
-                                  w: value42,
-                                  h: value42,
+                                  w: minSize,
+                                  h: minSize,
                                 },
                                 {
-                                  w: PlatformFileContentLimit_6,
-                                  h: PlatformFileContentLimit_6,
+                                  w: maxShapeSize,
+                                  h: maxShapeSize,
                                 },
-                                !!value7 ||
-                                  (context.shiftKey &&
-                                    input2.x !== null &&
-                                    input2.y !== null),
+                                !!imageSpec ||
+                                  (moveEvent.shiftKey &&
+                                    handle.x !== null &&
+                                    handle.y !== null),
                               ),
                             ),
-                            value46: Dynamic = activeResizeGuides(
-                              value45,
-                              input2,
-                              value44.guides,
+                            resizeGuides: Dynamic = activeResizeGuides(
+                              newFrame,
+                              handle,
+                              snapped.guides,
                             );
-                          onSnapGuides?.(value46.length > 0 ? value46 : null);
-                          return value45;
+                          onSnapGuides?.(resizeGuides.length > 0 ? resizeGuides : null);
+                          return newFrame;
                         },
                         state,
                         (): Dynamic => onSnapGuides?.(null),
                       );
                     }}
-                    onRotateStart={grouped || value2 ? undefined : callback2}
+                    onRotateStart={grouped || lineSpec ? undefined : handleRotateStart}
                     angleLabel={
-                      value38 !== null ? String(value38) + "\xB0" : undefined
+                      rotationAngleLabel !== null ? String(rotationAngleLabel) + "\xB0" : undefined
                     }
                   />
                 </div>)}
-              {value2 && !grouped && (<SelectionPoints
+              {lineSpec && !grouped && (<SelectionPoints
                   data-mega-chrome={"annotation-resize"}
                   data-testid={"mega-shape-ends-" + spec.id}
                   points={[
                     {
-                      x: value2.x - value.x,
-                      y: value2.y - value.y,
+                      x: lineSpec.x - shapeBounds.x,
+                      y: lineSpec.y - shapeBounds.y,
                     },
                     {
-                      x: value2.x2 - value.x,
-                      y: value2.y2 - value.y,
+                      x: lineSpec.x2 - shapeBounds.x,
+                      y: lineSpec.y2 - shapeBounds.y,
                     },
                   ]}
-                  scale={input}
+                  scale={viewportScale}
                   shape={"square"}
                   cursor={"crosshair"}
                   onPointDragStart={(
-                    input2?: Dynamic,
-                    options?: Dynamic,
+                    endIndex?: Dynamic,
+                    startEvent?: Dynamic,
                   ): Dynamic => {
-                    let value41: Dynamic = input2 === 0,
-                      [value42, value43]: Dynamic = value41
-                        ? [value2.x, value2.y]
-                        : [value2.x2, value2.y2],
-                      value44: Dynamic = value41
+                    let isStartPoint: Dynamic = endIndex === 0,
+                      [pointStartX, pointStartY]: Dynamic = isStartPoint
+                        ? [lineSpec.x, lineSpec.y]
+                        : [lineSpec.x2, lineSpec.y2],
+                      oppositePoint: Dynamic = isStartPoint
                         ? {
-                            x: value2.x2,
-                            y: value2.y2,
+                            x: lineSpec.x2,
+                            y: lineSpec.y2,
                           }
                         : {
-                            x: value2.x,
-                            y: value2.y,
+                            x: lineSpec.x,
+                            y: lineSpec.y,
                           };
-                    callback3(
-                      options,
+                    beginResizeGesture(
+                      startEvent,
                       "ann-resize",
                       (
-                        input3?: Dynamic,
-                        options2?: Dynamic,
-                        context?: Dynamic,
+                        deltaX?: Dynamic,
+                        deltaY?: Dynamic,
+                        moveEvent?: Dynamic,
                       ): Dynamic => {
                         let state: Dynamic = {
-                            x: value42 + input3,
-                            y: value43 + options2,
+                            x: pointStartX + deltaX,
+                            y: pointStartY + deltaY,
                           },
-                          value45: Dynamic = context.shiftKey
-                            ? constrainLineAngle(value44, state)
+                          nextPoint: Dynamic = moveEvent.shiftKey
+                            ? constrainLineAngle(oppositePoint, state)
                             : state;
-                        return value41
+                        return isStartPoint
                           ? {
-                              x: Math.round(value45.x),
-                              y: Math.round(value45.y),
+                              x: Math.round(nextPoint.x),
+                              y: Math.round(nextPoint.y),
                             }
                           : {
-                              x2: Math.round(value45.x),
-                              y2: Math.round(value45.y),
+                              x2: Math.round(nextPoint.x),
+                              y2: Math.round(nextPoint.y),
                             };
                       },
-                      value41
+                      isStartPoint
                         ? {
-                            x: value42,
-                            y: value43,
+                            x: pointStartX,
+                            y: pointStartY,
                           }
                         : {
-                            x2: value42,
-                            y2: value43,
+                            x2: pointStartX,
+                            y2: pointStartY,
                           },
                     );
                   }}
@@ -808,11 +808,11 @@ export {
 };
 export function installCanvasShape(): () => void {
   return () => {
-    CanvasShapeX = (input?: Dynamic): Dynamic => ({
-      x: Math.round(input.x),
-      y: Math.round(input.y),
-      w: Math.round(input.w),
-      h: Math.round(input.h),
+    CanvasShapeX = (rect?: Dynamic): Dynamic => ({
+      x: Math.round(rect.x),
+      y: Math.round(rect.y),
+      w: Math.round(rect.w),
+      h: Math.round(rect.h),
     });
     reactCanvasShape = toModuleNamespace(
       load_react(),

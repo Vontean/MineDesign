@@ -16,41 +16,41 @@ var CanvasWorkingLabelAnimationHandler_2: Dynamic;
 var CanvasWorkingLabelAnimationReduce: Dynamic;
 var jsxCanvasWorkingLabelAnimation: Dynamic;
 var CanvasWorkingLabelAnimationLabel: Dynamic;
-var CanvasWorkingLabelAnimationConstant: Dynamic;
-var CanvasWorkingLabelAnimationConstant_2: Dynamic;
-var CanvasWorkingLabelAnimationConstant_3: Dynamic;
-var CanvasWorkingLabelAnimationConstant_4: Dynamic;
-var CanvasWorkingLabelAnimationConstant_5: Dynamic;
-var CanvasWorkingLabelAnimationConstant_6: Dynamic;
-var CanvasWorkingLabelAnimationConstant_7: Dynamic;
-function createSeededRandom(input?: Dynamic): Dynamic {
-  let value: Dynamic = input >>> 0;
+var labelBoxWidth: Dynamic;
+var labelBoxHeight: Dynamic;
+var edgePadding: Dynamic;
+var springStiffness: Dynamic;
+var springDamping: Dynamic;
+var wanderDelayMin: Dynamic;
+var wanderDelayJitter: Dynamic;
+function createSeededRandom(seed?: Dynamic): Dynamic {
+  let state: Dynamic = seed >>> 0;
   return (): Dynamic => {
-    value = (value + 1831565813) >>> 0;
-    let value2: Dynamic = Math.imul(value ^ (value >>> 15), value | 1);
-    value2 ^= value2 + Math.imul(value2 ^ (value2 >>> 7), value2 | 61);
-    return ((value2 ^ (value2 >>> 14)) >>> 0) / 4294967296;
+    state = (state + 1831565813) >>> 0;
+    let mixed: Dynamic = Math.imul(state ^ (state >>> 15), state | 1);
+    mixed ^= mixed + Math.imul(mixed ^ (mixed >>> 7), mixed | 61);
+    return ((mixed ^ (mixed >>> 14)) >>> 0) / 4294967296;
   };
 }
 function workingLabelPosition(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  origin?: Dynamic,
+  strokes?: Dynamic,
+  time?: Dynamic,
 ): Dynamic {
-  let x: Dynamic = input.x,
-    y: Dynamic = input.y;
-  for (let value of options as Dynamic) {
-    let value2: Dynamic = (context - value.t0) / value.T;
-    if (value2 <= 0) continue;
-    let value3: Dynamic = CanvasWorkingLabelAnimationPow(value2);
-    x += value.dx * value3;
-    y += value.dy * value3;
-    let value4: Dynamic = Math.hypot(value.dx, value.dy);
-    if (value4 > 0 && value.bend !== 0 && value2 < 1) {
-      let value5: Dynamic =
-        (value.bend * CanvasWorkingLabelAnimationHandler_2(value2)) / value4;
-      x += -value.dy * value5;
-      y += value.dx * value5;
+  let x: Dynamic = origin.x,
+    y: Dynamic = origin.y;
+  for (let stroke of strokes as Dynamic) {
+    let progress: Dynamic = (time - stroke.t0) / stroke.T;
+    if (progress <= 0) continue;
+    let eased: Dynamic = CanvasWorkingLabelAnimationPow(progress);
+    x += stroke.dx * eased;
+    y += stroke.dy * eased;
+    let length: Dynamic = Math.hypot(stroke.dx, stroke.dy);
+    if (length > 0 && stroke.bend !== 0 && progress < 1) {
+      let bendScale: Dynamic =
+        (stroke.bend * CanvasWorkingLabelAnimationHandler_2(progress)) / length;
+      x += -stroke.dy * bendScale;
+      y += stroke.dx * bendScale;
     }
   }
   return {
@@ -59,239 +59,239 @@ function workingLabelPosition(
   };
 }
 function workingLabelTravel(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
-  extra?: Dynamic,
+  random?: Dynamic,
+  fromPoint?: Dynamic,
+  toPoint?: Dynamic,
+  startTime?: Dynamic,
+  bendSign?: Dynamic,
 ): Dynamic {
-  let value2: Dynamic = context.x - options.x,
-    value3: Dynamic = context.y - options.y,
-    value4: Dynamic = Math.hypot(value2, value3),
-    value5: Dynamic =
-      input() < 0.75 ? 0.05 + 0.08 * input() : -(0.05 + 0.06 * input()),
-    value6: Dynamic = (input() - 0.5) * 0.1,
+  let dx: Dynamic = toPoint.x - fromPoint.x,
+    dy: Dynamic = toPoint.y - fromPoint.y,
+    distance: Dynamic = Math.hypot(dx, dy),
+    stretch: Dynamic =
+      random() < 0.75 ? 0.05 + 0.08 * random() : -(0.05 + 0.06 * random()),
+    skew: Dynamic = (random() - 0.5) * 0.1,
     state: Dynamic = {
-      t0: value,
-      T: 0.9 + 0.25 * input() + Math.min(0.2, value4 / 600),
-      dx: value2 * (1 + value5) - value3 * value6,
-      dy: value3 * (1 + value5) + value2 * value6,
-      bend: extra * (0.1 + 0.1 * input()) * value4,
+      t0: startTime,
+      T: 0.9 + 0.25 * random() + Math.min(0.2, distance / 600),
+      dx: dx * (1 + stretch) - dy * skew,
+      dy: dy * (1 + stretch) + dx * skew,
+      bend: bendSign * (0.1 + 0.1 * random()) * distance,
     };
   return [
     state,
     {
-      t0: value + (0.7 + 0.08 * input()) * state.T,
-      T: 0.5 + 0.2 * input(),
-      dx: value2 - state.dx,
-      dy: value3 - state.dy,
+      t0: startTime + (0.7 + 0.08 * random()) * state.T,
+      T: 0.5 + 0.2 * random(),
+      dx: dx - state.dx,
+      dy: dy - state.dy,
       bend: 0,
     },
   ];
 }
 function workingLabelSweep(
-  input: Dynamic,
+  random: Dynamic,
   { rx: rx, ry: ry }: Dynamic,
 ): Dynamic {
-  let value: Dynamic = input() < 0.65 ? 1 : -1,
-    state: Dynamic = {
-      x: (input() - 0.5) * 0.3 * rx,
-      y: (input() - 0.3) * 0.4 * ry,
+  let direction: Dynamic = random() < 0.65 ? 1 : -1,
+    restPoint: Dynamic = {
+      x: (random() - 0.5) * 0.3 * rx,
+      y: (random() - 0.3) * 0.4 * ry,
     },
-    value2: Dynamic = input() < 0.7 ? value : -value,
-    value3: Dynamic = value2 === value ? 0 : 0.2,
-    state2: Dynamic = {
-      x: value * (0.72 + 0.2 * input()) * rx,
-      y: (0.65 - value3 + 0.3 * input()) * ry,
+    bendSign: Dynamic = random() < 0.7 ? direction : -direction,
+    yOffset: Dynamic = bendSign === direction ? 0 : 0.2,
+    startPoint: Dynamic = {
+      x: direction * (0.72 + 0.2 * random()) * rx,
+      y: (0.65 - yOffset + 0.3 * random()) * ry,
     };
-  if (input() < 0.6)
+  if (random() < 0.6)
     return {
-      from: state2,
-      strokes: workingLabelTravel(input, state2, state, 0, value2),
-      rest: state,
+      from: startPoint,
+      strokes: workingLabelTravel(random, startPoint, restPoint, 0, bendSign),
+      rest: restPoint,
     };
-  let state3: Dynamic = {
-      x: state.x + value * (0.1 + 0.3 * input()) * rx,
-      y: state.y - (0.4 + 0.4 * input()) * ry,
+  let reversePoint: Dynamic = {
+      x: restPoint.x + direction * (0.1 + 0.3 * random()) * rx,
+      y: restPoint.y - (0.4 + 0.4 * random()) * ry,
     },
-    state4: Dynamic = {
+    firstStroke: Dynamic = {
       t0: 0,
-      T: 0.85 + 0.2 * input(),
-      dx: state3.x - state2.x,
-      dy: state3.y - state2.y,
+      T: 0.85 + 0.2 * random(),
+      dx: reversePoint.x - startPoint.x,
+      dy: reversePoint.y - startPoint.y,
       bend:
-        value2 * 0.12 * Math.hypot(state3.x - state2.x, state3.y - state2.y),
+        bendSign * 0.12 * Math.hypot(reversePoint.x - startPoint.x, reversePoint.y - startPoint.y),
     };
   return {
-    from: state2,
+    from: startPoint,
     strokes: [
-      state4,
+      firstStroke,
       ...workingLabelTravel(
-        input,
-        state3,
-        state,
-        (0.5 + 0.1 * input()) * state4.T,
-        -value2,
+        random,
+        reversePoint,
+        restPoint,
+        (0.5 + 0.1 * random()) * firstStroke.T,
+        -bendSign,
       ),
     ],
-    rest: state,
+    rest: restPoint,
   };
 }
 function workingLabelWander(
-  input: Dynamic,
-  options: Dynamic,
+  random: Dynamic,
+  fromPoint: Dynamic,
   { rx: rx, ry: ry }: Dynamic,
-  value?: Dynamic,
+  startTime?: Dynamic,
 ): Dynamic {
-  let callback: Dynamic = (input2?: Dynamic, options2?: Dynamic): Dynamic =>
-      Math.min(options2, Math.max(-options2, input2)),
-    value2: Dynamic = options,
-    value3: Dynamic = -1;
-  for (let index: Dynamic = 0; index < 8 && value3 < 30; index++) {
-    let value4: Dynamic = input() * 2 * Math.PI,
-      value5: Dynamic = 30 + 50 * input(),
-      state: Dynamic = {
-        x: callback(options.x + value5 * Math.cos(value4), 0.62 * rx),
-        y: callback(options.y + 0.6 * value5 * Math.sin(value4), 0.5 * ry),
+  let clamp: Dynamic = (amount?: Dynamic, limit?: Dynamic): Dynamic =>
+      Math.min(limit, Math.max(-limit, amount)),
+    farthestPoint: Dynamic = fromPoint,
+    farthestDistance: Dynamic = -1;
+  for (let index: Dynamic = 0; index < 8 && farthestDistance < 30; index++) {
+    let angle: Dynamic = random() * 2 * Math.PI,
+      radius: Dynamic = 30 + 50 * random(),
+      candidate: Dynamic = {
+        x: clamp(fromPoint.x + radius * Math.cos(angle), 0.62 * rx),
+        y: clamp(fromPoint.y + 0.6 * radius * Math.sin(angle), 0.5 * ry),
       },
-      value6: Dynamic = Math.hypot(state.x - options.x, state.y - options.y);
-    value6 > value3 && ((value3 = value6), (value2 = state));
+      candidateDistance: Dynamic = Math.hypot(candidate.x - fromPoint.x, candidate.y - fromPoint.y);
+    candidateDistance > farthestDistance && ((farthestDistance = candidateDistance), (farthestPoint = candidate));
   }
   return {
     strokes: workingLabelTravel(
-      input,
-      options,
-      value2,
-      value,
-      input() < 0.5 ? 1 : -1,
+      random,
+      fromPoint,
+      farthestPoint,
+      startTime,
+      random() < 0.5 ? 1 : -1,
     ),
-    rest: value2,
+    rest: farthestPoint,
   };
 }
 function animateWorkingLabel(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
+  labelElement?: Dynamic,
+  cursorElement?: Dynamic,
+  tagElement?: Dynamic,
+  prefersReducedMotion?: Dynamic,
 ): Dynamic {
-  let value2: Dynamic = value || typeof requestAnimationFrame != "function",
-    clientWidth: Dynamic = input.clientWidth,
-    clientHeight: Dynamic = input.clientHeight,
-    callback: Dynamic = (): Dynamic => ({
+  let isStatic: Dynamic = prefersReducedMotion || typeof requestAnimationFrame != "function",
+    clientWidth: Dynamic = labelElement.clientWidth,
+    clientHeight: Dynamic = labelElement.clientHeight,
+    getRadii: Dynamic = (): Dynamic => ({
       rx: Math.max(
         0,
         (clientWidth -
-          CanvasWorkingLabelAnimationConstant -
-          2 * CanvasWorkingLabelAnimationConstant_3) /
+          labelBoxWidth -
+          2 * edgePadding) /
           2,
       ),
       ry: Math.max(
         0,
         (clientHeight -
-          CanvasWorkingLabelAnimationConstant_2 -
-          2 * CanvasWorkingLabelAnimationConstant_3) /
+          labelBoxHeight -
+          2 * edgePadding) /
           2,
       ),
     }),
-    value3: Dynamic = createSeededRandom(Math.random() * 4294967296),
-    value4: Dynamic = workingLabelSweep(value3, callback()),
-    from: Dynamic = value4.from,
-    strokes: Dynamic = value4.strokes,
-    NaN2: Dynamic = Number.NaN,
-    index: Dynamic = 0,
-    index2: Dynamic = 0,
-    index3: Dynamic = 0,
-    count: Dynamic = 0.18,
-    value5: Dynamic = -1,
-    index4: Dynamic = 0,
-    value6: Dynamic,
-    callback2: Dynamic = (input2?: Dynamic): Dynamic => {
-      let value8: Dynamic =
-        value5 < 0 ? 0 : Math.min(0.05, Math.max(0, (input2 - value5) / 1e3));
-      value5 = input2;
-      count += value8;
-      let { rx: value9, ry: value10 }: Dynamic = callback(),
-        value11: Dynamic = value2
-          ? value4.rest
-          : workingLabelPosition(from, strokes, count),
-        value12: Dynamic =
-          CanvasWorkingLabelAnimationConstant_3 +
-          value9 +
-          Math.min(value9, Math.max(-value9, value11.x)),
-        value13: Dynamic =
-          CanvasWorkingLabelAnimationConstant_3 +
-          value10 +
-          Math.min(value10, Math.max(-value10, value11.y));
-      (value2 || Number.isNaN(NaN2)) && ((NaN2 = value12), (index = value13));
-      for (let value15: Dynamic = value8; value15 > 0; value15 -= 0.008) {
-        let value16: Dynamic = Math.min(0.008, value15);
-        index2 +=
-          (CanvasWorkingLabelAnimationConstant_4 * (value12 - NaN2) -
-            CanvasWorkingLabelAnimationConstant_5 * index2) *
-          value16;
-        index3 +=
-          (CanvasWorkingLabelAnimationConstant_4 * (value13 - index) -
-            CanvasWorkingLabelAnimationConstant_5 * index3) *
-          value16;
-        NaN2 += index2 * value16;
-        index += index3 * value16;
+    random: Dynamic = createSeededRandom(Math.random() * 4294967296),
+    sweep: Dynamic = workingLabelSweep(random, getRadii()),
+    from: Dynamic = sweep.from,
+    strokes: Dynamic = sweep.strokes,
+    tagX: Dynamic = Number.NaN,
+    tagY: Dynamic = 0,
+    tagVelocityX: Dynamic = 0,
+    tagVelocityY: Dynamic = 0,
+    elapsed: Dynamic = 0.18,
+    lastTimestamp: Dynamic = -1,
+    frameHandle: Dynamic = 0,
+    idleTimer: Dynamic,
+    tick: Dynamic = (timestamp?: Dynamic): Dynamic => {
+      let deltaTime: Dynamic =
+        lastTimestamp < 0 ? 0 : Math.min(0.05, Math.max(0, (timestamp - lastTimestamp) / 1e3));
+      lastTimestamp = timestamp;
+      elapsed += deltaTime;
+      let { rx: radiusX, ry: radiusY }: Dynamic = getRadii(),
+        targetOffset: Dynamic = isStatic
+          ? sweep.rest
+          : workingLabelPosition(from, strokes, elapsed),
+        cursorX: Dynamic =
+          edgePadding +
+          radiusX +
+          Math.min(radiusX, Math.max(-radiusX, targetOffset.x)),
+        cursorY: Dynamic =
+          edgePadding +
+          radiusY +
+          Math.min(radiusY, Math.max(-radiusY, targetOffset.y));
+      (isStatic || Number.isNaN(tagX)) && ((tagX = cursorX), (tagY = cursorY));
+      for (let remaining: Dynamic = deltaTime; remaining > 0; remaining -= 0.008) {
+        let stepTime: Dynamic = Math.min(0.008, remaining);
+        tagVelocityX +=
+          (springStiffness * (cursorX - tagX) -
+            springDamping * tagVelocityX) *
+          stepTime;
+        tagVelocityY +=
+          (springStiffness * (cursorY - tagY) -
+            springDamping * tagVelocityY) *
+          stepTime;
+        tagX += tagVelocityX * stepTime;
+        tagY += tagVelocityY * stepTime;
       }
-      let value14: Dynamic =
-        !value2 &&
-        (count < CanvasWorkingLabelAnimationReduce(strokes) ||
-          Math.abs(value12 - NaN2) + Math.abs(value13 - index) > 0.05 ||
-          Math.abs(index2) + Math.abs(index3) > 1);
-      value14 || ((NaN2 = value12), (index = value13), (index2 = index3 = 0));
-      options.style.transform =
+      let isMoving: Dynamic =
+        !isStatic &&
+        (elapsed < CanvasWorkingLabelAnimationReduce(strokes) ||
+          Math.abs(cursorX - tagX) + Math.abs(cursorY - tagY) > 0.05 ||
+          Math.abs(tagVelocityX) + Math.abs(tagVelocityY) > 1);
+      isMoving || ((tagX = cursorX), (tagY = cursorY), (tagVelocityX = tagVelocityY = 0));
+      cursorElement.style.transform =
         "translate(" +
-        value12.toFixed(2) +
+        cursorX.toFixed(2) +
         "px," +
-        value13.toFixed(2) +
+        cursorY.toFixed(2) +
         "px)";
-      context.style.transform =
-        "translate(" + NaN2.toFixed(2) + "px," + index.toFixed(2) + "px)";
-      return value14;
+      tagElement.style.transform =
+        "translate(" + tagX.toFixed(2) + "px," + tagY.toFixed(2) + "px)";
+      return isMoving;
     },
-    callback3: Dynamic = (input2?: Dynamic): Dynamic => {
-      index4 = callback2(input2) ? requestAnimationFrame(callback3) : 0;
-      index4 === 0 && callback5();
+    handleFrame: Dynamic = (timestamp?: Dynamic): Dynamic => {
+      frameHandle = tick(timestamp) ? requestAnimationFrame(handleFrame) : 0;
+      frameHandle === 0 && scheduleWander();
     },
-    callback4: Dynamic = (): Dynamic => {
-      value5 = -1;
-      index4 = requestAnimationFrame(callback3);
+    startFrames: Dynamic = (): Dynamic => {
+      lastTimestamp = -1;
+      frameHandle = requestAnimationFrame(handleFrame);
     },
-    callback5: Dynamic = (): Dynamic => {
-      value6 = setTimeout(
+    scheduleWander: Dynamic = (): Dynamic => {
+      idleTimer = setTimeout(
         (): Dynamic => {
-          from = workingLabelPosition(from, strokes, count);
+          from = workingLabelPosition(from, strokes, elapsed);
           strokes = workingLabelWander(
-            value3,
+            random,
             from,
-            callback(),
-            count,
+            getRadii(),
+            elapsed,
           ).strokes;
-          callback4();
+          startFrames();
         },
-        (CanvasWorkingLabelAnimationConstant_6 +
-          CanvasWorkingLabelAnimationConstant_7 * value3()) *
+        (wanderDelayMin +
+          wanderDelayJitter * random()) *
           1e3,
       );
     },
-    value7: Dynamic =
+    resizeObserver: Dynamic =
       typeof ResizeObserver == "function"
         ? new ResizeObserver((): Dynamic => {
-            clientWidth = input.clientWidth;
-            clientHeight = input.clientHeight;
-            index4 === 0 && ((NaN2 = Number.NaN), callback2(value5));
+            clientWidth = labelElement.clientWidth;
+            clientHeight = labelElement.clientHeight;
+            frameHandle === 0 && ((tagX = Number.NaN), tick(lastTimestamp));
           })
         : null;
-  value7?.observe(input);
-  callback2(typeof performance == "object" ? performance.now() : 0);
-  value2 || callback4();
+  resizeObserver?.observe(labelElement);
+  tick(typeof performance == "object" ? performance.now() : 0);
+  isStatic || startFrames();
   return (): Dynamic => {
-    index4 !== 0 && cancelAnimationFrame(index4);
-    clearTimeout(value6);
-    value7?.disconnect();
+    frameHandle !== 0 && cancelAnimationFrame(frameHandle);
+    clearTimeout(idleTimer);
+    resizeObserver?.disconnect();
   };
 }
 function ClaudeWorkingLabel({
@@ -302,40 +302,40 @@ function ClaudeWorkingLabel({
   busy: busy,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic = (0, reactCanvasWorkingLabelAnimation_2.useRef)(null),
-    value2: Dynamic = (0, reactCanvasWorkingLabelAnimation_2.useRef)(null),
-    value3: Dynamic = (0, reactCanvasWorkingLabelAnimation_2.useRef)(null);
+  let containerRef: Dynamic = (0, reactCanvasWorkingLabelAnimation_2.useRef)(null),
+    cursorRef: Dynamic = (0, reactCanvasWorkingLabelAnimation_2.useRef)(null),
+    tagRef: Dynamic = (0, reactCanvasWorkingLabelAnimation_2.useRef)(null);
   (0, reactCanvasWorkingLabelAnimation_2.useLayoutEffect)((): Dynamic => {
-    let current: Dynamic = value.current,
-      current2: Dynamic = value2.current,
-      current3: Dynamic = value3.current;
-    if (!working || !current || !current2 || !current3) return;
-    let value5: Dynamic =
+    let containerElement: Dynamic = containerRef.current,
+      cursorElement: Dynamic = cursorRef.current,
+      tagElement: Dynamic = tagRef.current;
+    if (!working || !containerElement || !cursorElement || !tagElement) return;
+    let motionQuery: Dynamic =
         typeof matchMedia == "function"
           ? matchMedia("(prefers-reduced-motion: reduce)")
           : null,
-      value6: Dynamic = animateWorkingLabel(
-        current,
-        current2,
-        current3,
-        value5?.matches === true,
+      stopAnimation: Dynamic = animateWorkingLabel(
+        containerElement,
+        cursorElement,
+        tagElement,
+        motionQuery?.matches === true,
       ),
-      callback: Dynamic = (): Dynamic => {
-        value6();
-        value6 = animateWorkingLabel(
-          current,
-          current2,
-          current3,
-          value5?.matches === true,
+      handleMotionChange: Dynamic = (): Dynamic => {
+        stopAnimation();
+        stopAnimation = animateWorkingLabel(
+          containerElement,
+          cursorElement,
+          tagElement,
+          motionQuery?.matches === true,
         );
       };
-    value5?.addEventListener?.("change", callback);
+    motionQuery?.addEventListener?.("change", handleMotionChange);
     return (): Dynamic => {
-      value5?.removeEventListener?.("change", callback);
-      value6();
+      motionQuery?.removeEventListener?.("change", handleMotionChange);
+      stopAnimation();
     };
   }, [working]);
-  let value4: Dynamic = "var(--cds-" + tint + "-500)";
+  let tintColor: Dynamic = "var(--cds-" + tint + "-500)";
   return (
     <div
       data-kit={"claude-working-empty-state"}
@@ -350,22 +350,22 @@ function ClaudeWorkingLabel({
           {idle}
         </div>
         <div
-          ref={value}
+          ref={containerRef}
           className={"mc-claude-empty-working"}
           aria-hidden={"true"}
         >
-          <div ref={value3} className={"mc-peer-cursor"}>
+          <div ref={tagRef} className={"mc-peer-cursor"}>
             <span
               className={"mc-peer-tag mc-cursor-chat"}
               style={{
-                background: value4,
+                background: tintColor,
               }}
             >
               {CanvasWorkingLabelAnimationLabel}
             </span>
           </div>
-          <div ref={value2} className={"mc-peer-cursor"}>
-            <PeerCursorGlyph color={value4} />
+          <div ref={cursorRef} className={"mc-peer-cursor"}>
+            <PeerCursorGlyph color={tintColor} />
           </div>
         </div>
       </div>
@@ -376,13 +376,13 @@ function ClaudeWorkingLabel({
 }
 export {
   animateWorkingLabel,
-  CanvasWorkingLabelAnimationConstant,
-  CanvasWorkingLabelAnimationConstant_2,
-  CanvasWorkingLabelAnimationConstant_3,
-  CanvasWorkingLabelAnimationConstant_4,
-  CanvasWorkingLabelAnimationConstant_5,
-  CanvasWorkingLabelAnimationConstant_6,
-  CanvasWorkingLabelAnimationConstant_7,
+  labelBoxWidth as CanvasWorkingLabelAnimationConstant,
+  labelBoxHeight as CanvasWorkingLabelAnimationConstant_2,
+  edgePadding as CanvasWorkingLabelAnimationConstant_3,
+  springStiffness as CanvasWorkingLabelAnimationConstant_4,
+  springDamping as CanvasWorkingLabelAnimationConstant_5,
+  wanderDelayMin as CanvasWorkingLabelAnimationConstant_6,
+  wanderDelayJitter as CanvasWorkingLabelAnimationConstant_7,
   CanvasWorkingLabelAnimationHandler,
   CanvasWorkingLabelAnimationHandler_2,
   CanvasWorkingLabelAnimationLabel,
@@ -408,25 +408,25 @@ export function installCanvasWorkingLabelAnimation(): () => void {
       load_react(),
       1,
     );
-    CanvasWorkingLabelAnimationHandler = (input?: Dynamic): Dynamic =>
-      input < 0 ? 0 : input > 1 ? 1 : input;
-    CanvasWorkingLabelAnimationPow = (input?: Dynamic): Dynamic => {
-      let value: Dynamic = Math.pow(
-        CanvasWorkingLabelAnimationHandler(input),
+    CanvasWorkingLabelAnimationHandler = (t?: Dynamic): Dynamic =>
+      t < 0 ? 0 : t > 1 ? 1 : t;
+    CanvasWorkingLabelAnimationPow = (t?: Dynamic): Dynamic => {
+      let smoothed: Dynamic = Math.pow(
+        CanvasWorkingLabelAnimationHandler(t),
         0.86,
       );
-      return value * value * value * (10 + value * (6 * value - 15));
+      return smoothed * smoothed * smoothed * (10 + smoothed * (6 * smoothed - 15));
     };
-    CanvasWorkingLabelAnimationHandler_2 = (input?: Dynamic): Dynamic => {
-      let value: Dynamic =
-        CanvasWorkingLabelAnimationHandler(input) *
-        (1 - CanvasWorkingLabelAnimationHandler(input));
-      return 16 * value * value;
+    CanvasWorkingLabelAnimationHandler_2 = (t?: Dynamic): Dynamic => {
+      let parabola: Dynamic =
+        CanvasWorkingLabelAnimationHandler(t) *
+        (1 - CanvasWorkingLabelAnimationHandler(t));
+      return 16 * parabola * parabola;
     };
-    CanvasWorkingLabelAnimationReduce = (input?: Dynamic): Dynamic =>
-      input.reduce(
-        (input2?: Dynamic, options?: Dynamic): Dynamic =>
-          Math.max(input2, options.t0 + options.T),
+    CanvasWorkingLabelAnimationReduce = (strokeList?: Dynamic): Dynamic =>
+      strokeList.reduce(
+        (latestEnd?: Dynamic, stroke?: Dynamic): Dynamic =>
+          Math.max(latestEnd, stroke.t0 + stroke.T),
         0,
       );
     jsxCanvasWorkingLabelAnimation = toModuleNamespace(
@@ -435,12 +435,12 @@ export function installCanvasWorkingLabelAnimation(): () => void {
     );
     // MineDesign: user-facing copy calls the agent "the agent", not Claude.
     CanvasWorkingLabelAnimationLabel = uiMessage("canvas.workingLabelAnimation.theAgentIsWorking");
-    CanvasWorkingLabelAnimationConstant = 176;
-    CanvasWorkingLabelAnimationConstant_2 = 56;
-    CanvasWorkingLabelAnimationConstant_3 = 8;
-    CanvasWorkingLabelAnimationConstant_4 = 1600;
-    CanvasWorkingLabelAnimationConstant_5 = 76;
-    CanvasWorkingLabelAnimationConstant_6 = 12;
-    CanvasWorkingLabelAnimationConstant_7 = 14;
+    labelBoxWidth = 176;
+    labelBoxHeight = 56;
+    edgePadding = 8;
+    springStiffness = 1600;
+    springDamping = 76;
+    wanderDelayMin = 12;
+    wanderDelayJitter = 14;
   };
 }
