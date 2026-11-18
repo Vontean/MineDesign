@@ -13,7 +13,7 @@ import { ClipboardWorkingFilesHandler } from "../editor/clipboard/working-files"
 import { toModuleNamespace } from "../module-helpers";
 import { claudeActivityStore } from "../platform/claude-activity";
 import { getFeatureFlag } from "../platform/feature-flags";
-import { designPageId, isArtboardFile, isDesignSystemFile, PlatformFileContentConstant_5, PlatformFileContentConstant_6 } from "../platform/file-content";
+import { designPageId, isArtboardFile, isDesignSystemFile, PlatformFileContentConstant_5 as defaultArtboardWidth, PlatformFileContentConstant_6 as defaultArtboardHeight } from "../platform/file-content";
 
 var jsx_U1e: Dynamic;
 var creationCursorContentInset: Dynamic;
@@ -45,19 +45,19 @@ function DesignCreationCursor({
 }: Dynamic): Dynamic {
   useUiLocale();
   if (cursor.at !== "box" && cursor.at !== "rest") return null;
-  let value: Dynamic = (cursor.at === "box" ? boards : artboards).find(
-    (input?: Dynamic): Dynamic => input.file === cursor.file,
+  let targetBoard: Dynamic = (cursor.at === "box" ? boards : artboards).find(
+    (board?: Dynamic): Dynamic => board.file === cursor.file,
   );
-  if (value === undefined) return null;
-  let value2: Dynamic =
+  if (targetBoard === undefined) return null;
+  let cursorPosition: Dynamic =
     cursor.at === "box"
       ? {
-          left: value.x + creationCursorContentInset / scale,
-          top: value.y + creationCursorContentInset / scale,
+          left: targetBoard.x + creationCursorContentInset / scale,
+          top: targetBoard.y + creationCursorContentInset / scale,
         }
       : {
-          left: value.x,
-          top: value.y - creationCursorHeaderOffset / scale,
+          left: targetBoard.x,
+          top: targetBoard.y - creationCursorHeaderOffset / scale,
         };
   return (
     <div
@@ -72,159 +72,159 @@ function DesignCreationCursor({
           // MineDesign: user-facing copy calls the agent "the agent", not Claude.
           text: "Agent",
         }}
-        at={value2}
+        at={cursorPosition}
         glyphScale={1 / scale}
       />
     </div>
   );
 }
-function computeDesignCreationProgress(state?: Dynamic): Dynamic {
-  if (!state.on) return emptyCreationProgress;
-  let value: Dynamic =
-      state.lastProgressAt === undefined
+function computeDesignCreationProgress(progressInput?: Dynamic): Dynamic {
+  if (!progressInput.on) return emptyCreationProgress;
+  let progressWindowEnd: Dynamic =
+      progressInput.lastProgressAt === undefined
         ? undefined
-        : state.lastProgressAt + 6e5,
-    value2: Dynamic = state.heard || state.working,
-    value3: Dynamic = value2
-      ? state.working
-      : value !== undefined && state.now < value,
-    value4: Dynamic = value3
-      ? state.boxed.filter(
-          (input?: Dynamic): Dynamic => input.page === state.page,
+        : progressInput.lastProgressAt + 6e5,
+    isAgentActive: Dynamic = progressInput.heard || progressInput.working,
+    isInTurn: Dynamic = isAgentActive
+      ? progressInput.working
+      : progressWindowEnd !== undefined && progressInput.now < progressWindowEnd,
+    pageBoxes: Dynamic = isInTurn
+      ? progressInput.boxed.filter(
+          (box?: Dynamic): Dynamic => box.page === progressInput.page,
         )
       : [],
-    value5: Dynamic = value4.map((input?: Dynamic): Dynamic => input.spec),
-    value6: Dynamic = value4.find(
-      (input?: Dynamic): Dynamic => input.arriving !== true,
+    boxSpecs: Dynamic = pageBoxes.map((box?: Dynamic): Dynamic => box.spec),
+    settledBox: Dynamic = pageBoxes.find(
+      (box?: Dynamic): Dynamic => box.arriving !== true,
     ),
-    value7: Dynamic = state.boxedThisTurn || state.boxed.length > 0,
-    value8: Dynamic =
-      state.lastProgressAt === undefined
+    hasBoxed: Dynamic = progressInput.boxedThisTurn || progressInput.boxed.length > 0,
+    graceUntil: Dynamic =
+      progressInput.lastProgressAt === undefined
         ? undefined
-        : state.lastProgressAt + 9e4,
-    value9: Dynamic =
-      !value2 && value3 && value8 !== undefined && state.now < value8,
-    state2: Dynamic = {
+        : progressInput.lastProgressAt + 9e4,
+    isInGrace: Dynamic =
+      !isAgentActive && isInTurn && graceUntil !== undefined && progressInput.now < graceUntil,
+    cursor: Dynamic = {
       at: "none",
     };
-  (state.working || value9) &&
-    state.editing &&
-    (value6 !== undefined
-      ? (state2 = {
+  (progressInput.working || isInGrace) &&
+    progressInput.editing &&
+    (settledBox !== undefined
+      ? (cursor = {
           at: "box",
-          file: value6.spec.file,
+          file: settledBox.spec.file,
         })
-      : value4.length > 0
-        ? (state2 = {
+      : pageBoxes.length > 0
+        ? (cursor = {
             at: "box",
-            file: value4[value4.length - 1].spec.file,
+            file: pageBoxes[pageBoxes.length - 1].spec.file,
           })
-        : state.working
-          ? state.pageEmpty
-            ? (state2 = {
+        : progressInput.working
+          ? progressInput.pageEmpty
+            ? (cursor = {
                 at: "tips",
-                rotate: !value7,
+                rotate: !hasBoxed,
               })
-            : (value7 || state.arrivedThisTurn) &&
-              state.lastHere !== undefined &&
-              (state2 = {
+            : (hasBoxed || progressInput.arrivedThisTurn) &&
+              progressInput.lastHere !== undefined &&
+              (cursor = {
                 at: "rest",
-                file: state.lastHere,
+                file: progressInput.lastHere,
               })
-          : (state2 = {
+          : (cursor = {
               at: "none",
             }));
   return {
-    boxes: value5,
-    cursor: state2,
-    toCome: value3 ? state.boxed.length : 0,
+    boxes: boxSpecs,
+    cursor: cursor,
+    toCome: isInTurn ? progressInput.boxed.length : 0,
     wakeAt:
-      !value3 || value2
+      !isInTurn || isAgentActive
         ? undefined
-        : value9 && value8 !== undefined
-          ? Math.min(value8, value ?? value8)
-          : value,
+        : isInGrace && graceUntil !== undefined
+          ? Math.min(graceUntil, progressWindowEnd ?? graceUntil)
+          : progressWindowEnd,
   };
 }
 function useMemoByKey(key?: Dynamic, compute?: Dynamic): Dynamic {
-  let value: Dynamic = (0, react_Gu.useRef)(undefined);
-  value.current?.key !== key &&
-    (value.current = {
+  let cacheRef: Dynamic = (0, react_Gu.useRef)(undefined);
+  cacheRef.current?.key !== key &&
+    (cacheRef.current = {
       key: key,
       value: compute(),
     });
-  return value.current.value;
+  return cacheRef.current.value;
 }
 function useDesignCreationWorkingState(enabled?: Dynamic): Dynamic {
-  let [value, value2]: Dynamic = (0, react_Gu.useState)((): Dynamic => {
-    let value3: Dynamic =
+  let [activity, setActivity]: Dynamic = (0, react_Gu.useState)((): Dynamic => {
+    let isWorking: Dynamic =
       enabled && claudeActivityStore.get() === "working";
     return {
-      working: value3,
-      heard: value3,
+      working: isWorking,
+      heard: isWorking,
     };
   });
   (0, react_Gu.useEffect)((): Dynamic => {
     if (!enabled) return;
-    let value3: Dynamic,
-      callback: Dynamic = (): Dynamic => {
-        clearTimeout(value3);
+    let graceTimer: Dynamic,
+      syncActivity: Dynamic = (): Dynamic => {
+        clearTimeout(graceTimer);
         claudeActivityStore.get() === "working"
-          ? value2(
-              (input?: Dynamic): Dynamic =>
-                input.working && input.heard
-                  ? input
+          ? setActivity(
+              (previous?: Dynamic): Dynamic =>
+                previous.working && previous.heard
+                  ? previous
                   : {
                       working: true,
                       heard: true,
                     },
             )
-          : (value3 = setTimeout(
+          : (graceTimer = setTimeout(
               (): Dynamic =>
-                value2(
-                  (input?: Dynamic): Dynamic =>
-                    input.working
+                setActivity(
+                  (previous?: Dynamic): Dynamic =>
+                    previous.working
                       ? {
-                          ...input,
+                          ...previous,
                           working: false,
                         }
-                      : input,
+                      : previous,
                 ),
               CanvasWorkingStateRegistry.graceMs ??
                 CanvasWorkingStateConstant,
             ));
       },
-      value4: Dynamic = claudeActivityStore.subscribe(callback);
-    callback();
+      unsubscribe: Dynamic = claudeActivityStore.subscribe(syncActivity);
+    syncActivity();
     return (): Dynamic => {
-      value4();
-      clearTimeout(value3);
+      unsubscribe();
+      clearTimeout(graceTimer);
     };
   }, [enabled]);
-  return value;
+  return activity;
 }
-function useDesignCreationProgress(options?: Dynamic): Dynamic {
-  let { doc: value }: Dynamic = options,
-    [, value2]: Dynamic = (0, react_Gu.useReducer)(
-      (input?: Dynamic): Dynamic => input + 1,
+function useDesignCreationProgress(progressOptions?: Dynamic): Dynamic {
+  let { doc: doc }: Dynamic = progressOptions,
+    [, forceUpdate]: Dynamic = (0, react_Gu.useReducer)(
+      (previousCount?: Dynamic): Dynamic => previousCount + 1,
       0,
     ),
-    [value3]: Dynamic = (0, react_Gu.useState)((): Dynamic => {
-      let value21: Dynamic = options.flag
-        ? getListedArtboards(value)
+    [progressState]: Dynamic = (0, react_Gu.useState)((): Dynamic => {
+      let listedInfo: Dynamic = progressOptions.flag
+        ? getListedArtboards(doc)
         : emptyListedArtboards;
       return {
         creating:
-          options.flag &&
-          supportsListedArtboards(value) &&
-          (options.artboards.length === 0 || value21.awaited.length > 0),
-        names: options.flag ? listedArtboardNames(value) : new Set(),
-        listed: value21.listed,
+          progressOptions.flag &&
+          supportsListedArtboards(doc) &&
+          (progressOptions.artboards.length === 0 || listedInfo.awaited.length > 0),
+        names: progressOptions.flag ? listedArtboardNames(doc) : new Set(),
+        listed: listedInfo.listed,
         needsProgress: new Set(
-          value21.awaited.map((input?: Dynamic): Dynamic => input.file),
+          listedInfo.awaited.map((board?: Dynamic): Dynamic => board.file),
         ),
-        awaitedKey: value21.awaited.map(
-          (input?: Dynamic): Dynamic => input.file,
+        awaitedKey: listedInfo.awaited.map(
+          (board?: Dynamic): Dynamic => board.file,
         ).join(`
 `),
         boxed: new Map(),
@@ -236,246 +236,246 @@ function useDesignCreationProgress(options?: Dynamic): Dynamic {
         cover: new Set(),
       };
     }),
-    creating: Dynamic = value3.creating,
-    value4: Dynamic = useDesignCreationWorkingState(creating),
-    value5: Dynamic = (0, react_Gu.useRef)(value4.working);
-  value5.current = value4.working;
-  let value6: Dynamic = (0, react_Gu.useRef)(false);
+    creating: Dynamic = progressState.creating,
+    workingState: Dynamic = useDesignCreationWorkingState(creating),
+    isWorkingRef: Dynamic = (0, react_Gu.useRef)(workingState.working);
+  isWorkingRef.current = workingState.working;
+  let isShowingTipsRef: Dynamic = (0, react_Gu.useRef)(false);
   (0, react_Gu.useEffect)((): Dynamic => {
     if (creating)
       return subscribeRemoteDocumentUpdates(
-        value,
-        (input?: Dynamic): Dynamic => {
-          let value21: Dynamic = listedArtboardNames(value),
-            value22: Dynamic = [...value21].filter(
-              (input2?: Dynamic): Dynamic => !value3.names.has(input2),
+        doc,
+        (isRemoteUpdate?: Dynamic): Dynamic => {
+          let currentNames: Dynamic = listedArtboardNames(doc),
+            newNames: Dynamic = [...currentNames].filter(
+              (name?: Dynamic): Dynamic => !progressState.names.has(name),
             );
-          value3.names = value21;
-          let value23: Dynamic = creationProgressStateKey(value3),
-            value24: Dynamic = value3.boxed.size > 0,
-            { listed: value25, awaited: value26 }: Dynamic =
-              getListedArtboards(value),
-            value27: Dynamic = value26.map(
-              (input2?: Dynamic): Dynamic => input2.file,
+          progressState.names = currentNames;
+          let stateKeyBefore: Dynamic = creationProgressStateKey(progressState),
+            hadBoxed: Dynamic = progressState.boxed.size > 0,
+            { listed: listed, awaited: awaited }: Dynamic =
+              getListedArtboards(doc),
+            awaitedKey: Dynamic = awaited.map(
+              (board?: Dynamic): Dynamic => board.file,
             ).join(`
 `);
-          input &&
-            value27 !== value3.awaitedKey &&
-            ((value3.sawProgress = true),
-            (value3.lastProgressAt = Date.now()));
-          value3.awaitedKey = value27;
-          value3.listed = value25;
+          isRemoteUpdate &&
+            awaitedKey !== progressState.awaitedKey &&
+            ((progressState.sawProgress = true),
+            (progressState.lastProgressAt = Date.now()));
+          progressState.awaitedKey = awaitedKey;
+          progressState.listed = listed;
           let entries: Dynamic = new Map();
-          for (let value28 of value26 as Dynamic)
-            (value3.boxed.has(value28.file) ||
-              (input &&
-                (value3.sawProgress ||
-                  !value3.needsProgress.has(value28.file)))) &&
-              entries.set(value28.file, value28);
-          value3.awaitedNow = new Set(entries.keys());
-          for (let [value28, value29] of value3.boxed as Dynamic)
-            !entries.has(value28) &&
-              value3.listed.has(value28) &&
-              !value21.has(value28) &&
-              entries.set(value28, value29);
-          value3.boxed = entries;
-          value5.current && entries.size > 0 && (value3.boxedThisTurn = true);
-          (value5.current ||
+          for (let board of awaited as Dynamic)
+            (progressState.boxed.has(board.file) ||
+              (isRemoteUpdate &&
+                (progressState.sawProgress ||
+                  !progressState.needsProgress.has(board.file)))) &&
+              entries.set(board.file, board);
+          progressState.awaitedNow = new Set(entries.keys());
+          for (let [file, board] of progressState.boxed as Dynamic)
+            !entries.has(file) &&
+              progressState.listed.has(file) &&
+              !currentNames.has(file) &&
+              entries.set(file, board);
+          progressState.boxed = entries;
+          isWorkingRef.current && entries.size > 0 && (progressState.boxedThisTurn = true);
+          (isWorkingRef.current ||
             claudeActivityStore.get() === "working") &&
-            input &&
-            value22.length > 0 &&
-            (value3.arrivedThisTurn = true);
-          if (input && (value24 || entries.size > 0 || value6.current))
-            for (let value28 of value22 as Dynamic) value3.cover.add(value28);
-          for (let value28 of value3.cover as Dynamic)
-            value21.has(value28) || value3.cover.delete(value28);
-          value23 !== creationProgressStateKey(value3) && value2();
+            isRemoteUpdate &&
+            newNames.length > 0 &&
+            (progressState.arrivedThisTurn = true);
+          if (isRemoteUpdate && (hadBoxed || entries.size > 0 || isShowingTipsRef.current))
+            for (let name of newNames as Dynamic) progressState.cover.add(name);
+          for (let name of progressState.cover as Dynamic)
+            currentNames.has(name) || progressState.cover.delete(name);
+          stateKeyBefore !== creationProgressStateKey(progressState) && forceUpdate();
         },
       );
-  }, [value, creating, value3]);
-  value4.working || (value3.arrivedThisTurn = false);
-  if (value4.working) value3.boxed.size > 0 && (value3.boxedThisTurn = true);
-  else if (value3.boxedThisTurn || (value4.heard && value3.boxed.size > 0)) {
-    for (let value21 of value3.boxed.keys() as Dynamic)
-      value3.needsProgress.add(value21);
-    value3.boxed = new Map();
-    value3.awaitedNow = new Set();
-    value3.sawProgress = false;
-    value3.boxedThisTurn = false;
+  }, [doc, creating, progressState]);
+  workingState.working || (progressState.arrivedThisTurn = false);
+  if (workingState.working) progressState.boxed.size > 0 && (progressState.boxedThisTurn = true);
+  else if (progressState.boxedThisTurn || (workingState.heard && progressState.boxed.size > 0)) {
+    for (let file of progressState.boxed.keys() as Dynamic)
+      progressState.needsProgress.add(file);
+    progressState.boxed = new Map();
+    progressState.awaitedNow = new Set();
+    progressState.sawProgress = false;
+    progressState.boxedThisTurn = false;
   }
-  let value7: Dynamic = options.artboardsHere
-      .filter((input?: Dynamic): Dynamic => input.frameless !== true)
+  let lastArtboardFile: Dynamic = progressOptions.artboardsHere
+      .filter((board?: Dynamic): Dynamic => board.frameless !== true)
       .at(-1)?.file,
-    value8: Dynamic = computeDesignCreationProgress({
+    progress: Dynamic = computeDesignCreationProgress({
       on: creating,
       now: Date.now(),
-      working: value4.working,
-      heard: value4.heard,
-      lastProgressAt: value3.lastProgressAt,
-      boxedThisTurn: value3.boxedThisTurn,
-      arrivedThisTurn: value3.arrivedThisTurn,
-      boxed: [...value3.boxed.values()].map(
-        (input?: Dynamic): Dynamic => ({
-          spec: input,
-          page: designPageId(input, options.pages),
-          arriving: !value3.awaitedNow.has(input.file),
+      working: workingState.working,
+      heard: workingState.heard,
+      lastProgressAt: progressState.lastProgressAt,
+      boxedThisTurn: progressState.boxedThisTurn,
+      arrivedThisTurn: progressState.arrivedThisTurn,
+      boxed: [...progressState.boxed.values()].map(
+        (board?: Dynamic): Dynamic => ({
+          spec: board,
+          page: designPageId(board, progressOptions.pages),
+          arriving: !progressState.awaitedNow.has(board.file),
         }),
       ),
-      page: options.pageId,
-      pageEmpty: options.pageEmpty,
-      lastHere: value7,
-      editing: options.editing,
+      page: progressOptions.pageId,
+      pageEmpty: progressOptions.pageEmpty,
+      lastHere: lastArtboardFile,
+      editing: progressOptions.editing,
     }),
-    wakeAt: Dynamic = value8.wakeAt;
+    wakeAt: Dynamic = progress.wakeAt;
   (0, react_Gu.useEffect)((): Dynamic => {
     if (wakeAt === undefined) return;
-    let value21: Dynamic,
-      callback: Dynamic = (): Dynamic => {
-        let value22: Dynamic = wakeAt - Date.now();
-        value22 <= 0 ? value2() : (value21 = setTimeout(callback, value22));
+    let wakeTimer: Dynamic,
+      scheduleWake: Dynamic = (): Dynamic => {
+        let remainingMs: Dynamic = wakeAt - Date.now();
+        remainingMs <= 0 ? forceUpdate() : (wakeTimer = setTimeout(scheduleWake, remainingMs));
       };
-    callback();
-    return (): Dynamic => clearTimeout(value21);
+    scheduleWake();
+    return (): Dynamic => clearTimeout(wakeTimer);
   }, [wakeAt]);
-  let value9: Dynamic = value8.cursor.at === "tips";
-  value6.current = value9;
-  let value10: Dynamic = value8.cursor.at === "tips" && value8.cursor.rotate,
-    [value11, value12]: Dynamic = (0, react_Gu.useState)(-1);
+  let isShowingTips: Dynamic = progress.cursor.at === "tips";
+  isShowingTipsRef.current = isShowingTips;
+  let shouldRotateTips: Dynamic = progress.cursor.at === "tips" && progress.cursor.rotate,
+    [tipIndex, setTipIndex]: Dynamic = (0, react_Gu.useState)(-1);
   (0, react_Gu.useEffect)((): Dynamic => {
-    value12(-1);
-    if (!value9 || !value10) return;
-    let value21: Dynamic = Date.now(),
-      value22: Dynamic,
-      callback: Dynamic = (): Dynamic => {
-        let value23: Dynamic = Date.now() - value21;
-        value12(designCreationTipIndex(value23));
-        value22 = setTimeout(
-          callback,
-          timeUntilNextDesignCreationTip(value23),
+    setTipIndex(-1);
+    if (!isShowingTips || !shouldRotateTips) return;
+    let startedAt: Dynamic = Date.now(),
+      tipTimer: Dynamic,
+      showNextTip: Dynamic = (): Dynamic => {
+        let elapsedMs: Dynamic = Date.now() - startedAt;
+        setTipIndex(designCreationTipIndex(elapsedMs));
+        tipTimer = setTimeout(
+          showNextTip,
+          timeUntilNextDesignCreationTip(elapsedMs),
         );
       };
-    value22 = setTimeout(
-      callback,
+    tipTimer = setTimeout(
+      showNextTip,
       timeUntilNextDesignCreationTip(0),
     );
-    return (): Dynamic => clearTimeout(value22);
-  }, [value9, value10]);
-  let value13: Dynamic = (0, react_Gu.useRef)(value8.toCome);
-  value13.current = value8.toCome;
-  let value14: Dynamic = (0, react_Gu.useRef)(false),
-    value15: Dynamic = (0, react_Gu.useRef)(value4.heard),
-    value16: Dynamic = value8.toCome > 0;
+    return (): Dynamic => clearTimeout(tipTimer);
+  }, [isShowingTips, shouldRotateTips]);
+  let toComeRef: Dynamic = (0, react_Gu.useRef)(progress.toCome);
+  toComeRef.current = progress.toCome;
+  let hasAnnouncedRef: Dynamic = (0, react_Gu.useRef)(false),
+    wasHeardRef: Dynamic = (0, react_Gu.useRef)(workingState.heard),
+    hasPendingBoards: Dynamic = progress.toCome > 0;
   (0, react_Gu.useEffect)((): Dynamic => {
-    let value21: Dynamic = value4.heard && !value15.current;
-    value15.current = value4.heard;
-    if (!value16) {
-      value4.heard &&
-        (!value4.working || value21) &&
-        (value14.current = false);
+    let justHeard: Dynamic = workingState.heard && !wasHeardRef.current;
+    wasHeardRef.current = workingState.heard;
+    if (!hasPendingBoards) {
+      workingState.heard &&
+        (!workingState.working || justHeard) &&
+        (hasAnnouncedRef.current = false);
       return;
     }
-    if (value14.current) return;
-    let flag: Dynamic = true,
-      value22: Dynamic,
-      callback: Dynamic = (): Dynamic => {
-        value14.current ||
+    if (hasAnnouncedRef.current) return;
+    let isActive: Dynamic = true,
+      retryTimer: Dynamic,
+      tryAnnounce: Dynamic = (): Dynamic => {
+        hasAnnouncedRef.current ||
           (announce(
             (): Dynamic =>
-              !flag || value14.current || value13.current === 0
+              !isActive || hasAnnouncedRef.current || toComeRef.current === 0
                 ? null
-                : ((value14.current = true),
-                  ClipboardWorkingFilesHandler(value13.current)),
+                : ((hasAnnouncedRef.current = true),
+                  ClipboardWorkingFilesHandler(toComeRef.current)),
             {
               ifIdle: true,
             },
           ),
-          (value22 = setTimeout(
-            callback,
+          (retryTimer = setTimeout(
+            tryAnnounce,
             creationProgressOptions.retryMs ?? creationProgressRetryMs,
           )));
       };
-    callback();
+    tryAnnounce();
     return (): Dynamic => {
-      flag = false;
-      clearTimeout(value22);
+      isActive = false;
+      clearTimeout(retryTimer);
     };
-  }, [value16, value4.working, value4.heard]);
-  let value17: Dynamic =
-      value8.cursor.at === "box" ? value8.cursor.file : null,
-    value18: Dynamic = useMemoByKey(
-      value8.boxes.map(
-        (input?: Dynamic): Dynamic =>
+  }, [hasPendingBoards, workingState.working, workingState.heard]);
+  let activeFile: Dynamic =
+      progress.cursor.at === "box" ? progress.cursor.file : null,
+    boxesHere: Dynamic = useMemoByKey(
+      progress.boxes.map(
+        (box?: Dynamic): Dynamic =>
           [
-            input.file,
-            input.x,
-            input.y,
-            input.w,
-            input.h,
-            input.title,
-            JSON.stringify(input.radius),
-            input.page,
+            box.file,
+            box.x,
+            box.y,
+            box.w,
+            box.h,
+            box.title,
+            JSON.stringify(box.radius),
+            box.page,
           ].join("	"),
       ).join(`
 `),
       (): Dynamic =>
-        value8.boxes.length === 0 ? emptyCreationBoxes : value8.boxes,
+        progress.boxes.length === 0 ? emptyCreationBoxes : progress.boxes,
     ),
-    value19: Dynamic = (0, react_Gu.useMemo)(
+    pendingBoards: Dynamic = (0, react_Gu.useMemo)(
       (): Dynamic =>
-        value18.length === 0
+        boxesHere.length === 0
           ? emptyPendingArtboards
-          : value18.map(
-              (input?: Dynamic): Dynamic => ({
-                spec: input,
-                active: input.file === value17,
+          : boxesHere.map(
+              (box?: Dynamic): Dynamic => ({
+                spec: box,
+                active: box.file === activeFile,
               }),
             ),
-      [value18, value17],
+      [boxesHere, activeFile],
     ),
-    value20: Dynamic = useMemoByKey(
-      [...value3.cover].join(`
+    coverFiles: Dynamic = useMemoByKey(
+      [...progressState.cover].join(`
 `),
       (): Dynamic =>
-        value3.cover.size === 0
+        progressState.cover.size === 0
           ? emptyCreationCoverFiles
-          : new Set(value3.cover),
+          : new Set(progressState.cover),
     ),
-    current: Dynamic = (0, react_Gu.useRef)((input?: Dynamic): Dynamic => {
-      value3.cover.delete(input) && value2();
+    onArtboardReady: Dynamic = (0, react_Gu.useRef)((file?: Dynamic): Dynamic => {
+      progressState.cover.delete(file) && forceUpdate();
     }).current;
   return creating
     ? {
         creating: true,
-        pendingBoards: value19,
-        boxesHere: value18,
-        coverFiles: value20,
-        cursor: value8.cursor,
-        workingLabel: value4.working && value18.length > 0,
-        tip: value11,
-        onArtboardReady: current,
+        pendingBoards: pendingBoards,
+        boxesHere: boxesHere,
+        coverFiles: coverFiles,
+        cursor: progress.cursor,
+        workingLabel: workingState.working && boxesHere.length > 0,
+        tip: tipIndex,
+        onArtboardReady: onArtboardReady,
       }
     : emptyCreationProgressUi;
 }
 function fitBoundsCamera(bounds?: Dynamic, viewport?: Dynamic): Dynamic {
-  let value: Dynamic = bounds.maxX - bounds.minX,
-    value2: Dynamic = bounds.maxY - bounds.minY,
-    value3: Dynamic = Math.min(
+  let boundsWidth: Dynamic = bounds.maxX - bounds.minX,
+    boundsHeight: Dynamic = bounds.maxY - bounds.minY,
+    scale: Dynamic = Math.min(
       2,
       Math.max(
         viewportScaleLimits.minScale,
         Math.min(
-          (viewport.w - fitArtboardPadding * 2) / value,
-          (viewport.h - viewport.top - fitArtboardPadding * 2) / value2,
+          (viewport.w - fitArtboardPadding * 2) / boundsWidth,
+          (viewport.h - viewport.top - fitArtboardPadding * 2) / boundsHeight,
         ),
       ),
     );
   return {
-    x: bounds.minX - (viewport.w / value3 - value) / 2,
+    x: bounds.minX - (viewport.w / scale - boundsWidth) / 2,
     y:
       bounds.minY -
-      viewport.top / value3 -
-      ((viewport.h - viewport.top) / value3 - value2) / 2,
-    scale: value3,
+      viewport.top / scale -
+      ((viewport.h - viewport.top) / scale - boundsHeight) / 2,
+    scale: scale,
   };
 }
 function creationFocusedCamera(
@@ -483,37 +483,37 @@ function creationFocusedCamera(
   camera?: Dynamic,
   viewport?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = firstArtboardInReadingOrder(artboards);
-  if (value === undefined) return;
-  let value2: Dynamic = fitBoundsCamera(
+  let firstBoard: Dynamic = firstArtboardInReadingOrder(artboards);
+  if (firstBoard === undefined) return;
+  let fitCamera: Dynamic = fitBoundsCamera(
       {
         minX: 0,
         minY: -fitArtboardHeaderHeight,
-        maxX: PlatformFileContentConstant_5,
-        maxY: PlatformFileContentConstant_6,
+        maxX: defaultArtboardWidth,
+        maxY: defaultArtboardHeight,
       },
       viewport,
     ),
-    value3: Dynamic = Math.min(
+    targetScale: Dynamic = Math.min(
       2,
       Math.max(
         viewportScaleLimits.minScale,
-        value2.scale *
+        fitCamera.scale *
           Math.min(
-            PlatformFileContentConstant_5 / value.w,
-            PlatformFileContentConstant_6 / value.h,
+            defaultArtboardWidth / firstBoard.w,
+            defaultArtboardHeight / firstBoard.h,
           ),
       ),
     );
-  if (!(camera.scale < value3)) return;
-  let value4: Dynamic =
-      (PlatformFileContentConstant_5 / 2 - value2.x) * value2.scale,
-    value5: Dynamic =
-      (PlatformFileContentConstant_6 / 2 - value2.y) * value2.scale;
+  if (!(camera.scale < targetScale)) return;
+  let offsetX: Dynamic =
+      (defaultArtboardWidth / 2 - fitCamera.x) * fitCamera.scale,
+    offsetY: Dynamic =
+      (defaultArtboardHeight / 2 - fitCamera.y) * fitCamera.scale;
   return {
-    x: value.x + value.w / 2 - value4 / value3,
-    y: value.y + value.h / 2 - value5 / value3,
-    scale: value3,
+    x: firstBoard.x + firstBoard.w / 2 - offsetX / targetScale,
+    y: firstBoard.y + firstBoard.h / 2 - offsetY / targetScale,
+    scale: targetScale,
   };
 }
 export {
@@ -564,41 +564,41 @@ export function installCanvasCreationProgress(): () => void {
       toCome: 0,
       wakeAt: undefined,
     });
-    supportsListedArtboards = (input?: Dynamic): Dynamic =>
-      typeof input.listedBoards == "function";
-    getListedArtboards = (input?: Dynamic): Dynamic =>
-      input.listedBoards?.() ?? emptyListedArtboards;
+    supportsListedArtboards = (doc?: Dynamic): Dynamic =>
+      typeof doc.listedBoards == "function";
+    getListedArtboards = (doc?: Dynamic): Dynamic =>
+      doc.listedBoards?.() ?? emptyListedArtboards;
     emptyListedArtboards = {
       listed: new Set(),
       awaited: [],
     };
-    creationProgressStateKey = (input?: Dynamic): Dynamic =>
+    creationProgressStateKey = (progressState?: Dynamic): Dynamic =>
       [
-        [...input.boxed.values()]
+        [...progressState.boxed.values()]
           .map(
-            (input2?: Dynamic): Dynamic =>
+            (box?: Dynamic): Dynamic =>
               [
-                input2.file,
-                input2.x,
-                input2.y,
-                input2.w,
-                input2.h,
-                input2.title,
-                input2.page,
+                box.file,
+                box.x,
+                box.y,
+                box.w,
+                box.h,
+                box.title,
+                box.page,
               ].join(),
           )
           .join(";"),
-        [...input.awaitedNow].join(),
-        [...input.cover].join(),
-        String(input.lastProgressAt),
-        String(input.arrivedThisTurn),
+        [...progressState.awaitedNow].join(),
+        [...progressState.cover].join(),
+        String(progressState.lastProgressAt),
+        String(progressState.arrivedThisTurn),
       ].join("|");
-    listedArtboardNames = (input?: Dynamic): Dynamic =>
+    listedArtboardNames = (doc?: Dynamic): Dynamic =>
       new Set(
-        Object.keys(input.content().files).filter(
-          (input2?: Dynamic): Dynamic =>
-            isArtboardFile(input2) &&
-            !isDesignSystemFile(input2),
+        Object.keys(doc.content().files).filter(
+          (file?: Dynamic): Dynamic =>
+            isArtboardFile(file) &&
+            !isDesignSystemFile(file),
         ),
       );
     emptyPendingArtboards = [];
@@ -620,15 +620,15 @@ export function installCanvasCreationProgress(): () => void {
     creationProgressOptions = {};
     fitArtboardPadding = 48;
     fitArtboardHeaderHeight = 40;
-    firstArtboardInReadingOrder = (input?: Dynamic): Dynamic =>
-      input.reduce(
-        (input2?: Dynamic, options?: Dynamic): Dynamic =>
-          input2 === undefined ||
-          options.x + options.y < input2.x + input2.y ||
-          (options.x + options.y === input2.x + input2.y &&
-            options.y < input2.y)
-            ? options
-            : input2,
+    firstArtboardInReadingOrder = (artboards?: Dynamic): Dynamic =>
+      artboards.reduce(
+        (best?: Dynamic, candidate?: Dynamic): Dynamic =>
+          best === undefined ||
+          candidate.x + candidate.y < best.x + best.y ||
+          (candidate.x + candidate.y === best.x + best.y &&
+            candidate.y < best.y)
+            ? candidate
+            : best,
         undefined,
       );
     creationSequenceFeatureFlagName = "appifact_creation_sequence";

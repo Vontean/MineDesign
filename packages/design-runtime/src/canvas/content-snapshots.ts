@@ -3,28 +3,28 @@ import {
   type Dynamic,
 } from "../runtime-types";
 import { DcTplAttribute } from "../editor/html/authoring";
-import { PlatformFileContentTest_3 } from "../platform/file-content";
+import { PlatformFileContentTest_3 as asBlobAssetUrl } from "../platform/file-content";
 
 var textExtractionExcludedTags: Dynamic;
 var artboardTextSnapshotLimit: Dynamic;
 var videoElementsWithSource: Dynamic;
 function extractVisibleElementText(
   element?: Dynamic,
-  { enough: options = 600, visits: options2 = 1 / 0 }: Dynamic = {},
+  { enough: maxTextLength = 600, visits: maxVisits = 1 / 0 }: Dynamic = {},
 ): Dynamic {
   let text: Dynamic = "",
     index: Dynamic = 0,
-    callback: Dynamic = (input?: Dynamic): Dynamic => {
-      if (!(text.length >= options || index >= options2)) {
+    callback: Dynamic = (node?: Dynamic): Dynamic => {
+      if (!(text.length >= maxTextLength || index >= maxVisits)) {
         index += 1;
-        if (input.nodeType === 3) text += input.data;
+        if (node.nodeType === 3) text += node.data;
         else if (
-          input.nodeType === 1 &&
+          node.nodeType === 1 &&
           !textExtractionExcludedTags.has(
-            input.tagName.toLowerCase().replace(/^sc-raw-/, ""),
+            node.tagName.toLowerCase().replace(/^sc-raw-/, ""),
           )
         )
-          for (let value of input.childNodes as Dynamic) callback(value);
+          for (let childNode of node.childNodes as Dynamic) callback(childNode);
       }
     };
   callback(element);
@@ -34,40 +34,40 @@ function createVideoElementIdentity(
   model?: Dynamic,
   templateId?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = model.element(templateId),
-    value2: Dynamic =
-      value?.tagName.toLowerCase() === "video"
-        ? value.getAttribute("src")
+  let videoElement: Dynamic = model.element(templateId),
+    videoSrc: Dynamic =
+      videoElement?.tagName.toLowerCase() === "video"
+        ? videoElement.getAttribute("src")
         : null;
-  if (!value || !value2) return null;
-  let value3: Dynamic = videoElementsWithSource(model, value2),
-    value4: Dynamic = value3.indexOf(value);
-  return value4 < 0
+  if (!videoElement || !videoSrc) return null;
+  let sameSrcVideos: Dynamic = videoElementsWithSource(model, videoSrc),
+    videoIndex: Dynamic = sameSrcVideos.indexOf(videoElement);
+  return videoIndex < 0
     ? null
     : {
-        src: value2,
-        nth: value4,
-        of: value3.length,
+        src: videoSrc,
+        nth: videoIndex,
+        of: sameSrcVideos.length,
       };
 }
 function resolveVideoElementIdentity(
   model?: Dynamic,
   identity?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = videoElementsWithSource(model, identity.src);
-  if (value.length === 0) return "gone";
-  if (value.length !== identity.of) return "unsure";
-  let value2: Dynamic = Number.parseInt(
-    value[identity.nth]?.getAttribute(DcTplAttribute) ?? "",
+  let sameSrcVideos: Dynamic = videoElementsWithSource(model, identity.src);
+  if (sameSrcVideos.length === 0) return "gone";
+  if (sameSrcVideos.length !== identity.of) return "unsure";
+  let templateId: Dynamic = Number.parseInt(
+    sameSrcVideos[identity.nth]?.getAttribute(DcTplAttribute) ?? "",
     10,
   );
-  return Number.isInteger(value2) ? value2 : "gone";
+  return Number.isInteger(templateId) ? templateId : "gone";
 }
 function isValidVideoDimensions(video?: Dynamic): Dynamic {
-  let callback: Dynamic = (input?: Dynamic): Dynamic =>
-    Number.isInteger(input) && input > 0 && input <= 16384;
+  let callback: Dynamic = (dimension?: Dynamic): Dynamic =>
+    Number.isInteger(dimension) && dimension > 0 && dimension <= 16384;
   return (
-    PlatformFileContentTest_3(video.src) !== null &&
+    asBlobAssetUrl(video.src) !== null &&
     callback(video.width) &&
     callback(video.height)
   );
@@ -93,12 +93,12 @@ export function installCanvasContentSnapshots(): () => void {
       "helmet",
     ]);
     artboardTextSnapshotLimit = 1e3;
-    videoElementsWithSource = (input?: Dynamic, options?: Dynamic): Dynamic =>
-      input
-        .elementsByAttr("src", options)
+    videoElementsWithSource = (model?: Dynamic, videoSrc?: Dynamic): Dynamic =>
+      model
+        .elementsByAttr("src", videoSrc)
         .filter(
-          (input2?: Dynamic): Dynamic =>
-            input2.tagName.toLowerCase() === "video",
+          (element?: Dynamic): Dynamic =>
+            element.tagName.toLowerCase() === "video",
         );
   };
 }

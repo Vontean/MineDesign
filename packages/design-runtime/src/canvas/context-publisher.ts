@@ -18,24 +18,24 @@ var forbiddenDesignContextIdCodepoints: Dynamic;
 var forbiddenDesignContextLabelCharacters: Dynamic;
 var blankDesignContextLabelPattern: Dynamic;
 var extendedPictographicPattern: Dynamic;
-function isValidDesignContextId(value?: Dynamic): Dynamic {
+function isValidDesignContextId(contextId?: Dynamic): Dynamic {
   if (
-    typeof value != "string" ||
-    value.length > maxDesignContextIdLength ||
-    !designContextIdPattern.test(value)
+    typeof contextId != "string" ||
+    contextId.length > maxDesignContextIdLength ||
+    !designContextIdPattern.test(contextId)
   )
     return false;
   try {
     return !forbiddenDesignContextIdCodepoints.test(
-      decodeURIComponent(value).normalize("NFKD"),
+      decodeURIComponent(contextId).normalize("NFKD"),
     );
   } catch {
     return false;
   }
 }
 function normalizedSingleContextCharacter(character?: Dynamic): Dynamic {
-  let value: Dynamic = character.normalize("NFKD");
-  return [...value].length === 1 ? value : character;
+  let normalized: Dynamic = character.normalize("NFKD");
+  return [...normalized].length === 1 ? normalized : character;
 }
 function isUnicodeTagCodepoint(codepoint?: Dynamic): Dynamic {
   return (
@@ -52,44 +52,44 @@ function isForbiddenContextCodepoint(codepoint?: Dynamic): Dynamic {
   );
 }
 function sanitizeDesignContextText(
-  value?: Dynamic,
+  rawText?: Dynamic,
   limit: Dynamic = defaultDesignContextLabelLength,
 ): Dynamic {
   let text: Dynamic = "",
-    index: Dynamic = 0,
-    flag: Dynamic = false,
-    callback: Dynamic = (input?: Dynamic, options?: Dynamic): Dynamic => {
-      let value2: Dynamic = input.codePointAt(0) ?? 0;
-      return value2 <= 32 ||
-        (value2 >= 127 && value2 <= 160) ||
-        /\s/u.test(input)
-        ? ((flag = text !== ""), false)
-        : isForbiddenContextCodepoint(value2) ||
-            forbiddenDesignContextLabelCharacters.test(input)
+    charCount: Dynamic = 0,
+    hasPendingSpace: Dynamic = false,
+    appendCharacter: Dynamic = (character?: Dynamic, nextCharacter?: Dynamic): Dynamic => {
+      let codepoint: Dynamic = character.codePointAt(0) ?? 0;
+      return codepoint <= 32 ||
+        (codepoint >= 127 && codepoint <= 160) ||
+        /\s/u.test(character)
+        ? ((hasPendingSpace = text !== ""), false)
+        : isForbiddenContextCodepoint(codepoint) ||
+            forbiddenDesignContextLabelCharacters.test(character)
           ? false
           : forbiddenDesignContextLabelCharacters.test(
-                normalizedSingleContextCharacter(input),
+                normalizedSingleContextCharacter(character),
               ) ||
-              (isUnicodeTagCodepoint(options.codePointAt(0)) &&
-                extendedPictographicPattern.test(input))
-            ? ((flag = text !== ""), false)
-            : (flag && ((text += " "), (index += 1), (flag = false)),
-              (text += input),
-              (index += 1),
-              index > limit);
+              (isUnicodeTagCodepoint(nextCharacter.codePointAt(0)) &&
+                extendedPictographicPattern.test(character))
+            ? ((hasPendingSpace = text !== ""), false)
+            : (hasPendingSpace && ((text += " "), (charCount += 1), (hasPendingSpace = false)),
+              (text += character),
+              (charCount += 1),
+              charCount > limit);
     },
-    text2: Dynamic = "";
-  for (let value2 of value.normalize("NFC") as Dynamic) {
-    if (text2 !== "" && callback(text2, value2)) {
-      text2 = "";
+    previousCharacter: Dynamic = "";
+  for (let nextChar of rawText.normalize("NFC") as Dynamic) {
+    if (previousCharacter !== "" && appendCharacter(previousCharacter, nextChar)) {
+      previousCharacter = "";
       break;
     }
-    text2 = value2;
+    previousCharacter = nextChar;
   }
-  text2 !== "" && callback(text2, "");
+  previousCharacter !== "" && appendCharacter(previousCharacter, "");
   return blankDesignContextLabelPattern.test(text)
     ? ""
-    : index <= limit
+    : charCount <= limit
       ? text
       : [...text]
           .slice(0, limit - 1)
@@ -99,106 +99,106 @@ function sanitizeDesignContextText(
 function sanitizeDesignContextSelection(selection?: Dynamic): Dynamic {
   return selection
     .filter(
-      (input?: Dynamic): Dynamic =>
-        typeof input == "object" &&
-        input !== null &&
-        isValidDesignContextId(input.id),
+      (item?: Dynamic): Dynamic =>
+        typeof item == "object" &&
+        item !== null &&
+        isValidDesignContextId(item.id),
     )
     .slice(-maxDesignContextSelectionItems)
     .map(({ id: id, kind: kind, label: label }: Dynamic): Dynamic => {
-      let state: Dynamic = {
+      let selectionItem: Dynamic = {
         id: id,
       };
-      isValidDesignContextId(kind) && (state.kind = kind);
-      let value: Dynamic =
+      isValidDesignContextId(kind) && (selectionItem.kind = kind);
+      let sanitizedLabel: Dynamic =
         typeof label == "string" ? sanitizeDesignContextText(label) : "";
-      value !== "" && (state.label = value);
-      return state;
+      sanitizedLabel !== "" && (selectionItem.label = sanitizedLabel);
+      return selectionItem;
     });
 }
 function sanitizeDesignContextFields(fields?: Dynamic): Dynamic {
-  let state: Dynamic = {},
-    state2: Dynamic = {};
-  for (let value of Object.keys(fields) as Dynamic) {
+  let fullFields: Dynamic = {},
+    leanFields: Dynamic = {};
+  for (let fieldName of Object.keys(fields) as Dynamic) {
     if (
-      !designContextFieldNamePattern.test(value) ||
-      value === "prototype" ||
-      value in Object.prototype ||
-      reservedDesignContextFields.includes(value)
+      !designContextFieldNamePattern.test(fieldName) ||
+      fieldName === "prototype" ||
+      fieldName in Object.prototype ||
+      reservedDesignContextFields.includes(fieldName)
     )
       continue;
-    let value2: Dynamic = fields[value];
-    if (typeof value2 == "boolean" || value2 === null)
-      state[value] = state2[value] = value2;
-    else if (typeof value2 == "number")
-      state[value] = state2[value] = Number.isSafeInteger(value2)
-        ? value2
+    let fieldValue: Dynamic = fields[fieldName];
+    if (typeof fieldValue == "boolean" || fieldValue === null)
+      fullFields[fieldName] = leanFields[fieldName] = fieldValue;
+    else if (typeof fieldValue == "number")
+      fullFields[fieldName] = leanFields[fieldName] = Number.isSafeInteger(fieldValue)
+        ? fieldValue
         : null;
-    else if (Array.isArray(value2)) {
-      let value3: Dynamic = value2;
-      value3.some(
-        (input?: Dynamic): Dynamic =>
-          typeof input == "object" && input !== null,
+    else if (Array.isArray(fieldValue)) {
+      let listValue: Dynamic = fieldValue;
+      listValue.some(
+        (item?: Dynamic): Dynamic =>
+          typeof item == "object" && item !== null,
       )
-        ? (state[value] = sanitizeDesignContextSelection(value3))
-        : (state[value] = state2[value] =
-            value3
+        ? (fullFields[fieldName] = sanitizeDesignContextSelection(listValue))
+        : (fullFields[fieldName] = leanFields[fieldName] =
+            listValue
               .filter(isValidDesignContextId)
               .slice(-maxDesignContextFields));
-    } else if (typeof value2 == "object") {
-      let value3: Dynamic =
-        typeof value2.text == "string"
-          ? sanitizeDesignContextText(value2.text)
+    } else if (typeof fieldValue == "object") {
+      let textValue: Dynamic =
+        typeof fieldValue.text == "string"
+          ? sanitizeDesignContextText(fieldValue.text)
           : "";
-      value3 !== "" && (state[value] = value3);
+      textValue !== "" && (fullFields[fieldName] = textValue);
     } else
-      state[value] = state2[value] = isValidDesignContextId(value2)
-        ? value2
+      fullFields[fieldName] = leanFields[fieldName] = isValidDesignContextId(fieldValue)
+        ? fieldValue
         : null;
   }
   return {
-    full: state,
-    lean: state2,
+    full: fullFields,
+    lean: leanFields,
   };
 }
 function createDesignContextPublisher(): Dynamic {
-  let value: Dynamic = !hasRoomCapability(),
-    value2: Dynamic = null,
-    text: Dynamic = "",
-    text2: Dynamic = "",
-    text3: Dynamic = "",
-    flag: Dynamic = false,
-    flag2: Dynamic = false,
-    flag3: Dynamic = false,
-    value3: Dynamic,
-    flag4: Dynamic = false,
-    callback: Dynamic = (): Dynamic => {};
-  value ||
-    (callback = subscribeEditCount((): Dynamic => {
-      value7();
+  let isDisabled: Dynamic = !hasRoomCapability(),
+    latestContext: Dynamic = null,
+    lastFullJson: Dynamic = "",
+    lastLeanJson: Dynamic = "",
+    lastPublishedJson: Dynamic = "",
+    isPublishing: Dynamic = false,
+    hasWarnedOverflow: Dynamic = false,
+    isDisposed: Dynamic = false,
+    flushTimer: Dynamic,
+    needsRetry: Dynamic = false,
+    unsubscribeEditCount: Dynamic = (): Dynamic => {};
+  isDisabled ||
+    (unsubscribeEditCount = subscribeEditCount((): Dynamic => {
+      flush();
     }));
-  function value4(input?: Dynamic): Dynamic {
-    let value8: Dynamic = getEditCount();
-    return value8 > 0
+  function withEditCount(fields?: Dynamic): Dynamic {
+    let editCount: Dynamic = getEditCount();
+    return editCount > 0
       ? {
-          ...input,
-          edits: value8,
+          ...fields,
+          edits: editCount,
         }
-      : input;
+      : fields;
   }
-  let callback2: Dynamic = (input?: Dynamic): Dynamic =>
-    new TextEncoder().encode(input).length <= maxDesignContextBytes;
-  function value5(input?: Dynamic): Dynamic {
-    for (let value8 of [
-      value4(input.full),
-      value4(input.lean),
-      input.lean,
+  let fitsByteLimit: Dynamic = (json?: Dynamic): Dynamic =>
+    new TextEncoder().encode(json).length <= maxDesignContextBytes;
+  function pickPublishableView(fieldSets?: Dynamic): Dynamic {
+    for (let candidateView of [
+      withEditCount(fieldSets.full),
+      withEditCount(fieldSets.lean),
+      fieldSets.lean,
     ] as Dynamic) {
-      let value9: Dynamic = JSON.stringify(value8);
-      if (callback2(value9))
+      let candidateJson: Dynamic = JSON.stringify(candidateView);
+      if (fitsByteLimit(candidateJson))
         return {
-          view: value8,
-          json: value9,
+          view: candidateView,
+          json: candidateJson,
         };
     }
     return {
@@ -206,77 +206,77 @@ function createDesignContextPublisher(): Dynamic {
       json: "",
     };
   }
-  function value6(): Dynamic {
-    clearTimeout(value3);
-    value3 = setTimeout((): Dynamic => {
-      value7();
+  function scheduleFlush(): Dynamic {
+    clearTimeout(flushTimer);
+    flushTimer = setTimeout((): Dynamic => {
+      flush();
     }, maxDesignContextValueBytes);
   }
-  async function value7(): Promise<Dynamic> {
-    clearTimeout(value3);
-    value3 = undefined;
-    if (value || flag || value2 === null) return;
-    flag = true;
-    let { view: value8, json: value9 }: Dynamic = value5(value2);
-    value8 === null &&
-      !flag2 &&
-      ((flag2 = true),
+  async function flush(): Promise<Dynamic> {
+    clearTimeout(flushTimer);
+    flushTimer = undefined;
+    if (isDisabled || isPublishing || latestContext === null) return;
+    isPublishing = true;
+    let { view: view, json: json }: Dynamic = pickPublishableView(latestContext);
+    view === null &&
+      !hasWarnedOverflow &&
+      ((hasWarnedOverflow = true),
       console.warn(
         "appifact presence: context over 3 KiB \u2014 cleared, not published",
       ));
-    let value10: Dynamic = JSON.stringify(value4(value2.full)),
-      value11: Dynamic = text2,
-      value12: Dynamic = getEditCount();
+    let fullJsonBefore: Dynamic = JSON.stringify(withEditCount(latestContext.full)),
+      leanJsonBefore: Dynamic = lastLeanJson,
+      editCountBefore: Dynamic = getEditCount();
     try {
-      if (value9 === text3) return;
-      let value13: Dynamic = await publishRoomPresence({
-        context: value8,
+      if (json === lastPublishedJson) return;
+      let publishResult: Dynamic = await publishRoomPresence({
+        context: view,
       });
-      value13 === "off" &&
-        ((value = true),
-        callback(),
-        !flag3 &&
-          text3 !== "" &&
+      publishResult === "off" &&
+        ((isDisabled = true),
+        unsubscribeEditCount(),
+        !isDisposed &&
+          lastPublishedJson !== "" &&
           publishRoomPresence({
             context: null,
           }));
-      value13 === "ok" && (text3 = value9);
-      flag4 = value13 === "retry";
+      publishResult === "ok" && (lastPublishedJson = json);
+      needsRetry = publishResult === "retry";
     } finally {
-      flag = false;
-      value2 !== null &&
-        JSON.stringify(value4(value2.full)) !== value10 &&
-        (text2 === value11 && getEditCount() === value12
-          ? value3 === undefined && value6()
-          : value7());
+      isPublishing = false;
+      latestContext !== null &&
+        JSON.stringify(withEditCount(latestContext.full)) !== fullJsonBefore &&
+        (lastLeanJson === leanJsonBefore && getEditCount() === editCountBefore
+          ? flushTimer === undefined && scheduleFlush()
+          : flush());
     }
   }
   return {
-    report(input: Dynamic): Dynamic {
-      if (value) return;
-      let value8: Dynamic = sanitizeDesignContextFields(input),
-        value9: Dynamic = JSON.stringify(value8.full);
-      if (value9 === text) {
-        flag4 && value3 === undefined && value7();
+    report(fields: Dynamic): Dynamic {
+      if (isDisabled) return;
+      let sanitized: Dynamic = sanitizeDesignContextFields(fields),
+        fullJson: Dynamic = JSON.stringify(sanitized.full);
+      if (fullJson === lastFullJson) {
+        needsRetry && flushTimer === undefined && flush();
         return;
       }
-      let value10: Dynamic = JSON.stringify(value8.lean),
-        value11: Dynamic = !flag4 && value2 !== null && value10 === text2;
-      value2 = value8;
-      text = value9;
-      text2 = value10;
-      value11 ? value6() : value7();
+      let leanJson: Dynamic = JSON.stringify(sanitized.lean),
+        isLeanOnlyChange: Dynamic = !needsRetry && latestContext !== null && leanJson === lastLeanJson;
+      latestContext = sanitized;
+      lastFullJson = fullJson;
+      lastLeanJson = leanJson;
+      isLeanOnlyChange ? scheduleFlush() : flush();
     },
     dispose(): Dynamic {
-      clearTimeout(value3);
-      callback();
-      !value &&
-        (text3 !== "" || flag) &&
+      clearTimeout(flushTimer);
+      unsubscribeEditCount();
+      !isDisabled &&
+        (lastPublishedJson !== "" || isPublishing) &&
         publishRoomPresence({
           context: null,
         });
-      value2 = null;
-      value = flag3 = true;
+      latestContext = null;
+      isDisabled = isDisposed = true;
     },
   };
 }

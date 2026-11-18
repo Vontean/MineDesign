@@ -9,49 +9,49 @@ var emptyArtboardErrors: Dynamic;
 var maxArtboardErrorMessages: Dynamic;
 var maxArtboardErrorFields: Dynamic;
 var serializeErrorMessages: Dynamic;
-function sanitizeArtboardErrorContext(value?: Dynamic): Dynamic {
-  return Array.isArray(value)
-    ? value.map(
-        (input?: Dynamic): Dynamic =>
-          typeof input == "object" &&
-          input !== null &&
-          typeof input.label == "string"
+function sanitizeArtboardErrorContext(errorContext?: Dynamic): Dynamic {
+  return Array.isArray(errorContext)
+    ? errorContext.map(
+        (contextItem?: Dynamic): Dynamic =>
+          typeof contextItem == "object" &&
+          contextItem !== null &&
+          typeof contextItem.label == "string"
             ? {
-                ...input,
-                label: sanitizeDesignContextText(input.label),
+                ...contextItem,
+                label: sanitizeDesignContextText(contextItem.label),
               }
-            : input,
+            : contextItem,
       )
-    : typeof value == "object" && value !== null
-      ? sanitizeDesignContextText(value.text)
-      : value;
+    : typeof errorContext == "object" && errorContext !== null
+      ? sanitizeDesignContextText(errorContext.text)
+      : errorContext;
 }
 function serializeArtboardErrorContext(
   errors?: Dynamic,
   firstError?: Dynamic,
-  context?: Dynamic,
+  baseContext?: Dynamic,
 ): Dynamic {
   if (errors.length === 0) return [];
   let state: Dynamic = {
       ...Object.fromEntries(
-        Object.entries(context).map(
-          ([input, input2]: Dynamic): Dynamic => [
-            input,
-            sanitizeArtboardErrorContext(input2),
+        Object.entries(baseContext).map(
+          ([contextKey, contextValue]: Dynamic): Dynamic => [
+            contextKey,
+            sanitizeArtboardErrorContext(contextValue),
           ],
         ),
       ),
       erroredArtboards: [],
       firstError: sanitizeDesignContextText(firstError),
     },
-    value: Dynamic =
+    usedBytes: Dynamic =
       new TextEncoder().encode(JSON.stringify(state)).length +
       maxArtboardErrorFields,
     items: Dynamic = [];
-  for (let value2 of errors.slice(0, maxArtboardErrorMessages) as Dynamic) {
-    value += value2.length + 3;
-    if (value > maxDesignContextBytes) break;
-    items.push(value2);
+  for (let message of errors.slice(0, maxArtboardErrorMessages) as Dynamic) {
+    usedBytes += message.length + 3;
+    if (usedBytes > maxDesignContextBytes) break;
+    items.push(message);
   }
   return items;
 }
@@ -70,28 +70,28 @@ function artboardLoadErrorMessages(
   previewError?: Dynamic,
   messages?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = artboardLoadErrorMessage(loadError, previewError);
-  if (value === null) return messages;
-  let value2: Dynamic = sanitizeDesignContextText(value, 300);
-  return value2 === "" ? emptyArtboardErrors : [value2];
+  let loadMessage: Dynamic = artboardLoadErrorMessage(loadError, previewError);
+  if (loadMessage === null) return messages;
+  let sanitizedMessage: Dynamic = sanitizeDesignContextText(loadMessage, 300);
+  return sanitizedMessage === "" ? emptyArtboardErrors : [sanitizedMessage];
 }
 function normalizeArtboardErrorMessages(errors?: Dynamic): Dynamic {
   if (!Array.isArray(errors)) return [];
   let items: Dynamic = [];
-  for (let value of errors.slice(0, 10) as Dynamic) {
-    let value2: Dynamic =
-      typeof value == "object" && value !== null ? value.message : undefined;
-    if (typeof value2 != "string") continue;
-    let value3: Dynamic = sanitizeDesignContextText(value2, 300);
-    value3 !== "" && !items.includes(value3) && items.push(value3);
+  for (let errorEntry of errors.slice(0, 10) as Dynamic) {
+    let rawMessage: Dynamic =
+      typeof errorEntry == "object" && errorEntry !== null ? errorEntry.message : undefined;
+    if (typeof rawMessage != "string") continue;
+    let sanitizedMessage: Dynamic = sanitizeDesignContextText(rawMessage, 300);
+    sanitizedMessage !== "" && !items.includes(sanitizedMessage) && items.push(sanitizedMessage);
   }
   return items;
 }
 function reuseEqualStringArray(previous?: Dynamic, next?: Dynamic): Dynamic {
   return previous.length === next.length &&
     previous.every(
-      (input?: Dynamic, options?: Dynamic): Dynamic =>
-        input === next[options],
+      (previousMessage?: Dynamic, messageIndex?: Dynamic): Dynamic =>
+        previousMessage === next[messageIndex],
     )
     ? previous
     : next;
@@ -144,8 +144,8 @@ function retainMatchingDismissedErrors(
 ): Dynamic {
   return new Map(
     [...errors].filter(
-      ([input, input2]: Dynamic): Dynamic =>
-        errorMessagesMatch(dismissedMap, input, input2),
+      ([file, messages]: Dynamic): Dynamic =>
+        errorMessagesMatch(dismissedMap, file, messages),
     ),
   );
 }
@@ -171,7 +171,7 @@ export function installCanvasArtboardErrors(): () => void {
     emptyArtboardErrors = [];
     maxArtboardErrorMessages = 10;
     maxArtboardErrorFields = 32;
-    serializeErrorMessages = (input?: Dynamic): Dynamic =>
-      JSON.stringify(input);
+    serializeErrorMessages = (messages?: Dynamic): Dynamic =>
+      JSON.stringify(messages);
   };
 }

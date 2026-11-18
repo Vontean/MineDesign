@@ -40,9 +40,9 @@ function useArtboardRuntimeInstallation(
   }, [readyGeneration]);
   npm_useEventListener_bc(
     "message",
-    (input?: Dynamic): Dynamic => {
-      if (!isPreviewMessage(input, webviewRef.current)) return;
-      let data: Dynamic = input.data;
+    (messageEvent?: Dynamic): Dynamic => {
+      if (!isPreviewMessage(messageEvent, webviewRef.current)) return;
+      let data: Dynamic = messageEvent.data;
       data?.type === "__dc_design_mode" &&
         (data.mode === "canvas"
           ? (setDesignModePending(false), setCanvasMode(true))
@@ -51,78 +51,78 @@ function useArtboardRuntimeInstallation(
   );
   (0, react_nh.useEffect)((): Dynamic => {
     if (readyGeneration === 0) return;
-    let value: Dynamic = createPreviewHandle(webviewRef.current);
-    value && setPickerTheme(value, resolvedTheme);
+    let previewHandle: Dynamic = createPreviewHandle(webviewRef.current);
+    previewHandle && setPickerTheme(previewHandle, resolvedTheme);
   }, [resolvedTheme]);
   (0, react_nh.useEffect)((): Dynamic => {
     if (!designModePending || keepDesignMode) return;
-    let value: Dynamic = setTimeout((): Dynamic => {
+    let timeoutId: Dynamic = setTimeout((): Dynamic => {
       setCanvasMode(false);
       setDesignModePending(false);
     }, 500);
-    return (): Dynamic => clearTimeout(value);
+    return (): Dynamic => clearTimeout(timeoutId);
   }, [designModePending, keepDesignMode]);
   let shouldInstall: Dynamic = enabled || canvasMode;
   (0, react_nh.useEffect)((): Dynamic => {
     if (readyGeneration === 0 || !shouldInstall) return;
-    let value: Dynamic = createPreviewHandle(webviewRef.current);
-    if (!value) return;
-    installPicker(value, resolvedThemeRef.current);
-    setPickerReadOnly(value, readOnlyRef.current);
+    let previewHandle: Dynamic = createPreviewHandle(webviewRef.current);
+    if (!previewHandle) return;
+    installPicker(previewHandle, resolvedThemeRef.current);
+    setPickerReadOnly(previewHandle, readOnlyRef.current);
     installPanelHooksRef.current
-      ? enablePicker(value)
-      : enablePickerPanZoom(value);
-    setInstallGeneration((input?: Dynamic): Dynamic => input + 1);
+      ? enablePicker(previewHandle)
+      : enablePickerPanZoom(previewHandle);
+    setInstallGeneration((generation?: Dynamic): Dynamic => generation + 1);
     let flag: Dynamic = false,
-      value2: Dynamic = [700, 2e3].map(
-        (input?: Dynamic): Dynamic =>
+      retryTimerIds: Dynamic = [700, 2e3].map(
+        (delayMs?: Dynamic): Dynamic =>
           setTimeout((): Dynamic => {
-            isPickerInstalled(value).then(
-              (input2?: Dynamic): Dynamic => {
+            isPickerInstalled(previewHandle).then(
+              (isPickerReady?: Dynamic): Dynamic => {
                 flag ||
-                  input2 ||
+                  isPickerReady ||
                   (installPicker(
-                    value,
+                    previewHandle,
                     resolvedThemeRef.current,
                   ),
                   setPickerPanZoomArmed(
-                    value,
+                    previewHandle,
                     forceCanvasMode || canvasModeRef.current,
                   ),
-                  setPickerReadOnly(value, readOnlyRef.current),
+                  setPickerReadOnly(previewHandle, readOnlyRef.current),
                   installPanelHooksRef.current
-                    ? enablePicker(value)
-                    : enablePickerPanZoom(value),
+                    ? enablePicker(previewHandle)
+                    : enablePickerPanZoom(previewHandle),
                   setInstallGeneration(
-                    (input3?: Dynamic): Dynamic => input3 + 1,
+                    (generation?: Dynamic): Dynamic => generation + 1,
                   ));
               },
             );
-          }, input),
+          }, delayMs),
       );
     return (): Dynamic => {
       flag = true;
-      for (let value3 of value2 as Dynamic) clearTimeout(value3);
-      disablePicker(value);
+      for (let timerId of retryTimerIds as Dynamic) clearTimeout(timerId);
+      disablePicker(previewHandle);
     };
   }, [readyGeneration, shouldInstall]);
   (0, react_nh.useEffect)((): Dynamic => {
     if (readyGeneration === 0 || !shouldInstall) return;
-    let value: Dynamic = createPreviewHandle(webviewRef.current);
-    value &&
+    let previewHandle: Dynamic = createPreviewHandle(webviewRef.current);
+    previewHandle &&
       setPickerPanZoomArmed(
-        value,
+        previewHandle,
         forceCanvasMode || canvasMode,
       );
   }, [readyGeneration, shouldInstall, canvasMode, forceCanvasMode]);
   (0, react_nh.useEffect)((): Dynamic => {
     if (readyGeneration === 0 || !shouldInstall) return;
-    let value: Dynamic = createPreviewHandle(webviewRef.current);
-    value &&
-      (setPickerReadOnly(value, readOnly),
+    let previewHandle: Dynamic = createPreviewHandle(webviewRef.current);
+    previewHandle &&
+      (setPickerReadOnly(previewHandle, readOnly),
       installPanelHooks
-        ? enablePicker(value)
-        : enablePickerPanZoom(value));
+        ? enablePicker(previewHandle)
+        : enablePickerPanZoom(previewHandle));
   }, [readyGeneration, shouldInstall, installPanelHooks, readOnly]);
   return {
     installGen: installGeneration,

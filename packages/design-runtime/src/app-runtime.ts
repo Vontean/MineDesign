@@ -582,7 +582,7 @@ import { installApplicationMain } from "./application/main";
 
 /** Preserve hoisting, live bindings, and initialization order from the shipped IIFE. */
 export function createDesignRuntime(
-  options: { boot?: boolean } = {},
+  runtimeOptions: { boot?: boolean } = {},
 ): void {
   installDependencies();
   const initializers = [
@@ -1168,7 +1168,7 @@ export function createDesignRuntime(
     installApplicationMain(),
   ];
   for (let index = 0; index < initializers.length; index++) {
-    if (options.boot === false && index === initializers.length - 1) continue;
+    if (runtimeOptions.boot === false && index === initializers.length - 1) continue;
     initializers[index]!();
   }
 }

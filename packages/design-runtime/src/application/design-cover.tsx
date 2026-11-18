@@ -26,18 +26,18 @@ function computeCoverBounds(
   viewportHeight?: Dynamic,
 ): Dynamic {
   let left: Dynamic = Math.min(
-      ...boards.map((input?: Dynamic): Dynamic => input.x),
+      ...boards.map((board?: Dynamic): Dynamic => board.x),
     ),
     top: Dynamic = Math.min(
-      ...boards.map((input?: Dynamic): Dynamic => input.y),
+      ...boards.map((board?: Dynamic): Dynamic => board.y),
     ),
     width: Dynamic =
       Math.max(
-        ...boards.map((input?: Dynamic): Dynamic => input.x + input.w),
+        ...boards.map((board?: Dynamic): Dynamic => board.x + board.w),
       ) - left,
     height: Dynamic =
       Math.max(
-        ...boards.map((input?: Dynamic): Dynamic => input.y + input.h),
+        ...boards.map((board?: Dynamic): Dynamic => board.y + board.h),
       ) - top,
     availableWidth: Dynamic = Math.min(
       viewportWidth - 2 * COVER_VIEWPORT_PADDING,
@@ -63,15 +63,15 @@ function selectCoverArtboard(content?: Dynamic): Dynamic {
       content.files[canvasMetadataFile] ?? null,
       content.files,
     ),
-    hasContent: Dynamic = (input?: Dynamic): Dynamic =>
-      !isLoadingArtboardHtml(content.files[input.file] ?? ""),
+    hasContent: Dynamic = (board?: Dynamic): Dynamic =>
+      !isLoadingArtboardHtml(content.files[board.file] ?? ""),
     coverBoard: Dynamic = manifest.artboards.find(
-      (input?: Dynamic): Dynamic => input.file === manifest.cover,
+      (board?: Dynamic): Dynamic => board.file === manifest.cover,
     );
   return coverBoard !== undefined && hasContent(coverBoard)
     ? coverBoard
     : (manifest.artboards.find(
-        (input?: Dynamic): Dynamic => !input.frameless && hasContent(input),
+        (board?: Dynamic): Dynamic => !board.frameless && hasContent(board),
       ) ?? manifest.artboards.find(hasContent));
 }
 function selectCoverSnapshotBoards(content?: Dynamic): Dynamic {
@@ -80,13 +80,13 @@ function selectCoverSnapshotBoards(content?: Dynamic): Dynamic {
     content.files,
   );
   if (manifest.cover !== undefined) return;
-  let isSnapshotBoard: Dynamic = (input?: Dynamic): Dynamic =>
-      !input.frameless &&
-      !isLoadingArtboardHtml(content.files[input.file] ?? ""),
+  let isSnapshotBoard: Dynamic = (board?: Dynamic): Dynamic =>
+      !board.frameless &&
+      !isLoadingArtboardHtml(content.files[board.file] ?? ""),
     firstBoard: Dynamic = manifest.artboards.find(isSnapshotBoard);
   if (firstBoard === undefined) return;
-  let boardsForPage: Dynamic = (input?: Dynamic): Dynamic =>
-      designPageContents(manifest, input)
+  let boardsForPage: Dynamic = (pageId?: Dynamic): Dynamic =>
+      designPageContents(manifest, pageId)
         .artboards.filter(isSnapshotBoard)
         .slice(0, MAX_COVER_ARTBOARDS),
     launchFile: Dynamic =
@@ -94,7 +94,7 @@ function selectCoverSnapshotBoards(content?: Dynamic): Dynamic {
         ? manifest.launch.file
         : primaryDesignFile(content),
     launchBoard: Dynamic = manifest.artboards.find(
-      (input?: Dynamic): Dynamic => input.file === launchFile,
+      (board?: Dynamic): Dynamic => board.file === launchFile,
     ),
     launchPage: Dynamic =
       manifest.launch?.view === "canvas" && manifest.launch.page !== undefined
@@ -141,16 +141,16 @@ function DesignCover({
     actionsRef: Dynamic = (0, ReactCover.useRef)(null),
     content: Dynamic = (0, ReactCover.useSyncExternalStore)(
       (0, ReactCover.useCallback)(
-        (input?: Dynamic): Dynamic => doc.subscribe((): Dynamic => input()),
+        (onChange?: Dynamic): Dynamic => doc.subscribe((): Dynamic => onChange()),
         [doc],
       ),
       (): Dynamic => doc.content(),
     ),
     isLoaded: Dynamic = (0, ReactCover.useSyncExternalStore)(
       (0, ReactCover.useCallback)(
-        (input?: Dynamic): Dynamic =>
+        (onChange?: Dynamic): Dynamic =>
           "subscribeLoad" in doc
-            ? doc.subscribeLoad(input)
+            ? doc.subscribeLoad(onChange)
             : (): Dynamic => {},
         [doc],
       ),
@@ -176,23 +176,23 @@ function DesignCover({
       (): Dynamic => new Map(),
     ),
     onBoardPainted: Dynamic = (0, ReactCover.useCallback)(
-      (input?: Dynamic): Dynamic =>
+      (file?: Dynamic): Dynamic =>
         setPaintStates(
-          (input2?: Dynamic): Dynamic =>
-            input2.get(input) === "painted"
-              ? input2
-              : new Map(input2).set(input, "painted"),
+          (previousStates?: Dynamic): Dynamic =>
+            previousStates.get(file) === "painted"
+              ? previousStates
+              : new Map(previousStates).set(file, "painted"),
         ),
       [],
     ),
     onBoardBlocked: Dynamic = (0, ReactCover.useCallback)(
-      (input?: Dynamic, options?: Dynamic): Dynamic => {
-        options &&
+      (file?: Dynamic, isBlocked?: Dynamic): Dynamic => {
+        isBlocked &&
           setPaintStates(
-            (input2?: Dynamic): Dynamic =>
-              input2.get(input) === "failed"
-                ? input2
-                : new Map(input2).set(input, "failed"),
+            (previousStates?: Dynamic): Dynamic =>
+              previousStates.get(file) === "failed"
+                ? previousStates
+                : new Map(previousStates).set(file, "failed"),
           );
       },
       [],
@@ -218,12 +218,12 @@ function DesignCover({
         (): Dynamic => markCaptureFramesReady(),
       );
   }, [thumbnailReady]);
-  let renderBoard: Dynamic = (input?: Dynamic): Dynamic =>
+  let renderBoard: Dynamic = (board?: Dynamic): Dynamic =>
       (() => {
         const _Component = Board;
         const _props = {
-          file: input.file,
-          displayTitle: input.title ?? input.file,
+          file: board.file,
+          displayTitle: board.title ?? board.file,
           assets: assets,
           doc: doc,
           focused: false,
@@ -242,7 +242,7 @@ function DesignCover({
           settleSessionRef: settleSessionRef,
           actionsRef: actionsRef,
         } as const;
-        const _key = input.file;
+        const _key = board.file;
         return <_Component key={_key} {..._props} />;
       })(),
     firstBoard: Dynamic = boards[0];
@@ -252,8 +252,8 @@ function DesignCover({
         {isSnapshot ? (<CanvasSnapshotCover
             boards={boards}
             veiled={!hasPaintedBoard}
-            empty={(input?: Dynamic): Dynamic =>
-              paintStates.get(input.file) !== "painted"
+            empty={(board?: Dynamic): Dynamic =>
+              paintStates.get(board.file) !== "painted"
             }
           >
             {renderBoard}
@@ -385,25 +385,25 @@ function CanvasSnapshotCover({
           }}
         >
           {boards.map(
-            (input?: Dynamic): Dynamic =>
+            (board?: Dynamic): Dynamic =>
               (() => {
-                const _Component2 = "div";
-                const _props2 = {
+                const BoardElement = "div";
+                const boardProps = {
                   className:
                     "absolute isolate flex flex-col overflow-hidden bg-white",
                   style: {
-                    left: input.x - left,
-                    top: input.y - top,
-                    width: input.w,
-                    height: input.h,
+                    left: board.x - left,
+                    top: board.y - top,
+                    width: board.w,
+                    height: board.h,
                     boxShadow: borderShadow,
                     borderRadius: artboardRadiusCss(
-                      input.radius,
+                      board.radius,
                     ),
                   },
                   children: [
-                    renderBoard(input),
-                    isEmptyBoard(input) ? (
+                    renderBoard(board),
+                    isEmptyBoard(board) ? (
                       <div
                         data-design-cover-empty={""}
                         className={"absolute inset-0 z-20 bg-om-bg-canvas"}
@@ -411,8 +411,8 @@ function CanvasSnapshotCover({
                     ) : null,
                   ],
                 } as const;
-                const _key2 = input.file;
-                return <_Component2 key={_key2} {..._props2} />;
+                const boardKey = board.file;
+                return <BoardElement key={boardKey} {...boardProps} />;
               })(),
           )}
         </div>

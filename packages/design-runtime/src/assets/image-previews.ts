@@ -9,27 +9,27 @@ var imageMimeByExtension: Dynamic;
 var imagePreviewCache: Dynamic;
 var inlineImagePreview: Dynamic;
 function resolveImagePreviewUrl(source?: Dynamic, files?: Dynamic): Dynamic {
-  let value: Dynamic = inlineImagePreview(source);
-  if (value !== null) return value;
+  let inlineUrl: Dynamic = inlineImagePreview(source);
+  if (inlineUrl !== null) return inlineUrl;
   if (!source.startsWith("./")) return null;
-  let value2: Dynamic = source.slice(2),
-    value3: Dynamic = files[value2];
-  if (typeof value3 != "string" || value3.length > imagePreviewMaxBytes)
+  let relativePath: Dynamic = source.slice(2),
+    base64Data: Dynamic = files[relativePath];
+  if (typeof base64Data != "string" || base64Data.length > imagePreviewMaxBytes)
     return null;
-  let entry: Dynamic = imagePreviewCache.get(value2);
-  if (entry !== undefined && entry.b64 === value3) return entry.url;
-  let entry2: Dynamic = imageMimeByExtension.get(
-    value2.slice(value2.lastIndexOf(".") + 1).toLowerCase(),
+  let cachedPreview: Dynamic = imagePreviewCache.get(relativePath);
+  if (cachedPreview !== undefined && cachedPreview.b64 === base64Data) return cachedPreview.url;
+  let mimeType: Dynamic = imageMimeByExtension.get(
+    relativePath.slice(relativePath.lastIndexOf(".") + 1).toLowerCase(),
   );
-  if (entry2 === undefined) return null;
-  let value4: Dynamic = "data:" + entry2 + ";base64," + value3;
-  imagePreviewCache.set(value2, {
-    b64: value3,
-    url: value4,
+  if (mimeType === undefined) return null;
+  let dataUrl: Dynamic = "data:" + mimeType + ";base64," + base64Data;
+  imagePreviewCache.set(relativePath, {
+    b64: base64Data,
+    url: dataUrl,
   });
   imagePreviewCache.size > 64 &&
     imagePreviewCache.delete(imagePreviewCache.keys().next().value);
-  return value4;
+  return dataUrl;
 }
 export {
   imageMimeByExtension,
@@ -51,11 +51,11 @@ export function installAssetsImagePreviews(): () => void {
       ["avif", "image/avif"],
     ]);
     imagePreviewCache = new Map();
-    inlineImagePreview = (input?: Dynamic): Dynamic =>
-      isBlobAssetUrl(input)
-        ? input.startsWith("_blob/")
-          ? "/" + input
-          : input
+    inlineImagePreview = (assetUrl?: Dynamic): Dynamic =>
+      isBlobAssetUrl(assetUrl)
+        ? assetUrl.startsWith("_blob/")
+          ? "/" + assetUrl
+          : assetUrl
         : null;
   };
 }

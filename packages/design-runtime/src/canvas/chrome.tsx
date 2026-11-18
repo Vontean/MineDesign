@@ -49,30 +49,30 @@ function CanvasRectVisibility({
   surfaceRef: surfaceRef,
   children: children,
 }: Dynamic): Dynamic {
-  let value: Dynamic = useViewportStore(),
-    callback: Dynamic = (): Dynamic => {
-      let entry: Dynamic = value.get(),
+  let viewportStore: Dynamic = useViewportStore(),
+    isRectVisible: Dynamic = (): Dynamic => {
+      let viewport: Dynamic = viewportStore.get(),
         current: Dynamic = surfaceRef.current;
       return (
         distanceBetweenRects(rect, {
-          x: entry.x,
-          y: entry.y,
-          w: (current?.clientWidth || 1200) / entry.scale,
-          h: (current?.clientHeight || 800) / entry.scale,
+          x: viewport.x,
+          y: viewport.y,
+          w: (current?.clientWidth || 1200) / viewport.scale,
+          h: (current?.clientHeight || 800) / viewport.scale,
         }) === 0
       );
     };
   return children(
     (0, reactVectorToolState_2.useSyncExternalStore)(
-      value.subscribe,
-      callback,
-      callback,
+      viewportStore.subscribe,
+      isRectVisible,
+      isRectVisible,
     ),
   );
 }
 function CanvasSnapGuides({ guides: guides }: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic = useViewport();
+  let viewport: Dynamic = useViewport();
   return (
     <div
       data-testid={"mega-snap-guides"}
@@ -82,11 +82,11 @@ function CanvasSnapGuides({ guides: guides }: Dynamic): Dynamic {
       <AlignmentGuides
         scale={1}
         guides={guides.map(
-          (input?: Dynamic): Dynamic => ({
-            axis: input.axis,
+          (guide?: Dynamic): Dynamic => ({
+            axis: guide.axis,
             pos:
-              (input.pos - (input.axis === "x" ? value.x : value.y)) *
-              value.scale,
+              (guide.pos - (guide.axis === "x" ? viewport.x : viewport.y)) *
+              viewport.scale,
           }),
         )}
       />
@@ -95,39 +95,39 @@ function CanvasSnapGuides({ guides: guides }: Dynamic): Dynamic {
 }
 function CanvasGapGuides({ gaps: gaps }: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic = useViewport(),
-    callback: Dynamic = (input?: Dynamic): Dynamic =>
-      (input - value.x) * value.scale,
-    callback2: Dynamic = (input?: Dynamic): Dynamic =>
-      (input - value.y) * value.scale,
-    state: Dynamic = {
+  let viewport: Dynamic = useViewport(),
+    toScreenX: Dynamic = (worldX?: Dynamic): Dynamic =>
+      (worldX - viewport.x) * viewport.scale,
+    toScreenY: Dynamic = (worldY?: Dynamic): Dynamic =>
+      (worldY - viewport.y) * viewport.scale,
+    measurement: Dynamic = {
       lines: [],
       labels: [],
     };
-  for (let value2 of gaps as Dynamic)
-    value2.axis === "x"
-      ? (state.lines.push({
-          x1: callback(value2.from),
-          y1: callback2(value2.at),
-          x2: callback(value2.to),
-          y2: callback2(value2.at),
+  for (let gap of gaps as Dynamic)
+    gap.axis === "x"
+      ? (measurement.lines.push({
+          x1: toScreenX(gap.from),
+          y1: toScreenY(gap.at),
+          x2: toScreenX(gap.to),
+          y2: toScreenY(gap.at),
         }),
-        state.labels.push({
-          x: callback((value2.from + value2.to) / 2),
-          y: callback2(value2.at),
-          text: value2.label,
+        measurement.labels.push({
+          x: toScreenX((gap.from + gap.to) / 2),
+          y: toScreenY(gap.at),
+          text: gap.label,
           axis: "x",
         }))
-      : (state.lines.push({
-          x1: callback(value2.at),
-          y1: callback2(value2.from),
-          x2: callback(value2.at),
-          y2: callback2(value2.to),
+      : (measurement.lines.push({
+          x1: toScreenX(gap.at),
+          y1: toScreenY(gap.from),
+          x2: toScreenX(gap.at),
+          y2: toScreenY(gap.to),
         }),
-        state.labels.push({
-          x: callback(value2.at),
-          y: callback2((value2.from + value2.to) / 2),
-          text: value2.label,
+        measurement.labels.push({
+          x: toScreenX(gap.at),
+          y: toScreenY((gap.from + gap.to) / 2),
+          text: gap.label,
           axis: "y",
         }));
   return (
@@ -136,7 +136,7 @@ function CanvasGapGuides({ gaps: gaps }: Dynamic): Dynamic {
       aria-hidden={"true"}
       className={"pointer-events-none absolute inset-0 z-30"}
     >
-      <MeasurementOverlay m={state} scale={1} />
+      <MeasurementOverlay m={measurement} scale={1} />
     </div>
   );
 }
@@ -148,34 +148,34 @@ function CanvasAnchoredPopover({
   children: children,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic = useViewport(),
-    value2: Dynamic = (x - value.x) * value.scale,
-    value3: Dynamic = Math.max(40, (y - value.y) * value.scale + dy2),
-    value4: Dynamic = (0, reactVectorToolState_2.useRef)(null),
-    [value5, value6]: Dynamic = (0, reactVectorToolState_2.useState)(
+  let viewport: Dynamic = useViewport(),
+    screenX: Dynamic = (x - viewport.x) * viewport.scale,
+    screenY: Dynamic = Math.max(40, (y - viewport.y) * viewport.scale + dy2),
+    popoverRef: Dynamic = (0, reactVectorToolState_2.useRef)(null),
+    [measuredSize, setMeasuredSize]: Dynamic = (0, reactVectorToolState_2.useState)(
       null,
     );
   (0, reactVectorToolState_2.useLayoutEffect)((): Dynamic => {
-    let current: Dynamic = value4.current;
+    let current: Dynamic = popoverRef.current;
     if (!current) return;
     let callback: Dynamic = (): Dynamic => {
       let bounds: Dynamic = current.getBoundingClientRect(),
-        value7: Dynamic =
+        parentWidth: Dynamic =
           current.offsetParent?.clientWidth ?? (window as Dynamic).innerWidth,
-        value8: Dynamic = toolbarOverlayHeight(current);
-      value6(
-        (input?: Dynamic): Dynamic =>
-          input &&
-          Math.abs(input.w - bounds.width) < 0.5 &&
-          Math.abs(input.h - bounds.height) < 0.5 &&
-          input.pw === value7 &&
-          input.inset === value8
-            ? input
+        toolbarInset: Dynamic = toolbarOverlayHeight(current);
+      setMeasuredSize(
+        (previousSize?: Dynamic): Dynamic =>
+          previousSize &&
+          Math.abs(previousSize.w - bounds.width) < 0.5 &&
+          Math.abs(previousSize.h - bounds.height) < 0.5 &&
+          previousSize.pw === parentWidth &&
+          previousSize.inset === toolbarInset
+            ? previousSize
             : {
                 w: bounds.width,
                 h: bounds.height,
-                pw: value7,
-                inset: value8,
+                pw: parentWidth,
+                inset: toolbarInset,
               },
       );
     };
@@ -187,7 +187,7 @@ function CanvasAnchoredPopover({
   }, []);
   return (
     <div
-      ref={value4}
+      ref={popoverRef}
       data-mega-chrome={"selection-menu"}
       data-testid={"mega-selection-menu"}
       className={joinClassNames(
@@ -195,22 +195,22 @@ function CanvasAnchoredPopover({
         belowSheet ? "z-[39]" : "z-[45]",
       )}
       style={
-        value5
+        measuredSize
           ? {
               left: Math.max(
                 8,
-                Math.min(value2 - value5.w / 2, value5.pw - value5.w - 8),
+                Math.min(screenX - measuredSize.w / 2, measuredSize.pw - measuredSize.w - 8),
               ),
-              top: Math.max(value5.inset + 4, value3 - value5.h - 8),
+              top: Math.max(measuredSize.inset + 4, screenY - measuredSize.h - 8),
             }
           : {
-              left: value2,
-              top: value3,
+              left: screenX,
+              top: screenY,
               visibility: "hidden",
             }
       }
     >
-      {children([value.x, value.y, value.scale].join(","))}
+      {children([viewport.x, viewport.y, viewport.scale].join(","))}
     </div>
   );
 }
@@ -238,26 +238,26 @@ function focusedArtboardContentRect(
   showTweaks?: Dynamic,
   propsByFile?: Dynamic,
 ): Dynamic {
-  let value: Dynamic =
+  let focusedArtboard: Dynamic =
     focusedFile == null
       ? undefined
       : artboards.find(
-          (input?: Dynamic): Dynamic => input.file === focusedFile,
+          (artboard?: Dynamic): Dynamic => artboard.file === focusedFile,
         );
-  if (!value || !fullscreenBox) return null;
-  let value2: Dynamic = artboardContentBox(
-    value,
+  if (!focusedArtboard || !fullscreenBox) return null;
+  let contentBox: Dynamic = artboardContentBox(
+    focusedArtboard,
     fullscreenBox,
-    showTweaks && propsByFile?.[value.file]
+    showTweaks && propsByFile?.[focusedArtboard.file]
       ? artboardTweaksRowHeight
       : 0,
   );
   return {
-    file: value.file,
-    x: value.x,
-    y: value.y + value2.top,
-    w: value2.w,
-    h: value2.h,
+    file: focusedArtboard.file,
+    x: focusedArtboard.x,
+    y: focusedArtboard.y + contentBox.top,
+    w: contentBox.w,
+    h: contentBox.h,
   };
 }
 function commentPointWithinVisibleContent(
@@ -265,119 +265,119 @@ function commentPointWithinVisibleContent(
   board?: Dynamic,
   visibleContent?: Dynamic,
 ): Dynamic {
-  let callback: Dynamic = (
-      input?: Dynamic,
-      options?: Dynamic,
-      context?: Dynamic,
-    ): Dynamic => Math.max(options, Math.min(context, input)),
-    value: Dynamic = Math.min(8, visibleContent.w / 2),
-    value2: Dynamic = Math.min(8, visibleContent.h / 2);
+  let clamp: Dynamic = (
+      coordinate?: Dynamic,
+      min?: Dynamic,
+      max?: Dynamic,
+    ): Dynamic => Math.max(min, Math.min(max, coordinate)),
+    insetX: Dynamic = Math.min(8, visibleContent.w / 2),
+    insetY: Dynamic = Math.min(8, visibleContent.h / 2);
   return {
-    px: callback(
-      callback(
+    px: clamp(
+      clamp(
         point.x - board.x,
-        visibleContent.x + value,
-        visibleContent.x + visibleContent.w - value,
+        visibleContent.x + insetX,
+        visibleContent.x + visibleContent.w - insetX,
       ),
-      value,
-      board.w - value,
+      insetX,
+      board.w - insetX,
     ),
-    py: callback(
-      callback(
+    py: clamp(
+      clamp(
         point.y - board.y,
-        visibleContent.y + value2,
-        visibleContent.y + visibleContent.h - value2,
+        visibleContent.y + insetY,
+        visibleContent.y + visibleContent.h - insetY,
       ),
-      value2,
-      board.h - value2,
+      insetY,
+      board.h - insetY,
     ),
   };
 }
-function ArtboardNoticeAnchor(input?: Dynamic): Dynamic {
+function ArtboardNoticeAnchor(props?: Dynamic): Dynamic {
   useUiLocale();
   return (
     <div
       className={"pointer-events-none absolute h-0 w-0"}
       style={{
-        left: input.x,
-        top: input.y,
+        left: props.x,
+        top: props.y,
       }}
     >
       <ArtboardNoticePlane
-        w={input.w}
+        w={props.w}
         full={false}
-        inert={input.inert}
-        stamp={input.stamp}
+        inert={props.inert}
+        stamp={props.stamp}
       >
-        {input.children}
+        {props.children}
       </ArtboardNoticePlane>
     </div>
   );
 }
-function ArtboardNoticePlane(input?: Dynamic): Dynamic {
+function ArtboardNoticePlane(props?: Dynamic): Dynamic {
   useUiLocale();
   return (
     <div
       data-mega-notice-plane={""}
-      inert={input.inert ? true : undefined}
+      inert={props.inert ? true : undefined}
       className={joinClassNames(
         "@container/foot pointer-events-none absolute left-0 z-30 flex",
-        input.full ? "bottom-0 p-3" : "top-full",
+        props.full ? "bottom-0 p-3" : "top-full",
       )}
-      ref={input.stamp}
+      ref={props.stamp}
       style={{
-        width: `calc(${input.w}px * var(--mega-scale))`,
+        width: `calc(${props.w}px * var(--mega-scale))`,
         transform: "scale(var(--mega-inv-scale))",
-        transformOrigin: input.full ? "left bottom" : "left top",
-        marginTop: input.full
+        transformOrigin: props.full ? "left bottom" : "left top",
+        marginTop: props.full
           ? undefined
           : "calc(6px * var(--mega-inv-scale))",
       }}
     >
-      {input.children}
+      {props.children}
     </div>
   );
 }
-function ArtboardOverlayPlane(input?: Dynamic): Dynamic {
+function ArtboardOverlayPlane(props?: Dynamic): Dynamic {
   useUiLocale();
-  if (input.fullscreenFile == null)
+  if (props.fullscreenFile == null)
     return (
       <div className={"pointer-events-none absolute inset-0 z-[28]"}>
-        {input.overlay(input.a.file, null)}
+        {props.overlay(props.a.file, null)}
       </div>
     );
-  if (input.fullscreenFile !== input.a.file) return null;
-  let value: Dynamic = artboardContentBox(
-    input.a,
-    input.fullscreenBox,
-    input.rowH,
+  if (props.fullscreenFile !== props.a.file) return null;
+  let contentBox: Dynamic = artboardContentBox(
+    props.a,
+    props.fullscreenBox,
+    props.rowH,
   );
   return (
     <div
       data-testid={"mega-page-overlay"}
       className={"pointer-events-none absolute left-0 z-[28]"}
       style={{
-        top: value.top,
-        width: value.w,
-        height: value.h,
+        top: contentBox.top,
+        width: contentBox.w,
+        height: contentBox.h,
       }}
     >
-      {input.overlay(input.a.file, {
-        w: value.w,
-        h: value.h,
+      {props.overlay(props.a.file, {
+        w: contentBox.w,
+        h: contentBox.h,
       })}
     </div>
   );
 }
-function shouldShowArtboardFaceOverlay(state?: Dynamic): Dynamic {
+function shouldShowArtboardFaceOverlay(faceState?: Dynamic): Dynamic {
   return (
-    state.live &&
-    !state.blocked &&
-    !state.frameless &&
-    !state.focused &&
-    !state.selected &&
-    !state.playing &&
-    !state.fullWindow
+    faceState.live &&
+    !faceState.blocked &&
+    !faceState.frameless &&
+    !faceState.focused &&
+    !faceState.selected &&
+    !faceState.playing &&
+    !faceState.fullWindow
   );
 }
 export {
@@ -422,27 +422,27 @@ export function installCanvasChrome(): () => void {
     hideTweaksAtNarrowHeaderClass = "@max-[10.5rem]/hdr:hidden";
     hideDownloadAtNarrowHeaderClass = "@max-[8.75rem]/hdr:hidden";
     ArtboardHeaderActions = (0, reactVectorToolState_2.memo)(function (
-      input?: Dynamic,
+      props?: Dynamic,
     ): Dynamic {
-      let { file: value, title: value2 }: Dynamic = input,
-        value3: Dynamic = (0, reactVectorToolState_2.useRef)(null),
-        value4: Dynamic = (0, reactVectorToolState_2.useRef)(null);
+      let { file: artboardFile, title: artboardTitle }: Dynamic = props,
+        containerRef: Dynamic = (0, reactVectorToolState_2.useRef)(null),
+        focusedElementRef: Dynamic = (0, reactVectorToolState_2.useRef)(null);
       (0, reactVectorToolState_2.useLayoutEffect)((): Dynamic => {
-        let current: Dynamic = value4.current;
+        let current: Dynamic = focusedElementRef.current;
         !current ||
           current.isConnected ||
-          ((value4.current = null),
+          ((focusedElementRef.current = null),
           (document as Dynamic).activeElement === (document as Dynamic).body &&
-            value3.current?.querySelector('[data-mega-chrome="play"]')?.focus({
+            containerRef.current?.querySelector('[data-mega-chrome="play"]')?.focus({
               preventScroll: true,
             }));
-      }, [input.play]);
+      }, [props.play]);
       return (
         <div
-          ref={value3}
+          ref={containerRef}
           className={"ml-auto flex shrink-0 items-center gap-1.5"}
           onFocusCapture={(event?: Dynamic): Dynamic => {
-            value4.current =
+            focusedElementRef.current =
               event.target.closest(
                 '[data-mega-chrome="play"], [role="menu"]',
               ) != null
@@ -450,43 +450,43 @@ export function installCanvasChrome(): () => void {
                 : null;
           }}
           onBlurCapture={(): Dynamic => {
-            value4.current = null;
+            focusedElementRef.current = null;
           }}
-          aria-hidden={input.inert ? true : undefined}
-          onPointerDown={(input2?: Dynamic): Dynamic =>
-            input2.stopPropagation()
+          aria-hidden={props.inert ? true : undefined}
+          onPointerDown={(event?: Dynamic): Dynamic =>
+            event.stopPropagation()
           }
-          onClick={(input2?: Dynamic): Dynamic => input2.stopPropagation()}
-          onDoubleClick={(input2?: Dynamic): Dynamic =>
-            input2.stopPropagation()
+          onClick={(event?: Dynamic): Dynamic => event.stopPropagation()}
+          onDoubleClick={(event?: Dynamic): Dynamic =>
+            event.stopPropagation()
           }
         >
           <CdsIsland
             density={"compact"}
             className={"contents text-inherit"}
           >
-            {input.problem !== undefined && (<Button
+            {props.problem !== undefined && (<Button
                 variant={"ghost"}
                 size={"xxs"}
                 iconOnly={true}
                 data-mega-chrome={"problem"}
-                data-testid={"mega-artboard-problem-" + value}
-                tabIndex={input.inert ? -1 : undefined}
-                aria-label={uiMessage("canvas.chrome.showErrorNoticeOnArtboard", { value1: String(value2) })}
-                tooltip={input.problem}
+                data-testid={"mega-artboard-problem-" + artboardFile}
+                tabIndex={props.inert ? -1 : undefined}
+                aria-label={uiMessage("canvas.chrome.showErrorNoticeOnArtboard", { value1: String(artboardTitle) })}
+                tooltip={props.problem}
                 icon={<Icon name={"Warning"} size={"sm"} />}
                 className={joinClassNames(
                   "shrink-0 text-danger",
-                  input.play != null && hideProblemAtNarrowHeaderClass,
+                  props.play != null && hideProblemAtNarrowHeaderClass,
                 )}
-                onClick={(): Dynamic => input.onShowProblems(value)}
+                onClick={(): Dynamic => props.onShowProblems(artboardFile)}
               />)}
-            {input.tweaks && (<DisabledReasonTooltip
+            {props.tweaks && (<DisabledReasonTooltip
                 wrapperClassName={
-                  input.play != null ? hideTweaksAtNarrowHeaderClass : undefined
+                  props.play != null ? hideTweaksAtNarrowHeaderClass : undefined
                 }
                 reason={
-                  input.editable || input.inert
+                  props.editable || props.inert
                     ? undefined
                     : ViewOnlyYouCanInspectThisMessage
                 }
@@ -496,47 +496,47 @@ export function installCanvasChrome(): () => void {
                   size={"xxs"}
                   iconOnly={true}
                   data-mega-chrome={"tweaks-open"}
-                  data-testid={"mega-artboard-tweaks-open-" + value}
-                  tabIndex={input.inert ? -1 : undefined}
-                  aria-label={uiMessage("canvas.chrome.tweaksForArtboard", { value1: String(value2) })}
+                  data-testid={"mega-artboard-tweaks-open-" + artboardFile}
+                  tabIndex={props.inert ? -1 : undefined}
+                  aria-label={uiMessage("canvas.chrome.tweaksForArtboard", { value1: String(artboardTitle) })}
                   tooltip={
-                    input.tweaksOpen ? (uiMessage("canvas.chrome.hideThisArtboardSTweaks")) : (uiMessage("canvas.chrome.showThisArtboardSTweaks"))
+                    props.tweaksOpen ? (uiMessage("canvas.chrome.hideThisArtboardSTweaks")) : (uiMessage("canvas.chrome.showThisArtboardSTweaks"))
                   }
-                  pressed={input.tweaksOpen}
-                  disabled={!input.editable}
+                  pressed={props.tweaksOpen}
+                  disabled={!props.editable}
                   icon={<Icon name={"Filter"} size={"sm"} />}
                   className={artboardHeaderButtonClass}
-                  onClick={(): Dynamic => input.onToggleTweaks(value)}
+                  onClick={(): Dynamic => props.onToggleTweaks(artboardFile)}
                 />
               </DisabledReasonTooltip>)}
-            {input.download && (<MenuMenuAssignValue.Root
-                open={input.exportOpen}
-                onOpenChange={(input2?: Dynamic): Dynamic =>
-                  input.onExportOpenChange(value, input2)
+            {props.download && (<MenuMenuAssignValue.Root
+                open={props.exportOpen}
+                onOpenChange={(isOpen?: Dynamic): Dynamic =>
+                  props.onExportOpenChange(artboardFile, isOpen)
                 }
               >
                 <DisabledReasonTooltip
                   wrapperClassName={
-                    input.play != null
+                    props.play != null
                       ? hideDownloadAtNarrowHeaderClass
                       : undefined
                   }
-                  reason={input.inert ? undefined : input.exportDisabledReason}
+                  reason={props.inert ? undefined : props.exportDisabledReason}
                 >
                   <Tooltip content={"Export this artboard"}>
                     <MenuMenuAssignValue.Trigger
-                      disabled={input.exportDisabledReason !== undefined}
+                      disabled={props.exportDisabledReason !== undefined}
                       render={
                         <Button
                           variant={"ghost"}
                           size={"xxs"}
                           iconOnly={true}
                           data-mega-chrome={"download"}
-                          data-testid={"mega-artboard-download-" + value}
-                          tabIndex={input.inert ? -1 : undefined}
-                          aria-label={uiMessage("canvas.chrome.exportArtboard", { value1: String(value2) })}
+                          data-testid={"mega-artboard-download-" + artboardFile}
+                          tabIndex={props.inert ? -1 : undefined}
+                          aria-label={uiMessage("canvas.chrome.exportArtboard", { value1: String(artboardTitle) })}
                           tooltip={false}
-                          disabled={input.exportDisabledReason !== undefined}
+                          disabled={props.exportDisabledReason !== undefined}
                           icon={<Icon name={"Download"} size={"sm"} />}
                           className={artboardHeaderButtonClass}
                         />
@@ -545,24 +545,24 @@ export function installCanvasChrome(): () => void {
                   </Tooltip>
                 </DisabledReasonTooltip>
                 <MenuMenuAssignValue.Popup className={"min-w-[190px]"}>
-                  {input.exportItems}
+                  {props.exportItems}
                 </MenuMenuAssignValue.Popup>
               </MenuMenuAssignValue.Root>)}
             {/* MineDesign：打开全窗口用得更频繁，放在下载右侧 */}
-            {input.expand && input.play == null && (<Button
+            {props.expand && props.play == null && (<Button
                 variant={"ghost"}
                 size={"xxs"}
                 iconOnly={true}
                 data-mega-chrome={"expand"}
-                data-testid={"mega-artboard-expand-" + value}
-                tabIndex={input.inert ? -1 : undefined}
-                aria-label={uiMessage("canvas.chrome.openArtboardFullWindow", { value1: String(value2) })}
+                data-testid={"mega-artboard-expand-" + artboardFile}
+                tabIndex={props.inert ? -1 : undefined}
+                aria-label={uiMessage("canvas.chrome.openArtboardFullWindow", { value1: String(artboardTitle) })}
                 tooltip={uiMessage("canvas.chrome.openFullWindow")}
                 icon={<Icon name={"Expand"} size={"sm"} />}
                 className={artboardHeaderButtonClass}
-                onClick={(): Dynamic => input.onExpand(value)}
+                onClick={(): Dynamic => props.onExpand(artboardFile)}
               />)}
-            {input.play === "play" && (<MenuMenuAssignValue.Root>
+            {props.play === "play" && (<MenuMenuAssignValue.Root>
                 <MenuMenuAssignValue.Trigger
                   render={
                     <Button
@@ -570,9 +570,9 @@ export function installCanvasChrome(): () => void {
                       size={"xxs"}
                       iconOnly={true}
                       data-mega-chrome={"play"}
-                      data-testid={"mega-artboard-play-" + value}
-                      tabIndex={input.inert ? -1 : undefined}
-                      aria-label={uiMessage("canvas.chrome.playPrototype2", { value1: String(value2) })}
+                      data-testid={"mega-artboard-play-" + artboardFile}
+                      tabIndex={props.inert ? -1 : undefined}
+                      aria-label={uiMessage("canvas.chrome.playPrototype2", { value1: String(artboardTitle) })}
                       tooltip={uiMessage("canvas.chrome.playPrototype")}
                       icon={<Icon name={"Play"} size={"sm"} />}
                       className={artboardHeaderButtonClass}
@@ -586,35 +586,35 @@ export function installCanvasChrome(): () => void {
                   {renderMenuItems([
                     {
                       get label() { return uiMessage("canvas.chrome.playOnCanvas"); },
-                      onSelect: (): Dynamic => input.onPlay(value),
+                      onSelect: (): Dynamic => props.onPlay(artboardFile),
                     },
                     {
                       get label() { return uiMessage("canvas.chrome.playFullScreen"); },
-                      onSelect: (): Dynamic => input.onExpand(value),
+                      onSelect: (): Dynamic => props.onExpand(artboardFile),
                     },
                   ])}
                 </MenuMenuAssignValue.Popup>
               </MenuMenuAssignValue.Root>)}
-            {input.play === "edit" || input.play === "stop" && (<Button
+            {props.play === "edit" || props.play === "stop" && (<Button
                 variant={"ghost"}
                 size={"xxs"}
                 iconOnly={true}
                 data-mega-chrome={"play"}
-                data-testid={"mega-artboard-play-" + value}
-                tabIndex={input.inert ? -1 : undefined}
+                data-testid={"mega-artboard-play-" + artboardFile}
+                tabIndex={props.inert ? -1 : undefined}
                 aria-label={
-                  (input.play === "edit" ? uiMessage("canvas.chrome.edit2") : uiMessage("canvas.chrome.stopPlaying2")) + value2
+                  (props.play === "edit" ? uiMessage("canvas.chrome.edit2") : uiMessage("canvas.chrome.stopPlaying2")) + artboardTitle
                 }
-                tooltip={input.play === "edit" ? (uiMessage("canvas.chrome.edit")) : (uiMessage("canvas.chrome.stopPlaying"))}
-                pressed={input.play === "stop"}
+                tooltip={props.play === "edit" ? (uiMessage("canvas.chrome.edit")) : (uiMessage("canvas.chrome.stopPlaying"))}
+                pressed={props.play === "stop"}
                 icon={
                   <Icon
-                    name={input.play === "edit" ? "Edit" : "Stop"}
+                    name={props.play === "edit" ? "Edit" : "Stop"}
                     size={"sm"}
                   />
                 }
                 className={artboardHeaderButtonClass}
-                onClick={(): Dynamic => input.onPlay(value)}
+                onClick={(): Dynamic => props.onPlay(artboardFile)}
               />)}
           </CdsIsland>
         </div>

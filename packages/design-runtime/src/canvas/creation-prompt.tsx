@@ -76,7 +76,7 @@ function DesignCreationPrompt({
 }: Dynamic): Dynamic {
   useUiLocale();
   let value: Dynamic = useHostDrawsClaudeTips(),
-    value2: Dynamic = (
+    peerBadge: Dynamic = (
       <PeerBadge
         tint={"violet"}
         label={
@@ -119,7 +119,7 @@ function DesignCreationPrompt({
             "absolute inset-x-0 bottom-0 flex aspect-[4/3] items-center justify-center pb-12"
           }
         >
-          {value2}
+          {peerBadge}
         </div>
       </div>
       {prompt ? (AddArtboardPromptButton(onAdd, true)) : (null)}
@@ -148,7 +148,7 @@ function DesignCreationPrompt({
           }}
           aria-hidden={"true"}
         >
-          {value2}
+          {peerBadge}
         </div>
       </div>
       {prompt ? (AddArtboardPromptButton(onAdd, tucked)) : (null)}
@@ -189,20 +189,20 @@ export function installCanvasCreationPrompt(): () => void {
       1,
     );
     AddArtboardPromptButton = (
-      input?: Dynamic,
-      options: Dynamic = false,
+      onAddClick?: Dynamic,
+      isTucked: Dynamic = false,
     ): Dynamic => (
       <span
-        data-tucked={options || undefined}
+        data-tucked={isTucked || undefined}
         className={
-          options ? "sr-only has-[:focus-visible]:not-sr-only" : "contents"
+          isTucked ? "sr-only has-[:focus-visible]:not-sr-only" : "contents"
         }
       >
         <Button
           variant={"secondary"}
           className={"pointer-events-auto"}
           data-testid={"dc-empty-page-add"}
-          onClick={input}
+          onClick={onAddClick}
         >
           {uiMessage("canvas.creationPrompt.addAnArtboard")}
         </Button>

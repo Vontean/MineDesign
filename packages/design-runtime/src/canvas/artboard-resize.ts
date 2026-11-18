@@ -4,76 +4,76 @@ import {
 } from "../runtime-types";
 import { focusCanvasDocument } from "./focus";
 
-function beginArtboardResize(event?: Dynamic, options?: Dynamic): Dynamic {
+function beginArtboardResize(event?: Dynamic, resizeConfig?: Dynamic): Dynamic {
   if (event.button !== 0) return;
   event.preventDefault();
   event.stopPropagation();
   focusCanvasDocument();
-  options.onGesture(options.src, true);
-  options.armWindowGestureEnd(options.src);
-  let [items, items2, items3]: Dynamic = [
+  resizeConfig.onGesture(resizeConfig.src, true);
+  resizeConfig.armWindowGestureEnd(resizeConfig.src);
+  let [startX, startY, startPointerId]: Dynamic = [
       event.clientX,
       event.clientY,
       event.pointerId,
     ],
-    value: Dynamic = null,
-    callback: Dynamic = (input?: Dynamic): Dynamic => {
+    latestPatch: Dynamic = null,
+    handlePointerMove: Dynamic = (moveEvent?: Dynamic): Dynamic => {
       if (
-        input.pointerId === items3 &&
+        moveEvent.pointerId === startPointerId &&
         !(
-          value === null &&
-          Math.hypot(input.clientX - items, input.clientY - items2) < 4
+          latestPatch === null &&
+          Math.hypot(moveEvent.clientX - startX, moveEvent.clientY - startY) < 4
         )
       ) {
-        if (options.sound && !options.sound()) return callback5();
-        value = options.patchAt(
-          (input.clientX - items) / options.scale,
-          (input.clientY - items2) / options.scale,
-          input,
+        if (resizeConfig.sound && !resizeConfig.sound()) return handlePointerCancel();
+        latestPatch = resizeConfig.patchAt(
+          (moveEvent.clientX - startX) / resizeConfig.scale,
+          (moveEvent.clientY - startY) / resizeConfig.scale,
+          moveEvent,
         );
-        options.onChange(value, false);
+        resizeConfig.onChange(latestPatch, false);
       }
     },
-    callback2: Dynamic = (): Dynamic => {
-      (window as Dynamic).removeEventListener("pointermove", callback);
-      (window as Dynamic).removeEventListener("pointerup", callback4);
-      (window as Dynamic).removeEventListener("pointercancel", callback5);
-      (window as Dynamic).removeEventListener("keydown", callback6, true);
-      options.onGesture(options.src, false);
-      options.onEnd?.();
+    endGesture: Dynamic = (): Dynamic => {
+      (window as Dynamic).removeEventListener("pointermove", handlePointerMove);
+      (window as Dynamic).removeEventListener("pointerup", handlePointerUp);
+      (window as Dynamic).removeEventListener("pointercancel", handlePointerCancel);
+      (window as Dynamic).removeEventListener("keydown", handleKeyDown, true);
+      resizeConfig.onGesture(resizeConfig.src, false);
+      resizeConfig.onEnd?.();
     },
-    callback3: Dynamic = (input?: Dynamic): Dynamic =>
+    serializeRounded: Dynamic = (patch?: Dynamic): Dynamic =>
       JSON.stringify(
-        input,
-        (input2?: Dynamic, options2?: Dynamic): Dynamic =>
-          typeof options2 == "number" ? Math.round(options2) : options2,
+        patch,
+        (fieldKey?: Dynamic, fieldValue?: Dynamic): Dynamic =>
+          typeof fieldValue == "number" ? Math.round(fieldValue) : fieldValue,
       ),
-    callback4: Dynamic = (input?: Dynamic): Dynamic => {
-      if (input.pointerId !== items3) return;
-      let value2: Dynamic = value;
-      callback2();
-      value2 !== null &&
-        (callback3(value2) === callback3(options.restore) ||
-        (options.sound && !options.sound())
-          ? options.onChange(options.restore, false)
-          : options.onChange(value2, true));
+    handlePointerUp: Dynamic = (upEvent?: Dynamic): Dynamic => {
+      if (upEvent.pointerId !== startPointerId) return;
+      let finalPatch: Dynamic = latestPatch;
+      endGesture();
+      finalPatch !== null &&
+        (serializeRounded(finalPatch) === serializeRounded(resizeConfig.restore) ||
+        (resizeConfig.sound && !resizeConfig.sound())
+          ? resizeConfig.onChange(resizeConfig.restore, false)
+          : resizeConfig.onChange(finalPatch, true));
     },
-    callback5: Dynamic = (input?: Dynamic): Dynamic => {
-      if (input && input.pointerId !== items3) return;
-      let value2: Dynamic = value !== null;
-      callback2();
-      value2 && options.onChange(options.restore, false);
+    handlePointerCancel: Dynamic = (cancelEvent?: Dynamic): Dynamic => {
+      if (cancelEvent && cancelEvent.pointerId !== startPointerId) return;
+      let hasPatch: Dynamic = latestPatch !== null;
+      endGesture();
+      hasPatch && resizeConfig.onChange(resizeConfig.restore, false);
     },
-    callback6: Dynamic = (event2?: Dynamic): Dynamic => {
-      event2.key === "Escape" &&
-        (event2.preventDefault(),
-        event2.stopImmediatePropagation(),
-        callback5());
+    handleKeyDown: Dynamic = (keyEvent?: Dynamic): Dynamic => {
+      keyEvent.key === "Escape" &&
+        (keyEvent.preventDefault(),
+        keyEvent.stopImmediatePropagation(),
+        handlePointerCancel());
     };
-  (window as Dynamic).addEventListener("pointermove", callback);
-  (window as Dynamic).addEventListener("pointerup", callback4);
-  (window as Dynamic).addEventListener("pointercancel", callback5);
-  (window as Dynamic).addEventListener("keydown", callback6, true);
+  (window as Dynamic).addEventListener("pointermove", handlePointerMove);
+  (window as Dynamic).addEventListener("pointerup", handlePointerUp);
+  (window as Dynamic).addEventListener("pointercancel", handlePointerCancel);
+  (window as Dynamic).addEventListener("keydown", handleKeyDown, true);
 }
 export {
   beginArtboardResize,

@@ -6,7 +6,7 @@ import {
 import { load_react_jsx_runtime } from "../dependencies";
 import { joinClassNames } from "../editor/chrome/overlay-state";
 import { B6b0a7Value, defaultAnnotationStrokeColor } from "../editor/media/video-playback";
-import { NotesLinkEditingGrayRedOrangeConfig, NotesLinkEditingGrayRedOrangeConfig_2 } from "../editor/notes/link-editing";
+import { NotesLinkEditingGrayRedOrangeConfig, NotesLinkEditingGrayRedOrangeConfig_2 as shapeFillColors } from "../editor/notes/link-editing";
 import { toModuleNamespace } from "../module-helpers";
 
 var jsxCanvasAnnotationShapeStyle: Dynamic;
@@ -18,83 +18,83 @@ var CanvasAnnotationShapeStyleBorderTopLeftRadiusBorderTopRightRadiusBorderBotto
 var CanvasAnnotationShapeStyleBorderTopWidthBorderRightWidthBorderBottomWidthValues: Dynamic;
 var annotationColor: Dynamic;
 var CanvasAnnotationShapeStyleConstant: Dynamic;
-var CanvasAnnotationShapeStyleConstant_2: Dynamic;
-var CanvasAnnotationShapeStyleConstant_3: Dynamic;
+var defaultArrowStrokeWidth: Dynamic;
+var svgOverflowPadding: Dynamic;
 var CanvasAnnotationShapeStyleMatches: Dynamic;
-function annotationEffectsCss(input?: Dynamic): Dynamic {
-  let state: Dynamic = {};
-  for (let value of [
+function annotationEffectsCss(css?: Dynamic): Dynamic {
+  let effects: Dynamic = {};
+  for (let effectProperty of [
     "opacity",
     "box-shadow",
     "filter",
     "backdrop-filter",
   ] as Dynamic)
-    input?.[value] !== undefined &&
-      (state[
-        value.replace(
+    css?.[effectProperty] !== undefined &&
+      (effects[
+        effectProperty.replace(
           /-([a-z])/g,
-          (input2?: Dynamic, options?: Dynamic): Dynamic =>
-            options.toUpperCase(),
+          (match?: Dynamic, letter?: Dynamic): Dynamic =>
+            letter.toUpperCase(),
         )
-      ] = input[value]);
-  return state;
+      ] = css[effectProperty]);
+  return effects;
 }
-function annotationCssStyle(input: Dynamic = {}): Dynamic {
-  let state: Dynamic = {};
-  for (let [value2, value3] of Object.entries(input) as Dynamic)
-    value3 !== undefined &&
-      (state[CanvasAnnotationShapeStyleReplace(value2)] = value3);
-  let value: Dynamic = [
+function annotationCssStyle(css: Dynamic = {}): Dynamic {
+  let style: Dynamic = {};
+  for (let [cssName, cssValue] of Object.entries(css) as Dynamic)
+    cssValue !== undefined &&
+      (style[CanvasAnnotationShapeStyleReplace(cssName)] = cssValue);
+  let hasBorderWidth: Dynamic = [
     "border-width",
     "border-top-width",
     "border-right-width",
     "border-bottom-width",
     "border-left-width",
-  ].some((input2?: Dynamic): Dynamic => input[input2] !== undefined);
-  state.borderStyle ??= value ? "solid" : "none";
-  return state;
+  ].some((borderProperty?: Dynamic): Dynamic => css[borderProperty] !== undefined);
+  style.borderStyle ??= hasBorderWidth ? "solid" : "none";
+  return style;
 }
 function annotationFillDefaults(
-  input: Dynamic = {},
-  options?: Dynamic,
-  context?: Dynamic,
+  css: Dynamic = {},
+  background?: Dynamic,
+  useDefaultRadius?: Dynamic,
 ): Dynamic {
-  let state: Dynamic = {};
-  input["background-color"] === undefined && (state.background = options);
+  let fillStyle: Dynamic = {};
+  css["background-color"] === undefined && (fillStyle.background = background);
   if (
-    context ||
+    useDefaultRadius ||
     CanvasAnnotationShapeStyleBorderTopLeftRadiusBorderTopRightRadiusBorderBottomRightRadiusValues.every(
-      (input2?: Dynamic): Dynamic => input[input2] === undefined,
+      (radiusProperty?: Dynamic): Dynamic => css[radiusProperty] === undefined,
     )
   )
-    state.borderRadius = 8;
-  else if (input["border-radius"] === undefined)
-    for (let value of CanvasAnnotationShapeStyleBorderTopLeftRadiusBorderTopRightRadiusBorderBottomRightRadiusValues as Dynamic)
-      input[value] === undefined &&
-        (state[CanvasAnnotationShapeStyleReplace(value)] = 8);
-  return state;
+    fillStyle.borderRadius = 8;
+  else if (css["border-radius"] === undefined)
+    for (let radiusProperty of CanvasAnnotationShapeStyleBorderTopLeftRadiusBorderTopRightRadiusBorderBottomRightRadiusValues as Dynamic)
+      css[radiusProperty] === undefined &&
+        (fillStyle[CanvasAnnotationShapeStyleReplace(radiusProperty)] = 8);
+  return fillStyle;
 }
 function annotationFillSignature(
-  input: Dynamic = {},
-  options?: Dynamic,
+  css: Dynamic = {},
+  isOval?: Dynamic,
 ): Dynamic {
-  let callback: Dynamic = (input2?: Dynamic, options2?: Dynamic): Dynamic =>
-    input2 !== undefined &&
-    options2.some((input3?: Dynamic): Dynamic => input3 !== undefined)
-      ? [input2, ...options2].join(" ")
+  let joinIfDefined: Dynamic = (firstPart?: Dynamic, otherParts?: Dynamic): Dynamic =>
+    firstPart !== undefined &&
+    otherParts.some((part?: Dynamic): Dynamic => part !== undefined)
+      ? [firstPart, ...otherParts].join(" ")
       : "";
   return [
-    callback(input.background, [input["background-color"]]),
-    callback(
-      options ? "50%" : input["border-radius"],
+    joinIfDefined(css.background, [css["background-color"]]),
+    joinIfDefined(
+      isOval ? "50%" : css["border-radius"],
       CanvasAnnotationShapeStyleBorderTopLeftRadiusBorderTopRightRadiusBorderBottomRightRadiusValues.map(
-        (input2?: Dynamic): Dynamic => input[input2],
+        (radiusProperty?: Dynamic): Dynamic => css[radiusProperty],
       ),
     ),
-    callback(
-      input["border-width"],
+    joinIfDefined(
+      css["border-width"],
       CanvasAnnotationShapeStyleBorderTopWidthBorderRightWidthBorderBottomWidthValues.map(
-        (input2?: Dynamic): Dynamic => input[input2],
+        (widthProperty?: Dynamic): Dynamic => css[widthProperty],
       ),
     ),
   ].join("/");
@@ -127,17 +127,17 @@ function AnnotationShapeBody({
     </div>
   );
 }
-function annotationPathViewBox(input?: Dynamic): Dynamic {
-  let value: Dynamic = input.match(/-?\d+(\.\d+)?/g)?.map(Number) ?? [],
-    [items, items2]: Dynamic = [1, 1];
-  for (let index: Dynamic = 0; index + 1 < value.length; index += 2)
-    [items, items2] = [
-      Math.max(items, value[index]),
-      Math.max(items2, value[index + 1]),
+function annotationPathViewBox(pathData?: Dynamic): Dynamic {
+  let numbers: Dynamic = pathData.match(/-?\d+(\.\d+)?/g)?.map(Number) ?? [],
+    [maxX, maxY]: Dynamic = [1, 1];
+  for (let index: Dynamic = 0; index + 1 < numbers.length; index += 2)
+    [maxX, maxY] = [
+      Math.max(maxX, numbers[index]),
+      Math.max(maxY, numbers[index + 1]),
     ];
   return {
-    w: items,
-    h: items2,
+    w: maxX,
+    h: maxY,
   };
 }
 export {
@@ -152,8 +152,8 @@ export {
   CanvasAnnotationShapeStyleBorderTopLeftRadiusBorderTopRightRadiusBorderBottomRightRadiusValues,
   CanvasAnnotationShapeStyleBorderTopWidthBorderRightWidthBorderBottomWidthValues,
   CanvasAnnotationShapeStyleConstant,
-  CanvasAnnotationShapeStyleConstant_2,
-  CanvasAnnotationShapeStyleConstant_3,
+  defaultArrowStrokeWidth as CanvasAnnotationShapeStyleConstant_2,
+  svgOverflowPadding as CanvasAnnotationShapeStyleConstant_3,
   CanvasAnnotationShapeStyleLineArrowPenConfig,
   CanvasAnnotationShapeStyleMatches,
   CanvasAnnotationShapeStyleReplace,
@@ -166,9 +166,9 @@ export function installCanvasAnnotationShapeStyle(): () => void {
       load_react_jsx_runtime(),
       1,
     );
-    annotationStrokeWidth = (input?: Dynamic, options?: Dynamic): Dynamic => {
-      let value: Dynamic = parseFloat(input?.["stroke-width"] ?? "");
-      return Number.isFinite(value) && value >= 0 ? value : options;
+    annotationStrokeWidth = (css?: Dynamic, defaultWidth?: Dynamic): Dynamic => {
+      let strokeWidth: Dynamic = parseFloat(css?.["stroke-width"] ?? "");
+      return Number.isFinite(strokeWidth) && strokeWidth >= 0 ? strokeWidth : defaultWidth;
     };
     CanvasAnnotationShapeStyleLineArrowPenConfig = {
       line: 4,
@@ -180,10 +180,10 @@ export function installCanvasAnnotationShapeStyle(): () => void {
         source.css,
         CanvasAnnotationShapeStyleLineArrowPenConfig[source.kind],
       );
-    CanvasAnnotationShapeStyleReplace = (input?: Dynamic): Dynamic =>
-      input.replace(
+    CanvasAnnotationShapeStyleReplace = (cssName?: Dynamic): Dynamic =>
+      cssName.replace(
         /-([a-z])/g,
-        (input2?: Dynamic, options?: Dynamic): Dynamic => options.toUpperCase(),
+        (match?: Dynamic, letter?: Dynamic): Dynamic => letter.toUpperCase(),
       );
     CanvasAnnotationShapeStyleBorderTopLeftRadiusBorderTopRightRadiusBorderBottomRightRadiusValues =
       [
@@ -199,17 +199,17 @@ export function installCanvasAnnotationShapeStyle(): () => void {
         "border-bottom-width",
         "border-left-width",
       ];
-    annotationColor = (input?: Dynamic, options?: Dynamic): Dynamic =>
-      input === "rect" || input === "oval"
-        ? options === "default"
+    annotationColor = (shapeKind?: Dynamic, colorName?: Dynamic): Dynamic =>
+      shapeKind === "rect" || shapeKind === "oval"
+        ? colorName === "default"
           ? B6b0a7Value
-          : NotesLinkEditingGrayRedOrangeConfig_2[options]
-        : options === "default"
+          : shapeFillColors[colorName]
+        : colorName === "default"
           ? defaultAnnotationStrokeColor
-          : NotesLinkEditingGrayRedOrangeConfig[options];
+          : NotesLinkEditingGrayRedOrangeConfig[colorName];
     CanvasAnnotationShapeStyleConstant = 2;
-    CanvasAnnotationShapeStyleConstant_2 = 4;
-    CanvasAnnotationShapeStyleConstant_3 = 16;
+    defaultArrowStrokeWidth = 4;
+    svgOverflowPadding = 16;
     CanvasAnnotationShapeStyleMatches = (): Dynamic =>
       typeof matchMedia == "function" &&
       matchMedia("(prefers-reduced-motion: reduce)").matches;

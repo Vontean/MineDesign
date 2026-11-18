@@ -27,78 +27,78 @@ export function installCanvasBootScheduler(): () => void {
       booting: Dynamic = new Map();
       timer: Dynamic = null;
       booted: Dynamic = 0;
-      configure(input: Dynamic): Dynamic {
-        this.env = input ?? defaultArtboardBootEnvironment;
-        input === null && (this.booted = 0);
+      configure(environment: Dynamic): Dynamic {
+        this.env = environment ?? defaultArtboardBootEnvironment;
+        environment === null && (this.booted = 0);
       }
-      request(input: Dynamic, options: Dynamic): Dynamic {
-        this.drop(input);
+      request(file: Dynamic, grant: Dynamic): Dynamic {
+        this.drop(file);
         this.waiting = this.waiting.filter(
-          (input2?: Dynamic): Dynamic => input2.file !== input,
+          (waitingItem?: Dynamic): Dynamic => waitingItem.file !== file,
         );
         let state: Dynamic = {
-          file: input,
-          grant: options,
+          file: file,
+          grant: grant,
         };
-        this.env.rank(input) < 0
+        this.env.rank(file) < 0
           ? this.start(state)
           : (this.waiting.push(state), this.pump());
         return (): Dynamic => {
-          let value: Dynamic = this.waiting.indexOf(state);
-          value >= 0 && this.waiting.splice(value, 1);
+          let waitingIndex: Dynamic = this.waiting.indexOf(state);
+          waitingIndex >= 0 && this.waiting.splice(waitingIndex, 1);
         };
       }
-      done(input: Dynamic): Dynamic {
+      done(file: Dynamic): Dynamic {
         let length: Dynamic = this.waiting.length;
         this.waiting = this.waiting.filter(
-          (input2?: Dynamic): Dynamic => input2.file !== input,
+          (waitingItem?: Dynamic): Dynamic => waitingItem.file !== file,
         );
-        (this.drop(input) || this.waiting.length !== length) && this.pump();
+        (this.drop(file) || this.waiting.length !== length) && this.pump();
       }
-      expedite(input: Dynamic): Dynamic {
-        let value: Dynamic = this.waiting.findIndex(
-          (input2?: Dynamic): Dynamic => input2.file === input,
+      expedite(file: Dynamic): Dynamic {
+        let waitingIndex: Dynamic = this.waiting.findIndex(
+          (waitingItem?: Dynamic): Dynamic => waitingItem.file === file,
         );
-        value >= 0 && this.start(this.waiting.splice(value, 1)[0]);
+        waitingIndex >= 0 && this.start(this.waiting.splice(waitingIndex, 1)[0]);
       }
       get inFlight(): Dynamic {
         return this.booting.size;
       }
-      drop(input: Dynamic): Dynamic {
-        let entry: Dynamic = this.booting.get(input);
+      drop(file: Dynamic): Dynamic {
+        let entry: Dynamic = this.booting.get(file);
         return entry === undefined
           ? false
           : (clearTimeout(entry),
-            this.booting.delete(input),
+            this.booting.delete(file),
             (this.booted += 1),
             true);
       }
-      start(input: Dynamic): Dynamic {
+      start(waitingItem: Dynamic): Dynamic {
         this.booting.set(
-          input.file,
-          setTimeout((): Dynamic => this.done(input.file), 2500),
+          waitingItem.file,
+          setTimeout((): Dynamic => this.done(waitingItem.file), 2500),
         );
-        input.grant();
+        waitingItem.grant();
       }
       pump(): Dynamic {
         this.timer != null && (clearTimeout(this.timer), (this.timer = null));
-        let value: Dynamic = this.env.busySince(),
-          value2: Dynamic =
+        let busySince: Dynamic = this.env.busySince(),
+          isUserBusy: Dynamic =
             this.booted > 0 &&
-            value != null &&
-            artboardBootClock() - value < 2e3;
-        for (; !value2 && this.waiting.length > 0 && this.booting.size < 1; )
+            busySince != null &&
+            artboardBootClock() - busySince < 2e3;
+        for (; !isUserBusy && this.waiting.length > 0 && this.booting.size < 1; )
           this.start(this.next());
-        value2 &&
+        isUserBusy &&
           this.waiting.length > 0 &&
           (this.timer = setTimeout((): Dynamic => this.pump(), 120));
       }
       next(): Dynamic {
         let index: Dynamic = 0,
-          value: Dynamic = this.env.rank(this.waiting[0].file);
+          bestRank: Dynamic = this.env.rank(this.waiting[0].file);
         for (let count: Dynamic = 1; count < this.waiting.length; count++) {
-          let value2: Dynamic = this.env.rank(this.waiting[count].file);
-          value2 < value && ((index = count), (value = value2));
+          let rank: Dynamic = this.env.rank(this.waiting[count].file);
+          rank < bestRank && ((index = count), (bestRank = rank));
         }
         return this.waiting.splice(index, 1)[0];
       }

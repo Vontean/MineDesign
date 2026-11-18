@@ -25,8 +25,8 @@ function selectPageFiles(files?: Dynamic): Dynamic {
       all: files,
       pages: Object.fromEntries(
         Object.entries(files).filter(
-          ([input]: Dynamic): Dynamic =>
-            PreviewAddressedArtboardsTest(input),
+          ([filePath]: Dynamic): Dynamic =>
+            PreviewAddressedArtboardsTest(filePath),
         ),
       ),
     });
@@ -40,18 +40,18 @@ function createProjectAssetReadinessProbe(files?: Dynamic): Dynamic {
     typeof location === "undefined"
   )
     return;
-  let value: Dynamic = getDesignSystemFiles();
-  return (input?: Dynamic): Dynamic => {
+  let designSystemFiles: Dynamic = getDesignSystemFiles();
+  return (filePath?: Dynamic): Dynamic => {
     if (
-      files[input] !== value[input] ||
-      !isStandaloneStylesheet(input, files, value)
+      files[filePath] !== designSystemFiles[filePath] ||
+      !isStandaloneStylesheet(filePath, files, designSystemFiles)
     )
       return;
-    let value2: Dynamic = getDesignSystemFileUrl(input);
-    if (value2 !== undefined)
+    let designSystemUrl: Dynamic = getDesignSystemFileUrl(filePath);
+    if (designSystemUrl !== undefined)
       try {
-        return new URL(value2).origin === location.origin
-          ? value2
+        return new URL(designSystemUrl).origin === location.origin
+          ? designSystemUrl
           : undefined;
       } catch {
         return;
@@ -61,12 +61,12 @@ function createProjectAssetReadinessProbe(files?: Dynamic): Dynamic {
 function getCachedArtboardCompilation(
   file?: Dynamic,
   files?: Dynamic,
-  options?: Dynamic,
+  compileOptions?: Dynamic,
 ): Dynamic {
   let entry: Dynamic = artboardCompileCache.get(file);
-  if (entry === undefined || entry.opts !== options) return null;
-  for (let value in entry.closure)
-    if (files[value] !== entry.closure[value]) return null;
+  if (entry === undefined || entry.opts !== compileOptions) return null;
+  for (let fileName in entry.closure)
+    if (files[fileName] !== entry.closure[fileName]) return null;
   return entry.names !== projectFileNamesKey(files)
     ? null
     : (artboardCompileCache.delete(file),
@@ -88,13 +88,13 @@ function cacheArtboardCompilation(
 function projectFileNamesKey(files?: Dynamic): Dynamic {
   if (projectFileNamesCache?.files === files)
     return projectFileNamesCache.key;
-  let value: Dynamic = Object.keys(files).sort().join(`
+  let fileNamesKey: Dynamic = Object.keys(files).sort().join(`
 `);
   projectFileNamesCache = {
     files: files,
-    key: value,
+    key: fileNamesKey,
   };
-  return value;
+  return fileNamesKey;
 }
 function effectiveDesignPartMinScale(): Dynamic {
   let __designPartMin: Dynamic = (globalThis as Dynamic).__designPartMin;
@@ -124,9 +124,9 @@ export {
   recordDesignEditActivity,
   selectPageFiles,
 };
-export function set_lastDesignEditAt(value: any): any {
-  lastDesignEditAt = value;
-  return value;
+export function set_lastDesignEditAt(timestamp: any): any {
+  lastDesignEditAt = timestamp;
+  return timestamp;
 }
 export function installCanvasCompilationCache(): () => void {
   return () => {
@@ -135,12 +135,12 @@ export function installCanvasCompilationCache(): () => void {
       1,
     );
     equivalentDesignImportTags = (
-      input?: Dynamic,
-      options?: Dynamic,
+      tagName?: Dynamic,
+      otherTagName?: Dynamic,
     ): Dynamic =>
-      input === options ||
-      ((options === "dc-import" || options === "x-import") &&
-        (input === "x-import" || input === "dc-import"));
+      tagName === otherTagName ||
+      ((otherTagName === "dc-import" || otherTagName === "x-import") &&
+        (tagName === "x-import" || tagName === "dc-import"));
     pageFilesCache = null;
     maxArtboardCompileCacheEntries = 64;
     artboardCompileCache = new Map();

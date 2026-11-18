@@ -39,109 +39,109 @@ function ArtboardTweaksRow({
   onOpenTweaks: onOpenTweaks,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic = (0, react_Uu.useMemo)(
+  let tweakEntries: Dynamic = (0, react_Uu.useMemo)(
       (): Dynamic =>
         groupComponentProps(
           Object.entries(dcProps.propsMeta).filter(
-            ([, input]: Dynamic): Dynamic =>
-              isEditablePropMetadata(input),
+            ([, meta]: Dynamic): Dynamic =>
+              isEditablePropMetadata(meta),
           ),
-        ).flatMap((input?: Dynamic): Dynamic => input.rows),
+        ).flatMap((group?: Dynamic): Dynamic => group.rows),
       [dcProps.propsMeta],
     ),
-    value2: Dynamic = (0, react_Uu.useRef)(null),
-    value3: Dynamic = (0, react_Uu.useRef)(0),
-    [value4, value5]: Dynamic = (0, react_Uu.useState)(value.length),
-    [value6, value7]: Dynamic = (0, react_Uu.useState)(0),
-    value8: Dynamic = width - 2 * artboardTweaksChipFontSize;
+    measureRef: Dynamic = (0, react_Uu.useRef)(null),
+    openPopoverCountRef: Dynamic = (0, react_Uu.useRef)(0),
+    [visibleCount, setVisibleCount]: Dynamic = (0, react_Uu.useState)(tweakEntries.length),
+    [measureTick, setMeasureTick]: Dynamic = (0, react_Uu.useState)(0),
+    availableWidth: Dynamic = width - 2 * artboardTweaksChipFontSize;
   (0, react_Uu.useEffect)((): Dynamic => {
-    let current: Dynamic = value2.current;
+    let current: Dynamic = measureRef.current;
     if (!current || typeof ResizeObserver === "undefined") return;
     let observer: Dynamic = new ResizeObserver(
-      (): Dynamic => value7((input?: Dynamic): Dynamic => input + 1),
+      (): Dynamic => setMeasureTick((tick?: Dynamic): Dynamic => tick + 1),
     );
     observer.observe(current);
     return (): Dynamic => observer.disconnect();
   }, []);
-  let callback: Dynamic = (input?: Dynamic): Dynamic => {
-    value3.current += input ? 1 : -1;
-    value3.current <= 0 &&
-      ((value3.current = 0),
-      value7((input2?: Dynamic): Dynamic => input2 + 1));
+  let handlePopoverOpenChange: Dynamic = (isOpen?: Dynamic): Dynamic => {
+    openPopoverCountRef.current += isOpen ? 1 : -1;
+    openPopoverCountRef.current <= 0 &&
+      ((openPopoverCountRef.current = 0),
+      setMeasureTick((tick?: Dynamic): Dynamic => tick + 1));
   };
   (0, react_Uu.useLayoutEffect)((): Dynamic => {
-    let current: Dynamic = value2.current;
-    if (!current || value3.current > 0) return;
-    let value10: Dynamic = [...current.children].map(
-        (input?: Dynamic): Dynamic => input.offsetWidth,
+    let current: Dynamic = measureRef.current;
+    if (!current || openPopoverCountRef.current > 0) return;
+    let chipWidths: Dynamic = [...current.children].map(
+        (chip?: Dynamic): Dynamic => chip.offsetWidth,
       ),
-      value11: Dynamic = value10[value10.length - 1] ?? 0,
-      value12: Dynamic = value10.slice(0, -1);
+      moreChipWidth: Dynamic = chipWidths[chipWidths.length - 1] ?? 0,
+      tweakChipWidths: Dynamic = chipWidths.slice(0, -1);
     if (
-      value12.reduce(
-        (input?: Dynamic, options?: Dynamic): Dynamic => input + options,
+      tweakChipWidths.reduce(
+        (total?: Dynamic, chipWidth?: Dynamic): Dynamic => total + chipWidth,
         0,
       ) +
-        artboardTweaksChipHeight * (value12.length - 1) <=
-      value8
+        artboardTweaksChipHeight * (tweakChipWidths.length - 1) <=
+      availableWidth
     ) {
-      value5(value12.length);
+      setVisibleCount(tweakChipWidths.length);
       return;
     }
-    let index: Dynamic = 0,
-      index2: Dynamic = 0;
-    for (; index2 < value12.length; index2++) {
-      let value13: Dynamic =
-        index + (index2 > 0 ? artboardTweaksChipHeight : 0) + value12[index2];
-      if (value13 + artboardTweaksChipHeight + value11 > value8) break;
-      index = value13;
+    let usedWidth: Dynamic = 0,
+      fitCount: Dynamic = 0;
+    for (; fitCount < tweakChipWidths.length; fitCount++) {
+      let widthWithChip: Dynamic =
+        usedWidth + (fitCount > 0 ? artboardTweaksChipHeight : 0) + tweakChipWidths[fitCount];
+      if (widthWithChip + artboardTweaksChipHeight + moreChipWidth > availableWidth) break;
+      usedWidth = widthWithChip;
     }
-    value5(index2);
-  }, [value, dcProps.values, value8, value6]);
-  let value9: Dynamic = value.length - value4,
-    callback2: Dynamic = (input?: Dynamic): Dynamic =>
-      value
-        .slice(0, input ? value.length : value4)
+    setVisibleCount(fitCount);
+  }, [tweakEntries, dcProps.values, availableWidth, measureTick]);
+  let hiddenCount: Dynamic = tweakEntries.length - visibleCount,
+    renderChips: Dynamic = (isMeasuring?: Dynamic): Dynamic =>
+      tweakEntries
+        .slice(0, isMeasuring ? tweakEntries.length : visibleCount)
         .map(
-          ([input2, input3]: Dynamic): Dynamic => (
+          ([tweakName, tweakMeta]: Dynamic): Dynamic => (
             <TweakValuePopover
-              key={input2}
-              name={input2}
-              meta={input3}
-              value={dcProps.values[input2]}
-              onChange={(input4?: Dynamic): Dynamic =>
-                dcProps.setProp(input2, input4)
+              key={tweakName}
+              name={tweakName}
+              meta={tweakMeta}
+              value={dcProps.values[tweakName]}
+              onChange={(newValue?: Dynamic): Dynamic =>
+                dcProps.setProp(tweakName, newValue)
               }
-              onOpenChange={callback}
-              inert={input}
+              onOpenChange={handlePopoverOpenChange}
+              inert={isMeasuring}
             />
           ),
         ),
-    callback3: Dynamic = (input?: Dynamic, options?: Dynamic): Dynamic => (
+    renderMoreChip: Dynamic = (chipCount?: Dynamic, isMeasuring?: Dynamic): Dynamic => (
       <button
         type={"button"}
         data-testid={
-          options ? undefined : "mega-artboard-tweaks-more-" + file
+          isMeasuring ? undefined : "mega-artboard-tweaks-more-" + file
         }
         disabled={readonly}
         title={
           readonly ? (ViewOnlyYouCanInspectThisMessage) : (uiMessage("canvas.artboardTweaks.showAllTweaks"))
         }
         aria-label={
-          input === value.length ? (undefined) : (uiMessage("canvas.artboardTweaks.showAllTweaks2", { value1: String(String(input)), value2: String(String(value.length)) }))
+          chipCount === tweakEntries.length ? (undefined) : (uiMessage("canvas.artboardTweaks.showAllTweaks2", { value1: String(String(chipCount)), value2: String(String(tweakEntries.length)) }))
         }
         className={
           "pointer-events-auto inline-flex h-6 shrink-0 items-center whitespace-nowrap text-secondary hover:text-primary disabled:opacity-50"
         }
-        onPointerDown={(input2?: Dynamic): Dynamic =>
-          input2.stopPropagation()
+        onPointerDown={(event?: Dynamic): Dynamic =>
+          event.stopPropagation()
         }
-        onClick={(input2?: Dynamic): Dynamic => {
-          input2.stopPropagation();
-          options || onOpenTweaks?.(file);
+        onClick={(event?: Dynamic): Dynamic => {
+          event.stopPropagation();
+          isMeasuring || onOpenTweaks?.(file);
         }}
       >
-        {input === value.length ? (String(input) + input === 1 ? (uiMessage("canvas.artboardTweaks.tweak")) : (uiMessage("canvas.artboardTweaks.tweaks"))) : (("+") + (String(input)))}
+        {chipCount === tweakEntries.length ? (String(chipCount) + chipCount === 1 ? (uiMessage("canvas.artboardTweaks.tweak")) : (uiMessage("canvas.artboardTweaks.tweaks"))) : (("+") + (String(chipCount)))}
       </button>
     );
   return (
@@ -156,10 +156,10 @@ function ArtboardTweaksRow({
       style={{
         height: artboardTweaksRowHeight,
       }}
-      onPointerDown={(input?: Dynamic): Dynamic => input.stopPropagation()}
-      onDoubleClick={(input?: Dynamic): Dynamic => input.stopPropagation()}
-      onKeyDown={(input?: Dynamic): Dynamic => {
-        input.key !== "Escape" && input.stopPropagation();
+      onPointerDown={(event?: Dynamic): Dynamic => event.stopPropagation()}
+      onDoubleClick={(event?: Dynamic): Dynamic => event.stopPropagation()}
+      onKeyDown={(event?: Dynamic): Dynamic => {
+        event.key !== "Escape" && event.stopPropagation();
       }}
     >
       <div
@@ -170,11 +170,11 @@ function ArtboardTweaksRow({
           paddingRight: artboardTweaksChipFontSize,
         }}
       >
-        {callback2(false)}
-        {value9 > 0 && (callback3(value9, false))}
+        {renderChips(false)}
+        {hiddenCount > 0 && (renderMoreChip(hiddenCount, false))}
       </div>
       <div
-        ref={value2}
+        ref={measureRef}
         aria-hidden={"true"}
         className={
           "invisible absolute top-0 left-0 inline-flex h-full items-center"
@@ -185,53 +185,53 @@ function ArtboardTweaksRow({
           paddingRight: artboardTweaksChipFontSize,
         }}
       >
-        {callback2(true)}
-        {callback3(value.length, true)}
+        {renderChips(true)}
+        {renderMoreChip(tweakEntries.length, true)}
       </div>
     </div>
   );
 }
-function describeTweakValue(input?: Dynamic, options?: Dynamic): Dynamic {
-  switch (input.editor) {
+function describeTweakValue(meta?: Dynamic, currentValue?: Dynamic): Dynamic {
+  switch (meta.editor) {
     case "color":
       return {
         color:
-          typeof options == "string" && options.trim() !== ""
-            ? options.trim()
-            : Array.isArray(options) && typeof options[0] == "string"
-              ? options[0]
+          typeof currentValue == "string" && currentValue.trim() !== ""
+            ? currentValue.trim()
+            : Array.isArray(currentValue) && typeof currentValue[0] == "string"
+              ? currentValue[0]
               : null,
       };
     case "boolean":
       return {
-        text: options ? "On" : "Off",
+        text: currentValue ? "On" : "Off",
       };
     case "enum": {
-      let value: Dynamic = propOptionItems(input.options),
-        value2: Dynamic = options ?? value[0]?.value;
+      let optionItems: Dynamic = propOptionItems(meta.options),
+        selectedValue: Dynamic = currentValue ?? optionItems[0]?.value;
       return {
         text:
-          (typeof value2 == "object" && value2 !== null
+          (typeof selectedValue == "object" && selectedValue !== null
             ? undefined
-            : value.find(
-                (input2?: Dynamic): Dynamic =>
-                  String(input2.value) === String(value2),
+            : optionItems.find(
+                (item?: Dynamic): Dynamic =>
+                  String(item.value) === String(selectedValue),
               )
-          )?.label ?? primitivePropText(value2),
+          )?.label ?? primitivePropText(selectedValue),
       };
     }
     case "int":
     case "float":
     case "range": {
-      let value: Dynamic =
-          typeof options == "number"
-            ? options
-            : parseFloat(primitivePropText(options)),
-        value2: Dynamic = typeof input.unit == "string" ? input.unit : "";
+      let parsedNumber: Dynamic =
+          typeof currentValue == "number"
+            ? currentValue
+            : parseFloat(primitivePropText(currentValue)),
+        unit: Dynamic = typeof meta.unit == "string" ? meta.unit : "";
       return {
         text:
-          (Number.isFinite(value) ? String(value) : "\u2014") +
-          (value2 ? " " + value2 : ""),
+          (Number.isFinite(parsedNumber) ? String(parsedNumber) : "\u2014") +
+          (unit ? " " + unit : ""),
       };
     }
     default:
@@ -241,24 +241,24 @@ function describeTweakValue(input?: Dynamic, options?: Dynamic): Dynamic {
 function TweakValuePopover({
   name: name,
   meta: meta,
-  value: value,
+  value: currentValue,
   onChange: onChange,
   onOpenChange: onOpenChange,
   inert: inert,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let [value2, value3]: Dynamic = (0, react_Uu.useState)(false),
-    value4: Dynamic = (0, react_Uu.useRef)(null),
-    [value5, value6]: Dynamic = (0, react_Uu.useState)({
+  let [isOpen, setIsOpen]: Dynamic = (0, react_Uu.useState)(false),
+    anchorRef: Dynamic = (0, react_Uu.useRef)(null),
+    [placement, setPlacement]: Dynamic = (0, react_Uu.useState)({
       side: "bottom",
       maxHeight: undefined,
     });
   (0, react_Uu.useLayoutEffect)((): Dynamic => {
-    value2 &&
-      value6(
+    isOpen &&
+      setPlacement(
         meta.editor === "color"
           ? choosePopoverPlacement(
-              value4.current?.firstElementChild,
+              anchorRef.current?.firstElementChild,
               ColorPickerConstant,
             )
           : {
@@ -266,18 +266,18 @@ function TweakValuePopover({
               maxHeight: undefined,
             },
       );
-  }, [value2]);
-  let value7: Dynamic = (0, react_Uu.useRef)(onOpenChange);
-  value7.current = onOpenChange;
+  }, [isOpen]);
+  let onOpenChangeRef: Dynamic = (0, react_Uu.useRef)(onOpenChange);
+  onOpenChangeRef.current = onOpenChange;
   (0, react_Uu.useEffect)((): Dynamic => {
-    if (value2) {
-      value7.current?.(true);
-      return (): Dynamic => value7.current?.(false);
+    if (isOpen) {
+      onOpenChangeRef.current?.(true);
+      return (): Dynamic => onOpenChangeRef.current?.(false);
     }
-  }, [value2]);
-  let value8: Dynamic = value === undefined ? meta.default : value,
-    value9: Dynamic = describeTweakValue(meta, value8),
-    value10: Dynamic = (
+  }, [isOpen]);
+  let displayValue: Dynamic = currentValue === undefined ? meta.default : currentValue,
+    description: Dynamic = describeTweakValue(meta, displayValue),
+    chip: Dynamic = (
       <button
         type={"button"}
         data-testid={inert ? undefined : "mega-tweak-chip-" + name}
@@ -286,8 +286,8 @@ function TweakValuePopover({
         className={
           "pointer-events-auto relative inline-flex h-6 shrink-0 items-center gap-1.5 whitespace-nowrap rounded px-1 hover:bg-black/5"
         }
-        onPointerDown={(input?: Dynamic): Dynamic => input.stopPropagation()}
-        onClick={(input?: Dynamic): Dynamic => input.stopPropagation()}
+        onPointerDown={(event?: Dynamic): Dynamic => event.stopPropagation()}
+        onClick={(event?: Dynamic): Dynamic => event.stopPropagation()}
       >
         <span
           aria-hidden={"true"}
@@ -295,47 +295,47 @@ function TweakValuePopover({
             "absolute top-1/2 left-1/2 hidden h-10 w-full min-w-10 -translate-x-1/2 -translate-y-1/2 pointer-coarse:block"
           }
         />
-        {"color" in value9 ? (<span
+        {"color" in description ? (<span
             className={
               "block h-2.5 w-2.5 rounded-[3px] shadow-[inset_0_0_0_1px_rgba(0,0,0,0.15)]"
             }
             style={{
               background:
-                value9.color == null
+                description.color == null
                   ? "#000000"
-                  : sanitizeCssColor(value9.color),
+                  : sanitizeCssColor(description.color),
             }}
           />) : (null)}
         <span className={tweaksSecondaryTextClass}>{name}</span>
-        {value9.text != null && (<span className={tweaksValueTextClass}>{value9.text}</span>)}
+        {description.text != null && (<span className={tweaksValueTextClass}>{description.text}</span>)}
         <EditorIcon name={"CaretDown"} size={11} />
       </button>
     );
   return inert ? (
-    value10
+    chip
   ) : (
     <PopoverPopoverRootTriggerPopupConfig.Root
-      open={value2}
+      open={isOpen}
       modal={true}
-      onOpenChange={(input?: Dynamic, options?: Dynamic): Dynamic => {
-        !input &&
-          options.reason === "escape-key" &&
-          options.event.preventDefault();
-        value3(input);
+      onOpenChange={(nextOpen?: Dynamic, details?: Dynamic): Dynamic => {
+        !nextOpen &&
+          details.reason === "escape-key" &&
+          details.event.preventDefault();
+        setIsOpen(nextOpen);
       }}
     >
-      <span ref={value4} className={"contents"}>
+      <span ref={anchorRef} className={"contents"}>
         <PopoverPopoverRootTriggerPopupConfig.Trigger
-          render={value10}
+          render={chip}
         />
       </span>
       <PopoverPopoverRootTriggerPopupConfig.Popup
         data-tweak-popup={""}
-        side={value5.side}
+        side={placement.side}
         style={
-          value5.maxHeight !== undefined
+          placement.maxHeight !== undefined
             ? {
-                maxHeight: value5.maxHeight,
+                maxHeight: placement.maxHeight,
               }
             : undefined
         }
@@ -351,21 +351,21 @@ function TweakValuePopover({
               ? undefined
               : "w-80"
         }
-        onPointerDown={(input?: Dynamic): Dynamic => input.stopPropagation()}
+        onPointerDown={(event?: Dynamic): Dynamic => event.stopPropagation()}
       >
         <TweakOptionsEditor
           name={name}
           meta={meta}
-          cur={value8}
+          cur={displayValue}
           onChange={onChange}
         />
       </PopoverPopoverRootTriggerPopupConfig.Popup>
     </PopoverPopoverRootTriggerPopupConfig.Root>
   );
 }
-function hasTweakValueEditor(input?: Dynamic): Dynamic {
+function hasTweakValueEditor(meta?: Dynamic): Dynamic {
   return (
-    input.editor !== "color" && input.editor !== "text" && !!input.editor
+    meta.editor !== "color" && meta.editor !== "text" && !!meta.editor
   );
 }
 function TweakOptionsEditor({
@@ -375,34 +375,34 @@ function TweakOptionsEditor({
   onChange: onChange,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic = (0, react_Uu.useMemo)(
+  let optionList: Dynamic = (0, react_Uu.useMemo)(
       (): Dynamic =>
         (Array.isArray(meta.options) ? meta.options : []).slice(0, 64),
       [meta.options],
     ),
-    value2: Dynamic =
-      propColorEditorKind(value) === "palette-cards",
-    value3: Dynamic = (0, react_Uu.useMemo)(
+    isPaletteCards: Dynamic =
+      propColorEditorKind(optionList) === "palette-cards",
+    stringOptions: Dynamic = (0, react_Uu.useMemo)(
       (): Dynamic =>
-        value2
+        isPaletteCards
           ? []
-          : value.filter(
-              (input?: Dynamic): Dynamic => typeof input == "string",
+          : optionList.filter(
+              (option?: Dynamic): Dynamic => typeof option == "string",
             ),
-      [value.join("\0"), value.length, value2],
+      [optionList.join("\0"), optionList.length, isPaletteCards],
     ),
-    value4: Dynamic = (0, react_Uu.useMemo)(
-      (): Dynamic => propColorOptionKeys(value3),
-      [value3],
+    colorKeys: Dynamic = (0, react_Uu.useMemo)(
+      (): Dynamic => propColorOptionKeys(stringOptions),
+      [stringOptions],
     ),
-    value5: Dynamic = useDesignSystems(),
-    value6: Dynamic = (0, react_Uu.useMemo)(
+    designSystems: Dynamic = useDesignSystems(),
+    swatches: Dynamic = (0, react_Uu.useMemo)(
       (): Dynamic =>
-        designSystemPropColorOptions(value3, value4, value5),
-      [value3, value4, value5],
+        designSystemPropColorOptions(stringOptions, colorKeys, designSystems),
+      [stringOptions, colorKeys, designSystems],
     );
   if (meta.editor === "text" || !meta.editor) {
-    let value8: Dynamic = primitivePropText(cur);
+    let text: Dynamic = primitivePropText(cur);
     return (
       <label className={"flex flex-col gap-1.5"}>
         <span className={"text-caption font-medium text-secondary"}>
@@ -410,8 +410,8 @@ function TweakOptionsEditor({
         </span>
         <TextArea
           autoFocus={true}
-          rows={Math.min(4, Math.max(2, Math.ceil(value8.length / 40)))}
-          value={value8}
+          rows={Math.min(4, Math.max(2, Math.ceil(text.length / 40)))}
+          value={text}
           aria-label={name}
           onChange={(event?: Dynamic): Dynamic =>
             onChange(event.target.value)
@@ -432,27 +432,27 @@ function TweakOptionsEditor({
         />
       </PropertyPanelRoot>
     );
-  if (value2)
+  if (isPaletteCards)
     return (
       <div className={"w-64 p-md"}>
         <PropPaletteCards
           aria-label={name}
-          options={value}
+          options={optionList}
           value={cur}
           onChange={onChange}
         />
       </div>
     );
-  let value7: Dynamic =
+  let colorValue: Dynamic =
     typeof cur == "string" && cur.trim() !== "" ? cur.trim() : null;
   return (
     <ColorPickerWithSwatches
       title={name}
-      value={value7 ?? "#000000"}
-      unset={value7 === null}
-      swatches={value6}
-      onChange={(input?: Dynamic): Dynamic =>
-        onChange(restorePropColorOption(value3, value4, input))
+      value={colorValue ?? "#000000"}
+      unset={colorValue === null}
+      swatches={swatches}
+      onChange={(color?: Dynamic): Dynamic =>
+        onChange(restorePropColorOption(stringOptions, colorKeys, color))
       }
       className={ColorPickerLabel}
     />

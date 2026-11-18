@@ -7,53 +7,53 @@ function createDeferredPointerClick(
   onClick?: Dynamic,
   threshold: Dynamic = 3,
 ): Dynamic {
-  let value: Dynamic = null,
-    callback: Dynamic = (): Dynamic => {
-      let value2: Dynamic = value;
-      value = null;
-      value2 !== null &&
-        !value2.travelled &&
+  let pendingClick: Dynamic = null,
+    fireClick: Dynamic = (): Dynamic => {
+      let pending: Dynamic = pendingClick;
+      pendingClick = null;
+      pending !== null &&
+        !pending.travelled &&
         onClick(
           {
-            x: value2.x,
-            y: value2.y,
+            x: pending.x,
+            y: pending.y,
           },
-          value2.what,
+          pending.what,
         );
     };
   return {
-    down: (input?: Dynamic, options?: Dynamic): Dynamic => {
-      value = {
-        x: input.clientX,
-        y: input.clientY,
-        id: input.pointerId,
-        what: options,
+    down: (pointerEvent?: Dynamic, payload?: Dynamic): Dynamic => {
+      pendingClick = {
+        x: pointerEvent.clientX,
+        y: pointerEvent.clientY,
+        id: pointerEvent.pointerId,
+        what: payload,
         travelled: false,
         asked: false,
         up: false,
       };
     },
-    move: (input?: Dynamic): Dynamic => {
-      value !== null &&
-        !value.up &&
-        input.pointerId === value.id &&
-        Math.hypot(input.clientX - value.x, input.clientY - value.y) >
+    move: (moveEvent?: Dynamic): Dynamic => {
+      pendingClick !== null &&
+        !pendingClick.up &&
+        moveEvent.pointerId === pendingClick.id &&
+        Math.hypot(moveEvent.clientX - pendingClick.x, moveEvent.clientY - pendingClick.y) >
           threshold &&
-        (value.travelled = true);
+        (pendingClick.travelled = true);
     },
-    end: (input?: Dynamic): Dynamic => {
-      value === null ||
-        value.up ||
-        ((value.up = true),
-        input || (value.travelled = true),
-        value.asked && callback());
+    end: (hasPointerUp?: Dynamic): Dynamic => {
+      pendingClick === null ||
+        pendingClick.up ||
+        ((pendingClick.up = true),
+        hasPointerUp || (pendingClick.travelled = true),
+        pendingClick.asked && fireClick());
     },
     contextmenu: (): Dynamic =>
-      value === null
+      pendingClick === null
         ? false
-        : ((value.asked = true), value.up && callback(), true),
+        : ((pendingClick.asked = true), pendingClick.up && fireClick(), true),
     clear: (): Dynamic => {
-      value = null;
+      pendingClick = null;
     },
   };
 }
