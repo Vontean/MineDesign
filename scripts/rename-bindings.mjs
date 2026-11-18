@@ -61,6 +61,20 @@ function occurrences(binding, name) {
     else if (v.isIdentifier()) ids.add(v.node);
     else for (const id of Object.values(v.getBindingIdentifiers?.() ?? {})) if (id.name === name) ids.add(id);
   }
+  // 类型位置里的引用不在作用域分析里：类型谓词 `x is T`、`asserts x`，以及 `typeof x`
+  const scopePath = binding.scope.path;
+  const visit = {
+    TSTypePredicate(p) {
+      const param = p.node.parameterName;
+      if (param?.type === 'Identifier' && param.name === name && binding.kind === 'param' && p.getFunctionParent()?.scope === binding.scope) ids.add(param);
+    },
+    TSTypeQuery(p) {
+      let root = p.node.exprName;
+      while (root?.type === 'TSQualifiedName') root = root.left;
+      if (root?.type === 'Identifier' && root.name === name && p.scope.getBinding(name) === binding) ids.add(root);
+    },
+  };
+  if (scopePath.isProgram()) traverse(scopePath.node, visit, scopePath.scope); else scopePath.traverse(visit);
   return [...ids].filter(n => n && (n.type === 'Identifier' || n.type === 'JSXIdentifier') && n.name === name);
 }
 

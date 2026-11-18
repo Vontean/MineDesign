@@ -69,3 +69,11 @@ test('JSX 标签使用的绑定不能改成小写开头的名字', () => {
   const { problems } = applyRenames('export function f(value2: any) { const Comp1 = value2; return <Comp1 />; }\n', { 'Comp1@1': 'panel' });
   assert.equal(problems.length, 1);
 });
+
+test('改名同步更新类型谓词与 typeof 查询', () => {
+  const src = 'export function isSize(value2: unknown): value2 is number { const value3 = 1; let value4: typeof value3 = value3; return typeof value2 == "number" && value4 > 0; }\n';
+  const { code, problems } = applyRenames(src, { 'value2@1': 'candidate', 'value3@1': 'base', 'value4@1': 'copy' });
+  assert.deepEqual(problems, []);
+  assert.match(code, /\(candidate: unknown\): candidate is number/);
+  assert.match(code, /let copy: typeof base = base;/);
+});
