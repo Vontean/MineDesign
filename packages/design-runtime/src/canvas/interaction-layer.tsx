@@ -93,10 +93,10 @@ function toggleArtboardDragCurtain(
   passthrough: Dynamic = false,
 ): Dynamic {
   let value: Dynamic = artboard
-    ? (0, createPreviewHandle)(artboard.webviewRef.current)
+    ? createPreviewHandle(artboard.webviewRef.current)
     : null;
   value &&
-    (0, pickerHoverAt)(
+    pickerHoverAt(
       value,
       enabled,
       templateIds,
@@ -243,7 +243,7 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
     value: Dynamic = !artboardPicking,
     entry: Dynamic = camera.get(),
     value2: Dynamic = (0, reactVectorToolState_2.useRef)(new Map()),
-    value3: Dynamic = (0, useLatestCallback)(
+    value3: Dynamic = useLatestCallback(
       (input?: Dynamic, options2?: Dynamic, context?: Dynamic): Dynamic => {
         options2
           ? value2.current.set(input, options2)
@@ -265,7 +265,7 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
           options2.focus({
             preventScroll: true,
           });
-          let value250: Dynamic = (0, serializeDesignCommentAnchor)({
+          let value250: Dynamic = serializeDesignCommentAnchor({
               kind: "note",
               id: input,
             }),
@@ -282,7 +282,7 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
                   y: bounds.bottom + 48 + (window as Dynamic).scrollY,
                 },
                 {
-                  label: (0, commentAnchorShortLabel)({
+                  label: commentAnchorShortLabel({
                     kind: "note",
                     note: value251 ?? {
                       text: "",
@@ -298,16 +298,16 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
     reactVectorToolState_2.useState)({}),
     value12: Dynamic = (0, reactVectorToolState_2.useCallback)(
       (source?: Dynamic): Dynamic =>
-        (0, isShapeAnnotation)(source)
-          ? (0, annotationBounds)(source).w
+        isShapeAnnotation(source)
+          ? annotationBounds(source).w
           : source.kind === "title1"
             ? (value10[source.id]?.w ??
-              (0, NotesLinkEditingKind)(source))
+              NotesLinkEditingKind(source))
             : source.w,
       [value10],
     ),
     value13: Dynamic = (0, reactVectorToolState_2.useRef)([]),
-    value14: Dynamic = (0, artboardStackOrder)(
+    value14: Dynamic = artboardStackOrder(
       value13.current,
       manifest.artboards,
     );
@@ -326,14 +326,14 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
           ],
         ),
     ),
-    value15: Dynamic = (0, useInspectorPosture)(),
-    value16: Dynamic = (0, useTouchToolbar)(),
+    value15: Dynamic = useInspectorPosture(),
+    value16: Dynamic = useTouchToolbar(),
     value17: Dynamic = value15 === "sheet" && !value16,
     flag: Dynamic = false,
     value18: Dynamic = editing && (fullscreenFile == null || flag),
     value19: Dynamic = (0, reactVectorToolState_2.useRef)(value18);
   value19.current = value18;
-  let value20: Dynamic = (0, focusedArtboardContentRect)(
+  let value20: Dynamic = focusedArtboardContentRect(
       manifest.artboards,
       fullscreenFile,
       fullscreenBox,
@@ -348,7 +348,7 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
   let callback: Dynamic = (input?: Dynamic): Dynamic =>
       value21 &&
       !flag &&
-      (0, shouldDelayPreviewMount)(input, {
+      shouldDelayPreviewMount(input, {
         editing: value18,
         runsNothing: options.phoneCanvasRunsNothing === true,
       }),
@@ -363,7 +363,7 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
     },
     value24: Dynamic =
       value21 && !flag
-        ? ((0, limitMountedPreviewPixels)(
+        ? (limitMountedPreviewPixels(
             [...(livePins ?? [])],
             [value18 ? focusedFile : null, playingFile],
             manifest.artboards,
@@ -415,8 +415,8 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
       });
       value250.x = event.nativeEvent.offsetX;
       value250.y = event.nativeEvent.offsetY;
-      value250.deep = (0, isPrimaryModifierEvent)(event);
-      (0, setPrimaryModifierHeld)(value250.deep);
+      value250.deep = isPrimaryModifierEvent(event);
+      setPrimaryModifierHeld(value250.deep);
       !value250.raf &&
         (value250.raf = requestAnimationFrame((): Dynamic => {
           value250.raf = 0;
@@ -454,7 +454,7 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
   }, [value33, focusedFile]);
   (0, reactVectorToolState_2.useEffect)(
     (): Dynamic =>
-      (0, subscribePrimaryModifierHeld)(
+      subscribePrimaryModifierHeld(
         (input?: Dynamic): Dynamic => {
           let current: Dynamic = value25.current;
           current &&
@@ -496,7 +496,7 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
     [value39, value40]: Dynamic = (0,
     reactVectorToolState_2.useState)((): Dynamic => new Map()),
     value41: Dynamic = (0, reactVectorToolState_2.useRef)(new Set()),
-    value42: Dynamic = (0, useLatestCallback)(
+    value42: Dynamic = useLatestCallback(
       (input?: Dynamic): Dynamic => {
         let entry2: Dynamic = value2.current.get(input),
           value250: Dynamic = doc.content().files[input];
@@ -507,7 +507,7 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
           (value41.current.add(input),
           entry2.pageFill().then(
             (input2?: Dynamic): Dynamic => {
-              let value251: Dynamic = (0, artboardHeaderTheme)(
+              let value251: Dynamic = artboardHeaderTheme(
                 input2,
               );
               value40(
@@ -552,7 +552,7 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
     (): Dynamic =>
       value43 == null
         ? undefined
-        : (0, preventTouchScroll)(value9.current),
+        : preventTouchScroll(value9.current),
     [value43],
   );
   let [value46, value47]: Dynamic = (0,
@@ -561,7 +561,7 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
     callback5: Dynamic = (input?: Dynamic): Dynamic => {
       if (input) {
         value48.current.add(input);
-        input.style.transform = (0, viewportTransformCss)(
+        input.style.transform = viewportTransformCss(
           camera.get(),
         );
         return (): Dynamic => {
@@ -569,9 +569,9 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
         };
       }
     },
-    value49: Dynamic = (0, useLatestCallback)((): Dynamic => {
+    value49: Dynamic = useLatestCallback((): Dynamic => {
       value38.current.forEach(callback4);
-      let value250: Dynamic = (0, viewportTransformCss)(camera.get());
+      let value250: Dynamic = viewportTransformCss(camera.get());
       value48.current.forEach((input?: Dynamic): Dynamic => {
         input.style.transform = value250;
       });
@@ -580,7 +580,7 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
     reactVectorToolState_2.useState)(null),
     value52: Dynamic = (0, reactVectorToolState_2.useRef)(new Map()),
     callback6: Dynamic = (source?: Dynamic): Dynamic => {
-      if (!value35 || !(0, isShapeAnnotation)(source)) return false;
+      if (!value35 || !isShapeAnnotation(source)) return false;
       let value250: Dynamic =
           value130.current.size > 0
             ? value52.current.get(source.id)
@@ -590,7 +590,7 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
           ("css" in source &&
             (source.css?.filter !== undefined ||
               source.css?.["backdrop-filter"] !== undefined)),
-        value252: Dynamic = (0, annotationBounds)(source),
+        value252: Dynamic = annotationBounds(source),
         value253: Dynamic =
           value250 ??
           (!value251 &&
@@ -662,10 +662,10 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
       selectedNotes.size === 1 && selectedArtboards.size === 0
         ? [...selectedNotes][0]
         : null,
-    value60: Dynamic = (0, useLatestCallback)(
+    value60: Dynamic = useLatestCallback(
       (input?: Dynamic, options2?: Dynamic): Dynamic =>
         onSelectObjects(
-          (0, boardSelectionItems)({
+          boardSelectionItems({
             file: input,
           }),
           options2 ? "toggle" : "replace",
@@ -694,13 +694,13 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
           let value250: Dynamic = ancestor
             .closest("[data-mega-artboard]")
             ?.getAttribute("data-mega-artboard");
-          return (0, isTouchSelectionStart)(
+          return isTouchSelectionStart(
             event.pointerType,
             value250 != null && value57.current.files.has(value250),
           );
         }
         case "annotation":
-          return (0, isTouchSelectionStart)(
+          return isTouchSelectionStart(
             event.pointerType,
             value57.current.notes.has(
               ancestor.getAttribute("data-mega-annotation") ?? "",
@@ -716,7 +716,7 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
       return ancestor == null
         ? true
         : ancestor.getAttribute("data-mega-chrome") === "comments"
-          ? (0, prefersDragGesture)(event, !!value6.current?.areas)
+          ? prefersDragGesture(event, !!value6.current?.areas)
           : !value19.current &&
               ancestor.getAttribute("data-mega-chrome") === "annotation"
             ? true
@@ -725,7 +725,7 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
     callback11: Dynamic = (): Dynamic =>
       value85.current === "hand" && !value128.current,
     callback12: Dynamic = (event?: Dynamic): Dynamic =>
-      (0, isCanvasContextMenuPointer)({
+      isCanvasContextMenuPointer({
         pointerType: event.pointerType,
         button: event.button,
         chrome:
@@ -743,7 +743,7 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
         event.target instanceof Element &&
         event.target.hasAttribute("data-mega-pan-blanket")),
     callback14: Dynamic = (event?: Dynamic): Dynamic =>
-      (0, shouldBeginCanvasMarquee)({
+      shouldBeginCanvasMarquee({
         pointerType: event.pointerType,
         button: event.button,
         tool: value85.current,
@@ -755,7 +755,7 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
     callback15: Dynamic = (event?: Dynamic): Dynamic =>
       ((value85.current === "frame" ||
         value85.current === "note" ||
-        (0, supportsClickPlacement)(value85.current)) &&
+        supportsClickPlacement(value85.current)) &&
         (!(event.target instanceof Element) ||
           event.target.closest("[data-mega-chrome]") == null)) ||
       (value85.current === "draw" &&
@@ -766,7 +766,7 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
   (0, reactVectorToolState_2.useEffect)((): Dynamic => {
     let current: Dynamic = value9.current;
     if (!current) return;
-    let value250: Dynamic = (0, installCanvasPanZoom_binding)({
+    let value250: Dynamic = installCanvasPanZoom_binding({
       element: current,
       getView: (): Dynamic => value34.current.get(),
       setView: (input?: Dynamic): Dynamic => {
@@ -876,7 +876,7 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
     value90: Dynamic = (0, reactVectorToolState_2.useCallback)(
       (input?: Dynamic): Dynamic => {
         value89.current = input;
-        (0, applyElementRectStyle)(input, value88.current);
+        applyElementRectStyle(input, value88.current);
       },
       [],
     ),
@@ -942,7 +942,7 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
       held: value95,
       heldRef: value96,
       claimPan: value97,
-    }: Dynamic = (0, useSpacePanKeyboard)(),
+    }: Dynamic = useSpacePanKeyboard(),
     [value98, value99]: Dynamic = (0,
     reactVectorToolState_2.useState)(null),
     value100: Dynamic = (0, reactVectorToolState_2.useRef)(null);
@@ -977,7 +977,7 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
                 : null;
           (event.type === "pointerout"
             ? event.relatedTarget != null && value250 == null
-            : (0, isAboveTitleRect)(
+            : isAboveTitleRect(
                 event.clientX,
                 event.clientY,
                 input.getBoundingClientRect(),
@@ -1004,7 +1004,7 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
       return (
         current != null &&
         current.file !== options2 &&
-        (0, isAboveTitleRect)(
+        isAboveTitleRect(
           input.clientX,
           input.clientY,
           current.el.getBoundingClientRect(),
@@ -1035,7 +1035,7 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
       value105(input);
     };
   renameRef && (renameRef.current = callback24);
-  let value107: Dynamic = (0, useLatestCallback)(
+  let value107: Dynamic = useLatestCallback(
       (input?: Dynamic, options2?: Dynamic): Dynamic => {
         options2.keyboard !== true &&
           (value148.current = {
@@ -1048,7 +1048,7 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
     ),
     [value108]: Dynamic = (0, reactVectorToolState_2.useState)(
       (): Dynamic =>
-        (0, createDeferredPointerClick)(
+        createDeferredPointerClick(
           (input?: Dynamic, options2?: Dynamic): Dynamic =>
             value107(options2, input),
         ),
@@ -1087,7 +1087,7 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
     reactVectorToolState_2.useState)(null),
     value116: Dynamic = (0, reactVectorToolState_2.useRef)(value114);
   value116.current = value114;
-  let value117: Dynamic = (0, useActiveCropElement)(),
+  let value117: Dynamic = useActiveCropElement(),
     [, value118]: Dynamic = (0, reactVectorToolState_2.useState)(0),
     value119: Dynamic = (0, reactVectorToolState_2.useCallback)(
       (): Dynamic => value118((input?: Dynamic): Dynamic => input + 1),
@@ -1103,7 +1103,7 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
       return value250 &&
         value251 &&
         value251.dataset.megaPicture === "" &&
-        (0, mediaNaturalDimensions)(value251)
+        mediaNaturalDimensions(value251)
         ? {
             img: value251,
             body: value250,
@@ -1117,7 +1117,7 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
       input.local.h !== input.pad0.h,
     callback27: Dynamic = (input?: Dynamic): Dynamic => {
       if (!callback26(input)) return null;
-      let value250: Dynamic = (0, rotatedCropFrame)(
+      let value250: Dynamic = rotatedCropFrame(
         input.pad0,
         (input.rot * Math.PI) / 180,
         input.local,
@@ -1134,7 +1134,7 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
       let value250: Dynamic = (value146.current.annotations ?? []).find(
         (input2?: Dynamic): Dynamic => input2.id === input,
       );
-      if (value250 && (0, imageFlipCss)(value250))
+      if (value250 && imageFlipCss(value250))
         return void onSetMoveSay?.(CropDoesNotWorkWhileThisMessage);
       (0, reactDomVectorToolState.flushSync)(blurBeforeCrop);
       let value251: Dynamic = (value146.current.annotations ?? []).find(
@@ -1142,7 +1142,7 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
         ),
         value252: Dynamic = callback25(input);
       if (value251?.kind !== "image" || !value252) return;
-      let value253: Dynamic = (0, mediaNaturalDimensions)(
+      let value253: Dynamic = mediaNaturalDimensions(
           value252.img,
         ),
         state: Dynamic = {
@@ -1162,16 +1162,16 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
         value254: Dynamic = getComputedStyle(value252.img),
         value255: Dynamic =
           value251.crop ??
-          (0, cropFromObjectStyles)(state2, value253, {
+          cropFromObjectStyles(state2, value253, {
             fit: value254.objectFit,
-            pos: (0, parseObjectPosition)(value254.objectPosition),
+            pos: parseObjectPosition(value254.objectPosition),
             box: null,
           });
       value115({
         id: input,
         src: value251.src,
         natural: value253,
-        rot: (0, annotationRotation)(value251),
+        rot: annotationRotation(value251),
         pad0: {
           x: value251.x + state.l,
           y: value251.y + state.t,
@@ -1184,7 +1184,7 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
         before: value255,
       });
     },
-    value120: Dynamic = (0, useLatestCallback)(
+    value120: Dynamic = useLatestCallback(
       (input?: Dynamic): Dynamic => {
         let current: Dynamic = value116.current;
         if (!current) return;
@@ -1193,7 +1193,7 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
         let value250: Dynamic = (value146.current.annotations ?? []).find(
             (input2?: Dynamic): Dynamic => input2.id === current.id,
           ),
-          value251: Dynamic = (0, normalizeCenteredImageCrop)(
+          value251: Dynamic = normalizeCenteredImageCrop(
             current.local,
             current.natural,
             current.live,
@@ -1204,9 +1204,9 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
           value250?.kind !== "image" ||
           value250.src !== current.src ||
           (!value252 &&
-            (0, sameImageCrop)(
+            sameImageCrop(
               value251,
-              (0, normalizeCenteredImageCrop)(
+              normalizeCenteredImageCrop(
                 current.pad0,
                 current.natural,
                 current.before,
@@ -1221,9 +1221,9 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
           current.id,
           (source?: Dynamic): Dynamic =>
             source.kind === "image"
-              ? (0, updateAnnotationCrop)(
+              ? updateAnnotationCrop(
                   {
-                    ...(0, updateAnnotationCss)(source, {
+                    ...updateAnnotationCss(source, {
                       ...value254,
                       "object-fit": "cover",
                     }),
@@ -1234,7 +1234,7 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
               : source,
           true,
         );
-        (0, announce)(
+        announce(
           value251 || value252 ? "Cropped." : uiMessage("canvas.interactionLayer.cropRemoved"),
         );
       },
@@ -1252,7 +1252,7 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
     value123: Dynamic =
       value114 !== null &&
       (value59 !== value114.id ||
-        (0, supportsClickPlacement)(armedTool) ||
+        supportsClickPlacement(armedTool) ||
         armedTool === "draw" ||
         fullscreenFile != null);
   (0, reactVectorToolState_2.useEffect)((): Dynamic => {
@@ -1277,7 +1277,7 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
       value132.current?.(value250);
     },
     value133: Dynamic = (0, reactVectorToolState_2.useRef)(null),
-    value134: Dynamic = (0, useLatestCallback)(
+    value134: Dynamic = useLatestCallback(
       (input?: Dynamic, options2?: Dynamic): Dynamic => {
         let current: Dynamic = value130.current;
         options2 &&
@@ -1298,7 +1298,7 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
       ): Dynamic => {
         value130.current.size > 0 ||
           (value250 && !context && (document as Dynamic).hasFocus()) ||
-          (0, schedulePrimaryModifierHeld)(context);
+          schedulePrimaryModifierHeld(context);
       },
       [],
     ),
@@ -1312,13 +1312,13 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
           (input2.buttons & options2) === 0 &&
           callback62(input2);
       };
-      options2 === 2 && (0, suppressNativeContextMenu)(true);
+      options2 === 2 && suppressNativeContextMenu(true);
       let callback62: Dynamic = (input2?: Dynamic): Dynamic => {
         (window as Dynamic).removeEventListener("pointerup", callback62);
         (window as Dynamic).removeEventListener("pointercancel", callback62);
         options2 &&
           (window as Dynamic).removeEventListener("pointermove", callback61);
-        options2 === 2 && (0, suppressNativeContextMenu)(false);
+        options2 === 2 && suppressNativeContextMenu(false);
         options2 === 2 && value108.end(input2.type !== "pointercancel");
         value134(input, false);
         input === "pan" &&
@@ -1372,7 +1372,7 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
   let [value136, value137]: Dynamic = (0,
     reactVectorToolState_2.useState)(false),
     value138: Dynamic = (0, reactVectorToolState_2.useRef)(null),
-    value139: Dynamic = (0, useLatestCallback)(
+    value139: Dynamic = useLatestCallback(
       (input?: Dynamic, options2?: Dynamic): Dynamic => {
         input === focusedFile &&
           (value138.current != null && clearTimeout(value138.current),
@@ -1389,7 +1389,7 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
   }, [focusedFile]);
   let [value140, value141]: Dynamic = (0,
     reactVectorToolState_2.useState)(null),
-    value142: Dynamic = (0, useLatestCallback)(
+    value142: Dynamic = useLatestCallback(
       (input?: Dynamic, options2?: Dynamic): Dynamic => {
         input === focusedFile && value141(options2);
       },
@@ -1401,11 +1401,11 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
     for (let value250 of (value9.current?.querySelectorAll(
       "[data-mega-selection-strip]",
     ) ?? []) as Dynamic)
-      (0, getSessionStripScrollRow)(value250).scrollLeft = 0;
+      getSessionStripScrollRow(value250).scrollLeft = 0;
   }, [elementSelection?.identity, value59, value140 != null, value112]);
   let value143: Dynamic = (0, reactVectorToolState_2.useId)(),
     value144: Dynamic = keyboard2?.inside ?? null,
-    value145: Dynamic = (0, useLatestCallback)(
+    value145: Dynamic = useLatestCallback(
       (): Dynamic =>
         (armedTool != null && armedTool !== "select") || value136,
     );
@@ -1471,26 +1471,26 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
         });
       value32();
     },
-    value150: Dynamic = (0, useLatestCallback)(
+    value150: Dynamic = useLatestCallback(
       (input?: Dynamic): Dynamic => onOpenTweaks?.(input),
     ),
-    value151: Dynamic = (0, useLatestCallback)(
+    value151: Dynamic = useLatestCallback(
       (input?: Dynamic): Dynamic => onToggleTweaks?.(input),
     ),
-    value152: Dynamic = (0, useLatestCallback)(
+    value152: Dynamic = useLatestCallback(
       (input?: Dynamic): Dynamic => onOpenFile?.(input),
     ),
-    value153: Dynamic = (0, useLatestCallback)(
+    value153: Dynamic = useLatestCallback(
       (input?: Dynamic, options2?: Dynamic): Dynamic =>
         onPreviewDropNotice(input, options2),
     ),
-    value154: Dynamic = (0, useLatestCallback)(
+    value154: Dynamic = useLatestCallback(
       (input?: Dynamic): Dynamic => onExpandArtboard?.(input),
     ),
-    value155: Dynamic = (0, useLatestCallback)(
+    value155: Dynamic = useLatestCallback(
       (input?: Dynamic): Dynamic => onShowProblems?.(input),
     ),
-    value156: Dynamic = (0, useLatestCallback)(
+    value156: Dynamic = useLatestCallback(
       (input?: Dynamic): Dynamic => {
         value21 &&
           ((document as Dynamic).activeElement instanceof HTMLElement &&
@@ -1499,7 +1499,7 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
         value154(input);
       },
     ),
-    value157: Dynamic = (0, useLatestCallback)(
+    value157: Dynamic = useLatestCallback(
       (input?: Dynamic): Dynamic => {
         value56.current !== input
           ? onPlayArtboard?.(input)
@@ -1508,7 +1508,7 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
             : onPlayArtboard?.(null);
       },
     ),
-    value158: Dynamic = (0, useLatestCallback)(
+    value158: Dynamic = useLatestCallback(
       (input?: Dynamic, options2?: Dynamic): Dynamic => {
         value60(input, options2);
         value22 &&
@@ -1541,42 +1541,42 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
       seed: value159,
     });
   let seed: Dynamic = value161.current.seed,
-    value162: Dynamic = (0, useLatestCallback)(
+    value162: Dynamic = useLatestCallback(
       (): Dynamic => actionsRef.current?.openProps(),
     ),
-    value163: Dynamic = (0, useLatestCallback)(
+    value163: Dynamic = useLatestCallback(
       (input?: Dynamic, options2?: Dynamic): Dynamic =>
         quickProps?.onApply(input, options2) ?? Promise.resolve(false),
     ),
-    value164: Dynamic = (0, useLatestCallback)(
+    value164: Dynamic = useLatestCallback(
       (input?: Dynamic): Dynamic => quickProps?.onGesture(input),
     ),
-    value165: Dynamic = (0, useLatestCallback)(
+    value165: Dynamic = useLatestCallback(
       (input?: Dynamic): Dynamic => onTextFormat?.(input),
     ),
-    value166: Dynamic = (0, useLatestCallback)(
+    value166: Dynamic = useLatestCallback(
       (...input: Dynamic[]): Dynamic => quickProps?.onEditText?.(...input),
     ),
-    value167: Dynamic = (0, useLatestCallback)(
+    value167: Dynamic = useLatestCallback(
       (...input: Dynamic[]): Dynamic =>
         quickProps?.onReplaceImage?.(...input),
     ),
-    value168: Dynamic = (0, useLatestCallback)(
+    value168: Dynamic = useLatestCallback(
       (): Dynamic => quickProps?.onCrop?.(),
     ),
-    value169: Dynamic = (0, useLatestCallback)(
+    value169: Dynamic = useLatestCallback(
       (): Dynamic => quickProps?.onReplaceVideo?.(),
     ),
-    value170: Dynamic = (0, useLatestCallback)(
+    value170: Dynamic = useLatestCallback(
       (): Dynamic => quickProps?.findVideo?.() ?? null,
     ),
-    value171: Dynamic = (0, useLatestCallback)(
+    value171: Dynamic = useLatestCallback(
       (...input: Dynamic[]): Dynamic => quickProps?.onElementLink?.(...input),
     ),
-    value172: Dynamic = (0, useLatestCallback)(
+    value172: Dynamic = useLatestCallback(
       (...input: Dynamic[]): Dynamic => value7?.(...input),
     ),
-    value173: Dynamic = (0, useLatestCallback)(
+    value173: Dynamic = useLatestCallback(
       (input?: Dynamic, options2?: Dynamic): Dynamic =>
         value111(
           options2
@@ -1591,12 +1591,12 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
                 },
         ),
     ),
-    value174: Dynamic = (0, useLatestCallback)(
+    value174: Dynamic = useLatestCallback(
       (input?: Dynamic, options2?: Dynamic): Dynamic => {
         options2 && value182.current === input && callback33();
       },
     ),
-    value175: Dynamic = (0, useLatestCallback)(
+    value175: Dynamic = useLatestCallback(
       (input?: Dynamic, options2?: Dynamic): Dynamic => {
         value182.current === input &&
           (value149.current = {
@@ -1626,11 +1626,11 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
         value96.current ||
         callback11()
       )
-        return (0, pointerCoordinates)(value176("artboards"));
+        return pointerCoordinates(value176("artboards"));
       let value250: Dynamic = current.inFrame
           ? null
           : (document as Dynamic).elementFromPoint(current.x, current.y),
-        value251: Dynamic = (0, resolveInsertionPointer)(
+        value251: Dynamic = resolveInsertionPointer(
           current,
           value149.current,
           current3,
@@ -1644,11 +1644,11 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
             (input?: Dynamic): Dynamic => input.file === current3,
           );
       if (!value251 || !value252)
-        return (0, pointerCoordinates)(value176("artboards"));
+        return pointerCoordinates(value176("artboards"));
       let bounds: Dynamic = current2.getBoundingClientRect(),
         entry2: Dynamic = camera.get(),
         callback61: Dynamic = (input?: Dynamic): Dynamic => {
-          let value253: Dynamic = (0, clampPointToRect)(
+          let value253: Dynamic = clampPointToRect(
               callback16(input.x, input.y, bounds),
               value252,
             ),
@@ -1687,7 +1687,7 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
                 x: value250.x + context.at.x,
                 y: value250.y + context.at.y,
               }
-            : (0, visibleArtboardCenter)(
+            : visibleArtboardCenter(
                 value250,
                 value55.current == null && value251
                   ? {
@@ -1711,7 +1711,7 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
     ),
     value181: Dynamic = (0, reactVectorToolState_2.useCallback)(
       (input?: Dynamic): Dynamic =>
-        (0, resolveImagePreviewUrl)(input, doc.content().files),
+        resolveImagePreviewUrl(input, doc.content().files),
       [doc],
     ),
     callback34: Dynamic = (
@@ -1756,7 +1756,7 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
     ),
     [value189, value190]: Dynamic = (0,
     reactVectorToolState_2.useState)(
-      (): Dynamic => (0, getLinkedArtboards)(doc.content().files),
+      (): Dynamic => getLinkedArtboards(doc.content().files),
     ),
     value191: Dynamic = (0, reactVectorToolState_2.useRef)({}),
     value192: Dynamic = (0, reactVectorToolState_2.useRef)(undefined),
@@ -1764,13 +1764,13 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
       clearTimeout(value192.current);
       value192.current = setTimeout((): Dynamic => {
         value192.current = undefined;
-        let value250: Dynamic = (0, getLinkedArtboards)({
+        let value250: Dynamic = getLinkedArtboards({
           ...doc.content().files,
           ...value191.current,
         });
         value190(
           (input?: Dynamic): Dynamic =>
-            (0, samePreviewFiles)(input, value250) ? input : value250,
+            samePreviewFiles(input, value250) ? input : value250,
         );
       }, 150);
     };
@@ -1788,10 +1788,10 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
       value192.current = undefined;
     };
   }, [doc]);
-  (0, npm_useEventListener_bc)(
+  npm_useEventListener_bc(
     "dc-update",
     (input?: Dynamic): Dynamic => {
-      let value250: Dynamic = (0, resolveComponentFile)(
+      let value250: Dynamic = resolveComponentFile(
         doc.content().files,
         input.detail,
       );
@@ -1827,7 +1827,7 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
         value250: Dynamic = current?.clientWidth || 1200,
         value251: Dynamic = current?.clientHeight || 800,
         value252: Dynamic = current
-          ? (0, toolbarOverlayHeight)(current)
+          ? toolbarOverlayHeight(current)
           : 0;
       return {
         x: entry2.x,
@@ -1863,7 +1863,7 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
             (input2?: Dynamic): Dynamic => input2.file === input,
           );
           return value250
-            ? (0, previewMountPriority)(value250, callback37())
+            ? previewMountPriority(value250, callback37())
             : 1 / 0;
         },
       }),
@@ -1896,12 +1896,12 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
         return;
       let value250: Dynamic = performance.now(),
         value251: Dynamic = callback38(value250);
-      (0, samePreviewFiles)(value251, value194.current) ||
+      samePreviewFiles(value251, value194.current) ||
         value203(value251);
       value198.current != null && clearTimeout(value198.current);
       let value252: Dynamic =
         value188 > value187 && value55.current == null
-          ? (0, nextPreviewExpiry)(
+          ? nextPreviewExpiry(
               value251,
               value146.current.artboards,
               value196.current ?? callback37(),
@@ -1968,7 +1968,7 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
     value35 ? value18 : undefined,
   ]);
   let value208: Dynamic = manifest.artboards.length > 0,
-    value209: Dynamic = (0, useLatestCallback)((): Dynamic => {
+    value209: Dynamic = useLatestCallback((): Dynamic => {
       value201.current && ((value201.current = false), callback39());
     });
   (0, reactVectorToolState_2.useEffect)((): Dynamic => {
@@ -2035,7 +2035,7 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
   }, []);
   let [value213, value214]: Dynamic = (0,
     reactVectorToolState_2.useState)((): Dynamic => new Set()),
-    value215: Dynamic = (0, useLatestCallback)(
+    value215: Dynamic = useLatestCallback(
       (input?: Dynamic, options2?: Dynamic): Dynamic => {
         value214((input2?: Dynamic): Dynamic => {
           if (input2.has(input) === options2) return input2;
@@ -2053,7 +2053,7 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
       value18 || value60(input, options2);
     },
     callback43: Dynamic = (input?: Dynamic, options2?: Dynamic): Dynamic => ({
-      ...(0, replaceDesignArtboards)(
+      ...replaceDesignArtboards(
         manifest,
         manifest.artboards.map((input2?: Dynamic): Dynamic => {
           let entry2: Dynamic = input.get(input2.file);
@@ -2072,7 +2072,7 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
               (input2?: Dynamic): Dynamic => {
                 let entry2: Dynamic = options2.get(input2.id);
                 return entry2
-                  ? (0, moveAnnotation)(input2, entry2.x, entry2.y)
+                  ? moveAnnotation(input2, entry2.x, entry2.y)
                   : input2;
               },
             ),
@@ -2080,27 +2080,27 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
         : {}),
     }),
     callback44: Dynamic = (input?: Dynamic): Dynamic =>
-      (0, isShapeAnnotation)(input)
-        ? (0, annotationBounds)(input)
+      isShapeAnnotation(input)
+        ? annotationBounds(input)
         : {
             x: input.x,
             y: input.y,
             w: value12(input),
             h:
               value10[input.id]?.h ??
-              (0, annotationVisibleBounds)(input).h,
+              annotationVisibleBounds(input).h,
           },
     value216: Dynamic = (0, reactVectorToolState_2.useRef)(
       callback44,
     );
   value216.current = callback44;
   let callback45: Dynamic = (input?: Dynamic): Dynamic =>
-      (0, canvasSnapReferenceLines)(
+      canvasSnapReferenceLines(
         manifest.artboards,
         (manifest.annotations ?? []).map(
           (input2?: Dynamic): Dynamic => ({
             id: input2.id,
-            ...(0, rotatedAnnotationBounds)(
+            ...rotatedAnnotationBounds(
               input2,
               value216.current(input2),
             ),
@@ -2231,7 +2231,7 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
       setMovePieces,
     );
   value227.current = setMovePieces;
-  value226.current ??= (0, createElementMoveSessions)({
+  value226.current ??= createElementMoveSessions({
     handle: (input?: Dynamic): Dynamic => value2.current.get(input),
     targetAt: (input?: Dynamic, options2?: Dynamic): Dynamic => {
       let value250: Dynamic = value9.current?.getBoundingClientRect();
@@ -2330,7 +2330,7 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
   });
   let value228: Dynamic =
       onSetMoveCommit != null &&
-      (0, hasMultipleEditingGroups)(
+      hasMultipleEditingGroups(
         selectedTidsByFile,
         selectedArtboards.size + selectedNotes.size,
       ),
@@ -2367,7 +2367,7 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
         current.notes.has(input) &&
         current.files.size === 0) ||
         onSelectObjects(
-          (0, boardSelectionItems)({
+          boardSelectionItems({
             note: input,
           }),
           "replace",
@@ -2385,7 +2385,7 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
         return {
           spec: input,
           box: value250,
-          bounds: (0, rotatedAnnotationBounds)(input, value250),
+          bounds: rotatedAnnotationBounds(input, value250),
         };
       }),
     value232: Dynamic = value230.length + value231.length > 1,
@@ -2395,12 +2395,12 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
     reactVectorToolState_2.useState)([]),
     value237: Dynamic = ((): Dynamic => {
       if (!value232 || value235.length === 0) return null;
-      let value250: Dynamic = (0, selectionTransformMembers)(
+      let value250: Dynamic = selectionTransformMembers(
         value230,
         value231.map((input?: Dynamic): Dynamic => input.spec),
       );
       for (let value251 of value235 as Dynamic) {
-        let value252: Dynamic = (0, translatedSelectionTransform)(
+        let value252: Dynamic = translatedSelectionTransform(
           value251,
           value250,
         );
@@ -2423,7 +2423,7 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
       ));
   }, [value238]);
   let value240: Dynamic = value228
-      ? (0, unionRects)([
+      ? unionRects([
           ...value230,
           ...value231.map((input?: Dynamic): Dynamic => input.bounds),
           ...manifest.artboards.flatMap((input?: Dynamic): Dynamic => {
@@ -2473,7 +2473,7 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
       (value232
         ? (value233?.box ??
           value237?.box ??
-          (0, unionRects)([
+          unionRects([
             ...value230,
             ...value231.map((input?: Dynamic): Dynamic => input.bounds),
           ]))
@@ -2486,8 +2486,8 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
         value231.some(
           (input?: Dynamic): Dynamic =>
             input.spec.kind === "image" ||
-            ((0, isShapeAnnotation)(input.spec) &&
-              (0, annotationRotation)(input.spec) !== 0),
+            (isShapeAnnotation(input.spec) &&
+              annotationRotation(input.spec) !== 0),
         )),
     value244: Dynamic = value232 && value230.length === 0,
     value245: Dynamic =
@@ -2496,7 +2496,7 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
         : undefined,
     value246: Dynamic =
       !value18 ||
-      (0, supportsClickPlacement)(armedTool) ||
+      supportsClickPlacement(armedTool) ||
       armedTool === "draw" ||
       value240 != null,
     callback58: Dynamic = (...args: Dynamic[]): Dynamic => (runSelectionTransformGesture as Dynamic)({ get callback57() { return callback57; }, get onManifestChange() { return onManifestChange; }, get value146() { return value146; }, get value230() { return value230; }, get value231() { return value231; }, get value234() { return value234; }, get value236() { return value236; }, get value241() { return value241; }, get value242() { return value242; }, get value70() { return value70; } }, ...args),
@@ -2517,22 +2517,22 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
           bounds.left + bounds.width / 2,
           bounds.top + bounds.height / 2,
         ],
-        value251: Dynamic = (0, angleBetweenPoints)(
+        value251: Dynamic = angleBetweenPoints(
           items,
           items2,
           options2.clientX,
           options2.clientY,
         ),
         value252: Dynamic = value242,
-        value253: Dynamic = (0, transformTouchedProperties)("rotate");
+        value253: Dynamic = transformTouchedProperties("rotate");
       callback58(
         options2,
         "Rotate",
         value253,
         (input2?: Dynamic): Dynamic => {
-          let value254: Dynamic = (0, snapRotation)(
+          let value254: Dynamic = snapRotation(
             value252 +
-              (0, angleBetweenPoints)(
+              angleBetweenPoints(
                 items,
                 items2,
                 input2.clientX,
@@ -2549,7 +2549,7 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
                 keys: value253,
                 board: (): Dynamic => ({}),
                 ann: (input3?: Dynamic): Dynamic =>
-                  (0, rotateAnnotationAboutPoint)(
+                  rotateAnnotationAboutPoint(
                     input3.spec,
                     input3.box,
                     state,
@@ -2568,7 +2568,7 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
         value253: Dynamic = value80.dirY === 1 ? value80.h : 0,
         value254: Dynamic =
           value80.tool === "arrow"
-            ? (0, shortenLineEnd)(
+            ? shortenLineEnd(
                 value250,
                 value251,
                 value252,
@@ -2625,8 +2625,8 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
             !callback20(event) ||
             value55.current != null ||
             value128.current ||
-            (0, OutlineDcOutlineHandler)(event.target) ||
-            (0, canvasContextMenuTargetFromElement)(event.target) ===
+            OutlineDcOutlineHandler(event.target) ||
+            canvasContextMenuTargetFromElement(event.target) ===
               null
           ) &&
             (event.stopPropagation(),
@@ -2638,7 +2638,7 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
         onPointerMoveCapture={(): Dynamic => {
           value30 && value31(false);
         }}
-        className={(0, joinClassNames)(
+        className={joinClassNames(
           "relative h-full w-full select-none overflow-clip bg-om-bg-canvas mdn-dot-grid",
           armedTool === "frame" && "cursor-crosshair [&_*]:!cursor-crosshair",
           armedTool === "note" &&
@@ -2646,7 +2646,7 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
             "cursor-default [&_*]:!cursor-default",
           value18 &&
             fullscreenFile == null &&
-            (0, supportsClickPlacement)(armedTool) &&
+            supportsClickPlacement(armedTool) &&
             (onAddShape
               ? armedTool === "text"
                 ? "cursor-text"
@@ -2904,10 +2904,10 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
                   value267: Dynamic =
                     value252 || fullscreenFile != null
                       ? undefined
-                      : (0, artboardAboveDistances)(
+                      : artboardAboveDistances(
                           manifest.artboards,
                         ).get(spec.file),
-                  value268: Dynamic = (0, shouldHideArtboardTitle)({
+                  value268: Dynamic = shouldHideArtboardTitle({
                     phoneCanvas: value21,
                     selected: value251,
                     renaming: value104 === spec.file,
@@ -2918,7 +2918,7 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
                   }),
                   value269: Dynamic =
                     phone && !flag && fullscreenFile != null
-                      ? (0, isPreviewHighlighted)(
+                      ? isPreviewHighlighted(
                           spec.file,
                           fullscreenFile,
                           livePins,
@@ -2935,7 +2935,7 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
                       : null,
                   value271: Dynamic =
                     options.coverFiles?.has(spec.file) === true &&
-                    (0, shouldShowArtboardFaceOverlay)({
+                    shouldShowArtboardFaceOverlay({
                       live: value269,
                       blocked: value213.has(spec.file),
                       frameless: value252,
@@ -2956,13 +2956,13 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
                       : undefined,
                     "data-mega-artboard": spec.file,
                     "data-mega-selected": value251 ? "" : undefined,
-                    className: (0, joinClassNames)(
+                    className: joinClassNames(
                       "absolute",
                       value18 &&
                         !value250 &&
                         !value259 &&
                         fullscreenFile == null &&
-                        (0, supportsClickPlacement)(armedTool) &&
+                        supportsClickPlacement(armedTool) &&
                         (value213.has(spec.file)
                           ? "cursor-not-allowed [&_*]:!cursor-not-allowed"
                           : armedTool === "text"
@@ -3014,7 +3014,7 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
                     onPointerLeave: (input?: Dynamic): Dynamic => {
                       callback22(input, spec.file) ||
                         (value267 !== undefined &&
-                        (0, isAboveTitleRect)(
+                        isAboveTitleRect(
                           input.clientX,
                           input.clientY,
                           input.currentTarget.getBoundingClientRect(),
@@ -3025,7 +3025,7 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
                     children: [
                       value267 !== undefined && value268 && (
                         <ViewportScaleThreshold
-                          min={(0, artboardTitleHeight)(value267)}
+                          min={artboardTitleHeight(value267)}
                         >
                           {(input?: Dynamic): Dynamic =>
                             input ? null : (
@@ -3047,7 +3047,7 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
                           data-sel={value251 ? "" : undefined}
                           data-covered={value271 ? "" : undefined}
                           data-testid={"mega-artboard-title-" + spec.file}
-                          className={(0, joinClassNames)(
+                          className={joinClassNames(
                             "group/hdr @container/hdr absolute bottom-full left-0 z-30 flex h-6 items-center gap-1.5 [clip-path:inset(-100vmax_0_-100vmax_-8px)] text-xs select-none",
                             value18 ? "cursor-grab" : "cursor-pointer",
                             value256
@@ -3071,7 +3071,7 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
                             )
                               return;
                             if (
-                              (0, isTouchSelectionStart)(
+                              isTouchSelectionStart(
                                 event.pointerType,
                                 value251,
                               )
@@ -3079,7 +3079,7 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
                               let shiftKey2: Dynamic = event.shiftKey,
                                 value274: Dynamic =
                                   !shiftKey2 && !event.altKey;
-                              (0, watchPointerRelease)(
+                              watchPointerRelease(
                                 event.nativeEvent,
                                 (): Dynamic => {
                                   value60(spec.file, shiftKey2);
@@ -3098,7 +3098,7 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
                               event.pointerType !== "touch" &&
                               !shiftKey &&
                               !event.altKey &&
-                              (0, hasBoardSelection)(
+                              hasBoardSelection(
                                 value57.current,
                                 {
                                   file: spec.file,
@@ -3120,7 +3120,7 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
                                 },
                                 stillAction: (): Dynamic => {
                                   onSelectObjects(
-                                    (0, boardSelectionItems)({
+                                    boardSelectionItems({
                                       file: spec.file,
                                     }),
                                     "replace",
@@ -3132,8 +3132,7 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
                               });
                               return;
                             }
-                            let value273: Dynamic = (0,
-                            selectionPointerDownDecision)(
+                            let value273: Dynamic = selectionPointerDownDecision(
                               value57.current,
                               {
                                 file: spec.file,
@@ -3216,7 +3215,7 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
                             />) : (<ArtboardFocusOverlay
                               file={spec.file}
                               title={value257}
-                              name={(0, artboardPositionAnnouncement)(
+                              name={artboardPositionAnnouncement(
                                 entries.get(spec.file) ?? -1,
                                 entries.size,
                                 value257,
@@ -3303,8 +3302,8 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
                               }
                               exportItems={
                                 value110?.file === spec.file
-                                  ? (0, renderMenuItems)(
-                                      (0, artboardExportMenuItems)(
+                                  ? renderMenuItems(
+                                      artboardExportMenuItems(
                                         spec.file,
                                         manifest.artboards,
                                         {
@@ -3416,7 +3415,7 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
                                                 ...state2,
                                                 guides: [],
                                               }
-                                            : (0, snapResize)(
+                                            : snapResize(
                                                 state,
                                                 input2,
                                                 state2.dx,
@@ -3431,8 +3430,7 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
                                         ],
                                         value277: Dynamic =
                                           value273 && input3.shiftKey
-                                            ? (0,
-                                              resizeRectKeepingAspect)(
+                                            ? resizeRectKeepingAspect(
                                                 state,
                                                 input2,
                                                 items4,
@@ -3440,7 +3438,7 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
                                                 minimumArtboardSize,
                                                 maximumArtboardSize,
                                               )
-                                            : (0, resizeRect)(
+                                            : resizeRect(
                                                 state,
                                                 input2,
                                                 items4,
@@ -3459,8 +3457,7 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
                                             : value277;
                                       return {
                                         box: value278,
-                                        guides: (0,
-                                        activeResizeGuides)(
+                                        guides: activeResizeGuides(
                                           value278,
                                           input2,
                                           value276.guides,
@@ -3488,7 +3485,7 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
                                             input4.file === spec.file,
                                         );
                                       onManifestChange(
-                                        (0, replaceDesignArtboards)(
+                                        replaceDesignArtboards(
                                           value146.current,
                                           value146.current.artboards.map(
                                             (input4?: Dynamic): Dynamic =>
@@ -3554,7 +3551,7 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
                         <div
                           ref={callback23(spec.file)}
                           data-mega-chrome={"element"}
-                          className={(0, joinClassNames)(
+                          className={joinClassNames(
                             "pointer-events-none absolute left-0",
                             value117 === spec.file ? "z-[31]" : "z-[29]",
                           )}
@@ -3585,7 +3582,7 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
                       <div
                         data-testid={"mega-artboard-frame-" + spec.file}
                         data-empty-piece={value254 || undefined}
-                        className={(0, joinClassNames)(
+                        className={joinClassNames(
                           "relative flex h-full w-full flex-col overflow-clip",
                           value252
                             ? value254
@@ -3617,7 +3614,7 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
                           borderRadius:
                             value252 || fullscreenBox
                               ? undefined
-                              : (0, artboardRadiusCss)(spec.radius),
+                              : artboardRadiusCss(spec.radius),
                         }}
                       >
                         <ArtboardFrame
@@ -3708,7 +3705,7 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
                             (value18 &&
                               !(value250 && (!value252 || value253)) &&
                               !value259 &&
-                              (0, supportsClickPlacement)(
+                              supportsClickPlacement(
                                 armedTool,
                               ) &&
                               fullscreenFile == null)
@@ -3815,19 +3812,19 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
                                       event.button !== 0 ||
                                       value85.current === "note" ||
                                       value85.current === "frame" ||
-                                      (0, supportsClickPlacement)(
+                                      supportsClickPlacement(
                                         value85.current,
                                       )
                                     )
                                       return;
                                     let shiftKey: Dynamic = event.shiftKey;
-                                    (0, watchPointerRelease)(
+                                    watchPointerRelease(
                                       event.nativeEvent,
                                       (): Dynamic =>
                                         callback42(spec.file, shiftKey),
                                     );
                                   }}
-                                  {...(0, buttonKeyboardActivation)(
+                                  {...buttonKeyboardActivation(
                                     (input2?: Dynamic): Dynamic =>
                                       callback42(
                                         spec.file,
@@ -3862,8 +3859,7 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
                                         input2 && (
                                           <span
                                             ref={camera.stamp}
-                                            className={(0,
-                                            joinClassNames)(
+                                            className={joinClassNames(
                                               "shrink-0 whitespace-nowrap px-2.5 py-1 text-xs",
                                               !value270 && "text-secondary",
                                               value21
@@ -3909,18 +3905,18 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
                               artboardOverlayIdPrefixes[value262] +
                               spec.file
                             }
-                            className={(0, joinClassNames)(
+                            className={joinClassNames(
                               "absolute inset-0 z-20",
                               (value252 || value251 || value261) && value18
                                 ? "cursor-grab"
                                 : "cursor-pointer",
                               (armedTool === "note" ||
-                                (0, supportsClickPlacement)(
+                                supportsClickPlacement(
                                   armedTool,
                                 )) &&
                                 fullscreenFile == null &&
                                 "pointer-events-none",
-                              (0, shouldPassFileDropThroughOverlay)({
+                              shouldPassFileDropThroughOverlay({
                                 chrome: value262,
                                 filesDrag: value30,
                               }) && "pointer-events-none",
@@ -3933,7 +3929,7 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
                                   inert: value126 ? true : undefined,
                                   "aria-label": value257,
                                   "aria-pressed": value251,
-                                  ...(0, buttonKeyboardActivation)(
+                                  ...buttonKeyboardActivation(
                                     (input?: Dynamic): Dynamic => {
                                       input.key === "Enter" &&
                                       value22 &&
@@ -4013,12 +4009,12 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
                               let shiftKey: Dynamic = event.shiftKey;
                               if (value252) {
                                 if (
-                                  (0, isTouchSelectionStart)(
+                                  isTouchSelectionStart(
                                     event.pointerType,
                                     value251,
                                   )
                                 ) {
-                                  (0, watchPointerRelease)(
+                                  watchPointerRelease(
                                     event.nativeEvent,
                                     (): Dynamic =>
                                       value60(spec.file, shiftKey),
@@ -4030,7 +4026,7 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
                                   event.pointerType !== "touch" &&
                                   !shiftKey &&
                                   !event.altKey &&
-                                  (0, hasBoardSelection)(
+                                  hasBoardSelection(
                                     value57.current,
                                     {
                                       file: spec.file,
@@ -4055,8 +4051,7 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
                                   });
                                   return;
                                 }
-                                let value275: Dynamic = (0,
-                                selectionPointerDownDecision)(
+                                let value275: Dynamic = selectionPointerDownDecision(
                                   value57.current,
                                   {
                                     file: spec.file,
@@ -4076,16 +4071,14 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
                                 );
                                 return;
                               }
-                              let value273: Dynamic = (0,
-                                canvasFacePointerAction)({
+                              let value273: Dynamic = canvasFacePointerAction({
                                   editing: value18,
                                   pointerType: event.pointerType,
                                   tool: armedTool,
                                   fullscreen: fullscreenFile != null,
                                   faceOverlay: value260,
                                 }),
-                                value274: Dynamic = (0,
-                                isPrimaryModifierEvent)(event),
+                                value274: Dynamic = isPrimaryModifierEvent(event),
                                 state: Dynamic = {
                                   x: event.nativeEvent.offsetX,
                                   y: event.nativeEvent.offsetY,
@@ -4113,7 +4106,7 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
                                         shiftKey || onFocus(spec.file));
                                 };
                               if (event.pointerType === "touch") {
-                                (0, watchPointerRelease)(
+                                watchPointerRelease(
                                   event.nativeEvent,
                                   (): Dynamic => callback61(true),
                                 );
@@ -4165,8 +4158,7 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
                                 onDuplicateObjects &&
                                 fullscreenFile == null
                               ) {
-                                let value275: Dynamic = (0,
-                                selectionPointerDownDecision)(
+                                let value275: Dynamic = selectionPointerDownDecision(
                                   value57.current,
                                   {
                                     file: spec.file,
@@ -4305,7 +4297,7 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
                 left: value75.x,
                 top: value75.y,
                 width: PlatformFileContentConstant_8,
-                height: (0, NotesLinkEditingLh)({
+                height: NotesLinkEditingLh({
                   id: "",
                   x: 0,
                   y: 0,
@@ -4339,7 +4331,7 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
               className={"pointer-events-none contents"}
             >
               <CanvasShape_r
-                spec={(0, placementGhostAnnotation)(value80)}
+                spec={placementGhostAnnotation(value80)}
                 scale={entry.scale}
                 editing={false}
                 selected={false}
@@ -4351,7 +4343,7 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
             </div>)}
           {value80 && !(value80.onCanvas && value80.tool !== "text") && (<div
               data-testid={"mega-place-ghost"}
-              className={(0, joinClassNames)(
+              className={joinClassNames(
                 "pointer-events-none absolute z-30",
                 !value247 &&
                   "border-solid border-app-accent/80 bg-app-accent/10",
@@ -4613,7 +4605,7 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
           !value124 &&
           fullscreenFile == null &&
           value59 != null &&
-          !(0, supportsClickPlacement)(armedTool) &&
+          !supportsClickPlacement(armedTool) &&
           armedTool !== "draw" && (((...args: Dynamic[]): Dynamic => (renderAnnotationQuickActions as Dynamic)({ get callback25() { return callback25; }, get callback28() { return callback28; }, get callback34() { return callback34; }, get callback44() { return callback44; }, get manifest() { return manifest; }, get onAnnotationCss() { return onAnnotationCss; }, get onDeleteAnnotation() { return onDeleteAnnotation; }, get onOpenPropsPanel() { return onOpenPropsPanel; }, get onReplaceAnnotationMedia() { return onReplaceAnnotationMedia; }, get value112() { return value112; }, get value114() { return value114; }, get value120() { return value120; }, get value15() { return value15; }, get value162() { return value162; }, get value17() { return value17; }, get value18() { return value18; }, get value181() { return value181; }, get value21() { return value21; }, get value59() { return value59; }, get value8() { return value8; } }, ...args))())}
         <R_useCanvasComments
           manifest={manifest}
@@ -4650,7 +4642,7 @@ function CanvasInteractionLayer(options?: Dynamic): Dynamic {
           elementSelection &&
           elementSelection.count > 0 &&
           elementSelection.rect &&
-          (0, hasSelectionQuickActions)({
+          hasSelectionQuickActions({
             text: quickProps?.text ?? 0,
             shape: quickProps?.shape ?? 0,
             box: quickProps?.box ?? 0,
@@ -4695,7 +4687,7 @@ function updateBoardDrag(deps: { readonly callback16: Dynamic; readonly callback
           options2 &&
             (current.click &&
               deps.onSelectObjects(
-                (0, boardSelectionItems)(current.ref),
+                boardSelectionItems(current.ref),
                 current.click === "toggle" ? "toggle" : "replace",
               ),
             current.focus &&
@@ -4723,7 +4715,7 @@ function updateBoardDrag(deps: { readonly callback16: Dynamic; readonly callback
           dy: value252,
           guides: value253,
           gaps: value254,
-        }: Dynamic = (0, snapCanvasDrag)(
+        }: Dynamic = snapCanvasDrag(
           (input.clientX - current.startX) / entry2,
           (input.clientY - current.startY) / entry2,
           current.snap
@@ -4788,7 +4780,7 @@ function updateBoardDrag(deps: { readonly callback16: Dynamic; readonly callback
               }),
             ),
             ...current.notes.map((input2?: Dynamic): Dynamic => {
-              let value257: Dynamic = (0, rotatedAnnotationBounds)(
+              let value257: Dynamic = rotatedAnnotationBounds(
                 input2,
                 deps.callback44(input2),
               );
@@ -4960,7 +4952,7 @@ function updateBoardDrag(deps: { readonly callback16: Dynamic; readonly callback
           current.set.map(
             (input2?: Dynamic): Dynamic => [
               input2.file,
-              (0, preserveUnroundedDragPosition)(
+              preserveUnroundedDragPosition(
                 input2,
                 callback61(input2),
               ),
@@ -4971,7 +4963,7 @@ function updateBoardDrag(deps: { readonly callback16: Dynamic; readonly callback
           current.notes.map(
             (input2?: Dynamic): Dynamic => [
               input2.id,
-              (0, preserveUnroundedDragPosition)(
+              preserveUnroundedDragPosition(
                 input2,
                 callback61(input2),
               ),

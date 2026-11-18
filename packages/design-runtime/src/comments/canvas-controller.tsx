@@ -72,7 +72,7 @@ function useCanvasComments(options?: Dynamic): Dynamic {
         },
       }),
     [value6, value7]: Dynamic = (0, react_mi.useState)(false),
-    value8: Dynamic = (0, useViewport)(value6, camera),
+    value8: Dynamic = useViewport(value6, camera),
     value9: Dynamic = (0, react_mi.useRef)(value6);
   value9.current = value6;
   let [value10, value11]: Dynamic = (0, react_mi.useState)(false),
@@ -106,7 +106,7 @@ function useCanvasComments(options?: Dynamic): Dynamic {
     value25: Dynamic = (0, react_mi.useRef)("");
   (0, react_mi.useEffect)((): Dynamic => {
     let flag: Dynamic = false;
-    (0, bindCustomAnchors)({
+    bindCustomAnchors({
       mode: (input?: Dynamic): Dynamic => {
         value7(input);
         value.current.onModeChange?.(input);
@@ -130,7 +130,7 @@ function useCanvasComments(options?: Dynamic): Dynamic {
             (input2?: Dynamic): Dynamic => input2.id === input,
           ),
           value65: Dynamic = value64
-            ? (0, parseDesignCommentAnchor)(value64.anchor)
+            ? parseDesignCommentAnchor(value64.anchor)
             : null;
         if (!value65) return;
         let value66: Dynamic =
@@ -140,13 +140,13 @@ function useCanvasComments(options?: Dynamic): Dynamic {
             ? {
                 kind: "artboard",
                 match: (input2?: Dynamic): Dynamic =>
-                  (0, stableAnchorHash)(input2) === value65.fileHash,
+                  stableAnchorHash(input2) === value65.fileHash,
               }
             : value65.kind === "note" || value65.kind === "notearea"
               ? {
                   kind: "note",
                   match: (input2?: Dynamic): Dynamic =>
-                    (0, stableAnchorHash)(input2) === value65.idHash,
+                    stableAnchorHash(input2) === value65.idHash,
                 }
               : value65.kind === "boards"
                 ? {
@@ -155,14 +155,14 @@ function useCanvasComments(options?: Dynamic): Dynamic {
                       value65.boards.some(
                         (input3?: Dynamic): Dynamic =>
                           input3.fileHash ===
-                          (0, stableAnchorHash)(input2),
+                          stableAnchorHash(input2),
                       ),
                     boards: true,
                   }
                 : {
                     kind: "page",
                     match: (input2?: Dynamic): Dynamic =>
-                      (0, stableAnchorHash)(input2) ===
+                      stableAnchorHash(input2) ===
                       value65.pageHash,
                   };
         value.current.onReveal?.(value66) !== false && value24(input);
@@ -219,7 +219,7 @@ function useCanvasComments(options?: Dynamic): Dynamic {
         let current: Dynamic = value2.current;
         return typeof current?.enterMode != "function" ||
           value.current.keyHeld ||
-          (0, hasBlockingEditorOverlay)()
+          hasBlockingEditorOverlay()
           ? false
           : (value9.current ? current.exitMode?.() : current.enterMode(),
             true);
@@ -233,8 +233,8 @@ function useCanvasComments(options?: Dynamic): Dynamic {
           event.defaultPrevented ||
           event.repeat ||
           event.isComposing ||
-          (0, isEditingInputTarget)(event.target) ||
-          (0, shouldKeepLocalKeyboardEvent)(event) ||
+          isEditingInputTarget(event.target) ||
+          shouldKeepLocalKeyboardEvent(event) ||
           (event.target instanceof Element &&
             event.target.closest("[data-mega-selection-strip]") !== null) ||
           (callback38() && event.preventDefault());
@@ -259,14 +259,14 @@ function useCanvasComments(options?: Dynamic): Dynamic {
     callback6: Dynamic = (input?: Dynamic): Dynamic =>
       manifest.artboards.find(
         (input2?: Dynamic): Dynamic =>
-          (0, stableAnchorHash)(input2.file) === input,
+          stableAnchorHash(input2.file) === input,
       )?.file ?? null,
     value26: Dynamic = (0, react_mi.useRef)(callback6);
   value26.current = callback6;
   let callback7: Dynamic = (input?: Dynamic): Dynamic =>
       (manifest.annotations ?? []).find(
         (input2?: Dynamic): Dynamic =>
-          (0, stableAnchorHash)(input2.id) === input,
+          stableAnchorHash(input2.id) === input,
       ) ?? null,
     callback8: Dynamic = (input?: Dynamic): Dynamic =>
       (manifest.annotations ?? []).find(
@@ -298,7 +298,7 @@ function useCanvasComments(options?: Dynamic): Dynamic {
         let entries: Dynamic = new Map();
         fullscreenFile != null && entries.set(fullscreenFile, new Map());
         for (let value65 of value14.current as Dynamic) {
-          let value66: Dynamic = (0, parseDesignCommentAnchor)(
+          let value66: Dynamic = parseDesignCommentAnchor(
               value65.anchor,
             ),
             value67: Dynamic =
@@ -334,13 +334,13 @@ function useCanvasComments(options?: Dynamic): Dynamic {
                   value.current.handlesRef.current.get(input),
                 value65: Dynamic =
                   entry?.isReady() && !entry.isBlocked()
-                    ? (0, createPreviewHandle)(
+                    ? createPreviewHandle(
                         entry.webviewRef.current,
                       )
                     : null,
                 items: Dynamic = [...input2.values()],
                 value66: Dynamic = value65
-                  ? await (0, pickerCommentRects)(value65, [
+                  ? await pickerCommentRects(value65, [
                       {
                         page: true,
                       },
@@ -385,9 +385,9 @@ function useCanvasComments(options?: Dynamic): Dynamic {
         let value67: Dynamic =
           fullscreenFile == null ? callback7(source.idHash) : null;
         return value67
-          ? (0, rotatedAnnotationBounds)(
+          ? rotatedAnnotationBounds(
               value67,
-              (0, objectCommentAreaRect)(
+              objectCommentAreaRect(
                 value67,
                 options.annBox(value67),
                 source.box,
@@ -414,9 +414,9 @@ function useCanvasComments(options?: Dynamic): Dynamic {
                 : [];
             },
           ),
-          value68: Dynamic = (0, unionCommentRects)(value67);
+          value68: Dynamic = unionCommentRects(value67);
         return value68
-          ? (0, denormalizeCommentArea)(value68, source.box)
+          ? denormalizeCommentArea(value68, source.box)
           : null;
       }
       if (source.kind !== "area") return null;
@@ -424,7 +424,7 @@ function useCanvasComments(options?: Dynamic): Dynamic {
         value65: Dynamic = value64 == null ? null : callback5(value64);
       if (!value65 || value64 == null || !callback9(value64)) return null;
       if (source.path == null)
-        return (0, denormalizeCommentArea)(
+        return denormalizeCommentArea(
           callback10(value65),
           source.box,
         );
@@ -436,15 +436,15 @@ function useCanvasComments(options?: Dynamic): Dynamic {
           ? null
           : callback16(
               value64,
-              (0, denormalizeCommentArea)(value66, source.box),
+              denormalizeCommentArea(value66, source.box),
             );
     },
     callback12: Dynamic = (source?: Dynamic): Dynamic => {
       if (source.kind === "canvas") {
         let value70: Dynamic = manifest.pages?.[0]?.id ?? "",
-          value71: Dynamic = (0, isCanvasPageMatch)(
+          value71: Dynamic = isCanvasPageMatch(
             (input?: Dynamic): Dynamic =>
-              source.pageHash === (0, stableAnchorHash)(input),
+              source.pageHash === stableAnchorHash(input),
             pageKey === "" ? value70 : pageKey,
             value70,
           );
@@ -460,7 +460,7 @@ function useCanvasComments(options?: Dynamic): Dynamic {
         let value70: Dynamic = callback7(source.idHash);
         if (!value70) return null;
         if (source.fx != null && source.fy != null)
-          return (0, objectCommentPoint)(
+          return objectCommentPoint(
             value70,
             options.annBox(value70),
             {
@@ -468,7 +468,7 @@ function useCanvasComments(options?: Dynamic): Dynamic {
               fy: source.fy,
             },
           );
-        let value71: Dynamic = (0, rotatedAnnotationBounds)(
+        let value71: Dynamic = rotatedAnnotationBounds(
           value70,
           options.annBox(value70),
         );
@@ -481,7 +481,7 @@ function useCanvasComments(options?: Dynamic): Dynamic {
         let value70: Dynamic =
           fullscreenFile == null ? callback7(source.idHash) : null;
         return value70
-          ? (0, objectCommentAreaHandlePoint)(
+          ? objectCommentAreaHandlePoint(
               value70,
               options.annBox(value70),
               source.box,
@@ -491,7 +491,7 @@ function useCanvasComments(options?: Dynamic): Dynamic {
       if (source.kind === "area" || source.kind === "boards") {
         let value70: Dynamic = callback11(source);
         if (value70)
-          return (0, commentAreaHandlePoint)(
+          return commentAreaHandlePoint(
             value70,
             source.box.corner,
           );
@@ -584,10 +584,10 @@ function useCanvasComments(options?: Dynamic): Dynamic {
       current2: Dynamic = surfaceRef.current;
     if (!value6 || !current || !current2) return;
     let bounds: Dynamic = current2.getBoundingClientRect(),
-      value64: Dynamic = (0, toolbarOverlayHeight)(current2),
+      value64: Dynamic = toolbarOverlayHeight(current2),
       state: Dynamic = {};
     for (let value66 of value12 as Dynamic) {
-      let value67: Dynamic = (0, parseDesignCommentAnchor)(
+      let value67: Dynamic = parseDesignCommentAnchor(
           value66.anchor,
         ),
         value68: Dynamic = value67 ? callback12(value67) : null;
@@ -622,7 +622,7 @@ function useCanvasComments(options?: Dynamic): Dynamic {
         (input?: Dynamic): Dynamic => input.id === value23,
       ),
       value65: Dynamic = value64
-        ? (0, parseDesignCommentAnchor)(value64.anchor)
+        ? parseDesignCommentAnchor(value64.anchor)
         : null,
       current: Dynamic = surfaceRef.current;
     if (!value65 || !current) {
@@ -650,7 +650,7 @@ function useCanvasComments(options?: Dynamic): Dynamic {
         });
     }
     if (!value66 || (value24(null), fullscreenFile != null)) return;
-    let value67: Dynamic = (0, toolbarOverlayHeight)(current),
+    let value67: Dynamic = toolbarOverlayHeight(current),
       value68: Dynamic = current.clientWidth || 1,
       value69: Dynamic = (current.clientHeight || 1) - value67,
       value70: Dynamic = Math.max(camera.get().scale, 0.5);
@@ -736,10 +736,10 @@ function useCanvasComments(options?: Dynamic): Dynamic {
     ): Promise<Dynamic> => {
       let entry: Dynamic = handlesRef.current.get(input),
         value65: Dynamic = entry
-          ? (0, createPreviewHandle)(entry.webviewRef.current)
+          ? createPreviewHandle(entry.webviewRef.current)
           : null;
       return value65
-        ? (0, pickerCommentAt)(value65, options2, context, value64)
+        ? pickerCommentAt(value65, options2, context, value64)
         : null;
     },
     callback16: Dynamic = (input?: Dynamic, options2?: Dynamic): Dynamic => {
@@ -840,12 +840,12 @@ function useCanvasComments(options?: Dynamic): Dynamic {
             x: value64.x,
             y: value64.y,
           },
-          label: (0, commentAnchorShortLabel)({
+          label: commentAnchorShortLabel({
             kind: "canvas",
             pages: manifest.pages,
             pageKey: pageKey,
           }),
-          detail: (0, commentCanvasPointDetail)(value64.x, value64.y),
+          detail: commentCanvasPointDetail(value64.x, value64.y),
         };
       if (value64.kind === "note") {
         let value70: Dynamic = callback8(value64.id),
@@ -853,7 +853,7 @@ function useCanvasComments(options?: Dynamic): Dynamic {
             text: "",
           },
           value72: Dynamic = value70
-            ? (0, normalizeObjectCommentPoint)(
+            ? normalizeObjectCommentPoint(
                 value70,
                 options.annBox(value70),
                 value64,
@@ -865,16 +865,16 @@ function useCanvasComments(options?: Dynamic): Dynamic {
             id: value64.id,
             ...value72,
           },
-          label: (0, commentAnchorShortLabel)({
+          label: commentAnchorShortLabel({
             kind: "note",
             note: value71,
           }),
-          detail: (0, commentObjectPointDetail)(value71, value72),
+          detail: commentObjectPointDetail(value71, value72),
         };
       }
       let value65: Dynamic = callback5(value64.file);
       if (!value65) return null;
-      let value66: Dynamic = (0, commentAnchorShortLabel)({
+      let value66: Dynamic = commentAnchorShortLabel({
         kind: "artboard",
         board: value65,
       });
@@ -882,7 +882,7 @@ function useCanvasComments(options?: Dynamic): Dynamic {
         return {
           anchor: value64,
           label: value66,
-          detail: (0, commentArtboardElementDetail)(value65),
+          detail: commentArtboardElementDetail(value65),
         };
       let value67: Dynamic = callback10(value65),
         callback38: Dynamic = (input2?: Dynamic): Dynamic => ({
@@ -900,7 +900,7 @@ function useCanvasComments(options?: Dynamic): Dynamic {
                 fy: Math.min(1, Math.max(0, value64.ly / (value67.h || 1))),
               },
           label: value66,
-          detail: (0, commentArtboardElementDetail)(value65),
+          detail: commentArtboardElementDetail(value65),
         });
       if (value64.kind === "offFace")
         return callback38(
@@ -929,21 +929,21 @@ function useCanvasComments(options?: Dynamic): Dynamic {
         fx: value68.fx,
         fy: value68.fy,
       };
-      if (!(0, serializeDesignCommentAnchor)(state))
+      if (!serializeDesignCommentAnchor(state))
         return callback38(value68.page ?? null);
       let entry: Dynamic = handlesRef.current.get(value64.file),
-        value69: Dynamic = (0, describeCommentElement)(
+        value69: Dynamic = describeCommentElement(
           entry,
           value68,
         );
       return {
         anchor: state,
-        label: (0, commentAnchorShortLabel)({
+        label: commentAnchorShortLabel({
           kind: "el",
           board: value65,
           el: value69,
         }),
-        detail: (0, commentArtboardElementDetail)(
+        detail: commentArtboardElementDetail(
           value65,
           callback21(entry, value68.tid, value69),
         ),
@@ -960,7 +960,7 @@ function useCanvasComments(options?: Dynamic): Dynamic {
       callback19(input.clientX, input.clientY).then(
         (input2?: Dynamic): Dynamic => {
           let value64: Dynamic = input2
-            ? (0, serializeDesignCommentAnchor)(input2.anchor)
+            ? serializeDesignCommentAnchor(input2.anchor)
             : null;
           value64 &&
             current
@@ -998,9 +998,9 @@ function useCanvasComments(options?: Dynamic): Dynamic {
         : null;
     },
     value29: Dynamic = (0, react_mi.useRef)(
-      (0, createCommentOperationToken)(),
+      createCommentOperationToken(),
     ),
-    value30: Dynamic = (0, usePendingCommentArea)(
+    value30: Dynamic = usePendingCommentArea(
       value10,
       pageKey +
         `
@@ -1031,7 +1031,7 @@ function useCanvasComments(options?: Dynamic): Dynamic {
           }
         : null;
     },
-    value34: Dynamic = (0, useCommentAreaMarquee)({
+    value34: Dynamic = useCommentAreaMarquee({
       toLocal: callback22,
       toClient: callback23,
       stage: (): Dynamic => surfaceRef.current,
@@ -1068,7 +1068,7 @@ function useCanvasComments(options?: Dynamic): Dynamic {
             x: at.x + (window as Dynamic).scrollX,
             y: at.y + (window as Dynamic).scrollY,
           },
-          (0, nearestCommentAreaCorner)(state, resizing ? c02 : c12),
+          nearestCommentAreaCorner(state, resizing ? c02 : c12),
           value29.current.begin(),
         );
       },
@@ -1089,7 +1089,7 @@ function useCanvasComments(options?: Dynamic): Dynamic {
         !current2 ||
         event.button !== 0 ||
         options.spaceHeld ||
-        (0, prefersDragGesture)(event, !!current.areas)
+        prefersDragGesture(event, !!current.areas)
         ? false
         : (mdnSetHeldRect(value19),
           callback3(null),
@@ -1121,7 +1121,7 @@ function useCanvasComments(options?: Dynamic): Dynamic {
         });
       if (!value66 && flag) return;
       let value67: Dynamic = value66
-        ? (0, serializeDesignCommentAnchor)(value66.anchor)
+        ? serializeDesignCommentAnchor(value66.anchor)
         : null;
       if (!value66 || !value67 || !callback38()) return callback39();
       current
@@ -1153,7 +1153,7 @@ function useCanvasComments(options?: Dynamic): Dynamic {
               frame: callback10(input2),
             }),
           ),
-        value66: Dynamic = (0, artboardsCoveredByCommentArea)(
+        value66: Dynamic = artboardsCoveredByCommentArea(
           input,
           value65,
           7,
@@ -1178,34 +1178,34 @@ function useCanvasComments(options?: Dynamic): Dynamic {
           .map(
             (source?: Dynamic): Dynamic => ({
               object: source,
-              bounds: (0, rotatedAnnotationBounds)(
+              bounds: rotatedAnnotationBounds(
                 source,
                 options.annBox(source),
               ),
               solid: source.kind !== "pen",
               hides: source.kind === "image" || source.kind === undefined,
               on: (input2?: Dynamic): Dynamic =>
-                (0, pointWithinCommentObject)(
+                pointWithinCommentObject(
                   source,
                   options.annBox(source),
                   input2,
                 ),
             }),
           );
-      for (let value73 of (0, objectsCoveredByCommentArea)(
+      for (let value73 of objectsCoveredByCommentArea(
         input,
         value69,
         value67,
       ) as Dynamic) {
-        let value74: Dynamic = (0, normalizeObjectCommentArea)(
+        let value74: Dynamic = normalizeObjectCommentArea(
             value73,
             options.annBox(value73),
             input,
             options2,
           ),
-          value75: Dynamic = (0, normalizeCommentArea)(
+          value75: Dynamic = normalizeCommentArea(
             input,
-            (0, rotatedAnnotationBounds)(
+            rotatedAnnotationBounds(
               value73,
               options.annBox(value73),
             ),
@@ -1217,8 +1217,8 @@ function useCanvasComments(options?: Dynamic): Dynamic {
               id: value73.id,
               box: value74,
             },
-            label: (0, commentObjectAreaShortLabel)(value73, value75),
-            detail: (0, commentObjectAreaDetail)(value73, value74),
+            label: commentObjectAreaShortLabel(value73, value75),
+            detail: commentObjectAreaDetail(value73, value74),
           };
       }
       if (value66.length === 0) {
@@ -1233,12 +1233,12 @@ function useCanvasComments(options?: Dynamic): Dynamic {
             x: value73,
             y: value74,
           },
-          label: (0, commentAnchorShortLabel)({
+          label: commentAnchorShortLabel({
             kind: "canvas",
             pages: manifest.pages,
             pageKey: pageKey,
           }),
-          detail: (0, commentCanvasPointDetail)(value73, value74),
+          detail: commentCanvasPointDetail(value73, value74),
         };
       }
       let callback39: Dynamic = async (
@@ -1247,12 +1247,12 @@ function useCanvasComments(options?: Dynamic): Dynamic {
           let entry: Dynamic = handlesRef.current.get(input2.board.file),
             value73: Dynamic =
               entry?.isReady() && !entry.isBlocked()
-                ? (0, createPreviewHandle)(entry.webviewRef.current)
+                ? createPreviewHandle(entry.webviewRef.current)
                 : null;
           if (!value73) return null;
           let value74: Dynamic = input2.inter.x - input2.frame.x,
             value75: Dynamic = input2.inter.y - input2.frame.y;
-          return (0, pickerCommentIn)(
+          return pickerCommentIn(
             value73,
             value74,
             value75,
@@ -1306,8 +1306,7 @@ function useCanvasComments(options?: Dynamic): Dynamic {
             },
           };
         if (value75 && value75.path != null) {
-          let value76: Dynamic = (0,
-            commentAreaWithinArtboardContent)(value73, value75.rect),
+          let value76: Dynamic = commentAreaWithinArtboardContent(value73, value75.rect),
             value77: Dynamic = value76 && {
               kind: "area",
               file: value73.board.file,
@@ -1324,13 +1323,13 @@ function useCanvasComments(options?: Dynamic): Dynamic {
               },
             };
           value77 &&
-            (0, serializeDesignCommentAnchor)(value77) &&
+            serializeDesignCommentAnchor(value77) &&
             (state = value77);
         }
         let state2: Dynamic = {
           board: value73.board,
           cov: value73.cov,
-          part: (0, describeCommentAreaLocation)(
+          part: describeCommentAreaLocation(
             value73.b,
             value73.cov,
           ),
@@ -1338,8 +1337,8 @@ function useCanvasComments(options?: Dynamic): Dynamic {
         };
         return {
           anchor: state,
-          label: (0, commentArtboardAreaShortLabel)([state2]),
-          detail: (0, commentArtboardAreaDetail)([state2]),
+          label: commentArtboardAreaShortLabel([state2]),
+          detail: commentArtboardAreaDetail([state2]),
         };
       }
       let value70: Dynamic = await Promise.all(
@@ -1352,14 +1351,14 @@ function useCanvasComments(options?: Dynamic): Dynamic {
           (input2?: Dynamic, options3?: Dynamic): Dynamic => ({
             board: input2.board,
             cov: input2.cov,
-            part: (0, describeCommentAreaLocation)(
+            part: describeCommentAreaLocation(
               input2.b,
               input2.cov,
             ),
             ...callback40(input2, value70[options3] ?? null),
           }),
         ),
-        value72: Dynamic = (0, unionCommentRects)(
+        value72: Dynamic = unionCommentRects(
           value66.map((input2?: Dynamic): Dynamic => input2.frame),
         );
       return {
@@ -1373,7 +1372,7 @@ function useCanvasComments(options?: Dynamic): Dynamic {
             }),
           ),
           box: {
-            ...(0, normalizeCommentArea)(input, value72),
+            ...normalizeCommentArea(input, value72),
             ...(options2 != null
               ? {
                   corner: options2,
@@ -1381,8 +1380,8 @@ function useCanvasComments(options?: Dynamic): Dynamic {
               : {}),
           },
         },
-        label: (0, commentArtboardAreaShortLabel)(value71),
-        detail: (0, commentArtboardAreaDetail)(value71),
+        label: commentArtboardAreaShortLabel(value71),
+        detail: commentArtboardAreaDetail(value71),
       };
     },
     value36: Dynamic = (0, react_mi.useRef)(callback25);
@@ -1398,7 +1397,7 @@ function useCanvasComments(options?: Dynamic): Dynamic {
           (input2?: Dynamic): Dynamic => input2.id === input,
         ),
         value65: Dynamic = value64
-          ? (0, parseDesignCommentAnchor)(value64.anchor)
+          ? parseDesignCommentAnchor(value64.anchor)
           : null;
       if (!value65) return null;
       let state: Dynamic = {
@@ -1417,7 +1416,7 @@ function useCanvasComments(options?: Dynamic): Dynamic {
             value65.kind === "notearea"
               ? callback12(value65)
               : value73
-                ? (0, commentAreaHandlePoint)(
+                ? commentAreaHandlePoint(
                     value73,
                     value65.box.corner,
                   )
@@ -1452,7 +1451,7 @@ function useCanvasComments(options?: Dynamic): Dynamic {
             h: value73.h,
           },
           value65.kind === "notearea"
-            ? (0, nearestCommentAreaCorner)(value73, value74)
+            ? nearestCommentAreaCorner(value73, value74)
             : value65.box.corner,
           undefined,
           1500,
@@ -1464,7 +1463,7 @@ function useCanvasComments(options?: Dynamic): Dynamic {
           value66?.anchor.kind === "notearea" &&
           value66.anchor.id === value80.id
         ) {
-          let value81: Dynamic = (0, moveObjectCommentArea)(
+          let value81: Dynamic = moveObjectCommentArea(
             value80,
             options.annBox(value80),
             value65.box,
@@ -1473,16 +1472,16 @@ function useCanvasComments(options?: Dynamic): Dynamic {
           );
           if (value81.x0 === value65.box.x0 && value81.y0 === value65.box.y0)
             return null;
-          let value82: Dynamic = (0, normalizeCommentArea)(
-            (0, rotatedAnnotationBounds)(
+          let value82: Dynamic = normalizeCommentArea(
+            rotatedAnnotationBounds(
               value80,
-              (0, objectCommentAreaRect)(
+              objectCommentAreaRect(
                 value80,
                 options.annBox(value80),
                 value81,
               ),
             ),
-            (0, rotatedAnnotationBounds)(
+            rotatedAnnotationBounds(
               value80,
               options.annBox(value80),
             ),
@@ -1493,8 +1492,8 @@ function useCanvasComments(options?: Dynamic): Dynamic {
               id: value80.id,
               box: value81,
             },
-            label: (0, commentObjectAreaShortLabel)(value80, value82),
-            detail: (0, commentObjectAreaDetail)(value80, value81),
+            label: commentObjectAreaShortLabel(value80, value82),
+            detail: commentObjectAreaDetail(value80, value81),
           };
         }
         value66 &&
@@ -1504,7 +1503,7 @@ function useCanvasComments(options?: Dynamic): Dynamic {
           (value66 = null);
       } else value66 = await callback19(state.x, state.y, 1500);
       let value67: Dynamic = value66
-        ? (0, serializeDesignCommentAnchor)(value66.anchor)
+        ? serializeDesignCommentAnchor(value66.anchor)
         : null;
       if (!value66 || !value67 || value2.current == null || !value9.current)
         return null;
@@ -1512,7 +1511,7 @@ function useCanvasComments(options?: Dynamic): Dynamic {
           value66.anchor.kind === "area" ||
           value66.anchor.kind === "boards" ||
           value66.anchor.kind === "notearea",
-        value69: Dynamic = (0, parseDesignCommentAnchor)(value67),
+        value69: Dynamic = parseDesignCommentAnchor(value67),
         flag: Dynamic = false;
       if (
         value69 &&
@@ -1583,7 +1582,7 @@ function useCanvasComments(options?: Dynamic): Dynamic {
       let current: Dynamic = surfaceRef.current,
         entry: Dynamic = camera.get(),
         value64: Dynamic = current
-          ? (0, toolbarOverlayHeight)(current)
+          ? toolbarOverlayHeight(current)
           : 0,
         value65: Dynamic = (current?.clientWidth || 0) / entry.scale,
         value66: Dynamic = (current?.clientHeight || 0) / entry.scale,
@@ -1667,7 +1666,7 @@ function useCanvasComments(options?: Dynamic): Dynamic {
             });
       },
       callback39: Dynamic = (input?: Dynamic): Dynamic => {
-        (0, isCommentTargetEvent)(input) ||
+        isCommentTargetEvent(input) ||
           (callback31(false), (value47.current = null));
       },
       callback40: Dynamic = (input?: Dynamic): Dynamic => {
@@ -1758,12 +1757,12 @@ function useCanvasComments(options?: Dynamic): Dynamic {
         let state: Dynamic = {
             w: current.clientWidth || 1,
             h: current.clientHeight || 1,
-            top: (0, toolbarOverlayHeight)(current),
+            top: toolbarOverlayHeight(current),
           },
           value64: Dynamic =
             input.w <= state.w / input2.scale &&
             input.h <= (state.h - state.top) / input2.scale;
-        return (0, isArtboardInViewport)(
+        return isArtboardInViewport(
           input2,
           value64
             ? input
@@ -1783,7 +1782,7 @@ function useCanvasComments(options?: Dynamic): Dynamic {
       if (!current) return null;
       let entry: Dynamic = camera.get();
       if (input === canvasCommentScopeKey) {
-        let value68: Dynamic = (0, toolbarOverlayHeight)(current),
+        let value68: Dynamic = toolbarOverlayHeight(current),
           value69: Dynamic =
             entry.x + (current.clientWidth || 1) / 2 / entry.scale,
           value70: Dynamic =
@@ -1797,12 +1796,12 @@ function useCanvasComments(options?: Dynamic): Dynamic {
             x: value69,
             y: value70,
           },
-          label: (0, commentAnchorShortLabel)({
+          label: commentAnchorShortLabel({
             kind: "canvas",
             pages: manifest.pages,
             pageKey: pageKey,
           }),
-          detail: (0, commentCanvasPointDetail)(value69, value70),
+          detail: commentCanvasPointDetail(value69, value70),
           p: {
             x: value69,
             y: value70,
@@ -1812,8 +1811,7 @@ function useCanvasComments(options?: Dynamic): Dynamic {
       let value64: Dynamic = callback5(input);
       if (!value64) return null;
       let value65: Dynamic = callback10(value64),
-        { fx: value66, fy: value67 }: Dynamic = (0,
-        defaultArtboardCommentPoint)(value65, entry.scale);
+        { fx: value66, fy: value67 }: Dynamic = defaultArtboardCommentPoint(value65, entry.scale);
       return {
         anchor: {
           kind: "artboard",
@@ -1821,11 +1819,11 @@ function useCanvasComments(options?: Dynamic): Dynamic {
           fx: value66,
           fy: value67,
         },
-        label: (0, commentAnchorShortLabel)({
+        label: commentAnchorShortLabel({
           kind: "artboard",
           board: value64,
         }),
-        detail: (0, commentArtboardElementDetail)(value64),
+        detail: commentArtboardElementDetail(value64),
         p: {
           x: value65.x + value66 * value65.w,
           y: value65.y + value67 * value65.h,
@@ -1839,12 +1837,12 @@ function useCanvasComments(options?: Dynamic): Dynamic {
       if (!current || !value6 || !current2) return;
       let value64: Dynamic = callback33(input),
         value65: Dynamic = value64
-          ? (0, serializeDesignCommentAnchor)(value64.anchor)
+          ? serializeDesignCommentAnchor(value64.anchor)
           : null;
       if (!value64 || !value65) return;
       let bounds: Dynamic = current2.getBoundingClientRect(),
         entry: Dynamic = camera.get(),
-        value66: Dynamic = (0, toolbarOverlayHeight)(current2),
+        value66: Dynamic = toolbarOverlayHeight(current2),
         callback38: Dynamic = (
           input2?: Dynamic,
           options2?: Dynamic,
@@ -1899,7 +1897,7 @@ function useCanvasComments(options?: Dynamic): Dynamic {
       callback34(input);
     },
     callback36: Dynamic = (input?: Dynamic): Dynamic => {
-      let value64: Dynamic = (0, buttonKeyboardActivation)(
+      let value64: Dynamic = buttonKeyboardActivation(
         (): Dynamic => callback35(input, true),
       );
       return {
@@ -1940,7 +1938,7 @@ function useCanvasComments(options?: Dynamic): Dynamic {
           value55.current &&
             relatedTarget &&
             !value33.current?.contains(relatedTarget) &&
-            (0, announce)(
+            announce(
               (): Dynamic =>
                 value9.current
                   ? AccessibilityAnnouncementsLabel_24
@@ -1978,7 +1976,7 @@ function useCanvasComments(options?: Dynamic): Dynamic {
               fullscreenFile2 == null
                 ? undefined
                 : handlesRef.current.get(fullscreenFile2);
-          (0, createPreviewHandle)(
+          createPreviewHandle(
             value67?.webviewRef.current ?? null,
           )?.executeJavaScriptUnchecked(
             "scrollBy(" +
@@ -1996,7 +1994,7 @@ function useCanvasComments(options?: Dynamic): Dynamic {
           (input?: Dynamic): Dynamic => input.active,
         ),
         value65: Dynamic = value64
-          ? (0, parseDesignCommentAnchor)(value64.anchor)
+          ? parseDesignCommentAnchor(value64.anchor)
           : null,
         value66: Dynamic =
           value65?.kind === "notearea" && fullscreenFile == null
@@ -2004,7 +2002,7 @@ function useCanvasComments(options?: Dynamic): Dynamic {
             : null;
       return value65?.kind === "notearea"
         ? value66
-          ? (0, objectCommentAreaRect)(
+          ? objectCommentAreaRect(
               value66,
               options.annBox(value66),
               value65.box,
@@ -2035,8 +2033,7 @@ function useCanvasComments(options?: Dynamic): Dynamic {
       let value64: Dynamic = callback5(value45);
       if (!value64 || !callback9(value64.file)) return null;
       let value65: Dynamic = callback10(value64),
-        { fx: value66, fy: value67 }: Dynamic = (0,
-        defaultArtboardCommentPoint)(value65, value8.scale);
+        { fx: value66, fy: value67 }: Dynamic = defaultArtboardCommentPoint(value65, value8.scale);
       return {
         x: (value65.x - value8.x) * value8.scale,
         y: (value65.y - value8.y) * value8.scale,
@@ -2105,9 +2102,9 @@ function useCanvasComments(options?: Dynamic): Dynamic {
       }}
       onPointerDown={(event?: Dynamic): Dynamic => {
         event.button !== 0 ||
-          (0, isCommentTargetEvent)(event.nativeEvent) ||
+          isCommentTargetEvent(event.nativeEvent) ||
           callback24(event) ||
-          (0, watchPointerRelease)(
+          watchPointerRelease(
             event.nativeEvent,
             (input?: Dynamic): Dynamic => value37.current(input),
           );
@@ -2193,7 +2190,7 @@ function useCanvasComments(options?: Dynamic): Dynamic {
         />)}
       {value39.map((input?: Dynamic): Dynamic => {
         let value64: Dynamic = callback10(input),
-          value65: Dynamic = (0, clampCommentAreaToViewport)(
+          value65: Dynamic = clampCommentAreaToViewport(
             {
               x: (value64.x - value8.x) * value8.scale,
               y: (value64.y - value8.y) * value8.scale,
@@ -2211,7 +2208,7 @@ function useCanvasComments(options?: Dynamic): Dynamic {
             tabIndex: 0,
             "data-mega-comment-target": input.file,
             "data-testid": "mega-comment-target-" + input.file,
-            "aria-label": (0, commentSurfaceAriaLabel)({
+            "aria-label": commentSurfaceAriaLabel({
               kind: "artboard",
               board: input,
             }),
@@ -2235,7 +2232,7 @@ function useCanvasComments(options?: Dynamic): Dynamic {
           tabIndex={0}
           data-mega-comment-target={""}
           data-testid={"mega-comment-target-canvas"}
-          aria-label={(0, commentSurfaceAriaLabel)({
+          aria-label={commentSurfaceAriaLabel({
             kind: "canvas",
             pages: manifest.pages,
             pageKey: pageKey,
@@ -2245,7 +2242,7 @@ function useCanvasComments(options?: Dynamic): Dynamic {
           {...callback36(canvasCommentScopeKey)}
         />)}
       {value41.length > 0 && (<span id={value56} hidden={true}>
-          {(0, commentTargetKeyboardHint)({
+          {commentTargetKeyboardHint({
             several: value41.length > 1,
             canvas: value40,
           })}
@@ -2314,8 +2311,8 @@ export {
 };
 export function installCommentsCanvasController(): () => void {
   return () => {
-    jsx_mg = (0, toModuleNamespace)(
-      (0, load_react_jsx_runtime)(),
+    jsx_mg = toModuleNamespace(
+      load_react_jsx_runtime(),
       1,
     );
     commentAnchorRefreshIntervalMs = 1e3;

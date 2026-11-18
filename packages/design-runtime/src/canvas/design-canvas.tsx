@@ -354,8 +354,7 @@ function DesignCanvas({
   doc: doc,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let { showToast: showToast, hideToast: hideToast }: Dynamic = (0,
-    useToast)(),
+  let { showToast: showToast, hideToast: hideToast }: Dynamic = useToast(),
     value: Dynamic = (0, reactChromeTheme.useRef)(null),
     value2: Dynamic = (0, reactChromeTheme.useRef)(null),
     value3: Dynamic = (0, reactChromeTheme.useRef)(null),
@@ -393,7 +392,7 @@ function DesignCanvas({
     ),
     saveCanvas: Dynamic = (0,
     reactChromeTheme.useMemo)((): Dynamic => {
-      let value653: Dynamic = (0, beforeExport)(
+      let value653: Dynamic = beforeExport(
         value3,
         async (): Promise<Dynamic> => {
           for (let value654 of [
@@ -456,7 +455,7 @@ function DesignCanvas({
   (0, reactChromeTheme.useEffect)((): Dynamic => {
     editable && setMode("edit");
   }, [editable]);
-  let [value7, value8]: Dynamic = (0, npm_useLocalStorage_QP)(
+  let [value7, value8]: Dynamic = npm_useLocalStorage_QP(
       inspectorOpenStorageKey,
       defaultInspectorOpen,
     ),
@@ -467,7 +466,7 @@ function DesignCanvas({
       (): Dynamic => [value9, value10],
       [value9],
     ),
-    [value12, value13]: Dynamic = (0, npm_useLocalStorage_QP)(
+    [value12, value13]: Dynamic = npm_useLocalStorage_QP(
       DcEditorGuidesVisibleKey,
       true,
     ),
@@ -505,7 +504,7 @@ function DesignCanvas({
   }, []);
   (0, reactChromeTheme.useEffect)((): Dynamic => {
     let callback15: Dynamic = (): Dynamic => {
-      value14.current = !(0, hasBlockingEditorOverlay)();
+      value14.current = !hasBlockingEditorOverlay();
     };
     (window as Dynamic).addEventListener("panel-toggle-key", callback15);
     return (): Dynamic =>
@@ -696,7 +695,7 @@ function DesignCanvas({
         }
         if (value653 === "toggle" || value653 === "remove")
           applyCanvasSelection(
-            (0, toggleCanvasElementIds)(
+            toggleCanvasElementIds(
               selectionRef.current,
               input,
               [options],
@@ -717,7 +716,7 @@ function DesignCanvas({
           value279.current();
           value657 ||
             applyCanvasSelection(
-              (0, selectionFromElements)(input, {
+              selectionFromElements(input, {
                 name: value654,
                 tids: [options],
                 rect: context,
@@ -735,7 +734,7 @@ function DesignCanvas({
     value39: Dynamic = (0, reactChromeTheme.useRef)(null),
     value40: Dynamic = (0, reactChromeTheme.useCallback)(
       (input?: Dynamic): Dynamic => {
-        (0, OutlineGlyphsTest)(doc.content().files[input] ?? "") &&
+        OutlineGlyphsTest(doc.content().files[input] ?? "") &&
           (value39.current != null && hideToast(value39.current),
           (value39.current = showToast(
             CanTReadThisArtboardSFileAskMessage,
@@ -762,7 +761,7 @@ function DesignCanvas({
             .map((input2?: Dynamic): Dynamic => input2.tid);
           value654.length !== 0 &&
             (applyCanvasSelection(
-              (0, selectionFromElements)(input, {
+              selectionFromElements(input, {
                 name: value19(input),
                 tids: value654,
                 rect: null,
@@ -845,7 +844,7 @@ function DesignCanvas({
             selectionEpochRef.current - value50.current,
           value653: Dynamic = callback15();
         value49((): Dynamic => {
-          (0, sameSelectedObjectFiles)(
+          sameSelectedObjectFiles(
             current4,
             selectionRef.current,
           ) && callback15() === value653
@@ -907,7 +906,7 @@ function DesignCanvas({
               value279.current();
             } else if (selectionEpochRef.current !== value653) return;
             applyCanvasSelection(
-              (0, mergeCanvasSelection)(current4, input2, input),
+              mergeCanvasSelection(current4, input2, input),
             );
           },
           cancel: (): Dynamic => {
@@ -922,7 +921,7 @@ function DesignCanvas({
       (input?: Dynamic): Dynamic => {
         let current4: Dynamic = value26.current,
           activeElement: Dynamic = (document as Dynamic).activeElement,
-          value653: Dynamic = (0, reduceSessionCancellation)(
+          value653: Dynamic = reduceSessionCancellation(
             current4,
             input,
             {
@@ -1030,7 +1029,7 @@ function DesignCanvas({
         current4?.part !== "text" ||
         !current4.tids ||
         value653 ||
-        (0, hasBlockingEditorOverlay)() ||
+        hasBlockingEditorOverlay() ||
         target?.closest("[data-mega-selection-strip]") ||
         (event.preventDefault(),
         event.stopPropagation(),
@@ -1059,7 +1058,7 @@ function DesignCanvas({
     ),
     [value67, value68]: Dynamic = (0, reactChromeTheme.useState)(
       (): Dynamic =>
-        (0, parseCanvasMetadata)(
+        parseCanvasMetadata(
           doc.content().files[canvasMetadataFile],
           doc.content().files,
         ),
@@ -1073,7 +1072,7 @@ function DesignCanvas({
     value72: Dynamic = (0, reactChromeTheme.useCallback)(
       (input?: Dynamic): Dynamic =>
         value71.current
-          ? (0, reconcileCanvasManifestHistory)(
+          ? reconcileCanvasManifestHistory(
               input,
               value71.current,
               value70.current,
@@ -1091,14 +1090,14 @@ function DesignCanvas({
         value69.current = value653;
         let value655: Dynamic,
           callback15: Dynamic = (input2?: Dynamic): Dynamic =>
-            (0, designArtboardsMatchFiles)(input2, files) && !value654
+            designArtboardsMatchFiles(input2, files) && !value654
               ? input2
               : value653 === undefined
-                ? (0, parseCanvasMetadata)(
-                    (0, serializeCanvasMetadata)(input2),
+                ? parseCanvasMetadata(
+                    serializeCanvasMetadata(input2),
                     files,
                   )
-                : (value655 ??= (0, parseCanvasMetadata)(
+                : (value655 ??= parseCanvasMetadata(
                     value653,
                     files,
                   )),
@@ -1124,22 +1123,22 @@ function DesignCanvas({
     let current4: Dynamic = value71.current;
     value71.current = null;
     if (!current4) return;
-    let value653: Dynamic = (0, reconcileCanvasManifestHistory)(
+    let value653: Dynamic = reconcileCanvasManifestHistory(
       value67,
       current4,
       value70.current,
     );
-    (0, structurallyEqual)(value653, value67) || value68(value653);
+    structurallyEqual(value653, value67) || value68(value653);
   }, [value67]);
   let [value74]: Dynamic = (0, reactChromeTheme.useState)(
       (): Dynamic => {
         let value653: Dynamic =
-          (0, embedMemoryPrefix)() !== ""
+          embedMemoryPrefix() !== ""
             ? null
-            : (0, classifyPlaceLink)();
+            : classifyPlaceLink();
         return value653 === null || value653.why === "known"
           ? null
-          : (0, prototypeFileFromPlaceFragment)(
+          : prototypeFileFromPlaceFragment(
               value653.place,
               value67,
             );
@@ -1151,7 +1150,7 @@ function DesignCanvas({
           (input?: Dynamic): Dynamic => input.file === value74,
         );
         if (value653)
-          return (0, designPageId)(value653, value67.pages);
+          return designPageId(value653, value67.pages);
         let value654: Dynamic =
           doc.content().files[canvasMetadataFile] != null;
         if (
@@ -1172,7 +1171,7 @@ function DesignCanvas({
               (input?: Dynamic): Dynamic => input.file === filePath,
             );
         return value656
-          ? (0, designPageId)(value656, value67.pages)
+          ? designPageId(value656, value67.pages)
           : (value67.pages?.[0]?.id ?? "");
       },
     ),
@@ -1198,9 +1197,9 @@ function DesignCanvas({
     ),
     value84: Dynamic = (0, reactChromeTheme.useRef)(value83);
   value84.current = value83;
-  let value85: Dynamic = (0, useInspectorPosture)() === "sheet",
+  let value85: Dynamic = useInspectorPosture() === "sheet",
     value86: Dynamic = (0, reactChromeTheme.useMemo)(
-      (): Dynamic => (0, designPageContents)(value67, value79),
+      (): Dynamic => designPageContents(value67, value79),
       [value67, value79],
     ),
     value87: Dynamic = (0, reactChromeTheme.useRef)(value86);
@@ -1208,7 +1207,7 @@ function DesignCanvas({
   let [value88]: Dynamic = (0, reactChromeTheme.useState)(
       creationSequenceEnabled,
     ),
-    value89: Dynamic = (0, useDesignCreationProgress)({
+    value89: Dynamic = useDesignCreationProgress({
       doc: doc,
       flag: value88,
       artboards: value67.artboards,
@@ -1230,7 +1229,7 @@ function DesignCanvas({
   );
   value91.current = value89.boxesHere;
   let flag: Dynamic = false,
-    value92: Dynamic = (0, useClipboardFeatureFlag)(),
+    value92: Dynamic = useClipboardFeatureFlag(),
     value93: Dynamic = (0, reactChromeTheme.useMemo)(
       (): Dynamic => ({
         migrated: flag,
@@ -1281,8 +1280,7 @@ function DesignCanvas({
           },
     value98: Dynamic = (0, reactChromeTheme.useCallback)(
       (input?: Dynamic, options?: Dynamic): Dynamic => {
-        let value653: Dynamic = (0,
-          mergeMissingCanvasManifestMetadata)(
+        let value653: Dynamic = mergeMissingCanvasManifestMetadata(
             input,
             options ?? value73.current,
           ),
@@ -1293,12 +1291,12 @@ function DesignCanvas({
         value68(value654);
         localDirtyEpochRef.current++;
         setLocalDirty(true);
-        (0, getKvClient)()
+        getKvClient()
           .set(
-            (0, PlatformFileContentHandler_4)(
+            PlatformFileContentHandler_4(
               canvasMetadataFile,
             ),
-            (0, serializeCanvasMetadata)(value654),
+            serializeCanvasMetadata(value654),
           )
           .catch(
             (input2?: Dynamic): Dynamic =>
@@ -1317,19 +1315,19 @@ function DesignCanvas({
       (): Dynamic =>
         value99 &&
         !flag &&
-        (0, wasPhoneCanvasKilled)(
-          (0, getPhoneCanvasStorage)(),
-          (0, phoneCanvasStorageKey)(),
+        wasPhoneCanvasKilled(
+          getPhoneCanvasStorage(),
+          phoneCanvasStorageKey(),
         ),
     ),
     [value101]: Dynamic = (0, reactChromeTheme.useState)(
       (): Dynamic =>
         value74 ??
-        (0, initialFocusedArtboard)({
+        initialFocusedArtboard({
           manifest: value67,
           pageId: value79,
           entryFile: filePath,
-          embedded: (0, embedMemoryPrefix)() !== "",
+          embedded: embedMemoryPrefix() !== "",
           laidOut: doc.content().files[canvasMetadataFile] != null,
           phoneCanvas: value99 && !flag,
           killedBefore: value100,
@@ -1352,7 +1350,7 @@ function DesignCanvas({
               800,
             );
         }
-        let value653: Dynamic = (0, recallCanvasView)(value79);
+        let value653: Dynamic = recallCanvasView(value79);
         return value653
           ? ((value102.current = true), value653)
           : defaultCanvasCamera;
@@ -1360,7 +1358,7 @@ function DesignCanvas({
     ),
     [value105]: Dynamic = (0, reactChromeTheme.useState)(
       (): Dynamic =>
-        (0, createViewportStore)(
+        createViewportStore(
           value103,
           (input?: Dynamic, options?: Dynamic): Dynamic =>
             options
@@ -1410,7 +1408,7 @@ function DesignCanvas({
       ): Dynamic =>
         items.length > 0
           ? value111()
-          : (0, pointerCoordinates)(
+          : pointerCoordinates(
               items2.length > 0 ? context : value653,
             ),
       [value111],
@@ -1432,7 +1430,7 @@ function DesignCanvas({
         ) ?? null
       );
     }, []),
-    [value114, value115]: Dynamic = (0, useToolbarOverlaySize)(),
+    [value114, value115]: Dynamic = useToolbarOverlaySize(),
     value116: Dynamic = (0, reactChromeTheme.useRef)(value114);
   value116.current = value114;
   let value117: Dynamic = (0, reactChromeTheme.useRef)(false),
@@ -1458,7 +1456,7 @@ function DesignCanvas({
         if (value101 != null) return value101;
         if (value99 && !flag && editable) return null;
         let callback15: Dynamic = (input?: Dynamic): Dynamic =>
-            (0, designPageId)(input, value67.pages) === value79,
+            designPageId(input, value67.pages) === value79,
           value653: Dynamic = value67.artboards.find(
             (input?: Dynamic): Dynamic => input.file === filePath,
           );
@@ -1496,8 +1494,8 @@ function DesignCanvas({
             at: Date.now(),
           }),
           value133.current &&
-            (0, currentEditingArtboardPath)() !==
-              (0, artboardStorePath)(input) &&
+            currentEditingArtboardPath() !==
+              artboardStorePath(input) &&
             value131((input2?: Dynamic): Dynamic => input2 + 1));
       },
       [],
@@ -1505,8 +1503,8 @@ function DesignCanvas({
     value135: Dynamic = (0, reactChromeTheme.useCallback)(
       (input?: Dynamic): Dynamic => {
         input !== focusedFileRef.current ||
-          (0, currentEditingArtboardPath)() !==
-            (0, artboardStorePath)(input) ||
+          currentEditingArtboardPath() !==
+            artboardStorePath(input) ||
           (value132.current = {
             file: input,
             at: Date.now(),
@@ -1526,7 +1524,7 @@ function DesignCanvas({
           value655: Dynamic =
             supportsLoadState && editing && value121 !== null && value654 > 0;
         value655 || (value132.current = null);
-        let value656: Dynamic = (0, setCurrentEditingArtboard)(
+        let value656: Dynamic = setCurrentEditingArtboard(
           value655 ? value121 : null,
         );
         value656 !== null && doc.releaseHold?.(value656);
@@ -1538,21 +1536,21 @@ function DesignCanvas({
   }, [supportsLoadState, editing, value121, value130, doc]);
   (0, reactChromeTheme.useEffect)(
     (): Dynamic => (): Dynamic => {
-      let value653: Dynamic = (0, setCurrentEditingArtboard)(null);
+      let value653: Dynamic = setCurrentEditingArtboard(null);
       value653 !== null && doc.releaseHold?.(value653);
     },
     [doc],
   );
   (0, reactChromeTheme.useEffect)((): Dynamic => {
     let value653: Dynamic = doc;
-    (0, setArtboardWritableCheck)(
+    setArtboardWritableCheck(
       value653.theirsOnItsWay
         ? (input?: Dynamic): Dynamic => value653.theirsOnItsWay(input)
         : value653.releaseHold
           ? uiMessage("canvas.designCanvas.cannotTell")
           : null,
     );
-    return (): Dynamic => (0, setArtboardWritableCheck)(null);
+    return (): Dynamic => setArtboardWritableCheck(null);
   }, [doc]);
   let value136: Dynamic = (0, reactChromeTheme.useRef)(
     doc.content().files,
@@ -1581,7 +1579,7 @@ function DesignCanvas({
               value134(current5);
             return;
           }
-          (0, emitEditorEvent)("files-changed", {
+          emitEditorEvent("files-changed", {
             projectPath: "appifact",
             paths: value653,
           });
@@ -1598,7 +1596,7 @@ function DesignCanvas({
   );
   (0, reactChromeTheme.useEffect)(
     (): Dynamic => (
-      (0, setFilePublishHandler)((input?: Dynamic): Dynamic => {
+      setFilePublishHandler((input?: Dynamic): Dynamic => {
         showToast(
           uiMessage("canvas.designCanvas.storedACompressedCopyOf") +
             (input === "unavailable"
@@ -1609,7 +1607,7 @@ function DesignCanvas({
             ").",
         );
       }),
-      (): Dynamic => (0, setFilePublishHandler)(null)
+      (): Dynamic => setFilePublishHandler(null)
     ),
     [showToast],
   );
@@ -1649,7 +1647,7 @@ function DesignCanvas({
                   items.join(`
 `),
                 )
-              : (0, setElementClipboard)(
+              : setElementClipboard(
                   items.join(`
 `),
                   {
@@ -1696,7 +1694,7 @@ function DesignCanvas({
       (): Dynamic =>
         value339.current === "vector"
           ? FinishEditingThisDrawingSPointsToMessage
-          : (0, activeCropElement)() !== null ||
+          : activeCropElement() !== null ||
               (document as Dynamic).querySelector("[data-media-crop]") !==
                 null
             ? GeometryFlipElementsLabel_6
@@ -1765,7 +1763,7 @@ function DesignCanvas({
           activeElement.tagName === "IFRAME" &&
           activeElement.blur();
         (window as Dynamic).focus();
-        (0, announce)(input);
+        announce(input);
         value448.current?.(input);
       },
       [],
@@ -1809,7 +1807,7 @@ function DesignCanvas({
           (value23.current = true);
         setSelection(
           (input2?: Dynamic): Dynamic =>
-            (0, filterSelectedElements)(
+            filterSelectedElements(
               input2,
               (input3?: Dynamic): Dynamic => input3 !== input,
             ),
@@ -1880,7 +1878,7 @@ function DesignCanvas({
             w: value654.w,
             h: value654.h,
             print: value654.print === "flow" ? "flow" : "fixed",
-            ...((0, isFlowExport)(
+            ...(isFlowExport(
               {
                 expand: value654.expand,
               },
@@ -1890,7 +1888,7 @@ function DesignCanvas({
                   fillPaginates: true,
                 }
               : {}),
-            paper: (0, getArtboardPaperSize)(value654),
+            paper: getArtboardPaperSize(value654),
             paperSet: value654.paper,
             guides: value654.guides ?? [],
             radius: value654.radius,
@@ -1928,10 +1926,10 @@ function DesignCanvas({
         options === undefined && (count5 = input);
         for (let [value655, value656] of value177.current as Dynamic) {
           if (options !== undefined && value655 !== options) continue;
-          let value657: Dynamic = (0, createPreviewHandle)(
+          let value657: Dynamic = createPreviewHandle(
             value656.webviewRef.current,
           );
-          value657 && (0, setPickerHostScale)(value657, input);
+          value657 && setPickerHostScale(value657, input);
         }
       },
       callback16: Dynamic = (): Dynamic => {
@@ -1991,7 +1989,7 @@ function DesignCanvas({
     value188: Dynamic = (0, reactChromeTheme.useCallback)(
       (input?: Dynamic): Dynamic => {
         value186(input);
-        (0, announce)(input);
+        announce(input);
         value187.current && clearTimeout(value187.current);
         value187.current = setTimeout((): Dynamic => value186(null), 6e3);
       },
@@ -2001,7 +1999,7 @@ function DesignCanvas({
       (input?: Dynamic): Dynamic => {
         value186(null);
         value187.current && clearTimeout(value187.current);
-        (0, announce)(input);
+        announce(input);
       },
       [],
     ),
@@ -2029,16 +2027,16 @@ function DesignCanvas({
       )
         return;
       let current4: Dynamic = value4.current,
-        value653: Dynamic = (0, handleInlineUndoKey)(event, {
+        value653: Dynamic = handleInlineUndoKey(event, {
           editing: value224.current,
           filesOpen: value285.current,
           textEditOpen: current4 !== null,
           pending: value5.current,
           targetOwnsKey: (): Dynamic =>
-            (0, isCanvasTypingTarget)(event.target),
+            isCanvasTypingTarget(event.target),
           stepMadeDuringEdit: (input?: Dynamic): Dynamic =>
             current4 !== null &&
-            (0, canApplyTextEditHistory)(
+            canApplyTextEditHistory(
               current4,
               input,
               callback6(),
@@ -2117,7 +2115,7 @@ function DesignCanvas({
         value204();
         let state: Dynamic = {
           gestureKey: input.key,
-          token: (0, randomSessionToken)(),
+          token: randomSessionToken(),
           html: null,
           member: null,
           laidOut: new Map(),
@@ -2141,13 +2139,13 @@ function DesignCanvas({
             state.html = value653 || null;
             state.member =
               value653 &&
-              (0, canFreezeSinglePaste)(
+              canFreezeSinglePaste(
                 false,
                 input.tids,
                 value653,
                 false,
               )
-                ? (0, pastedElementGeometry)(value653, box)
+                ? pastedElementGeometry(value653, box)
                 : null;
           })
           .catch((): Dynamic => {});
@@ -2433,7 +2431,7 @@ function DesignCanvas({
             ({ h: h, desc: desc }: Dynamic): Dynamic =>
               h
                 ? h.setStylePropsPerTid(
-                    (0, routeStyleEditsByElementKind)(
+                    routeStyleEditsByElementKind(
                       input,
                       desc,
                       value655,
@@ -2453,9 +2451,9 @@ function DesignCanvas({
                 value: input4 ?? null,
               }),
             );
-            (0, announce)(
-              (0, addContrastToAnnouncement)(
-                (0, propertyEditAnnouncement)(value658),
+            announce(
+              addContrastToAnnouncement(
+                propertyEditAnnouncement(value658),
                 value658,
                 current4?.check,
                 current4?.resolve,
@@ -2527,8 +2525,7 @@ function DesignCanvas({
         value239(input);
         value22.current.set(input, (value22.current.get(input) ?? 0) + 1);
         let current4: Dynamic = selectionRef.current,
-          { next: value653, tell: value654 }: Dynamic = (0,
-          reconcileSelectedElementIds)(
+          { next: value653, tell: value654 }: Dynamic = reconcileSelectedElementIds(
             current4,
             input,
             options,
@@ -2555,16 +2552,16 @@ function DesignCanvas({
       },
       [value239, applyCanvasSelection],
     ),
-    value241: Dynamic = (0, useDesignSystems)(),
+    value241: Dynamic = useDesignSystems(),
     value242: Dynamic = (0, reactChromeTheme.useRef)([]),
-    value243: Dynamic = (0, useElementSessionState)(
+    value243: Dynamic = useElementSessionState(
       selection.primary ?? null,
     ),
     value244: Dynamic = (0, reactChromeTheme.useMemo)((...args: Dynamic[]): Dynamic => (deriveSelectionInspectorProbe as Dynamic)({ get selection() { return selection; }, get value177() { return value177; }, get value19() { return value19; }, get value232() { return value232; }, get value242() { return value242; } }, ...args), [selection, value232, value241]);
   (0, reactChromeTheme.useEffect)((): Dynamic => {
     let value653: Dynamic = value244?.seed;
     value653 &&
-      (0, updateTypographyCensus)({
+      updateTypographyCensus({
         sizes: value653.sizes,
         sizeRoles: value653.sizeRoles ?? {},
         sizeFamilies: value653.sizeFamilies ?? {},
@@ -2587,11 +2584,11 @@ function DesignCanvas({
         : null;
   (0, reactChromeTheme.useEffect)((): Dynamic => {
     if (value249 !== null) {
-      (0, updateElementSessionState)(value249, {
+      updateElementSessionState(value249, {
         selected: value250,
       });
       return (): Dynamic =>
-        (0, updateElementSessionState)(value249, {
+        updateElementSessionState(value249, {
           selected: null,
         });
     }
@@ -2606,7 +2603,7 @@ function DesignCanvas({
     let { file: value654, tid: value655, kind: value656 }: Dynamic = value653,
       entry: Dynamic = value177.current.get(value654),
       value657: Dynamic = entry
-        ? (0, createPreviewHandle)(entry.webviewRef.current)
+        ? createPreviewHandle(entry.webviewRef.current)
         : null;
     if (!value657) return;
     let value658: Dynamic = value654 + ":" + String(value655),
@@ -2614,7 +2611,7 @@ function DesignCanvas({
     value248.current = value658;
     let flag2: Dynamic = true,
       value660: Dynamic = value656 === "text";
-    (0, inspectPickerSelection)(
+    inspectPickerSelection(
       value657,
       value655,
       value19(value654),
@@ -2628,7 +2625,7 @@ function DesignCanvas({
       flag2 &&
         value247({
           key: value658,
-          ...(0, normalizeInspectorComputedData)(value656, input, {
+          ...normalizeInspectorComputedData(value656, input, {
             ground: value660,
           }),
         });
@@ -2642,12 +2639,12 @@ function DesignCanvas({
     if (!value653 || value653.kind !== "text") return;
     let entry: Dynamic = value177.current.get(value653.file),
       value654: Dynamic = entry
-        ? (0, createPreviewHandle)(entry.webviewRef.current)
+        ? createPreviewHandle(entry.webviewRef.current)
         : null;
     if (!value654) return;
     let value655: Dynamic = value653.file + ":" + String(value653.tid),
       flag2: Dynamic = true;
-    (0, getPickerFontFaces)(value654).then(
+    getPickerFontFaces(value654).then(
       (input?: Dynamic): Dynamic => {
         if (!flag2 || !input) return;
         let value656: Dynamic =
@@ -2717,7 +2714,7 @@ function DesignCanvas({
       (input?: Dynamic, options?: Dynamic): Dynamic =>
         value261(
           (input2?: Dynamic): Dynamic =>
-            (0, updateArtboardErrorMap)(input2, input, options),
+            updateArtboardErrorMap(input2, input, options),
         ),
       [],
     ),
@@ -2746,13 +2743,13 @@ function DesignCanvas({
       [value86, value260],
     ),
     value267: Dynamic = value266.length > 0;
-  (0, useArtboardErrorReporting)(value267);
-  let value268: Dynamic = (0, useArtboardErrorNotices)(
+  useArtboardErrorReporting(value267);
+  let value268: Dynamic = useArtboardErrorNotices(
     value260,
     value266,
     {
       canvasTitle: (document as Dynamic).title,
-      canAsk: editable && (0, embedMemoryPrefix)() === "",
+      canAsk: editable && embedMemoryPrefix() === "",
       large: value99,
       onShowAll: value265,
     },
@@ -2908,7 +2905,7 @@ function DesignCanvas({
         value272.current++;
         let current4: Dynamic = value73.current,
           callback15: Dynamic = (input2?: Dynamic): Dynamic =>
-            (0, designPageId)(input2, current4.pages) === input,
+            designPageId(input2, current4.pages) === input,
           value653: Dynamic = current4.artboards.find(
             (input2?: Dynamic): Dynamic =>
               callback15(input2) && !input2.frameless,
@@ -2919,14 +2916,14 @@ function DesignCanvas({
                 : current4.artboards.find(
                     (input2?: Dynamic): Dynamic =>
                       input2.file === options && callback15(input2),
-                  )) ?? (0, defaultPageArtboard)(current4, input))
+                  )) ?? defaultPageArtboard(current4, input))
             : undefined;
         value345.current &&
           (value654
             ? value348({
                 file: value654.file,
                 prev:
-                  (0, recallCanvasView)(input) ?? defaultCanvasCamera,
+                  recallCanvasView(input) ?? defaultCanvasCamera,
                 fit: artboardIsNotExpandedFill(value654),
               })
             : value297.current());
@@ -2976,7 +2973,7 @@ function DesignCanvas({
             (input2?: Dynamic): Dynamic => input2.file === input,
           );
         if (!value653) return;
-        let value654: Dynamic = (0, designPageId)(
+        let value654: Dynamic = designPageId(
           value653,
           current4.pages,
         );
@@ -2991,7 +2988,7 @@ function DesignCanvas({
     let callback15: Dynamic = (event?: Dynamic): Dynamic => {
       event.key !== "Escape" ||
         event.defaultPrevented ||
-        (0, hasBlockingEditorOverlay)() ||
+        hasBlockingEditorOverlay() ||
         (event.preventDefault(), value301());
     };
     (window as Dynamic).addEventListener("keydown", callback15);
@@ -3033,8 +3030,8 @@ function DesignCanvas({
         return;
       }
       let state: Dynamic = {
-        id: (0, createPageId)(value654, supportsLoadState),
-        name: (0, nextCanvasPageName)(value654),
+        id: createPageId(value654, supportsLoadState),
+        name: nextCanvasPageName(value654),
       };
       value396.current(
         {
@@ -3096,8 +3093,8 @@ function DesignCanvas({
     );
     setSelection(
       (input?: Dynamic): Dynamic =>
-        (0, filterSelectedAnnotations)(
-          (0, filterSelectedArtboards)(
+        filterSelectedAnnotations(
+          filterSelectedArtboards(
             input,
             (input2?: Dynamic): Dynamic =>
               value67.artboards.some(
@@ -3136,11 +3133,11 @@ function DesignCanvas({
         value279.current();
         let value653: Dynamic =
             options === "toggle"
-              ? (0, toggleCanvasSelection)(
+              ? toggleCanvasSelection(
                   selectionRef.current,
                   input,
                 )
-              : (0, selectionFromBoards)(input),
+              : selectionFromBoards(input),
           current4: Dynamic = focusedFileRef.current;
         current4 != null &&
           selectionRef.current.elements.has(current4) &&
@@ -3169,10 +3166,10 @@ function DesignCanvas({
         }
         let state: Dynamic = {
           ...input,
-          id: (0, createAnnotationId)(
+          id: createAnnotationId(
             value653,
             supportsLoadState,
-            (0, annotationKindCategory)(input),
+            annotationKindCategory(input),
           ),
         };
         value396.current(
@@ -3194,8 +3191,8 @@ function DesignCanvas({
           setSelection(
             options.keepTool
               ? emptyCanvasSelection
-              : (0, selectionFromBoards)(
-                  (0, boardSelectionItems)({
+              : selectionFromBoards(
+                  boardSelectionItems({
                     note: state.id,
                   }),
                 ),
@@ -3323,7 +3320,7 @@ function DesignCanvas({
         }
         value315({
           kind: input,
-          ...(0, annotationLineEndpoints)(input, options, context),
+          ...annotationLineEndpoints(input, options, context),
           ...value653,
         });
       },
@@ -3368,12 +3365,12 @@ function DesignCanvas({
           ),
         });
         let value655: Dynamic = value653[value654];
-        (0, announce)(
+        announce(
           value655.kind === "image"
             ? value655.video !== undefined
               ? AccessibilityAnnouncementsLabel_21
               : AccessibilityAnnouncementsLabel_20
-            : (0, isShapeAnnotation)(value655)
+            : isShapeAnnotation(value655)
               ? AccessibilityAnnouncementsLabel_19
               : AccessibilityAnnouncementsLabel_18,
         );
@@ -3396,8 +3393,8 @@ function DesignCanvas({
         return;
       let current4: Dynamic = selectionRef.current,
         value653: Dynamic =
-          (0, isEditingInputTarget)(event.target) ||
-          (0, hasBlockingEditorOverlay)();
+          isEditingInputTarget(event.target) ||
+          hasBlockingEditorOverlay();
       if (
         !(
           focusedFileRef.current != null &&
@@ -3406,12 +3403,12 @@ function DesignCanvas({
         )
       ) {
         if (value653) {
-          (0, isDuplicateShortcut)(event) && event.preventDefault();
+          isDuplicateShortcut(event) && event.preventDefault();
           return;
         }
         event.preventDefault();
         !(
-          (0, isEmptyCanvasSelection)(current4) ||
+          isEmptyCanvasSelection(current4) ||
           event.repeat ||
           value218.current
         ) &&
@@ -3422,12 +3419,12 @@ function DesignCanvas({
                 let current5: Dynamic = selectionRef.current;
                 !value224.current ||
                   value218.current ||
-                  (0, hasBlockingEditorOverlay)() ||
-                  (0, isEmptyCanvasSelection)(current5) ||
+                  hasBlockingEditorOverlay() ||
+                  isEmptyCanvasSelection(current5) ||
                   (current5.elements.size > 0
                     ? value158.current()
                     : value323.current(
-                        (0, canvasBoardSelection)(current5),
+                        canvasBoardSelection(current5),
                       ));
               }));
       }
@@ -3465,7 +3462,7 @@ function DesignCanvas({
           value655: Dynamic = value654.slice(0, 6),
           value656: Dynamic = items.filter(
             (input?: Dynamic): Dynamic =>
-              input instanceof File && (0, isVideoFile)(input),
+              input instanceof File && isVideoFile(input),
           ),
           value657: Dynamic = value655.length > 0 ? "images" : "videos";
         if (value655.length === 0 && value656.length === 0) {
@@ -3552,7 +3549,7 @@ function DesignCanvas({
       ): Dynamic => {
         let value654: Dynamic;
         if (input === "text") {
-          let value655: Dynamic = (0, beginDeferredTextInput)();
+          let value655: Dynamic = beginDeferredTextInput();
           if (value655 === null) return;
           value654 = value655;
           value177.current.get(options)?.textPlacing();
@@ -3567,7 +3564,7 @@ function DesignCanvas({
                 holdToken: value654,
               })
             : value654 !== undefined &&
-              (0, finishDeferredTextInput)("edit", value654);
+              finishDeferredTextInput("edit", value654);
         });
       },
       [value273],
@@ -3615,13 +3612,13 @@ function DesignCanvas({
       let value653: Dynamic = value73.current.annotations ?? [],
         items: Dynamic = [];
       for (let value654 of input as Dynamic) {
-        let value655: Dynamic = (0, createAnnotationId)(
+        let value655: Dynamic = createAnnotationId(
           [...value653, ...items],
           supportsLoadState,
-          (0, annotationKindCategory)(value654.src),
+          annotationKindCategory(value654.src),
         );
         items.push(
-          (0, moveAnnotation)(
+          moveAnnotation(
             {
               ...value654.src,
               id: value655,
@@ -3653,13 +3650,13 @@ function DesignCanvas({
         );
         return {
           file: value101,
-          prev: (0, recallCanvasView)(value79) ?? defaultCanvasCamera,
+          prev: recallCanvasView(value79) ?? defaultCanvasCamera,
           fit: artboardIsNotExpandedFill(value653),
         };
       },
     ),
     value349: Dynamic = value99 && value347 == null;
-  (0, usePhoneCanvasVisibility)(value349 && !flag && !value100);
+  usePhoneCanvasVisibility(value349 && !flag && !value100);
   let value350: Dynamic =
       value349 && !flag && editing && value121 != null
         ? (value70.current ?? value67).artboards.find(
@@ -3668,7 +3665,7 @@ function DesignCanvas({
         : undefined,
     value351: Dynamic =
       value350 &&
-      (0, shouldDelayPreviewMount)(value350, {
+      shouldDelayPreviewMount(value350, {
         editing: editing,
         runsNothing: value100,
       })
@@ -3765,13 +3762,13 @@ function DesignCanvas({
     ),
     value369: Dynamic = (0, reactChromeTheme.useRef)(null);
   (0, reactChromeTheme.useEffect)((): Dynamic => {
-    let value653: Dynamic = (0, createDesignContextPublisher)();
+    let value653: Dynamic = createDesignContextPublisher();
     value365.current = value653;
-    let value654: Dynamic = (0, createPresenceReporter)({
+    let value654: Dynamic = createPresenceReporter({
       minDelta: 2,
     });
     value366.current = value654;
-    (0, getCurrentUserProfile)().then((input?: Dynamic): Dynamic => {
+    getCurrentUserProfile().then((input?: Dynamic): Dynamic => {
       value654.setWho(input?.name ?? "", input?.color ?? "");
       value368(input?.color ?? "");
     });
@@ -3785,14 +3782,14 @@ function DesignCanvas({
           (value365.current = null),
           (value366.current = null));
       };
-    (0, setEmbedSilencer)(callback15);
+    setEmbedSilencer(callback15);
     return (): Dynamic => {
-      (0, setEmbedSilencer)(null);
+      setEmbedSilencer(null);
       callback15();
     };
   }, []);
   let value370: Dynamic =
-      (0, embedMemoryPrefix)() + "canvas:" + value79,
+      embedMemoryPrefix() + "canvas:" + value79,
     value371: Dynamic = (0, reactChromeTheme.useRef)(false),
     callback10: Dynamic = (input?: Dynamic, options?: Dynamic): Dynamic => {
       value371.current = true;
@@ -3807,7 +3804,7 @@ function DesignCanvas({
         value285.current ||
           ((value371.current = false),
           value366.current?.move(
-            (0, pageCommentSurfaceKey)(input),
+            pageCommentSurfaceKey(input),
             Math.round(options),
             Math.round(context),
           ));
@@ -3825,8 +3822,8 @@ function DesignCanvas({
   );
   let value374: Dynamic = (0, reactChromeTheme.useCallback)(
       (event?: Dynamic): Dynamic =>
-        !(0, isEditingInputTarget)(event.target) &&
-        !(0, hasBlockingEditorOverlay)() &&
+        !isEditingInputTarget(event.target) &&
+        !hasBlockingEditorOverlay() &&
         !value345.current &&
         value371.current,
       [],
@@ -3836,7 +3833,7 @@ function DesignCanvas({
       (!supportsLoadState && localDirty) ||
       sessionsDirty ||
       doc.dirty();
-  (0, useLiveDismissalGuard)((): Dynamic => false);
+  useLiveDismissalGuard((): Dynamic => false);
   let value376: Dynamic = (0,
   reactChromeTheme.useCallback)((...args: Dynamic[]): Dynamic => (reportDesignContextSnapshot as Dynamic)({ get flag() { return flag; }, get selection() { return selection; }, get value103() { return value103; }, get value120() { return value120; }, get value168() { return value168; }, get value172() { return value172; }, get value177() { return value177; }, get value266() { return value266; }, get value347() { return value347; }, get value356() { return value356; }, get value365() { return value365; }, get value375() { return value375; }, get value79() { return value79; }, get value81() { return value81; }, get value86() { return value86; } }, ...args), [
     value103,
@@ -3857,8 +3854,8 @@ function DesignCanvas({
   (0, reactChromeTheme.useEffect)(value376, [value376]);
   (0, reactChromeTheme.useEffect)(
     (): Dynamic => (
-      (0, setEmbedPresenceListener)(value376),
-      (): Dynamic => (0, setEmbedPresenceListener)(null)
+      setEmbedPresenceListener(value376),
+      (): Dynamic => setEmbedPresenceListener(null)
     ),
     [value376],
   );
@@ -3892,14 +3889,14 @@ function DesignCanvas({
     ),
     value379: Dynamic = (0, reactChromeTheme.useRef)(value378);
   value379.current = value378;
-  let value380: Dynamic = (0, useLatestCallback)(
+  let value380: Dynamic = useLatestCallback(
       (input?: Dynamic): Dynamic => {
         let current4: Dynamic = value73.current,
           value653: Dynamic = current4.artboards.find(
             (input2?: Dynamic): Dynamic => input2.file === input,
           );
         if (!value653 || value653.frameless === true) return;
-        let value654: Dynamic = (0, designPageId)(
+        let value654: Dynamic = designPageId(
             value653,
             current4.pages,
           ),
@@ -3911,7 +3908,7 @@ function DesignCanvas({
             prev:
               input2?.prev ??
               (value655
-                ? ((0, recallCanvasView)(value654) ??
+                ? (recallCanvasView(value654) ??
                   defaultCanvasCamera)
                 : value105.get()),
             fit: artboardIsNotExpandedFill(value653),
@@ -3919,7 +3916,7 @@ function DesignCanvas({
         );
       },
     ),
-    value381: Dynamic = (0, useLatestCallback)(
+    value381: Dynamic = useLatestCallback(
       (input?: Dynamic): Dynamic => value275((): Dynamic => value380(input)),
     ),
     value382: Dynamic = (0, reactChromeTheme.useRef)(
@@ -3946,7 +3943,7 @@ function DesignCanvas({
             if (
               value654 &&
               value653 &&
-              (0, shouldDelayPreviewMount)(value653, {
+              shouldDelayPreviewMount(value653, {
                 editing: value224.current,
                 runsNothing: value100,
               })
@@ -3957,7 +3954,7 @@ function DesignCanvas({
                 file: input,
                 prev:
                   value655 && options !== undefined
-                    ? ((0, recallCanvasView)(options) ??
+                    ? (recallCanvasView(options) ??
                       defaultCanvasCamera)
                     : value105.get(),
                 fit: artboardIsNotExpandedFill(value653),
@@ -3969,7 +3966,7 @@ function DesignCanvas({
             value654 && value122(null);
             setSelection(
               (input2?: Dynamic): Dynamic =>
-                (0, filterSelectedArtboards)(
+                filterSelectedArtboards(
                   input2,
                   (input3?: Dynamic): Dynamic => input3 !== input,
                 ),
@@ -4043,15 +4040,15 @@ function DesignCanvas({
           )
         )
           return false;
-        let value653: Dynamic = (0, adjacentPrintableArtboard)(
+        let value653: Dynamic = adjacentPrintableArtboard(
           artboards,
           current4,
           input,
         );
         if (value653 == null) {
           let value654: Dynamic =
-            (0, printableArtboards)(artboards).length <= 1;
-          (0, announce)(
+            printableArtboards(artboards).length <= 1;
+          announce(
             value654
               ? ThisIsTheOnlyArtboardMessage
               : input > 0
@@ -4079,14 +4076,14 @@ function DesignCanvas({
       value654: Dynamic = artboards.find(
         (input?: Dynamic): Dynamic => input.file === value653,
       ),
-      value655: Dynamic = (0, printableArtboardIndex)(
+      value655: Dynamic = printableArtboardIndex(
         artboards,
         value653,
       );
     value654 &&
       value655 &&
-      (0, announce)(
-        (0, artboardPositionAnnouncement)(
+      announce(
+        artboardPositionAnnouncement(
           value655.index,
           value655.count,
           value654.title ?? value654.file.replace(/\.dc\.html$/, ""),
@@ -4111,7 +4108,7 @@ function DesignCanvas({
     let value653: Dynamic = value347?.prev ?? value103;
     if (value653 === defaultCanvasCamera) return;
     let value654: Dynamic = (window as Dynamic).setTimeout(
-      (): Dynamic => (0, rememberCanvasView)(value79, value653),
+      (): Dynamic => rememberCanvasView(value79, value653),
       150,
     );
     return (): Dynamic => (window as Dynamic).clearTimeout(value654);
@@ -4136,7 +4133,7 @@ function DesignCanvas({
           activeElement instanceof HTMLElement &&
           (/^(INPUT|TEXTAREA|SELECT)$/.test(activeElement.tagName) ||
             activeElement.isContentEditable);
-      value14.current = !(0, hasBlockingEditorOverlay)() && !value653;
+      value14.current = !hasBlockingEditorOverlay() && !value653;
       value96((input?: Dynamic): Dynamic => !input);
     };
     (window as Dynamic).addEventListener("keydown", callback15, true);
@@ -4149,7 +4146,7 @@ function DesignCanvas({
         : (value106.current?.querySelector(
             `[data-mega-artboard="${CSS.escape(input)}"] [data-mega-title-text]`,
           ) ?? null),
-    value394: Dynamic = (0, useCanvasKeyboardFocus)(
+    value394: Dynamic = useCanvasKeyboardFocus(
       [
         {
           el: (): Dynamic =>
@@ -4231,9 +4228,9 @@ function DesignCanvas({
     value70.current = state;
     value73.current = state;
     value68(state);
-    await (0, getKvClient)().set(
-      (0, PlatformFileContentHandler_4)(canvasMetadataFile),
-      (0, serializeCanvasMetadata)(state),
+    await getKvClient().set(
+      PlatformFileContentHandler_4(canvasMetadataFile),
+      serializeCanvasMetadata(state),
       {
         auto: true,
       },
@@ -4258,7 +4255,7 @@ function DesignCanvas({
           })();
       };
     (document as Dynamic).addEventListener("visibilitychange", callback16);
-    (0, setEmbedSettler)(async (): Promise<Dynamic> => {
+    setEmbedSettler(async (): Promise<Dynamic> => {
       let current4: Dynamic = value369.current;
       current4?.ctrl.abort();
       current4 &&
@@ -4279,7 +4276,7 @@ function DesignCanvas({
         "visibilitychange",
         callback16,
       );
-      (0, setEmbedSettler)(null);
+      setEmbedSettler(null);
     };
   }, [supportsLoadState, editable, doc]);
   (0, reactChromeTheme.useEffect)((): Dynamic => {
@@ -4318,12 +4315,12 @@ function DesignCanvas({
         event.key !== "Escape" ||
           event.repeat ||
           event.defaultPrevented ||
-          (0, hasBlockingEditorOverlay)() ||
+          hasBlockingEditorOverlay() ||
           value220 ||
           (value224.current &&
-            !(0, isEmptyCanvasSelection)(selectionRef.current)) ||
+            !isEmptyCanvasSelection(selectionRef.current)) ||
           value339.current !== "select" ||
-          (0, isEditingInputTarget)(event.target) ||
+          isEditingInputTarget(event.target) ||
           (event.preventDefault(), value270(null));
       },
       callback16: Dynamic = (dataset?: Dynamic): Dynamic => {
@@ -4347,7 +4344,7 @@ function DesignCanvas({
   (0, reactChromeTheme.useEffect)((): Dynamic => {
     value347 != null &&
       setSelection(
-        (input?: Dynamic): Dynamic => (0, clearSelectedBoards)(input),
+        (input?: Dynamic): Dynamic => clearSelectedBoards(input),
       );
   }, [value347]);
   (0, reactChromeTheme.useEffect)((): Dynamic => {
@@ -4358,10 +4355,10 @@ function DesignCanvas({
     if (flag) {
       if (
         value653 &&
-        (0, designPageId)(value653, value67.pages) === value79
+        designPageId(value653, value67.pages) === value79
       )
         return;
-      let value654: Dynamic = (0, defaultPageArtboard)(
+      let value654: Dynamic = defaultPageArtboard(
         value67,
         value79,
       );
@@ -4410,7 +4407,7 @@ function DesignCanvas({
     value397: Dynamic = (0, reactChromeTheme.useCallback)(
       (input?: Dynamic, options?: Dynamic): Dynamic => {
         let value653: Dynamic = input.replace(/\.dc\.html$/, ""),
-          value654: Dynamic = (0, PlatformFileContentSlice)(options);
+          value654: Dynamic = PlatformFileContentSlice(options);
         if (value654 === undefined) return;
         let value655: Dynamic = value67.artboards.find(
             (input2?: Dynamic): Dynamic => input2.file === input,
@@ -4519,7 +4516,7 @@ function DesignCanvas({
           return;
         let value653: Dynamic = items.length > 0 ? [...items] : undefined;
         if (context) {
-          value73.current = (0, updateArtboardGuides)(
+          value73.current = updateArtboardGuides(
             current4,
             input,
             value653,
@@ -4530,9 +4527,9 @@ function DesignCanvas({
         let value654: Dynamic = (value70.current ?? current4).artboards.find(
           (input2?: Dynamic): Dynamic => input2.file === input,
         )?.guides;
-        if ((0, structurallyEqual)(value654, value653)) {
+        if (structurallyEqual(value654, value653)) {
           value68(
-            (0, updateArtboardGuides)(current4, input, value653),
+            updateArtboardGuides(current4, input, value653),
           );
           return;
         }
@@ -4545,7 +4542,7 @@ function DesignCanvas({
           },
           new Set(),
         );
-        value98((0, updateArtboardGuides)(current4, input, value653));
+        value98(updateArtboardGuides(current4, input, value653));
       },
       [value98],
     ),
@@ -4558,9 +4555,9 @@ function DesignCanvas({
           )
         )
           return;
-        let value653: Dynamic = (0, normalizeArtboardRadius)(options);
+        let value653: Dynamic = normalizeArtboardRadius(options);
         if (context) {
-          value73.current = (0, updateArtboardRadius)(
+          value73.current = updateArtboardRadius(
             current4,
             input,
             value653,
@@ -4571,9 +4568,9 @@ function DesignCanvas({
         let value654: Dynamic = (value70.current ?? current4).artboards.find(
           (input2?: Dynamic): Dynamic => input2.file === input,
         )?.radius;
-        if ((0, structurallyEqual)(value654, value653)) {
+        if (structurallyEqual(value654, value653)) {
           value68(
-            (0, updateArtboardRadius)(current4, input, value653),
+            updateArtboardRadius(current4, input, value653),
           );
           return;
         }
@@ -4586,12 +4583,12 @@ function DesignCanvas({
           },
           new Set(),
         );
-        value98((0, updateArtboardRadius)(current4, input, value653));
-        (0, announce)(
-          (0, propertyEditAnnouncement)([
+        value98(updateArtboardRadius(current4, input, value653));
+        announce(
+          propertyEditAnnouncement([
             {
               prop: "border-radius",
-              value: (0, artboardRadiusCss)(value653) ?? "0px",
+              value: artboardRadiusCss(value653) ?? "0px",
             },
           ]),
         );
@@ -4601,7 +4598,7 @@ function DesignCanvas({
     value403: Dynamic = (0, reactChromeTheme.useCallback)(
       (input?: Dynamic, options?: Dynamic): Dynamic => {
         let current4: Dynamic = value73.current,
-          value653: Dynamic = (0, reorderArtboardsOnPages)(
+          value653: Dynamic = reorderArtboardsOnPages(
             current4.artboards,
             input,
             options,
@@ -4609,7 +4606,7 @@ function DesignCanvas({
           );
         value653 !== null &&
           (value396.current(
-            (0, artboardOrderHistoryStep)(
+            artboardOrderHistoryStep(
               current4.artboards,
               value653,
             ),
@@ -4619,8 +4616,8 @@ function DesignCanvas({
             ...current4,
             artboards: value653,
           }));
-        (0, announce)(
-          (0, stackingAnnouncement)(options, value653 !== null),
+        announce(
+          stackingAnnouncement(options, value653 !== null),
         );
       },
       [value98],
@@ -4707,7 +4704,7 @@ function DesignCanvas({
           };
           value654.at = Date.now();
           value412();
-          (0, equalPropValues)(
+          equalPropValues(
             value654.op.from[value655],
             context[value655],
           ) &&
@@ -4748,7 +4745,7 @@ function DesignCanvas({
           return false;
         }
         if (
-          !(0, sessionAllowsMutation)({
+          !sessionAllowsMutation({
             gesturing: value218.current,
             setMoveCommits: value155.current,
           })
@@ -4760,15 +4757,15 @@ function DesignCanvas({
         );
         value655 !== undefined &&
           value448.current?.(
-            (0, partialFlipMessage)(
+            partialFlipMessage(
               value655,
               value654,
               GeometryFlipAnnotationsWytKytYtConfig,
             ),
           );
         value654 &&
-          (0, announce)(
-            (0, flipDirectionAnnouncement)(options),
+          announce(
+            flipDirectionAnnouncement(options),
           );
         return value654;
       },
@@ -4795,7 +4792,7 @@ function DesignCanvas({
           (value654.kind !== "line" && value654.kind !== "arrow")
         )
           return;
-        let value655: Dynamic = (0, annotationArrowHeads)(value654);
+        let value655: Dynamic = annotationArrowHeads(value654);
         if (value655[options] === context) return;
         let state: Dynamic = {
           ...value655,
@@ -4815,7 +4812,7 @@ function DesignCanvas({
           annotations: value653.map(
             (input2?: Dynamic): Dynamic =>
               input2.id === input
-                ? (0, updateAnnotationArrowHeads)(value654, state)
+                ? updateAnnotationArrowHeads(value654, state)
                 : input2,
           ),
         });
@@ -4907,7 +4904,7 @@ function DesignCanvas({
         event.repeat ||
         !value224.current ||
         value285.current ||
-        (0, isCanvasTypingTarget)(event.target) ||
+        isCanvasTypingTarget(event.target) ||
         value155.current > 0
       )
         return;
@@ -4941,7 +4938,7 @@ function DesignCanvas({
   let { keeper: current, host: current2 }: Dynamic = value178.current,
     value438: Dynamic = (0, reactChromeTheme.useRef)(false);
   (0, reactChromeTheme.useEffect)((): Dynamic => {
-    let value653: Dynamic = (0, textEditHistoryEpoch)(
+    let value653: Dynamic = textEditHistoryEpoch(
       editing,
       value438.current,
       toolResetTick,
@@ -4957,9 +4954,9 @@ function DesignCanvas({
     ),
     [doc, current],
   );
-  value434.current ??= (0, createEditSessionManager)({
+  value434.current ??= createEditSessionManager({
     depths: (input?: Dynamic): Dynamic =>
-      (0, readHeldSessionState)(
+      readHeldSessionState(
         current,
         current2.inDocument,
         input,
@@ -4967,7 +4964,7 @@ function DesignCanvas({
         (): Dynamic => value177.current.get(input)?.undoDepth() ?? null,
       ),
     floor: (input?: Dynamic): Dynamic =>
-      (0, readHeldSessionState)(
+      readHeldSessionState(
         current,
         current2.inDocument,
         input,
@@ -4975,7 +4972,7 @@ function DesignCanvas({
         (): Dynamic => value177.current.get(input)?.undoFloor() ?? null,
       ),
     redos: (input?: Dynamic): Dynamic =>
-      (0, readHeldSessionState)(
+      readHeldSessionState(
         current,
         current2.inDocument,
         input,
@@ -5069,7 +5066,7 @@ function DesignCanvas({
             });
     },
   });
-  value432.current ??= (0, createInlineHistoryBridge)(
+  value432.current ??= createInlineHistoryBridge(
     value434.current,
     current,
     current2,
@@ -5085,7 +5082,7 @@ function DesignCanvas({
         current4 !== null &&
           input === focusedFileRef.current &&
           !value5.current &&
-          (0, updateTextEditHistoryCounts)(current4, options);
+          updateTextEditHistoryCounts(current4, options);
       },
       [],
     ),
@@ -5131,7 +5128,7 @@ function DesignCanvas({
       (input?: Dynamic, options?: Dynamic): Dynamic => {
         value441(input, options);
         value443(input, options);
-        (0, announce)(
+        announce(
           AccessibilityAnnouncementsUndoRedoConfig_2[options],
         );
       },
@@ -5172,7 +5169,7 @@ function DesignCanvas({
         ) ||
         !value224.current ||
         value285.current ||
-        (0, isCanvasTypingTarget)(event.target)
+        isCanvasTypingTarget(event.target)
       )
         return;
       let current4: Dynamic = value432.current;
@@ -5186,7 +5183,7 @@ function DesignCanvas({
       value192.current(value653);
       if (value430.current.reachable(value653)) return;
       if (value653 === "undo" ? !current4.canUndo() : !current4.canRedo()) {
-        (0, announce)(
+        announce(
           AccessibilityAnnouncementsUndoRedoConfig[value653],
         );
         return;
@@ -5207,7 +5204,7 @@ function DesignCanvas({
   }, [value188]);
   let value447: Dynamic = (0, reactChromeTheme.useRef)(null),
     callback12: Dynamic = (input?: Dynamic, options?: Dynamic): Dynamic => {
-      (0, stepInlineHistory)({
+      stepInlineHistory({
         blocked: (): Dynamic =>
           (value432.current?.busy() ?? false) || value155.current > 0,
         stillOk: (): Dynamic => value224.current && !value285.current,
@@ -5244,7 +5241,7 @@ function DesignCanvas({
               uiMessage("canvas.designCanvas.nothingLeftToUndoThat"),
             )
           : value653 === "empty" &&
-            (0, announce)(
+            announce(
               AccessibilityAnnouncementsUndoRedoConfig.undo,
             );
       }),
@@ -5261,7 +5258,7 @@ function DesignCanvas({
               uiMessage("canvas.designCanvas.nothingLeftToRedoThat"),
             )
           : value653 === "empty" &&
-            (0, announce)(
+            announce(
               AccessibilityAnnouncementsUndoRedoConfig.redo,
             );
       }),
@@ -5302,27 +5299,27 @@ function DesignCanvas({
     value454: Dynamic = (0, reactChromeTheme.useMemo)((...args: Dynamic[]): Dynamic => (buildHostedEditorCanvasApi as Dynamic)({ get doc() { return doc; }, get supportsLoadState() { return supportsLoadState; }, get value155() { return value155; }, get value156() { return value156; }, get value202() { return value202; }, get value274() { return value274; }, get value383() { return value383; }, get value396() { return value396; }, get value405() { return value405; }, get value406() { return value406; }, get value409() { return value409; }, get value410() { return value410; }, get value432() { return value432; }, get value440() { return value440; }, get value447() { return value447; }, get value450() { return value450; }, get value451() { return value451; }, get value452() { return value452; }, get value453() { return value453; }, get value73() { return value73; }, get value80() { return value80; }, get value98() { return value98; } }, ...args), [doc, value98, supportsLoadState, value156]),
     value455: Dynamic = (0, reactChromeTheme.useCallback)(
       async function value653(input?: Dynamic): Promise<Dynamic> {
-        let value654: Dynamic = (0, canvasPageDeleteSnapshot)(
+        let value654: Dynamic = canvasPageDeleteSnapshot(
           value73.current,
           input,
         );
         if (!value654 || !value224.current) return;
         if (value654.files.size + value654.notes.size > 0) {
-          let value656: Dynamic = await (0, confirmCanvasAction)(
-            (0, canvasPageDeleteConfirmation)(
+          let value656: Dynamic = await confirmCanvasAction(
+            canvasPageDeleteConfirmation(
               value654.spec.name,
               value654.files.size,
               value654.notes.size,
-              (0, keyboardShortcutLabel)("Z"),
+              keyboardShortcutLabel("Z"),
             ),
           );
-          (0, clearEscapeReleaseSuppression)();
+          clearEscapeReleaseSuppression();
           value286.current?.focus({
             preventScroll: true,
           });
           if (!value656) return;
         }
-        let value655: Dynamic = (0, canvasPageDeleteSnapshot)(
+        let value655: Dynamic = canvasPageDeleteSnapshot(
           value73.current,
           input,
         );
@@ -5421,8 +5418,8 @@ function DesignCanvas({
                 (input2?: Dynamic): Dynamic => !input.notes.has(input2.id),
               ),
             }),
-            (0, announce)(
-              (0, objectsDeletedAnnouncement)(value654.length),
+            announce(
+              objectsDeletedAnnouncement(value654.length),
             ),
             true);
       },
@@ -5450,31 +5447,31 @@ function DesignCanvas({
     value466: Dynamic = (0, reactChromeTheme.useRef)(value465);
   value466.current = value465;
   (0, reactChromeTheme.useEffect)((): Dynamic => {
-    if (!(0, canvasElementSelectionCount)(selection)) return;
+    if (!canvasElementSelectionCount(selection)) return;
     let artboards: Dynamic = selection.artboards,
       notes: Dynamic = selection.notes,
       callback15: Dynamic = (): Dynamic => {
         let artboards2: Dynamic = value73.current.artboards,
-          value654: Dynamic = (0, annotationImageReferences)(
+          value654: Dynamic = annotationImageReferences(
             (value73.current.annotations ?? []).filter(
               (input?: Dynamic): Dynamic => notes.has(input.id),
             ),
           );
         for (let value655 of [
           ...(artboards.size > 0
-            ? (0, clipboardBlobAssets)(
+            ? clipboardBlobAssets(
                 artboards2.filter(
                   (input?: Dynamic): Dynamic => artboards.has(input.file),
                 ),
                 artboards2,
                 doc.content().files,
-                (0, getExternalFileReferences)(),
+                getExternalFileReferences(),
               )
             : []),
           ...value654,
         ] as Dynamic)
-          (0, getCachedBlobObjectUrl)(value655) === undefined &&
-            (0, fetchBlobAsset)(value655).catch((): Dynamic => {});
+          getCachedBlobObjectUrl(value655) === undefined &&
+            fetchBlobAsset(value655).catch((): Dynamic => {});
       };
     if (artboards.size === 0 && notes.size === 1) return callback15();
     let value653: Dynamic = setTimeout(callback15, 150);
@@ -5517,7 +5514,7 @@ function DesignCanvas({
             .filter((input2?: Dynamic): Dynamic => options.has(input2.id))
             .map(
               (input2?: Dynamic): Dynamic =>
-                (0, isShapeAnnotation)(input2)
+                isShapeAnnotation(input2)
                   ? ""
                   : input2.text.trim(),
             );
@@ -5556,7 +5553,7 @@ function DesignCanvas({
       },
       [],
     ),
-    value480: Dynamic = (0, useDownloadsWithheld)(),
+    value480: Dynamic = useDownloadsWithheld(),
     [value481, value482]: Dynamic = (0, reactChromeTheme.useState)(
       emptyCanvasNoteSet,
     );
@@ -5619,11 +5616,11 @@ function DesignCanvas({
               current4.artboards.some(
                 (input3?: Dynamic): Dynamic =>
                   !input3.frameless &&
-                  (0, designPageId)(input3, current4.pages) ===
+                  designPageId(input3, current4.pages) ===
                     input2.id,
               ),
           ).length;
-        return (0, describeExportScope)(input, options, {
+        return describeExportScope(input, options, {
           printable: value87.current.artboards.filter(
             (input2?: Dynamic): Dynamic => !input2.frameless,
           ).length,
@@ -5632,7 +5629,7 @@ function DesignCanvas({
       },
       [],
     ),
-    value486: Dynamic = (0, useExportPicker)({
+    value486: Dynamic = useExportPicker({
       artboards: value484,
       enter: (): Dynamic => {
         value346.current !== null ? value297.current() : value270(null);
@@ -5739,7 +5736,7 @@ function DesignCanvas({
           (input2?: Dynamic): Dynamic => input2.file === input,
         );
         return (
-          value653 !== undefined && (0, needsPagedExport)(value653)
+          value653 !== undefined && needsPagedExport(value653)
         );
       },
       [editable, value92, flag],
@@ -5835,11 +5832,11 @@ function DesignCanvas({
             let entry: Dynamic = value177.current.get(input2),
               value654: Dynamic =
                 entry !== undefined && entry.isReady()
-                  ? (0, createPreviewHandle)(entry.webviewRef.current)
+                  ? createPreviewHandle(entry.webviewRef.current)
                   : null;
             return value654 === null
               ? Promise.resolve(null)
-              : (0, collectArtboardFontDescriptors)(value654);
+              : collectArtboardFontDescriptors(value654);
           }),
         );
         return value653.every((input2?: Dynamic): Dynamic => input2 !== null)
@@ -5856,7 +5853,7 @@ function DesignCanvas({
       value510.current = undefined;
       try {
         let value653: Dynamic = await value509();
-        (0, reportExportEvent)("htmlBuilt");
+        reportExportEvent("htmlBuilt");
         return value653;
       } catch (value653: Dynamic) {
         value510.current = value653;
@@ -5867,11 +5864,11 @@ function DesignCanvas({
             : undefined;
         throw (
           value654 === "too_large"
-            ? (0, reportExportEvent)("tooLarge")
+            ? reportExportEvent("tooLarge")
             : value654 !== "not_loaded" &&
               value654 !== "empty" &&
               value654 !== "timeout" &&
-              (0, reportExportEvent)("failed"),
+              reportExportEvent("failed"),
           showToast(
             value653 instanceof ExportHtmlError &&
               value653.code === "too_large"
@@ -5884,7 +5881,7 @@ function DesignCanvas({
                     value653.code === "timeout"
                   ? uiMessage("canvas.designCanvas.preparingThisDesignToSend")
                   : uiMessage("canvas.designCanvas.couldnTPrepareThisDesign") +
-                    (0, errorMessage)(value653) +
+                    errorMessage(value653) +
                     ".",
             "error",
           ),
@@ -5895,8 +5892,8 @@ function DesignCanvas({
     value512: Dynamic = (0, reactChromeTheme.useCallback)(
       (input?: Dynamic): Dynamic => {
         let current4: Dynamic = value510.current;
-        (0, reportExportOutcome)(
-          (0, classifyHtmlDelivery)(
+        reportExportOutcome(
+          classifyHtmlDelivery(
             input,
             current4 instanceof ExportHtmlError
               ? current4.code
@@ -5928,15 +5925,15 @@ function DesignCanvas({
                   : uiMessage("canvas.designCanvas.thisArtboardIsnTVisible"),
               );
               healthReporter.report(
-                ...(0, classifyExportAbort)("pdf"),
+                ...classifyExportAbort("pdf"),
               );
               return;
             }
             let value655: Dynamic;
-            await (0, exportPdfWithFeedback)(
+            await exportPdfWithFeedback(
               [value653],
               (): Dynamic => value654,
-              value653.title ?? (0, exportBaseFileName)(input),
+              value653.title ?? exportBaseFileName(input),
               (...input2: Dynamic[]): Dynamic =>
                 (value655 = showToast(...input2)),
               {
@@ -5984,7 +5981,7 @@ function DesignCanvas({
     value514: Dynamic = (0, reactChromeTheme.useCallback)(
       (input?: Dynamic, options: Dynamic = 2): Dynamic => {
         let value653: Dynamic = input
-          ? (0, selectedExportableArtboards)(
+          ? selectedExportableArtboards(
               value87.current.artboards,
               input,
             )
@@ -6014,7 +6011,7 @@ function DesignCanvas({
               reason:
                 '"' +
                 (value654.title ??
-                  (0, exportBaseFileName)(value654.file)) +
+                  exportBaseFileName(value654.file)) +
                 '"\u2019s preview is stopped \u2014 reload it before exporting.',
               stopped: true,
             }
@@ -6037,7 +6034,7 @@ function DesignCanvas({
           showToast(value653.reason);
           value653.stopped &&
             healthReporter.report(
-              ...(0, classifyExportAbort)("pdf"),
+              ...classifyExportAbort("pdf"),
             );
           return;
         }
@@ -6047,11 +6044,11 @@ function DesignCanvas({
           await value495(
             value653.printable,
             (): Dynamic =>
-              (0, exportPdfWithFeedback)(
+              exportPdfWithFeedback(
                 value653.printable,
                 value483,
                 input
-                  ? ((0, sanitizeExportFileName)(
+                  ? (sanitizeExportFileName(
                       (document as Dynamic).title,
                       100,
                     ) || "design") + "-selection"
@@ -6130,8 +6127,8 @@ function DesignCanvas({
       (input?: Dynamic): Dynamic => {
         let { notes: current4, refused: current5 }: Dynamic =
           value516.current;
-        (0, reportExportOutcome)(
-          (0, classifyPdfDelivery)(input, current5),
+        reportExportOutcome(
+          classifyPdfDelivery(input, current5),
           designAnalyticsEvents.exported.pdf,
         );
         input.outcome === "delivered" &&
@@ -6178,8 +6175,8 @@ function DesignCanvas({
       (input?: Dynamic): Dynamic => {
         let { notes: current4, refused: current5 }: Dynamic =
           value519.current;
-        (0, reportExportOutcome)(
-          (0, classifyImageDelivery)(input, current5),
+        reportExportOutcome(
+          classifyImageDelivery(input, current5),
           designAnalyticsEvents.exported.png,
         );
         input.outcome === "delivered" &&
@@ -6205,7 +6202,7 @@ function DesignCanvas({
             : value512(input),
       [value512, value518, value523],
     );
-  (0, useExportFormats)(
+  useExportFormats(
     value480
       ? null
       : [
@@ -6241,7 +6238,7 @@ function DesignCanvas({
       onResult: value524,
     },
   );
-  let [value525, value526]: Dynamic = (0, npm_useLocalStorage_QP)(
+  let [value525, value526]: Dynamic = npm_useLocalStorage_QP(
       DcEditorModeKey,
       null,
     ),
@@ -6255,7 +6252,7 @@ function DesignCanvas({
         value345.current && value297.current();
         setMode("edit");
         value62();
-        setSelection((0, selectionFromArtboards)(new Set([input])));
+        setSelection(selectionFromArtboards(new Set([input])));
         let value653: Dynamic = ++value527.current;
         value273(input).then((input2?: Dynamic): Dynamic => {
           !input2 ||
@@ -6265,7 +6262,7 @@ function DesignCanvas({
       },
       [value62, value273, value96, value526, abandonSelectionGesture],
     ),
-    value529: Dynamic = (0, getTweakSelection)(
+    value529: Dynamic = getTweakSelection(
       editing,
       value95,
       value525,
@@ -6284,7 +6281,7 @@ function DesignCanvas({
         abandonSelectionGesture();
         setMode("edit");
         value62();
-        setSelection((0, selectionFromArtboards)(new Set([input])));
+        setSelection(selectionFromArtboards(new Set([input])));
         value175((input2?: Dynamic): Dynamic => input2 + 1);
       },
       [value62, abandonSelectionGesture],
@@ -6365,8 +6362,8 @@ function DesignCanvas({
             Promise.resolve(false)
           ).then((input3?: Dynamic): Dynamic => {
             input3 &&
-              (0, announce)(
-                (0, backgroundEditAnnouncement)(options2),
+              announce(
+                backgroundEditAnnouncement(options2),
               );
             callback17();
           }, callback17);
@@ -6472,7 +6469,7 @@ function DesignCanvas({
   value549.current = value547;
   let value550: Dynamic = (0, reactChromeTheme.useCallback)(
     (): Dynamic =>
-      (0, selectionAnnouncement)(
+      selectionAnnouncement(
         selectionRef.current,
         value549.current,
         (input?: Dynamic): Dynamic =>
@@ -6483,7 +6480,7 @@ function DesignCanvas({
           let value653: Dynamic = (value73.current.annotations ?? []).find(
             (input2?: Dynamic): Dynamic => input2.id === input,
           );
-          return value653 == null || !(0, isShapeAnnotation)(value653)
+          return value653 == null || !isShapeAnnotation(value653)
             ? "note"
             : value653.kind === "image"
               ? value653.video !== undefined
@@ -6545,7 +6542,7 @@ function DesignCanvas({
           if (value177.current.has(input)) {
             if ((doc.content().files[input] ?? "") !== value653)
               return value555(input);
-            (items == null && (0, isLoadingArtboardHtml)(value653)) ||
+            (items == null && isLoadingArtboardHtml(value653)) ||
               (items != null &&
                 items.length === 0 &&
                 value73.current.artboards.some(
@@ -6559,7 +6556,7 @@ function DesignCanvas({
               value548((input2?: Dynamic): Dynamic => {
                 let value654: Dynamic =
                     items ??
-                    ((0, OutlineGlyphsTest)(value653) ? null : []),
+                    (OutlineGlyphsTest(value653) ? null : []),
                   value655: Dynamic = input2[input];
                 return (
                   value655 === undefined
@@ -6611,7 +6608,7 @@ function DesignCanvas({
   }, [value554, value182, value556]);
   (0, reactChromeTheme.useEffect)(
     (): Dynamic =>
-      (0, subscribeHtmlReferences)(
+      subscribeHtmlReferences(
         (input?: Dynamic): Dynamic =>
           value556.add(
             input.filter(
@@ -6673,7 +6670,7 @@ function DesignCanvas({
     (input?: Dynamic): Dynamic =>
       value105.glide(
         (input2?: Dynamic): Dynamic =>
-          (0, isArtboardInViewport)(input2, input, value120()),
+          isArtboardInViewport(input2, input, value120()),
       ),
     [value105, value120],
   );
@@ -6702,7 +6699,7 @@ function DesignCanvas({
     [value558],
   );
   value382.current = value559;
-  let value560: Dynamic = (0, currentCanvasPlaceFragment)(
+  let value560: Dynamic = currentCanvasPlaceFragment(
       selection,
       value347?.file ?? null,
       value79,
@@ -6717,19 +6714,19 @@ function DesignCanvas({
   value562.current = (...args: Dynamic[]): Dynamic => (navigateToCanvasPlace as Dynamic)({ get abandonSelectionGesture() { return abandonSelectionGesture; }, get setSelection() { return setSelection; }, get value105() { return value105; }, get value2() { return value2; }, get value224() { return value224; }, get value225() { return value225; }, get value273() { return value273; }, get value275() { return value275; }, get value284() { return value284; }, get value291() { return value291; }, get value298() { return value298; }, get value310() { return value310; }, get value346() { return value346; }, get value380() { return value380; }, get value559() { return value559; }, get value563() { return value563; }, get value62() { return value62; }, get value73() { return value73; }, get value80() { return value80; } }, ...args);
   let value564: Dynamic = (0, reactChromeTheme.useRef)(null);
   (0, reactChromeTheme.useEffect)((): Dynamic => {
-    if ((0, embedMemoryPrefix)() !== "") return;
-    let value653: Dynamic = (0, createPlaceLinkReporter)();
+    if (embedMemoryPrefix() !== "") return;
+    let value653: Dynamic = createPlaceLinkReporter();
     value564.current = value653;
-    let value654: Dynamic = (0, observeGotoAnchorMessages)(
+    let value654: Dynamic = observeGotoAnchorMessages(
         (input?: Dynamic): Dynamic => {
           let value656: Dynamic = value562.current(input);
-          value656 !== null && (0, rememberPlaceLink)("goto", input);
+          value656 !== null && rememberPlaceLink("goto", input);
           value653.answer(value656 ?? value561.current);
         },
       ),
-      value655: Dynamic = (0, classifyPlaceLink)();
+      value655: Dynamic = classifyPlaceLink();
     value655 !== null &&
-      ((0, rememberPlaceLink)("link", value655.place),
+      (rememberPlaceLink("link", value655.place),
       value655.why !== "known" &&
         value562.current(value655.place, value655.why === "here"));
     return (): Dynamic => {
@@ -6779,7 +6776,7 @@ function DesignCanvas({
           !value357.current ||
           current4 == null ||
           !selectionRef.current.elements.has(current4) ||
-          (0, hasBlockingEditorOverlay)() ||
+          hasBlockingEditorOverlay() ||
           value.current === null ||
           value271.current === current4 ||
           value218.current ||
@@ -6791,7 +6788,7 @@ function DesignCanvas({
           target == null ||
           /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName ?? "") ||
           target.isContentEditable === true ||
-          (0, isEditingInputTarget)(event.target)
+          isEditingInputTarget(event.target)
         )
           return false;
         try {
@@ -6827,7 +6824,7 @@ function DesignCanvas({
       },
       [doc, value572],
     ),
-    value574: Dynamic = (0, useArtboardKeyRouting)({
+    value574: Dynamic = useArtboardKeyRouting({
       host: value570,
       enabled: !value283 && !value492,
       onEnter: (): Dynamic => value275((): Dynamic => {}),
@@ -6858,15 +6855,15 @@ function DesignCanvas({
   let value577: Dynamic = (0, reactChromeTheme.useCallback)(
       (input?: Dynamic): Dynamic => {
         let current4: Dynamic = value73.current,
-          value653: Dynamic = (0, findArtboardByName)(
+          value653: Dynamic = findArtboardByName(
             current4.artboards,
             input,
             (input2?: Dynamic): Dynamic =>
-              (0, designPageId)(input2, current4.pages) ===
+              designPageId(input2, current4.pages) ===
               value80.current,
           );
         if (value653 === null || value653 === "ambiguous") {
-          let value655: Dynamic = (0, isEditableComponentName)(
+          let value655: Dynamic = isEditableComponentName(
               value19(input),
             )
               ? value19(input)
@@ -6880,7 +6877,7 @@ function DesignCanvas({
                   )
                   .map(
                     (input2?: Dynamic): Dynamic =>
-                      (0, designPageId)(input2, current4.pages),
+                      designPageId(input2, current4.pages),
                   ),
               ),
             ].map(
@@ -6899,7 +6896,7 @@ function DesignCanvas({
         value345.current && value297.current();
         abandonSelectionGesture();
         value62();
-        let value654: Dynamic = (0, designPageId)(
+        let value654: Dynamic = designPageId(
           value653,
           current4.pages,
         );
@@ -6907,7 +6904,7 @@ function DesignCanvas({
           ? value298(value654, value653.file)
           : (value273(value653.file), value559(value653.file));
         setSelection(
-          (0, selectionFromArtboards)(new Set([value653.file])),
+          selectionFromArtboards(new Set([value653.file])),
         );
       },
       [
@@ -6922,7 +6919,7 @@ function DesignCanvas({
     value578: Dynamic = (0, reactChromeTheme.useCallback)(
       (input?: Dynamic, options?: Dynamic): Dynamic =>
         value314(
-          (0, boardSelectionItems)({
+          boardSelectionItems({
             file: input,
           }),
           options ? "toggle" : "replace",
@@ -6930,8 +6927,8 @@ function DesignCanvas({
       [value314],
     );
   value29.current = value578;
-  let value579: Dynamic = (0, canvasSelectionKey)(selection);
-  (0, useVectorToolReset)(value337, value579, value341);
+  let value579: Dynamic = canvasSelectionKey(selection);
+  useVectorToolReset(value337, value579, value341);
   let value580: Dynamic = (0, reactChromeTheme.useRef)(null);
   (0, reactChromeTheme.useEffect)((): Dynamic => {
     let current4: Dynamic = value580.current;
@@ -6952,16 +6949,16 @@ function DesignCanvas({
       )
     ) {
       let value654: Dynamic = value289;
-      (0, announce)(
+      announce(
         (): Dynamic => {
           let value655: Dynamic =
               value654 &&
               (document as Dynamic).activeElement === value286.current,
-            value656: Dynamic = (0, canvasSelectionKey)(
+            value656: Dynamic = canvasSelectionKey(
               selectionRef.current,
             ),
             value657: Dynamic = [
-              value655 ? null : (0, pageAnnouncement)(value81),
+              value655 ? null : pageAnnouncement(value81),
               value656 !== current4.sel && value656 !== "none"
                 ? value550()
                 : null,
@@ -6976,13 +6973,13 @@ function DesignCanvas({
     }
     if (value653) {
       if (current5) {
-        (0, announce)((): Dynamic => null, {
+        announce((): Dynamic => null, {
           ifIdle: true,
         });
         return;
       }
       value24.current?.saidSelection(selectionRef.current) ||
-        (0, announce)(value550, {
+        announce(value550, {
           ifIdle: true,
         });
     }
@@ -7055,13 +7052,13 @@ function DesignCanvas({
                 let value655: Dynamic = files[input2];
                 return (
                   typeof value655 == "string" &&
-                  !(0, isLoadingArtboardHtml)(value655)
+                  !isLoadingArtboardHtml(value655)
                 );
               }))
         )
           return;
         let value653: Dynamic = value473(input, options),
-          value654: Dynamic = (0, copyClipboardObject)(
+          value654: Dynamic = copyClipboardObject(
             DesignArtboardsKey,
             {
               data: {
@@ -7090,7 +7087,7 @@ function DesignCanvas({
           (value396.current(
             {
               kind: "cover",
-              from: (0, validCoverArtboard)(
+              from: validCoverArtboard(
                 current4.cover,
                 current4.artboards,
               ),
@@ -7102,7 +7099,7 @@ function DesignCanvas({
             ...current4,
             cover: input,
           }),
-          (0, announce)(
+          announce(
             "\u201C" +
               (value653.title ?? input.replace(/\.dc\.html$/, "")) +
               "\u201D is now the thumbnail.",
@@ -7112,8 +7109,8 @@ function DesignCanvas({
     ),
     value591: Dynamic = (0,
     reactChromeTheme.useCallback)((): Dynamic => {
-      let value653: Dynamic = (0, getArtboardClipboard)(),
-        value654: Dynamic = (0, getAnnotationClipboard)(),
+      let value653: Dynamic = getArtboardClipboard(),
+        value654: Dynamic = getAnnotationClipboard(),
         value655: Dynamic = value109(),
         value656: Dynamic = value653
           ? value112(
@@ -7126,7 +7123,7 @@ function DesignCanvas({
       return {
         label: KeyboardEditActionsCutCopyPasteConfig.paste.label,
         hotkey: KeyboardEditActionsCutCopyPasteConfig.paste.shortcut,
-        get disabledReason() { return value224.current ? (value653 ? (undefined) : (uiMessage("canvas.designCanvas.noArtboardOrObjectCopied") + (0, keyboardShortcutLabel)("V") + " to paste anything else.")) : (ViewOnlyYouCanInspectThisMessage); },
+        get disabledReason() { return value224.current ? (value653 ? (undefined) : (uiMessage("canvas.designCanvas.noArtboardOrObjectCopied") + keyboardShortcutLabel("V") + " to paste anything else.")) : (ViewOnlyYouCanInspectThisMessage); },
         onClick: (): Dynamic => {
           value224.current &&
             value653 &&
@@ -7173,7 +7170,7 @@ function DesignCanvas({
     value595: Dynamic = (0, reactChromeTheme.useRef)(new Map()),
     value596: Dynamic = (0, reactChromeTheme.useMemo)(
       (): Dynamic =>
-        (0, reconcileAnnotationOutline)(
+        reconcileAnnotationOutline(
           value86.annotations ?? [],
           value595.current,
         ),
@@ -7227,11 +7224,11 @@ function DesignCanvas({
   (0, reactChromeTheme.useEffect)((): Dynamic => {
     selection.elements.size === 0 && (value600.path = value600.row = "");
   }, [selection, value600]);
-  let value601: Dynamic = (0, validCoverArtboard)(
+  let value601: Dynamic = validCoverArtboard(
       value67.cover,
       value67.artboards,
     ),
-    value602: Dynamic = (0, useCanvasKeyboardNavigation)(
+    value602: Dynamic = useCanvasKeyboardNavigation(
       {
         focusedFileRef: focusedFileRef,
         megaSelRef: selectionRef,
@@ -7265,13 +7262,13 @@ function DesignCanvas({
               entry.setShownSelection([options], value19(input), context));
         },
         forgetHostSelection: (input?: Dynamic): Dynamic => {
-          selectionRef.current = (0, filterSelectedElements)(
+          selectionRef.current = filterSelectedElements(
             selectionRef.current,
             (input2?: Dynamic): Dynamic => input2 !== input,
           );
           setSelection(
             (input2?: Dynamic): Dynamic =>
-              (0, filterSelectedElements)(
+              filterSelectedElements(
                 input2,
                 (input3?: Dynamic): Dynamic => input3 !== input,
               ),
@@ -7279,7 +7276,7 @@ function DesignCanvas({
         },
         selectArtboard: (input?: Dynamic): Dynamic =>
           value314(
-            (0, boardSelectionItems)({
+            boardSelectionItems({
               file: input,
             }),
             "replace",
@@ -7332,7 +7329,7 @@ function DesignCanvas({
     let current4: Dynamic = value602.insideRef.current;
     current4 != null &&
       ((value653 && value121 !== current4) ||
-        (0, canvasElementSelectionCount)(selection) ||
+        canvasElementSelectionCount(selection) ||
         !(value356 || value358) ||
         value347 != null) &&
       value602.abandon();
@@ -7379,7 +7376,7 @@ function DesignCanvas({
       (input?: Dynamic): Dynamic =>
         (window as Dynamic).setTimeout(
           (): Dynamic =>
-            (0, refreshDesktopRendering)(
+            refreshDesktopRendering(
               (document as Dynamic).querySelector("header"),
             ),
           input,
@@ -7480,7 +7477,7 @@ function DesignCanvas({
             h: value654,
             top: value655,
           }: Dynamic = value120();
-          return (0, zoomViewportAtPoint)(
+          return zoomViewportAtPoint(
             input2,
             value653 / 2,
             value655 + (value654 - value655) / 2,
@@ -7501,15 +7498,15 @@ function DesignCanvas({
       if (!value653.length && !value654.length) return;
       let value655: Dynamic = value654.map(
           (input?: Dynamic): Dynamic =>
-            (0, rotatedAnnotationBounds)(
+            rotatedAnnotationBounds(
               input,
-              (0, isShapeAnnotation)(input)
-                ? (0, annotationBounds)(input)
+              isShapeAnnotation(input)
+                ? annotationBounds(input)
                 : {
                     x: input.x,
                     y: input.y,
-                    w: (0, NotesLinkEditingKind)(input),
-                    h: (0, NotesLinkEditingLh)(input),
+                    w: NotesLinkEditingKind(input),
+                    h: NotesLinkEditingLh(input),
                   },
             ),
         ),
@@ -7533,7 +7530,7 @@ function DesignCanvas({
           ...value655.map((input?: Dynamic): Dynamic => input.y + input.h),
         ),
         value660: Dynamic = value120();
-      return (0, fitBoundsCamera)(
+      return fitBoundsCamera(
         {
           minX: value656,
           minY: value657,
@@ -7573,7 +7570,7 @@ function DesignCanvas({
         value621.current &&
         value653 !== undefined &&
         (document as Dynamic).visibilityState === "visible"
-          ? (0, creationFocusedCamera)(
+          ? creationFocusedCamera(
               [...value86.artboards, ...value89.boxesHere],
               value653,
               value120(),
@@ -7609,7 +7606,7 @@ function DesignCanvas({
     value624: Dynamic = editing
       ? "Pages: switch, add, rename or delete a page"
       : "Pages: switch pages",
-    value625: Dynamic = (0, useToolbarItemAccessibility)({
+    value625: Dynamic = useToolbarItemAccessibility({
       disabled: false,
       name: value283 ? uiMessage("canvas.designCanvas.allFiles") : value81,
       tip: value624,
@@ -7719,7 +7716,7 @@ function DesignCanvas({
           (input?: Dynamic): Dynamic => input.file === value347.file,
         )
       : undefined,
-    value628: Dynamic = (0, useDesignSource)(),
+    value628: Dynamic = useDesignSource(),
     value629: Dynamic = null,
     value630: Dynamic =
       value266.length > 0 ? (
@@ -7727,7 +7724,7 @@ function DesignCanvas({
           problems={value266}
           canvasTitle={(document as Dynamic).title}
           canEdit={editable}
-          hosted={(0, embedMemoryPrefix)() !== ""}
+          hosted={embedMemoryPrefix() !== ""}
           open={value263}
           onOpenChange={value264}
         />
@@ -7808,7 +7805,7 @@ function DesignCanvas({
       </jsx_Gn.Fragment>
     ) : null,
     value641: Dynamic = (0, reactChromeTheme.useMemo)(
-      (): Dynamic => (0, groupNavigableArtboards)(value86.artboards),
+      (): Dynamic => groupNavigableArtboards(value86.artboards),
       [value86.artboards],
     ),
     callback14: Dynamic = (input?: Dynamic): Dynamic =>
@@ -7869,8 +7866,8 @@ function DesignCanvas({
               align={"end"}
               data-testid={"mega-export"}
             >
-              {(0, renderMenuItems)(
-                (0, artboardExportMenuItems)(
+              {renderMenuItems(
+                artboardExportMenuItems(
                   value347.file,
                   value86.artboards,
                   {
@@ -7977,7 +7974,7 @@ function DesignCanvas({
       ],
       [value12, value13, mdnCommentCardsToggle],
     ),
-    value651: Dynamic = (0, useLatestCallback)((): Dynamic => {
+    value651: Dynamic = useLatestCallback((): Dynamic => {
       saveCanvas();
     }),
     value652: Dynamic = (
@@ -7991,7 +7988,7 @@ function DesignCanvas({
   // MineDesign：属性面板与评论合成一个右侧面板（有 feedback 宿主能力时）：评论是面板的第四个标签，与评论模式双向联动；
   // 缩放与播放移到外壳顶栏，这里发布视图状态并执行顶栏的操作
   let mdnFeedback: Dynamic =
-      (0, getCachedHostCapability)("feedback") ?? null,
+      getCachedHostCapability("feedback") ?? null,
     mdnPanelOpen: Dynamic = mdnFeedback != null && (value220 || value95),
     mdnCommenting: Dynamic = (0, reactChromeTheme.useRef)(value220),
     // 进入评论模式前面板是否打开；退出时恢复
@@ -8095,14 +8092,14 @@ function DesignCanvas({
         viewToggles={value650}
         fitLabel={fitArtboardsLabel}
         tip={
-          (0, isApplePlatform)() ? (uiMessage("canvas.designCanvas.zoom0FitStep")) : (uiMessage("canvas.designCanvas.zoomCtrl0FitCtrl"))
+          isApplePlatform() ? (uiMessage("canvas.designCanvas.zoom0FitStep")) : (uiMessage("canvas.designCanvas.zoomCtrl0FitCtrl"))
         }
       />
     </span>
   );
   // toolbarDensity 内部调用 hook，必须在顶层无条件调用，不能放进按展开状态渲染的分支
-  let mdnDockDensity: Dynamic = (0, toolbarDensity)(),
-    mdnText: Dynamic = (0, useUiText)();
+  let mdnDockDensity: Dynamic = toolbarDensity(),
+    mdnText: Dynamic = useUiText();
   return (
     <ViewportContext.Provider value={value105}>
       <CanvasWorkingStateContext.Provider value={current}>
@@ -8247,7 +8244,7 @@ function DesignCanvas({
                             : [],
                         selectedElements:
                           value169.size === 0
-                            ? (0, selectedElementLocations)(
+                            ? selectedElementLocations(
                                 value86.artboards.map(
                                   (input?: Dynamic): Dynamic => input.file,
                                 ),
@@ -8271,7 +8268,7 @@ function DesignCanvas({
                           value349,
                         tell: value188,
                         say: (input?: Dynamic, options?: Dynamic): Dynamic =>
-                          (0, announce)(input, options),
+                          announce(input, options),
                         focusCanvas: (): Dynamic => value394.goHome(),
                         saveNow: (): Dynamic => doc.flushNow?.(),
                         canvas: value454,
@@ -8734,7 +8731,7 @@ function DesignCanvas({
                       editing && value86.artboards.length === 0 && value632
                     }
                     items={(): Dynamic =>
-                      (0, createWorkingFileMap)(doc.content().files)
+                      createWorkingFileMap(doc.content().files)
                     }
                     words={
                       AccessibilityAnnouncementsReadyUpdatedChangedConfig
@@ -8883,7 +8880,7 @@ export function installCanvasDesignCanvas(): () => void {
       onSave: onSave,
     }: Dynamic): Dynamic {
       let value: Dynamic = useCanvasSaveState(doc, synced, localDirty);
-      (0, useFrameSaveState)(
+      useFrameSaveState(
         synced || value.status === "readonly" ? value.status : null,
         onSave,
       );
