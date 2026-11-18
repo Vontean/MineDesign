@@ -7,92 +7,92 @@ import { inlineStylesheetImports, leadingStylesheetAtRuleEnd, moveCssImportsFirs
 import { findHtmlTags, getHtmlAttribute, maskHtmlRawContent, parseHtmlAttributes, cssImportPattern } from "./html-scanner";
 
 var linkedStylesheetHydrationScript: Dynamic;
-var DcAddressRefusedValue: Dynamic;
-var PreviewDependencyInjectionResolvedValue: Dynamic;
-var PreviewDependencyInjectionResolvedValue_2: Dynamic;
-var PreviewDependencyInjectionTrim: Dynamic;
-var PreviewDependencyInjectionJoin: Dynamic;
-function findDocumentHeadInsertion(items?: Dynamic): Dynamic {
-  let length: Dynamic = items.length;
-  for (let value of ["<x-dc", "<helmet", "<template", "<body"] as Dynamic) {
-    let value2: Dynamic = items.indexOf(value);
-    value2 >= 0 && value2 < length && (length = value2);
+var addressRefusedMessageKey: Dynamic;
+var addressRefusedOnerror: Dynamic;
+var addressRefusedListenerScript: Dynamic;
+var withAddressRefusedOnerror: Dynamic;
+var buildOpenTag: Dynamic;
+function findDocumentHeadInsertion(html: string): number {
+  let insertionIndex: number = html.length;
+  for (let marker of ["<x-dc", "<helmet", "<template", "<body"]) {
+    let markerIndex: number = html.indexOf(marker);
+    markerIndex >= 0 && markerIndex < insertionIndex && (insertionIndex = markerIndex);
   }
-  return length;
+  return insertionIndex;
 }
-function hydrateLinkedStylesheetScript(input?: Dynamic): Dynamic {
-  let value: Dynamic = JSON.stringify(input).replace(/</g, "\\u003c");
+function hydrateLinkedStylesheetScript(partKey: string): string {
+  let partKeyJson: string = JSON.stringify(partKey).replace(/</g, "\\u003c");
   return (
     "<script>(function (s, p) { if (s && p && typeof p[" +
-    value +
+    partKeyJson +
     "] === 'string') s.textContent = p[" +
-    value +
+    partKeyJson +
     "]; })(document.currentScript && document.currentScript.previousElementSibling, window.__dcParts);<\/script>"
   );
 }
 function rewriteHtmlDependencies(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value: Dynamic = {},
+  html?: Dynamic,
+  files?: Dynamic,
+  baseDirectory?: Dynamic,
+  rewriteOptions: Dynamic = {},
 ): Dynamic {
-  if (!/<(?:link|script|style)\b/i.test(input)) return input;
-  let callback: Dynamic = (
-      input2?: Dynamic,
-      options2?: Dynamic,
-      context2?: Dynamic,
+  if (!/<(?:link|script|style)\b/i.test(html)) return html;
+  let rewriteTags: Dynamic = (
+      sourceHtml?: Dynamic,
+      tagName?: Dynamic,
+      rewriteTag?: Dynamic,
     ): Dynamic => {
-      let value3: Dynamic = maskHtmlRawContent(input2),
-        value4: Dynamic = value3.replace(
+      let maskedHtml: Dynamic = maskHtmlRawContent(sourceHtml),
+        lowerMaskedHtml: Dynamic = maskedHtml.replace(
           /[A-Z]+/g,
-          (input3?: Dynamic): Dynamic => input3.toLowerCase(),
+          (letters?: Dynamic): Dynamic => letters.toLowerCase(),
         ),
-        text: Dynamic = "",
-        index: Dynamic = 0;
-      for (let [value5, value6] of findHtmlTags(
-        value3,
-        options2,
+        output: Dynamic = "",
+        copiedUntil: Dynamic = 0;
+      for (let [tagStart, tagEnd] of findHtmlTags(
+        maskedHtml,
+        tagName,
       ) as Dynamic) {
-        if (value5 < index) continue;
-        let value7: Dynamic = context2(
-          input2.slice(value5, value6),
-          value6,
-          value3,
-          value4,
+        if (tagStart < copiedUntil) continue;
+        let replacement: Dynamic = rewriteTag(
+          sourceHtml.slice(tagStart, tagEnd),
+          tagEnd,
+          maskedHtml,
+          lowerMaskedHtml,
         );
-        value7 !== undefined &&
-          ((text += input2.slice(index, value5) + value7[0]),
-          (index = value7[1]));
+        replacement !== undefined &&
+          ((output += sourceHtml.slice(copiedUntil, tagStart) + replacement[0]),
+          (copiedUntil = replacement[1]));
       }
-      return text + input2.slice(index);
+      return output + sourceHtml.slice(copiedUntil);
     },
-    value2: Dynamic = callback(
-      input,
+    rewrittenHtml: Dynamic = rewriteTags(
+      html,
       "link",
       (
-        items?: Dynamic,
-        options2?: Dynamic,
-        context2?: Dynamic,
-        value3?: Dynamic,
+        tagText?: Dynamic,
+        tagEnd?: Dynamic,
+        maskedHtml?: Dynamic,
+        lowerMaskedHtml?: Dynamic,
       ): Dynamic => {
-        let value4: Dynamic = (
-          getHtmlAttribute(items, "rel") ?? ""
+        let relTokens: Dynamic = (
+          getHtmlAttribute(tagText, "rel") ?? ""
         )
           .toLowerCase()
           .split(/\s+/);
-        if (!value4.includes("stylesheet") || value4.includes("alternate"))
+        if (!relTokens.includes("stylesheet") || relTokens.includes("alternate"))
           return;
-        let value5: Dynamic = resolveProjectAssetPath(
-          context,
-          getHtmlAttribute(items, "href") ?? "",
+        let sheetPath: Dynamic = resolveProjectAssetPath(
+          baseDirectory,
+          getHtmlAttribute(tagText, "href") ?? "",
         );
         if (
-          value5 === null ||
-          !/\.css$/i.test(value5) ||
-          options[value5] == null
+          sheetPath === null ||
+          !/\.css$/i.test(sheetPath) ||
+          files[sheetPath] == null
         )
           return;
-        let value6: Dynamic = parseHtmlAttributes(items, [
+        let styleAttributes: Dynamic = parseHtmlAttributes(tagText, [
             "href",
             "rel",
             "type",
@@ -102,21 +102,21 @@ function rewriteHtmlDependencies(
             "disabled",
             "media",
           ]),
-          value7: Dynamic =
-            getHtmlAttribute(items, "disabled") !== null
+          mediaQuery: Dynamic =
+            getHtmlAttribute(tagText, "disabled") !== null
               ? "not all"
-              : getHtmlAttribute(items, "media");
-        value7 !== null && (value6.media = value7);
-        value.covered?.has(value5) && (value6["data-dc-sheet"] = value5);
-        let value8: Dynamic =
+              : getHtmlAttribute(tagText, "media");
+        mediaQuery !== null && (styleAttributes.media = mediaQuery);
+        rewriteOptions.covered?.has(sheetPath) && (styleAttributes["data-dc-sheet"] = sheetPath);
+        let styleOpenTag: Dynamic =
           "<style" +
-          Object.entries(value6)
+          Object.entries(styleAttributes)
             .map(
-              ([input2, input3]: Dynamic): Dynamic =>
+              ([attributeName, attributeValue]: Dynamic): Dynamic =>
                 " " +
-                input2 +
+                attributeName +
                 '="' +
-                input3
+                attributeValue
                   .replace(/&/g, "&amp;")
                   .replace(/"/g, "&quot;")
                   .replace(/</g, "&lt;") +
@@ -124,34 +124,34 @@ function rewriteHtmlDependencies(
             )
             .join("") +
           ">";
-        if (value.covered?.has(value5))
-          return [value8 + "</style>", options2];
-        let value9: Dynamic =
-            options2 - items.length < findDocumentHeadInsertion(value3),
-          value10: Dynamic = value.parts?.urlFor?.(value5);
+        if (rewriteOptions.covered?.has(sheetPath))
+          return [styleOpenTag + "</style>", tagEnd];
+        let isInHead: Dynamic =
+            tagEnd - tagText.length < findDocumentHeadInsertion(lowerMaskedHtml),
+          sheetUrl: Dynamic = rewriteOptions.parts?.urlFor?.(sheetPath);
         if (
-          value10 !== undefined &&
-          options[value5].length >= (value.parts?.min ?? 1 / 0) &&
-          value9
+          sheetUrl !== undefined &&
+          files[sheetPath].length >= (rewriteOptions.parts?.min ?? 1 / 0) &&
+          isInHead
         ) {
-          value7 === null && value.inlined?.add(value5);
-          value.parts?.urls && (value.parts.urls[value5] = value10);
-          let state: Dynamic = {
-            ...value6,
+          mediaQuery === null && rewriteOptions.inlined?.add(sheetPath);
+          rewriteOptions.parts?.urls && (rewriteOptions.parts.urls[sheetPath] = sheetUrl);
+          let linkAttributes: Dynamic = {
+            ...styleAttributes,
             rel: "stylesheet",
-            href: value10,
-            "data-dc-sheet": value5,
+            href: sheetUrl,
+            "data-dc-sheet": sheetPath,
             onerror: linkedStylesheetHydrationScript,
           };
           return [
             "<link" +
-              Object.entries(state)
+              Object.entries(linkAttributes)
                 .map(
-                  ([input2, input3]: Dynamic): Dynamic =>
+                  ([attributeName, attributeValue]: Dynamic): Dynamic =>
                     " " +
-                    input2 +
+                    attributeName +
                     '="' +
-                    String(input3)
+                    String(attributeValue)
                       .replace(/&/g, "&amp;")
                       .replace(/"/g, "&quot;")
                       .replace(/</g, "&lt;") +
@@ -159,208 +159,208 @@ function rewriteHtmlDependencies(
                 )
                 .join("") +
               ">",
-            options2,
+            tagEnd,
           ];
         }
-        let values: Dynamic = new Set(value.covered ?? []),
-          value11: Dynamic = moveCssImportsFirst(
-            inlineStylesheetImports(value5, options, values),
+        let inlinedSheetPaths: Dynamic = new Set(rewriteOptions.covered ?? []),
+          stylesheetCss: Dynamic = moveCssImportsFirst(
+            inlineStylesheetImports(sheetPath, files, inlinedSheetPaths),
           );
-        if (value7 === null)
-          for (let value14 of values as Dynamic) value.inlined?.add(value14);
-        let value12: Dynamic =
-          value9 &&
-          [...values].every(
-            (input2?: Dynamic): Dynamic =>
-              !hasRootRelativeCssReference(options[input2] ?? "") &&
-              value.installedUrlFor?.(input2, options[input2] ?? "") !==
+        if (mediaQuery === null)
+          for (let inlinedPath of inlinedSheetPaths as Dynamic) rewriteOptions.inlined?.add(inlinedPath);
+        let installedUrl: Dynamic =
+          isInHead &&
+          [...inlinedSheetPaths].every(
+            (inlinedPath?: Dynamic): Dynamic =>
+              !hasRootRelativeCssReference(files[inlinedPath] ?? "") &&
+              rewriteOptions.installedUrlFor?.(inlinedPath, files[inlinedPath] ?? "") !==
                 undefined,
           )
-            ? value.installedUrlFor?.(value5, options[value5])
+            ? rewriteOptions.installedUrlFor?.(sheetPath, files[sheetPath])
             : undefined;
-        if (value12 !== undefined) {
-          value.byAddress && (value.byAddress[value5] = value12);
-          let { onerror: value14, ...value15 }: Dynamic = parseHtmlAttributes(
-            items,
+        if (installedUrl !== undefined) {
+          rewriteOptions.byAddress && (rewriteOptions.byAddress[sheetPath] = installedUrl);
+          let { onerror: originalOnerror, ...keptAttributes }: Dynamic = parseHtmlAttributes(
+            tagText,
             ["href", "type", "integrity", "crossorigin"],
             true,
           );
           return [
-            PreviewDependencyInjectionJoin("link", {
-              ...value15,
-              href: value12,
-              onerror: PreviewDependencyInjectionTrim(value14),
+            buildOpenTag("link", {
+              ...keptAttributes,
+              href: installedUrl,
+              onerror: withAddressRefusedOnerror(originalOnerror),
             }),
-            options2,
+            tagEnd,
           ];
         }
-        if (value.parts && value11.length >= value.parts.min && value9) {
-          let value14: Dynamic = "sheet:" + value5;
-          value.parts.out[value14] = value11;
+        if (rewriteOptions.parts && stylesheetCss.length >= rewriteOptions.parts.min && isInHead) {
+          let partKey: Dynamic = "sheet:" + sheetPath;
+          rewriteOptions.parts.out[partKey] = stylesheetCss;
           return [
-            value8.slice(0, -1) +
+            styleOpenTag.slice(0, -1) +
               ' data-dc-part="' +
-              value14
+              partKey
                 .replace(/&/g, "&amp;")
                 .replace(/"/g, "&quot;")
                 .replace(/</g, "&lt;") +
               '"></style>' +
-              hydrateLinkedStylesheetScript(value14),
-            options2,
+              hydrateLinkedStylesheetScript(partKey),
+            tagEnd,
           ];
         }
-        let value13: Dynamic = escapeNoscriptInCss(
-          value11.replace(/<\/style/gi, "<\\/style"),
+        let escapedCss: Dynamic = escapeNoscriptInCss(
+          stylesheetCss.replace(/<\/style/gi, "<\\/style"),
         );
-        return [value8 + value13 + "</style>", options2];
+        return [styleOpenTag + escapedCss + "</style>", tagEnd];
       },
     );
-  value2 = callback(
-    value2,
+  rewrittenHtml = rewriteTags(
+    rewrittenHtml,
     "style",
     (
-      input2?: Dynamic,
-      options2?: Dynamic,
-      context2?: Dynamic,
-      value3?: Dynamic,
+      tagText?: Dynamic,
+      tagEnd?: Dynamic,
+      maskedHtml?: Dynamic,
+      lowerMaskedHtml?: Dynamic,
     ): Dynamic => {
-      let value4: Dynamic = value3.indexOf("</style", options2),
-        value5: Dynamic = value2.slice(
-          options2,
-          value4 < 0 ? undefined : value4,
+      let closeIndex: Dynamic = lowerMaskedHtml.indexOf("</style", tagEnd),
+        styleCss: Dynamic = rewrittenHtml.slice(
+          tagEnd,
+          closeIndex < 0 ? undefined : closeIndex,
         );
-      if (!/@import/i.test(value5)) return;
-      let values: Dynamic = new Set(value.covered ?? []),
-        flag: Dynamic = false,
-        value6: Dynamic = stripStylesheetComments(value5),
-        value7: Dynamic = leadingStylesheetAtRuleEnd(value6),
-        value8: Dynamic = value6.replace(
+      if (!/@import/i.test(styleCss)) return;
+      let inlinedSheetPaths: Dynamic = new Set(rewriteOptions.covered ?? []),
+        didRewrite: Dynamic = false,
+        strippedCss: Dynamic = stripStylesheetComments(styleCss),
+        leadingAtRulesEnd: Dynamic = leadingStylesheetAtRuleEnd(strippedCss),
+        rewrittenCss: Dynamic = strippedCss.replace(
           cssImportPattern,
-          (input3?: Dynamic, ...options3: Dynamic[]): Dynamic => {
-            if (options3[6] >= value7) {
-              flag = true;
+          (importRule?: Dynamic, ...importGroups: Dynamic[]): Dynamic => {
+            if (importGroups[6] >= leadingAtRulesEnd) {
+              didRewrite = true;
               return "";
             }
-            if (options3[5]) return input3;
-            let value9: Dynamic = resolveProjectAssetPath(
-              context,
+            if (importGroups[5]) return importRule;
+            let importPath: Dynamic = resolveProjectAssetPath(
+              baseDirectory,
               String(
-                options3[0] ??
-                  options3[1] ??
-                  options3[2] ??
-                  options3[3] ??
-                  options3[4] ??
+                importGroups[0] ??
+                  importGroups[1] ??
+                  importGroups[2] ??
+                  importGroups[3] ??
+                  importGroups[4] ??
                   "",
               ),
             );
-            return value9 === null ||
-              !/\.css$/i.test(value9) ||
-              options[value9] == null
-              ? input3
-              : ((flag = true),
+            return importPath === null ||
+              !/\.css$/i.test(importPath) ||
+              files[importPath] == null
+              ? importRule
+              : ((didRewrite = true),
                 inlineStylesheetImports(
-                  value9,
-                  options,
-                  values,
+                  importPath,
+                  files,
+                  inlinedSheetPaths,
                 ) +
                   `
 `);
           },
         );
-      if (flag) {
-        for (let value9 of values as Dynamic) value.inlined?.add(value9);
+      if (didRewrite) {
+        for (let inlinedPath of inlinedSheetPaths as Dynamic) rewriteOptions.inlined?.add(inlinedPath);
         return [
-          input2 +
+          tagText +
             escapeNoscriptInCss(
-              moveCssImportsFirst(value8).replace(
+              moveCssImportsFirst(rewrittenCss).replace(
                 /<\/style/gi,
                 "<\\/style",
               ),
             ),
-          value4 < 0 ? value2.length : value4,
+          closeIndex < 0 ? rewrittenHtml.length : closeIndex,
         ];
       }
     },
   );
-  value2 = callback(
-    value2,
+  rewrittenHtml = rewriteTags(
+    rewrittenHtml,
     "script",
     (
-      items?: Dynamic,
-      options2?: Dynamic,
-      context2?: Dynamic,
-      value3?: Dynamic,
+      tagText?: Dynamic,
+      tagEnd?: Dynamic,
+      maskedHtml?: Dynamic,
+      lowerMaskedHtml?: Dynamic,
     ): Dynamic => {
-      let value4: Dynamic = value3.indexOf("<\/script", options2),
-        value5: Dynamic = value4 < 0 ? -1 : context2.indexOf(">", value4),
-        value6: Dynamic = getHtmlAttribute(items, "src");
+      let closeIndex: Dynamic = lowerMaskedHtml.indexOf("<\/script", tagEnd),
+        closeTagEnd: Dynamic = closeIndex < 0 ? -1 : maskedHtml.indexOf(">", closeIndex),
+        scriptSrc: Dynamic = getHtmlAttribute(tagText, "src");
       if (
-        value5 < 0 ||
-        value6 === null ||
-        getHtmlAttribute(items, "nomodule") !== null
+        closeTagEnd < 0 ||
+        scriptSrc === null ||
+        getHtmlAttribute(tagText, "nomodule") !== null
       )
         return;
-      let value7: Dynamic = value5 + 1,
-        value8: Dynamic = (getHtmlAttribute(items, "type") ?? "")
+      let afterCloseTag: Dynamic = closeTagEnd + 1,
+        scriptType: Dynamic = (getHtmlAttribute(tagText, "type") ?? "")
           .trim()
           .toLowerCase(),
-        value9: Dynamic = resolveProjectAssetPath(
-          context,
-          value6,
+        scriptPath: Dynamic = resolveProjectAssetPath(
+          baseDirectory,
+          scriptSrc,
         );
       if (
-        value9 === null ||
-        !/\.m?js$/i.test(value9) ||
-        /(^|\/)support\.js$/.test(value9) ||
-        options[value9] == null
+        scriptPath === null ||
+        !/\.m?js$/i.test(scriptPath) ||
+        /(^|\/)support\.js$/.test(scriptPath) ||
+        files[scriptPath] == null
       )
         return;
-      if (value8 === "module")
+      if (scriptType === "module")
         return [
           '<script type="module">import ' +
             JSON.stringify(
               "/appifact/" +
-                value9.split("/").map(encodeURIComponent).join("/"),
+                scriptPath.split("/").map(encodeURIComponent).join("/"),
             ) +
             ";<\/script>",
-          value7,
+          afterCloseTag,
         ];
       if (
-        value8 !== "" &&
-        value8 !== "text/javascript" &&
-        value8 !== "application/javascript"
+        scriptType !== "" &&
+        scriptType !== "text/javascript" &&
+        scriptType !== "application/javascript"
       )
         return;
-      let value10: Dynamic =
-        options2 - items.length < findDocumentHeadInsertion(value3)
-          ? value.installedUrlFor?.(value9, options[value9])
+      let installedUrl: Dynamic =
+        tagEnd - tagText.length < findDocumentHeadInsertion(lowerMaskedHtml)
+          ? rewriteOptions.installedUrlFor?.(scriptPath, files[scriptPath])
           : undefined;
-      if (value10 !== undefined) {
-        value.byAddress && (value.byAddress[value9] = value10);
+      if (installedUrl !== undefined) {
+        rewriteOptions.byAddress && (rewriteOptions.byAddress[scriptPath] = installedUrl);
         let {
-          async: value12,
-          onerror: value13,
-          ...value14
+          async: asyncAttribute,
+          onerror: originalOnerror,
+          ...keptAttributes
         }: Dynamic = parseHtmlAttributes(
-          items,
+          tagText,
           ["src", "integrity", "crossorigin"],
           true,
         );
         return [
-          PreviewDependencyInjectionJoin("script", {
-            ...value14,
-            ...(value12 !== undefined
+          buildOpenTag("script", {
+            ...keptAttributes,
+            ...(asyncAttribute !== undefined
               ? {
                   defer: "",
                 }
               : {}),
-            src: value10,
-            onerror: PreviewDependencyInjectionTrim(value13),
+            src: installedUrl,
+            onerror: withAddressRefusedOnerror(originalOnerror),
           }) + "<\/script>",
-          value7,
+          afterCloseTag,
         ];
       }
-      let value11: Dynamic = parseHtmlAttributes(items, [
+      let runAttributes: Dynamic = parseHtmlAttributes(tagText, [
         "src",
         "type",
         "nomodule",
@@ -369,42 +369,42 @@ function rewriteHtmlDependencies(
         "<script>" +
           ("__dcRun(" +
             (
-              JSON.stringify(value9) +
-              (Object.keys(value11).length
-                ? ", " + JSON.stringify(value11)
+              JSON.stringify(scriptPath) +
+              (Object.keys(runAttributes).length
+                ? ", " + JSON.stringify(runAttributes)
                 : "")
             ).replace(/</g, "\\u003c") +
             ")") +
           "<\/script>",
-        value7,
+        afterCloseTag,
       ];
     },
   );
-  return value2;
+  return rewrittenHtml;
 }
 function rewritePreviewAssets(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
+  html?: Dynamic,
+  files?: Dynamic,
+  filePath?: Dynamic,
+  rewriteOptions?: Dynamic,
 ): Dynamic {
-  let value2: Dynamic = projectDirectoryOf(context);
+  let baseDirectory: Dynamic = projectDirectoryOf(filePath);
   return rewriteHtmlDependencies(
-    rewriteProjectAssets(input, options, value2),
-    options,
-    value2,
-    value,
+    rewriteProjectAssets(html, files, baseDirectory),
+    files,
+    baseDirectory,
+    rewriteOptions,
   );
 }
 export {
-  DcAddressRefusedValue,
+  addressRefusedMessageKey as DcAddressRefusedValue,
   findDocumentHeadInsertion,
   hydrateLinkedStylesheetScript,
   linkedStylesheetHydrationScript,
-  PreviewDependencyInjectionJoin,
-  PreviewDependencyInjectionResolvedValue,
-  PreviewDependencyInjectionResolvedValue_2,
-  PreviewDependencyInjectionTrim,
+  buildOpenTag as PreviewDependencyInjectionJoin,
+  addressRefusedOnerror as PreviewDependencyInjectionResolvedValue,
+  addressRefusedListenerScript as PreviewDependencyInjectionResolvedValue_2,
+  withAddressRefusedOnerror as PreviewDependencyInjectionTrim,
   rewriteHtmlDependencies,
   rewritePreviewAssets,
 };
@@ -412,12 +412,12 @@ export function installPreviewDependencyInjection(): () => void {
   return () => {
     linkedStylesheetHydrationScript =
       "(function(l){var k=l.getAttribute('data-dc-sheet'),f=window.__dcFiles||{};if(!Object.prototype.hasOwnProperty.call(f,k))return;var s=document.createElement('style');s.setAttribute('data-dc-sheet',k);s.textContent=String(f[k]);l.replaceWith(s);})(this)";
-    DcAddressRefusedValue = "__dc_address_refused";
-    PreviewDependencyInjectionResolvedValue =
+    addressRefusedMessageKey = "__dc_address_refused";
+    addressRefusedOnerror =
       "try{parent.postMessage({" +
-      DcAddressRefusedValue +
+      addressRefusedMessageKey +
       ":1,u:this.href||this.src},'*')}catch(e){}";
-    PreviewDependencyInjectionResolvedValue_2 =
+    addressRefusedListenerScript =
       String.raw`
 (function () {
   var P = window.parent, root = window.__dcProjectRoot;
@@ -434,30 +434,30 @@ export function installPreviewDependencyInjection(): () => void {
     var u = t.currentSrc || t.src || t.href;
     if (typeof u !== 'string' || u.indexOf(under) !== 0) return;
     try { P.postMessage({ ` +
-      DcAddressRefusedValue +
+      addressRefusedMessageKey +
       String.raw`: 1, u: u }, '*'); } catch (e) {}
   }, true);
 })();
 `;
-    PreviewDependencyInjectionTrim = (input?: Dynamic): Dynamic =>
-      input === undefined || input.trim() === ""
-        ? PreviewDependencyInjectionResolvedValue
-        : PreviewDependencyInjectionResolvedValue + ";" + input;
-    PreviewDependencyInjectionJoin = (
-      input?: Dynamic,
-      options?: Dynamic,
+    withAddressRefusedOnerror = (originalOnerror?: Dynamic): Dynamic =>
+      originalOnerror === undefined || originalOnerror.trim() === ""
+        ? addressRefusedOnerror
+        : addressRefusedOnerror + ";" + originalOnerror;
+    buildOpenTag = (
+      tagName?: Dynamic,
+      attributes?: Dynamic,
     ): Dynamic =>
       "<" +
-      input +
-      Object.entries(options)
+      tagName +
+      Object.entries(attributes)
         .map(
-          ([input2, input3]: Dynamic): Dynamic =>
+          ([attributeName, attributeValue]: Dynamic): Dynamic =>
             " " +
-            input2 +
-            (input3 === ""
+            attributeName +
+            (attributeValue === ""
               ? ""
               : '="' +
-                input3
+                attributeValue
                   .replace(/&/g, "&amp;")
                   .replace(/"/g, "&quot;")
                   .replace(/</g, "&lt;") +

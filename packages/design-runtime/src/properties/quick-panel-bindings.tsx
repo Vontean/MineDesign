@@ -12,7 +12,7 @@ import { useBackgroundEditor } from "../editor/properties/background-editor";
 import { samePaint } from "../editor/properties/color-swatches";
 import { PropertyColorRow } from "../editor/properties/rows";
 import { PropertyOptionIcon } from "../editor/properties/tool-options";
-import { CropValue, PropertiesTooltipNameViewBoxPathsConfig, PropertiesTooltipNameViewBoxPathsConfig_3, PropertiesTooltipNameViewBoxPathsConfig_5 } from "../editor/properties/tooltip";
+import { CropValue, PropertiesTooltipNameViewBoxPathsConfig as borderWeightIcon, PropertiesTooltipNameViewBoxPathsConfig_3 as cornerRadiusIcon, PropertiesTooltipNameViewBoxPathsConfig_5 as spacingIcon } from "../editor/properties/tooltip";
 import { SessionActionsPopover, SessionImageReplaceButton, SessionPopup } from "../editor/session-strip/popups";
 import { SessionStripButton, SessionStripDivider, SessionStripGroup } from "../editor/session-strip/session-strip";
 import { normalizeHexColor } from "../editor/typography/census";
@@ -33,89 +33,89 @@ var unsupportedQuickPanelValueMessage: Dynamic;
 var areStyleEditsSupported: Dynamic;
 var quickPanelStyleIo: Dynamic;
 var emptyQuickPanelStyleEdits: Dynamic;
-function readBorderSideWidths(styles?: Dynamic): Dynamic {
-  let value: Dynamic = parseOptionalPixelValue(styles.get("border-width")),
-    callback: Dynamic = (input?: Dynamic): Dynamic =>
-      parseOptionalPixelValue(styles.get("border-" + input + "-width")) ??
-      value;
+function readBorderSideWidths(styleIo?: Dynamic): Dynamic {
+  let uniformWidth: Dynamic = parseOptionalPixelValue(styleIo.get("border-width")),
+    readSideWidth: Dynamic = (side?: Dynamic): Dynamic =>
+      parseOptionalPixelValue(styleIo.get("border-" + side + "-width")) ??
+      uniformWidth;
   return {
-    top: callback("top"),
-    right: callback("right"),
-    bottom: callback("bottom"),
-    left: callback("left"),
+    top: readSideWidth("top"),
+    right: readSideWidth("right"),
+    bottom: readSideWidth("bottom"),
+    left: readSideWidth("left"),
   };
 }
 function uniformNonzeroBorderWidth(widths?: Dynamic): Dynamic {
-  let value: Dynamic = cssBoxSides
-    .map((input?: Dynamic): Dynamic => widths[input])
-    .filter((input?: Dynamic): Dynamic => input !== undefined && input > 0);
-  if (value.length !== 0)
-    return value.every((input?: Dynamic): Dynamic => input === value[0])
-      ? value[0]
+  let nonzeroWidths: Dynamic = cssBoxSides
+    .map((side?: Dynamic): Dynamic => widths[side])
+    .filter((sideWidth?: Dynamic): Dynamic => sideWidth !== undefined && sideWidth > 0);
+  if (nonzeroWidths.length !== 0)
+    return nonzeroWidths.every((sideWidth?: Dynamic): Dynamic => sideWidth === nonzeroWidths[0])
+      ? nonzeroWidths[0]
       : undefined;
 }
 function activeBorderSides(widths?: Dynamic): Dynamic {
-  let value: Dynamic = cssBoxSides.filter(
-    (input?: Dynamic): Dynamic => (widths[input] ?? 0) > 0,
+  let activeSides: Dynamic = cssBoxSides.filter(
+    (side?: Dynamic): Dynamic => (widths[side] ?? 0) > 0,
   );
-  return value.length === 0 || value.length === 4 ? undefined : value;
+  return activeSides.length === 0 || activeSides.length === 4 ? undefined : activeSides;
 }
 function sideStyleChanges(prefix?: Dynamic, sides?: Dynamic): Dynamic {
   return cssBoxSides
-    .filter((input?: Dynamic): Dynamic => input in sides)
+    .filter((side?: Dynamic): Dynamic => side in sides)
     .map(
-      (input?: Dynamic): Dynamic => [
-        prefix + "-" + input,
-        serializeOptionalPixelValue(sides[input]),
+      (side?: Dynamic): Dynamic => [
+        prefix + "-" + side,
+        serializeOptionalPixelValue(sides[side]),
       ],
     );
 }
 function matchingDesignSwatchName(
   swatches?: Dynamic,
-  value?: Dynamic,
+  cssValue?: Dynamic,
   definedVariables?: Dynamic,
 ): Dynamic {
-  if (value === undefined) return null;
-  let value2: Dynamic = cssVariableName(value.trim());
-  if (value2 !== null)
+  if (cssValue === undefined) return null;
+  let variableName: Dynamic = cssVariableName(cssValue.trim());
+  if (variableName !== null)
     return (
       swatches.find(
-        (input?: Dynamic): Dynamic =>
-          designSwatchCssVariable(input.name) === value2,
+        (swatch?: Dynamic): Dynamic =>
+          designSwatchCssVariable(swatch.name) === variableName,
       )?.name ?? null
     );
-  let value3: Dynamic = swatches.find(
-    (input?: Dynamic): Dynamic =>
-      !input.empty &&
+  let matchingSwatch: Dynamic = swatches.find(
+    (swatch?: Dynamic): Dynamic =>
+      !swatch.empty &&
       !(
         definedVariables?.has(
-          designSwatchCssVariable(input.picks ?? input.name) ?? "",
+          designSwatchCssVariable(swatch.picks ?? swatch.name) ?? "",
         ) ?? false
       ) &&
-      samePaint(input.color, value),
+      samePaint(swatch.color, cssValue),
   );
-  return value3 === undefined ? null : (value3.picks ?? value3.name);
+  return matchingSwatch === undefined ? null : (matchingSwatch.picks ?? matchingSwatch.name);
 }
 function valueForDesignSwatch(
   swatches?: Dynamic,
   swatchName?: Dynamic,
   definedVariables?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = swatches.find(
-    (input?: Dynamic): Dynamic => input.name === swatchName,
+  let swatch: Dynamic = swatches.find(
+    (candidate?: Dynamic): Dynamic => candidate.name === swatchName,
   );
-  if (value === undefined) return;
-  let value2: Dynamic = designSwatchCssVariable(value.name);
-  return value2 === undefined ||
-    definedVariables?.has(value2) !== true ||
+  if (swatch === undefined) return;
+  let variableName: Dynamic = designSwatchCssVariable(swatch.name);
+  return variableName === undefined ||
+    definedVariables?.has(variableName) !== true ||
     swatches.some(
-      (input?: Dynamic): Dynamic =>
-        input !== value &&
-        designSwatchCssVariable(input.name) === value2 &&
-        !samePaint(input.color, value.color),
+      (other?: Dynamic): Dynamic =>
+        other !== swatch &&
+        designSwatchCssVariable(other.name) === variableName &&
+        !samePaint(other.color, swatch.color),
     )
-    ? value.color
-    : "var(" + value2 + ")";
+    ? swatch.color
+    : "var(" + variableName + ")";
 }
 function BackgroundQuickPanel({
   io: io,
@@ -126,27 +126,27 @@ function BackgroundQuickPanel({
   editsAreUndoSteps: editsAreUndoSteps,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let entry: Dynamic = io.get("background-color"),
-    [value, value2]: Dynamic = (0, react_mEt.useState)(false),
-    value3: Dynamic = useBackgroundEditor({
+  let backgroundColor: Dynamic = io.get("background-color"),
+    [isOpen, setIsOpen]: Dynamic = (0, react_mEt.useState)(false),
+    backgroundEditor: Dynamic = useBackgroundEditor({
       value: io.get("background") ?? null,
-      companionValue: entry ?? null,
+      companionValue: backgroundColor ?? null,
       fallback: io.rendered?.background ?? undefined,
       writer: quickPanelStyleIo(io),
-      open: value,
+      open: isOpen,
       tokens: emptyQuickPanelStyleEdits,
     }),
-    value4: Dynamic =
-      value3.mode === "gradient"
-        ? value3.previewCss
-        : (parseQuickPanelColor(entry) ??
+    previewPaint: Dynamic =
+      backgroundEditor.mode === "gradient"
+        ? backgroundEditor.previewCss
+        : (parseQuickPanelColor(backgroundColor) ??
           parseQuickPanelColor(io.rendered?.background));
   return (
     <SessionActionsPopover
       testid={testid}
       editsAreUndoSteps={editsAreUndoSteps}
       title={uiMessage("inspector.quickPanelBindings.backgroundColor")}
-      paint={value4}
+      paint={previewPaint}
       swatches={[
         {
           name: "none",
@@ -157,86 +157,86 @@ function BackgroundQuickPanel({
         ...swatches,
       ]}
       value={
-        (value3.mode !== "color" && value3.mode !== "none") ||
-        entry === undefined
+        (backgroundEditor.mode !== "color" && backgroundEditor.mode !== "none") ||
+        backgroundColor === undefined
           ? null
-          : entry === "transparent"
+          : backgroundColor === "transparent"
             ? "none"
-            : matchingDesignSwatchName(swatches, entry, defined)
+            : matchingDesignSwatchName(swatches, backgroundColor, defined)
       }
-      onSwatch={(input?: Dynamic): Dynamic => {
-        let value5: Dynamic =
-          input === "none"
+      onSwatch={(swatchName?: Dynamic): Dynamic => {
+        let swatchValue: Dynamic =
+          swatchName === "none"
             ? "transparent"
-            : valueForDesignSwatch(swatches, input, defined);
-        value5 !== undefined &&
-          io.set(editListToStylePairs(value3.solidEdits(value5)));
+            : valueForDesignSwatch(swatches, swatchName, defined);
+        swatchValue !== undefined &&
+          io.set(editListToStylePairs(backgroundEditor.solidEdits(swatchValue)));
       }}
       custom={{
         seed:
-          parseQuickPanelColor(value3.solid) ??
-          parseQuickPanelColor(entry) ??
+          parseQuickPanelColor(backgroundEditor.solid) ??
+          parseQuickPanelColor(backgroundColor) ??
           parseQuickPanelColor(io.rendered?.background) ??
           "#FFFFFF",
-        unset: !value3.solid,
-        onChange: (input?: Dynamic): Dynamic =>
-          io.set(editListToStylePairs(value3.solidEdits(input)), true),
+        unset: !backgroundEditor.solid,
+        onChange: (pickedColor?: Dynamic): Dynamic =>
+          io.set(editListToStylePairs(backgroundEditor.solidEdits(pickedColor)), true),
         onPickEnd: (): Dynamic => io.settle(),
       }}
       {...(faces
         ? {
-            kind: value3.kind,
-            face: value3.face,
+            kind: backgroundEditor.kind,
+            face: backgroundEditor.face,
           }
         : {})}
-      onOpenChange={(input?: Dynamic): Dynamic => {
-        value2(input);
-        input || value3.endSession();
+      onOpenChange={(isOpenNext?: Dynamic): Dynamic => {
+        setIsOpen(isOpenNext);
+        isOpenNext || backgroundEditor.endSession();
       }}
     />
   );
 }
 function CornerRadiusQuickPanel({ io: io }: Dynamic): Dynamic {
   useUiLocale();
-  let state: Dynamic = {
+  let cornerRadii: Dynamic = {
       tl: parseOptionalPixelValue(io.get(radiusCssProperties.tl)),
       tr: parseOptionalPixelValue(io.get(radiusCssProperties.tr)),
       br: parseOptionalPixelValue(io.get(radiusCssProperties.br)),
       bl: parseOptionalPixelValue(io.get(radiusCssProperties.bl)),
     },
-    callback: Dynamic = (input?: Dynamic, options?: Dynamic): Dynamic =>
+    setCorners: Dynamic = (changedCorners?: Dynamic, isLive?: Dynamic): Dynamic =>
       io.set(
-        Object.keys(input).map(
-          (input2?: Dynamic): Dynamic => [
-            radiusCssProperties[input2],
-            serializeOptionalPixelValue(input[input2]),
+        Object.keys(changedCorners).map(
+          (corner?: Dynamic): Dynamic => [
+            radiusCssProperties[corner],
+            serializeOptionalPixelValue(changedCorners[corner]),
           ],
         ),
-        options,
+        isLive,
       );
   return (
     <SessionPopup
       testid={"mega-qp-corner"}
       title={uiMessage("inspector.quickPanelBindings.cornerRadius")}
-      icon={PropertiesTooltipNameViewBoxPathsConfig_3}
+      icon={cornerRadiusIcon}
     >
       <RadiusQuickPanel
         radius={parseOptionalPixelValue(io.get("border-radius"))}
         max={400}
-        onChange={(input?: Dynamic): Dynamic =>
+        onChange={(radius?: Dynamic): Dynamic =>
           io.set([
-            ["border-radius", serializeOptionalPixelValue(input)],
+            ["border-radius", serializeOptionalPixelValue(radius)],
             ...Object.values(radiusCssProperties).map(
-              (input2?: Dynamic): Dynamic => [input2, undefined],
+              (cornerProperty?: Dynamic): Dynamic => [cornerProperty, undefined],
             ),
           ])
         }
-        onLive={(input?: Dynamic): Dynamic =>
+        onLive={(radius?: Dynamic): Dynamic =>
           io.set(
             [
-              ["border-radius", serializeOptionalPixelValue(input)],
+              ["border-radius", serializeOptionalPixelValue(radius)],
               ...Object.values(radiusCssProperties).map(
-                (input2?: Dynamic): Dynamic => [input2, undefined],
+                (cornerProperty?: Dynamic): Dynamic => [cornerProperty, undefined],
               ),
             ],
             true,
@@ -244,9 +244,9 @@ function CornerRadiusQuickPanel({ io: io }: Dynamic): Dynamic {
         }
         onLiveEnd={io.settle}
         corners={{
-          value: state,
-          onChange: (input?: Dynamic): Dynamic => callback(input),
-          onLive: (input?: Dynamic): Dynamic => callback(input, true),
+          value: cornerRadii,
+          onChange: (changedCorners?: Dynamic): Dynamic => setCorners(changedCorners),
+          onLive: (changedCorners?: Dynamic): Dynamic => setCorners(changedCorners, true),
           onLiveEnd: io.settle,
         }}
       />
@@ -262,59 +262,59 @@ function CssBorderQuickPanel({
   editsAreUndoSteps: editsAreUndoSteps,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let entry: Dynamic = io.get("border-style"),
-    value: Dynamic =
-      entry === "double"
+  let borderStyleValue: Dynamic = io.get("border-style"),
+    borderStyle: Dynamic =
+      borderStyleValue === "double"
         ? "solid"
-        : /^(none|solid|dashed|dotted)$/.test(entry ?? "")
-          ? entry
+        : /^(none|solid|dashed|dotted)$/.test(borderStyleValue ?? "")
+          ? borderStyleValue
           : undefined,
-    value2: Dynamic = value !== undefined && value !== "none",
-    value3: Dynamic = readBorderSideWidths(io),
-    callback: Dynamic = (input?: Dynamic): Dynamic =>
-      (value3[input] ?? 0) > 0,
-    value4: Dynamic = activeBorderSides(value3) !== undefined,
-    text: Dynamic = "#141413",
-    value5: Dynamic = parseQuickPanelColor(io.get("border-color")),
-    value6: Dynamic = matchingDesignSwatchName(
+    hasBorderStyle: Dynamic = borderStyle !== undefined && borderStyle !== "none",
+    sideWidths: Dynamic = readBorderSideWidths(io),
+    hasSideWidth: Dynamic = (side?: Dynamic): Dynamic =>
+      (sideWidths[side] ?? 0) > 0,
+    hasPartialSides: Dynamic = activeBorderSides(sideWidths) !== undefined,
+    defaultBorderColor: Dynamic = "#141413",
+    borderColor: Dynamic = parseQuickPanelColor(io.get("border-color")),
+    borderSwatchName: Dynamic = matchingDesignSwatchName(
       swatches,
       io.get("border-color"),
       defined,
     ),
-    value7: Dynamic =
-      value5 ??
-      (value6 !== null
+    borderPaint: Dynamic =
+      borderColor ??
+      (borderSwatchName !== null
         ? parseQuickPanelColor(
-            swatches.find((input?: Dynamic): Dynamic => input.name === value6)
+            swatches.find((swatch?: Dynamic): Dynamic => swatch.name === borderSwatchName)
               ?.color,
           )
         : undefined),
-    callback2: Dynamic = (input?: Dynamic): Dynamic =>
-      input && value5 !== undefined ? [["border-color", value5]] : [],
-    callback3: Dynamic = (input?: Dynamic): Dynamic => [
+    keepBorderColor: Dynamic = (shouldKeep?: Dynamic): Dynamic =>
+      shouldKeep && borderColor !== undefined ? [["border-color", borderColor]] : [],
+    sideWidthChanges: Dynamic = (changedWidths?: Dynamic): Dynamic => [
       ...cssBoxSides.map(
-        (input2?: Dynamic): Dynamic => [
-          "border-" + input2 + "-width",
+        (side?: Dynamic): Dynamic => [
+          "border-" + side + "-width",
           serializeOptionalPixelValue(
-            input2 in input ? (input[input2] ?? 0) : (value3[input2] ?? 0),
+            side in changedWidths ? (changedWidths[side] ?? 0) : (sideWidths[side] ?? 0),
           ),
         ],
       ),
-      ...(value2 ? [["border-style", value]] : []),
-      ...callback2(
+      ...(hasBorderStyle ? [["border-style", borderStyle]] : []),
+      ...keepBorderColor(
         cssBoxSides.some(
-          (input2?: Dynamic): Dynamic =>
-            (input[input2] ?? 0) > 0 && !callback(input2),
+          (side?: Dynamic): Dynamic =>
+            (changedWidths[side] ?? 0) > 0 && !hasSideWidth(side),
         ),
       ),
     ],
-    state: Dynamic = {
+    paddingSides: Dynamic = {
       top: parseOptionalPixelValue(io.get("padding-top")),
       right: parseOptionalPixelValue(io.get("padding-right")),
       bottom: parseOptionalPixelValue(io.get("padding-bottom")),
       left: parseOptionalPixelValue(io.get("padding-left")),
     },
-    state2: Dynamic = {
+    marginSides: Dynamic = {
       top: parseOptionalPixelValue(io.get("margin-top")),
       right: parseOptionalPixelValue(io.get("margin-right")),
       bottom: parseOptionalPixelValue(io.get("margin-bottom")),
@@ -333,89 +333,89 @@ function CssBorderQuickPanel({
         <SessionPopup
           testid={"mega-qp-border"}
           title={uiMessage("inspector.quickPanelBindings.border")}
-          icon={PropertiesTooltipNameViewBoxPathsConfig}
+          icon={borderWeightIcon}
           editsAreUndoSteps={editsAreUndoSteps}
         >
           <BorderQuickPanel
-            style={value}
-            width={uniformNonzeroBorderWidth(value3)}
-            sides={activeBorderSides(value3)}
+            style={borderStyle}
+            width={uniformNonzeroBorderWidth(sideWidths)}
+            sides={activeBorderSides(sideWidths)}
             color={
               <PropertyColorRow
                 testid={"mega-qp-border-color"}
                 editsAreUndoSteps={editsAreUndoSteps}
                 label={uiMessage("inspector.quickPanelBindings.borderColor")}
                 title={uiMessage("inspector.quickPanelBindings.borderColor")}
-                value={value7}
+                value={borderPaint}
                 swatches={swatches}
                 fold={true}
-                current={value6}
-                onSwatch={(input?: Dynamic): Dynamic => {
-                  let value8: Dynamic = valueForDesignSwatch(
+                current={borderSwatchName}
+                onSwatch={(swatchName?: Dynamic): Dynamic => {
+                  let swatchValue: Dynamic = valueForDesignSwatch(
                     swatches,
-                    input,
+                    swatchName,
                     defined,
                   );
-                  value8 !== undefined && io.set([["border-color", value8]]);
+                  swatchValue !== undefined && io.set([["border-color", swatchValue]]);
                 }}
-                disabled={!value2}
+                disabled={!hasBorderStyle}
                 disabledReason={uiMessage("inspector.quickPanelBindings.pickABorderStyleFirst")}
-                onChange={(input?: Dynamic): Dynamic => {
-                  input !== undefined && io.set([["border-color", input]]);
+                onChange={(pickedColor?: Dynamic): Dynamic => {
+                  pickedColor !== undefined && io.set([["border-color", pickedColor]]);
                 }}
-                onLive={(input?: Dynamic): Dynamic =>
-                  io.set([["border-color", input]], true)
+                onLive={(pickedColor?: Dynamic): Dynamic =>
+                  io.set([["border-color", pickedColor]], true)
                 }
                 onLiveEnd={io.settle}
                 keepFocus={true}
                 popover={quickPanelPopoverOptions}
               />
             }
-            onChange={(input?: Dynamic): Dynamic => {
-              if ("style" in input) {
-                input.style === undefined || input.style === "none"
+            onChange={(borderChange?: Dynamic): Dynamic => {
+              if ("style" in borderChange) {
+                borderChange.style === undefined || borderChange.style === "none"
                   ? io.set([["border-style", "none"]])
                   : io.set([
-                      ["border-style", input.style],
+                      ["border-style", borderChange.style],
                       ...(cssBoxSides.every(
-                        (input2?: Dynamic): Dynamic => !callback(input2),
+                        (side?: Dynamic): Dynamic => !hasSideWidth(side),
                       )
                         ? [["border-width", "1px"]]
-                        : value4
+                        : hasPartialSides
                           ? cssBoxSides
                               .filter(
-                                (input2?: Dynamic): Dynamic =>
-                                  !callback(input2),
+                                (side?: Dynamic): Dynamic =>
+                                  !hasSideWidth(side),
                               )
                               .map(
-                                (input2?: Dynamic): Dynamic => [
-                                  "border-" + input2 + "-width",
+                                (side?: Dynamic): Dynamic => [
+                                  "border-" + side + "-width",
                                   "0px",
                                 ],
                               )
                           : []),
                       ...(io.get("border-color") === undefined
-                        ? [["border-color", text]]
+                        ? [["border-color", defaultBorderColor]]
                         : []),
                     ]);
                 return;
               }
-              "width" in input &&
+              "width" in borderChange &&
                 io.set([
                   [
                     "border-width",
-                    serializeOptionalPixelValue(input.width ?? 0),
+                    serializeOptionalPixelValue(borderChange.width ?? 0),
                   ],
                   ...cssBoxSides.map(
-                    (input2?: Dynamic): Dynamic => [
-                      "border-" + input2 + "-width",
+                    (side?: Dynamic): Dynamic => [
+                      "border-" + side + "-width",
                       undefined,
                     ],
                   ),
-                  ...callback2(value4 && (input.width ?? 0) > 0),
+                  ...keepBorderColor(hasPartialSides && (borderChange.width ?? 0) > 0),
                 ]);
-              "sides" in input &&
-                input.sides === undefined &&
+              "sides" in borderChange &&
+                borderChange.sides === undefined &&
                 io.set([
                   [
                     "border-width",
@@ -423,44 +423,44 @@ function CssBorderQuickPanel({
                       Math.max(
                         1,
                         ...cssBoxSides.map(
-                          (input2?: Dynamic): Dynamic => value3[input2] ?? 0,
+                          (side?: Dynamic): Dynamic => sideWidths[side] ?? 0,
                         ),
                       ),
                     ),
                   ],
-                  ...(value2 ? [["border-style", value]] : []),
+                  ...(hasBorderStyle ? [["border-style", borderStyle]] : []),
                   ...cssBoxSides.map(
-                    (input2?: Dynamic): Dynamic => [
-                      "border-" + input2 + "-width",
+                    (side?: Dynamic): Dynamic => [
+                      "border-" + side + "-width",
                       undefined,
                     ],
                   ),
-                  ...callback2(value4),
+                  ...keepBorderColor(hasPartialSides),
                 ]);
             }}
-            onLive={(input?: Dynamic): Dynamic =>
-              input.width !== undefined &&
+            onLive={(borderChange?: Dynamic): Dynamic =>
+              borderChange.width !== undefined &&
               io.set(
                 [
-                  ["border-width", serializeOptionalPixelValue(input.width)],
+                  ["border-width", serializeOptionalPixelValue(borderChange.width)],
                   ...cssBoxSides.map(
-                    (input2?: Dynamic): Dynamic => [
-                      "border-" + input2 + "-width",
+                    (side?: Dynamic): Dynamic => [
+                      "border-" + side + "-width",
                       undefined,
                     ],
                   ),
-                  ...callback2(value4 && input.width > 0),
+                  ...keepBorderColor(hasPartialSides && borderChange.width > 0),
                 ],
                 true,
               )
             }
             onLiveEnd={io.settle}
             widths={{
-              value: value3,
-              onChange: (input?: Dynamic): Dynamic =>
-                io.set(callback3(input)),
-              onLive: (input?: Dynamic): Dynamic =>
-                io.set(callback3(input), true),
+              value: sideWidths,
+              onChange: (changedWidths?: Dynamic): Dynamic =>
+                io.set(sideWidthChanges(changedWidths)),
+              onLive: (changedWidths?: Dynamic): Dynamic =>
+                io.set(sideWidthChanges(changedWidths), true),
               onLiveEnd: io.settle,
             }}
             supports={{
@@ -477,25 +477,25 @@ function CssBorderQuickPanel({
         <SessionPopup
           testid={"mega-qp-spacing"}
           title={uiMessage("inspector.quickPanelBindings.spacing")}
-          icon={PropertiesTooltipNameViewBoxPathsConfig_5}
+          icon={spacingIcon}
         >
           <SpacingQuickPanel
-            padding={state}
+            padding={paddingSides}
             max={400}
-            onChange={(input?: Dynamic): Dynamic =>
-              io.set(sideStyleChanges("padding", input))
+            onChange={(changedSides?: Dynamic): Dynamic =>
+              io.set(sideStyleChanges("padding", changedSides))
             }
-            onLive={(input?: Dynamic): Dynamic =>
-              io.set(sideStyleChanges("padding", input), true)
+            onLive={(changedSides?: Dynamic): Dynamic =>
+              io.set(sideStyleChanges("padding", changedSides), true)
             }
             onLiveEnd={io.settle}
             margin={{
-              value: state2,
+              value: marginSides,
               max: 400,
-              onChange: (input?: Dynamic): Dynamic =>
-                io.set(sideStyleChanges("margin", input)),
-              onLive: (input?: Dynamic): Dynamic =>
-                io.set(sideStyleChanges("margin", input), true),
+              onChange: (changedSides?: Dynamic): Dynamic =>
+                io.set(sideStyleChanges("margin", changedSides)),
+              onLive: (changedSides?: Dynamic): Dynamic =>
+                io.set(sideStyleChanges("margin", changedSides), true),
               onLiveEnd: io.settle,
             }}
           />
@@ -511,16 +511,16 @@ function SvgPaintQuickPanel({
   defined: defined,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic = io.get("fill") ?? io.get("background-color"),
-    entry: Dynamic = io.get("stroke"),
-    entry2: Dynamic = io.get("stroke-dasharray"),
-    value2: Dynamic = parseOptionalPixelValue(io.get("stroke-width")),
-    value3: Dynamic =
-      entry === undefined || entry === "none"
+  let fillValue: Dynamic = io.get("fill") ?? io.get("background-color"),
+    strokeValue: Dynamic = io.get("stroke"),
+    dashArray: Dynamic = io.get("stroke-dasharray"),
+    strokeWidth: Dynamic = parseOptionalPixelValue(io.get("stroke-width")),
+    strokeStyle: Dynamic =
+      strokeValue === undefined || strokeValue === "none"
         ? undefined
-        : entry2 === undefined || entry2 === "none"
+        : dashArray === undefined || dashArray === "none"
           ? "solid"
-          : /^[0-2](px)?[ ,]/.test(entry2)
+          : /^[0-2](px)?[ ,]/.test(dashArray)
             ? "dotted"
             : "dashed";
   return (
@@ -529,7 +529,7 @@ function SvgPaintQuickPanel({
         testid={"mega-qp-fill"}
         title={uiMessage("inspector.quickPanelBindings.fillColor")}
         paint={
-          parseQuickPanelColor(value) ??
+          parseQuickPanelColor(fillValue) ??
           parseQuickPanelColor(io.rendered?.background)
         }
         swatches={[
@@ -542,38 +542,38 @@ function SvgPaintQuickPanel({
           ...swatches,
         ]}
         value={
-          value === undefined
+          fillValue === undefined
             ? null
-            : value === "none"
+            : fillValue === "none"
               ? "none"
-              : matchingDesignSwatchName(swatches, value, defined)
+              : matchingDesignSwatchName(swatches, fillValue, defined)
         }
-        onSwatch={(input?: Dynamic): Dynamic => {
-          let value4: Dynamic =
-            input === "none"
+        onSwatch={(swatchName?: Dynamic): Dynamic => {
+          let fillSwatchValue: Dynamic =
+            swatchName === "none"
               ? "none"
-              : valueForDesignSwatch(swatches, input, defined);
-          value4 !== undefined && io.set([["fill", value4]]);
+              : valueForDesignSwatch(swatches, swatchName, defined);
+          fillSwatchValue !== undefined && io.set([["fill", fillSwatchValue]]);
         }}
         custom={{
           seed:
-            parseQuickPanelColor(value) ??
+            parseQuickPanelColor(fillValue) ??
             parseQuickPanelColor(io.rendered?.background) ??
             "#d97757",
-          unset: value === undefined,
-          onChange: (input?: Dynamic): Dynamic =>
-            io.set([["fill", input]], true),
+          unset: fillValue === undefined,
+          onChange: (pickedColor?: Dynamic): Dynamic =>
+            io.set([["fill", pickedColor]], true),
           onPickEnd: (): Dynamic => io.settle(),
         }}
       />
       <SessionPopup
         testid={"mega-qp-stroke"}
         title={uiMessage("inspector.quickPanelBindings.stroke")}
-        icon={PropertiesTooltipNameViewBoxPathsConfig}
+        icon={borderWeightIcon}
       >
         <BorderQuickPanel
-          style={value3}
-          width={value2}
+          style={strokeStyle}
+          width={strokeWidth}
           sides={undefined}
           color={
             <PropertyColorRow
@@ -581,14 +581,14 @@ function SvgPaintQuickPanel({
               label={uiMessage("inspector.quickPanelBindings.strokeColor")}
               title={uiMessage("inspector.quickPanelBindings.strokeColor")}
               value={
-                entry === "none"
+                strokeValue === "none"
                   ? undefined
-                  : (parseQuickPanelColor(entry) ??
+                  : (parseQuickPanelColor(strokeValue) ??
                     parseQuickPanelColor(
                       swatches.find(
-                        (input?: Dynamic): Dynamic =>
-                          input.name ===
-                          matchingDesignSwatchName(swatches, entry, defined),
+                        (swatch?: Dynamic): Dynamic =>
+                          swatch.name ===
+                          matchingDesignSwatchName(swatches, strokeValue, defined),
                       )?.color,
                     ) ??
                     parseQuickPanelColor(io.rendered?.stroke))
@@ -596,67 +596,67 @@ function SvgPaintQuickPanel({
               swatches={swatches}
               fold={true}
               current={
-                entry === "none"
+                strokeValue === "none"
                   ? null
                   : matchingDesignSwatchName(
                       swatches,
-                      entry ?? io.rendered?.stroke ?? undefined,
+                      strokeValue ?? io.rendered?.stroke ?? undefined,
                       defined,
                     )
               }
-              onSwatch={(input?: Dynamic): Dynamic => {
-                let value4: Dynamic = valueForDesignSwatch(
+              onSwatch={(swatchName?: Dynamic): Dynamic => {
+                let swatchValue: Dynamic = valueForDesignSwatch(
                   swatches,
-                  input,
+                  swatchName,
                   defined,
                 );
-                value4 !== undefined && io.set([["stroke", value4]]);
+                swatchValue !== undefined && io.set([["stroke", swatchValue]]);
               }}
-              disabled={value3 === undefined}
+              disabled={strokeStyle === undefined}
               disabledReason={uiMessage("inspector.quickPanelBindings.pickAStrokeStyleFirst")}
-              onChange={(input?: Dynamic): Dynamic => {
-                input !== undefined && io.set([["stroke", input]]);
+              onChange={(pickedColor?: Dynamic): Dynamic => {
+                pickedColor !== undefined && io.set([["stroke", pickedColor]]);
               }}
-              onLive={(input?: Dynamic): Dynamic =>
-                io.set([["stroke", input]], true)
+              onLive={(pickedColor?: Dynamic): Dynamic =>
+                io.set([["stroke", pickedColor]], true)
               }
               onLiveEnd={io.settle}
               keepFocus={true}
               popover={quickPanelPopoverOptions}
             />
           }
-          onChange={(input?: Dynamic): Dynamic => {
-            "style" in input &&
-              (input.style === undefined || input.style === "none"
+          onChange={(strokeChange?: Dynamic): Dynamic => {
+            "style" in strokeChange &&
+              (strokeChange.style === undefined || strokeChange.style === "none"
                 ? io.set([["stroke", "none"]])
                 : io.set([
                     [
                       "stroke",
-                      entry === undefined || entry === "none"
+                      strokeValue === undefined || strokeValue === "none"
                         ? "#141413"
-                        : entry,
+                        : strokeValue,
                     ],
                     [
                       "stroke-dasharray",
-                      input.style === "solid"
+                      strokeChange.style === "solid"
                         ? undefined
-                        : input.style === "dashed"
+                        : strokeChange.style === "dashed"
                           ? "6 4"
                           : "1 3",
                     ],
-                    ...(value2 === undefined
+                    ...(strokeWidth === undefined
                       ? [["stroke-width", "2px"]]
                       : []),
                   ]));
-            "width" in input &&
+            "width" in strokeChange &&
               io.set([
-                ["stroke-width", serializeOptionalPixelValue(input.width)],
+                ["stroke-width", serializeOptionalPixelValue(strokeChange.width)],
               ]);
           }}
-          onLive={(input?: Dynamic): Dynamic =>
-            input.width !== undefined &&
+          onLive={(strokeChange?: Dynamic): Dynamic =>
+            strokeChange.width !== undefined &&
             io.set(
-              [["stroke-width", serializeOptionalPixelValue(input.width)]],
+              [["stroke-width", serializeOptionalPixelValue(strokeChange.width)]],
               true,
             )
           }
@@ -714,41 +714,41 @@ function LineStrokeQuickPanel({
   defined: defined,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic = io.get("stroke") ?? io.get("border-color");
+  let strokeValue: Dynamic = io.get("stroke") ?? io.get("border-color");
   return (
     <SessionStripGroup>
       <SessionActionsPopover
         testid={"mega-qp-stroke-line"}
         title={uiMessage("inspector.quickPanelBindings.strokeColor")}
         paint={
-          parseQuickPanelColor(value) ??
+          parseQuickPanelColor(strokeValue) ??
           parseQuickPanelColor(io.rendered?.stroke) ??
           "#141413"
         }
         swatches={swatches}
-        value={matchingDesignSwatchName(swatches, value, defined)}
-        onSwatch={(input?: Dynamic): Dynamic => {
-          let value2: Dynamic = valueForDesignSwatch(
+        value={matchingDesignSwatchName(swatches, strokeValue, defined)}
+        onSwatch={(swatchName?: Dynamic): Dynamic => {
+          let swatchValue: Dynamic = valueForDesignSwatch(
             swatches,
-            input,
+            swatchName,
             defined,
           );
-          value2 !== undefined &&
+          swatchValue !== undefined &&
             io.set([
-              ["stroke", value2],
-              ["border-color", value2],
+              ["stroke", swatchValue],
+              ["border-color", swatchValue],
             ]);
         }}
         custom={{
           seed:
-            parseQuickPanelColor(value) ??
+            parseQuickPanelColor(strokeValue) ??
             parseQuickPanelColor(io.rendered?.stroke) ??
             "#141413",
-          onChange: (input?: Dynamic): Dynamic =>
+          onChange: (pickedColor?: Dynamic): Dynamic =>
             io.set(
               [
-                ["stroke", input],
-                ["border-color", input],
+                ["stroke", pickedColor],
+                ["border-color", pickedColor],
               ],
               true,
             ),
@@ -794,13 +794,13 @@ export function installPropertiesQuickPanelBindings(): () => void {
       1,
     );
     cssBoxSides = ["top", "right", "bottom", "left"];
-    parseQuickPanelColor = (input?: Dynamic): Dynamic =>
-      input == null
+    parseQuickPanelColor = (cssValue?: Dynamic): Dynamic =>
+      cssValue == null
         ? undefined
-        : (normalizeHexColor(input) ?? undefined);
-    inlineImageUrl = (input?: Dynamic): Dynamic =>
-      input !== undefined && /^(data:image\/|blob:)/i.test(input)
-        ? input
+        : (normalizeHexColor(cssValue) ?? undefined);
+    inlineImageUrl = (src?: Dynamic): Dynamic =>
+      src !== undefined && /^(data:image\/|blob:)/i.test(src)
+        ? src
         : undefined;
     radiusCssProperties = {
       tl: "border-top-left-radius",
@@ -808,38 +808,38 @@ export function installPropertiesQuickPanelBindings(): () => void {
       br: "border-bottom-right-radius",
       bl: "border-bottom-left-radius",
     };
-    parseOptionalPixelValue = (input?: Dynamic): Dynamic => {
-      if (input === undefined) return;
-      let value: Dynamic = /^\s*(-?\d+(?:\.\d+)?)(?:px)?\s*$/.exec(input);
-      return value ? parseFloat(value[1]) : undefined;
+    parseOptionalPixelValue = (cssValue?: Dynamic): Dynamic => {
+      if (cssValue === undefined) return;
+      let pixelMatch: Dynamic = /^\s*(-?\d+(?:\.\d+)?)(?:px)?\s*$/.exec(cssValue);
+      return pixelMatch ? parseFloat(pixelMatch[1]) : undefined;
     };
-    serializeOptionalPixelValue = (input?: Dynamic): Dynamic =>
-      input === undefined
+    serializeOptionalPixelValue = (pixels?: Dynamic): Dynamic =>
+      pixels === undefined
         ? undefined
-        : String(Math.round(input * 10) / 10) + "px";
-    designSwatchCssVariable = (input?: Dynamic): Dynamic => {
-      let value: Dynamic = /^ds:\d+:(.+)$/.exec(input)?.[1];
-      return value === undefined ? undefined : "--" + value;
+        : String(Math.round(pixels * 10) / 10) + "px";
+    designSwatchCssVariable = (swatchName?: Dynamic): Dynamic => {
+      let variableSuffix: Dynamic = /^ds:\d+:(.+)$/.exec(swatchName)?.[1];
+      return variableSuffix === undefined ? undefined : "--" + variableSuffix;
     };
-    editListToStylePairs = (input?: Dynamic): Dynamic =>
-      input.map(
-        (input2?: Dynamic): Dynamic => [input2.prop, input2.value ?? undefined],
+    editListToStylePairs = (edits?: Dynamic): Dynamic =>
+      edits.map(
+        (edit?: Dynamic): Dynamic => [edit.prop, edit.value ?? undefined],
       );
     unsupportedQuickPanelValueMessage =
       uiMessage("inspector.quickPanelBindings.thatValueCanTBe");
-    areStyleEditsSupported = (items?: Dynamic): Dynamic =>
+    areStyleEditsSupported = (edits?: Dynamic): Dynamic =>
       normalizeStyleEdits(
-        items.map((input?: Dynamic): Dynamic => [input.prop, input.value]),
-      ).length === items.length;
+        edits.map((edit?: Dynamic): Dynamic => [edit.prop, edit.value]),
+      ).length === edits.length;
     quickPanelStyleIo = (io?: Dynamic): Dynamic => ({
-      commit: (input?: Dynamic): Dynamic => {
-        areStyleEditsSupported(input)
-          ? io.set(editListToStylePairs(input))
+      commit: (edits?: Dynamic): Dynamic => {
+        areStyleEditsSupported(edits)
+          ? io.set(editListToStylePairs(edits))
           : showEditorToast(unsupportedQuickPanelValueMessage);
       },
-      live: (input?: Dynamic): Dynamic => {
-        areStyleEditsSupported(input) &&
-          io.set(editListToStylePairs(input), true);
+      live: (edits?: Dynamic): Dynamic => {
+        areStyleEditsSupported(edits) &&
+          io.set(editListToStylePairs(edits), true);
       },
       settle: (): Dynamic => io.settle(),
     });

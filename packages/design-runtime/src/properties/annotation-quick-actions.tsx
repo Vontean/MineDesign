@@ -20,7 +20,7 @@ import { SessionActionsPopover, SessionChoicePopup, SessionTypographyPopup } fro
 import { SessionStripButton, SessionStripDivider, SessionStripGroup } from "../editor/session-strip/session-strip";
 import { SessionArtboardStateEscape } from "../editor/session/artboard-state";
 import { toModuleNamespace } from "../module-helpers";
-import { annotationTextStyle, PlatformFileContentConstant_3, PlatformFileContentConstant_4, PlatformFileContentGrayRedOrangeValues, PlatformFileContentGrayRedOrangeValuesAlias, PlatformFileContentSMLConfig } from "../platform/file-content";
+import { annotationTextStyle, PlatformFileContentConstant_3 as minNoteFontSize, PlatformFileContentConstant_4 as maxNoteFontSize, PlatformFileContentGrayRedOrangeValues, PlatformFileContentGrayRedOrangeValuesAlias, PlatformFileContentSMLConfig } from "../platform/file-content";
 import { ImageQuickPanel } from "./quick-panel-bindings";
 
 var react_RB: Dynamic;
@@ -35,27 +35,27 @@ function TextSelectionCount({
   testid: testid,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let [, value]: Dynamic = (0, react_Nse.useState)(0);
+  let [, setSelectionTick]: Dynamic = (0, react_Nse.useState)(0);
   (0, react_Nse.useEffect)((): Dynamic => {
-    let callback2: Dynamic = (): Dynamic =>
-      value((input?: Dynamic): Dynamic => input + 1);
-    (document as Dynamic).addEventListener("selectionchange", callback2);
-    (document as Dynamic).addEventListener("keyup", callback2);
+    let refreshSelection: Dynamic = (): Dynamic =>
+      setSelectionTick((tick?: Dynamic): Dynamic => tick + 1);
+    (document as Dynamic).addEventListener("selectionchange", refreshSelection);
+    (document as Dynamic).addEventListener("keyup", refreshSelection);
     return (): Dynamic => {
-      (document as Dynamic).removeEventListener("selectionchange", callback2);
-      (document as Dynamic).removeEventListener("keyup", callback2);
+      (document as Dynamic).removeEventListener("selectionchange", refreshSelection);
+      (document as Dynamic).removeEventListener("keyup", refreshSelection);
     };
   }, []);
-  let value2: Dynamic = getNoteFormattingState(document, base),
-    callback: Dynamic = (
-      input?: Dynamic,
-      options?: Dynamic,
-      context?: Dynamic,
-      value3?: Dynamic,
-      extra?: Dynamic,
+  let formattingState: Dynamic = getNoteFormattingState(document, base),
+    renderFormatButton: Dynamic = (
+      format?: Dynamic,
+      label?: Dynamic,
+      iconName?: Dynamic,
+      shortcutKey?: Dynamic,
+      isActive?: Dynamic,
     ): Dynamic => {
-      let value4: Dynamic = noteFormattingRefusal(
-        input,
+      let formattingRefusal: Dynamic = noteFormattingRefusal(
+        format,
         base,
         document,
         words,
@@ -63,27 +63,27 @@ function TextSelectionCount({
       return (
         <SessionStripButton
           data-testid={
-            testid === undefined ? undefined : testid + "-" + input
+            testid === undefined ? undefined : testid + "-" + format
           }
           title={
-            (value4) || (chords ? ((((options) + (" (")) + (keyboardShortcutLabel(value3))) + (")")) : (options))
+            (formattingRefusal) || (chords ? ((((label) + (" (")) + (keyboardShortcutLabel(shortcutKey))) + (")")) : (label))
           }
-          aria-label={options}
-          aria-pressed={value4 === "" && extra}
-          disabled={value4 !== ""}
-          icon={context}
+          aria-label={label}
+          aria-pressed={formattingRefusal === "" && isActive}
+          disabled={formattingRefusal !== ""}
+          icon={iconName}
           onPointerDown={(event?: Dynamic): Dynamic => event.preventDefault()}
           onClick={(): Dynamic => {
-            toggleNoteFormatting(input, base);
-            value((input2?: Dynamic): Dynamic => input2 + 1);
+            toggleNoteFormatting(format, base);
+            setSelectionTick((tick?: Dynamic): Dynamic => tick + 1);
           }}
         />
       );
     };
   return (
     <SessionStripGroup>
-      {callback("bold", uiMessage("inspector.annotationQuickActions.bold"), "TextBold", "B", value2.allBold)}
-      {callback("italic", uiMessage("inspector.annotationQuickActions.italic"), "TextItalics", "I", value2.allItalic)}
+      {renderFormatButton("bold", uiMessage("inspector.annotationQuickActions.bold"), "TextBold", "B", formattingState.allBold)}
+      {renderFormatButton("italic", uiMessage("inspector.annotationQuickActions.italic"), "TextItalics", "I", formattingState.allItalic)}
     </SessionStripGroup>
   );
 }
@@ -93,42 +93,42 @@ function NoteTypographyQuickActions({
   typing = false,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic = annotationTextStyle(spec),
-    value2: Dynamic = [
+  let textStyle: Dynamic = annotationTextStyle(spec),
+    inkSwatches: Dynamic = [
       "default",
       ...PlatformFileContentGrayRedOrangeValues,
     ].map(
-      (input?: Dynamic): Dynamic => ({
-        name: input,
-        color: NotesLinkEditingHandler_2(value.kind, input),
-        get label() { return input === "default" ? (uiMessage("inspector.annotationQuickActions.defaultInk")) : (input[0].toUpperCase() + input.slice(1)); },
+      (inkName?: Dynamic): Dynamic => ({
+        name: inkName,
+        color: NotesLinkEditingHandler_2(textStyle.kind, inkName),
+        get label() { return inkName === "default" ? (uiMessage("inspector.annotationQuickActions.defaultInk")) : (inkName[0].toUpperCase() + inkName.slice(1)); },
       }),
     ),
-    value3: Dynamic = noteFontSizePresets.find(
-      (input?: Dynamic): Dynamic => input.px === value.size,
+    sizePreset: Dynamic = noteFontSizePresets.find(
+      (preset?: Dynamic): Dynamic => preset.px === textStyle.size,
     );
   return (
     <SessionStripGroup wrap={true}>
       <SessionTypographyPopup
         testid={"mega-note-style"}
-        value={value3 ? String(value3.px) : null}
-        chipText={value3?.label ?? String(value.size)}
+        value={sizePreset ? String(sizePreset.px) : null}
+        chipText={sizePreset?.label ?? String(textStyle.size)}
         systemHeader={
           <div className={"mb-2"} data-testid={"mega-note-kind"}>
             <SegmentedControl
               aria-label={uiMessage("inspector.annotationQuickActions.noteStyle")}
               fullWidth={true}
-              value={value.kind}
-              onChange={(input?: Dynamic): Dynamic =>
+              value={textStyle.kind}
+              onChange={(noteKind?: Dynamic): Dynamic =>
                 onRestyle({
-                  kind: input,
+                  kind: noteKind,
                 })
               }
               segments={["note", "title1"].map(
-                (input?: Dynamic): Dynamic => ({
-                  value: input,
-                  get label() { return input === "note" ? ("Sticky") : (uiMessage("inspector.annotationQuickActions.title")); },
-                  disabled: typing && input !== value.kind,
+                (noteKind?: Dynamic): Dynamic => ({
+                  value: noteKind,
+                  get label() { return noteKind === "note" ? ("Sticky") : (uiMessage("inspector.annotationQuickActions.title")); },
+                  disabled: typing && noteKind !== textStyle.kind,
                   disabledReason: "Finish typing to change the note's kind",
                 }),
               )}
@@ -136,25 +136,25 @@ function NoteTypographyQuickActions({
           </div>
         }
         options={noteFontSizePresets.map(
-          (input?: Dynamic): Dynamic => ({
-            value: String(input.px),
-            text: input.label,
+          (preset?: Dynamic): Dynamic => ({
+            value: String(preset.px),
+            text: preset.label,
             label: (
               <span
                 style={{
-                  fontSize: Math.min(22, Math.max(12, input.px / 2.5)),
-                  fontWeight: value.kind === "title1" ? 700 : undefined,
+                  fontSize: Math.min(22, Math.max(12, preset.px / 2.5)),
+                  fontWeight: textStyle.kind === "title1" ? 700 : undefined,
                 }}
               >
-                {input.label}
+                {preset.label}
               </span>
             ),
-            get hint() { return (String(input.px)) + ("px"); },
+            get hint() { return (String(preset.px)) + ("px"); },
           }),
         )}
-        onChange={(input?: Dynamic): Dynamic =>
+        onChange={(sizeText?: Dynamic): Dynamic =>
           onRestyle({
-            size: Number(input),
+            size: Number(sizeText),
           })
         }
         custom={{
@@ -166,13 +166,13 @@ function NoteTypographyQuickActions({
                 typing ? ("Finish typing to set a custom size") : ("Size (px)")
               }
               disabled={typing}
-              value={value.size}
-              min={PlatformFileContentConstant_3}
-              max={PlatformFileContentConstant_4}
-              onValue={(input?: Dynamic): Dynamic => {
-                input !== undefined &&
+              value={textStyle.size}
+              min={minNoteFontSize}
+              max={maxNoteFontSize}
+              onValue={(customSize?: Dynamic): Dynamic => {
+                customSize !== undefined &&
                   onRestyle({
-                    size: input,
+                    size: customSize,
                   });
               }}
             />
@@ -183,14 +183,14 @@ function NoteTypographyQuickActions({
         testid={"mega-note-color"}
         title={uiMessage("inspector.annotationQuickActions.ink")}
         paint={NotesLinkEditingHandler_2(
-          value.kind,
-          value.color,
+          textStyle.kind,
+          textStyle.color,
         )}
-        swatches={value2}
-        value={value.color}
-        onSwatch={(input?: Dynamic): Dynamic =>
+        swatches={inkSwatches}
+        value={textStyle.color}
+        onSwatch={(inkName?: Dynamic): Dynamic =>
           onRestyle({
-            color: input,
+            color: inkName,
           })
         }
         editsAreUndoSteps={!typing}
@@ -204,16 +204,16 @@ function NoteFillQuickActions({
   typing = false,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic = annotationTextStyle(spec);
-  if (value.kind !== "note") return null;
-  let value2: Dynamic = [
+  let textStyle: Dynamic = annotationTextStyle(spec);
+  if (textStyle.kind !== "note") return null;
+  let fillSwatches: Dynamic = [
     "default",
     ...PlatformFileContentGrayRedOrangeValuesAlias,
   ].map(
-    (input?: Dynamic): Dynamic => ({
-      name: input,
-      color: NotesLinkEditingHandler(input),
-      get label() { return input === "default" ? (uiMessage("inspector.annotationQuickActions.defaultYellow")) : (input[0].toUpperCase() + input.slice(1)); },
+    (fillName?: Dynamic): Dynamic => ({
+      name: fillName,
+      color: NotesLinkEditingHandler(fillName),
+      get label() { return fillName === "default" ? (uiMessage("inspector.annotationQuickActions.defaultYellow")) : (fillName[0].toUpperCase() + fillName.slice(1)); },
     }),
   );
   return (
@@ -223,12 +223,12 @@ function NoteFillQuickActions({
         <SessionActionsPopover
           testid={"mega-note-fill"}
           title={uiMessage("inspector.annotationQuickActions.fill")}
-          paint={NotesLinkEditingHandler(value.fill)}
-          swatches={value2}
-          value={value.fill}
-          onSwatch={(input?: Dynamic): Dynamic =>
+          paint={NotesLinkEditingHandler(textStyle.fill)}
+          swatches={fillSwatches}
+          value={textStyle.fill}
+          onSwatch={(fillName?: Dynamic): Dynamic =>
             onRestyle({
-              fill: input,
+              fill: fillName,
             })
           }
           editsAreUndoSteps={!typing}
@@ -244,8 +244,8 @@ function NoteQuickActions({
   onComment: onComment,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic = annotationTextStyle(spec),
-    value2: Dynamic =
+  let textStyle: Dynamic = annotationTextStyle(spec),
+    isCoarsePointer: Dynamic =
       typeof window !== "undefined" &&
       (window as Dynamic).matchMedia("(pointer: coarse)").matches;
   return (
@@ -256,11 +256,11 @@ function NoteQuickActions({
           data-testid={"mega-note-bold"}
           title={uiMessage("inspector.annotationQuickActions.bold")}
           aria-label={uiMessage("inspector.annotationQuickActions.bold")}
-          aria-pressed={value.bold}
+          aria-pressed={textStyle.bold}
           icon={"TextBold"}
           onClick={(): Dynamic =>
             onRestyle({
-              bold: !value.bold,
+              bold: !textStyle.bold,
             })
           }
         />
@@ -268,11 +268,11 @@ function NoteQuickActions({
           data-testid={"mega-note-italic"}
           title={uiMessage("inspector.annotationQuickActions.italic")}
           aria-label={uiMessage("inspector.annotationQuickActions.italic")}
-          aria-pressed={value.italic}
+          aria-pressed={textStyle.italic}
           icon={"TextItalics"}
           onClick={(): Dynamic =>
             onRestyle({
-              italic: !value.italic,
+              italic: !textStyle.italic,
             })
           }
         />
@@ -286,13 +286,13 @@ function NoteQuickActions({
               icon={"ChatAdd"}
               title={uiMessage("inspector.annotationQuickActions.commentOnThisNote")}
               aria-label={uiMessage("inspector.annotationQuickActions.comment")}
-              onClick={(input?: Dynamic): Dynamic =>
-                onComment(input.currentTarget)
+              onClick={(event?: Dynamic): Dynamic =>
+                onComment(event.currentTarget)
               }
             />
           </SessionStripGroup>
         </jsx_Eo.Fragment>)}
-      {value2 && (<jsx_Eo.Fragment>
+      {isCoarsePointer && (<jsx_Eo.Fragment>
           <SessionStripDivider />
           <SessionStripGroup>
             <SessionStripButton
@@ -313,26 +313,26 @@ function EditingNoteQuickActions({
   onComment: onComment,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic = annotationTextStyle(spec),
-    [, value2]: Dynamic = (0, react_RB.useState)(0);
+  let textStyle: Dynamic = annotationTextStyle(spec),
+    [, setSelectionTick]: Dynamic = (0, react_RB.useState)(0);
   (0, react_RB.useEffect)((): Dynamic => {
-    let callback2: Dynamic = (): Dynamic =>
-      value2((input?: Dynamic): Dynamic => input + 1);
-    (document as Dynamic).addEventListener("selectionchange", callback2);
-    (document as Dynamic).addEventListener("keyup", callback2);
+    let refreshSelection: Dynamic = (): Dynamic =>
+      setSelectionTick((tick?: Dynamic): Dynamic => tick + 1);
+    (document as Dynamic).addEventListener("selectionchange", refreshSelection);
+    (document as Dynamic).addEventListener("keyup", refreshSelection);
     return (): Dynamic => {
-      (document as Dynamic).removeEventListener("selectionchange", callback2);
-      (document as Dynamic).removeEventListener("keyup", callback2);
+      (document as Dynamic).removeEventListener("selectionchange", refreshSelection);
+      (document as Dynamic).removeEventListener("keyup", refreshSelection);
     };
   }, []);
-  let value3: Dynamic = getNoteFormattingState(document, value),
-    callback: Dynamic =
-      (input?: Dynamic): Dynamic =>
+  let formattingState: Dynamic = getNoteFormattingState(document, textStyle),
+    withRefresh: Dynamic =
+      (action?: Dynamic): Dynamic =>
       (): Dynamic => {
-        input();
-        value2((input2?: Dynamic): Dynamic => input2 + 1);
+        action();
+        setSelectionTick((tick?: Dynamic): Dynamic => tick + 1);
       },
-    value4: Dynamic = value3.ol ? "number" : value3.ul ? "bullet" : "none";
+    listKind: Dynamic = formattingState.ol ? "number" : formattingState.ul ? "bullet" : "none";
   return (
     <span
       data-note-typing-strip={""}
@@ -350,16 +350,16 @@ function EditingNoteQuickActions({
         onRestyle={onRestyle}
         typing={true}
       />
-      <TextSelectionCount base={value} testid={"mega-note-sel"} />
+      <TextSelectionCount base={textStyle} testid={"mega-note-sel"} />
       <SessionStripDivider />
       <SessionStripGroup>
         <SessionChoicePopup
           testid={"mega-note-list"}
           title={
-            uiMessage("inspector.annotationQuickActions.list", { value1: String(value4 === "none" ? (uiMessage("inspector.annotationQuickActions.none")) : (value4 === "bullet" ? (uiMessage("inspector.annotationQuickActions.bulletedList")) : (uiMessage("inspector.annotationQuickActions.numberedList")))) })
+            uiMessage("inspector.annotationQuickActions.list", { value1: String(listKind === "none" ? (uiMessage("inspector.annotationQuickActions.none")) : (listKind === "bullet" ? (uiMessage("inspector.annotationQuickActions.bulletedList")) : (uiMessage("inspector.annotationQuickActions.numberedList")))) })
           }
-          face={value4 === "number" ? "ListNumbered" : "ListBullet"}
-          value={value4}
+          face={listKind === "number" ? "ListNumbered" : "ListBullet"}
+          value={listKind}
           options={[
             {
               value: "none",
@@ -377,14 +377,14 @@ function EditingNoteQuickActions({
               icon: "ListNumbered",
             },
           ]}
-          onChange={(input?: Dynamic): Dynamic =>
-            callback((): Dynamic => {
-              input === "none"
-                ? value3.ul
+          onChange={(listChoice?: Dynamic): Dynamic =>
+            withRefresh((): Dynamic => {
+              listChoice === "none"
+                ? formattingState.ul
                   ? toggleNoteList("ul")
-                  : value3.ol && toggleNoteList("ol")
+                  : formattingState.ol && toggleNoteList("ol")
                 : toggleNoteList(
-                    input === "bullet" ? "ul" : "ol",
+                    listChoice === "bullet" ? "ul" : "ol",
                   );
             })()
           }
@@ -402,8 +402,8 @@ function EditingNoteQuickActions({
               onPointerDown={(event?: Dynamic): Dynamic =>
                 event.preventDefault()
               }
-              onClick={(input?: Dynamic): Dynamic =>
-                onComment(input.currentTarget)
+              onClick={(event?: Dynamic): Dynamic =>
+                onComment(event.currentTarget)
               }
             />
           </SessionStripGroup>
@@ -422,39 +422,39 @@ function CanvasObjectQuickActions({
   clip: clip,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic = (0, react_RB.useRef)([]);
+  let clipCssRef: Dynamic = (0, react_RB.useRef)([]);
   if (
     spec.kind === "image" &&
     spec.video !== undefined &&
     clip !== undefined
   ) {
-    let state: Dynamic = {
-        get: (input?: Dynamic): Dynamic => spec.css?.[input],
-        set: (input?: Dynamic, options?: Dynamic): Dynamic => {
-          value.current = input.map(
-            ([input2, input3]: Dynamic): Dynamic => ({
-              prop: input2,
-              value: input3 ?? null,
+    let clipCssIo: Dynamic = {
+        get: (prop?: Dynamic): Dynamic => spec.css?.[prop],
+        set: (cssEntries?: Dynamic, isLive?: Dynamic): Dynamic => {
+          clipCssRef.current = cssEntries.map(
+            ([propName, cssValue]: Dynamic): Dynamic => ({
+              prop: propName,
+              value: cssValue ?? null,
             }),
           );
-          clip.onCss(value.current, options);
+          clip.onCss(clipCssRef.current, isLive);
         },
-        settle: (): Dynamic => clip.onCss(value.current, false),
+        settle: (): Dynamic => clip.onCss(clipCssRef.current, false),
       },
-      callback: Dynamic = (): Dynamic => {
-        let value8: Dynamic = (document as Dynamic).createElement("input");
-        value8.type = "file";
-        value8.accept =
+      pickReplacementFile: Dynamic = (): Dynamic => {
+        let fileInput: Dynamic = (document as Dynamic).createElement("input");
+        fileInput.type = "file";
+        fileInput.accept =
           VideoMp4VideoWebmVideoQuicktimeMovValue + ",image/*";
-        value8.hidden = true;
-        (document as Dynamic).body.appendChild(value8);
-        value8.addEventListener("cancel", (): Dynamic => value8.remove());
-        value8.onchange = (): Dynamic => {
-          let value9: Dynamic = value8.files?.[0];
-          value8.remove();
-          value9 && clip.onReplace(value9);
+        fileInput.hidden = true;
+        (document as Dynamic).body.appendChild(fileInput);
+        fileInput.addEventListener("cancel", (): Dynamic => fileInput.remove());
+        fileInput.onchange = (): Dynamic => {
+          let pickedFile: Dynamic = fileInput.files?.[0];
+          fileInput.remove();
+          pickedFile && clip.onReplace(pickedFile);
         };
-        value8.click();
+        fileInput.click();
       };
     return (
       <jsx_Eo.Fragment>
@@ -471,10 +471,10 @@ function CanvasObjectQuickActions({
           />
         </SessionStripGroup>
         <ImageQuickPanel
-          io={state}
+          io={clipCssIo}
           src={clip.src}
           ownAsset={true}
-          onReplace={callback}
+          onReplace={pickReplacementFile}
           replaceTitle={"Replace video"}
           onCrop={onCrop}
           cropping={cropping}
@@ -488,8 +488,8 @@ function CanvasObjectQuickActions({
               icon={"ChatAdd"}
               title={uiMessage("inspector.annotationQuickActions.commentOnThisVideo")}
               aria-label={uiMessage("inspector.annotationQuickActions.comment")}
-              onClick={(input?: Dynamic): Dynamic =>
-                onComment(input.currentTarget)
+              onClick={(event?: Dynamic): Dynamic =>
+                onComment(event.currentTarget)
               }
             />)}
           {clip.onOpenProps && (<SessionStripButton
@@ -516,41 +516,41 @@ function CanvasObjectQuickActions({
       </jsx_Eo.Fragment>
     );
   }
-  let value2: Dynamic = spec.kind !== "rect" && spec.kind !== "oval",
-    value3: Dynamic = spec.kind === "image",
-    value4: Dynamic = spec.color ?? "default",
-    value5: Dynamic = value2
+  let usesStroke: Dynamic = spec.kind !== "rect" && spec.kind !== "oval",
+    isImage: Dynamic = spec.kind === "image",
+    colorName: Dynamic = spec.color ?? "default",
+    customPaint: Dynamic = usesStroke
       ? spec.css?.stroke
       : (spec.css?.background ?? spec.css?.["background-color"]),
-    value6: Dynamic = [
+    colorSwatches: Dynamic = [
       "default",
       ...PlatformFileContentGrayRedOrangeValues,
     ].map(
-      (input?: Dynamic): Dynamic => ({
-        name: input,
-        color: annotationColor(spec.kind, input),
-        get label() { return input === "default" ? (uiMessage("inspector.annotationQuickActions.defaultGray")) : (input[0].toUpperCase() + input.slice(1)); },
+      (swatchName?: Dynamic): Dynamic => ({
+        name: swatchName,
+        color: annotationColor(spec.kind, swatchName),
+        get label() { return swatchName === "default" ? (uiMessage("inspector.annotationQuickActions.defaultGray")) : (swatchName[0].toUpperCase() + swatchName.slice(1)); },
       }),
     ),
-    value7: Dynamic =
+    isCoarsePointer: Dynamic =
       typeof window !== "undefined" &&
       (window as Dynamic).matchMedia("(pointer: coarse)").matches;
   return (
     <jsx_Eo.Fragment>
-      {!value3 && (<SessionStripGroup>
+      {!isImage && (<SessionStripGroup>
           <SessionActionsPopover
             testid={"mega-shape-color"}
-            title={value2 ? (uiMessage("inspector.annotationQuickActions.stroke")) : (uiMessage("inspector.annotationQuickActions.fill"))}
-            paint={value5 ?? annotationColor(spec.kind, value4)}
-            swatches={value6}
-            value={value5 !== undefined ? null : value4}
-            onSwatch={(input?: Dynamic): Dynamic =>
-              onRecolor(input === "default" ? "default" : input)
+            title={usesStroke ? (uiMessage("inspector.annotationQuickActions.stroke")) : (uiMessage("inspector.annotationQuickActions.fill"))}
+            paint={customPaint ?? annotationColor(spec.kind, colorName)}
+            swatches={colorSwatches}
+            value={customPaint !== undefined ? null : colorName}
+            onSwatch={(swatchName?: Dynamic): Dynamic =>
+              onRecolor(swatchName === "default" ? "default" : swatchName)
             }
             editsAreUndoSteps={true}
           />
         </SessionStripGroup>)}
-      {value3 && onCrop && (<SessionStripGroup>
+      {isImage && onCrop && (<SessionStripGroup>
           <SessionStripButton
             data-testid={"mega-picture-crop"}
             data-media-crop-keep={""}
@@ -565,28 +565,28 @@ function CanvasObjectQuickActions({
           />
         </SessionStripGroup>)}
       {onComment != null && (<jsx_Eo.Fragment>
-          {!value3 || onCrop && (<SessionStripDivider />)}
+          {!isImage || onCrop && (<SessionStripDivider />)}
           <SessionStripGroup>
             <SessionStripButton
               data-testid={"mega-note-comment"}
               icon={"ChatAdd"}
               title={
-                value3 ? (uiMessage("inspector.annotationQuickActions.commentOnThis", { value1: String(spec.kind === "image" && spec.video !== undefined ? (uiMessage("inspector.annotationQuickActions.video")) : (uiMessage("inspector.annotationQuickActions.picture"))) })) : (uiMessage("inspector.annotationQuickActions.commentOnThisShape"))
+                isImage ? (uiMessage("inspector.annotationQuickActions.commentOnThis", { value1: String(spec.kind === "image" && spec.video !== undefined ? (uiMessage("inspector.annotationQuickActions.video")) : (uiMessage("inspector.annotationQuickActions.picture"))) })) : (uiMessage("inspector.annotationQuickActions.commentOnThisShape"))
               }
               aria-label={uiMessage("inspector.annotationQuickActions.comment")}
-              onClick={(input?: Dynamic): Dynamic =>
-                onComment(input.currentTarget)
+              onClick={(event?: Dynamic): Dynamic =>
+                onComment(event.currentTarget)
               }
             />
           </SessionStripGroup>
         </jsx_Eo.Fragment>)}
-      {value7 && (<jsx_Eo.Fragment>
-          {!value3 || onComment != null || onCrop && (<SessionStripDivider />)}
+      {isCoarsePointer && (<jsx_Eo.Fragment>
+          {!isImage || onComment != null || onCrop && (<SessionStripDivider />)}
           <SessionStripGroup>
             <SessionStripButton
               data-testid={"mega-note-delete"}
               title={
-                uiMessage("inspector.annotationQuickActions.undoRestoresIt", { value1: String(value3 ? (spec.kind === "image" && spec.video !== undefined ? (uiMessage("inspector.annotationQuickActions.deleteVideo")) : (uiMessage("inspector.annotationQuickActions.deletePicture"))) : (uiMessage("inspector.annotationQuickActions.deleteShape"))) })
+                uiMessage("inspector.annotationQuickActions.undoRestoresIt", { value1: String(isImage ? (spec.kind === "image" && spec.video !== undefined ? (uiMessage("inspector.annotationQuickActions.deleteVideo")) : (uiMessage("inspector.annotationQuickActions.deletePicture"))) : (uiMessage("inspector.annotationQuickActions.deleteShape"))) })
               }
               aria-label={uiMessage("inspector.annotationQuickActions.delete")}
               icon={"Trash"}

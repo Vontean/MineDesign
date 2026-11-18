@@ -14,168 +14,168 @@ function installPreviewMessageListener(): Dynamic {
     ((previewMessageListenerInstalled = true),
     (window as Dynamic).addEventListener(
       "message",
-      (input?: Dynamic): Dynamic => {
-        if (input.origin !== currentHttpOrigin()) return;
-        let data: Dynamic = input.data;
-        data == null ||
-          typeof data != "object" ||
-          !data.__om_eval_r ||
-          typeof data.id != "string" ||
-          previewEvaluationRequests.get(data.id)?.(input);
+      (event?: Dynamic): Dynamic => {
+        if (event.origin !== currentHttpOrigin()) return;
+        let message: Dynamic = event.data;
+        message == null ||
+          typeof message != "object" ||
+          !message.__om_eval_r ||
+          typeof message.id != "string" ||
+          previewEvaluationRequests.get(message.id)?.(event);
       },
     ));
 }
-function createPreviewHandle(input?: Dynamic): Dynamic {
-  if (!input) return null;
-  let value: Dynamic = input;
-  function value2(input2?: Dynamic, options: Dynamic = 1e4): Dynamic {
-    let value4: Dynamic = getPreviewGenerationGate(value);
-    return value4.blocked != null
-      ? Promise.reject(new Error("preview is blocked: " + value4.blocked))
-      : new Promise((input3?: Dynamic, options2?: Dynamic): Dynamic => {
-          let value5: Dynamic =
+function createPreviewHandle(iframe?: Dynamic): Dynamic {
+  if (!iframe) return null;
+  let frame: Dynamic = iframe;
+  function requestEvaluation(script?: Dynamic, timeoutMs: Dynamic = 1e4): Dynamic {
+    let generationGate: Dynamic = getPreviewGenerationGate(frame);
+    return generationGate.blocked != null
+      ? Promise.reject(new Error("preview is blocked: " + generationGate.blocked))
+      : new Promise((resolve?: Dynamic, reject?: Dynamic): Dynamic => {
+          let requestId: Dynamic =
               (++previewEvaluationSequence).toString(36) +
               "." +
               Math.random().toString(36).slice(2),
-            value6: Dynamic = setTimeout((): Dynamic => {
-              callback2();
-              options2(
-                new Error(`executeJavaScript timed out (${options / 1e3}s)`),
+            timeoutId: Dynamic = setTimeout((): Dynamic => {
+              cleanup();
+              reject(
+                new Error(`executeJavaScript timed out (${timeoutMs / 1e3}s)`),
               );
-            }, options),
-            callback: Dynamic = (input4?: Dynamic): Dynamic => {
-              if (!isPreviewMessage(input4, value)) return;
-              let data: Dynamic = input4.data;
-              callback2();
-              if (data.ok) {
-                if (data.v === undefined) input3(undefined);
+            }, timeoutMs),
+            handleReply: Dynamic = (event?: Dynamic): Dynamic => {
+              if (!isPreviewMessage(event, frame)) return;
+              let reply: Dynamic = event.data;
+              cleanup();
+              if (reply.ok) {
+                if (reply.v === undefined) resolve(undefined);
                 else
                   try {
-                    input3(JSON.parse(data.v));
-                  } catch (value7: Dynamic) {
-                    options2(
+                    resolve(JSON.parse(reply.v));
+                  } catch (parseError: Dynamic) {
+                    reject(
                       new Error(
-                        `eval returned unparseable JSON: ${errorMessage(value7)}`,
+                        `eval returned unparseable JSON: ${errorMessage(parseError)}`,
                       ),
                     );
                   }
-              } else options2(new Error(data.e || "eval failed"));
+              } else reject(new Error(reply.e || "eval failed"));
             },
-            callback2: Dynamic = (): Dynamic => {
-              clearTimeout(value6);
-              previewEvaluationRequests.delete(value5);
+            cleanup: Dynamic = (): Dynamic => {
+              clearTimeout(timeoutId);
+              previewEvaluationRequests.delete(requestId);
             };
           installPreviewMessageListener();
-          previewEvaluationRequests.set(value5, callback);
-          value.contentWindow?.postMessage(
+          previewEvaluationRequests.set(requestId, handleReply);
+          frame.contentWindow?.postMessage(
             {
               __om_eval: 1,
-              id: value5,
-              code: input2,
+              id: requestId,
+              code: script,
             },
             "*",
           );
         });
   }
-  function value3(input2?: Dynamic, options?: Dynamic): Dynamic {
-    return value2(input2, options);
+  function evaluate(code?: Dynamic, timeoutMs?: Dynamic): Dynamic {
+    return requestEvaluation(code, timeoutMs);
   }
-  let entries: Dynamic = new Map();
+  let consoleListeners: Dynamic = new Map();
   return {
     reload(): Dynamic {
-      value3("location.reload()").catch((): Dynamic => {
-        let value4: Dynamic = new URL(
-          value.src,
+      evaluate("location.reload()").catch((): Dynamic => {
+        let reloadUrl: Dynamic = new URL(
+          frame.src,
           (window as Dynamic).location.href,
         );
-        value4.searchParams.set("_r", String(Date.now()));
-        value.src = value4.toString();
+        reloadUrl.searchParams.set("_r", String(Date.now()));
+        frame.src = reloadUrl.toString();
       });
     },
-    setZoomFactor(input2: Dynamic): Dynamic {
-      value.style.transform = `scale(${input2})`;
-      value.style.transformOrigin = "top left";
-      value.style.width = `${100 / input2}%`;
-      value.style.height = `${100 / input2}%`;
+    setZoomFactor(zoomFactor: Dynamic): Dynamic {
+      frame.style.transform = `scale(${zoomFactor})`;
+      frame.style.transformOrigin = "top left";
+      frame.style.width = `${100 / zoomFactor}%`;
+      frame.style.height = `${100 / zoomFactor}%`;
     },
-    lockViewportSize(input2: Dynamic, options: Dynamic): Dynamic {
-      let text: Dynamic = "data-genpptx-vplock",
-        value4: Dynamic =
-          Math.abs(value.offsetWidth - input2) >= 1 ||
-          Math.abs(value.offsetHeight - options) >= 1;
-      value.setAttribute(text, "");
-      let value5: Dynamic = (document as Dynamic).createElement("style");
-      value5.setAttribute(text, "");
-      value5.textContent = `iframe[${text}]{width:${input2}px!important;height:${options}px!important;flex:none!important;max-width:none!important;max-height:none!important;transform:none!important}`;
-      (document as Dynamic).head.appendChild(value5);
-      value.getBoundingClientRect();
+    lockViewportSize(width: Dynamic, height: Dynamic): Dynamic {
+      let lockAttribute: Dynamic = "data-genpptx-vplock",
+        isResized: Dynamic =
+          Math.abs(frame.offsetWidth - width) >= 1 ||
+          Math.abs(frame.offsetHeight - height) >= 1;
+      frame.setAttribute(lockAttribute, "");
+      let lockStyle: Dynamic = (document as Dynamic).createElement("style");
+      lockStyle.setAttribute(lockAttribute, "");
+      lockStyle.textContent = `iframe[${lockAttribute}]{width:${width}px!important;height:${height}px!important;flex:none!important;max-width:none!important;max-height:none!important;transform:none!important}`;
+      (document as Dynamic).head.appendChild(lockStyle);
+      frame.getBoundingClientRect();
       return {
         unlock: (): Dynamic => {
-          value.removeAttribute(text);
-          value5.remove();
+          frame.removeAttribute(lockAttribute);
+          lockStyle.remove();
         },
-        resized: value4,
+        resized: isResized,
       };
     },
     async executeJavaScript(
-      input2: Dynamic,
-      options: Dynamic,
+      code: Dynamic,
+      timeoutMs: Dynamic,
     ): Promise<Dynamic> {
-      return value3(input2, options);
+      return evaluate(code, timeoutMs);
     },
-    executeJavaScriptUnchecked(input2: Dynamic): Dynamic {
-      value3(input2).catch((): Dynamic => {});
+    executeJavaScriptUnchecked(code: Dynamic): Dynamic {
+      evaluate(code).catch((): Dynamic => {});
     },
-    async awaitSettled(input2: Dynamic = 500): Promise<Dynamic> {
-      let value4: Dynamic =
-          typeof input2 == "number"
+    async awaitSettled(settleOptions: Dynamic = 500): Promise<Dynamic> {
+      let settlement: Dynamic =
+          typeof settleOptions == "number"
             ? {
-                capMs: input2,
+                capMs: settleOptions,
               }
-            : input2,
-        value5: Dynamic,
-        promise: Dynamic = new Promise((input3?: Dynamic): Dynamic => {
-          value5 = setTimeout(input3, value4.capMs);
+            : settleOptions,
+        capTimeoutId: Dynamic,
+        capReached: Dynamic = new Promise((resolve?: Dynamic): Dynamic => {
+          capTimeoutId = setTimeout(resolve, settlement.capMs);
         });
       try {
         await Promise.race([
-          value3(
-            buildSettlementScript(value4),
-            value4.capMs + 1e3,
+          evaluate(
+            buildSettlementScript(settlement),
+            settlement.capMs + 1e3,
           ).then(
             (): Dynamic => {},
-            (): Dynamic => promise,
+            (): Dynamic => capReached,
           ),
-          promise,
+          capReached,
         ]);
       } finally {
-        clearTimeout(value5);
+        clearTimeout(capTimeoutId);
       }
     },
-    addEventListener(input2: Dynamic, options: Dynamic): Dynamic {
-      if (input2 === "dom-ready") value.addEventListener("load", options);
-      else if (input2 === "console-message") {
-        let callback: Dynamic = (input3?: Dynamic): Dynamic => {
-          if (!isPreviewMessage(input3, value)) return;
-          let data: Dynamic = input3.data;
-          data?.__omelette_log &&
-            data.type === "log" &&
-            options({
-              message: data.data,
+    addEventListener(eventName: Dynamic, listener: Dynamic): Dynamic {
+      if (eventName === "dom-ready") frame.addEventListener("load", listener);
+      else if (eventName === "console-message") {
+        let handleConsoleMessage: Dynamic = (event?: Dynamic): Dynamic => {
+          if (!isPreviewMessage(event, frame)) return;
+          let logMessage: Dynamic = event.data;
+          logMessage?.__omelette_log &&
+            logMessage.type === "log" &&
+            listener({
+              message: logMessage.data,
             });
         };
-        entries.set(options, callback);
-        (window as Dynamic).addEventListener("message", callback);
-      } else value.addEventListener(input2, options);
+        consoleListeners.set(listener, handleConsoleMessage);
+        (window as Dynamic).addEventListener("message", handleConsoleMessage);
+      } else frame.addEventListener(eventName, listener);
     },
-    removeEventListener(input2: Dynamic, options: Dynamic): Dynamic {
-      if (input2 === "dom-ready") value.removeEventListener("load", options);
-      else if (input2 === "console-message") {
-        let entry: Dynamic = entries.get(options);
-        entry &&
-          ((window as Dynamic).removeEventListener("message", entry),
-          entries.delete(options));
-      } else value.removeEventListener(input2, options);
+    removeEventListener(eventName: Dynamic, listener: Dynamic): Dynamic {
+      if (eventName === "dom-ready") frame.removeEventListener("load", listener);
+      else if (eventName === "console-message") {
+        let consoleListener: Dynamic = consoleListeners.get(listener);
+        consoleListener &&
+          ((window as Dynamic).removeEventListener("message", consoleListener),
+          consoleListeners.delete(listener));
+      } else frame.removeEventListener(eventName, listener);
     },
   };
 }

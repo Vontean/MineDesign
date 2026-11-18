@@ -7,230 +7,230 @@ import { exportBabelStandaloneUrl } from "../export/standalone-html";
 import { scriptPathPattern, imagePathPattern } from "./asset-rewriting";
 import { getProjectFileDependencies } from "./component-imports";
 import { collectProjectDependencyFiles, resolveComponentFile } from "./dependency-graph";
-import { PreviewDependencyInjectionResolvedValue_2, rewritePreviewAssets } from "./dependency-injection";
+import { PreviewDependencyInjectionResolvedValue_2 as addressRefusedListenerScript, rewritePreviewAssets } from "./dependency-injection";
 import { findHtmlTags, getHtmlAttribute, maskHtmlRawContent } from "./html-scanner";
-import { getBabelFileUrl, inlineScriptHtml, previewAssetLoaderRuntimeScript, previewBlobBridgeRuntimeScript, previewDocumentRuntimeScript, previewEvaluationRuntimeScript, previewGuardRuntimeScript, previewResizeRuntimeScript, PreviewRuntimeLoadingResolvedValue, previewViewportRuntimeScript, selectRuntimeUrl, supportsBlobScripts } from "./runtime-loading";
+import { getBabelFileUrl, inlineScriptHtml, previewAssetLoaderRuntimeScript, previewBlobBridgeRuntimeScript, previewDocumentRuntimeScript, previewEvaluationRuntimeScript, previewGuardRuntimeScript, previewResizeRuntimeScript, PreviewRuntimeLoadingResolvedValue as fontVariantLoaderScript, previewViewportRuntimeScript, selectRuntimeUrl, supportsBlobScripts } from "./runtime-loading";
 
-var PreviewBuildDocumentTest: Dynamic;
-var PreviewBuildDocumentResolvedValue: Dynamic;
+var isSupportScriptSrc: Dynamic;
+var defaultPartMinLength: Dynamic;
 var framelessPreviewChromeHtml: Dynamic;
-var PreviewBuildDocumentStringify: Dynamic;
+var previewDocumentCacheKey: Dynamic;
 var TheArtboardRuntimeDidNotLoadMessage: Dynamic;
-var PreviewBuildDocumentResolvedValue_2: Dynamic;
-var PreviewBuildDocumentStringify_2: Dynamic;
+var runtimeBootCheckScript: Dynamic;
+var linkedFilesBootCheckScript: Dynamic;
 var previewCaptureScript: Dynamic;
 var previewEvaluationScript: Dynamic;
-var PreviewBuildDocumentResolvedValue_3: Dynamic;
+var evaluationOnlyDocumentHtml: Dynamic;
 function componentRuntimeDependencies(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
-  extra?: Dynamic,
+  files?: Dynamic,
+  artboardPath?: Dynamic,
+  loadedPaths?: Dynamic,
+  component?: Dynamic,
+  coveredSheets?: Dynamic,
 ): Dynamic {
-  let value2: Dynamic = Object.keys(input).filter(
-    (input2?: Dynamic): Dynamic =>
-      !context.has(input2) &&
-      !imagePathPattern.test(input2),
+  let candidatePaths: Dynamic = Object.keys(files).filter(
+    (filePath?: Dynamic): Dynamic =>
+      !loadedPaths.has(filePath) &&
+      !imagePathPattern.test(filePath),
   );
   if (
-    value2.length === 0 ||
-    getProjectFileDependencies(value.content, value2).length ===
+    candidatePaths.length === 0 ||
+    getProjectFileDependencies(component.content, candidatePaths).length ===
       0
   )
     return {};
-  let value3: Dynamic = resolveComponentFile(input, {
-      ...value,
+  let componentPath: Dynamic = resolveComponentFile(files, {
+      ...component,
       kind: "html",
     }),
-    value4: Dynamic =
-      value3 != null
+    filesWithComponent: Dynamic =
+      componentPath != null
         ? {
-            ...input,
-            [value3]: value.content,
+            ...files,
+            [componentPath]: component.content,
           }
-        : input,
-    state: Dynamic = {};
-  for (let [value5, value6] of Object.entries(
-    collectProjectDependencyFiles(value4, options),
+        : files,
+    dependencyFiles: Dynamic = {};
+  for (let [filePath, fileText] of Object.entries(
+    collectProjectDependencyFiles(filesWithComponent, artboardPath),
   ) as Dynamic)
-    context.has(value5) ||
-      imagePathPattern.test(value5) ||
-      (state[value5] = value5.endsWith(".dc.html")
+    loadedPaths.has(filePath) ||
+      imagePathPattern.test(filePath) ||
+      (dependencyFiles[filePath] = filePath.endsWith(".dc.html")
         ? rewritePreviewAssets(
-            value6,
-            input,
-            value5,
-            value5 === options
+            fileText,
+            files,
+            filePath,
+            filePath === artboardPath
               ? {}
               : {
-                  covered: extra,
+                  covered: coveredSheets,
                 },
           )
-        : value6);
-  return state;
+        : fileText);
+  return dependencyFiles;
 }
-function prepareExportDcDocument(input?: Dynamic): Dynamic {
+function prepareExportDcDocument(html?: Dynamic): Dynamic {
   return replaceRuntimeScriptTags(
-    input,
+    html,
     `<script src="./vendor/react.js"><\/script>
 <script src="./vendor/react-dom.js"><\/script>
 <script src="./support.js"><\/script>`,
   );
 }
 function replaceRuntimeScriptTags(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  html?: Dynamic,
+  replacementHtml?: Dynamic,
+  isRuntimeScriptSrc?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = maskHtmlRawContent(input),
-    callback: Dynamic = (input2?: Dynamic): Dynamic => {
-      for (let [value4, value5] of findHtmlTags(
-        value,
+  let maskedHtml: Dynamic = maskHtmlRawContent(html),
+    findScriptRange: Dynamic = (matchesScript?: Dynamic): Dynamic => {
+      for (let [tagStart, tagEnd] of findHtmlTags(
+        maskedHtml,
         "script",
       ) as Dynamic) {
-        let value6: Dynamic = /^\s*<\/script\s*>/i.exec(
-          value.slice(value5, value5 + 64),
+        let closingTag: Dynamic = /^\s*<\/script\s*>/i.exec(
+          maskedHtml.slice(tagEnd, tagEnd + 64),
         );
         if (
-          value6 !== null &&
-          input2(
-            getHtmlAttribute(input.slice(value4, value5), "src"),
-            value4,
+          closingTag !== null &&
+          matchesScript(
+            getHtmlAttribute(html.slice(tagStart, tagEnd), "src"),
+            tagStart,
           )
         )
-          return [value4, value5 + value6[0].length];
+          return [tagStart, tagEnd + closingTag[0].length];
       }
     },
-    value2: Dynamic =
-      callback(PreviewBuildDocumentTest) ??
-      (context
-        ? callback(
-            (input2?: Dynamic, options2?: Dynamic): Dynamic =>
-              input2 !== null && context(input2, options2),
+    scriptRange: Dynamic =
+      findScriptRange(isSupportScriptSrc) ??
+      (isRuntimeScriptSrc
+        ? findScriptRange(
+            (src?: Dynamic, tagStart?: Dynamic): Dynamic =>
+              src !== null && isRuntimeScriptSrc(src, tagStart),
           )
         : undefined),
-    value3: Dynamic = value2
+    headTag: Dynamic = scriptRange
       ? undefined
-      : findHtmlTags(value, "head")[0];
-  return value2
-    ? input.slice(0, value2[0]) + options + input.slice(value2[1])
-    : value3
-      ? input.slice(0, value3[1]) +
+      : findHtmlTags(maskedHtml, "head")[0];
+  return scriptRange
+    ? html.slice(0, scriptRange[0]) + replacementHtml + html.slice(scriptRange[1])
+    : headTag
+      ? html.slice(0, headTag[1]) +
         `
 ` +
-        options +
-        input.slice(value3[1])
+        replacementHtml +
+        html.slice(headTag[1])
       : "<!doctype html><html><head>" +
-        options +
+        replacementHtml +
         "</head><body>" +
-        input +
+        html +
         "</body></html>";
 }
 function buildPreviewDocument(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
-  extra: Dynamic = {},
+  files?: Dynamic,
+  rootPath?: Dynamic,
+  runtimeAssets?: Dynamic,
+  inlinedSheetsSet?: Dynamic,
+  buildOptions: Dynamic = {},
 ): Dynamic {
-  let value2: Dynamic =
-    extra.atAddress !== undefined
+  let partMinLength: Dynamic =
+    buildOptions.atAddress !== undefined
       ? 1 / 0
-      : (extra.partMin ?? PreviewBuildDocumentResolvedValue);
-  if (input[options] == null)
-    throw new Error(`no such file in the document: ${options}`);
-  let state: Dynamic = {},
-    value3: Dynamic =
-      extra.atAddress !== undefined
+      : (buildOptions.partMin ?? defaultPartMinLength);
+  if (files[rootPath] == null)
+    throw new Error(`no such file in the document: ${rootPath}`);
+  let partFiles: Dynamic = {},
+    previewFiles: Dynamic =
+      buildOptions.atAddress !== undefined
         ? {
-            ...input,
+            ...files,
           }
-        : collectProjectDependencyFiles(input, options),
-    value4: Dynamic = value ?? new Set();
-  value4.clear();
-  let state2: Dynamic = {},
-    state3: Dynamic = {};
-  value3[options] = rewritePreviewAssets(
-    value3[options],
-    value3,
-    options,
+        : collectProjectDependencyFiles(files, rootPath),
+    inlinedSheets: Dynamic = inlinedSheetsSet ?? new Set();
+  inlinedSheets.clear();
+  let sheetUrlMap: Dynamic = {},
+    installedByAddress: Dynamic = {};
+  previewFiles[rootPath] = rewritePreviewAssets(
+    previewFiles[rootPath],
+    previewFiles,
+    rootPath,
     {
-      inlined: value4,
+      inlined: inlinedSheets,
       parts: {
-        min: value2,
-        out: state,
-        urlFor: extra.sheetUrlFor,
-        urls: state2,
+        min: partMinLength,
+        out: partFiles,
+        urlFor: buildOptions.sheetUrlFor,
+        urls: sheetUrlMap,
       },
-      ...(extra.installedUrlFor
+      ...(buildOptions.installedUrlFor
         ? {
-            installedUrlFor: extra.installedUrlFor,
-            byAddress: state3,
+            installedUrlFor: buildOptions.installedUrlFor,
+            byAddress: installedByAddress,
           }
         : {}),
     },
   );
-  for (let [value13, value14] of Object.entries(value3) as Dynamic)
-    !value13.endsWith(".dc.html") ||
-      value13 === options ||
-      (value3[value13] = rewritePreviewAssets(
-        value14,
-        value3,
-        value13,
+  for (let [filePath, fileText] of Object.entries(previewFiles) as Dynamic)
+    !filePath.endsWith(".dc.html") ||
+      filePath === rootPath ||
+      (previewFiles[filePath] = rewritePreviewAssets(
+        fileText,
+        previewFiles,
+        filePath,
         {
-          covered: value4,
+          covered: inlinedSheets,
         },
       ));
-  let value5: Dynamic = value3[options];
+  let rootHtml: Dynamic = previewFiles[rootPath];
   if (
-    !Object.entries(value3).some(
-      ([input2, input3]: Dynamic): Dynamic =>
-        scriptPathPattern.test(input2) ||
-        (input2.endsWith(".dc.html") &&
-          /\bfetch\s*\(|\bXMLHttpRequest\b/.test(input3)),
+    !Object.entries(previewFiles).some(
+      ([filePath, fileText]: Dynamic): Dynamic =>
+        scriptPathPattern.test(filePath) ||
+        (filePath.endsWith(".dc.html") &&
+          /\bfetch\s*\(|\bXMLHttpRequest\b/.test(fileText)),
     )
   )
-    for (let value13 of Object.keys(value3) as Dynamic)
-      imagePathPattern.test(value13) &&
-        delete value3[value13];
-  let state4: Dynamic = {},
-    state5: Dynamic = {};
-  for (let [value13, value14] of Object.entries(value3) as Dynamic) {
-    let value15: Dynamic =
-      value14.length >= value2 ||
-      value13 === options ||
-      value13 === "__proto__"
+    for (let filePath of Object.keys(previewFiles) as Dynamic)
+      imagePathPattern.test(filePath) &&
+        delete previewFiles[filePath];
+  let inlineFiles: Dynamic = {},
+    linkedFileUrls: Dynamic = {};
+  for (let [filePath, fileText] of Object.entries(previewFiles) as Dynamic) {
+    let linkedUrl: Dynamic =
+      fileText.length >= partMinLength ||
+      filePath === rootPath ||
+      filePath === "__proto__"
         ? undefined
-        : extra.fileUrlFor?.(value13, value14);
-    value14.length >= value2
-      ? (state["file:" + value13] = value14)
-      : value15 !== undefined
-        ? (state5[value13] = value15)
-        : (state4[value13] = value14);
+        : buildOptions.fileUrlFor?.(filePath, fileText);
+    fileText.length >= partMinLength
+      ? (partFiles["file:" + filePath] = fileText)
+      : linkedUrl !== undefined
+        ? (linkedFileUrls[filePath] = linkedUrl)
+        : (inlineFiles[filePath] = fileText);
   }
   // MineDesign: the artboard runtime loads Babel from this URL instead of the CDN the CSP blocks (getBabelFileUrl).
   let babelFile: Dynamic = getBabelFileUrl(),
     babelResources: Dynamic = babelFile
       ? ` window.__resources = ${JSON.stringify({ [exportBabelStandaloneUrl]: babelFile }).replace(/</g, "\\u003c")};`
       : "";
-  let value6: Dynamic = Object.keys(state).length > 0,
-    value7: Dynamic = selectRuntimeUrl(context),
-    atAddress: Dynamic = extra.atAddress,
-    value8: Dynamic =
-      atAddress === undefined
+  let hasPartFiles: Dynamic = Object.keys(partFiles).length > 0,
+    runtimeUrl: Dynamic = selectRuntimeUrl(runtimeAssets),
+    addressedProject: Dynamic = buildOptions.atAddress,
+    projectRootScript: Dynamic =
+      addressedProject === undefined
         ? ""
         : "<script>window.__dcProjectRoot = " +
-          JSON.stringify(atAddress.projectRoot).replace(/</g, "\\u003c") +
+          JSON.stringify(addressedProject.projectRoot).replace(/</g, "\\u003c") +
           ";<\/script>" +
           inlineScriptHtml(
-            PreviewDependencyInjectionResolvedValue_2,
+            addressRefusedListenerScript,
           ),
-    value9: Dynamic =
-      (atAddress === undefined
+    headPrefixHtml: Dynamic =
+      (addressedProject === undefined
         ? ""
         : '<base href="' +
-          atAddress.base
+          addressedProject.base
             .replace(/&/g, "&amp;")
             .replace(/"/g, "&quot;")
             .replace(/</g, "&lt;") +
@@ -238,21 +238,21 @@ function buildPreviewDocument(
       inlineScriptHtml(previewGuardRuntimeScript) +
       inlineScriptHtml(previewResizeRuntimeScript) +
       inlineScriptHtml(previewEvaluationRuntimeScript) +
-      value8,
-    value10: Dynamic = [
-      ...(atAddress === undefined
+      projectRootScript,
+    runtimeHeadHtml: Dynamic = [
+      ...(addressedProject === undefined
         ? [
-            `<base href="/appifact/${options.split("/").map(encodeURIComponent).join("/")}">`,
+            `<base href="/appifact/${rootPath.split("/").map(encodeURIComponent).join("/")}">`,
           ]
         : []),
-      `<script>window.__dcFiles = ${JSON.stringify(state4).replace(/</g, "\\u003c")}; window.__dcRootPath = ${JSON.stringify(options).replace(/</g, "\\u003c")};${babelResources}${value6 ? previewCaptureScript : ""}<\/script>`,
-      ...Object.values(state5).map(
-        (input2?: Dynamic): Dynamic => `<script src="${input2}"><\/script>`,
+      `<script>window.__dcFiles = ${JSON.stringify(inlineFiles).replace(/</g, "\\u003c")}; window.__dcRootPath = ${JSON.stringify(rootPath).replace(/</g, "\\u003c")};${babelResources}${hasPartFiles ? previewCaptureScript : ""}<\/script>`,
+      ...Object.values(linkedFileUrls).map(
+        (url?: Dynamic): Dynamic => `<script src="${url}"><\/script>`,
       ),
-      ...(Object.keys(state5).length > 0
+      ...(Object.keys(linkedFileUrls).length > 0
         ? [
             inlineScriptHtml(
-              PreviewBuildDocumentStringify_2(Object.keys(state5)),
+              linkedFilesBootCheckScript(Object.keys(linkedFileUrls)),
             ),
           ]
         : []),
@@ -263,38 +263,38 @@ function buildPreviewDocument(
           previewDocumentRuntimeScript,
       ),
       inlineScriptHtml(
-        PreviewRuntimeLoadingResolvedValue,
+        fontVariantLoaderScript,
       ),
-      ...(value7 !== undefined
+      ...(runtimeUrl !== undefined
         ? [
-            `<script src="${value7}"><\/script>`,
+            `<script src="${runtimeUrl}"><\/script>`,
             inlineScriptHtml(
-              PreviewBuildDocumentResolvedValue_2,
+              runtimeBootCheckScript,
             ),
           ]
         : ["reactUmd", "reactDomUmd", "supportJs"].map(
-            (input2?: Dynamic): Dynamic =>
-              inlineScriptHtml(context[input2]),
+            (assetKey?: Dynamic): Dynamic =>
+              inlineScriptHtml(runtimeAssets[assetKey]),
           )),
-      ...(extra.frameless ? [framelessPreviewChromeHtml] : []),
+      ...(buildOptions.frameless ? [framelessPreviewChromeHtml] : []),
     ].join(`
 `),
-    value11: Dynamic = replaceRuntimeScriptTags(value5, value10),
-    value12: Dynamic = /^\s*<!doctype[^>]*>/i.exec(value11);
+    documentHtml: Dynamic = replaceRuntimeScriptTags(rootHtml, runtimeHeadHtml),
+    doctypeMatch: Dynamic = /^\s*<!doctype[^>]*>/i.exec(documentHtml);
   return {
-    doc: value12
-      ? value11.slice(0, value12[0].length) +
+    doc: doctypeMatch
+      ? documentHtml.slice(0, doctypeMatch[0].length) +
         `
 ` +
-        value9 +
-        value11.slice(value12[0].length)
-      : value9 +
+        headPrefixHtml +
+        documentHtml.slice(doctypeMatch[0].length)
+      : headPrefixHtml +
         `
 ` +
-        value11,
-    parts: state,
-    sheetUrls: state2,
-    byAddress: state3,
+        documentHtml,
+    parts: partFiles,
+    sheetUrls: sheetUrlMap,
+    byAddress: installedByAddress,
   };
 }
 export {
@@ -302,12 +302,12 @@ export {
   componentRuntimeDependencies,
   framelessPreviewChromeHtml,
   prepareExportDcDocument,
-  PreviewBuildDocumentResolvedValue,
-  PreviewBuildDocumentResolvedValue_2,
-  PreviewBuildDocumentResolvedValue_3,
-  PreviewBuildDocumentStringify,
-  PreviewBuildDocumentStringify_2,
-  PreviewBuildDocumentTest,
+  defaultPartMinLength as PreviewBuildDocumentResolvedValue,
+  runtimeBootCheckScript as PreviewBuildDocumentResolvedValue_2,
+  evaluationOnlyDocumentHtml as PreviewBuildDocumentResolvedValue_3,
+  previewDocumentCacheKey as PreviewBuildDocumentStringify,
+  linkedFilesBootCheckScript as PreviewBuildDocumentStringify_2,
+  isSupportScriptSrc as PreviewBuildDocumentTest,
   previewCaptureScript,
   previewEvaluationScript,
   replaceRuntimeScriptTags,
@@ -315,40 +315,40 @@ export {
 };
 export function installPreviewBuildDocument(): () => void {
   return () => {
-    PreviewBuildDocumentTest = (input?: Dynamic): Dynamic =>
-      input !== null &&
+    isSupportScriptSrc = (src?: Dynamic): Dynamic =>
+      src !== null &&
       /^(?:\.\/|\/)?support\.js$/.test(
-        input
+        src
           .replace(/[\t\n\r]/g, "")
           .replace(/^[\x00-\x20]+|[\x00-\x20]+$/g, ""),
       );
-    PreviewBuildDocumentResolvedValue = 64 * 1024;
+    defaultPartMinLength = 64 * 1024;
     framelessPreviewChromeHtml =
       "<style>html,body{background:transparent!important}html[data-dc-frameless] .sc-logic-error{top:2px;left:auto;right:2px;width:10px;height:10px;max-width:none;padding:0;border-radius:5px;font-size:0;overflow:hidden}</style><script>document.documentElement.setAttribute('data-dc-frameless','')<\/script>";
-    PreviewBuildDocumentStringify = (input?: Dynamic): Dynamic =>
+    previewDocumentCacheKey = (cacheOptions?: Dynamic): Dynamic =>
       JSON.stringify([
-        input.partMin,
-        input.frameless,
+        cacheOptions.partMin,
+        cacheOptions.frameless,
         supportsBlobScripts(),
-        selectRuntimeUrl(input.assets) ?? null,
-        input.installed,
-        input.address ?? "",
+        selectRuntimeUrl(cacheOptions.assets) ?? null,
+        cacheOptions.installed,
+        cacheOptions.address ?? "",
       ]);
     TheArtboardRuntimeDidNotLoadMessage = "the artboard runtime did not load";
-    PreviewBuildDocumentResolvedValue_2 =
+    runtimeBootCheckScript =
       "(function (s) { if (!window.React || !window.ReactDOM || typeof window.__dcUpdate !== 'function') { try { s = s && s.previousElementSibling; window.parent.postMessage({ __dc_boot_failed: 1, e: '" +
       TheArtboardRuntimeDidNotLoadMessage +
       "', u: s && s.getAttribute('src') }, '*'); } catch (e) {} } })(document.currentScript);";
-    PreviewBuildDocumentStringify_2 = (input?: Dynamic): Dynamic =>
+    linkedFilesBootCheckScript = (linkedPaths?: Dynamic): Dynamic =>
       "(function (k, f) { for (var i = 0; i < k.length; i += 1) { if (!Object.prototype.hasOwnProperty.call(f, k[i])) { try { window.parent.postMessage({ __dc_boot_failed: 1, e: " +
       JSON.stringify(TheArtboardRuntimeDidNotLoadMessage) +
       " }, '*'); } catch (e) {} return; } } })(" +
-      JSON.stringify(input).replace(/</g, "\\u003c") +
+      JSON.stringify(linkedPaths).replace(/</g, "\\u003c") +
       ", window.__dcFiles || {});";
     previewCaptureScript =
       " (function (p) { for (var k in p) { if (Object.prototype.hasOwnProperty.call(p, k) && k.indexOf('file:') === 0) window.__dcFiles[k.slice(5)] = p[k]; } document.addEventListener('DOMContentLoaded', function () { try { delete window.__dcParts; delete window.__dcPartBlobs; } catch (e) {} }); })(window.__dcParts || {});";
     previewEvaluationScript = injected_wZt;
-    PreviewBuildDocumentResolvedValue_3 =
+    evaluationOnlyDocumentHtml =
       '<!doctype html><meta charset="utf-8">' +
       inlineScriptHtml(previewEvaluationScript);
   };

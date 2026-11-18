@@ -9,7 +9,7 @@ import { designSystemTypographyOptions, hasDesignSystems, useDesignSystems } fro
 import { colorTokenGroupLabels } from "../design-system/type-declarations";
 import { textContrastContext } from "../editor/accessibility/announcements";
 import { initializeEditorAttributeValidation, sanitizeEditableLink } from "../editor/attribute-validation";
-import { ColorContrastCopyLabel_4, InThisArtboardMessage } from "../editor/color/contrast-copy";
+import { ColorContrastCopyLabel_4 as inTheseArtboardsLabel, InThisArtboardMessage } from "../editor/color/contrast-copy";
 import { parseHsvaColor } from "../editor/color/picker-primitives";
 import { InspectorComputedDataPattern } from "../editor/inspector/computed-data";
 import { hasTextBackgroundClip, InspectorPropertySchemaItems } from "../editor/inspector/property-schema";
@@ -43,7 +43,7 @@ var parseQuickActionNumber: Dynamic;
 function propertySidebarActionState(
   sidebarVisible?: Dynamic,
   crossFile?: Dynamic,
-): Dynamic {
+): "hidden" | "disabled-with-reason" | "enabled" {
   return sidebarVisible
     ? "hidden"
     : crossFile
@@ -72,99 +72,99 @@ function quickActionPaintAndSeed(
   inheritedColor?: Dynamic,
   seed?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = explicitColor?.trim() ?? null,
-    value2: Dynamic =
-      value != null && literalQuickActionColorPattern.test(value)
-        ? value
+  let trimmedColor: Dynamic = explicitColor?.trim() ?? null,
+    literalColor: Dynamic =
+      trimmedColor != null && literalQuickActionColorPattern.test(trimmedColor)
+        ? trimmedColor
         : null,
-    value3: Dynamic = value2 ?? inheritedColor;
-  return value3 == null
+    effectiveColor: Dynamic = literalColor ?? inheritedColor;
+  return effectiveColor == null
     ? {
         paint: undefined,
         seed: seed,
       }
-    : parseHsvaColor(value3).a === 0
+    : parseHsvaColor(effectiveColor).a === 0
       ? {
           paint: undefined,
-          seed: value2 ?? seed,
+          seed: literalColor ?? seed,
         }
       : {
-          paint: value3,
-          seed: value3,
+          paint: effectiveColor,
+          seed: effectiveColor,
         };
 }
 function buildQuickActionSwatches(
   colors?: Dynamic,
-  swatches?: Dynamic,
-  tokens2?: Dynamic,
+  artboardColors?: Dynamic,
+  isCrossFile?: Dynamic,
   themes?: Dynamic,
 ): Dynamic {
   if (!hasDesignSystems(themes))
     return (colors ?? []).map(
-      (input?: Dynamic): Dynamic => ({
-        name: input,
-        color: input,
-        label: input.startsWith("#") ? input.toUpperCase() : input,
+      (colorValue?: Dynamic): Dynamic => ({
+        name: colorValue,
+        color: colorValue,
+        label: colorValue.startsWith("#") ? colorValue.toUpperCase() : colorValue,
       }),
     );
-  let value: Dynamic = themes.flatMap(
-      (input?: Dynamic, options?: Dynamic): Dynamic =>
-        input.colors.map(
-          (input2?: Dynamic): Dynamic => ({
-            name: "ds:" + String(options) + ":" + input2.name,
-            color: input2.value,
-            label: input2.name,
-            ...colorTokenGroupLabels(input, input2),
+  let designSystemSwatches: Dynamic = themes.flatMap(
+      (designSystem?: Dynamic, systemIndex?: Dynamic): Dynamic =>
+        designSystem.colors.map(
+          (colorToken?: Dynamic): Dynamic => ({
+            name: "ds:" + String(systemIndex) + ":" + colorToken.name,
+            color: colorToken.value,
+            label: colorToken.name,
+            ...colorTokenGroupLabels(designSystem, colorToken),
           }),
         ),
     ),
-    value2: Dynamic = swatches ?? [];
+    artboardSwatches: Dynamic = artboardColors ?? [];
   return mergeDesignSystemSwatches(
-    value2.length > 0
+    artboardSwatches.length > 0
       ? {
-          label: tokens2
-            ? ColorContrastCopyLabel_4
+          label: isCrossFile
+            ? inTheseArtboardsLabel
             : InThisArtboardMessage,
-          colors: value2,
+          colors: artboardSwatches,
         }
       : undefined,
-    value,
+    designSystemSwatches,
   );
 }
 function selectionHasVisiblePaint(style?: Dynamic): Dynamic {
-  let value: Dynamic =
+  let hasBackground: Dynamic =
       style.textClip !== true &&
       style.bg !== undefined &&
       normalizeHexColor(style.bg) !== null,
-    value2: Dynamic =
+    isBorderWidthZero: Dynamic =
       style.borderWidth !== undefined &&
       style.borderWidth
         .trim()
         .split(/\s+/)
         .every(
-          (input?: Dynamic): Dynamic => /^0+(?:\.0+)?[a-z%]*$/i.test(input),
+          (widthPart?: Dynamic): Dynamic => /^0+(?:\.0+)?[a-z%]*$/i.test(widthPart),
         ),
-    value3: Dynamic =
+    hasBorder: Dynamic =
       style.borderStyle !== undefined &&
       style.borderStyle !== "none" &&
-      !value2,
-    value4: Dynamic =
+      !isBorderWidthZero,
+    hasRenderedBackground: Dynamic =
       style.textClip !== true &&
       style.renderedBg != null &&
       normalizeHexColor(style.renderedBg) !== null;
-  return value || value3 || value4;
+  return hasBackground || hasBorder || hasRenderedBackground;
 }
-function toggleUnderlineDecoration(decoration?: Dynamic): Dynamic {
-  let value: Dynamic = decoration
+function toggleUnderlineDecoration(decoration: string): string {
+  let otherLines: Dynamic = decoration
       .split(/\s+/)
       .filter(
-        (input?: Dynamic): Dynamic =>
-          input === "line-through" || input === "overline",
+        (decorationLine?: Dynamic): Dynamic =>
+          decorationLine === "line-through" || decorationLine === "overline",
       ),
-    value2: Dynamic = decoration.includes("underline")
-      ? value
-      : ["underline", ...value];
-  return value2.length > 0 ? value2.join(" ") : "none";
+    nextLines: Dynamic = decoration.includes("underline")
+      ? otherLines
+      : ["underline", ...otherLines];
+  return nextLines.length > 0 ? nextLines.join(" ") : "none";
 }
 function SelectionQuickActions({
   text: text,
@@ -197,194 +197,194 @@ function SelectionQuickActions({
   compact = false,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let [value, value2]: Dynamic = (0, react_Gw.useState)({}),
-    [value3, value4]: Dynamic = (0, react_Gw.useState)(seed?.epoch);
-  value3 !== seed?.epoch &&
-    (value4(seed?.epoch), Object.keys(value).length > 0 && value2({}));
-  let value5: Dynamic = (0, react_Gw.useRef)(false),
-    value6: Dynamic = (0, react_Gw.useRef)(false),
-    [value7, value8]: Dynamic = (0, react_Gw.useState)(null),
-    value9: Dynamic = textEdit?.formats != null;
+  let [pendingStyles, setPendingStyles]: Dynamic = (0, react_Gw.useState)({}),
+    [seedEpoch, setSeedEpoch]: Dynamic = (0, react_Gw.useState)(seed?.epoch);
+  seedEpoch !== seed?.epoch &&
+    (setSeedEpoch(seed?.epoch), Object.keys(pendingStyles).length > 0 && setPendingStyles({}));
+  let isGestureActiveRef: Dynamic = (0, react_Gw.useRef)(false),
+    hasVisiblePaintRef: Dynamic = (0, react_Gw.useRef)(false),
+    [pendingFormat, setPendingFormat]: Dynamic = (0, react_Gw.useState)(null),
+    isEditingText: Dynamic = textEdit?.formats != null;
   (0, react_Gw.useEffect)((): Dynamic => {
-    if (value7 === null) return;
-    if (value9) {
-      onFormat(value7.verb);
-      value8(null);
+    if (pendingFormat === null) return;
+    if (isEditingText) {
+      onFormat(pendingFormat.verb);
+      setPendingFormat(null);
       return;
     }
-    let value30: Dynamic = 1500 - (Date.now() - value7.at);
-    if (value30 <= 0) return value8(null);
-    let value31: Dynamic = (window as Dynamic).setTimeout(
-      (): Dynamic => value8(null),
-      value30,
+    let remainingMs: Dynamic = 1500 - (Date.now() - pendingFormat.at);
+    if (remainingMs <= 0) return setPendingFormat(null);
+    let timeoutId: Dynamic = (window as Dynamic).setTimeout(
+      (): Dynamic => setPendingFormat(null),
+      remainingMs,
     );
-    return (): Dynamic => (window as Dynamic).clearTimeout(value31);
-  }, [value7, value9, onFormat]);
-  let callback: Dynamic = (input?: Dynamic): Dynamic => {
+    return (): Dynamic => (window as Dynamic).clearTimeout(timeoutId);
+  }, [pendingFormat, isEditingText, onFormat]);
+  let requestTextFormat: Dynamic = (formatVerb?: Dynamic): Dynamic => {
       onEditText &&
-        (value8({
-          verb: input,
+        (setPendingFormat({
+          verb: formatVerb,
           at: Date.now(),
         }),
         onEditText());
     },
-    state: Dynamic = {
-      get: (input?: Dynamic): Dynamic =>
-        input in value
-          ? value[input]
-          : (seed?.more?.[input] ??
-            (input === "background-color"
+    styleIo: Dynamic = {
+      get: (prop?: Dynamic): Dynamic =>
+        prop in pendingStyles
+          ? pendingStyles[prop]
+          : (seed?.more?.[prop] ??
+            (prop === "background-color"
               ? seed?.background
-              : input === "stroke"
+              : prop === "stroke"
                 ? seed?.stroke
-                : input === "color"
+                : prop === "color"
                   ? seed?.color
                   : undefined) ??
-            (input === "fill" ? undefined : seed?.rendered?.box?.[input]) ??
+            (prop === "fill" ? undefined : seed?.rendered?.box?.[prop]) ??
             undefined),
-      set: (input?: Dynamic, options?: Dynamic): Dynamic => {
-        value2(
-          (input2?: Dynamic): Dynamic => ({
-            ...input2,
-            ...Object.fromEntries(input),
+      set: (styleEntries?: Dynamic, isLive?: Dynamic): Dynamic => {
+        setPendingStyles(
+          (previous?: Dynamic): Dynamic => ({
+            ...previous,
+            ...Object.fromEntries(styleEntries),
           }),
         );
-        options &&
-          !value5.current &&
-          ((value5.current = true), onGesture("start"));
-        let value30: Dynamic = input.map(
-          ([input2, input3]: Dynamic): Dynamic => [input2, input3 ?? null],
+        isLive &&
+          !isGestureActiveRef.current &&
+          ((isGestureActiveRef.current = true), onGesture("start"));
+        let edits: Dynamic = styleEntries.map(
+          ([prop, cssValue]: Dynamic): Dynamic => [prop, cssValue ?? null],
         );
-        value30.length > 0 &&
-          onApply(value30, {
-            live: options,
-          }).then((input2?: Dynamic): Dynamic => {
-            !input2 &&
-              !options &&
-              value2((input3?: Dynamic): Dynamic => {
-                let state3: Dynamic = {
-                  ...input3,
+        edits.length > 0 &&
+          onApply(edits, {
+            live: isLive,
+          }).then((isApplied?: Dynamic): Dynamic => {
+            !isApplied &&
+              !isLive &&
+              setPendingStyles((previous?: Dynamic): Dynamic => {
+                let remaining: Dynamic = {
+                  ...previous,
                 };
-                for (let [value31] of value30 as Dynamic)
-                  delete state3[value31];
-                return state3;
+                for (let [editedProp] of edits as Dynamic)
+                  delete remaining[editedProp];
+                return remaining;
               });
           });
       },
       settle: (): Dynamic => {
-        value5.current && ((value5.current = false), onGesture("end"));
+        isGestureActiveRef.current && ((isGestureActiveRef.current = false), onGesture("end"));
       },
       rendered: {
         background: seed?.rendered?.background ?? null,
         stroke: seed?.rendered?.stroke ?? null,
       },
     },
-    value10: Dynamic = useDesignSystems();
+    designSystems: Dynamic = useDesignSystems();
   contrastRef && (contrastRef.current = undefined);
-  let value11: Dynamic = (0, react_Gw.useMemo)(
+  let colorSwatches: Dynamic = (0, react_Gw.useMemo)(
       (): Dynamic =>
         buildQuickActionSwatches(
           seed?.colors,
           seed?.artboardColors,
           crossFile !== null,
-          value10,
+          designSystems,
         ),
-      [seed?.colors, seed?.artboardColors, crossFile !== null, value10],
+      [seed?.colors, seed?.artboardColors, crossFile !== null, designSystems],
     ),
-    value12: Dynamic = crossFile ? undefined : seed?.definedVars,
-    value13: Dynamic = hasTextBackgroundClip(
-      (input?: Dynamic): Dynamic => state.get(input),
+    definedVariables: Dynamic = crossFile ? undefined : seed?.definedVars,
+    hasInlineTextClip: Dynamic = hasTextBackgroundClip(
+      (prop?: Dynamic): Dynamic => styleIo.get(prop),
     ),
-    value14: Dynamic = value13 || seed?.rendered?.textClip === true,
-    value15: Dynamic = seed?.rendered?.color ?? null,
-    [value16, value17]: Dynamic = (0, react_Gw.useState)(false),
-    value18: Dynamic = useBackgroundEditor({
-      value: state.get("color") ?? null,
-      fallback: value15 ?? undefined,
+    isTextClipped: Dynamic = hasInlineTextClip || seed?.rendered?.textClip === true,
+    renderedColor: Dynamic = seed?.rendered?.color ?? null,
+    [isTextFillOpen, setIsTextFillOpen]: Dynamic = (0, react_Gw.useState)(false),
+    textFillEditor: Dynamic = useBackgroundEditor({
+      value: styleIo.get("color") ?? null,
+      fallback: renderedColor ?? undefined,
       textFill: {
-        clipped: value14,
-        inlineClip: value13,
+        clipped: isTextClipped,
+        inlineClip: hasInlineTextClip,
         layer:
-          state.get("background-image") ?? state.get("background") ?? null,
-        size: state.get("background-size") ?? null,
+          styleIo.get("background-image") ?? styleIo.get("background") ?? null,
+        size: styleIo.get("background-size") ?? null,
         ...(isTransparentColor(
-          (state.get("color") ?? "").trim().toLowerCase(),
+          (styleIo.get("color") ?? "").trim().toLowerCase(),
         )
           ? {
               transparentInk: "inline",
             }
-          : value15 !== null && parseHsvaColor(value15).a === 0
+          : renderedColor !== null && parseHsvaColor(renderedColor).a === 0
             ? {
                 transparentInk: "computed",
               }
             : {}),
       },
-      writer: quickPanelStyleIo(state),
-      open: value16,
+      writer: quickPanelStyleIo(styleIo),
+      open: isTextFillOpen,
       tokens: emptySelectionPropertyItems,
     }),
-    value19: Dynamic =
-      value14 &&
-      !value13 &&
-      state.get("background-image") === undefined &&
-      state.get("background") === undefined,
-    text2: Dynamic =
+    isInheritedTextClip: Dynamic =
+      isTextClipped &&
+      !hasInlineTextClip &&
+      styleIo.get("background-image") === undefined &&
+      styleIo.get("background") === undefined,
+    inheritedClipReason: Dynamic =
       uiMessage("inspector.selectionQuickActions.thisTextSFillComes"),
-    state2: Dynamic = {
-      kind: value19
+    textFillPopoverProps: Dynamic = {
+      kind: isInheritedTextClip
         ? {
-            ...value18.kind,
-            options: value18.kind.options.map(
-              (input?: Dynamic): Dynamic =>
-                input.value === "color"
-                  ? input
+            ...textFillEditor.kind,
+            options: textFillEditor.kind.options.map(
+              (kindOption?: Dynamic): Dynamic =>
+                kindOption.value === "color"
+                  ? kindOption
                   : {
-                      ...input,
-                      disabledReason: text2,
+                      ...kindOption,
+                      disabledReason: inheritedClipReason,
                     },
             ),
           }
-        : value18.kind,
-      face: value18.face,
-      onOpenChange: (input?: Dynamic): Dynamic => {
-        value17(input);
-        input || value18.endSession();
+        : textFillEditor.kind,
+      face: textFillEditor.face,
+      onOpenChange: (isOpenNext?: Dynamic): Dynamic => {
+        setIsTextFillOpen(isOpenNext);
+        isOpenNext || textFillEditor.endSession();
       },
     },
-    value20: Dynamic = propertySidebarActionState(
+    sidebarActionState: Dynamic = propertySidebarActionState(
       sidebarVisible,
       !!crossFile,
     ),
-    value21: Dynamic = onComment
-      ? (input?: Dynamic): Dynamic => onComment(input)
+    openComment: Dynamic = onComment
+      ? (anchor?: Dynamic): Dynamic => onComment(anchor)
       : null,
-    value22: Dynamic =
-      value21 === null && value20 === "hidden" ? null : (
+    trailingGroup: Dynamic =
+      openComment === null && sidebarActionState === "hidden" ? null : (
         <SessionStripGroup>
-          {value21 !== null && (<SessionStripButton
+          {openComment !== null && (<SessionStripButton
               icon={"ChatAdd"}
               data-testid={"mega-sel-comment"}
               title={uiMessage("inspector.selectionQuickActions.commentOnThisElement")}
               aria-label={uiMessage("inspector.selectionQuickActions.comment")}
-              onClick={(input?: Dynamic): Dynamic =>
-                value21(input.currentTarget)
+              onClick={(event?: Dynamic): Dynamic =>
+                openComment(event.currentTarget)
               }
             />)}
-          {value20 !== "hidden" && (<SessionStripButton
+          {sidebarActionState !== "hidden" && (<SessionStripButton
               icon={"DotsVertical"}
               data-testid={"mega-sel-props"}
               title={
-                value20 === "disabled-with-reason" ? (uiMessage("inspector.selectionQuickActions.propertiesEditsOneArtboardAt")) : (uiMessage("inspector.selectionQuickActions.openThePropertiesPanel"))
+                sidebarActionState === "disabled-with-reason" ? (uiMessage("inspector.selectionQuickActions.propertiesEditsOneArtboardAt")) : (uiMessage("inspector.selectionQuickActions.openThePropertiesPanel"))
               }
               aria-label={uiMessage("inspector.selectionQuickActions.properties")}
-              disabled={value20 === "disabled-with-reason"}
+              disabled={sidebarActionState === "disabled-with-reason"}
               onClick={(): Dynamic => {
                 crossFile || onOpenProps();
               }}
             />)}
         </SessionStripGroup>
       ),
-    length: Dynamic = [
+    kindCount: Dynamic = [
       text > 0,
       box > 0,
       shape > 0,
@@ -392,10 +392,10 @@ function SelectionQuickActions({
       line > 0,
       other > 0,
     ].filter(Boolean).length,
-    value23: Dynamic = text + box + shape + image + line + other > 1,
-    value24: Dynamic = textEdit?.formats ?? null,
-    value25: Dynamic = textEdit == null,
-    value26: Dynamic = crossFile
+    isMultiple: Dynamic = text + box + shape + image + line + other > 1,
+    textFormats: Dynamic = textEdit?.formats ?? null,
+    editsAreUndoable: Dynamic = textEdit == null,
+    crossFileSummary: Dynamic = crossFile
       ? crossFile.elements +
         (crossFile.elements === 1 ? " element" : " elements") +
         (crossFile.artboards === 1
@@ -407,13 +407,13 @@ function SelectionQuickActions({
             (crossFile.objects === 1 ? " canvas object" : " canvas objects")
           : "")
       : "",
-    value27: Dynamic = crossFile ? (
+    crossFileActions: Dynamic = crossFile ? (
       <SessionStripGroup>
         <SessionStripButton
           data-testid={"mega-sel-duplicate"}
           icon={"Copy"}
           title={
-            uiMessage("inspector.selectionQuickActions.duplicate2", { value1: String(value26), value2: String(keyboardShortcutLabel("D")) })
+            uiMessage("inspector.selectionQuickActions.duplicate2", { value1: String(crossFileSummary), value2: String(keyboardShortcutLabel("D")) })
           }
           aria-label={uiMessage("inspector.selectionQuickActions.duplicate")}
           onClick={crossFile.onDuplicate}
@@ -421,24 +421,24 @@ function SelectionQuickActions({
         <SessionStripButton
           data-testid={"mega-sel-delete"}
           icon={"Trash"}
-          title={uiMessage("inspector.selectionQuickActions.delete2", { value1: String(value26) })}
+          title={uiMessage("inspector.selectionQuickActions.delete2", { value1: String(crossFileSummary) })}
           aria-label={uiMessage("inspector.selectionQuickActions.delete")}
           onClick={crossFile.onDelete}
         />
       </SessionStripGroup>
     ) : null,
-    value28: Dynamic =
-      value27 !== null && value22 !== null && !compact ? (
+    crossFileDivider: Dynamic =
+      crossFileActions !== null && trailingGroup !== null && !compact ? (
         <SessionStripDivider />
       ) : null;
-  if (other > 0 && !value23 && primaryTag === "video")
+  if (other > 0 && !isMultiple && primaryTag === "video")
     return (
       <jsx_Ki.Fragment>
         {findVideo && (<SessionStripGroup>
             <VideoPlayControl find={findVideo} />
           </SessionStripGroup>)}
         <ImageQuickPanel
-          io={state}
+          io={styleIo}
           src={undefined}
           onReplace={(): Dynamic => onReplaceVideo?.()}
           replaceTitle={"Replace video"}
@@ -452,32 +452,32 @@ function SelectionQuickActions({
           cropReason={cropping ? undefined : cropReason}
           noun={"video"}
         />
-        {compact || (value27 === null && value22 === null) ? (null) : (<SessionStripDivider />)}
-        {value27}
-        {value28}
-        {value22}
+        {compact || (crossFileActions === null && trailingGroup === null) ? (null) : (<SessionStripDivider />)}
+        {crossFileActions}
+        {crossFileDivider}
+        {trailingGroup}
       </jsx_Ki.Fragment>
     );
-  if (!value24 && (length > 1 || (length === 1 && other > 0))) {
-    let value30: Dynamic = quickActionPaintAndSeed(
-      state.get("color") ?? null,
+  if (!textFormats && (kindCount > 1 || (kindCount === 1 && other > 0))) {
+    let textPaint: Dynamic = quickActionPaintAndSeed(
+      styleIo.get("color") ?? null,
       seed?.rendered?.color ?? null,
       defaultQuickActionInk,
     );
     return (
       <jsx_Ki.Fragment>
         {text + box + shape + line > 0 && (((): Dynamic => {
-            let items: Dynamic = [
+            let colorProps: Dynamic = [
                 ...(text > 0 ? ["color"] : []),
                 ...(box > 0 || shape > 0 ? ["background-color", "fill"] : []),
                 ...(line > 0 ? ["stroke", "border-color"] : []),
               ],
-              value31: Dynamic =
+              groupPaint: Dynamic =
                 text > 0
-                  ? value30
+                  ? textPaint
                   : quickActionPaintAndSeed(
-                      state.get("background-color") ??
-                        state.get("fill") ??
+                      styleIo.get("background-color") ??
+                        styleIo.get("fill") ??
                         null,
                       seed?.rendered?.background ??
                         seed?.rendered?.stroke ??
@@ -489,398 +489,398 @@ function SelectionQuickActions({
                 <SessionActionsPopover
                   testid={"mega-qp-color"}
                   title={uiMessage("inspector.selectionQuickActions.color")}
-                  paint={value31.paint}
-                  swatches={value11}
+                  paint={groupPaint.paint}
+                  swatches={colorSwatches}
                   value={null}
-                  onSwatch={(input?: Dynamic): Dynamic => {
-                    let value32: Dynamic = valueForDesignSwatch(
-                      value11,
-                      input,
-                      value12,
+                  onSwatch={(swatchName?: Dynamic): Dynamic => {
+                    let swatchValue: Dynamic = valueForDesignSwatch(
+                      colorSwatches,
+                      swatchName,
+                      definedVariables,
                     );
-                    value32 !== undefined &&
-                      state.set(
-                        items.map(
-                          (input2?: Dynamic): Dynamic => [input2, value32],
+                    swatchValue !== undefined &&
+                      styleIo.set(
+                        colorProps.map(
+                          (prop?: Dynamic): Dynamic => [prop, swatchValue],
                         ),
                       );
                   }}
                   custom={{
-                    seed: value31.seed,
-                    onChange: (input?: Dynamic): Dynamic =>
-                      state.set(
-                        items.map(
-                          (input2?: Dynamic): Dynamic => [input2, input],
+                    seed: groupPaint.seed,
+                    onChange: (pickedColor?: Dynamic): Dynamic =>
+                      styleIo.set(
+                        colorProps.map(
+                          (prop?: Dynamic): Dynamic => [prop, pickedColor],
                         ),
                         true,
                       ),
-                    onPickEnd: (): Dynamic => state.settle(),
+                    onPickEnd: (): Dynamic => styleIo.settle(),
                   }}
                 />
               </SessionStripGroup>
             );
           })())}
-        {value27 !== null && !compact && text + box + shape + line > 0 ? (<SessionStripDivider />) : (null)}
-        {value27}
-        {value28}
-        {value22}
+        {crossFileActions !== null && !compact && text + box + shape + line > 0 ? (<SessionStripDivider />) : (null)}
+        {crossFileActions}
+        {crossFileDivider}
+        {trailingGroup}
       </jsx_Ki.Fragment>
     );
   }
-  if (value24 || text > 0) {
-    let value30: Dynamic = value24 !== null,
-      callback2: Dynamic = (input?: Dynamic): Dynamic => {
-        let value62: Dynamic =
-          input == null ? null : /^\s*(-?\d+(?:\.\d+)?)px\s*$/.exec(input);
-        return value62 ? parseFloat(value62[1]) : undefined;
+  if (textFormats || text > 0) {
+    let isRichTextEditing: Dynamic = textFormats !== null,
+      parsePixels: Dynamic = (cssValue?: Dynamic): Dynamic => {
+        let pixelMatch: Dynamic =
+          cssValue == null ? null : /^\s*(-?\d+(?:\.\d+)?)px\s*$/.exec(cssValue);
+        return pixelMatch ? parseFloat(pixelMatch[1]) : undefined;
       },
-      callback3: Dynamic = (input?: Dynamic): Dynamic => {
-        let value62: Dynamic =
-          input == null ? null : /^\s*(\d+(?:\.\d+)?)\s*$/.exec(input);
-        return value62 ? parseFloat(value62[1]) : undefined;
+      parseUnitless: Dynamic = (cssValue?: Dynamic): Dynamic => {
+        let numberMatch: Dynamic =
+          cssValue == null ? null : /^\s*(\d+(?:\.\d+)?)\s*$/.exec(cssValue);
+        return numberMatch ? parseFloat(numberMatch[1]) : undefined;
       },
-      value31: Dynamic =
-        callback2(state.get("font-size")) ??
-        callback2(seed?.fontSize) ??
-        callback2(seed?.rendered?.fontSizePx),
-      value32: Dynamic =
-        state.get("font-weight") ?? seed?.rendered?.fontWeight ?? undefined,
-      value33: Dynamic =
-        value32 === "bold"
+      currentFontSizePx: Dynamic =
+        parsePixels(styleIo.get("font-size")) ??
+        parsePixels(seed?.fontSize) ??
+        parsePixels(seed?.rendered?.fontSizePx),
+      fontWeightValue: Dynamic =
+        styleIo.get("font-weight") ?? seed?.rendered?.fontWeight ?? undefined,
+      parsedFontWeight: Dynamic =
+        fontWeightValue === "bold"
           ? 700
-          : value32 === "normal"
+          : fontWeightValue === "normal"
             ? 400
-            : parseQuickActionNumber(value32),
-      value34: Dynamic = value33 ?? 400,
-      value35: Dynamic =
-        state.get("font-style") ?? seed?.rendered?.fontStyle ?? "normal",
-      value36: Dynamic =
-        state.get("text-decoration-line") ??
+            : parseQuickActionNumber(fontWeightValue),
+      currentFontWeight: Dynamic = parsedFontWeight ?? 400,
+      currentFontStyle: Dynamic =
+        styleIo.get("font-style") ?? seed?.rendered?.fontStyle ?? "normal",
+      currentDecoration: Dynamic =
+        styleIo.get("text-decoration-line") ??
         seed?.rendered?.textDecoration ??
         "",
-      value37: Dynamic =
-        state.get("text-align") ?? seed?.rendered?.textAlign ?? "start",
+      currentTextAlign: Dynamic =
+        styleIo.get("text-align") ?? seed?.rendered?.textAlign ?? "start",
       {
-        sizes: value38,
-        sizeNames: value39,
-        sizeFamilies: value40,
+        sizes: censusSizes,
+        sizeNames: censusSizeNames,
+        sizeFamilies: censusSizeFamilies,
       }: Dynamic = typographyCensusOptions({
         sizes: seed?.sizes ?? [],
         sizeRoles: seed?.sizeRoles,
         sizeFamilies: seed?.sizeFamilies,
       }),
-      value41: Dynamic =
-        state.get("font-family") ??
+      fontFamilyValue: Dynamic =
+        styleIo.get("font-family") ??
         seed?.fontFamily ??
         seed?.rendered?.fontFamily ??
         "",
-      value42: Dynamic = InspectorComputedDataPattern.test(value41)
-        ? value41
+      pickableFamily: Dynamic = InspectorComputedDataPattern.test(fontFamilyValue)
+        ? fontFamilyValue
         : "",
-      value43: Dynamic = value42 || (seed?.rendered?.fontFamily ?? ""),
-      value44: Dynamic = /^(italic|oblique)/.test(value35),
-      value45: Dynamic = fontFamilyPickerOptions(
+      faceFamily: Dynamic = pickableFamily || (seed?.rendered?.fontFamily ?? ""),
+      isItalic: Dynamic = /^(italic|oblique)/.test(currentFontStyle),
+      familyOptions: Dynamic = fontFamilyPickerOptions(
         (seed?.fonts ?? []).filter(
-          (input?: Dynamic): Dynamic =>
-            InspectorComputedDataPattern.test(input),
+          (font?: Dynamic): Dynamic =>
+            InspectorComputedDataPattern.test(font),
         ),
       ),
-      value46: Dynamic = value45.find(
-        (input?: Dynamic): Dynamic =>
-          input.value.toLowerCase() ===
-          displayFontFamily(value42).toLowerCase(),
+      matchedFamilyOption: Dynamic = familyOptions.find(
+        (option?: Dynamic): Dynamic =>
+          option.value.toLowerCase() ===
+          displayFontFamily(pickableFamily).toLowerCase(),
       ),
-      value47: Dynamic =
-        value46 || !value42
-          ? value45
+      familyPickerOptions: Dynamic =
+        matchedFamilyOption || !pickableFamily
+          ? familyOptions
           : [
               {
-                value: value42,
-                label: displayFontFamily(value42),
+                value: pickableFamily,
+                label: displayFontFamily(pickableFamily),
                 labelStyle: {
-                  fontFamily: value42,
+                  fontFamily: pickableFamily,
                 },
               },
-              ...value45,
+              ...familyOptions,
             ],
-      value48: Dynamic = quickActionPaintAndSeed(
-        state.get("color") ?? null,
+      textPaintAndSeed: Dynamic = quickActionPaintAndSeed(
+        styleIo.get("color") ?? null,
         seed?.rendered?.color ?? null,
         defaultQuickActionInk,
       ),
-      value49: Dynamic = seed?.rendered?.ground,
-      value50: Dynamic =
-        value49 != null && !value23 && !value14
+      textGround: Dynamic = seed?.rendered?.ground,
+      contrastCheck: Dynamic =
+        textGround != null && !isMultiple && !isTextClipped
           ? textContrastContext(
-              value49.behind,
-              callback2(seed?.rendered?.fontSizePx) ?? value31 ?? null,
+              textGround.behind,
+              parsePixels(seed?.rendered?.fontSizePx) ?? currentFontSizePx ?? null,
               parseQuickActionNumber(seed?.rendered?.fontWeight) ??
-                value33 ??
+                parsedFontWeight ??
                 null,
             )
           : undefined;
     contrastRef &&
-      value50 &&
+      contrastCheck &&
       (contrastRef.current = {
-        check: value50,
-        resolve: (input?: Dynamic): Dynamic =>
-          value11.find(
-            (input2?: Dynamic): Dynamic =>
-              input2.name ===
-              matchingDesignSwatchName(value11, input, value12),
-          )?.color ?? input,
+        check: contrastCheck,
+        resolve: (cssColor?: Dynamic): Dynamic =>
+          colorSwatches.find(
+            (swatch?: Dynamic): Dynamic =>
+              swatch.name ===
+              matchingDesignSwatchName(colorSwatches, cssColor, definedVariables),
+          )?.color ?? cssColor,
       });
-    let value51: Dynamic = textEdit != null && value24 === null,
-      value52: Dynamic = seed?.list ?? "none",
-      value53: Dynamic = value51
+    let isBoundText: Dynamic = textEdit != null && textFormats === null,
+      listKind: Dynamic = seed?.list ?? "none",
+      textEditRefusal: Dynamic = isBoundText
         ? uiMessage("inspector.selectionQuickActions.thisTextIsBoundTo")
-        : value23 && !value30
+        : isMultiple && !isRichTextEditing
           ? uiMessage("inspector.selectionQuickActions.oneTextAtATime")
-          : !value30 && !onEditText
+          : !isRichTextEditing && !onEditText
             ? uiMessage("inspector.selectionQuickActions.thisTextIsNotEditable")
             : null,
-      value54: Dynamic =
-        !value30 &&
+      isSizeMixed: Dynamic =
+        !isRichTextEditing &&
         (seed?.fontSizes?.length ?? 0) > 1 &&
         new Set(seed.fontSizes).size > 1;
     selectionHasVisiblePaint({
-      bg: state.get("background-color"),
-      borderStyle: state.get("border-style"),
-      borderWidth: state.get("border-width") ?? state.get("border-top-width"),
+      bg: styleIo.get("background-color"),
+      borderStyle: styleIo.get("border-style"),
+      borderWidth: styleIo.get("border-width") ?? styleIo.get("border-top-width"),
       renderedBg: seed?.rendered?.background ?? null,
-      textClip: value14,
-    }) && (value6.current = true);
-    let current: Dynamic = value6.current,
-      value55: Dynamic = value14
+      textClip: isTextClipped,
+    }) && (hasVisiblePaintRef.current = true);
+    let showsBoxPanel: Dynamic = hasVisiblePaintRef.current,
+      textClipBackground: Dynamic = isTextClipped
         ? sanitizeCssBackground(
-            state.get("background-image") ?? state.get("background") ?? "",
+            styleIo.get("background-image") ?? styleIo.get("background") ?? "",
           )
         : "transparent",
-      value56: Dynamic = /gradient\(/.test(value55) ? value55 : undefined,
-      value57: Dynamic = value14
+      gradientPaint: Dynamic = /gradient\(/.test(textClipBackground) ? textClipBackground : undefined,
+      clearTextClipEdits: Dynamic = isTextClipped
         ? [
             [
               "background",
-              value13 &&
-              (state.get("background-image") !== undefined ||
-                state.get("background") !== undefined)
+              hasInlineTextClip &&
+              (styleIo.get("background-image") !== undefined ||
+                styleIo.get("background") !== undefined)
                 ? undefined
                 : "none",
             ],
             ...InspectorPropertySchemaItems.map(
-              (input?: Dynamic): Dynamic => [
-                input,
-                input === "-webkit-text-fill-color" && !value13
+              (prop?: Dynamic): Dynamic => [
+                prop,
+                prop === "-webkit-text-fill-color" && !hasInlineTextClip
                   ? "currentcolor"
                   : undefined,
               ],
             ),
           ]
         : [],
-      callback4: Dynamic = (input?: Dynamic): Dynamic =>
-        Math.round(input * 10) / 10,
-      value58: Dynamic =
-        state.get("font-family") ?? seed?.fontFamily ?? undefined,
-      value59: Dynamic = designSystemTypographyOptions(value10),
-      value60: Dynamic = typographySessionModel({
-        metrics: resolvedTypographyMetrics(state, seed),
-        sizeMixed: value54,
-        ownFamily: value58,
-        family: value42,
-        sizes: value38,
-        sizeNames: value39,
-        sizeFamilies: value40,
-        systemRows: value59,
-        hasSystem: hasDesignSystems(value10),
+      roundTenth: Dynamic = (amount?: Dynamic): Dynamic =>
+        Math.round(amount * 10) / 10,
+      ownFontFamily: Dynamic =
+        styleIo.get("font-family") ?? seed?.fontFamily ?? undefined,
+      typographySystemRows: Dynamic = designSystemTypographyOptions(designSystems),
+      typographyModel: Dynamic = typographySessionModel({
+        metrics: resolvedTypographyMetrics(styleIo, seed),
+        sizeMixed: isSizeMixed,
+        ownFamily: ownFontFamily,
+        family: pickableFamily,
+        sizes: censusSizes,
+        sizeNames: censusSizeNames,
+        sizeFamilies: censusSizeFamilies,
+        systemRows: typographySystemRows,
+        hasSystem: hasDesignSystems(designSystems),
         single: (seed?.fontSizes?.length ?? 1) <= 1,
       }),
-      state3: Dynamic = {
-        value: value60.value,
-        chipText: value60.chipText,
-        options: value60.options.map(
-          (input?: Dynamic): Dynamic => ({
-            value: input.value,
-            text: input.text,
+      typographyPopupProps: Dynamic = {
+        value: typographyModel.value,
+        chipText: typographyModel.chipText,
+        options: typographyModel.options.map(
+          (option?: Dynamic): Dynamic => ({
+            value: option.value,
+            text: option.text,
             label: (
-              <span className={"min-w-0 truncate"} style={input.labelStyle}>
-                {input.text}
+              <span className={"min-w-0 truncate"} style={option.labelStyle}>
+                {option.text}
               </span>
             ),
-            hint: input.hint,
-            title: input.title,
-            group: input.group,
-            subgroup: input.subgroup,
+            hint: option.hint,
+            title: option.title,
+            group: option.group,
+            subgroup: option.subgroup,
           }),
         ),
-        onChange: (input?: Dynamic): Dynamic =>
-          state.set(value60.editsFor(input)),
+        onChange: (optionValue?: Dynamic): Dynamic =>
+          styleIo.set(typographyModel.editsFor(optionValue)),
         custom: {
           family: {
-            value: value46?.value ?? value42,
-            options: value47,
+            value: matchedFamilyOption?.value ?? pickableFamily,
+            options: familyPickerOptions,
             searchable: true,
-            onOpenChange: (input?: Dynamic): Dynamic =>
-              input &&
+            onOpenChange: (isOpenNext?: Dynamic): Dynamic =>
+              isOpenNext &&
               ensureWebFonts([
                 ...TypographyFontCatalogMapValue,
                 ...(seed?.webfonts ?? []),
               ]),
-            onChange: (input?: Dynamic): Dynamic =>
-              state.set([
+            onChange: (pickedFamily?: Dynamic): Dynamic =>
+              styleIo.set([
                 [
                   "font-family",
-                  input === value42
-                    ? input
-                    : normalizedFontFamilyOption(input),
+                  pickedFamily === pickableFamily
+                    ? pickedFamily
+                    : normalizedFontFamilyOption(pickedFamily),
                 ],
               ]),
           },
           face: {
-            weight: value34,
-            italic: value44,
+            weight: currentFontWeight,
+            italic: isItalic,
             faces: resolveFontVariants(
-              value43,
+              faceFamily,
               getAvailableFontVariants(
                 seed?.faces ?? [],
-                value43,
+                faceFamily,
               ),
             ),
-            onOpenChange: (input?: Dynamic): Dynamic =>
-              input && seed?.onFacesOpen?.(),
-            onChange: (input?: Dynamic, options?: Dynamic): Dynamic =>
-              state.set(
-                options === value44
-                  ? [["font-weight", String(input)]]
+            onOpenChange: (isOpenNext?: Dynamic): Dynamic =>
+              isOpenNext && seed?.onFacesOpen?.(),
+            onChange: (pickedWeight?: Dynamic, pickedItalic?: Dynamic): Dynamic =>
+              styleIo.set(
+                pickedItalic === isItalic
+                  ? [["font-weight", String(pickedWeight)]]
                   : [
-                      ["font-weight", String(input)],
-                      ["font-style", options ? "italic" : "normal"],
+                      ["font-weight", String(pickedWeight)],
+                      ["font-style", pickedItalic ? "italic" : "normal"],
                     ],
               ),
           },
           size: {
-            value: value54 ? undefined : value31,
-            mixed: value54,
+            value: isSizeMixed ? undefined : currentFontSizePx,
+            mixed: isSizeMixed,
             min: 1,
             max: 999,
-            onValue: (input?: Dynamic): Dynamic =>
-              state.set([
+            onValue: (sizeValue?: Dynamic): Dynamic =>
+              styleIo.set([
                 [
                   "font-size",
-                  input === undefined
+                  sizeValue === undefined
                     ? undefined
-                    : String(callback4(input)) + "px",
+                    : String(roundTenth(sizeValue)) + "px",
                 ],
               ]),
-            onScrub: (input?: Dynamic): Dynamic =>
-              state.set(
-                [["font-size", String(Math.round(input)) + "px"]],
+            onScrub: (sizeValue?: Dynamic): Dynamic =>
+              styleIo.set(
+                [["font-size", String(Math.round(sizeValue)) + "px"]],
                 true,
               ),
-            onScrubEnd: state.settle,
+            onScrubEnd: styleIo.settle,
           },
           lineHeight: {
-            value: callback3(state.get("line-height")),
+            value: parseUnitless(styleIo.get("line-height")),
             get placeholder() { return seed?.rendered?.lineHeight ?? (uiMessage("inspector.selectionQuickActions.auto")); },
             clearable: true,
             min: 0.5,
             max: 4,
             step: 0.05,
-            onValue: (input?: Dynamic): Dynamic =>
-              state.set([
+            onValue: (lineHeightValue?: Dynamic): Dynamic =>
+              styleIo.set([
                 [
                   "line-height",
-                  input === undefined
+                  lineHeightValue === undefined
                     ? undefined
-                    : String(Math.round(input * 100) / 100),
+                    : String(Math.round(lineHeightValue * 100) / 100),
                 ],
               ]),
-            onScrub: (input?: Dynamic): Dynamic =>
-              state.set(
-                [["line-height", String(Math.round(input * 100) / 100)]],
+            onScrub: (lineHeightValue?: Dynamic): Dynamic =>
+              styleIo.set(
+                [["line-height", String(Math.round(lineHeightValue * 100) / 100)]],
                 true,
               ),
-            onScrubEnd: state.settle,
+            onScrubEnd: styleIo.settle,
           },
           letterSpacing: {
-            value: callback2(state.get("letter-spacing")),
+            value: parsePixels(styleIo.get("letter-spacing")),
             placeholder: "0",
             clearable: true,
             min: -10,
             max: 40,
             step: 0.5,
-            onValue: (input?: Dynamic): Dynamic =>
-              state.set([
+            onValue: (spacingValue?: Dynamic): Dynamic =>
+              styleIo.set([
                 [
                   "letter-spacing",
-                  input === undefined
+                  spacingValue === undefined
                     ? undefined
-                    : String(callback4(input)) + "px",
+                    : String(roundTenth(spacingValue)) + "px",
                 ],
               ]),
-            onScrub: (input?: Dynamic): Dynamic =>
-              state.set(
-                [["letter-spacing", String(callback4(input)) + "px"]],
+            onScrub: (spacingValue?: Dynamic): Dynamic =>
+              styleIo.set(
+                [["letter-spacing", String(roundTenth(spacingValue)) + "px"]],
                 true,
               ),
-            onScrubEnd: state.settle,
+            onScrubEnd: styleIo.settle,
           },
         },
       },
-      state4: Dynamic = {
+      textColorPopupProps: Dynamic = {
         get title() { return uiMessage("inspector.selectionQuickActions.textColor"); },
-        editsAreUndoSteps: value25,
-        paint: value56 ?? value48.paint,
-        swatches: value11,
-        value: value14
+        editsAreUndoSteps: editsAreUndoable,
+        paint: gradientPaint ?? textPaintAndSeed.paint,
+        swatches: colorSwatches,
+        value: isTextClipped
           ? null
           : matchingDesignSwatchName(
-              value11,
-              state.get("color"),
-              value12,
+              colorSwatches,
+              styleIo.get("color"),
+              definedVariables,
             ),
-        onSwatch: (input?: Dynamic): Dynamic => {
-          let value62: Dynamic = valueForDesignSwatch(
-            value11,
-            input,
-            value12,
+        onSwatch: (swatchName?: Dynamic): Dynamic => {
+          let swatchValue: Dynamic = valueForDesignSwatch(
+            colorSwatches,
+            swatchName,
+            definedVariables,
           );
-          value62 !== undefined &&
-            state.set([["color", value62], ...value57]);
+          swatchValue !== undefined &&
+            styleIo.set([["color", swatchValue], ...clearTextClipEdits]);
         },
         custom: {
-          seed: value48.seed,
-          unset: value48.paint === undefined,
-          onChange: (input?: Dynamic): Dynamic =>
-            state.set([["color", input], ...value57], true),
-          onPickEnd: (): Dynamic => state.settle(),
-          contrast: value50,
+          seed: textPaintAndSeed.seed,
+          unset: textPaintAndSeed.paint === undefined,
+          onChange: (pickedColor?: Dynamic): Dynamic =>
+            styleIo.set([["color", pickedColor], ...clearTextClipEdits], true),
+          onPickEnd: (): Dynamic => styleIo.settle(),
+          contrast: contrastCheck,
           quietSwatch: true,
         },
-        ...(value23 ? {} : state2),
+        ...(isMultiple ? {} : textFillPopoverProps),
       };
-    if (current && !value23 && !value30 && part !== "text")
+    if (showsBoxPanel && !isMultiple && !isRichTextEditing && part !== "text")
       return (
         <jsx_Ki.Fragment>
           <SessionStripGroup wrap={true}>
             <SessionTypographyPopup
               testid={"mega-text-style"}
-              {...state3}
+              {...typographyPopupProps}
             />
             <SessionActionsPopover
               testid={"mega-text-color"}
-              {...state4}
+              {...textColorPopupProps}
             />
           </SessionStripGroup>
           {compact ? (null) : (<SessionStripDivider />)}
           <CssBorderQuickPanel
-            io={state}
-            swatches={value11}
-            defined={value12}
+            io={styleIo}
+            swatches={colorSwatches}
+            defined={definedVariables}
             compact={compact}
-            editsAreUndoSteps={value25}
+            editsAreUndoSteps={editsAreUndoable}
           />
-          {value27}
-          {value28}
+          {crossFileActions}
+          {crossFileDivider}
           {coarse && onEditText ? (<SessionStripButton
               data-testid={"mega-text-edit"}
               icon={"Edit"}
@@ -888,28 +888,28 @@ function SelectionQuickActions({
               aria-label={uiMessage("inspector.selectionQuickActions.editText")}
               onClick={onEditText}
             />) : (null)}
-          {value22}
+          {trailingGroup}
         </jsx_Ki.Fragment>
       );
-    let value61: Dynamic = value30
+    let linkProps: Dynamic = isRichTextEditing
       ? {
-          pressed: value24.link,
+          pressed: textFormats.link,
           onClick: (): Dynamic => onFormat("link"),
         }
-      : primaryTag === "a" && onElementLink !== undefined && !value23
+      : primaryTag === "a" && onElementLink !== undefined && !isMultiple
         ? {
             href: seed?.href ?? undefined,
             editable: true,
             normalize: sanitizeEditableLink,
             invalidHint:
               "Enter a link: https://\u2026, a #section, a page path, mailto: or tel:",
-            onChange: (input?: Dynamic): Dynamic =>
-              onElementLink(input ?? null),
+            onChange: (nextHref?: Dynamic): Dynamic =>
+              onElementLink(nextHref ?? null),
           }
         : {
             pressed: false,
-            onClick: (): Dynamic => callback("link"),
-            disabledReason: value53,
+            onClick: (): Dynamic => requestTextFormat("link"),
+            disabledReason: textEditRefusal,
           };
     return (
       <jsx_Ki.Fragment>
@@ -917,95 +917,95 @@ function SelectionQuickActions({
           selKey={"sel"}
           compact={compact}
           testidPrefix={"mega-text"}
-          shortcuts={value30}
+          shortcuts={isRichTextEditing}
           tailTestids={{
             comment: "mega-sel-comment",
             more: "mega-sel-props",
           }}
-          style={state3}
-          color={state4}
+          style={typographyPopupProps}
+          color={textColorPopupProps}
           bold={{
-            pressed: value30 ? value24.bold : value34 >= 600,
+            pressed: isRichTextEditing ? textFormats.bold : currentFontWeight >= 600,
             onClick: (): Dynamic =>
-              value30
+              isRichTextEditing
                 ? onFormat("bold")
-                : state.set([
-                    ["font-weight", value34 >= 600 ? "400" : "700"],
+                : styleIo.set([
+                    ["font-weight", currentFontWeight >= 600 ? "400" : "700"],
                   ]),
-            disabledReason: value51 ? value53 : null,
+            disabledReason: isBoundText ? textEditRefusal : null,
           }}
           italic={{
-            pressed: value30 ? value24.italic : value35 === "italic",
+            pressed: isRichTextEditing ? textFormats.italic : currentFontStyle === "italic",
             onClick: (): Dynamic =>
-              value30
+              isRichTextEditing
                 ? onFormat("italic")
-                : state.set([
+                : styleIo.set([
                     [
                       "font-style",
-                      value35 === "italic" ? "normal" : "italic",
+                      currentFontStyle === "italic" ? "normal" : "italic",
                     ],
                   ]),
-            disabledReason: value51 ? value53 : null,
+            disabledReason: isBoundText ? textEditRefusal : null,
           }}
           underline={{
-            pressed: value30
-              ? value24.underline
-              : value36.includes("underline"),
+            pressed: isRichTextEditing
+              ? textFormats.underline
+              : currentDecoration.includes("underline"),
             onClick: (): Dynamic =>
-              value30
+              isRichTextEditing
                 ? onFormat("underline")
-                : state.set([
+                : styleIo.set([
                     [
                       "text-decoration-line",
-                      value23
-                        ? value36.includes("underline")
+                      isMultiple
+                        ? currentDecoration.includes("underline")
                           ? "none"
                           : "underline"
-                        : toggleUnderlineDecoration(value36),
+                        : toggleUnderlineDecoration(currentDecoration),
                     ],
                   ]),
-            disabledReason: value51 ? value53 : null,
+            disabledReason: isBoundText ? textEditRefusal : null,
           }}
-          link={value61}
+          link={linkProps}
           list={{
-            value: value30
-              ? value24.ol
+            value: isRichTextEditing
+              ? textFormats.ol
                 ? "number"
-                : value24.ul
+                : textFormats.ul
                   ? "bullet"
                   : "none"
-              : value23
+              : isMultiple
                 ? null
-                : value52,
-            get disabledReason() { return value53 !== null ? (value23 && !value30 ? (uiMessage("inspector.selectionQuickActions.makeListsOneTextAt")) : (value53)) : (null); },
-            onChange: (input?: Dynamic): Dynamic => {
-              let value62: Dynamic = listKindToTag(
-                input,
-                value30
-                  ? value24.ol
+                : listKind,
+            get disabledReason() { return textEditRefusal !== null ? (isMultiple && !isRichTextEditing ? (uiMessage("inspector.selectionQuickActions.makeListsOneTextAt")) : (textEditRefusal)) : (null); },
+            onChange: (nextListKind?: Dynamic): Dynamic => {
+              let listTag: Dynamic = listKindToTag(
+                nextListKind,
+                isRichTextEditing
+                  ? textFormats.ol
                     ? "number"
-                    : value24.ul
+                    : textFormats.ul
                       ? "bullet"
                       : "none"
-                  : value52,
+                  : listKind,
               );
-              value62 !== null &&
-                (value30 ? onFormat(value62) : callback(value62));
+              listTag !== null &&
+                (isRichTextEditing ? onFormat(listTag) : requestTextFormat(listTag));
             },
           }}
           align={{
-            value: value23 ? null : (textAlignmentValues[value37] ?? "start"),
-            onChange: (input?: Dynamic): Dynamic =>
-              state.set([["text-align", input]]),
+            value: isMultiple ? null : (textAlignmentValues[currentTextAlign] ?? "start"),
+            onChange: (nextAlign?: Dynamic): Dynamic =>
+              styleIo.set([["text-align", nextAlign]]),
           }}
-          onEdit={coarse && !value30 && onEditText ? onEditText : undefined}
-          trailing={value27}
-          onComment={crossFile ? null : value21}
+          onEdit={coarse && !isRichTextEditing && onEditText ? onEditText : undefined}
+          trailing={crossFileActions}
+          onComment={crossFile ? null : openComment}
           onOpenInspector={
-            value20 === "enabled" ? (): Dynamic => onOpenProps() : undefined
+            sidebarActionState === "enabled" ? (): Dynamic => onOpenProps() : undefined
           }
           inspectorDisabledReason={
-            value20 === "disabled-with-reason"
+            sidebarActionState === "disabled-with-reason"
               ? "Properties edits one artboard at a time \u2014 narrow the selection"
               : undefined
           }
@@ -1017,42 +1017,42 @@ function SelectionQuickActions({
     return (
       <jsx_Ki.Fragment>
         <CssBorderQuickPanel
-          io={state}
-          swatches={value11}
-          defined={value12}
+          io={styleIo}
+          swatches={colorSwatches}
+          defined={definedVariables}
           compact={compact}
-          faces={!value23}
-          editsAreUndoSteps={value25}
+          faces={!isMultiple}
+          editsAreUndoSteps={editsAreUndoable}
         />
-        {value27}
-        {value28}
-        {value22}
+        {crossFileActions}
+        {crossFileDivider}
+        {trailingGroup}
       </jsx_Ki.Fragment>
     );
-  let value29: Dynamic =
-    compact || (value27 === null && value22 === null) ? null : (
+  let trailingDivider: Dynamic =
+    compact || (crossFileActions === null && trailingGroup === null) ? null : (
       <SessionStripDivider />
     );
   return shape > 0 ? (
     <jsx_Ki.Fragment>
       <SvgPaintQuickPanel
-        io={state}
-        swatches={value11}
-        defined={value12}
+        io={styleIo}
+        swatches={colorSwatches}
+        defined={definedVariables}
       />
-      {value29}
-      {value27}
-      {value28}
-      {value22}
+      {trailingDivider}
+      {crossFileActions}
+      {crossFileDivider}
+      {trailingGroup}
     </jsx_Ki.Fragment>
   ) : image > 0 ? (
     <jsx_Ki.Fragment>
       <ImageQuickPanel
-        io={state}
+        io={styleIo}
         src={seed?.imageSrc ?? undefined}
         onReplace={(): Dynamic => onReplaceImage?.()}
         replaceReason={
-          value23
+          isMultiple
             ? "Replace one image at a time"
             : onReplaceImage
               ? undefined
@@ -1061,7 +1061,7 @@ function SelectionQuickActions({
         onCrop={(): Dynamic => onCrop?.()}
         cropping={cropping}
         cropReason={
-          value23
+          isMultiple
             ? "Crop one image at a time"
             : onCrop
               ? cropping
@@ -1070,28 +1070,28 @@ function SelectionQuickActions({
               : "This view can't crop images"
         }
       />
-      {value29}
-      {value27}
-      {value28}
-      {value22}
+      {trailingDivider}
+      {crossFileActions}
+      {crossFileDivider}
+      {trailingGroup}
     </jsx_Ki.Fragment>
   ) : line > 0 ? (
     <jsx_Ki.Fragment>
       <LineStrokeQuickPanel
-        io={state}
-        swatches={value11}
-        defined={value12}
+        io={styleIo}
+        swatches={colorSwatches}
+        defined={definedVariables}
       />
-      {value29}
-      {value27}
-      {value28}
-      {value22}
+      {trailingDivider}
+      {crossFileActions}
+      {crossFileDivider}
+      {trailingGroup}
     </jsx_Ki.Fragment>
   ) : (
     <jsx_Ki.Fragment>
-      {value27}
-      {value28}
-      {value22}
+      {crossFileActions}
+      {crossFileDivider}
+      {trailingGroup}
     </jsx_Ki.Fragment>
   );
 }
@@ -1131,10 +1131,10 @@ export function installPropertiesSelectionQuickActions(): () => void {
       end: "end",
       justify: "justify",
     };
-    parseQuickActionNumber = (input?: Dynamic): Dynamic => {
-      if (input == null) return;
-      let value: Dynamic = parseFloat(input);
-      return Number.isFinite(value) ? value : undefined;
+    parseQuickActionNumber = (rawValue?: Dynamic): Dynamic => {
+      if (rawValue == null) return;
+      let parsedNumber: Dynamic = parseFloat(rawValue);
+      return Number.isFinite(parsedNumber) ? parsedNumber : undefined;
     };
   };
 }

@@ -10,7 +10,7 @@ import { parseGoogleFontsRequest } from "../editor/typography/google-fonts";
 var escapeInlineScript: Dynamic;
 var inlineScriptHtml: Dynamic;
 var DcRuntimeFileKey: Dynamic;
-var PreviewRuntimeLoadingAlias: Dynamic;
+var blobScriptSupport: Dynamic;
 var runtimeFileUrlBlocked: Dynamic;
 var runtimeBlobUrlBlocked: Dynamic;
 var previewGuardRuntimeScript: Dynamic;
@@ -20,24 +20,24 @@ var previewEvaluationRuntimeScript: Dynamic;
 var previewResizeRuntimeScript: Dynamic;
 var previewViewportRuntimeScript: Dynamic;
 var previewDocumentRuntimeScript: Dynamic;
-var PreviewRuntimeLoadingResolvedValue: Dynamic;
-function combinePreviewRuntime(input?: Dynamic): Dynamic {
+var fontVariantLoaderScript: Dynamic;
+function combinePreviewRuntime(runtimeAssets?: Dynamic): Dynamic {
   return [
-    input.reactUmd,
+    runtimeAssets.reactUmd,
     `
 ;
 `,
-    input.reactDomUmd,
+    runtimeAssets.reactDomUmd,
     `
 ;
 `,
-    input.supportJs,
+    runtimeAssets.supportJs,
   ];
 }
 function supportsBlobScripts(): Dynamic {
   return (
     canCreateBlobUrls() &&
-    PreviewRuntimeLoadingAlias === true &&
+    blobScriptSupport === true &&
     !runtimeBlobUrlBlocked
   );
 }
@@ -50,67 +50,67 @@ function canCreateBlobUrls(): Dynamic {
     (globalThis as Dynamic).origin !== "null"
   );
 }
-function probeBlobScriptSupport(input: Dynamic = 1500): Dynamic {
-  return PreviewRuntimeLoadingAlias !== null
-    ? Promise.resolve(PreviewRuntimeLoadingAlias)
+function probeBlobScriptSupport(timeoutMs: Dynamic = 1500): Dynamic {
+  return blobScriptSupport !== null
+    ? Promise.resolve(blobScriptSupport)
     : !canCreateBlobUrls() || typeof document === "undefined"
-      ? Promise.resolve((PreviewRuntimeLoadingAlias = false))
-      : new Promise((input2?: Dynamic): Dynamic => {
-          let value: Dynamic = URL.createObjectURL(
+      ? Promise.resolve((blobScriptSupport = false))
+      : new Promise((resolve?: Dynamic): Dynamic => {
+          let probeUrl: Dynamic = URL.createObjectURL(
               new Blob(['parent.postMessage({ __dcBlobProbe: 1 }, "*")'], {
                 type: "text/javascript",
               }),
             ),
-            value2: Dynamic = (document as Dynamic).createElement("iframe"),
-            callback: Dynamic = (input3?: Dynamic): Dynamic => {
-              PreviewRuntimeLoadingAlias === null &&
-                ((PreviewRuntimeLoadingAlias = input3),
-                (window as Dynamic).removeEventListener("message", callback2),
-                value2.remove(),
-                URL.revokeObjectURL(value),
-                input2(input3));
+            probeFrame: Dynamic = (document as Dynamic).createElement("iframe"),
+            finishProbe: Dynamic = (isSupported?: Dynamic): Dynamic => {
+              blobScriptSupport === null &&
+                ((blobScriptSupport = isSupported),
+                (window as Dynamic).removeEventListener("message", handleProbeMessage),
+                probeFrame.remove(),
+                URL.revokeObjectURL(probeUrl),
+                resolve(isSupported));
             },
-            callback2: Dynamic = (dataset?: Dynamic): Dynamic => {
-              !value2.contentWindow ||
-                dataset.source !== value2.contentWindow ||
-                typeof dataset.data != "object" ||
-                dataset.data === null ||
-                !("__dcBlobProbe" in dataset.data) ||
-                callback(dataset.data.__dcBlobProbe === 1);
+            handleProbeMessage: Dynamic = (event?: Dynamic): Dynamic => {
+              !probeFrame.contentWindow ||
+                event.source !== probeFrame.contentWindow ||
+                typeof event.data != "object" ||
+                event.data === null ||
+                !("__dcBlobProbe" in event.data) ||
+                finishProbe(event.data.__dcBlobProbe === 1);
             };
-          (window as Dynamic).addEventListener("message", callback2);
-          setTimeout((): Dynamic => callback(false), input);
-          value2.setAttribute("sandbox", "allow-scripts allow-same-origin");
-          value2.setAttribute("aria-hidden", "true");
-          value2.style.cssText =
+          (window as Dynamic).addEventListener("message", handleProbeMessage);
+          setTimeout((): Dynamic => finishProbe(false), timeoutMs);
+          probeFrame.setAttribute("sandbox", "allow-scripts allow-same-origin");
+          probeFrame.setAttribute("aria-hidden", "true");
+          probeFrame.style.cssText =
             "position:absolute;width:0;height:0;border:0;visibility:hidden";
-          value2.srcdoc =
+          probeFrame.srcdoc =
             '<!doctype html><script src="' +
-            value +
+            probeUrl +
             '"><\/script><script>parent.postMessage({ __dcBlobProbe: 0 }, "*")<\/script>';
-          (document as Dynamic).body.appendChild(value2);
+          (document as Dynamic).body.appendChild(probeFrame);
         });
 }
-function markRuntimeUrlBlocked(input?: Dynamic): Dynamic {
-  typeof input == "string" && !input.startsWith("blob:")
+function markRuntimeUrlBlocked(runtimeUrl?: Dynamic): Dynamic {
+  typeof runtimeUrl == "string" && !runtimeUrl.startsWith("blob:")
     ? (runtimeFileUrlBlocked = true)
     : (runtimeBlobUrlBlocked = true);
 }
-function selectRuntimeUrl(input?: Dynamic): Dynamic {
+function selectRuntimeUrl(runtimeAssets?: Dynamic): Dynamic {
   if (!runtimeBlobUrlBlocked)
     return (
-      (runtimeFileUrlBlocked ? undefined : input.urls?.file) ??
-      input.urls?.blob
+      (runtimeFileUrlBlocked ? undefined : runtimeAssets.urls?.file) ??
+      runtimeAssets.urls?.blob
     );
 }
 function getRuntimeFileUrl(): Dynamic {
   if (typeof document === "undefined") return;
-  let value: Dynamic = (document as Dynamic)
+  let metaContent: Dynamic = (document as Dynamic)
     .querySelector('meta[name="' + DcRuntimeFileKey + '"]')
     ?.getAttribute("content");
-  if (value)
+  if (metaContent)
     try {
-      return new URL(value, (document as Dynamic).baseURI).pathname;
+      return new URL(metaContent, (document as Dynamic).baseURI).pathname;
     } catch {
       return;
     }
@@ -122,34 +122,34 @@ function getRuntimeFileUrl(): Dynamic {
  */
 function getBabelFileUrl(): Dynamic {
   if (typeof document === "undefined") return;
-  let value: Dynamic = (document as Dynamic)
+  let metaContent: Dynamic = (document as Dynamic)
     .querySelector('meta[name="dc-babel-file"]')
     ?.getAttribute("content");
-  if (value)
+  if (metaContent)
     try {
-      return new URL(value, (document as Dynamic).baseURI).pathname;
+      return new URL(metaContent, (document as Dynamic).baseURI).pathname;
     } catch {
       return;
     }
 }
 function preparePreviewRuntime(
-  input?: Dynamic,
-  options: Dynamic = supportsBlobScripts(),
-  context: Dynamic = getRuntimeFileUrl(),
+  runtimeAssets?: Dynamic,
+  useBlob: Dynamic = supportsBlobScripts(),
+  runtimeFileUrl: Dynamic = getRuntimeFileUrl(),
 ): Dynamic {
-  if (input.urls || (context === undefined && !options)) return input;
-  let value: Dynamic = options
+  if (runtimeAssets.urls || (runtimeFileUrl === undefined && !useBlob)) return runtimeAssets;
+  let blobUrl: Dynamic = useBlob
     ? URL.createObjectURL(
-        new Blob(combinePreviewRuntime(input), {
+        new Blob(combinePreviewRuntime(runtimeAssets), {
           type: "text/javascript",
         }),
       )
     : undefined;
   return {
-    ...input,
+    ...runtimeAssets,
     urls: {
-      file: context,
-      blob: value,
+      file: runtimeFileUrl,
+      blob: blobUrl,
     },
   };
 }
@@ -169,8 +169,8 @@ export {
   previewEvaluationRuntimeScript,
   previewGuardRuntimeScript,
   previewResizeRuntimeScript,
-  PreviewRuntimeLoadingAlias,
-  PreviewRuntimeLoadingResolvedValue,
+  blobScriptSupport as PreviewRuntimeLoadingAlias,
+  fontVariantLoaderScript as PreviewRuntimeLoadingResolvedValue,
   previewViewportRuntimeScript,
   probeBlobScriptSupport,
   runtimeBlobUrlBlocked,
@@ -180,12 +180,12 @@ export {
 };
 export function installPreviewRuntimeLoading(): () => void {
   return () => {
-    escapeInlineScript = (input?: Dynamic): Dynamic =>
-      input.replace(/<\/(script)/gi, "<\\/$1").replace(/<\!--/g, "<!-\\x2D");
-    inlineScriptHtml = (input?: Dynamic): Dynamic =>
-      `<script>${escapeInlineScript(input)}<\/script>`;
+    escapeInlineScript = (script?: Dynamic): Dynamic =>
+      script.replace(/<\/(script)/gi, "<\\/$1").replace(/<\!--/g, "<!-\\x2D");
+    inlineScriptHtml = (script?: Dynamic): Dynamic =>
+      `<script>${escapeInlineScript(script)}<\/script>`;
     DcRuntimeFileKey = "dc-runtime-file";
-    PreviewRuntimeLoadingAlias = null;
+    blobScriptSupport = null;
     runtimeFileUrlBlocked = false;
     runtimeBlobUrlBlocked = false;
     previewGuardRuntimeScript = injected_K7t.replace(
@@ -219,7 +219,7 @@ export function installPreviewRuntimeLoading(): () => void {
   (document.head || document.documentElement).appendChild(s);
 })();
 `;
-    PreviewRuntimeLoadingResolvedValue =
+    fontVariantLoaderScript =
       String.raw`
 (function (variants) {
   var seen = Object.create(null);

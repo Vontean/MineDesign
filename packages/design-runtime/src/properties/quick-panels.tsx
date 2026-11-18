@@ -11,7 +11,7 @@ import { editableElementSelector } from "../editor/chrome/focus";
 import { joinClassNames } from "../editor/chrome/overlay-state";
 import { NumericInput } from "../editor/properties/numeric-input";
 import { PropertyOptionIcon } from "../editor/properties/tool-options";
-import { PropertiesTooltipNameViewBoxPathsConfig, PropertiesTooltipNameViewBoxPathsConfig_2, PropertiesTooltipNameViewBoxPathsConfig_4, PropertiesTooltipNameViewBoxPathsConfig_6, PropertiesTooltipNameViewBoxPathsConfig_7, PropertiesTooltipNameViewBoxPathsConfig_8 } from "../editor/properties/tooltip";
+import { PropertiesTooltipNameViewBoxPathsConfig as borderWeightIcon, PropertiesTooltipNameViewBoxPathsConfig_2 as borderSidesIcon, PropertiesTooltipNameViewBoxPathsConfig_4 as cornerEachIcon, PropertiesTooltipNameViewBoxPathsConfig_6 as strokeSolidIcon, PropertiesTooltipNameViewBoxPathsConfig_7 as strokeDashedIcon, PropertiesTooltipNameViewBoxPathsConfig_8 as strokeDottedIcon } from "../editor/properties/tooltip";
 import { SessionStripButton } from "../editor/session-strip/session-strip";
 import { toModuleNamespace } from "../module-helpers";
 
@@ -65,52 +65,52 @@ function BorderQuickPanel({
   widths: widths,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic =
+  let nonzeroWidths: Dynamic =
       widths !== undefined
         ? borderSides
-            .map((input?: Dynamic): Dynamic => widths.value[input] ?? 0)
-            .filter((input?: Dynamic): Dynamic => input > 0)
+            .map((side?: Dynamic): Dynamic => widths.value[side] ?? 0)
+            .filter((sideWidth?: Dynamic): Dynamic => sideWidth > 0)
         : [],
-    value2: Dynamic = new Set(value).size > 1,
-    [value3, value4]: Dynamic = (0, react_mB.useState)(
-      sides !== undefined || value2,
+    hasMixedWidths: Dynamic = new Set(nonzeroWidths).size > 1,
+    [isIndividualOpen, setIsIndividualOpen]: Dynamic = (0, react_mB.useState)(
+      sides !== undefined || hasMixedWidths,
     ),
-    value5: Dynamic = (style ?? "none") === "none",
-    value6: Dynamic = sides ?? borderSides,
-    value7: Dynamic =
-      supports.sides === true && (value3 || sides !== undefined || value2),
-    callback: Dynamic = (input?: Dynamic): Dynamic => {
-      let value8: Dynamic = borderSides.filter(
-        (input2?: Dynamic): Dynamic =>
-          input2 === input
-            ? !value6.includes(input)
-            : value6.includes(input2),
+    isStyleNone: Dynamic = (style ?? "none") === "none",
+    drawnSides: Dynamic = sides ?? borderSides,
+    showsIndividualSides: Dynamic =
+      supports.sides === true && (isIndividualOpen || sides !== undefined || hasMixedWidths),
+    toggleSide: Dynamic = (toggledSide?: Dynamic): Dynamic => {
+      let nextSides: Dynamic = borderSides.filter(
+        (side?: Dynamic): Dynamic =>
+          side === toggledSide
+            ? !drawnSides.includes(toggledSide)
+            : drawnSides.includes(side),
       );
       onChange({
-        sides: value8.length === borderSides.length ? undefined : value8,
+        sides: nextSides.length === borderSides.length ? undefined : nextSides,
       });
     },
-    callback2: Dynamic = (): Dynamic => (
+    renderIndividualToggle: Dynamic = (): Dynamic => (
       <QuickPanelIconButton
-        icon={PropertiesTooltipNameViewBoxPathsConfig_2}
+        icon={borderSidesIcon}
         label={uiMessage("inspector.quickPanels.individualBorders")}
-        pressed={value7}
+        pressed={showsIndividualSides}
         hint={
           widths !== undefined
             ? "Set each side\u2019s width"
             : "Choose which sides draw"
         }
         disabledReason={
-          supports.sides === true ? (value5 ? (uiMessage("inspector.quickPanels.pickABorderStyleFirst")) : (undefined)) : (supports.sides)
+          supports.sides === true ? (isStyleNone ? (uiMessage("inspector.quickPanels.pickABorderStyleFirst")) : (undefined)) : (supports.sides)
         }
         onClick={(): Dynamic => {
-          value7
-            ? (value4(false),
-              (sides !== undefined || value2) &&
+          showsIndividualSides
+            ? (setIsIndividualOpen(false),
+              (sides !== undefined || hasMixedWidths) &&
                 onChange({
                   sides: undefined,
                 }))
-            : value4(true);
+            : setIsIndividualOpen(true);
         }}
       />
     );
@@ -124,15 +124,15 @@ function BorderQuickPanel({
         aria-label={uiMessage("inspector.quickPanels.borderStyle")}
         fullWidth={true}
         value={style ?? "none"}
-        onChange={(input?: Dynamic): Dynamic =>
+        onChange={(nextStyle?: Dynamic): Dynamic =>
           onChange({
-            style: input,
+            style: nextStyle,
           })
         }
         segments={borderStyleOptions.map(
-          (input?: Dynamic): Dynamic => ({
-            value: input,
-            ...(input === "none"
+          (styleOption?: Dynamic): Dynamic => ({
+            value: styleOption,
+            ...(styleOption === "none"
               ? {
                   icon: "Prohibit",
                 }
@@ -140,25 +140,25 @@ function BorderQuickPanel({
                   label: (
                     <jsx_os.Fragment>
                       <PropertyOptionIcon
-                        icon={borderStyleGlyphs[input]}
+                        icon={borderStyleGlyphs[styleOption]}
                       />
                       <span className={"sr-only"}>
-                        {borderStyleLabels[input]}
+                        {borderStyleLabels[styleOption]}
                       </span>
                     </jsx_os.Fragment>
                   ),
                 }),
-            tooltip: borderStyleLabels[input],
-            disabled: !supports.styles.includes(input),
+            tooltip: borderStyleLabels[styleOption],
+            disabled: !supports.styles.includes(styleOption),
             disabledReason: supports.styleReason,
           }),
         )}
       />
       <fieldset
-        disabled={value5}
+        disabled={isStyleNone}
         className={joinClassNames(
           "m-0 flex min-w-0 flex-col gap-1.5 border-0 p-0",
-          value5 && "opacity-60",
+          isStyleNone && "opacity-60",
         )}
       >
         <div className={"min-w-0"}>{color}</div>
@@ -166,42 +166,42 @@ function BorderQuickPanel({
           className={"grid grid-cols-[1fr_1fr_auto] items-center gap-1.5"}
           role={"group"}
           aria-label={
-            value7 && widths !== undefined ? (uiMessage("inspector.quickPanels.sideWidths")) : (undefined)
+            showsIndividualSides && widths !== undefined ? (uiMessage("inspector.quickPanels.sideWidths")) : (undefined)
           }
         >
-          {value7 && widths !== undefined ? (borderSideMenuOrder.map(
-              (input?: Dynamic, options?: Dynamic): Dynamic =>
-                input === null ? (
-                  options === 2 ? (
+          {showsIndividualSides && widths !== undefined ? (borderSideMenuOrder.map(
+              (side?: Dynamic, slotIndex?: Dynamic): Dynamic =>
+                side === null ? (
+                  slotIndex === 2 ? (
                     <react_mB.Fragment key={"toggle"}>
-                      {callback2()}
+                      {renderIndividualToggle()}
                     </react_mB.Fragment>
                   ) : (
                     <span key={"gap"} />
                   )
                 ) : (
                   <NumericInput
-                    key={input}
-                    prefix={borderSideInitials[input]}
-                    aria-label={uiMessage("inspector.quickPanels.borderWidth", { value1: String(borderSideLabels[input]) })}
+                    key={side}
+                    prefix={borderSideInitials[side]}
+                    aria-label={uiMessage("inspector.quickPanels.borderWidth", { value1: String(borderSideLabels[side]) })}
                     title={
-                      uiMessage("inspector.quickPanels.borderWidthPx0None", { value1: String(borderSideLabels[input]) })
+                      uiMessage("inspector.quickPanels.borderWidthPx0None", { value1: String(borderSideLabels[side]) })
                     }
-                    value={widths.value[input]}
+                    value={widths.value[side]}
                     min={0}
                     max={supports.widthMax}
                     step={1}
-                    disabled={value5}
-                    onValue={(input2?: Dynamic): Dynamic =>
+                    disabled={isStyleNone}
+                    onValue={(sideWidth?: Dynamic): Dynamic =>
                       widths.onChange({
-                        [input]: input2 ?? 0,
+                        [side]: sideWidth ?? 0,
                       })
                     }
                     onScrub={
                       widths.onLive
-                        ? (input2?: Dynamic): Dynamic =>
+                        ? (sideWidth?: Dynamic): Dynamic =>
                             widths.onLive({
-                              [input]: input2,
+                              [side]: sideWidth,
                             })
                         : undefined
                     }
@@ -213,62 +213,62 @@ function BorderQuickPanel({
                 <NumericInput
                   prefix={
                     <PropertyOptionIcon
-                      icon={PropertiesTooltipNameViewBoxPathsConfig}
+                      icon={borderWeightIcon}
                     />
                   }
                   aria-label={uiMessage("inspector.quickPanels.borderWeight")}
                   unit={"px"}
                   title={uiMessage("inspector.quickPanels.borderWeight")}
-                  value={value2 ? undefined : width}
+                  value={hasMixedWidths ? undefined : width}
                   min={1}
                   max={supports.widthMax}
                   step={1}
-                  clearable={!value2}
-                  placeholder={value2 ? (uiMessage("inspector.quickPanels.mixed")) : ("0")}
-                  disabled={value5}
-                  onValue={(input?: Dynamic): Dynamic => {
-                    (input !== undefined || !value2) &&
+                  clearable={!hasMixedWidths}
+                  placeholder={hasMixedWidths ? (uiMessage("inspector.quickPanels.mixed")) : ("0")}
+                  disabled={isStyleNone}
+                  onValue={(nextWidth?: Dynamic): Dynamic => {
+                    (nextWidth !== undefined || !hasMixedWidths) &&
                       onChange({
-                        width: input,
+                        width: nextWidth,
                       });
                   }}
                   onScrub={
                     onLive
-                      ? (input?: Dynamic): Dynamic =>
+                      ? (nextWidth?: Dynamic): Dynamic =>
                           onLive({
-                            width: input,
+                            width: nextWidth,
                           })
                       : undefined
                   }
                   onScrubEnd={onLiveEnd}
                 />
               </div>
-              {callback2()}
+              {renderIndividualToggle()}
             </jsx_os.Fragment>)}
         </div>
-        {value7 && widths === undefined && (<div
+        {showsIndividualSides && widths === undefined && (<div
             className={
               "grid grid-cols-4 gap-0.5 rounded-md bg-fill-field p-0.5"
             }
             role={"group"}
             aria-label={uiMessage("inspector.quickPanels.sides")}
           >
-            {borderSides.map((input?: Dynamic): Dynamic => {
-              let value8: Dynamic = value6.includes(input),
-                value9: Dynamic = value8 && value6.length === 1;
+            {borderSides.map((side?: Dynamic): Dynamic => {
+              let isDrawn: Dynamic = drawnSides.includes(side),
+                isLastDrawnSide: Dynamic = isDrawn && drawnSides.length === 1;
               return (
                 <SessionStripButton
-                  key={input}
-                  aria-label={uiMessage("inspector.quickPanels.border", { value1: String(borderSideLabels[input]) })}
-                  aria-pressed={value8}
+                  key={side}
+                  aria-label={uiMessage("inspector.quickPanels.border", { value1: String(borderSideLabels[side]) })}
+                  aria-pressed={isDrawn}
                   className={"justify-center"}
-                  disabled={value5 || value9}
+                  disabled={isStyleNone || isLastDrawnSide}
                   title={
-                    value9 ? (uiMessage("inspector.quickPanels.setTheStyleToNone")) : (uiMessage("inspector.quickPanels.border", { value1: String(borderSideLabels[input]) }))
+                    isLastDrawnSide ? (uiMessage("inspector.quickPanels.setTheStyleToNone")) : (uiMessage("inspector.quickPanels.border", { value1: String(borderSideLabels[side]) }))
                   }
-                  onClick={(): Dynamic => callback(input)}
+                  onClick={(): Dynamic => toggleSide(side)}
                 >
-                  {borderSideInitials[input]}
+                  {borderSideInitials[side]}
                 </SessionStripButton>
               );
             })}
@@ -278,37 +278,37 @@ function BorderQuickPanel({
   );
 }
 function RadiusCornerInput(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
+  cornersBinding?: Dynamic,
+  corner?: Dynamic,
+  maxRadius?: Dynamic,
+  fallbackRadius?: Dynamic,
 ): Dynamic {
   useUiLocale();
   return (
     <NumericInput
-      prefix={options.toUpperCase()}
-      aria-label={uiMessage("inspector.quickPanels.radius", { value1: String(radiusCornerLabels[options]) })}
-      title={uiMessage("inspector.quickPanels.radius", { value1: String(radiusCornerLabels[options]) })}
-      value={input.value[options]}
+      prefix={corner.toUpperCase()}
+      aria-label={uiMessage("inspector.quickPanels.radius", { value1: String(radiusCornerLabels[corner]) })}
+      title={uiMessage("inspector.quickPanels.radius", { value1: String(radiusCornerLabels[corner]) })}
+      value={cornersBinding.value[corner]}
       min={0}
-      max={context}
+      max={maxRadius}
       step={1}
       clearable={true}
-      placeholder={String(value ?? 0)}
-      onValue={(input2?: Dynamic): Dynamic =>
-        input.onChange({
-          [options]: input2,
+      placeholder={String(fallbackRadius ?? 0)}
+      onValue={(cornerRadius?: Dynamic): Dynamic =>
+        cornersBinding.onChange({
+          [corner]: cornerRadius,
         })
       }
       onScrub={
-        input.onLive
-          ? (input2?: Dynamic): Dynamic =>
-              input.onLive?.({
-                [options]: input2,
+        cornersBinding.onLive
+          ? (cornerRadius?: Dynamic): Dynamic =>
+              cornersBinding.onLive?.({
+                [corner]: cornerRadius,
               })
           : undefined
       }
-      onScrubEnd={input.onLiveEnd}
+      onScrubEnd={cornersBinding.onLiveEnd}
     />
   );
 }
@@ -322,34 +322,34 @@ function RadiusQuickPanel({
   corners: corners,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic =
+  let hasMixedCorners: Dynamic =
       corners !== undefined &&
       new Set(
-        radiusCorners.map((input?: Dynamic): Dynamic => corners.value[input]),
+        radiusCorners.map((corner?: Dynamic): Dynamic => corners.value[corner]),
       ).size > 1,
-    [value2, value3]: Dynamic = (0, react_mB.useState)(value),
-    value4: Dynamic = corners !== undefined && value2,
-    value5: Dynamic = (
+    [isIndividualOpen, setIsIndividualOpen]: Dynamic = (0, react_mB.useState)(hasMixedCorners),
+    showsIndividualCorners: Dynamic = corners !== undefined && isIndividualOpen,
+    individualToggle: Dynamic = (
       <QuickPanelIconButton
-        icon={PropertiesTooltipNameViewBoxPathsConfig_4}
+        icon={cornerEachIcon}
         label={uiMessage("inspector.quickPanels.individualCorners")}
-        pressed={value4}
+        pressed={showsIndividualCorners}
         hint={"Set each corner"}
         disabledReason={
           corners === undefined ? (individualReason ?? (uiMessage("inspector.quickPanels.oneRadiusForEveryCorner"))) : (undefined)
         }
         onClick={(): Dynamic => {
-          value4 &&
-            value &&
+          showsIndividualCorners &&
+            hasMixedCorners &&
             corners !== undefined &&
             onChange(
               Math.max(
                 ...radiusCorners.map(
-                  (input?: Dynamic): Dynamic => corners.value[input] ?? 0,
+                  (corner?: Dynamic): Dynamic => corners.value[corner] ?? 0,
                 ),
               ),
             );
-          value3(!value4);
+          setIsIndividualOpen(!showsIndividualCorners);
         }}
       />
     );
@@ -359,10 +359,10 @@ function RadiusQuickPanel({
       onMouseDown={preserveQuickPanelInputFocus}
       data-quick-panel={"corner"}
     >
-      {value4 && corners !== undefined ? (<div className={"grid grid-cols-[1fr_1fr_auto] items-center gap-1.5"}>
+      {showsIndividualCorners && corners !== undefined ? (<div className={"grid grid-cols-[1fr_1fr_auto] items-center gap-1.5"}>
           {RadiusCornerInput(corners, "tl", max, radius)}
           {RadiusCornerInput(corners, "tr", max, radius)}
-          {value5}
+          {individualToggle}
           {RadiusCornerInput(corners, "bl", max, radius)}
           {RadiusCornerInput(corners, "br", max, radius)}
           <span />
@@ -372,18 +372,18 @@ function RadiusQuickPanel({
               aria-label={uiMessage("inspector.quickPanels.cornerRadius")}
               unit={"px"}
               title={uiMessage("inspector.quickPanels.cornerRadius")}
-              value={value ? undefined : radius}
+              value={hasMixedCorners ? undefined : radius}
               min={0}
               max={max}
               step={1}
-              clearable={!value}
-              placeholder={value ? (uiMessage("inspector.quickPanels.mixed")) : ("0")}
+              clearable={!hasMixedCorners}
+              placeholder={hasMixedCorners ? (uiMessage("inspector.quickPanels.mixed")) : ("0")}
               onValue={onChange}
               onScrub={onLive}
               onScrubEnd={onLiveEnd}
             />
           </div>
-          {value5}
+          {individualToggle}
         </div>)}
     </div>
   );
@@ -428,60 +428,60 @@ function SpacingSidesEditor({
 }: Dynamic): Dynamic {
   useUiLocale();
   let {
-      value: value,
-      onChange: value2,
-      onLive: value3,
-      onLiveEnd: value4,
+      value: sideValues,
+      onChange: onSidesChange,
+      onLive: onSidesLive,
+      onLiveEnd: onSidesLiveEnd,
     }: Dynamic = binding,
-    [value5, value6]: Dynamic = (0, react_mB.useState)(
-      value.left !== value.right || value.top !== value.bottom,
+    [isIndividualOpen, setIsIndividualOpen]: Dynamic = (0, react_mB.useState)(
+      sideValues.left !== sideValues.right || sideValues.top !== sideValues.bottom,
     ),
-    callback: Dynamic = (
-      input?: Dynamic,
-      options?: Dynamic,
-      context?: Dynamic,
+    renderSideInput: Dynamic = (
+      prefixLetter?: Dynamic,
+      sideLabel?: Dynamic,
+      sideKeys?: Dynamic,
     ): Dynamic => {
-      let value8: Dynamic = context.map(
-          (input2?: Dynamic): Dynamic => value[input2],
+      let currentValues: Dynamic = sideKeys.map(
+          (side?: Dynamic): Dynamic => sideValues[side],
         ),
-        value9: Dynamic = value8.every(
-          (input2?: Dynamic): Dynamic => input2 === value8[0],
+        isUniform: Dynamic = currentValues.every(
+          (sideValue?: Dynamic): Dynamic => sideValue === currentValues[0],
         ),
-        callback2: Dynamic = (input2?: Dynamic): Dynamic =>
+        spreadToSides: Dynamic = (nextValue?: Dynamic): Dynamic =>
           Object.fromEntries(
-            context.map((input3?: Dynamic): Dynamic => [input3, input2]),
+            sideKeys.map((side?: Dynamic): Dynamic => [side, nextValue]),
           );
       return (
         <NumericInput
-          key={input}
-          prefix={input}
-          aria-label={((title) + (" ")) + (options)}
-          title={((title) + (" ")) + (options)}
-          value={value9 ? value8[0] : undefined}
-          placeholder={value9 ? ("0") : (uiMessage("inspector.quickPanels.mixed"))}
+          key={prefixLetter}
+          prefix={prefixLetter}
+          aria-label={((title) + (" ")) + (sideLabel)}
+          title={((title) + (" ")) + (sideLabel)}
+          value={isUniform ? currentValues[0] : undefined}
+          placeholder={isUniform ? ("0") : (uiMessage("inspector.quickPanels.mixed"))}
           min={0}
           max={max}
           step={1}
-          clearable={value9}
-          onValue={(input2?: Dynamic): Dynamic => {
-            (input2 !== undefined || value9) && value2(callback2(input2));
+          clearable={isUniform}
+          onValue={(nextValue?: Dynamic): Dynamic => {
+            (nextValue !== undefined || isUniform) && onSidesChange(spreadToSides(nextValue));
           }}
           onScrub={
-            value3
-              ? (input2?: Dynamic): Dynamic => value3(callback2(input2))
+            onSidesLive
+              ? (nextValue?: Dynamic): Dynamic => onSidesLive(spreadToSides(nextValue))
               : undefined
           }
-          onScrubEnd={value4}
+          onScrubEnd={onSidesLiveEnd}
         />
       );
     },
-    value7: Dynamic = (
+    individualToggle: Dynamic = (
       <QuickPanelIconButton
-        icon={PropertiesTooltipNameViewBoxPathsConfig_2}
+        icon={borderSidesIcon}
         label={uiMessage("inspector.quickPanels.individual", { value1: String(title.toLowerCase()) })}
-        pressed={value5}
+        pressed={isIndividualOpen}
         hint={"Set each side"}
-        onClick={(): Dynamic => value6(!value5)}
+        onClick={(): Dynamic => setIsIndividualOpen(!isIndividualOpen)}
       />
     );
   return (
@@ -492,17 +492,17 @@ function SpacingSidesEditor({
     >
       <div className={quickPanelHintClass}>{title}</div>
       <div className={"grid grid-cols-[1fr_1fr_auto] items-center gap-1.5"}>
-        {value5 ? (<jsx_os.Fragment>
-            {callback("T", "top", ["top"])}
-            {callback("R", "right", ["right"])}
-            {value7}
-            {callback("B", "bottom", ["bottom"])}
-            {callback("L", "left", ["left"])}
+        {isIndividualOpen ? (<jsx_os.Fragment>
+            {renderSideInput("T", "top", ["top"])}
+            {renderSideInput("R", "right", ["right"])}
+            {individualToggle}
+            {renderSideInput("B", "bottom", ["bottom"])}
+            {renderSideInput("L", "left", ["left"])}
             <span />
           </jsx_os.Fragment>) : (<jsx_os.Fragment>
-            {callback("H", uiMessage("inspector.quickPanels.leftAndRight"), ["left", "right"])}
-            {callback("V", uiMessage("inspector.quickPanels.topAndBottom"), ["top", "bottom"])}
-            {value7}
+            {renderSideInput("H", uiMessage("inspector.quickPanels.leftAndRight"), ["left", "right"])}
+            {renderSideInput("V", uiMessage("inspector.quickPanels.topAndBottom"), ["top", "bottom"])}
+            {individualToggle}
           </jsx_os.Fragment>)}
       </div>
     </div>
@@ -561,14 +561,14 @@ export function installPropertiesQuickPanels(): () => void {
       get dotted() { return uiMessage("inspector.quickPanels.dotted"); },
     };
     borderStyleGlyphs = {
-      solid: PropertiesTooltipNameViewBoxPathsConfig_6,
-      dashed: PropertiesTooltipNameViewBoxPathsConfig_7,
-      dotted: PropertiesTooltipNameViewBoxPathsConfig_8,
+      solid: strokeSolidIcon,
+      dashed: strokeDashedIcon,
+      dotted: strokeDottedIcon,
     };
     quickPanelBodyClass = "flex w-[184px] flex-col gap-1.5";
     quickPanelPopoverOptions = {
       side: "right",
-      anchor: (input?: Dynamic): Dynamic => input.closest("[data-quick-panel]"),
+      anchor: (element?: Dynamic): Dynamic => element.closest("[data-quick-panel]"),
     };
     quickPanelHintClass = "px-0.5 pt-0.5 text-footnote text-muted select-none";
     radiusCorners = ["tl", "tr", "bl", "br"];

@@ -20,292 +20,292 @@ var PreviewAddressedArtboardsHandler: Dynamic;
 var HttpsProjectInvalidValue: Dynamic;
 var PreviewAddressedArtboardsResolvedValue: Dynamic;
 var PreviewAddressedArtboardsCache: Dynamic;
-function hasExactFileReference(input?: Dynamic, options?: Dynamic): Dynamic {
+function hasExactFileReference(text: string, fileReference: string): boolean {
   for (
-    let value: Dynamic = input.indexOf(options);
-    value >= 0;
-    value = input.indexOf(options, value + 1)
+    let matchIndex: number = text.indexOf(fileReference);
+    matchIndex >= 0;
+    matchIndex = text.indexOf(fileReference, matchIndex + 1)
   ) {
-    let value2: Dynamic = value === 0 ? "" : input[value - 1];
+    let precedingChar: string = matchIndex === 0 ? "" : text[matchIndex - 1];
     if (
-      value2 === "" ||
-      !/[A-Za-z0-9_.%/-]/.test(value2) ||
-      (value2 === "/" &&
-        input[value - 2] === "." &&
-        !/[A-Za-z0-9_.%/-]/.test(input[value - 3] ?? ""))
+      precedingChar === "" ||
+      !/[A-Za-z0-9_.%/-]/.test(precedingChar) ||
+      (precedingChar === "/" &&
+        text[matchIndex - 2] === "." &&
+        !/[A-Za-z0-9_.%/-]/.test(text[matchIndex - 3] ?? ""))
     )
       return true;
   }
   return false;
 }
-function projectReferenceTokens(input?: Dynamic): Dynamic {
-  let value: Dynamic = decodeHtmlAttributeEntities(input);
-  return (value === input ? [input] : [input, value]).flatMap(
-    (input2?: Dynamic): Dynamic => input2.match(/[\w.~%/\\:@!$&*+-]+/g) ?? [],
+function projectReferenceTokens(attributeText?: Dynamic): Dynamic {
+  let decodedText: Dynamic = decodeHtmlAttributeEntities(attributeText);
+  return (decodedText === attributeText ? [attributeText] : [attributeText, decodedText]).flatMap(
+    (variant?: Dynamic): Dynamic => variant.match(/[\w.~%/\\:@!$&*+-]+/g) ?? [],
   );
 }
 function resolveProjectReference(
-  input?: Dynamic,
-  options?: Dynamic,
+  reference?: Dynamic,
+  baseDirectory?: Dynamic,
 ): Dynamic {
-  let value: Dynamic;
+  let resolvedUrl: Dynamic;
   try {
-    value = new URL(input, PreviewAddressedArtboardsResolvedValue + options);
+    resolvedUrl = new URL(reference, PreviewAddressedArtboardsResolvedValue + baseDirectory);
   } catch {
     return;
   }
-  if (value.origin === HttpsProjectInvalidValue) {
-    if (!value.pathname.startsWith("/p/")) return null;
+  if (resolvedUrl.origin === HttpsProjectInvalidValue) {
+    if (!resolvedUrl.pathname.startsWith("/p/")) return null;
     try {
-      return decodeURIComponent(value.pathname.slice(3));
+      return decodeURIComponent(resolvedUrl.pathname.slice(3));
     } catch {
-      return value.pathname.slice(3);
+      return resolvedUrl.pathname.slice(3);
     }
   }
 }
 function referencesOutsideProject(
-  input?: Dynamic,
-  options?: Dynamic,
+  text?: Dynamic,
+  baseDirectory?: Dynamic,
 ): Dynamic {
-  return projectReferenceTokens(input).some(
-    (input2?: Dynamic): Dynamic =>
-      /\.\.|%2e/i.test(input2) &&
-      resolveProjectReference(input2, options) === null,
+  return projectReferenceTokens(text).some(
+    (token?: Dynamic): Dynamic =>
+      /\.\.|%2e/i.test(token) &&
+      resolveProjectReference(token, baseDirectory) === null,
   );
 }
 function addressedArtboardRefusal(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
-  extra?: Dynamic,
+  fileText?: Dynamic,
+  filePath?: Dynamic,
+  baseDirectory?: Dynamic,
+  projectPaths?: Dynamic,
+  projectPathsKey?: Dynamic,
 ): Dynamic {
-  let entry: Dynamic = PreviewAddressedArtboardsCache.get(options);
+  let cached: Dynamic = PreviewAddressedArtboardsCache.get(filePath);
   if (
-    entry !== undefined &&
-    entry.text === input &&
-    entry.native === context &&
-    entry.paths === extra
+    cached !== undefined &&
+    cached.text === fileText &&
+    cached.native === baseDirectory &&
+    cached.paths === projectPathsKey
   )
-    return entry.why;
-  let value2: Dynamic = ((): Dynamic => {
-    if (input.includes("/appifact/"))
-      return options + " names a path under /appifact/";
-    if (referencesOutsideProject(input, context))
-      return options + " names a path that climbs above the project folder";
+    return cached.why;
+  let refusal: Dynamic = ((): Dynamic => {
+    if (fileText.includes("/appifact/"))
+      return filePath + " names a path under /appifact/";
+    if (referencesOutsideProject(fileText, baseDirectory))
+      return filePath + " names a path that climbs above the project folder";
     if (
-      !PreviewAddressedArtboardsPattern.test(options) &&
-      /\bimport\s*\(/.test(input)
+      !PreviewAddressedArtboardsPattern.test(filePath) &&
+      /\bimport\s*\(/.test(fileText)
     )
-      return options + " imports a module as it runs";
-    for (let value3 of value as Dynamic)
+      return filePath + " imports a module as it runs";
+    for (let otherPath of projectPaths as Dynamic)
       if (
-        value3 !== options &&
-        PreviewAddressedArtboardsHandler(input, "/" + value3)
+        otherPath !== filePath &&
+        PreviewAddressedArtboardsHandler(fileText, "/" + otherPath)
       )
-        return options + " names " + value3 + " from the root";
-    for (let value3 of projectReferenceTokens(input) as Dynamic) {
-      if (!/^\/(?!\/)/.test(value3)) continue;
-      let value4: Dynamic = resolveProjectAssetPath(
-        context,
-        value3,
+        return filePath + " names " + otherPath + " from the root";
+    for (let token of projectReferenceTokens(fileText) as Dynamic) {
+      if (!/^\/(?!\/)/.test(token)) continue;
+      let assetPath: Dynamic = resolveProjectAssetPath(
+        baseDirectory,
+        token,
       );
       if (
-        value4 !== null &&
-        value4 !== options &&
-        value.includes(value4) &&
-        resolveProjectReference(value3, context) !== value4
+        assetPath !== null &&
+        assetPath !== filePath &&
+        projectPaths.includes(assetPath) &&
+        resolveProjectReference(token, baseDirectory) !== assetPath
       )
-        return options + " names " + value4 + " from the root";
+        return filePath + " names " + assetPath + " from the root";
     }
-    for (let value3 of value as Dynamic)
+    for (let otherPath of projectPaths as Dynamic)
       if (
-        value3 !== options &&
-        context !== "" &&
-        PlatformFileContentWebpAvifPattern.test(value3) &&
-        PreviewAddressedArtboardsHandler(input, value3)
+        otherPath !== filePath &&
+        baseDirectory !== "" &&
+        PlatformFileContentWebpAvifPattern.test(otherPath) &&
+        PreviewAddressedArtboardsHandler(fileText, otherPath)
       )
-        return options + " names " + value3 + " from the project folder";
+        return filePath + " names " + otherPath + " from the project folder";
   })();
-  PreviewAddressedArtboardsCache.set(options, {
-    text: input,
-    native: context,
-    paths: extra,
-    why: value2,
+  PreviewAddressedArtboardsCache.set(filePath, {
+    text: fileText,
+    native: baseDirectory,
+    paths: projectPathsKey,
+    why: refusal,
   });
-  return value2;
+  return refusal;
 }
 function addressedRuntimeRefusal(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  html?: Dynamic,
+  baseDirectory?: Dynamic,
+  files?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = maskHtmlRawContent(input);
-  for (let [value2, value3] of findHtmlTags(
-    value,
+  let maskedHtml: Dynamic = maskHtmlRawContent(html);
+  for (let [tagStart, tagEnd] of findHtmlTags(
+    maskedHtml,
     "base",
   ) as Dynamic)
     if (
-      getHtmlAttribute(input.slice(value2, value3), "href") !==
+      getHtmlAttribute(html.slice(tagStart, tagEnd), "href") !==
       null
     )
       return "a base element of its own";
-  for (let [value2, value3] of findHtmlTags(
-    value,
+  for (let [tagStart, tagEnd] of findHtmlTags(
+    maskedHtml,
     "script",
   ) as Dynamic) {
-    let value4: Dynamic = input.slice(value2, value3),
-      value5: Dynamic = getHtmlAttribute(value4, "src"),
-      value6: Dynamic =
-        (getHtmlAttribute(value4, "type") ?? "")
+    let tagText: Dynamic = html.slice(tagStart, tagEnd),
+      src: Dynamic = getHtmlAttribute(tagText, "src"),
+      isModule: Dynamic =
+        (getHtmlAttribute(tagText, "type") ?? "")
           .trim()
           .toLowerCase() === "module";
-    if (value5 === null) {
-      if (value6) return "an inline module script";
+    if (src === null) {
+      if (isModule) return "an inline module script";
       continue;
     }
-    let value7: Dynamic = resolveProjectAssetPath(
-      options,
-      value5,
+    let scriptPath: Dynamic = resolveProjectAssetPath(
+      baseDirectory,
+      src,
     );
-    if (!(value7 === null || context[value7] == null)) {
-      if (value6) return "a module script names " + value7;
-      if (getHtmlAttribute(value4, "async") !== null)
-        return "an async script names " + value7;
+    if (!(scriptPath === null || files[scriptPath] == null)) {
+      if (isModule) return "a module script names " + scriptPath;
+      if (getHtmlAttribute(tagText, "async") !== null)
+        return "an async script names " + scriptPath;
     }
   }
 }
 function isRequiredProjectFile(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
+  filePath?: Dynamic,
+  artboardPath?: Dynamic,
+  dependencyPaths?: Dynamic,
+  extraPaths?: Dynamic,
 ): Dynamic {
-  return input === options || context.has(input) || value.has(input);
+  return filePath === artboardPath || dependencyPaths.has(filePath) || extraPaths.has(filePath);
 }
 function filterAddressedFiles(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
-  extra?: Dynamic,
+  filePaths?: Dynamic,
+  artboardPath?: Dynamic,
+  dependencyPaths?: Dynamic,
+  extraPaths?: Dynamic,
+  getFallbackFiles?: Dynamic,
 ): Dynamic {
-  let value2: Dynamic;
-  return input.filter(
-    (input2?: Dynamic): Dynamic =>
-      isRequiredProjectFile(input2, options, context, value) ||
-      input2 in (value2 ??= extra()),
+  let fallbackFiles: Dynamic;
+  return filePaths.filter(
+    (filePath?: Dynamic): Dynamic =>
+      isRequiredProjectFile(filePath, artboardPath, dependencyPaths, extraPaths) ||
+      filePath in (fallbackFiles ??= getFallbackFiles()),
   );
 }
 function buildAddressedArtboard(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  editorFiles?: Dynamic,
+  artboardPath?: Dynamic,
+  projectState?: Dynamic,
 ): Dynamic {
-  if (context.projectRoot === undefined)
+  if (projectState.projectRoot === undefined)
     return {
       copied:
         "the published files are not known for the version the editor's page addresses, or one of them did not load",
     };
-  let value: Dynamic = input[options];
-  if (value == null)
+  let artboardHtml: Dynamic = editorFiles[artboardPath];
+  if (artboardHtml == null)
     return {
       copied: "the artboard's file is not among the editor's files",
     };
-  if (isLoadingArtboardHtml(value))
+  if (isLoadingArtboardHtml(artboardHtml))
     return {
       copied: "the artboard's content has not arrived",
     };
-  if (!context.publishedAtAddress(options))
+  if (!projectState.publishedAtAddress(artboardPath))
     return {
       copied:
         "the artboard's file is not in the published version the editor shows",
     };
-  let value2: Dynamic = projectDirectoryOf(options),
-    value3: Dynamic = Object.keys(input),
-    value4: Dynamic = value3.join(`
+  let artboardDirectory: Dynamic = projectDirectoryOf(artboardPath),
+    filePaths: Dynamic = Object.keys(editorFiles),
+    filePathsKey: Dynamic = filePaths.join(`
 `),
-    state: Dynamic = {};
-  for (let value6 of value3 as Dynamic) {
-    let value7: Dynamic = input[value6];
-    if (PreviewAddressedArtboardsSupportPattern.test(value6))
+    htmlFiles: Dynamic = {};
+  for (let filePath of filePaths as Dynamic) {
+    let fileText: Dynamic = editorFiles[filePath];
+    if (PreviewAddressedArtboardsSupportPattern.test(filePath))
       return {
-        copied: "the canvas holds a runtime file of its own: " + value6,
+        copied: "the canvas holds a runtime file of its own: " + filePath,
       };
-    if (PreviewAddressedArtboardsTest(value6)) {
-      if (projectDirectoryOf(value6) !== value2)
+    if (PreviewAddressedArtboardsTest(filePath)) {
+      if (projectDirectoryOf(filePath) !== artboardDirectory)
         return {
-          copied: "the artboard uses a page from another folder: " + value6,
+          copied: "the artboard uses a page from another folder: " + filePath,
         };
       if (
-        value6 !== options &&
-        rewriteHtmlDependencies(value7, input, value2) !== value7
+        filePath !== artboardPath &&
+        rewriteHtmlDependencies(fileText, editorFiles, artboardDirectory) !== fileText
       )
         return {
           copied:
-            "a component names a stored stylesheet or script: " + value6,
+            "a component names a stored stylesheet or script: " + filePath,
         };
-      let value9: Dynamic = addressedRuntimeRefusal(value7, value2, input);
-      if (value9 !== undefined)
+      let runtimeRefusal: Dynamic = addressedRuntimeRefusal(fileText, artboardDirectory, editorFiles);
+      if (runtimeRefusal !== undefined)
         return {
-          copied: value9 + " in " + value6,
+          copied: runtimeRefusal + " in " + filePath,
         };
-      state[value6] = value7;
+      htmlFiles[filePath] = fileText;
     } else {
-      if (!context.publishedAsHeld(value6, value7))
+      if (!projectState.publishedAsHeld(filePath, fileText))
         return {
-          copied: "not published with the bytes the editor holds: " + value6,
+          copied: "not published with the bytes the editor holds: " + filePath,
         };
       if (
-        isProjectSourcePath(value6) &&
-        normalizeBlobAssetPaths(value7) !== value7
+        isProjectSourcePath(filePath) &&
+        normalizeBlobAssetPaths(fileText) !== fileText
       )
         return {
           copied:
             'an uploaded file named as "_blob/" and not "/_blob/" in ' +
-            value6,
+            filePath,
         };
     }
-    if (PlatformFileContentWebpAvifPattern.test(value6)) continue;
-    let value8: Dynamic = addressedArtboardRefusal(
-      value7,
-      value6,
-      PreviewAddressedArtboardsPattern.test(value6)
-        ? projectDirectoryOf(value6)
-        : value2,
-      value3,
-      value4,
+    if (PlatformFileContentWebpAvifPattern.test(filePath)) continue;
+    let refusal: Dynamic = addressedArtboardRefusal(
+      fileText,
+      filePath,
+      PreviewAddressedArtboardsPattern.test(filePath)
+        ? projectDirectoryOf(filePath)
+        : artboardDirectory,
+      filePaths,
+      filePathsKey,
     );
-    if (value8 !== undefined)
+    if (refusal !== undefined)
       return {
-        copied: value8,
+        copied: refusal,
       };
   }
-  let pathname: Dynamic = new URL(context.projectRoot).pathname,
-    value5: Dynamic =
-      context.projectRoot +
-      options.split("/").map(encodeURIComponent).join("/");
+  let projectPathname: Dynamic = new URL(projectState.projectRoot).pathname,
+    artboardPageUrl: Dynamic =
+      projectState.projectRoot +
+      artboardPath.split("/").map(encodeURIComponent).join("/");
   return {
-    projectRoot: context.projectRoot,
-    projectPath: pathname,
-    pageUrl: value5,
-    files: state,
+    projectRoot: projectState.projectRoot,
+    projectPath: projectPathname,
+    pageUrl: artboardPageUrl,
+    files: htmlFiles,
   };
 }
 function validateAddressedArtboard(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
+  files?: Dynamic,
+  artboardPath?: Dynamic,
+  builtProjectRoot?: Dynamic,
+  projectState?: Dynamic,
 ): Dynamic {
   if (
-    value.projectRoot !== undefined &&
-    value.projectRoot !== context &&
-    !value.describes(context)
+    projectState.projectRoot !== undefined &&
+    projectState.projectRoot !== builtProjectRoot &&
+    !projectState.describes(builtProjectRoot)
   )
     return "the list of files no longer describes the version the artboard was built for, or a file did not load from it";
-  let value2: Dynamic = buildAddressedArtboard(input, options, value);
-  return "copied" in value2 ? value2.copied : undefined;
+  let built: Dynamic = buildAddressedArtboard(files, artboardPath, projectState);
+  return "copied" in built ? built.copied : undefined;
 }
 function addressedProjectState(): Dynamic {
   return {
@@ -316,30 +316,30 @@ function addressedProjectState(): Dynamic {
   };
 }
 function resolveAddressedArtboard(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  files?: Dynamic,
+  artboardPath?: Dynamic,
+  isEnabled?: Dynamic,
 ): Dynamic {
-  return context
-    ? buildAddressedArtboard(input, options, addressedProjectState())
+  return isEnabled
+    ? buildAddressedArtboard(files, artboardPath, addressedProjectState())
     : {
         copied: "the flag is off",
       };
 }
 function addressedArtboardFailure(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  files?: Dynamic,
+  artboardPath?: Dynamic,
+  builtProjectRoot?: Dynamic,
 ): Dynamic {
   return validateAddressedArtboard(
-    collectProjectDependencyFiles(input, options),
-    options,
-    context,
+    collectProjectDependencyFiles(files, artboardPath),
+    artboardPath,
+    builtProjectRoot,
     addressedProjectState(),
   );
 }
-function addressedArtboardCacheKey(input?: Dynamic): Dynamic {
-  return input ? publishedProjectCacheKey() : "";
+function addressedArtboardCacheKey(isEnabled?: Dynamic): Dynamic {
+  return isEnabled ? publishedProjectCacheKey() : "";
 }
 export {
   addressedArtboardCacheKey,
@@ -370,15 +370,15 @@ export function installPreviewAddressedArtboards(): () => void {
     PreviewAddressedArtboardsHtmlPattern = /\.dc\.html$/i;
     PreviewAddressedArtboardsPattern = /\.css$/i;
     PreviewAddressedArtboardsSupportPattern = /(^|\/)support\.js$/;
-    PreviewAddressedArtboardsTest = (input?: Dynamic): Dynamic =>
-      PreviewAddressedArtboardsHtmlPattern.test(input);
+    PreviewAddressedArtboardsTest = (filePath?: Dynamic): Dynamic =>
+      PreviewAddressedArtboardsHtmlPattern.test(filePath);
     PreviewAddressedArtboardsHandler = (
-      input?: Dynamic,
-      options?: Dynamic,
+      text?: Dynamic,
+      fileReference?: Dynamic,
     ): Dynamic =>
-      hasExactFileReference(input, options) ||
-      (encodeURI(options) !== options &&
-        hasExactFileReference(input, encodeURI(options)));
+      hasExactFileReference(text, fileReference) ||
+      (encodeURI(fileReference) !== fileReference &&
+        hasExactFileReference(text, encodeURI(fileReference)));
     HttpsProjectInvalidValue = "https://project.invalid";
     PreviewAddressedArtboardsResolvedValue = HttpsProjectInvalidValue + "/p/";
     PreviewAddressedArtboardsCache = new Map();
