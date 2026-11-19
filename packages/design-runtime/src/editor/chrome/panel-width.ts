@@ -17,9 +17,9 @@ function readPanelPreference(key?: Dynamic, isValid?: Dynamic): Dynamic {
     if (isValid(storedValue)) return storedValue;
   } catch {}
 }
-function writePanelPreference(key?: Dynamic, value?: Dynamic): Dynamic {
+function writePanelPreference(key?: Dynamic, preference?: Dynamic): Dynamic {
   try {
-    localStorage.setItem(McSideValue + key, JSON.stringify(value));
+    localStorage.setItem(McSideValue + key, JSON.stringify(preference));
   } catch {}
 }
 function panelMaximumWidth(): Dynamic {
@@ -158,8 +158,8 @@ export {
 export function installEditorChromePanelWidth(): () => void {
   return () => {
     McSideValue = "mc-side/";
-    ChromePanelWidthHandler = (value?: Dynamic): Dynamic =>
-      typeof value == "number" && Number.isFinite(value);
+    ChromePanelWidthHandler = (candidate?: Dynamic): Dynamic =>
+      typeof candidate == "number" && Number.isFinite(candidate);
     ChromePanelWidthConstant = 285;
     compactMinPanelWidth = 376;
   };
