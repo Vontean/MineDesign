@@ -15,66 +15,66 @@ import { sanitizeCssBackground, sanitizeCssColor } from "../../platform/css-sani
 var ComponentsPropEditorsDataTweakPopupConfig: Dynamic;
 var ComponentsPropEditorsPattern: Dynamic;
 var ComponentsPropEditors234Config: Dynamic;
-function primitivePropText(input?: Dynamic): Dynamic {
-  return input == null || typeof input == "object" ? "" : String(input);
+function primitivePropText(value?: Dynamic): Dynamic {
+  return value == null || typeof value == "object" ? "" : String(value);
 }
-function numericPropValue(input?: Dynamic): Dynamic {
-  if (typeof input == "number")
-    return Number.isFinite(input) ? input : undefined;
-  if (typeof input == "string" && input.trim() !== "") {
-    let value: Dynamic = Number(input);
+function numericPropValue(value?: Dynamic): Dynamic {
+  if (typeof value == "number")
     return Number.isFinite(value) ? value : undefined;
+  if (typeof value == "string" && value.trim() !== "") {
+    let parsed: Dynamic = Number(value);
+    return Number.isFinite(parsed) ? parsed : undefined;
   }
 }
-function propStepDecimalPlaces(input?: Dynamic): Dynamic {
-  let value: Dynamic = String(input),
-    value2: Dynamic = value.indexOf(".");
-  return value2 === -1 || value.includes("e") ? 0 : value.length - value2 - 1;
+function propStepDecimalPlaces(step?: Dynamic): Dynamic {
+  let stepText: Dynamic = String(step),
+    dotIndex: Dynamic = stepText.indexOf(".");
+  return dotIndex === -1 || stepText.includes("e") ? 0 : stepText.length - dotIndex - 1;
 }
 function clampPropStep(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
   value?: Dynamic,
+  min?: Dynamic,
+  max?: Dynamic,
+  step?: Dynamic,
 ): Dynamic {
-  if (!(value > 0)) return Math.min(context, Math.max(options, input));
-  let value2: Dynamic = Math.max(
-      propStepDecimalPlaces(value),
-      propStepDecimalPlaces(options),
+  if (!(step > 0)) return Math.min(max, Math.max(min, value));
+  let decimals: Dynamic = Math.max(
+      propStepDecimalPlaces(step),
+      propStepDecimalPlaces(min),
     ),
-    value3: Dynamic = Number(
-      (Math.round((input - options) / value) * value + options).toFixed(
-        value2,
+    snapped: Dynamic = Number(
+      (Math.round((value - min) / step) * step + min).toFixed(
+        decimals,
       ),
     );
-  return Math.min(context, Math.max(options, value3));
+  return Math.min(max, Math.max(min, snapped));
 }
-function propOptionItems(input?: Dynamic): Dynamic {
-  return (input ?? []).map(
-    (input2?: Dynamic): Dynamic =>
-      input2 != null && typeof input2 == "object" && "value" in input2
+function propOptionItems(options?: Dynamic): Dynamic {
+  return (options ?? []).map(
+    (option?: Dynamic): Dynamic =>
+      option != null && typeof option == "object" && "value" in option
         ? {
-            value: input2.value,
-            label: String(input2.label ?? input2.value),
+            value: option.value,
+            label: String(option.label ?? option.value),
           }
         : {
-            value: input2,
-            label: String(input2),
+            value: option,
+            label: String(option),
           },
   );
 }
-function isLightHexColor(input?: Dynamic): Dynamic {
-  let value: Dynamic = input.replace("#", ""),
-    value2: Dynamic =
-      value.length === 3
-        ? value.replace(/./g, (input2?: Dynamic): Dynamic => input2 + input2)
-        : value.padEnd(6, "0"),
-    value3: Dynamic = parseInt(value2.slice(0, 6), 16);
-  if (Number.isNaN(value3)) return true;
-  let value4: Dynamic = (value3 >> 16) & 255,
-    value5: Dynamic = (value3 >> 8) & 255,
-    value6: Dynamic = value3 & 255;
-  return value4 * 299 + value5 * 587 + value6 * 114 > 148e3;
+function isLightHexColor(hex?: Dynamic): Dynamic {
+  let digits: Dynamic = hex.replace("#", ""),
+    fullHex: Dynamic =
+      digits.length === 3
+        ? digits.replace(/./g, (digit?: Dynamic): Dynamic => digit + digit)
+        : digits.padEnd(6, "0"),
+    rgb: Dynamic = parseInt(fullHex.slice(0, 6), 16);
+  if (Number.isNaN(rgb)) return true;
+  let red: Dynamic = (rgb >> 16) & 255,
+    green: Dynamic = (rgb >> 8) & 255,
+    blue: Dynamic = rgb & 255;
+  return red * 299 + green * 587 + blue * 114 > 148e3;
 }
 function PropPaletteCards({
   options: options,
@@ -84,81 +84,81 @@ function PropPaletteCards({
   "aria-label": ariaLabel,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let callback: Dynamic = (input?: Dynamic): Dynamic =>
-      String(JSON.stringify(input)).toLowerCase(),
-    value2: Dynamic = callback(value),
-    value3: Dynamic = size === "row";
+  let toKey: Dynamic = (option?: Dynamic): Dynamic =>
+      String(JSON.stringify(option)).toLowerCase(),
+    selectedKey: Dynamic = toKey(value),
+    isRowSize: Dynamic = size === "row";
   return (
     <div
       className={cn(
         "flex min-w-0 flex-1 gap-1.5",
-        value3 && "flex-wrap gap-1 py-0.5",
+        isRowSize && "flex-wrap gap-1 py-0.5",
       )}
       role={"radiogroup"}
       aria-label={ariaLabel}
     >
-      {options.map((input?: Dynamic, options2?: Dynamic): Dynamic => {
-        let value4: Dynamic = (Array.isArray(input) ? input : [input]).map(
+      {options.map((option?: Dynamic, index?: Dynamic): Dynamic => {
+        let colors: Dynamic = (Array.isArray(option) ? option : [option]).map(
             String,
           ),
-          [value5 = "#000", ...value6]: Dynamic = value4,
-          value7: Dynamic = value6.slice(0, value3 ? 3 : 4),
-          value8: Dynamic = callback(input) === value2;
+          [mainColor = "#000", ...sideColors]: Dynamic = colors,
+          visibleSideColors: Dynamic = sideColors.slice(0, isRowSize ? 3 : 4),
+          isSelected: Dynamic = toKey(option) === selectedKey;
         return (
           <button
-            key={options2}
+            key={index}
             type={"button"}
             role={"radio"}
-            aria-checked={value8}
-            aria-label={value4.join(", ")}
-            title={value4.join(" \xB7 ")}
-            onClick={(): Dynamic => onChange(input)}
+            aria-checked={isSelected}
+            aria-label={colors.join(", ")}
+            title={colors.join(" \xB7 ")}
+            onClick={(): Dynamic => onChange(option)}
             className={cn(
               "relative min-w-0 cursor-default overflow-hidden border-0 p-0",
-              value3
+              isRowSize
                 ? "h-control basis-[calc((100%-0.5rem)/3)] rounded pointer-coarse:h-10"
                 : "h-[46px] flex-1 rounded-md",
               "transition-[transform,box-shadow] duration-[120ms] ease-[cubic-bezier(.3,.7,.4,1)]",
-              value8
+              isSelected
                 ? "shadow-[0_0_0_1.5px_var(--cds-text-primary),0_2px_6px_rgba(0,0,0,0.15)]"
                 : cn(
                     "shadow-card-ring hover:shadow-field-hover",
-                    !value3 && "hover:-translate-y-px",
+                    !isRowSize && "hover:-translate-y-px",
                   ),
             )}
             style={{
-              background: sanitizeCssBackground(value5),
+              background: sanitizeCssBackground(mainColor),
             }}
           >
-            {value7.length > 0 && (<span
+            {visibleSideColors.length > 0 && (<span
                 className={
                   "absolute inset-y-0 right-0 flex w-[34%] flex-col shadow-[-1px_0_0_rgba(0,0,0,0.1)]"
                 }
               >
-                {value7.map(
-                  (input2?: Dynamic, options3?: Dynamic): Dynamic => (
+                {visibleSideColors.map(
+                  (sideColor?: Dynamic, sideIndex?: Dynamic): Dynamic => (
                     <i
-                      key={options3}
+                      key={sideIndex}
                       className={cn(
                         "flex-1",
-                        options3 > 0 &&
+                        sideIndex > 0 &&
                           "shadow-[0_-1px_0_color-mix(in_srgb,var(--cds-text-primary)_18%,transparent)]",
                       )}
                       style={{
                         background: sanitizeCssBackground(
-                          input2,
+                          sideColor,
                         ),
                       }}
                     />
                   ),
                 )}
               </span>)}
-            {value8 && (<svg
+            {isSelected && (<svg
                 viewBox={"0 0 14 14"}
                 aria-hidden={"true"}
                 className={cn(
                   "absolute drop-shadow-[0_1px_1px_rgba(0,0,0,0.3)]",
-                  value3
+                  isRowSize
                     ? "left-1 top-1 h-[11px] w-[11px]"
                     : "left-1.5 top-1.5 h-[13px] w-[13px]",
                 )}
@@ -170,7 +170,7 @@ function PropPaletteCards({
                   strokeLinecap={"round"}
                   strokeLinejoin={"round"}
                   stroke={
-                    isLightHexColor(value5) ? "rgba(0,0,0,.78)" : "#fff"
+                    isLightHexColor(mainColor) ? "rgba(0,0,0,.78)" : "#fff"
                   }
                 />
               </svg>)}
@@ -182,76 +182,76 @@ function PropPaletteCards({
 }
 function propColorEditorKind(items?: Dynamic): Dynamic {
   return items.length > 0 &&
-    !items.every((input?: Dynamic): Dynamic => typeof input == "string")
+    !items.every((option?: Dynamic): Dynamic => typeof option == "string")
     ? "palette-cards"
     : "color-well";
 }
-function canonicalPropHexColor(input?: Dynamic): Dynamic {
-  return hsvaToRgbaHex(parseHsvaColor(input));
+function canonicalPropHexColor(color?: Dynamic): Dynamic {
+  return hsvaToRgbaHex(parseHsvaColor(color));
 }
-function propColorOptionKeys(input?: Dynamic): Dynamic {
-  return input.map((input2?: Dynamic, options?: Dynamic): Dynamic => {
-    let value: Dynamic = input2.trim();
-    return ComponentsPropEditorsPattern.test(value)
-      ? canonicalPropHexColor(value)
-      : /\bvar\s*\(/i.test(value)
-        ? `\0unkeyable-${options}`
+function propColorOptionKeys(colors?: Dynamic): Dynamic {
+  return colors.map((color?: Dynamic, index?: Dynamic): Dynamic => {
+    let trimmed: Dynamic = color.trim();
+    return ComponentsPropEditorsPattern.test(trimmed)
+      ? canonicalPropHexColor(trimmed)
+      : /\bvar\s*\(/i.test(trimmed)
+        ? `\0unkeyable-${index}`
         : /^(?:inherit|initial|unset|revert|revert-layer|currentcolor)$/i.test(
-              value,
+              trimmed,
             )
-          ? `\0unkeyable-${options}`
+          ? `\0unkeyable-${index}`
           : typeof CSS !== "undefined" &&
               typeof CSS.supports == "function" &&
-              CSS.supports("color", value)
-            ? canonicalPropHexColor(value)
-            : `\0unkeyable-${options}`;
+              CSS.supports("color", trimmed)
+            ? canonicalPropHexColor(trimmed)
+            : `\0unkeyable-${index}`;
   });
 }
 function restorePropColorOption(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  swatches?: Dynamic,
+  swatchKeys?: Dynamic,
+  pickedColor?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = options.indexOf(canonicalPropHexColor(context));
-  return value >= 0 ? input[value] : context.toLowerCase();
+  let keyIndex: Dynamic = swatchKeys.indexOf(canonicalPropHexColor(pickedColor));
+  return keyIndex >= 0 ? swatches[keyIndex] : pickedColor.toLowerCase();
 }
 function designSystemPropColorOptions(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  swatches?: Dynamic,
+  swatchKeys?: Dynamic,
+  designSystems?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = designSystemColorOptions(context),
+  let systemOptions: Dynamic = designSystemColorOptions(designSystems),
     entries: Dynamic = new Map();
-  for (let value2 of value as Dynamic) {
+  for (let systemOption of systemOptions as Dynamic) {
     if (
-      typeof value2 == "string" ||
-      !ComponentsPropEditorsPattern.test(value2.value) ||
-      parseHsvaColor(value2.value).a < 1
+      typeof systemOption == "string" ||
+      !ComponentsPropEditorsPattern.test(systemOption.value) ||
+      parseHsvaColor(systemOption.value).a < 1
     )
       continue;
-    let value3: Dynamic = canonicalPropHexColor(value2.value);
-    entries.has(value3) || entries.set(value3, value2.label ?? value2.name);
+    let hex: Dynamic = canonicalPropHexColor(systemOption.value);
+    entries.has(hex) || entries.set(hex, systemOption.label ?? systemOption.name);
   }
   return [
-    ...input.map((input2?: Dynamic, options2?: Dynamic): Dynamic => {
-      let value2: Dynamic = ComponentsPropEditorsPattern.test(input2.trim())
-        ? entries.get(options[options2])
+    ...swatches.map((swatch?: Dynamic, index?: Dynamic): Dynamic => {
+      let label: Dynamic = ComponentsPropEditorsPattern.test(swatch.trim())
+        ? entries.get(swatchKeys[index])
         : undefined;
-      return value2 === undefined
-        ? input2
+      return label === undefined
+        ? swatch
         : {
-            name: input2,
-            value: input2,
-            label: value2,
+            name: swatch,
+            value: swatch,
+            label: label,
           };
     }),
-    ...value,
+    ...systemOptions,
   ];
 }
 function PropRangeInput({
   name: name,
   cur: cur,
-  min: min2,
+  min: minValue,
   max: max,
   step: step,
   unit: unit,
@@ -259,21 +259,21 @@ function PropRangeInput({
   onReset: onReset,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic = numericPropValue(cur) ?? min2,
-    value2: Dynamic = (0, reactInspectorContext_3.useRef)(value);
-  value2.current = value;
+  let currentValue: Dynamic = numericPropValue(cur) ?? minValue,
+    lastValueRef: Dynamic = (0, reactInspectorContext_3.useRef)(currentValue);
+  lastValueRef.current = currentValue;
   return (
     <PropertyRangeRow
       label={name}
-      value={value}
-      min={min2}
+      value={currentValue}
+      min={minValue}
       max={max}
       step={step}
       unit={unit}
-      onValue={(input?: Dynamic): Dynamic => {
-        let value3: Dynamic = clampPropStep(input, min2, max, step);
-        value3 !== value2.current &&
-          ((value2.current = value3), onChange(value3));
+      onValue={(nextValue?: Dynamic): Dynamic => {
+        let clamped: Dynamic = clampPropStep(nextValue, minValue, max, step);
+        clamped !== lastValueRef.current &&
+          ((lastValueRef.current = clamped), onChange(clamped));
       }}
       onReset={onReset}
     />
@@ -288,36 +288,36 @@ function PropColorInput({
   tweak: tweak,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic = typeof cur == "string" ? cur.trim() : "",
-    value2: Dynamic =
-      value !== "" && sanitizeCssColor(value) === value
-        ? value
+  let trimmed: Dynamic = typeof cur == "string" ? cur.trim() : "",
+    validColor: Dynamic =
+      trimmed !== "" && sanitizeCssColor(trimmed) === trimmed
+        ? trimmed
         : undefined,
-    value3: Dynamic = (0, reactInspectorContext_3.useMemo)(
+    stableSwatches: Dynamic = (0, reactInspectorContext_3.useMemo)(
       (): Dynamic => swatches,
       [swatches.join("\0"), swatches.length],
     ),
-    value4: Dynamic = (0, reactInspectorContext_3.useMemo)(
-      (): Dynamic => propColorOptionKeys(value3),
-      [value3],
+    swatchKeys: Dynamic = (0, reactInspectorContext_3.useMemo)(
+      (): Dynamic => propColorOptionKeys(stableSwatches),
+      [stableSwatches],
     ),
-    value5: Dynamic = useDesignSystems(),
-    value6: Dynamic = (0, reactInspectorContext_3.useMemo)(
-      (): Dynamic => designSystemPropColorOptions(value3, value4, value5),
-      [value3, value4, value5],
+    designSystems: Dynamic = useDesignSystems(),
+    allSwatches: Dynamic = (0, reactInspectorContext_3.useMemo)(
+      (): Dynamic => designSystemPropColorOptions(stableSwatches, swatchKeys, designSystems),
+      [stableSwatches, swatchKeys, designSystems],
     );
   return (
     <PropertyHexRow
       label={name}
-      value={value2}
-      swatches={value6}
+      value={validColor}
+      swatches={allSwatches}
       onReset={onReset}
       popupAttrs={
         tweak ? ComponentsPropEditorsDataTweakPopupConfig : undefined
       }
-      onChange={(input?: Dynamic): Dynamic => {
-        input !== undefined &&
-          onChange(restorePropColorOption(value3, value4, input));
+      onChange={(pickedColor?: Dynamic): Dynamic => {
+        pickedColor !== undefined &&
+          onChange(restorePropColorOption(stableSwatches, swatchKeys, pickedColor));
       }}
     />
   );
@@ -326,8 +326,8 @@ function propOptionsFitSegments(items?: Dynamic): Dynamic {
   return items.length < 2 || items.length > PropertiesRowsLimit
     ? false
     : items.reduce(
-        (input?: Dynamic, options?: Dynamic): Dynamic =>
-          Math.max(input, options.label.length),
+        (maxLength?: Dynamic, item?: Dynamic): Dynamic =>
+          Math.max(maxLength, item.label.length),
         0,
       ) <= (ComponentsPropEditors234Config[items.length] ?? 0);
 }
@@ -341,7 +341,7 @@ function ComponentPropInput({
   unsetHint: unsetHint,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let value2: Dynamic =
+  let currentValue: Dynamic =
     value === undefined &&
     (unsetHint === undefined || meta.editor === "boolean")
       ? meta.default
@@ -351,31 +351,31 @@ function ComponentPropInput({
       return (
         <PropertyBooleanRow
           label={name}
-          checked={!!value2}
+          checked={!!currentValue}
           onChange={onChange}
           onReset={onReset}
         />
       );
     case "int":
     case "float": {
-      let value3: Dynamic = meta.editor === "int",
-        value4: Dynamic = value3
+      let isInt: Dynamic = meta.editor === "int",
+        step: Dynamic = isInt
           ? Math.max(1, Math.trunc(meta.step ?? 1))
           : (meta.step ?? 1);
       return (
         <PropertyNumberRow
           label={name}
-          value={numericPropValue(value2)}
+          value={numericPropValue(currentValue)}
           min={meta.min}
           max={meta.max}
-          step={value4}
-          smallStep={value3 ? value4 : undefined}
+          step={step}
+          smallStep={isInt ? step : undefined}
           unit={meta.unit}
           placeholder={unsetHint}
           clearable={true}
-          onValue={(input?: Dynamic): Dynamic => {
-            if (input === undefined) return onChange(undefined);
-            onChange(value3 ? Math.trunc(input) : input);
+          onValue={(nextValue?: Dynamic): Dynamic => {
+            if (nextValue === undefined) return onChange(undefined);
+            onChange(isInt ? Math.trunc(nextValue) : nextValue);
           }}
           onReset={onReset}
         />
@@ -385,7 +385,7 @@ function ComponentPropInput({
       return (
         <PropRangeInput
           name={name}
-          cur={value2}
+          cur={currentValue}
           min={meta.min ?? 0}
           max={meta.max ?? 100}
           step={meta.step ?? 1}
@@ -395,24 +395,24 @@ function ComponentPropInput({
         />
       );
     case "color": {
-      let value3: Dynamic = (
+      let colorOptions: Dynamic = (
         Array.isArray(meta.options) ? meta.options : []
       ).slice(0, 64);
-      return propColorEditorKind(value3) === "palette-cards" ? (
+      return propColorEditorKind(colorOptions) === "palette-cards" ? (
         <PropertyTextRow label={name} onReset={onReset}>
           <PropPaletteCards
             size={"row"}
             aria-label={name}
-            options={value3}
-            value={value2}
+            options={colorOptions}
+            value={currentValue}
             onChange={onChange}
           />
         </PropertyTextRow>
       ) : (
         <PropColorInput
           name={name}
-          cur={value2}
-          swatches={value3}
+          cur={currentValue}
+          swatches={colorOptions}
           onChange={onChange}
           onReset={onReset}
           tweak={tweak}
@@ -420,71 +420,71 @@ function ComponentPropInput({
       );
     }
     case "enum": {
-      let value3: Dynamic = propOptionItems(meta.options),
-        value4: Dynamic = value3.map(
-          (input?: Dynamic, options?: Dynamic): Dynamic => ({
-            value: String(options),
-            label: input.label,
+      let optionItems: Dynamic = propOptionItems(meta.options),
+        selectItems: Dynamic = optionItems.map(
+          (item?: Dynamic, index?: Dynamic): Dynamic => ({
+            value: String(index),
+            label: item.label,
           }),
         ),
-        value5: Dynamic =
-          value2 ?? (unsetHint === undefined ? value3[0]?.value : undefined),
-        value6: Dynamic = value3.findIndex(
-          (input?: Dynamic): Dynamic => input.value === value5,
+        selectedValue: Dynamic =
+          currentValue ?? (unsetHint === undefined ? optionItems[0]?.value : undefined),
+        selectedIndex: Dynamic = optionItems.findIndex(
+          (item?: Dynamic): Dynamic => item.value === selectedValue,
         );
-      value6 < 0 &&
-        (value6 = value3.findIndex(
-          (input?: Dynamic): Dynamic =>
-            String(input.value) === primitivePropText(value5),
+      selectedIndex < 0 &&
+        (selectedIndex = optionItems.findIndex(
+          (item?: Dynamic): Dynamic =>
+            String(item.value) === primitivePropText(selectedValue),
         ));
-      let callback: Dynamic = (input?: Dynamic): Dynamic => {
-        let value9: Dynamic = value3[Number(input)];
-        value9 !== undefined && onChange(value9.value);
+      let handleSelect: Dynamic = (indexText?: Dynamic): Dynamic => {
+        let chosenItem: Dynamic = optionItems[Number(indexText)];
+        chosenItem !== undefined && onChange(chosenItem.value);
       };
       if (
-        propOptionsFitSegments(value3) &&
-        !(unsetHint !== undefined && value2 === undefined)
+        propOptionsFitSegments(optionItems) &&
+        !(unsetHint !== undefined && currentValue === undefined)
       )
         return (
           <PropertyEnumRow
             label={name}
-            options={value4}
+            options={selectItems}
             popupAttrs={
               tweak ? ComponentsPropEditorsDataTweakPopupConfig : undefined
             }
-            value={String(value6)}
-            onChange={callback}
+            value={String(selectedIndex)}
+            onChange={handleSelect}
             onReset={onReset}
           />
         );
-      let value7: Dynamic = isToolNameList(
-          value3.map((input?: Dynamic): Dynamic => input.value),
+      let isToolList: Dynamic = isToolNameList(
+          optionItems.map((item?: Dynamic): Dynamic => item.value),
         ),
-        value8: Dynamic = value7
-          ? value4.map(
-              (input?: Dynamic, options?: Dynamic): Dynamic => ({
-                ...input,
+        selectItemsWithIcons: Dynamic = isToolList
+          ? selectItems.map(
+              (item?: Dynamic, index?: Dynamic): Dynamic => ({
+                ...item,
                 icon:
-                  getSupportedTool(value3[options].value) ??
+                  getSupportedTool(optionItems[index].value) ??
                   null,
               }),
             )
-          : value4;
+          : selectItems;
       return (
         <PropertySelectRow
           label={name}
-          options={value8}
+          options={selectItemsWithIcons}
           popupAttrs={
             tweak ? ComponentsPropEditorsDataTweakPopupConfig : undefined
           }
-          value={value6 < 0 ? "" : String(value6)}
+          value={selectedIndex < 0 ? "" : String(selectedIndex)}
           placeholder={
-            value2 === undefined && unsetHint !== undefined ? (undefined) : (primitivePropText(value5))
+            currentValue === undefined && unsetHint !== undefined ? (undefined) : (primitivePropText(selectedValue))
           }
           hint={unsetHint}
-          searchable={value4.length > 12}
-          searchLabel={value7 ? "Search icons" : undefined}
-          onChange={callback}
+          searchable={selectItems.length > 12}
+          searchLabel={isToolList ? "Search icons" : undefined}
+          onChange={handleSelect}
           onReset={onReset}
         />
       );
@@ -500,7 +500,7 @@ function ComponentPropInput({
         >
           <TextInput
             aria-label={name}
-            value={primitivePropText(value2)}
+            value={primitivePropText(currentValue)}
             onChange={(event?: Dynamic): Dynamic =>
               onChange(event.target.value)
             }

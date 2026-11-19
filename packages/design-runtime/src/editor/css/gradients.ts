@@ -8,226 +8,226 @@ import { PropertiesAssetPickerAZAZPattern } from "../properties/asset-picker";
 
 var CssGradientsXYBlurConfig: Dynamic;
 var CssGradientsItems: Dynamic;
-function parseCssGradientStop(input?: Dynamic): Dynamic {
-  let value: Dynamic = input.trim(),
-    value2: Dynamic = /^(.*\S)\s+(-?\d*\.?\d+)%$/.exec(value),
-    value3: Dynamic = value2 ? value2[1] : value;
-  if (!PropertiesAssetPickerAZAZPattern.test(value3)) {
-    let value5: Dynamic = /^(-?\d*\.?\d+)%$/.exec(value);
-    if (value5)
+function parseCssGradientStop(stopText?: Dynamic): Dynamic {
+  let trimmed: Dynamic = stopText.trim(),
+    positionMatch: Dynamic = /^(.*\S)\s+(-?\d*\.?\d+)%$/.exec(trimmed),
+    colorText: Dynamic = positionMatch ? positionMatch[1] : trimmed;
+  if (!PropertiesAssetPickerAZAZPattern.test(colorText)) {
+    let bareNumberMatch: Dynamic = /^(-?\d*\.?\d+)%$/.exec(trimmed);
+    if (bareNumberMatch)
       return {
-        color: value,
+        color: trimmed,
         opaque: true,
-        raw: value,
-        pos: Math.min(100, Math.max(0, Number(value5[1]))),
+        raw: trimmed,
+        pos: Math.min(100, Math.max(0, Number(bareNumberMatch[1]))),
       };
-    let value6: Dynamic =
-        value.match(/(?:[^\s(]+(?:\((?:[^()]|\([^()]*\))*\))?)+|\S+/g) ?? [],
-      value7: Dynamic = [value6[0], value6[value6.length - 1]].find(
-        (input2?: Dynamic): Dynamic =>
-          input2 !== undefined &&
-          PropertiesAssetPickerAZAZPattern.test(input2) &&
-          !/^-?[\d.]/.test(input2),
+    let tokens: Dynamic =
+        trimmed.match(/(?:[^\s(]+(?:\((?:[^()]|\([^()]*\))*\))?)+|\S+/g) ?? [],
+      swatchToken: Dynamic = [tokens[0], tokens[tokens.length - 1]].find(
+        (token?: Dynamic): Dynamic =>
+          token !== undefined &&
+          PropertiesAssetPickerAZAZPattern.test(token) &&
+          !/^-?[\d.]/.test(token),
       );
     return {
-      color: value,
+      color: trimmed,
       opaque: true,
-      raw: value,
-      ...(value7
+      raw: trimmed,
+      ...(swatchToken
         ? {
-            swatch: value7,
+            swatch: swatchToken,
           }
         : {}),
     };
   }
-  if (!value2)
+  if (!positionMatch)
     return {
-      color: value3,
+      color: colorText,
     };
-  let value4: Dynamic = Number(value2[2]);
-  return value4 < 0 || value4 > 100
+  let position: Dynamic = Number(positionMatch[2]);
+  return position < 0 || position > 100
     ? {
-        color: value3,
+        color: colorText,
         opaque: true,
-        raw: value,
-        pos: value4,
-        swatch: value3,
+        raw: trimmed,
+        pos: position,
+        swatch: colorText,
       }
     : {
-        color: value3,
-        pos: value4,
+        color: colorText,
+        pos: position,
       };
 }
-function serializeCssGradientStop(input?: Dynamic): Dynamic {
-  return input.opaque
-    ? (input.raw ?? input.color)
-    : input.pos === undefined
-      ? input.color
-      : `${input.color} ${Math.round(input.pos * 100) / 100}%`;
+function serializeCssGradientStop(stop?: Dynamic): Dynamic {
+  return stop.opaque
+    ? (stop.raw ?? stop.color)
+    : stop.pos === undefined
+      ? stop.color
+      : `${stop.color} ${Math.round(stop.pos * 100) / 100}%`;
 }
-function splitGradientArguments(input?: Dynamic): Dynamic {
-  let items: Dynamic = [],
-    index: Dynamic = 0,
-    text: Dynamic = "";
-  for (let value of input as Dynamic) {
-    value === "("
-      ? index++
-      : value === ")" && (index = Math.max(0, index - 1));
-    if (value === "," && index === 0) {
-      items.push(text.trim());
-      text = "";
+function splitGradientArguments(text?: Dynamic): Dynamic {
+  let args: Dynamic = [],
+    parenDepth: Dynamic = 0,
+    current: Dynamic = "";
+  for (let char of text as Dynamic) {
+    char === "("
+      ? parenDepth++
+      : char === ")" && (parenDepth = Math.max(0, parenDepth - 1));
+    if (char === "," && parenDepth === 0) {
+      args.push(current.trim());
+      current = "";
       continue;
     }
-    text += value;
+    current += char;
   }
-  text.trim() && items.push(text.trim());
-  return items;
+  current.trim() && args.push(current.trim());
+  return args;
 }
-function parseCssGradient(input?: Dynamic): Dynamic {
-  let value: Dynamic = (input ?? "").trim(),
-    value2: Dynamic = /^(linear|radial)-gradient\(\s*([\s\S]+)\)$/i.exec(
-      value,
+function parseCssGradient(gradientText?: Dynamic): Dynamic {
+  let trimmed: Dynamic = (gradientText ?? "").trim(),
+    gradientMatch: Dynamic = /^(linear|radial)-gradient\(\s*([\s\S]+)\)$/i.exec(
+      trimmed,
     );
-  if (!value2) return null;
-  let value3: Dynamic = value2[1].toLowerCase() === "radial",
-    value4: Dynamic = splitGradientArguments(value2[2]);
-  if (value4.length === 0) return null;
-  let count: Dynamic = 180,
-    value5: Dynamic,
-    value6: Dynamic = /^(-?[\d.]+)(deg|grad|rad|turn)$/i.exec(value4[0]);
-  if (value3) {
-    let value7: Dynamic =
-        value4[0]
+  if (!gradientMatch) return null;
+  let isRadial: Dynamic = gradientMatch[1].toLowerCase() === "radial",
+    args: Dynamic = splitGradientArguments(gradientMatch[2]);
+  if (args.length === 0) return null;
+  let angle: Dynamic = 180,
+    shape: Dynamic,
+    angleMatch: Dynamic = /^(-?[\d.]+)(deg|grad|rad|turn)$/i.exec(args[0]);
+  if (isRadial) {
+    let shapeTokens: Dynamic =
+        args[0]
           .trim()
           .match(/(?:[^\s(]+(?:\((?:[^()]|\([^()]*\))*\))?)+|\S+/g) ?? [],
-      value8: Dynamic =
+      shapeKeyword: Dynamic =
         /^(circle|ellipse|closest-side|closest-corner|farthest-side|farthest-corner|at|center|top|bottom|left|right)$/i;
-    value7.every(
-      (input2?: Dynamic): Dynamic =>
-        value8.test(input2) ||
-        /^(-?[\d.]+[a-z%]*|(calc|min|max|clamp|var)\(.*\))$/i.test(input2),
+    shapeTokens.every(
+      (token?: Dynamic): Dynamic =>
+        shapeKeyword.test(token) ||
+        /^(-?[\d.]+[a-z%]*|(calc|min|max|clamp|var)\(.*\))$/i.test(token),
     ) &&
-      (value7.some((input2?: Dynamic): Dynamic => value8.test(input2)) ||
-        !value7.some(
-          (input2?: Dynamic): Dynamic => /^var\(/i.test(input2),
+      (shapeTokens.some((token?: Dynamic): Dynamic => shapeKeyword.test(token)) ||
+        !shapeTokens.some(
+          (token?: Dynamic): Dynamic => /^var\(/i.test(token),
         )) &&
-      (value5 = value4.shift());
-  } else if (value6) {
-    let value7: Dynamic = parseFloat(value6[1]),
-      value8: Dynamic = value6[2].toLowerCase();
-    count =
+      (shape = args.shift());
+  } else if (angleMatch) {
+    let angleValue: Dynamic = parseFloat(angleMatch[1]),
+      angleUnit: Dynamic = angleMatch[2].toLowerCase();
+    angle =
       Math.round(
-        (value8 === "deg"
-          ? value7
-          : value8 === "grad"
-            ? value7 * 0.9
-            : value8 === "rad"
-              ? (value7 * 180) / Math.PI
-              : value7 * 360) * 100,
+        (angleUnit === "deg"
+          ? angleValue
+          : angleUnit === "grad"
+            ? angleValue * 0.9
+            : angleUnit === "rad"
+              ? (angleValue * 180) / Math.PI
+              : angleValue * 360) * 100,
       ) / 100;
-    value4.shift();
+    args.shift();
   } else if (
-    /^(calc|min|max|clamp)\((?:[^()]|\([^()]*\))*\)$/i.test(value4[0].trim())
+    /^(calc|min|max|clamp)\((?:[^()]|\([^()]*\))*\)$/i.test(args[0].trim())
   )
-    value4.shift();
-  else if (/^-?[\d.]+deg$/i.test(value4[0])) {
-    count = parseFloat(value4[0]);
-    value4.shift();
-  } else if (/^to\s/i.test(value4[0])) {
-    let value7: Dynamic = value4.shift().toLowerCase();
-    count = value7.includes("right")
+    args.shift();
+  else if (/^-?[\d.]+deg$/i.test(args[0])) {
+    angle = parseFloat(args[0]);
+    args.shift();
+  } else if (/^to\s/i.test(args[0])) {
+    let direction: Dynamic = args.shift().toLowerCase();
+    angle = direction.includes("right")
       ? 90
-      : value7.includes("left")
+      : direction.includes("left")
         ? 270
-        : value7.includes("top")
+        : direction.includes("top")
           ? 0
           : 180;
   }
-  return value4.length === 0
+  return args.length === 0
     ? null
-    : value3
+    : isRadial
       ? {
-          angle: count,
-          stops: value4,
+          angle: angle,
+          stops: args,
           radial: true,
-          ...(value5 !== undefined
+          ...(shape !== undefined
             ? {
-                shape: value5,
+                shape: shape,
               }
             : {}),
         }
       : {
-          angle: count,
-          stops: value4,
+          angle: angle,
+          stops: args,
         };
 }
-function serializeCssGradient(input?: Dynamic): Dynamic {
-  return input.radial
-    ? `radial-gradient(${input.shape !== undefined ? input.shape + ", " : ""}${input.stops.join(", ")})`
-    : `linear-gradient(${input.angle}deg, ${input.stops.join(", ")})`;
+function serializeCssGradient(gradient?: Dynamic): Dynamic {
+  return gradient.radial
+    ? `radial-gradient(${gradient.shape !== undefined ? gradient.shape + ", " : ""}${gradient.stops.join(", ")})`
+    : `linear-gradient(${gradient.angle}deg, ${gradient.stops.join(", ")})`;
 }
-function parseCssBoxShadow(input?: Dynamic): Dynamic {
-  let value: Dynamic = (input ?? "").trim();
+function parseCssBoxShadow(shadowText?: Dynamic): Dynamic {
+  let trimmed: Dynamic = (shadowText ?? "").trim();
   if (
-    !value ||
-    value === "none" ||
-    classifyStyleValue(value).kind !== "literal"
+    !trimmed ||
+    trimmed === "none" ||
+    classifyStyleValue(trimmed).kind !== "literal"
   )
     return null;
-  let value2: Dynamic = splitGradientArguments(value)[0] ?? value,
-    items: Dynamic = [],
-    index: Dynamic = 0,
-    text: Dynamic = "";
-  for (let value3 of value2 as Dynamic) {
-    value3 === "("
-      ? index++
-      : value3 === ")" && (index = Math.max(0, index - 1));
-    if (/\s/.test(value3) && index === 0) {
-      text && items.push(text);
-      text = "";
+  let firstShadow: Dynamic = splitGradientArguments(trimmed)[0] ?? trimmed,
+    tokens: Dynamic = [],
+    parenDepth: Dynamic = 0,
+    current: Dynamic = "";
+  for (let char of firstShadow as Dynamic) {
+    char === "("
+      ? parenDepth++
+      : char === ")" && (parenDepth = Math.max(0, parenDepth - 1));
+    if (/\s/.test(char) && parenDepth === 0) {
+      current && tokens.push(current);
+      current = "";
       continue;
     }
-    text += value3;
+    current += char;
   }
-  text && items.push(text);
-  let items2: Dynamic = [],
-    items3: Dynamic = [];
-  for (let value3 of items as Dynamic) {
-    if (value3 === "inset") continue;
-    let value4: Dynamic = parseCssNumber(value3);
-    value4 && items2.length < 4
-      ? items2.push(value4.value)
-      : items3.push(value3);
+  current && tokens.push(current);
+  let numbers: Dynamic = [],
+    colorParts: Dynamic = [];
+  for (let token of tokens as Dynamic) {
+    if (token === "inset") continue;
+    let numberToken: Dynamic = parseCssNumber(token);
+    numberToken && numbers.length < 4
+      ? numbers.push(numberToken.value)
+      : colorParts.push(token);
   }
-  return items2.length < 2
+  return numbers.length < 2
     ? null
     : {
-        x: items2[0],
-        y: items2[1],
-        blur: items2[2] ?? 0,
-        spread: items2[3] ?? 0,
-        color: items3.join(" ") || "rgba(0, 0, 0, 0.15)",
+        x: numbers[0],
+        y: numbers[1],
+        blur: numbers[2] ?? 0,
+        spread: numbers[3] ?? 0,
+        color: colorParts.join(" ") || "rgba(0, 0, 0, 0.15)",
       };
 }
-function serializeCssBoxShadow(input?: Dynamic): Dynamic {
-  return `${input.x}px ${input.y}px ${input.blur}px ${input.spread}px ${input.color}`;
+function serializeCssBoxShadow(shadow?: Dynamic): Dynamic {
+  return `${shadow.x}px ${shadow.y}px ${shadow.blur}px ${shadow.spread}px ${shadow.color}`;
 }
-function contrastingGradientSeed(input?: Dynamic): Dynamic {
-  let text: Dynamic = "#c1672a",
-    value: Dynamic = hsvaToRgbHex(
-      parseHsvaColor(input),
+function contrastingGradientSeed(color?: Dynamic): Dynamic {
+  let accentHex: Dynamic = "#c1672a",
+    hex: Dynamic = hsvaToRgbHex(
+      parseHsvaColor(color),
     ).toLowerCase(),
-    value2: Dynamic = value === text ? "#ffffff" : text,
-    callback: Dynamic = (input2?: Dynamic, options?: Dynamic): Dynamic =>
-      parseInt(input2.slice(1 + options * 2, 3 + options * 2), 16);
+    contrastHex: Dynamic = hex === accentHex ? "#ffffff" : accentHex,
+    channelValue: Dynamic = (hexText?: Dynamic, channelIndex?: Dynamic): Dynamic =>
+      parseInt(hexText.slice(1 + channelIndex * 2, 3 + channelIndex * 2), 16);
   return (
     "#" +
     [0, 1, 2]
       .map(
-        (input2?: Dynamic): Dynamic =>
+        (channelIndex?: Dynamic): Dynamic =>
           Math.round(
-            callback(value, input2) +
-              (callback(value2, input2) - callback(value, input2)) * 0.6,
+            channelValue(hex, channelIndex) +
+              (channelValue(contrastHex, channelIndex) - channelValue(hex, channelIndex)) * 0.6,
           )
             .toString(16)
             .padStart(2, "0"),

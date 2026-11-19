@@ -10,73 +10,73 @@ var CssShorthandTopLeftTopRightBottomRightValues: Dynamic;
 var CssShorthandNoneHiddenDottedSet: Dynamic;
 var CssShorthandBorderBorderWidthBorderStyleSet: Dynamic;
 var CssShorthandTextDecorationLineTextDecorationStyleTextDecorationColorConfig: Dynamic;
-function expandCssSides(items?: Dynamic): Dynamic {
-  if (items.length === 0 || items.length > 4) return null;
-  let [value, value2 = value, value3 = value, value4 = value2]: Dynamic =
-    items;
-  return [value, value2, value3, value4];
+function expandCssSides(sides?: Dynamic): Dynamic {
+  if (sides.length === 0 || sides.length > 4) return null;
+  let [top, right = top, bottom = top, left = right]: Dynamic =
+    sides;
+  return [top, right, bottom, left];
 }
-function expandCssShorthand(input?: Dynamic): Dynamic {
-  let { prop: value, value: value2 }: Dynamic = input;
-  if (classifyStyleValue(value2).kind !== "literal") return null;
-  let value3: Dynamic = splitCssTokens(value2, " ")
-    .map((input2?: Dynamic): Dynamic => input2.trim())
+function expandCssShorthand(declaration?: Dynamic): Dynamic {
+  let { prop: prop, value: cssValue }: Dynamic = declaration;
+  if (classifyStyleValue(cssValue).kind !== "literal") return null;
+  let tokens: Dynamic = splitCssTokens(cssValue, " ")
+    .map((token?: Dynamic): Dynamic => token.trim())
     .filter(Boolean);
-  switch (value) {
+  switch (prop) {
     case "margin":
     case "padding":
     case "inset": {
-      let value4: Dynamic = expandCssSides(value3);
-      if (!value4) return null;
-      let value5: Dynamic = value === "inset" ? "" : `${value}-`;
+      let sides: Dynamic = expandCssSides(tokens);
+      if (!sides) return null;
+      let propPrefix: Dynamic = prop === "inset" ? "" : `${prop}-`;
       return CssShorthandTopRightBottomValues.map(
-        (input2?: Dynamic, options?: Dynamic): Dynamic => ({
-          prop: value === "inset" ? input2 : `${value5}${input2}`,
-          value: value4[options],
+        (side?: Dynamic, index?: Dynamic): Dynamic => ({
+          prop: prop === "inset" ? side : `${propPrefix}${side}`,
+          value: sides[index],
         }),
       );
     }
     case "border-width": {
-      if (value3.length < 2) return null;
-      let value4: Dynamic = expandCssSides(value3);
-      return value4
+      if (tokens.length < 2) return null;
+      let sides: Dynamic = expandCssSides(tokens);
+      return sides
         ? CssShorthandTopRightBottomValues.map(
-            (input2?: Dynamic, options?: Dynamic): Dynamic => ({
-              prop: `border-${input2}-width`,
-              value: value4[options],
+            (side?: Dynamic, index?: Dynamic): Dynamic => ({
+              prop: `border-${side}-width`,
+              value: sides[index],
             }),
           )
         : null;
     }
     case "border-radius": {
-      if (value2.includes("/") || value3.length < 2) return null;
-      let value4: Dynamic = expandCssSides(value3);
-      return value4
+      if (cssValue.includes("/") || tokens.length < 2) return null;
+      let corners: Dynamic = expandCssSides(tokens);
+      return corners
         ? CssShorthandTopLeftTopRightBottomRightValues.map(
-            (input2?: Dynamic, options?: Dynamic): Dynamic => ({
-              prop: `border-${input2}-radius`,
-              value: value4[options],
+            (corner?: Dynamic, index?: Dynamic): Dynamic => ({
+              prop: `border-${corner}-radius`,
+              value: corners[index],
             }),
           )
         : null;
     }
     case "border": {
       let items: Dynamic = [];
-      for (let value4 of value3 as Dynamic)
-        CssShorthandNoneHiddenDottedSet.has(value4.toLowerCase())
+      for (let token of tokens as Dynamic)
+        CssShorthandNoneHiddenDottedSet.has(token.toLowerCase())
           ? items.push({
               prop: "border-style",
-              value: value4,
+              value: token,
             })
-          : parseCssNumber(value4) ||
-              ["thin", "medium", "thick"].includes(value4.toLowerCase())
+          : parseCssNumber(token) ||
+              ["thin", "medium", "thick"].includes(token.toLowerCase())
             ? items.push({
                 prop: "border-width",
-                value: value4,
+                value: token,
               })
             : items.push({
                 prop: "border-color",
-                value: value4,
+                value: token,
               });
       return items.length ? items : null;
     }
@@ -85,133 +85,133 @@ function expandCssShorthand(input?: Dynamic): Dynamic {
     case "border-bottom":
     case "border-left": {
       let items: Dynamic = [];
-      for (let value4 of value3 as Dynamic)
-        CssShorthandNoneHiddenDottedSet.has(value4.toLowerCase())
+      for (let token of tokens as Dynamic)
+        CssShorthandNoneHiddenDottedSet.has(token.toLowerCase())
           ? items.push({
-              prop: `${value}-style`,
-              value: value4,
+              prop: `${prop}-style`,
+              value: token,
             })
-          : parseCssNumber(value4) ||
-              ["thin", "medium", "thick"].includes(value4.toLowerCase())
+          : parseCssNumber(token) ||
+              ["thin", "medium", "thick"].includes(token.toLowerCase())
             ? items.push({
-                prop: `${value}-width`,
-                value: value4,
+                prop: `${prop}-width`,
+                value: token,
               })
             : items.push({
-                prop: `${value}-color`,
-                value: value4,
+                prop: `${prop}-color`,
+                value: token,
               });
       return items.length ? items : null;
     }
     case "list-style": {
       let items: Dynamic = [];
-      for (let value4 of value3 as Dynamic) {
-        let value5: Dynamic = value4.toLowerCase();
-        value5 === "inside" || value5 === "outside"
+      for (let token of tokens as Dynamic) {
+        let lowerToken: Dynamic = token.toLowerCase();
+        lowerToken === "inside" || lowerToken === "outside"
           ? items.push({
               prop: "list-style-position",
-              value: value4,
+              value: token,
             })
-          : /^url\(/i.test(value4)
+          : /^url\(/i.test(token)
             ? items.push({
                 prop: "list-style-image",
-                value: value4,
+                value: token,
               })
             : items.push({
                 prop: "list-style-type",
-                value: value4,
+                value: token,
               });
       }
       return items.length ? items : null;
     }
     case "text-decoration": {
-      let values: Dynamic = new Set([
+      let lineKeywords: Dynamic = new Set([
           "none",
           "underline",
           "overline",
           "line-through",
         ]),
-        values2: Dynamic = new Set([
+        styleKeywords: Dynamic = new Set([
           "solid",
           "double",
           "dotted",
           "dashed",
           "wavy",
         ]),
-        items: Dynamic = [],
-        items2: Dynamic = [];
-      for (let value4 of value3 as Dynamic) {
-        let value5: Dynamic = value4.toLowerCase();
-        values.has(value5)
-          ? items.push(value5)
-          : values2.has(value5)
-            ? items2.push({
+        lineParts: Dynamic = [],
+        longhands: Dynamic = [];
+      for (let token of tokens as Dynamic) {
+        let lowerToken: Dynamic = token.toLowerCase();
+        lineKeywords.has(lowerToken)
+          ? lineParts.push(lowerToken)
+          : styleKeywords.has(lowerToken)
+            ? longhands.push({
                 prop: "text-decoration-style",
-                value: value4,
+                value: token,
               })
-            : parseCssNumber(value4) ||
-                value5 === "auto" ||
-                value5 === "from-font"
-              ? items2.push({
+            : parseCssNumber(token) ||
+                lowerToken === "auto" ||
+                lowerToken === "from-font"
+              ? longhands.push({
                   prop: "text-decoration-thickness",
-                  value: value4,
+                  value: token,
                 })
-              : items2.push({
+              : longhands.push({
                   prop: "text-decoration-color",
-                  value: value4,
+                  value: token,
                 });
       }
-      items.length &&
-        items2.unshift({
+      lineParts.length &&
+        longhands.unshift({
           prop: "text-decoration-line",
-          value: items.join(" "),
+          value: lineParts.join(" "),
         });
-      return items2.length ? items2 : null;
+      return longhands.length ? longhands : null;
     }
     default:
       return null;
   }
 }
 function expandShorthandForProperty(
-  input?: Dynamic,
-  options?: Dynamic,
-  context: Dynamic = false,
+  styleText?: Dynamic,
+  property?: Dynamic,
+  includeBorderShorthands: Dynamic = false,
 ): Dynamic {
-  options = normalizeCssProperty(options);
-  let value: Dynamic = (
+  property = normalizeCssProperty(property);
+  let shorthands: Dynamic = (
     CssShorthandTextDecorationLineTextDecorationStyleTextDecorationColorConfig[
-      options
+      property
     ] ?? []
   ).filter(
-    (input2?: Dynamic): Dynamic =>
-      context || !CssShorthandBorderBorderWidthBorderStyleSet.has(input2),
+    (name?: Dynamic): Dynamic =>
+      includeBorderShorthands || !CssShorthandBorderBorderWidthBorderStyleSet.has(name),
   );
-  if (value.length === 0 || !input) return input ?? "";
-  let value2: Dynamic = parseStyleDeclarations(input),
-    flag: Dynamic = false;
-  for (let value3 of value as Dynamic)
-    value2.some((input2?: Dynamic): Dynamic => input2.prop === value3) &&
-      (value2 = value2.flatMap((input2?: Dynamic): Dynamic => {
-        if (input2.prop !== value3) return [input2];
-        let value4: Dynamic = expandCssShorthand(input2);
-        value4 && (flag = true);
-        return value4 ?? [input2];
+  if (shorthands.length === 0 || !styleText) return styleText ?? "";
+  let declarations: Dynamic = parseStyleDeclarations(styleText),
+    hasExpanded: Dynamic = false;
+  for (let shorthandName of shorthands as Dynamic)
+    declarations.some((declaration?: Dynamic): Dynamic => declaration.prop === shorthandName) &&
+      (declarations = declarations.flatMap((declaration?: Dynamic): Dynamic => {
+        if (declaration.prop !== shorthandName) return [declaration];
+        let longhands: Dynamic = expandCssShorthand(declaration);
+        longhands && (hasExpanded = true);
+        return longhands ?? [declaration];
       }));
-  return flag &&
-    context &&
-    !value2.some((input2?: Dynamic): Dynamic => input2.prop === options)
-    ? input
-    : flag
-      ? serializeStyleDeclarations(value2)
-      : input;
+  return hasExpanded &&
+    includeBorderShorthands &&
+    !declarations.some((declaration?: Dynamic): Dynamic => declaration.prop === property)
+    ? styleText
+    : hasExpanded
+      ? serializeStyleDeclarations(declarations)
+      : styleText;
 }
-function expandCssDeclarations(input?: Dynamic): Dynamic {
-  let items: Dynamic = [];
-  for (let value of input as Dynamic) {
-    let value2: Dynamic = expandCssShorthand(value);
-    value2 ? items.push(...value2) : items.push(value);
+function expandCssDeclarations(declarations?: Dynamic): Dynamic {
+  let expanded: Dynamic = [];
+  for (let declaration of declarations as Dynamic) {
+    let longhands: Dynamic = expandCssShorthand(declaration);
+    longhands ? expanded.push(...longhands) : expanded.push(declaration);
   }
-  return items;
+  return expanded;
 }
 export {
   CssShorthandBorderBorderWidthBorderStyleSet,
@@ -263,19 +263,19 @@ export function installEditorCssShorthand(): () => void {
         "border-color": ["border"],
         ...Object.fromEntries(
           ["top", "right", "bottom", "left"].flatMap(
-            (input?: Dynamic): Dynamic =>
+            (side?: Dynamic): Dynamic =>
               ["width", "style", "color"].map(
-                (input2?: Dynamic): Dynamic => [
-                  `border-${input}-${input2}`,
-                  ["border", `border-${input2}`, `border-${input}`],
+                (kind?: Dynamic): Dynamic => [
+                  `border-${side}-${kind}`,
+                  ["border", `border-${kind}`, `border-${side}`],
                 ],
               ),
           ),
         ),
         ...Object.fromEntries(
           CssShorthandTopLeftTopRightBottomRightValues.map(
-            (input?: Dynamic): Dynamic => [
-              `border-${input}-radius`,
+            (corner?: Dynamic): Dynamic => [
+              `border-${corner}-radius`,
               ["border-radius"],
             ],
           ),

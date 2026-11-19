@@ -7,95 +7,95 @@ import { getCssRuleProperty } from "./rules";
 import { expandCssShorthand } from "./shorthand";
 
 function resolveCssVariable(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  cssRules?: Dynamic,
+  selector?: Dynamic,
+  varExpression?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = /^var\(\s*(--[\w-]+)\s*(?:,\s*(.+))?\)$/s.exec(
-    context.trim(),
+  let varMatch: Dynamic = /^var\(\s*(--[\w-]+)\s*(?:,\s*(.+))?\)$/s.exec(
+    varExpression.trim(),
   );
-  if (!value) return "";
-  for (let value2 of [options, "html", ":root"] as Dynamic) {
-    let value3: Dynamic = getCssRuleProperty(
-      input,
-      value2,
-      value[1],
+  if (!varMatch) return "";
+  for (let candidateSelector of [selector, "html", ":root"] as Dynamic) {
+    let resolved: Dynamic = getCssRuleProperty(
+      cssRules,
+      candidateSelector,
+      varMatch[1],
     );
-    if (value3 && !/^var\(/i.test(value3)) return value3;
+    if (resolved && !/^var\(/i.test(resolved)) return resolved;
   }
-  return value[2]?.trim() ?? "";
+  return varMatch[2]?.trim() ?? "";
 }
-function utilityClassSelector(input?: Dynamic): Dynamic {
-  return input.parent !== undefined
-    ? `.${input.parent} .${input.className}`
-    : input.also !== undefined
-      ? `.${input.className}.${input.also}`
-      : `.${input.className}`;
+function utilityClassSelector(rule?: Dynamic): Dynamic {
+  return rule.parent !== undefined
+    ? `.${rule.parent} .${rule.className}`
+    : rule.also !== undefined
+      ? `.${rule.className}.${rule.also}`
+      : `.${rule.className}`;
 }
 function mergeAuthoredStyle(
-  items?: Dynamic,
-  items2?: Dynamic,
-  context?: Dynamic,
-  value?: Dynamic,
+  utilityRules?: Dynamic,
+  classNames?: Dynamic,
+  styleText?: Dynamic,
+  parentClasses?: Dynamic,
 ): Dynamic {
-  let value2: Dynamic = parseStyleDeclarations(context);
-  if (items2.length === 0 || items.length === 0) return value2;
-  let values: Dynamic = new Set(items2),
+  let authored: Dynamic = parseStyleDeclarations(styleText);
+  if (classNames.length === 0 || utilityRules.length === 0) return authored;
+  let classSet: Dynamic = new Set(classNames),
     entries: Dynamic = new Map(),
-    callback: Dynamic = (input?: Dynamic, options?: Dynamic): Dynamic => {
-      entries.delete(input.prop);
+    setProperty: Dynamic = (declaration?: Dynamic, selector?: Dynamic): Dynamic => {
+      entries.delete(declaration.prop);
       entries.set(
-        input.prop,
-        options === undefined
+        declaration.prop,
+        selector === undefined
           ? {
-              prop: input.prop,
-              value: input.value,
+              prop: declaration.prop,
+              value: declaration.value,
             }
           : {
-              prop: input.prop,
-              value: input.value,
-              selector: options,
+              prop: declaration.prop,
+              value: declaration.value,
+              selector: selector,
             },
       );
     };
-  for (let value3 of items as Dynamic)
+  for (let rule of utilityRules as Dynamic)
     if (
-      !(value3.parent !== undefined || value3.also !== undefined) &&
-      values.has(value3.className)
+      !(rule.parent !== undefined || rule.also !== undefined) &&
+      classSet.has(rule.className)
     )
-      for (let value4 of value3.decls as Dynamic)
-        callback(value4, utilityClassSelector(value3));
-  for (let value3 of items as Dynamic)
-    if (values.has(value3.className)) {
-      if (value3.also !== undefined) {
-        if (!values.has(value3.also)) continue;
-      } else if (value3.parent !== undefined) {
-        if (!value || !value.has(value3.parent)) continue;
+      for (let declaration of rule.decls as Dynamic)
+        setProperty(declaration, utilityClassSelector(rule));
+  for (let rule of utilityRules as Dynamic)
+    if (classSet.has(rule.className)) {
+      if (rule.also !== undefined) {
+        if (!classSet.has(rule.also)) continue;
+      } else if (rule.parent !== undefined) {
+        if (!parentClasses || !parentClasses.has(rule.parent)) continue;
       } else continue;
-      for (let value4 of value3.decls as Dynamic)
-        callback(value4, utilityClassSelector(value3));
+      for (let declaration of rule.decls as Dynamic)
+        setProperty(declaration, utilityClassSelector(rule));
     }
-  for (let value3 of value2 as Dynamic) callback(value3);
+  for (let declaration of authored as Dynamic) setProperty(declaration);
   return [...entries.values()];
 }
-function getCssPropertySources(input?: Dynamic): Dynamic {
+function getCssPropertySources(declarations?: Dynamic): Dynamic {
   let entries: Dynamic = new Map(),
-    callback: Dynamic = (input2?: Dynamic, options?: Dynamic): Dynamic => {
-      entries.delete(input2);
-      entries.set(input2, options);
+    recordSource: Dynamic = (prop?: Dynamic, selector?: Dynamic): Dynamic => {
+      entries.delete(prop);
+      entries.set(prop, selector);
     };
-  for (let value2 of input as Dynamic) {
-    let value3: Dynamic = expandCssShorthand(value2);
-    if (value3) {
-      callback(value2.prop, value2.selector);
-      for (let value4 of value3 as Dynamic)
-        callback(value4.prop, value2.selector);
-    } else callback(value2.prop, value2.selector);
+  for (let declaration of declarations as Dynamic) {
+    let expanded: Dynamic = expandCssShorthand(declaration);
+    if (expanded) {
+      recordSource(declaration.prop, declaration.selector);
+      for (let longhand of expanded as Dynamic)
+        recordSource(longhand.prop, declaration.selector);
+    } else recordSource(declaration.prop, declaration.selector);
   }
-  let value: Dynamic = Object.create(null);
-  for (let [value2, value3] of entries as Dynamic)
-    value3 !== undefined && (value[value2] = value3);
-  return value;
+  let sources: Dynamic = Object.create(null);
+  for (let [prop, selector] of entries as Dynamic)
+    selector !== undefined && (sources[prop] = selector);
+  return sources;
 }
 export {
   getCssPropertySources,

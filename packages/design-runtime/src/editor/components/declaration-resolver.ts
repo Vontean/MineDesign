@@ -2,7 +2,7 @@
 import {
   type Dynamic,
 } from "../../runtime-types";
-import { ComponentsTypeInferenceLimit, ComponentsTypeInferenceLimit_5, ComponentsTypeInferenceSubscribers_2, ComponentsTypeInferenceTextsRsConfig, inferJSDocDefault, isValidTypeDeclarationName, TYPE_INFERENCE_OVER_BUDGET, TypeDeclarationResolver, typeExpressionReferences } from "./type-inference";
+import { ComponentsTypeInferenceLimit, ComponentsTypeInferenceLimit_5 as typeInferenceMaxDepth, ComponentsTypeInferenceSubscribers_2 as reservedPropNames, ComponentsTypeInferenceTextsRsConfig, inferJSDocDefault, isValidTypeDeclarationName, TYPE_INFERENCE_OVER_BUDGET, TypeDeclarationResolver, typeExpressionReferences } from "./type-inference";
 
 import { set_ComponentsTypeInferenceTextsRsConfig, set_typeInferenceIncomplete } from "./type-inference";
 var ComponentsDeclarationResolverNameTypeValueValues: Dynamic;
@@ -15,152 +15,152 @@ function getTypeDeclarationResolver(items?: Dynamic): Dynamic {
     ComponentsTypeInferenceTextsRsConfig.texts.length ===
       items.length &&
     ComponentsTypeInferenceTextsRsConfig.texts.every(
-      (input?: Dynamic, options?: Dynamic): Dynamic =>
-        input === items[options],
+      (text?: Dynamic, index?: Dynamic): Dynamic =>
+        text === items[index],
     )
   )
     return ComponentsTypeInferenceTextsRsConfig.rs.reuse();
-  let value: Dynamic = new TypeDeclarationResolver(items);
+  let resolver: Dynamic = new TypeDeclarationResolver(items);
   set_ComponentsTypeInferenceTextsRsConfig({
     texts: items,
-    rs: value,
+    rs: resolver,
   });
-  return value;
+  return resolver;
 }
 function inferComponentProps(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  componentName?: Dynamic,
+  sourceTexts?: Dynamic,
+  inferOptions?: Dynamic,
 ): Dynamic {
   set_typeInferenceIncomplete(false);
-  let value: Dynamic = options.filter(
-    (input2?: Dynamic): Dynamic => typeof input2 == "string" && input2 !== "",
+  let nonEmptyTexts: Dynamic = sourceTexts.filter(
+    (text?: Dynamic): Dynamic => typeof text == "string" && text !== "",
   );
-  if (!isValidTypeDeclarationName(input) || value.length === 0)
+  if (!isValidTypeDeclarationName(componentName) || nonEmptyTexts.length === 0)
     return [];
-  let values: Dynamic = new Set(context?.keep),
+  let keptNames: Dynamic = new Set(inferOptions?.keep),
     entries: Dynamic = new Map(),
-    values2: Dynamic = new Set(),
-    value2: Dynamic = getTypeDeclarationResolver(value),
-    callback: Dynamic = (input2?: Dynamic, options2?: Dynamic): Dynamic => {
+    visitedTypes: Dynamic = new Set(),
+    resolver: Dynamic = getTypeDeclarationResolver(nonEmptyTexts),
+    collectTypeProps: Dynamic = (typeName?: Dynamic, depth?: Dynamic): Dynamic => {
       if (
-        options2 > ComponentsTypeInferenceLimit_5 ||
-        values2.has(input2) ||
+        depth > typeInferenceMaxDepth ||
+        visitedTypes.has(typeName) ||
         entries.size >= ComponentsTypeInferenceLimit
       )
         return;
-      values2.add(input2);
-      let value3: Dynamic = value2.decl(input2);
+      visitedTypes.add(typeName);
+      let declaration: Dynamic = resolver.decl(typeName);
       if (
-        value3 === null ||
-        value3.kind === "const" ||
-        value3.kind === "enum"
+        declaration === null ||
+        declaration.kind === "const" ||
+        declaration.kind === "enum"
       )
         return;
-      let value4: Dynamic =
-        value3.kind === "interface"
-          ? [value3.body]
-          : value2.heads(value3.head);
-      for (let value5 of value4 as Dynamic)
-        for (let value6 of value2.members(value5) as Dynamic) {
-          value2.tick();
+      let bodies: Dynamic =
+        declaration.kind === "interface"
+          ? [declaration.body]
+          : resolver.heads(declaration.head);
+      for (let body of bodies as Dynamic)
+        for (let member of resolver.members(body) as Dynamic) {
+          resolver.tick();
           if (entries.size >= ComponentsTypeInferenceLimit) break;
           if (
-            (ComponentsTypeInferenceSubscribers_2.has(value6.name) &&
-              !values.has(value6.name)) ||
-            (value6.name.startsWith("on") && /^on[A-Z]/.test(value6.name)) ||
-            /@deprecated\b/.test(value6.doc) ||
-            /^\s*never\s*$/.test(value6.type)
+            (reservedPropNames.has(member.name) &&
+              !keptNames.has(member.name)) ||
+            (member.name.startsWith("on") && /^on[A-Z]/.test(member.name)) ||
+            /@deprecated\b/.test(member.doc) ||
+            /^\s*never\s*$/.test(member.type)
           )
             continue;
-          let value7: Dynamic = value2.resolve(value6.type, 0);
-          if (value7 === null) continue;
-          let entry: Dynamic = entries.get(value6.name);
+          let resolvedType: Dynamic = resolver.resolve(member.type, 0);
+          if (resolvedType === null) continue;
+          let entry: Dynamic = entries.get(member.name);
           if (
             entry !== undefined &&
             !(
               entry.kind === "string" &&
               entry.typeName !== undefined &&
-              value7.kind !== "string"
+              resolvedType.kind !== "string"
             )
           )
             continue;
           let state: Dynamic = {
-            name: value6.name,
-            kind: value7.kind,
+            name: member.name,
+            kind: resolvedType.kind,
           };
-          value7.options !== undefined && (state.options = value7.options);
-          value7.numeric === true && (state.numeric = true);
-          value7.withBool === true && (state.withBool = true);
-          value7.typeName !== undefined && (state.typeName = value7.typeName);
-          let value8: Dynamic = inferJSDocDefault(
-            value6.doc,
-            value7,
+          resolvedType.options !== undefined && (state.options = resolvedType.options);
+          resolvedType.numeric === true && (state.numeric = true);
+          resolvedType.withBool === true && (state.withBool = true);
+          resolvedType.typeName !== undefined && (state.typeName = resolvedType.typeName);
+          let defaultValue: Dynamic = inferJSDocDefault(
+            member.doc,
+            resolvedType,
           );
-          value8 !== undefined && (state.default = value8);
-          value6.optional || (state.required = true);
-          entries.set(value6.name, state);
+          defaultValue !== undefined && (state.default = defaultValue);
+          member.optional || (state.required = true);
+          entries.set(member.name, state);
         }
-      value2.charge(value3.head.length);
-      for (let value5 of typeExpressionReferences(
-        value3.head,
+      resolver.charge(declaration.head.length);
+      for (let referencedType of typeExpressionReferences(
+        declaration.head,
       ) as Dynamic)
-        callback(value5, options2 + 1);
+        collectTypeProps(referencedType, depth + 1);
     };
   try {
-    callback(input + "Props", 0);
-  } catch (value3: Dynamic) {
+    collectTypeProps(componentName + "Props", 0);
+  } catch (error: Dynamic) {
     set_ComponentsTypeInferenceTextsRsConfig(null);
-    if (value3 !== TYPE_INFERENCE_OVER_BUDGET) throw value3;
+    if (error !== TYPE_INFERENCE_OVER_BUDGET) throw error;
     set_typeInferenceIncomplete(true);
     return [];
   }
   let items: Dynamic = [...entries.values()];
   items.sort(
-    (input2?: Dynamic, options2?: Dynamic): Dynamic =>
-      input2.name === "children" ? -1 : options2.name === "children" ? 1 : 0,
+    (first?: Dynamic, second?: Dynamic): Dynamic =>
+      first.name === "children" ? -1 : second.name === "children" ? 1 : 0,
   );
   return items;
 }
-function filterEditableInferredProps(input?: Dynamic): Dynamic {
-  return input.filter(
-    (input2?: Dynamic): Dynamic =>
-      input2.name !== "children" &&
-      /^[a-z_][\w.-]*$/.test(input2.name) &&
-      !(input2.name in Object.prototype),
+function filterEditableInferredProps(props?: Dynamic): Dynamic {
+  return props.filter(
+    (prop?: Dynamic): Dynamic =>
+      prop.name !== "children" &&
+      /^[a-z_][\w.-]*$/.test(prop.name) &&
+      !(prop.name in Object.prototype),
   );
 }
 function inferPropsFromDeclarations(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  componentNames?: Dynamic,
+  sourceTexts?: Dynamic,
+  keptNames?: Dynamic,
 ): Dynamic {
   try {
-    for (let value of input as Dynamic) {
-      let value2: Dynamic = filterEditableInferredProps(
-        inferComponentProps(value, options, {
-          keep: context,
+    for (let componentName of componentNames as Dynamic) {
+      let props: Dynamic = filterEditableInferredProps(
+        inferComponentProps(componentName, sourceTexts, {
+          keep: keptNames,
         }),
       );
-      if (value2.length > 0) return value2;
+      if (props.length > 0) return props;
     }
   } catch {}
   return [];
 }
-function componentTypeCandidates(input?: Dynamic): Dynamic {
-  let value: Dynamic = input.split(".").slice(1);
-  if (value.length === 0) return [];
-  let value2: Dynamic = value[value.length - 1];
-  return [...new Set([value.join(""), value2, value2 + "Root"])];
+function componentTypeCandidates(componentName?: Dynamic): Dynamic {
+  let nameParts: Dynamic = componentName.split(".").slice(1);
+  if (nameParts.length === 0) return [];
+  let lastPart: Dynamic = nameParts[nameParts.length - 1];
+  return [...new Set([nameParts.join(""), lastPart, lastPart + "Root"])];
 }
 function typeExpressionTooDeep(items?: Dynamic): Dynamic {
-  let index: Dynamic = 0;
-  for (let index2: Dynamic = 0; index2 < items.length; index2++) {
-    let value: Dynamic = items.charCodeAt(index2);
-    if (value === 40 || value === 91 || value === 123) {
-      if (++index > ComponentsDeclarationResolverLimit) return true;
+  let nestingDepth: Dynamic = 0;
+  for (let position: Dynamic = 0; position < items.length; position++) {
+    let charCode: Dynamic = items.charCodeAt(position);
+    if (charCode === 40 || charCode === 91 || charCode === 123) {
+      if (++nestingDepth > ComponentsDeclarationResolverLimit) return true;
     } else
-      (value === 41 || value === 93 || value === 125) && index > 0 && index--;
+      (charCode === 41 || charCode === 93 || charCode === 125) && nestingDepth > 0 && nestingDepth--;
   }
   return false;
 }

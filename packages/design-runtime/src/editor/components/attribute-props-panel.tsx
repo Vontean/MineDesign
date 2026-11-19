@@ -12,122 +12,122 @@ import { isEditablePropMetadata } from "./prop-validation";
 import { ViewOnlyYouCanInspectThisMessage } from "../outline/annotations";
 import { PropertyTextInput } from "../properties/css-number-row";
 import { reactPropertiesDropShadowEditor } from "../properties/drop-shadow-editor";
-import { PropertiesInspectorFieldNameComponentFromSet, PropertiesInspectorFieldPattern, PropertiesInspectorFieldPattern_2, PropertiesInspectorFieldPattern_3, PropertiesInspectorFieldReplace, PropertiesInspectorFieldTest } from "../properties/inspector-field";
+import { PropertiesInspectorFieldNameComponentFromSet, PropertiesInspectorFieldPattern, PropertiesInspectorFieldPattern_2 as numberLiteralPattern, PropertiesInspectorFieldPattern_3 as eventAttributePattern, PropertiesInspectorFieldReplace, PropertiesInspectorFieldTest } from "../properties/inspector-field";
 import { PropertyPickerButton } from "../properties/primitives";
 import { PropertyTextRow } from "../properties/rows";
 import { PropertySection } from "../properties/section";
 
-function inferComponentAttributeMetadata(input?: Dynamic): Dynamic {
+function inferComponentAttributeMetadata(attrs?: Dynamic): Dynamic {
   let state: Dynamic = {};
-  for (let [value, value2] of Object.entries(input) as Dynamic) {
-    if (reservedImportAttributePattern.test(value))
+  for (let [attrName, attrValue] of Object.entries(attrs) as Dynamic) {
+    if (reservedImportAttributePattern.test(attrName))
       continue;
-    let value3: Dynamic = value2
+    let bindingExpression: Dynamic = attrValue
         .match(PropertiesInspectorFieldPattern)?.[1]
         ?.trim(),
-      value4: Dynamic =
-        value3 === "true" || value3 === "false" || value3 === "yes"
+      editorKind: Dynamic =
+        bindingExpression === "true" || bindingExpression === "false" || bindingExpression === "yes"
           ? "boolean"
-          : value3 != null &&
-              PropertiesInspectorFieldPattern_2.test(value3)
+          : bindingExpression != null &&
+              numberLiteralPattern.test(bindingExpression)
             ? "float"
             : "text";
-    state[value] = {
-      editor: value4,
+    state[attrName] = {
+      editor: editorKind,
     };
   }
   return state;
 }
-function mergeComponentAttributeValues(input?: Dynamic): Dynamic {
-  let value: Dynamic = Object.assign({}, ...[...input].reverse());
-  for (let value2 of input as Dynamic)
-    for (let [value3, value4] of Object.entries(value2) as Dynamic)
+function mergeComponentAttributeValues(attrLayers?: Dynamic): Dynamic {
+  let merged: Dynamic = Object.assign({}, ...[...attrLayers].reverse());
+  for (let layer of attrLayers as Dynamic)
+    for (let [attrName, attrValue] of Object.entries(layer) as Dynamic)
       parseComponentAttributeValue(
-        value4,
+        attrValue,
         {
           editor: "text",
         },
         true,
-      ).bound && (value[value3] = value4);
-  return value;
+      ).bound && (merged[attrName] = attrValue);
+  return merged;
 }
-function mixedComponentAttributeKeys(input?: Dynamic): Dynamic {
-  let values: Dynamic = new Set();
-  for (let value of new Set(
-    input.flatMap((input2?: Dynamic): Dynamic => Object.keys(input2)),
+function mixedComponentAttributeKeys(attrLayers?: Dynamic): Dynamic {
+  let mixedKeys: Dynamic = new Set();
+  for (let key of new Set(
+    attrLayers.flatMap((layer?: Dynamic): Dynamic => Object.keys(layer)),
   ) as Dynamic)
-    input.some(
-      (input2?: Dynamic): Dynamic => input2[value] !== input[0][value],
-    ) && values.add(value);
-  return values;
+    attrLayers.some(
+      (layer?: Dynamic): Dynamic => layer[key] !== attrLayers[0][key],
+    ) && mixedKeys.add(key);
+  return mixedKeys;
 }
 function useInferredComponentMetadata(
-  input?: Dynamic,
-  options?: Dynamic,
+  selectionKey?: Dynamic,
+  attrs?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = (0, reactPropertiesDropShadowEditor.useRef)({
+  let metaRef: Dynamic = (0, reactPropertiesDropShadowEditor.useRef)({
     selKey: "",
     meta: {},
   });
-  value.current.selKey !== input &&
-    (value.current = {
-      selKey: input,
+  metaRef.current.selKey !== selectionKey &&
+    (metaRef.current = {
+      selKey: selectionKey,
       meta: {},
     });
-  value.current.meta = {
-    ...value.current.meta,
-    ...inferComponentAttributeMetadata(options),
+  metaRef.current.meta = {
+    ...metaRef.current.meta,
+    ...inferComponentAttributeMetadata(attrs),
   };
-  return value.current.meta;
+  return metaRef.current.meta;
 }
 function resolveComponentAttributeName(
-  input?: Dynamic,
-  options?: Dynamic,
+  name?: Dynamic,
+  attrs?: Dynamic,
 ): Dynamic {
-  return Object.hasOwn(options, input)
-    ? input
-    : input.replace(
+  return Object.hasOwn(attrs, name)
+    ? name
+    : name.replace(
         /[A-Z]/g,
-        (input2?: Dynamic): Dynamic => "-" + input2.toLowerCase(),
+        (upperChar?: Dynamic): Dynamic => "-" + upperChar.toLowerCase(),
       );
 }
 function parseComponentAttributeValue(
-  input?: Dynamic,
-  options?: Dynamic,
-  context: Dynamic = false,
+  attrText?: Dynamic,
+  propMeta?: Dynamic,
+  allowYesLiteral: Dynamic = false,
 ): Dynamic {
-  if (input == null)
+  if (attrText == null)
     return {
       value: undefined,
       bound: false,
     };
-  let value: Dynamic = input.match(PropertiesInspectorFieldPattern);
-  if (value && !value[1].includes("{{")) {
-    let value2: Dynamic = value[1].trim();
-    if (value2 === "true")
+  let bindingMatch: Dynamic = attrText.match(PropertiesInspectorFieldPattern);
+  if (bindingMatch && !bindingMatch[1].includes("{{")) {
+    let expression: Dynamic = bindingMatch[1].trim();
+    if (expression === "true")
       return {
         value: true,
         bound: false,
       };
-    if (value2 === "false")
+    if (expression === "false")
       return {
         value: false,
         bound: false,
       };
-    if (context && value2 === "yes")
+    if (allowYesLiteral && expression === "yes")
       return {
         value: true,
         bound: false,
       };
-    if (PropertiesInspectorFieldPattern_2.test(value2))
+    if (numberLiteralPattern.test(expression))
       return {
-        value: Number(value2),
+        value: Number(expression),
         bound: false,
       };
-    let value3: Dynamic = value2.match(/^(['"])([\s\S]*)\1$/);
-    return value3
+    let quotedMatch: Dynamic = expression.match(/^(['"])([\s\S]*)\1$/);
+    return quotedMatch
       ? {
-          value: value3[2],
+          value: quotedMatch[2],
           bound: false,
         }
       : {
@@ -135,56 +135,56 @@ function parseComponentAttributeValue(
           bound: true,
         };
   }
-  if (input.includes("{{"))
+  if (attrText.includes("{{"))
     return {
       value: undefined,
       bound: true,
     };
-  if (options.editor === "boolean")
+  if (propMeta.editor === "boolean")
     return {
-      value: input !== "false" && input !== "",
+      value: attrText !== "false" && attrText !== "",
       bound: false,
     };
   if (
-    options.editor === "int" ||
-    options.editor === "float" ||
-    options.editor === "range"
+    propMeta.editor === "int" ||
+    propMeta.editor === "float" ||
+    propMeta.editor === "range"
   ) {
-    let value2: Dynamic = Number(input);
+    let numberValue: Dynamic = Number(attrText);
     return {
-      value: Number.isFinite(value2) ? value2 : undefined,
+      value: Number.isFinite(numberValue) ? numberValue : undefined,
       bound: false,
     };
   }
   return {
-    value: input,
+    value: attrText,
     bound: false,
   };
 }
-function serializeComponentAttributeValue(input?: Dynamic): Dynamic {
-  return input == null || Array.isArray(input)
+function serializeComponentAttributeValue(attrValue?: Dynamic): Dynamic {
+  return attrValue == null || Array.isArray(attrValue)
     ? null
-    : typeof input == "boolean" || typeof input == "number"
-      ? `{{ ${input} }}`
-      : String(input);
+    : typeof attrValue == "boolean" || typeof attrValue == "number"
+      ? `{{ ${attrValue} }}`
+      : String(attrValue);
 }
-function normalizeComponentColorOptions(input?: Dynamic): Dynamic {
-  if (input.editor !== "color" || !Array.isArray(input.options)) return input;
-  let value: Dynamic = input.options.filter(
-    (input2?: Dynamic): Dynamic => !Array.isArray(input2),
+function normalizeComponentColorOptions(propMeta?: Dynamic): Dynamic {
+  if (propMeta.editor !== "color" || !Array.isArray(propMeta.options)) return propMeta;
+  let nonPaletteOptions: Dynamic = propMeta.options.filter(
+    (option?: Dynamic): Dynamic => !Array.isArray(option),
   );
-  return value.length === input.options.length
-    ? input
+  return nonPaletteOptions.length === propMeta.options.length
+    ? propMeta
     : {
-        ...input,
-        options: value,
+        ...propMeta,
+        options: nonPaletteOptions,
       };
 }
 function ComponentImportPropsPanel({
   importName: importName,
   propsMeta: propsMeta,
   attrs: attrs,
-  disabled: disabled2,
+  disabled: isDisabled,
   onCommit: onCommit,
   onEditComponent: onEditComponent,
   refKeys = PropertiesInspectorFieldNameComponentFromSet,
@@ -195,38 +195,38 @@ function ComponentImportPropsPanel({
   mixed: mixed,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic = Object.entries(declared ?? {}).filter(
-      ([input, input2]: Dynamic): Dynamic =>
-        isEditablePropMetadata(input2) &&
+  let declaredEntries: Dynamic = Object.entries(declared ?? {}).filter(
+      ([attrName, propMeta]: Dynamic): Dynamic =>
+        isEditablePropMetadata(propMeta) &&
         !reservedImportAttributePattern.test(
-          input,
+          attrName,
         ) &&
         !reservedImportAttributePattern.test(
-          resolveComponentAttributeName(input, attrs),
+          resolveComponentAttributeName(attrName, attrs),
         ),
     ),
-    callback: Dynamic = (input?: Dynamic): Dynamic =>
-      PropertiesInspectorFieldPattern_3.test(input) &&
+    isBoundHandlerAttribute: Dynamic = (attrName?: Dynamic): Dynamic =>
+      eventAttributePattern.test(attrName) &&
       parseComponentAttributeValue(
-        attrs[resolveComponentAttributeName(input, attrs)],
+        attrs[resolveComponentAttributeName(attrName, attrs)],
         {},
         true,
       ).bound,
     items: Dynamic = [
-      ...value,
+      ...declaredEntries,
       ...Object.entries(propsMeta).filter(
-        ([input, input2]: Dynamic): Dynamic =>
-          isEditablePropMetadata(input2) &&
-          !refKeys.has(input) &&
+        ([attrName, propMeta]: Dynamic): Dynamic =>
+          isEditablePropMetadata(propMeta) &&
+          !refKeys.has(attrName) &&
           !(
             declared &&
-            (Object.hasOwn(declared, input) ||
+            (Object.hasOwn(declared, attrName) ||
               Object.hasOwn(
                 declared,
-                PropertiesInspectorFieldReplace(input),
+                PropertiesInspectorFieldReplace(attrName),
               ))
           ) &&
-          !callback(input),
+          !isBoundHandlerAttribute(attrName),
       ),
     ];
   return !onEditComponent && items.length === 0 && !emptyNote ? null : (
@@ -243,7 +243,7 @@ function ComponentImportPropsPanel({
             onClick={onEditComponent}
             data-testid={"dc-edit-imported-component"}
           >
-            {disabled2 ? (uiMessage("inspector.attributePropsPanel.open")) : (uiMessage("inspector.attributePropsPanel.edit"))} {importName}
+            {isDisabled ? (uiMessage("inspector.attributePropsPanel.open")) : (uiMessage("inspector.attributePropsPanel.edit"))} {importName}
             {" \u2192"}
           </Button>
           <span className={"text-caption text-muted"}>
@@ -254,92 +254,92 @@ function ComponentImportPropsPanel({
         </div>)}
       {items.length > 0 && (<div
           data-testid={"dc-import-props"}
-          className={disabled2 ? "opacity-60" : "contents"}
+          className={isDisabled ? "opacity-60" : "contents"}
           title={
-            disabled2 ? (ViewOnlyYouCanInspectThisMessage) : (undefined)
+            isDisabled ? (ViewOnlyYouCanInspectThisMessage) : (undefined)
           }
-          aria-disabled={disabled2 || undefined}
+          aria-disabled={isDisabled || undefined}
         >
-          <div className={"contents"} inert={disabled2}>
+          <div className={"contents"} inert={isDisabled}>
             {items.map(
-              ([input, input2]: Dynamic, options?: Dynamic): Dynamic => {
-                let value2: Dynamic = options < value.length,
-                  value3: Dynamic =
-                    schemaless && !value2
-                      ? input
-                      : resolveComponentAttributeName(input, attrs),
-                  { value: value4, bound: value5 }: Dynamic =
+              ([attrName, propMeta]: Dynamic, index?: Dynamic): Dynamic => {
+                let isDeclaredEntry: Dynamic = index < declaredEntries.length,
+                  attrKey: Dynamic =
+                    schemaless && !isDeclaredEntry
+                      ? attrName
+                      : resolveComponentAttributeName(attrName, attrs),
+                  { value: attrValue, bound: isBound }: Dynamic =
                     parseComponentAttributeValue(
-                      attrs[value3],
-                      input2,
+                      attrs[attrKey],
+                      propMeta,
                       schemaless,
                     ),
-                  value6: Dynamic =
+                  isSchemalessHandler: Dynamic =
                     schemaless &&
-                    (value2
-                      ? PropertiesInspectorFieldPattern_3
+                    (isDeclaredEntry
+                      ? eventAttributePattern
                       : /^on/i
-                    ).test(value3),
-                  value7: Dynamic =
-                    input2.default != null
-                      ? String(input2.default)
-                      : (input2.tsType ?? ""),
-                  value8: Dynamic =
-                    schemaless && !value2
-                      ? PropertiesInspectorFieldTest(input)
-                      : input;
-                if (value5 || value6) {
-                  let value10: Dynamic = attrs[value3] ?? "",
-                    value11: Dynamic = value10.match(
+                    ).test(attrKey),
+                  typeHint: Dynamic =
+                    propMeta.default != null
+                      ? String(propMeta.default)
+                      : (propMeta.tsType ?? ""),
+                  label: Dynamic =
+                    schemaless && !isDeclaredEntry
+                      ? PropertiesInspectorFieldTest(attrName)
+                      : attrName;
+                if (isBound || isSchemalessHandler) {
+                  let rawValue: Dynamic = attrs[attrKey] ?? "",
+                    bindingExpression: Dynamic = rawValue.match(
                       PropertiesInspectorFieldPattern,
                     )?.[1],
-                    value12: Dynamic =
-                      value11 !== undefined && !value11.includes("{{")
-                        ? value11.trim()
-                        : value10,
-                    value13: Dynamic = /^on/i.test(value3),
-                    value14: Dynamic = value13 && !value5,
-                    value15: Dynamic = mixed?.has(value3) === true,
-                    value16: Dynamic =
-                      !value13 &&
-                      !value15 &&
-                      !disabled2 &&
+                    displayValue: Dynamic =
+                      bindingExpression !== undefined && !bindingExpression.includes("{{")
+                        ? bindingExpression.trim()
+                        : rawValue,
+                    isEventAttr: Dynamic = /^on/i.test(attrKey),
+                    isLockedHandler: Dynamic = isEventAttr && !isBound,
+                    isMixed: Dynamic = mixed?.has(attrKey) === true,
+                    canEditInCode: Dynamic =
+                      !isEventAttr &&
+                      !isMixed &&
+                      !isDisabled &&
                       onEditInCode !== undefined,
-                    value17: Dynamic = value14
+                    tooltip: Dynamic = isLockedHandler
                       // MineDesign: user-facing copy calls the agent "the agent", not Claude.
                       ? uiMessage("inspector.attributePropsPanel.thisAttributeCanTBe")
-                      : value15 &&
-                          !value13 &&
-                          !disabled2 &&
+                      : isMixed &&
+                          !isEventAttr &&
+                          !isDisabled &&
                           onEditInCode !== undefined
                         ? uiMessage("inspector.attributePropsPanel.theSelectedInstancesSetThis")
                         : uiMessage("inspector.attributePropsPanel.setByThePageS") +
-                          (value16
+                          (canEditInCode
                             ? " Click to open it in Code."
-                            : value13
+                            : isEventAttr
                               ? " Ask the agent in chat to change it."
                               : "");
                   return (
                     <PropertyTextRow
-                      key={input}
-                      label={value8}
-                      title={value17}
-                      disabled={value13 || value15}
+                      key={attrName}
+                      label={label}
+                      title={tooltip}
+                      disabled={isEventAttr || isMixed}
                     >
                       <PropertyPickerButton
                         className={"w-full"}
                         data-testid={"dc-import-prop-bound"}
-                        title={value17}
-                        aria-label={uiMessage("inspector.attributePropsPanel.undefined", { value1: String(value8), value2: String((value12) || (uiMessage("inspector.attributePropsPanel.notSet"))) })}
-                        muted={value12 === ""}
-                        disabled={!value16}
+                        title={tooltip}
+                        aria-label={uiMessage("inspector.attributePropsPanel.undefined", { value1: String(label), value2: String((displayValue) || (uiMessage("inspector.attributePropsPanel.notSet"))) })}
+                        muted={displayValue === ""}
+                        disabled={!canEditInCode}
                         onClick={
-                          value16
-                            ? (): Dynamic => onEditInCode(value3)
+                          canEditInCode
+                            ? (): Dynamic => onEditInCode(attrKey)
                             : undefined
                         }
                         chip={
-                          value14 ? undefined : (
+                          isLockedHandler ? undefined : (
                             <Icon
                               name={"CodeBrackets"}
                               size={"sm"}
@@ -348,52 +348,52 @@ function ComponentImportPropsPanel({
                           )
                         }
                       >
-                        {value12 || ("\u2014")}
+                        {displayValue || ("\u2014")}
                       </PropertyPickerButton>
                     </PropertyTextRow>
                   );
                 }
-                let value9: Dynamic =
-                  (!schemaless || value2) &&
-                  !disabled2 &&
-                  attrs[value3] !== undefined
-                    ? (): Dynamic => onCommit(value3, null)
+                let resetHandler: Dynamic =
+                  (!schemaless || isDeclaredEntry) &&
+                  !isDisabled &&
+                  attrs[attrKey] !== undefined
+                    ? (): Dynamic => onCommit(attrKey, null)
                     : undefined;
-                return schemaless && (input2.editor ?? "text") === "text" ? (
+                return schemaless && (propMeta.editor ?? "text") === "text" ? (
                   <PropertyTextRow
-                    key={input}
-                    label={value8}
-                    onReset={value9}
+                    key={attrName}
+                    label={label}
+                    onReset={resetHandler}
                     onPress={(element?: Dynamic): Dynamic =>
                       element.querySelector("input")?.focus()
                     }
                   >
                     <PropertyTextInput
-                      display={attrs[value3] ?? ""}
+                      display={attrs[attrKey] ?? ""}
                       placeholder={""}
-                      hint={value7}
-                      aria-label={value8}
-                      disabled={disabled2}
-                      onCommitText={(input3?: Dynamic): Dynamic =>
-                        onCommit(value3, input3 === "" ? null : input3)
+                      hint={typeHint}
+                      aria-label={label}
+                      disabled={isDisabled}
+                      onCommitText={(text?: Dynamic): Dynamic =>
+                        onCommit(attrKey, text === "" ? null : text)
                       }
                     />
                   </PropertyTextRow>
                 ) : (
                   <ComponentPropInput
-                    key={input}
-                    name={value8}
-                    meta={normalizeComponentColorOptions(input2)}
-                    value={value4}
-                    unsetHint={value2 ? value7 || "\u2014" : undefined}
-                    onChange={(input3?: Dynamic): Dynamic => {
-                      disabled2 ||
+                    key={attrName}
+                    name={label}
+                    meta={normalizeComponentColorOptions(propMeta)}
+                    value={attrValue}
+                    unsetHint={isDeclaredEntry ? typeHint || "\u2014" : undefined}
+                    onChange={(newValue?: Dynamic): Dynamic => {
+                      isDisabled ||
                         onCommit(
-                          value3,
-                          serializeComponentAttributeValue(input3),
+                          attrKey,
+                          serializeComponentAttributeValue(newValue),
                         );
                     }}
-                    onReset={value9}
+                    onReset={resetHandler}
                   />
                 );
               },

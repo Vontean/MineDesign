@@ -6,85 +6,85 @@ import { camelToKebabCss } from "../html/tag-normalization";
 
 var CssDeclarationsAZaZPattern: Dynamic;
 var CssDeclarationsBehaviorMozBindingPattern: Dynamic;
-function normalizeCssProperty(input?: Dynamic): Dynamic {
-  return input.startsWith("--")
-    ? input
-    : CssDeclarationsAZaZPattern.test(input)
-      ? camelToKebabCss(input).toLowerCase()
-      : input.toLowerCase();
+function normalizeCssProperty(property?: Dynamic): Dynamic {
+  return property.startsWith("--")
+    ? property
+    : CssDeclarationsAZaZPattern.test(property)
+      ? camelToKebabCss(property).toLowerCase()
+      : property.toLowerCase();
 }
-function isUnsafeCssProperty(input?: Dynamic): Dynamic {
+function isUnsafeCssProperty(property?: Dynamic): Dynamic {
   return (
-    CssDeclarationsBehaviorMozBindingPattern.test(input) ||
-    CssDeclarationsBehaviorMozBindingPattern.test(normalizeCssProperty(input))
+    CssDeclarationsBehaviorMozBindingPattern.test(property) ||
+    CssDeclarationsBehaviorMozBindingPattern.test(normalizeCssProperty(property))
   );
 }
-function splitCssTokens(items?: Dynamic, options?: Dynamic): Dynamic {
-  let items2: Dynamic = [],
-    index: Dynamic = 0,
-    index2: Dynamic = 0,
-    value: Dynamic = null,
+function splitCssTokens(css?: Dynamic, separator?: Dynamic): Dynamic {
+  let tokens: Dynamic = [],
+    parenDepth: Dynamic = 0,
+    braceDepth: Dynamic = 0,
+    quoteChar: Dynamic = null,
     text: Dynamic = "";
-  for (let index3: Dynamic = 0; index3 < items.length; index3++) {
-    let value2: Dynamic = items[index3];
-    if (value) {
-      text += value2;
-      value2 === value && items[index3 - 1] !== "\\" && (value = null);
+  for (let position: Dynamic = 0; position < css.length; position++) {
+    let char: Dynamic = css[position];
+    if (quoteChar) {
+      text += char;
+      char === quoteChar && css[position - 1] !== "\\" && (quoteChar = null);
       continue;
     }
-    if (value2 === '"' || value2 === "'") {
-      value = value2;
-      text += value2;
+    if (char === '"' || char === "'") {
+      quoteChar = char;
+      text += char;
       continue;
     }
-    value2 === "("
-      ? index++
-      : value2 === ")"
-        ? (index = Math.max(0, index - 1))
-        : value2 === "{"
-          ? index2++
-          : value2 === "}" && (index2 = Math.max(0, index2 - 1));
-    if (value2 === options && index === 0 && index2 === 0) {
-      items2.push(text);
+    char === "("
+      ? parenDepth++
+      : char === ")"
+        ? (parenDepth = Math.max(0, parenDepth - 1))
+        : char === "{"
+          ? braceDepth++
+          : char === "}" && (braceDepth = Math.max(0, braceDepth - 1));
+    if (char === separator && parenDepth === 0 && braceDepth === 0) {
+      tokens.push(text);
       text = "";
       continue;
     }
-    text += value2;
+    text += char;
   }
-  items2.push(text);
-  return items2;
+  tokens.push(text);
+  return tokens;
 }
 function parseStyleDeclarations(style?: Dynamic): Dynamic {
   if (!style) return [];
-  let items: Dynamic = [];
-  for (let value of splitCssTokens(style, ";") as Dynamic) {
-    let value2: Dynamic = value.trim();
-    if (!value2) continue;
-    let value3: Dynamic = value2.indexOf(":");
-    if (value3 <= 0) continue;
-    let value4: Dynamic = value2.slice(0, value3).trim(),
-      value5: Dynamic = value2.slice(value3 + 1).trim();
-    !value4 ||
-      !value5 ||
-      isUnsafeCssProperty(value4) ||
-      items.push({
-        prop: normalizeCssProperty(value4),
-        value: value5,
+  let declarations: Dynamic = [];
+  for (let part of splitCssTokens(style, ";") as Dynamic) {
+    let trimmed: Dynamic = part.trim();
+    if (!trimmed) continue;
+    let colonIndex: Dynamic = trimmed.indexOf(":");
+    if (colonIndex <= 0) continue;
+    let propName: Dynamic = trimmed.slice(0, colonIndex).trim(),
+      propValue: Dynamic = trimmed.slice(colonIndex + 1).trim();
+    !propName ||
+      !propValue ||
+      isUnsafeCssProperty(propName) ||
+      declarations.push({
+        prop: normalizeCssProperty(propName),
+        value: propValue,
       });
   }
-  return items;
+  return declarations;
 }
 function serializeStyleDeclarations(declarations?: Dynamic): Dynamic {
   return declarations
-    .map((input?: Dynamic): Dynamic => `${input.prop}: ${input.value}`)
+    .map((declaration?: Dynamic): Dynamic => `${declaration.prop}: ${declaration.value}`)
     .join("; ");
 }
 function getStyleProperty(style?: Dynamic, property?: Dynamic): Dynamic {
   let declarations: Dynamic = parseStyleDeclarations(style),
     normalizedProperty: Dynamic = normalizeCssProperty(property);
-  for (let value: Dynamic = declarations.length - 1; value >= 0; value--)
-    if (declarations[value].prop === normalizedProperty)
-      return declarations[value].value;
+  for (let index: Dynamic = declarations.length - 1; index >= 0; index--)
+    if (declarations[index].prop === normalizedProperty)
+      return declarations[index].value;
   return "";
 }
 export {

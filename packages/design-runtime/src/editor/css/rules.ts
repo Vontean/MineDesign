@@ -12,494 +12,494 @@ function isUnescapedCharacter(text?: Dynamic, index?: Dynamic): Dynamic {
     precedingIndex--;
   return (index - 1 - precedingIndex) % 2 === 0;
 }
-function stripCssComments(items?: Dynamic): Dynamic {
-  let text: Dynamic = "",
-    index: Dynamic = 0,
-    value: Dynamic = null;
-  for (; index < items.length; ) {
-    let value2: Dynamic = items[index];
-    if (value) {
-      text += value2;
-      value2 === value &&
-        isUnescapedCharacter(items, index) &&
-        (value = null);
-      index++;
-    } else if (value2 === '"' || value2 === "'") {
-      value = value2;
-      text += value2;
-      index++;
-    } else if (value2 === "/" && items[index + 1] === "*") {
-      let value3: Dynamic = items.indexOf("*/", index + 2);
-      index = value3 === -1 ? items.length : value3 + 2;
+function stripCssComments(css?: Dynamic): Dynamic {
+  let stripped: Dynamic = "",
+    position: Dynamic = 0,
+    quoteChar: Dynamic = null;
+  for (; position < css.length; ) {
+    let char: Dynamic = css[position];
+    if (quoteChar) {
+      stripped += char;
+      char === quoteChar &&
+        isUnescapedCharacter(css, position) &&
+        (quoteChar = null);
+      position++;
+    } else if (char === '"' || char === "'") {
+      quoteChar = char;
+      stripped += char;
+      position++;
+    } else if (char === "/" && css[position + 1] === "*") {
+      let commentEnd: Dynamic = css.indexOf("*/", position + 2);
+      position = commentEnd === -1 ? css.length : commentEnd + 2;
     } else {
-      text += value2;
-      index++;
+      stripped += char;
+      position++;
     }
   }
-  return text;
+  return stripped;
 }
-function parseUtilityClasses(input?: Dynamic): Dynamic {
-  let value: Dynamic = stripCssComments(input),
-    items: Dynamic = [],
-    index: Dynamic = 0;
-  for (; index < value.length; ) {
-    let value2: Dynamic = value.indexOf("{", index);
-    if (value2 === -1) break;
-    let value3: Dynamic = value.indexOf(";", index);
-    if (value3 !== -1 && value3 < value2) {
-      index = value3 + 1;
+function parseUtilityClasses(css?: Dynamic): Dynamic {
+  let strippedCss: Dynamic = stripCssComments(css),
+    rules: Dynamic = [],
+    position: Dynamic = 0;
+  for (; position < strippedCss.length; ) {
+    let braceIndex: Dynamic = strippedCss.indexOf("{", position);
+    if (braceIndex === -1) break;
+    let semicolonIndex: Dynamic = strippedCss.indexOf(";", position);
+    if (semicolonIndex !== -1 && semicolonIndex < braceIndex) {
+      position = semicolonIndex + 1;
       continue;
     }
-    let value4: Dynamic = value.slice(index, value2).trim(),
-      count: Dynamic = 1,
-      value5: Dynamic = value2 + 1,
-      value6: Dynamic = null;
-    for (; value5 < value.length && count > 0; ) {
-      let value9: Dynamic = value[value5++];
-      value6
-        ? value9 === value6 &&
-          isUnescapedCharacter(value, value5 - 1) &&
-          (value6 = null)
-        : value9 === '"' || value9 === "'"
-          ? (value6 = value9)
-          : value9 === "{"
-            ? count++
-            : value9 === "}" && count--;
+    let selectorList: Dynamic = strippedCss.slice(position, braceIndex).trim(),
+      braceDepth: Dynamic = 1,
+      bodyPosition: Dynamic = braceIndex + 1,
+      quoteChar: Dynamic = null;
+    for (; bodyPosition < strippedCss.length && braceDepth > 0; ) {
+      let char: Dynamic = strippedCss[bodyPosition++];
+      quoteChar
+        ? char === quoteChar &&
+          isUnescapedCharacter(strippedCss, bodyPosition - 1) &&
+          (quoteChar = null)
+        : char === '"' || char === "'"
+          ? (quoteChar = char)
+          : char === "{"
+            ? braceDepth++
+            : char === "}" && braceDepth--;
     }
-    let value7: Dynamic = value.slice(
-      value2 + 1,
-      count === 0 ? value5 - 1 : value5,
+    let ruleBody: Dynamic = strippedCss.slice(
+      braceIndex + 1,
+      braceDepth === 0 ? bodyPosition - 1 : bodyPosition,
     );
-    index = value5;
-    if (value4.startsWith("@")) continue;
-    let value8: Dynamic = parseStyleDeclarations(value7);
-    for (let value9 of value4.split(",") as Dynamic) {
-      let value10: Dynamic = value9.trim(),
-        value11: Dynamic = /^\.(-?[_A-Za-z][\w-]*)$/.exec(value10);
-      if (value11) {
-        items.push({
-          className: value11[1],
-          decls: value8,
+    position = bodyPosition;
+    if (selectorList.startsWith("@")) continue;
+    let decls: Dynamic = parseStyleDeclarations(ruleBody);
+    for (let selectorPart of selectorList.split(",") as Dynamic) {
+      let selector: Dynamic = selectorPart.trim(),
+        simpleMatch: Dynamic = /^\.(-?[_A-Za-z][\w-]*)$/.exec(selector);
+      if (simpleMatch) {
+        rules.push({
+          className: simpleMatch[1],
+          decls: decls,
         });
         continue;
       }
-      let value12: Dynamic =
-        /^\.(-?[_A-Za-z][\w-]*)\.(-?[_A-Za-z][\w-]*)$/.exec(value10);
-      if (value12) {
-        items.push({
-          className: value12[1],
-          also: value12[2],
-          decls: value8,
+      let compoundMatch: Dynamic =
+        /^\.(-?[_A-Za-z][\w-]*)\.(-?[_A-Za-z][\w-]*)$/.exec(selector);
+      if (compoundMatch) {
+        rules.push({
+          className: compoundMatch[1],
+          also: compoundMatch[2],
+          decls: decls,
         });
         continue;
       }
-      let value13: Dynamic =
-        /^\.(-?[_A-Za-z][\w-]*)\s+\.(-?[_A-Za-z][\w-]*)$/.exec(value10);
-      value13 &&
-        items.push({
-          parent: value13[1],
-          className: value13[2],
-          decls: value8,
+      let descendantMatch: Dynamic =
+        /^\.(-?[_A-Za-z][\w-]*)\s+\.(-?[_A-Za-z][\w-]*)$/.exec(selector);
+      descendantMatch &&
+        rules.push({
+          parent: descendantMatch[1],
+          className: descendantMatch[2],
+          decls: decls,
         });
     }
   }
-  return items;
+  return rules;
 }
-function findCssRules(items?: Dynamic, options?: Dynamic): Dynamic {
-  let items2: Dynamic = [],
-    value: Dynamic = options.toLowerCase(),
-    text: Dynamic = "",
-    index: Dynamic = 0,
-    index2: Dynamic = 0,
-    value2: Dynamic = -1,
-    flag: Dynamic = false,
-    flag2: Dynamic = false,
-    flag3: Dynamic = false,
-    value3: Dynamic = null;
-  for (let index3: Dynamic = 0; index3 < items.length; index3++) {
-    let value4: Dynamic = items[index3];
-    if (value3) {
-      value4 === value3 &&
-        isUnescapedCharacter(items, index3) &&
-        (value3 = null);
+function findCssRules(css?: Dynamic, selector?: Dynamic): Dynamic {
+  let ruleRanges: Dynamic = [],
+    targetSelector: Dynamic = selector.toLowerCase(),
+    preludeText: Dynamic = "",
+    braceDepth: Dynamic = 0,
+    parenDepth: Dynamic = 0,
+    bodyStart: Dynamic = -1,
+    isTargetRule: Dynamic = false,
+    isOnlyTarget: Dynamic = false,
+    isConditionalBlock: Dynamic = false,
+    quoteChar: Dynamic = null;
+  for (let position: Dynamic = 0; position < css.length; position++) {
+    let char: Dynamic = css[position];
+    if (quoteChar) {
+      char === quoteChar &&
+        isUnescapedCharacter(css, position) &&
+        (quoteChar = null);
       continue;
     }
-    if (value4 === '"' || value4 === "'") {
-      value3 = value4;
-      index === 0 && (text += value4);
+    if (char === '"' || char === "'") {
+      quoteChar = char;
+      braceDepth === 0 && (preludeText += char);
       continue;
     }
-    if (value4 === "/" && items[index3 + 1] === "*") {
-      let value5: Dynamic = items.indexOf("*/", index3 + 2);
-      index3 = value5 === -1 ? items.length : value5 + 1;
+    if (char === "/" && css[position + 1] === "*") {
+      let commentEnd: Dynamic = css.indexOf("*/", position + 2);
+      position = commentEnd === -1 ? css.length : commentEnd + 1;
       continue;
     }
-    if (index === 0) {
-      if (value4 === ";") text = "";
-      else if (value4 === "{") {
-        let value5: Dynamic = text
+    if (braceDepth === 0) {
+      if (char === ";") preludeText = "";
+      else if (char === "{") {
+        let selectors: Dynamic = preludeText
           .trim()
           .split(",")
-          .map((input?: Dynamic): Dynamic => input.trim().toLowerCase());
-        flag = !value5[0].startsWith("@") && value5.includes(value);
-        flag2 = value5.every(
-          (input?: Dynamic): Dynamic => input === value || input === "html",
+          .map((selectorText?: Dynamic): Dynamic => selectorText.trim().toLowerCase());
+        isTargetRule = !selectors[0].startsWith("@") && selectors.includes(targetSelector);
+        isOnlyTarget = selectors.every(
+          (selectorText?: Dynamic): Dynamic => selectorText === targetSelector || selectorText === "html",
         );
-        let value6: Dynamic = /^@(media|supports|layer|container)\b/i
-            .exec(value5[0])?.[1]
+        let atRuleName: Dynamic = /^@(media|supports|layer|container)\b/i
+            .exec(selectors[0])?.[1]
             ?.toLowerCase(),
-          value7: Dynamic = [
-            value5[0].replace(/^@media\b/i, ""),
-            ...value5.slice(1),
-          ].map((input?: Dynamic): Dynamic => input.trim());
-        flag3 =
-          value6 !== undefined &&
+          mediaConditions: Dynamic = [
+            selectors[0].replace(/^@media\b/i, ""),
+            ...selectors.slice(1),
+          ].map((condition?: Dynamic): Dynamic => condition.trim());
+        isConditionalBlock =
+          atRuleName !== undefined &&
           !(
-            value6 === "media" &&
-            value7.every(
-              (input?: Dynamic): Dynamic => /^(only\s+)?print\b/.test(input),
+            atRuleName === "media" &&
+            mediaConditions.every(
+              (condition?: Dynamic): Dynamic => /^(only\s+)?print\b/.test(condition),
             )
           );
-        value2 = index3 + 1;
-        index = 1;
-        index2 = 0;
-        text = "";
-      } else text += value4;
+        bodyStart = position + 1;
+        braceDepth = 1;
+        parenDepth = 0;
+        preludeText = "";
+      } else preludeText += char;
       continue;
     }
-    if (value4 === "(") index2++;
-    else if (value4 === ")") index2 = Math.max(0, index2 - 1);
+    if (char === "(") parenDepth++;
+    else if (char === ")") parenDepth = Math.max(0, parenDepth - 1);
     else {
-      if (index2 > 0) continue;
-      if (value4 === "{") index++;
-      else if (value4 === "}" && --index === 0) {
-        if (flag)
-          items2.push({
-            start: value2,
-            end: index3,
-            only: flag2,
+      if (parenDepth > 0) continue;
+      if (char === "{") braceDepth++;
+      else if (char === "}" && --braceDepth === 0) {
+        if (isTargetRule)
+          ruleRanges.push({
+            start: bodyStart,
+            end: position,
+            only: isOnlyTarget,
           });
-        else if (flag3)
-          for (let value5 of findCssRules(
-            items.slice(value2, index3),
-            options,
+        else if (isConditionalBlock)
+          for (let nestedRange of findCssRules(
+            css.slice(bodyStart, position),
+            selector,
           ) as Dynamic)
-            items2.push({
-              start: value5.start + value2,
-              end: value5.end + value2,
+            ruleRanges.push({
+              start: nestedRange.start + bodyStart,
+              end: nestedRange.end + bodyStart,
               only: false,
               cond: true,
             });
-        flag = false;
+        isTargetRule = false;
       }
     }
   }
-  index > 0 &&
-    flag &&
-    items2.push({
-      start: value2,
-      end: items.length,
-      only: flag2,
+  braceDepth > 0 &&
+    isTargetRule &&
+    ruleRanges.push({
+      start: bodyStart,
+      end: css.length,
+      only: isOnlyTarget,
     });
-  return items2;
+  return ruleRanges;
 }
-function stripCssNestedContent(items?: Dynamic): Dynamic {
-  let index: Dynamic = 0,
-    value: Dynamic = null,
-    text: Dynamic = "";
-  for (let index2: Dynamic = 0; index2 < items.length; index2++) {
-    let value2: Dynamic = items[index2];
-    if (value)
-      value2 === value &&
-        isUnescapedCharacter(items, index2) &&
-        (value = null);
-    else if (value2 === '"' || value2 === "'") {
-      value = value2;
-      index === 0 && (text += value2);
-    } else if (value2 === "/" && items[index2 + 1] === "*") {
-      let value3: Dynamic = items.indexOf("*/", index2 + 2);
-      if (value3 === -1) return true;
-      index2 = value3 + 1;
-    } else if (value2 === "{") {
-      index++;
-      text = "";
-    } else if (value2 === "}") {
-      if (index === 0) return true;
-      index--;
-      text = "";
-    } else index === 0 && (text = value2 === ";" ? "" : text + value2);
+function stripCssNestedContent(css?: Dynamic): Dynamic {
+  let depth: Dynamic = 0,
+    quoteChar: Dynamic = null,
+    currentText: Dynamic = "";
+  for (let position: Dynamic = 0; position < css.length; position++) {
+    let char: Dynamic = css[position];
+    if (quoteChar)
+      char === quoteChar &&
+        isUnescapedCharacter(css, position) &&
+        (quoteChar = null);
+    else if (char === '"' || char === "'") {
+      quoteChar = char;
+      depth === 0 && (currentText += char);
+    } else if (char === "/" && css[position + 1] === "*") {
+      let commentEnd: Dynamic = css.indexOf("*/", position + 2);
+      if (commentEnd === -1) return true;
+      position = commentEnd + 1;
+    } else if (char === "{") {
+      depth++;
+      currentText = "";
+    } else if (char === "}") {
+      if (depth === 0) return true;
+      depth--;
+      currentText = "";
+    } else depth === 0 && (currentText = char === ";" ? "" : currentText + char);
   }
-  return index > 0 || value !== null || text.trim() !== "";
+  return depth > 0 || quoteChar !== null || currentText.trim() !== "";
 }
-function parseCssRuleDeclarations(items?: Dynamic): Dynamic {
-  let items2: Dynamic = [],
-    index: Dynamic = 0,
-    index2: Dynamic = 0,
-    index3: Dynamic = 0,
-    value: Dynamic = null,
-    callback: Dynamic = (
-      input?: Dynamic,
-      options: Dynamic = true,
+function parseCssRuleDeclarations(css?: Dynamic): Dynamic {
+  let declarations: Dynamic = [],
+    declarationStart: Dynamic = 0,
+    parenDepth: Dynamic = 0,
+    braceDepth: Dynamic = 0,
+    quoteChar: Dynamic = null,
+    pushDeclaration: Dynamic = (
+      end?: Dynamic,
+      shouldRecord: Dynamic = true,
     ): Dynamic => {
-      let value2: Dynamic = stripCssComments(items.slice(index, input)),
-        value3: Dynamic = value2.indexOf(":"),
-        value4: Dynamic =
-          value3 > 0 ? value2.slice(0, value3).trim().toLowerCase() : "";
-      options &&
-        /^-{0,2}[_a-z][\w-]*$/i.test(value4) &&
-        value2.slice(value3 + 1).trim() &&
-        items2.push({
-          prop: value4,
-          start: index,
-          end: input,
+      let declarationText: Dynamic = stripCssComments(css.slice(declarationStart, end)),
+        colonIndex: Dynamic = declarationText.indexOf(":"),
+        prop: Dynamic =
+          colonIndex > 0 ? declarationText.slice(0, colonIndex).trim().toLowerCase() : "";
+      shouldRecord &&
+        /^-{0,2}[_a-z][\w-]*$/i.test(prop) &&
+        declarationText.slice(colonIndex + 1).trim() &&
+        declarations.push({
+          prop: prop,
+          start: declarationStart,
+          end: end,
         });
-      index = input;
+      declarationStart = end;
     };
-  for (let index4: Dynamic = 0; index4 < items.length; index4++) {
-    let value2: Dynamic = items[index4];
-    if (value)
-      value2 === value &&
-        isUnescapedCharacter(items, index4) &&
-        (value = null);
-    else if (value2 === '"' || value2 === "'") value = value2;
-    else if (value2 === "/" && items[index4 + 1] === "*") {
-      let value3: Dynamic = items.indexOf("*/", index4 + 2);
-      index4 = value3 === -1 ? items.length : value3 + 1;
-    } else if (value2 === "(") index2++;
-    else if (value2 === ")") index2 = Math.max(0, index2 - 1);
+  for (let position: Dynamic = 0; position < css.length; position++) {
+    let char: Dynamic = css[position];
+    if (quoteChar)
+      char === quoteChar &&
+        isUnescapedCharacter(css, position) &&
+        (quoteChar = null);
+    else if (char === '"' || char === "'") quoteChar = char;
+    else if (char === "/" && css[position + 1] === "*") {
+      let commentEnd: Dynamic = css.indexOf("*/", position + 2);
+      position = commentEnd === -1 ? css.length : commentEnd + 1;
+    } else if (char === "(") parenDepth++;
+    else if (char === ")") parenDepth = Math.max(0, parenDepth - 1);
     else {
-      if (index2 > 0) continue;
-      value2 === "{"
-        ? index3++
-        : value2 === "}" && index3 > 0
-          ? --index3 === 0 && callback(index4 + 1, false)
-          : value2 === ";" && index3 === 0 && callback(index4 + 1);
+      if (parenDepth > 0) continue;
+      char === "{"
+        ? braceDepth++
+        : char === "}" && braceDepth > 0
+          ? --braceDepth === 0 && pushDeclaration(position + 1, false)
+          : char === ";" && braceDepth === 0 && pushDeclaration(position + 1);
     }
   }
-  callback(Math.max(index, items.trimEnd().length));
-  return items2;
+  pushDeclaration(Math.max(declarationStart, css.trimEnd().length));
+  return declarations;
 }
 function getCssRuleProperties(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  css?: Dynamic,
+  selector?: Dynamic,
+  props?: Dynamic,
 ): Dynamic {
-  let items: Dynamic = [];
-  for (let value of findCssRules(input, options) as Dynamic) {
-    let value2: Dynamic = input.slice(value.start, value.end);
-    for (let value3 of parseCssRuleDeclarations(value2) as Dynamic) {
-      if (!context.includes(value3.prop)) continue;
-      let value4: Dynamic = getStyleProperty(
-          stripCssComments(value2.slice(value3.start, value3.end)).replace(
+  let properties: Dynamic = [];
+  for (let rule of findCssRules(css, selector) as Dynamic) {
+    let ruleText: Dynamic = css.slice(rule.start, rule.end);
+    for (let declaration of parseCssRuleDeclarations(ruleText) as Dynamic) {
+      if (!props.includes(declaration.prop)) continue;
+      let declarationText: Dynamic = getStyleProperty(
+          stripCssComments(ruleText.slice(declaration.start, declaration.end)).replace(
             /;\s*$/,
             "",
           ),
-          value3.prop,
+          declaration.prop,
         ),
-        value5: Dynamic = /!\s*important\s*$/i.test(value4);
-      items.push({
-        prop: value3.prop,
-        value: value4.replace(/\s*!\s*important\s*$/i, ""),
-        important: value5,
-        rule: value,
-        start: value.start + value3.start,
-        end: value.start + value3.end,
+        isImportant: Dynamic = /!\s*important\s*$/i.test(declarationText);
+      properties.push({
+        prop: declaration.prop,
+        value: declarationText.replace(/\s*!\s*important\s*$/i, ""),
+        important: isImportant,
+        rule: rule,
+        start: rule.start + declaration.start,
+        end: rule.start + declaration.end,
       });
     }
   }
-  return items
-    .filter((input2?: Dynamic): Dynamic => !input2.important)
-    .concat(items.filter((input2?: Dynamic): Dynamic => input2.important));
+  return properties
+    .filter((entry?: Dynamic): Dynamic => !entry.important)
+    .concat(properties.filter((entry?: Dynamic): Dynamic => entry.important));
 }
 function getUnconditionalCssDeclarations(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  css?: Dynamic,
+  selector?: Dynamic,
+  props?: Dynamic,
 ): Dynamic {
   return getCssRuleProperties(
-    input,
-    options,
-    context.map((input2?: Dynamic): Dynamic => input2.toLowerCase()),
+    css,
+    selector,
+    props.map((prop?: Dynamic): Dynamic => prop.toLowerCase()),
   )
-    .filter((input2?: Dynamic): Dynamic => !input2.rule.cond)
+    .filter((entry?: Dynamic): Dynamic => !entry.rule.cond)
     .map(
-      (input2?: Dynamic): Dynamic => ({
-        prop: input2.prop,
-        value: input2.value,
+      (entry?: Dynamic): Dynamic => ({
+        prop: entry.prop,
+        value: entry.value,
       }),
     );
 }
 function getCssRuleProperty(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  css?: Dynamic,
+  selector?: Dynamic,
+  prop?: Dynamic,
 ): Dynamic {
   return (
-    getCssRuleProperties(input, options, [context.toLowerCase()])
-      .filter((input2?: Dynamic): Dynamic => !input2.rule.cond)
+    getCssRuleProperties(css, selector, [prop.toLowerCase()])
+      .filter((entry?: Dynamic): Dynamic => !entry.rule.cond)
       .at(-1)?.value ?? ""
   );
 }
 function updateCssRuleProperties(
-  items?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
-  value: Dynamic = context.map((input?: Dynamic): Dynamic => input.prop),
-  extra: Dynamic = true,
+  css?: Dynamic,
+  selector?: Dynamic,
+  updates?: Dynamic,
+  propsToClear: Dynamic = updates.map((update?: Dynamic): Dynamic => update.prop),
+  shouldClearOverrides: Dynamic = true,
 ): Dynamic {
-  let items2: Dynamic = [
+  let propList: Dynamic = [
       ...new Set(
         [
-          ...value,
-          ...context.map((input?: Dynamic): Dynamic => input.prop),
-        ].map((input?: Dynamic): Dynamic => input.toLowerCase()),
+          ...propsToClear,
+          ...updates.map((update?: Dynamic): Dynamic => update.prop),
+        ].map((prop?: Dynamic): Dynamic => prop.toLowerCase()),
       ),
     ],
-    callback: Dynamic = (): Dynamic =>
-      getCssRuleProperties(items, options, items2),
-    callback2: Dynamic = (input?: Dynamic): Dynamic => {
-      for (let value3 of [...input].sort(
-        (input2?: Dynamic, options2?: Dynamic): Dynamic =>
-          options2.start - input2.start,
+    readProperties: Dynamic = (): Dynamic =>
+      getCssRuleProperties(css, selector, propList),
+    removeRanges: Dynamic = (ranges?: Dynamic): Dynamic => {
+      for (let range of [...ranges].sort(
+        (rangeA?: Dynamic, rangeB?: Dynamic): Dynamic =>
+          rangeB.start - rangeA.start,
       ) as Dynamic)
-        items = items.slice(0, value3.start) + items.slice(value3.end);
+        css = css.slice(0, range.start) + css.slice(range.end);
     };
-  for (let value3 of context as Dynamic) {
-    if (value3.value == null || value3.value === "") continue;
-    let value4: Dynamic = value3.prop.toLowerCase(),
-      value5: Dynamic = callback(),
-      value6: Dynamic =
-        value4 +
+  for (let update of updates as Dynamic) {
+    if (update.value == null || update.value === "") continue;
+    let propLower: Dynamic = update.prop.toLowerCase(),
+      existing: Dynamic = readProperties(),
+      newDeclaration: Dynamic =
+        propLower +
         ": " +
-        value3.value +
-        (value5.some(
-          (input?: Dynamic): Dynamic => input.important && !input.rule.only,
+        update.value +
+        (existing.some(
+          (entry?: Dynamic): Dynamic => entry.important && !entry.rule.only,
         )
           ? " !important"
           : "") +
         ";",
-      value7: Dynamic = value5
-        .filter((input?: Dynamic): Dynamic => input.prop === value4)
+      lastExisting: Dynamic = existing
+        .filter((entry?: Dynamic): Dynamic => entry.prop === propLower)
         .at(-1);
     if (
-      value7?.rule.only &&
-      !value7.important &&
-      !value5.some(
-        (input?: Dynamic): Dynamic =>
-          (!input.rule.only || input.important) &&
-          value5.indexOf(input) > value5.indexOf(value7),
+      lastExisting?.rule.only &&
+      !lastExisting.important &&
+      !existing.some(
+        (entry?: Dynamic): Dynamic =>
+          (!entry.rule.only || entry.important) &&
+          existing.indexOf(entry) > existing.indexOf(lastExisting),
       )
     ) {
-      if (value7.value === value3.value) continue;
-      let value15: Dynamic = items.slice(value7.start, value7.end),
-        value16: Dynamic = /^(?:\s+|\/\*[\s\S]*?\*\/)*/.exec(value15)![0];
-      items =
-        items.slice(0, value7.start) +
-        value16 +
-        value6 +
-        items.slice(value7.end);
+      if (lastExisting.value === update.value) continue;
+      let existingText: Dynamic = css.slice(lastExisting.start, lastExisting.end),
+        leadingSpace: Dynamic = /^(?:\s+|\/\*[\s\S]*?\*\/)*/.exec(existingText)![0];
+      css =
+        css.slice(0, lastExisting.start) +
+        leadingSpace +
+        newDeclaration +
+        css.slice(lastExisting.end);
       continue;
     }
-    callback2(
-      value5.filter(
-        (input?: Dynamic): Dynamic =>
-          input.prop === value4 && input.rule.only,
+    removeRanges(
+      existing.filter(
+        (entry?: Dynamic): Dynamic =>
+          entry.prop === propLower && entry.rule.only,
       ),
     );
-    let value8: Dynamic = callback()
+    let lastRule: Dynamic = readProperties()
         .sort(
-          (input?: Dynamic, options2?: Dynamic): Dynamic =>
-            input.start - options2.start,
+          (entryA?: Dynamic, entryB?: Dynamic): Dynamic =>
+            entryA.start - entryB.start,
         )
         .at(-1)?.rule,
-      value9: Dynamic = value8?.only
-        ? value8
-        : findCssRules(items, options)
+      targetRule: Dynamic = lastRule?.only
+        ? lastRule
+        : findCssRules(css, selector)
             .filter(
-              (input?: Dynamic): Dynamic =>
-                input.only && input.start > (value8?.end ?? -1),
+              (rule?: Dynamic): Dynamic =>
+                rule.only && rule.start > (lastRule?.end ?? -1),
             )
             .at(-1);
-    if (!value9) {
-      items +=
-        (items.length === 0 || /\n\s*$/.test(items)
+    if (!targetRule) {
+      css +=
+        (css.length === 0 || /\n\s*$/.test(css)
           ? ""
           : `
 `) +
-        options +
+        selector +
         " { " +
-        value6 +
+        newDeclaration +
         ` }
 `;
       continue;
     }
-    let value10: Dynamic = items.slice(value9.start, value9.end),
-      value11: Dynamic = /\s*$/.exec(value10)![0],
-      value12: Dynamic = value10.slice(0, value10.length - value11.length),
-      value13: Dynamic = stripCssComments(value12).trim(),
-      value14: Dynamic = value13 === "" || /[;}]$/.test(value13) ? " " : "; ";
-    items =
-      items.slice(0, value9.start) +
-      value12 +
-      value14 +
-      value6 +
-      (value11 || " ") +
-      items.slice(value9.end);
+    let ruleText: Dynamic = css.slice(targetRule.start, targetRule.end),
+      trailingSpace: Dynamic = /\s*$/.exec(ruleText)![0],
+      ruleBody: Dynamic = ruleText.slice(0, ruleText.length - trailingSpace.length),
+      trimmedBody: Dynamic = stripCssComments(ruleBody).trim(),
+      separator: Dynamic = trimmedBody === "" || /[;}]$/.test(trimmedBody) ? " " : "; ";
+    css =
+      css.slice(0, targetRule.start) +
+      ruleBody +
+      separator +
+      newDeclaration +
+      (trailingSpace || " ") +
+      css.slice(targetRule.end);
   }
-  let value2: Dynamic = context
+  let removedProps: Dynamic = updates
     .filter(
-      (input?: Dynamic): Dynamic => input.value == null || input.value === "",
+      (update?: Dynamic): Dynamic => update.value == null || update.value === "",
     )
-    .map((input?: Dynamic): Dynamic => input.prop.toLowerCase());
+    .map((update?: Dynamic): Dynamic => update.prop.toLowerCase());
   if (
-    value2.length === 0 ||
-    (callback2(
-      callback().filter(
-        (input?: Dynamic): Dynamic =>
-          value2.includes(input.prop) && input.rule.only,
+    removedProps.length === 0 ||
+    (removeRanges(
+      readProperties().filter(
+        (entry?: Dynamic): Dynamic =>
+          removedProps.includes(entry.prop) && entry.rule.only,
       ),
     ),
-    !extra)
+    !shouldClearOverrides)
   )
-    return items;
-  let callback3: Dynamic = (input?: Dynamic): Dynamic => {
-      let value3: Dynamic = /^var\(/i.test(input)
-        ? resolveCssVariable(items, options, input)
-        : input;
+    return css;
+  let isSimpleValue: Dynamic = (cssValue?: Dynamic): Dynamic => {
+      let resolvedValue: Dynamic = /^var\(/i.test(cssValue)
+        ? resolveCssVariable(css, selector, cssValue)
+        : cssValue;
       return (
-        value3 !== "" &&
+        resolvedValue !== "" &&
         !/\b(url|[\w-]*gradient|image-set|image|cross-fade|element|paint)\(/i.test(
-          value3,
+          resolvedValue,
         )
       );
     },
-    callback4: Dynamic = (input?: Dynamic, options2?: Dynamic): Dynamic =>
-      (!options2.important || input.important) &&
-      (input.prop === options2.prop ||
-        input.prop === "background" ||
-        (options2.prop === "background" && callback3(options2.value)));
-  for (let index: Dynamic = 0; index < 4; index++) {
-    let value3: Dynamic = callback(),
-      value4: Dynamic = value2.flatMap((input?: Dynamic): Dynamic => {
-        let value5: Dynamic = value3
-          .filter((input2?: Dynamic): Dynamic => input2.prop === input)
+    overrides: Dynamic = (overridingEntry?: Dynamic, targetEntry?: Dynamic): Dynamic =>
+      (!targetEntry.important || overridingEntry.important) &&
+      (overridingEntry.prop === targetEntry.prop ||
+        overridingEntry.prop === "background" ||
+        (targetEntry.prop === "background" && isSimpleValue(targetEntry.value)));
+  for (let pass: Dynamic = 0; pass < 4; pass++) {
+    let currentEntries: Dynamic = readProperties(),
+      overridden: Dynamic = removedProps.flatMap((prop?: Dynamic): Dynamic => {
+        let lastForProp: Dynamic = currentEntries
+          .filter((entry?: Dynamic): Dynamic => entry.prop === prop)
           .at(-1);
-        return value5 &&
-          !value5.rule.only &&
-          !CssRulesNoneTransparentPattern.test(value5.value) &&
-          !value3.some(
-            (input2?: Dynamic): Dynamic =>
-              input2.rule.only &&
-              input2.start > value5.start &&
-              callback4(input2, value5),
+        return lastForProp &&
+          !lastForProp.rule.only &&
+          !CssRulesNoneTransparentPattern.test(lastForProp.value) &&
+          !currentEntries.some(
+            (entry?: Dynamic): Dynamic =>
+              entry.rule.only &&
+              entry.start > lastForProp.start &&
+              overrides(entry, lastForProp),
           )
-          ? [value5]
+          ? [lastForProp]
           : [];
       });
-    if (value4.length === 0) break;
-    callback2(value4);
+    if (overridden.length === 0) break;
+    removeRanges(overridden);
   }
-  return items;
+  return css;
 }
 export {
   CssRulesNoneTransparentPattern,

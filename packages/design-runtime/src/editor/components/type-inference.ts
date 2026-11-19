@@ -4,273 +4,273 @@ import {
 } from "../../runtime-types";
 
 var ComponentsTypeInferenceLimit: Dynamic;
-var ComponentsTypeInferenceLimit_2: Dynamic;
-var ComponentsTypeInferenceLimit_3: Dynamic;
-var ComponentsTypeInferenceLimit_4: Dynamic;
+var maxReferencedTypes: Dynamic;
+var maxMembersPerBody: Dynamic;
+var maxWorkUnits: Dynamic;
 var ComponentsTypeInferenceResolvedValue: Dynamic;
 var TYPE_INFERENCE_OVER_BUDGET: Dynamic;
-var ComponentsTypeInferenceLimit_5: Dynamic;
+var maxReferenceDepth: Dynamic;
 var ComponentsTypeInferenceAZaZPattern: Dynamic;
 var ComponentsTypeInferencePattern: Dynamic;
-var ComponentsTypeInferencePattern_2: Dynamic;
-var ComponentsTypeInferenceLimit_6: Dynamic;
-var ComponentsTypeInferenceLimit_7: Dynamic;
-var ComponentsTypeInferenceLimit_8: Dynamic;
-var ComponentsTypeInferenceLimit_9: Dynamic;
+var numberLiteralPattern: Dynamic;
+var maxResolveDepth: Dynamic;
+var maxTemplateCombinations: Dynamic;
+var maxEnumOptions: Dynamic;
+var fewNumberLiteralsLimit: Dynamic;
 var ComponentsTypeInferenceSubscribers: Dynamic;
 var ComponentsTypeInferenceElementCache: Dynamic;
 var TypeDeclarationResolver: Dynamic;
-var ComponentsTypeInferenceSubscribers_2: Dynamic;
+var reservedPropNames: Dynamic;
 var ComponentsTypeInferenceTextsRsConfig: Dynamic;
 var typeInferenceIncomplete: Dynamic;
 function convertInferredEnumValue(
-  input?: Dynamic,
-  options?: Dynamic,
+  inferredType?: Dynamic,
+  text?: Dynamic,
 ): Dynamic {
-  return input.numeric === true
-    ? Number(options)
-    : input.withBool === true && (options === "true" || options === "false")
-      ? options === "true"
-      : options;
+  return inferredType.numeric === true
+    ? Number(text)
+    : inferredType.withBool === true && (text === "true" || text === "false")
+      ? text === "true"
+      : text;
 }
-function isValidTypeDeclarationName(items?: Dynamic): Dynamic {
-  return ComponentsTypeInferenceAZaZPattern.test(items) && items.length <= 80;
+function isValidTypeDeclarationName(name?: Dynamic): Dynamic {
+  return ComponentsTypeInferenceAZaZPattern.test(name) && name.length <= 80;
 }
 function skipBalancedTypeExpression(
-  items?: Dynamic,
-  options?: Dynamic,
+  source?: Dynamic,
+  start?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = items[options],
-    value2: Dynamic =
-      value === "{" ? "}" : value === "(" ? ")" : value === "[" ? "]" : ">",
-    index: Dynamic = 0;
-  for (let value3: Dynamic = options; value3 < items.length; value3++) {
-    let value4: Dynamic = items[value3];
-    if (value4 === '"' || value4 === "'" || value4 === "`") {
-      let value5: Dynamic = value4;
-      for (value3++; value3 < items.length && items[value3] !== value5; ) {
-        items[value3] === "\\" && value3++;
-        value3++;
+  let openChar: Dynamic = source[start],
+    closeChar: Dynamic =
+      openChar === "{" ? "}" : openChar === "(" ? ")" : openChar === "[" ? "]" : ">",
+    depth: Dynamic = 0;
+  for (let position: Dynamic = start; position < source.length; position++) {
+    let char: Dynamic = source[position];
+    if (char === '"' || char === "'" || char === "`") {
+      let quote: Dynamic = char;
+      for (position++; position < source.length && source[position] !== quote; ) {
+        source[position] === "\\" && position++;
+        position++;
       }
       continue;
     }
-    if (value4 === "/" && items[value3 + 1] === "*") {
-      let value5: Dynamic = items.indexOf("*/", value3 + 2);
-      if (value5 === -1) return -1;
-      value3 = value5 + 1;
+    if (char === "/" && source[position + 1] === "*") {
+      let commentEnd: Dynamic = source.indexOf("*/", position + 2);
+      if (commentEnd === -1) return -1;
+      position = commentEnd + 1;
       continue;
     }
-    if (value4 === "/" && items[value3 + 1] === "/") {
-      let value5: Dynamic = items.indexOf(
+    if (char === "/" && source[position + 1] === "/") {
+      let lineEnd: Dynamic = source.indexOf(
         `
 `,
-        value3,
+        position,
       );
-      if (value5 === -1) return -1;
-      value3 = value5;
+      if (lineEnd === -1) return -1;
+      position = lineEnd;
       continue;
     }
-    if (value4 === value) index++;
-    else if (value4 === value2 && (index--, index === 0)) return value3 + 1;
+    if (char === openChar) depth++;
+    else if (char === closeChar && (depth--, depth === 0)) return position + 1;
   }
   return -1;
 }
-function typeDeclarationEnd(items?: Dynamic, options?: Dynamic): Dynamic {
-  let value: Dynamic = options;
-  for (; value < items.length; ) {
-    let value2: Dynamic = items[value];
-    if (value2 === ";") return value;
-    if (value2 === "{" || value2 === "(" || value2 === "[") {
-      let value3: Dynamic = skipBalancedTypeExpression(items, value);
-      if (value3 === -1) return items.length;
-      value = value3;
+function typeDeclarationEnd(source?: Dynamic, start?: Dynamic): Dynamic {
+  let position: Dynamic = start;
+  for (; position < source.length; ) {
+    let char: Dynamic = source[position];
+    if (char === ";") return position;
+    if (char === "{" || char === "(" || char === "[") {
+      let balancedEnd: Dynamic = skipBalancedTypeExpression(source, position);
+      if (balancedEnd === -1) return source.length;
+      position = balancedEnd;
       continue;
     }
-    if (value2 === '"' || value2 === "'" || value2 === "`") {
-      let value3: Dynamic = value2;
-      for (value++; value < items.length && items[value] !== value3; ) {
-        items[value] === "\\" && value++;
-        value++;
+    if (char === '"' || char === "'" || char === "`") {
+      let quote: Dynamic = char;
+      for (position++; position < source.length && source[position] !== quote; ) {
+        source[position] === "\\" && position++;
+        position++;
       }
-      value++;
+      position++;
       continue;
     }
-    if (value2 === "/" && items[value + 1] === "*") {
-      let value3: Dynamic = items.indexOf("*/", value + 2);
-      value = value3 === -1 ? items.length : value3 + 2;
+    if (char === "/" && source[position + 1] === "*") {
+      let commentEnd: Dynamic = source.indexOf("*/", position + 2);
+      position = commentEnd === -1 ? source.length : commentEnd + 2;
       continue;
     }
-    if (value2 === "/" && items[value + 1] === "/") {
-      let value3: Dynamic = items.indexOf(
+    if (char === "/" && source[position + 1] === "/") {
+      let lineEnd: Dynamic = source.indexOf(
         `
 `,
-        value,
+        position,
       );
-      value = value3 === -1 ? items.length : value3 + 1;
+      position = lineEnd === -1 ? source.length : lineEnd + 1;
       continue;
     }
-    value++;
+    position++;
   }
-  return items.length;
+  return source.length;
 }
-function findTypeDeclaration(input?: Dynamic, options?: Dynamic): Dynamic {
-  for (let value of input as Dynamic)
-    for (let value2 of ["interface", "type", "const", "enum"] as Dynamic) {
-      let index: Dynamic = 0,
-        value3: Dynamic = value2 + " " + options;
+function findTypeDeclaration(texts?: Dynamic, name?: Dynamic): Dynamic {
+  for (let text of texts as Dynamic)
+    for (let kind of ["interface", "type", "const", "enum"] as Dynamic) {
+      let searchFrom: Dynamic = 0,
+        keywordPhrase: Dynamic = kind + " " + name;
       for (;;) {
-        let value4: Dynamic = value.indexOf(value3, index);
-        if (value4 === -1) break;
-        index = value4 + value3.length;
-        let value5: Dynamic = value4 === 0 ? " " : (value[value4 - 1] ?? " "),
-          value6: Dynamic = value[index] ?? " ";
-        if (/[\w$]/.test(value5) || /[\w$]/.test(value6)) continue;
-        if (value2 === "interface" || value2 === "enum") {
-          let value11: Dynamic = value.indexOf("{", index);
-          if (value11 === -1) break;
-          let value12: Dynamic = skipBalancedTypeExpression(value, value11);
-          if (value12 === -1) break;
+        let matchIndex: Dynamic = text.indexOf(keywordPhrase, searchFrom);
+        if (matchIndex === -1) break;
+        searchFrom = matchIndex + keywordPhrase.length;
+        let charBefore: Dynamic = matchIndex === 0 ? " " : (text[matchIndex - 1] ?? " "),
+          charAfter: Dynamic = text[searchFrom] ?? " ";
+        if (/[\w$]/.test(charBefore) || /[\w$]/.test(charAfter)) continue;
+        if (kind === "interface" || kind === "enum") {
+          let braceIndex: Dynamic = text.indexOf("{", searchFrom);
+          if (braceIndex === -1) break;
+          let bodyEnd: Dynamic = skipBalancedTypeExpression(text, braceIndex);
+          if (bodyEnd === -1) break;
           return {
-            kind: value2,
-            head: value.slice(index, value11),
-            body: value.slice(value11 + 1, value12 - 1),
+            kind: kind,
+            head: text.slice(searchFrom, braceIndex),
+            body: text.slice(braceIndex + 1, bodyEnd - 1),
           };
         }
-        let value7: Dynamic = value
-            .slice(index)
+        let headSource: Dynamic = text
+            .slice(searchFrom)
             .replace(/^\s*(?:<[^=]*>\s*)?[=:]\s*/, ""),
-          value8: Dynamic = value.length - index - value7.length,
-          value9: Dynamic = index + value8,
-          value10: Dynamic = typeDeclarationEnd(value, value9);
+          strippedLength: Dynamic = text.length - searchFrom - headSource.length,
+          headStart: Dynamic = searchFrom + strippedLength,
+          headEnd: Dynamic = typeDeclarationEnd(text, headStart);
         return {
-          kind: value2,
-          head: value.slice(value9, value10),
+          kind: kind,
+          head: text.slice(headStart, headEnd),
           body: "",
         };
       }
     }
   return null;
 }
-function tokenizeTypeExpression(items?: Dynamic): Dynamic {
-  let items2: Dynamic = [],
-    index: Dynamic = 0,
-    text: Dynamic = "";
+function tokenizeTypeExpression(source?: Dynamic): Dynamic {
+  let members: Dynamic = [],
+    position: Dynamic = 0,
+    pendingDoc: Dynamic = "";
   for (
     ;
-    index < items.length && items2.length < ComponentsTypeInferenceLimit_3;
+    position < source.length && members.length < maxMembersPerBody;
 
   ) {
-    let value: Dynamic = items[index];
+    let char: Dynamic = source[position];
     if (
-      value === " " ||
-      value ===
+      char === " " ||
+      char ===
         `
 ` ||
-      value === "	" ||
-      value === "\r"
+      char === "	" ||
+      char === "\r"
     ) {
-      index++;
+      position++;
       continue;
     }
-    if (value === "/" && items[index + 1] === "*") {
-      let value5: Dynamic = items.indexOf("*/", index + 2),
-        value6: Dynamic = items.slice(
-          index,
-          value5 === -1 ? items.length : value5 + 2,
+    if (char === "/" && source[position + 1] === "*") {
+      let commentEnd: Dynamic = source.indexOf("*/", position + 2),
+        comment: Dynamic = source.slice(
+          position,
+          commentEnd === -1 ? source.length : commentEnd + 2,
         );
-      text = value6.startsWith("/**") ? value6 : "";
-      index = value5 === -1 ? items.length : value5 + 2;
+      pendingDoc = comment.startsWith("/**") ? comment : "";
+      position = commentEnd === -1 ? source.length : commentEnd + 2;
       continue;
     }
-    if (value === "/" && items[index + 1] === "/") {
-      let value5: Dynamic = items.indexOf(
+    if (char === "/" && source[position + 1] === "/") {
+      let lineEnd: Dynamic = source.indexOf(
         `
 `,
-        index,
+        position,
       );
-      index = value5 === -1 ? items.length : value5 + 1;
+      position = lineEnd === -1 ? source.length : lineEnd + 1;
       continue;
     }
-    let value2: Dynamic = typeDeclarationEnd(items, index),
-      value3: Dynamic = items.slice(index, value2);
-    index = value2 + 1;
-    let value4: Dynamic =
+    let memberEnd: Dynamic = typeDeclarationEnd(source, position),
+      memberText: Dynamic = source.slice(position, memberEnd);
+    position = memberEnd + 1;
+    let memberMatch: Dynamic =
       /^\s*(?:readonly\s+)?(?:"([^"]+)"|'([^']+)'|([A-Za-z_$][\w$]*))(?:\s*(\?))?\s*:\s*([\s\S]+)$/.exec(
-        value3,
+        memberText,
       );
-    if (value4 !== null) {
-      let value5: Dynamic = value4[1] ?? value4[2] ?? value4[3] ?? "";
-      items2.push({
-        name: value5,
-        optional: value4[4] !== undefined,
-        type: (value4[5] ?? "").trim(),
-        doc: text,
+    if (memberMatch !== null) {
+      let memberName: Dynamic = memberMatch[1] ?? memberMatch[2] ?? memberMatch[3] ?? "";
+      members.push({
+        name: memberName,
+        optional: memberMatch[4] !== undefined,
+        type: (memberMatch[5] ?? "").trim(),
+        doc: pendingDoc,
       });
     }
-    text = "";
+    pendingDoc = "";
   }
-  return items2;
+  return members;
 }
-function typeExpressionReferences(items?: Dynamic): Dynamic {
-  let text: Dynamic = "",
-    index: Dynamic = 0;
-  for (; index < items.length; ) {
-    if (items[index] === "{") {
-      let value3: Dynamic = skipBalancedTypeExpression(items, index);
-      if (value3 === -1) break;
-      index = value3;
+function typeExpressionReferences(source?: Dynamic): Dynamic {
+  let outerText: Dynamic = "",
+    position: Dynamic = 0;
+  for (; position < source.length; ) {
+    if (source[position] === "{") {
+      let blockEnd: Dynamic = skipBalancedTypeExpression(source, position);
+      if (blockEnd === -1) break;
+      position = blockEnd;
       continue;
     }
-    text += items[index];
-    index++;
+    outerText += source[position];
+    position++;
   }
-  let items2: Dynamic = [],
-    value: Dynamic = /\b([A-Z][\w$]*)\b(\s*\[)?/g,
-    value2: Dynamic;
-  for (; (value2 = value.exec(text)) !== null; ) {
-    let value3: Dynamic = value2[1] ?? "";
+  let references: Dynamic = [],
+    namePattern: Dynamic = /\b([A-Z][\w$]*)\b(\s*\[)?/g,
+    match: Dynamic;
+  for (; (match = namePattern.exec(outerText)) !== null; ) {
+    let typeName: Dynamic = match[1] ?? "";
     if (
-      value2[2] === undefined &&
+      match[2] === undefined &&
       !(
-        value3 === "Omit" ||
-        value3 === "Pick" ||
-        value3 === "Partial" ||
-        value3 === "Required" ||
-        value3 === "NonNullable" ||
-        value3 === "Readonly" ||
-        value3 === "React"
+        typeName === "Omit" ||
+        typeName === "Pick" ||
+        typeName === "Partial" ||
+        typeName === "Required" ||
+        typeName === "NonNullable" ||
+        typeName === "Readonly" ||
+        typeName === "React"
       ) &&
-      (items2.includes(value3) || items2.push(value3),
-      items2.length >= ComponentsTypeInferenceLimit_2)
+      (references.includes(typeName) || references.push(typeName),
+      references.length >= maxReferencedTypes)
     )
       break;
   }
-  return items2;
+  return references;
 }
-function typeObjectBodies(items?: Dynamic): Dynamic {
-  let items2: Dynamic = [],
-    index: Dynamic = 0;
-  for (; index < items.length; ) {
-    let value: Dynamic = items[index];
-    if (value === "{") {
-      let value2: Dynamic = skipBalancedTypeExpression(items, index);
-      if (value2 === -1) break;
-      items2.push(items.slice(index + 1, value2 - 1));
-      index = value2;
+function typeObjectBodies(source?: Dynamic): Dynamic {
+  let bodies: Dynamic = [],
+    position: Dynamic = 0;
+  for (; position < source.length; ) {
+    let char: Dynamic = source[position];
+    if (char === "{") {
+      let blockEnd: Dynamic = skipBalancedTypeExpression(source, position);
+      if (blockEnd === -1) break;
+      bodies.push(source.slice(position + 1, blockEnd - 1));
+      position = blockEnd;
       continue;
     }
-    if (value === "(" || value === "[") {
-      index++;
+    if (char === "(" || char === "[") {
+      position++;
       continue;
     }
-    if (value === "<") {
-      let value2: Dynamic = skipBalancedTypeExpression(items, index);
-      index = value2 === -1 ? items.length : value2;
+    if (char === "<") {
+      let angleEnd: Dynamic = skipBalancedTypeExpression(source, position);
+      position = angleEnd === -1 ? source.length : angleEnd;
       continue;
     }
-    index++;
+    position++;
   }
-  return items2;
+  return bodies;
 }
 function createTypeInferenceState(): Dynamic {
   return {
@@ -285,236 +285,236 @@ function createTypeInferenceState(): Dynamic {
   };
 }
 function addInferredLiteral(
-  input?: Dynamic,
-  options?: Dynamic,
-  context: Dynamic = false,
+  state?: Dynamic,
+  literal?: Dynamic,
+  isQuoted: Dynamic = false,
 ): Dynamic {
-  let entry: Dynamic = ComponentsTypeInferenceElementCache.get(
-    input.literals,
+  let literalSet: Dynamic = ComponentsTypeInferenceElementCache.get(
+    state.literals,
   );
-  entry === undefined &&
+  literalSet === undefined &&
     ComponentsTypeInferenceElementCache.set(
-      input.literals,
-      (entry = new Set(input.literals)),
+      state.literals,
+      (literalSet = new Set(state.literals)),
     );
-  !(entry.size > ComponentsTypeInferenceLimit_8) &&
-    (entry.has(options) || (entry.add(options), input.literals.push(options)),
-    (context || !ComponentsTypeInferencePattern_2.test(options)) &&
-      (input.numeric = false));
+  !(literalSet.size > maxEnumOptions) &&
+    (literalSet.has(literal) || (literalSet.add(literal), state.literals.push(literal)),
+    (isQuoted || !numberLiteralPattern.test(literal)) &&
+      (state.numeric = false));
 }
-function mergeInferredType(input?: Dynamic, source?: Dynamic): Dynamic {
+function mergeInferredType(state?: Dynamic, source?: Dynamic): Dynamic {
   if (source === null) {
-    input.other = true;
+    state.other = true;
     return;
   }
   if (source.kind === "enum") {
-    let value: Dynamic = source.options ?? [];
-    source.withBool === true && (input.bool = true);
-    for (let value2 of (source.withBool === true
-      ? value.slice(2)
-      : value) as Dynamic)
-      addInferredLiteral(input, value2);
-    source.numeric !== true && (input.numeric = false);
+    let enumOptions: Dynamic = source.options ?? [];
+    source.withBool === true && (state.bool = true);
+    for (let literal of (source.withBool === true
+      ? enumOptions.slice(2)
+      : enumOptions) as Dynamic)
+      addInferredLiteral(state, literal);
+    source.numeric !== true && (state.numeric = false);
   } else
     source.kind === "boolean"
-      ? (input.bool = true)
+      ? (state.bool = true)
       : source.kind === "number"
-        ? (input.num = true)
-        : ((input.str = true),
+        ? (state.num = true)
+        : ((state.str = true),
           source.typeName !== undefined &&
-            input.unresolved.push(source.typeName));
+            state.unresolved.push(source.typeName));
 }
-function inferredEnumType(input?: Dynamic): Dynamic {
+function inferredEnumType(literals?: Dynamic): Dynamic {
   let state: Dynamic = {
     kind: "enum",
-    options: [...new Set(input)].slice(0, ComponentsTypeInferenceLimit_8 + 1),
+    options: [...new Set(literals)].slice(0, maxEnumOptions + 1),
   };
   state.options !== undefined &&
     state.options.length > 0 &&
     state.options.every(
-      (input2?: Dynamic): Dynamic =>
-        ComponentsTypeInferencePattern_2.test(input2),
+      (literal?: Dynamic): Dynamic =>
+        numberLiteralPattern.test(literal),
     ) &&
     (state.numeric = true);
   return state;
 }
-function inferDeclaredEnum(input?: Dynamic): Dynamic {
-  let items: Dynamic = [],
-    flag: Dynamic = true,
-    index: Dynamic = 0;
-  for (let value of splitTypeExpression(
-    stripTypeComments(input),
+function inferDeclaredEnum(body?: Dynamic): Dynamic {
+  let values: Dynamic = [],
+    isNumeric: Dynamic = true,
+    nextIndex: Dynamic = 0;
+  for (let member of splitTypeExpression(
+    stripTypeComments(body),
     ",",
   ) as Dynamic) {
-    let value2: Dynamic =
+    let memberMatch: Dynamic =
       /^\s*(?:"([^"]+)"|'([^']+)'|([A-Za-z_$][\w$]*))\s*(?:=([\s\S]*))?$/.exec(
-        value.trim(),
+        member.trim(),
       );
-    if (value2 === null) continue;
-    let value3: Dynamic =
-      value2[4] === undefined ? undefined : value2[4].trim() || undefined;
-    if (value3 === undefined) {
-      items.push(String(index++));
+    if (memberMatch === null) continue;
+    let initializer: Dynamic =
+      memberMatch[4] === undefined ? undefined : memberMatch[4].trim() || undefined;
+    if (initializer === undefined) {
+      values.push(String(nextIndex++));
       continue;
     }
-    let value4: Dynamic = ComponentsTypeInferencePattern.exec(value3);
-    if (value4 !== null) {
-      items.push(value4[1] ?? value4[2] ?? "");
-      flag = false;
+    let quotedInitializer: Dynamic = ComponentsTypeInferencePattern.exec(initializer);
+    if (quotedInitializer !== null) {
+      values.push(quotedInitializer[1] ?? quotedInitializer[2] ?? "");
+      isNumeric = false;
       continue;
     }
-    if (ComponentsTypeInferencePattern_2.test(value3)) {
-      items.push(value3);
-      index = Number(value3) + 1;
+    if (numberLiteralPattern.test(initializer)) {
+      values.push(initializer);
+      nextIndex = Number(initializer) + 1;
       continue;
     }
     return null;
   }
-  if (items.length === 0) return null;
+  if (values.length === 0) return null;
   let state: Dynamic = {
     kind: "enum",
-    options: items,
+    options: values,
   };
-  flag && (state.numeric = true);
+  isNumeric && (state.numeric = true);
   return state;
 }
-function normalizeArrayType(input?: Dynamic): Dynamic {
-  let value: Dynamic = unwrapTypeExpression(stripTypeComments(input)).replace(
+function normalizeArrayType(typeText?: Dynamic): Dynamic {
+  let unwrapped: Dynamic = unwrapTypeExpression(stripTypeComments(typeText)).replace(
     /^readonly\s+/,
     "",
   );
-  if (value.startsWith("[") && value.endsWith("]"))
-    return splitTypeExpression(value.slice(1, -1), ",").join(" | ");
-  let value2: Dynamic = /^(?:ReadonlyArray|Array)\s*<([\s\S]*)>$/.exec(value);
-  return value2 !== null
-    ? (value2[1] ?? "")
-    : value.endsWith("[]")
-      ? value.slice(0, -2)
-      : value;
+  if (unwrapped.startsWith("[") && unwrapped.endsWith("]"))
+    return splitTypeExpression(unwrapped.slice(1, -1), ",").join(" | ");
+  let arrayMatch: Dynamic = /^(?:ReadonlyArray|Array)\s*<([\s\S]*)>$/.exec(unwrapped);
+  return arrayMatch !== null
+    ? (arrayMatch[1] ?? "")
+    : unwrapped.endsWith("[]")
+      ? unwrapped.slice(0, -2)
+      : unwrapped;
 }
-function stripTypeComments(items?: Dynamic): Dynamic {
-  let text: Dynamic = "",
-    index: Dynamic = 0,
-    index2: Dynamic = 0;
-  for (; index2 < items.length; ) {
-    let value: Dynamic = items[index2];
-    if (value === '"' || value === "'" || value === "`") {
-      for (index2++; index2 < items.length && items[index2] !== value; )
-        index2 += items[index2] === "\\" ? 2 : 1;
-      index2++;
+function stripTypeComments(source?: Dynamic): Dynamic {
+  let kept: Dynamic = "",
+    segmentStart: Dynamic = 0,
+    position: Dynamic = 0;
+  for (; position < source.length; ) {
+    let char: Dynamic = source[position];
+    if (char === '"' || char === "'" || char === "`") {
+      for (position++; position < source.length && source[position] !== char; )
+        position += source[position] === "\\" ? 2 : 1;
+      position++;
       continue;
     }
-    if (value === "/" && items[index2 + 1] === "*") {
-      text += items.slice(index, index2);
-      let value2: Dynamic = items.indexOf("*/", index2 + 2);
-      if (value2 === -1) return text.trim();
-      index2 = index = value2 + 2;
+    if (char === "/" && source[position + 1] === "*") {
+      kept += source.slice(segmentStart, position);
+      let commentEnd: Dynamic = source.indexOf("*/", position + 2);
+      if (commentEnd === -1) return kept.trim();
+      position = segmentStart = commentEnd + 2;
       continue;
     }
-    index2++;
+    position++;
   }
-  return (text + items.slice(index)).trim();
+  return (kept + source.slice(segmentStart)).trim();
 }
-function unwrapTypeExpression(input?: Dynamic): Dynamic {
-  let value: Dynamic = input.trim();
+function unwrapTypeExpression(typeText?: Dynamic): Dynamic {
+  let inner: Dynamic = typeText.trim();
   for (
     let index: Dynamic = 0;
     index < 8 &&
-    value.startsWith("(") &&
-    skipBalancedTypeExpression(value, 0) === value.length;
+    inner.startsWith("(") &&
+    skipBalancedTypeExpression(inner, 0) === inner.length;
     index++
   )
-    value = value.slice(1, -1).trim();
-  return value;
+    inner = inner.slice(1, -1).trim();
+  return inner;
 }
-function conciseTypeDescription(input?: Dynamic): Dynamic {
-  let value: Dynamic = stripTypeComments(input).replace(/\s+/g, " ");
-  return value.length > 40 ? value.slice(0, 37) + "\u2026" : value;
+function conciseTypeDescription(typeText?: Dynamic): Dynamic {
+  let collapsed: Dynamic = stripTypeComments(typeText).replace(/\s+/g, " ");
+  return collapsed.length > 40 ? collapsed.slice(0, 37) + "\u2026" : collapsed;
 }
-function splitTypeExpression(items?: Dynamic, options?: Dynamic): Dynamic {
-  let items2: Dynamic = [],
-    index: Dynamic = 0,
-    index2: Dynamic = 0,
-    index3: Dynamic = 0;
-  for (; index3 < items.length; ) {
-    let value: Dynamic = items[index3];
-    if (value === '"' || value === "'" || value === "`") {
-      let value2: Dynamic = value;
-      for (index3++; index3 < items.length && items[index3] !== value2; ) {
-        items[index3] === "\\" && index3++;
-        index3++;
+function splitTypeExpression(source?: Dynamic, separator?: Dynamic): Dynamic {
+  let parts: Dynamic = [],
+    depth: Dynamic = 0,
+    partStart: Dynamic = 0,
+    position: Dynamic = 0;
+  for (; position < source.length; ) {
+    let char: Dynamic = source[position];
+    if (char === '"' || char === "'" || char === "`") {
+      let quote: Dynamic = char;
+      for (position++; position < source.length && source[position] !== quote; ) {
+        source[position] === "\\" && position++;
+        position++;
       }
-      index3++;
+      position++;
       continue;
     }
-    value === "{" || value === "(" || value === "[" || value === "<"
-      ? index++
-      : value === "}" || value === ")" || value === "]" || value === ">"
-        ? (value === ">" && items[index3 - 1] === "=") || index--
-        : value === options &&
-          index === 0 &&
-          (items2.push(items.slice(index2, index3).trim()),
-          (index2 = index3 + 1));
-    index3++;
+    char === "{" || char === "(" || char === "[" || char === "<"
+      ? depth++
+      : char === "}" || char === ")" || char === "]" || char === ">"
+        ? (char === ">" && source[position - 1] === "=") || depth--
+        : char === separator &&
+          depth === 0 &&
+          (parts.push(source.slice(partStart, position).trim()),
+          (partStart = position + 1));
+    position++;
   }
-  items2.push(items.slice(index2).trim());
-  return items2.filter((input?: Dynamic): Dynamic => input !== "");
+  parts.push(source.slice(partStart).trim());
+  return parts.filter((part?: Dynamic): Dynamic => part !== "");
 }
-function inferVariantPropsType(input?: Dynamic, options?: Dynamic): Dynamic {
-  let value: Dynamic =
+function inferVariantPropsType(typeText?: Dynamic, resolver?: Dynamic): Dynamic {
+  let variantMatch: Dynamic =
     /VariantProps<typeof\s+([A-Za-z_$][\w$]*)>\s*\[\s*"([^"]+)"\s*\]/.exec(
-      input,
+      typeText,
     );
-  if (value === null) return null;
-  let value2: Dynamic = options.decl(value[1] ?? "");
-  if (value2 === null) return null;
-  let value3: Dynamic = value[2] ?? "";
-  for (let value4 of options.heads(value2.head) as Dynamic)
-    for (let value5 of options.members(value4) as Dynamic)
-      if (value5.name === value3) return value5.type;
+  if (variantMatch === null) return null;
+  let declaration: Dynamic = resolver.decl(variantMatch[1] ?? "");
+  if (declaration === null) return null;
+  let variantName: Dynamic = variantMatch[2] ?? "";
+  for (let head of resolver.heads(declaration.head) as Dynamic)
+    for (let member of resolver.members(head) as Dynamic)
+      if (member.name === variantName) return member.type;
   return null;
 }
-function inferJSDocDefault(input?: Dynamic, source?: Dynamic): Dynamic {
-  let value: Dynamic =
-    /@default\s+(?:`([^`]*)`|"([^"]*)"|'([^']*)'|(\S+))/.exec(input);
-  if (value === null) return;
-  let value2: Dynamic = (
-    value[1] ??
-    value[2] ??
-    value[3] ??
-    value[4] ??
+function inferJSDocDefault(doc?: Dynamic, source?: Dynamic): Dynamic {
+  let match: Dynamic =
+    /@default\s+(?:`([^`]*)`|"([^"]*)"|'([^']*)'|(\S+))/.exec(doc);
+  if (match === null) return;
+  let defaultText: Dynamic = (
+    match[1] ??
+    match[2] ??
+    match[3] ??
+    match[4] ??
     ""
   ).replace(/^["'`]|["'`]$/g, "");
   if (source.kind === "boolean")
-    return value2 === "true" ? true : value2 === "false" ? false : undefined;
+    return defaultText === "true" ? true : defaultText === "false" ? false : undefined;
   if (source.kind === "number") {
-    let value3: Dynamic = Number(value2);
-    return Number.isFinite(value3) ? value3 : undefined;
+    let numberValue: Dynamic = Number(defaultText);
+    return Number.isFinite(numberValue) ? numberValue : undefined;
   }
   return source.kind === "enum"
-    ? source.options?.includes(value2) !== true
+    ? source.options?.includes(defaultText) !== true
       ? undefined
-      : convertInferredEnumValue(source, value2)
-    : value2;
+      : convertInferredEnumValue(source, defaultText)
+    : defaultText;
 }
 export {
   addInferredLiteral,
   ComponentsTypeInferenceAZaZPattern,
   ComponentsTypeInferenceElementCache,
   ComponentsTypeInferenceLimit,
-  ComponentsTypeInferenceLimit_2,
-  ComponentsTypeInferenceLimit_3,
-  ComponentsTypeInferenceLimit_4,
-  ComponentsTypeInferenceLimit_5,
-  ComponentsTypeInferenceLimit_6,
-  ComponentsTypeInferenceLimit_7,
-  ComponentsTypeInferenceLimit_8,
-  ComponentsTypeInferenceLimit_9,
+  maxReferencedTypes as ComponentsTypeInferenceLimit_2,
+  maxMembersPerBody as ComponentsTypeInferenceLimit_3,
+  maxWorkUnits as ComponentsTypeInferenceLimit_4,
+  maxReferenceDepth as ComponentsTypeInferenceLimit_5,
+  maxResolveDepth as ComponentsTypeInferenceLimit_6,
+  maxTemplateCombinations as ComponentsTypeInferenceLimit_7,
+  maxEnumOptions as ComponentsTypeInferenceLimit_8,
+  fewNumberLiteralsLimit as ComponentsTypeInferenceLimit_9,
   ComponentsTypeInferencePattern,
-  ComponentsTypeInferencePattern_2,
+  numberLiteralPattern as ComponentsTypeInferencePattern_2,
   ComponentsTypeInferenceResolvedValue,
   ComponentsTypeInferenceSubscribers,
-  ComponentsTypeInferenceSubscribers_2,
+  reservedPropNames as ComponentsTypeInferenceSubscribers_2,
   ComponentsTypeInferenceTextsRsConfig,
   conciseTypeDescription,
   convertInferredEnumValue,
@@ -550,19 +550,19 @@ export function set_typeInferenceIncomplete(value: any): any {
 export function installEditorComponentsTypeInference(): () => void {
   return () => {
     ComponentsTypeInferenceLimit = 24;
-    ComponentsTypeInferenceLimit_2 = 32;
-    ComponentsTypeInferenceLimit_3 = 2e3;
-    ComponentsTypeInferenceLimit_4 = 5e4;
+    maxReferencedTypes = 32;
+    maxMembersPerBody = 2e3;
+    maxWorkUnits = 5e4;
     ComponentsTypeInferenceResolvedValue = 256 * 1024 * 1024;
     TYPE_INFERENCE_OVER_BUDGET = Symbol("over budget");
-    ComponentsTypeInferenceLimit_5 = 4;
+    maxReferenceDepth = 4;
     ComponentsTypeInferenceAZaZPattern = /^[A-Za-z_$][\w$]*$/;
     ComponentsTypeInferencePattern = /^(?:"([^"\\]*)"|'([^'\\]*)')$/;
-    ComponentsTypeInferencePattern_2 = /^-?\d+(?:\.\d+)?$/;
-    ComponentsTypeInferenceLimit_6 = 12;
-    ComponentsTypeInferenceLimit_7 = 64;
-    ComponentsTypeInferenceLimit_8 = 400;
-    ComponentsTypeInferenceLimit_9 = 3;
+    numberLiteralPattern = /^-?\d+(?:\.\d+)?$/;
+    maxResolveDepth = 12;
+    maxTemplateCombinations = 64;
+    maxEnumOptions = 400;
+    fewNumberLiteralsLimit = 3;
     ComponentsTypeInferenceSubscribers = new Set([
       "ReactElement",
       "JSX.Element",
@@ -578,10 +578,10 @@ export function installEditorComponentsTypeInference(): () => void {
     ]);
     ComponentsTypeInferenceElementCache = new WeakMap();
     TypeDeclarationResolver = class {
-      constructor(input: Dynamic) {
-        this.texts = input;
-        this.textBytes = input.reduce(
-          (input2?: Dynamic, items?: Dynamic): Dynamic => input2 + items.length,
+      constructor(texts: Dynamic) {
+        this.texts = texts;
+        this.textBytes = texts.reduce(
+          (total?: Dynamic, text?: Dynamic): Dynamic => total + text.length,
           0,
         );
       }
@@ -599,400 +599,400 @@ export function installEditorComponentsTypeInference(): () => void {
         this.named.clear();
         return this;
       }
-      tick(input: Dynamic = 1): Dynamic {
-        if ((this.work += input) > ComponentsTypeInferenceLimit_4)
+      tick(units: Dynamic = 1): Dynamic {
+        if ((this.work += units) > maxWorkUnits)
           throw TYPE_INFERENCE_OVER_BUDGET;
       }
-      charge(input: Dynamic): Dynamic {
-        if ((this.scanned += input) > ComponentsTypeInferenceResolvedValue)
+      charge(chars: Dynamic): Dynamic {
+        if ((this.scanned += chars) > ComponentsTypeInferenceResolvedValue)
           throw TYPE_INFERENCE_OVER_BUDGET;
       }
       headBodies: Dynamic = new Map();
-      heads(items: Dynamic): Dynamic {
-        let entry: Dynamic = this.headBodies.get(items);
+      heads(headText: Dynamic): Dynamic {
+        let entry: Dynamic = this.headBodies.get(headText);
         entry === undefined &&
-          (this.charge(items.length),
-          (entry = typeObjectBodies(items)),
-          this.headBodies.set(items, entry));
+          (this.charge(headText.length),
+          (entry = typeObjectBodies(headText)),
+          this.headBodies.set(headText, entry));
         this.tick();
         return entry;
       }
       bodies: Dynamic = new Map();
-      members(items: Dynamic): Dynamic {
-        let entry: Dynamic = this.bodies.get(items);
+      members(bodyText: Dynamic): Dynamic {
+        let entry: Dynamic = this.bodies.get(bodyText);
         entry === undefined &&
-          (this.charge(items.length),
-          (entry = tokenizeTypeExpression(items)),
-          this.bodies.set(items, entry));
+          (this.charge(bodyText.length),
+          (entry = tokenizeTypeExpression(bodyText)),
+          this.bodies.set(bodyText, entry));
         this.tick(1 + (entry.length >> 4));
         return entry;
       }
-      decl(input: Dynamic): Dynamic {
-        let entry: Dynamic = this.decls.get(input);
+      decl(name: Dynamic): Dynamic {
+        let entry: Dynamic = this.decls.get(name);
         if (entry !== undefined) return entry;
         this.tick(25);
         this.charge(this.textBytes);
-        let value: Dynamic = findTypeDeclaration(this.texts, input);
-        this.decls.set(input, value);
-        return value;
+        let declaration: Dynamic = findTypeDeclaration(this.texts, name);
+        this.decls.set(name, declaration);
+        return declaration;
       }
-      resolve(input: Dynamic, options: Dynamic): Dynamic {
+      resolve(typeText: Dynamic, depth: Dynamic): Dynamic {
         this.tick();
-        let value: Dynamic = createTypeInferenceState();
-        this.arms(input, options, value);
-        return this.control(value, input);
+        let state: Dynamic = createTypeInferenceState();
+        this.arms(typeText, depth, state);
+        return this.control(state, typeText);
       }
-      resolveName(input: Dynamic, options: Dynamic): Dynamic {
-        let entry: Dynamic = this.named.get(input);
+      resolveName(name: Dynamic, depth: Dynamic): Dynamic {
+        let entry: Dynamic = this.named.get(name);
         if (entry !== undefined) return entry;
-        if (this.busy.has(input) || options > ComponentsTypeInferenceLimit_6)
+        if (this.busy.has(name) || depth > maxResolveDepth)
           return {
             kind: "string",
-            typeName: input,
+            typeName: name,
           };
-        this.busy.add(input);
-        let value: Dynamic,
-          value2: Dynamic = this.decl(input);
-        value2 === null
-          ? (value = ComponentsTypeInferenceSubscribers.has(input)
+        this.busy.add(name);
+        let resolved: Dynamic,
+          declaration: Dynamic = this.decl(name);
+        declaration === null
+          ? (resolved = ComponentsTypeInferenceSubscribers.has(name)
               ? null
               : {
                   kind: "string",
-                  typeName: input,
+                  typeName: name,
                 })
-          : value2.kind === "type"
-            ? ((value = this.resolve(value2.head, options + 1)),
-              value !== null &&
-                value.kind === "string" &&
-                value.typeName !== undefined &&
-                this.decl(value.typeName) === null &&
-                (value = {
+          : declaration.kind === "type"
+            ? ((resolved = this.resolve(declaration.head, depth + 1)),
+              resolved !== null &&
+                resolved.kind === "string" &&
+                resolved.typeName !== undefined &&
+                this.decl(resolved.typeName) === null &&
+                (resolved = {
                   kind: "string",
-                  typeName: input,
+                  typeName: name,
                 }))
-            : value2.kind === "enum"
-              ? (value = inferDeclaredEnum(value2.body))
-              : (value = null);
-        this.busy.delete(input);
-        this.named.set(input, value);
-        return value;
+            : declaration.kind === "enum"
+              ? (resolved = inferDeclaredEnum(declaration.body))
+              : (resolved = null);
+        this.busy.delete(name);
+        this.named.set(name, resolved);
+        return resolved;
       }
-      arms(items: Dynamic, options: Dynamic, context: Dynamic): Dynamic {
-        this.charge(items.length);
-        for (let value of splitTypeExpression(
-          stripTypeComments(items),
+      arms(typeText: Dynamic, depth: Dynamic, state: Dynamic): Dynamic {
+        this.charge(typeText.length);
+        for (let arm of splitTypeExpression(
+          stripTypeComments(typeText),
           "|",
         ) as Dynamic) {
           this.tick();
-          this.charge(value.length);
-          let value2: Dynamic = unwrapTypeExpression(value);
+          this.charge(arm.length);
+          let armText: Dynamic = unwrapTypeExpression(arm);
           if (
-            value2 === "" ||
-            value2 === "undefined" ||
-            value2 === "null" ||
-            value2 === "never"
+            armText === "" ||
+            armText === "undefined" ||
+            armText === "null" ||
+            armText === "never"
           )
             continue;
-          let value3: Dynamic = ComponentsTypeInferencePattern.exec(value2);
-          if (value3 !== null) {
-            addInferredLiteral(context, value3[1] ?? value3[2] ?? "", true);
+          let quotedMatch: Dynamic = ComponentsTypeInferencePattern.exec(armText);
+          if (quotedMatch !== null) {
+            addInferredLiteral(state, quotedMatch[1] ?? quotedMatch[2] ?? "", true);
             continue;
           }
-          if (ComponentsTypeInferencePattern_2.test(value2)) {
-            addInferredLiteral(context, value2);
+          if (numberLiteralPattern.test(armText)) {
+            addInferredLiteral(state, armText);
             continue;
           }
-          if (value2 === "boolean" || value2 === "true" || value2 === "false") {
-            context.bool = true;
+          if (armText === "boolean" || armText === "true" || armText === "false") {
+            state.bool = true;
             continue;
           }
-          if (value2 === "number") {
-            context.num = true;
+          if (armText === "number") {
+            state.num = true;
             continue;
           }
-          if (value2 === "string") {
-            context.str = true;
+          if (armText === "string") {
+            state.str = true;
             continue;
           }
-          if (value2 === "ReactNode" || value2 === "React.ReactNode") {
-            context.node = true;
+          if (armText === "ReactNode" || armText === "React.ReactNode") {
+            state.node = true;
             continue;
           }
-          if (value2.startsWith("`") && value2.endsWith("`")) {
-            let value5: Dynamic = this.template(value2.slice(1, -1), options);
-            if (value5 === null) context.str = true;
+          if (armText.startsWith("`") && armText.endsWith("`")) {
+            let templateValues: Dynamic = this.template(armText.slice(1, -1), depth);
+            if (templateValues === null) state.str = true;
             else
-              for (let value6 of value5 as Dynamic)
-                addInferredLiteral(context, value6);
+              for (let templateValue of templateValues as Dynamic)
+                addInferredLiteral(state, templateValue);
             continue;
           }
-          let value4: Dynamic = this.special(value2, options);
-          if (value4 !== undefined) {
-            mergeInferredType(context, value4);
+          let specialType: Dynamic = this.special(armText, depth);
+          if (specialType !== undefined) {
+            mergeInferredType(state, specialType);
             continue;
           }
-          if (ComponentsTypeInferenceAZaZPattern.test(value2)) {
-            mergeInferredType(context, this.resolveName(value2, options));
+          if (ComponentsTypeInferenceAZaZPattern.test(armText)) {
+            mergeInferredType(state, this.resolveName(armText, depth));
             continue;
           }
-          context.other = true;
+          state.other = true;
         }
       }
-      special(input: Dynamic, options: Dynamic): Dynamic {
-        let value: Dynamic = /^([A-Za-z_$][\w$]*)\s*<([\s\S]*)>$/.exec(input);
-        if (value !== null) {
-          if (options > ComponentsTypeInferenceLimit_6) return null;
-          let value6: Dynamic = value[1] ?? "",
-            value7: Dynamic = splitTypeExpression(value[2] ?? "", ",");
-          return value6 === "NonNullable" && value7.length === 1
-            ? this.resolve(value7[0] ?? "", options + 1)
-            : (value6 === "Extract" || value6 === "Exclude") &&
-                value7.length === 2
+      special(typeText: Dynamic, depth: Dynamic): Dynamic {
+        let genericMatch: Dynamic = /^([A-Za-z_$][\w$]*)\s*<([\s\S]*)>$/.exec(typeText);
+        if (genericMatch !== null) {
+          if (depth > maxResolveDepth) return null;
+          let genericName: Dynamic = genericMatch[1] ?? "",
+            genericArgs: Dynamic = splitTypeExpression(genericMatch[2] ?? "", ",");
+          return genericName === "NonNullable" && genericArgs.length === 1
+            ? this.resolve(genericArgs[0] ?? "", depth + 1)
+            : (genericName === "Extract" || genericName === "Exclude") &&
+                genericArgs.length === 2
               ? this.extract(
-                  value6 === "Extract",
-                  value7[0] ?? "",
-                  value7[1] ?? "",
-                  options,
+                  genericName === "Extract",
+                  genericArgs[0] ?? "",
+                  genericArgs[1] ?? "",
+                  depth,
                 )
               : null;
         }
-        let value2: Dynamic = inferVariantPropsType(input, this);
-        if (value2 !== null) return this.resolve(value2, options + 1);
-        let value3: Dynamic = /^keyof\s+(typeof\s+)?([A-Za-z_$][\w$]*)$/.exec(
-          input,
+        let variantType: Dynamic = inferVariantPropsType(typeText, this);
+        if (variantType !== null) return this.resolve(variantType, depth + 1);
+        let keyofMatch: Dynamic = /^keyof\s+(typeof\s+)?([A-Za-z_$][\w$]*)$/.exec(
+          typeText,
         );
-        if (value3 !== null) {
-          let value6: Dynamic = this.keysOf(
-            value3[2] ?? "",
-            value3[1] !== undefined,
-            options,
+        if (keyofMatch !== null) {
+          let keys: Dynamic = this.keysOf(
+            keyofMatch[2] ?? "",
+            keyofMatch[1] !== undefined,
+            depth,
           );
-          return value6 === null ? null : inferredEnumType(value6);
+          return keys === null ? null : inferredEnumType(keys);
         }
-        let value4: Dynamic =
+        let typeofIndexMatch: Dynamic =
           /^\(?\s*typeof\s+([A-Za-z_$][\w$]*)\s*\)?\s*\[\s*number\s*\]$/.exec(
-            input,
+            typeText,
           );
-        if (value4 !== null) {
-          let value6: Dynamic = this.decl(value4[1] ?? "");
-          return value6 === null || value6.kind !== "const"
+        if (typeofIndexMatch !== null) {
+          let constDeclaration: Dynamic = this.decl(typeofIndexMatch[1] ?? "");
+          return constDeclaration === null || constDeclaration.kind !== "const"
             ? null
-            : (this.charge(value6.head.length),
-              this.resolve(normalizeArrayType(value6.head), options + 1));
+            : (this.charge(constDeclaration.head.length),
+              this.resolve(normalizeArrayType(constDeclaration.head), depth + 1));
         }
-        let value5: Dynamic =
+        let memberMatch: Dynamic =
           /^([A-Za-z_$][\w$]*)\s*\[\s*(?:"([^"]+)"|'([^']+)')\s*\]$/.exec(
-            input,
+            typeText,
           );
-        if (value5 !== null) {
-          let value6: Dynamic = this.memberType(
-            value5[1] ?? "",
-            value5[2] ?? value5[3] ?? "",
-            options,
+        if (memberMatch !== null) {
+          let memberTypeText: Dynamic = this.memberType(
+            memberMatch[1] ?? "",
+            memberMatch[2] ?? memberMatch[3] ?? "",
+            depth,
           );
-          return value6 === null ? null : this.resolve(value6, options + 1);
+          return memberTypeText === null ? null : this.resolve(memberTypeText, depth + 1);
         }
-        if (input.startsWith("typeof ")) return null;
+        if (typeText.startsWith("typeof ")) return null;
       }
       extract(
-        input: Dynamic,
-        options: Dynamic,
-        context: Dynamic,
-        value: Dynamic,
+        isExtract: Dynamic,
+        sourceText: Dynamic,
+        filterText: Dynamic,
+        depth: Dynamic,
       ): Dynamic {
-        let value2: Dynamic = createTypeInferenceState();
-        this.arms(context, value + 1, value2);
-        let value3: Dynamic = createTypeInferenceState();
-        this.arms(options, value + 1, value3);
-        if (input) {
+        let filterState: Dynamic = createTypeInferenceState();
+        this.arms(filterText, depth + 1, filterState);
+        let sourceState: Dynamic = createTypeInferenceState();
+        this.arms(sourceText, depth + 1, sourceState);
+        if (isExtract) {
           if (
-            value3.literals.length === 0 &&
-            !value3.str &&
-            !value3.num &&
-            !value3.bool &&
-            value2.literals.length > 0 &&
-            !value2.str
+            sourceState.literals.length === 0 &&
+            !sourceState.str &&
+            !sourceState.num &&
+            !sourceState.bool &&
+            filterState.literals.length > 0 &&
+            !filterState.str
           )
-            return inferredEnumType(value2.literals);
-          let state2: Dynamic = {
+            return inferredEnumType(filterState.literals);
+          let extractedState: Dynamic = {
             ...createTypeInferenceState(),
-            literals: value2.str
-              ? value3.literals
-              : value3.literals.filter(
-                  (input2?: Dynamic): Dynamic =>
-                    value2.literals.includes(input2),
+            literals: filterState.str
+              ? sourceState.literals
+              : sourceState.literals.filter(
+                  (literal?: Dynamic): Dynamic =>
+                    filterState.literals.includes(literal),
                 ),
           };
-          state2.numeric = state2.literals.every(
-            (input2?: Dynamic): Dynamic =>
-              ComponentsTypeInferencePattern_2.test(input2),
+          extractedState.numeric = extractedState.literals.every(
+            (literal?: Dynamic): Dynamic =>
+              numberLiteralPattern.test(literal),
           );
-          state2.str = value3.str && value2.str;
-          state2.num = value3.num && value2.num;
-          state2.bool = value3.bool && value2.bool;
-          state2.node = value3.node && value2.node;
-          return this.control(state2, options);
+          extractedState.str = sourceState.str && filterState.str;
+          extractedState.num = sourceState.num && filterState.num;
+          extractedState.bool = sourceState.bool && filterState.bool;
+          extractedState.node = sourceState.node && filterState.node;
+          return this.control(extractedState, sourceText);
         }
         let state: Dynamic = {
-          ...value3,
-          literals: value3.literals.filter(
-            (input2?: Dynamic): Dynamic => !value2.literals.includes(input2),
+          ...sourceState,
+          literals: sourceState.literals.filter(
+            (literal?: Dynamic): Dynamic => !filterState.literals.includes(literal),
           ),
-          unresolved: [...value3.unresolved],
+          unresolved: [...sourceState.unresolved],
         };
-        value2.str && (state.literals = []);
+        filterState.str && (state.literals = []);
         state.numeric = state.literals.every(
-          (input2?: Dynamic): Dynamic =>
-            ComponentsTypeInferencePattern_2.test(input2),
+          (literal?: Dynamic): Dynamic =>
+            numberLiteralPattern.test(literal),
         );
-        value2.bool && (state.bool = false);
-        value2.num && (state.num = false);
-        value2.str && (state.str = false);
-        return this.control(state, options);
+        filterState.bool && (state.bool = false);
+        filterState.num && (state.num = false);
+        filterState.str && (state.str = false);
+        return this.control(state, sourceText);
       }
-      keysOf(input: Dynamic, options: Dynamic, context: Dynamic): Dynamic {
-        if (context > ComponentsTypeInferenceLimit_6) return null;
-        let value: Dynamic = this.decl(input);
-        if (value === null) return null;
-        if (options) {
-          if (value.kind !== "const") return null;
-          let value5: Dynamic = this.heads(value.head);
-          return value5.length === 0
+      keysOf(name: Dynamic, isTypeof: Dynamic, depth: Dynamic): Dynamic {
+        if (depth > maxResolveDepth) return null;
+        let declaration: Dynamic = this.decl(name);
+        if (declaration === null) return null;
+        if (isTypeof) {
+          if (declaration.kind !== "const") return null;
+          let typeofHeads: Dynamic = this.heads(declaration.head);
+          return typeofHeads.length === 0
             ? null
-            : this.members(value5[0] ?? "").map(
-                (input2?: Dynamic): Dynamic => input2.name,
+            : this.members(typeofHeads[0] ?? "").map(
+                (member?: Dynamic): Dynamic => member.name,
               );
         }
-        if (value.kind === "interface")
-          return this.members(value.body).map(
-            (input2?: Dynamic): Dynamic => input2.name,
+        if (declaration.kind === "interface")
+          return this.members(declaration.body).map(
+            (member?: Dynamic): Dynamic => member.name,
           );
-        if (value.kind !== "type") return null;
-        this.charge(value.head.length);
-        let value2: Dynamic = unwrapTypeExpression(
-            stripTypeComments(value.head),
+        if (declaration.kind !== "type") return null;
+        this.charge(declaration.head.length);
+        let headText: Dynamic = unwrapTypeExpression(
+            stripTypeComments(declaration.head),
           ),
-          value3: Dynamic = /^typeof\s+([A-Za-z_$][\w$]*)$/.exec(value2);
-        if (value3 !== null)
-          return this.keysOf(value3[1] ?? "", true, context + 1);
-        if (ComponentsTypeInferenceAZaZPattern.test(value2))
-          return this.keysOf(value2, false, context + 1);
-        let value4: Dynamic = this.heads(value2);
-        return value4.length === 0
+          typeofMatch: Dynamic = /^typeof\s+([A-Za-z_$][\w$]*)$/.exec(headText);
+        if (typeofMatch !== null)
+          return this.keysOf(typeofMatch[1] ?? "", true, depth + 1);
+        if (ComponentsTypeInferenceAZaZPattern.test(headText))
+          return this.keysOf(headText, false, depth + 1);
+        let aliasHeads: Dynamic = this.heads(headText);
+        return aliasHeads.length === 0
           ? null
-          : this.members(value4[0] ?? "").map(
-              (input2?: Dynamic): Dynamic => input2.name,
+          : this.members(aliasHeads[0] ?? "").map(
+              (member?: Dynamic): Dynamic => member.name,
             );
       }
-      memberType(input: Dynamic, options: Dynamic, context: Dynamic): Dynamic {
-        if (context > ComponentsTypeInferenceLimit_6) return null;
-        let value: Dynamic = this.decl(input);
-        if (value === null || value.kind === "enum") return null;
-        let value2: Dynamic =
-          value.kind === "interface" ? [value.body] : this.heads(value.head);
-        for (let value3 of value2 as Dynamic)
-          for (let value4 of this.members(value3) as Dynamic)
-            if (value4.name === options) return value4.type;
-        if (value.kind === "type") {
-          this.charge(value.head.length);
-          let value3: Dynamic = unwrapTypeExpression(
-            stripTypeComments(value.head),
+      memberType(name: Dynamic, memberName: Dynamic, depth: Dynamic): Dynamic {
+        if (depth > maxResolveDepth) return null;
+        let declaration: Dynamic = this.decl(name);
+        if (declaration === null || declaration.kind === "enum") return null;
+        let bodies: Dynamic =
+          declaration.kind === "interface" ? [declaration.body] : this.heads(declaration.head);
+        for (let body of bodies as Dynamic)
+          for (let member of this.members(body) as Dynamic)
+            if (member.name === memberName) return member.type;
+        if (declaration.kind === "type") {
+          this.charge(declaration.head.length);
+          let aliasTarget: Dynamic = unwrapTypeExpression(
+            stripTypeComments(declaration.head),
           );
-          if (ComponentsTypeInferenceAZaZPattern.test(value3))
-            return this.memberType(value3, options, context + 1);
+          if (ComponentsTypeInferenceAZaZPattern.test(aliasTarget))
+            return this.memberType(aliasTarget, memberName, depth + 1);
         }
         return null;
       }
-      template(items: Dynamic, options: Dynamic): Dynamic {
-        let items2: Dynamic = [""],
-          index: Dynamic = 0;
-        for (; index < items.length; ) {
-          let value: Dynamic = items.indexOf("${", index);
-          if (value === -1) {
-            let value6: Dynamic = items.slice(index);
-            items2 = items2.map((input?: Dynamic): Dynamic => input + value6);
+      template(templateText: Dynamic, depth: Dynamic): Dynamic {
+        let combinations: Dynamic = [""],
+          position: Dynamic = 0;
+        for (; position < templateText.length; ) {
+          let dollarIndex: Dynamic = templateText.indexOf("${", position);
+          if (dollarIndex === -1) {
+            let rest: Dynamic = templateText.slice(position);
+            combinations = combinations.map((prefix?: Dynamic): Dynamic => prefix + rest);
             break;
           }
-          let value2: Dynamic = items.slice(index, value),
-            value3: Dynamic = skipBalancedTypeExpression(items, value + 1);
-          if (value3 === -1) return null;
-          let value4: Dynamic = this.resolve(
-            items.slice(value + 2, value3 - 1),
-            options + 1,
+          let literalPart: Dynamic = templateText.slice(position, dollarIndex),
+            expressionEnd: Dynamic = skipBalancedTypeExpression(templateText, dollarIndex + 1);
+          if (expressionEnd === -1) return null;
+          let expressionType: Dynamic = this.resolve(
+            templateText.slice(dollarIndex + 2, expressionEnd - 1),
+            depth + 1,
           );
-          if (value4 === null || value4.kind !== "enum") return null;
-          let value5: Dynamic = value4.options ?? [];
-          if (items2.length * value5.length > ComponentsTypeInferenceLimit_7)
+          if (expressionType === null || expressionType.kind !== "enum") return null;
+          let expressionOptions: Dynamic = expressionType.options ?? [];
+          if (combinations.length * expressionOptions.length > maxTemplateCombinations)
             return null;
-          items2 = items2.flatMap(
-            (input?: Dynamic): Dynamic =>
-              value5.map(
-                (input2?: Dynamic): Dynamic => input + value2 + input2,
+          combinations = combinations.flatMap(
+            (prefix?: Dynamic): Dynamic =>
+              expressionOptions.map(
+                (option?: Dynamic): Dynamic => prefix + literalPart + option,
               ),
           );
-          index = value3;
+          position = expressionEnd;
         }
-        return items2;
+        return combinations;
       }
-      control(input: Dynamic, options: Dynamic): Dynamic {
-        let literals: Dynamic = input.literals,
-          value: Dynamic = input.str || input.node;
-        if (literals.length > 0 && !value) {
-          if (input.num && literals.length < ComponentsTypeInferenceLimit_9)
+      control(inferenceState: Dynamic, typeText: Dynamic): Dynamic {
+        let literals: Dynamic = inferenceState.literals,
+          isStringLike: Dynamic = inferenceState.str || inferenceState.node;
+        if (literals.length > 0 && !isStringLike) {
+          if (inferenceState.num && literals.length < fewNumberLiteralsLimit)
             return {
               kind: "string",
-              typeName: conciseTypeDescription(options),
+              typeName: conciseTypeDescription(typeText),
             };
-          if (literals.length > ComponentsTypeInferenceLimit_8)
+          if (literals.length > maxEnumOptions)
             return {
               kind: "string",
-              typeName: conciseTypeDescription(options),
+              typeName: conciseTypeDescription(typeText),
             };
           let state: Dynamic = {
             kind: "enum",
-            options: input.bool ? ["true", "false", ...literals] : literals,
+            options: inferenceState.bool ? ["true", "false", ...literals] : literals,
           };
-          input.bool
+          inferenceState.bool
             ? (state.withBool = true)
-            : input.numeric && (state.numeric = true);
+            : inferenceState.numeric && (state.numeric = true);
           return state;
         }
-        return value
-          ? !input.str && input.other && input.unresolved.length === 0
+        return isStringLike
+          ? !inferenceState.str && inferenceState.other && inferenceState.unresolved.length === 0
             ? {
                 kind: "string",
                 typeName: "ReactNode",
               }
-            : input.unresolved.length > 0
+            : inferenceState.unresolved.length > 0
               ? {
                   kind: "string",
-                  typeName: input.unresolved[0],
+                  typeName: inferenceState.unresolved[0],
                 }
               : {
                   kind: "string",
                 }
-          : input.num && !input.bool
+          : inferenceState.num && !inferenceState.bool
             ? {
                 kind: "number",
               }
-            : input.bool && !input.num
+            : inferenceState.bool && !inferenceState.num
               ? {
                   kind: "boolean",
                 }
-              : input.num && input.bool
+              : inferenceState.num && inferenceState.bool
                 ? {
                     kind: "string",
-                    typeName: conciseTypeDescription(options),
+                    typeName: conciseTypeDescription(typeText),
                   }
-                : input.unresolved.length > 0
+                : inferenceState.unresolved.length > 0
                   ? {
                       kind: "string",
-                      typeName: input.unresolved[0],
+                      typeName: inferenceState.unresolved[0],
                     }
                   : null;
       }
     };
-    ComponentsTypeInferenceSubscribers_2 = new Set([
+    reservedPropNames = new Set([
       "ref",
       "key",
       "render",

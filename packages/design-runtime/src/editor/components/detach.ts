@@ -87,7 +87,7 @@ export function detachComponentRefusal(model: DetachModel, tid: Tid): string | u
         !positionStyleProps.has(declaration.prop) && (declaration.prop + declaration.value).includes("{{"),
     ) ||
     /(^|;)\s*\{\{[^:;]*\}\}\s*(;|$)/.test(model.inlineStyleAttr(tid)) ||
-    Object.values(model.attributes(tid)).some((value) => parseDetachablePropValue(value) === undefined)
+    Object.values(model.attributes(tid)).some((attributeValue) => parseDetachablePropValue(attributeValue) === undefined)
   )
     return takesValuesMessage;
   if (model.childTids(tid).length > 0 || (model.element(tid)?.textContent ?? "").trim() !== "")
@@ -173,28 +173,28 @@ export function hasUnresolvedTemplateExpression(html: string): boolean {
  * 把一个 dc-import 实例展开成它的组件内容（解除关联）。
  * 返回新的 HTML 与随带的素材，或不能解除的原因。
  */
-export function detachImportedComponent(model: DetachModel, tid: Tid, context: DetachContext): DetachResult {
+export function detachImportedComponent(model: DetachModel, tid: Tid, detachContext: DetachContext): DetachResult {
   if (!isDetachableDcImport(model, tid))
     return { blocked: selectionDetachRefusal(model, [tid]) ?? selectInstanceMessage };
   const attributes = model.attributes(tid);
-  const helmet = context.model.helmetAssets();
-  const rootTids = context.model
+  const helmet = detachContext.model.helmetAssets();
+  const rootTids = detachContext.model
     .childTids(null)
-    .filter((child) => !helmetTagPattern.test(context.model.tagName(child) ?? ""));
+    .filter((child) => !helmetTagPattern.test(detachContext.model.tagName(child) ?? ""));
   const componentHtml = rootTids
-    .map((child) => context.model.subtreeHtml(child))
+    .map((child) => detachContext.model.subtreeHtml(child))
     .filter((html) => html != null)
     .join(`
 `);
   if (
     helmet.other ||
     componentHtml === "" ||
-    context.model.rootText().trim() !== "" ||
-    selectionUsesFlexGrid(context.model, rootTids)
+    detachContext.model.rootText().trim() !== "" ||
+    selectionUsesFlexGrid(detachContext.model, rootTids)
   )
     return { blocked: PartsOfThisComponentCanTBeMessage };
   const props = detachableComponentProps(attributes);
-  const { vals, held } = context;
+  const { vals, held } = detachContext;
   const loopVariables = getLoopTemplateVariables(componentHtml);
   const flattened = flattenTemplateValues(componentHtml, (name: string): unknown => {
     if (!(name.startsWith("$") || ClipboardTemplateFlatteningTrueFalseNullSet.has(name) || loopVariables.has(name) || held.includes(name)))

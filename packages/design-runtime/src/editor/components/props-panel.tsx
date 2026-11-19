@@ -16,12 +16,12 @@ import { toModuleNamespace } from "../../module-helpers";
 var reactComponentsPropsPanel: Dynamic;
 var ComponentsPropsPanelCategorical1Categorical2Categorical3Values: Dynamic;
 var ComponentsPropsPanelMutedValues: Dynamic;
-function groupComponentProps(input?: Dynamic): Dynamic {
+function groupComponentProps(propEntries?: Dynamic): Dynamic {
   let items: Dynamic = [],
     entries: Dynamic = new Map(),
-    items2: Dynamic = [];
-  for (let value of input as Dynamic) {
-    let section: Dynamic = value[1].section;
+    looseRows: Dynamic = [];
+  for (let propEntry of propEntries as Dynamic) {
+    let section: Dynamic = propEntry[1].section;
     if (typeof section == "string" && section !== "") {
       let entry: Dynamic = entries.get(section);
       entry ||
@@ -31,14 +31,14 @@ function groupComponentProps(input?: Dynamic): Dynamic {
           section: section,
           rows: entry,
         }));
-      entry.push(value);
-    } else items2.push(value);
+      entry.push(propEntry);
+    } else looseRows.push(propEntry);
   }
-  return items2.length > 0
+  return looseRows.length > 0
     ? [
         {
           section: null,
-          rows: items2,
+          rows: looseRows,
         },
         ...items,
       ]
@@ -46,17 +46,17 @@ function groupComponentProps(input?: Dynamic): Dynamic {
 }
 function ComponentPropsPanel({ dcProps: dcProps }: Dynamic): Dynamic {
   useUiLocale();
-  let value: Dynamic = Object.entries(dcProps.propsMeta).filter(
-    ([, input]: Dynamic): Dynamic =>
-      isEditablePropMetadata(input),
+  let editableEntries: Dynamic = Object.entries(dcProps.propsMeta).filter(
+    ([, meta]: Dynamic): Dynamic =>
+      isEditablePropMetadata(meta),
   );
-  if (value.length === 0)
+  if (editableEntries.length === 0)
     return (
       <div className={"px-lg py-4 text-center text-caption text-muted"}>
         {uiMessage("inspector.propsPanel.thisComponentHasNoTweakableProps")}
       </div>
     );
-  let value2: Dynamic = groupComponentProps(value);
+  let groups: Dynamic = groupComponentProps(editableEntries);
   return (
     <jsxPropertiesRows.Fragment>
       <div
@@ -67,40 +67,40 @@ function ComponentPropsPanel({ dcProps: dcProps }: Dynamic): Dynamic {
           ChromeScrollbarLabel
         }
       >
-        {value2.map(
-          (input?: Dynamic): Dynamic =>
+        {groups.map(
+          (group?: Dynamic): Dynamic =>
             (() => {
               const _Component = PropertySection;
               const _props = {
-                title: input.section ?? undefined,
+                title: group.section ?? undefined,
                 "data-testid":
-                  input.section != null ? "dc-props-section" : undefined,
-                children: input.rows.map(
-                  ([input2, input3]: Dynamic): Dynamic => (
+                  group.section != null ? "dc-props-section" : undefined,
+                children: group.rows.map(
+                  ([propName, meta]: Dynamic): Dynamic => (
                     <ComponentPropInput
-                      key={input2}
-                      name={input2}
-                      meta={input3}
-                      value={dcProps.values[input2]}
-                      onChange={(input4?: Dynamic): Dynamic =>
-                        dcProps.setProp(input2, input4)
+                      key={propName}
+                      name={propName}
+                      meta={meta}
+                      value={dcProps.values[propName]}
+                      onChange={(newValue?: Dynamic): Dynamic =>
+                        dcProps.setProp(propName, newValue)
                       }
                       tweak={true}
                       onReset={
                         !dcProps.saving &&
-                        dcProps.values[input2] !== undefined &&
+                        dcProps.values[propName] !== undefined &&
                         !equalPropValues(
-                          dcProps.values[input2],
-                          input3.default,
+                          dcProps.values[propName],
+                          meta.default,
                         )
-                          ? (): Dynamic => dcProps.setProp(input2, undefined)
+                          ? (): Dynamic => dcProps.setProp(propName, undefined)
                           : undefined
                       }
                     />
                   ),
                 ),
               } as const;
-              const _key = input.section ?? "__loose";
+              const _key = group.section ?? "__loose";
               return <_Component key={_key} {..._props} />;
             })(),
         )}

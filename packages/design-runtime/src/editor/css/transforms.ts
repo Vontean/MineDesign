@@ -5,8 +5,8 @@ import {
 import { classifyStyleValue, formatCssNumber, parseCssNumber } from "./values";
 
 var CssTransformsTranslateTranslatexTranslateyConfig: Dynamic;
-function parseCssTransform(input?: Dynamic): Dynamic {
-  let value: Dynamic = (input ?? "").trim(),
+function parseCssTransform(transform?: Dynamic): Dynamic {
+  let trimmed: Dynamic = (transform ?? "").trim(),
     state: Dynamic = {
       x: {
         value: 0,
@@ -23,92 +23,92 @@ function parseCssTransform(input?: Dynamic): Dynamic {
       scaleX: 1,
       scaleY: 1,
     };
-  if (!value || value === "none") return state;
-  if (classifyStyleValue(value).kind !== "literal") return null;
-  let value2: Dynamic = /([a-zA-Z]+)\(([^)]*)\)/g;
-  if (value.replace(value2, "").trim() !== "") return null;
-  let values: Dynamic = new Set(),
-    value3: Dynamic;
-  for (; (value3 = value2.exec(value)); ) {
-    let value4: Dynamic = value3[1].toLowerCase(),
-      value5: Dynamic = value3[2]
+  if (!trimmed || trimmed === "none") return state;
+  if (classifyStyleValue(trimmed).kind !== "literal") return null;
+  let functionPattern: Dynamic = /([a-zA-Z]+)\(([^)]*)\)/g;
+  if (trimmed.replace(functionPattern, "").trim() !== "") return null;
+  let usedAxes: Dynamic = new Set(),
+    match: Dynamic;
+  for (; (match = functionPattern.exec(trimmed)); ) {
+    let functionName: Dynamic = match[1].toLowerCase(),
+      args: Dynamic = match[2]
         .split(",")
-        .map((input2?: Dynamic): Dynamic => input2.trim()),
-      value6: Dynamic = parseCssNumber(value5[0] ?? ""),
-      value7: Dynamic = parseCssNumber(value5[1] ?? "");
+        .map((arg?: Dynamic): Dynamic => arg.trim()),
+      firstArg: Dynamic = parseCssNumber(args[0] ?? ""),
+      secondArg: Dynamic = parseCssNumber(args[1] ?? "");
     if (
-      !value6 ||
-      !Object.hasOwn(CssTransformsTranslateTranslatexTranslateyConfig, value4)
+      !firstArg ||
+      !Object.hasOwn(CssTransformsTranslateTranslatexTranslateyConfig, functionName)
     )
       return null;
-    for (let value8 of CssTransformsTranslateTranslatexTranslateyConfig[
-      value4
+    for (let axis of CssTransformsTranslateTranslatexTranslateyConfig[
+      functionName
     ] as Dynamic) {
-      if (values.has(value8)) return null;
-      values.add(value8);
+      if (usedAxes.has(axis)) return null;
+      usedAxes.add(axis);
     }
     if (
-      value5.length >
-      CssTransformsTranslateTranslatexTranslateyConfig[value4].length
+      args.length >
+      CssTransformsTranslateTranslatexTranslateyConfig[functionName].length
     )
       return null;
-    let callback: Dynamic = (input2?: Dynamic): Dynamic =>
-      !!input2 && !input2.unit && input2.value !== 0;
-    if (!value4.startsWith("scale") && (callback(value6) || callback(value7)))
+    let hasBareNonZero: Dynamic = (parsedNumber?: Dynamic): Dynamic =>
+      !!parsedNumber && !parsedNumber.unit && parsedNumber.value !== 0;
+    if (!functionName.startsWith("scale") && (hasBareNonZero(firstArg) || hasBareNonZero(secondArg)))
       return null;
-    if (value4 === "translate") {
-      state.x = value6;
-      if (value5.length > 1) {
-        if (!value7) return null;
-        state.y = value7;
+    if (functionName === "translate") {
+      state.x = firstArg;
+      if (args.length > 1) {
+        if (!secondArg) return null;
+        state.y = secondArg;
       }
-    } else if (value4 === "translatex") state.x = value6;
-    else if (value4 === "translatey") state.y = value6;
-    else if (value4 === "rotate") {
-      if (!/^(deg|rad|turn|grad)?$/i.test(value6.unit)) return null;
+    } else if (functionName === "translatex") state.x = firstArg;
+    else if (functionName === "translatey") state.y = firstArg;
+    else if (functionName === "rotate") {
+      if (!/^(deg|rad|turn|grad)?$/i.test(firstArg.unit)) return null;
       state.rotate = {
-        value: value6.value,
-        unit: value6.unit || "deg",
+        value: firstArg.value,
+        unit: firstArg.unit || "deg",
       };
-    } else if (value4 === "scale") {
-      if ((value5.length > 1 && !value7) || value6.unit || value7?.unit)
+    } else if (functionName === "scale") {
+      if ((args.length > 1 && !secondArg) || firstArg.unit || secondArg?.unit)
         return null;
-      state.scaleX = value6.value;
-      state.scaleY = value7 ? value7.value : value6.value;
-    } else if (value4 === "scalex" || value4 === "scaley") {
-      if (value6.unit) return null;
-      value4 === "scalex"
-        ? (state.scaleX = value6.value)
-        : (state.scaleY = value6.value);
+      state.scaleX = firstArg.value;
+      state.scaleY = secondArg ? secondArg.value : firstArg.value;
+    } else if (functionName === "scalex" || functionName === "scaley") {
+      if (firstArg.unit) return null;
+      functionName === "scalex"
+        ? (state.scaleX = firstArg.value)
+        : (state.scaleY = firstArg.value);
     } else return null;
   }
   return state;
 }
-function serializeCssTransform(input?: Dynamic): Dynamic {
-  let items: Dynamic = [];
-  (input.x.value !== 0 || input.y.value !== 0) &&
-    items.push(
-      `translate(${formatCssNumber(input.x.value, input.x.unit || "px")}, ${formatCssNumber(input.y.value, input.y.unit || "px")})`,
+function serializeCssTransform(transform?: Dynamic): Dynamic {
+  let parts: Dynamic = [];
+  (transform.x.value !== 0 || transform.y.value !== 0) &&
+    parts.push(
+      `translate(${formatCssNumber(transform.x.value, transform.x.unit || "px")}, ${formatCssNumber(transform.y.value, transform.y.unit || "px")})`,
     );
-  input.rotate.value !== 0 &&
-    items.push(
-      `rotate(${formatCssNumber(input.rotate.value, input.rotate.unit || "deg")})`,
+  transform.rotate.value !== 0 &&
+    parts.push(
+      `rotate(${formatCssNumber(transform.rotate.value, transform.rotate.unit || "deg")})`,
     );
-  (input.scaleX !== 1 || input.scaleY !== 1) &&
-    (input.scaleX === input.scaleY
-      ? items.push(`scale(${formatCssNumber(input.scaleX, "")})`)
-      : input.scaleY === 1
-        ? items.push(
-            `scaleX(${formatCssNumber(input.scaleX, "")})`,
+  (transform.scaleX !== 1 || transform.scaleY !== 1) &&
+    (transform.scaleX === transform.scaleY
+      ? parts.push(`scale(${formatCssNumber(transform.scaleX, "")})`)
+      : transform.scaleY === 1
+        ? parts.push(
+            `scaleX(${formatCssNumber(transform.scaleX, "")})`,
           )
-        : input.scaleX === 1
-          ? items.push(
-              `scaleY(${formatCssNumber(input.scaleY, "")})`,
+        : transform.scaleX === 1
+          ? parts.push(
+              `scaleY(${formatCssNumber(transform.scaleY, "")})`,
             )
-          : items.push(
-              `scale(${formatCssNumber(input.scaleX, "")}, ${formatCssNumber(input.scaleY, "")})`,
+          : parts.push(
+              `scale(${formatCssNumber(transform.scaleX, "")}, ${formatCssNumber(transform.scaleY, "")})`,
             ));
-  return items.join(" ");
+  return parts.join(" ");
 }
 export {
   CssTransformsTranslateTranslatexTranslateyConfig,

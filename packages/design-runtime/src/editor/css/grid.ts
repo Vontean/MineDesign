@@ -3,46 +3,46 @@ import {
   type Dynamic,
 } from "../../runtime-types";
 
-function splitGridTracks(input?: Dynamic): Dynamic {
-  let items: Dynamic = [],
-    index: Dynamic = 0,
+function splitGridTracks(value?: Dynamic): Dynamic {
+  let tracks: Dynamic = [],
+    parenDepth: Dynamic = 0,
     text: Dynamic = "";
-  for (let value of input as Dynamic) {
-    value === "("
-      ? index++
-      : value === ")" && (index = Math.max(0, index - 1));
-    index === 0 && /\s/.test(value)
-      ? (text && items.push(text), (text = ""))
-      : (text += value);
+  for (let char of value as Dynamic) {
+    char === "("
+      ? parenDepth++
+      : char === ")" && (parenDepth = Math.max(0, parenDepth - 1));
+    parenDepth === 0 && /\s/.test(char)
+      ? (text && tracks.push(text), (text = ""))
+      : (text += char);
   }
-  text && items.push(text);
-  return items;
+  text && tracks.push(text);
+  return tracks;
 }
-function parseEqualGridColumns(input?: Dynamic): Dynamic {
-  let value: Dynamic = (input ?? "").trim();
-  if (!value || /^none$/i.test(value)) return null;
-  let value2: Dynamic =
+function parseEqualGridColumns(gridTemplate?: Dynamic): Dynamic {
+  let trimmed: Dynamic = (gridTemplate ?? "").trim();
+  if (!trimmed || /^none$/i.test(trimmed)) return null;
+  let repeatMatch: Dynamic =
     /^repeat\(\s*(\d{1,3})\s*,\s*(?:minmax\(\s*0(?:px)?\s*,\s*1fr\s*\)|1fr)\s*\)$/i.exec(
-      value,
+      trimmed,
     );
-  if (value2) {
-    let value6: Dynamic = parseInt(value2[1], 10);
-    return value6 >= 1 ? value6 : null;
+  if (repeatMatch) {
+    let count: Dynamic = parseInt(repeatMatch[1], 10);
+    return count >= 1 ? count : null;
   }
-  let value3: Dynamic = splitGridTracks(value);
-  if (value3.length === 0) return null;
-  let callback: Dynamic = (input2?: Dynamic): Dynamic => input2.toLowerCase(),
-    value4: Dynamic = callback(value3[0]),
-    value5: Dynamic = value4.replace(/\s+/g, "");
+  let tracks: Dynamic = splitGridTracks(trimmed);
+  if (tracks.length === 0) return null;
+  let toLowerCase: Dynamic = (track?: Dynamic): Dynamic => track.toLowerCase(),
+    firstTrack: Dynamic = toLowerCase(tracks[0]),
+    compactFirstTrack: Dynamic = firstTrack.replace(/\s+/g, "");
   return /^(?:minmax\(0(?:px)?,1fr\)|[\d.]+(?:px|fr|%|em|rem))$/.test(
-    value5,
+    compactFirstTrack,
   ) &&
-    value3.every((input2?: Dynamic): Dynamic => callback(input2) === value4)
-    ? value3.length
+    tracks.every((track?: Dynamic): Dynamic => toLowerCase(track) === firstTrack)
+    ? tracks.length
     : null;
 }
-function serializeEqualGridColumns(input?: Dynamic): Dynamic {
-  return `repeat(${Math.max(1, Math.round(input))}, minmax(0, 1fr))`;
+function serializeEqualGridColumns(count?: Dynamic): Dynamic {
+  return `repeat(${Math.max(1, Math.round(count))}, minmax(0, 1fr))`;
 }
 export {
   parseEqualGridColumns,

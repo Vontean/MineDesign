@@ -7,52 +7,52 @@ import { toModuleNamespace } from "../../module-helpers";
 
 var reactComponentsPropCache: Dynamic;
 var ComponentsPropCacheCache: Dynamic;
-function getComponentPropsCache(input?: Dynamic, options?: Dynamic): Dynamic {
-  let entry: Dynamic = ComponentsPropCacheCache.get(input);
-  entry || ((entry = new Map()), ComponentsPropCacheCache.set(input, entry));
-  let entry2: Dynamic = entry.get(options);
-  entry2 ||
-    ((entry2 = {
+function getComponentPropsCache(projectPath?: Dynamic, filePath?: Dynamic): Dynamic {
+  let fileCaches: Dynamic = ComponentsPropCacheCache.get(projectPath);
+  fileCaches || ((fileCaches = new Map()), ComponentsPropCacheCache.set(projectPath, fileCaches));
+  let cache: Dynamic = fileCaches.get(filePath);
+  cache ||
+    ((cache = {
       unsaved: new Map(),
       defaults: new Map(),
     }),
-    entry.set(options, entry2));
-  return entry2;
+    fileCaches.set(filePath, cache));
+  return cache;
 }
 function cacheUnsavedComponentProp(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  projectPath?: Dynamic,
+  filePath?: Dynamic,
+  propName?: Dynamic,
   value?: Dynamic,
 ): Dynamic {
-  if (!(!input || !options || !context)) {
+  if (!(!projectPath || !filePath || !propName)) {
     if (value === undefined) {
-      ComponentsPropCacheCache.get(input)
-        ?.get(options)
-        ?.unsaved.delete(context);
+      ComponentsPropCacheCache.get(projectPath)
+        ?.get(filePath)
+        ?.unsaved.delete(propName);
       return;
     }
-    getComponentPropsCache(input, options).unsaved.set(context, value);
+    getComponentPropsCache(projectPath, filePath).unsaved.set(propName, value);
   }
 }
 function clearUnsavedComponentProps(
-  input?: Dynamic,
-  options?: Dynamic,
+  projectPath?: Dynamic,
+  filePath?: Dynamic,
 ): Dynamic {
-  ComponentsPropCacheCache.get(input)?.get(options)?.unsaved.clear();
+  ComponentsPropCacheCache.get(projectPath)?.get(filePath)?.unsaved.clear();
 }
 function adoptComponentPropDefaults(
-  input?: Dynamic,
-  options?: Dynamic,
-  context?: Dynamic,
+  projectPath?: Dynamic,
+  filePath?: Dynamic,
+  defaults?: Dynamic,
 ): Dynamic {
-  if (!input || !options) return;
-  let value: Dynamic = Object.keys(context);
-  if (value.length === 0) return;
-  let value2: Dynamic = getComponentPropsCache(input, options);
-  for (let value3 of value as Dynamic) {
-    value2.defaults.set(value3, context[value3]);
-    value2.unsaved.delete(value3);
+  if (!projectPath || !filePath) return;
+  let propNames: Dynamic = Object.keys(defaults);
+  if (propNames.length === 0) return;
+  let cache: Dynamic = getComponentPropsCache(projectPath, filePath);
+  for (let propName of propNames as Dynamic) {
+    cache.defaults.set(propName, defaults[propName]);
+    cache.unsaved.delete(propName);
   }
 }
 export {

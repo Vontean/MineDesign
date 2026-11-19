@@ -12,48 +12,48 @@ var ComponentsTypeInferenceWorkerConstant: Dynamic;
 var ComponentsTypeInferenceWorkerCache: Dynamic;
 var ComponentsTypeInferenceWorkerElementCache: Dynamic;
 function componentDeclarationFiles(
-  input?: Dynamic,
-  options?: Dynamic,
+  componentName?: Dynamic,
+  declarationFiles?: Dynamic,
 ): Dynamic {
-  let value: Dynamic = input.split(".")[0].toLowerCase(),
-    entry: Dynamic =
-      ComponentsDeclarationResolverElementCache.get(options);
-  entry === undefined &&
+  let prefix: Dynamic = componentName.split(".")[0].toLowerCase(),
+    cacheByFiles: Dynamic =
+      ComponentsDeclarationResolverElementCache.get(declarationFiles);
+  cacheByFiles === undefined &&
     ComponentsDeclarationResolverElementCache.set(
-      options,
-      (entry = new Map()),
+      declarationFiles,
+      (cacheByFiles = new Map()),
     );
-  let entry2: Dynamic = entry.get(value);
-  if (entry2 !== undefined) return entry2;
-  let value2: Dynamic =
+  let cachedTexts: Dynamic = cacheByFiles.get(prefix);
+  if (cachedTexts !== undefined) return cachedTexts;
+  let designSystemPrefix: Dynamic =
       "ds/" +
-      value
+      prefix
         .replace(/[^a-z0-9_-]+/g, "-")
         .replace(/^[-_]+/, "")
         .slice(0, 64)
         .replace(/-+$/, "") +
       "/",
-    callback: Dynamic = (input2?: Dynamic): Dynamic => {
-      let value4: Dynamic = input2.toLowerCase();
+    pathRelevance: Dynamic = (filePath?: Dynamic): Dynamic => {
+      let lowerPath: Dynamic = filePath.toLowerCase();
       return Number(
-        value4.startsWith("ds/")
-          ? value4.startsWith(value2)
-          : value4.startsWith(value),
+        lowerPath.startsWith("ds/")
+          ? lowerPath.startsWith(designSystemPrefix)
+          : lowerPath.startsWith(prefix),
       );
     },
-    value3: Dynamic = Object.entries(options)
+    sortedTexts: Dynamic = Object.entries(declarationFiles)
       .filter(
-        ([, input2]: Dynamic): Dynamic =>
-          !typeExpressionTooDeep(input2),
+        ([, text]: Dynamic): Dynamic =>
+          !typeExpressionTooDeep(text),
       )
       .sort(
-        ([input2]: Dynamic, [options2]: Dynamic): Dynamic =>
-          callback(options2) - callback(input2) ||
-          (input2 < options2 ? -1 : input2 > options2 ? 1 : 0),
+        ([pathA]: Dynamic, [pathB]: Dynamic): Dynamic =>
+          pathRelevance(pathB) - pathRelevance(pathA) ||
+          (pathA < pathB ? -1 : pathA > pathB ? 1 : 0),
       )
-      .map(([, input2]: Dynamic): Dynamic => input2);
-  entry.set(value, value3);
-  return value3;
+      .map(([, text]: Dynamic): Dynamic => text);
+  cacheByFiles.set(prefix, sortedTexts);
+  return sortedTexts;
 }
 function supportsTypeInferenceWorker(): Dynamic {
   return typeof Worker !== "undefined" && typeof Blob !== "undefined";
@@ -66,44 +66,44 @@ function getTypeInferenceWorker(): Dynamic {
       type: "text/javascript",
     }),
   );
-  let value: Dynamic = new Worker(
+  let worker: Dynamic = new Worker(
     ComponentsTypeInferenceWorkerCreateObjectURLValue,
   );
-  value.onmessage = (input?: Dynamic): Dynamic => {
+  worker.onmessage = (message?: Dynamic): Dynamic => {
     let entry: Dynamic = ComponentsTypeInferenceWorkerCache.get(
-      input.data.id,
+      message.data.id,
     );
     entry !== undefined &&
-      (ComponentsTypeInferenceWorkerCache.delete(input.data.id),
+      (ComponentsTypeInferenceWorkerCache.delete(message.data.id),
       clearTimeout(entry.timer),
-      entry.resolve(Array.isArray(input.data.specs) ? input.data.specs : []));
+      entry.resolve(Array.isArray(message.data.specs) ? message.data.specs : []));
   };
-  value.onerror = (): Dynamic => {
+  worker.onerror = (): Dynamic => {
     console.warn(
       "design (props panel): the type-declaration reader could not run here \u2014 showing values only",
     );
-    ComponentsTypeInferenceWorkerCurrentState === value &&
+    ComponentsTypeInferenceWorkerCurrentState === worker &&
       terminateTypeInferenceWorker();
   };
-  return (ComponentsTypeInferenceWorkerCurrentState = value);
+  return (ComponentsTypeInferenceWorkerCurrentState = worker);
 }
 function terminateTypeInferenceWorker(): Dynamic {
   ComponentsTypeInferenceWorkerCurrentState?.terminate();
   ComponentsTypeInferenceWorkerCurrentState = null;
-  for (let value of ComponentsTypeInferenceWorkerCache.values() as Dynamic) {
-    clearTimeout(value.timer);
-    value.resolve([]);
+  for (let pendingRequest of ComponentsTypeInferenceWorkerCache.values() as Dynamic) {
+    clearTimeout(pendingRequest.timer);
+    pendingRequest.resolve([]);
   }
   ComponentsTypeInferenceWorkerCache.clear();
 }
-function inferPropsInWorker(input?: Dynamic, options?: Dynamic): Dynamic {
-  return ComponentsTypeInferenceWorkerObservedElements.has(options)
+function inferPropsInWorker(candidateNames?: Dynamic, declarationTexts?: Dynamic): Dynamic {
+  return ComponentsTypeInferenceWorkerObservedElements.has(declarationTexts)
     ? Promise.resolve([])
-    : new Promise((input2?: Dynamic): Dynamic => {
-        let value: Dynamic = ComponentsTypeInferenceWorkerConstant++,
-          value2: Dynamic = setTimeout((): Dynamic => {
-            ComponentsTypeInferenceWorkerCache.has(value) &&
-              (ComponentsTypeInferenceWorkerObservedElements.add(options),
+    : new Promise((resolve?: Dynamic): Dynamic => {
+        let requestId: Dynamic = ComponentsTypeInferenceWorkerConstant++,
+          timeoutTimer: Dynamic = setTimeout((): Dynamic => {
+            ComponentsTypeInferenceWorkerCache.has(requestId) &&
+              (ComponentsTypeInferenceWorkerObservedElements.add(declarationTexts),
               console.warn(
                 "design (props panel): reading the design system's type declarations took over " +
                   String(ComponentsDeclarationResolverDelayMs) +
@@ -111,16 +111,16 @@ function inferPropsInWorker(input?: Dynamic, options?: Dynamic): Dynamic {
               ),
               terminateTypeInferenceWorker());
           }, ComponentsDeclarationResolverDelayMs);
-        ComponentsTypeInferenceWorkerCache.set(value, {
-          resolve: input2,
-          timer: value2,
-          texts: options,
+        ComponentsTypeInferenceWorkerCache.set(requestId, {
+          resolve: resolve,
+          timer: timeoutTimer,
+          texts: declarationTexts,
         });
         try {
           getTypeInferenceWorker().postMessage({
-            id: value,
-            names: input,
-            texts: options,
+            id: requestId,
+            names: candidateNames,
+            texts: declarationTexts,
             keep: ComponentsDeclarationResolverNameTypeValueValues,
           });
         } catch {
@@ -132,36 +132,36 @@ function inferPropsInWorker(input?: Dynamic, options?: Dynamic): Dynamic {
       });
 }
 function cachedInferredComponentProps(
-  input?: Dynamic,
-  options?: Dynamic,
+  componentName?: Dynamic,
+  declarationTexts?: Dynamic,
 ): Dynamic {
-  return ComponentsTypeInferenceWorkerElementCache.get(options)?.get(input);
+  return ComponentsTypeInferenceWorkerElementCache.get(declarationTexts)?.get(componentName);
 }
 async function inferInstalledComponentProps(
-  input?: Dynamic,
-  options?: Dynamic,
+  componentName?: Dynamic,
+  declarationFiles?: Dynamic,
 ): Promise<Dynamic> {
-  let value: Dynamic = cachedInferredComponentProps(input, options);
-  if (value !== undefined) return value;
-  let value2: Dynamic = componentDeclarationFiles(input, options),
+  let cachedProps: Dynamic = cachedInferredComponentProps(componentName, declarationFiles);
+  if (cachedProps !== undefined) return cachedProps;
+  let declarationTexts: Dynamic = componentDeclarationFiles(componentName, declarationFiles),
     items: Dynamic = [];
-  if (value2.length > 0) {
-    let value3: Dynamic = componentTypeCandidates(input);
+  if (declarationTexts.length > 0) {
+    let candidateNames: Dynamic = componentTypeCandidates(componentName);
     items = supportsTypeInferenceWorker()
-      ? await inferPropsInWorker(value3, value2)
+      ? await inferPropsInWorker(candidateNames, declarationTexts)
       : inferPropsFromDeclarations(
-          value3,
-          value2,
+          candidateNames,
+          declarationTexts,
           ComponentsDeclarationResolverNameTypeValueValues,
         );
   }
-  let entry: Dynamic = ComponentsTypeInferenceWorkerElementCache.get(options);
+  let entry: Dynamic = ComponentsTypeInferenceWorkerElementCache.get(declarationFiles);
   entry === undefined &&
     ComponentsTypeInferenceWorkerElementCache.set(
-      options,
+      declarationFiles,
       (entry = new Map()),
     );
-  entry.set(input, items);
+  entry.set(componentName, items);
   return items;
 }
 export {

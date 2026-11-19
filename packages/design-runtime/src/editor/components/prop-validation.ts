@@ -209,16 +209,16 @@ export function normalizePropValues(values: PlainRecord): PlainRecord {
 }
 
 /** 整理 data-props 解析出的整份元数据；格式不对返回空对象。 */
-export function parsePropsMetadata(input: unknown): Record<string, PlainRecord> {
-  if (!isPlainPropRecord(input)) return {};
+export function parsePropsMetadata(rawMetadata: unknown): Record<string, PlainRecord> {
+  if (!isPlainPropRecord(rawMetadata)) return {};
   const result: Record<string, PlainRecord> = {};
-  const seen = new WeakSet([input]);
+  const seen = new WeakSet([rawMetadata]);
   let count = 0;
-  for (const key in input) {
-    if (!Object.hasOwn(input, key)) continue;
+  for (const key in rawMetadata) {
+    if (!Object.hasOwn(rawMetadata, key)) continue;
     if (count++ >= maxPropEntries) break;
     if (isUnsafePropKey(key)) continue;
-    const entry = input[key];
+    const entry = rawMetadata[key];
     if (!isPlainPropRecord(entry) || seen.has(entry)) continue;
     seen.add(entry);
     result[key] = normalizePropMetadata(entry, seen);

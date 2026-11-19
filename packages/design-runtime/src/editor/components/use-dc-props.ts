@@ -10,350 +10,350 @@ import { markLocalFileChange } from "../model/file-echoes";
 import { projectFilesystem } from "../../platform/file-content";
 import { createPreviewHandle } from "../../preview/evaluation";
 
-function useDcProps(input?: Dynamic): Dynamic {
+function useDcProps(hookOptions?: Dynamic): Dynamic {
   let {
-      webviewRef: value,
-      readyGen: value2,
-      projectPath: value3,
-      filePath: value4,
-      enabled: value5,
-    }: Dynamic = input,
-    [value6, value7]: Dynamic = (0,
+      webviewRef: webviewRef,
+      readyGen: readyGen,
+      projectPath: projectPath,
+      filePath: filePath,
+      enabled: enabled,
+    }: Dynamic = hookOptions,
+    [propsMeta, setPropsMeta]: Dynamic = (0,
     reactComponentsPropCache.useState)({}),
-    value8: Dynamic = (0, reactComponentsPropCache.useRef)(value6);
-  value8.current = value6;
-  let [value9, value10]: Dynamic = (0,
+    propsMetaRef: Dynamic = (0, reactComponentsPropCache.useRef)(propsMeta);
+  propsMetaRef.current = propsMeta;
+  let [rootName, setRootName]: Dynamic = (0,
     reactComponentsPropCache.useState)(null),
-    [value11, value12]: Dynamic = (0,
+    [bootCount, setBootCount]: Dynamic = (0,
     reactComponentsPropCache.useState)(0),
-    [value13, value14]: Dynamic = (0,
+    [draftValues, setDraftValues]: Dynamic = (0,
     reactComponentsPropCache.useState)({}),
-    [value15, value16]: Dynamic = (0,
+    [isSaving, setIsSaving]: Dynamic = (0,
     reactComponentsPropCache.useState)(false),
-    value17: Dynamic = (0, reactComponentsPropCache.useRef)(value5);
-  value17.current = value5;
-  let value18: Dynamic = (0, reactComponentsPropCache.useRef)(
-    value11,
+    enabledRef: Dynamic = (0, reactComponentsPropCache.useRef)(enabled);
+  enabledRef.current = enabled;
+  let bootCountRef: Dynamic = (0, reactComponentsPropCache.useRef)(
+    bootCount,
   );
-  value18.current = value11;
-  let value19: Dynamic = (0, reactComponentsPropCache.useCallback)(
-    (input2?: Dynamic): Dynamic => {
-      if (!value17.current) return;
-      let value33: Dynamic = normalizePropString(
-        input2.rootName,
+  bootCountRef.current = bootCount;
+  let handleDcBooted: Dynamic = (0, reactComponentsPropCache.useCallback)(
+    (bootInfo?: Dynamic): Dynamic => {
+      if (!enabledRef.current) return;
+      let normalizedRootName: Dynamic = normalizePropString(
+        bootInfo.rootName,
       );
-      value10(value33);
-      value8.current = value33
-        ? parsePropsMetadata(input2.propsMeta)
+      setRootName(normalizedRootName);
+      propsMetaRef.current = normalizedRootName
+        ? parsePropsMetadata(bootInfo.propsMeta)
         : {};
-      value7(value8.current);
-      value12((input3?: Dynamic): Dynamic => input3 + 1);
+      setPropsMeta(propsMetaRef.current);
+      setBootCount((count?: Dynamic): Dynamic => count + 1);
     },
     [],
   );
   (0, reactComponentsPropCache.useEffect)((): Dynamic => {
-    if (!value5 || value2 === 0) {
-      value8.current = {};
-      value7({});
-      value10(null);
+    if (!enabled || readyGen === 0) {
+      propsMetaRef.current = {};
+      setPropsMeta({});
+      setRootName(null);
       return;
     }
-    let value33: Dynamic = createPreviewHandle(value.current);
-    if (!value33) return;
-    let flag: Dynamic = false,
-      current: Dynamic = value18.current,
-      value34: Dynamic = null,
-      callback: Dynamic = (): Dynamic => {
-        flag ||
-          value18.current !== current ||
-          value33
+    let previewHandle: Dynamic = createPreviewHandle(webviewRef.current);
+    if (!previewHandle) return;
+    let isCancelled: Dynamic = false,
+      bootCountAtStart: Dynamic = bootCountRef.current,
+      retryTimer: Dynamic = null,
+      pollRegistry: Dynamic = (): Dynamic => {
+        isCancelled ||
+          bootCountRef.current !== bootCountAtStart ||
+          previewHandle
             .executeJavaScript(
               "(function(){try{if(!window.__dcRootName)return null;var n=window.__dcRootName();var r=window.__dcRegistry&&window.__dcRegistry[n];if(!r)return null;return JSON.stringify({n:n,p:r.propsMeta||null})}catch(e){return null}})()",
             )
-            .then((input2?: Dynamic): Dynamic => {
-              if (flag || value18.current !== current) return;
-              if (typeof input2 != "string") {
-                value34 = setTimeout(callback, 1e3);
+            .then((registryJson?: Dynamic): Dynamic => {
+              if (isCancelled || bootCountRef.current !== bootCountAtStart) return;
+              if (typeof registryJson != "string") {
+                retryTimer = setTimeout(pollRegistry, 1e3);
                 return;
               }
-              let value35: Dynamic = JSON.parse(input2);
-              value19({
-                rootName: value35.n,
-                propsMeta: value35.p,
+              let registry: Dynamic = JSON.parse(registryJson);
+              handleDcBooted({
+                rootName: registry.n,
+                propsMeta: registry.p,
               });
             })
             .catch((): Dynamic => {
-              !flag &&
-                value18.current === current &&
-                (value34 = setTimeout(callback, 1e3));
+              !isCancelled &&
+                bootCountRef.current === bootCountAtStart &&
+                (retryTimer = setTimeout(pollRegistry, 1e3));
             });
       };
-    value34 = setTimeout(callback, 1500);
+    retryTimer = setTimeout(pollRegistry, 1500);
     return (): Dynamic => {
-      flag = true;
-      value34 !== null && clearTimeout(value34);
+      isCancelled = true;
+      retryTimer !== null && clearTimeout(retryTimer);
     };
-  }, [value5, value2, value, value19]);
+  }, [enabled, readyGen, webviewRef, handleDcBooted]);
   (0, reactComponentsPropCache.useEffect)((): Dynamic => {
-    value14({});
-    value8.current = {};
-    value7({});
-    value10(null);
-    value12(0);
-  }, [value4]);
-  let value20: Dynamic = (0, reactComponentsPropCache.useRef)(
-    value13,
+    setDraftValues({});
+    propsMetaRef.current = {};
+    setPropsMeta({});
+    setRootName(null);
+    setBootCount(0);
+  }, [filePath]);
+  let draftValuesRef: Dynamic = (0, reactComponentsPropCache.useRef)(
+    draftValues,
   );
-  value20.current = value13;
+  draftValuesRef.current = draftValues;
   (0, reactComponentsPropCache.useEffect)((): Dynamic => {
-    if (!value5 || value11 === 0 || !value9) return;
-    let value33: Dynamic = createPreviewHandle(value.current);
-    if (!value33) return;
+    if (!enabled || bootCount === 0 || !rootName) return;
+    let previewHandle: Dynamic = createPreviewHandle(webviewRef.current);
+    if (!previewHandle) return;
     let state: Dynamic = {};
-    for (let [value35, value36] of Object.entries(value8.current) as Dynamic)
-      isEditablePropMetadata(value36) &&
-        value36.default !== undefined &&
-        (state[value35] = value36.default);
-    for (let [value35, value36] of Object.entries(value20.current) as Dynamic)
-      value35 in value8.current && (state[value35] = value36);
-    let value34: Dynamic = Object.keys(state).length
+    for (let [propName, meta] of Object.entries(propsMetaRef.current) as Dynamic)
+      isEditablePropMetadata(meta) &&
+        meta.default !== undefined &&
+        (state[propName] = meta.default);
+    for (let [propName, draftValue] of Object.entries(draftValuesRef.current) as Dynamic)
+      propName in propsMetaRef.current && (state[propName] = draftValue);
+    let propsPayload: Dynamic = Object.keys(state).length
       ? JSON.stringify(state)
       : "null";
-    value33.executeJavaScriptUnchecked(
-      `window.__dcSetProps&&window.__dcSetProps(${JSON.stringify(value9)},${value34})`,
+    previewHandle.executeJavaScriptUnchecked(
+      `window.__dcSetProps&&window.__dcSetProps(${JSON.stringify(rootName)},${propsPayload})`,
     );
-  }, [value5, value11, value9, value13, value]);
-  let value21: Dynamic = (0, reactComponentsPropCache.useRef)({
-    projectPath: value3,
-    filePath: value4,
+  }, [enabled, bootCount, rootName, draftValues, webviewRef]);
+  let locationRef: Dynamic = (0, reactComponentsPropCache.useRef)({
+    projectPath: projectPath,
+    filePath: filePath,
   });
-  value21.current = {
-    projectPath: value3,
-    filePath: value4,
+  locationRef.current = {
+    projectPath: projectPath,
+    filePath: filePath,
   };
-  let value22: Dynamic = (0, reactComponentsPropCache.useRef)(false),
-    value23: Dynamic = (0, reactComponentsPropCache.useCallback)(
-      (): Dynamic => value22.current,
+  let isSavingRef: Dynamic = (0, reactComponentsPropCache.useRef)(false),
+    readIsSaving: Dynamic = (0, reactComponentsPropCache.useCallback)(
+      (): Dynamic => isSavingRef.current,
       [],
     ),
-    value24: Dynamic = (0, reactComponentsPropCache.useCallback)(
-      (input2?: Dynamic): Dynamic => value8.current[input2]?.default,
+    readCurrentDefault: Dynamic = (0, reactComponentsPropCache.useCallback)(
+      (propName?: Dynamic): Dynamic => propsMetaRef.current[propName]?.default,
       [],
     ),
-    value25: Dynamic = (0, reactComponentsPropCache.useCallback)(
-      (input2?: Dynamic, options?: Dynamic): Dynamic => {
-        let { projectPath: current, filePath: current2 }: Dynamic =
-          value21.current;
-        current &&
-          current2 &&
+    setProp: Dynamic = (0, reactComponentsPropCache.useCallback)(
+      (propName?: Dynamic, propValue?: Dynamic): Dynamic => {
+        let { projectPath: currentProject, filePath: currentFile }: Dynamic =
+          locationRef.current;
+        currentProject &&
+          currentFile &&
           cacheUnsavedComponentProp(
-            current,
-            current2,
-            input2,
-            options,
+            currentProject,
+            currentFile,
+            propName,
+            propValue,
           );
-        value14((input3?: Dynamic): Dynamic => {
-          if (options === undefined) {
-            if (!(input2 in input3)) return input3;
+        setDraftValues((previousDrafts?: Dynamic): Dynamic => {
+          if (propValue === undefined) {
+            if (!(propName in previousDrafts)) return previousDrafts;
             let state: Dynamic = {
-              ...input3,
+              ...previousDrafts,
             };
-            delete state[input2];
+            delete state[propName];
             return state;
           }
           return {
-            ...input3,
-            [input2]: options,
+            ...previousDrafts,
+            [propName]: propValue,
           };
         });
       },
       [],
     ),
-    value26: Dynamic = (0,
+    resetProps: Dynamic = (0,
     reactComponentsPropCache.useCallback)((): Dynamic => {
-      let { projectPath: current, filePath: current2 }: Dynamic =
-        value21.current;
-      current &&
-        current2 &&
-        clearUnsavedComponentProps(current, current2);
-      value14({});
+      let { projectPath: currentProject, filePath: currentFile }: Dynamic =
+        locationRef.current;
+      currentProject &&
+        currentFile &&
+        clearUnsavedComponentProps(currentProject, currentFile);
+      setDraftValues({});
     }, []),
-    value27: Dynamic = (0, reactComponentsPropCache.useMemo)(
+    hasProps: Dynamic = (0, reactComponentsPropCache.useMemo)(
       (): Dynamic =>
-        Object.values(value6).some(isEditablePropMetadata),
-      [value6],
+        Object.values(propsMeta).some(isEditablePropMetadata),
+      [propsMeta],
     ),
-    value28: Dynamic = (0,
+    isDirty: Dynamic = (0,
     reactComponentsPropCache.useMemo)((): Dynamic => {
-      for (let [value33, value34] of Object.entries(value13) as Dynamic)
+      for (let [propName, draftValue] of Object.entries(draftValues) as Dynamic)
         if (
-          value33 in value6 &&
-          !equalPropValues(value6[value33]?.default, value34)
+          propName in propsMeta &&
+          !equalPropValues(propsMeta[propName]?.default, draftValue)
         )
           return true;
       return false;
-    }, [value13, value6]),
-    value29: Dynamic = (0, reactComponentsPropCache.useRef)(
-      input.onAdopted,
+    }, [draftValues, propsMeta]),
+    onAdoptedRef: Dynamic = (0, reactComponentsPropCache.useRef)(
+      hookOptions.onAdopted,
     );
-  value29.current = input.onAdopted;
-  let value30: Dynamic = (0, reactComponentsPropCache.useRef)(
-    input.onWritten,
+  onAdoptedRef.current = hookOptions.onAdopted;
+  let onWrittenRef: Dynamic = (0, reactComponentsPropCache.useRef)(
+    hookOptions.onWritten,
   );
-  value30.current = input.onWritten;
-  let value31: Dynamic = (0,
+  onWrittenRef.current = hookOptions.onWritten;
+  let saveAsDefaults: Dynamic = (0,
     reactComponentsPropCache
       .useCallback)(async (): Promise<Dynamic> => {
-      let { projectPath: current, filePath: current2 }: Dynamic =
-        value21.current;
-      if (!current || !current2) return;
-      value22.current = true;
-      value16(true);
-      let value33: Dynamic;
+      let { projectPath: currentProject, filePath: currentFile }: Dynamic =
+        locationRef.current;
+      if (!currentProject || !currentFile) return;
+      isSavingRef.current = true;
+      setIsSaving(true);
+      let undoWriteEcho: Dynamic;
       try {
-        let value34: Dynamic = `${current}/${current2}`,
-          value35: Dynamic = projectFilesystem.readFileWithVersion
-            ? await projectFilesystem.readFileWithVersion(value34)
+        let fullPath: Dynamic = `${currentProject}/${currentFile}`,
+          fileRead: Dynamic = projectFilesystem.readFileWithVersion
+            ? await projectFilesystem.readFileWithVersion(fullPath)
             : {
-                content: await projectFilesystem.readFile(value34),
+                content: await projectFilesystem.readFile(fullPath),
                 version: undefined,
               },
-          content: Dynamic = value35.content,
-          value36: Dynamic = getDcPropsJson(content);
-        if (value36 == null) {
+          content: Dynamic = fileRead.content,
+          propsJson: Dynamic = getDcPropsJson(content);
+        if (propsJson == null) {
           console.error(
             "[dc-props] could not read data-props from",
-            current2,
+            currentFile,
           );
           return;
         }
-        let value37: Dynamic;
+        let parsedProps: Dynamic;
         try {
-          value37 = JSON.parse(value36);
+          parsedProps = JSON.parse(propsJson);
         } catch {
           console.error(
             "[dc-props] data-props is not valid JSON in",
-            current2,
+            currentFile,
           );
           return;
         }
         if (
-          value37 == null ||
-          typeof value37 != "object" ||
-          Array.isArray(value37)
+          parsedProps == null ||
+          typeof parsedProps != "object" ||
+          Array.isArray(parsedProps)
         ) {
           console.error(
             "[dc-props] data-props is not an object in",
-            current2,
+            currentFile,
           );
           return;
         }
-        let value38: Dynamic = value37,
-          current3: Dynamic = value8.current,
+        let nextProps: Dynamic = parsedProps,
+          propsMetaSnapshot: Dynamic = propsMetaRef.current,
           state: Dynamic = {
-            ...value20.current,
+            ...draftValuesRef.current,
           };
-        for (let [value40, value41] of Object.entries(state) as Dynamic) {
-          if (!(value40 in current3)) continue;
-          let value42: Dynamic = value38[value40] ?? current3[value40],
-            value43: Dynamic =
-              value42 && typeof value42 == "object" && !Array.isArray(value42)
-                ? value42
+        for (let [propName, draftValue] of Object.entries(state) as Dynamic) {
+          if (!(propName in propsMetaSnapshot)) continue;
+          let baseMeta: Dynamic = nextProps[propName] ?? propsMetaSnapshot[propName],
+            metaRecord: Dynamic =
+              baseMeta && typeof baseMeta == "object" && !Array.isArray(baseMeta)
+                ? baseMeta
                 : {};
-          value38[value40] = {
-            ...value43,
-            default: value41,
+          nextProps[propName] = {
+            ...metaRecord,
+            default: draftValue,
           };
         }
-        let value39: Dynamic = setDcPropsJson(
+        let newContent: Dynamic = setDcPropsJson(
           content,
-          JSON.stringify(value38),
+          JSON.stringify(nextProps),
         );
-        if (value39 == null) {
+        if (newContent == null) {
           console.error(
             "[dc-props] could not splice data-props in",
-            current2,
+            currentFile,
           );
           return;
         }
-        value35.version !== undefined &&
-          !value35.isBase64 &&
-          value29.current?.(current2, value35.version, content);
-        value33 = value30.current?.(current2, value39);
-        await projectFilesystem.writeFile(value34, value39);
-        value33 = undefined;
-        markLocalFileChange(current, current2);
-        let state2: Dynamic = {};
-        for (let [value40, value41] of Object.entries(state) as Dynamic)
-          value40 in current3 && (state2[value40] = value41);
-        adoptComponentPropDefaults(current, current2, state2);
-        value21.current.projectPath === current &&
-          value21.current.filePath === current2 &&
-          ((value8.current = applyComponentPropDefaults(
-            value8.current,
+        fileRead.version !== undefined &&
+          !fileRead.isBase64 &&
+          onAdoptedRef.current?.(currentFile, fileRead.version, content);
+        undoWriteEcho = onWrittenRef.current?.(currentFile, newContent);
+        await projectFilesystem.writeFile(fullPath, newContent);
+        undoWriteEcho = undefined;
+        markLocalFileChange(currentProject, currentFile);
+        let knownDefaults: Dynamic = {};
+        for (let [propName, draftValue] of Object.entries(state) as Dynamic)
+          propName in propsMetaSnapshot && (knownDefaults[propName] = draftValue);
+        adoptComponentPropDefaults(currentProject, currentFile, knownDefaults);
+        locationRef.current.projectPath === currentProject &&
+          locationRef.current.filePath === currentFile &&
+          ((propsMetaRef.current = applyComponentPropDefaults(
+            propsMetaRef.current,
             state,
           )),
-          value7(
-            (input2?: Dynamic): Dynamic =>
-              applyComponentPropDefaults(input2, state),
+          setPropsMeta(
+            (previousMeta?: Dynamic): Dynamic =>
+              applyComponentPropDefaults(previousMeta, state),
           ),
-          value14(
-            (input2?: Dynamic): Dynamic =>
-              omitUnchangedProps(input2, state2),
+          setDraftValues(
+            (previousDrafts?: Dynamic): Dynamic =>
+              omitUnchangedProps(previousDrafts, knownDefaults),
           ));
-      } catch (value34: Dynamic) {
-        value33?.();
-        console.error("[dc-props] save as defaults failed:", value34);
+      } catch (error: Dynamic) {
+        undoWriteEcho?.();
+        console.error("[dc-props] save as defaults failed:", error);
       } finally {
-        value22.current = false;
-        value16(false);
+        isSavingRef.current = false;
+        setIsSaving(false);
       }
     }, []),
-    value32: Dynamic = (0, reactComponentsPropCache.useCallback)(
-      (input2?: Dynamic): Dynamic => {
-        let current: Dynamic = value8.current,
-          value33: Dynamic = normalizePropValues(input2),
+    adoptSavedDefaults: Dynamic = (0, reactComponentsPropCache.useCallback)(
+      (savedValues?: Dynamic): Dynamic => {
+        let propsMetaSnapshot: Dynamic = propsMetaRef.current,
+          normalizedValues: Dynamic = normalizePropValues(savedValues),
           state: Dynamic = {};
-        for (let [value34, value35] of Object.entries(value33) as Dynamic)
-          Object.hasOwn(current, value34) && (state[value34] = value35);
+        for (let [propName, propValue] of Object.entries(normalizedValues) as Dynamic)
+          Object.hasOwn(propsMetaSnapshot, propName) && (state[propName] = propValue);
         if (Object.keys(state).length === 0) return;
-        let { projectPath: current2, filePath: current3 }: Dynamic =
-          value21.current;
-        current2 &&
-          current3 &&
-          adoptComponentPropDefaults(current2, current3, state);
-        value8.current = applyComponentPropDefaults(
-          value8.current,
+        let { projectPath: currentProject, filePath: currentFile }: Dynamic =
+          locationRef.current;
+        currentProject &&
+          currentFile &&
+          adoptComponentPropDefaults(currentProject, currentFile, state);
+        propsMetaRef.current = applyComponentPropDefaults(
+          propsMetaRef.current,
           state,
         );
-        value7(
-          (input3?: Dynamic): Dynamic =>
-            applyComponentPropDefaults(input3, state),
+        setPropsMeta(
+          (previousMeta?: Dynamic): Dynamic =>
+            applyComponentPropDefaults(previousMeta, state),
         );
-        value14(
-          (input3?: Dynamic): Dynamic =>
-            omitUnchangedProps(input3, state),
+        setDraftValues(
+          (previousDrafts?: Dynamic): Dynamic =>
+            omitUnchangedProps(previousDrafts, state),
         );
       },
       [],
     );
-  return value5
+  return enabled
     ? {
-        booted: value11 > 0,
-        hasProps: value27,
+        booted: bootCount > 0,
+        hasProps: hasProps,
         lifecycleCallbacks: {
-          onDcBooted: value19,
+          onDcBooted: handleDcBooted,
         },
-        propsMeta: value6,
-        values: value13,
-        setProp: value25,
-        reset: value26,
-        dirty: value28,
-        saveAsDefaults: value31,
-        adoptSavedDefaults: value32,
-        saving: value15,
-        isSaving: value23,
-        currentDefault: value24,
+        propsMeta: propsMeta,
+        values: draftValues,
+        setProp: setProp,
+        reset: resetProps,
+        dirty: isDirty,
+        saveAsDefaults: saveAsDefaults,
+        adoptSavedDefaults: adoptSavedDefaults,
+        saving: isSaving,
+        isSaving: readIsSaving,
+        currentDefault: readCurrentDefault,
       }
     : emptyDcPropsState;
 }

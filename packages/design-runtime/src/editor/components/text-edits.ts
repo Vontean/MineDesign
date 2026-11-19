@@ -37,11 +37,11 @@ export function collectTemplateTextValues(
 ): Set<string> {
   const texts = new Set<string>();
   let budget = 5e3;
-  const visit = (value: unknown, depth: number): void => {
-    if (typeof value == "string") texts.add(normalizeTextWords(value));
-    else if (typeof value == "number" && Number.isFinite(value)) texts.add(String(value));
-    else if (value != null && typeof value == "object" && depth < 6 && --budget > 0)
-      for (const child of Object.values(value)) visit(child, depth + 1);
+  const visit = (candidate: unknown, depth: number): void => {
+    if (typeof candidate == "string") texts.add(normalizeTextWords(candidate));
+    else if (typeof candidate == "number" && Number.isFinite(candidate)) texts.add(String(candidate));
+    else if (candidate != null && typeof candidate == "object" && depth < 6 && --budget > 0)
+      for (const child of Object.values(candidate)) visit(child, depth + 1);
   };
   for (const token of scriptTokens) visit(token.value, 0);
   visit(props.values, 0);
@@ -82,7 +82,7 @@ export function componentTextOptions(
   const record = (words: string, key: string | null): void => {
     if (words !== "") keysByWords.set(words, keysByWords.has(words) ? null : key);
   };
-  const scan = (key: string | null, text: string, context: "own" | "deep" | "handler" | "attr"): void => {
+  const scan = (key: string | null, text: string, origin: "own" | "deep" | "handler" | "attr"): void => {
     const literal = literalExpressionPattern.exec(text);
     if (literal) {
       const bare = literal[1];
@@ -97,9 +97,9 @@ export function componentTextOptions(
       const words = normalizeTextWords(text);
       return record(words, words.length > maxTextEditLength ? null : key);
     }
-    if (context !== "handler") hasDynamicText = true;
+    if (origin !== "handler") hasDynamicText = true;
     const parts = text.split(/\{\{[^{}]*\}\}/);
-    if (context === "deep") for (const part of parts) record(normalizeTextWords(part), null);
+    if (origin === "deep") for (const part of parts) record(normalizeTextWords(part), null);
     else if (parts.length > 2 || parts.some((part) => /[^\s{}]/.test(part))) hasMixedTemplate = true;
   };
   scan(source.text != null ? "__text" : null, source.ownText, "own");
@@ -140,14 +140,14 @@ export type ComponentTextEditResult =
 export function normalizeComponentTextEdit(
   edit: { key?: unknown; words?: unknown } | null | undefined,
   nextText: unknown,
-  options: ComponentTextOption[],
+  textOptions: ComponentTextOption[],
 ): ComponentTextEditResult {
   if (edit == null || typeof edit != "object") return { kind: "drop" };
   const key = edit.key;
   const words = edit.words;
   if (typeof key != "string" || typeof words != "string" || typeof nextText != "string")
     return { kind: "drop" };
-  if (!options.some((option) => option.key === key && option.words === words))
+  if (!textOptions.some((option) => option.key === key && option.words === words))
     return { kind: "refuse" };
   if (nextText.length > maxTextPropLength) return { kind: "toolong" };
   const text = normalizeTextWhitespace(nextText);
