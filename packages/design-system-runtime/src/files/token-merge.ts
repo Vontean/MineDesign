@@ -12,8 +12,8 @@ import { parseTokens, serializeTokens } from "../model/tokens";
 /** 数组元素用哪个字段识别身份，按这个顺序取第一个在所有版本里都唯一的字符串字段 */
 export const MERGE_ARRAY_ID_FIELDS = ["id", "name", "key", "file"];
 
-export function isPlainMergeRecord(value: unknown): value is JsonRecord {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
+export function isPlainMergeRecord(candidate: unknown): candidate is JsonRecord {
+  return typeof candidate === "object" && candidate !== null && !Array.isArray(candidate);
 }
 
 /** 按序列化结果比较，键序不同视为不同 */
@@ -24,8 +24,8 @@ export function serializedValuesEqual(
   return JSON.stringify(first) === JSON.stringify(second);
 }
 
-export function cloneJsonValue<T extends JsonMergeValue>(value: T): T {
-  return value === undefined ? value : JSON.parse(JSON.stringify(value));
+export function cloneJsonValue<T extends JsonMergeValue>(mergeValue: T): T {
+  return mergeValue === undefined ? mergeValue : JSON.parse(JSON.stringify(mergeValue));
 }
 
 export function isTokenFilePath(path: string): boolean {
@@ -35,7 +35,7 @@ export function isTokenFilePath(path: string): boolean {
 /** 各版本的数组都是记录、且某个字段在每个数组里都是不重复的字符串时，返回该字段名 */
 export function mergeArrayIdentityField(...arrays: JsonMergeValue[]) {
   const presentArrays = arrays.filter(
-    (value: JsonMergeValue): value is JsonValue[] => Array.isArray(value),
+    (candidate: JsonMergeValue): candidate is JsonValue[] => Array.isArray(candidate),
   );
   if (
     presentArrays.length === 0 ||

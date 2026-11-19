@@ -140,14 +140,14 @@ async function legacyStoreSnapshotToFiles(
       storeDocumentDataMap(snapshot),
     ),
     remoteText = new Map<string, string>();
-  for (let [value, value2] of state.remoteText) {
+  for (let [value, remoteFile] of state.remoteText) {
     remoteText.set(
       value,
       new TextDecoder().decode(
         await readMigrationBlob(
           fetchBlob,
-          blobIdFromReference(value2.dataRef),
-          typeof value2.dataBytes === "number" ? value2.dataBytes : undefined,
+          blobIdFromReference(remoteFile.dataRef),
+          typeof remoteFile.dataBytes === "number" ? remoteFile.dataBytes : undefined,
         ),
       ),
     );
@@ -190,16 +190,16 @@ async function materializeMigrationBlobFiles(
   let manifest = storageCatalogFromManifest(
     files[DESIGN_SYSTEM_PATHS.manifest] ?? "",
   );
-  for (let { path: value, id: value2 } of blobFilesOwedToFileStorage(files)) {
-    let value3 = await readMigrationBlob(
+  for (let { path: value, id: blobId } of blobFilesOwedToFileStorage(files)) {
+    let blobData = await readMigrationBlob(
       fetchBlob,
-      value2,
+      blobId,
       manifest.files[value]?.bytes,
     );
     files[value] = isTextFilePath(value)
-      ? new TextDecoder().decode(value3)
+      ? new TextDecoder().decode(blobData)
       : bytesToFileDataUri(
-          value3,
+          blobData,
           publishableFileMimeType(value) ??
             "application/octet-stream",
         );
@@ -212,26 +212,26 @@ function designSystemFilesMigrationTree(
 ) {
   lastUnpublishableMigrationPaths = filesLeftOutOfMigration(
     system.files,
-  ).map((input) => input.path);
+  ).map((fileEntry) => fileEntry.path);
   if (lastUnpublishableMigrationPaths.length > 0) {
     throw new DesignSystemMigrationError("unpublishable_file");
   }
   let files = new Map<string, Model.FilePublishInput>(),
     sources = new Map<string, string[]>();
-  for (let [value, value2] of publishableProjectFiles(
+  for (let [value, fileText] of publishableProjectFiles(
     system.files,
   )) {
-    files.set(value, migrationPublishInput(value, value2));
+    files.set(value, migrationPublishInput(value, fileText));
     sources.set(
       value,
       sourcesFor(relativeProjectFilePath(value)!),
     );
   }
-  for (let [value, value2] of validDerivedProjectFiles(
+  for (let [value, derivedText] of validDerivedProjectFiles(
     system.files,
   )) {
     files.set(value, {
-      content: value2,
+      content: derivedText,
       contentType:
         publishableFileMimeType(
           relativeProjectFilePath(value),
@@ -270,18 +270,18 @@ function trackMigrationDownloadFailures(files: Model.BrowserFilesPort) {
   let refusedDownloads: string[] = [],
     instrumented: Model.BrowserFilesPort = Object.create(files);
   instrumented.publish = async (
-    input: Model.FilePublishEntries,
-    options?: Model.FilePublishPreconditions,
+    publishEntries: Model.FilePublishEntries,
+    preconditions?: Model.FilePublishPreconditions,
   ): Promise<Model.FilePublishResult> => {
-    let value = await files.publish(input, options);
+    let value = await files.publish(publishEntries, preconditions);
     if (!value.ok && value.code === "invalid_content") {
-      refusedDownloads = Object.entries(input)
-        .filter(([, input2]) =>
-          isDownloadOnlyPublishInput(input2),
+      refusedDownloads = Object.entries(publishEntries)
+        .filter(([, publishInput]) =>
+          isDownloadOnlyPublishInput(publishInput),
         )
         .map(
-          ([input2]) =>
-            relativeProjectFilePath(input2) ?? input2,
+          ([filePath]) =>
+            relativeProjectFilePath(filePath) ?? filePath,
         );
     }
     return value;
@@ -309,27 +309,27 @@ function migrationIndexSourceDocuments(
     ...(index.upgraded !== undefined
       ? [SYSTEM_UPGRADED_DOCUMENT_PATH]
       : []),
-  ].filter((input) => snapshot.has(input));
+  ].filter((filePath) => snapshot.has(filePath));
 }
 function createDesignSystemMigrationCodec(
   fetchBlob: Migration.FetchMigrationBlob,
 ): Migration.MigrationCodec {
   return {
     async toTree(
-      input: Migration.StoreSnapshot,
+      snapshot: Migration.StoreSnapshot,
     ): Promise<Migration.MigrationTree> {
       let value = designSystemFilesMigrationTree(
-        await legacyStoreSnapshotToFiles(input, fetchBlob),
-        (input2) => migrationFileSourceDocuments(input2, input),
+        await legacyStoreSnapshotToFiles(snapshot, fetchBlob),
+        (filePath) => migrationFileSourceDocuments(filePath, snapshot),
       );
       return {
         ...value,
-        indexSources: migrationIndexSourceDocuments(value.index, input),
+        indexSources: migrationIndexSourceDocuments(value.index, snapshot),
       };
     },
     serializeIndex: serializeMigrationIndex,
-    fold: (input) =>
-      foldLegacyStoreChangesIntoFiles(input, fetchBlob),
+    fold: (change) =>
+      foldLegacyStoreChangesIntoFiles(change, fetchBlob),
   };
 }
 export {
@@ -413,41 +413,41 @@ export function installFilesMigrationCodec(): () => void {
       Error
     ) {
       code: string;
-      constructor(input: string) {
-        super(input);
-        this.code = input;
+      constructor(message: string) {
+        super(message);
+        this.code = message;
       }
     };
     storeDocumentDataMap = (snapshot) =>
-      new Map([...snapshot].map(([input, input2]) => [input, input2.data]));
-    finalizeMigrationFiles = (input, options) => {
-      input[DESIGN_SYSTEM_PATHS.manifest] = stringifyManifestWithinBudget(
+      new Map([...snapshot].map(([filePath, fileEntry]) => [filePath, fileEntry.data]));
+    finalizeMigrationFiles = (files, migrationOptions) => {
+      files[DESIGN_SYSTEM_PATHS.manifest] = stringifyManifestWithinBudget(
         buildDesignSystemManifest(
           parsedDesignSystem({
             v: 2,
             files: {
-              ...input,
+              ...files,
             },
           }),
-          options,
+          migrationOptions,
         ),
       );
       return Object.freeze(
         Object.fromEntries(
-          Object.keys(input)
+          Object.keys(files)
             .sort()
-            .map((input2) => [input2, input[input2]]),
+            .map((filePath) => [filePath, files[filePath]]),
         ),
       );
     };
     lastUnpublishableMigrationPaths = [];
-    migrationFileSourceDocuments = (input, options) => {
+    migrationFileSourceDocuments = (filePath, documentPaths) => {
       let value =
-        input === DESIGN_SYSTEM_PATHS.tokens &&
-        !options.has(SYSTEM_TOKENS_DOCUMENT_PATH)
+        filePath === DESIGN_SYSTEM_PATHS.tokens &&
+        !documentPaths.has(SYSTEM_TOKENS_DOCUMENT_PATH)
           ? RAW_TOKENS_DOCUMENT_PATH
-          : documentPathForFile(input);
-      if (options.has(value)) {
+          : documentPathForFile(filePath);
+      if (documentPaths.has(value)) {
         return [value];
       } else {
         return [];

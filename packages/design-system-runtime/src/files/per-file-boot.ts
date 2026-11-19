@@ -88,30 +88,30 @@ async function bootPerFileDesignSystem(
   } catch {}
   let files = createBrowserFilesPort({
       canWrite: access.canWrite,
-      fetch: (input) =>
-        fetch(input, {
+      fetch: (url) =>
+        fetch(url, {
           credentials: "same-origin",
           signal: AbortSignal.timeout(
             FILES_DOCUMENT_FETCH_TIMEOUT_MS,
           ),
         }),
-      fetchFresh: (input) =>
-        fetch(input, {
+      fetchFresh: (url) =>
+        fetch(url, {
           credentials: "same-origin",
           cache: "no-store",
           signal: AbortSignal.timeout(
             FILES_DOCUMENT_FETCH_TIMEOUT_MS,
           ),
         }),
-      onRead: (input, options, context, value) =>
+      onRead: (filePath, fileContent, fileSha, baseSha) =>
         designSystemFilesDebugger?.read(
-          input,
-          options,
-          context,
-          value,
+          filePath,
+          fileContent,
+          fileSha,
+          baseSha,
         ),
-      onPublishError: (input) =>
-        designSystemFilesDebugger?.event("publish-raw-error", input),
+      onPublishError: (error) =>
+        designSystemFilesDebugger?.event("publish-raw-error", error),
     }),
     instrumentedFiles =
       designSystemFilesDebugger !== undefined
@@ -125,7 +125,7 @@ async function bootPerFileDesignSystem(
     String(access.canWrite),
   );
   setFileSystemDocumentFactory(
-    (options: Host.ArtifactParser<Model.DesignSystemContent>) => {
+    (parserOptions: Host.ArtifactParser<Model.DesignSystemContent>) => {
       let value: Docs.DesignSystemFilesDocument = createDesignSystemFilesDocument({
         port: instrumentedFiles,
         indexPath: indexPath,
@@ -134,9 +134,9 @@ async function bootPerFileDesignSystem(
               startWhenNoIndex: () => emptyIndex,
             }
           : {}),
-        parseContent: options.parseContent,
-        initialContent: options.initialContent,
-        defaultTitle: document.title || options.defaultTitle,
+        parseContent: parserOptions.parseContent,
+        initialContent: parserOptions.initialContent,
+        defaultTitle: document.title || parserOptions.defaultTitle,
         ...(readOnlyReason !== undefined
           ? {
               readOnlyReason: readOnlyReason,
@@ -147,15 +147,15 @@ async function bootPerFileDesignSystem(
               }
             : {}),
         lazy: !access.canWrite,
-        onNotice: (input: string): void => {
+        onNotice: (message: string): void => {
           designSystemFilesDebugger?.event("notice", {
-            text: input,
+            text: message,
           });
-          showEditorPromiseNotification(input, null);
+          showEditorPromiseNotification(message, null);
         },
         generated: true,
-        onEvent: (input: string, options2: unknown) =>
-          designSystemFilesDebugger?.event("ds-" + input, options2),
+        onEvent: (eventType: string, eventData: unknown) =>
+          designSystemFilesDebugger?.event("ds-" + eventType, eventData),
         reveal: designSystemFirstPaint,
         ...(stash !== null
           ? {
@@ -164,26 +164,26 @@ async function bootPerFileDesignSystem(
           : {}),
         stashKey: designSystemCarryKey(viewerId),
         paced: true,
-        onHotEvent: (input: FilesCore.FilesHotEvent): void => {
-          designSystemFilesDebugger?.hotEvent(input);
-          if (input.type === "applied") {
+        onHotEvent: (hotEvent: FilesCore.FilesHotEvent): void => {
+          designSystemFilesDebugger?.hotEvent(hotEvent);
+          if (hotEvent.type === "applied") {
             afterTwoAnimationFrames(() =>
               designSystemFilesDebugger?.visible(
-                input.to!,
+                hotEvent.to!,
                 "adopted",
               ),
             );
           }
         },
-        onBeforeRestart: (input: string) =>
-          designSystemFilesDebugger?.beforeRestart(input),
+        onBeforeRestart: (reason: string) =>
+          designSystemFilesDebugger?.beforeRestart(reason),
       });
       installFilesSaveLifecycle(value.queue());
-      monitorSyncLoadHealth(value, (input: Boot.HealthReport) =>
-        artifactHealth.report(...input),
+      monitorSyncLoadHealth(value, (healthReport: Boot.HealthReport) =>
+        artifactHealth.report(...healthReport),
       );
-      monitorSyncSaveHealth(value, (input: Boot.HealthReport) =>
-        artifactHealth.report(...input),
+      monitorSyncSaveHealth(value, (healthReport: Boot.HealthReport) =>
+        artifactHealth.report(...healthReport),
       );
       observeDocumentThumbnailReadiness(value);
       provideDesignSystemFilesDebugState(value, files, indexPath);
@@ -192,35 +192,35 @@ async function bootPerFileDesignSystem(
         if (value.loadState() !== "live" || value.readOnly()) {
           return;
         }
-        let files2 = value.content().files,
-          value2 = filesLeftOutOfMigration(files2).filter(
-            (input: { path: string }) =>
-              !values.has(input.path) &&
+        let currentFiles = value.content().files,
+          unpublishablePaths = filesLeftOutOfMigration(currentFiles).filter(
+            (fileEntry: { path: string }) =>
+              !values.has(fileEntry.path) &&
               !isRepairableDamagedText(
-                input.path,
-                files2[input.path] ?? "",
+                fileEntry.path,
+                currentFiles[fileEntry.path] ?? "",
               ) &&
               !isUnsupportedBinaryFile(
-                input.path,
-                files2[input.path] ?? "",
+                fileEntry.path,
+                currentFiles[fileEntry.path] ?? "",
               ) &&
               !isHeldFilePointer(
-                input.path,
-                files2[input.path] ?? "",
+                fileEntry.path,
+                currentFiles[fileEntry.path] ?? "",
               ),
           );
-        for (let value3 of value2) {
-          values.add(value3.path);
+        for (let fileEntry of unpublishablePaths) {
+          values.add(fileEntry.path);
         }
-        if (value2.length > 0) {
+        if (unpublishablePaths.length > 0) {
           showEditorPromiseNotification(
-            (value2.length === 1
-              ? '"' + value2[0].path + '"'
-              : String(value2.length) + " files") +
+            (unpublishablePaths.length === 1
+              ? '"' + unpublishablePaths[0].path + '"'
+              : String(unpublishablePaths.length) + " files") +
               " can’t be saved here. Give " +
-              (value2.length === 1 ? uiMessage("design-system.perFileBoot.itAnotherName") : uiMessage("design-system.perFileBoot.themOtherNames")) +
+              (unpublishablePaths.length === 1 ? uiMessage("design-system.perFileBoot.itAnotherName") : uiMessage("design-system.perFileBoot.themOtherNames")) +
               " without % ; : ? or #, or add " +
-              (value2.length === 1 ? "it" : "them") +
+              (unpublishablePaths.length === 1 ? "it" : "them") +
               " again.",
             null,
           );
@@ -232,18 +232,18 @@ async function bootPerFileDesignSystem(
         }
         let entry = value.index().get();
         updateStoredSystemMigrationFlags(entry);
-        let value2 = editingOffTransition({
+        let editingState = editingOffTransition({
           offAtBoot: readOnlyReason === get_MIGRATED_READONLY_MESSAGE(),
           canWrite: access.canWrite,
           offNow: isSystemEditingDisabled(entry),
         });
-        if (value2 === "on") {
+        if (editingState === "on") {
           reportMigrationAnalytics(
             MIGRATION_ANALYTICS_EVENTS.editingCameOn,
           );
         }
-        if (value2 !== null) {
-          reopenForEditingTransition(value2);
+        if (editingState !== null) {
+          reopenForEditingTransition(editingState);
         }
       };
       value.subscribe(callback);
@@ -273,9 +273,9 @@ async function bootPerFileDesignSystem(
         .whenLive()
         .then((): void => {
           callback();
-          let value2 = value.subscribe((): void => {
+          let unsubscribe = value.subscribe((): void => {
             if (value.personChanged()) {
-              value2();
+              unsubscribe();
               value.materializeOwed().catch((): void => {
                 return;
               });
@@ -283,11 +283,11 @@ async function bootPerFileDesignSystem(
           });
         })
         .then((): void => {
-          let value2: boolean =
+          let wasWriteBlocked: boolean =
               readTreeIndex(outcome.state)?.convertedFrom
                 ?.home === "file",
-            value3 = access.canWrite && !value.readOnly();
-          if (storeHandle !== null && value3 && !value2) {
+            canWrite = access.canWrite && !value.readOnly();
+          if (storeHandle !== null && canWrite && !wasWriteBlocked) {
             watchLegacyStoreChanges(
               storeHandle,
               files,
@@ -296,14 +296,14 @@ async function bootPerFileDesignSystem(
               indexPath,
             );
           }
-          if (storeHandle !== null && access.canWrite && value2) {
+          if (storeHandle !== null && access.canWrite && wasWriteBlocked) {
             createLegacyDatabasePort(storeHandle)
               .get(SYSTEM_META_DOCUMENT_PATH)
               .then(
-                (input: Model.FilesMigrationStoreDocument | null): void => {
+                (migrationStore: Model.FilesMigrationStoreDocument | null): void => {
                   if (
                     legacyStoreChangedAfterMigration(
-                      input?.data,
+                      migrationStore?.data,
                       readTreeIndex(outcome.state),
                     )
                   ) {
@@ -349,7 +349,7 @@ function legacyStoreChangedAfterMigration(
 function watchLegacyStoreChanges(
   storeHandle: Boot.NativeLegacyDatabase,
   files: Model.BrowserFilesPort,
-  document2: Docs.DesignSystemFilesDocument,
+  document: Docs.DesignSystemFilesDocument,
   bootIndex: Model.FilesIndex | undefined,
   indexPath: string = FILES_INDEX_PROJECT_PATH,
 ): void {
@@ -366,13 +366,13 @@ function watchLegacyStoreChanges(
     holder: migrationTabHolder(),
     timers: designSystemMigrationTimers,
     artifactId: location.host,
-    onFolded: (input: Model.FileRemoteChange) =>
-      void document2.applyRemote(input).catch((): void => {
+    onFolded: (remoteChange: Model.FileRemoteChange) =>
+      void document.applyRemote(remoteChange).catch((): void => {
         return;
       }),
-    onOutcome: (input: Boot.MigrationOutcome): void => {
-      reportMigrationFailure(input);
-      if (input.result === "folded") {
+    onOutcome: (outcome: Boot.MigrationOutcome): void => {
+      reportMigrationFailure(outcome);
+      if (outcome.result === "folded") {
         let value = takeStoreFoldSummary(),
           items = [
             ...(value.came ? [uiMessage("design-system.perFileBoot.changesMadeToThisDesign")] : []),
@@ -385,21 +385,21 @@ function watchLegacyStoreChanges(
         }
         if (value.came) {
           setTimeout((): void => {
-            document2.regenerate();
-            document2.flushNow();
+            document.regenerate();
+            document.flushNow();
           }, 2000);
         }
       }
       if (
-        input.result === "skipped" &&
-        input.reason === "no_record" &&
+        outcome.result === "skipped" &&
+        outcome.reason === "no_record" &&
         !warned
       ) {
         store
           .get(SYSTEM_META_DOCUMENT_PATH)
-          .then((input2: Model.FilesMigrationStoreDocument | null): void => {
+          .then((migrationStore: Model.FilesMigrationStoreDocument | null): void => {
             if (
-              legacyStoreChangedAfterMigration(input2?.data, bootIndex) &&
+              legacyStoreChangedAfterMigration(migrationStore?.data, bootIndex) &&
               !warned
             ) {
               warned = true;
@@ -421,9 +421,9 @@ function storeFoldKeptFilesMessage(
 ): string {
   let describeFiles = (items: readonly Boot.FoldKeptFile[]) =>
       items.length === 1 ? items[0].path : String(items.length) + " files",
-    changed = kept.filter((input): boolean => input.why === "changed"),
-    gone = kept.filter((input): boolean => input.why === "gone"),
-    cannot = kept.filter((input): boolean => input.why === "cannot");
+    changed = kept.filter((entry): boolean => entry.why === "changed"),
+    gone = kept.filter((entry): boolean => entry.why === "gone"),
+    cannot = kept.filter((entry): boolean => entry.why === "cannot");
   return [
     ...(changed.length > 0
       ? [
@@ -454,15 +454,15 @@ function storeFoldKeptFilesMessage(
       : []),
   ].join(" ");
 }
-function afterTwoAnimationFrames(callback: () => void): void {
+function afterTwoAnimationFrames(animationCallback: () => void): void {
   if (typeof requestAnimationFrame !== "function") {
-    setTimeout(callback, 32);
+    setTimeout(animationCallback, 32);
     return;
   }
-  requestAnimationFrame(() => requestAnimationFrame(callback));
+  requestAnimationFrame(() => requestAnimationFrame(animationCallback));
 }
 function provideDesignSystemFilesDebugState(
-  document2: Docs.DesignSystemFilesDocument,
+  document: Docs.DesignSystemFilesDocument,
   files: Model.BrowserFilesPort,
   indexPath: string = FILES_INDEX_PROJECT_PATH,
 ): void {
@@ -473,43 +473,43 @@ function provideDesignSystemFilesDebugState(
   designSystemFilesDebugger.provide({
     files: () => {
       let items = [],
-        files2 = document2.content().files,
+        currentFiles = document.content().files,
         value: Map<string, string> =
           extensions.knownListing?.() ?? new Map<string, string>(),
-        value2 = document2.flagged(),
-        value3 = document2.held();
+        flaggedPaths = document.flagged(),
+        heldPaths = document.held();
       items.push({
         path: indexPath,
-        sha: document2.index().baseSha(),
+        sha: document.index().baseSha(),
         liveSha: extensions.liveSha?.(indexPath) ?? null,
-        state: document2.index().dirty() ? "changed here" : "",
+        state: document.index().dirty() ? "changed here" : "",
       });
-      for (let value4 of Object.keys(files2).sort()) {
-        let value5 = projectFilePath(value4);
-        if (!value.has(value5) && !value2.has(value4)) {
+      for (let filePath of Object.keys(currentFiles).sort()) {
+        let absolutePath = projectFilePath(filePath);
+        if (!value.has(absolutePath) && !flaggedPaths.has(filePath)) {
           continue;
         }
         items.push({
-          path: value5,
-          sha: extensions.heldSha?.(value5) ?? null,
-          liveSha: extensions.liveSha?.(value5) ?? null,
-          size: files2[value4].length,
+          path: absolutePath,
+          sha: extensions.heldSha?.(absolutePath) ?? null,
+          liveSha: extensions.liveSha?.(absolutePath) ?? null,
+          size: currentFiles[filePath].length,
           state: [
-            value2.has(value4)
-              ? "FLAGGED (" + (document2.flags().get(value4)?.why ?? "") + ")"
+            flaggedPaths.has(filePath)
+              ? "FLAGGED (" + (document.flags().get(filePath)?.why ?? "") + ")"
               : "",
-            value3.has(value5) ? "theirs held" : "",
+            heldPaths.has(absolutePath) ? "theirs held" : "",
           ]
             .filter(Boolean)
             .join(" "),
         });
       }
-      for (let [value4, value5] of value) {
-        if (isDerivedProjectPath(value4)) {
+      for (let [filePath, sha] of value) {
+        if (isDerivedProjectPath(filePath)) {
           items.push({
-            path: value4,
-            sha: value5,
-            liveSha: extensions.liveSha?.(value4) ?? null,
+            path: filePath,
+            sha: sha,
+            liveSha: extensions.liveSha?.(filePath) ?? null,
             state: "generated",
           });
         }
@@ -517,17 +517,17 @@ function provideDesignSystemFilesDebugState(
       return items;
     },
     queue: () => {
-      let value = document2.queue(),
-        value2 = value.state();
+      let value = document.queue(),
+        queueState = value.state();
       return {
-        dirty: value2.dirty > 0 ? [String(value2.dirty) + " path(s)"] : [],
-        inFlight: value2.inFlight,
-        ...(value2.lastError !== undefined
+        dirty: queueState.dirty > 0 ? [String(queueState.dirty) + " path(s)"] : [],
+        inFlight: queueState.inFlight,
+        ...(queueState.lastError !== undefined
           ? {
-              lastError: value2.lastError,
+              lastError: queueState.lastError,
             }
           : {}),
-        conflicted: [...document2.flagged()].map(projectFilePath),
+        conflicted: [...document.flagged()].map(projectFilePath),
         note:
           "a flagged file is kept out of the queue until the person chooses; withdrawn: " +
           ([...value.withdrawn()].join(", ") || "none"),

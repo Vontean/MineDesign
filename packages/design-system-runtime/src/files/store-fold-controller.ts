@@ -13,30 +13,30 @@ var STORE_FOLD_RETRY_DELAY_MS: number;
 var STORE_FOLD_MAX_RETRIES: number;
 function createStoreToFilesFoldController<
   Index extends object = Migration.MigrationWireIndex,
->(options: Migration.StoreFoldOptions<Index>): Migration.StoreFoldController {
+>(foldOptions: Migration.StoreFoldOptions<Index>): Migration.StoreFoldController {
   let {
       adapter: adapter,
       files: files,
       store: store,
       timers: timers,
-    } = options,
+    } = foldOptions,
     inFlight: Promise<Migration.FoldOutcome> | undefined,
     checkOwed: boolean = false,
     lastPublishAt = -1 / 0,
-    readFileText = async (input: string): Promise<string | null> => {
+    readFileText = async (path: string): Promise<string | null> => {
       try {
-        return (await files.readText(input)).text;
+        return (await files.readText(path)).text;
       } catch {
         return null;
       }
     },
     readFileState = async (
-      input: string,
+      path: string,
     ): Promise<Migration.FileReadState> => {
       try {
         if (
           !(await listWritableFiles(files)).some(
-            (input2): boolean => input2.path === input,
+            (entry): boolean => entry.path === path,
           )
         ) {
           return {
@@ -45,7 +45,7 @@ function createStoreToFilesFoldController<
         }
         return {
           state: "text",
-          text: (await files.readText(input)).text,
+          text: (await files.readText(path)).text,
         };
       } catch {
         return {
@@ -68,35 +68,35 @@ function createStoreToFilesFoldController<
         reason: "index_unreadable",
       };
     }
-    let value2 =
+    let migrationSentinel =
       value.state === "read"
         ? readFileMigrationMarker(value.value)
         : null;
-    if (value.state !== "read" || value2 === null) {
+    if (value.state !== "read" || migrationSentinel === null) {
       return {
         result: "skipped",
         reason: "not_on_files",
       };
     }
-    if (value2.kind === "converted" && value2.marker.home === "file") {
+    if (migrationSentinel.kind === "converted" && migrationSentinel.marker.home === "file") {
       return {
         result: "skipped",
         reason: "no_store_home",
       };
     }
-    let value3: Model.FileTextRead | null = null;
+    let indexFile: Model.FileTextRead | null = null;
     try {
-      value3 = await files.readText(MIGRATION_SENTINEL_PATH);
+      indexFile = await files.readText(MIGRATION_SENTINEL_PATH);
     } catch {
-      value3 = null;
+      indexFile = null;
     }
-    let value4 = parseMigrationSentinel(value3?.text ?? null);
+    let sentinel = parseMigrationSentinel(indexFile?.text ?? null);
     if (
-      value3 === null ||
-      value4 === null ||
+      indexFile === null ||
+      sentinel === null ||
       !migrationSentinelMatchesArtifact(
-        value4,
-        options.artifactId,
+        sentinel,
+        foldOptions.artifactId,
       )
     ) {
       return {
@@ -104,62 +104,62 @@ function createStoreToFilesFoldController<
         reason: "no_record",
       };
     }
-    let value5 = await readAllowlistedStoreDocuments(
+    let storeDocuments = await readAllowlistedStoreDocuments(
       store,
       adapter.allowlist,
     );
-    if (!value5.has(adapter.metaPath)) {
+    if (!storeDocuments.has(adapter.metaPath)) {
       return {
         result: "skipped",
         reason: "store_absent",
       };
     }
-    let value6 = await hashStoreSnapshot(value5, adapter),
-      value7 = [...value5.values()].filter(
-        (input): boolean =>
-          value4.documents[input.path] !== value6.get(input.path),
+    let documentDigests = await hashStoreSnapshot(storeDocuments, adapter),
+      changedDocuments = [...storeDocuments.values()].filter(
+        (document): boolean =>
+          sentinel.documents[document.path] !== documentDigests.get(document.path),
       ),
-      value8 = readMovedToMarker(
-        value5.get(adapter.metaPath)!.data,
+      movedMarker = readMovedToMarker(
+        storeDocuments.get(adapter.metaPath)!.data,
       ),
-      value9 = Object.keys(value4.documents).filter(
-        (input): boolean => !value5.has(input),
+      documentPaths = Object.keys(sentinel.documents).filter(
+        (path): boolean => !storeDocuments.has(path),
       ),
-      value10 = value4.dropped ?? value4.dropping,
-      value11 =
-        value10?.documents !== undefined &&
-        value10.stamp !== undefined &&
-        value10.stamp === value8?.took
+      droppedState = sentinel.dropped ?? sentinel.dropping,
+      droppedPaths =
+        droppedState?.documents !== undefined &&
+        droppedState.stamp !== undefined &&
+        droppedState.stamp === movedMarker?.took
           ? new Set([
-              ...(value4.dropping?.documents ?? []),
-              ...(value4.dropped?.documents ?? []),
+              ...(sentinel.dropping?.documents ?? []),
+              ...(sentinel.dropped?.documents ?? []),
             ])
           : undefined,
-      value12 =
-        value8?.dropping !== undefined ||
-        value8?.dropped !== undefined ||
-        value4.dropping !== undefined ||
-        value4.dropped !== undefined,
-      value13 =
-        value11 !== undefined
-          ? value9.filter((input): boolean => !value11.has(input))
-          : value12
+      removedPathsFallback =
+        movedMarker?.dropping !== undefined ||
+        movedMarker?.dropped !== undefined ||
+        sentinel.dropping !== undefined ||
+        sentinel.dropped !== undefined,
+      removedPaths =
+        droppedPaths !== undefined
+          ? documentPaths.filter((path): boolean => !droppedPaths.has(path))
+          : removedPathsFallback
             ? []
-            : value9;
+            : documentPaths;
     return {
       index: value.value as Index,
       markerKey:
-        value2.kind === "converted"
+        migrationSentinel.kind === "converted"
           ? CONVERTED_FROM_MARKER_KEY
           : CREATED_ON_FILES_MARKER_KEY,
-      marker: value2.marker,
+      marker: migrationSentinel.marker,
       indexSha: value.sha256,
-      record: value4,
-      recordSha: value3.sha256,
-      snapshot: value5,
-      digests: value6,
-      changed: value7,
-      removed: value13,
+      record: sentinel,
+      recordSha: indexFile.sha256,
+      snapshot: storeDocuments,
+      digests: documentDigests,
+      changed: changedDocuments,
+      removed: removedPaths,
     };
   }
   let lastUnfoldedCount = 0;
@@ -183,64 +183,64 @@ function createStoreToFilesFoldController<
           result: "clean",
         };
       }
-      let value2 = await store.acquire(adapter.lockPath, {
-        holder: options.holder,
+      let lockResult = await store.acquire(adapter.lockPath, {
+        holder: foldOptions.holder,
         ttlMs: MIGRATION_LEASE_TTL_MS,
       });
-      if (value2 !== "unsupported" && !value2.acquired) {
+      if (lockResult !== "unsupported" && !lockResult.acquired) {
         return {
           result: "busy",
-          ...(value2.expiresAt !== undefined
+          ...(lockResult.expiresAt !== undefined
             ? {
-                until: value2.expiresAt,
+                until: lockResult.expiresAt,
               }
             : {}),
         };
       }
-      flag = value2 !== "unsupported";
-      let value3 = await readFoldSnapshot();
-      if ("result" in value3) {
-        return value3;
+      flag = lockResult !== "unsupported";
+      let snapshot = await readFoldSnapshot();
+      if ("result" in snapshot) {
+        return snapshot;
       }
-      if (value3.changed.length === 0 && value3.removed.length === 0) {
+      if (snapshot.changed.length === 0 && snapshot.removed.length === 0) {
         return {
           result: "clean",
         };
       }
       let entries = new Map(
-          value3.changed
-            .map((input): [string, Record<string, string> | undefined] => [
-              input.path,
-              value3.record.fields?.[input.path],
+          snapshot.changed
+            .map((document): [string, Record<string, string> | undefined] => [
+              document.path,
+              snapshot.record.fields?.[document.path],
             ])
             .filter(
-              (input): input is [string, Record<string, string>] =>
-                input[1] !== undefined,
+              (fieldEntry): fieldEntry is [string, Record<string, string>] =>
+                fieldEntry[1] !== undefined,
             ),
         ),
-        value4 = await adapter.codec.fold({
-          index: value3.index,
-          changed: value3.changed,
-          removed: value3.removed,
+        foldResult = await adapter.codec.fold({
+          index: snapshot.index,
+          changed: snapshot.changed,
+          removed: snapshot.removed,
           recorded: entries,
-          snapshot: value3.snapshot,
+          snapshot: snapshot.snapshot,
           readFile: readFileText,
           readFileState: readFileState,
         }),
-        value5 = removeUnpublishableMigrationFiles(
-          value4.files,
+        unpublishable = removeUnpublishableMigrationFiles(
+          foldResult.files,
           adapter.type,
         );
       validateMigrationTreePaths(
-        value4.files.keys(),
+        foldResult.files.keys(),
         adapter.type,
       );
-      let values = new Set(value4.unfolded ?? []);
+      let values = new Set(foldResult.unfolded ?? []);
       if (
-        value4.files.size === 0 &&
+        foldResult.files.size === 0 &&
         values.size > 0 &&
-        value3.changed.every((input) => values.has(input.path)) &&
-        value3.removed.every((input) => values.has(input))
+        snapshot.changed.every((document) => values.has(document.path)) &&
+        snapshot.removed.every((path) => values.has(path))
       ) {
         return {
           result: "failed",
@@ -248,185 +248,185 @@ function createStoreToFilesFoldController<
         };
       }
       let state = {
-        ...value3.record,
+        ...snapshot.record,
         at: new Date(timers.now()).toISOString(),
-        documents: Object.fromEntries(value3.digests),
+        documents: Object.fromEntries(snapshot.digests),
         fields: {
-          ...(value3.record.fields ?? {}),
+          ...(snapshot.record.fields ?? {}),
         },
         files: {
-          ...value3.record.files,
+          ...snapshot.record.files,
         },
       };
-      for (let value11 of value3.changed) {
-        state.fields[value11.path] = await hashStoreFields(
-          storeDocumentDigestView(value11, adapter),
+      for (let document of snapshot.changed) {
+        state.fields[document.path] = await hashStoreFields(
+          storeDocumentDigestView(document, adapter),
           adapter.secretFields,
         );
       }
-      for (let value11 of value3.removed) {
-        delete state.fields[value11];
+      for (let path of snapshot.removed) {
+        delete state.fields[path];
       }
-      for (let value11 of value4.unfolded ?? []) {
-        let value12 = value3.record.documents[value11];
-        if (value12 === undefined) {
-          delete state.documents[value11];
+      for (let path of foldResult.unfolded ?? []) {
+        let documentValue = snapshot.record.documents[path];
+        if (documentValue === undefined) {
+          delete state.documents[path];
         } else {
-          state.documents[value11] = value12;
+          state.documents[path] = documentValue;
         }
-        let value13 = value3.record.fields?.[value11];
-        if (value13 === undefined) {
-          delete state.fields[value11];
+        let fieldValue = snapshot.record.fields?.[path];
+        if (fieldValue === undefined) {
+          delete state.fields[path];
         } else {
-          state.fields[value11] = value13;
+          state.fields[path] = fieldValue;
         }
       }
-      if ((value4.indexSources ?? []).length > 0) {
+      if ((foldResult.indexSources ?? []).length > 0) {
         state.indexSources = {
-          ...(value3.record.indexSources ?? {}),
+          ...(snapshot.record.indexSources ?? {}),
           ...Object.fromEntries(
-            value4
-              .indexSources!.filter((input) => value3.digests.has(input))
-              .map((input) => [input, value3.digests.get(input)!]),
+            foldResult
+              .indexSources!.filter((path) => snapshot.digests.has(path))
+              .map((path) => [path, snapshot.digests.get(path)!]),
           ),
         };
       }
-      let value6 = [
-        ...(value4.indexSourcesGone ?? []),
-        ...value3.removed,
-      ].filter((input): boolean => state.indexSources?.[input] !== undefined);
-      if (value6.length > 0) {
+      let indexPaths = [
+        ...(foldResult.indexSourcesGone ?? []),
+        ...snapshot.removed,
+      ].filter((path): boolean => state.indexSources?.[path] !== undefined);
+      if (indexPaths.length > 0) {
         state.indexSources = Object.fromEntries(
           Object.entries(state.indexSources!).filter(
-            ([input]): boolean => !value6.includes(input),
+            ([path]): boolean => !indexPaths.includes(path),
           ),
         );
       }
-      lastUnfoldedCount = (value4.unfolded ?? []).length;
-      let state2: Model.FilePublishEntries = {},
-        state3: Model.FilePublishEntries = {};
-      for (let [value11, value12] of value4.files) {
-        if (value12 === null) {
-          state3[value11] = null;
-          delete state.files[value11];
+      lastUnfoldedCount = (foldResult.unfolded ?? []).length;
+      let publishFilesState: Model.FilePublishEntries = {},
+        removeFiles: Model.FilePublishEntries = {};
+      for (let [filePath, fileContent] of foldResult.files) {
+        if (fileContent === null) {
+          removeFiles[filePath] = null;
+          delete state.files[filePath];
           continue;
         }
-        state2[value11] = value12;
-        let value13 = normalizeFilePublishInput(
-          value11,
-          value12,
+        publishFilesState[filePath] = fileContent;
+        let normalizedFile = normalizeFilePublishInput(
+          filePath,
+          fileContent,
         );
-        if (value13 === null || typeof value13 === "string") {
+        if (normalizedFile === null || typeof normalizedFile === "string") {
           return {
             result: "failed",
             code: "invalid_content",
           };
         }
-        let value14 =
-          value4.sources.get(value11) ?? state.files[value11]?.from ?? [];
-        state.files[value11] = {
+        let indexDelta =
+          foldResult.sources.get(filePath) ?? state.files[filePath]?.from ?? [];
+        state.files[filePath] = {
           sha256: await sha256(
-            await fileContentBytes(value13.content),
+            await fileContentBytes(normalizedFile.content),
           ),
-          from: value14,
+          from: indexDelta,
           of: Object.fromEntries(
-            value14
+            indexDelta
               .filter(
-                (input): boolean => state.documents[input] !== undefined,
+                (path): boolean => state.documents[path] !== undefined,
               )
-              .map((input) => [input, state.documents[input]]),
+              .map((path) => [path, state.documents[path]]),
           ),
         };
       }
-      let state4 = {
-          ...state3,
+      let publishState = {
+          ...removeFiles,
           [MIGRATION_SENTINEL_PATH]: serializeIndexDocument(state),
           [adapter.indexPath]: adapter.codec.serializeIndex({
-            ...value3.index,
-            ...value4.index,
-            [value3.markerKey]: value3.marker,
+            ...snapshot.index,
+            ...foldResult.index,
+            [snapshot.markerKey]: snapshot.marker,
           }),
         },
-        value7 = await listWritableFiles(files),
-        entries2 = new Map(value7.map((input) => [input.path, input.sha256]));
+        writableFiles = await listWritableFiles(files),
+        writableShas = new Map(writableFiles.map((fileEntry) => [fileEntry.path, fileEntry.sha256]));
       if (
-        entries2.get(adapter.indexPath) !== value3.indexSha ||
-        entries2.get(MIGRATION_SENTINEL_PATH) !== value3.recordSha
+        writableShas.get(adapter.indexPath) !== snapshot.indexSha ||
+        writableShas.get(MIGRATION_SENTINEL_PATH) !== snapshot.recordSha
       ) {
         return {
           result: "failed",
           code: "conflict",
         };
       }
-      let values2 = new Set(
-          value7
-            .filter((input): boolean => input.provisional === true)
-            .map((input) => input.path),
+      let provisionalPaths = new Set(
+          writableFiles
+            .filter((entry): boolean => entry.provisional === true)
+            .map((entry) => entry.path),
         ),
-        callback = (input: Model.FilePublishEntries) => ({
+        callback = (publishEntries: Model.FilePublishEntries) => ({
           ifMatch: Object.fromEntries(
-            Object.keys(input)
-              .filter((input2): boolean => !values2.has(input2))
-              .map((input2) => [
-                input2,
-                input2 === adapter.indexPath
-                  ? value3.indexSha
-                  : input2 === MIGRATION_SENTINEL_PATH
-                    ? value3.recordSha
-                    : (entries2.get(input2) ?? null),
+            Object.keys(publishEntries)
+              .filter((path): boolean => !provisionalPaths.has(path))
+              .map((path) => [
+                path,
+                path === adapter.indexPath
+                  ? snapshot.indexSha
+                  : path === MIGRATION_SENTINEL_PATH
+                    ? snapshot.recordSha
+                    : (writableShas.get(path) ?? null),
               ]),
           ),
         }),
-        value8 =
-          options.write ??
+        publishBatch =
+          foldOptions.write ??
           ((
-            input: Model.FilePublishEntries,
-            options2?: Model.FilePublishPreconditions,
-          ) => files.publish(input, options2)),
-        value9 = files.version(),
-        version = value9.version,
-        value10 = splitMigrationPublishBatches({
-          ...state2,
-          ...state4,
+            publishFiles: Model.FilePublishEntries,
+            preconditions?: Model.FilePublishPreconditions,
+          ) => files.publish(publishFiles, preconditions)),
+        fileVersion = files.version(),
+        version = fileVersion.version,
+        publishBatches = splitMigrationPublishBatches({
+          ...publishFilesState,
+          ...publishState,
         });
-      for (let value11 of value10.length === 1
-        ? value10
-        : [...splitMigrationPublishBatches(state2), state4]) {
+      for (let batch of publishBatches.length === 1
+        ? publishBatches
+        : [...splitMigrationPublishBatches(publishFilesState), publishState]) {
         lastPublishAt = timers.now();
-        let value12 = await value8(value11, callback(value11));
-        if (!value12.ok) {
+        let publishResult = await publishBatch(batch, callback(batch));
+        if (!publishResult.ok) {
           return {
             result: "failed",
-            code: value12.code,
-            ...(value12.retryAfterMs !== undefined &&
-            Number.isFinite(value12.retryAfterMs) &&
-            value12.retryAfterMs > 0
+            code: publishResult.code,
+            ...(publishResult.retryAfterMs !== undefined &&
+            Number.isFinite(publishResult.retryAfterMs) &&
+            publishResult.retryAfterMs > 0
               ? {
-                  retryAfterMs: Math.min(value12.retryAfterMs, 300000),
+                  retryAfterMs: Math.min(publishResult.retryAfterMs, 300000),
                 }
               : {}),
           };
         }
-        version = value12.version;
+        version = publishResult.version;
       }
-      if (options.onFolded !== undefined) {
+      if (foldOptions.onFolded !== undefined) {
         let items: Model.ChangedFileRow[] = [];
-        for (let [value11, value12] of Object.entries({
-          ...state2,
-          ...state4,
+        for (let [filePath, fileText] of Object.entries({
+          ...publishFilesState,
+          ...publishState,
         })) {
           items.push({
-            path: value11,
+            path: filePath,
             sha256:
-              value12 === null
+              fileText === null
                 ? null
-                : (state.files[value11]?.sha256 ??
-                  (await sha256(value12 as string))),
+                : (state.files[filePath]?.sha256 ??
+                  (await sha256(fileText as string))),
           });
         }
         try {
-          options.onFolded({
-            from: value9,
+          foldOptions.onFolded({
+            from: fileVersion,
             to: {
               version: version,
             },
@@ -436,28 +436,28 @@ function createStoreToFilesFoldController<
       }
       return {
         result: "folded",
-        documents: value3.changed.length + value3.removed.length,
-        files: value4.files.size,
-        ...(value5.length > 0
+        documents: snapshot.changed.length + snapshot.removed.length,
+        files: foldResult.files.size,
+        ...(unpublishable.length > 0
           ? {
-              leftOut: value5,
+              leftOut: unpublishable,
             }
           : {}),
       };
     } catch (value) {
-      let value2 = (value as { code?: unknown } | null | undefined)?.code;
+      let errorCode = (value as { code?: unknown } | null | undefined)?.code;
       return {
         result: "failed",
         code:
-          typeof value2 === "string" && /^[a-z][a-z0-9_]{0,31}$/.test(value2)
-            ? value2
+          typeof errorCode === "string" && /^[a-z][a-z0-9_]{0,31}$/.test(errorCode)
+            ? errorCode
             : "internal",
       };
     } finally {
       if (flag) {
         await store
           .acquire(adapter.lockPath, {
-            holder: options.holder,
+            holder: foldOptions.holder,
             ttlMs: 1000,
           })
           .catch((): void => {
@@ -467,12 +467,12 @@ function createStoreToFilesFoldController<
     }
   }
   function check(): Promise<Migration.FoldOutcome> {
-    inFlight ??= foldChangedStore().then((input) => {
+    inFlight ??= foldChangedStore().then((outcome) => {
       inFlight = undefined;
       try {
-        options.onOutcome?.(input);
+        foldOptions.onOutcome?.(outcome);
       } catch {}
-      return input;
+      return outcome;
     });
     return inFlight;
   }
@@ -482,94 +482,94 @@ function createStoreToFilesFoldController<
       let value: ReturnType<Model.FilesTimers["setTimeout"]> | undefined,
         flag: boolean = false,
         index = 0,
-        flag2: boolean = false,
-        index2 = 0,
-        callback = (input: number, options2: () => void): void => {
+        hasPendingChanges: boolean = false,
+        retryCount = 0,
+        callback = (retryDelay: number, retryCallback: () => void): void => {
           if (value !== undefined) {
             timers.clearTimeout(value);
           }
           value = timers.setTimeout((): void => {
             value = undefined;
-            options2();
-          }, input);
+            retryCallback();
+          }, retryDelay);
         },
-        callback2 = (): void => {
+        runRetry = (): void => {
           if (flag) {
             return;
           }
-          let value4 =
+          let retryAfterMs =
             lastPublishAt + STORE_FOLD_PUBLISH_SPACING_MS - timers.now();
-          if (value4 > 0) {
-            callback(value4, callback2);
+          if (retryAfterMs > 0) {
+            callback(retryAfterMs, runRetry);
             return;
           }
           checkOwed = false;
-          check().then((input): void => {
+          check().then((foldCheck): void => {
             if (flag || value !== undefined) {
               return;
             }
-            if (input.result === "busy") {
-              let value5 =
-                input.until === undefined
+            if (foldCheck.result === "busy") {
+              let retryDelay =
+                foldCheck.until === undefined
                   ? NaN
-                  : Date.parse(input.until) - timers.now();
+                  : Date.parse(foldCheck.until) - timers.now();
               callback(
-                Number.isFinite(value5)
+                Number.isFinite(retryDelay)
                   ? Math.min(
-                      Math.max(value5 + 1000, STORE_FOLD_RETRY_DELAY_MS),
+                      Math.max(retryDelay + 1000, STORE_FOLD_RETRY_DELAY_MS),
                       MIGRATION_LEASE_TTL_MS + 5000,
                     )
                   : STORE_FOLD_RETRY_DELAY_MS,
-                callback2,
+                runRetry,
               );
               return;
             }
-            if (input.result === "failed") {
-              flag2 = input.code === "conflict";
+            if (foldCheck.result === "failed") {
+              hasPendingChanges = foldCheck.code === "conflict";
               if (index < STORE_FOLD_MAX_RETRIES) {
                 index += 1;
                 callback(
                   Math.max(
                     STORE_FOLD_RETRY_DELAY_MS,
-                    input.retryAfterMs ?? 0,
+                    foldCheck.retryAfterMs ?? 0,
                   ),
-                  callback2,
+                  runRetry,
                 );
               }
               return;
             }
-            if (input.result === "folded") {
+            if (foldCheck.result === "folded") {
               index = 0;
             }
-            flag2 = false;
+            hasPendingChanges = false;
             if (
-              input.result === "folded" &&
+              foldCheck.result === "folded" &&
               lastUnfoldedCount > 0 &&
-              index2 < STORE_FOLD_MAX_RETRIES
+              retryCount < STORE_FOLD_MAX_RETRIES
             ) {
-              index2 += 1;
-              callback(STORE_FOLD_RETRY_DELAY_MS, callback2);
+              retryCount += 1;
+              callback(STORE_FOLD_RETRY_DELAY_MS, runRetry);
               return;
             }
             if (lastUnfoldedCount === 0) {
-              index2 = 0;
+              retryCount = 0;
             }
-            if (input.result === "folded") {
-              callback5();
+            if (foldCheck.result === "folded") {
+              onRetryComplete();
             }
             if (checkOwed) {
-              callback(STORE_FOLD_DEBOUNCE_MS, callback2);
+              callback(STORE_FOLD_DEBOUNCE_MS, runRetry);
             }
           });
         },
-        callback3 = (input?: string[]): void => {
+        watchChanges = (paths?: string[]): void => {
           if (flag) {
             return;
           }
-          if (input !== undefined && !input.some(callback4)) {
+          if (paths !== undefined && !paths.some(isAllowedPath)) {
             return;
           }
-          if (input !== undefined) {
+          if (paths !== undefined) {
             index = 0;
           } else if (index >= STORE_FOLD_MAX_RETRIES) {
             return;
@@ -579,54 +579,54 @@ function createStoreToFilesFoldController<
             return;
           }
           if (value === undefined) {
-            callback(STORE_FOLD_DEBOUNCE_MS, callback2);
+            callback(STORE_FOLD_DEBOUNCE_MS, runRetry);
           }
         },
         items = [
-          ...new Set(adapter.allowlist.map((input) => input.collection)),
+          ...new Set(adapter.allowlist.map((collection) => collection.collection)),
         ],
-        callback4 = (input: string) =>
-          input !== adapter.lockPath &&
-          adapter.allowlist.some((input2) =>
-            input2.docId !== undefined
-              ? input === input2.collection + "/" + input2.docId
-              : input.startsWith(input2.collection + "/") &&
-                !input.slice(input2.collection.length + 1).includes("/"),
+        isAllowedPath = (path: string) =>
+          path !== adapter.lockPath &&
+          adapter.allowlist.some((allowlistEntry) =>
+            allowlistEntry.docId !== undefined
+              ? path === allowlistEntry.collection + "/" + allowlistEntry.docId
+              : path.startsWith(allowlistEntry.collection + "/") &&
+                !path.slice(allowlistEntry.collection.length + 1).includes("/"),
           ),
-        value2 =
+        watchedPaths =
           store.watch === undefined
             ? []
-            : items.map((input) => store.watch!(input, callback3)),
-        value3 = files.onRemoteChange?.((): void => {
-          if (flag2 && !flag && inFlight === undefined) {
-            flag2 = false;
+            : items.map((path) => store.watch!(path, watchChanges)),
+        unsubscribeRemote = files.onRemoteChange?.((): void => {
+          if (hasPendingChanges && !flag && inFlight === undefined) {
+            hasPendingChanges = false;
             index = 0;
-            callback(STORE_FOLD_DEBOUNCE_MS, callback2);
+            callback(STORE_FOLD_DEBOUNCE_MS, runRetry);
           }
         }),
-        callback5 = () =>
+        onRetryComplete = () =>
           finishMigrationTombstone({
             indexPath: adapter.indexPath,
             metaPath: adapter.metaPath,
             files: files,
             store: store,
             timers: timers,
-            ...(options.artifactId !== undefined
+            ...(foldOptions.artifactId !== undefined
               ? {
-                  artifactId: options.artifactId,
+                  artifactId: foldOptions.artifactId,
                 }
               : {}),
           });
-      callback5().then(callback2);
+      onRetryComplete().then(runRetry);
       return (): void => {
         flag = true;
         if (value !== undefined) {
           timers.clearTimeout(value);
         }
-        for (let value4 of value2) {
-          value4();
+        for (let unsubscribe of watchedPaths) {
+          unsubscribe();
         }
-        value3?.();
+        unsubscribeRemote?.();
       };
     },
   };

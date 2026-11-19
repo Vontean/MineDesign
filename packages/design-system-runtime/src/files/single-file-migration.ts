@@ -44,7 +44,7 @@ function createSingleFileMigrationStore(
   let fence: unknown,
     syntheticMeta =
       async (): Promise<Model.FilesMigrationStoreDocument | null> => {
-        let [value, value2] = await Promise.all([
+        let [value, metaData] = await Promise.all([
           readSingleFile().catch(() => {
             throw Object.assign(Error("upstream_error"), {
               code: "upstream_error",
@@ -58,7 +58,7 @@ function createSingleFileMigrationStore(
           return {
             path: SYSTEM_META_DOCUMENT_PATH,
             data: {
-              ...(value2?.data ?? {}),
+              ...(metaData?.data ?? {}),
               ...(fence !== undefined && fence !== null
                 ? {
                     [CONVERTING_MARKER_KEY]: fence,
@@ -74,49 +74,49 @@ function createSingleFileMigrationStore(
       };
   return {
     list: async (
-      input: string,
+      collectionPath: string,
     ): Promise<Model.FilesMigrationStoreDocument[]> => {
       let value =
-        input === SYSTEM_COLLECTION ? await syntheticMeta() : null;
+        collectionPath === SYSTEM_COLLECTION ? await syntheticMeta() : null;
       if (value === null) {
         return [];
       } else {
         return [value];
       }
     },
-    get: (input) =>
-      input === SYSTEM_META_DOCUMENT_PATH
+    get: (documentId) =>
+      documentId === SYSTEM_META_DOCUMENT_PATH
         ? syntheticMeta()
-        : store.get(input),
+        : store.get(documentId),
     async update(
-      input: string,
-      options: Record<string, unknown>,
+      documentId: string,
+      fields: Record<string, unknown>,
     ): Promise<void> {
-      if (input !== SYSTEM_META_DOCUMENT_PATH) {
-        return store.update(input, options);
+      if (documentId !== SYSTEM_META_DOCUMENT_PATH) {
+        return store.update(documentId, fields);
       }
-      let { [CONVERTING_MARKER_KEY]: value, ...value2 } = options;
-      if (Object.hasOwn(options, CONVERTING_MARKER_KEY)) {
+      let { [CONVERTING_MARKER_KEY]: value, ...remainingFields } = fields;
+      if (Object.hasOwn(fields, CONVERTING_MARKER_KEY)) {
         fence = value;
       }
-      if (Object.keys(value2).length === 0) {
+      if (Object.keys(remainingFields).length === 0) {
         return;
       }
       try {
-        await store.update(input, value2);
-      } catch (value3) {
-        if (store.set === undefined || (await store.get(input)) !== null) {
-          throw value3;
+        await store.update(documentId, remainingFields);
+      } catch (error) {
+        if (store.set === undefined || (await store.get(documentId)) !== null) {
+          throw error;
         }
-        await store.set!(input, value2);
+        await store.set!(documentId, remainingFields);
       }
     },
     ...(store.set !== undefined
       ? {
-          set: (input, options) => store.set!(input, options),
+          set: (documentId, fields) => store.set!(documentId, fields),
         }
       : {}),
-    acquire: (input, options) => store.acquire(input, options),
+    acquire: (documentId, leaseOptions) => store.acquire(documentId, leaseOptions),
   };
 }
 function createSingleFileMigrationAdapter(
@@ -126,25 +126,25 @@ function createSingleFileMigrationAdapter(
     builtPaths = new Set<string>(),
     codec: Migration.MigrationCodec = {
       async toTree(
-        input: Migration.StoreSnapshot,
-        options?: { preflight?: boolean },
+        snapshot: Migration.StoreSnapshot,
+        migrationOptions?: { preflight?: boolean },
       ): Promise<Migration.MigrationTree> {
-        let value = input.get(SYSTEM_META_DOCUMENT_PATH)?.data[
+        let value = snapshot.get(SYSTEM_META_DOCUMENT_PATH)?.data[
             SINGLE_FILE_SYNTHETIC_META_FIELD
           ] as { text?: unknown; sha256?: unknown } | undefined,
-          value2 =
+          metaData =
             typeof value?.text === "string"
               ? parseSingleFileDesignSystem(value.text)
               : null;
-        if (value2 === null || typeof value?.sha256 !== "string") {
+        if (metaData === null || typeof value?.sha256 !== "string") {
           throw new DesignSystemMigrationError("invalid_content");
         }
-        let value3 = designSystemFilesMigrationTree(
+        let migrationTree = designSystemFilesMigrationTree(
           {
-            title: value2.title,
+            title: metaData.title,
             files: await materializeMigrationBlobFiles(
-              value2.files,
-              value2.title,
+              metaData.files,
+              metaData.title,
               fetchBlob,
             ),
             source: null,
@@ -152,16 +152,16 @@ function createSingleFileMigrationAdapter(
           },
           () => [SYSTEM_META_DOCUMENT_PATH],
         );
-        if (options?.preflight !== true) {
+        if (migrationOptions?.preflight !== true) {
           builtFromSha = value.sha256;
-          builtPaths = new Set(value3.files.keys());
+          builtPaths = new Set(migrationTree.files.keys());
         }
-        return value3;
+        return migrationTree;
       },
       serializeIndex: serializeMigrationIndex,
-      fold: (input) => ({
+      fold: (snapshot) => ({
         files: new Map(),
-        index: input.index,
+        index: snapshot.index,
         sources: new Map(),
       }),
     };
@@ -188,10 +188,10 @@ function createSingleFileMigrationAdapter(
               },
             }
           : {},
-      digestView: (input) => ({
+      digestView: (document) => ({
         [SINGLE_FILE_SYNTHETIC_META_FIELD]:
           (
-            input.data[SINGLE_FILE_SYNTHETIC_META_FIELD] as
+            document.data[SINGLE_FILE_SYNTHETIC_META_FIELD] as
               | { sha256?: unknown }
               | undefined
           )?.sha256 ?? null,
@@ -213,27 +213,27 @@ function createSingleFileMigrationFiles(
       timers === undefined
         ? Promise.resolve()
         : new Promise<void>(
-            (input) =>
+            (entry) =>
               void timers.setTimeout(
-                input,
+                entry,
                 SINGLE_FILE_MIGRATION_PUBLISH_SPACING_MS,
               ),
           );
   return {
     async list(): Promise<Model.FileListing> {
       let value = (await listWritableFiles(files)).filter(
-        (input): boolean => !isProjectContentPath(input.path),
+        (entry): boolean => !isProjectContentPath(entry.path),
       );
       if (
         value.some(
-          (input): boolean =>
-            input.path === SINGLE_FILE_MIGRATION_BACKUP_PATH,
+          (entry): boolean =>
+            entry.path === SINGLE_FILE_MIGRATION_BACKUP_PATH,
         )
       ) {
         return value;
       }
-      let value2 = await readSingleFile().catch((): null => null);
-      if (value2 === null) {
+      let singleFile = await readSingleFile().catch((): null => null);
+      if (singleFile === null) {
         return value;
       } else {
         return [
@@ -241,13 +241,13 @@ function createSingleFileMigrationFiles(
           {
             path: SINGLE_FILE_MIGRATION_BACKUP_PATH,
             sha256: "",
-            size: new TextEncoder().encode(value2.text).length,
+            size: new TextEncoder().encode(singleFile.text).length,
             contentType: "application/json",
           },
         ];
       }
     },
-    readText: (input) => files.readText(input),
+    readText: (path) => files.readText(path),
     version: () => files.version(),
     get canWrite() {
       return files.canWrite;
@@ -259,77 +259,77 @@ function createSingleFileMigrationFiles(
       return files.mayWrite;
     },
     async publish(
-      input: Model.FilePublishEntries,
+      publishFiles: Model.FilePublishEntries,
     ): Promise<Model.FilePublishResult> {
       if (needsCleanup) {
-        let value2: Model.FileListing;
+        let listing: Model.FileListing;
         try {
-          value2 = await listWritableFiles(files);
+          listing = await listWritableFiles(files);
         } catch {
           return {
             ok: false,
             code: "upstream_error",
           };
         }
-        let value3 = value2
-          .map((input2) => input2.path)
+        let writablePaths = listing
+          .map((path) => path.path)
           .filter(
-            (input2) =>
-              isProjectContentPath(input2) &&
-              !adapter.builtPaths().has(input2) &&
-              !Object.hasOwn(input, input2),
+            (path) =>
+              isProjectContentPath(path) &&
+              !adapter.builtPaths().has(path) &&
+              !Object.hasOwn(publishFiles, path),
           );
-        for (let index = 0; index < value3.length; index += 200) {
-          let value4 = await files.publish(
+        for (let index = 0; index < writablePaths.length; index += 200) {
+          let publishResult = await files.publish(
             Object.fromEntries(
-              value3
+              writablePaths
                 .slice(index, index + 200)
-                .map((input2) => [input2, null]),
+                .map((path) => [path, null]),
             ),
           );
-          if (!value4.ok) {
-            return value4;
+          if (!publishResult.ok) {
+            return publishResult;
           }
           await wait();
         }
         needsCleanup = false;
       }
-      let value = Object.hasOwn(input, FILES_INDEX_PROJECT_PATH);
+      let value = Object.hasOwn(publishFiles, FILES_INDEX_PROJECT_PATH);
       if (value) {
-        let value2 = await readSingleFile().catch((): null => null);
-        if (value2 === null) {
+        let singleFile = await readSingleFile().catch((): null => null);
+        if (singleFile === null) {
           return {
             ok: false,
             code: "upstream_error",
           };
         }
-        if (value2.sha256 !== adapter.builtFrom()) {
+        if (singleFile.sha256 !== adapter.builtFrom()) {
           return {
             ok: false,
             code: "conflict",
           };
         }
-        if (backedUpSha !== value2.sha256) {
-          let value3 = await files.publish({
+        if (backedUpSha !== singleFile.sha256) {
+          let backupResult = await files.publish({
             [SINGLE_FILE_MIGRATION_BACKUP_PATH]: {
-              content: value2.text,
+              content: singleFile.text,
               contentType: "application/json",
             },
           });
-          if (!value3.ok) {
-            return value3;
+          if (!backupResult.ok) {
+            return backupResult;
           }
-          backedUpSha = value2.sha256;
+          backedUpSha = singleFile.sha256;
           await wait();
         }
       }
       return files.publish(
         value
           ? {
-              ...input,
+              ...publishFiles,
               [DESIGN_SYSTEM_ENVELOPE_PATH]: null,
             }
-          : input,
+          : publishFiles,
       );
     },
   };
@@ -340,7 +340,7 @@ async function classifySingleFileMigrationSentinel(
 ): Promise<string | undefined> {
   if (
     !listing.some(
-      (input): boolean => input.path === MIGRATION_SENTINEL_PATH,
+      (entry): boolean => entry.path === MIGRATION_SENTINEL_PATH,
     )
   ) {
     return "none";
@@ -359,7 +359,7 @@ async function classifySingleFileMigrationSentinel(
     return "unread";
   }
 }
-async function preflightSingleFileMigration(options: {
+async function preflightSingleFileMigration(migrationOptions: {
   files: Migration.MigrationFilesPort;
   text: string;
 }): Promise<
@@ -369,37 +369,37 @@ async function preflightSingleFileMigration(options: {
   | "moved_before"
 > {
   try {
-    let value = parseSingleFileDesignSystem(options.text);
+    let value = parseSingleFileDesignSystem(migrationOptions.text);
     if (value === null) {
       return "not_single_file";
     }
-    let value2: Model.FileListing;
+    let listing: Model.FileListing;
     try {
-      value2 = await listWritableFiles(options.files);
+      listing = await listWritableFiles(migrationOptions.files);
     } catch {
       return "not_now";
     }
-    if (fileListingIsNarrowed(value2, options.files)) {
+    if (fileListingIsNarrowed(listing, migrationOptions.files)) {
       return "not_now";
     }
-    let value3 = await classifySingleFileMigrationSentinel(
-      options.files,
-      value2,
+    let sentinelKind = await classifySingleFileMigrationSentinel(
+      migrationOptions.files,
+      listing,
     );
-    if (value3 !== "none") {
-      if (value3 === "ours") {
+    if (sentinelKind !== "none") {
+      if (sentinelKind === "ours") {
         return "moved_before";
       } else {
         return "not_now";
       }
     }
     if (
-      new TextEncoder().encode(options.text).length >
+      new TextEncoder().encode(migrationOptions.text).length >
       MAX_FILE_PUBLISH_ENCODED_BYTES
     ) {
       return "too_large";
     }
-    if (options.text.includes(SINGLE_FILE_REPLACEMENT_CHARACTER)) {
+    if (migrationOptions.text.includes(SINGLE_FILE_REPLACEMENT_CHARACTER)) {
       return {
         unpublishable: [
           {
@@ -412,13 +412,13 @@ async function preflightSingleFileMigration(options: {
         ],
       };
     }
-    let value4 = filesLeftOutOfMigration(value.files);
-    if (value4.length > 0) {
+    let unpublishable = filesLeftOutOfMigration(value.files);
+    if (unpublishable.length > 0) {
       return {
-        unpublishable: value4,
+        unpublishable: unpublishable,
       };
     }
-    let value5 = designSystemFilesMigrationTree(
+    let migrationTree = designSystemFilesMigrationTree(
         {
           title: value.title,
           files: Object.freeze({
@@ -429,38 +429,38 @@ async function preflightSingleFileMigration(options: {
         },
         () => [],
       ),
-      value6 = blobFilesOwedToFileStorage(value.files),
-      value7 = storageCatalogFromManifest(
+      blobPaths = blobFilesOwedToFileStorage(value.files),
+      storageCatalog = storageCatalogFromManifest(
         value.files["manifest.json"] ?? "",
       ),
       items = [
-        ...value2.filter(
-          (input) =>
-            !isProjectContentPath(input.path) &&
-            input.path !== SINGLE_FILE_MIGRATION_BACKUP_PATH,
+        ...listing.filter(
+          (entry) =>
+            !isProjectContentPath(entry.path) &&
+            entry.path !== SINGLE_FILE_MIGRATION_BACKUP_PATH,
         ),
         {
           path: SINGLE_FILE_MIGRATION_BACKUP_PATH,
-          size: new TextEncoder().encode(options.text).length,
+          size: new TextEncoder().encode(migrationOptions.text).length,
         },
       ],
-      value8 = migrationVersionSize(
+      sizeSummary = migrationVersionSize(
         items,
-        value5,
+        migrationTree,
         FILES_INDEX_PROJECT_PATH,
-        serializeMigrationIndex(value5.index),
+        serializeMigrationIndex(migrationTree.index),
       );
     if (
-      value8.oversized.length > 0 ||
-      value8.files + value6.length > ARTIFACT_FILE_CAPACITY.files
+      sizeSummary.oversized.length > 0 ||
+      sizeSummary.files + blobPaths.length > ARTIFACT_FILE_CAPACITY.files
     ) {
       return "too_large";
     }
     if (
-      value8.bytes +
-        value6.reduce(
-          (input, options2) =>
-            input + (value7.files[options2.path]?.bytes ?? 0),
+      sizeSummary.bytes +
+        blobPaths.reduce(
+          (total, entry) =>
+            total + (storageCatalog.files[entry.path]?.bytes ?? 0),
           0,
         ) >
       ARTIFACT_FILE_CAPACITY.bytes
@@ -474,10 +474,10 @@ async function preflightSingleFileMigration(options: {
   }
 }
 async function migrateSingleFileDesignSystem(
-  options: Migration.DesignSystemMigrationOptions,
+  migrationOptions: Migration.DesignSystemMigrationOptions,
 ): Promise<Migration.MigrationOutcome> {
   let readSingleFile = async (): Promise<Model.FileTextRead> => {
-      let value = await options.files.readText(
+      let value = await migrationOptions.files.readText(
         DESIGN_SYSTEM_ENVELOPE_PATH,
       );
       return {
@@ -487,7 +487,7 @@ async function migrateSingleFileDesignSystem(
     },
     listing: Model.FileListing;
   try {
-    listing = await listWritableFiles(options.files);
+    listing = await listWritableFiles(migrationOptions.files);
   } catch (value) {
     if (
       (value as { narrowed?: unknown } | null | undefined)?.narrowed === true
@@ -505,14 +505,14 @@ async function migrateSingleFileDesignSystem(
       };
     }
   }
-  if (fileListingIsNarrowed(listing, options.files)) {
+  if (fileListingIsNarrowed(listing, migrationOptions.files)) {
     return {
       result: "skipped",
       reason: "narrowed_listing",
     };
   }
   let sentinelKind = await classifySingleFileMigrationSentinel(
-    options.files,
+    migrationOptions.files,
     listing,
   );
   if (sentinelKind === "unread") {
@@ -547,30 +547,30 @@ async function migrateSingleFileDesignSystem(
       reason: "too_large",
     };
   }
-  let adapter = createSingleFileMigrationAdapter(options.fetchBlob);
+  let adapter = createSingleFileMigrationAdapter(migrationOptions.fetchBlob);
   return migrateStoreToFiles({
     adapter: adapter.adapter,
     versionCaps: ARTIFACT_FILE_CAPACITY,
     files: createSingleFileMigrationFiles(
-      options.files,
+      migrationOptions.files,
       adapter,
       readSingleFile,
-      options.timers,
+      migrationOptions.timers,
     ),
-    store: createSingleFileMigrationStore(options.store, readSingleFile),
-    holder: options.holder,
-    by: options.by,
-    timers: options.timers,
-    ...(options.artifactId !== undefined
+    store: createSingleFileMigrationStore(migrationOptions.store, readSingleFile),
+    holder: migrationOptions.holder,
+    by: migrationOptions.by,
+    timers: migrationOptions.timers,
+    ...(migrationOptions.artifactId !== undefined
       ? {
-          artifactId: options.artifactId,
+          artifactId: migrationOptions.artifactId,
         }
       : {}),
     sharedExternally: async (): Promise<null> => null,
     embedsArtifacts: async (): Promise<null> => null,
-    ...(options.onStage !== undefined
+    ...(migrationOptions.onStage !== undefined
       ? {
-          onStage: options.onStage,
+          onStage: migrationOptions.onStage,
         }
       : {}),
   });

@@ -14,18 +14,18 @@ function migrationHoldAllowsKey(event: { key?: string }): boolean {
 }
 function restoreReopenedFocus(host: Window, focusId?: string): void {
   let focusTarget = (): void => {
-    let value2 = focusId !== undefined && focusId !== "",
-      value3 =
-        (value2 ? host.document.getElementById(focusId as string) : null) ??
+    let hasFocusTarget = focusId !== undefined && focusId !== "",
+      focusElement =
+        (hasFocusTarget ? host.document.getElementById(focusId as string) : null) ??
         host.document.querySelector<HTMLElement>("main h1, main h2, main");
-    if (value3 === null) {
+    if (focusElement === null) {
       return;
     }
-    if (!value3.hasAttribute("tabindex")) {
-      value3.setAttribute("tabindex", "-1");
+    if (!focusElement.hasAttribute("tabindex")) {
+      focusElement.setAttribute("tabindex", "-1");
     }
-    value3.focus({
-      preventScroll: !value2,
+    focusElement.focus({
+      preventScroll: !hasFocusTarget,
     });
   };
   if (host.document.hasFocus()) {
@@ -39,32 +39,32 @@ function restoreReopenedFocus(host: Window, focusId?: string): void {
       }
       flag = false;
       host.clearTimeout(value);
-      host.document.removeEventListener("visibilitychange", callback3);
-      host.removeEventListener("focus", callback2, false);
-      for (let value2 of ["keydown", "pointerdown"]) {
-        host.removeEventListener(value2, callback, true);
+      host.document.removeEventListener("visibilitychange", restoreVisibilityFocus);
+      host.removeEventListener("focus", restoreFocus, false);
+      for (let eventType of ["keydown", "pointerdown"]) {
+        host.removeEventListener(eventType, callback, true);
       }
     },
-    callback2 = (): void => {
+    restoreFocus = (): void => {
       if (!flag) {
         return;
       }
       callback();
       focusTarget();
     },
-    callback3 = (): void => {
+    restoreVisibilityFocus = (): void => {
       host.clearTimeout(value);
       value =
         host.document.visibilityState === "visible"
           ? host.setTimeout(callback, REOPEN_FOCUS_HOLD_MS)
           : undefined;
     };
-  host.addEventListener("focus", callback2, false);
-  for (let value2 of ["keydown", "pointerdown"]) {
-    host.addEventListener(value2, callback, true);
+  host.addEventListener("focus", restoreFocus, false);
+  for (let eventType of ["keydown", "pointerdown"]) {
+    host.addEventListener(eventType, callback, true);
   }
-  host.document.addEventListener("visibilitychange", callback3);
-  callback3();
+  host.document.addEventListener("visibilitychange", restoreVisibilityFocus);
+  restoreVisibilityFocus();
 }
 function createMigrationEditingHold(host: Window): Boot.EditingHold {
   let banner: HTMLDivElement | undefined,
@@ -78,20 +78,20 @@ function createMigrationEditingHold(host: Window): Boot.EditingHold {
     };
   return {
     held: (): boolean => banner !== undefined,
-    hold(input): void {
+    hold(message): void {
       if (banner !== undefined) {
         return;
       }
       let body = host.document.body;
       madeInert = Array.from(body.children).filter(
-        (input2: Element & { inert?: boolean }): boolean =>
-          input2.inert !== true,
+        (element: Element & { inert?: boolean }): boolean =>
+          element.inert !== true,
       );
-      for (let value2 of madeInert) {
-        value2.inert = true;
+      for (let element of madeInert) {
+        element.inert = true;
       }
-      for (let value2 of MIGRATION_HOLD_BLOCKED_EVENTS) {
-        host.addEventListener(value2, blockEvent, true);
+      for (let eventType of MIGRATION_HOLD_BLOCKED_EVENTS) {
+        host.addEventListener(eventType, blockEvent, true);
       }
       let value = (banner = host.document.createElement("div"));
       value.setAttribute("role", "status");
@@ -100,7 +100,7 @@ function createMigrationEditingHold(host: Window): Boot.EditingHold {
       body.appendChild(value);
       host.setTimeout((): void => {
         if (banner === value) {
-          value.textContent = input;
+          value.textContent = message;
         }
       }, 60);
     },

@@ -19,12 +19,12 @@ var assetGroupPathParts: (
   path: string,
 ) => { key: string; rel: string } | null;
 async function foldLegacyStoreChangesIntoFiles(
-  context: Migration.FoldContext,
+  foldContext: Migration.FoldContext,
   fetchBlob: Migration.FetchMigrationBlob,
 ): Promise<Migration.FoldTree> {
   let files = new Map<string, Model.FilePublishInput>(),
     sources = new Map<string, string[]>(),
-    index = cloneMergeValue(context.index);
+    index = cloneMergeValue(foldContext.index);
   index.assetGroups ??= {};
   index.blobs ??= {};
   index.groups ??= [];
@@ -33,7 +33,7 @@ async function foldLegacyStoreChangesIntoFiles(
     ...(index.docs ?? {}),
     sections: [...(index.docs?.sections ?? [])],
   };
-  let sentinelRead = await context.readFileState(
+  let sentinelRead = await foldContext.readFileState(
     MIGRATION_SENTINEL_PATH,
   );
   if (sentinelRead.state === "unreadable") {
@@ -41,7 +41,7 @@ async function foldLegacyStoreChangesIntoFiles(
       files: files,
       index: index,
       sources: sources,
-      unfolded: context.changed.map((input) => input.path),
+      unfolded: foldContext.changed.map((change) => change.path),
     };
   }
   let sentinel =
@@ -50,12 +50,12 @@ async function foldLegacyStoreChangesIntoFiles(
         : null,
     kept: Migration.FoldSummary["kept"] = [],
     unfolded: string[] = [];
-  for (let value of context.changed) {
+  for (let value of foldContext.changed) {
     if (value.path === SYSTEM_META_DOCUMENT_PATH) {
       await foldLegacyMetaFields(
         index,
         value.data,
-        context.recorded.get(SYSTEM_META_DOCUMENT_PATH),
+        foldContext.recorded.get(SYSTEM_META_DOCUMENT_PATH),
       );
       continue;
     }
@@ -72,17 +72,17 @@ async function foldLegacyStoreChangesIntoFiles(
       continue;
     }
     if (value.path === SYSTEM_TOKENS_DOCUMENT_PATH) {
-      let value5 = projectFilePath(
+      let projectPath = projectFilePath(
           DESIGN_SYSTEM_PATHS.tokens,
         ),
-        value6 = await context.readFileState(value5);
-      if (value6.state === "unreadable") {
+        fileState = await foldContext.readFileState(projectPath);
+      if (fileState.state === "unreadable") {
         unfolded.push(value.path);
         continue;
       }
       if (
-        value6.state === "absent" &&
-        sentinel?.files[value5] !== undefined
+        fileState.state === "absent" &&
+        sentinel?.files[projectPath] !== undefined
       ) {
         kept.push({
           path: DESIGN_SYSTEM_PATHS.tokens,
@@ -90,147 +90,147 @@ async function foldLegacyStoreChangesIntoFiles(
         });
         continue;
       }
-      let value7 = value6.state === "text" ? value6.text : null,
-        value8 =
-          value7 === null
+      let currentText = fileState.state === "text" ? fileState.text : null,
+        comparison =
+          currentText === null
             ? null
             : await foldLegacyTokenChanges(
-                value7,
+                currentText,
                 value.data,
-                context.recorded.get(SYSTEM_TOKENS_DOCUMENT_PATH),
-                sentinel?.files[value5]?.sha256,
+                foldContext.recorded.get(SYSTEM_TOKENS_DOCUMENT_PATH),
+                sentinel?.files[projectPath]?.sha256,
               );
-      if (value8 !== null) {
-        if (value8.clashed) {
+      if (comparison !== null) {
+        if (comparison.clashed) {
           kept.push({
             path: DESIGN_SYSTEM_PATHS.tokens,
             why: "changed",
           });
         }
-        if (value8.text !== value7) {
+        if (comparison.text !== currentText) {
           files.set(
-            value5,
-            migrationPublishInput(value5, value8.text),
+            projectPath,
+            migrationPublishInput(projectPath, comparison.text),
           );
-          sources.set(value5, [value.path]);
+          sources.set(projectPath, [value.path]);
         }
-        if (value8.clashed) {
-          let value9 = otherVersionProjectPath(value5);
+        if (comparison.clashed) {
+          let alternatePath = otherVersionProjectPath(projectPath);
           files.set(
-            value9,
+            alternatePath,
             migrationPublishInput(
-              value9,
+              alternatePath,
               JSON.stringify(value.data, null, 2) +
                 `
 `,
             ),
           );
-          sources.set(value9, [value.path]);
+          sources.set(alternatePath, [value.path]);
         }
         continue;
       }
     }
-    let value2 = await legacyStoreSnapshotToFiles(
+    let migratedFiles = await legacyStoreSnapshotToFiles(
       new Map([[value.path, value]]),
       fetchBlob,
     );
-    for (let value5 of filesLeftOutOfMigration(value2.files)) {
+    for (let excludedFile of filesLeftOutOfMigration(migratedFiles.files)) {
       kept.push({
-        path: value5.path,
+        path: excludedFile.path,
         why: "cannot",
       });
     }
-    for (let [value5, value6] of publishableProjectFiles(
-      value2.files,
+    for (let [absolutePath, fileText] of publishableProjectFiles(
+      migratedFiles.files,
     )) {
-      let value7 = relativeProjectFilePath(value5)!,
-        value8 = await storeFoldFileComparison(
-          context,
-          value5,
-          value7,
-          sentinel?.files[value5]?.sha256,
+      let relativePath = relativeProjectFilePath(absolutePath)!,
+        comparison = await storeFoldFileComparison(
+          foldContext,
+          absolutePath,
+          relativePath,
+          sentinel?.files[absolutePath]?.sha256,
         );
-      if (value8 === "unreadable") {
+      if (comparison === "unreadable") {
         unfolded.push(value.path);
         continue;
       }
-      if (value8 !== "same") {
+      if (comparison !== "same") {
         kept.push({
-          path: value7,
-          why: value8,
+          path: relativePath,
+          why: comparison,
         });
         if (
-          value8 === "gone" ||
+          comparison === "gone" ||
           !(
-            isAdditionalMarkdownPath(value7) ||
-            value7 === DESIGN_SYSTEM_PATHS.readme ||
-            value7.endsWith(".json")
+            isAdditionalMarkdownPath(relativePath) ||
+            relativePath === DESIGN_SYSTEM_PATHS.readme ||
+            relativePath.endsWith(".json")
           )
         ) {
           continue;
         }
-        let value9 = otherVersionProjectPath(value5);
-        files.set(value9, migrationPublishInput(value9, value6));
-        sources.set(value9, [value.path]);
+        let alternatePath = otherVersionProjectPath(absolutePath);
+        files.set(alternatePath, migrationPublishInput(alternatePath, fileText));
+        sources.set(alternatePath, [value.path]);
         addFoldedDocumentToIndex(
           index,
-          relativeProjectFilePath(value9)!,
+          relativeProjectFilePath(alternatePath)!,
         );
         continue;
       }
-      files.set(value5, migrationPublishInput(value5, value6));
-      sources.set(value5, [value.path]);
-      removeFoldedBlobReference(index, value7);
-      addFoldedDocumentToIndex(index, value7);
+      files.set(absolutePath, migrationPublishInput(absolutePath, fileText));
+      sources.set(absolutePath, [value.path]);
+      removeFoldedBlobReference(index, relativePath);
+      addFoldedDocumentToIndex(index, relativePath);
     }
-    let value3 = buildFilesIndex("", value2.files),
-      value4: boolean =
+    let builtIndex = buildFilesIndex("", migratedFiles.files),
+      hasConflict: boolean =
         (await hashCanonicalIndex(value.data.dataRef)) !==
-        context.recorded.get(value.path)?.dataRef;
-    for (let [value5, value6] of Object.entries(value3.assetGroups)) {
-      for (let [value7, value8] of Object.entries(value6.files)) {
-        let value9 = Object.hasOwn(index.assetGroups, value5)
-          ? index.assetGroups[value5].files[value7]
+        foldContext.recorded.get(value.path)?.dataRef;
+    for (let [groupName, group] of Object.entries(builtIndex.assetGroups)) {
+      for (let [assetName, asset] of Object.entries(group.files)) {
+        let existingAsset = Object.hasOwn(index.assetGroups, groupName)
+          ? index.assetGroups[groupName].files[assetName]
           : undefined;
         if (
-          value9 !== undefined &&
-          (!value4 || value9.blob === value8.blob)
+          existingAsset !== undefined &&
+          (!hasConflict || existingAsset.blob === asset.blob)
         ) {
           continue;
         }
         if (
-          value9 === undefined &&
-          context.recorded.has(value.path) &&
-          !value4
+          existingAsset === undefined &&
+          foldContext.recorded.has(value.path) &&
+          !hasConflict
         ) {
           continue;
         }
-        let value10 = ensureFoldedAssetGroup(index, value5, value6.name);
-        if (!index.groups.includes(value5)) {
-          index.groups.push(value5);
+        let targetGroup = ensureFoldedAssetGroup(index, groupName, group.name);
+        if (!index.groups.includes(groupName)) {
+          index.groups.push(groupName);
         }
-        if (value9 === undefined) {
-          value10.files[value7] = value8;
+        if (existingAsset === undefined) {
+          targetGroup.files[assetName] = asset;
           continue;
         }
-        let value11 = otherVersionFileName(value8.name);
-        value10.files[encodeFileIndexKey_r(value11)] = {
-          ...value8,
-          name: value11,
+        let alternateAssetName = otherVersionFileName(asset.name);
+        targetGroup.files[encodeFileIndexKey_r(alternateAssetName)] = {
+          ...asset,
+          name: alternateAssetName,
         };
         kept.push({
           path:
             DESIGN_SYSTEM_PATHS.assetsDir +
-            value6.name +
+            group.name +
             "/" +
-            value8.name,
+            asset.name,
           why: "changed",
         });
       }
     }
-    for (let [value5, value6] of Object.entries(value3.blobs)) {
-      if (!Object.hasOwn(index.blobs, value5)) {
-        index.blobs[value5] = value6;
+    for (let [blobId, blob] of Object.entries(builtIndex.blobs)) {
+      if (!Object.hasOwn(index.blobs, blobId)) {
+        index.blobs[blobId] = blob;
       }
     }
   }
@@ -238,10 +238,10 @@ async function foldLegacyStoreChangesIntoFiles(
     kept: kept,
     came:
       [...files.keys()].some(
-        (input): boolean => !input.includes(OTHER_VERSION_COPY_SUFFIX),
+        (path): boolean => !path.includes(OTHER_VERSION_COPY_SUFFIX),
       ) ||
       serializeIndexDocument(index) !==
-        serializeIndexDocument(context.index),
+        serializeIndexDocument(foldContext.index),
   };
   return {
     files: files,
@@ -289,68 +289,68 @@ async function foldLegacyTokenChanges(
     return null;
   }
   let clashed: boolean = false,
-    isNamedToken = (input: unknown): input is Migration.NamedLegacyToken =>
-      typeof input === "object" &&
-      input !== null &&
-      typeof (input as { name?: unknown }).name === "string";
-  for (let [value, value2] of Object.entries(storeTokens)) {
+    isNamedToken = (token: unknown): token is Migration.NamedLegacyToken =>
+      typeof token === "object" &&
+      token !== null &&
+      typeof (token as { name?: unknown }).name === "string";
+  for (let [value, tokenValue] of Object.entries(storeTokens)) {
     if (
-      (await hashCanonicalIndex(value2)) ===
+      (await hashCanonicalIndex(tokenValue)) ===
       recordedFields?.[value]
     ) {
       continue;
     }
-    let value3 = (fileTokens as Record<string, unknown>)[value];
+    let existingToken = (fileTokens as Record<string, unknown>)[value];
     if (
-      value3 === undefined ||
+      existingToken === undefined ||
       (recordedFields !== undefined &&
-        (await hashCanonicalIndex(value3)) ===
+        (await hashCanonicalIndex(existingToken)) ===
           recordedFields[value])
     ) {
-      (fileTokens as Record<string, unknown>)[value] = value2;
+      (fileTokens as Record<string, unknown>)[value] = tokenValue;
       continue;
     }
     if (
-      serializeIndexDocument(value3) ===
-      serializeIndexDocument(value2)
+      serializeIndexDocument(existingToken) ===
+      serializeIndexDocument(tokenValue)
     ) {
       continue;
     }
-    let value4 = (value3 as { tokens?: unknown } | null | undefined)?.tokens,
-      value5 = (value2 as { tokens?: unknown } | null | undefined)?.tokens;
+    let existingTokens = (existingToken as { tokens?: unknown } | null | undefined)?.tokens,
+      incomingTokens = (tokenValue as { tokens?: unknown } | null | undefined)?.tokens;
     if (
-      !Array.isArray(value4) ||
-      !Array.isArray(value5) ||
-      !value4.every(isNamedToken) ||
-      !value5.every(isNamedToken)
+      !Array.isArray(existingTokens) ||
+      !Array.isArray(incomingTokens) ||
+      !existingTokens.every(isNamedToken) ||
+      !incomingTokens.every(isNamedToken)
     ) {
       clashed = true;
       continue;
     }
-    for (let [value6, value7] of Object.entries(
-      value2 as Record<string, unknown>,
+    for (let [fieldName, fieldValue] of Object.entries(
+      tokenValue as Record<string, unknown>,
     )) {
-      if (value6 === "tokens") {
+      if (fieldName === "tokens") {
         continue;
       }
-      let value8 = (value3 as Record<string, unknown>)[value6];
-      if (value8 === undefined) {
-        (value3 as Record<string, unknown>)[value6] = value7;
+      let existingField = (existingToken as Record<string, unknown>)[fieldName];
+      if (existingField === undefined) {
+        (existingToken as Record<string, unknown>)[fieldName] = fieldValue;
       } else if (
-        serializeIndexDocument(value8) !==
-        serializeIndexDocument(value7)
+        serializeIndexDocument(existingField) !==
+        serializeIndexDocument(fieldValue)
       ) {
         clashed = true;
       }
     }
-    let entries = new Map(value4.map((input) => [input.name, input]));
-    for (let value6 of value5) {
-      let entry = entries.get(value6.name);
+    let entries = new Map(existingTokens.map((token) => [token.name, token]));
+    for (let token of incomingTokens) {
+      let entry = entries.get(token.name);
       if (entry === undefined) {
-        value4.push(value6);
+        existingTokens.push(token);
       } else if (
         serializeIndexDocument(entry) !==
-        serializeIndexDocument(value6)
+        serializeIndexDocument(token)
       ) {
         clashed = true;
       }
@@ -385,12 +385,12 @@ function otherVersionFileName(path: string): string {
   }
 }
 async function storeFoldFileComparison(
-  context: Migration.FoldContext,
+  foldContext: Migration.FoldContext,
   projectPath: string,
   relative: string,
   recordedSha?: string,
 ): Promise<string> {
-  let current = await context.readFileState(projectPath);
+  let current = await foldContext.readFileState(projectPath);
   if (current.state === "unreadable") {
     return "unreadable";
   }
@@ -426,10 +426,10 @@ async function foldLegacyMetaFields(
   if (parsed === null) {
     return;
   }
-  let fieldChanged = async (input: string): Promise<boolean> =>
-    Object.hasOwn(meta, input) &&
-    (await hashCanonicalIndex(meta[input])) !==
-      recordedFields?.[input];
+  let fieldChanged = async (fieldName: string): Promise<boolean> =>
+    Object.hasOwn(meta, fieldName) &&
+    (await hashCanonicalIndex(meta[fieldName])) !==
+      recordedFields?.[fieldName];
   if ((await fieldChanged("title")) && parsed.title !== "") {
     index.title = parsed.title;
   }
@@ -440,28 +440,28 @@ async function foldLegacyMetaFields(
     index.libraries = parsed.libraries;
   }
   if (await fieldChanged("sections")) {
-    for (let [value, value2] of Object.entries(parsed.sections ?? {})) {
+    for (let [value, sectionValue] of Object.entries(parsed.sections ?? {})) {
       if (
-        typeof value2 === "string" &&
+        typeof sectionValue === "string" &&
         !["__proto__", "constructor", "prototype"].includes(
           encodeFileIndexKey_r(value),
         ) &&
         !Object.hasOwn(index.sections, encodeFileIndexKey_r(value))
       ) {
-        index.sections[encodeFileIndexKey_r(value)] = value2;
+        index.sections[encodeFileIndexKey_r(value)] = sectionValue;
       }
     }
   }
   if (await fieldChanged("assetGroups")) {
     for (let value of parsed.assetGroups ?? []) {
-      let value2 = (encodeFileIndexKey_r as (input: unknown) => string)((value as { name?: unknown }).name);
+      let groupKey = (encodeFileIndexKey_r as (input: unknown) => string)((value as { name?: unknown }).name);
       if (
         !isAssetGroupName((value as { name?: unknown }).name) ||
-        Object.hasOwn(index.assetGroups, value2)
+        Object.hasOwn(index.assetGroups, groupKey)
       ) {
         continue;
       }
-      index.assetGroups[value2] = {
+      index.assetGroups[groupKey] = {
         name: (value as { name: string }).name,
         ...((value as { tile?: unknown }).tile !== undefined &&
         isAssetTileSize((value as { tile?: unknown }).tile)
@@ -472,8 +472,8 @@ async function foldLegacyMetaFields(
         order: [...((value as { order?: Iterable<unknown> }).order ?? [])],
         files: {},
       };
-      if (!index.groups.includes(value2)) {
-        index.groups.push(value2);
+      if (!index.groups.includes(groupKey)) {
+        index.groups.push(groupKey);
       }
     }
   }
@@ -517,39 +517,39 @@ function addFoldedDocumentToIndex(
   }
   let projectPath = projectFilePath(path);
   index.docs.sections = [
-    ...index.docs.sections.filter((input): boolean => input !== projectPath),
+    ...index.docs.sections.filter((sectionPath): boolean => sectionPath !== projectPath),
     projectPath,
   ].sort();
 }
 async function preflightLegacyStoreMigration(
-  options: Pick<Migration.DesignSystemMigrationOptions, "files" | "store">,
+  migrationOptions: Pick<Migration.DesignSystemMigrationOptions, "files" | "store">,
 ): Promise<Migration.MigrationPreflight> {
   try {
-    let value = await listWritableFiles(options.files),
-      value2 = await readAllowlistedStoreDocuments(
-        options.store,
+    let value = await listWritableFiles(migrationOptions.files),
+      storeDocuments = await readAllowlistedStoreDocuments(
+        migrationOptions.store,
         DESIGN_SYSTEM_STORE_ALLOWLIST,
       ),
-      value3 = composeStoredSystemFiles(
-        storeDocumentDataMap(value2),
+      composedFiles = composeStoredSystemFiles(
+        storeDocumentDataMap(storeDocuments),
       ),
-      value4 = filesLeftOutOfMigration(value3.files);
-    if (value4.length > 0) {
+      unpublishableFiles = filesLeftOutOfMigration(composedFiles.files);
+    if (unpublishableFiles.length > 0) {
       return {
-        unpublishable: value4,
+        unpublishable: unpublishableFiles,
       };
     }
     let items = [
-      ...publishableProjectFiles(value3.files).keys(),
-      ...blobFilesOwedToFileStorage(value3.files).map((input) =>
-        projectFilePath(input.path),
+      ...publishableProjectFiles(composedFiles.files).keys(),
+      ...blobFilesOwedToFileStorage(composedFiles.files).map((blobEntry) =>
+        projectFilePath(blobEntry.path),
       ),
-      ...[...value3.remoteText.keys()].map(projectFilePath),
-      ...validDerivedProjectFiles(value3.files).keys(),
+      ...[...composedFiles.remoteText.keys()].map(projectFilePath),
+      ...validDerivedProjectFiles(composedFiles.files).keys(),
     ];
     if (
       new Set([
-        ...value.map((input) => input.path),
+        ...value.map((fileEntry) => fileEntry.path),
         ...items,
         MIGRATION_SENTINEL_PATH,
         FILES_INDEX_PROJECT_PATH,
@@ -562,19 +562,19 @@ async function preflightLegacyStoreMigration(
         MIGRATION_SENTINEL_PATH,
         FILES_INDEX_PROJECT_PATH,
       ]),
-      value5 = value
-        .filter((input): boolean => !values.has(input.path))
-        .reduce((input, options2) => input + options2.size, 0);
-    for (let value6 of value2.values()) {
-      value5 +=
-        typeof value6.data.data === "string"
-          ? value6.data.data.length
-          : typeof value6.data.dataBytes === "number" &&
-              !value6.path.startsWith(ASSETS_COLLECTION + "/")
-            ? value6.data.dataBytes
+      totalSize = value
+        .filter((entry): boolean => !values.has(entry.path))
+        .reduce((total, entry) => total + entry.size, 0);
+    for (let document of storeDocuments.values()) {
+      totalSize +=
+        typeof document.data.data === "string"
+          ? document.data.data.length
+          : typeof document.data.dataBytes === "number" &&
+              !document.path.startsWith(ASSETS_COLLECTION + "/")
+            ? document.data.dataBytes
             : 0;
     }
-    if (value5 > ARTIFACT_FILE_CAPACITY.bytes) {
+    if (totalSize > ARTIFACT_FILE_CAPACITY.bytes) {
       return "too_large";
     } else {
       return null;
@@ -591,26 +591,26 @@ async function preflightLegacyStoreMigration(
   }
 }
 async function migrateDesignSystemStoreToFiles(
-  options: Migration.DesignSystemMigrationOptions,
+  migrationOptions: Migration.DesignSystemMigrationOptions,
 ): Promise<Migration.MigrationOutcome> {
   return migrateStoreToFiles({
-    adapter: createDesignSystemMigrationAdapter(options.fetchBlob),
+    adapter: createDesignSystemMigrationAdapter(migrationOptions.fetchBlob),
     versionCaps: ARTIFACT_FILE_CAPACITY,
-    files: options.files,
-    store: options.store,
-    holder: options.holder,
-    by: options.by,
-    timers: options.timers,
-    ...(options.artifactId !== undefined
+    files: migrationOptions.files,
+    store: migrationOptions.store,
+    holder: migrationOptions.holder,
+    by: migrationOptions.by,
+    timers: migrationOptions.timers,
+    ...(migrationOptions.artifactId !== undefined
       ? {
-          artifactId: options.artifactId,
+          artifactId: migrationOptions.artifactId,
         }
       : {}),
     sharedExternally: async (): Promise<null> => null,
     embedsArtifacts: async (): Promise<null> => null,
-    ...(options.onStage !== undefined
+    ...(migrationOptions.onStage !== undefined
       ? {
-          onStage: options.onStage,
+          onStage: migrationOptions.onStage,
         }
       : {}),
   });
@@ -627,10 +627,10 @@ function createDesignSystemMigrationAdapter(
     allowlist: DESIGN_SYSTEM_STORE_ALLOWLIST,
     dbRules: designSystemMigrationDbRules(),
     codec: createDesignSystemMigrationCodec(fetchBlob),
-    indexHolds: (dataset, options): boolean =>
-      options === SYSTEM_SOURCE_DOCUMENT_PATH
+    indexHolds: (dataset, path): boolean =>
+      path === SYSTEM_SOURCE_DOCUMENT_PATH
         ? dataset.source !== undefined
-        : options === SYSTEM_UPGRADED_DOCUMENT_PATH
+        : path === SYSTEM_UPGRADED_DOCUMENT_PATH
           ? dataset.upgraded !== undefined
           : false,
   };
@@ -660,18 +660,18 @@ export function installFilesMigrationFold(): () => void {
       came: false,
     };
     OTHER_VERSION_COPY_SUFFIX = " (other version)";
-    assetGroupPathParts = (input) => {
-      if (!input.startsWith(DESIGN_SYSTEM_PATHS.assetsDir)) {
+    assetGroupPathParts = (assetPath) => {
+      if (!assetPath.startsWith(DESIGN_SYSTEM_PATHS.assetsDir)) {
         return null;
       }
-      let value = input.slice(DESIGN_SYSTEM_PATHS.assetsDir.length),
-        value2 = value.indexOf("/");
-      if (value2 <= 0) {
+      let value = assetPath.slice(DESIGN_SYSTEM_PATHS.assetsDir.length),
+        separatorIndex = value.indexOf("/");
+      if (separatorIndex <= 0) {
         return null;
       } else {
         return {
-          key: encodeFileIndexKey_r(value.slice(0, value2)),
-          rel: value.slice(value2 + 1),
+          key: encodeFileIndexKey_r(value.slice(0, separatorIndex)),
+          rel: value.slice(separatorIndex + 1),
         };
       }
     };

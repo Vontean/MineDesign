@@ -28,7 +28,7 @@ async function readFreshDatabaseSnapshot<
       });
     }
     await new Promise(
-      (input) => void setTimeout(input, LEGACY_DATABASE_FRESH_READ_DELAY_MS),
+      (resolve) => void setTimeout(resolve, LEGACY_DATABASE_FRESH_READ_DELAY_MS),
     );
   }
 }
@@ -36,33 +36,33 @@ function createLegacyDatabasePort(
   handle: Boot.NativeLegacyDatabase,
 ): Model.FilesMigrationStore {
   return {
-    async list(input) {
+    async list(collectionPath) {
       let value = await readFreshDatabaseSnapshot(() =>
           handle
-            .collection(input)
+            .collection(collectionPath)
             .limit(LEGACY_DATABASE_LIST_LIMIT)
             .get(),
         ),
         items = [];
-      for (let value2 of value.docs) {
-        if (value2.exists) {
+      for (let document of value.docs) {
+        if (document.exists) {
           items.push({
-            path: input + "/" + value2.id,
+            path: collectionPath + "/" + document.id,
             data: {
-              ...(value2.data() ?? {}),
+              ...(document.data() ?? {}),
             },
           });
         }
       }
       return items;
     },
-    async get(input) {
+    async get(documentId) {
       let value = await readFreshDatabaseSnapshot(() =>
-        handle.doc(input).get(),
+        handle.doc(documentId).get(),
       );
       if (value.exists) {
         return {
-          path: input,
+          path: documentId,
           data: {
             ...(value.data() ?? {}),
           },
@@ -71,53 +71,53 @@ function createLegacyDatabasePort(
         return null;
       }
     },
-    async update(input, options): Promise<void> {
-      await handle.doc(input).update({
-        ...options,
+    async update(documentId, fields): Promise<void> {
+      await handle.doc(documentId).update({
+        ...fields,
       });
     },
-    async set(input, options): Promise<void> {
-      await handle.doc(input).set({
-        ...options,
+    async set(documentId, fields): Promise<void> {
+      await handle.doc(documentId).set({
+        ...fields,
       });
     },
-    async acquire(input, options) {
-      let value = handle.doc(input);
+    async acquire(documentId, leaseOptions) {
+      let value = handle.doc(documentId);
       if (typeof value.acquire !== "function") {
         return "unsupported";
       }
-      let value2 = await value.acquire(options);
+      let leaseResult = await value.acquire(leaseOptions);
       return {
-        acquired: value2.acquired === true,
-        ...(typeof value2.expiresAt === "string"
+        acquired: leaseResult.acquired === true,
+        ...(typeof leaseResult.expiresAt === "string"
           ? {
-              expiresAt: value2.expiresAt,
+              expiresAt: leaseResult.expiresAt,
             }
           : {}),
       };
     },
-    watch(input, options) {
+    watch(collectionPath, watchOptions) {
       let flag: boolean = true,
         value: (() => void) | undefined,
-        callback = (input2: Boot.NativeLegacyQuerySnapshot) => {
+        callback = (snapshot: Boot.NativeLegacyQuerySnapshot) => {
           try {
-            return input2
+            return snapshot
               .docChanges?.()
-              .map((input3): string => input + "/" + input3.doc.id);
+              .map((document): string => collectionPath + "/" + document.doc.id);
           } catch {
             return;
           }
         };
       try {
         value = handle
-          .collection(input)
+          .collection(collectionPath)
           .limit(LEGACY_DATABASE_LIST_LIMIT)
           .onSnapshot(
-            (input2): void => {
+            (snapshot): void => {
               if (flag) {
                 flag = false;
               } else {
-                options(callback(input2));
+                watchOptions(callback(snapshot));
               }
             },
             (): void => {

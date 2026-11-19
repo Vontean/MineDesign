@@ -25,17 +25,17 @@ async function readLegacyStateFile(
         value.status,
       );
     }
-    let value2 = await value.text(),
-      value3: Boot.LegacyReadSuccess | string;
+    let stateText = await value.text(),
+      readResult: Boot.LegacyReadSuccess | string;
     try {
-      value3 = read(value2, readPath);
+      readResult = read(stateText, readPath);
     } catch {
       return new LegacyStateReadFailure(path + ": unreadable", "read");
     }
-    if (typeof value3 === "string") {
-      return new LegacyStateReadFailure(path + ": " + value3, "read");
+    if (typeof readResult === "string") {
+      return new LegacyStateReadFailure(path + ": " + readResult, "read");
     } else {
-      return value3;
+      return readResult;
     }
   } catch (value: unknown) {
     return new LegacyStateReadFailure(
@@ -47,23 +47,23 @@ async function readLegacyStateFile(
   }
 }
 async function readLegacyDesignSystemState(
-  options: Boot.LegacyReadOptions,
+  readOptions: Boot.LegacyReadOptions,
 ): Promise<Boot.LegacyInitialState> {
-  let fetchFile = options.fetch ?? ((input) => fetch(input)),
+  let fetchFile = readOptions.fetch ?? ((url) => fetch(url)),
     statePaths =
-      options.stateFiles ??
-      (options.stateFile !== undefined ? [options.stateFile] : []),
+      readOptions.stateFiles ??
+      (readOptions.stateFile !== undefined ? [readOptions.stateFile] : []),
     answers = await Promise.all(
-      statePaths.map((input) =>
-        readLegacyStateFile(fetchFile, input, options.read),
+      statePaths.map((statePath) =>
+        readLegacyStateFile(fetchFile, statePath, readOptions.read),
       ),
     ),
-    answerKind = (input: Boot.LegacyReadAnswer): Boot.LegacyAnswerKind =>
-      !(input instanceof LegacyStateReadFailure)
+    answerKind = (answer: Boot.LegacyReadAnswer): Boot.LegacyAnswerKind =>
+      !(answer instanceof LegacyStateReadFailure)
         ? "accepted"
-        : input.missing
+        : answer.missing
           ? "missing"
-          : input.at === "read"
+          : answer.at === "read"
             ? "refused"
             : "unread",
     isAccessDenied = (
@@ -72,42 +72,42 @@ async function readLegacyDesignSystemState(
       state instanceof LegacyStateReadFailure &&
       (state.status === 401 || state.status === 403);
   if (
-    options.mayWrite !== undefined &&
+    readOptions.mayWrite !== undefined &&
     answers.some(isAccessDenied) &&
     answers.some(
-      (input): boolean => !(input instanceof LegacyStateReadFailure),
+      (answer): boolean => !(answer instanceof LegacyStateReadFailure),
     )
   ) {
     let value =
-        options.wait ??
-        ((input) => new Promise((input2) => void setTimeout(input2, input))),
-      value2 = await Promise.resolve()
-        .then(() => options.mayWrite!())
+        readOptions.wait ??
+        ((waitMs) => new Promise((resolve) => void setTimeout(resolve, waitMs))),
+      waitResult = await Promise.resolve()
+        .then(() => readOptions.mayWrite!())
         .catch((): void => {
           return;
         });
-    if (value2 === true) {
-      for (let value3 of options.refusedWaits ?? []) {
+    if (waitResult === true) {
+      for (let refusedWaitMs of readOptions.refusedWaits ?? []) {
         if (!answers.some(isAccessDenied)) {
           break;
         }
-        await value(value3);
+        await value(refusedWaitMs);
         await Promise.all(
-          answers.map(async (input, options2): Promise<void> => {
-            if (isAccessDenied(input)) {
-              answers[options2] = await readLegacyStateFile(
+          answers.map(async (answer, stateIndex): Promise<void> => {
+            if (isAccessDenied(answer)) {
+              answers[stateIndex] = await readLegacyStateFile(
                 fetchFile,
-                statePaths[options2],
-                options.read,
+                statePaths[stateIndex],
+                readOptions.read,
               );
             }
           }),
         );
       }
-    } else if (value2 === false) {
-      answers.forEach((state, options2): void => {
+    } else if (waitResult === false) {
+      answers.forEach((state, stateIndex): void => {
         if (isAccessDenied(state)) {
-          answers[options2] = new LegacyStateReadFailure(
+          answers[stateIndex] = new LegacyStateReadFailure(
             state.fail,
             "fetch",
             true,
@@ -120,50 +120,50 @@ async function readLegacyDesignSystemState(
   }
   if (
     statePaths.length > 1 &&
-    answers.some((input): boolean => answerKind(input) === "unread")
+    answers.some((answer): boolean => answerKind(answer) === "unread")
   ) {
     await (
-      options.wait ??
-      ((input) => new Promise((input2) => void setTimeout(input2, input)))
+      readOptions.wait ??
+      ((waitMs) => new Promise((resolve) => void setTimeout(resolve, waitMs)))
     )(LEGACY_STATE_AMBIGUOUS_RETRY_MS);
     await Promise.all(
-      answers.map(async (input, options2): Promise<void> => {
-        if (answerKind(input) === "unread") {
-          answers[options2] = await readLegacyStateFile(
+      answers.map(async (answer, stateIndex): Promise<void> => {
+        if (answerKind(answer) === "unread") {
+          answers[stateIndex] = await readLegacyStateFile(
             fetchFile,
-            statePaths[options2],
-            options.read,
+            statePaths[stateIndex],
+            readOptions.read,
           );
         }
       }),
     );
   }
   let stateFileAnswers = Object.fromEntries(
-      statePaths.map((input, options2) => [
-        input,
-        answerKind(answers[options2]),
+      statePaths.map((statePath, stateIndex) => [
+        statePath,
+        answerKind(answers[stateIndex]),
       ]),
     ),
     acceptedIndex = answers.findIndex(
-      (input): boolean => !(input instanceof LegacyStateReadFailure),
+      (answer): boolean => !(answer instanceof LegacyStateReadFailure),
     ),
     hasUnread = answers.some(
-      (input) =>
-        input instanceof LegacyStateReadFailure &&
-        answerKind(input) === "unread",
+      (answer) =>
+        answer instanceof LegacyStateReadFailure &&
+        answerKind(answer) === "unread",
     ),
     accepted =
       acceptedIndex >= 0 && !hasUnread
         ? (answers[acceptedIndex] as Boot.LegacyReadSuccess)
         : undefined,
     failures = answers.filter(
-      (input): input is Boot.LegacyFailure =>
-        input instanceof LegacyStateReadFailure,
+      (answer): answer is Boot.LegacyFailure =>
+        answer instanceof LegacyStateReadFailure,
     ),
     allMissing =
       failures.length === answers.length &&
-      failures.every((input) => input.missing);
-  options.onOwn?.(
+      failures.every((failureEntry) => failureEntry.missing);
+  readOptions.onOwn?.(
     accepted !== undefined
       ? accepted.envelope
       : allMissing
@@ -181,20 +181,20 @@ async function readLegacyDesignSystemState(
     };
   }
   let failure =
-      failures.find((input): boolean => !input.missing) ??
+      failures.find((failureEntry): boolean => !failureEntry.missing) ??
       failures[0] ??
       new LegacyStateReadFailure("no state file named", "fetch", true),
     demo = await readLegacyStateFile(
       fetchFile,
-      options.demoFile,
-      options.read,
+      readOptions.demoFile,
+      readOptions.read,
       "demo",
     ),
     stateFileFound: boolean | undefined | boolean =
-      failures.some((input) => input.answered && !input.missing) ||
+      failures.some((failureEntry) => failureEntry.answered && !failureEntry.missing) ||
       acceptedIndex >= 0
         ? true
-        : failures.some((input): boolean => !input.answered)
+        : failures.some((failureEntry): boolean => !failureEntry.answered)
           ? undefined
           : false;
   if (!(demo instanceof LegacyStateReadFailure)) {
@@ -233,17 +233,17 @@ export function installFilesLegacyStateReader(): () => void {
       answered: boolean;
       status: number | undefined;
       constructor(
-        input: string,
-        options: Boot.LegacyFailure["at"],
-        context: boolean = false,
-        value: boolean = true,
-        extra?: number,
+        failureMessage: string,
+        failureLocation: Boot.LegacyFailure["at"],
+        isMissing: boolean = false,
+        isAnswered: boolean = true,
+        statusCode?: number,
       ) {
-        this.fail = input;
-        this.at = options;
-        this.missing = context;
-        this.answered = value;
-        this.status = extra;
+        this.fail = failureMessage;
+        this.at = failureLocation;
+        this.missing = isMissing;
+        this.answered = isAnswered;
+        this.status = statusCode;
       }
     };
     LEGACY_STATE_AMBIGUOUS_RETRY_MS = 700;

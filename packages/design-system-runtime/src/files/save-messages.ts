@@ -85,13 +85,13 @@ function describeStuckSave(
 }
 function formatUnsendableFilesMessage(
   leftOut: readonly Boot.UnsavedFile[],
-  options: { stashed?: boolean; restSaved?: boolean } = {},
+  messageOptions: { stashed?: boolean; restSaved?: boolean } = {},
 ): string {
-  let basename = (input: string) => input.slice(input.lastIndexOf("/") + 1),
+  let basename = (filePath: string) => filePath.slice(filePath.lastIndexOf("/") + 1),
     first = leftOut[0],
     singular: boolean = leftOut.length === 1,
     retention: string =
-      options.stashed === true
+      messageOptions.stashed === true
         ? uiMessage("design-system.saveMessages.keptInThisBrowserFor") +
           CRASH_STASH_RETENTION_LABEL
         : uiMessage("design-system.saveMessages.keptOnlyWhileThisTab"),
@@ -101,7 +101,7 @@ function formatUnsendableFilesMessage(
       " not saved, and " +
       retention +
       ".";
-  if (options.restSaved === false) {
+  if (messageOptions.restSaved === false) {
     return (
       (singular
         ? 'Also, "' + basename(first.path) + '" cannot be saved as it is: '
@@ -149,9 +149,9 @@ export function installFilesSaveMessages(): () => void {
       read_only_path:
         "this file belongs to the editor itself and cannot be changed",
     };
-    isTextFileListingRow = (input) =>
-      input.contentType.startsWith("text/") ||
-      input.contentType === "application/json" ||
-      input.contentType === "image/svg+xml";
+    isTextFileListingRow = (fileEntry) =>
+      fileEntry.contentType.startsWith("text/") ||
+      fileEntry.contentType === "application/json" ||
+      fileEntry.contentType === "image/svg+xml";
   };
 }

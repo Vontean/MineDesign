@@ -42,25 +42,25 @@ function storeReadAccessLevel(path: string, rules: Migration.DatabaseRule[]) {
   let level = "view",
     longestMatch = -1;
   for (let value of rules) {
-    let value2 = storePathParts(value.path);
-    if (value2[value2.length - 1] === "{self}") {
+    let pathParts = storePathParts(value.path);
+    if (pathParts[pathParts.length - 1] === "{self}") {
       if (
-        storePathHasPrefix(parts, value2.slice(0, -1)) &&
-        parts.length >= value2.length
+        storePathHasPrefix(parts, pathParts.slice(0, -1)) &&
+        parts.length >= pathParts.length
       ) {
         return "private";
       }
       continue;
     }
     if (
-      !storePathHasPrefix(parts, value2) ||
+      !storePathHasPrefix(parts, pathParts) ||
       value.read === undefined ||
-      value2.length < longestMatch
+      pathParts.length < longestMatch
     ) {
       continue;
     }
     level = value.read;
-    longestMatch = value2.length;
+    longestMatch = pathParts.length;
   }
   if (PUBLIC_STORE_READ_LEVELS.includes(level)) {
     return level;
@@ -72,60 +72,60 @@ function validateMigrationAllowlist(
   adapter: Pick<Migration.MigrationAdapter<object>, "allowlist" | "dbRules">,
 ): void {
   for (let value of adapter.allowlist) {
-    let value2 = allowlistedStorePath(value);
+    let storePath = allowlistedStorePath(value);
     if (
       [
         ...value.collection.split("/"),
         ...(value.docId === undefined ? [] : [value.docId]),
       ].some(
-        (input) =>
-          !/^[A-Za-z0-9_.~:@+-]+$/.test(input) ||
-          input === "." ||
-          input === "..",
+        (segment) =>
+          !/^[A-Za-z0-9_.~:@+-]+$/.test(segment) ||
+          segment === "." ||
+          segment === "..",
       )
     ) {
       throw new MigrationConfigError(
-        "not a store path: " + JSON.stringify(value2),
+        "not a store path: " + JSON.stringify(storePath),
       );
     }
-    let value3 = storePathParts(value2),
-      items = [storeReadAccessLevel(value2, adapter.dbRules)];
-    for (let value5 of adapter.dbRules) {
-      let value6 = storePathParts(value5.path);
+    let pathParts = storePathParts(storePath),
+      items = [storeReadAccessLevel(storePath, adapter.dbRules)];
+    for (let rule of adapter.dbRules) {
+      let ruleParts = storePathParts(rule.path);
       if (
-        value6.length > value3.length &&
-        storePathHasPrefix(value6, value3)
+        ruleParts.length > pathParts.length &&
+        storePathHasPrefix(ruleParts, pathParts)
       ) {
         items.push(
-          value6[value6.length - 1] === "{self}"
+          ruleParts[ruleParts.length - 1] === "{self}"
             ? "private"
-            : storeReadAccessLevel(value5.path, adapter.dbRules),
+            : storeReadAccessLevel(rule.path, adapter.dbRules),
         );
       }
     }
-    let value4 = items.find((input): boolean => input !== "view");
-    if (value4 !== undefined) {
+    let specificAccess = items.find((access): boolean => access !== "view");
+    if (specificAccess !== undefined) {
       throw new MigrationConfigError(
         "store kind " +
-          JSON.stringify(value2) +
+          JSON.stringify(storePath) +
           " is readable only at " +
-          value4 +
+          specificAccess +
           ": it must not be in the allowlist",
       );
     }
   }
 }
 async function hashStoreDocument(
-  document2: Record<string, unknown>,
+  document: Record<string, unknown>,
   secretFields: string[] = [],
 ): Promise<string> {
   let filtered: Record<string, unknown> = {};
-  for (let [value, value2] of Object.entries(document2)) {
+  for (let [value, fieldValue] of Object.entries(document)) {
     if (
       !MIGRATION_INTERNAL_META_FIELDS.includes(value) &&
       !secretFields.includes(value)
     ) {
-      filtered[value] = value2;
+      filtered[value] = fieldValue;
     }
   }
   return sha256(serializeIndexDocument(filtered));
@@ -137,43 +137,43 @@ async function readAllowlistedStoreDocuments(
   let documents: Migration.StoreSnapshot = new Map();
   for (let value of allowlist) {
     if (value.docId !== undefined) {
-      let value3 = await store.get(allowlistedStorePath(value));
-      if (value3 !== null && value3.path === allowlistedStorePath(value)) {
-        documents.set(value3.path, value3);
+      let document = await store.get(allowlistedStorePath(value));
+      if (document !== null && document.path === allowlistedStorePath(value)) {
+        documents.set(document.path, document);
       }
       continue;
     }
-    let value2 = await store.list(value.collection);
-    if (value2.length >= LEGACY_DATABASE_LIST_LIMIT) {
+    let collectionDocs = await store.list(value.collection);
+    if (collectionDocs.length >= LEGACY_DATABASE_LIST_LIMIT) {
       throw new MigrationLimitError("collection_too_large");
     }
-    for (let value3 of value2) {
+    for (let document of collectionDocs) {
       if (
-        value3.path.startsWith(value.collection + "/") &&
-        !value3.path.slice(value.collection.length + 1).includes("/")
+        document.path.startsWith(value.collection + "/") &&
+        !document.path.slice(value.collection.length + 1).includes("/")
       ) {
-        documents.set(value3.path, value3);
+        documents.set(document.path, document);
       }
     }
   }
   return documents;
 }
-function hashCanonicalIndex(value: unknown) {
+function hashCanonicalIndex(indexValue: unknown) {
   return sha256(
-    serializeIndexDocument(value === undefined ? null : value),
+    serializeIndexDocument(indexValue === undefined ? null : indexValue),
   );
 }
 async function hashStoreFields(
-  document2: Record<string, unknown>,
+  document: Record<string, unknown>,
   secretFields: string[] = [],
 ): Promise<Record<string, string>> {
   let fields: Record<string, string> = {};
-  for (let [value, value2] of Object.entries(document2)) {
+  for (let [value, fieldValue] of Object.entries(document)) {
     if (
       !MIGRATION_INTERNAL_META_FIELDS.includes(value) &&
       !secretFields.includes(value)
     ) {
-      fields[value] = await hashCanonicalIndex(value2);
+      fields[value] = await hashCanonicalIndex(fieldValue);
     }
   }
   return fields;
@@ -186,11 +186,11 @@ async function hashStoreSnapshot(
   > = {},
 ): Promise<Map<string, string>> {
   let digests = new Map<string, string>();
-  for (let [value, value2] of snapshot) {
+  for (let [value, document] of snapshot) {
     digests.set(
       value,
       await hashStoreDocument(
-        storeDocumentDigestView(value2, adapter),
+        storeDocumentDigestView(document, adapter),
         adapter.secretFields,
       ),
     );
@@ -203,8 +203,8 @@ function parseMigrationSentinel(text: string | null) {
   }
   try {
     let value: unknown = JSON.parse(text),
-      callback = (input: unknown): input is Record<string, unknown> =>
-        typeof input === "object" && input !== null && !Array.isArray(input);
+      callback = (candidateValue: unknown): candidateValue is Record<string, unknown> =>
+        typeof candidateValue === "object" && candidateValue !== null && !Array.isArray(candidateValue);
     if (
       value !== null &&
       ((value as { v?: unknown }).v === 1 ||
@@ -235,21 +235,21 @@ function splitMigrationPublishBatches(entries: Model.FilePublishEntries) {
     batch: Model.FilePublishEntries = {},
     count = 0,
     bytes = 0;
-  for (let [value, value2] of Object.entries(entries)) {
-    let value3 = filePublishEncodedBytes(value2);
+  for (let [value, fileContent] of Object.entries(entries)) {
+    let encodedBytes = filePublishEncodedBytes(fileContent);
     if (
       count > 0 &&
       (count + 1 > MIGRATION_BATCH_MAX_FILES ||
-        bytes + value3 > MIGRATION_BATCH_MAX_BYTES)
+        bytes + encodedBytes > MIGRATION_BATCH_MAX_BYTES)
     ) {
       batches.push(batch);
       batch = {};
       count = 0;
       bytes = 0;
     }
-    batch[value] = value2;
+    batch[value] = fileContent;
     count += 1;
-    bytes += value3;
+    bytes += encodedBytes;
   }
   if (count > 0) {
     batches.push(batch);
@@ -263,26 +263,26 @@ function createMigrationPublisher(
 ) {
   let lastAttemptAt = -1 / 0,
     calls = 0,
-    wait = (input: number) =>
-      new Promise<void>((input2) => void timers.setTimeout(input2, input));
+    wait = (delayMs: number) =>
+      new Promise<void>((resolve) => void timers.setTimeout(resolve, delayMs));
   return {
     calls: () => calls,
     async publish(
-      input: Model.FilePublishEntries,
-      options?: Model.FilePublishPreconditions,
+      publishEntries: Model.FilePublishEntries,
+      preconditions?: Model.FilePublishPreconditions,
     ): Promise<Model.FilePublishResult> {
       let value = timers.now(),
-        value2: number = MIGRATION_RETRY_INITIAL_MS,
-        value3: Model.FilePublishFailure | undefined;
+        retryDelay: number = MIGRATION_RETRY_INITIAL_MS,
+        failure: Model.FilePublishFailure | undefined;
       for (;;) {
-        let value4: number =
+        let nextDelay: number =
           MIGRATION_PUBLISH_SPACING_MS - (timers.now() - lastAttemptAt);
-        if (value4 > 0) {
-          await wait(value4);
+        if (nextDelay > 0) {
+          await wait(nextDelay);
         }
         if (!(await stillOwnsLease())) {
           return (
-            value3 ?? {
+            failure ?? {
               ok: false,
               code: "conflict",
             }
@@ -290,48 +290,48 @@ function createMigrationPublisher(
         }
         lastAttemptAt = timers.now();
         calls += 1;
-        let value5: Model.FilePublishResult;
+        let publishResult: Model.FilePublishResult;
         try {
-          value5 = await files.publish(input, options);
+          publishResult = await files.publish(publishEntries, preconditions);
         } catch {
-          value5 = {
+          publishResult = {
             ok: false,
             code: "upstream_error",
           };
         }
-        if (value5.ok) {
-          return value5;
+        if (publishResult.ok) {
+          return publishResult;
         }
-        value3 = value5;
+        failure = publishResult;
         if (
           !(
-            value5.code === "rate_limited" ||
-            value5.code === "conflict" ||
-            value5.code === "upstream_error"
+            publishResult.code === "rate_limited" ||
+            publishResult.code === "conflict" ||
+            publishResult.code === "upstream_error"
           )
         ) {
-          return value5;
+          return publishResult;
         }
         if (
           timers.now() - value >=
-          (value5.code === "upstream_error"
+          (publishResult.code === "upstream_error"
             ? MIGRATION_UPSTREAM_RETRY_WINDOW_MS
             : MIGRATION_PUBLISH_RETRY_WINDOW_MS)
         ) {
           await stillOwnsLease();
-          return value5;
+          return publishResult;
         }
-        let value6 =
-          value5.code === "rate_limited" &&
-          value5.retryAfterMs !== undefined &&
-          Number.isFinite(value5.retryAfterMs) &&
-          value5.retryAfterMs >= 0
-            ? value5.retryAfterMs
+        let retryAfterMs =
+          publishResult.code === "rate_limited" &&
+          publishResult.retryAfterMs !== undefined &&
+          Number.isFinite(publishResult.retryAfterMs) &&
+          publishResult.retryAfterMs >= 0
+            ? publishResult.retryAfterMs
             : undefined;
         await wait(
-          Math.min(value6 ?? value2, MIGRATION_PUBLISH_RETRY_WINDOW_MS),
+          Math.min(retryAfterMs ?? retryDelay, MIGRATION_PUBLISH_RETRY_WINDOW_MS),
         );
-        value2 = Math.min(MIGRATION_RETRY_MAX_MS, value2 * 2);
+        retryDelay = Math.min(MIGRATION_RETRY_MAX_MS, retryDelay * 2);
       }
     },
   };
@@ -354,10 +354,10 @@ function migrationVersionSize(
     }
   }
   let oversized: string[] = [];
-  for (let [value, value2] of tree.files) {
+  for (let [value, fileContent] of tree.files) {
     if (
-      ((bytes += filePublishRawBytes(value2)),
-      filePublishEncodedBytes(value2) >
+      ((bytes += filePublishRawBytes(fileContent)),
+      filePublishEncodedBytes(fileContent) >
         MAX_FILE_PUBLISH_ENCODED_BYTES)
     ) {
       oversized.push(value);
@@ -365,7 +365,7 @@ function migrationVersionSize(
   }
   bytes += 2048 * (tree.files.size + 1);
   return {
-    files: new Set([...listing.map((input) => input.path), ...treePaths])
+    files: new Set([...listing.map((fileEntry) => fileEntry.path), ...treePaths])
       .size,
     bytes: bytes,
     oversized: oversized,
@@ -395,9 +395,9 @@ function validateMigrationTreePaths(
 }
 async function hashMigrationFileInput(
   path: string,
-  input: Model.FilePublishInput,
+  fileContent: Model.FilePublishInput,
 ): Promise<string> {
-  let normalized = normalizeFilePublishInput(path, input);
+  let normalized = normalizeFilePublishInput(path, fileContent);
   if (normalized === null || typeof normalized === "string") {
     throw new MigrationConfigError(
       typeof normalized === "string" ? normalized : path + ": no content",
@@ -408,67 +408,67 @@ async function hashMigrationFileInput(
   );
 }
 async function finishMigrationTombstone(
-  options: Pick<
+  migrationOptions: Pick<
     Migration.MigrationOptions<object>,
     "files" | "store" | "timers" | "artifactId"
   > & { indexPath: string; metaPath: string },
 ): Promise<boolean | undefined> {
   try {
-    if (!options.files.canWrite) {
+    if (!migrationOptions.files.canWrite) {
       return false;
     }
     let value = await readJsonFileState(
-        options.files,
-        options.indexPath,
-        options.timers,
+        migrationOptions.files,
+        migrationOptions.indexPath,
+        migrationOptions.timers,
       ),
-      value2 =
+      sentinelData =
         value.state === "read"
           ? readFileMigrationMarker(value.value)
           : null;
-    if (value2 === null) {
+    if (sentinelData === null) {
       return false;
     }
-    let value3: Model.FilesMigrationSentinel | null = null;
+    let sentinel: Model.FilesMigrationSentinel | null = null;
     try {
-      value3 = parseMigrationSentinel(
-        (await options.files.readText(MIGRATION_SENTINEL_PATH)).text,
+      sentinel = parseMigrationSentinel(
+        (await migrationOptions.files.readText(MIGRATION_SENTINEL_PATH)).text,
       );
     } catch {
-      value3 = null;
+      sentinel = null;
     }
     if (
-      value3 === null ||
-      value3.documents[options.metaPath] === undefined ||
-      !migrationSentinelMatchesArtifact(value3, options.artifactId)
+      sentinel === null ||
+      sentinel.documents[migrationOptions.metaPath] === undefined ||
+      !migrationSentinelMatchesArtifact(sentinel, migrationOptions.artifactId)
     ) {
       return false;
     }
-    let value4 = await options.store.get(options.metaPath);
+    let metaDocument = await migrationOptions.store.get(migrationOptions.metaPath);
     if (
-      value4 === null ||
-      readMovedToMarker(value4.data) !== null
+      metaDocument === null ||
+      readMovedToMarker(metaDocument.data) !== null
     ) {
       return false;
     }
     let state = {
-      ...(value3.dropping !== undefined
+      ...(sentinel.dropping !== undefined
         ? {
-            dropping: value3.dropping.at,
+            dropping: sentinel.dropping.at,
           }
         : {}),
-      ...(value3.dropped !== undefined
+      ...(sentinel.dropped !== undefined
         ? {
-            dropped: value3.dropped.at,
+            dropped: sentinel.dropped.at,
           }
         : {}),
     };
-    await options.store.update(options.metaPath, {
+    await migrationOptions.store.update(migrationOptions.metaPath, {
       [MOVED_TO_MARKER_KEY]: {
         ...movedToMarker({
-          path: options.indexPath,
-          ver: options.files.version().version,
-          at: value2.marker.at,
+          path: migrationOptions.indexPath,
+          ver: migrationOptions.files.version().version,
+          at: sentinelData.marker.at,
         }),
         ...state,
       },
@@ -480,26 +480,26 @@ async function finishMigrationTombstone(
   }
 }
 async function migrateStoreToFiles<Index extends object = Model.FilesIndex>(
-  options: Migration.MigrationOptions<Index>,
+  migrationOptions: Migration.MigrationOptions<Index>,
 ): Promise<Migration.MigrationOutcome> {
   let {
       adapter: adapter,
       files: files,
       store: store,
       timers: timers,
-    } = options,
+    } = migrationOptions,
     startedAt = timers.now(),
     stage = "preflight",
-    setStage = (input: string): void => {
-      stage = input;
+    setStage = (stageName: string): void => {
+      stage = stageName;
       try {
-        options.onStage?.(input);
+        migrationOptions.onStage?.(stageName);
       } catch {}
     },
-    aborted = (input: string): Migration.MigrationOutcome => ({
+    aborted = (code: string): Migration.MigrationOutcome => ({
       result: "aborted",
       stage: stage,
-      code: input,
+      code: code,
       ms: timers.now() - startedAt,
     }),
     renewalTimer: ReturnType<Model.FilesTimers["setTimeout"]> | undefined,
@@ -532,14 +532,14 @@ async function migrateStoreToFiles<Index extends object = Model.FilesIndex>(
       ) {
         return "already_moved";
       }
-      let value2 =
+      let ownershipMarker =
         value === null
           ? null
           : activeConvertingMarker(value.data, timers.now());
-      if (value2 !== null && value2.holder !== options.holder) {
+      if (ownershipMarker !== null && ownershipMarker.holder !== migrationOptions.holder) {
         return "lease_lost";
       }
-      let value3 = await readJsonFileState(
+      let state = await readJsonFileState(
         files,
         adapter.indexPath,
         timers,
@@ -547,16 +547,16 @@ async function migrateStoreToFiles<Index extends object = Model.FilesIndex>(
       if (checkLeaseExpired()) {
         return "lease_lost";
       }
-      if (value3.state === "unreadable") {
+      if (state.state === "unreadable") {
         return "index_unreadable";
       }
-      let value4 =
-        value3.state === "read"
-          ? readFileMigrationMarker(value3.value)
+      let marker =
+        state.state === "read"
+          ? readFileMigrationMarker(state.value)
           : null;
       remoteConversionMarker =
-        value4?.kind === "converted" ? value4.marker : undefined;
-      if (value4 !== null) {
+        marker?.kind === "converted" ? marker.marker : undefined;
+      if (marker !== null) {
         return "already_files";
       } else {
         return null;
@@ -564,16 +564,16 @@ async function migrateStoreToFiles<Index extends object = Model.FilesIndex>(
     },
     remoteConversionMarker: Storage.DatabaseRecord | undefined,
     renewalInFlight: Promise<void> | undefined,
-    versionCaps = options.versionCaps ?? DEFAULT_FILE_VERSION_CAPS,
+    versionCaps = migrationOptions.versionCaps ?? DEFAULT_FILE_VERSION_CAPS,
     exceedsVersionCaps = (
-      input: Model.FileListing,
-      options2: Migration.MigrationTree<Index>,
+      listing: Model.FileListing,
+      migrationTree: Migration.MigrationTree<Index>,
     ) => {
       let value = migrationVersionSize(
-        input,
-        options2,
+        listing,
+        migrationTree,
         adapter.indexPath,
-        adapter.codec.serializeIndex(options2.index),
+        adapter.codec.serializeIndex(migrationTree.index),
       );
       return (
         value.files > versionCaps.files ||
@@ -619,9 +619,9 @@ async function migrateStoreToFiles<Index extends object = Model.FilesIndex>(
           files: files,
           store: store,
           timers: timers,
-          ...(options.artifactId !== undefined
+          ...(migrationOptions.artifactId !== undefined
             ? {
-                artifactId: options.artifactId,
+                artifactId: migrationOptions.artifactId,
               }
             : {}),
         }))
@@ -631,104 +631,104 @@ async function migrateStoreToFiles<Index extends object = Model.FilesIndex>(
           : {}),
       };
     }
-    let value2 = await store.get(adapter.metaPath);
-    if (value2 === null) {
+    let metaRecord = await store.get(adapter.metaPath);
+    if (metaRecord === null) {
       return {
         result: "skipped",
         reason: "empty_store",
       };
     }
-    if (readMovedToMarker(value2.data) !== null) {
+    if (readMovedToMarker(metaRecord.data) !== null) {
       return {
         result: "skipped",
         reason: "already_moved",
       };
     }
-    let value3 = activeConvertingMarker(
-      value2.data,
+    let activeMarker = activeConvertingMarker(
+      metaRecord.data,
       timers.now(),
     );
-    if (value3 !== null && value3.holder !== options.holder) {
+    if (activeMarker !== null && activeMarker.holder !== migrationOptions.holder) {
       return {
         result: "busy",
       };
     }
-    if (options.force !== true) {
-      if ((await options.sharedExternally?.()) === true) {
+    if (migrationOptions.force !== true) {
+      if ((await migrationOptions.sharedExternally?.()) === true) {
         return {
           result: "skipped",
           reason: "shared_externally",
         };
       }
-      if ((await options.embedsArtifacts?.()) === true) {
+      if ((await migrationOptions.embedsArtifacts?.()) === true) {
         return {
           result: "skipped",
           reason: "embeds_artifacts",
         };
       }
     }
-    let value4 = await adapter.codec.toTree(
+    let convertedTree = await adapter.codec.toTree(
         await readAllowlistedStoreDocuments(store, adapter.allowlist),
         {
           preflight: true,
         },
       ),
-      value5 = damagedTextFiles(value4);
-    if (value5.length > 0) {
+      damagedPaths = damagedTextFiles(convertedTree);
+    if (damagedPaths.length > 0) {
       return {
         result: "skipped",
         reason: "unsendable_content",
-        leftOut: value5,
+        leftOut: damagedPaths,
       };
     }
-    let value6 = await listWritableFiles(files).catch(
+    let currentListing = await listWritableFiles(files).catch(
       (): void => {
         return;
       },
     );
     removeUnpublishableMigrationFiles(
-      value4.files,
+      convertedTree.files,
       adapter.type,
     );
-    if (value6 !== undefined && exceedsVersionCaps(value6, value4)) {
+    if (currentListing !== undefined && exceedsVersionCaps(currentListing, convertedTree)) {
       return {
         result: "skipped",
         reason: "too_large",
       };
     }
     setStage("lease");
-    let value7 = timers.now(),
-      value8 = await store.acquire(adapter.lockPath, {
-        holder: options.holder,
+    let leaseTimestamp = timers.now(),
+      migrationLease = await store.acquire(adapter.lockPath, {
+        holder: migrationOptions.holder,
         ttlMs: MIGRATION_LEASE_TTL_MS,
       });
-    lastLeaseRefreshAt = value7;
-    if (value8 === "unsupported") {
+    lastLeaseRefreshAt = leaseTimestamp;
+    if (migrationLease === "unsupported") {
       supportsLease = false;
     } else {
-      if (!value8.acquired) {
+      if (!migrationLease.acquired) {
         return {
           result: "busy",
-          ...(value8.expiresAt !== undefined
+          ...(migrationLease.expiresAt !== undefined
             ? {
-                until: value8.expiresAt,
+                until: migrationLease.expiresAt,
               }
             : {}),
         };
       }
       acquiredLease = true;
     }
-    let value9 = await checkMigrationOwnership();
-    if (value9 === "already_files" || value9 === "already_moved") {
+    let ownershipStatus = await checkMigrationOwnership();
+    if (ownershipStatus === "already_files" || ownershipStatus === "already_moved") {
       return {
         result: "skipped",
-        reason: value9,
+        reason: ownershipStatus,
       };
     }
-    if (value9 === "index_unreadable") {
-      return aborted(value9);
+    if (ownershipStatus === "index_unreadable") {
+      return aborted(ownershipStatus);
     }
-    if (value9 !== null) {
+    if (ownershipStatus !== null) {
       return {
         result: "busy",
       };
@@ -736,30 +736,30 @@ async function migrateStoreToFiles<Index extends object = Model.FilesIndex>(
     let callback = () =>
         store.update(adapter.metaPath, {
           [CONVERTING_MARKER_KEY]: {
-            by: options.by,
+            by: migrationOptions.by,
             at: isoNow(),
-            holder: options.holder,
+            holder: migrationOptions.holder,
           },
         }),
-      callback2 = (): void => {
+      refreshLease = (): void => {
         renewalTimer = timers.setTimeout((): void => {
           renewalInFlight = (async (): Promise<void> => {
             if (finishing) {
               return;
             }
-            let value21 = await checkMigrationOwnership();
-            if (value21 !== null && value21 !== "index_unreadable") {
+            let ownershipResult = await checkMigrationOwnership();
+            if (ownershipResult !== null && ownershipResult !== "index_unreadable") {
               leaseLost = true;
               return;
             }
-            let value22 = timers.now(),
-              value23 = supportsLease
+            let now = timers.now(),
+              leaseResult = supportsLease
                 ? await store.acquire(adapter.lockPath, {
-                    holder: options.holder,
+                    holder: migrationOptions.holder,
                     ttlMs: MIGRATION_LEASE_TTL_MS,
                   })
                 : "unsupported";
-            if (value23 !== "unsupported" && !value23.acquired) {
+            if (leaseResult !== "unsupported" && !leaseResult.acquired) {
               leaseLost = true;
               return;
             }
@@ -769,7 +769,7 @@ async function migrateStoreToFiles<Index extends object = Model.FilesIndex>(
             if (fenceWritten && !finishing) {
               await callback();
             }
-            lastLeaseRefreshAt = value22;
+            lastLeaseRefreshAt = now;
           })()
             .catch((): void => {
               return;
@@ -777,21 +777,21 @@ async function migrateStoreToFiles<Index extends object = Model.FilesIndex>(
             .then((): void => {
               renewalInFlight = undefined;
               if (renewalTimer !== undefined && !leaseLost && !finishing) {
-                callback2();
+                refreshLease();
               }
             });
         }, MIGRATION_LEASE_RENEWAL_MS);
       };
-    callback2();
+    refreshLease();
     setStage("fence");
     await callback();
     fenceWritten = true;
     if (!supportsLease) {
-      let value21 = await store.get(adapter.metaPath);
+      let metaDocument = await store.get(adapter.metaPath);
       if (
-        value21 !== null &&
-        readConvertingMarker(value21.data)?.holder !==
-          options.holder
+        metaDocument !== null &&
+        readConvertingMarker(metaDocument.data)?.holder !==
+          migrationOptions.holder
       ) {
         fenceWritten = false;
         return {
@@ -800,149 +800,149 @@ async function migrateStoreToFiles<Index extends object = Model.FilesIndex>(
       }
     }
     setStage("snapshot");
-    let value10 = await listWritableFiles(files),
-      entries = new Map(value10.map((input) => [input.path, input.sha256])),
+    let writableListing = await listWritableFiles(files),
+      entries = new Map(writableListing.map((fileEntry) => [fileEntry.path, fileEntry.sha256])),
       values = new Set(
-        value10
-          .filter((input): boolean => input.provisional === true)
-          .map((input) => input.path),
+        writableListing
+          .filter((fileEntry): boolean => fileEntry.provisional === true)
+          .map((fileEntry) => fileEntry.path),
       ),
-      value11 = await readAllowlistedStoreDocuments(store, adapter.allowlist),
-      value12 = await hashStoreSnapshot(value11, adapter),
-      value13 = await adapter.codec.toTree(value11);
-    if (damagedTextFiles(value13).length > 0) {
+      legacyDocuments = await readAllowlistedStoreDocuments(store, adapter.allowlist),
+      legacyDigests = await hashStoreSnapshot(legacyDocuments, adapter),
+      migrationTree = await adapter.codec.toTree(legacyDocuments);
+    if (damagedTextFiles(migrationTree).length > 0) {
       return {
         result: "skipped",
         reason: "unsendable_content",
-        leftOut: damagedTextFiles(value13),
+        leftOut: damagedTextFiles(migrationTree),
       };
     }
-    let value14 = removeUnpublishableMigrationFiles(
-      value13.files,
+    let unpublishablePaths = removeUnpublishableMigrationFiles(
+      migrationTree.files,
       adapter.type,
     );
-    validateMigrationTreePaths(value13.files.keys(), adapter.type);
-    if (exceedsVersionCaps(value10, value13)) {
+    validateMigrationTreePaths(migrationTree.files.keys(), adapter.type);
+    if (exceedsVersionCaps(writableListing, migrationTree)) {
       return {
         result: "skipped",
         reason: "too_large",
       };
     }
     setStage("publish");
-    let value15: string | null = null,
-      value16 = createMigrationPublisher(
+    let abortReason: string | null = null,
+      publisher = createMigrationPublisher(
         files,
         timers,
         async (): Promise<boolean> => {
-          value15 = await checkMigrationOwnership();
-          return value15 === null;
+          abortReason = await checkMigrationOwnership();
+          return abortReason === null;
         },
       ),
-      entries2 = new Map<string, string>(),
+      publishedShas = new Map<string, string>(),
       flag: boolean = true,
-      callback3 = (
-        input: Model.FilePublishFailure,
+      handlePublishFailure = (
+        failure: Model.FilePublishFailure,
       ): Migration.MigrationOutcome => {
-        if (value15 === "already_files" || value15 === "already_moved") {
+        if (abortReason === "already_files" || abortReason === "already_moved") {
           return {
             result: "skipped",
-            reason: value15,
+            reason: abortReason,
           };
         }
-        if (value15 === "index_unreadable") {
-          return aborted(value15);
+        if (abortReason === "index_unreadable") {
+          return aborted(abortReason);
         }
-        if (value15 === "lease_lost" || leaseLost) {
+        if (abortReason === "lease_lost" || leaseLost) {
           return aborted("lease_lost");
         }
         if (
           flag &&
-          (input.code === "capability_disabled" ||
-            input.code === "not_declared")
+          (failure.code === "capability_disabled" ||
+            failure.code === "not_declared")
         ) {
           return {
             result: "skipped",
             reason: "files_unavailable",
           };
         } else {
-          return aborted(input.code);
+          return aborted(failure.code);
         }
       },
-      callback4 = (input: string[]) => ({
+      pathsToInput = (paths: string[]) => ({
         ifMatch: Object.fromEntries(
-          input
-            .filter((input2): boolean => !values.has(input2))
-            .map((input2) => [
-              input2,
-              entries2.get(input2) ?? entries.get(input2) ?? null,
+          paths
+            .filter((path): boolean => !values.has(path))
+            .map((path) => [
+              path,
+              publishedShas.get(path) ?? entries.get(path) ?? null,
             ]),
         ),
       }),
-      callback5 = async (): Promise<Model.FilePublishFailure | undefined> => {
-        let state4: Model.FilePublishEntries = {},
-          entries3 = new Map();
-        for (let [value21, value22] of value13.files) {
-          let value23 = await hashMigrationFileInput(value21, value22);
-          entries3.set(value21, value23);
-          if ((entries2.get(value21) ?? entries.get(value21)) !== value23) {
-            state4[value21] = value22;
+      publishChanges = async (): Promise<Model.FilePublishFailure | undefined> => {
+        let publishState: Model.FilePublishEntries = {},
+          newShas = new Map();
+        for (let [filePath, fileContent] of migrationTree.files) {
+          let fileSha = await hashMigrationFileInput(filePath, fileContent);
+          newShas.set(filePath, fileSha);
+          if ((publishedShas.get(filePath) ?? entries.get(filePath)) !== fileSha) {
+            publishState[filePath] = fileContent;
           }
         }
-        for (let value21 of entries2.keys()) {
-          if (!value13.files.has(value21)) {
-            state4[value21] = null;
+        for (let filePath of publishedShas.keys()) {
+          if (!migrationTree.files.has(filePath)) {
+            publishState[filePath] = null;
           }
         }
-        for (let value21 of splitMigrationPublishBatches(state4)) {
-          let value22 = await value16.publish(
-            value21,
-            callback4(Object.keys(value21)),
+        for (let batch of splitMigrationPublishBatches(publishState)) {
+          let batchResult = await publisher.publish(
+            batch,
+            pathsToInput(Object.keys(batch)),
           );
-          if (!value22.ok) {
-            return value22;
+          if (!batchResult.ok) {
+            return batchResult;
           }
           flag = false;
-          for (let [value23, value24] of Object.entries(value21)) {
-            if (value24 === null) {
-              entries2.delete(value23);
-              values.delete(value23);
+          for (let [filePath, fileContent] of Object.entries(batch)) {
+            if (fileContent === null) {
+              publishedShas.delete(filePath);
+              values.delete(filePath);
               continue;
             }
-            let value25 =
-              value22.shas?.[value23] !== undefined &&
-              value22.computed?.includes(value23) !== true;
-            entries2.set(
-              value23,
-              value25 ? value22.shas![value23] : entries3.get(value23)!,
+            let expectedSha =
+              batchResult.shas?.[filePath] !== undefined &&
+              batchResult.computed?.includes(filePath) !== true;
+            publishedShas.set(
+              filePath,
+              expectedSha ? batchResult.shas![filePath] : newShas.get(filePath)!,
             );
             if (
-              !value25 &&
-              fileContentContainsRuntimeMarkers(value24)
+              !expectedSha &&
+              fileContentContainsRuntimeMarkers(fileContent)
             ) {
-              values.add(value23);
+              values.add(filePath);
             } else {
-              values.delete(value23);
+              values.delete(filePath);
             }
           }
         }
         return;
       },
-      value17 = await callback5();
-    if (value17 !== undefined) {
-      return callback3(value17);
+      migrationFailure = await publishChanges();
+    if (migrationFailure !== undefined) {
+      return handlePublishFailure(migrationFailure);
     }
     setStage("recheck");
     let index = 0;
     for (;;) {
-      let value21 = await readAllowlistedStoreDocuments(
+      let storeDocuments = await readAllowlistedStoreDocuments(
           store,
           adapter.allowlist,
         ),
-        value22 = await hashStoreSnapshot(value21, adapter);
+        storeDigests = await hashStoreSnapshot(storeDocuments, adapter);
       if (
-        value22.size === value12.size &&
-        [...value22].every(
-          ([input, input2]): boolean => value12.get(input) === input2,
+        storeDigests.size === legacyDigests.size &&
+        [...storeDigests].every(
+          ([filePath, fileSha]): boolean => legacyDigests.get(filePath) === fileSha,
         )
       ) {
         break;
@@ -951,78 +951,78 @@ async function migrateStoreToFiles<Index extends object = Model.FilesIndex>(
       if (index > MIGRATION_MAX_STORE_RECHECKS) {
         return aborted("store_kept_changing");
       }
-      value11 = value21;
-      value12 = value22;
-      value13 = await adapter.codec.toTree(value11);
-      if (damagedTextFiles(value13).length > 0) {
+      legacyDocuments = storeDocuments;
+      legacyDigests = storeDigests;
+      migrationTree = await adapter.codec.toTree(legacyDocuments);
+      if (damagedTextFiles(migrationTree).length > 0) {
         return aborted("unsendable_content");
       }
-      value14 = removeUnpublishableMigrationFiles(
-        value13.files,
+      unpublishablePaths = removeUnpublishableMigrationFiles(
+        migrationTree.files,
         adapter.type,
       );
-      validateMigrationTreePaths(value13.files.keys(), adapter.type);
-      if (exceedsVersionCaps(value10, value13)) {
+      validateMigrationTreePaths(migrationTree.files.keys(), adapter.type);
+      if (exceedsVersionCaps(writableListing, migrationTree)) {
         return aborted("too_large");
       }
-      let value23 = await callback5();
-      if (value23 !== undefined) {
-        return callback3(value23);
+      let publishFailure = await publishChanges();
+      if (publishFailure !== undefined) {
+        return handlePublishFailure(publishFailure);
       }
     }
     setStage("sentinel");
-    let value18 = isoNow(),
+    let timestamp = isoNow(),
       state: Model.FilesMigrationSentinel & {
         fields: Record<string, Record<string, string>>;
       } = {
         v: 1,
         vouching: 1,
         type: adapter.type,
-        at: value18,
-        ...(options.artifactId !== undefined
+        at: timestamp,
+        ...(migrationOptions.artifactId !== undefined
           ? {
-              artifact: options.artifactId,
+              artifact: migrationOptions.artifactId,
             }
           : {}),
-        documents: Object.fromEntries(value12),
+        documents: Object.fromEntries(legacyDigests),
         fields: {},
         files: {},
       };
-    for (let [value21, value22] of value11) {
-      state.fields[value21] = await hashStoreFields(
-        storeDocumentDigestView(value22, adapter),
+    for (let [fieldName, document] of legacyDocuments) {
+      state.fields[fieldName] = await hashStoreFields(
+        storeDocumentDigestView(document, adapter),
         adapter.secretFields,
       );
     }
-    for (let value21 of value13.files.keys()) {
-      let value22 = value13.sources.get(value21) ?? [];
-      state.files[value21] = {
-        sha256: entries2.get(value21) ?? entries.get(value21) ?? "",
-        from: value22,
+    for (let filePath of migrationTree.files.keys()) {
+      let sourcePaths = migrationTree.sources.get(filePath) ?? [];
+      state.files[filePath] = {
+        sha256: publishedShas.get(filePath) ?? entries.get(filePath) ?? "",
+        from: sourcePaths,
         of: Object.fromEntries(
-          value22
-            .filter((input) => value12.has(input))
-            .map((input) => [input, value12.get(input)!]),
+          sourcePaths
+            .filter((fieldName) => legacyDigests.has(fieldName))
+            .map((fieldName) => [fieldName, legacyDigests.get(fieldName)!]),
         ),
       };
     }
-    if ((value13.indexSources ?? []).length > 0) {
+    if ((migrationTree.indexSources ?? []).length > 0) {
       state.indexSources = Object.fromEntries(
-        value13
-          .indexSources!.filter((input) => value12.has(input))
-          .map((input) => [input, value12.get(input)!]),
+        migrationTree
+          .indexSources!.filter((path) => legacyDigests.has(path))
+          .map((path) => [path, legacyDigests.get(path)!]),
       );
     }
-    let value19 = (await adapter.kept?.()) ?? {};
-    if (Object.keys(value19).length > 0) {
-      state.kept = value19;
+    let keptFiles = (await adapter.kept?.()) ?? {};
+    if (Object.keys(keptFiles).length > 0) {
+      state.kept = keptFiles;
     }
-    let state2 = {
-        ...value13.index,
+    let migrationIndex = {
+        ...migrationTree.index,
         [CONVERTED_FROM_MARKER_KEY]: convertedFromMarker(
           {
-            at: value18,
-            by: options.by,
+            at: timestamp,
+            by: migrationOptions.by,
             ...(adapter.home !== undefined
               ? {
                   home: adapter.home,
@@ -1031,68 +1031,68 @@ async function migrateStoreToFiles<Index extends object = Model.FilesIndex>(
           },
         ),
       },
-      value20 = await value16.publish(
+      publishResult = await publisher.publish(
         {
           [MIGRATION_SENTINEL_PATH]: serializeIndexDocument(
             state,
           ),
-          [adapter.indexPath]: adapter.codec.serializeIndex(state2),
+          [adapter.indexPath]: adapter.codec.serializeIndex(migrationIndex),
         },
-        callback4([MIGRATION_SENTINEL_PATH, adapter.indexPath]),
+        pathsToInput([MIGRATION_SENTINEL_PATH, adapter.indexPath]),
       ),
-      callback6 = (input: Storage.DatabaseRecord | undefined) =>
-        input !== undefined &&
-        input.at === value18 &&
-        input.by === options.by;
+      matchesMarker = (marker: Storage.DatabaseRecord | undefined) =>
+        marker !== undefined &&
+        marker.at === timestamp &&
+        marker.by === migrationOptions.by;
     if (
-      !value20.ok &&
-      value15 === "already_files" &&
-      callback6(remoteConversionMarker)
+      !publishResult.ok &&
+      abortReason === "already_files" &&
+      matchesMarker(remoteConversionMarker)
     ) {
-      value20 = {
+      publishResult = {
         ok: true,
         version: files.version().version,
       };
     }
-    if (!value20.ok) {
-      let value21 = await readJsonFileState(
+    if (!publishResult.ok) {
+      let metaState = await readJsonFileState(
           files,
           adapter.indexPath,
           timers,
         ),
-        value22 =
-          value21.state === "read"
-            ? readFileMigrationMarker(value21.value)
+        conversionMarker =
+          metaState.state === "read"
+            ? readFileMigrationMarker(metaState.value)
             : null;
-      if (value22?.kind === "converted" && callback6(value22.marker)) {
-        value20 = {
+      if (conversionMarker?.kind === "converted" && matchesMarker(conversionMarker.marker)) {
+        publishResult = {
           ok: true,
           version: files.version().version,
         };
       }
     }
-    if (!value20.ok) {
-      return callback3(value20);
+    if (!publishResult.ok) {
+      return handlePublishFailure(publishResult);
     }
     setStage("tombstone");
     finishing = true;
     await renewalInFlight;
-    let state3 = {
+    let conversionState = {
         [MOVED_TO_MARKER_KEY]: movedToMarker({
           path: adapter.indexPath,
-          ver: value20.version,
-          at: value18,
+          ver: publishResult.version,
+          at: timestamp,
         }),
         [CONVERTING_MARKER_KEY]: null,
       },
-      flag2 = false;
-    for (let index2: number = 0; index2 < 3 && !flag2; index2++) {
-      if (index2 > 0) {
+      updated = false;
+    for (let attempt: number = 0; attempt < 3 && !updated; attempt++) {
+      if (attempt > 0) {
         await new Promise<void>(
-          (input) => void timers.setTimeout(input, 500 * index2),
+          (resolve) => void timers.setTimeout(resolve, 500 * attempt),
         );
       }
-      flag2 = await store.update(adapter.metaPath, state3).then(
+      updated = await store.update(adapter.metaPath, conversionState).then(
         (): boolean => true,
         (): boolean => false,
       );
@@ -1100,19 +1100,19 @@ async function migrateStoreToFiles<Index extends object = Model.FilesIndex>(
     fenceWritten = false;
     return {
       result: "converted",
-      version: value20.version,
-      files: value13.files.size,
-      calls: value16.calls(),
+      version: publishResult.version,
+      files: migrationTree.files.size,
+      calls: publisher.calls(),
       rechecks: index,
       ms: timers.now() - startedAt,
-      ...(flag2
+      ...(updated
         ? {}
         : {
             tombstoned: false,
           }),
-      ...(value14.length > 0
+      ...(unpublishablePaths.length > 0
         ? {
-            leftOut: value14,
+            leftOut: unpublishablePaths,
           }
         : {}),
     };
@@ -1136,7 +1136,7 @@ async function migrateStoreToFiles<Index extends object = Model.FilesIndex>(
       if (
         value !== null &&
         readConvertingMarker(value.data)?.holder ===
-          options.holder
+          migrationOptions.holder
       ) {
         await store
           .update(adapter.metaPath, {
@@ -1150,7 +1150,7 @@ async function migrateStoreToFiles<Index extends object = Model.FilesIndex>(
     if (acquiredLease && !checkLeaseExpired()) {
       await store
         .acquire(adapter.lockPath, {
-          holder: options.holder,
+          holder: migrationOptions.holder,
           ttlMs: 1000,
         })
         .catch((): void => {
@@ -1201,8 +1201,8 @@ export {
 };
 export function installFilesMigrationEngine(): () => void {
   return () => {
-    isPublishableFilePath = (input): boolean =>
-      validateFilePath(input) === undefined;
+    isPublishableFilePath = (path): boolean =>
+      validateFilePath(path) === undefined;
     MIGRATION_LEASE_TTL_MS = 120000;
     MIGRATION_LEASE_RENEWAL_MS = 45000;
     MIGRATION_BATCH_MAX_FILES = 200;
@@ -1217,30 +1217,30 @@ export function installFilesMigrationEngine(): () => void {
     MIGRATION_SENTINEL_PATH = MIGRATION_MANIFEST_PATH;
     MigrationConfigError = class MigrationConfigError extends Error {};
     PUBLIC_STORE_READ_LEVELS = ["view", "interact", "admin", "owner"];
-    storePathParts = (input) =>
-      input.split("/").filter((input2): boolean => input2 !== "");
-    storePathHasPrefix = (items, items2) =>
-      items2.length <= items.length &&
-      items2.every((input, options): boolean => input === items[options]);
-    allowlistedStorePath = (input) =>
-      input.docId === undefined
-        ? input.collection
-        : input.collection + "/" + input.docId;
+    storePathParts = (path) =>
+      path.split("/").filter((segment): boolean => segment !== "");
+    storePathHasPrefix = (items, prefixParts) =>
+      prefixParts.length <= items.length &&
+      prefixParts.every((segment, index): boolean => segment === items[index]);
+    allowlistedStorePath = (storePath) =>
+      storePath.docId === undefined
+        ? storePath.collection
+        : storePath.collection + "/" + storePath.docId;
     MIGRATION_INTERNAL_META_FIELDS = [
       CONVERTING_MARKER_KEY,
       MOVED_TO_MARKER_KEY,
     ];
     MigrationLimitError = class MigrationLimitError extends Error {
       code: string;
-      constructor(input: string) {
-        super(input);
-        this.code = input;
+      constructor(message: string) {
+        super(message);
+        this.code = message;
       }
     };
-    storeDocumentDigestView = (input, options = {}) =>
-      options.digestView !== undefined ? options.digestView(input) : input.data;
-    migrationErrorCode = (input) => {
-      let value = (input as { code?: unknown } | null | undefined)?.code;
+    storeDocumentDigestView = (document, digestOptions = {}) =>
+      digestOptions.digestView !== undefined ? digestOptions.digestView(document) : document.data;
+    migrationErrorCode = (error) => {
+      let value = (error as { code?: unknown } | null | undefined)?.code;
       if (typeof value === "string" && /^[a-z][a-z0-9_]{0,31}$/.test(value)) {
         return value;
       } else {

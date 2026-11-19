@@ -17,94 +17,94 @@ function stateEnvelopeTitle(envelope: Boot.RawEnvelope): string | undefined {
     return undefined;
   }
 }
-function isFrameCaptureMode(document2: Document = document): boolean {
-  return document2.documentElement.hasAttribute("data-frame-capture");
+function isFrameCaptureMode(pageDocument: Document = document): boolean {
+  return pageDocument.documentElement.hasAttribute("data-frame-capture");
 }
 function observeDocumentThumbnailReadiness(
-  input: Boot.ThumbnailLoadDocument,
-  options: Boot.ThumbnailOptions = {},
+  documentState: Boot.ThumbnailLoadDocument,
+  thumbnailOptions: Boot.ThumbnailOptions = {},
 ): () => void {
-  let value = options.document ?? document,
+  let value = thumbnailOptions.document ?? document,
     flag: boolean = false,
-    value2: (() => void) | undefined,
+    unsubscribe: (() => void) | undefined,
     callback = (): void => {
       if (flag) {
         return;
       }
-      let value3 = input.loadState();
-      if (value3 === "loading") {
+      let loadState = documentState.loadState();
+      if (loadState === "loading") {
         return;
       }
       flag = true;
-      value2?.();
-      if (value3 === "live") {
+      unsubscribe?.();
+      if (loadState === "live") {
         waitForThumbnailResources(
-          options.whenPainted ?? (() => waitForThumbnailAssets(value)),
+          thumbnailOptions.whenPainted ?? (() => waitForThumbnailAssets(value)),
           value,
         );
       } else {
         prepareDesignSystemThumbnailCapture(value);
       }
     };
-  value2 = input.subscribeLoad(callback);
+  unsubscribe = documentState.subscribeLoad(callback);
   callback();
   return (): void => {
     flag = true;
-    value2?.();
+    unsubscribe?.();
   };
 }
 function prepareDesignSystemThumbnailCapture(
-  document2: Document = document,
+  pageDocument: Document = document,
 ): void {
-  if (detectCompiledPageStorageMode(document2) !== "db") {
+  if (detectCompiledPageStorageMode(pageDocument) !== "db") {
     return;
   }
-  if (!isFrameCaptureMode(document2)) {
+  if (!isFrameCaptureMode(pageDocument)) {
     return waitForThumbnailResources(
-      () => waitForThumbnailAssets(document2),
-      document2,
+      () => waitForThumbnailAssets(pageDocument),
+      pageDocument,
     );
   }
-  createBlankThumbnailOverlay(document2);
-  markThumbnailReady(document2);
+  createBlankThumbnailOverlay(pageDocument);
+  markThumbnailReady(pageDocument);
 }
 function waitForThumbnailResources(
   ready: () => PromiseLike<unknown> = () => waitForThumbnailAssets(),
-  document2: Document = document,
+  pageDocument: Document = document,
 ): void {
-  let callback = () => markThumbnailReady(document2);
+  let callback = () => markThumbnailReady(pageDocument);
   ready().then(callback, callback);
 }
-function markThumbnailReady(document2: Document = document): void {
-  document2.documentElement.setAttribute(THUMBNAIL_READY_ATTRIBUTE, "");
+function markThumbnailReady(pageDocument: Document = document): void {
+  pageDocument.documentElement.setAttribute(THUMBNAIL_READY_ATTRIBUTE, "");
 }
-function createBlankThumbnailOverlay(document2: Document): void {
+function createBlankThumbnailOverlay(pageDocument: Document): void {
   if (
-    document2.querySelector("[" + BLANK_THUMBNAIL_ATTRIBUTE + "]") !== null
+    pageDocument.querySelector("[" + BLANK_THUMBNAIL_ATTRIBUTE + "]") !== null
   ) {
     return;
   }
-  for (let value of [document2.documentElement, document2.body]) {
+  for (let value of [pageDocument.documentElement, pageDocument.body]) {
     value.style.overflow = "hidden";
   }
-  let overlay = document2.createElement("div");
+  let overlay = pageDocument.createElement("div");
   overlay.setAttribute(BLANK_THUMBNAIL_ATTRIBUTE, "");
   overlay.setAttribute("aria-hidden", "true");
   overlay.style.cssText =
     "position:fixed;inset:0;z-index:2147483647;background:" +
-    getThumbnailPageBackground(document2);
-  document2.body.appendChild(overlay);
+    getThumbnailPageBackground(pageDocument);
+  pageDocument.body.appendChild(overlay);
 }
-function getThumbnailPageBackground(document2: Document): string {
-  let window2 = document2.defaultView;
-  for (let value of [document2.body, document2.documentElement]) {
-    let value2 = window2?.getComputedStyle(value).backgroundColor ?? "";
+function getThumbnailPageBackground(pageDocument: Document): string {
+  let pageWindow = pageDocument.defaultView;
+  for (let value of [pageDocument.body, pageDocument.documentElement]) {
+    let backgroundColor = pageWindow?.getComputedStyle(value).backgroundColor ?? "";
     if (
-      value2 !== "" &&
-      value2 !== "transparent" &&
-      !/^rgba\(.*,\s*0\)$/.test(value2)
+      backgroundColor !== "" &&
+      backgroundColor !== "transparent" &&
+      !/^rgba\(.*,\s*0\)$/.test(backgroundColor)
     ) {
-      return value2;
+      return backgroundColor;
     }
   }
   return "#fff";
@@ -113,52 +113,52 @@ async function waitForThumbnailAssets(
   nextFrame: Document = document,
 ): Promise<void> {
   await waitForDesignSystemRootContent(nextFrame);
-  let window2 = nextFrame.defaultView,
+  let pageWindow = nextFrame.defaultView,
     images = () =>
-      new Promise<void>((input) =>
-        window2?.requestAnimationFrame
-          ? window2.requestAnimationFrame(() => input())
-          : setTimeout(input, 16),
+      new Promise<void>((resolve) =>
+        pageWindow?.requestAnimationFrame
+          ? pageWindow.requestAnimationFrame(() => resolve())
+          : setTimeout(resolve, 16),
       );
   await images();
   await images();
   await nextFrame.fonts?.ready;
   let value = Array.from(nextFrame.images).filter(
-    (input) =>
-      !(input.loading === "lazy" && !input.complete) &&
-      typeof input.decode === "function",
+    (image) =>
+      !(image.loading === "lazy" && !image.complete) &&
+      typeof image.decode === "function",
   );
   await Promise.all(
-    value.map((input) =>
-      input.decode().catch((): void => {
+    value.map((image) =>
+      image.decode().catch((): void => {
         return;
       }),
     ),
   );
   await images();
 }
-function waitForDesignSystemRootContent(document2: Document): Promise<void> {
-  let root = document2.getElementById("root"),
+function waitForDesignSystemRootContent(pageDocument: Document): Promise<void> {
+  let root = pageDocument.getElementById("root"),
     hasContent = () =>
       root !== null &&
       Array.from(root.children).some(
-        (input): boolean => !input.hasAttribute("data-placeholder"),
+        (element): boolean => !element.hasAttribute("data-placeholder"),
       );
   if (root === null || hasContent()) {
     return Promise.resolve();
   }
-  let Observer = (document2.defaultView as Dom.BrowserWindow | null)
+  let Observer = (pageDocument.defaultView as Dom.BrowserWindow | null)
     ?.MutationObserver;
   if (Observer === undefined) {
     return Promise.resolve();
   }
-  return new Promise<void>((input): void => {
+  return new Promise<void>((resolve): void => {
     let value = new Observer((): void => {
       if (!hasContent()) {
         return;
       }
       value.disconnect();
-      input();
+      resolve();
     });
     value.observe(root, {
       childList: true,

@@ -66,8 +66,8 @@ function restartDesignSystemWithFallback(message?: string): void {
     note: "design system keeps its content as files",
     ask: () => announceReloadRequired(message),
     watchdogMs: DESIGN_SYSTEM_REOPEN_WATCHDOG_MS,
-    setTimeout: (input: () => void, options: number) =>
-      setTimeout(input, options),
+    setTimeout: (timerCallback: () => void, delayMs: number) =>
+      setTimeout(timerCallback, delayMs),
   });
 }
 function reopenForEditingTransition(transition: "on" | "off"): void {
@@ -91,7 +91,7 @@ function reopenForEditingTransition(transition: "on" | "off"): void {
     }
   };
   announceAndWaitToReopen({
-    say: (input: string) => announceLiveMessage(input),
+    say: (message: string) => announceLiveMessage(message),
     message: get_DESIGN_SYSTEM_CHANGED_MESSAGE(),
     isTyping: (): boolean => Date.now() - lastDesignSystemTypingAt < 2000,
     hasUnsentEdits: activeDesignSystemHasUnsentEdits,
@@ -103,14 +103,14 @@ function reopenForEditingTransition(transition: "on" | "off"): void {
           (transition === "on" ? "removed" : "added"),
         ask: fallback,
         watchdogMs: DESIGN_SYSTEM_REOPEN_WATCHDOG_MS,
-        setTimeout: (input: () => void, options: number) =>
-          setTimeout(input, options),
+        setTimeout: (timerCallback: () => void, delayMs: number) =>
+          setTimeout(timerCallback, delayMs),
       }),
     timers: {
-      setTimeout: (input: () => void, options: number) =>
-        setTimeout(input, options),
-      clearTimeout: (input: ReturnType<typeof setTimeout> | undefined) =>
-        clearTimeout(input),
+      setTimeout: (timerCallback: () => void, delayMs: number) =>
+        setTimeout(timerCallback, delayMs),
+      clearTimeout: (timerHandle: ReturnType<typeof setTimeout> | undefined) =>
+        clearTimeout(timerHandle),
       now: (): number => Date.now(),
     },
     note: {
@@ -138,7 +138,7 @@ function reopenAfterFilesMigration(
         JSON.parse(
           sessionStorage.getItem("ds-moved-reloads") ?? "[]",
         ) as unknown[]
-      ).filter((input): boolean => Date.now() - (input as number) < 60000);
+      ).filter((timestamp): boolean => Date.now() - (timestamp as number) < 60000);
       index = value.length;
       sessionStorage.setItem(
         "ds-moved-reloads",
@@ -171,7 +171,7 @@ function reopenAfterFilesMigration(
       }
     };
   announceAndWaitToReopen({
-    say: (input: string) => announceLiveMessage(input),
+    say: (liveMessage: string) => announceLiveMessage(liveMessage),
     message:
       message ??
       (restart
@@ -181,10 +181,10 @@ function reopenAfterFilesMigration(
     hasUnsentEdits: activeDesignSystemHasUnsentEdits,
     reopen: reopen,
     timers: {
-      setTimeout: (input: () => void, options: number) =>
-        setTimeout(input, options),
-      clearTimeout: (input: ReturnType<typeof setTimeout> | undefined) =>
-        clearTimeout(input),
+      setTimeout: (timerCallback: () => void, delayMs: number) =>
+        setTimeout(timerCallback, delayMs),
+      clearTimeout: (timerHandle: ReturnType<typeof setTimeout> | undefined) =>
+        clearTimeout(timerHandle),
       now: (): number => Date.now(),
     },
     note: {
@@ -198,14 +198,14 @@ function announceDesignSystemReopened(): void {
   announceReopenedArtifact({
     store: safeReopenSessionStorage(),
     now: Date.now(),
-    say: (input: string) => announceLiveMessage(input),
+    say: (message: string) => announceLiveMessage(message),
     message: (): string =>
       activeDesignSystemDocument !== undefined &&
       !activeDesignSystemDocument.readOnly()
         ? uiMessage("design-system.reopen.theDesignSystemHasReopened")
         : uiMessage("design-system.reopen.theDesignSystemHasReopened2"),
-    focus: (input: string | undefined) =>
-      restoreReopenedFocus(window, input),
+    focus: (focusId: string | undefined) =>
+      restoreReopenedFocus(window, focusId),
   });
 }
 function waitForBootLiveAnnouncer(message?: string): void {
@@ -272,13 +272,13 @@ export {
   singleFileMigrationRunning,
   waitForBootLiveAnnouncer,
 };
-export function set_activeDesignSystemDocument(value: any): any {
-  activeDesignSystemDocument = value;
-  return value;
+export function set_activeDesignSystemDocument(documentValue: any): any {
+  activeDesignSystemDocument = documentValue;
+  return documentValue;
 }
-export function set_singleFileMigrationRunning(value: any): any {
-  singleFileMigrationRunning = value;
-  return value;
+export function set_singleFileMigrationRunning(migrationValue: any): any {
+  singleFileMigrationRunning = migrationValue;
+  return migrationValue;
 }
 export function installFilesReopen(): () => void {
   return () => {
@@ -308,10 +308,10 @@ export function installFilesReopen(): () => void {
     ]);
     legacyDesignSystemIsBusy = (): boolean => false;
     setAutosaveInstaller(
-      (input: Boot.ActiveDocument, options: () => boolean): void => {
-        legacyDesignSystemDocument = input;
-        legacyDesignSystemIsBusy = options;
-        activeDesignSystemDocument ??= input;
+      (document: Boot.ActiveDocument, isBusy: () => boolean): void => {
+        legacyDesignSystemDocument = document;
+        legacyDesignSystemIsBusy = isBusy;
+        activeDesignSystemDocument ??= document;
       },
     );
     activeDesignSystemHasUnsentEdits = () => {
@@ -339,9 +339,9 @@ export function installFilesReopen(): () => void {
       return value?.restart?.bind(value);
     };
     DEFAULT_RELOAD_MESSAGE = get_MOVED_RELOAD_MESSAGE();
-    announceReloadRequired = (input = DEFAULT_RELOAD_MESSAGE): void => {
-      showEditorPromiseNotification(input, null);
-      announceLiveMessage(input);
+    announceReloadRequired = (message = DEFAULT_RELOAD_MESSAGE): void => {
+      showEditorPromiseNotification(message, null);
+      announceLiveMessage(message);
     };
     DESIGN_SYSTEM_REOPEN_WATCHDOG_MS = 6000;
     designSystemReopenPending = false;

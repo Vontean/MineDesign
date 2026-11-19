@@ -45,24 +45,24 @@ var FILE_SAVE_TERMINAL_ERROR_CODES: Set<string>;
 var isIndexFileSaveError: (code: string | undefined) => boolean;
 function defaultFilesSaveTimers(): Files.FilesTimers {
   return {
-    setTimeout: (input, options) => setTimeout(input, options),
-    clearTimeout: (input) => clearTimeout(input),
+    setTimeout: (timerCallback, delayMs) => setTimeout(timerCallback, delayMs),
+    clearTimeout: (timerHandle) => clearTimeout(timerHandle),
     now: (): number => Date.now(),
     random: (): number => Math.random(),
   };
 }
 function createFilesSaveQueue(
-  options: FilesSaveQueueOptions,
+  queueOptions: FilesSaveQueueOptions,
 ): FilesSaveQueue {
-  let { port: port } = options,
+  let { port: port } = queueOptions,
     normalizedPort = filesPortExtensions(port),
-    timers = options.timers ?? defaultFilesSaveTimers(),
-    indexStore = options.index,
+    timers = queueOptions.timers ?? defaultFilesSaveTimers(),
+    indexStore = queueOptions.index,
     indexPath = indexStore?.path,
-    isIndexPath = (input: string) =>
+    isIndexPath = (filePath: string) =>
       indexPath !== undefined
-        ? input === indexPath
-        : isProjectIndexFilePath(input),
+        ? filePath === indexPath
+        : isProjectIndexFilePath(filePath),
     dirtyEntries: Map<string, DirtyFileEntry> = new Map(),
     conflictedEntries: Map<string, FileSaveConflict> = new Map(),
     recentConflictTimes: Map<string, number[]> = new Map(),
@@ -106,11 +106,11 @@ function createFilesSaveQueue(
     remoteChangeGeneration = 0,
     retryWindow: FileSaveRetryWindow | undefined,
     retryBudgetMs =
-      options.retryBudgetMs ?? FILE_SAVE_SHARED_ACTIVITY_TIMEOUT_MS,
+      queueOptions.retryBudgetMs ?? FILE_SAVE_SHARED_ACTIVITY_TIMEOUT_MS,
     refusalHistory: { since: number; attempts: number } | undefined,
     stuckState: FileSaveStuck | undefined,
     retryTimer: ReturnType<typeof setTimeout> | undefined,
-    stuckRetryBackoff = options.stuckRetryMs ?? FILE_SAVE_CONFLICT_RETRY_MS,
+    stuckRetryBackoff = queueOptions.stuckRetryMs ?? FILE_SAVE_CONFLICT_RETRY_MS,
     hasStashedEntries: boolean = false,
     clearOfferedStashOnSave: boolean = false,
     rateLimitUntil = 0,
@@ -123,28 +123,28 @@ function createFilesSaveQueue(
     wakeRetryWait: (() => void) | undefined,
     retryWaitProtected = false,
     random = () => timers.random?.() ?? Math.random(),
-    jitterDelay = (input: number): number =>
-      Math.round(input / 2 + random() * (input / 2)),
+    jitterDelay = (delayMs: number): number =>
+      Math.round(delayMs / 2 + random() * (delayMs / 2)),
     currentRetryBudget = () =>
-      options.retryBudgetMs ?? FILE_SAVE_SHARED_ACTIVITY_TIMEOUT_MS;
-  function waitForRetryOrWake(input: number, options2: boolean = false) {
-    return new Promise<boolean>((input2): void => {
+      queueOptions.retryBudgetMs ?? FILE_SAVE_SHARED_ACTIVITY_TIMEOUT_MS;
+  function waitForRetryOrWake(delayMs: number, protectRetryWait: boolean = false) {
+    return new Promise<boolean>((resolve): void => {
       let value = timers.setTimeout((): void => {
         wakeRetryWait = undefined;
-        input2(false);
-      }, input);
-      retryWaitProtected = options2;
+        resolve(false);
+      }, delayMs);
+      retryWaitProtected = protectRetryWait;
       wakeRetryWait = (): void => {
         timers.clearTimeout(value);
         wakeRetryWait = undefined;
-        input2(true);
+        resolve(true);
       };
     });
   }
-  let liveSha = (input: string) =>
-      remoteShas.has(input)
-        ? remoteShas.get(input)
-        : normalizedPort.liveSha?.(input),
+  let liveSha = (filePath: string) =>
+      remoteShas.has(filePath)
+        ? remoteShas.get(filePath)
+        : normalizedPort.liveSha?.(filePath),
     getQueueState: () => FileSaveQueueState = () => ({
       dirty: dirtyEntries.size,
       inFlight: inFlight,
@@ -168,10 +168,10 @@ function createFilesSaveQueue(
         : {}),
       ...(unsendableEntries.size > 0
         ? {
-            unsendable: [...unsendableEntries].map(([input, input2]) => ({
-              path: input,
-              why: input2.why,
-              cause: input2.cause,
+            unsendable: [...unsendableEntries].map(([filePath, entry]) => ({
+              path: filePath,
+              why: entry.why,
+              cause: entry.cause,
             })),
             ...(unsendableStashed
               ? {
@@ -183,7 +183,7 @@ function createFilesSaveQueue(
     }),
     notifyState = (): void => {
       try {
-        options.onState?.(getQueueState());
+        queueOptions.onState?.(getQueueState());
       } catch {}
       if (
         !inFlight &&
@@ -192,8 +192,8 @@ function createFilesSaveQueue(
       ) {
         let value = settleWaiters;
         settleWaiters = [];
-        for (let value2 of value) {
-          value2();
+        for (let subscriber of value) {
+          subscriber();
         }
       }
     },
@@ -201,23 +201,23 @@ function createFilesSaveQueue(
       lastError !== undefined &&
       backoffUntil === undefined &&
       !commitRequested,
-    isOwnPublishEcho = (input: Files.ChangedFileRow) =>
-      ownPublishedShas.has(input.path) &&
-      ownPublishedShas.get(input.path) === input.sha256,
+    isOwnPublishEcho = (change: Files.ChangedFileRow) =>
+      ownPublishedShas.has(change.path) &&
+      ownPublishedShas.get(change.path) === change.sha256,
     lastSharedActivityAt = -1 / 0,
     peerStore: import("../contracts/files-core").SaveQueuePeers =
-      options.peers ?? roomPeerStore,
+      queueOptions.peers ?? roomPeerStore,
     hasOtherPeers = () =>
-      peerStore.getSnapshot().some((input): boolean => !input.sameTab),
+      peerStore.getSnapshot().some((peer): boolean => !peer.sameTab),
     hasRecentSharedActivity = (): boolean =>
       timers.now() - lastSharedActivityAt <
       FILE_SAVE_DEBOUNCE_POLICY.recentMs,
     isSoloPacing = () =>
-      options.paced === true &&
+      queueOptions.paced === true &&
       !hasOtherPeers() &&
       !hasRecentSharedActivity(),
     getPacingPolicy = () =>
-      options.paced !== true
+      queueOptions.paced !== true
         ? undefined
         : isSoloPacing()
           ? FILE_SAVE_DEBOUNCE_POLICY.solo
@@ -233,7 +233,7 @@ function createFilesSaveQueue(
     }
     tryStartCommit();
     try {
-      options.onShared?.();
+      queueOptions.onShared?.();
     } catch {}
   }
   function recordSharedActivity(): void {
@@ -243,15 +243,15 @@ function createFilesSaveQueue(
       switchToSharedPacing();
     }
   }
-  let hadOtherPeers = options.paced === true && hasOtherPeers(),
+  let hadOtherPeers = queueOptions.paced === true && hasOtherPeers(),
     unsubscribePeers =
-      options.paced !== true
+      queueOptions.paced !== true
         ? undefined
         : peerStore.subscribe((): void => {
             let value = hasOtherPeers(),
-              value2 = value && !hadOtherPeers;
+              sharedActivity = value && !hadOtherPeers;
             hadOtherPeers = value;
-            if (value2 && !hasRecentSharedActivity()) {
+            if (sharedActivity && !hasRecentSharedActivity()) {
               switchToSharedPacing();
             }
           });
@@ -279,110 +279,110 @@ function createFilesSaveQueue(
       Math.max(0, firstDirtyAt + value.maxWaitMs - timers.now()),
     );
   }
-  let unsubscribeRemoteChange = port.onRemoteChange((input) =>
-    handleRemoteChange(input),
+  let unsubscribeRemoteChange = port.onRemoteChange((change) =>
+    handleRemoteChange(change),
   );
-  function handleRemoteChange(input: Files.FileRemoteChange): void {
+  function handleRemoteChange(remoteChange: Files.FileRemoteChange): void {
     remoteChangeGeneration += 1;
-    let callback = (input2: Files.ChangedFileRow) =>
-        isOwnPublishEcho(input2) ||
-        (awaitingComputedShas.has(input2.path) &&
-          input2.sha256 !== null &&
-          ownPublishedVersions.has(input.to.version)),
-      value = input.changed.some((input2): boolean => !callback(input2));
-    for (let value4 of input.changed) {
+    let callback = (change: Files.ChangedFileRow) =>
+        isOwnPublishEcho(change) ||
+        (awaitingComputedShas.has(change.path) &&
+          change.sha256 !== null &&
+          ownPublishedVersions.has(remoteChange.to.version)),
+      value = remoteChange.changed.some((change): boolean => !callback(change));
+    for (let change of remoteChange.changed) {
       if (
-        (remoteShas.set(value4.path, value4.sha256),
-        awaitingComputedShas.delete(value4.path),
-        ownPublishedShas.has(value4.path) &&
-          ownPublishedShas.get(value4.path) !== value4.sha256)
+        (remoteShas.set(change.path, change.sha256),
+        awaitingComputedShas.delete(change.path),
+        ownPublishedShas.has(change.path) &&
+          ownPublishedShas.get(change.path) !== change.sha256)
       ) {
-        ownPublishedShas.delete(value4.path);
+        ownPublishedShas.delete(change.path);
       }
     }
-    lastRemoteVersion = input.to.version;
+    lastRemoteVersion = remoteChange.to.version;
     if (value) {
       recordSharedActivity();
     }
-    let value2 =
+    let shouldRetry =
         isIndexFileSaveError(stuckState?.code) &&
         indexPath !== undefined &&
-        input.changed.some((input2): boolean => input2.path === indexPath),
-      value3 =
-        value2 && !retryOnRemoteChange
+        remoteChange.changed.some((change): boolean => change.path === indexPath),
+      retryDelay =
+        shouldRetry && !retryOnRemoteChange
           ? FILES_BOOT_PERMANENT_RETRY_MS -
             (timers.now() - lastStuckRetryAt)
           : 0;
-    if (value3 > 0) {
+    if (retryDelay > 0) {
       if (retryTimer === undefined && !disposed) {
         retryTimer = timers.setTimeout((): void => {
           retryTimer = undefined;
           restartRetryWindow(currentRetryBudget());
-        }, value3);
+        }, retryDelay);
       }
       return;
     }
-    if ((retryOnRemoteChange || value2) && !inFlight && !disposed) {
+    if ((retryOnRemoteChange || shouldRetry) && !inFlight && !disposed) {
       restartRetryWindow(currentRetryBudget());
     }
   }
   indexStore?.bind?.(
-    (input: string, options2: () => string, context: string | null) =>
-      markDirty(input, options2, context),
+    (filePath: string, valueProvider: () => string, baseSha: string | null) =>
+      markDirty(filePath, valueProvider, baseSha),
   );
-  function recordConflictAttempt(input: string): void {
+  function recordConflictAttempt(filePath: string): void {
     let value = timers.now();
-    recentConflictTimes.set(input, [
-      ...(recentConflictTimes.get(input) ?? []).filter(
-        (input2): boolean => value - input2 < FILE_SAVE_TOTAL_RETRY_WINDOW_MS,
+    recentConflictTimes.set(filePath, [
+      ...(recentConflictTimes.get(filePath) ?? []).filter(
+        (timestamp): boolean => value - timestamp < FILE_SAVE_TOTAL_RETRY_WINDOW_MS,
       ),
       value,
     ]);
   }
   function markDirty(
-    input: string,
-    options2: () => Files.FilePublishInput,
-    context?: string | null,
+    filePath: string,
+    valueProvider: () => Files.FilePublishInput,
+    baseSha?: string | null,
   ): void {
     if (disposed) {
       return;
     }
-    let entry = dirtyEntries.get(input);
+    let entry = dirtyEntries.get(filePath);
     dirtyGeneration += 1;
     let value =
-        ownPublishedShas.has(input) &&
-        (liveSha(input) === undefined ||
-          liveSha(input) === ownPublishedShas.get(input)),
-      value2 =
-        context !== undefined
-          ? context
+        ownPublishedShas.has(filePath) &&
+        (liveSha(filePath) === undefined ||
+          liveSha(filePath) === ownPublishedShas.get(filePath)),
+      remoteSha =
+        baseSha !== undefined
+          ? baseSha
           : entry !== undefined
             ? entry.base
             : value
-              ? ownPublishedShas.get(input)
-              : (normalizedPort.heldSha?.(input) ?? liveSha(input) ?? null);
-    unsendableReasons.delete(input);
-    unsendableEntries.delete(input);
-    dirtyEntries.set(input, {
-      value: options2,
-      base: value2,
+              ? ownPublishedShas.get(filePath)
+              : (normalizedPort.heldSha?.(filePath) ?? liveSha(filePath) ?? null);
+    unsendableReasons.delete(filePath);
+    unsendableEntries.delete(filePath);
+    dirtyEntries.set(filePath, {
+      value: valueProvider,
+      base: remoteSha,
       gen: dirtyGeneration,
     });
     if (firstDirtyAt === undefined) {
       firstDirtyAt = timers.now();
       scheduleMaxWaitCommit();
     }
-    withdrawnPaths.delete(input);
-    if (context !== undefined) {
-      let entry2 = conflictSurfacedAt.get(input);
+    withdrawnPaths.delete(filePath);
+    if (baseSha !== undefined) {
+      let conflictTime = conflictSurfacedAt.get(filePath);
       if (
-        entry2 !== undefined &&
-        timers.now() - entry2 < FILE_SAVE_TOTAL_RETRY_WINDOW_MS
+        conflictTime !== undefined &&
+        timers.now() - conflictTime < FILE_SAVE_TOTAL_RETRY_WINDOW_MS
       ) {
-        recordConflictAttempt(input);
+        recordConflictAttempt(filePath);
       }
-      conflictSurfacedAt.delete(input);
-      conflictedEntries.delete(input);
+      conflictSurfacedAt.delete(filePath);
+      conflictedEntries.delete(filePath);
     }
     if (stuckState !== undefined) {
       stuckState = {
@@ -413,18 +413,18 @@ function createFilesSaveQueue(
     tryStartCommit();
   }
   function restartRetryWindow(
-    input: number,
-    options2: boolean = false,
+    delayMs: number,
+    protectRetryWait: boolean = false,
   ): void {
     if (disposed || inFlight) {
       return;
     }
     let value = rateLimitUntil - timers.now();
-    if (value > 0 && (serverRateLimit || !options2)) {
+    if (value > 0 && (serverRateLimit || !protectRetryWait)) {
       if (retryTimer === undefined) {
         retryTimer = timers.setTimeout((): void => {
           retryTimer = undefined;
-          restartRetryWindow(input);
+          restartRetryWindow(delayMs);
         }, value);
       }
       return;
@@ -439,7 +439,7 @@ function createFilesSaveQueue(
       commitTimer = undefined;
     }
     retryWindow = undefined;
-    retryBudgetMs = input;
+    retryBudgetMs = delayMs;
     retryOnRemoteChange = false;
     lastError = undefined;
     if (dirtyEntries.size === 0) {
@@ -464,7 +464,7 @@ function createFilesSaveQueue(
     }
     let value: number =
       Math.max(
-        options.minGapMs ?? 0,
+        queueOptions.minGapMs ?? 0,
         ignorePacingOnce ? 0 : (getPacingPolicy()?.gapMs ?? 0),
       ) -
       (timers.now() - lastPublishStartedAt);
@@ -482,54 +482,54 @@ function createFilesSaveQueue(
   }
   function detectChangedFileBases(): void {
     conflictBudgetExceeded.clear();
-    for (let [value, value2] of [...dirtyEntries]) {
+    for (let [value, filePath] of [...dirtyEntries]) {
       if (isIndexPath(value)) {
         continue;
       }
-      let value3 = liveSha(value);
-      if (value3 === undefined || value3 === value2.base) {
+      let liveShaValue = liveSha(value);
+      if (liveShaValue === undefined || liveShaValue === filePath.base) {
         continue;
       }
       if (
         ownPublishedShas.has(value) &&
-        ownPublishedShas.get(value) === value3
+        ownPublishedShas.get(value) === liveShaValue
       ) {
-        value2.base = value3;
+        filePath.base = liveShaValue;
         continue;
       }
       if (
         awaitingComputedShas.has(value) &&
-        typeof value3 === "string" &&
+        typeof liveShaValue === "string" &&
         isPublishVersionCurrent()
       ) {
         awaitingComputedShas.delete(value);
-        ownPublishedShas.set(value, value3);
-        value2.base = value3;
+        ownPublishedShas.set(value, liveShaValue);
+        filePath.base = liveShaValue;
         continue;
       }
-      let value4 = timers.now();
+      let now = timers.now();
       if (
         (recentConflictTimes.get(value) ?? []).filter(
-          (input): boolean =>
-            value4 - input < FILE_SAVE_TOTAL_RETRY_WINDOW_MS,
+          (timestamp): boolean =>
+            now - timestamp < FILE_SAVE_TOTAL_RETRY_WINDOW_MS,
         ).length >= FILE_SAVE_MAX_TRANSIENT_RETRIES
       ) {
         conflictBudgetExceeded.add(value);
         continue;
       }
-      let value5: Files.FilePublishInput,
+      let fileContent: Files.FilePublishInput,
         flag: boolean = false;
       try {
-        value5 = value2.value();
+        fileContent = filePath.value();
       } catch {
-        value5 = null;
+        fileContent = null;
         flag = true;
       }
       let state = {
         path: value,
-        base: value2.base,
-        mine: value5,
-        theirsSha: value3,
+        base: filePath.base,
+        mine: fileContent,
+        theirsSha: liveShaValue,
         ...(flag
           ? {
               unreadable: true,
@@ -538,14 +538,14 @@ function createFilesSaveQueue(
       };
       dirtyEntries.delete(value);
       conflictedEntries.set(value, state);
-      conflictSurfacedAt.set(value, value4);
+      conflictSurfacedAt.set(value, now);
       counters.surfaced += 1;
-      if (options.stash !== undefined) {
+      if (queueOptions.stash !== undefined) {
         hasStashedEntries = true;
         stashWritePaused = false;
       }
       try {
-        options.onConflict(state);
+        queueOptions.onConflict(state);
       } catch {}
     }
   }
@@ -574,20 +574,20 @@ function createFilesSaveQueue(
       indexPath !== undefined &&
       dirtyEntries.has(indexPath)
     ) {
-      let value4 = liveSha(indexPath),
-        value5 =
-          (value4 !== undefined &&
-            value4 !== null &&
-            value4 !== indexStore.baseSha() &&
-            ownPublishedShas.get(indexPath) !== value4) ||
+      let indexSha = liveSha(indexPath),
+        indexMergeResult =
+          (indexSha !== undefined &&
+            indexSha !== null &&
+            indexSha !== indexStore.baseSha() &&
+            ownPublishedShas.get(indexPath) !== indexSha) ||
           indexNeedsMerge
             ? await mergeRemoteIndex()
             : "merged";
-      if (value5 !== "merged" && value5 !== "unread") {
+      if (indexMergeResult !== "merged" && indexMergeResult !== "unread") {
         beginRetryAttempt();
-        return markStuck(value5, false, undefined, indexPath);
+        return markStuck(indexMergeResult, false, undefined, indexPath);
       }
-      if (value5 === "unread") {
+      if (indexMergeResult === "unread") {
         lastError = "conflict";
         beginRetryAttempt();
         notifyState();
@@ -596,18 +596,18 @@ function createFilesSaveQueue(
     }
     let state: Files.FilePublishEntries = {},
       entries: Map<string, number> = new Map(),
-      state2: Record<string, string | null | undefined> = {};
-    for (let [value4, value5] of [...dirtyEntries]) {
-      if (conflictBudgetExceeded.has(value4)) {
+      baseShas: Record<string, string | null | undefined> = {};
+    for (let [filePath, dirtyEntry] of [...dirtyEntries]) {
+      if (conflictBudgetExceeded.has(filePath)) {
         continue;
       }
-      let value6: Files.FilePublishInput;
+      let fileContent: Files.FilePublishInput;
       try {
-        value6 = value5.value();
+        fileContent = dirtyEntry.value();
       } catch {
         continue;
       }
-      let value7:
+      let rejectionReason:
         | {
             why: string;
             cause: import("../contracts/files-core").UnsendableCause;
@@ -615,59 +615,59 @@ function createFilesSaveQueue(
         | undefined;
       try {
         if (normalizedPort.entryProblemDetail !== undefined) {
-          value7 = normalizedPort.entryProblemDetail(value4, value6);
+          rejectionReason = normalizedPort.entryProblemDetail(filePath, fileContent);
         } else if (normalizedPort.entryProblem !== undefined) {
-          let value8 = normalizedPort.entryProblem(value4, value6);
-          value7 =
-            value8 === undefined
+          let problemReason = normalizedPort.entryProblem(filePath, fileContent);
+          rejectionReason =
+            problemReason === undefined
               ? undefined
               : {
-                  why: value8,
+                  why: problemReason,
                   cause: "other",
                 };
         } else {
-          value7 = filePublishRejection(value4, value6);
+          rejectionReason = filePublishRejection(filePath, fileContent);
         }
       } catch {
-        value7 = filePublishRejection(value4, value6);
+        rejectionReason = filePublishRejection(filePath, fileContent);
       }
-      if (value7 === undefined) {
-        let value8 = filePublishSizeRejection(value6);
-        if (value8 !== undefined) {
-          value7 = {
-            why: value8,
+      if (rejectionReason === undefined) {
+        let sizeReason = filePublishSizeRejection(fileContent);
+        if (sizeReason !== undefined) {
+          rejectionReason = {
+            why: sizeReason,
             cause: "size",
           };
         }
       }
-      if (value7 !== undefined && value6 === null) {
-        dirtyEntries.delete(value4);
-        unsendableReasons.delete(value4);
-        unsendableEntries.delete(value4);
+      if (rejectionReason !== undefined && fileContent === null) {
+        dirtyEntries.delete(filePath);
+        unsendableReasons.delete(filePath);
+        unsendableEntries.delete(filePath);
         continue;
       }
-      if (value7 !== undefined) {
-        dirtyEntries.delete(value4);
-        unsendableReasons.set(value4, value7.why);
-        unsendableEntries.set(value4, {
-          value: value5.value,
-          base: value5.base,
-          why: value7.why,
-          cause: value7.cause,
+      if (rejectionReason !== undefined) {
+        dirtyEntries.delete(filePath);
+        unsendableReasons.set(filePath, rejectionReason.why);
+        unsendableEntries.set(filePath, {
+          value: dirtyEntry.value,
+          base: dirtyEntry.base,
+          why: rejectionReason.why,
+          cause: rejectionReason.cause,
         });
         unsendableStashed = false;
-        if (options.stash !== undefined) {
+        if (queueOptions.stash !== undefined) {
           hasStashedEntries = true;
           stashWritePaused = false;
         }
         try {
-          options.onUnsendable?.(value4, value7.why);
+          queueOptions.onUnsendable?.(filePath, rejectionReason.why);
         } catch {}
         continue;
       }
-      state[value4] = value6;
-      entries.set(value4, value5.gen);
-      state2[value4] = value5.base;
+      state[filePath] = fileContent;
+      entries.set(filePath, dirtyEntry.gen);
+      baseShas[filePath] = dirtyEntry.base;
     }
     if (entries.size === 0) {
       if (dirtyEntries.size === 0) {
@@ -675,8 +675,8 @@ function createFilesSaveQueue(
         return;
       }
       if (
-        [...dirtyEntries.keys()].every((input) =>
-          conflictBudgetExceeded.has(input),
+        [...dirtyEntries.keys()].every((filePath) =>
+          conflictBudgetExceeded.has(filePath),
         )
       ) {
         return markStuck("conflict", false, FILE_SAVE_RECENT_PEER_WINDOW_MS);
@@ -685,66 +685,66 @@ function createFilesSaveQueue(
       return markStuck("invalid_content", false);
     }
     notifyState();
-    let value2 = splitFilePublishBatches(state, isIndexPath),
-      value3: Files.FilePublishFailure | undefined;
-    for (let value4 of value2) {
-      let value5 = timers.now(),
-        value6: Files.FilePublishResult,
-        value7 = Object.fromEntries(
-          Object.keys(value4)
+    let publishBatches = splitFilePublishBatches(state, isIndexPath),
+      publishFailure: Files.FilePublishFailure | undefined;
+    for (let batch of publishBatches) {
+      let publishStartedAt = timers.now(),
+        publishResult: Files.FilePublishResult,
+        ifMatchShas = Object.fromEntries(
+          Object.keys(batch)
             .filter(
-              (input): boolean =>
+              (filePath): boolean =>
                 !(
-                  awaitingComputedShas.has(input) &&
-                  state2[input] === ownPublishedShas.get(input)
+                  awaitingComputedShas.has(filePath) &&
+                  baseShas[filePath] === ownPublishedShas.get(filePath)
                 ),
             )
-            .map((input) => [input, state2[input] ?? null]),
+            .map((filePath) => [filePath, baseShas[filePath] ?? null]),
         ),
         version = port.version().version;
       try {
-        value6 = await port.publish(value4, {
-          ifMatch: value7,
+        publishResult = await port.publish(batch, {
+          ifMatch: ifMatchShas,
         });
       } catch {
-        value6 = {
+        publishResult = {
           ok: false,
           code: "upstream_error",
         };
       }
       if (
-        value6.ok &&
-        value6.unchanged !== true &&
-        value6.version === version
+        publishResult.ok &&
+        publishResult.unchanged !== true &&
+        publishResult.version === version
       ) {
-        value6 = {
-          ...value6,
+        publishResult = {
+          ...publishResult,
           unchanged: true,
         };
       }
-      if (!value6.ok) {
-        value3 = value6;
+      if (!publishResult.ok) {
+        publishFailure = publishResult;
         break;
       }
-      if (value6.changed) {
-        for (let value10 of value6.changed) {
-          if (!(value10.path in value4)) {
-            remoteShas.set(value10.path, value10.sha256);
-            awaitingComputedShas.delete(value10.path);
+      if (publishResult.changed) {
+        for (let change of publishResult.changed) {
+          if (!(change.path in batch)) {
+            remoteShas.set(change.path, change.sha256);
+            awaitingComputedShas.delete(change.path);
           }
         }
       }
-      let value8 =
-        value6.preconditionsChecked === true &&
-        Object.keys(value4).every((input) => Object.hasOwn(value7, input));
+      let publishSucceeded =
+        publishResult.preconditionsChecked === true &&
+        Object.keys(batch).every((filePath) => Object.hasOwn(ifMatchShas, filePath));
       if (
         !(
-          value6.unchanged === true ||
-          (value8 && value6.changed === undefined)
+          publishResult.unchanged === true ||
+          (publishSucceeded && publishResult.changed === undefined)
         )
       ) {
-        lastPublishVersion = value6.version;
-        ownPublishedVersions.add(value6.version);
+        lastPublishVersion = publishResult.version;
+        ownPublishedVersions.add(publishResult.version);
         if (ownPublishedVersions.size > FILE_SAVE_MAX_BATCH_CONFLICTS) {
           ownPublishedVersions.delete(
             ownPublishedVersions.values().next().value!,
@@ -752,66 +752,66 @@ function createFilesSaveQueue(
         }
       }
       counters.publishes += 1;
-      counters.pathsSent += Object.keys(value4).length;
-      counters.lastPublishMs = timers.now() - value5;
-      let value9 =
-        value6.shas ?? (await hashFilePublishEntries(value4));
-      for (let [value10, value11] of Object.entries(value4)) {
-        let value12 = value11 === null ? null : (value9[value10] ?? null);
-        counters.bytesSent += filePublishRawBytes(value11);
-        ownPublishedShas.set(value10, value12);
-        remoteShas.set(value10, value12);
+      counters.pathsSent += Object.keys(batch).length;
+      counters.lastPublishMs = timers.now() - publishStartedAt;
+      let publishedShas =
+        publishResult.shas ?? (await hashFilePublishEntries(batch));
+      for (let [filePath, fileContent] of Object.entries(batch)) {
+        let publishedSha = fileContent === null ? null : (publishedShas[filePath] ?? null);
+        counters.bytesSent += filePublishRawBytes(fileContent);
+        ownPublishedShas.set(filePath, publishedSha);
+        remoteShas.set(filePath, publishedSha);
         if (
           !(
-            value6.shas?.[value10] !== undefined &&
-            value6.computed?.includes(value10) !== true
+            publishResult.shas?.[filePath] !== undefined &&
+            publishResult.computed?.includes(filePath) !== true
           ) &&
-          value12 !== null &&
-          fileContentContainsRuntimeMarkers(value11)
+          publishedSha !== null &&
+          fileContentContainsRuntimeMarkers(fileContent)
         ) {
-          awaitingComputedShas.add(value10);
+          awaitingComputedShas.add(filePath);
         } else {
-          awaitingComputedShas.delete(value10);
+          awaitingComputedShas.delete(filePath);
         }
-        if (value12 !== null && value6.unchanged !== true) {
-          options.tokens?.advance?.(value10, value12);
+        if (publishedSha !== null && publishResult.unchanged !== true) {
+          queueOptions.tokens?.advance?.(filePath, publishedSha);
         }
-        let entry = dirtyEntries.get(value10);
-        if (entry !== undefined && entry.gen === entries.get(value10)) {
-          dirtyEntries.delete(value10);
-          conflictSurfacedAt.delete(value10);
+        let entry = dirtyEntries.get(filePath);
+        if (entry !== undefined && entry.gen === entries.get(filePath)) {
+          dirtyEntries.delete(filePath);
+          conflictSurfacedAt.delete(filePath);
         } else if (entry !== undefined) {
-          entry.base = value12;
+          entry.base = publishedSha;
         }
-        if (indexStore && value10 === indexPath && value12 !== null) {
-          indexStore.markSaved(fileInputDebugText(value11), value12);
+        if (indexStore && filePath === indexPath && publishedSha !== null) {
+          indexStore.markSaved(fileInputDebugText(fileContent), publishedSha);
         }
       }
     }
-    if (value3 === undefined) {
-      let value4 = [...conflictBudgetExceeded].some((input) =>
-        dirtyEntries.has(input),
+    if (publishFailure === undefined) {
+      let hasConflicts = [...conflictBudgetExceeded].some((filePath) =>
+        dirtyEntries.has(filePath),
       );
-      finishPublish(!value4, !value4);
-      let value5 = [...dirtyEntries.keys()].some(
-        (input): boolean => !conflictBudgetExceeded.has(input),
+      finishPublish(!hasConflicts, !hasConflicts);
+      let hasDirtyFiles = [...dirtyEntries.keys()].some(
+        (filePath): boolean => !conflictBudgetExceeded.has(filePath),
       );
-      if (value4) {
+      if (hasConflicts) {
         markStuck(
           "conflict",
           false,
-          value5 ? 0 : FILE_SAVE_RECENT_PEER_WINDOW_MS,
+          hasDirtyFiles ? 0 : FILE_SAVE_RECENT_PEER_WINDOW_MS,
           undefined,
-          value5 ? currentRetryBudget() : 0,
+          hasDirtyFiles ? currentRetryBudget() : 0,
         );
       }
       return;
     }
-    await handlePublishFailure(value3, value);
+    await handlePublishFailure(publishFailure, value);
   }
   function finishPublish(
-    input: boolean = true,
-    options2: boolean = true,
+    shouldFinish: boolean = true,
+    forceFinish: boolean = true,
   ): void {
     conflictRetryUsed = false;
     retryOnRemoteChange = false;
@@ -822,7 +822,7 @@ function createFilesSaveQueue(
     refusalHistory = undefined;
     retryBudgetMs = currentRetryBudget();
     stuckState = undefined;
-    stuckRetryBackoff = options.stuckRetryMs ?? FILE_SAVE_CONFLICT_RETRY_MS;
+    stuckRetryBackoff = queueOptions.stuckRetryMs ?? FILE_SAVE_CONFLICT_RETRY_MS;
     rateLimitUntil = 0;
     serverRateLimit = false;
     if (retryTimer !== undefined) {
@@ -833,30 +833,30 @@ function createFilesSaveQueue(
     firstDirtyAt = dirtyEntries.size === 0 ? undefined : timers.now();
     scheduleMaxWaitCommit();
     inFlight = false;
-    if (options2) {
+    if (forceFinish) {
       notifyState();
     }
-    if (input) {
+    if (shouldFinish) {
       tryStartCommit();
     }
   }
   async function handlePublishFailure(
-    input: Files.FilePublishFailure,
-    options2: number,
+    failure: Files.FilePublishFailure,
+    remoteGeneration: number,
   ): Promise<void> {
-    lastError = input.code;
-    if (input.code === "conflict") {
+    lastError = failure.code;
+    if (failure.code === "conflict") {
       counters.conflicts += 1;
-      if (input.changed) {
-        for (let value2 of input.changed) {
-          remoteShas.set(value2.path, value2.sha256);
-          awaitingComputedShas.delete(value2.path);
+      if (failure.changed) {
+        for (let change of failure.changed) {
+          remoteShas.set(change.path, change.sha256);
+          awaitingComputedShas.delete(change.path);
         }
       }
-      if (input.paths) {
-        for (let value2 of input.paths) {
-          remoteShas.set(value2.path, value2.liveSha);
-          awaitingComputedShas.delete(value2.path);
+      if (failure.paths) {
+        for (let path of failure.paths) {
+          remoteShas.set(path.path, path.liveSha);
+          awaitingComputedShas.delete(path.path);
         }
       }
       let value = beginRetryAttempt();
@@ -869,14 +869,14 @@ function createFilesSaveQueue(
       }
       notifyState();
       for (;;) {
-        let value2 =
-          remoteChangeGeneration !== options2 ||
-          (input.live !== undefined && port.version().version === input.live)
+        let shouldRetry =
+          remoteChangeGeneration !== remoteGeneration ||
+          (failure.live !== undefined && port.version().version === failure.live)
             ? true
             : await waitForRemoteVersion();
         for (
           let index: number = 0;
-          value2 &&
+          shouldRetry &&
           awaitingComputedShas.size > 0 &&
           !isPublishVersionCurrent() &&
           index < FILE_SAVE_MAX_CONFLICT_RETRIES &&
@@ -885,23 +885,23 @@ function createFilesSaveQueue(
         ) {
           await waitForRemoteVersion();
         }
-        let value3 = await refreshLiveFileShas();
+        let hasFreshShas = await refreshLiveFileShas();
         if (disposed) {
           inFlight = false;
           notifyState();
           return;
         }
-        if (value2 && !value3 && remoteChangeGeneration === options2) {
+        if (shouldRetry && !hasFreshShas && remoteChangeGeneration === remoteGeneration) {
           if (timers.now() - value.since >= value.budgetMs) {
             return markStuck("conflict", false);
           }
-          let value4: number = Math.min(
+          let backoffMs: number = Math.min(
             jitterDelay(FILE_SAVE_QUICK_RETRY_MS * 2),
             Math.max(1, value.budgetMs - (timers.now() - value.since)),
           );
-          backoffUntil = timers.now() + value4;
+          backoffUntil = timers.now() + backoffMs;
           notifyState();
-          await waitForRetryOrWake(value4);
+          await waitForRetryOrWake(backoffMs);
           backoffUntil = undefined;
           continue;
         }
@@ -911,48 +911,48 @@ function createFilesSaveQueue(
           indexPath !== undefined &&
           dirtyEntries.has(indexPath)
         ) {
-          let value4 = await mergeRemoteIndex();
-          if (value4 !== "merged" && value4 !== "unread") {
-            return markStuck(value4, false, undefined, indexPath);
+          let indexMergeResult = await mergeRemoteIndex();
+          if (indexMergeResult !== "merged" && indexMergeResult !== "unread") {
+            return markStuck(indexMergeResult, false, undefined, indexPath);
           }
         }
         if (dirtyEntries.size === 0) {
           finishPublish();
           return;
         }
-        if (!value2) {
+        if (!shouldRetry) {
           if (conflictRetryUsed) {
             return markStuck("conflict", true);
           }
           conflictRetryUsed = true;
         }
-        return retryFailure("conflict", value2);
+        return retryFailure("conflict", shouldRetry);
       }
     }
-    if (input.code === "rate_limited") {
+    if (failure.code === "rate_limited") {
       counters.rateLimited += 1;
       let value = beginRetryAttempt(),
-        value2: number | undefined =
-          input.retryAfterMs !== undefined &&
-          Number.isFinite(input.retryAfterMs) &&
-          input.retryAfterMs >= 0
+        serverRetryMs: number | undefined =
+          failure.retryAfterMs !== undefined &&
+          Number.isFinite(failure.retryAfterMs) &&
+          failure.retryAfterMs >= 0
             ? Math.min(
-                Math.max(input.retryAfterMs, FILE_SAVE_RETRY_JITTER_MS),
+                Math.max(failure.retryAfterMs, FILE_SAVE_RETRY_JITTER_MS),
                 FILE_SAVE_RECENT_ACTIVITY_WINDOW_MS,
               )
             : undefined,
-        value3 = value2 ?? rateLimitBackoff;
+        retryDelay = serverRetryMs ?? rateLimitBackoff;
       rateLimitBackoff = Math.min(
         FILE_SAVE_STUCK_TIMEOUT_MS,
         rateLimitBackoff * 2,
       );
-      rateLimitUntil = timers.now() + value3;
-      serverRateLimit = value2 !== undefined;
+      rateLimitUntil = timers.now() + retryDelay;
+      serverRateLimit = serverRetryMs !== undefined;
       backoffUntil = rateLimitUntil;
       notifyState();
-      let value4 = value.budgetMs - (timers.now() - value.since),
-        value5 = await waitForRetryOrWake(
-          Math.max(0, Math.min(value3, value4)),
+      let remainingBudget = value.budgetMs - (timers.now() - value.since),
+        waited = await waitForRetryOrWake(
+          Math.max(0, Math.min(retryDelay, remainingBudget)),
           serverRateLimit,
         );
       if (disposed) {
@@ -961,7 +961,7 @@ function createFilesSaveQueue(
         return;
       }
       if (
-        !value5 &&
+        !waited &&
         (timers.now() < rateLimitUntil ||
           timers.now() - value.since >= value.budgetMs)
       ) {
@@ -977,28 +977,28 @@ function createFilesSaveQueue(
       lastError = undefined;
       return publishDirtyEntries();
     }
-    if (input.code === "upstream_error") {
+    if (failure.code === "upstream_error") {
       beginRetryAttempt();
       notifyState();
       return retryFailure("upstream_error", true);
     }
     beginRetryAttempt();
-    markStuck(input.code, false);
+    markStuck(failure.code, false);
   }
   async function retryFailure(
-    input: string,
-    options2: boolean,
+    failureCode: string,
+    allowStuck: boolean,
   ): Promise<void> {
     let value: FileSaveRetryWindow = retryWindow!,
-      value2 = timers.now() - value.since;
-    if (value2 >= value.budgetMs) {
-      return markStuck(input, !options2);
+      elapsedMs = timers.now() - value.since;
+    if (elapsedMs >= value.budgetMs) {
+      return markStuck(failureCode, !allowStuck);
     }
     let refusals = value.refusals,
-      value3: number;
+      retryDelay: number;
     if (refusals <= 1) {
-      value3 =
-        input === "upstream_error"
+      retryDelay =
+        failureCode === "upstream_error"
           ? FILE_SAVE_CONFLICT_BACKOFF_MS[0] +
             Math.floor(
               random() *
@@ -1007,19 +1007,19 @@ function createFilesSaveQueue(
             )
           : 0;
     } else {
-      value3 = jitterDelay(
+      retryDelay = jitterDelay(
         Math.min(
           FILE_SAVE_LONG_REQUEST_MS,
           FILE_SAVE_QUICK_RETRY_MS * 2 ** (refusals - 2),
         ),
       );
     }
-    value3 = Math.min(value3, value.budgetMs - value2);
+    retryDelay = Math.min(retryDelay, value.budgetMs - elapsedMs);
     counters.retries += 1;
-    if (value3 > 0) {
-      backoffUntil = timers.now() + value3;
+    if (retryDelay > 0) {
+      backoffUntil = timers.now() + retryDelay;
       notifyState();
-      await waitForRetryOrWake(value3);
+      await waitForRetryOrWake(retryDelay);
       backoffUntil = undefined;
     }
     if (disposed) {
@@ -1031,62 +1031,62 @@ function createFilesSaveQueue(
     return publishDirtyEntries();
   }
   function markStuck(
-    input: string,
-    options2: boolean,
-    context?: number,
-    value?: string,
-    extra: number = 0,
+    filePath: string,
+    allowRemoteRetry: boolean,
+    retryAfterMs?: number,
+    detailMessage?: string,
+    additionalDelay: number = 0,
   ): void {
-    let value2 = timers.now();
-    lastError = input;
-    let value3 =
-      input === "conflict" &&
+    let now = timers.now();
+    lastError = filePath;
+    let retryBudget =
+      filePath === "conflict" &&
       (refusalHistory?.attempts ?? 0) >= FILE_SAVE_MAX_CONFLICT_PATHS;
-    retryOnRemoteChange = options2 || value3;
+    retryOnRemoteChange = allowRemoteRetry || retryBudget;
     backoffUntil = undefined;
     commitRequested = false;
     inFlight = false;
     retryWindow = undefined;
-    let value4: boolean = !FILE_SAVE_TERMINAL_ERROR_CODES.has(input),
-      value5: number | undefined,
-      value6 = options.stuckRetryMs ?? FILE_SAVE_CONFLICT_RETRY_MS;
+    let retryable: boolean = !FILE_SAVE_TERMINAL_ERROR_CODES.has(filePath),
+      nextRetryAt: number | undefined,
+      stuckRetryMs = queueOptions.stuckRetryMs ?? FILE_SAVE_CONFLICT_RETRY_MS;
     if (
-      value4 &&
-      !options2 &&
-      !value3 &&
-      (value6 > 0 || context !== undefined)
+      retryable &&
+      !allowRemoteRetry &&
+      !retryBudget &&
+      (stuckRetryMs > 0 || retryAfterMs !== undefined)
     ) {
-      let value7 = context ?? jitterDelay(stuckRetryBackoff);
-      if (context === undefined) {
+      let backoffMs = retryAfterMs ?? jitterDelay(stuckRetryBackoff);
+      if (retryAfterMs === undefined) {
         stuckRetryBackoff = Math.min(
           FILE_SAVE_STUCK_TIMEOUT_MS,
           stuckRetryBackoff * 2,
         );
       }
-      value5 = value2 + value7;
+      nextRetryAt = now + backoffMs;
       if (retryTimer !== undefined) {
         timers.clearTimeout(retryTimer);
       }
       retryTimer = timers.setTimeout((): void => {
         retryTimer = undefined;
-        restartRetryWindow(extra);
-      }, value7);
+        restartRetryWindow(additionalDelay);
+      }, backoffMs);
     }
     stuckState = {
-      code: input,
-      since: refusalHistory?.since ?? value2,
+      code: filePath,
+      since: refusalHistory?.since ?? now,
       attempts: refusalHistory?.attempts ?? 1,
       paths: [...dirtyEntries.keys()],
-      retryable: value4,
+      retryable: retryable,
       stashed: stuckState?.stashed ?? false,
-      ...(value5 !== undefined
+      ...(nextRetryAt !== undefined
         ? {
-            nextRetryAt: value5,
+            nextRetryAt: nextRetryAt,
           }
         : {}),
-      ...(value !== undefined
+      ...(detailMessage !== undefined
         ? {
-            file: value,
+            file: detailMessage,
           }
         : {}),
     };
@@ -1097,9 +1097,9 @@ function createFilesSaveQueue(
   let stashGeneration: number = 0,
     stashWriteChain: Promise<unknown> = Promise.resolve();
   function serializeStashWrite<Result>(
-    input: () => Promise<Result>,
+    write: () => Promise<Result>,
   ): Promise<Result> {
-    let value = stashWriteChain.then(input);
+    let value = stashWriteChain.then(write);
     stashWriteChain = value.catch((): void => {
       return;
     });
@@ -1108,7 +1108,7 @@ function createFilesSaveQueue(
   let stashWriteInFlight: boolean = false,
     stashWriteOwed: boolean = false;
   function writePendingStash(): void {
-    if (options.stash === undefined || stashWritePaused) {
+    if (queueOptions.stash === undefined || stashWritePaused) {
       return;
     }
     if (stashWriteInFlight) {
@@ -1122,61 +1122,61 @@ function createFilesSaveQueue(
         () => Files.FilePublishInput,
         string | null | undefined,
       ][] = [...dirtyEntries].map(
-        ([input, input2]: [string, DirtyFileEntry]) => [
-          input,
-          input2.value,
-          input2.base,
+        ([filePath, entry]: [string, DirtyFileEntry]) => [
+          filePath,
+          entry.value,
+          entry.base,
         ],
       );
-    for (let [value3, value4] of conflictedEntries) {
-      if (dirtyEntries.has(value3)) {
+    for (let [filePath, conflictEntry] of conflictedEntries) {
+      if (dirtyEntries.has(filePath)) {
         continue;
       }
-      if (value4.unreadable === true) {
+      if (conflictEntry.unreadable === true) {
         flag = false;
         continue;
       }
-      value.push([value3, () => value4.mine, value4.base]);
+      value.push([filePath, () => conflictEntry.mine, conflictEntry.base]);
     }
-    for (let [value3, value4] of unsendableEntries) {
-      if (!dirtyEntries.has(value3) && !conflictedEntries.has(value3)) {
-        value.push([value3, value4.value, value4.base]);
+    for (let [filePath, unsendableEntry] of unsendableEntries) {
+      if (!dirtyEntries.has(filePath) && !conflictedEntries.has(filePath)) {
+        value.push([filePath, unsendableEntry.value, unsendableEntry.base]);
       }
     }
     if (value.length === 0) {
       return;
     }
-    for (let [value3, value4, value5] of value) {
-      let value6: Files.FilePublishInput;
+    for (let [filePath, valueFactory, baseText] of value) {
+      let fileContent: Files.FilePublishInput;
       try {
-        value6 = value4();
+        fileContent = valueFactory();
       } catch {
         flag = false;
         continue;
       }
-      let value7 =
-        value6 === null
+      let normalizedContent =
+        fileContent === null
           ? null
-          : typeof value6 === "object" &&
-              !(typeof Blob !== "undefined" && value6 instanceof Blob)
+          : typeof fileContent === "object" &&
+              !(typeof Blob !== "undefined" && fileContent instanceof Blob)
             ? (
-                value6 as import("../contracts/files-core").NormalizedFilePublishInput
+                fileContent as import("../contracts/files-core").NormalizedFilePublishInput
               ).content
-            : value6;
-      if (value7 !== null && typeof value7 !== "string") {
+            : fileContent;
+      if (normalizedContent !== null && typeof normalizedContent !== "string") {
         flag = false;
         continue;
       }
       items.push({
-        path: value3,
-        text: value7,
-        base: value5 as string | null,
+        path: filePath,
+        text: normalizedContent,
+        base: baseText as string | null,
       });
     }
     hasStashedEntries = true;
     stashWriteInFlight = true;
-    let value2 = ++stashGeneration,
-      stash = options.stash,
+    let generation = ++stashGeneration,
+      stash = queueOptions.stash,
       version = port.version().version;
     serializeStashWrite(() => stash.put(items, version))
       .finally((): void => {
@@ -1186,9 +1186,9 @@ function createFilesSaveQueue(
           writePendingStash();
         }
       })
-      .then((input): void => {
+      .then((saved): void => {
         if (
-          value2 !== stashGeneration ||
+          generation !== stashGeneration ||
           disposed ||
           (stuckState === undefined && unsendableEntries.size === 0)
         ) {
@@ -1197,10 +1197,10 @@ function createFilesSaveQueue(
         if (stuckState !== undefined) {
           stuckState = {
             ...stuckState,
-            stashed: input && flag,
+            stashed: saved && flag,
           };
         }
-        unsendableStashed = unsendableEntries.size > 0 && input && flag;
+        unsendableStashed = unsendableEntries.size > 0 && saved && flag;
         notifyState();
       });
   }
@@ -1217,7 +1217,7 @@ function createFilesSaveQueue(
       return;
     }
     hasStashedEntries = false;
-    let stash = options.stash,
+    let stash = queueOptions.stash,
       value: boolean = clearOfferedStashOnSave;
     clearOfferedStashOnSave = false;
     if (stash !== undefined) {
@@ -1232,12 +1232,12 @@ function createFilesSaveQueue(
   let stashWritePaused: boolean = false,
     stashResumeTimer: ReturnType<typeof setTimeout> | undefined,
     stashWriteTimer: ReturnType<typeof setTimeout> | undefined;
-  function scheduleStashWrite(input: number = 1000): void {
-    if (options.stash === undefined || disposed) {
+  function scheduleStashWrite(delayMs: number = 1000): void {
+    if (queueOptions.stash === undefined || disposed) {
       return;
     }
     if (stashWriteTimer !== undefined) {
-      if (input > 0) {
+      if (delayMs > 0) {
         return;
       }
       timers.clearTimeout(stashWriteTimer);
@@ -1252,7 +1252,7 @@ function createFilesSaveQueue(
       ) {
         writePendingStash();
       }
-    }, input);
+    }, delayMs);
   }
   function clearStuckIfClean(): void {
     if (dirtyEntries.size > 0 || stuckState === undefined || inFlight) {
@@ -1261,19 +1261,19 @@ function createFilesSaveQueue(
     finishPublish();
   }
   function waitForRemoteVersion() {
-    return new Promise<boolean>((input): void => {
+    return new Promise<boolean>((resolve): void => {
       let flag: boolean = false,
-        callback = (input2: boolean): void => {
+        callback = (result: boolean): void => {
           if (flag) {
             return;
           }
           flag = true;
           value();
-          timers.clearTimeout(value2);
-          input(input2);
+          timers.clearTimeout(timerHandle);
+          resolve(result);
         },
         value = port.onRemoteChange(() => callback(true)),
-        value2 = timers.setTimeout(
+        timerHandle = timers.setTimeout(
           () => callback(false),
           FILE_SAVE_RETRY_MIN_MS,
         );
@@ -1290,9 +1290,9 @@ function createFilesSaveQueue(
       if (fileListingIsNarrowed(value, port)) {
         return false;
       }
-      let entries = new Map(value.map((input) => [input.path, input.sha256]));
-      for (let value2 of dirtyEntries.keys()) {
-        remoteShas.set(value2, entries.get(value2) ?? null);
+      let entries = new Map(value.map((fileEntry) => [fileEntry.path, fileEntry.sha256]));
+      for (let filePath of dirtyEntries.keys()) {
+        remoteShas.set(filePath, entries.get(filePath) ?? null);
       }
       if (indexPath !== undefined) {
         remoteShas.set(indexPath, entries.get(indexPath) ?? null);
@@ -1318,7 +1318,7 @@ function createFilesSaveQueue(
       indexNeedsMerge = false;
       if (value.length > 0) {
         try {
-          options.onIndexMerged?.(value);
+          queueOptions.onIndexMerged?.(value);
         } catch {}
       }
       let entry = dirtyEntries.get(indexStore.path);
@@ -1379,7 +1379,7 @@ function createFilesSaveQueue(
     ) {
       return Promise.resolve();
     }
-    return new Promise<void>((input) => settleWaiters.push(input));
+    return new Promise<void>((resolve) => settleWaiters.push(resolve));
   }
   return {
     markDirty: markDirty,
@@ -1418,17 +1418,17 @@ function createFilesSaveQueue(
     state: getQueueState,
     conflicted: () => conflictedEntries,
     unsendable: () => unsendableReasons,
-    resolveConflict(input, options2): void {
-      let entry = conflictedEntries.get(input);
+    resolveConflict(filePath, choice): void {
+      let entry = conflictedEntries.get(filePath);
       if (entry === undefined) {
         return;
       }
-      if (options2 === "mine" && entry.unreadable === true) {
+      if (choice === "mine" && entry.unreadable === true) {
         return;
       }
-      conflictedEntries.delete(input);
-      if (options2 === "mine") {
-        markDirty(input, () => entry.mine, entry.theirsSha);
+      conflictedEntries.delete(filePath);
+      if (choice === "mine") {
+        markDirty(filePath, () => entry.mine, entry.theirsSha);
       } else {
         clearSavedStash();
       }
@@ -1440,19 +1440,19 @@ function createFilesSaveQueue(
       unsendableReasons.size > 0,
     isOwnEcho: isOwnPublishEcho,
     solo: isSoloPacing,
-    withdraw(input): void {
-      let value = dirtyEntries.delete(input),
-        value2 = conflictedEntries.delete(input),
-        value3 = unsendableReasons.delete(input);
-      unsendableEntries.delete(input);
-      if (value || value2) {
-        withdrawnPaths.add(input);
+    withdraw(filePath): void {
+      let value = dirtyEntries.delete(filePath),
+        removedConflict = conflictedEntries.delete(filePath),
+        removedUnsendable = unsendableReasons.delete(filePath);
+      unsendableEntries.delete(filePath);
+      if (value || removedConflict) {
+        withdrawnPaths.add(filePath);
       }
       if (dirtyEntries.size === 0) {
         firstDirtyAt = undefined;
         scheduleMaxWaitCommit();
       }
-      if (value || value2 || value3) {
+      if (value || removedConflict || removedUnsendable) {
         notifyState();
       }
       clearStuckIfClean();
@@ -1477,13 +1477,13 @@ function createFilesSaveQueue(
     },
     flushNow: flushNow,
     stashRestored(): void {
-      if (options.stash !== undefined) {
+      if (queueOptions.stash !== undefined) {
         hasStashedEntries = true;
         clearOfferedStashOnSave = true;
       }
     },
     stashHandedOff(): void {
-      if (options.stash === undefined) {
+      if (queueOptions.stash === undefined) {
         return;
       }
       stashWritePaused = true;
@@ -1512,7 +1512,7 @@ function createFilesSaveQueue(
         return;
       }
       hasStashedEntries = false;
-      let stash = options.stash,
+      let stash = queueOptions.stash,
         value: boolean = clearOfferedStashOnSave;
       clearOfferedStashOnSave = false;
       serializeStashWrite(async (): Promise<void> => {
@@ -1524,17 +1524,17 @@ function createFilesSaveQueue(
     },
   };
 }
-function fileInputDebugText(input: Files.FilePublishInput) {
-  if (input === null) {
+function fileInputDebugText(fileContent: Files.FilePublishInput) {
+  if (fileContent === null) {
     return "";
   }
   let value =
-    typeof input === "object" &&
-    !(typeof Blob !== "undefined" && input instanceof Blob)
+    typeof fileContent === "object" &&
+    !(typeof Blob !== "undefined" && fileContent instanceof Blob)
       ? (
-          input as import("../contracts/files-core").NormalizedFilePublishInput
+          fileContent as import("../contracts/files-core").NormalizedFilePublishInput
         ).content
-      : input;
+      : fileContent;
   if (typeof value === "string") {
     return value;
   } else {
@@ -1645,7 +1645,7 @@ export function installFilesSaveQueue(): () => void {
       "index_newer_build",
       "index_damaged",
     ]);
-    isIndexFileSaveError = (input: string | undefined) =>
-      input === "index_newer_build" || input === "index_damaged";
+    isIndexFileSaveError = (errorCode: string | undefined) =>
+      errorCode === "index_newer_build" || errorCode === "index_damaged";
   };
 }

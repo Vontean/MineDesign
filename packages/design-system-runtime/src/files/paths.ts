@@ -79,7 +79,7 @@ function validateFilePath(path: string): string | undefined {
   if (
     path.startsWith("/") ||
     parts.some(
-      (input: string) => input === "" || input === "." || input === "..",
+      (pathSegment: string) => pathSegment === "" || pathSegment === "." || pathSegment === "..",
     )
   ) {
     return uiMessage("design-system.paths.itsPathHasAnEmpty");
@@ -91,12 +91,12 @@ function validateFilePath(path: string): string | undefined {
 }
 function isTextFileWithInvalidUnicode(
   path: string,
-  input: Files.FilePublishInput,
+  fileContent: Files.FilePublishInput,
 ) {
-  if (input === null) {
+  if (fileContent === null) {
     return false;
   }
-  let normalized = normalizeFilePublishInput(path, input);
+  let normalized = normalizeFilePublishInput(path, fileContent);
   return (
     normalized !== null &&
     typeof normalized !== "string" &&
@@ -117,7 +117,7 @@ function restrictedFileNameReason(path: string) {
 }
 function filePublishRejection(
   path: string,
-  input: Files.FilePublishInput,
+  fileContent: Files.FilePublishInput,
 ): FilePublishRejection | undefined {
   let nameProblem = validateFilePath(path);
   if (nameProblem !== undefined) {
@@ -126,10 +126,10 @@ function filePublishRejection(
       cause: "name",
     };
   }
-  if (input === null) {
+  if (fileContent === null) {
     return;
   }
-  let normalized = normalizeFilePublishInput(path, input);
+  let normalized = normalizeFilePublishInput(path, fileContent);
   if (typeof normalized === "string") {
     if (normalized.includes("files of this kind")) {
       return {
@@ -148,7 +148,7 @@ function filePublishRejection(
       cause: "unreadable",
     };
   }
-  if (isTextFileWithInvalidUnicode(path, input)) {
+  if (isTextFileWithInvalidUnicode(path, fileContent)) {
     return {
       get why() { return ((uiMessage("design-system.paths.itHoldsACharacterThat")) + (UNICODE_REPLACEMENT_CHARACTER)) + ("). Find it and type it again"); },
       cause: "damaged_text",
@@ -186,20 +186,20 @@ function stripFrameRuntimeBlock(html: string) {
 }
 function normalizeFilePublishInput(
   path: string,
-  input: Files.FilePublishInput,
+  fileContent: Files.FilePublishInput,
 ): NormalizedFilePublishInput | string | null {
-  if (input === null) {
+  if (fileContent === null) {
     return null;
   }
   let content: Files.FileContents | Exclude<Files.FilePublishInput, null> =
-      input,
+      fileContent,
     contentType: string | undefined;
   if (
-    typeof input === "object" &&
-    !(typeof Blob !== "undefined" && input instanceof Blob)
+    typeof fileContent === "object" &&
+    !(typeof Blob !== "undefined" && fileContent instanceof Blob)
   ) {
-    content = (input as NormalizedFilePublishInput).content;
-    contentType = (input as NormalizedFilePublishInput).contentType;
+    content = (fileContent as NormalizedFilePublishInput).content;
+    contentType = (fileContent as NormalizedFilePublishInput).contentType;
   }
   let isBlob = typeof Blob !== "undefined" && content instanceof Blob;
   if (typeof content !== "string" && !isBlob) {
@@ -236,22 +236,22 @@ function normalizeFilePublishInput(
     contentType: resolvedMime,
   };
 }
-function filePublishEncodedBytes(input: Files.FilePublishInput) {
-  if (input === null) {
+function filePublishEncodedBytes(fileContent: Files.FilePublishInput) {
+  if (fileContent === null) {
     return 0;
   }
-  let content = filePublishContent(input);
+  let content = filePublishContent(fileContent);
   if (typeof content === "string") {
     return encodeFileUtf8(content).length;
   } else {
     return Math.ceil(content.size / 3) * 4;
   }
 }
-function filePublishRawBytes(input: Files.FilePublishInput) {
-  if (input === null) {
+function filePublishRawBytes(fileContent: Files.FilePublishInput) {
+  if (fileContent === null) {
     return 0;
   }
-  let content = filePublishContent(input);
+  let content = filePublishContent(fileContent);
   if (typeof content === "string") {
     return encodeFileUtf8(content).length;
   } else {
@@ -259,15 +259,15 @@ function filePublishRawBytes(input: Files.FilePublishInput) {
   }
 }
 function filePublishSizeRejection(
-  input: Files.FilePublishInput,
+  fileContent: Files.FilePublishInput,
 ): undefined | string {
   if (
-    input === null ||
-    filePublishEncodedBytes(input) <= MAX_FILE_PUBLISH_ENCODED_BYTES
+    fileContent === null ||
+    filePublishEncodedBytes(fileContent) <= MAX_FILE_PUBLISH_ENCODED_BYTES
   ) {
     return;
   }
-  let isText: boolean = typeof filePublishContent(input) === "string",
+  let isText: boolean = typeof filePublishContent(fileContent) === "string",
     limitMb: number =
       (isText
         ? MAX_FILE_PUBLISH_ENCODED_BYTES
@@ -292,13 +292,13 @@ async function hashFilePublishEntries(
   entries: Files.FilePublishEntries,
 ): Promise<Record<string, string>> {
   let hashes: Record<string, string> = {};
-  for (let [value, value2] of Object.entries(entries)) {
-    let value3 = normalizeFilePublishInput(value, value2);
-    if (value3 === null || typeof value3 === "string") {
+  for (let [value, fileContent] of Object.entries(entries)) {
+    let normalizedFile = normalizeFilePublishInput(value, fileContent);
+    if (normalizedFile === null || typeof normalizedFile === "string") {
       continue;
     }
     hashes[value] = await sha256(
-      await fileContentBytes(value3.content),
+      await fileContentBytes(normalizedFile.content),
     );
   }
   return hashes;
@@ -348,48 +348,48 @@ function splitFilePublishBatches(
 ) {
   let allEntries = Object.entries(entries),
     contentEntries = allEntries.filter(
-      ([input]: [string, Files.FilePublishInput]): boolean =>
-        !isIndexPath(input),
+      ([path]: [string, Files.FilePublishInput]): boolean =>
+        !isIndexPath(path),
     ),
     indexEntries = allEntries.filter(
-      ([input]: [string, Files.FilePublishInput]) => isIndexPath(input),
+      ([path]: [string, Files.FilePublishInput]) => isIndexPath(path),
     ),
     batches: Files.FilePublishEntries[] = [],
     batch: Files.FilePublishEntries = {},
     bytes = 0,
     count = 0,
-    append = (input: string, options: Files.FilePublishInput): void => {
-      let value = filePublishEncodedBytes(options);
+    append = (path: string, fileContent: Files.FilePublishInput): void => {
+      let value = filePublishEncodedBytes(fileContent);
       if (count > 0 && (bytes + value > maxBytes || count + 1 > maxEntries)) {
         batches.push(batch);
         batch = {};
         bytes = 0;
         count = 0;
       }
-      batch[input] = options;
+      batch[path] = fileContent;
       bytes += value;
       count += 1;
     };
-  for (let [value, value2] of contentEntries) {
-    append(value, value2);
+  for (let [value, fileContent] of contentEntries) {
+    append(value, fileContent);
   }
-  for (let [value, value2] of indexEntries) {
-    append(value, value2);
+  for (let [value, fileContent] of indexEntries) {
+    append(value, fileContent);
   }
   if (count > 0) {
     batches.push(batch);
   }
   return batches;
 }
-function fileContentContainsRuntimeMarkers(input: Files.FilePublishInput) {
-  if (input === null) {
+function fileContentContainsRuntimeMarkers(fileContent: Files.FilePublishInput) {
+  if (fileContent === null) {
     return false;
   }
   let content =
-    typeof input === "object" &&
-    !(typeof Blob !== "undefined" && input instanceof Blob)
-      ? (input as NormalizedFilePublishInput).content
-      : input;
+    typeof fileContent === "object" &&
+    !(typeof Blob !== "undefined" && fileContent instanceof Blob)
+      ? (fileContent as NormalizedFilePublishInput).content
+      : fileContent;
   return (
     typeof content === "string" &&
     (content.includes("/_cas/") ||
@@ -499,8 +499,8 @@ async function retryFileRead<Result>(
   delays: readonly number[] = FILE_FETCH_RETRY_DELAYS_MS,
 ): Promise<Result> {
   let clock = timers ?? {
-    setTimeout: (input: () => void, options: number) =>
-      setTimeout(input, options),
+    setTimeout: (timerCallback: () => void, delayMs: number) =>
+      setTimeout(timerCallback, delayMs),
   };
   for (let index: number = 0; ; index++) {
     try {
@@ -511,7 +511,7 @@ async function retryFileRead<Result>(
       }
       onRetry?.(index + 1, value);
       await new Promise<void>(
-        (input: () => void) => void clock.setTimeout(input, delays[index]),
+        (scheduledCallback: () => void) => void clock.setTimeout(scheduledCallback, delays[index]),
       );
     }
   }
@@ -525,7 +525,7 @@ async function readJsonFileState(
   try {
     listed = (
       await retryFileRead(() => listWritableFiles(files), timers)
-    ).some((input: Files.FileListingRow): boolean => input.path === path);
+    ).some((fileEntry: Files.FileListingRow): boolean => fileEntry.path === path);
   } catch (value: unknown) {
     return {
       state: "unreadable",
@@ -543,15 +543,15 @@ async function readJsonFileState(
   }
   try {
     let value = await retryFileRead(() => files.readText(path), timers),
-      value2: unknown = null;
+      parsedValue: unknown = null;
     try {
-      value2 = JSON.parse(value.text);
+      parsedValue = JSON.parse(value.text);
     } catch {
-      value2 = null;
+      parsedValue = null;
     }
     return {
       state: "read",
-      value: value2,
+      value: parsedValue,
       text: value.text,
       sha256: value.sha256,
     };
@@ -565,13 +565,13 @@ function damagedTextFiles(tree: {
   files: Map<string, Files.FilePublishInput>;
 }) {
   return [...tree.files]
-    .filter(([input, input2]: [string, Files.FilePublishInput]) =>
-      isTextFileWithInvalidUnicode(input, input2),
+    .filter(([path, fileContent]: [string, Files.FilePublishInput]) =>
+      isTextFileWithInvalidUnicode(path, fileContent),
     )
-    .map(([input, input2]: [string, Files.FilePublishInput]) => ({
-      path: input,
+    .map(([path, fileContent]: [string, Files.FilePublishInput]) => ({
+      path: path,
       why:
-        filePublishRejectionReason(input, input2) ??
+        filePublishRejectionReason(path, fileContent) ??
         uiMessage("design-system.paths.itsTextCannotBeSaved"),
     }));
 }
@@ -580,22 +580,22 @@ function removeUnpublishableMigrationFiles(
   type?: FileArtifactType,
 ) {
   let leftOut = [];
-  for (let [value, value2] of [...files]) {
-    let value3 =
+  for (let [value, fileContent] of [...files]) {
+    let rejectionReason =
       restrictedFileNameReason(value) ??
       (type !== undefined && isPrivateProjectFile(type, value)
         ? uiMessage("design-system.paths.thisNameIsUsedBy")
         : undefined) ??
       (isPublishableFilePath(value)
-        ? filePublishRejectionReason(value, value2)
+        ? filePublishRejectionReason(value, fileContent)
         : undefined);
-    if (value3 === undefined) {
+    if (rejectionReason === undefined) {
       continue;
     }
     files.delete(value);
     leftOut.push({
       path: value,
-      why: value3,
+      why: rejectionReason,
     });
   }
   return leftOut;
@@ -688,21 +688,21 @@ export function installFilesPaths(): () => void {
     PUBLIC_PROJECT_FILES_BY_TYPE = {
       slides: ["store-meta.json"],
     };
-    isReservedProjectFile = (input: FileArtifactType, options: string) =>
-      options.startsWith("project/") &&
-      RESERVED_PROJECT_FILES_BY_TYPE[input].includes(options.slice(8));
-    isPrivateProjectFile = (input: FileArtifactType, options: string) =>
-      isReservedProjectFile(input, options) &&
-      !(PUBLIC_PROJECT_FILES_BY_TYPE[input] ?? []).includes(options.slice(8));
-    isRuntimeInternalFilePath = (input: string) =>
-      input === "index.html" ||
-      input === "SKILL.md" ||
-      input.startsWith("artifact-type/");
-    isProjectIndexFilePath = (input: string) =>
-      input === PROJECT_INDEX_PATHS.design ||
-      input === PROJECT_INDEX_PATHS.slides ||
-      input === PROJECT_INDEX_PATHS.designSystem ||
-      input === LEGACY_PROJECT_INDEX_PATHS.designSystem;
+    isReservedProjectFile = (fileType: FileArtifactType, filePath: string) =>
+      filePath.startsWith("project/") &&
+      RESERVED_PROJECT_FILES_BY_TYPE[fileType].includes(filePath.slice(8));
+    isPrivateProjectFile = (fileType: FileArtifactType, filePath: string) =>
+      isReservedProjectFile(fileType, filePath) &&
+      !(PUBLIC_PROJECT_FILES_BY_TYPE[fileType] ?? []).includes(filePath.slice(8));
+    isRuntimeInternalFilePath = (filePath: string) =>
+      filePath === "index.html" ||
+      filePath === "SKILL.md" ||
+      filePath.startsWith("artifact-type/");
+    isProjectIndexFilePath = (filePath: string) =>
+      filePath === PROJECT_INDEX_PATHS.design ||
+      filePath === PROJECT_INDEX_PATHS.slides ||
+      filePath === PROJECT_INDEX_PATHS.designSystem ||
+      filePath === LEGACY_PROJECT_INDEX_PATHS.designSystem;
     MAX_FILE_BATCH_ENTRIES = 256;
     MAX_FILE_PATH_UTF8_BYTES = 512;
     MAX_FILE_PUBLISH_ENCODED_BYTES = 16777216;
@@ -803,31 +803,31 @@ export function installFilesPaths(): () => void {
     UNICODE_REPLACEMENT_CHARACTER = String.fromCharCode(65533);
     FILE_UNPAIRED_SURROGATE_PATTERN =
       /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/;
-    textContainsInvalidUnicode = (input: string) =>
-      input.includes(UNICODE_REPLACEMENT_CHARACTER) ||
-      FILE_UNPAIRED_SURROGATE_PATTERN.test(input);
+    textContainsInvalidUnicode = (text: string) =>
+      text.includes(UNICODE_REPLACEMENT_CHARACTER) ||
+      FILE_UNPAIRED_SURROGATE_PATTERN.test(text);
     filePublishRejectionReason = (
-      input: string,
-      options: Files.FilePublishInput,
-    ) => filePublishRejection(input, options)?.why;
-    isHtmlFilePath = (input: string) => /\.html?$/i.test(input);
+      filePath: string,
+      fileContent: Files.FilePublishInput,
+    ) => filePublishRejection(filePath, fileContent)?.why;
+    isHtmlFilePath = (filePath: string) => /\.html?$/i.test(filePath);
     FRAME_RUNTIME_BLOCK_START = "<\!-- frame-runtime -->";
     FRAME_RUNTIME_BLOCK_END = "<\!-- /frame-runtime -->";
-    filePublishContent = (input: Exclude<Files.FilePublishInput, null>) =>
-      typeof input === "object" &&
-      !(typeof Blob !== "undefined" && input instanceof Blob)
-        ? (input as NormalizedFilePublishInput).content
-        : input;
-    encodeFileUrlPath = (input: string) =>
-      input.split("/").map(encodeURIComponent).join("/");
+    filePublishContent = (fileContent: Exclude<Files.FilePublishInput, null>) =>
+      typeof fileContent === "object" &&
+      !(typeof Blob !== "undefined" && fileContent instanceof Blob)
+        ? (fileContent as NormalizedFilePublishInput).content
+        : fileContent;
+    encodeFileUrlPath = (filePath: string) =>
+      filePath.split("/").map(encodeURIComponent).join("/");
     PathCheckError = class PathCheckError extends Error {
       declare name: string;
       code: PathCheckException["code"];
       subject: string;
-      constructor(input: PathCheckException["code"], options: string) {
-        super(input + ": " + JSON.stringify(options));
-        this.code = input;
-        this.subject = options;
+      constructor(errorCode: PathCheckException["code"], subject: string) {
+        super(errorCode + ": " + JSON.stringify(subject));
+        this.code = errorCode;
+        this.subject = subject;
         this.name = "PathCheckError";
       }
     };

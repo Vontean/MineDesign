@@ -153,7 +153,7 @@ async function prepareSingleFileMigrationReopen(
             ? get_OLDER_SINGLE_FILE_COPY_MESSAGE()
             : unpublishableMigrationFilesMessage(
                 preflight.unpublishable.map(
-                  (input: { path: string }) => input.path,
+                  (fileEntry: { path: string }) => fileEntry.path,
                 ),
               ),
         null,
@@ -161,17 +161,17 @@ async function prepareSingleFileMigrationReopen(
     }
     return;
   }
-  let document2 = legacyDesignSystemDocument;
-  if (document2 === undefined) {
+  let document = legacyDesignSystemDocument;
+  if (document === undefined) {
     return;
   }
   installDesignSystemTypingListener();
   let clean = () =>
       !legacyDesignSystemIsBusy() &&
-      !document2.dirty() &&
-      document2.saveState().status !== "error" &&
-      document2.saveState().status !== "saving" &&
-      document2.commentSync().status === "idle",
+      !document.dirty() &&
+      document.saveState().status !== "error" &&
+      document.saveState().status !== "saving" &&
+      document.commentSync().status === "idle",
     leaveMoveNote = (): boolean | undefined => {
       try {
         let value: string = String(Date.now());
@@ -190,8 +190,8 @@ async function prepareSingleFileMigrationReopen(
     };
   for (let index: number = 0; index < 10; index++) {
     flushMarkdownCommitQueues();
-    if (document2.dirty() && !legacyDesignSystemIsBusy()) {
-      await document2.save().catch((): void => {
+    if (document.dirty() && !legacyDesignSystemIsBusy()) {
+      await document.save().catch((): void => {
         return;
       });
     }
@@ -214,9 +214,9 @@ async function prepareSingleFileMigrationReopen(
           }),
         );
       } catch {}
-      await new Promise<void>((input) => setTimeout(input, 2500));
+      await new Promise<void>((resolve) => setTimeout(resolve, 2500));
       if (!clean()) {
-        await document2.save().catch((): void => {
+        await document.save().catch((): void => {
           return;
         });
         if (!clean()) {
@@ -234,8 +234,8 @@ async function prepareSingleFileMigrationReopen(
         restart: designSystemRestartFunction(),
         note: "design system: a single-file system is about to be moved",
         watchdogMs: SINGLE_FILE_REOPEN_WATCHDOG_MS,
-        setTimeout: (input: () => void, options: number) =>
-          setTimeout(input, options),
+        setTimeout: (timerCallback: () => void, delayMs: number) =>
+          setTimeout(timerCallback, delayMs),
         ask: (): void => {
           releaseMigrationEditingHold();
           skipMigrationForTab();
@@ -254,7 +254,7 @@ async function prepareSingleFileMigrationReopen(
       });
       return;
     }
-    await new Promise<void>((input) => setTimeout(input, 3000));
+    await new Promise<void>((resolve) => setTimeout(resolve, 3000));
   }
 }
 function consumeMigrationRunningNote(): null | number | undefined {
@@ -280,9 +280,9 @@ function singleFileMigrationHolder(): string {
     if (value !== null && value !== "") {
       return value;
     }
-    let value2 = migrationTabHolder();
-    sessionStorage.setItem("ds-move-holder/" + location.host, value2);
-    return value2;
+    let holderId = migrationTabHolder();
+    sessionStorage.setItem("ds-move-holder/" + location.host, holderId);
+    return holderId;
   } catch {
     return migrationTabHolder();
   }
@@ -303,11 +303,11 @@ async function runSingleFileMigrationBoot(
       typeof document !== "undefined" &&
       document.visibilityState === "hidden"
     ) {
-      await new Promise<void>((input) =>
+      await new Promise<void>((resolve) =>
         document.addEventListener("visibilitychange", function value(): void {
           if (document.visibilityState !== "hidden") {
             document.removeEventListener("visibilitychange", value);
-            input();
+            resolve();
           }
         }),
       );
@@ -335,38 +335,38 @@ async function runSingleFileMigrationBoot(
             notice: singleFileMigrationBootExit.notice,
           }
         : {}),
-      carryNotice: (input: string): void => {
+      carryNotice: (message: string): void => {
         try {
           sessionStorage.setItem(
             MIGRATION_NOTICE_STORAGE_PREFIX + location.host,
             JSON.stringify({
               at: Date.now(),
-              words: input,
+              words: message,
             }),
           );
         } catch {
-          showEditorPromiseNotification(input, null);
+          showEditorPromiseNotification(message, null);
         }
       },
       skip: skipMigrationForTab,
       waitForTheirs: (): void => {
         let value: number = Date.now(),
-          value2 = setInterval(
+          timer = setInterval(
             () =>
               void readAuthoritativeStoreMeta({
                 port: createDatabaseAdapter(storeHandle),
                 handle: storeHandle,
-              }).then((input: Boot.MetaOutcome) => {
-                let value3 = migrationOtherTabWaitOutcome({
+              }).then((outcome: Boot.MetaOutcome) => {
+                let waitOutcome = migrationOtherTabWaitOutcome({
                   movedTo:
-                    readMovedToMarker(input.meta) !== null,
+                    readMovedToMarker(outcome.meta) !== null,
                   waitedMs: Date.now() - value,
                 });
-                if (value3 === "wait") {
+                if (waitOutcome === "wait") {
                   return;
                 }
-                clearInterval(value2);
-                if (value3 === "landed") {
+                clearInterval(timer);
+                if (waitOutcome === "landed") {
                   return reopenAfterFilesMigration(
                     "moved_by_someone",
                   );
@@ -417,11 +417,11 @@ async function startEmptyFilesDesignSystem(
       metaPath: SYSTEM_META_DOCUMENT_PATH,
       artifactId: location.host,
     },
-    rootHoldsContent = (input: unknown) =>
-      typeof input === "object" &&
-      input !== null &&
-      typeof (input as { content?: unknown }).content === "object" &&
-      (input as { content?: unknown }).content !== null,
+    rootHoldsContent = (contentValue: unknown) =>
+      typeof contentValue === "object" &&
+      contentValue !== null &&
+      typeof (contentValue as { content?: unknown }).content === "object" &&
+      (contentValue as { content?: unknown }).content !== null,
     otherHome = async (): Promise<"absent" | "unreadable" | "content"> => {
       let value = await readJsonFileState(
         files,
@@ -441,8 +441,8 @@ async function startEmptyFilesDesignSystem(
       files: files,
       indexPath: FILES_INDEX_PATH,
       emptyIndex: createEmptyFilesIndex,
-      serializeIndex: (input: Model.FilesIndex) =>
-        serializeIndexDocument(input),
+      serializeIndex: (index: Model.FilesIndex) =>
+        serializeIndexDocument(index),
       at: new Date().toISOString(),
       storeUntouched: storeUntouched,
       mark: mark,
@@ -530,7 +530,7 @@ function unpublishableMigrationFilesMessage(
       ? uiMessage("design-system.singleFileMigrationBoot.oneOfItsFiles")
       : paths
           .slice(0, 3)
-          .map((input): string => '"' + input + '"')
+          .map((path): string => '"' + path + '"')
           .join(", ") +
         (paths.length > 3
           ? " and " + String(paths.length - 3) + " more"
@@ -547,7 +547,7 @@ function temporarilyUnsavableMigrationFilesMessage(
     uiMessage("design-system.singleFileMigrationBoot.thisDesignSystemWasGoing") +
     (paths
       .slice(0, 3)
-      .map((input): string => '"' + input + '"')
+      .map((path): string => '"' + path + '"')
       .join(", ") +
       (paths.length > 3
         ? " and " + String(paths.length - 3) + " more"
@@ -620,42 +620,42 @@ export {
   TERMINAL_MIGRATION_ERROR_CODES,
   unpublishableMigrationFilesMessage,
 };
-export function set_singleFileMigrationBootExit(value: any): any {
-  singleFileMigrationBootExit = value;
-  return value;
+export function set_singleFileMigrationBootExit(exitValue: any): any {
+  singleFileMigrationBootExit = exitValue;
+  return exitValue;
 }
-export function set_singleFileMigrationBootHeld(value: any): any {
-  singleFileMigrationBootHeld = value;
-  return value;
+export function set_singleFileMigrationBootHeld(heldValue: any): any {
+  singleFileMigrationBootHeld = heldValue;
+  return heldValue;
 }
 export function installFilesSingleFileMigrationBoot(): () => void {
   return () => {
     SINGLE_FILE_MOVE_NOTE_PREFIX = "ds-move-single/";
     singleFileMigrationBootHeld = false;
-    mayMigrateLegacyDesignSystem = (input, options = false) => {
-      let value = ((input.content as { files?: Model.FileTable } | undefined)
+    mayMigrateLegacyDesignSystem = (document, isBusy = false) => {
+      let value = ((document.content as { files?: Model.FileTable } | undefined)
           ?.files ?? {})["manifest.json"],
-        value2: unknown;
+        lastChange: unknown;
       try {
-        value2 =
+        lastChange =
           typeof value === "string" ? JSON.parse(value).lastChange : undefined;
       } catch {
-        value2 = undefined;
+        lastChange = undefined;
       }
       return mayMigrateDesignSystem({
         typeHost: isDesignSystemTypeHost,
         pipeline: isMigrationExemptHost(location.hostname),
-        lastChange: value2,
+        lastChange: lastChange,
         automation: browserIsAutomated(),
         skipped: migrationIsSkipped(),
         canReopen: canRestartArtifact(),
         switchOn: async (): Promise<boolean> => false,
         canWrite: async () => {
-          let value3 = await probeLegacyDesignSystemWriteAccess();
+          let writeAccess = await probeLegacyDesignSystemWriteAccess();
           return (
-            value3 === true ||
-            (options &&
-              value3 === null &&
+            writeAccess === true ||
+            (isBusy &&
+              writeAccess === null &&
               (await probeLegacyDesignSystemWriteAccess()) !==
                 false)
           );
@@ -678,7 +678,7 @@ export function installFilesSingleFileMigrationBoot(): () => void {
       typeof window === "undefined"
         ? undefined
         : createMigrationEditingHold(window);
-    holdEditingForMigration = (input) => migrationEditingHold?.hold(input);
+    holdEditingForMigration = (message) => migrationEditingHold?.hold(message);
     releaseMigrationEditingHold = () => migrationEditingHold?.release();
     MIGRATION_SIZE_NOTICE_STORAGE_PREFIX = "ds-too-large-said/";
     MIGRATION_RUNNING_STORAGE_PREFIX = "ds-move-running/";
@@ -699,18 +699,18 @@ export function installFilesSingleFileMigrationBoot(): () => void {
           (await determineSlidesWriteAccess()).canWrite,
       });
     designSystemMigrationTimers = {
-      setTimeout: (input: () => void, options: number) =>
-        setTimeout(input, options),
-      clearTimeout: (input: ReturnType<typeof setTimeout> | undefined) =>
-        clearTimeout(input),
+      setTimeout: (timerCallback: () => void, delayMs: number) =>
+        setTimeout(timerCallback, delayMs),
+      clearTimeout: (timerHandle: ReturnType<typeof setTimeout> | undefined) =>
+        clearTimeout(timerHandle),
       now: (): number => Date.now(),
       random: (): number => Math.random(),
     };
     FILES_DOCUMENT_FETCH_TIMEOUT_MS = 300000;
-    readMigrationArtifactBlob = async (input) => {
+    readMigrationArtifactBlob = async (blobPath) => {
       try {
         let value = await fetch(
-          blobRelativeUrlModelFilePolicy(input),
+          blobRelativeUrlModelFilePolicy(blobPath),
           {
             credentials: "same-origin",
             signal: AbortSignal.timeout(60000),
